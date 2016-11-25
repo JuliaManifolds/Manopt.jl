@@ -8,4 +8,4 @@ branches:
     - master
 
 script:
-  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build($name); Pkg.test($name; coverage=true)'
+  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("ManifoldValuedImageProcessing"); Pkg.test("ManifoldvaluedImageProcessing"; coverage=true)'
