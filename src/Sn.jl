@@ -4,7 +4,7 @@
 """
 module Sn
 using Manifold: ManifoldPoint, ManifoldTangentialPoint
-import Base.LinAlg.norm, Base.LinAlg.dot
+import Base.LinAlg.norm, Base.LinAlg.dot, Base.exp, Base.log
 export SnPoint, SnTangentialPoint, exp, log, manifoldDimension
 
 #

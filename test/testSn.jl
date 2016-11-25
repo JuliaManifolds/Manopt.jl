@@ -1,5 +1,4 @@
-using Sn
-@testset "Sphere Sn functions" begin
+@testset "Sphere Sn" begin
   p = Sn.SnPoint([1,0,0])
   q = Sn.SnPoint([0,1,0])
   r = Sn.SnPoint([0,0,1])
