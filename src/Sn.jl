@@ -4,7 +4,7 @@
 """
 module Sn
 using Manifold: ManifoldPoint, ManifoldTangentialPoint
-
+import Base.LinAlg.norm, Base.LinAlg.dot
 export SnPoint, SnTangentialPoint, exp, log, manifoldDimension
 
 #
@@ -19,9 +19,13 @@ end
 
 immutable SnTangentialPoint <: ManifoldTangentialPoint
   value::Vector
-  base::Vector
-  SnTangentialPoint(value::Vector) = new(value)
-  SnTangentialPoint(value::Vector,base::Vector) = new(value,base)
+  base::Nullable{SnPoint}
+  SnTangentialPoint(value::Vector) = new(value,Nullable{SnPoint}())
+  SnTangentialPoint(value::Vector,base::SnPoint) = new(value,base)
+end
+
+function distance(p::SnPoint,q::SnPoint)::Float64
+  return acos(dot(p.value,q.value))
 end
 
 function exp(p::SnPoint,xi::SnTangentialPoint,t=1.0)::SnPoint
@@ -33,14 +37,19 @@ function exp(p::SnPoint,xi::SnTangentialPoint,t=1.0)::SnPoint
   end
 end
 
-function log(p::SnPoint,q::SnPoint)::SnTangentialPoint
+function log(p::SnPoint,q::SnPoint,includeBase=false)::SnTangentialPoint
   scp = dot(p.value,q.value)
   xivalue = q.value-scp*p.value
   xivnorm = norm(xivalue)
   if (xivnorm > eps(Float64))
-    return SnTangentialPoint(xivalue*acos(scp)/xivnorm)
+    value = xivalue*acos(scp)/xivnorm;
   else
-    return SnTangentialPoint(zeros(p.value))
+    value = zeros(p.value)
+  end
+  if includeBase
+    return SnTangentialPoint(value,p)
+  else
+    return SnTangentialPoint(value)
   end
 end
 """
@@ -53,5 +62,17 @@ end
 function manifoldDimension(p::SnPoint)::Integer
   return length(p.value)-1
 end
-
+function norm(xi::SnTangentialPoint)
+  return norm(xi.value)
+end
+function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)
+  if (isnull(xi.base) || isnull(nu.base)) #no checks if one is undefined (unknown = right base)
+    return dot(xi.value,nu.value)
+  elseif xi.base.value == nu.base.value #both defined -> htey have to be equal
+    return dot(xi.value,nu.value)
+  else
+    throw(ErrorException("Can't build the dot product from two tangential vectors belonging to
+      different tangential spaces."))
+  end
+end
 end  # module Sn
