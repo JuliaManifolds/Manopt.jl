@@ -1,0 +1,15 @@
+language: julia
+
+julia:
+  -release
+
+branches:
+  only:
+    - master
+
+script:
+julia -e 'Pkg.clone(pwd())'
+julia -e 'Pkg.build("ManifoldValuedImageProcessing")'
+if [ -f test/runtests.jl ]; then
+  julia --check-bounds=yes -e 'Pkg.test("$name", coverage=true)'
+fi
