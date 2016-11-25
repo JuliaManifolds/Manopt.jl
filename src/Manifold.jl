@@ -31,11 +31,11 @@ abstract ManifoldTangentialPoint
 # proximal Maps
 """
     proxTuple = proxTV(lambda,pointTuple)
-  Compute the proximal map prox_f(x) for f(x) = dist(x,y) with parameter
+  Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
   lambda
   # INPUT
     * lambda : a real value, parameter of the proximal map
-    * pointTuple : a tuple of size 2 containing two ManifoldPoints
+    * pointTuple : a tuple of size 2 containing two ManifoldPoints x and y
   # OUTPUT
     * proxTuple : resulting two-ManifoldPoint-Tuple of the proximal map
 ---
@@ -43,6 +43,23 @@ abstract ManifoldTangentialPoint
 """
 function proxTV(lambda::Float64,pointTuple::Tuple{ManifoldPoint,ManifoldPoint})::Tuple{ManifoldPoint,ManifoldPoint}
   step = min(0.5, lambda/distance(pointTuple[1],pointTuple[2]))
+  return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
+            exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
+end
+"""
+    proxTuple = proxTVSquared(lambda,pointTuple)
+  Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y)^2 with parameter
+  lambda
+  # INPUT
+    * lambda : a real value, parameter of the proximal map
+    * pointTuple : a tuple of size 2 containing two ManifoldPoints x and y
+  # OUTPUT
+    * proxTuple : resulting two-ManifoldPoint-Tuple of the proximal map
+---
+    ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
+"""
+function proxTVSquared(lambda::Float64,pointTuple::Tuple{ManifoldPoint,ManifoldPoint})::Tuple{ManifoldPoint,ManifoldPoint}
+  step = lambda/(1+2*lambda)*distance(pointTuple[1],pointTuple[2]))
   return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
             exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
 end
