@@ -1,7 +1,7 @@
 language: julia
 
 julia:
-  -release
+  - release
 
 branches:
   only:
