@@ -4,8 +4,14 @@
 """
 module Sn
 using Manifold: ManifoldPoint, ManifoldTangentialPoint
-import Base.LinAlg.norm, Base.LinAlg.dot, Base.exp, Base.log
-export SnPoint, SnTangentialPoint, exp, log, manifoldDimension
+# methods to extend
+import Manifold.exp, Manifold.log, Manifold.norm, Manifold.dot
+import Manifold.distance, Manifold.manifoldDimension
+import Base.*
+# types to introduce
+export SnPoint, SnTangentialPoint
+# export extended functions again
+export distance, exp, log, norm, dot, manifoldDimension
 
 #
 # TODO: It would be nice to have a fixed dimension here Sn here, however
@@ -22,7 +28,12 @@ immutable SnTangentialPoint <: ManifoldTangentialPoint
   base::Nullable{SnPoint}
   SnTangentialPoint(value::Vector) = new(value,Nullable{SnPoint}())
   SnTangentialPoint(value::Vector,base::SnPoint) = new(value,base)
+  SnTangentialPoint(value::Vector,base::Nullable{SnPoint}) = new(value,base)
 end
+
+*(xi::SnTangentialPoint,s::Number) = SnTangentialPoint(s*xi.value,xi.base)
+*(s::Number, xi::SnTangentialPoint) = SnTangentialPoint(s*xi.value,xi.base)
+==(p::SnPoint, q::SnPoint) = p.vale
 
 function distance(p::SnPoint,q::SnPoint)::Float64
   return acos(dot(p.value,q.value))

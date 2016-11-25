@@ -1,7 +1,3 @@
 module ManifoldValuedImageProcessing
-  include("Manifold.jl")
-  include("Sn.jl")
-  export
-    Manifold,
-    Sn
+  importall Manifold, Sn
 end
