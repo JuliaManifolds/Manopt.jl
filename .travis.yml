@@ -8,8 +8,4 @@ branches:
     - master
 
 script:
-  julia -e 'Pkg.clone(pwd())'
-  julia -e 'Pkg.build("$name")'
-  if [ -f test/runtests.jl ]; then
-    julia --check-bounds=yes -e 'Pkg.test("$name", coverage=true)'
-  fi
+  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build($name); Pkg.test($name; coverage=true)'
