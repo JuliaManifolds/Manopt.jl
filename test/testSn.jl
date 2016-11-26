@@ -1,4 +1,3 @@
-using Sn
 @testset "Sphere Sn" begin
   p = SnPoint([1,0,0])
   q = SnPoint([0,1,0])
@@ -10,5 +9,5 @@ using Sn
   @test distance(p,q) ≈ norm(xi.value)
   @test dot(xi,nu) ≈ 0
   # different base points throws an error
-  @test_throws ErrorException Sn.dot(Sn.log(q,r,true),Sn.log(p,q,true))
+  @test_throws ErrorException dot(log(q,r,true),log(p,q,true))
 end

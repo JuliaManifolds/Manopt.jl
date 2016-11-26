@@ -1,4 +1,3 @@
-using Manifold, Sn
 @testset "proxTV" begin
   #
   # proxTV

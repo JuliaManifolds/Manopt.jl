@@ -1,15 +1,13 @@
-"""
-      Manifold -- a manifold defined via its data types:
-  * A point on the manifold, ManifoldPoint
-  * A point in an tangential space ManifoldTangentialPoint
-"""
-module Manifold
-# extend existing methods:
+#
+#      Manifold -- a manifold defined via its data types:
+#  * A point on the manifold, ManifoldPoint
+#  * A point in an tangential space ManifoldTangentialPoint
+#
 import Base.LinAlg.norm, Base.LinAlg.dot, Base.exp, Base.log, Base.+,Base.-,Base.*
 # introcude new types
 export ManifoldPoint, ManifoldTangentialPoint
 # introduce new functions
-export manifoldDimension, distance
+export distance, exp, log, norm, dot, manifoldDimension
 # introcude new algorithms
 export proxTV
 """

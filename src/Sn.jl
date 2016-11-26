@@ -1,23 +1,12 @@
-"""
-      Sn - The manifold of the n-dimensional sphere
-  Point is a Point on the n-dimensional sphere.
-"""
-module Sn
-using Manifold: ManifoldPoint, ManifoldTangentialPoint
-# methods to extend
-import Manifold.exp, Manifold.log, Manifold.norm, Manifold.dot
-import Manifold.distance, Manifold.manifoldDimension
-import Base.*
-# types to introduce
+#
+#      Sn - The manifold of the n-dimensional sphere
+#  Point is a Point on the n-dimensional sphere.
+#
 export SnPoint, SnTangentialPoint
-# export extended functions again
-export distance, exp, log, norm, dot, manifoldDimension
-
 #
 # TODO: It would be nice to have a fixed dimension here Sn here, however
 #   they need N+1-dimensional vectors
 #
-
 immutable SnPoint <: ManifoldPoint
   value::Vector
   SnPoint(value::Vector) = new(value)
@@ -86,4 +75,3 @@ function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)
       different tangential spaces."))
   end
 end
-end  # module Sn

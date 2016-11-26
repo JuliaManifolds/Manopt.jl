@@ -1,3 +1,4 @@
 module ManifoldValuedImageProcessing
-  importall Manifold, Sn
+  include("Manifold.jl")
+  include("Sn.jl")
 end
