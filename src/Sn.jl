@@ -71,7 +71,7 @@ function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)
   elseif xi.base.value == nu.base.value #both defined -> htey have to be equal
     return dot(xi.value,nu.value)
   else
-    throw(ErrorException("Can't build the dot product from two tangential vectors belonging to
+    throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
       different tangential spaces."))
   end
 end

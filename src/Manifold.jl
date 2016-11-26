@@ -31,11 +31,11 @@ abstract ManifoldTangentialPoint
     proxTuple = proxTV(lambda,pointTuple)
 Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
 lambda
-### INPUT
-* lambda : a real value, parameter of the proximal map
-* pointTuple : a tuple of size 2 containing two ManifoldPoints x and y
-# OUTPUT
-* proxTuple : resulting two-ManifoldPoint-Tuple of the proximal map
+# Arguments
+* `lambda` : a real value, parameter of the proximal map
+* `pointTuple` : a tuple of size 2 containing two ManifoldPoints x and y
+# Returns
+* `proxTuple` : resulting two-ManifoldPoint-Tuple of the proximal map
 ---
 ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
@@ -48,11 +48,11 @@ end
     proxTuple = proxTVSquared(lambda,pointTuple)
   Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y)^2 with parameter
   lambda
-  # INPUT
-  * lambda : a real value, parameter of the proximal map
-  * pointTuple : a tuple of size 2 containing two ManifoldPoints x and y
+  # Arguments
+  * `lambda` : a real value, parameter of the proximal map
+  * `pointTuple` : a tuple of size 2 containing two ManifoldPoints x and y
   # OUTPUT
-  * proxTuple : resulting two-ManifoldPoint-Tuple of the proximal map
+  * `proxTuple` : resulting two-ManifoldPoint-Tuple of the proximal map
 ---
     ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
@@ -80,21 +80,26 @@ end
 #
 # fallback functions for not yet implemented cases
 function distance(p::ManifoldPoint,q::ManifoldPoint)::Float64
-  error("The distance is not yet available for the manifold you\'re unsing")
+       sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
+       throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 function dot(xi::ManifoldTangentialPoint,nu::ManifoldTangentialPoint)::Float64
-  error("The dot product og two tangential vectors is not yet available for the manifold you\'re unsing")
+  sig1 = string( typeof(xi) ); sig2 = string( typeof(nu) )
+  throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 function exp(p::ManifoldPoint,xi::ManifoldTangentialPoint)::ManifoldPoint
-  error("The exponential map is not yet available for the manifold you\'re unsing")
+  sig1 = string( typeof(p) ); sig2 = string( typeof(xi) )
+  throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 function log(p::ManifoldPoint,q::ManifoldPoint)::ManifoldTangentialPoint
-  error("This logarithmic map is not yet available for the manifold you\'re unsing")
+  sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
+  throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 function manifoldDimension(p::ManifoldPoint)::Integer
-  error("The Dimension of the Manifold is not yet available for the manifold you\'re unsing")
+  sig1 = string( typeof(p) );
+  throw( ErrorException(" Not Implemented for types $sig1 " ) )
 end
 function norm(xi::ManifoldTangentialPoint)::Float64
-  error("The norm of a tangential vector is not yet vailable for the manifold you\'re unsing")
+  sig1 = string( typeof(xi) );
+  throw( ErrorException(" Not Implemented for types $sig1 " ) )
 end
-end #module Manifold
