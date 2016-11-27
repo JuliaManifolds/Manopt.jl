@@ -28,6 +28,14 @@ abstract ManifoldTangentialPoint
 #
 # proximal Maps
 """
+    proxDistanceSquared(f,lambda,g) - proximal map with parameter lambda of
+  distance(f,x) for some fixed ManifoldPoint f
+"""
+function proxDistanceSquared(f::ManifoldPoint,lambda::Float16,x::ManifoldPoint)::ManifoldPoint
+  exp(x, lambda/(1+lambda)*log(x,f))
+end
+
+"""
     proxTuple = proxTV(lambda,pointTuple)
 Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
 lambda
@@ -46,15 +54,15 @@ function proxTV(lambda::Float64,pointTuple::Tuple{ManifoldPoint,ManifoldPoint}):
 end
 """
     proxTuple = proxTVSquared(lambda,pointTuple)
-  Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y)^2 with parameter
-  lambda
-  # Arguments
-  * `lambda` : a real value, parameter of the proximal map
-  * `pointTuple` : a tuple of size 2 containing two ManifoldPoints x and y
-  # OUTPUT
-  * `proxTuple` : resulting two-ManifoldPoint-Tuple of the proximal map
+Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y)^2 with parameter
+`lambda`
+# Arguments
+* `lambda` : a real value, parameter of the proximal map
+* `pointTuple` : a tuple of size 2 containing two ManifoldPoints x and y
+# OUTPUT
+* `proxTuple` : resulting two-ManifoldPoint-Tuple of the proximal map
 ---
-    ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
+ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
 function proxTVSquared(lambda::Float64,pointTuple::Tuple{ManifoldPoint,ManifoldPoint})::Tuple{ManifoldPoint,ManifoldPoint}
   step = lambda/(1+2*lambda)*distance(pointTuple[1],pointTuple[2])
@@ -63,14 +71,56 @@ function proxTVSquared(lambda::Float64,pointTuple::Tuple{ManifoldPoint,ManifoldP
 end
 
 #
+# CPPA _TV
+"""
+    TV_Regularization_CPPA(f,alpha, lambda) - compute the TV regularization model of
+given data array f and paramater alpha and internal operator start lambda.
+
+# Arguments
+* `f` an d-dimensional array of `ManifoldPoint`s
+* `alpha` parameter of the model
+* `lambda` internal parameter of the cyclic proxximal point algorithm
+# Output
+* `x` the regulraized array
+# Optional Parameters
+* `MinimalChange` (`10.0^(-5)`) minimal change for the algorithm to stop
+* `MaxIterations` (`500`) maximal number of iterations
+---
+ ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
+"""
+function TV_Regularization_CPPA(lambda::Float64, alpha::Float64, f::Array{ManifoldPoint};
+           MinimalChange=10.0^(-5), MaxIterations=500)::Array{ManifoldPoint}
+  x = deepcopy(f)
+  xold = deepcopy(x)
+  iter = 1
+  while ( (sum( [ distance(xi,xoldi) for (xi,xoldi) in zip(x,xold) ] ) > MinimalChange)
+    && (iter < MaxIterations) )
+    # First term: d(f,x)^2
+    for i in eachindex(x)
+      x[i] = proxDistanceSquared(f[i],lambda/i,x[i])
+    end
+    # TV term
+    for d in 1:ndims(f)
+      for i in eachindex(f)
+        # neighbor index
+        i2 = i; i2[d] += 1;
+        if ( all(i2 <=size(A)) )
+          (x[i], x[i2]) = proxTV(alpha*lambda/i,(x[i], x[i2]))
+        end
+      end
+    end
+    iter++
+    xold = deepcopy(x)
+  end
+end
+#
 # other auxilgary functions
 """
 midPoint(x,z) - Compute the (geodesic) mid point of x and z.
-* INPUT
-  x,z : two `ManifoldPoint`s
-
-* OUTPUT
-  m : resulting mid point( sets)
+# Arguments
+* `x`,`z` : two `ManifoldPoint`s
+# Output
+* `m` : resulting mid point
 ---
 ManifoldValuedImageProcessing, R. Bergmann ~ 2015-11-25
 """
