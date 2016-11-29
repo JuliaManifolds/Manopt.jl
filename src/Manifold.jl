@@ -245,16 +245,52 @@ end
 #
 # other auxilgary functions
 """
-midPoint(x,z) - Compute the (geodesic) mid point of x and z.
-# Arguments
-* `x`,`z` : two `ManifoldPoint`s
-# Output
-* `m` : resulting mid point
----
-ManifoldValuedImageProcessing, R. Bergmann ~ 2015-11-25
+    midPoint(x,z)
+  Compute the (geodesic) mid point of x and z.
+ # Arguments
+ * `p`,`q` : two `ManifoldPoint`s
+ # Output
+ * `m` : resulting mid point
 """
 function midPoint(p::ManifoldPoint, q::ManifoldPoint)::ManifoldPoint
   return exp(p,0.5*log(p,q))
+end
+"""
+    geodesic(p,q)
+  return a function to evaluate the geodesic connecting p and q
+"""
+function geodesic{T <: ManifoldPoint}(p::T,q::T)::Function
+  return (t -> exp(p,t*log(p,q)))
+end
+"""
+    geodesic(p,q,n)
+  returns vector containing the equispaced n sample-values along the geodesic
+"""
+function geodesic{T <: ManifoldPoint}(p::T,q::T,n::Integer)::Vector{T}
+  geo = geodesic(p,q);
+  return [geo(t) for t in linspace(0,1,n)]
+end
+"""
+    geodesic(p,q,t)
+  returns the point along the geodesic from `p`to `q` given by the `Float64` `t` (0,1).
+"""
+geodesic{T <: ManifoldPoint}(p::T,q::T,t::Float64)::T = geodesic(p,q)(t)
+"""
+    geodesic(p,q,T)
+  returns vector containing the points along the geodesic from `p`to `q` given
+  by vector of `Float64` `T`.
+"""
+function geodesic{T <: ManifoldPoint}(p::T,q::T,v::Vector{Float64})::Vector{T}
+  geo = geodesic(p,q);
+  return [geo(t) for t in v]
+end
+"""
+    variance(f)
+  returns the variance of the set of pints on a maniofold.
+"""
+function variance{T<:ManifoldPoint}(f::Vector{T})
+  meanF = mean(f);
+  return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(meanF,fi)^2 for fi in f])
 end
 #
 # fallback functions for not yet implemented cases
