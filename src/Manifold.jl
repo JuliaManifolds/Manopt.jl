@@ -8,9 +8,10 @@ import Base: exp, log, mean, median, +, -, *, /, ==
 # introcude new types
 export ManifoldPoint, ManifoldTangentialPoint
 # introduce new functions
-export distance, exp, log, norm, dot, manifoldDimension, mean
+export distance, exp, log, norm, dot, manifoldDimension,
+export mean, median, variance, geodesic, midPoint
 # introcude new algorithms
-export proxTV
+export proxTV, proxDistanceSquared, proxTVSquared
 """
     ManifoldPoint - an abstract point on a Manifold
 """

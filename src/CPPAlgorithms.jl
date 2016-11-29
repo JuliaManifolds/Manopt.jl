@@ -1,3 +1,10 @@
+#
+#
+# CPPAlgorithm based minimizations
+#
+#
+export TV_Regularization_CPPA
+
 """
     TV_Regularization_CPPA(f,alpha, lambda) - compute the TV regularization model of
  given data array f and paramater alpha and internal operator start lambda.
