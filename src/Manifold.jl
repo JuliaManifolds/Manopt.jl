@@ -29,6 +29,8 @@ abstract ManifoldTangentialPoint
 # scale tangential vectors
 *{T <: ManifoldTangentialPoint}(xi::T,s::Number) = T(s*xi.value,xi.base)
 *{T <: ManifoldTangentialPoint}(s::Number, xi::T) = T(s*xi.value,xi.base)
+*{T <: ManifoldTangentialPoint}(s::Number, xi::Vector{T}) = s*ones(length(xi)).*xi
+*{T <: ManifoldTangentialPoint}(xi::Vector{T},s::Number) = s*ones(length(xi)).*xi
 # compare Points
 =={T <: ManifoldPoint}(p::T, q::T) = all(p.value == q.value)
 
@@ -93,7 +95,8 @@ end
     mean(f;initialValue=[], MaxIterations=50, MinimalChange=5*10.0^(-7),
     Weights=[])
 
-  calculates the mean of the input data with a gradient descent algorithm.
+  calculates the Riemannian Center of Mass (Karcher mean) of the input data `f`
+  with a gradient descent algorithm.
   >This implementation is based on
   >B. Afsari, Riemannian Lp center of mass: Existence, uniqueness, and convexity,
   >Proc. AMS 139(2), pp.655-673, 2011.
@@ -109,8 +112,10 @@ end
   * `MinimalChange` (`5*10.0^(-7)`) minimal change for the algorithm to stop
   * `Weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
   all are choren equal, i.e. `1/n*ones(n)` for `n=length(f)`.
+  ---
+  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)
+function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::ManifoldPoint
   # collect optional values
   kwargs_dict = Dict(kwargs);
   x = get(kwargs_dict, "initialValue", f[1])
