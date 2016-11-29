@@ -20,9 +20,6 @@ immutable SnTangentialPoint <: ManifoldTangentialPoint
   SnTangentialPoint(value::Vector,base::Nullable{SnPoint}) = new(value,base)
 end
 
-*(xi::SnTangentialPoint,s::Number) = SnTangentialPoint(s*xi.value,xi.base)
-*(s::Number, xi::SnTangentialPoint) = SnTangentialPoint(s*xi.value,xi.base)
-==(p::SnPoint, q::SnPoint) = p.vale
 
 function distance(p::SnPoint,q::SnPoint)::Float64
   return acos(dot(p.value,q.value))

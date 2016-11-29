@@ -3,11 +3,12 @@
 #  * A point on the manifold, ManifoldPoint
 #  * A point in an tangential space ManifoldTangentialPoint
 #
-import Base.LinAlg.norm, Base.LinAlg.dot, Base.exp, Base.log, Base.+,Base.-,Base.*
+import Base.LinAlg: norm, dot
+import Base: exp, log, mean, +, -, *, ==
 # introcude new types
 export ManifoldPoint, ManifoldTangentialPoint
 # introduce new functions
-export distance, exp, log, norm, dot, manifoldDimension
+export distance, exp, log, norm, dot, manifoldDimension, mean
 # introcude new algorithms
 export proxTV
 """
@@ -24,7 +25,24 @@ abstract ManifoldTangentialPoint
 #
 # Short hand notations for general exp and log
 +(p::ManifoldPoint,xi::ManifoldTangentialPoint) = exp(p,xi)
--(p::ManifoldPoint,q::ManifoldPoint) = log(p,q)
+-{T <: ManifoldPoint}(p::T,q::T) = log(p,q)
+# scale tangential vectors
+*{T <: ManifoldTangentialPoint}(xi::T,s::Number) = T(s*xi.value,xi.base)
+*{T <: ManifoldTangentialPoint}(s::Number, xi::T) = T(s*xi.value,xi.base)
+# compare Points
+=={T <: ManifoldPoint}(p::T, q::T) = all(p.value == q.value)
+
+function +{T <: ManifoldTangentialPoint }(xi::T,nu::T)
+  if (isnull(xi.base) || isnull(nu.base)) #no checks if one is undefined (unknown = right base)
+    T(xi.value+nu.value)
+  elseif xi.base.value == nu.base.value #both defined -> htey have to be equal
+    return T(xi.value+nu.value,xi.base)
+  else
+    throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
+      different tangential spaces."))
+  end
+end
+
 #
 # proximal Maps
 """
