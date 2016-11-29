@@ -87,7 +87,45 @@ function proxTVSquared(lambda::Float64,pointTuple::Tuple{ManifoldPoint,ManifoldP
   return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
             exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
 end
+#
+# median & mean
+"""
+    mean(f;initialValue=[], MaxIterations=50, MinimalChange=5*10.0^(-7),
+    Weights=[])
 
+  calculates the mean of the input data with a gradient descent algorithm.
+  >This implementation is based on
+  >B. Afsari, Riemannian Lp center of mass: Existence, uniqueness, and convexity,
+  >Proc. AMS 139(2), pp.655-673, 2011.
+
+  # Input
+  * `f` an array of `ManifoldPoint`s
+  # Output
+  * `x` the mean of the values from `f`
+  # Optional Parameters
+  * `initialValue` (`[]`) start the algorithm with a special initialisation of
+  `x`, if not specified, the first value `f[1]` is unsigned
+  * `MaxIterations` (`500`) maximal number of iterations
+  * `MinimalChange` (`5*10.0^(-7)`) minimal change for the algorithm to stop
+  * `Weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
+  all are choren equal, i.e. `1/n*ones(n)` for `n=length(f)`.
+"""
+function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)
+  # collect optional values
+  kwargs_dict = Dict(kwargs);
+  x = get(kwargs_dict, "initialValue", f[1])
+  Weights = get(kwargs_dict, "Weights", 1/length(f)*ones(length(f)))
+  MaxIterations = get(kwargs_dict, "MaxIterations", 50)
+  MinimalChange = get(kwargs_dict, "MinimalChange", 5*10.0^(-7))
+  iter=0
+  xold = x
+  while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+    xold = x
+    x = exp(x, sum(Weights.*[log(x,fi) for fi in f]))
+    iter += 1
+  end
+  return x
+end
 #
 # CPPA _TV
 """
@@ -106,13 +144,14 @@ given data array f and paramater alpha and internal operator start lambda.
 ---
  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function TV_Regularization_CPPA(lambda::Float64, alpha::Float64, f::Array{ManifoldPoint};
+function TV_Regularization_CPPA{T <: ManifoldPoint}(lambda::Float64, alpha::Float64, f::Array{T};
            MinimalChange=10.0^(-5), MaxIterations=500)::Array{ManifoldPoint}
   x = deepcopy(f)
   xold = deepcopy(x)
   iter = 1
-  while ( (sum( [ distance(xi,xoldi) for (xi,xoldi) in zip(x,xold) ] ) > MinimalChange)
-    && (iter < MaxIterations) )
+  while (  ( (sum( [ distance(xi,xoldi) for (xi,xoldi) in zip(x,xold) ] ) > MinimalChange)
+    && (iter < MaxIterations) ) || (iter==1)  )
+    xold = deepcopy(x)
     # First term: d(f,x)^2
     for i in eachindex(x)
       x[i] = proxDistanceSquared(f[i],lambda/i,x[i])
@@ -122,14 +161,14 @@ function TV_Regularization_CPPA(lambda::Float64, alpha::Float64, f::Array{Manifo
       for i in eachindex(f)
         # neighbor index
         i2 = i; i2[d] += 1;
-        if ( all(i2 <=size(A)) )
+        if ( all(i2 <=size(f)) )
           (x[i], x[i2]) = proxTV(alpha*lambda/i,(x[i], x[i2]))
         end
       end
     end
-    iter++
-    xold = deepcopy(x)
+    iter +=1
   end
+  return x;
 end
 #
 # other auxilgary functions
