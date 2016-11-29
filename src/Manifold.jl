@@ -153,6 +153,53 @@ function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::ManifoldPoint
   end
   return x
 end
+"""
+    median(f;initialValue=[], MaxIterations=50, MinimalChange=5*10.0^(-7),
+    StepSize=1, Weights=[])
+
+  calculates the Riemannian Center of Mass (Karcher mean) of the input data `f`
+  with a gradient descent algorithm. This implementation is based on
+  >B. Afsari, Riemannian Lp center of mass: Existence, uniqueness, and convexity,
+  >Proc. AMS 139(2), pp.655–673, 2011.
+
+  and
+  > P. T. Fletcher, S. Venkatasubramanian, and S. Joshi: The geometric median on
+  > Riemannian manifolds with application to robust atlas estimation,
+  > NeuroImage 45, pp. S143–152
+
+  # Input
+  * `f` an array of `ManifoldPoint`s
+  # Output
+  * `x` the mean of the values from `f`
+  # Optional Parameters
+  * `initialValue` (`[]`) start the algorithm with a special initialisation of
+  `x`, if not specified, the first value `f[1]` is unsigned
+  * `MaxIterations` (`500`) maximal number of iterations
+  * `MinimalChange` (`5*10.0^(-7)`) minimal change for the algorithm to stop
+  * `StepSize` (`1`)
+  * `Weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
+  all are choren equal, i.e. `1/n*ones(n)` for `n=length(f)`.
+  ---
+  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
+"""
+function median{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::ManifoldPoint
+  # collect optional values
+  kwargs_dict = Dict(kwargs);
+  x = get(kwargs_dict, "initialValue", f[1])
+  MaxIterations = get(kwargs_dict, "MaxIterations", 50)
+  MinimalChange = get(kwargs_dict, "MinimalChange", 5*10.0^(-7))
+  StepSize = get(kwargs_dict, "StepSize",1)
+  Weights = get(kwargs_dict, "Weights", 1/length(f)*ones(length(f)))
+  iter=0
+  xold = x
+  while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+    xold = x
+    sumDistances = sum( Weights.*[distance(x,fi) for fi in f] )
+    x = exp(x, StepSize/sumDistances * sum(Weights.* [ 1/( (distance(x,fi)==0)?1:distance(x,fi) )*log(x,fi) for fi in f]))
+    iter += 1
+  end
+  return x
+end
 #
 # CPPA _TV
 """
