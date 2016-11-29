@@ -63,9 +63,7 @@ function norm(xi::SnTangentialPoint)
   return norm(xi.value)
 end
 function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)
-  if (isnull(xi.base) || isnull(nu.base)) #no checks if one is undefined (unknown = right base)
-    return dot(xi.value,nu.value)
-  elseif xi.base.value == nu.base.value #both defined -> htey have to be equal
+  if sameBase(xi,nu)
     return dot(xi.value,nu.value)
   else
     throw(ErrorException("Can't compute dot product of two tangential vectors belonging to

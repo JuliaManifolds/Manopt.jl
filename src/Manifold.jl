@@ -4,7 +4,7 @@
 #  * A point in an tangential space ManifoldTangentialPoint
 #
 import Base.LinAlg: norm, dot
-import Base: exp, log, mean, +, -, *, ==
+import Base: exp, log, mean, median, +, -, *, /, ==
 # introcude new types
 export ManifoldPoint, ManifoldTangentialPoint
 # introduce new functions
@@ -25,26 +25,48 @@ abstract ManifoldTangentialPoint
 #
 # Short hand notations for general exp and log
 +(p::ManifoldPoint,xi::ManifoldTangentialPoint) = exp(p,xi)
--{T <: ManifoldPoint}(p::T,q::T) = log(p,q)
+-(p::ManifoldPoint,q::ManifoldPoint) = log(p,q)
 # scale tangential vectors
-*{T <: ManifoldTangentialPoint}(xi::T,s::Number) = T(s*xi.value,xi.base)
+*{T <: ManifoldTangentialPoint}(xi::T,s::Number)::T = T(s*xi.value,xi.base)
 *{T <: ManifoldTangentialPoint}(s::Number, xi::T) = T(s*xi.value,xi.base)
-*{T <: ManifoldTangentialPoint}(s::Number, xi::Vector{T}) = s*ones(length(xi)).*xi
 *{T <: ManifoldTangentialPoint}(xi::Vector{T},s::Number) = s*ones(length(xi)).*xi
-# compare Points
-=={T <: ManifoldPoint}(p::T, q::T) = all(p.value == q.value)
-
-function +{T <: ManifoldTangentialPoint }(xi::T,nu::T)
-  if (isnull(xi.base) || isnull(nu.base)) #no checks if one is undefined (unknown = right base)
-    T(xi.value+nu.value)
-  elseif xi.base.value == nu.base.value #both defined -> htey have to be equal
+*{T <: ManifoldTangentialPoint}(s::Number, xi::Vector{T}) = s*ones(length(xi)).*xi
+# /
+/{T <: ManifoldTangentialPoint}(xi::T,s::Number) = T(s./xi.value,xi.base)
+/{T <: ManifoldTangentialPoint}(s::Number, xi::T) = T(s./xi.value,xi.base)
+/{T <: ManifoldTangentialPoint}(xi::Vector{T},s::Number) = s*ones(length(xi))./xi
+/{T <: ManifoldTangentialPoint}(s::Number, xi::Vector{T}) = s*ones(length(xi))./xi
+# + -
+function +{T <: ManifoldTangentialPoint}(xi::T,nu::T)::T
+  if sameBase(xi,nu)
     return T(xi.value+nu.value,xi.base)
   else
-    throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
+    throw(ErrorException("Can't add two tangential vectors belonging to
       different tangential spaces."))
   end
 end
+function -{T <: ManifoldTangentialPoint}(xi::T,nu::T)::T
+  if sameBase(xi,nu)
+    return T(xi.value-nu.value,xi.base)
+  else
+    throw(ErrorException("Can't subtract two tangential vectors belonging to
+    different tangential spaces."))
+  end
+end
 
+# compare Points
+=={T <: ManifoldPoint}(p::T, q::T)::Bool = all(p.value == q.value)
+=={T <: ManifoldTangentialPoint}(xi::T,nu::T)::Bool = ( sameBase(xi,nu) && all(xi.value==nu.value) )
+
+function sameBase{T <: ManifoldTangentialPoint}(xi::T,nu::T)::Bool
+  if (isnull(xi.base) || isnull(nu.base))
+    return true # one base null is treated as correct
+  elseif xi.base.value == nu.base.value
+    return true # if both are given and are the same
+  else
+    return false
+  end
+end
 #
 # proximal Maps
 """
