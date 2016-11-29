@@ -24,8 +24,8 @@ abstract ManifoldTangentialPoint
 
 #
 # Short hand notations for general exp and log
-+(p::ManifoldPoint,xi::ManifoldTangentialPoint) = exp(p,xi)
--(p::ManifoldPoint,q::ManifoldPoint) = log(p,q)
++{T <: ManifoldPoint, S <: ManifoldTangentialPoint}(p::T,xi::S)::T = exp(p,xi)
+-{T <: ManifoldPoint}(p::T,q::T) = log(p,q)
 # scale tangential vectors
 *{T <: ManifoldTangentialPoint}(xi::T,s::Number)::T = T(s*xi.value,xi.base)
 *{T <: ManifoldTangentialPoint}(s::Number, xi::T) = T(s*xi.value,xi.base)
@@ -73,7 +73,7 @@ end
     proxDistanceSquared(f,lambda,g) - proximal map with parameter lambda of
   distance(f,x) for some fixed ManifoldPoint f
 """
-function proxDistanceSquared(f::ManifoldPoint,lambda::Float16,x::ManifoldPoint)::ManifoldPoint
+function proxDistanceSquared{T <: ManifoldPoint}(f::T,lambda::Float16,x::T)::T
   exp(x, lambda/(1+lambda)*log(x,f))
 end
 
@@ -87,7 +87,7 @@ lambda
 # Returns
 * `proxTuple` : resulting two-ManifoldPoint-Tuple of the proximal map
 """
-function proxTV(lambda::Float64,pointTuple::Tuple{ManifoldPoint,ManifoldPoint})::Tuple{ManifoldPoint,ManifoldPoint}
+function proxTV{T <: ManifoldPoint}(lambda::Float64,pointTuple::Tuple{T,T})::Tuple{T,T}
   step = min(0.5, lambda/distance(pointTuple[1],pointTuple[2]))
   return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
             exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
@@ -104,7 +104,7 @@ end
  ---
  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function proxTVSquared(lambda::Float64,pointTuple::Tuple{ManifoldPoint,ManifoldPoint})::Tuple{ManifoldPoint,ManifoldPoint}
+function proxTVSquared{T <: ManifoldPoint}(lambda::Float64,pointTuple::Tuple{T,T})::Tuple{T,T}
   step = lambda/(1+2*lambda)*distance(pointTuple[1],pointTuple[2])
   return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
             exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
@@ -135,7 +135,7 @@ end
   ---
   ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::ManifoldPoint
+function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::T
   # collect optional values
   kwargs_dict = Dict(kwargs);
   x = get(kwargs_dict, "initialValue", f[1])
@@ -155,7 +155,7 @@ end
     variance(f)
   returns the variance of the set of pints on a maniofold.
 """
-function variance{T<:ManifoldPoint}(f::Vector{T})
+function variance{T<:ManifoldPoint}(f::Vector{T})::Float64
   meanF = mean(f);
   return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(meanF,fi)^2 for fi in f])
 end
@@ -188,7 +188,7 @@ end
   ---
   ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function median{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::ManifoldPoint
+function median{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::T
   # collect optional values
   kwargs_dict = Dict(kwargs);
   x = get(kwargs_dict, "initialValue", f[1])
@@ -217,7 +217,7 @@ end
  # Output
  * `m` : resulting mid point
 """
-function midPoint(p::ManifoldPoint, q::ManifoldPoint)::ManifoldPoint
+function midPoint{T <: ManifoldPoint}(p::T, q::T)::T
   return exp(p,0.5*log(p,q))
 end
 """
@@ -252,8 +252,8 @@ end
 #
 # fallback functions for not yet implemented cases
 function distance(p::ManifoldPoint,q::ManifoldPoint)::Float64
-       sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
-       throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
+  sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
+  throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 function dot(xi::ManifoldTangentialPoint,nu::ManifoldTangentialPoint)::Float64
   sig1 = string( typeof(xi) ); sig2 = string( typeof(nu) )

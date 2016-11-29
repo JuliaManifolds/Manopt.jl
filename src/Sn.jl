@@ -59,10 +59,10 @@ end
 function manifoldDimension(p::SnPoint)::Integer
   return length(p.value)-1
 end
-function norm(xi::SnTangentialPoint)
+function norm(xi::SnTangentialPoint)::Float64
   return norm(xi.value)
 end
-function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)
+function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)::Float64
   if sameBase(xi,nu)
     return dot(xi.value,nu.value)
   else
