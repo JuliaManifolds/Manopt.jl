@@ -152,6 +152,14 @@ function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::ManifoldPoint
   return x
 end
 """
+    variance(f)
+  returns the variance of the set of pints on a maniofold.
+"""
+function variance{T<:ManifoldPoint}(f::Vector{T})
+  meanF = mean(f);
+  return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(meanF,fi)^2 for fi in f])
+end
+"""
     median(f;initialValue=[], MaxIterations=50, MinimalChange=5*10.0^(-7),
     StepSize=1, Weights=[])
 
@@ -199,51 +207,8 @@ function median{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::ManifoldPoint
   return x
 end
 #
-# CPPA _TV
-"""
-    TV_Regularization_CPPA(f,alpha, lambda) - compute the TV regularization model of
- given data array f and paramater alpha and internal operator start lambda.
-
- # Arguments
- * `f` an d-dimensional array of `ManifoldPoint`s
- * `alpha` parameter of the model
- * `lambda` internal parameter of the cyclic proxximal point algorithm
- # Output
- * `x` the regulraized array
- # Optional Parameters
- * `MinimalChange` (`10.0^(-5)`) minimal change for the algorithm to stop
- * `MaxIterations` (`500`) maximal number of iterations
- ---
- ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
-"""
-function TV_Regularization_CPPA{T <: ManifoldPoint}(lambda::Float64, alpha::Float64, f::Array{T};
-           MinimalChange=10.0^(-5), MaxIterations=500)::Array{T}
-  x = deepcopy(f)
-  xold = deepcopy(x)
-  iter = 1
-  while (  ( (sum( [ distance(xi,xoldi) for (xi,xoldi) in zip(x,xold) ] ) > MinimalChange)
-    && (iter < MaxIterations) ) || (iter==1)  )
-    xold = deepcopy(x)
-    # First term: d(f,x)^2
-    for i in eachindex(x)
-      x[i] = proxDistanceSquared(f[i],lambda/i,x[i])
-    end
-    # TV term
-    for d in 1:ndims(f)
-      for i in eachindex(f)
-        # neighbor index
-        i2 = i; i2[d] += 1;
-        if ( all(i2 <=size(f)) )
-          (x[i], x[i2]) = proxTV(alpha*lambda/i,(x[i], x[i2]))
-        end
-      end
-    end
-    iter +=1
-  end
-  return x;
-end
 #
-# other auxilgary functions
+# Mid point and geodesics
 """
     midPoint(x,z)
   Compute the (geodesic) mid point of x and z.
@@ -283,14 +248,6 @@ geodesic{T <: ManifoldPoint}(p::T,q::T,t::Float64)::T = geodesic(p,q)(t)
 function geodesic{T <: ManifoldPoint}(p::T,q::T,v::Vector{Float64})::Vector{T}
   geo = geodesic(p,q);
   return [geo(t) for t in v]
-end
-"""
-    variance(f)
-  returns the variance of the set of pints on a maniofold.
-"""
-function variance{T<:ManifoldPoint}(f::Vector{T})
-  meanF = mean(f);
-  return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(meanF,fi)^2 for fi in f])
 end
 #
 # fallback functions for not yet implemented cases
