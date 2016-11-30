@@ -22,7 +22,7 @@ export TV_Regularization_CPPA
  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
 function TV_Regularization_CPPA{T <: ManifoldPoint}(
-      lambda::Float64, alpha::Float64, f::Array{T};
+      lambda::Number, alpha::Number, f::Array{T};
       MinimalChange=10.0^(-5), MaxIterations=500)::Array{T}
   x = deepcopy(f)
   xold = deepcopy(x)

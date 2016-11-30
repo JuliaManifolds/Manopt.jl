@@ -21,7 +21,7 @@ immutable SnTangentialPoint <: ManifoldTangentialPoint
 end
 
 
-function distance(p::SnPoint,q::SnPoint)::Float64
+function distance(p::SnPoint,q::SnPoint)::Number
   return acos(dot(p.value,q.value))
 end
 
@@ -59,10 +59,10 @@ end
 function manifoldDimension(p::SnPoint)::Integer
   return length(p.value)-1
 end
-function norm(xi::SnTangentialPoint)::Float64
+function norm(xi::SnTangentialPoint)::Number
   return norm(xi.value)
 end
-function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)::Float64
+function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)::Number
   if sameBase(xi,nu)
     return dot(xi.value,nu.value)
   else

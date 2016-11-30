@@ -8,7 +8,7 @@ import Base: exp, log, mean, median, +, -, *, /, ==
 # introcude new types
 export ManifoldPoint, ManifoldTangentialPoint
 # introduce new functions
-export distance, exp, log, norm, dot, manifoldDimension,
+export distance, exp, log, norm, dot, manifoldDimension
 export mean, median, variance, geodesic, midPoint
 # introcude new algorithms
 export proxTV, proxDistanceSquared, proxTVSquared
@@ -88,7 +88,7 @@ lambda
 # Returns
 * `proxTuple` : resulting two-ManifoldPoint-Tuple of the proximal map
 """
-function proxTV{T <: ManifoldPoint}(lambda::Float64,pointTuple::Tuple{T,T})::Tuple{T,T}
+function proxTV{T <: ManifoldPoint}(lambda::Number,pointTuple::Tuple{T,T})::Tuple{T,T}
   step = min(0.5, lambda/distance(pointTuple[1],pointTuple[2]))
   return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
             exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
@@ -105,7 +105,7 @@ end
  ---
  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function proxTVSquared{T <: ManifoldPoint}(lambda::Float64,pointTuple::Tuple{T,T})::Tuple{T,T}
+function proxTVSquared{T <: ManifoldPoint}(lambda::Number,pointTuple::Tuple{T,T})::Tuple{T,T}
   step = lambda/(1+2*lambda)*distance(pointTuple[1],pointTuple[2])
   return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
             exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
@@ -156,7 +156,7 @@ end
     variance(f)
   returns the variance of the set of pints on a maniofold.
 """
-function variance{T<:ManifoldPoint}(f::Vector{T})::Float64
+function variance{T<:ManifoldPoint}(f::Vector{T})::Number
   meanF = mean(f);
   return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(meanF,fi)^2 for fi in f])
 end
@@ -240,7 +240,7 @@ end
     geodesic(p,q,t)
   returns the point along the geodesic from `p`to `q` given by the `Float64` `t` (0,1).
 """
-geodesic{T <: ManifoldPoint}(p::T,q::T,t::Float64)::T = geodesic(p,q)(t)
+geodesic{T <: ManifoldPoint}(p::T,q::T,t::Number)::T = geodesic(p,q)(t)
 """
     geodesic(p,q,T)
   returns vector containing the points along the geodesic from `p`to `q` given
@@ -252,11 +252,11 @@ function geodesic{T <: ManifoldPoint}(p::T,q::T,v::Vector{Float64})::Vector{T}
 end
 #
 # fallback functions for not yet implemented cases
-function distance(p::ManifoldPoint,q::ManifoldPoint)::Float64
+function distance(p::ManifoldPoint,q::ManifoldPoint)::Number
   sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
-function dot(xi::ManifoldTangentialPoint,nu::ManifoldTangentialPoint)::Float64
+function dot(xi::ManifoldTangentialPoint,nu::ManifoldTangentialPoint)::Number
   sig1 = string( typeof(xi) ); sig2 = string( typeof(nu) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
@@ -272,7 +272,7 @@ function manifoldDimension(p::ManifoldPoint)::Integer
   sig1 = string( typeof(p) );
   throw( ErrorException(" Not Implemented for types $sig1 " ) )
 end
-function norm(xi::ManifoldTangentialPoint)::Float64
+function norm(xi::ManifoldTangentialPoint)::Number
   sig1 = string( typeof(xi) );
   throw( ErrorException(" Not Implemented for types $sig1 " ) )
 end
