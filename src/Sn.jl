@@ -20,9 +20,17 @@ immutable SnTangentialPoint <: ManifoldTangentialPoint
   SnTangentialPoint(value::Vector,base::Nullable{SnPoint}) = new(value,base)
 end
 
-
 function distance(p::SnPoint,q::SnPoint)::Number
   return acos(dot(p.value,q.value))
+end
+
+function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)::Number
+  if sameBase(xi,nu)
+    return dot(xi.value,nu.value)
+  else
+    throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
+      different tangential spaces."))
+  end
 end
 
 function exp(p::SnPoint,xi::SnTangentialPoint,t=1.0)::SnPoint
@@ -49,24 +57,9 @@ function log(p::SnPoint,q::SnPoint,includeBase=false)::SnTangentialPoint
     return SnTangentialPoint(value)
   end
 end
-"""
-  manifoldDimension - dimension of the manifold this point belongs to
-  # Input
-    p : an SnPoint
-  # Output
-    d : dimension of the manifold (sphere) this point belongs to
-"""
 function manifoldDimension(p::SnPoint)::Integer
   return length(p.value)-1
 end
 function norm(xi::SnTangentialPoint)::Number
   return norm(xi.value)
-end
-function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)::Number
-  if sameBase(xi,nu)
-    return dot(xi.value,nu.value)
-  else
-    throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
-      different tangential spaces."))
-  end
 end

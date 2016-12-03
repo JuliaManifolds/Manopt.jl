@@ -71,13 +71,22 @@ end
 #
 # proximal Maps
 """
-    proxDistanceSquared(f,lambda,g) - proximal map with parameter lambda of
-  distance(f,x) for some fixed ManifoldPoint f
+    proxDistance(f,lambda,g)
+  compute the proximal map with parameter lambda of `distance(f,x)` for some fixed
+  `ManifoldPoint` f
 """
-function proxDistanceSquared{T <: ManifoldPoint}(f::T,lambda::Float16,x::T)::T
-  exp(x, lambda/(1+lambda)*log(x,f))
+function proxDistance{T <: ManifoldPoint}(f::T,lambda::Number,x::T)::T
+  exp(x, min(lambda, distance(f,x))*log(x,f))
 end
 
+"""
+    proxDistanceSquared(f,lambda,g)
+  computes the proximal map with parameter `lambda` of distance^2(f,x) for some
+  fixed `ManifoldPoint` f
+"""
+function proxDistanceSquared{T <: ManifoldPoint}(f::T,lambda::Float16,x::T)::T
+  exp(x, lambda/(1+lambda)*log(x,f) )
+end
 """
     proxTuple = proxTV(lambda,pointTuple)
 Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
@@ -129,7 +138,10 @@ end
   # Optional Parameters
   * `initialValue` (`[]`) start the algorithm with a special initialisation of
   `x`, if not specified, the first value `f[1]` is unsigned
+  * `Lambda` (`2`) initial value for the lambda of the CPP algorithm
   * `MaxIterations` (`500`) maximal number of iterations
+  * `Method` (`GD`) wether to use Gradient Descent (`GD`) or Cyclic Proximal
+    Point (`CPP`) algorithm
   * `MinimalChange` (`5*10.0^(-7)`) minimal change for the algorithm to stop
   * `Weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
   all are choren equal, i.e. `1/n*ones(n)` for `n=length(f)`.
@@ -143,22 +155,28 @@ function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::T
   Weights = get(kwargs_dict, "Weights", 1/length(f)*ones(length(f)))
   MaxIterations = get(kwargs_dict, "MaxIterations", 50)
   MinimalChange = get(kwargs_dict, "MinimalChange", 5*10.0^(-7))
+  Method = get(kwargs_dict, "Method", "Geodesic Distance")
+  lambda = get(kwargs_dict, "Lambda", 2)
   iter=0
   xold = x
-  while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
-    xold = x
-    x = exp(x, sum(Weights.*[log(x,fi) for fi in f]))
-    iter += 1
+  if Method == "GD"
+    while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+      xold = x
+      x = exp(x, sum(Weights.*[log(x,fi) for fi in f]))
+      iter += 1
+    end
+  elseif Method == "CPP"
+    while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+      xold = x
+      for i=1:lengthh(f)
+        x = proxDistanceSquared(x,f[i])
+      end
+      iter += 1
+    end
+  else
+    throw(ErrorException("Unknown Method to compute the mean."))
   end
   return x
-end
-"""
-    variance(f)
-  returns the variance of the set of pints on a maniofold.
-"""
-function variance{T<:ManifoldPoint}(f::Vector{T})::Number
-  meanF = mean(f);
-  return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(meanF,fi)^2 for fi in f])
 end
 """
     median(f;initialValue=[], MaxIterations=50, MinimalChange=5*10.0^(-7),
@@ -181,7 +199,10 @@ end
   # Optional Parameters
   * `initialValue` (`[]`) start the algorithm with a special initialisation of
   `x`, if not specified, the first value `f[1]` is unsigned
+  * `Lambda` (`2`) initial value for the lambda of the CPP algorithm
   * `MaxIterations` (`500`) maximal number of iterations
+  * `Method` (`GD`) wether to use Gradient Descent (`GD`) or Cyclic Proximal
+    Point (`CPP`) algorithm
   * `MinimalChange` (`5*10.0^(-7)`) minimal change for the algorithm to stop
   * `StepSize` (`1`)
   * `Weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
@@ -199,11 +220,23 @@ function median{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::T
   Weights = get(kwargs_dict, "Weights", 1/length(f)*ones(length(f)))
   iter=0
   xold = x
-  while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
-    xold = x
-    sumDistances = sum( Weights.*[distance(x,fi) for fi in f] )
-    x = exp(x, StepSize/sumDistances * sum(Weights.* [ 1/( (distance(x,fi)==0)?1:distance(x,fi) )*log(x,fi) for fi in f]))
-    iter += 1
+  if Method == "GD"
+    while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+      xold = x
+      sumDistances = sum( Weights.*[distance(x,fi) for fi in f] )
+      x = exp(x, StepSize/sumDistances * sum(Weights.* [ 1/( (distance(x,fi)==0)?1:distance(x,fi) )*log(x,fi) for fi in f]))
+      iter += 1
+    end
+  elseif Method == "CPP"
+    while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+      xold = x
+      for i=1:lengthh(f)
+        x = proxDistance(x,f[i])
+      end
+      iter += 1
+    end
+  else
+    throw(ErrorException("Unknown Method to compute the mean."))
   end
   return x
 end
@@ -252,27 +285,61 @@ function geodesic{T <: ManifoldPoint}(p::T,q::T,v::Vector{Float64})::Vector{T}
 end
 #
 # fallback functions for not yet implemented cases
+"""
+    distance(p,q)
+  computes the gedoesic distance between two points on a manifold
+"""
 function distance(p::ManifoldPoint,q::ManifoldPoint)::Number
   sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
+"""
+    dot(xi,nu)
+  computes the inner product of two tangential vectors, if they are in the same
+  tangential space
+"""
 function dot(xi::ManifoldTangentialPoint,nu::ManifoldTangentialPoint)::Number
   sig1 = string( typeof(xi) ); sig2 = string( typeof(nu) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
+"""
+    exp(p,xi)
+  computes the exponential map at p for the tangential vector xi
+"""
 function exp(p::ManifoldPoint,xi::ManifoldTangentialPoint)::ManifoldPoint
   sig1 = string( typeof(p) ); sig2 = string( typeof(xi) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
+"""
+    log(p,q)
+  computes the tangential vector at p whose geodesic reaches q after time
+  T = distance(p,q)
+"""
 function log(p::ManifoldPoint,q::ManifoldPoint)::ManifoldTangentialPoint
   sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
+"""
+    manifoldDimension(p)
+  returns the dimension of the manifold the point p belongs to.
+"""
 function manifoldDimension(p::ManifoldPoint)::Integer
   sig1 = string( typeof(p) );
   throw( ErrorException(" Not Implemented for types $sig1 " ) )
 end
+"""
+    norm(xi)
+  computes the lenth of a tangential vector
+"""
 function norm(xi::ManifoldTangentialPoint)::Number
   sig1 = string( typeof(xi) );
   throw( ErrorException(" Not Implemented for types $sig1 " ) )
+end
+"""
+    variance(f)
+  returns the variance of the set of pints on a maniofold.
+"""
+function variance{T<:ManifoldPoint}(f::Vector{T})::Number
+  meanF = mean(f);
+  return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(meanF,fi)^2 for fi in f])
 end
