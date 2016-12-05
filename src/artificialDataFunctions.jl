@@ -5,8 +5,16 @@
 #
 """
     artificial InSARImage(pts)
-    generate an artificial InSAR image, i.e. phase valued data, of size `pts` x
-    `pts` points.
+  generate an artificial InSAR image, i.e. phase valued data, of size `pts` x
+  `pts` points.
+
+  This example was introduced in the article
+  > R. Bergmann, F. Laus, G. Steidl, A. Weinmann:
+  > Second Order Differences of Cyclic Data and Applications in Variational Denoising,
+  > SIAM J. Imaging Sciences, Vol. 7, No. 4, pp. 2916–2953
+
+---
+  ManifoldValuedImageProcessing.jl – R. Bergmann, 2016-12-05.
 """
 function artificialInSARImage(pts::Integer)::Array{Real,2}
   # variables
