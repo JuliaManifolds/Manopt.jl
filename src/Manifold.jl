@@ -4,12 +4,12 @@
 #  * A point in an tangential space ManifoldTangentialPoint
 #
 import Base.LinAlg: norm, dot
-import Base: exp, log, mean, median, +, -, *, /, ==
+import Base: exp, log, mean, median, +, -, *, /, ==, show
 # introcude new types
 export ManifoldPoint, ManifoldTangentialPoint
 # introduce new functions
 export distance, exp, log, norm, dot, manifoldDimension
-export mean, median, variance, geodesic, midPoint
+export mean, median, variance, geodesic, midPoint, addNoise
 # introcude new algorithms
 export proxTV, proxDistanceSquared, proxTVSquared
 """
@@ -285,6 +285,14 @@ function geodesic{T <: ManifoldPoint}(p::T,q::T,v::Vector{Float64})::Vector{T}
 end
 #
 # fallback functions for not yet implemented cases
+"""
+    addNoise(P,sigma)
+  adds noise of standard deviation `sigma` to the manifod valued data array `P`.
+"""
+function addNoise{T <: ManifoldPoint}(P::Array{T},sigma::Number)::Array{T}
+  sig1 = string( typeof(P) ); sig2 = string( typeof(aigma) )
+  throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
+end
 """
     distance(p,q)
   computes the gedoesic distance between two points on a manifold

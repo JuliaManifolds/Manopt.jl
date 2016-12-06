@@ -10,7 +10,7 @@ export symRem
 #
 immutable S1Point <: ManifoldPoint
   value::Number
-  SnPoint(value::Number) = new(value)
+  S1Point(value::Number) = new(value)
 end
 
 immutable S1TangentialPoint <: ManifoldTangentialPoint
@@ -20,6 +20,11 @@ immutable S1TangentialPoint <: ManifoldTangentialPoint
   S1TangentialPoint(value::Number,base::S1Point) = new(value,base)
   S1TangentialPoint(value::Number,base::Nullable{S1Point}) = new(value,base)
 end
+
+function addNoise(P::Array{S1Point},sigma::Real)::Array{S1Point}
+  return [S1Point(mod(p.value-pi+sigma*randn(),2*pi)+pi) for p in P]
+end
+
 
 function distance(p::S1Point,q::S1Point)::Number
   return abs( symRem(p.value-q.value) )
@@ -35,11 +40,11 @@ function dot(xi::S1TangentialPoint, nu::S1TangentialPoint)::Number
 end
 
 function exp(p::S1Point,xi::S1TangentialPoint,t=1.0)::S1Point
-  return symRem(p.value+v.value)
+  return S1(symRem(p.value+v.value))
 end
 
 function log(p::S1Point,q::S1Point,includeBase=false)::S1TangentialPoint
-  return symRem(q-p)
+  return S1TangentialPoint(symRem(q.value-p.value))
 end
 
 function manifoldDimension(p::S1Point)::Integer
@@ -49,6 +54,20 @@ end
 function norm(xi::S1TangentialPoint)::Number
   return abs(xi.value)
 end
+
+function show(io::IO, m::S1Point)
+    print(io, "S1($(m.value))")
+end
+function show(io::IO, m::S1TangentialPoint)
+  if !isnull(m.base)
+    print(io, "S1T_$(m.base)($(m.value))")
+  else
+    print(io, "S1T($(m.value))")
+  end
+end
+#
+#
+# little Helpers
 """
     symRem(x,y,T=pi)
   symmetric remainder with respect to the interall 2*T

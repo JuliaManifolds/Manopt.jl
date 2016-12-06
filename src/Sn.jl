@@ -63,3 +63,14 @@ end
 function norm(xi::SnTangentialPoint)::Number
   return norm(xi.value)
 end
+
+function show(io::IO, m::SnPoint)
+    print(io, "Sn($(m.value))")
+end
+function show(io::IO, m::SnTangentialPoint)
+  if !isnull(m.base)
+    print(io, "SnT_$(m.base)($(m.value))")
+  else
+    print(io, "SnT($(m.value))")
+  end
+end
