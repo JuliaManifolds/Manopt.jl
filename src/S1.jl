@@ -44,7 +44,11 @@ function exp(p::S1Point,xi::S1TangentialPoint,t=1.0)::S1Point
 end
 
 function log(p::S1Point,q::S1Point,includeBase=false)::S1TangentialPoint
-  return S1TangentialPoint(symRem(q.value-p.value))
+  if includeBase
+    return S1TangentialPoint(symRem(q.value-p.value))
+  else
+    return S1TangentialPoint(symRem(q.value-p.value),p)
+  end
 end
 
 function manifoldDimension(p::S1Point)::Integer
