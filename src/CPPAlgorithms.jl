@@ -18,8 +18,14 @@ export TV_Regularization_CPPA
  # Optional Parameters
  * `MinimalChange` (`10.0^(-5)`) minimal change for the algorithm to stop
  * `MaxIterations` (`500`) maximal number of iterations
- ---
- ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
+
+This implementation is based on the article
+> A. Weinmann, L. Demaret, M. Storath:
+> Total Variation Regularization for Manifold-valued Data,
+> SIAM J. Imaging Science, Vol. 7, 
+>
+
+ ~ ManifoldValuedImageProcessing.jl ~ R. Bergmann ~ 2016-11-25
 """
 function TV_Regularization_CPPA{T <: ManifoldPoint}(
       lambda::Number, alpha::Number, f::Array{T};

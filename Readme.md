@@ -11,7 +11,11 @@ the algorithms are based on the [Manfiold-valued Image Processing Toolbox](http:
 ## Manfiolds
 * `Manifold.jl` the general manifold containing functions and algorithms applicable to all manifolds
 * `Sn.jl` the n-dimensional Sphere represented by n+1-dimensional vectors
+* `S1.jl` the 1-dimensional Sphere, i.e. the cirvle, represented by phase values
 
-## proximal Maps
+## Algorithms
+* `TV_Regularization` available as `CPPA` based algorithm
+
+## Proximal Maps
 * `TV`
 * `TVSquared`
