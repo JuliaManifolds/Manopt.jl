@@ -69,7 +69,7 @@ function show(io::IO, m::SnPoint)
 end
 function show(io::IO, m::SnTangentialPoint)
   if !isnull(m.base)
-    print(io, "SnT_$(m.base)($(m.value))")
+    print(io, "SnT_$(m.base.value)($(m.value))")
   else
     print(io, "SnT($(m.value))")
   end

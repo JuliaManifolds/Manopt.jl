@@ -45,9 +45,9 @@ end
 
 function log(p::S1Point,q::S1Point,includeBase=false)::S1TangentialPoint
   if includeBase
-    return S1TangentialPoint(symRem(q.value-p.value))
-  else
     return S1TangentialPoint(symRem(q.value-p.value),p)
+  else
+    return S1TangentialPoint(symRem(q.value-p.value))
   end
 end
 
@@ -64,7 +64,7 @@ function show(io::IO, m::S1Point)
 end
 function show(io::IO, m::S1TangentialPoint)
   if !isnull(m.base)
-    print(io, "S1T_$(m.base)($(m.value))")
+    print(io, "S1T_$(m.base.value)($(m.value))")
   else
     print(io, "S1T($(m.value))")
   end
