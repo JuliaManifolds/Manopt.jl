@@ -19,36 +19,36 @@ abstract ManifoldPoint
 
 """
       ManifoldTangentialPoint - a point on a tangent plane of a base point, which might
-  be NULL if the tangent space is fixed/known to spare memory.
+  be null if the tangent space is fixed/known to spare memory.
 """
 abstract ManifoldTangentialPoint
 
 #
 # Short hand notations for general exp and log
-+{T <: ManifoldPoint, S <: ManifoldTangentialPoint}(p::T,xi::S)::T = exp(p,xi)
++{T <: ManifoldPoint, S <: ManifoldTangentialPoint}(p::T,ξ::S)::T = exp(p,ξ)
 -{T <: ManifoldPoint}(p::T,q::T) = log(p,q)
 # scale tangential vectors
-*{T <: ManifoldTangentialPoint}(xi::T,s::Number)::T = T(s*xi.value,xi.base)
-*{T <: ManifoldTangentialPoint}(s::Number, xi::T) = T(s*xi.value,xi.base)
-*{T <: ManifoldTangentialPoint}(xi::Vector{T},s::Number) = s*ones(length(xi)).*xi
-*{T <: ManifoldTangentialPoint}(s::Number, xi::Vector{T}) = s*ones(length(xi)).*xi
+*{T <: ManifoldTangentialPoint}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
+*{T <: ManifoldTangentialPoint}(s::Number, ξ::T) = T(s*ξ.value,ξ.base)
+*{T <: ManifoldTangentialPoint}(ξ::Vector{T},s::Number) = s*ones(length(ξ))*ξ
+*{T <: ManifoldTangentialPoint}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))*ξ
 # /
-/{T <: ManifoldTangentialPoint}(xi::T,s::Number) = T(s./xi.value,xi.base)
-/{T <: ManifoldTangentialPoint}(s::Number, xi::T) = T(s./xi.value,xi.base)
-/{T <: ManifoldTangentialPoint}(xi::Vector{T},s::Number) = s*ones(length(xi))./xi
-/{T <: ManifoldTangentialPoint}(s::Number, xi::Vector{T}) = s*ones(length(xi))./xi
+/{T <: ManifoldTangentialPoint}(ξ::T,s::Number) = T(s/ξ.value,ξ.base)
+/{T <: ManifoldTangentialPoint}(s::Number, ξ::T) = T(s/ξ.value,ξ.base)
+/{T <: ManifoldTangentialPoint}(ξ::Vector{T},s::Number) = s*ones(length(ξ))/ξ
+/{T <: ManifoldTangentialPoint}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))/ξ
 # + -
-function +{T <: ManifoldTangentialPoint}(xi::T,nu::T)::T
-  if sameBase(xi,nu)
-    return T(xi.value+nu.value,xi.base)
+function +{T <: ManifoldTangentialPoint}(ξ::T,ν::T)::T
+  if sameBase(ξ,ν)
+    return T(ξ.value+ν.value,ξ.base)
   else
     throw(ErrorException("Can't add two tangential vectors belonging to
       different tangential spaces."))
   end
 end
-function -{T <: ManifoldTangentialPoint}(xi::T,nu::T)::T
-  if sameBase(xi,nu)
-    return T(xi.value-nu.value,xi.base)
+function -{T <: ManifoldTangentialPoint}(ξ::T,ν::T)::T
+  if sameBase(ξ,ν)
+    return T(ξ.value-ν.value,ξ.base)
   else
     throw(ErrorException("Can't subtract two tangential vectors belonging to
     different tangential spaces."))
@@ -57,12 +57,12 @@ end
 
 # compare Points
 =={T <: ManifoldPoint}(p::T, q::T)::Bool = all(p.value == q.value)
-=={T <: ManifoldTangentialPoint}(xi::T,nu::T)::Bool = ( sameBase(xi,nu) && all(xi.value==nu.value) )
+=={T <: ManifoldTangentialPoint}(ξ::T,ν::T)::Bool = ( sameBase(ξ,ν) && all(ξ.value==ν.value) )
 
-function sameBase{T <: ManifoldTangentialPoint}(xi::T,nu::T)::Bool
-  if (isnull(xi.base) || isnull(nu.base))
+function sameBase{T <: ManifoldTangentialPoint}(ξ::T, ν::T)::Bool
+  if (isnull(ξ.base) || isnull(ν.base))
     return true # one base null is treated as correct
-  elseif xi.base.value == nu.base.value
+  elseif ξ.base.value == ν.base.value
     return true # if both are given and are the same
   else
     return false
@@ -71,51 +71,51 @@ end
 #
 # proximal Maps
 """
-    proxDistance(f,lambda,g)
-  compute the proximal map with parameter lambda of `distance(f,x)` for some fixed
+    proxDistance(f,g,λ)
+  compute the proximal map with parameter λ of `distance(f,x)` for some fixed
   `ManifoldPoint` f
 """
-function proxDistance{T <: ManifoldPoint}(f::T,lambda::Number,x::T)::T
-  exp(x, min(lambda, distance(f,x))*log(x,f))
+function proxDistance{T <: ManifoldPoint}(f::T,x::T,λ::Number)::T
+  exp(x, min(λ, distance(f,x))*log(x,f))
 end
 
 """
-    proxDistanceSquared(f,lambda,g)
-  computes the proximal map with parameter `lambda` of distance^2(f,x) for some
-  fixed `ManifoldPoint` f
+    proxDistanceSquared(f,g,λ)
+  computes the proximal map of distance^2(f,x) for some
+  fixed `ManifoldPoint` f with parameter `λ`
 """
-function proxDistanceSquared{T <: ManifoldPoint}(f::T,lambda::Float16,x::T)::T
-  exp(x, lambda/(1+lambda)*log(x,f) )
+function proxDistanceSquared{T <: ManifoldPoint}(f::T,λ::Number,x::T)::T
+  exp(x, λ/(1+λ)*log(x,f) )
 end
 """
-    proxTuple = proxTV(lambda,pointTuple)
+    proxTuple = proxTV(pointTuple,λ)
 Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
-lambda
+`λ`
 # Arguments
-* `lambda` : a real value, parameter of the proximal map
 * `pointTuple` : a tuple of size 2 containing two ManifoldPoints x and y
+* `λ` : a real value, parameter of the proximal map
 # Returns
 * `proxTuple` : resulting two-ManifoldPoint-Tuple of the proximal map
 """
-function proxTV{T <: ManifoldPoint}(lambda::Number,pointTuple::Tuple{T,T})::Tuple{T,T}
-  step = min(0.5, lambda/distance(pointTuple[1],pointTuple[2]))
+function proxTV{T <: ManifoldPoint}(pointTuple::Tuple{T,T},λ::Number)::Tuple{T,T}
+  step = min(0.5, λ/distance(pointTuple[1],pointTuple[2]))
   return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
             exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
 end
 """
-    proxTuple = proxTVSquared(lambda,pointTuple)
+    proxTuple = proxTVSquared(pointTuple,λ)
  Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y)^2 with parameter
- `lambda`
+ `λ`
  # Arguments
- * `lambda` : a real value, parameter of the proximal map
  * `pointTuple` : a tuple of size 2 containing two ManifoldPoints x and y
+ * `λ` : a real value, parameter of the proximal map
  # OUTPUT
  * `proxTuple` : resulting two-ManifoldPoint-Tuple of the proximal map
  ---
  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function proxTVSquared{T <: ManifoldPoint}(lambda::Number,pointTuple::Tuple{T,T})::Tuple{T,T}
-  step = lambda/(1+2*lambda)*distance(pointTuple[1],pointTuple[2])
+function proxTVSquared{T <: ManifoldPoint}(pointTuple::Tuple{T,T},λ::Number)::Tuple{T,T}
+  step = λ/(1+2*λ)*distance(pointTuple[1],pointTuple[2])
   return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
             exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
 end
@@ -138,7 +138,7 @@ end
   # Optional Parameters
   * `initialValue` (`[]`) start the algorithm with a special initialisation of
   `x`, if not specified, the first value `f[1]` is unsigned
-  * `Lambda` (`2`) initial value for the lambda of the CPP algorithm
+  * `λ` (`2`) initial value for the λ of the CPP algorithm
   * `MaxIterations` (`500`) maximal number of iterations
   * `Method` (`GD`) wether to use Gradient Descent (`GD`) or Cyclic Proximal
     Point (`CPP`) algorithm
@@ -156,7 +156,7 @@ function mean{T <: ManifoldPoint}(f::Vector{T}; kwargs...)::T
   MaxIterations = get(kwargs_dict, "MaxIterations", 50)
   MinimalChange = get(kwargs_dict, "MinimalChange", 5*10.0^(-7))
   Method = get(kwargs_dict, "Method", "Geodesic Distance")
-  lambda = get(kwargs_dict, "Lambda", 2)
+  λ = get(kwargs_dict, "λ", 2)
   iter=0
   xold = x
   if Method == "GD"
@@ -199,7 +199,7 @@ end
   # Optional Parameters
   * `initialValue` (`[]`) start the algorithm with a special initialisation of
   `x`, if not specified, the first value `f[1]` is unsigned
-  * `Lambda` (`2`) initial value for the lambda of the CPP algorithm
+  * `λ` (`2`) initial value for the λ of the CPP algorithm
   * `MaxIterations` (`500`) maximal number of iterations
   * `Method` (`GD`) wether to use Gradient Descent (`GD`) or Cyclic Proximal
     Point (`CPP`) algorithm
@@ -277,19 +277,19 @@ geodesic{T <: ManifoldPoint}(p::T,q::T,t::Number)::T = geodesic(p,q)(t)
 """
     geodesic(p,q,T)
   returns vector containing the points along the geodesic from `p`to `q` given
-  by vector of `Float64` `T`.
+  by vector of `Number`s.
 """
-function geodesic{T <: ManifoldPoint}(p::T,q::T,v::Vector{Float64})::Vector{T}
+function geodesic{T <: ManifoldPoint, S <: Number}(p::T,q::T,v::Vector{S})::Vector{T}
   geo = geodesic(p,q);
   return [geo(t) for t in v]
 end
 #
 # fallback functions for not yet implemented cases
 """
-    addNoise(P,sigma)
-  adds noise of standard deviation `sigma` to the manifod valued data array `P`.
+    addNoise(P,σ)
+  adds noise of standard deviation `σ` to the manifod valued data array `P`.
 """
-function addNoise{T <: ManifoldPoint}(P::Array{T},sigma::Number)::Array{T}
+function addNoise{T <: ManifoldPoint}(P::T,σ::Number)::T
   sig1 = string( typeof(P) ); sig2 = string( typeof(aigma) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
@@ -302,20 +302,20 @@ function distance(p::ManifoldPoint,q::ManifoldPoint)::Number
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 """
-    dot(xi,nu)
+    dot(ξ,ν)
   computes the inner product of two tangential vectors, if they are in the same
   tangential space
 """
-function dot(xi::ManifoldTangentialPoint,nu::ManifoldTangentialPoint)::Number
-  sig1 = string( typeof(xi) ); sig2 = string( typeof(nu) )
+function dot(ξ::ManifoldTangentialPoint,ν::ManifoldTangentialPoint)::Number
+  sig1 = string( typeof(ξ) ); sig2 = string( typeof(ν) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 """
-    exp(p,xi)
-  computes the exponential map at p for the tangential vector xi
+    exp(p,ξ)
+  computes the exponential map at p for the tangential vector ξ
 """
-function exp(p::ManifoldPoint,xi::ManifoldTangentialPoint)::ManifoldPoint
-  sig1 = string( typeof(p) ); sig2 = string( typeof(xi) )
+function exp(p::ManifoldPoint,ξ::ManifoldTangentialPoint)::ManifoldPoint
+  sig1 = string( typeof(p) ); sig2 = string( typeof(ξ) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 """
@@ -336,11 +336,11 @@ function manifoldDimension(p::ManifoldPoint)::Integer
   throw( ErrorException(" Not Implemented for types $sig1 " ) )
 end
 """
-    norm(xi)
+    norm(ξ)
   computes the lenth of a tangential vector
 """
-function norm(xi::ManifoldTangentialPoint)::Number
-  sig1 = string( typeof(xi) );
+function norm(ξ::ManifoldTangentialPoint)::Number
+  sig1 = string( typeof(ξ) );
   throw( ErrorException(" Not Implemented for types $sig1 " ) )
 end
 """

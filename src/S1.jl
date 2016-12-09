@@ -21,8 +21,8 @@ immutable S1TangentialPoint <: ManifoldTangentialPoint
   S1TangentialPoint(value::Number,base::Nullable{S1Point}) = new(value,base)
 end
 
-function addNoise(P::Array{S1Point},sigma::Real)::Array{S1Point}
-  return [S1Point(mod(p.value-pi+sigma*randn(),2*pi)+pi) for p in P]
+function addNoise(p::S1Point,σ::Real)::S1Point
+  return S1Point(mod(p.value-pi+σ*randn(),2*pi)+pi)
 end
 
 
@@ -30,17 +30,17 @@ function distance(p::S1Point,q::S1Point)::Number
   return abs( symRem(p.value-q.value) )
 end
 
-function dot(xi::S1TangentialPoint, nu::S1TangentialPoint)::Number
-  if sameBase(xi,nu)
-    return xi.value*nu.value
+function dot(ξ::S1TangentialPoint, ν::S1TangentialPoint)::Number
+  if sameBase(ξ,ν)
+    return ξ.value*ν.value
   else
     throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
       different tangential spaces."))
   end
 end
 
-function exp(p::S1Point,xi::S1TangentialPoint,t=1.0)::S1Point
-  return S1(symRem(p.value+v.value))
+function exp(p::S1Point,ξ::S1TangentialPoint,t::Number=1.0)::S1Point
+  return S1Point(symRem(p.value+t*ξ.value))
 end
 
 function log(p::S1Point,q::S1Point,includeBase=false)::S1TangentialPoint
@@ -55,18 +55,18 @@ function manifoldDimension(p::S1Point)::Integer
   return 1
 end
 
-function norm(xi::S1TangentialPoint)::Number
-  return abs(xi.value)
+function norm(ξ::S1TangentialPoint)::Number
+  return abs(ξ.value)
 end
 
 function show(io::IO, m::S1Point)
     print(io, "S1($(m.value))")
 end
-function show(io::IO, m::S1TangentialPoint)
-  if !isnull(m.base)
-    print(io, "S1T_$(m.base.value)($(m.value))")
+function show(io::IO, ξ::S1TangentialPoint)
+  if !isnull(ξ.base)
+    print(io, "S1T_$(ξ.base.value)($(ξ.value))")
   else
-    print(io, "S1T($(m.value))")
+    print(io, "S1T($(ξ.value))")
   end
 end
 #

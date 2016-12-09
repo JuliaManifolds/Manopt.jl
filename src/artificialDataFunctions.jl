@@ -10,7 +10,7 @@ export artificialInSARImage
   generate an artificial InSAR image, i.e. phase valued data, of size `pts` x
   `pts` points.
 
-  This example was introduced in the article
+  This example data was introduced in the article
   > R. Bergmann, F. Laus, G. Steidl, A. Weinmann:
   > Second Order Differences of Cyclic Data and Applications in Variational Denoising,
   > SIAM Journal on Imaging Sciences, Vol. 7, No. 4, pp. 2916–2953, 2014.
@@ -38,12 +38,12 @@ function artificialInSARImage(pts::Integer)::Array{Float64,2}
     Xr = cosE*values[i] - sinE*values[j]
     Yr = cosE*values[j] + sinE*values[i]
     v = axes_inv[1]*Xr^2 + axes_inv[2]*Yr^2
-    k1 = v <= 1 ? 10*pi*Yr : 0.0
+    k1 = v <= 1.0 ? 10.0*pi*Yr : 0.0
     # circle
     Xr = cosA*values[i] - sinA*values[j]
     Yr = cosA*values[j] + sinA*values[i]
-    v = (Xr-midPoint[1])^2 + (Yr-midPoint[2])^2/radius^2
-    k2 = v <= 1 ? 4.0*pi*(1-v) : 0.0
+    v = ( (Xr-midPoint[1])^2 + (Yr-midPoint[2])^2 )/radius^2
+    k2 = v <= 1.0 ? 4.0*pi*(1.0-v) : 0.0
     #
     Xr = cosS*values[i] - sinS*values[j]
     Yr = cosS*values[j] + sinS*values[i]

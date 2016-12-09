@@ -24,30 +24,30 @@ function distance(p::SnPoint,q::SnPoint)::Number
   return acos(dot(p.value,q.value))
 end
 
-function dot(xi::SnTangentialPoint, nu::SnTangentialPoint)::Number
-  if sameBase(xi,nu)
-    return dot(xi.value,nu.value)
+function dot(ξ::SnTangentialPoint, ν::SnTangentialPoint)::Number
+  if sameBase(ξ,ν)
+    return dot(ξ.value,ν.value)
   else
     throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
       different tangential spaces."))
   end
 end
 
-function exp(p::SnPoint,xi::SnTangentialPoint,t=1.0)::SnPoint
-  len = norm(xi.value)
+function exp(p::SnPoint,ξ::SnTangentialPoint,t=1.0)::SnPoint
+  len = norm(ξ.value)
   if len < eps(Float64)
     return p
   else
-    return SnPoint(cos(t*len)*p.value + sin(t*len)/len*xi.value)
+    return SnPoint(cos(t*len)*p.value + sin(t*len)/len*ξ.value)
   end
 end
 
 function log(p::SnPoint,q::SnPoint,includeBase=false)::SnTangentialPoint
   scp = dot(p.value,q.value)
-  xivalue = q.value-scp*p.value
-  xivnorm = norm(xivalue)
-  if (xivnorm > eps(Float64))
-    value = xivalue*acos(scp)/xivnorm;
+  ξvalue = q.value-scp*p.value
+  ξvnorm = norm(ξvalue)
+  if (ξvnorm > eps(Float64))
+    value = ξvalue*acos(scp)/ξvnorm;
   else
     value = zeros(p.value)
   end
@@ -60,8 +60,8 @@ end
 function manifoldDimension(p::SnPoint)::Integer
   return length(p.value)-1
 end
-function norm(xi::SnTangentialPoint)::Number
-  return norm(xi.value)
+function norm(ξ::SnTangentialPoint)::Number
+  return norm(ξ.value)
 end
 
 function show(io::IO, m::SnPoint)
