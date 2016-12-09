@@ -13,7 +13,7 @@ export TV_Regularization_CPPA
  * `f` an d-dimensional array of `ManifoldPoint`s
  * `α` parameter of the model (may be given as a vector to provide different
       weights to different directions)
- * `λ` internal parameter of the cyclic proxξmal point algorithm
+ * `λ` internal parameter of the cyclic proximal point algorithm
  # Output
  * `x` the regulraized array
  # Optional Parameters
@@ -34,7 +34,7 @@ export TV_Regularization_CPPA
 """
 function TV_Regularization_CPPA{T <: ManifoldPoint, S <: Number, R1 <: Bool, R2 <: Bool}(
       f::Array{T}, α::Array{S,1}, λ::Number;
-      MinimalChange=10.0^(-9.0), MaxIterations=1000,
+      MinimalChange::Real=10.0^(-9.0), MaxIterations::Integer=4000,
       FixedMask::Array{R1} = Array(Bool,0), UnknownMask::Array{R2} = Array(Bool,0)
       )::Array{T}
   if ( length(FixedMask) == 0 )
@@ -56,41 +56,42 @@ function TV_Regularization_CPPA{T <: ManifoldPoint, S <: Number, R1 <: Bool, R2 
   stillUnknownMask = copy(UnknownMask);
   x = deepcopy(f)
   xold = deepcopy(x)
-  iter = 1
-  while (  ( (sum( [ distance(ξ,xoldi) for (ξ,xoldi) in zip(x[stillUnknownMask],xold[stillUnknownMask]) ] ) > MinimalChange)
+  iter::Integer = 1
+  R = CartesianRange(size(f))
+  while (  ( (sum( [ distance(ξ,xoldi) for (ξ,xoldi) in zip(x[~stillUnknownMask],xold[~stillUnknownMask]) ] ) > MinimalChange)
     && (iter < MaxIterations) ) || (iter==1)  )
-    xold = deepcopy(x)
+    xold = x;
+    x = similar(xold)
     # First term: d(f,x)^2
     for i in eachindex(x)
-      x[i] = proxDistanceSquared(f[i],λ/i,x[i])
+      x[i] = proxDistanceSquared(f[i],λ/i,xold[i])
     end
     # TV term
-    for d in 1:ndims(f)
-      e_d  = zeros(ndims(f))
-      e_d[d] = 1;
-      for i in eachindex(f)
+    for d in 1:ndims(f) # d runs over the neighbors, for each dimension one
+      e_d  = zeros(Int,ndims(f)); e_d[d] = 1
+      unitOffset = CartesianIndex( (e_d...) )
+      for i in R
         # neighbor index
-        i2 = sub2ind(size(f), [sum(x) for x in zip( ind2sub(size(f), i), e_d)] )
-        print(i)
-        print(i2)
-        if ( i2 <=length(f) )
+        i2 = i+unitOffset
+        if all(map(<=,i2.I, last(R).I)) # i2 valid?
           if stillUnknownMask[i]
             x[i] = x[i2]; stillUnknownMask[i] = false;
           elseif stillUnknownMask[i2]
             x[i2] = x[i]; stillUnknownMask[i] = false;
           else # both known
-            (a,b) = proxTV((x[i], x[i2]),αV[d]*λ/i)
-            if !FixedMask[i]
-              x[i] = a;
+            (a,b) = proxTV((x[i], x[i2]),αV[d]*λ/iter)
+            if ~FixedMask[i]
+              x[i] = a
             end
-            if !FixedMask[i2]
-              x[i2] = b;
+            if ~FixedMask[i2]
+              x[i2] = b
             end
           end #endif known
         end #endif inrange
       end #end for i
     end #end for d
+    print(string(iter, " Iterations, ", sum( [ distance(ξ,xoldi) for (ξ,xoldi) in zip(x[~stillUnknownMask],xold[~stillUnknownMask]) ] ), " last change."))
     iter +=1
   end #end while
-  return x,iter, sum( [ distance(ξ,xoldi) for (ξ,xoldi) in zip(x[stillUnknownMask],xold[stillUnknownMask]) ] )
+  return x
 end
