@@ -28,10 +28,6 @@ abstract MPoint
 """
 abstract MTVector
 
-#
-# Short hand notations for general exp and log
-+{T <: MPoint, S <: MTVector}(p::T,ξ::S)::T = exp(p,ξ)
--{T <: MPoint}(p::T,q::T) = log(p,q)
 # scale tangential vectors
 *{T <: MTVector}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
 *{T <: MTVector}(s::Number, ξ::T) = T(s*ξ.value,ξ.base)
@@ -42,7 +38,7 @@ abstract MTVector
 /{T <: MTVector}(s::Number, ξ::T) = T(s/ξ.value,ξ.base)
 /{T <: MTVector}(ξ::Vector{T},s::Number) = s*ones(length(ξ))/ξ
 /{T <: MTVector}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))/ξ
-# + -
+# + - of MTVectors
 function +{T <: MTVector}(ξ::T,ν::T)::T
   if sameBase(ξ,ν)
     return T(ξ.value+ν.value,ξ.base)
