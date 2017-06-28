@@ -32,54 +32,57 @@ export TV_Regularization_CPPA
 
  ~ ManifoldValuedImageProcessing.jl ~ R. Bergmann ~ 2016-11-25
 """
-function TV_Regularization_CPPA{T <: ManifoldPoint, S <: Number, R1 <: Bool, R2 <: Bool}(
-      f::Array{T}, α::Array{S,1}, λ::Number;
-      MinimalChange::Real=10.0^(-9.0), MaxIterations::Integer=4000,
-      FixedMask::Array{R1} = Array(Bool,0), UnknownMask::Array{R2} = Array(Bool,0)
-      )::Array{T}
-  if ( length(FixedMask) == 0 )
-    FixedMask = falses(f)
-  end
-  if ( length(UnknownMask) == 0)
-    UnknownMask = falses(f)
-  end
+function TV_Regularization_CPPA{T <: ManifoldPoint, N}(
+      f::Array{T,N}, α::Array{Float64,1}, λ::Number; kwargs...)::Array{T,N}
+      kwargs_dict = Dict(kwargs);
+      # load optionals
+      MinimalChange::Float64=get(kwargs_dict, "MinimalChange", 10.0^-9)
+      MaxIterations::Int64=get(kwargs_dict, "MaxIterations", 400)
+      FixedMask::Array{Bool,N} = get(kwargs_dict, "FixedMask", falses(f))
+      UnknownMask::Array{Bool,N} = get(kwargs_dict, "UnknownMask", falses(f))
   if length(α) == 1
-    αV = α*ones(length(size(f)))
+    αV::Array{Float64,1} = α*ones(length(size(f)))
   else
     if length(α) ≠ length(size(f))
       sig1 = length(α);
       throw( ErrorException(string(" Length of α vector (",length(α),
-        ") as to be the same as the number of dimensions of f (",length(size(f)),").")) )
+      ") as to be the same as the number of dimensions of f (",length(size(f)),").")) )
     end
-    αV=α;
+    αV = α;
   end
-  stillUnknownMask = copy(UnknownMask);
-  x = deepcopy(f)
-  xold = deepcopy(x)
-  iter::Integer = 1
+#  @code_warntype _TVRegCPPA(f,αV,λ,MinimalChange,7,FixedMask,UnknownMask)
+  @code_warntype _TV1CPPA(f,αV,λ,MinimalChange,MaxIterations,FixedMask,UnknownMask)
+  return _TV1CPPA(f,αV,λ,MinimalChange,MaxIterations,FixedMask,UnknownMask)
+end
+function _TV1CPPA{T <: ManifoldPoint,N}(
+      f::Array{T,N}, α::Array{Float64,1}, λ::Float64,
+      MinimalChange::Float64,MaxIterations::Int64,FixedMask::Array{Bool,N},UnknownMask::Array{Bool,N}
+    )::Array{T,N}
+  iter::Int64 = 1
+  x::Array{T,N} = f
+  xold::Array{T,N} = x
+  stillUnknownMask::BitArray{N} = copy(UnknownMask);
   R = CartesianRange(size(f))
-  while (  ( (sum( [ distance(ξ,xoldi) for (ξ,xoldi) in zip(x[~stillUnknownMask],xold[~stillUnknownMask]) ] ) > MinimalChange)
-    && (iter < MaxIterations) ) || (iter==1)  )
+  while (  ( (1.0/length(f)*sum( [ distance(ξ,xoldi) for (ξ,xoldi) in zip(x[~stillUnknownMask],xold[~stillUnknownMask]) ] ) > MinimalChange)
+            && (iter < MaxIterations) ) || (iter==1)  )
+    iter = iter+1
     xold = x;
     x = similar(xold)
     # First term: d(f,x)^2
-    for i in eachindex(x)
-      x[i] = proxDistanceSquared(f[i],λ/i,xold[i])
+    @fastmath @inbounds for k in eachindex(x)
+      x[k] = proxDistanceSquared(f[k],λ/k,xold[k])
     end
-    # TV term
-    for d in 1:ndims(f) # d runs over the neighbors, for each dimension one
-      e_d  = zeros(Int,ndims(f)); e_d[d] = 1
-      unitOffset = CartesianIndex( (e_d...) )
+    @fastmath @inbounds for d = 1:N
+      unitOffset::CartesianIndex{N} = CartesianIndex{N}(ntuple(i::Integer->i::Integer==d ? 1: 0, N))
       for i in R
-        # neighbor index
         i2 = i+unitOffset
-        if all(map(<=,i2.I, last(R).I)) # i2 valid?
+        if (i2 in R)
           if stillUnknownMask[i]
             x[i] = x[i2]; stillUnknownMask[i] = false;
           elseif stillUnknownMask[i2]
             x[i2] = x[i]; stillUnknownMask[i] = false;
           else # both known
-            (a,b) = proxTV((x[i], x[i2]),αV[d]*λ/iter)
+            (a,b) = proxTV((x[i], x[i2]),α[d]*λ/iter)
             if ~FixedMask[i]
               x[i] = a
             end
@@ -87,11 +90,9 @@ function TV_Regularization_CPPA{T <: ManifoldPoint, S <: Number, R1 <: Bool, R2 
               x[i2] = b
             end
           end #endif known
-        end #endif inrange
-      end #end for i
-    end #end for d
-    print(string(iter, " Iterations, ", sum( [ distance(ξ,xoldi) for (ξ,xoldi) in zip(x[~stillUnknownMask],xold[~stillUnknownMask]) ] ), " last change."))
-    iter +=1
-  end #end while
+        end #endif in Range
+      end #endfor i
+    end #endfor d
+  end #endwhile
   return x
 end

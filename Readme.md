@@ -8,14 +8,45 @@ on a manifold.
 the algorithms are based on the [Manfiold-valued Image Processing Toolbox](http://www.mathematik.uni-kl.de/imagepro/members/bergmann/mvirt/)
 (MVIRT) available as Matlab Source code.
 
-## Manfiolds
-* `Manifold.jl` the general manifold containing functions and algorithms applicable to all manifolds
-* `Sn.jl` the n-dimensional Sphere represented by n+1-dimensional vectors
-* `S1.jl` the 1-dimensional Sphere, i.e. the cirvle, represented by phase values
+## Manifolds
+  The manifold itself is the central type of this Julia package concerning
+  data types. We split the manifold into three types:
+  * `Manifold` containing information that either is not available when no
+  points are present, e.g. when calling a `random(M::Manifold,arraysize)` type
+  function or which should not be stored in all data items
+  * `MPoint` a point on the manifold, where the naming convention is to shorten
+  the manifold to `M` or a specific manifold to a unique abbreviation (e.g. `Sn` for the sphere)
+  * `MTVector` a manifold tangential vector with the same naming convention as above replacing again the `M` shorthand for manifold
 
+The following manifolds are available:
+* `Manifold.jl` the general (`abstract`) manifold containing functions and algorithms applicable to all manifolds as well as fallbacks for functions that may be needed for algorithms to run (e.g. each non-abstract manifold should implement a `dist(M,x,y)` or )
+* `MatrixManifold.jl` (`MM`) and `abstract` manifold unifying methods to apply for matrix manifolds.
+* `Sphere.jl` (`Sn`) the n-dimensional Sphere represented by n+1-dimensional vectors
+* `Circle.jl` (`S1`) the 1-dimensional Sphere, i.e. the circle. Though the `S1` is a special case of the sphere, the `Sphere.jl`
+* works within the embedding on \(\mathbb R^2\), thi class represents the `S1Points` as angles.
+
+## Functions available for Manifolds
+
+Implemented on the most general level for `Manifold`
+* `mean(M,Vector<MPoint> F)` compute the mean (Riemannian center of mass)
+of a set of points on `M`
+* `median(M,Vector<MPoint> F)` compute the median based on the variational minimizer of the distances between all points on `M`
+* `geodesic(p,q)` the function of the geodesic between `p` and `q`
+* `geodesic(p,q,t)` evaluate the geodesic between `p` and `q` at `t`
+* `geodesic(p,q,n)` evaluate the geodesic between `p` and `q` at n equistpaced points from \([0,1]\)
+* `geodesic(p,q,t)` evaluate the geodesic between `p` and `q` at points from teh vector `v`
+
+Available as fallbacks in general and to be implemented on you favourite manifold:
+* `exp(x,ξ)` the exponential map from the tangential space at `x` to the manifold
+* `log(x,y)` the (locally defined) inverse of the logarithmic map
+* `dist(x,y)` the geodesic distance between two points on the manifold
+* `retraction(x,ξ)` the retraction on the manifold.
+* `parallelTransport(x,y,ξ)` transports the tangential vector
 ## Algorithms
 * `TV_Regularization` available as `CPPA` based algorithm
 
 ## Proximal Maps
-* `TV`
-* `TVSquared`
+* `proxTV`
+* `proxTVSquared`
+* `proxDistance`
+* `proxDistanceSquared`

@@ -2,29 +2,33 @@
 #      Sn - The manifold of the n-dimensional sphere
 #  Point is a Point on the n-dimensional sphere.
 #
-export SnPoint, SnTangentialPoint
-#
-# TODO: It would be nice to have a fixed dimension here Sn here, however
-#   they need N+1-dimensional vectors
-#
-immutable SnPoint <: ManifoldPoint
+export SnPoint, SnTVector
+
+struct Sphere <: MatrixManifold
+  name::String
+  dimension::Int
+  abbreviation::String
+  Sphere(dimension::Int) = new("Sphere",dimension,"S$dimension")
+end
+
+struct SnPoint <: MMPoint
   value::Vector
   SnPoint(value::Vector) = new(value)
 end
 
-immutable SnTangentialPoint <: ManifoldTangentialPoint
+struct SnTVector <: MMTVector
   value::Vector
   base::Nullable{SnPoint}
-  SnTangentialPoint(value::Vector) = new(value,Nullable{SnPoint}())
-  SnTangentialPoint(value::Vector,base::SnPoint) = new(value,base)
-  SnTangentialPoint(value::Vector,base::Nullable{SnPoint}) = new(value,base)
+  SnTVector(value::Vector) = new(value,Nullable{SnPoint}())
+  SnTVector(value::Vector,base::SnPoint) = new(value,base)
+  SnTVector(value::Vector,base::Nullable{SnPoint}) = new(value,base)
 end
 
 function distance(p::SnPoint,q::SnPoint)::Number
   return acos(dot(p.value,q.value))
 end
 
-function dot(ξ::SnTangentialPoint, ν::SnTangentialPoint)::Number
+function dot(ξ::SnTVector, ν::SnTVector)::Number
   if sameBase(ξ,ν)
     return dot(ξ.value,ν.value)
   else
@@ -33,7 +37,7 @@ function dot(ξ::SnTangentialPoint, ν::SnTangentialPoint)::Number
   end
 end
 
-function exp(p::SnPoint,ξ::SnTangentialPoint,t=1.0)::SnPoint
+function exp(p::SnPoint,ξ::SnTVector,t=1.0)::SnPoint
   len = norm(ξ.value)
   if len < eps(Float64)
     return p
@@ -42,7 +46,7 @@ function exp(p::SnPoint,ξ::SnTangentialPoint,t=1.0)::SnPoint
   end
 end
 
-function log(p::SnPoint,q::SnPoint,includeBase=false)::SnTangentialPoint
+function log(p::SnPoint,q::SnPoint,includeBase=false)::SnTVector
   scp = dot(p.value,q.value)
   ξvalue = q.value-scp*p.value
   ξvnorm = norm(ξvalue)
@@ -52,22 +56,22 @@ function log(p::SnPoint,q::SnPoint,includeBase=false)::SnTangentialPoint
     value = zeros(p.value)
   end
   if includeBase
-    return SnTangentialPoint(value,p)
+    return SnTVector(value,p)
   else
-    return SnTangentialPoint(value)
+    return SnTVector(value)
   end
 end
 function manifoldDimension(p::SnPoint)::Integer
   return length(p.value)-1
 end
-function norm(ξ::SnTangentialPoint)::Number
+function norm(ξ::SnTVector)::Number
   return norm(ξ.value)
 end
 
 function show(io::IO, m::SnPoint)
     print(io, "Sn($(m.value))")
 end
-function show(io::IO, m::SnTangentialPoint)
+function show(io::IO, m::SnTVector)
   if !isnull(m.base)
     print(io, "SnT_$(m.base.value)($(m.value))")
   else
