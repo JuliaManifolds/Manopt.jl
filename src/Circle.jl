@@ -7,7 +7,7 @@ export symRem
 #
 # TODO: It would be nice to have an arbitrary real type here
 #
-struct Sphere1 <: Manifold
+struct Circle <: Manifold
   name::String
   dimension::Int
   abbreviation::String
@@ -26,16 +26,16 @@ immutable S1TVector <: MTVector
   S1TVector(value::Float64,base::Nullable{S1Point}) = new(value,base)
 end
 
-function addNoise(M::Sphere1, p::S1Point,σ::Real)::S1Point
+function addNoise(M::Circle, p::S1Point,σ::Real)::S1Point
   return S1Point(mod(p.value-pi+σ*randn(),2*pi)+pi)
 end
 
 
-function distance(M::Sphere1, p::S1Point,q::S1Point)::Float64
+function distance(M::Circle, p::S1Point,q::S1Point)::Float64
   return abs( symRem(p.value-q.value) )
 end
 
-function dot(M::Sphere1, ξ::S1TVector, ν::S1TVector)::Float64
+function dot(M::Circle, ξ::S1TVector, ν::S1TVector)::Float64
   if sameBase(ξ,ν)
     return ξ.value*ν.value
   else
@@ -44,11 +44,11 @@ function dot(M::Sphere1, ξ::S1TVector, ν::S1TVector)::Float64
   end
 end
 
-function exp(M::Sphere1, p::S1Point,ξ::S1TVector,t::Number=1.0)::S1Point
+function exp(M::Circle, p::S1Point,ξ::S1TVector,t::Number=1.0)::S1Point
   return S1Point(symRem(p.value+t*ξ.value))
 end
 
-function log(M::Sphere1, p::S1Point,q::S1Point,includeBase=false)::S1TVector
+function log(M::Circle, p::S1Point,q::S1Point,includeBase=false)::S1TVector
   if includeBase
     return S1TVector(symRem(q.value-p.value),p)
   else
@@ -59,16 +59,16 @@ end
 function manifoldDimension(p::S1Point)::Int
   return 1
 end
-function manifoldDimension(M::Sphere1)::Int
+function manifoldDimension(M::Circle)::Int
   return 1
 end
-function norm(M::Sphere1, ξ::S1TVector)::Float64
+function norm(M::Circle, ξ::S1TVector)::Float64
   return abs(ξ.value)
 end
 #
 #
 # Display functions for the structs
-function show(io::IO, M::Sphere1)
+function show(io::IO, M::Circle)
   print(io, "The Manifold S1 consisting of angles")
 end
 function show(io::IO, m::S1Point)
