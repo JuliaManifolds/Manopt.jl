@@ -2,13 +2,13 @@
 #      Sn - The manifold of the n-dimensional sphere
 #  Point is a Point on the n-dimensional sphere.
 #
-export SnPoint, SnTVector
+export Sphere, SnPoint, SnTVector
 
 struct Sphere <: MatrixManifold
   name::String
   dimension::Int
   abbreviation::String
-  Sphere(dimension::Int) = new("Sphere",dimension,"S$dimension")
+  Sphere(dimension::Int) = new("$dimension-Sphere",dimension,"S$dimension")
 end
 
 struct SnPoint <: MMPoint

@@ -6,7 +6,7 @@
 A Julia package to perform Image Processing on Images and Data having values
 on a manifold.
 the algorithms are based on the [Manfiold-valued Image Processing Toolbox](http://www.mathematik.uni-kl.de/imagepro/members/bergmann/mvirt/)
-(MVIRT) available as Matlab Source code.
+(MVIRT) and the [Manopt](http://www.manopt.org) toolbox, both available as Matlab Source code.
 
 ## Manifolds
   The manifold itself is the central type of this Julia package concerning

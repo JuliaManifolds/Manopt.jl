@@ -2,7 +2,7 @@
 #      Sn - The manifold of the n-dimensional sphere
 #  Point is a Point on the n-dimensional sphere.
 #
-export S1Point, S1TVector, S1Manifold
+export Circle, S1Point, S1TVector
 export symRem
 #
 # TODO: It would be nice to have an arbitrary real type here

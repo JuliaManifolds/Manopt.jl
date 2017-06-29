@@ -15,29 +15,29 @@ export proxTV, proxDistanceSquared, proxTVSquared
 """
     Manifold - an abstract Manifold to keep global information on a specific manifold
 """
-abstract Manifold
+abstract type Manifold end
 
 """
     MPoint - an abstract point on a Manifold
 """
-abstract MPoint
+abstract type MPoint end
 
 """
       MTVector - a point on a tangent plane of a base point, which might
   be null if the tangent space is fixed/known to spare memory.
 """
-abstract MTVector
+abstract type MTVector end
 
 # scale tangential vectors
-*{mT <:Manifold, T <: MTVector}(M::mT,ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
-*{mT <:Manifold, T <: MTVector}(M::mT,s::Number, ξ::T) = T(s*ξ.value,ξ.base)
-*{mT <:Manifold, T <: MTVector}(M::mT,ξ::Vector{T},s::Number) = s*ones(length(ξ))*ξ
-*{mT <:Manifold, T <: MTVector}(M::mT,s::Number, ξ::Vector{T}) = s*ones(length(ξ))*ξ
+*{T <: MTVector}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
+*{T <: MTVector}(s::Number, ξ::T) = T(s*ξ.value,ξ.base)
+*{T <: MTVector}(ξ::Vector{T},s::Number) = s*ones(length(ξ))*ξ
+*{T <: MTVector}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))*ξ
 # /
-/{mT <:Manifold, T <: MTVector}(M::mT,ξ::T,s::Number) = T(s/ξ.value,ξ.base)
-/{mT <:Manifold, T <: MTVector}(M::mT,s::Number, ξ::T) = T(s/ξ.value,ξ.base)
-/{mT <:Manifold, T <: MTVector}(M::mT,ξ::Vector{T},s::Number) = s*ones(length(ξ))/ξ
-/{mT <:Manifold, T <: MTVector}(M::mT,s::Number, ξ::Vector{T}) = s*ones(length(ξ))/ξ
+/{T <: MTVector}(ξ::T,s::Number) = T(s/ξ.value,ξ.base)
+/{T <: MTVector}(s::Number, ξ::T) = T(s/ξ.value,ξ.base)
+/{T <: MTVector}(ξ::Vector{T},s::Number) = s*ones(length(ξ))/ξ
+/{T <: MTVector}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))/ξ
 # + - of MTVectors
 function +{T <: MTVector}(ξ::T,ν::T)::T
   if sameBase(ξ,ν)
@@ -72,24 +72,24 @@ end
 #
 # proximal Maps
 """
-    proxDistance(f,g,λ)
+    proxDistance(M,λ,f,g)
   compute the proximal map with parameter λ of `distance(f,x)` for some fixed
   `MPoint` f
 """
-function proxDistance{mT <: Manifold, T <: MPoint}(M::mT,f::T,x::T,λ::Number)::T
+function proxDistance{mT <: Manifold, T <: MPoint}(M::mT,λ::Number,f::T,x::T)::T
   exp(M,x, min(λ, distance(M,f,x))*log(M,x,f))
 end
 
 """
-    proxDistanceSquared(M,f,g,λ)
+    proxDistanceSquared(M,λ,f,g)
   computes the proximal map of distance^2(f,x) for some
   fixed `MPoint` f with parameter `λ`
 """
-function proxDistanceSquared{mT <: Manifold T <: MPoint}(M::mT,f::T,λ::Number,x::T)::T
+function proxDistanceSquared{mT <: Manifold, T <: MPoint}(M::mT,λ::Number,f::T,x::T)::T
   return exp(M,x, λ/(1+λ)*log(M,x,f) )
 end
 """
-    proxTuple = proxTV(M,pointTuple,λ)
+    proxTuple = proxTV(M,λ,pointTuple)
 Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
 `λ`
 # Arguments
@@ -98,13 +98,13 @@ Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
 # Returns
 * `proxTuple` : resulting two-MPoint-Tuple of the proximal map
 """
-function proxTV{mT <: Manifold, T <: MPoint}(M::mT, pointTuple::Tuple{T,T}, λ::Number)::Tuple{T,T}
+function proxTV{mT <: Manifold, T <: MPoint}(M::mT,λ::Number, pointTuple::Tuple{T,T})::Tuple{T,T}
   step = min(0.5, λ/distance(M,pointTuple[1],pointTuple[2]))
   return (  exp(M,pointTuple[1], step*log(M,pointTuple[1],pointTuple[2])),
             exp(M,pointTuple[2], step*log(M,pointTuple[2],pointTuple[1])) )
 end
 """
-    proxTuple = proxTVSquared(pointTuple,λ)
+    proxTuple = proxTVSquared(M,λ,pointTuple)
  Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y)^2 with parameter
  `λ`
  # Arguments
@@ -115,7 +115,7 @@ end
  ---
  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function proxTVSquared{mT <: Manifold, T <: MPoint}(M::mT, pointTuple::Tuple{T,T},λ::Number)::Tuple{T,T}
+function proxTVSquared{mT <: Manifold, T <: MPoint}(M::mT,λ::Number, pointTuple::Tuple{T,T})::Tuple{T,T}
   step = λ/(1+2*λ)*distance(M, pointTuple[1],pointTuple[2])
   return (  exp(M, pointTuple[1], step*log(M, pointTuple[1],pointTuple[2])),
             exp(M, pointTuple[2], step*log(M, pointTuple[2],pointTuple[1])) )
@@ -141,8 +141,8 @@ end
   `x`, if not specified, the first value `f[1]` is unsigned
   * `λ` (`2`) initial value for the λ of the CPP algorithm
   * `MaxIterations` (`500`) maximal number of iterations
-  * `Method` (`GD`) wether to use Gradient Descent (`GD`) or Cyclic Proximal
-    Point (`CPP`) algorithm
+  * `Method` (`Gradient Descent`) wether to use Gradient Descent or `Cyclic
+      Proximal Point` algorithm
   * `MinimalChange` (`5*10.0^(-7)`) minimal change for the algorithm to stop
   * `Weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
   all are choren equal, i.e. `1/n*ones(n)` for `n=length(f)`.
@@ -157,17 +157,17 @@ function mean{mT <: Manifold, T <: MPoint}(M::mT, f::Vector{T}; kwargs...)::T
   Weights = get(kwargs_dict, "Weights", 1/length(f)*ones(length(f)))
   MaxIterations = get(kwargs_dict, "MaxIterations", 50)
   MinimalChange = get(kwargs_dict, "MinimalChange", 5*10.0^(-7))
-  Method = get(kwargs_dict, "Method", "Geodesic Distance")
+  Method = get(kwargs_dict, "Method", "Gradient Descent")
   λ = get(kwargs_dict, "λ", 2)
   iter=0
   xold = x
-  if Method == "GD"
+  if Method == "Gradient Descent"
     while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
       x = exp(M,x, sum(Weights.*[log(M,x,fi) for fi in f]))
       iter += 1
     end
-  elseif Method == "CPP"
+  elseif Method == "Cyclic Proximal Point"
     while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
       for i=1:lengthh(f)
@@ -203,8 +203,8 @@ end
   `x`, if not specified, the first value `f[1]` is unsigned
   * `λ` (`2`) initial value for the λ of the CPP algorithm
   * `MaxIterations` (`500`) maximal number of iterations
-  * `Method` (`GD`) wether to use Gradient Descent (`GD`) or Cyclic Proximal
-    Point (`CPP`) algorithm
+  * `Method` (`Gradient Descent`) wether to use Gradient Descent or `Cyclic
+      Proximal Point` algorithm
   * `MinimalChange` (`5*10.0^(-7)`) minimal change for the algorithm to stop
   * `StepSize` (`1`)
   * `Weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
@@ -220,16 +220,17 @@ function median{mT <: Manifold, T <: MPoint}(M::mT, f::Vector{T}; kwargs...)::T
   MinimalChange = get(kwargs_dict, "MinimalChange", 5*10.0^(-7))
   StepSize = get(kwargs_dict, "StepSize",1)
   Weights = get(kwargs_dict, "Weights", 1/length(f)*ones(length(f)))
+  Method = get(kwargs_dict, "Method", "Gradient Descent")
   iter=0
   xold = x
-  if Method == "GD"
+  if Method == "Gradient Descent"
     while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
       sumDistances = sum( Weights.*[distance(M,x,fi) for fi in f] )
       x = exp(M,x, StepSize/sumDistances * sum(Weights.* [ 1/( (distance(M,x,fi)==0)?1:distance(M,x,fi) )*log(M,x,fi) for fi in f]))
       iter += 1
     end
-  elseif Method == "CPP"
+  elseif Method == "Cyclic Proximal Point"
     while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
       for i=1:lengthh(f)
@@ -299,7 +300,7 @@ end
     distance(M,p,q)
   computes the gedoesic distance between two points on a manifold
 """
-function distance{mT <: Mnifold, T <: MPoint}(M::mT, p::T,q::T)::Number
+function distance{mT <: Manifold, T <: MPoint}(M::mT, p::T,q::T)::Number
   sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
@@ -325,7 +326,7 @@ end
   computes the tangential vector at p whose geodesic reaches q after time
   T = distance(Mp,q)
 """
-function log{mT<:Manifold, T<:MPoint, S<:MTVector}(M::mT,p::T,q::T)::MTVector
+function log{mT<:Manifold, T<:MPoint}(M::mT,p::T,q::T)::MTVector
   sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
