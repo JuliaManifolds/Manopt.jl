@@ -29,15 +29,15 @@ abstract MPoint
 abstract MTVector
 
 # scale tangential vectors
-*{T <: MTVector}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
-*{T <: MTVector}(s::Number, ξ::T) = T(s*ξ.value,ξ.base)
-*{T <: MTVector}(ξ::Vector{T},s::Number) = s*ones(length(ξ))*ξ
-*{T <: MTVector}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))*ξ
+*{mT <:Manifold, T <: MTVector}(M::mT,ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
+*{mT <:Manifold, T <: MTVector}(M::mT,s::Number, ξ::T) = T(s*ξ.value,ξ.base)
+*{mT <:Manifold, T <: MTVector}(M::mT,ξ::Vector{T},s::Number) = s*ones(length(ξ))*ξ
+*{mT <:Manifold, T <: MTVector}(M::mT,s::Number, ξ::Vector{T}) = s*ones(length(ξ))*ξ
 # /
-/{T <: MTVector}(ξ::T,s::Number) = T(s/ξ.value,ξ.base)
-/{T <: MTVector}(s::Number, ξ::T) = T(s/ξ.value,ξ.base)
-/{T <: MTVector}(ξ::Vector{T},s::Number) = s*ones(length(ξ))/ξ
-/{T <: MTVector}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))/ξ
+/{mT <:Manifold, T <: MTVector}(M::mT,ξ::T,s::Number) = T(s/ξ.value,ξ.base)
+/{mT <:Manifold, T <: MTVector}(M::mT,s::Number, ξ::T) = T(s/ξ.value,ξ.base)
+/{mT <:Manifold, T <: MTVector}(M::mT,ξ::Vector{T},s::Number) = s*ones(length(ξ))/ξ
+/{mT <:Manifold, T <: MTVector}(M::mT,s::Number, ξ::Vector{T}) = s*ones(length(ξ))/ξ
 # + - of MTVectors
 function +{T <: MTVector}(ξ::T,ν::T)::T
   if sameBase(ξ,ν)
@@ -56,7 +56,7 @@ function -{T <: MTVector}(ξ::T,ν::T)::T
   end
 end
 
-# compare Points
+# compare Points & vectors
 =={T <: MPoint}(p::T, q::T)::Bool = all(p.value == q.value)
 =={T <: MTVector}(ξ::T,ν::T)::Bool = ( sameBase(ξ,ν) && all(ξ.value==ν.value) )
 
@@ -76,20 +76,20 @@ end
   compute the proximal map with parameter λ of `distance(f,x)` for some fixed
   `MPoint` f
 """
-function proxDistance{T <: MPoint}(f::T,x::T,λ::Number)::T
-  exp(x, min(λ, distance(f,x))*log(x,f))
+function proxDistance{mT <: Manifold, T <: MPoint}(M::mT,f::T,x::T,λ::Number)::T
+  exp(M,x, min(λ, distance(M,f,x))*log(M,x,f))
 end
 
 """
-    proxDistanceSquared(f,g,λ)
+    proxDistanceSquared(M,f,g,λ)
   computes the proximal map of distance^2(f,x) for some
   fixed `MPoint` f with parameter `λ`
 """
-function proxDistanceSquared{T <: MPoint}(f::T,λ::Number,x::T)::T
-  return exp(x, λ/(1+λ)*log(x,f) )
+function proxDistanceSquared{mT <: Manifold T <: MPoint}(M::mT,f::T,λ::Number,x::T)::T
+  return exp(M,x, λ/(1+λ)*log(M,x,f) )
 end
 """
-    proxTuple = proxTV(pointTuple,λ)
+    proxTuple = proxTV(M,pointTuple,λ)
 Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
 `λ`
 # Arguments
@@ -98,10 +98,10 @@ Compute the proximal map prox_f(x,y) for f(x,y) = dist(x,y) with parameter
 # Returns
 * `proxTuple` : resulting two-MPoint-Tuple of the proximal map
 """
-function proxTV{T <: MPoint}(pointTuple::Tuple{T,T},λ::Number)::Tuple{T,T}
-  step = min(0.5, λ/distance(pointTuple[1],pointTuple[2]))
-  return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
-            exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
+function proxTV{mT <: Manifold, T <: MPoint}(M::mT, pointTuple::Tuple{T,T}, λ::Number)::Tuple{T,T}
+  step = min(0.5, λ/distance(M,pointTuple[1],pointTuple[2]))
+  return (  exp(M,pointTuple[1], step*log(M,pointTuple[1],pointTuple[2])),
+            exp(M,pointTuple[2], step*log(M,pointTuple[2],pointTuple[1])) )
 end
 """
     proxTuple = proxTVSquared(pointTuple,λ)
@@ -115,10 +115,10 @@ end
  ---
  ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function proxTVSquared{T <: MPoint}(pointTuple::Tuple{T,T},λ::Number)::Tuple{T,T}
-  step = λ/(1+2*λ)*distance(pointTuple[1],pointTuple[2])
-  return (  exp(pointTuple[1], step*log(pointTuple[1],pointTuple[2])),
-            exp(pointTuple[2], step*log(pointTuple[2],pointTuple[1])) )
+function proxTVSquared{mT <: Manifold, T <: MPoint}(M::mT, pointTuple::Tuple{T,T},λ::Number)::Tuple{T,T}
+  step = λ/(1+2*λ)*distance(M, pointTuple[1],pointTuple[2])
+  return (  exp(M, pointTuple[1], step*log(M, pointTuple[1],pointTuple[2])),
+            exp(M, pointTuple[2], step*log(M, pointTuple[2],pointTuple[1])) )
 end
 #
 # median & mean
@@ -149,8 +149,9 @@ end
   ---
   ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function mean{T <: MPoint}(f::Vector{T}; kwargs...)::T
+function mean{mT <: Manifold, T <: MPoint}(M::mT, f::Vector{T}; kwargs...)::T
   # collect optional values
+  # TODO: Optional values as a parameter dictionary?
   kwargs_dict = Dict(kwargs);
   x = get(kwargs_dict, "initialValue", f[1])
   Weights = get(kwargs_dict, "Weights", 1/length(f)*ones(length(f)))
@@ -161,16 +162,16 @@ function mean{T <: MPoint}(f::Vector{T}; kwargs...)::T
   iter=0
   xold = x
   if Method == "GD"
-    while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+    while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
-      x = exp(x, sum(Weights.*[log(x,fi) for fi in f]))
+      x = exp(M,x, sum(Weights.*[log(M,x,fi) for fi in f]))
       iter += 1
     end
   elseif Method == "CPP"
-    while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+    while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
       for i=1:lengthh(f)
-        x = proxDistanceSquared(x,f[i])
+        x = proxDistanceSquared(M,x,f[i])
       end
       iter += 1
     end
@@ -211,7 +212,7 @@ end
   ---
   ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function median{T <: MPoint}(f::Vector{T}; kwargs...)::T
+function median{mT <: Manifold, T <: MPoint}(M::mT, f::Vector{T}; kwargs...)::T
   # collect optional values
   kwargs_dict = Dict(kwargs);
   x = get(kwargs_dict, "initialValue", f[1])
@@ -222,17 +223,17 @@ function median{T <: MPoint}(f::Vector{T}; kwargs...)::T
   iter=0
   xold = x
   if Method == "GD"
-    while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+    while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
-      sumDistances = sum( Weights.*[distance(x,fi) for fi in f] )
-      x = exp(x, StepSize/sumDistances * sum(Weights.* [ 1/( (distance(x,fi)==0)?1:distance(x,fi) )*log(x,fi) for fi in f]))
+      sumDistances = sum( Weights.*[distance(M,x,fi) for fi in f] )
+      x = exp(M,x, StepSize/sumDistances * sum(Weights.* [ 1/( (distance(M,x,fi)==0)?1:distance(M,x,fi) )*log(M,x,fi) for fi in f]))
       iter += 1
     end
   elseif Method == "CPP"
-    while (  ( (distance(x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
+    while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
       for i=1:lengthh(f)
-        x = proxDistance(x,f[i])
+        x = proxDistance(M,x,f[i])
       end
       iter += 1
     end
@@ -245,43 +246,43 @@ end
 #
 # Mid point and geodesics
 """
-    midPoint(x,z)
+    midPoint(M,x,z)
   Compute the (geodesic) mid point of x and z.
  # Arguments
  * `p`,`q` : two `MPoint`s
  # Output
  * `m` : resulting mid point
 """
-function midPoint{T <: MPoint}(p::T, q::T)::T
-  return exp(p,0.5*log(p,q))
+function midPoint{mT <: Manifold, T <: MPoint}(M::mT,p::T, q::T)::T
+  return exp(M,p,0.5*log(p,q))
 end
 """
-    geodesic(p,q)
+    geodesic(M,p,q)
   return a function to evaluate the geodesic connecting p and q
 """
-function geodesic{T <: MPoint}(p::T,q::T)::Function
-  return (t -> exp(p,t*log(p,q)))
+function geodesic{mT <: Manifold, T <: MPoint}(M::mT, p::T,q::T)::Function
+  return (t -> exp(M,p,t*log(M,p,q)))
 end
 """
-    geodesic(p,q,n)
+    geodesic(M,p,q,n)
   returns vector containing the equispaced n sample-values along the geodesic
 """
-function geodesic{T <: MPoint}(p::T,q::T,n::Integer)::Vector{T}
-  geo = geodesic(p,q);
+function geodesic{mT <: Manifold, T <: MPoint}(M::mT, p::T,q::T,n::Integer)::Vector{T}
+  geo = geodesic(M,p,q);
   return [geo(t) for t in linspace(0,1,n)]
 end
 """
-    geodesic(p,q,t)
+    geodesic(Mp,q,t)
   returns the point along the geodesic from `p`to `q` given by the `Float64` `t` (0,1).
 """
-geodesic{T <: MPoint}(p::T,q::T,t::Number)::T = geodesic(p,q)(t)
+geodesic{mT <: Manifold, T <: MPoint}(M::mT,p::T,q::T,t::Number)::T = geodesic(p,q)(t)
 """
-    geodesic(p,q,T)
+    geodesic(Mp,q,T)
   returns vector containing the points along the geodesic from `p`to `q` given
   by vector of `Number`s.
 """
-function geodesic{T <: MPoint, S <: Number}(p::T,q::T,v::Vector{S})::Vector{T}
-  geo = geodesic(p,q);
+function geodesic{mT <: Manifold, T <: MPoint, S <: Number}(M::mT, p::T,q::T,v::Vector{S})::Vector{T}
+  geo = geodesic(M,p,q);
   return [geo(t) for t in v]
 end
 #
@@ -290,57 +291,61 @@ end
     addNoise(P,σ)
   adds noise of standard deviation `σ` to the manifod valued data array `P`.
 """
-function addNoise{T <: MPoint}(P::T,σ::Number)::T
+function addNoise{mT <: Manifold, T <: MPoint}(M::mT,P::T,σ::Number)::T
   sig1 = string( typeof(P) ); sig2 = string( typeof(aigma) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 """
-    distance(p,q)
+    distance(M,p,q)
   computes the gedoesic distance between two points on a manifold
 """
-function distance(p::MPoint,q::MPoint)::Number
+function distance{mT <: Mnifold, T <: MPoint}(M::mT, p::T,q::T)::Number
   sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 """
-    dot(ξ,ν)
+    dot(M,ξ,ν)
   computes the inner product of two tangential vectors, if they are in the same
   tangential space
 """
-function dot(ξ::MTVector,ν::MTVector)::Number
+function dot{mT <: Manifold, T <: MTVector}(M::mT, ξ::T, ν::T)::Number
   sig1 = string( typeof(ξ) ); sig2 = string( typeof(ν) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 """
-    exp(p,ξ)
+    exp(M,p,ξ)
   computes the exponential map at p for the tangential vector ξ
 """
-function exp(p::MPoint,ξ::MTVector)::MPoint
+function exp{mT<:Manifold, T<:MPoint, S<:MTVector}(M::mT, p::T, ξ::S)::MPoint
   sig1 = string( typeof(p) ); sig2 = string( typeof(ξ) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 """
-    log(p,q)
+    log(M,p,q)
   computes the tangential vector at p whose geodesic reaches q after time
-  T = distance(p,q)
+  T = distance(Mp,q)
 """
-function log(p::MPoint,q::MPoint)::MTVector
+function log{mT<:Manifold, T<:MPoint, S<:MTVector}(M::mT,p::T,q::T)::MTVector
   sig1 = string( typeof(p) ); sig2 = string( typeof(q) )
   throw( ErrorException(" Not Implemented for types $sig1 and $sig2 " ) )
 end
 """
-    manifoldDimension(p)
+    manifoldDimension(M) or manifoldDimension(p)
   returns the dimension of the manifold the point p belongs to.
 """
-function manifoldDimension(p::MPoint)::Integer
+function manifoldDimension{T<:MPoint}(p::T)::Integer
   sig1 = string( typeof(p) );
-  throw( ErrorException(" Not Implemented for types $sig1 " ) )
+  throw( ErrorException(" Not Implemented for manifodl points $sig1 " ) )
+end
+function manifoldDimension{T<:Manifold}(M::T)::Integer
+  sig1 = string( typeof(M) );
+  throw( ErrorException(" Not Implemented for manifold $sig1 " ) )
 end
 """
-    norm(ξ)
+    norm(M,ξ)
   computes the lenth of a tangential vector
 """
-function norm(ξ::MTVector)::Number
+function norm{mT<:Manifold, T<:MTVector}(M::mT,ξ::T)::Number
   sig1 = string( typeof(ξ) );
   throw( ErrorException(" Not Implemented for types $sig1 " ) )
 end
@@ -348,7 +353,7 @@ end
     variance(f)
   returns the variance of the set of pints on a maniofold.
 """
-function variance{T<:MPoint}(f::Vector{T})::Number
-  meanF = mean(f);
-  return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(meanF,fi)^2 for fi in f])
+function variance{mT<:Manifold,T<:MPoint}(M::mT,f::Vector{T})::Number
+  meanF = mean(M,f);
+  return 1/( (length(f)-1)*manifoldDimension(f[1]) ) * sum( [ dist(M,meanF,fi)^2 for fi in f])
 end

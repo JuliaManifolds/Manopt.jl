@@ -24,11 +24,11 @@ struct SnTVector <: MMTVector
   SnTVector(value::Vector,base::Nullable{SnPoint}) = new(value,base)
 end
 
-function distance(p::SnPoint,q::SnPoint)::Number
+function distance(M::Sphere,p::SnPoint,q::SnPoint)::Number
   return acos(dot(p.value,q.value))
 end
 
-function dot(ξ::SnTVector, ν::SnTVector)::Number
+function dot(M::Sphere,ξ::SnTVector, ν::SnTVector)::Number
   if sameBase(ξ,ν)
     return dot(ξ.value,ν.value)
   else
@@ -37,7 +37,7 @@ function dot(ξ::SnTVector, ν::SnTVector)::Number
   end
 end
 
-function exp(p::SnPoint,ξ::SnTVector,t=1.0)::SnPoint
+function exp(M::Sphere,p::SnPoint,ξ::SnTVector,t=1.0)::SnPoint
   len = norm(ξ.value)
   if len < eps(Float64)
     return p
@@ -46,7 +46,7 @@ function exp(p::SnPoint,ξ::SnTVector,t=1.0)::SnPoint
   end
 end
 
-function log(p::SnPoint,q::SnPoint,includeBase=false)::SnTVector
+function log(M::Sphere,p::SnPoint,q::SnPoint,includeBase=false)::SnTVector
   scp = dot(p.value,q.value)
   ξvalue = q.value-scp*p.value
   ξvnorm = norm(ξvalue)
@@ -64,10 +64,18 @@ end
 function manifoldDimension(p::SnPoint)::Integer
   return length(p.value)-1
 end
-function norm(ξ::SnTVector)::Number
+function manifoldDimension(M::Sphere)::Integer
+  return M.dimension
+end
+function norm(M::Sphere,ξ::SnTVector)::Number
   return norm(ξ.value)
 end
-
+#
+#
+# --- Display functions for the objects/types
+function show(io::IO, M::Sphere)
+    print(io, "The Manifold $(M.name).")
+  end
 function show(io::IO, m::SnPoint)
     print(io, "Sn($(m.value))")
 end
