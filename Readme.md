@@ -18,13 +18,7 @@ the algorithms are based on the [Manfiold-valued Image Processing Toolbox](http:
   the manifold to `M` or a specific manifold to a unique abbreviation (e.g. `Sn` for the sphere)
   * `MTVector` a manifold tangential vector with the same naming convention as above replacing again the `M` shorthand for manifold
 
-The following manifolds are available:
-* `Manifold.jl` the general (`abstract`) manifold containing functions and algorithms applicable to all manifolds as well as fallbacks for functions that may be needed for algorithms to run (e.g. each non-abstract manifold should implement a `dist(M,x,y)` or )
-* `MatrixManifold.jl` (`MM`) and `abstract` manifold unifying methods to apply for matrix manifolds.
-* `Sphere.jl` (`Sn`) the n-dimensional Sphere represented by n+1-dimensional vectors
-* `Circle.jl` (`S1`) the 1-dimensional Sphere, i.e. the circle. Though the `S1` is a special case of the sphere, the `Sphere.jl`
-* works within the embedding on \(\mathbb R^2\), thi class represents the `S1Points` as angles.
-
+	For an overview of already available manifolds see [Documentation.md](Documentation.md)
 ## Functions available for Manifolds
 
 Implemented on the most general level for `Manifold`
