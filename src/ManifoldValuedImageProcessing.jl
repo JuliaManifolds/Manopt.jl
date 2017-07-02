@@ -17,6 +17,8 @@ module ManifoldValuedImageProcessing
   include("manifolds/Sphere.jl")
 # algorithms
   include("CPPAlgorithms.jl")
+# helpers
+  include("helpers/imageHelpers.jl")
 # data
   include("artificialDataFunctions.jl")
 end

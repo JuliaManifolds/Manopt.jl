@@ -1,6 +1,6 @@
 using ManifoldValuedImageProcessing
 using Base.Test
-tests = ["testSn","testProximalMaps"]
+tests = ["testSn","testProximalMaps","testGraphConstruction"]
 
 @testset "ManifoldValuedImageProcessing Tests" begin
   for t in tests
