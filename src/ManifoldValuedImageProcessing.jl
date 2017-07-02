@@ -8,10 +8,13 @@
 """
 module ManifoldValuedImageProcessing
 # Manifolds
-  include("Manifold.jl") #base type
-  include("MatrixManifold.jl")
-  include("Sphere.jl")
-  include("Circle.jl")
+  include("manifolds/Manifold.jl") #base type
+  # matrix manifold – common functions
+  include("manifolds/MatrixManifold.jl")
+  # specific manifolds
+  include("manifolds/Circle.jl")
+  include("manifolds/Euclidean.jl")
+  include("manifolds/Sphere.jl")
 # algorithms
   include("CPPAlgorithms.jl")
 # data

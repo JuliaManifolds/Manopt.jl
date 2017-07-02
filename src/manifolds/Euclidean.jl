@@ -1,7 +1,7 @@
 #
 #      Rn - The manifold of the n-dimensional (real valued) Euclidean space
 #
-export Sphere, SnPoint, SnTVector
+export Euclideam, RnPoint, RnTVector
 
 struct Euclidean <: MatrixManifold
   name::String
@@ -42,6 +42,7 @@ end
 
 function log(M::Euclidean,p::RnPoint,q::RnPoint,includeBase=false)::RnTVector
 	return RnTVector(p.value - q.value)
+end
 function manifoldDimension(p::RnPoint)::Integer
   return length(p.value)
 end
@@ -54,13 +55,13 @@ end
 #
 #
 # --- Display functions for the objects/types
-function show(io::IO, M::Sphere)
+function show(io::IO, M::Euclidean)
     print(io, "The Manifold $(M.name).")
   end
-function show(io::IO, m::SnPoint)
+function show(io::IO, m::RnPoint)
     print(io, "Rn($(m.value))")
 end
-function show(io::IO, m::SnTVector)
+function show(io::IO, m::RnTVector)
   if !isnull(m.base)
     print(io, "RnT_$(m.base.value)($(m.value))")
   else
