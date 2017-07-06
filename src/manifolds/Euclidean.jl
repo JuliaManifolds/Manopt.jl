@@ -32,7 +32,7 @@ function distance(M::Euclidean,p::RnPoint,q::RnPoint)::Number
 end
 
 function dot(M::Euclidean,ξ::RnTVector, ν::RnTVector)::Number
-  if sameBase(ξ,ν)
+  if checkBase(ξ,ν)
     return dot(ξ.value,ν.value)
   else
     throw(ErrorException("Can't compute dot product of two tangential vectors belonging to

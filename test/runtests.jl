@@ -1,8 +1,8 @@
-using ManifoldValuedImageProcessing
+using Manopt
 using Base.Test
-tests = ["testSn","testProximalMaps","testGraphConstruction"]
+tests = ["testSn","testSPD","testProximalMaps","testGraphConstruction"]
 
-@testset "ManifoldValuedImageProcessing Tests" begin
+@testset "Manopt Tests" begin
   for t in tests
     include("$(t).jl")
   end

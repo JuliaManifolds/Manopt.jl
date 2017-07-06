@@ -39,7 +39,7 @@ abstract type MTVector end
 /{T <: MTVector}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))/ξ
 # + - of MTVectors
 function +{T <: MTVector}(ξ::T,ν::T)::T
-  if sameBase(ξ,ν)
+  if checkBase(ξ,ν)
     return T(ξ.value+ν.value,ξ.base)
   else
     throw(ErrorException("Can't add two tangential vectors belonging to
@@ -47,7 +47,7 @@ function +{T <: MTVector}(ξ::T,ν::T)::T
   end
 end
 function -{T <: MTVector}(ξ::T,ν::T)::T
-  if sameBase(ξ,ν)
+  if checkBase(ξ,ν)
     return T(ξ.value-ν.value,ξ.base)
   else
     throw(ErrorException("Can't subtract two tangential vectors belonging to
@@ -57,16 +57,22 @@ end
 
 # compare Points & vectors
 =={T <: MPoint}(p::T, q::T)::Bool = all(p.value == q.value)
-=={T <: MTVector}(ξ::T,ν::T)::Bool = ( sameBase(ξ,ν) && all(ξ.value==ν.value) )
+=={T <: MTVector}(ξ::T,ν::T)::Bool = ( checkBase(ξ,ν) && all(ξ.value==ν.value) )
 
-function sameBase{T <: MTVector}(ξ::T, ν::T)::Bool
-  if (isnull(ξ.base) || isnull(ν.base))
-    return true # one base null is treated as correct
-  elseif ξ.base.value == ν.base.value
-    return true # if both are given and are the same
-  else
-    return false
+function checkBase{T <: MTVector}(ξ::T, ν::T)::Bool
+  if (!isnull(ξ.base)) && (!isnull(ν.base)) &&
+		 		(get(ξ.base).value != get(ν.base).value)
+	  	throw( ErrorException("checkBase - The two tangent vectors "string(ξ)" and ("string(ν)") do not have the same (non-null) base vector) – use parallel transport before combining these.") )
+			return false
   end
+	return true
+end
+function checkBase{T <: MPoint, S <: MTVector}(p::T, ξ::S)::Bool
+  if (!isnull(ξ.base)) && (get(ξ.base).value != p.value)
+		throw( ErrorException("checkBase - The tangent vector "string(ξ)" does not have the manifold point "string(p)" as a (non-null) base.") )
+		return false
+	end
+	return true
 end
 #
 #
@@ -191,5 +197,5 @@ function norm{mT<:Manifold, T<: MPoint, S<:MTVector}(M::mT,p::T,ξ::S)::Number
 	sig1 = string( typeof(ξ) )
 	sig2 = string( typeof(p) )
 	sig3 = string( typeof(M) )
-  throw( ErrorException(" Not Implemented for types $sig1 in the tangent space of a $sig2 on the manifold $sig3" ) )
+  throw( ErrorException("Norm - Not Implemented for types $sig1 in the tangent space of a $sig2 on the manifold $sig3" ) )
 end

@@ -36,11 +36,11 @@ function distance(M::Circle, p::S1Point,q::S1Point)::Float64
 end
 
 function dot(M::Circle, ξ::S1TVector, ν::S1TVector)::Float64
-  if sameBase(ξ,ν)
+  if checkBase(ξ,ν)
     return ξ.value*ν.value
   else
-    throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
-      different tangential spaces."))
+    throw(ErrorException("Can't compute dot product of two tangential vectors
+		belonging to different tangential spaces."))
   end
 end
 

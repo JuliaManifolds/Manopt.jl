@@ -29,24 +29,23 @@ function distance(M::Sphere,p::SnPoint,q::SnPoint)::Number
 end
 
 function dot(M::Sphere,ξ::SnTVector, ν::SnTVector)::Number
-  if sameBase(ξ,ν)
-    return dot(ξ.value,ν.value)
-  else
-    throw(ErrorException("Can't compute dot product of two tangential vectors belonging to
-      different tangential spaces."))
+  if checkBase(ξ,ν)
+  	return dot(ξ.value,ν.value)
   end
 end
 
 function exp(M::Sphere,p::SnPoint,ξ::SnTVector,t=1.0)::SnPoint
-  len = norm(ξ.value)
-  if len < eps(Float64)
-    return p
-  else
-    return SnPoint(cos(t*len)*p.value + sin(t*len)/len*ξ.value)
-  end
+	if checkBase(p,ξ)
+  	len = norm(ξ.value)
+  	if len < eps(Float64)
+    	return p
+  	else
+    	return SnPoint(cos(t*len)*p.value + sin(t*len)/len*ξ.value)
+  	end
+	end
 end
 
-function log(M::Sphere,p::SnPoint,q::SnPoint,includeBase=false)::SnTVector
+function log(M::Sphere,p::SnPoint,q::SnPoint,includeBase::Bool=false)::SnTVector
   scp = dot(p.value,q.value)
   ξvalue = q.value-scp*p.value
   ξvnorm = norm(ξvalue)
