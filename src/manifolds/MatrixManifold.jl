@@ -8,9 +8,18 @@ export MatrixManifold, MMPoint, MMTVector
 export transpose
 
 abstract type MatrixManifold <: Manifold end
+"""
+	MMPoint - A point on a matrix manifold
+	# Elements
+	value  - (like Manifold) containg a representation of the manifold point
+	decompostion – cache for a decomposition of value, e.g. into SVD
+"""
 abstract type MMPoint <: MPoint end
-abstract type MMTVector <: MTVector end
 
+abstract type MMTVector <: MTVector end
+#
+#
+# promote operations to the value field of MMPoint and MMTVector
 +{T <: MMPoint}(x::T,y::T)::MMPoint = T(x.value + y.value)
 -{T <: MMPoint}(x::T,y::T)::MMPoint = T(x.value - y.value)
 *{T <: MMPoint}(x::T,y::T)::Array = transpose(x.value)*y.value

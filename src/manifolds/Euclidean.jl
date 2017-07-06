@@ -3,6 +3,10 @@
 #
 export Euclideam, RnPoint, RnTVector
 
+import Base: exp, log, +, -, *, /, ==, show
+# introduce new functions
+export distance, exp, log, norm, dot, manifoldDimension, show
+
 struct Euclidean <: MatrixManifold
   name::String
   dimension::Int
