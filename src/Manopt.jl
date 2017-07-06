@@ -1,22 +1,24 @@
 """
-    ManifoldValuedImageProcessing.jl
-  A package to perform Image processing methods on images and data whose values
-  lie on a given manifold.
+    Manopt.jl
+  A package to perform Optimization methods on manifold in Julia uncluding
+	high dimensional power manifolds to tacke manifold-valued image processing.
 
   See Readme.md for an exaustive list of features and examples/ for several
   examples that can just je `include`d.
 """
-module ManifoldValuedImageProcessing
+module Manopt
 # Manifolds
   include("manifolds/Manifold.jl") #base type
   # matrix manifold – common functions
   include("manifolds/MatrixManifold.jl")
   # specific manifolds
   include("manifolds/Circle.jl")
-  include("manifolds/Euclidean.jl")
+	include("manifolds/Euclidean.jl")
+	include("manifolds/SymmetricPositiveDefinite.jl")
   include("manifolds/Sphere.jl")
 # algorithms
-  include("CPPAlgorithms.jl")
+	include("algorithms/simpleAlgorithms.jl")
+	include("algorithms/proximalMaps.jl")
 # helpers
   include("helpers/imageHelpers.jl")
 # data

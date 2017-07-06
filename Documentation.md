@@ -1,7 +1,11 @@
-# Manifold Optimization and Imaging
-The `Manoptim.jl` Julia package provides all necessary tools to perform optimization on manifolds and apply these methods to manifold-valued image processing. This file intends to fix notations both mathematical and with respect to source code throughout this package. For an introduction to manifolds, we refer to [AMS08].
+# Manifold optimization
+The `Manopt.jl` Julia package provides all necessary tools to perform optimization on manifolds and apply these methods to manifold-valued image processing. This file intends to fix notations both mathematical and with respect to source code throughout this package. For an introduction to manifolds, we refer to [AMS08].
 
 ## Manifolds
+
+All manifolds inherit from `Manifold`to store their main properties, which is most prominently the manifold dimension and the name of the manifolds. Furthermore there are two types accompanying each manifold – a point on the manifold inheriting from `MPoint` and the tangential vector `MTVector`. For both the term manifold is shortened to `M` for concise naming. Each manifold also inherits such a short abbreviation, see `Abbr.` in the following table.
+Furthermore there is an abstract type `MatrixManifold` (Abbreviation `MM`) that overloads the operands `*,/,+,-` for the `MMPoint`.
+Furthermore each `MMPOint`is indeed a matrix, so they also posess an array to store its decomposition, namely for \(\mathbf{A}\in\mathbb R^{n,m}\) its singular value decomposition \(\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}\).
 
 File | Abbr. |  Manifold \(\mathcal M\) | Comment
 -----|-------|--------------------------|---------
