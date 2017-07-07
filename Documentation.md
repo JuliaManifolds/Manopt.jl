@@ -11,6 +11,7 @@ File | Abbr. |  Manifold \(\mathcal M\) | Comment
 -----|-------|--------------------------|---------
 `Circle.jl`  | `S1`| \(1\)-Sphere \(\mathbb S^1\) | represented as angles \(p_i\in[-\pi,\pi)\)
 `Euclidean.jl` | `Rn` | \(n\)-dimensional Euclidean space \(\mathbb R^n\)
+`SymmetricPositiveDefinite.jl` | `SPD` | \(n\times n\) symmetric positive matrices | using the affine metric
 `Sphere.jl` | `Sn` | \(n\)-dimensional Sphere \(\mathbb S^n\) | embedded in \(\mathbb R^{n+1}\)
 
 ## A summary of notations

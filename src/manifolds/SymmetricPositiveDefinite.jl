@@ -50,6 +50,7 @@ function decomp!(p::SPDPoint,cache::Bool=true)::Array{Matrix{Float64},1}
 		return p.decomposition
 	end
 end
+
 function exp(M::SymmetricPositiveDefinite,p::SPDPoint,ξ::SPDTVector,t::Float64=1.0, cache::Bool=true)
 	if checkBase(p,ξ)
 	  #if norm(M,p,ξ) == 0
@@ -59,14 +60,34 @@ function exp(M::SymmetricPositiveDefinite,p::SPDPoint,ξ::SPDTVector,t::Float64=
 		  U = svd1[1]
 		  S = copy(svd1[2])
 		  Ssqrt = sqrt.(diag(S))
-		  SsqrtInv = 1./Ssqrt
+		  SsqrtInv = diagm(1./Ssqrt)
 	  	pSqrt = U*diagm(Ssqrt)*U.'
-  		T = U*S*U.'*(t.*ξ.value)*U*S*U.';
+  		T = U*SsqrtInv*U.'*(t.*ξ.value)*U*SsqrtInv*U.';
 		  svd2 = svd(T)
 		  Se = diagm(exp.(svd2[2]))
 		  Ue = svd2[1]
 		  return SPDPoint(pSqrt*Ue*Se*Ue.'*pSqrt)
 		#end
+	end
+end
+
+function log(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint, includeBase::Bool=false,cache::Bool=true)
+	svd1 = decomp!(p)
+	U = svd1[1]
+	S = copy(svd1[2])
+	Ssqrt = sqrt.(diag(S))
+	SsqrtInv = diagm(1./Ssqrt)
+	Ssqrt = diagm(Ssqrt)
+  pSqrt = U*S*U.'
+	T = U*SsqrtInv*U.'*q.value*U*SsqrtInv*U.'
+	svd2 = svd(T)
+	Se = diagm(log.(svd2[2]))
+	Ue = svd2[1]
+	Xi = pSqrt*Ue*Se*Ue.'*pSqrt
+	if includeBase
+		return SPDTVector(Xi,p)
+	else
+		return SPDTVector(Xi)
 	end
 end
 

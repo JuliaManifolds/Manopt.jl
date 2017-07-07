@@ -131,7 +131,7 @@ function addNoise{mT <: Manifold, T <: MPoint}(M::mT,P::T,σ::Number)::T
   sig1 = string( typeof(P) )
   sig2 = string( typeof(σ) )
   sig3 = string( typeof(M) )
-  throw( ErrorException(" addNoise – not Implemented for Point $sig1 and $sig2 on the manifold $sig3.") )
+  throw( ErrorException(" addNoise – not Implemented for Point $sig1 and standard deviation of type $sig2 on the manifold $sig3.") )
 end
 """
     distance(M,p,q)
@@ -157,10 +157,13 @@ function dot{mT <: Manifold, T <: MTVector}(M::mT, ξ::T, ν::T)::Number
 end
 """
     exp(M,p,ξ)
-  computes the exponential map at p for the tangential vector ξ=ξp
+  computes the exponential map at p for the tangential vector ξ=ξ_p
   on the manifold `M`.
+
+	Optional Arguments (standard value)
+	* cache (true) : cache intermediate results for a faster exponential map at p for further runs
 """
-function exp{mT<:Manifold, T<:MPoint, S<:MTVector}(M::mT, p::T, ξ::S)::MPoint
+function exp{mT<:Manifold, T<:MPoint, S<:MTVector}(M::mT, p::T, ξ::S,cache::Bool=true)::MPoint
   sig1 = string( typeof(p) )
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(M) )
@@ -170,8 +173,14 @@ end
     log(M,p,q)
   computes the tangential vector at p whose unit speed geodesic reaches q after time T = distance(Mp,q) (not t) (note that the geodesic above is [0,1]
   parametrized).
+
+	Optional Arguments (standard value)
+	* includeBase (false) : include the base withing the resulting MTVector,
+	 	makes validity checks more reliable/possivle but also requires more memory
+	* cache (true) : cache intermediate results for a faster exponential map at p for further runs
+
 """
-function log{mT<:Manifold, T<:MPoint}(M::mT,p::T,q::T)::MTVector
+function log{mT<:Manifold, T<:MPoint}(M::mT,p::T,q::T,includeBase::Bool=false,cache::Bool=true)::MTVector
   sig1 = string( typeof(p) )
   sig2 = string( typeof(q) )
   sig3 = string( typeof(M) )
