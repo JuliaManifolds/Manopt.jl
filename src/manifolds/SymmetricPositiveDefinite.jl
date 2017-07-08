@@ -91,6 +91,43 @@ function log(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint, includeBase::
 	end
 end
 
+function distance(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint)::Float64
+  # shortest way to compute
+	# sqrt(trace(log(sqrt(p)^-1 q sqrt(p)^-1)^2)
+	# is to determine the generalized eigenvalus of XDV=Y we can
+	# compute from these sqrt(sum(abs(log(D)).^2))
+	return sqrt(sum(log.(abs.(eig(p.value,q.value)[1])).^2));
+end
+
+function dot(M::SymmetricPositiveDefinite, p::SPDPoint, ξ::SPDTVector, ν::SPDTVector, cache::Bool=true)
+	svd1 = decomp!(p,cache)
+	U = svd1[1]
+	S = copy(svd1[2])
+	SInv = diagm(1./diag(S))
+	return trace(ξ.value*U*SInv*U.'*ν.value*U*Sing*U.')
+end
+
+function parallelTransport(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint,ξ::SPDTVector,t::Float64=1.0,cache::Bool=true)
+	svd1 = decomp!(p,cache)
+	U = svd1[1]
+	S = copy(svd1[2])
+	Ssqrt = sqrt.(diag(S))
+	SsqrtInv = diagm(1./Ssqrt)
+	Ssqrt = diagm(Ssqrt)
+	pSqrt = U*Ssqrt*U.'
+  pSqrtInv = U*SsqrtInv*U.'
+	tξ = pSqrtInv*ξ.value*pSqrtInv
+	tQ = pSqrtInv*q.value*pSqrtInv
+	svd2 = svd(tQ)
+	Se = diagm(log.(svd2[2]))
+	Ue = svd2[1]
+	tQ2 = Ue*Se*Ue.'
+	svd3 = svd(tQ2)
+	Sf = diagm(exp.(svd3[2]))
+	Uf = svd3[1]
+	return pSqrt*Uf*Sf*Uf.'*tξ*Uf*Sf*Ef.'*pSqrt
+end
+
 function show(io::IO, M::SymmetricPositiveDefinite)
     print(io, "The Manifold $(M.name).")
   end

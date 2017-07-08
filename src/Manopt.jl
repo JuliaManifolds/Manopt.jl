@@ -4,7 +4,7 @@
 	high dimensional power manifolds to tacke manifold-valued image processing.
 
   See Readme.md for an exaustive list of features and examples/ for several
-  examples that can just je `include`d.
+  examples that can just be `include`d.
 """
 module Manopt
 # Manifolds
