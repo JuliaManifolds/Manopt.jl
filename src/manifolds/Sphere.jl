@@ -2,7 +2,12 @@
 #      Sn - The manifold of the n-dimensional sphere
 #  Point is a Point on the n-dimensional sphere.
 #
-export Sphere, SnPoint, SnTVector
+import Base.LinAlg: norm, dot
+import Base: exp, log, show
+
+export Sphere, SnPoint, SnTVector,show
+export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+
 
 struct Sphere <: MatrixManifold
   name::String
@@ -60,28 +65,34 @@ function log(M::Sphere,p::SnPoint,q::SnPoint,includeBase::Bool=false)::SnTVector
     return SnTVector(value)
   end
 end
-function manifoldDimension(p::SnPoint)::Integer
-  return length(p.value)-1
-end
-function manifoldDimension(M::Sphere)::Integer
-  return M.dimension
-end
-function norm(M::Sphere,ξ::SnTVector)::Number
-  return norm(ξ.value)
+
+manifoldDimension(p::SnPoint)::Integer = length(p.value)-1
+
+manifoldDimension(M::Sphere)::Integer = M.dimension
+
+norm(M::Sphere, ξ::SnTVector)::Number = norm(ξ.value)
+
+function parallelTransport(M::Sphere, p::SnPoint, q::SnPoint, ξ::SnTVector)
+	if checkBase(p,ξ)
+		ν::SnTVector = log(M,p,q)
+		νL::Float64 = norm(M,ν)
+		if νL > 0
+			ν = ν/νL
+    	if isnull(ξ.base)
+				# remove p-coponent, add q-component (which is also by substraction - work on value to not have basechecks)
+				return SnTVector(ξ.value - dot(M,ν,ξ)*(ν.value + log(M,q,p).value/νL));
+			else # add base
+				return SnTVector(ξ.value - dot(M,ν,ξ)*(ν + log(M,q,p).value/νL),q);
+			end
+		else
+			# if length of ν is 0, we have p=q and hence ξ is unchanged
+			return ξ
+		end
+	end
 end
 #
 #
 # --- Display functions for the objects/types
-function show(io::IO, M::Sphere)
-    print(io, "The Manifold $(M.name).")
-  end
-function show(io::IO, m::SnPoint)
-    print(io, "Sn($(m.value))")
-end
-function show(io::IO, m::SnTVector)
-  if !isnull(m.base)
-    print(io, "SnT_$(m.base.value)($(m.value))")
-  else
-    print(io, "SnT($(m.value))")
-  end
-end
+show(io::IO, M::Sphere) = print(io, "The Manifold $(M.name).")
+show(io::IO, p::SnPoint) = print(io, "Sn($(p.value))")
+show(io::IO, ξ::SnTVector) = isnull(ξ.base) ? print(io, "SnT($(ξ.value))") : print(io, "SnT_$(ξ.base.value)($(ξ.value))")
