@@ -9,8 +9,8 @@
 import Base.LinAlg: svd, norm, dot
 import Base: exp, log, show
 
-export SymmetricPositiveDefinite, SPDPoint, SPDTVector
-export distance, exp, log, norm, dot, manifoldDimension, show
+export SymmetricPositiveDefinite, SPDPoint, SPDTVector, shoq
+export distance, dot, exp, norm, dot, manifoldDimension, parallelTransport
 
 struct SymmetricPositiveDefinite <: MatrixManifold
   name::String
@@ -78,27 +78,26 @@ function log(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint, includeBase::
 	Ssqrt = sqrt.(diag(S))
 	SsqrtInv = diagm(1./Ssqrt)
 	Ssqrt = diagm(Ssqrt)
-  pSqrt = U*S*U.'
+  pSqrt = U*Ssqrt*U.'
 	T = U*SsqrtInv*U.'*q.value*U*SsqrtInv*U.'
 	svd2 = svd(T)
 	Se = diagm(log.(svd2[2]))
 	Ue = svd2[1]
-	Xi = pSqrt*Ue*Se*Ue.'*pSqrt
+	ξ = pSqrt*Ue*Se*Ue.'*pSqrt
 	if includeBase
-		return SPDTVector(Xi,p)
+		return SPDTVector(ξ,p)
 	else
-		return SPDTVector(Xi)
+		return SPDTVector(ξ)
 	end
 end
 
+# shortest way to compute
+# sqrt(trace(log(sqrt(p)^-1 q sqrt(p)^-1)^2)
+# is to determine the generalized eigenvalus of XDV=Y we can
+# compute from these sqrt(sum(abs(log(D)).^2))
 function distance(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint)::Float64
-  # shortest way to compute
-	# sqrt(trace(log(sqrt(p)^-1 q sqrt(p)^-1)^2)
-	# is to determine the generalized eigenvalus of XDV=Y we can
-	# compute from these sqrt(sum(abs(log(D)).^2))
-	return sqrt(sum(log.(abs.(eig(p.value,q.value)[1])).^2));
+  return sqrt(sum(log.(abs.(eig(p.value,q.value)[1])).^2))
 end
-
 function dot(M::SymmetricPositiveDefinite, p::SPDPoint, ξ::SPDTVector, ν::SPDTVector, cache::Bool=true)
 	svd1 = decomp!(p,cache)
 	U = svd1[1]
@@ -107,7 +106,7 @@ function dot(M::SymmetricPositiveDefinite, p::SPDPoint, ξ::SPDTVector, ν::SPDT
 	return trace(ξ.value*U*SInv*U.'*ν.value*U*Sing*U.')
 end
 
-function parallelTransport(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint,ξ::SPDTVector,t::Float64=1.0,cache::Bool=true)
+function parallelTransport(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint,ξ::SPDTVector,cache::Bool=true)::SPDTVector
 	svd1 = decomp!(p,cache)
 	U = svd1[1]
 	S = copy(svd1[2])
@@ -122,22 +121,16 @@ function parallelTransport(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint,
 	Se = diagm(log.(svd2[2]))
 	Ue = svd2[1]
 	tQ2 = Ue*Se*Ue.'
-	svd3 = svd(tQ2)
-	Sf = diagm(exp.(svd3[2]))
-	Uf = svd3[1]
-	return pSqrt*Uf*Sf*Uf.'*tξ*Uf*Sf*Ef.'*pSqrt
+	eig1 = eig(0.5*tQ2)
+	Sf = diagm(exp.(eig1[1]))
+	Uf = eig1[2]
+	if isnull(ξ.base)
+		return SPDTVector(pSqrt*Uf*Sf*Uf.'*(0.5*(tξ+tξ.'))*Uf*Sf*Uf.'*pSqrt)
+	else
+		return SPDTVector(pSqrt*Uf*Sf*Uf.'*(0.5*(tξ+tξ.'))*Uf*Sf*Uf.'*pSqrt,q)
+	end
 end
 
-function show(io::IO, M::SymmetricPositiveDefinite)
-    print(io, "The Manifold $(M.name).")
-  end
-function show(io::IO, m::SPDPoint)
-    print(io, "SPD($(m.value))")
-end
-function show(io::IO, m::SPDTVector)
-  if !isnull(m.base)
-    print(io, "SPDT_$(m.base.value)($(m.value))")
-  else
-    print(io, "SPDT($(m.value))")
-  end
-end
+show(io::IO, M::SymmetricPositiveDefinite) = print(io, "The Manifold $(M.name).")
+show(io::IO, p::SPDPoint) = print(io, "SPD($(p.value))")
+show(io::IO, ξ::SPDTVector) = isnull(ξ.base) ? print(io, "SPDT($(ξ.value))") : print(io, "SPDT_$(ξ.base.value)($(ξ.value))")
