@@ -4,7 +4,7 @@
 #  * A point in an tangential space MTVector
 #
 import Base.LinAlg: norm, dot
-import Base: exp, log, mean, median, +, -, *, /, ==, show
+import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
 export MPoint, MTVector
 # introduce new functions
@@ -29,14 +29,14 @@ abstract type MTVector end
 
 # scale tangential vectors
 *{T <: MTVector}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
-*{T <: MTVector}(s::Number, ξ::T) = T(s*ξ.value,ξ.base)
-*{T <: MTVector}(ξ::Vector{T},s::Number) = s*ones(length(ξ))*ξ
-*{T <: MTVector}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))*ξ
+*{T <: MTVector}(s::Number, ξ::T)::T = T(s*ξ.value,ξ.base)
+*{T <: MTVector}(ξ::Vector{T},s::Number)::T = [ξe*s for ξe in ξ]
+*{T <: MTVector}(s::Number, ξ::Vector{T}) = [s*ξe for ξe in ξ]
 # /
-/{T <: MTVector}(ξ::T,s::Number) = T(s/ξ.value,ξ.base)
-/{T <: MTVector}(s::Number, ξ::T) = T(s/ξ.value,ξ.base)
-/{T <: MTVector}(ξ::Vector{T},s::Number) = s*ones(length(ξ))/ξ
-/{T <: MTVector}(s::Number, ξ::Vector{T}) = s*ones(length(ξ))/ξ
+/{T <: MTVector}(ξ::T,s::Number)::T = T(ξ.value./s,ξ.base)
+/{T <: MTVector}(s::Number, ξ::T)::T = T(s./ξ.value,ξ.base)
+/{T <: MTVector}(ξ::Vector{T},s::Number) = [ξe/s for ξe in ξ]
+/{T <: MTVector}(s::Number, ξ::Vector{T}) = [s/ξe for ξe in ξ]
 # + - of MTVectors
 function +{T <: MTVector}(ξ::T,ν::T)::T
   if checkBase(ξ,ν)
@@ -54,6 +54,9 @@ function -{T <: MTVector}(ξ::T,ν::T)::T
     different tangential spaces."))
   end
 end
+# unary operators
+-{T <: MTVector}(ξ::T)::T = T(-ξ.value,ξ.base)
++{T <: MTVector}(ξ::T)::T = T(ξ.value,ξ.base)
 
 # compare Points & vectors
 =={T <: MPoint}(p::T, q::T)::Bool = all(p.value == q.value)

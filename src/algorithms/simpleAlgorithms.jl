@@ -5,7 +5,7 @@
 #
 # ---
 # Manopt.jl – Ronny Bergmann – 2017-07-06
-
+import Base: mean, median
 export mean, median, variance
 
 """
