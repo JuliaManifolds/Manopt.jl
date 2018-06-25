@@ -44,7 +44,7 @@ function exp(M::Euclidean,p::RnPoint,ξ::RnTVector,t=1.0)::SnPoint
   return RnPoint(p.value + ξ.value)
 end
 
-function log(M::Euclidean,p::RnPoint,q::RnPoint,includeBase=false)::RnTVector
+function log(M::Euclidean,p::RnPoint,q::RnPoint,includeBase::Bool=false)::RnTVector
 	return RnTVector(p.value - q.value)
 end
 function manifoldDimension(p::RnPoint)::Integer

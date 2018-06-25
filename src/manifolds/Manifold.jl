@@ -183,7 +183,7 @@ end
 	* cache (true) : cache intermediate results for a faster exponential map at p for further runs
 
 """
-function log{mT<:Manifold, T<:MPoint}(M::mT,p::T,q::T,includeBase::Bool=false,cache::Bool=true)::MTVector
+function log{mT<:Manifold, T<:MPoint, S<:MPoint}(M::mT,p::T,q::S,includeBase::Bool=false,cache::Bool=true)::MTVector
   sig1 = string( typeof(p) )
   sig2 = string( typeof(q) )
   sig3 = string( typeof(M) )

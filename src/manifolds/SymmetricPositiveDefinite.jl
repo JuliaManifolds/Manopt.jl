@@ -45,7 +45,7 @@ function decomp!(p::SPDPoint,cache::Bool=true)::Array{Matrix{Float64},1}
 			push!(p.decomposition,svdResult[1])
 			push!(p.decomposition,diagm(svdResult[2]))
 			push!(p.decomposition,svdResult[3])
-			# note that since p.value is immutable the cache never expires.
+			# note that since p.value is struct the cache never expires.
 		end
 		return p.decomposition
 	end

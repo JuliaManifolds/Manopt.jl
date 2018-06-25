@@ -4,21 +4,18 @@
 #
 export Circle, S1Point, S1TVector
 export symRem
-#
-# TODO: It would be nice to have an arbitrary real type here
-#
 struct Circle <: Manifold
   name::String
   dimension::Int
   abbreviation::String
-  Sphere() = new("1-Sphere as angles",1,"S1")
+  Circle() = new("1-Sphere as angles",1,"S1")
 end
-immutable S1Point <: MPoint
+struct S1Point <: MPoint
   value::Float64
   S1Point(value::Float64) = new(value)
 end
 
-immutable S1TVector <: MTVector
+struct S1TVector <: MTVector
   value::Float64
   base::Nullable{S1Point}
   S1TVector(value::Float64) = new(value,Nullable{S1Point}())
@@ -48,7 +45,7 @@ function exp(M::Circle, p::S1Point,ξ::S1TVector,t::Number=1.0)::S1Point
   return S1Point(symRem(p.value+t*ξ.value))
 end
 
-function log(M::Circle, p::S1Point,q::S1Point,includeBase=false)::S1TVector
+function log(M::Circle, p::S1Point,q::S1Point,includeBase::Bool=false)::S1TVector
   if includeBase
     return S1TVector(symRem(q.value-p.value),p)
   else

@@ -16,11 +16,16 @@ module Manopt
 	include("manifolds/Euclidean.jl")
 	include("manifolds/SymmetricPositiveDefinite.jl")
   include("manifolds/Sphere.jl")
-# algorithms
-	include("algorithms/simpleAlgorithms.jl")
-	include("algorithms/proximalMaps.jl")
-# helpers
+  # ...corresponding problems
+  include("problem/problem.jl")
+  # ...solvers
+  include("solvers/steepestDescent.jl")
+  # algorithms
+  include("algorithms/basicAlgorithms.jl")
+  include("algorithms/lineSearch.jl")
+  include("algorithms/proximalMaps.jl")
+  # helpers
   include("helpers/imageHelpers.jl")
-# data
+  # data
   include("artificialDataFunctions.jl")
 end

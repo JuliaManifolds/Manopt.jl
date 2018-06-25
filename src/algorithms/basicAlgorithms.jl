@@ -1,5 +1,5 @@
 #
-# Manopt.jl – simple algorithms
+# Manopt.jl – basic algorithms
 #
 # A collection of simple algorithms that might be helpful
 #

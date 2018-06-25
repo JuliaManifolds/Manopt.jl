@@ -8,9 +8,9 @@
 # > Second Order Differences of Cyclic Data and Applications in Variational Denoising,
 # > SIAM Journal on Imaging Sciences, Vol. 7, No. 4, pp. 2916–2953, 2014.
 #
-# ManifoldValuedImageProcessing ~ R. Bergmsnn ~ 2016-12-09
+# Manopt.jl ~ R. Bergmsnn ~ 2016-12-09
 
-# include("../ManifoldValuedImageProcessing.jl")
+using Manopt
 
 # Global Names and parameters
 dataName = "src/examples/artInSAR/data"
@@ -37,5 +37,5 @@ end
 @time S1imageReconstruction = TV_Regularization_CPPA(S1imageNoisy,[3.0/8.0,1.0/4.0],pi/2; MaxIterations=200)
 #@time S1imageReconstruction = TV_Regularization_CPPA(S1imageNoisy,[3.0/8.0,1.0/4.0],pi/2)
 #@time S1imageReconstruction = TV_Regularization_CPPA(S1imageNoisy,[3.0/8.0,1.0/4.0],pi/2)
-#@code_warntype TV_Regularization_CPPA(S1imageNoisy,[3.0/8.0,1.0/4.0],pi/2)
-#@code_warntype TV_Regularization_CPPA(S1imageNoisy,[3.0/8.0,1.0/4.0],pi/2; MaxIterations=100)
+#@code_warntypeTV_Regularization_CPPA(S1imageNoisy,[3.0/8.0,1.0/4.0],pi/2)
+#@code_warntypeTV_Regularization_CPPA(S1imageNoisy,[3.0/8.0,1.0/4.0],pi/2; MaxIterations=100)
