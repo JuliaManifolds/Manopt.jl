@@ -26,6 +26,8 @@ module Manopt
   include("algorithms/basicAlgorithms.jl")
   include("algorithms/lineSearch.jl")
   include("algorithms/proximalMaps.jl")
+  # Plots
+  include("plots/SpherePlots.jl")
   # helpers
   include("helpers/imageHelpers.jl")
   # data

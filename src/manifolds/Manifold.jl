@@ -99,7 +99,7 @@ end
   on the manifold `M`.
 """
 function geodesic{mT <: Manifold, T <: MPoint}(M::mT, p::T,q::T)::Function
-  return (t -> exp(M,p,t*log(M,p,q)))
+  return (t::Float64 -> exp(M,p,t*log(M,p,q)))
 end
 """
     geodesic(M,p,q,n)
@@ -108,7 +108,7 @@ end
 """
 function geodesic{mT <: Manifold, T <: MPoint}(M::mT, p::T,q::T,n::Integer)::Vector{T}
   geo = geodesic(M,p,q);
-  return [geo(t) for t in linspace(0,1,n)]
+  return [geo(t) for t in linspace(0.,1.,n)]
 end
 """
     geodesic(M,p,q,t)

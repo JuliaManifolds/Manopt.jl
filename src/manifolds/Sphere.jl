@@ -12,7 +12,7 @@ struct Sphere <: MatrixManifold
   name::String
   dimension::Int
   abbreviation::String
-  Sphere(dimension::Int) = new("$dimension-Sphere",dimension,"S$dimension")
+  Sphere(dimension::Int) = new("$dimension-Sphere",dimension,"S$(dimension-1)")
 end
 
 struct SnPoint <: MMPoint
@@ -38,7 +38,7 @@ function dot(M::Sphere, p::SnPoint, ξ::SnTVector, ν::SnTVector)::Number
   end
 end
 
-function exp(M::Sphere,p::SnPoint,ξ::SnTVector,t=1.0)::SnPoint
+function exp(M::Sphere,p::SnPoint,ξ::SnTVector,t::Float64=1.0)::SnPoint
 	if checkBase(p,ξ)
   	len = norm(ξ.value)
   	if len < eps(Float64)
