@@ -1,6 +1,7 @@
 #
 #      Rn - The manifold of the n-dimensional (real valued) Euclidean space
 #
+# Manopt.jl, R. Bergmann, 2018-06-26
 export Euclideam, RnPoint, RnTVector
 
 import Base: exp, log, +, -, *, /, ==, show

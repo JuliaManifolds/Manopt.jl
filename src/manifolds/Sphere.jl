@@ -33,7 +33,7 @@ function distance(M::Sphere,p::SnPoint,q::SnPoint)::Number
   return acos(dot(p.value,q.value))
 end
 
-function dot(M::Sphere,ξ::SnTVector, ν::SnTVector)::Number
+function dot(M::Sphere, p::SnPoint, ξ::SnTVector, ν::SnTVector)::Number
   if checkBase(ξ,ν)
   	return dot(ξ.value,ν.value)
   end

@@ -1,7 +1,7 @@
 #
-#      Sn - The manifold of the n-dimensional sphere
-#  Point is a Point on the n-dimensional sphere.
+#      S1 - The manifold of the 1-dimensional sphere represented by angles
 #
+# Manopt.jl, R. Bergmann, 2018-06-26
 export Circle, S1Point, S1TVector
 export symRem
 struct Circle <: Manifold
@@ -32,7 +32,7 @@ function distance(M::Circle, p::S1Point,q::S1Point)::Float64
   return abs( symRem(p.value-q.value) )
 end
 
-function dot(M::Circle, ξ::S1TVector, ν::S1TVector)::Float64
+function dot(M::Circle, p::S1Point, ξ::S1TVector, ν::S1TVector)::Float64
   if checkBase(ξ,ν)
     return ξ.value*ν.value
   else

@@ -2,6 +2,7 @@
 #      MatrixManifold -- a matrix manifold,
 #       i.e. the values/points on the manifold are matrices
 #
+# Manopt.jl, R. Bergmann, 2018-06-26
 import Base.LinAlg: transpose
 
 export MatrixManifold, MMPoint, MMTVector

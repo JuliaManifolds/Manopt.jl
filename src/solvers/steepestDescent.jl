@@ -12,10 +12,15 @@ function steepestDescent{P <: DescentProblem}(problem::P)
     iter = 0
     x = problem.initX
     s = problem.lineSearchProblem.initialStepsize
+    M = problem.manifold
+
     while !stop
+        if getVerbosity(problem) > 2
+            global reason
+        end
         ξ = getGradient(problem,x)
         s = getStepsize(problem,x,ξ,s)
-        xnew = exp.(x,-s*ξ)
+        xnew = exp(M,x,-s*ξ)
         iter=iter+1
         (stop, reason) = evaluateStoppingCriterion(problem,iter,ξ,x,xnew)
         x=xnew
@@ -23,4 +28,5 @@ function steepestDescent{P <: DescentProblem}(problem::P)
     if getVerbosity(problem) > 2
         print(reason)
     end
+    return x
 end

@@ -15,6 +15,8 @@ module Manopt
   include("manifolds/Circle.jl")
 	include("manifolds/Euclidean.jl")
 	include("manifolds/SymmetricPositiveDefinite.jl")
+  include("manifolds/PowerManifold.jl")
+  include("manifolds/ProductManifold.jl")
   include("manifolds/Sphere.jl")
   # ...corresponding problems
   include("problem/problem.jl")

@@ -3,6 +3,7 @@
 #  * A point on the manifold, MPoint
 #  * A point in an tangential space MTVector
 #
+# Manopt.jl, R. Bergmann, 2018-06-26
 import Base.LinAlg: norm, dot
 import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
