@@ -3,10 +3,12 @@
 #       i.e. the values/points on the manifold are matrices
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
+import Base: exp, log, show
 import Base.LinAlg: transpose
 
-export MatrixManifold, MMPoint, MMTVector
-export transpose
+export PowerManifold, PowMPoint, PowMTVector
+export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export show, transpose
 
 abstract type MatrixManifold <: Manifold end
 """

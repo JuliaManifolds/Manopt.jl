@@ -9,7 +9,7 @@
 import Base.LinAlg: svd, norm, dot
 import Base: exp, log, show
 
-export SymmetricPositiveDefinite, SPDPoint, SPDTVector, shoq
+export SymmetricPositiveDefinite, SPDPoint, SPDTVector, show
 export distance, dot, exp, norm, dot, manifoldDimension, parallelTransport
 
 struct SymmetricPositiveDefinite <: MatrixManifold

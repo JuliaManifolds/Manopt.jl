@@ -2,7 +2,12 @@
 #      Powermanifold – an array of points of _one_ manifold
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
+import Base: exp, log, show
+
 export PowerManifold, PowMPoint, PowMTVector
+export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export show
+
 struct PowerManifold{M<:Manifold} <: Manifold
   name::String
   manifold::M

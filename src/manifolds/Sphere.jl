@@ -8,7 +8,6 @@ import Base: exp, log, show
 export Sphere, SnPoint, SnTVector,show
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 
-
 struct Sphere <: MatrixManifold
   name::String
   dimension::Int

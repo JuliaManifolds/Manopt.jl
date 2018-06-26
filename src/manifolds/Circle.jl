@@ -2,7 +2,12 @@
 #      S1 - The manifold of the 1-dimensional sphere represented by angles
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
+import Base: exp, log, show
+
 export Circle, S1Point, S1TVector
+export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export show
+
 export symRem
 struct Circle <: Manifold
   name::String
