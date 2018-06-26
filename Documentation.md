@@ -9,7 +9,10 @@ to perform all algorithms given in these packages with all benefits from Julia.
 
 ## Manifolds
 All manifolds inherit from `Manifold` to store their main properties, which is
-most prominently the manifold dimension and the name of the manifold. This will be extended in the future, for example ba properties denoting whether the manifold is explicitly given in the sense of a closed form exponential and logarithmic map for example, or only approximately.
+most prominently the manifold dimension and the name of the manifold. This will
+be extended in the future, for example ba properties denoting whether the
+manifold is explicitly given in the sense of a closed form exponential and
+logarithmic map for example, or only approximately.
 
 Furthermore there are two types accompanying each manifold – a point on the
 manifold inheriting from `MPoint` and the tangential vector `MTVector`. For both
@@ -20,13 +23,21 @@ overloads the operands `*,/,+,-` for the `MMPoint`. Furthermore each `MMPoint`is
 indeed a matrix, so they also possess an array to store its decomposition, namely
 for $\mathbf{A}\in\mathbb R^{n,m}$ its singular value decomposition
 $\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}$.
+Compared to Matlab, we do not implicitly do vectorization but use explicitly a
+`ProdctManifold` (with `ProdMPoint` and `ProdMTVector`) consisting of an array of manifolds,
+as well as the product manifold consisting of only one manifold, i.e. the `PowerManifold`
+(with `PowMPoint` and `PowMTVector`).
 
-File | Abbr. |  Manifold $\mathcal M$ | Comment
------|-------|--------------------------|---------
-`Circle.jl`  | `S1`| $1$-Sphere $\mathbb S^1$ | represented as angles $p_i\in[-\pi,\pi)$
-`Euclidean.jl` | `Rn` | $n$-dimensional Euclidean space $\mathbb R^n$
-`SymmetricPositiveDefinite.jl` | `SPD` | $n\times n$ symmetric positive matrices | using the affine metric
-`Sphere.jl` | `Sn` | $n$-dimensional Sphere $\mathbb S^n$ | embedded in $\mathbb R^{n+1}$
+File | Abbr. |  supertype |  Manifold $\mathcal M$ | Comment
+-----|-------|------------|-----------------------|---------
+`Circle.jl`  | `S1`| `M` | $1$-Sphere $\mathbb S^1$ | represented as angles $p_i\in[-\pi,\pi)$
+`Euclidean.jl` | `Rn` | `M` |  $n$-dimensional Euclidean space $\mathbb R^n$
+`Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$ |  
+`MatrixManifold` | `MM` | `M` |  The manifold, where points are represented by matrices |
+`PowerManifold.jl` | `PowM` | `M` | $\mathcal M^n$ | where $n$ can be a vector |
+`ProductManifold.jl` | `ProdM` | `M` | $\mathcal M_1\times \mathcal M_2\times\cdot \mathcal M_n$ | might be arranged in any array |
+`SymmetricPositiveDefinite.jl` | `SPD` | `MM` |  $n\times n$ symmetric positive matrices | using the affine metric
+`Sphere.jl` | `Sn` | `M` |  $n$-dimensional Sphere $\mathbb S^n$ | embedded in $\mathbb R^{n+1}$
 
 ## A summary of notations
 The Riemannian Manifold will always be denoted by $\mathcal M$ its dimension
