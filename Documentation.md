@@ -70,10 +70,41 @@ is meant as a function $F\colon \mathcal M\to\mathbb R$ defined for some fixed
 (sampled) data $f\in\mathcal M$.
 
 ## The general Approach to Algorithms
-Algorithms should be implemented for any subtype of `Manifold`, i.e. a function taking a manifold point as an argument should be written in the form `function F{MP <: MPoint}(x::MP)`. Furthermore, for performance issues, the inner functions that
-are required to run often and fast, should (for now, `Julia 0.6`) contain
-optional arguments (`...kwargs`), since that reduces the performance per call.
-The recommendation.
+Algorithms should be implemented for any subtype of `Manifold`, i.e. a function
+taking a manifold point as an argument should be written in the form `function
+F{MP <: MPoint}(x::MP)`. Furthermore, for performance issues, the inner
+functions that are required to run often and fast, should not (for now, `Julia 0.6`)
+contain optional arguments (`...kwargs`), since that reduces the performance per
+call. The recommendation is hence to write a classical function using a `struct problem`
+(see `problem/problem.jl` for a start).
+
+## Verbosity and Debug
+There is a global `verbosity` level within the algorithms that steers the amount
+of output. It ranges from `verbosity=0` meaning no output at all to `verbosity=5`
+including times and a lot of debug. The rough course is as follows
+
+| Level | Additional Output     |
+|-------|-----------------------|
+|   1   | Main start and result |
+|   2   | not yet used          |
+|   3   | End criteria of algorithms etc. |
+|   4   | Time measurements |
+|   5   | Iteration interims values |
+
+For the last Level, an individual `debug` field in the structs provides the
+possibility to add an own function into the iteration. This function always takes
+just one argument, namnely a `Dict{String, Any}` dictionary, i.e. a hashmap to
+store any data passed to a debug function. If values are present in the `debugSettings`
+they should be updated in the algorithm.
+
+Maybe something similar using a `record` field would also be nice.
+
+## Tests
+Every new function or manifold should be accompanied by a test suite, placed
+within `test/` (the script `runtests.jl` takes care of running all test cases
+within that folder automatically).
+A plan is to use Travor CI to check for code coverage and all tests passing
+automatically, soon.
 
 ## Literature
 [AMS08] P.-A. Absil, R. Mahony and R. Sepulchre, Optimization Algorithms on

@@ -30,6 +30,7 @@ module Manopt
   include("plots/SpherePlots.jl")
   # helpers
   include("helpers/imageHelpers.jl")
+  include("helpers/debugFunctions.jl")
   # data
   include("artificialDataFunctions.jl")
 end

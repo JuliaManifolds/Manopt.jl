@@ -23,9 +23,22 @@ function steepestDescent{P <: DescentProblem}(problem::P)
         xnew = exp(M,x,-s*ξ)
         iter=iter+1
         (stop, reason) = evaluateStoppingCriterion(problem,iter,ξ,x,xnew)
-        x=xnew
+        # Debug
+        if getVerbosity(problem) > 4 && !isnull(problem.debugSettings) && !isnull(problem.debugFunction)
+            d = get(problem.debugSettings);
+            if haskey(d,"x")
+                d["x"] = xnew
+            end
+            if haskey(d,"xold")
+                d["xold"] = x
+            end
+            if haskey(d,"Iteration")
+                d["Iteration"] = iter
+            end
+            get(problem.debugFunction)(d);
+        end
     end
-    if getVerbosity(problem) > 2
+    if getVerbosity(problem) > 2 && length(reason) > 0
         print(reason)
     end
     return x

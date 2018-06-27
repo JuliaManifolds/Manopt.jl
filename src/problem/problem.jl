@@ -55,8 +55,13 @@ mutable struct DescentProblem <: Problem
   lineSearchProblem::LineSearchProblem
   useCache::Bool
   verbosity::Int
+  # Optional: debug.
+  debugFunction::Nullable{Function}
+  debugSettings::Nullable{Dict{String,<:Any}}
 end
 # set verbosity and cache to something standard when not present
+DescentProblem(M,f,g,s,x,l,lp,u,v) = DescentProblem(M,f,g,s,x,l,lp,u,v,Nullable{Function}(),Nullable{Dict{String,Any}}())
+
 DescentProblem(M,f,g,s,x,l,lp) = DescentProblem(M,f,g,s,x,l,lp,false,0)
 # deactivate line search to keep the gradient vector as before, whten not specified
 DescentProblem(M,f,g,s,x) = DescentProblem(M,f,g,s,x, ξ -> 1.0)
