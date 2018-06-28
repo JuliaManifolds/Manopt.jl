@@ -79,9 +79,9 @@ function parallelTransport(M::Sphere, p::SnPoint, q::SnPoint, ξ::SnTVector)
 			ν = ν/νL
     	if isnull(ξ.base)
 				# remove p-coponent, add q-component (which is also by substraction - work on value to not have basechecks)
-				return SnTVector(ξ.value - dot(M,ν,ξ)*(ν.value + log(M,q,p).value/νL));
+				return SnTVector(ξ.value - dot(M,p,ν,ξ)*(ν.value + log(M,q,p).value/νL));
 			else # add base
-				return SnTVector(ξ.value - dot(M,ν,ξ)*(ν + log(M,q,p).value/νL),q);
+				return SnTVector(ξ.value - dot(M,p,ν,ξ)*(ν + log(M,q,p).value/νL),q);
 			end
 		else
 			# if length of ν is 0, we have p=q and hence ξ is unchanged
