@@ -1,4 +1,5 @@
-# Manifold optimization
+# Manopt.jl
+## Optimization on Manifolds
 The `Manopt.jl` Julia package provides all necessary tools to perform
 optimization on manifolds and apply these methods to manifold-valued image
 processing. This file intends to fix notations both mathematical and with
