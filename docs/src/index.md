@@ -33,7 +33,7 @@ File | Abbr. |  supertype |  Manifold $\mathcal M$ | Comment
 -----|-------|------------|-----------------------|---------
 `Circle.jl`  | `S1`| `M` | $1$-Sphere $\mathbb S^1$ | represented as angles $p_i\in[-\pi,\pi)$
 `Euclidean.jl` | `Rn` | `M` |  $n$-dimensional Euclidean space $\mathbb R^n$
-`Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$ |  
+`Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$ |
 `MatrixManifold` | `MM` | `M` |  The manifold, where points are represented by matrices |
 `PowerManifold.jl` | `PowM` | `M` | $\mathcal M^n$ | where $n$ can be a vector |
 `ProductManifold.jl` | `ProdM` | `M` | $\mathcal M_1\times \mathcal M_2\times\cdot \mathcal M_n$ | might be arranged in any array |
@@ -99,6 +99,10 @@ store any data passed to a debug function. If values are present in the `debugSe
 they should be updated in the algorithm.
 
 Maybe something similar using a `record` field would also be nice.
+
+### A general remark
+In general, one should additionally provide an interface that uses keyword-argument lists (kwargs) as a Dictionary (similarly to the matlab usage),
+having the same name, checking input and passing it to the struct-based function. That way the basic function (with struct) is compiled to a function being quite fast, and the wrapper makes the function easily accessible with `kwargs` for a user; see e.g. https://stackoverflow.com/a/39602289/1820236. This might also be a good idea for the plot functions, because we can filter dictionaries and pass parts to the internally used plot functions, making it possible to provide line styles but also appearance of e.g. the sphere as options.
 
 ## Tests
 Every new function or manifold should be accompanied by a test suite, placed
