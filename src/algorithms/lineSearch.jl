@@ -47,6 +47,4 @@ function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::L
   end
   return s
 end
-ArmijoLineSearch{MP <: MPoint, MT <: MTVector}(problem::LineSearchProblem,
-                x::MP, gradFx::MT, retraction::Function=exp )
-                = ArmijoLineSearch(problem, x, gradFx, -gradFx,retraction)
+ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::LineSearchProblem{Mc},x::MP, gradFx::MT, retraction::Function=exp) = ArmijoLineSearch(problem, x, gradFx, -gradFx,retraction)

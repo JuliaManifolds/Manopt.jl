@@ -5,7 +5,6 @@
 # Manopt.jl, R. Bergmann, 2018-06-27
 export gradientDebug
 function gradientDebug(data::Dict{String,Any})
-    end
     # if step is given only output every step-th iterate
     if haskey(data,"step") && haskey(data,"Iteration")
         if mod(data["Iteration"],data["step"]) == 0

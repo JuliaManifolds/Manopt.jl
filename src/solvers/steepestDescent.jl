@@ -32,7 +32,7 @@ function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
         debug=(Nullable{Function}(),Nullable{Dict}()),
         lineSearch=((p,M,gradF,ξ)->1/2,LineSearchProblem(M,F)),
         retraction=exp,
-        stoppingCriterion= (iter,ξ,x,xnew) -> norm(M,x,ξ) < 10^-4 || Iterations > 500
+        stoppingCriterion= (iter,ξ,x,xnew) -> norm(M,x,ξ) < 10^-4 || Iterations > 500,
         useCache=false,
         verbosity=0
     )
