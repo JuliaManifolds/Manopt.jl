@@ -4,53 +4,74 @@
 #
 # Manopt.jl, R. Bergmann, 2018-06-27
 export gradientDebug
-# TODO do single string generators on the dictionary returning strings
-# to concatenate them for own debugs
 function gradientDebug(data::Dict{String,Any})
-    s = "";
-    Format = get(data,"Format","short");
-    if haskey(data,"Iteration")
-        sLocal = string("#",data["Iteration"]);
-        s = string(s,sLocal);
     end
+    # if step is given only output every step-th iterate
+    if haskey(data,"step") && haskey(data,"Iteration")
+        if mod(data["Iteration"],data["step"]) == 0
+            s = string(s,getIterationString(data), getCostString(data),
+                getNormGradientString(data), getLastChangeString(data));
+            print(s,"\n")
+        end
+    else
+        s = string(s,getIterationString(data), getCostString(data),
+            getNormGradientString(data), getLastChangeString(data));
+        print(s,"\n")
+    end
+end
+#
+# Local Building blocks
+#
+function getIterationString(data::Dict{String,Any})
+    if haskey(data,"Iteration")
+        s = string("#",data["Iteration"]);
+    else
+        s="";
+    end
+    return s;
+end
+function getCost(data::Dict{String,Any})
     if haskey(data,"costFunction") && haskey(data,"x")
         x = data["x"];
         F = data["costFunction"]
-        if Format == "short"
-            sLocal = string(" | ",string(F(x)) );
+        if get(data,"Format","short") == "short"
+            s = string(" | ",string(F(x)) );
         else
-            sLocal = string(" | F: ",string(F(x)))
+            s = string(" | F: ",string(F(x)))
         end
-        s = string(s,sLocal);
+    else
+        s = "";
     end
+    return s;
+end
+function getLastChangeString(data::Dict{String,Any})
+    if haskey(data,"x") && haskey(data,"xold") && haskey(data,"manifold")
+        M = data["manifold"]
+        x = data["x"]
+        xold = data["xold"]
+        if get(data,"Format","short") == "short"
+            s = string(" | ",string(distance(M,x,xold)));
+        else
+            s = string(" | Last change: ",string(distance(M,x,xold)));
+        end
+    else
+        s = "";
+    end
+    return s
+end
+function getNormGradientString(data::Dict{String,Any})
     if haskey(data,"gradient") && haskey(data,"x") && haskey(data,"manifold")
         M = data["manifold"];
         x = data["x"];
         g = data["gradient"];
         nG = sqrt(dot(M,x,g(x),g(x)));
-        if Format == "short"
-            sLocal = string(" | ",string(nG) );
+        if get(data,"Format","short") == "short"
+            s = string(" | ",string(nG) );
         else
-            sLocal = string(" | Norm of gradient: ",string(nG));
-        end
-        s = string(s,sLocal);
-    end
-    if haskey(data,"x") && haskey(data,"xold") && haskey(data,"manifold")
-        M = data["manifold"]
-        x = data["x"]
-        xold = data["xold"]
-        if Format == "short"
-            sLocal = string(" | ",string(distance(M,x,xold)));
-        else
-            sLocal = string(" | Last change: ",string(distance(M,x,xold)));
-        end
-        s = string(s,sLocal);
-    end
-    if haskey(data,"step") && haskey(data,"Iteration")
-        if mod(data["Iteration"],data["step"]) == 0
-            print(s,"\n")
+            s = string(" | Norm of gradient: ",string(nG));
         end
     else
-        print(s,"\n")
+        s = "";
     end
+    return s;
 end
