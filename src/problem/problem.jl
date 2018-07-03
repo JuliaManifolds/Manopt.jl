@@ -39,18 +39,30 @@ end
 
 """
     DescentProblem <: Problem
+      specify a problem for gradient descent type algorithms.
 
-specify a problem for gradient descent type algorithms, i.e. we require
-a `costFuncion(x)`, a `gradient(x)`, a `stoppingCriterion(iter,x1,x2)`
-and an initial value `xInit`. The `lineSearch` function to find the optimal
-length of the gradient (e.g. by Amijo rule) is deactivated if not specified.
+    FIELDS
+      manifold          – a manifold
+      costFunction      - a function F:M -> R
+      gradient          – the gradient of F
+      stoppingCriterion - a function(iter,x,xnew,ξ) returning true, if the
+                        stopping Criterion is fulfilled, where ξ is gradient(x)
+      initX             – initial value of x
+      retraction        - a retraction that is set to exp if not specified
+      lineSearch        - a lineSearchFunction that can be called with the following
+      lineSearchProblem – a struct with the variables for lineSearch
+      useCache          - (optional, false) indicate whether to use a cache or not
+      verbosity         - (optional, 0) set verbosity
+      debugFunctiion    - (optional, Null{Function}) a debug Function that is called with
+      debugSettings     - (optional, Null{Dict}) a set of Variables for debug
 """
 mutable struct DescentProblem <: Problem
   manifold::Manifold
   costFunction::Function
   gradient::Function
-  stoppingCriterion::Function
   initX::T where T <: MPoint
+  stoppingCriterion::Function
+  retraction::Function
   lineSearch::Function
   lineSearchProblem::LineSearchProblem
   useCache::Bool
@@ -59,12 +71,18 @@ mutable struct DescentProblem <: Problem
   debugFunction::Nullable{Function}
   debugSettings::Nullable{Dict{String,<:Any}}
 end
-# set verbosity and cache to something standard when not present
-DescentProblem(M,f,g,s,x,l,lp,u,v) = DescentProblem(M,f,g,s,x,l,lp,u,v,Nullable{Function}(),Nullable{Dict{String,Any}}())
-
-DescentProblem(M,f,g,s,x,l,lp) = DescentProblem(M,f,g,s,x,l,lp,false,0)
-# deactivate line search to keep the gradient vector as before, whten not specified
-DescentProblem(M,f,g,s,x) = DescentProblem(M,f,g,s,x, ξ -> 1.0)
+#
+# Constructors filling standard-values
+#
+# (a) Set Debug to Null (With or without retraction)
+DescentProblem(M,f,g,x,s,r,l,lp,u,v) = DescentProblem(M,f,g,x,s,r,l,lp,u,v,Nullable{Function}(),Nullable{Dict{String,Any}}())
+DescentProblem(M,f,g,x,s,l,lp,u,v) = DescentProblem(M,f,g,x,s,exp,l,lp,u,v,Nullable{Function}(),Nullable{Dict{String,Any}}())
+# (b) set cache and verbosity off/false (With or without retraction)
+DescentProblem(M,f,g,r,x,s,r,l,lp) = DescentProblem(M,f,g,x,s,r,l,lp,false,0)
+DescentProblem(M,f,g,s,x,r,l,lp) = DescentProblem(M,f,g,x,s,exp,l,lp,false,0)
+# (c) set step size constand (with or without retraction)
+DescentProblem(M,f,g,x,s,r) = DescentProblem(M,f,g,r,x,s, ξ -> 1.0)
+DescentProblem(M,f,g,x,s) = DescentProblem(M,f,g,exp,x,s,exp,ξ -> 1.0)
 
 
 mutable struct HessianProblem <: Problem
@@ -112,7 +130,7 @@ function getStepsize{P <: DescentProblem, MP <: MPoint, MT <: MTVector}(p::P,
   p.lineSearchProblem.initialStepsize = s
   return p.lineSearch(p.lineSearchProblem,x,gradF,descentDir)
 end
-function getStepsize{P<:DescentProblem, MP <: MPoint, MT <: MTVector}(p::P,
+function getStepsize{P <: DescentProblem, MP <: MPoint, MT <: MTVector}(p::P,
                               x::MP, gradF::MT, descentDir::MT)
   return getStepSize(p,x,gradF,descentDir,p.lineSearchProblem.initialStepsize)
 end

@@ -203,12 +203,12 @@ function manifoldDimension{T<:Manifold}(M::T)::Integer
   throw( ErrorException(" Not Implemented for manifold $sig1 " ) )
 end
 """
-    norm(M,ξ)
-  computes the lenth of a tangential vector
+    norm(M,x,ξ)
+  computes the lenth of a tangential vector in TxM
 """
-function norm{mT<:Manifold, T<: MPoint, S<:MTVector}(M::mT,p::T,ξ::S)::Number
+function norm{mT<:Manifold, T<: MPoint, S<:MTVector}(M::mT,x::T,ξ::S)::Number
 	sig1 = string( typeof(ξ) )
-	sig2 = string( typeof(p) )
+	sig2 = string( typeof(x) )
 	sig3 = string( typeof(M) )
   throw( ErrorException("Norm - Not Implemented for types $sig1 in the tangent space of a $sig2 on the manifold $sig3" ) )
 end

@@ -7,16 +7,22 @@
 # Manopt.jl – Ronny Bergmann – 2018-06-25
 export ArmijoLineSearch
 """
-   ArmijoLineSearch(LineSearchProblem)
+  ArmijoLineSearch(LineSearchProblem)
+    compute the step size with respect to Armijo Rule for a LineSearchProblem.
 
-compute the step size with respect to Armijo Rule for a LineSearchProblem, i.e.
-for a manifold M (.Manifold), a cost function (.costFunction), point x on M,
-a gradient (.Gradient) at x and
-optionally a descent direction (.DescentDirection=-.Gradient) and a decreaseFactor
-(.Rho) as well as a scalar c for the gain (.c) on front of the inner product.
+    INPUT
+      problem - a LineSearchProblem (with Manifold, costFunction, initialStepSize, c and rho)
+      x - current point on M
+      gradFx - the gradient of the costFunction
+      descentDirection - (optional) a descentDirection, set to -gradFx if not
+        explicitly specified
+      retraction – (optional) a retraction on M. Set to exp if not given
+
+    OUTPUT
+      s - the resulting stepsize
 """
 function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::LineSearchProblem{Mc},
-    x::MP,gradFx::MT,descentDirection::MT)::Float64
+    x::MP,gradFx::MT,descentDirection::MT, retraction::Function=exp)::Float64
   e = problem.costFunction(x)
   eNew = e-1
   # for local shortness
@@ -42,4 +48,5 @@ function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::L
   return s
 end
 ArmijoLineSearch{MP <: MPoint, MT <: MTVector}(problem::LineSearchProblem,
-                x::MP, gradFx::MT ) = ArmijoLineSearch(problem, x, gradFx, -gradFx)
+                x::MP, gradFx::MT, retraction::Function=exp )
+                = ArmijoLineSearch(problem, x, gradFx, -gradFx,retraction)
