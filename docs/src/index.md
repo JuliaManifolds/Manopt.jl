@@ -40,6 +40,42 @@ File | Abbr. |  supertype |  Manifold $\mathcal M$ | Comment
 `SymmetricPositiveDefinite.jl` | `SPD` | `MM` |  $n\times n$ symmetric positive matrices | using the affine metric
 `Sphere.jl` | `Sn` | `M` |  $n$-dimensional Sphere $\mathbb S^n$ | embedded in $\mathbb R^{n+1}$
 
+## Organization of Code
+Despite the given structure by Julia (folders `src/`, `docs/`, `test/`), this
+package consists of the following structre:
+* a folder in the main directory `Tutorials/` containing all Tutorials as Juypter
+  notebooks (thats why they are not wihtin `src/`) that should cover all main
+  algorithms and introduce the data structures (`Manifold`, `MPoint`, `MTVector`
+  structure)
+* the `src/` folder itself structures the parts of the Toolbox as follows (roughly
+  in order of importance). The main file including all following is `Manopt.jl`
+  encapsulating all `include`s in a module. That also means, that all files
+  seperately handle `export`s and `import`s. * `manifold/` contains a file for
+  each manifold implementing the subtypes. The main types are defined in
+  `Manifold.jl` as well as operators in the types as well as fallbacks to provide
+  errors for not implemented cases of types or non-fitting cases (like `exp` with
+  a point from manifold A and a tangent vector from manifold B)
+  * `solvers/` contains all solving algorithms like `steepestDescent`.
+    These should always be available in two formats: One based on a `problem`
+    structure, such that they can be called by just one argument, for example
+    when checking a range of parameters and such that you only need to change one
+    value in the struct (which is defined in `problems/`). The second version should
+    be one with only mandatory parameters, where all others are (`;...)`) optional
+    key-value parameters and also providing thorough checks of the input and internally
+    call the first ones. While
+    the first one might be harder to call, the less checks and without key-value
+    makes them faster after compilation, which is also beneficiary for the second ones
+    since they internally call them. The second ones provide the easy-to-use
+    functions for new users, where all optional parameters are set so values that
+    are for a start in a certain sense _reasonable_.
+  * `algorithms/` contains all smaller parts or helpers for the solvers, for
+    example the Armijo line search
+  * `examples/` contains examples that are not yet tutorials or jupyter notebooks
+    (maybe removed in future, when all examples are Tutorials)
+  * `helpers/` contains small helpers like the debug functionals
+  * `plots/` contains all plotting functions
+  * `problem/` contains all structures for the internal algorithms or solvers
+
 ## A summary of notations
 The Riemannian Manifold will always be denoted by $\mathcal M$ its dimension
 by $d\in\mathbb N$, and points on $\mathcal M$ by $p,q$ or $p_i$,

@@ -47,4 +47,5 @@ function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::L
   end
   return s
 end
+# call without a descent direction -> take the negative gradient
 ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::LineSearchProblem{Mc},x::MP, gradFx::MT, retraction::Function=exp) = ArmijoLineSearch(problem, x, gradFx, -gradFx,retraction)

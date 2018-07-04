@@ -32,5 +32,5 @@ module Manopt
   include("helpers/imageHelpers.jl")
   include("helpers/debugFunctions.jl")
   # data
-  include("artificialDataFunctions.jl")
+  include("data/artificialDataFunctions.jl")
 end
