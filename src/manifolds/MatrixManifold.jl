@@ -6,10 +6,13 @@
 import Base: exp, log, show
 import Base.LinAlg: transpose
 
-export PowerManifold, PowMPoint, PowMTVector
+export MatrixManifold, MMPoint, MMTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export show, transpose
-
+"""
+	An abstract Manifold to represent a manifold whose points are matrices.
+	For these manifolds the usual operators (+,-,*) are overloaded for points.
+"""
 abstract type MatrixManifold <: Manifold end
 """
 	MMPoint - A point on a matrix manifold
@@ -18,7 +21,9 @@ abstract type MatrixManifold <: Manifold end
 	decompostion – cache for a decomposition of value, e.g. into SVD
 """
 abstract type MMPoint <: MPoint end
-
+"""
+	MMTVector
+"""
 abstract type MMTVector <: MTVector end
 #
 #

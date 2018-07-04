@@ -7,7 +7,14 @@ import Base: exp, log, show
 
 export Sphere, SnPoint, SnTVector,show
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+"""
+    `Sphere <: MatrixManifold`
+    The base type for a the sphere ``\mathbb S^n`` abbreviated as Sn and
+    represented by vectors in ``\mathbb R^{n+1}``.
 
+    # Fields (additional to `MatrixManifold`)
+    None
+"""
 struct Sphere <: MatrixManifold
   name::String
   dimension::Int
