@@ -97,9 +97,13 @@ function exp{mT<:Manifold, T<:TVectorE, S<:MPoint}(M::mT,p::S,ξ::T)::T
     checkBase(p,ξ);
     return exp(p,ξ.value);
 end
-# for extended vectors as return values...return an extendede
-function log{mT<:Manifold, S<:MPoint}(M::mT,p::S,q::S)::TVectorE
-    return T(log(M,p,q),p);
+# for extended vectors set the base to true
+function log{mT<:Manifold, S<:MPoint}(M::mT,p::S,q::S,base=false)
+    if base
+        return TVectorE(log(M,p,q),p);
+    else
+        log(M,p,q)
+    end
 end
 # break down to inner if base
 function dot{mT<:Manifold, T<:TVectorE}(M::mT,ξ::T,ν::T)::Float64

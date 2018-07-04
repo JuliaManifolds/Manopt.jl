@@ -18,8 +18,9 @@ module Manopt
   include("manifolds/PowerManifold.jl")
   include("manifolds/ProductManifold.jl")
   include("manifolds/Sphere.jl")
-  # ...corresponding problems
-  include("problem/problem.jl")
+  # ...corresponding plans consisting of problems and options
+  include("plans/problem.jl")
+  include("plans/options.jl")
   # ...solvers
   include("solvers/steepestDescent.jl")
   # algorithms

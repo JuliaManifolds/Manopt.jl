@@ -8,5 +8,5 @@ Manopt.Manifold
 Manopt.MPoint
 ```
 ```@docs
-Manopt.MTVector
+Manopt.TVector
 ```

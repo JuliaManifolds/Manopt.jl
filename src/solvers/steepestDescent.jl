@@ -37,7 +37,8 @@ function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
         verbosity=0
     )
     # TODO Test Input
-    p = DescentProblem(M,F,gradF,x,Retraction,lineSeach[1],lineSeach[2],useCache,Verbosity,debug[1],debug[2])
+    p = GradientProblem(M,F,gradF)
+    o = GradientDescentOptions(x,Retraction,lineSeach[1],lineSeach[2],Verbosity,debug[1],debug[2])
     return steepestDescent(p)
 end
 """
@@ -45,45 +46,51 @@ end
         performs a steepestDescent based on a DescentProblem struct.
         sets “x” “xold” and “Iteration” in a non-null debugSettings Dict.
 """
-function steepestDescent{P <: DescentProblem}(problem::P)
+function steepestDescent{P <: GradientProblem, O <: GradientDescentOptions}(problem::P, options::O)
     stop = false
     iter = 0
-    x = problem.initX
-    s = problem.lineSearchProblem.initialStepsize
-    M = problem.manifold
-    retr = problem.retraction
+    x = getOptions(O).initX
+    s = getOptions(O).initialStepsize
     while !stop
-        if getVerbosity(problem) > 2
-            global reason
-        end
-        ξ = getGradient(problem,x)
-        s = getStepsize(problem,x,ξ,s)
-        xnew = retr(M,x,-s*ξ)
-        iter=iter+1
-        (stop, reason) = evaluateStoppingCriterion(problem,iter,ξ,x,xnew)
-        # Debug
-        if getVerbosity(problem) > 4 && !isnull(problem.debugSettings) && !isnull(problem.debugFunction)
-            d = get(problem.debugSettings);
-            if haskey(d,"x")
-                d["x"] = xnew;
-            end
-            if haskey(d,"xold")
-                d["xold"] = x;
-            end
-            if haskey(d,"gradient")
-                d["gradient"] = ξ;
-            end
-            if haskey(d,"Iteration")
-                d["Iteration"] = iter;
-            end
-            if haskey(d,"Stepsize")
-                d["Stepsize"] = s;
-            end
-            get(problem.debugFunction)(d);
-        end
-    end
-    if getVerbosity(problem) > 2 && length(reason) > 0
+        xnew,s,iter,stop,reason = gradientStep(problem, options,iter,s,x)
+    if getVerbosity(options) > 2 && length(reason) > 0
         print(reason)
     end
     return x,reason
+end
+
+function gradientStep{P <: GradientProblem, O <: GradientDescentOptions, MP <: MPoint}(problem::P, options::O,iter::Int,s::Float64,x::MP)
+    M = problem.manifold
+    ξ = getGradient(problem,x)
+    s = getStepsize(problem,x,ξ,s)
+    xnew = O.retraction(M,x,-s*ξ)
+    iter=iter+1
+    (stop, reason) = O.evaluateStoppingCriterion(problem,iter,ξ,x,xnew)
+    return xnew,s,iter,stop,reason;
+end
+
+function gradientStep{P <: GradientProblem, D <: DebugDecoOptions{O} where O <: GradientDescentOptions, MP <: MPoint}(problem::P, options::D, iter::Int,s::Float64,x::MP)
+    # for debug
+    ξ = getGradient(problem,x)
+    # classical debug
+    xnew,s,iter,stop,reason = gradientStep(problem,options.options,iter,s,x);
+    # decorate
+    d = options.debugSettings;
+    # Update values for debug
+    if haskey(d,"x")
+        d["x"] = xnew;
+    end
+    if haskey(d,"xold")
+        d["xold"] = x;
+    end
+    if haskey(d,"gradient")
+        d["gradient"] = ξ;
+    end
+    if haskey(d,"Iteration")
+        d["Iteration"] = iter;
+    end
+    if haskey(d,"Stepsize")
+        d["Stepsize"] = s;
+    end
+    options.debugFunction(d);
 end

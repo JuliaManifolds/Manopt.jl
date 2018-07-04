@@ -34,7 +34,7 @@ File | Abbr. |  supertype |  Manifold $\mathcal M$ | Comment
 `Circle.jl`  | `S1`| `M` | $1$-Sphere $\mathbb S^1$ | represented as angles $p_i\in[-\pi,\pi)$
 `Euclidean.jl` | `Rn` | `M` |  $n$-dimensional Euclidean space $\mathbb R^n$
 `Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$ |
-`MatrixManifold` | `MM` | `M` |  The manifold, where points are represented by matrices |
+`MatrixManifold` | `Mat` | `M` |  The manifold, where points are represented by matrices |
 `PowerManifold.jl` | `PowM` | `M` | $\mathcal M^n$ | where $n$ can be a vector |
 `ProductManifold.jl` | `ProdM` | `M` | $\mathcal M_1\times \mathcal M_2\times\cdot \mathcal M_n$ | might be arranged in any array |
 `SymmetricPositiveDefinite.jl` | `SPD` | `MM` |  $n\times n$ symmetric positive matrices | using the affine metric
