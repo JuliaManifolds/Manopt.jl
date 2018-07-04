@@ -36,7 +36,7 @@ level.
   * `MPoint` a point on the manifold, where the naming convention is to shorten
   the manifold to `M` or a specific manifold to a unique abbreviation
   (e.g. `Sn` for the sphere)
-  * `MTVector` a manifold tangential vector with the same naming convention as
+  * `TVector` a manifold tangential vector with the same naming convention as
   above replacing again the `M` shorthand for manifold
 
 	For an overview of already available manifolds see [Documentation.md](Documentation.md)

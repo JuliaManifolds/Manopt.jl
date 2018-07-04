@@ -1,13 +1,13 @@
 #
 #      Manifold -- a manifold defined via its data types:
 #  * A point on the manifold, MPoint
-#  * A point in an tangential space MTVector
+#  * A point in an tangential space TVector
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
 import Base.LinAlg: norm, dot
 import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
-export MPoint, MTVector
+export MPoint, TVector
 # introduce new functions
 export distance, exp, log, norm, dot, manifoldDimension
 export geodesic, midPoint, addNoise
@@ -23,61 +23,97 @@ abstract type Manifold end
 abstract type MPoint end
 
 """
-      MTVector - a point on a tangent plane of a base point, which might
+      TVector - a point on a tangent plane of a base point, which might
   be null if the tangent space is fixed/known to spare memory.
 """
-abstract type MTVector end
+abstract type TVector end
 
 # scale tangential vectors
-*{T <: MTVector}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
-*{T <: MTVector}(s::Number, ξ::T)::T = T(s*ξ.value,ξ.base)
-*{T <: MTVector}(ξ::Vector{T},s::Number)::T = [ξe*s for ξe in ξ]
-*{T <: MTVector}(s::Number, ξ::Vector{T}) = [s*ξe for ξe in ξ]
+*{T <: TVector}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
+*{T <: TVector}(s::Number, ξ::T)::T = T(s*ξ.value,ξ.base)
+*{T <: TVector}(ξ::Vector{T},s::Number)::T = [ξe*s for ξe in ξ]
+*{T <: TVector}(s::Number, ξ::Vector{T}) = [s*ξe for ξe in ξ]
 # /
-/{T <: MTVector}(ξ::T,s::Number)::T = T(ξ.value./s,ξ.base)
-/{T <: MTVector}(s::Number, ξ::T)::T = T(s./ξ.value,ξ.base)
-/{T <: MTVector}(ξ::Vector{T},s::Number) = [ξe/s for ξe in ξ]
-/{T <: MTVector}(s::Number, ξ::Vector{T}) = [s/ξe for ξe in ξ]
-# + - of MTVectors
-function +{T <: MTVector}(ξ::T,ν::T)::T
-  if checkBase(ξ,ν)
-    return T(ξ.value+ν.value,ξ.base)
-  else
-    throw(ErrorException("Can't add two tangential vectors belonging to
-      different tangential spaces."))
-  end
+/{T <: TVector}(ξ::T,s::Number)::T = T(ξ.value./s,ξ.base)
+/{T <: TVector}(s::Number, ξ::T)::T = T(s./ξ.value,ξ.base)
+/{T <: TVector}(ξ::Vector{T},s::Number) = [ξe/s for ξe in ξ]
+/{T <: TVector}(s::Number, ξ::Vector{T}) = [s/ξe for ξe in ξ]
+# + - of TVectors
+function +{T <: TVector}(ξ::T,ν::T)
+    return T(ξ.value+ν.value)
 end
-function -{T <: MTVector}(ξ::T,ν::T)::T
-  if checkBase(ξ,ν)
+function -{T <: TVector}(ξ::T,ν::T)::T
     return T(ξ.value-ν.value,ξ.base)
-  else
-    throw(ErrorException("Can't subtract two tangential vectors belonging to
-    different tangential spaces."))
-  end
 end
 # unary operators
--{T <: MTVector}(ξ::T)::T = T(-ξ.value,ξ.base)
-+{T <: MTVector}(ξ::T)::T = T(ξ.value,ξ.base)
+-{T <: TVector}(ξ::T)::T = T(-ξ.value,ξ.base)
++{T <: TVector}(ξ::T)::T = T(ξ.value,ξ.base)
 
 # compare Points & vectors
 =={T <: MPoint}(p::T, q::T)::Bool = all(p.value == q.value)
-=={T <: MTVector}(ξ::T,ν::T)::Bool = ( checkBase(ξ,ν) && all(ξ.value==ν.value) )
+=={T <: TVector}(ξ::T,ν::T)::Bool = ( checkBase(ξ,ν) && all(ξ.value==ν.value) )
 
-function checkBase{T <: MTVector}(ξ::T, ν::T)::Bool
-  if (!isnull(ξ.base)) && (!isnull(ν.base)) &&
-		 		(get(ξ.base).value != get(ν.base).value)
-	  	throw( ErrorException("checkBase - The two tangent vectors "string(ξ)" and ("string(ν)") do not have the same (non-null) base vector) – use parallel transport before combining these.") )
-			return false
-  end
-	return true
+# Decorator pattern for keeping and checking base
+struct TVectorE{T <: TVector, P <: MPoint} <: TVector
+    vector::T
+    base::P
+    TVectorE{T,P}(value::T,base::P) where {T <: TVector, P <: MPoint} = new(value,base)
 end
-function checkBase{T <: MPoint, S <: MTVector}(p::T, ξ::S)::Bool
-  if (!isnull(ξ.base)) && (get(ξ.base).value != p.value)
-		throw( ErrorException("checkBase - The tangent vector "string(ξ)" does not have the manifold point "string(p)" as a (non-null) base.") )
-		return false
-	end
-	return true
+show(io::IO, ξ::TVectorE) = print(io, "$(ξ.value)_$(ξ.base)")
+function +{T <: TVectorE}(ξ::T,ν::T)
+    checkBase(ξ,ν)
+    return T(ξ.value+ν.value,ξ.base)
 end
+function -{T <: TVectorE}(ξ::T,ν::T)::T
+    checkBase(ξ,ν)
+    return T(ξ.value-ν.value,ξ.base)
+end
+function checkBase{T <: TVectorE}(ξ::T,ν::T)
+    if ξ.base != ν.base
+        throw(
+            ErrorException("The two tangent vectors do not have the same base.")
+        );
+    else
+        return true;
+    end
+end
+function checkBase{T <: TVectorE, P <: MPoint}(ξ::T,x::P)
+    if ξ.base != x
+        throw(
+            ErrorException("The tangent vector is not from the tangent space of $x")
+        );
+    else
+        return true;
+    end
+end# unary operators
+-{T <: TVectorE}(ξ::T)::T = T(-ξ.value,ξ.base)
++{T <: TVectorE}(ξ::T)::T = T(ξ.value,ξ.base)
+
+# compare extended vectors
+=={T <: TVectorE}(ξ::T,ν::T)::Bool = ( checkBase(ξ,ν) && all(ξ.value==ν.value) )
+
+# extended exp check base and return exp of value if that did not fail
+function exp{mT<:Manifold, T<:TVectorE, S<:MPoint}(M::mT,p::S,ξ::T)::T
+    checkBase(p,ξ);
+    return exp(p,ξ.value);
+end
+# for extended vectors as return values...return an extendede
+function log{mT<:Manifold, S<:MPoint}(M::mT,p::S,q::S)::TVectorE
+    return T(log(M,p,q),p);
+end
+# break down to inner if base
+function dot{mT<:Manifold, T<:TVectorE}(M::mT,ξ::T,ν::T)::Float64
+    checkBase()
+    return dot(M,ξ.value,ν.value)
+end
+# break down to inner for differents
+function dot{mT<:Manifold, T<:TVectorE, S<:TVector}(M::mT,ξ::T,ν::S)::Float64
+    return dot(M,ξ.value,ν)
+end
+function dot{mT<:Manifold, T<:TVectorE, S<:TVector}(M::mT,ξ::S,ν::T)::Float64
+    return dot(M,ξ.value,ν)
+end
+
 #
 #
 # Mid point and geodesics
@@ -153,7 +189,7 @@ end
   computes the inner product of two tangential vectors ξ=ξp and ν=νp in TpM
   of p on the manifold `M`.
 """
-function dot{mT <: Manifold, T <: MTVector}(M::mT, ξ::T, ν::T)::Number
+function dot{mT <: Manifold, T <: TVector}(M::mT, ξ::T, ν::T)::Number
   sig1 = string( typeof(ξ) )
   sig2 = string( typeof(ν) )
   sig3 = string( typeof(M) )
@@ -167,7 +203,7 @@ end
 	Optional Arguments (standard value)
 	* cache (true) : cache intermediate results for a faster exponential map at p for further runs
 """
-function exp{mT<:Manifold, T<:MPoint, S<:MTVector}(M::mT, p::T, ξ::S,cache::Bool=true)::MPoint
+function exp{mT<:Manifold, T<:MPoint, S<:TVector}(M::mT, p::T, ξ::S)::T
   sig1 = string( typeof(p) )
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(M) )
@@ -179,12 +215,12 @@ end
   parametrized).
 
 	Optional Arguments (standard value)
-	* includeBase (false) : include the base withing the resulting MTVector,
+	* includeBase (false) : include the base withing the resulting TVector,
 	 	makes validity checks more reliable/possivle but also requires more memory
 	* cache (true) : cache intermediate results for a faster exponential map at p for further runs
 
 """
-function log{mT<:Manifold, T<:MPoint, S<:MPoint}(M::mT,p::T,q::S,includeBase::Bool=false,cache::Bool=true)::MTVector
+function log{mT<:Manifold, T<:MPoint, S<:MPoint}(M::mT,p::T,q::S)::TVector
   sig1 = string( typeof(p) )
   sig2 = string( typeof(q) )
   sig3 = string( typeof(M) )
@@ -206,7 +242,7 @@ end
     norm(M,x,ξ)
   computes the lenth of a tangential vector in TxM
 """
-function norm{mT<:Manifold, T<: MPoint, S<:MTVector}(M::mT,x::T,ξ::S)::Number
+function norm{mT<:Manifold, T<: MPoint, S<:TVector}(M::mT,x::T,ξ::S)::Number
 	sig1 = string( typeof(ξ) )
 	sig2 = string( typeof(x) )
 	sig3 = string( typeof(M) )

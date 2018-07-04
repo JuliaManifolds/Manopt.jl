@@ -6,7 +6,7 @@
 import Base: exp, log, show
 import Base.LinAlg: transpose
 
-export MatrixManifold, MMPoint, MMTVector
+export MatrixManifold, MatPoint, MatTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export show, transpose
 """
@@ -15,28 +15,28 @@ export show, transpose
 """
 abstract type MatrixManifold <: Manifold end
 """
-	MMPoint - A point on a matrix manifold
+	MatPoint - A point on a matrix manifold
 	# Elements
 	value  - (like Manifold) containg a representation of the manifold point
 	decompostion – cache for a decomposition of value, e.g. into SVD
 """
-abstract type MMPoint <: MPoint end
+abstract type MatPoint <: MPoint end
 """
-	MMTVector
+	MatTVector
 """
-abstract type MMTVector <: MTVector end
+abstract type MatTVector <: TVector end
 #
 #
-# promote operations to the value field of MMPoint and MMTVector
-+{T <: MMPoint}(x::T,y::T)::MMPoint = T(x.value + y.value)
--{T <: MMPoint}(x::T,y::T)::MMPoint = T(x.value - y.value)
-*{T <: MMPoint}(x::T,y::T)::Array = transpose(x.value)*y.value
-*{T <: MMTVector}(ξ::T,ν::T)::Array = transpose(ξ.value)*ν.value
-*{T <: MMTVector, S <: MMPoint}(x::T,y::S)::Array = transpose(x.value)*y.value
-*{T <: MMTVector, S <: MMPoint}(x::S,y::T)::Array = transpose(x.value)*y.value
-function transpose{T <: MMPoint}(x::T)::Array
+# promote operations to the value field of MatPoint and MatTVector
++{T <: MatPoint}(x::T,y::T)::MatPoint = T(x.value + y.value)
+-{T <: MatPoint}(x::T,y::T)::MatPoint = T(x.value - y.value)
+*{T <: MatPoint}(x::T,y::T)::Array = transpose(x.value)*y.value
+*{T <: MatTVector}(ξ::T,ν::T)::Array = transpose(ξ.value)*ν.value
+*{T <: MatTVector, S <: MatPoint}(x::T,y::S)::Array = transpose(x.value)*y.value
+*{T <: MatTVector, S <: MatPoint}(x::S,y::T)::Array = transpose(x.value)*y.value
+function transpose{T <: MatPoint}(x::T)::Array
   return transpose(x.value)
 end
-function transpose{T <: MMTVector}(ξ::T)::Array
+function transpose{T <: MatTVector}(ξ::T)::Array
   return transpose(x.value)
 end

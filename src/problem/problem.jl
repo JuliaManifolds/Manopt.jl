@@ -125,20 +125,20 @@ evaluates the stopping criterion of problem with respect to the current
 iteration iter, the descent direction ξ, and two (successive) iterates x1, x2
 of the algorithm.
 """
-function getStepsize{P <: DescentProblem, MP <: MPoint, MT <: MTVector}(p::P,
+function getStepsize{P <: DescentProblem, MP <: MPoint, MT <: TVector}(p::P,
                               x::MP,gradF::MT,descentDir::MT,s::Float64)
   p.lineSearchProblem.initialStepsize = s
   return p.lineSearch(p.lineSearchProblem,x,gradF,descentDir)
 end
-function getStepsize{P <: DescentProblem, MP <: MPoint, MT <: MTVector}(p::P,
+function getStepsize{P <: DescentProblem, MP <: MPoint, MT <: TVector}(p::P,
                               x::MP, gradF::MT, descentDir::MT)
   return getStepSize(p,x,gradF,descentDir,p.lineSearchProblem.initialStepsize)
 end
-function getStepsize{P<:DescentProblem, MP <: MPoint, MT <: MTVector}(p::P,
+function getStepsize{P<:DescentProblem, MP <: MPoint, MT <: TVector}(p::P,
                               x::MP,gradF::MT,s::Float64)
   return getStepsize(p,x,gradF,-gradF,s)
 end
-function getStepsize{P<:DescentProblem, MP <: MPoint, MT <: MTVector}(p::P,
+function getStepsize{P<:DescentProblem, MP <: MPoint, MT <: TVector}(p::P,
                               x::MP, gradF::MT)
   return p.lineSearch(pL,x,gradF,-gradF)
 end
@@ -160,7 +160,7 @@ evaluates the stopping criterion of problem with respect to the current
 iteration iter, the descent direction ξ, and two (successive) iterates x1, x2
 of the algorithm.
 """
-function evaluateStoppingCriterion{P<:DescentProblem, MP <: MPoint, MT <: MTVector, I<:Integer}(p::P,
+function evaluateStoppingCriterion{P<:DescentProblem, MP <: MPoint, MT <: TVector, I<:Integer}(p::P,
                           iter::I,ξ::MT, x1::MP, x2::MP)
   p.stoppingCriterion(iter,ξ,x1,x2)
 end

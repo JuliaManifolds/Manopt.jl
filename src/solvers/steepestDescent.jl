@@ -44,7 +44,6 @@ end
     steepestDescent(problem)
         performs a steepestDescent based on a DescentProblem struct.
         sets “x” “xold” and “Iteration” in a non-null debugSettings Dict.
-
 """
 function steepestDescent{P <: DescentProblem}(problem::P)
     stop = false

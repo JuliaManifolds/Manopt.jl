@@ -21,7 +21,7 @@ export ArmijoLineSearch
     OUTPUT
       s - the resulting stepsize
 """
-function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::LineSearchProblem{Mc},
+function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: TVector}(problem::LineSearchProblem{Mc},
     x::MP,gradFx::MT,descentDirection::MT, retraction::Function=exp)::Float64
   e = problem.costFunction(x)
   eNew = e-1
@@ -48,4 +48,4 @@ function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::L
   return s
 end
 # call without a descent direction -> take the negative gradient
-ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: MTVector}(problem::LineSearchProblem{Mc},x::MP, gradFx::MT, retraction::Function=exp) = ArmijoLineSearch(problem, x, gradFx, -gradFx,retraction)
+ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: TVector}(problem::LineSearchProblem{Mc},x::MP, gradFx::MT, retraction::Function=exp) = ArmijoLineSearch(problem, x, gradFx, -gradFx,retraction)

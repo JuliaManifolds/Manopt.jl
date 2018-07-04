@@ -19,76 +19,44 @@ struct SymmetricPositiveDefinite <: MatrixManifold
   SymmetricPositiveDefinite(dimension::Int) = new("$dimension-by-$dimension symmetric positive definite matrices",(dimension*(dimension+1)/2),"SPD($dimension) affine")
 end
 
-struct SPDPoint <: MMPoint
+struct SPDPoint <: MatPoint
 	value::Matrix{Float64}
-	decomposition::Array{Matrix{Float64},1}
-	SPDPoint(v::Matrix{Float64}) = new(v,[])
-	SPDPoint(v::Matrix{Float64}, decomp::Array{Matrix{Float64},1}) = new(v,decomp)
-	SPDPoint(p::SPDPoint) = new(copy(p.value),copy(p.decomp))
+	SPDPoint(v::Matrix{Float64}) = new(v);
 end
 
-struct SPDTVector <: MMTVector
+struct SPDTVector <: TVector
 	value::Matrix{Float64}
-  base::Nullable{SPDPoint}
-  SPDTVector(value::Matrix{Float64}) = new(value,Nullable{SPDPoint}())
-  SPDTVector(value::Matrix{Float64},base::SPDPoint) = new(value,base)
-  SPDTVector(value::Matrix{Float64},base::Nullable{SPDPoint}) = new(value,base)
-end
-"""
-	decomp(p::SPDPoint,cache=true)
-"""
-function decomp!(p::SPDPoint,cache::Bool=true)::Array{Matrix{Float64},1}
-	svdResult = svd(p.value)
-	if cache # cache result?
-		if length(p.decomposition)==0
-			# not cached before?
-			push!(p.decomposition,svdResult[1])
-			push!(p.decomposition,diagm(svdResult[2]))
-			push!(p.decomposition,svdResult[3])
-			# note that since p.value is struct the cache never expires.
-		end
-		return p.decomposition
-	end
+  	SPDTVector(value::Matrix{Float64}) = new(value);
 end
 
 function exp(M::SymmetricPositiveDefinite,p::SPDPoint,ξ::SPDTVector,t::Float64=1.0, cache::Bool=true)
-	if checkBase(p,ξ)
-	  #if norm(M,p,ξ) == 0
-	  #	return p
-	  #else
-		  svd1 = decomp!(p,cache)
-		  U = svd1[1]
-		  S = copy(svd1[2])
-		  Ssqrt = sqrt.(diag(S))
-		  SsqrtInv = diagm(1./Ssqrt)
-	  	pSqrt = U*diagm(Ssqrt)*U.'
-  		T = U*SsqrtInv*U.'*(t.*ξ.value)*U*SsqrtInv*U.';
-		  svd2 = svd(T)
-		  Se = diagm(exp.(svd2[2]))
-		  Ue = svd2[1]
-		  return SPDPoint(pSqrt*Ue*Se*Ue.'*pSqrt)
-		#end
-	end
+ 	svd1 = svd(p.value);
+	U = svd1[1];
+	S = copy(svd1[2]);
+	Ssqrt = sqrt.(diag(S));
+	SsqrtInv = diagm(1./Ssqrt);
+	pSqrt = U*diagm(Ssqrt)*U.';
+  	T = U*SsqrtInv*U.'*(t.*ξ.value)*U*SsqrtInv*U.';
+    svd2 = svd(T);
+   	Se = diagm(exp.(svd2[2]))
+  	Ue = svd2[1]
+	return SPDPoint(pSqrt*Ue*Se*Ue.'*pSqrt)
 end
 
-function log(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint, includeBase::Bool=false,cache::Bool=true)
-	svd1 = decomp!(p)
+function log(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint)
+	svd1 = svd(p.value)
 	U = svd1[1]
-	S = copy(svd1[2])
+	S = svd1[2]
 	Ssqrt = sqrt.(diag(S))
 	SsqrtInv = diagm(1./Ssqrt)
 	Ssqrt = diagm(Ssqrt)
-  pSqrt = U*Ssqrt*U.'
+  	pSqrt = U*Ssqrt*U.'
 	T = U*SsqrtInv*U.'*q.value*U*SsqrtInv*U.'
 	svd2 = svd(T)
 	Se = diagm(log.(svd2[2]))
 	Ue = svd2[1]
 	ξ = pSqrt*Ue*Se*Ue.'*pSqrt
-	if includeBase
-		return SPDTVector(ξ,p)
-	else
-		return SPDTVector(ξ)
-	end
+	return SPDTVector(ξ)
 end
 
 # shortest way to compute
@@ -98,23 +66,23 @@ end
 function distance(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint)::Float64
   return sqrt(sum(log.(abs.(eig(p.value,q.value)[1])).^2))
 end
-function dot(M::SymmetricPositiveDefinite, p::SPDPoint, ξ::SPDTVector, ν::SPDTVector, cache::Bool=true)
-	svd1 = decomp!(p,cache)
+function dot(M::SymmetricPositiveDefinite, p::SPDPoint, ξ::SPDTVector, ν::SPDTVector)
+	svd1 = svd(p.value)
 	U = svd1[1]
-	S = copy(svd1[2])
+	S = svd1[2]
 	SInv = diagm(1./diag(S))
 	return trace(ξ.value*U*SInv*U.'*ν.value*U*Sing*U.')
 end
 
-function parallelTransport(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint,ξ::SPDTVector,cache::Bool=true)::SPDTVector
-	svd1 = decomp!(p,cache)
+function parallelTransport(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint,ξ::SPDTVector)::SPDTVector
+	svd1 = svd(p.value)
 	U = svd1[1]
-	S = copy(svd1[2])
+	S = svd1[2]
 	Ssqrt = sqrt.(diag(S))
 	SsqrtInv = diagm(1./Ssqrt)
 	Ssqrt = diagm(Ssqrt)
 	pSqrt = U*Ssqrt*U.'
-  pSqrtInv = U*SsqrtInv*U.'
+  	pSqrtInv = U*SsqrtInv*U.'
 	tξ = pSqrtInv*ξ.value*pSqrtInv
 	tQ = pSqrtInv*q.value*pSqrtInv
 	svd2 = svd(tQ)
@@ -124,13 +92,9 @@ function parallelTransport(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint,
 	eig1 = eig(0.5*tQ2)
 	Sf = diagm(exp.(eig1[1]))
 	Uf = eig1[2]
-	if isnull(ξ.base)
-		return SPDTVector(pSqrt*Uf*Sf*Uf.'*(0.5*(tξ+tξ.'))*Uf*Sf*Uf.'*pSqrt)
-	else
-		return SPDTVector(pSqrt*Uf*Sf*Uf.'*(0.5*(tξ+tξ.'))*Uf*Sf*Uf.'*pSqrt,q)
-	end
+	return SPDTVector(pSqrt*Uf*Sf*Uf.'*(0.5*(tξ+tξ.'))*Uf*Sf*Uf.'*pSqrt)
 end
 
 show(io::IO, M::SymmetricPositiveDefinite) = print(io, "The Manifold $(M.name).")
 show(io::IO, p::SPDPoint) = print(io, "SPD($(p.value))")
-show(io::IO, ξ::SPDTVector) = isnull(ξ.base) ? print(io, "SPDT($(ξ.value))") : print(io, "SPDT_$(ξ.base.value)($(ξ.value))")
+show(io::IO, ξ::SPDTVector) = print(io, "SPDT($(ξ.value))")

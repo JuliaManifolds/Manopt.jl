@@ -16,18 +16,18 @@ manifold is explicitly given in the sense of a closed form exponential and
 logarithmic map for example, or only approximately.
 
 Furthermore there are two types accompanying each manifold – a point on the
-manifold inheriting from `MPoint` and the tangential vector `MTVector`. For both
+manifold inheriting from `MPoint` and the tangential vector `TVector`. For both
 the term manifold is shortened to `M` for concise naming. Each manifold also
 inherits such a short abbreviation, see `Abbr.` in the following table.
 Furthermore there is an abstract type (struct) `MatrixManifold` (Abbreviation `MM`) that
-overloads the operands `*,/,+,-` for the `MMPoint`. Furthermore each `MMPoint`is
+overloads the operands `*,/,+,-` for the `MatPoint`. Furthermore each `MatPoint`is
 indeed a matrix, so they also possess an array to store its decomposition, namely
 for $\mathbf{A}\in\mathbb R^{n,m}$ its singular value decomposition
 $\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}$.
 Compared to Matlab, we do not implicitly do vectorization but use explicitly a
-`ProdctManifold` (with `ProdMPoint` and `ProdMTVector`) consisting of an array of manifolds,
+`ProdctManifold` (with `ProdMPoint` and `ProdTVector`) consisting of an array of manifolds,
 as well as the product manifold consisting of only one manifold, i.e. the `PowerManifold`
-(with `PowMPoint` and `PowMTVector`).
+(with `PowMPoint` and `PowTVector`).
 
 File | Abbr. |  supertype |  Manifold $\mathcal M$ | Comment
 -----|-------|------------|-----------------------|---------
@@ -45,7 +45,7 @@ Despite the given structure by Julia (folders `src/`, `docs/`, `test/`), this
 package consists of the following structre:
 * a folder in the main directory `Tutorials/` containing all Tutorials as Juypter
   notebooks (thats why they are not wihtin `src/`) that should cover all main
-  algorithms and introduce the data structures (`Manifold`, `MPoint`, `MTVector`
+  algorithms and introduce the data structures (`Manifold`, `MPoint`, `TVector`
   structure)
 * the `src/` folder itself structures the parts of the Toolbox as follows (roughly
   in order of importance). The main file including all following is `Manopt.jl`

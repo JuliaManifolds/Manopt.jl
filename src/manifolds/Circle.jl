@@ -20,12 +20,9 @@ struct S1Point <: MPoint
   S1Point(value::Float64) = new(value)
 end
 
-struct S1TVector <: MTVector
+struct S1TVector <: TVector
   value::Float64
-  base::Nullable{S1Point}
-  S1TVector(value::Float64) = new(value,Nullable{S1Point}())
-  S1TVector(value::Float64,base::S1Point) = new(value,base)
-  S1TVector(value::Float64,base::Nullable{S1Point}) = new(value,base)
+  S1TVector(value::Float64) = new(value)
 end
 
 function addNoise(M::Circle, p::S1Point,σ::Real)::S1Point
@@ -38,24 +35,15 @@ function distance(M::Circle, p::S1Point,q::S1Point)::Float64
 end
 
 function dot(M::Circle, p::S1Point, ξ::S1TVector, ν::S1TVector)::Float64
-  if checkBase(ξ,ν)
     return ξ.value*ν.value
-  else
-    throw(ErrorException("Can't compute dot product of two tangential vectors
-		belonging to different tangential spaces."))
-  end
 end
 
 function exp(M::Circle, p::S1Point,ξ::S1TVector,t::Number=1.0)::S1Point
   return S1Point(symRem(p.value+t*ξ.value))
 end
 
-function log(M::Circle, p::S1Point,q::S1Point,includeBase::Bool=false)::S1TVector
-  if includeBase
-    return S1TVector(symRem(q.value-p.value),p)
-  else
+function log(M::Circle, p::S1Point,q::S1Point)::S1TVector
     return S1TVector(symRem(q.value-p.value))
-  end
 end
 
 function manifoldDimension(p::S1Point)::Int
@@ -70,19 +58,9 @@ end
 #
 #
 # Display functions for the structs
-function show(io::IO, M::Circle)
-  print(io, "The Manifold S1 consisting of angles")
-end
-function show(io::IO, m::S1Point)
-    print(io, "S1($(m.value))")
-end
-function show(io::IO, ξ::S1TVector)
-  if !isnull(ξ.base)
-    print(io, "S1T_$(ξ.base.value)($(ξ.value))")
-  else
-    print(io, "S1T($(ξ.value))")
-  end
-end
+show(io::IO, M::Circle) = print(io, "The Manifold S1 consisting of angles");
+show(io::IO, m::S1Point) = print(io, "S1($(m.value))");
+show(io::IO, ξ::S1TVector) = print(io, "S1T($(ξ.value))");
 #
 #
 # little Helpers

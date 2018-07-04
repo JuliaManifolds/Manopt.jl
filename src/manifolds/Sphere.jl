@@ -22,12 +22,12 @@ struct Sphere <: MatrixManifold
   Sphere(dimension::Int) = new("$dimension-Sphere",dimension,"S$(dimension-1)")
 end
 
-struct SnPoint <: MMPoint
+struct SnPoint <: MatPoint
   value::Vector
   SnPoint(value::Vector) = new(value)
 end
 
-struct SnTVector <: MMTVector
+struct SnTVector <: TVector
   value::Vector
   base::Nullable{SnPoint}
   SnTVector(value::Vector) = new(value,Nullable{SnPoint}())
@@ -101,4 +101,4 @@ end
 # --- Display functions for the objects/types
 show(io::IO, M::Sphere) = print(io, "The Manifold $(M.name).")
 show(io::IO, p::SnPoint) = print(io, "Sn($(p.value))")
-show(io::IO, ξ::SnTVector) = isnull(ξ.base) ? print(io, "SnT($(ξ.value))") : print(io, "SnT_$(ξ.base.value)($(ξ.value))")
+show(io::IO, ξ::SnTVector) = print(io, "SnT($(ξ.value))")
