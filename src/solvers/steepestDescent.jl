@@ -32,13 +32,17 @@ function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
             o::GradientLineSearchOptions) -> 0.5, GradientLineSearchOptions(x)),
         retraction::Function = exp,
         stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"critical point reached"),
-        debug::Tuple{Nullable{Function},Nullable{Dict{String,Any}},Int} = (Nullable{Function}(),Nullable{Dict{String,Any}}(),0)
+        kwargs... #especially may contain debug
     )
     # TODO Test Input
     p = GradientProblem(M,F,gradF)
     o = GradientDescentOptions(x,stoppingCriterion,retraction,lineSearch[1],lineSearch[2])
-    if !isnull(debug[1]) && !isnull(debug[2]) # decorate options
-        o = DebugDecoOptions(o,get(debug[1]),get(debug[2]),debug[3])
+    # create default here to check if the user provided a debug and still have the typecheck
+    debug::Tuple{Function,Dict{String,Any},Int}= (x::Dict{String,Any}->print(""),Dict{String,Any}(),0);
+    kwargs=Dict(kwargs)
+    if haskey(kwargs, :debug) # if a key is given -> decorate Options.
+        debug = kwargs[:debug]
+        o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
     end
     return steepestDescent(p,o)
 end
