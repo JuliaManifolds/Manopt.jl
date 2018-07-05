@@ -52,9 +52,7 @@ end
 function manifoldDimension(M::Circle)::Int
   return 1
 end
-function norm(M::Circle, ξ::S1TVector)::Float64
-  return abs(ξ.value)
-end
+norm(M::Circle, p::S1Point, ξ::S1TVector)::Float64 = abs(ξ.value)
 #
 #
 # Display functions for the structs

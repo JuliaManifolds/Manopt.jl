@@ -76,7 +76,7 @@ manifoldDimension(p::SnPoint)::Integer = length(p.value)-1
 
 manifoldDimension(M::Sphere)::Integer = M.dimension
 
-norm(M::Sphere, ξ::SnTVector)::Number = norm(ξ.value)
+norm(M::Sphere, p::SnPoint, ξ::SnTVector)::Number = norm(ξ.value)
 
 function parallelTransport(M::Sphere, p::SnPoint, q::SnPoint, ξ::SnTVector)
 	if checkBase(p,ξ)

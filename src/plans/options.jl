@@ -37,6 +37,7 @@ type GradientDescentOptions <: Options
     lineSearch::Function
     lineSearchOptions::L where {L <:LineSearchOptions}
     # fallback do exp
+    GradientDescentOptions(initX::MP where {MP <:MPoint},sC::Function,retr::Function,lS::Function,lSO::LSO where {LSO <: LineSearchOptions}) = new(initX,sC,retr,lS,lSO)
     GradientDescentOptions(initX::MP where {MP <:MPoint},sC::Function,lS::Function,lSO::LSO where {LSO <: LineSearchOptions}) = new(initX,sC,exp,lS,lSO)
 end
 

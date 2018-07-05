@@ -28,16 +28,17 @@ export steepestDescent
 """
 function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
         F::Function, gradF::Function, x::MP;
-        lineSearch::Tuple{Function,Options}=((p,M,gradF,ξ)->1/2,LineSearchProblem(M,F)),
+        lineSearch::Tuple{Function,Options}= ( (p::GradientProblem{Mc},
+            o::GradientLineSearchOptions) -> 0.5, GradientLineSearchOptions(x)),
         retraction::Function = exp,
-        stoppingCriterion::Function = (iter,ξ,x,xnew) -> norm(M,x,ξ) < 10^-4 || Iterations > 500,
-        debug::Tuple{Nullable{Function},Nullable{Dict{String,Any}},Int} = (Nullable{Function}(),Nullable{Dict{String,any}()}(),0)
+        stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"critical point reached"),
+        debug::Tuple{Nullable{Function},Nullable{Dict{String,Any}},Int} = (Nullable{Function}(),Nullable{Dict{String,Any}}(),0)
     )
     # TODO Test Input
     p = GradientProblem(M,F,gradF)
-    o = GradientDescentOptions(x,Retraction,lineSeach[1],lineSeach[2])
-    if !null(debug[1]) && !null(debug[2]) # decorate options
-        o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
+    o = GradientDescentOptions(x,stoppingCriterion,retraction,lineSearch[1],lineSearch[2])
+    if !isnull(debug[1]) && !isnull(debug[2]) # decorate options
+        o = DebugDecoOptions(o,get(debug[1]),get(debug[2]),debug[3])
     end
     return steepestDescent(p,o)
 end
