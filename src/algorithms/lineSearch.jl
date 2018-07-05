@@ -21,20 +21,23 @@ export ArmijoLineSearch
     OUTPUT
       s - the resulting stepsize
 """
-function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: TVector}(problem::LineSearchProblem{Mc},
-    x::MP,gradFx::MT,descentDirection::MT, retraction::Function=exp)::Float64
-  e = problem.costFunction(x)
-  eNew = e-1
+function ArmijoLineSearch{Mc<:Manifold}(problem::GradientProblem{Mc},
+    options::DescentLineSearchOptions)::Float64
   # for local shortness
   F = problem.costFunction
-  s = problem.initialStepsize
-  M = problem.manifold
-  ξ = descentDirection
-  ν = gradFx
-  ρ = problem.rho
-  c = problem.c
+  M = problem.M
+  x = options.x
+  ν = getGradient(problem,x)
+  s = options.initialStepsize
+  ρ = options.rho
+  c = options.c
+  retr = options.retraction
+  ξ = options.descentDirection
+  e = F(x)
+  eNew = e-1
+
   while e > eNew
-    xNew = exp(M,x,s*ξ)
+    xNew = retr(M,x,s*ξ)
     eNew = F(xNew) - c*s*dot(M,x,ξ,ν)
     if e >= eNew
       s = s/ρ
@@ -42,10 +45,11 @@ function ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: TVector}(problem::Li
   end
   while (e < eNew) && (s > typemin(Float64))
     s = s*ρ
-    xNew = exp(M,x,s*ξ)
+    xNew = retr(M,x,s*ξ)
     eNew = F(xNew) - c*s*dot(M,x,ξ,ν)
   end
   return s
 end
-# call without a descent direction -> take the negative gradient
-ArmijoLineSearch{Mc<:Manifold, MP <: MPoint, MT <: TVector}(problem::LineSearchProblem{Mc},x::MP, gradFx::MT, retraction::Function=exp) = ArmijoLineSearch(problem, x, gradFx, -gradFx,retraction)
+ArmijoLineSearch{Mc<:Manifold}(problem::GradientProblem{Mc},
+    options::GradientLineSearchOptions)::Float64 = ArmijoLineSearch(problem,
+    DescentLineSearchOptions(options,-getGradient(problem, options.x)) )

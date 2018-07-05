@@ -29,13 +29,13 @@ abstract type MPoint end
 abstract type TVector end
 
 # scale tangential vectors
-*{T <: TVector}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
-*{T <: TVector}(s::Number, ξ::T)::T = T(s*ξ.value,ξ.base)
+*{T <: TVector}(ξ::T,s::Number)::T = T(s*ξ.value)
+*{T <: TVector}(s::Number, ξ::T)::T = T(s*ξ.value)
 *{T <: TVector}(ξ::Vector{T},s::Number)::T = [ξe*s for ξe in ξ]
 *{T <: TVector}(s::Number, ξ::Vector{T}) = [s*ξe for ξe in ξ]
 # /
-/{T <: TVector}(ξ::T,s::Number)::T = T(ξ.value./s,ξ.base)
-/{T <: TVector}(s::Number, ξ::T)::T = T(s./ξ.value,ξ.base)
+/{T <: TVector}(ξ::T,s::Number)::T = T(ξ.value./s)
+/{T <: TVector}(s::Number, ξ::T)::T = T(s./ξ.value)
 /{T <: TVector}(ξ::Vector{T},s::Number) = [ξe/s for ξe in ξ]
 /{T <: TVector}(s::Number, ξ::Vector{T}) = [s/ξe for ξe in ξ]
 # + - of TVectors
@@ -46,8 +46,8 @@ function -{T <: TVector}(ξ::T,ν::T)::T
     return T(ξ.value-ν.value,ξ.base)
 end
 # unary operators
--{T <: TVector}(ξ::T)::T = T(-ξ.value,ξ.base)
-+{T <: TVector}(ξ::T)::T = T(ξ.value,ξ.base)
+-{T <: TVector}(ξ::T)::T = T(-ξ.value)
++{T <: TVector}(ξ::T)::T = T(ξ.value)
 
 # compare Points & vectors
 =={T <: MPoint}(p::T, q::T)::Bool = all(p.value == q.value)
@@ -85,7 +85,13 @@ function checkBase{T <: TVectorE, P <: MPoint}(ξ::T,x::P)
     else
         return true;
     end
-end# unary operators
+end
+# unary operators
+*{T <: TVectorE}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
+*{T <: TVectorE}(s::Number, ξ::T)::T = T(s*ξ.value,ξ.base)
+# /
+/{T <: TVectorE}(ξ::T,s::Number)::T = T(ξ.value./s,ξ.base)
+/{T <: TVectorE}(s::Number, ξ::T)::T = T(s./ξ.value,ξ.base)
 -{T <: TVectorE}(ξ::T)::T = T(-ξ.value,ξ.base)
 +{T <: TVectorE}(ξ::T)::T = T(ξ.value,ξ.base)
 

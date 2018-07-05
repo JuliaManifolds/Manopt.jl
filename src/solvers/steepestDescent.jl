@@ -12,70 +12,67 @@ export steepestDescent
             x - an initial value of F
 
     OPTIONAL
-        debug             - a tuple (f,p) of a DebugFunction f that is called
+        debug             - a tuple (f,p,v) of a DebugFunction f that is called
                                 with its settings dictionary fS that is updated
-                                during iterations (iter, x, xnew, stepSize)
+                                during iterations (iter, x, xnew, stepSize) and
+                                a verbosity v
         lineSearch        – a tuple (l,p) a line search function with its
                                 lineSeachProblem p. The default is a constant
                                 step size 1.
         retraction        - a retraction to use. Set to exp by standard
         stoppingCriterion – a function indicating when to stop. Default is to
             stop if ||gradF(x)||<10^-4 or Iterations > 500
-        verbosity         - set console verbosity.
-        useCache          - use a cache if available. Set to false by default
 
     OUTPUT
         xOpt – the resulting point of gradientDescent
 """
 function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
         F::Function, gradF::Function, x::MP;
-        debug=(Nullable{Function}(),Nullable{Dict}()),
-        lineSearch=((p,M,gradF,ξ)->1/2,LineSearchProblem(M,F)),
-        retraction=exp,
-        stoppingCriterion= (iter,ξ,x,xnew) -> norm(M,x,ξ) < 10^-4 || Iterations > 500,
-        useCache=false,
-        verbosity=0
+        lineSearch::Tuple{Function,Options}=((p,M,gradF,ξ)->1/2,LineSearchProblem(M,F)),
+        retraction::Function = exp,
+        stoppingCriterion::Function = (iter,ξ,x,xnew) -> norm(M,x,ξ) < 10^-4 || Iterations > 500,
+        debug::Tuple{Nullable{Function},Nullable{Dict{String,Any}},Int} = (Nullable{Function}(),Nullable{Dict{String,any}()}(),0)
     )
     # TODO Test Input
     p = GradientProblem(M,F,gradF)
-    o = GradientDescentOptions(x,Retraction,lineSeach[1],lineSeach[2],Verbosity,debug[1],debug[2])
-    return steepestDescent(p)
+    o = GradientDescentOptions(x,Retraction,lineSeach[1],lineSeach[2])
+    if !null(debug[1]) && !null(debug[2]) # decorate options
+        o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
+    end
+    return steepestDescent(p,o)
 end
 """
     steepestDescent(problem)
         performs a steepestDescent based on a DescentProblem struct.
-        sets “x” “xold” and “Iteration” in a non-null debugSettings Dict.
+        sets “x” “xold” and “Iteration” in a non-null debugOptions Dict.
 """
-function steepestDescent{P <: GradientProblem, O <: GradientDescentOptions}(problem::P, options::O)
-    stop = false
-    iter = 0
-    x = getOptions(O).initX
-    s = getOptions(O).initialStepsize
+function steepestDescent{P <: GradientProblem, O <: Options}(p::P, o::O)
+    stop::Bool = false
+    reason::String="";
+    iter::Integer = 0
+    x = getOptions(o).initX
+    s = getOptions(o).lineSearchOptions.initialStepsize
     while !stop
-        xnew,s,iter,stop,reason = gradientStep(problem, options,iter,s,x)
-    if getVerbosity(options) > 2 && length(reason) > 0
-        print(reason)
+        M = p.M
+        ξ = getGradient(p,x)
+        s = getStepsize(p,getOptions(o),x,s)
+        xnew = getOptions(o).retraction(M,x,-s*ξ)
+        iter=iter+1
+        (stop, reason) = evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
+        gradDescDebug(o,iter,x,xnew,ξ,s,reason);
+        x=xnew;
     end
     return x,reason
 end
-
-function gradientStep{P <: GradientProblem, O <: GradientDescentOptions, MP <: MPoint}(problem::P, options::O,iter::Int,s::Float64,x::MP)
-    M = problem.manifold
-    ξ = getGradient(problem,x)
-    s = getStepsize(problem,x,ξ,s)
-    xnew = O.retraction(M,x,-s*ξ)
-    iter=iter+1
-    (stop, reason) = O.evaluateStoppingCriterion(problem,iter,ξ,x,xnew)
-    return xnew,s,iter,stop,reason;
+# fallback - do nothing just unpeel
+function gradDescDebug{O <: Options, MP <: MPoint, MT <: TVector}(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String)
+    if getOptions(o) != o
+        gradDescDebug(getOptions(o),iter,x,xnew,ξ,s,reason)
+    end
 end
-
-function gradientStep{P <: GradientProblem, D <: DebugDecoOptions{O} where O <: GradientDescentOptions, MP <: MPoint}(problem::P, options::D, iter::Int,s::Float64,x::MP)
-    # for debug
-    ξ = getGradient(problem,x)
-    # classical debug
-    xnew,s,iter,stop,reason = gradientStep(problem,options.options,iter,s,x);
+function gradDescDebug{D <: DebugDecoOptions{O} where O<:Options, MT <: TVector, MP <: MPoint}(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String)
     # decorate
-    d = options.debugSettings;
+    d = o.debugOptions;
     # Update values for debug
     if haskey(d,"x")
         d["x"] = xnew;
@@ -92,5 +89,9 @@ function gradientStep{P <: GradientProblem, D <: DebugDecoOptions{O} where O <: 
     if haskey(d,"Stepsize")
         d["Stepsize"] = s;
     end
-    options.debugFunction(d);
+    # one could also activate a debug checking stept size to -grad if problem and chekNegative are given?
+    o.debugFunction(d);
+    if getVerbosity(o) > 2 && length(reason) > 0
+        print(reason)
+    end
 end
