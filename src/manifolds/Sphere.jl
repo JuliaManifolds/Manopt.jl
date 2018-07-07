@@ -44,7 +44,7 @@ end
 
 # Specify this Manifold to be a Manifold
 @traitimpl IsMatrixM{Sphere}
-@traitimpl IsMatrixV{SnTVector}
+@traitimpl IsMatrixP{SnPoint}
 @traitimpl IsMatrixV{SnTVector}
 
 #
