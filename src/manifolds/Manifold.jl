@@ -11,6 +11,7 @@ export Manifold, MPoint, TVector
 # introduce new functions
 export distance, exp, log, norm, dot, manifoldDimension
 export geodesic, midPoint, addNoise
+export +, -, *, /, ==, show
 # introcude new algorithms
 """
     Manifold - an abstract Manifold to keep global information on a specific manifold
