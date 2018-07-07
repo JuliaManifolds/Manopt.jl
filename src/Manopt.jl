@@ -7,9 +7,10 @@
   examples that can just be `include`d.
 """
 module Manopt
+  using SimpleTraits
 # Manifolds
   include("manifolds/Manifold.jl") #base type
-  # matrix manifold – common functions
+  # Traits (properties/decorators)
   include("manifolds/MatrixManifold.jl")
   # specific manifolds
   include("manifolds/Circle.jl")

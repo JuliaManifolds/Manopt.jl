@@ -19,6 +19,7 @@ export steepestDescent
         lineSearch        – a tuple (l,p) a line search function with its
                                 lineSeachProblem p. The default is a constant
                                 step size 1.
+        returnReason      - (false) whether or not to return the reason as second element
         retraction        - a retraction to use. Set to exp by standard
         stoppingCriterion – a function indicating when to stop. Default is to
             stop if ||gradF(x)||<10^-4 or Iterations > 500
@@ -32,6 +33,7 @@ function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
             o::GradientLineSearchOptions) -> 0.5, GradientLineSearchOptions(x)),
         retraction::Function = exp,
         stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"critical point reached"),
+        returnReason=false,
         kwargs... #especially may contain debug
     )
     # TODO Test Input
@@ -44,7 +46,12 @@ function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
         debug = kwargs[:debug]
         o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
     end
-    return steepestDescent(p,o)
+    x,r = steepestDescent(p,o)
+    if returnReason
+        return x,r;
+    else
+        return x;
+    end
 end
 """
     steepestDescent(problem)
