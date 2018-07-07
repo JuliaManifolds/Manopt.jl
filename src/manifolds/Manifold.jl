@@ -7,7 +7,7 @@
 import Base.LinAlg: norm, dot
 import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
-export MPoint, TVector
+export Manifold, MPoint, TVector
 # introduce new functions
 export distance, exp, log, norm, dot, manifoldDimension
 export geodesic, midPoint, addNoise
@@ -108,22 +108,22 @@ function log{mT<:Manifold, S<:MPoint}(M::mT,p::S,q::S,base=false)
     if base
         return TVectorE(log(M,p,q),p);
     else
-        log(M,p,q)
+        return log(M,p,q);
     end
 end
 # break down to inner if base
 function dot{mT<:Manifold, T<:TVectorE}(M::mT,ξ::T,ν::T)::Float64
     checkBase()
-    return dot(M,ξ.value,ν.value)
+    return dot(M,ξ.value,ν.value);
 end
 # break down to inner for differents
 function dot{mT<:Manifold, T<:TVectorE, S<:TVector}(M::mT,ξ::T,ν::S)::Float64
-    return dot(M,ξ.value,ν)
+    return dot(M,ξ.value,ν);
 end
 function dot{mT<:Manifold, T<:TVectorE, S<:TVector}(M::mT,ξ::S,ν::T)::Float64
-    return dot(M,ξ.value,ν)
+    return dot(M,ξ.value,ν);
 end
-
+# do the log and ep with extended points
 #
 #
 # Mid point and geodesics

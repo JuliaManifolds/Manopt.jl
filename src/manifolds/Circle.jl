@@ -9,6 +9,11 @@ export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export show
 
 export symRem
+
+#
+# Types
+#
+
 struct Circle <: Manifold
   name::String
   dimension::Int
@@ -24,7 +29,16 @@ struct S1TVector <: TVector
   value::Float64
   S1TVector(value::Float64) = new(value)
 end
+#
+# Traits
+#
+@traitimpl IsMatrixM{Circle}
+@traitimpl IsMatrixP{S1Point}
+@traitimpl IsMatrixV{S1TVector}
 
+#
+# Functions
+#
 function addNoise(M::Circle, p::S1Point,σ::Real)::S1Point
   return S1Point(mod(p.value-pi+σ*randn(),2*pi)+pi)
 end

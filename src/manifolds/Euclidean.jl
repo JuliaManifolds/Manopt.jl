@@ -8,14 +8,17 @@ import Base: exp, log, +, -, *, /, ==, show
 # introduce new functions
 export distance, exp, log, norm, dot, manifoldDimension, show
 
-struct Euclidean <: MatrixManifold
+#
+# Types
+#
+struct Euclidean <: Manifold
   name::String
   dimension::Int
   abbreviation::String
   Sphere(dimension::Int) = new("$dimension-dimensional Euclidean space",dimension,"R$dimension")
 end
 
-struct RnPoint <: MatPoint
+struct RnPoint <: MPoint
   value::Vector
   SnPoint(value::Vector) = new(value)
 end
@@ -24,7 +27,17 @@ struct RnTVector <: TVector
   value::Vector
   SnTVector(value::Vector) = new(value)
 end
+#
+# Traits
+#
+# - Rn is a MatrixManifold
+@traitimpl IsMatrixM{Euclidean}
+@traitimpl IsMatrixP{RnPoint}
+@traitimpl IsMatrixV{RnTVector}
 
+#
+# Functions
+#
 function distance(M::Euclidean,p::RnPoint,q::RnPoint)::Number
   return norm(p.value-q.value)
 end

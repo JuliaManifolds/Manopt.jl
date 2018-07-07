@@ -7,6 +7,10 @@ import Base: exp, log, show
 
 export Sphere, SnPoint, SnTVector,show
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+#
+# Type definitions
+#
+
 """
     `Sphere <: MatrixManifold`
     The base type for a the sphere ``\mathbb S^n`` abbreviated as Sn and
@@ -15,14 +19,14 @@ export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
     # Fields (additional to `MatrixManifold`)
     None
 """
-struct Sphere <: MatrixManifold
+struct Sphere <: Manifold
   name::String
   dimension::Int
   abbreviation::String
   Sphere(dimension::Int) = new("$dimension-Sphere",dimension,"S$(dimension-1)")
 end
 
-struct SnPoint <: MatPoint
+struct SnPoint <: MPoint
   value::Vector
   SnPoint(value::Vector) = new(value)
 end
@@ -34,6 +38,18 @@ struct SnTVector <: TVector
   SnTVector(value::Vector,base::SnPoint) = new(value,base)
   SnTVector(value::Vector,base::Nullable{SnPoint}) = new(value,base)
 end
+#
+# Traits
+#
+
+# Specify this Manifold to be a Manifold
+@traitimpl IsMatrixM{Sphere}
+@traitimpl IsMatrixV{SnTVector}
+@traitimpl IsMatrixV{SnTVector}
+
+#
+# Concrete Function definitions
+#
 
 function distance(M::Sphere,p::SnPoint,q::SnPoint)::Number
   return acos(dot(p.value,q.value))
