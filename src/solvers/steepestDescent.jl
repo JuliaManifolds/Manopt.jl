@@ -1,36 +1,40 @@
 #
 # A simple steepest descent algorithm implementation
 #
-export steepestDescent
-"""
-    steepestDescent(M,F,gradF,x)
-        perform a steepestDescent
-    INPUT
-            M – a manifold
-            F - a cost function to minimize
-        gradF - the gradient of F
-            x - an initial value of F
+export steepestDescent, gradDescDebug
+doc"""
+    steepestDescent(M, F, gradF, x)
+perform a steepestDescent
+# Input
+* `M` : a manifold $\mathcal M$
+* `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `gradF`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `x` : an initial value $x\in\mathcal M$
 
-    OPTIONAL
-        debug             - a tuple (f,p,v) of a DebugFunction f that is called
-                                with its settings dictionary fS that is updated
-                                during iterations (iter, x, xnew, stepSize) and
-                                a verbosity v
-        lineSearch        – a tuple (l,p) a line search function with its
-                                lineSeachProblem p. The default is a constant
-                                step size 1.
-        returnReason      - (false) whether or not to return the reason as second element
-        retraction        - a retraction to use. Set to exp by standard
-        stoppingCriterion – a function indicating when to stop. Default is to
-            stop if ||gradF(x)||<10^-4 or Iterations > 500
+# Optional
+* `debug` : (off) a tuple `(f,p,v)` of a DebugFunction `f`
+  that is called with its settings dictionary `p` and a verbosity `v`. Existing
+  fields of `p` are updated during the iteration from (iter, x, xnew, stepSize).
+* `lineSearch` : (`(p,lO) -> 1, lO::GradientLineSeachOptions)`) A tuple `(lS,lO)`
+  consisting of a line search function `lS` (called with two arguments, the
+  problem `p` and the lineSearchOptions `lO`) with its LineSearchOptions `lO`.
+  The default is a constant step size 1.
+* `retraction` : (`exp`) a retraction(M,x,ξ) to use.
+* `returnReason` : (`false`) whether or not to return the reason as second return
+   value.
+* `stoppingCriterion` : (`(i,ξ,x,xnew) -> ...`) a function indicating when to stop.
+  Default is to stop if the norm of the gradient $\lVert \xi\rVert_x$ is less
+  than $10^{-4}$ or the iterations `i` exceed 500.
 
-    OUTPUT
-        xOpt – the resulting point of gradientDescent
+# Output
+* `xOpt` – the resulting (approximately critical) point of gradientDescent
+* `reason` - if activated a String containing the stopping criterion stopping
+  reason.
 """
 function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
         F::Function, gradF::Function, x::MP;
         lineSearch::Tuple{Function,Options}= ( (p::GradientProblem{Mc},
-            o::GradientLineSearchOptions) -> 0.5, GradientLineSearchOptions(x)),
+            o::GradientLineSearchOptions) -> 1, GradientLineSearchOptions(x)),
         retraction::Function = exp,
         stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"critical point reached"),
         returnReason=false,
@@ -55,8 +59,11 @@ function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
 end
 """
     steepestDescent(problem,options)
-        performs a steepestDescent based on a DescentProblem struct.
-        sets “x” “xold” and “Iteration” in a non-null debugOptions Dict.
+performs a steepestDescent based on a GradientProblem containing all information
+for the `problem <: GradientProblem` (Manifold, costFunction, Gradient)  and
+Options for the solver (`initX <: MPoint`, `lineSearch` and `lineSearchOptions`,
+`retraction` and stoppingCriterion` functions); see the general Interface
+for details on these parameters.
 """
 function steepestDescent{P <: GradientProblem, O <: Options}(p::P, o::O)
     stop::Bool = false

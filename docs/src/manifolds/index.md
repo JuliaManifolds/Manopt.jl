@@ -1,7 +1,7 @@
 ```@meta
 CurrentModule = Manopt
 ```
-# Manifolds within `Manopt.jl`
+# Riemannian Manifolds
 All manifolds inherit from `Manifold` to store their main properties, which is
 most prominently the manifold dimension and the name of the manifold. This will
 be extended in the future, for example properties denoting whether the
