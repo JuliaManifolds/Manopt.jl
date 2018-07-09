@@ -1,4 +1,4 @@
-# The Manifold $\mathbb S^n$
+# $n$-sphere $\mathbb S^n$
 ```@docs
 Sphere
 ```

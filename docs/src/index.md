@@ -8,38 +8,6 @@ manifolds, we refer to [AMS08].
 This package further aims to unify Manopt and MVIRT, i.e. to find a “Julia way”
 to perform all algorithms given in these packages with all benefits from Julia.
 
-## Manifolds
-All manifolds inherit from `Manifold` to store their main properties, which is
-most prominently the manifold dimension and the name of the manifold. This will
-be extended in the future, for example ba properties denoting whether the
-manifold is explicitly given in the sense of a closed form exponential and
-logarithmic map for example, or only approximately.
-
-Furthermore there are two types accompanying each manifold – a point on the
-manifold inheriting from `MPoint` and the tangential vector `TVector`. For both
-the term manifold is shortened to `M` for concise naming. Each manifold also
-inherits such a short abbreviation, see `Abbr.` in the following table.
-Furthermore there is an abstract type (struct) `MatrixManifold` (Abbreviation `MM`) that
-overloads the operands `*,/,+,-` for the `MatPoint`. Furthermore each `MatPoint`is
-indeed a matrix, so they also possess an array to store its decomposition, namely
-for $\mathbf{A}\in\mathbb R^{n,m}$ its singular value decomposition
-$\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}$.
-Compared to Matlab, we do not implicitly do vectorization but use explicitly a
-`ProdctManifold` (with `ProdMPoint` and `ProdTVector`) consisting of an array of manifolds,
-as well as the product manifold consisting of only one manifold, i.e. the `PowerManifold`
-(with `PowMPoint` and `PowTVector`).
-
-File | Abbr. |  supertype |  Manifold $\mathcal M$ | Comment
------|-------|------------|-----------------------|---------
-`Circle.jl`  | `S1`| `M` | $1$-Sphere $\mathbb S^1$ | represented as angles $p_i\in[-\pi,\pi)$
-`Euclidean.jl` | `Rn` | `M` |  $n$-dimensional Euclidean space $\mathbb R^n$
-`Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$ |
-`MatrixManifold` | `Mat` | `M` |  The manifold, where points are represented by matrices |
-`PowerManifold.jl` | `PowM` | `M` | $\mathcal M^n$ | where $n$ can be a vector |
-`ProductManifold.jl` | `ProdM` | `M` | $\mathcal M_1\times \mathcal M_2\times\cdot \mathcal M_n$ | might be arranged in any array |
-`SymmetricPositiveDefinite.jl` | `SPD` | `MM` |  $n\times n$ symmetric positive matrices | using the affine metric
-`Sphere.jl` | `Sn` | `M` |  $n$-dimensional Sphere $\mathbb S^n$ | embedded in $\mathbb R^{n+1}$
-
 ## Organization of Code
 Despite the given structure by Julia (folders `src/`, `docs/`, `test/`), this
 package consists of the following structre:
@@ -139,6 +107,13 @@ Maybe something similar using a `record` field would also be nice.
 ### A general remark
 In general, one should additionally provide an interface that uses keyword-argument lists (kwargs) as a Dictionary (similarly to the matlab usage),
 having the same name, checking input and passing it to the struct-based function. That way the basic function (with struct) is compiled to a function being quite fast, and the wrapper makes the function easily accessible with `kwargs` for a user; see e.g. https://stackoverflow.com/a/39602289/1820236. This might also be a good idea for the plot functions, because we can filter dictionaries and pass parts to the internally used plot functions, making it possible to provide line styles but also appearance of e.g. the sphere as options.
+
+A few further notes are
+* it might be a good idea to have a decorator for `MPoint`, too,
+to have a consistent scheme for the extended scenario and an easier `log`
+* we should be able to do caching with a `macro` as soon as I saw how to access
+values computed within a function and to save them (and access them) in a consistent way
+
 
 ## Tests
 Every new function or manifold should be accompanied by a test suite, placed

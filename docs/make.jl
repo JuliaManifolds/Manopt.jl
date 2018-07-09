@@ -1,7 +1,17 @@
 using Manopt, Documenter
 
-makedocs()
-
+makedocs(
+    format=:html,
+    modules=[Manopt],
+    sitename = "Manopt.jl",
+    pages = [
+        "Home" => "index.md",
+        "Manifolds" => [
+            "Introduction" => "manifolds/index.md",
+            "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",
+        ]
+    ]
+)
 #deploydocs(
 #     target = "site",
 #     repo   = "github.com/kellertuer/Manopt.jl",
