@@ -6,7 +6,7 @@ import Base: exp, log, show
 
 export ProductManifold, ProdMPoint, ProdTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
-export show
+export show, getValue
 
 struct ProductManifold <: Manifold
   name::String
@@ -16,55 +16,30 @@ struct ProductManifold <: Manifold
   ProductManifold(mv::Array{Manifold}) = new("ProductManifold",
     mv,prod(manifoldDimension.(mv)),string("Prod(",join([m.abbreviation for m in mv],", "),")") )
 end
+
 struct ProdMPoint <: MPoint
   value::Array{MPoint}
   ProdMPoint(v::Array{MPoint}) = new(v)
 end
+getValue(x::ProdMPoint) = x.value
 
 struct ProdTVector <: TVector
   value::Array{TVector}
   ProdTVector(value::Array{TVector}) = new(value);
 end
-
-function addNoise(M::ProductManifold, p::ProdMPoint,σ)::ProdMPoint
-  return ProdMPoint([addNoise.(M.manifolds,p.value,σ)])
-end
-
-function distance(M::ProductManifold, p::ProdMPoint,q::ProdMPoint)::Float64
-  return sqrt(sum( distance.(manifolds,p.value,q.value).^2 ))
-end
-
-function dot(M::ProductManifold, ξ::ProdTVector, ν::ProdTVector)::Float64
-    return sum(dot.(M.manifolds,ξ.value,ν.value));
-end
-
-function exp(M::ProductManifold, p::ProdMPoint,ξ::ProdTVector,t::Number=1.0)::ProdMPoint
-  return ProdMPoint( exp.(M.manifolds,p.value,ξ.value) )
-end
-
-function log(M::ProductManifold, p::ProdMPoint,q::ProdMPoint)::ProdTVector
-    return ProdTVector(log.(M.manifolds,p.value,q.value))
-end
-
-function manifoldDimension(p::ProdMPoint)::Int
-  return prod( manifoldDimension.(p.value) )
-end
-function manifoldDimension(M::ProductManifold)::Int
-  return prod( manifoldDimension.(M.manifolds) )
-end
-function norm(M::ProductManifold, ξ::ProdTVector)::Float64
-  return sqrt( dot(M,ξ,ξ) )
-end
-#
-#
-# Display functions for the structs
-function show(io::IO, M::ProductManifold)
-  print(io,string("The Product Manifold of [ ",
+getValue(ξ::ProdTVector) = ξ.value
+# Functions
+# ---
+addNoise(M::ProductManifold, x::ProdMPoint,σ) = ProdMPoint([addNoise.(M.manifolds, getValue(x)p.value,σ)])
+distance(M::ProductManifold, x::ProdMPoint, y::ProdMPoint) = sqrt(sum( distance.(manifolds, getValue(p), getValue(q) ).^2 ))
+dot(M::ProductManifold, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.manifolds, getValue(ξ), getValue(ν) ));
+exp(M::ProductManifold, x::ProdMPoint,ξ::ProdTVector,t::Number=1.0) = ProdMPoint( exp.(M.manifolds, getValue(p), getValue(ξ)) )
+log(M::ProductManifold, x::ProdMPoint,y::ProdMPoint) = ProdTVector(log.(M.manifolds, getValue(x), getValue(y) ))
+manifoldDimension(x::ProdMPoint) =  prod( manifoldDimension.( getValue(x) ) )
+manifoldDimension(M::ProductManifold) = prod( manifoldDimension.(M.manifolds) )
+norm(M::ProductManifold, ξ::ProdTVector) = sqrt( dot(M,ξ,ξ) )
+# Display
+show(io::IO, M::ProductManifold) = print(io,string("The Product Manifold of [ ",
     join([m.abbreviation for m in M.manifolds])," ]"))
-end
-function show(io::IO, p::ProdMPoint)
-    print(io,string("ProdM[",join(repr.(p.value),", "),"]"))
-end
-function show(io::IO, ξ::ProdTVector)
-    print(io,String("ProdMT[", join(repr.(ξ.value),", "),"]"))
-end
+show(io::IO, p::ProdMPoint) = print(io,string("ProdM[",join(repr.( getValue(p) ),", "),"]"))
+show(io::IO, ξ::ProdTVector) = print(io,String("ProdMT[", join(repr.(ξ.value),", "),"]"))

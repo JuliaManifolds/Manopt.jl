@@ -6,8 +6,12 @@ import Base: exp, log, show
 
 export PowerManifold, PowMPoint, PowTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
-export show
-
+export show, getValue
+doc"""
+    PowerManifold{M<:Manifold} <: Manifold
+a power manifold $\mathcal M = \mathcal N^n$, where $n$ can be an integer or an
+integer vector. Its abbreviatio is `Pow` and for explicit instances `Pow(N,n)`.
+"""
 struct PowerManifold{M<:Manifold} <: Manifold
   name::String
   manifold::M
@@ -15,48 +19,38 @@ struct PowerManifold{M<:Manifold} <: Manifold
   dimension::Int
   abbreviation::String
   PowerManifold{M}(mv::M,dims::Array{Int,1}) where {M<:Manifold} = new(string("A Power Manifold of ",mv.name,"."),
-    mv,dims,prod(dims)*manifoldDimension(mv),string("Prod(",m.abbreviation,",",repr(dims),")") )
+    mv,dims,prod(dims)*manifoldDimension(mv),string("Pow(",m.abbreviation,",",repr(dims),")") )
 end
+doc"""
+    PowMPoint <: MPoint
+A point on the power manifold $\mathcal M = \mathcal N^n$ represented by a vector of `MPoint`s.
+"""
 struct PowMPoint <: MPoint
   value::Array{T,N} where N where T<:MPoint
   PowMPoint(v::Array{T,N} where N where T<:MPoint) = new(v)
 end
+getValue(x::PowMPoint) = x.value;
 
+doc"""
+    PowTVector <: TVector
+A tangent vector on the power manifold $\mathcal M = \mathcal N^n$ represented by a vector of `TVector`s.
+"""
 struct PowTVector <: TVector
   value::Array{T,N} where N where T <: TVector
   PowTVector(value::Array{T,N} where N where T <: TVector) = new(value)
 end
-
-function addNoise(M::PowerManifold, p::PowMPoint,σ)::PowMPoint
-  return PowMPoint([addNoise.(M.manifold,p.value,σ)])
-end
-
-
-function distance(M::PowerManifold, p::PowMPoint,q::PowMPoint)::Float64
-  return sqrt(sum( distance.(manifold,p.value,q.value).^2 ))
-end
-
-function dot(M::PowerManifold, ξ::PowTVector, ν::PowTVector)::Float64
-    return sum(dot.(M.manifold,ξ.value,ν.value))
-end
-
-function exp(M::PowerManifold, p::PowMPoint,ξ::PowTVector,t::Number=1.0)::PowMPoint
-  return PowMPoint( exp.(M.manifold,p.value,ξ.value) )
-end
-
-function log(M::PowerManifold, p::PowMPoint,q::PowMPoint)::PowTVector
-    return ProdTVector(log.(M.manifold, p.value,q.value))
-end
-
-function manifoldDimension(p::PowMPoint)::Int
-  return prod(manifoldDimension.(p.value) )
-end
-function manifoldDimension(M::PowerManifold)::Int
-  return prod(M.dims*manifoldDimension(M.manifold) )
-end
-function norm(M::PowerManifold, ξ::PowTVector)::Float64
-  return sqrt( dot(M,ξ,ξ) )
-end
+getValue(ξ::PowTVector) = ξ.value
+# Functions
+# ---
+addNoise(M::PowerManifold, x::PowMPoint,σ) = PowMPoint([addNoise.(M.manifold,p.value,σ)])
+distance(M::PowerManifold, x::PowMPoint, y::PowMPoint) = sqrt(sum( distance.(M.manifold, getValue(x), getValue(y) ).^2 ))
+dot(M::PowerManifold, x::PowMPoint, ξ::PowTVector, ν::PowTVector) = sum(dot.(M.manifold,getValue(x), getValue(ξ), getValue(ν) ))
+exp(M::PowerManifold, x::PowMPoint, ξ::PowTVector, t::Number=1.0) = PowMPoint( exp.(M.manifold, getValue(p) , getValue(ξ) ))
+log(M::PowerManifold, x::PowMPoint, y::PowMPoint)::PowTVector = ProdTVector(log.(M.manifold, getValue(p), getValue(q) ))
+manifoldDimension(p::PowMPoint) = prod(manifoldDimension.( getValue(p) ) )
+manifoldDimension(M::PowerManifold) = prod( M.dims * manifoldDimension(M.manifold) )
+norm(M::PowerManifold, ξ::PowTVector) = sqrt( dot(M,ξ,ξ) )
+parallelTransport(M::PowerManifold, x::PowMPoint, y::PowMPoint, ξ::PowTVector) = PowTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
 #
 #
 # Display functions for the structs

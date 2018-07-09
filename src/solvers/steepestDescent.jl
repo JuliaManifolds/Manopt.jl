@@ -64,8 +64,8 @@ function steepestDescent{P <: GradientProblem, O <: Options}(p::P, o::O)
     iter::Integer = 0
     x = getOptions(o).initX
     s = getOptions(o).lineSearchOptions.initialStepsize
+    M = p.M
     while !stop
-        M = p.M
         ξ = getGradient(p,x)
         s = getStepsize(p,getOptions(o),x,s)
         xnew = getOptions(o).retraction(M,x,-s*ξ)

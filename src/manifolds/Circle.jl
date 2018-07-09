@@ -6,76 +6,68 @@ import Base: exp, log, show
 
 export Circle, S1Point, S1TVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
-export show
+export show, getValue
 
 export symRem
-
-#
 # Types
-#
-
+# ---
+doc"""
+    Circle <: Manifold
+The one-dimensional manifold $\mathcal M = \mathbb S^1$ represented by angles.
+Note that one can also use the $n$-dimensional sphere with $n=1$ to obtain the
+same manifold represented by unit vectors in $\mathbb R^2$.
+Its abbreviation is `S1`, since the abbreviation of Sn is in variables always `Sn`.
+"""
 struct Circle <: Manifold
   name::String
   dimension::Int
   abbreviation::String
   Circle() = new("1-Sphere as angles",1,"S1")
 end
+doc"""
+    S1Point <: MPoint
+a point $x\in\mathbb S^1$ represented by an angle `getValue(x)`$\in[-\pi,\pi)$.
+"""
 struct S1Point <: MPoint
   value::Float64
   S1Point(value::Float64) = new(value)
 end
-
+getValue(x::S1Point) = x.value
+doc"""
+    S1TVector <: TVector
+a tangent vector $\xi\in\mathbb S^1$ represented by a real valiue
+`getValue($\xi$)`$\in\mathbb R$.
+"""
 struct S1TVector <: TVector
   value::Float64
   S1TVector(value::Float64) = new(value)
 end
-#
+getValue(ξ::S1TVector) = ξ.value
 # Traits
-#
+# ---
+#(a) S1 is a matrix manifold
 @traitimpl IsMatrixM{Circle}
 @traitimpl IsMatrixP{S1Point}
 @traitimpl IsMatrixV{S1TVector}
 
-#
 # Functions
-#
-function addNoise(M::Circle, p::S1Point,σ::Real)::S1Point
-  return S1Point(mod(p.value-pi+σ*randn(),2*pi)+pi)
-end
-
-
-function distance(M::Circle, p::S1Point,q::S1Point)::Float64
-  return abs( symRem(p.value-q.value) )
-end
-
-function dot(M::Circle, p::S1Point, ξ::S1TVector, ν::S1TVector)::Float64
-    return ξ.value*ν.value
-end
-
-function exp(M::Circle, p::S1Point,ξ::S1TVector,t::Number=1.0)::S1Point
-  return S1Point(symRem(p.value+t*ξ.value))
-end
-
-function log(M::Circle, p::S1Point,q::S1Point)::S1TVector
-    return S1TVector(symRem(q.value-p.value))
-end
-
-function manifoldDimension(p::S1Point)::Int
-  return 1
-end
-function manifoldDimension(M::Circle)::Int
-  return 1
-end
-norm(M::Circle, p::S1Point, ξ::S1TVector)::Float64 = abs(ξ.value)
-#
-#
-# Display functions for the structs
+# ---
+addNoise(M::Circle, p::S1Point,σ::Real) = S1Point(mod(getValue(p)-pi+σ*randn(),2*pi)+pi)
+distance(M::Circle, x::S1Point,y::S1Point) = abs( symRem(getValue(y) - getValue(x)) )
+dot(M::Circle, p::S1Point, ξ::S1TVector, ν::S1TVector) = getValue(ξ)*getVaklue(ν)
+exp(M::Circle, p::S1Point,ξ::S1TVector,t::Number=1.0) = S1Point( symRem(getValue(x) + t*getVakue(ξ)) )
+log(M::Circle, x::S1Point,y::S1Point)::S1TVector = S1TVector(symRem( getValue(y) - getValue(x) ))
+manifoldDimension(p::S1Point) = 1
+manifoldDimension(M::Circle) = 1
+norm(M::Circle, p::S1Point, ξ::S1TVector)::Float64 = abs( getValue(ξ) )
+parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
+# Display
+# ---
 show(io::IO, M::Circle) = print(io, "The Manifold S1 consisting of angles");
-show(io::IO, m::S1Point) = print(io, "S1($(m.value))");
-show(io::IO, ξ::S1TVector) = print(io, "S1T($(ξ.value))");
-#
-#
+show(io::IO, x::S1Point) = print(io, "C($( getValue(x) ))");
+show(io::IO, ξ::S1TVector) = print(io, "CT($( getValue(ξ) ))");
 # little Helpers
+# ---
 """
     symRem(x,y,T=pi)
   symmetric remainder with respect to the interall 2*T
