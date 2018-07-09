@@ -51,41 +51,37 @@ end
 getOptions{O <: Options}(o::O) = o; # fallback and end
 getOptions{O <: DebugDecoOptions}(o::O) = getOptions(o.options); #unpeel recursively
 
-function setDebugFunction{O<:Options}(o::O,f::Function)
+function setDebugFunction!{O<:Options}(o::O,f::Function)
     if getOptions(o) != o #decorator
-        setDebugFunction(o.options,f)
+        setDebugFunction!(o.options,f)
     end
 end
-function setDebugFunction{O<:DebugDecoOptions}(o::O,f::Function)
+function setDebugFunction!{O<:DebugDecoOptions}(o::O,f::Function)
     o.debugFunction = f;
 end
 
-function setDebugOptions{O<:Options}(o::O,dO::Dict{String,<:Any})
+function setDebugOptions!{O<:Options}(o::O,dO::Dict{String,<:Any})
     if getOptions(o) != o #decorator
-        setDebugOptions(o.options,dO)
+        setDebugOptions!(o.options,dO)
     end
 end
-function setDebugOptions{O<:DebugDecoOptions}(o::O,dO::Dict{String,<:Any})
+function setDebugOptions!{O<:DebugDecoOptions}(o::O,dO::Dict{String,<:Any})
     o.debugOptions = dO;
 end
-
-
 """
-    evaluateStoppingCriterion(problem,iter,x1,x2)
+    evaluateStoppingCriterion(options,iter,ξx1,x2)
+Evaluates the stopping criterion based on
 
-evaluates the stoppinc criterion of problem with respect to the current
-iteration and two (successive) values of the algorithm
-"""
-function evaluateStoppingCriterion{P<:Problem, MP <: MPoint,I<:Integer}(p::P,
-                          iter::I,x1::MP,x2::MP)
-  p.stoppingCriterion(iter,ξ,x1,x2)
-end
-"""
-    evaluateStoppingCriterion(problem,iter,x1,x2)
+# Input
+* `o` – options of the solver (maybe decorated) `GradientDescentOptions`
+* `iter` – the current iteration
+* `ξ` – a tangent vector (the current gradient)
+* `x1`, `x2` — two points on the manifold (current and last iterate)
 
-evaluates the stopping criterion of problem with respect to the current
-iteration iter, the descent direction ξ, and two (successive) iterates x1, x2
-of the algorithm.
+# Output
+Result of evaluating stoppingCriterion in the options, i.e.
+* `true` if the algorithms stopping criteria are fulfilled and it should stop
+* `false` otherwise.
 """
 function evaluateStoppingCriterion{O<:Options, MP <: MPoint, MT <: TVector, I<:Integer}(o::O,
                           iter::I,ξ::MT, x1::MP, x2::MP)

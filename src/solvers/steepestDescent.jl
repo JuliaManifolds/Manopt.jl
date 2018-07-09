@@ -54,7 +54,7 @@ function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
     end
 end
 """
-    steepestDescent(problem)
+    steepestDescent(problem,options)
         performs a steepestDescent based on a DescentProblem struct.
         sets “x” “xold” and “Iteration” in a non-null debugOptions Dict.
 """
