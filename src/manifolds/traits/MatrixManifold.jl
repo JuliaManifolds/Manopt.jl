@@ -1,6 +1,9 @@
 #
 #      MatrixManifold -- a matrix manifold,
 #       i.e. the values/points on the manifold are matrices
+#		this is here implemented as traits, such that every manifold can
+#		“gain” this feature by setting @traitimlp IsMatrixM{}
+#		for the manifold, its point and the tangent vector
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
 import Base.LinAlg: transpose
@@ -15,6 +18,8 @@ export +,-,*,/
 @traitdef IsMatrixM{X}
 @traitdef IsMatrixP{X}
 @traitdef IsMatrixV{X}
+
+@traitdef isMTuple{X,Y}
 
 # for all that satisfy IsMatrixM -> introduce operators on points and points/TVecs
 @traitfn +{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = T(x.value + y.value)

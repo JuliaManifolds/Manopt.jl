@@ -14,18 +14,18 @@ export geodesic, midPoint, addNoise
 export +, -, *, /, ==, show
 # introcude new algorithms
 """
-    Manifold - an abstract Manifold to keep global information on a specific manifold
+Manifold - an abstract Manifold to keep global information on a specific manifold
 """
 abstract type Manifold end
 
 """
-    MPoint - an abstract point on a Manifold
+MPoint - an abstract point on a Manifold
 """
 abstract type MPoint end
 
 """
-      TVector - a point on a tangent plane of a base point, which might
-  be null if the tangent space is fixed/known to spare memory.
+TVector - a point on a tangent plane of a base point, which might
+be null if the tangent space is fixed/known to spare memory.
 """
 abstract type TVector end
 

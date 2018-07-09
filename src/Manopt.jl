@@ -11,7 +11,8 @@ module Manopt
 # Manifolds
   include("manifolds/Manifold.jl") #base type
   # Traits (properties/decorators)
-  include("manifolds/MatrixManifold.jl")
+  include("manifolds/traits/MatrixManifold.jl")
+  include("manifolds/traits/LieGroup.jl")
   # specific manifolds
   include("manifolds/Circle.jl")
 	include("manifolds/Euclidean.jl")
