@@ -8,6 +8,12 @@
 import Base: mean, median
 export mean, median, variance
 
+# Indicators for Algorithms
+struct GradientDescent end
+struct ProximalPoint end
+struct CyclicProximalPoint end
+struct DouglasRachford end
+
 """
     p = mean(M,f;initialValue=[], MaxIterations=50, MinimalChange=5*10.0^(-7),
     Weights=[])
@@ -19,19 +25,19 @@ export mean, median, variance
   and
   > M. Bacak, Computing medians and means in Hadamard manifolds,
   > SIAM J. Optim., 24(3), 1542–1566, 2014.
-
   # Arguments
-  * 'M' a manifold
+  * `M` a manifold
   * `f` an array of `MPoint`s
   # Output
   * `p` the mean of the values from `f`
   # Optional Parameters
-  * `initialValue` (`[]`) start the algorithm with a special initialisation of
+  the default values are given in brackets
+  * `InitialValue` (`[]`) start the algorithm with a special initialisation of
     `p`, if not specified, the first value `f[1]` is used
   * `λ` (`2`) initial value for the λ of the CPP algorithm
   * `MaxIterations` (`500`) maximal number of iterations
-  * `Method` (`Gradient Descent`) wether to use Gradient Descent or
-    `Cyclic Proximal Point` algorithm
+  * `Method` (:Gradient Descent) wether to use Gradient Descent or
+    `Cyclic Proximal Point` (:CyclicProximalPoint) algorithm
   * `MinimalChange` (`5*10.0^(-7)`) minimal change for the algorithm to stop
   * `Weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
   all are choren equal, i.e. `1/n*ones(n)` for `n=length(f)`.
@@ -42,21 +48,21 @@ function mean{mT <: Manifold, T <: MPoint}(M::mT, f::Vector{T}; kwargs...)::T
   # collect optional values
   # TODO: Optional values as a parameter dictionary?
   kwargs_dict = Dict(kwargs);
-  x = get(kwargs_dict, "initialValue", f[1])
+  x = get(kwargs_dict, "InitialValue", f[1])
   Weights = get(kwargs_dict, "Weights", 1/length(f)*ones(length(f)))
   MaxIterations = get(kwargs_dict, "MaxIterations", 50)
   MinimalChange = get(kwargs_dict, "MinimalChange", 5*10.0^(-7))
-  Method = get(kwargs_dict, "Method", "Gradient Descent")
+  Method = get(kwargs_dict, "Method", :GradientDescent)
   λ = get(kwargs_dict, "λ", 2)
   iter=0
   xold = x
-  if Method == "Gradient Descent"
+  if Method == :GradiendDescent
     while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
       x = exp(M,x, sum(Weights.*[log(M,x,fi) for fi in f]))
       iter += 1
     end
-  elseif Method == "Cyclic Proximal Point"
+  elseif Method == :CyclicProximalPoint
     while (  ( (distance(M,x,xold) > MinimalChange) && (iter < MaxIterations) ) || (iter == 0)  )
       xold = x
       for i=1:lengthh(f)
