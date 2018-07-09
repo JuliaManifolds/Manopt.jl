@@ -52,20 +52,20 @@ getValue(ξ::S1TVector) = ξ.value
 
 # Functions
 # ---
-addNoise(M::Circle, p::S1Point,σ::Real) = S1Point(mod(getValue(p)-pi+σ*randn(),2*pi)+pi)
+addNoise(M::Circle, x::S1Point,σ::Real) = S1Point(mod(getValue(x)-pi+σ*randn(),2*pi)+pi)
 distance(M::Circle, x::S1Point,y::S1Point) = abs( symRem(getValue(y) - getValue(x)) )
-dot(M::Circle, p::S1Point, ξ::S1TVector, ν::S1TVector) = getValue(ξ)*getVaklue(ν)
-exp(M::Circle, p::S1Point,ξ::S1TVector,t::Number=1.0) = S1Point( symRem(getValue(x) + t*getVakue(ξ)) )
+dot(M::Circle, x::S1Point, ξ::S1TVector, ν::S1TVector) = getValue(ξ)*getValue(ν)
+exp(M::Circle, x::S1Point,ξ::S1TVector,t::Float64=1.0) = S1Point( symRem(getValue(x) + t*getValue(ξ)) )
 log(M::Circle, x::S1Point,y::S1Point)::S1TVector = S1TVector(symRem( getValue(y) - getValue(x) ))
-manifoldDimension(p::S1Point) = 1
+manifoldDimension(x::S1Point) = 1
 manifoldDimension(M::Circle) = 1
-norm(M::Circle, p::S1Point, ξ::S1TVector)::Float64 = abs( getValue(ξ) )
+norm(M::Circle, x::S1Point, ξ::S1TVector)::Float64 = abs( getValue(ξ) )
 parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
 # Display
 # ---
 show(io::IO, M::Circle) = print(io, "The Manifold S1 consisting of angles");
-show(io::IO, x::S1Point) = print(io, "C($( getValue(x) ))");
-show(io::IO, ξ::S1TVector) = print(io, "CT($( getValue(ξ) ))");
+show(io::IO, x::S1Point) = print(io, "S1($( getValue(x) ))");
+show(io::IO, ξ::S1TVector) = print(io, "S1T($( getValue(ξ) ))");
 # little Helpers
 # ---
 """

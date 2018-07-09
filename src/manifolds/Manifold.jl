@@ -147,7 +147,7 @@ on the manifold `M`.
 the standard values is given in brackets
 * `t` : (1.0) shorten the tangent vector by the factor t
 """
-function exp{mT<:Manifold, T<:MPoint, S<:TVector}(M::mT, x::T, ξ::S,t::Float64=1.0)::T
+function exp(M::mT, x::T, ξ::S,t::Number=1.0) where {mT<:Manifold, T<:MPoint, S<:TVector}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(M) )
@@ -223,7 +223,7 @@ doc"""
     parallelTransport(M,x,y,,ξ)
 Parallel transport of a vector `ξ` given at the tangent space $T_x\mathcal M$
 of `x` to the tangent space $T_y\mathcal M$ at `y` along the geodesic form `x` to `y`.
-If the geodesic is not unique, this function takes the same choice as `geodesic`. 
+If the geodesic is not unique, this function takes the same choice as `geodesic`.
 """
 function parallelTransport{mT<:Manifold, P<:MPoint, Q<:MPoint, T<:TVector}(M::mT, x::P, y::Q, ξ::T)
   sig1 = string( typeof(x) )
