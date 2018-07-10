@@ -10,6 +10,9 @@ makedocs(
             "Introduction" => "manifolds/index.md",
             "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",
         ],
+        "Plans" => [
+            "Introduction" => "plans/index.md"
+        ],
         "Solvers" => [
             "Introduction" => "solvers/index.md"
         ]

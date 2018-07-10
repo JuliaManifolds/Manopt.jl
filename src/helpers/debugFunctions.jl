@@ -20,6 +20,22 @@ function gradientDebug(data::Dict{String,Any})
     end
     return s;
 end
+function cyclicProcimalPointDebug(data::Dict{String,Any})
+    # if step is given only output every step-th iterate
+    s::String="";
+    if haskey(data,"step") && haskey(data,"Iteration")
+        if mod(data["Iteration"],data["step"]) == 0
+            s = string(getIterationString(data), getCostString(data),
+                getgetKeyValueString(data,"λ"), getLastChangeString(data));
+            print(s,"\n")
+        end
+    else
+        s = string(getIterationString(data), getCostString(data),
+            getgetKeyValueString(data,"λ"), getLastChangeString(data));
+        print(s,"\n")
+    end
+    return s;
+end
 #
 # Local Building blocks
 #
@@ -45,14 +61,14 @@ function getCostString(data::Dict{String,Any})
 end
 function getLastChangeString(data::Dict{String,Any})
     s::String="";
-    if haskey(data,"x") && haskey(data,"xold") && haskey(data,"manifold")
+    if haskey(data,"x") && haskey(data,"xnew") && haskey(data,"manifold")
         M = data["manifold"]
         x = data["x"]
-        xold = data["xold"]
+        xnew = data["xnew"]
         if get(data,"Format","short") == "short"
-            s = string(" | ",string(distance(M,x,xold)));
+            s = string(" | ",string(distance(M,x,xnew)));
         else
-            s = string(" | Last change: ",string(distance(M,x,xold)));
+            s = string(" | Last change: ",string(distance(M,x,xnew)));
         end
     end
     return s
@@ -68,6 +84,18 @@ function getNormGradientString(data::Dict{String,Any})
             s = string(" | ",string(nG) );
         else
             s = string(" | Norm of gradient: ",string(nG));
+        end
+    end
+    return s;
+end
+function getKeyValueString(data::Dict{String,Any},key::String)
+    s::String="";
+    if haskey(data,key)
+        k = data[key];
+        if get(data,"Format","short") == "short"
+            s = string(" | ",string(k) );
+        else
+            s = string(" | ",key,": ",string(k));
         end
     end
     return s;

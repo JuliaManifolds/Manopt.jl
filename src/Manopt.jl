@@ -24,6 +24,7 @@ module Manopt
   include("plans/problem.jl")
   include("plans/options.jl")
   # ...solvers
+  include("solvers/cyclicProximalPoint.jl")
   include("solvers/steepestDescent.jl")
   # algorithms
   include("algorithms/basicAlgorithms.jl")

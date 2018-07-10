@@ -50,18 +50,18 @@ function _TV1CPPA{mT <: Manifold, T <: MPoint,N}(M::mT, f::Array{T,N}, α::Float
   )::Array{T,N}
   iter::Int64 = 1
   x::Array{T,N} = f
-  xold::Array{T,N} = x
+  xnew::Array{T,N} = x
   stillUnknownMask::BitArray{N} = copy(UnknownMask);
   foGraph::Array{Tuple} = constructImageGraph(f,"firstOrderDifference")
   soGraph::Array{Tuple} = constructImageGraph(f,"secondOrderDifference")
-  while (  ( (1.0/length(f)*sum( [ distance(ξ,xoldi) for (ξ,xoldi) in zip(x[~stillUnknownMask],xold[~stillUnknownMask]) ] ) > MinimalChange)
+  while (  ( (1.0/length(f)*sum( [ distance(ξ,xnewi) for (ξ,xnewi) in zip(x[~stillUnknownMask],xnew[~stillUnknownMask]) ] ) > MinimalChange)
     && (iter < MaxIterations) ) || (iter==1)  )
     iter = iter+1
-    xold = x;
-    x = similar(xold)
+    xnew = x;
+    x = similar(xnew)
     # First term: d(f,x)^2
     @fastmath @inbounds for k in eachindex(x)
-      x[k] = proxDistanceSquared(f[k],λ/k,xold[k])
+      x[k] = proxDistanceSquared(f[k],λ/k,xnew[k])
     end
     # first order
     @fastmath @inbounds for k in foGraph

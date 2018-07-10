@@ -3,8 +3,13 @@
 # problem itself (independent of the solver), the options collect parameters,
 # that steer the solver (indipendent of the problem at hand)
 #
-export Options, GradientLineSearchOptions, LineSearchOptions, GradientDescentOptions, DebugDecoOptions
-export getStepSize, evaluateStoppingCriterion, getVerbosity, getOptions, setDebugFunction, setDebugOptions
+export Options
+export GradientLineSearchOptions, LineSearchOptions
+export GradientDescentOptions, getStepSize
+export CyclicProximalPointOptions
+export DebugDecoOptions
+export evaluateStoppingCriterion
+export getVerbosity, getOptions, setDebugFunction, setDebugOptions
 
 abstract type Options end
 abstract type LineSearchOptions <: Options end
@@ -19,7 +24,6 @@ type GradientLineSearchOptions <: LineSearchOptions
     GradientLineSearchOptions(x::MP where {MP <: MPoint}, s::Float64,rho::Float64,c::Float64) = GradientLineSearchOptions(x,s,rho,c,exp)
     GradientLineSearchOptions(x::MP where {MP <: MPoint}, s::Float64,rho::Float64,c::Float64,r::Function) = new(x,s,rho,c,r)
 end
-
 type DescentLineSearchOptions <: LineSearchOptions
     x::MPoint
     initialStepsize::Float64
@@ -31,43 +35,50 @@ type DescentLineSearchOptions <: LineSearchOptions
 end
 
 type GradientDescentOptions <: Options
-    initX::MPoint
+    x0::MPoint
     stoppingCriterion::Function
     retraction::Function
     lineSearch::Function
     lineSearchOptions::L where {L <:LineSearchOptions}
     # fallback do exp
-    GradientDescentOptions(initX::MP where {MP <:MPoint},sC::Function,retr::Function,lS::Function,lSO::LSO where {LSO <: LineSearchOptions}) = new(initX,sC,retr,lS,lSO)
-    GradientDescentOptions(initX::MP where {MP <:MPoint},sC::Function,lS::Function,lSO::LSO where {LSO <: LineSearchOptions}) = new(initX,sC,exp,lS,lSO)
+    GradientDescentOptions(x0::MP where {MP <:MPoint},sC::Function,retr::Function,lS::Function,lSO::LSO where {LSO <: LineSearchOptions}) = new(x0,sC,retr,lS,lSO)
+    GradientDescentOptions(x0::MP where {MP <:MPoint},sC::Function,lS::Function,lSO::LSO where {LSO <: LineSearchOptions}) = new(x0,sC,exp,lS,lSO)
 end
 
-# Todo getter/setter should pass down to the inner
+abstract type EvalOrder end
+type LinearEvalOrder <: EvalOrder end
+type RandomEvalOrder <: EvalOrder end
+type FixedRandomEvalOrder <: EvalOrder end
+
+type CyclicProximalPointOptions{MP <: MPoint} <: Options
+    x0::MP
+    stoppingCriterion::Function
+    λ::Function
+    orderType::EvalOrder
+    CyclicProximalPointOptions{MP}(
+        x0::MP,
+        sC::Function,
+        λ::Function,
+        order::EO where { EO <: EvalOrder } = LinearEvalOrder()
+        ) where {MP <: MPoint} = new(x0,sC,λ,order)
+    CyclicProximalPointOptions{MP}(x0::MP,sC::Function) where {MP <: MPoint} = CyclicProximalPointOptions(x0,sC, (iter)-> 1.0/iter)
+end
+#
+#
+# Debug Decorator
+#
+#
 type DebugDecoOptions{O<: Options} <: Options
     options::O
     debugFunction::Function
     debugOptions::Dict{String,<:Any}
     verbosity::Int
 end
-getOptions{O <: Options}(o::O) = o; # fallback and end
-getOptions{O <: DebugDecoOptions}(o::O) = getOptions(o.options); #unpeel recursively
-
-function setDebugFunction!{O<:Options}(o::O,f::Function)
-    if getOptions(o) != o #decorator
-        setDebugFunction!(o.options,f)
-    end
-end
-function setDebugFunction!{O<:DebugDecoOptions}(o::O,f::Function)
-    o.debugFunction = f;
-end
-
-function setDebugOptions!{O<:Options}(o::O,dO::Dict{String,<:Any})
-    if getOptions(o) != o #decorator
-        setDebugOptions!(o.options,dO)
-    end
-end
-function setDebugOptions!{O<:DebugDecoOptions}(o::O,dO::Dict{String,<:Any})
-    o.debugOptions = dO;
-end
+#
+#
+# Corresponding Functions, getters&setters
+#
+#
 """
     evaluateStoppingCriterion(options,iter,ξx1,x2)
 Evaluates the stopping criterion based on
@@ -76,7 +87,7 @@ Evaluates the stopping criterion based on
 * `o` – options of the solver (maybe decorated) `GradientDescentOptions`
 * `iter` – the current iteration
 * `ξ` – a tangent vector (the current gradient)
-* `x1`, `x2` — two points on the manifold (current and last iterate)
+* `x`, `xnew` — two points on the manifold (last and current iterate)
 
 # Output
 Result of evaluating stoppingCriterion in the options, i.e.
@@ -84,14 +95,21 @@ Result of evaluating stoppingCriterion in the options, i.e.
 * `false` otherwise.
 """
 function evaluateStoppingCriterion{O<:Options, MP <: MPoint, MT <: TVector, I<:Integer}(o::O,
-                          iter::I,ξ::MT, x1::MP, x2::MP)
-  evaluateStoppingCriterion(getOptions(o),iter,ξ,x1,x2)
+                          iter::I,ξ::MT, x::MP, xnew::MP)
+  evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
 end
 function evaluateStoppingCriterion{O<:GradientDescentOptions, MP <: MPoint, MT <: TVector, I<:Integer}(o::O,
-                          iter::I,ξ::MT, x1::MP, x2::MP)
-  o.stoppingCriterion(iter,ξ,x1,x2)
+                          iter::I,ξ::MT, x::MP, xnew::MP)
+  o.stoppingCriterion(iter,ξ,x,xnew)
 end
-
+function evaluateStoppingCriterion{O<:Options, MP <: MPoint, I<:Integer}(o::O,
+                          iter::I, x::MP, xnew::MP,λ)
+  evaluateStoppingCriterion(getOptions(o),iter,x,xnew,λ)
+end
+function evaluateStoppingCriterion{O<:CyclicProximalPointOptions, MP <: MPoint, I<:Integer}(o::O,
+                          iter::I, x::MP, xnew::MP,λ)
+  o.stoppingCriterion(iter,x1,x2,λ)
+end
 """
     getVerbosity(Options)
 
@@ -149,3 +167,47 @@ function updateDescentDir!{O <: LineSearchOptions, MP <: MPoint}(o::O,x::MP)
 # how do the more general cases update?
 #  o.descentDirection =
 end
+
+getOptions{O <: Options}(o::O) = o; # fallback and end
+getOptions{O <: DebugDecoOptions}(o::O) = getOptions(o.options); #unpeel recursively
+
+function setDebugFunction!{O<:Options}(o::O,f::Function)
+    if getOptions(o) != o #decorator
+        setDebugFunction!(o.options,f)
+    end
+end
+function setDebugFunction!{O<:DebugDecoOptions}(o::O,f::Function)
+    o.debugFunction = f;
+end
+function getDebugFunction{O<:Options}(o::O)
+    if getOptions(o) != o #We have a decorator
+        return getDebugFunction(o.options,f)
+    end
+end
+function getDebugFunction{O<:DebugDecoOptions}(o::O,f::Function)
+    return o.debugFunction;
+end
+function setDebugOptions!{O<:Options}(o::O,dO::Dict{String,<:Any})
+    if getOptions(o) != o #decorator
+        setDebugOptions(o.options,dO)
+    end
+end
+function setDebugOptions!{O<:DebugDecoOptions}(o::O,dO::Dict{String,<:Any})
+    o.debugOptions = dO;
+end
+function getDebugOptions{O<:Options}(o::O)
+    if getOptions(o) != o #decorator
+        return getDebugOptions(o.options)
+    end
+end
+function getDebugOptions{O<:DebugDecoOptions}(o::O,dO::Dict{String,<:Any})
+    return o.debugOptions;
+end
+function optionsHasDebug{O<:Options}(o::O)
+    if getOptions(o) == o
+        return false;
+    else
+        return optionsHaveDebug(o.options)
+    end
+end
+optionsHasDebug{O<:DebugDecoOptions}(o::O) = true

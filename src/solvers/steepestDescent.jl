@@ -61,7 +61,7 @@ end
     steepestDescent(problem,options)
 performs a steepestDescent based on a GradientProblem containing all information
 for the `problem <: GradientProblem` (Manifold, costFunction, Gradient)  and
-Options for the solver (`initX <: MPoint`, `lineSearch` and `lineSearchOptions`,
+Options for the solver (`x0 <: MPoint`, `lineSearch` and `lineSearchOptions`,
 `retraction` and stoppingCriterion` functions); see the general Interface
 for details on these parameters.
 """
@@ -69,7 +69,7 @@ function steepestDescent{P <: GradientProblem, O <: Options}(p::P, o::O)
     stop::Bool = false
     reason::String="";
     iter::Integer = 0
-    x = getOptions(o).initX
+    x = getOptions(o).x0
     s = getOptions(o).lineSearchOptions.initialStepsize
     M = p.M
     while !stop
@@ -96,8 +96,8 @@ function gradDescDebug{D <: DebugDecoOptions{O} where O<:Options, MT <: TVector,
     if haskey(d,"x")
         d["x"] = xnew;
     end
-    if haskey(d,"xold")
-        d["xold"] = x;
+    if haskey(d,"xnew")
+        d["xnew"] = x;
     end
     if haskey(d,"gradient")
         d["gradient"] = ξ;
