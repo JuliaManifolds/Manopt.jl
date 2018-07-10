@@ -1,4 +1,4 @@
-@testset "The image graph construction" begin
+@testset "image graph construction" begin
   # these points are null, but we only need the size for the indices tests
   img = Array{SnPoint}(2,3)
   K = constructImageGraph(img,"firstOrderDifference")

@@ -1,4 +1,4 @@
-@testset "The proximal map of TV" begin
+@testset "proximal maps" begin
   #
   # proxTV
   p = SnPoint([1,0,0])

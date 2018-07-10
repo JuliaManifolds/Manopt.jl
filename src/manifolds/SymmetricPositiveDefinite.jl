@@ -63,11 +63,11 @@ function dot(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, ν::SPDT
 	SInv = diagm(1./diag(S))
 	return trace(getValue(ξ) * U*SInv*U.'*getValue(ν)*U*SInv*U.' )
 end
-function exp(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector,t::Float64=1.0)
-	svd1 = svd(p.value);
+function exp(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, t::Float64=1.0)
+	svd1 = svd( getValue(x) );
 	U = svd1[1];
 	S = copy(svd1[2]);
-	Ssqrt = sqrt.(diag(S));
+	Ssqrt = sqrt.(S);
 	SsqrtInv = diagm(1./Ssqrt);
 	pSqrt = U*diagm(Ssqrt)*U.';
   	T = U*SsqrtInv*U.'*(t.*ξ.value)*U*SsqrtInv*U.';
@@ -76,15 +76,15 @@ function exp(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector,t::Float64=
   	Ue = svd2[1]
 	return SPDPoint(pSqrt*Ue*Se*Ue.'*pSqrt)
 end
-function log(M::SymmetricPositiveDefinite,p::SPDPoint,q::SPDPoint)
-	svd1 = svd(p.value)
+function log(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
+	svd1 = svd( getValue(x) )
 	U = svd1[1]
 	S = svd1[2]
-	Ssqrt = sqrt.(diag(S))
+	Ssqrt = sqrt.(S)
 	SsqrtInv = diagm(1./Ssqrt)
 	Ssqrt = diagm(Ssqrt)
   	pSqrt = U*Ssqrt*U.'
-	T = U*SsqrtInv*U.'*q.value*U*SsqrtInv*U.'
+	T = U * SsqrtInv * U.' * getValue(y) * U * SsqrtInv * U.'
 	svd2 = svd(T)
 	Se = diagm(log.(svd2[2]))
 	Ue = svd2[1]
@@ -98,13 +98,13 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 	svd1 = svd( getValue(x) )
 	U = svd1[1]
 	S = svd1[2]
-	Ssqrt = sqrt.(diag(S))
+	Ssqrt = sqrt.(S)
 	SsqrtInv = diagm(1./Ssqrt)
 	Ssqrt = diagm(Ssqrt)
 	xSqrt = U*Ssqrt*U.'
   	xSqrtInv = U*SsqrtInv*U.'
 	tξ = xSqrtInv * getValue(ξ) * xSqrtInv
-	tY = xSqrtInv * getValue(q) * xSqrtInv
+	tY = xSqrtInv * getValue(y) * xSqrtInv
 	svd2 = svd(tY)
 	Se = diagm(log.(svd2[2]))
 	Ue = svd2[1]

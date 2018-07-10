@@ -52,7 +52,7 @@ getValue(ξ::RnTVector) = ξ.value
 # Functions
 # ---
 distance(M::Euclidean,x::RnPoint,y::RnPoint) = norm( getValue(x) - getValue(y) )
-dot(M::Euclidean,ξ::RnTVector, ν::RnTVector) = dot( getValue(ξ) , getValue(ν) )
+dot(M::Euclidean,x::RnPoint,ξ::RnTVector, ν::RnTVector) = dot( getValue(ξ) , getValue(ν) )
 exp(M::Euclidean,x::RnPoint,ξ::RnTVector,t=1.0) = RnPoint(getValue(p) + t*getValue(ξ) )
 log(M::Euclidean,x::RnPoint,y::RnPoint) = RnTVector( getValue(y) - getValue(x) )
 manifoldDimension(x::RnPoint) = length( getValue(x) )

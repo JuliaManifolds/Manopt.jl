@@ -52,11 +52,11 @@ getValue(ξ::SnTVector) = ξ.value;
 # Functions
 # ---
 distance(M::Sphere,x::SnPoint,y::SnPoint) = acos(dot(getValue(x), getValue(y) ))
-dot(M::Sphere, p::SnPoint, ξ::SnTVector, ν::SnTVector) = dot( getValue(ξ), getValue(ν) )
+dot(M::Sphere, x::SnPoint, ξ::SnTVector, ν::SnTVector) = dot( getValue(ξ), getValue(ν) )
 function exp(M::Sphere,x::SnPoint,ξ::SnTVector,t::Float64=1.0)
   len = norm( getValue(ξ) )
 	if len < eps(Float64)
-  	return copy(p)
+  	return x
 	else
   	return SnPoint(cos(t*len)*getValue(x) + sin(t*len)/len*getValue(ξ) )
 	end
@@ -68,7 +68,7 @@ function log(M::Sphere,x::SnPoint,y::SnPoint)
   if (ξvnorm > eps(Float64))
     value = ξvalue*acos(scp)/ξvnorm;
   else
-    value = zeros(p.value)
+    value = zeros( getValue(x) )
   end
   return SnTVector(value)
 end
@@ -76,11 +76,11 @@ manifoldDimension(x::SnPoint)::Integer = length( getValue(x) )-1
 manifoldDimension(M::Sphere)::Integer = M.dimension
 norm(M::Sphere, x::SnPoint, ξ::SnTVector) = norm( getValue(ξ) )
 function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
-  ν = log(M,p,q);
-	νL = norm(M,ν);
+  ν = log(M,x,y);
+	νL = norm(M,x,ν);
 	if νL > 0
 	  ν = ν/νL;
-		return SnTVector( getValue(ξ) - dot(M,p,ν,ξ)*( getValue(ν) + getValue(log(M,q,p))/νL) );
+		return SnTVector( getValue(ξ) - dot(M,x,ν,ξ)*( getValue(ν) + getValue(log(M,y,x))/νL) );
   else
 	  # if length of ν is 0, we have p=q and hence ξ is unchanged
 	  return ξ;

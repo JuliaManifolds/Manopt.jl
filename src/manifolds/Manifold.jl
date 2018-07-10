@@ -242,30 +242,34 @@ with correct base points.
 struct TVectorE{T <: TVector, P <: MPoint} <: TVector
     vector::T
     base::P
-    TVectorE{T,P}(ξ::T,x::P) where {T <: TVector, P <: MPoint} = new(ξ,x)
 end
 getValue{T <: TVectorE}(ξ::T) = getValue(ξ.vector)
 """
     getBase(ξ)
-returns the base point of a tangent vector for the extended tangent vector.
+returns the base point of an extended tangent vector.
 """
-getBase{T <: TVectorE}(ξ::T) = getBase(ξ.base)
+getBase{T <: TVectorE}(ξ::T) = ξ.base
+"""
+    getVector(ξ)
+returns the internal TVector point of an extended tangent vector.
+"""
+getVector{T <: TVectorE}(ξ::T) = ξ.vector
 """
 A decorator pattern based extension of MPoint to identify when to switch
 to the extended `TVectorE` for functions just working on points, e.g. `log`
 """
 struct MPointE{P <: MPoint} <: MPoint
     base::P
-    MPointE{P}(x::P) where {P <: MPoint} = new(x)
 end
 getValue{P <: MPointE}(x::P) = getValue( getBase(x) );
+show(io::IO, x::MPointE) = print(io, "$(x)E")
 """
     getBase(x)
 returns the point this extended manifold point stores internally.
 """
 getBase{P <: MPointE}(x::P) = x.base;
 
-show(io::IO, ξ::TVectorE) = print(io, "$(ξ.value)_$(ξ.base)")
+show(io::IO, ξ::TVectorE) = print(io, "$( getValue(ξ) )_$( getValue( getBase(ξ) ) )")
 function +{T <: TVectorE}(ξ::T,ν::T)
     checkBase(ξ,ν)
     return T(ξ.value+ν.value,ξ.base)
@@ -320,26 +324,29 @@ checkBase{T<: TVector, P<: MPoint}(ξ::T,x::P) = true
 =={T <: TVectorE}(ξ::T,ν::T)::Bool = ( checkBase(ξ,ν) && all(ξ.value==ν.value) )
 
 # extended exp check base and return exp of value if that did not fail
-exp{mT<:Manifold, T<:TVectorE, S<:MPointE}(M::mT,p::S,ξ::T)::T = exp(M.p.point,ξ)
-function exp{mT<:Manifold, T<:TVectorE, S<:MPoint}(M::mT,p::S,ξ::T)::T
+exp{mT<:Manifold, T<:TVectorE, S<:MPointE}(M::mT,x::S,ξ::T)::T = exp(M,getBase(x),ξ)
+function exp{mT<:Manifold, T<:TVectorE, S<:MPoint}(M::mT,x::S,ξ::T)::T
     checkBase(ξ,x);
-    return exp(M,x,ξ.value);
+    return exp(M,x, getVector(ξ) );
 end
 # for extended vectors set the base to true
-log{mT<:Manifold, P<:MPointE}(M::mT,x::P,y::P) = TVectorE(log(M,x,y),x);
-log{mT<:Manifold, P<:MPointE, Q<:MPoint}(M::mT,x::P,y::Q) = TVectorE(log(M,x,y),x);
-log{mT<:Manifold, P<:MPointE, Q<:MPoint}(M::mT,x::Q,y::P) = TVectorE(log(M,x,y),x);
+log{mT<:Manifold, P<:MPointE}(M::mT,x::P,y::P) = TVectorE(log(M,getBase(x),getBase(y)),x);
+log{mT<:Manifold, P<:MPointE, Q<:MPoint}(M::mT,x::P,y::Q) = TVectorE(log(M,getVector(x),y),x);
+log{mT<:Manifold, P<:MPointE, Q<:MPoint}(M::mT,x::Q,y::P) = TVectorE(log(M,x,getVector(y)),x);
 # break down to inner if base
-function dot{mT<:Manifold, T<:TVectorE}(M::mT,ξ::T,ν::T)::Float64
-    checkBase()
-    return dot(M,ξ.value,ν.value);
+function dot{mT<:Manifold, P <: MPoint, T<:TVectorE}(M::mT, x::P, ξ::T, ν::T)::Float64
+    checkBase(ξ,x);
+    checkBase(ξ,ν);
+    return dot(M, getVector(ξ), getVector(ν) );
 end
-dot{mT<:Manifold, T<:TVectorE, S<:TVector}(M::mT,ξ::T,ν::S) = dot(M,ξ.value,ν);
-dot{mT<:Manifold, T<:TVectorE, S<:TVector}(M::mT,ξ::S,ν::T) = dot(M,ξ.value,ν);
+dot{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT, x::P, ξ::T, ν::S) = dot(M,x, getVector(ξ), ν);
+dot{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT, x::P, ξ::S, ν::T) = dot(M,x,ξ, getVector(ν) );
 # break down to inner if base is checked
-function norm{mT<:Manifold, T<:TVectorE}(M::mT,ξ::T,ν::T)::Float64
-    checkBase()
+function norm{mT<:Manifold, P <: MPoint, T<:TVectorE}(M::mT, x::P, ξ::T, ν::T)::Float64
+    checkBase(ξ,x);
+    checkBase(ξ,ν);
     return norm(M,ξ.value,ν.value);
 end
-norm{mT<:Manifold, T<:TVectorE, S<:TVector}(M::mT,ξ::T,ν::S) = dot(M,ξ.value,ν);
-norm{mT<:Manifold, T<:TVectorE, S<:TVector}(M::mT,ξ::S,ν::T) = dot(M,ξ.value,ν);
+norm{mT<:Manifold, P <: MPointE, T<:TVector, S<:TVector}(M::mT,x::P,ξ::T,ν::S) = dot(M,getBase(x),ξ,ν);
+norm{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT,x::P,ξ::T,ν::S) = dot(M, getVector(ξ) ,ν);
+norm{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT,x::P,ξ::S,ν::T) = dot(M, ξ, getVector(ν));

@@ -32,7 +32,7 @@ getValue(ξ::ProdTVector) = ξ.value
 # ---
 addNoise(M::ProductManifold, x::ProdMPoint,σ) = ProdMPoint([addNoise.(M.manifolds, getValue(x)p.value,σ)])
 distance(M::ProductManifold, x::ProdMPoint, y::ProdMPoint) = sqrt(sum( distance.(manifolds, getValue(p), getValue(q) ).^2 ))
-dot(M::ProductManifold, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.manifolds, getValue(ξ), getValue(ν) ));
+dot(M::ProductManifold, x::ProdMPoint, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.manifolds, getValue(x), getValue(ξ), getValue(ν) ));
 exp(M::ProductManifold, x::ProdMPoint,ξ::ProdTVector,t::Number=1.0) = ProdMPoint( exp.(M.manifolds, getValue(p), getValue(ξ)) )
 log(M::ProductManifold, x::ProdMPoint,y::ProdMPoint) = ProdTVector(log.(M.manifolds, getValue(x), getValue(y) ))
 manifoldDimension(x::ProdMPoint) =  prod( manifoldDimension.( getValue(x) ) )
