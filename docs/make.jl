@@ -15,6 +15,11 @@ makedocs(
         ],
         "Solvers" => [
             "Introduction" => "solvers/index.md"
+        ],
+        "Functions" => [
+            "Introduction" => "functions/index.md",
+            "Gradients" => "functions/gradients.md",
+            "Proximal Maps" => "functions/proximalMaps.md"
         ]
     ]
 )

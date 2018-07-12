@@ -20,6 +20,9 @@ module Manopt
   include("manifolds/PowerManifold.jl")
   include("manifolds/ProductManifold.jl")
   include("manifolds/Sphere.jl")
+  # Functions
+  include("functions/gradients.jl")
+  include("functions/proximalMaps.jl")
   # ...corresponding plans consisting of problems and options
   include("plans/problem.jl")
   include("plans/options.jl")
@@ -29,7 +32,6 @@ module Manopt
   # algorithms
   include("algorithms/basicAlgorithms.jl")
   include("algorithms/lineSearch.jl")
-  include("algorithms/proximalMaps.jl")
   # Plots
   include("plots/SpherePlots.jl")
   # helpers
