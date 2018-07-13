@@ -10,7 +10,7 @@ import Base: exp, log, +, -, *, /, ==, show
 export Manifold, MPoint, TVector, MPointE, TVectorE
 # introduce new functions
 export distance, exp, log, norm, dot, manifoldDimension
-export geodesic, midPoint, addNoise
+export geodesic, midPoint, addNoise, reflection, jacobiField
 export +, -, *, /, ==, show
 export getValue, getBase, checkBase
 # introcude new algorithms
@@ -102,6 +102,37 @@ function geodesic{mT <: Manifold, P <: MPoint, S <: Number}(M::mT, x::P,y::P,T::
   geo = geodesic(M,x,y);
   return [geo(t) for t in T]
 end
+doc"""
+    jacobiField(M,x,y,η,w)
+Compute the jacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
+$\mathcal M$ with initial conditions (depending on the application) $\eta$ and
+weights $w$.
+
+For detais see [JacobiFields](@ref)
+"""
+function jacobiField{mT<:Manifold, P<:MPoint, T<:TVector}(M::mT,x::P,y::P,t::Number,η::T,β::Function=βGeodesicStartPoint)
+    z = geodesic(x,y,t); # Point the TzM of the resulting vector lies in
+    Ξ,κ = tangentONB(x,y) # ONB at x
+    Θ = parallelTransport.(M,x,z,Ξ) # Frame at z
+    # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
+    ξ = sum( ( dot.(M,x,η,Ξ) ).* ( β.(κ,t,dist(M,x,y)) ).*Θ )
+end
+doc"""
+    y = reflection(M,p,x)
+reflect the `MPoint x` at `MPoint p`, i.e. compute
+$y = R_p(x) = \exp_p(-\log_px)$. On Euclidean space this results in the point
+reflection $R_p(x) = p - (x-p) = 2p-x$.
+
+# Arguments
+* `M`  :   a manifold $\mathcal M$
+* `p`  :   an `MPoint` $p\in\mathcal M$ to relfect at
+* `x`  :   an `MPoint` $x\in\mathcal M$ that is reflected
+
+# Output
+* `y`  :  the resulting reflection.
+"""
+reflection{mT <: Manifold, P<: MPoint}(M::mT, p::P, x::P) = exp(M,p,-log(M,p,x))
+
 #
 #
 # General documentation of exp/log/... and its fallbacks in case of non-implemented tuples
@@ -220,7 +251,7 @@ function norm{mT<:Manifold, T<: MPoint, S<:TVector}(M::mT,x::T,ξ::S)::Number
   throw( ErrorException("Norm - Not Implemented for types $sig1 in the tangent space of a $sig2 on the manifold $sig3" ) )
 end
 doc"""
-    parallelTransport(M,x,y,,ξ)
+    parallelTransport(M,x,y,ξ)
 Parallel transport of a vector `ξ` given at the tangent space $T_x\mathcal M$
 of `x` to the tangent space $T_y\mathcal M$ at `y` along the geodesic form `x` to `y`.
 If the geodesic is not unique, this function takes the same choice as `geodesic`.
@@ -232,6 +263,31 @@ function parallelTransport{mT<:Manifold, P<:MPoint, Q<:MPoint, T<:TVector}(M::mT
   sig4 = string( typeof(M) )
   throw( ErrorException(" parallelTransport not implemented for Points $sig1 and $sig2, and a tangential vector $sig3 on the manifold $sig4." ) )
 end
+doc"""
+    (Ξ,κ) = tangentONB(M,x,ξ)
+compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the
+first vector and compute the eigenvalues of the curvature tensor
+$R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
+$\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
+
+See also [jacobiField](@ref).
+"""
+function tangentONB{mT <: Manifold, P <: MPoint, T <: TVector}(M::mT, x::P, ξ::T)
+    sig1 = string( typeof(x) )
+    sig2 = string( typeof(y) )
+    sig3 = string( typeof(ξ) )
+    throw( ErrorException("tangentONB Point $sig1 and tangent vector $sig2 on the manifold $sig3." ) )
+end
+doc"""
+    (Ξ,κ) = tangentONB(M,x,y)
+compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$ is the
+first vector and compute the eigenvalues of the curvature tensor
+$R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
+$\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
+
+See also [jacobiField](@ref).
+"""
+tangentONB{mT <: Manifold, P <: MPoint}(M::mT, x::P, y::P) = tangentONB(M,x,log(M,x,y))
 # The extended types for more information/security on base points of tangent vectors
 # ---
 """

@@ -1,4 +1,4 @@
-# [Gradients](@id proximalMapFunctions)
+# [Proximal Maps](@id proximalMapFunctions)
 For a function $\varphi\colon\mathcal M \to\mathbb R$ the proximal map is defined
 as
 

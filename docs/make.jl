@@ -19,6 +19,7 @@ makedocs(
         "Functions" => [
             "Introduction" => "functions/index.md",
             "Gradients" => "functions/gradients.md",
+            "JacobiFields" => "functions/jacobiFields.md",
             "Proximal Maps" => "functions/proximalMaps.md"
         ]
     ]
