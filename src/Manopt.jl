@@ -21,9 +21,10 @@ module Manopt
   include("manifolds/ProductManifold.jl")
   include("manifolds/Sphere.jl")
   # Functions
-  include("functions/AdjointJacobiFields.jl")
+  include("functions/adjointDifferentials.jl")
+  include("functions/differentials.jl")
   include("functions/gradients.jl")
-  include("functions/JacobiFields.jl")
+  include("functions/jacobiFields.jl")
   include("functions/proximalMaps.jl")
   # ...corresponding plans consisting of problems and options
   include("plans/problem.jl")

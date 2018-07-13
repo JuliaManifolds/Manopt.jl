@@ -67,6 +67,7 @@ the following base functions are implemented for general manifolds and are
 based on the functions from the last section
 
 ```@docs
+adjointJacobiField
 geodesic
 jacobiField
 Manopt.mean

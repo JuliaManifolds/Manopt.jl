@@ -10,7 +10,7 @@ import Base: exp, log, +, -, *, /, ==, show
 export Manifold, MPoint, TVector, MPointE, TVectorE
 # introduce new functions
 export distance, exp, log, norm, dot, manifoldDimension
-export geodesic, midPoint, addNoise, reflection, jacobiField
+export geodesic, midPoint, addNoise, reflection, jacobiField, AdjointJacobiField
 export +, -, *, /, ==, show
 export getValue, getBase, checkBase
 # introcude new algorithms
@@ -59,6 +59,22 @@ end
 # General functions available on manifolds based on exp/log/dist
 #
 #
+doc"""
+    ζ = adjointJacobiField(M,x,y,t,η,w)
+Compute the AdjointJacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
+$\mathcal M$ with initial conditions (depending on the application) $\eta\in T_{g(t;x,y)\mathcal M}$ and
+weights $\beta$. The result is a vector $\zeta \in T_x\mathcal M$
+The main difference to [`jacobiField`](@ref) is the inversion, that the input $\eta$ and the output $\zeta$ switched tangent spaces.
+
+For detais see [JacobiFields](@ref)
+"""
+function adjointJacobiField{mT<:Manifold, P<:MPoint, T<:TVector}(M::mT,x::P,y::P,t::Number,η::T,β::Function=βGeodesicStartPoint)
+    z = geodesic(M,x,y,t); # Point the TzM of the resulting vector lies in
+    Ξ,κ = tangentONB(M,x,y) # ONB at x
+    Θ = parallelTransport.(M,x,z,Ξ) # Frame at z
+    # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
+    ξ = sum( ( dot.(M,x,η,Θ) ).* ( β.(κ,t,dist(M,x,y)) ).*Ξ )
+end
 """
     midPoint(M,x,y)
 Compute the (geodesic) mid point of x and y.
@@ -103,16 +119,18 @@ function geodesic{mT <: Manifold, P <: MPoint, S <: Number}(M::mT, x::P,y::P,T::
   return [geo(t) for t in T]
 end
 doc"""
-    jacobiField(M,x,y,η,w)
+    ζ = jacobiField(M,x,y,t,η,β)
 Compute the jacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
-$\mathcal M$ with initial conditions (depending on the application) $\eta$ and
-weights $w$.
+$\mathcal M$ with initial conditions (depending on the application) $\eta\in T_x\mathcal M$ and
+weights $\beta$. The result is a tangent vector in $\zeta \in T_{g(t;x,y)}\mathcal M$.
 
-For detais see [JacobiFields](@ref)
+For detais see [JacobiFields](@ref).
+
+*See also:* [`adjointJacobiField`](@ref)
 """
-function jacobiField{mT<:Manifold, P<:MPoint, T<:TVector}(M::mT,x::P,y::P,t::Number,η::T,β::Function=βGeodesicStartPoint)
-    z = geodesic(x,y,t); # Point the TzM of the resulting vector lies in
-    Ξ,κ = tangentONB(x,y) # ONB at x
+function jacobiField{mT<:Manifold, P<:MPoint, T<:TVector}(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx)
+    z = geodesic(M,x,y,t); # Point the TzM of the resulting vector lies in
+    Ξ,κ = tangentONB(M,x,y) # ONB at x
     Θ = parallelTransport.(M,x,z,Ξ) # Frame at z
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
     ξ = sum( ( dot.(M,x,η,Ξ) ).* ( β.(κ,t,dist(M,x,y)) ).*Θ )
@@ -270,7 +288,7 @@ first vector and compute the eigenvalues of the curvature tensor
 $R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
 $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
-See also [jacobiField](@ref).
+See also `jacobiField`.
 """
 function tangentONB{mT <: Manifold, P <: MPoint, T <: TVector}(M::mT, x::P, ξ::T)
     sig1 = string( typeof(x) )
@@ -285,7 +303,7 @@ first vector and compute the eigenvalues of the curvature tensor
 $R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
 $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
-See also [jacobiField](@ref).
+See also `jacobiField`.
 """
 tangentONB{mT <: Manifold, P <: MPoint}(M::mT, x::P, y::P) = tangentONB(M,x,log(M,x,y))
 # The extended types for more information/security on base points of tangent vectors
