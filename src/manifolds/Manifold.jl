@@ -422,3 +422,13 @@ end
 norm{mT<:Manifold, P <: MPointE, T<:TVector, S<:TVector}(M::mT,x::P,ξ::T,ν::S) = dot(M,getBase(x),ξ,ν);
 norm{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT,x::P,ξ::T,ν::S) = dot(M, getVector(ξ) ,ν);
 norm{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT,x::P,ξ::S,ν::T) = dot(M, ξ, getVector(ν));
+
+function show{mT<:Manifold}(io::IO, M::mT)
+    try # works if M has a .name field
+        print(io, "The Manifold $(M.name).")
+    catch
+        throw(
+            ErrorException("The manifold $( typeof(M) ) seems to not have a `.name` field. Please implement a seperate `show` function.")
+        );
+    end
+end

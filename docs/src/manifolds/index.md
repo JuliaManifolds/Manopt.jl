@@ -43,21 +43,21 @@ symmetric positive definite matrices $\mathcal P(n)$ | `SymmetricPositiveDefinit
   point and vector types. The manifolds may also be arranged in a general array
   instead of in a vector.
 
-## Functions that need to be implemented for Manifolds
+## Functions that need to be implemented for a Manifold
 If you plan to implement a new manifold within `Manopt.jl`, the following
 functions should be implemented. If you only implement a few of these functions,
 not all algorithms might work.
 all these functions have a fallback providing an error message if the function is
 not (yet) implemented.
-Otherwise, for example if the field of the inner representant of `MPoint`
+Otherwise, for example, if the field of the inner representant of `MPoint`
 or `TVector` is the field `.value` of your struct, [`getValue`](@ref) directly
 works.
 
 ```@docs
 addNoise{mT <: Manifold, T <: MPoint}(::mT,::T,::Number)
 distance{M<:Manifold, P<:MPoint}(::M,::P,::P)
-dot(::mT,::P,::T,::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
-exp(::mT,::T,::S,::Number) where {mT<:Manifold, T<:MPoint, S<:TVector}
+dot{mT <: Manifold, P <: MPoint, T <: TVector}(::mT,::P,::T,::T)
+exp{mT<:Manifold, T<:MPoint, S<:TVector}(::mT,::T,::S,::Number)
 getValue
 log(::mT,::T,::T) where {mT<:Manifold, T<:MPoint}
 manifoldDimension

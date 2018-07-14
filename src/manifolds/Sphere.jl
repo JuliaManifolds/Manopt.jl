@@ -68,7 +68,7 @@ distance(M::Sphere,x::SnPoint,y::SnPoint) = acos(dot(getValue(x), getValue(y) ))
 doc"""
     dot(M,x,ξ,ν)
 Compute the Riemannian inner product for two [`SnTVector`](@ref)s `ξ` and `ν`
-from $T_x\mathcal M$ of the [`Sphere`](@ref) `M` given by
+from $T_x\mathcal M$ of the [`Sphere`](@ref)` M` given by
 $\langle \xi, \nu \rangle_x = \langle \xi,\nu \rangle$, i.e. the inner product
 in the embedded space $\mathbb R^{n+1}$.
 """
@@ -76,8 +76,8 @@ dot(M::Sphere, x::SnPoint, ξ::SnTVector, ν::SnTVector) = dot( getValue(ξ), ge
 
 doc"""
     exp(M,x,ξ,[t=1.0])
-Compute the exponential map on the [`Sphere`](@ref) $\mathcal M=\mathbb S^n$ with
-respect to the [`SnPoint`](@ref) `x` and the [`SnTVector`](@ref) `ξ`, which can
+Compute the exponential map on the [`Sphere`](@ref)` M`$=\mathbb S^n$ with
+respect to the [`SnPoint`](@ref)` x` and the [`SnTVector`](@ref)` ξ`, which can
 be shortened with `t` to `tξ`. The formula reads
 
 $\exp_x\xi = \cos(\lVert\xi\rVert_2)x + \sin(\lVert\xi\rVert_2)\frac{\xi}{\lVert\xi\rVert_2}.$
@@ -94,8 +94,8 @@ doc"""
     log(M,x,y)
 Compute the logarithmic map on the [`Sphere`](@ref)
 $\mathcal M=\mathbb S^n$, i.e. the [`SnTVector`](@ref) whose corresponding
-[`geodesic`](@ref) starting from [`SnPoint`](@ref) `x` reaches the
-[`SnPoint`](@ref) `y` after time 1 on the [`Sphere`](@ref) `M`.
+[`geodesic`](@ref) starting from [`SnPoint`](@ref)` x` reaches the
+[`SnPoint`](@ref)` y` after time 1 on the [`Sphere`](@ref)` M`.
 The formula reads for $x\neq -y$
 
 $\log_x y = d_{\mathbb S^n}(x,y)\frac{y-\langle x,y\rangle x}{\lVert y-\langle x,y\rangle x \rVert_2}.$
@@ -114,7 +114,7 @@ end
 doc"""
     manifoldDimension(x)
 returns the dimension of the [`Sphere`](@ref) $\mathbb S^n$, the
-[`SnPoint`](@ref) `x` embedded in $\mathbb R^{n+1}$.
+[`SnPoint`](@ref)` x`, itself embedded in $\mathbb R^{n+1}$, belongs to.
 """
 manifoldDimension(x::SnPoint)::Integer = length( getValue(x) )-1
 doc"""
@@ -124,15 +124,15 @@ returns the dimension of the [`Sphere`](@ref) `M`.
 manifoldDimension(M::Sphere)::Integer = M.dimension
 doc"""
     norm(M,x,ξ)
-Computes the norm of the [`SnTVector`](@ref) `ξ` in the tangent space
-$T_x\mathcal M$ at [`SnPoint`](@ref) `x` of the [`Sphere`](@ref) `M`.
+Computes the norm of the [`SnTVector`](@ref)` ξ` in the tangent space
+$T_x\mathcal M$ at [`SnPoint`](@ref)` x` of the [`Sphere`](@ref)` M`.
 """
 norm(M::Sphere, x::SnPoint, ξ::SnTVector) = norm( getValue(ξ) )
 doc"""
     parallelTransport(M, x, y, ξ)
 Compute the paralllel transport of the [`SnTVector`](@ref) `ξ` from
-the tangent space $T_x\mathcal M$ at [`SnPoint`](@ref) `x` to
-$T_y\mathcal M$ at [`SnPoint`](@ref) `y` on the [`Sphere`](@ref) `M` provided
+the tangent space $T_x\mathcal M$ at [`SnPoint`](@ref)` x` to
+$T_y\mathcal M$ at [`SnPoint`](@ref)` y` on the [`Sphere`](@ref)` M` provided
 that the corresponding [`geodesic`](@ref) $g(\cdot;x,y)$ is unique.
 The formula reads
 
@@ -152,6 +152,5 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
 end
 # Display
 # ---
-show(io::IO, M::Sphere) = print(io, "The Manifold $(M.name).")
 show(io::IO, p::SnPoint) = print(io, "Sn($( getValue(p) ))")
 show(io::IO, ξ::SnTVector) = print(io, "SnT($( getValue(ξ) ))")
