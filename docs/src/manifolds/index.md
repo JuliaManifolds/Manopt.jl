@@ -54,16 +54,17 @@ or `TVector` is the field `.value` of your struct, [`getValue`](@ref) directly
 works.
 
 ```@docs
-addNoise{mT <: Manifold, T <: MPoint}(::mT,::T,::Number)
-distance{M<:Manifold, P<:MPoint}(::M,::P,::P)
-dot{mT <: Manifold, P <: MPoint, T <: TVector}(::mT,::P,::T,::T)
-exp{mT<:Manifold, T<:MPoint, S<:TVector}(::mT,::T,::S,::Number)
+addNoise(::mT,::T,::Number) where {mT <: Manifold, T <: MPoint}
+distance(::M,::P,::P) where {M<:Manifold, P<:MPoint}
+dot(::mT,::P,::T,::S) where {mT <: Manifold, P <: MPoint, T <: TVector, S <: TVector}
+exp(::mT,::P,::T,::N) where {mT<:Manifold, P<:MPoint, T<:TVector, N<:Number}
 getValue
-log(::mT,::T,::T) where {mT<:Manifold, T<:MPoint}
-manifoldDimension
-norm
-parallelTransport
-tangentONB
+log(::mT,::P,::Q) where {mT<:Manifold, P<:MPoint, Q<:MPoint}
+manifoldDimension(::P) where {P <: MPoint}
+manifoldDimension(::mT) where {mT <: Manifold}
+norm(::mT,::P,::T) where {mT<:Manifold, P<: MPoint, T<:TVector}
+parallelTransport(::mT,::P,::Q,::T) where {mT <: Manifold, P <: MPoint, Q <: MPoint, T <: TVector}
+tangentONB(::mT, ::P, ::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint}
 ```
 ## Functions implemented for a general manifold
 the following base functions are implemented for general manifolds and are

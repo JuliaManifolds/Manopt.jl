@@ -169,9 +169,9 @@ end
 """
     distance(M,x,y)
 computes the gedoesic distance between two [`MPoint`](@ref)s `x` and `y` on
-a [`Manifold`](@ref) `M`.
+a [`Manifold`](@ref)` M`.
 """
-function distance{mT <: Manifold, T <: MPoint}(M::mT, x::T, y::T)
+function distance(M::mT, x::T, y::T) where {mT <: Manifold, T <: MPoint}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(y) )
   sig3 = string( typeof(M) )
@@ -180,9 +180,9 @@ end
 doc"""
     dot(M, x, ξ, ν)
 Computes the inner product of two [`TVector`](@ref)s `ξ` and `ν` from the
-tangent space at the [`MPoint`](@ref) `x` on the [`Manifold`](@ref) `M`.
+tangent space at the [`MPoint`](@ref)` x` on the [`Manifold`](@ref)` M`.
 """
-function dot{mT <: Manifold, P <: MPoint, T <: TVector}(M::mT, x::P, ξ::T, ν::T)
+function dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVector, S <: TVector}
   sig1 = string( typeof(ξ) )
   sig2 = string( typeof(ν) )
   sig3 = string( typeof(M) )
@@ -194,7 +194,7 @@ computes the exponential map at an [`MPoint`](@ref) `x` for the
 [`TVector`](@ref) `ξ` on the [`Manifold`](@ref) `M`. The optional parameter `t` can be
 used to shorten `ξ` to `tξ`.
 """
-function exp{mT<:Manifold, P<:MPoint, T<:TVector}(M::mT, x::P, ξ::T,t::Number=1.0)
+function exp(M::mT, x::P, ξ::T,t::N=1.0) where {mT<:Manifold, P<:MPoint, T<:TVector, N<:Number}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(M) )
@@ -206,7 +206,7 @@ get the actual value representing the point `x` on a manifold.
 This should be implemented if you do not use the field x.value to avoid the
 try-catch in the fallback implementation.
 """
-function getValue{P <: MPoint}(x::P)
+function getValue(x::P) where {P <: MPoint}
     try
         return x.value
     catch
@@ -220,7 +220,7 @@ get the actual value representing the tangent vector `ξ` to a manifold.
 This should be implemented if you do not use the field ξ.value to avoid the
 try-catch in the fallback implementation.
 """
-function getValue{T <: TVector}(ξ::T)
+function getValue(ξ::T) where {T <: TVector}
     try
         return ξ.value
     catch
@@ -234,7 +234,7 @@ computes the [`TVector`](@ref) in the tangent space ``T_x\mathcal M`` at the
 [`MPoint`](@ref) `x` such that the corresponding geodesic reaches the
 [`MPoint`](@ref) `y` after time 1 on the [`Manifold`](@ref) `M`.
 """
-function log{mT<:Manifold, T<:MPoint, S<:MPoint}(M::mT,x::T,y::S)::TVector
+function log(M::mT,x::P,y::Q)::TVector where {mT<:Manifold, P<:MPoint, Q<:MPoint}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(y) )
   sig3 = string( typeof(M) )
@@ -244,7 +244,7 @@ end
     manifoldDimension(x)
 returns the dimension of the manifold `M` the point `x` belongs to.
 """
-function manifoldDimension{T<:MPoint}(x::T)::Integer
+function manifoldDimension(x::P)::Integer where {P<:MPoint}
   sig1 = string( typeof(x) )
   throw( ErrorException(" Not Implemented for manifold points $sig1 " ) )
 end
@@ -252,7 +252,7 @@ end
     manifoldDimension(M)
 returns the dimension of the manifold `M`.
 """
-function manifoldDimension{T<:Manifold}(M::T)::Integer
+function manifoldDimension(M::mT)::Integer where {mT<:Manifold}
   sig1 = string( typeof(M) )
   throw( ErrorException(" Not Implemented for manifold $sig1 " ) )
 end
@@ -260,7 +260,7 @@ doc"""
     norm(M,x,ξ)
   computes the length of a tangential vector $\xi\in T_x\mathcal M$
 """
-function norm{mT<:Manifold, T<: MPoint, S<:TVector}(M::mT,x::T,ξ::S)::Number
+function norm(M::mT,x::P,ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
 	sig1 = string( typeof(ξ) )
 	sig2 = string( typeof(x) )
 	sig3 = string( typeof(M) )
@@ -272,7 +272,7 @@ Parallel transport of a vector `ξ` given at the tangent space $T_x\mathcal M$
 of `x` to the tangent space $T_y\mathcal M$ at `y` along the geodesic form `x` to `y`.
 If the geodesic is not unique, this function takes the same choice as `geodesic`.
 """
-function parallelTransport{mT<:Manifold, P<:MPoint, Q<:MPoint, T<:TVector}(M::mT, x::P, y::Q, ξ::T)
+function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPoint, Q<:MPoint, T<:TVector}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(y) )
   sig3 = string( typeof(ξ) )
@@ -286,9 +286,9 @@ first vector and compute the eigenvalues of the curvature tensor
 $R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
 $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
-See also `jacobiField`.
+*See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
 """
-function tangentONB{mT <: Manifold, P <: MPoint, T <: TVector}(M::mT, x::P, ξ::T)
+function tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
     sig1 = string( typeof(x) )
     sig2 = string( typeof(y) )
     sig3 = string( typeof(ξ) )
@@ -301,9 +301,9 @@ first vector and compute the eigenvalues of the curvature tensor
 $R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
 $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
-See also `jacobiField`.
+*See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
 """
-tangentONB{mT <: Manifold, P <: MPoint}(M::mT, x::P, y::P) = tangentONB(M,x,log(M,x,y))
+tangentONB(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint} = tangentONB(M,x,log(M,x,y))
 # The extended types for more information/security on base points of tangent vectors
 # ---
 """
