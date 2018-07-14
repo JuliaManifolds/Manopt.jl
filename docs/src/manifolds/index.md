@@ -103,4 +103,5 @@ for a tuple $(x,\xi)$ the point $x$ is the base point of $\xi$. Furthermore, to
 access the inner value of `MPointE` and the base stored in `TVectorE` you can use
 ```@docs
 getBase
+getVector
 ```

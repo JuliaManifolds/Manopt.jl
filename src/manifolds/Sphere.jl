@@ -113,13 +113,13 @@ function log(M::Sphere,x::SnPoint,y::SnPoint)
 end
 doc"""
     manifoldDimension(x)
-returns the dimension of the [`Sphere`](@ref) $\mathbb S^n$, the
+returns the dimension of the [`Sphere`](@ref)` M`$=\mathbb S^n$, the
 [`SnPoint`](@ref)` x`, itself embedded in $\mathbb R^{n+1}$, belongs to.
 """
 manifoldDimension(x::SnPoint)::Integer = length( getValue(x) )-1
 doc"""
     manifoldDimension(M)
-returns the dimension of the [`Sphere`](@ref) `M`.
+returns the dimension of the [`Sphere`](@ref)` M`.
 """
 manifoldDimension(M::Sphere)::Integer = M.dimension
 doc"""
@@ -129,7 +129,7 @@ $T_x\mathcal M$ at [`SnPoint`](@ref)` x` of the [`Sphere`](@ref)` M`.
 """
 norm(M::Sphere, x::SnPoint, ξ::SnTVector) = norm( getValue(ξ) )
 doc"""
-    parallelTransport(M, x, y, ξ)
+    parallelTransport(M,x,y,ξ)
 Compute the paralllel transport of the [`SnTVector`](@ref) `ξ` from
 the tangent space $T_x\mathcal M$ at [`SnPoint`](@ref)` x` to
 $T_y\mathcal M$ at [`SnPoint`](@ref)` y` on the [`Sphere`](@ref)` M` provided
