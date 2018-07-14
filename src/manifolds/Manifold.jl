@@ -68,7 +68,7 @@ The main difference to [`jacobiField`](@ref) is the inversion, that the input $\
 
 For detais see [JacobiFields](@ref)
 """
-function adjointJacobiField{mT<:Manifold, P<:MPoint, T<:TVector}(M::mT,x::P,y::P,t::Number,η::T,β::Function=βGeodesicStartPoint)
+function adjointJacobiField{mT<:Manifold, P<:MPoint, T<:TVector}(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx)
     z = geodesic(M,x,y,t); # Point the TzM of the resulting vector lies in
     Ξ,κ = tangentONB(M,x,y) # ONB at x
     Θ = parallelTransport.(M,x,z,Ξ) # Frame at z
@@ -160,7 +160,7 @@ reflection{mT <: Manifold, P<: MPoint}(M::mT, p::P, x::P) = exp(M,p,-log(M,p,x))
     addNoise(M,x,σ)
 adds noise of standard deviation `σ` to the MPoint `x` on the manifold `M`.
 """
-function addNoise{mT <: Manifold, T <: MPoint}(M::mT,x::T,σ::Number)::T
+function addNoise(M::mT,x::T,σ::Number)::T where {mT <: Manifold, T <: MPoint}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(σ) )
   sig3 = string( typeof(M) )
@@ -168,35 +168,33 @@ function addNoise{mT <: Manifold, T <: MPoint}(M::mT,x::T,σ::Number)::T
 end
 """
     distance(M,x,y)
-computes the gedoesic distance between two points `x` and `y` on a manifold `M`.
+computes the gedoesic distance between two [`MPoint`](@ref)s `x` and `y` on
+a [`Manifold`](@ref) `M`.
 """
-function distance{mT <: Manifold, T <: MPoint}(M::mT, x::T, y::T)::Number
+function distance{mT <: Manifold, T <: MPoint}(M::mT, x::T, y::T)
   sig1 = string( typeof(x) )
   sig2 = string( typeof(y) )
   sig3 = string( typeof(M) )
-  throw( ErrorException(" Distance – not Implemented for the two points $sig1 and $sig2 on the manifold $sig3." ) )
+  throw( ErrorException(" distance – not Implemented for the two points $sig1 and $sig2 on the manifold $sig3." ) )
 end
 doc"""
-    dot(M,ξ,ν)
-  computes the inner product of two tangential vectors ξ and ν in TpM
-  of p on the manifold `M`.
+    dot(M, x, ξ, ν)
+Computes the inner product of two [`TVector`](@ref)s `ξ` and `ν` from the
+tangent space at the [`MPoint`](@ref) `x` on the [`Manifold`](@ref) `M`.
 """
-function dot{mT <: Manifold, T <: TVector}(M::mT, ξ::T, ν::T)::Number
+function dot{mT <: Manifold, P <: MPoint, T <: TVector}(M::mT, x::P, ξ::T, ν::T)
   sig1 = string( typeof(ξ) )
   sig2 = string( typeof(ν) )
   sig3 = string( typeof(M) )
-  throw( ErrorException(" Dot – not Implemented for the two tangential vectors $sig1 and $sig2 on the manifold $sig3." ) )
+  throw( ErrorException(" dot – not Implemented for the two tangential vectors $sig1 and $sig2 on the manifold $sig3." ) )
 end
 doc"""
-    exp(M,x,ξ)
-computes the exponential map at `p` for the tangential vector `ξ`
-on the manifold `M`.
-
-# Optional Arguments
-the standard values is given in brackets
-* `t` : (1.0) shorten the tangent vector by the factor t
+    exp(M,x,ξ,[t=1.0])
+computes the exponential map at an [`MPoint`](@ref) `x` for the
+[`TVector`](@ref) `ξ` on the [`Manifold`](@ref) `M`. The optional parameter `t` can be
+used to shorten `ξ` to `tξ`.
 """
-function exp(M::mT, x::T, ξ::S,t::Number=1.0) where {mT<:Manifold, T<:MPoint, S<:TVector}
+function exp{mT<:Manifold, P<:MPoint, T<:TVector}(M::mT, x::P, ξ::T,t::Number=1.0)
   sig1 = string( typeof(x) )
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(M) )
@@ -232,15 +230,15 @@ function getValue{T <: TVector}(ξ::T)
 end
 """
     log(M,x,y)
-computes the tangential vector at x whose unit speed geodesic reaches y after
-time T = `distance(M,x,y)` (note that the geodesic above is [0,1]
-parametrized).
+computes the [`TVector`](@ref) in the tangent space ``T_x\mathcal M`` at the
+[`MPoint`](@ref) `x` such that the corresponding geodesic reaches the
+[`MPoint`](@ref) `y` after time 1 on the [`Manifold`](@ref) `M`.
 """
 function log{mT<:Manifold, T<:MPoint, S<:MPoint}(M::mT,x::T,y::S)::TVector
   sig1 = string( typeof(x) )
   sig2 = string( typeof(y) )
   sig3 = string( typeof(M) )
-  throw( ErrorException(" Log – not Implemented for Points $sig1 and $sig2 on the manifold $sig3.") )
+  throw( ErrorException("log – not Implemented for Points $sig1 and $sig2 on the manifold $sig3.") )
 end
 """
     manifoldDimension(x)

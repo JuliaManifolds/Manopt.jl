@@ -24,7 +24,7 @@ inherits such a short abbreviation, see `Abbr.` in the following table.
 -------------------------|------|-------|---------
 A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$
 $1$-sphere $\mathbb S^1$  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
-[$n$-sphere $\mathbb S^n$](@ref) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
+[$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
 Euclidean space $\mathbb R^n$ | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
 symmetric positive definite matrices $\mathcal P(n)$ | `SymmetricPositiveDefinite.jl` | `SPD` |  $n\times n$ symmetric positive matrices using the affine metric
 ## Traits for special types of Manifolds
@@ -49,14 +49,17 @@ functions should be implemented. If you only implement a few of these functions,
 not all algorithms might work.
 all these functions have a fallback providing an error message if the function is
 not (yet) implemented.
+Otherwise, for example if the field of the inner representant of `MPoint`
+or `TVector` is the field `.value` of your struct, [`getValue`](@ref) directly
+works.
 
 ```@docs
-addNoise
-distance
-Manopt.dot
-Manopt.exp
+addNoise{mT <: Manifold, T <: MPoint}(::mT,::T,::Number)
+distance{M<:Manifold, P<:MPoint}(::M,::P,::P)
+dot(::mT,::P,::T,::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
+exp(::mT,::T,::S,::Number) where {mT<:Manifold, T<:MPoint, S<:TVector}
 getValue
-Manopt.log
+log(::mT,::T,::T) where {mT<:Manifold, T<:MPoint}
 manifoldDimension
 norm
 parallelTransport
@@ -72,6 +75,7 @@ geodesic
 jacobiField
 Manopt.mean
 Manopt.median
+midPoint
 reflection
 variance
 ```

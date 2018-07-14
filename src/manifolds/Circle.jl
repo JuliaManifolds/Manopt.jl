@@ -69,8 +69,8 @@ show(io::IO, ξ::S1TVector) = print(io, "S1T($( getValue(ξ) ))");
 # little Helpers
 # ---
 """
-    symRem(x,y,T=pi)
-  symmetric remainder with respect to the interall 2*T
+    symRem(x,y,[T=pi])
+symmetric remainder with respect to the interall 2*`T`
 """
 function symRem(x::Float64, T::Float64=Float64(pi))::Float64
   return (x+T)%(2*T) - T
