@@ -3,17 +3,32 @@
 #
 #
 # Manopt.jl, R. Bergmann, 2018-07-07
+export IsLieGroupM, IsLieGroupP, IsLieGroupV, ⊗
+
+"""
+    IsLieGroupM{X}
+Indicates that `X` is a [`Manifold`](@ref) with a Lie group structure. This also
+introdcues a group operation `⊗` of two `MPoints` of `X`.
+"""
 @traitdef IsLieGroupM{X}
+"""
+    IsLieGroupP{X}
+An abstract [`MPoint`](@ref) belonging to a Lie group manifold.
+"""
 @traitdef IsLieGroupP{X}
+"""
+    IsLieGroupV{X}
+An abstract [`TVector`](@ref) belonging to a Lie group manifold.
+"""
 @traitdef IsLieGroupV{X}
 
 # introduces a shorthand for the group operation
-@traitfn ⊗{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = LieGroupOp(x,y)
-@traitfn function ⊗{T <: MPoint; !IsMatrixP{T}}(x::T,y::T)
+@traitfn ⊗{P <: MPoint; IsLieGroupP{P}}(x::P,y::P) = LieGroupOp(x,y)
+@traitfn function ⊗{P <: MPoint; !IsLieGroupP{P}}(x::P,y::P)
         sig1 = string( typeof(x) )
         throw( ErrorException("The manifold point of type $sig1 does not belong to a Lie Group") );
 end
-@traitfn function LieGroupOp{T <: MPoint; !IsMatrixP{T}}(x::T,y::T)
+@traitfn function LieGroupOp{P <: MPoint; !IsLieGroupP{P}}(x::P,y::P)
     sig1 = string( typeof(x) )
     throw( ErrorException("The manifold point of type $sig1 does not belong to a Lie Group") );
 end

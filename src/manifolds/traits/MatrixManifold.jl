@@ -11,23 +11,30 @@ import Base: +, -, *, /
 export transpose, IsMatrixM, IsMatrixP, IsMatrixV
 export +,-,*,/
 """
-	An abstract Manifold to represent a manifold whose points are matrices.
-	For these manifolds the usual operators (+,-,*) are overloaded for points.
+    IsMatrixM{X}
+An abstract Manifold to represent a manifold whose points are matrices.
+For these manifolds the usual operators (+,-,*) are overloaded for points.
+Furthermore, the `transpose` is also overloaded, though it returns the matrix,
+since the dimensions mit be different for rectangular matrices.
 """
-# Introduces three Traits for Manifolds, Points and Vectors
 @traitdef IsMatrixM{X}
+"""
+    IsMatrixP{X}
+An abstract Manifold Point belonging to a matrix manifold.
+"""
 @traitdef IsMatrixP{X}
+"""
+    IsMatrixV{X}
+An abstract Manifold Point belonging to a matrix manifold.
+"""
 @traitdef IsMatrixV{X}
 
-@traitdef isMTuple{X,Y}
-
 # for all that satisfy IsMatrixM -> introduce operators on points and points/TVecs
-@traitfn +{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = T(x.value + y.value)
-@traitfn -{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = T(x.value - y.value)
-@traitfn *{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = transpose(x.value)*y.value
-@traitfn *{T <: TVector; IsMatrixP{T}}(ξ::T,ν::T) = transpose(ξ.value)*ν.value
-@traitfn *{T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}}(x::T,y::S) = transpose(x.value)*y.value
-@traitfn *{T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}}(x::S,y::T) = transpose(x.value)*y.value
-
-@traitfn transpose{T <: MPoint; IsMatrixP{T}}(x::T) = transpose(x.value)
-@traitfn transpose{T <: TVector; IsMatrixV{T}}(ξ::T) = transpose(x.value)
+@traitfn +{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = T( getValue(x) + getValue(y) )
+@traitfn -{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = T( getValue(x) - getValue(y) )
+@traitfn *{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = transpose( getValue(x) )* getValue(y)
+@traitfn *{T <: TVector; IsMatrixP{T}}(ξ::T,ν::T) = transpose( getValue(ξ) ) * getValue(ν)
+@traitfn *{T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}}(x::T,y::S) = transpose( getValue(x) ) * getValue(y)
+@traitfn *{T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}}(x::S,y::T) = transpose( getValue(x) ) * getValue(y)
+@traitfn transpose{T <: MPoint; IsMatrixP{T}}(x::T) = transpose( getValue(x) )
+@traitfn transpose{T <: TVector; IsMatrixV{T}}(ξ::T) = transpose( getValue(x) )

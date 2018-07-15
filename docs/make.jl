@@ -8,6 +8,7 @@ makedocs(
         "Home" => "index.md",
         "Manifolds" => [
             "Introduction" => "manifolds/index.md",
+            "The Euclidean Space \$\\mathbb R^n\$" => "manifolds/euclidean.md",
             "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",
         ],
         "Plans" => [

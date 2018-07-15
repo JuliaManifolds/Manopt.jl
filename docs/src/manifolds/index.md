@@ -25,14 +25,37 @@ inherits such a short abbreviation, see `Abbr.` in the following table.
 A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$
 $1$-sphere $\mathbb S^1$  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
 [$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
-Euclidean space $\mathbb R^n$ | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
+[Euclidean space $\mathbb R^n$](@ref EuclideanSpace) | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
 symmetric positive definite matrices $\mathcal P(n)$ | `SymmetricPositiveDefinite.jl` | `SPD` |  $n\times n$ symmetric positive matrices using the affine metric
-## Traits for special types of Manifolds
+## Special Types of Manifolds
+Special types of manifolds are introduced by [SimpleTraits.jl](https://github.com/mauro3/SimpleTraits.jl)
+### Embedded Manifold
+```@docs
+IsEmbeddedM
+IsEmbeddedP
+IsEmbeddedV
+```
 
+### Lie Group Manifold
+```@docs
+IsLieGroupM
+IsLieGroupP
+IsLieGroupV
+```
+
+### Matrix Manifold
+```@docs
+IsMatrixM
+IsMatrixP
+IsMatrixV
+```
+It further overloads addition, subtraction, multiplication, and division for both
+Points and vectors of a matrix manifold.
 * With `@isLieGroupM`, `@isLieGroupP`, and `@isLieGroupV`
   a manifold, point, and vector, respectively is (belongs to) a Lie group manifold.
 * With `@isMatrixM`, `@isMatrixP`, and `@isMatrixV`
   a manifold, point, and vector, respectively is (belongs to) a matrix manifold.
+
 
 ## Special Manifolds to extend the above Basic manifolds
 

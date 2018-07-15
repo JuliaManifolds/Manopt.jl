@@ -11,7 +11,8 @@ export distance, exp, log, norm, dot, manifoldDimension, show, getValue
 doc"""
     Euclidean <: Manifold
 The manifold $\mathcal M = \mathbb R^n$ of the $n$-dimensional Euclidean vector
-space.
+space. We employ the notation $\langle\cdot,\cdot,\rangle$ for the inner product
+and $\lVert\cdot\rVert_2$ for its induced norm.
 """
 struct Euclidean <: Manifold
   name::String
@@ -51,13 +52,48 @@ getValue(ξ::RnTVector) = ξ.value
 
 # Functions
 # ---
+doc"""
+    distance(M,x,y)
+Computes the Euclidean distance $\lVert x - y\rVert$
+"""
 distance(M::Euclidean,x::RnPoint,y::RnPoint) = norm( getValue(x) - getValue(y) )
+doc"""
+    dot(M,x,ξ,ν)
+Computes the Euclidean inner product of `ξ` and `ν`, i.e.
+$\langle\xi,\nu\rangle = \displaystyle\sum_{k=1}^n \xi_k\nu_k$.
+"""
 dot(M::Euclidean,x::RnPoint,ξ::RnTVector, ν::RnTVector) = dot( getValue(ξ) , getValue(ν) )
+doc"""
+    exp(M,x,ξ)
+Computes the exponential map, i.e. $x+\xi$.
+"""
 exp(M::Euclidean,x::RnPoint,ξ::RnTVector,t=1.0) = RnPoint(getValue(p) + t*getValue(ξ) )
+doc"""
+    log(M,x,y)
+Computes the logarithmic map, i.e. $y-x$.
+"""
 log(M::Euclidean,x::RnPoint,y::RnPoint) = RnTVector( getValue(y) - getValue(x) )
+"""
+    manifoldDimension(x)
+Returns the manifold dimension, i.e. the length of the vector `x`.
+"""
 manifoldDimension(x::RnPoint) = length( getValue(x) )
+"""
+    manifoldDimension(M)
+Returns the manifold dimension, i.e. the length of the vectors stored
+in `M.dimension`.
+"""
 manifoldDimension(M::Euclidean) = M.dimension
+doc"""
+    norm(M,x,ξ)
+Computes the length of the tangent vector `ξ` in the tangent
+space $T_x\mathcal M$ of `x` on the Eclidean space `M`, i.e. $\lVert\xi\rVert$.
+"""
 norm(M::Euclidean,x::RnPoint, ξ::RnTVector) = norm(ξ.value)
+"""
+    parallelTransport(M,x,y,ξ)
+Computes the parallel transport, which is in Eulidean space the identity.
+"""
 parallelTransport(M::Euclidean, x::RnPoint, y::RnPoint, ξ::RnTVector) = ξ
 #
 #
