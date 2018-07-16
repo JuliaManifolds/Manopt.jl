@@ -49,13 +49,6 @@ IsMatrixM
 IsMatrixP
 IsMatrixV
 ```
-It further overloads addition, subtraction, multiplication, and division for both
-Points and vectors of a matrix manifold.
-* With `@isLieGroupM`, `@isLieGroupP`, and `@isLieGroupV`
-  a manifold, point, and vector, respectively is (belongs to) a Lie group manifold.
-* With `@isMatrixM`, `@isMatrixP`, and `@isMatrixV`
-  a manifold, point, and vector, respectively is (belongs to) a matrix manifold.
-
 
 ## Special Manifolds to extend the above Basic manifolds
 

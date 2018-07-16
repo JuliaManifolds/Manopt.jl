@@ -16,7 +16,7 @@ doc"""
 The one-dimensional manifold $\mathcal M = \mathbb S^1$ represented by angles.
 Note that one can also use the $n$-dimensional sphere with $n=1$ to obtain the
 same manifold represented by unit vectors in $\mathbb R^2$.
-Its abbreviation is `S1`, since the abbreviation of Sn is in variables always `Sn`.
+Its abbreviation is `S1`.
 """
 struct Circle <: Manifold
   name::String

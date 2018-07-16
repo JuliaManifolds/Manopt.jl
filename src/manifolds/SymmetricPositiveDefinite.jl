@@ -25,7 +25,7 @@ struct SymmetricPositiveDefinite <: Manifold
   SymmetricPositiveDefinite(dimension::Int) = new("$dimension-by-$dimension symmetric positive definite matrices",(dimension*(dimension+1)/2),"SPD($dimension) affine")
 end
 doc"""
-    SPDPoint <: SPDPoint
+    SPDPoint <: MPoint
 A point $x$ on the manifold $\mathcal M = \mathcal P(n)$ of $n\times n$
 symmetric positive definite matrices, represented in the redundant way of a
 symmetric positive definite matrix.

@@ -13,6 +13,7 @@ doc"""
 The manifold $\mathcal M = \mathbb R^n$ of the $n$-dimensional Euclidean vector
 space. We employ the notation $\langle\cdot,\cdot,\rangle$ for the inner product
 and $\lVert\cdot\rVert_2$ for its induced norm.
+The abbreviation for functions is `Rn`
 """
 struct Euclidean <: Manifold
   name::String
