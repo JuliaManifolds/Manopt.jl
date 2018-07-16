@@ -56,56 +56,12 @@ getValue(ξ::SymTVector) = ξ.value
 # ---
 distance(M::Symmetric,x::SymPoint,y::SymPoint) = vecnorm( getValue(x) - getValue(y) )
 function dot(M::Symmetric, x::SymPoint, ξ::SymTVector, ν::SymTVector) = vec( getValue(ξ) )'*vec( getValue(ν) )
-function exp(M::Symmetric, x::SymPoint, ξ::SymTVector, t::Float64=1.0)
-	svd1 = svd( getValue(x) );
-	U = svd1[1];
-	S = copy(svd1[2]);
-	Ssqrt = sqrt.(S);
-	SsqrtInv = diagm(1./Ssqrt);
-	pSqrt = U*diagm(Ssqrt)*U.';
-  	T = U*SsqrtInv*U.'*(t.*ξ.value)*U*SsqrtInv*U.';
-    svd2 = svd(T);
-   	Se = diagm(exp.(svd2[2]))
-  	Ue = svd2[1]
-	return SymPoint(pSqrt*Ue*Se*Ue.'*pSqrt)
-end
-function log(M::Symmetric,x::SymPoint,y::SymPoint)
-	svd1 = svd( getValue(x) )
-	U = svd1[1]
-	S = svd1[2]
-	Ssqrt = sqrt.(S)
-	SsqrtInv = diagm(1./Ssqrt)
-	Ssqrt = diagm(Ssqrt)
-  	pSqrt = U*Ssqrt*U.'
-	T = U * SsqrtInv * U.' * getValue(y) * U * SsqrtInv * U.'
-	svd2 = svd(T)
-	Se = diagm(log.(svd2[2]))
-	Ue = svd2[1]
-	ξ = pSqrt*Ue*Se*Ue.'*pSqrt
-	return SymTVector(ξ)
-end
+function exp(M::Symmetric, x::SymPoint, ξ::SymTVector, t::Float64=1.0) = SymPoint( getValue(x) + t*getValue(ξ) )
+function log(M::Symmetric,x::SymPoint,y::SymPoint) = SymTVector( getValue(y) - getValue(x) )
 manifoldDimension(M::Symmetric) = M.dimension
 manifoldDimension(x::SymPoint) = size( getValue(x), 1)*(size( getValue(x), 1)+1)/2
 norm(M::Symmetric,x::SymPoint,ξ::SymTVector) = vecnorm( getValue(ξ) )
-function parallelTransport(M::Symmetric,x::SymPoint,y::SymPoint,ξ::SymTVector)
-	svd1 = svd( getValue(x) )
-	U = svd1[1]
-	S = svd1[2]
-	Ssqrt = sqrt.(S)
-	SsqrtInv = diagm(1./Ssqrt)
-	Ssqrt = diagm(Ssqrt)
-	xSqrt = U*Ssqrt*U.'
-  	xSqrtInv = U*SsqrtInv*U.'
-	tξ = xSqrtInv * getValue(ξ) * xSqrtInv
-	tY = xSqrtInv * getValue(y) * xSqrtInv
-	svd2 = svd(tY)
-	Se = diagm(log.(svd2[2]))
-	Ue = svd2[1]
-	tY2 = Ue*Se*Ue.'
-	eig1 = eig(0.5*tY2)
-	Sf = diagm(exp.(eig1[1]))
-	Uf = eig1[2]
-	return SymTVector(xSqrt*Uf*Sf*Uf.'*(0.5*(tξ+tξ.'))*Uf*Sf*Uf.'*xSqrt)
+function parallelTransport(M::Symmetric,x::SymPoint,y::SymPoint,ξ::SymTVector) = ξ
 end
 # Display
 # ---

@@ -14,7 +14,10 @@ abstract type Problem end
 
 doc"""
     GradientProblem <: Problem
-specify a problem for gradient basd algorithms.
+specify a problem for gradient based algorithms.
+
+*See also*: [`steepestDescent`](@ref), [`conjugateGradientDescent`](@ref),
+[`GradientDescentOptions`](@ref), [`ConjugateGradientOptions`](@ref)
 
 # Fields
 * `M`            : a manifold $\mathcal M$

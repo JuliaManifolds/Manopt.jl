@@ -1,0 +1,4 @@
+# Gradient Descent
+```@docs
+  steepestDescent
+```

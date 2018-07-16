@@ -5,7 +5,7 @@
   	f = S1Point.(r);
 	F(x) = 1/2*sum(distance.(M,f,x).^2);
 	gradF(x) = sum(-log.(M,x,f));
-	lO = GradientLineSearchOptions(f[1]);
+	lO = ArmijoLineSearchOptions(f[1]);
 	stoppingCrit(i,ξ,x,xnew) = (i>0), (i<1)?"":"Stopped after $(i) iterations"; #one iteration
 	dP = GradientProblem(M,F,gradF);
 	dO = GradientDescentOptions(f[1],stoppingCrit,ArmijoLineSearch,lO);

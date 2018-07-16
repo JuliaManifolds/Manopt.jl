@@ -2,10 +2,4 @@
 CurrentModule = Manopt
 ```
 # Solvers
-```@docs
-steepestDescent
-```
-
-```@docs
-cyclicProximalPoint
-```
+Solvers can be applied to `Problems` with solver specific `Options`.

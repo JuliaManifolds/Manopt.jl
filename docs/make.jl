@@ -15,7 +15,10 @@ makedocs(
             "Introduction" => "plans/index.md"
         ],
         "Solvers" => [
-            "Introduction" => "solvers/index.md"
+            "Introduction" => "solvers/index.md",
+            "Conjugate Gradient Descent" => "solvers/conjugateGradientDescent.md",
+            "Cyclic Proximal Point" => "solvers/cyclicProximalPoint.md",
+            "Gradient Descent" => "solvers/gradientDescent.md"
         ],
         "Functions" => [
             "Introduction" => "functions/index.md",

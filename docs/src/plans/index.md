@@ -9,21 +9,36 @@ same problem.
 Since the `options` directly relate to a solver, they are documented with the
 corresponding [Solvers](@ref) for now.
 
+## Problems
 ```@docs
 Problem
 ```
-
-# Gradient based problems
-
+### Gradient based problems
 ```@docs
 GradientProblem
 getGradient
 ```
 
-# Proximal Map(s) based problems
+### Proximal Map(s) based problems
 
 ```@docs
 ProximalProblem
 getProximalMap
 getProximalMaps
+```
+
+## Options
+```@docs
+GradientDescentOptions
+LineSearchOptions
+SimpleLineSearchOptions
+ArmijoLineSearchOptions
+ArmijoDescentDirectionLineSearchOptions
+ConjugateGradientOptions
+SimpleDirectionUpdateOptions
+```
+
+# Until I find a better place to reduce errors...
+```@docs
+ArmijoLineSearch
 ```

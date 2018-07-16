@@ -89,7 +89,7 @@ function cPPDebug{O <: Options, MP <: MPoint}(o::O,iter::Int,x::MP,xnew::MP,λ::
         cPPDebug(getOptions(o),iter,x,xnew,λ,reason)
     end
 end
-function cPPDebugDebug{D <: DebugDecoOptions{O} where O<:Options, MP <: MPoint}(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String)
+function cPPDebugDebug{D <: DebugDecoOptions, MP <: MPoint}(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String)
     # decorate
     d = o.debugOptions;
     # Update values for debug

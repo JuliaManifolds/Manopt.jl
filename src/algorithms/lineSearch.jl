@@ -7,11 +7,11 @@
 # Manopt.jl – Ronny Bergmann – 2018-06-25
 export ArmijoLineSearch
 """
-  ArmijoLineSearch(LineSearchProblem)
-    compute the step size with respect to Armijo Rule for a LineSearchProblem.
+  ArmijoLineSearch(GradientProblem, ArmijoLineSearchOptions)
+    compute the step size with respect to Armijo's rule for a `GradientProblem`
 
     INPUT
-      problem - a LineSearchProblem (with Manifold, costFunction, initialStepSize, c and rho)
+      problem - a GradientProblem (with Manifold, costFunction and a gradient)
       x - current point on M
       gradFx - the gradient of the costFunction
       descentDirection - (optional) a descentDirection, set to -gradFx if not
@@ -22,17 +22,17 @@ export ArmijoLineSearch
       s - the resulting stepsize
 """
 function ArmijoLineSearch{Mc<:Manifold}(problem::GradientProblem{Mc},
-    options::DescentLineSearchOptions)::Float64
+    options::ArmijoDescentDirectionLineSearchOptions)::Float64
   # for local shortness
   F = problem.costFunction
   M = problem.M
   x = options.x
   ν = getGradient(problem,x)
   s = options.initialStepsize
-  ρ = options.rho
+  ρ = options.ρ
   c = options.c
   retr = options.retraction
-  ξ = options.descentDirection
+  ξ = options.direction
   e = F(x)
   eNew = e-1
 
@@ -51,5 +51,5 @@ function ArmijoLineSearch{Mc<:Manifold}(problem::GradientProblem{Mc},
   return s
 end
 ArmijoLineSearch{Mc<:Manifold}(problem::GradientProblem{Mc},
-    options::GradientLineSearchOptions)::Float64 = ArmijoLineSearch(problem,
-    DescentLineSearchOptions(options,-getGradient(problem, options.x)) )
+    options::LineSearchOptions)::Float64 = ArmijoLineSearch(problem,
+    ArmijoDescentDirectionLineSearchOptions(options,-getGradient(problem, options.x)) )

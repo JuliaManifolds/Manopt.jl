@@ -87,7 +87,7 @@ function exp(M::Sphere,x::SnPoint,ξ::SnTVector,t::Float64=1.0)
 	if len < eps(Float64)
   	return x
 	else
-  	return SnPoint(cos(t*len)*getValue(x) + sin(t*len)/len*getValue(ξ) )
+  	return SnPoint( cos(t*len)*getValue(x) + sin(t*len)/len*getValue(ξ) )
 	end
 end
 doc"""

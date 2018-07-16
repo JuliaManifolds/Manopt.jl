@@ -4,7 +4,9 @@
 export steepestDescent, gradDescDebug
 doc"""
     steepestDescent(M, F, gradF, x)
-perform a steepestDescent
+perform a steepestDescent $x_{k+1} = \exp_{x_k} s_k\nabla f(x_k)$ with different
+choices of $s_k$ available (see `lineSearch` option below).
+
 # Input
 * `M` : a manifold $\mathcal M$
 * `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
@@ -15,7 +17,7 @@ perform a steepestDescent
 * `debug` : (off) a tuple `(f,p,v)` of a DebugFunction `f`
   that is called with its settings dictionary `p` and a verbosity `v`. Existing
   fields of `p` are updated during the iteration from (iter, x, xnew, stepSize).
-* `lineSearch` : (`(p,lO) -> 1, lO::GradientLineSeachOptions)`) A tuple `(lS,lO)`
+* `lineSearch` : (`(p,lO) -> 1, lO::`[`LineSearchOptions`](@ref)`)`) A tuple `(lS,lO)`
   consisting of a line search function `lS` (called with two arguments, the
   problem `p` and the lineSearchOptions `lO`) with its LineSearchOptions `lO`.
   The default is a constant step size 1.
@@ -31,10 +33,10 @@ perform a steepestDescent
 * `reason` - if activated a String containing the stopping criterion stopping
   reason.
 """
-function steepestDescent{Mc <: Manifold, MP <: MPoint}(M::Mc,
+function steepestDescent{mT <: Manifold, MP <: MPoint}(M::mT,
         F::Function, gradF::Function, x::MP;
-        lineSearch::Tuple{Function,Options}= ( (p::GradientProblem{Mc},
-            o::GradientLineSearchOptions) -> 1, GradientLineSearchOptions(x)),
+        lineSearch::Tuple{Function,Options}= ( (p::GradientProblem{mT},
+            o::LineSearchOptions) -> 1, SimpleLineSearchOptions() ),
         retraction::Function = exp,
         stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"critical point reached"),
         returnReason=false,
@@ -89,7 +91,7 @@ function gradDescDebug{O <: Options, MP <: MPoint, MT <: TVector}(o::O,iter::Int
         gradDescDebug(getOptions(o),iter,x,xnew,ξ,s,reason)
     end
 end
-function gradDescDebug{D <: DebugDecoOptions{O} where O<:Options, MT <: TVector, MP <: MPoint}(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String)
+function gradDescDebug{D <: DebugDecoOptions, MT <: TVector, MP <: MPoint}(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String)
     # decorate
     d = o.debugOptions;
     # Update values for debug

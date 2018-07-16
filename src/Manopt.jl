@@ -32,6 +32,7 @@ module Manopt
   include("plans/options.jl")
   # ...solvers
   include("solvers/cyclicProximalPoint.jl")
+  include("solvers/conjugateGradientDescent.jl")
   include("solvers/steepestDescent.jl")
   # algorithms
   include("algorithms/basicAlgorithms.jl")
