@@ -30,12 +30,12 @@ proxDistance{mT <: Manifold, T <: MPoint}(M::mT,λ::Number,f::T,x::T) = proxDist
 function proxDistance{mT <: Manifold, T <: MPoint}(M::mT,λ::Number,f::T,x::T,p::Int)
   d = distance(M,p,q)
   if p==2
-    t =  λ/(1+λ)*d;
+    t =  λ/(1+λ);
   elseif p==1
     if λ < d
-      t = λ;
+      t = λ/d;
     else
-      t = d;
+      t = 1;
     end
   else
       throw(ErrorException(
@@ -62,14 +62,14 @@ parameter `λ`.
 # Ouput
 * (y1,y2) : resulting tuple of `MPoints` of the $\operatorname{prox}_{\lambda\varphi}($ `(x1,x2)` $)$
 """
-function proxTV{mT <: Manifold, T <: MPoint}(M::mT,λ::Number, pointTuple::Tuple{T,T},p::Int)::Tuple{T,T}
+function proxTV{mT <: Manifold, T <: MPoint}(M::mT,λ::Number, pointTuple::Tuple{T,T},p::Int=1)::Tuple{T,T}
   x1 = pointTuple[1];
   x2 = pointTuple[2];
   d = distance(M,x1,x2);
   if p==1
-    t = min(0.5*d, λ);
+    t = min(0.5, λ/d);
   elseif p==2
-    t = λ/(1+2*λ)*d;
+    t = λ/(1+2*λ);
   else
     throw(ErrorException(
       "Proximal Map of TV(M,x1,x2) not implemented for $(p) (requires p=1 or 2)"

@@ -4,12 +4,12 @@
   p = SnPoint([1,0,0])
   q = SnPoint([0,1,0])
   M = Sphere(2)
-  (r1,r2) = proxTV(M,pi/4,(p,q));
-  @test (abs(r1.value[1]-r2.value[1])<10.0^(-15) && abs(r1.value[2]-r2.value[2])<10.0^(-15) && abs(r1.value[3]-r2.value[3])<10.0^(-15) )
+  (r,s) = proxTV(M,π/4,(p,q));
+  @test norm( getValue(r) - getValue(s) ) < eps(Float64)
   # i.e. they are moved together
-  @test distance(M,r1,r2) < 10.0^(-16)
-  (r3,r4) = proxTV(M,pi/8,(p,q));
+  @test distance(M,r,s) < eps(Float64)
+  (t,u) = proxTV(M,π/8,(p,q));
   # they cross correlate
-  @test (abs(r3.value[1]-r4.value[2])<10.0^(-15) && abs(r3.value[2]-r4.value[1])<10.0^(-15) && abs(r3.value[3]-r4.value[3])<10.0^(-15) )
-  @test distance(M,r3,r4) == pi/4 # and have moved half their distance
+  @test ( abs(t.value[1]-u.value[2])< eps(Float64) && abs(t.value[2]-u.value[1]) < eps(Float64) && abs(t.value[3]-u.value[3])< eps(Float64) )
+  @test distance(M,t,u) == π/4 # and have moved half their distance
 end
