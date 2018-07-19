@@ -11,14 +11,17 @@ export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 #
 
 doc"""
-    Sphere <: MatrixManifold
-The manifold $\mathcal M = \mathbb S^n$ of unit vectors in $\mathbb R^{n+1}$
+    Sphere <: Manifold
+The manifold $\mathcal M = \mathbb S^n$ of unit vectors in $\mathbb R^{n+1}$.
+This manifold is a matrix manifold (see [`IsMatrixM`](@ref)) and embedded (see
+[`IsEmbeddedM`](@ref)).
+Its abbreviation is `Sn`.
 """
 struct Sphere <: Manifold
   name::String
   dimension::Int
   abbreviation::String
-  Sphere(dimension::Int) = new("$dimension-Sphere",dimension,"S$(dimension-1)")
+  Sphere(dimension::Int) = new("$dimension-Sphere",dimension,"Sn($(dimension-1))")
 end
 doc"""
     SnPoint <: MPoint
@@ -50,6 +53,10 @@ getValue(ξ::SnTVector) = ξ.value;
 @traitimpl IsMatrixM{Sphere}
 @traitimpl IsMatrixP{SnPoint}
 @traitimpl IsMatrixV{SnTVector}
+# (b) Sn is Embedded
+@traitimpl IsEmbeddedM{Sphere}
+@traitimpl IsEmbeddedP{SnPoint}
+@traitimpl IsEmbeddedV{SnTVector}
 
 # Functions
 # ---
@@ -58,7 +65,7 @@ doc"""
 Compute the Riemannian distance on $\mathcal M=\mathbb S^n$ embedded in
 $\mathbb R^{n+1}$ can be computed as
 
-$ d_{\mathcal S^n}(x,y) = \operatorname{acos} \bigl(\langle x,y\rangle\bigr), $
+$ d_{\mathbb S^n}(x,y) = \operatorname{acos} \bigl(\langle x,y\rangle\bigr), $
 
 where $\langle\cdot,\cdot\rangle$ denotes the Euclidean inner product
 on $\mathbb R^{n+1}$.

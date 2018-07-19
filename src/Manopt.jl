@@ -16,7 +16,8 @@ module Manopt
   include("manifolds/traits/MatrixManifold.jl")
   # specific manifolds
   include("manifolds/Circle.jl")
-	include("manifolds/Euclidean.jl")
+  include("manifolds/Euclidean.jl")
+  include("manifolds/Hyperbolic.jl")
 	include("manifolds/SymmetricPositiveDefinite.jl")
   include("manifolds/PowerManifold.jl")
   include("manifolds/ProductManifold.jl")
