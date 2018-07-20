@@ -47,19 +47,52 @@ end
 getValue(ξ::ProdTVector) = ξ.value
 # Functions
 # ---
+"""
+    addNoise(M,x,δ)
+computes a vectorized version of addNoise, and returns the noisy [`ProdMPoint`](@ref).
+"""
 addNoise(M::ProductManifold, x::ProdMPoint,σ) = ProdMPoint([addNoise.(M.manifolds, getValue.(x),σ)])
+"""
+    distance(M,x,y)
+computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
+"""
 distance(M::ProductManifold, x::ProdMPoint, y::ProdMPoint) = sqrt(sum( distance.(M.manifolds, getValue(x), getValue(y) ).^2 ))
+"""
+    dot(M,x,ξ,ν)
+computes the inner product as sum of the component inner products on the [`ProductManifold`](@ref).
+"""
 dot(M::ProductManifold, x::ProdMPoint, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.manifolds, getValue(x), getValue(ξ), getValue(ν) ));
 """
     exp(M,x,ξ)
-Computes the exponential map on the [`ProductManifold`](@ref) by combining all
-points of the single manifolds into one [`ProdMPoint`](@ref).
+computes the product exponential map on the [`ProdManifold`](@ref) and returns the corresponding [`ProdMPoint`](@ref).
 """
 exp(M::ProductManifold, x::ProdMPoint,ξ::ProdTVector,t::Number=1.0) = ProdMPoint( exp.(M.manifolds, getValue(x), getValue(ξ)) )
+"""
+   log(M,x,y)
+computes the product logarithmic map on the [`ProdManifold`](@ref) and returns the corresponding [`ProdTVector`](@ref).
+"""
 log(M::ProductManifold, x::ProdMPoint,y::ProdMPoint) = ProdTVector(log.(M.manifolds, getValue(x), getValue(y) ))
+"""
+    manifoldDimension(x)
+returns the (product of) dimension(s) of the [`ProdManifold`](@ref) the [`ProdMPoint`](@ref)`x` belongs to.
+"""
 manifoldDimension(x::ProdMPoint) =  prod( manifoldDimension.( getValue(x) ) )
+"""
+    manifoldDimension(M)
+returns the (product of) dimension(s) of the [`ProdManifold`](@ref)` M`.
+"""
 manifoldDimension(M::ProductManifold) = prod( manifoldDimension.(M.manifolds) )
+"""
+    norm(M,x,ξ)
+norm of the [`ProdTVector`]` ξ` induced by the metric on the manifold components
+of the [`ProdManifold`](@ref)` M`.
+"""
 norm(M::ProductManifold, ξ::ProdTVector) = sqrt( dot(M,ξ,ξ) )
+"""
+    parallelTransport(M,x,ξ)
+computes the product parallelTransport map on the [`ProdManifold`](@ref) and returns the corresponding [`ProdTVector`](@ref).
+"""
+parallelTransport(M::ProductManifold, x::ProdMPoint, y::ProdMPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
 # Display
 show(io::IO, M::ProductManifold) = print(io,string("The Product Manifold of [ ",
     join([m.abbreviation for m in M.manifolds])," ]"))

@@ -42,14 +42,51 @@ end
 getValue(ξ::PowTVector) = ξ.value
 # Functions
 # ---
+"""
+    addNoise(M,x,δ)
+computes a vectorized version of addNoise, and returns the noisy [`PowMPoint`](@ref).
+"""
 addNoise(M::PowerManifold, x::PowMPoint,σ) = PowMPoint([addNoise.(M.manifold,p.value,σ)])
+"""
+    distance(M,x,y)
+computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
+"""
 distance(M::PowerManifold, x::PowMPoint, y::PowMPoint) = sqrt(sum( distance.(M.manifold, getValue(x), getValue(y) ).^2 ))
+"""
+    dot(M,x,ξ,ν)
+computes the inner product as sum of the component inner products on the [`PowerManifold`](@ref).
+"""
 dot(M::PowerManifold, x::PowMPoint, ξ::PowTVector, ν::PowTVector) = sum(dot.(M.manifold,getValue(x), getValue(ξ), getValue(ν) ))
+"""
+    exp(M,x,ξ)
+computes the product exponential map on the [`PowerManifold`](@ref) and returns the corresponding [`PowMPoint`](@ref).
+"""
 exp(M::PowerManifold, x::PowMPoint, ξ::PowTVector, t::Number=1.0) = PowMPoint( exp.(M.manifold, getValue(p) , getValue(ξ) ))
+"""
+   log(M,x,y)
+computes the product logarithmic map on the [`PowerManifold`](@ref) and returns the corresponding [`PowTVector`](@ref).
+"""
 log(M::PowerManifold, x::PowMPoint, y::PowMPoint)::PowTVector = ProdTVector(log.(M.manifold, getValue(p), getValue(q) ))
+"""
+    manifoldDimension(x)
+returns the (product of) dimension(s) of the [`PowerManifold`](@ref) the [`PowMPoint`](@ref)`x` belongs to.
+"""
 manifoldDimension(p::PowMPoint) = prod(manifoldDimension.( getValue(p) ) )
+"""
+    manifoldDimension(M)
+returns the (product of) dimension(s) of the [`PowerManifold`](@ref)` M`.
+"""
 manifoldDimension(M::PowerManifold) = prod( M.dims * manifoldDimension(M.manifold) )
+"""
+    norm(M,x,ξ)
+norm of the [`PowTVector`]` ξ` induced by the metric on the manifold components
+of the [`PowerManifold`](@ref)` M`.
+"""
 norm(M::PowerManifold, ξ::PowTVector) = sqrt( dot(M,ξ,ξ) )
+"""
+    parallelTransport(M,x,ξ)
+computes the product parallelTransport map on the [`PowerManifold`](@ref) and returns the corresponding [`PowTVector`](@ref).
+"""
 parallelTransport(M::PowerManifold, x::PowMPoint, y::PowMPoint, ξ::PowTVector) = PowTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
 #
 #
