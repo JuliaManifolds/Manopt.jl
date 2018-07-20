@@ -66,7 +66,7 @@ getValue(ξ::HnTVector) = ξ.value;
 # ---
 doc"""
     distance(M,x,y)
-Compute the Riemannian distance on $\mathcal M=\mathbb H^n$ embedded in
+Compute the Riemannian distance on the [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$ embedded in
 $\mathbb R^{n+1}$ can be computed as
 
 $ d_{\mathbb H^n}(x,y) = \operatorname{acosh} \bigl(-\langle x,y\rangle_{\mathrm{M}}\bigr), $
@@ -80,7 +80,7 @@ distance(M::Hyperbolic,x::HnPoint,y::HnPoint) = acosh(-dotM(getValue(x), getValu
 doc"""
     dot(M,x,ξ,ν)
 Compute the Riemannian inner product for two [`HnTVector`](@ref)s `ξ` and `ν`
-from $T_x\mathcal M$ of the [`Hyperpolic Space`](@ref Hyperbolic)` M=`$\mathbb H^n$ given by
+from $T_x\mathcal M$ of the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ given by
 $\langle \xi, \nu \rangle_x = \langle \xi,\nu \rangle$, i.e. the inner product
 in the embedded space $\mathbb R^{n+1}$.
 """
@@ -88,7 +88,7 @@ dot(M::Hyperbolic, x::HnPoint, ξ::HnTVector, ν::HnTVector) = dotM( getValue(ξ
 
 doc"""
     exp(M,x,ξ,[t=1.0])
-Compute the exponential map on the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ with
+Computes the exponential map on the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ with
 respect to the [`HnPoint`](@ref)` x` and the [`HnTVector`](@ref)` ξ`, which can
 be shortened with `t` to `tξ`. The formula reads
 
@@ -104,8 +104,8 @@ function exp(M::Hyperbolic,x::HnPoint,ξ::HnTVector,t::Float64=1.0)
 end
 doc"""
     log(M,x,y)
-Compute the logarithmic map on the [`Hyperbolic`](@ref)
-$\mathcal M=\mathbb H^n$, i.e. the [`HnTVector`](@ref) whose corresponding
+Computes the logarithmic map on the [`Hyperbolic`](@ref) $\mathbb H^n$,
+i.e., the [`HnTVector`](@ref) whose corresponding
 [`geodesic`](@ref) starting from [`HnPoint`](@ref)` x` reaches the
 [`HnPoint`](@ref)` y` after time 1 on the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$.
 The formula reads for $x\neq -y$

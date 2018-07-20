@@ -23,7 +23,7 @@ inherits such a short abbreviation, see `Abbr.` in the following table.
 |  Manifold $\mathcal M$ | File | Abbr. | Comment
 -------------------------|------|-------|---------
 A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$
-$1$-sphere $\mathbb S^1$  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
+[$1$-sphere $\mathbb S^1$](@ref CircleManifold)  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
 [$n$-dim. Hyperbolic space $\mathbb H^n$](@ref HyperbolicManifold) | `Hyperbolic.jl` | `Hn` | embedded in $\mathbb R^{n+1}$
 [$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
 [Euclidean space $\mathbb R^n$](@ref EuclideanSpace) | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
@@ -52,13 +52,18 @@ IsMatrixV
 ```
 
 ## Special Manifolds to extend the above Basic manifolds
-
-* `PowerManifold.jl` (Abbr. `PowM`) introduces a power manifold
-  $\mathcal M^n$, where $n$ can be a vector.
-* `ProductManifold.jl` (Abbr. `ProdM`) introduces a product manifold
-  $\mathcal M_1\times \mathcal M_2\times\cdot \mathcal M_n$ and corresponding
-  point and vector types. The manifolds may also be arranged in a general array
-  instead of in a vector.
+### Product manifold
+```@docs
+ProductManifold
+ProdMPoint
+ProdTVector
+```
+### Power manifold
+```@docs
+PowerManifold
+PowMPoint
+PowTVector
+```
 
 ## Functions that need to be implemented for a Manifold
 If you plan to implement a new manifold within `Manopt.jl`, the following

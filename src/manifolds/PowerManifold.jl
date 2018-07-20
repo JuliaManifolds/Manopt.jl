@@ -9,8 +9,8 @@ export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export show, getValue
 doc"""
     PowerManifold{M<:Manifold} <: Manifold
-a power manifold $\mathcal M = \mathcal N^n$, where $n$ can be an integer or an
-integer vector. Its abbreviatio is `Pow` and for explicit instances `Pow(N,n)`.
+a power manifold $\mathcal M = \mathcal N^m$, where $m$ can be an integer or an
+integer vector. Its abbreviatio is `Pow`.
 """
 struct PowerManifold{M<:Manifold} <: Manifold
   name::String
@@ -23,7 +23,7 @@ struct PowerManifold{M<:Manifold} <: Manifold
 end
 doc"""
     PowMPoint <: MPoint
-A point on the power manifold $\mathcal M = \mathcal N^n$ represented by a vector of `MPoint`s.
+A point on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector or array of [`MPoint`](@ref)s.
 """
 struct PowMPoint <: MPoint
   value::Array{T,N} where N where T<:MPoint
@@ -33,7 +33,7 @@ getValue(x::PowMPoint) = x.value;
 
 doc"""
     PowTVector <: TVector
-A tangent vector on the power manifold $\mathcal M = \mathcal N^n$ represented by a vector of `TVector`s.
+A tangent vector on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector of [`TVector`](@ref)s.
 """
 struct PowTVector <: TVector
   value::Array{T,N} where N where T <: TVector

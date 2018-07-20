@@ -7,7 +7,15 @@ import Base: exp, log, show
 export ProductManifold, ProdMPoint, ProdTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export show, getValue
-
+doc"""
+    ProductManifold{M<:Manifold} <: Manifold
+a product manifold $\mathcal M = \mathcal N_1\times\mathcal N_2\times\cdots\times\mathcal N_m$,
+$m\in\mathbb N$,
+concatinates a set of manifolds $\mathcal N_i$, $i=1,\ldots,m$, into one using
+the sum of the metrics to impose a metric on this manifold. The manifold can
+also be an arbitrary Array of manifolds, not necessarily only a vector.
+Its abbreviation is `Prod`.
+"""
 struct ProductManifold <: Manifold
   name::String
   manifolds::Array{Manifold}
@@ -16,13 +24,22 @@ struct ProductManifold <: Manifold
   ProductManifold(mv::Array{Manifold}) = new("ProductManifold",
     mv,prod(manifoldDimension.(mv)),string("Prod(",join([m.abbreviation for m in mv],", "),")") )
 end
-
+doc"""
+    ProdMPoint <: MPoint
+A point on the [`ProductManifold`](@ref) $\mathcal M = \mathcal N_1\times\mathcal N_2\times\cdots\times\mathcal N_m$,$m\in\mathbb N$,
+represented by a vector or array of [`MPoint`](@ref)s.
+"""
 struct ProdMPoint <: MPoint
   value::Array{MPoint}
   ProdMPoint(v::Array{MPoint}) = new(v)
 end
 getValue(x::ProdMPoint) = x.value
-
+doc"""
+    ProdTVector <: TVector
+A tangent vector in the product of tangent spaces of the [`ProductManifold`](@ref)
+$T\mathcal M = T\mathcal N_1\times T\mathcal N_2\times\cdots\times T\mathcal N_m$,$m\in\mathbb N$,
+represented by a vector or array of [`TVector`](@ref)s.
+"""
 struct ProdTVector <: TVector
   value::Array{TVector}
   ProdTVector(value::Array{TVector}) = new(value);
@@ -30,10 +47,15 @@ end
 getValue(ξ::ProdTVector) = ξ.value
 # Functions
 # ---
-addNoise(M::ProductManifold, x::ProdMPoint,σ) = ProdMPoint([addNoise.(M.manifolds, getValue(x)p.value,σ)])
-distance(M::ProductManifold, x::ProdMPoint, y::ProdMPoint) = sqrt(sum( distance.(manifolds, getValue(p), getValue(q) ).^2 ))
+addNoise(M::ProductManifold, x::ProdMPoint,σ) = ProdMPoint([addNoise.(M.manifolds, getValue.(x),σ)])
+distance(M::ProductManifold, x::ProdMPoint, y::ProdMPoint) = sqrt(sum( distance.(M.manifolds, getValue(x), getValue(y) ).^2 ))
 dot(M::ProductManifold, x::ProdMPoint, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.manifolds, getValue(x), getValue(ξ), getValue(ν) ));
-exp(M::ProductManifold, x::ProdMPoint,ξ::ProdTVector,t::Number=1.0) = ProdMPoint( exp.(M.manifolds, getValue(p), getValue(ξ)) )
+"""
+    exp(M,x,ξ)
+Computes the exponential map on the [`ProductManifold`](@ref) by combining all
+points of the single manifolds into one [`ProdMPoint`](@ref).
+"""
+exp(M::ProductManifold, x::ProdMPoint,ξ::ProdTVector,t::Number=1.0) = ProdMPoint( exp.(M.manifolds, getValue(x), getValue(ξ)) )
 log(M::ProductManifold, x::ProdMPoint,y::ProdMPoint) = ProdTVector(log.(M.manifolds, getValue(x), getValue(y) ))
 manifoldDimension(x::ProdMPoint) =  prod( manifoldDimension.( getValue(x) ) )
 manifoldDimension(M::ProductManifold) = prod( manifoldDimension.(M.manifolds) )
