@@ -116,6 +116,11 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 	return SPDTVector(xSqrt*Uf*Sf*Uf.'*(0.5*(tξ+tξ.'))*Uf*Sf*Uf.'*xSqrt)
 end
 doc"""
+    typicalDistance(M)
+returns the typical distance on the [`SymmetricPositiveDefinite`](@ref)` SPD`: $\sqrt\bigl(\frac{n(n+1)}{2}\bigr)$.
+"""
+typicalDistance(M::SymmetricPositiveDefinite) = sqrt(M.dimension);
+doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`SPDPoint`](@ref) $x\in\mathcal P(n)$ on the [`SymmetricPositiveDefinite`](@ref)` SPD`.

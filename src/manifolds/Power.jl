@@ -90,6 +90,11 @@ computes the product parallelTransport map on the [`Power`](@ref) and returns th
 """
 parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) = PowTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
 doc"""
+    typicalDistance(M)
+returns the typical distance on the [`Power`](@ref)` Pow`, which is identical to the base.
+"""
+typicalDistance(M::Power) = sqrt( M.dims ) * typicalDistance(M.manifold);
+doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`PowPoint`](@ref) $x\in\mathcal M$ on the [`Power`](@ref)` M`.

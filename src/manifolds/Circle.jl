@@ -119,6 +119,12 @@ Since the [`Sphere`](@ref)` M` is represented in angles this is the identity.
 """
 parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
 doc"""
+    typicalDistance(M)
+returns the typical distance on the [`Circle`](@ref)` M`: π.
+"""
+typicalDistance(M::Circle) = π;
+
+doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`S1Point`](@ref) $x\in\mathbb S^1$ on the [`Circle`](@ref)` S1`.

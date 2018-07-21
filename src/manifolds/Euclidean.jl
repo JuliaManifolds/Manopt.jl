@@ -98,6 +98,11 @@ Computes the parallel transport, which is in Eulidean space the identity.
 """
 parallelTransport(M::Euclidean, x::RnPoint, y::RnPoint, ξ::RnTVector) = ξ
 doc"""
+    typicalDistance(M)
+returns the typical distance on the [`Euclidean`](@ref)` Rn`: $\sqrt(n)$.
+"""
+typicalDistance(M::Euclidean) = sqrt(M.dimension);
+doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`RnPoint`](@ref) $x\in\mathbb R^n$ on the [`Euclidean`](@ref)` Rn`.

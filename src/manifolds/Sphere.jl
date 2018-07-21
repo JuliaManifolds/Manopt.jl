@@ -159,6 +159,11 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
 	end
 end
 doc"""
+    typicalDistance(M)
+returns the typical distance on the [`Sphere`](@ref)` Sn`: π.
+"""
+typicalDistance(M::Sphere) = π;
+doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`SnPoint`](@ref) $x\in\mathbb S^n$ on the [`Sphere`](@ref)` Sn`.

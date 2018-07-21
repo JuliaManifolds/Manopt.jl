@@ -20,7 +20,6 @@ Its abbreviation is `Prod`.
 struct Product <: Manifold
   name::String
   manifolds::Array{Manifold}
-  dimension::Int
   abbreviation::String
   Product(mv::Array{Manifold}) = new("Product",
     mv,prod(manifoldDimension.(mv)),string("Prod(",join([m.abbreviation for m in mv],", "),")") )
@@ -94,6 +93,11 @@ norm(M::Product, ξ::ProdTVector) = sqrt( dot(M,ξ,ξ) )
 computes the product parallelTransport map on the [`Prodanifold`](@ref) and returns the corresponding [`ProdTVector`](@ref).
 """
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
+doc"""
+    typicalDistance(M)
+returns the typical distance on the [`Prod`](@ref)` Prod`, which is the minimum of the internal ones.
+"""
+typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) );
 doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the

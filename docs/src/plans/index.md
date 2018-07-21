@@ -16,7 +16,7 @@ Problem
 ### Gradient based problems
 ```@docs
 GradientProblem
-getGradient
+gradF
 ```
 
 ### Proximal Map(s) based problems

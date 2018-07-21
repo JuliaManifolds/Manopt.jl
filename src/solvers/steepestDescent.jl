@@ -3,14 +3,14 @@
 #
 export steepestDescent, gradDescDebug
 doc"""
-    steepestDescent(M, F, gradF, x)
+    steepestDescent(M, F, ∇F, x)
 perform a steepestDescent $x_{k+1} = \exp_{x_k} s_k\nabla f(x_k)$ with different
 choices of $s_k$ available (see `lineSearch` option below).
 
 # Input
 * `M` : a manifold $\mathcal M$
 * `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `gradF`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
 * `x` : an initial value $x\in\mathcal M$
 
 # Optional
@@ -34,7 +34,7 @@ choices of $s_k$ available (see `lineSearch` option below).
   reason.
 """
 function steepestDescent{mT <: Manifold, MP <: MPoint}(M::mT,
-        F::Function, gradF::Function, x::MP;
+        F::Function, ∇F::Function, x::MP;
         lineSearch::Tuple{Function,Options}= ( (p::GradientProblem{mT},
             o::LineSearchOptions) -> 1, SimpleLineSearchOptions() ),
         retraction::Function = exp,
@@ -43,7 +43,7 @@ function steepestDescent{mT <: Manifold, MP <: MPoint}(M::mT,
         kwargs... #especially may contain debug
     )
     # TODO Test Input
-    p = GradientProblem(M,F,gradF)
+    p = GradientProblem(M,F,∇F)
     o = GradientDescentOptions(x,stoppingCriterion,retraction,lineSearch[1],lineSearch[2])
     # create default here to check if the user provided a debug and still have the typecheck
     debug::Tuple{Function,Dict{String,Any},Int}= (x::Dict{String,Any}->print(""),Dict{String,Any}(),0);
@@ -75,7 +75,7 @@ function steepestDescent{P <: GradientProblem, O <: Options}(p::P, o::O)
     s = getOptions(o).lineSearchOptions.initialStepsize
     M = p.M
     while !stop
-        ξ = getGradient(p,x)
+        ξ = gradF(p,x)
         s = getStepsize(p,getOptions(o),x,s)
         xnew = getOptions(o).retraction(M,x,-s*ξ)
         iter=iter+1

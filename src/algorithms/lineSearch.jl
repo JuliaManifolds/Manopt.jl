@@ -13,8 +13,8 @@ export ArmijoLineSearch
     INPUT
       problem - a GradientProblem (with Manifold, costFunction and a gradient)
       x - current point on M
-      gradFx - the gradient of the costFunction
-      descentDirection - (optional) a descentDirection, set to -gradFx if not
+      ∇Fx - the gradient of the costFunction
+      descentDirection - (optional) a descentDirection, set to -∇Fx if not
         explicitly specified
       retraction – (optional) a retraction on M. Set to exp if not given
 
@@ -27,7 +27,7 @@ function ArmijoLineSearch{Mc<:Manifold}(problem::GradientProblem{Mc},
   F = problem.costFunction
   M = problem.M
   x = options.x
-  ν = getGradient(problem,x)
+  ν = gradF(problem,x)
   s = options.initialStepsize
   ρ = options.ρ
   c = options.c
@@ -52,4 +52,4 @@ function ArmijoLineSearch{Mc<:Manifold}(problem::GradientProblem{Mc},
 end
 ArmijoLineSearch{Mc<:Manifold}(problem::GradientProblem{Mc},
     options::LineSearchOptions)::Float64 = ArmijoLineSearch(problem,
-    ArmijoDescentDirectionLineSearchOptions(options,-getGradient(problem, options.x)) )
+    ArmijoDescentDirectionLineSearchOptions(options,-gradF(problem, options.x)) )

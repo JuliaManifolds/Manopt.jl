@@ -16,7 +16,7 @@
   @test norm( getValue( mean(M,[x,y]) ) - [1/sqrt(2),1/sqrt(2),0] ) ≈ 0 atol=10.0^(-15)
   # Test extended
   xT = MPointE(x); yT = MPointE(y); zT = MPointE(z);
-  @test_throws ErrorException dot(M,x,log(M,xT,zT),log(M,yT,zT) )
+  @test_throws ErrorException dot(M,xT,log(M,xT,zT),log(M,yT,zT) )
   @test dot(M,x,log(M,x,z),log(M,x,y) ) ≈ 0 atol=10.0^(-15)
 	#check that PT(q->p, log_qp) = -log_pq (unitary minus already checked)
 	@test parallelTransport(M,y,x,log(M,y,x)) == -ξ

@@ -6,7 +6,7 @@ export steepestCoefficient, HeestenesStiefelCoefficient, FletcherReevesCoefficie
 export PolakCoefficient, ConjugateDescentCoefficient, LiuStoreyCoefficient
 export DaiYuanCoefficient, HagerZhangCoefficient
 doc"""
-    conjugateGradientDescent(M, F, gradF, x)
+    conjugateGradientDescent(M, F, ∇F, x)
 perform a conjugate gradient based descent $x_{k+1} = \exp_{x_k} s_k\delta_k$
 whith different rules to compute the direction $\delta_k$ based on the last direction
 $\delta_{k-1}$ and both gradients $\nabla f(x_k)$,$\nabla f(x_{k-1})$ are available.
@@ -15,7 +15,7 @@ Further, the step size $s_k$ may be refined by a line search.
 # Input
 * `M` : a manifold $\mathcal M$
 * `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `gradF`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
 * `x` : an initial value $x\in\mathcal M$
 
 # Optional
@@ -49,7 +49,7 @@ Further, the step size $s_k$ may be refined by a line search.
   reason.
 """
 function conjugateGradientDescent{mT <: Manifold, P <: MPoint}(M::mT,
-        F::Function, gradF::Function, x::P;
+        F::Function, ∇F::Function, x::P;
         directionUpdate::Tuple{Function,Options} =
             (steepestDirection, SimpleDirectionUpdateOptions()),
         lineSearch::Tuple{Function,Options}=
@@ -61,7 +61,7 @@ function conjugateGradientDescent{mT <: Manifold, P <: MPoint}(M::mT,
         kwargs... #especially may contain debug
     )
     # TODO Test Input
-    p = GradientProblem(M,F,gradF)
+    p = GradientProblem(M,F,∇F)
     o = ConjugateGradientOptions(x,stoppingCriterion,retraction,lineSearch[1],lineSearch[2], directionUpdate[1], directionUpdate[2])
     # create default here to check if the user provided a debug and still have the typecheck
     debug::Tuple{Function,Dict{String,Any},Int}= (x::Dict{String,Any}->print(""),Dict{String,Any}(),0);
@@ -89,13 +89,13 @@ function conjugateGradientDescent{P <: GradientProblem, O <: Options}(p::P, o::O
     x = getOptions(o).x0
     s = getOptions(o).lineSearchOptions.initialStepsize
     M = p.M
-    ξ = getGradient(p,x); # g_k in [HZ06]
-    δ = -getGradient(p,x); #d_k in [HZ06]
+    ξ = gradF(p,x); # g_k in [HZ06]
+    δ = -gradF(p,x); #d_k in [HZ06]
     β = 0;
     while !stop
         s = getStepsize(p,getOptions(o),x,s) # α_k in [HZ06]
         xnew = getOptions(o).retraction(M,x,-s*δ)
-        ξnew = getGradient(p,xnew) # g_k+1
+        ξnew = gradF(p,xnew) # g_k+1
         βnew = getOptions(o).directionUpdate(x,ξ,δ,xnew,ξnew,
             getOptions(o).directionUpdateOptions)
         δnew = - ξnew + βnew * parallelTransport(M,x,xnew,δ)

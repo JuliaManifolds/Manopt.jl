@@ -65,6 +65,11 @@ norm(M::Symmetric,x::SymPoint,ξ::SymTVector) = vecnorm( getValue(ξ) )
 function parallelTransport(M::Symmetric,x::SymPoint,y::SymPoint,ξ::SymTVector) = ξ
 end
 doc"""
+    typicalDistance(M)
+returns the typical distance on the [`Symmetric`](@ref)` Sym`: $n$.
+"""
+typicalDistance(M::Symmetric) = manifoldDimension(M);
+doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`SymPoint`](@ref) $x\in\mathcal S(n)$ on the [`Symmetric`](@ref)` Sym`.

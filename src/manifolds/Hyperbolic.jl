@@ -166,6 +166,11 @@ function parallelTransport(M::Hyperbolic, x::HnPoint, y::HnPoint, ξ::HnTVector)
   end
 end
 doc"""
+    typicalDistance(M)
+returns the typical distance on the [`Hyperbolic`](@ref)` Hn`: $\sqrt(n)$.
+"""
+typicalDistance(M::Hyperbolic) = sqrt(M.dimension);
+doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`HnPoint`](@ref) $x\in\mathbb H^n$ on the [`Hyperbolic`](@ref)` Hn`.

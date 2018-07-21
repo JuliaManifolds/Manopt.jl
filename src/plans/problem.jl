@@ -2,7 +2,7 @@
 # Define a global problem and ist constructors
 #
 # ---
-export getGradient,getProximalMap, getProximalMaps
+export gradF,getProximalMap, getProximalMaps
 export Problem, GradientProblem, ProximalProblem #, HessianProblem
 
 """
@@ -11,6 +11,19 @@ Specify properties (values) and related functions for computing
 a certain optimization problem.
 """
 abstract type Problem end
+#
+# 1) Functions / Fallbacks
+#
+costF(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
+    throw(Exception("no costFunction found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+gradF(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
+    throw(Exception("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+HessF(p::Pr,x::P,η::T) where {Pr <: Problem, P <: MPoint, T <: TVector} =
+    throw(Exception("no Hessian found in $(typeof(p)) to evaluate for a $(typeof(x)) with tangent vector $(typeof(η))."))
+proxesF(p::Pr,λ,x::P) where {Pr <: Problem, P <: MPoint} =
+    throw(Exception("no proximal maps found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
+proxF(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
+    throw(Exception("no $(i)th proximal map found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 
 doc"""
     GradientProblem <: Problem
@@ -34,12 +47,12 @@ end
 # Access functions for Gradient problem.
 # ---
 """
-    getGradient(p,x)
+    gradF(p,x)
 
 evaluate the gradient of a problem at x, where x is either a MPoint
 or an array of MPoints
 """
-function getGradient{P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}(p::P,x::MP)
+function gradF(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
   return p.gradient(x)
 end
 
@@ -66,12 +79,13 @@ evaluate all proximal maps of `ProximalProblem p` at the point `x` of `p.M` and
 some `λ`$>0$ which might be given as a vector the same length as the number of
 proximal maps.
 """
-getProximalMaps{P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}(p::P,λ,x::MP) = p.proximalMaps.(λ,x);
+proxesF(p::P,λ,x::MP) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint} =
+    p.proximalMaps.(λ,x);
 doc"""
     getProximalMap(p,λ,x,i)
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
-function getProximalMap{P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}(p::P,λ,x::MP,i)
+function proxF(p::P,λ,x::MP,i) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}
     if i>len(p.proximalMaps)
         ErrorException("the $(i)th entry does not exists, only $(len(p.proximalMaps)) available.")
     end
