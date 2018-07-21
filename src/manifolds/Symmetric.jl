@@ -10,6 +10,7 @@ import Base: exp, log, show
 export SymmetricMatrices, SymPoint, SymTVector, show
 # also indicates which functions are available (already) for Sym
 export distance, dot, exp, norm, dot, manifoldDimension, parallelTransport
+export zeroTVector
 # Types
 # ---
 doc"""
@@ -63,6 +64,12 @@ manifoldDimension(x::SymPoint) = size( getValue(x), 1)*(size( getValue(x), 1)+1)
 norm(M::Symmetric,x::SymPoint,ξ::SymTVector) = vecnorm( getValue(ξ) )
 function parallelTransport(M::Symmetric,x::SymPoint,y::SymPoint,ξ::SymTVector) = ξ
 end
+doc"""
+    ξ = zeroTVector(M,x)
+returns a zero vector in the tangent space $T_x\mathcal M$ of the
+[`SymPoint`](@ref) $x\in\mathcal S(n)$ on the [`Symmetric`](@ref)` Sym`.
+"""
+zeroTVector(M::Symmetric, x::SymPoint) = SymTVector(  zero( getValue(x) )  );
 # Display
 # ---
 show(io::IO, M::Symmetric) = print(io, "The Manifold $(M.name).")

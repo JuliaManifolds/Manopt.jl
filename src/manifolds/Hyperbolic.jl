@@ -6,6 +6,7 @@ import Base.LinAlg: norm, dot
 import Base: exp, log, show
 export Hyperbolic, HnPoint, HnTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export zeroTVector
 #
 # Type definitions
 #
@@ -164,6 +165,12 @@ function parallelTransport(M::Hyperbolic, x::HnPoint, y::HnPoint, ξ::HnTVector)
     return ξ;
   end
 end
+doc"""
+    ξ = zeroTVector(M,x)
+returns a zero vector in the tangent space $T_x\mathcal M$ of the
+[`HnPoint`](@ref) $x\in\mathbb H^n$ on the [`Hyperbolic`](@ref)` Hn`.
+"""
+zeroTVector(M::Hyperbolic, x::HnPoint) = HnTVector(  zero( getValue(x) )  );
 # Display
 # ---
 show(io::IO, p::HnPoint) = print(io, "Hn($( getValue(p) ))")

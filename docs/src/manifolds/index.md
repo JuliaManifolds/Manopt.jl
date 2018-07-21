@@ -54,14 +54,14 @@ IsMatrixV
 ## Special Manifolds to extend the above Basic manifolds
 ### Product manifold
 ```@docs
-ProductManifold
-ProdMPoint
+Product
+ProdPoint
 ProdTVector
 ```
 ### Power manifold
 ```@docs
-PowerManifold
-PowMPoint
+Power
+PowPoint
 PowTVector
 ```
 
@@ -87,6 +87,7 @@ manifoldDimension(::mT) where {mT <: Manifold}
 norm(::mT,::P,::T) where {mT<:Manifold, P<: MPoint, T<:TVector}
 parallelTransport(::mT,::P,::Q,::T) where {mT <: Manifold, P <: MPoint, Q <: MPoint, T <: TVector}
 tangentONB(::mT, ::P, ::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint}
+zeroTVector(::mT, ::P) where {mT <: Manifold, P <: MPoint}
 ```
 ## Functions implemented for a general manifold
 the following base functions are implemented for general manifolds and are

@@ -6,6 +6,7 @@ import Base.LinAlg: norm, dot
 import Base: exp, log, show
 export Sphere, SnPoint, SnTVector,show, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export zeroTVector
 #
 # Type definitions
 #
@@ -157,6 +158,12 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
 	  return ξ;
 	end
 end
+doc"""
+    ξ = zeroTVector(M,x)
+returns a zero vector in the tangent space $T_x\mathcal M$ of the
+[`SnPoint`](@ref) $x\in\mathbb S^n$ on the [`Sphere`](@ref)` Sn`.
+"""
+zeroTVector(M::Sphere, x::SnPoint) = SnTVector(  zero( getValue(x) )  );
 # Display
 # ---
 show(io::IO, p::SnPoint) = print(io, "Sn($( getValue(p) ))")

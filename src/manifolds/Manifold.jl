@@ -9,7 +9,7 @@ import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
 export Manifold, MPoint, TVector, MPointE, TVectorE
 # introduce new functions
-export distance, exp, log, norm, dot, manifoldDimension
+export distance, exp, log, norm, dot, manifoldDimension, zeroTVector
 export geodesic, midPoint, addNoise, reflection, jacobiField, AdjointJacobiField
 export +, -, *, /, ==, show
 export getValue, getBase, checkBase
@@ -164,7 +164,7 @@ function addNoise(M::mT,x::T,σ::Number)::T where {mT <: Manifold, T <: MPoint}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(σ) )
   sig3 = string( typeof(M) )
-  throw( ErrorException(" addNoise – not Implemented for Point $sig1 and standard deviation of type $sig2 on the manifold $sig3.") )
+  throw( ErrorException("addNoise not implemented for a $sig1 and standard deviation of type $sig2 on $sig3.") )
 end
 """
     distance(M,x,y)
@@ -175,7 +175,7 @@ function distance(M::mT, x::T, y::T) where {mT <: Manifold, T <: MPoint}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(y) )
   sig3 = string( typeof(M) )
-  throw( ErrorException(" distance – not Implemented for the two points $sig1 and $sig2 on the manifold $sig3." ) )
+  throw( ErrorException("distance not implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
 doc"""
     dot(M, x, ξ, ν)
@@ -183,10 +183,11 @@ Computes the inner product of two [`TVector`](@ref)s `ξ` and `ν` from the
 tangent space at the [`MPoint`](@ref)` x` on the [`Manifold`](@ref)` M`.
 """
 function dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVector, S <: TVector}
-  sig1 = string( typeof(ξ) )
-  sig2 = string( typeof(ν) )
-  sig3 = string( typeof(M) )
-  throw( ErrorException(" dot – not Implemented for the two tangential vectors $sig1 and $sig2 on the manifold $sig3." ) )
+  sig1 = string( typeof(x) )
+  sig2 = string( typeof(ξ) )
+  sig3 = string( typeof(ν) )
+  sig4 = string( typeof(M) )
+  throw( ErrorException("dot not implemented for a $sig2 and $sig3 in the tangent space of a $sig1 on $sig4." ) )
 end
 doc"""
     exp(M,x,ξ,[t=1.0])
@@ -198,7 +199,7 @@ function exp(M::mT, x::P, ξ::T,t::N=1.0) where {mT<:Manifold, P<:MPoint, T<:TVe
   sig1 = string( typeof(x) )
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(M) )
-  throw( ErrorException(" Exp – not Implemented for Point $sig1 and tangential vector $sig2 on the manifold $sig3." ) )
+  throw( ErrorException("exp not implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
 """
     getValue(x)
@@ -211,7 +212,7 @@ function getValue(x::P) where {P <: MPoint}
         return x.value
     catch
         sig1 = string( typeof(x) )
-        throw( ErrorException("getValue – not implemented for manifold point $sig1.") );
+        throw( ErrorException("getValue not implemented for a $sig1.") );
     end
 end
 """
@@ -246,7 +247,7 @@ returns the dimension of the manifold `M` the point `x` belongs to.
 """
 function manifoldDimension(x::P)::Integer where {P<:MPoint}
   sig1 = string( typeof(x) )
-  throw( ErrorException(" Not Implemented for manifold points $sig1 " ) )
+  throw( ErrorException("manifoldDimension not Implemented for a $sig1." ) )
 end
 """
     manifoldDimension(M)
@@ -254,7 +255,7 @@ returns the dimension of the manifold `M`.
 """
 function manifoldDimension(M::mT)::Integer where {mT<:Manifold}
   sig1 = string( typeof(M) )
-  throw( ErrorException(" Not Implemented for manifold $sig1 " ) )
+  throw( ErrorException("manifoldDimension not Implemented on $sig1." ) )
 end
 doc"""
     norm(M,x,ξ)
@@ -264,7 +265,7 @@ function norm(M::mT,x::P,ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector
 	sig1 = string( typeof(ξ) )
 	sig2 = string( typeof(x) )
 	sig3 = string( typeof(M) )
-  throw( ErrorException("Norm - Not Implemented for types $sig1 in the tangent space of a $sig2 on the manifold $sig3" ) )
+  throw( ErrorException("norm not implemented for $sig1 in the tangent space of a $sig2 on $sig3." ) )
 end
 doc"""
     parallelTransport(M,x,y,ξ)
@@ -277,7 +278,7 @@ function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPo
   sig2 = string( typeof(y) )
   sig3 = string( typeof(ξ) )
   sig4 = string( typeof(M) )
-  throw( ErrorException(" parallelTransport not implemented for Points $sig1 and $sig2, and a tangential vector $sig3 on the manifold $sig4." ) )
+  throw( ErrorException("parallelTransport not implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
 end
 doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)
@@ -290,9 +291,9 @@ $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 """
 function tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
     sig1 = string( typeof(x) )
-    sig2 = string( typeof(y) )
-    sig3 = string( typeof(ξ) )
-    throw( ErrorException("tangentONB Point $sig1 and tangent vector $sig2 on the manifold $sig3." ) )
+    sig2 = string( typeof(ξ) )
+    sig3 = string( typeof(M) )
+    throw( ErrorException("tangentONB not implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
 doc"""
     (Ξ,κ) = tangentONB(M,x,y)
@@ -306,6 +307,17 @@ $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 tangentONB(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint} = tangentONB(M,x,log(M,x,y))
 # The extended types for more information/security on base points of tangent vectors
 # ---
+doc"""
+    ξ = zeroTVector(M,x)
+returns a zero vector in the tangent space $T_x\mathcal M$ of the
+[`MPoint`](@ref) $x\in\mathcal M$ on the [`Manifold`](@ref)` M`.
+"""
+function zeroTVector(M::mT, x::P) where {mT <: Manifold, P <: MPoint}
+    sig1 = string( typeof(x) )
+    sig2 = string( typeof(M) )
+    throw( ErrorException("zeroTVector(M,x) not implemented for a $sig1 on the $sig2." ) )
+end
+
 """
 A decorator pattern based extension of TVector to additionally store the base
 point. The decorator is then used to verify, that exp and dot are only called

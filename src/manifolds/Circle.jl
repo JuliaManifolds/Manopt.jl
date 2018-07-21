@@ -6,6 +6,7 @@ import Base: exp, log, show
 
 export Circle, S1Point, S1TVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export zeroTVector
 export show, getValue
 
 export symRem
@@ -117,6 +118,12 @@ at the [`S1Point`](@ref)` x` to $T_y\mathbb S^1$ at the [`S1Point`](@ref)` y`.
 Since the [`Sphere`](@ref)` M` is represented in angles this is the identity.
 """
 parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
+doc"""
+    ξ = zeroTVector(M,x)
+returns a zero vector in the tangent space $T_x\mathcal M$ of the
+[`S1Point`](@ref) $x\in\mathbb S^1$ on the [`Circle`](@ref)` S1`.
+"""
+zeroTVector(M::Circle, x::S1Point) = S1TVector(  zero( getValue(x) )  );
 # Display
 # ---
 show(io::IO, M::Circle) = print(io, "The Manifold S1 consisting of angles");

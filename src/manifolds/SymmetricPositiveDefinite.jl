@@ -11,6 +11,7 @@ import Base: exp, log, show
 
 export SymmetricPositiveDefinite, SPDPoint, SPDTVector, show
 export distance, dot, exp, norm, dot, manifoldDimension, parallelTransport
+export zeroTVector
 # Types
 # ---
 doc"""
@@ -114,6 +115,12 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 	Uf = eig1[2]
 	return SPDTVector(xSqrt*Uf*Sf*Uf.'*(0.5*(tξ+tξ.'))*Uf*Sf*Uf.'*xSqrt)
 end
+doc"""
+    ξ = zeroTVector(M,x)
+returns a zero vector in the tangent space $T_x\mathcal M$ of the
+[`SPDPoint`](@ref) $x\in\mathcal P(n)$ on the [`SymmetricPositiveDefinite`](@ref)` SPD`.
+"""
+zeroTVector(M::SPDPoint, x::SPDPoint) = SPDTVector(  zero( getValue(x) )  );
 # Display
 # ---
 show(io::IO, M::SymmetricPositiveDefinite) = print(io, "The Manifold $(M.name).")

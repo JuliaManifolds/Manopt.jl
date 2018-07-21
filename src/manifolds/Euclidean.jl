@@ -5,6 +5,7 @@
 export Euclidean, RnPoint, RnTVector
 import Base: exp, log, show
 export distance, exp, log, norm, dot, manifoldDimension, show, getValue
+export zeroTVector
 # Types
 # ---
 
@@ -96,6 +97,12 @@ norm(M::Euclidean,x::RnPoint, ξ::RnTVector) = norm(ξ.value)
 Computes the parallel transport, which is in Eulidean space the identity.
 """
 parallelTransport(M::Euclidean, x::RnPoint, y::RnPoint, ξ::RnTVector) = ξ
+doc"""
+    ξ = zeroTVector(M,x)
+returns a zero vector in the tangent space $T_x\mathcal M$ of the
+[`RnPoint`](@ref) $x\in\mathbb R^n$ on the [`Euclidean`](@ref)` Rn`.
+"""
+zeroTVector(M::Euclidean, x::RnPoint) = RnTVector(  zero( getValue(x) )  );
 #
 #
 # --- Display functions for the objects/types
