@@ -189,6 +189,53 @@ type DebugDecoOptions <: Options
     debugOptions::Dict{String,<:Any}
     verbosity::Int
 end
+getTrustRadius(o::DebugDecoOptions) = getTrustRadius(o.options);
+function updateTrustRadius!(o::DebugDecoOptions,newΔ)
+    o.options = updateTrustRadius!(o.options,newΔ)
+end
+#
+#
+# Trust Region OPtions
+#
+#
+doc"""
+    TrustRegionOptions <: Options
+stores optional values for a TrustRegionSolver
+
+# Fields
+* `maxTrustRadius` – maximal radius of the trust region
+* `minΡAcceopt` – minimal value of `ρ` to still accept a new iterate
+* `retraction` – the retration to use within
+* `stoppingCriterion` – stopping criterion for the algorithm
+* `trustRadius` – current trust region radius
+* `trustRegionSubSolver` - function f(p,x,o) to solve the inner problem with `o` being
+* [`trustRegionSubOptions`](@ref) – options passed to the `trustRegionSubSolver`
+* `x` – initial value of the algorithm
+"""
+type TrustRegionOptions <: Options
+    maxTrustRadius::Float64
+    minΡAccept::Float64
+    retraction::Function
+    stoppingCriterion::Function
+    trustRadius::Float64
+    trustRegionSubSolver::Function
+    trustRegionSubOptions::Options
+    x::P where {P <: MPoint}
+    TrustRegionOptions(x,initΔ,maxΔ,minΡ,sC,retr,tRSubF,tRSubO) = new(maxΔ,minΡ,retr,sC,initΔ,tRSubF,tRSubO,x)
+end
+getTrustRadius(o::TrustRegionOptions) = o.trustRadius;
+function updateTrustRadius!(o::TrustRegionOptions,newΔ)
+    o.trustRadius = newΔ
+end
+type TrustRegionSubOptions <: Options
+    trustRadius::Float64
+    stoppingCriterion::Function
+end
+getTrustRadius(o::TrustRegionSubOptions) = o.trustRadius;
+function updateTrustRadius!(o::TrustRegionSubOptions,newΔ)
+    o.trustRadius = newΔ
+end
+
 #
 #
 # Corresponding Functions, getters&setters
@@ -217,13 +264,19 @@ function evaluateStoppingCriterion{O<:GradientDescentOptions, P <: MPoint, MT <:
                           iter::I,ξ::MT, x::P, xnew::P)
   o.stoppingCriterion(iter,ξ,x,xnew)
 end
-function evaluateStoppingCriterion{O<:Options, P <: MPoint, I<:Integer}(o::O,
-                          iter::I, x::P, xnew::P,λ)
-  evaluateStoppingCriterion(getOptions(o),iter,x,xnew,λ)
+# fallback: Unpeel
+function evaluateStoppingCriterion{O<:Options, P <: MPoint, I<:Integer}(o::O,v...)
+  evaluateStoppingCriterion(getOptions(o),v...)
 end
 function evaluateStoppingCriterion{O<:CyclicProximalPointOptions, P <: MPoint, I<:Integer}(o::O,
                           iter::I, x::P, xnew::P,λ)
-  o.stoppingCriterion(iter,x1,x2,λ)
+  o.stoppingCriterion(iter, x, xnew, λ)
+end
+function evaluateStoppingCriterion(o::O, iter::I, η::T, x::P, xnew::P) where {O<:TrustRegionOptions, P <: MPoint, T <: TVector, I<:Integer}
+  o.stoppingCriterion(iter,η,x,xnew)
+end
+function evaluateStoppingCriterion(o::O, iter::I, x::P, η::T, ηnew::T) where {O<:TrustRegionSubOptions, P <: MPoint, T <: TVector, I<:Integer}
+  o.stoppingCriterion(iter,x,η,ηnew)
 end
 """
     getVerbosity(Options)

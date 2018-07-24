@@ -138,7 +138,7 @@ $T_x\mathcal M$ at [`SnPoint`](@ref)` x` of the [`Sphere`](@ref)` M`.
 norm(M::Sphere, x::SnPoint, ξ::SnTVector) = norm( getValue(ξ) )
 doc"""
     parallelTransport(M,x,y,ξ)
-Compute the paralllel transport of the [`SnTVector`](@ref) `ξ` from
+Compute the paralllel transport of the [`SnTVector`](@ref)` ξ` from
 the tangent space $T_x\mathcal M$ at [`SnPoint`](@ref)` x` to
 $T_y\mathcal M$ at [`SnPoint`](@ref)` y` on the [`Sphere`](@ref)` M` provided
 that the corresponding [`geodesic`](@ref) $g(\cdot;x,y)$ is unique.

@@ -67,7 +67,7 @@ Options for the solver (`x0 <: MPoint`, `lineSearch` and `lineSearchOptions`,
 `retraction` and stoppingCriterion` functions); see the general Interface
 for details on these parameters.
 """
-function steepestDescent{P <: GradientProblem, O <: Options}(p::P, o::O)
+function steepestDescent(p::P, o::O) where {P <: GradientProblem, O <: Options}
     stop::Bool = false
     reason::String="";
     iter::Integer = 0
