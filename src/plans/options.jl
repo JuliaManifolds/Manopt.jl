@@ -9,6 +9,7 @@ export GradientDescentOptions, getStepSize
 export CyclicProximalPointOptions
 export ConjugateGradientOptions
 export DebugDecoOptions
+export DouglasRachfordOptions
 export evaluateStoppingCriterion
 export getVerbosity, getOptions, setDebugFunction, setDebugOptions
 
@@ -176,7 +177,18 @@ type CyclicProximalPointOptions <: Options
     stoppingCriterion::Function
     λ::Function
     orderType::EvalOrder
-    CyclicProximalPointOptions(x0::P where {P <: MPoint},sC::Function,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) = new(x0,sC,λ,o)
+    CyclicProximalPointOptions(x0::P where {P <: MPoint},sC::Function,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) = new(M,x0,sC,λ,o)
+end
+"""
+    DouglasRachfordOptions <: Options
+"""
+type DouglasRachfordOptions <: Options
+    x0::P where {P <: MPoint}
+    stoppingCriterion::Function
+    λ::Function
+    α::Function
+    R::Function
+    DouglasRachfordOptions(x0::P where {P <: MPoint}, sC::Function, λ::Function=(iter)->1.0, α::Function=(iter)->0.9, R=reflection) = new(M,x0,sC,λ,α,refl)
 end
 #
 #
@@ -265,7 +277,7 @@ function evaluateStoppingCriterion{O<:GradientDescentOptions, P <: MPoint, MT <:
   o.stoppingCriterion(iter,ξ,x,xnew)
 end
 # fallback: Unpeel
-function evaluateStoppingCriterion{O<:Options, P <: MPoint, I<:Integer}(o::O,v...)
+function evaluateStoppingCriterion(o::O,v...) where {O<:Options}
   evaluateStoppingCriterion(getOptions(o),v...)
 end
 function evaluateStoppingCriterion{O<:CyclicProximalPointOptions, P <: MPoint, I<:Integer}(o::O,

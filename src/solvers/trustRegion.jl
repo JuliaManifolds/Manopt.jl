@@ -60,15 +60,15 @@ function trustRegion(p::Pr,x::P,o::O) where {Pr <: Union{GradientProblem, Hessia
     # update Options
     updateTrustRadius!(tRSubO,Δ);
     stop,reason = evaluateStoppingCriterion(o,iter,η,x,xnew)
+    x = xnew
   end
-  return stop,reason
+  return x,reason
 end
 
-function trustRegionConjugateGradient(p::Pr,x::P,o::O) where {Pr <: Problem, x::MPoint, O <: Options}
-    ηnew = zeroTVector(x);
-    rnew = gradF(p,x);
-    δnew = -r;
-    m = @(η,Hη) dot(p.M,x,η,r) + 0.5*dot(p.M,x,η,Hη);
+function trustRegionConjugateGradient(p::Pr,x::P,o::O) where {Pr <: Problem, P <: MPoint, O <: Options}
+    ηnew = zeroTVector(x); η = ηnew
+    rnew = gradF(p,x); r = newr; δnew = -r
+    m = (η,Hη) -> dot(p.M,x,η,r) + 0.5*dot(p.M,x,η,Hη)
     Δ = getTrustRadius(o)
     stop = false;
     iter = 0;
@@ -78,19 +78,18 @@ function trustRegionConjugateGradient(p::Pr,x::P,o::O) where {Pr <: Problem, x::
         # update eta
         dotR = dot(M,x,r,r)
         α = dotR / dot(M,δ,Hδ)
-        ηnew = η + ⁠α*δ
+        ηnew = η + α*δ
         #
         Hδ = HessianF(p,x,δ)
         if dot(M,x,δ,Hδ) ≤ 0  || norm(M,x,η) ≥ Δ
             # Formula fomm Sec. 3 [ABG04]
-            τ = 1/dot(M,x,δ,δ)*(-dot(M,x,η,δ) + sqrt(dot(M,x,η,δ)^2 - (Δ^2 - dot(M,x,η,η))*dot(M,x,δ,δ) ) );
+            τ = 1/dot(M,x,δ,δ)*(-dot(M,x,η,δ) + sqrt(dot(M,x,η,δ)^2 - (Δ^2 - dot(M,x,η,η))*dot(M,x,δ,δ) ) )
             return η + τ*δ
         end
         # Update r and δ
         r = r + α*Hδ
-        δ = -r + dot(M,x,r,r)/dotR*δ;
-        end
-        evaluateStoppingCriterion(o,iter,x,η,ηnew)
+        δ = -r + dot(M,x,r,r)/dotR*δ
+        stop, reason = evaluateStoppingCriterion(o,iter,x,η,ηnew)
     end
     return η
 end

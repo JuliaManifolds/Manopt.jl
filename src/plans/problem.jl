@@ -3,7 +3,7 @@
 #
 # ---
 export gradF,getProximalMap, getProximalMaps
-export Problem, GradientProblem, ProximalProblem #, HessianProblem
+export Problem, GradientProblem, ProximalProblem, HessianProblem
 
 """
     Problem
@@ -55,7 +55,15 @@ or an array of MPoints
 function gradF(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
   return p.gradient(x)
 end
-
+doc""" HessianProblem <: Problem
+    HessianProblem <: Problem
+For no this is just a dummy problem to carry information about a Problem also providing a Hessian
+"""
+mutable struct HessianProblem{mT <: Manifold} <: Problem
+    M::mT
+    costFunction::Function
+    Heassian::Function
+end
 doc"""
     ProximalProblem <: Problem
 specify a problem for solvers based on the evaluation of proximal map(s).

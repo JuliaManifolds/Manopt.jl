@@ -111,7 +111,7 @@ geodesic{mT <: Manifold, T <: MPoint}(M::mT,x::T,y::T,t::Number)::T = geodesic(x
 returns vector containing the MPoints along the geodesic from `x` to `y` on
 the manfiold `M` specified by the points from the vector `T` (of numbers between 0 and 1).
 """
-function geodesic{mT <: Manifold, P <: MPoint, S <: Number}(M::mT, x::P,y::P,T::Vector{S})::Vector{T}
+function geodesic(M::mT, x::P,y::P,T::Vector{S})::Vector{T} where {mT <: Manifold, P <: MPoint, S <: Number}
   geo = geodesic(M,x,y);
   return [geo(t) for t in T]
 end

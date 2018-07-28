@@ -7,13 +7,13 @@
 # Manopt.jl – Ronny Bergmann – 2017-07-06
 import Base: mean, median
 export mean, median, variance
-export GradientDescent, SubgradientDescent,ProximalPoint, CyclicProximalPoint, DouglasRachford
+export useGradientDescent, useSubgradientDescent, useProximalPoint, useCyclicProximalPoint, useDouglasRachford
 # Indicators for Algorithms
-struct GradientDescent end
-struct SubgradientDescent end
-struct ProximalPoint end
-struct CyclicProximalPoint end
-struct DouglasRachford end
+struct useGradientDescent end
+struct useSubgradientDescent end
+struct useProximalPoint end
+struct useCyclicProximalPoint end
+struct useDouglasRachford end
 
 """
     y = mean(M,x;initialValue=[], MaxIterations=50, MinimalChange=5*10.0^(-7),
@@ -52,11 +52,11 @@ function mean{mT <: Manifold, T <: MPoint}(M::mT, x::Vector{T}; kwargs...)::T
   Weights = get(kwargs_dict, "weights", 1/length(x)*ones(length(x)))
   MaxIterations = get(kwargs_dict, "maxIterations", 50)
   MinimalChange = get(kwargs_dict, "minimalChange", 5*10.0^(-7))
-  Method = get(kwargs_dict, "method", GradientDescent())
+  Method = get(kwargs_dict, "method", useGradientDescent())
   λ = get(kwargs_dict, "λ", 2)
   return mean_(M,x,y,Weights,λ,MinimalChange,MaxIterations,Method)
 end
-function mean_(M,x,y,w,λ,mC,mI,::GradientDescent)
+function mean_(M,x,y,w,λ,mC,mI,::useGradientDescent)
   iter = 0; yold = y
   while (  ( (distance(M,y,yold) > mC) && (iter < mI) ) || (iter == 0)  )
     yold = y
@@ -65,7 +65,7 @@ function mean_(M,x,y,w,λ,mC,mI,::GradientDescent)
   end
   return y
 end
-function mean_(M,x,y,w,λ,mC,mI,::CyclicProximalPoint)
+function mean_(M,x,y,w,λ,mC,mI,::useCyclicProximalPoint)
   while (  ( (distance(M,y,yold) > mC) && (iter < mI) ) || (iter == 0)  )
     yold = y
     iter += 1
@@ -117,10 +117,10 @@ function median{mT <: Manifold, T <: MPoint}(M::mT, f::Vector{T}; kwargs...)::T
   λ = get(kwargs_dict, "λ", 2)
   MinimalChange = get(kwargs_dict, "minimalChange", 5*10.0^(-7))
   MaxIterations = get(kwargs_dict, "maxIterations", 50)
-  Method = get(kwargs_dict, "method", SubGradientDescent())
+  Method = get(kwargs_dict, "method", useSubgradientDescent())
   return median_(M,x,y,Weights,StepSize,λ,MinimalChange,MaxIterations,Method)
 end
-function median_(M,x,y,w,s,λ,mC,mI,::GradientDescent)
+function median_(M,x,y,w,s,λ,mC,mI,::useSubgradientDescent)
   iter=0;
   yold = y;
   while (  ( (distance(M,y,yold) > mC) && (iter < mI) ) || (iter == 0)  )
@@ -131,7 +131,7 @@ function median_(M,x,y,w,s,λ,mC,mI,::GradientDescent)
   end
   return y
 end
-function median_(M,x,y,w,s,λ,mC,mI,::CyclicProximalPoint)
+function median_(M,x,y,w,s,λ,mC,mI,::useCyclicProximalPoint)
   iter=0
   yold = y
   while (  ( (distance(M,y,yold) > mC) && (iter < mI) ) || (iter == 0)  )

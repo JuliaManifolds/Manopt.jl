@@ -29,14 +29,14 @@ the default values are given in brackets
 * `reason` : (if activated) a String containing the stopping criterion stopping
   reason.
 """
-function cyclicProximalPoint{Mc <: Manifold, MP <: MPoint}(M::Mc,
+function cyclicProximalPoint(M::Mc,
         F::Function, proximalMaps::Array{Function,N} where N, x::MP;
         evaluationOrder::EvalOrder = LinearEvalOrder(),
         stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"Minimal change small enough."),
         λ = iter -> 1/iter,
         returnReason=false,
         kwargs... #especially may contain debug
-    )
+    ) where {Mc <: Manifold, MP <: MPoint}
     # TODO Test Input
     p = getProximalProblem(M,F,proximalMaps)
     o = CyclicProximalPointOptions(x,stoppingCriterion,λ,evaluationOrder,lineSearch[1],lineSearch[2])
@@ -49,47 +49,46 @@ function cyclicProximalPoint{Mc <: Manifold, MP <: MPoint}(M::Mc,
     end
     x,r = cyclicProximalPoint(p,o)
     if returnReason
-        return x,r;
+        return x,r
     else
-        return x;
+        return x
     end
 end
 doc"""
     cyclicProximalPoint(p,o)
 compute a cyclic proximal point algorithm (CPPA) for the
-`ProximalProblem p` and `CyclicProximalPointOptions o`.
+[`ProximalProblem`](@ref)` p` and [`CyclicProximalPointOptions`](@ref)` o`.
 """
 function cyclicProximalPoint{P<:ProximalProblem, O<:CyclicProximalPointOptions}(p::P,o::O)
     x = o.x0
     M = p.M
-    stop = false;
-    iter = 0;
-    c = len(p.proximalMaps);
+    stop = false; iter = 0;
+    c = length(p.proximalMaps);
     order = updateOrder(c,0,collect(1:c),o.OrderType)
     xnew = x;
     while !stop
-        iter += 1;
+        iter += 1
         order = updateOrder(c,iter,order,o.OrderType)
         λi = o.λ(iter)
         for k=order
             xnew = getProximalMap(p,λi,xnew,k)
         end
         stop, reason = evaluateStoppingCriterion(o,iter,x,xnew,λ)
-        cPPDebug(o,iter,x,xnew,λ,reason);
-        x = xnew;
+        cPPDebug(o,iter,x,xnew,λ,reason)
+        x = xnew
     end
-    return x,reason;
+    return x,reason
 end
-updateOrder(n,i,o,::LinearEvalOrder) = o;
-updateOrder(n,i,o,::RandomEvalOrder) = collect(1:n)[randperm(length(X))];
-updateOrder(n,i,o,::FixedRandomEvalOrder) = (i==0) ? collect(1:n)[randperm(length(X))] : o;
+updateOrder(n,i,o,::LinearEvalOrder) = o
+updateOrder(n,i,o,::RandomEvalOrder) = collect(1:n)[randperm(length(X))]
+updateOrder(n,i,o,::FixedRandomEvalOrder) = (i==0) ? collect(1:n)[randperm(length(X))] : o
 
 function cPPDebug{O <: Options, MP <: MPoint}(o::O,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String)
     if getOptions(o) != o
         cPPDebug(getOptions(o),iter,x,xnew,λ,reason)
     end
 end
-function cPPDebugDebug{D <: DebugDecoOptions, MP <: MPoint}(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String)
+function cPPDebug{D <: DebugDecoOptions, MP <: MPoint}(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String)
     # decorate
     d = o.debugOptions;
     # Update values for debug
