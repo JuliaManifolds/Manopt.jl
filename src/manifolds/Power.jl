@@ -67,7 +67,7 @@ exp(M::Power, x::PowPoint, ξ::PowTVector, t::Number=1.0) = PowPoint( exp.(M.man
    log(M,x,y)
 computes the product logarithmic map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
 """
-log(M::Power, x::PowPoint, y::PowPoint)::PowTVector = ProdTVector(log.(M.manifold, getValue(p), getValue(q) ))
+log(M::Power, x::PowPoint, y::PowPoint)::PowTVector = PowTVector(log.(M.manifold, getValue(p), getValue(q) ))
 """
     manifoldDimension(x)
 returns the (product of) dimension(s) of the [`Power`](@ref) the [`PowPoint`](@ref)`x` belongs to.
@@ -77,13 +77,13 @@ manifoldDimension(p::PowPoint) = prod(manifoldDimension.( getValue(p) ) )
     manifoldDimension(M)
 returns the (product of) dimension(s) of the [`Power`](@ref)` M`.
 """
-manifoldDimension(M::Power) = prod( M.dims * manifoldDimension(M.manifold) )
+manifoldDimension(M::Power) = M.dims * manifoldDimension(M.manifold)
 """
     norm(M,x,ξ)
 norm of the [`PowTVector`]` ξ` induced by the metric on the manifold components
 of the [`Power`](@ref)` M`.
 """
-norm(M::Power, ξ::PowTVector) = sqrt( dot(M,ξ,ξ) )
+norm(M::Power, x::PowPoint, ξ::PowTVector) = sqrt( dot(M,x,ξ,ξ) )
 """
     parallelTransport(M,x,ξ)
 computes the product parallelTransport map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
@@ -91,7 +91,8 @@ computes the product parallelTransport map on the [`Power`](@ref) and returns th
 parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) = PowTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
 doc"""
     typicalDistance(M)
-returns the typical distance on the [`Power`](@ref)` Pow`, which is identical to the base.
+returns the typical distance on the [`Power`](@ref)` Pow`, which is based on
+the elementwise bae manifold.
 """
 typicalDistance(M::Power) = sqrt( M.dims ) * typicalDistance(M.manifold);
 doc"""

@@ -87,7 +87,7 @@ manifoldDimension(M::Product) = prod( manifoldDimension.(M.manifolds) )
 norm of the [`ProdTVector`]` ξ` induced by the metric on the manifold components
 of the [`Prodanifold`](@ref)` M`.
 """
-norm(M::Product, ξ::ProdTVector) = sqrt( dot(M,ξ,ξ) )
+norm(M::Product, x::ProdPoint, ξ::ProdTVector) = sqrt( dot(M,x,ξ,ξ) )
 """
     parallelTransport(M,x,ξ)
 computes the product parallelTransport map on the [`Prodanifold`](@ref) and returns the corresponding [`ProdTVector`](@ref).

@@ -126,10 +126,10 @@ log{mT<:Manifold, P<:MPointE, Q<:MPoint}(M::mT,x::Q,y::P) = TVectorE(log(M,x,get
 # break down to inner if base
 manifoldDimension(x::P) where {P <: MPointE} = manifoldDimension(getBase(x))
 # break down to inner if base is checked
-function norm{mT<:Manifold, P <: MPoint, T<:TVectorE}(M::mT, x::P, ξ::T, ν::T)::Float64
+function norm(M::mT, x::P, ξ::T, ν::T)::Float64 where {mT<:Manifold, P <: MPoint, T<:TVectorE}
     checkBase(ξ,x);
     checkBase(ξ,ν);
-    return norm(M,ξ.value,ν.value);
+    return norm(M,x,ξ.value,ν.value);
 end
 norm{mT<:Manifold, P <: MPointE, T<:TVector, S<:TVector}(M::mT,x::P,ξ::T,ν::S) = dot(M,getBase(x),ξ,ν);
 norm{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT,x::P,ξ::T,ν::S) = dot(M, getVector(ξ) ,ν);
