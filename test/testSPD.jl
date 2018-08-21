@@ -4,7 +4,7 @@
   x = SPDPoint([1.0 0.0; 0.0 1.0])
   ξ = SPDTVector([1.0 0.0; 0.0 0.0])
   y = exp(M,x,ξ)
-  @test norm( getValue(y) - [e 0;0 1.0]) ≈ 0 atol=10.0^(-16)
+  @test norm( getValue(y) - [ℯ 0;0 1.0]) ≈ 0 atol=10.0^(-16)
   # check that with base the base must mach.
 	z = SPDPoint([1.0 0.0; 0.0 0.1])
 	ξE = TVectorE(ξ,x);

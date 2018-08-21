@@ -4,7 +4,6 @@
 #
 import LinearAlgebra: norm, dot
 import Base: exp, log, show
-import Markdown
 export Sphere, SnPoint, SnTVector,show, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
@@ -116,7 +115,7 @@ function log(M::Sphere,x::SnPoint,y::SnPoint)
   if (ξvnorm > eps(Float64))
     value = ξvalue*acos(scp)/ξvnorm;
   else
-    value = zeros( getValue(x) )
+    value = zeroTVector(M,x)
   end
   return SnTVector(value)
 end

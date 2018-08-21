@@ -111,7 +111,7 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 	Ue = svd2.U
 	tY2 = Ue*Se*transpose(Ue)
 	eig1 = eigen(0.5*tY2)
-	Sf = Matrix(  Diagonal( exp.(eig1.values))
+	Sf = Matrix(  Diagonal( exp.(eig1.values) )  )
 	Uf = eig1.vectors
 	return SPDTVector(xSqrt*Uf*Sf*transpose(Uf)*(0.5*(tξ+transpose(tξ)))*Uf*Sf*transpose(Uf)*xSqrt)
 end
