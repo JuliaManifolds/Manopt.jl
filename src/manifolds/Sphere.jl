@@ -113,11 +113,10 @@ function log(M::Sphere,x::SnPoint,y::SnPoint)
   ξvalue = getValue(y) - scp*getValue(x)
   ξvnorm = norm(ξvalue)
   if (ξvnorm > eps(Float64))
-    value = ξvalue*acos(scp)/ξvnorm;
+    return SnTVector( ξvalue*acos(scp)/ξvnorm );
   else
-    value = zeroTVector(M,x)
+    return zeroTVector(M,x)
   end
-  return SnTVector(value)
 end
 md"""
     manifoldDimension(x)

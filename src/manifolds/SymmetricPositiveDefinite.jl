@@ -6,7 +6,7 @@
 # ---
 # Manopt.jl - Ronny Bergmann - 2017-07-06
 
-import LinearAlgebra: svd, norm, dot, Diagonal
+import LinearAlgebra: svd, norm, dot, Diagonal, eigen, Matrix
 import Base: exp, log, show
 
 export SymmetricPositiveDefinite, SPDPoint, SPDTVector, show
@@ -73,7 +73,7 @@ function exp(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, t::Float
 	pSqrt = U*Matrix(  Diagonal( Ssqrt )  )*transpose(U);
   	T = U*SsqrtInv*transpose(U)*(t.*ξ.value)*U*SsqrtInv*transpose(U);
     svd2 = svd(T);
-   	Se = diagm(exp.(svd2.S))
+   	Se = Matrix(  Diagonal( exp.(svd2.S) )  )
   	Ue = svd2.U
 	return SPDPoint(pSqrt*Ue*Se*transpose(Ue)*pSqrt)
 end
@@ -107,7 +107,7 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 	tξ = xSqrtInv * getValue(ξ) * xSqrtInv
 	tY = xSqrtInv * getValue(y) * xSqrtInv
 	svd2 = svd(tY)
-	Se = diagm(log.(svd2.S))
+	Se = Matrix(  Diagonal( log.(svd2.S) )  )
 	Ue = svd2.U
 	tY2 = Ue*Se*transpose(Ue)
 	eig1 = eigen(0.5*tY2)
