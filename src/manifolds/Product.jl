@@ -8,7 +8,7 @@ export Product, ProdPoint, ProdTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
 export show, getValue
-Markdown.doc"""
+md"""
     Product{M<:Manifold} <: Manifold
 a product manifold $\mathcal M = \mathcal N_1\times\mathcal N_2\times\cdots\times\mathcal N_m$,
 $m\in\mathbb N$,
@@ -24,7 +24,7 @@ struct Product <: Manifold
   Product(mv::Array{Manifold}) = new("Product",
     mv,prod(manifoldDimension.(mv)),string("Prod(",join([m.abbreviation for m in mv],", "),")") )
 end
-Markdown.doc"""
+md"""
     ProdPoint <: MPoint
 A point on the [`Product`](@ref) $\mathcal M = \mathcal N_1\times\mathcal N_2\times\cdots\times\mathcal N_m$,$m\in\mathbb N$,
 represented by a vector or array of [`MPoint`](@ref)s.
@@ -34,7 +34,7 @@ struct ProdPoint <: MPoint
   ProdPoint(v::Array{MPoint}) = new(v)
 end
 getValue(x::ProdPoint) = x.value
-Markdown.doc"""
+md"""
     ProdTVector <: TVector
 A tangent vector in the product of tangent spaces of the [`Product`](@ref)
 $T\mathcal M = T\mathcal N_1\times T\mathcal N_2\times\cdots\times T\mathcal N_m$,$m\in\mathbb N$,
@@ -98,7 +98,7 @@ parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = Pro
 returns the typical distance on the [`Prod`](@ref)` Prod`, which is the minimum of the internal ones.
 """
 typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) );
-Markdown.doc"""
+md"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`ProdPoint`](@ref) $x\in\mathcal M$ on the [`Product`](@ref) manifold `M`.

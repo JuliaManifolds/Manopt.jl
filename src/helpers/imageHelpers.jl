@@ -28,17 +28,17 @@ function constructImageGraph(data::Array{T}, graphtype::String)::Array{Tuple} wh
       end
       newnumel = newnumel + ithDiffs
     end
-    edges = Array{Tuple{Int,Int}}(newnumel)
+    edges = Array{Tuple{Int,Int}}(undef, newnumel)
     # fill with differences
     n=1
     for i=1:numdims
       # generate forward differences along ith dimension
       for index in eachindex(data) #for each index (linear)
-        ind = ind2sub(dims,index) # get index (sub)
+        ind = CartesianIndices(dims)[index] # get index (sub)
         if ind[i] < dims[i]     # forward difference in ith direction possible
-          ind2 = [ind...]       # extract into array
+          ind2 = [Tuple(ind)...]       # extract into array
           ind2[i] = ind2[i] + 1 # generate neighbor
-          edges[n] = (sub2ind(dims,ind...),sub2ind(dims,ind2...))
+          edges[n] = ( (LinearIndices(dims))[Tuple(ind)...],(LinearIndices(dims))[Tuple(ind2)...] )
           n=n+1
         end
       end
@@ -58,19 +58,19 @@ function constructImageGraph(data::Array{T}, graphtype::String)::Array{Tuple} wh
       end
       newnumel = newnumel + ithDiffs
     end
-    edges = Array{Tuple{Int,Int,Int}}(newnumel)
+    edges = Array{Tuple{Int,Int,Int}}(undef,newnumel)
     # fill with differences
     n=1
     for i=1:numdims
       # generate forward differences along ith dimension
       for index in eachindex(data) #for each index (linear)
-        ind = ind2sub(dims,index) # get index (sub)
+        ind = CartesianIndices(dims)[index] # get index (sub)
         if (ind[i] < dims[i]) && (1<ind[i])     # left and right neighbot in ith direction within array
-          ind2 = [ind...]       # extract into array
+          ind2 = [Tuple(ind)...]       # extract into array
           ind2[i] = ind2[i] + 1 # generate neighbor
-          ind3 = [ind...]       # extract into array
+          ind3 = [Tuple(ind)...]       # extract into array
           ind3[i] = ind3[i] - 1 # generate neighbor
-          edges[n] = (sub2ind(dims,ind3...),sub2ind(dims,ind...),sub2ind(dims,ind2...))
+          edges[n] = ( (LinearIndices(dims))[Tuple(ind3)...],LinearIndices(dims))[Tuple(ind)...],(LinearIndices(dims))[Tuple(ind2)...] )
           n=n+1
         end
       end

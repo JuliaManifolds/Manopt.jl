@@ -9,7 +9,7 @@ export Graph, GraphVertexPoint, GraphVertexTVector, GraphEdgePoint, GraphEdgeTVe
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
 export show, getValue
-Markdown.doc"""
+md"""
     Graph{M<:Manifold} <: Manifold
 The graph manifold models manifold-valued data on a graph
 $\mathcal G = (\mathcal Vm \mathcal E)$, both on vertices
@@ -40,7 +40,7 @@ struct Graph{M<:Manifold} <: Manifold
   Graph{M}(mv::M,adjacency::Mat where {Mat <: AbstractMatrix}, isDir::Bool=false) where {M <: Manifold} = new(string("A Graph Manifold of ",mv.name,"."),
     mv,size(adjacency,1)*manifoldDimension(mv),isDir,string("GraphVertex(",m.abbreviation,",",repr(size(adjacency,1)),")") )
 end
-Markdown.doc"""
+md"""
     GraphVertexPoint <: MPoint
 A point graph vertex power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal V\rvert}$
@@ -52,7 +52,7 @@ struct GraphVertexPoint <: MPoint
 end
 getValue(x::GraphVertexPoint) = x.value;
 
-Markdown.doc"""
+md"""
     GraphVertexTVector
 A tangent vector $\xi\in T_x\mathcal M$ to the graph vertex power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal V\rvert}$
@@ -64,7 +64,7 @@ struct GraphVertexTVector <: TVector
 end
 getValue(ξ::GraphVertexTVector) = ξ.value
 
-Markdown.doc"""
+md"""
     GraphEdgePoint <: MPoint
 A point graph edge power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal E\rvert}$
@@ -77,7 +77,7 @@ struct GraphEdgePoint <: MPoint
 end
 getValue(x::GraphEdgePoint) = x.value;
 
-Markdown.doc"""
+md"""
     GraphEdgeTVector
 A tangent vector $\xi\in T_x\mathcal M$ to the graph edge power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal E\rvert}$
@@ -167,7 +167,7 @@ of the [`Graph`](@ref)` M`.
 """
 norm(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector) = sqrt( dot.(M.manifold,x,ξ,ξ) )
 
-Markdown.doc"""
+md"""
     parallelTransport(M,x,ξ)
 computes the product parallelTransport map on the [`Graph`](@ref) vertex power
 manifold $\mathcal M^{\lvert\mathcal V\rvert}$ and returns
@@ -186,13 +186,13 @@ returns the typical distance on the [`Graph`](@ref) vertex manifold `M`, based
 on the typical distance of the base.
 """
 typicalDistance(M::Graph) = sqrt( size(M.adjacency,1) ) * typicalDistance(M.manifold);
-Markdown.doc"""
+md"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`GraphVertexPoint`](@ref) $x\in\mathcal M$ on the [`Graph`](@ref) vertex manifold `M`.
 """
 zeroTVector(M::Graph, x::GraphVertexPoint) = GraphVertexTVector( zeroTVector.(M.manifold, getValue(x) )  )
-Markdown.doc"""
+md"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`GraphEdgePoint`](@ref) $x\in\mathcal M$ on the [`Graph`](@ref) edge manifold `M`.

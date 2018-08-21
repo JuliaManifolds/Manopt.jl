@@ -25,7 +25,7 @@ proxesF(p::Pr,λ,x::P) where {Pr <: Problem, P <: MPoint} =
 proxF(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
     throw(Exception("no $(i)th proximal map found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 
-Markdown.doc"""
+md"""
     GradientProblem <: Problem
 specify a problem for gradient based algorithms.
 
@@ -64,7 +64,7 @@ mutable struct HessianProblem{mT <: Manifold} <: Problem
     costFunction::Function
     Heassian::Function
 end
-Markdown.doc"""
+md"""
     ProximalProblem <: Problem
 specify a problem for solvers based on the evaluation of proximal map(s).
 
@@ -81,7 +81,7 @@ mutable struct ProximalProblem{mT <: Manifold} <: Problem
 end
 # Access Functions for proxes.
 #
-Markdown.doc"""
+md"""
     getProximalMaps(p,λ,x)
 evaluate all proximal maps of `ProximalProblem p` at the point `x` of `p.M` and
 some `λ`$>0$ which might be given as a vector the same length as the number of
@@ -89,7 +89,7 @@ proximal maps.
 """
 proxesF(p::P,λ,x::MP) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint} =
     p.proximalMaps.(λ,x);
-Markdown.doc"""
+md"""
     getProximalMap(p,λ,x,i)
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """

@@ -78,7 +78,7 @@ function getValue(ξ::T) where {T <: TVector}
         throw( ErrorException("getValue – not implemented for tangent vector $sig1.") );
     end
 end
-Markdown.doc"""
+md"""
     log(M,x,y)
 computes the [`TVector`](@ref) in the tangent space $T_x\mathcal M$ at the
 [`MPoint`](@ref) `x` such that the corresponding geodesic reaches the
@@ -106,7 +106,7 @@ function manifoldDimension(M::mT)::Integer where {mT<:Manifold}
   sig1 = string( typeof(M) )
   throw( ErrorException("manifoldDimension not Implemented on $sig1." ) )
 end
-Markdown.doc"""
+md"""
     norm(M,x,ξ)
   computes the length of a tangential vector $\xi\in T_x\mathcal M$
 """
@@ -116,7 +116,7 @@ function norm(M::mT,x::P,ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector
 	sig3 = string( typeof(M) )
   throw( ErrorException("norm not implemented for $sig1 in the tangent space of a $sig2 on $sig3." ) )
 end
-Markdown.doc"""
+md"""
     parallelTransport(M,x,y,ξ)
 Parallel transport of a vector `ξ` given at the tangent space $T_x\mathcal M$
 of `x` to the tangent space $T_y\mathcal M$ at `y` along the geodesic form `x` to `y`.
@@ -129,7 +129,7 @@ function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPo
   sig4 = string( typeof(M) )
   throw( ErrorException("parallelTransport not implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
 end
-Markdown.doc"""
+md"""
     (Ξ,κ) = tangentONB(M,x,ξ)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the
 first vector and compute the eigenvalues of the curvature tensor
@@ -144,7 +144,7 @@ function tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint, T <:
     sig3 = string( typeof(M) )
     throw( ErrorException("tangentONB not implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
-Markdown.doc"""
+md"""
     (Ξ,κ) = tangentONB(M,x,y)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$ is the
 first vector and compute the eigenvalues of the curvature tensor
@@ -164,7 +164,7 @@ function typicalDistance(M::mT) where {mT <: Manifold}
   sig2 = string( typeof(M) )
   throw( ErrorException("zeroTVector(M) not implemented on $sig2." ) )
 end
-Markdown.doc"""
+md"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`MPoint`](@ref) $x\in\mathcal M$ on the [`Manifold`](@ref)` M`.

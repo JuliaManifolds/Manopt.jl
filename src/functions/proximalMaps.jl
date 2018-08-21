@@ -9,7 +9,7 @@
 
 export proxDistance, proxTV, proxDistanceSquared, proxTVSquared
 
-Markdown.doc"""
+md"""
     y = proxDistance(M,λ,f,x,[p]) -
 compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ with
 parameter λ of $\varphi(x) = d_{\mathcal M}^p(f,x)$.
@@ -44,7 +44,7 @@ function proxDistance(M::mT,λ::Number,f::T,x::T,p::Int) where {mT <: Manifold, 
   end
   return exp(M,x,f,t);
 end
-Markdown.doc"""
+md"""
     (y1,y2) = proxTV(M,λ,(x1,x2),[p])
 Compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ of
 $\varphi(x,y) = d_{\mathcal M}^p(x,y)$ with

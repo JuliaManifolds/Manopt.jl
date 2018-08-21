@@ -11,17 +11,17 @@ export Manifold, MPoint, TVector, MPointE, TVectorE
 # introduce new functions
 export geodesic, midPoint, reflection, jacobiField, AdjointJacobiField
 export +, -, *, /, ==, show
-Markdown.doc"""
+md"""
 An abstract manifold $\mathcal M$ to keep global information on a specific manifold
 """
 abstract type Manifold end
 
-Markdown.doc"""
+md"""
 An abstract point $x$ on a manifold $\mathcal M$.
 """
 abstract type MPoint end
 
-Markdown.doc"""
+md"""
 A point on a tangent plane $T_x\mathcal M$ at a point $x$ on a
 manifold $\mathcal M$.
 """
@@ -56,7 +56,7 @@ end
 # General functions available on manifolds based on exp/log/dist
 #
 #
-Markdown.doc"""
+md"""
     ζ = adjointJacobiField(M,x,y,t,η,w)
 Compute the AdjointJacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
 $\mathcal M$ with initial conditions (depending on the application) $\eta\in T_{g(t;x,y)\mathcal M}$ and
@@ -115,7 +115,7 @@ function geodesic(M::mT, x::P,y::P,T::Vector{S})::Vector{T} where {mT <: Manifol
   geo = geodesic(M,x,y);
   return [geo(t) for t in T]
 end
-Markdown.doc"""
+md"""
     ζ = jacobiField(M,x,y,t,η,β)
 Compute the jacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
 $\mathcal M$ with initial conditions (depending on the application) $\eta\in T_x\mathcal M$ and
@@ -132,7 +132,7 @@ function jacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
     ξ = sum( ( dot.(M,x,η,Ξ) ).* ( β.(κ,t,dist(M,x,y)) ).*Θ )
 end
-Markdown.doc"""
+md"""
     y = reflection(M,p,x)
 reflect the `MPoint x` at `MPoint p`, i.e. compute
 $y = R_p(x) = \exp_p(-\log_px)$. On Euclidean space this results in the point

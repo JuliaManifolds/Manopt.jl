@@ -5,7 +5,7 @@
 #
 #
 export DouglasRachford, DRDebug
-Markdown.doc"""
+md"""
      DouglasRachford(M, F, proxMaps, x)
 Computes the Douglas-Rachford algorithm on the manifold $\mathcal M$, initial
 data $x_0$ and the (two) proximal maps `proxMaps`.

@@ -5,7 +5,7 @@ export conjugateGradientDescent
 export steepestCoefficient, HeestenesStiefelCoefficient, FletcherReevesCoefficient
 export PolyakCoefficient, ConjugateDescentCoefficient, LiuStoreyCoefficient
 export DaiYuanCoefficient, HagerZhangCoefficient
-Markdown.doc"""
+md"""
     conjugateGradientDescent(M, F, ∇F, x)
 perform a conjugate gradient based descent $x_{k+1} = \exp_{x_k} s_k\delta_k$
 whith different rules to compute the direction $\delta_k$ based on the last direction
@@ -122,7 +122,7 @@ attached at the last iterate `x` as well as the current gradient `ξnew` and ite
 """
 steepestCoefficient(M::mT,
     x::P,ξ::T,δ::T,xnew::P,ξnew::T, o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()) where {mT<:Manifold, P<:MPoint,T<:TVector} = 0.0
-Markdown.doc"""
+md"""
     HeestenesStiefelCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -148,7 +148,7 @@ function HeestenesStiefelCoefficient(M::mT,
     β = dot(M,xnew, ξnew,νk)/dot(M,xnew,δtr,νk)
     return max(0,β);
 end
-Markdown.doc"""
+md"""
     FletcherReevesCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -168,7 +168,7 @@ function FletcherReevesCoefficient(M::mT,
     ) where {mT<:Manifold,P<:MPoint,T<:TVector}
     return dot(M,xnew,ξnew,ξnew)/dot(M,x,ξ,ξ)
 end
-Markdown.doc"""
+md"""
     PolyakCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -193,7 +193,7 @@ function PolyakCoefficient(M::mT,
         β = dot(M,xnew, ξnew,νk)/dot(M,x,ξ,ξ);
         return max(0,β);
 end
-Markdown.doc"""
+md"""
     ConjugateDescentCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -214,7 +214,7 @@ function ConjugateDescentCoefficient(M::mT,
     ) where {mT<:Manifold,P<:MPoint,T<:TVector}
     return dot(M,xnew,ξnew,ξnew)/dot(M,x,-δ,ξ)
 end
-Markdown.doc"""
+md"""
     LiuStoreyCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -237,7 +237,7 @@ function LiuStoreyCoefficient(M::mT,
     νk = ξnew-ξtr #notation y from [HZ06]
     return dot(M,xnew, ξnew,νk)/dot(M,x,-δ,ξ)
 end
-Markdown.doc"""
+md"""
     DaiYuanCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -261,7 +261,7 @@ function DaiYuanCoefficient(M::mT,
     δtr = parallelTransport(M,x,xnew,δ);
     return dot(M,xnew,ξnew,ξnew)/dot(M,x,δtr,νk);
 end
-Markdown.doc"""
+md"""
     HagerZhangCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on

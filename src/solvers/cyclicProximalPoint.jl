@@ -1,5 +1,5 @@
 export cyclicProximalPoint, cPPDebug
-Markdown.doc"""
+md"""
     cyclicProximalPoint(M, F, proximalMaps, x)
 perform a cyclic proximal point algorithm.
 # Input

@@ -1,5 +1,5 @@
 using Manopt
-using Base.Test
+using Test
 tests = ["testSn","testSPD",
           "testProximalMaps",
           "testGraphConstruction",

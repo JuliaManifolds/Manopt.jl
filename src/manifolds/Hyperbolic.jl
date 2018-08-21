@@ -11,7 +11,7 @@ export zeroTVector
 # Type definitions
 #
 
-Markdown.doc"""
+md"""
     Hyperbolic <: Manifold
 The manifold $\mathbb H^n$ is the set
 
@@ -30,7 +30,7 @@ struct Hyperbolic <: Manifold
   abbreviation::String
   Hyperbolic(dimension::Int) = new("$dimension-Hyperbolic Space",dimension,"Hn($(dimension-1))")
 end
-Markdown.doc"""
+md"""
     HnPoint <: MPoint
 A point $x$ on the manifold $\mathbb H^n$ represented by a vector
 $x\in\mathbb R^{n+1}$ with Minkowski inner product
@@ -42,7 +42,7 @@ struct HnPoint <: MPoint
 end
 getValue(x::HnPoint) = x.value;
 
-Markdown.doc"""
+md"""
     HnTVector <: TVector
 A tangent vector $\xi \in T_x\mathcal M$ on the manifold
 $\mathbb H^n$.
@@ -65,7 +65,7 @@ getValue(ξ::HnTVector) = ξ.value;
 
 # Functions
 # ---
-Markdown.doc"""
+md"""
     distance(M,x,y)
 Compute the Riemannian distance on the [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$ embedded in
 $\mathbb R^{n+1}$ can be computed as
@@ -78,7 +78,7 @@ on $\mathbb R^{n+1}$.
 """
 distance(M::Hyperbolic,x::HnPoint,y::HnPoint) = acosh(-dotM(getValue(x), getValue(y) ))
 
-Markdown.doc"""
+md"""
     dot(M,x,ξ,ν)
 Compute the Riemannian inner product for two [`HnTVector`](@ref)s `ξ` and `ν`
 from $T_x\mathcal M$ of the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ given by
@@ -87,7 +87,7 @@ in the embedded space $\mathbb R^{n+1}$.
 """
 dot(M::Hyperbolic, x::HnPoint, ξ::HnTVector, ν::HnTVector) = dotM( getValue(ξ), getValue(ν) )
 
-Markdown.doc"""
+md"""
     exp(M,x,ξ,[t=1.0])
 Computes the exponential map on the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ with
 respect to the [`HnPoint`](@ref)` x` and the [`HnTVector`](@ref)` ξ`, which can
@@ -103,7 +103,7 @@ function exp(M::Hyperbolic,x::HnPoint,ξ::HnTVector,t::Float64=1.0)
   	return HnPoint( cosh(t*len)*getValue(x) + sinh(t*len)/len*getValue(ξ) )
   end
 end
-Markdown.doc"""
+md"""
     log(M,x,y)
 Computes the logarithmic map on the [`Hyperbolic`](@ref) $\mathbb H^n$,
 i.e., the [`HnTVector`](@ref) whose corresponding
@@ -124,25 +124,25 @@ function log(M::Hyperbolic,x::HnPoint,y::HnPoint)
   end
   return HnTVector(value)
 end
-Markdown.doc"""
+md"""
     manifoldDimension(x)
 returns the dimension of the [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$, the
 [`HnPoint`](@ref)` x`, itself embedded in $\mathbb R^{n+1}$, belongs to.
 """
 manifoldDimension(x::HnPoint)::Integer = length( getValue(x) )-1
-Markdown.doc"""
+md"""
     manifoldDimension(M)
 returns the dimension of the [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$.
 """
 manifoldDimension(M::Hyperbolic)::Integer = M.dimension
-Markdown.doc"""
+md"""
     norm(M,x,ξ)
 Computes the norm of the [`HnTVector`](@ref)` ξ` in the tangent space
 $T_x\mathcal M$ at [`HnPoint`](@ref)` x` of the
 [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$.
 """
 norm(M::Hyperbolic, x::HnPoint, ξ::HnTVector) = sqrt(dot(x,ξ,ξ))
-Markdown.doc"""
+md"""
     parallelTransport(M,x,y,ξ)
 Compute the paralllel transport of the [`HnTVector`](@ref)` ξ` from
 the tangent space $T_x\mathcal M$ at [`HnPoint`](@ref)` x` to
@@ -165,12 +165,12 @@ function parallelTransport(M::Hyperbolic, x::HnPoint, y::HnPoint, ξ::HnTVector)
     return ξ;
   end
 end
-Markdown.doc"""
+md"""
     typicalDistance(M)
 returns the typical distance on the [`Hyperbolic`](@ref)` Hn`: $\sqrt(n)$.
 """
 typicalDistance(M::Hyperbolic) = sqrt(M.dimension);
-Markdown.doc"""
+md"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`HnPoint`](@ref) $x\in\mathbb H^n$ on the [`Hyperbolic`](@ref)` Hn`.
@@ -182,7 +182,7 @@ show(io::IO, p::HnPoint) = print(io, "Hn($( getValue(p) ))")
 show(io::IO, ξ::HnTVector) = print(io, "HnT($( getValue(ξ) ))")
 # Helper
 #
-Markdown.doc"""
+md"""
     dotM(a,b)
 computes the Minkowski inner product of two Vectors `a` and `b` of same length
 `n+1`, i.e.

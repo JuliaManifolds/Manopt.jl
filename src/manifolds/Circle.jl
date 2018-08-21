@@ -12,7 +12,7 @@ export show, getValue
 export symRem
 # Types
 # ---
-Markdown.doc"""
+md"""
     Circle <: Manifold
 The one-dimensional manifold $\mathbb S^1$ represented by angles.
 Note that one can also use the $n$-dimensional sphere with $n=1$ to obtain the
@@ -25,7 +25,7 @@ struct Circle <: Manifold
   abbreviation::String
   Circle() = new("1-Sphere as angles",1,"S1")
 end
-Markdown.doc"""
+md"""
     S1Point <: MPoint
 a point $x\in\mathbb S^1$ represented by an angle `getValue(x)`$\in[-\pi,\pi)$,
 usually referred to as “cyclic data”.
@@ -35,7 +35,7 @@ struct S1Point <: MPoint
   S1Point(value::Float64) = new(value)
 end
 getValue(x::S1Point) = x.value
-Markdown.doc"""
+md"""
     S1TVector <: TVector
 a tangent vector $\xi\in\mathbb S^1$ represented by a real valiue
 `getValue(ξ)`$\in\mathbb R$.
@@ -54,7 +54,7 @@ getValue(ξ::S1TVector) = ξ.value
 
 # Functions
 # ---
-Markdown.doc"""
+md"""
     addNoise(M,x,σ)
 add noise to cyclic data, i.e. wrapped Gaussian noise, $(x+n)_{2\pi} $,
 where $n\sim \mathcal N(0,\sigma)$ is a zero-mean Gaussian random variable
@@ -62,21 +62,21 @@ of standard deviation `σ`
 and $(\cdot)_{2\pi}$ is the symmetric remainder modulo $2\pi$, see [`symRem`](@ref).
 """
 addNoise(M::Circle, x::S1Point,σ::Real) = S1Point( symRem(getValue(x)-pi+σ*randn()) )
-Markdown.doc"""
+md"""
     distance(M,x,y)
 the distance of two cyclic data items is given by $\lvert (x-y)_{2\pi} \rvert $,
 where $(\cdot)_{2\pi}$ is the symmetric remainder modulo $2\pi$,
 see [`symRem`](@ref).
 """
 distance(M::Circle, x::S1Point,y::S1Point) = abs( symRem(getValue(y) - getValue(x)) )
-Markdown.doc"""
+md"""
     dot(M,x,ξ,ν)
 Computes the inner product of two [`S1TVector`](@ref)s in the tangent space $T_x\mathbb S^1$
 of the [`S1Point`](@ref)` x`. Since the values are angles, we
 obtain $\langle \xi,\nu\rangle_x = \xi\nu$.
 """
 dot(M::Circle, x::S1Point, ξ::S1TVector, ν::S1TVector) = getValue(ξ)*getValue(ν)
-Markdown.doc"""
+md"""
     exp(M,x,ξ,[t=1.0])
 Computes the exponential map on the [`Circle`](@ref) $\mathbb S^1$ with
 respect to the [`S1Point`](@ref)` x` and the [`S1TVector`](@ref)` ξ`, which can
@@ -84,7 +84,7 @@ be shortened with `t` to `tξ`. The formula reads $(x+\xi)_{2\pi}$, where
 $(\cdot)_{2\pi}$ is the symmetric remainder modulo $2\pi$, see [`symRem`](@ref).
 """
 exp(M::Circle, x::S1Point,ξ::S1TVector,t::Float64=1.0) = S1Point( symRem(getValue(x) + t*getValue(ξ)) )
-Markdown.doc"""
+md"""
     log(M,x,y)
 Computes the logarithmic map on the [`Circle`](@ref) $\mathbb S^1$,
 i.e., the [`S1TVector`](@ref) whose corresponding
@@ -104,14 +104,14 @@ manifoldDimension(x::S1Point) = 1
 returns the dimension of the [`Circle`](@ref) manifold, i.e., 1.
 """
 manifoldDimension(M::Circle) = 1
-Markdown.doc"""
+md"""
     norm(M,x,ξ)
 Computes the norm of the [`S1TVector`](@ref)` ξ` in the tangent space
 $T_x\mathcal M$ at [`S1Point`](@ref)` x` of the
 [`Circle`](@ref) $\mathbb S^1$, which is just its absolute value $\lvert\xi\rvert$.
 """
 norm(M::Circle, x::S1Point, ξ::S1TVector)::Float64 = abs( getValue(ξ) )
-Markdown.doc"""
+md"""
     parallelTransport(M,x,y,ξ)
 computes the parallel transport of the [`S1TVector`](@ref)` ξ` from the tangent space $T_x\mathbb S^1$
 at the [`S1Point`](@ref)` x` to $T_y\mathbb S^1$ at the [`S1Point`](@ref)` y`.
@@ -124,7 +124,7 @@ returns the typical distance on the [`Circle`](@ref)` M`: π.
 """
 typicalDistance(M::Circle) = π;
 
-Markdown.doc"""
+md"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`S1Point`](@ref) $x\in\mathbb S^1$ on the [`Circle`](@ref)` S1`.
@@ -137,7 +137,7 @@ show(io::IO, x::S1Point) = print(io, "S1($( getValue(x) ))");
 show(io::IO, ξ::S1TVector) = print(io, "S1T($( getValue(ξ) ))");
 # little Helpers
 # ---
-Markdown.doc"""
+md"""
     symRem(x,[T=pi])
 symmetric remainder of `x` with respect to the interall 2*`T`, i.e.
 `(x+T)%2T`, where the default for `T` is $\pi$

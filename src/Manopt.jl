@@ -8,6 +8,7 @@ examples that can just be `include`d.
 """
 module Manopt
   using SimpleTraits
+  using Markdown
 # Manifolds
   include("manifolds/Manifold.jl") #base type
   # Traits (properties/decorators)
