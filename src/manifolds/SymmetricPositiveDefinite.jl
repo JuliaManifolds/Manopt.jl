@@ -81,8 +81,6 @@ function log(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
 	svd1 = svd( getValue(x) )
 	U = svd1.U
 	S = svd1.S
-	print(U)
-	print(S)
 	Ssqrt = sqrt.(S)
 	SsqrtInv = Matrix(  Diagonal( 1 ./ Ssqrt )  )
 	Ssqrt = Matrix(  Diagonal( Ssqrt )  )
