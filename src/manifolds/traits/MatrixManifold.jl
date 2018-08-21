@@ -30,11 +30,11 @@ An abstract Manifold Point belonging to a matrix manifold.
 @traitdef IsMatrixV{X}
 
 # for all that satisfy IsMatrixM -> introduce operators on points and points/TVecs
-@traitfn +{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = T( getValue(x) + getValue(y) )
-@traitfn -{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = T( getValue(x) - getValue(y) )
-@traitfn *{T <: MPoint; IsMatrixP{T}}(x::T,y::T) = transpose( getValue(x) )* getValue(y)
-@traitfn *{T <: TVector; IsMatrixP{T}}(ξ::T,ν::T) = transpose( getValue(ξ) ) * getValue(ν)
-@traitfn *{T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}}(x::T,y::S) = transpose( getValue(x) ) * getValue(y)
-@traitfn *{T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}}(x::S,y::T) = transpose( getValue(x) ) * getValue(y)
-@traitfn transpose{T <: MPoint; IsMatrixP{T}}(x::T) = transpose( getValue(x) )
-@traitfn transpose{T <: TVector; IsMatrixV{T}}(ξ::T) = transpose( getValue(x) )
+@traitfn +(x::T,y::T) where {T <: MPoint; IsMatrixP{T}} = T( getValue(x) + getValue(y) )
+@traitfn -(x::T,y::T) where {T <: MPoint; IsMatrixP{T}} = T( getValue(x) - getValue(y) )
+@traitfn *(x::T,y::T) where {T <: MPoint; IsMatrixP{T}} = transpose( getValue(x) )* getValue(y)
+@traitfn *(ξ::T,ν::T) where {T <: TVector; IsMatrixP{T}} = transpose( getValue(ξ) ) * getValue(ν)
+@traitfn *(x::T,y::S) where {T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}} = transpose( getValue(x) ) * getValue(y)
+@traitfn *(x::S,y::T) where {T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}} = transpose( getValue(x) ) * getValue(y)
+@traitfn transpose(x::T) where {T <: MPoint; IsMatrixP{T}} = transpose( getValue(x) )
+@traitfn transpose(ξ::T) where {T <: TVector; IsMatrixV{T}} = transpose( getValue(x) )

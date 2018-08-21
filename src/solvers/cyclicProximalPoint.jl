@@ -1,5 +1,5 @@
 export cyclicProximalPoint, cPPDebug
-@doc doc"""
+Markdown.doc"""
     cyclicProximalPoint(M, F, proximalMaps, x)
 perform a cyclic proximal point algorithm.
 # Input
@@ -32,7 +32,7 @@ the default values are given in brackets
 function cyclicProximalPoint(M::Mc,
         F::Function, proximalMaps::Array{Function,N} where N, x::MP;
         evaluationOrder::EvalOrder = LinearEvalOrder(),
-        stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"Minimal change small enough."),
+        stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached." : "Minimal change small enough."),
         λ = iter -> 1/iter,
         returnReason=false,
         kwargs... #especially may contain debug
@@ -54,12 +54,12 @@ function cyclicProximalPoint(M::Mc,
         return x
     end
 end
-@doc doc"""
+"""
     cyclicProximalPoint(p,o)
 compute a cyclic proximal point algorithm (CPPA) for the
 [`ProximalProblem`](@ref)` p` and [`CyclicProximalPointOptions`](@ref)` o`.
 """
-function cyclicProximalPoint{P<:ProximalProblem, O<:CyclicProximalPointOptions}(p::P,o::O)
+function cyclicProximalPoint(p::P,o::O) where {P<:ProximalProblem, O<:CyclicProximalPointOptions}
     x = o.x0
     M = p.M
     stop = false; iter = 0;
@@ -83,12 +83,12 @@ updateOrder(n,i,o,::LinearEvalOrder) = o
 updateOrder(n,i,o,::RandomEvalOrder) = collect(1:n)[randperm(length(X))]
 updateOrder(n,i,o,::FixedRandomEvalOrder) = (i==0) ? collect(1:n)[randperm(length(X))] : o
 
-function cPPDebug{O <: Options, MP <: MPoint}(o::O,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String)
+function cPPDebug(o::O,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) where {O <: Options, MP <: MPoint}
     if getOptions(o) != o
         cPPDebug(getOptions(o),iter,x,xnew,λ,reason)
     end
 end
-function cPPDebug{D <: DebugDecoOptions, MP <: MPoint}(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String)
+function cPPDebug(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) where {D <: DebugDecoOptions, MP <: MPoint}
     # decorate
     d = o.debugOptions;
     # Update values for debug

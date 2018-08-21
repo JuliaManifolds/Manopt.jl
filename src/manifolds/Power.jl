@@ -8,7 +8,7 @@ export Power, PowPoint, PowTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
 export show, getValue
-@doc doc"""
+Markdown.doc"""
     Power{M<:Manifold} <: Manifold
 a power manifold $\mathcal M = \mathcal N^m$, where $m$ can be an integer or an
 integer vector. Its abbreviatio is `Pow`.
@@ -22,7 +22,7 @@ struct Power{M<:Manifold} <: Manifold
   Power{M}(mv::M,dims::Array{Int,1}) where {M<:Manifold} = new(string("A Power Manifold of ",mv.name,"."),
     mv,dims,prod(dims)*manifoldDimension(mv),string("Pow(",m.abbreviation,",",repr(dims),")") )
 end
-@doc doc"""
+Markdown.doc"""
     PowPoint <: MPoint
 A point on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector or array of [`MPoint`](@ref)s.
 """
@@ -32,7 +32,7 @@ struct PowPoint <: MPoint
 end
 getValue(x::PowPoint) = x.value;
 
-@doc doc"""
+Markdown.doc"""
     PowTVector <: TVector
 A tangent vector on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector of [`TVector`](@ref)s.
 """
@@ -89,13 +89,13 @@ norm(M::Power, x::PowPoint, ξ::PowTVector) = sqrt( dot(M,x,ξ,ξ) )
 computes the product parallelTransport map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
 """
 parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) = PowTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
-@doc doc"""
+"""
     typicalDistance(M)
 returns the typical distance on the [`Power`](@ref)` Pow`, which is based on
 the elementwise bae manifold.
 """
 typicalDistance(M::Power) = sqrt( M.dims ) * typicalDistance(M.manifold);
-@doc doc"""
+Markdown.doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`PowPoint`](@ref) $x\in\mathcal M$ on the [`Power`](@ref)` M`.

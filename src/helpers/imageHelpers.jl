@@ -12,7 +12,7 @@ export constructImageGraph
   * type – the type of graph_
   ** `forwardDifference` – generate the forward difference graph
  """
-function constructImageGraph{T<:MPoint}(data::Array{T}, graphtype::String)::Array{Tuple}
+function constructImageGraph(data::Array{T}, graphtype::String)::Array{Tuple} where {T<:MPoint}
   if graphtype == "firstOrderDifference"
     numdims = ndims(data)
     dims = size(data)

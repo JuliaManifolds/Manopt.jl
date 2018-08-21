@@ -15,17 +15,17 @@ struct TVectorE{T <: TVector, P <: MPoint} <: TVector
     vector::T
     base::P
 end
-getValue{T <: TVectorE}(ξ::T) = getValue(ξ.vector)
+getValue(ξ::T) where {T <: TVectorE}= getValue(ξ.vector)
 """
     getBase(ξ)
 returns the base point of an extended tangent vector.
 """
-getBase{T <: TVectorE}(ξ::T) = ξ.base
+getBase(ξ::T) where {T <: TVectorE} = ξ.base
 """
     getVector(ξ)
 returns the internal TVector point of an extended tangent vector.
 """
-getVector{T <: TVectorE}(ξ::T) = ξ.vector
+getVector(ξ::T) where {T <: TVectorE} = ξ.vector
 """
 A decorator pattern based extension of MPoint to identify when to switch
 to the extended `TVectorE` for functions just working on points, e.g. `log`
@@ -33,20 +33,20 @@ to the extended `TVectorE` for functions just working on points, e.g. `log`
 struct MPointE{P <: MPoint} <: MPoint
     base::P
 end
-getValue{P <: MPointE}(x::P) = getValue( getBase(x) );
+getValue(x::P) where {P <: MPointE} = getValue( getBase(x) );
 show(io::IO, x::MPointE) = print(io, "$(x)E")
 """
     getBase(x)
 returns the point this extended manifold point stores internally.
 """
-getBase{P <: MPointE}(x::P) = x.base;
+getBase(x::P) where {P <: MPointE} = x.base;
 
 show(io::IO, ξ::TVectorE) = print(io, "$( getValue(ξ) )_$( getValue( getBase(ξ) ) )")
-function +{T <: TVectorE}(ξ::T,ν::T)
+function +(ξ::T,ν::T) where {T <: TVectorE}
     checkBase(ξ,ν)
     return T(ξ.value+ν.value,ξ.base)
 end
-function -{T <: TVectorE}(ξ::T,ν::T)::T
+function -(ξ::T,ν::T) where {T <: TVectorE}
     checkBase(ξ,ν)
     return T(ξ.value-ν.value,ξ.base)
 end
@@ -56,7 +56,7 @@ checks, whether the base of two tangent vectors is identical, if both tangent
 vectors are of type `TVectorE`. If one of them is not an extended vector, the
 function returns true, expecting the tangent vector implicitly to be correct.
 """
-function checkBase{T <: TVectorE}(ξ::T,ν::T)
+function checkBase(ξ::T,ν::T) where {T <: TVectorE}
     if getValue( getBase(ξ) ) != getValue( getBase(ν) )
         throw(
             ErrorException("The two tangent vectors $ξ and $ν do not have the same base.")
@@ -65,15 +65,15 @@ function checkBase{T <: TVectorE}(ξ::T,ν::T)
         return true;
     end
 end
-checkBase{T <: TVectorE, S <: TVector}(ξ::T,ν::S) = true
-checkBase{T <: TVectorE, S <: TVector}(ξ::S,ν::T) = true
+checkBase(ξ::T,ν::S) where {T <: TVectorE, S <: TVector} = true
+checkBase(ξ::S,ν::T) where {T <: TVectorE, S <: TVector} = true
 """
     checkBase(ξ,x)
 checks, whether the base of the tangent vector `ξ` is `x`. If `ξ` is not an
 extended tangent vector `TVectorE` the function returns true, assuming the base
 implicitly to be correct
 """
-function checkBase{T <: TVectorE, P <: MPoint}(ξ::T,x::P)
+function checkBase(ξ::T,x::P) where {T <: TVectorE, P <: MPoint}
     if getValue( getBase(ξ) ) != getValue(x)
         throw(
             ErrorException("The tangent vector $ξ is not from the tangent space of $x")
@@ -82,18 +82,18 @@ function checkBase{T <: TVectorE, P <: MPoint}(ξ::T,x::P)
         return true;
     end
 end
-checkBase{T<: TVector, P<: MPoint}(ξ::T,x::P) = true
+checkBase(ξ::T,x::P) where {T<: TVector, P<: MPoint} = true
 # unary operators
-*{T <: TVectorE}(ξ::T,s::Number)::T = T(s*ξ.value,ξ.base)
-*{T <: TVectorE}(s::Number, ξ::T)::T = T(s*ξ.value,ξ.base)
+*(ξ::T,s::Number) where {T <: TVectorE} = T(s*ξ.value,ξ.base)
+*(s::Number, ξ::T) where {T <: TVectorE} = T(s*ξ.value,ξ.base)
 # /
-/{T <: TVectorE}(ξ::T,s::Number)::T = T(ξ.value./s,ξ.base)
-/{T <: TVectorE}(s::Number, ξ::T)::T = T(s./ξ.value,ξ.base)
--{T <: TVectorE}(ξ::T)::T = T(-ξ.value,ξ.base)
-+{T <: TVectorE}(ξ::T)::T = T(ξ.value,ξ.base)
+/(ξ::T,s::Number) where {T <: TVectorE} = T(ξ.value./s,ξ.base)
+/(s::Number, ξ::T) where {T <: TVectorE} = T(s./ξ.value,ξ.base)
+-(ξ::T) where {T <: TVectorE} = T(-ξ.value,ξ.base)
++(ξ::T) where {T <: TVectorE} = T(ξ.value,ξ.base)
 
 # compare extended vectors
-=={T <: TVectorE}(ξ::T,ν::T)::Bool = ( checkBase(ξ,ν) && all(ξ.value==ν.value) )
+==(ξ::T,ν::T) where {T <: TVectorE} = ( checkBase(ξ,ν) && all(ξ.value==ν.value) )
 #
 # encapsulate default functions
 #
@@ -114,15 +114,15 @@ dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVectorE
 dot(M::mT, x::P, ξ::S, ν::T) where {mT <: Manifold, P <: MPoint, T <: TVectorE, S <: TVector} = dot(M,x,ξ,getVector(ν) )
 
 # extended exp check base and return exp of value if that did not fail
-exp{mT<:Manifold, T<:TVectorE, S<:MPointE}(M::mT,x::S,ξ::T)::T = exp(M,getBase(x),ξ)
-function exp{mT<:Manifold, T<:TVectorE, S<:MPoint}(M::mT,x::S,ξ::T)::T
+exp(M::mT,x::S,ξ::T) where {mT<:Manifold, T<:TVectorE, S<:MPointE} = exp(M,getBase(x),ξ)
+function exp(M::mT,x::S,ξ::T) where {mT<:Manifold, T<:TVectorE, S<:MPoint}
     checkBase(ξ,x);
     return exp(M,x, getVector(ξ) );
 end
 # for extended vectors set the base to true
-log{mT<:Manifold, P<:MPointE}(M::mT,x::P,y::P) = TVectorE(log(M,getBase(x),getBase(y)),x);
-log{mT<:Manifold, P<:MPointE, Q<:MPoint}(M::mT,x::P,y::Q) = TVectorE(log(M,getVector(x),y),x);
-log{mT<:Manifold, P<:MPointE, Q<:MPoint}(M::mT,x::Q,y::P) = TVectorE(log(M,x,getVector(y)),x);
+log(M::mT,x::P,y::P) where {mT<:Manifold, P<:MPointE} = TVectorE(log(M,getBase(x),getBase(y)),x);
+log(M::mT,x::P,y::Q) where {mT<:Manifold, P<:MPointE, Q<:MPoint} = TVectorE(log(M,getVector(x),y),x);
+log(M::mT,x::Q,y::P) where {mT<:Manifold, P<:MPointE, Q<:MPoint} = TVectorE(log(M,x,getVector(y)),x);
 # break down to inner if base
 manifoldDimension(x::P) where {P <: MPointE} = manifoldDimension(getBase(x))
 # break down to inner if base is checked
@@ -131,9 +131,9 @@ function norm(M::mT, x::P, ξ::T, ν::T)::Float64 where {mT<:Manifold, P <: MPoi
     checkBase(ξ,ν);
     return norm(M,x,ξ.value,ν.value);
 end
-norm{mT<:Manifold, P <: MPointE, T<:TVector, S<:TVector}(M::mT,x::P,ξ::T,ν::S) = dot(M,getBase(x),ξ,ν);
-norm{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT,x::P,ξ::T,ν::S) = dot(M, getVector(ξ) ,ν);
-norm{mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector}(M::mT,x::P,ξ::S,ν::T) = dot(M, ξ, getVector(ν));
+norm(M::mT,x::P,ξ::T,ν::S) where {mT<:Manifold, P <: MPointE, T<:TVector, S<:TVector} = dot(M,getBase(x),ξ,ν);
+norm(M::mT,x::P,ξ::T,ν::S) where {mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector} = dot(M, getVector(ξ) ,ν);
+norm(M::mT,x::P,ξ::S,ν::T) where {mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector} = dot(M, ξ, getVector(ν));
 # (a) x,ξ extended -> check, y not -> check but strip
 function parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPointE, Q <: MPoint, T<: TVectorE}
     checkBase(x,ξ)

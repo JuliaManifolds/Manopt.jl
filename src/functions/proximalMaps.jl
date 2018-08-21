@@ -9,7 +9,7 @@
 
 export proxDistance, proxTV, proxDistanceSquared, proxTVSquared
 
-@doc doc"""
+Markdown.doc"""
     y = proxDistance(M,λ,f,x,[p]) -
 compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ with
 parameter λ of $\varphi(x) = d_{\mathcal M}^p(f,x)$.
@@ -26,8 +26,8 @@ parameter λ of $\varphi(x) = d_{\mathcal M}^p(f,x)$.
 # Ouput
 * `y` : the proximal map of $\varphi$
 """
-proxDistance{mT <: Manifold, T <: MPoint}(M::mT,λ::Number,f::T,x::T) = proxDistance(M,λ,f,x,2)
-function proxDistance{mT <: Manifold, T <: MPoint}(M::mT,λ::Number,f::T,x::T,p::Int)
+proxDistance(M::mT,λ::Number,f::T,x::T) where {mT <: Manifold, T <: MPoint} = proxDistance(M,λ,f,x,2)
+function proxDistance(M::mT,λ::Number,f::T,x::T,p::Int) where {mT <: Manifold, T <: MPoint}
   d = distance(M,p,q)
   if p==2
     t =  λ/(1+λ);
@@ -44,7 +44,7 @@ function proxDistance{mT <: Manifold, T <: MPoint}(M::mT,λ::Number,f::T,x::T,p:
   end
   return exp(M,x,f,t);
 end
-@doc doc"""
+Markdown.doc"""
     (y1,y2) = proxTV(M,λ,(x1,x2),[p])
 Compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ of
 $\varphi(x,y) = d_{\mathcal M}^p(x,y)$ with
@@ -62,7 +62,7 @@ parameter `λ`.
 # Ouput
 * (y1,y2) : resulting tuple of `MPoints` of the $\operatorname{prox}_{\lambda\varphi}($ `(x1,x2)` $)$
 """
-function proxTV{mT <: Manifold, T <: MPoint}(M::mT,λ::Number, pointTuple::Tuple{T,T},p::Int=1)::Tuple{T,T}
+function proxTV(M::mT,λ::Number, pointTuple::Tuple{T,T},p::Int=1)::Tuple{T,T} where {mT <: Manifold, T <: MPoint}
   x1 = pointTuple[1];
   x2 = pointTuple[2];
   d = distance(M,x1,x2);

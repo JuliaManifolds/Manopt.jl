@@ -27,7 +27,7 @@ abstract type LineSearchOptions <: Options end
     SimpleLineSearchOptions <: LineSearchOptions
 A line search without additional no information required, e.g. a constant step size.
 """
-type SimpleLineSearchOptions <: LineSearchOptions end
+mutable struct SimpleLineSearchOptions <: LineSearchOptions end
 """
     ArmijoLineSearchOptions <: LineSearchOptions
 A subtype of `LineSearchOptions` referring to an Armijo based line search,
@@ -44,7 +44,7 @@ out but not `ρ``.
 
 *See also*: [`ArmijoLineSearch`](@ref), [`ArmijoDescentDirectionLineSearchOptions`](@ref)
 """
-type ArmijoLineSearchOptions <: LineSearchOptions
+mutable struct ArmijoLineSearchOptions <: LineSearchOptions
     x::P where {P <: MPoint}
     initialStepsize::Float64
     retraction::Function
@@ -72,7 +72,7 @@ values.*
 
 *See also*:  [`ArmijoLineSearch`](@ref), [`ArmijoLineSearchOptions`](@ref)
 """
-type ArmijoDescentDirectionLineSearchOptions <: LineSearchOptions
+mutable struct ArmijoDescentDirectionLineSearchOptions <: LineSearchOptions
     x::P where {P <: MPoint}
     initialStepsize::Float64
     retraction::Function
@@ -99,7 +99,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 *See also*: [`steepestDescent`](@ref)
 """
-type GradientDescentOptions <: Options
+mutable struct GradientDescentOptions <: Options
     x0::P where {P <: MPoint}
     stoppingCriterion::Function
     retraction::Function
@@ -118,7 +118,7 @@ struct SimpleDirectionUpdateOptions <: DirectionUpdateOptions
 end
 struct HessianDirectionUpdateOptions <: DirectionUpdateOptions
 end
-@doc doc"""
+"""
     ConjugateGradientOptions <: Options
 specify options for a conjugate gradient descent algoritm, that solves a
 [`GradientProblem`].
@@ -136,7 +136,7 @@ specify options for a conjugate gradient descent algoritm, that solves a
 
 *See also*: [`conjugateGradientDescent`](@ref), [`GradientProblem`](@ref), [`ArmijoLineSearch`](@ref)
 """
-type ConjugateGradientOptions <: Options
+mutable struct ConjugateGradientOptions <: Options
     x0::P where {P <: MPoint}
     stoppingCriterion::Function
     retraction::Function
@@ -154,9 +154,9 @@ type ConjugateGradientOptions <: Options
 end
 
 abstract type EvalOrder end
-type LinearEvalOrder <: EvalOrder end
-type RandomEvalOrder <: EvalOrder end
-type FixedRandomEvalOrder <: EvalOrder end
+mutable struct LinearEvalOrder <: EvalOrder end
+mutable struct RandomEvalOrder <: EvalOrder end
+mutable struct FixedRandomEvalOrder <: EvalOrder end
 """
     CyclicProximalPointOptions <: Options
 stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
@@ -172,7 +172,7 @@ stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
 
 *See also*: [`cyclicProximalPoint`](@ref)
 """
-type CyclicProximalPointOptions <: Options
+mutable struct CyclicProximalPointOptions <: Options
     x0::P where {P <: MPoint}
     stoppingCriterion::Function
     λ::Function
@@ -182,7 +182,7 @@ end
 """
     DouglasRachfordOptions <: Options
 """
-type DouglasRachfordOptions <: Options
+mutable struct DouglasRachfordOptions <: Options
     x0::P where {P <: MPoint}
     stoppingCriterion::Function
     λ::Function
@@ -195,7 +195,7 @@ end
 # Debug Decorator
 #
 #
-type DebugDecoOptions <: Options
+mutable struct DebugDecoOptions <: Options
     options::O where {O<: Options}
     debugFunction::Function
     debugOptions::Dict{String,<:Any}
@@ -210,7 +210,7 @@ end
 # Trust Region OPtions
 #
 #
-@doc doc"""
+"""
     TrustRegionOptions <: Options
 stores optional values for a TrustRegionSolver
 
@@ -224,7 +224,7 @@ stores optional values for a TrustRegionSolver
 * [`trustRegionSubOptions`](@ref) – options passed to the `trustRegionSubSolver`
 * `x` – initial value of the algorithm
 """
-type TrustRegionOptions <: Options
+mutable struct TrustRegionOptions <: Options
     maxTrustRadius::Float64
     minΡAccept::Float64
     retraction::Function
@@ -239,7 +239,7 @@ getTrustRadius(o::TrustRegionOptions) = o.trustRadius;
 function updateTrustRadius!(o::TrustRegionOptions,newΔ)
     o.trustRadius = newΔ
 end
-type TrustRegionSubOptions <: Options
+mutable struct TrustRegionSubOptions <: Options
     trustRadius::Float64
     stoppingCriterion::Function
 end
@@ -268,20 +268,17 @@ Result of evaluating stoppingCriterion in the options, i.e.
 * `true` if the algorithms stopping criteria are fulfilled and it should stop
 * `false` otherwise.
 """
-function evaluateStoppingCriterion{O<:Options, P <: MPoint, MT <: TVector, I<:Integer}(o::O,
-                          iter::I,ξ::MT, x::P, xnew::P)
+function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:Options, P <: MPoint, MT <: TVector, I<:Integer}
   evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
 end
-function evaluateStoppingCriterion{O<:GradientDescentOptions, P <: MPoint, MT <: TVector, I<:Integer}(o::O,
-                          iter::I,ξ::MT, x::P, xnew::P)
+function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:GradientDescentOptions, P <: MPoint, MT <: TVector, I<:Integer}
   o.stoppingCriterion(iter,ξ,x,xnew)
 end
 # fallback: Unpeel
 function evaluateStoppingCriterion(o::O,v...) where {O<:Options}
   evaluateStoppingCriterion(getOptions(o),v...)
 end
-function evaluateStoppingCriterion{O<:CyclicProximalPointOptions, P <: MPoint, I<:Integer}(o::O,
-                          iter::I, x::P, xnew::P,λ)
+function evaluateStoppingCriterion(o::O,iter::I, x::P, xnew::P,λ) where {O<:CyclicProximalPointOptions, P <: MPoint, I<:Integer}
   o.stoppingCriterion(iter, x, xnew, λ)
 end
 function evaluateStoppingCriterion(o::O, iter::I, η::T, x::P, xnew::P) where {O<:TrustRegionOptions, P <: MPoint, T <: TVector, I<:Integer}
@@ -296,7 +293,7 @@ end
 returns the verbosity of the options, if any decorator provides such, otherwise 0
     if more than one decorator has a verbosity, the maximum is returned
 """
-function getVerbosity{O<:Options}(o::O)
+function getVerbosity(o::O) where {O<:Options}
   if getOptions(o) == o # no Decorator
       return 0
   end
@@ -304,13 +301,14 @@ function getVerbosity{O<:Options}(o::O)
   return getVerbosity(getOptions(o))
 end
 # List here any decorator that has verbosity
-function getVerbosity{O<:DebugDecoOptions}(o::O)
+function getVerbosity(o::O) where {O<:DebugDecoOptions}
   if o.options == getOptions(o.options) # we do not have any further inner decos
       return o.verbosity;
   end
   # else maximum of all decorators
     return max(o.verbosity,getVerbosity(o.options));
 end
+# simplest case – we start with GradientProblem and GradientOptions -> extract line search and its options
 """
     getStepsize(p,o)
 
@@ -318,76 +316,72 @@ evaluates the stopping criterion of problem with respect to the current
 iteration iter, the descent direction ξ, and two (successive) iterates x1, x2
 of the algorithm.
 """
-# simplest case – we start with GradientProblem and GradientOptions -> extract line search and its options
-function getStepsize{P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions}(p::P,
-                              o::O,vars...)
+function getStepsize(p::P,o::O,vars...) where {P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions}
     return getStepsize(p,o.lineSearchOptions,o.lineSearch,vars...)
 end
 # for gradientLineSearch: Update initS and x and start
-function getStepsize{gP <: GradientProblem{M} where M <: Manifold, O <: ArmijoLineSearchOptions, P <: MPoint}(p::gP,
-                              o::O, f::Function, x::P, s::Float64)
+function getStepsize(p::gP,o::O, f::Function, x::P, s::Float64) where {gP <: GradientProblem{M} where M <: Manifold, O <: ArmijoLineSearchOptions, P <: MPoint}
     o.initialStepsize = s
     o.x = x;
     return getStepsize(p,o,f)
 end
 # for generalLineSearch - update DescentDir (how?) and continue
-function getStepsize{gP <: GradientProblem{M} where M <: Manifold, P <: MPoint, O <: LineSearchOptions}(p::gP,
-                              o::O, f::Function, x::P, s::Float64)
+function getStepsize(p::gP,o::O, f::Function, x::P, s::Float64) where {gP <: GradientProblem{M} where M <: Manifold, P <: MPoint, O <: LineSearchOptions}
   o.initialStepsize = s;
   o.x = x;
   updateDescentDir!(o,x)
   return getStepsize(p,o,f)
 end
 # (finally) call lineSearchProcedure
-function getStepsize{gP <: GradientProblem{M} where M <: Manifold, O <: Union{ArmijoLineSearchOptions,LineSearchOptions}}(p::gP, o::O, f::Function)
+function getStepsize(p::gP, o::O, f::Function) where {gP <: GradientProblem{M} where M <: Manifold, O <: Union{ArmijoLineSearchOptions,LineSearchOptions}}
   return f(p,o)
 end
 # modifies o - updates descentDir - if I know how ;)
-function updateDescentDir!{O <: LineSearchOptions, P <: MPoint}(o::O,x::P)
+function updateDescentDir!(o::O,x::P) where {O <: LineSearchOptions, P <: MPoint}
 # how do the more general cases update?
 #  o.descentDirection =
 end
 
-getOptions{O <: Options}(o::O) = o; # fallback and end
-getOptions{O <: DebugDecoOptions}(o::O) = getOptions(o.options); #unpeel recursively
+getOptions(o::O) where {O <: Options} = o; # fallback and end
+getOptions(o::O) where {O <: DebugDecoOptions} = getOptions(o.options); #unpeel recursively
 
-function setDebugFunction!{O<:Options}(o::O,f::Function)
+function setDebugFunction!(o::O,f::Function) where {O<:Options}
     if getOptions(o) != o #decorator
         setDebugFunction!(o.options,f)
     end
 end
-function setDebugFunction!{O<:DebugDecoOptions}(o::O,f::Function)
+function setDebugFunction!(o::O,f::Function) where {O<:DebugDecoOptions}
     o.debugFunction = f;
 end
-function getDebugFunction{O<:Options}(o::O)
+function getDebugFunction(o::O) where {O<:Options}
     if getOptions(o) != o #We have a decorator
         return getDebugFunction(o.options,f)
     end
 end
-function getDebugFunction{O<:DebugDecoOptions}(o::O,f::Function)
+function getDebugFunction(o::O,f::Function) where {O<:DebugDecoOptions}
     return o.debugFunction;
 end
-function setDebugOptions!{O<:Options}(o::O,dO::Dict{String,<:Any})
+function setDebugOptions!(o::O,dO::Dict{String,<:Any}) where {O<:Options}
     if getOptions(o) != o #decorator
         setDebugOptions(o.options,dO)
     end
 end
-function setDebugOptions!{O<:DebugDecoOptions}(o::O,dO::Dict{String,<:Any})
+function setDebugOptions!(o::O,dO::Dict{String,<:Any}) where {O<:DebugDecoOptions}
     o.debugOptions = dO;
 end
-function getDebugOptions{O<:Options}(o::O)
+function getDebugOptions(o::O) where {O<:Options}
     if getOptions(o) != o #decorator
         return getDebugOptions(o.options)
     end
 end
-function getDebugOptions{O<:DebugDecoOptions}(o::O,dO::Dict{String,<:Any})
+function getDebugOptions(o::O,dO::Dict{String,<:Any}) where {O<:DebugDecoOptions}
     return o.debugOptions;
 end
-function optionsHasDebug{O<:Options}(o::O)
+function optionsHasDebug(o::O) where {O<:Options}
     if getOptions(o) == o
         return false;
     else
         return optionsHaveDebug(o.options)
     end
 end
-optionsHasDebug{O<:DebugDecoOptions}(o::O) = true
+optionsHasDebug(o::O) where {O<:DebugDecoOptions} = true 

@@ -9,7 +9,7 @@ export zeroTVector
 # Types
 # ---
 
-@doc doc"""
+Markdown.doc"""
     Euclidean <: Manifold
 The manifold $\mathcal M = \mathbb R^n$ of the $n$-dimensional Euclidean vector
 space. We employ the notation $\langle\cdot,\cdot,\rangle$ for the inner product
@@ -23,7 +23,7 @@ struct Euclidean <: Manifold
   Euclidean(dimension::Int) = new("$dimension-dimensional Euclidean space",dimension,"R$dimension")
 end
 
-@doc doc"""
+Markdown.doc"""
     RnPoint <: MPoint
 The point $x\in\mathbb M$ for $\mathbb M=\mathbb R^n$ represented by an
 $n$-dimensional `Vector`.
@@ -34,7 +34,7 @@ struct RnPoint <: MPoint
 end
 getValue(x::RnPoint) = x.value
 
-@doc doc"""
+Markdown.doc"""
     RnTVector <: TVector
 The point $\xi\in\mathbb M$ for $\mathbb M=\mathbb R^n$ represented by an
 $n$-dimensional `Vector`.
@@ -54,23 +54,23 @@ getValue(ξ::RnTVector) = ξ.value
 
 # Functions
 # ---
-@doc doc"""
+Markdown.doc"""
     distance(M,x,y)
 Computes the Euclidean distance $\lVert x - y\rVert$
 """
 distance(M::Euclidean,x::RnPoint,y::RnPoint) = norm( getValue(x) - getValue(y) )
-@doc doc"""
+Markdown.doc"""
     dot(M,x,ξ,ν)
 Computes the Euclidean inner product of `ξ` and `ν`, i.e.
 $\langle\xi,\nu\rangle = \displaystyle\sum_{k=1}^n \xi_k\nu_k$.
 """
 dot(M::Euclidean,x::RnPoint,ξ::RnTVector, ν::RnTVector) = dot( getValue(ξ) , getValue(ν) )
-@doc doc"""
+Markdown.doc"""
     exp(M,x,ξ)
 Computes the exponential map, i.e. $x+\xi$.
 """
 exp(M::Euclidean,x::RnPoint,ξ::RnTVector,t=1.0) = RnPoint(getValue(p) + t*getValue(ξ) )
-@doc doc"""
+Markdown.doc"""
     log(M,x,y)
 Computes the logarithmic map, i.e. $y-x$.
 """
@@ -86,7 +86,7 @@ Returns the manifold dimension, i.e. the length of the vectors stored
 in `M.dimension`.
 """
 manifoldDimension(M::Euclidean) = M.dimension
-@doc doc"""
+Markdown.doc"""
     norm(M,x,ξ)
 Computes the length of the tangent vector `ξ` in the tangent
 space $T_x\mathcal M$ of `x` on the Eclidean space `M`, i.e. $\lVert\xi\rVert$.
@@ -97,12 +97,12 @@ norm(M::Euclidean,x::RnPoint, ξ::RnTVector) = norm(ξ.value)
 Computes the parallel transport, which is in Eulidean space the identity.
 """
 parallelTransport(M::Euclidean, x::RnPoint, y::RnPoint, ξ::RnTVector) = ξ
-@doc doc"""
+Markdown.doc"""
     typicalDistance(M)
 returns the typical distance on the [`Euclidean`](@ref)` Rn`: $\sqrt(n)$.
 """
 typicalDistance(M::Euclidean) = sqrt(M.dimension);
-@doc doc"""
+Markdown.doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`RnPoint`](@ref) $x\in\mathbb R^n$ on the [`Euclidean`](@ref)` Rn`.

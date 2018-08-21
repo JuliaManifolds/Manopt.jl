@@ -5,7 +5,7 @@
 #
 # ---
 # Manopt.jl – Ronny Bergmann – 2017-07-06
-import Base: mean, median
+import Statistics: mean, median
 export mean, median, variance
 export useGradientDescent, useSubgradientDescent, useProximalPoint, useCyclicProximalPoint, useDouglasRachford
 # Indicators for Algorithms
@@ -44,7 +44,7 @@ the default values are given in brackets
   ---
   ManifoldValuedImageProcessing 0.8, R. Bergmann, 2016-11-25
 """
-function mean{mT <: Manifold, T <: MPoint}(M::mT, x::Vector{T}; kwargs...)::T
+function mean(M::mT, x::Vector{T}; kwargs...)::T where {mT <: Manifold, T <: MPoint}
   # collect optional values
   # TODO: Optional values as a parameter dictionary?
   kwargs_dict = Dict(kwargs);
@@ -108,7 +108,7 @@ end
   * `weights` (`[]`) cimpute a weigthed mean, if not specified (`[]`),
     all are chosen equal, i.e. `1/n*ones(n)` for `n=length(x)`.
 """
-function median{mT <: Manifold, T <: MPoint}(M::mT, f::Vector{T}; kwargs...)::T
+function median(M::mT, f::Vector{T}; kwargs...)::T where {mT <: Manifold, T <: MPoint}
   # collect optional values
   kwargs_dict = Dict(kwargs);
   y = get(kwargs_dict, "initialValue", x[1])
@@ -125,8 +125,8 @@ function median_(M,x,y,w,s,λ,mC,mI,::useSubgradientDescent)
   yold = y;
   while (  ( (distance(M,y,yold) > mC) && (iter < mI) ) || (iter == 0)  )
     yold = y
-    sumDistances = sum( w.*[distance(M,y,xi) for xi in x] )
-    y = exp(M,y, s/sumDistances * sum(w.* [ 1/( (distance(M,y,xi)==0)?1:distance(M,y,xi) )*log(M,y,xi) for xi in x]))
+    sumDistances = sum( w.*[distance(M,y,ξ) for ξ in x] )
+    y = exp(M,y, s/sumDistances * sum(w.* [ 1/( (distance(M,y,ξ)==0) ? 1 : distance(M,y,ξ) )*log(M,y,ξ) for ξ in x]))
     iter += 1
   end
   return y
@@ -149,7 +149,7 @@ end
     variance(x)
   returns the variance of the vector `x` of points on a maniofold.
 """
-function variance{mT<:Manifold,T<:MPoint}(M::mT,x::Vector{T})
+function variance(M::mT,x::Vector{T}) where {mT<:Manifold,T<:MPoint}
   meanX = mean(M,x)
   return 1/( (length(x)-1)*manifoldDimension(M) ) * sum( [ dist(M,meanX,xi)^2 for xi in x])
 end

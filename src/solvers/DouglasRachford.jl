@@ -5,7 +5,7 @@
 #
 #
 export DouglasRachford, DRDebug
-@doc doc"""
+Markdown.doc"""
      DouglasRachford(M, F, proxMaps, x)
 Computes the Douglas-Rachford algorithm on the manifold $\mathcal M$, initial
 data $x_0$ and the (two) proximal maps `proxMaps`.
@@ -46,7 +46,7 @@ the default parameter is given in brackets
 function DouglasRachford(M::mT, F::Function, x::P, proxes::Array{Function,N} where N;
     λ::Function = (iter) -> 1.0, α::Function = (iter) -> 0.9,
     R = reflection,
-    stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"Minimal change small enough."),
+    stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached." : "Minimal change small enough."),
     returnReason=false,
     kwargs... #especially may contain debug
     ) where {mT <: Manifold, P <: MPoint}

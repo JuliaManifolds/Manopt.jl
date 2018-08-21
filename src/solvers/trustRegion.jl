@@ -1,16 +1,16 @@
 export trustRegion
-function trustRegion{mT <: Manifold, MP <: MPoint}(M::mT,
+function trustRegion(M::mT,
         F::Function, ∇F::Function, x::MP=randomPoint(M);
         trustRegionSubSolver::Function=truncatedConjugateGradient,
         maxTrustRadius = typicalDistance(M),
         initialTrustRadius = maxTrustRadius / 8,
         retraction::Function = exp,
-        stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"critical point reached"),
+        stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached." : "critical point reached"),
         subStoppingCriterion::Function =
         returnReason=false,
         minΡAccept=0.1,
         kwargs... #especially may contain debug
-    )
+    ) where {mT <: Manifold, MP <: MPoint}
     p = GradientProblem(M,F,∇F)
     o = TrustRegionOptions(x,initTrustRadius, maxTrustRadius,minΡAccept,stoppingCriterion,retraction,trustRegionSubSolver)
     # create default here to check if the user provided a debug and still have the typecheck
@@ -27,7 +27,7 @@ function trustRegion{mT <: Manifold, MP <: MPoint}(M::mT,
         return x;
     end
 end
-@doc doc"""
+"""
     trustRegion(p,o)
 perform a trust region algorithm based on a [`GradientProblem`](@ref) or a [`HessianProblem`](@ref)
 together with some [`TrustRegionOptions`](@ref)

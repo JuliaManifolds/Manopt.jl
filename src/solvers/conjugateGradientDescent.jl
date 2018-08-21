@@ -3,9 +3,9 @@
 #
 export conjugateGradientDescent
 export steepestCoefficient, HeestenesStiefelCoefficient, FletcherReevesCoefficient
-export PolakCoefficient, ConjugateDescentCoefficient, LiuStoreyCoefficient
+export PolyakCoefficient, ConjugateDescentCoefficient, LiuStoreyCoefficient
 export DaiYuanCoefficient, HagerZhangCoefficient
-@doc doc"""
+Markdown.doc"""
     conjugateGradientDescent(M, F, ∇F, x)
 perform a conjugate gradient based descent $x_{k+1} = \exp_{x_k} s_k\delta_k$
 whith different rules to compute the direction $\delta_k$ based on the last direction
@@ -29,7 +29,7 @@ Further, the step size $s_k$ may be refined by a line search.
 
   Available rules are: [`steepestCoefficient`](@ref),
   [`HeestenesStiefelCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
-  [`PolakCoefficient`](@ref), [`ConjugateDescentCoefficient`](@ref),
+  [`PolyakCoefficient`](@ref), [`ConjugateDescentCoefficient`](@ref),
   [`LiuStoreyCoefficient`](@ref), [`DaiYuanCoefficient`](@ref),
   [`HagerZhangCoefficient`](@ref).
 * `lineSearch` : (`(p,lO) -> 1, lO::`[`LineSearchOptions`](@ref)`)`) A tuple `(lS,lO)`
@@ -48,18 +48,17 @@ Further, the step size $s_k$ may be refined by a line search.
 * `reason` - if activated a String containing the stopping criterion stopping
   reason.
 """
-function conjugateGradientDescent{mT <: Manifold, P <: MPoint}(M::mT,
-        F::Function, ∇F::Function, x::P;
+function conjugateGradientDescent(M::mT,F::Function, ∇F::Function, x::P;
         directionUpdate::Tuple{Function,Options} =
             (steepestDirection, SimpleDirectionUpdateOptions()),
         lineSearch::Tuple{Function,Options}=
             ( (p::GradientProblem{mT}, o::LineSearchOptions) -> 1,
                 SimpleLineSearchOptions(x) ),
         retraction::Function = exp,
-        stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached.":"critical point reached"),
+        stoppingCriterion::Function = (i,ξ,x,xnew) -> (norm(M,x,ξ) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached." : "critical point reached"),
         returnReason=false,
         kwargs... #especially may contain debug
-    )
+    ) where {mT <: Manifold, P <: MPoint}
     # TODO Test Input
     p = GradientProblem(M,F,∇F)
     o = ConjugateGradientOptions(x,stoppingCriterion,retraction,lineSearch[1],lineSearch[2], directionUpdate[1], directionUpdate[2])
@@ -82,7 +81,7 @@ end
 performs a conjugateGradientDescent based on a [`GradientProblem`](@ref)
 and corresponding [`ConjugateGradientOptions`](@ref).
 """
-function conjugateGradientDescent{P <: GradientProblem, O <: Options}(p::P, o::O)
+function conjugateGradientDescent(p::P, o::O) where {P <: GradientProblem, O <: Options}
     stop::Bool = false
     reason::String="";
     iter::Integer = 0
@@ -113,7 +112,7 @@ end
 # Direction Update rules
 #
 #
-@doc doc"""
+"""
     steepestCoefficient(M,x,ξ,δ,xnew,ξnew)
 The simplest rule to update is to have no influence of the last direction and
 hence return an update β of zero for all last gradients and directions `ξ,δ`,
@@ -121,9 +120,9 @@ attached at the last iterate `x` as well as the current gradient `ξnew` and ite
 
 *See also*: [`conjugateGradientDescent`](@ref)
 """
-steepestCoefficient{mT<:Manifold, P<:MPoint,T<:TVector}(M::mT,
-    x::P,ξ::T,δ::T,xnew::P,ξnew::T, o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()) = 0.0
-@doc doc"""
+steepestCoefficient(M::mT,
+    x::P,ξ::T,δ::T,xnew::P,ξnew::T, o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()) where {mT<:Manifold, P<:MPoint,T<:TVector} = 0.0
+Markdown.doc"""
     HeestenesStiefelCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -140,15 +139,16 @@ $ \beta_k =
 
 *See also*: [`conjugateGradientDescent`](@ref)
 """
-function HeestenesStiefelCoefficient{mT<:Manifold,P<:MPoint,T<:TVector}(M::mT,
-    x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions() )
+function HeestenesStiefelCoefficient(M::mT,
+    x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()
+        ) where {mT<:Manifold,P<:MPoint,T<:TVector}
     ξtr = parallelTransport(M,x,xnew,ξ)
     δtr = parallelTransport(M,x,xnew,δ)
     νk = ξnew-ξtr #notation from [HZ06]
     β = dot(M,xnew, ξnew,νk)/dot(M,xnew,δtr,νk)
     return max(0,β);
 end
-@doc doc"""
+Markdown.doc"""
     FletcherReevesCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -163,13 +163,13 @@ $ \beta_k =
 
 *See also*: [`conjugateGradientDescent`](@ref)
 """
-function FletcherReevesCoefficient{mT<:Manifold,P<:MPoint,T<:TVector}(M::mT,
+function FletcherReevesCoefficient(M::mT,
     x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()
-    )
+    ) where {mT<:Manifold,P<:MPoint,T<:TVector}
     return dot(M,xnew,ξnew,ξnew)/dot(M,x,ξ,ξ)
 end
-@doc doc"""
-    PolakCoefficient(M,x,ξ,δ,xnew,ξnew)
+Markdown.doc"""
+    PolyakCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
 
@@ -185,15 +185,15 @@ $ \beta_k =
 
 *See also*: [`conjugateGradientDescent`](@ref)
 """
-function PolakCoefficient{mT<:Manifold,P<:MPoint,T<:TVector}(M::mT,
+function PolyakCoefficient(M::mT,
         x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()
-        )
+        ) where {mT<:Manifold,P<:MPoint,T<:TVector}
         ξtr = parallelTransport(M,x,xnew,ξ)
         νk = ξnew-ξtr #notation y from [HZ06]
         β = dot(M,xnew, ξnew,νk)/dot(M,x,ξ,ξ);
         return max(0,β);
 end
-@doc doc"""
+Markdown.doc"""
     ConjugateDescentCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -209,11 +209,12 @@ $ \beta_k =
 
 *See also*: [`conjugateGradientDescent`](@ref)
 """
-function ConjugateDescentCoefficient{mT<:Manifold,P<:MPoint,T<:TVector}(M::mT,
-    x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions() )
+function ConjugateDescentCoefficient(M::mT,
+        x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()
+    ) where {mT<:Manifold,P<:MPoint,T<:TVector}
     return dot(M,xnew,ξnew,ξnew)/dot(M,x,-δ,ξ)
 end
-@doc doc"""
+Markdown.doc"""
     LiuStoreyCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -229,13 +230,14 @@ $ \beta_k =
 
 *See also*: [`conjugateGradientDescent`](@ref)
 """
-function LiuStoreyCoefficient{mT<:Manifold,P<:MPoint,T<:TVector}(M::mT,
-    x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions() )
+function LiuStoreyCoefficient(M::mT,
+        x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()
+    ) where {mT<:Manifold,P<:MPoint,T<:TVector}
     ξtr = parallelTransport(M,x,xnew,ξ)
     νk = ξnew-ξtr #notation y from [HZ06]
     return dot(M,xnew, ξnew,νk)/dot(M,x,-δ,ξ)
 end
-@doc doc"""
+Markdown.doc"""
     DaiYuanCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -251,14 +253,15 @@ $ \beta_k =
 
 *See also*: [`conjugateGradientDescent`](@ref)
 """
-function DaiYuanCoefficient{mT<:Manifold,P<:MPoint,T<:TVector}(M::mT,
-    x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions() )
+function DaiYuanCoefficient(M::mT,
+        x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()
+    ) where {mT<:Manifold,P<:MPoint,T<:TVector}
     ξtr = parallelTransport(M,x,xnew,ξ);
     νk = ξnew-ξtr #notation y from [HZ06]
     δtr = parallelTransport(M,x,xnew,δ);
     return dot(M,xnew,ξnew,ξnew)/dot(M,x,δtr,νk);
 end
-@doc doc"""
+Markdown.doc"""
     HagerZhangCoefficient(M,x,ξ,δ,xnew,ξnew)
 Computes an update coefficient for the conjugate gradient method, where
 `new` refers to $k+1$ based on
@@ -278,8 +281,9 @@ This methods includes a numerical stability proposed by those authors.
 
 *See also*: [`conjugateGradientDescent`](@ref)
 """
-function HagerZhangCoefficient{mT<:Manifold,P<:MPoint,T<:TVector}(M::mT,
-    x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions() )
+function HagerZhangCoefficient(M::mT,
+        x::P,ξ::T,δ::T,xnew::P,ξnew::T,o::DirectionUpdateOptions = SimpleDirectionUpdateOptions()
+    ) where {mT<:Manifold,P<:MPoint,T<:TVector}
     ξtr = parallelTransport(M,x,xnew,ξ);
     νk = ξnew-ξtr #notation y from [HZ06]
     δtr = parallelTransport(M,x,xnew,δ);
