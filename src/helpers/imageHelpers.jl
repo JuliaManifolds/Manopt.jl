@@ -70,7 +70,7 @@ function constructImageGraph(data::Array{T}, graphtype::String)::Array{Tuple} wh
           ind2[i] = ind2[i] + 1 # generate neighbor
           ind3 = [Tuple(ind)...]       # extract into array
           ind3[i] = ind3[i] - 1 # generate neighbor
-          edges[n] = ( (LinearIndices(dims))[Tuple(ind3)...],LinearIndices(dims))[Tuple(ind)...],(LinearIndices(dims))[Tuple(ind2)...] )
+          edges[n] = ( (LinearIndices(dims))[Tuple(ind3)...], (LinearIndices(dims))[Tuple(ind)...], (LinearIndices(dims))[Tuple(ind2)...] )
           n=n+1
         end
       end
