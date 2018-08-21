@@ -4,6 +4,7 @@
 #
 import LinearAlgebra: norm, dot
 import Base: exp, log, show
+import Markdown
 export Sphere, SnPoint, SnTVector,show, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
@@ -98,7 +99,7 @@ function exp(M::Sphere,x::SnPoint,ξ::SnTVector,t::Float64=1.0)
   	return SnPoint( cos(t*len)*getValue(x) + sin(t*len)/len*getValue(ξ) )
 	end
 end
-md"""
+@doc doc"""
     log(M,x,y)
 Compute the logarithmic map on the [`Sphere`](@ref)
 $\mathcal M=\mathbb S^n$, i.e. the [`SnTVector`](@ref) whose corresponding

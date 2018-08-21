@@ -64,33 +64,33 @@ computes the inner product as sum of the component inner products on the [`Produ
 dot(M::Product, x::ProdPoint, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.manifolds, getValue(x), getValue(ξ), getValue(ν) ));
 """
     exp(M,x,ξ)
-computes the product exponential map on the [`Prodanifold`](@ref) and returns the corresponding [`ProdPoint`](@ref).
+computes the product exponential map on the [`Product`](@ref) manifold and returns the corresponding [`ProdPoint`](@ref).
 """
 exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Number=1.0) = ProdPoint( exp.(M.manifolds, getValue(x), getValue(ξ)) )
 """
    log(M,x,y)
-computes the product logarithmic map on the [`Prodanifold`](@ref) and returns the corresponding [`ProdTVector`](@ref).
+computes the product logarithmic map on the [`Product`](@ref) manifold and returns the corresponding [`ProdTVector`](@ref).
 """
 log(M::Product, x::ProdPoint,y::ProdPoint) = ProdTVector(log.(M.manifolds, getValue(x), getValue(y) ))
 """
     manifoldDimension(x)
-returns the (product of) dimension(s) of the [`Prodanifold`](@ref) the [`ProdPoint`](@ref)`x` belongs to.
+returns the (product of) dimension(s) of the [`Product`](@ref) manifold the [`ProdPoint`](@ref)`x` belongs to.
 """
 manifoldDimension(x::ProdPoint) =  prod( manifoldDimension.( getValue(x) ) )
 """
     manifoldDimension(M)
-returns the (product of) dimension(s) of the [`Prodanifold`](@ref)` M`.
+returns the (product of) dimension(s) of the [`Product`](@ref) manifold` M`.
 """
 manifoldDimension(M::Product) = prod( manifoldDimension.(M.manifolds) )
 """
     norm(M,x,ξ)
 norm of the [`ProdTVector`]` ξ` induced by the metric on the manifold components
-of the [`Prodanifold`](@ref)` M`.
+of the [`Product`](@ref) manifold` M`.
 """
 norm(M::Product, x::ProdPoint, ξ::ProdTVector) = sqrt( dot(M,x,ξ,ξ) )
 """
     parallelTransport(M,x,ξ)
-computes the product parallelTransport map on the [`Prodanifold`](@ref) and returns the corresponding [`ProdTVector`](@ref).
+computes the product parallelTransport map on the [`Product`](@ref) manifold and returns the corresponding [`ProdTVector`](@ref).
 """
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
 """
