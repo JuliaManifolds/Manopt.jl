@@ -2,7 +2,7 @@
 #      Hn - The manifold of the n-dimensional sphere
 #  Point is a Point on the n-dimensional sphere.
 #
-import Base.LinAlg: norm, dot
+import LinearAlgebra: norm, dot
 import Base: exp, log, show
 export Hyperbolic, HnPoint, HnTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport

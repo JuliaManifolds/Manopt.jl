@@ -4,7 +4,7 @@
 # ---
 # Manopt.jl - Ronny Bergmann - 2017-07-06
 
-import Base.LinAlg: vecnorm, norm, dot
+import LinearAlgebra: vecnorm, norm, dot
 import Base: exp, log, show
 
 export SymmetricMatrices, SymPoint, SymTVector, show

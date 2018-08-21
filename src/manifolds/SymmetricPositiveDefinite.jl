@@ -6,7 +6,7 @@
 # ---
 # Manopt.jl - Ronny Bergmann - 2017-07-06
 
-import Base.LinAlg: svd, norm, dot
+import LinearAlgebra: svd, norm, dot
 import Base: exp, log, show
 
 export SymmetricPositiveDefinite, SPDPoint, SPDTVector, show

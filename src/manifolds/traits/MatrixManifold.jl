@@ -6,7 +6,7 @@
 #		for the manifold, its point and the tangent vector
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
-import Base.LinAlg: transpose
+import LinearAlgebra: transpose
 import Base: +, -, *, /
 export transpose, IsMatrixM, IsMatrixP, IsMatrixV
 export +,-,*,/

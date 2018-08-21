@@ -4,7 +4,7 @@
 #  * A point in an tangential space TVector
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
-import Base.LinAlg: norm, dot
+import LinearAlgebra: norm, dot
 import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
 export Manifold, MPoint, TVector, MPointE, TVectorE
