@@ -6,7 +6,7 @@
 # ---
 # Manopt.jl - Ronny Bergmann - 2017-07-06
 
-import LinearAlgebra: svd, norm, dot, Diagonal, eigen, Matrix
+import LinearAlgebra: svd, norm, dot, Diagonal, eigen
 import Base: exp, log, show
 
 export SymmetricPositiveDefinite, SPDPoint, SPDTVector, show
@@ -81,6 +81,8 @@ function log(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
 	svd1 = svd( getValue(x) )
 	U = svd1.U
 	S = svd1.S
+	print(U)
+	print(S)
 	Ssqrt = sqrt.(S)
 	SsqrtInv = Matrix(  Diagonal( 1 ./ Ssqrt )  )
 	Ssqrt = Matrix(  Diagonal( Ssqrt )  )
@@ -88,7 +90,7 @@ function log(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
 	T = U * SsqrtInv * transpose(U) * getValue(y) * U * SsqrtInv * transpose(U)
 	svd2 = svd(T)
 	Se = Matrix(  Diagonal( log.(svd2.S) )  )
-	Ue = Matrix(  Diagonal( svd2.U )  )
+	Ue = svd2.U
 	ξ = pSqrt*Ue*Se*transpose(Ue)*pSqrt
 	return SPDTVector(ξ)
 end
