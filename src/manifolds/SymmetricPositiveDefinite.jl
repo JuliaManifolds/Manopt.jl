@@ -6,7 +6,7 @@
 # ---
 # Manopt.jl - Ronny Bergmann - 2017-07-06
 
-import LinearAlgebra: svd, norm, dot
+import LinearAlgebra: svd, norm, dot, Diagonal
 import Base: exp, log, show
 
 export SymmetricPositiveDefinite, SPDPoint, SPDTVector, show
@@ -56,7 +56,7 @@ getValue(ξ::SPDTVector) = ξ.value
 @traitimpl IsMatrixV{SPDTVector}
 # Functions
 # ---
-distance(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint) = sqrt(sum(log.(abs.(eig(getValue(x), getValue(y) )[1])).^2))
+distance(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint) = sqrt(sum(log.(abs.(eigen(getValue(x), getValue(y) ).values)).^2))
 function dot(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, ν::SPDTVector)
 	svd1 = svd( getValue(x) )
 	U = svd1.U
