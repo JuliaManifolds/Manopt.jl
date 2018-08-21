@@ -1,5 +1,5 @@
 export cyclicProximalPoint, cPPDebug
-doc"""
+@doc doc"""
     cyclicProximalPoint(M, F, proximalMaps, x)
 perform a cyclic proximal point algorithm.
 # Input
@@ -54,7 +54,7 @@ function cyclicProximalPoint(M::Mc,
         return x
     end
 end
-doc"""
+@doc doc"""
     cyclicProximalPoint(p,o)
 compute a cyclic proximal point algorithm (CPPA) for the
 [`ProximalProblem`](@ref)` p` and [`CyclicProximalPointOptions`](@ref)` o`.

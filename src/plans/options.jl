@@ -118,7 +118,7 @@ struct SimpleDirectionUpdateOptions <: DirectionUpdateOptions
 end
 struct HessianDirectionUpdateOptions <: DirectionUpdateOptions
 end
-doc"""
+@doc doc"""
     ConjugateGradientOptions <: Options
 specify options for a conjugate gradient descent algoritm, that solves a
 [`GradientProblem`].
@@ -210,7 +210,7 @@ end
 # Trust Region OPtions
 #
 #
-doc"""
+@doc doc"""
     TrustRegionOptions <: Options
 stores optional values for a TrustRegionSolver
 

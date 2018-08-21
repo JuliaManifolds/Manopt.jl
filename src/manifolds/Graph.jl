@@ -9,7 +9,7 @@ export Graph, GraphVertexPoint, GraphVertexTVector, GraphEdgePoint, GraphEdgeTVe
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
 export show, getValue
-doc"""
+@doc doc"""
     Graph{M<:Manifold} <: Manifold
 The graph manifold models manifold-valued data on a graph
 $\mathcal G = (\mathcal Vm \mathcal E)$, both on vertices
@@ -40,7 +40,7 @@ struct Graph{M<:Manifold} <: Manifold
   Graph{M}(mv::M,adjacency::Mat where {Mat <: AbstractMatrix}, isDir::Bool=false) where {M <: Manifold} = new(string("A Graph Manifold of ",mv.name,"."),
     mv,size(adjacency,1)*manifoldDimension(mv),isDir,string("GraphVertex(",m.abbreviation,",",repr(size(adjacency,1)),")") )
 end
-doc"""
+@doc doc"""
     GraphVertexPoint <: MPoint
 A point graph vertex power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal V\rvert}$
@@ -52,7 +52,7 @@ struct GraphVertexPoint <: MPoint
 end
 getValue(x::GraphVertexPoint) = x.value;
 
-doc"""
+@doc doc"""
     GraphVertexTVector
 A tangent vector $\xi\in T_x\mathcal M$ to the graph vertex power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal V\rvert}$
@@ -64,7 +64,7 @@ struct GraphVertexTVector <: TVector
 end
 getValue(ξ::GraphVertexTVector) = ξ.value
 
-doc"""
+@doc doc"""
     GraphEdgePoint <: MPoint
 A point graph edge power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal E\rvert}$
@@ -77,7 +77,7 @@ struct GraphEdgePoint <: MPoint
 end
 getValue(x::GraphEdgePoint) = x.value;
 
-doc"""
+@doc doc"""
     GraphEdgeTVector
 A tangent vector $\xi\in T_x\mathcal M$ to the graph edge power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal E\rvert}$
@@ -167,7 +167,7 @@ of the [`Graph`](@ref)` M`.
 """
 norm(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector) = sqrt( dot.(M.manifold,x,ξ,ξ) )
 
-doc"""
+@doc doc"""
     parallelTransport(M,x,ξ)
 computes the product parallelTransport map on the [`Graph`](@ref) vertex power
 manifold $\mathcal M^{\lvert\mathcal V\rvert}$ and returns
@@ -180,25 +180,25 @@ computes the product parallelTransport map on the [`Graph`](@ref) edge power man
 the corresponding [`GraphVertexTVector`](@ref).
 """
 parallelTransport(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint, ξ::GraphEdgeTVector) = GraphVertexTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
-doc"""
+@doc doc"""
     typicalDistance(M)
 returns the typical distance on the [`Graph`](@ref) vertex manifold `M`, based
 on the typical distance of the base.
 """
 typicalDistance(M::Graph) = sqrt( size(M.adjacency,1) ) * typicalDistance(M.manifold);
-doc"""
+@doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`GraphVertexPoint`](@ref) $x\in\mathcal M$ on the [`Graph`](@ref) vertex manifold `M`.
 """
 zeroTVector(M::Graph, x::GraphVertexPoint) = GraphVertexTVector( zeroTVector.(M.manifold, getValue(x) )  )
-doc"""
+@doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`GraphEdgePoint`](@ref) $x\in\mathcal M$ on the [`Graph`](@ref) edge manifold `M`.
 """
 zeroTVector(M::Graph, x::GraphEdgePoint) = GraphEdgeTVector( zeroTVector.(M.manifold, getValue(x) )  )
-doc"""
+@doc doc"""
    startEdgePoint(M,x)
 For a [`Graph`](@ref) manifold and a [`GraphVertexPoint`](@ref), this
 function constructs the corresponding [`GraphEdgePoint`], such that each
@@ -225,7 +225,7 @@ function startEdgePoint(M::Graph, x::GraphVertexPoint)::GraphEdgePoint
     end
   end
 end
-doc"""
+@doc doc"""
     sumEdgeTVector(M,ξ)
 return the [ `GraphVertexTVector`](@ref) where edge tangents are summed in their start point.
 

@@ -5,7 +5,7 @@
 #
 export βDgx, βDgy, βDexpx, βDexpξ, βDlogx, βDlogy
 
-doc"""
+@doc doc"""
     βDgx(κ,t,d)
 weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_x g(\cdot;x,y)[\eta]$.
@@ -29,7 +29,7 @@ function βDgx(κ::Number,t::Number,d::Number)
         return (1-t);
     end
 end
-doc"""
+@doc doc"""
     βDgy(κ,t,d)
 weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_y g(\cdot;x,y)[\eta]$. They are
@@ -53,7 +53,7 @@ function βDgy(κ::Number,t::Number,d::Number)
         return t;
     end
 end
-doc"""
+@doc doc"""
     βDexpx(κ,t,d)
 weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_x \exp_x(\xi)[\eta]$. They are
@@ -74,7 +74,7 @@ function βDexpx(κ::Number,t::Number,d::Number)
         return 1;
     end
 end
-doc"""
+@doc doc"""
     βDexpξ(κ,t,d)
 weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_\xi \exp_x(\xi)[\eta]$. They are
@@ -95,7 +95,7 @@ function βDexpξ(κ::Number,t::Number,d::Number)
         return 1;
     end
 end
-doc"""
+@doc doc"""
     βDlogx(κ,t,d)
 weights for the[`jacobiField`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_x \log_xy[\eta]$. They are
@@ -116,7 +116,7 @@ function βDlogx(κ::Number,t::Number,d::Number)
         return -1;
     end
 end
-doc"""
+@doc doc"""
     βDlogy(κ,t,d)
 weights for the JacobiField corresponding to the differential of the logarithmic
 map with respect to its argument $D_y \log_xy[\eta]$.

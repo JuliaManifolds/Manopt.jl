@@ -26,7 +26,7 @@ function distance(M::mT, x::T, y::T) where {mT <: Manifold, T <: MPoint}
   sig3 = string( typeof(M) )
   throw( ErrorException("distance not implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
-doc"""
+@doc doc"""
     dot(M, x, ξ, ν)
 Computes the inner product of two [`TVector`](@ref)s `ξ` and `ν` from the
 tangent space at the [`MPoint`](@ref)` x` on the [`Manifold`](@ref)` M`.
@@ -38,7 +38,7 @@ function dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <:
   sig4 = string( typeof(M) )
   throw( ErrorException("dot not implemented for a $sig2 and $sig3 in the tangent space of a $sig1 on $sig4." ) )
 end
-doc"""
+@doc doc"""
     exp(M,x,ξ,[t=1.0])
 computes the exponential map at an [`MPoint`](@ref) `x` for the
 [`TVector`](@ref) `ξ` on the [`Manifold`](@ref) `M`. The optional parameter `t` can be
@@ -106,7 +106,7 @@ function manifoldDimension(M::mT)::Integer where {mT<:Manifold}
   sig1 = string( typeof(M) )
   throw( ErrorException("manifoldDimension not Implemented on $sig1." ) )
 end
-doc"""
+@doc doc"""
     norm(M,x,ξ)
   computes the length of a tangential vector $\xi\in T_x\mathcal M$
 """
@@ -116,7 +116,7 @@ function norm(M::mT,x::P,ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector
 	sig3 = string( typeof(M) )
   throw( ErrorException("norm not implemented for $sig1 in the tangent space of a $sig2 on $sig3." ) )
 end
-doc"""
+@doc doc"""
     parallelTransport(M,x,y,ξ)
 Parallel transport of a vector `ξ` given at the tangent space $T_x\mathcal M$
 of `x` to the tangent space $T_y\mathcal M$ at `y` along the geodesic form `x` to `y`.
@@ -129,7 +129,7 @@ function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPo
   sig4 = string( typeof(M) )
   throw( ErrorException("parallelTransport not implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
 end
-doc"""
+@doc doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the
 first vector and compute the eigenvalues of the curvature tensor
@@ -144,7 +144,7 @@ function tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint, T <:
     sig3 = string( typeof(M) )
     throw( ErrorException("tangentONB not implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
-doc"""
+@doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$ is the
 first vector and compute the eigenvalues of the curvature tensor
@@ -154,7 +154,7 @@ $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 *See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
 """
 tangentONB(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint} = tangentONB(M,x,log(M,x,y))
-doc"""
+@doc doc"""
     typicalDistance(M)
 returns the typical distance on the [`Manifold`](@ref)` M`, which is for example
 the longest distance in a unit cell or injectivity radius. It is for example
@@ -164,7 +164,7 @@ function typicalDistance(M::mT) where {mT <: Manifold}
   sig2 = string( typeof(M) )
   throw( ErrorException("zeroTVector(M) not implemented on $sig2." ) )
 end
-doc"""
+@doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`MPoint`](@ref) $x\in\mathcal M$ on the [`Manifold`](@ref)` M`.

@@ -13,7 +13,7 @@ export distance, dot, exp, norm, dot, manifoldDimension, parallelTransport
 export zeroTVector
 # Types
 # ---
-doc"""
+@doc doc"""
     Symmetric <: Manifold
 The manifold $\mathcal M = \mathcal S(n)$, where $\mathcal S(n) = \{
 x \in \mathbb R^{n\times n} | x = x^\tT
@@ -27,7 +27,7 @@ struct Symmetric <: Manifold
   abbreviation::String
   Symmetric(dimension::Int) = new("$dimension-by-$dimension symmetric matrices",(dimension*(dimension+1)/2),"Sym($dimension)")
 end
-doc"""
+@doc doc"""
     SymPoint <: MPoint
 A point $x$ on the manifold $\mathcal M = \mathcal S(n)$ of $n\times n$
 symmetric positive definite matrices, represented in the redundant way of a
@@ -38,7 +38,7 @@ struct SymPoint <: MPoint
 	SymPoint(v::Matrix{Float64}) = new(v);
 end
 getValue(x::SymPoint) = x.value
-doc"""
+@doc doc"""
     SymTVector <: TVector
 A tangent vector $\xi$ in $T_x\mathcal M$ of a symmetric matrix $x\in\mathcal M$.
 """
@@ -64,12 +64,12 @@ manifoldDimension(x::SymPoint) = size( getValue(x), 1)*(size( getValue(x), 1)+1)
 norm(M::Symmetric,x::SymPoint,ξ::SymTVector) = vecnorm( getValue(ξ) )
 function parallelTransport(M::Symmetric,x::SymPoint,y::SymPoint,ξ::SymTVector) = ξ
 end
-doc"""
+@doc doc"""
     typicalDistance(M)
 returns the typical distance on the [`Symmetric`](@ref)` Sym`: $n$.
 """
 typicalDistance(M::Symmetric) = manifoldDimension(M);
-doc"""
+@doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`SymPoint`](@ref) $x\in\mathcal S(n)$ on the [`Symmetric`](@ref)` Sym`.

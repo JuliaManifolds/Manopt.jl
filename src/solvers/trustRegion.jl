@@ -27,7 +27,7 @@ function trustRegion{mT <: Manifold, MP <: MPoint}(M::mT,
         return x;
     end
 end
-doc"""
+@doc doc"""
     trustRegion(p,o)
 perform a trust region algorithm based on a [`GradientProblem`](@ref) or a [`HessianProblem`](@ref)
 together with some [`TrustRegionOptions`](@ref)

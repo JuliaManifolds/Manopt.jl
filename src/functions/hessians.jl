@@ -1,7 +1,7 @@
 
 export approximateHessianForwardDifferences
 
-doc"""
+@doc doc"""
     approximateHessianForwardDifferences(p,x,ξ,[stepSize=2^(-14)],[retraction=exp])
 Computes an approximate Hessian by finite difference of the gradient function.
 
