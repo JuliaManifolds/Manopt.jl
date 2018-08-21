@@ -4,7 +4,6 @@
 #
 import LinearAlgebra: norm, dot
 import Base: exp, log, show
-import Markdown
 export Sphere, SnPoint, SnTVector,show, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
@@ -12,7 +11,7 @@ export zeroTVector
 # Type definitions
 #
 
-md"""
+@doc doc"""
     Sphere <: Manifold
 The manifold $\mathcal M = \mathbb S^n$ of unit vectors in $\mathbb R^{n+1}$.
 This manifold is a matrix manifold (see [`IsMatrixM`](@ref)) and embedded (see
@@ -25,7 +24,7 @@ struct Sphere <: Manifold
   abbreviation::String
   Sphere(dimension::Int) = new("$dimension-Sphere",dimension,"Sn($(dimension-1))")
 end
-md"""
+@doc doc"""
     SnPoint <: MPoint
 A point $x$ on the manifold $\mathcal M = \mathbb S^n$ represented by a unit
 vector from $\mathbb R^{n+1}$
@@ -36,7 +35,7 @@ struct SnPoint <: MPoint
 end
 getValue(x::SnPoint) = x.value;
 
-md"""
+@doc doc"""
     SnTVector <: TVector
 A tangent vector $\xi \in T_x\mathcal M$ on the manifold
 $\mathcal M = \mathbb S^n$. For the representation the tangent space can be
@@ -62,7 +61,7 @@ getValue(ξ::SnTVector) = ξ.value;
 
 # Functions
 # ---
-md"""
+@doc doc"""
     distance(M,x,y)
 Compute the Riemannian distance on $\mathcal M=\mathbb S^n$ embedded in
 $\mathbb R^{n+1}$ can be computed as
@@ -74,7 +73,7 @@ on $\mathbb R^{n+1}$.
 """
 distance(M::Sphere,x::SnPoint,y::SnPoint) = acos(dot(getValue(x), getValue(y) ))
 
-md"""
+@doc doc"""
     dot(M,x,ξ,ν)
 Compute the Riemannian inner product for two [`SnTVector`](@ref)s `ξ` and `ν`
 from $T_x\mathcal M$ of the [`Sphere`](@ref)` M` given by
@@ -83,7 +82,7 @@ in the embedded space $\mathbb R^{n+1}$.
 """
 dot(M::Sphere, x::SnPoint, ξ::SnTVector, ν::SnTVector) = dot( getValue(ξ), getValue(ν) )
 
-md"""
+@doc doc"""
     exp(M,x,ξ,[t=1.0])
 Compute the exponential map on the [`Sphere`](@ref)` M`$=\mathbb S^n$ with
 respect to the [`SnPoint`](@ref)` x` and the [`SnTVector`](@ref)` ξ`, which can
@@ -119,7 +118,7 @@ function log(M::Sphere,x::SnPoint,y::SnPoint)
     return zeroTVector(M,x)
   end
 end
-md"""
+@doc doc"""
     manifoldDimension(x)
 returns the dimension of the [`Sphere`](@ref)` M`$=\mathbb S^n$, the
 [`SnPoint`](@ref)` x`, itself embedded in $\mathbb R^{n+1}$, belongs to.
@@ -130,13 +129,13 @@ manifoldDimension(x::SnPoint)::Integer = length( getValue(x) )-1
 returns the dimension of the [`Sphere`](@ref)` M`.
 """
 manifoldDimension(M::Sphere)::Integer = M.dimension
-md"""
+@doc doc"""
     norm(M,x,ξ)
 Computes the norm of the [`SnTVector`](@ref)` ξ` in the tangent space
 $T_x\mathcal M$ at [`SnPoint`](@ref)` x` of the [`Sphere`](@ref)` M`.
 """
 norm(M::Sphere, x::SnPoint, ξ::SnTVector) = norm( getValue(ξ) )
-md"""
+@doc doc"""
     parallelTransport(M,x,y,ξ)
 Compute the paralllel transport of the [`SnTVector`](@ref)` ξ` from
 the tangent space $T_x\mathcal M$ at [`SnPoint`](@ref)` x` to
@@ -163,7 +162,7 @@ end
 returns the typical distance on the [`Sphere`](@ref)` Sn`: π.
 """
 typicalDistance(M::Sphere) = π;
-md"""
+@doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`SnPoint`](@ref) $x\in\mathbb S^n$ on the [`Sphere`](@ref)` Sn`.

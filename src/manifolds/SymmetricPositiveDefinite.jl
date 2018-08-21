@@ -14,7 +14,7 @@ export distance, dot, exp, norm, dot, manifoldDimension, parallelTransport
 export zeroTVector
 # Types
 # ---
-md"""
+@doc doc"""
     SymmetricPositiveDefinite <: Manifold
 The manifold $\mathcal M = \mathcal P(n)$ of $n\times n$ symmetric positive
 definite matrices.
@@ -25,7 +25,7 @@ struct SymmetricPositiveDefinite <: Manifold
   abbreviation::String
   SymmetricPositiveDefinite(dimension::Int) = new("$dimension-by-$dimension symmetric positive definite matrices",(dimension*(dimension+1)/2),"SPD($dimension) affine")
 end
-md"""
+@doc doc"""
     SPDPoint <: MPoint
 A point $x$ on the manifold $\mathcal M = \mathcal P(n)$ of $n\times n$
 symmetric positive definite matrices, represented in the redundant way of a
@@ -36,7 +36,7 @@ struct SPDPoint <: MPoint
 	SPDPoint(v::Matrix{Float64}) = new(v);
 end
 getValue(x::SPDPoint) = x.value
-md"""
+@doc doc"""
     SPDTVector <: TVector
 A tangent vector $\xi$ in
 $T_x\mathcal M = \{ x^{\frac{1}{2}\nu x^{\frac{1}{2}} \big| \nu\in\mathbb R^{n,n}\text{ with }\nu=\nu^\tT\}$
@@ -115,12 +115,12 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 	Uf = eig1.vectors
 	return SPDTVector(xSqrt*Uf*Sf*transpose(Uf)*(0.5*(tξ+transpose(tξ)))*Uf*Sf*transpose(Uf)*xSqrt)
 end
-md"""
+@doc doc"""
     typicalDistance(M)
 returns the typical distance on the [`SymmetricPositiveDefinite`](@ref)` SPD`: $\sqrt\bigl(\frac{n(n+1)}{2}\bigr)$.
 """
 typicalDistance(M::SymmetricPositiveDefinite) = sqrt(M.dimension);
-md"""
+@doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`SPDPoint`](@ref) $x\in\mathcal P(n)$ on the [`SymmetricPositiveDefinite`](@ref)` SPD`.

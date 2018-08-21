@@ -2,7 +2,7 @@
 # A simple steepest descent algorithm implementation
 #
 export steepestDescent, gradDescDebug
-md"""
+@doc doc"""
     steepestDescent(M, F, ∇F, x)
 perform a steepestDescent $x_{k+1} = \exp_{x_k} s_k\nabla f(x_k)$ with different
 choices of $s_k$ available (see `lineSearch` option below).
