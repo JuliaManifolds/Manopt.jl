@@ -179,7 +179,7 @@ Computes an update coefficient for the conjugate gradient method, where
 adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_k\to x_{k+1}}\xi_k$.
 Then the update reads
 
-$ \beta_k =
+$\beta_k =
 \frac{ \langle \xi_{k+1}, \nu_k \rangle_{x_{k+1}} }
 {\lVert \xi_k \rVert_{x_k} }.$
 
@@ -203,7 +203,7 @@ Computes an update coefficient for the conjugate gradient method, where
 
 adapted to manifolds:
 
-$ \beta_k =
+$\beta_k =
 \frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
 {\langle -\delta_k,\xi_k \rangle_{x_k}}.$
 
@@ -224,7 +224,7 @@ Computes an update coefficient for the conjugate gradient method, where
 
 adapted to manifolds: with $\nu_k = \xi_{k+1} - P_{x_k\to x_{k+1}}\xi_k$ it reads
 
-$ \beta_k =
+$\beta_k =
 \frac{ \langle \xi_{k+1},\nu_k \rangle_{x_{k+1}} }
 {\langle -\delta_k,\xi_k \rangle_{x_k}}.$
 
@@ -247,7 +247,7 @@ Computes an update coefficient for the conjugate gradient method, where
 
 adapted to manifolds: with $\nu_k = \xi_{k+1} - P_{x_k\to x_{k+1}}\xi_k$ it reads
 
-$ \beta_k =
+$\beta_k =
 \frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
 {\langle P_{x_k\to x_{k+1}}\delta_k, \nu_k \rangle_{x_{k+1}}}.$
 
@@ -271,7 +271,7 @@ Computes an update coefficient for the conjugate gradient method, where
 
 adapted to manifolds: with $\nu_k = \xi_{k+1} - P_{x_k\to x_{k+1}}\xi_k$ it reads
 
-$ \beta_k = \Bigl\langle\nu_k -
+$\beta_k = \Bigl\langle\nu_k -
 \frac{ 2\lVert \nu_k\rVert_{x_{k+1}}^2 }{ \langle P_{x_k\to x_{k+1}}\delta_k, \nu_k \rangle_{x_{k+1}} }
 P_{x_k\to x_{k+1}}\delta_k,
 \frac{\xi_{k+1}}{ \langle P_{x_k\to x_{k+1}}\delta_k, \nu_k \rangle_{x_{k+1}} }
