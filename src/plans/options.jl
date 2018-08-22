@@ -42,7 +42,8 @@ out but not `ρ``.
 * `ρ` : exponent for line search reduction
 * `c` : gain within Armijo's rule
 
-*See also*: [`ArmijoLineSearch`](@ref), [`ArmijoDescentDirectionLineSearchOptions`](@ref)
+# See also
+[`ArmijoLineSearch`](@ref), [`ArmijoDescentDirectionLineSearchOptions`](@ref)
 """
 mutable struct ArmijoLineSearchOptions <: LineSearchOptions
     x::P where {P <: MPoint}
@@ -70,7 +71,8 @@ out but not `ρ``.
 *Might be unified to `ArmijoLineSearchOptions` with Julia 0.7 and `missing`
 values.*
 
-*See also*:  [`ArmijoLineSearch`](@ref), [`ArmijoLineSearchOptions`](@ref)
+# See also
+[`ArmijoLineSearch`](@ref), [`ArmijoLineSearchOptions`](@ref)
 """
 mutable struct ArmijoDescentDirectionLineSearchOptions <: LineSearchOptions
     x::P where {P <: MPoint}
@@ -97,7 +99,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `lineSearch` : a function performing the lineSearch, returning a step size
 * `lineSearchOptions` : options the linesearch is called with.
 
-*See also*: [`steepestDescent`](@ref)
+# See also
+[`steepestDescent`](@ref)
 """
 mutable struct GradientDescentOptions <: Options
     x0::P where {P <: MPoint}
@@ -134,7 +137,8 @@ specify options for a conjugate gradient descent algoritm, that solves a
     current and last gradient as well as the last direction and
 * `directionUpdateOptions` : options for the update, if needed (e.g. to provide the hessian with a function handle).
 
-*See also*: [`conjugateGradientDescent`](@ref), [`GradientProblem`](@ref), [`ArmijoLineSearch`](@ref)
+# See also
+[`conjugateGradientDescent`](@ref), [`GradientProblem`](@ref), [`ArmijoLineSearch`](@ref)
 """
 mutable struct ConjugateGradientOptions <: Options
     x0::P where {P <: MPoint}
@@ -170,7 +174,8 @@ stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
     Other values are `RandomEvalOrder()` that takes a new random order each
     iteration, and `FixedRandomEvalOrder()` that fixes a random cycle for all iterations.
 
-*See also*: [`cyclicProximalPoint`](@ref)
+# See also
+[`cyclicProximalPoint`](@ref)
 """
 mutable struct CyclicProximalPointOptions <: Options
     x0::P where {P <: MPoint}

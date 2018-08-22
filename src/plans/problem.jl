@@ -29,14 +29,16 @@ getProximalMap(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
     GradientProblem <: Problem
 specify a problem for gradient based algorithms.
 
-*See also*: [`steepestDescent`](@ref), [`conjugateGradientDescent`](@ref),
-[`GradientDescentOptions`](@ref), [`ConjugateGradientOptions`](@ref)
 
 # Fields
 * `M`            : a manifold $\mathcal M$
 * `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `gradient`     : the gradient $\nabla F\colon\mathcal M
   \to \mathcal T\mathcal M$ of the cost function $F$
+
+# See also
+[`steepestDescent`](@ref), [`conjugateGradientDescent`](@ref),
+[`GradientDescentOptions`](@ref), [`ConjugateGradientOptions`](@ref)
 
 # """
 mutable struct GradientProblem{mT <: Manifold} <: Problem
@@ -73,7 +75,7 @@ mutable struct HessianProblem{mT <: Manifold} <: Problem
 end
 @doc doc"""
     getHessian(p,x)
-evakuate the Hessian of a [`HessianProblem`](@ref)` p` at `x`.
+evakuate the Hessian of a [`HessianProblem`](@ref)` p` at the [`MPoint`](@ref)` x`.
 """
 function getHessian(p::P,x::MP) where {P <: HessianProblem{M} where M <: Manifold, MP <: MPoint }
     return p.Hessian(x)
@@ -87,14 +89,25 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 * `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `proximalMaps` : proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
   as functions (λ,x) -> y, i.e. the prox parameter λ also belongs to the signature of the proximal map.
-# """
+# See also
+[`cyclicProximalPoint`](@ref), [`getCost`](@ref),
+[`getProximalMaps`](@ref),[`getProximalMap`](@ref),
+"""
 mutable struct ProximalProblem{mT <: Manifold} <: Problem
   M::mT
   costFunction::Function
   proximalMaps::Array{Function,N} where N
 end
-# Access Functions for proxes.
+# Access Functions for proxes & cost.
 #
+"""
+    getCost(p,x)
+
+evaluate the cost function `F` stored within a [`ProximalProblem`](@ref) at the [`MPoint`](@ref)` x`.
+"""
+function getCost(p::P,x::MP) where {P <: ProximalProblem{M} where M <: Manifold, MP <: MPoint}
+  return p.costFunction(x)
+end
 @doc doc"""
     getProximalMaps(p,λ,x)
 evaluate all proximal maps of `ProximalProblem p` at the point `x` of `p.M` and
