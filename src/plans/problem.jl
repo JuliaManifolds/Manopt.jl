@@ -2,7 +2,7 @@
 # Define a global problem and ist constructors
 #
 # ---
-export gradF,getProximalMap, getProximalMaps
+export getGradient, getCost, getHessian, getProximalMap, getProximalMaps
 export Problem, GradientProblem, ProximalProblem, HessianProblem
 
 """
@@ -14,15 +14,15 @@ abstract type Problem end
 #
 # 1) Functions / Fallbacks
 #
-costF(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
+getCost(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
     throw(Exception("no costFunction found in $(typeof(p)) to evaluate for a $(typeof(x))."))
-gradF(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
+getGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
     throw(Exception("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
-HessF(p::Pr,x::P,η::T) where {Pr <: Problem, P <: MPoint, T <: TVector} =
+getHessian(p::Pr,x::P,η::T) where {Pr <: Problem, P <: MPoint, T <: TVector} =
     throw(Exception("no Hessian found in $(typeof(p)) to evaluate for a $(typeof(x)) with tangent vector $(typeof(η))."))
-proxesF(p::Pr,λ,x::P) where {Pr <: Problem, P <: MPoint} =
+getProximalMaps(p::Pr,λ,x::P) where {Pr <: Problem, P <: MPoint} =
     throw(Exception("no proximal maps found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
-proxF(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
+getProximalMap(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
     throw(Exception("no $(i)th proximal map found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 
 @doc doc"""
@@ -47,22 +47,37 @@ end
 # Access functions for Gradient problem.
 # ---
 """
-    gradF(p,x)
+    getGradient(p,x)
 
 evaluate the gradient of a problem at x, where x is either a MPoint
 or an array of MPoints
 """
-function gradF(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
+function getGradient(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
   return p.gradient(x)
 end
-""" HessianProblem <: Problem
+"""
+    getCost(p,x)
+
+evaluate the cost function `F` stored within a [`GradientProblem`](@ref) at the [`MPoint`](@ref) `x`.
+"""
+function getCost(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
+  return p.costFunction(x)
+end
+"""
     HessianProblem <: Problem
-For no this is just a dummy problem to carry information about a Problem also providing a Hessian
+For now this is just a dummy problem to carry information about a Problem also providing a Hessian
 """
 mutable struct HessianProblem{mT <: Manifold} <: Problem
     M::mT
     costFunction::Function
     Heassian::Function
+end
+@doc doc"""
+    getHessian(p,x)
+evakuate the Hessian of a [`HessianProblem`](@ref)` p` at `x`.
+"""
+function getHessian(p::P,x::MP) where {P <: HessianProblem{M} where M <: Manifold, MP <: MPoint }
+    return p.Hessian(x)
 end
 @doc doc"""
     ProximalProblem <: Problem
@@ -87,13 +102,13 @@ evaluate all proximal maps of `ProximalProblem p` at the point `x` of `p.M` and
 some `λ`$>0$ which might be given as a vector the same length as the number of
 proximal maps.
 """
-proxesF(p::P,λ,x::MP) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint} =
+getProximalMaps(p::P,λ,x::MP) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint} =
     p.proximalMaps.(λ,x);
 @doc doc"""
     getProximalMap(p,λ,x,i)
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
-function proxF(p::P,λ,x::MP,i) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}
+function getProximalMap(p::P,λ,x::MP,i) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}
     if i>len(p.proximalMaps)
         ErrorException("the $(i)th entry does not exists, only $(len(p.proximalMaps)) available.")
     end
