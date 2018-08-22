@@ -37,8 +37,8 @@ especially with a search direction along the negative gradient.
 a default value is given in brackets. For `ρ` and `c`, only `c` can be left
 out but not `ρ``.
 * `x` : an [`MPoint`](@ref).
-* ìnitialStepsize` : (1.0) and initial step size
-* `retraction` : (exp) the rectraction used in line search
+* ìnitialStepsize` : (`1.0`) and initial step size
+* `retraction` : ([`exp`](@ref) the rectraction used in line search
 * `ρ` : exponent for line search reduction
 * `c` : gain within Armijo's rule
 
@@ -61,8 +61,8 @@ searching along a specified direction.
 a default value is given in brackets. For `ρ` and `c`, only `c` can be left
 out but not `ρ``.
 * `x` : an [`MPoint`](@ref).
-* ìnitialStepsize` : (1.0) and initial step size
-* `retraction` : (exp) the rectraction used in line search
+* ìnitialStepsize` : (`1.0`) and initial step size
+* `retraction` : ([`exp`](@ref)) the rectraction used in line search
 * `ρ` : (`0.5`) exponent for line search reduction
 * `c` : (`0.0001`)gain within Armijo's rule
 * `direction` : direction to search along
@@ -384,4 +384,4 @@ function optionsHasDebug(o::O) where {O<:Options}
         return optionsHaveDebug(o.options)
     end
 end
-optionsHasDebug(o::O) where {O<:DebugDecoOptions} = true 
+optionsHasDebug(o::O) where {O<:DebugDecoOptions} = true

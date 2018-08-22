@@ -49,8 +49,7 @@ end
 """
     getGradient(p,x)
 
-evaluate the gradient of a problem at x, where x is either a MPoint
-or an array of MPoints
+evaluate the gradient of a [`GradientProblem`](@ref)`p` at the [`MPoint`](@ref)` x`.
 """
 function getGradient(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
   return p.gradient(x)
@@ -58,7 +57,7 @@ end
 """
     getCost(p,x)
 
-evaluate the cost function `F` stored within a [`GradientProblem`](@ref) at the [`MPoint`](@ref) `x`.
+evaluate the cost function `F` stored within a [`GradientProblem`](@ref) at the [`MPoint`](@ref)` x`.
 """
 function getCost(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
   return p.costFunction(x)
