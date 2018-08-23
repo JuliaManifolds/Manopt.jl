@@ -21,6 +21,7 @@ makedocs(
             "Introduction" => "solvers/index.md",
             "Conjugate Gradient Descent" => "solvers/conjugateGradientDescent.md",
             "Cyclic Proximal Point" => "solvers/cyclicProximalPoint.md",
+            "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Gradient Descent" => "solvers/gradientDescent.md"
         ],
         "Functions" => [

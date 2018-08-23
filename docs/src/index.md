@@ -7,6 +7,9 @@ respect to source code throughout this package. For an introduction to
 manifolds, we refer to [AMS08].
 This package further aims to unify Manopt and MVIRT, i.e. to find a “Julia way”
 to perform all algorithms given in these packages with all benefits from Julia.
+```@docs
+Manopt
+```
 
 ## Organization of Code
 Despite the given structure by Julia (folders `src/`, `docs/`, `test/`), this

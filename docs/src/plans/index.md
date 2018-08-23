@@ -32,10 +32,11 @@ getProximalMaps
 
 ## Options
 ```@docs
+ArmijoLineSearchOptions
+DouglasRachfordOptions
 GradientDescentOptions
 LineSearchOptions
 SimpleLineSearchOptions
-ArmijoLineSearchOptions
 ConjugateGradientOptions
 SimpleDirectionUpdateOptions
 ```

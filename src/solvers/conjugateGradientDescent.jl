@@ -88,13 +88,13 @@ function conjugateGradientDescent(p::P, o::O) where {P <: GradientProblem, O <: 
     x = getOptions(o).x0
     s = getOptions(o).lineSearchOptions.initialStepsize
     M = p.M
-    ξ = gradF(p,x); # g_k in [HZ06]
-    δ = -gradF(p,x); #d_k in [HZ06]
+    ξ = getGradient(p,x); # g_k in [HZ06]
+    δ = -getGradient(p,x); #d_k in [HZ06]
     β = 0;
     while !stop
         s = getStepsize(p,getOptions(o),x,s) # α_k in [HZ06]
         xnew = getOptions(o).retraction(M,x,-s*δ)
-        ξnew = gradF(p,xnew) # g_k+1
+        ξnew = getGradient(p,xnew) # g_k+1
         βnew = getOptions(o).directionUpdate(x,ξ,δ,xnew,ξnew,
             getOptions(o).directionUpdateOptions)
         δnew = - ξnew + βnew * parallelTransport(M,x,xnew,δ)

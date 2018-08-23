@@ -48,7 +48,7 @@ function trustRegion(p::Pr,x::P,o::O) where {Pr <: Union{GradientProblem, Hessia
     η = tRSub(p,x,tRSubO)
     Hη = HessF(p,x,η)
     xTest = retr(M,x,η)
-    ρ = (costF(p,x) - costF(p,xTest)) / ( dot(M,x, gradF(p,x),η) + 0.5*dot(M,η,Hη) )
+    ρ = (getCost(p,x) - getCost(p,xTest)) / ( dot(M,x, getGradient(p,x),η) + 0.5*dot(M,η,Hη) )
     if ρ < 1/4 # bad approximation -> decrease trust region
         Δ = Δ/4;
     elseif (ρ > 3/4) && (norm(M,x,η) == Δ) # good approximation _and_ step at boundary of trust -> increase trust
@@ -67,7 +67,7 @@ end
 
 function trustRegionConjugateGradient(p::Pr,x::P,o::O) where {Pr <: Problem, P <: MPoint, O <: Options}
     ηnew = zeroTVector(x); η = ηnew
-    rnew = gradF(p,x); r = newr; δnew = -r
+    rnew = getGradient(p,x); r = newr; δnew = -r
     m = (η,Hη) -> dot(p.M,x,η,r) + 0.5*dot(p.M,x,η,Hη)
     Δ = getTrustRadius(o)
     stop = false;

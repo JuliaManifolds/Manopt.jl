@@ -27,9 +27,9 @@ approximateHessianForwardDifferences{GP <: GradientProblem, P <: MPoint, T <: TV
     end
     # have a real direction of size stepSize
     c = stepSize / nξ;
-    ∇fx = gradF(p,x);
+    ∇fx = getGradient(p,x);
     y = retraction(p.M,x,ξ,c)
-    ∇fy = gradF(p,y);
+    ∇fy = getGradient(p,y);
     # transport ∇fy back to x and finite difference -> approximate Hessian
     return 1/c*( parallelTransport(M,y,x,∇fy) - ∇fx);
 end

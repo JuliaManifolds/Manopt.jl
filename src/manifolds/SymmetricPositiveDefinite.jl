@@ -39,9 +39,11 @@ getValue(x::SPDPoint) = x.value
 @doc doc"""
     SPDTVector <: TVector
 A tangent vector $\xi$ in
-$T_x\mathcal M = \{ x^{\frac{1}{2}\nu x^{\frac{1}{2}} \big| \nu\in\mathbb R^{n,n}\text{ with }\nu=\nu^\tT\}$
+$T_x\mathcal M = \{ x^{\frac{1}{2}}\nu x^{\frac{1}{2}}
+\big| \nu\in\mathbb R^{n,n}\text{ with }\nu=\nu^{\mathrm{T}}\}$
 to the manifold $\mathcal M = \mathcal P(n)$ of $n\times n$ symmetric positive
-definite matrices, represented in the redundant way of a skew symmetrymmetric positive definite matrix.
+definite matrices, represented in the redundant way of a skew symmetric
+positive definite matrix.
 """
 struct SPDTVector <: TVector
 	value::Matrix{Float64}
@@ -117,13 +119,15 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 end
 @doc doc"""
     typicalDistance(M)
-returns the typical distance on the [`SymmetricPositiveDefinite`](@ref)` SPD`: $\sqrt\bigl(\frac{n(n+1)}{2}\bigr)$.
+returns the typical distance on the
+[`SymmetricPositiveDefinite`](@ref) manifold
+: $\sqrt{\frac{n(n+1)}{2}}$.
 """
 typicalDistance(M::SymmetricPositiveDefinite) = sqrt(M.dimension);
 @doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
-[`SPDPoint`](@ref) $x\in\mathcal P(n)$ on the [`SymmetricPositiveDefinite`](@ref)` SPD`.
+[`SPDPoint`](@ref) $x\in\mathcal P(n)$ on the [`SymmetricPositiveDefinite`](@ref) manifold.
 """
 zeroTVector(M::SPDPoint, x::SPDPoint) = SPDTVector(  zero( getValue(x) )  );
 # Display

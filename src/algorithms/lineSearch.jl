@@ -27,7 +27,7 @@ function ArmijoLineSearch(problem::GradientProblem{Mc},
   F = problem.costFunction
   M = problem.M
   x = options.x
-  ν = gradF(problem,x)
+  ν = getGradient(problem,x)
   s = options.initialStepsize
   ρ = options.ρ
   c = options.c
