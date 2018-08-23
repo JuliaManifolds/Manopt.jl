@@ -23,6 +23,12 @@ GradientProblem
 getGradient
 ```
 
+### Hessian based problems
+*note that this section is preliminary, there is no Hessian based algorithm yet*
+```@docs
+HessianProblem
+```
+
 ### Proximal Map(s) based problems
 ```@docs
 ProximalProblem
@@ -31,6 +37,13 @@ getProximalMaps
 ```
 
 ## Options
+For most algorithms a certain set of options can either be
+generated beforehand of the function with keywords can be used.
+Generally the type
+```@docs
+Options
+```
+serves as a common base type for the following
 ```@docs
 ArmijoLineSearchOptions
 DouglasRachfordOptions
@@ -39,6 +52,8 @@ LineSearchOptions
 SimpleLineSearchOptions
 ConjugateGradientOptions
 SimpleDirectionUpdateOptions
+TrustRegionOptions
+TrustRegionSubOptions
 ```
 
 # Until I find a better place to reduce errors...

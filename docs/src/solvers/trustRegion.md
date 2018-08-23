@@ -1,0 +1,4 @@
+# Trust Region
+```@docs
+trustRegion
+```

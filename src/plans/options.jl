@@ -189,16 +189,16 @@ end
 #
 """
     TrustRegionOptions <: Options
-stores optional values for a TrustRegionSolver
+stores option values for a [`trustRegion`](@ref) solver
 
 # Fields
 * `maxTrustRadius` – maximal radius of the trust region
 * `minΡAcceopt` – minimal value of `ρ` to still accept a new iterate
 * `retraction` – the retration to use within
 * `stoppingCriterion` – stopping criterion for the algorithm
-* `trustRadius` – current trust region radius
-* `trustRegionSubSolver` - function f(p,x,o) to solve the inner problem with `o` being
-* [`trustRegionSubOptions`](@ref) – options passed to the `trustRegionSubSolver`
+* `TrustRadius` – current trust region radius
+* `TrustRegionSubSolver` - function f(p,x,o) to solve the inner problem with `o` being
+* [`TrustRegionSubOptions`](@ref) – options passed to the trustRegion sub problem solver
 * `x` – initial value of the algorithm
 """
 mutable struct TrustRegionOptions <: Options
@@ -206,23 +206,35 @@ mutable struct TrustRegionOptions <: Options
     minΡAccept::Float64
     retraction::Function
     stoppingCriterion::Function
-    trustRadius::Float64
-    trustRegionSubSolver::Function
-    trustRegionSubOptions::Options
+    TrustRadius::Float64
+    TrustRegionSubSolver::Function
+    TrustRegionSubOptions::Options
     x::P where {P <: MPoint}
     TrustRegionOptions(x,initΔ,maxΔ,minΡ,sC,retr,tRSubF,tRSubO) = new(maxΔ,minΡ,retr,sC,initΔ,tRSubF,tRSubO,x)
 end
-getTrustRadius(o::TrustRegionOptions) = o.trustRadius;
+getTrustRadius(o::TrustRegionOptions) = o.TrustRadius;
 function updateTrustRadius!(o::TrustRegionOptions,newΔ)
-    o.trustRadius = newΔ
+    o.TrustRadius = newΔ
 end
+"""
+    TrustRegionSubOptions
+Options for the internal subsolver of the [`trustRegion`](@ref) algorithm.
+
+# Fields
+- `TrustRadius` : initial radius of the trust region
+- `stoppingCriterion` : a function determining when to stop based
+  on `(iter,x,η,ηnew)`.
+
+# See also
+[`trustRegion`](@ref), [`TrustRegionOptions`](@ref)
+"""
 mutable struct TrustRegionSubOptions <: Options
-    trustRadius::Float64
+    TrustRadius::Float64
     stoppingCriterion::Function
 end
-getTrustRadius(o::TrustRegionSubOptions) = o.trustRadius;
+getTrustRadius(o::TrustRegionSubOptions) = o.TrustRadius;
 function updateTrustRadius!(o::TrustRegionSubOptions,newΔ)
-    o.trustRadius = newΔ
+    o.TrustRadius = newΔ
 end
 
 #

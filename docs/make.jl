@@ -22,7 +22,8 @@ makedocs(
             "Conjugate Gradient Descent" => "solvers/conjugateGradientDescent.md",
             "Cyclic Proximal Point" => "solvers/cyclicProximalPoint.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
-            "Gradient Descent" => "solvers/gradientDescent.md"
+            "Gradient Descent" => "solvers/gradientDescent.md",
+            "Trust Region" => "solvers/trustRegion.md",
         ],
         "Functions" => [
             "Introduction" => "functions/index.md",

@@ -1,7 +1,12 @@
-export trustRegion
+export TrustRegion
+@doc doc"""
+    trustRegion(M,F,∇F,[x])
+perform the trust region algorithm on the [`Manifold`](@ref)` M` for the
+funtion ` F`
+"""
 function trustRegion(M::mT,
         F::Function, ∇F::Function, x::MP=randomPoint(M);
-        trustRegionSubSolver::Function=truncatedConjugateGradient,
+        TrustRegionSubSolver::Function=truncatedConjugateGradient,
         maxTrustRadius = typicalDistance(M),
         initialTrustRadius = maxTrustRadius / 8,
         retraction::Function = exp,
@@ -12,7 +17,7 @@ function trustRegion(M::mT,
         kwargs... #especially may contain debug
     ) where {mT <: Manifold, MP <: MPoint}
     p = GradientProblem(M,F,∇F)
-    o = TrustRegionOptions(x,initTrustRadius, maxTrustRadius,minΡAccept,stoppingCriterion,retraction,trustRegionSubSolver)
+    o = TrustRegionOptions(x,initTrustRadius, maxTrustRadius,minΡAccept,stoppingCriterion,retraction,TrustRegionSubSolver)
     # create default here to check if the user provided a debug and still have the typecheck
     debug::Tuple{Function,Dict{String,Any},Int}= (x::Dict{String,Any}->print(""),Dict{String,Any}(),0);
     kwargs=Dict(kwargs)
@@ -20,7 +25,7 @@ function trustRegion(M::mT,
         debug = kwargs[:debug]
         o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
     end
-    x,r = trustRegion(p,o)
+    x,r = TrustRegion(p,o)
     if returnReason
         return x,r;
     else
@@ -38,8 +43,8 @@ function trustRegion(p::Pr,x::P,o::O) where {Pr <: Union{GradientProblem, Hessia
   Δ = getTrustRadius(o);
   Δmax = getOptions(o).maxTrustRadius;
   ρAccept = getOptions(o).minΡAccept;
-  tRSub = getOptions(o).trustRegionSubSolver;
-  tRSubO = getOptions(o).trustRegionSubOptions;
+  tRSub = getOptions(o).TrustRegionSubSolver;
+  tRSubO = getOptions(o).TrustRegionSubOptions;
   stop = false;
   iter=0;
   while !stop
@@ -65,7 +70,7 @@ function trustRegion(p::Pr,x::P,o::O) where {Pr <: Union{GradientProblem, Hessia
   return x,reason
 end
 
-function trustRegionConjugateGradient(p::Pr,x::P,o::O) where {Pr <: Problem, P <: MPoint, O <: Options}
+function TrustRegionConjugateGradient(p::Pr,x::P,o::O) where {Pr <: Problem, P <: MPoint, O <: Options}
     ηnew = zeroTVector(x); η = ηnew
     rnew = getGradient(p,x); r = newr; δnew = -r
     m = (η,Hη) -> dot(p.M,x,η,r) + 0.5*dot(p.M,x,η,Hη)
