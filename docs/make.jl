@@ -12,6 +12,7 @@ makedocs(
             "The Euclidean Space \$\\mathbb R^n\$" => "manifolds/euclidean.md",
             "The Hyperbolic Space \$\\mathbb H^n\$" => "manifolds/hyperbolic.md",
             "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",
+            "The Symmetric Positive Definite Matrices \$\\mathbb P(n)\$" => "manifolds/symmetricpositivedefinite.md",
         ],
         "Plans" => [
             "Introduction" => "plans/index.md"
