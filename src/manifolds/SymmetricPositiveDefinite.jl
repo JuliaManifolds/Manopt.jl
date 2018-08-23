@@ -6,7 +6,7 @@
 # ---
 # Manopt.jl - Ronny Bergmann - 2017-07-06
 
-import LinearAlgebra: svd, norm, dot, Diagonal, eigen
+import LinearAlgebra: svd, norm, dot, Diagonal, eigen, tr
 import Base: exp, log, show
 
 export SymmetricPositiveDefinite, SPDPoint, SPDTVector, show
@@ -58,6 +58,15 @@ getValue(ξ::SPDTVector) = ξ.value
 @traitimpl IsMatrixV{SPDTVector}
 # Functions
 # ---
+@doc doc"""
+	distance(M,x,y)
+Compute the Riemannian distance on $\mathcal M=\mathcal P(n)$ can be computed as
+
+$ d_{\mathcal P(n)}(x,y) = \lVert \operatorname{Log}(x^{-\frac{1}{2}}yx^{-\frac{1}{2}})\rVert, $
+
+where $\operatorname{Log}$ denotes the matrix logarithm and the Norm is the Frobenius norm
+in matrices
+"""
 distance(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint) = sqrt(sum(log.(abs.(eigen(getValue(x), getValue(y) ).values)).^2))
 function dot(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, ν::SPDTVector)
 	svd1 = svd( getValue(x) )
@@ -66,6 +75,29 @@ function dot(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, ν::SPDT
 	SInv = Matrix(  Diagonal( 1 ./ diag(S) )  )
 	return trace(getValue(ξ) * U*SInv*transpose(U)*getValue(ν)*U*SInv*transpose(U) )
 end
+@doc doc"""
+    dot(M,x,ξ,ν)
+compute the innter product of the two [`SPDTVector`](@ref)`s ξ,ν` from the tangent
+space $T_x\mathcal M$ of the [`SPDPoint`](@ref)` x` on the
+[`SymmetricPositiveDefinite`](@ref) given by the formula
+
+$ \langle \xi, \nu \rangle_x = \operatorname{tr}(x^{-1}\xi x^{-1}\nu ),$
+
+where $\operatorname{tr}(y)$ denotes the trace of the matrix $y$.
+"""
+dot(M,x,ξ,ν) = tr( (x\ξ)*(x\ν) ) #use \ instead of inversion
+
+@doc doc"""
+    exp(M,x,ξ,[t=1.0])
+Compute the exponential map on the [`SymmetricPositiveDefinite`](@ref)
+` M`$=\mathcal P(n)$ with respect to the [`SPDPoint`](@ref)` x` and the
+[`SPDTVector`](@ref)` ξ`, which can be shortened with `t` to `tξ`.
+The formula reads
+
+$\exp_x\xi = x^{\frac{1}{2}}\operatorname{Exp}(x^{-\frac{1}{2}}\xi x^{-\frac{1}{2}})x^{\frac{1}{2}},$
+
+where $\operatorname{Exp}$ denotes the matrix exponential
+"""
 function exp(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, t::Float64=1.0)
 	svd1 = svd( getValue(x) );
 	U = svd1.U;
@@ -79,6 +111,18 @@ function exp(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, t::Float
   	Ue = svd2.U
 	return SPDPoint(pSqrt*Ue*Se*transpose(Ue)*pSqrt)
 end
+@doc doc"""
+    log(M,x,y)
+Compute the logarithmic map on the [`SymmetricPositiveDefinite`](@ref)
+$\mathcal M=\mathcal P(n)$, i.e. the [`SPDTVector`](@ref) whose corresponding
+[`geodesic`](@ref) starting from [`SPDPoint`](@ref)` x` reaches the
+[`SPDPoint`](@ref)` y` after time 1 on the [`SymmetricPositiveDefinite`](@ref)` M`.
+The formula reads for
+
+$\log_x y = x^{\frac{1}{2}}\operatorname{Log}(x^{-\frac{1}{2}} y x^{-\frac{1}{2}})x^{\frac{1}{2}},$
+
+where $\operatorname{Log}$ denotes the matrix logarithm.
+"""#
 function log(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
 	svd1 = svd( getValue(x) )
 	U = svd1.U
@@ -94,9 +138,49 @@ function log(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
 	ξ = pSqrt*Ue*Se*transpose(Ue)*pSqrt
 	return SPDTVector(ξ)
 end
+@doc doc"""
+    manifoldDimension(M)
+returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)
+manifold `M`, i.e. for $n\times n$ matrices the dimension
+is $d_{\mathcal P(n)} = \frac{n(n+1)}{2}$.
+"""
 manifoldDimension(M::SymmetricPositiveDefinite) = M.dimension
+@doc doc"""
+    manifoldDimension(x)
+returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)
+manifold the [`SPDPoint`](@ref)` x` belongs to,
+i.e. for $n\times n$ matrices the dimension is
+$d_{\mathcal P(n)} = \frac{n(n+1)}{2}$.
+"""
 manifoldDimension(x::SPDPoint) = size( getValue(x), 1)*(size( getValue(x), 1)+1)/2
+@doc doc"""
+    norm(M,x,ξ)
+Computes the norm of the [`SPDTVector`](@ref)` ξ` from the tangent space $T_x\mathcal M$
+at the [`SPDPoint`](@ref)` x` on the [`SymmetricPositiveDefinite`](@ref) manifold `M`
+induced by the inner product [`dot`](@ref) as $\lVert\xi\rVert_x = \sqrt{\langle\xi,\xi\rangle_x}$.
+"""
 norm(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector) = sqrt(dot(M,x,ξ,ξ) )
+@doc doc"""
+    parallelTransport(M,x,y,ξ)
+Compute the paralllel transport of the [`SPDTVector`](@ref)` ξ` from
+the tangent space $T_x\mathcal M$ at [`SPDPoint`](@ref)` x` to
+$T_y\mathcal M$ at [`SPDPoint`](@ref)` y` on the [`SymmetricPositiveDefinite`](@ref)` M`
+along the [`geodesic`](@ref) $g(\cdot;x,y)$.
+The formula reads
+
+$P_{x\to y}(\xi) = x^{\frac{1}{2}}
+\operatorname{Exp}\bigl(
+\frac{1}{2}x^{-\frac{1}{2}}\log_x(y)x^{-\frac{1}{2}}
+\bigr)
+x^{-\frac{1}{2}}\xi x^{-\frac{1}{2}}
+\operatorname{Exp}\bigl(
+\frac{1}{2}x^{-\frac{1}{2}}\log_x(y)x^{-\frac{1}{2}}
+\bigr)
+x^{\frac{1}{2}},$
+
+where $\operatorname{Exp}$ denotes the matrix exponential
+and `log` the logarithmic map.
+"""
 function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,ξ::SPDTVector)
 	svd1 = svd( getValue(x) )
 	U = svd1.U

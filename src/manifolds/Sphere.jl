@@ -64,7 +64,7 @@ getValue(ξ::SnTVector) = ξ.value;
 @doc doc"""
     distance(M,x,y)
 Compute the Riemannian distance on $\mathcal M=\mathbb S^n$ embedded in
-$\mathbb R^{n+1}$ can be computed as
+$\mathbb R^{n+1}$, which is given by
 
 $ d_{\mathbb S^n}(x,y) = \operatorname{acos} \bigl(\langle x,y\rangle\bigr), $
 
