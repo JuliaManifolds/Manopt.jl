@@ -4,7 +4,7 @@
 # that steer the solver (indipendent of the problem at hand)
 #
 export Options
-export ArmijoLineSearchOptions, ArmijoDescentDirectionLineSearchOptions, LineSearchOptions
+export ArmijoLineSearchOptions, LineSearchOptions
 export GradientDescentOptions, getStepSize
 export CyclicProximalPointOptions
 export ConjugateGradientOptions
@@ -37,13 +37,14 @@ especially with a search direction along the negative gradient.
 a default value is given in brackets. For `ρ` and `c`, only `c` can be left
 out but not `ρ``.
 * `x` : an [`MPoint`](@ref).
-* ìnitialStepsize` : (`1.0`) and initial step size
+* `direction` : (optional, can be `missing`) an [`TVector`](@ref).
+* `initialStepsize` : (`1.0`) and initial step size
 * `retraction` : ([`exp`](@ref) the rectraction used in line search
 * `ρ` : exponent for line search reduction
 * `c` : gain within Armijo's rule
 
 # See also
-[`ArmijoLineSearch`](@ref), [`ArmijoDescentDirectionLineSearchOptions`](@ref)
+[`ArmijoLineSearch`](@ref)
 """
 mutable struct ArmijoLineSearchOptions <: LineSearchOptions
     x::P where {P <: MPoint}
@@ -51,38 +52,9 @@ mutable struct ArmijoLineSearchOptions <: LineSearchOptions
     retraction::Function
     ρ::Float64
     c::Float64
-    ArmijoLineSearchOptions(x::P where {P <: MPoint}, s::Float64=1.0,r::Function=exp,ρ::Float64=0.5,c::Float64=0.0001) = new(x,s,r,ρ,c)
-end
-"""
-    ArmijoDescentDirectionLineSearchOptions <: LineSearchOptions
-A subtype of `LineSearchOptions` referring to an Armijo based line search,
-searching along a specified direction.
-
-# Fields
-a default value is given in brackets. For `ρ` and `c`, only `c` can be left
-out but not `ρ``.
-* `x` : an [`MPoint`](@ref).
-* ìnitialStepsize` : (`1.0`) and initial step size
-* `retraction` : ([`exp`](@ref)) the rectraction used in line search
-* `ρ` : (`0.5`) exponent for line search reduction
-* `c` : (`0.0001`)gain within Armijo's rule
-* `direction` : direction to search along
-
-*Might be unified to `ArmijoLineSearchOptions` with Julia 0.7 and `missing`
-values.*
-
-# See also
-[`ArmijoLineSearch`](@ref), [`ArmijoLineSearchOptions`](@ref)
-"""
-mutable struct ArmijoDescentDirectionLineSearchOptions <: LineSearchOptions
-    x::P where {P <: MPoint}
-    initialStepsize::Float64
-    retraction::Function
-    ρ::Float64
-    c::Float64
-    direction::T where {T <: TVector}
-    ArmijoDescentDirectionLineSearchOptions(x::P where {P <: MPoint},d::T where {T <: TVector}, s::Float64=1.0,r::Function=exp,ρ::Float64=0.5,c::Float64=0.0001) = new(x,s,r,ρ,c,d)
-    ArmijoDescentDirectionLineSearchOptions(o::ArmijoLineSearchOptions,d::T where {T <: TVector})  = new(o.x,o.initialStepsize,o.retraction,o.ρ,o.c,d)
+    direction::Union{Missing,T where {T <: TVector}}
+    ArmijoLineSearchOptions(x::P where {P <: MPoint}, s::Float64=1.0,r::Function=exp,ρ::Float64=0.5,c::Float64=0.0001) = new(x,s,r,ρ,c,missing)
+    ArmijoLineSearchOptions(x::P where {P <: MPoint}, ξ::T where {T <: TVector}, s::Float64=1.0,r::Function=exp,ρ::Float64=0.5,c::Float64=0.0001) = new(x,s,r,ρ,c)
 end
 """
     GradientDescentOptions{P,L} <: Options

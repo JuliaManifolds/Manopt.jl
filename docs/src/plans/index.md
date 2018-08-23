@@ -10,9 +10,13 @@ Since the `options` directly relate to a solver, they are documented with the
 corresponding [Solvers](@ref) for now.
 
 ## Problems
+A problem usually contains its cost function and provides and
+implementation to access the cost
 ```@docs
 Problem
+getCost
 ```
+
 ### Gradient based problems
 ```@docs
 GradientProblem
@@ -20,7 +24,6 @@ getGradient
 ```
 
 ### Proximal Map(s) based problems
-
 ```@docs
 ProximalProblem
 getProximalMap
@@ -33,7 +36,6 @@ GradientDescentOptions
 LineSearchOptions
 SimpleLineSearchOptions
 ArmijoLineSearchOptions
-ArmijoDescentDirectionLineSearchOptions
 ConjugateGradientOptions
 SimpleDirectionUpdateOptions
 ```

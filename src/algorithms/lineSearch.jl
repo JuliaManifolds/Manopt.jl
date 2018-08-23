@@ -22,7 +22,7 @@ export ArmijoLineSearch
       s - the resulting stepsize
 """
 function ArmijoLineSearch(problem::GradientProblem{Mc},
-    options::ArmijoDescentDirectionLineSearchOptions)::Float64 where {Mc<:Manifold}
+    options::ArmijoLineSearchOptions)::Float64 where {Mc<:Manifold}
   # for local shortness
   F = problem.costFunction
   M = problem.M
@@ -32,7 +32,11 @@ function ArmijoLineSearch(problem::GradientProblem{Mc},
   ρ = options.ρ
   c = options.c
   retr = options.retraction
-  ξ = options.direction
+  if ismissing(options.direction)
+    ξ = -ν
+  else
+    ξ = options.direction
+  end
   e = F(x)
   eNew = e-1
 
@@ -50,5 +54,3 @@ function ArmijoLineSearch(problem::GradientProblem{Mc},
   end
   return s
 end
-ArmijoLineSearch(problem::GradientProblem{Mc} where {Mc<:Manifold}, options::LineSearchOptions)::Float64  = ArmijoLineSearch(problem,
-    ArmijoDescentDirectionLineSearchOptions(options,-gradF(problem, options.x)) )

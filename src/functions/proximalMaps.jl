@@ -53,7 +53,7 @@ parameter `λ`.
 # Input
 * `M`     : a manifold
 * `λ`     : a real value, parameter of the proximal map
-* `(x,y)` : a tuple of `MPoints`, `x,y`
+* `(x1,x2)` : a tuple of two [`MPoints`](@ref),
 
 # Optional
 (default is given in brackets)
@@ -77,3 +77,22 @@ function proxTV(M::mT,λ::Number, pointTuple::Tuple{T,T},p::Int=1)::Tuple{T,T} w
   end
   return (  exp(M, x1, log(M,x1,x2), t), exp(M, x2, log(M, x2, x1), t)  );
 end
+@doc doc"""
+    (y1,y2) = proxTV2(M,λ,(x1,x2),[p])
+Compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ of
+$\varphi(x,y) = d_{\mathcal M}^p(c(x,z),y)$ with
+parameter `λ`>0, where $c(x,z)$ denotes the mid point of a shortest
+geodesic from x1 to x3.
+
+# Input
+* `M`     : a manifold
+* `λ`     : a real value, parameter of the proximal map
+* `(x,y)` : a tuple of `MPoints`, `x,y`
+
+# Optional
+(default is given in brackets)
+* `p` : (1) exponent of the distance of the TV term
+
+# Ouput
+* (y1,y2) : resulting tuple of `MPoints` of the $\operatorname{prox}_{\lambda\varphi}($ `(x1,x2)` $)$
+"""
