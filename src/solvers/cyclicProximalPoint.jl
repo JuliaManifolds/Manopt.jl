@@ -32,14 +32,15 @@ the default values are given in brackets
 function cyclicProximalPoint(M::Mc,
         F::Function, proximalMaps::Array{Function,N} where N, x::MP;
         evaluationOrder::EvalOrder = LinearEvalOrder(),
-        stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached." : "Minimal change small enough."),
-        λ = iter -> 1/iter,
+        stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499,
+            (i>499) ? "max Iter $(i) reached." : ( (distance(M,x,xnew) < 10.0^-8) ? "Minimal change small enough." : "" )),
+        λ = iter -> typicalDistance(M)/iter,
         returnReason=false,
         kwargs... #especially may contain debug
     ) where {Mc <: Manifold, MP <: MPoint}
     # TODO Test Input
-    p = getProximalProblem(M,F,proximalMaps)
-    o = CyclicProximalPointOptions(x,stoppingCriterion,λ,evaluationOrder,lineSearch[1],lineSearch[2])
+    p = ProximalProblem(M,F,proximalMaps)
+    o = CyclicProximalPointOptions(x,stoppingCriterion,λ,evaluationOrder)
     # create default here to check if the user provided a debug and still have the typecheck
     debug::Tuple{Function,Dict{String,Any},Int}= (x::Dict{String,Any}->print(""),Dict{String,Any}(),0);
     kwargs=Dict(kwargs)
@@ -64,20 +65,21 @@ function cyclicProximalPoint(p::P,o::O) where {P<:ProximalProblem, O<:CyclicProx
     M = p.M
     stop = false; iter = 0;
     c = length(p.proximalMaps);
-    order = updateOrder(c,0,collect(1:c),o.OrderType)
+    order = updateOrder(c,0,collect(1:c),o.orderType)
     xnew = x;
+    reason=""
     while !stop
         iter += 1
-        order = updateOrder(c,iter,order,o.OrderType)
+        order = updateOrder(c,iter,order,o.orderType)
         λi = o.λ(iter)
         for k=order
             xnew = getProximalMap(p,λi,xnew,k)
         end
-        stop, reason = evaluateStoppingCriterion(o,iter,x,xnew,λ)
-        cPPDebug(o,iter,x,xnew,λ,reason)
+        stop, reason = evaluateStoppingCriterion(o,iter,x,xnew,λi)
+        cPPDebug(o,iter,x,xnew,λi,reason)
         x = xnew
     end
-    return x,reason
+    return x, reason
 end
 updateOrder(n,i,o,::LinearEvalOrder) = o
 updateOrder(n,i,o,::RandomEvalOrder) = collect(1:n)[randperm(length(X))]

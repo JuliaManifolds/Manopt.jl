@@ -26,6 +26,7 @@ module Manopt
   include("manifolds/Sphere.jl")
   # Functions
   include("functions/adjointDifferentials.jl")
+  include("functions/costFunctions.jl")
   include("functions/differentials.jl")
   include("functions/gradients.jl")
   include("functions/jacobiFields.jl")
@@ -49,4 +50,5 @@ module Manopt
   include("helpers/debugFunctions.jl")
   # data
   include("data/artificialDataFunctions.jl")
+  include("data/signals.jl")
 end

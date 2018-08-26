@@ -61,7 +61,7 @@ where $n\sim \mathcal N(0,\sigma)$ is a zero-mean Gaussian random variable
 of standard deviation `σ`
 and $(\cdot)_{2\pi}$ is the symmetric remainder modulo $2\pi$, see [`symRem`](@ref).
 """
-addNoise(M::Circle, x::S1Point,σ::Real) = S1Point( symRem(getValue(x)-pi+σ*randn()) )
+addNoise(M::Circle, x::S1Point,σ::Real) = S1Point( symRem(getValue(x)+σ*randn()) )
 @doc doc"""
     distance(M,x,y)
 the distance of two cyclic data items is given by $\lvert (x-y)_{2\pi} \rvert $,
@@ -142,6 +142,6 @@ show(io::IO, ξ::S1TVector) = print(io, "S1T($( getValue(ξ) ))");
 symmetric remainder of `x` with respect to the interall 2*`T`, i.e.
 `(x+T)%2T`, where the default for `T` is $\pi$
 """
-function symRem(x::Float64, T::Float64=Float64(pi))::Float64
-  return (x+T)%(2*T) - T
+function symRem(x::Float64, T::Float64=Float64(π))::Float64
+  return rem(x, 2*T,RoundNearest)
 end

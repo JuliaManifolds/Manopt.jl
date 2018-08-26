@@ -99,7 +99,7 @@ from `x`to `y` on the manifold `M`.
 """
 function geodesic(M::mT, x::T,y::T,n::Integer)::Vector{T} where {mT <: Manifold, T <: MPoint}
   geo = geodesic(M,x,y);
-  return [geo(t) for t in linspace(0.,1.,n)]
+  return [geo(t) for t in range(0., stop=1.,length=n)]
 end
 """
     geodesic(M,x,y,t)

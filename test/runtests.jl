@@ -3,7 +3,9 @@ using Test
 tests = ["testSn","testSPD",
           "testProximalMaps",
           "testGraphConstruction",
-          "testGradDesc"]
+          "testGradDesc",
+          "testProximalMaps"
+          ]
 
 @testset "Manopt Tests" begin
   for t in tests

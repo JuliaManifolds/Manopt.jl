@@ -26,9 +26,8 @@ parameter λ of $\varphi(x) = d_{\mathcal M}^p(f,x)$.
 # Ouput
 * `y` : the proximal map of $\varphi$
 """
-proxDistance(M::mT,λ::Number,f::T,x::T) where {mT <: Manifold, T <: MPoint} = proxDistance(M,λ,f,x,2)
-function proxDistance(M::mT,λ::Number,f::T,x::T,p::Int) where {mT <: Manifold, T <: MPoint}
-  d = distance(M,p,q)
+function proxDistance(M::mT,λ::Number,f::T,x::T,p::Int=2) where {mT <: Manifold, T <: MPoint}
+  d = distance(M,f,x)
   if p==2
     t =  λ/(1+λ);
   elseif p==1
@@ -42,7 +41,7 @@ function proxDistance(M::mT,λ::Number,f::T,x::T,p::Int) where {mT <: Manifold, 
         "Proximal Map of distance(M,f,x) not implemented for $(p) (requires p=1 or 2)"
       ))
   end
-  return exp(M,x,f,t);
+  return exp(M,x,log(M,x,f),t);
 end
 @doc doc"""
     (y1,y2) = proxTV(M,λ,(x1,x2),[p])
@@ -72,10 +71,46 @@ function proxTV(M::mT,λ::Number, pointTuple::Tuple{P,P},p::Int=1)::Tuple{P,P} w
     t = λ/(1+2*λ);
   else
     throw(ErrorException(
-      "Proximal Map of TV(M,x1,x2) not implemented for $(p) (requires p=1 or 2)"
+      "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)"
     ))
   end
-  return (  exp(M, x1, log(M,x1,x2), t), exp(M, x2, log(M, x2, x1), t)  );
+  return (  exp(M, x1, log(M, x1, x2), t), exp(M, x2, log(M, x2, x1), t)  );
+end
+@doc doc"""
+    ξ = proxTV(M,λ,x,[p])
+Compute the proximal maps $\operatorname{prox}_{\lambda\varphi}$ of
+all forward differences orrucirng in the power manifold array, i.e.
+$\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)$ with `xi` and `xj` being array
+elemets of `x` and `j = i+e_k`, where `e` is the $k$th unitvector.
+The parameter `λ` is the prox parameter.
+
+# Input
+* `M`     : a manifold
+* `λ`     : a real value, parameter of the proximal map
+* `x`    : a a [`PowPoint`](@ref).
+
+# Optional
+(default is given in brackets)
+* `p` : (1) exponent of the distance of the TV term
+
+# Ouput
+* y : resulting of [`PowPoint`](@ref) with all mentioned proximal points evaluated (in a cylic order).
+"""
+function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
+  R = CartesianIndices(M.dims)
+  d = length(M.dims)
+  maxInd = last(R)
+  y = copy(x)
+  for k in 1:d # for all directions
+    ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+    for i in R # iterate over all pixel
+      j = i+ek # compute neighbor
+      if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
+        (y[i],y[j]) = proxTV( M.manifold,λ,(y[i],y[j]) ) # Compute TV on these
+      end
+    end
+  end
+  return y
 end
 @doc doc"""
     (y1,y2) = proxTV2(M,λ,(x1,x2),[p])
@@ -105,7 +140,7 @@ function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=
   w = [1., -2. ,1. ]
   x = getValue.(pointTuple)
   if p==1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
-    m = min(  λ, abs(  symRem( sum( x.* w  ) )   )/(dot(w,w))  )
+    m = min(  λ, abs(  symRem( sum( x .* w  ) )   )/(dot(w,w))  )
     s = sign.( x .* w )
     return Tuple( S1Point.( SymRem.( x  .-  m .* s .* w ) ) )
   elseif p==2 # Theorem 3.6 ibd.
@@ -113,7 +148,7 @@ function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=
     return Tuple(  S1Point.( SymRem.( x - t.*w ) )  )
   else
     throw(ErrorException(
-      "Proximal Map of TV(M,x1,x2) not implemented for $(p) (requires p=1 or 2)"
+      "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)"
     ))
   end
 end

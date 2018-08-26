@@ -2,6 +2,7 @@
 # Define a global problem and ist constructors
 #
 # ---
+import Random: randperm
 export getGradient, getCost, getHessian, getProximalMap, getProximalMaps
 export Problem, GradientProblem, ProximalProblem, HessianProblem
 
@@ -121,7 +122,7 @@ getProximalMaps(p::P,λ,x::MP) where {P <: ProximalProblem{M} where M <: Manifol
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
 function getProximalMap(p::P,λ,x::MP,i) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}
-    if i>len(p.proximalMaps)
+    if i>length(p.proximalMaps)
         ErrorException("the $(i)th entry does not exists, only $(len(p.proximalMaps)) available.")
     end
     return p.proximalMaps[i].(λ,x);

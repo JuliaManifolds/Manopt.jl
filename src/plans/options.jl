@@ -154,7 +154,7 @@ mutable struct CyclicProximalPointOptions <: Options
     stoppingCriterion::Function
     λ::Function
     orderType::EvalOrder
-    CyclicProximalPointOptions(x0::P where {P <: MPoint},sC::Function,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) = new(M,x0,sC,λ,o)
+    CyclicProximalPointOptions(x0::P where {P <: MPoint},sC::Function,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) = new(x0,sC,λ,o)
 end
 """
     DouglasRachfordOptions <: Options
