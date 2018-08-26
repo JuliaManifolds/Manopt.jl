@@ -17,7 +17,7 @@ parameter λ of $\varphi(x) = d_{\mathcal M}^p(f,x)$.
 # Input
 * `M` a manifold $\mathcal M$
 * `λ` the prox parameter
-* `f` an [`MPoint`](@ref) $f\in\mathcal M$
+* `f` an [`MPoint`](@ref) $f\in\mathcal M$ (the data)
 * `x` the argument of the proximal map
 
 # Optional argument
@@ -103,13 +103,17 @@ function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
   y = copy(x)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-    for i in R # iterate over all pixel
-      j = i+ek # compute neighbor
-      if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-        (y[i],y[j]) = proxTV( M.manifold,λ,(y[i],y[j]) ) # Compute TV on these
-      end
-    end
-  end
+    for l in 0:1
+      for i in R # iterate over all pixel
+        if (i[k] % 2) == l
+          j = i+ek # compute neighbor
+          if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
+            (y[i],y[j]) = proxTV( M.manifold,λ,(y[i],y[j]) ) # Compute TV on these
+          end
+        end
+      end # i in R
+    end # even odd
+  end # directions
   return y
 end
 @doc doc"""

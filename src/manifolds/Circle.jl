@@ -122,7 +122,7 @@ parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
     typicalDistance(M)
 returns the typical distance on the [`Circle`](@ref)` M`: π.
 """
-typicalDistance(M::Circle) = π;
+typicalDistance(M::Circle) = π/2;
 
 @doc doc"""
     ξ = zeroTVector(M,x)

@@ -80,8 +80,8 @@ function steepestDescent(p::P, o::O) where {P <: GradientProblem, O <: Options}
         xnew = getOptions(o).retraction(M,x,-s*ξ)
         iter=iter+1
         (stop, reason) = evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
-        gradDescDebug(o,iter,x,xnew,ξ,s,reason);
-        x=xnew;
+        gradDescDebug(o,iter,x,xnew,ξ,s,reason)
+        x=xnew
     end
     return x,reason
 end

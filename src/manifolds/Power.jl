@@ -70,7 +70,7 @@ dot(M::Power, x::PowPoint, ξ::PowTVector, ν::PowTVector) = sum(dot.(Ref(M.mani
     exp(M,x,ξ)
 computes the product exponential map on the [`Power`](@ref) and returns the corresponding [`PowPoint`](@ref).
 """
-exp(M::Power, x::PowPoint, ξ::PowTVector, t::Number=1.0) = PowPoint( exp.(Ref(M.manifold), getValue(x) , getValue(ξ) ))
+exp(M::Power, x::PowPoint, ξ::PowTVector, t::Number=1.0) = PowPoint( exp.(Ref(M.manifold), getValue(x) , getValue(ξ),t))
 
 """
    log(M,x,y)

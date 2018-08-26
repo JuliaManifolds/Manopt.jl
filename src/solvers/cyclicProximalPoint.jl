@@ -32,8 +32,10 @@ the default values are given in brackets
 function cyclicProximalPoint(M::Mc,
         F::Function, proximalMaps::Array{Function,N} where N, x::MP;
         evaluationOrder::EvalOrder = LinearEvalOrder(),
-        stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499,
-            (i>499) ? "max Iter $(i) reached." : ( (distance(M,x,xnew) < 10.0^-8) ? "Minimal change small enough." : "" )),
+        stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-8 || i > 4999,
+            (i>4999) ? "max Iter $(i) reached." :
+            ( (distance(M,x,xnew) < 10.0^-8) ? "#$(i) | Minimal change ($(distance(M,x,xnew))) small enough." :
+            "" )),
         λ = iter -> typicalDistance(M)/iter,
         returnReason=false,
         kwargs... #especially may contain debug
@@ -60,22 +62,23 @@ end
 compute a cyclic proximal point algorithm (CPPA) for the
 [`ProximalProblem`](@ref)` p` and [`CyclicProximalPointOptions`](@ref)` o`.
 """
-function cyclicProximalPoint(p::P,o::O) where {P<:ProximalProblem, O<:CyclicProximalPointOptions}
-    x = o.x0
+function cyclicProximalPoint(p::P,o::O) where {P<:ProximalProblem, O<:Options}
+    lO = getOptions(o);
+    x = lO.x0
     M = p.M
     stop = false; iter = 0;
     c = length(p.proximalMaps);
-    order = updateOrder(c,0,collect(1:c),o.orderType)
+    order = updateOrder(c,0,collect(1:c),lO.orderType)
     xnew = x;
-    reason=""
+    reason::String="";
     while !stop
         iter += 1
-        order = updateOrder(c,iter,order,o.orderType)
-        λi = o.λ(iter)
+        order = updateOrder(c,iter,order,lO.orderType)
+        λi = lO.λ(iter)
         for k=order
             xnew = getProximalMap(p,λi,xnew,k)
         end
-        stop, reason = evaluateStoppingCriterion(o,iter,x,xnew,λi)
+        stop, reason = evaluateStoppingCriterion(lO,iter,x,xnew,λi)
         cPPDebug(o,iter,x,xnew,λi,reason)
         x = xnew
     end
