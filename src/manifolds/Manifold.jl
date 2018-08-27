@@ -81,7 +81,7 @@ Compute the (geodesic) mid point of x and y.
 # Output
 * `m` – resulting mid point
 """
-function midPoint(M::mT,x::T, y::T)::T where {mT <: Manifold, T <: MPoint}
+function midPoint(M::mT,x::T, y::T, nearTo::T=missing)::T where {mT <: Manifold, T <: MPoint}
   return exp(M,x,0.5*log(x,y))
 end
 """

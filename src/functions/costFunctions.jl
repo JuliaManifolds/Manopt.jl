@@ -1,11 +1,13 @@
 export costL2TV, costTV
 
 costL2TV(M::Power,f::PowPoint,x::PowPoint,α::Number) =
-  1/2*distance(M,f,x).^2 + α*costTV(M,x)
+  1/2*distance(M,f,x)^2 + α*costTV(M,x)
 
 costL2TV1plusTV2(M::Power,f::PowPoint,x::PowPoint,α::Number,β::Number) =
-  1/2*distance(M,f,x).^2 + α*costTV(M,x) + β*costTV2(M,x)
+  1/2*distance(M,f,x)^2 + α*costTV(M,x) + β*costTV2(M,x)
 
+costL2TV2(M::Power,f::PowPoint,x::PowPoint,β::Number) =
+    1/2*distance(M,f,x)^2 + β*costTV2(M,x)
 
 function costTV(M::mT,λ::Number,pointTuple::Tuple{P,P},p::Int=1) where {mT <: Manifold, P <: MPoint}
   return distance(M,pointTuple[1],pointTuple[2])^p

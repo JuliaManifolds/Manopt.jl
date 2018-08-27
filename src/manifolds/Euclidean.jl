@@ -45,7 +45,6 @@ struct RnTVector <: TVector
   RnTVector(value::Vector) = new(value)
   RnTVector(value::Number) = new([value])
 end
-getValue(ξ::RnTVector) = ξ.value
 getValue(ξ::RnTVector) = length(ξ.value)==1 ? ξ.value[1] : ξ.value
 
 # Traits
