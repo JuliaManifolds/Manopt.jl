@@ -46,8 +46,9 @@ module Manopt
   # Plots
   include("plots/SpherePlots.jl")
   # helpers
-  include("helpers/imageHelpers.jl")
   include("helpers/debugFunctions.jl")
+  include("helpers/errorMeasures.jl")
+  include("helpers/imageHelpers.jl")
   # data
   include("data/artificialDataFunctions.jl")
   include("data/signals.jl")

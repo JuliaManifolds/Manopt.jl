@@ -7,12 +7,12 @@
 # ---
 # Manopt.jl - R. Bergmann – 2017-07-06
 
-export proxDistance, proxTV, proxDistanceSquared, proxTVSquared
+export proxDistance, proxTV, proxTV2
 
 @doc doc"""
     y = proxDistance(M,λ,f,x,[p]) -
 compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ with
-parameter λ of $\varphi(x) = d_{\mathcal M}^p(f,x)$.
+parameter λ of $\varphi(x) = \frac{1}{p}d_{\mathcal M}^p(f,x)$.
 
 # Input
 * `M` a manifold $\mathcal M$
@@ -80,8 +80,8 @@ end
     ξ = proxTV(M,λ,x,[p])
 Compute the proximal maps $\operatorname{prox}_{\lambda\varphi}$ of
 all forward differences orrucirng in the power manifold array, i.e.
-$\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)$ with `xi` and `xj` being array
-elemets of `x` and `j = i+e_k`, where `e` is the $k$th unitvector.
+$\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)$ with `xi` and `xj` are array
+elemets of `x` and `j = i+e_k`, where `e_k` is the $k$th unitvector.
 The parameter `λ` is the prox parameter.
 
 # Input
@@ -94,7 +94,8 @@ The parameter `λ` is the prox parameter.
 * `p` : (1) exponent of the distance of the TV term
 
 # Ouput
-* y : resulting of [`PowPoint`](@ref) with all mentioned proximal points evaluated (in a cylic order).
+* y : resulting of [`PowPoint`](@ref) with all mentioned proximal
+  points evaluated (in a cylic order).
 """
 function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
   R = CartesianIndices(M.dims)
@@ -108,7 +109,7 @@ function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
         if (i[k] % 2) == l
           j = i+ek # compute neighbor
           if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-            (y[i],y[j]) = proxTV( M.manifold,λ,(y[i],y[j]) ) # Compute TV on these
+            (y[i],y[j]) = proxTV( M.manifold,λ,(y[i],y[j]),p) # Compute TV on these
           end
         end
       end # i in R
@@ -133,7 +134,8 @@ geodesic from x1 to x3.
 * `p` : (1) exponent of the distance of the TV term
 
 # Ouput
-* (y1,y2,y3) : resulting tuple of [`MPoint`](@ref)s of the $\operatorname{prox}_{\lambda\varphi}($ `(x1,x2,x3)` $)$
+* (y1,y2,y3) : resulting tuple of [`MPoint`](@ref)s of the
+$\operatorname{prox}_{\lambda\varphi}($ `(x1,x2,x3)` $)$
 """
 function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1)::Tuple{P,P,P} where {mT <: Manifold, P <: MPoint}
   throw(ErrorException(
@@ -144,15 +146,56 @@ function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=
   w = [1., -2. ,1. ]
   x = getValue.(pointTuple)
   if p==1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
-    m = min(  λ, abs(  symRem( sum( x .* w  ) )   )/(dot(w,w))  )
-    s = sign.( x .* w )
-    return Tuple( S1Point.( SymRem.( x  .-  m .* s .* w ) ) )
+    m = min(   λ, abs(  symRem( sum( x .* w  ) )  )/(dot(w,w))   )
+    s = sign.( symRem(sum(x .* w)) )
+    return Tuple( S1Point.( symRem.( x  .-  m .* s .* w ) ) )
   elseif p==2 # Theorem 3.6 ibd.
-    t = λ * SymRem( sum( x .* w ) ) ./ (1 + λ*dot(w,w) )
-    return Tuple(  S1Point.( SymRem.( x - t.*w ) )  )
+    t = λ * symRem( sum( x .* w ) ) ./ (1 + λ*dot(w,w) )
+    return Tuple(  S1Point.( symRem.( x - t.*w ) )  )
   else
     throw(ErrorException(
       "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)"
     ))
   end
+end
+@doc doc"""
+    ξ = proxTV2(M,λ,x,[p])
+Compute the proximal maps $\operatorname{prox}_{\lambda\varphi}$ of
+all centered second order differences orrucirng in the power manifold array, i.e.
+$\varphi(xk,xi,xj) = d_{\mathcal M}^p(xi,xj)$ with `xk` and `xj` are array
+elemets of `x` and `j = i+e_k`, `k = i+e_k` where `e_k` is the $k$th unitvector.
+The parameter `λ` is the prox parameter.
+
+# Input
+* `M`     : a manifold
+* `λ`     : a real value, parameter of the proximal map
+* `x`    : a a [`PowPoint`](@ref).
+
+# Optional
+(default is given in brackets)
+* `p` : (1) exponent of the distance of the TV term
+
+# Ouput
+* y : resulting of [`PowPoint`](@ref) with all mentioned proximal points evaluated (in a cylic order).
+"""
+function proxTV2(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
+  R = CartesianIndices(M.dims)
+  d = length(M.dims)
+  minInd, maxInd = first(R), last(R)
+  y = copy(x)
+  for k in 1:d # for all directions
+    ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+    for l in 0:2
+      for i in R # iterate over all pixel
+        if (i[k] % 3) == l
+          jF = i+ek # compute forward neighbor
+          jB = i-ek # compute backward neighbor
+          if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
+            (y[jB], y[i], y[jF]) = proxTV2( M.manifold, λ, (y[jB], y[i], y[jF]),p) # Compute TV on these
+          end
+        end # if mod 3
+      end # i in R
+    end # for mod 3
+  end # directions
+  return y
 end

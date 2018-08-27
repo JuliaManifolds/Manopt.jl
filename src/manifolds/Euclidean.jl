@@ -31,8 +31,9 @@ $n$-dimensional `Vector`.
 struct RnPoint <: MPoint
   value::Vector
   RnPoint(value::Vector) = new(value)
+  RnPoint(value::Number) = new([value])
 end
-getValue(x::RnPoint) = x.value
+getValue(x::RnPoint) = length(x.value)==1 ? x.value[1] : x.value
 
 @doc doc"""
     RnTVector <: TVector
@@ -42,8 +43,10 @@ $n$-dimensional `Vector`.
 struct RnTVector <: TVector
   value::Vector
   RnTVector(value::Vector) = new(value)
+  RnTVector(value::Number) = new([value])
 end
 getValue(ξ::RnTVector) = ξ.value
+getValue(ξ::RnTVector) = length(ξ.value)==1 ? ξ.value[1] : ξ.value
 
 # Traits
 # ---
@@ -69,7 +72,7 @@ dot(M::Euclidean,x::RnPoint,ξ::RnTVector, ν::RnTVector) = dot( getValue(ξ) , 
     exp(M,x,ξ)
 Computes the exponential map, i.e. $x+\xi$.
 """
-exp(M::Euclidean,x::RnPoint,ξ::RnTVector,t=1.0) = RnPoint(getValue(p) + t*getValue(ξ) )
+exp(M::Euclidean,x::RnPoint,ξ::RnTVector,t::Number=1.0) = RnPoint(getValue(x) + t*getValue(ξ) )
 @doc doc"""
     log(M,x,y)
 Computes the logarithmic map, i.e. $y-x$.
