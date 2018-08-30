@@ -63,7 +63,7 @@ $\mathcal M$ with initial conditions (depending on the application) $\eta\in T_{
 weights $\beta$. The result is a vector $\zeta \in T_x\mathcal M$
 The main difference to [`jacobiField`](@ref) is the inversion, that the input $\eta$ and the output $\zeta$ switched tangent spaces.
 
-For detais see [JacobiFields](@ref)
+For detais see [`jacobiField`](@ref)
 """
 function adjointJacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {mT<:Manifold, P<:MPoint, T<:TVector}
     z = geodesic(M,x,y,t); # Point the TzM of the resulting vector lies in
@@ -120,8 +120,6 @@ end
 Compute the jacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
 $\mathcal M$ with initial conditions (depending on the application) $\eta\in T_x\mathcal M$ and
 weights $\beta$. The result is a tangent vector in $\zeta \in T_{g(t;x,y)}\mathcal M$.
-
-For detais see [JacobiFields](@ref).
 
 *See also:* [`adjointJacobiField`](@ref)
 """

@@ -12,7 +12,7 @@ of phase-valued data introduces in Sec. 5.1 of
 # Optional
 - `wrap` : (`true`) to obtain the real valued (unwrapped) signal set `wrap` to false
 """
-function S1Signal(x, wrap=true)
+function S1Signal(x::Number, wrap=true)::Union{Number,Missing}
     if x < 0
         y = missing
     elseif x <= 1/4

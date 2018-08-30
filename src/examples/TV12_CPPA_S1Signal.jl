@@ -13,7 +13,7 @@ using Plots
 using LaTeXStrings
 using DataFrames
 using CSV
-resultsFolder = string(@__DIR__,"/resultsPhaseSignal/")
+resultsFolder = string(@__DIR__,"/results_TV12_CPPA_S1Signal/")
 fileType = ".pdf"
 
 # Create Data
@@ -46,7 +46,7 @@ meanSquaredError(MPow,yPow,ynPow)
 # TV
 α = 0.75
 proxMaps = [ (λ,x) -> proxDistance(MPow,λ,ynPow,x), (λ,x) -> proxTV(MPow,α*λ,x) ]
-costF = (x) -> L2TV(MPow,ynPow,x,α);
+costF = (x) -> L2TV(MPow,ynPow,α,x);
 recTV = cyclicProximalPoint(MPow,costF,proxMaps,ynPow;
         debug = (d -> (d["Iteration"]%1000==1) ? print(d["Iteration"],"| λ=",d["λ"]," | last change ",distance(MPow,d["x"],d["xnew"]),"\n") : print("") ,
                 Dict("λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"") ,4),
@@ -63,7 +63,7 @@ savefig(string(resultsFolder,"wrapped-noisy-TV",fileType))
 # TV2
 β = 1
 proxMaps2 = [ (λ,x) -> proxDistance(MPow,λ,yPow,x), (λ,x) -> proxTV2(MPow,β*λ,x) ]
-costF2 = (x) -> L2TV2(MPow,yPow,x,β);
+costF2 = (x) -> L2TV2(MPow,yPow,β,x);
 recTV2 = cyclicProximalPoint(MPow,costF2,proxMaps2,ynPow;
         debug = (d -> (d["Iteration"]%1000==1) ? print(d["Iteration"],"| λ=",d["λ"]," | last change ",distance(MPow,d["x"],d["xnew"]),"\n") : print("") ,
                 Dict("λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"") ,4),
@@ -80,7 +80,7 @@ savefig(string(resultsFolder,"wrapped-noisy-TV2",fileType))
 # TV 1&2
 α,β = 0.5,.5
 proxMaps1p2 = [ (λ,x) -> proxDistance(MPow,λ,yPow,x), (λ,x) -> proxTV(MPow,α*λ,x), (λ,x) -> proxTV2(MPow,β*λ,x) ]
-costF1p2 = (x) -> L2TVplusTV2(MPow,yPow,x,α,β);
+costF1p2 = (x) -> L2TVplusTV2(MPow,yPow,α,β,x);
 recTV1p2 = cyclicProximalPoint(MPow,costF1p2,proxMaps1p2,ynPow;
         debug = (d -> (d["Iteration"]%1000==1) ? print(d["Iteration"],"| λ=",d["λ"]," | last change ",distance(MPow,d["x"],d["xnew"]),"\n") : print("") ,
                 Dict("λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"") ,4),
@@ -99,7 +99,7 @@ ynRPow = PowPoint(RnPoint.(yn))
 RPow = Power(Euclidean(1),size(yn))
 α = 0.75
 proxMapsR = [ (λ,x) -> proxDistance(RPow,λ,ynRPow,x), (λ,x) -> proxTV(RPow,α*λ,x) ]
-costFR = (x) -> L2TV(RPow,ynRpow,x,α);
+costFR = (x) -> L2TV(RPow,ynRpow,α,x);
 recTVR = cyclicProximalPoint(RPow,costFR,proxMapsR,ynRPow;
         debug = (d -> (d["Iteration"]%1000==1) ? print(d["Iteration"],"| λ=",d["λ"]," | last change ",distance(RPow,d["x"],d["xnew"]),"\n") : print("") ,
                 Dict("λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"") ,4),
@@ -113,4 +113,4 @@ savefig(string(resultsFolder,"wrapped-noisy-TVR",fileType))
 
 # Export Data
 df = DataFrame(x=x, y=y, yR=yR, yn=yn, yRecTV=yRecTV, yRecTV2=yRecTV2, yRecTV1p2=yRecTV1p2, yRecTVR=yRecTVR)
-CSV.write(string(resultsFolder,"phase-data.csv"),df)
+CSV.write(string(resultsFolder,"phase-data.csv"),df);

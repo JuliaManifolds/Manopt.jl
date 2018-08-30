@@ -1,5 +1,4 @@
-# Differentials and their Adjoints
-
+# [Differentials](@id DifferentialFunctions)
 ```@autodocs
 Modules = [Manopt]
 Pages   = ["differentials.jl"]

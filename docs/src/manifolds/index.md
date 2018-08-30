@@ -16,7 +16,7 @@ TVector
 ```
 
 Furthermore there are two types accompanying each manifold – a point on the
-manifold inheriting from `MPoint` and the tangential vector `TVector`. For both
+manifold inheriting from [`MPoint`](@ref) and the tangential vector [`TVector`](@ref). For both
 the term manifold is shortened to `M` for concise naming. Each manifold also
 inherits such a short abbreviation, see `Abbr.` in the following table.
 
@@ -72,7 +72,7 @@ not all algorithms might work.
 all these functions have a fallback providing an error message if the function is
 not (yet) implemented.
 Otherwise, for example, if the field of the inner representant of `MPoint`
-or `TVector` is the field `.value` of your struct, [`getValue`](@ref) directly
+or [`TVector`](@ref) is the field `.value` of your struct, [`getValue`](@ref) directly
 works.
 
 ```@docs

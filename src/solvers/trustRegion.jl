@@ -1,4 +1,4 @@
-export TrustRegion
+export trustRegion
 @doc doc"""
     trustRegion(M,F,∇F,[x])
 perform the trust region algorithm on the [`Manifold`](@ref)` M` for the

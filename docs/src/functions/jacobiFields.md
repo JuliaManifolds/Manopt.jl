@@ -1,4 +1,4 @@
-# [Jacobi Fields](@id JacobiFields)
+# [Jacobi Fields](@id JacobiFieldFunctions)
 
 A smooth tangent vector field $J\colon [0,1] \to T\mathcal M$
 along a geodesic $g(\cdot;x,y)$ is called _Jacobi field_

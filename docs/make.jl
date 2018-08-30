@@ -27,6 +27,8 @@ makedocs(
         ],
         "Functions" => [
             "Introduction" => "functions/index.md",
+            "cost functions" => "functions/costFunctions.md",
+            "Differentials" => "functions/differentials.md",
             "Gradients" => "functions/gradients.md",
             "JacobiFields" => "functions/jacobiFields.md",
             "Proximal Maps" => "functions/proximalMaps.md"
