@@ -134,8 +134,7 @@ geodesic from x1 to x3.
 * `p` : (1) exponent of the distance of the TV term
 
 # Ouput
-* (y1,y2,y3) : resulting tuple of [`MPoint`](@ref)s of the
-$\operatorname{prox}_{\lambda\varphi}($ `(x1,x2,x3)` $)$
+* (y1,y2,y3) : resulting tuple of [`MPoint`](@ref)s of the proximal map
 """
 function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1)::Tuple{P,P,P} where {mT <: Manifold, P <: MPoint}
   throw(ErrorException(
@@ -169,7 +168,7 @@ The parameter `λ` is the prox parameter.
 # Input
 * `M`     : a manifold
 * `λ`     : a real value, parameter of the proximal map
-* `x`    : a a [`PowPoint`](@ref).
+* `x`     : a [`PowPoint`](@ref).
 
 # Optional
 (default is given in brackets)
