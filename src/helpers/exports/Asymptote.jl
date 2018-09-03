@@ -1,6 +1,25 @@
 using ColorTypes, Colors
-export asyExportS2
+export renderAsymptote, asyExportS2
+"""
+    renderAsymptote(filename, exportFct; render=4, format="png", ...)
+render an exported `asy`.
 
+# INPUT
+* `filename` : filename of the exported `asy` and rendered image
+* `exportFct`: a function creating an `asy` file with `kwargs` as optional
+  arguments and the `filename` string as its only mandatory argument
+
+# Keyword Arguments
+the default values are given in brackets
+* `render`   : (4) render level of asymptote, i.e. its `-render` option
+* `format`   : (`"png"`) final rendered format, i.e. asymptote's `-f` option
+all further keyword arguments are passed down to the `exportFct` call.
+"""
+function renderAsymptote(filename, exportFct; render::Int=4, format="png", kwargs...)
+    renderCmd = `asy -render $(render) -f $(format) $(filename)`
+    exportFct(filename; kwargs...)
+    run(renderCmd)
+end
 function asyExportS2(filename::String;
     points::Array{Array{SnPoint,1},1} = Array{Array{SnPoint,1},1}(undef,0),
     curves::Array{Array{SnPoint,1},1} = Array{Array{SnPoint,1},1}(undef,0),
@@ -9,12 +28,9 @@ function asyExportS2(filename::String;
     arrowHeadSize::Float64 = 6.,
     cameraPosition::Tuple{Float64,Float64,Float64} = (1., 1., 0.),
     dotSize::Float64 = 1.0,
-    dotSizes::Union{Array{Float64,1},Missing} = missing,
+    dotSizes::Array{Float64,1} = fill(dotSize,size(points)),
     target::Tuple{Float64,Float64,Float64} = (0.,0.,0.),
     )
-    if ismissing(dotSizes)
-        dotSizes = fill(dotSize,size(points))
-    end
     io = open(filename,"w")
     try
         #
@@ -45,9 +61,9 @@ function asyExportS2(filename::String;
             i=0
             for c in value
                 i=i+1;
-                write(io,string("pen $(penPrefix)Style$(i) ",
+                write(io,string("pen $(penPrefix)Style$(i) = ",
                     "rgb($(red(c)),$(green(c)),$(blue(c)))",
-                    "+lineWidth($(dotSize[i]))",
+                    (key==:points) ? "+linewidth($(dotSizes[i])pt)" : "",
                     "+opacity($(alpha(c)));\n"));
             end
         end
