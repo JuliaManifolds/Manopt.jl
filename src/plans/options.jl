@@ -10,6 +10,7 @@ export CyclicProximalPointOptions
 export ConjugateGradientOptions
 export DebugDecoOptions
 export DouglasRachfordOptions
+export SubGradientMethodOptions
 export evaluateStoppingCriterion
 export getVerbosity, getOptions, setDebugFunction, setDebugOptions
 
@@ -183,8 +184,28 @@ function updateTrustRadius!(o::DebugDecoOptions,newΔ)
     o.options = updateTrustRadius!(o.options,newΔ)
 end
 #
+# SubGrad Method
 #
-# Trust Region OPtions
+"""
+    SubGradientMethodOptions <: Options
+stories option values for a [`SubGradientMethod`](@ref) solver
+
+# Fields
+* `retraction` – the retration to use within
+* `stepSize` – a function returning the step size.
+* `stoppingCriterion` – stopping criterion for the algorithm
+* `x0` – Initial value the algorithm starts
+"""
+mutable struct SubGradientMethodOptions
+    retraction::Function
+    stepSize::Function
+    stoppingCriterion::Function
+    x0::P where P <: MPoint
+    SubGradientMethodOptions(x,sC,retr,stepS) = new(retr,stepS,sC,x)
+end
+#
+#
+# Trust Region Options
 #
 #
 """
@@ -199,7 +220,7 @@ stores option values for a [`trustRegion`](@ref) solver
 * `TrustRadius` – current trust region radius
 * `TrustRegionSubSolver` - function f(p,x,o) to solve the inner problem with `o` being
 * [`TrustRegionSubOptions`](@ref) – options passed to the trustRegion sub problem solver
-* `x` – initial value of the algorithm
+* `x0` – initial value of the algorithm
 """
 mutable struct TrustRegionOptions <: Options
     maxTrustRadius::Float64
@@ -209,7 +230,7 @@ mutable struct TrustRegionOptions <: Options
     TrustRadius::Float64
     TrustRegionSubSolver::Function
     TrustRegionSubOptions::Options
-    x::P where {P <: MPoint}
+    x0::P where {P <: MPoint}
     TrustRegionOptions(x,initΔ,maxΔ,minΡ,sC,retr,tRSubF,tRSubO) = new(maxΔ,minΡ,retr,sC,initΔ,tRSubF,tRSubO,x)
 end
 getTrustRadius(o::TrustRegionOptions) = o.TrustRadius;
@@ -325,6 +346,7 @@ end
 function getStepsize(p::gP, o::O, f::Function) where {gP <: GradientProblem{M} where M <: Manifold, O <: Union{ArmijoLineSearchOptions,LineSearchOptions}}
   return f(p,o)
 end
+getStepSize(p::Pr, o::O,x::P,ξ::T) where {Pr <: SubGradientProblem, O<:SubGradientMethodOptions, P<: MPoint, T<:TVector} = o.stepSize(x,ξ)
 # modifies o - updates descentDir - if I know how ;)
 function updateDescentDir!(o::O,x::P) where {O <: LineSearchOptions, P <: MPoint}
 # how do the more general cases update?

@@ -72,27 +72,35 @@ Denoting by $\mathcal I$ all indices from $\mathbf{1}\in\mathbb N^k$ to $n$ and
 $\mathcal I^+_i = \{i+e_j, j=1,\ldots,k\}\cap \mathcal I$ its forward neighbors,
 this function computes
 
-$ E(x) = \sum_{i\in\mathcal I, j\in \mathcal I^+_i} d^p_{\mathcal M}^p(x_i,x_j),
+$ E(x) = \sum_{i\in\mathcal I}
+  \Bigl( \sum{j\in \mathcal I^+_i} d^p_{\mathcal M}^p(x_i,x_j) \bigr)^{1/p},
 \quad x\in \mathcal M$
 
 # See also
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::Power, x::PowPoint, p::Int=1)
+function costTV(M::Power, x::PowPoint, p::Int=1, sum::Bool=true)
   R = CartesianIndices(M.dims)
   d = length(M.dims)
   maxInd = last(R)
-  cost = 0.;
+  cost = fill(0.,M.dims)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
     for i in R # iterate over all pixel
       j = i+ek # compute neighbor
       if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-        cost += costTV( M.manifold,(x[i],x[j]),p) # Compute TV on these
+        cost[i] += costTV( M.manifold,(x[i],x[j]),p) # Compute TV on these
       end
     end
   end
-  return cost
+  if p != 1
+    cost = (cost).^(1/p)
+  end
+  if sum
+    return sum(cost)
+  else
+    return cost
+  end
 end
 @doc doc"""
     costTV2(M,(x1,x2,x3),[p=1])

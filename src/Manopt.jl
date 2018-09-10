@@ -39,6 +39,7 @@ module Manopt
   include("solvers/cyclicProximalPoint.jl")
   include("solvers/DouglasRachford.jl")
   include("solvers/steepestDescent.jl")
+  include("solvers/subGradientMethod.jl")
   include("solvers/trustRegion.jl")
   # algorithms
   include("algorithms/basicAlgorithms.jl")

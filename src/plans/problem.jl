@@ -4,7 +4,7 @@
 # ---
 import Random: randperm
 export getGradient, getCost, getHessian, getProximalMap, getProximalMaps
-export Problem, GradientProblem, ProximalProblem, HessianProblem
+export Problem, GradientProblem, HessianProblem, ProximalProblem, SubGradientProblem
 
 """
     Problem
@@ -25,11 +25,12 @@ getProximalMaps(p::Pr,λ,x::P) where {Pr <: Problem, P <: MPoint} =
     throw(Exception("no proximal maps found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 getProximalMap(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
     throw(Exception("no $(i)th proximal map found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
+getSubGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
+        throw(Exception("no sub gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
 
 @doc doc"""
     GradientProblem <: Problem
 specify a problem for gradient based algorithms.
-
 
 # Fields
 * `M`            : a manifold $\mathcal M$
@@ -127,3 +128,23 @@ function getProximalMap(p::P,λ,x::MP,i) where {P <: ProximalProblem{M} where M 
     end
     return p.proximalMaps[i].(λ,x);
 end
+#
+# SubGradientProblem
+#
+mutable struct SubGradientProblem{mT <: Manifold} <: Problem
+    M::mT
+    costFunction::Function
+    subGradient::Function
+end
+"""
+    getSubGradient(p,x)
+
+evaluate the gradient of a [`SubGradientProblem`](@ref)` p` at the [`MPoint`](@ref)` x`.
+"""
+getSubGradient(p::P,x::MP) where {P <: SubGradientProblem{M} where M <: Manifold, MP <: MPoint} = p.subGradient(x)
+"""
+    getCost(p,x)
+
+evaluate the cost function `F` stored within a [`GradientProblem`](@ref) at the [`MPoint`](@ref)` x`.
+"""
+getCost(p::P,x::MP) where {P <: SubGradientProblem{M} where M <: Manifold, MP <: MPoint} = p.costFunction(x)
