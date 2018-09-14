@@ -116,7 +116,7 @@ $d_2^p(x_1,x_2,x_3) = \min_{c\in\mathcal C} d_{\mathcal M}(c,x_2).$
 """
 function costTV2(M::mT,pointTuple::Tuple{P,P,P},p::Int=1) where {mT <: Manifold, P <: MPoint}
   # TODO: sometimes necessary: mid point nearest to [2]
-  return distance(M,midPoint(pointTuple[1],pointTuple[3]),pointTuple[2])^p
+  return distance(M,midPoint(M,pointTuple[1],pointTuple[3]),pointTuple[2])^p
 end
 @doc doc"""
     costTV2(M,x[p=1])
@@ -137,20 +137,27 @@ to $x_i$.
 # See also
 [`gradTV2`](@ref), [`proxTV2`](@ref)
 """
-function costTV2(M::Power, x::PowPoint, p::Int=1)
+function costTV2(M::Power, x::PowPoint, p::Int=1, sum::Bool=true)
   R = CartesianIndices(M.dims)
   d = length(M.dims)
   minInd, maxInd = first(R), last(R)
-  cost = 0.
+  cost = fill(0.,M.dims)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
     for i in R # iterate over all pixel
       jF = i+ek # compute forward neighbor
       jB = i-ek # compute backward neighbor
       if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
-        cost += costTV2( M.manifold, (y[jB], y[i], y[jF]) ) # Compute TV on these
+        cost[i] = costTV2( M.manifold, (x[jB], x[i], x[jF]),p ) # Compute TV on these
       end
     end # i in R
   end # directions
-  return cost
+  if p != 1
+    cost = (cost).^(1/p)
+  end
+  if sum
+    return sum(cost)
+  else
+    return cost
+  end
 end
