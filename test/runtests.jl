@@ -1,7 +1,7 @@
 using Manopt
 using Test
 tests = ["testSn","testSPD",
-          "testProximalMaps",
+          "testGradients",
           "testGraphConstruction",
           "testGradDesc",
           "testProximalMaps"

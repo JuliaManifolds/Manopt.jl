@@ -88,7 +88,7 @@ function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoi
   x = xT[1];
   y = xT[2];
   z = xT[3];
-  c = midPoint(M,x,z)
+  c = midPoint(M,x,z,y) # nearest mid point of x and z to y
   d = distance(M,y,c)
   innerLog = log(M,c,y)
   if p==2
@@ -97,31 +97,31 @@ function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoi
     if d==0 # subdifferential containing zero
       return (zeroTVector(M,x),zeroTVector(M,y),zeroTVector(M,z))
     else
-      return ( AdjDxGeo(M,x,z,1/2,innerLog/(d^(2-p))), -log(M,y,c/(d^(2-p))), AdjDyGeo(M,x,z,1/2,innerLog/./(d^(2-p))) )
+      return ( AdjDxGeo(M,x,z,1/2,innerLog/(d^(2-p))), -log(M,y,c)/(d^(2-p)), AdjDyGeo(M,x,z,1/2,innerLog/(d^(2-p))) )
     end
   end
 end
 function gradTV2(M::Power,x::PowPoint,p::Int=1)::PowTVector
   R = CartesianIndices(M.dims)
   d = length(M.dims)
-  maxInd = last(R)
+  minInd, maxInd = first(R), last(R)
   ξ = zeroTVector(M,x)
   c = costTV2(M,x,p,false)
   for i in R # iterate over all pixel
     di = 0.
     for k in 1:d # for all direction combinations (TODO)
       ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-      jp = i+ek # compute neighbor
-      jm = i-ek
-      if all( map(<=, j.I, maxInd.I)) && all( map(<=, j.I, maxInd.I)) # are both neighbors in range?
+      jF = i+ek # compute forward neighbor
+      jB = i-ek # compute backward neighbor
+      if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
         if p != 1
-          g = gradTV2(M.manifold,(x[jm],x[i],x[jp]),p)/c[i] # Compute TV2 on these
+          g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p)/c[i] # Compute TV2 on these
         else
-          g = gradTV2(M.manifold,(x[jm],x[i],x[jp]),p) # Compute TV2 on these
+          g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
         end
-        ξ[jm] += g[1]
+        ξ[jB] += g[1]
         ξ[i] += g[2]
-        ξ[jp] += g[3]
+        ξ[jF] += g[3]
       end
     end # directions
   end # i in R

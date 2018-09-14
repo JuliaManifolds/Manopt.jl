@@ -68,9 +68,19 @@ For detais see [`jacobiField`](@ref)
 function adjointJacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {mT<:Manifold, P<:MPoint, T<:TVector}
     z = geodesic(M,x,y,t); # Point the TzM of the resulting vector lies in
     Ξ,κ = tangentONB(M,x,y) # ONB at x
-    Θ = parallelTransport.(M,x,z,Ξ) # Frame at z
+    Θ = parallelTransport.(Ref(M),Ref(x),Ref(z),Ξ) # Frame at z
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
-    ξ = sum( ( dot.(M,x,η,Θ) ).* ( β.(κ,t,dist(M,x,y)) ).*Ξ )
+    ξ = sum( ( dot.(Ref(M),Ref(x),Ref(η),Θ) ).* ( β.(κ,Ref(t),distance(M,x,y)) ).*Ξ )
+end
+"""
+   midPoint(M,x,y,z)
+computes the mid point between x and y. If there is more than one mid point
+of (not neccessarily miniizing) geodesics (i.e. on the sphere), the one nearest
+to z.
+"""
+function midPoint(M::mT,x::T,y::T,z::T)::T where {mT <: Manifold, T <: MPoint}
+    # since this is the fallback, it just uses the non-nearest one
+    return midPoint(M,x,y)
 end
 """
     midPoint(M,x,y)
@@ -81,8 +91,8 @@ Compute the (geodesic) mid point of x and y.
 # Output
 * `m` – resulting mid point
 """
-function midPoint(M::mT,x::T, y::T, nearTo::T=missing)::T where {mT <: Manifold, T <: MPoint}
-  return exp(M,x,0.5*log(x,y))
+function midPoint(M::mT,x::T, y::T)::T where {mT <: Manifold, T <: MPoint}
+  return exp(M,x,0.5*log(M,x,y))
 end
 """
     geodesic(M,x,y)
@@ -105,7 +115,7 @@ end
     geodesic(M,x,y,t)
 returns the point along the geodesic from `x`to `y` given by the `t`(in [0,1]) on the manifold `M`
 """
-geodesic(M::mT,x::T,y::T,t::Number) where {mT <: Manifold, T <: MPoint} = geodesic(x,y)(t)
+geodesic(M::mT,x::T,y::T,t::Number) where {mT <: Manifold, T <: MPoint} = geodesic(M,x,y)(t)
 """
     geodesic(M,x,y,T)
 returns vector containing the MPoints along the geodesic from `x` to `y` on
@@ -126,9 +136,9 @@ weights $\beta$. The result is a tangent vector in $\zeta \in T_{g(t;x,y)}\mathc
 function jacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {mT<:Manifold, P<:MPoint, T<:TVector}
     z = geodesic(M,x,y,t); # Point the TzM of the resulting vector lies in
     Ξ,κ = tangentONB(M,x,y) # ONB at x
-    Θ = parallelTransport.(M,x,z,Ξ) # Frame at z
+    Θ = parallelTransport.(Ref(M),Ref(x),Ref(z),Ξ) # Frame at z
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
-    ξ = sum( ( dot.(M,x,η,Ξ) ).* ( β.(κ,t,dist(M,x,y)) ).*Θ )
+    ξ = sum( ( dot.(Ref(M),Ref(x),Ref(η),Ξ) ).* ( β.(κ,t,distance(M,x,y)) ).*Θ )
 end
 @doc doc"""
     y = reflection(M,p,x)

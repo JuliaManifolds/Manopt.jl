@@ -120,4 +120,4 @@ zeroTVector(M::Power, x::PowPoint) = PowTVector( zeroTVector.(Ref(M.manifold), g
 # Display functions for the structs
 show(io::IO, M::Power) = print(io,string("The Power Manifold of ",repr(M.manifold), " of size ",repr(M.dims),".") );
 show(io::IO, p::PowPoint) = print(io,string("Pow[",join(repr.(p.value),", "),"]"));
-show(io::IO, ξ::PowTVector) = print(io,string("ProdT[", join(repr.(ξ.value),", "),"]"));
+show(io::IO, ξ::PowTVector) = print(io,string("PowT[", join(repr.(ξ.value),", "),"]"));

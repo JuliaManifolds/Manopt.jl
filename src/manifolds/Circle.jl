@@ -118,6 +118,27 @@ at the [`S1Point`](@ref)` x` to $T_y\mathbb S^1$ at the [`S1Point`](@ref)` y`.
 Since the [`Sphere`](@ref)` M` is represented in angles this is the identity.
 """
 parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
+@doc doc"""
+    (Ξ,κ) = tangentONB(M,x,ξ)
+compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the
+first vector and compute the eigenvalues of the curvature tensor
+$R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
+$\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
+
+*See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
+"""
+tangentONB(M::Circle,x::S1Point,ξ::S1TVector) = [S1TVector(sign(getValue(ξ))==0 ? 1 : sign(getValue(ξ)))], [0]
+@doc doc"""
+    (Ξ,κ) = tangentONB(M,x,y)
+compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$ is the
+first vector and compute the eigenvalues of the curvature tensor
+$R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
+$\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
+
+*See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
+"""
+tangentONB(M::Circle, x::S1Point, y::S1Point) = tangentONB(M,x,log(M,x,y))
+
 """
     typicalDistance(M)
 returns the typical distance on the [`Circle`](@ref)` M`: π.
