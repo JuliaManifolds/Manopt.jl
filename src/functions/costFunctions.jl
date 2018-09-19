@@ -1,4 +1,24 @@
 export costL2TV, costL2TVplusTV2, costL2TV2, costTV, costTV2
+
+@doc doc"""
+   costIntrICTV12(M,f,u,v,α,β)
+Computes the intrinsic infimal convolution model using the mid point model of
+second order differences, see [`costTV2`](@ref), i.e. for some $f\in\mathcal M$
+on a [`Power`] manifold $\mathcal M$ this function computes
+
+$E_{\mathrm{IC}}^{\mathrm{int}}(u,v) =
+\frac{1}{2}\sum_{i\in\mathcal G} d_{\mathcal M}(g(\frac{1}{2},v_i,w_i),f_i)
++ \alpha
+\bigl(
+\beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w)
+\bigr),$
+where both total variations refer to the intrinsic ones, [`costTV`](@ref) and
+[`costTV2`](@ref), respectively
+"""
+function costIntrICTV12(M::mT,f::P,u::P,v::P,α,β) where {mT <: Manifold, P <: MPoint}
+  return 1/2*distance(M,midPoint(M,u,v,f),f)^2 + α*β*costTV(M,u) + α * (1-β) * costTV2(M,v)
+end
+
 @doc doc"""
     costL2TV(M,f,α,x)
 compute the L2-TV functional for given data `f` and nonnegative parameter `α`,

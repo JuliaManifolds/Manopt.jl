@@ -1,9 +1,28 @@
 #
 #
 #
-
 export gradTV, gradTV2
 
+@doc doc"""
+   ∇u,⁠∇v = gradIntrICTV12(M,f,u,v,α,β)
+Computes (sub)gradient of the intrinsic infimal convolution model using the mid point
+model of second order differences, see [`costTV2`](@ref), i.e. for some $f\in\mathcal M$
+on a [`Power`] manifold $\mathcal M$ this function computes the (sub) gradient of
+
+$E_{\mathrm{IC}}^{\mathrm{int}}(u,v) =
+\frac{1}{2}\sum_{i\in\mathcal G} d_{\mathcal M}(g(\frac{1}{2},v_i,w_i),f_i)
++ \alpha
+\bigl(
+\beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w)
+\bigr),$
+where both total variations refer to the intrinsic ones, [`gradTV`](@ref) and
+[`gradTV2`](@ref), respectively.
+"""
+function gradIntrICTV12(M::mT,f::P,u::P,v::P,α,β) where {mT <: Manifold, P <: MPoint}
+  c = midPoint(M,u,v,f)
+  iL = log(M,c,f)
+  return AdjDxGeo(M,u,v,1/2,iL) + α*β*gradTV(M,u), AdjDyGeo(M,u,v,1/2,iL) + α * (1-β) * gradTV2(M,v)
+end
 @doc doc"""
     gradTV(M,(x,y),[p=1])
 computes the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
@@ -34,8 +53,8 @@ where $i$ runs over all indices of the [`Power`] manifold `M` and $\mathcal N_i$
 denotes the forward neighbors of $i$.
 
 # Input
-* `M`     : a manifold
-* `x`    : a a [`PowPoint`](@ref).
+* `M`     : a [`Power`](@ref) manifold
+* `x`     : a [`PowPoint`](@ref).
 
 # Optional
 (default is given in brackets)
@@ -72,17 +91,17 @@ end
 @doc doc"""
     gradTV2(M,(x,y,z),p)
 computes the (sub) gradient of $\frac{1}{p}d_2^p_{\mathcal M}(x,y,z)$ with respect
-    to $x$, $y$, and $z$, where $d_2$ denotes the second order absolute difference
-    using the mid point model, i.e. let
-    $\mathcal C = \{c | \exists g(\cdot;x,z) : c = g(\frac{1}{2};x,z)\}$ the set of
-    mid points between $x$ and $z$ on the manifold $\mathcal M$. Then the
-    absolute second order difference is defined as
+to $x$, $y$, and $z$, where $d_2$ denotes the second order absolute difference
+using the mid point model, i.e. let
+$\mathcal C = \{c | \exists g(\cdot;x,z) : c = g(\frac{1}{2};x,z)\}$ the set of
+mid points between $x$ and $z$ on the manifold $\mathcal M$. Then the
+absolute second order difference is defined as
 
-    $ d_2(x,y,z) = \min_{c\in\mathcal C_{x,z}} d(c,y).$
+$ d_2(x,y,z) = \min_{c\in\mathcal C_{x,z}} d(c,y).$
 
-    While the (sub)gradient with respect to $y$ is easy, the other two require
-    the evaluation of an ['AdjointJacobiField'](@ref). See
-    Bačák, Bergmann, Steidl, Weinmann, 2016 for the derivation
+While the (sub)gradient with respect to $y$ is easy, the other two require
+the evaluation of an ['AdjointJacobiField'](@ref). See
+Bačák, Bergmann, Steidl, Weinmann, 2016 for the derivation
 """
 function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoint}, p::Number=1)
   x = xT[1];
@@ -101,6 +120,12 @@ function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoi
     end
   end
 end
+@doc doc"""
+    gradTV2(M,x,p)
+computes the (sub) gradient of $\frac{1}{p}d_2^p_{\mathcal M}(x_1,x_2,x_3)$
+with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
+[`PowPoint`](@ref)` x`, where `M` is the corresponding [`Power`](@ref) manifold.
+"""
 function gradTV2(M::Power,x::PowPoint,p::Int=1)::PowTVector
   R = CartesianIndices(M.dims)
   d = length(M.dims)

@@ -1,7 +1,8 @@
 #
 # SpherePlots.jl –
 #
-import Plots: plot, scatter3d, scatter3d!, surface!, surface, plotlyjs, current
+import RecipesBase: plot
+import Plots: scatter3d, scatter3d!, surface!, surface, plotlyjs, current
 export plot
 """
     plot(M::Sphere, signals) – plot signals on the two sphere

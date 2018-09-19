@@ -18,7 +18,7 @@ $\beta(\kappa) = \begin{cases}
 &\text{ if }\kappa > 0.
 \end{cases}$
 
-*See also:* [`Dxgeo`](@ref), [`jacobiField`](@ref)
+*See also:* [`DxGeo`](@ref), [`jacobiField`](@ref)
 """
 function βDgx(κ::Number,t::Number,d::Number)
     if κ < 0
@@ -42,7 +42,7 @@ t & \text{ if } \kappa = 0,\\
 \end{cases}$
 Note that this function can also be called using [`βDgx`](@ref) with `1-t` for `t`.
 
-*See also:* [`Dygeo`](@ref), [`jacobiField`](@ref)
+*See also:* [`DyGeo`](@ref), [`jacobiField`](@ref)
 """
 function βDgy(κ::Number,t::Number,d::Number)
     if κ < 0
@@ -63,7 +63,7 @@ $\beta(\kappa) = \begin{cases}
 \cos(\sqrt{\kappa}) &\text{ if }\kappa > 0.
 \end{cases}$
 
-*See also:* [`Dxexp`](@ref), [`jacobiField`](@ref)
+*See also:* [`DxExp`](@ref), [`jacobiField`](@ref)
 """
 function βDexpx(κ::Number,t::Number,d::Number)
     if κ < 0
@@ -84,7 +84,7 @@ $\beta(\kappa) = \begin{cases}
 \frac{\sin(d\sqrt{\kappa})}{\sqrt{d\kappa}}&\text{ if }\kappa > 0.
 \end{cases}$
 
-*See also:* [`Dξexp`](@ref), [`jacobiField`](@ref)
+*See also:* [`DξExp`](@ref), [`jacobiField`](@ref)
 """
 function βDexpξ(κ::Number,t::Number,d::Number)
     if κ < 0
@@ -105,7 +105,7 @@ $\beta(\kappa) = \begin{cases}
 -\sqrt{\kappa}d\frac{\cos(d\sqrt{\kappa})}{\sin(d\sqrt{\kappa})}&\text{ if }\kappa > 0.
 \end{cases}$
 
-*See also:* [`Dxlog`](@ref), [`jacobiField`](@ref)
+*See also:* [`DxLog`](@ref), [`jacobiField`](@ref)
 """
 function βDlogx(κ::Number,t::Number,d::Number)
     if κ < 0
@@ -127,7 +127,7 @@ $\beta(\kappa) = \begin{cases}
 \frac{ d\sqrt{\kappa} }{\sin(d\sqrt{\kappa})}&\text{ if }\kappa > 0.
 \end{cases}$
 
-*See also:* [`Dylog`](@ref), [`jacobiField`](@ref)
+*See also:* [`DyLog`](@ref), [`jacobiField`](@ref)
 """
 function βDlogy(κ::Number,t::Number,d::Number)
     if κ < 0
