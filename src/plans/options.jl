@@ -8,7 +8,6 @@ export ArmijoLineSearchOptions, LineSearchOptions
 export getStepSize
 export CyclicProximalPointOptions
 export ConjugateGradientOptions
-export DebugDecoOptions
 export DouglasRachfordOptions
 export evaluateStoppingCriterion
 
@@ -140,21 +139,6 @@ mutable struct DouglasRachfordOptions <: Options
 end
 #
 #
-# Debug Decorator
-#
-#
-mutable struct DebugDecoOptions <: Options
-    options::O where {O<: Options}
-    debugFunction::Function
-    debugOptions::Dict{String,<:Any}
-    verbosity::Int
-end
-getTrustRadius(o::DebugDecoOptions) = getTrustRadius(o.options);
-function updateTrustRadius!(o::DebugDecoOptions,newΔ)
-    o.options = updateTrustRadius!(o.options,newΔ)
-end
-#
-#
 # Trust Region Options
 #
 #
@@ -229,7 +213,7 @@ Result of evaluating stoppingCriterion in the options, i.e.
 * `false` otherwise.
 """
 function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:Options, P <: MPoint, MT <: TVector, I<:Integer}
-  # Fallback: Unpeel options (might be DebugDecorated or such)
+  # Fallback: Unpeel options (might be Debugrated or such)
   evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
 end
 # fallback: Unpeel
@@ -245,72 +229,8 @@ end
 function evaluateStoppingCriterion(o::O, iter::I, x::P, η::T, ηnew::T) where {O<:TrustRegionSubOptions, P <: MPoint, T <: TVector, I<:Integer}
   o.stoppingCriterion(iter,x,η,ηnew)
 end
-"""
-    getVerbosity(Options)
 
-returns the verbosity of the options, if any decorator provides such, otherwise 0
-    if more than one decorator has a verbosity, the maximum is returned
-"""
-function getVerbosity(o::O) where {O<:Options}
-  if getOptions(o) == o # no Decorator
-      return 0
-  end
-  # else look into encapsulated
-  return getVerbosity(getOptions(o))
-end
-# List here any decorator that has verbosity
-function getVerbosity(o::O) where {O<:DebugDecoOptions}
-  if o.options == getOptions(o.options) # we do not have any further inner decos
-      return o.verbosity;
-  end
-  # else maximum of all decorators
-    return max(o.verbosity,getVerbosity(o.options));
-end
 function updateDescentDir!(o::O,x::P) where {O <: LineSearchOptions, P <: MPoint}
 # how do the more general cases update?
 #  o.descentDirection =
 end
-
-getOptions(o::O) where {O <: Options} = o; # fallback and end
-getOptions(o::O) where {O <: DebugDecoOptions} = getOptions(o.options); #unpeel recursively
-
-function setDebugFunction!(o::O,f::Function) where {O<:Options}
-    if getOptions(o) != o #decorator
-        setDebugFunction!(o.options,f)
-    end
-end
-function setDebugFunction!(o::O,f::Function) where {O<:DebugDecoOptions}
-    o.debugFunction = f;
-end
-function getDebugFunction(o::O) where {O<:Options}
-    if getOptions(o) != o #We have a decorator
-        return getDebugFunction(o.options,f)
-    end
-end
-function getDebugFunction(o::O,f::Function) where {O<:DebugDecoOptions}
-    return o.debugFunction;
-end
-function setDebugOptions!(o::O,dO::Dict{String,<:Any}) where {O<:Options}
-    if getOptions(o) != o #decorator
-        setDebugOptions(o.options,dO)
-    end
-end
-function setDebugOptions!(o::O,dO::Dict{String,<:Any}) where {O<:DebugDecoOptions}
-    o.debugOptions = dO;
-end
-function getDebugOptions(o::O) where {O<:Options}
-    if getOptions(o) != o #decorator
-        return getDebugOptions(o.options)
-    end
-end
-function getDebugOptions(o::O,dO::Dict{String,<:Any}) where {O<:DebugDecoOptions}
-    return o.debugOptions;
-end
-function optionsHasDebug(o::O) where {O<:Options}
-    if getOptions(o) == o
-        return false;
-    else
-        return optionsHaveDebug(o.options)
-    end
-end
-optionsHasDebug(o::O) where {O<:DebugDecoOptions} = true

@@ -7,3 +7,5 @@ include("problem.jl")
 include("options.jl")
 include("gradientPlan.jl")
 include("subGradientPlan.jl")
+
+include("debugOptions.jl")
