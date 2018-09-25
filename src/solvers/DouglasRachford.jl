@@ -71,7 +71,7 @@ function DouglasRachford(M::mT, F::Function, x::P, proxes::Array{Function,N} whe
     kwargs=Dict(kwargs)
     if haskey(kwargs, :debug) # if a key is given -> decorate Options.
         debug = kwargs[:debug]
-        o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
+        o = DebugOptions(o,debug[1],debug[2],debug[3])
     end
     x,r = DouglasRachford(p,o)
     if returnReason
@@ -115,7 +115,7 @@ function DRDebug(o::O,iter::Int,x::MP,xnew::MP,reason::String) where {O <: Optio
         DRDebug(getOptions(o),iter,x,xnew,reason)
     end
 end
-function DRDebug(o::D,iter::Int,x::MP,xnew::MP,reason::String) where {D <: DebugDecoOptions, MP <: MPoint}
+function DRDebug(o::D,iter::Int,x::MP,xnew::MP,reason::String) where {D <: DebugOptions, MP <: MPoint}
     # decorate
     d = o.debugOptions;
     # Update values for debug

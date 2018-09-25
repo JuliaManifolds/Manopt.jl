@@ -48,7 +48,7 @@ function cyclicProximalPoint(M::Mc,
     kwargs=Dict(kwargs)
     if haskey(kwargs, :debug) # if a key is given -> decorate Options.
         debug = kwargs[:debug]
-        o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
+        o = DebugOptions(o,debug[1],debug[2],debug[3])
     end
     x,r = cyclicProximalPoint(p,o)
     if returnReason
@@ -93,7 +93,7 @@ function cPPDebug(o::O,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) wher
         cPPDebug(getOptions(o),iter,x,xnew,λ,reason)
     end
 end
-function cPPDebug(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) where {D <: DebugDecoOptions, MP <: MPoint}
+function cPPDebug(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) where {D <: DebugOptions, MP <: MPoint}
     # decorate
     d = o.debugOptions;
     # Update values for debug

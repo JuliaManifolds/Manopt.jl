@@ -67,7 +67,7 @@ function conjugateGradientDescent(M::mT,F::Function, ∇F::Function, x::P;
     kwargs=Dict(kwargs)
     if haskey(kwargs, :debug) # if a key is given -> decorate Options.
         debug = kwargs[:debug]
-        o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
+        o = DebugOptions(o,debug[1],debug[2],debug[3])
     end
     x,r = conjugateGradientDescent(p,o)
     if returnReason

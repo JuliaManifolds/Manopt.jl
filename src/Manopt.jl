@@ -32,8 +32,7 @@ module Manopt
   include("functions/jacobiFields.jl")
   include("functions/proximalMaps.jl")
   # ...corresponding plans consisting of problems and options
-  include("plans/problem.jl")
-  include("plans/options.jl")
+  include("plans/plan.jl")
   # ...solvers
   include("solvers/conjugateGradientDescent.jl")
   include("solvers/cyclicProximalPoint.jl")

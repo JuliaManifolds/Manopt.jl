@@ -49,7 +49,7 @@ function subgradientDescent(M::mT,
     kwargs=Dict(kwargs)
     if haskey(kwargs, :debug) # if a key is given -> decorate Options.
         debug = kwargs[:debug]
-        o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
+        o = DebugOptions(o,debug[1],debug[2],debug[3])
     end
     x,r = subGradientMethod(p,o)
     if returnReason
@@ -77,7 +77,7 @@ function subGradientMethod(p::P, o::O) where {P <: SubGradientProblem, O <: Opti
         s = getStepsize(p,getOptions(o),x,ξ)
         xnew = getOptions(o).retraction(M,x,-s*ξ)
         iter=iter+1
-        (stop, reason) = evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
+        (stop, reason) = evaluateStoppingCriterion(o,iter,ξ,x,xnew)
         subGradDescDebug(o,iter,x,xnew,ξ,s,reason)
         x=xnew
     end
@@ -89,15 +89,15 @@ function subGradDescDebug(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason
         subGradDescDebug(getOptions(o),iter,x,xnew,ξ,s,reason)
     end
 end
-function subGradDescDebug(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugDecoOptions, MT <: TVector, MP <: MPoint}
+function subGradDescDebug(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugOptions, MT <: TVector, MP <: MPoint}
     # decorate
     d = o.debugOptions;
     # Update values for debug
     if haskey(d,"x")
-        d["x"] = xnew;
+        d["x"] = x;
     end
     if haskey(d,"xnew")
-        d["xnew"] = x;
+        d["xnew"] = xnew;
     end
     if haskey(d,"subgradient")
         d["subgradient"] = ξ;

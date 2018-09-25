@@ -50,7 +50,7 @@ function steepestDescent(M::mT,
     kwargs=Dict(kwargs)
     if haskey(kwargs, :debug) # if a key is given -> decorate Options.
         debug = kwargs[:debug]
-        o = DebugDecoOptions(o,debug[1],debug[2],debug[3])
+        o = DebugOptions(o,debug[1],debug[2],debug[3])
     end
     x,r = steepestDescent(p,o)
     if returnReason
@@ -79,7 +79,7 @@ function steepestDescent(p::P, o::O) where {P <: GradientProblem, O <: Options}
         s = getStepsize(p,getOptions(o),x,s)
         xnew = getOptions(o).retraction(M,x,-s*ξ)
         iter=iter+1
-        (stop, reason) = evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
+        stop, reason = evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
         gradDescDebug(o,iter,x,xnew,ξ,s,reason)
         x=xnew
     end
@@ -91,7 +91,7 @@ function gradDescDebug(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::S
         gradDescDebug(getOptions(o),iter,x,xnew,ξ,s,reason)
     end
 end
-function gradDescDebug(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugDecoOptions, MT <: TVector, MP <: MPoint}
+function gradDescDebug(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugOptions, MT <: TVector, MP <: MPoint}
     # decorate
     d = o.debugOptions;
     # Update values for debug
