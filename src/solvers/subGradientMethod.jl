@@ -37,7 +37,7 @@ the argument `∂F` should always return _one_ element from the subgradient.
 function subGradientMethod(M::mT,
         F::Function, ∂F::Function, x::MP;
         retraction::Function = exp,
-        stepSize::Function = (x,ξ) -> 0.001,
+        stepSize::Function = (i,x,ξ) -> 0.01/i,
         stoppingCriterion::Function = (i,ξ,x,xnew) -> ((i>4999), (i>4999) ? "max Iter $(i) reached." : ""),
         returnReason=false,
         kwargs... #especially may contain debug
@@ -71,17 +71,21 @@ function subGradientMethod(p::P, o::O) where {P <: SubGradientProblem, O <: Opti
     reason::String="";
     iter::Integer = 0
     x = getOptions(o).x0
+    xOpt = x
     M = p.M
     while !stop
-        ξ = getSubGradient(p,x)
-        s = getStepsize(p,getOptions(o),x,ξ)
-        xnew = getOptions(o).retraction(M,x,-s*ξ)
         iter=iter+1
+        ξ = getSubGradient(p,x)
+        s = getStepsize(p,getOptions(o),iter,x,ξ)
+        xnew = getOptions(o).retraction(M,x,-s*ξ)
         (stop, reason) = evaluateStoppingCriterion(o,iter,ξ,x,xnew)
-        subGradDescDebug(o,iter,x,xnew,ξ,s,reason)
-        x=xnew
+        if getCost(p,xnew) < getCost(p,xOpt)
+            xOpt=xnew
+        end
+        subGradDescDebug(o,iter,x,xnew,xOpt,ξ,s,reason)
+        x = xnew
     end
-    return x,reason
+    return xOpt,reason
 end
 # fallback - do nothing just unpeel
 function subGradDescDebug(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {O <: Options, MP <: MPoint, MT <: TVector}
@@ -89,7 +93,7 @@ function subGradDescDebug(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason
         subGradDescDebug(getOptions(o),iter,x,xnew,ξ,s,reason)
     end
 end
-function subGradDescDebug(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugOptions, MT <: TVector, MP <: MPoint}
+function subGradDescDebug(o::D,iter::Int,x::MP,xnew::MP,xopt::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugOptions, MT <: TVector, MP <: MPoint}
     # decorate
     d = o.debugOptions;
     # Update values for debug
@@ -98,6 +102,9 @@ function subGradDescDebug(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason
     end
     if haskey(d,"xnew")
         d["xnew"] = xnew;
+    end
+    if haskey(d,"xopt")
+        d["xopt"] = xopt;
     end
     if haskey(d,"subgradient")
         d["subgradient"] = ξ;
