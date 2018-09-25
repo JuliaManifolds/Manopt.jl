@@ -12,7 +12,7 @@ mutable struct DebugOptions <: Options
     debugOptions::Dict{String,<:Any}
     verbosity::Int
 end
-evaluateStoppingCriterion(o::DebugDecoOptions,vars...) = evaluateStoppingCriterion(o.options,vars...)
+evaluateStoppingCriterion(o::DebugOptions,vars...) = evaluateStoppingCriterion(o.options,vars...)
 getOptions(o::O) where {O <: Options} = o; # fallback and end
 getOptions(o::O) where {O <: DebugOptions} = getOptions(o.options); #unpeel recursively
 

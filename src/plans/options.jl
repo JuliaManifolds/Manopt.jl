@@ -212,10 +212,10 @@ Result of evaluating stoppingCriterion in the options, i.e.
 * `true` if the algorithms stopping criteria are fulfilled and it should stop
 * `false` otherwise.
 """
-function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:Options, P <: MPoint, MT <: TVector, I<:Integer}
-  # Fallback: Unpeel options (might be Debugrated or such)
-  evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
-end
+# function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:Options, P <: MPoint, MT <: TVector, I<:Integer}
+#   # Fallback: Unpeel options (might be Debugrated or such)
+#   evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
+# end
 # fallback: Unpeel
 function evaluateStoppingCriterion(o::O,v...) where {O<:Options}
   evaluateStoppingCriterion(getOptions(o),v...)
