@@ -5,14 +5,12 @@
 #
 export Options
 export ArmijoLineSearchOptions, LineSearchOptions
-export GradientDescentOptions, getStepSize
+export getStepSize
 export CyclicProximalPointOptions
 export ConjugateGradientOptions
 export DebugDecoOptions
 export DouglasRachfordOptions
-export SubGradientMethodOptions
 export evaluateStoppingCriterion
-export getVerbosity, getOptions, setDebugFunction, setDebugOptions
 
 """
     Options
@@ -57,34 +55,6 @@ mutable struct ArmijoLineSearchOptions <: LineSearchOptions
     ArmijoLineSearchOptions(x::P where {P <: MPoint}, s::Float64=1.0,r::Function=exp,ρ::Float64=0.5,c::Float64=0.0001) = new(x,s,r,ρ,c,missing)
     ArmijoLineSearchOptions(x::P where {P <: MPoint}, ξ::T where {T <: TVector}, s::Float64=1.0,r::Function=exp,ρ::Float64=0.5,c::Float64=0.0001) = new(x,s,r,ρ,c)
 end
-"""
-    GradientDescentOptions{P,L} <: Options
-Describes a Gradient based descent algorithm, with
-
-# Fields
-a default value is given in brackets if a parameter can be left out in initialization.
-
-* `x0` : an [`MPoint`](@ref) as starting point
-* `stoppingCriterion` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
-    indicator and a reason based on an iteration number, the gradient and the last and
-    current iterates
-* `retraction` : (exp) the rectraction to use
-* `lineSearch` : a function performing the lineSearch, returning a step size
-* `lineSearchOptions` : options the linesearch is called with.
-
-# See also
-[`steepestDescent`](@ref)
-"""
-mutable struct GradientDescentOptions <: Options
-    x0::P where {P <: MPoint}
-    stoppingCriterion::Function
-    retraction::Function
-    lineSearch::Function
-    lineSearchOptions::L where {L <: LineSearchOptions}
-    # fallback do exp
-    GradientDescentOptions(x0::P where {P<:MPoint},sC::Function,lS::Function,lSO::L where {L <: LineSearchOptions},retr::Function=exp) = new(x0,sC,retr,lS,lSO)
-end
-
 abstract type DirectionUpdateOptions end
 """
     SimpleDirectionUpdateOptions <: DirectionUpdateOptions
@@ -184,26 +154,6 @@ function updateTrustRadius!(o::DebugDecoOptions,newΔ)
     o.options = updateTrustRadius!(o.options,newΔ)
 end
 #
-# SubGrad Method
-#
-"""
-    SubGradientMethodOptions <: Options
-stories option values for a [`SubGradientMethod`](@ref) solver
-
-# Fields
-* `retraction` – the retration to use within
-* `stepSize` – a function returning the step size.
-* `stoppingCriterion` – stopping criterion for the algorithm
-* `x0` – Initial value the algorithm starts
-"""
-mutable struct SubGradientMethodOptions
-    retraction::Function
-    stepSize::Function
-    stoppingCriterion::Function
-    x0::P where P <: MPoint
-    SubGradientMethodOptions(x,sC,retr,stepS) = new(retr,stepS,sC,x)
-end
-#
 #
 # Trust Region Options
 #
@@ -279,10 +229,8 @@ Result of evaluating stoppingCriterion in the options, i.e.
 * `false` otherwise.
 """
 function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:Options, P <: MPoint, MT <: TVector, I<:Integer}
+  # Fallback: Unpeel options (might be DebugDecorated or such)
   evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
-end
-function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:GradientDescentOptions, P <: MPoint, MT <: TVector, I<:Integer}
-  o.stoppingCriterion(iter,ξ,x,xnew)
 end
 # fallback: Unpeel
 function evaluateStoppingCriterion(o::O,v...) where {O<:Options}
@@ -318,36 +266,6 @@ function getVerbosity(o::O) where {O<:DebugDecoOptions}
   # else maximum of all decorators
     return max(o.verbosity,getVerbosity(o.options));
 end
-# simplest case – we start with GradientProblem and GradientOptions -> extract line search and its options
-"""
-    getStepsize(p,o)
-
-evaluates the stopping criterion of problem with respect to the current
-iteration iter, the descent direction ξ, and two (successive) iterates x1, x2
-of the algorithm.
-"""
-function getStepsize(p::P,o::O,vars...) where {P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions}
-    return getStepsize(p,o.lineSearchOptions,o.lineSearch,vars...)
-end
-# for gradientLineSearch: Update initS and x and start
-function getStepsize(p::gP,o::O, f::Function, x::P, s::Float64) where {gP <: GradientProblem{M} where M <: Manifold, O <: ArmijoLineSearchOptions, P <: MPoint}
-    o.initialStepsize = s
-    o.x = x;
-    return getStepsize(p,o,f)
-end
-# for generalLineSearch - update DescentDir (how?) and continue
-function getStepsize(p::gP,o::O, f::Function, x::P, s::Float64) where {gP <: GradientProblem{M} where M <: Manifold, P <: MPoint, O <: LineSearchOptions}
-  o.initialStepsize = s;
-  o.x = x;
-  updateDescentDir!(o,x)
-  return getStepsize(p,o,f)
-end
-# (finally) call lineSearchProcedure
-function getStepsize(p::gP, o::O, f::Function) where {gP <: GradientProblem{M} where M <: Manifold, O <: Union{ArmijoLineSearchOptions,LineSearchOptions}}
-  return f(p,o)
-end
-getStepSize(p::Pr, o::O,x::P,ξ::T) where {Pr <: SubGradientProblem, O<:SubGradientMethodOptions, P<: MPoint, T<:TVector} = o.stepSize(x,ξ)
-# modifies o - updates descentDir - if I know how ;)
 function updateDescentDir!(o::O,x::P) where {O <: LineSearchOptions, P <: MPoint}
 # how do the more general cases update?
 #  o.descentDirection =
