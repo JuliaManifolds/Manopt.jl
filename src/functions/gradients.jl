@@ -1,7 +1,7 @@
 #
 #
 #
-export gradTV, gradTV2
+export gradTV, gradTV2, gradIntrICTV12
 
 @doc doc"""
    ∇u,⁠∇v = gradIntrICTV12(M,f,u,v,α,β)

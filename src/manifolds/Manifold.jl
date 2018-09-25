@@ -9,7 +9,7 @@ import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
 export Manifold, MPoint, TVector, MPointE, TVectorE
 # introduce new functions
-export geodesic, midPoint, reflection, jacobiField, AdjointJacobiField
+export geodesic, midPoint, reflection, jacobiField, adjointJacobiField
 export +, -, *, /, ==, show
 @doc doc"""
 An abstract manifold $\mathcal M$ to keep global information on a specific manifold
@@ -140,6 +140,7 @@ function jacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
     ξ = sum( ( dot.(Ref(M),Ref(x),Ref(η),Ξ) ).* ( β.(κ,t,distance(M,x,y)) ).*Θ )
 end
+
 @doc doc"""
     y = reflection(M,p,x)
 reflect the `MPoint x` at `MPoint p`, i.e. compute

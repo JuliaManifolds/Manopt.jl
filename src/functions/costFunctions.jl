@@ -1,4 +1,4 @@
-export costL2TV, costL2TVplusTV2, costL2TV2, costTV, costTV2
+export costL2TV, costL2TVplusTV2, costL2TV2, costTV, costTV2,costIntrICTV12
 
 @doc doc"""
    costIntrICTV12(M,f,u,v,α,β)
@@ -99,7 +99,7 @@ $ E(x) = \sum_{i\in\mathcal I}
 # See also
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::Power, x::PowPoint, p::Int=1, sum::Bool=true)
+function costTV(M::Power, x::PowPoint, p::Int=1, Sum::Bool=true)
   R = CartesianIndices(M.dims)
   d = length(M.dims)
   maxInd = last(R)
@@ -116,7 +116,7 @@ function costTV(M::Power, x::PowPoint, p::Int=1, sum::Bool=true)
   if p != 1
     cost = (cost).^(1/p)
   end
-  if sum
+  if Sum
     return sum(cost)
   else
     return cost
@@ -157,7 +157,7 @@ to $x_i$.
 # See also
 [`gradTV2`](@ref), [`proxTV2`](@ref)
 """
-function costTV2(M::Power, x::PowPoint, p::Int=1, sum::Bool=true)
+function costTV2(M::Power, x::PowPoint, p::Int=1, Sum::Bool=true)
   R = CartesianIndices(M.dims)
   d = length(M.dims)
   minInd, maxInd = first(R), last(R)
@@ -175,7 +175,7 @@ function costTV2(M::Power, x::PowPoint, p::Int=1, sum::Bool=true)
   if p != 1
     cost = (cost).^(1/p)
   end
-  if sum
+  if Sum
     return sum(cost)
   else
     return cost

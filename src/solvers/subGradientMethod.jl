@@ -1,7 +1,7 @@
 #
 # A simple steepest descent algorithm implementation
 #
-export subgradientMethod, subGradDescDebug
+export subGradientMethod, subGradDescDebug
 @doc doc"""
     subGradientMethod(M, F, ∂F, x)
 perform a subgradient method $x_{k+1} = \mathcal R({x_k}, s_k∂F(x_k))$,
@@ -34,11 +34,11 @@ the argument `∂F` should always return _one_ element from the subgradient.
 * `reason` - if activated a String containing the stopping criterion stopping
   reason.
 """
-function subgradientDescent(M::mT,
+function subGradientMethod(M::mT,
         F::Function, ∂F::Function, x::MP;
         retraction::Function = exp,
-        stepSize::Function = (i,ξ) -> 0.001,
-        stoppingCriterion::Function = (i,ξ,x,xnew) -> (i>4999) ? "max Iter $(i) reached." : "",
+        stepSize::Function = (x,ξ) -> 0.001,
+        stoppingCriterion::Function = (i,ξ,x,xnew) -> ((i>4999), (i>4999) ? "max Iter $(i) reached." : ""),
         returnReason=false,
         kwargs... #especially may contain debug
     ) where {mT <: Manifold, MP <: MPoint}

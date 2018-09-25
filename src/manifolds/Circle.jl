@@ -127,7 +127,7 @@ $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
 *See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
 """
-tangentONB(M::Circle,x::S1Point,ξ::S1TVector) = [S1TVector(sign(getValue(ξ))==0 ? 1 : sign(getValue(ξ)))], [0]
+tangentONB(M::Circle,x::S1Point,ξ::S1TVector) = [S1TVector(sign(getValue(ξ))==0 ? 1.0 : sign(getValue(ξ)))], [0.]
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$ is the
