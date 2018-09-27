@@ -64,13 +64,13 @@ function cyclicProcimalPointDebug(data::Dict{String,Any})
     if haskey(data,"step") && haskey(data,"Iteration")
         if mod(data["Iteration"],data["step"]) == 0
             s = string(getIterationString(data), getCostString(data),
-                getgetKeyValueString(data,"λ"), getLastChangeString(data),
+                getKeyValueString(data,"λ"), getLastChangeString(data),
                 length(r)>0 ? "\n$(r)" : "")
             print(s,"\n")
         end
     else
         s = string(getIterationString(data), getCostString(data),
-            getgetKeyValueString(data,"λ"), getLastChangeString(data),
+            getKeyValueString(data,"λ"), getLastChangeString(data),
             length(r)>0 ? "\n$(r)" : "")
         print(s,"\n")
     end
