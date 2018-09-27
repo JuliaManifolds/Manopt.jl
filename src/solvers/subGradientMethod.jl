@@ -82,7 +82,10 @@ function subGradientMethod(p::P, o::O) where {P <: SubGradientProblem, O <: Opti
         if getCost(p,xnew) < getCost(p,xOpt)
             xOpt=xnew
         end
-        subGradDescDebug(o,iter,x,xnew,xOpt,ξ,s,reason)
+        if optionsHasDebug(o)
+            updateDebugValues!(o,Dict("Iteration"=>iter,"x"=>x,"xnew"=>xnew,"xopt"=>xOpt,"subgradient"=>ξ,"StepSize"=>s,"StopReason"=>reason))
+            Debug(o)
+        end
         x = xnew
     end
     return xOpt,reason
@@ -95,7 +98,7 @@ function subGradDescDebug(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason
 end
 function subGradDescDebug(o::D,iter::Int,x::MP,xnew::MP,xopt::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugOptions, MT <: TVector, MP <: MPoint}
     # decorate
-    d = o.debugOptions;
+    d = o.debugValues;
     # Update values for debug
     if haskey(d,"x")
         d["x"] = x;

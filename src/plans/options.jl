@@ -9,8 +9,7 @@ export getStepSize
 export CyclicProximalPointOptions
 export ConjugateGradientOptions
 export DouglasRachfordOptions
-export evaluateStoppingCriterion
-
+export evaluateStoppingCriterion, getTrustRadius, updateTrustRadius
 """
     Options
 A general super type for all options.

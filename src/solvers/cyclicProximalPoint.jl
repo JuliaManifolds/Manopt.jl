@@ -95,7 +95,7 @@ function cPPDebug(o::O,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) wher
 end
 function cPPDebug(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) where {D <: DebugOptions, MP <: MPoint}
     # decorate
-    d = o.debugOptions;
+    d = o.debugValues;
     # Update values for debug
     if haskey(d,"x")
         d["x"] = x;

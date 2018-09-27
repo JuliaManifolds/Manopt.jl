@@ -38,6 +38,7 @@ perform a trust region algorithm based on a [`GradientProblem`](@ref) or a [`Hes
 together with some [`TrustRegionOptions`](@ref)
 """
 function trustRegion(p::Pr,x::P,o::O) where {Pr <: Union{GradientProblem, HessianProblem}, P <: MPoint, O <: Options}
+@warn "This method is not yet finished and might return strange values, since it's still under development."
   M = p.M;
   retr = getOptions(o).retraction
   Δ = getTrustRadius(o);

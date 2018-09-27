@@ -102,7 +102,7 @@ including times and a lot of debug. The rough course is as follows
 For the last Level, an individual `debug` field in the structs provides the
 possibility to add an own function into the iteration. This function always takes
 just one argument, namnely a `Dict{String, Any}` dictionary, i.e. a hashmap to
-store any data passed to a debug function. If values are present in the `debugOptions`
+store any data passed to a debug function. If values are present in the `debugValues`
 they should be updated in the algorithm.
 
 Maybe something similar using a `record` field would also be nice.

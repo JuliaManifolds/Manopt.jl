@@ -93,7 +93,7 @@ function gradDescDebug(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::S
 end
 function gradDescDebug(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugOptions, MT <: TVector, MP <: MPoint}
     # decorate
-    d = o.debugOptions;
+    d = o.debugValues;
     # Update values for debug
     if haskey(d,"x")
         d["x"] = xnew;

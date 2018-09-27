@@ -117,7 +117,7 @@ function DRDebug(o::O,iter::Int,x::MP,xnew::MP,reason::String) where {O <: Optio
 end
 function DRDebug(o::D,iter::Int,x::MP,xnew::MP,reason::String) where {D <: DebugOptions, MP <: MPoint}
     # decorate
-    d = o.debugOptions;
+    d = o.debugValues;
     # Update values for debug
     if haskey(d,"x")
         d["x"] = x;
