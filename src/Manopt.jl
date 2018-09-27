@@ -49,6 +49,7 @@ module Manopt
   include("helpers/debugFunctions.jl")
   include("helpers/errorMeasures.jl")
   include("helpers/imageHelpers.jl")
+  include("helpers/stepSizeFunctions.jl")
   # Exports
   include("helpers/exports/Asymptote.jl")
   # data
