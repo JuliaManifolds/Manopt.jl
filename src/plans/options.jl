@@ -63,69 +63,10 @@ struct SimpleDirectionUpdateOptions <: DirectionUpdateOptions
 end
 struct HessianDirectionUpdateOptions <: DirectionUpdateOptions
 end
-"""
-    ConjugateGradientOptions <: Options
-specify options for a conjugate gradient descent algoritm, that solves a
-[`GradientProblem`].
-
-# Fields
-* `x0` : Initial Point on the manifold
-* `stoppingCriterion` : a stopping criterion
-* `lineSearch` : a function to perform line search that is based on all
-  information from `GradientProblem` and the `lineSearchoptions`
-* `lineSearchOptions` : options for the `lineSearch`, e.g. parameters necessary
-    within [`ArmijoLineSearch`](@ref).
-* `directionUpdate` : a function @(M,g,gnew,d) computing the update `dnew` based on the
-    current and last gradient as well as the last direction and
-* `directionUpdateOptions` : options for the update, if needed (e.g. to provide the hessian with a function handle).
-
-# See also
-[`conjugateGradientDescent`](@ref), [`GradientProblem`](@ref), [`ArmijoLineSearch`](@ref)
-"""
-mutable struct ConjugateGradientOptions <: Options
-    x0::P where {P <: MPoint}
-    stoppingCriterion::Function
-    retraction::Function
-    lineSearch::Function
-    lineSearchOptions::L where {L <: LineSearchOptions}
-    directionUpdate::Function
-    directionUpdateOptions::D where {D <: DirectionUpdateOptions}
-    ConjugateGradientOptions(x0::P where {P <: MPoint},
-        sC::Function,
-        lS::Function,
-        lSO::L where {L<: LineSearchOptions},
-        dU::Function,
-        dUO::D where {D <: DirectionUpdateOptions}
-        ) = ConjugateGradientOptions(x0,sC,exp,lS,lSO,dU,dUO)
-end
-
 abstract type EvalOrder end
 mutable struct LinearEvalOrder <: EvalOrder end
 mutable struct RandomEvalOrder <: EvalOrder end
 mutable struct FixedRandomEvalOrder <: EvalOrder end
-"""
-    CyclicProximalPointOptions <: Options
-stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
-
-# Fields
-* `x0` : an [`MPoint`](@ref) to start
-* `stoppingCriterion` : a function `@(iter,x,xnew,λ_k)` based on the current
-    `iter`, `x` and `xnew` as well as the current value of `λ`.
-* `λ` : (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
-* `orderType` : (`LinearEvalOrder()`) how to cycle through the proximal maps.
-    Other values are `RandomEvalOrder()` that takes a new random order each
-    iteration, and `FixedRandomEvalOrder()` that fixes a random cycle for all iterations.
-
-# See also
-[`cyclicProximalPoint`](@ref)
-"""
-mutable struct CyclicProximalPointOptions <: Options
-    x0::P where {P <: MPoint}
-    stoppingCriterion::Function
-    λ::Function
-    orderType::EvalOrder
-    CyclicProximalPointOptions(x0::P where {P <: MPoint},sC::Function,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) = new(x0,sC,λ,o)
-end
 """
     DouglasRachfordOptions <: Options
 """
@@ -212,16 +153,8 @@ Result of evaluating stoppingCriterion in the options, i.e.
 * `true` if the algorithms stopping criteria are fulfilled and it should stop
 * `false` otherwise.
 """
-# function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:Options, P <: MPoint, MT <: TVector, I<:Integer}
-#   # Fallback: Unpeel options (might be Debugrated or such)
-#   evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
-# end
-# fallback: Unpeel
 function evaluateStoppingCriterion(o::O,v...) where {O<:Options}
   evaluateStoppingCriterion(getOptions(o),v...)
-end
-function evaluateStoppingCriterion(o::O,iter::I, x::P, xnew::P,λ) where {O<:CyclicProximalPointOptions, P <: MPoint, I<:Integer}
-  o.stoppingCriterion(iter, x, xnew, λ)
 end
 function evaluateStoppingCriterion(o::O, iter::I, η::T, x::P, xnew::P) where {O<:TrustRegionOptions, P <: MPoint, T <: TVector, I<:Integer}
   o.stoppingCriterion(iter,η,x,xnew)

@@ -73,6 +73,41 @@ mutable struct GradientDescentOptions <: Options
     # fallback do exp
     GradientDescentOptions(x0::P where {P<:MPoint},sC::Function,lS::Function,lSO::L where {L <: LineSearchOptions},retr::Function=exp) = new(x0,sC,retr,lS,lSO)
 end
+"""
+    ConjugateGradientOptions <: Options
+specify options for a conjugate gradient descent algoritm, that solves a
+[`GradientProblem`].
+
+# Fields
+* `x0` : Initial Point on the manifold
+* `stoppingCriterion` : a stopping criterion
+* `lineSearch` : a function to perform line search that is based on all
+  information from `GradientProblem` and the `lineSearchoptions`
+* `lineSearchOptions` : options for the `lineSearch`, e.g. parameters necessary
+    within [`ArmijoLineSearch`](@ref).
+* `directionUpdate` : a function @(M,g,gnew,d) computing the update `dnew` based on the
+    current and last gradient as well as the last direction and
+* `directionUpdateOptions` : options for the update, if needed (e.g. to provide the hessian with a function handle).
+
+# See also
+[`conjugateGradientDescent`](@ref), [`GradientProblem`](@ref), [`ArmijoLineSearch`](@ref)
+"""
+mutable struct ConjugateGradientOptions <: Options
+    x0::P where {P <: MPoint}
+    stoppingCriterion::Function
+    retraction::Function
+    lineSearch::Function
+    lineSearchOptions::L where {L <: LineSearchOptions}
+    directionUpdate::Function
+    directionUpdateOptions::D where {D <: DirectionUpdateOptions}
+    ConjugateGradientOptions(x0::P where {P <: MPoint},
+        sC::Function,
+        lS::Function,
+        lSO::L where {L<: LineSearchOptions},
+        dU::Function,
+        dUO::D where {D <: DirectionUpdateOptions}
+        ) = ConjugateGradientOptions(x0,sC,exp,lS,lSO,dU,dUO)
+end
 function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:GradientDescentOptions, P <: MPoint, MT <: TVector, I<:Integer}
   o.stoppingCriterion(iter,ξ,x,xnew)
 end
