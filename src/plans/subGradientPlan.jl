@@ -43,9 +43,21 @@ mutable struct SubGradientMethodOptions <: Options
     x0::P where P <: MPoint
     SubGradientMethodOptions(x,sC,retr,stepS) = new(retr,stepS,sC,x)
 end
+"""
+    getStepSize(p,o,vars...)
+evaluate the step size function from the plan of a subgradient plan given by the
+`SubGradientMethodOptions o` and the `SubGradientProblem p` with respect to the
+variables `vars...`.
+"""
 function getStepsize(p::P,o::O,vars...) where {P <: SubGradientProblem{M} where M <: Manifold, O <: SubGradientMethodOptions}
     return o.stepSize(vars...)
 end
+"""
+    evaluateStoppingCriterion(o,iter,ξ,x,xnew)
+evaluate the stopping criterion stored within the `SubGradientMethodOptions o`
+with respect to the current iteration `iter`, the last and current iterates
+`x` and `xnew` as well as the current subgradient `ξ`.
+"""
 function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:SubGradientMethodOptions, P <: MPoint, MT <: TVector, I<:Integer}
   o.stoppingCriterion(iter,ξ,x,xnew)
 end

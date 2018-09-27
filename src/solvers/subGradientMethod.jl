@@ -1,7 +1,7 @@
 #
 # A simple steepest descent algorithm implementation
 #
-export subGradientMethod, subGradDescDebug
+export subGradientMethod
 @doc doc"""
     subGradientMethod(M, F, ∂F, x)
 perform a subgradient method $x_{k+1} = \mathcal R({x_k}, s_k∂F(x_k))$,
@@ -89,38 +89,4 @@ function subGradientMethod(p::P, o::O) where {P <: SubGradientProblem, O <: Opti
         x = xnew
     end
     return xOpt,reason
-end
-# fallback - do nothing just unpeel
-function subGradDescDebug(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {O <: Options, MP <: MPoint, MT <: TVector}
-    if getOptions(o) != o
-        subGradDescDebug(getOptions(o),iter,x,xnew,ξ,s,reason)
-    end
-end
-function subGradDescDebug(o::D,iter::Int,x::MP,xnew::MP,xopt::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugOptions, MT <: TVector, MP <: MPoint}
-    # decorate
-    d = o.debugValues;
-    # Update values for debug
-    if haskey(d,"x")
-        d["x"] = x;
-    end
-    if haskey(d,"xnew")
-        d["xnew"] = xnew;
-    end
-    if haskey(d,"xopt")
-        d["xopt"] = xopt;
-    end
-    if haskey(d,"subgradient")
-        d["subgradient"] = ξ;
-    end
-    if haskey(d,"Iteration")
-        d["Iteration"] = iter;
-    end
-    if haskey(d,"Stepsize")
-        d["Stepsize"] = s;
-    end
-    # one could also activate a debug checking stept size to -grad if problem and chekNegative are given?
-    o.debugFunction(d);
-    if getVerbosity(o) > 2 && length(reason) > 0
-        print(reason)
-    end
 end

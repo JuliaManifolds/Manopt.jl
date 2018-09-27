@@ -108,33 +108,57 @@ mutable struct ConjugateGradientOptions <: Options
         dUO::D where {D <: DirectionUpdateOptions}
         ) = ConjugateGradientOptions(x0,sC,exp,lS,lSO,dU,dUO)
 end
+"""
+    evaluateStoppingCriterion(o,iter,ξ,x,xnew)
+evaluate the stopping criterion stored within the `GradientDescentOptions o`
+with respect to the current iteration `iter`, the last and current iterates
+`x` and `xnew` as well as the current gradient `ξ`.
+"""
 function evaluateStoppingCriterion(o::O,iter::I,ξ::MT, x::P, xnew::P) where {O<:GradientDescentOptions, P <: MPoint, MT <: TVector, I<:Integer}
   o.stoppingCriterion(iter,ξ,x,xnew)
 end
 """
-    getStepsize(p,o)
+    getStepsize(p,o,vars...)
 
-evaluates the stopping criterion of problem with respect to the current
-iteration iter, the descent direction ξ, and two (successive) iterates x1, x2
-of the algorithm.
+calculate using the internal line search of the `GradientDescentOptions o`
+belonging to the `GradientProblem p`, where `vars...` contains further variables
+required for the line search.
 """
 function getStepsize(p::P,o::O,vars...) where {P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions}
     return getStepsize(p,o.lineSearchOptions,o.lineSearch,vars...)
 end
 # for gradientLineSearch: Update initS and x and start
+"""
+    getStepsize(p,o,x,s)
+
+calculate using the internal line search of the `ArmijoLineSearchOptions o`
+belonging to the `GradientProblem p`, at a point `x`and initial step size `s`.
+"""
 function getStepsize(p::gP,o::O, f::Function, x::P, s::Float64) where {gP <: GradientProblem{M} where M <: Manifold, O <: ArmijoLineSearchOptions, P <: MPoint}
     o.initialStepsize = s
     o.x = x;
     return getStepsize(p,o,f)
 end
-# for generalLineSearch - update DescentDir and continue
+"""
+    getStepsize(p,o,f,x,s)
+
+calculate using the internal line search of the `LineSearchOptions o`
+belonging to the `GradientProblem p`, at a point `x`and initial step size `s`
+by updating the descent direction in `o` before calling the function `f`.
+"""
 function getStepsize(p::gP,o::O, f::Function, x::P, s::Float64) where {gP <: GradientProblem{M} where M <: Manifold, P <: MPoint, O <: LineSearchOptions}
   o.initialStepsize = s;
   o.x = x;
   updateDescentDir!(o,x)
   return getStepsize(p,o,f)
 end
-# (finally) call lineSearchProcedure
+"""
+    getStepsize(p,o,f)
+
+calculate using the internal line search of the `ArmijoLineSearchOptions o`
+or `LineSearchOptions o` belonging to the `GradientProblem p` using the line
+seach function `f`.
+"""
 function getStepsize(p::gP, o::O, f::Function) where {gP <: GradientProblem{M} where M <: Manifold, O <: Union{ArmijoLineSearchOptions,LineSearchOptions}}
   return f(p,o)
 end

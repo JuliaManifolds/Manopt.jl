@@ -91,10 +91,15 @@ function getIterationString(data::Dict{String,<:Any})
     end
     return s;
 end
+"""
+    getCostString(data[,Point="x"])
+returns (if both items presen) the cost function evaluated at the point stored
+in the field addressed by `Point`, which is by default `"x"`.
+"""
 function getCostString(data::Dict{String,<:Any},Point::String="x")
     s::String="";
-    if haskey(data,"costFunction") && haskey(data,"x")
-        x = data["x"];
+    if haskey(data,"costFunction") && haskey(data,Point)
+        x = data[Point];
         F = data["costFunction"]
         if get(data,"Format","short") == "short"
             s = string(" | ",string(F(x)) );
@@ -104,6 +109,11 @@ function getCostString(data::Dict{String,<:Any},Point::String="x")
     end
     return s;
 end
+"""
+    getLastChangeString(data)
+returns (if all 3 items provided) last change between `x` and `xnew` measured
+using the distance on their manifold M.
+"""
 function getLastChangeString(data::Dict{String,<:Any})
     s::String="";
     if haskey(data,"x") && haskey(data,"xnew") && haskey(data,"manifold")
@@ -118,6 +128,10 @@ function getLastChangeString(data::Dict{String,<:Any})
     end
     return s
 end
+"""
+    getNormSubGradientString(data)
+returns (if provided) the subgradient norm as a string from the debug values.
+"""
 function getNormSubGradientString(data::Dict{String,<:Any})
     s::String="";
     if haskey(data,"subgradient") && haskey(data,"x") && haskey(data,"manifold")
@@ -133,6 +147,10 @@ function getNormSubGradientString(data::Dict{String,<:Any})
     end
     return s;
 end
+"""
+    getNormGradientString(data)
+returns (if provided) the gradient norm as a string from the debug values.
+"""
 function getNormGradientString(data::Dict{String,<:Any})
     s::String=""
     if haskey(data,"gradient") && haskey(data,"x") && haskey(data,"manifold")
@@ -148,6 +166,10 @@ function getNormGradientString(data::Dict{String,<:Any})
     end
     return s
 end
+"""
+   getStopReasonString(data)
+returns the stop reason if it is within the debug values and a nonempty string.
+"""
 function getStopReasonString(data::Dict{String,<:Any})
     s::String=""
     if length(get(data,"StopReason","")) > 0
@@ -155,6 +177,10 @@ function getStopReasonString(data::Dict{String,<:Any})
     end
     return s
 end
+"""
+   getKeyValueString(data,key)
+extracts a key-value pair addresses by its `key` from the debug dictionary.
+"""
 function getKeyValueString(data::Dict{String,<:Any},key::String)
     s::String="";
     if haskey(data,key)
