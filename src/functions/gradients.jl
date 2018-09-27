@@ -100,7 +100,7 @@ absolute second order difference is defined as
 $ d_2(x,y,z) = \min_{c\in\mathcal C_{x,z}} d(c,y).$
 
 While the (sub)gradient with respect to $y$ is easy, the other two require
-the evaluation of an ['AdjointJacobiField'](@ref). See
+the evaluation of an [`adjointJacobiField`](@ref). See
 Bačák, Bergmann, Steidl, Weinmann, 2016 for the derivation
 """
 function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoint}, p::Number=1)

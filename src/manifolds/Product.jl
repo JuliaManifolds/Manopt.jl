@@ -95,7 +95,7 @@ computes the product parallelTransport map on the [`Product`](@ref) manifold and
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
 """
     typicalDistance(M)
-returns the typical distance on the [`Prod`](@ref)` Prod`, which is the minimum of the internal ones.
+returns the typical distance on the [`Product`](@ref)` M`, which is the minimum of the internal ones.
 """
 typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) );
 @doc doc"""

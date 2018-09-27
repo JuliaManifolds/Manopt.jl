@@ -51,19 +51,7 @@ IsMatrixP
 IsMatrixV
 ```
 
-## Special Manifolds to extend the above Basic manifolds
-### Product manifold
-```@docs
-Product
-ProdPoint
-ProdTVector
-```
-### Power manifold
-```@docs
-Power
-PowPoint
-PowTVector
-```
+Further special manifolds can be created combining existing ones, see [Combined Manifolds](@ref CombinedManifolds)
 
 ## Functions that need to be implemented for a Manifold
 If you plan to implement a new manifold within `Manopt.jl`, the following

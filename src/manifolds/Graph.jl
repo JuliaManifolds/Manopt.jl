@@ -12,7 +12,7 @@ export show, getValue
 @doc doc"""
     Graph{M<:Manifold} <: Manifold
 The graph manifold models manifold-valued data on a graph
-$\mathcal G = (\mathcal Vm \mathcal E)$, both on vertices
+$\mathcal G = (\mathcal V, \mathcal E)$, both on vertices
 and edges as well as their interplay. The adjacency is stored in a matrix,
 and may contain also the weights.
 
@@ -23,8 +23,7 @@ depending on the type of `MPoint` one of them is returned.
 # Fields
 the default values are given in brackets
 * `adjacency` – the (sparse) adjacency matrix, might also carry weights, i.e. all
-  $a_{ij}>0$ refer to adjacent nodes $i$ and $j$, see [`addEdge`](@ref)
-  and [`removeEdge`](@ref)
+  $a_{ij}>0$ refer to adjacent nodes $i$ and $j$
 * `name` – (`A Graph manifold of \$Submanifold.`) name of the manifold
 * `manifold` – the internal manifold present at vertices (edges) for [`GraphVertexPoint`](@ref) ([`GraphEdgePoint`](@ref))
 * `dimension` – stores the dimension of the manifold of a `GraphVertexPoint`
@@ -156,7 +155,7 @@ returns the (product of) dimension(s) of the [`Graph`](@ref)` M` seen as a verte
 manifoldDimension(M::Graph) = size(M.adjacency,1) * manifoldDimension(M.manifold)
 """
     norm(M,x,ξ)
-norm of the [`GraphVertexTVector`]` ξ` induced by the metric on the manifold components
+norm of the [`GraphVertexTVector`](@ref)` ξ` induced by the metric on the manifold components
 of the [`Graph`](@ref)` M`.
 """
 norm(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector) = sqrt( dot.(M.manifold,x,ξ,ξ) )
@@ -227,7 +226,7 @@ function startEdgePoint(M::Graph, x::GraphVertexPoint)::GraphEdgePoint
 end
 """
     sumEdgeTVector(M,ξ)
-return the [ `GraphVertexTVector`](@ref) where edge tangents are summed in their start point.
+return the [`GraphVertexTVector`](@ref) where edge tangents are summed in their start point.
 
 For an [`GraphEdgeTVector`](@ref)` ξ` on a [`Graph`](@ref) manifold `M`
 this function assumes that all edge tangents are attached in a tangent space

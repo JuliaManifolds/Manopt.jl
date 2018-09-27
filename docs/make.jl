@@ -8,6 +8,7 @@ makedocs(
         "Home" => "index.md",
         "Manifolds" => [
             "Introduction" => "manifolds/index.md",
+            "Combinations of Manifolds" => "manifolds/combined.md",
             "The Circle \$\\mathbb S^1\$" => "manifolds/circle.md",
             "The Euclidean Space \$\\mathbb R^n\$" => "manifolds/euclidean.md",
             "The Hyperbolic Space \$\\mathbb H^n\$" => "manifolds/hyperbolic.md",

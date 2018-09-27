@@ -115,7 +115,8 @@ norm(M::Power, x::PowPoint, ξ::PowTVector) = sqrt( dot(M,x,ξ,ξ) )
 
 """
     parallelTransport(M,x,ξ)
-computes the product parallelTransport map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
+computes the product parallelTransport map on the [`Power`](@ref) and returns
+the corresponding [`PowTVector`](@ref)` ξ`.
 """
 parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) = PowTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
 @doc doc"""
