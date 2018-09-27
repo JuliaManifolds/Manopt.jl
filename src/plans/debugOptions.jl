@@ -121,6 +121,7 @@ optionsHasDebug(o::O) where {O<:DebugOptions} = true
 
 """
     updateDebugValues!(o,v)
+
 update all values in the debug options `o` for which `v` has a new value.
 """
 function updateDebugValues!(o::O,v::Dict{String,<:Any}) where {O<:DebugOptions}
@@ -133,8 +134,8 @@ end
 """
     getVerbosity(Options)
 
-returns the verbosity of the options, if any decorator provides such, otherwise 0
-    if more than one decorator has a verbosity, the maximum is returned
+returns the verbosity of the options, if any decorator provides such, otherwise
+0 if more than one decorator has a verbosity, the maximum is returned
 """
 function getVerbosity(o::O) where {O<:Options}
   if getOptions(o) == o # no Decorator
