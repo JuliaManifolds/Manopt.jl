@@ -66,6 +66,10 @@ function trustRegion(p::Pr,x::P,o::O) where {Pr <: Union{GradientProblem, Hessia
     # update Options
     updateTrustRadius!(tRSubO,Δ);
     stop,reason = evaluateStoppingCriterion(o,iter,η,x,xnew)
+    if optionsHasDebug(o)
+        updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "η" => η, "Iteration" => iter));
+        Debug(o)
+    end
     x = xnew
   end
   return x,reason

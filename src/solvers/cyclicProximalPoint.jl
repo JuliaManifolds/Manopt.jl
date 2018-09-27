@@ -79,7 +79,10 @@ function cyclicProximalPoint(p::P,o::O) where {P<:ProximalProblem, O<:Options}
             xnew = getProximalMap(p,λi,xnew,k)
         end
         stop, reason = evaluateStoppingCriterion(lO,iter,x,xnew,λi)
-        cPPDebug(o,iter,x,xnew,λi,reason)
+        if optionsHasDebug(o)
+            updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "λ" => λi, "Iteration" => iter, "Reason" => reason));
+            Debug(o)
+        end
         x = xnew
     end
     return x, reason
@@ -87,30 +90,3 @@ end
 updateOrder(n,i,o,::LinearEvalOrder) = o
 updateOrder(n,i,o,::RandomEvalOrder) = collect(1:n)[randperm(length(X))]
 updateOrder(n,i,o,::FixedRandomEvalOrder) = (i==0) ? collect(1:n)[randperm(length(X))] : o
-
-function cPPDebug(o::O,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) where {O <: Options, MP <: MPoint}
-    if getOptions(o) != o
-        cPPDebug(getOptions(o),iter,x,xnew,λ,reason)
-    end
-end
-function cPPDebug(o::D,iter::Int,x::MP,xnew::MP,λ::Float64,reason::String) where {D <: DebugOptions, MP <: MPoint}
-    # decorate
-    d = o.debugValues;
-    # Update values for debug
-    if haskey(d,"x")
-        d["x"] = x;
-    end
-    if haskey(d,"xnew")
-        d["xnew"] = xnew;
-    end
-    if haskey(d,"λ")
-        d["λ"] = λ;
-    end
-    if haskey(d,"Iteration")
-        d["Iteration"] = iter;
-    end
-    o.debugFunction(d);
-    if getVerbosity(o) > 2 && length(reason) > 0
-        print(reason)
-    end
-end

@@ -80,39 +80,11 @@ function steepestDescent(p::P, o::O) where {P <: GradientProblem, O <: Options}
         xnew = getOptions(o).retraction(M,x,-s*ξ)
         iter=iter+1
         stop, reason = evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
-        gradDescDebug(o,iter,x,xnew,ξ,s,reason)
+        if optionsHasDebug(o)
+            updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "gradient" => ξ, "Iteration" => iter, "Stepsize" => s, "Reason" => reason));
+            Debug(o)
+        end
         x=xnew
     end
     return x,reason
-end
-# fallback - do nothing just unpeel
-function gradDescDebug(o::O,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {O <: Options, MP <: MPoint, MT <: TVector}
-    if getOptions(o) != o
-        gradDescDebug(getOptions(o),iter,x,xnew,ξ,s,reason)
-    end
-end
-function gradDescDebug(o::D,iter::Int,x::MP,xnew::MP,ξ::MT,s::Float64,reason::String) where {D <: DebugOptions, MT <: TVector, MP <: MPoint}
-    # decorate
-    d = o.debugValues;
-    # Update values for debug
-    if haskey(d,"x")
-        d["x"] = xnew;
-    end
-    if haskey(d,"xnew")
-        d["xnew"] = x;
-    end
-    if haskey(d,"gradient")
-        d["gradient"] = ξ;
-    end
-    if haskey(d,"Iteration")
-        d["Iteration"] = iter;
-    end
-    if haskey(d,"Stepsize")
-        d["Stepsize"] = s;
-    end
-    # one could also activate a debug checking stept size to -grad if problem and chekNegative are given?
-    o.debugFunction(d);
-    if getVerbosity(o) > 2 && length(reason) > 0
-        print(reason)
-    end
 end

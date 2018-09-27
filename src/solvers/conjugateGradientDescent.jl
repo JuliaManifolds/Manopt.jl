@@ -99,7 +99,10 @@ function conjugateGradientDescent(p::P, o::O) where {P <: GradientProblem, O <: 
             getOptions(o).directionUpdateOptions)
         δnew = - ξnew + βnew * parallelTransport(M,x,xnew,δ)
         (stop, reason) = evaluateStoppingCriterion(getOptions(o),iter,ξ,x,xnew)
-        gradDescDebug(o,iter,x,xnew,ξ,s,reason);
+        if optionsHasDebug(o)
+            updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "gradient" => ξ, "Iteration" => iter, "Stepsize" => s, "Reason" => reason));
+            Debug(o)
+        end
         x=xnew;
         ξ = ξnew;
         δ = δnew;

@@ -45,7 +45,8 @@ getOptions(o::O) where {O <: DebugOptions} = getOptions(o.options); #unpeel recu
 
 """
     Debug(o)
-perform debug output for options `o`
+
+perform debug output for options `o`.
 """
 function Debug(o::O) where {O<:DebugOptions}
     o.debugFunction(o.debugValues)

@@ -105,31 +105,11 @@ function DouglasRachford(p::ProximalProblem,o::DouglasRachfordOptions)
         xnew = geodesic(M,x,xnew,α(iter))
         stop, reason = evaluateStoppingCriterion(o,iter,x,xnew,λ)
         # Debug?
-        DRDebug(o,iter,x,xnew,reason)
+        if optionsHasDebug(o)
+            updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "Iteration" => iter, "Reason" => reason));
+            Debug(o)
+        end
         x = xnew
     end
     return x,reason
-end
-function DRDebug(o::O,iter::Int,x::MP,xnew::MP,reason::String) where {O <: Options, MP <: MPoint}
-    if getOptions(o) != o
-        DRDebug(getOptions(o),iter,x,xnew,reason)
-    end
-end
-function DRDebug(o::D,iter::Int,x::MP,xnew::MP,reason::String) where {D <: DebugOptions, MP <: MPoint}
-    # decorate
-    d = o.debugValues;
-    # Update values for debug
-    if haskey(d,"x")
-        d["x"] = x;
-    end
-    if haskey(d,"xnew")
-        d["xnew"] = xnew;
-    end
-    if haskey(d,"Iteration")
-        d["Iteration"] = iter;
-    end
-    o.debugFunction(d);
-    if getVerbosity(o) > 2 && length(reason) > 0
-        print(reason)
-    end
 end
