@@ -33,8 +33,8 @@ function cyclicProximalPoint(M::Mc,
         F::Function, proximalMaps::Array{Function,N} where N, x::MP;
         evaluationOrder::EvalOrder = LinearEvalOrder(),
         stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-8 || i > 4999,
-            (i>4999) ? "max Iter $(i) reached." :
-            ( (distance(M,x,xnew) < 10.0^-8) ? "#$(i) | Minimal change ($(distance(M,x,xnew))) small enough." :
+            (i>4999) ? "Maximal number of Iterations ($(i)) reached." :
+            ( (distance(M,x,xnew) < 10.0^-8) ? "#$(i) | Last change in the iterate ($(distance(M,x,xnew))) below minimal change." :
             "" )),
         λ = iter -> typicalDistance(M)/iter,
         returnReason=false,
@@ -80,7 +80,7 @@ function cyclicProximalPoint(p::P,o::O) where {P<:ProximalProblem, O<:Options}
         end
         stop, reason = evaluateStoppingCriterion(lO,iter,x,xnew,λi)
         if optionsHasDebug(o)
-            updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "λ" => λi, "Iteration" => iter, "Reason" => reason));
+            updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "λ" => λi, "Iteration" => iter, "StopReason" => reason));
             Debug(o)
         end
         x = xnew

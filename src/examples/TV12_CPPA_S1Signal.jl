@@ -24,7 +24,7 @@ yR = S1Signal.(x,false);
 # Put data in manifold-types
 M = Circle()
 yS = S1Point.(y)
-ySn = addNoise.(Ref(M),yS,0.2);
+ySn = addNoise.(Ref(M),yS,0.3);
 # noisy data array
 yn = getValue.(ySn);
 # Power manifold
@@ -46,10 +46,10 @@ meanSquaredError(MPow,yPow,ynPow)
 # TV
 α = 0.75
 proxMaps = [ (λ,x) -> proxDistance(MPow,λ,ynPow,x), (λ,x) -> proxTV(MPow,α*λ,x) ]
-costF = (x) -> L2TV(MPow,ynPow,α,x);
+costF = (x) -> costL2TV(MPow,ynPow,α,x);
 recTV = cyclicProximalPoint(MPow,costF,proxMaps,ynPow;
-        debug = (d -> (d["Iteration"]%1000==1) ? print(d["Iteration"],"| λ=",d["λ"]," | last change ",distance(MPow,d["x"],d["xnew"]),"\n") : print("") ,
-                Dict("λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"") ,4),
+        debug = (cyclicProximalPointDebug, Dict("Manifold"=>MPow,"step"=>1000,
+        "costFunction"=>costF, "λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"","StopReason"=>"") ,4),
         λ = i -> π/4/i
     );
 meanSquaredError(MPow,yPow,recTV)
@@ -63,10 +63,10 @@ savefig(string(resultsFolder,"wrapped-noisy-TV",fileType))
 # TV2
 β = 1
 proxMaps2 = [ (λ,x) -> proxDistance(MPow,λ,yPow,x), (λ,x) -> proxTV2(MPow,β*λ,x) ]
-costF2 = (x) -> L2TV2(MPow,yPow,β,x);
+costF2 = (x) -> costL2TV2(MPow,yPow,β,x);
 recTV2 = cyclicProximalPoint(MPow,costF2,proxMaps2,ynPow;
-        debug = (d -> (d["Iteration"]%1000==1) ? print(d["Iteration"],"| λ=",d["λ"]," | last change ",distance(MPow,d["x"],d["xnew"]),"\n") : print("") ,
-                Dict("λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"") ,4),
+debug = (cyclicProximalPointDebug, Dict("Manifold"=>MPow,"step"=>1000,
+    "costFunction"=>costF2, "λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"","StopReason"=>"") ,4),
         λ = i -> π/4/i
     );
 meanSquaredError(MPow,yPow,recTV2)
@@ -80,10 +80,10 @@ savefig(string(resultsFolder,"wrapped-noisy-TV2",fileType))
 # TV 1&2
 α,β = 0.5,.5
 proxMaps1p2 = [ (λ,x) -> proxDistance(MPow,λ,yPow,x), (λ,x) -> proxTV(MPow,α*λ,x), (λ,x) -> proxTV2(MPow,β*λ,x) ]
-costF1p2 = (x) -> L2TVplusTV2(MPow,yPow,α,β,x);
+costF1p2 = (x) -> costL2TVplusTV2(MPow,yPow,α,β,x);
 recTV1p2 = cyclicProximalPoint(MPow,costF1p2,proxMaps1p2,ynPow;
-        debug = (d -> (d["Iteration"]%1000==1) ? print(d["Iteration"],"| λ=",d["λ"]," | last change ",distance(MPow,d["x"],d["xnew"]),"\n") : print("") ,
-                Dict("λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"") ,4),
+debug = (cyclicProximalPointDebug, Dict("Manifold"=>MPow,"step"=>1000,
+    "costFunction"=>costF1p2, "λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"","StopReason"=>"") ,4),
         λ = i -> π/4/i
     );
 meanSquaredError(MPow,yPow,recTV1p2)
@@ -99,10 +99,10 @@ ynRPow = PowPoint(RnPoint.(yn))
 RPow = Power(Euclidean(1),size(yn))
 α = 0.75
 proxMapsR = [ (λ,x) -> proxDistance(RPow,λ,ynRPow,x), (λ,x) -> proxTV(RPow,α*λ,x) ]
-costFR = (x) -> L2TV(RPow,ynRpow,α,x);
+costFR = (x) -> costL2TV(RPow,ynRPow,α,x);
 recTVR = cyclicProximalPoint(RPow,costFR,proxMapsR,ynRPow;
-        debug = (d -> (d["Iteration"]%1000==1) ? print(d["Iteration"],"| λ=",d["λ"]," | last change ",distance(RPow,d["x"],d["xnew"]),"\n") : print("") ,
-                Dict("λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"") ,4),
+debug = (cyclicProximalPointDebug, Dict("Manifold"=>MPow,"step"=>1000,
+    "costFunction"=>costFR, "λ"=>"","Iteration"=>0,"x"=>"","xnew"=>"","StopReason"=>"") ,4),
         λ = i -> π/4/i
     );
 yRecTVR = getValue.( getValue(recTVR) )
@@ -112,5 +112,5 @@ plot!(x,yRecTVR,label="reconstructed",linetype=:scatter, marker=(2.5,stroke(0)))
 savefig(string(resultsFolder,"wrapped-noisy-TVR",fileType))
 
 # Export Data
-df = DataFrame(x=x, y=y, yR=yR, yn=yn, yRecTV=yRecTV, yRecTV2=yRecTV2, yRecTV1p2=yRecTV1p2, yRecTVR=yRecTVR)
+df = DataFrame(x=x, y=y, yR=yR, yn=yn, yRecTV=yRecTV, yRecTV2=yRecTV2, yRecTV1p2=yRecTV1p2, yRecTVR=yRecTVR);
 CSV.write(string(resultsFolder,"phase-data.csv"),df);

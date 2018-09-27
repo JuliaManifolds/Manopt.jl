@@ -3,7 +3,7 @@
 # and sovlers.
 #
 # Manopt.jl, R. Bergmann, 2018-06-27
-export gradientDebug,cyclicProcimalPointDebug, subGradientDebug
+export gradientDebug,cyclicProximalPointDebug, subGradientDebug
 """
     gradientDebug(v)
 print all fields of a gradient descent method, if they are present in the dictionary
@@ -57,7 +57,7 @@ end
      cyclicProcimalPointDebug(v)
 create the string conatining all CPPA values present in the dictionary `v`.
 """
-function cyclicProcimalPointDebug(data::Dict{String,Any})
+function cyclicProximalPointDebug(data::Dict{String,Any})
     # if step is given only output every step-th iterate
     s::String=""
     r = getStopReasonString(data)
