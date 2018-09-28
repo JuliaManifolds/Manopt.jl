@@ -17,6 +17,29 @@ A general super type for all options.
 """
 abstract type Options end
 """
+    EvalOrder
+type for specifying an evaluation order for any cyclicly evaluated algorithms
+"""
+abstract type EvalOrder end
+"""
+    LinearEvalOrder <: EvalOrder
+evaluate in a linear order, i.e. for each cycle of length l evaluate in the
+order 1,2,...,l.
+"""
+mutable struct LinearEvalOrder <: EvalOrder end
+"""
+    RandomEvalOrder <: EvalOrder
+choose a random order for each evaluation of the l functionals.
+"""
+mutable struct RandomEvalOrder <: EvalOrder end
+"""
+    FixedRandomEvalOrder <: EvalOrder
+Choose a random order once and evaluate always in this order, i.e. for
+l elements there is one chosen permutation used for each iteration cycle.
+"""
+mutable struct FixedRandomEvalOrder <: EvalOrder end
+
+"""
     LineSearchOptions <: Options
 A general super type for all options that refer to some line search
 """
@@ -63,12 +86,19 @@ struct SimpleDirectionUpdateOptions <: DirectionUpdateOptions
 end
 struct HessianDirectionUpdateOptions <: DirectionUpdateOptions
 end
-abstract type EvalOrder end
-mutable struct LinearEvalOrder <: EvalOrder end
-mutable struct RandomEvalOrder <: EvalOrder end
-mutable struct FixedRandomEvalOrder <: EvalOrder end
-"""
+@doc doc"""
     DouglasRachfordOptions <: Options
+Store all options required for the DouglasRachford algorithm,
+
+# Fields
+* `x0` - initial start point
+* `λ` – (`(iter)->1.0`) function to provide the value for the proximal parameter
+  during the calls
+* `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
+  $x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})$, where $t^{(k)}$ is the result
+  of the double reflection involved in the DR algorithm
+* `R` – ([`reflection`](@ref)) method employed in the iteration to perform the reflection of `x` at
+  the prox `p`.
 """
 mutable struct DouglasRachfordOptions <: Options
     x0::P where {P <: MPoint}

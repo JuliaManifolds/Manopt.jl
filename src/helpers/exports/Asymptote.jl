@@ -4,7 +4,7 @@ export renderAsymptote, asyExportS2
     renderAsymptote(filename, exportFct; render=4, format="png", ...)
 render an exported `asy`.
 
-# INPUT
+# Input
 * `filename` : filename of the exported `asy` and rendered image
 * `exportFct`: a function creating an `asy` file with `kwargs` as optional
   arguments and the `filename` string as its only mandatory argument
@@ -14,12 +14,43 @@ the default values are given in brackets
 * `render`   : (4) render level of asymptote, i.e. its `-render` option
 * `format`   : (`"png"`) final rendered format, i.e. asymptote's `-f` option
 all further keyword arguments are passed down to the `exportFct` call.
+
+# See also
+[`asyExportS2`](@ref)
 """
 function renderAsymptote(filename, exportFct; render::Int=4, format="png", kwargs...)
     renderCmd = `asy -render $(render) -f $(format) $(filename)`
     exportFct(filename; kwargs...)
     run(renderCmd)
 end
+@doc doc"""
+    asyExportS2(filename; points, curves, tVectors, colors, options...)
+Export given `points`, `curves`, and `tVectors` on the sphere $\mathbb S^2$
+to Asymptote.
+
+# Input
+* `filename` – a file to store the Asymptote code in.
+
+# Optional Arguments (Data)
+* `colors` - dictionary of color arrays (indexed by symbols `:points`, `:curves`
+  and `:tvector`) where each entry has to provide as least as many colors as
+  the length of the corresponding sets.
+* `curves` – an `Array` of `Arrays` of `SnPoints` where each inner array is
+  interpreted as a curve and is accompanied by an entry within `colors`
+* `points` – an `Array` of `Arrays` of `SnPoints` where each inner array is
+  itnerpreted as a set of points and is accompanied by an entry within `colors`
+* `tVectors` – an `Array` of `Arrays` of extended `SnTVector`s
+  (`TVectorE{SnTVector}`) where each set of vectors is accompanied by an entry
+  from within `colors`
+
+# Optional Arguments (Asymptote)
+* `arrowHeadSize` - (`6.0`) size of the arrowheads of the tangent vectors
+* `cameraPosition` - (`(1., 1., 0.)`) position of the camera in the Asymptote
+  szene
+* `dotSize` – (`1.0`) size of the dots used to draw the points.
+* `dotSizes – overrides the previous value to specify a value per point set.
+* `target` - (`(0.,0.,0.)`) position the camera points at.
+"""
 function asyExportS2(filename::String;
     points::Array{Array{SnPoint,1},1} = Array{Array{SnPoint,1},1}(undef,0),
     curves::Array{Array{SnPoint,1},1} = Array{Array{SnPoint,1},1}(undef,0),

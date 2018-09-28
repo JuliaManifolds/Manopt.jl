@@ -17,7 +17,7 @@ here a linearly decreasing step size, i.e. `(i,x,ξ) -> c(i^k)`
 """
 linearDecreasingStepSize(c::Number,k::Number=1) = (i,x,ξ) -> c/(i^k)
 @doc doc"""
-    constantStepSize(M,c)
+    normedStepSize(M,c)
 returns a function depenting on the iteration `i`, a manifold point `x` (the
 current iterate) and a tangent vector (a subgradient) `ξ` to return a step size,
 here a normed step size, i.e. `(i,x,ξ) -> c/norm(M,xξ)`, i.e. normed with respect

@@ -38,6 +38,8 @@ makedocs(
             "Proximal Maps" => "functions/proximalMaps.md"
         ],
         "Helpers" => [
+            "Error Measures" => "helpers/errorMeasures.md",
+            "Exports" => "helpers/exports.md",
             "Line Search" => "helpers/lineSearch.md"
         ]
     ]

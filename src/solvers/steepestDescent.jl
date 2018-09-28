@@ -1,7 +1,7 @@
 #
 # A simple steepest descent algorithm implementation
 #
-export steepestDescent, gradDescDebug
+export steepestDescent
 @doc doc"""
     steepestDescent(M, F, ∇F, x)
 perform a steepestDescent $x_{k+1} = \exp_{x_k} s_k\nabla f(x_k)$ with different

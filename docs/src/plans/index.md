@@ -27,29 +27,34 @@ getCost
 evaluateStoppingCriterion
 ```
 
-### Gradient based problems and options
+For any algorithm that involves a cyclic evalutaion, e.g.
+[`cyclicProximalPoint`](@ref), one can specify the [`EvalOrder`](@ref) as
+```@docs
+EvalOrder
+LinearEvalOrder
+RandomEvalOrder
+FixedRandomEvalOrder
+```
+
+### Gradient based problems
 ```@docs
 GradientProblem
 getGradient
 ```
-## Subgradient based problem and options
+## Subgradient based problem
 ```@docs
 SubGradientProblem
 getSubGradient
 ```
-Furthermore there are the following StepSize rules
-```@docs
-linearDecreasingStepSize
-```
 
-### Hessian based problems
+### Hessian based problem
 *note that this section is preliminary, there is no Hessian based algorithm yet*
 ```@docs
 HessianProblem
 getHessian
 ```
 
-### Proximal Map(s) based problems
+### Proximal Map(s) based problem
 ```@docs
 ProximalProblem
 getProximalMap

@@ -4,7 +4,7 @@
 # following douglas rachford algorithm
 #
 #
-export DouglasRachford, DRDebug
+export DouglasRachford
 @doc doc"""
      DouglasRachford(M, F, proxMaps, x)
 Computes the Douglas-Rachford algorithm on the manifold $\mathcal M$, initial
@@ -32,10 +32,10 @@ For details see
 the default parameter is given in brackets
 * `λ` – (`(iter) -> 1.0`) function to provide the value for the proximal parameter
   during the calls
-* `α` – ('(iter) -> 0.9') relaxation of the step from old to new iterate, i.e.
+* `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.
   $x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})$, where $t^{(k)}$ is the result
   of the double reflection involved in the DR algorithm
-* `R` – (`reflection`) method employed in the iteration
+* `R` – ([`reflection`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
 * `returnReason` : ( `false` ) whether or not to return the reason as second return
   value.

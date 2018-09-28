@@ -1,4 +1,4 @@
-export cyclicProximalPoint, cPPDebug
+export cyclicProximalPoint
 @doc doc"""
     cyclicProximalPoint(M, F, proximalMaps, x)
 perform a cyclic proximal point algorithm.
@@ -13,9 +13,9 @@ the default values are given in brackets
 * `debug` : (off) a tuple `(f,p,v)` of a DebugFunction `f`
   that is called with its settings dictionary `p` and a verbosity `v`. Existing
   fields of `p` are updated during the iteration from (iter, x, xnew, stepSize).
-* `evaluationOrder <: EvalOrder` ( `LinearEvalOrder()` ) whether to use a randomly
-  permuted sequence (`FixedRandomEvalOrder()`), a per cycle permuted sequence (`RandomEvalOrder()`)
-  or the default linear one.
+* `evaluationOrder <: [`EvalOrder`](@ref) ( [`LinearEvalOrder`](@ref) ) whether
+  to use a randomly permuted sequence ([`FixedRandomEvalOrder`](@ref)), a per
+  cycle permuted sequence ([`RandomEvalOrder`](@ref)) or the default linear one.
 * `λ`  : ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
 * `returnReason` : ( `false` ) whether or not to return the reason as second return
