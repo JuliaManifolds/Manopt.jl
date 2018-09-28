@@ -6,6 +6,15 @@ export getCost, getSubGradient
 export getStepSize, evaluateStoppingCriterion
 #
 # Problem
+@doc doc"""
+    SubGradientProblem <: Problem
+A structure to store information about a subgradient based optimization problem
+
+# Fields
+* `M` – a [`Manifold`](@ref)
+* `costFunction` – the function $F$ to be minimized
+* `subGradient` – a function returning a subgradient $\partial F$ of $F$
+"""
 mutable struct SubGradientProblem{mT <: Manifold} <: Problem
     M::mT
     costFunction::Function
@@ -28,7 +37,7 @@ getCost(p::P,x::MP) where {P <: SubGradientProblem{M} where M <: Manifold, MP <:
 # SubGradientMethod Options
 """
     SubGradientMethodOptions <: Options
-stories option values for a [`SubGradientMethod`](@ref) solver
+stories option values for a [`subGradientMethod`](@ref) solver
 
 # Fields
 * `retraction` – the retration to use within

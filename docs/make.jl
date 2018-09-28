@@ -17,6 +17,7 @@ makedocs(
         ],
         "Plans" => [
             "Introduction" => "plans/index.md"
+            "activate Debug" => "plans/debugOptions.md"
         ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
@@ -34,6 +35,9 @@ makedocs(
             "Gradients" => "functions/gradients.md",
             "JacobiFields" => "functions/jacobiFields.md",
             "Proximal Maps" => "functions/proximalMaps.md"
+        ],
+        "Helpers" => [
+            "Line Search" => "helpers/lineSearch.md"
         ]
     ]
 )

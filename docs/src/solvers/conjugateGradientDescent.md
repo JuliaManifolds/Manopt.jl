@@ -2,6 +2,7 @@
 
 ```@docs
 conjugateGradientDescent
+ConjugateGradientOptions
 ```
 The conjugate gradient descent extends the classical Gradient Descent
 as follows: for some $x_0\in\mathcal M$ the algorithm computes

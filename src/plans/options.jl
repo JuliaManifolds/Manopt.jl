@@ -9,6 +9,7 @@ export getStepSize
 export CyclicProximalPointOptions
 export ConjugateGradientOptions
 export DouglasRachfordOptions
+export TrustRegionOptions, TrustRegionSubOptions
 export evaluateStoppingCriterion, getTrustRadius, updateTrustRadius
 """
     Options

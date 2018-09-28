@@ -2,4 +2,5 @@
 CurrentModule = Manopt
 ```
 # Solvers
-Solvers can be applied to `Problems` with solver specific `Options`.
+Solvers can be applied to [`Problems`](@ref planSection) with solver
+specific `Options`.

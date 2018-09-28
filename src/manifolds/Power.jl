@@ -141,7 +141,7 @@ end
 
 """
     typicalDistance(M)
-returns the typical distance on the [`Power`](@ref)` Pow`, which is based on
+returns the typical distance on the [`Power`](@ref)` M`, which is based on
 the elementwise bae manifold.
 """
 typicalDistance(M::Power) = sqrt( Float64(sum(M.dims)) ) * typicalDistance(M.manifold);

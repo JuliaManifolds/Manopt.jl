@@ -41,8 +41,8 @@ getValue(x::SPDPoint) = x.value
 A tangent vector $\xi$ in
 $T_x\mathcal M = \{ x^{\frac{1}{2}}\nu x^{\frac{1}{2}}
 \big| \nu\in\mathbb R^{n,n}\text{ with }\nu=\nu^{\mathrm{T}}\}$
-to the manifold $\mathcal M = \mathcal P(n)$ of $n\times n$ symmetric positive
-definite matrices, represented in the redundant way of a skew symmetric
+to the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref) $\mathcal M = \mathcal P(n)$ of $n\times n$
+of symmetric positive definite matrices, represented in the redundant way of a skew symmetric
 positive definite matrix.
 """
 struct SPDTVector <: TVector
@@ -60,7 +60,7 @@ getValue(ξ::SPDTVector) = ξ.value
 # ---
 @doc doc"""
 	distance(M,x,y)
-Compute the Riemannian distance on $\mathcal M=\mathcal P(n)$ can be computed as
+Compute the Riemannian distance on the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref) $\mathcal M=\mathcal P(n)$, can be computed as
 
 $ d_{\mathcal P(n)}(x,y) = \lVert \operatorname{Log}(x^{-\frac{1}{2}}yx^{-\frac{1}{2}})\rVert, $
 
@@ -79,7 +79,7 @@ end
     dot(M,x,ξ,ν)
 compute the innter product of the two [`SPDTVector`](@ref)`s ξ,ν` from the tangent
 space $T_x\mathcal M$ of the [`SPDPoint`](@ref)` x` on the
-[`SymmetricPositiveDefinite`](@ref) given by the formula
+[`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M` given by the formula
 
 $ \langle \xi, \nu \rangle_x = \operatorname{tr}(x^{-1}\xi x^{-1}\nu ),$
 
@@ -89,7 +89,7 @@ dot(M,x,ξ,ν) = tr( (x\ξ)*(x\ν) ) #use \ instead of inversion
 
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
-Compute the exponential map on the [`SymmetricPositiveDefinite`](@ref)
+Compute the exponential map on the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M`
 ` M`$=\mathcal P(n)$ with respect to the [`SPDPoint`](@ref)` x` and the
 [`SPDTVector`](@ref)` ξ`, which can be shortened with `t` to `tξ`.
 The formula reads
@@ -116,7 +116,7 @@ end
 Compute the logarithmic map on the [`SymmetricPositiveDefinite`](@ref)
 $\mathcal M=\mathcal P(n)$, i.e. the [`SPDTVector`](@ref) whose corresponding
 [`geodesic`](@ref) starting from [`SPDPoint`](@ref)` x` reaches the
-[`SPDPoint`](@ref)` y` after time 1 on the [`SymmetricPositiveDefinite`](@ref)` M`.
+[`SPDPoint`](@ref)` y` after time 1 on the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M`.
 The formula reads for
 
 $\log_x y = x^{\frac{1}{2}}\operatorname{Log}(x^{-\frac{1}{2}} y x^{-\frac{1}{2}})x^{\frac{1}{2}},$
@@ -140,14 +140,13 @@ function log(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
 end
 @doc doc"""
     manifoldDimension(M)
-returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)
-manifold `M`, i.e. for $n\times n$ matrices the dimension
+returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M`, i.e. for $n\times n$ matrices the dimension
 is $d_{\mathcal P(n)} = \frac{n(n+1)}{2}$.
 """
 manifoldDimension(M::SymmetricPositiveDefinite) = M.dimension
 @doc doc"""
     manifoldDimension(x)
-returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)
+returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M`
 manifold the [`SPDPoint`](@ref)` x` belongs to,
 i.e. for $n\times n$ matrices the dimension is
 $d_{\mathcal P(n)} = \frac{n(n+1)}{2}$.
@@ -156,7 +155,7 @@ manifoldDimension(x::SPDPoint) = size( getValue(x), 1)*(size( getValue(x), 1)+1)
 @doc doc"""
     norm(M,x,ξ)
 Computes the norm of the [`SPDTVector`](@ref)` ξ` from the tangent space $T_x\mathcal M$
-at the [`SPDPoint`](@ref)` x` on the [`SymmetricPositiveDefinite`](@ref) manifold `M`
+at the [`SPDPoint`](@ref)` x` on the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M`
 induced by the inner product [`dot`](@ref) as $\lVert\xi\rVert_x = \sqrt{\langle\xi,\xi\rangle_x}$.
 """
 norm(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector) = sqrt(dot(M,x,ξ,ξ) )
@@ -164,7 +163,7 @@ norm(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector) = sqrt(dot(M,x,ξ,
     parallelTransport(M,x,y,ξ)
 Compute the paralllel transport of the [`SPDTVector`](@ref)` ξ` from
 the tangent space $T_x\mathcal M$ at [`SPDPoint`](@ref)` x` to
-$T_y\mathcal M$ at [`SPDPoint`](@ref)` y` on the [`SymmetricPositiveDefinite`](@ref)` M`
+$T_y\mathcal M$ at [`SPDPoint`](@ref)` y` on the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M`
 along the [`geodesic`](@ref) $g(\cdot;x,y)$.
 The formula reads
 
@@ -203,15 +202,13 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 end
 @doc doc"""
     typicalDistance(M)
-returns the typical distance on the
-[`SymmetricPositiveDefinite`](@ref) manifold
-: $\sqrt{\frac{n(n+1)}{2}}$.
+returns the typical distance on the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M` $\sqrt{\frac{n(n+1)}{2}}$.
 """
 typicalDistance(M::SymmetricPositiveDefinite) = sqrt(M.dimension);
 @doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
-[`SPDPoint`](@ref) $x\in\mathcal P(n)$ on the [`SymmetricPositiveDefinite`](@ref) manifold.
+[`SPDPoint`](@ref) $x\in\mathcal P(n)$ on the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M`.
 """
 zeroTVector(M::SPDPoint, x::SPDPoint) = SPDTVector(  zero( getValue(x) )  );
 # Display

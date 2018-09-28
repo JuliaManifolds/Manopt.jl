@@ -2,3 +2,7 @@
 ```@docs
   DouglasRachford
 ```
+## Options
+```@docs
+DouglasRachfordOptions
+```
