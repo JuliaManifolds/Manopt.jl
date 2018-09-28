@@ -25,6 +25,7 @@ makedocs(
             "Cyclic Proximal Point" => "solvers/cyclicProximalPoint.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Gradient Descent" => "solvers/gradientDescent.md",
+            "Subgradient Method" => "solvers/subGradientMethod.md",
             "Trust Region" => "solvers/trustRegion.md",
         ],
         "Functions" => [
