@@ -1,4 +1,4 @@
-export AdjDxGeo, AdjDyGeo, AdjDxexp, AdjDξexp, AdjDxLog, AdjDylog
+export AdjDxGeo, AdjDyGeo, AdjDxExp, AdjDξExp, AdjDxLog, AdjDyLog
 @doc doc"""
     AdjDxGeo(M,x,y,t,η)
 computes the adjoint of $D_xg(t;x,y)[\eta]$.

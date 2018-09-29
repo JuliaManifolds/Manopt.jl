@@ -2,8 +2,8 @@
 #      Sn - The manifold of the n-dimensional sphere
 #  Point is a Point on the n-dimensional sphere.
 #
-import LinearAlgebra: norm, dot
-import Base: exp, log, show
+import LinearAlgebra: norm, dot, nullspace
+import Base: exp, log, show, cat
 export Sphere, SnPoint, SnTVector,show, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
@@ -147,15 +147,30 @@ $P_{x\to y}(\xi) = \xi - \frac{\langle \log_xy,\xi\rangle_x}{d^2_{\mathbb S^n}(x
 \bigl(\log_xy + \log_yx \bigr).$
 """
 function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
-  ν = log(M,x,y);
-	νL = norm(M,x,ν);
-	if νL > 0
-	  ν = ν/νL;
-		return SnTVector( getValue(ξ) - dot(M,x,ν,ξ)*( getValue(ν) + getValue(log(M,y,x))/νL) );
-  else
-	  # if length of ν is 0, we have p=q and hence ξ is unchanged
-	  return ξ;
-	end
+  ν = log(M,x,y)
+  νL = norm(M,x,ν)
+  if νL > 0
+    ν = ν/νL
+    return SnTVector( getValue(ξ) - dot(M,x,ν,ξ)*( getValue(ν) + getValue(log(M,y,x))/νL) )
+  else # if length of ν is 0, we have p=q and hence ξ is unchanged
+    return ξ
+  end
+end
+tangentONB(M::Sphere, x::SnPoint, y::SnPoint) = tangentONB(M,x,log(M,x,y))
+function tangentONB(M::Sphere,x::SnPoint,ξ::SnTVector)
+    d = manifoldDimension(M)
+    A = zeros(d+1,d+1)
+    A[1,:] = transpose(getValue(x))
+    A[2,:] = transpose(getValue(ξ))
+    V = nullspace(A)
+    κ = ones(d)
+    if ξ != zeroTVector(M,x)
+        # if we have a nonzero direction for the geodesic, add it and it gets curvature zero from the tensor
+        V = cat(getValue(ξ),V,dims=2)
+        κ[1] = 0.0 # no curvature along the geodesic direction, if x!=y
+    end
+    Ξ = [ SnTVector(V[:,i]) for i in 1:d ]
+    return Ξ,κ
 end
 """
     typicalDistance(M)

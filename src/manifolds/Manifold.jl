@@ -100,7 +100,8 @@ return a function to evaluate the geodesic connecting `x` and `y`
 on the manifold `M`.
 """
 function geodesic(M::mT, x::T,y::T)::Function where {mT <: Manifold, T <: MPoint}
-  return (t::Float64 -> exp(M,x,t*log(M,x,y)))
+  g(t) =  exp(M,x,t*log(M,x,y))
+  return g
 end
 """
     geodesic(M,x,y,n)
@@ -115,7 +116,7 @@ end
     geodesic(M,x,y,t)
 returns the point along the geodesic from `x`to `y` given by the `t`(in [0,1]) on the manifold `M`
 """
-geodesic(M::mT,x::T,y::T,t::Number) where {mT <: Manifold, T <: MPoint} = geodesic(M,x,y)(t)
+geodesic(M::mT,x::T,y::T,t::N) where {mT <: Manifold, T <: MPoint, N <: Number} = geodesic(M,x,y)(t)
 """
     geodesic(M,x,y,T)
 returns vector containing the MPoints along the geodesic from `x` to `y` on
@@ -138,7 +139,7 @@ function jacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {
     Ξ,κ = tangentONB(M,x,y) # ONB at x
     Θ = parallelTransport.(Ref(M),Ref(x),Ref(z),Ξ) # Frame at z
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
-    ξ = sum( ( dot.(Ref(M),Ref(x),Ref(η),Ξ) ).* ( β.(κ,t,distance(M,x,y)) ).*Θ )
+    ξ = sum( ( dot.(Ref(M),Ref(x),Ref(η),Ξ) ).* ( β.(κ,Ref(t),Ref(distance(M,x,y))) ).*Θ )
 end
 
 @doc doc"""

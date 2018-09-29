@@ -21,12 +21,14 @@ $\beta(\kappa) = \begin{cases}
 *See also:* [`DxGeo`](@ref), [`jacobiField`](@ref)
 """
 function βDgx(κ::Number,t::Number,d::Number)
-    if κ < 0
-        return sinh(sqrt(-κ)*(1-t)*d)/sinh(sqrt(-κ)*d);
-    elseif κ > 0
-        return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d);
+    if (d==0) || (κ==0)
+        return (1-t)
     else
-        return (1-t);
+        if κ < 0
+            return sinh(sqrt(-κ)*(1-t)*d)/sinh(sqrt(-κ)*d)
+        elseif κ > 0
+            return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d)
+        end
     end
 end
 @doc doc"""
@@ -45,12 +47,14 @@ Note that this function can also be called using [`βDgx`](@ref) with `1-t` for 
 *See also:* [`DyGeo`](@ref), [`jacobiField`](@ref)
 """
 function βDgy(κ::Number,t::Number,d::Number)
-    if κ < 0
-        return sinh(sqrt(-κ)*t*d)/sinh(sqrt(-κ)*d);
-    elseif κ > 0
-        return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d);
+    if (d==0) || (κ==0)
+        return t
     else
-        return t;
+        if κ < 0
+            return sinh(sqrt(-κ)*t*d)/sinh(sqrt(-κ)*d)
+        elseif κ > 0
+            return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d)
+        end
     end
 end
 @doc doc"""
@@ -67,11 +71,11 @@ $\beta(\kappa) = \begin{cases}
 """
 function βDexpx(κ::Number,t::Number,d::Number)
     if κ < 0
-        return cosh(sqrt(-κ)*d);
+        return cosh(sqrt(-κ)*d)
     elseif κ > 0
-        return cos(sqrt(κ)*d);
+        return cos(sqrt(κ)*d)
     else
-        return 1;
+        return 1.0;
     end
 end
 @doc doc"""
@@ -87,12 +91,14 @@ $\beta(\kappa) = \begin{cases}
 *See also:* [`DξExp`](@ref), [`jacobiField`](@ref)
 """
 function βDexpξ(κ::Number,t::Number,d::Number)
-    if κ < 0
-        return sinh(sqrt(-κ)*d)/( d*sqrt((-κ)) );
-    elseif κ > 0
-        return sin( sqrt(κ)*d )/( d*sqrt(κ) );
+    if (d==0) || (κ==0)
+        return 1.0
     else
-        return 1;
+        if κ < 0
+            return sinh(sqrt(-κ)*d)/( d*sqrt((-κ)) )
+        elseif κ > 0
+            return sin( sqrt(κ)*d )/( d*sqrt(κ) )
+        end
     end
 end
 @doc doc"""
@@ -108,12 +114,14 @@ $\beta(\kappa) = \begin{cases}
 *See also:* [`DxLog`](@ref), [`jacobiField`](@ref)
 """
 function βDlogx(κ::Number,t::Number,d::Number)
-    if κ < 0
-        return - sqrt(-κ)*d*cosh(sqrt(-κ)*d)/sinh(sqrt(-κ)*d)
-    elseif κ > 0
-        return - sqrt(κ)*d*cos(sqrt(κ)*d)/sin(sqrt(κ)*d)
+    if (d==0) || (κ==0)
+        return -1.0
     else
-        return -1;
+        if κ < 0
+            return - sqrt(-κ)*d*cosh(sqrt(-κ)*d)/sinh(sqrt(-κ)*d)
+        else #if κ > 0
+            return - sqrt(κ)*d*cos(sqrt(κ)*d)/sin(sqrt(κ)*d)
+        end
     end
 end
 @doc doc"""
@@ -130,11 +138,13 @@ $\beta(\kappa) = \begin{cases}
 *See also:* [`DyLog`](@ref), [`jacobiField`](@ref)
 """
 function βDlogy(κ::Number,t::Number,d::Number)
-    if κ < 0
-        return sqrt(-κ)*d/sinh(sqrt(-κ)*d)
-    elseif κ > 0
-        return sqrt(κ)*d/sin(sqrt(κ)*d)
+    if (d==0) || (κ==0)
+        return 1.0
     else
-        return 1;
+        if κ < 0
+            return sqrt(-κ)*d/sinh(sqrt(-κ)*d)
+        else #if κ > 0
+            return sqrt(κ)*d/sin(sqrt(κ)*d)
+        end
     end
 end

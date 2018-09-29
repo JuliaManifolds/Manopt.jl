@@ -2,12 +2,12 @@
 #      Powermanifold – an array of points of _one_ manifold
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
-import Base: exp, log, show, getindex, setindex!, copy, size
+import Base: exp, log, show, getindex, setindex!, copy, size, cat
 
 export Power, PowPoint, PowTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
-export show, getValue, setindex!, getindex,copy, size
+export show, getValue, setindex!, getindex,copy, size, cat
 @doc doc"""
     Power{M<:Manifold} <: Manifold
 a power manifold $\mathcal M = \mathcal N^m$, where $m$ can be an integer or an

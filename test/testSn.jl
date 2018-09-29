@@ -20,4 +20,13 @@
   @test dot(M,x,log(M,x,z),log(M,x,y) ) ≈ 0 atol=10.0^(-15)
 	#check that PT(q->p, log_qp) = -log_pq (unitary minus already checked)
 	@test parallelTransport(M,y,x,log(M,y,x)) == -ξ
+  # Text differentials (1) Dx of Log_xy
+  @test DxLog(M,x,x,ξ) == -ξ
+  @test DyLog(M,x,x,ξ) == ξ
+  @test DxExp(M,x,zeroTVector(M,x),ξ) == ξ
+  @test DξExp(M,x,zeroTVector(M,x),ξ) == ξ
+  for t in [0,0.15,0.33,0.66,0.9]
+	  @test DxGeo(M,x,x,t,ξ) == (1-t)*ξ
+	  @test DyGeo(M,x,x,t,ξ) == (1-t)*ξ
+  end
 end
