@@ -12,7 +12,7 @@ computes $D_yg(t;x,y)[\eta]$.
 
 *See also:* [`DxGeo`](@ref), [`jacobiField`](@ref)
 """
-DyGeo(M::mT,x::P,y::P,t::Number,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = jacobiField(M,x,y,1.0-t,η,βDgy)
+DyGeo(M::mT,x::P,y::P,t::Number,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = jacobiField(M,x,y,t,η,βDgy)
 @doc doc"""
     DxExp(M,x,ξ,η)
 computes $D_x\exp_x\xi[\eta]$.
