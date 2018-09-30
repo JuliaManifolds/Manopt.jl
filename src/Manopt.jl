@@ -1,10 +1,10 @@
 """
     Manopt.jl
 A package to perform Optimization methods on manifold in Julia uncluding
-high dimensional power manifolds to tacke manifold-valued image processing.
+high dimensional power manifolds to tackle manifold-valued image processing.
 
-See `Readme.md` for an exaustive list of features and `examples/` for
-examples that can just be `include`d.
+See `Readme.md` more details, and `examples/` for examples that can just be
+`include`d.
 """
 module Manopt
   using SimpleTraits
@@ -54,5 +54,6 @@ module Manopt
   include("helpers/exports/Asymptote.jl")
   # data
   include("data/artificialDataFunctions.jl")
+  include("data/S2Lemniscate.jl")
   include("data/signals.jl")
 end
