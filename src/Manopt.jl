@@ -20,10 +20,12 @@ module Manopt
   include("manifolds/Euclidean.jl")
   include("manifolds/Graph.jl")
   include("manifolds/Hyperbolic.jl")
-	include("manifolds/SymmetricPositiveDefinite.jl")
+  include("manifolds/Sphere.jl")
+  include("manifolds/SymmetricPositiveDefinite.jl")
+  include("manifolds/Symmetric.jl")
+  # meta
   include("manifolds/Power.jl")
   include("manifolds/Product.jl")
-  include("manifolds/Sphere.jl")
   # Functions
   include("functions/adjointDifferentials.jl")
   include("functions/costFunctions.jl")
