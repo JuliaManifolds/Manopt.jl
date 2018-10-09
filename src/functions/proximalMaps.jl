@@ -141,9 +141,9 @@ function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1;kwargs...)::Tuple{P,
   PowX = PowPoint([pointTuple...])
   PowM = Power(M,(3,))
   xInit = PowX
-  F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(x)
-  ∂F(x) = log(M,x,PowX) + λ*gradTV2(M,x)
-  xR = subGradientMethod(M,F,∂F,x;sDOpt...)
+  F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
+  ∂F(x) = log(PowM,x,PowX) + λ*gradTV2(PowM,x)
+  xR = subGradientMethod(PowM,F,∂F,xInit;kwargs...)
   return (getValue(xR)...,)
 end
 function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=1)::Tuple{S1Point,S1Point,S1Point}
