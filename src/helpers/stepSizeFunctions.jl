@@ -9,7 +9,6 @@ current iterate) and a tangent vector (a subgradient) `ξ` to return a step size
 here a constant step size, i.e. `(i,x,ξ) -> c`
 """
 constantStepSize(c::Number) = (i,x,ξ) -> c
-constantStepSize(c::Number) = ((i,x,ξ) -> c)
 @doc doc"""
     decreasingStepSize(c[,k=1])
 returns a function depenting on the iteration `i`, a manifold point `x` (the

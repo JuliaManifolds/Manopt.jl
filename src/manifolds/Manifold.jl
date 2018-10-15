@@ -109,12 +109,12 @@ returns vector containing the equispaced n sample-values along the geodesic
 from `x`to `y` on the manifold `M`.
 """
 function geodesic(M::mT, x::T,y::T,n::Integer)::Vector{T} where {mT <: Manifold, T <: MPoint}
-  geo = geodesic(M,x,y);
-  return [geo(t) for t in range(0., stop=1.,length=n)]
+  return geodesic.( Ref(M),Ref(x),Ref(y), range(0., stop=1.,length=n) )
 end
 """
     geodesic(M,x,y,t)
-returns the point along the geodesic from `x`to `y` given by the `t`(in [0,1]) on the manifold `M`
+returns the point along the geodesic from `x` to `y` given by the value `t`
+(in `[0,1]`) on the [`Manifold`](@ref)` M`
 """
 geodesic(M::mT,x::T,y::T,t::N) where {mT <: Manifold, T <: MPoint, N <: Number} = geodesic(M,x,y)(t)
 """

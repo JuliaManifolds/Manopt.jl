@@ -47,17 +47,21 @@ to Asymptote.
 * `arrowHeadSize` - (`6.0`) size of the arrowheads of the tangent vectors
 * `cameraPosition` - (`(1., 1., 0.)`) position of the camera in the Asymptote
   szene
+* `lineWidth` – (`1.0`) size of the lines used to draw the curves.
+* `lineWidths` – overrides the previous value to specify a value per curve.
 * `dotSize` – (`1.0`) size of the dots used to draw the points.
-* `dotSizes – overrides the previous value to specify a value per point set.
+* `dotSizes` – overrides the previous value to specify a value per point set.
 * `target` - (`(0.,0.,0.)`) position the camera points at.
 """
 function asyExportS2(filename::String;
     points::Array{Array{SnPoint,1},1} = Array{Array{SnPoint,1},1}(undef,0),
     curves::Array{Array{SnPoint,1},1} = Array{Array{SnPoint,1},1}(undef,0),
     tVectors::Array{Array{TVectorE{SnTVector,SnPoint},1},1} = Array{Array{TVectorE{SnTVector,SnPoint},1},1}(undef,0),
-    colors::Dict{Symbol, Array{T,1} where T}  = Dict{Symbol,Array{RGBA{Float},1}}(),
+    colors::Dict{Symbol, Array{RGBA{Float64},1} }  = Dict{Symbol,Array{RGBA{Float64},1}}(),
     arrowHeadSize::Float64 = 6.,
     cameraPosition::Tuple{Float64,Float64,Float64} = (1., 1., 0.),
+    lineWidth::Float64 = 1.0,
+    lineWidths::Array{Float64,1} = fill(lineWidth,size(curves)),
     dotSize::Float64 = 1.0,
     dotSizes::Array{Float64,1} = fill(dotSize,size(points)),
     target::Tuple{Float64,Float64,Float64} = (0.,0.,0.),
@@ -94,6 +98,7 @@ function asyExportS2(filename::String;
                 i=i+1;
                 write(io,string("pen $(penPrefix)Style$(i) = ",
                     "rgb($(red(c)),$(green(c)),$(blue(c)))",
+                    (key==:curves) ? "+linewidth($(lineWidths[i])pt)" : "",
                     (key==:points) ? "+linewidth($(dotSizes[i])pt)" : "",
                     "+opacity($(alpha(c)));\n"));
             end
@@ -111,15 +116,18 @@ function asyExportS2(filename::String;
             i=i+1
             write(io,"path3 p$(i) = ");
             j=0
-            for point in pSet
+            for point in curve
                 j=j+1
+                pString = string("(",
+                  string([string(v,",") for v in getValue(point)]...)[1:end-1],
+                    ")");
                 if j>1
-                    write( io," .. (",[string(v,",") for v in getValue(point)]...,")" )
+                    write( io," .. $(pString)")
                 else
-                    write( io,"(",[string(v,",") for v in getValue(point)]...,")" )
+                    write( io, pString )
                 end
-                write( io,string(";\n draw(p$(i), curveStyle$(i));\n") );
             end
+            write( io,string(";\n draw(p$(i), curveStyle$(i));\n") );
         end
         i=0
         for tVecs in tVectors
