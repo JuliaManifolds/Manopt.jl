@@ -27,6 +27,6 @@
   @test DξExp(M,x,zeroTVector(M,x),ξ) == ξ
   for t in [0,0.15,0.33,0.66,0.9]
 	  @test DxGeo(M,x,x,t,ξ) == (1-t)*ξ
-	  @test DyGeo(M,x,x,t,ξ) == (1-t)*ξ
+	  @test DyGeo(M,x,x,t,ξ) == t*ξ
   end
 end

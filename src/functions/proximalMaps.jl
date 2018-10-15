@@ -118,28 +118,33 @@ function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
   return y
 end
 @doc doc"""
-    (y1,y2) = proxTV2(M,λ,(x1,x2),[p])
+    (y1,y2) = proxTV2(M,λ,(x1,x2),[p=1])
 Compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ of
 $\varphi(x1,x2,x3) = d_{\mathcal M}^p(c(x1,x3),x2)$ with
 parameter `λ`>0, where $c(x,z)$ denotes the mid point of a shortest
-geodesic from x1 to x3.
+geodesic from `x1` to `x3`.
 
 # Input
 * `M`          : a manifold
 * `λ`          : a real value, parameter of the proximal map
 * `(x1,x2,x3)` : a tuple of three [`MPoint`](@ref)s
 
-# Optional
-(default is given in brackets)
 * `p` : (1) exponent of the distance of the TV term
 
-# Ouput
+# Optional
+parameters for the internal [`subGradientMethod`](@ref) (if `M` is not `Circle`)
+
+# Output
 * (y1,y2,y3) : resulting tuple of [`MPoint`](@ref)s of the proximal map
 """
-function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1)::Tuple{P,P,P} where {mT <: Manifold, P <: MPoint}
-  throw(ErrorException(
-    "Proximal Map of TV2(M,x1,x2,x3) not (yet) implemented for the manifold $(M)."
-  ))
+function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1;kwargs...)::Tuple{P,P,P} where {mT <: Manifold, P <: MPoint}
+  PowX = PowPoint([pointTuple...])
+  PowM = Power(M,(3,))
+  xInit = PowX
+  F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
+  ∂F(x) = log(PowM,x,PowX) + λ*gradTV2(PowM,x)
+  xR = subGradientMethod(PowM,F,∂F,xInit;kwargs...)
+  return (getValue(xR)...,)
 end
 function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=1)::Tuple{S1Point,S1Point,S1Point}
   w = [1., -2. ,1. ]

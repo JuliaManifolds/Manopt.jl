@@ -9,6 +9,6 @@ SubGradientMethodOptions
 # Step Size Rules
 ```@docs
 constantStepSize
-linearDecreasingStepSize
+decreasingStepSize
 normedStepSize
 ```

@@ -13,6 +13,7 @@ makedocs(
             "The Euclidean Space \$\\mathbb R^n\$" => "manifolds/euclidean.md",
             "The Hyperbolic Space \$\\mathbb H^n\$" => "manifolds/hyperbolic.md",
             "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",
+            "The Symmetric Matrices \$\\mathcal{Sym}(n)\$" => "manifolds/symmetric.md",
             "The Symmetric Positive Definite Matrices \$\\mathbb P(n)\$" => "manifolds/symmetricpositivedefinite.md",
         ],
         "Plans" => [
@@ -38,6 +39,7 @@ makedocs(
             "Proximal Maps" => "functions/proximalMaps.md"
         ],
         "Helpers" => [
+            "Data" => "helpers/data.md",
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
             "Line Search" => "helpers/lineSearch.md"

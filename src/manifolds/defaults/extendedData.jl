@@ -121,8 +121,8 @@ function exp(M::mT,x::S,ξ::T) where {mT<:Manifold, T<:TVectorE, S<:MPoint}
 end
 # for extended vectors set the base to true
 log(M::mT,x::P,y::P) where {mT<:Manifold, P<:MPointE} = TVectorE(log(M,getBase(x),getBase(y)),x);
-log(M::mT,x::P,y::Q) where {mT<:Manifold, P<:MPointE, Q<:MPoint} = TVectorE(log(M,getVector(x),y),x);
-log(M::mT,x::Q,y::P) where {mT<:Manifold, P<:MPointE, Q<:MPoint} = TVectorE(log(M,x,getVector(y)),x);
+log(M::mT,x::P,y::Q) where {mT<:Manifold, P<:MPointE, Q<:MPoint} = TVectorE(log(M,getBase(x),y),x);
+log(M::mT,x::Q,y::P) where {mT<:Manifold, P<:MPointE, Q<:MPoint} = TVectorE(log(M,x,getBase(y)),x);
 # break down to inner if base
 manifoldDimension(x::P) where {P <: MPointE} = manifoldDimension(getBase(x))
 # break down to inner if base is checked

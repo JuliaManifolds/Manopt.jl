@@ -5,7 +5,7 @@
 import LinearAlgebra: norm, dot, nullspace
 import Base: exp, log, show, cat
 export Sphere, SnPoint, SnTVector,show, getValue
-export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export addNoise, distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
 #
 # Type definitions
@@ -62,6 +62,19 @@ getValue(ξ::SnTVector) = ξ.value;
 # Functions
 # ---
 @doc doc"""
+    addNoise(M,p,σ)
+	addNoise(M,x,σ)
+add noise to sperical data, i.e. tangential Gaussian noise, $\exp_x n$,
+where $n\sim \mathcal N(0,\sigma)^d$ d-dimensional is a zero-mean Gaussian
+random variable of standard deviation `σ` in the tangent plane of the `x::SnPoint`
+on the manifold `M`.
+"""
+function addNoise(M::Sphere, x::SnPoint,σ::Real)
+	n = σ * randn( size( getValue(x)) ) # Gaussian in embedding
+	nP = n - dot(n,getValue(x))*getValue(x) #project to TpM (keeps Gaussianness)
+	return exp(  M,x,SnTVector( nP )  )
+end
+@doc doc"""
     distance(M,x,y)
 Compute the Riemannian distance on $\mathcal M=\mathbb S^n$ embedded in
 $\mathbb R^{n+1}$, which is given by
@@ -71,7 +84,9 @@ $ d_{\mathbb S^n}(x,y) = \operatorname{acos} \bigl(\langle x,y\rangle\bigr), $
 where $\langle\cdot,\cdot\rangle$ denotes the Euclidean inner product
 on $\mathbb R^{n+1}$.
 """
-distance(M::Sphere,x::SnPoint,y::SnPoint) = acos(dot(getValue(x), getValue(y) ))
+distance(M::Sphere,x::SnPoint,y::SnPoint) = acos(
+	min( max(dot(getValue(x), getValue(y) ), -1.), 1. )
+)
 
 @doc doc"""
     dot(M,x,ξ,ν)
@@ -92,11 +107,11 @@ $\exp_x\xi = \cos(\lVert\xi\rVert_2)x + \sin(\lVert\xi\rVert_2)\frac{\xi}{\lVert
 """
 function exp(M::Sphere,x::SnPoint,ξ::SnTVector,t::Float64=1.0)
   len = norm( getValue(ξ) )
-	if len < eps(Float64)
-  	return x
-	else
-  	return SnPoint( cos(t*len)*getValue(x) + sin(t*len)/len*getValue(ξ) )
-	end
+  if len < eps(Float64)
+    return x
+  else
+    return SnPoint( cos(t*len) * getValue(x)  +  (sin(t*len)/len) * getValue(ξ) )
+  end
 end
 @doc doc"""
     log(M,x,y)
@@ -113,7 +128,7 @@ function log(M::Sphere,x::SnPoint,y::SnPoint)
   ξvalue = getValue(y) - scp*getValue(x)
   ξvnorm = norm(ξvalue)
   if (ξvnorm > eps(Float64))
-    return SnTVector( ξvalue*acos(scp)/ξvnorm );
+    return SnTVector( ξvalue * acos(min(max(scp,-1.),1.) )/ξvnorm );
   else
     return zeroTVector(M,x)
   end
@@ -166,7 +181,8 @@ function tangentONB(M::Sphere,x::SnPoint,ξ::SnTVector)
     κ = ones(d)
     if ξ != zeroTVector(M,x)
         # if we have a nonzero direction for the geodesic, add it and it gets curvature zero from the tensor
-        V = cat(getValue(ξ),V,dims=2)
+		ξ = ξ/norm(M,x,ξ)
+		V = cat(getValue(ξ),V,dims=2)
         κ[1] = 0.0 # no curvature along the geodesic direction, if x!=y
     end
     Ξ = [ SnTVector(V[:,i]) for i in 1:d ]

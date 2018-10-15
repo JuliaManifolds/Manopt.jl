@@ -27,7 +27,8 @@ A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\m
 [$n$-dim. Hyperbolic space $\mathbb H^n$](@ref HyperbolicManifold) | `Hyperbolic.jl` | `Hn` | embedded in $\mathbb R^{n+1}$
 [$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
 [Euclidean space $\mathbb R^n$](@ref EuclideanSpace) | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
-[symmetric positive definite matrices $\mathcal P(n)$](@ref SymmmetricPositiveDefiniteManifold) | `SymmetricPositiveDefinite.jl` | `SPD` |  $n\times n$ symmetric positive matrices using the affine metric
+[symmetric matrices $\mathcal{Sym}(n)$](@ref SymmetricManifold) | `Symmetric.jl` | `Sym` | $n\times n$ symmetric matrices
+[symmetric positive definite matrices $\mathcal P(n)$](@ref SymmmetricPositiveDefiniteManifold) | `SymmetricPositiveDefinite.jl` | `SPD` | $n\times n$ symmetric positive matrices using the affine metric
 ## Special Types of Manifolds
 Special types of manifolds are introduced by [SimpleTraits.jl](https://github.com/mauro3/SimpleTraits.jl)
 ### Embedded Manifold
