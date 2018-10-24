@@ -1,6 +1,7 @@
 export getValue, getBase, checkBase
 export addNoise, distance, dot, exp, getValue, log, manifoldDimension, norm
 export manifoldDimension, parallelTransport, tangentONB, typicalDistance, zeroTVector
+export MPointE, TVectorE
 #
 #
 #
@@ -34,7 +35,7 @@ struct MPointE{P <: MPoint} <: MPoint
     base::P
 end
 getValue(x::P) where {P <: MPointE} = getValue( getBase(x) );
-show(io::IO, x::MPointE) = print(io, "$(x)E")
+show(io::IO, x::MPointE) = print(io, "$(getBase(x))E")
 """
     getBase(x)
 returns the point this extended manifold point stores internally.

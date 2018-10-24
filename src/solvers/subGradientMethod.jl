@@ -49,8 +49,8 @@ function subGradientMethod(M::mT,
     kwargs=Dict(kwargs)
     if haskey(kwargs, :debug) # if a key is given -> decorate Options.
         debug = kwargs[:debug]
-        o = DebugOptions(o,debug[1],debug[2],debug[3])
     end
+    o = DebugOptions(o,debug[1],debug[2],debug[3])
     x,r = subGradientMethod(p,o)
     if returnReason
         return x,r;

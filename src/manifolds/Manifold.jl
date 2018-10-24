@@ -7,7 +7,7 @@
 import LinearAlgebra: norm, dot
 import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
-export Manifold, MPoint, TVector, MPointE, TVectorE
+export Manifold, MPoint, TVector
 # introduce new functions
 export geodesic, midPoint, reflection, jacobiField, adjointJacobiField
 export +, -, *, /, ==, show
