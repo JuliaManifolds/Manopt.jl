@@ -118,7 +118,7 @@ function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
   return y
 end
 @doc doc"""
-    (y1,y2) = proxTV2(M,λ,(x1,x2),[p=1])
+    (y1,y2) = proxTV2(M,λ,(x1,x2),[p=1], kwargs...)
 Compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ of
 $\varphi(x1,x2,x3) = d_{\mathcal M}^p(c(x1,x3),x2)$ with
 parameter `λ`>0, where $c(x,z)$ denotes the mid point of a shortest
@@ -132,18 +132,26 @@ geodesic from `x1` to `x3`.
 * `p` : (1) exponent of the distance of the TV term
 
 # Optional
-parameters for the internal [`subGradientMethod`](@ref) (if `M` is not `Circle`)
+`kwargs...` : parameters for the internal [`subGradientMethod`](@ref)
+    (if `M` is neither `Euclidean` nor `Circle`)
 
 # Output
 * (y1,y2,y3) : resulting tuple of [`MPoint`](@ref)s of the proximal map
 """
-function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1;kwargs...)::Tuple{P,P,P} where {mT <: Manifold, P <: MPoint}
+function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1;
+  stoppingCriterion::Function = (i,ξ,x,xnew) -> ((i>5), (i>5) ? "max Iter $(i) reached." : ""),
+  kwargs...)::Tuple{P,P,P} where {mT <: Manifold, P <: MPoint}
+  if p != 1
+    throw(ErrorException(
+      "Proximal Map of TV2(M,λ,pT,p) not implemented for p=$(p) (requires p=1) on general manifolds."
+    ))
+  end
   PowX = PowPoint([pointTuple...])
   PowM = Power(M,(3,))
   xInit = PowX
   F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
   ∂F(x) = log(PowM,x,PowX) + λ*gradTV2(PowM,x)
-  xR = subGradientMethod(PowM,F,∂F,xInit;kwargs...)
+  xR = subGradientMethod(PowM,F,∂F,xInit;stoppingCriterion=stoppingCriterion, kwargs...)
   return (getValue(xR)...,)
 end
 function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=1)::Tuple{S1Point,S1Point,S1Point}
@@ -151,14 +159,30 @@ function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=
   x = getValue.(pointTuple)
   if p==1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
     m = min(   λ, abs(  symRem( sum( x .* w  ) )  )/(dot(w,w))   )
-    s = sign.( symRem(sum(x .* w)) )
+    s = sign( symRem(sum(x .* w)) )
     return Tuple( S1Point.( symRem.( x  .-  m .* s .* w ) ) )
   elseif p==2 # Theorem 3.6 ibd.
     t = λ * symRem( sum( x .* w ) ) ./ (1 + λ*dot(w,w) )
     return Tuple(  S1Point.( symRem.( x - t.*w ) )  )
   else
     throw(ErrorException(
-      "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)"
+      "Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"
+    ))
+  end
+end
+function proxTV2(M::Euclidean,λ,pointTuple::Tuple{RnPoint,RnPoint,RnPoint},p::Int=1)::Tuple{S1Point,S1Point,S1Point}
+  w = [1., -2. ,1. ]
+  x = getValue.(pointTuple)
+  if p==1 # Example 3.2 in Bergmann, Laus, Steidl, Weinmann, 2014.
+    m = min.(Ref(λ),  abs( x .* w  ) /(dot(w,w))   )
+    s = sign.( sum(x .* w) )
+    return Tuple( RnPoint.( x  .-  m .* s .* w ) )
+  elseif p==2 # Theorem 3.6 ibd.
+    t = λ * sum( x .* w ) ./ (1 + λ*dot(w,w) )
+    return Tuple(  RnPoint.( x - t.*w ) )
+  else
+    throw(ErrorException(
+      "Proximal Map of TV2(Euclidean,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"
     ))
   end
 end

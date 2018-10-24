@@ -1,15 +1,17 @@
 @testset "gradient descent..." begin
-  # explicitly compute an easy exp
-	M = Circle()
-	r = [-π/2,π/4,0.0,π/4];
-  	f = S1Point.(r);
-	F(x) = 1/2*sum(distance.(Ref(M),f,Ref(x)).^2);
-	∇F(x) = sum(-log.(Ref(M),Ref(x),f));
-	lO = ArmijoLineSearchOptions(f[1]);
-	stoppingCrit(i,ξ,x,xnew) = (i>0), (i<1) ? "" : "Stopped after $(i) iterations"; #one iteration
-	dP = GradientProblem(M,F,∇F);
-	dO = GradientDescentOptions(f[1],stoppingCrit,ArmijoLineSearch,lO);
-	x, = steepestDescent(dP,dO)
-	# after one step for local enough data -> equal to real valued data
-	@test abs(getValue(x)-sum(r)/length(r)) ≈ 0 atol=10.0^(-16)
+  # Test the gradient descent with
+  # the distance function squared
+  # on S1, such that we can easily also verify exp and log
+  M = Circle()
+  r = [-π/2,π/4,0.0,π/4];
+  f = S1Point.(r);
+  F(x) = 1/2*sum(distance.(Ref(M),f,Ref(x)).^2);
+  ∇F(x) = sum(-log.(Ref(M),Ref(x),f));
+  lO = ArmijoLineSearchOptions(f[1]);
+  stoppingCrit(i,ξ,x,xnew) = (i>0), (i<1) ? "" : "Stopped after $(i) iterations"; #one iteration
+  dP = GradientProblem(M,F,∇F);
+  dO = GradientDescentOptions(f[1],stoppingCrit,ArmijoLineSearch,lO);
+  x, = steepestDescent(dP,dO)
+  # after one step for local enough data -> equal to real valued data
+  @test abs(getValue(x)-sum(r)/length(r)) ≈ 0 atol=10.0^(-16)
 end
