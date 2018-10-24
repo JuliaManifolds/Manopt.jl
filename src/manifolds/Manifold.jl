@@ -70,7 +70,7 @@ function adjointJacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) 
     Ξ,κ = tangentONB(M,x,y) # ONB at x
     Θ = parallelTransport.(Ref(M),Ref(x),Ref(z),Ξ) # Frame at z
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
-    ξ = sum( ( dot.(Ref(M),Ref(x),Ref(η),Θ) ).* ( β.(κ,Ref(t),distance(M,x,y)) ).*Ξ )
+    ξ = sum( ( dot.(Ref(M),Ref(z),Ref(η),Θ) ).* ( β.(κ,Ref(t),distance(M,x,y)) ).*Ξ )
 end
 """
    midPoint(M,x,y,z)
