@@ -103,7 +103,9 @@ function asyExportS2(filename::String;
                     "+opacity($(alpha(c)));\n"));
             end
         end
-        write(io,"\n/*\n  Exported Points\n*/\n")
+        if length(points)>0
+            write(io,"\n/*\n  Exported Points\n*/\n")
+        end
         i=0
         for pSet in points
             i=i+1
@@ -112,6 +114,9 @@ function asyExportS2(filename::String;
             end
         end
         i=0
+        if length(curves)>0
+            write(io,"\n/*\n  Exported Curves\n*/\n")
+        end
         for curve in curves
             i=i+1
             write(io,"path3 p$(i) = ");
@@ -130,15 +135,18 @@ function asyExportS2(filename::String;
             write( io,string(";\n draw(p$(i), curveStyle$(i));\n") );
         end
         i=0
+        if length(tVectors)>0
+            write(io,"\n/*\n  Exported tangent vectors\n*/\n")
+        end
         for tVecs in tVectors
             i=i+1
             j=0
             for vector in tVecs
                 j=j+1
                 write(io,string("draw( (",
-                    string( [string(v,",") for v in getBase(vector)]...)[1:end-1],")--(",
-                    string( [string(v,",") for v in getValue(vectort)]...)[1:end-1],
-                    "), tVectorStyle$(j),Arrow3($(arrowHeadSize)));\n"));
+                    string( [string(v,",") for v in getValue(getBase(vector))]...)[1:end-1],")--(",
+                    string( [string(v,",") for v in getValue(vector)]...)[1:end-1],
+                    "), tVectorStyle$(i),Arrow3($(arrowHeadSize)));\n"));
             end
         end
     finally

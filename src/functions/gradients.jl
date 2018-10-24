@@ -109,7 +109,7 @@ function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoi
   z = xT[3];
   c = midPoint(M,x,z,y) # nearest mid point of x and z to y
   d = distance(M,y,c)
-  innerLog = -log(M,c,y)
+  innerLog = log(M,c,y)
   if p==2
       return ( AdjDxGeo(M,x,z,1/2,innerLog), log(M,y,c), AdjDyGeo(M,x,z,1/2,innerLog))
   else

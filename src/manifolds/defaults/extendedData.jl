@@ -116,7 +116,9 @@ checkBase(ξ::T,x::P) where {T<: TVector, P<: MPoint} = true
 # encapsulate default functions
 #
 addNoise(M::mT,x::P,σ) where {mT <: Manifold, P <: MPointE} = MPointE( addNoise(M,getBase(x),σ) )
-distance(M::mT, x::T, y::T) where {mT <: Manifold, T <: MPointE} = distance(M,getBase(x),getBase(y))
+distance(M::mT, x::P, y::P) where {mT <: Manifold, P <: MPointE} = distance(M,getBase(x),getBase(y))
+distance(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPointE, Q <: MPoint} = distance(M,getBase(x),getBase(y))
+distance(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPointE} = distance(M,getBase(x),getBase(y))
 
 function dot(M::mT, x::P, ξ::T, ν::T)::Float64 where {mT<:Manifold, P <: MPointE, T<:TVectorE}
     checkBase(ξ,x," first ")
@@ -148,11 +150,11 @@ manifoldDimension(x::P) where {P <: MPointE} = manifoldDimension(getBase(x))
 function norm(M::mT, x::P, ξ::T, ν::T)::Float64 where {mT<:Manifold, P <: MPoint, T<:TVectorE}
     checkBase(ξ,x," first ")
     checkBase(ξ,ν," second ")
-    return norm(M,x,getVector(ξ),ν.vector);
+    return norm(M,getBase(x),getVector(ξ),ν.vector);
 end
 norm(M::mT,x::P,ξ::T,ν::S) where {mT<:Manifold, P <: MPointE, T<:TVector, S<:TVector} = dot(M,getBase(x),ξ,ν);
-norm(M::mT,x::P,ξ::T,ν::S) where {mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector} = dot(M, getVector(ξ) ,ν);
-norm(M::mT,x::P,ξ::S,ν::T) where {mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector} = dot(M, ξ, getVector(ν));
+norm(M::mT,x::P,ξ::T,ν::S) where {mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector} = dot(M,getBase(x), getVector(ξ) ,ν);
+norm(M::mT,x::P,ξ::S,ν::T) where {mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector} = dot(M,getBase(x), ξ, getVector(ν));
 # (a) x,ξ extended -> check, y not -> check but strip
 function parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPointE, Q <: MPoint, T<: TVectorE}
     checkBase(ξ,x)
