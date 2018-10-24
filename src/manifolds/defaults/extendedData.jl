@@ -94,7 +94,7 @@ implicitly to be correct
 function checkBase(ξ::T,x::P,tAttr=" ") where {T <: TVectorE, P <: MPoint}
     if getValue( getBase(ξ) ) != getValue(x)
         throw(
-            ErrorException("The$(tAttr)tangent vector $ξ is not from the tangent space of $x")
+            ErrorException("The tangent vector $ξ is not from the tangent space of $x")
         );
     else
         return true;
@@ -121,8 +121,8 @@ distance(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPointE, Q <: MPoint} = 
 distance(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPointE} = distance(M,getBase(x),getBase(y))
 
 function dot(M::mT, x::P, ξ::T, ν::T)::Float64 where {mT<:Manifold, P <: MPointE, T<:TVectorE}
-    checkBase(ξ,x," first ")
-    checkBase(ξ,ν," second ")
+    checkBase(ξ,x)
+    checkBase(ξ,ν)
     return dot(M, getVector(ξ), getVector(ν) );
 end
 # all others (i.e. one implicitly assumed to be correct -> pass)
