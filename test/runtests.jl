@@ -6,7 +6,7 @@ tests = ["testSn","testSPD",
           "testGradDesc",
           "testProximalMaps"
           ]
-@testset "Manopt Tests" begin
+@testset "Manopt.jl Tests" begin
   for t in tests
     include("$(t).jl")
   end
