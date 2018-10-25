@@ -4,7 +4,6 @@ os:
 
 julia:
   - 0.7
-  - 1.0
 
 notifications:
   email: false
@@ -13,7 +12,7 @@ git:
   depth: 99999999
 
 script:
-  - julia -e 'Pkg.clone("https://$GITHUB_TOKEN:github.com/$GITHUB_USER/Manopt.jl); Pkg.build("Manopt"); Pkg.test("Manopt"; coverage=true)';
+  - julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://$GITHUB_TOKEN:github.com/$GITHUB_USER/Manopt.jl")); Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)';
 
 after_success:
   # push coverage results to Coveralls
