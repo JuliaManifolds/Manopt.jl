@@ -1,15 +1,24 @@
 language: julia
+os:
+  - linux
 
 julia:
-  - release
+  - 0.7
+  - 1.0
 
-branches:
-  only:
-    - master
+notifications:
+  email: false
+
+git:
+  depth: 99999999
 
 script:
-  julia -e 'Pkg.clone(pwd())'
-  julia -e 'Pkg.build("$name")'
-  if [ -f test/runtests.jl ]; then
-    julia --check-bounds=yes -e 'Pkg.test("$name", coverage=true)'
-  fi
+  - sed -i 's/git@github.com:/https:\/\/'$GITHUB_USER':'$GITHUB_TOKEN'@github.com\//' .gitmodules
+  - git submodule update --init --recursive
+  - julia -e 'Pkg.clone(pwd()); Pkg.build("Manopt"); Pkg.test("Manopt"; coverage=true)';
+
+after_success:
+  # push coverage results to Coveralls
+  #- julia -e 'cd(Pkg.dir("MathOptInterface")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  # push coverage results to Codecov
+  - julia -e 'cd(Pkg.dir("Manopt")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
