@@ -11,11 +11,9 @@ notifications:
 git:
   depth: 99999999
 
-before_script:
-- T=$GITHUB_TOKEN
-- U=$GITHUB_USER
-
 script:
+  - T=$GITHUB_TOKEN
+  - U=$GITHUB_USER
   - julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://$T:github.com/$U/Manopt.jl")); Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)';
 
 after_success:
