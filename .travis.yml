@@ -16,7 +16,7 @@ before_script:
 - U=$GITHUB_USER
 
 script:
-  - julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://${T}:github.com/${U}/Manopt.jl")); Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)';
+  - julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://$T:github.com/$U/Manopt.jl")); Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)';
 
 after_success:
   # push coverage results to Coveralls
