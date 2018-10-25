@@ -13,9 +13,7 @@ git:
   depth: 99999999
 
 script:
-  - sed -i 's/git@github.com:/https:\/\/'$GITHUB_USER':'$GITHUB_TOKEN'@github.com\//' .gitmodules
-  - git submodule update --init --recursive
-  - julia -e 'Pkg.clone(pwd()); Pkg.build("Manopt"); Pkg.test("Manopt"; coverage=true)';
+  - julia -e 'Pkg.clone("https://$GITHUB_TOKEN:github.com/$GITHUB_USER/Manopt.jl); Pkg.build("Manopt"); Pkg.test("Manopt"; coverage=true)';
 
 after_success:
   # push coverage results to Coveralls
