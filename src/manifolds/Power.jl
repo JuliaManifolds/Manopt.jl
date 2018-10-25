@@ -33,12 +33,12 @@ end
 getValue(x::PowPoint) = x.value;
 getindex(x::PowPoint, i::CartesianIndex{N} where N) = getindex( getValue(x) ,i)
 getindex(x::PowPoint, i...) = PowPoint(getindex( getValue(x) ,i...))
-setindex!(x::PowPoint, p::P where {P <: MPoint},i) = setindex!(x.value,p,i)
-cat(X::PowPoint; dims=k) = PowPoint(cat( [x.value for x in X]; dims=k))
+setindex!(x::PowPoint, p::P where {P <: MPoint},i) = setindex!(getValue(x),p,i)
+cat(X::PowPoint; dims=k) = PowPoint(cat( [getValue(x) for x in X]; dims=k))
 vcat(X::PowPoint...) = cat(X...; dims=1)
 hcat(X::PowPoint...) = cat(X...; dims=2)
 size(x::PowPoint) = size(getValue(x))
-copy(x::PowPoint) = PowPoint(copy(x.value))
+copy(x::PowPoint) = PowPoint(copy(getValue(x)))
 @doc doc"""
     PowTVector <: TVector
 A tangent vector on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector of [`TVector`](@ref)s.
@@ -60,32 +60,32 @@ copy(ξ::PowTVector) = PowTVector(copy(ξ.value))
     addNoise(M,x,δ)
 computes a vectorized version of addNoise, and returns the noisy [`PowPoint`](@ref).
 """
-addNoise(M::Power, x::PowPoint, σ::Float64) = PowPoint(addNoise.( Ref(M.manifold), getValue(x) ,Ref(σ) ))
+addNoise(M::Power, x::PowPoint, σ::Float64) = PowPoint(addNoise.( Ref(M.manifold), x.value ,Ref(σ) ))
 
 function adjointJacobiField(M::Power,x::PowPoint,y::PowPoint,t::Number,η::PowTVector,β::Function=βDgx)::PowTVector
-    return PowTVector( adjointJacobiField.(Ref(M.manifold), getValue(x), getValue(y), Ref(t), getValue(η),Ref(β) ) )
+    return PowTVector( adjointJacobiField.(Ref(M.manifold), x.value, y.value, Ref(t), η.value ,Ref(β) ) )
 end
 
 """
     distance(M,x,y)
 computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
 """
-distance(M::Power, x::PowPoint, y::PowPoint) = sqrt(sum( distance.( Ref(M.manifold), getValue(x), getValue(y) ).^2 ))
+distance(M::Power, x::PowPoint, y::PowPoint) = sqrt(sum( distance.( Ref(M.manifold), x.value, y.value ).^2 ))
 
 """
     dot(M,x,ξ,ν)
 computes the inner product as sum of the component inner products on the [`Power`](@ref)` manifold`.
 """
-dot(M::Power, x::PowPoint, ξ::PowTVector, ν::PowTVector) = sum(dot.(Ref(M.manifold),getValue(x), getValue(ξ), getValue(ν) ))
+dot(M::Power, x::PowPoint, ξ::PowTVector, ν::PowTVector) = sum(dot.(Ref(M.manifold), x.value, ξ.value, ν.value ))
 
 """
     exp(M,x,ξ)
 computes the product exponential map on the [`Power`](@ref) and returns the corresponding [`PowPoint`](@ref).
 """
-exp(M::Power, x::PowPoint, ξ::PowTVector, t::Number=1.0) = PowPoint( exp.(Ref(M.manifold), getValue(x) , getValue(ξ),t))
+exp(M::Power, x::PowPoint, ξ::PowTVector, t::Number=1.0) = PowPoint( exp.(Ref(M.manifold), x.value, ξ.value,t))
 
 function jacobiField(M::Power,x::PowPoint,y::PowPoint,t::Number,η::PowTVector,β::Function=βDgx)::PowTVector
-    return PowTVector( jacobiField.(Ref(M.manifold), getValue(x), getValue(y), Ref(t), getValue(η),Ref(β) ) )
+    return PowTVector( jacobiField.(Ref(M.manifold), x.value, y.value, Ref(t), η.value, Ref(β) ) )
 end
 
 """
