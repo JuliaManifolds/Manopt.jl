@@ -1,0 +1,6 @@
+language: julia
+julia:
+  - 0.7
+
+after_success:
+- julia -e 'cd(Pkg.dir("MyPkg")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
