@@ -11,8 +11,10 @@ notifications:
 git:
   depth: 99999999
 
+before_install:
+  - git clone https://$GITBUH_TOKEN:x-oauth-basic@github.com/$GITHUB_USERNAME/Manopt.jl
 script:
-  - julia -e "using Pkg; Pkg.add(\"Manopt\"); Pkg.build(\"Manopt\"); Pkg.test(\"Manopt\", coverage=true)"
+  - julia -e "using Pkg; Pkg.build(\"Manopt\"); Pkg.test(\"Manopt\", coverage=true)"
 
 after_success:
   # push coverage results to Coveralls
