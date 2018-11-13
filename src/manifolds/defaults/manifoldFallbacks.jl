@@ -3,6 +3,7 @@
 # General documentation of exp/log/... and its fallbacks in case of non-implemented tuples
 #
 #
+import LinearAlgebra: norm
 export addNoise, distance, dot, exp, getValue, log, manifoldDimension, norm
 export manifoldDimension, parallelTransport, tangentONB, typicalDistance, zeroTVector
 """
@@ -105,16 +106,6 @@ returns the dimension of the manifold `M`.
 function manifoldDimension(M::mT)::Integer where {mT<:Manifold}
   sig1 = string( typeof(M) )
   throw( ErrorException("manifoldDimension not Implemented on $sig1." ) )
-end
-@doc doc"""
-    norm(M,x,ξ)
-  computes the length of a tangential vector $\xi\in T_x\mathcal M$
-"""
-function norm(M::mT,x::P,ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
-	sig1 = string( typeof(ξ) )
-	sig2 = string( typeof(x) )
-	sig3 = string( typeof(M) )
-  throw( ErrorException("norm not implemented for $sig1 in the tangent space of a $sig2 on $sig3." ) )
 end
 @doc doc"""
     parallelTransport(M,x,y,ξ)

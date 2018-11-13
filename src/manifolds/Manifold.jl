@@ -141,7 +141,17 @@ function jacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
     ξ = sum( ( dot.(Ref(M),Ref(x),Ref(η),Ξ) ).* ( β.(κ,Ref(t),Ref(distance(M,x,y))) ).*Θ )
 end
-
+@doc doc"""
+    norm(M,x,ξ)
+  computes the length of a tangential vector $\xi\in T_x\mathcal M$
+"""
+function norm(M::mt,x::P,ξ:T) where {mT<:Manifold,P<:MPoint,ξ<:TVector}
+    try
+        sqrt(dot(M,x,ξ,ξ))
+    catch e
+        throw( ErrorException("The norm could not be computed, since the error \"$(e.msg)\" orccurred.") );
+    end
+end
 @doc doc"""
     y = reflection(M,p,x)
 reflect the `MPoint x` at `MPoint p`, i.e. compute
