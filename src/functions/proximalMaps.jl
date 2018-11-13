@@ -162,7 +162,7 @@ function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=
     s = sign( symRem(sum(x .* w)) )
     return Tuple( S1Point.( symRem.( x  .-  m .* s .* w ) ) )
   elseif p==2 # Theorem 3.6 ibd.
-    t = λ * symRem( sum( x .* w ) ) ./ (1 + λ*dot(w,w) )
+    t = λ * symRem( sum( x .* w ) ) / (1 + λ*dot(w,w) )
     return Tuple(  S1Point.( symRem.( x - t.*w ) )  )
   else
     throw(ErrorException(
@@ -178,7 +178,7 @@ function proxTV2(M::Euclidean,λ,pointTuple::Tuple{RnPoint,RnPoint,RnPoint},p::I
     s = sign.( sum(x .* w) )
     return Tuple( RnPoint.( x  .-  m .* s .* w ) )
   elseif p==2 # Theorem 3.6 ibd.
-    t = λ * sum( x .* w ) ./ (1 + λ*dot(w,w) )
+    t = λ * sum( x .* w ) / (1 + λ*dot(w,w) )
     return Tuple(  RnPoint.( x - t.*w ) )
   else
     throw(ErrorException(

@@ -33,8 +33,8 @@ abstract type TVector end
 *(ξ::Vector{T},s::Number) where {T <: TVector} = [ξe*s for ξe in ξ]
 *(s::Number, ξ::Vector{T}) where {T <: TVector} = [s*ξe for ξe in ξ]
 # /
-/(ξ::T,s::Number) where {T <: TVector} = T( getValue(ξ) ./s)
-/(s::Number, ξ::T) where {T <: TVector} = T(s./ getValue(ξ) )
+/(ξ::T,s::Number) where {T <: TVector} = T( getValue(ξ) ./ s)
+/(s::Number, ξ::T) where {T <: TVector} = T(s ./ getValue(ξ) )
 /(ξ::Vector{T},s::Number) where {T <: TVector} = [ξe/s for ξe in ξ]
 /(s::Number, ξ::Vector{T}) where {T <: TVector} = [s/ξe for ξe in ξ]
 # + - of TVectors

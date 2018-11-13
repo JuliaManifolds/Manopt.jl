@@ -4,7 +4,7 @@
 # ---
 # Manopt.jl - Ronny Bergmann - 2017-07-06
 
-import LinearAlgebra: vecnorm, norm, dot
+import LinearAlgebra: norm, dot
 import Base: exp, log, show
 
 export SymmetricMatrices, SymPoint, SymTVector, show
@@ -98,7 +98,7 @@ computes the norm of the tangent vector `ξ` from the tangent space at `x`
 given on the manifold of symmetric matrices `M` embedded in the Euclidean space,
 i.e. by its Frobenius norm.
 """
-norm(M::Symmetric,x::SymPoint,ξ::SymTVector) = vecnorm( getValue(ξ) )
+norm(M::Symmetric,x::SymPoint,ξ::SymTVector) = norm( getValue(ξ) )
 """
     parallelTransport(M,x,y,ξ)
 coputes the parallel transport of a tangent vector `ξ` from the tangent space at
