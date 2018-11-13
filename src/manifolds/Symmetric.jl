@@ -61,7 +61,7 @@ getValue(ξ::SymTVector) = ξ.value
 distance of two symmetric manifolds inherited from embedding them in
 $\mathbb R^{n\times n}$, i.e. use the Frobenious norm
 """
-distance(M::Symmetric,x::SymPoint,y::SymPoint) = vecnorm( getValue(x) - getValue(y) )
+distance(M::Symmetric,x::SymPoint,y::SymPoint) = norm( getValue(x) - getValue(y) )
 @doc doc"""
    dot(M,x,ξ,ν)
 inner product of two tangent vectors `ξ,ν::SymTVector` lying in the tangent
