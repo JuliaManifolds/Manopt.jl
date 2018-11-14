@@ -63,7 +63,6 @@ getValue(ξ::SnTVector) = ξ.value;
 # ---
 @doc doc"""
     addNoise(M,p,σ)
-	addNoise(M,x,σ)
 add noise to sperical data, i.e. tangential Gaussian noise, $\exp_x n$,
 where $n\sim \mathcal N(0,\sigma)^d$ d-dimensional is a zero-mean Gaussian
 random variable of standard deviation `σ` in the tangent plane of the `x::SnPoint`
