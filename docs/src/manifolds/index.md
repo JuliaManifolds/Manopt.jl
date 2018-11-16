@@ -75,6 +75,7 @@ manifoldDimension(::P) where {P <: MPoint}
 manifoldDimension(::mT) where {mT <: Manifold}
 norm(::mT,::P,::T) where {mT<:Manifold, P<: MPoint, T<:TVector}
 parallelTransport(::mT,::P,::Q,::T) where {mT <: Manifold, P <: MPoint, Q <: MPoint, T <: TVector}
+randomPoint(::M) where {M<:Manifold}
 tangentONB(::mT, ::P, ::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint}
 typicalDistance(M::mT) where {mT <: Manifold}
 zeroTVector(::mT, ::P) where {mT <: Manifold, P <: MPoint}

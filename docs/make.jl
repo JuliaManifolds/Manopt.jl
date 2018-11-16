@@ -52,6 +52,6 @@ makedocs(
 #     branch = "gh-pages",
 #     latest = "master",
 #     osname = "osx",
-#     julia  = "0.6",
+#     julia  = "1.0",
 #     deps = Deps.pip("pygments", "mkdocs", "python-markdown-math")
 #)

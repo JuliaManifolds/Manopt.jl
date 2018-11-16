@@ -6,4 +6,7 @@ that can be loaded using the following data functions
   S1Signal
   S2Lemniscate
   artificialInSARImage
+  artificialS2WhirlPatch
+  artificialS2WhirlImage
+  artificialS2RotationsImage
 ```
