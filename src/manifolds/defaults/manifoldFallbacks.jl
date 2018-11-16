@@ -5,7 +5,8 @@
 #
 import LinearAlgebra: norm
 export addNoise, distance, dot, exp, getValue, log, manifoldDimension, norm
-export manifoldDimension, parallelTransport, tangentONB, typicalDistance, zeroTVector
+export manifoldDimension, parallelTransport, randomPoint, tangentONB
+export typicalDistance, zeroTVector
 """
     addNoise(M,x,σ)
 adds noise of standard deviation `σ` to the MPoint `x` on the manifold `M`.
@@ -120,6 +121,11 @@ function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPo
   sig4 = string( typeof(M) )
   throw( ErrorException("parallelTransport not implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
 end
+@doc doc"""
+    randomPoint(M)
+return a random point on the manifold `M`
+"""
+randomPoint(M::mT) where {mT <: Manifold} = throw( ErrorException("randomPoint() not implemented on the Manifold $(typeof(M)).") );
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the

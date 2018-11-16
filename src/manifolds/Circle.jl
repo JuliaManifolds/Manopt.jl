@@ -5,7 +5,7 @@
 import Base: exp, log, show
 
 export Circle, S1Point, S1TVector
-export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export distance, dot, exp, log, manifoldDimension, norm, opposite, parallelTransport
 export zeroTVector
 export show, getValue
 
@@ -112,9 +112,14 @@ $T_x\mathcal M$ at [`S1Point`](@ref)` x` of the
 """
 norm(M::Circle, x::S1Point, ξ::S1TVector)::Float64 = abs( getValue(ξ) )
 @doc doc"""
+    opposite(M,x)
+returns the antipodal point of x, i.e. $ y = (x+\pi)_{2\pi} $.
+"""
+opposite(M::Circle, x::S1Point) = S1Point( symRem(x+π) )
+@doc doc"""
     parallelTransport(M,x,y,ξ)
-computes the parallel transport of the [`S1TVector`](@ref)` ξ` from the tangent space $T_x\mathbb S^1$
-at the [`S1Point`](@ref)` x` to $T_y\mathbb S^1$ at the [`S1Point`](@ref)` y`.
+computes the parallel transport of the [`S1TVector`](@ref)` ξ` from the tangent space $ T_x\mathbb S^1$
+at the [`S1Point`](@ref)` x` to $ T_y\mathbb S^1$ at the [`S1Point`](@ref)` y`.
 Since the [`Sphere`](@ref)` M` is represented in angles this is the identity.
 """
 parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ

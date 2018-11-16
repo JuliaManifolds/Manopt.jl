@@ -5,8 +5,8 @@
 import LinearAlgebra: norm, dot, nullspace
 import Base: exp, log, show, cat
 export Sphere, SnPoint, SnTVector,show, getValue
-export addNoise, distance, dot, exp, log, manifoldDimension, norm, parallelTransport
-export zeroTVector
+export addNoise, distance, dot, exp, log, manifoldDimension, norm
+export randomPoint, opposite, parallelTransport, zeroTVector
 #
 # Type definitions
 #
@@ -150,6 +150,11 @@ $T_x\mathcal M$ at [`SnPoint`](@ref)` x` of the [`Sphere`](@ref)` M`.
 """
 norm(M::Sphere, x::SnPoint, ξ::SnTVector) = norm( getValue(ξ) )
 @doc doc"""
+    opposite(M,x)
+returns the antipodal point of x, i.e. $ y = -x $.
+"""
+opposite(M::Sphere, x::SnPoint) = SnPoint( -getValue(x) )
+@doc doc"""
     parallelTransport(M,x,y,ξ)
 Compute the paralllel transport of the [`SnTVector`](@ref)` ξ` from
 the tangent space $T_x\mathcal M$ at [`SnPoint`](@ref)` x` to
@@ -169,6 +174,15 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
   else # if length of ν is 0, we have p=q and hence ξ is unchanged
     return ξ
   end
+end
+@doc doc"""
+    randomPoint(M)
+returns a random point on the Sphere by projecting a normal distirbuted vector
+from within the embedding to the sphere.
+"""
+function randomPoint(M::Sphere)::SnPoint
+	v = randn(manifoldDimension(M)+1);
+	return SnPoint(v./norm(v))
 end
 tangentONB(M::Sphere, x::SnPoint, y::SnPoint) = tangentONB(M,x,log(M,x,y))
 function tangentONB(M::Sphere,x::SnPoint,ξ::SnTVector)
