@@ -31,9 +31,13 @@ struct PowPoint <: MPoint
   PowPoint(v::Array{T,N} where N where T<:MPoint) = new(v)
 end
 getValue(x::PowPoint) = x.value;
-getindex(x::PowPoint, i::CartesianIndex{N} where N) = getindex( getValue(x) ,i)
+# pass all getters and setters down to the internal array...
 getindex(x::PowPoint, i...) = PowPoint(getindex( getValue(x) ,i...))
-setindex!(x::PowPoint, p::P where {P <: MPoint},i) = setindex!(getValue(x),p,i)
+# only for a specific index: return entry
+getindex(x::PowPoint, i::Int...) = getindex( getValue(x) ,i...)
+getindex(x::PowPoint, i::CartesianIndex{N} where N) = getindex( getValue(x) ,i)
+setindex!(x::PowPoint, y::PowPoint, kv...) = setindex!(getValue(x),getValue(y),kv...)
+setindex!(x::PowPoint, kv...) = setindex!(getValue(x),kv...)
 cat(X::PowPoint; dims=k) = PowPoint(cat( [getValue(x) for x in X]; dims=k))
 vcat(X::PowPoint...) = cat(X...; dims=1)
 hcat(X::PowPoint...) = cat(X...; dims=2)

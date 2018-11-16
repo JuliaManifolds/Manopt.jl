@@ -145,11 +145,11 @@ end
     norm(M,x,ξ)
   computes the length of a tangential vector $\xi\in T_x\mathcal M$
 """
-function norm(M::mt,x::P,ξ:T) where {mT<:Manifold,P<:MPoint,ξ<:TVector}
+function norm(M::mT,x::P,ξ::T) where {mT<:Manifold,P<:MPoint,T<:TVector}
     try
         sqrt(dot(M,x,ξ,ξ))
     catch e
-        throw( ErrorException("The norm could not be computed, since the error \"$(e.msg)\" orccurred.") );
+        throw( ErrorException("The norm could not be computed, error: $(e.msg).") );
     end
 end
 @doc doc"""
