@@ -9,7 +9,7 @@
   pM = midPoint(M,p1,p3)
   gradSO = gradTV2(M,(p1,p2,p3))
   a = [getBase(p) for p in [p1,p2,p3,pM] ]
-  renderAsymptote("test.asy", asyExportS2; points=[ a, ], tVectors = [[gradSO...],],
+  renderAsymptote("test.asy", asyExportS2Signals; points=[ a, ], tVectors = [[gradSO...],],
     colors=Dict( :points => [RGBA(.5,0,0,1),], :tvectors => [RGBA(0.,.7,.3,1),] ),
     dotSize=3.0)
 #end

@@ -70,14 +70,18 @@ function artificialS2WhirlImage(;pts::Int=64)
   # Set WhirlPatches
   sc = pts/64;
   patchSizes = floor.( sc.* [9,9,9,9,11,11,11,15,15,15,17,21] )
-  patchCenters = Integer.( floor.( sc.* [ [35,7] [25,41] [32,25] [7,60] [10,5] [41,58] [11,41] [23,56] [38,45] [16,28] [55,42] [51,16] ] ) )
+  patchCenters = Integer.( floor.(
+    sc.* [ [35,7] [25,41] [32,25] [7,60] [10,5] [41,58] [11,41] [23,56] [38,45] [16,28] [55,42] [51,16] ]
+  ) )
   patchSigns = [1,1,-1,1,-1,-1,1,1,-1,-1,1,-1]
   for i=1:length(patchSizes)
     pS = Integer(patchSizes[i])
-    pSH = Integer( (patchSizes[i]-1)/2 )
+    pSH = Integer( floor( (patchSizes[i]-1)/2 ) )
     pC = patchCenters[:,i]
+    pC = max.(Ref(1), pC.-pS) .+pS
     pSgn = patchSigns[i]
-    r = [ pC[1] .+ ( -pSH:pSH ), pC[1] .+ ( -pSH:pSH ) ]
+    s = pS%2==0 ? 1 : 0;
+    r = [ pC[1] .+ ( -pSH:(pSH+s) ), pC[2] .+ ( -pSH:(pSH+s) ) ]
     patch = artificialS2WhirlPatch(;pts=pS);
     if pSgn==-1 # opposite ?
       patch = PowPoint( opposite.(Ref(M), getValue(patch)) )
@@ -103,8 +107,8 @@ function artificialS2RotationsImage(;pts::Int=64,rotations::Tuple{Float64,Float6
   Rxz(a) = [cos(a) 0. -sin(a); 0. 1. 0.; sin(a) 0. cos(a)]
   for i=1:pts
     for j=1:pts
-      x = i*2π*rotations[1];
-      y = j*2π*rotations[2];
+      x = i/pts*2π*rotations[1];
+      y = j/pts*2π*rotations[2];
       img[i,j] = SnPoint( Rxy(x+y)*Rxz(x-y)*[0,0,1] )
     end
   end
@@ -121,15 +125,17 @@ create a whirl within the ptsxpts patch
 function artificialS2WhirlPatch(;pts::Int=5)
   M = Sphere(2)
   N = Power(M, (pts,pts) )
-  patch = PowPoint(Matrix{SnPoint}(undef,pts,pts))
-  scaleFactor = sqrt(2)*pts*3/π;
+  patch = PowPoint( fill(SnPoint([0.,0.,-1.]),pts,pts))
+  scaleFactor = sqrt( (pts-1)^2 / 2 )*3/π;
   for i=1:pts
     for j=1:pts
-      # direction within the patch⁠
-      α = atan( (j-(pts+1)/2), (i-(pts+1)/2) );
-      # scaled length
-      β = (i^2+j^2)/scaleFactor;
-      patch[i,j] = SnPoint([sin(α)*sin(π/2-β), cos(α)*sin(π/2-β), cos(π/2-β)])
+      if i!=(pts+1)/2 || j != (pts+1)/2
+        # direction within the patch⁠
+        α = atan( (j-(pts+1)/2), (i-(pts+1)/2) );
+        # scaled length
+        β = sqrt( (j-(pts+1)/2)^2 + (i-(pts+1)/2)^2 )/scaleFactor;
+        patch[i,j] = SnPoint([sin(α)*sin(π/2-β), -cos(α)*sin(π/2-β), cos(π/2-β)])
+      end
     end
   end
   return patch

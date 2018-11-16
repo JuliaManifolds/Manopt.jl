@@ -41,7 +41,7 @@ setindex!(x::PowPoint, kv...) = setindex!(getValue(x),kv...)
 cat(X::PowPoint; dims=k) = PowPoint(cat( [getValue(x) for x in X]; dims=k))
 vcat(X::PowPoint...) = cat(X...; dims=1)
 hcat(X::PowPoint...) = cat(X...; dims=2)
-size(x::PowPoint) = size(getValue(x))
+size(x::PowPoint,k...) = size(getValue(x),k...)
 copy(x::PowPoint) = PowPoint(copy(getValue(x)))
 @doc doc"""
     PowTVector <: TVector

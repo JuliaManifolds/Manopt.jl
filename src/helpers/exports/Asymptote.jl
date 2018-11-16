@@ -1,5 +1,5 @@
-using ColorTypes, Colors
-export renderAsymptote, asyExportS2
+using ColorTypes, Colors, ColorSchemes
+export renderAsymptote, asyExportS2Signals, asyExportS2Data
 """
     renderAsymptote(filename, exportFct; render=4, format="png", ...)
 render an exported `asy`.
@@ -16,15 +16,16 @@ the default values are given in brackets
 all further keyword arguments are passed down to the `exportFct` call.
 
 # See also
-[`asyExportS2`](@ref)
+[`asyExportS2Signals`](@ref)
 """
-function renderAsymptote(filename, exportFct; render::Int=4, format="png", kwargs...)
-    renderCmd = `asy -render $(render) -f $(format) $(filename)`
+function renderAsymptote(filename, exportFct; render::Int=4, format="png",
+    exportFolder = string( filename[1:( [findlast(".",filename)...][1])], format), kwargs...)
+    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o $(exportFolder) $(filename)`
     exportFct(filename; kwargs...)
     run(renderCmd)
 end
 @doc doc"""
-    asyExportS2(filename; points, curves, tVectors, colors, options...)
+    asyExportS2Signals(filename; points, curves, tVectors, colors, options...)
 Export given `points`, `curves`, and `tVectors` on the sphere $\mathbb S^2$
 to Asymptote.
 
@@ -53,7 +54,7 @@ to Asymptote.
 * `dotSizes` – overrides the previous value to specify a value per point set.
 * `target` - (`(0.,0.,0.)`) position the camera points at.
 """
-function asyExportS2(filename::String;
+function asyExportS2Signals(filename::String;
     points::Array{Array{SnPoint,1},1} = Array{Array{SnPoint,1},1}(undef,0),
     curves::Array{Array{SnPoint,1},1} = Array{Array{SnPoint,1},1}(undef,0),
     tVectors::Array{Array{TVectorE{SnTVector,SnPoint},1},1} = Array{Array{TVectorE{SnTVector,SnPoint},1},1}(undef,0),
@@ -151,5 +152,62 @@ function asyExportS2(filename::String;
         end
     finally
         close(io)
+    end
+end
+@doc doc"""
+    asyExportS2Data(filename)
+Export given `data` as a point on a `Power{SnPoint}` manifold, i.e. one-, two-
+or three-dimensional data with points on the sphere §\mathbb S^2$.
+
+# Input
+* `filename` – a file to store the Asymptote code in.
+
+# Optional Arguments (Data)
+* `data` – a `PowPoint` representing the 1-,2-, or 3-D array of `SnPoints`
+* `elevationColorScheme` - A `ColorScheme` for elevation
+* `scaleAxes` - (`(1/3,1/3,1/3)`) move spheres closer to each other by a factor
+  per direction
+
+# Optional Arguments (Asymptote)
+* `arrowHeadSize` - (`1.8`) size of the arrowheads of the vectors (in mm)
+* `cameraPosition` - position of the camrea (defailt: centered above xy-plane)
+  szene
+* `target` - position the camera points at (default: center of xy-plane within data).
+
+"""
+function asyExportS2Data(filename::String;
+    data::PowPoint = PowPoint(fill(SnPoint([0.,0.,1.]),0,0)),
+    arrowHeadSize::Float64 = 1.8,
+    scaleAxes = (1/3.,1/3.,1/3.),
+    cameraPosition::Tuple{Float64,Float64,Float64} = scaleAxes.*( (size(data)[1]-1)/2 ,(size(data)[2]-1)/2, max(size(data,3),0)+10),
+    target::Tuple{Float64,Float64,Float64} = scaleAxes.*( (size(data)[1]-1)/2 ,(size(data)[2]-1)/2, 0.),
+    elevationColorScheme = ColorSchemes.viridis,
+    )
+    io = open(filename,"w")
+    try
+      write(io,string("import settings;\nimport three;\n",
+        "size(7cm);\n",
+        "DefaultHead.size=new real(pen p=currentpen) {return $(arrowHeadSize)mm;};\n",
+        "currentprojection=perspective( ",
+        "camera = $(cameraPosition), up=Y,",
+        "target = $(target) );\n\n"));
+      dims = [size(data,1) size(data,2) size(data,3) ];
+      for x=1:dims[1]
+        for y=1:dims[2]
+          for z=1:dims[3]
+            v = Tuple(getValue(data[x,y,z])) #extract value
+            el = asin(v[3]); # since 3 is between -1 and 1 this yields a value between 0 and pi
+            # map elevation to colormap
+            c = get(elevationColorScheme,el+π/2, (0,π) );
+            # write arrow in this colormap
+            # transpose image to comply with image adresses (first index column downwards, second rows)
+            write(io,string("draw( $(scaleAxes.*(x-1,y-1,z-1))",
+              "--$(scaleAxes.*(x-1,y-1,z-1).+v),",
+              " rgb($(red(c)),$(green(c)),$(blue(c))), Arrow3);\n"));
+          end
+        end
+      end
+    finally
+      close(io)
     end
 end
