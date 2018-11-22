@@ -5,7 +5,7 @@
 #
 import LinearAlgebra: norm
 export addNoise, distance, dot, exp, getValue, log, manifoldDimension, norm
-export manifoldDimension, parallelTransport, randomPoint, tangentONB
+export manifoldDimension, parallelTransport, randomPoint, randomTVector, tangentONB
 export typicalDistance, zeroTVector
 """
     addNoise(M,x,σ)
@@ -125,7 +125,12 @@ end
     randomPoint(M)
 return a random point on the manifold `M`
 """
-randomPoint(M::mT) where {mT <: Manifold} = throw( ErrorException("randomPoint() not implemented on the Manifold $(typeof(M)).") );
+randomMPoint(M::mT) where {mT <: Manifold} = throw( ErrorException("randomPoint() not implemented on the Manifold $(typeof(M)).") );
+@doc doc"""
+    randomTVector(M,x)
+return a random tangent vector in the tangent space of x on the manifold `M`
+"""
+randomTVector(M::mT,p::P) where {mT <: Manifold, P<: MPoint} = throw( ErrorException("randomPoint() not implemented for points $(typeof(p)) on the Manifold $(typeof(M)).") );
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the

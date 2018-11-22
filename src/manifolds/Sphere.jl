@@ -63,12 +63,12 @@ getValue(ξ::SnTVector) = ξ.value;
 # ---
 @doc doc"""
     addNoise(M,p,σ)
-add noise to sperical data, i.e. tangential Gaussian noise, $\exp_x n$,
+add noise to spherical data, i.e. tangential Gaussian noise, $\exp_x n$,
 where $n\sim \mathcal N(0,\sigma)^d$ d-dimensional is a zero-mean Gaussian
 random variable of standard deviation `σ` in the tangent plane of the `x::SnPoint`
 on the manifold `M`.
 """
-function addNoise(M::Sphere, x::SnPoint,σ::Real)
+function addNoise(M::Sphere, x::SnPoint, σ::Real)
 	n = σ * randn( size( getValue(x)) ) # Gaussian in embedding
 	nP = n - dot(n,getValue(x))*getValue(x) #project to TpM (keeps Gaussianness)
 	return exp(  M,x,SnTVector( nP )  )
