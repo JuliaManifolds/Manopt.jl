@@ -23,6 +23,7 @@ module Manopt
   include("manifolds/Sphere.jl")
   include("manifolds/SymmetricPositiveDefinite.jl")
   include("manifolds/Symmetric.jl")
+  include("manifolds/TangentBundle.jl")
   # meta
   include("manifolds/Power.jl")
   include("manifolds/Product.jl")
