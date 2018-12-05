@@ -5,7 +5,7 @@
 #
 import LinearAlgebra: norm
 export addNoise, distance, dot, exp, getValue, log, manifoldDimension, norm
-export manifoldDimension, parallelTransport, randomPoint, randomTVector, tangentONB
+export manifoldDimension, parallelTransport, randomMPoint, randomTVector, tangentONB
 export typicalDistance, zeroTVector
 """
     addNoise(M,x,σ)
@@ -122,13 +122,13 @@ function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPo
   throw( ErrorException("parallelTransport not implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
 end
 @doc doc"""
-    randomPoint(M)
-return a random point on the manifold `M`
+    randomMPoint(M)
+returns a random point on the manifold `M`
 """
-randomMPoint(M::mT) where {mT <: Manifold} = throw( ErrorException("randomPoint() not implemented on the Manifold $(typeof(M)).") );
+randomMPoint(M::mT) where {mT <: Manifold} = throw( ErrorException("randomMPoint() not implemented on the Manifold $(typeof(M)).") );
 @doc doc"""
     randomTVector(M,x)
-return a random tangent vector in the tangent space of x on the manifold `M`
+returns a random tangent vector in the tangent space of x on the manifold `M`
 """
 randomTVector(M::mT,p::P) where {mT <: Manifold, P<: MPoint} = throw( ErrorException("randomPoint() not implemented for points $(typeof(p)) on the Manifold $(typeof(M)).") );
 @doc doc"""

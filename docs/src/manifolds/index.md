@@ -15,6 +15,8 @@ MPoint
 TVector
 ```
 
+## List of available Manifolds
+
 Furthermore there are two types accompanying each manifold – a point on the
 manifold inheriting from [`MPoint`](@ref) and the tangential vector [`TVector`](@ref). For both
 the term manifold is shortened to `M` for concise naming. Each manifold also
@@ -29,7 +31,17 @@ A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\m
 [Euclidean space $\mathbb R^n$](@ref EuclideanSpace) | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
 [symmetric matrices $\mathcal{Sym}(n)$](@ref SymmetricManifold) | `Symmetric.jl` | `Sym` | $n\times n$ symmetric matrices
 [symmetric positive definite matrices $\mathcal P(n)$](@ref SymmmetricPositiveDefiniteManifold) | `SymmetricPositiveDefinite.jl` | `SPD` | $n\times n$ symmetric positive matrices using the affine metric
+
 ## Special Types of Manifolds
+### Manifolds build upon Manifolds
+| Manifold $\mathcal M$ | File | Abbr. | Comment
+-------------------------|------|-------|---------
+Power manifold           | `Power.jl` | `Pow` | Builds $\mathcal N^{d_1\times\cdotd\times d_k}$ of any manifold $\mathcal N$
+Product manifold         | `Product.jl` | `Prod` | Build the product manifold $\mathcal N_1\times\cdots\times\mathcal N_k$ of manifolds
+Tangent bundle           | `TangentBundle.jl` | `TB` | tangent bundle of a manifold, i.e. the set of all tuples $(x,\xi), \xi \in T_x\mathcal M$, $x\in\mathcal M$ with the induced metric.
+
+for more details see [Combined Manifolds](@ref CombinedManifolds)
+
 Special types of manifolds are introduced by [SimpleTraits.jl](https://github.com/mauro3/SimpleTraits.jl)
 ### Embedded Manifold
 ```@docs
@@ -62,20 +74,24 @@ all these functions have a fallback providing an error message if the function i
 not (yet) implemented.
 Otherwise, for example, if the field of the inner representant of `MPoint`
 or [`TVector`](@ref) is the field `.value` of your struct, [`getValue`](@ref) directly
-works.
+works. In the following list `M <: Manifold` the manifold type
+ represents the manifold `QP <: MPoint` the type of a point on the new manifold,
+`T <: TVector` a corresponding tangent vector in a suitable tangent space,
 
 ```@docs
-addNoise(::mT,::T,::Number) where {mT <: Manifold, T <: MPoint}
-distance(::M,::P,::P) where {M<:Manifold, P<:MPoint}
-dot(::mT,::P,::T,::S) where {mT <: Manifold, P <: MPoint, T <: TVector, S <: TVector}
+addNoise(::mT,::P,::Number) where {mT<:Manifold, P<:MPoint}
+distance(::mT,::P,::P) where {mT<:Manifold, P<:MPoint}
+dot(::mT,::P,::T,::T) where {mT<:Manifold, P<:MPoint, T<:TVector}
 exp(::mT,::P,::T,::N) where {mT<:Manifold, P<:MPoint, T<:TVector, N<:Number}
-getValue
 log(::mT,::P,::Q) where {mT<:Manifold, P<:MPoint, Q<:MPoint}
+getValue(ξ::P) where {P <: MPoint}
+getValue(ξ::T) where {T <: TVector}
 manifoldDimension(::P) where {P <: MPoint}
 manifoldDimension(::mT) where {mT <: Manifold}
 norm(::mT,::P,::T) where {mT<:Manifold, P<: MPoint, T<:TVector}
 parallelTransport(::mT,::P,::Q,::T) where {mT <: Manifold, P <: MPoint, Q <: MPoint, T <: TVector}
-randomPoint(::M) where {M<:Manifold}
+randomMPoint(::M) where {M<:Manifold}
+randomTVector(::M,::P) where {M <: Manifold, P <: MPoint}
 tangentONB(::mT, ::P, ::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint}
 typicalDistance(M::mT) where {mT <: Manifold}
 zeroTVector(::mT, ::P) where {mT <: Manifold, P <: MPoint}

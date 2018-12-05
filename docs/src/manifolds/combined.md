@@ -1,7 +1,26 @@
 ```@meta
 CurrentModule = Manopt
 ```
-# [Special Manifolds to combine Riemannian manifolds](@id CombinedManifolds)
+# [Special Manifolds build upon one or more Riemannian manifolds](@id CombinedManifolds)
+
+## Tangent bundle
+The tangent bundle $T\mathcal M$ of a manifold $\mathcal M$ consists of all tuples
+$(x,\xi) \in T\mathcal M$, where $\xi\inT_x\mathcal M$, $x\in \mathcal M$, where
+the metric is inherited componentwise and for the exponential and logarithmic map,
+the second component requires a `parallelTransport`.
+
+### Types
+```@autodocs
+Modules = [Manopt]
+Pages = ["manifolds/TangentBundle.jl"]
+Order = [:type]
+```
+### Functions
+```@autodocs
+Modules = [Manopt]
+Pages = ["manifolds/TangentBundle.jl"]
+Order = [:function]
+```
 
 ## Power manifold
 The product manifold $\mathcal M^n$, where $n\in\mathbb N^k$ represents
