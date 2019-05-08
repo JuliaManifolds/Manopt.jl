@@ -39,7 +39,7 @@ mutable struct HessianProblem{mT <: Manifold} <: Problem
 end
 @doc doc"""
     getHessian(p,x)
-evakuate the Hessian of a [`HessianProblem`](@ref)` p` at the [`MPoint`](@ref)` x`.
+evakuate the Hessian of a [`HessianProblem`](@ref)` p` at the [`MPoint`](@ref) `x`.
 """
 function getHessian(p::P,x::MP) where {P <: HessianProblem{M} where M <: Manifold, MP <: MPoint }
     return p.Hessian(x)

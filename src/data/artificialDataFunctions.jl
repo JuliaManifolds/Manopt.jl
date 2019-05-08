@@ -3,18 +3,14 @@
 #
 #
 #
-export artificialInSARImage, artificialS2WhirlImage, artificialS2RotationsImage
-export artificialS2WhirlPatch
+export artificialS1Signal, artificialS1SlopeSignal, artificialInSARImage
+export artificialS2WhirlImage, artificialS2RotationsImage
+export artificialS2WhirlPatch, artificialS2Lemniscate
 
 """
     artificialInSARImage(pts)
 generate an artificial InSAR image, i.e. phase valued data, of size `pts` x
 `pts` points.
-
-This example data was introduced in the article
-> R. Bergmann, F. Laus, G. Steidl, A. Weinmann:
-> Second Order Differences of Cyclic Data and Applications in Variational Denoising,
-> SIAM Journal on Imaging Sciences, Vol. 7, No. 4, pp. 2916–2953, 2014.
 """
 function artificialInSARImage(pts::Integer)::Array{Float64,2}
   # variables
@@ -26,7 +22,7 @@ function artificialInSARImage(pts::Integer)::Array{Float64,2}
   # values for the hyperboloid
   midPoint = [0.275;0.275]
   radius = 0.18
-  values = linspace(-0.5,0.5,pts)
+  values = [range(-0.5,0.5,lengt=pts)...]
   # Steps
   aSteps = 60.0; cosS = cosd(aSteps); sinS = sind(aSteps)
   l = 0.075
@@ -56,11 +52,105 @@ function artificialInSARImage(pts::Integer)::Array{Float64,2}
 end
 
 @doc doc"""
+    artificialS1SlopeSignal()
+
+Creates a Signal of (phase-valued) data represented on the
+[`Circle`](@ref)` `[`Manifold`](@ref) with increasing slope.
+
+# Optional
+* `pts` – number of points to sample the function.
+* `slope` – initial slope that gets increased afterwards
+"""
+function artificialS1SlopeSignal(pts::Integer = 500, slope::Float64=4.)
+    t = range(0., 1., length=pts)
+    f = zero(t)
+    f[ t .<= 1/6] .= -π/2 .+ slope * π/8 * t[ t .<= 1/6]
+    # In the following terms, the first max 
+    f[(1/6 .< t) .& (t .<= 1/3)] .= max(f[f .!= 0]...) .- slope * π/4 * 1/6 .+ slope * π/4 .* t[ (1/6 .< t) .& ( t.<=1/3 )]
+    f[(1/3 .< t) .& (t .<= 1/2)] .= max(f[f .!= 0]...) .- slope * π/2 * 1/3 .+ slope * π/2 * t[ (1/3 .< t) .& ( t .<= 1/2)]
+    f[(1/2 .< t) .& (t .<= 2/3)] .= max(f[f .!= 0]...) .- slope * π * 1/2 .+ slope * π * t[(1/2 .< t) .& (t .<= 2/3)]
+    f[(2/3 .< t) .& (t .<= 5/6)] .= max(f[f .!= 0]...) .- slope * 2*π * 2/3 .+ slope * 2 * π * t[(2/3 .< t) .& (t .<= 5/6)]
+    f[ 5/6 .< t] .= max(f[f .!= 0]...) .- slope * 4 * π * 5/6 .+ slope * 4 * π * t[ 5/6 .< t]
+    return S1Point.(symRem.(f))
+end
+
+@doc doc"""
+    artificialS1Signal()
+
+generate a real-valued signal having piecewise constant, linear and quadratic
+intervals with jumps in between. If the resulting manifold the data lives on,
+is the [`Circle`](@ref) (the default [`S1Point`](@ref)) the data is also wrapped
+to $[-\pi,\pi)$.
+
+# Optional
+* `pts` – (`500`) number of points to sample the function
+* `pointType` – (`S1Point`) provide the point type, i.e. manifold the data lives
+  on. Possible values: [`S1Point`](@ref), [`SnPoint`](@ref), [`RnPoint`](@ref),
+  where for the second type, the data is embedded (point wise) in $\mathbb R^2$.
+"""
+function artificialS1Signal(pts::Integer=500,
+    pointType::Union{Type{S1Point},Type{RnPoint},Type{SnPoint},Type{Real}}=S1Point)
+  t = range(0., 1., length=pts)
+  slope = 4
+  f = zero(t)
+  # define segments
+  f[t .<= 1/4] .= -24*π*( t[t .<= 1/4] .- 1/4).^2 .+ 3*π/4 # Parabel
+  f[(t .> 1/4) .& (t .<= 3/8)] .= 4*π*t[(t .> 1/4) .& (t .<= 3/8)] .- π/4 # linears
+  f[(t .> 3/8) .& (t .<= 1/2)] .= -π*t[(t .> 3/8) .& (t .<= 1/2)] .- 3/8*π
+  f[(t .> 1/2) .& (t .<= 19/32)] .= -7/8*π
+  f[(t .> 19/32) .& (t .<= 11/16)] .= -8/8*π
+  f[(t .> 11/16) .& (t .<= 25/32)] .= 7/8*π
+  f[(t .> 25/32) .& (t .<= 7/8)] .= 6/8*π
+  f[(t .> 7/8)] .= 3/2*π/exp(8/7-1/(1-7/8)) .* exp.( 8/7 .- 1 ./ (1 .- t[(t .> 7/8)]  )) .- 3/4*π
+  if isa(pointType,Type{SnPoint}) # SnPoint: wrap & embedd
+    return embedd.(Ref(Circle()),S1Point.(symRem.(f)))
+  elseif isa(pointType,Type{S1Point}) # S1Point: wrap
+    return S1Point.(symRem.(f))
+  else
+    return pointType.(f)
+  end
+end
+@doc doc"""
+    artificialS1Signal(x)
+evaluate the example signal $f(x), x\in [0,1]$,
+of phase-valued data introduces in Sec. 5.1 of
+
+> Bergmann, Laus, Steidl, Weinmann, Second Order Differences of Cyclic Data and
+> Applications in Variational Denoising, SIAM J. Imaging Sci., 7(4), 2916–2953, 2014.
+> doi: [10.1137/140969993](https://dx.doi.org/10.1137/140969993)
+
+for values outside that intervall, this Signal is `missing`.
+"""
+function artificialS1Signal(x::Number)
+    if x < 0
+        y = missing
+    elseif x <= 1/4
+        y = - 24 * π * (x-1/4)^2  +  3/4 * π
+    elseif x <= 3/8
+        y = 4 * π * x  -  π / 4
+    elseif x <= 1/2
+        y = - π * x - 3*π/8;
+    elseif x <= (3*0 + 19)/32
+        y = - (0+7)/8*π
+    elseif x <= (3*1 + 19)/32
+        y = - (1+7)/8*π
+    elseif x <= (3*2 + 19)/32
+        y = - (2+7)/8*π
+    elseif x <= (3*3 + 19)/32
+        y = - (3+7)/8*π
+    elseif x <= 1
+        y = 3 / 2 * π * exp(8-1/(1-x))  -  3/4*π
+    else
+        y = missing
+    end
+    return y
+end
+@doc doc"""
     artificialS2WhirlImage()
 generate an artificial image of data on the 2 sphere,
 
 # Optional Parameters
-* `pts` : (`64`)size of the image in `pts`$\times$`pts` pixel.
+* `pts` – (`64`) size of the image in `pts`$\times$`pts` pixel.
 """
 function artificialS2WhirlImage(;pts::Int=64)
   M = Sphere(2);
@@ -139,4 +229,45 @@ function artificialS2WhirlPatch(;pts::Int=5)
     end
   end
   return patch
+end
+@doc doc"""
+    artificialS2Lemniscate(p,pts; interval=[0,2π], a=π/2)
+generate a Signal on the 2-sphere $\mathbb S^2$ by creating the Lemniscate of
+Bernoulli in the tangent space of `p` sampled at `pts` points.
+
+# Input
+* `p` – the tangent space the Lemniscate is created in
+* `pts` – number of points to sample the Lemniscate
+
+# Optional Values
+`* interval` – (`[0,2*π]`) range to sample the lemniscate at, the default value
+  refers to one closed curve
+ * `a` – (`π/2`) defines a half axis of the Lemniscate to cover a
+   half sphere.
+"""
+function artificialS2Lemniscate(p::SnPoint,pts::Integer;
+    interval::Array{Float64,1}=[0.,2.0*π], a::Float64=π/2.)
+    return artificialS2Lemniscate.(Ref(p),range(interval[1],interval[2],length=pts); a=a)
+end
+@doc doc"""
+    artificialS2Lemniscate(p,t; interval=[0,2π], a=π/2)
+generate a Signal on the 2-sphere $\mathbb S^2$ by creating the Lemniscate of
+Bernoulli in the tangent space of `p` sampled at `pts` points.
+
+# Input
+* `p` – the tangent space the Lemniscate is created in
+* `t` – value to sample the Lemniscate at
+
+# Optional Values
+ * `a` – (`π/2`) defines a half axis of the Lemniscate to cover a
+   half sphere.
+"""
+function artificialS2Lemniscate(p::SnPoint,t::Float64; a::Float64=π/2.)
+    M = Sphere(2);
+    tP = 2.0*Float64(getValue(p)[1]>=0.)-1. # Take north or south pole
+    base = SnPoint([0.,0.,tP]);
+    xc = a * (cos(t)/(sin(t)^2+1.));
+    yc = a * (cos(t)*sin(t)/(sin(t)^2+1.));
+    tV = parallelTransport(M,base,p,SnTVector([xc,yc,0.]))
+    return exp(M,p,tV)
 end

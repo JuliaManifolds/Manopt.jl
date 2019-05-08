@@ -4,3 +4,10 @@
 /docs/build/
 /docs/site/
 Tutorials/.ipynb_checkpoints
+src/examples/**/*.asy
+src/examples/**/*.png
+src/examples/**/*.csv
+src/examples/**/*.tex
+src/examples/**/*.pdf
+src/examples/**/*.mp4
+src/examples/**/*.jld2

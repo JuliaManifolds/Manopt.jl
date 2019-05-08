@@ -114,7 +114,7 @@ end
 """
     geodesic(M,x,y,t)
 returns the point along the geodesic from `x` to `y` given by the value `t`
-(in `[0,1]`) on the [`Manifold`](@ref)` M`
+(in `[0,1]`) on the [`Manifold`](@ref) `M`
 """
 geodesic(M::mT,x::T,y::T,t::N) where {mT <: Manifold, T <: MPoint, N <: Number} = geodesic(M,x,y)(t)
 """
@@ -143,7 +143,8 @@ function jacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {
 end
 @doc doc"""
     norm(M,x,ξ)
-  computes the length of a tangential vector $\xi\in T_x\mathcal M$
+
+computes the length of a tangential vector $\xi\in T_x\mathcal M$
 """
 function norm(M::mT,x::P,ξ::T) where {mT<:Manifold,P<:MPoint,T<:TVector}
     try
@@ -159,18 +160,14 @@ $y = R_p(x) = \exp_p(-\log_px)$. On Euclidean space this results in the point
 reflection $R_p(x) = p - (x-p) = 2p-x$.
 
 # Arguments
-* `M`  :   a manifold $\mathcal M$
-* `p`  :   an `MPoint` $p\in\mathcal M$ to relfect at
-* `x`  :   an `MPoint` $x\in\mathcal M$ that is reflected
+* `M` – a [`Manifold`](@ref) $\mathcal M$
+* `p` – an [`MPoint`](@ref) $p\in\mathcal M$ to relfect at
+* `x` – an [`MPoint`](@ref) $x\in\mathcal M$ that is reflected
 
 # Output
-* `y`  :  the resulting reflection.
+* `y` – the resulting reflection.
 """
 reflection(M::mT, p::P, x::P) where {mT <: Manifold, P<: MPoint} = exp(M,p,-log(M,p,x))
-# errors for false combinations of types or nonimplemented cases
-include("defaults/manifoldFallbacks.jl")
-# Extended Vector decorations
-include("defaults/extendedData.jl")
 
 function show(io::IO, M::mT) where {mT<:Manifold}
     try # works if M has a .name field

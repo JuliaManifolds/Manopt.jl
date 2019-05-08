@@ -1,14 +1,8 @@
-# [Subgradient Method](@id SubgradientMethod)
+# [Subgradient Method](@id SubgradientSolver)
 ```@docs
 subGradientMethod
 ```
 # Options
 ```@docs
 SubGradientMethodOptions
-```
-# Step Size Rules
-```@docs
-constantStepSize
-decreasingStepSize
-normedStepSize
 ```

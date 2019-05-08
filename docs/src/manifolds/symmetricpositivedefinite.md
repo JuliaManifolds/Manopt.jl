@@ -1,4 +1,4 @@
-# [The Symmetric Positive Definite $n\times n$ Matrices](@id SymmmetricPositiveDefiniteManifold)
+# [The Symmetric Positive Definite $n\times n$ Matrices](@id SymmetricPositiveDefiniteManifold)
 The manifold of symmetric positive definite matrices
 $\mathcal P(3) = \bigl\{ A \in \mathbb R^{n\times n}\ \big|\ 
 A = A^{\mathrm{T}} \text{ and }

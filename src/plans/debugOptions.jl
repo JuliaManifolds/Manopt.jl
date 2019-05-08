@@ -1,7 +1,5 @@
-export evaluateStoppingCriterion,getVerbosity,updateDebugValues,Debug
-export setDebugFunction,getDebugFunction,setDebugOptions,getDebugOptions
-export DebugOptions
-
+import Base: stdout
+export DebugOptions, getOptions, debug
 #
 #
 # Debug Decorator
@@ -13,7 +11,7 @@ export DebugOptions
 The debug options append to any options a debug functionality, i.e. they act as
 a decorator pattern. The Debug keeps track of a dictionary of values and only
 these are kept up to date during e.g. the iterations. The original options can
-still be accessed using the `getOptions` function.
+still be accessed using the [`getOptions`](@ref) function.
 
 The amount of output the `debugFunction` provides can be determined by the
 `verbosity`, which should follow the following rough categories, where the
@@ -25,130 +23,73 @@ higher level always includes all levels below in output
 * 4 - Time measurements
 * 5 - Iteration interims values
 
-# Fields
+# Fields (defaults in brackets)
 * `options` – the options that are extended by debug information
-* `debugFunction` – a function called to produce debug output, e.g. on REPL and
-  gets a dictionary of values (see `DebugValues` as input)
-* `debugValues` – a dictionary of values to store, where the strings to store
-  values with is determined by the algorithm itself
-* `verbosity` – A verbosity level
+* `debugActivated` – a set of Symbols whose debug is activated
+* `debugEvery` (`1`) - reduce debug output to be only performed every `k`th iteration
+* `verbosity` - (`3`) a verbosity, see above.
+* `debugOut` – (`Base.stdout`) where to produce debug to, e.g. a file.
 """
-mutable struct DebugOptions <: Options
-    options::O where {O<: Options}
-    debugFunction::Function
-    debugValues::Dict{String,<:Any}
+mutable struct DebugOptions{O<:Options} <: Options
+    options::O
+    debugActivated::Array{Symbol,1}
+    debugEvery::Int
     verbosity::Int
+    debugOut::IO
+    DebugOptions{O}(o::O, dA::Array{Symbol,1}, dbgE::Int=1,dbgV::Int=5,dOut::IO=Base.stdout) where {O <: Options} = new(o,dA,dbgE,dbgV,dOut)
 end
-evaluateStoppingCriterion(o::DebugOptions,vars...) = evaluateStoppingCriterion(o.options,vars...)
-getOptions(o::O) where {O <: Options} = o; # fallback and end
-getOptions(o::O) where {O <: DebugOptions} = getOptions(o.options); #unpeel recursively
+DebugOptions(o::O, dA::Array{Symbol,1},e=1,v=3, dOut::IO=Base.stdout) where {O <: Options} = DebugOptions{O}(o,dA,e,v,dOut)
 
-"""
-    Debug(o)
+@traitimpl IsOptionsDecorator{DebugOptions}
 
-perform debug output for options `o`.
-"""
-function Debug(o::O) where {O<:DebugOptions}
-    o.debugFunction(o.debugValues)
-end
 @doc doc"""
-    setDebugFunction!(o,f)
+    debug(p,o,s[, status,iter=0])
 
-set the debug function within the options `o` to `f`.
+perform debug for `Symbol s` during run of the solver with respect to
+[`Problem`](@ref)` p` and [`DebugOptions`](@ref)` o`, that decorate the
+original options. While some symbols might require an additional status String,
+depending on the specific `Symbol`, during the iterations most should just rely
+on values stored within the [`Options`](@ref)` o`.
+The optional `status` String might be used to pass down a String directly.
+The iteration may be used to
+compute certain values, but is mainly used to reduce debug to `debugEvery`th iteration.
 """
-function setDebugFunction!(o::O,f::Function) where {O<:Options}
-    if getOptions(o) != o #decorator
-        setDebugFunction!(o.options,f)
+function debug(p::P,dO::DebugOptions{O},debugFor::Symbol,iter::Int=0) where {P <: Problem, O <: Options}
+    if (rem(iter,dO.debugEvery)==0) && ( debugFor ∈ dO.debugActivated )
+        debug(p,dO.options,Val(debugFor),iter,dO.debugOut)
     end
 end
-function setDebugFunction!(o::O,f::Function) where {O<:DebugOptions}
-    o.debugFunction = f;
-end
+function debug(p::P,dO::DebugOptions{O},debugFor::Symbol,status::String,iter::Int=0) where {P <: Problem, O <: Options}
+    if (rem(iter,dO.debugEvery)==0) && ( debugFor ∈ dO.debugActivated )
+        debug(p,dO.options,Val(debugFor),status,iter,dO.debugOut)
+    end
+end#
+# general debugs - defaults
+#
+# overwrite if you do something different and do not store an iterate in x.
 @doc doc"""
-    getDebugFunction(o)
+    debug(p,o,v,iter,[out=Base.stdout])
 
-get the debug function within the options `o`.
-"""
-function getDebugFunction(o::O) where {O<:Options}
-    if getOptions(o) != o #We have a decorator
-        return getDebugFunction(o.options,f)
-    end
-end
-function getDebugFunction(o::O,f::Function) where {O<:DebugOptions}
-    return o.debugFunction;
-end
-@doc doc"""
-    setDebugValues(o,v)
+implement the specific output a certain symbol generated, based on a
+[`Problem`](@ref)` p`, [`Options`](@ref)` o` and certain `Symbol`ic value `v`, as
+well as the current `iter`ation. The optional parameter `out` classically prints
+to the default out, but can also be used to print the log to a file, when set to
+somethins different in the external interface, the [`DebugOptions`](@ref).
 
-set the dictionary of debug values to `v`, i.e. especially also update the
-currently present keys within the debug values.
+In order to generate your own debug output, you have to Choose a `:Symbol`,
+that for a certain [`Problem`](@ref)` p`, [`Options`](@ref)` o` and implement
+this function. Then add this symbol to the [`DebugOptions`](@ref) initialization.
 """
-function setDebugOptions!(o::O,v::Dict{String,<:Any}) where {O<:Options}
-    if getOptions(o) != o #decorator
-        setDebugOptions(o.options,v)
-    end
-end
-function setDebugOptions!(o::O,v::Dict{String,<:Any}) where {O<:DebugOptions}
-    o.debugValues = v;
-end
-@doc doc"""
-    setDebugValues(o,v)
-
-set the dictionary of debug values to `v`, i.e. especially also update the
-currently present keys within the debug values.
-"""
-function getDebugOptions(o::O) where {O<:Options}
-    if getOptions(o) != o #decorator
-        return getDebugOptions(o.options)
-    end
-end
-function getDebugOptions(o::O,dO::Dict{String,<:Any}) where {O<:DebugOptions}
-    return o.debugValues;
-end
-@doc doc"""
-    optionsHasDebug(o)
-
-returns true if the give options `o` are decorated with debug options.
-"""
-function optionsHasDebug(o::O) where {O<:Options}
-    if getOptions(o) == o
-        return false;
-    else
-        return optionsHaveDebug(o.options)
-    end
-end
-optionsHasDebug(o::O) where {O<:DebugOptions} = true
-
-"""
-    updateDebugValues!(o,v)
-
-update all values in the debug options `o` for which `v` has a new value.
-"""
-function updateDebugValues!(o::O,v::Dict{String,<:Any}) where {O<:DebugOptions}
-    for k in keys(v)
-        if haskey(o.debugValues,k) # key presend -> update
-            o.debugValues[k] = v[k]
-        end
-    end
-end
-"""
-    getVerbosity(Options)
-
-returns the verbosity of the options, if any decorator provides such, otherwise
-0 if more than one decorator has a verbosity, the maximum is returned
-"""
-function getVerbosity(o::O) where {O<:Options}
-  if getOptions(o) == o # no Decorator
-      return 0
-  end
-  # else look into encapsulated
-  return getVerbosity(getOptions(o))
-end
-# List here any decorator that has verbosity
-function getVerbosity(o::O) where {O<:DebugOptions}
-  if o.options == getOptions(o.options) # we do not have any further inner decos
-      return o.verbosity;
-  end
-  # else maximum of all decorators
-    return max(o.verbosity,getVerbosity(o.options));
-end
+debug(p::P, o::O, ::Val{:Change}, iter::Int, out::IO=Base.stdout) where {P <: Problem, O <: Options} = print(out,"Change: ",distance(p.M, o.xOld, o.x) )
+debug(p::P, o::O, ::Val{:Cost}, iter::Int, out::IO=Base.stdout)  where {P <: Problem, O <: Options} = print(out,"Cost Function: ", getCost(p,o.x))
+debug(p::P, o::O, ::Val{:InitialCost}, iter::Int, out::IO=Base.stdout)  where {P <: Problem, O <: Options} = println(out,"Initial Cost Function: ", getCost(p,o.x))
+debug(p::P, o::O, ::Val{:FinalCost}, iter::Int, out::IO=Base.stdout)  where {P <: Problem, O <: Options} = println(out,"Final Cost Function after $(iter) iterations: ", getCost(p,o.x))
+debug(p::P, o::O, ::Val{:Divider}, iter::Int, out::IO=Base.stdout) where {P <: Problem, O <: Options} = print(out," | ")
+debug(p::P, o::O, ::Val{:Iteration},iter::Int,out::IO=Base.stdout) where {P <: Problem, O <: Options} = print(out," #$(iter)")
+debug(p::P, o::O, ::Val{:Iterate},iter::Int,out::IO=Base.stdout) where {P <: Problem, O <: Options} = print(out," Iterate: $(o.x)")
+debug(p::P, o::O, ::Val{:Newline}, iter::Int, out::IO=Base.stdout) where {P <: Problem, O <: Options} = print(out,"\n")
+debug(p::P, o::O, ::Val{:Solver}, status::String, iter::Int, out::IO=Base.stdout) where {P <: Problem, O <: Options} = print(out,status)
+debug(p::P, o::O, ::Val{:stoppingCriterion}, status::String, iter::Int, out::IO=Base.stdout) where {P <: Problem, O <: Options} = print(out,status)
+# Fallback
+debug(p::P,o::O,s::Val{e},r...) where {e, P <: Problem, O <: Options} =
+  @warn(string("No debug Symbol $(s) within $(typeof(p)) and $(typeof(o)) provided yet."))

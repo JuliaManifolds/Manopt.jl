@@ -1,4 +1,4 @@
-# Douglas–Rachford Algorithm
+# [Douglas–Rachford Algorithm](@id DRSolver)
 ```@docs
   DouglasRachford
 ```

@@ -8,7 +8,7 @@ export IsLieGroupM, IsLieGroupP, IsLieGroupV, ⊗
 """
     IsLieGroupM{X}
 Indicates that `X` is a [`Manifold`](@ref) with a Lie group structure. This also
-introdcues a group operation `⊗` of two `MPoints` of `X`.
+introdcues a group operation `⊗` of two [`MPoint`](@refs of `X`.
 """
 @traitdef IsLieGroupM{X}
 """
