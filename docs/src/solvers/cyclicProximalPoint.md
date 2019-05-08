@@ -1,4 +1,4 @@
-# Cyclic Proximal Point
+# [Cyclic Proximal Point](@id CPPSolver)
 ```@docs
 cyclicProximalPoint
 ```

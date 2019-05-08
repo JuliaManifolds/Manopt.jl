@@ -27,7 +27,7 @@ Note that $\xi\in T_\xi(T_x\mathcal M) = T_x\mathcal M$ is still a tangent vecto
 
 *See also:* [`DξExp`](@ref), [`adjointJacobiField`](@ref)
 """
-AdjDξExp(M::mT,x::P,y::P,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,x,exp(M,x,ξ),1.,η,βDexpξ)
+AdjDξExp(M::mT,x::P,y::P,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,x,exp(M,x,η),1.,η,βDexpξ)
 @doc doc"""
     AdjDxLog(M,x,y,η)
 computes the adjoint of $D_xlog_xy[\eta]$.

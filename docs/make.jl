@@ -1,7 +1,8 @@
 using Manopt, Documenter
 
 makedocs(
-    format=:html,
+    # for development, we disable prettyurls
+    format = Documenter.HTML(prettyurls = false),
     modules=[Manopt],
     sitename = "Manopt.jl",
     pages = [
@@ -13,22 +14,17 @@ makedocs(
             "The Euclidean Space \$\\mathbb R^n\$" => "manifolds/euclidean.md",
             "The Hyperbolic Space \$\\mathbb H^n\$" => "manifolds/hyperbolic.md",
             "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",
-            "The Symmetric Matrices \$\\mathcal{Sym}(n)\$" => "manifolds/symmetric.md",
-            "The Symmetric Positive Definite Matrices \$\\mathbb P(n)\$" => "manifolds/symmetricpositivedefinite.md",
+            "The Symmetric Matrices \$\\mathrm{Sym}(n)\$" => "manifolds/symmetric.md",
+            "The Symmetric Positive Definite Matrices \$\\mathcal P(n)\$" => "manifolds/symmetricpositivedefinite.md",
         ],
-        "Plans" => [
-            "Introduction" => "plans/index.md"
-            "activate Debug" => "plans/debugOptions.md"
-        ],
+        "Plans" => "plans/index.md",
         "Solvers" => [
             "Introduction" => "solvers/index.md",
-            "Conjugate Gradient Descent" => "solvers/conjugateGradientDescent.md",
             "Cyclic Proximal Point" => "solvers/cyclicProximalPoint.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Gradient Descent" => "solvers/gradientDescent.md",
             "Subgradient Method" => "solvers/subGradientMethod.md",
-            "Trust Region" => "solvers/trustRegion.md",
-        ],
+         ],
         "Functions" => [
             "Introduction" => "functions/index.md",
             "cost functions" => "functions/costFunctions.md",
@@ -42,8 +38,8 @@ makedocs(
             "Data" => "helpers/data.md",
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
-            "Line Search" => "helpers/lineSearch.md"
-        ]
+        ],
+        "Function Index" => "list.md"
     ]
 )
 #deploydocs(

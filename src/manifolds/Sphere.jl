@@ -6,11 +6,11 @@ import LinearAlgebra: norm, dot, nullspace
 import Base: exp, log, show, cat
 export Sphere, SnPoint, SnTVector,show, getValue
 export addNoise, distance, dot, exp, log, manifoldDimension, norm
-export randomPoint, opposite, parallelTransport, zeroTVector
+export randomMPoint, opposite, parallelTransport, zeroTVector
+export validateMPoint, validateTVector
 #
 # Type definitions
 #
-
 @doc doc"""
     Sphere <: Manifold
 The manifold $\mathcal M = \mathbb S^n$ of unit vectors in $\mathbb R^{n+1}$.
@@ -90,16 +90,16 @@ distance(M::Sphere,x::SnPoint,y::SnPoint) = acos(
 @doc doc"""
     dot(M,x,ξ,ν)
 Compute the Riemannian inner product for two [`SnTVector`](@ref)s `ξ` and `ν`
-from $T_x\mathcal M$ of the [`Sphere`](@ref)` M` given by
+from $T_x\mathcal M$ of the [`Sphere`](@ref) `M` given by
 $\langle \xi, \nu \rangle_x = \langle \xi,\nu \rangle$, i.e. the inner product
 in the embedded space $\mathbb R^{n+1}$.
 """
 dot(M::Sphere, x::SnPoint, ξ::SnTVector, ν::SnTVector) = dot( getValue(ξ), getValue(ν) )
 
 @doc doc"""
-    exp(M,x,ξ,[t=1.0])
-Compute the exponential map on the [`Sphere`](@ref)` M`$=\mathbb S^n$ with
-respect to the [`SnPoint`](@ref)` x` and the [`SnTVector`](@ref)` ξ`, which can
+    exp(M,x,ξ[, t=1.0])
+Compute the exponential map on the [`Sphere`](@ref) `M`$=\mathbb S^n$ with
+respect to the [`SnPoint`](@ref) `x` and the [`SnTVector`](@ref) `ξ`, which can
 be shortened with `t` to `tξ`. The formula reads
 
 $\exp_x\xi = \cos(\lVert\xi\rVert_2)x + \sin(\lVert\xi\rVert_2)\frac{\xi}{\lVert\xi\rVert_2}.$
@@ -116,8 +116,8 @@ end
     log(M,x,y)
 Compute the logarithmic map on the [`Sphere`](@ref)
 $\mathcal M=\mathbb S^n$, i.e. the [`SnTVector`](@ref) whose corresponding
-[`geodesic`](@ref) starting from [`SnPoint`](@ref)` x` reaches the
-[`SnPoint`](@ref)` y` after time 1 on the [`Sphere`](@ref)` M`.
+[`geodesic`](@ref) starting from [`SnPoint`](@ref) `x` reaches the
+[`SnPoint`](@ref)` y` after time 1 on the [`Sphere`](@ref) `M`.
 The formula reads for $x\neq -y$
 
 $\log_x y = d_{\mathbb S^n}(x,y)\frac{y-\langle x,y\rangle x}{\lVert y-\langle x,y\rangle x \rVert_2}.$
@@ -134,19 +134,19 @@ function log(M::Sphere,x::SnPoint,y::SnPoint)
 end
 @doc doc"""
     manifoldDimension(x)
-returns the dimension of the [`Sphere`](@ref)` M`$=\mathbb S^n$, the
-[`SnPoint`](@ref)` x`, itself embedded in $\mathbb R^{n+1}$, belongs to.
+returns the dimension of the [`Sphere`](@ref) `M`$=\mathbb S^n$, the
+[`SnPoint`](@ref) `x`, itself embedded in $\mathbb R^{n+1}$, belongs to.
 """
 manifoldDimension(x::SnPoint)::Integer = length( getValue(x) )-1
 """
     manifoldDimension(M)
-returns the dimension of the [`Sphere`](@ref)` M`.
+returns the dimension of the [`Sphere`](@ref) `M`.
 """
 manifoldDimension(M::Sphere)::Integer = M.dimension
 @doc doc"""
     norm(M,x,ξ)
-Computes the norm of the [`SnTVector`](@ref)` ξ` in the tangent space
-$T_x\mathcal M$ at [`SnPoint`](@ref)` x` of the [`Sphere`](@ref)` M`.
+Computes the norm of the [`SnTVector`](@ref) `ξ` in the tangent space
+$T_x\mathcal M$ at [`SnPoint`](@ref) `x` of the [`Sphere`](@ref) `M`.
 """
 norm(M::Sphere, x::SnPoint, ξ::SnTVector) = norm( getValue(ξ) )
 @doc doc"""
@@ -156,9 +156,9 @@ returns the antipodal point of x, i.e. $ y = -x $.
 opposite(M::Sphere, x::SnPoint) = SnPoint( -getValue(x) )
 @doc doc"""
     parallelTransport(M,x,y,ξ)
-Compute the paralllel transport of the [`SnTVector`](@ref)` ξ` from
-the tangent space $T_x\mathcal M$ at [`SnPoint`](@ref)` x` to
-$T_y\mathcal M$ at [`SnPoint`](@ref)` y` on the [`Sphere`](@ref)` M` provided
+Compute the paralllel transport of the [`SnTVector`](@ref) `ξ` from
+the tangent space $T_x\mathcal M$ at [`SnPoint`](@ref) `x` to
+$T_y\mathcal M$ at [`SnPoint`](@ref)` y` on the [`Sphere`](@ref) `M` provided
 that the corresponding [`geodesic`](@ref) $g(\cdot;x,y)$ is unique.
 The formula reads
 
@@ -176,11 +176,12 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
   end
 end
 @doc doc"""
-    randomPoint(M)
+    randomMPoint(M)
+
 returns a random point on the Sphere by projecting a normal distirbuted vector
 from within the embedding to the sphere.
 """
-function randomPoint(M::Sphere)::SnPoint
+function randomMPoint(M::Sphere)::SnPoint
 	v = randn(manifoldDimension(M)+1);
 	return SnPoint(v./norm(v))
 end
@@ -201,11 +202,56 @@ function tangentONB(M::Sphere,x::SnPoint,ξ::SnTVector)
     Ξ = [ SnTVector(V[:,i]) for i in 1:d ]
     return Ξ,κ
 end
+typeofTVector(::Type{SnPoint}) = SnTVector
+typeofMPoint(::Type{SnTVector}) = SnPoint 
 """
     typicalDistance(M)
+
 returns the typical distance on the [`Sphere`](@ref)` Sn`: π.
 """
-typicalDistance(M::Sphere) = π;
+typicalDistance(M::Sphere) = π
+
+@doc doc"""
+    validateMPoint(M,x)
+
+validate, whether the [`SnPoint`](@ref) `x` is on the [`Sphere`](@ref) `M`$=\mathbb S^n$,
+i.e. that the vector is of the correct dimension $n$ and its norm is $\lVert x \rVert = 1$.
+"""
+function validateMPoint(M::Sphere, x::SnPoint)
+  if length(getValue(x)) ≠ M.dimension+1
+    throw( ErrorException(
+      "The Point $x is not on the $(M.name), since the vector dimension ($(length(getValue(x)))) is not $(M.dimension+1)."
+    ))
+  end
+  if abs(norm(getValue(x)) - 1) >= 10^(-15)
+    throw( ErrorException(
+      "The Point $x is not on the $(M.name) since its norm $(norm(getValue(x))) ≠ 1"
+    ))
+  end
+  return true
+end
+
+@doc doc"""
+    validateTVector(M,x,ξ)
+
+validate, whether the tangent vector [`SnTVector`](@ref) `ξ` is in the tangent
+space of [`SnPoint`](@ref) `x` is on the [`Sphere`](@ref) `M`$=\mathbb S^n$,
+i.e. that all three lengths are correct and $x^\mathrm{T}\xi = 0$.
+"""
+function validateTVector(M::Sphere,x::SnPoint,ξ::SnTVector)
+  if (length(getValue(x)) ≠ length(getValue(ξ))) || (length(getValue(x)) ≠ M.dimension)
+    throw( ErrorException(
+      "The three dimensions of the $(M.name), the point x ($(length(getValue(x)))), and the tangent vector ($(length(getValue(ξ)))) don't match."
+    ))
+  end
+  if dot(getValue(x),getValue(ξ)) >= 10^(-15)
+    throw( ErrorException(
+      "The tangent vector $ξ is not a tangent vector to $x on $(M.name) since the inner product is $( dot(getValue(x),getValue(ξ)) ) and not zero."
+    ))
+  end
+  return true
+end
+
 @doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
@@ -215,4 +261,4 @@ zeroTVector(M::Sphere, x::SnPoint) = SnTVector(  zero( getValue(x) )  );
 # Display
 # ---
 show(io::IO, p::SnPoint) = print(io, "Sn($( getValue(p) ))")
-show(io::IO, ξ::SnTVector) = print(io, "SnT($( getValue(ξ) ))")
+show(io::IO, ξ::SnTVector) = print(io, "SnT($( getValue(ξ) ))") 

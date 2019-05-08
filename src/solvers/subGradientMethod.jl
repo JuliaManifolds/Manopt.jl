@@ -4,9 +4,9 @@
 export subGradientMethod
 @doc doc"""
     subGradientMethod(M, F, ∂F, x)
-perform a subgradient method $x_{k+1} = \mathcal R({x_k}, s_k∂F(x_k))$,
+perform a subgradient method $x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))$,
 
-where $\mathcal R$ is a retraction, $s_k$ can be specified as a function but is
+where $\mathrm{retr}$ is a retraction, $s_k$ can be specified as a function but is
 usually set to a constant value. Though the subgradient might be set valued,
 the argument `∂F` should always return _one_ element from the subgradient.
 
@@ -20,73 +20,50 @@ the argument `∂F` should always return _one_ element from the subgradient.
 # Optional
 * `debug` : (off) a tuple `(f,p,v)` of a DebugFunction `f`
   that is called with its settings dictionary `p` and a verbosity `v`. Existing
-  fields of `p` are updated during the iteration from (iter, x, xnew, stepSize).
-* `stepSize` : (`(x,ξ) -> 0.001`)
+  fields of `p` are updated during the iteration from (iter, x, xnew, stepsize).
+* `stepsize` : ([`DecreasingStepsize`](@ref)`(1.)`) specify a stepsize,
+  consisting of a `Tuple{Function,`[`StepsizeOptions`](@ref)`}` where the first
+  maps `(p,o,sO)->s`, i.e. a [`GradientProblem`](@ref)` p`, its [`Options`](@ref)` o`
+  and the [`StepsizeOptions`](@ref)` sO` to a new step size, where the second
+  tuple element are the initial values for `sO`.
 * `retraction` : (`exp`) a retraction(M,x,ξ) to use.
-* `returnReason` : (`false`) whether or not to return the reason as second return
-   value.
-* `stoppingCriterion` : (`(i,ξ,x,xnew) -> ...`) a function indicating when to stop.
-  Default is to stop if the norm of the gradient $\lVert \xi\rVert_x$ is less
-  than $10^{-4}$ or the iterations `i` exceed 500.
+* `stoppingCriterion` : ([`stopAtIteration`](@ref)`(5000)`) a function indicating when to stop.
 
 # Output
-* `xOpt` – the resulting (approximately critical) point of gradientDescent
-* `reason` - if activated a String containing the stopping criterion stopping
-  reason.
+* `xOpt` – the resulting (approximately critical) point of subgradientDescent
 """
 function subGradientMethod(M::mT,
         F::Function, ∂F::Function, x::MP;
         retraction::Function = exp,
-        stepSize::Function = (i,x,ξ) -> 0.01/i,
-        stoppingCriterion::Function = (i,ξ,x,xnew) -> ((i>4999), (i>4999) ? "max Iter $(i) reached." : ""),
-        returnReason=false,
+        stepsize::Tuple{Function,StepsizeOptions} = DecreasingStepsize(1.),
+        stoppingCriterion::Function = stopAtIteration(5000),
         kwargs... #especially may contain debug
     ) where {mT <: Manifold, MP <: MPoint}
     p = SubGradientProblem(M,F,∂F)
-    o = SubGradientMethodOptions(x,stoppingCriterion,retraction,stepSize)
-    # create default here to check if the user provided a debug and still have the typecheck
-    debug::Tuple{Function,Dict{String,Any},Int}= (x::Dict{String,Any}->print(""),Dict{String,Any}(),0);
-    kwargs=Dict(kwargs)
-    if haskey(kwargs, :debug) # if a key is given -> decorate Options.
-        debug = kwargs[:debug]
+    o = SubGradientMethodOptions(x,stoppingCriterion,retraction,stepsize[1],stepsize[2],)
+
+    o = decorateOptions(o; kwargs...)
+    resultO = solve(p,o)
+    if hasRecord(resultO)
+        return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
     end
-    o = DebugOptions(o,debug[1],debug[2],debug[3])
-    x,r = subGradientMethod(p,o)
-    if returnReason
-        return x,r;
-    else
-        return x;
+    return getSolverResult(p,resultO)
+end
+function initializeSolver!(p::SubGradientProblem, o::SubGradientMethodOptions)
+    o.optimalX = o.x
+    o.xLast = o.x
+    o.subGradient = zeroTVector(p.M,o.x)
+end
+function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
+    o.xLast = o.x
+    o.subGradient = getSubGradient(p,o.x)
+    s = getStepsize(p,o,iter,o.x,o.subGradient)
+    o.x = o.retraction(p.M,o.x,-o.stepsize*o.subGradient)
+    (stop, reason) = evaluateStoppingCriterion(p,o,iter,o.subGradient)
+    if getCost(p,o.x) < getCost(p,o.xOptimal)
+        o.xOptimal = o.x
     end
 end
-"""
-    subGradientMethod(problem,options)
-performs a steepestDescent based on a GradientProblem containing all information
-for the `problem <: GradientProblem` (Manifold, costFunction, Gradient)  and
-Options for the solver (`x0 <: MPoint`, `lineSearch` and `lineSearchOptions`,
-`retraction` and stoppingCriterion` functions); see the general Interface
-for details on these parameters.
-"""
-function subGradientMethod(p::P, o::O) where {P <: SubGradientProblem, O <: Options}
-    stop::Bool = false
-    reason::String="";
-    iter::Integer = 0
-    x = getOptions(o).x0
-    xOpt = x
-    M = p.M
-    while !stop
-        iter=iter+1
-        ξ = getSubGradient(p,x)
-        s = getStepsize(p,getOptions(o),iter,x,ξ)
-        xnew = getOptions(o).retraction(M,x,-s*ξ)
-        (stop, reason) = evaluateStoppingCriterion(o,iter,ξ,x,xnew)
-        if getCost(p,xnew) < getCost(p,xOpt)
-            xOpt=xnew
-        end
-        if optionsHasDebug(o)
-            updateDebugValues!(o,Dict("Iteration"=>iter,"x"=>x,"xnew"=>xnew,"xopt"=>xOpt,"subgradient"=>ξ,"StepSize"=>s,"StopReason"=>reason))
-            Debug(o)
-        end
-        x = xnew
-    end
-    return xOpt,reason
+function getSolverResult(p::SubGradientProblem, o::SubGradientMethodOptions)
+    return o.xOptimal
 end

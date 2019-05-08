@@ -2,60 +2,88 @@
 #      Powermanifold – an array of points of _one_ manifold
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
-import Base: exp, log, show, getindex, setindex!, copy, size, cat
+import Base: exp, log, show, getindex, setindex!, copy, size, cat, repeat, ndims
 
 export Power, PowPoint, PowTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
-export show, getValue, setindex!, getindex,copy, size, cat
+export typeofMPoint, typeofTVector, randomMPoint, randomTVector
+export validateMPoint, validateTVector
+export show, getValue, setindex!, getindex,copy, size, cat, repeat, ndims
 @doc doc"""
     Power{M<:Manifold} <: Manifold
 a power manifold $\mathcal M = \mathcal N^m$, where $m$ can be an integer or an
 integer vector. Its abbreviatio is `Pow`.
 """
-struct Power <: Manifold
+struct Power{mT <: Manifold} <: Manifold
   name::String
-  manifold::M where {M <: Manifold}
-  dims::Tuple{Int,Vararg{Int}}
-  dimension::Int
+  manifold::mT
+  powerSize::NTuple{N,Int} where N
   abbreviation::String
-  Power(m::mT,dims::Tuple{Int,Vararg{Int}}) where {mT<:Manifold} = new(string("A Power Manifold of ",m.name,"."),
-    m,dims,prod(dims)*manifoldDimension(m),string("Pow(",m.abbreviation,",",repr(dims),")") )
+  Power{mT}(M::mT, pSize::NTuple{N,Int}) where {mT <: Manifold,N} = new(string("The Power Manifold of ",repr(M),
+    " to the power ",repr(pSize),"."), M, pSize, string("Pow(",M.abbreviation,"^",repr(pSize),")")
+  )
 end
+Power(M::mT, numElements::Int ) where {mT <: Manifold} = Power{mT}(M, numElements )
+Power(M::mT, pSize::NTuple{N,Int}) where {mT <: Manifold,N} = Power{mT}(M, pSize )
+Power(M::mT, pSize::Array{Int, 1}) where {mT <: Manifold} = Power{mT}(M, pSize)
 @doc doc"""
     PowPoint <: MPoint
 A point on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector or array of [`MPoint`](@ref)s.
 """
-struct PowPoint <: MPoint
-  value::Array{T,N} where N where T<:MPoint
-  PowPoint(v::Array{T,N} where N where T<:MPoint) = new(v)
+struct PowPoint{P,N} <: MPoint where {P <: MPoint,N}
+  value::Array{P,N}
+  PowPoint{P,N}(v) where { P<: MPoint,N} = new(v)
 end
-getValue(x::PowPoint) = x.value;
+PowPoint{P}(v::Array{P,N}) where {P<:MPoint,N} = PowPoint{P,N}(v)
+PowPoint(v::Array{P,N}) where {P<:MPoint,N} = PowPoint{P,N}(v)
+getValue(x::PowPoint{P,N}) where {P<:MPoint, N} = x.value;
 # pass all getters and setters down to the internal array...
 getindex(x::PowPoint, i...) = PowPoint(getindex( getValue(x) ,i...))
 # only for a specific index: return entry
-getindex(x::PowPoint, i::Int...) = getindex( getValue(x) ,i...)
-getindex(x::PowPoint, i::CartesianIndex{N} where N) = getindex( getValue(x) ,i)
+getindex(x::PowPoint, i::Union{Integer, CartesianIndex},
+  I::Union{Integer, CartesianIndex}...) = getindex(getValue(x),i,I...)
 setindex!(x::PowPoint, y::PowPoint, kv...) = setindex!(getValue(x),getValue(y),kv...)
 setindex!(x::PowPoint, kv...) = setindex!(getValue(x),kv...)
-cat(X::PowPoint; dims=k) = PowPoint(cat( [getValue(x) for x in X]; dims=k))
-vcat(X::PowPoint...) = cat(X...; dims=1)
-hcat(X::PowPoint...) = cat(X...; dims=2)
+@inline ndims(x::PowPoint{P,N}) where {P<:MPoint,N} = ndims(x.value)
+function repeat(x::PowPoint{P,N}; inner=ntuple(y->1, Val(ndims(x))), outer=ntuple(y->1, Val(ndims(x))) ) where {P<:MPoint,N}
+    b = repeat(x.value; inner=inner, outer=outer)
+    return PowPoint{P}(b)
+end
+repeat(x::PowPoint, counts::Integer...) = repeat(x; outer=counts)
+cat(X::PowPoint{P,N}; dims=k) where {P<:MPoint,N} = PowPoint{Array{P}}(cat( [getValue(x) for x in X]; dims=k))
+vcat(X::PowPoint{P,N}...) where {P<:MPoint,N} = cat(X...; dims=1)
+hcat(X::PowPoint{P,N}...) where {P<:MPoint,N} = cat(X...; dims=2)
 size(x::PowPoint,k...) = size(getValue(x),k...)
 copy(x::PowPoint) = PowPoint(copy(getValue(x)))
+ndims(x::PowPoint) = ndims( getValue(x) )
 @doc doc"""
     PowTVector <: TVector
 A tangent vector on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector of [`TVector`](@ref)s.
 """
-struct PowTVector <: TVector
-  value::Array{T,N} where N where T <: TVector
-  PowTVector(value::Array{T,N} where N where T <: TVector) = new(value)
+struct PowTVector{T,N} <: TVector where {T <: TVector, N}
+  value::Array{T,N}
+  PowTVector{T,N}(v) where {T <: TVector, N} = new(v)
 end
-getValue(ξ::PowTVector) = ξ.value
-getindex(ξ::PowTVector, i::CartesianIndex{N} where N) = getindex( getValue(ξ), i)
+PowTVector{T}(v::Array{T,N}) where {T <: TVector, N} = PowTVector{T,N}(v)
+PowTVector(v::Array{T,N}) where {T <: TVector, N} = PowTVector{T,N}(v)
+getValue(ξ::PowTVector{T,N}) where {T <: TVector, N} = ξ.value
+getindex(ξ::PowTVector, i::Union{Integer, CartesianIndex},
+  I::Union{Integer, CartesianIndex}...) = getindex(getValue(ξ),i,I...)
 getindex(ξ::PowTVector,i...) = PowTVector(getindex(ξ.value,i...))
 setindex!(ξ::PowTVector, ν::T where {T <: TVector},i...) = setindex!(ξ.value,ν,i...)
+function repeat(ξ::PowTVector{T,N}; inner=ntuple(t->1, Val(ndims(ξ))), outer=ntuple(t->1, Val(ndims(ξ))) ) where {T <: TVector,N}
+    b = repeat(ξ.value; inner=inner, outer=outer)
+    return PowTVector{T}(b)
+end
+repeat(ξ::PowTVector, counts::Integer...) = repeat(ξ; outer=counts)
+ndims(ξ::PowTVector) = ndims( getValue(ξ) )
+
 *(ξ::PowTVector,s::Array{Number,N}) where N = PowTVector( s.*getValue(ξ) )
+
+cat(X::PowTVector{T,N}; dims=k) where {T<:TVector,N} = PowTVector{Array{T}}(cat( [getValue(x) for x in X]; dims=k))
+vcat(X::PowTVector{T,N}...) where {T<:TVector,N} = cat(X...; dims=1)
+hcat(X::PowTVector{T,N}...) where {T<:TVector,N} = cat(X...; dims=2)
 size(ξ::PowTVector) = size(getValue(ξ))
 copy(ξ::PowTVector) = PowTVector(copy(ξ.value))
 # Functions
@@ -74,7 +102,7 @@ end
     distance(M,x,y)
 computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
 """
-distance(M::Power, x::PowPoint, y::PowPoint) = sqrt(sum( distance.( Ref(M.manifold), x.value, y.value ).^2 ))
+distance(M::Power, x::PowPoint, y::PowPoint) = sqrt(sum( abs.(distance.( Ref(M.manifold), x.value, y.value )).^2 ))
 
 """
     dot(M,x,ξ,ν)
@@ -83,8 +111,9 @@ computes the inner product as sum of the component inner products on the [`Power
 dot(M::Power, x::PowPoint, ξ::PowTVector, ν::PowTVector) = sum(dot.(Ref(M.manifold), x.value, ξ.value, ν.value ))
 
 """
-    exp(M,x,ξ)
-computes the product exponential map on the [`Power`](@ref) and returns the corresponding [`PowPoint`](@ref).
+    exp(M,x,ξ[, t=1.0])
+computes the product exponential map on the [`Power`](@ref) and returns the
+corresponding [`PowPoint`](@ref).
 """
 exp(M::Power, x::PowPoint, ξ::PowTVector, t::Number=1.0) = PowPoint( exp.(Ref(M.manifold), x.value, ξ.value,t))
 
@@ -106,23 +135,41 @@ manifoldDimension(x::PowPoint) = sum(manifoldDimension.( getValue(x) ) )
 
 """
     manifoldDimension(M)
-returns the (product of) dimension(s) of the [`Power`](@ref)` M`.
+returns the (product of) dimension(s) of the [`Power`](@ref) `M`.
 """
-manifoldDimension(M::Power) = M.dims * manifoldDimension(M.manifold)
+manifoldDimension(M::Power) = prod(M.powerSize) * manifoldDimension(M.manifold)
 
 """
     norm(M,x,ξ)
-norm of the [`PowTVector`]` ξ` induced by the metric on the manifold components
-of the [`Power`](@ref)` M`.
+norm of the [`PowTVector`] `ξ` induced by the metric on the manifold components
+of the [`Power`](@ref) `M`.
 """
 norm(M::Power, x::PowPoint, ξ::PowTVector) = sqrt( dot(M,x,ξ,ξ) )
 
 """
     parallelTransport(M,x,ξ)
 computes the product parallelTransport map on the [`Power`](@ref) and returns
-the corresponding [`PowTVector`](@ref)` ξ`.
+the corresponding [`PowTVector`](@ref) `ξ`.
 """
-parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) = PowTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
+parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) = 
+    PowTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
+
+@doc doc"""
+    randomMPoint(M)
+construct a random point on the [`Power`](@ref) manifold `M`, by creating
+[`manifoldDimension`](@ref)`(M)` many random points on the
+[`Manifold`](@ref)` M.manifold` as corresponding [`PowPoint`](@ref).
+"""
+randomMPoint(M::Power) = PowPoint( [randomMPoint(M.manifold) for i in CartesianIndices(M.powerSize)] )
+
+@doc doc"""
+    randomTVector(M,x)
+construct a random tangent vector on the [`Power`](@ref) manifold `M`, by creating
+[`manifoldDimension`](@ref)`(M)` many random tangent vectors on the
+[`Manifold`](@ref)` M.manifold` at the enrties of the [`PowPoint`](@ref) `x`.
+"""
+randomTVector(M::Power,x::PowPoint) = PowTVector( randomMPoint.(Ref(M.manifold), getValue(x) ))
+
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$ is the
@@ -142,22 +189,71 @@ A = collect(zip( tangentONB.(Ref(M.manifold),getValue(x), getValue(ξ) )... ) )
     κ = [ [a[k] for a in A[2]] for k in 1:manifoldDimension(Circle()) ]
 return Ξ,κ
 end
+doc"""
+    typeofTVector(P)
+
+returns the type of the [`PowTVector`](@ref) that all tangent vectors of the
+[`PowPoint`](@ref)` P` have.
+"""
+typeofTVector(::Type{PowPoint{P,N}}) where {P <: MPoint, N} = PowTVector{typeofTVector(P),N}
+doc"""
+    typeofMPoint(T)
+
+return the type of the [`PowPoint`](@ref) that is the base point of the
+[`PowTVector`](@ref)` T`.
+"""
+typeofMPoint(::Type{PowTVector{T,N}}) where {T <: TVector, N} = PowPoint{typeofMPoint(T),N}
 
 """
     typicalDistance(M)
-returns the typical distance on the [`Power`](@ref)` M`, which is based on
+returns the typical distance on the [`Power`](@ref) `M`, which is based on
 the elementwise bae manifold.
 """
-typicalDistance(M::Power) = sqrt( Float64(sum(M.dims)) ) * typicalDistance(M.manifold);
+typicalDistance(M::Power) = sqrt( prod(M.powerSize) ) * typicalDistance(M.manifold)
+
+doc"""
+    validateMPoint(M,x)
+
+validate, that the [`PowPoint`](@ref) `x` is a point on the [`Power`](@ref)
+manifold `M`, i.e. that the array dimensions are correct and that all elements
+are valid points on the elements manifold
+"""
+function validateMPoint(M::Power, x::PowPoint)
+    if size(getValue(x)) ≠ M.powerSize
+        throw(ErrorException(
+        " The power manifold point $x is not on $(M.name) since its array dimensions of the elements ($(size(getValue(x)))) does not fit the power ($(M.powerSize))."
+        ))
+    end
+    validateMPoint.(Ref(M.manifold),getValue(x))
+    return true
+end
+
+doc"""
+    validateTVector(M,x,ξ)
+
+validate, that the [`ProdTVector`](@ref) `ξ` is a valid tangent vector to the
+[`ProdPoint`](@ref) `x` on the [`Product`](@ref) `M`, i.e. that all three array
+dimensions match and this validation holds elementwise.
+"""
+function validateTVector(M::Power, x::PowPoint, ξ::PowTVector)
+    if (size(getValue(x)) ≠ size(getValue(ξ))) || (size(getValue(ξ)) ≠ M.powerSize)
+        throw( ErrorException(
+        "The three dimensions of the $(M.name), the point x ($(size(getValue(x)))), and the tangent vector ($(size(getValue(ξ)))) don't match."
+        ))
+    end
+    validateTVector.(Ref(M.manifold),getValue(x),getValue(ξ))
+    return true
+end
+
 @doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
-[`PowPoint`](@ref) $x\in\mathcal M$ on the [`Power`](@ref)` M`.
+[`PowPoint`](@ref) $x\in\mathcal M$ on the [`Power`](@ref) `M`.
 """
-zeroTVector(M::Power, x::PowPoint) = PowTVector( zeroTVector.(Ref(M.manifold), getValue(x) )  )
+zeroTVector(M::Power{Mt}, x::PowPoint{P,N}) where {Mt <: Manifold, P <: MPoint, N} = PowTVector{typeofTVector(P),N}( zeroTVector.(Ref(M.manifold), getValue(x) )  )
 #
 #
 # Display functions for the structs
-show(io::IO, M::Power) = print(io,string("The Power Manifold of ",repr(M.manifold), " of size ",repr(M.dims),".") );
+show(io::IO, M::Power) = print(io,string("The Power Manifold of ",repr(M.manifold), " of size ",repr(M.powerSize),".") );
 show(io::IO, p::PowPoint) = print(io,string("Pow[",join(repr.(p.value),", "),"]"));
 show(io::IO, ξ::PowTVector) = print(io,string("PowT[", repr.(ξ.value),"]"));

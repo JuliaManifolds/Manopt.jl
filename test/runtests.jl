@@ -1,13 +1,10 @@
 using Manopt
 using Test
-tests = ["testSn","testSPD",
-          "testGradients",
-          "testGraphConstruction",
-          "testGradDesc",
-          "testProximalMaps"
-          ]
 @testset "Manopt.jl Tests" begin
-  for t in tests
-    include("$(t).jl")
-  end
+    include("testSn.jl")
+    include("testSPD.jl")
+    include("testGradients.jl")
+    include("testGraphConstruction.jl")
+    include("testGradDesc.jl")
+    include("testProximalMaps.jl")
 end

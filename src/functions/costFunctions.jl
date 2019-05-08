@@ -73,7 +73,7 @@ costL2TV2(M::Power,f::PowPoint,β::Number,x::PowPoint) =
 @doc doc"""
     costTV(M,x,p)
 compute the $\operatorname{TV}^p$ functional for a tuple `pT` of [`MPoint`](@ref)
-data points on a [`Manifold`](@ref)` M`, i.e.
+data points on a [`Manifold`](@ref) `M`, i.e.
 
 $ E(x_1,x_2) = d_{\mathcal M}^p(x_1,x_2), \quad x_1,x_2\in\mathcal M $
 
@@ -86,7 +86,7 @@ end
 @doc doc"""
     costTV(M,x[p=1])
 compute the $\operatorname{TV}^p$ functional for signal, image or dataset `x`
-on the [`Power`](@ref)` `[`Manifold`](@ref)` M`, i.e. $\mathcal M = \mathcal N^n$,
+on the [`Power`](@ref)` `[`Manifold`](@ref) `M`, i.e. $\mathcal M = \mathcal N^n$,
 where $n\in\mathbb N^k$ denotes the dimensions of the data.
 Denoting by $\mathcal I$ all indices from $\mathbf{1}\in\mathbb N^k$ to $n$ and
 $\mathcal I^+_i = \{i+e_j, j=1,\ldots,k\}\cap \mathcal I$ its forward neighbors,
@@ -100,10 +100,10 @@ $ E(x) = \sum_{i\in\mathcal I}
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
 function costTV(M::Power, x::PowPoint, p::Int=1, Sum::Bool=true)
-  R = CartesianIndices(M.dims)
-  d = length(M.dims)
+  R = CartesianIndices(M.powerSize)
+  d = length(M.powerSize)
   maxInd = last(R)
-  cost = fill(0.,M.dims)
+  cost = fill(0.,M.powerSize)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
     for i in R # iterate over all pixel
@@ -125,7 +125,7 @@ end
 @doc doc"""
     costTV2(M,(x1,x2,x3),[p=1])
 compute the $\operatorname{TV}_2^p$ functional for the 3-tuple of points
-`(x1,x2,x3)`on the `[`Manifold`](@ref)` M`, denote by
+`(x1,x2,x3)`on the `[`Manifold`](@ref) `M`, denote by
 $\mathcal C = \{ c\in \mathcal M | g(\frac{1}{2};x_1,x_3) \text{ for some geodesic }g\}$
 the set of mid points between the first and third point. Then this function computes
 
@@ -141,7 +141,7 @@ end
 @doc doc"""
     costTV2(M,x[p=1])
 compute the $\operatorname{TV}^p$ functional for signal, image or dataset `x`
-on the [`Power`](@ref)` `[`Manifold`](@ref)` M`, i.e. $\mathcal M = \mathcal N^n$,
+on the [`Power`](@ref)` `[`Manifold`](@ref) `M`, i.e. $\mathcal M = \mathcal N^n$,
 where $n\in\mathbb N^k$ denotes the dimensions of the data.
 Denoting by $\mathcal I$ all indices from $\mathbf{1}\in\mathbb N^k$ to $n$ and
 $\mathcal I^\pm_i = \{\pm e_j, j=1,\ldots,k\}\cap \mathcal I$ its forward
@@ -158,10 +158,10 @@ to $x_i$.
 [`gradTV2`](@ref), [`proxTV2`](@ref)
 """
 function costTV2(M::Power, x::PowPoint, p::Int=1, Sum::Bool=true)
-  R = CartesianIndices(M.dims)
-  d = length(M.dims)
+  R = CartesianIndices(M.powerSize)
+  d = length(M.powerSize)
   minInd, maxInd = first(R), last(R)
-  cost = fill(0.,M.dims)
+  cost = fill(0.,M.powerSize)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
     for i in R # iterate over all pixel

@@ -10,7 +10,7 @@
 export proxDistance, proxTV, proxTV2
 
 @doc doc"""
-    y = proxDistance(M,λ,f,x,[p]) -
+    y = proxDistance(M,λ,f,x[, p=2 ]) -
 compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ with
 parameter λ of $\varphi(x) = \frac{1}{p}d_{\mathcal M}^p(f,x)$.
 
@@ -98,8 +98,8 @@ The parameter `λ` is the prox parameter.
   points evaluated (in a cylic order).
 """
 function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
-  R = CartesianIndices(M.dims)
-  d = length(M.dims)
+  R = CartesianIndices(M.powerSize)
+  d = length(M.powerSize)
   maxInd = last(R)
   y = copy(x)
   for k in 1:d # for all directions
@@ -207,8 +207,8 @@ The parameter `λ` is the prox parameter.
 * y : resulting of [`PowPoint`](@ref) with all mentioned proximal points evaluated (in a cylic order).
 """
 function proxTV2(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
-  R = CartesianIndices(M.dims)
-  d = length(M.dims)
+  R = CartesianIndices(M.powerSize)
+  d = length(M.powerSize)
   minInd, maxInd = first(R), last(R)
   y = copy(x)
   for k in 1:d # for all directions

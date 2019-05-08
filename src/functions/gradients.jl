@@ -2,6 +2,22 @@
 #
 #
 export gradTV, gradTV2, gradIntrICTV12
+export gradDistance
+@doc doc"""
+    gradDistance(M,y,x[, p=2])
+
+compute the (sub)gradient of the distance (squared) 
+
+$f(x) = \frac{1}{2} d_{\mathcal M}(x,y)$
+
+to a fixed [`MPoint`](@ref)` y` on the [`Manifold`](@ref) `M`.
+
+# Optional
+
+* `p` – (`2`) the exponent of the distance,  i.e. the default is the squared
+  distance
+"""
+gradDistance(M,y,x,p::Int=2) = (p==2) ? -log(M,x,y) : -distance(M,x,y)^(p-2)*log(M,x,y)
 
 @doc doc"""
    ∇u,⁠∇v = gradIntrICTV12(M,f,u,v,α,β)
@@ -64,8 +80,8 @@ denotes the forward neighbors of $i$.
 * \xi : resulting tangent vector in $T_x\mathcal M$ representing the gradient.
 """
 function gradTV(M::Power,x::PowPoint,p::Int=1)::PowTVector
-  R = CartesianIndices(M.dims)
-  d = length(M.dims)
+  R = CartesianIndices(M.powerSize)
+  d = length(M.powerSize)
   maxInd = last(R)
   ξ = zeroTVector(M,x)
   c = costTV(M,x,p,false)
@@ -124,11 +140,11 @@ end
     gradTV2(M,x,p)
 computes the (sub) gradient of $\frac{1}{p}d_2^p_{\mathcal M}(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
-[`PowPoint`](@ref)` x`, where `M` is the corresponding [`Power`](@ref) manifold.
+[`PowPoint`](@ref) `x`, where `M` is the corresponding [`Power`](@ref) manifold.
 """
 function gradTV2(M::Power,x::PowPoint,p::Int=1)::PowTVector
-  R = CartesianIndices(M.dims)
-  d = length(M.dims)
+  R = CartesianIndices(M.powerSize)
+  d = length(M.powerSize)
   minInd, maxInd = first(R), last(R)
   ξ = zeroTVector(M,x)
   c = costTV2(M,x,p,false)

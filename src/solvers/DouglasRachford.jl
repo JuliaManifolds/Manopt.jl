@@ -1,9 +1,3 @@
-#
-#
-# For a proximal Problem with at least two proximal maps one can define the
-# following douglas rachford algorithm
-#
-#
 export DouglasRachford
 @doc doc"""
      DouglasRachford(M, F, proxMaps, x)
@@ -19,7 +13,8 @@ For details see
 > R. Bergmann, J. Persch, G. Steidl: A Parallel Douglas–Rachford Algorithm for
 > Minimizing ROF-like Functionals on Images with Values in Symmetric Hadamard
 > Manifolds.
-> SIAM J. Imaging Sciences 9.3, pp. 901–937, 2016. doi: 10.1137/15M1052858
+> SIAM J. Imaging Sciences 9.3, pp. 901–937, 2016.
+> doi: [10.1137/15M1052858](https://dx.doi.org/10.1137/15M1052858)
 
 # Input
 * `M` – a Riemannian Manifold $\mathcal M$
@@ -37,19 +32,22 @@ the default parameter is given in brackets
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflection`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
-* `returnReason` : ( `false` ) whether or not to return the reason as second return
-  value.
-* `stoppingCriterion` : ( `(i,x,xnew,λ) -> ...` ) a function indicating when to stop.
-  Default is to stop if the norm of the iterates change $d_{\mathcal M}(x,x_{\text{new}})$ is less
-  than $10^{-4}$ or the iterations `i` exceed 500.
+* `stoppingCriterion` : ( [`stopWhenAny`](@ref)`( `[`stopAtIteration`](@ref)`(200), `[`stopChangeLess`](@ref)`(10.0^-5))` )
+  a function `(p,o,i) -> s,r` indicating when to stop and what the reason is.
+
+and the ones that are passed to [`decorateOptions`](@ref) for the decorators.
+
+# Output
+* `xOpt` – the resulting point of the Douglas Rachford algorithm
+* `record` - if activated (using the `record` key, see [`RecordOptions`](@ref)
+  an array containing the recorded values.
 """
 function DouglasRachford(M::mT, F::Function, x::P, proxes::Array{Function,N} where N;
     λ::Function = (iter) -> 1.0, α::Function = (iter) -> 0.9,
     R = reflection,
-    stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached." : "Minimal change small enough."),
-    returnReason=false,
-    kwargs... #especially may contain debug
-    ) where {mT <: Manifold, P <: MPoint}
+    stoppingCriterion::Function = stopWhenAny( stopAtIteration(200), stopChangeLess(10.0^-5)),
+    kwargs... #especially may contain decorator options
+) where {mT <: Manifold, P <: MPoint}
     if length(proxes) < 2
         throw(
          ErrorException("Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps.")
@@ -66,50 +64,46 @@ function DouglasRachford(M::mT, F::Function, x::P, proxes::Array{Function,N} whe
     end
     p = ProximalProblem(M,F,[prox1 prox2])
     o = DouglasRachfordOptions(x, stoppingCriterion, reflection, λ, α)
-    # create default here to check if the user provided a debug and still have the typecheck
-    debug::Tuple{Function,Dict{String,Any},Int}= (x::Dict{String,Any}->print(""),Dict{String,Any}(),0);
-    kwargs=Dict(kwargs)
-    if haskey(kwargs, :debug) # if a key is given -> decorate Options.
-        debug = kwargs[:debug]
-        o = DebugOptions(o,debug[1],debug[2],debug[3])
+
+    o = decorateOptions(o; kwargs...)
+    resultO = solve(p,o)
+    if hasRecord(resultO)
+        return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
     end
-    x,r = DouglasRachford(p,o)
-    if returnReason
-        return x,r
-    else
-        return x
-    end
+    return getSolverResult(p,resultO)
 end
-"""
-    DouglasRachford(p,o)
-perform a Douglas Rachford algorithm based on the [`ProximalProblem`](@ref)` p`
-and the [`DouglasRachfordOptions`](@ref)` o`.
-"""
-function DouglasRachford(p::ProximalProblem,o::DouglasRachfordOptions)
-    if length(p.proximalMaps) != 2
-        throw( ErrorException("Douglas-Rachford requires exactely two proximal maps. The problem provides $(length(p.proximalMaps))"))
-    end
-    x = getOptions(o).x0; newx = x;
-    M = p.M
-    λ = getOptions(o).λ; α = getOptions(o).α; R = getOptions(o).R
-    stop=false; iter=0;
-    while !stop
-        iter = iter+1;
-        # Reflect at the first prox
-        p1 = getProximalMap(p,λ(iter),x,1)
-        xR = R(M,p1,x);
-        # Reflect at second prox
-        p2 = getProximalMap(p,λ(iter),xR,2)
-        t = R(M,xR,p2)
-        # relaxation
-        xnew = geodesic(M,x,xnew,α(iter))
-        stop, reason = evaluateStoppingCriterion(o,iter,x,xnew,λ)
-        # Debug?
-        if optionsHasDebug(o)
-            updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "Iteration" => iter, "Reason" => reason));
-            Debug(o)
-        end
-        x = xnew
-    end
-    return x,reason
+function initializeSolver!(p::ProximalProblem,o::DouglasRachfordOptions)
+    o.xOld = o.x
+    o.mean = o.x[1];
+    o.meanOld = o.mean
 end
+function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
+    o.meanOld = o.mean
+    # first prox or parallel Proxes
+    pP = getProximalMap(p,o.λ(iter),o.x,1)
+    o.x = o.R(p.M,pP,o.x);
+    # relaxation
+    o.x = geodesic(p.M,o.xOld,o.x,o.α(iter))
+    o.xOld = o.x
+    # second prox: Mean in parallel
+    pP = getProximalMap(p,o.λ(iter),o.x,2)
+    o.mean = pP[1] # store mean
+    # reflect at mean
+    o.x = o.R(p.M,pP,o.x)
+ end
+function getSolverResult(p::ProximalProblem,o::DouglasRachfordOptions)
+    return o.mean
+end
+
+# overwrite defaults, since we store the result in the mean field
+debug(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Change}, iter::Int, out::IO=Base.stdout) =
+  print(out,"Change: ",distance(p.M.manifold, o.mean, o.meanOld))
+debug(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Cost}, iter::Int, out::IO=Base.stdout) =
+  print(out,"Cost: ", getCost(p,o.mean))
+
+record(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Iterate}, iter::Int) = o.mean
+recordType(o::DouglasRachfordOptions,::Val{:Iterate}) = typeof(o.mean)
+record(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Cost}, iter::Int) = getCost(p,o.mean)
+recordType(o::DouglasRachfordOptions,::Val{:Cost}) = Float64
+record(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions, ::Val{:Change}, iter::Int) = distance(p.M.manifold, o.mean, o.meanOld)
+recordType(o::DouglasRachfordOptions,::Val{:Change}) = Float64
