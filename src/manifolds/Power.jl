@@ -2,7 +2,7 @@
 #      Powermanifold – an array of points of _one_ manifold
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
-import Base: exp, log, show, getindex, setindex!, copy, size, cat, repeat, ndims
+import Base: exp, log, show, getindex, setindex!, copy, size, vcat, hcat, cat, repeat, ndims
 
 export Power, PowPoint, PowTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
@@ -12,8 +12,25 @@ export validateMPoint, validateTVector
 export show, getValue, setindex!, getindex,copy, size, cat, repeat, ndims
 @doc doc"""
     Power{M<:Manifold} <: Manifold
-a power manifold $\mathcal M = \mathcal N^m$, where $m$ can be an integer or an
-integer vector. Its abbreviatio is `Pow`.
+
+A power manifold $\mathcal M = \mathcal N^m$, where $m$ can be an integer or an
+integer vector.
+
+# Abbreviation
+
+`Pow`
+
+# Constructors
+    Power(M,n)
+
+construct the power manifold $\mathcal M^n$ for a [`Manifold`](@ref) `M`
+and a natural number `n`.
+
+    Power(M,n)
+
+construct the power manifold $\mathcal M^{n_1\times n_2\times\cdots\times n_d}$
+for a [`Manifold`](@ref) `M` and a `Tuple` or `Array` `n` of natural numbers.
+
 """
 struct Power{mT <: Manifold} <: Manifold
   name::String
@@ -24,12 +41,14 @@ struct Power{mT <: Manifold} <: Manifold
     " to the power ",repr(pSize),"."), M, pSize, string("Pow(",M.abbreviation,"^",repr(pSize),")")
   )
 end
-Power(M::mT, numElements::Int ) where {mT <: Manifold} = Power{mT}(M, numElements )
-Power(M::mT, pSize::NTuple{N,Int}) where {mT <: Manifold,N} = Power{mT}(M, pSize )
-Power(M::mT, pSize::Array{Int, 1}) where {mT <: Manifold} = Power{mT}(M, pSize)
+Power(M::mT, n::Int ) where {mT <: Manifold} = Power{mT}(M, (n,) )
+Power(M::mT, n::NTuple{N,Int}) where {mT <: Manifold,N} = Power{mT}(M, n)
+Power(M::mT, n::Array{Int, 1}) where {mT <: Manifold} = Power{mT}(M, n)
 @doc doc"""
     PowPoint <: MPoint
-A point on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector or array of [`MPoint`](@ref)s.
+
+A point on the power manifold $\mathcal M = \mathcal N^m$ represented by
+an array of [`MPoint`](@ref)s.
 """
 struct PowPoint{P,N} <: MPoint where {P <: MPoint,N}
   value::Array{P,N}
@@ -59,7 +78,9 @@ copy(x::PowPoint) = PowPoint(copy(getValue(x)))
 ndims(x::PowPoint) = ndims( getValue(x) )
 @doc doc"""
     PowTVector <: TVector
-A tangent vector on the power manifold $\mathcal M = \mathcal N^m$ represented by a vector of [`TVector`](@ref)s.
+
+A tangent vector on the power manifold $\mathcal M = \mathcal N^m$ represented
+by an array of [`TVector`](@ref)s.
 """
 struct PowTVector{T,N} <: TVector where {T <: TVector, N}
   value::Array{T,N}
@@ -88,12 +109,6 @@ size(ξ::PowTVector) = size(getValue(ξ))
 copy(ξ::PowTVector) = PowTVector(copy(ξ.value))
 # Functions
 # ---
-"""
-    addNoise(M,x,δ)
-computes a vectorized version of addNoise, and returns the noisy [`PowPoint`](@ref).
-"""
-addNoise(M::Power, x::PowPoint, σ::Float64) = PowPoint(addNoise.( Ref(M.manifold), x.value ,Ref(σ) ))
-
 function adjointJacobiField(M::Power,x::PowPoint,y::PowPoint,t::Number,η::PowTVector,β::Function=βDgx)::PowTVector
     return PowTVector( adjointJacobiField.(Ref(M.manifold), x.value, y.value, Ref(t), η.value ,Ref(β) ) )
 end
@@ -159,16 +174,23 @@ parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) =
 construct a random point on the [`Power`](@ref) manifold `M`, by creating
 [`manifoldDimension`](@ref)`(M)` many random points on the
 [`Manifold`](@ref)` M.manifold` as corresponding [`PowPoint`](@ref).
+Optional values are passed down.
 """
-randomMPoint(M::Power) = PowPoint( [randomMPoint(M.manifold) for i in CartesianIndices(M.powerSize)] )
+randomMPoint(M::Power,options...) = PowPoint( [randomMPoint(M.manifold,options...) for i in CartesianIndices(M.powerSize)] )
 
 @doc doc"""
     randomTVector(M,x)
 construct a random tangent vector on the [`Power`](@ref) manifold `M`, by creating
 [`manifoldDimension`](@ref)`(M)` many random tangent vectors on the
 [`Manifold`](@ref)` M.manifold` at the enrties of the [`PowPoint`](@ref) `x`.
+Optional values are passed down.
 """
-randomTVector(M::Power,x::PowPoint) = PowTVector( randomMPoint.(Ref(M.manifold), getValue(x) ))
+randomTVector(M::Power,x::PowPoint,options...) = PowTVector(
+    [
+        randomTVector(M.manifold, getValue(x)[i] , options...)
+        for i in CartesianIndices(getValue(x))
+    ]
+)
 
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)

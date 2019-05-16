@@ -32,7 +32,7 @@ the default parameter is given in brackets
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflection`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
-* `stoppingCriterion` : ( [`stopWhenAny`](@ref)`( `[`stopAtIteration`](@ref)`(200), `[`stopChangeLess`](@ref)`(10.0^-5))` )
+* `stoppingCriterion` : ( [`stopWhenAny`](@ref)`( `[`stopAfterIteration`](@ref)`(200), `[`stopWhenChangeLess`](@ref)`(10.0^-5))` )
   a function `(p,o,i) -> s,r` indicating when to stop and what the reason is.
 
 and the ones that are passed to [`decorateOptions`](@ref) for the decorators.
@@ -45,7 +45,7 @@ and the ones that are passed to [`decorateOptions`](@ref) for the decorators.
 function DouglasRachford(M::mT, F::Function, x::P, proxes::Array{Function,N} where N;
     λ::Function = (iter) -> 1.0, α::Function = (iter) -> 0.9,
     R = reflection,
-    stoppingCriterion::Function = stopWhenAny( stopAtIteration(200), stopChangeLess(10.0^-5)),
+    stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenChangeLess(10.0^-5)),
     kwargs... #especially may contain decorator options
 ) where {mT <: Manifold, P <: MPoint}
     if length(proxes) < 2
@@ -94,12 +94,6 @@ function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
 function getSolverResult(p::ProximalProblem,o::DouglasRachfordOptions)
     return o.mean
 end
-
-# overwrite defaults, since we store the result in the mean field
-debug(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Change}, iter::Int, out::IO=Base.stdout) =
-  print(out,"Change: ",distance(p.M.manifold, o.mean, o.meanOld))
-debug(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Cost}, iter::Int, out::IO=Base.stdout) =
-  print(out,"Cost: ", getCost(p,o.mean))
 
 record(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Iterate}, iter::Int) = o.mean
 recordType(o::DouglasRachfordOptions,::Val{:Iterate}) = typeof(o.mean)

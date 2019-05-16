@@ -139,7 +139,7 @@ geodesic from `x1` to `x3`.
 * (y1,y2,y3) : resulting tuple of [`MPoint`](@ref)s of the proximal map
 """
 function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1;
-  stoppingCriterion::Function = (i,ξ,x,xnew) -> ((i>5), (i>5) ? "max Iter $(i) reached." : ""),
+  stoppingCriterion::StoppingCriterion = stopAfterIteration(5),
   kwargs...)::Tuple{P,P,P} where {mT <: Manifold, P <: MPoint}
   if p != 1
     throw(ErrorException(

@@ -3,7 +3,7 @@
 # Specific JacobiFields
 #
 #
-export βDgx, βDgy, βDexpx, βDexpξ, βDlogx, βDlogy
+export βDgx, βDexpx, βDexpξ, βDlogx, βDlogy
 
 @doc doc"""
     βDgx(κ,t,d)
@@ -26,32 +26,6 @@ function βDgx(κ::Number,t::Number,d::Number)
     else
         if κ < 0
             return sinh(sqrt(-κ)*(1-t)*d)/sinh(sqrt(-κ)*d)
-        elseif κ > 0
-            return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d)
-        end
-    end
-end
-@doc doc"""
-    βDgy(κ,t,d)
-weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
-with respect to its start point $D_y g(\cdot;x,y)[\eta]$. They are
-$\beta(\kappa) = \begin{cases}
-\frac{\sinh(td\sqrt{-\kappa})}{\sinh(d\sqrt{-\kappa})}
-&\text{ if }\kappa < 0,\\
-t & \text{ if } \kappa = 0,\\
-\frac{\sin(td\sqrt{\kappa})}{\sinh(d\sqrt{\kappa})}
-&\text{ if }\kappa > 0.
-\end{cases}$
-Note that this function can also be called using [`βDgx`](@ref) with `1-t` for `t`.
-
-*See also:* [`DyGeo`](@ref), [`jacobiField`](@ref)
-"""
-function βDgy(κ::Number,t::Number,d::Number)
-    if (d==0) || (κ==0)
-        return t
-    else
-        if κ < 0
-            return sinh(sqrt(-κ)*t*d)/sinh(sqrt(-κ)*d)
         elseif κ > 0
             return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d)
         end
@@ -111,7 +85,7 @@ $\beta(\kappa) = \begin{cases}
 -\sqrt{\kappa}d\frac{\cos(d\sqrt{\kappa})}{\sin(d\sqrt{\kappa})}&\text{ if }\kappa > 0.
 \end{cases}$
 
-*See also:* [`DxLog`](@ref), [`jacobiField`](@ref)
+*See also:* [`DxLog`](@ref), [`DyLog`](@ref), [`jacobiField`](@ref)
 """
 function βDlogx(κ::Number,t::Number,d::Number)
     if (d==0) || (κ==0)

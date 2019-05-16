@@ -3,7 +3,7 @@
 # Encapulates arbitrary solvers by a debug solver, which is induced by Decoration Options
 #
 #
-export initializeSolver!, doSolverStep!, evaluateStoppingCriterion, getSolverResult
+export initializeSolver!, doSolverStep!, getSolverResult
 """
     initializeSolver!(p,o)
 
@@ -24,15 +24,6 @@ function doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: RecordOptions}
     record!(p,o,iter)
 end
 """
-    evaluateStoppingCriterion(p,o,iter)
-
-Evaluate, whether the stopping criterion for the [`Problem`](@ref)` p`
-and the [`Options`](@ref)` o` after `iter`th iteration is met.
-"""
-function evaluateStoppingCriterion(p::P,o::O, iter) where {P <: Problem, O <: RecordOptions}
-    return evaluateStoppingCriterion(p, o.options,iter)
-end
-"""
     getResult(p,o)
 
 Return the final result after all iterations that is stored within the
@@ -41,3 +32,4 @@ Return the final result after all iterations that is stored within the
 function getSolverResult(p::P,o::O) where {P <: Problem, O <: RecordOptions}
     return getSolverResult(p, o.options)
 end
+stopSolver!(p::P,o::RecordOptions,i::Int) where {P <: Problem} = stopSolver!(p,o.options,i)

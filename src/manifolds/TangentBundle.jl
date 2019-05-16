@@ -5,7 +5,7 @@
 import LinearAlgebra: norm, dot
 import Base: exp, log, show
 export TangentBundle, TBPoint, TBTVector, show, getValue, getTangent, getBase
-export addNoise, distance, dot, exp, log, manifoldDimension, norm
+export distance, dot, exp, log, manifoldDimension, norm
 export randomMPoint, parallelTransport, zeroTVector, typeofMPoint, typeofTVector
 export validateMPoint, validateTVector
 #
@@ -145,14 +145,6 @@ getTangent(Ξ::TVectorE{TBTVector}) = TVectorE( getTangent(strip(Ξ)) )
 
 # Functions
 # ---
-@doc doc"""
-    addNoise(M,X,σ)
-
-add noise to both components of a [`TBPoint`](@ref)` X=(x,ξ)`, by employing the manifolds
-`addNoise` for the base component `x` and the classical component wise `randn` for
-the (vector space) tangent vector component `ξ`.
-"""
-addNoise(M::TangentBundle, X::TBPoint, σ::Real) = TBPoint( addNoise(M.manifold,getBase(X)), getTangent(X) + randn(size(getValue(getTangent))))
 @doc doc"""
     distance(M,X,Y)
 

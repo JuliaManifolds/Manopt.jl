@@ -8,16 +8,6 @@ export addNoise, distance, dot, exp, getValue, log, manifoldDimension, norm
 export manifoldDimension, parallelTransport, randomMPoint, randomTVector, tangentONB
 export typeofMPoint, typeofTVector, typicalDistance, zeroTVector
 export validateMPoint, validateTVector
-"""
-    addNoise(M,x,σ)
-adds noise of standard deviation `σ` to the MPoint `x` on the manifold `M`.
-"""
-function addNoise(M::mT,x::T,σ::Number,kwargs...) where {mT <: Manifold, T <: MPoint}
-  sig1 = string( typeof(x) )
-  sig2 = string( typeof(σ) )
-  sig3 = string( typeof(M) )
-  throw( ErrorException("addNoise not implemented for a $sig1 and standard deviation of type $sig2 on $sig3.") )
-end
 @doc doc"""
     distance(M,x,y)
 computes the gedoesic distance between two [`MPoint`](@ref)s `x` and `y` on
@@ -123,16 +113,11 @@ function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPo
   throw( ErrorException("parallelTransport not implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
 end
 @doc doc"""
-    randomMPoint(M)
+    randomMPoint(M,options...)
 returns a random point on the manifold `M`
 """
-randomMPoint(M::mT) where {mT <: Manifold} = throw( ErrorException("randomMPoint() not implemented on the Manifold $(typeof(M)).") );
-
-@doc doc"""
-    randomTVector(M,x)
-returns a random tangent vector in the tangent space of `x` on the manifold `M`
-"""
-randomTVector(M::mT,p::P) where {mT <: Manifold, P<: MPoint} = throw( ErrorException("randomTVector() not implemented for points $(typeof(p)) on the Manifold $(typeof(M)).") );
+randomMPoint(M::mT,options...) where {mT <: Manifold} = throw( ErrorException("randomMPoint() not implemented on the Manifold $(typeof(M)).") );
+#randomTVector(M::mT,p::P,s::Symbol,options...) where {mT <: Manifold, P<: MPoint} = throw( ErrorException("randomTVector($(typeof(M)),$(typeof(p)),$(s),$(options...)) not implemented for points $(typeof(p)) on the Manifold $(typeof(M)).") );
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the

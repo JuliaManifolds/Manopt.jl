@@ -5,7 +5,7 @@
 import LinearAlgebra: norm, dot, nullspace
 import Base: exp, log, show, cat
 export Sphere, SnPoint, SnTVector,show, getValue
-export addNoise, distance, dot, exp, log, manifoldDimension, norm
+export distance, dot, exp, log, manifoldDimension, norm
 export randomMPoint, opposite, parallelTransport, zeroTVector
 export validateMPoint, validateTVector
 #
@@ -61,18 +61,6 @@ getValue(ξ::SnTVector) = ξ.value;
 
 # Functions
 # ---
-@doc doc"""
-    addNoise(M,p,σ)
-add noise to spherical data, i.e. tangential Gaussian noise, $\exp_x n$,
-where $n\sim \mathcal N(0,\sigma)^d$ d-dimensional is a zero-mean Gaussian
-random variable of standard deviation `σ` in the tangent plane of the `x::SnPoint`
-on the manifold `M`.
-"""
-function addNoise(M::Sphere, x::SnPoint, σ::Real)
-	n = σ * randn( size( getValue(x)) ) # Gaussian in embedding
-	nP = n - dot(n,getValue(x))*getValue(x) #project to TpM (keeps Gaussianness)
-	return exp(  M,x,SnTVector( nP )  )
-end
 @doc doc"""
     distance(M,x,y)
 Compute the Riemannian distance on $\mathcal M=\mathbb S^n$ embedded in
@@ -178,12 +166,23 @@ end
 @doc doc"""
     randomMPoint(M)
 
-returns a random point on the Sphere by projecting a normal distirbuted vector
+return a random point on the Sphere by projecting a normal distirbuted vector
 from within the embedding to the sphere.
 """
-function randomMPoint(M::Sphere)::SnPoint
-	v = randn(manifoldDimension(M)+1);
+function randomMPoint(M::Sphere, ::Val{:Gaussian}, σ::Real=1.0)::SnPoint
+	v = σ * randn(manifoldDimension(M)+1);
 	return SnPoint(v./norm(v))
+end
+@doc doc"""
+    randomTVector(M,x,)
+
+return a random tangent vector in the tangent space of the [`SnPoint`](@ref)
+`x` on the [`Sphere`](@ref) `M`.
+"""
+function randomTVector(M::Sphere, x::SnPoint, ::Val{:Gaussian}, σ::Real=1.0)
+    n = σ * randn( size( getValue(x)) ) # Gaussian in embedding
+	nP = n - dot(n,getValue(x))*getValue(x) #project to TpM (keeps Gaussianness)
+	SnTVector( nP )
 end
 tangentONB(M::Sphere, x::SnPoint, y::SnPoint) = tangentONB(M,x,log(M,x,y))
 function tangentONB(M::Sphere,x::SnPoint,ξ::SnTVector)

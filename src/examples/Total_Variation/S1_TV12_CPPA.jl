@@ -23,40 +23,47 @@ N = Power(M,(n,))
 
 f = artificialS1Signal(n)
 xCompare = PowPoint(f)
-fn = addNoise.(Ref(M),f,σ)
+fn = addNoise.(Ref(M),f,:Gaussian,σ)
 data = PowPoint(fn)
 t = range(0.,1.,length=n)
 
 
 scene = scatter(t,getValue.(f),
-  markersize=2, markercolor = dataColor, markerstrokecolor=dataColor,
-  lab="original")
+    markersize=2, markercolor = dataColor, markerstrokecolor=dataColor,
+    lab="original")
 scatter!(scene,t,getValue.(fn),
-  markersize=2, markercolor = nColor, markerstrokecolor=nColor,
-  lab="noisy")
+    markersize=2, markercolor = nColor, markerstrokecolor=nColor,
+    lab="noisy")
 yticks!([-π,-π/2,0,π/2,π], ["-\\pi", "- \\pi/2", "0", "\\pi/2", "\\pi"])
 png(scene,"$(experimentFolder)$(experimentName)-original.png")
 
 F = x -> costL2TVplusTV2(N,data,α,β,x)
 proxes = [ (λ,x) -> proxDistance(N,λ,data,x),
-  (λ,x) -> proxTV(N,α*λ,x),
-  (λ,x) -> proxTV2(N,β*λ,x) ]
+    (λ,x) -> proxTV(N,α*λ,x),
+    (λ,x) -> proxTV2(N,β*λ,x) ]
 
-xOpt = cyclicProximalPoint(N,F,proxes, data;
-  λ = i -> π/i,
-  debug = [:Iteration, :Divider, :λ, :Divider, :Cost, :Divider, :Change, :Newline],
-  debugEvery=1000
+fR, r = cyclicProximalPoint(N,F,proxes, data;
+    λ = i -> π/i,
+    debug = Dict(:Stop => DebugStoppingCriterion(),
+                 :Step => DebugEvery(DebugGroup([
+                    DebugIteration(), DebugDivider(),
+                    DebugProximalParameter(), DebugDivider(),
+                    DebugCost(), DebugDivider(),DebugChange(data),
+                    DebugDivider("\n"),
+                  ]),1000),
+                 :Init => DebugDivider("Starting the solver\n")
+            ),
+  record = (:Iteration, :Cost)
   )
-fR = getValue(xOpt)
 
 scene = scatter(t,getValue.(f),
-  markersize=2, markercolor = dataColor, markerstrokecolor=dataColor,
-  lab="original")
-scatter!(scene,t,getValue.(fR),
-  markersize=2, markercolor = nColor, markerstrokecolor=nColor,
-  lab="reconstruction")
+    markersize=2, markercolor = dataColor, markerstrokecolor=dataColor,
+    lab="original")
+scatter!(scene,t,getValue.(getValue(fR)),
+    markersize=2, markercolor = nColor, markerstrokecolor=nColor,
+    lab="reconstruction")
 yticks!([-π,-π/2,0,π/2,π], ["-\\pi", "- \\pi/2", "0", "\\pi/2", "\\pi"])
 png(scene,"$(experimentFolder)$(experimentName)-result.png")
 
-print("MSE (input): ",1/n*distance(N,xCompare,data)^2,"\n")
-print("MSE (result): ",1/n*distance(N,xCompare,xOpt)^2,"\n")
+print("MSE (input):  ",1/n*distance(N,xCompare,data)^2,"\n")
+print("MSE (result): ",1/n*distance(N,xCompare,fR)^2,"\n")

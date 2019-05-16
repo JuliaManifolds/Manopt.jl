@@ -101,8 +101,8 @@ manifoldDimension(::P) where {P <: MPoint}
 manifoldDimension(::mT) where {mT <: Manifold}
 norm(::mT,::P,::T) where {mT<:Manifold, P<: MPoint, T<:TVector}
 parallelTransport(::mT,::P,::Q,::T) where {mT <: Manifold, P <: MPoint, Q <: MPoint, T <: TVector}
-randomMPoint(M::mT) where {mT <: Manifold}
-randomTVector(M::mT,p::P) where {mT <: Manifold, P<: MPoint}
+randomMPoint(M::mT,options...) where {mT <: Manifold}
+randomTVector(M::mT,p::P,options...) where {mT <: Manifold, P<: MPoint}
 tangentONB(::mT, ::P, ::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint}
 tangentONB(::mT, ::P, ::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
 typeofMPoint(::T) where {T <: TVector}

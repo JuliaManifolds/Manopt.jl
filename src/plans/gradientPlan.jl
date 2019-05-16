@@ -4,7 +4,7 @@
 export GradientProblem, GradientDescentOptions
 export getGradient, getCost, getStepsize, getInitialStepsize
 
-export DirectionUpdateOptions, HessianDirectionUpdateOptions
+# export DirectionUpdateOptions, HessianDirectionUpdateOptions
 #
 # Problem
 #
@@ -33,20 +33,20 @@ end
 # Options for subproblems
 #
 
-abstract type DirectionUpdateOptions end
-"""
-    SimpleDirectionUpdateOptions <: DirectionUpdateOptions
-A simple update rule requires no information
-"""
-struct SimpleDirectionUpdateOptions <: DirectionUpdateOptions
-end
-"""
-    HessianDirectionUpdateOptions
-An update rule that keeps information about the Hessian or optains these
-informations from the corresponding [`Options`](@ref)
-"""
-struct HessianDirectionUpdateOptions <: DirectionUpdateOptions
-end
+# abstract type DirectionUpdateOptions end
+# """
+#     SimpleDirectionUpdateOptions <: DirectionUpdateOptions
+# A simple update rule requires no information
+# """
+# struct SimpleDirectionUpdateOptions <: DirectionUpdateOptions
+# end
+# """
+#     HessianDirectionUpdateOptions
+# An update rule that keeps information about the Hessian or optains these
+# informations from the corresponding [`Options`](@ref)
+# """
+# struct HessianDirectionUpdateOptions <: DirectionUpdateOptions
+# end
 
 """
     getGradient(p,x)
@@ -80,63 +80,29 @@ a default value is given in brackets if a parameter can be left out in initializ
     current iterates
 * `retraction` : (exp) the rectraction to use
 * `stepsize` : a `Function` to compute the next step size)
-* `StepsizeOptions` : options the linesearch is called with.
 
 # See also
 [`steepestDescent`](@ref)
 """
-mutable struct GradientDescentOptions{P <: MPoint, Q <: TVector, S <: StepsizeOptions} <: Options
+mutable struct GradientDescentOptions{P <: MPoint, T <: TVector} <: Options
     x::P where {P <: MPoint}
-    xOld::P where {P <: MPoint}
-    ∇::Q where {Q <: TVector}
-    ∇Old::Q where {Q <: TVector}
-    stepsize::Float64
-    stepsizeOld::Float64
-    stoppingCriterion::Function
+    ∇::T where {T <: TVector}
+    stop::StoppingCriterion
     retraction::Function
-    stepsizeFunction::Function
-    stepsizeOptions::S
-    GradientDescentOptions{P,Q,S}(
+    stepsize::Stepsize
+    GradientDescentOptions{P,T}(
         initialX::P,
-        stoppingCriterion::Function,
-        stepsizeF::Function,
-        stepsizeO::S,
+        s::StoppingCriterion,
+        stepsize::Stepsize,
         retraction::Function=exp
-    ) where {P <: MPoint, Q <: TVector, S <: StepsizeOptions} = (
-        o = new{P,typeofTVector(P),S}();
+    ) where {P <: MPoint, T <: TVector} = (
+        o = new{P,typeofTVector(P)}();
         o.x = initialX;
-        o.stoppingCriterion = stoppingCriterion;
+        o.stop = s;
         o.retraction = retraction;
-        o.stepsizeFunction = stepsizeF;
-        o.stepsizeOptions = stepsizeO;
+        o.stepsize = stepsize;
         return o
     )
 end
-GradientDescentOptions(x::P,sC::Function,sF::Function,sO::S,retraction::Function=exp) where {P <: MPoint, S <:StepsizeOptions} = GradientDescentOptions{P,typeofTVector(P),S}(x,sC,sF,sO,retraction)
-#
-# Access functions
-#
-
-"""
-    getInitialStepsize(p,o)
-
-for a [`GradientProblem`](@ref)` p` and some [`Options`](@ref)` o` return the
-initial step size from within the [`StepsizeOptions`](@ref) within `o`.
-"""
-function getInitialStepsize(p::P,o::O) where {P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions}
-    return getInitialStepsize(p,o,o.stepsizeOptions)
-end
-# default just do a line search as init.
-function getInitialStepsize(p::P,o::O, sO::S) where {P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions, S <: StepsizeOptions}
-    return o.stepsizeFunction(p,o,sO)
-end
-"""
-    getStepsize(p,o,lo,vars...)
-
-calculate a step size using the internal line search of the
-[`GradientDescentOptions`](@ref)` o` belonging to the [`GradientProblem`](@ref),
-where `vars...` might contain additional information
-"""
-function getStepsize(p::P,o::O,vars...) where {P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions}
-    return o.stepsizeFunction(p,o,o.stepsizeOptions,vars...)
-end
+GradientDescentOptions(x::P,stop::StoppingCriterion,s::Stepsize,retraction::Function=exp) where {P <: MPoint} = GradientDescentOptions{P,typeofTVector(P)}(x,stop,s,retraction)
+getStepsize(p::P,o::O,vars...) where {P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions} = o.stepsze(p,o,vars...)

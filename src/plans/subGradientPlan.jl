@@ -33,44 +33,32 @@ evaluate the cost function `F` stored within a [`GradientProblem`](@ref) at the 
 """
 getCost(p::P,x::MP) where {P <: SubGradientProblem{M} where M <: Manifold, MP <: MPoint} = p.costFunction(x)
 
-#
-# SubGradientMethod Options
 """
     SubGradientMethodOptions <: Options
 stories option values for a [`subGradientMethod`](@ref) solver
 
 # Fields
 * `retraction` – the retration to use within
-* `stepsizeFunction` – a function (p,o,sO[,i]) -> s to determine the next step size.
-* `stepsizeOptions` – options for the current state of the step size determination, see [`StepsizeOptions`](@ref).
-* `stoppingCriterion` – stopping criterion for the algorithm
+* `stepsize´ – see [`Stepsize`](@ref)
+* `stoppingCriterion` – [`StoppingCriterion`](@ref)
 * `x` – (initial or current) value the algorithm is at
 * `optimalX` – optimal value
 """
-mutable struct SubGradientMethodOptions{P,T,S} <: Options where {P <: MPoint, T <: TVector, S <: StepsizeOptions}
+mutable struct SubGradientMethodOptions{P,T} <: Options where {P <: MPoint, T <: TVector}
     retraction::Function
-    stepsizeFunction::Function
-    stepsizeOptions::S
-    stoppingCriterion::Function
+    stepsize::Stepsize
+    stoppingCriterion::StoppingCriterion
     x::P
     xLast::P
     xOptimal::P
     subGradient::T
-    SubGradientMethodOptions{P,T,S}(x::P,sC::Function,sF::Function,sO::S,retr::Function=exp) where {P <: MPoint, T <: TVector, S <: StepsizeOptions} = (
-        o = new{P,T,S}(); o.x = x; o.xLast = x; o.xOptimal = x;
-        o.stepsizeFunction = sF; o.stepsizeOptions = sO; o.retraction = retr;
+    SubGradientMethodOptions{P,T}(x::P,sC::StoppingCriterion,s::Stepsize,retr::Function=exp) where {P <: MPoint, T <: TVector} = (
+        o = new{P,T}(); o.x = x; o.xLast = x; o.xOptimal = x;
+        o.stepsize = s; o.retraction = retr;
         o.stoppingCriterion = sC;
         return o
     )
 end
-SubGradientMethodOptions(x::P,sC::Function,stepsize::Function,sF::Function,sO::S,retr::Function=exp) where {P <: MPoint, S <: StepsizeOptions} = SubGradientMethodOptions{P,typeofTVector(x),L}(x,sC,stepsize,sF,sO,retr)
-"""
-    getStepsize(p,o,lo,vars...)
+SubGradientMethodOptions(x::P,sC::StoppingCriterion,stepsize::Stepsize,retr::Function=exp) where {P <: MPoint} = SubGradientMethodOptions{P,typeofTVector(x)}(x,sC,s,retr)
 
-calculate a step size using the internal line search of the
-[`SubGradientMethodOptions`](@ref)` o` belonging to the [`GradientProblem`](@ref),
-where `vars...` might contain additional information
-"""
-function getStepsize(p::P,o::O,vars...) where {P <: GradientProblem{M} where M <: Manifold, O <: SubGradientMethodOptions}
-    return o.stepsizeFunction(p,o,o.stepsizeOptions,vars...)
-end
+getStepsize(p::P,o::O,vars...) where {P <: SubGradientProblem{M} where M <: Manifold, O <: SubGradientMethodOptions} = o.stepsze(p,o,vars...)
