@@ -12,7 +12,7 @@ computes the adjoint of $D_yg(t;x,y)[\eta]$.
 
 *See also:* [`DyGeo`](@ref), [`adjointJacobiField`](@ref)
 """
-AdjDyGeo(M::mT,x::P,y::P,t::Float64,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,y,x,1. - t,η,βDgy)
+AdjDyGeo(M::mT,x::P,y::P,t::Float64,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,y,x,1-t,η,βDgx)
 @doc doc"""
     AdjDxExp(M,x,ξ,η)
 computes the adjoint of $D_x\exp_x\xi[\eta]$.

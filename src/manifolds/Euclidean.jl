@@ -121,12 +121,12 @@ determines the type of the entries of the resulting [`RnPoint`](@ref).
 randomMPoint(M::Euclidean, T::DataType=Float64) = RnPoint( randn(T,M.dimension) )
 
 doc"""
-    randomTVector(M[,T=Float64])
+    randomTVector(M,x,:Gaussian[,σ=1.0])
 
-generate a random vector on the [`Euclidean`](@ref), where the optional parameter
-determines the type of the entries of the resulting [`RnTVector`](@ref).
+generate a Gaussian random vector on the [`Euclidean`](@ref) manifold `M` with
+standard deviation `σ`.
 """
-randomTVector(M::Euclidean, T::DataType=Float64) = RnTVector( randn(T,M.dimension) )
+randomTVector(M::Euclidean, x::RnPoint{T}, ::Val{:Gaussian}, σ::Real=1.0) where {T} = RnTVector( σ * randn(T,M.dimension) )
 
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)

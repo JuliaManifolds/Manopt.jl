@@ -22,30 +22,29 @@ The following algorithms are currently available
 Note that the [`Options`](@ref) can also be decorated to enhance your algorithm
 by general additional properties.
 
-## [Stopping Criteria](@id StoppingCriterion)
-Stopping criteria are in general modeled as a function
+## [StoppingCriteria](@id StoppingCriteria)
 
-```
-(p::P where {P <: Problem}, o::O where {O <: Options}, i::Int) -> s,r
-```
-where `s` is a `Bool` indicating whether to stop or not and `r` is a `String`,
-which is empty if `s` is false and contains a reason, why the algorithm stopped
-otherwise. Providing such a function as the usual `stoppingCriterion` option or
-field might be cumbersome, so there are a few default ones
+Stopping criteria are implemented as a `functor`, i.e. inherit from the base type
 
 ```@docs
-stopAtIteration
-stopGradientNormLess
-stopChangeLess
+StoppingCriterion
 ```
 
-as well as two concatenator functions, i.e.
+```@autodocs
+Modules = [Manopt]
+Pages = ["plans/stoppingCriterion.jl"]
+Order = [:type]
+```
+
+as well as the function
+
 ```@docs
-stopWhenAny
-stopWhenAll
+getReason
 ```
 
-## [Decorated solvers](@id DecoratedSolvers)
+further stopping criteria might be available for individual Solvers.
+
+## [Decorated Solvers](@id DecoratedSolvers)
 
 The following decorators are available.
 
@@ -53,15 +52,14 @@ The following decorators are available.
 
 The decorator to print debug during the iterations can be activated by
 decorating the [`Options`](@ref) with [`DebugOptions`](@ref) and implementing
-your own `Symbols` for the [`debug`](@ref) function. For example printing a
-gradient from the [`GradientDescentOptions`](@ref) is automatically available,
-see  [`DebugOptions`](@ref) for general keys and the specific solvers for more
-details on specific ones.
+your own [`DebugAction`](@ref)s.
+For example printing a gradient from the [`GradientDescentOptions`](@ref) is automatically available, as explained in the [`steepestDescent`](@ref) solver.
 
 ```@docs
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: DebugOptions}
 getSolverResult(p::P,o::O) where {P <: Problem, O <: DebugOptions}
+stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: DebugOptions}
 ```
 
 ### [Record Solver](@id RecordSolver)
@@ -92,4 +90,5 @@ algorithm, if you want to provide one.
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: Options}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: Options}
 getSolverResult(p::P,o::O) where {P <: Problem, O <: Options}
+stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: Options}
 ```

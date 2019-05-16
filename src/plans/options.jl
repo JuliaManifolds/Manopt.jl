@@ -5,13 +5,9 @@
 #
 import Base: copy
 
-export StepsizeOptions, SimpleStepsizeOptions
-export ConstantStepsize, DecreasingStepsize
-export LinesearchOptions
-
+export StoppingCriterion, StepSize
 export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
-export Options, getOptions
-export getOptions
+export Options, getOptions, getReason
 export IsOptionsDecorator
 
 """
@@ -26,61 +22,56 @@ stores the original [`Options`](@ref) under consideration.
     Options
 
 A general super type for all options.
+
+# Fields
+The following fields are assumed to be default. If you use different ones,
+provide the access functions accordingly
+* `x` an [`MPoint`](@ref) with the current iterate
+* `xOld` an [`MPoint`](@ref) with the previous iterate
+* `stop` a [`StoppingCriterion`](@ref).
+
 """
 abstract type Options end
 copy(x::T) where {T <: Options} = T([getfield(x, k) for k ∈ fieldnames(T)]...)
+#
+# StoppingCriterion meta
+#
+@doc doc""" 
+    StoppingCriterion
+
+An abstract type for the functors representing stoping criteria, i.e. they are
+callable structures. The naming Scheme follows functions, see for
+example [`stopAfterIteration`](@ref).
+
+Every StoppingCriterion has to provide a constructor and its function has to have
+the interface `(p,o,i)` where a [`Problem`](@ref) as well as [`Options`](@ref)
+and the current number of iterations are the arguments and returns a Bool whether
+to stop or not.
+
+By default each `StoppingCriterion` should provide a fiels `reason` to provide
+details when a criteion is met (and that is empty otherwise).
+"""
+abstract type StoppingCriterion end
 #
 #
 # StepsizeOptions
 #
 #
 """
-    StepsizeOptions <: Options
-A general super type for all options that refer to some line search
-"""
-abstract type StepsizeOptions <: Options end
-"""
-    LinesearchOptons <: StepsizeOptions
-A general super type for all StepsizeOptions that perform a certain line search
-"""
-abstract type LinesearchOptions <: StepsizeOptions end
+    Stepsize
 
-"""
-    SimpleStepsizeOptions <: StepsizeOptions
-A line search without additional no information required, e.g.
-[`ConstantStepsize`](@ref) or [`DecreasingStepsize`](@ref).
-"""
-mutable struct SimpleStepsizeOptions <: StepsizeOptions end
-"""
-    ConstantStepsize(s)
+An abstract type for the functors representing step sizes, i.e. they are callable
+structurs. The naming scheme is `TypeOfStepSize`, e.g. `ConstantStepsize`.
 
-returns a `Tuple{Function,<:StepsizeOptions}` with
+Every Stepsize has to provide a constructor and its function has to have
+the interface `(p,o,i)` where a [`Problem`](@ref) as well as [`Options`](@ref)
+and the current number of iterations are the arguments
+and returns a number, namely the stepsize to use.
 
-* a function depenting on a [`Problem`](@ref)` p`, some
-[`Options`](@ref)` o`, (empty) [`SimpleStepsizeOptions`](@ref)` lO` and
-optionally the current iterate `i` to return a decreasing step size given by
-`c/(i^k)`
-* The initial (still empty) [`SimpleStepsizeOptions`](@ref)
+# See also
+[`Linesearch`](@ref)
 """
-ConstantStepsize(s::Number) = (
-  (p::P where P <: Problem, o::O where O <: Options, lO::SimpleStepsizeOptions, i::Int=1) -> s,
-  SimpleStepsizeOptions()
-)
-
-@doc doc"""
-    DecreasingStepsize(c[,k=1])
-returns a `Tuple{Function,<:StepsizeOptions}` with
-
-* a function depenting on a [`Problem`](@ref)` p`, some
-[`Options`](@ref)` o`, (empty) [`SimpleStepsizeOptions`](@ref)` lO` and
-optionally the current iterate `i` to return a decreasing step size given by
-`c/(i^k)`
-* The initial (still empty) [`SimpleStepsizeOptions`](@ref)
-"""
-DecreasingStepsize(s::Number,k::Number=1) = (
-  (p::P where P <: Problem, o::O where O <: Options, lO::SimpleStepsizeOptions,i::Int=1) -> s/(i^k),
-  SimpleStepsizeOptions()
-)
+abstract type Stepsize end
 #
 #
 # Evalualtion Orders
@@ -121,3 +112,12 @@ getOptions(O) = error("Not implemented for types that are not `Options`")
 # this might seem like a trick/fallback just for documentation reasons
 @traitfn getOptions(o::O) where {O <: Options; !IsOptionsDecorator{O}} = o
 @traitfn getOptions(o::O) where {O <: Options; IsOptionsDecorator{O}} = getOptions(o.options)
+
+@doc doc"""
+    getReason(c)
+
+return the current reason stored within the [`StoppingCriterion`](@ref) from
+within the [`Options`](@ref) This reason is empty if the criterion has never
+been met.
+"""
+getReason(o::O) where O <: Options = getReason( getOptions(o).stop )

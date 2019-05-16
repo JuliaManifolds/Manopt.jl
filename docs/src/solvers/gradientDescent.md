@@ -13,3 +13,11 @@ CurrentModule = Manopt
 ```@docs
 GradientDescentOptions
 ```
+
+## Specific Debug Actions
+
+```@docs
+DebugGradient
+DebugGradientNorm
+DebugStepsize
+```

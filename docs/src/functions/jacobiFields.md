@@ -25,7 +25,6 @@ for example when using unit speed geodesics.
 The following weights functions are available
 ```@docs
 βDgx
-βDgy
 βDexpx
 βDexpξ
 βDlogx

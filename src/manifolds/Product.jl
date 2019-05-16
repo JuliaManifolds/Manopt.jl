@@ -59,13 +59,6 @@ end
 getValue(ξ::ProdTVector) = ξ.value
 
 @doc doc"""
-    addNoise(M,x,δ)
-
-computes a vectorized version of addNoise, and returns the noisy [`ProdPoint`](@ref).
-"""
-addNoise(M::Product, x::ProdPoint,σ) = ProdPoint([addNoise.(M.manifolds, getValue.(x),σ)])
-
-@doc doc"""
     distance(M,x,y)
 
 computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
@@ -131,7 +124,7 @@ parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = Pro
 
 generate a random point on [`Product`](@ref) `M`.
 """
-randomMPoint(M::Product) = ProdPoint( randomMPoint.(M.manifold))
+randomMPoint(M::Product,options...) = ProdPoint([ randomMPoint(m, options) for m in M.manifolds ] )
 
 @doc doc"""
     randomTVector(M,x)
@@ -139,7 +132,10 @@ randomMPoint(M::Product) = ProdPoint( randomMPoint.(M.manifold))
 generate a random tangent vector in the tangent space of the [`ProdPoint`](@ref) `x`
 on [`Power`](@ref) `M`.
 """
-randomTVector(M::Product,x::ProdTVector) = ProdTVector( randomTVector(M.manifold,x) )
+randomTVector(M::Product,x::ProdTVector,options) = ProdTVector([
+    randomTVector(m.manifolds[i], getValue(x)[i], options...)
+    for i in CartesianIndices(getValue(x))
+])
 
 @doc doc"""
     typicalDistance(M)
@@ -171,7 +167,7 @@ validate, that the [`ProdTVector`](@ref) `ξ` is a valid tangent vector to the
 [`ProdPoint`](@ref) `x` on the [`Product`](@ref) `M`, i.e. that all three array
 dimensions match and this validation holds elementwise.
 """
-function validateTVector(M::Product, x::PowPoint, ξ::PowTVector)
+function validateTVector(M::Product, x::ProdPoint, ξ::ProdTVector)
     if (length(getValue(x)) ≠ length(getValue(ξ))) || (length(getValue(ξ)) ≠ length(M.manifolds))
         throw( ErrorException(
         "The three dimensions of the $(M.name), the point x ($(length(getValue(x)))), and the tangent vector ($(length(getValue(ξ)))) don't match."

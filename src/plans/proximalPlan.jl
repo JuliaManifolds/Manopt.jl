@@ -6,6 +6,7 @@
 export ProximalProblem
 export CyclicProximalPointOptions, DouglasRachfordOptions
 export getCost, getProximalMap, getProximalMaps
+export DebugProximalParameter
 @doc doc"""
     ProximalProblem <: Problem
 specify a problem for solvers based on the evaluation of proximal map(s).
@@ -57,6 +58,7 @@ end
 #
 """
     CyclicProximalPointOptions <: Options
+
 stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
 
 # Fields
@@ -74,15 +76,16 @@ stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
 mutable struct CyclicProximalPointOptions{P} <: Options where {P <: MPoint}
     x::P
     xOld::P
-    stoppingCriterion::Function
+    stop::StoppingCriterion
     λ::Function
     orderType::EvalOrder
     order::Array{Int,1}
-    CyclicProximalPointOptions{P}(x::P,sC::Function,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) where {P <: MPoint} = new(x,x,sC,λ,o,[])
+    CyclicProximalPointOptions{P}(x::P,s::StoppingCriterion, λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) where {P <: MPoint} = new(x,x,s,λ,o,[])
 end
-CyclicProximalPointOptions(x::P,sC::Function,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) where {P <: MPoint} = CyclicProximalPointOptions{P}(x,sC,λ,o)
+CyclicProximalPointOptions(x::P,s::StoppingCriterion,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) where {P <: MPoint} = CyclicProximalPointOptions{P}(x,s,λ,o)
 @doc doc"""
     DouglasRachfordOptions <: Options
+
 Store all options required for the DouglasRachford algorithm,
 
 # Fields
@@ -98,10 +101,36 @@ Store all options required for the DouglasRachford algorithm,
 mutable struct DouglasRachfordOptions <: Options
     x::P where {P <: MPoint}
     xOld::P where {P <: MPoint}
-    stoppingCriterion::Function
+    stop::StoppingCriterion
     λ::Function
     α::Function
     R::Function
-    DouglasRachfordOptions(x::P where {P <: MPoint}, sC::Function, λ::Function=(iter)->1.0, α::Function=(iter)->0.9, R=reflection) = new(x,x,sC,λ,α,reflection)
+    DouglasRachfordOptions(x::P where {P <: MPoint}, s::StoppingCriterion, λ::Function=(iter)->1.0, α::Function=(iter)->0.9, R=reflection) = new(x,x,s,λ,α,reflection)
 end
-debug(p::ProximalProblem, o::CyclicProximalPointOptions, ::Val{:λ}, iter::Int, out::IO=Base.stdout) where {P <: Problem, O <: Options} = print(out,"λ: ",o.λ(iter))
+#
+# Debug Updates for DR
+#
+# overwrite defaults, since we store the result in the mean field
+(d::DebugCost)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) d.print( (i>=0) ? d.prefix*string(getCost(p,o.mean)) : "")
+function (d::DebugChange)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int)
+    s = isdefined(d.xOld) ? "Last Change: " * string(distance(p.M,o.mean, d.xOld)) : ""
+    d.xOld = o.mean
+    d.print(s)
+end
+(d::DebugIterate)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = d.print( (i>=0) ? prefix*"$(o.mean)" : "")
+#
+# Debug the Cyclic Proximal point parameter
+#
+@doc doc"""
+    DebugProximalParameter <: DebugAction
+
+print the current iterates proximal point algorithm parameter stored in
+[`Options`](@ref)s `o.λ`.
+"""
+mutable struct DebugProximalParameter <: DebugAction
+    print::Function
+    prefix::String
+    DebugProximalParameter(long::Bool=false,print::Function=print) = new(print, long ? "Proximal Map Parameter λ(i):" : "λ:" )
+end
+(d::DebugProximalParameter)(p::ProximalProblem,o::DouglasRachfordOptions,i::Int) = d.print((i>0) ? d.prefix*string(o.λ(i)) : "")
+(d::DebugProximalParameter)(p::ProximalProblem,o::CyclicProximalPointOptions,i::Int) = d.print((i>0) ? d.prefix*string(o.λ(i)) : "")

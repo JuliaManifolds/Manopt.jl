@@ -20,7 +20,7 @@ all further keyword arguments are passed down to the `exportFct` call.
 """
 function renderAsymptote(filename, exportFct; render::Int=4, format="png",
     exportFolder = string( filename[1:( [findlast(".",filename)...][1])], format), kwargs...)
-    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o $(exportFolder) $(filename)`
+    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(exportFolder))" $(filename)`
     exportFct(filename; kwargs...)
     run(renderCmd)
 end
@@ -84,19 +84,32 @@ function asyExportS2Signals(filename::String;
         );
         write(io,"\n/*\n  Colors\n*/\n")
         j=0
-        for (key,value) in colors
+        for (key,value) in colors # colors for all keys
             penPrefix = "$(j)"
-            penPrefix = "$(j)"
+            sets = 0
             if key==:points
                 penPrefix="point"
+                sets = length(points)
             elseif key==:curves
                 penPrefix="curve"
+                sets = length(curves)
             elseif key==:tvectors
                 penPrefix="tVector"
+                sets = length(tVectors)
+            end
+            if length(value) < sets
+                throw( ErrorException(
+                    "Not enough colors ($(length(value))) provided for $(sets) sets in $(key)."
+                ))
             end
             i=0
+            # export all colors
             for c in value
                 i=i+1;
+                if i>sets
+                    # avoid access errors in lineWidth or dotSizes if more colors then sets are given
+                    break
+                end
                 write(io,string("pen $(penPrefix)Style$(i) = ",
                     "rgb($(red(c)),$(green(c)),$(blue(c)))",
                     (key==:curves) ? "+linewidth($(lineWidths[i])pt)" : "",
@@ -144,9 +157,11 @@ function asyExportS2Signals(filename::String;
             j=0
             for vector in tVecs
                 j=j+1
+                base = getValue(getBasePoint(vector))
+                endPoints = base + getValue(vector)
                 write(io,string("draw( (",
-                    string( [string(v,",") for v in getValue(getBase(vector))]...)[1:end-1],")--(",
-                    string( [string(v,",") for v in getValue(vector)]...)[1:end-1],
+                    string( [string(v,",") for v in base]...)[1:end-1],")--(",
+                    string( [string(v,",") for v in endPoints]...)[1:end-1],
                     "), tVectorStyle$(i),Arrow3($(arrowHeadSize)));\n"));
             end
         end

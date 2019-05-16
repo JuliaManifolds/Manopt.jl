@@ -57,6 +57,16 @@ end
 #
 #
 @doc doc"""
+    addNoise(M,x)
+
+add noise to a [`MPoint`](@ref) `x` on the [`Manifold`](@ref) `M` by using the
+[`randomTVector`](@ref) method and doing an exponential step.
+Optional parameters, like the type of noise and parameters for the noise
+may be given and are just passed on-
+"""
+addNoise(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint} = exp(M,x,randomTVector(M,x,options...))
+
+@doc doc"""
     ζ = adjointJacobiField(M,x,y,t,η,w)
 Compute the AdjointJacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
 $\mathcal M$ with initial conditions (depending on the application) $\eta\in T_{g(t;x,y)\mathcal M}$ and
@@ -99,33 +109,29 @@ end
 return a function to evaluate the geodesic connecting `x` and `y`
 on the manifold `M`.
 """
-function geodesic(M::mT, x::T,y::T)::Function where {mT <: Manifold, T <: MPoint}
-  g(t) =  exp(M,x,t*log(M,x,y))
-  return g
-end
+geodesic(M::mT, x::T,y::T) where {mT <: Manifold, T <: MPoint} = t -> exp(M,x,t*log(M,x,y))
+
 """
     geodesic(M,x,y,n)
 returns vector containing the equispaced n sample-values along the geodesic
 from `x`to `y` on the manifold `M`.
 """
-function geodesic(M::mT, x::T,y::T,n::Integer)::Vector{T} where {mT <: Manifold, T <: MPoint}
-  return geodesic.( Ref(M),Ref(x),Ref(y), range(0., stop=1.,length=n) )
-end
+geodesic(M::mT, x::T,y::T,n::Integer) where {mT <: Manifold, T <: MPoint} = geodesic(M,x,y,[range(0.,1.,length=n)...])
+
 """
     geodesic(M,x,y,t)
 returns the point along the geodesic from `x` to `y` given by the value `t`
 (in `[0,1]`) on the [`Manifold`](@ref) `M`
 """
 geodesic(M::mT,x::T,y::T,t::N) where {mT <: Manifold, T <: MPoint, N <: Number} = geodesic(M,x,y)(t)
+
 """
     geodesic(M,x,y,T)
 returns vector containing the MPoints along the geodesic from `x` to `y` on
 the manfiold `M` specified by the points from the vector `T` (of numbers between 0 and 1).
 """
-function geodesic(M::mT, x::P,y::P,T::Vector{S})::Vector{T} where {mT <: Manifold, P <: MPoint, S <: Number}
-  geo = geodesic(M,x,y);
-  return [geo(t) for t in T]
-end
+geodesic(M::mT, x::P,y::P,T::Vector{S}) where {mT <: Manifold, P <: MPoint, S <: Number} = geodesic(M,x,y).(T)
+
 @doc doc"""
     ζ = jacobiField(M,x,y,t,η,β)
 Compute the jacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
@@ -153,6 +159,17 @@ function norm(M::mT,x::P,ξ::T) where {mT<:Manifold,P<:MPoint,T<:TVector}
         throw( ErrorException("The norm could not be computed, error: $(e.msg).") );
     end
 end
+randomMPoint(M::mT) where {mT <: Manifold} = randomMPoint(M, :Gaussian)
+@doc doc"""
+    randomTVector(M,x)
+
+generate a random tangent vector at [`MPoint`](@ref) `x`
+on the [`Manifold`](@ref) `M` by falling back to the default `:Gaussian` noise
+with the default standard deviation on the specific manifold.
+"""
+randomTVector(M::mT, x::P,options...) where {mT <: Manifold, P <: MPoint} = randomTVector(M,x,Val(:Gaussian),options...)
+randomTVector(M::mT, x::P,s::Symbol,options...) where {mT <: Manifold, P <: MPoint} = randomTVector(M,x,Val(s),options...)
+
 @doc doc"""
     y = reflection(M,p,x)
 reflect the `MPoint x` at `MPoint p`, i.e. compute

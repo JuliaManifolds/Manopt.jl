@@ -27,6 +27,8 @@ module Manopt
   # meta
   include("manifolds/Power.jl")
   include("manifolds/Product.jl")
+  # ...corresponding plans consisting of problems and options
+  include("plans/plan.jl")
   # Functions
   include("functions/adjointDifferentials.jl")
   include("functions/costFunctions.jl")
@@ -34,8 +36,6 @@ module Manopt
   include("functions/gradients.jl")
   include("functions/jacobiFields.jl")
   include("functions/proximalMaps.jl")
-  # ...corresponding plans consisting of problems and options
-  include("plans/plan.jl")
   # ...solvers (1) general framework
   include("solvers/solver.jl")
   # ...solvers (2) specific solvers
@@ -48,7 +48,6 @@ module Manopt
   include("solvers/recordSolver.jl")
   # algorithms
   include("algorithms/basicAlgorithms.jl")
-  include("algorithms/lineSearch.jl")
   # Plots
   include("plots/SpherePlots.jl")
   # helpers

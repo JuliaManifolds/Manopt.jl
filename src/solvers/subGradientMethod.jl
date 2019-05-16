@@ -18,29 +18,28 @@ the argument `∂F` should always return _one_ element from the subgradient.
 * `x` : an initial value $x\in\mathcal M$
 
 # Optional
-* `debug` : (off) a tuple `(f,p,v)` of a DebugFunction `f`
-  that is called with its settings dictionary `p` and a verbosity `v`. Existing
-  fields of `p` are updated during the iteration from (iter, x, xnew, stepsize).
-* `stepsize` : ([`DecreasingStepsize`](@ref)`(1.)`) specify a stepsize,
-  consisting of a `Tuple{Function,`[`StepsizeOptions`](@ref)`}` where the first
-  maps `(p,o,sO)->s`, i.e. a [`GradientProblem`](@ref)` p`, its [`Options`](@ref)` o`
-  and the [`StepsizeOptions`](@ref)` sO` to a new step size, where the second
-  tuple element are the initial values for `sO`.
-* `retraction` : (`exp`) a retraction(M,x,ξ) to use.
-* `stoppingCriterion` : ([`stopAtIteration`](@ref)`(5000)`) a function indicating when to stop.
+* `stepsize` : ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
+  functor.
+* `retraction` : (`exp`) a `retraction(M,x,ξ)` to use.
+* `stoppingCriterion` : (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+
+and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
 # Output
-* `xOpt` – the resulting (approximately critical) point of subgradientDescent
+* `xOpt` – the resulting (approximately critical) point of gradientDescent
+* `record` - if activated (using the `record` key, see [`RecordOptions`](@ref)
+  an array containing the recorded values.
 """
 function subGradientMethod(M::mT,
         F::Function, ∂F::Function, x::MP;
         retraction::Function = exp,
-        stepsize::Tuple{Function,StepsizeOptions} = DecreasingStepsize(1.),
-        stoppingCriterion::Function = stopAtIteration(5000),
+        stepsize::Stepsize = DecreasingStepsize(1.),
+        stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
         kwargs... #especially may contain debug
     ) where {mT <: Manifold, MP <: MPoint}
     p = SubGradientProblem(M,F,∂F)
-    o = SubGradientMethodOptions(x,stoppingCriterion,retraction,stepsize[1],stepsize[2],)
+    o = SubGradientMethodOptions(x,stoppingCriterion,retraction,stepsize)
 
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
@@ -57,9 +56,8 @@ end
 function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     o.xLast = o.x
     o.subGradient = getSubGradient(p,o.x)
-    s = getStepsize(p,o,iter,o.x,o.subGradient)
+    s = getStepsize(p,o,iter)
     o.x = o.retraction(p.M,o.x,-o.stepsize*o.subGradient)
-    (stop, reason) = evaluateStoppingCriterion(p,o,iter,o.subGradient)
     if getCost(p,o.x) < getCost(p,o.xOptimal)
         o.xOptimal = o.x
     end

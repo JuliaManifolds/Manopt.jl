@@ -1,7 +1,7 @@
 #
 # A simple steepest descent algorithm implementation
 #
-export initializeSolver!, doSolverStep!, evaluateStoppingCriterion, getSolverResult
+export initializeSolver!, doSolverStep!, getSolverResult
 export steepestDescent
 @doc doc"""
     steepestDescent(M, F, ∇F, x)
@@ -15,14 +15,11 @@ different choices of $s_k$ available (see `stepsize` option below).
 * `x` : an initial value $x\in\mathcal M$
 
 # Optional
-* `stepsize` : ([`ConstantStepsize`](@ref)`(1.)`) specify a stepsize,
-  consisting of a `Tuple{Function,`[`StepsizeOptions`](@ref)`}` where the first
-  maps `(p,o,sO)->s`, i.e. a [`GradientProblem`](@ref)` p`, its [`Options`](@ref)` o`
-  and the [`StepsizeOptions`](@ref)` sO` to a new step size, where the second
-  tuple element are the initial values for `sO`.
+* `stepsize` : ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
+  functor.
 * `retraction` : (`exp`) a `retraction(M,x,ξ)` to use.
-* `stoppingCriterion` : (`[`stopWhenAny`](@ref)`(`[`stopAtIteration`](@ref)`(200), `[`stopGradientNormLess`](@ref)`(10.0^-8))`)
-  a function indicating when to stop.
+* `stoppingCriterion` : (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
@@ -33,13 +30,13 @@ and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 """
 function steepestDescent(M::mT,
     F::Function, ∇F::Function, x::MP;
-    stepsize::Tuple{Function,StepsizeOptions} = ConstantStepsize(1.),
+    stepsize::Stepsize = ConstantStepsize(1.0),
     retraction::Function = exp,
-    stoppingCriterion::Function = stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8)),
+    stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenGradientNormLess(10.0^-8)),
     kwargs... #collect rest
   ) where {mT <: Manifold, MP <: MPoint}
   p = GradientProblem(M,F,∇F)
-  o = GradientDescentOptions(x,stoppingCriterion,stepsize[1],stepsize[2],retraction)
+  o = GradientDescentOptions(x,stoppingCriterion,stepsize,retraction)
 
   o = decorateOptions(o; kwargs...)
   resultO = solve(p,o)
@@ -52,23 +49,13 @@ end
 # Solver functions
 #
 function initializeSolver!(p::P,o::O) where {P <: GradientProblem, O <: GradientDescentOptions}
-    o.xOld = o.x
     o.∇ = zeroTVector(p.M,o.x)
-    o.∇Old = o.∇
-    o.stepsize = getInitialStepsize(p,o)
-    o.stepsizeOld = o.stepsize
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: GradientProblem, O <: GradientDescentOptions}
-    # save last
-    o.xOld = o.x
-    o.∇Old = o.∇
-    o.stepsizeOld = o.stepsize
     # update
     o.∇ = getGradient(p,o.x)
-    o.stepsize = getStepsize(p,o)
-    o.x = o.retraction(p.M, o.x , -o.stepsize * o.∇)
+    o.x = o.retraction(p.M, o.x , -getStepsize!(p,o,iter) * o.∇)
 end
-evaluateStoppingCriterion(p::P,o::O,iter) where {P <: GradientProblem, O <: GradientDescentOptions} = o.stoppingCriterion(p,o,iter)
 getSolverResult(p::P,o::O) where {P <: GradientProblem, O <: GradientDescentOptions} = o.x
 
 #
@@ -79,6 +66,71 @@ recordType(p::P,o::O,::Val{:Stepsize}) where {P <: GradientProblem, O <: Gradien
 record(p::P,o::O,::Val{:Gradient},iter) where {P <: GradientProblem, O <: GradientDescentOptions}= o.∇
 recordType(p::P,o::O,::Val{:Gradient}) where {P <: GradientProblem, O <: GradientDescentOptions} = typeof(o.∇)
 
-debug(p::P,o::O,::Val{:Gradient},iter, out::IO=Base.stdout) where {P <: GradientProblem, O <: GradientDescentOptions} = print(out,"Gradient: $(o.∇)")
-debug(p::P,o::O,::Val{:GradientNorm},iter, out::IO=Base.stdout) where {P <: GradientProblem, O <: GradientDescentOptions} = print(out,"Norm of gradient: $(norm(p.M,o.x,o.∇))")
-debug(p::P,o::O,::Val{:Stepsize},iter, out::IO=Base.stdout) where {P <: GradientProblem, O <: GradientDescentOptions} = print(out,"Stepsize: $(o.stepsize)")
+@doc doc"""
+    DebugGradient <: DebugAction
+
+debug for the gradient evaluated at the current iterate
+
+# Constructors
+    DebugGradient([long=false,p=print])
+
+display the short (`false`) or long (`true`) default text for the gradient.
+
+    DebugGradient(prefix[, p=print])
+
+display the a `prefix` in front of the gradient.
+"""
+mutable struct DebugGradient <: DebugAction
+    print::Function
+    prefix::String
+    DebugGradientNorm(long::Bool=false,print::Function=print) = new(print,
+        long ? "Gradient: " : "∇F(x):")
+    DebugGradientNorm(prefix::String,print::Function=print) = new(print,prefix)
+end
+(d::DebugGradient)(p::ProximalProblem,o::CyclicProximalPointOptions,i::Int) = d.print((i>=0) ? d.prefix*""*string(getproperty(o,:∇)) : "")
+
+@doc doc"""
+    DebugGradientNorm <: DebugAction
+
+debug for gradient evaluated at the current iterate.
+
+# Constructors
+    DebugGradientNorm([long=false,p=print])
+
+display the short (`false`) or long (`true`) default text for the gradient norm.
+
+    DebugGradientNorm(prefix[, p=print])
+
+display the a `prefix` in front of the gradientnorm.
+"""
+mutable struct DebugGradientNorm <: DebugAction
+    print::Function
+    prefix::String
+    DebugGradientNorm(long::Bool=false,print::Function=print) = new(print,
+        long ? "Norm of the Gradient: " : "|∇F(x)|:")
+    DebugGradientNorm(prefix::String,print::Function=print) = new(print,prefix)
+end
+(d::DebugGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>=0) ? d.prefix*"$(norm(p.M,o.x,o.∇))" : "")
+
+@doc doc"""
+    DebugStepsize <: DebugAction
+
+debug for the current step size.
+
+# Constructors
+    DebugStepsize([long=false,p=print])
+
+display the short (`false`) or long (`true`) default text for the step size.
+
+    DebugStepsize(prefix[, p=print])
+
+display the a `prefix` in front of the step size.
+"""
+mutable struct DebugStepsize <: DebugAction
+    print::Function
+    prefix::String
+    DebugGradientNorm(long::Bool=false,print::Function=print) = new(print,
+        long ? "step size:" : "s:")
+    DebugGradientNorm(prefix::String,print::Function=print) = new(print,prefix)
+end
+(d::DebugStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>0) ? d.prefix*"$(getLastStepsize(p,o,i))" : "")

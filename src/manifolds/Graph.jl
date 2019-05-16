@@ -34,7 +34,7 @@ struct Graph{mT<:Manifold} <: Manifold
   name::String
   manifold::mT
   dimension::Int
-  addjacency::Mat where {Mat <: AbstractMatrix}
+  adjacency::Mat where {Mat <: AbstractMatrix}
   isDirected::Bool
   abbreviation::String
   Graph{mT}(M::mT, adjacency::Mat where {Mat <: AbstractMatrix}, isDir::Bool=false) where {mT <: Manifold} = new(string("A Graph Manifold of ",mv.name,"."),
@@ -92,20 +92,6 @@ getValue(ξ::GraphEdgeTVector) = ξ.value
 
 # Functions
 # ---
-"""
-    addNoise(M,x,δ)
-
-computes a vectorized version of addNoise, and returns the noisy version of the
-[`GraphVertexPoint`](@ref) `x` on the [`Graph`](@ref) (vertex)
-[`Manifold`](@ref) `M`.
-"""
-addNoise(M::Graph, x::GraphVertexPoint,σ) = GraphVertexPoint(addNoise.(M.manifold,getValue(x),σ))
-"""
-    addNoise(M,x,δ)
-
-computes a vectorized version of addNoise, and returns the noisy [`GraphEdgePoint`](@ref).
-"""
-addNoise(M::Graph, x::GraphEdgePoint,σ) = GraphEdgePoint(addNoise.(M.manifold,getValue(x),σ))
 """
     distance(M,x,y)
 
@@ -188,10 +174,33 @@ the corresponding [`GraphVertexTVector`](@ref).
 """
 parallelTransport(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint, ξ::GraphEdgeTVector) = GraphVertexTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
 """
-    typicalDistance(M)
-returns the typical distance on the [`Graph`](@ref) vertex manifold `M`, based
-on the typical distance of the base.
+    randomMPoint(M,[,:Vertex])
+
+compute a random point on the [`Graph`](@ref) manifold, where by default a point
+on the vertices is produces, use `:Edge` to generate a `GraphEdgePoint`.
+Further optional parameters are passed on to the element wise random point function.
 """
+randomMPoint(M::Graph,::Val{:Vertex},options...) = GraphVertexPoint(
+    [ randomMPoint( M.manifold, options...) for i=1:size(M.adjacency,1) ]
+)
+randomMPoint(M::Graph,::Val{:Edge},options...) =  GraphEdgePoint(
+    [ randomMPoint( M.manifold, options...) for i=1:sum( M.adjacency .> 0) ]
+)
+
+"""
+    randomTVector(M,x)
+
+compute a random [`GraphEdgeTVector`](@ref) to the [`GraphVertexPoint`](@ref) `x`
+on the [`Graph`](@ref) manifold `M` by calling the inner random vector generation
+for every edge
+"""
+randomTVector(M::Graph, x::GraphVertexPoint,options...) = GraphVertexTVector(
+    [
+        (M.adjacency[i,j] > 0) ? M.randomTVector(M.manifold, getValue(x)[i],options...) : zeroTVector(M,getValue(x)[i])
+        for i = 1:size(M.adjacency,1) for j=1:size(M.adjacency,2)        
+    ]
+)
+
 typicalDistance(M::Graph) = sqrt( size(M.adjacency,1) ) * typicalDistance(M.manifold);
 @doc doc"""
     ξ = zeroTVector(M,x)

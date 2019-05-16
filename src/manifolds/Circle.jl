@@ -62,15 +62,6 @@ getValue(ξ::S1TVector) = ξ.value
 
 # Functions
 # ---
-
-@doc doc"""
-    addNoise(M,x,σ)
-add noise to cyclic data, i.e. wrapped Gaussian noise, $(x+n)_{2\pi} $,
-where $n\sim \mathcal N(0,\sigma)$ is a zero-mean Gaussian random variable
-of standard deviation `σ`
-and $(\cdot)_{2\pi}$ is the symmetric remainder modulo $2\pi$, see [`symRem`](@ref).
-"""
-addNoise(M::Circle, x::S1Point,σ::Real) = S1Point( symRem(getValue(x)+σ*randn()) )
 @doc doc"""
     distance(M,x,y)
 the distance of two cyclic data items is given by $\lvert (x-y)_{2\pi} \rvert $,
@@ -142,20 +133,22 @@ Since the [`Sphere`](@ref) `M` is represented in angles this is the identity.
 """
 parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
 @doc doc"""
-    randomMPoint(M)
+    randomMPoint(M,:uniform)
 
 return a random point on the [`Circle`](@ref) $\mathbb S^1$ by picking a random
 element from $[-\pi,\pi).
 """
-randomMPoint(M::Circle) = S1Point((rand(Float64)-0.5)*2*π)
+randomMPoint(M::Circle,σ::Real=1.0) = S1Point((rand()-0.5)*2*π)
+
+randomTVector(M::Circle, x::S1Point) = randomTVector(M,x,:Gaussian)
 @doc doc"""
-    randomTVector(M,x)
+    randomTVector(M,x,:Gaussian[, σ=1.0])
 
 returns a random tangent vector from the tangent space of the [`S1Point`](@ref)
  `x` on the [`Circle`](@ref) $\mathbb S^1$ by using a normal distribution with
 mean 0 and standard deviation 1.
 """
-randomTVector(M::Circle, x::S1Point) = S1TVector(randn())
+randomTVector(M::Circle, x::S1Point, ::Val{:Gaussian}, σ::Real=1.0) = S1TVector(σ*randn())
 
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)

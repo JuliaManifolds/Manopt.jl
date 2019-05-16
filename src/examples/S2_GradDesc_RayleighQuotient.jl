@@ -21,7 +21,7 @@ x0 = SnPoint( 1/sqrt(2.)*[ -1. , 1. ] );
 
 eV = steepestDescent(M, Rayleigh, ∇Rayleigh, x0;
     stepsize = ConstantStepsize(π/64),
-    stoppingCriterion = stopWhenAny( stopAtIteration(50), stopGradientNormLess(10.0^-8) ),
+    stoppingCriterion = stopWhenAny( stopAfterIteration(50), stopWhenGradientNormLess(10.0^-8) ),
     debug= [:Iteration, :Divider, :Iterate, :Divider, :GradientNorm, :Divider, :Stepsize, :Divider, :Cost, :Newline, :stoppingCriterion],
 );
 

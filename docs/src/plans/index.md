@@ -41,25 +41,9 @@ Modules = [Manopt]
 Pages = ["plans/debugOptions.jl"]
 Order = [:type, :function]
 ```
-
 see [DebugSolver](@ref DebugSolver) for details on the decorated solver.
 
-For arbitrary [`Problem`](@ref)s and [`Options`](@ref) the following Symbols, i.e. types of debug, are automatically available.
-
-* `:Change` - print the last change in the variable
-* `:Cost` - print the cost function evaluated at the current iterate
-* `:InitialCost` - print the initial cost function
-* `:FinalCost` - print the final cost function. This is explicitly called after the last iteration if activated.
-* `:Divider` – print a divider `" |  "` between the other debugs.
-* `:Iteration` – print the current iteration number
-* `:Iterate` – print the current iterate `o.x`
-* `:Newline` – print a newline character.
-* `:Solver` - print status of the solver
-* `:StoppingCriterion` - print status of the stopping criterion
-
-These debug symbols assume, that `p.M` is the manifold the optimization problem is defined on, `o.x` is the current iterate, `o.xOld` is the last iterates value, `getCost(p,x)` evaluates the cost function associated to the [`Problem`](@ref) `p`. Both `:Solver` and `:StoppingCriterion` by default print a `String` they get passed to, i.e. to print status of the solver or the string the `StoppingCriterion` provide.
-
-For further `:Symbols` that add additional debug print capabilities, see the specific solvers and their plans.
+Further specific [`DebugAction`](@ref)s can be found at the specific Options.
 
 #### [Record Options](@id RecordOptons)
 ```@autodocs
@@ -71,6 +55,7 @@ Order = [:type, :function]
 Your own `:Symbol` has to provide both the [`record`](@ref) and the [`recordType`](@ref) function. The following records are available by default assuming that `p.M` denotes the manifold we optimize on,
 `o.x`, `o.xOld` are the current and last iterate. For each symbol the
 type is given in brackets.
+
 * `:Iteration` (`Int`) – the current iteration number
 * `:Iterate` (`typeof(o.x)` ) – the current iterate, i.e. the type is a `<: MPoint`
 * `:Change` (`Float64`) the last change
@@ -81,14 +66,17 @@ These records assume that `o.x`,`o.xOld` are the current and last iterate within
 For further `:Symbols` providing special recording capabilities of special solvers, see
 the details in the specific solvers.
 
-### [Stepsize and Linesearch Options](@id StepsizeOptions)
-
-using the following `<:Options`.
+### [Stepsize and Linesearch](@id Stepsize)
+The step size determination is implemented as a `Functor` based on
 ```@docs
-StepsizeOptions
-SimpleStepsizeOptions
-LinesearchOptions
-ArmijoLinesearchOptions
+Stepsize
+```
+in general there are
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["plans/stepsize.jl"]
+Order = [:type]
 ```
 
 ## Problems
@@ -97,7 +85,6 @@ implementation to access the cost
 ```@docs
 Problem
 getCost
-evaluateStoppingCriterion
 ```
 
 For any algorithm that involves a cyclic evalutaion, e.g.
@@ -114,23 +101,6 @@ FixedRandomEvalOrder
 GradientProblem
 getGradient
 ```
-Whenever we have a problem involving a gradient, we can employ a line search,
-which is itself not a complete solver but organized in the Algorithms section.
-```@docs
-ArmijoLineSearch
-getInitialStepsize
-getStepsize
-```
-In order to get a step size rule running, the algorithms require both a function
-performing the line search and options for the line search, see [`LinesearchOptions`](@ref).
-
-There are short hands available, namely
-```@docs
-ConstantStepsize
-DecreasingStepsize
-Armijo
-```
-
 
 ## Subgradient based problem
 ```@docs
@@ -150,10 +120,4 @@ getHessian
 ProximalProblem
 getProximalMap
 getProximalMaps
-```
-
-serves as a common base type for the following
-```@docs
-SimpleDirectionUpdateOptions
-HessianDirectionUpdateOptions
 ```

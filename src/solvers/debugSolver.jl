@@ -9,45 +9,27 @@
 #
 # This file introduces fallbacks for not yet implemented parts and the general
 # function to run the solver
-export initializeSolver!, doSolverStep!, evaluateStoppingCriterion, getSolverResult
+import Base: vcat
+export initializeSolver!, doSolverStep!, getSolverResult, stopSolver!
 """
     initializeSolver!(p,o)
 Initialize the solver to the optimization [`Problem`](@ref) by initializing all
 values in the [`DebugOptions`](@ref)` o`.
 """
 function initializeSolver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
-    sig1 = string( typeof(p) )
-    sig2 = string( typeof( getOptions(o) ) )
-    debug(p,o,:Solver,"Starting solver for the $sig1 and $sig2.\n");
-    debug(p,o,:InitialCost,0);
     initializeSolver!(p,o.options)
+    get(o.debugDictionary,:Init,DebugDivider(""))(p,getOptions(o),0)
+    get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),0)
 end
 """
     doSolverStep!(p,o,iter)
 Do one iteration step (the `iter`th) for [`Problem`](@ref)` p` by modifying
 the values in the [`Options`](@ref)` o.options` and print `Debug`.
 """
-function doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: DebugOptions}
-    doSolverStep!(p,o.options,iter)
-    for dbgType ∈ filter(e -> e ∉ [:stoppingCriterion, :Solver, :InitialCost, :FinalCost], o.debugActivated)
-        debug(p,o,dbgType,iter)
-    end
-    stop, reason = evaluateStoppingCriterion(p,o,iter)
-    if stop
-        sig1 = string( typeof(p) )
-        sig2 = string( typeof( getOptions(o) ) )
-        debug(p,o,:stoppingCriterion,reason);
-        debug(p,o,:FinalCost,iter);
-        debug(p,o,:Solver,"Finished solver for the $sig1 and $sig2.\n");
-    end    
-end
-"""
-    evaluateStoppingCriterion(p,o,iter)
-Evaluate, whether the stopping criterion for the [`Problem`](@ref)` p`
-and the [`Options`](@ref)` o` after `iter`th iteration is met.
-"""
-function evaluateStoppingCriterion(p::P,o::O, iter) where {P <: Problem, O <: DebugOptions}
-    return evaluateStoppingCriterion(p, o.options,iter)
+function doSolverStep!(p::P,o::O, i) where {P <: Problem, O <: DebugOptions}
+    doSolverStep!(p,o.options,i)
+    get(o.debugDictionary,:Step,DebugDivider(""))(p,getOptions(o),i)
+    get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),i)
 end
 """
     getResult(p,o)
@@ -56,4 +38,18 @@ Return the final result after all iterations that is stored within the
 """
 function getSolverResult(p::P,o::O) where {P <: Problem, O <: DebugOptions}
     return getSolverResult(p, o.options)
+end
+"""
+    stopSolver!(p,o,i)
+
+determine whether the solver for [`Problem`](@ref) `p` and the [`DebugOptions`](@ref) `o`
+should stop at iteration `i`. If so, print all debug from `:All` and `:Final`.
+"""
+function stopSolver!(p::P,o::O,i::Int) where {P <: Problem, O <: DebugOptions}
+    s = stopSolver!(p,o.options,i)
+    if s
+        get(o.debugDictionary,:Stop,DebugDivider(""))(p,getOptions(o),i)
+        get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),i)
+    end
+    return s
 end
