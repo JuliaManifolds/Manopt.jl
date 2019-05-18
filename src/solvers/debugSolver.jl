@@ -18,7 +18,7 @@ values in the [`DebugOptions`](@ref)` o`.
 """
 function initializeSolver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
     initializeSolver!(p,o.options)
-    get(o.debugDictionary,:Init,DebugDivider(""))(p,getOptions(o),0)
+    get(o.debugDictionary,:Start,DebugDivider(""))(p,getOptions(o),0)
     get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),0)
 end
 """
@@ -32,7 +32,7 @@ function doSolverStep!(p::P,o::O, i) where {P <: Problem, O <: DebugOptions}
     get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),i)
 end
 """
-    getResult(p,o)
+    getSolverResult(p,o)
 Return the final result after all iterations that is stored within the
 (modified during the iterations) [`Options`](@ref)` o`.
 """

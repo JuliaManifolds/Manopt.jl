@@ -8,8 +8,14 @@ cyclicProximalPoint
 CyclicProximalPointOptions
 ```
 
-## Additionally Available Debug
+## Specific Debug Functions
 
 ```@docs
 DebugProximalParameter
+```
+
+## Specific Record Functions
+
+```@docs
+RecordProximalParameter
 ```

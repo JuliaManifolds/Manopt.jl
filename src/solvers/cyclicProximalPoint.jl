@@ -42,12 +42,10 @@ function cyclicProximalPoint(M::Mc,
     return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::ProximalProblem, o::CyclicProximalPointOptions)
-    o.xOld = o.x
     c = length(p.proximalMaps)
     o.order = updateOrder(c,0,[1:c...],o.orderType)
 end
 function doSolverStep!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
-    o.xOld = o.x
     c = length(p.proximalMaps)
     λi = o.λ(iter)
     for k=o.order

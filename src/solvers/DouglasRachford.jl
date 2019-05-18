@@ -43,7 +43,8 @@ and the ones that are passed to [`decorateOptions`](@ref) for the decorators.
   an array containing the recorded values.
 """
 function DouglasRachford(M::mT, F::Function, x::P, proxes::Array{Function,N} where N;
-    λ::Function = (iter) -> 1.0, α::Function = (iter) -> 0.9,
+    λ::Function = (iter) -> 1.0,
+    α::Function = (iter) -> 0.9,
     R = reflection,
     stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenChangeLess(10.0^-5)),
     kwargs... #especially may contain decorator options
@@ -73,18 +74,15 @@ function DouglasRachford(M::mT, F::Function, x::P, proxes::Array{Function,N} whe
     return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::ProximalProblem,o::DouglasRachfordOptions)
-    o.xOld = o.x
     o.mean = o.x[1];
-    o.meanOld = o.mean
 end
 function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
-    o.meanOld = o.mean
-    # first prox or parallel Proxes
+
+    xOld = x
     pP = getProximalMap(p,o.λ(iter),o.x,1)
     o.x = o.R(p.M,pP,o.x);
     # relaxation
-    o.x = geodesic(p.M,o.xOld,o.x,o.α(iter))
-    o.xOld = o.x
+    o.x = geodesic(p.M,xOld,o.x,o.α(iter))
     # second prox: Mean in parallel
     pP = getProximalMap(p,o.λ(iter),o.x,2)
     o.mean = pP[1] # store mean
@@ -94,10 +92,3 @@ function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
 function getSolverResult(p::ProximalProblem,o::DouglasRachfordOptions)
     return o.mean
 end
-
-record(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Iterate}, iter::Int) = o.mean
-recordType(o::DouglasRachfordOptions,::Val{:Iterate}) = typeof(o.mean)
-record(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,::Val{:Cost}, iter::Int) = getCost(p,o.mean)
-recordType(o::DouglasRachfordOptions,::Val{:Cost}) = Float64
-record(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions, ::Val{:Change}, iter::Int) = distance(p.M.manifold, o.mean, o.meanOld)
-recordType(o::DouglasRachfordOptions,::Val{:Change}) = Float64

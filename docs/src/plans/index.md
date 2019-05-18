@@ -34,6 +34,21 @@ IsOptionsDecorator
 decorateOptions
 ```
 
+In general dedcorators often perform actions so we introduce
+
+```@docs
+Action
+```
+
+as well as a helper for storing values using keys, i.e.
+
+```@docs
+StoreOptionsAction
+getStorage
+hasStorage
+updateStorage!
+```
+
 #### [Debug Options](@id DebugOptions)
 
 ```@autodocs
@@ -41,30 +56,29 @@ Modules = [Manopt]
 Pages = ["plans/debugOptions.jl"]
 Order = [:type, :function]
 ```
+
 see [DebugSolver](@ref DebugSolver) for details on the decorated solver.
 
 Further specific [`DebugAction`](@ref)s can be found at the specific Options.
 
 #### [Record Options](@id RecordOptons)
+
 ```@autodocs
 Modules = [Manopt]
 Pages = ["plans/recordOptions.jl"]
 Order = [:type, :function]
+Private = false
 ```
 
-Your own `:Symbol` has to provide both the [`record`](@ref) and the [`recordType`](@ref) function. The following records are available by default assuming that `p.M` denotes the manifold we optimize on,
-`o.x`, `o.xOld` are the current and last iterate. For each symbol the
-type is given in brackets.
+see [RecordSolver](@ref RecordSolver) for details on the decorated solver.
 
-* `:Iteration` (`Int`) – the current iteration number
-* `:Iterate` (`typeof(o.x)` ) – the current iterate, i.e. the type is a `<: MPoint`
-* `:Change` (`Float64`) the last change
-* `:Cost` (`Float64`) the cost function of the current iterate.
+Further specific [`RecordAction`](@ref)s can be found at the specific Options.
 
-These records assume that `o.x`,`o.xOld` are the current and last iterate within the current [`Options`](@ref) decorated, respectively, and that `p.M` refers to the [`Manifold`](@ref) the [`Problem`](@ref) is formulated on. 
+there's one internal helper that might be useful for you own actions, namely
 
-For further `:Symbols` providing special recording capabilities of special solvers, see
-the details in the specific solvers.
+```@docs
+recordOrReset!
+```
 
 ### [Stepsize and Linesearch](@id Stepsize)
 The step size determination is implemented as a `Functor` based on

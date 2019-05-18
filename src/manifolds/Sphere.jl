@@ -238,7 +238,7 @@ space of [`SnPoint`](@ref) `x` is on the [`Sphere`](@ref) `M`$=\mathbb S^n$,
 i.e. that all three lengths are correct and $x^\mathrm{T}\xi = 0$.
 """
 function validateTVector(M::Sphere,x::SnPoint,ξ::SnTVector)
-  if (length(getValue(x)) ≠ length(getValue(ξ))) || (length(getValue(x)) ≠ M.dimension)
+  if (length(getValue(x)) ≠ length(getValue(ξ))) || (length(getValue(x)) ≠ M.dimension+1)
     throw( ErrorException(
       "The three dimensions of the $(M.name), the point x ($(length(getValue(x)))), and the tangent vector ($(length(getValue(ξ)))) don't match."
     ))

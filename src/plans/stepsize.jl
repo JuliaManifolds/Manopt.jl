@@ -145,5 +145,6 @@ getInitialStepsize(a::ArmijoLinesearch) = a.initialStepsize
 
 @traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; IsOptionsDecorator{O}} = getLastStepsize(p, o.options,vars...)
 @traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; !IsOptionsDecorator{O}} = getLastStepsize(p,o,o.stepsize,vars...)
-getLastStepsize(p,o,s::S,vars) where {S <: Stepsize} = s(p,o,vars...)
-getLastStepsize(p,o,s::ArmijoLinesearch,vars...)  = s.stepsizeOld
+
+getLastStepsize(p::P,o::O,s::S,vars...) where {P <: Problem, O <: Options,S <: Stepsize} = s(p,o,vars...)
+getLastStepsize(p::P,o::O,s::ArmijoLinesearch,vars...) where {P <: Problem, O <: Options} = s.stepsizeOld

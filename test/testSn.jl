@@ -1,7 +1,7 @@
 @testset "The 2-Sphere Sphere(2)" begin
-  x = SnPoint([1,0,0])
-  y = SnPoint([0,1,0])
-  z = SnPoint([0,0,1])
+  x = SnPoint([1.,0.,0.])
+  y = SnPoint([0.,1.,0.])
+  z = SnPoint([0.,0.,1.])
   M = Sphere(2)
   ξ = log(M,x,y)
   y2 = exp(M,x,ξ)

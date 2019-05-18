@@ -1,138 +1,68 @@
 export RecordOptions
-export record!, record, getRecord, getLastRecord, recordType, hasRecord
+export RecordAction
+export RecordGroup, RecordEvery
+export RecordChange, RecordCost, RecordIterate, RecordIteration
+
+export getRecord, hasRecord
+
 #
 #
 # record Options Decorator
 #
 #
 @doc doc"""
+    RecordAction
+
+A `RecordAction` is a small functor to record values.
+The usual call is given by `(p,o,i) -> s` that performs the record based on
+a [`Problem`](@ref) `p`, [`Options`](@ref) `o` and the current iterate `i`.
+
+By convention `i<=0` is interpreted as "For Initialization only", i.e. only
+initialize internal values, but not trigger any record
+
+# Fields (assumed by subtypes to exist)
+* `recordedValues` an `Array` of the recorded values.
+""" 
+abstract type RecordAction <: Action end
+
+@doc doc"""
     RecordOptions <: Options
 
-The record options append to any options a record functionality, i.e. they act
-as a decorator pattern. The record, similar to [`DebugOptions`](@ref), keeps
-track of a dictionary of values and only these are recorded during iterations.
+append to any [`Options`](@ref) the decorator with record functionality,
+Internally a `Dict`ionary is kept that stores a [`RecordAction`](@ref) for
+several occasions using a `Symbol` as reference.
+The default occasion is `:All` and for example solvers join this field with
+`:Start`, `:Step` and `:Stop` at the beginning, every iteration or the
+end of the algorithm, respectively
+
 The original options can still be accessed using the [`getOptions`](@ref) function.
-
-The amount of data the `recordOptions` store can be determined by specifying
-fields that should be recorded, adressed by symbols within `recordKeys`. for
-any such symbol two functions have to be implemented, here illustrated for `:Iterate`
-- [`record`](@ref)`(p::P,o::O,::Val{:Iterate},iter) where {P <: `[`Problem`](@ref)`, O <: `[`Options`](@ref)`} = `[`getOptions`](@ref)(o).x`
-- [`recordType`](@ref)`(o::O, ::Val{:Iterate}) where {P <: `[`Problem`](@ref)`, O <: `[`Options`](@ref)} = typeof(`[`getOptions`](@ref)`(o).x)
-
-the first one is called every iteration and returns the value to be recorded,
-the second one provides the `DataType` of the recorded value in order to initialize
-the array of records. You can hence record anything you store between iterations
-(i.e. in the `Options` of an algorithm.)
 
 # Fields
 * `options` – the options that are extended by debug information
-* `recordKeys` - a tuple of `Symbols` which values to store.
-* `recordedValues` – an array of `Tuple` where the entries of that tuple are the `typeof`s,
-belonging to the `recordedKeys` (provided by [`recordType`](@ref))
+* `recordDictionary` – a `Dict{Symbol,RecordAction}` to keep track of all
+  different recorded values
 
-# Constructor
-`recordOptions(o,r)`, where `o` are the options to be decorated and `r` is the
-`NTuple` of `Symbols` what to record.
+# Constructors
+    RecordOptions(o,dR)
+
+construct record decorated [`Options`](@ref), where `dR` can be
+
+* a [`RecordAction`](@ref), then it is stored within the dictionary at `:All`
+* an `Array` of [`RecordAction`](@ref)s, then it is stored as a
+  `recordDictionary`(@ref) within the dictionary at `:All`.
+* a `Dict{Symbol,RecordAction}`.
 """
-mutable struct RecordOptions{T,N} <: Options where {T,N}
-  options::O where {O<: Options}
-  recordKeys::NTuple{N,Symbol}
-  recordedValues::Array{T,1}
-  RecordOptions{T,N}(
-    o::Op,
-    r::NTuple{N,Symbol},
-  ) where {Op <: Options,N,T} = 
-    new(o,r,Array{T,1}(undef,0))
+mutable struct RecordOptions{O <: Options} <: Options
+    options::O
+    recordDictionary::Dict{Symbol, <: RecordAction}
+    RecordOptions{O}(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = new(o,dR)
 end
-RecordOptions(o::Op, r::NTuple{N,Symbol}) where {Op <: Options,N} = 
-  RecordOptions{Tuple{[ recordType(getOptions(o),Val(v)) for v in r]...},N}(o,r)
+RecordOptions(o::O, dR::D) where {O <: Options, D <: RecordAction} = RecordOptions{O}(o,Dict(:All => dR))
+RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = RecordOptions{O}(o,Dict(:All => RecordGroup(dR)))
+RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o,dR)
 
 @traitimpl IsOptionsDecorator{RecordOptions}
 
-"""
-    record!(p,o,iter)
-
-perform one record for the `iter`th iteration of the solver for
-[`Problem`](@ref)` p` and [`RecordOptions`](@ref)` o`, where the latter contains
-the current state after that iteration internally.
-"""
-function record!(p::P, oR::RecordOptions, iter::Int) where {P <: Problem}
-  values = Tuple(
-    [record(p,getOptions(oR.options),Val(recordKey),iter)
-      for recordKey in oR.recordKeys]
-  )
-  push!(oR.recordedValues,values)
-end
-doc"""
-    getLastRecord(o,key)
-
-returns the last recorded data item with key `key` from the records array of the
-[`RecordOptions`](@ref)` o`, i.e. the final result with all its (recorded)
-metadata.
-"""
-function getLastRecord(o::RecordOptions, key::Symbol)
-  if key in o.recordKeys
-    pos = findall(x->x==key, o.recordKeys)[1] # find frst position
-    return o.recordedValues[end][pos]
-  else
-    throw(
-      ErrorException("The key \"$(key)\" is not among the recorded keys of these Record Options.")
-    )
-  end
-end
-@traitfn getLastRecord(o::O,k) where {O <: Options; IsOptionsDecorator{O}} = getLastRecord(o.options,k)
-@traitfn getLastRecord(o::O,k) where {O <: Options; !IsOptionsDecorator{O}} = throw( ErrorException(" None of the decorators is a options Recorder"))
-
-function getRecord(o::RecordOptions, key::Symbol,iter)
-  if iter > length(o.recordedValues)
-    throw(
-      ErrorException("No iterate $(iter) existst in therse records.")
-    )
-  end
-  if key in o.recordKeys
-     pos = findall(x->x==key, o.recordKeys)[1] # find frst position
-    return o.recordedValues[iter][pos]
-  else
-    throw(
-      ErrorException("The key \"$(key)\" is not among the recorded keys of these Record Options.")
-    )
-  end
-end
-@traitfn getRecord(o::O,k,iter) where {O <: Options; IsOptionsDecorator{O}} = getRecord(o.options,k,iter)
-@traitfn getRecord(o::O,k,iter) where {O <: Options; !IsOptionsDecorator{O}} = throw( ErrorException(" None of the decorators is a options Recorder"))
-
-doc"""
-    getRecord(o,key)
-get the record of the value recorded during the iterations under the key `key`
-in the [`RecordOptions`](@ref)` o`.
-"""
-function getRecord(o::RecordOptions, key::Symbol)
-  if key in o.recordKeys
-    pos = findall(x->x==key, o.recordKeys)[1] # find frst position
-    return [ x[pos] for x in o.recordedValues ]
-  else
-    throw(
-      ErrorException("The key \"$(key)\" is not among the recorded keys of these Record Options.")
-    )
-  end
-end
-@traitfn getRecord(o::O, key::Symbol) where {O <: Options; IsOptionsDecorator{O}} = getRecord(o.options, key::Symbol)
-@traitfn getRecord(o::O, key::Symbol) where {O <: Options; !IsOptionsDecorator{O}} = throw(ErrorException(
-    "No record decorator found within the decorators of $(typeof(o))."
-))
-
-"""
-    getRecord(o)
-
-Return the array of tuples with the recorded values within the [`Options`]` o`,
-if one of its decorators is a [`RecordOptions`](@ref).
-"""
-getRecord(o::RecordOptions) = o.recordedValues
-# decorated ones: recursive search
-@traitfn getRecord(o::O) where {O <: Options; IsOptionsDecorator{O}} = getRecord(o.options)
-@traitfn getRecord(o::O) where {O <: Options; !IsOptionsDecorator{O}} = throw(ErrorException(
-    "No record decorator found within the decorators of $(typeof(o))."
-))
 """
     hasRecord(o)
 
@@ -143,44 +73,224 @@ hasRecord(o::RecordOptions) = true
 @traitfn hasRecord(o::O) where {O <: Options; IsOptionsDecorator{O}} = hasRecord(o.options)
 @traitfn hasRecord(o::O) where {O <: Options; !IsOptionsDecorator{O}} = false
 
+# default - stored in the recordedValues field of the RecordAction
+@doc doc"""
+    getRecord(o[,s=:Step])
 
+return the recorded values from within the [`RecordOptions`](@ref) `o` that where
+recorded with respect to the `Symbol s` as an `Array`. The default refers to
+any recordings during an Iteration represented by the Symbol `:Step`
+"""
+function getRecord(o::RecordOptions,s::Symbol=:Step)
+    if haskey(o.recordDictionary,s)
+        return getRecord(o.recordDictionary[s])
+    elseif haskey(o.recordDictionary,:All)
+        return getRecord(o.recordDictionary[:All])
+    else
+        error("No record known for key found, since neither :$s nor :All are present.")
+    end
+end
+@traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; IsOptionsDecorator{O}} = getRecord(o.options,s)
+@traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; !IsOptionsDecorator{O}} = error("No Record decoration found")
+
+@doc doc"""
+    getRecord(r)
+
+return the recorded values stored within a [`RecordAction`](@ref) `r`.
+"""
+getRecord(r::R) where {R <: RecordAction} = r.recordedValues
+
+"""
+    recordOrReset!(r,v,i)
+
+either record (`i>0`) the value `v` within the [`RecordAction`](@ref) `r`
+or reset (`i<0`) the internal storage, where `v` has to match the internal
+value type of the corresponding Recordaction. 
+"""
+function recordOrReset!(r::R,v,i::Int) where {R <: RecordAction}
+    if i > 0
+        push!(r.recordedValues,v)
+    elseif i < 0
+        r.recordedValues = Array{typeof(v),1}()
+    end
+end
+"""
+    RecordGroup <: RecordAction
+
+group a set of [`RecordAction`](@ref)s into one action, where the internal prints
+are removed by default and the resulting strings are concatenated
+
+# Constructor
+    RecordGroup(g)
+
+construct a group consisting of an Array of [`RecordAction`](@ref)s `g`,
+that are recording `en bloque`; the method does not perform any record itself,
+but keeps an array of records. Accessing these yields a `Tuple` of the recorded
+values per iteration
+"""
+mutable struct RecordGroup <: RecordAction
+  group::Array{RecordAction,1}
+  RecordGroup(g::Array{<:RecordAction,1}) = new(g)
+  RecordGroup() = new(Array{RecordAction,1}())
+end
+function (d::RecordGroup)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    for ri in d.group
+        ri(p,o,i)
+    end
+end
+getRecord(r::RecordGroup) = [zip( getRecord.(r.group)...)...]
+
+@doc doc"""
+    RecordEvery <: RecordAction
+
+record only every $i$th iteration.
+Otherwise (optionally, but activated by default) just update internal tracking
+values.
+
+This method does not perform any record itself but relies on it's childrens methods
+"""
+mutable struct RecordEvery <: RecordAction
+    record::RecordAction
+    every::Int
+    alwaysUpdate::Bool
+    RecordEvery(r::RecordAction,every::Int=1,alwaysUpdate::Bool=true) = new(r,every,alwaysUpdate)
+end
+function (d::RecordEvery)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    if (rem(i,d.every)==0)
+        d.record(p,o,i)
+    elseif d.alwaysUpdate
+        d.record(p,o,-1)
+    end
+end
+getRecord(r::RecordEvery) = getRecord(r.record)
 #
-# provide a few simple defaults (as long as problem and options keep to use
-# general naming scheme, i.e. this does not hold for primalDual)
-record(p::P,o::O,::Val{:Iteration},iter::Int) where {P <: Problem, O <: Options} = iter
-recordType(o::O, ::Val{:Iteration}) where {P <: Problem, O <: Options} = Int
-
-record(p::P,o::O,::Val{:Iterate},iter::Int) where {P <: Problem, O <: Options} = o.x
-recordType(o::O, ::Val{:Iterate}) where {P <: Problem, O <: Options} = typeof(o.x)
-
-record(p::P,o::O,::Val{:Change},iter::Int) where {P <: Problem, O <: Options} = distance(p.M,o.x,o.xOld)
-recordType(o::O, ::Val{:Change}) where {P <: Problem, O <: Options} = Float64
-
-record(p::P, o::O,::Val{:Cost}, iter::Int) where {P <: Problem, O <: Options} = getCost(p,o.x)
-recordType(o::O, ::Val{:Cost}) where {O <: Options} = Float64
-
-#and a fallback tha also explains the function with a documentation
+# Special single ones
+#
 @doc doc"""
-    record(p,o,s,iter)
-record one data item during the [`doSolverStep!`](@ref)`r` of the [`Problem`](@ref)` p`
-with current state stored in [`Options`](@ref)` o` after iteration `iter`.
-The `Symbol s` determines which datum to pass to the [`record!`](@ref) function.
+    RecordChange <: RecordAction
 
-It for a `Symbol s` there is no `record` specified, this function will issue
-a corresponding warning.
+debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
+during the last iteration.
 
-See also [`recordType`](@ref)
+# Additional Fields
+* `storage` a [`StoreOptionsAction`](@ref) to store (at least) `o.x` to use this
+  as the last value (to compute the change)
 """
-record(p::P,o::O,s::Val{e},iter) where {P <: Problem, O <: Options, e} =
-  @warn(string("No record function for Symbol $(s) within $(typeof(p)) and $(typeof(o)) provided yet."))
+mutable struct RecordChange <: RecordAction
+    recordedValues::Array{Float64,1}
+    storage::StoreOptionsAction
+    RecordChange(a::StoreOptionsAction=StoreOptionsAction( (:x,) ) ) = new(Array{Float64,1}(),a)
+    function RecordChange(x0::MPoint,
+            a::StoreOptionsAction=StoreOptionsAction( (:x,) ),
+        )
+        updateStorage!(a,Dict(:x=>x0))
+        return new(Array{Float64,1}(),a)
+    end
+end
+function (r::RecordChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    recordOrReset!(r,
+        hasStorage(r.storage, :x) ? distance(p.M,o.x, getStorage(r.storage,:x) ) : 0.0,
+        i
+    )
+    r.storage(p,o,i)
+end
 
 @doc doc"""
-  recordType(o,s)
-provides the `DataType` a [`record`](@ref) for these [`Options`](@ref)` o` and
-`Symbol s` returns in order to properly create the `Tuple` of values recorded
-each iteration as well as the `Array` they are stored in.
+    RecordEntry{T} <: RecordAction
 
-See also [`record`](@ref)
+record a certain fields entry of type {T} during the iterates
+
+# Fields
+* `recordedValues` – the recorded Iterates
+* `field` – Symbol the entry can be accessed with within [`Options`](@ref)
+
 """
-recordType(o::O,s::Val{e}) where {O <: Options, e} =
-  @warn(string("No recordType provided for Symbol $(s) within $(typeof(o))."))
+mutable struct RecordEntry{T} <: RecordAction
+    recordedValues::Array{T,1}
+    field::Symbol
+    RecordEntry{T}(f::Symbol) where T = new(Array{T,1}(),f)
+end
+RecordEntry(e::T,f::Symbol) where T = RecordEntry{T}(f)
+RecordEntry(d::DataType,f::Symbol) = RecordEntry{d}(f)
+(r::RecordEntry{T})(p::Pr,o::O,i::Int) where {T, Pr <: Problem, O <: Options} = recordOrReset!(r, getfield(o, r.field), i)
+
+@doc doc"""
+    RecordEntryChange{T} <: RecordAction
+
+record a certain entries change during iterates
+
+# Additional Fields
+* `recordedValues` – the recorded Iterates
+* `field` – Symbol the field can be accessed with within [`Options`](@ref)
+* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry 
+* `storage` a [`StoreOptionsAction`](@ref) to store (at least) `o[field]`
+"""
+mutable struct RecordEntryChange <: RecordAction
+    recordedValues::Array{Float64,1}
+    field::Symbol
+    distance::Function
+    storage::StoreOptionsAction
+    RecordEntryChange(
+            f::Symbol,
+            d::Function,
+            a::StoreOptionsAction=StoreOptionsAction( (f,) )
+        ) = new(Array{Float64,1}(),f,d,a)
+    function RecordEntryChange(v::T where T, f::Symbol, d::Function,
+            a::StoreOptionsAction=StoreOptionsAction( (f,) )
+        )
+        updateStorage!(a,Dict(f=>v))
+        return new(Array{Float64,1}(),f, d, a)
+    end
+end
+function (r::RecordEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    recordOrReset!(r,
+        hasStorage(r.storage, r.field) ? r.distance(p,o, getfield(o, r.field), getStorage(r.storage, r.field) ) : 0.0,
+    i)
+    r.storage(p,o,i)
+end
+
+@doc doc"""
+    RecordIterate <: RecordAction
+
+record the iterate
+
+# Constructors
+    RecordIterate(x0)
+
+initialize the iterate record array to the type of `x0`, e.g. your initial data.
+
+    RecordIterate(P)
+
+initialize the iterate record array to the data type `P`, where `P<:MPoint`holds.
+"""
+mutable struct RecordIterate{P <: MPoint} <: RecordAction
+    recordedValues::Array{P,1}
+    RecordIterate{P}() where {P <: MPoint} = new(Array{P,1}())
+end
+RecordIterate(p::P) where {P <: MPoint} = RecordIterate{P}()
+RecordIterate(d::DataType) = (<:(d,MPoint)) ? RecordIterate{d}() : throw(ErrorException("Unknown manifold point (<:MPoint) DataType  $d"))
+RecordIterate() = throw(ErrorException("The iterate's data type has to be provided, i.e. either RecordIterate(x0) or RecordIterate(<:MPoint)"))
+
+(r::RecordIterate{P})(p::Pr,o::O,i::Int) where {P <: MPoint, Pr <: Problem, O <: Options} = recordOrReset!(r, o.x, i)
+
+@doc doc"""
+    RecordIteration <: RecordAction
+
+record the current iteration
+"""
+mutable struct RecordIteration <: RecordAction
+    recordedValues::Array{Int,1}
+    RecordIteration() = new(Array{Int,1}())
+end
+(r::RecordIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, i, i)
+    
+@doc doc"""
+    RecordCost <: RecordAction
+
+record the current cost function value, see [`getCost`](@ref).
+"""
+mutable struct RecordCost <: RecordAction
+    recordedValues::Array{Float64,1}
+    RecordCost() = new(Array{Float64,1}())
+end
+(r::RecordCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, getCost(p,o.x), i)

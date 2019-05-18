@@ -5,10 +5,13 @@
 #
 import Base: copy
 
-export StoppingCriterion, StepSize
+export StoppingCriterion, Stepsize
 export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
 export Options, getOptions, getReason
 export IsOptionsDecorator
+
+export Action, StoreOptionsAction
+export hasStorage, getStorage, updateStorage!
 
 """
     IsOptionsDecorator{O}
@@ -27,7 +30,6 @@ A general super type for all options.
 The following fields are assumed to be default. If you use different ones,
 provide the access functions accordingly
 * `x` an [`MPoint`](@ref) with the current iterate
-* `xOld` an [`MPoint`](@ref) with the previous iterate
 * `stop` a [`StoppingCriterion`](@ref).
 
 """
@@ -121,3 +123,94 @@ within the [`Options`](@ref) This reason is empty if the criterion has never
 been met.
 """
 getReason(o::O) where O <: Options = getReason( getOptions(o).stop )
+
+#
+# Common Actions for decorated Options
+#
+@doc doc"""
+    Action
+
+a common `Type` for `Actions` that might be triggered in decoraters,
+for example [`DebugOptions`](@ref) or [`RecordOptions`](@ref).
+"""
+abstract type Action end
+
+
+@doc doc"""
+    StoreTupleAction <: Action
+
+internal storage for [`Action`](@ref)s to store a tuple of fields from an
+[`Options`](@ref)s 
+
+This functor posesses the usual interface of functions called during an
+iteration, i.e. acts on `(p,o,i)`, where `p` is a [`Problem`](@ref),
+`o` is an [`Options`](@ref) and `i` is the current iteration.
+
+# Fields
+* `values` – a dictionary to store interims values based on certain `Symbols`
+* `keys` – an `NTuple` of `Symbols` to refer to fields of `Options`
+* `once` – whether to update the internal values only once per iteration
+* `lastStored` – last iterate, where this `Action` was called (to determine `once`
+
+# Constructiors
+
+    StoreOptionsAction([keys=(), once=true])
+
+Initialize the Functor to an (empty) set of keys, where `once` determines
+whether more that one update per iteration are effective
+
+    StoreOptionsAction(keys, values[, once=true])
+
+Initialize the Functor to a set of keys, where `values` is a tuple containing
+initial values, one for each key. Further, `once` determines whether
+more that one update per iteration are effective.
+
+"""
+mutable struct StoreOptionsAction <: Action
+    values::Dict{Symbol,<:Any}
+    keys::NTuple{N,Symbol} where N
+    once::Bool
+    lastStored::Int
+    StoreOptionsAction(keys::NTuple{N,Symbol} where N = NTuple{0,Symbol}(),once=true) = new(Dict{Symbol,Any}(), keys, once )
+    StoreOptionsAction(keys::NTuple{N,Symbol}, values::NTuple{N,<:Any},once=true) where N = new(
+        Dict( key -> value for (key,value) in zip(keys,values)), keys,once )
+end
+function (a::StoreOptionsAction)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    #update values (maybe only once)
+    if !a.once || a.lastStored != i
+        merge!(a.values, Dict( key => getproperty(o,key) for key in a.keys) )
+    end
+    a.lastStored = i
+end
+"""
+    getStorage(a,key)
+
+return the internal value of the [`StoreOptionsAction`](@ref) `a` at the
+`Symbol` `key`.
+"""
+getStorage(a::StoreOptionsAction,key) = a.values[key]
+"""
+    getStorage(a,key)
+
+return whether the [`StoreOptionsAction`](@ref) `a` has a value stored at the
+`Symbol` `key`.
+"""
+hasStorage(a::StoreOptionsAction,key) = haskey(a.values,key)
+"""
+    updateStorage!(a,o)
+
+update the [`StoreOptionsAction`] internal values to the ones given on
+the [`Options`](@ref) `o`, that are 
+"""
+updateStorage!(a::StoreOptionsAction,o::O) where {O <: Options} = updateStorage!(a, Dict( key => getproperty(o, key) for key in a.keys) )
+"""
+    updateStorage!(a,o)
+
+update the [`StoreOptionsAction`] internal values to the ones given on
+the [`Options`](@ref) `o`.
+"""
+function updateStorage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any}) where {O <: Options}
+    merge!(a.values, d)
+    # update keys
+    a.keys = ( keys(a.values) )
+end

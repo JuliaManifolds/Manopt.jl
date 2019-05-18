@@ -21,8 +21,8 @@ of iterations.
 
 # Fields
 * `maxIter` – stores the maximal iteration number where to stop at
-* `reason` – stores a reason of stopping if the stoppingcriterion has one be reached,
-    see [`getReason`](@ref).
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+  reached, see [`getReason`](@ref).
 
 # Constructor
 
@@ -64,26 +64,34 @@ end
 """
     stopWhenChangeLess <: StoppingCriterion
 
-stores a threshold when to stop looking at the norm of the change of the optimization variable
-from within a [`Options`](@ref).
+stores a threshold when to stop looking at the norm of the change of the
+optimization variable from within a [`Options`](@ref), i.e `o.x`.
+For the storage a [`StoreOptionsAction`](@ref) is used
+
+# Constructor
+
+    stopWhenChangeLess(ε[, a])
+
+initialize the stopping criterion to a threshold `ε` using the
+[`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:x` by
+default.
 """
 mutable struct stopWhenChangeLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    xOld::MPoint
-    stopWhenChangeLess(ε::Float64) = new(ε,"")
+    storage::StoreOptionsAction
+    stopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction( (:x,) )) = new(ε,"",a)
 end
 function (c::stopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if i==0 # init
-        c.xOld = o.x
-    elseif !isdefined(c,:xOld)
-        c.xOld = o.xOld
-    else
-        if distance(p.M, o.x, c.xOld) < c.threshold && i>0
-            c.reason = "The algorithm performed a step with a change ($(distance(p.M, o.x, c.xOld))) less than $(c.threshold).\n"
+    if hasStorage(c.storage,:x)
+        xOld = getStorage(c.storage,:x)
+        if distance(p.M, o.x, xOld) < c.threshold && i>0
+            c.reason = "The algorithm performed a step with a change ($(distance(p.M, o.x, xOld))) less than $(c.threshold).\n"
+            c.storage(p,o,i)
             return true
         end
     end
+    c.storage(p,o,i)
     return false
 end
 @doc doc"""
