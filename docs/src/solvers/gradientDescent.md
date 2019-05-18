@@ -21,3 +21,11 @@ DebugGradient
 DebugGradientNorm
 DebugStepsize
 ```
+
+## Sepcific Record Actions
+
+```@docs
+RecordGradient
+RecordGradientNorm
+RecordStepsize
+```

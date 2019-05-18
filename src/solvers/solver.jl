@@ -19,9 +19,6 @@ one is used to activate certain decorators.
 * `debug` : (`Array{Symbol,1}()`) a set of symbols printed during the iterations,
 at start or end, depending on the symbol. Providing at least on symbol activates
 the [`DebugOptions`](@ref) decorator
-* `debugEvery` : (`1`) print debug only every `debugEvery`th iteration
-* `debugVerbosity` : (`3`) a level of debug verbosity between 1 (least) and 5 (most) output.
-* `debugOutput` : (`Base.stdout`) an outputstream to put the debug to.
 * `record` : (`NTuple{0,Symbol}()`)
 
 # See also
@@ -29,14 +26,10 @@ the [`DebugOptions`](@ref) decorator
 """
 function decorateOptions(o::O;
         debug::Union{Missing,DebugAction,Array{DebugAction,1},Dict{Symbol,DebugAction}}=missing,
-        record::NTuple{N,Symbol} where N = NTuple{0,Symbol}(),
+        record::Union{Missing,RecordAction,Array{RecordAction,1},Dict{Symbol,RecordAction}}=missing,
     ) where {O <: Options}
-    if !ismissing(debug)
-        o = DebugOptions(o,debug)
-    end
-    if length(record) > 0
-        o = RecordOptions(o,record)
-    end
+    o = ismissing(debug) ? o : DebugOptions(o,debug)
+    o = ismissing(record) ? o : RecordOptions(o,record)
     return o
 end
 """
@@ -54,7 +47,7 @@ end
     doSolverStep!(p,o,iter)
 
 Do one iteration step (the `iter`th) for [`Problem`](@ref)` p` by modifying
-the values in the [`Options`](@ref)` o`.
+the values in the [`Options`](@ref) `o`.
 """
 function doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: Options}
     sig1 = string( typeof(p) )
@@ -65,7 +58,7 @@ end
     getSolverResult(p,o)
 
 Return the final result after all iterations that is stored within the
-(modified during the iterations) [`Options`](@ref)` o`.
+(modified during the iterations) [`Options`](@ref) `o`.
 """
 function getSolverResult(p::P,o::O) where {P <: Problem, O <: Options}
     sig1 = string( typeof(p) )

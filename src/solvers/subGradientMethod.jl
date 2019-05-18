@@ -50,11 +50,9 @@ function subGradientMethod(M::mT,
 end
 function initializeSolver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.optimalX = o.x
-    o.xLast = o.x
     o.subGradient = zeroTVector(p.M,o.x)
 end
 function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
-    o.xLast = o.x
     o.subGradient = getSubGradient(p,o.x)
     s = getStepsize(p,o,iter)
     o.x = o.retraction(p.M,o.x,-o.stepsize*o.subGradient)
@@ -65,3 +63,7 @@ end
 function getSolverResult(p::SubGradientProblem, o::SubGradientMethodOptions)
     return o.xOptimal
 end
+
+#
+# TODO specific debugs and records.
+#

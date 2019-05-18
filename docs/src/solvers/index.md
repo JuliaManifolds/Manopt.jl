@@ -64,14 +64,17 @@ stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: DebugOptions}
 
 ### [Record Solver](@id RecordSolver)
 
-The record solver acts on the [`RecordOptions`](@ref), which also provide the
-functions to handle access to the recorded values afterwards. Internally each of
-the following functions calls the solver the [`RecordOptions`](@ref) decorate
+The decorator to record certain values during the iterations can be activated by
+decorating the [`Options`](@ref) with [`RecordOptions`](@ref) and implementing
+your own [`RecordAction`](@ref)s.
+For example recording the gradient from the [`GradientDescentOptions`](@ref) is
+automatically available, as explained in the [`steepestDescent`](@ref) solver.
 
 ```@docs
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: RecordOptions}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: RecordOptions}
 getSolverResult(p::P,o::O) where {P <: Problem, O <: RecordOptions}
+stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: RecordOptions}
 ```
 
 ## Technical Details

@@ -6,3 +6,6 @@
 ```@docs
 DouglasRachfordOptions
 ```
+
+For [`DebugAction`](@ref)s and [`RecordAction`](@ref) see also
+[Cyclic Proximal Point](@ref CPPSolver).
