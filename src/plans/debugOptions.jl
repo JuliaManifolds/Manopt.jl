@@ -19,7 +19,8 @@ a [`Problem`](@ref) `p`, [`Options`](@ref) `o` and the current iterate `i`.
 
 By convention `i=0` is interpreted as "For Initialization only", i.e. only debug
 info that prints initialization reacts, `i<0` triggers updates of variables
-internally but does not trigger any output.
+internally but does not trigger any output. Finally `typemin(Int)` is used
+to indicate a call from [`stopSolver!`](@ref) that returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
 * `print` method to perform the actual print. Can for example be set to a file export,
@@ -131,10 +132,13 @@ debug for the amount of change of the iterate (stored in `o.x` of the [`Options`
 during the last iteration. See [`DebugEntryChange`](@ref)
 
 # Parameters
+* `x0` – an initial value to already get a Change after the first iterate. Can be left out
 * `a` – (`StoreOptionsAction( (:x,) )`) – the storage of the previous action
 * `prefix` (`"Last Change:"`) prefix of the debug output
 * `print` (`print`) default method to peform the print.
 """
+DebugChange(x::P, a::StoreOptionsAction=StoreOptionsAction( (:x,) ), prefix="Last Change:",print=print) where {P <: MPoint}= 
+    DebugEntryChange(x,:x,(p,o,x,y) -> distance(p.M,x,y), a, prefix,print)
 DebugChange(a::StoreOptionsAction=StoreOptionsAction( (:x,) ), prefix="Last Change:",print=print)  = 
     DebugEntryChange(:x,(p,o,x,y) -> distance(p.M,x,y), a, prefix,print)
 
@@ -151,7 +155,7 @@ mutable struct DebugIterate <: DebugAction
     prefix::String
     DebugIterate(print::Function=print,long::Bool=false) = new(print, long ? "current Iterate:" : "x:")
 end
-(d::DebugIterate)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? prefix*"$(o.x)" : "")
+(d::DebugIterate)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*"$(o.x)" : "")
 
 @doc doc"""
     DebugIteration <: DebugAction
@@ -162,7 +166,7 @@ mutable struct DebugIteration <: DebugAction
     print::Function
     DebugIteration(print::Function=print) = new(print)
 end
-(d::DebugIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>0) ? "# $(i)" : "")
+(d::DebugIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>0) ? "# $(i)" : ((i==0) ? "Initial" : "") )
     
 @doc doc"""
     DebugCost <: DebugAction
@@ -271,7 +275,7 @@ end
 DebugEntryChange(v::T,f,d,rest...) where T = DebugEntryChange{T}(v, f, d,rest...)
 function (d::DebugEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     s= (i>0) ? ( hasStorage(d.storage,d.field) ? d.prefix * string(
-            d.distance( p, o, o[d.field], getStorage(d.storage,d.field))
+            d.distance( p, o, getproperty(o, d.field), getStorage(d.storage,d.field))
             ) : "") : ""
     d.storage(p,o,i)
     d.print(s)
@@ -287,4 +291,4 @@ mutable struct DebugStoppingCriterion <: DebugAction
     print::Function
     DebugStoppingCriterion(print::Function=print) = new(print)
 end
-(d::DebugStoppingCriterion)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? getReason(o) : "")
+(d::DebugStoppingCriterion)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0 || i==typemin(Int)) ? getReason(o) : "")

@@ -34,7 +34,7 @@ IsOptionsDecorator
 decorateOptions
 ```
 
-In general dedcorators often perform actions so we introduce
+In general decorators often perform actions so we introduce
 
 ```@docs
 Action

@@ -212,5 +212,5 @@ the [`Options`](@ref) `o`.
 function updateStorage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any}) where {O <: Options}
     merge!(a.values, d)
     # update keys
-    a.keys = ( keys(a.values) )
+    a.keys = Tuple( keys(a.values) )
 end

@@ -181,8 +181,8 @@ return a random tangent vector in the tangent space of the [`SnPoint`](@ref)
 """
 function randomTVector(M::Sphere, x::SnPoint, ::Val{:Gaussian}, σ::Real=1.0)
     n = σ * randn( size( getValue(x)) ) # Gaussian in embedding
-	nP = n - dot(n,getValue(x))*getValue(x) #project to TpM (keeps Gaussianness)
-	SnTVector( nP )
+	  nP = n - dot(n,getValue(x))*getValue(x) #project to TpM (keeps Gaussianness)
+	  return SnTVector( nP )
 end
 tangentONB(M::Sphere, x::SnPoint, y::SnPoint) = tangentONB(M,x,log(M,x,y))
 function tangentONB(M::Sphere,x::SnPoint,ξ::SnTVector)

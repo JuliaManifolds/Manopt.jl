@@ -140,7 +140,7 @@ element from $[-\pi,\pi).
 """
 randomMPoint(M::Circle,σ::Real=1.0) = S1Point((rand()-0.5)*2*π)
 
-randomTVector(M::Circle, x::S1Point) = randomTVector(M,x,:Gaussian)
+randomTVector(M::Circle, x::S1Point) = randomTVector(M,x,Val(:Gaussian))
 @doc doc"""
     randomTVector(M,x,:Gaussian[, σ=1.0])
 

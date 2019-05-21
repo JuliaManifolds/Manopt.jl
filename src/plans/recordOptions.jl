@@ -2,7 +2,7 @@ export RecordOptions
 export RecordAction
 export RecordGroup, RecordEvery
 export RecordChange, RecordCost, RecordIterate, RecordIteration
-
+export RecordEntry, RecordEntryChange
 export getRecord, hasRecord
 
 #
@@ -18,7 +18,9 @@ The usual call is given by `(p,o,i) -> s` that performs the record based on
 a [`Problem`](@ref) `p`, [`Options`](@ref) `o` and the current iterate `i`.
 
 By convention `i<=0` is interpreted as "For Initialization only", i.e. only
-initialize internal values, but not trigger any record
+initialize internal values, but not trigger any record, the same holds for
+`i=typemin(Inf)` which is used to indicate `stop`, i.e. that the record is
+called from within [`stopSolver!`](@ref) which returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
 * `recordedValues` an `Array` of the recorded values.
@@ -103,14 +105,14 @@ getRecord(r::R) where {R <: RecordAction} = r.recordedValues
 """
     recordOrReset!(r,v,i)
 
-either record (`i>0`) the value `v` within the [`RecordAction`](@ref) `r`
+either record (`i>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
 or reset (`i<0`) the internal storage, where `v` has to match the internal
 value type of the corresponding Recordaction. 
 """
 function recordOrReset!(r::R,v,i::Int) where {R <: RecordAction}
     if i > 0
         push!(r.recordedValues,v)
-    elseif i < 0
+    elseif i < 0 && i > typemin(Int) # reset if negative but not stop indication
         r.recordedValues = Array{typeof(v),1}()
     end
 end
@@ -223,7 +225,7 @@ record a certain entries change during iterates
 * `recordedValues` – the recorded Iterates
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry 
-* `storage` a [`StoreOptionsAction`](@ref) to store (at least) `o[field]`
+* `storage` a [`StoreOptionsAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
 mutable struct RecordEntryChange <: RecordAction
     recordedValues::Array{Float64,1}

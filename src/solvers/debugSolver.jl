@@ -48,8 +48,8 @@ should stop at iteration `i`. If so, print all debug from `:All` and `:Final`.
 function stopSolver!(p::P,o::O,i::Int) where {P <: Problem, O <: DebugOptions}
     s = stopSolver!(p,o.options,i)
     if s
-        get(o.debugDictionary,:Stop,DebugDivider(""))(p,getOptions(o),i)
-        get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),i)
+        get(o.debugDictionary,:Stop,DebugDivider(""))(p,getOptions(o),typemin(Int))
+        get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),typemin(Int))
     end
     return s
 end
