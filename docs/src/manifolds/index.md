@@ -26,8 +26,8 @@ the term manifold is shortened to `M` for concise naming. Each manifold also
 inherits such a short abbreviation, see `Abbr.` in the following table.
 
 |  Manifold $\mathcal M$ | File | Abbr. | Comment
--------------------------|------|-------|---------
-A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$
+|:-----------------------|:-----|:-----:|:--------
+A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$ | collects general functions and types
 [$1$-sphere $\mathbb S^1$](@ref CircleManifold)  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
 [$n$-dim. Hyperbolic space $\mathbb H^n$](@ref HyperbolicManifold) | `Hyperbolic.jl` | `Hn` | embedded in $\mathbb R^{n+1}$
 [$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$

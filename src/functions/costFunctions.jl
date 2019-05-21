@@ -136,7 +136,7 @@ $d_2^p(x_1,x_2,x_3) = \min_{c\in\mathcal C} d_{\mathcal M}(c,x_2).$
 """
 function costTV2(M::mT,pointTuple::Tuple{P,P,P},p::Int=1) where {mT <: Manifold, P <: MPoint}
   # note that here midPoint returns the closest to x2 from the e midpoints between x1 x3
-  return distance(M,midPoint(M,pointTuple[1],pointTuple[3]),pointTuple[2])^p
+  return 1/p*distance(M,midPoint(M,pointTuple[1],pointTuple[3]),pointTuple[2])^p
 end
 @doc doc"""
     costTV2(M,x[p=1])

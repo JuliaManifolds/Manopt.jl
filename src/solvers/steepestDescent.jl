@@ -50,10 +50,9 @@ end
 # Solver functions
 #
 function initializeSolver!(p::P,o::O) where {P <: GradientProblem, O <: GradientDescentOptions}
-    o.∇ = zeroTVector(p.M,o.x)
+    o.∇ = getGradient(p,o.x)
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: GradientProblem, O <: GradientDescentOptions}
-    # update
     o.∇ = getGradient(p,o.x)
     o.x = o.retraction(p.M, o.x , -getStepsize!(p,o,iter) * o.∇)
 end

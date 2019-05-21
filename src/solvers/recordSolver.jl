@@ -45,8 +45,8 @@ If so, do a (final) record to `:All` and `:Stop`.
 function stopSolver!(p::P,o::O,i::Int) where {P <: Problem, O <: RecordOptions}
     s = stopSolver!(p,o.options,i)
     if s
-        get(o.recordDictionary, :Stop, RecordGroup() )(p, getOptions(o), i)
-        get(o.recordDictionary, :All,   RecordGroup() )(p, getOptions(o), i)
+        get(o.recordDictionary, :Stop, RecordGroup() )(p, getOptions(o), typemin(Int) )
+        get(o.recordDictionary, :All,   RecordGroup() )(p, getOptions(o), typemin(Int ))
     end
     return s
 end

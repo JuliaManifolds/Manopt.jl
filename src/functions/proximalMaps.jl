@@ -34,7 +34,7 @@ function proxDistance(M::mT,λ::Number,f::T,x::T,p::Int=2) where {mT <: Manifold
     if λ < d
       t = λ/d;
     else
-      t = 1;
+      t = 1.;
     end
   else
       throw(ErrorException(

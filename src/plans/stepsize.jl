@@ -34,9 +34,9 @@ getInitialStepsize(s::ConstantStepsize) = s.length
 A functor that represents several decreasing step sizes
 
 # Fields
-* `length` – (`1`)the initial step size $l$.
-* `factor` – (`1`)(a value $f$ to multiply the initial step size with every iteration
-* `subtrahend` – (`0`)a value $a$ that is subtracted every iteration
+* `length` – (`1`) the initial step size $l$.
+* `factor` – (`1`) a value $f$ to multiply the initial step size with every iteration
+* `subtrahend` – (`0`) a value $a$ that is subtracted every iteration
 * `exponent` – (`1`) a value $e$ the current iteration numbers $e$th exponential
   is taken of
 
@@ -44,7 +44,8 @@ In total the complete formulae reads for the $i$th iterate as
 
 $ s_i = \frac{(l-i\cdot a)f^i}{i^e}$
 
-and hence the default simplifies to just $ s_i = \frac{l}{i}
+and hence the default simplifies to just $ s_i = \frac{l}{i} $
+
 # Constructor
 
     ConstantStepSize(l,f,a,e)
@@ -89,13 +90,22 @@ last step size.
 * `retraction` – ([`exp`](@ref Manopt.exp)) the rectraction used in line search
 * `contractionFactor` – (`0.95`) exponent for line search reduction
 * `sufficientDecrease` – (`0.1`) gain within Armijo's rule
-* `lastStepSize` – 
+* `lastStepSize` – (`initialstepsize`) the last step size we start the search with 
 
 # Constructor
 
-    ArmijoLineSearch(i,retr,c,s)
+    ArmijoLineSearch()
 
-construct an Armijo lineseach, where the last step size is also initialized to i.
+with the Fields above in their order as optional arguments.
+
+This method returns the functor to perform Armijo line search, where two inter
+faces are available:
+* based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
+  and a current iterate `i`.
+* with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [`Manifold`](@ref) `M`, a current
+  [`MPoint`](@ref) `x` a function `F`, that maps from the manifold to the reals,
+  its gradient (a [`TVector`](@ref)) `∇F`$=\nabla F(x)$ at  `x` and an optional
+  search direction [`TVector`](@ref) `η-∇F` are the arguments. 
 """
 mutable struct ArmijoLinesearch <: Linesearch
     initialStepsize::Float64
@@ -110,24 +120,19 @@ mutable struct ArmijoLinesearch <: Linesearch
         sufficientDecrease::Float64=0.1) = new(s, r, contractionFactor, sufficientDecrease,s)
 end
 function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η::T=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options, T <: TVector}
+  a(p.M, o.x, p.costFunction, getGradient(p,o.x), η)
+end
+function (a::ArmijoLinesearch)(M::mT, x::P, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, P <: MPoint, T <: TVector}
   # for local shortness
-  F = p.costFunction
-  gradient = getGradient(p,o.x)
   s = a.stepsizeOld
   retr = a.retraction
-  e = F(o.x)
-  eNew = e-1
-  if e > eNew
-    xNew = retr(p.M,o.x,s*η)
-    eNew = F(xNew) + a.sufficientDecrease*s*dot(p.M, o.x, η, gradient)
-    if e >= eNew
-      s = s/a.contractionFactor
-    end
-  end
-  while (e < eNew) && (s > typemin(Float64))
-    s = s*a.contractionFactor
-    xNew = retr(p.M,o.x,s*η)
-    eNew = F(xNew) + a.sufficientDecrease*s*dot(p.M, o.x, η, gradient)
+  f0 = F(x)
+  xNew = retr(M,x,s*η)
+  fNew = F(xNew)
+  while fNew > f0 + a.sufficientDecrease*s*dot(M, x, η, ∇F)
+    s = a.contractionFactor * s
+    xNew = retr(M,x,s*η)
+    fNew = F(xNew)
   end
   a.stepsizeOld = s
   return s
