@@ -22,7 +22,7 @@ DebugGradientNorm
 DebugStepsize
 ```
 
-## Sepcific Record Actions
+## Specific Record Actions
 
 ```@docs
 RecordGradient

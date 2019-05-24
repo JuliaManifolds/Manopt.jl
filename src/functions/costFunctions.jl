@@ -84,7 +84,7 @@ function costTV(M::mT,x::Tuple{P,P},p::Int=1) where {mT <: Manifold, P <: MPoint
   return distance(M,x[1],x[2])^p
 end
 @doc doc"""
-    costTV(M,x[p=1])
+    costTV(M,x[,p=2,q=1])
 compute the $\operatorname{TV}^p$ functional for signal, image or dataset `x`
 on the [`Power`](@ref)` `[`Manifold`](@ref) `M`, i.e. $\mathcal M = \mathcal N^n$,
 where $n\in\mathbb N^k$ denotes the dimensions of the data.
@@ -92,14 +92,14 @@ Denoting by $\mathcal I$ all indices from $\mathbf{1}\in\mathbb N^k$ to $n$ and
 $\mathcal I^+_i = \{i+e_j, j=1,\ldots,k\}\cap \mathcal I$ its forward neighbors,
 this function computes
 
-$ E(x) = \sum_{i\in\mathcal I}
-  \Bigl( \sum{j\in \mathcal I^+_i} d^p_{\mathcal M}^p(x_i,x_j) \bigr)^{1/p},
+$ E^q(x) = \sum_{i\in\mathcal I}
+  \Bigl( \sum{j\in \mathcal I^+_i} d^p_{\mathcal M}^p(x_i,x_j) \bigr)^{q/p},
 \quad x\in \mathcal M$
 
 # See also
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::Power, x::PowPoint, p::Int=1, Sum::Bool=true)
+function costTV(M::Power, x::PowPoint, p::Int=1, q::Int=1)
   R = CartesianIndices(M.powerSize)
   d = length(M.powerSize)
   maxInd = last(R)
@@ -109,15 +109,13 @@ function costTV(M::Power, x::PowPoint, p::Int=1, Sum::Bool=true)
     for i in R # iterate over all pixel
       j = i+ek # compute neighbor
       if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-        cost[i] += costTV( M.manifold,(x[i],x[j]),p) # Compute TV on these
+        cost[i] += costTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
       end
     end
   end
-  if p != 1
-    cost = (cost).^(1/p)
-  end
-  if Sum
-    return sum(cost)
+  cost = (cost).^(1/p)
+  if q > 0
+    return sum(cost.^q)^(1/q)
   else
     return cost
   end

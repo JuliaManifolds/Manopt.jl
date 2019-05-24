@@ -116,7 +116,7 @@ getOptions(O) = error("Not implemented for types that are not `Options`")
 @traitfn getOptions(o::O) where {O <: Options; IsOptionsDecorator{O}} = getOptions(o.options)
 
 @doc doc"""
-    getReason(c)
+    getReason(o)
 
 return the current reason stored within the [`StoppingCriterion`](@ref) from
 within the [`Options`](@ref) This reason is empty if the criterion has never

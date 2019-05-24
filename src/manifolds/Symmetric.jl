@@ -11,7 +11,7 @@ export Symmetric, SymPoint, SymTVector, show
 # also indicates which functions are available (already) for Sym
 export distance, dot, exp, norm, dot, manifoldDimension, parallelTransport
 export validateMPoint, validateTVector
-export zeroTVector
+export zeroTVector, typeofMPoint, typeofTVector
 # Types
 # ---
 @doc doc"""
@@ -43,20 +43,22 @@ A point $x$ on the manifold $\mathcal M = \mathrm{Sym}(n)$ of $n\times n$
 symmetric matrices, represented in the redundant way of a
 symmetric matrix (instead of storing just the upper half).
 """
-struct SymPoint <: MPoint
-	value::Matrix{Float64}
-	SymPoint(v::Matrix{Float64}) = new(v);
+struct SymPoint{T <: AbstractFloat} <: MPoint
+	value::Matrix{T}
+	SymPoint{T}(v::Matrix{T}) where {T <: AbstractFloat} = new(v);
 end
+SymPoint(v::Matrix{T}) where {T <: AbstractFloat} = SymPoint{T}(v)
 getValue(x::SymPoint) = x.value
 @doc doc"""
     SymTVector <: TVector
 
 A tangent vector $\xi$ in $T_x\mathcal M$ of a symmetric matrix $x\in\mathcal M$.
 """
-struct SymTVector <: TVector
-	value::Matrix{Float64}
-  	SymTVector(value::Matrix{Float64}) = new(value);
+struct SymTVector{T <: AbstractFloat} <: TVector
+	value::Matrix{T}
+  	SymTVector{T}(value::Matrix{T}) where {T <: AbstractFloat} = new(value);
 end
+SymTVector(v::Matrix{T}) where {T <: AbstractFloat} = SymTVector{T}(v)
 getValue(ξ::SymTVector) = ξ.value
 # Traits
 # ---
@@ -121,12 +123,16 @@ norm(M::Symmetric,x::SymPoint,ξ::SymTVector) = norm( getValue(ξ) )
 """
     parallelTransport(M,x,y,ξ)
 
-coputes the parallel transport of a [`SymTVector`](@ref) `ξ` from the tangent
+compute the parallel transport of a [`SymTVector`](@ref) `ξ` from the tangent
 space at the [`SymPoint`](@ref) `x` to the [`SymPoint`](@ref)` y` on the
 [`Symmetric`](@ref) `M`.
 Since the metric is inherited from the embedding space, it is just the identity.
 """
 parallelTransport(M::Symmetric,x::SymPoint,y::SymPoint,ξ::SymTVector) = ξ
+
+typeofTVector(::Type{SymPoint{T}}) where T = SymTVector{T}
+typeofMPoint(::Type{SymTVector{T}}) where T = SymPoint{T} 
+
 @doc doc"""
     typicalDistance(M)
 

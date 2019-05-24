@@ -1,4 +1,5 @@
 export AdjDxGeo, AdjDyGeo, AdjDxExp, AdjDξExp, AdjDxLog, AdjDyLog
+export AdjDforwardLogs
 @doc doc"""
     AdjDxGeo(M,x,y,t,η)
 computes the adjoint of $D_xg(t;x,y)[\eta]$.
@@ -41,4 +42,44 @@ computes the adjoint of $D_ylog_xy[\eta]$.
 
 *See also:* [`DyLog`](@ref), [`adjointJacobiField`](@ref)
 """
-AdjDyLog(M::mT,x::P,y::P,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,y,x,1.,η,βDlogy)
+AdjDyLog(M::mT,x::P,y::P,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,x,y,1.,η,βDlogy)
+@doc doc"""
+    ξ = AdjDforwardLogs(M,x,ν)
+Compute the adjoibnt differenital of [`forwardLogs`](@ref) orrucirng,
+in the power manifold array, the differential of the function
+
+$F(x) = \sum_{i}\sum_{j\in\mathcal N_i} \log_{x_i} x_j$
+
+where $i$ runs over all indices of the [`Power`](@ref) manifold `M` and $\mathcal N_i$
+denotes the forward neighbors of $i$.
+
+# Input
+* `M`     : a [`Power`](@ref) manifold
+* `x`     : a [`PowPoint`](@ref).
+* `ν`     : a [`PowTVector`](@ref) from T_(x,...,x)N.
+#
+# Ouput
+* ξ : resulting tangent vector in $T_x\mathcal M$ representing the adjoint
+  differentials of the logs, where $\mathcal N$ is thw power manifold with the
+  number of dimensions added to `size(x)`.
+"""
+function AdjDforwardLogs(M::Power,x::PowPoint,ν::PowTVector)::PowTVector
+  sX = size(x)
+  R = CartesianIndices(sX)
+  d = length(sX)
+  maxInd = [last(R).I...] # maxInd as Array
+  N = Power(M.manifold,(sX...,d))
+  ξ = zeroTVector(M,x)
+  for i in R # iterate over all pixel
+    for k in 1:d # for all direction combinations
+        I = [i.I...] # array of index
+        J = I .+ 1 .* (1:d .== k) #i + e_k is j
+        if all( J .<= maxInd ) # is this neighbor in range?
+            j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+            ξ[i] += AdjDxLog(M.manifold,x[i],x[j],ν[i,k])
+            ξ[j] += AdjDyLog(M.manifold,x[i],x[j],ν[i,k])
+        end
+    end # directions
+  end # i in R
+  return ξ
+end

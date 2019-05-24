@@ -32,7 +32,7 @@ A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\m
 [$n$-dim. Hyperbolic space $\mathbb H^n$](@ref HyperbolicManifold) | `Hyperbolic.jl` | `Hn` | embedded in $\mathbb R^{n+1}$
 [$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
 [Euclidean space $\mathbb R^n$](@ref EuclideanSpace) | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
-[special orthogonal group $\mathrm{SO}(n)](@ref SOn) | `Rotations.jl` | `SO` | represented as rotation matrices
+[special orthogonal group $\mathrm{SO}(n)$](@ref SOn) | `Rotations.jl` | `SO` | represented as rotation matrices
 [symmetric matrices $\mathcal{Sym}(n)$](@ref SymmetricManifold) | `Symmetric.jl` | `Sym` | $n\times n$ symmetric matrices
 [symmetric positive definite matrices $\mathcal P(n)$](@ref SymmetricPositiveDefiniteManifold) | `SymmetricPositiveDefinite.jl` | `SPD` | $n\times n$ symmetric positive matrices using the affine metric
 

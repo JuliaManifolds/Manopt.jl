@@ -36,6 +36,7 @@ makedocs(
             "The Circle \$\\mathbb S^1\$" => "manifolds/circle.md",
             "The Euclidean Space \$\\mathbb R^n\$" => "manifolds/euclidean.md",
             "The Hyperbolic Space \$\\mathbb H^n\$" => "manifolds/hyperbolic.md",
+            "The Special Orthogonal Group \$\\mathrm{SO}(n)\$" => "manifolds/rotations.md",
             "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",
             "The Symmetric Matrices \$\\mathrm{Sym}(n)\$" => "manifolds/symmetric.md",
             "The Symmetric Positive Definite Matrices \$\\mathcal P(n)\$" => "manifolds/symmetricpositivedefinite.md",

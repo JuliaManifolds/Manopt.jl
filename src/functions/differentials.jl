@@ -1,4 +1,5 @@
 export DxGeo, DyGeo, DxExp,DξExp, DxLog, DyLog
+export DforwardLogs
 @doc doc"""
     DxGeo(M,x,y,t,η)
 computes $D_xg(t;x,y)[\eta]$.
@@ -42,3 +43,45 @@ computes $D_ylog_xy[\eta]$.
 *See also:* [`DxLog`](@ref), [`jacobiField`](@ref)
 """
 DyLog(M::mT,x::P,y::P,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = jacobiField(M,y,x,1.0,η,βDlogy)
+
+@doc doc"""
+    ξ = DforwardLogs(M,x,ξ)
+Compute the Differenital of [`forwardLogs`](@ref) orrucirng,
+in the power manifold array, the differential of the function
+
+$F(x) = \sum_{i}\sum_{j\in\mathcal N_i} \log_{x_i} x_j$
+
+where $i$ runs over all indices of the [`Power`](@ref) manifold `M` and $\mathcal N_i$
+denotes the forward neighbors of $i$.
+
+# Input
+* `M`     : a [`Power`](@ref) manifold
+* `x`     : a [`PowPoint`](@ref).
+* `ξ`     : a [`PowTVector`](@ref).
+#
+# Ouput
+* ν : resulting tangent vector in $T_x\mathcal N$ representing the differentials of the logs, where
+  $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
+"""
+function DforwardLogs(M::Power,x::PowPoint,ξ::PowTVector)::PowTVector
+  sξ = size(ξ)
+  R = CartesianIndices(sξ)
+  d = length(sξ)
+  maxInd = [last(R).I...]
+  d2 = (d>1) ? ones(Int,d+1) + (d-1)*(1:(d+1) .== d+1 ) : d
+  N = Power(M.manifold,(sξ...,d))
+  ν = zeroTVector(N, repeat(x,inner=d2) )
+  for i in R # iterate over all pixel
+    for k in 1:d # for all direction combinations
+      I = [i.I...] # array of index
+      J = I .+ 1 .* (1:d .== k) #i + e_k is j
+      if all( J .<= maxInd )
+        # this is neighbor in range,
+        j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+        # collects two, namely in kth direction since xi appears as base and arg
+        ν[i,k] = DxLog(M.manifold,x[i],x[j],ξ[i]) + DyLog(M.manifold,x[i],x[j],ξ[j])
+      end
+    end # directions
+  end # i in R
+  return ν
+end

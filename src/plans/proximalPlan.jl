@@ -14,10 +14,15 @@ export RecordProximalParameter
 specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
-* `M`            : a manifold $\mathcal M$
-* `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `proximalMaps` : proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
+* `M`            - a manifold $\mathcal M$
+* `costFunction` - a function $F\colon\mathcal M\to\mathbb R$ to
+  minimize
+* `proximalMaps` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
   as functions (λ,x) -> y, i.e. the prox parameter λ also belongs to the signature of the proximal map.
+* `numberOfProxes` - (length(proximalMaps)) number of proxmal Maps,
+  e.g. if one of the maps is a compined one such that the proximal Maps
+  functions return more than one entry per function
+
 # See also
 [`cyclicProximalPoint`](@ref), [`getCost`](@ref),
 [`getProximalMaps`](@ref),[`getProximalMap`](@ref),
@@ -26,6 +31,11 @@ mutable struct ProximalProblem{mT <: Manifold} <: Problem
   M::mT
   costFunction::Function
   proximalMaps::Array{Function,N} where N
+  numberOfProxes::Array{Int,1}
+  ProximalProblem(M::mT, cF::Function, proxMaps::Array{Function,1}) where {mT <: Manifold}= new{mT}(M,cF,proxMaps,ones(length(proxMaps)))
+  ProximalProblem(M::mT, cF::Function, proxMaps::Array{Function,1}, nOP::Array{Int,1}) where {mT <: Manifold} =
+    length(nOP) != length(proxMaps) ? throw(ErrorException("The numberOfProxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
+    new{mT}(M,cF,proxMaps,nOP)
 end
 """
     getCost(p,x)
@@ -33,18 +43,22 @@ end
 evaluate the cost function `F` stored within a [`ProximalProblem`](@ref) at the [`MPoint`](@ref) `x`.
 """
 function getCost(p::P,x::MP) where {P <: ProximalProblem{M} where M <: Manifold, MP <: MPoint}
-  return p.costFunction(x)
+    return p.costFunction(x)
 end
 @doc doc"""
     getProximalMaps(p,λ,x)
+
 evaluate all proximal maps of `ProximalProblem p` at the point `x` of `p.M` and
 some `λ`$>0$ which might be given as a vector the same length as the number of
 proximal maps.
 """
-getProximalMaps(p::P,λ,x::MP) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint} =
-    p.proximalMaps.(λ,x);
+getProximalMaps(p::P,λ,x::Array{MP,1}) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint} =
+  cat( [ p.proximalMaps[i](λ,
+    x[ (i==1 ? 1 : sum(p.numberOfProxes[1:i-1])+1 ) : sum(p.numberOfProxes[1:i]) ]
+      ) for i in 1:length(p.proximalMaps) ]; dims=1 )
 @doc doc"""
     getProximalMap(p,λ,x,i)
+
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
 function getProximalMap(p::P,λ,x::MP,i) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}
@@ -64,13 +78,13 @@ end
 stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
 
 # Fields
-* `x0` : an [`MPoint`](@ref) to start
+* `x0` – an [`MPoint`](@ref) to start
 * `stoppingCriterion` : a function `@(iter,x,xnew,λ_k)` based on the current
     `iter`, `x` and `xnew` as well as the current value of `λ`.
-* `λ` : (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
-* `evaluationOrder` : (`LinearEvalOrder()`) how to cycle through the proximal maps.
-    Other values are `RandomEvalOrder()` that takes a new random order each
-    iteration, and `FixedRandomEvalOrder()` that fixes a random cycle for all iterations.
+* `λ` – (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
+* `evaluationOrder` – ([`LinearEvalOrder`](@ref)`()`) how to cycle through the proximal maps.
+    Other values are [`RandomEvalOrder`](@ref)`()` that takes a new random order each
+    iteration, and [`FixedRandomEvalOrder`](@ref)`()` that fixes a random cycle for all iterations.
 
 # See also
 [`cyclicProximalPoint`](@ref)
@@ -90,7 +104,9 @@ CyclicProximalPointOptions(x::P,s::StoppingCriterion,λ::Function=(iter)-> 1.0/i
 Store all options required for the DouglasRachford algorithm,
 
 # Fields
-* `x0` - initial start point
+* `x` - the current iterate (result) For the parallel Douglas-Rachford, this is
+  not a value from the [`Power`](@ref) manifold but the mean.
+* `s` – the last result of the double reflection at the proxes relaxed by `α`.
 * `λ` – (`(iter)->1.0`) function to provide the value for the proximal parameter
   during the calls
 * `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
@@ -98,21 +114,43 @@ Store all options required for the DouglasRachford algorithm,
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflection`](@ref)) method employed in the iteration to perform the reflection of `x` at
   the prox `p`.
+* `stop` – ([`stopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
+* `parallel` – (`false`) inducate whether we are running a pallel Douglas-Rachford
+  or not.
 """
 mutable struct DouglasRachfordOptions <: Options
     x::P where {P <: MPoint}
-    stop::StoppingCriterion
+    s::P where {P <: MPoint}
     λ::Function
     α::Function
     R::Function
-    DouglasRachfordOptions(x::P where {P <: MPoint}, s::StoppingCriterion, λ::Function=(iter)->1.0, α::Function=(iter)->0.9, R=reflection) = new(x,s,λ,α,reflection)
+    stop::StoppingCriterion
+    parallel::Bool
+    DouglasRachfordOptions(x::P where {P <: MPoint}, λ::Function=(iter)->1.0,
+        α::Function=(iter)->0.9, R=reflection,
+        stop::StoppingCriterion = stopAfterIteration(300),
+        parallel=false
+    ) = new(x,x,λ,α,reflection,stop,parallel)
 end
 #
 # Debug
 #
 # overwrite defaults, since we store the result in the mean field
-(d::DebugCost)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = d.print( (i>=0) ? d.prefix*string(getCost(p,o.mean)) : "")
-(d::DebugIterate)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = d.print( (i>=0) ? prefix*"$(o.mean)" : "")
+function (d::DebugCost)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int)
+    d.print( (i>=0) ? d.prefix*string(getCost(p, o.x)) : "")
+end
+(d::DebugIterate)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = d.print( (i>=0) ? d.prefix*"$( o.parallel ? o.x[1] : o.x )" : "")
+function (d::DebugChange)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int)
+    if i > 0 && hasStorage(d.storage, :x)
+        d.print( d.prefix * string(
+            distance( o.parallel ? p.M.manifold : p.M,
+                o.parallel ? o.x[1] : o.x,
+                o.parallel ? getStorage(d.storage, :x)[1] : getStorage(d.storage, :x)
+            )
+        ))
+    end
+    d.storage(p,o,i)
+end
 #
 # Debug the Cyclic Proximal point parameter
 #
@@ -134,13 +172,17 @@ end
 # Record
 #
 # again overwrite defaults
-(r::RecordCost)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = recordOrReset!(r, getCost(p,o.mean), i)
+(r::RecordCost)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = recordOrReset!(r, getCost(p, o.x), i)
 function (r::RecordChange)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int)
-    recordOrReset!(r, isdefined(d.xOld) ? distance(p.M,o.mean, d.xOld) : 0.0, i)
-    d.xOld = o.mean
+    if hasStorage(r.storage, :x)
+       recordOrReset!(r, distance( o.parallel ? p.M.manifold : p.M,
+        o.parallel ? o.x[1] : o.x,
+        o.parallel ? getStorage(r.storage, :x)[1] : getStorage(r.storage, :x)
+    ), i)
+    end
+    d.storage(p,o,i)
 end
-(r::RecordIterate)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = recordOrReset(r, o.mean, i)
-
+(r::RecordIterate)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = recordOrReset(r, o.parallel ? o.x[1] : o.x, i)
 @doc doc"""
     RecordProximalParameter <: RecordAction
 

@@ -28,22 +28,18 @@ manifold $\mathcal M$.
 abstract type TVector end
 
 # scale tangential vectors
-*(ξ::T,s::Number) where {T <: TVector} = T(s* getValue(ξ) )
-*(s::Number, ξ::T) where {T <: TVector} = T(s* getValue(ξ) )
-*(ξ::Vector{T},s::Number) where {T <: TVector} = [ξe*s for ξe in ξ]
-*(s::Number, ξ::Vector{T}) where {T <: TVector} = [s*ξe for ξe in ξ]
+*(ξ::T,s::N) where {T <: TVector, N <: Number} = T(s* getValue(ξ) )
+*(s::N, ξ::T) where {T <: TVector, N <: Number} = T(s* getValue(ξ) )
+*(ξ::Vector{T},s::N) where {T <: TVector, N <: Number} = [ξe*s for ξe in ξ]
+*(s::N, ξ::Vector{T}) where {T <: TVector, N <: Number} = [s*ξe for ξe in ξ]
 # /
-/(ξ::T,s::Number) where {T <: TVector} = T( getValue(ξ) ./ s)
-/(s::Number, ξ::T) where {T <: TVector} = T(s ./ getValue(ξ) )
-/(ξ::Vector{T},s::Number) where {T <: TVector} = [ξe/s for ξe in ξ]
-/(s::Number, ξ::Vector{T}) where {T <: TVector} = [s/ξe for ξe in ξ]
+/(ξ::T,s::N) where {T <: TVector, N <: Number} = T( getValue(ξ) ./ s)
+/(s::N, ξ::T) where {T <: TVector, N <: Number} = T(s ./ getValue(ξ) )
+/(ξ::Vector{T},s::N) where {T <: TVector, N <: Number} = [ξe/s for ξe in ξ]
+/(s::N, ξ::Vector{T}) where {T <: TVector, N <: Number} = [s/ξe for ξe in ξ]
 # + - of TVectors
-function +(ξ::T,ν::T) where {T <: TVector}
-    return T( getValue(ξ) + getValue(ν) )
-end
-function -(ξ::T,ν::T) where {T <: TVector}
-    return T( getValue(ξ) - getValue(ν) )
-end
++(ξ::T,ν::T) where {T <: TVector} = T( getValue(ξ) + getValue(ν) )
+-(ξ::T,ν::T) where {T <: TVector} = T( getValue(ξ) - getValue(ν) )
 # unary operators
 -(ξ::T) where {T <: TVector} = T(- getValue(ξ))
 +(ξ::T) where {T <: TVector} = T(getValue(ξ))
@@ -159,10 +155,17 @@ function norm(M::mT,x::P,ξ::T) where {mT<:Manifold,P<:MPoint,T<:TVector}
         throw( ErrorException("The norm could not be computed, error: $(e.msg).") );
     end
 end
+@doc doc"""
+    randomMPoint(M,x, options...)
+
+generate a random [`MPoint`](@ref) on the [`Manifold`](@ref) `M` by falling
+back to the default `:Gaussian` noise if no third argument `Symbol` is given.
+Further options might be used for different types of noise.
+"""
 randomMPoint(M::mT,options...) where {mT <: Manifold} = randomMPoint(M, Val(:Gaussian), options...)
 randomMPoint(M::mT,s::Symbol,options...) where {mT <: Manifold} = randomMPoint(M, Val(s), options...)
 @doc doc"""
-    randomTVector(M,x)
+    randomTVector(M,x, options...)
 
 generate a random tangent vector at [`MPoint`](@ref) `x`
 on the [`Manifold`](@ref) `M` by falling back to the default `:Gaussian` noise

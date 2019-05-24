@@ -6,6 +6,7 @@ import LinearAlgebra: norm, dot
 import Base: exp, log, show
 export Hyperbolic, HnPoint, HnTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
+export typeofMPoint, typeofTVector
 export validateMPoint, validateTVector, zeroTVector
 #
 # Type definitions
@@ -44,11 +45,15 @@ $x\in\mathbb R^{n+1}$ with Minkowski inner product
 
 $\langle x,x\rangle_{\mathrm{M}} = -x_{n+1}^2 + \sum_{k=1}^n x_k^2 = -1$..
 """
-struct HnPoint <: MPoint
-  value::Vector
-  HnPoint(value::Vector) = new(value)
+struct HnPoint{T<:AbstractFloat} <: MPoint
+  value::Vector{T}
+  HnPoint{T}( value::Vector{T} ) where {T<:AbstractFloat} = new(value)
+  HnPoint{T}( value::T) where {T<:AbstractFloat} = new([value])
 end
-getValue(x::HnPoint) = x.value
+HnPoint(value::Vector{T}) where {T<:AbstractFloat} = HnPoint{T}(value)
+HnPoint(value::T) where {T <: AbstractFloat} = HnPoint{T}(value)
+
+getValue(x::HnPoint) = length(x.value)==1 ? x.value[1] : x.value
 
 @doc doc"""
     HnTVector <: TVector
@@ -59,11 +64,16 @@ i.e. orthogonal with respect to the Minkowski inner product
 
 $\langle \xi, x \rangle_{\mathrm{M}} = -\xi_{n+1}x_{n+1} + \sum_{k=1}^n \xi_k x_k = 0$ 
 """
-struct HnTVector <: TVector
-  value::Vector
-  HnTVector(value::Vector) = new(value)
+struct HnTVector{T <: AbstractFloat}  <: TVector
+    value::Vector{T}
+    HnTVector{T}(value::Vector{T})  where {T <: AbstractFloat}  = new(value)
+    HnTVector{T}(value::T) where {T <: AbstractFloat}  = new([value])
 end
-getValue(ξ::HnTVector) = ξ.value
+HnTVector(value::T) where {T <: AbstractFloat} = HnTVector{T}(value)
+HnTVector(value::Vector{T})  where {T <: AbstractFloat}  = HnTVector{T}(value)
+  
+getValue(ξ::HnTVector) = length(ξ.value)==1 ? ξ.value[1] : ξ.value
+
 # Traits
 # ---
 # (a) Hn is a MatrixManifold
@@ -88,7 +98,7 @@ where $\langle x,y\rangle_{\mathrm{M}} = -x_{n+1}y_{n+1} +
 \displaystyle\sum_{k=1}^n x_ky_k$ denotes the Minkowski inner product
 on $\mathbb R^{n+1}$.
 """
-distance(M::Hyperbolic,x::HnPoint,y::HnPoint) = acosh(-dotM(getValue(x), getValue(y) ))
+distance(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat} = acosh(-dotM(getValue(x), getValue(y) ))
 
 @doc doc"""
     dot(M,x,ξ,ν)
@@ -97,7 +107,7 @@ from $T_x\mathcal M$ of the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ 
 $\langle \xi, \nu \rangle_x = \langle \xi,\nu \rangle$, i.e. the inner product
 in the embedded space $\mathbb R^{n+1}$.
 """
-dot(M::Hyperbolic, x::HnPoint, ξ::HnTVector, ν::HnTVector) = dotM( getValue(ξ), getValue(ν) )
+dot(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T}, ν::HnTVector{T}) where {T <: AbstractFloat} = dotM( getValue(ξ), getValue(ν) )
 
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
@@ -107,7 +117,7 @@ be shortened with `t` to `tξ`. The formula reads
 
 $\exp_x\xi = \cosh(\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}})x + \operatorname{sinh}(\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}})\frac{\xi}{\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}}}.$
 """
-function exp(M::Hyperbolic,x::HnPoint,ξ::HnTVector,t::Real=1.0)
+function exp(M::Hyperbolic,x::HnPoint{T},ξ::HnTVector{T},t::Number=1.0)  where {T <: AbstractFloat}
   len = sqrt(dotM( getValue(ξ), getValue(ξ) ));
   if len < eps(Float64)
   	return x
@@ -125,7 +135,7 @@ The formula reads for $x\neq -y$
 
 $\log_x y = d_{\mathbb H^n}(x,y)\frac{y-\langle x,y\rangle_{\mathrm{M}} x}{\lVert y-\langle x,y\rangle_{\mathrm{M}} x \rVert_2}.$
 """
-function log(M::Hyperbolic,x::HnPoint,y::HnPoint)
+function log(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat}
   scp = dotM( getValue(x), getValue(y) )
   ξvalue = getValue(y) + scp*getValue(x)
   ξvnorm = sqrt(dotM(getValue(x),getValue(y))-1);
@@ -153,7 +163,7 @@ Computes the norm of the [`HnTVector`](@ref) `ξ` in the tangent space
 $T_x\mathcal M$ at [`HnPoint`](@ref) `x` of the
 [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$.
 """
-norm(M::Hyperbolic, x::HnPoint, ξ::HnTVector) = sqrt(dot(x,ξ,ξ))
+norm(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T})  where {T <: AbstractFloat}= sqrt(dot(x,ξ,ξ))
 @doc doc"""
     parallelTransport(M,x,y,ξ)
 Compute the paralllel transport of the [`HnTVector`](@ref) `ξ` from
@@ -166,7 +176,7 @@ The formula reads
 $P_{x\to y}(\xi) = \xi - \frac{\langle \log_xy,\xi\rangle_x}
 {d^2_{\mathbb H^n}(x,y)}\bigl(\log_xy + \log_yx \bigr).$
 """
-function parallelTransport(M::Hyperbolic, x::HnPoint, y::HnPoint, ξ::HnTVector)
+function parallelTransport(M::Hyperbolic, x::HnPoint{T}, y::HnPoint{T}, ξ::HnTVector{T})  where {T <: AbstractFloat}
   ν = log(M,x,y);
   νL = norm(M,x,ν);
   if νL > 0
@@ -177,6 +187,10 @@ function parallelTransport(M::Hyperbolic, x::HnPoint, y::HnPoint, ξ::HnTVector)
     return ξ;
   end
 end
+
+typeofTVector(::Type{HnPoint{T}}) where T = HnTVector{T}
+typeofMPoint(::Type{HnTVector{T}}) where T = HnPoint{T} 
+
 @doc doc"""
     typicalDistance(M)
 returns the typical distance on the [`Hyperbolic`](@ref)` Hn`: $\sqrt(n)$.
@@ -185,8 +199,8 @@ typicalDistance(M::Hyperbolic) = sqrt(M.dimension);
 @doc doc"""
     validateMPoint(M,x)
 
-validate, that the [`HnPoint`](@ref) `x` is a valid point on the
-[`Hyperbolic`](@ref) `M`, i.e. that the dimensioj of $x\in\mathbb H^n$ is
+validate, that the [`HnPoint`](@ref)` x` is a valid point on the
+[`Hyperbolic`](@ref)` M`, i.e. that the dimension of $x\in\mathbb H^n$ is
 correct and that its minkowski inner product is $\langle x,x\rangle=-1$.
 """
 function validateMPoint(M::Hyperbolic,x::HnPoint)
@@ -207,7 +221,7 @@ end
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`HnPoint`](@ref) $x\in\mathbb H^n$ on the [`Hyperbolic`](@ref)` Hn`.
 """
-zeroTVector(M::Hyperbolic, x::HnPoint) = HnTVector(  zero( getValue(x) )  );
+zeroTVector(M::Hyperbolic, x::HnPoint{T}) where {T <: AbstractFloat} = HnTVector(  zero( getValue(x) )  );
 # Display
 # ---
 show(io::IO, p::HnPoint) = print(io, "Hn($( getValue(p) ))")

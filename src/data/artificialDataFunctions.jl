@@ -3,8 +3,11 @@
 #
 #
 #
+import LinearAlgebra: I, Diagonal
 export artificialS1Signal, artificialS1SlopeSignal, artificialInSARImage
-export artificialS2WhirlImage, artificialS2RotationsImage
+export artificialSPDImage, artificialSPDImage2
+export artificialS2WhirlImage, artificialS2WhirlPatch
+export artificialS2RotationsImage
 export artificialS2WhirlPatch, artificialS2Lemniscate
 
 """
@@ -91,17 +94,7 @@ to $[-\pi,\pi)$.
 function artificialS1Signal(pts::Integer=500,
     pointType::Union{Type{S1Point},Type{RnPoint},Type{SnPoint},Type{Real}}=S1Point)
   t = range(0., 1., length=pts)
-  slope = 4
-  f = zero(t)
-  # define segments
-  f[t .<= 1/4] .= -24*π*( t[t .<= 1/4] .- 1/4).^2 .+ 3*π/4 # Parabel
-  f[(t .> 1/4) .& (t .<= 3/8)] .= 4*π*t[(t .> 1/4) .& (t .<= 3/8)] .- π/4 # linears
-  f[(t .> 3/8) .& (t .<= 1/2)] .= -π*t[(t .> 3/8) .& (t .<= 1/2)] .- 3/8*π
-  f[(t .> 1/2) .& (t .<= 19/32)] .= -7/8*π
-  f[(t .> 19/32) .& (t .<= 11/16)] .= -8/8*π
-  f[(t .> 11/16) .& (t .<= 25/32)] .= 7/8*π
-  f[(t .> 25/32) .& (t .<= 7/8)] .= 6/8*π
-  f[(t .> 7/8)] .= 3/2*π/exp(8/7-1/(1-7/8)) .* exp.( 8/7 .- 1 ./ (1 .- t[(t .> 7/8)]  )) .- 3/4*π
+  f = artificialS1Signal.(t)
   if isa(pointType,Type{SnPoint}) # SnPoint: wrap & embedd
     return embedd.(Ref(Circle()),S1Point.(symRem.(f)))
   elseif isa(pointType,Type{S1Point}) # S1Point: wrap
@@ -191,7 +184,7 @@ creates an image with a rotation on each axis as a parametrization.
 function artificialS2RotationsImage(;pts::Int=64,rotations::Tuple{Float64,Float64}=(0.5,0.5))
   M = Sphere(2)
   N = Power(M, (pts,pts) )
-  img = PowPoint(Matrix{SnPoint}(undef,pts,pts))
+  img = PowPoint(Matrix{SnPoint{Float64}}(undef,pts,pts))
   north = SnPoint([1.,0.,0.])
   Rxy(a) = [cos(a) -sin(a) 0.; sin(a) cos(a) 0.; 0. 0. 1]
   Rxz(a) = [cos(a) 0. -sin(a); 0. 1. 0.; sin(a) 0. cos(a)]
@@ -206,7 +199,7 @@ function artificialS2RotationsImage(;pts::Int=64,rotations::Tuple{Float64,Float6
 end
 
 @doc doc"""
-    artificialS2WhirlImage()
+    artificialS2WhirlPatch()
 create a whirl within the ptsxpts patch
 
 # Optional Parameters
@@ -230,6 +223,69 @@ function artificialS2WhirlPatch(;pts::Int=5)
   end
   return patch
 end
+@doc doc"""
+    artificialSPDImage()
+create an artificial image of symmetric positive definite matrices.
+"""
+function artificialSPDImage(;pts::Int=64, stepSize = 1.5)
+  r = range(0, stop = 1-1/pts, length=pts)
+  v1 = abs.(2*pi .* r .- pi)
+  v2 = pi .* r;
+  v3 = range(0, stop = 3*(1-1/pts), length = 2*pts);
+  data = PowPoint(fill( SPDPoint( Matrix{Float64}(I,3,3) ), pts, pts ))
+  for row = 1:pts
+    for col = 1:pts
+      A = [cos(v1[col]) -sin(v1[col]) 0. ; sin(v1[col]) cos(v1[col]) 0. ; 0. 0. 1.]
+      B = [1. 0. 0. ; 0. cos(v2[row]) -sin(v2[row]) ; 0. sin(v2[row]) cos(v2[row]) ]
+      C = [ cos(v1[mod(col-row,pts)+1]) 0 -sin(v1[mod(col-row,pts)+1]);
+           0. 1. 0.;
+           sin(v1[mod(col-row,pts)+1]) 0. cos(v1[mod(col-row,pts)+1]) ]
+      scale = [ 1 + stepSize/2 * ( (row + col) > pts ? 1 : 0)
+                1 + v3[row + col] - stepSize * ( col > pts/2 ? 1 : 0)
+                4 - v3[row + col] + stepSize * ( row > pts/2 ? 1 : 0) ]
+      data[row, col] = SPDPoint( A * B * C * Diagonal(scale) * C' * B' * A' )
+    end
+  end
+  return data
+end
+@doc doc"""
+    artificialSPDImage2()
+create a second artificial image of symmetric positive definite matrices.
+"""
+function artificialSPDImage2(;pts=64, fraction = 0.66)
+  Zl = SPDPoint( 4. * Matrix{Float64}(I,3,3) )
+  # create a first matrix
+  α = 2. * π/3;
+  β = π/3;
+  B = [  1. 0. 0. ; 0. cos(β) -sin(β) ; 0. sin(β) cos(β)  ]
+  A = [  cos(α) -sin(α) 0. ; sin(α) cos(α) 0. ; 0. 0. 1.  ]
+  Zo = SPDPoint( A * B * Diagonal( [2., 4., 8.] ) * B' * A' )
+  # create a second matrix
+  α = -4. * π/3;
+  β = -π/3;
+  B = [  1. 0. 0. ; 0. cos(β) -sin(β) ; 0. sin(β) cos(β)  ]
+  A = [  cos(α) -sin(α) 0. ; sin(α) cos(α) 0. ; 0. 0. 1.  ]
+  Zt = SPDPoint( A * B * Diagonal( [ 8. / sqrt(2.), 8., sqrt(2.) ] ) * B' * A' )
+  data = PowPoint(fill( SPDPoint( Matrix{Float64}(I,3,3) ), pts, pts ))
+  M = SymmetricPositiveDefinite(3)
+  for row = 1 : pts
+    for col = 1 : pts
+      # (a) from Zo a part to Zt
+      C = Zo;
+      if ( row > 1) # in X direction
+        C = exp(M, C, log(M,C,Zt),
+              (row - 1)/(2*(pts-1)) + ( ( row > fraction * pts) ? 1/2 : 0. )
+            )
+      end
+      if ( col > 1) # and then in Y direction
+        C = exp(M, C, parallelTransport(M,Zo,C, log(M,Zo,Zl)), (col - 1.)/(pts-1) )
+      end
+      data[row,col] = C
+    end
+  end
+  return data
+end
+
 @doc doc"""
     artificialS2Lemniscate(p,pts; interval=[0,2π], a=π/2)
 generate a Signal on the 2-sphere $\mathbb S^2$ by creating the Lemniscate of

@@ -1,7 +1,9 @@
 #
 # This file provides a systematic way to state stopping criteria employing functors
 #
+using Dates: Period, Nanosecond, value
 export stopAfterIteration, stopWhenChangeLess, stopWhenGradientNormLess
+export stopWhenCostLess, stopAfter
 export stopWhenAll, stopWhenAny
 export getReason
 # defaults
@@ -97,7 +99,7 @@ end
 @doc doc"""
     stopWhenAll <: StoppingCriterion
 
-stores an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
+store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _all_ indicate to stop. The `reseason` is given by the concatenation of all
 reasons.
 
@@ -122,7 +124,7 @@ end
 @doc doc"""
     stopWhenAny <: StoppingCriterion
 
-stores an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
+store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _any_ single one indicates to stop. The `reseason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
 
@@ -140,6 +142,63 @@ function (c::stopWhenAny)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if any([ subC(p,o,i) for subC in c.criteria])
         c.reason = string( [ getReason(subC) for subC in c.criteria ]... )
         return true
+    end
+    return false
+end
+
+"""
+    stopWhenCostLess <: StoppingCriterion
+
+store a threshold when to stop looking at the cost function of the
+optimization problem from within a [`Problem`](@ref), i.e `getCost(p,o.x)`.
+
+# Constructor
+
+    stopWhenCostLess(ε)
+
+initialize the stopping criterion to a threshold `ε`.
+"""
+mutable struct stopWhenCostLess <: StoppingCriterion
+    threshold::Float64
+    reason::String
+    stopWhenCostLess(ε::Float64) = new(ε,"")
+end
+function (c::stopWhenCostLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    if i > 0 && getCost(p,o.x) < c.threshold
+        c.reason = "The algorithm reached a cost function value ($(getCost(p,o.x))) less then the threshold ($(c.threshold)).\n"
+        return true
+    end
+    return false
+end
+
+"""
+    stopAfter <: StoppingCriterion
+
+store a threshold when to stop looking at the complete runtime. It uses
+`time_ns()` to measure the time and you provide a `Period` as a time limit,
+i.e. `Minute(15)`
+
+# Constructor
+
+    stopAfter(t)
+
+initialize the stopping criterion to a `Period t` to stop after.
+"""
+mutable struct stopAfter <: StoppingCriterion
+    threshold::Period
+    reason::String
+    start::Nanosecond
+    stopAfter(t::Period) = value(t) < 0 ? error("You must provide a positive time period") : new(t,"", Nanosecond(0))
+end
+function (c::stopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    if value(c.start) == 0 || i <= 0 # (re)start timer
+        c.start = Nanosecond(time_ns())
+    else
+        cTime = Nanosecond(time_ns()) - c.start
+        if i > 0 && ( cTime > Nanosecond(c.threshold) )
+            c.reason = "The algorithm ran for about $(floor(cTime, typeof(c.threshold))) and has hence reached the threshold of $(c.threshold).\n"
+            return true
+        end
     end
     return false
 end

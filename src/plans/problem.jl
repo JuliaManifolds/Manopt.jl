@@ -4,7 +4,7 @@
 # ---
 import Random: randperm
 export getGradient, getCost, getHessian, getProximalMap, getProximalMaps
-export Problem, HessianProblem, ProximalProblem
+export Problem, HessianProblem
 
 """
     Problem
@@ -13,20 +13,20 @@ a certain optimization problem.
 """
 abstract type Problem end
 #
-# 1) Functions / Fallbacks
+# 1) Function defaults / Fallbacks
 #
 getCost(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
-    throw(Exception("no costFunction found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+    throw(ErrorException("no costFunction found in $(typeof(p)) to evaluate for a $(typeof(x))."))
 getGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
-    throw(Exception("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+    throw(ErrorException("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
 getHessian(p::Pr,x::P,η::T) where {Pr <: Problem, P <: MPoint, T <: TVector} =
-    throw(Exception("no Hessian found in $(typeof(p)) to evaluate for a $(typeof(x)) with tangent vector $(typeof(η))."))
+    throw(ErrorException("no Hessian found in $(typeof(p)) to evaluate for a $(typeof(x)) with tangent vector $(typeof(η))."))
 getProximalMaps(p::Pr,λ,x::P) where {Pr <: Problem, P <: MPoint} =
-    throw(Exception("no proximal maps found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
+    throw(ErrorException("no proximal maps found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 getProximalMap(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
-    throw(Exception("no $(i)th proximal map found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
+    throw(ErrorException("no $(i)th proximal map found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 getSubGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
-        throw(Exception("no sub gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+        throw(ErrorException("no sub gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
 
 """
     HessianProblem <: Problem

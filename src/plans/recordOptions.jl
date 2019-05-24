@@ -4,6 +4,7 @@ export RecordGroup, RecordEvery
 export RecordChange, RecordCost, RecordIterate, RecordIteration
 export RecordEntry, RecordEntryChange
 export getRecord, hasRecord
+export RecordActionFactory, RecordFactory
 
 #
 #
@@ -62,6 +63,7 @@ end
 RecordOptions(o::O, dR::D) where {O <: Options, D <: RecordAction} = RecordOptions{O}(o,Dict(:All => dR))
 RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = RecordOptions{O}(o,Dict(:All => RecordGroup(dR)))
 RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o,dR)
+RecordOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = RecordOptions{O}(o, RecordFactory(getOptions(o),format))
 
 @traitimpl IsOptionsDecorator{RecordOptions}
 
@@ -296,3 +298,54 @@ mutable struct RecordCost <: RecordAction
     RecordCost() = new(Array{Float64,1}())
 end
 (r::RecordCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, getCost(p,o.x), i)
+
+
+@doc doc"""
+    RecordFactory(a)
+
+given an array of `Symbol`s and [`RecordAction`](@ref)s and `Ints`
+
+* The symbol `:Cost` creates a [`RecordCost`](@ref)
+* The symbol `:iteration` creates a [`RecordIteration`](@ref)
+* The symbol `:Change` creates a [`RecordChange`](@ref)
+* any other symbol creates a [`RecordEntry`](@ref) of the corresponding field in [`Options`](@ref)
+* any [`RecordAction`](@ref) is directly included
+* an Integer `k` introduces that record is only performed every `k`th iteration
+"""
+function RecordFactory(o::O, a::Array{<:Any,1} ) where {O <: Options}
+    # filter out every
+    group = Array{RecordAction,1}()
+    for s in filter(x -> !isa(x,Int), a) # filter ints and stop
+        push!(group,RecordActionFactory(o,s) )
+    end
+    record = RecordGroup(group)
+    # filter ints
+    e = filter(x -> isa(x,Int),a)
+    if length(e) > 0
+        record = RecordEvery(record,last(e))
+    end
+    dictionary = Dict{Symbol,RecordAction}(:All => record)
+    return dictionary
+end
+@doc doc"""
+    RecordActionFactory(s)
+
+create a [`RecordAction`](@ref) where
+
+* a [`RecordAction`](@ref) is passed through
+* a [`Symbol`] creates [`RecordEntry`](@ref) of that symbol, with the exceptions
+  of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
+"""
+RecordActionFactory(o::O,a::A) where {O <: Options, A <: RecordAction} = a
+function RecordActionFactory(o::O,s::Symbol) where {O <: Options}
+    if (s==:Change)
+        return RecordChange()
+    elseif (s==:Iteration)
+        return RecordIteration()
+    elseif (s==:Iterate)
+        return RecordIterate(o.x)
+    elseif (s==:Cost)
+        return RecordCost()
+    end
+        return RecordEntry(getfield(o,s),s)
+end

@@ -1,7 +1,7 @@
 #
 #
 #
-export gradTV, gradTV2, gradIntrICTV12
+export gradTV, gradTV2, gradIntrICTV12, forwardLogs
 export gradDistance
 @doc doc"""
     gradDistance(M,y,x[, p=2])
@@ -65,29 +65,25 @@ in the power manifold array, i.e. of the function
 
 $F(x) = \sum_{i}\sum_{j\in\mathcal N_i} d^p(x_i,x_j)$
 
-where $i$ runs over all indices of the [`Power`] manifold `M` and $\mathcal N_i$
+where $i$ runs over all indices of the [`Power`](@ref) manifold `M` and $\mathcal N_i$
 denotes the forward neighbors of $i$.
 
 # Input
 * `M`     : a [`Power`](@ref) manifold
 * `x`     : a [`PowPoint`](@ref).
 
-# Optional
-(default is given in brackets)
-* `p` : (1) exponent of the distance of the TV term
-
 # Ouput
-* \xi : resulting tangent vector in $T_x\mathcal M$ representing the gradient.
+* ξ : resulting tangent vector in $T_x\mathcal M$.
 """
 function gradTV(M::Power,x::PowPoint,p::Int=1)::PowTVector
   R = CartesianIndices(M.powerSize)
   d = length(M.powerSize)
   maxInd = last(R)
   ξ = zeroTVector(M,x)
-  c = costTV(M,x,p,false)
+  c = costTV(M,x,p,0)
   for i in R # iterate over all pixel
     di = 0.
-    for k in 1:d # for all direction combinations (TODO)
+    for k in 1:d # for all direction combinations
       ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
       j = i+ek # compute neighbor
       if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
@@ -98,6 +94,51 @@ function gradTV(M::Power,x::PowPoint,p::Int=1)::PowTVector
         end
         ξ[i] += g[1]
         ξ[j] += g[2]
+      end
+    end # directions
+  end # i in R
+  return ξ
+end
+
+@doc doc"""
+    ξ = forwardLogs(M,x)
+Compute the forward logs (generalizing forward differences) orrucirng,
+in the power manifold array, the function
+
+$F(x) = \sum_{i}\sum_{j\in\mathcal N_i} \log_{x_i} x_j$
+
+where $i$ runs over all indices of the [`Power`](@ref) manifold `M` and $\mathcal N_i$
+denotes the forward neighbors of $i$.
+
+# Input
+* `M`     : a [`Power`](@ref) manifold
+* `x`     : a [`PowPoint`](@ref).
+
+# Ouput
+* ξ : resulting tangent vector in $T_x\mathcal M$ representing the logs, where
+  $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
+"""
+function forwardLogs(M::Power, x::PowPoint{P,Nt}) where {P <: MPoint, Nt}
+  sX = size(x)
+  R = CartesianIndices(sX)
+  d = length(sX)
+  maxInd = [last(R).I...] # maxInd as Array
+  if d > 1
+    d2 = fill(1,d+1)
+    d2[d+1] = d
+  else
+    d2 = 1
+  end
+  N = Power(M.manifold, (prod(sX)*d,) )
+  xT = PowPoint(repeat(getValue(x),inner=d2))
+  ξ = zeroTVector(N,xT)
+  for i in R # iterate over all pixel
+    for k in 1:d # for all direction combinations
+      I = [i.I...] # array of index
+      J = I .+ 1 .* (1:d .== k) #i + e_k is j
+      if all( J .<= maxInd ) # is this neighbor in range?
+        j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+        ξ[i,k] = log(M.manifold,x[i],x[j]) # Compute log and store in kth entry
       end
     end # directions
   end # i in R

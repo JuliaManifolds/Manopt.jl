@@ -139,7 +139,9 @@ function log(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
 end
 @doc doc"""
     manifoldDimension(M)
-returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)` M`, i.e. for $n\times n$ matrices the dimension
+
+return the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)
+[`Manifold`](@ref) `M`, i.e. for $n\times n$ matrices the dimension
 is $d_{\mathcal P(n)} = \frac{n(n+1)}{2}$.
 """
 manifoldDimension(M::SymmetricPositiveDefinite) = (M.n+1)*M.n/2
@@ -185,8 +187,28 @@ where $\operatorname{Exp}$ denotes the matrix exponential
 and `log` the logarithmic map.
 """
 function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,ξ::SPDTVector)
-    E = sqrt(getValue(y)/getValue(x))
-    return SPDTVector( E*getValue(ξ)*transpose(E) )    
+  svd1 = svd( getValue(x) )
+  if norm(getValue(x)-getValue(y))<1e-13
+    return ξ
+  end
+  U = svd1.U
+  S = svd1.S
+  Ssqrt = sqrt.(S)
+  SsqrtInv = Matrix(  Diagonal( 1 ./ Ssqrt )  )
+  Ssqrt = Matrix(  Diagonal( Ssqrt )  )
+  xSqrt = U*Ssqrt*transpose(U)
+  xSqrtInv = U*SsqrtInv*transpose(U)
+  tξ = xSqrtInv * getValue(ξ) * xSqrtInv
+  tY = xSqrtInv * getValue(y) * xSqrtInv
+  svd2 = svd(tY)
+  Se = Matrix(  Diagonal( log.(svd2.S) )  )
+  Ue = svd2.U
+  tY2 = Ue*Se*transpose(Ue)
+  eig1 = eigen(0.5*tY2)
+  Sf = Matrix(  Diagonal( exp.(eig1.values) )  )
+  Uf = eig1.vectors
+  ν = xSqrt*Uf*Sf*transpose(Uf)*(0.5*(tξ+transpose(tξ)))*Uf*Sf*transpose(Uf)*xSqrt
+  return SPDTVector(ν)
 end
 
 @doc doc"""
