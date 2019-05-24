@@ -6,7 +6,7 @@ export getGradient, getCost, getStepsize, getInitialStepsize
 
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export RecordGradient, RecordGradientNorm, RecordStepsize
-# export DirectionUpdateOptions, HessianDirectionUpdateOptions
+
 #
 # Problem
 #
@@ -30,26 +30,6 @@ mutable struct GradientProblem{mT <: Manifold} <: Problem
   costFunction::Function
   gradient::Function
 end
-
-#
-# Options for subproblems
-#
-
-# abstract type DirectionUpdateOptions end
-# """
-#     SimpleDirectionUpdateOptions <: DirectionUpdateOptions
-# A simple update rule requires no information
-# """
-# struct SimpleDirectionUpdateOptions <: DirectionUpdateOptions
-# end
-# """
-#     HessianDirectionUpdateOptions
-# An update rule that keeps information about the Hessian or optains these
-# informations from the corresponding [`Options`](@ref)
-# """
-# struct HessianDirectionUpdateOptions <: DirectionUpdateOptions
-# end
-
 """
     getGradient(p,x)
 
@@ -76,12 +56,12 @@ Describes a Gradient based descent algorithm, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `x0` –  an [`MPoint`](@ref) as starting point
-* `stoppingCriterion` – (`stopAfterIteration(100=`) a function s,r = @(o,iter,ξ,x,xnew) returning a stop
+* `x0` : an [`MPoint`](@ref) as starting point
+* `stoppingCriterion` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
     indicator and a reason based on an iteration number, the gradient and the last and
     current iterates
-* `stepsize` – (`ConstantStepsize(1.)`): a `Function` to compute the next step size)
 * `retraction` : (exp) the rectraction to use
+* `stepsize` : a `Function` to compute the next step size)
 
 # See also
 [`steepestDescent`](@ref)

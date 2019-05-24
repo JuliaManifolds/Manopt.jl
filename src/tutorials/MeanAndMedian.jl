@@ -102,14 +102,12 @@ nothing; #hide
 #
 # `# i | x: | Last Change: | F(x): ``
 #
-# as well as the reason why the algorithm stopped at the end. It is hence a
-# [`DebugGroup`](@ref) of Actions performed each iteration
+# as well as the reason why the algorithm stopped at the end.
+# Here, the formaz shorthand and the [`DebugFactory`] are used, whcih returns a
+# [`DebugGroup`](@ref) of [`DebugAction`](@ref) performed each iteration and the stop,
+# respectively.
 xMean = steepestDescent(M,F,∇F,data[1];
-   debug = DebugGroup([
-       DebugIteration(), DebugDivider(), DebugIterate(), DebugDivider(),
-       DebugChange(data[1]), DebugDivider(), DebugCost(), DebugDivider("\n"),
-       DebugStoppingCriterion(),
-   ])
+   debug = [:Iteration," | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop]
 )
 nothing #hide
 #
@@ -137,34 +135,23 @@ nothing #hide
 #
 # We then call the [`cyclicProximalPoint`](@ref) as
 xMedian, values = cyclicProximalPoint(M,F2,proxes,data[1];
-    debug = Dict(:Step => DebugEvery(DebugGroup([
-        DebugIteration(), DebugDivider(), DebugIterate(), DebugDivider(),
-        DebugChange(data[1]), DebugDivider(), DebugCost(), DebugDivider("\n")
-        ]),50),
-        :Stop => DebugStoppingCriterion()
-    ),
-    record = RecordGroup([RecordIteration(), RecordChange(), RecordCost()])
+    debug = [:Iteration," | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
+    record = [:Iteration, :Change, :Cost]
 )
 nothing # hide
 # where the differences to [`steepestDescent`](@ref) are as follows
 # * the thrid parameter is now an Array of proximal maps
-# * providing a dictionary `Symbol => DebugAction` for debug (or Record)
-#   puts certain [`Action`](@ref) only at certain points, here, the `:Step`
-#   action is performed after every step, while `:Stop` is just performed if the
-#   algorithm stops. By default (as for the last debug) just an [`Action`] is put
-#   to the symbol `:All` which acts everywhere (here at `:Init`, `:Step`, and
-#   `:Stop`). 
-# * putting the [`DebugGroup`](@ref) into a [`DebugEvery`](@ref) evaluates that
-#   group only (here) every 50th iteration.
+# * debug is reduces to only every 50th iteration
 # * we further activated a [`RecordAction`](@ref) using the `record=` optional
 #   parameter. These work very simlar to those in debug, but they
-#   collect their data in an array. The high level interface returns two variables
-#   if a record is given; the `values` do contain an array of recorded
-#   datum per iteration. Here [`RecordGroup`](@ref) forms one group/tuple
-#   consisting of [`RecordIteration`](@ref), [`RecordChange`](@ref), and
-#   [`RecordCost`](@ref). The `values` contains hence a tuple per iteration,
-#   that contains (by order of specification) the iteration number, the last
-#   change and the cost function value.
+#   collect their data in an array. The high level interface then returns two
+#   variables; the `values` do contain an array of recorded
+#   datum per iteration. Here a Tuple containing the iteration, last change and
+#   cost respectively; see [`RecordGroup`](@ref), [`RecordIteration`](@ref),
+#   [`RecordChange`](@ref), [`RecordCost`](@ref) as well as the [`RecordFactory`](@ref)
+#   for details. The `values` contains hence a tuple per iteration,
+#   that itself consists of (by order of specification) the iteration number,
+#   the last change and the cost function value.
 #
 # This reads
 values

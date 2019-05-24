@@ -12,6 +12,8 @@ that can be loaded using the following data functions
   artificialS2WhirlPatch
   artificialS2WhirlImage
   artificialS2RotationsImage
+  artificialSPDImage
+  artificialSPDImage2
 ```
 
 # Manifold Constructors

@@ -9,5 +9,5 @@ renderAsymptote
 ```@docs
 asyExportS2Signals
 asyExportS2Data
-
+asyExportSPDData
 ```

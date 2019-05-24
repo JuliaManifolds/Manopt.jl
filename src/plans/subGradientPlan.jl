@@ -49,7 +49,7 @@ mutable struct SubGradientMethodOptions{P,T} <: Options where {P <: MPoint, T <:
     stepsize::Stepsize
     stoppingCriterion::StoppingCriterion
     x::P
-    xLast::P
+    xOld::P
     xOptimal::P
     subGradient::T
     SubGradientMethodOptions{P,T}(x::P,sC::StoppingCriterion,s::Stepsize,retr::Function=exp) where {P <: MPoint, T <: TVector} = (

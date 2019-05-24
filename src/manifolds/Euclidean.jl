@@ -36,6 +36,7 @@ struct RnPoint{T<:AbstractFloat} <: MPoint
   RnPoint{T}( value::T ) where T<:AbstractFloat = new([value])
 end
 RnPoint(value::T) where {T <: AbstractFloat} = RnPoint{T}(value)
+RnPoint(value::Vector{T}) where {T <: AbstractFloat} = RnPoint{T}(value)
 getValue(x::RnPoint) = length(x.value)==1 ? x.value[1] : x.value
 
 @doc doc"""
@@ -170,6 +171,7 @@ validateTVector(M::Euclidean,x::RnPoint,ξ::RnTVector) = true
 
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`RnPoint`](@ref) $x\in\mathbb R^n$ on the [`Euclidean`](@ref)` Rn`.
 """

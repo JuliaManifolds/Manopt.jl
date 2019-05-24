@@ -8,6 +8,7 @@ export Sphere, SnPoint, SnTVector,show, getValue
 export distance, dot, exp, log, manifoldDimension, norm
 export randomMPoint, opposite, parallelTransport, zeroTVector
 export validateMPoint, validateTVector
+export zeroTVector, typeofMPoint, typeofTVector
 #
 # Type definitions
 #
@@ -29,10 +30,11 @@ end
 A point $x$ on the manifold $\mathcal M = \mathbb S^n$ represented by a unit
 vector from $\mathbb R^{n+1}$
 """
-struct SnPoint <: MPoint
-  value::Vector
-  SnPoint(value::Vector) = new(value)
+struct SnPoint{T<:AbstractFloat} <: MPoint
+  value::Vector{T}
+  SnPoint{T}(value::Vector{T}) where {T <: AbstractFloat} = new(value)
 end
+SnPoint(value::Vector{T}) where {T <: AbstractFloat} = SnPoint{T}(value)
 getValue(x::SnPoint) = x.value;
 
 @doc doc"""
@@ -43,10 +45,11 @@ given as $T_x\mathbb S^n = \bigl\{\xi \in \mathbb R^{n+1}
 \big| \langle x,\xi\rangle = 0\bigr\}$, where $\langle\cdot,\cdot\rangle$
 denotes the Euclidean inner product on $\mathbb R^{n+1}$.
 """
-struct SnTVector <: TVector
-  value::Vector
-  SnTVector(value::Vector) = new(value)
+struct SnTVector{T <: AbstractFloat} <: TVector
+  value::Vector{T}
+  SnTVector{T}(value::Vector{T}) where {T <: AbstractFloat} = new(value)
 end
+SnTVector(value::Vector{T})  where {T <: AbstractFloat}  = SnTVector{T}(value)
 getValue(ξ::SnTVector) = ξ.value;
 # Traits
 # ---
@@ -97,7 +100,8 @@ function exp(M::Sphere,x::SnPoint,ξ::SnTVector,t::Float64=1.0)
   if len < eps(Float64)
     return x
   else
-    return SnPoint( cos(t*len) * getValue(x)  +  (sin(t*len)/len) * getValue(ξ) )
+	xV = cos(t*len) * getValue(x)  +  (sin(t*len)/len) * getValue(ξ)
+    return SnPoint( xV ./ norm(xV)  )
   end
 end
 @doc doc"""
@@ -201,8 +205,8 @@ function tangentONB(M::Sphere,x::SnPoint,ξ::SnTVector)
     Ξ = [ SnTVector(V[:,i]) for i in 1:d ]
     return Ξ,κ
 end
-typeofTVector(::Type{SnPoint}) = SnTVector
-typeofMPoint(::Type{SnTVector}) = SnPoint 
+typeofTVector(::Type{SnPoint{T}}) where T = SnTVector{T}
+typeofMPoint(::Type{SnTVector{T}}) where T = SnPoint{T} 
 """
     typicalDistance(M)
 
@@ -253,6 +257,7 @@ end
 
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`SnPoint`](@ref) $x\in\mathbb S^n$ on the [`Sphere`](@ref)` Sn`.
 """

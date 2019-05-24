@@ -45,7 +45,7 @@ TangentBundle(M::mT) where {mT <: Manifold} = TangentBundle{mT}(M)
 @doc doc"""
     getBase(M)
 
-return the base manifold of the [`TangentBundle`](@ref)` `[`Manifold`](@ref) `M`.
+return the base manifold of the [`TangentBundle`](@ref) [`Manifold`](@ref) `M`.
 """
 getBase(M::TangentBundle) = M.manifold
 

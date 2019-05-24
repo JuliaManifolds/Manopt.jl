@@ -186,10 +186,12 @@ construct a random tangent vector on the [`Power`](@ref) manifold `M`, by creati
 Optional values are passed down.
 """
 randomTVector(M::Power,x::PowPoint,options...) = PowTVector(
-    [
-        randomTVector(M.manifold, getValue(x)[i] , options...)
-        for i in CartesianIndices(getValue(x))
-    ]
+    [randomTVector(M.manifold, getValue(x)[i] , options...)
+        for i in CartesianIndices(getValue(x)) ]
+)
+randomTVector(M::Power,x::PowPoint,s::Symbol,options...) = PowTVector(
+    [randomTVector(M.manifold, getValue(x)[i],s,options...)
+        for i in CartesianIndices(getValue(x)) ]
 )
 
 @doc doc"""

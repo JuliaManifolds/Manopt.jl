@@ -31,7 +31,14 @@ function dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <:
   sig4 = string( typeof(M) )
   throw( ErrorException("dot not implemented for a $sig2 and $sig3 in the tangent space of a $sig1 on $sig4." ) )
 end
-@doc doc"""
+# fallback for forgetting base
+function dot(M::mT, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVector, S <: TVector}
+  sig2 = string( typeof(ξ) )
+  sig3 = string( typeof(ν) )
+  sig4 = string( typeof(M) )
+  throw( ErrorException("dot requires a base point. You provided a manifold ($sig4) two tangent vectorsa and $sig2 as well as $sig3 in the tangent space of a $sig1 on $sig4." ) )
+end
+"""
     exp(M,x,ξ,[t=1.0])
 computes the exponential map at an [`MPoint`](@ref) `x` for the
 [`TVector`](@ref) `ξ` on the [`Manifold`](@ref) `M`. The optional parameter `t` can be
@@ -99,6 +106,7 @@ function manifoldDimension(M::mT)::Integer where {mT<:Manifold}
   sig1 = string( typeof(M) )
   throw( ErrorException("manifoldDimension not Implemented on $sig1." ) )
 end
+
 @doc doc"""
     parallelTransport(M,x,y,ξ)
 Parallel transport of a vector `ξ` given at the tangent space $T_x\mathcal M$
@@ -158,6 +166,7 @@ function typeofTVector(pP::Type{P}) where {P <: MPoint}
 end
 """
     typicalDistance(M)
+
 returns the typical distance on the [`Manifold`](@ref) `M`, which is for example
 the longest distance in a unit cell or injectivity radius.
 """
@@ -205,6 +214,7 @@ function validateTVector(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint,
 end
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`MPoint`](@ref) $x\in\mathcal M$ on the [`Manifold`](@ref) `M`.
 """

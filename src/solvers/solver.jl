@@ -25,8 +25,18 @@ the [`DebugOptions`](@ref) decorator
 [`DebugOptions`](@ref), [`RecordOptions`](@ref)
 """
 function decorateOptions(o::O;
-        debug::Union{Missing,DebugAction,Array{DebugAction,1},Dict{Symbol,DebugAction}}=missing,
-        record::Union{Missing,RecordAction,Array{RecordAction,1},Dict{Symbol,RecordAction}}=missing,
+        debug::Union{Missing, # none
+                    DebugAction, # single one for :All
+                    Array{DebugAction,1}, # a group that's put into :All
+                    Dict{Symbol,DebugAction}, # the most elaborate, a dictionary
+                    Array{<:Any,1}, # short hand for Factory.
+                    }=missing,
+        record::Union{Missing, # none
+                    RecordAction, # single action
+                    Array{RecordAction,1}, # a group to be set in :All
+                    Dict{Symbol,RecordAction}, # a dictionary for precise settings
+                    Array{<:Any,1} # a formated string with symbols or Actions
+                    }=missing,
     ) where {O <: Options}
     o = ismissing(debug) ? o : DebugOptions(o,debug)
     o = ismissing(record) ? o : RecordOptions(o,record)

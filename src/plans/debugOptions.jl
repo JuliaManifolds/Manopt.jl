@@ -2,9 +2,7 @@ import Base: stdout
 export DebugOptions, getOptions
 export DebugAction, DebugGroup, DebugEvery
 export DebugChange, DebugIterate, DebugIteration, DebugDivider
-export DebugCost, DebugStoppingCriterion
-
-export DebugICC
+export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 #
 #
 # Debug Options Decorator
@@ -52,6 +50,7 @@ construct debug decorated options, where `dD` can be
 * an `Array` of [`DebugAction`](@ref)s, then it is stored as a
   `debugDictionary` within `:All`.
 * a `Dict{Symbol,DebugAction}`.
+* an Array of Symbols, String and an Int for the [`DebugFactory`](@ref)
 """
 mutable struct DebugOptions{O<:Options} <: Options
     options::O
@@ -61,18 +60,10 @@ end
 DebugOptions(o::O, dD::D) where {O <: Options, D <: DebugAction} = DebugOptions{O}(o,Dict(:All => dD))
 DebugOptions(o::O, dD::Array{<:DebugAction,1}) where {O <: Options} = DebugOptions{O}(o,Dict(:All => DebugGroup(dD,first(dD).print)))
 DebugOptions(o::O, dD::Dict{Symbol,<:DebugAction}) where {O <: Options} = DebugOptions{O}(o,dD)
+DebugOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = DebugOptions{O}(o, DebugFactory(format))
 
 @traitimpl IsOptionsDecorator{DebugOptions}
-#
-# Summaries / easy Access
-#
-@doc doc"""
-    DebugICC([e=0,print=print])
 
-generate a debug output for [I]teration, current [C]ost and last [C]hange that
-only prints every `e`th ieration (deactivated by nonpositive integers)
-"""
-DebugICC(print::Function=print,e::Int=0) = e>0 ? DebugEvery(DebugGroup([DebugIteration(),DebugCost(),DebugChange()],print),e) : DebugGroup([DebugIteration(),DebugCost(),DebugChange()],print)
 #
 # Meta Debugs
 #
@@ -137,11 +128,22 @@ during the last iteration. See [`DebugEntryChange`](@ref)
 * `prefix` (`"Last Change:"`) prefix of the debug output
 * `print` (`print`) default method to peform the print.
 """
-DebugChange(x::P, a::StoreOptionsAction=StoreOptionsAction( (:x,) ), prefix="Last Change:",print=print) where {P <: MPoint}= 
-    DebugEntryChange(x,:x,(p,o,x,y) -> distance(p.M,x,y), a, prefix,print)
-DebugChange(a::StoreOptionsAction=StoreOptionsAction( (:x,) ), prefix="Last Change:",print=print)  = 
-    DebugEntryChange(:x,(p,o,x,y) -> distance(p.M,x,y), a, prefix,print)
-
+mutable struct DebugChange <: DebugAction
+    print::Function
+    prefix::String
+    storage::StoreOptionsAction
+    DebugChange(a::StoreOptionsAction=StoreOptionsAction( (:x,) ),
+            prefix = "Last Change: ",
+            print::Function=print
+        ) = new(print, prefix, a)
+end
+function (d::DebugChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    s = (i>0) ? ( hasStorage(d.storage, :x) ? d.prefix * string(
+            distance(p.M, o.x, getStorage(d.storage, :x))
+            ) : "") : ""
+    d.storage(p,o,i)
+    d.print(s)
+end
 @doc doc"""
     DebugIterate <: DebugAction
 
@@ -226,7 +228,7 @@ mutable struct DebugEntry <: DebugAction
     DebugEntry(f::Symbol,prefix="$f:",print::Function=print) = new(print,prefix,f)
 end
 (d::DebugEntry)(p::Pr,o::O,i::Int) where {Pr <: Problem, O <: Options} = d.print(
-    (i>=0) ? prefix*": "*string(getfield(o, d.field)) : "")
+    (i>=0) ? d.prefix*" "*string(getfield(o, d.field)) : "")
 
 @doc doc"""
     DebugEntryChange{T} <: DebugAction
@@ -272,7 +274,6 @@ mutable struct DebugEntryChange <: DebugAction
         return new(print, prefix, f, d, a)
     end
 end
-DebugEntryChange(v::T,f,d,rest...) where T = DebugEntryChange{T}(v, f, d,rest...)
 function (d::DebugEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     s= (i>0) ? ( hasStorage(d.storage,d.field) ? d.prefix * string(
             d.distance( p, o, getproperty(o, d.field), getStorage(d.storage,d.field))
@@ -292,3 +293,61 @@ mutable struct DebugStoppingCriterion <: DebugAction
     DebugStoppingCriterion(print::Function=print) = new(print)
 end
 (d::DebugStoppingCriterion)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0 || i==typemin(Int)) ? getReason(o) : "")
+
+@doc doc"""
+    DebugFactory(a)
+
+given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
+
+* The symbol `:Stop` creates an entry of to display the stoping criterion at the end
+  (`:Stop => DebugStoppingCriterion()`)
+* The symbol `:Cost` creates a [`DebugCost`](@ref)
+* The symbol `:iteration` creates a [`DebugIteration`](@ref)
+* The symbol `:Change` creates a [`DebugChange`](@ref)
+* any other symbol creates debug output of the corresponding field in [`Options`](@ref)
+* any string creates a [`DebugDivider`](@ref)
+* any [`DebugAction`](@ref) is directly included
+* an Integer `k`introduces that debug is only printed every `k`th iteration
+"""
+function DebugFactory(a::Array{<:Any,1} )
+    # filter out every
+    group = Array{DebugAction,1}()
+    for s in filter(x -> !isa(x,Int) && x!=:Stop, a) # filter ints and stop
+        push!(group,DebugActionFactory(s) )
+    end
+    debug = DebugGroup(group)
+    # filter ints
+    e = filter(x -> isa(x,Int),a)
+    if length(e) > 0
+        debug = DebugEvery(debug,last(e))
+    end
+    dictionary = Dict{Symbol,DebugAction}(:All => debug)
+    if :Stop in a
+        dictionary[:Stop] = DebugStoppingCriterion()
+    end
+    return dictionary
+end
+@doc doc"""
+    DebugActionFactory(s)
+
+create a [`DebugAction`](@ref) where
+
+* a `String` yields the correspoinding divider
+* a [`DebugAction`](@ref) is passed through
+* a [`Symbol`] creates [`DebugEntry`](@ref) of that symbol, with the exceptions
+  of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
+"""
+DebugActionFactory(s::String) = DebugDivider(s)
+DebugActionFactory(a::A) where {A <: DebugAction} = a
+function DebugActionFactory(s::Symbol)
+    if (s==:Change)
+        return DebugChange()
+    elseif (s==:Iteration)
+        return DebugIteration()
+    elseif (s==:Iterate)
+        return DebugIterate()
+    elseif (s==:Cost)
+        return DebugCost()
+    end
+        return DebugEntry(s)
+end

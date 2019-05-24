@@ -4,12 +4,12 @@
 CurrentModule = Manopt
 ```
 
-## Tangent Bundle
+## [Tangent bundle](@id SubSecTangentBundle)
 
 The tangent bundle $T\mathcal M$ of a manifold $\mathcal M$ consists of all tuples
 $(x,\xi) \in T\mathcal M$, where $\xi\in T_x\mathcal M$, $x\in \mathcal M$, where
 the metric is inherited component wise and for the exponential and logarithmic map,
-the second component requires a `parallelTransport`.
+the second component requires a [`parallelTransport`](@ref).
 
 ### Tangent Bundle Types
 

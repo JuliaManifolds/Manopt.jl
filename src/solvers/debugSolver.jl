@@ -34,7 +34,7 @@ end
 """
     getSolverResult(p,o)
 Return the final result after all iterations that is stored within the
-(modified during the iterations) [`Options`](@ref)` o`.
+(modified during the iterations) [`Options`](@ref) `o`.
 """
 function getSolverResult(p::P,o::O) where {P <: Problem, O <: DebugOptions}
     return getSolverResult(p, o.options)

@@ -135,13 +135,13 @@ log(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint)::GraphEdgeTVector = GraphEdg
 returns the (product of) dimension(s) of the [`Graph`](@ref) the
 [`GraphVertexPoint`](@ref)`x` belongs to.
 """
-manifoldDimension(p::GraphVertexPoint) = prod(manifoldDimension.( getValue(p) ) )
+manifoldDimension(x::GraphVertexPoint) = prod(manifoldDimension.( getValue(x) ) )
 """
     manifoldDimension(x)
 returns the (product of) dimension(s) of the [`Power`](@ref) the
 [`GraphEdgePoint`](@ref)`x` belongs to.
 """
-manifoldDimension(p::GraphEdgePoint) = prod(manifoldDimension.( getValue(p) ) )
+manifoldDimension(x::GraphEdgePoint) = prod(manifoldDimension.( getValue(x) ) )
 """
     manifoldDimension(M)
 returns the (product of) dimension(s) of the [`Graph`](@ref) `M` seen as a vertex power manifold.

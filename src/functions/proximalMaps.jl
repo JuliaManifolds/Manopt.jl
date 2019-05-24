@@ -7,7 +7,7 @@
 # ---
 # Manopt.jl - R. Bergmann – 2017-07-06
 
-export proxDistance, proxTV, proxTV2
+export proxDistance, proxTV, proxParallelTV, proxTV2, proxCollaborativeTV
 
 @doc doc"""
     y = proxDistance(M,λ,f,x[, p=2 ]) -
@@ -100,15 +100,17 @@ The parameter `λ` is the prox parameter.
 function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
   R = CartesianIndices(M.powerSize)
   d = length(M.powerSize)
-  maxInd = last(R)
+  maxInd = Tuple(last(R))
   y = copy(x)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
     for l in 0:1
       for i in R # iterate over all pixel
         if (i[k] % 2) == l
-          j = i+ek # compute neighbor
-          if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
+          I = [i.I...] # array of index
+          J = I .+ 1 .* (1:d .== k) #i + e_k is j
+          if all( J .<= maxInd ) # is this neighbor in range?
+            j = CartesianIndex(J...) # neigbbor index as Cartesian Index
             (y[i],y[j]) = proxTV( M.manifold,λ,(y[i],y[j]),p) # Compute TV on these
           end
         end
@@ -116,6 +118,55 @@ function proxTV(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
     end # even odd
   end # directions
   return y
+end
+@doc doc"""
+    ξ = proxParallelTV(M,λ,x,[p])
+Compute the proximal maps $\operatorname{prox}_{\lambda\varphi}$ of
+all forward differences orrucirng in the power manifold array, i.e.
+$\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)$ with `xi` and `xj` are array
+elemets of `x` and `j = i+e_k`, where `e_k` is the $k$th unitvector.
+The parameter `λ` is the prox parameter.
+
+# Input
+* `M`     : a manifold
+* `λ`     : a real value, parameter of the proximal map
+* `x`     : a [`PowPoint`](@ref).
+
+# Optional
+(default is given in brackets)
+* `p` : (1) exponent of the distance of the TV term
+
+# Ouput
+* y : resulting of Array [`PowPoint`](@ref) with all mentioned proximal
+  points evaluated (in a parallel within the arrays elements).
+"""
+function proxParallelTV(M::Power, λ::Number, x::Array{PowPoint{P,N},1}, p::Int=1)::Array{PowPoint{P,N},1} where {P <: MPoint, N}
+  R = CartesianIndices(getValue(x[1]))
+  d = ndims(getValue(x[1]))
+  if length(x) != 2*d
+    throw(ErrorException("The number of inputs from the array ($(length(x))) has to be twice the data dimensions ($(d))."))
+  end
+  maxInd = Tuple(last(R))
+  # create an array for even/odd splitted proxes along every dimension
+  y = reshape(deepcopy(x),d,2)
+  x = reshape(x,d,2)
+  for k in 1:d # for all directions
+    ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+    for l in 0:1 # even odd
+      for i in R # iterate over all pixel
+        if (i[k] % 2) == l
+          I = [i.I...] # array of index
+          J = I .+ 1 .* (1:d .== k) #i + e_k is j
+          if all( J .<= maxInd ) # is this neighbor in range?
+            j = CartesianIndex(J...) # neigbbor index as Cartesian Index
+            # parallel means we apply each (direction even/odd) to a seperate copy of the data.
+            (y[k,l+1][i],y[k,l+1][j]) = proxTV( M.manifold,λ,(x[k,l+1][i],x[k,l+1][j]),p) # Compute TV on these
+          end
+        end
+      end # i in R
+    end # even odd
+  end # directions
+  return y[:] # return as onedimensional array
 end
 @doc doc"""
     (y1,y2) = proxTV2(M,λ,(x1,x2),[p=1], kwargs...)
@@ -209,17 +260,21 @@ The parameter `λ` is the prox parameter.
 function proxTV2(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
   R = CartesianIndices(M.powerSize)
   d = length(M.powerSize)
-  minInd, maxInd = first(R), last(R)
+  minInd, maxInd = Tuple(first(R)), Tuple(last(R))
   y = copy(x)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-    for l in 0:2
+    for l in 0:1
       for i in R # iterate over all pixel
         if (i[k] % 3) == l
-          jF = i+ek # compute forward neighbor
-          jB = i-ek # compute backward neighbor
-          if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
-            (y[jB], y[i], y[jF]) = proxTV2( M.manifold, λ, (y[jB], y[i], y[jF]),p) # Compute TV on these
+          I = [i.I...] # array of index
+          JForward = I .+ 1 .* (1:d .== k) #i + e_k
+          JBackward = I .+ 1 .* (1:d .== k) # i - e_k
+          if all( JForward .<= maxInd ) && all( JBackward .=> minInd)
+            jForward = CartesianIndex(JForward...) # neigbbor index as Cartesian Index
+            jBackward = CartesianIndex(JForward...) # neigbbor index as Cartesian Index
+            (y[jBackward], y[i], y[jForward]) = 
+              proxTV2( M.manifold, λ, (y[jBackward], y[i], y[jForward]),p) # Compute TV on these
           end
         end # if mod 3
       end # i in R
@@ -227,3 +282,63 @@ function proxTV2(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
   end # directions
   return y
 end
+@doc doc"""
+    proxCollaborativeTV(M, λ, x[, p, q])
+computes the prox of the collaborative TV prox for x on the [`Power`](@ref) Manifold ,
+  i.e. of the function
+
+$ G^q(X) = \sum_{i\in\mathcal I}
+  \Bigl( \sum_{j\in\mathcal N_i}\sum_{k=1^d} \lVert X_{i,j}\rVert_x^p\Bigr)^\frac{q/p},
+
+where $\mathcal I$ is the set of indices for $x\in\mathcal M$ and $\mathcal N_i$ is the set of its forward neighbors.
+this is adopted from Duran, Möller, Sbert. Cremers, where the most inner norm is not on a manifold but on a vector space,
+see their Example 3 for details.
+"""
+function proxCollaborativeTV(N::Power,λ::Float64,x::PowPoint,Ξ::PowTVector,p::Float64=2.,q::Float64=1.)
+  # Ξ = forwardLogs(M,x)
+  if length(size(x)) == 1
+    d = 1
+    s = 1
+    iRep = 1
+  else
+    d = size(x)[end]
+    s = length(size(x))-1
+    if s != d
+      throw( ErrorException( "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not." ))
+    end
+    iRep = [Integer.(ones(d))...,d]
+  end
+  if q==1 # Example 3 case 2
+    if p==1
+      normΞ = norm.(Ref(N.manifold), getValue(x), getValue(Ξ) )
+      return PowTVector( max.(normΞ .- λ, 0.) ./ ( (normΞ .== 0) .+ normΞ )  .*  getValue(Ξ) )
+    elseif p==2 # Example 3 case 3
+      norms = sqrt.( sum( norm.(Ref(N.manifold),getValue(x),getValue(Ξ)).^2, dims=d+1) )
+      normΞ = repeat(norms,inner=iRep)
+      # if the norm is zero add 1 to avoid division by zero, also then the
+      # nominator is already (max(-λ,0) = 0) so it stays zero then
+      return PowTVector( max.(normΞ .- λ, 0.) ./ ( (normΞ .== 0) .+ normΞ )  .*  getValue(Ξ) )
+    else
+      throw( ErrorException("The case p=$p, q=$q is not yet implemented"))
+    end
+  elseif q==Inf
+    if p==2
+      norms = sqrt.( sum( norm.(Ref(N.manifold),getValue(x),getValue(Ξ)).^2, dims=d+1) )
+      normΞ = repeat(norms,inner=iRep)
+    elseif p==1
+      norms = sum( norm.(Ref(N.manifold),getValue(x),getValue(Ξ)), dims=d+1)
+      normΞ = repeat(norms,inner=iRep)
+    elseif p==Inf
+      normΞ = norm.(Ref(N.manifold),getValue(x),getValue(Ξ))
+    else
+      throw( ErrorException("The case p=$p, q=$q is not yet implemented"))
+    end
+    return PowTVector(
+      λ .* getValue(Ξ) ./ max.(Ref(λ), normΞ)
+    )
+  end # end q
+  throw( ErrorException("The case p=$p, q=$q is not yet implemented"))
+end
+proxCollaborativeTV(N::Power,λ::Float64,x::PowPoint,Ξ::PowTVector,p::Int,q::Float64=1.) = proxCollaborativeTV(N,λ,x,Ξ,Float64(p),q)
+proxCollaborativeTV(N::Power,λ::Float64,x::PowPoint,Ξ::PowTVector,p::Float64,q::Int) = proxCollaborativeTV(N,λ,x,Ξ,p,Float64(q))
+proxCollaborativeTV(N::Power,λ::Float64,x::PowPoint,Ξ::PowTVector,p::Int,q::Int) = proxCollaborativeTV(N,λ,x,Ξ,Float64(p),Float64(q))

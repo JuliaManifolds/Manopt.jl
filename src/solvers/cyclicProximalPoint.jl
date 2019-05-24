@@ -3,25 +3,23 @@ export cyclicProximalPoint
     cyclicProximalPoint(M, F, proximalMaps, x)
 perform a cyclic proximal point algorithm.
 # Input
-* `M` : a manifold $\mathcal M$
-* `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `proximalMaps`: an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of $F$
-* `x` : an initial value $x\in\mathcal M$
+* `M` – a manifold $\mathcal M$
+* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `proximalMaps` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of $F$
+* `x` – an initial value $x\in\mathcal M$
 
 # Optional
 the default values are given in brackets
-* `evaluationOrder <: [`EvalOrder`](@ref) ( [`LinearEvalOrder`](@ref) ) whether
+* `evaluationOrder` – ( [`LinearEvalOrder`](@ref) ) – whether
   to use a randomly permuted sequence ([`FixedRandomEvalOrder`](@ref)), a per
   cycle permuted sequence ([`RandomEvalOrder`](@ref)) or the default linear one.
-* `λ`  : ( `iter -> 1/iter` ) a function returning the (square summable but not
+* `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
-* `stoppingCriterion` : ( `(i,x,xnew,λ) -> ...` ) a function indicating when to stop.
-  Default is to stop if the norm of the iterates change $d_{\mathcal M}(x,x_{\text{new}})$ is less
-  than $10^{-4}$ or the iterations `i` exceed 500.
+* `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000),`[`stopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
 
 # Output
-* `xOpt` : the resulting (approximately critical) point of gradientDescent
-* `record` : (if activated) a String containing the stopping criterion stopping
+* `xOpt` – the resulting (approximately critical) point of gradientDescent
+* `record` – (if activated) a String containing the stopping criterion stopping
   reason.
 """
 function cyclicProximalPoint(M::Mc,

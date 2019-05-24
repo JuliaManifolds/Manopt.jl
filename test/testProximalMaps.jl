@@ -1,8 +1,8 @@
 @testset "proximal maps" begin
   #
   # proxTV
-  p = SnPoint([1,0,0])
-  q = SnPoint([0,1,0])
+  p = SnPoint([1.,0.,0.])
+  q = SnPoint([0.,1.,0.])
   M = Sphere(2)
   (r,s) = proxTV(M,π/4,(p,q));
   @test norm( getValue(r) - getValue(s) ) < eps(Float64)

@@ -6,9 +6,9 @@ import Base: exp, log, show
 
 export Product, ProdPoint, ProdTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
-export randomMPoint, randomTVector
 export validateMPoint, validateTVector
-export zeroTVector
+export randomMPoint, randomTVector
+export zeroTVector, typeofMPoint, typeofTVector
 export show, getValue
 @doc doc"""
     Product{M<:Manifold} <: Manifold
@@ -40,10 +40,12 @@ end
 A point on the [`Product`](@ref) $\mathcal M = \mathcal N_1\times\mathcal N_2\times\cdots\times\mathcal N_m$,$m\in\mathbb N$,
 represented by a vector or array of [`MPoint`](@ref)s.
 """
-struct ProdPoint <: MPoint
-  value::Array{MPoint}
-  ProdPoint(v::Array{MPoint}) = new(v)
+struct ProdPoint{A <: Array{MPoint}} <: MPoint
+  value::A
+  ProdPoint{A}(v::A) where {A <: Array{MPoint}} = new(v)
 end
+ProdPoint(v::A) where {A <: Array{MPoint}} = ProdPoint(v)
+
 getValue(x::ProdPoint) = x.value
 @doc doc"""
     ProdTVector <: TVector
@@ -52,10 +54,11 @@ A tangent vector in the product of tangent spaces of the [`Product`](@ref)
 $T\mathcal M = T\mathcal N_1\times T\mathcal N_2\times\cdots\times T\mathcal N_m$,$m\in\mathbb N$,
 represented by a vector or array of [`TVector`](@ref)s.
 """
-struct ProdTVector <: TVector
-  value::Array{TVector}
-  ProdTVector(value::Array{TVector}) = new(value);
+struct ProdTVector{A <: Array{TVector}} <: TVector
+  value::A
+  ProdTVector{A}(value::A) where {A <: Array{TVector}} = new(value);
 end
+ProdTVector(v::A) where {A <: Array{TVector}} = ProdTVector{A}(v)
 getValue(ξ::ProdTVector) = ξ.value
 
 @doc doc"""
@@ -118,6 +121,9 @@ computes the product parallelTransport map on the [`Product`](@ref)` `[`Manifold
 and returns the corresponding [`ProdTVector`](@ref).
 """
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
+
+typeofTVector(::Type{ProdPoint{A}}) where {A <: Array{MPoint}} = ProdTVector{Array{TVector}}
+typeofMPoint(::Type{ProdTVector{A}}) where {A <: Array{TVector}} = ProdPoint{Array{MPoint}}
 
 @doc doc"""
     randomMPoint(M)
