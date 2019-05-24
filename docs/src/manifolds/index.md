@@ -32,6 +32,7 @@ A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\m
 [$n$-dim. Hyperbolic space $\mathbb H^n$](@ref HyperbolicManifold) | `Hyperbolic.jl` | `Hn` | embedded in $\mathbb R^{n+1}$
 [$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
 [Euclidean space $\mathbb R^n$](@ref EuclideanSpace) | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
+[special orthogonal group $\mathrm{SO}(n)](@ref SOn) | `Rotations.jl` | `SO` | represented as rotation matrices
 [symmetric matrices $\mathcal{Sym}(n)$](@ref SymmetricManifold) | `Symmetric.jl` | `Sym` | $n\times n$ symmetric matrices
 [symmetric positive definite matrices $\mathcal P(n)$](@ref SymmetricPositiveDefiniteManifold) | `SymmetricPositiveDefinite.jl` | `SPD` | $n\times n$ symmetric positive matrices using the affine metric
 
@@ -90,7 +91,7 @@ In the following list `M <: Manifold` the manifold type
 `T <: TVector` a corresponding tangent vector in a suitable tangent space,
 
 ```@docs
-addNoise(M::mT,x::T,σ::Number,kwargs...) where {mT <: Manifold, T <: MPoint}
+addNoise(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint}
 distance(M::mT, x::T, y::T) where {mT <: Manifold, T <: MPoint}
 dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVector, S <: TVector}
 exp(M::mT, x::P, ξ::T,t::N=1.0) where {mT<:Manifold, P<:MPoint, T<:TVector, N<:Number}

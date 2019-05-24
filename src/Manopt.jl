@@ -20,6 +20,7 @@ module Manopt
   include("manifolds/Euclidean.jl")
   include("manifolds/Graph.jl")
   include("manifolds/Hyperbolic.jl")
+  include("manifolds/Rotations.jl")
   include("manifolds/Sphere.jl")
   include("manifolds/SymmetricPositiveDefinite.jl")
   include("manifolds/Symmetric.jl")

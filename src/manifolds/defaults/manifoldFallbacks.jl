@@ -113,12 +113,6 @@ function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPo
   throw( ErrorException("parallelTransport not implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
 end
 @doc doc"""
-    randomMPoint(M,options...)
-returns a random point on the manifold `M`
-"""
-randomMPoint(M::mT,options...) where {mT <: Manifold} = throw( ErrorException("randomMPoint() not implemented on the Manifold $(typeof(M)).") );
-#randomTVector(M::mT,p::P,s::Symbol,options...) where {mT <: Manifold, P<: MPoint} = throw( ErrorException("randomTVector($(typeof(M)),$(typeof(p)),$(s),$(options...)) not implemented for points $(typeof(p)) on the Manifold $(typeof(M)).") );
-@doc doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the
 first vector and compute the eigenvalues of the curvature tensor

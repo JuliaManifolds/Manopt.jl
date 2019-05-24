@@ -14,7 +14,7 @@
 	xT = MPointE(x);
 	ξT2 = log(M,x,y)
 	@test norm( getValue(ξ) - getValue(ξT2) ) ≈ 0 atol=10.0^(-16)
-	@test distance(M,getBasePoint(ξE),x) ≈ 0 atol=10.0^(-16)
+	@test distance(M, getBasePoint(ξE), x) ≈ 0 atol=10.0^(-16)
 	# test parallel transport
 	@test norm(getValue( parallelTransport(M,y,x,log(M,y,x)) ) + getValue(ξ) ) ≈ 0 atol=3*10.0^(-16)
 	#
