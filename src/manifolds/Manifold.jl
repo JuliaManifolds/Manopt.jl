@@ -159,7 +159,8 @@ function norm(M::mT,x::P,ξ::T) where {mT<:Manifold,P<:MPoint,T<:TVector}
         throw( ErrorException("The norm could not be computed, error: $(e.msg).") );
     end
 end
-randomMPoint(M::mT) where {mT <: Manifold} = randomMPoint(M, :Gaussian)
+randomMPoint(M::mT,options...) where {mT <: Manifold} = randomMPoint(M, Val(:Gaussian), options...)
+randomMPoint(M::mT,s::Symbol,options...) where {mT <: Manifold} = randomMPoint(M, Val(s), options...)
 @doc doc"""
     randomTVector(M,x)
 
