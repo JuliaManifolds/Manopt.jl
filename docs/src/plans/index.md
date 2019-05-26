@@ -4,9 +4,9 @@
 CurrentModule = Manopt
 ```
 
-In order to start a solver, both a `:Problem` and `:Options` are required.
-Together they form a `plan` and these are stored in this folder. For
-sub-problems there are maybe also only `options`, since they than refer to the
+In order to start a solver, both a [`Problem`](@ref) and [`Options`](@ref) are required.
+Together they form a __plan__ and these are stored in this folder. For
+sub-problems there are maybe also only [`Options`](@ref), since they than refer to the
 same problem.
 
 ## Options
@@ -61,7 +61,7 @@ see [DebugSolver](@ref DebugSolver) for details on the decorated solver.
 
 Further specific [`DebugAction`](@ref)s can be found at the specific Options.
 
-#### [Record Options](@id RecordOptons)
+#### [Record Options](@id RecordOptions)
 
 ```@autodocs
 Modules = [Manopt]

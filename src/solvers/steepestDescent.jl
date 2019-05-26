@@ -38,7 +38,6 @@ function steepestDescent(M::mT,
   ) where {mT <: Manifold, MP <: MPoint}
   p = GradientProblem(M,F,∇F)
   o = GradientDescentOptions(x,stoppingCriterion,stepsize,retraction)
-
   o = decorateOptions(o; kwargs...)
   resultO = solve(p,o)
   if hasRecord(resultO)

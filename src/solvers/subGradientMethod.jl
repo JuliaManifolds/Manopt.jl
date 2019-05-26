@@ -21,8 +21,8 @@ the argument `∂F` should always return _one_ element from the subgradient.
 * `stepsize` : ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
   functor.
 * `retraction` : (`exp`) a `retraction(M,x,ξ)` to use.
-* `stoppingCriterion` : (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
-  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `stoppingCriterion` : ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+  a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 
 and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 

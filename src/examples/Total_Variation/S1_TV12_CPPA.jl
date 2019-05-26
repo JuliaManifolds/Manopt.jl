@@ -48,7 +48,7 @@ fR, r = cyclicProximalPoint(N,F,proxes, data;
                  :Step => DebugEvery(DebugGroup([
                     DebugIteration(), DebugDivider(),
                     DebugProximalParameter(), DebugDivider(),
-                    DebugCost(), DebugDivider(),DebugChange(data),
+                    DebugCost(), DebugDivider(),DebugChange(),
                     DebugDivider("\n"),
                   ]),1000),
                  :Init => DebugDivider("Starting the solver\n")

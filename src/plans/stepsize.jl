@@ -120,22 +120,28 @@ mutable struct ArmijoLinesearch <: Linesearch
         sufficientDecrease::Float64=0.1) = new(s, r, contractionFactor, sufficientDecrease,s)
 end
 function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η::T=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options, T <: TVector}
-  a(p.M, o.x, p.costFunction, getGradient(p,o.x), η)
+    a(p.M, o.x, p.costFunction, getGradient(p,o.x), η)
 end
 function (a::ArmijoLinesearch)(M::mT, x::P, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, P <: MPoint, T <: TVector}
-  # for local shortness
-  s = a.stepsizeOld
-  retr = a.retraction
-  f0 = F(x)
-  xNew = retr(M,x,s*η)
-  fNew = F(xNew)
-  while fNew > f0 + a.sufficientDecrease*s*dot(M, x, η, ∇F)
-    s = a.contractionFactor * s
+    # for local shortness
+    s = a.stepsizeOld
+    retr = a.retraction
+    f0 = F(x)
     xNew = retr(M,x,s*η)
     fNew = F(xNew)
-  end
-  a.stepsizeOld = s
-  return s
+    while fNew < f0 + a.sufficientDecrease*s*dot(M, x, η, ∇F) # increase
+        xNew = retr(M,x,s*η)
+        fNew = F(xNew)
+        s = s/a.contractionFactor
+    end
+    s = s*a.contractionFactor # correct last
+    while fNew > f0 + a.sufficientDecrease*s*dot(M, x, η, ∇F) # decrease
+        s = a.contractionFactor * s
+        xNew = retr(M,x,s*η)
+        fNew = F(xNew)
+    end
+    a.stepsizeOld = s
+    return s
 end
 getInitialStepsize(a::ArmijoLinesearch) = a.initialStepsize
 

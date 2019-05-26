@@ -259,20 +259,20 @@ The parameter `λ` is the prox parameter.
 """
 function proxTV2(M::Power, λ::Number, x::PowPoint,p::Int=1)::PowPoint
   R = CartesianIndices(M.powerSize)
-  d = length(M.powerSize)
-  minInd, maxInd = Tuple(first(R)), Tuple(last(R))
+  d = length(size(x))
+  minInd = [first(R).I...]
+  maxInd = [last(R).I...]
   y = copy(x)
   for k in 1:d # for all directions
-    ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
     for l in 0:1
       for i in R # iterate over all pixel
         if (i[k] % 3) == l
           I = [i.I...] # array of index
           JForward = I .+ 1 .* (1:d .== k) #i + e_k
           JBackward = I .+ 1 .* (1:d .== k) # i - e_k
-          if all( JForward .<= maxInd ) && all( JBackward .=> minInd)
-            jForward = CartesianIndex(JForward...) # neigbbor index as Cartesian Index
-            jBackward = CartesianIndex(JForward...) # neigbbor index as Cartesian Index
+          if all( JForward .<= maxInd ) && all( JBackward .>= minInd)
+            jForward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
+            jBackward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
             (y[jBackward], y[i], y[jForward]) = 
               proxTV2( M.manifold, λ, (y[jBackward], y[i], y[jForward]),p) # Compute TV on these
           end
