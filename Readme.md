@@ -3,9 +3,10 @@
 Optimization on Manifolds.
 
 
-| **Documentation** | **Build Status** | **Code Coverage** |
-|:-------------:|:------------:|:-------------:|
-| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://kellertuer.github.io/Manopt.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://kellertuer.github.io/Manopt.jl/dev) | [![Build Status](https://travis-ci.com/kellertuer/Manopt.jl.svg?branch=master)](https://travis-ci.com/kellertuer/Manopt.jl) | [![codecov](https://codecov.io/gh/kellertuer/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/kellertuer/Manopt.jl) |
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://kellertuer.github.io/Manopt.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://kellertuer.github.io/Manopt.jl/dev)
+[![Build Status](https://travis-ci.com/kellertuer/Manopt.jl.svg?branch=master)](https://travis-ci.com/kellertuer/Manopt.jl)
+[![codecov](https://codecov.io/gh/kellertuer/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/kellertuer/Manopt.jl)
 
 For a function f that maps from a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold)
 ℳ onto the real line, we aim to solve

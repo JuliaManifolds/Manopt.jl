@@ -18,18 +18,10 @@ branches:
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 
 script:
+  - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
+                                          Pkg.instantiate()'
+  - julia --project=docs/ docs/make.jl
   - julia -e 'using Pkg; Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)'
 
 after_success:
   - julia -e 'using Pkg; cd(Pkg.dir("Manopt")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
-
-jobs:
-  include:
-    - stage: "Documentation"
-      julia: 1.1
-      os: linux
-      script:
-        - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
-                                               Pkg.instantiate()'
-        - julia --project=docs/ docs/make.jl
-      after_success: skip
