@@ -21,7 +21,9 @@ script:
   - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                           Pkg.instantiate()'
   - julia --project=docs/ docs/make.jl
-  - julia -e 'using Pkg; Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)'
+  - julia --project=coverage/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
+                                          Pkg.instantiate();
+                                          Pkg.test("Manopt", coverage=true)'
 
 after_success:
-  - julia -e 'using Pkg; cd(Pkg.dir("Manopt")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia --project=coverage/ -e 'using Pkg; cd(Pkg.dir("Manopt")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
