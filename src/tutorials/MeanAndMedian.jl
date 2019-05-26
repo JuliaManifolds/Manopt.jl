@@ -22,7 +22,7 @@
 # necessary information to run the algorithm.
 #
 # ## Example
-# A [gradientPlan.jl](@__REPO__ROOT_URL__src/plans/gradientPlan.jl) might
+# A [`gradientPlan`](@ref) might
 # consist of a [`GradientProblem`](@ref) with the fields `M`, `costFunction`
 # $f$ as well as `gradient` storing the gradient function corresponding to $f$.
 # Accessing both functions can be done directly but should be encapsulated using
@@ -67,13 +67,20 @@ nothing #hide
 #
 asyResolution = 2
 renderAsymptote(exportFolder*"/startDataAndCenter.asy",asyExportS2Signals; #src
-#md renderAsymptote("startDataAndCenter.asy",asyExportS2Signals;
-    render = asyResolution,
-    points = [ [x], data],
-    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
-    dotSize = 3.5, cameraPosition = (1.,.5,.5)
-)
-nothing #hide
+    render = asyResolution, #src
+    points = [ [x], data], #src
+    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]), #src
+    dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
+) #src
+#md # ```julia
+#md # renderAsymptote("startDataAndCenter.asy",asyExportS2Signals;
+#md #     render = asyResolution,
+#md #     points = [ [x], data],
+#md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
+#md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
+#md # )
+#md # ```
+#md # 
 #md # ![The data of noisy versions of $x$](../assets/images/tutorials/startDataAndCenter.png)
 #
 # ## Computing the Mean
@@ -112,13 +119,20 @@ xMean = steepestDescent(M,F,∇F,data[1];
 nothing #hide
 #
 renderAsymptote(exportFolder*"/startDataCenterMean.asy",asyExportS2Signals; #src
-#md renderAsymptote("startDataCenterMean.asy",asyExportS2Signals;
-    render = asyResolution,
-    points = [ [x], data, [xMean] ],
-    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]),
-    dotSize = 3.5, cameraPosition = (1.,.5,.5)
-)
-nothing #hide
+    render = asyResolution, #src
+    points = [ [x], data, [xMean] ], #src
+    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]), #src
+    dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
+) #src
+#md # ```julia
+#md # renderAsymptote("startDataCenterMean.asy",asyExportS2Signals;
+#md #     render = asyResolution,
+#md #     points = [ [x], data, [xMean] ],
+#md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]),
+#md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
+#md # )
+#md # ```
+#md # 
 #md # ![The resulting mean (orange)](../assets/images/tutorials/startDataCenterMean.png)
 #
 # ## Computing the Median
@@ -158,13 +172,20 @@ values
 # The resulting median and mean for the data hence are
 #
 renderAsymptote(exportFolder*"/startDataCenterMedianAndMean.asy",asyExportS2Signals; #src
-#md renderAsymptote("startDataCenterMean.asy",asyExportS2Signals;
-    render = asyResolution,
-    points = [ [x], data, [xMean], [xMedian] ],
-    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]),
-    dotSize = 3.5, cameraPosition = (1.,.5,.5)
-)
-nothing #hide
+    render = asyResolution, #src
+    points = [ [x], data, [xMean], [xMedian] ], #src
+    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]), #src
+    dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
+) #src
+#md # ```julia
+#md # renderAsymptote("startDataCenterMean.asy",asyExportS2Signals;
+#md #     render = asyResolution,
+#md #     points = [ [x], data, [xMean], [xMedian] ],
+#md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]),
+#md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
+#md # )
+#md # ```
+#md # 
 #md # ![The resulting mean (orange) and median (magenta)](../assets/images/tutorials/startDataCenterMedianAndMean.png)
 #
 # ## Literature

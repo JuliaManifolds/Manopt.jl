@@ -12,5 +12,5 @@
     stepsize = ArmijoLinesearch(1.,exp,0.99,0.1),
   )
   # after one step for local enough data -> equal to real valued data
-  @test abs(getValue(x)-sum(r)/length(r)) ≈ 0 atol=10.0^(-15)
+  @test abs(getValue(x)-sum(r)/length(r)) ≈ 0 atol=5*10.0^(-14)
 end
