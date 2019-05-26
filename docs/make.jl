@@ -69,7 +69,7 @@ makedocs(
 )
 deploydocs(
     repo   = "github.com/kellertuer/Manopt.jl",
-    devbranch = "gh-pages-test",
+    devbranch = "development",
     versions = [
     "stable" => "v^"
     ]
