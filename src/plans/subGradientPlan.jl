@@ -39,8 +39,8 @@ stories option values for a [`subGradientMethod`](@ref) solver
 
 # Fields
 * `retraction` – the retration to use within
-* `stepsize´ – see [`Stepsize`](@ref)
-* `stoppingCriterion` – [`StoppingCriterion`](@ref)
+* `stepsize` – a [`Stepsize`](@ref)
+* `stoppingCriterion` – a [`StoppingCriterion`](@ref)
 * `x` – (initial or current) value the algorithm is at
 * `optimalX` – optimal value
 """
@@ -49,7 +49,6 @@ mutable struct SubGradientMethodOptions{P,T} <: Options where {P <: MPoint, T <:
     stepsize::Stepsize
     stoppingCriterion::StoppingCriterion
     x::P
-    xOld::P
     xOptimal::P
     subGradient::T
     SubGradientMethodOptions{P,T}(x::P,sC::StoppingCriterion,s::Stepsize,retr::Function=exp) where {P <: MPoint, T <: TVector} = (
