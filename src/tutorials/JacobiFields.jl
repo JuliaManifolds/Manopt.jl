@@ -25,14 +25,20 @@ asyResolution = 2
 nothing #hide
 # looks as follows using [`renderAsymptote`](@ref) with the [`asyExportS2Signals`](@ref) export
 renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
-#md renderAsymptote("jacobiGeodesic.asy",asyExportS2Signals;
-    render = asyResolution,
-    curves=[geodesicCurve], points = [ [x,y] ],
-    colors=Dict(:curves => [black], :points => [TolVibrantOrange]),
-    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.,1.,.5)
-)
-nothing #hide
-#
+    render = asyResolution, #src
+    curves=[geodesicCurve], points = [ [x,y] ], #src
+    colors=Dict(:curves => [black], :points => [TolVibrantOrange]), #src
+    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.,1.,.5) #src
+)#src
+#md # ```julia
+#md # renderAsymptote("jacobiGeodesic.asy",asyExportS2Signals;
+#md #     render = asyResolution,
+#md #     curves=[geodesicCurve], points = [ [x,y] ],
+#md #     colors=Dict(:curves => [black], :points => [TolVibrantOrange]),
+#md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.,1.,.5)
+#md # )
+#md # ```
+#md # 
 #md # ![A geodesic connecting two points on the equator](../assets/images/tutorials/jacobiGeodesic.png)
 #
 # where $x$ is on the left. Then this tutorial solves the following task:
@@ -83,17 +89,27 @@ nothing #hide
 Vx = TVectorE.(ηx,Z)
 # and add that as one further set to the Asymptote export.
 renderAsymptote(exportFolder*"/jacobiGeodesicDxGeo.asy",asyExportS2Signals; #src
-#md renderAsymptote("jacobiGeodesicDxGeo.asy",asyExportS2Signals;
-    render = asyResolution,
-    curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx],
-    colors=Dict(
-        :curves => [black],
-        :points => [TolVibrantOrange,TolVibrantCyan],
-        :tvectors => [TolVibrantCyan]
-    ),
-    dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,.5)
-)
-nothing #hide
+    render = asyResolution, #src
+    curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx], #src
+    colors=Dict( #src
+        :curves => [black], #src
+        :points => [TolVibrantOrange,TolVibrantCyan], #src
+        :tvectors => [TolVibrantCyan] #src
+    ), #src
+    dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,.5) #src
+) #src
+#md # ```julia
+#md # renderAsymptote("jacobiGeodesicDxGeo.asy",asyExportS2Signals;
+#md #     render = asyResolution,
+#md #     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx],
+#md #     colors=Dict(
+#md #         :curves => [black],
+#md #         :points => [TolVibrantOrange,TolVibrantCyan],
+#md #         :tvectors => [TolVibrantCyan]
+#md #     ),
+#md #     dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,.5)
+#md # )
+#md # ```
 #
 #md # ![A Jacobi field for $D_xg(t,x,y)[\eta]$](../assets/images/tutorials/jacobiGeodesicDxGeo.png)
 #
@@ -105,18 +121,28 @@ Vy = TVectorE.(ηy,Z)
 # that only tangent vectors are added that have a common base point
 Vb = Vx .+ Vy
 renderAsymptote(exportFolder*"/jacobiGeodesicResult.asy",asyExportS2Signals; #src
-#md renderAsymptote("jacobiGeodesicResult.asy",asyExportS2Signals;
-    render = asyResolution,
-    curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx,Vy,Vb],
-    colors=Dict(
-        :curves => [black],
-        :points => [TolVibrantOrange,TolVibrantCyan],
-        :tvectors => [TolVibrantCyan,TolVibrantCyan,TolVibrantTeal]
-    ),
-    dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,0.)
-)
-nothing #hide
-#
+    render = asyResolution, #src
+    curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx,Vy,Vb], #src
+    colors=Dict( #src
+        :curves => [black], #src
+        :points => [TolVibrantOrange,TolVibrantCyan], #src
+        :tvectors => [TolVibrantCyan,TolVibrantCyan,TolVibrantTeal] #src
+    ), #src
+    dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,0.) #src
+) #src
+#md # ```julia
+#md # renderAsymptote("jacobiGeodesicResult.asy",asyExportS2Signals;
+#md #    render = asyResolution,
+#md #    curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx,Vy,Vb],
+#md #    colors=Dict(
+#md #        :curves => [black],
+#md #        :points => [TolVibrantOrange,TolVibrantCyan],
+#md #        :tvectors => [TolVibrantCyan,TolVibrantCyan,TolVibrantTeal]
+#md #   ),
+#md #   dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,0.)
+#md # )
+#md # ```
+#md #
 #md # ![A Jacobi field for the effect of two differentials (blue) in sum (teal)](../assets/images/tutorials/jacobiGeodesicResult.png)
 #
 #

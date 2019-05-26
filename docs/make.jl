@@ -25,7 +25,7 @@ for (i,tutorial) in enumerate(tutorials)
 end
 makedocs(
     # for development, we disable prettyurls
-    format = Documenter.HTML(prettyurls = false),
+    # format = Documenter.HTML(prettyurls = false),
     modules = [Manopt],
     sitename = "Manopt.jl",
     pages = [
@@ -67,12 +67,10 @@ makedocs(
         "Function Index" => "list.md",
     ]
 )
-#deploydocs(
-#     target = "site",
-#     repo   = "github.com/kellertuer/Manopt.jl",
-#     branch = "gh-pages",
-#     latest = "master",
-#     osname = "osx",
-#     julia  = "1.0",
-#     deps = Deps.pip("pygments", "mkdocs", "python-markdown-math")
-#)
+deploydocs(
+    repo   = "github.com/kellertuer/Manopt.jl",
+    devbranch = "gh-pages-test",
+    versions = [
+    "stable" => "v^"
+    ]
+)

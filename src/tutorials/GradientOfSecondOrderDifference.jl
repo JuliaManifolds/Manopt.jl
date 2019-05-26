@@ -43,16 +43,23 @@ geoPts_yc = geodesic(M,y,c,T)
 nothing #hide
 # looks as follows using [`renderAsymptote`](@ref) with the [`asyExportS2Signals`](@ref) export
 renderAsymptote(exportFolder*"/SecondOrderData.asy",asyExportS2Signals; #src
-#md renderAsymptote("secondOrderData.asy",asyExportS2Signals;
-    render = asyResolution,
-    curves = [ geoPts_yc ],
-    points = [ [x,y,z], [c,c2] ],
-    colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]),
-    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
-)
-nothing #hide
+    render = asyResolution, #src
+    curves = [ geoPts_yc ], #src
+    points = [ [x,y,z], [c,c2] ], #src
+    colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]), #src
+    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
+) #src
+#md # ```julia
+#md # renderAsymptote("secondOrderData.asy",asyExportS2Signals;
+#md #     render = asyResolution,
+#md #     curves = [ geoPts_yc ],
+#md #     points = [ [x,y,z], [c,c2] ],
+#md #     colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]),
+#md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
+#md # )
+#md # ```
 #
-#md # ![Three points $x,y,z$ and the midpoint $c=c(x,z)$ (blue)](../assets/images/tutorials/secondOrderData.png)
+#md # ![Three points $x,y,z$ and the midpoint $c=c(x,z)$ (blue)](../assets/images/tutorials/SecondOrderData.png)
 #
 # Since we moved $y$ 10% along the geodesic from the north pole to $c$, the distance
 # to $c$ is $\frac{9\pi}{20}\approx 1.4137$, and this is also what
@@ -70,15 +77,22 @@ costTV2(M, (x,y,z) )
 # When we aim to minimize this, we look at the negative gradient, i.e.
 # we can draw this as
 renderAsymptote(exportFolder*"/SecondOrderGradient.asy",asyExportS2Signals; #src
-#md renderAsymptote("secondOrderData.asy",asyExportS2Signals;
-    render = asyResolution,
-    points = [ [x,y,z], [c,c2] ],
-    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
-    colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]),
-    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
-)
-nothing #hide
-#md 
+    render = asyResolution, #src
+    points = [ [x,y,z], [c,c2] ], #src
+    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
+    colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]), #src
+    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
+) #src
+#md # ```julia
+#md # renderAsymptote("secondOrderData.asy",asyExportS2Signals;
+#md #    render = asyResolution,
+#md #    points = [ [x,y,z], [c,c2] ],
+#md #    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
+#md #    colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]),
+#md #    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
+#md # )
+#md # ```
+#md # 
 #md # ![Three points $x,y,z$ and the negative gradient of the second order absolute difference](../assets/images/tutorials/SecondOrderGradient.png)
 #
 # If we now perform a gradient step, we obtain the three points
@@ -89,18 +103,30 @@ geoPts_yncn = geodesic(M,yn,cn,T)
 nothing #hide
 # and obtain the new situation
 renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
-#md renderAsymptote("SecondOrderMin1.asy",asyExportS2Signals;
-    render = asyResolution,
-    points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ],
-    curves = [ geoPts_yncn ] ,
-    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
-    colors=Dict(:tvectors => [TolVibrantCyan],
-                :points => [black, TolVibrantBlue, TolVibrantOrange],
-                :curves => [TolVibrantTeal]
-                ),
-    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
-)
-nothing #hide
+    render = asyResolution, #src
+    points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ], #src
+    curves = [ geoPts_yncn ], #src
+    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
+    colors=Dict(:tvectors => [TolVibrantCyan], #src
+                :points => [black, TolVibrantBlue, TolVibrantOrange], #src
+                :curves => [TolVibrantTeal] #src
+                ), #src
+    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
+) #src
+#md #
+#md # ```julia
+#md # renderAsymptote("SecondOrderMin1.asy",asyExportS2Signals;
+#md #     render = asyResolution,
+#md #     points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ],
+#md #     curves = [ geoPts_yncn ] ,
+#md #     tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
+#md #     colors=Dict(:tvectors => [TolVibrantCyan],
+#md #         :points => [black, TolVibrantBlue, TolVibrantOrange],
+#md #         :curves => [TolVibrantTeal]
+#md #     ),
+#md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
+#md # )
+#md # ```
 #md 
 #md # ![A gradient Step](../assets/images/tutorials/SecondOrderMin1.png)
 #
@@ -123,19 +149,30 @@ geoPts_xmzm = geodesic(M,xm,zm,T)
 nothing #hide
 # we obtain again with
 renderAsymptote(exportFolder*"/SecondOrderMin2.asy",asyExportS2Signals; #src
-#md renderAsymptote("SecondOrderMin2.asy",asyExportS2Signals;
-    render = asyResolution,
-    points = [ [x,y,z], [c,c2,cm], [xm,ym,zm] ],
-    curves = [ geoPts_xmzm ] ,
-    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
-    colors=Dict(:tvectors => [TolVibrantCyan],
-                :points => [black, TolVibrantBlue, TolVibrantOrange],
-                :curves => [TolVibrantTeal]
-                ),
-    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
-)
-nothing #hide
-#md 
+    render = asyResolution, #src
+    points = [ [x,y,z], [c,c2,cm], [xm,ym,zm] ], #src
+    curves = [ geoPts_xmzm ], #src
+    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
+    colors=Dict(:tvectors => [TolVibrantCyan], #src
+                :points => [black, TolVibrantBlue, TolVibrantOrange], #src
+                :curves => [TolVibrantTeal] #src
+                ), #src
+    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
+) #src
+#md # ```julia
+#md # renderAsymptote("SecondOrderMin2.asy",asyExportS2Signals;
+#md #     render = asyResolution,
+#md #     points = [ [x,y,z], [c,c2,cm], [xm,ym,zm] ],
+#md #     curves = [ geoPts_xmzm ] ,
+#md #     tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
+#md #     colors=Dict(:tvectors => [TolVibrantCyan],
+#md #                 :points => [black, TolVibrantBlue, TolVibrantOrange],
+#md #                 :curves => [TolVibrantTeal]
+#md #                 ),
+#md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
+#md # )
+#md # ```
+#md #
 #md # ![A gradient Step](../assets/images/tutorials/SecondOrderMin2.png)
 #
 # Here, the cost function yields
