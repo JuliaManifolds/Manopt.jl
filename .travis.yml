@@ -18,7 +18,7 @@ branches:
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 
 script:
-  - julia -e 'using Pkg; Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)'
+  - julia -e 'Pkg.clone(pwd()); Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)'
 
 after_success:
   - julia -e 'using Pkg; cd(Pkg.dir("Manopt")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
