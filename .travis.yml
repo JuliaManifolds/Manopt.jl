@@ -1,5 +1,4 @@
 language: julia
-
 os:
   - linux
 
@@ -9,25 +8,20 @@ julia:
 notifications:
   email: false
 
+git:
+  depth: 99999999
+
 branches:
   only:
     - development
     - master
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 
-after_success:
-  - if [[ $TRAVIS_JULIA_VERSION = 1.1 ]] && [[ $TRAVIS_OS_NAME = linux ]]; then
-      julia --project=coverage/ -e 'using Pkg; Pkg.instantiate();
-          using Coverage; Codecov.submit(Codecov.process_folder())';
-    fi
+script:
+  - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
+                                          Pkg.instantiate()'
+  - julia --project=docs/ docs/make.jl
+  - julia -e 'using Pkg; Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)'
 
-jobs:
-  include:
-    - stage: "Documentation"
-      julia: 1.1
-      os: linux
-      script:
-        - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
-                                               Pkg.instantiate()'
-        - julia --project=docs/ docs/make.jl
-      after_success: skip
+after_success:
+  - julia -e 'using Pkg; cd(Pkg.dir("Manopt")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
