@@ -22,8 +22,7 @@
 # necessary information to run the algorithm.
 #
 # ## Example
-# A [`gradientPlan`](@ref) might
-# consist of a [`GradientProblem`](@ref) with the fields `M`, `costFunction`
+# A `gradientPlan` consists of a [`GradientProblem`](@ref) with the fields `M`, `costFunction`
 # $f$ as well as `gradient` storing the gradient function corresponding to $f$.
 # Accessing both functions can be done directly but should be encapsulated using
 # [`getCost`](@ref)`(p,x)` and [`getGradient`](@ref)`(p,x)`, where in both cases `x` is a [`MPoint`](@ref)
