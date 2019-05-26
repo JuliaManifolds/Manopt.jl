@@ -17,8 +17,10 @@ branches:
     - master
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 
-script:
-  - julia -e 'Pkg.clone(pwd()); Pkg.build("Manopt"); Pkg.test("Manopt", coverage=true)'
+# uncomment the following lines to override the default test script
+#script:
+#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+#  - julia -e 'Pkg.clone(pwd()); Pkg.build("Manopt"); Pkg.test("Manopt"; coverage=true)'
 
 after_success:
   - julia -e 'using Pkg; cd(Pkg.dir("Manopt")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
@@ -32,3 +34,4 @@ jobs:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                                Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl
+      after_success: skip
