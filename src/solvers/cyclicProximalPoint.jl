@@ -25,8 +25,8 @@ the default values are given in brackets
 function cyclicProximalPoint(M::Mc,
   F::Function, proximalMaps::Array{Function,N} where N, x0::MP;
   evaluationOrder::EvalOrder = LinearEvalOrder(),
-  stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(5000), stopWhenChangeLess(10.0^-8)),
-  λ = i -> typicalDistance(M)/i,
+  stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(5000), stopWhenChangeLess(10.0^-12)),
+  λ = i -> typicalDistance(M)/2/i,
   kwargs... #decorator options
   ) where {Mc <: Manifold, MP <: MPoint}
     p = ProximalProblem(M,F,proximalMaps)

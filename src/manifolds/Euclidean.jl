@@ -107,7 +107,7 @@ manifoldDimension(M::Euclidean) = M.dimension
 Computes the length of the tangent vector `ξ` in the tangent
 space $T_x\mathcal M$ of `x` on the Eclidean space `M`, i.e. $\lVert\xi\rVert$.
 """
-norm(M::Euclidean,x::RnPoint{T}, ξ::RnTVector{T}) where {T <: AbstractFloat} = norm(ξ.value)
+norm(M::Euclidean,x::RnPoint{T}, ξ::RnTVector{T}) where {T <: AbstractFloat} = length(getValue(ξ)) == 1 ? abs( getValue(ξ) ) : norm( getValue(ξ) )
 """
     parallelTransport(M,x,y,ξ)
 Computes the parallel transport, which is on [`Euclidean`](@ref) space the identity.
@@ -156,18 +156,18 @@ typicalDistance(M::Euclidean) = sqrt(M.dimension)
     validateMPoint(M,x)
 
 Checks that a [`RnPoint`](@ref) `x` has a valid value for a point on the
-[`Euclidean`](@ref) `M`$=\mathbb R1n$, which is always the case. 
+[`Euclidean`](@ref) `M`$=\mathbb R1n$, which is the case if the dimensions fit. 
 """
-validateMPoint(M::Euclidean, x::RnPoint) = true
+validateMPoint(M::Euclidean, x::RnPoint) = manifoldDimension(M) == manifoldDimension(x)
 
 @doc doc"""
     validateTVector(M,x,ξ)
 
 Checks, that the [`RnTVector`](@ref) `ξ` is a valid tangent vector in the
 tangent space of the [`RnPoint`](@ref) `x` ont the [`Euclidean`](@ref) `M`$=\mathbb R^n$,
-which is always the case since all real values are valid.
+which is always the case as long as the vector dimensions are the same.
 """ 
-validateTVector(M::Euclidean,x::RnPoint,ξ::RnTVector) = true
+validateTVector(M::Euclidean,x::RnPoint,ξ::RnTVector) = length(getValue(x) )== length(getValue(ξ))
 
 @doc doc"""
     ξ = zeroTVector(M,x)
@@ -181,6 +181,6 @@ end
 #
 #
 # --- Display functions for the objects/types
-show(io::IO, M::Euclidean) = print(io, "The Manifold $(M.name).");
+show(io::IO, M::Euclidean) = print(io, "The $(M.name).");
 show(io::IO, x::RnPoint) = print(io, "Rn($( getValue(x) ))");
 show(io::IO, ξ::RnTVector) = print(io, "RnT($( getValue(ξ) ))");

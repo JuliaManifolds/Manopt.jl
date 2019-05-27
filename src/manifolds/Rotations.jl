@@ -93,25 +93,6 @@ getValue(ξ::SOTVector) = ξ.value;
 @traitimpl IsLieGroupV{SOTVector}
 #
 LieGroupOp(x::SOPoint, y::SOPoint) = SOPoint( transpose(getValue(x))*getValue(y) )
-# Functions
-# ---
-
-@doc doc"""
-    addNoise(M,x,σ)
-
-add noise to data, i.e. tangential Gaussian noise, $\exp_x ξ$, where
-$ξ\sim \mathcal N(0,\sigma)^{n\times n}$is a zero mean, $n\times n$-dimensional,
-Gaussian random variable of standard deviation `σ` in the tangent plane
-of the [`SOPoint`](@ref)` x` on the manifold [`Rotations`](@ref)` M`.
-The formula reads
-
-$\tilde{x} = \operatorname{exp}_x ξ$
-"""
-function addNoise(M::Rotations, x::SOPoint, σ::Real)
-  A = σ*randn(M.dimension, M.dimension)
-  A = triu(A,1) - transpose(triu(A,1))
-  return exp(M,x,SOTVector(A))
-end
 
 @doc doc"""
     manifoldDimension(x)
@@ -260,16 +241,17 @@ and second columns are simply swapped.
 """
 function randomMPoint(M::Rotations, ::Val{:Gaussian}, σ::Real=1.0)
   if M.dimension==1
-    SOPoint(1)
+    SOPoint(ones(1,1))
+  else
+    A=randn(Float64, M.dimension, M.dimension)
+    s=diag(sign.(qr(A).R))
+    D=Diagonal(s)
+    C = qr(A).Q*D
+    if det(C)<0
+      C[:,[1,2]] = C[:,[2,1]]
+    end
+    SOPoint(C)
   end
-  A=randn(Float64, M.dimension, M.dimension)
-  s=diag(sign.(qr(A).R))
-  D=Diagonal(s)
-  C = qr(A).Q*D
-  if det(C)<0
-    C[:,[1,2]] = C[:,[2,1]]
-  end
-  SOPoint(C)
 end
 
 @doc doc"""

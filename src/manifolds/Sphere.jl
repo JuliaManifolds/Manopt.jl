@@ -264,5 +264,6 @@ returns a zero vector in the tangent space $T_x\mathcal M$ of the
 zeroTVector(M::Sphere, x::SnPoint) = SnTVector(  zero( getValue(x) )  );
 # Display
 # ---
+show(io::IO, M::Sphere) = print(io,"The $(M.name)")
 show(io::IO, p::SnPoint) = print(io, "Sn($( getValue(p) ))")
 show(io::IO, ξ::SnTVector) = print(io, "SnT($( getValue(ξ) ))") 

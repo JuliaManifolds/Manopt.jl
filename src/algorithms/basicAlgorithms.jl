@@ -47,7 +47,7 @@ function mean_(M,x,x0,w,::Val{:GradientDescent};kwargs...)
 end
 function mean_(M,x,x0,w,::Val{:CyclicProximalPoint};kwargs...)
     F = y -> sum(w .* 1/2 .* distance.(Ref(M),Ref(y),x).^2)
-    proxes = [ (λ,y) -> proxDistance(M, λ*wi, xi, y) for (wi,xi) in zip(w,x) ]
+    proxes = Function[ (λ,y) -> proxDistance(M, λ*wi, xi, y) for (wi,xi) in zip(w,x) ]
     return cyclicProximalPoint(M,F,proxes,x0; kwargs...)
 end
 @doc doc"""
@@ -78,13 +78,8 @@ function median(M::mT, x::Vector{T};
 end
 function median_(M,x,x0,w,::Val{:CyclicProximalPoint};kwargs...)
     F = y -> sum(w .* 1/2 .* distance.(Ref(M),Ref(y),x))
-    proxes = [ (λ,y) -> proxDistance(M, λ*wi, xi, y,1) for (wi,xi) in zip(w,x) ]
+    proxes = Function[ (λ,y) -> proxDistance(M, λ*wi, xi, y,1) for (wi,xi) in zip(w,x) ]
     return cyclicProximalPoint(M,F,proxes,x0; kwargs...)
-end
-function median_(M,x,x0,w,::Val{:SubGradient};kwargs...)
-    F = y -> sum(w .* 1/2 .* distance.(Ref(M),Ref(y),x))
-    ∂F = y -> sum( w .* gradDistance.(Ref(M),x,Ref(y),1))
-    return subGradientMethod(M,F,∂F,x0;kwargs...)
 end
 
 """

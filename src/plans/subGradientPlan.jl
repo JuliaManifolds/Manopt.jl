@@ -40,24 +40,24 @@ stories option values for a [`subGradientMethod`](@ref) solver
 # Fields
 * `retraction` – the retration to use within
 * `stepsize` – a [`Stepsize`](@ref)
-* `stoppingCriterion` – a [`StoppingCriterion`](@ref)
+* `stop` – a [`StoppingCriterion`](@ref)
 * `x` – (initial or current) value the algorithm is at
 * `optimalX` – optimal value
 """
 mutable struct SubGradientMethodOptions{P,T} <: Options where {P <: MPoint, T <: TVector}
     retraction::Function
     stepsize::Stepsize
-    stoppingCriterion::StoppingCriterion
+    stop::StoppingCriterion
     x::P
     xOptimal::P
     subGradient::T
     SubGradientMethodOptions{P,T}(x::P,sC::StoppingCriterion,s::Stepsize,retr::Function=exp) where {P <: MPoint, T <: TVector} = (
-        o = new{P,T}(); o.x = x; o.xLast = x; o.xOptimal = x;
+        o = new{P,T}(); o.x = x; o.xOptimal = x;
         o.stepsize = s; o.retraction = retr;
-        o.stoppingCriterion = sC;
+        o.stop = sC;
         return o
     )
 end
-SubGradientMethodOptions(x::P,sC::StoppingCriterion,stepsize::Stepsize,retr::Function=exp) where {P <: MPoint} = SubGradientMethodOptions{P,typeofTVector(x)}(x,sC,s,retr)
+SubGradientMethodOptions(x::P,sC::StoppingCriterion,s::Stepsize,retr::Function=exp) where {P <: MPoint} = SubGradientMethodOptions{P,typeofTVector(x)}(x,sC,s,retr)
 
-getStepsize(p::P,o::O,vars...) where {P <: SubGradientProblem{M} where M <: Manifold, O <: SubGradientMethodOptions} = o.stepsze(p,o,vars...)
+getStepsize(p::P,o::O,vars...) where {P <: SubGradientProblem{M} where M <: Manifold, O <: SubGradientMethodOptions} = o.stepsize(p,o,vars...)

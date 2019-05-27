@@ -34,12 +34,12 @@ and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 function subGradientMethod(M::mT,
         F::Function, ∂F::Function, x::MP;
         retraction::Function = exp,
-        stepsize::Stepsize = DecreasingStepsize(1.),
+        stepsize::Stepsize = DecreasingStepsize( typicalDistance(M)/5),
         stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
         kwargs... #especially may contain debug
     ) where {mT <: Manifold, MP <: MPoint}
     p = SubGradientProblem(M,F,∂F)
-    o = SubGradientMethodOptions(x,stoppingCriterion,retraction,stepsize)
+    o = SubGradientMethodOptions(x,stoppingCriterion, stepsize, retraction)
 
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
@@ -49,13 +49,13 @@ function subGradientMethod(M::mT,
     return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::SubGradientProblem, o::SubGradientMethodOptions)
-    o.optimalX = o.x
+    o.xOptimal = o.x
     o.subGradient = zeroTVector(p.M,o.x)
 end
 function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     o.subGradient = getSubGradient(p,o.x)
     s = getStepsize(p,o,iter)
-    o.x = o.retraction(p.M,o.x,-o.stepsize*o.subGradient)
+    o.x = o.retraction(p.M,o.x,-s*o.subGradient)
     if getCost(p,o.x) < getCost(p,o.xOptimal)
         o.xOptimal = o.x
     end
