@@ -313,7 +313,7 @@ function _tangentONB(M,x,y, v)
   end
   V,κ = tangentONB(M,strip(x),log(M,strip(x), strip(y)))
   if v
-    validateMPoint.(Ref(M), Ref(x), V)
+    validateTVector.(Ref(M), Ref(x), V)
   end
   return TVectorE.(V, Ref(x), Ref(v))
 end
