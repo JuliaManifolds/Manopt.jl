@@ -171,9 +171,9 @@ mutable struct StoreOptionsAction <: Action
     keys::NTuple{N,Symbol} where N
     once::Bool
     lastStored::Int
-    StoreOptionsAction(keys::NTuple{N,Symbol} where N = NTuple{0,Symbol}(),once=true) = new(Dict{Symbol,Any}(), keys, once )
+    StoreOptionsAction(keys::NTuple{N,Symbol} where N = NTuple{0,Symbol}(),once=true) = new(Dict{Symbol,Any}(), keys, once,-1 )
     StoreOptionsAction(keys::NTuple{N,Symbol}, values::NTuple{N,<:Any},once=true) where N = new(
-        Dict( key -> value for (key,value) in zip(keys,values)), keys,once )
+        Dict( key -> value for (key,value) in zip(keys,values)), keys,once,-1 )
 end
 function (a::StoreOptionsAction)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     #update values (maybe only once)

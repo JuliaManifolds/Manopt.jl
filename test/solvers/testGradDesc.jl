@@ -1,4 +1,4 @@
-@testset "gradient descent..." begin
+@testset "Manopt Gradient Descent" begin
   # Test the gradient descent with
   # the distance function squared
   # on S1, such that we can easily also verify exp and log

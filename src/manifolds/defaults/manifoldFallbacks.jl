@@ -17,7 +17,7 @@ function distance(M::mT, x::T, y::T) where {mT <: Manifold, T <: MPoint}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(y) )
   sig3 = string( typeof(M) )
-  throw( ErrorException("distance not implemented for a $sig1 and a $sig2 on $sig3." ) )
+  throw( DomainError("distance not defined/implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
 @doc doc"""
     dot(M, x, ξ, ν)
@@ -29,14 +29,14 @@ function dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <:
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(ν) )
   sig4 = string( typeof(M) )
-  throw( ErrorException("dot not implemented for a $sig2 and $sig3 in the tangent space of a $sig1 on $sig4." ) )
+  throw( DomainError("dot not defined/implemented for a $sig2 and $sig3 in the tangent space of a $sig1 on $sig4." ) )
 end
 # fallback for forgetting base
 function dot(M::mT, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVector, S <: TVector}
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(ν) )
   sig4 = string( typeof(M) )
-  throw( ErrorException("dot requires a base point. You provided a manifold ($sig4) two tangent vectorsa and $sig2 as well as $sig3 in the tangent space of a $sig1 on $sig4." ) )
+  throw( ErrorException("dot requires a base point, but the function call only contains a manifold ($sig4) and two tangent vectors ($sig2) and ($sig3)." ) )
 end
 """
     exp(M,x,ξ,[t=1.0])
@@ -44,39 +44,11 @@ computes the exponential map at an [`MPoint`](@ref) `x` for the
 [`TVector`](@ref) `ξ` on the [`Manifold`](@ref) `M`. The optional parameter `t` can be
 used to shorten `ξ` to `tξ`.
 """
-function exp(M::mT, x::P, ξ::T,t::N=1.0) where {mT<:Manifold, P<:MPoint, T<:TVector, N<:Number}
+function exp(M::mT, x::P, ξ::T,t::Float64=1.0) where {mT<:Manifold, P<:MPoint, T<:TVector, N<:Number}
   sig1 = string( typeof(x) )
   sig2 = string( typeof(ξ) )
   sig3 = string( typeof(M) )
-  throw( ErrorException("exp not implemented for a $sig1 and a $sig2 on $sig3." ) )
-end
-@doc doc"""
-    getValue(x)
-get the actual value representing the point `x` on a manifold.
-This should be implemented if you do not use the field x.value to avoid the
-try-catch in the fallback implementation.
-"""
-function getValue(x::P) where {P <: MPoint}
-    try
-        return x.value
-    catch
-        sig1 = string( typeof(x) )
-        throw( ErrorException("getValue not implemented for a $sig1.") );
-    end
-end
-@doc doc"""
-    getValue(ξ)
-get the actual value representing the tangent vector `ξ` to a manifold.
-This should be implemented if you do not use the field ξ.value to avoid the
-try-catch in the fallback implementation.
-"""
-function getValue(ξ::T) where {T <: TVector}
-    try
-        return ξ.value
-    catch
-        sig1 = string( typeof(ξ) )
-        throw( ErrorException("getValue – not implemented for tangent vector $sig1.") );
-    end
+  throw( DomainError("exp not defined/implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
 @doc doc"""
     log(M,x,y)
@@ -88,23 +60,7 @@ function log(M::mT,x::P,y::Q)::TVector where {mT<:Manifold, P<:MPoint, Q<:MPoint
   sig1 = string( typeof(x) )
   sig2 = string( typeof(y) )
   sig3 = string( typeof(M) )
-  throw( ErrorException("log – not Implemented for Points $sig1 and $sig2 on the manifold $sig3.") )
-end
-@doc doc"""
-    manifoldDimension(x)
-returns the dimension of the manifold `M` the point `x` belongs to.
-"""
-function manifoldDimension(x::P)::Integer where {P<:MPoint}
-  sig1 = string( typeof(x) )
-  throw( ErrorException("manifoldDimension not Implemented for a $sig1." ) )
-end
-@doc doc"""
-    manifoldDimension(M)
-returns the dimension of the manifold `M`.
-"""
-function manifoldDimension(M::mT)::Integer where {mT<:Manifold}
-  sig1 = string( typeof(M) )
-  throw( ErrorException("manifoldDimension not Implemented on $sig1." ) )
+  throw( DomainError("log – not defined/implemented for a $sig1 and a $sig2 on $sig3.") )
 end
 
 @doc doc"""
@@ -118,8 +74,9 @@ function parallelTransport(M::mT, x::P, y::Q, ξ::T) where {mT<:Manifold, P<:MPo
   sig2 = string( typeof(y) )
   sig3 = string( typeof(ξ) )
   sig4 = string( typeof(M) )
-  throw( ErrorException("parallelTransport not implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
+  throw( DomainError("parallelTransport not defined/implemented for a $sig1, a $sig2, and a $sig3 on $sig4." ) )
 end
+
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the
@@ -133,8 +90,9 @@ function tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint, T <:
     sig1 = string( typeof(x) )
     sig2 = string( typeof(ξ) )
     sig3 = string( typeof(M) )
-    throw( ErrorException("tangentONB not implemented for a $sig1 and a $sig2 on $sig3." ) )
+    throw( DomainError("tangentONB not defined/implemented for a $sig1 and a $sig2 on $sig3." ) )
 end
+
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)
 
@@ -147,19 +105,19 @@ $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 """
 tangentONB(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint} = tangentONB(M,x,log(M,x,y))
 """
-    typeofMPoint(ξ)
-returns the MPoint belonging to the `TVector` subtype of `ξ`.
+    typeofMPoint(T)
+
+return the [`MPoint`](@ref) belonging to the [`TVector`](@ref) type `T`.
 """
-typeofMPoint(ξ::T) where {T <: TVector} = typeofMPoint(typeof(ξ))
 function typeofMPoint(ξT::Type{T}) where { T <: TVector }
     sig = string( ξT )
     throw( ErrorException("typeofMPoint not yet implemented for the tangent vector type $sig.") )
 end
 """
-    typeofTVector(p)
-returns the TVector belonging to the `MPoint` subtype of `p`.
+    typeofTVector(P)
+
+returns the [`TVector`](@ref) belonging to the [`MPoint`](@ref) type `P`.
 """
-typeofTVector(p::P) where {P <: MPoint} = typeofTVector(typeof(p))
 function typeofTVector(pP::Type{P}) where {P <: MPoint}
     sig = string( pP )
     throw( ErrorException("typeofTVector not yet implemented for the tangent vector type $sig.") )
@@ -172,7 +130,7 @@ the longest distance in a unit cell or injectivity radius.
 """
 function typicalDistance(M::mT) where {mT <: Manifold}
   sig2 = string( typeof(M) )
-  throw( ErrorException("zeroTVector(M) not implemented on $sig2." ) )
+  throw( ErrorException("typicalDistance(M) not implemented on $sig2." ) )
 end
 @doc doc"""
     validateMPoint(M,x)
@@ -189,7 +147,7 @@ function validateMPoint(M::mT, x::P) where {mT <: Manifold, P <: MPoint}
   sig2 = string( typeof(M) )
   @warn """No valitadion for a $sig1 on $sig2 available. Continuing without
   validation. To turn this warning off, either deactivate the validate flag
-  in (one of) your extended `MPoint`s or implement a corresponding validation."""
+  in (one of) your extended MPoints or implement a corresponding validation."""
   return true
 end
 @doc doc"""
@@ -208,7 +166,7 @@ function validateTVector(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint,
   sig3 = string( typeof(M) )
   @warn """No valitadion for a $sig1 and a $sig2 on $sig3 available.
   Continuing without validation. To turn this warning off, either deactivate
-  the validate flag in (one of) your extended `TVectors`s or `MPoints`s or
+  the validate flag in (one of) your extended TVectors or MPoints or
   implement a corresponding validation"""
   return true
 end
@@ -221,5 +179,5 @@ returns a zero vector in the tangent space $T_x\mathcal M$ of the
 function zeroTVector(M::mT, x::P) where {mT <: Manifold, P <: MPoint}
     sig1 = string( typeof(x) )
     sig2 = string( typeof(M) )
-    throw( ErrorException("zeroTVector(M,x) not implemented for a $sig1 on $sig2." ) )
+    throw( DomainError("zeroTVector not defined/implemented for a $sig1 on $sig2." ) )
 end

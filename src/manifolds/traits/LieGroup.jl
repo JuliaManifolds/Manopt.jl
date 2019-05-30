@@ -23,11 +23,7 @@ An abstract [`TVector`](@ref) belonging to a Lie group manifold.
 @traitdef IsLieGroupV{X}
 
 # introduces a shorthand for the group operation
-@traitfn ⊗(x::P,y::P) where {P <: MPoint; IsLieGroupP{P}}= LieGroupOp(x,y)
-@traitfn function ⊗(x::P,y::P) where {P <: MPoint; !IsLieGroupP{P}}
-        sig1 = string( typeof(x) )
-        throw( ErrorException("The manifold point of type $sig1 does not belong to a Lie Group") );
-end
+⊗(x::P,y::P) where {P <: MPoint}= LieGroupOp(x,y)
 @traitfn function LieGroupOp(x::P,y::P) where {P <: MPoint; !IsLieGroupP{P}}
     sig1 = string( typeof(x) )
     throw( ErrorException("The manifold point of type $sig1 does not belong to a Lie Group") );

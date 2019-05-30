@@ -56,7 +56,7 @@ getValue(ξ::SnTVector) = ξ.value;
 # (a) Sn is a MatrixManifold
 @traitimpl IsMatrixM{Sphere}
 @traitimpl IsMatrixP{SnPoint}
-@traitimpl IsMatrixV{SnTVector}
+@traitimpl IsMatrixTV{SnTVector}
 # (b) Sn is Embedded
 @traitimpl IsEmbeddedM{Sphere}
 @traitimpl IsEmbeddedP{SnPoint}
@@ -173,7 +173,7 @@ end
 return a random point on the Sphere by projecting a normal distirbuted vector
 from within the embedding to the sphere.
 """
-function randomMPoint(M::Sphere, ::Val{:Gaussian}, σ::Real=1.0)::SnPoint
+function randomMPoint(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)::SnPoint
 	v = σ * randn(manifoldDimension(M)+1);
 	return SnPoint(v./norm(v))
 end
@@ -183,7 +183,7 @@ end
 return a random tangent vector in the tangent space of the [`SnPoint`](@ref)
 `x` on the [`Sphere`](@ref) `M`.
 """
-function randomTVector(M::Sphere, x::SnPoint, ::Val{:Gaussian}, σ::Real=1.0)
+function randomTVector(M::Sphere, x::SnPoint, ::Val{:Gaussian}, σ::Float64=1.0)
     n = σ * randn( size( getValue(x)) ) # Gaussian in embedding
 	  nP = n - dot(n,getValue(x))*getValue(x) #project to TpM (keeps Gaussianness)
 	  return SnTVector( nP )

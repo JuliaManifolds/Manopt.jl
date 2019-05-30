@@ -6,7 +6,7 @@ import LinearAlgebra: norm, dot
 import Base: exp, log, show
 export Hyperbolic, HnPoint, HnTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
-export typeofMPoint, typeofTVector
+export typeofMPoint, typeofTVector, MinkowskiDot
 export validateMPoint, validateTVector, zeroTVector
 #
 # Type definitions
@@ -79,7 +79,7 @@ getValue(ξ::HnTVector) = length(ξ.value)==1 ? ξ.value[1] : ξ.value
 # (a) Hn is a MatrixManifold
 @traitimpl IsMatrixM{Hyperbolic}
 @traitimpl IsMatrixP{HnPoint}
-@traitimpl IsMatrixV{HnTVector}
+@traitimpl IsMatrixTV{HnTVector}
 # (b) Hn is a MatrixManifold
 @traitimpl IsEmbeddedM{Hyperbolic}
 @traitimpl IsEmbeddedP{HnPoint}
@@ -98,7 +98,7 @@ where $\langle x,y\rangle_{\mathrm{M}} = -x_{n+1}y_{n+1} +
 \displaystyle\sum_{k=1}^n x_ky_k$ denotes the Minkowski inner product
 on $\mathbb R^{n+1}$.
 """
-distance(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat} = acosh(-dotM(getValue(x), getValue(y) ))
+distance(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat} = acosh(  max(1,-MinkowskiDot(getValue(x), getValue(y)))  )
 
 @doc doc"""
     dot(M,x,ξ,ν)
@@ -107,7 +107,7 @@ from $T_x\mathcal M$ of the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ 
 $\langle \xi, \nu \rangle_x = \langle \xi,\nu \rangle$, i.e. the inner product
 in the embedded space $\mathbb R^{n+1}$.
 """
-dot(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T}, ν::HnTVector{T}) where {T <: AbstractFloat} = dotM( getValue(ξ), getValue(ν) )
+dot(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T}, ν::HnTVector{T}) where {T <: AbstractFloat} = MinkowskiDot( getValue(ξ), getValue(ν) )
 
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
@@ -117,8 +117,8 @@ be shortened with `t` to `tξ`. The formula reads
 
 $\exp_x\xi = \cosh(\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}})x + \operatorname{sinh}(\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}})\frac{\xi}{\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}}}.$
 """
-function exp(M::Hyperbolic,x::HnPoint{T},ξ::HnTVector{T},t::Number=1.0)  where {T <: AbstractFloat}
-  len = sqrt(dotM( getValue(ξ), getValue(ξ) ));
+function exp(M::Hyperbolic,x::HnPoint{T},ξ::HnTVector{T},t::Float64=1.0)  where {T <: AbstractFloat}
+  len = sqrt(MinkowskiDot( getValue(ξ), getValue(ξ) ));
   if len < eps(Float64)
   	return x
   else
@@ -136,15 +136,14 @@ The formula reads for $x\neq -y$
 $\log_x y = d_{\mathbb H^n}(x,y)\frac{y-\langle x,y\rangle_{\mathrm{M}} x}{\lVert y-\langle x,y\rangle_{\mathrm{M}} x \rVert_2}.$
 """
 function log(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat}
-  scp = dotM( getValue(x), getValue(y) )
+  scp = MinkowskiDot( getValue(x), getValue(y) )
   ξvalue = getValue(y) + scp*getValue(x)
-  ξvnorm = sqrt(dotM(getValue(x),getValue(y))-1);
+  ξvnorm = sqrt(max(scp^2 - 1,0));
   if (ξvnorm > eps(Float64))
-    value = ξvalue*acosh(-scp)/ξvnorm;
+    return HnTVector( ξvalue*acosh(max(1.,-scp))/ξvnorm )
   else
-    value = zeros( getValue(x) )
+    return zeroTVector(M,x)
   end
-  return HnTVector(value)
 end
 @doc doc"""
     manifoldDimension(x)
@@ -163,7 +162,7 @@ Computes the norm of the [`HnTVector`](@ref) `ξ` in the tangent space
 $T_x\mathcal M$ at [`HnPoint`](@ref) `x` of the
 [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$.
 """
-norm(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T})  where {T <: AbstractFloat}= sqrt(dot(x,ξ,ξ))
+norm(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T})  where {T <: AbstractFloat}= sqrt(dot(M,x,ξ,ξ))
 @doc doc"""
     parallelTransport(M,x,y,ξ)
 Compute the paralllel transport of the [`HnTVector`](@ref) `ξ` from
@@ -203,18 +202,42 @@ validate, that the [`HnPoint`](@ref)` x` is a valid point on the
 [`Hyperbolic`](@ref)` M`, i.e. that the dimension of $x\in\mathbb H^n$ is
 correct and that its minkowski inner product is $\langle x,x\rangle=-1$.
 """
-function validateMPoint(M::Hyperbolic,x::HnPoint)
+function validateMPoint(M::Hyperbolic, x::HnPoint)
     if length(getValue(x)) ≠ M.dimension+1
     throw( ErrorException(
       "The Point $x is not on the $(M.name), since the vector dimension ($(length(getValue(x)))) is not $(M.dimension+1)."
     ))
   end
-  if (dotM(getValue(x),getValue(x))+1) ≧ 10^(-15)
+  if (MinkowskiDot(getValue(x),getValue(x))+1) >= 10^(-15)
     throw( ErrorException(
       "The Point $x is not on the $(M.name) since its minkowski inner product <x,x>_MN is $(norm(getValue(x))) is not -1"
     ))
   end
   return true
+end
+@doc doc"""
+    validateTVector(M,x,ξ)
+
+check that the [`HnTVector`](@ref) `ξ` is a valid tangent vector in the tangent
+space of the [`HnPoint`](@ref) `x` on the [`Hyperbolic`](@ref) `M`, i.e. `x`
+is a valid point on `M`, the vectors within `ξ` and `x` agree in length and the
+Minkowski inner product [`MinkowskiDot`](@ref)`(x,ξ)` is zero.
+"""
+function validateTVector(M::Hyperbolic, x::HnPoint, ξ::HnTVector)
+    if !validateMPoint(M,x)
+        return false
+     end
+    if length(getValue(x)) != length(getValue(ξ))
+        throw( ErrorException(
+            "The lengths of x ($(length(getValue(x)))) and ξ ($(length(getValue(ξ)))) do not agree, so ξ can not be a tangent vector of x."
+        ))
+    end
+    if abs( MinkowskiDot(getValue(x),getValue(ξ)) ) > 10^(-15)
+        throw( ErrorException(
+            "The tangent vector should be (hyperbolically) orthogonal to its base, but the (Minkowski) inner product yields $( abs( MinkowskiDot(getValue(x),getValue(ξ))) )."
+        ))
+    end
+    return true
 end
 @doc doc"""
     ξ = zeroTVector(M,x)
@@ -224,16 +247,17 @@ returns a zero vector in the tangent space $T_x\mathcal M$ of the
 zeroTVector(M::Hyperbolic, x::HnPoint{T}) where {T <: AbstractFloat} = HnTVector(  zero( getValue(x) )  );
 # Display
 # ---
+show(io::IO, M::Hyperbolic) = print(io, "The $(M.name).")
 show(io::IO, p::HnPoint) = print(io, "Hn($( getValue(p) ))")
 show(io::IO, ξ::HnTVector) = print(io, "HnT($( getValue(ξ) ))")
 # Helper
 #
 @doc doc"""
-    dotM(a,b)
+    MinkowskiDot(a,b)
 computes the Minkowski inner product of two Vectors `a` and `b` of same length
 `n+1`, i.e.
 
 $\langle a,b\rangle_{\mathrm{M}} = -a_{n+1}b_{n+1} +
 \displaystyle\sum_{k=1}^n a_kb_k.$
 """
-dotM(a::Vector,b::Vector) = -a[end]*b[end] + sum( a[1:end-1].*b[1:end-1] )
+MinkowskiDot(a::Vector,b::Vector) = -a[end]*b[end] + sum( a[1:end-1].*b[1:end-1] )

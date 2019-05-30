@@ -73,7 +73,7 @@ IsLieGroupV
 ```@docs
 IsMatrixM
 IsMatrixP
-IsMatrixV
+IsMatrixTV
 ```
 
 Further special manifolds can be created combining existing ones, see [Combined Manifolds](@ref CombinedManifolds)
@@ -96,7 +96,7 @@ In the following list `M <: Manifold` the manifold type
 addNoise(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint}
 distance(M::mT, x::T, y::T) where {mT <: Manifold, T <: MPoint}
 dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVector, S <: TVector}
-exp(M::mT, x::P, ξ::T,t::N=1.0) where {mT<:Manifold, P<:MPoint, T<:TVector, N<:Number}
+exp(M::mT, x::P, ξ::T,t::Float64=1.0) where {mT<:Manifold, P<:MPoint, T<:TVector, N<:Number}
 getValue(ξ::P) where {P <: MPoint}
 getValue(ξ::T) where {T <: TVector}
 log(::mT,::P,::Q) where {mT<:Manifold, P<:MPoint, Q<:MPoint}
@@ -104,12 +104,14 @@ manifoldDimension(::P) where {P <: MPoint}
 manifoldDimension(::mT) where {mT <: Manifold}
 norm(::mT,::P,::T) where {mT<:Manifold, P<: MPoint, T<:TVector}
 parallelTransport(::mT,::P,::Q,::T) where {mT <: Manifold, P <: MPoint, Q <: MPoint, T <: TVector}
-randomMPoint(M::mT,options...) where {mT <: Manifold}
-randomTVector(M::mT,p::P,options...) where {mT <: Manifold, P<: MPoint}
+randomMPoint(M::mT,s::Symbol,options...) where {mT <: Manifold}
+randomTVector(M::mT,p::P,s::Symbol,options...) where {mT <: Manifold, P<: MPoint}
 tangentONB(::mT, ::P, ::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint}
 tangentONB(::mT, ::P, ::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
 typeofMPoint(::T) where {T <: TVector}
+typeofMPoint(::Type{T}) where {T <: TVector}
 typeofTVector(::P) where {P <: MPoint}
+typeofTVector(::Type{P}) where {P <: MPoint}
 typicalDistance(M::mT) where {mT <: Manifold}
 zeroTVector(::mT, ::P) where {mT <: Manifold, P <: MPoint}
 ```

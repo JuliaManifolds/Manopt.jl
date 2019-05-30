@@ -82,6 +82,13 @@ getValue(ξ::StTVector) = ξ.value;
 StTVector(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = StTVector{T}(value)
 
 #
+# Traits
+#
+@traitimpl IsMatrixM{Stiefel}
+@traitimpl IsMatrixP{StPoint}
+@traitimpl IsMatrixTV{StTVector}
+
+#
 # Functions
 #
 @doc doc"""

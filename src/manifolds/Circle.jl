@@ -5,7 +5,7 @@
 import Base: exp, log, show
 
 export Circle, S1Point, S1TVector
-export distance, dot, embedd, exp, log, manifoldDimension, norm, opposite
+export distance, dot, embed, exp, log, manifoldDimension, norm, opposite
 export parallelTransport
 export parallelTransport, randomMPoint, randomTVector, typeofMPoint, typeofTVector
 export zeroTVector
@@ -58,7 +58,7 @@ getValue(ξ::S1TVector) = ξ.value
 #(a) S1 is a matrix manifold
 @traitimpl IsMatrixM{Circle}
 @traitimpl IsMatrixP{S1Point}
-@traitimpl IsMatrixV{S1TVector}
+@traitimpl IsMatrixTV{S1TVector}
 
 # Functions
 # ---
@@ -83,7 +83,7 @@ embed the [`Circle`](@ref)` `[`Manifold`](@ref), i.e. turn the [`S1Point`](@ref)
 into an [`SnPoint`](@ref) on the manifold [`Sphere`](@ref)`(1)` embedded in
 $\mathbb R^2$.
 """
-embedd(M::Circle,x::S1Point) = SnPoint([cos(getValue(x)),sin(getValue(x))])
+embed(M::Circle,x::S1Point) = SnPoint([cos(getValue(x)),sin(getValue(x))])
 
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
@@ -124,7 +124,7 @@ norm(M::Circle, x::S1Point, ξ::S1TVector)::Float64 = abs( getValue(ξ) )
     opposite(M,x)
 returns the antipodal point of x, i.e. $ y = (x+\pi)_{2\pi} $.
 """
-opposite(M::Circle, x::S1Point) = S1Point( symRem(x+π) )
+opposite(M::Circle, x::S1Point) = S1Point( symRem(getValue(x)+π) )
 @doc doc"""
     parallelTransport(M,x,y,ξ)
 computes the parallel transport of the [`S1TVector`](@ref) `ξ` from the tangent space $ T_x\mathbb S^1$
@@ -138,7 +138,7 @@ parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
 return a random point on the [`Circle`](@ref) $\mathbb S^1$ by picking a random
 element from $[-\pi,\pi).
 """
-randomMPoint(M::Circle,σ::Real=1.0) = S1Point((rand()-0.5)*2*π)
+randomMPoint(M::Circle,σ::Float64=1.0) = S1Point((rand()-0.5)*2*π)
 
 randomTVector(M::Circle, x::S1Point) = randomTVector(M,x,Val(:Gaussian))
 @doc doc"""
@@ -191,7 +191,7 @@ returns a zero vector in the tangent space $T_x\mathcal M$ of the
 zeroTVector(M::Circle, x::S1Point) = S1TVector(  zero( getValue(x) )  );
 # Display
 # ---
-show(io::IO, M::Circle) = print(io, "The Manifold S1 consisting of angles");
+show(io::IO, M::Circle) = print(io, "The manifold S1 consisting of angles");
 show(io::IO, x::S1Point) = print(io, "S1($( getValue(x) ))");
 show(io::IO, ξ::S1TVector) = print(io, "S1T($( getValue(ξ) ))");
 # little Helpers

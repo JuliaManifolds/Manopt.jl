@@ -65,7 +65,6 @@ struct GrPoint{T<:Union{U, Complex{U}} where U<:AbstractFloat} <: MPoint
   GrPoint{T}(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = new(value)
 end
 GrPoint(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = GrPoint{T}(value)
-
 getValue(x::GrPoint) = x.value;
 
 @doc doc"""
@@ -88,6 +87,10 @@ struct GrTVector{T<:Union{U, Complex{U}} where U<:AbstractFloat} <: TVector
 end
 GrTVector(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = GrTVector{T}(value)
 getValue(ξ::GrTVector) = ξ.value;
+
+@traitimpl IsMatrixM{Grassmannian}
+@traitimpl IsMatrixP{GrPoint}
+@traitimpl IsMatrixTV{GrTVector}
 
 @doc doc"""
     dot(M,x,ξ,ν)

@@ -45,8 +45,8 @@
   @test manifoldDimension(M) == manifoldDimension(x)
   @test manifoldDimension(M) == 6
   @test manifoldDimension(x) == 6
-  # Test distance
-  @test_throws ErrorException distance(M,x,y)
+  # Test distance – not yet implemented
+  @test_throws DomainError distance(M,x,y)
   # Test parallelTransport
   @test norm(getValue(parallelTransport(M,x,z,η)) - getValue(projection(M,z,getValue(η)))) ≈ 0 atol = 10.0^(-16)
   # Test zeroTVector
