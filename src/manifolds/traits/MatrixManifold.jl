@@ -8,7 +8,7 @@
 # Manopt.jl, R. Bergmann, 2018-06-26
 import LinearAlgebra: transpose
 import Base: +, -, *, /
-export transpose, IsMatrixM, IsMatrixP, IsMatrixV
+export transpose, IsMatrixM, IsMatrixP, IsMatrixTV
 export +,-,*,/
 """
     IsMatrixM{X}
@@ -24,17 +24,15 @@ An abstract Manifold Point belonging to a matrix manifold.
 """
 @traitdef IsMatrixP{X}
 """
-    IsMatrixV{X}
+    IsMatrixTV{X}
 An abstract Manifold Point belonging to a matrix manifold.
 """
-@traitdef IsMatrixV{X}
+@traitdef IsMatrixTV{X}
 
 # for all that satisfy IsMatrixM -> introduce operators on points and points/TVecs
-@traitfn +(x::T,y::T) where {T <: MPoint; IsMatrixP{T}} = T( getValue(x) + getValue(y) )
-@traitfn -(x::T,y::T) where {T <: MPoint; IsMatrixP{T}} = T( getValue(x) - getValue(y) )
-@traitfn *(x::T,y::T) where {T <: MPoint; IsMatrixP{T}} = transpose( getValue(x) )* getValue(y)
-@traitfn *(ξ::T,ν::T) where {T <: TVector; IsMatrixP{T}} = transpose( getValue(ξ) ) * getValue(ν)
-@traitfn *(x::T,y::S) where {T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}} = transpose( getValue(x) ) * getValue(y)
-@traitfn *(x::S,y::T) where {T <: TVector, S <: MPoint; IsMatrixV{T},IsMatrixP{S}} = transpose( getValue(x) ) * getValue(y)
-@traitfn transpose(x::T) where {T <: MPoint; IsMatrixP{T}} = transpose( getValue(x) )
-@traitfn transpose(ξ::T) where {T <: TVector; IsMatrixV{T}} = transpose( getValue(x) )
+@traitfn +(x::P, y::P) where {P <: MPoint; IsMatrixP{P}}  = P( getValue(x) + getValue(y) )
+@traitfn -(x::P, y::P) where {P <: MPoint; IsMatrixP{P}}  = P( getValue(x) - getValue(y) )
+@traitfn *(x::P, y::P) where {P <: MPoint; IsMatrixP{P}}  = P( getValue(x) * getValue(y) )
+@traitfn transpose(x::P) where {P <: MPoint; IsMatrixP{P}} = P( Matrix(transpose( getValue(x) ) ) )
+@traitfn *(ξ::T, ν::T) where {T <: TVector; IsMatrixTV{T}} = T( getValue(ξ) * getValue(ν) )
+@traitfn transpose(ξ::T) where {T <: TVector; IsMatrixTV{T}} = T( Matrix( transpose( getValue(ξ) ) ) )

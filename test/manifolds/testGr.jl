@@ -1,4 +1,4 @@
-@testset "The Gr(6,4)" begin
+@testset "The Gr(4,6)" begin
   import Base: zeros, one
   import Random: seed!
   seed!(42); #set seed -> at least always the same random numbers.
@@ -65,9 +65,9 @@
   ynot2 = GrPoint([1. 0. 0. 0. 0.; 0. 1. 0. 0. 0.; 0. 0. 1. 0. 0.; 0. 0. 0. 1. 0.; 0. 0. 0. 0. 0.; 0. 0. 0. 0. 0.])
   ynot3 = GrPoint([1. 0. 0. 0.; 0. 1. 0. 0.; 0. 0. 1. 0.; 0. 0. 0. 0.; 0. 0. 0. 0.; 0. 0. 0. 0.])
   ynot4 = GrPoint([1. 0. 0. 0.; 0. 2. 0. 0.; 0. 0. 4. 0.; 0. 0. 0. 8.; 0. 0. 0. 0.; 0. 0. 0. 0.])
-  ξnot1 = GrTVector([1. 0. 0.; 0. 1. 0.; 0. 0. 1.; 0. 0. 0.; 0. 0. 0.])
-  ξnot2 = GrTVector([1. 0. 0. 0.; 0. 1. 0. 0.; 0. 0. 1. 0.; 0. 0. 0. 1.])
-  ξnot3 = GrTVector([ 1. 2. 3.; 4. 5. 6.; 7. 8. 9.; 0. 0. 0.])
+  ξnot1 = GrTVector([1. 0. 0. 0.; 0. 1. 0. 0.; 0. 0. 1. 0.; 0. 0. 0. 1.; 0. 0. 0. 0.; 0. 0. 0. 0.;  0. 0. 0. 0.])
+  ξnot2 = GrTVector([1. 0. 0. 0. 0.; 0. 1. 0. 0. 0.; 0. 0. 1. 0. 0.; 0. 0. 0. 1. 0.; 0. 0. 0. 0. 0.; 0. 0. 0. 0. 0.])
+  ξnot3 = GrTVector([ 1. 2. 3. 0.; 4. 5. 6. 0.; 7. 8. 9. 0.; 0. 0. 0. 0.; 1. 0. 0. 0.; 0. 1. 0. 0.])
   @test_throws ErrorException validateMPoint(M,ynot1)
   @test_throws ErrorException validateMPoint(M,ynot2)
   @test_throws ErrorException validateMPoint(M,ynot3)

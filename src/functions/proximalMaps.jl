@@ -207,7 +207,7 @@ function proxTV2(M::mT,λ,pointTuple::Tuple{P,P,P},p::Int=1;
 end
 function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=1)::Tuple{S1Point,S1Point,S1Point}
   w = [1., -2. ,1. ]
-  x = getValue.(pointTuple)
+  x = [getValue.(pointTuple)...]
   if p==1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
     m = min(   λ, abs(  symRem( sum( x .* w  ) )  )/(dot(w,w))   )
     s = sign( symRem(sum(x .* w)) )
@@ -221,11 +221,11 @@ function proxTV2(M::Circle,λ,pointTuple::Tuple{S1Point,S1Point,S1Point},p::Int=
     ))
   end
 end
-function proxTV2(M::Euclidean,λ,pointTuple::Tuple{RnPoint,RnPoint,RnPoint},p::Int=1)::Tuple{S1Point,S1Point,S1Point}
+function proxTV2(M::Euclidean,λ,pointTuple::Tuple{RnPoint,RnPoint,RnPoint},p::Int=1)::Tuple{RnPoint,RnPoint,RnPoint}
   w = [1., -2. ,1. ]
-  x = getValue.(pointTuple)
+  x = [getValue.(pointTuple)...]
   if p==1 # Example 3.2 in Bergmann, Laus, Steidl, Weinmann, 2014.
-    m = min.(Ref(λ),  abs( x .* w  ) /(dot(w,w))   )
+    m = min.(Ref(λ),  abs.( x .* w  ) / (dot(w,w))   )
     s = sign.( sum(x .* w) )
     return Tuple( RnPoint.( x  .-  m .* s .* w ) )
   elseif p==2 # Theorem 3.6 ibd.

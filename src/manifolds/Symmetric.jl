@@ -65,7 +65,7 @@ getValue(ξ::SymTVector) = ξ.value
 # (a) P(n) is a matrix manifold
 @traitimpl IsMatrixM{Symmetric}
 @traitimpl IsMatrixP{SymPoint}
-@traitimpl IsMatrixV{SymTVector}
+@traitimpl IsMatrixTV{SymTVector}
 # Functions
 # ---
 @doc doc"""

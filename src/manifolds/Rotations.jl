@@ -82,7 +82,7 @@ getValue(ξ::SOTVector) = ξ.value;
 # (a) SO(n) is a MatrixManifold
 @traitimpl IsMatrixM{Rotations}
 @traitimpl IsMatrixP{SOPoint}
-@traitimpl IsMatrixV{SOTVector}
+@traitimpl IsMatrixTV{SOTVector}
 # (b) SO(n) is Embedded
 @traitimpl IsEmbeddedM{Rotations}
 @traitimpl IsEmbeddedP{SOPoint}
@@ -213,10 +213,14 @@ $n×n$ and subtracts the same transposed matrix from it. Finally, the matrix is 
 normalized.
 """
 function randomTVector(M::Rotations,x::SOPoint, ::Val{:Gaussian}, σ::Real=1.0)
-  A = randn(Float64, M.dimension, M.dimension)
-  A = triu(A,1) - transpose(triu(A,1))
-  A = (1/norm(A))*A
-  SOTVector(A)
+  if M.dimension==1
+    SOTVector(zeros(1,1))
+  else
+    A = randn(Float64, M.dimension, M.dimension)
+    A = triu(A,1) - transpose(triu(A,1))
+    A = (1/norm(A))*A
+    SOTVector(A)
+  end
 end
 
 @doc doc"""

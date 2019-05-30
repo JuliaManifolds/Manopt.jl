@@ -1,6 +1,6 @@
 import Base: stdout
 export DebugOptions, getOptions
-export DebugAction, DebugGroup, DebugEvery
+export DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
 export DebugChange, DebugIterate, DebugIteration, DebugDivider
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 #
@@ -58,7 +58,7 @@ mutable struct DebugOptions{O<:Options} <: Options
     DebugOptions{O}(o::O, dA::Dict{Symbol,<:DebugAction}) where {O <: Options} = new(o,dA)
 end
 DebugOptions(o::O, dD::D) where {O <: Options, D <: DebugAction} = DebugOptions{O}(o,Dict(:All => dD))
-DebugOptions(o::O, dD::Array{<:DebugAction,1}) where {O <: Options} = DebugOptions{O}(o,Dict(:All => DebugGroup(dD,first(dD).print)))
+DebugOptions(o::O, dD::Array{<:DebugAction,1}) where {O <: Options} = DebugOptions{O}(o,Dict(:All => DebugGroup(dD)))
 DebugOptions(o::O, dD::Dict{Symbol,<:DebugAction}) where {O <: Options} = DebugOptions{O}(o,dD)
 DebugOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = DebugOptions{O}(o, DebugFactory(format))
 
@@ -315,13 +315,16 @@ function DebugFactory(a::Array{<:Any,1} )
     for s in filter(x -> !isa(x,Int) && x!=:Stop, a) # filter ints and stop
         push!(group,DebugActionFactory(s) )
     end
-    debug = DebugGroup(group)
-    # filter ints
-    e = filter(x -> isa(x,Int),a)
-    if length(e) > 0
-        debug = DebugEvery(debug,last(e))
+    dictionary = Dict{Symbol,DebugAction}()
+    if length(group) > 0
+        debug = DebugGroup(group)
+        # filter ints
+        e = filter(x -> isa(x,Int),a)
+        if length(e) > 0
+            debug = DebugEvery(debug,last(e))
+        end
+        dictionary[:All] = debug
     end
-    dictionary = Dict{Symbol,DebugAction}(:All => debug)
     if :Stop in a
         dictionary[:Stop] = DebugStoppingCriterion()
     end

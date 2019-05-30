@@ -3,7 +3,7 @@
 #  * A point on the manifold, MPoint
 #  * A point in an tangential space TVector
 #
-# Manopt.jl, R. Bergmann, 2018-06-26
+# Manopt.jl, R. Bergmann, 2019
 import LinearAlgebra: norm, dot
 import Base: exp, log, +, -, *, /, ==, show
 # introcude new types
@@ -30,13 +30,9 @@ abstract type TVector end
 # scale tangential vectors
 *(ξ::T,s::N) where {T <: TVector, N <: Number} = T(s* getValue(ξ) )
 *(s::N, ξ::T) where {T <: TVector, N <: Number} = T(s* getValue(ξ) )
-*(ξ::Vector{T},s::N) where {T <: TVector, N <: Number} = [ξe*s for ξe in ξ]
-*(s::N, ξ::Vector{T}) where {T <: TVector, N <: Number} = [s*ξe for ξe in ξ]
 # /
 /(ξ::T,s::N) where {T <: TVector, N <: Number} = T( getValue(ξ) ./ s)
 /(s::N, ξ::T) where {T <: TVector, N <: Number} = T(s ./ getValue(ξ) )
-/(ξ::Vector{T},s::N) where {T <: TVector, N <: Number} = [ξe/s for ξe in ξ]
-/(s::N, ξ::Vector{T}) where {T <: TVector, N <: Number} = [s/ξe for ξe in ξ]
 # + - of TVectors
 +(ξ::T,ν::T) where {T <: TVector} = T( getValue(ξ) + getValue(ν) )
 -(ξ::T,ν::T) where {T <: TVector} = T( getValue(ξ) - getValue(ν) )
@@ -64,7 +60,8 @@ addNoise(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint} = exp(M,x,
 
 @doc doc"""
     ζ = adjointJacobiField(M,x,y,t,η,w)
-Compute the AdjointJacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
+
+compute the AdjointJacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
 $\mathcal M$ with initial conditions (depending on the application) $\eta\in T_{g(t;x,y)\mathcal M}$ and
 weights $\beta$. The result is a vector $\zeta \in T_x\mathcal M$
 The main difference to [`jacobiField`](@ref) is the inversion, that the input $\eta$ and the output $\zeta$ switched tangent spaces.
@@ -78,9 +75,11 @@ function adjointJacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) 
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
     ξ = sum( ( dot.(Ref(M),Ref(z),Ref(η),Θ) ).* ( β.(κ,Ref(t),distance(M,x,y)) ).*Ξ )
 end
+
 """
    midPoint(M,x,y,z)
-computes the mid point between x and y. If there is more than one mid point
+
+compute the mid point between x and y. If there is more than one mid point
 of (not neccessarily miniizing) geodesics (i.e. on the sphere), the one nearest
 to z.
 """
@@ -88,51 +87,87 @@ function midPoint(M::mT,x::T,y::T,z::T)::T where {mT <: Manifold, T <: MPoint}
     # since this is the fallback, it just uses the non-nearest one
     return midPoint(M,x,y)
 end
+
 """
     midPoint(M,x,y)
-Compute the (geodesic) mid point of x and y.
-# Arguments
-* `M` – a manifold
-* `x`,`y` – two `MPoint`s on `M`
-# Output
-* `m` – resulting mid point
+
+compute the (geodesic) mid point of the two [`MPoint`](@ref)s `x` and `y` on the
+[`Manifold`](@ref) `M`.
 """
 function midPoint(M::mT,x::T, y::T)::T where {mT <: Manifold, T <: MPoint}
   return exp(M,x,0.5*log(M,x,y))
 end
+
 """
     geodesic(M,x,y)
-return a function to evaluate the geodesic connecting `x` and `y`
-on the manifold `M`.
+
+return a function to evaluate the geodesic connecting the two [`MPoint`](@ref)s
+`x` and `y` on the [`Manifold`](@ref) `M`.
 """
 geodesic(M::mT, x::T,y::T) where {mT <: Manifold, T <: MPoint} = t -> exp(M,x,t*log(M,x,y))
 
 """
     geodesic(M,x,y,n)
-returns vector containing the equispaced n sample-values along the geodesic
-from `x`to `y` on the manifold `M`.
-"""
+
+return vector containing the equispaced `n` sample-values along the geodesic
+connecting the two [`MPoint`](@ref)s `x` and `y` on the [`Manifold`](@ref) `M`."""
 geodesic(M::mT, x::T,y::T,n::Integer) where {mT <: Manifold, T <: MPoint} = geodesic(M,x,y,[range(0.,1.,length=n)...])
 
 """
     geodesic(M,x,y,t)
-returns the point along the geodesic from `x` to `y` given by the value `t`
-(in `[0,1]`) on the [`Manifold`](@ref) `M`
+
+return the point along the geodesic from [`MPoint`](@ref) `x` to `y` given by
+at value `t` (in `[0,1]`) on the [`Manifold`](@ref) `M`
 """
 geodesic(M::mT,x::T,y::T,t::N) where {mT <: Manifold, T <: MPoint, N <: Number} = geodesic(M,x,y)(t)
 
 """
     geodesic(M,x,y,T)
-returns vector containing the MPoints along the geodesic from `x` to `y` on
-the manfiold `M` specified by the points from the vector `T` (of numbers between 0 and 1).
+
+return vector containing the [`MPoint`](@ref) along the geodesic from
+[`MPoint`](@ref) `x` to `y` on the [`Manifold`](@ref) `M` specified by the
+points from the vector `T` (of numbers between 0 and 1).
 """
 geodesic(M::mT, x::P,y::P,T::Vector{S}) where {mT <: Manifold, P <: MPoint, S <: Number} = geodesic(M,x,y).(T)
 
 @doc doc"""
+    getValue(x)
+
+get the value representing the [`MPoint`](@ref) `x`.
+This function defaults to returning `x.value`; if your representation is 
+different, you should implement this function for your type
+"""
+function getValue(x::P) where {P <: MPoint}
+    try
+        return x.value
+    catch
+        sig1 = string( typeof(x) )
+        throw( DomainError("getValue not defined/implemented for a $sig1.") );
+    end
+end
+@doc doc"""
+    getValue(ξ)
+
+get the value representing the [`TVector`](@ref) `ξ`.
+This function defaults to returning `ξ.value`; if your representation is 
+different, you should implement this function for your type
+"""
+function getValue(ξ::T) where {T <: TVector}
+    try
+        return ξ.value
+    catch
+        sig1 = string( typeof(ξ) )
+        throw( DomainError("getValue – not defined/implemented for tangent vector $sig1.") );
+    end
+end
+
+@doc doc"""
     ζ = jacobiField(M,x,y,t,η,β)
-Compute the jacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
-$\mathcal M$ with initial conditions (depending on the application) $\eta\in T_x\mathcal M$ and
-weights $\beta$. The result is a tangent vector in $\zeta \in T_{g(t;x,y)}\mathcal M$.
+
+compute the jacobiField $J$ along the geodesic $g_{x,y}$ on the
+[`Manifold`](@ref) `M` $\mathcal M$ with initial conditions (depending on the
+application) $\eta\in T_x\mathcal M$ and weights $\beta$. The result is a
+[`TVector`](@ref) in $\zeta \in T_{g(t;x,y)}\mathcal M$.
 
 *See also:* [`adjointJacobiField`](@ref)
 """
@@ -143,26 +178,35 @@ function jacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
     ξ = sum( ( dot.(Ref(M),Ref(x),Ref(η),Ξ) ).* ( β.(κ,Ref(t),Ref(distance(M,x,y))) ).*Θ )
 end
+
+@doc doc"""
+    manifoldDimension(x)
+
+return the dimension of the manifold `M` the point `x` belongs to.
+"""
+function manifoldDimension(x::P)::Integer where {P<:MPoint}
+  sig1 = string( typeof(x) )
+  throw( DomainError("manifoldDimension not defined/implemented for a $sig1." ) )
+end
+@doc doc"""
+    manifoldDimension(M)
+
+returns the dimension of the manifold `M`.
+"""
+function manifoldDimension(M::mT)::Integer where {mT<:Manifold}
+  sig1 = string( typeof(M) )
+  throw( DomainError("manifoldDimension not defined/implemented on $sig1." ) )
+end
+
 @doc doc"""
     norm(M,x,ξ)
 
-computes the length of a tangential vector $\xi\in T_x\mathcal M$
+computes the length of a [`TVector`](@ref) `ξ` in the tangent space of the
+[`MPoint`](@ref) `x` on the [`Manifold`](@ref) `M` induced by the inner product.
 """
-function norm(M::mT,x::P,ξ::T) where {mT<:Manifold,P<:MPoint,T<:TVector}
-    try
-        sqrt(dot(M,x,ξ,ξ))
-    catch e
-        throw( ErrorException("The norm could not be computed, error: $(e.msg).") );
-    end
-end
-@doc doc"""
-    randomMPoint(M,x, options...)
+norm(M::mT,x::P,ξ::T) where {mT<:Manifold,P<:MPoint,T<:TVector} = sqrt(dot(M,x,ξ,ξ))
 
-generate a random [`MPoint`](@ref) on the [`Manifold`](@ref) `M` by falling
-back to the default `:Gaussian` noise if no third argument `Symbol` is given.
-Further options might be used for different types of noise.
-"""
-randomMPoint(M::mT,options...) where {mT <: Manifold} = randomMPoint(M, Val(:Gaussian), options...)
+randomMPoint(M::mT,options...) where {mT <: Manifold} = randomMPoint(M, :Gaussian, options...)
 @doc doc"""
     randomMPoint(M,x[, type=:Gaussian, options...])
 
@@ -171,13 +215,8 @@ back to the default `:Gaussian` noise with the default standard deviation
 on the specific manifold.
 """
 randomMPoint(M::mT,s::Symbol,options...) where {mT <: Manifold} = randomMPoint(M, Val(s), options...)
-@doc doc"""
-    randomTVector(M,x[, type=:Gaussian, options...])
 
-generate a random tangent vector at [`MPoint`](@ref) `x`
-on the [`Manifold`](@ref) `M` by falling back to the default `:Gaussian` noise
-with the default standard deviation on the specific manifold.
-"""
+randomTVector(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint} = randomTVector(M,x,:Gaussian,options...)
 randomTVector(M::mT, x::P,options...) where {mT <: Manifold, P <: MPoint} = randomTVector(M,x,Val(:Gaussian),options...)
 @doc doc"""
     randomTVector(M,x[, type=:Gaussian, options...])
@@ -190,6 +229,7 @@ randomTVector(M::mT, x::P,s::Symbol,options...) where {mT <: Manifold, P <: MPoi
 
 @doc doc"""
     y = reflection(M,p,x)
+
 reflect the `MPoint x` at `MPoint p`, i.e. compute
 $y = R_p(x) = \exp_p(-\log_px)$. On Euclidean space this results in the point
 reflection $R_p(x) = p - (x-p) = 2p-x$.
@@ -204,12 +244,15 @@ reflection $R_p(x) = p - (x-p) = 2p-x$.
 """
 reflection(M::mT, p::P, x::P) where {mT <: Manifold, P<: MPoint} = exp(M,p,-log(M,p,x))
 
-function show(io::IO, M::mT) where {mT<:Manifold}
-    try # works if M has a .name field
-        print(io, "The Manifold $(M.name).")
-    catch
-        throw(
-            ErrorException("The manifold $( typeof(M) ) seems to not have a `.name` field. Please implement a seperate `show` function.")
-        );
-    end
-end
+"""
+    typeofMPoint(ξ)
+
+return the [`MPoint`](@ref) belonging to the [`TVector`](@ref) type of `ξ`.
+"""
+typeofMPoint(ξ::T) where {T <: TVector} = typeofMPoint(typeof(ξ))
+"""
+    typeofTVector(x)
+
+return the [`TVector`](@ref) belonging to the [`MPoint`](@ref) type of `x`.
+"""
+typeofTVector(x::P) where {P <: MPoint} = typeofTVector(typeof(x))

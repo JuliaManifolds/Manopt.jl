@@ -1,6 +1,7 @@
 @testset "The SO(3)" begin
   import LinearAlgebra: det
   import Base: zeros
+  import Random
   x = SOPoint([1. 0. 0.; 0. 1. 0.; 0. 0. 1.])
   xanti = SOPoint([1. 0. 0.; 0. -1. 0.; 0. 0. -1.])
   y = SOPoint([1 0 0; 0 cos(pi/5) -sin(pi/5); 0 sin(pi/5) cos(pi/5)])
@@ -16,6 +17,7 @@
   x3 = addNoise(M,x,500)
   w = randomMPoint(M)
   s = rand(Float64)
+  Random.seed!(1)
 
   # Test unary operator
   # Test Dimension
@@ -49,6 +51,7 @@
   @test det(getValue(w)) ≈ 1 atol = 10.0^(-9)
   @test norm(transpose(getValue(w))*getValue(w) - one(getValue(w))) ≈ 0 atol = 10.0^(-14)
   @test norm(getValue(η) + transpose(getValue(η))) ≈ 0 atol = 10.0^(-16)
+  @test getValue(randomTVector(Rotations(1), SOPoint(ones(1,1)))) == zeros(1,1)
   # Test addNoise
   @test det(getValue(x2)) ≈ 1 atol = 10.0^(-9)
   @test norm(transpose(getValue(x2))*getValue(x2) - one(getValue(x))) ≈ 0 atol=10.0^(-15)
@@ -65,7 +68,15 @@
   @test norm(getValue(parallelTransport(M,x,y,ξ)) - getValue(ξ)) ≈ 0 atol = 10.0^(-16)
   #Test zeroTVector
   @test norm(getValue(zeroTVector(M,x))) ≈ 0 atol = 10.0^(-16)
-  # Test Lie Group capabilities
+  #Test Lie Group capabilities
   @test distance(M, x⊗y, SOPoint( transpose(getValue(x))*getValue(y)) ) ≈ 0 atol = 10.0^(-16)
-
+  #Test validateMPoint and validateTVector
+  @test validateMPoint(M,w) == true
+  @test validateTVector(M,x,η) == true
+  ynot1 = SOPoint(0.5*[1 0 0; 0 cos(pi/5) -sin(pi/5); 0 sin(pi/5) cos(pi/5)])
+  ynot2 = SOPoint([1 2 3; 0 2 1; 0 0 0.5])
+  @test_throws ErrorException validateMPoint(M,ynot1)
+  @test_throws ErrorException validateMPoint(M,ynot2)
+  ωnot = SOTVector(0.2*[1 1 2; -1 1 3; -2 -3 1])
+  @test_throws ErrorException validateTVector(M,x,ωnot)
 end

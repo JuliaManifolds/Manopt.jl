@@ -100,7 +100,7 @@ end
 repeat(ξ::PowTVector, counts::Integer...) = repeat(ξ; outer=counts)
 ndims(ξ::PowTVector) = ndims( getValue(ξ) )
 
-*(ξ::PowTVector,s::Array{Number,N}) where N = PowTVector( s.*getValue(ξ) )
+*(ξ::PowTVector,s::Array{Float64,N}) where N = PowTVector( s.*getValue(ξ) )
 
 cat(X::PowTVector{T,N}; dims=k) where {T<:TVector,N} = PowTVector{Array{T}}(cat( [getValue(x) for x in X]; dims=k))
 vcat(X::PowTVector{T,N}...) where {T<:TVector,N} = cat(X...; dims=1)
@@ -109,7 +109,7 @@ size(ξ::PowTVector) = size(getValue(ξ))
 copy(ξ::PowTVector) = PowTVector(copy(ξ.value))
 # Functions
 # ---
-function adjointJacobiField(M::Power,x::PowPoint,y::PowPoint,t::Number,η::PowTVector,β::Function=βDgx)::PowTVector
+function adjointJacobiField(M::Power,x::PowPoint,y::PowPoint,t::Float64,η::PowTVector,β::Function=βDgx)::PowTVector
     return PowTVector( adjointJacobiField.(Ref(M.manifold), x.value, y.value, Ref(t), η.value ,Ref(β) ) )
 end
 
@@ -130,9 +130,9 @@ dot(M::Power, x::PowPoint, ξ::PowTVector, ν::PowTVector) = sum(dot.(Ref(M.mani
 computes the product exponential map on the [`Power`](@ref) and returns the
 corresponding [`PowPoint`](@ref).
 """
-exp(M::Power, x::PowPoint, ξ::PowTVector, t::Number=1.0) = PowPoint( exp.(Ref(M.manifold), x.value, ξ.value,t))
+exp(M::Power, x::PowPoint, ξ::PowTVector, t::Float64=1.0) = PowPoint( exp.(Ref(M.manifold), x.value, ξ.value,t))
 
-function jacobiField(M::Power,x::PowPoint,y::PowPoint,t::Number,η::PowTVector,β::Function=βDgx)::PowTVector
+function jacobiField(M::Power,x::PowPoint,y::PowPoint,t::Float64,η::PowTVector,β::Function=βDgx)::PowTVector
     return PowTVector( jacobiField.(Ref(M.manifold), x.value, y.value, Ref(t), η.value, Ref(β) ) )
 end
 

@@ -160,10 +160,12 @@ mutable struct RecordEvery <: RecordAction
     RecordEvery(r::RecordAction,every::Int=1,alwaysUpdate::Bool=true) = new(r,every,alwaysUpdate)
 end
 function (d::RecordEvery)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if (rem(i,d.every)==0)
+    if i<=0
+        d.record(p,o,i)
+    elseif (rem(i,d.every)==0)
         d.record(p,o,i)
     elseif d.alwaysUpdate
-        d.record(p,o,-1)
+        d.record(p,o,0)
     end
 end
 getRecord(r::RecordEvery) = getRecord(r.record)
@@ -197,6 +199,7 @@ function (r::RecordChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
         i
     )
     r.storage(p,o,i)
+    return r.recordedValues
 end
 
 @doc doc"""

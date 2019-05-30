@@ -63,7 +63,7 @@ $\xi \in T_x\mathcal M = \{ x^{\frac{1}{2}}\nu x^{\frac{1}{2}}
 
 to the [`SymmetricPositiveDefinite`](@ref)` `[`Manifold`](@ref)
 $\mathcal M = \mathcal P(n)$ at the [`SPDPoint`](@ref)` x` represented in the
-redundant way of a skew symmetric matrix $\nu$, i.e. in the Lie algebra
+redundant way of a symmetric matrix $\nu$, i.e. in the Lie algebra
 $T_I\mathcal P(n)$, where $I\in\mathbb R^{n\times n}$ denotes the identity
 matrix.
 """
@@ -78,7 +78,7 @@ getValue(ξ::SPDTVector) = ξ.value
 # (a) P(n) is a matrix manidolf
 @traitimpl IsMatrixM{SymmetricPositiveDefinite}
 @traitimpl IsMatrixP{SPDPoint}
-@traitimpl IsMatrixV{SPDTVector}
+@traitimpl IsMatrixTV{SPDTVector}
 # Functions
 # ---
 @doc doc"""
@@ -331,12 +331,12 @@ i.e. all dimensions are corrrect and the matrix is skew symmetric since
 we only store the corresponding value in the Lie algebra.
 """
 function validateTVector(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector)
-    if manifoldDimension(M) ≠ manifoldDimension(x)
+    if !validateMPoint(M,x)
         throw(ErrorException(
-            "The point $x does not lie on $M, since the manifold dimension of $M ($(manifoldDimension(M))) cdoes not match the manifold dimension of $x ($(manifoldDimension(x)))."
+            "The point $x does not lie on on the manifold $M."
         ))
     end
-    if size(getValue(x())) != size(getValue(ξ))
+    if size(getValue(x)) != size(getValue(ξ))
         throw(ErrorException(
             "The tangent vector $ξ can not be a tangent vector to $x (on $M), since the size of the matrix of ξ ($(size(getValue(ξ))) does not match the size of its base point matrix ($(size(getValue(x))))."
         ))
@@ -358,6 +358,6 @@ returns a zero vector in the tangent space $T_x\mathcal M$ of the
 zeroTVector(M::SymmetricPositiveDefinite, x::SPDPoint) = SPDTVector(  zero( getValue(x) )  );
 # Display
 # ---
-show(io::IO, M::SymmetricPositiveDefinite) = print(io, "The Manifold $(M.name).")
+show(io::IO, M::SymmetricPositiveDefinite) = print(io, "The manifold of $(M.name)")
 show(io::IO, p::SPDPoint) = print(io, "SPD($(p.value))")
 show(io::IO, ξ::SPDTVector) = print(io, "SPDT($(ξ.value))")

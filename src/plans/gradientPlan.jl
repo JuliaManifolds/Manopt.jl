@@ -50,7 +50,8 @@ end
 # Options
 #
 """
-    GradientDescentOptions{P,L} <: Options
+    GradientDescentOptions{P,T} <: Options where {P <: MPoint, T <: TVector}
+
 Describes a Gradient based descent algorithm, with
 
 # Fields
@@ -63,8 +64,14 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `retraction` : (exp) the rectraction to use
 * `stepsize` : a `Function` to compute the next step size)
 
+# Constructor
+
+    GradientDescentOptions(x, stop, s [, retr=exp])
+ 
+construct a Gradient Descent Option with the fields and defaults as above
+
 # See also
-[`steepestDescent`](@ref)
+[`steepestDescent`](@ref), [`GradientProblem`](@ref)
 """
 mutable struct GradientDescentOptions{P <: MPoint, T <: TVector} <: Options
     x::P where {P <: MPoint}

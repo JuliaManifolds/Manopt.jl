@@ -76,7 +76,7 @@
     @test zeroTVector(N,y1) == RnTVector(zeros(1))
     
     # only needed once.
-    @test "$(M)" == "The 3-dimensional Euclidean space."
+    @test "$(M)" == "The 3-dimensional Euclidean space"
     @test "$(x1)" == "Rn([1.0, 0.0, 0.0])"
     @test "$(ξ1)" == "RnT([0.0, 1.0, 1.0])"
 end

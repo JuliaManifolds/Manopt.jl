@@ -21,7 +21,7 @@ y2 = exp(M,x,ξ)
 @test validateTVector(M,x,randomTVector(M,x))
 # Test extended
 xT = MPointE(x); yT = MPointE(y); zT = MPointE(z);
-@test_throws ErrorException dot(M,xT,log(M,xT,zT),log(M,yT,zT) )
+@test_throws DomainError dot(M,xT,log(M,xT,zT),log(M,yT,zT) )
 @test dot(M,x,log(M,x,z),log(M,x,y) ) ≈ 0 atol=10.0^(-15)
 # Tst ONB
 @test tangentONB(M,x,y) == ( [SnTVector([0.,1.,0.]), SnTVector([0., 0., 1.])], [0.,1.] )
@@ -44,6 +44,7 @@ xT = MPointE(x); yT = MPointE(y); zT = MPointE(z);
 #
 #
 #
-  @test_throws ErrorException x⊗y
+@test_throws ErrorException x⊗y
+@test_throws ErrorException x⊗y
 
 end

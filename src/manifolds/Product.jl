@@ -31,8 +31,11 @@ struct Product <: Manifold
   name::String
   manifolds::Array{Manifold}
   abbreviation::String
-  Product(m::Array{Manifold}) = new("Product",
-    mv,prod(manifoldDimension.(m)),string("Prod(",join([mi.abbreviation for mi in m],", "),")") )
+  Product(m::Array{Manifold}) = new(
+        string("Product Manifold of [ ",join([mi.name for mi in m],", "),")"),
+        m,
+        string("Prod(",join([mi.abbreviation for mi in m],", "),")"),
+    )
 end
 @doc doc"""
     ProdPoint <: MPoint
@@ -42,9 +45,9 @@ represented by a vector or array of [`MPoint`](@ref)s.
 """
 struct ProdPoint{A <: Array{MPoint}} <: MPoint
   value::A
-  ProdPoint{A}(v::A) where {A <: Array{MPoint}} = new(v)
+  ProdPoint{A}(v::A) where {A <: Array{<:MPoint}} = new(v)
 end
-ProdPoint(v::A) where {A <: Array{MPoint}} = ProdPoint(v)
+ProdPoint(v::A) where {A <: Array{<:MPoint}} = ProdPoint{A}(v)
 
 getValue(x::ProdPoint) = x.value
 @doc doc"""
@@ -54,11 +57,11 @@ A tangent vector in the product of tangent spaces of the [`Product`](@ref)
 $T\mathcal M = T\mathcal N_1\times T\mathcal N_2\times\cdots\times T\mathcal N_m$,$m\in\mathbb N$,
 represented by a vector or array of [`TVector`](@ref)s.
 """
-struct ProdTVector{A <: Array{TVector}} <: TVector
+struct ProdTVector{A <: Array{<:TVector}} <: TVector
   value::A
-  ProdTVector{A}(value::A) where {A <: Array{TVector}} = new(value);
+  ProdTVector{A}(value::A) where {A <: Array{<:TVector}} = new(value);
 end
-ProdTVector(v::A) where {A <: Array{TVector}} = ProdTVector{A}(v)
+ProdTVector(v::A) where {A <: Array{<:TVector}} = ProdTVector{A}(v)
 getValue(ξ::ProdTVector) = ξ.value
 
 @doc doc"""
@@ -80,7 +83,7 @@ dot(M::Product, x::ProdPoint, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.man
 
 computes the product exponential map on the [`Product`](@ref) manifold and returns the corresponding [`ProdPoint`](@ref).
 """
-exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Number=1.0) = ProdPoint( exp.(M.manifolds, getValue(x), getValue(ξ)) )
+exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( exp.(M.manifolds, getValue(x), getValue(ξ)) )
 
 @doc doc"""
    log(M,x,y)
@@ -97,14 +100,14 @@ log(M::Product, x::ProdPoint,y::ProdPoint) = ProdTVector(log.(M.manifolds, getVa
 returns the (product of) dimension(s) of the [`Product`](@ref) manifold the
 [`ProdPoint`](@ref) `x` belongs to.
 """
-manifoldDimension(x::ProdPoint) =  prod( manifoldDimension.( getValue(x) ) )
+manifoldDimension(x::ProdPoint) =  sum( manifoldDimension.( getValue(x) ) )
 
 @doc doc"""
     manifoldDimension(M)
 
 returns the (product of) dimension(s) of the [`Product`](@ref)` `[`Manifold`](@ref) `M`.
 """
-manifoldDimension(M::Product) = prod( manifoldDimension.(M.manifolds) )
+manifoldDimension(M::Product) = sum( manifoldDimension.(M.manifolds) )
 
 @doc doc"""
     norm(M,x,ξ)
@@ -122,7 +125,10 @@ and returns the corresponding [`ProdTVector`](@ref).
 """
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
 
+typeofTVector(x::ProdPoint) = ProdTVector{Array{TVector,ndims(x.value)}}
 typeofTVector(::Type{ProdPoint{A}}) where {A <: Array{MPoint}} = ProdTVector{Array{TVector}}
+
+typeofMPoint(ξ::ProdTVector) = ProdPoint{Array{MPoint,ndims(ξ.value)}}
 typeofMPoint(::Type{ProdTVector{A}}) where {A <: Array{TVector}} = ProdPoint{Array{MPoint}}
 
 @doc doc"""
@@ -130,7 +136,8 @@ typeofMPoint(::Type{ProdTVector{A}}) where {A <: Array{TVector}} = ProdPoint{Arr
 
 generate a random point on [`Product`](@ref) `M`.
 """
-randomMPoint(M::Product,options...) = ProdPoint([ randomMPoint(m, options) for m in M.manifolds ] )
+randomMPoint(M::Product, options...) = ProdPoint([ randomMPoint(m, options...) for m in M.manifolds ] )
+randomMPoint(M::Product, ::Val{:Gaussian}, options...) = ProdPoint([ randomMPoint(m, Val(:Gaussian), options...) for m in M.manifolds ] )
 
 @doc doc"""
     randomTVector(M,x)
@@ -138,11 +145,10 @@ randomMPoint(M::Product,options...) = ProdPoint([ randomMPoint(m, options) for m
 generate a random tangent vector in the tangent space of the [`ProdPoint`](@ref) `x`
 on [`Power`](@ref) `M`.
 """
-randomTVector(M::Product,x::ProdTVector,options) = ProdTVector([
-    randomTVector(m.manifolds[i], getValue(x)[i], options...)
+randomTVector(M::Product,x::ProdPoint, options...) where N = ProdTVector([
+    randomTVector(M.manifolds[i], getValue(x)[i], options...)
     for i in CartesianIndices(getValue(x))
 ])
-
 @doc doc"""
     typicalDistance(M)
 
@@ -189,7 +195,6 @@ returns a zero vector in the tangent space $T_x\mathcal M$ of the
 """
 zeroTVector(M::Product, x::ProdPoint) = ProdTVector( zeroTVector.(M.manifolds, getValue(x) )  );
 # Display
-show(io::IO, M::Product) = print(io,string("The Product Manifold of [ ",
-    join([m.abbreviation for m in M.manifolds])," ]"))
-show(io::IO, p::ProdPoint) = print(io,string("Prod[",join(repr.( getValue(p) ),", "),"]"))
-show(io::IO, ξ::ProdTVector) = print(io,String("ProdT[", join(repr.(ξ.value),", "),"]"))
+show(io::IO, M::Product) = print(io, "The Product Manifold of [ "*join(["$(m)" for m in M.manifolds],", ")," ]")
+show(io::IO, x::ProdPoint) = print(io, "Prod[ "*join(repr.( x.value ),", ")," ]")
+show(io::IO, ξ::ProdTVector) = print(io, "ProdT[ "*join(repr.( ξ.value ),", ")*" ]")

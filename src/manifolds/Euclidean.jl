@@ -1,7 +1,7 @@
 #
 #      Rn - The manifold of the n-dimensional (real valued) Euclidean space
 #
-# Manopt.jl, R. Bergmann, 2018-06-26
+# Manopt.jl, R. Bergmann, 2019
 import LinearAlgebra: I, norm
 import Base: exp, log, show
 export Euclidean, RnPoint, RnTVector
@@ -13,10 +13,20 @@ export validateMPoint, validateTVector, typeofMPoint, typeofTVector
 
 @doc doc"""
     Euclidean <: Manifold
+
 The manifold $\mathcal M = \mathbb R^n$ of the $n$-dimensional Euclidean vector
 space. We employ the notation $\langle\cdot,\cdot,\rangle$ for the inner product
 and $\lVert\cdot\rVert_2$ for its induced norm.
-The abbreviation for functions is `Rn`
+
+# Abbreviation
+
+`Rn`
+
+# Constructor
+
+Euclidean(n)
+
+construct the n-dimensional Euclidean space.
 """
 struct Euclidean <: Manifold
   name::String
@@ -27,7 +37,8 @@ end
 
 @doc doc"""
     RnPoint <: MPoint
-The point $x\in\mathbb M$ for $\mathbb M=\mathbb R^n$ represented by an
+
+the point $x\in\mathbb M$ for $\mathbb M=\mathbb R^n$ represented by an
 $n$-dimensional `Vector{T}`, where `T <: AbstractFloat`.
 """
 struct RnPoint{T<:AbstractFloat} <: MPoint
@@ -41,7 +52,8 @@ getValue(x::RnPoint) = length(x.value)==1 ? x.value[1] : x.value
 
 @doc doc"""
     RnTVector <: TVector
-The point $\xi\in\mathbb M$ for $\mathbb M=\mathbb R^n$ represented by an
+
+the point $\xi\in\mathbb M$ for $\mathbb M=\mathbb R^n$ represented by an
 $n$-dimensional `Vector{T}`, where `T <: AbstractFloat`.
 """
 struct RnTVector{T <: AbstractFloat}  <: TVector
@@ -59,13 +71,14 @@ getValue(ξ::RnTVector) = length(ξ.value)==1 ? ξ.value[1] : ξ.value
 # (a) Rn is a MatrixManifold
 @traitimpl IsMatrixM{Euclidean}
 @traitimpl IsMatrixP{RnPoint}
-@traitimpl IsMatrixV{RnTVector}
+@traitimpl IsMatrixTV{RnTVector}
 
 # Functions
 # ---
 @doc doc"""
     distance(M,x,y)
-Computes the Euclidean distance $\lVert x - y\rVert$
+
+compute the Euclidean distance $\lVert x - y\rVert$
 """
 function distance(M::Euclidean,x::RnPoint{T},y::RnPoint{T})::T where {T <: AbstractFloat}
     if length(getValue(x)) > 1
@@ -85,7 +98,7 @@ dot(M::Euclidean,x::RnPoint{T},ξ::RnTVector{T}, ν::RnTVector{T}) where {T <: A
 Computes the exponential map, i.e. $x+t*\xi$, where the scaling parameter `t` is
 optional.
 """
-exp(M::Euclidean,x::RnPoint{T},ξ::RnTVector{T},t::Number=1.0) where {T <: AbstractFloat} = RnPoint(getValue(x) + t*getValue(ξ) )
+exp(M::Euclidean,x::RnPoint{T},ξ::RnTVector{T},t::Float64=1.0) where {T <: AbstractFloat} = RnPoint(getValue(x) + t*getValue(ξ) )
 @doc doc"""
     log(M,x,y)
 Computes the logarithmic map, i.e. $y-x$.
@@ -98,19 +111,15 @@ Returns the manifold dimension, i.e. the length of the vector `x`.
 manifoldDimension(x::RnPoint) = length( getValue(x) )
 """
     manifoldDimension(M)
-Returns the manifold dimension, i.e. the length of the vectors stored
+
+return the manifold dimension, i.e. the length of the vectors stored
 in `M.dimension`.
 """
 manifoldDimension(M::Euclidean) = M.dimension
-@doc doc"""
-    norm(M,x,ξ)
-Computes the length of the tangent vector `ξ` in the tangent
-space $T_x\mathcal M$ of `x` on the Eclidean space `M`, i.e. $\lVert\xi\rVert$.
-"""
-norm(M::Euclidean,x::RnPoint{T}, ξ::RnTVector{T}) where {T <: AbstractFloat} = length(getValue(ξ)) == 1 ? abs( getValue(ξ) ) : norm( getValue(ξ) )
 """
     parallelTransport(M,x,y,ξ)
-Computes the parallel transport, which is on [`Euclidean`](@ref) space the identity.
+
+compute the parallel transport, which is on [`Euclidean`](@ref) space the identity.
 """
 parallelTransport(M::Euclidean, x::RnPoint{T}, y::RnPoint{T}, ξ::RnTVector{T})  where {T <: AbstractFloat} = ξ
 doc"""
@@ -127,7 +136,7 @@ doc"""
 generate a Gaussian random vector on the [`Euclidean`](@ref) manifold `M` with
 standard deviation `σ`.
 """
-randomTVector(M::Euclidean, x::RnPoint{T}, ::Val{:Gaussian}, σ::Real=1.0) where {T} = RnTVector( σ * randn(T,M.dimension) )
+randomTVector(M::Euclidean, x::RnPoint{T}, ::Val{:Gaussian}, σ::Float64=1.0) where {T} = RnTVector( σ * randn(T,M.dimension) )
 
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)
@@ -181,6 +190,6 @@ end
 #
 #
 # --- Display functions for the objects/types
-show(io::IO, M::Euclidean) = print(io, "The $(M.name).");
+show(io::IO, M::Euclidean) = print(io, "The $(M.name)");
 show(io::IO, x::RnPoint) = print(io, "Rn($( getValue(x) ))");
 show(io::IO, ξ::RnTVector) = print(io, "RnT($( getValue(ξ) ))");

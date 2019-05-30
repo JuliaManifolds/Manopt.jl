@@ -71,7 +71,7 @@ TBPoint(x::P, ξ::T) where {P <: MPoint, T <: TVector} = TBPoint{P,T}( (x,ξ) )
 TBPoint(X::Tuple{P,T}) where {P <: MPoint, T <: TVector}= TBPoint{P,T}( X )
 @doc doc"""
     getValue(X)
-return the value of the [`TBPoint`](@ref)` X`, i.e. the Tuple of a
+return the value of the [`TBPoint`](@ref) `X`, i.e. the Tuple of a
 [`MPoint`](@ref) and its [`TVector`](@ref).
 """
 getValue(X::TBPoint{P,T}) where { P <: MPoint, T <: TVector } = X.value
