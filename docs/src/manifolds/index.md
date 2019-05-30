@@ -28,11 +28,13 @@ inherits such a short abbreviation, see `Abbr.` in the following table.
 |  Manifold $\mathcal M$ | File | Abbr. | Comment
 |:-----------------------|:-----|:-----:|:--------
 A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$ | collects general functions and types
-[$1$-sphere $\mathbb S^1$](@ref CircleManifold)  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
-[$n$-dim. Hyperbolic space $\mathbb H^n$](@ref HyperbolicManifold) | `Hyperbolic.jl` | `Hn` | embedded in $\mathbb R^{n+1}$
-[$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
 [Euclidean space $\mathbb R^n$](@ref EuclideanSpace) | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
+[Grassmannian manufold $\mathrm{Gr}(k,n)$](@ref Grassmannianmanifold) | `Grassmannian.jl` | `Gr` | embedded in $\mathbb R^{n\times k}$
+[$n$-dim. Hyperbolic space $\mathbb H^n$](@ref HyperbolicManifold) | `Hyperbolic.jl` | `Hn` | embedded in $\mathbb R^{n+1}$
 [special orthogonal group $\mathrm{SO}(n)$](@ref SOn) | `Rotations.jl` | `SO` | represented as rotation matrices
+[Stiefel $\mathrm{St}(k,n)$](@ref StiefelManifold) | `Stiefel.jl`| `St` |  contains both the real- ad the complex-valued case
+[$1$-sphere $\mathbb S^1$](@ref CircleManifold)  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
+[$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
 [symmetric matrices $\mathcal{Sym}(n)$](@ref SymmetricManifold) | `Symmetric.jl` | `Sym` | $n\times n$ symmetric matrices
 [symmetric positive definite matrices $\mathcal P(n)$](@ref SymmetricPositiveDefiniteManifold) | `SymmetricPositiveDefinite.jl` | `SPD` | $n\times n$ symmetric positive matrices using the affine metric
 

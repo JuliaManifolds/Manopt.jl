@@ -1,10 +1,12 @@
 using Manopt
 using Test
 @testset "Manopt.jl Manifold Tests" begin
+    include("manifolds/testGr.jl")
     include("manifolds/testRn.jl")
     include("manifolds/testSn.jl")
     include("manifolds/testSO.jl")
     include("manifolds/testSPD.jl")
+    include("manifolds/testStiefel.jl")
     include("manifolds/testGraphConstruction.jl")
 end
 @testset "Manopt.jl Algorithms" begin
