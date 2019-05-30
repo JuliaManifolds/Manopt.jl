@@ -14,7 +14,8 @@
   w = randomMPoint(M)
   s = pi
 
-
+  # Test Stiefel
+  @test_throws ErrorException Stiefel(4,3)
   # Test Minus operator
   @test getValue( (-η) ) == getValue(-η)
   # Test Cauchy-Schwarz-Inequation
@@ -24,7 +25,6 @@
   @test dot(M,x,ω,η) ≈ dot(M,x,η,ω) atol = 10.0^(-16)
   @test dot(M,x,ω,η+ξ) ≈ dot(M,x,ω,η) + dot(M,x,ω,ξ) atol = 10.0^(-15)
   @test dot(M,x,ω,s*η) ≈ s*dot(M,x,ω,η) atol = 10.0^(-14)
-  #@test_throws ErrorException dot(M,y,ξ,μ)
   # Test norm
   @test norm(M,x,ω)^2 ≈ dot(M,x,ω,ω) atol = 10.0^(-14)
   @test norm(M,x,ω) ≈ sqrt(dot(M,x,ω,ω)) atol = 10.0^(-16)
@@ -36,15 +36,36 @@
   @test norm(transpose(getValue(x3))*getValue(x3) - one(transpose(getValue(x3))*getValue(x3))) ≈ 0 atol=10.0^(-12)
   #Test retraction
   @test norm(getValue(inverseRetractionQR(M,x,retractionQR(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
+  @test norm(getValue(inverseRetraction(M,x,retraction(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
   @test norm(getValue(inverseRetractionPolar(M,x,retractionPolar(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
   @test norm(transpose(getValue(retractionQR(M,x,ω))) * getValue(retractionQR(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
+  @test norm(transpose(getValue(retraction(M,x,ω))) * getValue(retraction(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
   @test norm(transpose(getValue(retractionPolar(M,x,ω))) * getValue(retractionPolar(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
   #Test manifoldDimension
   @test manifoldDimension(M) == manifoldDimension(x)
   @test manifoldDimension(M) == 6
   @test manifoldDimension(x) == 6
-  # Test error
+  # Test distance
   @test_throws ErrorException distance(M,x,y)
+  # Test parallelTransport
+  @test norm(getValue(parallelTransport(M,x,z,η)) - getValue(projection(M,z,getValue(η)))) ≈ 0 atol = 10.0^(-16)
+  # Test zeroTVector
+  @test norm(M,x,zeroTVector(M,x)) ≈ 0 atol = 10.0^(-16)
+  # Test validateMPoint and validateTVector
+  ynot1 = StPoint([1. 0. 0.; 0. 1. 0.; 0. 0. 1.; 0. 0. 0.; 0. 0. 0.])
+  ynot2 = StPoint([1. 0. 0. 0.; 0. 1. 0. 0.; 0. 0. 1. 0.; 0. 0. 0. 1.])
+  ynot3 = StPoint([1. 0. 0.; 0. 1. 0.; 0. 0. 0; 0. 0. 0.])
+  ynot4 = StPoint([1. 2. 0.; 0. 1. 0.; 0. 4. 0; 5. 0. 6.])
+  ξnot1 = StTVector([1. 0. 0.; 0. 1. 0.; 0. 0. 1.; 0. 0. 0.; 0. 0. 0.])
+  ξnot2 = StTVector([1. 0. 0. 0.; 0. 1. 0. 0.; 0. 0. 1. 0.; 0. 0. 0. 1.])
+  ξnot3 = StTVector([ 1. 2. 3.; 4. 5. 6.; 7. 8. 9.; 0. 0. 0.])
+  @test_throws ErrorException validateMPoint(M,ynot1)
+  @test_throws ErrorException validateMPoint(M,ynot2)
+  @test_throws ErrorException validateMPoint(M,ynot3)
+  @test_throws ErrorException validateMPoint(M,ynot4)
+  @test_throws ErrorException validateTVector(M,x,ξnot1)
+  @test_throws ErrorException validateTVector(M,x,ξnot2)
+  @test_throws ErrorException validateTVector(M,x,ξnot3)
 
 
   N = Stiefel{Complex{Float64}}(3,4)
@@ -59,6 +80,8 @@
   x2compl = addNoise(N,xcompl,0.5)
   x3compl = addNoise(N,xcompl,500.0)
 
+  # Test Stiefel
+  @test_throws ErrorException Stiefel{Complex{Float64}}(4,3)
   # Test Minus operator
   @test getValue( (-ηcompl) ) == getValue(-ηcompl)
   # Test Cauchy-Schwarz-Inequation
@@ -77,6 +100,8 @@
   # Test addNoise
   @test norm(getValue(x2compl)'*getValue(x2compl) - one(getValue(x2compl)'*getValue(x2compl))) ≈ 0 atol=10.0^(-5)
   @test norm(getValue(x3compl)'*getValue(x3compl) - one(getValue(x3compl)'*getValue(x3compl))) ≈ 0 atol=10.0^(-5)
+  # Test parallelTransport
+  @test norm(getValue(parallelTransport(N,xcompl,zcompl,ηcompl)) - getValue(projection(N,zcompl,getValue(ηcompl)))) ≈ 0 atol = 10.0^(-16)
 
   #Test manifoldDimension
   @test manifoldDimension(N) == manifoldDimension(wcompl)
