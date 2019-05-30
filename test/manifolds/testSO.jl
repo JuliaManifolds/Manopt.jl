@@ -30,7 +30,6 @@
   @test dot(M,x,ω,η) ≈ dot(M,x,η,ω) atol = 10.0^(-16)
   @test dot(M,x,ω,η+ξ) ≈ dot(M,x,ω,η) + dot(M,x,ω,ξ) atol = 10.0^(-15)
   @test dot(M,x,ω,s*η) ≈ s*dot(M,x,ω,η) atol = 10.0^(-14)
-  #@test_throws ErrorException dot(M,y,ξ,μ)
   # Test norm
   @test norm(M,x,ω)^2 ≈ dot(M,x,ω,ω) atol = 10.0^(-14)
   @test norm(M,x,ω) ≈ sqrt(dot(M,x,ω,ω)) atol = 10.0^(-16)
@@ -39,22 +38,34 @@
   @test distance(M,x,xanti) ≈ π atol=10.0^(-16) # antipodal ponts
   @test distance(M,x,z) ≈ norm(M,x,μ) atol=10.0^(-16)
   # Test Exponential and logarithm for both usual and antipodal points
-  @test getValue(log(M, x, y2)) ≈ getValue(ξ) atol = 10.0^(-16)
-  @test getValue(log(M, x, z2)) ≈ getValue(μ) atol = 10.0^(-16)
-  @test getValue(exp(M,x,log(M,x,y))) - getValue(y) ≈ zero(getValue(y)) atol = 10.0^(-15)
-  @test getValue(log(M,x,exp(M,x,ω))) - getValue(ω) ≈ zero(getValue(y)) atol = 10.0^(-15)
+  @test norm(getValue(log(M, x, y2)) - getValue(ξ)) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(log(M, x, z2)) - getValue(μ)) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(exp(M,x,log(M,x,y))) - getValue(y)) ≈ 0 atol = 10.0^(-15)
+  @test norm(getValue(log(M,x,exp(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-15)
+  @test_throws ErrorException log(M,x,xanti)
   # Test randomMPoint and randomTVector
+  N = Rotations(1)
+  @test norm(getValue(randomMPoint(N)) - ones(1,1)) ≈ 0 atol = 10.0^(-16)
   @test det(getValue(w)) ≈ 1 atol = 10.0^(-9)
-  @test transpose(getValue(w))*getValue(w) - one(getValue(w)) ≈ zero(getValue(w)) atol = 10.0^(-14)
-  @test getValue(η) + transpose(getValue(η)) ≈ zero(getValue(η)) atol = 10.0^(-16)
+  @test norm(transpose(getValue(w))*getValue(w) - one(getValue(w))) ≈ 0 atol = 10.0^(-14)
+  @test norm(getValue(η) + transpose(getValue(η))) ≈ 0 atol = 10.0^(-16)
   # Test addNoise
   @test det(getValue(x2)) ≈ 1 atol = 10.0^(-9)
-  @test transpose(getValue(x2))*getValue(x2) ≈ one(getValue(x)) atol=10.0^(-15)
+  @test norm(transpose(getValue(x2))*getValue(x2) - one(getValue(x))) ≈ 0 atol=10.0^(-15)
   @test det(getValue(x3)) ≈ 1 atol = 10.0^(-9)
-  @test transpose(getValue(x3))*getValue(x3) - one(getValue(x)) ≈ zero(getValue(x)) atol=10.0^(-12)
+  @test norm(transpose(getValue(x3))*getValue(x3) - one(getValue(x))) ≈ 0 atol=10.0^(-12)
   #Test retraction
-  @test getValue(inverseRetractionQR(M,x,retractionQR(M,x,ω))) - getValue(ω) ≈ zero(getValue(ω)) atol = 10.0^(-14)
-  @test getValue(inverseRetractionPolar(M,x,retractionPolar(M,x,ω))) - getValue(ω) ≈ zero(getValue(ω)) atol = 10.0^(-14)
-  @test transpose(getValue(retractionQR(M,x,ω))) * getValue(retractionQR(M,x,ω)) - one(getValue(x)) ≈ zero(getValue(x)) atol = 10.0^(-15)
-  @test transpose(getValue(retractionPolar(M,x,ω))) * getValue(retractionPolar(M,x,ω)) - one(getValue(x)) ≈ zero(getValue(x)) atol = 10.0^(-15)
+  @test norm(getValue(inverseRetractionQR(M,x,retractionQR(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
+  @test norm(getValue(inverseRetraction(M,x,retraction(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
+  @test norm(getValue(inverseRetractionPolar(M,x,retractionPolar(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
+  @test norm(transpose(getValue(retractionQR(M,x,ω))) * getValue(retractionQR(M,x,ω)) - one(getValue(x))) ≈ 0 atol = 10.0^(-15)
+  @test norm(transpose(getValue(retraction(M,x,ω))) * getValue(retraction(M,x,ω)) - one(getValue(x))) ≈ 0 atol = 10.0^(-15)
+  @test norm(transpose(getValue(retractionPolar(M,x,ω))) * getValue(retractionPolar(M,x,ω)) - one(getValue(x))) ≈ 0 atol = 10.0^(-15)
+  #Test parallelTransport
+  @test norm(getValue(parallelTransport(M,x,y,ξ)) - getValue(ξ)) ≈ 0 atol = 10.0^(-16)
+  #Test zeroTVector
+  @test norm(getValue(zeroTVector(M,x))) ≈ 0 atol = 10.0^(-16)
+  # Test Lie Group capabilities
+  @test distance(M, x⊗y, SOPoint( transpose(getValue(x))*getValue(y)) ) ≈ 0 atol = 10.0^(-16)
+
 end
