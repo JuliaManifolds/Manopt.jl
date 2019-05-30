@@ -217,9 +217,8 @@ on the specific manifold.
 randomMPoint(M::mT,s::Symbol,options...) where {mT <: Manifold} = randomMPoint(M, Val(s), options...)
 
 randomTVector(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint} = randomTVector(M,x,:Gaussian,options...)
-randomTVector(M::mT, x::P,options...) where {mT <: Manifold, P <: MPoint} = randomTVector(M,x,Val(:Gaussian),options...)
 @doc doc"""
-    randomTVector(M,x[, type=:Gaussian, options...])
+    randomTVector(M, x [, :Gaussian, options...])
 
 generate a random tangent vector at [`MPoint`](@ref) `x`
 on the [`Manifold`](@ref) `M` using `:Gaussian` noise where options usually
