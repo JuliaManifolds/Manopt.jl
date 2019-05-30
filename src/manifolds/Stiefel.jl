@@ -389,4 +389,7 @@ function validateTVector(M::Stiefel{T}, x::StPoint{T}, ξ::StTVector{T}) where T
   if size(getValue(ξ), 2) ≠ M.dimensioncolumns
     throw( ErrorException("The dimension of $ξ must be $(M.dimensionlines) × $(M.dimensioncolumns) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
   end
+  if norm(getValue(x)'*getValue(ξ) + getValue(ξ)'*getValue(x)) > 10^(-15)
+    throw( ErrorException("The matrix $x'$ξ must be skew-symmetric!") )
+  end
 end
