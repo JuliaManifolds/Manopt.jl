@@ -80,10 +80,13 @@ function asyExportS2Signals(filename::String;
     arrowHeadSize::Float64 = 6.,
     cameraPosition::Tuple{Float64,Float64,Float64} = (1., 1., 0.),
     lineWidth::Float64 = 1.0,
-    lineWidths::Array{Float64,1} = fill(lineWidth,size(curves)),
+    lineWidths::Array{Float64,1} = fill(lineWidth,size(curves)+size(tVectors)),
     dotSize::Float64 = 1.0,
     dotSizes::Array{Float64,1} = fill(dotSize,size(points)),
     target::Tuple{Float64,Float64,Float64} = (0.,0.,0.),
+    sphereColor::RGBA{Float64} = RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
+    sphereLineColor::RGBA{Float64} = RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
+    sphereLineWidth::Float64 = 0.5
     )
     io = open(filename,"w")
     try
@@ -91,14 +94,19 @@ function asyExportS2Signals(filename::String;
         # Header
         # ---
         write(io,string("import settings;\nimport three;\nimport solids;",
-                    "unitsize(4cm);\n\n",
-                    "currentprojection=perspective( ",
-                    "camera = $(cameraPosition), ",
-                    "target = $(target) );\n",
-                    "currentlight=nolight;\n\n",
-                    "revolution S=sphere(O,1);\n",
-                    "draw(surface(S), surfacepen=lightgrey+opacity(.6), ",
-                    "meshpen=0.6*white+linewidth(.5pt));\n")
+            "unitsize(4cm);\n\n",
+            "currentprojection=perspective( ",
+            "camera = $(cameraPosition), ",
+            "target = $(target) );\n",
+            "currentlight=nolight;\n\n",
+            "revolution S=sphere(O,1);\n",
+            "pen SpherePen = rgb($(red(sphereColor)),",
+            "$(green(sphereColor)),$(blue(sphereColor)))",
+            "+opacity($(alpha(sphereColor)));\n",
+            "pen SphereLinePen = rgb($(red(sphereLineColor)),",
+            "$(green(sphereLineColor)),$(blue(sphereLineColor)))",
+            "+opacity($(alpha(sphereLineColor)))+linewidth($(sphereLineWidth)pt);\n",
+            "draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);\n")
         );
         write(io,"\n/*\n  Colors\n*/\n")
         j=0
@@ -130,7 +138,8 @@ function asyExportS2Signals(filename::String;
                 end
                 write(io,string("pen $(penPrefix)Style$(i) = ",
                     "rgb($(red(c)),$(green(c)),$(blue(c)))",
-                    (key==:curves) ? "+linewidth($(lineWidths[i])pt)" : "",
+                    (key==:curves || key==:tvectors) ? "+linewidth($(lineWidths[i])pt)" : "",
+                    (key==:tvectors) ? "+linewidth($(lineWidths[length(curves)+i])pt)" : "",
                     (key==:points) ? "+linewidth($(dotSizes[i])pt)" : "",
                     "+opacity($(alpha(c)));\n"));
             end
