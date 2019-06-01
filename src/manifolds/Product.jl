@@ -29,9 +29,9 @@ constructs a `Power` [`Manifold`](@ref) based on an array of manifolds
 """
 struct Product <: Manifold
   name::String
-  manifolds::Array{Manifold}
+  manifolds::Array{<:Manifold}
   abbreviation::String
-  Product(m::Array{Manifold}) = new(
+  Product(m::Array{<:Manifold}) = new(
         string("Product Manifold of [ ",join([mi.name for mi in m],", "),")"),
         m,
         string("Prod(",join([mi.abbreviation for mi in m],", "),")"),
@@ -43,7 +43,7 @@ end
 A point on the [`Product`](@ref) $\mathcal M = \mathcal N_1\times\mathcal N_2\times\cdots\times\mathcal N_m$,$m\in\mathbb N$,
 represented by a vector or array of [`MPoint`](@ref)s.
 """
-struct ProdPoint{A <: Array{MPoint}} <: MPoint
+struct ProdPoint{A <: Array{<:MPoint}} <: MPoint
   value::A
   ProdPoint{A}(v::A) where {A <: Array{<:MPoint}} = new(v)
 end
@@ -126,10 +126,10 @@ and returns the corresponding [`ProdTVector`](@ref).
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
 
 typeofTVector(x::ProdPoint) = ProdTVector{Array{TVector,ndims(x.value)}}
-typeofTVector(::Type{ProdPoint{A}}) where {A <: Array{MPoint}} = ProdTVector{Array{TVector}}
+typeofTVector(::Type{ProdPoint{Array{MPoint,N}}}) where N = ProdTVector{Array{TVector,N}}
 
 typeofMPoint(ξ::ProdTVector) = ProdPoint{Array{MPoint,ndims(ξ.value)}}
-typeofMPoint(::Type{ProdTVector{A}}) where {A <: Array{TVector}} = ProdPoint{Array{MPoint}}
+typeofMPoint(::Type{ProdTVector{Array{TVector,N}}}) where N = ProdPoint{Array{MPoint,N}}
 
 @doc doc"""
     randomMPoint(M)
@@ -137,7 +137,6 @@ typeofMPoint(::Type{ProdTVector{A}}) where {A <: Array{TVector}} = ProdPoint{Arr
 generate a random point on [`Product`](@ref) `M`.
 """
 randomMPoint(M::Product, options...) = ProdPoint([ randomMPoint(m, options...) for m in M.manifolds ] )
-randomMPoint(M::Product, ::Val{:Gaussian}, options...) = ProdPoint([ randomMPoint(m, Val(:Gaussian), options...) for m in M.manifolds ] )
 
 @doc doc"""
     randomTVector(M,x)
@@ -164,7 +163,7 @@ are valid points on each elements manifolds
 """
 function validateMPoint(M::Product, x::ProdPoint)
     if length(getValue(x)) ≠ length(M.manifolds)
-        throw(ErrorException(
+        throw(DomainError(
         " The product manifold point $x is not on $(M.name) since its number of elements ($(length(getValue(x)))) does not fit the number of manifolds ($(length(M.manifolds)))."
         ))
     end
@@ -181,7 +180,7 @@ dimensions match and this validation holds elementwise.
 """
 function validateTVector(M::Product, x::ProdPoint, ξ::ProdTVector)
     if (length(getValue(x)) ≠ length(getValue(ξ))) || (length(getValue(ξ)) ≠ length(M.manifolds))
-        throw( ErrorException(
+        throw( DomainError(
         "The three dimensions of the $(M.name), the point x ($(length(getValue(x)))), and the tangent vector ($(length(getValue(ξ)))) don't match."
         ))
     end
@@ -195,6 +194,6 @@ returns a zero vector in the tangent space $T_x\mathcal M$ of the
 """
 zeroTVector(M::Product, x::ProdPoint) = ProdTVector( zeroTVector.(M.manifolds, getValue(x) )  );
 # Display
-show(io::IO, M::Product) = print(io, "The Product Manifold of [ "*join(["$(m)" for m in M.manifolds],", ")," ]")
+show(io::IO, M::Product) = print(io, "The Product Manifold of [ "*join(["$(m)" for m in M.manifolds],", ")*" ]")
 show(io::IO, x::ProdPoint) = print(io, "Prod[ "*join(repr.( x.value ),", ")," ]")
 show(io::IO, ξ::ProdTVector) = print(io, "ProdT[ "*join(repr.( ξ.value ),", ")*" ]")

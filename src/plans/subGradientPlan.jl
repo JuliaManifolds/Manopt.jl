@@ -27,13 +27,6 @@ evaluate the gradient of a [`SubGradientProblem`](@ref)` p` at the [`MPoint`](@r
 """
 getSubGradient(p::P,x::MP) where {P <: SubGradientProblem{M} where M <: Manifold, MP <: MPoint} = p.subGradient(x)
 """
-    getCost(p,x)
-
-evaluate the cost function `F` stored within a [`GradientProblem`](@ref) at the [`MPoint`](@ref) `x`.
-"""
-getCost(p::P,x::MP) where {P <: SubGradientProblem{M} where M <: Manifold, MP <: MPoint} = p.costFunction(x)
-
-"""
     SubGradientMethodOptions <: Options
 stories option values for a [`subGradientMethod`](@ref) solver
 
@@ -50,7 +43,7 @@ mutable struct SubGradientMethodOptions{P,T} <: Options where {P <: MPoint, T <:
     stop::StoppingCriterion
     x::P
     xOptimal::P
-    subGradient::T
+    ∂::T
     SubGradientMethodOptions{P,T}(x::P,sC::StoppingCriterion,s::Stepsize,retr::Function=exp) where {P <: MPoint, T <: TVector} = (
         o = new{P,T}(); o.x = x; o.xOptimal = x;
         o.stepsize = s; o.retraction = retr;
@@ -59,5 +52,3 @@ mutable struct SubGradientMethodOptions{P,T} <: Options where {P <: MPoint, T <:
     )
 end
 SubGradientMethodOptions(x::P,sC::StoppingCriterion,s::Stepsize,retr::Function=exp) where {P <: MPoint} = SubGradientMethodOptions{P,typeofTVector(x)}(x,sC,s,retr)
-
-getStepsize(p::P,o::O,vars...) where {P <: SubGradientProblem{M} where M <: Manifold, O <: SubGradientMethodOptions} = o.stepsize(p,o,vars...)

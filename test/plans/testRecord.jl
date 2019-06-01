@@ -9,19 +9,29 @@
     p = GradientProblem(M,f,∇f)
     a = RecordIteration()
     # constructors
-    @test RecordOptions(o,a).recordDictionary[:All] == a
+    rO = RecordOptions(o,a)
+    @test getOptions(o) == o
+    @test getOptions(rO) == o
+    @test_throws ErrorException getOptions(p)
+    #
+    @test getInitialStepsize(p,rO) == 1.
+    @test getStepsize!(p,rO,1) == 1.
+    @test getLastStepsize(p,rO,1) == 1.
+    #
+    @test rO.recordDictionary[:All] == a
     @test RecordOptions(o,[a]).recordDictionary[:All].group[1] == a
     @test RecordOptions(o,Dict(:A => a)).recordDictionary[:A] == a
     @test isa( RecordOptions(o, [:Iteration]).recordDictionary[:All].group[1], RecordIteration)
     @test !hasRecord(o)
     @test !hasRecord(DebugOptions(o,[]))
-    @test hasRecord(RecordOptions(o,a))
-    @test length( getRecord(RecordOptions(o,a),:All) ) == 0
-    @test length( getRecord(RecordOptions(o,a)) ) == 0 
-    @test length(  getRecord(DebugOptions( RecordOptions(o,a),[]) )  ) == 0 
+    @test hasRecord(rO)
+    @test_throws ErrorException getRecord(o)
+    @test length( getRecord(rO,:All) ) == 0
+    @test length( getRecord(rO) ) == 0 
+    @test length(  getRecord(DebugOptions( rO,[]) )  ) == 0 
     @test_throws ErrorException getRecord(RecordOptions(o,Dict{Symbol,RecordAction}()))
     @test_throws ErrorException getRecord(o)
-    @test getRecord(RecordOptions(o,a)) == Array{Int64,1}()
+    @test getRecord(rO) == Array{Int64,1}()
     # RecordIteration
     @test a(p,o,0) == nothing # inactive
     @test a(p,o,1) == [1]
@@ -64,6 +74,7 @@
     # RecordEntryChange
     o.x = x
     e = RecordEntryChange(:x, (p,o,x,y) -> distance(p.M,x,y))
+    @test updateStorage!(e.storage,o) == (:x,)
     e2 = RecordEntryChange(x,:x,(p,o,x,y) -> distance(p.M,x,y))
     @test e.field == e2.field
     e(p,o,1)

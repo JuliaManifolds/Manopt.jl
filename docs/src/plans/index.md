@@ -122,16 +122,13 @@ SubGradientProblem
 getSubGradient
 ```
 
-### Hessian based problem
-*note that this section is preliminary, there is no Hessian based algorithm yet*
-```@docs
-HessianProblem
-getHessian
-```
-
 ### Proximal Map(s) based problem
 ```@docs
 ProximalProblem
 getProximalMap
-getProximalMaps
+```
+
+### Further planned problems
+```@docs
+HessianProblem
 ```

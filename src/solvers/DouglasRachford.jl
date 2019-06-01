@@ -50,7 +50,6 @@ function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, 
     stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenChangeLess(10.0^-5)),
     kwargs... #especially may contain decorator options
 ) where {mT <: Manifold, P <: MPoint}
-    p = parallel > 0
     if length(proxes) < 2
         throw(
          ErrorException("Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps.")
@@ -60,8 +59,8 @@ function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, 
         prox2 = proxes[2]
     else # more than 2 -> parallelDouglasRachford
         parallel = length(proxes)
-        prox1 = (λ,x) -> [proxes[i](λ,x[i]) for i in 1:parallel]
-        prox2 = (λ,x) -> PowPoint( fill(mean(M,getValue(x)),parallel) )
+        prox1 = (λ,x) -> PowPoint([proxes[i](λ,x[i]) for i in 1:parallel])
+        prox2 = (λ,x) -> PowPoint( fill(mean(M.manifold,getValue(x)),parallel) )
     end
     if parallel > 0
         M = Power(M,parallel)

@@ -5,12 +5,12 @@
 #
 # Manopt.jl, R. Bergmann, 2019
 import LinearAlgebra: norm, dot
-import Base: exp, log, +, -, *, /, ==, show
+import Base: exp, log, +, -, *, /, ==, show, copy
 # introcude new types
 export Manifold, MPoint, TVector
 # introduce new functions
 export geodesic, midPoint, reflection, jacobiField, adjointJacobiField
-export +, -, *, /, ==, show
+export +, -, *, /, ==, show, copy
 @doc doc"""
 An abstract manifold $\mathcal M$ to keep global information on a specific manifold
 """
@@ -75,6 +75,9 @@ function adjointJacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) 
     # Decompose wrt. Ξ, multiply with the weights from w and recompose with Θ.
     ξ = sum( ( dot.(Ref(M),Ref(z),Ref(η),Θ) ).* ( β.(κ,Ref(t),distance(M,x,y)) ).*Ξ )
 end
+
+copy(x::P) where {P <: MPoint} = P(copy(getValue(x)))
+copy(ξ::T) where {T <: TVector} = T(copy(getValue(ξ)))
 
 """
    midPoint(M,x,y,z)

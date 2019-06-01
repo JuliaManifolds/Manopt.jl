@@ -16,7 +16,7 @@ ExportOrig = true
 ExportResultVideo = false
 ExportTable = true
 
-f = artificialS2WhirlImage(;pts=64)
+f = artificialS2WhirlImage(64)
 pixelM = Sphere(2); #(2)
 resultsFolder = "src/examples/Total_Variation/S2_TV/" # (3)
 experimentName = "WhirlCPPA" # (4)

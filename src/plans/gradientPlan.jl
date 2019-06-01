@@ -2,7 +2,7 @@
 # Gradient Plan
 #
 export GradientProblem, GradientDescentOptions
-export getGradient, getCost, getStepsize, getInitialStepsize
+export getGradient, getCost, getInitialStepsize
 
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export RecordGradient, RecordGradientNorm, RecordStepsize
@@ -38,14 +38,6 @@ evaluate the gradient of a [`GradientProblem`](@ref)`p` at the [`MPoint`](@ref) 
 function getGradient(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
   return p.gradient(x)
 end
-"""
-    getCost(p,x)
-
-evaluate the cost function `F` stored within a [`GradientProblem`](@ref) at the [`MPoint`](@ref) `x`.
-"""
-function getCost(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
-  return p.costFunction(x)
-end
 #
 # Options
 #
@@ -75,10 +67,10 @@ construct a Gradient Descent Option with the fields and defaults as above
 """
 mutable struct GradientDescentOptions{P <: MPoint, T <: TVector} <: Options
     x::P where {P <: MPoint}
-    ∇::T where {T <: TVector}
     stop::StoppingCriterion
-    retraction::Function
     stepsize::Stepsize
+    ∇::T where {T <: TVector}
+    retraction::Function
     GradientDescentOptions{P,T}(
         initialX::P,
         s::StoppingCriterion = stopAfterIteration(100),
@@ -94,7 +86,6 @@ mutable struct GradientDescentOptions{P <: MPoint, T <: TVector} <: Options
     )
 end
 GradientDescentOptions(x::P,stop::StoppingCriterion,s::Stepsize,retraction::Function=exp) where {P <: MPoint} = GradientDescentOptions{P,typeofTVector(P)}(x,stop,s,retraction)
-getStepsize(p::P,o::O,vars...) where {P <: GradientProblem{M} where M <: Manifold, O <: GradientDescentOptions} = o.stepsze(p,o,vars...)
 #
 # Debugs
 #
@@ -183,9 +174,9 @@ initialize the [`RecordAction`](@ref) to the corresponding type of the [`TVector
 """
 mutable struct RecordGradient{T <: TVector} <: RecordAction
     recordedValues::Array{T,1}
-    RecordGradient{T}() where {T <: MPoint} = new(Array{T,1}())
+    RecordGradient{T}() where {T <: TVector} = new(Array{T,1}())
 end
-RecordedGradient(ξ::T) where {T <: TVector} = RecordGradient{T}()
+RecordGradient(ξ::T) where {T <: TVector} = RecordGradient{T}()
 (r::RecordGradient{T})(p::P,o::O,i::Int) where {T <: TVector, P <: GradientProblem, O <: GradientDescentOptions} = recordOrReset!(r, o.∇, i)
 
 @doc doc"""

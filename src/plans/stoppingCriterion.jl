@@ -136,7 +136,7 @@ mutable struct stopWhenAny <: StoppingCriterion
     criteria::Array{StoppingCriterion,1}
     reason::String
     stopWhenAny(c::Array{StoppingCriterion,1}) = new(c,"")
-    stopWhenAny(c...) = new([c...],"")
+    stopWhenAny(c::StoppingCriterion...) = stopWhenAny([c...])
 end
 function (c::stopWhenAny)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if any([ subC(p,o,i) for subC in c.criteria])

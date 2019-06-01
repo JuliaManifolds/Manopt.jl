@@ -37,9 +37,14 @@ struct Graph{mT<:Manifold} <: Manifold
   adjacency::Mat where {Mat <: AbstractMatrix}
   isDirected::Bool
   abbreviation::String
-  Graph{mT}(M::mT, adjacency::Mat where {Mat <: AbstractMatrix}, isDir::Bool=false) where {mT <: Manifold} = new(string("A Graph Manifold of ",mv.name,"."),
-    mv,size(adjacency,1)*manifoldDimension(mv),isDir,string("GraphVertex(",M.abbreviation,",",repr(size(adjacency,1)),")") )
+  Graph{mT}(M::mT, adjacency::Mat, isDir::Bool=false) where {mT <: Manifold, Mat <: AbstractMatrix} = new(
+    string("A Graph Manifold of ",M.name,"."),
+    M,size(adjacency,1)*manifoldDimension(M),
+    adjacency, isDir,
+    string("GraphVertex(",M.abbreviation,",",repr(size(adjacency,1)),")") )
 end
+Graph(M::mT,A::Mat,dir::Bool=false) where {mT <: Manifold, Mat <: AbstractMatrix} = Graph{mT}(M,A,dir)
+
 @doc doc"""
     GraphVertexPoint <: MPoint
 A point graph vertex power manifold
@@ -97,51 +102,51 @@ getValue(ξ::GraphEdgeTVector) = ξ.value
 
 computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
 """
-distance(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint) = sqrt(sum( distance.(M.manifold, getValue(x), getValue(y) ).^2 ))
+distance(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint) = sqrt(sum( distance.(Ref(M.manifold), getValue(x), getValue(y) ).^2 ))
 """
     distance(M,x,y)
 
 computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
 """
-distance(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint) = sqrt(sum( distance.(M.manifold, getValue(x), getValue(y) ).^2 ))
+distance(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint) = sqrt(sum( distance.(Ref(M.manifold), getValue(x), getValue(y) ).^2 ))
 """
     dot(M,x,ξ,ν)
 computes the inner product as sum of the component inner products on the [`Graph`](@ref) vertices.
 """
-dot(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector, ν::GraphVertexTVector) = sum(dot.(M.manifold,getValue(x), getValue(ξ), getValue(ν) ))
+dot(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector, ν::GraphVertexTVector) = sum(dot.(Ref(M.manifold),getValue(x), getValue(ξ), getValue(ν) ))
 """
     dot(M,x,ξ,ν)
 computes the inner product as sum of the component inner products on the [`Graph`](@ref) edges.
 """
-dot(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector, ν::GraphEdgeTVector) = sum(dot.(M.manifold,getValue(x), getValue(ξ), getValue(ν) ))
+dot(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector, ν::GraphEdgeTVector) = sum(dot.(Ref(M.manifold),getValue(x), getValue(ξ), getValue(ν) ))
 """
     exp(M,x,ξ[, t=1.0])
 computes the product exponential map on the [`Graph`](@ref) vertices and
 returns the corresponding [`GraphVertexPoint`](@ref).
 """
-exp(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector, t::Number=1.0) = GraphVertexPoint( exp.(M.manifold, getValue(x) , getValue(ξ) ))
+exp(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector, t::Float64=1.0) = GraphVertexPoint( exp.(Ref(M.manifold), getValue(x) , getValue(ξ) ))
 """
    log(M,x,y)
 computes the product logarithmic map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
 """
-log(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint)::GraphVertexTVector = GraphVertexTVector(log.(M.manifold, getValue(x), getValue(y) ))
+log(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint)::GraphVertexTVector = GraphVertexTVector(log.(Ref(M.manifold), getValue(x), getValue(y) ))
 """
    log(M,x,y)
 computes the product logarithmic map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
 """
-log(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint)::GraphEdgeTVector = GraphEdgeTVector(log.(M.manifold, getValue(x), getValue(y) ))
+log(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint)::GraphEdgeTVector = GraphEdgeTVector(log.(Ref(M.manifold), getValue(x), getValue(y) ))
 """
     manifoldDimension(x)
 returns the (product of) dimension(s) of the [`Graph`](@ref) the
 [`GraphVertexPoint`](@ref)`x` belongs to.
 """
-manifoldDimension(x::GraphVertexPoint) = prod(manifoldDimension.( getValue(x) ) )
+manifoldDimension(x::GraphVertexPoint) = sum(manifoldDimension.( getValue(x) ) )
 """
     manifoldDimension(x)
 returns the (product of) dimension(s) of the [`Power`](@ref) the
 [`GraphEdgePoint`](@ref)`x` belongs to.
 """
-manifoldDimension(x::GraphEdgePoint) = prod(manifoldDimension.( getValue(x) ) )
+manifoldDimension(x::GraphEdgePoint) = sum(manifoldDimension.( getValue(x) ) )
 """
     manifoldDimension(M)
 returns the (product of) dimension(s) of the [`Graph`](@ref) `M` seen as a vertex power manifold.
@@ -152,13 +157,13 @@ manifoldDimension(M::Graph) = size(M.adjacency,1) * manifoldDimension(M.manifold
 norm of the [`GraphVertexTVector`](@ref) `ξ` induced by the metric on the manifold components
 of the [`Graph`](@ref) `M`.
 """
-norm(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector) = sqrt( dot.(M.manifold,x,ξ,ξ) )
+norm(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector) = sqrt(sum(dot.(Ref(M.manifold),getValue(x),getValue(ξ),getValue(ξ))))
 """
     norm(M,x,ξ)
 norm of the [`GraphEdgeTVector`] `ξ` induced by the metric on the manifold components
 of the [`Graph`](@ref) `M`.
 """
-norm(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector) = sqrt( dot.(M.manifold,x,ξ,ξ) )
+norm(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector) = sqrt(sum(dot.(Ref(M.manifold),getValue(x), getValue(ξ), getValue(ξ))))
 
 @doc doc"""
     parallelTransport(M,x,ξ)
@@ -166,13 +171,13 @@ computes the product parallelTransport map on the [`Graph`](@ref) vertex power
 manifold $\mathcal M^{\lvert\mathcal V\rvert}$ and returns
 the corresponding [`GraphVertexTVector`](@ref).
 """
-parallelTransport(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint, ξ::GraphVertexTVector) = GraphVertexTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
+parallelTransport(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint, ξ::GraphVertexTVector) = GraphVertexTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
 """
     parallelTransport(M,x,ξ)
 computes the product parallelTransport map on the [`Graph`](@ref) edge power manifold and returns
 the corresponding [`GraphVertexTVector`](@ref).
 """
-parallelTransport(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint, ξ::GraphEdgeTVector) = GraphVertexTVector( parallelTransport.(M.manifold, getValue(x), getValue(y), getValue(ξ)) )
+parallelTransport(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint, ξ::GraphEdgeTVector) = GraphVertexTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
 """
     randomMPoint(M,[,:Vertex])
 
@@ -207,13 +212,13 @@ typicalDistance(M::Graph) = sqrt( size(M.adjacency,1) ) * typicalDistance(M.mani
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`GraphVertexPoint`](@ref) $x\in\mathcal M$ on the [`Graph`](@ref) vertex manifold `M`.
 """
-zeroTVector(M::Graph, x::GraphVertexPoint) = GraphVertexTVector( zeroTVector.(M.manifold, getValue(x) )  )
+zeroTVector(M::Graph, x::GraphVertexPoint) = GraphVertexTVector( zeroTVector.(Ref(M.manifold), getValue(x) )  )
 @doc doc"""
     ξ = zeroTVector(M,x)
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`GraphEdgePoint`](@ref) $x\in\mathcal M$ on the [`Graph`](@ref) edge manifold `M`.
 """
-zeroTVector(M::Graph, x::GraphEdgePoint) = GraphEdgeTVector( zeroTVector.(M.manifold, getValue(x) )  )
+zeroTVector(M::Graph, x::GraphEdgePoint) = GraphEdgeTVector( zeroTVector.(Ref(M.manifold), getValue(x) )  )
 """
    startEdgePoint(M,x)
 For a [`Graph`](@ref) manifold and a [`GraphVertexPoint`](@ref), this
@@ -269,8 +274,8 @@ end
 #
 #
 # Display functions for the structs
-show(io::IO, M::Graph) = print(io,string("The manifold on vertices and edges of a graph of ",repr(M.manifold), " of (vertex manifold) dimension ",repr(M.dims),".") );
+show(io::IO, M::Graph) = print(io,string("The manifold on vertices and edges of a graph of ",repr(M.manifold), " of (vertex manifold) dimension ",repr(M.dimension),".") );
 show(io::IO, p::GraphVertexPoint) = print(io,string("GraphVertexV[",join(repr.(p.value),", "),"]"));
-show(io::IO, ξ::GraphVertexTVector) = print(io,String("GraphVertexT[", join(repr.(ξ.value),", "),"]"));
+show(io::IO, ξ::GraphVertexTVector) = print(io,string("GraphVertexT[",join(repr.(ξ.value),", "),"]"));
 show(io::IO, p::GraphEdgePoint) = print(io,string("GraphEdgeV[",join(repr.(p.value),", "),"]"));
-show(io::IO, ξ::GraphEdgeTVector) = print(io,String("GraphEdgeT[", join(repr.(ξ.value),", "),"]"));
+show(io::IO, ξ::GraphEdgeTVector) = print(io,string("GraphEdgeT[", join(repr.(ξ.value),", "),"]"));

@@ -34,7 +34,6 @@ provide the access functions accordingly
 
 """
 abstract type Options end
-copy(x::T) where {T <: Options} = T([getfield(x, k) for k ∈ fieldnames(T)]...)
 #
 # StoppingCriterion meta
 #
@@ -159,12 +158,11 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`Problem`](@ref),
 Initialize the Functor to an (empty) set of keys, where `once` determines
 whether more that one update per iteration are effective
 
-    StoreOptionsAction(keys, values[, once=true])
+    StoreOptionsAction(keys, once=true])
 
-Initialize the Functor to a set of keys, where `values` is a tuple containing
-initial values, one for each key. Further, `once` determines whether
-more that one update per iteration are effective.
-
+Initialize the Functor to a set of keys, where the dictionary is initialized to
+be empty. Further, `once` determines whether more that one update per iteration
+are effective, otherwise only the first update is stored, all others are ignored.
 """
 mutable struct StoreOptionsAction <: Action
     values::Dict{Symbol,<:Any}
@@ -172,8 +170,6 @@ mutable struct StoreOptionsAction <: Action
     once::Bool
     lastStored::Int
     StoreOptionsAction(keys::NTuple{N,Symbol} where N = NTuple{0,Symbol}(),once=true) = new(Dict{Symbol,Any}(), keys, once,-1 )
-    StoreOptionsAction(keys::NTuple{N,Symbol}, values::NTuple{N,<:Any},once=true) where N = new(
-        Dict( key -> value for (key,value) in zip(keys,values)), keys,once,-1 )
 end
 function (a::StoreOptionsAction)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     #update values (maybe only once)

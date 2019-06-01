@@ -67,7 +67,7 @@ struct TBPoint{P<:MPoint, T <: TVector} <: MPoint
   TBPoint{P,T}(x::P, ξ::T) where {P <: MPoint, T <: TVector} = new( (x,ξ) )
   TBPoint{P,T}(X::Tuple{P, T}) where {P <: MPoint, T <: TVector} = new( X )
 end
-TBPoint(x::P, ξ::T) where {P <: MPoint, T <: TVector} = TBPoint{P,T}( (x,ξ) )
+TBPoint(x::P, ξ::T) where {P <: MPoint, T <: TVector} = TBPoint{P,T}(x,ξ)
 TBPoint(X::Tuple{P,T}) where {P <: MPoint, T <: TVector}= TBPoint{P,T}( X )
 @doc doc"""
     getValue(X)
@@ -75,16 +75,13 @@ return the value of the [`TBPoint`](@ref) `X`, i.e. the Tuple of a
 [`MPoint`](@ref) and its [`TVector`](@ref).
 """
 getValue(X::TBPoint{P,T}) where { P <: MPoint, T <: TVector } = X.value
-# passthrough for Extendeds
-getValue(X::MPointE{TBPoint}) = MPointE( strip(X).value )
-
 @doc doc"""
     getBase(X)
 return the base of the [`TBPoint`](@ref)` X`, i.e. its [`MPoint`](@ref).
 """
 getBase(X::TBPoint{P,T}) where { P <: MPoint, T <: TVector } = X.value[1]
 # passthrough for Extendeds
-getBase(X::MPointE{TBPoint}) = MPointE( getBase(strip(X)) )
+getBase(X::MPointE{TBPoint{P,T}}) where { P <: MPoint, T <: TVector } = MPointE( getBase(strip(X)) )
 
 @doc doc"""
     getTangent(X)
@@ -92,7 +89,7 @@ return the tangent of the [`TBPoint`](@ref)` X`, i.e. the its [`TVector`](@ref).
 """
 getTangent(X::TBPoint{P,T}) where { P <: MPoint, T <: TVector } = X.value[2]
 #passthrough for Extendeds
-getTangent(X::MPointE{TBPoint}) = TVectorE( getTangent(strip(X)) )
+getTangent(X::MPointE{TBPoint{P,T}}) where { P <: MPoint, T <: TVector } = TVectorE( getTangent(strip(X)), getBase(strip(X) ) )
 
 @doc doc"""
     TBTVector <: TVector
@@ -111,7 +108,7 @@ struct TBTVector{T <: TVector} <: TVector
   TBTVector{T}(ξ::T,ν::T) where {T <: TVector} = new( (ξ,ν) )
   TBTVector{T}(Ξ::Tuple{T,T}) where {T <: TVector} = new( Ξ )
 end
-TBTVector(ξ::T, ν::T) where {T <: TVector} = TBTVector{T}( (ξ,ν) )
+TBTVector(ξ::T, ν::T) where {T <: TVector} = TBTVector{T}( ξ,ν )
 TBTVector(Ξ::Tuple{T,T}) where {T <:TVector}= TBTVector{T}( Ξ )
 @doc doc"""
     getValue(Ξ)
@@ -126,7 +123,7 @@ return the base of the [`TBTVector`](@ref)` Ξ`, i.e. its first [`TVector`](@ref
 """
 getBase(Ξ::TBTVector) = Ξ.value[1]
 # passthrough for Extendeds
-getBase(Ξ::TVectorE{TBTVector}) = TVectorE( getBase(strip(Ξ)) )
+getBase(Ξ::TVectorE{TBTVector{T}}) where {T <: TVector} = TVectorE( getBase(strip(Ξ)), getBase(getBasePoint(Ξ)) )
 
 @doc doc"""
     getTangent(Ξ)
@@ -134,7 +131,7 @@ return the tangent of the [`TBTVector`](@ref)` Ξ`, i.e. its second
 [`TBTVector`](@ref).
 """
 getTangent(Ξ::TBTVector) = Ξ.value[2]
-getTangent(Ξ::TVectorE{TBTVector}) = TVectorE( getTangent(strip(Ξ)) )
+getTangent(Ξ::TVectorE{TBTVector{T}}) where {T <: TVector}= TVectorE( getTangent(strip(Ξ)), getBase(getBasePoint(Ξ)) )
 
 *(t::Number, Ξ::TBTVector) = TBTVector(t*getBase(Ξ),t*getTangent(Ξ))
 
@@ -176,7 +173,7 @@ which consists of the exponential map in the first component (`exp(x,Ξx,t)` and
 a (scaled) addition in the second (`ξ + tΞξ`) in the second component followed
 by a parallel transport.
 """
-function exp(M::TangentBundle,X::TBTVector,Ξ::TBTVector,t::Float64=1.0)
+function exp(M::TangentBundle,X::TBPoint,Ξ::TBTVector,t::Float64=1.0)
   x = exp(M.manifold,getBase(X),getBase(Ξ),t)
   ξ = parallelTransport(M.manifold, getBase(X), x,
     getTangent(X) + t*getTangent(Ξ)
@@ -250,7 +247,7 @@ returns a random tangent vector the [`TangentBundle`](@ref) `M` by producing
 two [`randomTVector`](@ref)s in the correspoinding tangent plane of the
 [`getBase`](@ref) of the [`TBPoint`](@ref) `x`.
 """
-function randomMPoint(M::TangentBundle, x::TBPoint)
+function randomTVector(M::TangentBundle, x::TBPoint)
   xξ = randomTVector(M.manifold,getBase(x))
   ξξ = randomTVector(M.manifold,getBase(x))
 	return TBTVector(xξ,ξξ)
@@ -273,10 +270,12 @@ It is constructed by using twice the tangent ONB of the base manifold.
 function tangentONB(M::TangentBundle,X::TBPoint,Ξ::TBTVector)
   BaseONB,κx = tangentONB(M.manifold, getBase(X), getBase(Ξ))
   TangentONB,κξ = tangentONB(M.manifold, getBase(X), getTangent(Ξ) )
-  return TBTVector.(BaseONB, TangentONB), κx
+  baseTVs = [BaseONB..., [zeroTVector(M.manifold,getBase(X)) for i=1:length(TangentONB)]...]
+  tangentTVs = [ [zeroTVector(M.manifold,getBase(X)) for i=1:length(BaseONB)]..., TangentONB...]
+  return TBTVector.(baseTVs, tangentTVs), [κx...,κξ...]
 end
 
-typeofTVector(::Type{TBPoint{P}})  where {P <: MPoint} = TBTVector{typeofTVector(P)}
+typeofTVector(::Type{TBPoint{P,T}})  where {P <: MPoint, T <: TVector} = TBTVector{typeofTVector(P)}
 typeofMPoint(::Type{TBTVector{T}}) where {T <: TVector} = TBPoint{typeofMPoint(T),T}
 
 @doc doc"""
@@ -312,7 +311,7 @@ the tangent space itself.
 """
 function validateTVector(M::TangentBundle, X::TBPoint, Ξ::TBTVector)
   # both components have to be tangent vectors, since TM = TTM
-  return validateTVector(M.manifold, getBase(X), getBaseTangent(Ξ)) && validateTVector(M.manifold, getBase(X), getTangentTangent(Ξ))
+  return validateTVector(M.manifold, getBase(X), getTangent(Ξ)) && validateTVector(M.manifold, getBase(X), getTangent(Ξ))
 end
 @doc doc"""
     zeroTVector(M,X)
@@ -327,5 +326,6 @@ TBTVector{typeofTVector(P)}(
 )
 # Display
 # ---
+show(io::IO, M::TangentBundle) = print(io,"The Tangent bundle of <$(M.manifold)>")
 show(io::IO, X::TBPoint) = print(io, "TB($(getBase(X)), $(getTangent(X)))")
 show(io::IO, Ξ::TBTVector) = print(io, "TBT($( getBase(Ξ) ), $( getTangent( Ξ )))")

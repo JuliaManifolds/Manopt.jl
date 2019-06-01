@@ -4,6 +4,8 @@ x = RnPoint([1.,0.,0.])
 y = RnPoint([0.,1.,0.])
 ξ = RnTVector([1.,0.,1.])
 η = RnTVector([0.,1.,1.])
+@test copy(x) == x
+@test copy(ξ) == ξ
 @test getValue(2*ξ) == 2*getValue(ξ)
 @test getValue(ξ*2) == getValue(ξ)*2
 @test getValue(2/RnTVector([1.,1.])) == 2 ./ [1.,1.]

@@ -51,10 +51,10 @@ fR, r = cyclicProximalPoint(N,F,proxes, data;
                     DebugCost(), DebugDivider(),DebugChange(),
                     DebugDivider("\n"),
                   ]),1000),
-                 :Init => DebugDivider("Starting the solver\n")
+                 :Start => DebugDivider("Starting the solver\n")
             ),
-    record = RecordGroup([RecordIteration(), RecordCost(), RecordChange(), RecordIterate(data)])
-  )
+    record = [:Iteration, :Cost, :Change, :Iterate]
+)
 
 scene = scatter(t,getValue.(f),
     markersize=2, markercolor = dataColor, markerstrokecolor=dataColor,

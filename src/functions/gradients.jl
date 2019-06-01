@@ -88,7 +88,7 @@ function gradTV(M::Power,x::PowPoint,p::Int=1)::PowTVector
       j = i+ek # compute neighbor
       if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
         if p != 1
-          g = gradTV(M.manifold,(x[i],x[j]),p)/c[i] # Compute TV on these
+          g = (c[i]==0 ? 1 : 1/c[i]) .* gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
         else
           g = gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
         end
@@ -197,7 +197,7 @@ function gradTV2(M::Power,x::PowPoint,p::Int=1)::PowTVector
       jB = i-ek # compute backward neighbor
       if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
         if p != 1
-          g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p)/c[i] # Compute TV2 on these
+          g = (c[i] == 0 ? 1 : 1/c[i]) .* gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
         else
           g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
         end

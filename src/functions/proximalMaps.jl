@@ -38,7 +38,7 @@ function proxDistance(M::mT,λ::Number,f::T,x::T,p::Int=2) where {mT <: Manifold
     end
   else
       throw(ErrorException(
-        "Proximal Map of distance(M,f,x) not implemented for $(p) (requires p=1 or 2)"
+        "Proximal Map of distance(M,f,x) not implemented for p=$(p) (requires p=1 or 2)"
       ))
   end
   return exp(M,x,log(M,x,f),t);

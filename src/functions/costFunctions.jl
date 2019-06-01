@@ -166,7 +166,7 @@ function costTV2(M::Power, x::PowPoint, p::Int=1, Sum::Bool=true)
       jF = i+ek # compute forward neighbor
       jB = i-ek # compute backward neighbor
       if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
-        cost[i] = costTV2( M.manifold, (x[jB], x[i], x[jF]),p ) # Compute TV on these
+        cost[i] += costTV2( M.manifold, (x[jB], x[i], x[jF]),p ) # Compute TV on these
       end
     end # i in R
   end # directions

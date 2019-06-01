@@ -10,12 +10,16 @@ export artificialS2WhirlImage, artificialS2WhirlPatch
 export artificialS2RotationsImage
 export artificialS2WhirlPatch, artificialS2Lemniscate
 
-"""
-    artificialInSARImage(pts)
+@doc doc"""
+    artificialInSARImage([pts=500, pointType])
 generate an artificial InSAR image, i.e. phase valued data, of size `pts` x
 `pts` points.
+The `pointType` – (`S1Point`) provide the point type, i.e. manifold the data lives
+  on. Possible values: [`S1Point`](@ref), [`SnPoint`](@ref), [`RnPoint`](@ref),
+  where for the second type, the data is embeded (point wise) in $\mathbb R^2$.
 """
-function artificialInSARImage(pts::Integer)::Array{Float64,2}
+function artificialInSARImage(pts::Integer,
+      pointType::Union{Type{S1Point},Type{RnPoint},Type{SnPoint},Type{Real}}=S1Point)
   # variables
   # rotation of ellipse
   aEll = 35.0; cosE = cosd(aEll); sinE = sind(aEll)
@@ -25,13 +29,13 @@ function artificialInSARImage(pts::Integer)::Array{Float64,2}
   # values for the hyperboloid
   midPoint = [0.275;0.275]
   radius = 0.18
-  values = [range(-0.5,0.5,lengt=pts)...]
+  values = [range(-0.5,0.5,length = pts)...]
   # Steps
   aSteps = 60.0; cosS = cosd(aSteps); sinS = sind(aSteps)
   l = 0.075
   midP = [-.475,-.0625];#.125, .55]
   img = zeros(Float64,pts,pts)
-  @inbounds @fastmath for j in eachindex(values), i in eachindex(values)
+  for j in eachindex(values), i in eachindex(values)
     # ellipse
     Xr = cosE*values[i] - sinE*values[j]
     Yr = cosE*values[j] + sinE*values[i]
@@ -51,7 +55,13 @@ function artificialInSARImage(pts::Integer)::Array{Float64,2}
     end
     img[i,j] = mod(k1+k2+k3-pi,2*pi)+pi
   end
-  return img
+  if isa(pointType,Type{SnPoint}) # SnPoint: wrap & embed
+    return embed.(Ref(Circle()),S1Point.(symRem.(img)))
+  elseif isa(pointType,Type{S1Point}) # S1Point: wrap
+    return S1Point.(symRem.(img))
+  else
+    return pointType.(img)
+  end
 end
 
 @doc doc"""
@@ -89,14 +99,14 @@ to $[-\pi,\pi)$.
 * `pts` – (`500`) number of points to sample the function
 * `pointType` – (`S1Point`) provide the point type, i.e. manifold the data lives
   on. Possible values: [`S1Point`](@ref), [`SnPoint`](@ref), [`RnPoint`](@ref),
-  where for the second type, the data is embedded (point wise) in $\mathbb R^2$.
+  where for the second type, the data is embeypeded (point wise) in $\mathbb R^2$.
 """
 function artificialS1Signal(pts::Integer=500,
     pointType::Union{Type{S1Point},Type{RnPoint},Type{SnPoint},Type{Real}}=S1Point)
   t = range(0., 1., length=pts)
   f = artificialS1Signal.(t)
-  if isa(pointType,Type{SnPoint}) # SnPoint: wrap & embedd
-    return embedd.(Ref(Circle()),S1Point.(symRem.(f)))
+  if isa(pointType,Type{SnPoint}) # SnPoint: wrap & embed
+    return embed.(Ref(Circle()),S1Point.(symRem.(f)))
   elseif isa(pointType,Type{S1Point}) # S1Point: wrap
     return S1Point.(symRem.(f))
   else
@@ -139,19 +149,19 @@ function artificialS1Signal(x::Number)
     return y
 end
 @doc doc"""
-    artificialS2WhirlImage()
+    artificialS2WhirlImage([pts])
 generate an artificial image of data on the 2 sphere,
 
-# Optional Parameters
+# Arguments
 * `pts` – (`64`) size of the image in `pts`$\times$`pts` pixel.
 """
-function artificialS2WhirlImage(;pts::Int=64)
-  M = Sphere(2);
-  N = Power(M, (pts,pts) );
+function artificialS2WhirlImage(pts::Int=64)
+  M = Sphere(2)
+  N = Power(M, (pts,pts) )
   # background - default rotations
-  img = artificialS2RotationsImage(;pts=pts, rotations=(0.5,0.5) )
+  img = artificialS2RotationsImage(pts, (0.5,0.5) )
   # Set WhirlPatches
-  sc = pts/64;
+  sc = pts/64
   patchSizes = floor.( sc.* [9,9,9,9,11,11,11,15,15,15,17,21] )
   patchCenters = Integer.( floor.(
     sc.* [ [35,7] [25,41] [32,25] [7,60] [10,5] [41,58] [11,41] [23,56] [38,45] [16,28] [55,42] [51,16] ]
@@ -163,9 +173,9 @@ function artificialS2WhirlImage(;pts::Int=64)
     pC = patchCenters[:,i]
     pC = max.(Ref(1), pC.-pS) .+pS
     pSgn = patchSigns[i]
-    s = pS%2==0 ? 1 : 0;
+    s = pS%2==0 ? 1 : 0
     r = [ pC[1] .+ ( -pSH:(pSH+s) ), pC[2] .+ ( -pSH:(pSH+s) ) ]
-    patch = artificialS2WhirlPatch(;pts=pS);
+    patch = artificialS2WhirlPatch(pS)
     if pSgn==-1 # opposite ?
       patch = PowPoint( opposite.(Ref(M), getValue(patch)) )
     end
@@ -181,7 +191,7 @@ creates an image with a rotation on each axis as a parametrization.
 * `pts` : (`64`) number of pixels along one dimension
 * `roations` : (`(.5,.5)`) number of total rotations performed on the axes.
 """
-function artificialS2RotationsImage(;pts::Int=64,rotations::Tuple{Float64,Float64}=(0.5,0.5))
+function artificialS2RotationsImage(pts::Int=64,rotations::Tuple{Float64,Float64}=(0.5,0.5))
   M = Sphere(2)
   N = Power(M, (pts,pts) )
   img = PowPoint(Matrix{SnPoint{Float64}}(undef,pts,pts))
@@ -205,7 +215,7 @@ create a whirl within the ptsxpts patch
 # Optional Parameters
 * `pts` : (`5`) size of the patch. If the number is odd, the center is the north pole.
 """
-function artificialS2WhirlPatch(;pts::Int=5)
+function artificialS2WhirlPatch(pts::Int=5)
   M = Sphere(2)
   N = Power(M, (pts,pts) )
   patch = PowPoint( fill(SnPoint([0.,0.,-1.]),pts,pts))
@@ -227,7 +237,7 @@ end
     artificialSPDImage()
 create an artificial image of symmetric positive definite matrices.
 """
-function artificialSPDImage(;pts::Int=64, stepSize = 1.5)
+function artificialSPDImage(pts::Int=64, stepSize = 1.5)
   r = range(0, stop = 1-1/pts, length=pts)
   v1 = abs.(2*pi .* r .- pi)
   v2 = pi .* r;
@@ -249,10 +259,11 @@ function artificialSPDImage(;pts::Int=64, stepSize = 1.5)
   return data
 end
 @doc doc"""
-    artificialSPDImage2()
+    artificialSPDImage2([pts=64, fraction = .66])
+
 create a second artificial image of symmetric positive definite matrices.
 """
-function artificialSPDImage2(;pts=64, fraction = 0.66)
+function artificialSPDImage2(pts=64, fraction = 0.66)
   Zl = SPDPoint( 4. * Matrix{Float64}(I,3,3) )
   # create a first matrix
   α = 2. * π/3;
@@ -287,23 +298,22 @@ function artificialSPDImage2(;pts=64, fraction = 0.66)
 end
 
 @doc doc"""
-    artificialS2Lemniscate(p,pts; interval=[0,2π], a=π/2)
+    artificialS2Lemniscate(p [, pts=128, a=π/2, interval=[0,2π])
+
 generate a Signal on the 2-sphere $\mathbb S^2$ by creating the Lemniscate of
 Bernoulli in the tangent space of `p` sampled at `pts` points.
 
 # Input
 * `p` – the tangent space the Lemniscate is created in
-* `pts` – number of points to sample the Lemniscate
-
-# Optional Values
-`* interval` – (`[0,2*π]`) range to sample the lemniscate at, the default value
-  refers to one closed curve
- * `a` – (`π/2`) defines a half axis of the Lemniscate to cover a
+* `pts` – (`128`) number of points to sample the Lemniscate
+* `a` – (`π/2`) defines a half axis of the Lemniscate to cover a
    half sphere.
+* `interval` – (`[0,2*π]`) range to sample the lemniscate at, the default value
+  refers to one closed curve
 """
-function artificialS2Lemniscate(p::SnPoint,pts::Integer;
-    interval::Array{Float64,1}=[0.,2.0*π], a::Float64=π/2.)
-    return artificialS2Lemniscate.(Ref(p),range(interval[1],interval[2],length=pts); a=a)
+function artificialS2Lemniscate(p::SnPoint,pts::Integer=128, a::Float64=π/2.,
+    interval::Array{Float64,1}=[0.,2.0*π])
+    return artificialS2Lemniscate.(Ref(p),range(interval[1],interval[2],length=pts), a)
 end
 @doc doc"""
     artificialS2Lemniscate(p,t; interval=[0,2π], a=π/2)
@@ -318,12 +328,12 @@ Bernoulli in the tangent space of `p` sampled at `pts` points.
  * `a` – (`π/2`) defines a half axis of the Lemniscate to cover a
    half sphere.
 """
-function artificialS2Lemniscate(p::SnPoint,t::Float64; a::Float64=π/2.)
-    M = Sphere(2);
+function artificialS2Lemniscate(p::SnPoint,t::Float64, a::Float64=π/2.)
+    M = Sphere(2)
     tP = 2.0*Float64(getValue(p)[1]>=0.)-1. # Take north or south pole
-    base = SnPoint([0.,0.,tP]);
-    xc = a * (cos(t)/(sin(t)^2+1.));
-    yc = a * (cos(t)*sin(t)/(sin(t)^2+1.));
+    base = SnPoint([0.,0.,tP])
+    xc = a * (cos(t)/(sin(t)^2+1.))
+    yc = a * (cos(t)*sin(t)/(sin(t)^2+1.))
     tV = parallelTransport(M,base,p,SnTVector([xc,yc,0.]))
     return exp(M,p,tV)
 end

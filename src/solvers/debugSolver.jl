@@ -9,7 +9,6 @@
 #
 # This file introduces fallbacks for not yet implemented parts and the general
 # function to run the solver
-import Base: vcat
 export initializeSolver!, doSolverStep!, getSolverResult, stopSolver!
 """
     initializeSolver!(p,o)
