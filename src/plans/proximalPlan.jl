@@ -5,7 +5,7 @@
 #
 export ProximalProblem
 export CyclicProximalPointOptions, DouglasRachfordOptions
-export getCost, getProximalMap, getProximalMaps
+export getCost, getProximalMap
 export DebugProximalParameter
 export RecordProximalParameter
 
@@ -24,8 +24,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
   functions return more than one entry per function
 
 # See also
-[`cyclicProximalPoint`](@ref), [`getCost`](@ref),
-[`getProximalMaps`](@ref),[`getProximalMap`](@ref),
+[`cyclicProximalPoint`](@ref), [`getCost`](@ref), [`getProximalMap`](@ref)
 """
 mutable struct ProximalProblem{mT <: Manifold} <: Problem
   M::mT
@@ -37,25 +36,6 @@ mutable struct ProximalProblem{mT <: Manifold} <: Problem
     length(nOP) != length(proxMaps) ? throw(ErrorException("The numberOfProxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
     new{mT}(M,cF,proxMaps,nOP)
 end
-"""
-    getCost(p,x)
-
-evaluate the cost function `F` stored within a [`ProximalProblem`](@ref) at the [`MPoint`](@ref) `x`.
-"""
-function getCost(p::P,x::MP) where {P <: ProximalProblem{M} where M <: Manifold, MP <: MPoint}
-    return p.costFunction(x)
-end
-@doc doc"""
-    getProximalMaps(p,λ,x)
-
-evaluate all proximal maps of `ProximalProblem p` at the point `x` of `p.M` and
-some `λ`$>0$ which might be given as a vector the same length as the number of
-proximal maps.
-"""
-getProximalMaps(p::P,λ,x::Array{MP,1}) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint} =
-  cat( [ p.proximalMaps[i](λ,
-    x[ (i==1 ? 1 : sum(p.numberOfProxes[1:i-1])+1 ) : sum(p.numberOfProxes[1:i]) ]
-      ) for i in 1:length(p.proximalMaps) ]; dims=1 )
 @doc doc"""
     getProximalMap(p,λ,x,i)
 
@@ -63,7 +43,7 @@ evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M`
 """
 function getProximalMap(p::P,λ,x::MP,i) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}
     if i>length(p.proximalMaps)
-        ErrorException("the $(i)th entry does not exists, only $(length(p.proximalMaps)) available.")
+        throw( ErrorException("the $(i)th entry does not exists, only $(length(p.proximalMaps)) available.") )
     end
     return p.proximalMaps[i](λ,x);
 end
@@ -136,21 +116,6 @@ end
 # Debug
 #
 # overwrite defaults, since we store the result in the mean field
-function (d::DebugCost)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int)
-    d.print( (i>=0) ? d.prefix*string(getCost(p, o.x)) : "")
-end
-(d::DebugIterate)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = d.print( (i>=0) ? d.prefix*"$( o.parallel ? o.x[1] : o.x )" : "")
-function (d::DebugChange)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int)
-    if i > 0 && hasStorage(d.storage, :x)
-        d.print( d.prefix * string(
-            distance( o.parallel ? p.M.manifold : p.M,
-                o.parallel ? o.x[1] : o.x,
-                o.parallel ? getStorage(d.storage, :x)[1] : getStorage(d.storage, :x)
-            )
-        ))
-    end
-    d.storage(p,o,i)
-end
 #
 # Debug the Cyclic Proximal point parameter
 #
@@ -170,19 +135,6 @@ end
 
 #
 # Record
-#
-# again overwrite defaults
-(r::RecordCost)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = recordOrReset!(r, getCost(p, o.x), i)
-function (r::RecordChange)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int)
-    if hasStorage(r.storage, :x)
-       recordOrReset!(r, distance( o.parallel ? p.M.manifold : p.M,
-        o.parallel ? o.x[1] : o.x,
-        o.parallel ? getStorage(r.storage, :x)[1] : getStorage(r.storage, :x)
-    ), i)
-    end
-    d.storage(p,o,i)
-end
-(r::RecordIterate)(p::ProximalProblem{M} where {M <: Manifold}, o::DouglasRachfordOptions,i::Int) = recordOrReset(r, o.parallel ? o.x[1] : o.x, i)
 @doc doc"""
     RecordProximalParameter <: RecordAction
 

@@ -62,8 +62,7 @@ as an `Array` of [`MPoint`](@ref)s on the [`Manifold`](@ref) with a
 # Optional
 
 * `initialValue` – (`x[1]`) the value to initialize the algorithm to
-* `method` – (`:CyclicProximalPoint`) symbol indicating the algorithm to use,
-  so the second variant is `:SubGradientDescent`
+* `method` – (`:CyclicProximalPoint`) symbol indicating the algorithm to use
 * `weights` – (`1/n`) compute a weighted Karcher mean, i.e. the dault is to
   set all weights to be `1/n` where `n` is the length of `x`.
 

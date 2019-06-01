@@ -138,7 +138,7 @@ typeofMPoint(::Type{SymTVector{T}}) where T = SymPoint{T}
 
 returns the typical distance on the [`Symmetric`](@ref) `M`.
 """
-typicalDistance(M::Symmetric) = sqrt(2*manifoldDimension(M)-1/4)-1/2 #get back to the n of the R^n by n matrix
+typicalDistance(M::Symmetric) = sqrt( - 0.5 + sqrt(1/4 + 2*manifoldDimension(M) ) ) # manDim to n
 
 @doc doc"""
     validateMPoint(M,x)
@@ -148,12 +148,12 @@ i.e. that its dimensions are correct and that the matrix is symmetric.
 """
 function validateMPoint(M::Symmetric, x::SymPoint)
     if manifoldDimension(M) ≠ manifoldDimension(x)
-        throw(ErrorException(
+        throw(DomainError(
             "The point $x does not lie on $M,, since the manifold dimension of $M ($(manifoldDimension(M)))does not fit the manifold dimension of $x ($(manifoldDimension(x)))."
         ))
     end
     if norm(getValue(x) - transpose(getValue(x))) > 10^(-14)
-        throw(ErrorException(
+        throw(DomainError(
             "The point $x does not lie on $M, since the matrix of $x is not symmetric."
         ))
     end
@@ -169,12 +169,12 @@ i.e. that its dimensions are correct and that the matrix is symmetric.
 function validateTVector(M::Symmetric, x::SymPoint, ξ::SymTVector)
     ξs = size( getValue(ξ), 1)*(size( getValue(ξ), 1)+1)/2
     if (manifoldDimension(M) ≠ manifoldDimension(x)) || (ξs ≠ manifoldDimension(x))
-        throw(ErrorException(
+        throw(DomainError(
             "The tangent vector $ξ of size $(ξs), the point $x ($(manifoldDimension(x))) and the manifold $M ($(manifoldDimension(M))) are not all equal in dimensions, so the tangent vector can not be correct."
         ))
     end
     if norm(getValue(ξ) - transpose(getValue(ξ))) > 10^(-14)
-        throw(ErrorException(
+        throw(DomainError(
             "The tangent vector $ξ is not a symmetric matrix and hence can not lie in the tangent space of $x on $M."
         ))
     end
@@ -189,6 +189,6 @@ returns a zero vector in the tangent space $T_x\mathcal M$ of the
 zeroTVector(M::Symmetric, x::SymPoint) = SymTVector(  zero( getValue(x) )  );
 # Display
 # ---
-show(io::IO, M::Symmetric) = print(io, "The Manifold $(M.name).")
+show(io::IO, M::Symmetric) = print(io, "The Manifold of $(M.name).")
 show(io::IO, p::SymPoint) = print(io, "Sym($(p.value))")
 show(io::IO, ξ::SymTVector) = print(io, "SymT($(ξ.value))")

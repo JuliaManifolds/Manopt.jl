@@ -4,7 +4,7 @@
 #  A point in an tangential space is a skew-symmetric matrix.
 #
 import LinearAlgebra: Diagonal, norm, dot, nullspace, det, tr, qr, triu, eigvals, diag, svd, sylvester
-import Base: exp, log, show, vcat, rand, Matrix
+import Base: exp, log, show, rand, Matrix
 export Rotations, SOPoint, SOTVector, getValue
 export addNoise, distance, dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, retraction, inverseRetraction
 export zeroTVector

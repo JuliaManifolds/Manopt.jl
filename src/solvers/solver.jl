@@ -51,7 +51,7 @@ values in the [`Options`](@ref)` o`.
 function initializeSolver!(p::P,o::O) where {P <: Problem, O <: Options}
     sig1 = string( typeof(p) )
     sig2 = string( typeof(o) )
-    throw( ErrorException("Initialization of a solver corresponding to the problem $sig1 and options $sig2 not yet implemented." ) )
+    throw( ErrorException("Initialization of a solver corresponding to the $sig1 and $sig2 not yet implemented." ) )
 end
 """
     doSolverStep!(p,o,iter)
@@ -62,7 +62,7 @@ the values in the [`Options`](@ref) `o`.
 function doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: Options}
     sig1 = string( typeof(p) )
     sig2 = string( typeof(o) )
-    throw( ErrorException("Initialization of a solver corresponding to the problem $sig1 and options $sig2 not yet implemented." ) )
+    throw( ErrorException("Initialization of a solver corresponding to the $sig1 and $sig2 not yet implemented." ) )
 end
 """
     getSolverResult(p,o)
@@ -73,7 +73,7 @@ Return the final result after all iterations that is stored within the
 function getSolverResult(p::P,o::O) where {P <: Problem, O <: Options}
     sig1 = string( typeof(p) )
     sig2 = string( typeof(o) )
-    throw( ErrorException("Initialization of a solver corresponding to the problem $sig1 and options $sig2 not yet implemented." ) )
+    throw( ErrorException("Initialization of a solver corresponding to the $sig1 and $sig2 not yet implemented." ) )
 end
 """
     stopSolver!(p,o,i)

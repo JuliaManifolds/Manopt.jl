@@ -20,7 +20,7 @@ computes the adjoint of $D_x\exp_x\xi[\eta]$.
 
 *See also:* [`DxExp`](@ref), [`adjointJacobiField`](@ref)
 """
-AdjDxExp(M::mT,x::P,ξ::P,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,x,exp(M,x,ξ),1.,η,βDexpx)
+AdjDxExp(M::mT,x::P,ξ::T,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,x,exp(M,x,ξ),1.,η,βDexpx)
 @doc doc"""
     AdjDξExp(M,x,ξ,η)
 computes the adjoint of $D_\xi\exp_x\xi[\eta]$.
@@ -28,7 +28,7 @@ Note that $\xi\in T_\xi(T_x\mathcal M) = T_x\mathcal M$ is still a tangent vecto
 
 *See also:* [`DξExp`](@ref), [`adjointJacobiField`](@ref)
 """
-AdjDξExp(M::mT,x::P,y::P,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,x,exp(M,x,η),1.,η,βDexpξ)
+AdjDξExp(M::mT,x::P,ξ::T,η::T) where {mT <: Manifold, P <: MPoint, T<: TVector} = adjointJacobiField(M,x,exp(M,x,ξ),1.0,η,βDexpξ)
 @doc doc"""
     AdjDxLog(M,x,y,η)
 computes the adjoint of $D_xlog_xy[\eta]$.

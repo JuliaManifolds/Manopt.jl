@@ -2,14 +2,14 @@
 #      Powermanifold – an array of points of _one_ manifold
 #
 # Manopt.jl, R. Bergmann, 2018-06-26
-import Base: exp, log, show, getindex, setindex!, copy, size, vcat, hcat, cat, repeat, ndims
+import Base: exp, log, show, getindex, setindex!, copy, size, cat, hcat, vcat, repeat, ndims
 
 export Power, PowPoint, PowTVector
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export zeroTVector
 export typeofMPoint, typeofTVector, randomMPoint, randomTVector
 export validateMPoint, validateTVector
-export show, getValue, setindex!, getindex,copy, size, cat, repeat, ndims
+export show, getValue, setindex!, getindex,copy, size, repeat, ndims
 @doc doc"""
     Power{M<:Manifold} <: Manifold
 
@@ -42,8 +42,7 @@ struct Power{mT <: Manifold} <: Manifold
   )
 end
 Power(M::mT, n::Int ) where {mT <: Manifold} = Power{mT}(M, (n,) )
-Power(M::mT, n::NTuple{N,Int}) where {mT <: Manifold,N} = Power{mT}(M, n)
-Power(M::mT, n::Array{Int, 1}) where {mT <: Manifold} = Power{mT}(M, n)
+Power(M::mT, n::NTuple{N,<:Int}) where {mT <: Manifold,N} = Power{mT}(M, n)
 @doc doc"""
     PowPoint <: MPoint
 
@@ -52,14 +51,11 @@ an array of [`MPoint`](@ref)s.
 """
 struct PowPoint{P,N} <: MPoint where {P <: MPoint,N}
   value::Array{P,N}
-  PowPoint{P,N}(v) where { P<: MPoint,N} = new(v)
+  PowPoint{P,N}(v) where { P <: MPoint,N} = new(v)
 end
-PowPoint{P}(v::Array{P,N}) where {P<:MPoint,N} = PowPoint{P,N}(v)
-PowPoint(v::Array{P,N}) where {P<:MPoint,N} = PowPoint{P,N}(v)
-getValue(x::PowPoint{P,N}) where {P<:MPoint, N} = x.value;
-# pass all getters and setters down to the internal array...
+PowPoint(v::Array{P,N}) where {P <: MPoint,N} = PowPoint{P,N}(v)
+getValue(x::PowPoint{P,N}) where {P <: MPoint, N} = x.value;
 getindex(x::PowPoint, i...) = PowPoint(getindex( getValue(x) ,i...))
-# only for a specific index: return entry
 getindex(x::PowPoint, i::Union{Integer, CartesianIndex},
   I::Union{Integer, CartesianIndex}...) = getindex(getValue(x),i,I...)
 setindex!(x::PowPoint, y::PowPoint, kv...) = setindex!(getValue(x),getValue(y),kv...)
@@ -67,12 +63,9 @@ setindex!(x::PowPoint, kv...) = setindex!(getValue(x),kv...)
 @inline ndims(x::PowPoint{P,N}) where {P<:MPoint,N} = ndims(x.value)
 function repeat(x::PowPoint{P,N}; inner=ntuple(y->1, Val(ndims(x))), outer=ntuple(y->1, Val(ndims(x))) ) where {P<:MPoint,N}
     b = repeat(x.value; inner=inner, outer=outer)
-    return PowPoint{P}(b)
+    return PowPoint(b)
 end
 repeat(x::PowPoint, counts::Integer...) = repeat(x; outer=counts)
-cat(X::PowPoint{P,N}; dims=k) where {P<:MPoint,N} = PowPoint{Array{P}}(cat( [getValue(x) for x in X]; dims=k))
-vcat(X::PowPoint{P,N}...) where {P<:MPoint,N} = cat(X...; dims=1)
-hcat(X::PowPoint{P,N}...) where {P<:MPoint,N} = cat(X...; dims=2)
 size(x::PowPoint,k...) = size(getValue(x),k...)
 copy(x::PowPoint) = PowPoint(copy(getValue(x)))
 ndims(x::PowPoint) = ndims( getValue(x) )
@@ -86,25 +79,18 @@ struct PowTVector{T,N} <: TVector where {T <: TVector, N}
   value::Array{T,N}
   PowTVector{T,N}(v) where {T <: TVector, N} = new(v)
 end
-PowTVector{T}(v::Array{T,N}) where {T <: TVector, N} = PowTVector{T,N}(v)
 PowTVector(v::Array{T,N}) where {T <: TVector, N} = PowTVector{T,N}(v)
 getValue(ξ::PowTVector{T,N}) where {T <: TVector, N} = ξ.value
+getindex(ξ::PowTVector,i...) = PowTVector(getindex(ξ.value,i...))
 getindex(ξ::PowTVector, i::Union{Integer, CartesianIndex},
   I::Union{Integer, CartesianIndex}...) = getindex(getValue(ξ),i,I...)
-getindex(ξ::PowTVector,i...) = PowTVector(getindex(ξ.value,i...))
 setindex!(ξ::PowTVector, ν::T where {T <: TVector},i...) = setindex!(ξ.value,ν,i...)
 function repeat(ξ::PowTVector{T,N}; inner=ntuple(t->1, Val(ndims(ξ))), outer=ntuple(t->1, Val(ndims(ξ))) ) where {T <: TVector,N}
     b = repeat(ξ.value; inner=inner, outer=outer)
-    return PowTVector{T}(b)
+    return PowTVector(b)
 end
 repeat(ξ::PowTVector, counts::Integer...) = repeat(ξ; outer=counts)
 ndims(ξ::PowTVector) = ndims( getValue(ξ) )
-
-*(ξ::PowTVector,s::Array{Float64,N}) where N = PowTVector( s.*getValue(ξ) )
-
-cat(X::PowTVector{T,N}; dims=k) where {T<:TVector,N} = PowTVector{Array{T}}(cat( [getValue(x) for x in X]; dims=k))
-vcat(X::PowTVector{T,N}...) where {T<:TVector,N} = cat(X...; dims=1)
-hcat(X::PowTVector{T,N}...) where {T<:TVector,N} = cat(X...; dims=2)
 size(ξ::PowTVector) = size(getValue(ξ))
 copy(ξ::PowTVector) = PowTVector(copy(ξ.value))
 # Functions
@@ -205,13 +191,17 @@ $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 """
 tangentONB(M::Power, x::PowPoint, y::PowPoint) = tangentONB(M,x,log(M,x,y))
 function tangentONB(M::Power, x::PowPoint, ξ::PowTVector)
-# can this be done easier?
-# (a) turn it into two tuples of vectors
-A = collect(zip( tangentONB.(Ref(M.manifold),getValue(x), getValue(ξ) )... ) )
-# produce k TVectors
-    Ξ = [ PowTVector([a[k] for a in A[1]]) for k in 1:manifoldDimension(Circle()) ]
-    κ = [ [a[k] for a in A[2]] for k in 1:manifoldDimension(Circle()) ]
-return Ξ,κ
+    A = collect(zip( tangentONB.(Ref(M.manifold),getValue(x), getValue(ξ) )... ) )
+    κ = vcat( A[2]... )
+    Ξ = [ zeroTVector(M,x) for i in Tuple(CartesianIndices(M.powerSize)) for j=1:manifoldDimension(M.manifold)]
+    l = 1
+    for i in Tuple(CartesianIndices(M.powerSize))
+        for j=1:manifoldDimension(M.manifold)
+            Ξ[l][i] = A[1][i][j]
+            l=l+1
+        end
+    end
+    return Ξ,κ
 end
 doc"""
     typeofTVector(P)
@@ -244,7 +234,7 @@ are valid points on the elements manifold
 """
 function validateMPoint(M::Power, x::PowPoint)
     if size(getValue(x)) ≠ M.powerSize
-        throw(ErrorException(
+        throw( DomainError(
         " The power manifold point $x is not on $(M.name) since its array dimensions of the elements ($(size(getValue(x)))) does not fit the power ($(M.powerSize))."
         ))
     end
@@ -261,7 +251,7 @@ dimensions match and this validation holds elementwise.
 """
 function validateTVector(M::Power, x::PowPoint, ξ::PowTVector)
     if (size(getValue(x)) ≠ size(getValue(ξ))) || (size(getValue(ξ)) ≠ M.powerSize)
-        throw( ErrorException(
+        throw( DomainError(
         "The three dimensions of the $(M.name), the point x ($(size(getValue(x)))), and the tangent vector ($(size(getValue(ξ)))) don't match."
         ))
     end
@@ -280,4 +270,4 @@ zeroTVector(M::Power{Mt}, x::PowPoint{P,N}) where {Mt <: Manifold, P <: MPoint, 
 # Display functions for the structs
 show(io::IO, M::Power) = print(io,string("The Power Manifold of ",repr(M.manifold), " of size ",repr(M.powerSize),".") );
 show(io::IO, p::PowPoint) = print(io,string("Pow[",join(repr.(p.value),", "),"]"));
-show(io::IO, ξ::PowTVector) = print(io,string("PowT[", repr.(ξ.value),"]"));
+show(io::IO, ξ::PowTVector) = print(io,string("PowT[", join(repr.(ξ.value),", "),"]"));
