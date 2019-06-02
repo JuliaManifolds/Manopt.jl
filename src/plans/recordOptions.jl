@@ -230,7 +230,7 @@ record a certain entries change during iterates
 * `recordedValues` – the recorded Iterates
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry 
-* `storage` a [`StoreOptionsAction`](@ref) to store (at least) `getproperty(o, d.field)`
+* `storage` – a [`StoreOptionsAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
 mutable struct RecordEntryChange <: RecordAction
     recordedValues::Array{Float64,1}

@@ -20,7 +20,7 @@ to the extended `TVectorE` for functions just working on points, e.g. `log`.
 The constructor avoids multiple encapsualtions of extensions.
 
 # Constructors
-    MPointE(x[,v=true])
+    MPointE(x [,v=true])
 
 the point can constructed by extending an existing [`MPoint`](@ref).
 optionally, the `validation` can be turned off (but is `true`by default).
@@ -42,7 +42,7 @@ point. The decorator is then used to verify, that exp and dot are only called
 with correct base points.
 
 # Constructors
-    TVectorE(ξ,x[,v=true])
+    TVectorE(ξ,x [,v=true])
 
 constructs an extended tangential vector based on the [`TVector`](@ref) `ξ`
 with base [`MPoint`](@ref) `x` with optional `validation v`. If none of the
@@ -66,13 +66,14 @@ getValue(ξ::T) where {T <: TVectorE}= getValue(strip(ξ))
 
 returns the base point of an extended tangent vector. To continue promotion of
 the extended type, the result is always a [`MPointE`](@ref). To eliminate the
-decorator, use [`strip`](@ref)
+decorator, use [`strip`](@ref).
 """
 getBasePoint(ξ::T) where {T <: TVectorE{Tl,Pl} where {Tl <: TVector, Pl <: MPoint }} = MPointE(strip(ξ.base))
 """
     strip(ξ)
 
-returns the internal TVector point of an extended tangent vector.
+returns the internal [`TVector`](@ref) of an extended tangent vector
+[`TVectorE`](@ref).
 """
 strip(ξ::T) where {T <: TVector} = ξ
 strip(ξ::T) where {T <: TVectorE} = ξ.vector

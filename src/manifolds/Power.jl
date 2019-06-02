@@ -13,7 +13,7 @@ export show, getValue, setindex!, getindex,copy, size, repeat, ndims
 @doc doc"""
     Power{M<:Manifold} <: Manifold
 
-A power manifold $\mathcal M = \mathcal N^m$, where $m$ can be an integer or an
+A power manifold $\mathcal M = \mathcal N^n$, where $n$ can be an integer or an
 integer vector.
 
 # Abbreviation
@@ -46,8 +46,8 @@ Power(M::mT, n::NTuple{N,<:Int}) where {mT <: Manifold,N} = Power{mT}(M, n)
 @doc doc"""
     PowPoint <: MPoint
 
-A point on the power manifold $\mathcal M = \mathcal N^m$ represented by
-an array of [`MPoint`](@ref)s.
+A point on the power manifold $\mathcal M = \mathcal N^n$ represented by
+an array (of size `n`) of [`MPoint`](@ref)s.
 """
 struct PowPoint{P,N} <: MPoint where {P <: MPoint,N}
   value::Array{P,N}
@@ -72,8 +72,8 @@ ndims(x::PowPoint) = ndims( getValue(x) )
 @doc doc"""
     PowTVector <: TVector
 
-A tangent vector on the power manifold $\mathcal M = \mathcal N^m$ represented
-by an array of [`TVector`](@ref)s.
+A tangent vector on the power manifold $\mathcal M = \mathcal N^n$ represented
+by an array (of size `n`) of [`TVector`](@ref)s.
 """
 struct PowTVector{T,N} <: TVector where {T <: TVector, N}
   value::Array{T,N}
@@ -101,74 +101,92 @@ end
 
 """
     distance(M,x,y)
-computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
+
+compute a vectorized version of distance on the [`Power`] manifold `M` for two
+[`PowPoint`](@ref) `x` and `y`.
 """
 distance(M::Power, x::PowPoint, y::PowPoint) = sqrt(sum( abs.(distance.( Ref(M.manifold), x.value, y.value )).^2 ))
 
 """
     dot(M,x,ξ,ν)
-computes the inner product as sum of the component inner products on the [`Power`](@ref)` manifold`.
+
+compute the inner product as sum of the component inner products on the
+[`Power`](@ref) manifold `M`.
 """
 dot(M::Power, x::PowPoint, ξ::PowTVector, ν::PowTVector) = sum(dot.(Ref(M.manifold), x.value, ξ.value, ν.value ))
 
 """
     exp(M,x,ξ[, t=1.0])
-computes the product exponential map on the [`Power`](@ref) and returns the
-corresponding [`PowPoint`](@ref).
+
+compute the product exponential map on the [`Power`](@ref) manifold `M` and
+return the corresponding [`PowPoint`](@ref).
 """
-exp(M::Power, x::PowPoint, ξ::PowTVector, t::Float64=1.0) = PowPoint( exp.(Ref(M.manifold), x.value, ξ.value,t))
+exp(M::Power, x::PowPoint, ξ::PowTVector, t::Float64=1.0) = PowPoint(
+    exp.(Ref(M.manifold), x.value, ξ.value,t)
+)
 
 function jacobiField(M::Power,x::PowPoint,y::PowPoint,t::Float64,η::PowTVector,β::Function=βDgx)::PowTVector
-    return PowTVector( jacobiField.(Ref(M.manifold), x.value, y.value, Ref(t), η.value, Ref(β) ) )
+    return PowTVector(
+        jacobiField.(Ref(M.manifold), x.value, y.value, Ref(t), η.value, Ref(β))
+    )
 end
 
 """
-   log(M,x,y)
-computes the product logarithmic map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
+    log(M,x,y)
+
+compute the product logarithmic map on the [`Power`](@ref) manifold `M` and
+return the corresponding [`PowTVector`](@ref).
 """
 log(M::Power, x::PowPoint, y::PowPoint)::PowTVector = PowTVector(log.(Ref(M.manifold), getValue(x), getValue(y) ))
 
 """
     manifoldDimension(x)
-returns the (product of) dimension(s) of the [`Power`](@ref) the [`PowPoint`](@ref)`x` belongs to.
+
+return the (product of) dimension(s) of the [`Power`](@ref) the
+[`PowPoint`](@ref)`x` belongs to.
 """
 manifoldDimension(x::PowPoint) = sum(manifoldDimension.( getValue(x) ) )
 
 """
     manifoldDimension(M)
-returns the (product of) dimension(s) of the [`Power`](@ref) `M`.
+
+return the (product of) dimension(s) of the [`Power`](@ref) manifold `M`.
 """
 manifoldDimension(M::Power) = prod(M.powerSize) * manifoldDimension(M.manifold)
 
 """
     norm(M,x,ξ)
-norm of the [`PowTVector`] `ξ` induced by the metric on the manifold components
-of the [`Power`](@ref) `M`.
+
+compute the norm of the [`PowTVector`] `ξ` induced by the metric on the manifold
+components of the [`Power`](@ref) manifold `M`.
 """
 norm(M::Power, x::PowPoint, ξ::PowTVector) = sqrt( dot(M,x,ξ,ξ) )
 
 """
-    parallelTransport(M,x,ξ)
-computes the product parallelTransport map on the [`Power`](@ref) and returns
-the corresponding [`PowTVector`](@ref) `ξ`.
+    parallelTransport(M,x,y,ξ)
+
+compute the product parallelTransport map on the [`Power`](@ref) manifold `M`
+from the [`PowPoint`](@ref) `x` to `y` of the [`PowTVector`](@ref) `ξ`.
 """
 parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) = 
     PowTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
 
 @doc doc"""
     randomMPoint(M)
+
 construct a random point on the [`Power`](@ref) manifold `M`, by creating
-[`manifoldDimension`](@ref)`(M)` many random points on the
-[`Manifold`](@ref)` M.manifold` as corresponding [`PowPoint`](@ref).
+`n` points on the
+[`Manifold`](@ref) `M.manifold` as corresponding [`PowPoint`](@ref).
 Optional values are passed down.
 """
 randomMPoint(M::Power,options...) = PowPoint( [randomMPoint(M.manifold,options...) for i in CartesianIndices(M.powerSize)] )
 
 @doc doc"""
     randomTVector(M,x)
+
 construct a random tangent vector on the [`Power`](@ref) manifold `M`, by creating
-[`manifoldDimension`](@ref)`(M)` many random tangent vectors on the
-[`Manifold`](@ref)` M.manifold` at the enrties of the [`PowPoint`](@ref) `x`.
+`n` tangent vectors on the
+[`Manifold`](@ref) `M.manifold` at the enrties of the [`PowPoint`](@ref) `x`.
 Optional values are passed down.
 """
 randomTVector(M::Power,x::PowPoint,options...) = PowTVector(
@@ -182,12 +200,14 @@ randomTVector(M::Power,x::PowPoint,s::Symbol,options...) = PowTVector(
 
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)
-compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$ is the
-first vector and compute the eigenvalues of the curvature tensor
-$R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
-$\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
-*See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
+compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$
+is the first vector and compute the eigenvalues of the curvature tensor
+$R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$, $\dot
+g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
+
+# See also
+ [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
 """
 tangentONB(M::Power, x::PowPoint, y::PowPoint) = tangentONB(M,x,log(M,x,y))
 function tangentONB(M::Power, x::PowPoint, ξ::PowTVector)
@@ -207,21 +227,22 @@ doc"""
     typeofTVector(P)
 
 returns the type of the [`PowTVector`](@ref) that all tangent vectors of the
-[`PowPoint`](@ref)` P` have.
+[`PowPoint`](@ref) `P` have.
 """
 typeofTVector(::Type{PowPoint{P,N}}) where {P <: MPoint, N} = PowTVector{typeofTVector(P),N}
 doc"""
     typeofMPoint(T)
 
 return the type of the [`PowPoint`](@ref) that is the base point of the
-[`PowTVector`](@ref)` T`.
+[`PowTVector`](@ref) `T`.
 """
 typeofMPoint(::Type{PowTVector{T,N}}) where {T <: TVector, N} = PowPoint{typeofMPoint(T),N}
 
 """
     typicalDistance(M)
-returns the typical distance on the [`Power`](@ref) `M`, which is based on
-the elementwise bae manifold.
+
+returns the typical distance on the [`Power`](@ref) manifold `M`, which is
+based on the elementwise manifold.
 """
 typicalDistance(M::Power) = sqrt( prod(M.powerSize) ) * typicalDistance(M.manifold)
 
@@ -230,7 +251,7 @@ doc"""
 
 validate, that the [`PowPoint`](@ref) `x` is a point on the [`Power`](@ref)
 manifold `M`, i.e. that the array dimensions are correct and that all elements
-are valid points on the elements manifold
+are valid points on the elements manifold.
 """
 function validateMPoint(M::Power, x::PowPoint)
     if size(getValue(x)) ≠ M.powerSize
@@ -246,8 +267,8 @@ doc"""
     validateTVector(M,x,ξ)
 
 validate, that the [`ProdTVector`](@ref) `ξ` is a valid tangent vector to the
-[`ProdPoint`](@ref) `x` on the [`Product`](@ref) `M`, i.e. that all three array
-dimensions match and this validation holds elementwise.
+[`ProdPoint`](@ref) `x` on the [`Product`](@ref) manifold `M`, i.e. that all
+three array dimensions match and this validation holds elementwise.
 """
 function validateTVector(M::Power, x::PowPoint, ξ::PowTVector)
     if (size(getValue(x)) ≠ size(getValue(ξ))) || (size(getValue(ξ)) ≠ M.powerSize)
@@ -261,8 +282,9 @@ end
 
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
-[`PowPoint`](@ref) $x\in\mathcal M$ on the [`Power`](@ref) `M`.
+[`PowPoint`](@ref) $x\in\mathcal M$ on the [`Power`](@ref) manifold `M`.
 """
 zeroTVector(M::Power{Mt}, x::PowPoint{P,N}) where {Mt <: Manifold, P <: MPoint, N} = PowTVector{typeofTVector(P),N}( zeroTVector.(Ref(M.manifold), getValue(x) )  )
 #

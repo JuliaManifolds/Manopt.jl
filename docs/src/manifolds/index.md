@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-All manifolds inherit from `Manifold` to store their main properties, which is
+All manifolds inherit from [`Manifold`](@ref) to store their main properties, which is
 most prominently the manifold dimension and the name of the manifold. This will
 be extended in the future, for example properties denoting whether the
 manifold is explicitly given in the sense of a closed form exponential and
@@ -18,25 +18,28 @@ MPoint
 TVector
 ```
 
-## List of available Manifolds
+## [List of available Manifolds](@id Manifolds)
 
 Furthermore there are two types accompanying each manifold – a point on the
-manifold inheriting from [`MPoint`](@ref) and the tangential vector [`TVector`](@ref). For both
-the term manifold is shortened to `M` for concise naming. Each manifold also
-inherits such a short abbreviation, see `Abbr.` in the following table.
+manifold inheriting from [`MPoint`](@ref) and the tangent vector
+[`TVector`](@ref). For both the term manifold is shortened to `M` for concise
+naming. Each manifold also inherits such a short abbreviation, see `Abbr.` in
+the following table.
 
 |  Manifold $\mathcal M$ | File | Abbr. | Comment
 |:-----------------------|:-----|:-----:|:--------
 A manifold $\mathcal M$ | `Manifold.jl`| `M`| | the (abstract) base manifold $\mathcal M$ | collects general functions and types
+[$1$-sphere $\mathbb S^1$](@ref CircleManifold)  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
 [Euclidean space $\mathbb R^n$](@ref EuclideanSpace) | `Euclidean.jl` | `Rn` |  $n$-dimensional Euclidean space $\mathbb R^n$
-[Grassmannian manufold $\mathrm{Gr}(k,n)$](@ref Grassmannianmanifold) | `Grassmannian.jl` | `Gr` | embedded in $\mathbb R^{n\times k}$
+[Grassmannian manifold $\mathrm{Gr}(k,n)$](@ref GrassmannianManifold) | `Grassmannian.jl` | `Gr` | embedded in $\mathbb R^{n\times k}$
 [$n$-dim. Hyperbolic space $\mathbb H^n$](@ref HyperbolicManifold) | `Hyperbolic.jl` | `Hn` | embedded in $\mathbb R^{n+1}$
 [special orthogonal group $\mathrm{SO}(n)$](@ref SOn) | `Rotations.jl` | `SO` | represented as rotation matrices
-[Stiefel $\mathrm{St}(k,n)$](@ref StiefelManifold) | `Stiefel.jl`| `St` |  contains both the real- ad the complex-valued case
-[$1$-sphere $\mathbb S^1$](@ref CircleManifold)  | `Circle.jl`  | `S1`| represented as angles $x\in[-\pi,\pi)$
 [$n$-sphere $\mathbb S^n$](@ref SphereManifold) | `Sphere.jl` | `Sn` | embedded in $\mathbb R^{n+1}$
+[Stiefel $\mathrm{St}(k,n)$](@ref StiefelManifold) | `Stiefel.jl`| `St` |  contains both the real- ad the complex-valued case
 [symmetric matrices $\mathcal{Sym}(n)$](@ref SymmetricManifold) | `Symmetric.jl` | `Sym` | $n\times n$ symmetric matrices
 [symmetric positive definite matrices $\mathcal P(n)$](@ref SymmetricPositiveDefiniteManifold) | `SymmetricPositiveDefinite.jl` | `SPD` | $n\times n$ symmetric positive matrices using the affine metric
+
+If you're missing your favorite manifold, [give us a note on Github](https://github.com/kellertuer/Manopt.jl/issues).
 
 ## Special Types of Manifolds
 
@@ -50,9 +53,18 @@ Tangent bundle           | `TangentBundle.jl` | `TB` | tangent bundle of a manif
 
 for more details see [Combined Manifolds](@ref CombinedManifolds)
 
-Special types of manifolds are introduced by [SimpleTraits.jl](https://github.com/mauro3/SimpleTraits.jl)
+### Special Properties of Manifolds
 
-### Embedded Manifold
+Special types of manifolds are introduced by
+[SimpleTraits.jl](https://github.com/mauro3/SimpleTraits.jl). They can be used
+to clarify that a manifold possesses a certain property. For example two points
+on a matrix manifold can be multiplied, though the result is not necessarily a
+point on the manifold anymore. Traits have to goals here: Provide functions that
+are common for all manifolds of such a type (e.g. the [`⊗`](@ref) for Lie
+groups) as a common interface and to specify certain functions or solvers for
+these certain types, that for example take advantage of [`⊗`](@ref) then.
+
+#### Embedded Manifold
 
 ```@docs
 IsEmbeddedM
@@ -60,23 +72,22 @@ IsEmbeddedP
 IsEmbeddedV
 ```
 
-### Lie Group Manifold
+#### [Lie Group Manifold](@id LieGroup)
 
 ```@docs
 IsLieGroupM
 IsLieGroupP
 IsLieGroupV
+⊗
 ```
 
-### Matrix Manifold
+#### [Matrix Manifold](@id MatrixManifold)
 
 ```@docs
 IsMatrixM
 IsMatrixP
 IsMatrixTV
 ```
-
-Further special manifolds can be created combining existing ones, see [Combined Manifolds](@ref CombinedManifolds)
 
 ## Functions that need to be implemented for a Manifold
 
@@ -208,7 +219,7 @@ getBasePoint
 
 Furthermore the following functions are
 mapping to the internally stored data and
-encapsulate the results if that is applicable
+encapsulate the results with the extended variant if applicable
 
 * [`getValue`](@ref)
 * [`addNoise`](@ref)
@@ -226,4 +237,4 @@ encapsulate the results if that is applicable
 * [`typicalDistance`](@ref)
 * [`zeroTVector`](@ref)
 
-as well as mathematical operators on tangent vectors and comparison operators
+as well as mathematical operators on tangent vectors and comparison operators.

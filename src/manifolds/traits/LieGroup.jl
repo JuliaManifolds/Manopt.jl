@@ -8,7 +8,7 @@ export IsLieGroupM, IsLieGroupP, IsLieGroupV, ⊗
 """
     IsLieGroupM{X}
 Indicates that `X` is a [`Manifold`](@ref) with a Lie group structure. This also
-introdcues a group operation `⊗` of two [`MPoint`](@refs of `X`.
+introdcues a group operation [`⊗`](@ref) of two [`MPoint`](@ref)s of `X`.
 """
 @traitdef IsLieGroupM{X}
 """
@@ -21,8 +21,12 @@ An abstract [`MPoint`](@ref) belonging to a Lie group manifold.
 An abstract [`TVector`](@ref) belonging to a Lie group manifold.
 """
 @traitdef IsLieGroupV{X}
+@doc doc"""
+    ⊗(x,y)
 
-# introduces a shorthand for the group operation
+the binary operator `x ⊗ y` represents the Lie group action for a Lie group
+[`Manifold`](@ref), see [`IsLieGroupM`](@ref). 
+"""
 ⊗(x::P,y::P) where {P <: MPoint}= LieGroupOp(x,y)
 @traitfn function LieGroupOp(x::P,y::P) where {P <: MPoint; !IsLieGroupP{P}}
     sig1 = string( typeof(x) )

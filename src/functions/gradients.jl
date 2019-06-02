@@ -8,9 +8,20 @@ export gradDistance
 
 compute the (sub)gradient of the distance (squared) 
 
-$f(x) = \frac{1}{2} d_{\mathcal M}(x,y)$
+```math
+f(x) = \frac{1}{2} d^p_{\mathcal M}(x,y)
+```
 
-to a fixed [`MPoint`](@ref)` y` on the [`Manifold`](@ref) `M`.
+to a fixed [`MPoint`](@ref)` y` on the [`Manifold`](@ref) `M` and `p` is an
+integer. The gradient reads
+
+```math
+  \nabla f(x) = -d_{\mathcal M}^{p-2}(x,y)\log_xy
+```
+
+for $p\neq 1$ or $x\neq  y$. Note that for the remaining case $p=1$,
+$x=y$ the function is not differentiable. This function returns then the
+[`zeroTVector`](@ref)`(M,x)`, since this is an element of the subdifferential.
 
 # Optional
 
@@ -20,17 +31,20 @@ to a fixed [`MPoint`](@ref)` y` on the [`Manifold`](@ref) `M`.
 gradDistance(M,y,x,p::Int=2) = (p==2) ? -log(M,x,y) : -distance(M,x,y)^(p-2)*log(M,x,y)
 
 @doc doc"""
-   ∇u,⁠∇v = gradIntrICTV12(M,f,u,v,α,β)
-Computes (sub)gradient of the intrinsic infimal convolution model using the mid point
-model of second order differences, see [`costTV2`](@ref), i.e. for some $f\in\mathcal M$
-on a [`Power`] manifold $\mathcal M$ this function computes the (sub) gradient of
+    ∇u,⁠∇v = gradIntrICTV12(M,f,u,v,α,β)
 
-$E_{\mathrm{IC}}^{\mathrm{int}}(u,v) =
+compute (sub)gradient of the intrinsic infimal convolution model using the mid point
+model of second order differences, see [`costTV2`](@ref), i.e. for some $f\in\mathcal M$
+on a [`Power`](@ref) manifold $\mathcal M$ this function computes the (sub)gradient of
+
+```math
+E(u,v) =
 \frac{1}{2}\sum_{i\in\mathcal G} d_{\mathcal M}(g(\frac{1}{2},v_i,w_i),f_i)
 + \alpha
 \bigl(
 \beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w)
-\bigr),$
+\bigr),
+```
 where both total variations refer to the intrinsic ones, [`gradTV`](@ref) and
 [`gradTV2`](@ref), respectively.
 """
@@ -41,7 +55,8 @@ function gradIntrICTV12(M::mT,f::P,u::P,v::P,α,β) where {mT <: Manifold, P <: 
 end
 @doc doc"""
     gradTV(M,(x,y),[p=1])
-computes the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
+
+compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
 to both $x$ and $y$.
 """
 function gradTV(M::mT where {mT <: Manifold}, xT::Tuple{P,P} where {P <: MPoint}, p::Number=1)
@@ -63,17 +78,17 @@ end
 Compute the (sub)gradient $\partial F$ of all forward differences orrucirng,
 in the power manifold array, i.e. of the function
 
-$F(x) = \sum_{i}\sum_{j\in\mathcal N_i} d^p(x_i,x_j)$
+$F(x) = \sum_{i}\sum_{j\in\mathcal I_i} d^p(x_i,x_j)$
 
-where $i$ runs over all indices of the [`Power`](@ref) manifold `M` and $\mathcal N_i$
-denotes the forward neighbors of $i$.
+where $i$ runs over all indices of the [`Power`](@ref) manifold `M`
+and $\mathcal I_i$ denotes the forward neighbors of $i$.
 
 # Input
-* `M`     : a [`Power`](@ref) manifold
-* `x`     : a [`PowPoint`](@ref).
+* `M` – a [`Power`](@ref) manifold
+* `x` – a [`PowPoint`](@ref).
 
 # Ouput
-* ξ : resulting tangent vector in $T_x\mathcal M$.
+* ξ – resulting tangent vector in $T_x\mathcal M$.
 """
 function gradTV(M::Power,x::PowPoint,p::Int=1)::PowTVector
   R = CartesianIndices(M.powerSize)
@@ -102,20 +117,23 @@ end
 
 @doc doc"""
     ξ = forwardLogs(M,x)
-Compute the forward logs (generalizing forward differences) orrucirng,
+
+compute the forward logs $F$ (generalizing forward differences) orrucirng,
 in the power manifold array, the function
 
-$F(x) = \sum_{i}\sum_{j\in\mathcal N_i} \log_{x_i} x_j$
+```math
+$F_i(x) = \sum_{j\in\mathcal I_i} \log_{x_i} x_j,\quad i \in \mathcal G,
+```
 
-where $i$ runs over all indices of the [`Power`](@ref) manifold `M` and $\mathcal N_i$
-denotes the forward neighbors of $i$.
+where $\mathcal G$ is the set of indices of the [`Power`](@ref) manifold `M`
+and $\mathcal I_i$ denotes the forward neighbors of $i$.
 
 # Input
-* `M`     : a [`Power`](@ref) manifold
-* `x`     : a [`PowPoint`](@ref).
+* `M` – a [`Power`](@ref) manifold
+* `x` – a [`PowPoint`](@ref).
 
 # Ouput
-* ξ : resulting tangent vector in $T_x\mathcal M$ representing the logs, where
+* `ξ` – resulting tangent vector in $T_x\mathcal M$ representing the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
 function forwardLogs(M::Power, x::PowPoint{P,Nt}) where {P <: MPoint, Nt}
@@ -147,18 +165,24 @@ end
 
 @doc doc"""
     gradTV2(M,(x,y,z),p)
-computes the (sub) gradient of $\frac{1}{p}d_2^p_{\mathcal M}(x,y,z)$ with respect
+
+computes the (sub) gradient of $\frac{1}{p}d_2^p(x,y,z)$ with respect
 to $x$, $y$, and $z$, where $d_2$ denotes the second order absolute difference
 using the mid point model, i.e. let
-$\mathcal C = \{c | \exists g(\cdot;x,z) : c = g(\frac{1}{2};x,z)\}$ the set of
-mid points between $x$ and $z$ on the manifold $\mathcal M$. Then the
-absolute second order difference is defined as
+```math
+  \mathcal C = \bigl\{ c\in \mathcal M \ |\ g(\tfrac{1}{2};x_1,x_3) \text{ for some geodesic }g\bigr\}
+```
+denote the mid points between $x$ and $z$ on the manifold $\mathcal M$.
+Then the absolute second order difference is defined as
 
-$ d_2(x,y,z) = \min_{c\in\mathcal C_{x,z}} d(c,y).$
+```math
+d_2(x,y,z) = \min_{c\in\mathcal C_{x,z}} d(c,y).
+```
 
 While the (sub)gradient with respect to $y$ is easy, the other two require
-the evaluation of an [`adjointJacobiField`](@ref). See
-Bačák, Bergmann, Steidl, Weinmann, 2016 for the derivation
+the evaluation of an [`adjointJacobiField`](@ref).
+See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
+for its derivation.
 """
 function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoint}, p::Number=1)
   x = xT[1];
@@ -178,8 +202,9 @@ function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoi
   end
 end
 @doc doc"""
-    gradTV2(M,x,p)
-computes the (sub) gradient of $\frac{1}{p}d_2^p_{\mathcal M}(x_1,x_2,x_3)$
+    gradTV2(M,x [,p=1])
+
+computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 [`PowPoint`](@ref) `x`, where `M` is the corresponding [`Power`](@ref) manifold.
 """

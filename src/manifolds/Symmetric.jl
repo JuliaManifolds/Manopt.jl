@@ -71,7 +71,8 @@ getValue(ξ::SymTVector) = ξ.value
 @doc doc"""
     distance(M,x,y)
 
-distance of two [`SymPoint`](@ref)s `x,y` on the [`Symmetric`](@ref) inherited
+distance of two [`SymPoint`](@ref)s `x,y` on the [`Symmetric`](@ref) manifold `M``
+inherited
 from embedding them in $\mathbb R^{n\times n}$, i.e. use the Frobenious norm
 of the difference.
 """
@@ -79,14 +80,14 @@ distance(M::Symmetric,x::SymPoint,y::SymPoint) = norm( getValue(x) - getValue(y)
 @doc doc"""
     dot(M,x,ξ,ν)
 
-inner product of two [`SymTVector`](@ref)S` ξ,ν` lying in the tangent
-space of the [`SymPoint`](@ref) `x` on the [`Symmetric`](@ref) `M`.
+inner product of two [`SymTVector`](@ref)s `ξ,ν` lying in the tangent
+space of the [`SymPoint`](@ref) `x` on the [`Symmetric`](@ref) manifold `M`.
 """
 dot(M::Symmetric, x::SymPoint, ξ::SymTVector, ν::SymTVector) = dot( getValue(ξ), getValue(ν) )
 @doc doc"""
     exp(M,x,ξ[, t=1.0])
 
-computes the exponential map on the [`Symmetric`](@ref) `M` given a
+compute the exponential map on the [`Symmetric`](@ref) manifold `M` given a
 [`SymPoint`](@ref) `x` and a [`SymTVector`](@ref) `ξ`, as well as an optional
 scaling factor `t`. The exponential map is given by
 
@@ -94,16 +95,16 @@ $\exp_{x}ξ = x+ξ.$
 """
 exp(M::Symmetric, x::SymPoint, ξ::SymTVector, t::Float64=1.0) = SymPoint( getValue(x) + t*getValue(ξ) )
 @doc doc"""
-   log(M,x,y)
+    log(M,x,y)
 
-computes the logarithmic map for two [`SymPoint`](@ref)` x,y` on the [`Symmetric`](@ref) `M`,
+compute the logarithmic map for two [`SymPoint`](@ref)` x,y` on the [`Symmetric`](@ref) `M`,
 which is given by $\log_xy = y-x$.
 """
 log(M::Symmetric,x::SymPoint,y::SymPoint) = SymTVector( getValue(y) - getValue(x) )
 """
     manifoldDimension(M)
 
-returns the manifold dimension of the [`Symmetric`](@ref) `M`.
+returns the manifold dimension of the [`Symmetric`](@ref) manifold `M`.
 """
 manifoldDimension(M::Symmetric) = M.dimension
 """
@@ -125,7 +126,7 @@ norm(M::Symmetric,x::SymPoint,ξ::SymTVector) = norm( getValue(ξ) )
 
 compute the parallel transport of a [`SymTVector`](@ref) `ξ` from the tangent
 space at the [`SymPoint`](@ref) `x` to the [`SymPoint`](@ref)` y` on the
-[`Symmetric`](@ref) `M`.
+[`Symmetric`](@ref) manifold `M`.
 Since the metric is inherited from the embedding space, it is just the identity.
 """
 parallelTransport(M::Symmetric,x::SymPoint,y::SymPoint,ξ::SymTVector) = ξ
@@ -136,14 +137,16 @@ typeofMPoint(::Type{SymTVector{T}}) where T = SymPoint{T}
 @doc doc"""
     typicalDistance(M)
 
-returns the typical distance on the [`Symmetric`](@ref) `M`.
+returns the typical distance on the [`Symmetric`](@ref) manifold `M`,
+i.e. $\sqrt{n}$.
 """
 typicalDistance(M::Symmetric) = sqrt( - 0.5 + sqrt(1/4 + 2*manifoldDimension(M) ) ) # manDim to n
 
 @doc doc"""
     validateMPoint(M,x)
 
-validate, that the [`SymPoint`](@ref) `x` is a valid point on the [`Symmetric`](@ref) `M`,
+validate, that the [`SymPoint`](@ref) `x` is a valid point on the
+[`Symmetric`](@ref) manifold `M`,
 i.e. that its dimensions are correct and that the matrix is symmetric.
 """
 function validateMPoint(M::Symmetric, x::SymPoint)
@@ -163,7 +166,7 @@ end
     validateTVector(M,x,ξ)
 
 validate, that the [`SymTVector`](@ref) is a valid tangent vector to the
-[`SymPoint`](@ref) `x` on the [`Symmetric`](@ref) `M`,
+[`SymPoint`](@ref) `x` on the [`Symmetric`](@ref) manifold `M`,
 i.e. that its dimensions are correct and that the matrix is symmetric.
 """
 function validateTVector(M::Symmetric, x::SymPoint, ξ::SymTVector)
@@ -184,7 +187,7 @@ end
     ξ = zeroTVector(M,x)
 
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
-[`SymPoint`](@ref) `x` on  the [`Symmetric`](@ref) `M`.
+[`SymPoint`](@ref) `x` on  the [`Symmetric`](@ref) manifold `M`.
 """
 zeroTVector(M::Symmetric, x::SymPoint) = SymTVector(  zero( getValue(x) )  );
 # Display

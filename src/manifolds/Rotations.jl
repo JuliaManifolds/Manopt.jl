@@ -41,9 +41,9 @@ A point $x$ on the manifold $\mathcal M = \mathrm{SO}(n)$ is represented by an
 orthogonal matrix with determinant $+1$ from $\mathbb R^{n\times n}.$
 
 # Constructor
-    SOPoint(Matrix)
+    SOPoint(x)
 
-where Matrix is an orthogonal matrix with determinant $+1$ of dimension $n×n$.
+where `x` is an orthogonal matrix with determinant $+1$ of dimension $n×n$.
 """
 struct SOPoint <: MPoint
   value::Matrix
@@ -61,9 +61,7 @@ $T_x\mathrm{SO}(n) = \bigl\{x\xi \in \mathbb R^{n\times n}
 \big| \xi + \xi^T = 0 \bigr\}.$
 
 Since the manifold of rotations is a Lie group, it suffices to store just the
-skew-symmetric matrix $\xi$ as a [`SOTVector`](@ref). Hence, the elements within
-a `SOTVector` are not stored as elements $x\xi$ of the tangent space but
-just $\xi$. This has to be taken into account in all formulae.
+skew-symmetric matrix $\xi$. This has to be taken into account in all formulae.
 
 
 # Constructor
@@ -95,31 +93,10 @@ getValue(ξ::SOTVector) = ξ.value;
 LieGroupOp(x::SOPoint, y::SOPoint) = SOPoint( transpose(getValue(x))*getValue(y) )
 
 @doc doc"""
-    manifoldDimension(x)
-
-return the dimension of the [`Rotations`](@ref) `M`$= \mathrm{SO}(n)$, the
-[`SOPoint`](@ref) `x`, itself embedded in $\mathbb R^{n\times n}$, belongs to.
-The dimension is defined by
-
-$\frac{n(n-1)}{2}.$
-"""
-manifoldDimension(x::SOPoint)::Integer = size(getValue(x), 1)*(size(getValue(x), 2)-1)/2
-
-@doc doc"""
-    manifoldDimension(M)
-
-return the dimension of the [`Rotations`](@ref) `M`$= \mathrm{SO}(n)$. The
-dimension is defined by
-
-$\frac{n(n-1)}{2}.$
-"""
-manifoldDimension(M::Rotations)::Integer = (M.dimension*(M.dimension-1))/2
-
-@doc doc"""
     dot(M,x,ξ,ν)
 
 compute the Riemannian inner product for two [`SOTVector`](@ref)s `ξ` and `ν`
-from $T_x\mathcal M$ of the [`Rotations`](@ref) `M` given by
+from $T_x\mathcal M$ of the [`Rotations`](@ref) manifold `M` given by
 
 $\langle \xi, \nu \rangle_x = \operatorname{tr}(\xi^T\nu)$
 
@@ -129,8 +106,9 @@ dot(M::Rotations, x::SOPoint, ξ::SOTVector, ν::SOTVector)::Float64 = tr( trans
 
 @doc doc"""
     distance(M,x,y)
-compute the Riemannian distance on [`Rotations`](@ref) `M`$= \mathrm{SO}(n)$
-embedded in $\mathbb R^{n\times n}$, which is given by
+
+compute the Riemannian distance on [`Rotations`](@ref) manifold `M`
+$= \mathrm{SO}(n)$ embedded in $\mathbb R^{n\times n}$, which is given by
 
 $d(x,y) = \lVert \operatorname{log}_{x}y \rVert_x$
 
@@ -145,27 +123,17 @@ function distance(M::Rotations,x::SOPoint,y::SOPoint)
   return norm(M, x, log(M,x,y))
 end
 
-@doc doc"""
-    norm(M,x,ξ)
-
-compute the norm of the [`SOTVector`](@ref) `ξ` in the tangent space
-$T_x\mathcal M$ at [`SOPoint`](@ref) `x` of the [`Rotations`](@ref) `M`.
-
-$\lVert \xi \rVert_x = \sqrt{\sum_{i,j=0}^n \xi_{ij}^2}$
-
-where $\xi_{ij}$ are the entries of the skew-symmetric matrix `ξ`, i.e. the norm
-is given by the Frobenius norm of `ξ`.
-"""
-norm(M::Rotations, x::SOPoint, ξ::SOTVector) = norm(getValue(ξ))
 
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
 
-compute the exponential map on the [`Rotations`](@ref) `M`$=\mathrm{SO}(n)$ with
+compute the exponential map on the [`Rotations`](@ref) manifold `M`$=\mathrm{SO}(n)$ with
 respect to the [`SOPoint`](@ref) `x` and the [`SOTVector`](@ref) `ξ`, which can
 be shortened with `t` to `tξ`. The formula reads
 
-$\operatorname{exp}_{x} tξ = x \cdot \operatorname{Exp} tξ$
+```math
+\operatorname{exp}_{x}(tξ) = x \cdot \operatorname{Exp}(tξ)
+```
 
 where $\operatorname{Exp}$ denotes matrix exponential.
 """
@@ -174,10 +142,14 @@ exp(M::Rotations,x::SOPoint,ξ::SOTVector,t::Float64=1.0) = SOPoint(getValue(x) 
 @doc doc"""
     log(M,x,y)
 
-compute the logarithmic map on the [`Rotations`](@ref) `M`$=\mathrm{SO}(n)$,
-which is given by
+compute the logarithmic map on the [`Rotations`](@ref) manifold
+`M`$=\mathrm{SO}(n)$, which is given by
 
-$\operatorname{log}_{x} y = \frac{1}{2} (\operatorname{Log}x^{\mathrm{T}}y - (\operatorname{Log} x^{\mathrm{T}}y)^{\mathrm{T}})$
+```math
+\operatorname{log}_{x} y =
+  \frac{1}{2} \bigl(\operatorname{Log}(x^{\mathrm{T}}y)
+  - (\operatorname{Log} x^{\mathrm{T}}y)^{\mathrm{T}}),
+```
 
 where $\operatorname{Log}$ denotes the matrix logarithm.
 """
@@ -190,6 +162,40 @@ function log(M::Rotations,x::SOPoint,y::SOPoint)
   U2 = 0.5 * (U1 - transpose(U1))
   return SOTVector(U2)
 end
+
+@doc doc"""
+    manifoldDimension(x)
+
+return the dimension of the [`Rotations`](@ref) manifold `M`$= \mathrm{SO}(n)$, the
+[`SOPoint`](@ref) `x`, itself embedded in $\mathbb R^{n\times n}$, belongs to.
+The dimension is defined by
+
+$\frac{n(n-1)}{2}.$
+"""
+manifoldDimension(x::SOPoint)::Integer = size(getValue(x), 1)*(size(getValue(x), 2)-1)/2
+
+@doc doc"""
+    manifoldDimension(M)
+
+return the dimension of the [`Rotations`](@ref) manifold `M`$= \mathrm{SO}(n)$.
+The dimension is defined by
+
+$\frac{n(n-1)}{2}.$
+"""
+manifoldDimension(M::Rotations)::Integer = (M.dimension*(M.dimension-1))/2
+
+@doc doc"""
+    norm(M,x,ξ)
+
+compute the norm of the [`SOTVector`](@ref) `ξ` in the tangent space
+$T_x\mathcal M$ at [`SOPoint`](@ref) `x` of the [`Rotations`](@ref) manifold `M`.
+
+$\lVert \xi \rVert_x = \sqrt{\sum_{i,j=0}^n \xi_{ij}^2}$
+
+where $\xi_{ij}$ are the entries of the skew-symmetric matrix `ξ`, i.e. the norm
+is given by the Frobenius norm of `ξ`.
+"""
+norm(M::Rotations, x::SOPoint, ξ::SOTVector) = norm(getValue(ξ))
 
 @doc doc"""
     parallelTransport(M,x,y,ξ)
@@ -207,10 +213,11 @@ parallelTransport(M::Rotations,x::SOPoint,y::SOPoint,ξ::SOTVector) = ξ
     randomTVector(M,x[, type=:Gaussian, σ=1.0])
 
 return a random [`SOTVector`](@ref) in the tangent space
-$T_x\mathrm{SO}(n)$ by generating a random skew-symmetric matrix. The function
-takes the real upper triangular matrix of a random matrix A with dimension
-$n×n$ and subtracts the same transposed matrix from it. Finally, the matrix is ​​
-normalized.
+$T_x\mathrm{SO}(n)$ of the [`SOPoint`](@ref) `x` on the [`Rotations`](@ref)
+manifold `M` by generating a random skew-symmetric matrix. The function
+takes the real upper triangular matrix of a (Gaussian) random matrix $A$ with
+dimension $n\times n$ and subtracts its transposed matrix.
+Finally, the matrix is ​​normalized.
 """
 function randomTVector(M::Rotations,x::SOPoint, ::Val{:Gaussian}, σ::Real=1.0)
   if M.dimension==1
@@ -226,8 +233,8 @@ end
 @doc doc"""
     randomMPoint(M[, type=:Gaussian, σ=1.0])
 
-return a random [`SOPoint`](@ref) `x` Gaussian on the manifold [`Rotations`](@ref) `M`
-by generating a random orthogonal matrix with determinant +1. Let
+return a random [`SOPoint`](@ref) `x` on the manifold [`Rotations`](@ref) `M`
+by generating a (Gaussian) random orthogonal matrix with determinant $+1$. Let
 
 $QR = A$
 
@@ -241,7 +248,7 @@ i.e.
 $D_{ij}=\begin{cases} \operatorname{sgn}(R_{ij}) & \text{if} \; i=j \\ 0 & \, \text{otherwise} \end{cases}.$
 
 It can happen that the matrix gets -1 as a determinant. In this case, the first
-and second columns are simply swapped.
+and second columns are swapped.
 """
 function randomMPoint(M::Rotations, ::Val{:Gaussian}, σ::Real=1.0)
   if M.dimension==1
@@ -259,11 +266,11 @@ function randomMPoint(M::Rotations, ::Val{:Gaussian}, σ::Real=1.0)
 end
 
 @doc doc"""
-    retractionPolar(M,x,ξ,[t=1.0])
+    retractionPolar(M,x,ξ [,t=1.0])
 
 move the [`SOPoint`](@ref) `x` in the direction of the [`SOTVector`](@ref) `ξ`
-on the  [`Rotations`](@ref) `M`. This SVD-based retraction is a second-order
-approximation of the exponential map [`exp`](@ref). Let
+on the  [`Rotations`](@ref) manifold `M`. This SVD-based retraction is a second-order
+approximation of the exponential map. Let
 
 $USV = x + txξ$
 
@@ -279,11 +286,11 @@ function retractionPolar(M::Rotations, x::SOPoint, ξ::SOTVector, t::Float64=1.0
 end
 
 @doc doc"""
-    retractionQR(M,x,ξ,[t=1.0])
+    retractionQR(M,x,ξ [,t=1.0])
 
 move the [`SOPoint`](@ref) `x` in the direction of the [`SOTVector`](@ref) `ξ`
-on the  [`Rotations`](@ref) `M`. This QR-based retraction is only a
-first-order approximation of the exponential map [`exp`](@ref). Let
+on the [`Rotations`](@ref) manifold `M`. This QR-based retraction is a
+first-order approximation of the exponential map. Let
 
 $QR = x + txξ$
 
@@ -291,10 +298,14 @@ be the QR decomposition, then the formula reads
 
 $\operatorname{retr}_x\xi = QD$
 
-where D is a diagonal matrix with the signs of the diagonal entries of $R$ plus
-$0.5$, i.e.
+where the matrix $D$ is given by
 
-$D_{ij}=\begin{cases} \operatorname{sgn}(R_{ij}+0,5) & \text{if} \; i=j \\ 0 & \, \text{otherwise} \end{cases}.$
+```math
+D_{ij}=\begin{cases}
+\operatorname{sgn}(R_{ij}+0,5) & \text{if} \; i=j \\
+0 & \, \text{otherwise.}
+\end{cases}
+```
 """
 function retractionQR(M::Rotations, x::SOPoint, ξ::SOTVector, t::Float64=1.0)
   y = getValue(x) + t * getValue(x)*getValue(ξ)
@@ -310,9 +321,9 @@ retraction(M::Rotations, x::SOPoint, ξ::SOTVector, t::Float64=1.0) = retraction
     inverseRetractionPolar(M,x,y)
 
 return a [`SOTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{SO}(n)$
-with which the [`SOPoint`](@ref)` y` can be reached by the
-[`retractionPolar`](@ref) from the [`SOPoint`](@ref)` x` after time 1.
-The formula reads
+of the [`SOPoint`](@ref) `x` on the [`Rotations`](@ref) manifold `M`
+with which the [`SOPoint`](@ref) `y` can be reached by the
+[`retractionPolar`](@ref) after time 1. The formula reads
 
 $ξ = -\frac{1}{2}(x^{\mathrm{T}}ys - (x^{\mathrm{T}}ys)^{\mathrm{T}})$
 
@@ -332,9 +343,10 @@ end
 @doc doc"""
     inverseRetractionQR(M,x,y)
 
-return a [`SOTVector`](@ref)` ξ` of the tagent space $T_x\mathrm{SO}(n)$
-with which the [`SOPoint`](@ref)` y` can be reached by the
-[`retractionQR`](@ref) from the [`SOPoint`](@ref)` x` after time 1.
+return a [`SOTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{SO}(n)$
+of the [`SOPoint`](@ref) `x` on the [`Rotations`](@ref) manifold `M`
+with which the [`SOPoint`](@ref) `y` can be reached by the
+[`retractionQR`](@ref) from the [`SOPoint`](@ref) `x` after time 1.
 """
 function inverseRetractionQR(M::Rotations, x::SOPoint, y::SOPoint)
   A = transpose(getValue(x)) * getValue(y)
@@ -353,8 +365,9 @@ inverseRetraction(M::Rotations, x::SOPoint, y::SOPoint) = inverseRetractionQR(M,
 @doc doc"""
     zeroTVector(M,x)
 
-return a zero tangent vector of the tagent space $T_x\mathrm{SO}(n)$.
-All entries of the returned [`SOTVector`](@ref) are 0.
+return a zero [`SOTVector`](@ref) $\xi$ from the tagent space $T_x\mathrm{SO}(n)$
+of [`SOPoint`](@ref) `x` on the [`Rotations`](@ref) manifold `M`, i.e. a zero
+matrix.
 """
 zeroTVector(M::Rotations, x::SOPoint) = SOTVector( zero(getValue(x)) )
 

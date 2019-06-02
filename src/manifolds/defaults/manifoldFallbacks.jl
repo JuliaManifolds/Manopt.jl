@@ -79,12 +79,14 @@ end
 
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,ξ)
+    
 compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi$ is the
 first vector and compute the eigenvalues of the curvature tensor
 $R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
 $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
-*See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
+# See also
+ [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
 """
 function tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
     sig1 = string( typeof(x) )
@@ -101,7 +103,8 @@ first vector and compute the eigenvalues of the curvature tensor
 $R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
 $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
-*See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
+# See also
+ [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
 """
 tangentONB(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPoint} = tangentONB(M,x,log(M,x,y))
 """
@@ -140,7 +143,8 @@ check, whether the data in the [`MPoint`](@ref) `x` is a valid point on the
 computations using [`MPointE`](@ref)s.
 Note that the default fallback is just a warning that no validation is available.
 
-Throws an error message if `x` is not point on the manifold `M`, otherwise returns true
+The function should throw an error if `x` is not point on the manifold `M`,
+otherwise it should return `true`.
 """
 function validateMPoint(M::mT, x::P) where {mT <: Manifold, P <: MPoint}
   sig1 = string( typeof(x) )
@@ -155,10 +159,12 @@ end
 
 check, whether the data in the [`TVector`](@ref) `ξ` is a valid tangent vector
 #to the [`MPoint`](@ref) `x` on the [`Manifold`](@ref) `M`.
-This is used to validate parameters and results during computations using [`MPointE`](@ref)s.
+This is used to validate parameters and results during computations when using
+[`MPointE`](@ref)s. 
 Note that the default fallback is just a warning that no validation is available.
 
-Throws an error message if `ξ` is not a tangent vector of `x`, otherwise returns true
+Available validations should throw an error if `x` is not on `M` or `ξ` is not
+in the tangent space of `x`. If `ξ` is valid, the function returns true.
 """
 function validateTVector(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector}
   sig1 = string( typeof(x) )

@@ -14,9 +14,22 @@ export zeroTVector, typeofMPoint, typeofTVector
 #
 @doc doc"""
     Sphere <: Manifold
+
 The manifold $\mathcal M = \mathbb S^n$ of unit vectors in $\mathbb R^{n+1}$.
 This manifold is a matrix manifold (see [`IsMatrixM`](@ref)) and embedded (see
 [`IsEmbeddedM`](@ref)).
+
+# Abbreviation
+
+`Sn`
+
+# Constructor
+
+    Sphere(n)
+
+generate the sphere $\mathbb S^n$
+
+`
 Its abbreviation is `Sn`.
 """
 struct Sphere <: Manifold
@@ -27,6 +40,7 @@ struct Sphere <: Manifold
 end
 @doc doc"""
     SnPoint <: MPoint
+
 A point $x$ on the manifold $\mathcal M = \mathbb S^n$ represented by a unit
 vector from $\mathbb R^{n+1}$
 """
@@ -39,6 +53,7 @@ getValue(x::SnPoint) = x.value;
 
 @doc doc"""
     SnTVector <: TVector
+
 A tangent vector $\xi \in T_x\mathcal M$ on the manifold
 $\mathcal M = \mathbb S^n$. For the representation the tangent space can be
 given as $T_x\mathbb S^n = \bigl\{\xi \in \mathbb R^{n+1}
@@ -66,6 +81,7 @@ getValue(ξ::SnTVector) = ξ.value;
 # ---
 @doc doc"""
     distance(M,x,y)
+
 Compute the Riemannian distance on $\mathcal M=\mathbb S^n$ embedded in
 $\mathbb R^{n+1}$, which is given by
 
@@ -168,7 +184,7 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
   end
 end
 @doc doc"""
-    randomMPoint(M)
+    randomMPoint(M [,:Gaussian, σ=1.0])
 
 return a random point on the Sphere by projecting a normal distirbuted vector
 from within the embedding to the sphere.
@@ -178,7 +194,7 @@ function randomMPoint(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)::SnPoint
 	return SnPoint(v./norm(v))
 end
 @doc doc"""
-    randomTVector(M,x,)
+    randomTVector(M,x [,:Gaussian,σ=1.0])
 
 return a random tangent vector in the tangent space of the [`SnPoint`](@ref)
 `x` on the [`Sphere`](@ref) `M`.

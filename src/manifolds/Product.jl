@@ -25,7 +25,8 @@ also be an arbitrary Array of manifolds, not necessarily only a vector.
 # Constructor
     Product(m)
 
-constructs a `Power` [`Manifold`](@ref) based on an array of manifolds
+constructs a `Power` [`Manifold`](@ref) based on an array `m` of
+[`Manifold`](@ref)s.
 """
 struct Product <: Manifold
   name::String
@@ -67,21 +68,24 @@ getValue(ξ::ProdTVector) = ξ.value
 @doc doc"""
     distance(M,x,y)
 
-computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
+compute a vectorized version of distance for two [`ProdPoint`](@ref)s `x` and
+`y` on the [`Product`](@ref) manifold `M`.
 """
 distance(M::Product, x::ProdPoint, y::ProdPoint) = sqrt(sum( distance.(M.manifolds, getValue(x), getValue(y) ).^2 ))
 
 @doc doc"""
     dot(M,x,ξ,ν)
 
-computes the inner product as sum of the component inner products on the [`Product`](@ref).
+compute the inner product as sum of the component inner products on the
+[`Product`](@ref) manifold `M`.
 """
 dot(M::Product, x::ProdPoint, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.manifolds, getValue(x), getValue(ξ), getValue(ν) ));
 
 @doc doc"""
     exp(M,x,ξ)
 
-computes the product exponential map on the [`Product`](@ref) manifold and returns the corresponding [`ProdPoint`](@ref).
+computes the product exponential map on the [`Product`](@ref) manifold `M` and
+returns the corresponding [`ProdPoint`](@ref).
 """
 exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( exp.(M.manifolds, getValue(x), getValue(ξ)) )
 
@@ -89,7 +93,7 @@ exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( exp.(M
    log(M,x,y)
 
 computes the product logarithmic map from [`PowPoint`](@ref) `x` to `y` on the
-[`Product`](@ref)` `[`Manifold`](@ref) `M` and returns the corresponding
+[`Product`](@ref) manifold `M` and returns the corresponding
 [`ProdTVector`](@ref).
 """
 log(M::Product, x::ProdPoint,y::ProdPoint) = ProdTVector(log.(M.manifolds, getValue(x), getValue(y) ))
@@ -97,7 +101,7 @@ log(M::Product, x::ProdPoint,y::ProdPoint) = ProdTVector(log.(M.manifolds, getVa
 @doc doc"""
     manifoldDimension(x)
 
-returns the (product of) dimension(s) of the [`Product`](@ref) manifold the
+returns the (product of) dimension(s) of the [`Product`](@ref) manifold `M` the
 [`ProdPoint`](@ref) `x` belongs to.
 """
 manifoldDimension(x::ProdPoint) =  sum( manifoldDimension.( getValue(x) ) )
@@ -105,22 +109,22 @@ manifoldDimension(x::ProdPoint) =  sum( manifoldDimension.( getValue(x) ) )
 @doc doc"""
     manifoldDimension(M)
 
-returns the (product of) dimension(s) of the [`Product`](@ref)` `[`Manifold`](@ref) `M`.
+returns the (product of) dimension(s) of the [`Product`](@ref) manifold `M`.
 """
 manifoldDimension(M::Product) = sum( manifoldDimension.(M.manifolds) )
 
 @doc doc"""
     norm(M,x,ξ)
 
-norm of the [`ProdTVector`](@ref) `ξ` induced by the metric on the manifold components
-of the [`Product`](@ref)` `[`Manifold`](@ref) `M`.
+norm of the [`ProdTVector`](@ref) `ξ` induced by the metric on the manifold
+components of the [`Product`](@ref) manifold `M`.
 """
 norm(M::Product, x::ProdPoint, ξ::ProdTVector) = sqrt( dot(M,x,ξ,ξ) )
 
 @doc doc"""
     parallelTransport(M,x,ξ)
 
-computes the product parallelTransport map on the [`Product`](@ref)` `[`Manifold`](@ref) `M`
+computes the product parallelTransport map on the [`Product`](@ref) manifold `M`
 and returns the corresponding [`ProdTVector`](@ref).
 """
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
@@ -134,15 +138,15 @@ typeofMPoint(::Type{ProdTVector{Array{TVector,N}}}) where N = ProdPoint{Array{MP
 @doc doc"""
     randomMPoint(M)
 
-generate a random point on [`Product`](@ref) `M`.
+generate a random point on [`Product`](@ref) manifold `M`.
 """
 randomMPoint(M::Product, options...) = ProdPoint([ randomMPoint(m, options...) for m in M.manifolds ] )
 
 @doc doc"""
     randomTVector(M,x)
 
-generate a random tangent vector in the tangent space of the [`ProdPoint`](@ref) `x`
-on [`Power`](@ref) `M`.
+generate a random tangent vector in the tangent space of the
+[`ProdPoint`](@ref) `x` on [`Power`](@ref) manifold `M`.
 """
 randomTVector(M::Product,x::ProdPoint, options...) where N = ProdTVector([
     randomTVector(M.manifolds[i], getValue(x)[i], options...)
@@ -151,7 +155,8 @@ randomTVector(M::Product,x::ProdPoint, options...) where N = ProdTVector([
 @doc doc"""
     typicalDistance(M)
 
-returns the typical distance on [`Product`](@ref) `M`, which is the minimum of the internal ones.
+returns the typical distance on [`Product`](@ref) manifold `M`, which is the
+minimum of the internal ones.
 """
 typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) );
 @doc doc"""
@@ -175,8 +180,8 @@ end
     validateTVector(M,x,ξ)
 
 validate, that the [`ProdTVector`](@ref) `ξ` is a valid tangent vector to the
-[`ProdPoint`](@ref) `x` on the [`Product`](@ref) `M`, i.e. that all three array
-dimensions match and this validation holds elementwise.
+[`ProdPoint`](@ref) `x` on the [`Product`](@ref) manifold `M`, i.e. that all
+three array dimensions match and this validation holds elementwise.
 """
 function validateTVector(M::Product, x::ProdPoint, ξ::ProdTVector)
     if (length(getValue(x)) ≠ length(getValue(ξ))) || (length(getValue(ξ)) ≠ length(M.manifolds))
@@ -189,6 +194,7 @@ function validateTVector(M::Product, x::ProdPoint, ξ::ProdTVector)
 end
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`ProdPoint`](@ref) $x\in\mathcal M$ on the [`Product`](@ref) manifold `M`.
 """

@@ -17,13 +17,13 @@ An abstract manifold $\mathcal M$ to keep global information on a specific manif
 abstract type Manifold end
 
 @doc doc"""
-An abstract point $x$ on a manifold $\mathcal M$.
+An abstract point $x$ on a [`Manifold`](@ref) $\mathcal M$.
 """
 abstract type MPoint end
 
 @doc doc"""
-A point on a tangent plane $T_x\mathcal M$ at a point $x$ on a
-manifold $\mathcal M$.
+A tangent vector $\xi \in T_x\mathcal M$ at a [`MPoint`](@ref) point $x$ on a
+[`Manifold`](@ref) $\mathcal M$.
 """
 abstract type TVector end
 
@@ -56,15 +56,18 @@ add noise to a [`MPoint`](@ref) `x` on the [`Manifold`](@ref) `M` by using the
 Optional parameters, like the type of noise and parameters for the noise
 may be given and are just passed on-
 """
-addNoise(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint} = exp(M,x,randomTVector(M,x,options...))
+addNoise(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint} = exp(
+    M,x,randomTVector(M,x,options...)
+)
 
 @doc doc"""
     ζ = adjointJacobiField(M,x,y,t,η,w)
 
 compute the AdjointJacobiField $J$ along the geodesic $g_{x,y}$ on the manifold
-$\mathcal M$ with initial conditions (depending on the application) $\eta\in T_{g(t;x,y)\mathcal M}$ and
-weights $\beta$. The result is a vector $\zeta \in T_x\mathcal M$
-The main difference to [`jacobiField`](@ref) is the inversion, that the input $\eta$ and the output $\zeta$ switched tangent spaces.
+$\mathcal M$ with initial conditions (depending on the application)
+$\eta\in T_{g(t;x,y)\mathcal M}$ and weights $\beta$. The result is a vector
+$\zeta \in T_x\mathcal M$. The main difference to [`jacobiField`](@ref) is the,
+that the input $\eta$ and the output $\zeta$ switched tangent spaces.
 
 For detais see [`jacobiField`](@ref)
 """
@@ -80,7 +83,7 @@ copy(x::P) where {P <: MPoint} = P(copy(getValue(x)))
 copy(ξ::T) where {T <: TVector} = T(copy(getValue(ξ)))
 
 """
-   midPoint(M,x,y,z)
+    midPoint(M,x,y,z)
 
 compute the mid point between x and y. If there is more than one mid point
 of (not neccessarily miniizing) geodesics (i.e. on the sphere), the one nearest
@@ -95,7 +98,10 @@ end
     midPoint(M,x,y)
 
 compute the (geodesic) mid point of the two [`MPoint`](@ref)s `x` and `y` on the
-[`Manifold`](@ref) `M`.
+[`Manifold`](@ref) `M`. If the geodesic is not unique, either a deterministic
+choice is returned or an error is raised. For the deteministic choixe, see
+[`midPoint(M,x,y,z)`](@ref), the mid point closest to a third [`MPoint`](@ref)
+`z`.
 """
 function midPoint(M::mT,x::T, y::T)::T where {mT <: Manifold, T <: MPoint}
   return exp(M,x,0.5*log(M,x,y))
@@ -172,7 +178,8 @@ compute the jacobiField $J$ along the geodesic $g_{x,y}$ on the
 application) $\eta\in T_x\mathcal M$ and weights $\beta$. The result is a
 [`TVector`](@ref) in $\zeta \in T_{g(t;x,y)}\mathcal M$.
 
-*See also:* [`adjointJacobiField`](@ref)
+# See also
+ [`adjointJacobiField`](@ref)
 """
 function jacobiField(M::mT,x::P,y::P,t::Number,η::T,β::Function=βDgx) where {mT<:Manifold, P<:MPoint, T<:TVector}
     z = geodesic(M,x,y,t); # Point the TzM of the resulting vector lies in
@@ -211,7 +218,7 @@ norm(M::mT,x::P,ξ::T) where {mT<:Manifold,P<:MPoint,T<:TVector} = sqrt(dot(M,x,
 
 randomMPoint(M::mT,options...) where {mT <: Manifold} = randomMPoint(M, :Gaussian, options...)
 @doc doc"""
-    randomMPoint(M,x[, type=:Gaussian, options...])
+    randomMPoint(M,x [,:Gaussian,options...])
 
 generate a random [`MPoint`](@ref) on the [`Manifold`](@ref) `M` by falling
 back to the default `:Gaussian` noise with the default standard deviation
@@ -221,7 +228,7 @@ randomMPoint(M::mT,s::Symbol,options...) where {mT <: Manifold} = randomMPoint(M
 
 randomTVector(M::mT, x::P, options...) where {mT <: Manifold, P <: MPoint} = randomTVector(M,x,:Gaussian,options...)
 @doc doc"""
-    randomTVector(M, x [, :Gaussian, options...])
+    randomTVector(M,x [,:Gaussian,options...])
 
 generate a random tangent vector at [`MPoint`](@ref) `x`
 on the [`Manifold`](@ref) `M` using `:Gaussian` noise where options usually

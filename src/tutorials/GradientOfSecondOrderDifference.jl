@@ -1,9 +1,9 @@
-# # Illustration of the Gradient of a Second Order Difference
+# # [Illustration of the Gradient of a Second Order Difference](@id secondOrderDifferenceGrad)
 #
 # This example explains how to compute the gradient of the second order
 # difference mid point model using [`adjointJacobiField`](@ref)s.
 #
-# This example also illustrates the [`Power`](@ref) [`Manifold`](@ref) as well
+# This example also illustrates the [`Power`](@ref) manifold as well
 # as [`ArmijoLinesearch`](@ref).
 
 # We first initialize the manifold
@@ -28,7 +28,7 @@ c = midPoint(M,x,z)
 #src y is the north pole just bend a little bit towards 
 y = geodesic(M, SnPoint([0., 0., 1.]), c, 0.1)
 [c,y]
-# Now the second order absolute difference can be stated as (see [[Bačák, Bergmnann, Steidl, Weinmann, 2016](#BacakBergmannSteidlWeinmann2016)])
+# Now the second order absolute difference can be stated as (see [[Bačák, Bergmann, Steidl, Weinmann, 2016](#BacakBergmannSteidlWeinmann2016)])
 #
 # $d_2(x,y,z) := \min_{c\in\mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z\in\mathcal M,$
 #
@@ -49,6 +49,7 @@ renderAsymptote(exportFolder*"/SecondOrderData.asy",asyExportS2Signals; #src
     colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]), #src
     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
 ) #src
+#md # 
 #md # ```julia
 #md # renderAsymptote("secondOrderData.asy",asyExportS2Signals;
 #md #     render = asyResolution,
@@ -65,9 +66,9 @@ renderAsymptote(exportFolder*"/SecondOrderData.asy",asyExportS2Signals; #src
 # to $c$ is $\frac{9\pi}{20}\approx 1.4137$, and this is also what
 costTV2(M, (x,y,z) )
 # returns, see [`costTV2`](@ref) for reference. But also its gradient can be
-# easily computed since it is just a distance with restepct to $y$ and a
-# concatentaion of a geodesic, where the start or end point is the argument,
-# respecitvely, with a distance. 
+# easily computed since it is just a distance with respect to $y$ and a
+# concatenation of a geodesic, where the start or end point is the argument,
+# respectively, with a distance. 
 # Hence the [adjoint differentials](@ref adjointDifferentialFunctions)
 # [`AdjDxGeo`](@ref) and [`AdjDyGeo`](@ref) can be employed,
 # see [`gradTV2`](@ref) for details.
@@ -83,8 +84,9 @@ renderAsymptote(exportFolder*"/SecondOrderGradient.asy",asyExportS2Signals; #src
     colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]), #src
     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
 ) #src
+#md #
 #md # ```julia
-#md # renderAsymptote("secondOrderData.asy",asyExportS2Signals;
+#md # renderAsymptote("SecondOrderGradient.asy",asyExportS2Signals;
 #md #    render = asyResolution,
 #md #    points = [ [x,y,z], [c,c2] ],
 #md #    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
@@ -135,7 +137,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
 costTV2(M, (xn, yn, zn) )
 #
 # But we can also search for the best step size using [`ArmijoLinesearch`](@ref)
-# on the [`Power`](@ref) [`Manifold`](@ref) $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
+# on the [`Power`](@ref) manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
 p = PowPoint([x,y,z])
 N = Power(M,3)
 s = ArmijoLinesearch(1.0,exp,0.999,0.96)(N, p,
@@ -159,6 +161,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin2.asy",asyExportS2Signals; #src
                 ), #src
     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
 ) #src
+#md #
 #md # ```julia
 #md # renderAsymptote("SecondOrderMin2.asy",asyExportS2Signals;
 #md #     render = asyResolution,
@@ -184,7 +187,7 @@ costTV2( M, (xm, ym, zm) )
 # 
 # ```@raw html
 # <ul>
-# <li id="BačákBergmannSteidlWeinmann2016">[<a>Bačák, Bergmnann, Steidl, Weinmann, 2016</a>]
+# <li id="BačákBergmannSteidlWeinmann2016">[<a>Bačák, Bergmann, Steidl, Weinmann, 2016</a>]
 #   Bačák, M; Bergmann, R.; Steidl, G; Weinmann, A.: <emph>A second order nonsmooth
 #   variational model for restoring manifold-valued images.</emph>,
 #   SIAM Journal on Scientific Computations, Volume 38, Number 1, pp. A567–597,

@@ -57,7 +57,7 @@ compute the median of the data given by the vector of
 [`MPoint`](@ref)s `x` on the [`Manifold`](@ref) `M`.
 calculates the Riemannian Center of Mass (Karcher mean) of the input data `x`
 as an `Array` of [`MPoint`](@ref)s on the [`Manifold`](@ref) with a
-[`subGradientMethod`](@ref) or a [`cyclicProximalPoint`](@ref).
+[`cyclicProximalPoint`](@ref).
 
 # Optional
 

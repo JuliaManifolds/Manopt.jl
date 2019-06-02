@@ -29,7 +29,7 @@ the default parameter is given in brackets
   to perform the reflection of `x` at the prox `p`.
 * `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200),`[`stopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
-  [`Power`](@ref) [`Manifold`](@ref) with two proxes. This can be used to trigger
+  [`Power`](@ref) manifold with two proxes. This can be used to trigger
   parallel Douglas–Rachford if you enter with two proxes. Keep in mind, that a
   parallel Douglas–Rachford implicitly works on a [`Power`](@ref) manifold and
   its first argument is the result then (assuming all are equal after the second

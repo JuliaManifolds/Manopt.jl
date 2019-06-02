@@ -11,7 +11,7 @@ export artificialS2RotationsImage
 export artificialS2WhirlPatch, artificialS2Lemniscate
 
 @doc doc"""
-    artificialInSARImage([pts=500, pointType])
+    artificialInSARImage([pts=500, pointType=S1Point])
 generate an artificial InSAR image, i.e. phase valued data, of size `pts` x
 `pts` points.
 The `pointType` – (`S1Point`) provide the point type, i.e. manifold the data lives
@@ -65,14 +65,14 @@ function artificialInSARImage(pts::Integer,
 end
 
 @doc doc"""
-    artificialS1SlopeSignal()
+    artificialS1SlopeSignal([pts=500, slope=4.])
 
 Creates a Signal of (phase-valued) data represented on the
 [`Circle`](@ref)` `[`Manifold`](@ref) with increasing slope.
 
 # Optional
-* `pts` – number of points to sample the function.
-* `slope` – initial slope that gets increased afterwards
+* `pts` – (`500`) number of points to sample the function.
+* `slope` – (`4.0`) initial slope that gets increased afterwards
 """
 function artificialS1SlopeSignal(pts::Integer = 500, slope::Float64=4.)
     t = range(0., 1., length=pts)
@@ -88,7 +88,7 @@ function artificialS1SlopeSignal(pts::Integer = 500, slope::Float64=4.)
 end
 
 @doc doc"""
-    artificialS1Signal()
+    artificialS1Signal([pts=500,pointType=S1Point])
 
 generate a real-valued signal having piecewise constant, linear and quadratic
 intervals with jumps in between. If the resulting manifold the data lives on,
@@ -149,7 +149,7 @@ function artificialS1Signal(x::Number)
     return y
 end
 @doc doc"""
-    artificialS2WhirlImage([pts])
+    artificialS2WhirlImage([pts=64])
 generate an artificial image of data on the 2 sphere,
 
 # Arguments
@@ -184,14 +184,14 @@ function artificialS2WhirlImage(pts::Int=64)
   return img
 end
 @doc doc"""
-    artificialS2Rot()
+    artificialS2Rot([pts=64, rotations=(.5,.5)])
 creates an image with a rotation on each axis as a parametrization.
 
 # Optional Parameters
-* `pts` : (`64`) number of pixels along one dimension
-* `roations` : (`(.5,.5)`) number of total rotations performed on the axes.
+* `pts` – (`64`) number of pixels along one dimension
+* `rotations` – (`(.5,.5)`) number of total rotations performed on the axes.
 """
-function artificialS2RotationsImage(pts::Int=64,rotations::Tuple{Float64,Float64}=(0.5,0.5))
+function artificialS2RotationsImage(pts::Int=64,rotations::Tuple{Float64,Float64}=(.5,.5))
   M = Sphere(2)
   N = Power(M, (pts,pts) )
   img = PowPoint(Matrix{SnPoint{Float64}}(undef,pts,pts))
@@ -209,11 +209,14 @@ function artificialS2RotationsImage(pts::Int=64,rotations::Tuple{Float64,Float64
 end
 
 @doc doc"""
-    artificialS2WhirlPatch()
-create a whirl within the ptsxpts patch
+    artificialS2WhirlPatch([pts=5])
+
+create a whirl within the `pts`$\times$`pts` patch of
+[`Sphere`](@ref)`(2)`-valued image data.
 
 # Optional Parameters
-* `pts` : (`5`) size of the patch. If the number is odd, the center is the north pole.
+* `pts` – (`5`) size of the patch. If the number is odd, the center is the north
+  pole.
 """
 function artificialS2WhirlPatch(pts::Int=5)
   M = Sphere(2)
@@ -234,10 +237,12 @@ function artificialS2WhirlPatch(pts::Int=5)
   return patch
 end
 @doc doc"""
-    artificialSPDImage()
-create an artificial image of symmetric positive definite matrices.
+    artificialSPDImage([pts=64, stepsize=1.5])
+
+create an artificial image of symmetric positive definite matrices of size
+`pts`$\times$`pts` pixel with a jump of size `stepsize`.
 """
-function artificialSPDImage(pts::Int=64, stepSize = 1.5)
+function artificialSPDImage(pts::Int=64, stepsize = 1.5)
   r = range(0, stop = 1-1/pts, length=pts)
   v1 = abs.(2*pi .* r .- pi)
   v2 = pi .* r;
@@ -250,18 +255,19 @@ function artificialSPDImage(pts::Int=64, stepSize = 1.5)
       C = [ cos(v1[mod(col-row,pts)+1]) 0 -sin(v1[mod(col-row,pts)+1]);
            0. 1. 0.;
            sin(v1[mod(col-row,pts)+1]) 0. cos(v1[mod(col-row,pts)+1]) ]
-      scale = [ 1 + stepSize/2 * ( (row + col) > pts ? 1 : 0)
-                1 + v3[row + col] - stepSize * ( col > pts/2 ? 1 : 0)
-                4 - v3[row + col] + stepSize * ( row > pts/2 ? 1 : 0) ]
+      scale = [ 1 + stepsize/2 * ( (row + col) > pts ? 1 : 0)
+                1 + v3[row + col] - stepsize * ( col > pts/2 ? 1 : 0)
+                4 - v3[row + col] + stepsize * ( row > pts/2 ? 1 : 0) ]
       data[row, col] = SPDPoint( A * B * C * Diagonal(scale) * C' * B' * A' )
     end
   end
   return data
 end
 @doc doc"""
-    artificialSPDImage2([pts=64, fraction = .66])
+    artificialSPDImage2([pts=64, fraction=.66])
 
-create a second artificial image of symmetric positive definite matrices.
+create an artificial image of symmetric positive definite matrices of size
+`pts`$\times$`pts` pixel with right hand side `fraction` is moved upwards.
 """
 function artificialSPDImage2(pts=64, fraction = 0.66)
   Zl = SPDPoint( 4. * Matrix{Float64}(I,3,3) )
@@ -298,10 +304,12 @@ function artificialSPDImage2(pts=64, fraction = 0.66)
 end
 
 @doc doc"""
-    artificialS2Lemniscate(p [, pts=128, a=π/2, interval=[0,2π])
+    artificialS2Lemniscate(p [,pts=128,a=π/2,interval=[0,2π])
 
-generate a Signal on the 2-sphere $\mathbb S^2$ by creating the Lemniscate of
-Bernoulli in the tangent space of `p` sampled at `pts` points.
+generate a Signal on the [`Sphere`](@ref)`(2)` $\mathbb S^2$ by creating the
+[Lemniscate of Bernoulli](https://en.wikipedia.org/wiki/Lemniscate_of_Bernoulli)
+in the tangent space of `p` sampled at `pts` points and use `exp` to get a
+signal on the [`Sphere`](@ref)`(2)`. 
 
 # Input
 * `p` – the tangent space the Lemniscate is created in
@@ -316,9 +324,12 @@ function artificialS2Lemniscate(p::SnPoint,pts::Integer=128, a::Float64=π/2.,
     return artificialS2Lemniscate.(Ref(p),range(interval[1],interval[2],length=pts), a)
 end
 @doc doc"""
-    artificialS2Lemniscate(p,t; interval=[0,2π], a=π/2)
-generate a Signal on the 2-sphere $\mathbb S^2$ by creating the Lemniscate of
-Bernoulli in the tangent space of `p` sampled at `pts` points.
+    artificialS2Lemniscate(p,t; a=π/2)
+
+generate a point from the signal on the [`Sphere`](@ref)`(2)` $\mathbb S^2$ by
+creating the [Lemniscate of Bernoulli](https://en.wikipedia.org/wiki/Lemniscate_of_Bernoulli)
+in the tangent space of `p` sampled at `t` and use èxp` to obtain a point on
+the [`Sphere`](@ref)`(2)`. 
 
 # Input
 * `p` – the tangent space the Lemniscate is created in

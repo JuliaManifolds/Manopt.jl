@@ -195,15 +195,15 @@ hasStorage(a::StoreOptionsAction,key) = haskey(a.values,key)
 """
     updateStorage!(a,o)
 
-update the [`StoreOptionsAction`] internal values to the ones given on
-the [`Options`](@ref) `o`, that are 
+update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given on
+the [`Options`](@ref) `o`.
 """
 updateStorage!(a::StoreOptionsAction,o::O) where {O <: Options} = updateStorage!(a, Dict( key => getproperty(o, key) for key in a.keys) )
 """
     updateStorage!(a,o)
 
-update the [`StoreOptionsAction`] internal values to the ones given on
-the [`Options`](@ref) `o`.
+update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given in
+the dictionary `d`. The values are merged, where the values from `d` are preferred.
 """
 function updateStorage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any}) where {O <: Options}
     merge!(a.values, d)

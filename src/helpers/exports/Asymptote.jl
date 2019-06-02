@@ -2,11 +2,14 @@ using ColorTypes, Colors, ColorSchemes
 import LinearAlgebra: eigen, eigvals, tril
 export renderAsymptote, asyExportS2Signals, asyExportS2Data, asyExportSPDData
 """
-    renderAsymptote(filename, exportFct; render=4, format="png", ...)
-render an exported `asy`.
+    renderAsymptote(filename, exportFct=missing; render=4, format="png", ...)
+render an exported `asy`. The export function can be provided but might also
+be infered by the optional arguments, i.e. type of `data`
+(or `curves`, `points` and `tVectors`) provided.
 
 # Input
-* `filename` : filename of the exported `asy` and rendered image
+
+* `filename` – filename of the exported `asy` and rendered image
 * `exportFct`: (`missing`) a function creating an `asy` file with `kwargs` as optional
   arguments and the `filename` string as its only mandatory argument. If this
   function is not given, we infere it from kwargs, i.e. `data` indicates that
@@ -14,9 +17,12 @@ render an exported `asy`.
   `asyExportS2Signals` is infered.
 
 # Keyword Arguments
+
 the default values are given in brackets
-* `render`   : (4) render level of asymptote, i.e. its `-render` option
-* `format`   : (`"png"`) final rendered format, i.e. asymptote's `-f` option
+
+* `render` – (`4`) render level of asymptote, i.e. its `-render` option
+* `format` – (`"png"`) final rendered format, i.e. asymptote's `-f` option
+
 all further keyword arguments are passed down to the `exportFct` call.
 
 # See also
@@ -67,10 +73,14 @@ to Asymptote.
 * `cameraPosition` - (`(1., 1., 0.)`) position of the camera in the Asymptote
   szene
 * `lineWidth` – (`1.0`) size of the lines used to draw the curves.
-* `lineWidths` – overrides the previous value to specify a value per curve.
+* `lineWidths` – overrides the previous value to specify a value per curve and tVector set.
 * `dotSize` – (`1.0`) size of the dots used to draw the points.
 * `dotSizes` – overrides the previous value to specify a value per point set.
-* `target` - (`(0.,0.,0.)`) position the camera points at.
+* `sphereColor` – (`RGBA{Float64}(0.85, 0.85, 0.85, 0.6)`) color of the sphere
+  the data is drawn on
+* `sphereLineColor` –  (`RGBA{Float64}(0.75, 0.75, 0.75, 0.6)`) color of the lines on the sphere
+* `sphereLineWidth` – (`0.5`) line width of the lines on the sphere
+* `target` – (`(0.,0.,0.)`) position the camera points at
 """
 function asyExportS2Signals(filename::String;
     points::Array{Array{SnPoint{T},1},1} where T = Array{Array{SnPoint{Float64},1},1}(undef,0),
@@ -83,10 +93,10 @@ function asyExportS2Signals(filename::String;
     lineWidths::Array{Float64,1} = fill(lineWidth,size(curves)+size(tVectors)),
     dotSize::Float64 = 1.0,
     dotSizes::Array{Float64,1} = fill(dotSize,size(points)),
-    target::Tuple{Float64,Float64,Float64} = (0.,0.,0.),
     sphereColor::RGBA{Float64} = RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
     sphereLineColor::RGBA{Float64} = RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
-    sphereLineWidth::Float64 = 0.5
+    sphereLineWidth::Float64 = 0.5,
+    target::Tuple{Float64,Float64,Float64} = (0.,0.,0.),
     )
     io = open(filename,"w")
     try
@@ -199,7 +209,7 @@ end
 @doc doc"""
     asyExportS2Data(filename)
 Export given `data` as a point on a `Power{SnPoint}` manifold, i.e. one-, two-
-or three-dimensional data with points on the sphere §\mathbb S^2$.
+or three-dimensional data with points on the [`Sphere`](@ref)`(2)` $\mathbb S^2$.
 
 # Input
 * `filename` – a file to store the Asymptote code in.
@@ -214,8 +224,8 @@ or three-dimensional data with points on the sphere §\mathbb S^2$.
 * `arrowHeadSize` - (`1.8`) size of the arrowheads of the vectors (in mm)
 * `cameraPosition` - position of the camrea (default: centered above xy-plane)
   szene
-* `target` - position the camera points at (default: center of xy-plane within data).
-
+* `target` - position the camera points at (default: center of xy-plane within
+  data).
 """
 function asyExportS2Data(filename::String;
     data::PowPoint = PowPoint(fill(SnPoint([0.,0.,1.]),0,0)),
@@ -255,7 +265,8 @@ function asyExportS2Data(filename::String;
 end
 @doc doc"""
     asyExportSPDData(filename)
-Export given `data` as a point on a `Power{SPDPoint}` manifold, i.e. one-, two-
+
+export given `data` as a point on a `Power{SPDPoint}` manifold, i.e. one-, two-
 or three-dimensional data with points on the manifold of symmetric positive
 definite matrices.
 

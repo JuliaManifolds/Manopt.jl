@@ -16,21 +16,28 @@ export validateMPoint, validateTVector, zeroTVector
     Hyperbolic <: Manifold
 The manifold $\mathbb H^n$ is the set
 
-$\mathbb H^n = \Bigl\{x\in\mathbb R^{n+1}\Big|\langle x,x \rangle_{\mathrm{M}}= -x_{n+1}^2 + \displaystyle\sum_{k=1}^n x_k^2 = -1, x_{n+1} > 0\Bigr\},$
-where $\langle\cdot,\cdot\rangle_{\mathrm{M}}$ denotes the Minkowski inner
-product, and this inner product in the embedded space as Riemannian metric in
-the tangent bundle $T\mathbb H^n$.
+```math
+\mathbb H^n = \Bigl\{x\in\mathbb R^{n+1}
+\ \Big|\ \langle x,x \rangle_{\mathrm{M}}= -x_{n+1}^2
++ \displaystyle\sum_{k=1}^n x_k^2 = -1, x_{n+1} > 0\Bigr\},
+```
+
+where $\langle\cdot,\cdot\rangle_{\mathrm{M}}$ denotes the [`MinkowskiDot`](@ref)
+is Minkowski inner product, and this inner product in the embedded space yields
+the Riemannian metric when restricted to the tangent bundle $T\mathbb H^n$.
 
 This manifold is a matrix manifold (see [`IsMatrixM`](@ref)) and embedded (see
 [`IsEmbeddedM`](@ref)).
 
 # Abbreviation
+
 `Hn`
 
 # Constructor
+
     Hyperbolic(n)
 
-generates the `n`-dimensional hyperbolic manifold.
+generates the `n`-dimensional hyperbolic manifold embedded in $\mathbb R^{n+1}$.
 """
 struct Hyperbolic <: Manifold
   name::String
@@ -40,6 +47,7 @@ struct Hyperbolic <: Manifold
 end
 @doc doc"""
     HnPoint <: MPoint
+
 A point $x$ on the manifold $\mathbb H^n$ represented by a vector
 $x\in\mathbb R^{n+1}$ with Minkowski inner product
 
@@ -57,8 +65,9 @@ getValue(x::HnPoint) = length(x.value)==1 ? x.value[1] : x.value
 
 @doc doc"""
     HnTVector <: TVector
+
 A tangent vector $\xi \in T_x\mathbb H^n$ to a [`HnPoint`](@ref) $x$ on the
-$n$-dimensional [`Hyperbolic`](@ref) $\mathbb H^n$. To be precise
+$n$-dimensional [`Hyperbolic`](@ref) space $\mathbb H^n$. To be precise
 $\xi\in\mathbb R^{n+1}$ is hyperbocally orthogonal to $x\in\mathbb R^{n+1}$,
 i.e. orthogonal with respect to the Minkowski inner product
 
@@ -89,29 +98,35 @@ getValue(ξ::HnTVector) = length(ξ.value)==1 ? ξ.value[1] : ξ.value
 # ---
 @doc doc"""
     distance(M,x,y)
-Compute the Riemannian distance on the [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$ embedded in
-$\mathbb R^{n+1}$ can be computed as
 
-$ d_{\mathbb H^n}(x,y) = \operatorname{acosh} \bigl(-\langle x,y\rangle_{\mathrm{M}}\bigr), $
+compute the Riemannian distance on the [`Hyperbolic`](@ref) space $\mathbb H^n$
+embedded in $\mathbb R^{n+1}$ can be computed as
+
+```math
+d_{\mathbb H^n}(x,y)
+= \operatorname{acosh} \bigl(-\langle x,y\rangle_{\mathrm{M}}\bigr),
+```
 
 where $\langle x,y\rangle_{\mathrm{M}} = -x_{n+1}y_{n+1} +
-\displaystyle\sum_{k=1}^n x_ky_k$ denotes the Minkowski inner product
-on $\mathbb R^{n+1}$.
+\displaystyle\sum_{k=1}^n x_ky_k$ denotes the [`MinkowskiDot`](@ref) Minkowski
+inner product on $\mathbb R^{n+1}$.
 """
 distance(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat} = acosh(  max(1,-MinkowskiDot(getValue(x), getValue(y)))  )
 
 @doc doc"""
     dot(M,x,ξ,ν)
-Compute the Riemannian inner product for two [`HnTVector`](@ref)s `ξ` and `ν`
-from $T_x\mathcal M$ of the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ given by
-$\langle \xi, \nu \rangle_x = \langle \xi,\nu \rangle$, i.e. the inner product
-in the embedded space $\mathbb R^{n+1}$.
+
+compute the Riemannian inner product for two [`HnTVector`](@ref)s `ξ` and `ν`
+from $T_x\mathcal M$ of the [`Hyperbolic`](@ref) space $\mathbb H^n$ given by
+$\langle \xi, \nu \rangle_{\mathrm{M}}$ the [`MinkowskiDot`](@ref) Minkowski
+inner product on $\mathbb R^{n+1}$.
 """
 dot(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T}, ν::HnTVector{T}) where {T <: AbstractFloat} = MinkowskiDot( getValue(ξ), getValue(ν) )
 
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
-Computes the exponential map on the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$ with
+
+computes the exponential map on the [`Hyperbolic`](@ref) space $\mathbb H^n$ with
 respect to the [`HnPoint`](@ref) `x` and the [`HnTVector`](@ref) `ξ`, which can
 be shortened with `t` to `tξ`. The formula reads
 
@@ -127,13 +142,18 @@ function exp(M::Hyperbolic,x::HnPoint{T},ξ::HnTVector{T},t::Float64=1.0)  where
 end
 @doc doc"""
     log(M,x,y)
-Computes the logarithmic map on the [`Hyperbolic`](@ref) $\mathbb H^n$,
+
+computes the logarithmic map on the [`Hyperbolic`](@ref) space $\mathbb H^n$,
 i.e., the [`HnTVector`](@ref) whose corresponding
 [`geodesic`](@ref) starting from [`HnPoint`](@ref) `x` reaches the
-[`HnPoint`](@ref)` y` after time 1 on the [`Hyperpolic Space`](@ref Hyperbolic) $\mathbb H^n$.
-The formula reads for $x\neq -y$
+[`HnPoint`](@ref) `y` after time 1 on the [`Hyperbolic`](@ref) space
+$\mathbb H^n$.
+The formula reads for $x\neq y$
 
-$\log_x y = d_{\mathbb H^n}(x,y)\frac{y-\langle x,y\rangle_{\mathrm{M}} x}{\lVert y-\langle x,y\rangle_{\mathrm{M}} x \rVert_2}.$
+```math
+\log_x y = d_{\mathbb H^n}(x,y)\frac{y-\langle x,y\rangle_{\mathrm{M}} x}{\lVert y-\langle x,y\rangle_{\mathrm{M}} x \rVert_2}
+```
+and is zero otherwise.
 """
 function log(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat}
   scp = MinkowskiDot( getValue(x), getValue(y) )
@@ -147,29 +167,32 @@ function log(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloa
 end
 @doc doc"""
     manifoldDimension(x)
-returns the dimension of the [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$, the
+
+returns the dimension of the [`Hyperbolic`](@ref) space $\mathbb H^n$, the
 [`HnPoint`](@ref) `x`, itself embedded in $\mathbb R^{n+1}$, belongs to.
 """
 manifoldDimension(x::HnPoint)::Integer = length( getValue(x) )-1
 @doc doc"""
     manifoldDimension(M)
-returns the dimension of the [`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$.
+
+returns the dimension of the [`Hyperbolic`](@ref) space $\mathbb H^n$.
 """
 manifoldDimension(M::Hyperbolic)::Integer = M.dimension
 @doc doc"""
     norm(M,x,ξ)
 Computes the norm of the [`HnTVector`](@ref) `ξ` in the tangent space
 $T_x\mathcal M$ at [`HnPoint`](@ref) `x` of the
-[`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$.
+[`Hyperbolic`](@ref) space $\mathbb H^n$.
 """
 norm(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T})  where {T <: AbstractFloat}= sqrt(dot(M,x,ξ,ξ))
 @doc doc"""
     parallelTransport(M,x,y,ξ)
+
 Compute the paralllel transport of the [`HnTVector`](@ref) `ξ` from
 the tangent space $T_x\mathcal M$ at [`HnPoint`](@ref) `x` to
-$T_y\mathcal M$ at [`HnPoint`](@ref)` y` on the
-[`Hyperbolic Space`](@ref Hyperbolic) $\mathbb H^n$ provided
-that the corresponding [`geodesic`](@ref) $g(\cdot;x,y)$ is unique.
+$T_y\mathcal M$ at [`HnPoint`](@ref) `y` on the
+[`Hyperbolic`](@ref) space $\mathbb H^n$ along the unique [`geodesic`](@ref)
+$g(\cdot;x,y)$.
 The formula reads
 
 $P_{x\to y}(\xi) = \xi - \frac{\langle \log_xy,\xi\rangle_x}
@@ -192,15 +215,15 @@ typeofMPoint(::Type{HnTVector{T}}) where T = HnPoint{T}
 
 @doc doc"""
     typicalDistance(M)
-returns the typical distance on the [`Hyperbolic`](@ref)` Hn`: $\sqrt(n)$.
+returns the typical distance on the [`Hyperbolic`](@ref) space `M`: $\sqrt{n}$.
 """
 typicalDistance(M::Hyperbolic) = sqrt(M.dimension);
 @doc doc"""
     validateMPoint(M,x)
 
-validate, that the [`HnPoint`](@ref)` x` is a valid point on the
-[`Hyperbolic`](@ref)` M`, i.e. that the dimension of $x\in\mathbb H^n$ is
-correct and that its minkowski inner product is $\langle x,x\rangle=-1$.
+validate, that the [`HnPoint`](@ref) `x` is a valid point on the
+[`Hyperbolic`](@ref) space `M`, i.e. that the dimension of $x\in\mathbb H^n$ is
+correct and that its [`MinkowskiDot`](@ref) inner product is $\langle x,x\rangle_{\mathrm{M}} = -1$.
 """
 function validateMPoint(M::Hyperbolic, x::HnPoint)
     if length(getValue(x)) ≠ M.dimension+1
@@ -219,9 +242,9 @@ end
     validateTVector(M,x,ξ)
 
 check that the [`HnTVector`](@ref) `ξ` is a valid tangent vector in the tangent
-space of the [`HnPoint`](@ref) `x` on the [`Hyperbolic`](@ref) `M`, i.e. `x`
+space of the [`HnPoint`](@ref) `x` on the [`Hyperbolic`](@ref) space `M`, i.e. `x`
 is a valid point on `M`, the vectors within `ξ` and `x` agree in length and the
-Minkowski inner product [`MinkowskiDot`](@ref)`(x,ξ)` is zero.
+Minkowski inner product [`MinkowskiDot`](@ref)`(x,ξ) `is zero.
 """
 function validateTVector(M::Hyperbolic, x::HnPoint, ξ::HnTVector)
     if !validateMPoint(M,x)
@@ -241,8 +264,9 @@ function validateTVector(M::Hyperbolic, x::HnPoint, ξ::HnTVector)
 end
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
-[`HnPoint`](@ref) $x\in\mathbb H^n$ on the [`Hyperbolic`](@ref)` Hn`.
+[`HnPoint`](@ref) $x\in\mathbb H^n$ on the [`Hyperbolic`](@ref) space `M`.
 """
 zeroTVector(M::Hyperbolic, x::HnPoint{T}) where {T <: AbstractFloat} = HnTVector(  zero( getValue(x) )  );
 # Display

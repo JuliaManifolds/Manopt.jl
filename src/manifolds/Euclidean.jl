@@ -15,7 +15,7 @@ export validateMPoint, validateTVector, typeofMPoint, typeofTVector
     Euclidean <: Manifold
 
 The manifold $\mathcal M = \mathbb R^n$ of the $n$-dimensional Euclidean vector
-space. We employ the notation $\langle\cdot,\cdot,\rangle$ for the inner product
+space. We employ the notation $\langle\cdot,\cdot\rangle$ for the inner product
 and $\lVert\cdot\rVert_2$ for its induced norm.
 
 # Abbreviation
@@ -24,9 +24,9 @@ and $\lVert\cdot\rVert_2$ for its induced norm.
 
 # Constructor
 
-Euclidean(n)
+    Euclidean(n)
 
-construct the n-dimensional Euclidean space.
+construct the n-dimensional Euclidean space $\mathbb R^n$.
 """
 struct Euclidean <: Manifold
   name::String
@@ -38,7 +38,7 @@ end
 @doc doc"""
     RnPoint <: MPoint
 
-the point $x\in\mathbb M$ for $\mathbb M=\mathbb R^n$ represented by an
+the point $x\in\mathcal M$ for $\mathcal M=\mathbb R^n$ represented by an
 $n$-dimensional `Vector{T}`, where `T <: AbstractFloat`.
 """
 struct RnPoint{T<:AbstractFloat} <: MPoint
@@ -53,7 +53,7 @@ getValue(x::RnPoint) = length(x.value)==1 ? x.value[1] : x.value
 @doc doc"""
     RnTVector <: TVector
 
-the point $\xi\in\mathbb M$ for $\mathbb M=\mathbb R^n$ represented by an
+the point $\xi\in\mathcal M$ for $\mathcal M=\mathbb R^n$ represented by an
 $n$-dimensional `Vector{T}`, where `T <: AbstractFloat`.
 """
 struct RnTVector{T <: AbstractFloat}  <: TVector
@@ -95,38 +95,43 @@ $\langle\xi,\nu\rangle = \displaystyle\sum_{k=1}^n \xi_k\nu_k$.
 dot(M::Euclidean,x::RnPoint{T},ξ::RnTVector{T}, ν::RnTVector{T}) where {T <: AbstractFloat} = dot( getValue(ξ) , getValue(ν) )
 @doc doc"""
     exp(M,x,ξ[, t=1.0])
-Computes the exponential map, i.e. $x+t*\xi$, where the scaling parameter `t` is
-optional.
+
+compute the exponential map on the [`Euclidean`](@ref) manifold `M`, i.e.
+$x+t*\xi$, where the scaling parameter `t` is optional.
 """
 exp(M::Euclidean,x::RnPoint{T},ξ::RnTVector{T},t::Float64=1.0) where {T <: AbstractFloat} = RnPoint(getValue(x) + t*getValue(ξ) )
 @doc doc"""
     log(M,x,y)
-Computes the logarithmic map, i.e. $y-x$.
+
+computes the logarithmic map on the [`Euclidean`](@ref) manifold `M`, i.e. $y-x$.
 """
 log(M::Euclidean,x::RnPoint{T},y::RnPoint{T})  where {T <: AbstractFloat} = RnTVector( getValue(y) - getValue(x) )
-"""
+@doc doc"""
     manifoldDimension(x)
-Returns the manifold dimension, i.e. the length of the vector `x`.
+
+return the manifold dimension of the [`RnPoint`](@ref) `x`, i.e. $n$.
 """
 manifoldDimension(x::RnPoint) = length( getValue(x) )
-"""
+@doc doc"""
     manifoldDimension(M)
 
-return the manifold dimension, i.e. the length of the vectors stored
-in `M.dimension`.
+return the manifold dimension of the [`Euclidean`](@ref) manifold `M`,
+i.e. the length of the vectors stored in `M.dimension`, i.e. $n$.
 """
 manifoldDimension(M::Euclidean) = M.dimension
-"""
+@doc doc"""
     parallelTransport(M,x,y,ξ)
 
-compute the parallel transport, which is on [`Euclidean`](@ref) space the identity.
+compute the parallel transport  the [`Euclidean`](@ref) manifold `M`, which is
+the identity.
 """
 parallelTransport(M::Euclidean, x::RnPoint{T}, y::RnPoint{T}, ξ::RnTVector{T})  where {T <: AbstractFloat} = ξ
-doc"""
+@doc doc"""
     randomMPoint(M[,T=Float64])
 
-generate a random point on the [`Euclidean`](@ref), where the optional parameter
-determines the type of the entries of the resulting [`RnPoint`](@ref).
+generate a random point on the [`Euclidean`](@ref) manifold `M`, where the
+optional parameter determines the type of the entries of the
+resulting [`RnPoint`](@ref).
 """
 randomMPoint(M::Euclidean, T::DataType=Float64) = RnPoint( randn(T,M.dimension) )
 
@@ -140,12 +145,15 @@ randomTVector(M::Euclidean, x::RnPoint{T}, ::Val{:Gaussian}, σ::Float64=1.0) wh
 
 @doc doc"""
     (Ξ,κ) = tangentONB(M,x,y)
-compute an ONB within the tangent space $T_x\mathcal M$ such that $\xi=\log_xy$ is the
-first vector and compute the eigenvalues of the curvature tensor
+
+compute an ONB within the tangent space $T_x\mathcal M$ at the [`MPoint`](@ref)
+on the [`Euclidean`](@ref) manifold `M`, such that $\xi=\log_xy$
+is the first vector and compute the eigenvalues of the curvature tensor
 $R(\Xi,\dot g)\dot g$, where $g=g_{x,\xi}$ is the geodesic with $g(0)=x$,
 $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 
-*See also:* [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
+# See also
+ [`jacobiField`](@ref), [`adjointJacobiField`](@ref).
 """
 tangentONB(M::Euclidean, x::RnPoint{T}, y::RnPoint{T}) where {T <: AbstractFloat}  = tangentONB(M,x,log(M,x,y))
 tangentONB(M::Euclidean, x::RnPoint{T}, ξ::RnTVector{T}) where {T <: AbstractFloat}  =
@@ -157,7 +165,8 @@ typeofMPoint(::Type{RnTVector{T}}) where T = RnPoint{T}
                         
 @doc doc"""
     typicalDistance(M)
-returns the typical distance on the [`Euclidean`](@ref)` Rn`: $\sqrt(n)$.
+
+returns the typical distance on the [`Euclidean`](@ref) manifold `M`: $\sqrt{n}$.
 """
 typicalDistance(M::Euclidean) = sqrt(M.dimension)
 
@@ -165,7 +174,8 @@ typicalDistance(M::Euclidean) = sqrt(M.dimension)
     validateMPoint(M,x)
 
 Checks that a [`RnPoint`](@ref) `x` has a valid value for a point on the
-[`Euclidean`](@ref) `M`$=\mathbb R1n$, which is the case if the dimensions fit. 
+[`Euclidean`](@ref) manifold `M`$=\mathbb R^n$, which is the case if the
+dimensions fit. 
 """
 validateMPoint(M::Euclidean, x::RnPoint) = manifoldDimension(M) == manifoldDimension(x)
 
@@ -173,8 +183,8 @@ validateMPoint(M::Euclidean, x::RnPoint) = manifoldDimension(M) == manifoldDimen
     validateTVector(M,x,ξ)
 
 Checks, that the [`RnTVector`](@ref) `ξ` is a valid tangent vector in the
-tangent space of the [`RnPoint`](@ref) `x` ont the [`Euclidean`](@ref) `M`$=\mathbb R^n$,
-which is always the case as long as the vector dimensions are the same.
+tangent space of the [`RnPoint`](@ref) `x` ont the [`Euclidean`](@ref)
+manifold `M`, which is always the case as long as their vector dimensions agree.
 """ 
 validateTVector(M::Euclidean,x::RnPoint,ξ::RnTVector) = length(getValue(x) )== length(getValue(ξ))
 
@@ -182,7 +192,7 @@ validateTVector(M::Euclidean,x::RnPoint,ξ::RnTVector) = length(getValue(x) )== 
     ξ = zeroTVector(M,x)
 
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
-[`RnPoint`](@ref) $x\in\mathbb R^n$ on the [`Euclidean`](@ref)` Rn`.
+[`RnPoint`](@ref) $x\in\mathbb R^n$ on the [`Euclidean`](@ref) manifold `M`.
 """
 function zeroTVector(M::Euclidean, x::RnPoint{T}) where {T <: AbstractFloat}
     return RnTVector(  zero( getValue(x) )  )

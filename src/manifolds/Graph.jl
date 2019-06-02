@@ -11,6 +11,7 @@ export zeroTVector
 export show, getValue
 @doc doc"""
     Graph{M<:Manifold} <: Manifold
+
 The graph manifold models manifold-valued data on a graph
 $\mathcal G = (\mathcal V, \mathcal E)$, both on vertices
 and edges as well as their interplay. The adjacency is stored in a matrix,
@@ -47,6 +48,7 @@ Graph(M::mT,A::Mat,dir::Bool=false) where {mT <: Manifold, Mat <: AbstractMatrix
 
 @doc doc"""
     GraphVertexPoint <: MPoint
+
 A point graph vertex power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal V\rvert}$
 represented by a vector of corresponding [`MPoint`](@ref)s.
@@ -58,7 +60,8 @@ end
 getValue(x::GraphVertexPoint) = x.value;
 
 @doc doc"""
-    GraphVertexTVector
+    GraphVertexTVector <: TVector
+
 A tangent vector $\xi\in T_x\mathcal M$ to the graph vertex power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal V\rvert}$
 represented by a vector of corresponding [`TVector`](@ref)s.
@@ -71,6 +74,7 @@ getValue(ξ::GraphVertexTVector) = ξ.value
 
 @doc doc"""
     GraphEdgePoint <: MPoint
+
 A point graph edge power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal E\rvert}$
 represented by a (sparse/not completely filled matrix of corresponding
@@ -84,6 +88,7 @@ getValue(x::GraphEdgePoint) = x.value;
 
 @doc doc"""
     GraphEdgeTVector <: TVector
+
 A tangent vector $\xi\in T_x\mathcal M$ to the graph edge power manifold
 $\mathcal M = \mathcal N^{\lvert\mathcal E\rvert}$
 represented by a (sparse/not completely filled) matrix of corresponding
@@ -100,82 +105,103 @@ getValue(ξ::GraphEdgeTVector) = ξ.value
 """
     distance(M,x,y)
 
-computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
+compute a vectorized version of distance on the [`Graph`](@ref) manifold `M`
+for two [`GraphVertexPoint`](@ref) `x` and `y`.
 """
 distance(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint) = sqrt(sum( distance.(Ref(M.manifold), getValue(x), getValue(y) ).^2 ))
 """
     distance(M,x,y)
 
-computes a vectorized version of distance, and the induced norm from the metric [`dot`](@ref).
+compute a vectorized version of distance on the [`Graph`](@ref) manifold `M`
+for two [`GraphEdgePoint`](@ref) `x` and `y`.
 """
 distance(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint) = sqrt(sum( distance.(Ref(M.manifold), getValue(x), getValue(y) ).^2 ))
 """
     dot(M,x,ξ,ν)
-computes the inner product as sum of the component inner products on the [`Graph`](@ref) vertices.
+
+computes the inner product as sum of the component inner products on the
+[`Graph`](@ref) vertices.
 """
 dot(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector, ν::GraphVertexTVector) = sum(dot.(Ref(M.manifold),getValue(x), getValue(ξ), getValue(ν) ))
 """
     dot(M,x,ξ,ν)
-computes the inner product as sum of the component inner products on the [`Graph`](@ref) edges.
+
+computes the inner product as sum of the component inner products on the
+[`Graph`](@ref) edges.
 """
 dot(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector, ν::GraphEdgeTVector) = sum(dot.(Ref(M.manifold),getValue(x), getValue(ξ), getValue(ν) ))
 """
     exp(M,x,ξ[, t=1.0])
+
 computes the product exponential map on the [`Graph`](@ref) vertices and
 returns the corresponding [`GraphVertexPoint`](@ref).
 """
 exp(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector, t::Float64=1.0) = GraphVertexPoint( exp.(Ref(M.manifold), getValue(x) , getValue(ξ) ))
 """
-   log(M,x,y)
-computes the product logarithmic map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
+    log(M,x,y)
+
+computes the product logarithmic map on the [`Graph`](@ref) for two
+[`GraphVertexPoint`](@ref) `x` and `y` and returns the
+corresponding [`GraphVertexTVector`](@ref).
 """
 log(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint)::GraphVertexTVector = GraphVertexTVector(log.(Ref(M.manifold), getValue(x), getValue(y) ))
 """
-   log(M,x,y)
-computes the product logarithmic map on the [`Power`](@ref) and returns the corresponding [`PowTVector`](@ref).
+    log(M,x,y)
+
+computes the product logarithmic map on the [`Graph`](@ref) for two
+[`GraphEdgePoint`](@ref) `x` and `y` and returns the
+corresponding [`GraphEdgeTVector`](@ref).
 """
 log(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint)::GraphEdgeTVector = GraphEdgeTVector(log.(Ref(M.manifold), getValue(x), getValue(y) ))
 """
     manifoldDimension(x)
-returns the (product of) dimension(s) of the [`Graph`](@ref) the
-[`GraphVertexPoint`](@ref)`x` belongs to.
+
+returns the (product of) dimension(s) of the [`Graph`](@ref) manifold `M` the
+[`GraphVertexPoint`](@ref) `x` belongs to.
 """
 manifoldDimension(x::GraphVertexPoint) = sum(manifoldDimension.( getValue(x) ) )
 """
     manifoldDimension(x)
-returns the (product of) dimension(s) of the [`Power`](@ref) the
+
+returns the (product of) dimension(s) of the [`Graph`](@ref) manifold `M` the
 [`GraphEdgePoint`](@ref)`x` belongs to.
 """
 manifoldDimension(x::GraphEdgePoint) = sum(manifoldDimension.( getValue(x) ) )
 """
     manifoldDimension(M)
-returns the (product of) dimension(s) of the [`Graph`](@ref) `M` seen as a vertex power manifold.
+
+returns the (product of) dimension(s) of the [`Graph`](@ref) manifold `M` seen
+as a vertex power manifold.
 """
 manifoldDimension(M::Graph) = size(M.adjacency,1) * manifoldDimension(M.manifold)
 """
     norm(M,x,ξ)
-norm of the [`GraphVertexTVector`](@ref) `ξ` induced by the metric on the manifold components
-of the [`Graph`](@ref) `M`.
+
+norm of the [`GraphVertexTVector`](@ref) `ξ` induced by the metric on the
+manifold components of the [`Graph`](@ref) manifold `M`.
 """
 norm(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector) = sqrt(sum(dot.(Ref(M.manifold),getValue(x),getValue(ξ),getValue(ξ))))
 """
     norm(M,x,ξ)
-norm of the [`GraphEdgeTVector`] `ξ` induced by the metric on the manifold components
-of the [`Graph`](@ref) `M`.
+
+norm of the [`GraphEdgeTVector`](@ref) `ξ` induced by the metric on the manifold
+components of the [`Graph`](@ref) manifold `M`.
 """
 norm(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector) = sqrt(sum(dot.(Ref(M.manifold),getValue(x), getValue(ξ), getValue(ξ))))
 
 @doc doc"""
     parallelTransport(M,x,ξ)
-computes the product parallelTransport map on the [`Graph`](@ref) vertex power
+
+compute the product parallelTransport map on the [`Graph`](@ref) vertex power
 manifold $\mathcal M^{\lvert\mathcal V\rvert}$ and returns
 the corresponding [`GraphVertexTVector`](@ref).
 """
 parallelTransport(M::Graph, x::GraphVertexPoint, y::GraphVertexPoint, ξ::GraphVertexTVector) = GraphVertexTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
 """
     parallelTransport(M,x,ξ)
-computes the product parallelTransport map on the [`Graph`](@ref) edge power manifold and returns
-the corresponding [`GraphVertexTVector`](@ref).
+
+compute the product parallelTransport map on the [`Graph`](@ref) edge power
+manifold and returns the corresponding [`GraphVertexTVector`](@ref).
 """
 parallelTransport(M::Graph, x::GraphEdgePoint, y::GraphEdgePoint, ξ::GraphEdgeTVector) = GraphVertexTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
 """
@@ -209,20 +235,23 @@ randomTVector(M::Graph, x::GraphVertexPoint,options...) = GraphVertexTVector(
 typicalDistance(M::Graph) = sqrt( size(M.adjacency,1) ) * typicalDistance(M.manifold);
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`GraphVertexPoint`](@ref) $x\in\mathcal M$ on the [`Graph`](@ref) vertex manifold `M`.
 """
 zeroTVector(M::Graph, x::GraphVertexPoint) = GraphVertexTVector( zeroTVector.(Ref(M.manifold), getValue(x) )  )
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`GraphEdgePoint`](@ref) $x\in\mathcal M$ on the [`Graph`](@ref) edge manifold `M`.
 """
 zeroTVector(M::Graph, x::GraphEdgePoint) = GraphEdgeTVector( zeroTVector.(Ref(M.manifold), getValue(x) )  )
 """
-   startEdgePoint(M,x)
+    startEdgePoint(M,x)
+
 For a [`Graph`](@ref) manifold and a [`GraphVertexPoint`](@ref), this
-function constructs the corresponding [`GraphEdgePoint`], such that each
+function constructs the corresponding [`GraphEdgePoint`](@ref), such that each
 edge has its start point vertex value assigned.
 """
 function startEdgePoint(M::Graph, x::GraphVertexPoint)::GraphEdgePoint
@@ -248,7 +277,9 @@ function startEdgePoint(M::Graph, x::GraphVertexPoint)::GraphEdgePoint
 end
 """
     sumEdgeTVector(M,ξ)
-return the [`GraphVertexTVector`](@ref) where edge tangents are summed in their start point.
+
+return the [`GraphVertexTVector`](@ref) where edge tangents are summed in their
+start point.
 
 For an [`GraphEdgeTVector`](@ref) `ξ` on a [`Graph`](@ref) manifold `M`
 this function assumes that all edge tangents are attached in a tangent space

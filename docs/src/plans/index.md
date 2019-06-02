@@ -116,13 +116,13 @@ GradientProblem
 getGradient
 ```
 
-## Subgradient based problem
+### Subgradient based problem
 ```@docs
 SubGradientProblem
 getSubGradient
 ```
 
-### Proximal Map(s) based problem
+### [Proximal Map(s) based problem](@id ProximalProblem)
 ```@docs
 ProximalProblem
 getProximalMap

@@ -1,4 +1,5 @@
 # [The Manifold $\operatorname{SO}(n)$ of rotations](@id SOn)
+
 The manifold $\mathcal M = \mathrm{SO}(n)$ of orthogonal matrices with
 determinant $+1$ in $\mathbb R^{n\times n}$, i.e.
 

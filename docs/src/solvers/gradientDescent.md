@@ -14,7 +14,7 @@ CurrentModule = Manopt
 GradientDescentOptions
 ```
 
-## Specific Debug Actions
+## Debug Actions
 
 ```@docs
 DebugGradient
@@ -22,7 +22,7 @@ DebugGradientNorm
 DebugStepsize
 ```
 
-## Specific Record Actions
+## Record Actions
 
 ```@docs
 RecordGradient

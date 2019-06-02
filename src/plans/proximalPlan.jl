@@ -14,7 +14,7 @@ export RecordProximalParameter
 specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
-* `M`            - a manifold $\mathcal M$
+* `M`            - a [`Manifold`](@ref) $\mathcal M$
 * `costFunction` - a function $F\colon\mathcal M\to\mathbb R$ to
   minimize
 * `proximalMaps` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
@@ -59,7 +59,7 @@ stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
 
 # Fields
 * `x0` – an [`MPoint`](@ref) to start
-* `stoppingCriterion` : a function `@(iter,x,xnew,λ_k)` based on the current
+* `stoppingCriterion` – a function `@(iter,x,xnew,λ_k)` based on the current
     `iter`, `x` and `xnew` as well as the current value of `λ`.
 * `λ` – (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
 * `evaluationOrder` – ([`LinearEvalOrder`](@ref)`()`) how to cycle through the proximal maps.

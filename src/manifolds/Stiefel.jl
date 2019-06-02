@@ -24,7 +24,7 @@ orthogonal matrices, that are either real- or complex-valued.
 # Constructor
      Stiefel(k, n[, d=Float64])
 
-generates the manifold $\mathrm{St}(k,n)$ where the integer `n` is the
+generate the manifold $\mathrm{St}(k,n)$ where the integer `n` is the
 number of rows and `k` is the number of columns of the matrices and the optional
 parameter `d` sets the `DataType` of the matrix entries.
 """
@@ -70,6 +70,7 @@ $\mathcal M = \mathrm{St}(k,n)$. The tangent space is given by as
 $T_x\mathrm{St}(k,n) = \bigl\{\xi \in \mathbb{K}^{n\times k} \big| x^{\mathrm{T}}ξ+ξ^{\mathrm{T}}x=0 \bigr\}$.
 
 # Constructor
+
     StTVector(ξ)
 
 where `ξ` is an $n\times k$ `Matrix` that satisfies the above.
@@ -95,7 +96,7 @@ StTVector(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
     dot(M,x,ξ,ν)
 
 compute the Riemannian inner product for two [`StTVector`](@ref)s `ξ` and `ν`
-from $T_x\mathcal M$ of the [`Stiefel`](@ref) `M` given by
+from $T_x\mathcal M$ of the [`Stiefel`](@ref) manifold `M` given by
 
 $\langle \xi, \nu \rangle_x = \operatorname{trace}({\bar \xi}^{\mathrm{T}}\nu).$
 """
@@ -104,9 +105,9 @@ function dot(M::Stiefel{T}, x::StPoint{T}, ξ::StTVector{T}, ν::StTVector{T})::
 end
 
 @doc doc"""
-    exp(M,x,ξ,[t=1.0])
+    exp(M,x,ξ [,t=1.0])
 
-compute the exponential map on the [`Stiefel`](@ref) `M`$=\mathrm{SO}(n)$ with
+compute the exponential map on the [`Stiefel`](@ref) manifold `M`$=\mathrm{SO}(n)$ with
 respect to the [`StPoint`](@ref) `x` and the [`StTVector`](@ref) `ξ`, which can
 be shortened with `t` to `tξ`. The formula reads
 
@@ -120,8 +121,9 @@ $\operatorname{exp}_{x} tξ = \begin{pmatrix}
  \right)
 \begin{pmatrix}  \operatorname{Exp}( -{\bar x}^{\mathrm{T}}\xi) \\ 0_{k×k}\end{pmatrix}$
 
-where $\operatorname{Exp}$ denotes matrix exponential, $I_{k×k}$ the identity
-matrix of dimension $k×k$ and $0_{k×k}$ the zero matrix of dimension $k×k$.
+where $\operatorname{Exp}$ denotes matrix exponential, and $I_{k×k}$ and
+$0_{k×k} are the identity matrix and the zero matrix of dimension $k×k$,
+respectively.
 """
 function exp(M::Stiefel{T},x::StPoint{T},ξ::StTVector{T},t::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   Z = zeros(M.dimensioncolumns,M.dimensioncolumns)
@@ -135,8 +137,9 @@ end
     inverseRetractionPolar(M,x,y)
 
 return a [`StTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{SO}(n)$
+of the [`StPoint`](@ref) `x` on the [`Stiefel`](@ref) manifold `M`
 with which the [`StPoint`](@ref) `y` can be reached by the
-[`retractionPolar`](@ref) from the [`StPoint`](@ref) `x` after time 1.
+[`retractionPolar`](@ref)  after time 1.
 The formula reads
 
 $ξ = ys-x$
@@ -157,9 +160,11 @@ end
 
 @doc doc"""
     inverseRetractionQR(M,x,y)
+
 return a [`StTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{SO}(n)$
+of the [`StPoint`](@ref) `x` on the [`Stiefel`](@ref) manifold `M`
 with which the [`StPoint`](@ref) `y` can be reached by the
-[`retractionQR`](@ref) from the [`StPoint`](@ref) `x` after time 1.
+[`retractionQR`](@ref) after time 1.
 This function is implemented only for the case $\mathbb{K}=\mathbb{R}$.
 This is also the standard retraction.
 """
@@ -183,9 +188,9 @@ end
 @doc doc"""
     manifoldDimension(x)
 
-return the dimension of the [`Stiefel`](@ref) `M`$= \mathrm{St}(k,n)$, the
+return the dimension of the [`Stiefel`](@ref) manifold `M`$= \mathrm{St}(k,n)$, the
 [`StPoint`](@ref) `x`, itself embedded in $\mathbb R^{n\times k}$, belongs to.
-The dimension for $\mathbb{K}=\mathbb{R}$ is defined by
+The dimension for $\mathbb{K}=\mathbb{R}$ is given by
 
 $nk - \frac{1}{2}k(k+1)$
 
@@ -204,8 +209,8 @@ end
 @doc doc"""
     manifoldDimension(M)
 
-return the dimension of the [`Stiefel`](@ref) `M`.
-The dimension for $\mathbb{K}=\mathbb{R}$ is defined by
+return the dimension of the [`Stiefel`](@ref) manifold `M`.
+The dimension for $\mathbb{K}=\mathbb{R}$ is given by
 
 $nk - \frac{1}{2}k(k+1)$
 
@@ -224,7 +229,7 @@ end
     norm(M,x,ξ)
 
 compute the norm of the [`StTVector`](@ref) `ξ` in the tangent space
-$T_x\mathcal M$ at [`StPoint`](@ref) `x` of the [`Stiefel`](@ref) `M`.
+$T_x\mathcal M$ at [`StPoint`](@ref) `x` of the [`Stiefel`](@ref) manifold `M`.
 
 $\lVert \xi \rVert_x = \sqrt{\sum_{i,j=0}^n \xi_{ij}^2}$
 
@@ -240,13 +245,13 @@ end
 
 compute the paralllel transport of the [`StTVector`](@ref) `ξ` from
 the tangent space $T_x\mathcal M$ at [`StPoint`](@ref) `x` to
-$T_y\mathcal M$ at [`StPoint`](@ref) `y` on the [`Stiefel`](@ref) `M` provided
-that the corresponding [`geodesic`](@ref) $g(\cdot;x,y)$ is unique.
+$T_y\mathcal M$ at [`StPoint`](@ref) `y` on the [`Stiefel`](@ref) manifold `M`
+provided that the corresponding [`geodesic`](@ref) $g(\cdot;x,y)$ is unique.
 The formula reads
 
 $P_{x\to y}(\xi) = \operatorname{proj}_{\mathcal M}(y,\xi).$
 
-where $\operatorname{proj}_{\mathcal M}$ is the [`projection`](@ref) onto the
+where $\operatorname{proj}_{\mathcal M}$ is the projection onto the
 tangent space $T_y\mathcal M$.
 """
 function parallelTransport(M::Stiefel{T}, x::StPoint{T}, y::StPoint{T}, ξ::StTVector{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
@@ -257,19 +262,13 @@ end
     projection(M,x,q)
 
 project a `Matrix q` orthogonally on the tangent space of the
-[`StPoint`](@ref) `x` on the manifold [`Stiefel`](@ref) `M`. The formula reads
+[`StPoint`](@ref) `x` on the [`Stiefel`](@ref) manifold `M`. The formula reads
 
 $\operatorname{proj}_{\mathcal M}(x,q) = q-xB$
 
 where
 
-$B=\frac{1}{2} (x^{\mathrm{T}}{\bar q})^{\mathrm{T}} {\bar x}^{\mathrm{T}}q$
-
-is,
-
-i.e. the difference matrix of the image and the output matrix lies in
-the orthogonal complement of all [`StTVector`](@ref)s from the tangent space
-$T_x\mathcal M$ at [`StPoint`](@ref)` x`.
+$B=\frac{1}{2} (x^{\mathrm{T}}{\bar q})^{\mathrm{T}} {\bar x}^{\mathrm{T}}q.$
 
 # see also
 [`parallelTransport`](@ref), [`randomTVector`](@ref)
@@ -281,10 +280,10 @@ function projection(M::Stiefel{T}, x::StPoint{T}, q::Matrix{T}) where T<:Union{U
 end
 
 @doc doc"""
-    randomMPoint(M[, type=:Gaussian, σ=1.0])
+    randomMPoint(M [,:Gaussian, σ=1.0])
 
 return a random (Gaussian) [`StPoint`](@ref) `x` on the manifold
-[`Stiefel`](@ref) `M` by generating a (Gaussian) matrix with standard deviation
+[`Stiefel`](@ref) manifold `M` by generating a (Gaussian) matrix with standard deviation
 `σ` and return the orthogonalized version, i.e. return ​​the Q
 component of the QR decomposition of the random matrix of size $n×k$.
 """
@@ -294,7 +293,8 @@ function randomMPoint(M::Stiefel{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<
 end
 
 @doc doc"""
-    randomTVector(M,x[, type=:Gaussian, σ=1.0])
+    randomTVector(M,x [,:Gaussian, σ=1.0])
+
 return a random vector [`StTVector`](@ref) in the tangential space
 $T_x\mathrm{St}(k,n)$ by generating a random matrix of size $n×k$ and projecting
 it onto [`StPoint`](@ref) `x` with [`projection`](@ref).
@@ -309,7 +309,7 @@ end
     retractionPolar(M,x,ξ,[t=1.0])
 
 move the [`StPoint`](@ref) `x` in the direction of the [`StTVector`](@ref) `ξ`
-on the  [`Stiefel`](@ref) `M`. This SVD-based retraction is a second-order
+on the  [`Stiefel`](@ref) manifold `M`. This SVD-based retraction is a second-order
 approximation of the exponential map [`exp`](@ref). Let
 
 $USV = x + tξ$
@@ -329,8 +329,9 @@ end
 
 @doc doc"""
     retractionQR(M,x,ξ,[t=1.0])
+
 move the [`StPoint`](@ref) `x` in the direction of the [`StTVector`](@ref) `ξ`
-on the  [`Stiefel`](@ref) `M`. This QR-based retraction is only a
+on the  [`Stiefel`](@ref) manifold `M`. This QR-based retraction is a
 first-order approximation of the exponential map [`exp`](@ref). Let
 
 $QR = x + tξ$
@@ -363,15 +364,21 @@ end
 
 @doc doc"""
     ξ = zeroTVector(M,x)
+
 return a zero vector in the tangent space $T_x\mathcal M$ of the
-[`StPoint`](@ref) $x\in\mathrm{St}(k,n)$ on the [`Stiefel`](@ref) `M`.
+[`StPoint`](@ref) $x\in\mathrm{St}(k,n)$ on the [`Stiefel`](@ref) manifold `M`.
 """
 function zeroTVector(M::Stiefel{T},x::StPoint{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   return StTVector{T}( zero(getValue(x)) )
 end
 
+@doc doc"""
+    validateMPoint(M,x)
 
-#Helpers
+validate that the [`StPoint`](@ref) `x` is a valid point on the
+[`Stiefel`](@ref) manifold `M`, i.e. that both dimensions and the rank are correct
+as well as that all columns are orthonormal.
+"""
 function validateMPoint(M::Stiefel{T}, x::StPoint{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   if size(getValue(x), 1) ≠ M.dimensionlines
     throw( ErrorException("The dimension of $x must be $(M.dimensionlines) × $(M.dimensioncolumns) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
@@ -388,7 +395,13 @@ if rank(getValue(x)) ≠ M.dimensioncolumns #is this necessary?
     throw( ErrorException("$x has to be orthonormal but it's not.") )
   end
 end
+@doc doc"""
+    validateMPoint(M,x,ξ)
 
+validate that the [`StTVector`](@ref) `ξ` is a valid tangent vector to
+[`StPoint`](@ref) `x` on the [`Stiefel`](@ref) manifold `M`, i.e. that both
+dimensions agree and ${\bar x}^{\mathrm{T}}$ is skew symmetric.
+"""
 function validateTVector(M::Stiefel{T}, x::StPoint{T}, ξ::StTVector{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   if size(getValue(ξ), 1) ≠ M.dimensionlines
     throw( ErrorException("The dimension of $ξ must be $(M.dimensionlines) × $(M.dimensioncolumns) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )

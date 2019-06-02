@@ -3,7 +3,7 @@
 # This tutorial illustrates the usage of Jacobi Fields within
 # `Manopt.jl`.
 # For this tutorial you should be familiar with the basic terminology on a
-# manifold like the [`exp`](@ref)onential and [`log`](@ref) map as well as
+# manifold like the exponential and logarithmic map as well as
 # [`geodesic`](@ref)s.
 #
 # We first initialize the manifold
@@ -30,6 +30,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
     colors=Dict(:curves => [black], :points => [TolVibrantOrange]), #src
     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.,1.,.5) #src
 )#src
+#md #
 #md # ```julia
 #md # renderAsymptote("jacobiGeodesic.asy",asyExportS2Signals;
 #md #     render = asyResolution,
@@ -55,7 +56,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
 # (in $T_y\mathcal M$).
 #
 # For all other cases we employ a [`jacobiField`](@ref), which is a (tangent)
-# vector field along the [`geodesic`](@ref) given as follows: The _geodesic variatio_
+# vector field along the [`geodesic`](@ref) given as follows: The _geodesic variation_
 # $\Gamma_{g,\xi}(s,t)$ is defined for some $\varepsilon > 0$ as
 #
 # $\Gamma_{g,\xi}(s,t):=\exp{\gamma_{x,\xi}(s)}[t\log_{g(s;x,\xi)}y],\qquad s\in(-\varepsilon,\varepsilon),\ t\in[0,1].$
@@ -98,6 +99,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesicDxGeo.asy",asyExportS2Signals; #src
     ), #src
     dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,.5) #src
 ) #src
+#md #
 #md # ```julia
 #md # renderAsymptote("jacobiGeodesicDxGeo.asy",asyExportS2Signals;
 #md #     render = asyResolution,
@@ -145,14 +147,13 @@ renderAsymptote(exportFolder*"/jacobiGeodesicResult.asy",asyExportS2Signals; #sr
 #md #
 #md # ![A Jacobi field for the effect of two differentials (blue) in sum (teal)](../assets/images/tutorials/jacobiGeodesicResult.png)
 #
-#
 # ## Literature
 # 
 # ```@raw html
 # <ul><li id="doCarmo1992">[<a>doCarmo1992</a>] do Carmo, M. P.:
-#    <emph>Riemannian Geometry</emph>, Mathematics: Theory & Apploications,
+#    <emph>Riemannian Geometry</emph>, Mathematics: Theory & Applications,
 #    Birkhäuser Basel, 1992, ISBN: 0-8176-3490-8</li>
-# <li id="BergmannGousenbourger2018">[<a>BergmnannGousenbourger2018</a>]
+# <li id="BergmannGousenbourger2018">[<a>BergmannGousenbourger2018</a>]
 #   Bergmann, R.; Gousenbourger, P.-Y.: <emph>A variational model for data
 #   fitting on manifolds by minimizing the acceleration of a Bézier curve</emph>,
 #   Frontiers in Applied Mathematics and Statistics, 2018.
