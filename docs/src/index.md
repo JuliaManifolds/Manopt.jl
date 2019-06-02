@@ -1,131 +1,107 @@
-# Manopt.jl
-## Optimization on Manifolds
-The `Manopt.jl` Julia package provides all necessary tools to perform
-optimization on manifolds and apply these methods to manifold-valued image
-processing. This file intends to fix notations both mathematical and with
-respect to source code throughout this package. For an introduction to
-manifolds, we refer to [AMS08].
-This package further aims to unify Manopt and MVIRT, i.e. to find a “Julia way”
-to perform all algorithms given in these packages with all benefits from Julia.
-```@docs
-Manopt
+# Welcome to Manopt.jl
+
+```@meta
+CurrentModule = Manopt
 ```
 
-## Organization of Code
-Despite the given structure by Julia (folders `src/`, `docs/`, `test/`), this
-package consists of the following structre:
-* a folder in the main directory `Tutorials/` containing all Tutorials as Juypter
-  notebooks (thats why they are not wihtin `src/`) that should cover all main
-  algorithms and introduce the data structures (`Manifold`, `MPoint`, `TVector`
-  structure)
-* the `src/` folder itself structures the parts of the Toolbox as follows (roughly
-  in order of importance). The main file including all following is `Manopt.jl`
-  encapsulating all `include`s in a module. That also means, that all files
-  seperately handle `export`s and `import`s. * `manifold/` contains a file for
-  each manifold implementing the subtypes. The main types are defined in
-  `Manifold.jl` as well as operators in the types as well as fallbacks to provide
-  errors for not implemented cases of types or non-fitting cases (like `exp` with
-  a point from manifold A and a tangent vector from manifold B)
-  * `solvers/` contains all solving algorithms like `steepestDescent`.
-    These should always be available in two formats: One based on a `problem`
-    structure, such that they can be called by just one argument, for example
-    when checking a range of parameters and such that you only need to change one
-    value in the struct (which is defined in `problems/`). The second version should
-    be one with only mandatory parameters, where all others are (`;...)`) optional
-    key-value parameters and also providing thorough checks of the input and internally
-    call the first ones. While
-    the first one might be harder to call, the less checks and without key-value
-    makes them faster after compilation, which is also beneficiary for the second ones
-    since they internally call them. The second ones provide the easy-to-use
-    functions for new users, where all optional parameters are set so values that
-    are for a start in a certain sense _reasonable_.
-  * `algorithms/` contains all smaller parts or helpers for the solvers, for
-    example the Armijo line search
-  * `examples/` contains examples that are not yet tutorials or jupyter notebooks
-    (maybe removed in future, when all examples are Tutorials)
-  * `helpers/` contains small helpers like the debug functionals
-  * `plots/` contains all plotting functions
-  * `problem/` contains all structures for the internal algorithms or solvers
+```@docs
+Manopt.Manopt
+```
 
-## A summary of notations
-The Riemannian Manifold will always be denoted by $\mathcal M$ its dimension
-by $d\in\mathbb N$, and points on $\mathcal M$ by $p,q$ or $p_i$,
-$i\in\mathcal I$, for more than 2 points.We denote the tangential space at
-$p\in\mathcal M$ by $\mathrm{T}_p\mathcal M$ and the Riemannian metric by
-$g_p(\xi,\nu) = \langle \xi,\nu\rangle_p$, where we denote tangential vectors
-$\xi,\nu\in\mathrm{T}_p\mathcal M$ by small greek letters, and in most cases
-omit denoting the basis point $p$, just if a confucion might arise or we
-would like to emphasize the tangential space, we write $\xi_p,\nu_p$.
+For a function $f\colon\mathcal M \to \mathbb R$ defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) $\mathcal M$ we aim to solve
 
-With capital letters $X,Y,Z$ we refer to vector fields on a manifold,
-$X\colon \mathcal M \to \mathrm{T}\mathcal M$, such that $X(p) = X_p
-\in \mathrm{T}\mathcal M$. Whenever we require to look at charts, they are
-indicated by $\varphi,\psi\colon\mathcal U \to\mathbb R^d$,
-$\mathcal U\subset\mathcal M$ with e.g. $x=\varphi(p)$, $y=\varphi(q)$.
-When explicitly speaking of matrices, we employ $A,B,C\in\mathbb R^{n,n}$.
+$\operatorname*{argmin}_{x\in\mathcal M} f(x),$
 
-We denote the exponential map by $\exp_p\colon\mathrm{T}_p\mathcal M\to\mathcal
-M$ and its (locally defined) inverse by $\log_p\colon\mathcal M
-\to\mathrm{T}_p\mathcal M$.
+or in other words: find the point $x$ on the manifold, where $f$ reaches its minimal function value.
 
-Finally functions are denoted by $f,g\colon\Omega\to\mathcal M$,
-$\Omega\subset\mathbb R^m$, where we use the short hand notation of $f_i =
-f(x_i)$, $i\in\mathcal I$, for given fixed samples of a function $f$ and
-functions defined on a manifold by $F,G\colon\mathcal M\to\mathbb R^m$. The
-notion of samples valued is especially employed, when a Function $F$ depends
-on fixed given data and variable data, e.g. $F(p;f) = d_{\mathcal M}^2(p,f)$
-is meant as a function $F\colon \mathcal M\to\mathbb R$ defined for some fixed
-(sampled) data $f\in\mathcal M$.
+`Manopt.jl` provides a framework for optimization on manifolds.
+Based on [Manopt](https://manopt.org) and
+[MVIRT](https://ronnybergmann.net/mvirt/), both implemented in Matlab,
+this toolbox provide an easy access to optimization methods on manifolds
+for [Julia](https://julialang.org), including example data and visualization methods.
 
-## The general Approach to Algorithms
-Algorithms should be implemented for any subtype of `Manifold`, i.e. a function
-taking a manifold point as an argument should be written in the form `function
-F{MP <: MPoint}(x::MP)`. Furthermore, for performance issues, the inner
-functions that are required to run often and fast, should not (for now, `Julia 0.6`)
-contain optional arguments (`...kwargs`), since that reduces the performance per
-call. The recommendation is hence to write a classical function using a `struct problem`
-(see `problem/problem.jl` for a start).
+If you want to delve right into `Manopt.jl` check out the
+[Getting Started: Optimize!](@ref Optimize) tutorial.
 
-## Verbosity and Debug
-There is a global `verbosity` level within the algorithms that steers the amount
-of output. It ranges from `verbosity=0` meaning no output at all to `verbosity=5`
-including times and a lot of debug. The rough course is as follows
+`Manopt.jl` makes it easy to use an algorithm for your favorite
+manifold as well as a manifold for your favorite algorithm. It already provides
+many manifolds and algorithms, which can easily be enhanced, for example to
+[record](@ref RecordOptions) certain data or
+[display information](@ref DebugOptions) throughout iterations.
 
-| Level | Additional Output     |
-|-------|-----------------------|
-|   1   | Main start and result |
-|   2   | not yet used          |
-|   3   | End criteria of algorithms etc. |
-|   4   | Time measurements |
-|   5   | Iteration interims values |
+## Main Features
 
-For the last Level, an individual `debug` field in the structs provides the
-possibility to add an own function into the iteration. This function always takes
-just one argument, namnely a `Dict{String, Any}` dictionary, i.e. a hashmap to
-store any data passed to a debug function. If values are present in the `debugValues`
-they should be updated in the algorithm.
+**1. Manifolds**
+Manifolds consist of three elements: a [`Manifold`](@ref) type that stores
+general information about the manifold, for example a name, or for example in
+order to generate a [`randomMPoint`](@ref), an [`MPoint`](@ref) storing data to
+represent a point on the manifold, for example a vector or a matrix, and a
+[`TVector`](@ref) string data to represent a point in a tangent space
+$T_x\mathcal M$ of such an [`MPoint`](@ref). If a manifold has certain
+properties, for example if it is a [matrix manifold](@ref MatrixManifold) or a [Lie
+group](@ref LieGroup), see for example the binary operator [`⊗`](@ref). For a
+list of available manifolds, see [the list of manifolds](@ref Manifolds)
 
-Maybe something similar using a `record` field would also be nice.
+**2. Functions on Manifolds**
+Several functions are available, implemented on an arbitrary manifold, [cost
+functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions), and
+[gradients](@ref GradientFunctions) as well as [proximal maps](@ref
+proximalMapFunctions), but also several [jacobi Fields](@ref
+JacobiFieldFunctions) and their [adjoints](@ref adjointDifferentialFunctions).
 
-### A general remark
-In general, one should additionally provide an interface that uses keyword-argument lists (kwargs) as a Dictionary (similarly to the matlab usage),
-having the same name, checking input and passing it to the struct-based function. That way the basic function (with struct) is compiled to a function being quite fast, and the wrapper makes the function easily accessible with `kwargs` for a user; see e.g. https://stackoverflow.com/a/39602289/1820236. This might also be a good idea for the plot functions, because we can filter dictionaries and pass parts to the internally used plot functions, making it possible to provide line styles but also appearance of e.g. the sphere as options.
+**3. Optimization Algorithms (Solvers)**
+For every optimization algorithm, a [solver](@ref Solvers) is implemented based
+on a [`Problem`](@ref) that describes the problem to solve and its
+[`Options`](@ref) that set up the solver, store interims values. Together they
+form a [plan](@ref planSection).
 
-A few further notes are
-* it might be a good idea to have a decorator for `MPoint`, too,
-to have a consistent scheme for the extended scenario and an easier `log`
-* we should be able to do caching with a `macro` as soon as I saw how to access
-values computed within a function and to save them (and access them) in a consistent way
+**4. Visualization**
+To visualize and interpret results, `Manopt.jl` aims to provide both easy plot
+functions as well as [exports](@ref Exports). Furthermore a system to get
+[debug](@ref DebugOptions) during the iterations of an algorithms as well as
+[record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of
+values per iteration, most prominently [`RecordCost`](@ref) and
+[`RecordIterate`](@ref). Take a look at the
+[Getting Started: Optimize!](@ref Optimize) tutorial how to easily activate
+this.
 
+All four parts are accompanied by a documentation that can also be accessed from
+within `Julia REPL` and provides detailed information, e.g. the formula for an
+[exponential or logarithmic map on the manifold of symmetric positive definite matrices](@ref SymmetricPositiveDefiniteManifold) or literature references for an algorithm like [`cyclicProximalPoint`](@ref).
 
-## Tests
-Every new function or manifold should be accompanied by a test suite, placed
-within `test/` (the script `runtests.jl` takes care of running all test cases
-within that folder automatically).
-A plan is to use Travor CI to check for code coverage and all tests passing
-automatically, soon.
+## Notation
+
+During this documentation, we refer to a variable with e.g. both `x` and $x$
+depending on whether the context refers to a code fragment or a mathematical
+formula, respectively.
+
+| Symbol | used for
+|:---|:---|
+$\mathcal M, \mathcal N$ | a manifold
+$d,d_1,\ldots,d_n$ | dimension(s) of a manifold
+$x,y,z,x_1,\ldots,x_n$ | points on a manifold
+$T_x\mathcal M$ | the tangent space of $x\in\mathcal M$
+$\xi,\nu,\eta,\xi_1,\ldots,\xi_n$ | tangent vectors, might be extended by the base point, i.e. $\xi_x$
+$\log_xy$ | logarithmic map
+$\exp_x\xi$ | exponential map
+$g(t; x,y)$ | geodesic connecting $x,y\in\mathcal M$ with $t\in [0,1]$
+$\langle \cdot, \cdot\rangle_x$ | Riemannian inner product on $T_x\mathcal M$
+$\operatorname{PT}_{x\to y}\xi$ | parallel transport of $\xi\in T_x\mathcal M$ from $x$ to $y$ along $g(\cdot;x,y)$
+
+## Contribute
+
+If you notice a typo, have a question or would like even to contribute, give me a note
+at `manopt@ronnybergmann.net` or visit the [GitHub repository](https://github.com/kellertuer/Manopt.jl/) to clone/fork the repository.
 
 ## Literature
-[AMS08] P.-A. Absil, R. Mahony and R. Sepulchre, Optimization Algorithms on
-Matrix Manifolds, Princeton University Press, 2008,
-[open access](http://press.princeton.edu/chapters/absil/)
+
+```@raw html
+<ul><li id="AbsilMahonySepulchre2008">
+    [<a>Absil, Mahony, Sepulchre, 2008</a>]
+    P.-A. Absil, R. Mahony and R. Sepulchre,
+    <emph>Optimization Algorithms on
+    Matrix Manifolds</emph>, Princeton University Press, 2008,
+    doi: <a href="https://doi.org/10.1515/9781400830244">10.1515/9781400830244</a>,
+    <a href="http://press.princeton.edu/chapters/absil/">open access</a>.
+</li></ul>
+```

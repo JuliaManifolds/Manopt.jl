@@ -1,197 +1,346 @@
-import Base: convert, promote_rule
-export getValue, getBase, checkBase
-export addNoise, distance, dot, exp, getValue, log, manifoldDimension, norm
-export manifoldDimension, parallelTransport, tangentONB, typicalDistance, zeroTVector
+import Base: convert, promote_rule, strip
 export MPointE, TVectorE
-export convert, proomte_rule
+export getValue, getBasePoint, checkBasePoint
+export addNoise, distance, dot, exp, getValue, log, norm
+export manifoldDimension, parallelTransport
+export randomMPoint, randomTVector
+export tangentONB, typicalDistance, zeroTVector
+export validateMPoint, validateTVector
+export convert, promote_rule, strip
 #
 #
 #
 # The extended types for more information/security on base points of tangent vectors
 # ---
-"""
+@doc doc"""
+    MPointE <: MPoint
+
 A decorator pattern based extension of MPoint to identify when to switch
-to the extended `TVectorE` for functions just working on points, e.g. `log`
+to the extended `TVectorE` for functions just working on points, e.g. `log`.
+The constructor avoids multiple encapsualtions of extensions.
+
+# Constructors
+    MPointE(x [,v=true])
+
+the point can constructed by extending an existing [`MPoint`](@ref).
+optionally, the `validation` can be turned off (but is `true`by default).
+If `x` is a [`MPointE`](@ref) the default of `v` is taken from `x`.
 """
 struct MPointE{P <: MPoint} <: MPoint
-    base::P
+  base::P
+  validate::Bool
+  MPointE{P}(b,v=true) where {P <: MPoint} = new(b,v)
 end
-"""
+MPointE(x::P,v::Bool=true) where {P <: MPoint} = MPointE{P}(x,v)
+MPointE(x::MPointE{P},v::Bool=x.validate) where {P <: MPoint} = MPointE{P}(strip(x),v)
+
+@doc doc"""
+    TVectorE <: MPoint
+
 A decorator pattern based extension of TVector to additionally store the base
 point. The decorator is then used to verify, that exp and dot are only called
 with correct base points.
+
+# Constructors
+    TVectorE(ξ,x [,v=true])
+
+constructs an extended tangential vector based on the [`TVector`](@ref) `ξ`
+with base [`MPoint`](@ref) `x` with optional `validation v`. If none of the
+first two arguments is an extended element, `v` defaults to `true`, otherwise,
+the one which is an extended is inherited or the `&&` of both validations.
 """
 struct TVectorE{T <: TVector, P <: MPoint} <: TVector
   vector::T
   base::P
+  validate::Bool
+  TVectorE{T,P}(vec,base,val=true) where {T <: TVector, P <: MPoint} = new(vec,base,val)
 end
-TVectorE(ξ::T, x::P) where {T <: TVector, P <: MPointE} = TVector(ξ,getBase(x))
-TVectorE(ξ::T, x::P) where {T <: TVectorE, P <: MPointE} = checkBase(ξ,x) ? TVector(getVector(ξ),getBase(ξ)) : 0
-TVectorE(ξ::T, x::P) where {T <: TVectorE, P <: MPoint} = checkBase(ξ,x) ? TVector(getVector(ξ),getBase(ξ)) : 0
+TVectorE(ξ::T, x::P,v::Bool=true) where {T <: TVector, P <: MPoint} = TVectorE{T,P}(ξ,x,v)
+TVectorE(ξ::T, x::P,v::Bool=x.validate) where {T <: TVector, P <: MPointE} = TVectorE(ξ,strip(x),v)
+TVectorE(ξ::T, x::P,v::Bool=ξ.validate) where {T <: TVectorE, P <: MPoint} = checkBasePoint(ξ,x) ? TVectorE(strip(ξ),getBasePoint(ξ),v) : 0
+TVectorE(ξ::T, x::P,v::Bool=x.validate && ξ.validate ) where {T <: TVectorE, P <: MPointE} = checkBasePoint(ξ,x) ? TVectorE(strip(ξ),getBasePoint(ξ),v) : 0
 #
-convert(::Type{TVectorE}, x::T) where {T <: TVector} = error("Can't convert a non-extended tangent vector to an extended one, because the base is unknown.")
-convert(::Type{TVectorE}, x::TVectorE) = x
-getValue(ξ::T) where {T <: TVectorE}= getValue(getVector(ξ))
+getValue(ξ::T) where {T <: TVectorE}= getValue(strip(ξ))
 """
-    getBase(ξ)
-returns the base point of an extended tangent vector.
-"""
-getBase(ξ::T) where {T <: TVectorE{Tl,Pl} where {Tl <: TVector, Pl <: MPoint }} = MPointE(ξ.base)
-getBase(ξ::T) where {T <: TVectorE{Tl,Pl} where {Tl <: TVector, Pl <: MPointE}}= ξ.base
-"""
-    getVector(ξ)
-returns the internal TVector point of an extended tangent vector.
-"""
-getVector(ξ::T) where {T <: TVectorE} = ξ.vector
-promote_rule(::Type{MPointE}, ::Type{MPoint}) = MPointE
-convert(::Type{MPointE{P}}, x::P) where {P <: MPoint} = MPointE(x)
-convert(::Type{MPointE{Q}}, x::P) where {P <: MPoint,  Q <: MPoint} = error("Cannot `convert` an $(P) to MPointE{$(Q)} since the base is not of type $(P).")
-convert(::Type{MPointE{P}}, x::MPointE{P}) where {P <: MPoint} = x
-convert(::Type{P}, x::MPointE{P}) where {P <: MPoint} = getBase(x)
-convert(::Type{P}, x::MPointE{Q}) where {P <: MPoint, Q <: MPoint} = error("Cannot `convert` an MPointE{$(Q)} to $(P) since the base is not of type $(P).")
-convert(::Type{P}, x::P) where {P <: MPoint} = x
-getValue(x::P) where {P <: MPointE} = getValue( getBase(x) );
-show(io::IO, x::MPointE) = print(io, "$(getBase(x))E")
-"""
-    getBase(x)
-returns the point this extended manifold point stores internally.
-"""
-getBase(x::P) where {P <: MPointE} = x.base
-getBase(x::P) where {P <: MPoint} = x
+    getBasePoint(ξ)
 
-show(io::IO, ξ::TVectorE) = print(io, "$( getValue(ξ) )_$( getValue( getBase(ξ) ) )")
+returns the base point of an extended tangent vector. To continue promotion of
+the extended type, the result is always a [`MPointE`](@ref). To eliminate the
+decorator, use [`strip`](@ref).
+"""
+getBasePoint(ξ::T) where {T <: TVectorE{Tl,Pl} where {Tl <: TVector, Pl <: MPoint }} = MPointE(strip(ξ.base))
+"""
+    strip(ξ)
+
+returns the internal [`TVector`](@ref) of an extended tangent vector
+[`TVectorE`](@ref).
+"""
+strip(ξ::T) where {T <: TVector} = ξ
+strip(ξ::T) where {T <: TVectorE} = ξ.vector
+#
+# Add promotions and implicit conversions
+promote_rule(::Type{MPointE{P}}, ::Type{P}) where {P <: MPoint} = MPointE{P}
+convert(::Type{MPointE{P}}, x::P) where {P <: MPoint} = MPointE(x)
+convert(::Type{MPointE{Q}}, x::P) where {P <: MPoint,  Q <: MPoint} = throw( ErrorException("Cannot `convert` an $(P) to MPointE{$(Q)} since the base type is not of type $(P)."))
+convert(::Type{MPointE{P}}, x::MPointE{P}) where {P <: MPoint} = x
+convert(::Type{P}, x::MPointE{P}) where {P <: MPoint} = strip(x)
+convert(::Type{P}, x::MPointE{Q}) where {P <: MPoint, Q <: MPoint} = throw( ErrorException( "Cannot `convert` an MPointE{$(Q)} to $(P) since the base type is not of type $(P)."))
+convert(::Type{P}, x::P) where {P <: MPoint} = x
+#
+convert(::Type{TVectorE{T,P}}, ξ::T) where {P <: MPoint, T <: TVector} =throw( ErrorException("Cannot `convert` an $(T) to TVectorE{$(T)}; no base MPoint known."))
+convert(::Type{T}, ξ::TVectorE{T,P}) where {P <: MPoint, T <: TVector} = ξ.vector
+convert(::Type{T}, ξ::TVectorE{S,P}) where {P <: MPoint, T <: TVector, S <: TVector} = throw( ErrorException("Cannot `convert` from TVectorE{$S,$P} to a $T since the TVector types don't match."))
+convert(::Type{TVectorE{T,P}}, ξ::TVectorE{T,P}) where {P <: MPoint, T <: TVector} = ξ
+convert(::Type{T}, ξ::T) where {T <: TVector} = ξ
+
+getValue(x::P) where {P <: MPointE} = getValue( strip(x) );
+show(io::IO, x::MPointE) = print(io, "$(strip(x))E")
+"""
+    strip(x)
+
+returns the [`MPoint`](@ref) the [`MPointE`](@ref) `x` stores internally.
+If applied to an already non-extended [`MPoint`](@ref), nothing happens.
+"""
+strip(x::P) where {P <: MPointE} = x.base
+strip(x::P) where {P <: MPoint} = x
+
+show(io::IO, ξ::TVectorE) = print(io, "$(ξ.vector)E_$(ξ.base)")
 function +(ξ::T,ν::T) where {T <: TVectorE}
-    checkBase(ξ,ν)
-    return T(getVector(ξ)+ν.vector,getBase(ξ))
+  checkBasePoint(ξ,ν)
+  return T(strip(ξ)+ν.vector,getBasePoint(ξ))
 end
 function -(ξ::T,ν::T) where {T <: TVectorE}
-    checkBase(ξ,ν)
-    return T(getVector(ξ)-ν.vector,getBase(ξ))
+  checkBasePoint(ξ,ν)
+  return T(strip(ξ)-ν.vector,getBasePoint(ξ))
 end
 """
-    checkBase(ξ,ν)
+    checkBasePoint(ξ,ν)
+
 checks, whether the base of two tangent vectors is identical, if both tangent
 vectors are of type `TVectorE`. If one of them is not an extended vector, the
 function returns true, expecting the tangent vector implicitly to be correct.
 """
-function checkBase(ξ::T,ν::T) where {T <: TVectorE}
-    if getValue( getBase(ξ) ) != getValue( getBase(ν) )
-        throw(
-            ErrorException("The two tangent vectors $ξ and $ν do not have the same base.")
-        );
-    else
-        return true;
-    end
+function checkBasePoint(ξ::T,ν::T) where {T <: TVectorE}
+  if getValue( getBasePoint(ξ) ) != getValue( getBasePoint(ν) )
+    throw(
+    DomainError("The two tangent vectors $ξ and $ν do not have the same base.")
+    )
+  else
+    return true
+  end
 end
-checkBase(ξ::T,ν::S) where {T <: TVectorE, S <: TVector} = true
-checkBase(ξ::S,ν::T) where {T <: TVectorE, S <: TVector} = true
+checkBasePoint(ξ::T,ν::S) where {T <: TVectorE, S <: TVector} = true
+checkBasePoint(ξ::S,ν::T) where {T <: TVectorE, S <: TVector} = true
 """
-    checkBase(ξ,x)
+    checkBasePoint(ξ,x)
+
 checks, whether the base of the tangent vector `ξ` is `x`. If `ξ` is not an
 extended tangent vector `TVectorE` the function returns true, assuming the base
 implicitly to be correct
 """
-function checkBase(ξ::T,x::P,tAttr=" ") where {T <: TVectorE, P <: MPoint}
-    if getValue( getBase(ξ) ) != getValue(x)
-        throw(
-            ErrorException("The tangent vector $ξ is not from the tangent space of $x")
-        );
-    else
-        return true;
-    end
+function checkBasePoint(ξ::T,x::P) where {T <: TVectorE, P <: MPoint}
+  if getValue( getBasePoint(ξ) ) != getValue(x)
+    throw(
+    DomainError("The tangent vector $ξ is not from the tangent space of $x")
+    )
+  else
+    return true
+  end
 end
-checkBase(ξ::T,x::P) where {T<: TVector, P<: MPoint} = true
+checkBasePoint(ξ::T,x::P) where {T<: TVector, P<: MPoint} = true
+#
+# Defaults for validation that do warnings if used but return true
+#
 # unary operators
-*(ξ::T,s::Number) where {T <: TVectorE} = T(s*getVector(ξ),getBase(ξ))
-*(s::Number, ξ::T) where {T <: TVectorE} = T(s*getVector(ξ),getBase(ξ))
-# /
-/(ξ::T,s::Number) where {T <: TVectorE} = T(getVector(ξ)/s,getBase(ξ))
-/(s::Number, ξ::T) where {T <: TVectorE} = T(s/getVector(ξ),getBase(ξ))
--(ξ::T) where {T <: TVectorE} = T(-getVector(ξ),getBase(ξ))
-+(ξ::T) where {T <: TVectorE} = T(getVector(ξ),getBase(ξ))
-
+*(ξ::T,s::Number) where {T <: TVectorE} = T(s*strip(ξ),getBasePoint(ξ))
+*(s::Number, ξ::T) where {T <: TVectorE} = T(s*strip(ξ),getBasePoint(ξ))
+/(ξ::T,s::Number) where {T <: TVectorE} = T(strip(ξ)/s,getBasePoint(ξ))
+-(ξ::T) where {T <: TVectorE} = T(-strip(ξ),getBasePoint(ξ))
++(ξ::T) where {T <: TVectorE} = T(strip(ξ),getBasePoint(ξ))
 # compare extended vectors
-==(ξ::T,ν::T) where {T <: TVectorE} = ( checkBase(ξ,ν) && all(getVector(ξ)==ν.vector) )
+==(ξ::T,ν::T) where {T <: TVectorE} = ( checkBasePoint(ξ,ν) && all(strip(ξ)==ν.vector) )
 #
 # encapsulate default functions
 #
-addNoise(M::mT,x::P,σ) where {mT <: Manifold, P <: MPointE} = MPointE( addNoise(M,getBase(x),σ) )
-distance(M::mT, x::P, y::P) where {mT <: Manifold, P <: MPointE} = distance(M,getBase(x),getBase(y))
-distance(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPointE, Q <: MPoint} = distance(M,getBase(x),getBase(y))
-distance(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPointE} = distance(M,getBase(x),getBase(y))
+distance(M::mT, x::P, y::P) where {mT <: Manifold, P <: MPointE} = _distance(M,strip(x),strip(y), x.validate&&y.validate)
+distance(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPointE, Q <: MPoint} = _distance(M,strip(x),strip(y), x.validate)
+distance(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPoint, Q <: MPointE} = _distance(M,strip(x),strip(y), y.validate)
+function _distance(M,x,y,v)
+  if v
+    validateMPoint(M,x)
+    validateMPoint(M,y)
+  end
+  return distance(M,x,y)
+end
 
 function dot(M::mT, x::P, ξ::T, ν::T)::Float64 where {mT<:Manifold, P <: MPointE, T<:TVectorE}
-    checkBase(ξ,x)
-    checkBase(ξ,ν)
-    return dot(M, getVector(ξ), getVector(ν) );
+  checkBasePoint(ξ,x)
+  checkBasePoint(ξ,ν)
+  return _dot(M, strip(x), strip(ξ), strip(ν), x.validate && ξ.validate && ν.validate )
 end
-# all others (i.e. one implicitly assumed to be correct -> pass)
-# (a) MPointE 1) with different TVectorEs even because one might have an SnPointE one not.
-dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPointE, T <: TVectorE, S <: TVectorE} = dot(M,getBase(x),getVector(ξ),getVector(ν))
-dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPointE, T <: TVectorE, S <: TVector} = dot(M,x,getVector(ξ),ν)
-dot(M::mT, x::P, ξ::S, ν::T) where {mT <: Manifold, P <: MPointE, T <: TVectorE, S <: TVector} = dot(M,x,ξ,getVector(ν) )
-dot(M::mT, x::P, ξ::T, ν::T) where {mT <: Manifold, P <: MPointE, T <: TVector} = dot(M,getBase(x),ξ,ν)
-# (b) MPoint
-dot(M::mT, x::P, ξ::T, ν::T) where {mT <: Manifold, P <: MPoint, T <: TVectorE} = dot(M,x,getVector(ξ),ν)
-dot(M::mT, x::P, ξ::S, ν::T) where {mT <: Manifold, P <: MPoint, T <: TVectorE, S <: TVector} = dot(M,x,ξ,getVector(ν) )
-dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVectorE, S <: TVector} = dot(M,x,ξ,getVector(ν) )
+function dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPointE, T <: TVectorE, S <: TVector}
+  checkBasePoint(ξ,x)
+  return _dot(M, strip(x),strip(ξ),ν, x.validate && ξ.validate)
+end
+function dot(M::mT, x::P, ξ::S, ν::T) where {mT <: Manifold, P <: MPointE, T <: TVectorE, S <: TVector}
+  checkBasePoint(ν,x)
+  return _dot(M, strip(x), ξ, strip(ν), x.validate && ν.validate )
+end
+dot(M::mT, x::P, ξ::T, ν::T) where {mT <: Manifold, P <: MPointE, T <: TVector} = _dot(M,strip(x),ξ,ν, x.validate)
 
-# extended exp check base and return exp of value if that did not fail
-exp(M::mT,x::S,ξ::T) where {mT<:Manifold, T<:TVectorE, S<:MPointE} = exp(M,getBase(x),ξ)
-function exp(M::mT,x::S,ξ::T) where {mT<:Manifold, T<:TVectorE, S<:MPoint}
-    checkBase(ξ,x);
-    return exp(M,x, getVector(ξ) )
+function dot(M::mT, x::P, ξ::T, ν::T) where {mT <: Manifold, P <: MPoint, T <: TVectorE}
+  checkBasePoint(ξ,ν)
+  return _dot(M,x,strip(ξ),strip(ν), ξ.validate && ν.validate )
 end
-# for extended vectors set the base to true
-log(M::mT,x::P,y::P) where {mT<:Manifold, P<:MPoint} = TVectorE(log(M,getBase(x),getBase(y)),getBase(x));
-# break down to inner if base
-manifoldDimension(x::P) where {P <: MPointE} = manifoldDimension(getBase(x))
-# break down to inner if base is checked
-function norm(M::mT, x::P, ξ::T, ν::T)::Float64 where {mT<:Manifold, P <: MPoint, T<:TVectorE}
-    checkBase(ξ,x," first ")
-    checkBase(ξ,ν," second ")
-    return norm(M,getBase(x),getVector(ξ),ν.vector);
+function dot(M::mT, x::P, ξ::S, ν::T) where {mT <: Manifold, P <: MPoint, T <: TVectorE, S <: TVector}
+  checkBasePoint(ν,x)
+  return _dot(M,x,ξ,strip(ν), ν.validate )
 end
-norm(M::mT,x::P,ξ::T,ν::S) where {mT<:Manifold, P <: MPointE, T<:TVector, S<:TVector} = dot(M,getBase(x),ξ,ν);
-norm(M::mT,x::P,ξ::T,ν::S) where {mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector} = dot(M,getBase(x), getVector(ξ) ,ν);
-norm(M::mT,x::P,ξ::S,ν::T) where {mT<:Manifold, P <: MPoint, T<:TVectorE, S<:TVector} = dot(M,getBase(x), ξ, getVector(ν));
-# (a) x,ξ extended -> check, y not -> check but strip
+function dot(M::mT, x::P, ξ::T, ν::S) where {mT <: Manifold, P <: MPoint, T <: TVectorE, S <: TVector}
+  checkBasePoint(ξ,x)
+  return _dot(M,x,strip(ξ),ν, ξ.validate )
+end
+function _dot(M,x,ξ,ν,v)
+  if v
+    validateMPoint(M,x)
+    validateTVector(M,x,ξ)
+    validateTVector(M,x,ν)
+  end
+  return dot(M,x,ξ,ν)
+end
+
+function exp(M::mT,x::P,ξ::T,t::Float64=1.0) where {mT<:Manifold, P<:MPointE, T<:TVectorE}
+  checkBasePoint(ξ,x)
+  return _exp(M, strip(x), t*strip(ξ), x.validate && ξ.validate )
+end
+exp(M::mT,x::P,ξ::T,t::Float64=1.0) where {mT<:Manifold, P<:MPointE, T<:TVector} = _exp(M,strip(x), t*ξ
+, x.validate )
+function exp(M::mT,x::P,ξ::T,t::Float64=1.0) where {mT<:Manifold, P<:MPoint, T<:TVectorE}
+  checkBasePoint(ξ,x)
+  return _exp(M, x, t*strip(ξ), ξ.validate )
+end
+function _exp(M,x,ξ,v)
+  if v
+    validateMPoint(M,x)
+    validateTVector(M,x,ξ)
+  end
+  y = exp(M,x,ξ)
+  if v
+    validateMPoint(M,y)
+  end
+  return MPointE(y, v)
+end
+
+log(M::mT,x::Q,y::Q) where {mT<:Manifold, Q<:MPointE} = _log(M,strip(x),strip(y), x.validate && y.validate )
+log(M::mT,x::P,y::Q) where {mT<:Manifold, P<:MPoint, Q<:MPointE} = _log(M, x, strip(y), y.validate )
+log(M::mT,x::Q,y::P) where {mT<:Manifold, P<:MPoint, Q<:MPointE} = _log(M, strip(x), y, x.validate )
+function _log(M,x,y,v)
+  if v
+    validateMPoint(M,x)
+    validateMPoint(M,y)
+  end
+  ν = log(M,x,y)
+  if v
+    validateTVector(M,x,ν)
+  end
+  return TVectorE(ν,x, v)
+end
+
+manifoldDimension(x::P) where {P <: MPointE} = manifoldDimension(strip(x))
+
+function norm(M::mT, x::P, ξ::T)::Float64 where {mT<:Manifold, P <: MPointE, T<:TVectorE}
+  checkBasePoint(ξ,x)
+  return _norm(M,strip(x),strip(ξ), x.validate && ξ.validate )
+end
+norm(M::mT,x::P,ξ::T) where {mT<:Manifold, P <: MPointE, T<:TVector} = _norm(M,strip(x),ξ, x.validate)
+function norm(M::mT,x::P,ξ::T) where {mT<:Manifold, P <: MPoint, T<:TVectorE}
+  checkBasePoint(ξ,x)
+  return _norm(M,x,strip(ξ), ξ.validate)
+end
+function _norm(M,x,ξ,v)
+  if v
+    validateMPoint(M,x)
+    validateTVector(M,x,ξ)
+  end
+  norm(M,x,ξ)
+end
+
 function parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPointE, Q <: MPoint, T<: TVectorE}
-    checkBase(ξ,x)
-    return TVectorE( parallelTransport(M,getBase(x),y,getVector(ξ)), y)
+  checkBasePoint(ξ,x)
+  return _parallelTransport(M,strip(x),y,strip(ξ), x.validate && ξ.validate)
 end
-# (b) x,ξ extended -> y, too, Extend result
 function parallelTransport(M::mT,x::P,y::P,ξ::T) where {mT <: Manifold, P <: MPointE, T<: TVectorE}
-    checkBase(x,ξ)
-    return TVectorE(parallelTransport(M,getBase(x),y,getVector(ξ)), y)
+  checkBasePoint(ξ,x)
+  return _parallelTransport(M,strip(x),strip(y),strip(ξ), x.validate && y.validate && ξ.validate)
 end
-# (c) remaining combinations, just strip
 function parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPoint, Q <: MPointE, T<: TVectorE}
-    return TVectorE( parallelTransport( M,x,y,getVector(ξ) ), y)
+  checkBasePoint(ξ,x)
+  _parallelTransport( M, x, strip(y), strip(ξ), y.validate && ξ.validate )
 end
-function parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPointE, Q <: MPointE, T<: TVector}
-    return TVectorE( parallelTransport( M,getBase(x),y,ξ ), y)
+parallelTransport(M::mT,x::P,y::P,ξ::T) where {mT <: Manifold, P <: MPointE, T<: TVector} = _parallelTransport(M, strip(x), strip(y), ξ, x.validate && y.validate )
+function parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPoint, Q <: MPointE, T<: TVector}
+  checkBasePoint(ξ,x)
+  return _parallelTransport(M,x,strip(y),ξ, y.validate )
 end
-function parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPoint, Q <: MPoint, T<: TVectorE}
-    return parallelTransport( M,x,y,getVector(ξ) )
+parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPointE, Q <: MPoint, T<: TVector} = _parallelTransport(M,strip(x),y,ξ, x.validate )
+function _parallelTransport(M,x,y,ξ,v)
+  if v
+    validateMPoint(M,x)
+    validateMPoint(M,y)
+    validateTVector(M,x,ξ)
+  end
+  ν = parallelTransport(M,x,y,ξ)
+  if v
+    validateTVector(M,y,ν)
+  end
+  return TVectorE(ν,y,v)
 end
-function parallelTransport(M::mT,x::P,y::Q,ξ::T) where {mT <: Manifold, P <: MPointE, Q <: MPoint, T<: TVector}
-    return parallelTransport( M,getBase(x),y,ξ )
-end
-#
-# tangentONB (a) x is ext -> extended Tangents,
-function tangentONB(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPointE, Q <: MPoint}
-    V,κ = tangentONB(M,getBase(x),log(M,getBase(x),y))
-    return TVectorE.(V, Ref(x)),κ
-end
-function tangentONB(M::mT, x::Q, y::P) where {mT <: Manifold, P <: MPointE, Q <: MPoint}
-    V,κ = tangentONB(M,x,log(M,x,getBase(y)))
-    return TVectorE.(V, Ref(x)),κ
-end
-function tangentONB(M::mT, x::P, y::P) where {mT <: Manifold, P <: MPointE}
-  V,κ = tangentONB(M,getBase(x),log(M,getBase(x), getBase(y)))
-  return TVectorE.(V, Ref(getBase(x)) ),κ
-end
-typicalDistance(x::P) where {P <: MPointE} = typicalDistance(getBase(x))
 
-zeroTVector(x::P) where {P <: MPointE} = TVectorE( zeroTVector(getBase(x)) )
+function randomTVector(M::mT, x::P,options...) where {mT <: Manifold, P <: MPointE}
+  ξ = randomTVector(M,strip(x),options...)
+  if x.validate
+    validateTVector(M,strip(x),ξ)
+  end
+  return TVectorE(ξ,x,x.validate)
+end
+
+tangentONB(M::mT, x::P, y::Q) where {mT <: Manifold, P <: MPointE, Q <: MPoint} = _tangentONB(M, strip(x), y, x.validate )
+tangentONB(M::mT, x::Q, y::P) where {mT <: Manifold, P <: MPointE, Q <: MPoint} = _tangentONB(M, x, strip(y), y.validate )
+tangentONB(M::mT, x::P, y::P) where {mT <: Manifold, P <: MPointE} = _tangentONB(M, strip(x), strip(y), x.validate && y.validate )
+
+function _tangentONB(M,x::MPoint,y::MPoint, v::Bool)
+  if v
+    validateMPoint(M,x)
+    validateMPoint(M,y)
+  end
+  V,κ = tangentONB(M,x,log(M,x,y))
+  if v
+    validateTVector.(Ref(M), Ref(x), V)
+  end
+  return TVectorE.(V, Ref(x), Ref(v)), κ
+end
+tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPointE, T <: TVectorE} = _tangentONB(M, strip(x), strip(ξ), x.validate && ξ.validate )
+tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVectorE} = _tangentONB(M, x, strip(ξ), ξ.validate )
+tangentONB(M::mT, x::P, ξ::T) where {mT <: Manifold, P <: MPointE, T <: TVector} = _tangentONB(M, strip(x), ξ, x.validate )
+function _tangentONB(M, x::MPoint, ξ::TVector, v::Bool)
+  if v
+    validateMPoint(M,x)
+    validateTVector(M,x,ξ)
+  end
+  V,κ = tangentONB(M,x,ξ)
+  if v
+    validateTVector.(Ref(M), Ref(x), V)
+  end
+  return TVectorE.(V, Ref(x), Ref(v)), κ
+end
+
+validateMPoint(M::mT,x::P) where {mT <: Manifold, P <: MPointE} = validateMPoint(M,strip(x))
+validateTVector(M::mT,x::P,ξ::T) where {mT <: Manifold, P <: MPointE, T <: TVectorE} = validateTVector(M, strip(x), strip(ξ))
+validateTVector(M::mT,x::P,ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVectorE} = validateTVector(M, x, strip(ξ))
+validateTVector(M::mT,x::P,ξ::T) where {mT <: Manifold, P <: MPointE, T <: TVector} = validateTVector(M, strip(x), ξ)
+function zeroTVector(M::mT,x::P) where {mT <: Manifold, P <: MPointE}
+  if x.validate
+    validateMPoint(M,x)
+  end
+  return TVectorE( zeroTVector(M,strip(x)), strip(x), x.validate )
+end

@@ -5,12 +5,13 @@
 export constructImageGraph
 
 """
-    constructImageGraph(img,type) - construct the graph that can be used
-        within the algorithms to model forward differences
-  #Arguments
-  * img – the manifold-valued (MPoint-entries) image
-  * type – the type of graph_
-  ** `forwardDifference` – generate the forward difference graph
+    constructImageGraph(img,type)
+
+construct the graph that can be used within the algorithms to model forward
+differences
+# Arguments
+* `img` – the manifold-valued (MPoint-entries) image
+* `type` – the type of graph, here `firstOrderDifference` and `secondOrderDifference`.
  """
 function constructImageGraph(data::Array{T}, graphtype::String)::Array{Tuple} where {T<:MPoint}
   if graphtype == "firstOrderDifference"

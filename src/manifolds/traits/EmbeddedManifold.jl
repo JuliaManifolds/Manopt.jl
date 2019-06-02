@@ -20,6 +20,6 @@ An abstract [`MPoint`](@ref) belonging to an embedded manifold.
 @traitdef IsEmbeddedP{X}
 """
     IsEmbeddedV{X}
-An abstract [`TVector`](@ref} belonging to an embedded manifold.
+An abstract [`TVector`](@ref) belonging to an embedded manifold.
 """
 @traitdef IsEmbeddedV{X}

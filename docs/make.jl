@@ -1,8 +1,32 @@
-using Manopt, Documenter
+using Manopt, Documenter, Literate
 
+# generate examples using Literate
+tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
+tutorialsRelativePath = "tutorials/"
+tutorialsOutputPath = joinpath(@__DIR__,"src/"*tutorialsRelativePath)
+tutorials  = [
+    "MeanAndMedian",
+    "GradientOfSecondOrderDifference",
+    "JacobiFields",
+    ]
+menuEntries = [
+    "Getting Started: Optimize!",
+    "Gradient of \$d_2\$",
+    "Jacobi Fields"]
+TutorialMenu = Array{Pair{String,String},1}()
+for (i,tutorial) in enumerate(tutorials)
+    global TutorialMenu
+    sourceFile = joinpath(tutorialsInputPath,tutorial*".jl")
+    targetFile = joinpath(tutorialsOutputPath,tutorial*"md")
+    Literate.markdown(sourceFile,tutorialsOutputPath; name=tutorial,
+    # codefence = "```julia" => "```",
+    credit=false)
+    push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath,tutorial*".md") )
+end
 makedocs(
-    format=:html,
-    modules=[Manopt],
+    # for development, we disable prettyurls
+    # format = Documenter.HTML(prettyurls = false),
+    modules = [Manopt],
     sitename = "Manopt.jl",
     pages = [
         "Home" => "index.md",
@@ -11,24 +35,22 @@ makedocs(
             "Combinations of Manifolds" => "manifolds/combined.md",
             "The Circle \$\\mathbb S^1\$" => "manifolds/circle.md",
             "The Euclidean Space \$\\mathbb R^n\$" => "manifolds/euclidean.md",
+            "The Grassmannian Manifold \$\\mathrm{Gr}(k,n)\$" => "manifolds/grassmannian.md",
             "The Hyperbolic Space \$\\mathbb H^n\$" => "manifolds/hyperbolic.md",
+            "The Special Orthogonal Group \$\\mathrm{SO}(n)\$" => "manifolds/rotations.md",
             "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",
-            "The Symmetric Matrices \$\\mathcal{Sym}(n)\$" => "manifolds/symmetric.md",
-            "The Symmetric Positive Definite Matrices \$\\mathbb P(n)\$" => "manifolds/symmetricpositivedefinite.md",
+            "The Stiefel Manifold \$\\mathrm{St}(k,n)\$" => "manifolds/stiefel.md",
+            "The Symmetric Matrices \$\\mathrm{Sym}(n)\$" => "manifolds/symmetric.md",
+            "The Symmetric Positive Definite Matrices \$\\mathcal P(n)\$" => "manifolds/symmetricpositivedefinite.md",
         ],
-        "Plans" => [
-            "Introduction" => "plans/index.md"
-            "activate Debug" => "plans/debugOptions.md"
-        ],
+        "Plans" => "plans/index.md",
         "Solvers" => [
             "Introduction" => "solvers/index.md",
-            "Conjugate Gradient Descent" => "solvers/conjugateGradientDescent.md",
             "Cyclic Proximal Point" => "solvers/cyclicProximalPoint.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Gradient Descent" => "solvers/gradientDescent.md",
             "Subgradient Method" => "solvers/subGradientMethod.md",
-            "Trust Region" => "solvers/trustRegion.md",
-        ],
+         ],
         "Functions" => [
             "Introduction" => "functions/index.md",
             "cost functions" => "functions/costFunctions.md",
@@ -42,16 +64,15 @@ makedocs(
             "Data" => "helpers/data.md",
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
-            "Line Search" => "helpers/lineSearch.md"
-        ]
+        ],
+        "Tutorials" => TutorialMenu,
+        "Function Index" => "list.md",
     ]
 )
-#deploydocs(
-#     target = "site",
-#     repo   = "github.com/kellertuer/Manopt.jl",
-#     branch = "gh-pages",
-#     latest = "master",
-#     osname = "osx",
-#     julia  = "1.0",
-#     deps = Deps.pip("pygments", "mkdocs", "python-markdown-math")
-#)
+deploydocs(
+    repo   = "github.com/kellertuer/Manopt.jl",
+    devbranch = "development",
+    versions = [
+    "stable" => "v^"
+    ]
+)
