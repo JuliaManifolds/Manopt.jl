@@ -6,5 +6,3 @@ several cost functions and corresponding gradients, but also corresponding
 manifold-valued data. Most of these functions require the evaluation of
 [Differential](@ref DifferentialFunctions)s or their `AdjointDifferential`s as well
 as [JacobiFields](@ref JacobiFieldFunctions) (e.g. easily to evaluate for symmetric manifolds).
-
-These are collected in the Functions Library of `Manopt.jl`.

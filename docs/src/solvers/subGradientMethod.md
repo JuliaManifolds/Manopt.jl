@@ -1,4 +1,4 @@
-# [Subgradient Method](@id SubgradientMethod)
+# [Subgradient Method](@id SubgradientSolver)
 ```@docs
 subGradientMethod
 ```
@@ -6,9 +6,6 @@ subGradientMethod
 ```@docs
 SubGradientMethodOptions
 ```
-# Step Size Rules
-```@docs
-constantStepSize
-decreasingStepSize
-normedStepSize
-```
+For [`DebugAction`](@ref)s and [`RecordAction`](@ref)s to record (sub)gradient,
+its norm and the stepsizes, see the [steepest Descent](@ref GradientDescentSolver)
+actions.

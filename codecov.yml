@@ -1,0 +1,6 @@
+comment: false
+
+ignore:
+  - "src/examples/.*"  # Ignore all examples
+  - "src/tutorials/.*" # Ignore all tutorials
+  - "src/helpers/exports/.*" # ignore exports until asymptote is running in travis 

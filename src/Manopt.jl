@@ -1,16 +1,16 @@
 """
-    Manopt.jl
-A package to perform Optimization methods on manifold in Julia uncluding
-high dimensional power manifolds to tackle manifold-valued image processing.
-
-See `Readme.md` more details, and `examples/` for examples that can just be
-`include`d.
+`Manopt.jl` – Optimization on Manifolds in Julia.
 """
 module Manopt
   using SimpleTraits
   using Markdown
 # Manifolds
   include("manifolds/Manifold.jl") #base type
+  # errors for false combinations of types or nonimplemented cases
+  include("manifolds/defaults/manifoldFallbacks.jl")
+  # Extended Vector decorations
+  include("manifolds/defaults/extendedData.jl")
+
   # Traits (properties/decorators)
   include("manifolds/traits/EmbeddedManifold.jl")
   include("manifolds/traits/LieGroup.jl")
@@ -19,14 +19,19 @@ module Manopt
   include("manifolds/Circle.jl")
   include("manifolds/Euclidean.jl")
   include("manifolds/Graph.jl")
+  include("manifolds/Grassmannian.jl")
   include("manifolds/Hyperbolic.jl")
+  include("manifolds/Rotations.jl")
   include("manifolds/Sphere.jl")
+  include("manifolds/Stiefel.jl")
   include("manifolds/SymmetricPositiveDefinite.jl")
   include("manifolds/Symmetric.jl")
   include("manifolds/TangentBundle.jl")
   # meta
   include("manifolds/Power.jl")
   include("manifolds/Product.jl")
+  # ...corresponding plans consisting of problems and options
+  include("plans/plan.jl")
   # Functions
   include("functions/adjointDifferentials.jl")
   include("functions/costFunctions.jl")
@@ -34,29 +39,25 @@ module Manopt
   include("functions/gradients.jl")
   include("functions/jacobiFields.jl")
   include("functions/proximalMaps.jl")
-  # ...corresponding plans consisting of problems and options
-  include("plans/plan.jl")
-  # ...solvers
-  include("solvers/conjugateGradientDescent.jl")
+  # ...solvers (1) general framework
+  include("solvers/solver.jl")
+  # ...solvers (2) specific solvers
   include("solvers/cyclicProximalPoint.jl")
   include("solvers/DouglasRachford.jl")
   include("solvers/steepestDescent.jl")
   include("solvers/subGradientMethod.jl")
-  include("solvers/trustRegion.jl")
+  # extended metasolvers
+  include("solvers/debugSolver.jl")
+  include("solvers/recordSolver.jl")
   # algorithms
   include("algorithms/basicAlgorithms.jl")
-  include("algorithms/lineSearch.jl")
   # Plots
   include("plots/SpherePlots.jl")
   # helpers
-  include("helpers/debugFunctions.jl")
   include("helpers/errorMeasures.jl")
   include("helpers/imageHelpers.jl")
-  include("helpers/stepSizeFunctions.jl")
   # Exports
   include("helpers/exports/Asymptote.jl")
   # data
   include("data/artificialDataFunctions.jl")
-  include("data/S2Lemniscate.jl")
-  include("data/signals.jl")
 end

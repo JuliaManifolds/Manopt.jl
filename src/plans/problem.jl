@@ -3,8 +3,8 @@
 #
 # ---
 import Random: randperm
-export getGradient, getCost, getHessian, getProximalMap, getProximalMaps
-export Problem, HessianProblem, ProximalProblem
+export getGradient, getCost, getProximalMap
+export Problem, HessianProblem
 
 """
     Problem
@@ -13,20 +13,22 @@ a certain optimization problem.
 """
 abstract type Problem end
 #
-# 1) Functions / Fallbacks
+# 1) Function defaults / Fallbacks
 #
-getCost(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
-    throw(Exception("no costFunction found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+"""
+    getCost(p,x)
+
+evaluate the cost function `F` stored within a [`Problem`](@ref) at the [`MPoint`](@ref) `x`.
+"""
+function getCost(p::P,x::MP) where {P <: Problem, MP <: MPoint}
+  return p.costFunction(x)
+end
 getGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
-    throw(Exception("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
-getHessian(p::Pr,x::P,η::T) where {Pr <: Problem, P <: MPoint, T <: TVector} =
-    throw(Exception("no Hessian found in $(typeof(p)) to evaluate for a $(typeof(x)) with tangent vector $(typeof(η))."))
-getProximalMaps(p::Pr,λ,x::P) where {Pr <: Problem, P <: MPoint} =
-    throw(Exception("no proximal maps found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
+    throw(ErrorException("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
 getProximalMap(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
-    throw(Exception("no $(i)th proximal map found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
+    throw(ErrorException("No proximal map No. $(i) found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 getSubGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
-        throw(Exception("no sub gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+        throw(ErrorException("no subgradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
 
 """
     HessianProblem <: Problem
@@ -36,11 +38,4 @@ mutable struct HessianProblem{mT <: Manifold} <: Problem
     M::mT
     costFunction::Function
     Heassian::Function
-end
-@doc doc"""
-    getHessian(p,x)
-evakuate the Hessian of a [`HessianProblem`](@ref)` p` at the [`MPoint`](@ref)` x`.
-"""
-function getHessian(p::P,x::MP) where {P <: HessianProblem{M} where M <: Manifold, MP <: MPoint }
-    return p.Hessian(x)
 end

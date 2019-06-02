@@ -1,9 +1,3 @@
-#
-#
-# For a proximal Problem with at least two proximal maps one can define the
-# following douglas rachford algorithm
-#
-#
 export DouglasRachford
 @doc doc"""
      DouglasRachford(M, F, proxMaps, x)
@@ -13,13 +7,9 @@ data $x_0$ and the (two) proximal maps `proxMaps`.
 For $k>2$ proximal
 maps the problem is reformulated using the parallelDouglasRachford: a vectorial
 proximal map on the power manifold $\mathcal M^k$ and the proximal map of the
-set that identifies all entries again, i.e. the Karcher mean.
-
-For details see
-> R. Bergmann, J. Persch, G. Steidl: A Parallel Douglas–Rachford Algorithm for
-> Minimizing ROF-like Functionals on Images with Values in Symmetric Hadamard
-> Manifolds.
-> SIAM J. Imaging Sciences 9.3, pp. 901–937, 2016. doi: 10.1137/15M1052858
+set that identifies all entries again, i.e. the Karcher mean. This henve also
+boild down to two proximal maps, though each evauates proximal maps in parallel,
+i.e. component wise in a vector.
 
 # Input
 * `M` – a Riemannian Manifold $\mathcal M$
@@ -33,83 +23,72 @@ the default parameter is given in brackets
 * `λ` – (`(iter) -> 1.0`) function to provide the value for the proximal parameter
   during the calls
 * `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.
-  $x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})$, where $t^{(k)}$ is the result
+  $t_{k+1} = g(α_k; t_k, s_k)$, where $s_k$ is the result
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflection`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
-* `returnReason` : ( `false` ) whether or not to return the reason as second return
-  value.
-* `stoppingCriterion` : ( `(i,x,xnew,λ) -> ...` ) a function indicating when to stop.
-  Default is to stop if the norm of the iterates change $d_{\mathcal M}(x,x_{\text{new}})$ is less
-  than $10^{-4}$ or the iterations `i` exceed 500.
+* `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200),`[`stopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
+* `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
+  [`Power`](@ref) manifold with two proxes. This can be used to trigger
+  parallel Douglas–Rachford if you enter with two proxes. Keep in mind, that a
+  parallel Douglas–Rachford implicitly works on a [`Power`](@ref) manifold and
+  its first argument is the result then (assuming all are equal after the second
+  prox.
+
+and the ones that are passed to [`decorateOptions`](@ref) for the decorators.
+
+# Output
+* `xOpt` – the resulting point of the Douglas Rachford algorithm
+* `record` - if activated (using the `record` key, see [`RecordOptions`](@ref)
+  an array containing the recorded values.
 """
-function DouglasRachford(M::mT, F::Function, x::P, proxes::Array{Function,N} where N;
-    λ::Function = (iter) -> 1.0, α::Function = (iter) -> 0.9,
+function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, x::P;
+    λ::Function = (iter) -> 1.0,
+    α::Function = (iter) -> 0.9,
     R = reflection,
-    stoppingCriterion::Function = (i,x,xnew,λ) -> (distance(M,x,xnew) < 10.0^-4 || i > 499, (i>499) ? "max Iter $(i) reached." : "Minimal change small enough."),
-    returnReason=false,
-    kwargs... #especially may contain debug
-    ) where {mT <: Manifold, P <: MPoint}
+    parallel::Int = 0,
+    stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenChangeLess(10.0^-5)),
+    kwargs... #especially may contain decorator options
+) where {mT <: Manifold, P <: MPoint}
     if length(proxes) < 2
         throw(
          ErrorException("Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps.")
         );
-    elseif length(proxes==2)
-        lM = M;
+    elseif length(proxes) == 2
         prox1 = proxes[1]
         prox2 = proxes[2]
     else # more than 2 -> parallelDouglasRachford
-        k=length(proxes)
-        lM = Power(M,k)
-        prox1 = (λ,x) -> [proxes[i](λ,x[i]) for i in 1:k]
-        prox2 = (λ,x) -> fill(mean(M,getValue(x)),k)
+        parallel = length(proxes)
+        prox1 = (λ,x) -> PowPoint([proxes[i](λ,x[i]) for i in 1:parallel])
+        prox2 = (λ,x) -> PowPoint( fill(mean(M.manifold,getValue(x)),parallel) )
     end
-    p = ProximalProblem(M,F,[prox1 prox2])
-    o = DouglasRachfordOptions(x, stoppingCriterion, reflection, λ, α)
-    # create default here to check if the user provided a debug and still have the typecheck
-    debug::Tuple{Function,Dict{String,Any},Int}= (x::Dict{String,Any}->print(""),Dict{String,Any}(),0);
-    kwargs=Dict(kwargs)
-    if haskey(kwargs, :debug) # if a key is given -> decorate Options.
-        debug = kwargs[:debug]
-        o = DebugOptions(o,debug[1],debug[2],debug[3])
-    end
-    x,r = DouglasRachford(p,o)
-    if returnReason
-        return x,r
+    if parallel > 0
+        M = Power(M,parallel)
+        x = PowPoint([copy(x) for i=1:parallel])
+        nF = x -> F(x[1])
     else
-        return x
+        nF = F
     end
+    p = ProximalProblem(M,nF,[prox1,prox2])
+    o = DouglasRachfordOptions(x, λ, α, reflection, stoppingCriterion,parallel > 0)
+
+    o = decorateOptions(o; kwargs...)
+    resultO = solve(p,o)
+    if hasRecord(resultO)
+        return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
+    end
+    return getSolverResult(p,resultO)
 end
-"""
-    DouglasRachford(p,o)
-perform a Douglas Rachford algorithm based on the [`ProximalProblem`](@ref)` p`
-and the [`DouglasRachfordOptions`](@ref)` o`.
-"""
-function DouglasRachford(p::ProximalProblem,o::DouglasRachfordOptions)
-    if length(p.proximalMaps) != 2
-        throw( ErrorException("Douglas-Rachford requires exactely two proximal maps. The problem provides $(length(p.proximalMaps))"))
-    end
-    x = getOptions(o).x0; newx = x;
-    M = p.M
-    λ = getOptions(o).λ; α = getOptions(o).α; R = getOptions(o).R
-    stop=false; iter=0;
-    while !stop
-        iter = iter+1;
-        # Reflect at the first prox
-        p1 = getProximalMap(p,λ(iter),x,1)
-        xR = R(M,p1,x);
-        # Reflect at second prox
-        p2 = getProximalMap(p,λ(iter),xR,2)
-        t = R(M,xR,p2)
-        # relaxation
-        xnew = geodesic(M,x,xnew,α(iter))
-        stop, reason = evaluateStoppingCriterion(o,iter,x,xnew,λ)
-        # Debug?
-        if optionsHasDebug(o)
-            updateDebugValues!(o,Dict("x" => x, "xnew" => xnew, "Iteration" => iter, "Reason" => reason));
-            Debug(o)
-        end
-        x = xnew
-    end
-    return x,reason
+function initializeSolver!(p::ProximalProblem,o::DouglasRachfordOptions)
+end
+function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
+    pP = getProximalMap(p,o.λ(iter),o.s,1)
+    snew = o.R(p.M,pP, o.s);
+    o.x = getProximalMap(p,o.λ(iter),snew,2)
+    snew = o.R(p.M,o.x,snew)
+    # relaxation
+    o.s = geodesic(p.M,o.s,snew,o.α(iter))
+end
+function getSolverResult(p::ProximalProblem,o::DouglasRachfordOptions)
+    return o.parallel ? o.x[1] : o.x
 end

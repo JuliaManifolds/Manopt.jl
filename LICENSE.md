@@ -1,7 +1,7 @@
-The ManifoldValuedImageProcessing.jl package is licensed under the MIT "Expat" License:
+The Manopt.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2016:
->  * Ronny Bergmann
+> Copyright (c) 2018-2019:
+>  * Ronny Bergmann <manopt@ronnybergmann.net>
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
