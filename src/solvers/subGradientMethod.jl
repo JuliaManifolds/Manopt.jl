@@ -11,17 +11,16 @@ usually set to a constant value. Though the subgradient might be set valued,
 the argument `∂F` should always return _one_ element from the subgradient.
 
 # Input
-* `M` : a manifold $\mathcal M$
-* `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `M` – a manifold $\mathcal M$
+* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `∂F`: the (sub)gradient $\partial F\colon\mathcal M\to T\mathcal M$ of F
   restricted to always only returning one value/element from the subgradient
-* `x` : an initial value $x\in\mathcal M$
+* `x` – an initial value $x\in\mathcal M$
 
 # Optional
-* `stepsize` : ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
-  functor.
-* `retraction` : (`exp`) a `retraction(M,x,ξ)` to use.
-* `stoppingCriterion` : ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+* `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
+* `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
+* `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 
 and the ones that are passed to [`decorateOptions`](@ref) for decorators.

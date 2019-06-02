@@ -35,6 +35,7 @@ makedocs(
             "Combinations of Manifolds" => "manifolds/combined.md",
             "The Circle \$\\mathbb S^1\$" => "manifolds/circle.md",
             "The Euclidean Space \$\\mathbb R^n\$" => "manifolds/euclidean.md",
+            "The Grassmannian Manifold \$\\mathrm{Gr}(k,n)\$" => "manifolds/grassmannian.md",
             "The Hyperbolic Space \$\\mathbb H^n\$" => "manifolds/hyperbolic.md",
             "The Special Orthogonal Group \$\\mathrm{SO}(n)\$" => "manifolds/rotations.md",
             "The Sphere \$\\mathbb S^n\$" => "manifolds/sphere.md",

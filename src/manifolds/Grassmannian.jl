@@ -73,7 +73,11 @@ getValue(x::GrPoint) = x.value;
 A tangent vector $\xi \in T_x\mathcal M$ on the manifold
 $\mathcal M = \mathrm{Gr}(k,n)$. The tangent space is given by as
 
-$T_x\mathrm{Gr}(k,n) = \bigl\{\xi \in \mathbb{K}^{n\times k} \big| {\bar ξ}^\mathrm{T}x = {\bar x}^\mathrm{T}ξ = 0_{k×k} \bigr\}.$
+```math
+T_x\mathrm{Gr}(k,n) = \bigl\{
+\xi \in \mathbb{K}^{n\times k} \ \big|
+\ {\bar ξ}^\mathrm{T}x = {\bar x}^\mathrm{T}ξ = 0_{k×k} \bigr\}.
+```
 
 # Constructor
 
@@ -96,7 +100,7 @@ getValue(ξ::GrTVector) = ξ.value;
     dot(M,x,ξ,ν)
 
 compute the Riemannian inner product for two [`GrTVector`](@ref)s `ξ` and `ν`
-from $T_x\mathcal M$ of the [`Grassmannian`](@ref)` M` given by
+from $T_x\mathcal M$ of the [`Grassmannian`](@ref) manifold `M` given by
 
 $\langle \xi, \nu \rangle_x = \operatorname{Re}(\operatorname{tr}(\xi^{\mathrm{T}} ν)),$
 """
@@ -107,7 +111,7 @@ end
 @doc doc"""
     distance(M,x,y)
 
-compute the Riemannian distance on [`Grassmannian`](@ref)` M`$= \mathrm{Gr}(k,n)$ embedded in
+compute the Riemannian distance on [`Grassmannian`](@ref) manifold `M`$= \mathrm{Gr}(k,n)$ embedded in
 $\mathbb R$. Let $USV = {\bar x}^\mathrm{T}y$ denote the SVD decomposition of
 $x'y$. Then we compute
 
@@ -132,8 +136,8 @@ end
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
 
-compute the exponential map on the [`Grassmannian`](@ref)` M`$= \mathrm{Gr}(k,n)$ with
-respect to the [`GrPoint`](@ref)` x` and the [`GrTVector`](@ref)` ξ`, which can
+compute the exponential map on the [`Grassmannian`](@ref) manifold `M`$= \mathrm{Gr}(k,n)$ with
+respect to the [`GrPoint`](@ref) `x` and the [`GrTVector`](@ref) `ξ`, which can
 be shortened with `t` to `tξ`. Let $USV = t\xi$ denote the SVD decomposition of
 $t\xi$. Then we compute
 
@@ -154,7 +158,8 @@ end
     inverseRetraction(M,x,y)
 
 return a [`GrTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{Gr}(k,n)$
-with which the [`GrPoint`](@ref) `y` can be reached by the
+with which the [`GrPoint`](@ref) `y` can be reached on the
+[`Grassmannian`](@ref) manifold `M`by the
 [`retraction`](@ref) from the [`GrPoint`](@ref) `x` after time 1.
 The formula reads
 
@@ -172,10 +177,10 @@ end
 @doc doc"""
     log(M,x,y)
 
-compute the logarithmic map on the [`Grassmannian`](@ref)
+compute the logarithmic map on the [`Grassmannian`](@ref) manifold
 $\mathcal M=\mathrm{Gr}(k,n)$, i.e. the [`GrTVector`](@ref) whose corresponding
-[`geodesic`](@ref) starting from [`GrPoint`](@ref)` x` reaches the
-[`GrPoint`](@ref)` y` after time 1 on the [`Grassmannian`](@ref)` M`.
+[`geodesic`](@ref) starting from [`GrPoint`](@ref) `x` reaches the
+[`GrPoint`](@ref) `y` after time 1 on the [`Grassmannian`](@ref) manifold `M`.
 The formula reads
 
 $\log_x y = V\cdot \operatorname{atan}(S) \cdot {\bar U}^\mathrm{T}$
@@ -202,8 +207,8 @@ end
 @doc doc"""
     manifoldDimension(x)
 
-return the dimension of the [`Grassmannian`](@ref)` M`$= \mathrm{Gr}(k,n)$, the
-[`GrPoint`](@ref)` x`, itself embedded in $\mathbb{K}^{n\times k}$, belongs to.
+return the dimension of the [`Grassmannian`](@ref) manifold `M`$= \mathrm{Gr}(k,n)$, the
+[`GrPoint`](@ref) `x`, itself embedded in $\mathbb{K}^{n\times k}$, belongs to.
 The dimension for $\mathbb{K}=\mathbb{R}$ is defined by
 
 $k(n-k)$
@@ -223,7 +228,7 @@ end
 @doc doc"""
     manifoldDimension(M)
 
-return the dimension of the [`Grassmannian`](@ref)` M`.
+return the dimension of the [`Grassmannian`](@ref) manifold `M`.
 The dimension for $\mathbb{K}=\mathbb{R}$ is defined by
 
 $k(n-k)$
@@ -243,8 +248,8 @@ end
 @doc doc"""
     norm(M,x,ξ)
 
-compute the norm of the [`GrTVector`](@ref)` ξ` in the tangent space
-$T_x\mathcal M$ at [`GrPoint`](@ref)` x` of the [`Grassmannian`](@ref)` M`.
+compute the norm of the [`GrTVector`](@ref) `ξ` in the tangent space
+$T_x\mathcal M$ at [`GrPoint`](@ref) `x` of the [`Grassmannian`](@ref) manifold `M`.
 
 $\lVert \xi \rVert_x = \sqrt{\sum_{i,j=0}^n \xi_{ij}^2}$
 
@@ -258,9 +263,9 @@ end
 @doc doc"""
     parallelTransport(M,x,y,ξ)
 
-compute the paralllel transport of the [`GrTVector`](@ref)` ξ` from
-the tangent space $T_x\mathcal M$ at [`GrPoint`](@ref)` x` to
-$T_y\mathcal M$ at [`GrPoint`](@ref)` y` on the [`Grassmannian`](@ref)` M` provided
+compute the paralllel transport of the [`GrTVector`](@ref) `ξ` from
+the tangent space $T_x\mathcal M$ at [`GrPoint`](@ref) `x` to
+$T_y\mathcal M$ at [`GrPoint`](@ref) `y` on the [`Grassmannian`](@ref) manifold `M` provided
 that the corresponding [`geodesic`](@ref) $g(\cdot;x,y)$ is unique.
 The formula reads
 
@@ -277,13 +282,13 @@ end
     projection(M,x,q)
 
 project a matrix q orthogonally on the [`GrPoint`](@ref) `x` of the manifold
-[`Grassmannian`](@ref) `M`. The formula reads
+[`Grassmannian`](@ref) manifold `M`. The formula reads
 
 $\operatorname{proj}_{\mathcal M}(x,q) = q-x({\bar x}^\mathrm{T}q),$
 
 i.e. the difference matrix of the image and the output matrix lies in
 the orthogonal complement of all [`GrTVector`](@ref)s from the tangent space
-$T_x\mathcal M$ at [`GrPoint`](@ref)` x`.
+$T_x\mathcal M$ at [`GrPoint`](@ref) `x`.
 
 # see also
 [`parallelTransport`](@ref), [`randomTVector`](@ref)
@@ -297,7 +302,7 @@ end
 @doc doc"""
     randomMPoint(M [,type=:Gaussian, σ=1.0])
 
-return a random [`GrPoint`](@ref)` x` on [`Grassmannian`](@ref) `M` by
+return a random [`GrPoint`](@ref) `x` on [`Grassmannian`](@ref) manifold `M` by
 generating a random (Gaussian) matrix with standard deviation `σ` in matching
 size, which is orthonormal.
 """
@@ -326,7 +331,7 @@ end
     retraction(M,x,ξ,[t=1.0])
 
 move the [`GrPoint`](@ref) `x` in the direction of the [`GrTVector`](@ref) `ξ`
-on the  [`Grassmannian`](@ref) `M`. This SVD-based retraction is an
+on the  [`Grassmannian`](@ref) manifold `M`. This SVD-based retraction is an
 approximation of the exponential map [`exp`](@ref). Let
 
 $USV = x + tξ$
@@ -346,7 +351,7 @@ end
     zeroTVector(M,x)
 
 return a zero tangent vector in the tangent space of the [`GrPoint`](@ref) on
-the [`Grassmannian`](@ref)` M`.
+the [`Grassmannian`](@ref) manifold `M`.
 """
 function zeroTVector(M::Grassmannian{T}, x::GrPoint{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   return GrTVector{T}(zeros(M.dimensionvecspace,M.dimensionsubspace))

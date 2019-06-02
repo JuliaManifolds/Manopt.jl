@@ -47,9 +47,9 @@ end
 @doc doc"""
     SPDPoint <: MPoint
 
-A point $x$ on the manifold $\mathcal M = \mathcal P(n)$ of $n\times n$
-symmetric positive definite matrices, represented in the redundant way of a
-symmetric positive definite matrix.
+A point $x$ on the [`SymmetricPositiveDefinite`](@ref) manifold
+$\mathcal M = \mathcal P(n)$ of $n\times n$,
+represented in the redundant way of a symmetric positive definite matrix.
 """
 struct SPDPoint{ T <: AbstractFloat} <: MPoint
 	value::Matrix{T}
@@ -59,12 +59,13 @@ SPDPoint(v::Matrix{T}) where {T <: AbstractFloat} = SPDPoint{T}(v)
 getValue(x::SPDPoint) = x.value
 @doc doc"""
     SPDTVector <: TVector
+
 A tangent vector
 
 $\xi \in T_x\mathcal M = \{ x^{\frac{1}{2}}\nu x^{\frac{1}{2}}
 \big| \nu\in\mathbb R^{n,n}\text{ with }\nu=\nu^{\mathrm{T}}\}$
 
-to the [`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref)
+to the [`SymmetricPositiveDefinite`](@ref) manifold
 $\mathcal M = \mathcal P(n)$ at the [`SPDPoint`](@ref) `x` represented in the
 redundant way of a skew symmetric matrix $\nu$, i.e. in the Lie algebra
 $T_I\mathcal P(n)$, where $I\in\mathbb R^{n\times n}$ denotes the identity
@@ -88,7 +89,7 @@ getValue(ξ::SPDTVector) = ξ.value
     distance(M,x,y)
     
 compute the Riemannian distance on the [`SymmetricPositiveDefinite`](@ref)
-[`Manifold`](@ref) $\mathcal M=\mathcal P(n)$, can be computed as
+manifold $\mathcal M=\mathcal P(n)$, given by
 
 ```math
 d_{\mathcal P(n)}(x,y) = \lVert \operatorname{Log}(x^{-\frac{1}{2}}yx^{-\frac{1}{2}})\rVert,
@@ -103,9 +104,10 @@ function distance(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint)
 end
 @doc doc"""
     dot(M,x,ξ,ν)
+
 compute the innter product of the two [`SPDTVector`](@ref)s `ξ,ν` from the tangent
 space $T_x\mathcal M$ of the [`SPDPoint`](@ref) `x` on the
-[`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M` given by the formula
+[`SymmetricPositiveDefinite`](@ref) manifold `M` given by the formula
 
 $ \langle \xi, \nu \rangle_x = \operatorname{tr}(x^{-1}\xi x^{-1}\nu ),$
 
@@ -115,7 +117,8 @@ dot(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, ν::SPDTVector) =
 
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
-Compute the exponential map on the [`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M`
+
+compute the exponential map on the [`SymmetricPositiveDefinite`](@ref) manifold `M`
  `M`$=\mathcal P(n)$ with respect to the [`SPDPoint`](@ref) `x` and the
 [`SPDTVector`](@ref)` ξ`, which can be shortened with `t` to `tξ`.
 The formula reads
@@ -130,11 +133,12 @@ function exp(M::SymmetricPositiveDefinite, x::SPDPoint, ξ::SPDTVector, t::Float
 end
 @doc doc"""
     log(M,x,y)
-Compute the logarithmic map on the [`SymmetricPositiveDefinite`](@ref)
+
+compute the logarithmic map on the [`SymmetricPositiveDefinite`](@ref) manifold
 $\mathcal M=\mathcal P(n)$, i.e. the [`SPDTVector`](@ref) whose corresponding
 [`geodesic`](@ref) starting from [`SPDPoint`](@ref) `x` reaches the
-[`SPDPoint`](@ref)`y` after time 1 on the [`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M`.
-The formula reads for
+[`SPDPoint`](@ref)`y` after time 1.
+The formula reads
 
 $\log_x y = x^{\frac{1}{2}}\operatorname{Log}(x^{-\frac{1}{2}} y x^{-\frac{1}{2}})x^{\frac{1}{2}},$
 
@@ -149,22 +153,23 @@ end
 
 return the manifold dimension of the [`SymmetricPositiveDefinite`](@ref)
 [`Manifold`](@ref) `M`, i.e. for $n\times n$ matrices the dimension
-is $d_{\mathcal P(n)} = \frac{n(n+1)}{2}$.
+is $\frac{n(n+1)}{2}$.
 """
 manifoldDimension(M::SymmetricPositiveDefinite) = (M.n+1)*M.n/2
 @doc doc"""
     manifoldDimension(x)
-returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M`
+
+returns the manifold dimension of the [`SymmetricPositiveDefinite`](@ref) manifold `M`
 manifold the [`SPDPoint`](@ref) `x` belongs to,
 i.e. for $n\times n$ matrices the dimension is
-$d_{\mathcal P(n)} = \frac{n(n+1)}{2}$.
+$\frac{n(n+1)}{2}$.
 """
 manifoldDimension(x::SPDPoint) = Int( size( getValue(x), 1)*(size( getValue(x), 1)+1)/2 )
 @doc doc"""
     norm(M,x,ξ)
 
 compute the norm of the [`SPDTVector`](@ref)` ξ` from the tangent space $T_x\mathcal M$
-at the [`SPDPoint`](@ref) `x` on the [`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M`
+at the [`SPDPoint`](@ref) `x` on the [`SymmetricPositiveDefinite`](@ref) manifold `M`
 induced by the inner product [`dot`](@ref) as $\lVert\xi\rVert_x = \sqrt{\langle\xi,\xi\rangle_x}$.
 """
 function norm(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector)
@@ -176,7 +181,7 @@ end
 
 compute the paralllel transport of the [`SPDTVector`](@ref)` ξ` from
 the tangent space $T_x\mathcal M$ at [`SPDPoint`](@ref) `x` to
-$T_y\mathcal M$ at [`SPDPoint`](@ref)`y` on the [`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M`
+$T_y\mathcal M$ at [`SPDPoint`](@ref)`y` on the [`SymmetricPositiveDefinite`](@ref) manifold `M`
 along the [`geodesic`](@ref) $g(\cdot;x,y)$.
 The formula reads
 
@@ -222,27 +227,34 @@ end
     randomMPoint(M,:Gaussian[, σ=1.0])
 
 gerenate a random symmetric positive definite matrix on the
-[`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M`.
+[`SymmetricPositiveDefinite`](@ref) manifold `M`.
 """
-function randomMPoint(M::SymmetricPositiveDefinite,::Val{:Gaussian},σ::Real=1.0)
+function randomMPoint(M::SymmetricPositiveDefinite,::Val{:Gaussian},σ::Float64=1.0)
     D = Diagonal( 1 .+ randn(M.n) ) # random diagonal matrix
     s = qr(σ * randn(M.n,M.n)) # random q
     return SPDPoint(s.Q*D* transpose(s.Q))
 end
 @doc doc"""
-    randomTVector(M, x [, :Gaussian, σ = 1.0])
+    randomTVector(M,x [,:Gaussian,σ = 1.0])
 
 generate a random tangent vector in the tangent space of the [`SPDPoint`](@ref)
-`x` on the [`SymmetricPositiveDefinite`](@ref) `M` by using a Gaussian distribution
+`x` on the [`SymmetricPositiveDefinite`](@ref) manifold `M` by using a Gaussian distribution
 with standard deviation `σ` on an ONB of the tangent space.
 """
-function randomTVector(M::SymmetricPositiveDefinite, x::SPDPoint, ::Val{:Gaussian}, σ::Real = 0.01)
+function randomTVector(M::SymmetricPositiveDefinite, x::SPDPoint, ::Val{:Gaussian}, σ::Float64 = 0.01)
     # generate ONB in TxM
     I = SPDPoint(one(zeros(M.n,M.n)))
     Ξ,κ = tangentONB(M,I,SPDTVector(one(zeros(M.n,M.n))))
     Ξx = parallelTransport.(Ref(M), Ref(I), Ref(x), Ξ)
     return sum( randn(length(Ξx)) .* Ξx )
 end
+@doc doc"""
+    randomTVector(M,x [,:Gaussian,σ = 1.0])
+
+generate a random tangent vector in the tangent space of the [`SPDPoint`](@ref)
+`x` on the [`SymmetricPositiveDefinite`](@ref) manifold `M` by using a Rician distribution
+with standard deviation `σ`.
+"""
 function randomTVector(M::SymmetricPositiveDefinite, x::SPDPoint, ::Val{:Rician}, σ::Real = 0.01)
     # Rician
     C = cholesky( Hermitian(getValue(x)) )
@@ -255,7 +267,7 @@ end
     Ξ,κ = tangentONB(M,x,y)
 
 compute a ONB in the tangent space of the [`SPDPoint`](@ref) `x` on the
-[`SymmetricPositiveDefinite`](@ref) `M` where the first vector is given by the
+[`SymmetricPositiveDefinite`](@ref) manifold `M` where the first vector is given by the
 normed `log(M,x,y)`, i.e. the direction to the [`SPDPoint`](@ref) `y`.
 """
 tangentONB(M::SymmetricPositiveDefinite, x::SPDPoint, y::SPDPoint) = tangentONB(M,x,log(M,x,y))
@@ -263,7 +275,7 @@ tangentONB(M::SymmetricPositiveDefinite, x::SPDPoint, y::SPDPoint) = tangentONB(
     Ξ,κ = tangentONB(M,x,y)
 
 compute a ONB in the tangent space of the [`SPDPoint`](@ref) `x` on the
-[`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M` where the first
+[`SymmetricPositiveDefinite`](@ref) manifold `M` where the first
 vector is the normed tangent vector of the [`SPDTVector`](@ref) `ξ`.
 
 The basis is computed using the eigenvectors $v_i$, $i=1,\ldots,n$, of `ξ` and
@@ -307,7 +319,7 @@ typeofMPoint(::Type{SPDTVector{T}}) where T = SPDPoint{T}
     typicalDistance(M)
 
 returns the typical distance on the [`SymmetricPositiveDefinite`](@ref)
-[`Manifold`](@ref) `M` $\sqrt{\frac{n(n+1)}{2}}$.
+manifold `M` $\sqrt{\frac{n(n+1)}{2}}$.
 """
 typicalDistance(M::SymmetricPositiveDefinite) = sqrt(manifoldDimension(M));
 
@@ -315,7 +327,7 @@ typicalDistance(M::SymmetricPositiveDefinite) = sqrt(manifoldDimension(M));
     validateMPoint(M,x)
 
 validate that the [`SPDPoint`](@ref) `x` is a valid point on the manifold
-[`SymmetricPositiveDefinite`](@ref) `M`, i.e. the matrix is symmetric and
+[`SymmetricPositiveDefinite`](@ref) manifold `M`, i.e. the matrix is symmetric and
 positive definite.
 """
 function validateMPoint(M::SymmetricPositiveDefinite, x::SPDPoint)
@@ -368,7 +380,7 @@ end
 
 returns a zero vector in the tangent space $T_x\mathcal M$ of the
 [`SPDPoint`](@ref) $x\in\mathcal P(n)$ on the
-[`SymmetricPositiveDefinite`](@ref) [`Manifold`](@ref) `M`.
+[`SymmetricPositiveDefinite`](@ref) manifold `M`.
 """
 zeroTVector(M::SymmetricPositiveDefinite, x::SPDPoint) = SPDTVector(  zero( getValue(x) )  );
 # Display

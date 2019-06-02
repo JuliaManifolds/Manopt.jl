@@ -1,5 +1,5 @@
 """
-`Manopt.jl` – Perform Optimization on Manifolds in Julia.
+`Manopt.jl` – Optimization on Manifolds in Julia.
 """
 module Manopt
   using SimpleTraits

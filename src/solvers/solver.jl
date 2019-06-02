@@ -7,7 +7,7 @@
 export decorateOptions
 export initializeSolver!, doSolverStep!, getSolverResult, stopSolver!
 export solve
-"""
+@doc doc"""
     decorateOptions(o)
 
 decorate the [`Options`](@ref)` o` with specific decorators.
@@ -16,10 +16,13 @@ decorate the [`Options`](@ref)` o` with specific decorators.
 optional arguments provide necessary details on the decorators. A specific
 one is used to activate certain decorators.
 
-* `debug` : (`Array{Symbol,1}()`) a set of symbols printed during the iterations,
-at start or end, depending on the symbol. Providing at least on symbol activates
-the [`DebugOptions`](@ref) decorator
-* `record` : (`NTuple{0,Symbol}()`)
+* `debug` – (`Array{Union{Symbol,DebugAction,String,Int},1}()`) a set of symbols
+  representing [`DebugActions`](@ref), `Strings` used as dividers and a subsampling
+  integer. These are passed as a [`DebugGroup`](@ref) within `:All` to the
+  [`DebugOptions`](@ref) decorator dictionary. Only excention is `:Stop` that is passed to `:Stop`.
+* `record` – (`Array{Union{Symbol,RecordAction,Int},1}()`) specify recordings 
+  by using `Symbol`s or [`RecordAction`](@ref)s directly. The integer can again
+  be used for only recording every $i$th iteration.
 
 # See also
 [`DebugOptions`](@ref), [`RecordOptions`](@ref)

@@ -125,8 +125,8 @@ during the last iteration. See [`DebugEntryChange`](@ref)
 # Parameters
 * `x0` – an initial value to already get a Change after the first iterate. Can be left out
 * `a` – (`StoreOptionsAction( (:x,) )`) – the storage of the previous action
-* `prefix` (`"Last Change:"`) prefix of the debug output
-* `print` (`print`) default method to peform the print.
+* `prefix` – (`"Last Change:"`) prefix of the debug output
+* `print` – (`print`) default method to peform the print.
 """
 mutable struct DebugChange <: DebugAction
     print::Function
@@ -335,7 +335,7 @@ end
 
 create a [`DebugAction`](@ref) where
 
-* a `String` yields the correspoinding divider
+* a `String`yields the correspoinding divider
 * a [`DebugAction`](@ref) is passed through
 * a [`Symbol`] creates [`DebugEntry`](@ref) of that symbol, with the exceptions
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.

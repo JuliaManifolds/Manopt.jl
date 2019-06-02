@@ -22,19 +22,22 @@
 # necessary information to run the algorithm.
 #
 # ## Example
-# A `gradientPlan` consists of a [`GradientProblem`](@ref) with the fields `M`, `costFunction`
-# $f$ as well as `gradient` storing the gradient function corresponding to $f$.
-# Accessing both functions can be done directly but should be encapsulated using
-# [`getCost`](@ref)`(p,x)` and [`getGradient`](@ref)`(p,x)`, where in both cases `x` is a [`MPoint`](@ref)
-# on the [`Manifold`](@ref) `M`.
+#
+# A gradient plan consists of a [`GradientProblem`](@ref) with the fields `M`,
+# cost function $f$ as well as `gradient` storing the gradient function
+# corresponding to $f$. Accessing both functions can be done directly but should
+# be encapsulated using [`getCost`](@ref)`(p,x)` and [`getGradient`](@ref)`(p,x)`,
+# where in both cases `x` is an [`MPoint`](@ref) on the [`Manifold`](@ref) `M`.
 # Second, the [`GradientDescentOptions`](@ref) specify that the algorithm to solve
-# the [`GradientProblem`](@ref) will be the [gradient descent](https://en.wikipedia.org/wiki/Gradient_descent)
-# algorithm. It requires an initial value `o.x0`, a [`StoppingCriterion`](@ref) `o.stop`,
-# a [`Stepsize`](@ref) `o.stepsize` and a retraction `o.retraction` and it internally
-# stores the last evláluation of the gradient at `o.∇` for convenience.
+# the [`GradientProblem`](@ref) will be the [gradient
+# descent](https://en.wikipedia.org/wiki/Gradient_descent) algorithm. It requires
+# an initial value `o.x0`, a [`StoppingCriterion`](@ref) `o.stop`, a
+# [`Stepsize`](@ref) `o.stepsize` and a retraction `o.retraction` and it
+# internally stores the last evaluation of the gradient at `o.∇` for convenience.
 # The only mandatory parameter is the initial value `x0`, though the defaults for
-# both the stopping criterion ([`stopAfterIteration`](@ref)`(100)`) as well as the stepsize ([`ConstantStepsize`](@ref)`(1.)`
-# are quite conservative, but are chosen to be as simple as possible.
+# both the stopping criterion ([`stopAfterIteration`](@ref)`(100)`) as well as the
+# stepsize ([`ConstantStepsize`](@ref)`(1.)` are quite conservative, but are
+# chosen to be as simple as possible.
 #
 # With these two at hand, running the algorithm just requires to call `xOpt = solve(p,o)`.
 #
@@ -65,6 +68,7 @@ nothing #hide
 # Then our data looks like
 #
 asyResolution = 2
+nothing #hide
 renderAsymptote(exportFolder*"/startDataAndCenter.asy",asyExportS2Signals; #src
     render = asyResolution, #src
     points = [ [x], data], #src
@@ -85,8 +89,9 @@ renderAsymptote(exportFolder*"/startDataAndCenter.asy",asyExportS2Signals; #src
 # ## Computing the Mean
 #
 # To compute the mean on the manifold we use the characterization, that the
-# Euclideamean minimizes the sum of squared distances, and end up with the
-# following cost function. Its minimizer is called __Riemannian Center of Mass__.
+# Euclidean mean minimizes the sum of squared distances, and end up with the
+# following cost function. Its minimizer is called
+# [Riemannian Center of Mass](https://arxiv.org/abs/1407.2087).
 #
 F = y -> sum(1/(2*n) * distance.(Ref(M),Ref(y),data).^2)
 ∇F = y -> sum(1/n*gradDistance.(Ref(M),data,Ref(y)))
@@ -101,7 +106,7 @@ nothing #hide
 xMean = steepestDescent(M,F,∇F,data[1])
 nothing; #hide
 # but in order to get more details, we further add the `debug=` options, which
-# act as a [decorator pattern])(https://en.wikipedia.org/wiki/Decorator_pattern)
+# act as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern)
 # using the [`DebugOptions`](@ref) and [`DebugAction`](@ref)s. The latter store
 # values if that's necessary, for example for the [`DebugChange`](@ref) that prints
 # the change during the last iteration. The following debug prints
@@ -109,7 +114,7 @@ nothing; #hide
 # `# i | x: | Last Change: | F(x): ``
 #
 # as well as the reason why the algorithm stopped at the end.
-# Here, the formaz shorthand and the [`DebugFactory`] are used, whcih returns a
+# Here, the format shorthand and the [`DebugFactory`] are used, which returns a
 # [`DebugGroup`](@ref) of [`DebugAction`](@ref) performed each iteration and the stop,
 # respectively.
 xMean = steepestDescent(M,F,∇F,data[1];
@@ -144,7 +149,7 @@ renderAsymptote(exportFolder*"/startDataCenterMean.asy",asyExportS2Signals; #src
 F2 = y -> sum( 1/(2*n) * distance.(Ref(M),Ref(y),data))
 proxes = Function[ (λ,y) -> proxDistance(M,λ/n,di,y,1) for di in data ]
 nothing #hide
-# where the `Function` is a helper for global scope to infere the correct type.
+# where the `Function` is a helper for global scope to infer the correct type.
 #
 # We then call the [`cyclicProximalPoint`](@ref) as
 xMedian, values = cyclicProximalPoint(M,F2,proxes,data[1];
@@ -153,10 +158,11 @@ xMedian, values = cyclicProximalPoint(M,F2,proxes,data[1];
 )
 nothing # hide
 # where the differences to [`steepestDescent`](@ref) are as follows
-# * the thrid parameter is now an Array of proximal maps
+# 
+# * the third parameter is now an Array of proximal maps
 # * debug is reduces to only every 50th iteration
 # * we further activated a [`RecordAction`](@ref) using the `record=` optional
-#   parameter. These work very simlar to those in debug, but they
+#   parameter. These work very similar to those in debug, but they
 #   collect their data in an array. The high level interface then returns two
 #   variables; the `values` do contain an array of recorded
 #   datum per iteration. Here a Tuple containing the iteration, last change and
@@ -166,7 +172,7 @@ nothing # hide
 #   that itself consists of (by order of specification) the iteration number,
 #   the last change and the cost function value.
 #
-# This reads
+# These recorded entries read
 values
 # The resulting median and mean for the data hence are
 #
@@ -194,12 +200,14 @@ renderAsymptote(exportFolder*"/startDataCenterMedianAndMean.asy",asyExportS2Sign
 # <li id="Bačák2014">[<a>Bačák, 2014</a>]
 #   Bačák, M: <emph>Computing Medians and Means in Hadamard Spaces.</emph>,
 #   SIAM Journal on Optimization, Volume 24, Number 3, pp. 1542–1566,
-#   doi: <a href="https://doi.org/10.1137/140953393">10.1137/140953393</a></li>
+#   doi: <a href="https://doi.org/10.1137/140953393">10.1137/140953393</a>,
+#   arxiv: <a href="https://arxiv.org/abs/1210.2145">1210.2145</a>.</li>
 #   <li id="AfsariTronVidal2013">[<a>Afsari, Tron, Vidal, 2013</a>]
 #    Afsari, B; Tron, R.; Vidal, R.: <emph>On the Convergence of Gradient
 #    Descent for Finding the Riemannian Center of Mass</emph>,
 #    SIAM Journal on Control and Optimization, Volume 51, Issue 3,
 #    pp. 2230–2260. 
-#    doi: <a href="https://doi.org/10.1137/12086282X">10.1137/12086282X</a></li>
+#    doi: <a href="https://doi.org/10.1137/12086282X">10.1137/12086282X</a>,
+#    arxiv: <a href="https://arxiv.org/abs/1201.0925">1201.0925</a></li>
 # </ul>
 # ```
