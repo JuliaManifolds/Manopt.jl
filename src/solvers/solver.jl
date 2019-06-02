@@ -17,7 +17,7 @@ optional arguments provide necessary details on the decorators. A specific
 one is used to activate certain decorators.
 
 * `debug` – (`Array{Union{Symbol,DebugAction,String,Int},1}()`) a set of symbols
-  representing [`DebugActions`](@ref), `Strings` used as dividers and a subsampling
+  representing [`DebugAction`](@ref)s, `Strings` used as dividers and a subsampling
   integer. These are passed as a [`DebugGroup`](@ref) within `:All` to the
   [`DebugOptions`](@ref) decorator dictionary. Only excention is `:Stop` that is passed to `:Stop`.
 * `record` – (`Array{Union{Symbol,RecordAction,Int},1}()`) specify recordings 

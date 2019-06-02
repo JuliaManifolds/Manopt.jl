@@ -6,6 +6,6 @@ subGradientMethod
 ```@docs
 SubGradientMethodOptions
 ```
-For [`DebugActions`](@ref) and [`RecordActions](@ref) to record (sub)gradient,
+For [`DebugAction`](@ref)s and [`RecordAction`](@ref)s to record (sub)gradient,
 its norm and the stepsizes, see the [steepest Descent](@ref GradientDescentSolver)
 actions.

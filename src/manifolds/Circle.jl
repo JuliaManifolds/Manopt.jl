@@ -176,6 +176,7 @@ return a random [`S1Point`](@ref) on the [`Circle`](@ref) $\mathbb S^1$ by
 picking a random element from $[-\pi,\pi)$ uniformly.
 """
 randomMPoint(M::Circle, ::Val{:Uniform}) = S1Point((rand()-0.5)*2*π)
+randomMPoint(M::Circle) = randomMPoint(M,Val(:Uniform)) # introduce different default
 
 @doc doc"""
     randomTVector(M,x [,Gaussian,σ=1.0])
