@@ -71,8 +71,4 @@ makedocs(
 )
 deploydocs(
     repo   = "github.com/kellertuer/Manopt.jl",
-    devbranch = "development",
-    versions = [
-    "stable" => "v^"
-    ]
 )

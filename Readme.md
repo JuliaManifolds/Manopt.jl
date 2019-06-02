@@ -4,7 +4,6 @@ Optimization on Manifolds.
 
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://kellertuer.github.io/Manopt.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://kellertuer.github.io/Manopt.jl/dev)
 [![Build Status](https://travis-ci.com/kellertuer/Manopt.jl.svg?branch=master)](https://travis-ci.com/kellertuer/Manopt.jl)
 [![codecov](https://codecov.io/gh/kellertuer/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/kellertuer/Manopt.jl)
 
