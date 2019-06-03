@@ -176,12 +176,7 @@ $P_{x\to y}(\xi) = \xi - \frac{\langle \log_xy,\xi\rangle_x}{d^2_{\mathbb S^n}(x
 function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
   ν = log(M,x,y)
   νL = norm(M,x,ν)
-  if νL > 0
-    ν = ν/νL
-    return SnTVector( getValue(ξ) - dot(M,x,ν,ξ)*( getValue(ν) + getValue(log(M,y,x))/νL) )
-  else # if length of ν is 0, we have p=q and hence ξ is unchanged
-    return ξ
-  end
+	return ξ - ( νL > 0 ? dot(M,x,ν,ξ)*(ν + log(M,y,x))/νL^2 : zeroTVector(M,x) )
 end
 @doc doc"""
     randomMPoint(M [,:Gaussian, σ=1.0])
