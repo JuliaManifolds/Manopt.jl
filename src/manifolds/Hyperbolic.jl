@@ -225,9 +225,9 @@ function validateMPoint(M::Hyperbolic, x::HnPoint)
       "The Point $x is not on the $(M.name), since the vector dimension ($(length(getValue(x)))) is not $(M.dimension+1)."
     ))
   end
-  if (MinkowskiDot(getValue(x),getValue(x))+1) >= 10^(-15)
+  if abs(MinkowskiDot(getValue(x),getValue(x))+1) >= 10^(-15)
     throw( ErrorException(
-      "The Point $x is not on the $(M.name) since its minkowski inner product <x,x>_MN is $(norm(getValue(x))) is not -1"
+      "The Point $x is not on the $(M.name) since its minkowski inner product <x,x>_MN is $(MinkowskiDot(getValue(x),getValue(x))) and not -1"
     ))
   end
   return true

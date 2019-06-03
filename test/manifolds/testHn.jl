@@ -9,6 +9,7 @@
     @test getValue(ξ) == [1., 1., 0.]
     @test_throws ErrorException validateMPoint(M, HnPoint([1.,0.]))
     @test_throws ErrorException validateMPoint(M, HnPoint([0., 0., 0.]))
+    @test_throws ErrorException validateMPoint(M, HnPoint([2., 0., 3.])) # -5 instead of -1
     @test validateTVector(M, x, ξ)
     @test_throws ErrorException validateTVector(M,x, HnTVector([0.,0.])) # Dimensions don't agree
     @test_throws ErrorException validateTVector(M,x, HnTVector(getValue(x))) # Not orthogonal
