@@ -10,7 +10,7 @@ $\mathrm{St}(k,n) = \bigl\{ x \in \mathbb{K}^{n\times k} \big| {\bar x}^{\mathrm
 The Stiefel manifold $\mathrm{St}(k,n)$ can be thought of as a set of $n×k$
 matrices by writing a $k$-frame as a matrix of $k$ column vectors in
 $\mathbb{K}^{n}$. It is named after the mathematician [Eduard Stiefel](https://de.wikipedia.org/wiki/Eduard_Stiefel) (1909–1978).
-The Stiefel manifold $\mathcal M = \mathrm{St}(k,n)$ possesses the following instances of the
+The Stiefel manifold $\mathcal M = \mathrm{St}(k,n)$ posesses the following instances of the
 abstract types [`Manifold`](@ref), [`MPoint`](@ref), and [`TVector`](@ref).
 
 ```@autodocs
