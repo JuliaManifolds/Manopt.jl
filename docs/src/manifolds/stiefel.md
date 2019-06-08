@@ -1,7 +1,7 @@
 # [The Stiefel manifold $\mathrm{St}(k,n)$ embedded in $\mathbb K^{n\times k}$](@id StiefelManifold)
 
 The manifold $\mathcal M = \mathrm{St}(k,n)$ is an embedded submanifold of
-$\mathbb{K}^{n×k}$, wich represents all orthonormal k-frames in
+$\mathbb{K}^{n×k}$, which represents all orthonormal k-frames in
 $\mathbb{K}^{n}$. The set can be written as
 
 $\mathrm{St}(k,n) = \bigl\{ x \in \mathbb{K}^{n\times k} \big| {\bar x}^{\mathrm{T}}x = I_k \bigl\}$
