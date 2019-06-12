@@ -90,9 +90,9 @@ function asyExportS2Signals(filename::String;
     arrowHeadSize::Float64 = 6.,
     cameraPosition::Tuple{Float64,Float64,Float64} = (1., 1., 0.),
     lineWidth::Float64 = 1.0,
-    lineWidths::Array{Float64,1} = fill(lineWidth,size(curves)+size(tVectors)),
+    lineWidths::Array{Float64,1} = fill(lineWidth,length(curves)+length(tVectors)),
     dotSize::Float64 = 1.0,
-    dotSizes::Array{Float64,1} = fill(dotSize,size(points)),
+    dotSizes::Array{Float64,1} = fill(dotSize,length(points)),
     sphereColor::RGBA{Float64} = RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
     sphereLineColor::RGBA{Float64} = RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
     sphereLineWidth::Float64 = 0.5,
@@ -174,14 +174,8 @@ function asyExportS2Signals(filename::String;
             j=0
             for point in curve
                 j=j+1
-                pString = string("(",
-                  string([string(v,",") for v in getValue(point)]...)[1:end-1],
-                    ")");
-                if j>1
-                    write( io," .. $(pString)")
-                else
-                    write( io, pString )
-                end
+                pString = "("*string([ "$v," for v in getValue(point)]...)[1:end-1]*")"
+                write(io, j>1 ? " .. $(pString)" : pString)
             end
             write( io,string(";\n draw(p$(i), curveStyle$(i));\n") );
         end

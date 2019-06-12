@@ -51,7 +51,7 @@ end
 A point $x$ on the manifold $\mathbb H^n$ represented by a vector
 $x\in\mathbb R^{n+1}$ with Minkowski inner product
 
-$\langle x,x\rangle_{\mathrm{M}} = -x_{n+1}^2 + \sum_{k=1}^n x_k^2 = -1$..
+$\langle x,x\rangle_{\mathrm{M}} = -x_{n+1}^2 + \sum_{k=1}^n x_k^2 = -1$.
 """
 struct HnPoint{T<:AbstractFloat} <: MPoint
   value::Vector{T}
@@ -111,7 +111,7 @@ where $\langle x,y\rangle_{\mathrm{M}} = -x_{n+1}y_{n+1} +
 \displaystyle\sum_{k=1}^n x_ky_k$ denotes the [`MinkowskiDot`](@ref) Minkowski
 inner product on $\mathbb R^{n+1}$.
 """
-distance(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat} = acosh(  max(1,-MinkowskiDot(getValue(x), getValue(y)))  )
+distance(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat} = acosh(  max(1.,-MinkowskiDot(getValue(x), getValue(y)))  )
 
 @doc doc"""
     dot(M,x,ξ,ν)
@@ -133,11 +133,11 @@ be shortened with `t` to `tξ`. The formula reads
 $\exp_x\xi = \cosh(\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}})x + \operatorname{sinh}(\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}})\frac{\xi}{\sqrt{\langle\xi,\xi\rangle_{\mathrm{M}}}}.$
 """
 function exp(M::Hyperbolic,x::HnPoint{T},ξ::HnTVector{T},t::Float64=1.0)  where {T <: AbstractFloat}
-  len = sqrt(MinkowskiDot( getValue(ξ), getValue(ξ) ));
+  len = sqrt(  max( MinkowskiDot( getValue(ξ), getValue(ξ) ), 0.)  )
   if len < eps(Float64)
   	return x
   else
-  	return HnPoint( cosh(t*len)*getValue(x) + sinh(t*len)/len*getValue(ξ) )
+  	return HnPoint( cosh(t*len)*getValue(x) + sinh(t*len)/len * getValue(ξ) )
   end
 end
 @doc doc"""
@@ -158,9 +158,9 @@ and is zero otherwise.
 function log(M::Hyperbolic,x::HnPoint{T},y::HnPoint{T}) where {T <: AbstractFloat}
   scp = MinkowskiDot( getValue(x), getValue(y) )
   ξvalue = getValue(y) + scp*getValue(x)
-  ξvnorm = sqrt(max(scp^2 - 1,0));
-  if (ξvnorm > eps(Float64))
-    return HnTVector( ξvalue*acosh(max(1.,-scp))/ξvnorm )
+  ξnorm = sqrt(max( scp.^2-1, 0.))
+  if (ξnorm > eps(Float64))
+    return HnTVector( acosh(max(1.,-scp))/ξnorm * ξvalue )
   else
     return zeroTVector(M,x)
   end
@@ -184,7 +184,7 @@ Computes the norm of the [`HnTVector`](@ref) `ξ` in the tangent space
 $T_x\mathcal M$ at [`HnPoint`](@ref) `x` of the
 [`Hyperbolic`](@ref) space $\mathbb H^n$.
 """
-norm(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T})  where {T <: AbstractFloat}= sqrt(dot(M,x,ξ,ξ))
+norm(M::Hyperbolic, x::HnPoint{T}, ξ::HnTVector{T})  where {T <: AbstractFloat}= sqrt(max( dot(M,x,ξ,ξ), 0.) )
 @doc doc"""
     parallelTransport(M,x,y,ξ)
 
@@ -199,15 +199,9 @@ $P_{x\to y}(\xi) = \xi - \frac{\langle \log_xy,\xi\rangle_x}
 {d^2_{\mathbb H^n}(x,y)}\bigl(\log_xy + \log_yx \bigr).$
 """
 function parallelTransport(M::Hyperbolic, x::HnPoint{T}, y::HnPoint{T}, ξ::HnTVector{T})  where {T <: AbstractFloat}
-  ν = log(M,x,y);
-  νL = norm(M,x,ν);
-  if νL > 0
-    ν = ν/νL;
-	return HnTVector( getValue(ξ) - dot(M,x,ν,ξ)*( getValue(ν) + getValue(log(M,y,x))/νL) );
-  else
-    # if length of ν is 0, we have p=q and hence ξ is unchanged
-    return ξ;
-  end
+  ν = log(M,x,y)
+  νL = norm(M,x,ν)
+	return ξ - ( νL > 0 ? dot(M,x,ν,ξ)*(ν + log(M,y,x))/νL^2 : zeroTVector(M,x) )
 end
 
 typeofTVector(::Type{HnPoint{T}}) where T = HnTVector{T}
@@ -231,9 +225,9 @@ function validateMPoint(M::Hyperbolic, x::HnPoint)
       "The Point $x is not on the $(M.name), since the vector dimension ($(length(getValue(x)))) is not $(M.dimension+1)."
     ))
   end
-  if (MinkowskiDot(getValue(x),getValue(x))+1) >= 10^(-15)
+  if abs(MinkowskiDot(getValue(x),getValue(x))+1) >= 10^(-15)
     throw( ErrorException(
-      "The Point $x is not on the $(M.name) since its minkowski inner product <x,x>_MN is $(norm(getValue(x))) is not -1"
+      "The Point $x is not on the $(M.name) since its minkowski inner product <x,x>_MN is $(MinkowskiDot(getValue(x),getValue(x))) and not -1"
     ))
   end
   return true
@@ -257,7 +251,7 @@ function validateTVector(M::Hyperbolic, x::HnPoint, ξ::HnTVector)
     end
     if abs( MinkowskiDot(getValue(x),getValue(ξ)) ) > 10^(-15)
         throw( ErrorException(
-            "The tangent vector should be (hyperbolically) orthogonal to its base, but the (Minkowski) inner product yields $( abs( MinkowskiDot(getValue(x),getValue(ξ))) )."
+            "The tangent vector should be (hyperbolically) orthogonal to its base, but the (Minkowski) inner product yields $(  MinkowskiDot(getValue(x),getValue(ξ)) )."
         ))
     end
     return true
