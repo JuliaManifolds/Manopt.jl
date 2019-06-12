@@ -7,7 +7,7 @@ import LinearAlgebra: norm, dot, nullspace, det, tr, qr, triu, rank, svd, diag, 
 import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Stiefel, StPoint, StTVector, getValue
 export dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, projection, retraction, inverseRetraction
-export zeroTVector
+export zeroTVector, injectivity_radius
 #
 # Type definitions
 #
@@ -107,7 +107,7 @@ end
 @doc doc"""
     exp(M,x,ξ [,t=1.0])
 
-compute the exponential map on the [`Stiefel`](@ref) manifold `M`$=\mathrm{SO}(n)$ with
+compute the exponential map on the [`Stiefel`](@ref) manifold `M`$= \mathrm{St}(k,n)$ with
 respect to the [`StPoint`](@ref) `x` and the [`StTVector`](@ref) `ξ`, which can
 be shortened with `t` to `tξ`. The formula reads
 
@@ -132,6 +132,13 @@ function exp(M::Stiefel{T},x::StPoint{T},ξ::StTVector{T},t::Float64=1.0) where 
   Y = [getValue(x) Ξ] * exp([getValue(x)'*Ξ -Ξ'*Ξ; I getValue(x)'*Ξ]) * [exp(-getValue(x)'*Ξ); Z]
   StPoint{T}(Y)
 end
+
+@doc doc"""
+    injectivity_radius(M)
+
+return the injectivity radius of the [`Stiefel`](@ref) manifold `M`$= \mathrm{St}(k,n)$.
+"""
+injectivity_radius(M::Stiefel) = sqrt(M.dimensioncolumns)
 
 @doc doc"""
     inverseRetractionPolar(M,x,y)

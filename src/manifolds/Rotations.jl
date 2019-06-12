@@ -7,7 +7,7 @@ import LinearAlgebra: Diagonal, norm, dot, nullspace, det, tr, qr, triu, eigvals
 import Base: exp, log, show, rand, Matrix
 export Rotations, SOPoint, SOTVector, getValue
 export addNoise, distance, dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, retraction, inverseRetraction
-export zeroTVector
+export zeroTVector, injectivity_radius
 #
 # Type definitions
 #
@@ -138,6 +138,13 @@ be shortened with `t` to `tξ`. The formula reads
 where $\operatorname{Exp}$ denotes matrix exponential.
 """
 exp(M::Rotations,x::SOPoint,ξ::SOTVector,t::Float64=1.0) = SOPoint(getValue(x) * exp( t * getValue(ξ)))
+
+@doc doc"""
+    injectivity_radius(M)
+
+return the injectivity radius of the [`Rotations`](@ref) manifold `M`$=\mathrm{SO}(n)$.
+"""
+injectivity_radius(M::Rotations) = pi*sqrt(M.dimension)
 
 @doc doc"""
     log(M,x,y)

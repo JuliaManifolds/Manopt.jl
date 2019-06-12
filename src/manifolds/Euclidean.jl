@@ -6,7 +6,7 @@ import LinearAlgebra: I, norm
 import Base: exp, log, show
 export Euclidean, RnPoint, RnTVector
 export distance, exp, log, norm, dot, manifoldDimension, show, getValue
-export zeroTVector, tangentONB, randomMPoint, randomTVector
+export zeroTVector, tangentONB, randomMPoint, randomTVector, injectivity_radius
 export validateMPoint, validateTVector, typeofMPoint, typeofTVector
 # Types
 # ---
@@ -101,6 +101,12 @@ $x+t*\xi$, where the scaling parameter `t` is optional.
 """
 exp(M::Euclidean,x::RnPoint{T},ξ::RnTVector{T},t::Float64=1.0) where {T <: AbstractFloat} = RnPoint(getValue(x) + t*getValue(ξ) )
 @doc doc"""
+    injectivity_radius(M)
+
+return the injectivity radius of the [`Euclidean`](@ref) manifold `M`$=\mathbb R^n$.
+"""
+injectivity_radius(M::Euclidean) = sqrt(M.dimension)
+@doc doc"""
     log(M,x,y)
 
 computes the logarithmic map on the [`Euclidean`](@ref) manifold `M`, i.e. $y-x$.
@@ -161,8 +167,8 @@ tangentONB(M::Euclidean, x::RnPoint{T}, ξ::RnTVector{T}) where {T <: AbstractFl
     for i in 1:manifoldDimension(x)], zeros(manifoldDimension(x))
 
 typeofTVector(::Type{RnPoint{T}}) where T = RnTVector{T}
-typeofMPoint(::Type{RnTVector{T}}) where T = RnPoint{T} 
-                        
+typeofMPoint(::Type{RnTVector{T}}) where T = RnPoint{T}
+
 @doc doc"""
     typicalDistance(M)
 
@@ -175,7 +181,7 @@ typicalDistance(M::Euclidean) = sqrt(M.dimension)
 
 Checks that a [`RnPoint`](@ref) `x` has a valid value for a point on the
 [`Euclidean`](@ref) manifold `M`$=\mathbb R^n$, which is the case if the
-dimensions fit. 
+dimensions fit.
 """
 validateMPoint(M::Euclidean, x::RnPoint) = manifoldDimension(M) == manifoldDimension(x)
 
@@ -185,7 +191,7 @@ validateMPoint(M::Euclidean, x::RnPoint) = manifoldDimension(M) == manifoldDimen
 Checks, that the [`RnTVector`](@ref) `ξ` is a valid tangent vector in the
 tangent space of the [`RnPoint`](@ref) `x` ont the [`Euclidean`](@ref)
 manifold `M`, which is always the case as long as their vector dimensions agree.
-""" 
+"""
 validateTVector(M::Euclidean,x::RnPoint,ξ::RnTVector) = length(getValue(x) )== length(getValue(ξ))
 
 @doc doc"""
