@@ -7,7 +7,7 @@ import LinearAlgebra: norm, dot, nullspace, det, tr, qr, triu, rank, svd, diag, 
 import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Stiefel, StPoint, StTVector, getValue
 export dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, projection, retraction, inverseRetraction
-export zeroTVector, injectivity_radius
+export zeroTVector, injectivity_radius, tangent
 #
 # Type definitions
 #
@@ -368,6 +368,8 @@ end
 function retraction(M::Stiefel{T},x::StPoint{T},ξ::StTVector{T},t::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   return retractionQR(M,x,ξ,t)
 end
+
+tangent(M::Stiefel, x::StPoint, q::Matrix) = projection(M,x,q)
 
 @doc doc"""
     ξ = zeroTVector(M,x)

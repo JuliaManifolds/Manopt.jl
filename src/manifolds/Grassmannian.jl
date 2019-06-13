@@ -10,7 +10,7 @@ import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Grassmannian, GrPoint, GrTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, retraction, inverseRetraction
 export parallelTransport, randomTVector, randomMPoint, validateMPoint, validateTVector
-export projection, zeroTVector, injectivity_radius
+export projection, zeroTVector, injectivity_radius, tangent
 #
 # Type definitions
 #
@@ -353,6 +353,8 @@ function retraction(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},t::Float64
     A = S.U * S.V'
     GrPoint{T}(A)
 end
+
+tangent(M::Grassmannian, x::GrPoint, q::Matrix) = projection(M,x,q)
 
 @doc doc"""
     zeroTVector(M,x)

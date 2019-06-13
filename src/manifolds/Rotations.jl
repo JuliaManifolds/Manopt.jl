@@ -7,7 +7,7 @@ import LinearAlgebra: Diagonal, norm, dot, nullspace, det, tr, qr, triu, eigvals
 import Base: exp, log, show, rand, Matrix
 export Rotations, SOPoint, SOTVector, getValue
 export addNoise, distance, dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, retraction, inverseRetraction
-export zeroTVector, injectivity_radius
+export zeroTVector, injectivity_radius, tangent
 #
 # Type definitions
 #
@@ -123,7 +123,6 @@ function distance(M::Rotations,x::SOPoint,y::SOPoint)
   return norm(M, x, log(M,x,y))
 end
 
-
 @doc doc"""
     exp(M,x,ξ,[t=1.0])
 
@@ -138,6 +137,51 @@ be shortened with `t` to `tξ`. The formula reads
 where $\operatorname{Exp}$ denotes matrix exponential.
 """
 exp(M::Rotations,x::SOPoint,ξ::SOTVector,t::Float64=1.0) = SOPoint(getValue(x) * exp( t * getValue(ξ)))
+
+@doc doc"""
+    inverseRetractionPolar(M,x,y)
+
+return a [`SOTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{SO}(n)$
+of the [`SOPoint`](@ref) `x` on the [`Rotations`](@ref) manifold `M`
+with which the [`SOPoint`](@ref) `y` can be reached by the
+[`retractionPolar`](@ref) after time 1. The formula reads
+
+$ξ = -\frac{1}{2}(x^{\mathrm{T}}ys - (x^{\mathrm{T}}ys)^{\mathrm{T}})$
+
+where $s$ is the solution to the Sylvester equation
+
+$x^{\mathrm{T}}ys + s(x^{\mathrm{T}}y)^{\mathrm{T}} + 2\mathrm{I}_n = 0.$
+"""
+function inverseRetractionPolar(M::Rotations, x::SOPoint, y::SOPoint)
+  A = transpose(getValue(x)) * getValue(y)
+  H = 2 * one(getValue(x))
+  K = convert(Array{Float64,2}, transpose(A))
+  B = sylvester(A, K, H)
+  C =  A * B
+  SOTVector( -0.5 * ( C - transpose(C) ) )
+end
+
+@doc doc"""
+    inverseRetractionQR(M,x,y)
+
+return a [`SOTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{SO}(n)$
+of the [`SOPoint`](@ref) `x` on the [`Rotations`](@ref) manifold `M`
+with which the [`SOPoint`](@ref) `y` can be reached by the
+[`retractionQR`](@ref) from the [`SOPoint`](@ref) `x` after time 1.
+"""
+function inverseRetractionQR(M::Rotations, x::SOPoint, y::SOPoint)
+  A = transpose(getValue(x)) * getValue(y)
+  R = zeros(M.dimension, M.dimension)
+  for i = 1:M.dimension
+    b = zeros(i)
+    b[end] = 1
+    b[1:(end-1)] = - transpose(R[1:(i-1), 1:(i-1)]) * A[i, 1:(i-1)]
+    R[1:i, i] = A[1:i, 1:i] \ b
+  end
+  C =  A * R
+  SOTVector( 0.5 * ( C - transpose(C) ) )
+end
+inverseRetraction(M::Rotations, x::SOPoint, y::SOPoint) = inverseRetractionQR(M,x,y)
 
 @doc doc"""
     injectivity_radius(M)
@@ -324,50 +368,7 @@ function retractionQR(M::Rotations, x::SOPoint, ξ::SOTVector, t::Float64=1.0)
 end
 retraction(M::Rotations, x::SOPoint, ξ::SOTVector, t::Float64=1.0) = retractionQR(M,x,ξ,t)
 
-@doc doc"""
-    inverseRetractionPolar(M,x,y)
-
-return a [`SOTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{SO}(n)$
-of the [`SOPoint`](@ref) `x` on the [`Rotations`](@ref) manifold `M`
-with which the [`SOPoint`](@ref) `y` can be reached by the
-[`retractionPolar`](@ref) after time 1. The formula reads
-
-$ξ = -\frac{1}{2}(x^{\mathrm{T}}ys - (x^{\mathrm{T}}ys)^{\mathrm{T}})$
-
-where $s$ is the solution to the Sylvester equation
-
-$x^{\mathrm{T}}ys + s(x^{\mathrm{T}}y)^{\mathrm{T}} + 2\mathrm{I}_n = 0.$
-"""
-function inverseRetractionPolar(M::Rotations, x::SOPoint, y::SOPoint)
-  A = transpose(getValue(x)) * getValue(y)
-  H = 2 * one(getValue(x))
-  K = convert(Array{Float64,2}, transpose(A))
-  B = sylvester(A, K, H)
-  C =  A * B
-  SOTVector( -0.5 * ( C - transpose(C) ) )
-end
-
-@doc doc"""
-    inverseRetractionQR(M,x,y)
-
-return a [`SOTVector`](@ref) `ξ` of the tagent space $T_x\mathrm{SO}(n)$
-of the [`SOPoint`](@ref) `x` on the [`Rotations`](@ref) manifold `M`
-with which the [`SOPoint`](@ref) `y` can be reached by the
-[`retractionQR`](@ref) from the [`SOPoint`](@ref) `x` after time 1.
-"""
-function inverseRetractionQR(M::Rotations, x::SOPoint, y::SOPoint)
-  A = transpose(getValue(x)) * getValue(y)
-  R = zeros(M.dimension, M.dimension)
-  for i = 1:M.dimension
-    b = zeros(i)
-    b[end] = 1
-    b[1:(end-1)] = - transpose(R[1:(i-1), 1:(i-1)]) * A[i, 1:(i-1)]
-    R[1:i, i] = A[1:i, 1:i] \ b
-  end
-  C =  A * R
-  SOTVector( 0.5 * ( C - transpose(C) ) )
-end
-inverseRetraction(M::Rotations, x::SOPoint, y::SOPoint) = inverseRetractionQR(M,x,y)
+tangent(M::Rotations, x::SOPoint, q::Matrix) = 0.5*(q - transpose(q))
 
 @doc doc"""
     zeroTVector(M,x)
@@ -377,6 +378,7 @@ of [`SOPoint`](@ref) `x` on the [`Rotations`](@ref) manifold `M`, i.e. a zero
 matrix.
 """
 zeroTVector(M::Rotations, x::SOPoint) = SOTVector( zero(getValue(x)) )
+
 
 function validateMPoint(M::Rotations, x::SOPoint)
   if det(getValue(x)) ≉ 1
