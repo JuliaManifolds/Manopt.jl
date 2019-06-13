@@ -5,7 +5,14 @@ struct HessianProblem <: Problem
     gradient::Function
     hessian::Union{Function,Missing}
     precon::Function
+    HessianProblem(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function)=new(M,cost,grad,hess,pre)
 end
+
+getManifold(problem::HessianProblem) = problem.M;
+getCostFunction(problem::HessianProblem) = problem.costFunction;
+getGradient(problem::HessianProblem) = problem.gradient;
+getHessian(problem::HessianProblem) = problem.hessian;
+getPreconditioner(problem::HessianProblem) = problem.precon;
 
 # injectivity_radius.
 
@@ -13,7 +20,11 @@ abstract type HessianOptions <: Options end
 
 struct TruncatedConjugateGradientOptions <: HessianOptions
     x::P where {P <: MPoint}
-
+    kappa::Float64
+    theta::Float64
+    useRand::Bool
+    mininner::Int64
+    maxinner::Int64
 end
 
 struct TrustRegionOptions <: HessianOptions
@@ -37,3 +48,5 @@ struct TrustRegionOptions <: HessianOptions
 end
 
 getHessian(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} = error("Not yet implemented")
+getGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} = error("Not yet implemented")
+getPreconditioner(p::Pr,x::P, d) where {Pr <: Problem, P <: MPoint} = error("Not yet implemented")
