@@ -48,5 +48,6 @@ struct TrustRegionOptions <: HessianOptions
 end
 
 getHessian(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} = error("Not yet implemented")
+getHessian(p::Pr,x::P,ξ::V) where {Pr <: Problem, P <: MPoint, V <: MTVector} = error("Not yet implemented")
 getGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} = error("Not yet implemented")
 getPreconditioner(p::Pr,x::P, d) where {Pr <: Problem, P <: MPoint} = error("Not yet implemented")
