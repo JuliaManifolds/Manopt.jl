@@ -1,9 +1,17 @@
 #
+#   Truncated Conjugate-Gradient Method
 #
-#
-export
-@doc doc"""
+export truncatedConjugateGradient, model_fun
 
+@doc doc"""
+    truncatedConjugateGradient(P, x, grad, η, Δ, options)
+
+solve the trust-region subproblem
+
+$min_{\eta in T_{x_k}M} m_{x_k}(\eta) = f(x_k) + \langle \nabla f(x_k), \eta \rangle_{x_k} + \frac{1}{2} \langle Η_{x_k} \eta, \eta \rangle_{x_k}$
+$s.t. \langle \eta, \eta \rangle_{x_k} \leqq {\Delta_k}^2$
+
+with the Steihaug-Toint truncated conjugate-gradient method.
 """
 function truncatedConjugateGradient(problem::HessianProblem, x::MP, grad::MTVec,
     eta::MTVec, Delta::Float64, options::TruncatedConjugateGradientOptions)
@@ -15,15 +23,15 @@ function truncatedConjugateGradient(problem::HessianProblem, x::MP, grad::MTVec,
 
     if options.useRand == true
         Heta = zeroTVector(M,x)
-        r = getGradient(problem, x)
+        r = grad
         e_Pe = 0
     else
         Heta = getHessian(problem, x, eta)
-        r = lincomb(1, grad, 1, Heta) #No clue what it does yet
-        e_Pe = dot(M, eta, eta)
+        r = TVector(getValue(grad)+getValue(Heta))
+        e_Pe = dot(M, x, eta, eta)
     end
 
-    r_r = dot(M, r, r)
+    r_r = dot(M, x, r, r)
     norm_r = sqrt(r_r)
     norm_r0 = norm_r
 
@@ -33,14 +41,14 @@ function truncatedConjugateGradient(problem::HessianProblem, x::MP, grad::MTVec,
         z = r
     end
 
-    z_r = dot(M, z, r)
+    z_r = dot(M, x, z, r)
     d_Pd = z_r
     mdelta = z;
 
     if options.useRand == true
         e_Pd = 0
     else
-        e_Pd = -dot(M, eta, mdelta)
+        e_Pd = -dot(M, x, eta, mdelta)
     end
 
     if options.useRand == true
@@ -54,14 +62,14 @@ function truncatedConjugateGradient(problem::HessianProblem, x::MP, grad::MTVec,
 
     for j in 1:options.maxinner
         Hmdelta = getHessian(problem, x, mdelta)
-        d_Hd = dot(M, mdelta, Hmdelta)
+        d_Hd = dot(M, x, mdelta, Hmdelta)
         alpha = z_r/d_Hd
         e_Pe_new = e_Pe + 2.0*alpha*e_Pd + alpha*alpha*d_Pd
 
         if d_Hd <= 0 || e_Pe_new >= Delta^2
             tau = (-e_Pd + sqrt(e_Pd*e_Pd + d_Pd*(Delta^2-e_Pe))) / d_Pd
-            eta  = lincomb(1,  eta, -tau,  mdelta)
-            Heta = lincomb(1, Heta, -tau, Hmdelta)
+            eta  = TVector(getValue(eta)-tau*getValue(mdelta))
+            Heta = TVector(getValue(Heta)-tau*getValue(Hmdelta))
 
             if d_Hd <= 0
                 stop_tCG = 1
@@ -72,8 +80,8 @@ function truncatedConjugateGradient(problem::HessianProblem, x::MP, grad::MTVec,
         end
 
         e_Pe = e_Pe_new
-        new_eta  = lincomb(1,  eta, -alpha,  mdelta)
-        new_Heta = lincomb(1, Heta, -alpha, Hmdelta)
+        new_eta  = TVector(getValue(eta)-alpha*getValue(mdelta))
+        new_Heta = TVector(getValue(Heta)-alpha*getValue(Hmdelta))
 
         new_model_value = model_fun(new_eta, new_Heta)
 
@@ -86,9 +94,9 @@ function truncatedConjugateGradient(problem::HessianProblem, x::MP, grad::MTVec,
         Heta = new_Heta
         model_value = new_model_value
 
-        r = lincomb(1, r, -alpha, Hmdelta)
+        r = TVector(getValue(r)-alpha*getValue(Hmdelta))
 
-        r_r = dot(M, r, r)
+        r_r = dot(M, x, r, r)
         norm_r = sqrt(r_r)
 
         if j >= options.mininner && norm_r <= norm_r0*min(norm_r0^theta, kappa)
@@ -101,12 +109,26 @@ function truncatedConjugateGradient(problem::HessianProblem, x::MP, grad::MTVec,
         end
 
         if options.useRand == true
-            z = getPrecon(problem, x, r, storedb, key);
+            z = getPrecon(problem, x, r)
         else
-            z = r;
+            z = r
         end
+
+
+        zold_rold = z_r
+        z_r = dot(M, x, z, r)
+
+        beta = z_r/zold_rold
+        mdelta = TVector(getValue(z)+beta*getValue(mdelta))
+
+        mdelta = tangent(M, x, getValue(mdelta))
+
+        e_Pd = beta*(e_Pd + alpha*d_Pd)
+        d_Pd = z_r + beta*beta*d_Pd
+    end
+    inner_it = j
 end
 
-function model_fun(M::Manifold, ξ::MTVector, η::MTVector, ν::MTVector)
-    return dot(M,ξ,ν) + 0.5*dot(M,ξ,η)
+function model_fun(M::Manifold, x::MPoint, ξ::MTVector, η::MTVector, ν::MTVector)
+    return dot(M,x,ξ,ν) + 0.5*dot(M,x,ξ,η)
 end
