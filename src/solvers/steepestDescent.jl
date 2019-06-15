@@ -12,7 +12,7 @@ different choices of $s_k$ available (see `stepsize` option below).
 # Input
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
 * `x` – an initial value $x\in\mathcal M$
 
 # Optional

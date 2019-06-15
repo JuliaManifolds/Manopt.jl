@@ -110,6 +110,11 @@ RandomEvalOrder
 FixedRandomEvalOrder
 ```
 
+### Cost based problem
+```@docs
+CostProblem
+```
+
 ### Gradient based problem
 ```@docs
 GradientProblem

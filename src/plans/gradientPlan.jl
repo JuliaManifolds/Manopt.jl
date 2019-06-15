@@ -15,9 +15,9 @@ export RecordGradient, RecordGradientNorm, RecordStepsize
 specify a problem for gradient based algorithms.
 
 # Fields
-* `M`            : a manifold $\mathcal M$
-* `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `gradient`     : the gradient $\nabla F\colon\mathcal M
+* `M`            – a manifold $\mathcal M$
+* `costFunction` – a function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `gradient`     – the gradient $\nabla F\colon\mathcal M
   \to \mathcal T\mathcal M$ of the cost function $F$
 
 # See also
@@ -49,12 +49,10 @@ Describes a Gradient based descent algorithm, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `x0` : an [`MPoint`](@ref) as starting point
-* `stoppingCriterion` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
-    indicator and a reason based on an iteration number, the gradient and the last and
-    current iterates
-* `retraction` : (exp) the rectraction to use
-* `stepsize` : a `Function` to compute the next step size)
+* `x0` – an [`MPoint`](@ref) as starting point
+* `stoppingCriterion` – ([`stopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
+* `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
+* `retraction` – (`exp`) the rectraction to use
 
 # Constructor
 

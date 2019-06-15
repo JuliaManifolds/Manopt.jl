@@ -44,6 +44,7 @@ module Manopt
   # ...solvers (2) specific solvers
   include("solvers/cyclicProximalPoint.jl")
   include("solvers/DouglasRachford.jl")
+  include("solvers/NelderMead.jl")
   include("solvers/steepestDescent.jl")
   include("solvers/subGradientMethod.jl")
   # extended metasolvers

@@ -49,6 +49,7 @@ makedocs(
             "Cyclic Proximal Point" => "solvers/cyclicProximalPoint.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Gradient Descent" => "solvers/gradientDescent.md",
+            "Nelder–Mead" => "solvers/NelderMead.md",
             "Subgradient Method" => "solvers/subGradientMethod.md",
          ],
         "Functions" => [
