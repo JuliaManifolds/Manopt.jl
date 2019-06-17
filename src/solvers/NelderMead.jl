@@ -12,7 +12,7 @@ points is chosen.
 This algorithm is adapted from the Euclidean Nelder-Mead method, see
 [https://en.wikipedia.org/wiki/Nelder–Mead_method](https://en.wikipedia.org/wiki/Nelder–Mead_method)
 and
-
+[http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf](http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf).
 
 # Input
 
@@ -60,11 +60,11 @@ end
 function initializeSolver!(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions}
     # init cost and x
     o.costs = getCost.(Ref(p), o.population )
-    o.x = o.population(argmin(o.costs)) # select min
+    o.x = o.population[argmin(o.costs)] # select min
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadOptions}
     # compute mean
-    m = mean(p.M,p)
+    m = mean(p.M,p.population)
     # enables accessing both costs and population and avoids rearranging them internally
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
     # log to last
