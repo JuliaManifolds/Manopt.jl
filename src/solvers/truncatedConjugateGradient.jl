@@ -29,7 +29,7 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     model_function(M,x,ξ,η,ν) = dot(M,x,ξ,ν) + 0.5 * dot(M,x,ξ,η)
-    
+
         Hmdelta = getHessian(problem, x, mdelta)
         d_Hd = dot(M, x, mdelta, Hmdelta)
         alpha = z_r/d_Hd
@@ -51,7 +51,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
         Heta = new_Heta
         model_value = new_model_value
 
-        r = TVector(getValue(r)-alpha*getValue(Hmdelta))
+        r = r-alpha*Hmdelta
 
         r_r = dot(M, x, r, r)
         norm_r = sqrt(r_r)
@@ -67,9 +67,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
         z_r = dot(M, x, z, r)
 
         beta = z_r/zold_rold
-        mdelta = TVector(getValue(z)+beta*getValue(mdelta))
-
-        mdelta = tangent(M, x, getValue(mdelta))
+        mdelta = z + beta * mdelta
 
         e_Pd = beta*(e_Pd + alpha*d_Pd)
         d_Pd = z_r + beta*beta*d_Pd
