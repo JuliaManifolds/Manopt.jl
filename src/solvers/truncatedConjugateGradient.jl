@@ -43,7 +43,7 @@ function truncatedConjugateGradient(problem::HessianProblem, x::MP, grad::MTVec,
 
     z_r = dot(M, x, z, r)
     d_Pd = z_r
-    mdelta = z;
+    mdelta = z
 
     if options.useRand == true
         e_Pd = 0

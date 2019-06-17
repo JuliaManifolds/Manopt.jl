@@ -49,6 +49,7 @@ end
 
 getHessian(p::Pr,x::P,ξ::V) where {Pr <: Problem, P <: MPoint, V <: MTVector} = p.hessian(x,ξ)
 getGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} = p.gradient(x)
+getCostFunction(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} = p.costFunction(x)
 getPreconditioner(p::Pr,x::P, ξ::V) where {Pr <: Problem, P <: MPoint, V <: MTVector} = p.precon(x,ξ)
 
 function approxHessianFD(problem::HessianProblem, x::MPoint, ξ::MTVec, stepsize::Float64=2.0^(-14))
