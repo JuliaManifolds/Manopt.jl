@@ -29,6 +29,8 @@ getProximalMap(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
     throw(ErrorException("No proximal map No. $(i) found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 getSubGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
         throw(ErrorException("no subgradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+getHessian(p::Pr,x::P,ξ::T) where {Pr <: Problem, P <: MPoint, T <: TVector} =
+    throw(ErrorException("no hessian found in $(typeof(p)) to evaluate at point $(typeof(x)) and tangent vector $(typeof(ξ))."))
 
 """
     HessianProblem <: Problem
