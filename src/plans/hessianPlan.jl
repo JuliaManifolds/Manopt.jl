@@ -1,6 +1,6 @@
 
 struct HessianProblem{mT <: Manifold} <: Problem
-    M::mT
+    M::mT where {mT <: Manifold}
     costFunction::Function
     gradient::Function
     hessian::Union{Function,Missing}
@@ -14,17 +14,18 @@ abstract type HessianOptions <: Options end
 
 struct TruncatedConjugateGradientOptions <: HessianOptions
     x::P where {P <: MPoint}
-    kappa::Float64
-    theta::Float64
+    η::T where {T <: TVector}
+    ∇::T where {T <: TVector}
+    mδ::T where {T <: TVector}
+    Δ::Float64
     useRand::Bool
+    TruncatedConjugateGradientOptions(x::P,η::T,∇::T,δ::T,Δ::Float64,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,η,∇,δ,Δ,uR)
 end
 
 struct TrustRegionOptions <: HessianOptions
     x::P where {P <: MPoint}
     ∇::T where {T <: TVector}
-    # is actually passed as a parameter of the function
     stop::stoppingCriterion
-    # do we pass the limits to the criterion or do we pass them the options?
     δ_bar::Float64
     δ0::Float64
     useRand::Bool

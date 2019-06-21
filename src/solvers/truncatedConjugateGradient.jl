@@ -13,62 +13,63 @@ $s.t. \langle \eta, \eta \rangle_{x_k} \leqq {\Delta_k}^2$
 
 with the Steihaug-Toint truncated conjugate-gradient method.
 """
-function truncatedConjugateGradient(M,F,∇F,x::P,η::T,H::Union{Function,Mussing}=missing)
-
+function truncatedConjugateGradient(M::mT,
+        F::Function, ∂F::Function, x::MP, eta::T;
+        H::Union{Function,Missing},
+        P::Function,
+        Δ::Float64,
+        uR::Bool
+    ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
+    p = HessianProblem(M,F,∂F,H,P)
+    ∇ = getGradient(p,x)
+    o = TruncatedConjugateGradientOptions(x,eta,∇,zeroTVector(M,x),Δ,uR)
 end
 function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    o.∇ = getGradient(p,o.x)
-    Heta = o.useRand ? zeroTVector(p.M,ox) : getHessian(p, o.x, o.η) # \eta in doe Options?
+    Heta = o.useRand ? zeroTVector(p.M,o.x) : getHessian(p, o.x, o.η) # \eta in doe Options?
     r = o.∇ + Heta # radius in options? als Radius?
     e_Pe = useRand ? 0 : dot(p.M, o.x, o.η, o.η)
 
     z = o.useRand ? getPreconditioner(p, o.x, r) : r
+    o.mδ = z
 
-    e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, -o.δ) # \delta in Options?
+    e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, o.mδ)
     model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,o.∇) + 0.5 * dot(p.M,o.x,o.η,Heta)
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    model_function(M,x,ξ,η,ν) = dot(M,x,ξ,ν) + 0.5 * dot(M,x,ξ,η)
+    Hmdelta = getHessian(p, o.x, o.mδ)
+    d_Hd = dot(p.M, o.x, o.mδ, Hmdelta)
+    alpha = z_r/d_Hd
+    e_Pe_new = e_Pe + 2.0*alpha*e_Pd + alpha*alpha*d_Pd
 
-        Hmdelta = getHessian(problem, x, mdelta)
-        d_Hd = dot(M, x, mdelta, Hmdelta)
-        alpha = z_r/d_Hd
-        e_Pe_new = e_Pe + 2.0*alpha*e_Pd + alpha*alpha*d_Pd
+    if d_Hd <= 0 || e_Pe_new >= Δ^2
+        tau = (-e_Pd + sqrt(e_Pd*e_Pd + d_Pd*(Δ^2-e_Pe))) / d_Pd
+        eta  = eta-tau*(o.δ)
+        Heta = Heta-tau*Hmdelta
+    end
 
-        if d_Hd <= 0 || e_Pe_new >= Delta^2
-            tau = (-e_Pd + sqrt(e_Pd*e_Pd + d_Pd*(Delta^2-e_Pe))) / d_Pd
-            eta  = TVector(getValue(eta)-tau*getValue(mdelta))
-            Heta = TVector(getValue(Heta)-tau*getValue(Hmdelta))
-        end
+    e_Pe = e_Pe_new
+    new_eta  = eta-alpha*(o.mδ)
+    new_Heta = Heta-alpha*Hmdelta
 
-        e_Pe = e_Pe_new
-        new_eta  = TVector(getValue(eta)-alpha*getValue(mdelta))
-        new_Heta = TVector(getValue(Heta)-alpha*getValue(Hmdelta))
+    new_model_value = dot(p.M,o.x,new_eta,o.∇) + 0.5 * dot(p.M,o.x,new_eta,new_Heta)
 
-        new_model_value = model_fun(new_eta, new_Heta)
+    eta = new_eta
+    Heta = new_Heta
+    model_value = new_model_value
 
-        eta = new_eta
-        Heta = new_Heta
-        model_value = new_model_value
+    r = r-alpha*Hmdelta
 
-        r = r-alpha*Hmdelta
+    r_r = dot(p.M, o.x, r, r)
+    norm_r = sqrt(r_r)
 
-        r_r = dot(M, x, r, r)
-        norm_r = sqrt(r_r)
+    z = o.useRand ? getPreconditioner(p, o.x, r) : r
 
-        if options.useRand == true
-            z = getPrecon(problem, x, r)
-        else
-            z = r
-        end
+    zold_rold = z_r
+    z_r = dot(p.M, o.x, z, r)
 
+    beta = z_r/zold_rold
+    (o.mδ) = z + beta * (o.mδ)
 
-        zold_rold = z_r
-        z_r = dot(M, x, z, r)
-
-        beta = z_r/zold_rold
-        mdelta = z + beta * mdelta
-
-        e_Pd = beta*(e_Pd + alpha*d_Pd)
-        d_Pd = z_r + beta*beta*d_Pd
+    e_Pd = beta*(e_Pd + alpha*d_Pd)
+    d_Pd = z_r + beta*beta*d_Pd
 end
