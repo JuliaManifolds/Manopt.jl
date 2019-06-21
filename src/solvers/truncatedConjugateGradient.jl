@@ -4,12 +4,12 @@
 export truncatedConjugateGradient, model_fun
 
 @doc doc"""
-    truncatedConjugateGradient(P, x, grad, η, Δ, options)
+    truncatedConjugateGradient(M, F, ∂F, x, η; H, P, Δ, uR)
 
 solve the trust-region subproblem
 
-$min_{\eta in T_{x_k}M} m_{x_k}(\eta) = f(x_k) + \langle \nabla f(x_k), \eta \rangle_{x_k} + \frac{1}{2} \langle Η_{x_k} \eta, \eta \rangle_{x_k}$
-$s.t. \langle \eta, \eta \rangle_{x_k} \leqq {\Delta_k}^2$
+$min_{\eta in T_{x}M} m_{x}(\eta) = F(x) + \langle \partialF(x), \eta \rangle_{x} + \frac{1}{2} \langle Η_{x} \eta, \eta \rangle_{x}$
+$s.t. \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2$
 
 with the Steihaug-Toint truncated conjugate-gradient method.
 """
@@ -30,9 +30,14 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     e_Pe = useRand ? 0 : dot(p.M, o.x, o.η, o.η)
 
     z = o.useRand ? getPreconditioner(p, o.x, r) : r
+
+    z_r = dot(p.M, o.x, z, r)
+    d_Pd = z_r
+
     o.mδ = z
 
     e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, o.mδ)
+
     model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,o.∇) + 0.5 * dot(p.M,o.x,o.η,Heta)
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
@@ -59,17 +64,20 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
 
     r = r-alpha*Hmdelta
 
-    r_r = dot(p.M, o.x, r, r)
-    norm_r = sqrt(r_r)
-
     z = o.useRand ? getPreconditioner(p, o.x, r) : r
 
     zold_rold = z_r
     z_r = dot(p.M, o.x, z, r)
 
     beta = z_r/zold_rold
-    (o.mδ) = z + beta * (o.mδ)
+    o.mδ = z + beta*o.mδ
+
+    # not sure if this is necessary. We need to discuss this. 
+    o.mδ = tangent(p.M, o.x, getValue(o.mδ))
 
     e_Pd = beta*(e_Pd + alpha*d_Pd)
     d_Pd = z_r + beta*beta*d_Pd
+
+    return eta
+    return Heta
 end
