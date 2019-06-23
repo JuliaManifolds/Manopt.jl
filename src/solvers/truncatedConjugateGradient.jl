@@ -21,63 +21,67 @@ function truncatedConjugateGradient(M::mT,
         uR::Bool
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
     p = HessianProblem(M,F,∂F,H,P)
-    ∇ = getGradient(p,x)
-    o = TruncatedConjugateGradientOptions(x,eta,∇,zeroTVector(M,x),Δ,uR)
+    o = TruncatedConjugateGradientOptions(x,eta,zeroTVector(M,x),zeroTVector(M,x),Δ,0,0,0,zeroTVector(M,x),zeroTVector(M,x),uR)
 end
 function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    Heta = o.useRand ? zeroTVector(p.M,o.x) : getHessian(p, o.x, o.η) # \eta in doe Options?
-    r = o.∇ + Heta # radius in options? als Radius?
-    e_Pe = useRand ? 0 : dot(p.M, o.x, o.η, o.η)
+    o.Hη = o.useRand ? zeroTVector(p.M,o.x) : getHessian(p, o.x, o.η)
+    o.residual = getGradient(p,o.x) + o.Hη 
+    o.e_Pe = useRand ? 0 : dot(p.M, o.x, o.η, o.η)
 
-    z = o.useRand ? getPreconditioner(p, o.x, r) : r
+    o.z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
 
-    z_r = dot(p.M, o.x, z, r)
-    d_Pd = z_r
+    o.z_r = dot(p.M, o.x, o.z, o.residual)
+    o.d_Pd = o.z_r
 
-    o.mδ = z
+    o.mδ = o.z
 
-    e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, o.mδ)
+    o.e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, o.mδ)
 
-    model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,o.∇) + 0.5 * dot(p.M,o.x,o.η,Heta)
+    model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,o.Hη)
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     Hmdelta = getHessian(p, o.x, o.mδ)
     d_Hd = dot(p.M, o.x, o.mδ, Hmdelta)
-    alpha = z_r/d_Hd
-    e_Pe_new = e_Pe + 2.0*alpha*e_Pd + alpha*alpha*d_Pd
+    alpha = o.z_r/d_Hd
+    e_Pe_new = o.e_Pe + 2.0*alpha*o.e_Pd + alpha*alpha*o.d_Pd
 
-    if d_Hd <= 0 || e_Pe_new >= Δ^2
-        tau = (-e_Pd + sqrt(e_Pd*e_Pd + d_Pd*(Δ^2-e_Pe))) / d_Pd
-        eta  = eta-tau*(o.δ)
-        Heta = Heta-tau*Hmdelta
+    if d_Hd <= 0 || e_Pe_new >= o.Δ^2
+        tau = (-o.e_Pd + sqrt(o.e_Pd*o.e_Pd + o.d_Pd*(o.Δ^2-o.e_Pe))) / o.d_Pd
+        o.η  = o.η-tau*(o.δ)
+        o.Hη = o.Hη-tau*Hmdelta
     end
 
-    e_Pe = e_Pe_new
-    new_eta  = eta-alpha*(o.mδ)
-    new_Heta = Heta-alpha*Hmdelta
+    o.e_Pe = e_Pe_new
+    new_eta  = o.η-alpha*(o.mδ)
+    new_Heta = o.Hη-alpha*Hmdelta
 
-    new_model_value = dot(p.M,o.x,new_eta,o.∇) + 0.5 * dot(p.M,o.x,new_eta,new_Heta)
+    new_model_value = dot(p.M,o.x,new_eta,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,new_eta,new_Heta)
 
-    eta = new_eta
-    Heta = new_Heta
+    o.η = new_eta
+    o.Hη = new_Heta
     model_value = new_model_value
 
-    r = r-alpha*Hmdelta
+    o.residual = o.residual-alpha*Hmdelta
 
-    z = o.useRand ? getPreconditioner(p, o.x, r) : r
+    o.z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
 
-    zold_rold = z_r
-    z_r = dot(p.M, o.x, z, r)
+    zold_rold = o.z_r
+    o.z_r = dot(p.M, o.x, o.z, o.residual)
 
-    beta = z_r/zold_rold
-    o.mδ = z + beta*o.mδ
+    beta = o.z_r/zold_rold
+    o.mδ = o.z + beta*o.mδ
 
-    # not sure if this is necessary. We need to discuss this. 
+    # not sure if this is necessary. We need to discuss this.
     o.mδ = tangent(p.M, o.x, getValue(o.mδ))
 
-    e_Pd = beta*(e_Pd + alpha*d_Pd)
-    d_Pd = z_r + beta*beta*d_Pd
+    o.e_Pd = beta*(o.e_Pd + alpha*o.d_Pd)
+    o.d_Pd = o.z_r + beta*beta*o.d_Pd
 
-    return eta
-    return Heta
+    return o.η
+    return o.Hη
+end
+
+function getSolverResult(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+    return o.ηOptimal
+    return o.HηOptimal
 end
