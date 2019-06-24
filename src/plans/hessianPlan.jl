@@ -14,6 +14,7 @@ abstract type HessianOptions <: Options end
 
 struct TruncatedConjugateGradientOptions <: HessianOptions
     x::P where {P <: MPoint}
+    stop::stoppingCriterion
     η::T where {T <: TVector}
     Hη::T where {T <: TVector}
     mδ::T where {T <: TVector}
@@ -23,8 +24,9 @@ struct TruncatedConjugateGradientOptions <: HessianOptions
     e_Pe::Float64
     residual::T where {T <: TVector}
     z::T where {T <: TVector}
+    model_value::Float64
     useRand::Bool
-    TruncatedConjugateGradientOptions(x::P,η::T,Hη::T,δ::T,Δ::Float64,d_Pd::Float64,e_Pd::Float64,e_Pe::Float64,residual::T,z::T,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,η,Hη,δ,Δ,d_Pd,e_Pd,e_Pe,residual,z,uR)
+    TruncatedConjugateGradientOptions(x::P,η::T,Hη::T,δ::T,Δ::Float64,d_Pd::Float64,e_Pd::Float64,e_Pe::Float64,residual::T,z::T,model_value::Float64,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,η,Hη,δ,Δ,d_Pd,e_Pd,e_Pe,residual,z,model_value,uR)
 end
 
 struct TrustRegionOptions <: HessianOptions
