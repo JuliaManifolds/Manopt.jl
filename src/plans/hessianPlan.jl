@@ -31,15 +31,15 @@ end
 
 struct TrustRegionOptions <: HessianOptions
     x::P where {P <: MPoint}
-    ∇::T where {T <: TVector}
     stop::stoppingCriterion
     δ_bar::Float64
     δ0::Float64
     useRand::Bool
-    kappa::Float64
-    theta::Float64
     ρ_prime::Float64
     ρ_regularization::Float64
+    TrustRegionOptions(x::P, stop::stoppingCriterion, δ_bar::Float64,
+    δ0::Float64, useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64)
+    where {P <: MPoint} = new(x,stop,δ_bar,δ0,useRand,ρ_prime,ρ_regularization)
 end
 
 getHessian(p::Pr,x::P,ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = ismissing(p.hessian) ? approxHessianFD(p,x,ξ) : p.hessian(x,ξ)
