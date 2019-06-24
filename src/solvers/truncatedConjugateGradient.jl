@@ -4,17 +4,26 @@
 export truncatedConjugateGradient, model_fun
 
 @doc doc"""
-    truncatedConjugateGradient(M, F, ∂F, x, η; H, P, Δ, stoppingCriterion, uR)
+    truncatedConjugateGradient(M, F, ∂F, x, η, H, P, Δ, stoppingCriterion, uR)
 
 solve the trust-region subproblem
 
 $min_{\eta in T_{x}M} m_{x}(\eta) = F(x) + \langle \partialF(x), \eta \rangle_{x} + \frac{1}{2} \langle Η_{x} \eta, \eta \rangle_{x}$
-$s.t. \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2$
+$\text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2$
 
 with the Steihaug-Toint truncated conjugate-gradient method.
+
+# Input
+* `M` – a manifold $\mathcal M$
+* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `∂F`: the (sub)gradient $\partial F\colon\mathcal M\to T\mathcal M$ of F
+  restricted to always only returning one value/element from the subgradient
+* `x` – an initial value $x\in\mathcal M$
+* `η` – an update tangential vector $\eta\in\mathcal{T_{x}M}$
+* `H` – a hessian matrix
 """
 function truncatedConjugateGradient(M::mT,
-        F::Function, ∂F::Function, x::MP, eta::T;
+        F::Function, ∂F::Function, x::MP, eta::T,
         H::Union{Function,Missing},
         P::Function,
         Δ::Float64,
