@@ -32,14 +32,16 @@ end
 struct TrustRegionOptions <: HessianOptions
     x::P where {P <: MPoint}
     stop::stoppingCriterion
+    δ::Float64
     δ_bar::Float64
     δ0::Float64
     useRand::Bool
     ρ_prime::Float64
     ρ_regularization::Float64
-    TrustRegionOptions(x::P, stop::stoppingCriterion, δ_bar::Float64,
-    δ0::Float64, useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64)
-    where {P <: MPoint} = new(x,stop,δ_bar,δ0,useRand,ρ_prime,ρ_regularization)
+    norm_grad::Float64
+    TrustRegionOptions(x::P, stop::stoppingCriterion, δ::Float64, δ_bar::Float64,
+    δ0::Float64, useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64,
+    norm_grad::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,δ0,useRand,ρ_prime,ρ_regularization,norm_grad)
 end
 
 getHessian(p::Pr,x::P,ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = ismissing(p.hessian) ? approxHessianFD(p,x,ξ) : p.hessian(x,ξ)
@@ -54,7 +56,7 @@ function approxHessianFD(p::HessianProblem, x::P, ξ::T, stepsize::Float64=2.0^(
     end
     c = stepsize / norm_xi
     grad = getGradient(p, x)
-    x1 = retraction(M, x, ξ, c)
+    x1 = retraction(p.M, x, ξ, c)
     grad1 = getGradient(p, x1)
     grad1 = parallelTransport(p.M, x1, x, grad1)
     return TVector((getValue(grad1)-getValue(grad))/c)
