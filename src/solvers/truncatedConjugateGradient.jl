@@ -26,9 +26,9 @@ function truncatedConjugateGradient(M::mT,
         F::Function, ∂F::Function, x::MP, eta::T,
         H::Union{Function,Missing},
         P::Function,
-        Δ::Float64,
+        Δ::Float64;
         stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
-        uR::Bool
+        uR::Bool = false
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
     p = HessianProblem(M,F,∂F,H,P)
     o = TruncatedConjugateGradientOptions(x,stoppingCriterion,eta,zeroTVector(M,x),zeroTVector(M,x),Δ,0,0,0,zeroTVector(M,x),zeroTVector(M,x),0,uR)
