@@ -61,8 +61,8 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     o.d_Pd = o.z_r
     # Initial search direction (we maintain -delta in memory, called mdelta, to
     # avoid a change of sign of the tangent vector.)
-    o.mδ = o.z # TODO please change to delta, analog für Hmdelta
-    o.e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, o.mδ)
+    o.δ = o.z
+    o.e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, o.δ)
     # If the Hessian or a linear Hessian approximation is in use, it is
     # theoretically guaranteed that the model value decreases strictly
     # with each iteration of tCG. Hence, there is no need to monitor the model
@@ -74,9 +74,10 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     o.model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,o.Hη)
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    # TODO save old values
     ηOld = o.η
     zrOld = o.zr
+    HηOld = o.Hη
+    e_PeOld = o.e_Pe
     # This call is the computationally expensive step.
     Hδ = getHessian(p, o.x, o.δ)
     # Compute curvature (often called kappa).
@@ -85,22 +86,21 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     α = zrOld/δHδ
     # <neweta,neweta>_P =
     # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
-    e_Pe_new = o.e_Pe + 2.0*α*o.e_Pd + α^2*o.d_Pd
+    o.e_Pe = e_PeOld + 2.0 * α * o.e_Pd + α^2 * o.d_Pd
     # Check against negative curvature and trust-region radius violation.
     # If either condition triggers, we bail out.
-    if d_Hd <= 0 || e_Pe_new >= o.Δ^2
-        tau = (-o.e_Pd + sqrt(o.e_Pd*o.e_Pd + o.d_Pd*(o.Δ^2-o.e_Pe))) / o.d_Pd
-        o.η  = o.η-tau*(o.δ)
+    if δHδ <= 0 || o.e_Pe >= o.Δ^2
+        tau = (-o.e_Pd + sqrt(o.e_Pd^2 + o.d_Pd * (o.Δ^2 - e_PeOld))) / o.d_Pd
+        ηOld  = ηOld - tau * (o.δ)
         # If only a nonlinear Hessian approximation is available, this is
         # only approximately correct, but saves an additional Hessian call.
-        o.Hη = o.Hη-tau*Hmdelta
+        HηOld = HηOld - tau * Hδ
     end
     # No negative curvature and eta_prop inside TR: accept it.
-    o.e_Pe = e_Pe_new
-    new_eta  = o.η - α*(o.mδ)
+    o.η = ηOld - α * (o.δ)
     # If only a nonlinear Hessian approximation is available, this is
     # only approximately correct, but saves an additional Hessian call.
-    new_Heta = o.Hη-α*Hmdelta
+    o.Hη = HηOld - α * Hδ
     # Verify that the model cost decreased in going from eta to new_eta. If
     # it did not (which can only occur if the Hessian approximation is
     # nonlinear or because of numerical errors), then we return the
@@ -111,19 +111,17 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # if new_model_value >= o.model_value
     #     break
     # end
-    o.η = new_eta
-    o.Hη = new_Heta
-    o.model_value = new_model_value
+    # o.model_value = new_model_value
     # Update the residual.
-    o.residual = o.residual-α*Hmdelta
+    o.residual = o.residual - α * Hδ
     # Precondition the residual.
     o.z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     # Save the old z'*r.
     # Compute new z'*r.
     o.zr = dot(p.M, o.x, o.z, o.residual)
     # Compute new search direction.
-    beta = o.zr/zrOld
-    o.mδ = o.z + beta*o.mδ
+    β = o.zr/zrOld
+    o.δ = o.z + β * o.δ
     # Since mdelta is passed to getHessian, which is the part of the code
     # we have least control over from here, we want to make sure mdelta is
     # a tangent vector up to numerical errors that should remain small.
@@ -133,10 +131,10 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # being that loss of tangency can lead to more inner iterations being
     # run, which leads to an overall higher computational cost.
     # Not sure if this is necessary. We need to discuss this.
-    o.mδ = tangent(p.M, o.x, getValue(o.mδ))
+    o.δ = tangent(p.M, o.x, getValue(o.δ))
     # Update new P-norms and P-dots
-    o.e_Pd = beta*(o.e_Pd + α*o.d_Pd)
-    o.d_Pd = o.zr + beta*beta*o.d_Pd
+    o.e_Pd = β * (o.e_Pd + α * o.d_Pd)
+    o.d_Pd = o.zr + β^2 *o.d_Pd
 end
 function getSolverResult(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     return o.η
