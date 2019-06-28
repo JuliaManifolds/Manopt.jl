@@ -12,7 +12,7 @@ function trustRegionsSolver(M::mT,
         x::MP = randomMPoint(M),
         H::Union{Function,Missing}, P::Function;
         stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
-        δ_bar::Float64 = injectivity_radius(M),
+        δ_bar::Float64 = try injectivity_radius(M) catch; sqrt(manifoldDimension(M)) end,
         δ0::Float64 = δ_bar/8,
         uR::Bool = false, ρ_prime::Float64 = 0.1,
         ρ_regularization::Float64=10^(-3)
@@ -40,7 +40,8 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                         eta = sqrt(sqrt(eps(Float64)))*eta
                 end
         end
-        tCG = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,p.x,eta,p.hessian,p.precon,o.δ,o.stop,o.useRand)
+        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,p.x,eta,p.hessian,p.precon,o.δ,o.stop,o.useRand)
+        Hη = getHessian(p.M, o.x, η)
 end
 
 function getSolverResult(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionOptions}

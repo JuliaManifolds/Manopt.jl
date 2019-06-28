@@ -1,3 +1,6 @@
+export HessianProblem, HessianOptions
+export TruncatedConjugateGradientOptions, TrustRegionOptions
+export stopResidualReducedByFactor, stopResidualReducedByPower
 
 struct HessianProblem{mT <: Manifold} <: Problem
     M::mT where {mT <: Manifold}
@@ -24,6 +27,7 @@ struct TruncatedConjugateGradientOptions <: HessianOptions
     e_Pe::Float64
     residual::T where {T <: TVector}
     z::T where {T <: TVector}
+    zr::Float64
     model_value::Float64
     useRand::Bool
     TruncatedConjugateGradientOptions(x::P,η::T,Hη::T,δ::T,Δ::Float64,d_Pd::Float64,e_Pd::Float64,e_Pe::Float64,residual::T,z::T,model_value::Float64,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,η,Hη,δ,Δ,d_Pd,e_Pd,e_Pe,residual,z,model_value,uR)
@@ -60,4 +64,32 @@ function approxHessianFD(p::HessianProblem, x::P, ξ::T, stepsize::Float64=2.0^(
     grad1 = getGradient(p, x1)
     grad1 = parallelTransport(p.M, x1, x, grad1)
     return TVector((getValue(grad1)-getValue(grad))/c)
+end
+
+struct stopResidualReducedByFactor <: StoppingCriterion
+    κ::Float64
+    initialResidualNorm::Float64
+    reason::String
+    stopResidualReducedByFactor(iRN::Float64,κ::Float64) = new(κ,iRN,"")
+end
+function (c::stopResidualReducedByFactor)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
+    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm*c.κ
+        c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
+        return true
+    end
+    return false
+end
+
+struct stopResidualReducedByPower <: StoppingCriterion
+    θ::Float64
+    initialResidualNorm::Float64
+    reason::String
+    stopResidualReducedByPower(iRN::Float64,θ::Float64) = new(θ,iRN,"")
+end
+function (c::stopResidualReducedByPower)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
+    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1+c.θ)
+        c.reason = "The algorithm reached superlinear convergence (residual at least reduced by powert 1 + θ=$(c.θ)).\n"
+        return true
+    end
+    return false
 end
