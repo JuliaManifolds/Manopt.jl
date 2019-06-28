@@ -1,7 +1,7 @@
 #
 #   Truncated Conjugate-Gradient Method
 #
-export truncatedConjugateGradient, model_fun
+export truncatedConjugateGradient
 
 @doc doc"""
     truncatedConjugateGradient(M, F, ∂F, x, η, H, P, Δ, stoppingCriterion, uR)

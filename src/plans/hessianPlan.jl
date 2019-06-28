@@ -2,6 +2,27 @@ export HessianProblem, HessianOptions
 export TruncatedConjugateGradientOptions, TrustRegionOptions
 export stopResidualReducedByFactor, stopResidualReducedByPower
 
+#
+# Problem
+#
+@doc doc"""
+    HessianProblem <: Problem
+specify a problem for hessian based algorithms.
+
+# Fields
+* `M`            : a manifold $\mathcal M$
+* `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `gradient`     : the gradient $\nabla F\colon\mathcal M
+  \to \mathcal T\mathcal M$ of the cost function $F$
+* `hessian`      : the hessian matrix $Hess F(x) \colon \mathcal T_{x} \mathcal M
+  \to \mathcal T_{x} \mathcal M$ of the cost function $F$
+* `precon`       : the preconditioner for the Hessian of the cost function $F$
+
+# See also
+[`truncatedConjugateGradient`](@ref)
+[`trustRegionsSolver`](@ref)
+
+# """
 struct HessianProblem{mT <: Manifold} <: Problem
     M::mT where {mT <: Manifold}
     costFunction::Function
@@ -11,13 +32,46 @@ struct HessianProblem{mT <: Manifold} <: Problem
     HessianProblem(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function) where {mT <: Manifold} = new(M,cost,grad,hess,pre)
 end
 
-# injectivity_radius.
-
 abstract type HessianOptions <: Options end
+#
+# Options
+#
+"""
+    TruncatedConjugateGradientOptions <: HessianOptions
 
+Describes the truncated Conjugate Gradient algorithm with the Steihaug-Toint
+method, with
+
+# Fields
+a default value is given in brackets if a parameter can be left out in initialization.
+
+* `x` : an [`MPoint`](@ref) as starting point
+* `stoppingCriterion` :
+* `η` :
+* `Hη` :
+* `mδ` :
+* `Δ` :
+* `d_Pd` :
+* `e_Pd` :
+* `e_Pe` :
+* `residual` :
+* `z` :
+* `zr` :
+* `model_value` :
+* `useRand` :
+
+# Constructor
+
+    TruncatedConjugateGradientOptions()
+
+construct a truncated Conjugate Gradient Option with the fields as above.
+
+# See also
+[`steepestDescent`](@ref), [`GradientProblem`](@ref)
+"""
 struct TruncatedConjugateGradientOptions <: HessianOptions
     x::P where {P <: MPoint}
-    stop::stoppingCriterion
+    stoppingCriterion::stoppingCriterion
     η::T where {T <: TVector}
     Hη::T where {T <: TVector}
     mδ::T where {T <: TVector}
