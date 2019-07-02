@@ -148,6 +148,12 @@ getGradient(p::Pr,x::P) where {Pr <: HessianProblem, P <: MPoint} = p.gradient(x
 evaluate the cost function of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`.
 """
 getCost(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} = p.costFunction(x)
+"""
+    getPreconditioner(p,x,ξ)
+
+evaluate a preconditioner of the Hessian of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`
+times a [`TVector`](@ref) `ξ`.
+"""
 getPreconditioner(p::Pr,x::P, ξ::V) where {Pr <: Problem, P <: MPoint, V <: TVector} = p.precon(x,ξ)
 
 @doc doc"""
