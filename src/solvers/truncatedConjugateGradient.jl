@@ -4,7 +4,7 @@
 export truncatedConjugateGradient
 
 @doc doc"""
-    truncatedConjugateGradient(M, F, ∂F, x, η, H, P, Δ, stoppingCriterion, uR)
+    truncatedConjugateGradient(M, F, ∂F, x, η, H, P, Δ)
 
 solve the trust-region subproblem
 
@@ -25,6 +25,20 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 * `x` – an initial value $x\in\mathcal M$
 * `η` – an update tangential vector $\eta\in\mathcal{T_{x}M}$
 * `H` – a hessian matrix
+* `P` – a preconditioner for the hessian matrix
+* `Δ` – a trust-region radius
+
+# Optional
+* `θ` – 1+θ is the superlinear convergence target rate. The algorithm will
+    terminate early if the residual was reduced by a power of 1+theta.
+* `κ` – the linear convergence target rate: algorithm will terminate
+    early if the residual was reduced by a factor of kappa
+* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`([`manifoldDimension`](@ref)(M)),
+  `[`stopResidualReducedByFactor`](@ref)`(κ))`, `[`stopResidualReducedByPower`](@ref)`(θ))`)
+  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+
+# Output
+* `η` – an approximate solution of the trust-region subproblem
 """
 function truncatedConjugateGradient(M::mT,
         F::Function, ∂F::Function, x::MP, eta::T,

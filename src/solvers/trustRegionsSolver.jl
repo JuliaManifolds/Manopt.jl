@@ -141,8 +141,8 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         else ρ > 3/4
                 o.δ = min(2*o.δ, o.δ_bar)
         end
-
-
+        # Choose to accept or reject the proposed step based on the model
+        # performance. Note the strict inequality.
         if model_decreased && ρ > o.ρ_prime
                 o.x = x_prop
                 fx = fx_prop # Probably not necessary
