@@ -144,13 +144,10 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
 
 
         if model_decreased && ρ > o.ρ_prime
-                accept = true
                 o.x = x_prop
                 fx = fx_prop # Probably not necessary
                 grad = getGradient(p, o.x)
                 o.norm_grad = norm(p.M, o.x, grad)
-        else
-                accept = false
         end
 
 end
