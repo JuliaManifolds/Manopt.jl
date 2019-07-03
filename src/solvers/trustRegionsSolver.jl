@@ -138,22 +138,10 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # then reduce the TR radius.
         if ρ < 1/4 || ~model_decreased || isnan(ρ)
                 o.δ = o.δ/4
-                consecutive_TRplus = 0
-                consecutive_TRminus = consecutive_TRminus + 1
-                if consecutive_TRminus >= 5
-                        consecutive_TRminus = -Inf
-                end
-        elseif ρ > 3/4
+        else ρ > 3/4
                 o.δ = min(2*o.δ, o.δ_bar)
-                consecutive_TRminus = 0
-                consecutive_TRplus = consecutive_TRplus + 1
-                if consecutive_TRplus >= 5
-                        consecutive_TRplus = -Inf
-                end
-        else
-                consecutive_TRplus = 0
-                consecutive_TRminus = 0
         end
+
 
         if model_decreased && ρ > o.ρ_prime
                 accept = true
