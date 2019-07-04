@@ -74,7 +74,7 @@ struct TruncatedConjugateGradientOptions <: HessianOptions
     stop::stoppingCriterion
     η::T where {T <: TVector}
     Hη::T where {T <: TVector}
-    mδ::T where {T <: TVector}
+    δ::T where {T <: TVector}
     Δ::Float64
     d_Pd::Float64
     e_Pd::Float64
