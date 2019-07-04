@@ -39,7 +39,7 @@ function trustRegionsSolver(M::mT,
         x::MP = randomMPoint(M),
         H::Union{Function,Missing}, P::Function;
         stoppingCriterion::StoppingCriterion = stopWhenAny(
-        stopAfterIteration(5000)),
+        stopAfterIteration(5000), stopGradientTolerance(10^(-6))),
         δ_bar::Float64 = try injectivity_radius(M) catch; sqrt(manifoldDimension(M)) end,
         δ0::Float64 = δ_bar/8,
         uR::Bool = false, ρ_prime::Float64 = 0.1,

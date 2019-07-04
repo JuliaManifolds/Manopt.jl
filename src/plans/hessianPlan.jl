@@ -199,3 +199,53 @@ function (c::stopResidualReducedByPower)(p::P,o::O,i::Int) where {P <: Problem, 
     end
     return false
 end
+
+struct stopGradientTolerance <: StoppingCriterion
+    tolgrad::Float64
+    reason::String
+    stopGradientTolerance(tol::Float64) = new(tol,"")
+end
+function (c::stopGradientTolerance)(p::P,o::O,i::Int) where {P <: Problem, O <: TrustRegionOptions}
+    if norm(p.M, o.x, getGradient(p, o.x)) <= c.tolgrad
+        c.reason = "The norm of the gradient reached tolerance ($norm(p.M, o.x, getGradient(p, o.x))).\n"
+        return true
+    end
+    return false
+end
+
+struct stopCostTolerance <: StoppingCriterion
+    tolcost::Float64
+    reason::String
+    stopCostTolerance(tol::Float64) = new(tol,"")
+end
+function (c::stopCostTolerance)(p::P,o::O,i::Int) where {P <: Problem, O <: TrustRegionOptions}
+    if getCost(p, o.x) <= c.tolcost
+        c.reason = "The value of the cost function reached tolerance ($getCost(p, o.x)).\n"
+        return true
+    end
+    return false
+end
+
+struct stopExceededTrustRegion <: StoppingCriterion
+    reason::String
+    stopExceededTrustRegion(tol::Float64) = new(tol,"")
+end
+function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
+    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) >= 0
+        c.reason = "Exceeded trust region.\n"
+        return true
+    end
+    return false
+end
+
+struct stopNegativeCurvature <: StoppingCriterion
+    reason::String
+    stopNegativeCurvature(tol::Float64) = new(tol,"")
+end
+function (c::stopNegativeCurvature)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
+    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0
+        c.reason = "Negative curvature.\n"
+        return true
+    end
+    return false
+end
