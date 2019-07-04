@@ -4,14 +4,42 @@
 export trustRegionsSolver
 
 @doc doc"""
-    trustRegionsSolver(M, F, ∂F, x, η, H, P)
+    trustRegionsSolver(M, F, ∇F, x, H, P)
+
+evaluate the Riemannian trust-regions solver for optimization on manifolds.
+
+### Not sure, which formula has to be shown here
+
+# Input
+* `M` – a manifold $\mathcal M$
+* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `x` – an initial value $x\in\mathcal M$
+* `H` – a hessian matrix
+* `P` – a preconditioner for the hessian matrix
+
+# Optional
+* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000))
+        a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `δ_bar` – the maximum trust-region radius
+* `δ0` – the initial trust-region radius
+* `uR` – set to true if the trust-region solve is to be initiated with a
+        random tangent vector. If set to true, no preconditioner will be
+        used. This option is set to true in some scenarios to escape saddle
+        points, but is otherwise seldom activated.
+* `ρ_prime` –
+* `ρ_regularization` –
+
+# Output
+* `x` – the last reached point on the manifold
 """
 
 function trustRegionsSolver(M::mT,
         F::Function, ∂F::Function,
         x::MP = randomMPoint(M),
         H::Union{Function,Missing}, P::Function;
-        stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
+        stoppingCriterion::StoppingCriterion = stopWhenAny(
+        stopAfterIteration(5000)),
         δ_bar::Float64 = try injectivity_radius(M) catch; sqrt(manifoldDimension(M)) end,
         δ0::Float64 = δ_bar/8,
         uR::Bool = false, ρ_prime::Float64 = 0.1,
@@ -45,7 +73,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 end
         end
         # Solve TR subproblem approximately
-        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,p.x,eta,p.hessian,p.precon,o.δ,o.stop,o.useRand)
+        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,p.precon,o.δ,o.useRand)
         Hη = getHessian(p.M, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x

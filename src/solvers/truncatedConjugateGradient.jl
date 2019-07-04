@@ -4,7 +4,7 @@
 export truncatedConjugateGradient
 
 @doc doc"""
-    truncatedConjugateGradient(M, F, ∂F, x, η, H, P, Δ)
+    truncatedConjugateGradient(M, F, ∇F, x, η, H, P, Δ)
 
 solve the trust-region subproblem
 
@@ -20,8 +20,7 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 # Input
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∂F`: the (sub)gradient $\partial F\colon\mathcal M\to T\mathcal M$ of F
-  restricted to always only returning one value/element from the subgradient
+* `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
 * `x` – an initial value $x\in\mathcal M$
 * `η` – an update tangential vector $\eta\in\mathcal{T_{x}M}$
 * `H` – a hessian matrix
@@ -36,6 +35,10 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 * `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`([`manifoldDimension`](@ref)(M)),
   `[`stopResidualReducedByFactor`](@ref)`(κ))`, `[`stopResidualReducedByPower`](@ref)`(θ))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `useRandom` – set to true if the trust-region solve is to be initiated with a
+    random tangent vector. If set to true, no preconditioner will be
+    used. This option is set to true in some scenarios to escape saddle
+    points, but is otherwise seldom activated.
 
 # Output
 * `η` – an approximate solution of the trust-region subproblem
