@@ -29,7 +29,7 @@ struct HessianProblem{mT <: Manifold} <: Problem
     gradient::Function
     hessian::Union{Function,Missing}
     precon::Function
-    HessianProblem(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function) where {mT <: Manifold} = new(M,cost,grad,hess,pre)
+    HessianProblem(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function= h -> h) where {mT <: Manifold} = new(M,cost,grad,hess,pre)
 end
 
 abstract type HessianOptions <: Options end
@@ -70,19 +70,20 @@ construct a truncated Conjugate Gradient Option with the fields as above.
 [`truncatedConjugateGradient`](@ref), [`trustRegionsSolver`](@ref)
 """
 struct TruncatedConjugateGradientOptions <: HessianOptions
+    # benötigen eta, residual, delta, Delta
     x::P where {P <: MPoint}
     stop::stoppingCriterion
     η::T where {T <: TVector}
-    Hη::T where {T <: TVector}
+    #Hη::T where {T <: TVector}
     δ::T where {T <: TVector}
     Δ::Float64
-    d_Pd::Float64
-    e_Pd::Float64
-    e_Pe::Float64
+    #d_Pd::Float64
+    #e_Pd::Float64
+    #e_Pe::Float64
     residual::T where {T <: TVector}
-    z::T where {T <: TVector}
-    zr::Float64
-    model_value::Float64
+    #z::T where {T <: TVector}
+    #zr::Float64
+    #model_value::Float64
     useRand::Bool
     TruncatedConjugateGradientOptions(x::P,η::T,Hη::T,δ::T,Δ::Float64,d_Pd::Float64,e_Pd::Float64,e_Pe::Float64,residual::T,z::T,model_value::Float64,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,η,Hη,δ,Δ,d_Pd,e_Pd,e_Pe,residual,z,model_value,uR)
 end
@@ -194,7 +195,7 @@ struct stopResidualReducedByPower <: StoppingCriterion
 end
 function (c::stopResidualReducedByPower)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1+c.θ)
-        c.reason = "The algorithm reached superlinear convergence (residual at least reduced by powert 1 + θ=$(c.θ)).\n"
+        c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(c.θ)).\n"
         return true
     end
     return false
@@ -213,19 +214,6 @@ function (c::stopGradientTolerance)(p::P,o::O,i::Int) where {P <: Problem, O <: 
     return false
 end
 
-struct stopCostTolerance <: StoppingCriterion
-    tolcost::Float64
-    reason::String
-    stopCostTolerance(tol::Float64) = new(tol,"")
-end
-function (c::stopCostTolerance)(p::P,o::O,i::Int) where {P <: Problem, O <: TrustRegionOptions}
-    if getCost(p, o.x) <= c.tolcost
-        c.reason = "The value of the cost function reached tolerance ($getCost(p, o.x)).\n"
-        return true
-    end
-    return false
-end
-
 struct stopExceededTrustRegion <: StoppingCriterion
     reason::String
     stopExceededTrustRegion(tol::Float64) = new(tol,"")
@@ -238,9 +226,9 @@ function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: Problem, O <
     return false
 end
 
-struct stopNegativeCurvature <: StoppingCriterion
+struct stopWhen CurvatureIsNegative <: StoppingCriterion
     reason::String
-    stopNegativeCurvature(tol::Float64) = new(tol,"")
+    stopNegativeCurvature() = new("")
 end
 function (c::stopNegativeCurvature)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
     if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0

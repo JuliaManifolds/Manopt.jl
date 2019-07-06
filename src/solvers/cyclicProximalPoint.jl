@@ -1,7 +1,9 @@
 export cyclicProximalPoint
 @doc doc"""
     cyclicProximalPoint(M, F, proximalMaps, x)
+
 perform a cyclic proximal point algorithm.
+
 # Input
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize

@@ -44,7 +44,7 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 * `η` – an approximate solution of the trust-region subproblem
 """
 function truncatedConjugateGradient(M::mT,
-        F::Function, ∂F::Function, x::MP, eta::T,
+        F::Function, ∇F::Function, x::MP, η::T,
         H::Union{Function,Missing},
         P::Function,
         Δ::Float64;
@@ -52,14 +52,15 @@ function truncatedConjugateGradient(M::mT,
         κ::Float64 = 0.1,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
             stopAfterIteration(manifoldDimension(M)),
-            stopResidualReducedByPower(1.0,θ),
-            stopResidualReducedByFactor(1.0,κ),
+            stopResidualReducedByPower(norm(M,x, ∇F(x) + (useRandom ? zeroTVector(M,x): H(η) ), 0,θ),
+            stopResidualReducedByFactor(norm(M,x, ∇F(x) + (useRandom ? zeroTVector(M,x): H(η) ), κ),
         ),
-        useRandom::Bool = false
+        useRandom::Bool = false,
+        kwargs... #collect rest
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
     p = HessianProblem(M,F,∂F,H,P)
     o = TruncatedConjugateGradientOptions(x,stoppingCriterion,eta,zeroTVector(M,x),zeroTVector(M,x),Δ,0,0,0,zeroTVector(M,x),zeroTVector(M,x),0,useRandom)
-
+    o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
     if hasRecord(resultO)
         return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
