@@ -124,7 +124,6 @@ struct TrustRegionOptions <: HessianOptions
     useRand::Bool
     ρ_prime::Float64
     ρ_regularization::Float64
-    norm_grad::Float64
     TrustRegionOptions(x::P, stop::stoppingCriterion, δ::Float64, δ_bar::Float64,
     δ0::Float64, useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64,
     norm_grad::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,δ0,useRand,ρ_prime,ρ_regularization,norm_grad)

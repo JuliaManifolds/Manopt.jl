@@ -56,7 +56,6 @@ function trustRegionsSolver(M::mT,
 end
 
 function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionOptions}
-        o.norm_grad = norm(p.M, o.x, getGradient(p, o.x))
 end
 
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionOptions}
@@ -72,6 +71,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                         eta = sqrt(sqrt(eps(Float64)))*eta
                 end
         end
+        norm_grad = norm(p.M, o.x, getGradient(p, o.x))
         # Solve TR subproblem approximately
         η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,p.precon,o.δ,o.useRand)
         Hη = getHessian(p.M, o.x, η)
@@ -91,11 +91,11 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 if gradHgrad <= 0
                         tau_c = 1
                 else
-                        tau_c = min( o.norm_grad^3 /(o.δ * gradHgrad), 1)
+                        tau_c = min( norm_grad^3 /(o.δ * gradHgrad), 1)
                 end
                 # and generate the Cauchy point.
-                η_c = (-tau_c * o.δ / o.norm_grad) * grad
-                Hη_c = (-tau_c * o.δ / o.norm_grad) * Hgrad
+                η_c = (-tau_c * o.δ / norm_grad) * grad
+                Hη_c = (-tau_c * o.δ / norm_grad) * Hgrad
                 # Now that we have computed the Cauchy point in addition to the
                 # returned eta, we might as well keep the best of them.
                 mdle  = fx + dot(p.M, o.x, grad, η) + .5 * dot(p.M, o.x, Hη, η)
@@ -175,7 +175,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 o.x = x_prop
                 fx = fx_prop # Probably not necessary
                 grad = getGradient(p, o.x)
-                o.norm_grad = norm(p.M, o.x, grad)
         end
 
 end
