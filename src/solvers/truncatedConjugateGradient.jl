@@ -75,8 +75,8 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     # Precondition the residual.
     o.z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     # Compute z'*r.
-    o.zr = dot(p.M, o.x, o.z, o.residual)
-    o.d_Pd = o.z_r
+    zr = dot(p.M, o.x, o.z, o.residual)
+    o.d_Pd = zr
     # Initial search direction (we maintain -delta in memory, called mdelta, to
     # avoid a change of sign of the tangent vector.)
     o.δ = o.z
@@ -93,7 +93,7 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
-    zrOld = o.zr
+    zrOld = dot(p.M, o.x, o.z, o.residual)
     HηOld = o.Hη
     e_PeOld = o.e_Pe
     # This call is the computationally expensive step.
@@ -136,9 +136,9 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     o.z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     # Save the old z'*r.
     # Compute new z'*r.
-    o.zr = dot(p.M, o.x, o.z, o.residual)
+    zr = dot(p.M, o.x, o.z, o.residual)
     # Compute new search direction.
-    β = o.zr/zrOld
+    β = zr/zrOld
     o.δ = o.z + β * o.δ
     # Since mdelta is passed to getHessian, which is the part of the code
     # we have least control over from here, we want to make sure mdelta is
@@ -152,7 +152,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     o.δ = tangent(p.M, o.x, getValue(o.δ))
     # Update new P-norms and P-dots
     o.e_Pd = β * (o.e_Pd + α * o.d_Pd)
-    o.d_Pd = o.zr + β^2 *o.d_Pd
+    o.d_Pd = zr + β^2 *o.d_Pd
 end
 function getSolverResult(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     return o.η
