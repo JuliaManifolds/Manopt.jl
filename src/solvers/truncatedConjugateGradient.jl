@@ -73,13 +73,13 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     o.residual = getGradient(p,o.x) + o.Hη
     o.e_Pe = useRand ? 0 : dot(p.M, o.x, o.η, o.η)
     # Precondition the residual.
-    o.z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
+    z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     # Compute z'*r.
-    zr = dot(p.M, o.x, o.z, o.residual)
+    zr = dot(p.M, o.x, z, o.residual)
     o.d_Pd = zr
     # Initial search direction (we maintain -delta in memory, called mdelta, to
     # avoid a change of sign of the tangent vector.)
-    o.δ = o.z
+    o.δ = z
     o.e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, o.δ)
     # If the Hessian or a linear Hessian approximation is in use, it is
     # theoretically guaranteed that the model value decreases strictly
@@ -93,7 +93,8 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
-    zrOld = dot(p.M, o.x, o.z, o.residual)
+    zold = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
+    zrOld = dot(p.M, o.x, z, o.residual)
     HηOld = o.Hη
     e_PeOld = o.e_Pe
     # This call is the computationally expensive step.
@@ -133,13 +134,13 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # Update the residual.
     o.residual = o.residual - α * Hδ
     # Precondition the residual.
-    o.z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
+    z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     # Save the old z'*r.
     # Compute new z'*r.
-    zr = dot(p.M, o.x, o.z, o.residual)
+    zr = dot(p.M, o.x, z, o.residual)
     # Compute new search direction.
     β = zr/zrOld
-    o.δ = o.z + β * o.δ
+    o.δ = z + β * o.δ
     # Since mdelta is passed to getHessian, which is the part of the code
     # we have least control over from here, we want to make sure mdelta is
     # a tangent vector up to numerical errors that should remain small.
