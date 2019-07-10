@@ -59,7 +59,7 @@ function truncatedConjugateGradient(M::mT,
         kwargs... #collect rest
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
     p = HessianProblem(M,F,∂F,H,P)
-    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,eta,zeroTVector(M,x),zeroTVector(M,x),Δ,0,0,0,zeroTVector(M,x),zeroTVector(M,x),0,useRandom)
+    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),zeroTVector(M,x),Δ,0,0,0,zeroTVector(M,x),zeroTVector(M,x),0,useRandom)
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
     if hasRecord(resultO)
@@ -69,8 +69,9 @@ function truncatedConjugateGradient(M::mT,
 end
 function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     # If the falg useRand is on, eta is the zeroTVector.
-    o.Hη = o.useRand ? zeroTVector(p.M,o.x) : getHessian(p, o.x, o.η)
-    o.residual = getGradient(p,o.x) + o.Hη
+    o.η = o.useRand ? zeroTVector(p.M,o.x) : o.η
+    Hη = getHessian(p, o.x, o.η)
+    o.residual = getGradient(p,o.x) + Hη
     o.e_Pe = useRand ? 0 : dot(p.M, o.x, o.η, o.η)
     # Precondition the residual.
     z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
@@ -89,13 +90,13 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     # increase. It is then important to terminate the tCG iterations and return
     # the previous (the best-so-far) iterate. The variable below will hold the
     # model value.
-    o.model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,o.Hη)
+    o.model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,Hη)
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
     zold = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     zrOld = dot(p.M, o.x, z, o.residual)
-    HηOld = o.Hη
+    HηOld = getHessian(p, o.x, o.η)
     e_PeOld = o.e_Pe
     # This call is the computationally expensive step.
     Hδ = getHessian(p, o.x, o.δ)
@@ -117,9 +118,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     end
     # No negative curvature and eta_prop inside TR: accept it.
     o.η = ηOld - α * (o.δ)
-    # If only a nonlinear Hessian approximation is available, this is
-    # only approximately correct, but saves an additional Hessian call.
-    o.Hη = HηOld - α * Hδ
     # Verify that the model cost decreased in going from eta to new_eta. If
     # it did not (which can only occur if the Hessian approximation is
     # nonlinear or because of numerical errors), then we return the
