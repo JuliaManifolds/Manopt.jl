@@ -90,7 +90,7 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     # increase. It is then important to terminate the tCG iterations and return
     # the previous (the best-so-far) iterate. The variable below will hold the
     # model value.
-    o.model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,Hη)
+    # o.model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,Hη)
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
@@ -124,11 +124,12 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # previous eta (which necessarily is the best reached so far, according
     # to the model cost). Otherwise, we accept the new eta and go on.
     # -> Stopping Criterion
-    # new_model_value = dot(p.M,o.x,new_eta,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,new_eta,new_Heta)
-    # if new_model_value >= o.model_value
-    #     break
-    # end
-    # o.model_value = new_model_value
+    old_model_value = dot(p.M,o.x,ηOld,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,ηOld,HηOld)
+    new_model_value = dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,getHessian(p, o.x, o.η))
+     if new_model_value >= old_model_value
+         break
+     end
+
     # Update the residual.
     o.residual = o.residual - α * Hδ
     # Precondition the residual.
