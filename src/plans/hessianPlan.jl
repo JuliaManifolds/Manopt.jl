@@ -46,18 +46,16 @@ method, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` : an [`MPoint`](@ref) as starting point
-* `stoppingCriterion` : a function
+* `stoppingCriterion` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
+    indicator and a reason based on an iteration number, the gradient and the last and
+    current iterates
 * `η` :
-* `Hη` :
-* `mδ` :
+* `δ` :
 * `Δ` :
 * `d_Pd` :
 * `e_Pd` :
 * `e_Pe` :
 * `residual` :
-* `z` :
-* `zr` :
-* `model_value` :
 * `useRand` :
 
 # Constructor
@@ -93,14 +91,17 @@ Describes the Trust Regions Solver, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` : an [`MPoint`](@ref) as starting point
-* `stop` :
-* `δ` :
-* `δ_bar` :
-* `δ0` :
-* `useRand` :
+* `stop` : a function s,r = @(o,iter) returning a stop
+    indicator and a reason based on an iteration number and the gradient
+* `δ` : the trust-region radius
+* `δ_bar` : the maximum trust-region radius
+* `δ0` : the initial trust-region radius
+* `useRand` : indicates if the trust-region solve is to be initiated with a
+        random tangent vector. If set to true, no preconditioner will be
+        used. This option is set to true in some scenarios to escape saddle
+        points, but is otherwise seldom activated.
 * `ρ_prime` :
 * `ρ_regularization` :
-* `norm_grad` :
 
 # Constructor
 
