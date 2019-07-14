@@ -93,9 +93,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x` : an [`MPoint`](@ref) as starting point
 * `stop` : a function s,r = @(o,iter) returning a stop
     indicator and a reason based on an iteration number and the gradient
-* `δ` : the trust-region radius
+* `δ` : the (initial) trust-region radius
 * `δ_bar` : the maximum trust-region radius
-* `δ0` : the initial trust-region radius
 * `useRand` : indicates if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
@@ -117,13 +116,12 @@ struct TrustRegionOptions <: HessianOptions
     stop::stoppingCriterion
     δ::Float64
     δ_bar::Float64
-    δ0::Float64
     useRand::Bool
     ρ_prime::Float64
     ρ_regularization::Float64
     TrustRegionOptions(x::P, stop::stoppingCriterion, δ::Float64, δ_bar::Float64,
-    δ0::Float64, useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64,
-    norm_grad::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,δ0,useRand,ρ_prime,ρ_regularization,norm_grad)
+    useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64,
+    norm_grad::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,useRand,ρ_prime,ρ_regularization,norm_grad)
 end
 
 """

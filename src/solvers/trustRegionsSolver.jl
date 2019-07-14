@@ -22,7 +22,6 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
 * `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000))
         a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `δ_bar` – the maximum trust-region radius
-* `δ0` – the initial trust-region radius
 * `uR` – set to true if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
@@ -41,12 +40,12 @@ function trustRegionsSolver(M::mT,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
         stopAfterIteration(5000), stopGradientTolerance(10^(-6))),
         δ_bar::Float64 = try injectivity_radius(M) catch; sqrt(manifoldDimension(M)) end,
-        δ0::Float64 = δ_bar/8,
+        δ::Float64 = δ_bar/8,
         uR::Bool = false, ρ_prime::Float64 = 0.1,
         ρ_regularization::Float64=10^(-3)
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
         p = HessianProblem(M,F,∂F,H,P)
-        o = TrustRegionOptions(x,stoppingCriterion,δ0,δ_bar,δ0,uR,ρ_prime,ρ_regularization,0)
+        o = TrustRegionOptions(x,stoppingCriterion,δ,δ_bar,uR,ρ_prime,ρ_regularization,0)
 
         resultO = solve(p,o)
         if hasRecord(resultO)
