@@ -111,9 +111,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     if δHδ <= 0 || e_Pe >= o.Δ^2 # Here should be the new e_Pe und tau should be calculated with the old
         tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_Pe))) / d_Pd
         ηOld  = ηOld - tau * (o.δ)
-        # If only a nonlinear Hessian approximation is available, this is
-        # only approximately correct, but saves an additional Hessian call.
-        HηOld = HηOld - tau * Hδ
     end
     # No negative curvature and eta_prop inside TR: accept it.
     o.η = ηOld - α * (o.δ)
