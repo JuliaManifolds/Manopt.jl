@@ -72,16 +72,13 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     o.η = o.useRand ? zeroTVector(p.M,o.x) : o.η
     Hη = getHessian(p, o.x, o.η)
     o.residual = getGradient(p,o.x) + Hη
-    o.e_Pe = useRand ? 0 : dot(p.M, o.x, o.η, o.η)
     # Precondition the residual.
     z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     # Compute z'*r.
     zr = dot(p.M, o.x, z, o.residual)
-    o.d_Pd = zr
     # Initial search direction (we maintain -delta in memory, called mdelta, to
     # avoid a change of sign of the tangent vector.)
     o.δ = z
-    o.e_Pd = o.useRand ? 0 : -dot(p.M, o.x, o.η, o.δ)
     # If the Hessian or a linear Hessian approximation is in use, it is
     # theoretically guaranteed that the model value decreases strictly
     # with each iteration of tCG. Hence, there is no need to monitor the model
@@ -94,10 +91,10 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
+    δold = o.δ
     zold = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     zrOld = dot(p.M, o.x, z, o.residual)
     HηOld = getHessian(p, o.x, o.η)
-    e_PeOld = o.e_Pe
     # This call is the computationally expensive step.
     Hδ = getHessian(p, o.x, o.δ)
     # Compute curvature (often called kappa).
@@ -106,11 +103,13 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     α = zrOld/δHδ
     # <neweta,neweta>_P =
     # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
-    o.e_Pe = e_PeOld + 2.0 * α * o.e_Pd + α^2 * o.d_Pd
+    e_Pd = -dot(p.M, o.x, ηOld, getPreconditioner(p, o.x, δold)) # It must be clarified if it's negative or not
+    d_Pd = dot(p.M, o.x, δold, getPreconditioner(p, o.x, δold))
+    e_Pe = dot(p.M, o.x, ηOld, getPreconditioner(p, o.x, ηOld))
     # Check against negative curvature and trust-region radius violation.
     # If either condition triggers, we bail out.
-    if δHδ <= 0 || o.e_Pe >= o.Δ^2
-        tau = (-o.e_Pd + sqrt(o.e_Pd^2 + o.d_Pd * (o.Δ^2 - e_PeOld))) / o.d_Pd
+    if δHδ <= 0 || e_Pe >= o.Δ^2 # Here should be the new e_Pe und tau should be calculated with the old
+        tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_Pe))) / d_Pd
         ηOld  = ηOld - tau * (o.δ)
         # If only a nonlinear Hessian approximation is available, this is
         # only approximately correct, but saves an additional Hessian call.
@@ -150,9 +149,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # run, which leads to an overall higher computational cost.
     # Not sure if this is necessary. We need to discuss this.
     o.δ = tangent(p.M, o.x, getValue(o.δ))
-    # Update new P-norms and P-dots
-    o.e_Pd = β * (o.e_Pd + α * o.d_Pd)
-    o.d_Pd = zr + β^2 *o.d_Pd
 end
 function getSolverResult(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     return o.η
