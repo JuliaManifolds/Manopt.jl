@@ -59,7 +59,7 @@ function truncatedConjugateGradient(M::mT,
         kwargs... #collect rest
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
     p = HessianProblem(M,F,∂F,H,P)
-    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),zeroTVector(M,x),Δ,0,0,0,zeroTVector(M,x),zeroTVector(M,x),0,useRandom)
+    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),Δ,0,zeroTVector(M,x),useRandom)
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
     if hasRecord(resultO)
@@ -88,6 +88,7 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     # the previous (the best-so-far) iterate. The variable below will hold the
     # model value.
     # o.model_value = o.useRand ? 0 : dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,Hη)
+    o.e_Pe = dot(p.M, o.x, o.η, o.η)
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
@@ -95,6 +96,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     zold = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     zrOld = dot(p.M, o.x, z, o.residual)
     HηOld = getHessian(p, o.x, o.η)
+    e_PeOld = o.e_Pe
     # This call is the computationally expensive step.
     Hδ = getHessian(p, o.x, o.δ)
     # Compute curvature (often called kappa).
@@ -105,11 +107,11 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
     e_Pd = -dot(p.M, o.x, ηOld, getPreconditioner(p, o.x, δold)) # It must be clarified if it's negative or not
     d_Pd = dot(p.M, o.x, δold, getPreconditioner(p, o.x, δold))
-    e_Pe = dot(p.M, o.x, ηOld, getPreconditioner(p, o.x, ηOld))
+    o.e_Pe = dot(p.M, o.x, ηOld, getPreconditioner(p, o.x, ηOld))
     # Check against negative curvature and trust-region radius violation.
     # If either condition triggers, we bail out.
-    if δHδ <= 0 || e_Pe >= o.Δ^2 # Here should be the new e_Pe und tau should be calculated with the old
-        tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_Pe))) / d_Pd
+    if δHδ <= 0 || o.e_Pe >= o.Δ^2 # Here should be the new e_Pe und tau should be calculated with the old
+        tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_PeOld))) / d_Pd
         ηOld  = ηOld - tau * (o.δ)
     end
     # No negative curvature and eta_prop inside TR: accept it.
