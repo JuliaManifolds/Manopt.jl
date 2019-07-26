@@ -71,7 +71,6 @@ struct TruncatedConjugateGradientOptions <: HessianOptions
     η::T where {T <: TVector}
     δ::T where {T <: TVector}
     Δ::Float64
-    e_Pe::Float64
     residual::T where {T <: TVector}
     useRand::Bool
     TruncatedConjugateGradientOptions(x::P,η::T,δ::T,Δ::Float64,residual::T,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,η,δ,Δ,e_Pe,residual,uR)
