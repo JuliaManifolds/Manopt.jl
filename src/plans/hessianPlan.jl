@@ -29,9 +29,9 @@ struct HessianProblem{mT <: Manifold} <: Problem
     gradient::Function
     hessian::Union{Function,Missing}
     precon::Function
-    HessianProblem{mT}(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function= h -> h) where {mT <: Manifold} = new(M,cost,grad,hess,pre)
+    HessianProblem{mT}(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function) where {mT <: Manifold} = new(M,cost,grad,hess,pre)
 end
-HessianProblem(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function= h -> h) where {mT <: Manifold} = HessianProblem{mT}(M,cost,grad,hess,pre)
+HessianProblem(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function) where {mT <: Manifold} = HessianProblem{mT}(M,cost,grad,hess,pre)
 
 abstract type HessianOptions <: Options end
 #
@@ -73,7 +73,7 @@ struct TruncatedConjugateGradientOptions <: HessianOptions
     Δ::Float64
     residual::T where {T <: TVector}
     useRand::Bool
-    TruncatedConjugateGradientOptions(x::P,η::T,δ::T,Δ::Float64,residual::T,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,η,δ,Δ,e_Pe,residual,uR)
+    TruncatedConjugateGradientOptions(x::P,stop::StoppingCriterion,η::T,δ::T,Δ::Float64,residual::T,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,stop,η,δ,Δ,residual,uR)
 end
 
 """
@@ -107,13 +107,13 @@ construct a Trust Regions Option with the fields as above.
 """
 struct TrustRegionOptions <: HessianOptions
     x::P where {P <: MPoint}
-    stop::stoppingCriterion
+    stop::StoppingCriterion
     δ::Float64
     δ_bar::Float64
     useRand::Bool
     ρ_prime::Float64
     ρ_regularization::Float64
-    TrustRegionOptions(x::P, stop::stoppingCriterion, δ::Float64, δ_bar::Float64,
+    TrustRegionOptions(x::P, stop::StoppingCriterion, δ::Float64, δ_bar::Float64,
     useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64,
     norm_grad::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,useRand,ρ_prime,ρ_regularization,norm_grad)
 end
@@ -214,11 +214,11 @@ function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: Problem, O <
     return false
 end
 
-struct stopWhen CurvatureIsNegative <: StoppingCriterion
+struct stopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
     stopNegativeCurvature() = new("")
 end
-function (c::stopNegativeCurvature)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
+function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
     if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0
         c.reason = "Negative curvature.\n"
         return true

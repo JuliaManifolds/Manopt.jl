@@ -52,14 +52,15 @@ function truncatedConjugateGradient(M::mT,
         κ::Float64 = 0.1,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
             stopAfterIteration(manifoldDimension(M)),
-            stopResidualReducedByPower(norm(M,x, ∇F(x) + (useRandom ? zeroTVector(M,x): H(η) ), 0,θ),
-            stopResidualReducedByFactor(norm(M,x, ∇F(x) + (useRandom ? zeroTVector(M,x): H(η) ), κ),
+            stopResidualReducedByPower(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(η) ), 0,θ)),
+            stopResidualReducedByFactor(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(η) ), κ)),
         ),
         useRandom::Bool = false,
         kwargs... #collect rest
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
-    p = HessianProblem(M,F,∂F,H,P)
-    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),Δ,0,zeroTVector(M,x),useRandom)
+
+    p = HessianProblem(M, F, ∇F, H, P)
+    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),Δ,zeroTVector(M,x),useRandom)
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
     if hasRecord(resultO)
@@ -123,9 +124,9 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # -> Stopping Criterion
     old_model_value = dot(p.M,o.x,ηOld,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,ηOld,HηOld)
     new_model_value = dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,getHessian(p, o.x, o.η))
-     if new_model_value >= old_model_value
-         break
-     end
+    if new_model_value >= old_model_value
+        o.η = ηOld
+    end
 
     # Update the residual.
     o.residual = o.residual - α * Hδ
