@@ -39,13 +39,14 @@ function trustRegionsSolver(M::mT,
         H::Union{Function,Missing}, P::Function;
         stoppingCriterion::StoppingCriterion = stopWhenAny(
         stopAfterIteration(5000), stopGradientTolerance(10^(-6))),
-        δ_bar::Float64 = try injectivity_radius(M) catch; sqrt(manifoldDimension(M)) end,
+        δ_bar::Float64 = sqrt(manifoldDimension(M)),
         δ::Float64 = δ_bar/8,
         uR::Bool = false, ρ_prime::Float64 = 0.1,
         ρ_regularization::Float64=10^(-3)
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
         p = HessianProblem(M,F,∂F,H,P)
-        o = TrustRegionOptions(x,stoppingCriterion,δ,δ_bar,uR,ρ_prime,ρ_regularization,0)
+
+        o = TrustRegionOptions(x,stoppingCriterion,δ,δ_bar,uR,ρ_prime,ρ_regularization)
 
         resultO = solve(p,o)
         if hasRecord(resultO)
