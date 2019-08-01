@@ -34,9 +34,9 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
 """
 
 function trustRegionsSolver(M::mT,
-        F::Function, ∂F::Function,
-        x::MP = randomMPoint(M),
-        H::Union{Function,Missing}, P::Function;
+        F::Function, ∇F::Function,
+        x::MP, H::Union{Function,Missing};
+        preconditioner::Function = x -> x,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
         stopAfterIteration(5000), stopGradientTolerance(10^(-6))),
         δ_bar::Float64 = sqrt(manifoldDimension(M)),
@@ -44,7 +44,7 @@ function trustRegionsSolver(M::mT,
         uR::Bool = false, ρ_prime::Float64 = 0.1,
         ρ_regularization::Float64=10^(-3)
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
-        p = HessianProblem(M,F,∂F,H,P)
+        p = HessianProblem(M,F,∇F,H,preconditioner)
 
         o = TrustRegionOptions(x,stoppingCriterion,δ,δ_bar,uR,ρ_prime,ρ_regularization)
 

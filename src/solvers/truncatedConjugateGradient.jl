@@ -46,8 +46,8 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 function truncatedConjugateGradient(M::mT,
         F::Function, ∇F::Function, x::MP, η::T,
         H::Union{Function,Missing},
-        P::Function,
         Δ::Float64;
+        preconditioner::Function = x -> x,
         θ::Float64 = 1.0,
         κ::Float64 = 0.1,
         stoppingCriterion::StoppingCriterion = stopWhenAny(

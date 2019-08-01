@@ -131,12 +131,6 @@ evaluate the gradient of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `
 """
 getGradient(p::Pr,x::P) where {Pr <: HessianProblem, P <: MPoint} = p.gradient(x)
 """
-    getCost(p,x)
-
-evaluate the cost function of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`.
-"""
-getCost(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} = p.costFunction(x)
-"""
     getPreconditioner(p,x,ξ)
 
 evaluate a preconditioner of the Hessian of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`
@@ -166,8 +160,8 @@ struct stopResidualReducedByFactor <: StoppingCriterion
     reason::String
     stopResidualReducedByFactor(iRN::Float64,κ::Float64) = new(κ,iRN,"")
 end
-function (c::stopResidualReducedByFactor)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
-    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm*c.κ
+function (c::stopResidualReducedByFactor)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm*c.κ && i > 0
         c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
         return true
     end
@@ -180,22 +174,9 @@ struct stopResidualReducedByPower <: StoppingCriterion
     reason::String
     stopResidualReducedByPower(iRN::Float64,θ::Float64) = new(θ,iRN,"")
 end
-function (c::stopResidualReducedByPower)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
-    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1+c.θ)
+function (c::stopResidualReducedByPower)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1+c.θ) && i > 0
         c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(c.θ)).\n"
-        return true
-    end
-    return false
-end
-
-struct stopGradientTolerance <: StoppingCriterion
-    tolgrad::Float64
-    reason::String
-    stopGradientTolerance(tol::Float64) = new(tol,"")
-end
-function (c::stopGradientTolerance)(p::P,o::O,i::Int) where {P <: Problem, O <: TrustRegionOptions}
-    if norm(p.M, o.x, getGradient(p, o.x)) <= c.tolgrad
-        c.reason = "The norm of the gradient reached tolerance ($norm(p.M, o.x, getGradient(p, o.x))).\n"
         return true
     end
     return false
@@ -205,8 +186,8 @@ struct stopExceededTrustRegion <: StoppingCriterion
     reason::String
     stopExceededTrustRegion(tol::Float64) = new(tol,"")
 end
-function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
-    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) >= 0
+function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) >= 0 && i > 0
         c.reason = "Exceeded trust region.\n"
         return true
     end
@@ -217,8 +198,8 @@ struct stopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
     stopNegativeCurvature() = new("")
 end
-function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: Problem, O <: TruncatedConjugateGradientOptions}
-    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0
+function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0 && i > 0
         c.reason = "Negative curvature.\n"
         return true
     end
