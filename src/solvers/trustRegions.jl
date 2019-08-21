@@ -38,7 +38,7 @@ function trustRegionsSolver(M::mT,
         x::MP, H::Union{Function,Missing};
         preconditioner::Function = x -> x,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
-        stopAfterIteration(5000), stopGradientTolerance(10^(-6))),
+        stopAfterIteration(5000), stopWhenGradientNormLess(10^(-6))),
         δ_bar::Float64 = sqrt(manifoldDimension(M)),
         δ::Float64 = δ_bar/8,
         uR::Bool = false, ρ_prime::Float64 = 0.1,

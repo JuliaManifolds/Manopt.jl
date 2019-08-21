@@ -2,6 +2,7 @@
 #   SVD decomposition of a matrix truncated to a rank
 #
 using Manopt
+import LinearAlgebra: norm, svd
 export truncated_svd
 
 @doc doc"""
@@ -25,63 +26,48 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         throw( ErrorException("The Rank p=$p must be smaller than the smallest dimension of A = $min(m, n).") )
     end
 
-    U = Grassmannian(m, p)
-    V = Grassmannian(n, p)
-
-    prod = [U, V]
+    prod = [Grassmannian(p, m), Grassmannian(p, n)]
 
     M = Product(prod)
 
-    function cost(X)
-        U = X.U;
-        V = X.V;
-        f = -.5*norm(U'*A*V, 'fro')^2;
+    function cost(X::Array{AbstractArray{Float64,2},1})
+        U = X[1]
+        V = X[2]
+        return -.5 * norm(transpose(U) * A * V)^2
     end
 
-    function egrad(X)
-        U = X.U;
-        V = X.V;
-        AV = A*V;
-        AtU = A'*U;
-        g.U = -AV*(AV'*U);
-        g.V = -AtU*(AtU'*V);
+    function egrad(X::Array{AbstractArray{Float64,2},1})
+        U = X[1]
+        V = X[2]
+        AV = A*V
+        AtU = transpose(A)*U
+        return [-AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V)]
     end
 
-    function ehess(X, H)
-        U = X.U;
-        V = X.V;
-        Udot = H.U;
-        Vdot = H.V;
-        AV = A*V;
-        AtU = A'*U;
-        AVdot = A*Vdot;
-        AtUdot = A'*Udot;
-        h.U = -(AVdot*AV'*U + AV*AVdot'*U + AV*AV'*Udot);
-        h.V = -(AtUdot*AtU'*V + AtU*AtUdot'*V + AtU*AtU'*Vdot);
+    function ehess(X::Array{AbstractArray{Float64,2},1}, H::Array{AbstractArray{Float64,2},1})
+        U = X[1]
+        V = X[2]
+        Udot = H[1]
+        Vdot = H[2]
+        AV = A*V
+        AtU = transpose(A)*U
+        AVdot = A*Vdot
+        AtUdot = transpose(A)*Udot
+        return [-(AVdot*transpose(AV)*U + AV*transpose(AVdot)*U + AV*transpose(AV)*Udot), -(AtUdot*transpose(AtU)*V + AtU*transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot)]
     end
 
+    X = trustRegionsSolver(M, cost, egrad, randomMPoint(M), ehess, x -> x,
+    stopWhenAny(stopAfterIteration(5000), stopGradientTolerance(10^(-6))),
+    4*sqrt(2*p))
 
+    U = X[1]
+    V = X[2]
 
+    Spp = transpose(U)*A*V
+    SVD = svd(Spp)
+    U = U*SVD.U
+    S = SVD.S
+    V = V*SVD.V
 
-
-    options.Delta_bar = 4*sqrt(2*p);
-    [X, Xcost, info] = trustregions(problem, [], options); %#ok<ASGLU>
-    U = X.U;
-    V = X.V;
-
-
-    Spp = U'*A*V;
-    [Upp, Spp, Vpp] = svd(Spp);
-    U = U*Upp;
-    S = Spp;
-    V = V*Vpp;
-
-
-    if M.dim() < 512
-        evs = hessianspectrum(problem, X);
-        stairs(sort(evs));
-        title(['Eigenvalues of the Hessian of the cost function ' ...
-               'at the solution']);
-    end
-
+    return [U, S, V]
 end
