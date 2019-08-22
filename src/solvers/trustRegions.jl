@@ -26,7 +26,14 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
-* `ρ_prime` –
+* `ρ_prime` – Accept/reject threshold: if ρ (the performance ratio for the 
+        iterate) is at least ρ_prime, the outer
+        iteration is accepted. Otherwise, it is rejected. In case it is
+        rejected, the trust-region radius will have been decreased.
+        To ensure this, ρ_prime >= 0 must be strictly smaller than 1/4.
+        If ρ_prime is negative, the algorithm is not guaranteed to
+        produce monotonically decreasing cost values. It is strongly
+        recommended to set ρ_prime > 0, to aid convergence.
 * `ρ_regularization` –
 
 # Output

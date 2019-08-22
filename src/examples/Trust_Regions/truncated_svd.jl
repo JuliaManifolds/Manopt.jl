@@ -8,6 +8,9 @@ export truncated_svd
 @doc doc"""
     truncated_svd(A, p)
 
+return a singular value decomposition of a real valued matrix A truncated to
+rank p.
+
 # Input
 * `A` – a real-valued matrix A of size mxn
 * `p` – an integer $p \leq min\{ m, n \}$
@@ -30,13 +33,13 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
 
     M = Product(prod)
 
-    function cost(X::Array{AbstractArray{Float64,2},1})
+    function cost(X::Array{Array{Float64,2},1})
         U = X[1]
         V = X[2]
-        return -.5 * norm(transpose(U) * A * V)^2
+        return -0.5 * norm(transpose(U) * A * V)^2
     end
 
-    function egrad(X::Array{AbstractArray{Float64,2},1})
+    function egrad(X::Array{Array{Float64,2},1})
         U = X[1]
         V = X[2]
         AV = A*V
@@ -44,7 +47,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         return [-AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V)]
     end
 
-    function ehess(X::Array{AbstractArray{Float64,2},1}, H::Array{AbstractArray{Float64,2},1})
+    function ehess(X::Array{Array{Float64,2},1}, H::Array{Array{Float64,2},1})
         U = X[1]
         V = X[2]
         Udot = H[1]
@@ -57,7 +60,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     end
 
     X = trustRegionsSolver(M, cost, egrad, randomMPoint(M), ehess, x -> x,
-    stopWhenAny(stopAfterIteration(5000), stopGradientTolerance(10^(-6))),
+    stopWhenAny(stopAfterIteration(5000), stopWhenGradientNormLess(10^(-6))),
     4*sqrt(2*p))
 
     U = X[1]
