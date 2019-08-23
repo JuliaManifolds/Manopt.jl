@@ -21,7 +21,7 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
-* `x` – an initial value $x\in\mathcal M$
+* `x` – a point on the manifold $x\in\mathcal M$
 * `η` – an update tangential vector $\eta\in\mathcal{T_{x}M}$
 * `H` – a hessian matrix
 * `P` – a preconditioner for the hessian matrix
@@ -41,7 +41,8 @@ with the Steihaug-Toint truncated conjugate-gradient method.
     points, but is otherwise seldom activated.
 
 # Output
-* `η` – an approximate solution of the trust-region subproblem
+* `η` – an approximate solution of the trust-region subproblem in
+    $\mathcal{T_{x}M}.
 """
 function truncatedConjugateGradient(M::mT,
         F::Function, ∇F::Function, x::MP, η::T,
