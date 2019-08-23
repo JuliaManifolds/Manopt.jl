@@ -47,7 +47,7 @@ method, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `x` : a [`MPoint`](@ref), a point where the trust-region subproblem needs
+* `x` : a [`MPoint`](@ref), where the trust-region subproblem needs
     to be solved
 * `stoppingCriterion` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
     indicator and a reason based on an iteration number, the gradient and the
@@ -99,7 +99,13 @@ a default value is given in brackets if a parameter can be left out in initializ
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
-* `ρ_prime` :
+* `ρ_prime` : a lower bound of the performance ratio for the
+        iterate that decides if the iteration will be accepted or not. If not,
+        the trust-region radius will have been decreased. To ensure this,
+        ρ_prime >= 0 must be strictly smaller than 1/4. If ρ_prime is negative,
+        the algorithm is not guaranteed to produce monotonically decreasing
+        cost values. It is strongly recommended to set ρ_prime > 0, to aid
+        convergence.
 * `ρ_regularization` :
 
 # Constructor
