@@ -227,13 +227,15 @@ end
 
 """
     stopExceededTrustRegion <: StoppingCriterion
+
+terminate the algorithm when the radius has been left.
 """
 struct stopExceededTrustRegion <: StoppingCriterion
     reason::String
     stopExceededTrustRegion(tol::Float64) = new(tol,"")
 end
 function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) >= 0 && i > 0
+    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0 && i > 0
         c.reason = "Exceeded trust region.\n"
         return true
     end
