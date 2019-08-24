@@ -73,7 +73,7 @@ construct a truncated Conjugate Gradient Option with the fields as above.
 """
 struct TruncatedConjugateGradientOptions <: HessianOptions
     x::P where {P <: MPoint}
-    stop::StoppingCriterion
+    stoppingCriterion::StoppingCriterion
     η::T where {T <: TVector}
     δ::T where {T <: TVector}
     Δ::Float64
@@ -91,22 +91,30 @@ Describes the Trust Regions Solver, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` : an [`MPoint`](@ref) as starting point
-* `stop` : a function s,r = @(o,iter) returning a stop
+* `stoppingCriterion` : a function s,r = @(o,iter) returning a stop
     indicator and a reason based on an iteration number and the gradient
-* `δ` : the (initial) trust-region radius
-* `δ_bar` : the maximum trust-region radius
+* `Δ` : the (initial) trust-region radius
+* `Δ_bar` : the maximum trust-region radius
 * `useRand` : indicates if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
-* `ρ_prime` : a lower bound of the performance ratio for the
-        iterate that decides if the iteration will be accepted or not. If not,
-        the trust-region radius will have been decreased. To ensure this,
+* `ρ_prime` : a lower bound of the performance ratio for the iterate that
+        decides if the iteration will be accepted or not. If not, the
+        trust-region radius will have been decreased. To ensure this,
         ρ_prime >= 0 must be strictly smaller than 1/4. If ρ_prime is negative,
         the algorithm is not guaranteed to produce monotonically decreasing
         cost values. It is strongly recommended to set ρ_prime > 0, to aid
         convergence.
-* `ρ_regularization` :
+* `ρ_regularization` : Close to convergence, evaluating the performance ratio ρ
+        is numerically challenging. Meanwhile, close to convergence, the
+        quadratic model should be a good fit and the steps should be
+        accepted. Regularization lets ρ go to 1 as the model decrease and
+        the actual decrease go to zero. Set this option to zero to disable
+        regularization (not recommended). When this is not zero, it may happen
+        that the iterates produced are not monotonically improving the cost
+        when very close to convergence. This is because the corrected cost
+        improvement could change sign if it is negative but very small.
 
 # Constructor
 
@@ -120,8 +128,8 @@ construct a Trust Regions Option with the fields as above.
 struct TrustRegionOptions <: HessianOptions
     x::P where {P <: MPoint}
     stop::StoppingCriterion
-    δ::Float64
-    δ_bar::Float64
+    Δ::Float64
+    Δ_bar::Float64
     useRand::Bool
     ρ_prime::Float64
     ρ_regularization::Float64

@@ -21,7 +21,8 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
 # Optional
 * `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000))
         a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `δ_bar` – the maximum trust-region radius
+* `Δ_bar` – the maximum trust-region radius
+* `Δ` : the (initial) trust-region radius
 * `uR` – set to true if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
@@ -53,14 +54,14 @@ function trustRegionsSolver(M::mT,
         preconditioner::Function = x -> x,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
         stopAfterIteration(5000), stopWhenGradientNormLess(10^(-6))),
-        δ_bar::Float64 = sqrt(manifoldDimension(M)),
-        δ::Float64 = δ_bar/8,
+        Δ_bar::Float64 = sqrt(manifoldDimension(M)),
+        Δ::Float64 = Δ_bar/8,
         uR::Bool = false, ρ_prime::Float64 = 0.1,
         ρ_regularization::Float64=10^(-3)
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
         p = HessianProblem(M,F,∇F,H,preconditioner)
 
-        o = TrustRegionOptions(x,stoppingCriterion,δ,δ_bar,uR,ρ_prime,ρ_regularization)
+        o = TrustRegionOptions(x,stoppingCriterion,Δ,Δ_bar,uR,ρ_prime,ρ_regularization)
 
         resultO = solve(p,o)
         if hasRecord(resultO)
@@ -80,14 +81,14 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         else
                 # Random vector in T_x M (this has to be very small)
                 eta = 10.0^(-6)*randomTVector(p.M, o.x)
-                while norm(p.M, o.x, eta) > o.δ
+                while norm(p.M, o.x, eta) > o.Δ
                         # Must be inside trust-region
                         eta = sqrt(sqrt(eps(Float64)))*eta
                 end
         end
         norm_grad = norm(p.M, o.x, getGradient(p, o.x))
         # Solve TR subproblem approximately
-        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,p.precon,o.δ,o.useRand)
+        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,p.precon,o.Δ,o.useRand)
         Hη = getHessian(p.M, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
@@ -105,11 +106,11 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 if gradHgrad <= 0
                         tau_c = 1
                 else
-                        tau_c = min( norm_grad^3 /(o.δ * gradHgrad), 1)
+                        tau_c = min( norm_grad^3 /(o.Δ * gradHgrad), 1)
                 end
                 # and generate the Cauchy point.
-                η_c = (-tau_c * o.δ / norm_grad) * grad
-                Hη_c = (-tau_c * o.δ / norm_grad) * Hgrad
+                η_c = (-tau_c * o.Δ / norm_grad) * grad
+                Hη_c = (-tau_c * o.Δ / norm_grad) * Hgrad
                 # Now that we have computed the Cauchy point in addition to the
                 # returned eta, we might as well keep the best of them.
                 mdle  = fx + dot(p.M, o.x, grad, η) + .5 * dot(p.M, o.x, Hη, η)
@@ -179,9 +180,9 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
         # then reduce the TR radius.
         if ρ < 1/4 || ~model_decreased || isnan(ρ)
-                o.δ = o.δ/4
+                o.Δ = o.Δ/4
         else ρ > 3/4
-                o.δ = min(2*o.δ, o.δ_bar)
+                o.Δ = min(2*o.Δ, o.Δ_bar)
         end
         # Choose to accept or reject the proposed step based on the model
         # performance. Note the strict inequality.
