@@ -113,7 +113,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # If either condition triggers, we bail out.
     if δHδ <= 0 || ηαδ_Pηαδ >= o.Δ^2
         tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_Pe))) / d_Pd
-        ηOld  = ηOld - tau * (o.δ)
+        return ηOld - tau * (o.δ)
     end
     # No negative curvature and eta_prop inside TR: accept it.
     o.η = ηOld - α * (o.δ)
