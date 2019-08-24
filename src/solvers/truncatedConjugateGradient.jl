@@ -20,7 +20,7 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 # Input
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
 * `x` – a point on the manifold $x\in\mathcal M$
 * `η` – an update tangential vector $\eta\in\mathcal{T_{x}M}$
 * `H` – a hessian matrix
