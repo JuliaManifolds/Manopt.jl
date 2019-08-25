@@ -94,7 +94,7 @@ end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
     δold = o.δ
-    zold = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
+    z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
     zrOld = dot(p.M, o.x, z, o.residual)
     HηOld = getHessian(p, o.x, o.η)
     # This call is the computationally expensive step.
