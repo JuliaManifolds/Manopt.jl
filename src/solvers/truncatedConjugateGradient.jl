@@ -53,8 +53,8 @@ function truncatedConjugateGradient(M::mT,
         κ::Float64 = 0.1,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
             stopAfterIteration(manifoldDimension(M)),
-            stopResidualReducedByPower(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(η) ), 0,θ)),
-            stopResidualReducedByFactor(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(η) ), κ)),
+            stopResidualReducedByPower(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(η) )), θ)),
+            stopResidualReducedByFactor(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(η) )), κ)),
         ),
         useRandom::Bool = false,
         kwargs... #collect rest
