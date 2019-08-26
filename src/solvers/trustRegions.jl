@@ -75,7 +75,7 @@ end
 
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionOptions}
         # Determine eta0
-        if o.useRand == true
+        if o.useRand
                 # Pick the zero vector
                 eta = zeroTVector(p.M, o.x)
         else
@@ -88,7 +88,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         end
         norm_grad = norm(p.M, o.x, getGradient(p, o.x))
         # Solve TR subproblem approximately
-        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,p.precon,o.Δ,o.useRand)
+        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand)
         Hη = getHessian(p.M, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
@@ -99,7 +99,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # the reduction of the Cauchy point. After this if-block, either all
         # eta-related quantities have been changed consistently, or none of
         # them have changed.
-        if o.useRand == true
+        if o.useRand
                 # Check the curvature,
                 Hgrad = getHessian(p, o.x, grad)
                 gradHgrad = dot(p.M, o.x, grad, Hgrad)
@@ -188,10 +188,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # performance. Note the strict inequality.
         if model_decreased && ρ > o.ρ_prime
                 o.x = x_prop
-                fx = fx_prop # Probably not necessary
-                grad = getGradient(p, o.x)
         end
-
 end
 
 function getSolverResult(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionOptions}

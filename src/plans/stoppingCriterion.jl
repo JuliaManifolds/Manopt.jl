@@ -56,7 +56,7 @@ mutable struct stopWhenGradientNormLess <: StoppingCriterion
     reason::String
     stopWhenGradientNormLess(ε::Float64) = new(ε,"")
 end
-function (c::stopWhenGradientNormLess)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: Options}
+function (c::stopWhenGradientNormLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if norm(p.M,o.x,getGradient(p,o.x)) < c.threshold
         c.reason = "The algorithm reached approximately critical point; the gradient norm ($(norm(p.M,o.x,getGradient(p,o.x)))) is less than $(c.threshold).\n"
         return true

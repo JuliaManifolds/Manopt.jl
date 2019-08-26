@@ -25,14 +25,13 @@ specify a problem for hessian based algorithms.
 
 # """
 struct HessianProblem{mT <: Manifold} <: Problem
-    M::mT where {mT <: Manifold}
+    M::mT
     costFunction::Function
     gradient::Function
     hessian::Union{Function,Missing}
     precon::Function
-    HessianProblem{mT}(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function) where {mT <: Manifold} = new(M,cost,grad,hess,pre)
+    HessianProblem(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function) where {mT <: Manifold} = new{mT}(M,cost,grad,hess,pre)
 end
-HessianProblem(M::mT,cost::Function,grad::Function,hess::Union{Function,Missing},pre::Function) where {mT <: Manifold} = HessianProblem{mT}(M,cost,grad,hess,pre)
 
 abstract type HessianOptions <: Options end
 #

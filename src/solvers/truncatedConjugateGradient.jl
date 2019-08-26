@@ -51,16 +51,17 @@ function truncatedConjugateGradient(M::mT,
         preconditioner::Function = x -> x,
         θ::Float64 = 1.0,
         κ::Float64 = 0.1,
+        useRandom::Bool = false,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
             stopAfterIteration(manifoldDimension(M)),
-            stopResidualReducedByPower(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(η) )), θ)),
-            stopResidualReducedByFactor(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(η) )), κ)),
+            stopResidualReducedByPower(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(x,η) )), θ),
+            stopResidualReducedByFactor(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(x,η) )), κ),
         ),
-        useRandom::Bool = false,
+
         kwargs... #collect rest
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
 
-    p = HessianProblem(M, F, ∇F, H, P)
+    p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),Δ,zeroTVector(M,x),useRandom)
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)

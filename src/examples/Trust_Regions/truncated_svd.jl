@@ -33,35 +33,37 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
 
     M = Product(prod)
 
-    function cost(X::Array{Array{Float64,2},1})
-        U = X[1]
-        V = X[2]
+    function cost(X::ProdPoint{Array{GrPoint{Float64},1}})
+        U = getValue(getValue(X)[1])
+        V = getValue(getValue(X)[2])
         return -0.5 * norm(transpose(U) * A * V)^2
     end
 
-    function egrad(X::Array{Array{Float64,2},1})
-        U = X[1]
-        V = X[2]
+    function egrad(X::ProdPoint{Array{GrPoint{Float64},1}})
+        U = getValue(getValue(X)[1])
+        V = getValue(getValue(X)[2])
         AV = A*V
         AtU = transpose(A)*U
-        return [-AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V)]
+        return ProdTVector( [ GrTVector(-AV*(transpose(AV)*U)), GrTVector(-AtU*(transpose(AtU)*V))] )
     end
 
-    function ehess(X::Array{Array{Float64,2},1}, H::Array{Array{Float64,2},1})
-        U = X[1]
-        V = X[2]
-        Udot = H[1]
-        Vdot = H[2]
+    function ehess(X::ProdPoint{Array{GrPoint{Float64},1}}, H::ProdTVector{Array{GrTVector{Float64},1}})
+        U = getValue(getValue(X)[1])
+        V = getValue(getValue(X)[2])
+        Udot = getValue(getValue(H)[1])
+        Vdot = getValue(getValue(H)[2])
         AV = A*V
         AtU = transpose(A)*U
         AVdot = A*Vdot
         AtUdot = transpose(A)*Udot
-        return [-(AVdot*transpose(AV)*U + AV*transpose(AVdot)*U + AV*transpose(AV)*Udot), -(AtUdot*transpose(AtU)*V + AtU*transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot)]
+        return ProdTVector( [
+            GrTVector( -(AVdot*transpose(AV)*U + AV*transpose(AVdot)*U + AV*transpose(AV)*Udot)),
+            GrTVector( -(AtUdot*transpose(AtU)*V + AtU*transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot))
+        ] )
     end
 
-    X = trustRegionsSolver(M, cost, egrad, randomMPoint(M), ehess, x -> x,
-    stopWhenAny(stopAfterIteration(5000), stopWhenGradientNormLess(10^(-6))),
-    4*sqrt(2*p))
+    X = trustRegionsSolver(M, cost, egrad, randomMPoint(M), ehess;
+    Δ_bar=4*sqrt(2*p))
 
     U = X[1]
     V = X[2]
