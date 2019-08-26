@@ -1,6 +1,8 @@
 #
 #   Riemannian Trust-Tegions Solver For Optimization On Manifolds
 #
+using Manopt
+import Base: identity
 export trustRegionsSolver
 
 @doc doc"""
@@ -48,10 +50,14 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
 * `x` – the last reached point on the manifold
 """
 
+function pre(xp::MPoint, y::TVector)
+        return y
+end
+
 function trustRegionsSolver(M::mT,
         F::Function, ∇F::Function,
         x::MP, H::Union{Function,Missing};
-        preconditioner::Function = x -> x,
+        preconditioner::Function = pre,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
         stopAfterIteration(5000), stopWhenGradientNormLess(10^(-6))),
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),

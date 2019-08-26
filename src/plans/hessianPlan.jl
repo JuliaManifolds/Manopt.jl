@@ -70,9 +70,9 @@ construct a truncated Conjugate Gradient Option with the fields as above.
 # See also
 [`truncatedConjugateGradient`](@ref), [`trustRegionsSolver`](@ref)
 """
-struct TruncatedConjugateGradientOptions <: HessianOptions
+mutable struct TruncatedConjugateGradientOptions <: HessianOptions
     x::P where {P <: MPoint}
-    stoppingCriterion::StoppingCriterion
+    stop::StoppingCriterion
     η::T where {T <: TVector}
     δ::T where {T <: TVector}
     Δ::Float64
@@ -124,7 +124,7 @@ construct a Trust Regions Option with the fields as above.
 # See also
 [`trustRegionsSolver`](@ref)
 """
-struct TrustRegionOptions <: HessianOptions
+mutable struct TrustRegionOptions <: HessianOptions
     x::P where {P <: MPoint}
     stop::StoppingCriterion
     Δ::Float64
@@ -210,7 +210,7 @@ end
 """
     stopResidualReducedByPower <: StoppingCriterion
 """
-struct stopResidualReducedByPower <: StoppingCriterion
+mutable struct stopResidualReducedByPower <: StoppingCriterion
     θ::Float64
     initialResidualNorm::Float64
     reason::String
