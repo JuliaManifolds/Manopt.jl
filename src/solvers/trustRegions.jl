@@ -95,7 +95,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         norm_grad = norm(p.M, o.x, getGradient(p, o.x))
         # Solve TR subproblem approximately
         η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand)
-        Hη = getHessian(p.M, o.x, η)
+        Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
         grad = getGradient(p, o.x)
