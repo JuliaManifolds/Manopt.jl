@@ -152,6 +152,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # Not sure if this is necessary. We need to discuss this.
     o.δ = tangent(p.M, o.x, getValue(o.δ))
 end
-function getSolverResult(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     return o.η
 end

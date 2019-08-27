@@ -76,7 +76,7 @@ Return the final result after all iterations that is stored within the
 function getSolverResult(p::P,o::O) where {P <: Problem, O <: Options}
     sig1 = string( typeof(p) )
     sig2 = string( typeof(o) )
-    throw( ErrorException("Initialization of a solver corresponding to the $sig1 and $sig2 not yet implemented." ) )
+    throw( ErrorException("There is no implementation of getSolverResult for a $sig1 and $sig2 yet." ) )
 end
 """
     stopSolver!(p,o,i)

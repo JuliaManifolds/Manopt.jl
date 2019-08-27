@@ -197,6 +197,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         end
 end
 
-function getSolverResult(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionOptions}
+function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionOptions}
         return o.x
 end
