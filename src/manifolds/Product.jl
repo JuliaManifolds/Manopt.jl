@@ -146,12 +146,19 @@ randomMPoint(M::Product, options...) = ProdPoint([ randomMPoint(m, options...) f
     randomTVector(M,x)
 
 generate a random tangent vector in the tangent space of the
-[`ProdPoint`](@ref) `x` on [`Power`](@ref) manifold `M`.
+[`ProdPoint`](@ref) `x` on [`Product`](@ref) manifold `M`.
 """
 randomTVector(M::Product,x::ProdPoint, options...) where N = ProdTVector([
     randomTVector(M.manifolds[i], getValue(x)[i], options...)
     for i in CartesianIndices(getValue(x))
 ])
+@doc doc"""
+    retraction(M,x,ξ [,t=1.0])
+
+move the [`ProdPoint`](@ref) `x` in the direction of the [`ProdTVector`](@ref) `ξ`
+on the [`Product`](@ref) manifold `M`.
+"""
+retraction(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( retraction.(M.manifolds, getValue(x), getValue(ξ)) )
 @doc doc"""
     typicalDistance(M)
 
