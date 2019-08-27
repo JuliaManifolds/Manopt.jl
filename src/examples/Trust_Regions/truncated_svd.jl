@@ -2,7 +2,7 @@
 #   SVD decomposition of a matrix truncated to a rank
 #
 using Manopt
-import LinearAlgebra: norm, svd
+import LinearAlgebra: norm, svd, Diagonal
 export truncated_svd
 
 @doc doc"""
@@ -65,8 +65,8 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     X = trustRegionsSolver(M, cost, egrad, randomMPoint(M), ehess;
     Δ_bar=4*sqrt(2*p))
 
-    U = X[1]
-    V = X[2]
+    U = getValue(getValue(X)[1])
+    V = getValue(getValue(X)[2])
 
     Spp = transpose(U)*A*V
     SVD = svd(Spp)
