@@ -106,9 +106,9 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     α = zrOld/δHδ
     # <neweta,neweta>_P =
     # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
-    e_Pd = -dot(p.M, o.x, ηOld, getPreconditioner(p, o.x, δold)) # It must be clarified if it's negative or not
-    d_Pd = dot(p.M, o.x, δold, getPreconditioner(p, o.x, δold))
-    e_Pe = dot(p.M, o.x, ηOld, getPreconditioner(p, o.x, ηOld))
+    e_Pd = -dot(p.M, o.x, ηOld, o.useRand ? getPreconditioner(p, o.x, δold) : δold) # It must be clarified if it's negative or not
+    d_Pd = dot(p.M, o.x, δold, o.useRand ? getPreconditioner(p, o.x, δold) : δold)
+    e_Pe = dot(p.M, o.x, ηOld, o.useRand ? getPreconditioner(p, o.x, ηOld) : ηOld)
     e_Pe_new = e_Pe + 2α*e_Pd + α^2*d_Pd
     # Check against negative curvature and trust-region radius violation.
     # If either condition triggers, we bail out.
