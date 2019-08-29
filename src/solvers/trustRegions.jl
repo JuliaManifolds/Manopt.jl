@@ -59,12 +59,25 @@ function trustRegionsSolver(M::mT,
         x::MP, H::Union{Function,Missing};
         preconditioner::Function = pre,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
-        stopAfterIteration(5000), stopWhenGradientNormLess(10^(-6))),
+        stopAfterIteration(1000), stopWhenGradientNormLess(10^(-6))),
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),
         Δ::Float64 = Δ_bar/8,
         uR::Bool = false, ρ_prime::Float64 = 0.1,
         ρ_regularization::Float64=10^(-3)
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
+
+        if ρ_prime >= 0.25
+                throw( ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime.") )
+        end
+
+        if Δ_bar <= 0
+                throw( ErrorException("Δ_bar must be positive but it is $Δ_bar.") )
+        end
+
+        if Δ <= 0 || Δ > Δ_bar
+                throw( ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ.") )
+        end
+
         p = HessianProblem(M,F,∇F,H,preconditioner)
 
         o = TrustRegionOptions(x,stoppingCriterion,Δ,Δ_bar,uR,ρ_prime,ρ_regularization)
@@ -185,9 +198,9 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Choose the new TR radius based on the model performance
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
         # then reduce the TR radius.
-        if ρ < 1/4 || ~model_decreased || isnan(ρ)
+        if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
-        else ρ > 3/4
+        elseif ρ > 3/4
                 o.Δ = min(2*o.Δ, o.Δ_bar)
         end
         # Choose to accept or reject the proposed step based on the model
