@@ -25,7 +25,7 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
         a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
 * `Δ` : the (initial) trust-region radius
-* `uR` – set to true if the trust-region solve is to be initiated with a
+* `useRandom` – set to true if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
@@ -62,7 +62,7 @@ function trustRegionsSolver(M::mT,
         stopAfterIteration(1000), stopWhenGradientNormLess(10^(-6))),
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),
         Δ::Float64 = Δ_bar/8,
-        uR::Bool = false, ρ_prime::Float64 = 0.1,
+        useRandom::Bool = false, ρ_prime::Float64 = 0.1,
         ρ_regularization::Float64=10^(-3)
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
 
@@ -80,7 +80,7 @@ function trustRegionsSolver(M::mT,
 
         p = HessianProblem(M,F,∇F,H,preconditioner)
 
-        o = TrustRegionOptions(x,stoppingCriterion,Δ,Δ_bar,uR,ρ_prime,ρ_regularization)
+        o = TrustRegionOptions(x,stoppingCriterion,Δ,Δ_bar,useRandom,ρ_prime,ρ_regularization)
 
         resultO = solve(p,o)
         if hasRecord(resultO)
@@ -142,7 +142,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
 
         norm_η = norm(p.M, o.x, η)
         # Compute the tentative next iterate (the proposal)
-        x_prop  = retraction(p.M, o.x, η)
+        x_prop  = retraction(p.M, o.x, η) #retraction ist auf 10^(-6) ungenau
         # Compute the function value of the proposal
         fx_prop = getCost(p, x_prop)
         # Will we accept the proposal or not?

@@ -62,6 +62,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         ] )
     end
 
+    # einen bestimmten Punkt übergeben funtioniert nicht!
     X = trustRegionsSolver(M, cost, egrad, randomMPoint(M), ehess;
     Δ_bar=4*sqrt(2*p))
 
