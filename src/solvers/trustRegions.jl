@@ -3,10 +3,10 @@
 #
 using Manopt
 import Base: identity
-export trustRegionsSolver
+export trustRegions
 
 @doc doc"""
-    trustRegionsSolver(M, F, ∇F, x, H, P)
+    trustRegions(M, F, ∇F, x, H, P)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds.
 
@@ -54,7 +54,7 @@ function pre(xp::MPoint, y::TVector)
         return y
 end
 
-function trustRegionsSolver(M::mT,
+function trustRegions(M::mT,
         F::Function, ∇F::Function,
         x::MP, H::Union{Function,Missing};
         preconditioner::Function = pre,
@@ -64,6 +64,7 @@ function trustRegionsSolver(M::mT,
         Δ::Float64 = Δ_bar/8,
         useRandom::Bool = false, ρ_prime::Float64 = 0.1,
         ρ_regularization::Float64=10^(-3)
+        ,kwargs... #collect rest
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
 
         if ρ_prime >= 0.25
@@ -82,6 +83,7 @@ function trustRegionsSolver(M::mT,
 
         o = TrustRegionOptions(x,stoppingCriterion,Δ,Δ_bar,useRandom,ρ_prime,ρ_regularization)
 
+        o = decorateOptions(o; kwargs...)
         resultO = solve(p,o)
         if hasRecord(resultO)
                 return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
@@ -108,6 +110,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         norm_grad = norm(p.M, o.x, getGradient(p, o.x))
         # Solve TR subproblem approximately
         η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand)
+        print("η = $η\n")
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x

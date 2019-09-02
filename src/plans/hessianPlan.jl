@@ -21,7 +21,7 @@ specify a problem for hessian based algorithms.
 
 # See also
 [`truncatedConjugateGradient`](@ref)
-[`trustRegionsSolver`](@ref)
+[`trustRegions`](@ref)
 
 # """
 struct HessianProblem{mT <: Manifold} <: Problem
@@ -68,7 +68,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a truncated Conjugate Gradient Option with the fields as above.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegionsSolver`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
 """
 mutable struct TruncatedConjugateGradientOptions <: HessianOptions
     x::P where {P <: MPoint}
@@ -122,7 +122,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a Trust Regions Option with the fields as above.
 
 # See also
-[`trustRegionsSolver`](@ref)
+[`trustRegions`](@ref)
 """
 mutable struct TrustRegionOptions <: HessianOptions
     x::P where {P <: MPoint}

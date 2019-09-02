@@ -178,7 +178,7 @@ This is also the standard retraction.
 function inverseRetraction(M::Grassmannian{T},x::GrPoint{T},y::GrPoint{T}) where T<:AbstractFloat
   U = getValue(y)/(transpose(getValue(x))*getValue(y))
   A = U-getValue(x)
-  GrPoint{T}(A)
+  GrPoint(A)
 end
 
 @doc doc"""
@@ -205,7 +205,7 @@ function log(M::Grassmannian{T},x::GrPoint{T},y::GrPoint{T}) where T<:Union{U, C
    W = Z\(getValue(y)'-Z*getValue(x)')
    d = svd(W, full = false)
    A = (d.V)*atan(Diagonal(svd(W, full = false).S))*(d.U)'
-   GrTVector{T}(A)
+   GrTVector(A)
   else
    throw( ErrorException("The points $x and $y are antipodal, thus these input parameters are invalid.") )
   end
