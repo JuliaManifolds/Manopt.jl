@@ -1,6 +1,6 @@
 export HessianProblem, HessianOptions
 export TruncatedConjugateGradientOptions, TrustRegionOptions
-export stopResidualReducedByFactor, stopResidualReducedByPower
+export stopResidualReducedByFactor, stopResidualReducedByPower, stopNegativeCurvature, stopExceededTrustRegion
 
 #
 # Problem
@@ -229,9 +229,9 @@ end
 
 terminate the algorithm when the trust region has been left.
 """
-struct stopExceededTrustRegion <: StoppingCriterion
+mutable struct stopExceededTrustRegion <: StoppingCriterion
     reason::String
-    stopExceededTrustRegion(tol::Float64) = new(tol,"")
+    stopExceededTrustRegion() = new("")
 end
 function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if dot(p.M, o.x, o.η, o.η) - 2*(dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual, o.residual)/dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)))*dot(p.M, o.x, o.η, getPreconditioner(p, o.x, o.δ)) + (dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual, o.residual)/dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)))^2 *  dot(p.M, o.x, o.δ, getPreconditioner(p, o.x, o.δ)) >= o.Δ^2 && i > 0
@@ -248,11 +248,11 @@ terminate the algorithm when the curvature is negative. In this case, the model
 is not strictly convex, and the stepsize as computed does not give a reduction
 of the model.
 """
-struct stopWhenCurvatureIsNegative <: StoppingCriterion
+mutable struct stopNegativeCurvature <: StoppingCriterion
     reason::String
     stopNegativeCurvature() = new("")
 end
-function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function (c::stopNegativeCurvature)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0 && i > 0
         c.reason = "Negative curvature.\n"
         return true

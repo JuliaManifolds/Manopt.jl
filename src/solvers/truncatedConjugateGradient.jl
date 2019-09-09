@@ -56,6 +56,8 @@ function truncatedConjugateGradient(M::mT,
             stopAfterIteration(manifoldDimension(M)),
             stopResidualReducedByPower(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(x,η) )), θ),
             stopResidualReducedByFactor(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(x,η) )), κ),
+            stopExceededTrustRegion(),
+            stopNegativeCurvature()
         ),
 
         kwargs... #collect rest
