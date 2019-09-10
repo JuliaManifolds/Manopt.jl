@@ -62,7 +62,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         ] )
     end
 
-    x = [ GrPoint{Float64}([-0.642174 -0.747752; 0.619009 -0.375991; 0.45215 -0.547264]), GrPoint{Float64}([-0.604078 -0.725989; 0.364001 0.11554; -0.708938 0.677931]) ]
+    x = randomMPoint(M)
     print("x = $x\n")
     X = trustRegions(M, cost, egrad, x, ehess;
         Δ_bar=4*sqrt(2*p),

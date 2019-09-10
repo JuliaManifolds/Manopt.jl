@@ -59,7 +59,7 @@ function trustRegions(M::mT,
         x::MP, H::Union{Function,Missing};
         preconditioner::Function = pre,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
-        stopAfterIteration(200), stopWhenGradientNormLess(10^(-6))),
+        stopAfterIteration(100), stopWhenGradientNormLess(10^(-6))),
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),
         Δ::Float64 = Δ_bar/8,
         useRandom::Bool = false, ρ_prime::Float64 = 0.1,
@@ -111,7 +111,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # print("norm_grad = $norm_grad\n")
         # Solve TR subproblem approximately
         η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand)
-        print("η = $η\n")
+        #print("η = $η\n")
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
@@ -146,6 +146,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
 
         # Compute the tentative next iterate (the proposal)
         x_prop  = retraction(p.M, o.x, η) #retraction ist auf 10^(-6) ungenau
+         print("norm = $(norm(p.M, o.x, η))\n")
         # Compute the function value of the proposal
         fx_prop = getCost(p, x_prop)
         # Will we accept the proposal or not?
@@ -204,10 +205,13 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Choose the new TR radius based on the model performance
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
         # then reduce the TR radius.
+        # print("o.Δ = $(o.Δ)\n")
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
         elseif ρ > 3/4 && norm(p.M, o.x, η) == o.Δ# we need to test the stopping criterions negative curvature and exceeded tr here.
                 o.Δ = min(2*o.Δ, o.Δ_bar)
+        else
+                o.Δ = o.Δ
         end
         # Choose to accept or reject the proposed step based on the model
         # performance. Note the strict inequality.

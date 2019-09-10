@@ -316,7 +316,7 @@ size, which is orthonormal.
 function randomMPoint(M::Grassmannian{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   V = σ * randn(T, (M.dimensionvecspace, M.dimensionsubspace))
   A = qr(V).Q[:,1:M.dimensionsubspace]
-  GrPoint{T}( A )
+  GrPoint{T}( A/norm(A) )
 end
 
 
