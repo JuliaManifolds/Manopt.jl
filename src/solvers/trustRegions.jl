@@ -101,14 +101,16 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 eta = zeroTVector(p.M, o.x)
         else
                 # Random vector in T_x M (this has to be very small)
+                print("No useRandom\n")
                 eta = 10.0^(-6)*randomTVector(p.M, o.x)
                 while norm(p.M, o.x, eta) > o.Δ
                         # Must be inside trust-region
                         eta = sqrt(sqrt(eps(Float64)))*eta
+                        print("normetapre = $(norm(p.M, o.x, eta))\n")
                 end
         end
         norm_grad = norm(p.M, o.x, getGradient(p, o.x))
-        # print("norm_grad = $norm_grad\n")
+         print("norm_grad = $norm_grad\n")
         # Solve TR subproblem approximately
         η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand)
         #print("η = $η\n")
@@ -201,11 +203,11 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         ρ = ρnum / ρden
         # print("ρnum = $ρnum\n")
         # print("ρden = $ρden\n")
-        # print("ρ = $ρ\n")
+         print("ρ = $ρ\n")
         # Choose the new TR radius based on the model performance
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
         # then reduce the TR radius.
-        # print("o.Δ = $(o.Δ)\n")
+         print("o.Δ = $(o.Δ)\n")
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
         elseif ρ > 3/4 && norm(p.M, o.x, η) == o.Δ# we need to test the stopping criterions negative curvature and exceeded tr here.
@@ -217,6 +219,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # performance. Note the strict inequality.
         if model_decreased && ρ > o.ρ_prime
                 o.x = x_prop
+                print("accepted \n")
         end
 end
 
