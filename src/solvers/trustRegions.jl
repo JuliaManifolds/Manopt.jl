@@ -59,7 +59,7 @@ function trustRegions(M::mT,
         x::MP, H::Union{Function,Missing};
         preconditioner::Function = pre,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
-        stopAfterIteration(100), stopWhenGradientNormLess(10^(-6))),
+        stopAfterIteration(50), stopWhenGradientNormLess(10^(-6))),
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),
         Δ::Float64 = Δ_bar/8,
         useRandom::Bool = false, ρ_prime::Float64 = 0.1,
@@ -95,18 +95,18 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegi
 end
 
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionOptions}
+        print("--------------------------\n")
         # Determine eta0
-        if o.useRand
+        if o.useRand==false
                 # Pick the zero vector
                 eta = zeroTVector(p.M, o.x)
         else
                 # Random vector in T_x M (this has to be very small)
-                print("No useRandom\n")
                 eta = 10.0^(-6)*randomTVector(p.M, o.x)
                 while norm(p.M, o.x, eta) > o.Δ
                         # Must be inside trust-region
                         eta = sqrt(sqrt(eps(Float64)))*eta
-                        print("normetapre = $(norm(p.M, o.x, eta))\n")
+                        # print("normetapre = $(norm(p.M, o.x, eta))\n")
                 end
         end
         norm_grad = norm(p.M, o.x, getGradient(p, o.x))
@@ -154,8 +154,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Will we accept the proposal or not?
         # Check the performance of the quadratic model against the actual cost.
         ρnum = fx - fx_prop
-        vecρ = grad + 0.5 * Hη
-        ρden = -dot(p.M, o.x, η, vecρ)
+        ρden = -dot(p.M, o.x, η, grad) - 0.5*dot(p.M, o.x, η, Hη)
         # rhonum could be anything.
         # rhoden should be nonnegative, as guaranteed by tCG, baring numerical
         # errors.
@@ -201,8 +200,8 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         end
 
         ρ = ρnum / ρden
-        # print("ρnum = $ρnum\n")
-        # print("ρden = $ρden\n")
+         print("ρnum = $ρnum\n")
+         print("ρden = $ρden\n")
          print("ρ = $ρ\n")
         # Choose the new TR radius based on the model performance
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
@@ -210,7 +209,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
          print("o.Δ = $(o.Δ)\n")
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
-        elseif ρ > 3/4 && norm(p.M, o.x, η) == o.Δ# we need to test the stopping criterions negative curvature and exceeded tr here.
+        elseif ρ > 3/4 && norm(p.M, o.x, η) >= o.Δ# we need to test the stopping criterions negative curvature and exceeded tr here.
                 o.Δ = min(2*o.Δ, o.Δ_bar)
         else
                 o.Δ = o.Δ
