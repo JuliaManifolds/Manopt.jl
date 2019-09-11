@@ -95,7 +95,6 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegi
 end
 
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionOptions}
-        print("--------------------------\n")
         # Determine eta0
         if o.useRand==false
                 # Pick the zero vector
@@ -109,8 +108,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                         # print("normetapre = $(norm(p.M, o.x, eta))\n")
                 end
         end
-        norm_grad = norm(p.M, o.x, getGradient(p, o.x))
-         print("norm_grad = $norm_grad\n")
         # Solve TR subproblem approximately
         η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand)
         #print("η = $η\n")
@@ -119,6 +116,8 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # ∇F at the point x
         grad = getGradient(p, o.x)
         fx = getCost(p, o.x)
+        norm_grad = norm(p.M, o.x, grad)
+         print("norm_grad = $norm_grad\n")
         # If using randomized approach, compare result with the Cauchy point.
         # Convergence proofs assume that we achieve at least (a fraction of)
         # the reduction of the Cauchy point. After this if-block, either all
@@ -220,6 +219,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 o.x = x_prop
                 print("accepted \n")
         end
+        print("--------------------------\n")
 end
 
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionOptions}

@@ -73,12 +73,10 @@ function truncatedConjugateGradient(M::mT,
     return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    # If the falg useRand is on, eta is the zeroTVector.
-    o.η = o.useRand ? zeroTVector(p.M,o.x) : o.η
-    Hη = getHessian(p, o.x, o.η)
+    Hη = o.useRand ? getHessian(p, o.x, o.η) : zeroTVector(p.M,o.x)
     o.residual = getGradient(p,o.x) + Hη
     # Precondition the residual.
-    z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
+    z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
     # Compute z'*r.
     zr = dot(p.M, o.x, z, o.residual)
     # Initial search direction (we maintain -delta in memory, called mdelta, to
@@ -97,7 +95,7 @@ end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
     δold = o.δ
-    z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
+    z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
     zrOld = dot(p.M, o.x, z, o.residual)
     HηOld = getHessian(p, o.x, o.η)
     # This call is the computationally expensive step.
@@ -108,9 +106,9 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     α = zrOld/δHδ
     # <neweta,neweta>_P =
     # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
-    e_Pd = -dot(p.M, o.x, ηOld, o.useRand ? getPreconditioner(p, o.x, δold) : δold) # It must be clarified if it's negative or not
-    d_Pd = dot(p.M, o.x, δold, o.useRand ? getPreconditioner(p, o.x, δold) : δold)
-    e_Pe = dot(p.M, o.x, ηOld, o.useRand ? getPreconditioner(p, o.x, ηOld) : ηOld)
+    e_Pd = -dot(p.M, o.x, ηOld, o.useRand ? δold : getPreconditioner(p, o.x, δold)) # It must be clarified if it's negative or not
+    d_Pd = dot(p.M, o.x, δold, o.useRand ? δold : getPreconditioner(p, o.x, δold))
+    e_Pe = dot(p.M, o.x, ηOld, o.useRand ? ηOld : getPreconditioner(p, o.x, ηOld))
     e_Pe_new = e_Pe + 2α*e_Pd + α^2*d_Pd # vielleicht müssen doch die weiteren Optionen gespeichert werden
     # Check against negative curvature and trust-region radius violation.
     # If either condition triggers, we bail out.
@@ -136,7 +134,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     o.residual = o.residual - α * Hδ
     # Precondition the residual.
     # It's actually the inverse of the preconditioner in o.residual
-    z = o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual
+    z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
     # Save the old z'*r.
     # Compute new z'*r.
     zr = dot(p.M, o.x, z, o.residual)
