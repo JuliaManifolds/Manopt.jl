@@ -73,15 +73,12 @@ function truncatedConjugateGradient(M::mT,
     return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+    o.η = o.useRand ? o.η : zeroTVector(p.M,o.x)
     Hη = o.useRand ? getHessian(p, o.x, o.η) : zeroTVector(p.M,o.x)
     o.residual = getGradient(p,o.x) + Hη
-    # Precondition the residual.
-    z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
-    # Compute z'*r.
-    zr = dot(p.M, o.x, z, o.residual)
     # Initial search direction (we maintain -delta in memory, called mdelta, to
     # avoid a change of sign of the tangent vector.)
-    o.δ = z
+    o.δ = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
     # If the Hessian or a linear Hessian approximation is in use, it is
     # theoretically guaranteed that the model value decreases strictly
     # with each iteration of tCG. Hence, there is no need to monitor the model
@@ -94,30 +91,30 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
-    δold = o.δ
+    δOld = o.δ
     z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
     zrOld = dot(p.M, o.x, z, o.residual)
-    HηOld = getHessian(p, o.x, o.η)
+    HηOld = getHessian(p, o.x, ηOld)
     # This call is the computationally expensive step.
-    Hδ = getHessian(p, o.x, o.δ)
+    Hδ = getHessian(p, o.x, δOld)
     # Compute curvature (often called kappa).
-    δHδ = dot(p.M, o.x, o.δ, Hδ)
+    δHδ = dot(p.M, o.x, δOld, Hδ)
     # Note that if d_Hd == 0, we will exit at the next "if" anyway.
     α = zrOld/δHδ
     # <neweta,neweta>_P =
     # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
-    e_Pd = -dot(p.M, o.x, ηOld, o.useRand ? δold : getPreconditioner(p, o.x, δold)) # It must be clarified if it's negative or not
-    d_Pd = dot(p.M, o.x, δold, o.useRand ? δold : getPreconditioner(p, o.x, δold))
+    e_Pd = -dot(p.M, o.x, ηOld, o.useRand ? δOld : getPreconditioner(p, o.x, δOld)) # It must be clarified if it's negative or not
+    d_Pd = dot(p.M, o.x, δOld, o.useRand ? δOld : getPreconditioner(p, o.x, δOld))
     e_Pe = dot(p.M, o.x, ηOld, o.useRand ? ηOld : getPreconditioner(p, o.x, ηOld))
     e_Pe_new = e_Pe + 2α*e_Pd + α^2*d_Pd # vielleicht müssen doch die weiteren Optionen gespeichert werden
     # Check against negative curvature and trust-region radius violation.
     # If either condition triggers, we bail out.
     if δHδ <= 0 || e_Pe_new >= o.Δ^2
         tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_Pe))) / d_Pd
-        return ηOld - tau * (o.δ)
+        return ηOld - tau * (δOld) # we need to stop here!
     end
     # No negative curvature and eta_prop inside TR: accept it.
-    o.η = ηOld - α * (o.δ)
+    o.η = ηOld - α * (δOld)
     # Verify that the model cost decreased in going from eta to new_eta. If
     # it did not (which can only occur if the Hessian approximation is
     # nonlinear or because of numerical errors), then we return the

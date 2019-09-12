@@ -109,7 +109,9 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 end
         end
         # Solve TR subproblem approximately
-        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand)
+        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
+        o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
+        debug = [:Stop])
         #print("η = $η\n")
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
@@ -117,7 +119,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         grad = getGradient(p, o.x)
         fx = getCost(p, o.x)
         norm_grad = norm(p.M, o.x, grad)
-         print("norm_grad = $norm_grad\n")
+        # print("norm_grad = $norm_grad\n")
         # If using randomized approach, compare result with the Cauchy point.
         # Convergence proofs assume that we achieve at least (a fraction of)
         # the reduction of the Cauchy point. After this if-block, either all
@@ -147,7 +149,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
 
         # Compute the tentative next iterate (the proposal)
         x_prop  = retraction(p.M, o.x, η) #retraction ist auf 10^(-6) ungenau
-         print("norm = $(norm(p.M, o.x, η))\n")
+        # print("norm = $(norm(p.M, o.x, η))\n")
         # Compute the function value of the proposal
         fx_prop = getCost(p, x_prop)
         # Will we accept the proposal or not?
@@ -199,16 +201,16 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         end
 
         ρ = ρnum / ρden
-         print("ρnum = $ρnum\n")
-         print("ρden = $ρden\n")
-         print("ρ = $ρ\n")
+        # print("ρnum = $ρnum\n")
+        # print("ρden = $ρden\n")
+        # print("ρ = $ρ\n")
         # Choose the new TR radius based on the model performance
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
         # then reduce the TR radius.
-         print("o.Δ = $(o.Δ)\n")
+        # print("o.Δ = $(o.Δ)\n")
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
-        elseif ρ > 3/4 && norm(p.M, o.x, η) >= o.Δ# we need to test the stopping criterions negative curvature and exceeded tr here.
+        elseif ρ > 3/4 # we need to test the stopping criterions negative curvature and exceeded tr here.
                 o.Δ = min(2*o.Δ, o.Δ_bar)
         else
                 o.Δ = o.Δ
