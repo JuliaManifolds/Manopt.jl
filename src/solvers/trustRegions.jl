@@ -111,7 +111,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Solve TR subproblem approximately
         η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
-        debug = [:Stop])
+        debug = [:Iteration," ",:Stop])
         #print("η = $η\n")
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
