@@ -18,6 +18,10 @@ The following algorithms are currently available
 [Cyclic Proximal Point](@ref CPPSolver) | `cyclicProximalPoint.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointOptions`](@ref)
 [Douglas–Rachford](@ref DRSolver) | `DouglasRachford.jl` | [`ProximalProblem`](@ref), [`DouglasRachfordOptions`](@ref)
 [Subgradient Method](@ref SubgradientSolver) | `subGradientMethod.jl` | [`SubGradientProblem`](@ref), [`SubGradientMethodOptions`](@ref)
+[Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncatedConjugateGradient.jl` | [`HessianProblem`](@ref),
+[`TruncatedConjugateGradientOptions`](@ref)
+[The Riemannian Trust-Regions Solver](@ref trustRegions) | `trustRegions.jl` |
+[`HessianProblem`](@ref), [`TrustRegionOptions`](@ref)
 
 Note that the [`Options`](@ref) can also be decorated to enhance your algorithm
 by general additional properties.

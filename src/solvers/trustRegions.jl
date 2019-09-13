@@ -59,7 +59,7 @@ function trustRegions(M::mT,
         x::MP, H::Union{Function,Missing};
         preconditioner::Function = pre,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
-        stopAfterIteration(50), stopWhenGradientNormLess(10^(-6))),
+        stopAfterIteration(100), stopWhenGradientNormLess(10^(-6))),
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),
         Δ::Float64 = Δ_bar/8,
         useRandom::Bool = false, ρ_prime::Float64 = 0.1,

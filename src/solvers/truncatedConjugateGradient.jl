@@ -9,7 +9,7 @@ export truncatedConjugateGradient
 solve the trust-region subproblem
 
 ```math
-min_{\eta in T_{x}M} m_{x}(\eta) = F(x) + \langle \partialF(x), \eta \rangle_{x} + \frac{1}{2} \langle Η_{x} \eta, \eta \rangle_{x}
+min_{\eta \in T_{x}M} m_{x}(\eta) = \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle Η_{x} \eta, \eta \rangle_{x}
 ```
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
@@ -42,7 +42,7 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 
 # Output
 * `η` – an approximate solution of the trust-region subproblem in
-    $\mathcal{T_{x}M}.
+    $\mathcal{T_{x}M}$.
 """
 function truncatedConjugateGradient(M::mT,
         F::Function, ∇F::Function, x::MP, η::T,
