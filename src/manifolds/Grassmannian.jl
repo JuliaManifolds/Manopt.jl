@@ -136,6 +136,11 @@ end
 
 @doc doc"""
     euclideanGradientToRiemannianGradient(M,x,Grad)
+
+convert the matrix $Grad$ of size $ n×k$, which represents the Euclidean
+gradient of a function at the [`GrPoint`](@ref) `x`, to a [`GrTVector`](@ref),
+which represents the Riemannian gradient of that function on the
+[`Grassmannian`](@ref) manifold `M`.
 """
 function euclideanGradientToRiemannianGradient(M::Grassmannian{T},x::GrPoint{T},Grad::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
 	GrTVector(projection(M,x,Grad))
@@ -143,6 +148,11 @@ end
 
 @doc doc"""
     euclideanHessToRiemannianHess(M,x,ξ,Grad,Hess)
+
+convert the matrix $Hess$ of size $ n×k$, which represents the Euclidean
+Hessian of a function at the [`GrPoint`](@ref) `x`, to a [`GrTVector`](@ref),
+which represents the Riemannian Hessian of that function along the
+[`GrTVector`](@ref) `ξ` on the [`Grassmannian`](@ref) manifold `M`.
 """
 function euclideanHessToRiemannianHess(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},Grad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
 	pxHess = projection(M,x,Hess)
