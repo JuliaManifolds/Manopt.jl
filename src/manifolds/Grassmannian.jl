@@ -134,6 +134,23 @@ function distance(M::Grassmannian{T},x::GrPoint{T},y::GrPoint{T})::Float64 where
 end
 
 @doc doc"""
+    euclideanGradientToRiemannianGradient(M,x,Grad)
+"""
+function euclideanGradientToRiemannianGradient(M::Grassmannian{T},x::GrPoint{T},Grad::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+	GrTVector(projection(M,x,Grad))
+end
+
+@doc doc"""
+    euclideanHessToRiemannianHess(M,x,ξ,Grad,Hess)
+"""
+function euclideanHessToRiemannianHess(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},Grad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+	pxHess = projection(M,x,Hess)
+    xtGrad = getValue(x)'*Grad
+    ξxtGrad = getValue(ξ)*xtGrad
+    GrTVector(pxHess - ξxtGrad)
+end
+
+@doc doc"""
     exp(M,x,ξ,[t=1.0])
 
 compute the exponential map on the [`Grassmannian`](@ref) manifold `M`$= \mathrm{Gr}(k,n)$ with
