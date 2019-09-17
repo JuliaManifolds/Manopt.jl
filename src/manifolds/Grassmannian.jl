@@ -11,6 +11,7 @@ export Grassmannian, GrPoint, GrTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, retraction, inverseRetraction
 export parallelTransport, randomTVector, randomMPoint, validateMPoint, validateTVector
 export projection, zeroTVector, injectivity_radius, tangent
+export euclideanGradientToRiemannianGradient, euclideanHessToRiemannianHess
 #
 # Type definitions
 #
