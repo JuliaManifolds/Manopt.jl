@@ -91,7 +91,7 @@ end
 @doc doc"""
     euclideanHessToRiemannianHess(M,x,ξ,Grad,Hess)
 """
-function euclideanHessToRiemannianHess(M::Product, x::ProdPoint,ξ::ProdTVector,Grad::Array{Matrix{T}, 2},Hess::Array{Matrix{T}, 2})
+function euclideanHessToRiemannianHess(M::Product, x::ProdPoint,ξ::ProdTVector,Grad::Array{Matrix{T}, 2},Hess::Array{Matrix{T}, 2}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
     ProdTVector(euclideanHessToRiemannianHess.(M.manifolds, getValue(x), getValue(ξ) ))
 end
 

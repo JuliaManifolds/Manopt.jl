@@ -49,11 +49,6 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
 # Output
 * `x` – the last reached point on the manifold
 """
-
-function pre(xp::MPoint, y::TVector)
-        return y
-end
-
 function trustRegions(M::mT,
         F::Function, ∇F::Function,
         x::MP, H::Union{Function,Missing};
@@ -226,4 +221,8 @@ end
 
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionOptions}
         return o.x
+end
+
+function pre(xp::MPoint, y::TVector)
+        return y
 end

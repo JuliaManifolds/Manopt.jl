@@ -21,14 +21,14 @@ and $k=0$
 
 ## Iteration
 
-Repeat  until a convergence criterion is reached
+Repeat until a convergence criterion is reached
 
 1. Set $\kappa_k = \langle \delta_k, H_{x}\delta_k \rangle_{x}$, $\alpha_k =\frac{\langle r_k, z_k \rangle_{x}}{\kappa_k}$
 2. If $\kappa_k \leqq 0$ or $\operatorname{norm}_P(\eta_k + \alpha_k \delta_k) \geqq \Delta$
     compute $\tau_k$ the positive root of
     $\operatorname{norm}_P(\eta_k + \tau \delta_k) = \Delta $, return
     $\eta_{k+1} = \eta_k + \tau_k \delta_k$ and stop.
-3. Set $\eta_{k+1} = \eta_k + \alpha_k \delta_k$, $r_{k+1} = r_k + \alpha_k H_{x}\delta_k$, 
+3. Set $\eta_{k+1} = \eta_k + \alpha_k \delta_k$, $r_{k+1} = r_k + \alpha_k H_{x}\delta_k$,
     $z_{k+1} = P^{-1}r_{k+1}$, $\beta_k = \frac{\langle r_{k+1}, z_{k+1} \rangle_{x}}{\langle r_k, z_k \rangle_{x}}$
     and $\delta_{k+1} = -z_{k+1} + \beta_k \delta_k$
 
