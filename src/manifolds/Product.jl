@@ -82,20 +82,6 @@ compute the inner product as sum of the component inner products on the
 dot(M::Product, x::ProdPoint, ξ::ProdTVector, ν::ProdTVector) = sum(dot.(M.manifolds, getValue(x), getValue(ξ), getValue(ν) ));
 
 @doc doc"""
-    euclideanGradientToRiemannianGradient(M,x,Grad)
-"""
-function euclideanGradientToRiemannianGradient(M::Product, x::ProdPoint,Grad::Array{Matrix{T}, 2}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-    ProdTVector(euclideanGradientToRiemannianGradient.(M.manifolds, getValue(x),  ))
-end
-
-@doc doc"""
-    euclideanHessToRiemannianHess(M,x,ξ,Grad,Hess)
-"""
-function euclideanHessToRiemannianHess(M::Product, x::ProdPoint,ξ::ProdTVector,Grad::Array{Matrix{T}, 2},Hess::Array{Matrix{T}, 2}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-    ProdTVector(euclideanHessToRiemannianHess.(M.manifolds, getValue(x), getValue(ξ) ))
-end
-
-@doc doc"""
     exp(M,x,ξ)
 
 computes the product exponential map on the [`Product`](@ref) manifold `M` and

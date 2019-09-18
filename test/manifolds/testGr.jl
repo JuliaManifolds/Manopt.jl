@@ -57,7 +57,7 @@
   @test norm( getValue(inverseRetraction(M,x,retraction(M,x,ξ))) - getValue(ξ)) ≈ 0 atol = 10.0^(-14)
   @test norm( transpose(getValue(retraction(M,x,ξ))) * getValue(retraction(M,x,ξ)) - one(transpose(getValue(x))*getValue(x)) ) ≈ 0 atol = 10.0^(-14)
   # Test parallelTransport
-  @test norm(getValue(parallelTransport(M,x,z,η)) - projection(M,z,getValue(η))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(M,x,z,η)) - getValue(project(M,z,getValue(η)))) ≈ 0 atol = 10.0^(-16)
   # Test zeroTVector
   @test norm(M,x,zeroTVector(M,x)) ≈ 0 atol = 10.0^(-16)
   # Test validateMPoint and validateTVector

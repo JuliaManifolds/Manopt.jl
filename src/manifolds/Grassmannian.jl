@@ -10,8 +10,7 @@ import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Grassmannian, GrPoint, GrTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, retraction, inverseRetraction
 export parallelTransport, randomTVector, randomMPoint, validateMPoint, validateTVector
-export projection, zeroTVector, injectivity_radius, tangent
-export euclideanGradientToRiemannianGradient, euclideanHessToRiemannianHess
+export project, zeroTVector, injectivity_radius, tangent
 #
 # Type definitions
 #
@@ -132,33 +131,6 @@ function distance(M::Grassmannian{T},x::GrPoint{T},y::GrPoint{T})::Float64 where
     	b[a.<1] = acos.(a[a.<1])
 		return norm(real(b), 2)
   	end
-end
-
-@doc doc"""
-    euclideanGradientToRiemannianGradient(M,x,Grad)
-
-convert the matrix $Grad$ of size $ n×k$, which represents the Euclidean
-gradient of a function at the [`GrPoint`](@ref) `x`, to a [`GrTVector`](@ref),
-which represents the Riemannian gradient of that function on the
-[`Grassmannian`](@ref) manifold `M`.
-"""
-function euclideanGradientToRiemannianGradient(M::Grassmannian{T},x::GrPoint{T},Grad::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-	GrTVector(projection(M,x,Grad))
-end
-
-@doc doc"""
-    euclideanHessToRiemannianHess(M,x,ξ,Grad,Hess)
-
-convert the matrix $Hess$ of size $ n×k$, which represents the Euclidean
-Hessian of a function at the [`GrPoint`](@ref) `x`, to a [`GrTVector`](@ref),
-which represents the Riemannian Hessian of that function along the
-[`GrTVector`](@ref) `ξ` on the [`Grassmannian`](@ref) manifold `M`.
-"""
-function euclideanHessToRiemannianHess(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},Grad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-	pxHess = projection(M,x,Hess)
-    xtGrad = getValue(x)'*Grad
-    ξxtGrad = getValue(ξ)*xtGrad
-    GrTVector(pxHess - ξxtGrad)
 end
 
 @doc doc"""
@@ -306,15 +278,15 @@ The formula reads
 
 $P_{x\to y}(\xi) = \operatorname{proj}_{\mathcal M}(y,\xi).$
 
-where $\operatorname{proj}_{\mathcal M}$ is the [`projection`](@ref) onto the
+where $\operatorname{proj}_{\mathcal M}$ is the [`project`](@ref) onto the
 tangent space $T_y\mathcal M$.
 """
 function parallelTransport(M::Grassmannian{T}, x::GrPoint{T}, y::GrPoint{T}, ξ::GrTVector{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
- 	GrTVector(projection(M,y,getValue(ξ)))
+ 	project(M,y,getValue(ξ))
 end
 
 @doc doc"""
-    projection(M,x,q)
+    project(M,x,q)
 
 project a matrix q orthogonally on the [`GrPoint`](@ref) `x` of the manifold
 [`Grassmannian`](@ref) manifold `M`. The formula reads
@@ -328,10 +300,10 @@ $T_x\mathcal M$ at [`GrPoint`](@ref) `x`.
 # see also
 [`parallelTransport`](@ref), [`randomTVector`](@ref)
 """
-function projection(M::Grassmannian{T},x::GrPoint{T},q::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+function project(M::Grassmannian{T},x::GrPoint{T},q::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   	A = getValue(x)'*q
   	B = q - getValue(x)*A
-  	return B
+  	return GrTVector(B)
 end
 
 @doc doc"""
@@ -353,13 +325,13 @@ end
 
 return a (Gaussian) random vector [`GrTVector`](@ref) in the tangential space
 $T_x\mathrm{Gr}(k,n)$ with mean zero and standard deviation `σ` by projecting
-a random Matrix onto the  [`GrPoint`](@ref) `x` with [`projection`](@ref).
+a random Matrix onto the  [`GrPoint`](@ref) `x` with [`project`](@ref).
 """
 function randomTVector(M::Grassmannian{T},x::GrPoint{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   	y = σ * randn(T, (M.dimensionvecspace,M.dimensionsubspace))
-  	Y = projection(M, x, y)
-  	Y = Y/norm(Y)
-  	GrTVector(Y)
+  	Y = project(M, x, y)
+  	Y = Y/norm(getValue(Y))
+	return Y
 end
 
 @doc doc"""
@@ -382,7 +354,7 @@ function retraction(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},t::Float64
     GrPoint{T}(A)
 end
 
-tangent(M::Grassmannian, x::GrPoint, q::Matrix) = projection(M,x,q)
+tangent(M::Grassmannian, x::GrPoint, q::Matrix) = project(M,x,q)
 
 @doc doc"""
     zeroTVector(M,x)

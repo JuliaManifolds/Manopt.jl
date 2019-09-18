@@ -48,21 +48,20 @@ function truncatedConjugateGradient(M::mT,
         F::Function, ∇F::Function, x::MP, η::T,
         H::Union{Function,Missing},
         Δ::Float64;
-        preconditioner::Function = x -> x,
+        preconditioner::Function = (M,x,ξ) -> ξ,
         θ::Float64 = 1.0,
         κ::Float64 = 0.1,
         useRandom::Bool = false,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
             stopAfterIteration(manifoldDimension(M)),
-            stopResidualReducedByPower(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(x,η) )), θ),
-            stopResidualReducedByFactor(norm(M,x, ∇F(x) + ( useRandom ? zeroTVector(M,x) : H(x,η) )), κ),
+            stopResidualReducedByPower(norm(M,x, ∇F(M,x) + ( useRandom ? zeroTVector(M,x) : H(M,x,η) )), θ),
+            stopResidualReducedByFactor(norm(M,x, ∇F(M,x) + ( useRandom ? zeroTVector(M,x) : H(M,x,η) )), κ),
             stopExceededTrustRegion(),
             stopNegativeCurvature()
         ),
 
         kwargs... #collect rest
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
-
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),Δ,zeroTVector(M,x),useRandom)
     o = decorateOptions(o; kwargs...)
@@ -138,16 +137,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # Compute new search direction.
     β = zr/zrOld
     o.δ = z + β * o.δ
-    # Since mdelta is passed to getHessian, which is the part of the code
-    # we have least control over from here, we want to make sure mdelta is
-    # a tangent vector up to numerical errors that should remain small.
-    # For this reason, we re-project mdelta to the tangent space.
-    # In limited tests, it was observed that it is a good idea to project
-    # at every iteration rather than only every k iterations, the reason
-    # being that loss of tangency can lead to more inner iterations being
-    # run, which leads to an overall higher computational cost.
-    # Not sure if this is necessary. We need to discuss this.
-    o.δ = tangent(p.M, o.x, getValue(o.δ))
 end
 end
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}

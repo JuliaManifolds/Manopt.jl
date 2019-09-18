@@ -6,7 +6,7 @@
 import LinearAlgebra: norm, dot, nullspace, det, tr, qr, triu, rank, svd, diag, sylvester, lyap, Diagonal
 import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Stiefel, StPoint, StTVector, getValue
-export dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, projection, retraction, inverseRetraction
+export dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, project, retraction, inverseRetraction
 export zeroTVector, injectivity_radius, tangent
 #
 # Type definitions
@@ -258,15 +258,15 @@ The formula reads
 
 $P_{x\to y}(\xi) = \operatorname{proj}_{\mathcal M}(y,\xi).$
 
-where $\operatorname{proj}_{\mathcal M}$ is the projection onto the
+where $\operatorname{proj}_{\mathcal M}$ is the project onto the
 tangent space $T_y\mathcal M$.
 """
 function parallelTransport(M::Stiefel{T}, x::StPoint{T}, y::StPoint{T}, ξ::StTVector{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-    projection(M,y,getValue(ξ))
+    project(M,y,getValue(ξ))
 end
 
 @doc doc"""
-    projection(M,x,q)
+    project(M,x,q)
 
 project a `Matrix q` orthogonally on the tangent space of the
 [`StPoint`](@ref) `x` on the [`Stiefel`](@ref) manifold `M`. The formula reads
@@ -280,7 +280,7 @@ $B=\frac{1}{2} (x^{\mathrm{T}}{\bar q})^{\mathrm{T}} {\bar x}^{\mathrm{T}}q.$
 # see also
 [`parallelTransport`](@ref), [`randomTVector`](@ref)
 """
-function projection(M::Stiefel{T}, x::StPoint{T}, q::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+function project(M::Stiefel{T}, x::StPoint{T}, q::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
     A = getValue(x)'*q
     B = 0.5 * (A' + A)
     return StTVector{T}(q - getValue(x) * B)
@@ -304,11 +304,11 @@ end
 
 return a random vector [`StTVector`](@ref) in the tangential space
 $T_x\mathrm{St}(k,n)$ by generating a random matrix of size $n×k$ and projecting
-it onto [`StPoint`](@ref) `x` with [`projection`](@ref).
+it onto [`StPoint`](@ref) `x` with [`project`](@ref).
 """
 function randomTVector(M::Stiefel{T}, x::StPoint{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   y = σ * randn(T, (M.dimensionlines,M.dimensioncolumns))
-  Y = projection(M, x, y)
+  Y = project(M, x, y)
   return 1/(norm(getValue(Y))) * Y
 end
 
@@ -369,7 +369,7 @@ function retraction(M::Stiefel{T},x::StPoint{T},ξ::StTVector{T},t::Float64=1.0)
   return retractionQR(M,x,ξ,t)
 end
 
-tangent(M::Stiefel, x::StPoint, q::Matrix) = projection(M,x,q)
+tangent(M::Stiefel, x::StPoint, q::Matrix) = project(M,x,q)
 
 @doc doc"""
     ξ = zeroTVector(M,x)

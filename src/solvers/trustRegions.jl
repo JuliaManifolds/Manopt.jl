@@ -52,7 +52,7 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
 function trustRegions(M::mT,
         F::Function, ∇F::Function,
         x::MP, H::Union{Function,Missing};
-        preconditioner::Function = pre,
+        preconditioner::Function = (M,x,ξ) -> ξ,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
         stopAfterIteration(100), stopWhenGradientNormLess(10^(-6))),
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),
@@ -221,8 +221,4 @@ end
 
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionOptions}
         return o.x
-end
-
-function pre(xp::MPoint, y::TVector)
-        return y
 end

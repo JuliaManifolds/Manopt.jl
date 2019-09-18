@@ -142,20 +142,20 @@ end
 evaluate the Hessian of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`
 times a [`TVector`](@ref) `ξ`.
 """
-getHessian(p::Pr,x::P,ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = ismissing(p.hessian) ? approxHessianFD(p,x,ξ) : p.hessian(x,ξ)
+getHessian(p::Pr,x::P,ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = ismissing(p.hessian) ? approxHessianFD(p,x,ξ) : p.hessian(p.M,x,ξ)
 """
     getGradient(p,x)
 
 evaluate the gradient of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`.
 """
-getGradient(p::Pr,x::P) where {Pr <: HessianProblem, P <: MPoint} = p.gradient(x)
+getGradient(p::Pr,x::P) where {Pr <: HessianProblem, P <: MPoint} = p.gradient(p.M,x)
 """
     getPreconditioner(p,x,ξ)
 
 evaluate a preconditioner of the Hessian of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`
 times a [`TVector`](@ref) `ξ`.
 """
-getPreconditioner(p::Pr,x::P, ξ::V) where {Pr <: Problem, P <: MPoint, V <: TVector} = p.precon(x,ξ)
+getPreconditioner(p::Pr,x::P, ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = p.precon(p.M, x, ξ)
 
 @doc doc"""
     approxHessianFD(p,x,ξ,[stepsize=2.0^(-14)])
@@ -193,7 +193,7 @@ end
 """
     stopResidualReducedByFactor <: StoppingCriterion
 """
-struct stopResidualReducedByFactor <: StoppingCriterion
+mutable struct stopResidualReducedByFactor <: StoppingCriterion
     κ::Float64
     initialResidualNorm::Float64
     reason::String
@@ -234,7 +234,11 @@ mutable struct stopExceededTrustRegion <: StoppingCriterion
     stopExceededTrustRegion() = new("")
 end
 function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    if dot(p.M, o.x, o.η, o.η) - 2*(dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual, o.residual)/dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)))*dot(p.M, o.x, o.η, getPreconditioner(p, o.x, o.δ)) + (dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual, o.residual)/dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)))^2 *  dot(p.M, o.x, o.δ, getPreconditioner(p, o.x, o.δ)) >= o.Δ^2 && i > 0
+    a1 = dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual, o.residual)
+    a2 = dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))
+    a3 = dot( p.M, o.x, o.η, getPreconditioner(p, o.x, o.δ))
+    a4 = dot(p.M, o.x, o.δ, getPreconditioner(p, o.x, o.δ))
+    if dot(p.M, o.x, o.η, o.η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4 >= o.Δ^2 && i > 0
         c.reason = "Exceeded trust region.\n"
         return true
     end
