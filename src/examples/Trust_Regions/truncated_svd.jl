@@ -50,7 +50,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         eG = egrad( getValue.(getValue(X)) )
         return ProdTVector( project.(M.manifolds, getValue(X), eG) )
     end
-    
+
     function e2rHess(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
 	    pxHess = getValue(project(M,x,Hess))
         xtGrad = getValue(x)'*eGrad
@@ -96,3 +96,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
 
     return [U, S, V]
 end
+
+A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
+
+truncated_svd(A,2)
