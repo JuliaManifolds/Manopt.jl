@@ -128,8 +128,8 @@ function distance(M::Grassmannian{T},x::GrPoint{T},y::GrPoint{T})::Float64 where
     	z = getValue(x)'*getValue(y)
     	a = svd(z).S
     	b = zero(a)
-    	b[a.<1] = acos.(a[a.<1])
-		return norm(real(b), 2)
+    	b[a.<1] = (acos.(a[a.<1])).^2
+		return sqrt(sum(b))
   	end
 end
 
@@ -316,7 +316,7 @@ size, which is orthonormal.
 function randomMPoint(M::Grassmannian{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
   	V = σ * randn(T, (M.dimensionvecspace, M.dimensionsubspace))
   	A = qr(V).Q[:,1:M.dimensionsubspace]
-  	GrPoint{T}( A/norm(A) )
+  	GrPoint{T}( A )
 end
 
 
