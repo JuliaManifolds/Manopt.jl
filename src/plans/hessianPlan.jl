@@ -78,7 +78,8 @@ mutable struct TruncatedConjugateGradientOptions <: HessianOptions
     Δ::Float64
     residual::T where {T <: TVector}
     useRand::Bool
-    TruncatedConjugateGradientOptions(x::P,stop::StoppingCriterion,η::T,δ::T,Δ::Float64,residual::T,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,stop,η,δ,Δ,residual,uR)
+    stopReason::Array{Bool, 1}
+    TruncatedConjugateGradientOptions(x::P,stop::StoppingCriterion,η::T,δ::T,Δ::Float64,residual::T,uR::Bool,sR::Array{Bool, 1}) where {P <: MPoint, T <: TVector} = new(x,stop,η,δ,Δ,residual,uR,sR)
 end
 
 """

@@ -63,7 +63,8 @@ function truncatedConjugateGradient(M::mT,
         kwargs... #collect rest
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
-    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),Δ,zeroTVector(M,x),useRandom)
+    sR = [false; false; false; false; false]
+    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),Δ,zeroTVector(M,x),useRandom,sR)
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
     if hasRecord(resultO)
@@ -128,6 +129,13 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
         # Compute new search direction.
         β = zr/zrOld
         o.δ = z + β * o.δ
+
+        if δHδ <= 0
+            o.stopReason[1] = true
+        else
+            o.stopReason[2] = true
+        end
+
     else
         # No negative curvature and eta_prop inside TR: accept it.
         o.η = ηOld - α * (δOld)
@@ -157,5 +165,5 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     end
 end
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    return o.η
+    return o.η, o.stopReason
 end
