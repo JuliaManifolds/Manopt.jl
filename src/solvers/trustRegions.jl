@@ -114,7 +114,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         grad = getGradient(p, o.x)
         fx = getCost(p, o.x)
         norm_grad = norm(p.M, o.x, grad)
-        # print("norm_grad = $norm_grad\n")
+         print("norm_grad = $norm_grad\n")
         # If using randomized approach, compare result with the Cauchy point.
         # Convergence proofs assume that we achieve at least (a fraction of)
         # the reduction of the Cauchy point. After this if-block, either all
