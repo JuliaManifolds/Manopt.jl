@@ -17,7 +17,7 @@ Repeat until a convergence criterion is reached
 
 ## Result
 
-The result is given by the last computed $x_K$.
+The result is given by the last computed $x_k$.
 
 ## Interface
 

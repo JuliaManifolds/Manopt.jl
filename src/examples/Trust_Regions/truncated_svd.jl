@@ -2,6 +2,7 @@
 #   SVD decomposition of a matrix truncated to a rank
 #
 using Manopt
+import Manopt: trustRegions
 import LinearAlgebra: norm, svd, Diagonal
 export truncated_svd
 
