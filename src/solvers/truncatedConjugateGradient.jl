@@ -16,6 +16,10 @@ min_{\eta \in T_{x}M} m_{x}(\eta) = \langle \nabla F(x), \eta \rangle_{x} + \fra
 ```
 
 with the Steihaug-Toint truncated conjugate-gradient method.
+For a description of the algorithm and theorems offering convergence guarantees,
+see the reference:
+
+* [CGT2000] Conn, Gould and Toint: Trust-region methods, 2000.
 
 # Input
 * `M` – a manifold $\mathcal M$
@@ -24,10 +28,10 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 * `x` – a point on the manifold $x\in\mathcal M$
 * `η` – an update tangential vector $\eta\in\mathcal{T_{x}M}$
 * `H` – a hessian matrix
-* `P` – a preconditioner for the hessian matrix
 * `Δ` – a trust-region radius
 
 # Optional
+* `P` – a preconditioner for the hessian matrix
 * `θ` – 1+θ is the superlinear convergence target rate. The algorithm will
     terminate early if the residual was reduced by a power of 1+theta.
 * `κ` – the linear convergence target rate: algorithm will terminate

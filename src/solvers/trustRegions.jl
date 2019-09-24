@@ -6,11 +6,17 @@ import Base: identity
 export trustRegions
 
 @doc doc"""
-    trustRegions(M, F, ∇F, x, H, P)
+    trustRegions(M, F, ∇F, x, H)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds.
+It will attempt to minimize the cost function F on the Manifold M.
+If no Hessian H is provided, a standard approximation of the Hessian based on
+the gradient ∇F will be computed.
+For a description of the algorithm and theorems offering convergence guarantees,
+see the reference:
 
-### Not sure, which formula has to be shown here
+* [ABG07] P.-A. Absil, C.G. Baker, K.A. Gallivan,
+        Trust-region methods on Riemannian manifolds, FoCM, 2007
 
 # Input
 * `M` – a manifold $\mathcal M$
