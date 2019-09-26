@@ -2,7 +2,6 @@
 #   SVD decomposition of a matrix truncated to a rank
 #
 using Manopt
-import Manopt: trustRegions
 import LinearAlgebra: norm, svd, Diagonal
 export truncated_svd
 
@@ -22,7 +21,6 @@ rank p.
 * `S` – a diagonal matrix of size pxp with nonnegative and decreasing diagonal
         entries
 """
-
 function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     (m, n) = size(A)
 
@@ -47,6 +45,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         AtU = transpose(A)*U
         return [ -AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V) ];
     end
+
     function rgrad(M::Product, X::ProdPoint{Array{GrPoint{Float64},1}})
         eG = egrad( getValue.(getValue(X)) )
         return ProdTVector( project.(M.manifolds, getValue(X), eG) )
