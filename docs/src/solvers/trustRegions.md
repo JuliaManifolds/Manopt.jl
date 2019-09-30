@@ -25,7 +25,12 @@ Repeat until a convergence criterion is reached
 2. Obtain $\eta_k$ by (approximately) solving the trust-regions subproblem.
     The problem as well as the solution method is described in the
     [`truncatedConjugateGradient`](@ref).
-3. 
+3. ---Here should be the Cauchy Point described---
+4. Set ${x}^{* } = \operatorname{retraction}(\mathcal{M}, x_k, \eta_k)$
+5. Set $\rho = \frac{f(x_k)-f({x}^{* })}{m_{k}(x_k)-m_{k}({x}^{* })}$, where $f$
+    is the cost function and
+    $m_{k}({x}^{* })=m_{k}(x_k)+\langle\eta_k,\operatorname{Grad}[f]_ {x_k} \rangle_{x}
+    +\langle\eta_k,\operatorname{Hess}[f] (\eta_k)_ {x_k} \rangle_{x}$
 
 ## Result
 
