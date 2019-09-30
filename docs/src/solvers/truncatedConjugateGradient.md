@@ -9,7 +9,7 @@ min_{\eta \in T_{x}M} m_{x}(\eta) = \langle \nabla F(x), \eta \rangle_{x} + \fra
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
 ```
 
-on a manifold.
+on a manifold by using the Steihaug-Toint truncated conjugate-gradient method.
 All terms involving the trust-region radius use an inner product w.r.t. the
 preconditioner; this is because the iterates grow in length w.r.t. the
 preconditioner, guaranteeing that we do not re-enter the trust-region.
@@ -35,7 +35,6 @@ Repeat until a convergence criterion is reached
 ## Result
 
 The result is given by the last computed $η_K$.
-
 
 ## Interface
 
