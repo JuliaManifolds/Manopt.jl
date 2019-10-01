@@ -11,7 +11,9 @@ by using the Riemannian trust-regions solver.
 ## Initialization
 
 Initialize $x_0 = x$ if an initial point $x$ is given by the caller or set
-$x_0 = \operatorname{randomMPoint}(\mathcal{M})$.
+$x_0 = \operatorname{randomMPoint}(\mathcal{M})$, $\Delta =\frac{1}{2} \bar{\Delta}$
+where $\bar{\Delta}$ is the maximum radius the trust-region can have. Usually
+one uses the root of the manifold dimension.
 
 ## Iteration
 
@@ -29,8 +31,12 @@ Repeat until a convergence criterion is reached
 4. Set ${x}^{* } = \operatorname{retraction}(\mathcal{M}, x_k, \eta_k)$
 5. Set $\rho = \frac{f(x_k)-f({x}^{* })}{m_{k}(x_k)-m_{k}({x}^{* })}$, where $f$
     is the cost function and
-    $m_{k}({x}^{* })=m_{k}(x_k)+\langle\eta_k,\operatorname{Grad}[f]_ {x_k} \rangle_{x}
-    +\langle\eta_k,\operatorname{Hess}[f] (\eta_k)_ {x_k} \rangle_{x}$
+    $m_{k}({x}^{* })=m_{k}(x_k)+\langle\eta_k,\operatorname{Grad}[f] (x_k)\rangle_{x_k}
+    +\frac{1}{2}\langle\eta_k,\operatorname{Hess}[f] (\eta_k)_ {x_k}\rangle_{x_k}$
+    describes the quadratic model function with $m_{k}(x_k) = f(x_k)$.
+6. Then the trust-region radius is updated. If $\rho < \frac{1}{4}& or
+    $m_{k}(x_k)-m_{k}({x}^{* }) \geq 0$ or $\rho = \pm \infty& set
+    $\Delta =\frac{1}{4} \Delta$.
 
 ## Result
 
