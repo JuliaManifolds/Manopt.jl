@@ -5,7 +5,7 @@ using Manopt
 import LinearAlgebra: norm, svd, Diagonal
 export truncated_svd
 
-@doc doc"""
+"""
     truncated_svd(A, p)
 
 return a singular value decomposition of a real valued matrix A truncated to
@@ -13,7 +13,7 @@ rank p.
 
 # Input
 * `A` – a real-valued matrix A of size mxn
-* `p` – an integer $p \leq min\{ m, n \}$
+* `p` – an integer p in min { m, n }
 
 # Output
 * `U` – an orthonormal matrix of size mxp
