@@ -116,56 +116,38 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     if δHδ <= 0 || e_Pe_new >= o.Δ^2
         tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_Pe))) / d_Pd
         o.η = ηOld - tau * (δOld) # we need to stop here!
-        old_model_value = dot(p.M,o.x,ηOld,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,ηOld,HηOld)
-        new_model_value = dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,getHessian(p, o.x, o.η))
-        if new_model_value >= old_model_value
-            o.η = ηOld
-        end
-
         # Update the residual.
-        o.residual = o.residual - α * Hδ
-        # Precondition the residual.
-        # It's actually the inverse of the preconditioner in o.residual
-        z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
-        # Save the old z'*r.
-        # Compute new z'*r.
-        zr = dot(p.M, o.x, z, o.residual)
-        # Compute new search direction.
-        β = zr/zrOld
-        o.δ = z + β * o.δ
-
         if δHδ <= 0
             o.stopReason[1] = true
         else
             o.stopReason[2] = true
         end
-
     else
         # No negative curvature and eta_prop inside TR: accept it.
         o.η = ηOld - α * (δOld)
-        # Verify that the model cost decreased in going from eta to new_eta. If
-        # it did not (which can only occur if the Hessian approximation is
-        # nonlinear or because of numerical errors), then we return the
-        # previous eta (which necessarily is the best reached so far, according
-        # to the model cost). Otherwise, we accept the new eta and go on.
-        # -> Stopping Criterion
-        old_model_value = dot(p.M,o.x,ηOld,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,ηOld,HηOld)
-        new_model_value = dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,getHessian(p, o.x, o.η))
-        if new_model_value >= old_model_value
-            o.η = ηOld
-        end
-
-        # Update the residual.
-        o.residual = o.residual - α * Hδ
-        # Precondition the residual.
-        # It's actually the inverse of the preconditioner in o.residual
-        z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
-        # Save the old z'*r.
-        # Compute new z'*r.
-        zr = dot(p.M, o.x, z, o.residual)
-        # Compute new search direction.
-        β = zr/zrOld
-        o.δ = z + β * o.δ
+    end
+    # Verify that the model cost decreased in going from eta to new_eta. If
+    # it did not (which can only occur if the Hessian approximation is
+    # nonlinear or because of numerical errors), then we return the
+    # previous eta (which necessarily is the best reached so far, according
+    # to the model cost). Otherwise, we accept the new eta and go on.
+    # -> Stopping Criterion
+    old_model_value = dot(p.M,o.x,ηOld,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,ηOld,HηOld)
+    new_model_value = dot(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * dot(p.M,o.x,o.η,getHessian(p, o.x, o.η))
+    if new_model_value >= old_model_value
+        o.η = ηOld
+    end
+    # Update the residual.
+    o.residual = o.residual - α * Hδ
+    # Precondition the residual.
+    # It's actually the inverse of the preconditioner in o.residual
+    z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
+    # Save the old z'*r.
+    # Compute new z'*r.
+    zr = dot(p.M, o.x, z, o.residual)
+    # Compute new search direction.
+    β = zr/zrOld
+    o.δ = z + β * o.δ
     end
 end
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
