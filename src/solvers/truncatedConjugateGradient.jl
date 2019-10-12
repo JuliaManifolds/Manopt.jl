@@ -4,7 +4,7 @@
 export truncatedConjugateGradient
 
 @doc doc"""
-    truncatedConjugateGradient(M, F, ∇F, x, η, H, P, Δ)
+    truncatedConjugateGradient(M, F, ∇F, x, η, H, Δ)
 
 solve the trust-region subproblem
 
@@ -27,11 +27,11 @@ see the reference:
 * `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
 * `x` – a point on the manifold $x\in\mathcal M$
 * `η` – an update tangential vector $\eta\in\mathcal{T_{x}M}$
-* `H` – a hessian matrix
+* `H` – the hessian $H( \mathcal M, x, \xi)$ of F
 * `Δ` – a trust-region radius
 
 # Optional
-* `P` – a preconditioner for the hessian matrix
+* `P` – a preconditioner for the hessian H
 * `θ` – 1+θ is the superlinear convergence target rate. The algorithm will
     terminate early if the residual was reduced by a power of 1+theta.
 * `κ` – the linear convergence target rate: algorithm will terminate

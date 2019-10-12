@@ -23,10 +23,10 @@ see the reference:
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
 * `x` – an initial value $x\in\mathcal M$
-* `H` – a hessian matrix
-* `P` – a preconditioner for the hessian matrix
+* `H` – the hessian $H( \mathcal M, x, \xi)$ of F
 
 # Optional
+* `P` – a preconditioner for the hessian H
 * `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000))
         a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
