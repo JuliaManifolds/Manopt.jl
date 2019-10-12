@@ -110,7 +110,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 end
         end
         # Solve TR subproblem approximately
-        (η, sR) = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
+        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         debug = [:Iteration," ",:Stop])
         #print("η = $η\n")
@@ -211,7 +211,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # print("o.Δ = $(o.Δ)\n")
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
-        elseif ρ > 3/4 && (sR[1]==true || sR[2]==true)# we need to test the stopping criterions negative curvature and exceeded tr here.
+        elseif ρ > 3/4 # we need to test the stopping criterions negative curvature and exceeded tr here.
                 o.Δ = min(2*o.Δ, o.Δ_bar)
         else
                 o.Δ = o.Δ
