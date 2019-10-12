@@ -11,6 +11,11 @@ export getReason
 # defaults
 @doc doc"""
     getActiveStoppingCriterion(c)
+
+return a [`StoppingCriterion`](@ref) `c` if it is activated.
+
+# see also
+[`getActiveStoppingCriteria`](@ref)
 """
 function getActiveStoppingCriterion(c::sC) where sC <: StoppingCriterion
     if c.reason != ""
@@ -218,6 +223,12 @@ end
 
 @doc doc"""
     getActiveStoppingCriteria(c)
+
+return an Array of all [`StoppingCriterion`](@ref)s summarized in the
+[`StoppingCriterion`](@ref) c which is from the type [`stopWhenAny`](@ref).
+
+# see also
+[`getActiveStoppingCriterion`](@ref)
 """
 function getActiveStoppingCriteria(c::stopWhenAny)
     return getActiveStoppingCriterion.(c.criteria)
