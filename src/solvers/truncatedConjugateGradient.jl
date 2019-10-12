@@ -143,5 +143,5 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     o.δ = z + β * o.δ
 end
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    return o.η
+    return o.η, o
 end

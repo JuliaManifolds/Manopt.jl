@@ -110,17 +110,19 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 end
         end
         # Solve TR subproblem approximately
-        η = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
+        (η, option) = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         debug = [:Iteration," ",:Stop])
         #print("η = $η\n")
+        SR = getActiveStoppingCriteria(option.stop)
+        print("SR = $SR \n")
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
         grad = getGradient(p, o.x)
         fx = getCost(p, o.x)
         norm_grad = norm(p.M, o.x, grad)
-         print("norm_grad = $norm_grad\n")
+        #print("norm_grad = $norm_grad\n")
         # If using randomized approach, compare result with the Cauchy point.
         # Convergence proofs assume that we achieve at least (a fraction of)
         # the reduction of the Cauchy point. After this if-block, either all
