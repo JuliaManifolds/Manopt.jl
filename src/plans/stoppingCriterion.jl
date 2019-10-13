@@ -2,7 +2,6 @@
 # This file provides a systematic way to state stopping criteria employing functors
 #
 using Dates: Period, Nanosecond, value
-using RecursiveArrayTools
 export stopAfterIteration, stopWhenChangeLess, stopWhenGradientNormLess
 export stopWhenCostLess, stopAfter
 export stopWhenAll, stopWhenAny
@@ -12,7 +11,7 @@ export getReason
 @doc doc"""
     getActiveStoppingCriterion(c)
 
-return a [`StoppingCriterion`](@ref) `c` if it is activated.
+return the [`StoppingCriterion`](@ref) `c` if it is activated.
 
 # see also
 [`getActiveStoppingCriteria`](@ref)
@@ -22,8 +21,6 @@ function getActiveStoppingCriterion(c::sC) where sC <: StoppingCriterion
         return c
     end
 end
-
-
 
 @doc doc"""
     getReason(c)
@@ -225,7 +222,7 @@ end
     getActiveStoppingCriteria(c)
 
 return an Array of all [`StoppingCriterion`](@ref)s summarized in the
-[`StoppingCriterion`](@ref) c which is from the type [`stopWhenAny`](@ref).
+[`stopWhenAny`](@ref) c if they are activated.
 
 # see also
 [`getActiveStoppingCriterion`](@ref)

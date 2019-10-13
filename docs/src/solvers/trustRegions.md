@@ -6,7 +6,10 @@ The aim is to solve an optimization problem on a manifold
 min_{x \in \mathcal{M}} f(x)
 ```
 
-by using the Riemannian trust-regions solver.
+by using the Riemannian trust-regions solver. It is number one choice for smooth
+optimization. This trust-region method uses the Steihaug-Toint truncated
+conjugate-gradient method to solve the inner minimization problems. This inner
+solve can be preconditioned: simply provide a preconditioner.
 
 ## Initialization
 

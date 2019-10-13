@@ -15,7 +15,7 @@ specify a problem for hessian based algorithms.
 * `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `gradient`     : the gradient $\nabla F\colon\mathcal M
   \to \mathcal T\mathcal M$ of the cost function $F$
-* `hessian`      : the hessian matrix $Hess F(x) \colon \mathcal T_{x} \mathcal M
+* `hessian`      : the hessian $Hess F(x) \colon \mathcal T_{x} \mathcal M
   \to \mathcal T_{x} \mathcal M$ of the cost function $F$
 * `precon`       : the preconditioner for the Hessian of the cost function $F$
 
