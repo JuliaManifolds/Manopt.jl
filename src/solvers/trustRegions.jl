@@ -64,7 +64,7 @@ function trustRegions(M::mT,
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),
         Δ::Float64 = Δ_bar/8,
         useRandom::Bool = false, ρ_prime::Float64 = 0.1,
-        ρ_regularization::Float64=10^(-3)
+        ρ_regularization::Float64=1000.
         ,kwargs... #collect rest
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
 
@@ -115,7 +115,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         debug = [:Iteration," ",:Stop])
         #print("η = $η\n")
         SR = getActiveStoppingCriteria(option.stop)
-        print("SR = $SR \n")
+        #print("SR = $SR \n")
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
@@ -206,7 +206,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         ρ = ρnum / ρden
         # print("ρnum = $ρnum\n")
         # print("ρden = $ρden\n")
-        # print("ρ = $ρ\n")
+         print("ρ = $ρ\n")
         # Choose the new TR radius based on the model performance
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
         # then reduce the TR radius.
@@ -215,6 +215,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 o.Δ = o.Δ/4
         elseif ρ > 3/4 && (SR[4] != nothing || SR[5] != nothing)# we need to test the stopping criterions negative curvature and exceeded tr here.
                 o.Δ = min(2*o.Δ, o.Δ_bar)
+                print("bigger radius \n")
         else
                 o.Δ = o.Δ
         end
