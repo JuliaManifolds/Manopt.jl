@@ -8,8 +8,9 @@ min_{x \in \mathcal{M}} f(x)
 
 by using the Riemannian trust-regions solver. It is number one choice for smooth
 optimization. This trust-region method uses the Steihaug-Toint truncated
-conjugate-gradient method to solve the inner minimization problems. This inner
-solve can be preconditioned: simply provide a preconditioner.
+conjugate-gradient method to solve the inner minimization problems called the
+trust-regions subproblem. This inner solve can be preconditioned: simply provide
+a preconditioner.
 
 ## Initialization
 
@@ -22,15 +23,17 @@ one uses the root of the manifold dimension.
 
 Repeat until a convergence criterion is reached
 
-1. If the initial point $x_0$ was chosen randomly, set
+1. If using randomized approach (i.e. using a random tangent vector as initial
+    vector for the approximal solve of the trust-regions subproblem), set
     $\eta = \operatorname{randomTVector}(\mathcal{M}, x)$ and multiply it by
     $\sqrt{\sqrt{\operatorname{eps}(Float64)}}$ as long as its norm is greater than
-    the current trust-regions radius $\Delta$. If the initial point $x_0$ is given
-    by the caller, set $\eta = \operatorname{zeroTVector}(\mathcal{M}, x)$.
+    the current trust-regions radius $\Delta$. If not, set $\eta = \operatorname{zeroTVector}(\mathcal{M}, x)$.
 2. Obtain $\eta_k$ by (approximately) solving the trust-regions subproblem.
     The problem as well as the solution method is described in the
     [`truncatedConjugateGradient`](@ref).
-3. ---Here should be the Cauchy Point described---
+3. If using random tangent vector as initial vector, compare result with the
+    Cauchy point. Convergence proofs assume that we achieve at least (a fraction
+    of) the reduction of the Cauchy point.
 4. Set ${x}^{* } = \operatorname{retraction}(\mathcal{M}, x_k, \eta_k)$
 5. Set $\rho = \frac{f(x_k)-f({x}^{* })}{m_{k}(x_k)-m_{k}({x}^{* })}$, where $f$
     is the cost function and

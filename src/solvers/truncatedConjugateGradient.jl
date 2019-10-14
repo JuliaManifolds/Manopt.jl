@@ -9,7 +9,7 @@ export truncatedConjugateGradient
 solve the trust-region subproblem
 
 ```math
-min_{\eta \in T_{x}M} m_{x}(\eta) = \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle Η_{x} \eta, \eta \rangle_{x}
+min_{\eta \in T_{x}M} m_{x}(\eta) = F(x) + \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle Η_{x} [\eta], \eta \rangle_{x}
 ```
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
@@ -19,7 +19,13 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 For a description of the algorithm and theorems offering convergence guarantees,
 see the reference:
 
-* [CGT2000] Conn, Gould and Toint: Trust-region methods, 2000.
+* [ABG07] P.-A. Absil, C.G. Baker, K.A. Gallivan,
+        Trust-region methods on Riemannian manifolds, FoCM, 2007.
+* [AMS08] P.-A. Absil, R. Mahony and R. Sepulchre,
+        Optimization Algorithms on Matrix Manifolds, Princeton University Press,
+        2008.
+* [CGT2000] A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
+        MPS, 2000.
 
 # Input
 * `M` – a manifold $\mathcal M$
@@ -36,17 +42,20 @@ see the reference:
     terminate early if the residual was reduced by a power of 1+theta.
 * `κ` – the linear convergence target rate: algorithm will terminate
     early if the residual was reduced by a factor of kappa
-* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`([`manifoldDimension`](@ref)(M)),
-  `[`stopResidualReducedByFactor`](@ref)`(κ))`, `[`stopResidualReducedByPower`](@ref)`(θ))`)
-  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `useRandom` – set to true if the trust-region solve is to be initiated with a
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
+* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`([`manifoldDimension`](@ref)(M)),
+    `[`stopResidualReducedByFactor`](@ref)`(κ))`, `[`stopResidualReducedByPower`](@ref)`(θ))`)
+    a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Output
 * `η` – an approximate solution of the trust-region subproblem in
     $\mathcal{T_{x}M}$.
+
+# see also
+    [`trustRegions.jl`](@ref)
 """
 function truncatedConjugateGradient(M::mT,
         F::Function, ∇F::Function, x::MP, η::T,

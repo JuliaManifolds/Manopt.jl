@@ -12,25 +12,33 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds.
 It will attempt to minimize the cost function F on the Manifold M.
 If no Hessian H is provided, a standard approximation of the Hessian based on
 the gradient ∇F will be computed.
+For solving the the inner trust-region subproblem of finding an update-vector,
+it uses the Steihaug-Toint truncated conjugate-gradient method.
 For a description of the algorithm and theorems offering convergence guarantees,
 see the reference:
 
 * [ABG07] P.-A. Absil, C.G. Baker, K.A. Gallivan,
-        Trust-region methods on Riemannian manifolds, FoCM, 2007
+        Trust-region methods on Riemannian manifolds, FoCM, 2007.
+* [AMS08] P.-A. Absil, R. Mahony and R. Sepulchre,
+        Optimization Algorithms on Matrix Manifolds, Princeton University Press,
+        2008.
+* [CGT2000] A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
+        MPS, 2000.
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F`: the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
-* `x` – an initial value $x\in\mathcal M$
-* `H` – the hessian $H( \mathcal M, x, \xi)$ of F
+* `F` – a cost function $F \colon \mathcal M \to \mathbb R$ to minimize
+* `∇F`- the gradient $\nabla F \colon \mathcal M \to T \mathcal M$ of F
+* `x` – an initial value $x \in \mathcal M$
+* `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
 
 # Optional
-* `P` – a preconditioner for the hessian H
+* `P` – a preconditioner (a symmetric, positive definite operator that should
+        approximate the inverse of the Hessian)
 * `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000))
         a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
-* `Δ` : the (initial) trust-region radius
+* `Δ` - the (initial) trust-region radius
 * `useRandom` – set to true if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
@@ -54,6 +62,9 @@ see the reference:
 
 # Output
 * `x` – the last reached point on the manifold
+
+# see also
+[`truncatedConjugateGradient.jl`](@ref)
 """
 function trustRegions(M::mT,
         F::Function, ∇F::Function,
