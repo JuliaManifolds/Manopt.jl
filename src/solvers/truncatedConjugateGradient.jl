@@ -37,7 +37,7 @@ see the reference:
 * `Δ` – a trust-region radius
 
 # Optional
-* `P` – a preconditioner for the hessian H
+* `preconditioner` – a preconditioner for the hessian H
 * `θ` – 1+θ is the superlinear convergence target rate. The algorithm will
     terminate early if the residual was reduced by a power of 1+theta.
 * `κ` – the linear convergence target rate: algorithm will terminate

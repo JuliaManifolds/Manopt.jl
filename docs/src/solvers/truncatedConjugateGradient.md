@@ -23,8 +23,12 @@ and $k=0$
 
 Repeat until a convergence criterion is reached
 
-1. Set $\kappa_k = \langle \delta_k, H_{x}\delta_k \rangle_{x}$, $\alpha_k =\frac{\langle r_k, z_k \rangle_{x}}{\kappa_k}$
-2. If $\kappa_k \leqq 0$ or $\operatorname{norm}_P(\eta_k + \alpha_k \delta_k) \geqq \Delta$
+1. Set $\kappa_k = \langle \delta_k, \operatorname{Hess}[F] (\delta_k)_ {x} \rangle_{x}$,
+    $\alpha_k =\frac{\langle r_k, z_k \rangle_{x}}{\kappa_k}$ and
+    $\langle \eta_k, \eta_k \rangle_{x}^{* } = \langle \eta_k, \eta_k \rangle_{x} +
+    2\alpha \langle \eta_k, \delta_k \rangle_{x} + 2 {\alpha}^2
+    \langle \delta_k, \delta_k \rangle_{x}$.
+2. If $\kappa_k \leqq 0$ or $\langle \eta_k, \eta_k \rangle_{x}^{* } \geqq {\Delta}^2$
     compute $\tau_k$ the positive root of
     $\operatorname{norm}_P(\eta_k + \tau \delta_k) = \Delta $, return
     $\eta_{k+1} = \eta_k + \tau_k \delta_k$ and stop.
