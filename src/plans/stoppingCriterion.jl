@@ -5,22 +5,9 @@ using Dates: Period, Nanosecond, value
 export stopAfterIteration, stopWhenChangeLess, stopWhenGradientNormLess
 export stopWhenCostLess, stopAfter
 export stopWhenAll, stopWhenAny
-export getActiveStoppingCriteria, getActiveStoppingCriterion
+export getActiveStoppingCriteria
 export getReason
 # defaults
-@doc doc"""
-    getActiveStoppingCriterion(c)
-
-return the [`StoppingCriterion`](@ref) `c` if it is activated.
-
-# see also
-[`getActiveStoppingCriteria`](@ref)
-"""
-function getActiveStoppingCriterion(c::sC) where sC <: StoppingCriterion
-    if c.reason != ""
-        return c
-    end
-end
 
 @doc doc"""
     getReason(c)
@@ -217,6 +204,19 @@ function (c::stopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     end
     return false
 end
+@doc doc"""
+    getActiveStoppingCriterion(c)
+
+return the [`StoppingCriterion`](@ref) `c` if it is activated.
+
+# see also
+[`getActiveStoppingCriteria`](@ref)
+"""
+function getActiveStoppingCriteria(c::sC) where sC <: StoppingCriterion
+    if c.reason != ""
+        return [c] # recursion top
+    end
+end
 
 @doc doc"""
     getActiveStoppingCriteria(c)
@@ -227,6 +227,9 @@ return an Array of all [`StoppingCriterion`](@ref)s summarized in the
 # see also
 [`getActiveStoppingCriterion`](@ref)
 """
-function getActiveStoppingCriteria(c::stopWhenAny)
-    return getActiveStoppingCriterion.(c.criteria)
+function getActiveStoppingCriteria(c::U where U<:Union{stopWhenAny,stopWhenAll}) 
+    c = getActiveStoppingCriteria.(c.criteria);
+    # filter nothing 
+    c = filter(x -> nothing!=x, c)
+    return vcat(c...)
 end

@@ -65,7 +65,7 @@ see the reference:
 * `x` – the last reached point on the manifold
 
 # see also
-[`truncatedConjugateGradient.jl`](@ref)
+[`truncatedConjugateGradient`](@ref)
 """
 function trustRegions(M::mT,
         F::Function, ∇F::Function,
@@ -225,7 +225,8 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # print("o.Δ = $(o.Δ)\n")
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
-        elseif ρ > 3/4 && (SR[4] != nothing || SR[5] != nothing)# we need to test the stopping criterions negative curvature and exceeded tr here.
+        elseif ρ > 3/4 && any([typeof(s) in [stopExceededTrustRegion,stopNegativeCurvature] for s in SR] )
+                # we need to test the stopping criterions negative curvature and exceeded tr here.
                 o.Δ = min(2*o.Δ, o.Δ_bar)
                 print("bigger radius \n")
         else

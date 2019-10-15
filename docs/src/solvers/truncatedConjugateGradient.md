@@ -3,7 +3,7 @@
 The aim is to solve the trust-region subproblem
 
 ```math
-min_{\eta \in T_{x}M} m_{x}(\eta) = \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle Η_{x} \eta, \eta \rangle_{x}
+\operatorname*{arg\,min}_{\eta \in T_{x}M} m_{x}(\eta) = \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle Η_{x} \eta, \eta \rangle_{x}
 ```
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
