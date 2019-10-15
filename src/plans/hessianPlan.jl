@@ -1,5 +1,5 @@
 export HessianProblem, HessianOptions
-export TruncatedConjugateGradientOptions, TrustRegionOptions
+export TruncatedConjugateGradientOptions, TrustRegionsOptions
 export stopResidualReducedByFactor, stopResidualReducedByPower, stopNegativeCurvature, stopExceededTrustRegion
 
 #
@@ -20,10 +20,8 @@ specify a problem for hessian based algorithms.
 * `precon`       : the preconditioner for the Hessian of the cost function $F$
 
 # See also
-[`truncatedConjugateGradient`](@ref)
-[`trustRegions`](@ref)
-
-# """
+[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+"""
 struct HessianProblem{mT <: Manifold} <: Problem
     M::mT
     costFunction::Function
@@ -40,15 +38,14 @@ abstract type HessianOptions <: Options end
 """
     TruncatedConjugateGradientOptions <: HessianOptions
 
-describe the truncated Conjugate Gradient algorithm with the Steihaug-Toint
-method, with
+describe the Steihaug-Toint truncated conjugate-gradient method, with
 
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` : a [`MPoint`](@ref), where the trust-region subproblem needs
     to be solved
-* `stoppingCriterion` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
+* `stop` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
     indicator and a reason based on an iteration number, the gradient and the
     last and current iterates
 * `η` : a [`TVector`](@ref) (called update vector), which solves the
@@ -65,7 +62,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
     TruncatedConjugateGradientOptions(x, stop, eta, delta, Delta, res, uR)
 
-construct a truncated Conjugate Gradient Option with the fields as above.
+construct a truncated conjugate-gradient Option with the fields as above.
 
 # See also
 [`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
@@ -82,15 +79,15 @@ mutable struct TruncatedConjugateGradientOptions <: HessianOptions
 end
 
 """
-    TrustRegionOptions <: HessianOptions
+    TrustRegionsOptions <: HessianOptions
 
-Describes the Trust Regions Solver, with
+Describes the trust-regions Solver, with
 
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` : a [`MPoint`](@ref) as starting point
-* `stoppingCriterion` : a function s,r = @(o,iter) returning a stop
+* `stop` : a function s,r = @(o,iter) returning a stop
     indicator and a reason based on an iteration number and the gradient
 * `Δ` : the (initial) trust-region radius
 * `Δ_bar` : the maximum trust-region radius
@@ -117,14 +114,14 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    TrustRegionOptions(x, stop, delta, delta_bar, uR, rho_prime, rho_reg)
+    TrustRegionsOptions(x, stop, delta, delta_bar, uR, rho_prime, rho_reg)
 
-construct a Trust Regions Option with the fields as above.
+construct a trust-regions Option with the fields as above.
 
 # See also
 [`trustRegions`](@ref)
 """
-mutable struct TrustRegionOptions <: HessianOptions
+mutable struct TrustRegionsOptions <: HessianOptions
     x::P where {P <: MPoint}
     stop::StoppingCriterion
     Δ::Float64
@@ -132,7 +129,7 @@ mutable struct TrustRegionOptions <: HessianOptions
     useRand::Bool
     ρ_prime::Float64
     ρ_regularization::Float64
-    TrustRegionOptions(x::P, stop::StoppingCriterion, δ::Float64, δ_bar::Float64,
+    TrustRegionsOptions(x::P, stop::StoppingCriterion, δ::Float64, δ_bar::Float64,
     useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,useRand,ρ_prime,ρ_regularization)
 end
 

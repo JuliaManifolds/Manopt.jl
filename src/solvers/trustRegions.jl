@@ -28,15 +28,16 @@ see the reference:
 # Input
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F \colon \mathcal M \to \mathbb R$ to minimize
-* `∇F`- the gradient $\nabla F \colon \mathcal M \to T \mathcal M$ of F
+* `∇F`- the gradient $\nabla F \colon \mathcal M \to T \mathcal M$ of $F$
 * `x` – an initial value $x \in \mathcal M$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
 
 # Optional
-* `P` – a preconditioner (a symmetric, positive definite operator that should
-        approximate the inverse of the Hessian)
-* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000))
-        a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `preconditioner` – a preconditioner (a symmetric, positive definite operator
+        that should approximate the inverse of the Hessian)
+* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(1000),
+        `[`stopWhenGradientNormLess`](@ref)`(10^(-6))) a functor inheriting
+        from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
 * `Δ` - the (initial) trust-region radius
 * `useRandom` – set to true if the trust-region solve is to be initiated with a
@@ -93,7 +94,7 @@ function trustRegions(M::mT,
 
         p = HessianProblem(M,F,∇F,H,preconditioner)
 
-        o = TrustRegionOptions(x,stoppingCriterion,Δ,Δ_bar,useRandom,ρ_prime,ρ_regularization)
+        o = TrustRegionsOptions(x,stoppingCriterion,Δ,Δ_bar,useRandom,ρ_prime,ρ_regularization)
 
         o = decorateOptions(o; kwargs...)
         resultO = solve(p,o)
@@ -103,10 +104,10 @@ function trustRegions(M::mT,
         return getSolverResult(p,resultO)
 end
 
-function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionOptions}
+function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions}
 end
 
-function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionOptions}
+function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionsOptions}
         # Determine eta0
         if o.useRand==false
                 # Pick the zero vector
@@ -239,6 +240,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         print("--------------------------\n")
 end
 
-function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionOptions}
+function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions}
         return o.x
 end

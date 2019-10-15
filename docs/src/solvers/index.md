@@ -21,7 +21,7 @@ The following algorithms are currently available
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncatedConjugateGradient.jl` | [`HessianProblem`](@ref),
 [`TruncatedConjugateGradientOptions`](@ref)
 [The Riemannian Trust-Regions Solver](@ref trustRegions) | `trustRegions.jl` |
-[`HessianProblem`](@ref), [`TrustRegionOptions`](@ref)
+[`HessianProblem`](@ref), [`TrustRegionsOptions`](@ref)
 
 Note that the [`Options`](@ref) can also be decorated to enhance your algorithm
 by general additional properties.
