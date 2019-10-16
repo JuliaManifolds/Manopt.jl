@@ -118,28 +118,20 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 while norm(p.M, o.x, eta) > o.Δ
                         # Must be inside trust-region
                         eta = sqrt(sqrt(eps(Float64)))*eta
-                        # print("normetapre = $(norm(p.M, o.x, eta))\n")
                 end
         end
         # Solve TR subproblem approximately
         (η, option) = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         debug = [:Iteration," ",:Stop])
-        #print("η = $η\n")
         SR = getActiveStoppingCriteria(option.stop)
-        #print("SR = $SR \n")
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
         grad = getGradient(p, o.x)
         fx = getCost(p, o.x)
         norm_grad = norm(p.M, o.x, grad)
-        #print("norm_grad = $norm_grad\n")
         # If using randomized approach, compare result with the Cauchy point.
-        # Convergence proofs assume that we achieve at least (a fraction of)
-        # the reduction of the Cauchy point. After this if-block, either all
-        # eta-related quantities have been changed consistently, or none of
-        # them have changed.
         if o.useRand
                 # Check the curvature,
                 Hgrad = getHessian(p, o.x, grad)
@@ -161,74 +153,38 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                         Hη = Hη_c
                 end
         end
-
         # Compute the tentative next iterate (the proposal)
-        x_prop  = retraction(p.M, o.x, η) #retraction ist auf 10^(-6) ungenau
-        # print("norm = $(norm(p.M, o.x, η))\n")
+        x_prop  = retraction(p.M, o.x, η)
         # Compute the function value of the proposal
         fx_prop = getCost(p, x_prop)
-        # Will we accept the proposal or not?
         # Check the performance of the quadratic model against the actual cost.
         ρnum = fx - fx_prop
         ρden = -dot(p.M, o.x, η, grad) - 0.5*dot(p.M, o.x, η, Hη)
-        # rhonum could be anything.
-        # rhoden should be nonnegative, as guaranteed by tCG, baring numerical
-        # errors.
-        # rhonum measures the difference between two numbers. Close to
-        # convergence, these two numbers are very close to each other, so
-        # that computing their difference is numerically challenging: there may
-        # be a significant loss in accuracy. Since the acceptance or rejection
-        # of the step is conditioned on the ratio between rhonum and rhoden,
-        # large errors in rhonum result in a very large error in rho, hence in
-        # erratic acceptance / rejection. Meanwhile, close to convergence,
+
+        # Since, at convergence, both ρnum and ρden become extremely small,
+        # computing ρ is numerically challenging. The break with ρnum and ρden
+        # can thus lead to a large error in rho, making the
+        # acceptance / rejection erratic. Meanwhile, close to convergence,
         # steps are usually trustworthy and we should transition to a Newton-
         # like method, with rho=1 consistently. The heuristic thus shifts both
         # rhonum and rhoden by a small amount such that far from convergence,
         # the shift is irrelevant and close to convergence, the ratio rho goes
         # to 1, effectively promoting acceptance of the step.
-        # he rationale is that close to convergence, both rhonum and rhoden
-        # are quadratic in the distance between x and x_prop. Thus, when this
-        # distance is on the order of sqrt(eps), the value of rhonum and rhoden
-        # is on the order of eps, which is indistinguishable from the numerical
-        # error, resulting in badly estimated rho's.
-        # For abs(fx) < 1, this heuristic is invariant under offsets of f but
-        # not under scaling of f. For abs(fx) > 1, the opposite holds. This
-        # should not alarm us, as this heuristic only triggers at the very last
-        # iterations if very fine convergence is demanded.
+
         ρ_reg = max(1, abs(fx)) * eps(Float64) * o.ρ_regularization
         ρnum = ρnum + ρ_reg
         ρden = ρden + ρ_reg
-        # This is always true if a linear, symmetric operator is used for the
-        # Hessian (approximation) and if we had infinite numerical precision.
-        # In practice, nonlinear approximations of the Hessian such as the
-        # built-in finite difference approximation and finite numerical
-        # accuracy can cause the model to increase. In such scenarios, we
-        # decide to force a rejection of the step and a reduction of the
-        # trust-region radius. We test the sign of the regularized rhoden since
-        # the regularization is supposed to capture the accuracy to which
-        # rhoden is computed: if rhoden were negative before regularization but
-        # not after, that should not be (and is not) detected as a failure.
 
-        if ρden >= 0
-                model_decreased = true
-        else
-                model_decreased = false
-        end
-
+        model_decreased = (ρden >= 0)
         ρ = ρnum / ρden
-        # print("ρnum = $ρnum\n")
-        # print("ρden = $ρden\n")
-         print("ρ = $ρ\n")
-        # Choose the new TR radius based on the model performance
+        # Choose the new TR radius based on the model performance.
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
         # then reduce the TR radius.
         # print("o.Δ = $(o.Δ)\n")
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
         elseif ρ > 3/4 && any([typeof(s) in [stopExceededTrustRegion,stopNegativeCurvature] for s in SR] )
-                # we need to test the stopping criterions negative curvature and exceeded tr here.
                 o.Δ = min(2*o.Δ, o.Δ_bar)
-                print("bigger radius \n")
         else
                 o.Δ = o.Δ
         end
@@ -236,7 +192,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # performance. Note the strict inequality.
         if model_decreased && ρ > o.ρ_prime
                 o.x = x_prop
-                print("accepted \n")
         end
         print("--------------------------\n")
 end
