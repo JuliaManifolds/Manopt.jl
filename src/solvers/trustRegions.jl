@@ -160,7 +160,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Check the performance of the quadratic model against the actual cost.
         ρnum = fx - fx_prop
         ρden = -dot(p.M, o.x, η, grad) - 0.5*dot(p.M, o.x, η, Hη)
-
         # Since, at convergence, both ρnum and ρden become extremely small,
         # computing ρ is numerically challenging. The break with ρnum and ρden
         # can thus lead to a large error in rho, making the
@@ -170,17 +169,14 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # rhonum and rhoden by a small amount such that far from convergence,
         # the shift is irrelevant and close to convergence, the ratio rho goes
         # to 1, effectively promoting acceptance of the step.
-
         ρ_reg = max(1, abs(fx)) * eps(Float64) * o.ρ_regularization
         ρnum = ρnum + ρ_reg
         ρden = ρden + ρ_reg
-
         model_decreased = (ρden >= 0)
         ρ = ρnum / ρden
         # Choose the new TR radius based on the model performance.
         # If the actual decrease is smaller than 1/4 of the predicted decrease,
         # then reduce the TR radius.
-        # print("o.Δ = $(o.Δ)\n")
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
         elseif ρ > 3/4 && any([typeof(s) in [stopExceededTrustRegion,stopNegativeCurvature] for s in SR] )
@@ -193,7 +189,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         if model_decreased && ρ > o.ρ_prime
                 o.x = x_prop
         end
-        print("--------------------------\n")
 end
 
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions}

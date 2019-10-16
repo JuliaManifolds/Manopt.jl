@@ -27,25 +27,17 @@ $\rho' = 0.1$ on default. Set $k=0$.
 
 Repeat until a convergence criterion is reached
 
-1. If using randomized approach (i.e. using a random tangent vector as initial
-    vector for the approximal solve of the trust-regions subproblem), set
-    `η = `[`randomTVector`](@ref)`(M,x)` and multiply it by `sqrt(4,eps(Float64)` as long as its norm is greater than
-    the current trust-regions radius $\Delta$. If not, set $\eta = \operatorname{zeroTVector}(\mathcal{M}, x)$.
-2. Obtain $\eta_k$ by (approximately) solving the trust-regions subproblem with
-    the Steihaug-Toint truncated conjugate-gradient method. The problem as well
-    as the solution method is described in the
-    [`truncatedConjugateGradient`](@ref).
-3. If using random tangent vector as initial vector, compare result with the
-    Cauchy point. Convergence proofs assume that we achieve at least (a fraction
-    of) the reduction of the Cauchy point. The Cauchy point is defined as
-    $\eta_{k}^{c} = -\tau_{k}^{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[f] (x_k)$ where
-    $\tau_{k}^{c} = \begin{cases} 1 & \langle \operatorname{Grad}[f] (x_k), \, \operatorname{Hess}[f] (\eta_k)_ {x_k}\rangle_{x_k} \leqq 0 , \\ \operatorname{min}(\frac{{\operatorname{norm}(\operatorname{Grad}[f] (x_k))}^3}{\Delta \langle \operatorname{Grad}[f] (x_k), \, \operatorname{Hess}[f] (\eta_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise} \end{cases}$. If
-    $f(x_k) + \langle \eta_{k}^{c},\operatorname{Grad}[f] (x_k)\rangle_{x_k}
-    +\frac{1}{2}\langle \eta_{k}^{c}, \operatorname{Hess}[f] (\eta_{k}^{c})_ {x_k}\rangle_{x_k}
-    < f(x_k) + \langle\ eta_k, \operatorname{Grad}[f] (x_k) \rangle_{x_k}
-    +\frac{1}{2} \langle \eta_k, \operatorname{Hess}[f] (\eta_k)_ {x_k} \rangle_{x_k}$
-    replace the update vector $\eta_k$ with the cauchy point $\eta_{k}^{c}$.
-4. Set ${x}^{* } = \operatorname{retraction}(\mathcal{M}, x_k, \eta_k)$
+1. Set $\eta$`=`[`randomTVector`](@ref)`(M,x)` if using randomized approach. Else
+    set $\eta$`=`[`zeroTVector`](@ref)`(M,x)`.
+2. Set $\eta^{* }$`=`[`truncatedConjugateGradient`](@ref)`(M, F, ∇F, x_k, η, H, Δ; preconditioner, useRandom)`.
+3. If using randomized approach set
+    $\eta_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$. If
+    $F(x_k) + \langle \eta_{c}^{* },\operatorname{Grad}[F] (x_k)\rangle_{x_k}
+    +\frac{1}{2}\langle \eta_{c}^{* }, \operatorname{Hess}[F] (\eta_{c}^{* })_ {x_k}\rangle_{x_k}
+    < F(x_k) + \langle\ \eta^{* }, \operatorname{Grad}[F] (x_k) \rangle_{x_k}
+    +\frac{1}{2} \langle \eta^{* }, \operatorname{Hess}[F] (\eta^{* })_ {x_k} \rangle_{x_k}$
+    replace the update vector $\eta^{* }$ with the cauchy point $\eta_{c}^{* }$.
+4. Set ${x}^{* }$ `=`[`retraction`](@ref)`(M, x_k, η*)`.
 5. Set $\rho = \frac{f(x_k)-f({x}^{* })}{m_{k}(x_k)-m_{k}({x}^{* })}$, where $f$
     is the cost function and
     $m_{k}({x}^{* })=m_{k}(x_k)+\langle\eta_k,\operatorname{Grad}[f] (x_k)\rangle_{x_k}
@@ -69,6 +61,24 @@ Repeat until a convergence criterion is reached
 
 The result is given by the last computed $x_k$.
 
+## Remarks
+
+1. Using randomized approach means using a random tangent vector as initial
+    vector for the approximal solve of the trust-regions subproblem.
+    If this is the case, keep in mind that the vector must be in the
+    trust-region radius. This is achieved by multiplying
+    `η = `[`randomTVector`](@ref)`(M,x)` by `sqrt(4,eps(Float64))` as long as
+    its norm is greater than the current trust-region radius $\Delta$.
+2. Obtain $\eta^{* }$ by (approximately) solving the trust-regions subproblem with
+    the Steihaug-Toint truncated conjugate-gradient method. The problem as well
+    as the solution method is described in the
+    [`truncatedConjugateGradient`](@ref).
+3. If using random tangent vector as initial vector, compare result with the
+    Cauchy point. Convergence proofs assume that we achieve at least (a fraction
+    of) the reduction of the Cauchy point. The idea is to go in the direction of
+    the gradient to an optimal point. This can be on the edge, but also before.
+    The optimal length is defined by
+    $\tau_{k}^{c} = \begin{cases} 1 & \langle \operatorname{Grad}[F] (x_k), \, \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leqq 0 , \\ \operatorname{min}(\frac{{\operatorname{norm}(\operatorname{Grad}[F] (x_k))}^3}{\Delta \langle \operatorname{Grad}[F] (x_k), \, \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise} \end{cases}$. 
 ## Interface
 
 ```@docs
