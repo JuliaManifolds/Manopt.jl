@@ -81,7 +81,7 @@ end
 """
     TrustRegionsOptions <: HessianOptions
 
-Describes the trust-regions Solver, with
+describe the trust-regions solver, with
 
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
@@ -98,9 +98,9 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `ρ_prime` : a lower bound of the performance ratio for the iterate that
         decides if the iteration will be accepted or not. If not, the
         trust-region radius will have been decreased. To ensure this,
-        ρ_prime >= 0 must be strictly smaller than 1/4. If ρ_prime is negative,
+        ρ'>= 0 must be strictly smaller than 1/4. If ρ' is negative,
         the algorithm is not guaranteed to produce monotonically decreasing
-        cost values. It is strongly recommended to set ρ_prime > 0, to aid
+        cost values. It is strongly recommended to set ρ' > 0, to aid
         convergence.
 * `ρ_regularization` : Close to convergence, evaluating the performance ratio ρ
         is numerically challenging. Meanwhile, close to convergence, the
