@@ -167,7 +167,7 @@ minimum of the internal ones.
 """
 typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) )
 
-tangent(M::Product, x::ProdPoint,q::) = ProdTVector( tangent.(M.manifolds, getValue(x), )
+tangent(M::Product, x::ProdPoint,q::Matrix) = ProdTVector( tangent.(M.manifolds, getValue(x), q))
 
 @doc doc"""
     validateMPoint(M,x)
