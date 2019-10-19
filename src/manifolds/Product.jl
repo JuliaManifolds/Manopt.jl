@@ -165,7 +165,10 @@ retraction(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint(
 returns the typical distance on [`Product`](@ref) manifold `M`, which is the
 minimum of the internal ones.
 """
-typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) );
+typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) )
+
+tangent(M::Product, x::ProdPoint,q::) = ProdTVector( tangent.(M.manifolds, getValue(x), )
+
 @doc doc"""
     validateMPoint(M,x)
 

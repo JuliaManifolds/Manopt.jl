@@ -149,7 +149,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     zr = dot(p.M, o.x, z, o.residual)
     # Compute new search direction.
     β = zr/zrOld
-    o.δ = z + β * o.δ
+    o.δ = tangent(p.M, o.x, getValue(z + β * o.δ))
 end
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     return o.η, o
