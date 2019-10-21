@@ -41,7 +41,7 @@ see the reference:
 * `θ` – 1+θ is the superlinear convergence target rate. The algorithm will
     terminate early if the residual was reduced by a power of 1+theta.
 * `κ` – the linear convergence target rate: algorithm will terminate
-    early if the residual was reduced by a factor of kappa
+    early if the residual was reduced by a factor of kappa.
 * `useRandom` – set to true if the trust-region solve is to be initiated with a
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
@@ -105,6 +105,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     ηOld = o.η
     δOld = o.δ
     z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
+    # this is not correct, it needs to be the inverse of the preconditioner!
     zrOld = dot(p.M, o.x, z, o.residual)
     HηOld = getHessian(p, o.x, ηOld)
     # This call is the computationally expensive step.
@@ -144,6 +145,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     # Precondition the residual.
     # It's actually the inverse of the preconditioner in o.residual
     z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
+    # this is not correct, it needs to be the inverse of the preconditioner!
     # Save the old z'*r.
     # Compute new z'*r.
     zr = dot(p.M, o.x, z, o.residual)
