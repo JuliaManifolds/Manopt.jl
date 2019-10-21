@@ -58,6 +58,7 @@
   @test norm( transpose(getValue(retraction(M,x,ξ))) * getValue(retraction(M,x,ξ)) - one(transpose(getValue(x))*getValue(x)) ) ≈ 0 atol = 10.0^(-14)
   # Test parallelTransport
   @test norm(getValue(parallelTransport(M,x,z,η)) - getValue(project(M,z,getValue(η)))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(M,x,x,η)) - getValue(η)) ≈ 0 atol = 10.0^(-16)
   # Test zeroTVector
   @test norm(M,x,zeroTVector(M,x)) ≈ 0 atol = 10.0^(-16)
   # Test validateMPoint and validateTVector
@@ -110,7 +111,9 @@
   # Test addNoise
   @test norm( getValue(x2compl)'*getValue(x2compl) - one(getValue(x2compl)'*getValue(x2compl)) ) ≈ 0 atol=10.0^(-5)
   @test norm( getValue(x3compl)'*getValue(x3compl) - one(getValue(x3compl)'*getValue(x3compl)) ) ≈ 0 atol=10.0^(-6)
-
+  # Test parallelTransport
+  @test norm(getValue(parallelTransport(N,xcompl,zcompl,ηcompl)) - getValue(project(N,zcompl,getValue(ηcompl)))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(N,xcompl,xcompl,ηcompl)) - getValue(ηcompl)) ≈ 0 atol = 10.0^(-14)
   #Test manifoldDimension
   @test manifoldDimension(N) == manifoldDimension(wcompl)
   @test manifoldDimension(N) == 16

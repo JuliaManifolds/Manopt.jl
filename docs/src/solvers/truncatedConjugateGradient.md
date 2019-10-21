@@ -51,8 +51,10 @@ The result is given by the last computed $η_K$.
 1. The $\operatorname{P}(\cdot)$ denotes the symmetric, positivedeﬁnite
     preconditioner. It is required if a randomized approach is used i.e. using
     a random tangent vector $\eta$`=`[`randomTVector`](@ref)`(M,x)` as initial
-    vector. The idea behind it is to avoid saddle points. Preconditioning is simply a rescaling of the
-    variables and thus a redeﬁnition of the shape of the trust region. On
+    vector. The idea behind it is to avoid saddle points. Preconditioning is
+    simply a rescaling of the variables and thus a redeﬁnition of the shape of
+    the trust region. Ideally $\operatorname{P}(\cdot)$ is a cheap, positive
+    approximationof the inverse of the Hessian of $F$ at $x$. On
     default, the preconditioner is just the identity.
 2. To step number 2: Obtain $\tau$ the positive root of
     $\left\lVert \eta_k + \tau \delta_k \right\rVert_{\operatorname{P}, x} = \Delta$
