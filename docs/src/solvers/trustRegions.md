@@ -96,3 +96,9 @@ trustRegions
 ```@docs
 TrustRegionsOptions
 ```
+
+## Additional Stopping Criteria
+
+```@docs
+stopExceededTrustRegion
+```

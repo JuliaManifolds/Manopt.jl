@@ -46,9 +46,13 @@ see the reference:
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
-* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`([`manifoldDimension`](@ref)(M)),
-    `[`stopResidualReducedByFactor`](@ref)`(κ))`, `[`stopResidualReducedByPower`](@ref)`(θ))`)
-    a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `stoppingCriterion` – ([`stopWhenAny`](@ref), [`stopAfterIteration`](@ref),
+    [`stopResidualReducedByFactor`](@ref), [`stopResidualReducedByPower`](@ref),
+    [`stopNegativeCurvature`](@ref), [`stopExceededTrustRegion`](@ref) )
+    a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
+    where for the default, the maximal number of iterations is [`manifoldDimension`](@ref),
+    the power factor is `θ`, the reduction factor is `κ`.
+    .
 
 # Output
 * `η` – an approximate solution of the trust-region subproblem in
@@ -151,7 +155,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     zr = dot(p.M, o.x, z, o.residual)
     # Compute new search direction.
     β = zr/zrOld
-    o.δ = tangent(p.M, o.x, getValue(z + β * o.δ))
+    o.δ = tangent(p.M, o.x, z + β * o.δ)
 end
 function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     return o.η, o

@@ -253,6 +253,8 @@ reflection $R_p(x) = p - (x-p) = 2p-x$.
 """
 reflection(M::mT, p::P, x::P) where {mT <: Manifold, P<: MPoint} = exp(M,p,-log(M,p,x))
 
+tangent(M::mT, x::P,ξ::T) where {mT <: Manifold, P <: MPoint, T <: TVector} = project(M, x, getValue(ξ))
+
 """
     typeofMPoint(ξ)
 

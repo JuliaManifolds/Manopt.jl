@@ -59,11 +59,13 @@ The result is given by the last computed $η_k$.
 2. To step number 2: Obtain $\tau$ from the positive root of
     $\left\lVert \eta_k + \tau \delta_k \right\rVert_{\operatorname{P}, x} = \Delta$
     what becomes after the conversion of the equation to
-    $\tau = \frac{-\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +
+    ````math
+    \tau = \frac{-\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +
     \sqrt{\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x}^{2} +
     \langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x} ( \Delta^2 -
     \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x})}}
-    {\langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x}}$. 
+    {\langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x}}.
+    ````
     It can occur that $\langle \delta_k, \operatorname{Hess}[F] (\delta_k)_ {x} \rangle_{x}
     = \kappa \leqq 0$ at iteration $k$. In this case, the model is not strictly
     convex, and the stepsize $\alpha =\frac{\langle r_k, z_k \rangle_{x}}

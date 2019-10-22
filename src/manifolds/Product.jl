@@ -89,6 +89,8 @@ returns the corresponding [`ProdPoint`](@ref).
 """
 exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( exp.(M.manifolds, getValue(x), getValue(ξ)) )
 
+project(M::Product, x::ProdPoint, v::Array{<:Any}) = ProdTVector( project.(M.manifolds, getValue(x), v ) )
+
 @doc doc"""
    log(M,x,y)
 
@@ -167,8 +169,6 @@ minimum of the internal ones.
 """
 typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) )
 
-tangent(M::Product, x::ProdPoint,q::Matrix) = ProdTVector( tangent.(M.manifolds, getValue(x), q))
-
 @doc doc"""
     validateMPoint(M,x)
 
@@ -185,6 +185,8 @@ function validateMPoint(M::Product, x::ProdPoint)
     validateMPoint.(M.manifolds,getValue(x))
     return true
 end
+
+tangent(M::Product, x::ProdPoint,ξ::ProdTVector) = ProdTVector( tangent.(M.manifolds, getValue(x), getValue(ξ) ) )
 
 @doc doc"""
     validateTVector(M,x,ξ)
