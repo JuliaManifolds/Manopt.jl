@@ -35,7 +35,7 @@ abstract type HessianOptions <: Options end
 #
 # Options
 #
-"""
+@doc doc"""
     TruncatedConjugateGradientOptions <: HessianOptions
 
 describe the Steihaug-Toint truncated conjugate-gradient method, with
@@ -78,7 +78,7 @@ mutable struct TruncatedConjugateGradientOptions <: HessianOptions
     TruncatedConjugateGradientOptions(x::P,stop::StoppingCriterion,η::T,δ::T,Δ::Float64,residual::T,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,stop,η,δ,Δ,residual,uR)
 end
 
-"""
+@doc doc"""
     TrustRegionsOptions <: HessianOptions
 
 describe the trust-regions solver, with
@@ -133,20 +133,20 @@ mutable struct TrustRegionsOptions <: HessianOptions
     useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,useRand,ρ_prime,ρ_regularization)
 end
 
-"""
+@doc doc"""
     getHessian(p,x,ξ)
 
 evaluate the Hessian of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`
 times a [`TVector`](@ref) `ξ`.
 """
 getHessian(p::Pr,x::P,ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = ismissing(p.hessian) ? approxHessianFD(p,x,ξ) : p.hessian(p.M,x,ξ)
-"""
+@doc doc"""
     getGradient(p,x)
 
 evaluate the gradient of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`.
 """
 getGradient(p::Pr,x::P) where {Pr <: HessianProblem, P <: MPoint} = p.gradient(p.M,x)
-"""
+@doc doc"""
     getPreconditioner(p,x,ξ)
 
 evaluate a preconditioner of the Hessian of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`
@@ -187,7 +187,7 @@ function approxHessianFD(p::HessianProblem, x::P, ξ::T, stepsize::Float64=2.0^(
     return TVector((getValue(grad1)-getValue(grad))/c)
 end
 
-"""
+@doc doc"""
     stopResidualReducedByFactor <: StoppingCriterion
 """
 mutable struct stopResidualReducedByFactor <: StoppingCriterion
@@ -204,7 +204,7 @@ function (c::stopResidualReducedByFactor)(p::P,o::O,i::Int) where {P <: HessianP
     return false
 end
 
-"""
+@doc doc"""
     stopResidualReducedByPower <: StoppingCriterion
 """
 mutable struct stopResidualReducedByPower <: StoppingCriterion
@@ -221,7 +221,7 @@ function (c::stopResidualReducedByPower)(p::P,o::O,i::Int) where {P <: HessianPr
     return false
 end
 
-"""
+@doc doc"""
     stopExceededTrustRegion <: StoppingCriterion
 
 terminate the algorithm when the trust region has been left.
@@ -242,7 +242,7 @@ function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: HessianProbl
     return false
 end
 
-"""
+@doc doc"""
     stopWhenCurvatureIsNegative <: StoppingCriterion
 
 terminate the algorithm when the curvature is negative. In this case, the model

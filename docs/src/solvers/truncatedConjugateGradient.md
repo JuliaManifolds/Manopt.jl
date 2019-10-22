@@ -3,7 +3,7 @@
 The aim is to solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{\eta \in T_{x}M} m_{x}(\eta) = \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
+\operatorname*{arg\,min}_{\eta \in T_{x}M} m_{x}(\eta) = F(x) + \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
 ```
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
@@ -26,48 +26,48 @@ Repeat until a convergence criterion is reached
 
 1. Set $\kappa = \langle \delta_k, \operatorname{Hess}[F] (\delta_k)_ {x} \rangle_{x}$,
     $\alpha =\frac{\langle r_k, z_k \rangle_{x}}{\kappa}$ and
-    $\langle \eta_k, \eta_k \rangle_{x}^{* } = \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x} -
+    $\langle \eta_k, \eta_k \rangle_{x}^{* } = \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x} +
     2\alpha \langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +  {\alpha}^2
     \langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x}$.
 2. If $\kappa \leqq 0$ or $\langle \eta_k, \eta_k \rangle_{x}^{* } \geqq {\Delta}^2$
     return $\eta_{k+1} = \eta_k + \tau \delta_k$ and stop.
-3. Set $\eta_{k}^{* }= \eta_k + \alpha \delta_k$,
-    if $\langle \eta_k, \eta_k \rangle_{x} + \frac{1}{2} \langle \eta_k,
+3. Set $\eta_{k}^{* }= \eta_k + \alpha \delta_k$, if
+    $\langle \eta_k, \eta_k \rangle_{x} + \frac{1}{2} \langle \eta_k,
     \operatorname{Hess}[F] (\eta_k)_ {x} \rangle_{x} \leqq \langle \eta_k^{* },
     \eta_k^{* } \rangle_{x} + \frac{1}{2} \langle \eta_k^{* },
-    \operatorname{Hess}[F] (\eta_k)_ {x} \rangle_{x}$ set $\eta_{k+1} = \eta_k$
-    else set $\eta_{k+1} = \eta_{k}^{* }$.
+    \operatorname{Hess}[F] (\eta_k)_ {x} \rangle_{x}$
+    set $\eta_{k+1} = \eta_k$ else set $\eta_{k+1} = \eta_{k}^{* }$.
 4. Set $r_{k+1} = r_k + \alpha \operatorname{Hess}[F] (\delta_k)_ {x}$,
-    $z_{k+1} = \operatorname{P}(r_{k+1})$,
-    $\beta = \frac{\langle r_{k+1}, z_{k+1} \rangle_{x}}{\langle r_k, z_k
+     $z_{k+1} = \operatorname{P}(r_{k+1})$,
+    $\beta = \frac{\langle r_{k+1},  z_{k+1} \rangle_{x}}{\langle r_k, z_k
     \rangle_{x}}$ and $\delta_{k+1} = -z_{k+1} + \beta \delta_k$.
 5. Set $k=k+1$.
 
 ## Result
 
-The result is given by the last computed $η_K$.
+The result is given by the last computed $η_k$.
 
 ## Remarks
-1. The $\operatorname{P}(\cdot)$ denotes the symmetric, positivedeﬁnite
+1. The $\operatorname{P}(\cdot)$ denotes the symmetric, positive deﬁnite
     preconditioner. It is required if a randomized approach is used i.e. using
     a random tangent vector $\eta$`=`[`randomTVector`](@ref)`(M,x)` as initial
     vector. The idea behind it is to avoid saddle points. Preconditioning is
     simply a rescaling of the variables and thus a redeﬁnition of the shape of
     the trust region. Ideally $\operatorname{P}(\cdot)$ is a cheap, positive
-    approximationof the inverse of the Hessian of $F$ at $x$. On
+    approximation of the inverse of the Hessian of $F$ at $x$. On
     default, the preconditioner is just the identity.
-2. To step number 2: Obtain $\tau$ the positive root of
+2. To step number 2: Obtain $\tau$ from the positive root of
     $\left\lVert \eta_k + \tau \delta_k \right\rVert_{\operatorname{P}, x} = \Delta$
     what becomes after the conversion of the equation to
     $\tau = \frac{-\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +
     \sqrt{\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x}^{2} +
     \langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x} ( \Delta^2 -
     \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x})}}
-    {\langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x}}$.
+    {\langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x}}$. 
     It can occur that $\langle \delta_k, \operatorname{Hess}[F] (\delta_k)_ {x} \rangle_{x}
-    = \kappa \leqq 0$ at iteration k. In this case, the model is not strictly
+    = \kappa \leqq 0$ at iteration $k$. In this case, the model is not strictly
     convex, and the stepsize $\alpha =\frac{\langle r_k, z_k \rangle_{x}}
-    {\kappa}$ computed in step 1. does not give a reduction in the modelfunktion
+    {\kappa}$ computed in step 1. does not give a reduction in the modelfunction
     $m_{x}(\cdot)$. Indeed, $m_{x}(\cdot)$ is unbounded from below along the
     line $\eta_k + \alpha \delta_k$. If our aim is to minimize the model within
     the trust-region, it makes far more sense to reduce $m_{x}(\cdot)$ along
