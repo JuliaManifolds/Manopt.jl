@@ -27,7 +27,7 @@ might be decorated) by calling [`getOptions`](@ref).
 
 ### Decorators for Options
 
-Options can be decorated using the following trait and function to initialize 
+Options can be decorated using the following trait and function to initialize
 
 ```@docs
 IsOptionsDecorator
@@ -131,4 +131,6 @@ getProximalMap
 ### Further planned problems
 ```@docs
 HessianProblem
+getHessian
+getPreconditioner
 ```

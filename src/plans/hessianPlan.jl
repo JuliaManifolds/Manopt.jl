@@ -18,7 +18,8 @@ specify a problem for hessian based algorithms.
   \to \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}[F] (\cdot)_ {x} \colon \mathcal T_{x} \mathcal M
   \to \mathcal T_{x} \mathcal M$ of the cost function $F$
-* `precon`       : the preconditioner for the Hessian of the cost function $F$
+* `precon`       : the symmetric, positive deﬁnite
+    preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
 [`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
@@ -137,21 +138,24 @@ end
 @doc doc"""
     getHessian(p,x,ξ)
 
-evaluate the Hessian of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`
-times a [`TVector`](@ref) `ξ`.
+evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the [`MPoint`](@ref) `x`
+applied to a [`TVector`](@ref) `ξ`.
 """
 getHessian(p::Pr,x::P,ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = ismissing(p.hessian) ? approxHessianFD(p,x,ξ) : p.hessian(p.M,x,ξ)
 @doc doc"""
     getGradient(p,x)
 
-evaluate the gradient of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`.
+evaluate the gradient of a [`HessianProblem`](@ref)`p` at the
+[`MPoint`](@ref) `x`.
 """
 getGradient(p::Pr,x::P) where {Pr <: HessianProblem, P <: MPoint} = p.gradient(p.M,x)
 @doc doc"""
     getPreconditioner(p,x,ξ)
 
-evaluate a preconditioner of the Hessian of a [`HessianProblem`](@ref)`p` at the [`MPoint`](@ref) `x`
-times a [`TVector`](@ref) `ξ`.
+evaluate the symmetric, positive deﬁnite preconditioner (approximation of the
+inverse of the Hessian of the cost function `F`) of a
+[`HessianProblem`](@ref) `p` at the [`MPoint`](@ref) `x`applied to a
+[`TVector`](@ref) `ξ`.
 """
 getPreconditioner(p::Pr,x::P, ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = p.precon(p.M, x, ξ)
 
@@ -159,7 +163,7 @@ getPreconditioner(p::Pr,x::P, ξ::V) where {Pr <: HessianProblem, P <: MPoint, V
     approxHessianFD(p,x,ξ,[stepsize=2.0^(-14)])
 
 return an approximated solution of the Hessian of the cost function applied to
-a [`TVector`](@ref) ξ by using a generic finite difference approximation
+a [`TVector`](@ref) `ξ` by using a generic finite difference approximation
 based on computations of the gradient.
 
 Input
@@ -237,9 +241,9 @@ $\Vert r_k \Vert \leqq  \Vert r_0 \Vert^{1+\theta}$
 # Fields
 * `θ` – stores the maximal iteration number where to stop at
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
-$\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
+    $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-reached, see [`getReason`](@ref).
+    reached, see [`getReason`](@ref).
 
 # Constructor
 
