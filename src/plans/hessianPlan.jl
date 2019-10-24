@@ -235,7 +235,7 @@ by a power compared to the norm of the initial residual, i.e.
 $\Vert r_k \Vert \leqq  \Vert r_0 \Vert^{1+\theta}$
 
 # Fields
-* `κ` – stores the maximal iteration number where to stop at
+* `θ` – stores the maximal iteration number where to stop at
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
 $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
@@ -280,8 +280,9 @@ function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: Hessia
     a2 = dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))
     a3 = dot( p.M, o.x, o.η, getPreconditioner(p, o.x, o.δ))
     a4 = dot(p.M, o.x, o.δ, getPreconditioner(p, o.x, o.δ))
-    if dot(p.M, o.x, o.η, o.η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4 >= o.Δ^2 && i > 0
-        c.reason = "Exceeded trust region.\n"
+    norm = dot(p.M, o.x, o.η, o.η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4
+    if norm >= o.Δ^2 && i > 0
+        c.reason = "Trust-region radius violation (‖η‖ = $norm >= $(o.Δ) = Δ). \n"
         return true
     end
     return false
@@ -300,7 +301,7 @@ mutable struct stopWhenCurvatureIsNegative <: StoppingCriterion
 end
 function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0 && i > 0
-        c.reason = "Negative curvature.\n"
+        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩ = $(dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))) <= 0)\n"
         return true
     end
     return false
