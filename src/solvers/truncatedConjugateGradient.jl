@@ -47,8 +47,8 @@ see the reference:
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
 * `stoppingCriterion` – ([`stopWhenAny`](@ref), [`stopAfterIteration`](@ref),
-    [`stopResidualReducedByFactor`](@ref), [`stopResidualReducedByPower`](@ref),
-    [`stopNegativeCurvature`](@ref), [`stopExceededTrustRegion`](@ref) )
+    [`stopIfResidualIsReducedByFactor`](@ref), [`stopIfResidualIsReducedByPower`](@ref),
+    [`stopWhenCurvatureIsNegative`](@ref), [`stopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
     where for the default, the maximal number of iterations is [`manifoldDimension`](@ref),
     the power factor is `θ`, the reduction factor is `κ`.
@@ -71,10 +71,10 @@ function truncatedConjugateGradient(M::mT,
         useRandom::Bool = false,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
             stopAfterIteration(manifoldDimension(M)),
-            stopResidualReducedByPower( sqrt( dot(M,x, ∇F(M,x) + ( useRandom ? H(M,x,η) : zeroTVector(M,x) ), ∇F(M,x) + ( useRandom ? H(M,x,η) : zeroTVector(M,x) )) ), θ),
-            stopResidualReducedByFactor( sqrt( dot(M,x, ∇F(M,x) + ( useRandom ? H(M,x,η) : zeroTVector(M,x) ), ∇F(M,x) + ( useRandom ? H(M,x,η) : zeroTVector(M,x) )) ), κ),
-            stopExceededTrustRegion(),
-            stopNegativeCurvature()
+            stopIfResidualIsReducedByPower( sqrt( dot(M,x, ∇F(M,x) + ( useRandom ? H(M,x,η) : zeroTVector(M,x) ), ∇F(M,x) + ( useRandom ? H(M,x,η) : zeroTVector(M,x) )) ), θ),
+            stopIfResidualIsReducedByFactor( sqrt( dot(M,x, ∇F(M,x) + ( useRandom ? H(M,x,η) : zeroTVector(M,x) ), ∇F(M,x) + ( useRandom ? H(M,x,η) : zeroTVector(M,x) )) ), κ),
+            stopWhenTrustRegionIsExceeded(),
+            stopWhenCurvatureIsNegative()
         ),
 
         kwargs... #collect rest

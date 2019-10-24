@@ -179,11 +179,13 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # then reduce the TR radius.
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
-        elseif ρ > 3/4 && any([typeof(s) in [stopExceededTrustRegion,stopNegativeCurvature] for s in SR] )
+        elseif ρ > 3/4 && any([typeof(s) in [stopWhenTrustRegionIsExceeded,stopWhenCurvatureIsNegative] for s in SR] )
                 o.Δ = min(2*o.Δ, o.Δ_bar)
         else
                 o.Δ = o.Δ
         end
+        D=o.Δ
+        print("Δ = $D")
         # Choose to accept or reject the proposed step based on the model
         # performance. Note the strict inequality.
         if model_decreased && ρ > o.ρ_prime

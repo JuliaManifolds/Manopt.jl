@@ -99,3 +99,18 @@ The result is given by the last computed $η_k$.
 ```@docs
 TruncatedConjugateGradientOptions
 ```
+
+## Additional Stopping Criteria
+
+```@docs
+stopIfResidualIsReducedByPower
+```
+```@docs
+stopIfResidualIsReducedByFactor
+```
+```@docs
+stopWhenTrustRegionIsExceeded
+```
+```@docs
+stopWhenCurvatureIsNegative
+```

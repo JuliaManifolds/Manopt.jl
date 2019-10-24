@@ -81,8 +81,8 @@ The result is given by the last computed $x_k$.
     The optimal length is defined by
     $\tau_{k}^{c} = \begin{cases} 1 & \langle \operatorname{Grad}[F] (x_k), \, \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leqq 0 , \\ \operatorname{min}(\frac{{\operatorname{norm}(\operatorname{Grad}[F] (x_k))}^3}{\Delta \langle \operatorname{Grad}[F] (x_k), \, \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise.} \end{cases}$
 4. To step number 6: We know that the [`truncatedConjugateGradient`](@ref) algorithm stopped for
-    these reasons when the stopping criteria [`stopNegativeCurvature`](@ref),
-    [`stopExceededTrustRegion`](@ref) are activated.
+    these reasons when the stopping criteria [`stopWhenCurvatureIsNegative`](@ref),
+    [`stopWhenTrustRegionIsExceeded`](@ref) are activated.
 6. To step number 7: The last step is to decide if the new point ${x}^{* }$ is
     accepted.
 ## Interface
@@ -97,8 +97,8 @@ trustRegions
 TrustRegionsOptions
 ```
 
-## Additional Stopping Criteria
+## Approximation of the Hessian
 
 ```@docs
-stopExceededTrustRegion
+approxHessianFD
 ```

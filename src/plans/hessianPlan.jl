@@ -1,6 +1,7 @@
 export HessianProblem, HessianOptions
 export TruncatedConjugateGradientOptions, TrustRegionsOptions
-export stopResidualReducedByFactor, stopResidualReducedByPower, stopNegativeCurvature, stopExceededTrustRegion
+export approxHessianFD
+export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, stopWhenCurvatureIsNegative, stopWhenTrustRegionIsExceeded
 
 #
 # Problem
@@ -15,7 +16,7 @@ specify a problem for hessian based algorithms.
 * `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `gradient`     : the gradient $\nabla F\colon\mathcal M
   \to \mathcal T\mathcal M$ of the cost function $F$
-* `hessian`      : the hessian $Hess F(x) \colon \mathcal T_{x} \mathcal M
+* `hessian`      : the hessian $\operatorname{Hess}[F] (\cdot)_ {x} \colon \mathcal T_{x} \mathcal M
   \to \mathcal T_{x} \mathcal M$ of the cost function $F$
 * `precon`       : the preconditioner for the Hessian of the cost function $F$
 
@@ -188,15 +189,37 @@ function approxHessianFD(p::HessianProblem, x::P, ξ::T, stepsize::Float64=2.0^(
 end
 
 @doc doc"""
-    stopResidualReducedByFactor <: StoppingCriterion
+    stopIfResidualIsReducedByFactor <: StoppingCriterion
+
+A functor for testing if the norm of residual at the current iterate is reduced
+by a factor compared to the norm of the initial residual, i.e.
+$\Vert r_k \Vert \leqq \kappa \Vert r_0 \Vert$
+
+# Fields
+* `κ` – the factor
+* `initialResidualNorm` - stores the norm of the residual at the initial vector
+    $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+  reached, see [`getReason`](@ref).
+
+# Constructor
+
+    stopIfResidualIsReducedByFactor(iRN, κ)
+
+initialize the stopIfResidualIsReducedByFactor functor to indicate to stop after
+the norm of the current residual is lesser than the norm of the initial residual
+iRN times κ.
+
+# See also
+[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
 """
-mutable struct stopResidualReducedByFactor <: StoppingCriterion
+mutable struct stopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
     initialResidualNorm::Float64
     reason::String
-    stopResidualReducedByFactor(iRN::Float64,κ::Float64) = new(κ,iRN,"")
+    stopIfResidualIsReducedByFactor(iRN::Float64,κ::Float64) = new(κ,iRN,"")
 end
-function (c::stopResidualReducedByFactor)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function (c::stopIfResidualIsReducedByFactor)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm*c.κ && i > 0
         c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
         return true
@@ -205,15 +228,37 @@ function (c::stopResidualReducedByFactor)(p::P,o::O,i::Int) where {P <: HessianP
 end
 
 @doc doc"""
-    stopResidualReducedByPower <: StoppingCriterion
+    stopIfResidualIsReducedByPower <: StoppingCriterion
+
+A functor for testing if the norm of residual at the current iterate is reduced
+by a power compared to the norm of the initial residual, i.e.
+$\Vert r_k \Vert \leqq  \Vert r_0 \Vert^{1+\theta}$
+
+# Fields
+* `κ` – stores the maximal iteration number where to stop at
+* `initialResidualNorm` - stores the norm of the residual at the initial vector
+$\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+reached, see [`getReason`](@ref).
+
+# Constructor
+
+stopIfResidualIsReducedByPower(iRN, θ)
+
+initialize the stopIfResidualIsReducedByFactor functor to indicate to stop after
+the norm of the current residual is lesser than the norm of the initial residual
+iRN times θ.
+
+# See also
+[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
 """
-mutable struct stopResidualReducedByPower <: StoppingCriterion
+mutable struct stopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
     initialResidualNorm::Float64
     reason::String
-    stopResidualReducedByPower(iRN::Float64,θ::Float64) = new(θ,iRN,"")
+    stopIfResidualIsReducedByPower(iRN::Float64,θ::Float64) = new(θ,iRN,"")
 end
-function (c::stopResidualReducedByPower)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function (c::stopIfResidualIsReducedByPower)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1+c.θ) && i > 0
         c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
         return true
@@ -222,15 +267,15 @@ function (c::stopResidualReducedByPower)(p::P,o::O,i::Int) where {P <: HessianPr
 end
 
 @doc doc"""
-    stopExceededTrustRegion <: StoppingCriterion
+    stopWhenTrustRegionIsExceeded <: StoppingCriterion
 
 terminate the algorithm when the trust region has been left.
 """
-mutable struct stopExceededTrustRegion <: StoppingCriterion
+mutable struct stopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
-    stopExceededTrustRegion() = new("")
+    stopWhenTrustRegionIsExceeded() = new("")
 end
-function (c::stopExceededTrustRegion)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     a1 = dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual, o.residual)
     a2 = dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))
     a3 = dot( p.M, o.x, o.η, getPreconditioner(p, o.x, o.δ))
@@ -249,11 +294,11 @@ terminate the algorithm when the curvature is negative. In this case, the model
 is not strictly convex, and the stepsize as computed does not give a reduction
 of the model.
 """
-mutable struct stopNegativeCurvature <: StoppingCriterion
+mutable struct stopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
-    stopNegativeCurvature() = new("")
+    stopWhenCurvatureIsNegative() = new("")
 end
-function (c::stopNegativeCurvature)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0 && i > 0
         c.reason = "Negative curvature.\n"
         return true
