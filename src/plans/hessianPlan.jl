@@ -197,10 +197,11 @@ end
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a factor compared to the norm of the initial residual, i.e.
-$\Vert r_k \Vert \leqq \kappa \Vert r_0 \Vert$
+$\Vert r_k \Vert_x \leqq \kappa \Vert r_0 \Vert_x$.
+In this case the algorithm reached linear convergence.
 
 # Fields
-* `κ` – the factor
+* `κ` – the reduction factor
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
     $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
@@ -235,11 +236,12 @@ end
     stopIfResidualIsReducedByPower <: StoppingCriterion
 
 A functor for testing if the norm of residual at the current iterate is reduced
-by a power compared to the norm of the initial residual, i.e.
-$\Vert r_k \Vert \leqq  \Vert r_0 \Vert^{1+\theta}$
+by a power of 1+θ compared to the norm of the initial residual, i.e.
+$\Vert r_k \Vert_x \leqq  \Vert r_0 \Vert_{x}^{1+\theta}$. In this case the
+algorithm reached superlinear convergence.
 
 # Fields
-* `θ` – stores the maximal iteration number where to stop at
+* `θ` – part of the reduction power
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
     $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
@@ -251,7 +253,7 @@ stopIfResidualIsReducedByPower(iRN, θ)
 
 initialize the stopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
-iRN times θ.
+iRN to the power of 1+θ.
 
 # See also
 [`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
@@ -273,7 +275,23 @@ end
 @doc doc"""
     stopWhenTrustRegionIsExceeded <: StoppingCriterion
 
-terminate the algorithm when the trust region has been left.
+A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
+mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
+≧ Δ$. terminate the algorithm when the trust region has been left.
+
+# Fields
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`getReason`](@ref).
+
+# Constructor
+
+stopWhenTrustRegionIsExceeded()
+
+initialize the stopWhenTrustRegionIsExceeded functor to indicate to stop after
+the norm of the next iterate is greater than the trust-region radius.
+
+# See also
+[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
 """
 mutable struct stopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
@@ -298,6 +316,26 @@ end
 terminate the algorithm when the curvature is negative. In this case, the model
 is not strictly convex, and the stepsize as computed does not give a reduction
 of the model.
+
+A functor for testing if the curvatureof the model is negative, i.e.
+$\langle \delta_k, \operatorname{Hess}[F](\delta_k)\rangle_x \leqq 0$.
+In this case, the model is not strictly convex, and the stepsize as computed
+does not give a reduction of the model.
+
+# Fields
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`getReason`](@ref).
+
+# Constructor
+
+stopWhenCurvatureIsNegative()
+
+initialize the stopWhenCurvatureIsNegative functor to indicate to stop after
+the inner product of the search direction and the hessian applied on the search
+dircetion is less than zero.
+
+# See also
+[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
 """
 mutable struct stopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
@@ -305,7 +343,7 @@ mutable struct stopWhenCurvatureIsNegative <: StoppingCriterion
 end
 function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0 && i > 0
-        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩ = $(dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))) <= 0)\n"
+        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))) <= 0).\n"
         return true
     end
     return false
