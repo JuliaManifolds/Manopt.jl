@@ -7,7 +7,7 @@ import LinearAlgebra: Diagonal, norm, dot, nullspace, det, tr, qr, triu, eigvals
 import Base: exp, log, show, rand, Matrix
 export Rotations, SOPoint, SOTVector, getValue
 export addNoise, distance, dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, retraction, inverseRetraction
-export zeroTVector, injectivity_radius, tangent
+export zeroTVector, injectivity_radius, project
 #
 # Type definitions
 #
@@ -261,6 +261,13 @@ Since we have only stored the skew-symmetric matrix as a
 parallelTransport(M::Rotations,x::SOPoint,y::SOPoint,ξ::SOTVector) = ξ
 
 @doc doc"""
+    project(M,x,q)
+"""
+function project(M::Rotations, x::SOPoint, q::Matrix)
+  A= 0.5*(transpose(getValue(x))*q - transpose(transpose(getValue(x))*q))
+  SOTVector(1/norm(A)*A)
+end
+@doc doc"""
     randomTVector(M,x[, type=:Gaussian, σ=1.0])
 
 return a random [`SOTVector`](@ref) in the tangent space
@@ -368,7 +375,6 @@ function retractionQR(M::Rotations, x::SOPoint, ξ::SOTVector, t::Float64=1.0)
 end
 retraction(M::Rotations, x::SOPoint, ξ::SOTVector, t::Float64=1.0) = retractionQR(M,x,ξ,t)
 
-tangent(M::Rotations, x::SOPoint, q::Matrix) = 0.5*(q - transpose(q))
 
 @doc doc"""
     zeroTVector(M,x)
