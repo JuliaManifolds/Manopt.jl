@@ -8,6 +8,7 @@ export Sphere, SnPoint, SnTVector,show, getValue
 export distance, dot, exp, log, manifoldDimension, norm
 export randomMPoint, opposite, parallelTransport, zeroTVector
 export validateMPoint, validateTVector
+export project
 export zeroTVector, typeofMPoint, typeofTVector, injectivity_radius
 #
 # Type definitions
@@ -189,6 +190,10 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
     return ξ
   end
 end
+@doc doc"""
+    project(M,x,q)
+"""
+project(M::Sphere, x::SnPoint, v::Vector{T}) where {T <: AbstractFloat} = SnTVector{T}(v - getValue(x)*(transpose(getValue(x))*v))
 @doc doc"""
     randomMPoint(M [,:Gaussian, σ=1.0])
 

@@ -7,6 +7,7 @@ import Base: exp, log, show
 export Euclidean, RnPoint, RnTVector
 export distance, exp, log, norm, dot, manifoldDimension, show, getValue
 export zeroTVector, tangentONB, randomMPoint, randomTVector, injectivity_radius
+export project
 export validateMPoint, validateTVector, typeofMPoint, typeofTVector
 # Types
 # ---
@@ -132,6 +133,10 @@ compute the parallel transport  the [`Euclidean`](@ref) manifold `M`, which is
 the identity.
 """
 parallelTransport(M::Euclidean, x::RnPoint{T}, y::RnPoint{T}, ξ::RnTVector{T})  where {T <: AbstractFloat} = ξ
+@doc doc"""
+    project(M,x,q)
+"""
+project(M::Euclidean, x::RnPoint{T}, v::Vector{T}) where {T <: AbstractFloat} = RnTVector{T}(v)
 @doc doc"""
     randomMPoint(M[,T=Float64])
 

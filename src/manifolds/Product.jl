@@ -10,6 +10,7 @@ export validateMPoint, validateTVector
 export randomMPoint, randomTVector
 export zeroTVector, typeofMPoint, typeofTVector
 export show, getValue
+export project
 @doc doc"""
     Product{M<:Manifold} <: Manifold
 
