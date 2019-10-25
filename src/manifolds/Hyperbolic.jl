@@ -8,6 +8,7 @@ export Hyperbolic, HnPoint, HnTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export typeofMPoint, typeofTVector, MinkowskiDot
 export validateMPoint, validateTVector, zeroTVector
+export randomMPoint, project, randomTVector
 #
 # Type definitions
 #
@@ -71,7 +72,7 @@ $n$-dimensional [`Hyperbolic`](@ref) space $\mathbb H^n$. To be precise
 $\xi\in\mathbb R^{n+1}$ is hyperbocally orthogonal to $x\in\mathbb R^{n+1}$,
 i.e. orthogonal with respect to the Minkowski inner product
 
-$\langle \xi, x \rangle_{\mathrm{M}} = -\xi_{n+1}x_{n+1} + \sum_{k=1}^n \xi_k x_k = 0$ 
+$\langle \xi, x \rangle_{\mathrm{M}} = -\xi_{n+1}x_{n+1} + \sum_{k=1}^n \xi_k x_k = 0$
 """
 struct HnTVector{T <: AbstractFloat}  <: TVector
     value::Vector{T}
@@ -80,7 +81,7 @@ struct HnTVector{T <: AbstractFloat}  <: TVector
 end
 HnTVector(value::T) where {T <: AbstractFloat} = HnTVector{T}(value)
 HnTVector(value::Vector{T})  where {T <: AbstractFloat}  = HnTVector{T}(value)
-  
+
 getValue(ξ::HnTVector) = length(ξ.value)==1 ? ξ.value[1] : ξ.value
 
 # Traits
@@ -210,8 +211,36 @@ function parallelTransport(M::Hyperbolic, x::HnPoint{T}, y::HnPoint{T}, ξ::HnTV
   end
 end
 
+@doc doc"""
+    project(M,x,v)
+"""
+function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: AbstractFloat}
+	n = M.dimension
+	v[n+1] = (1/getValue(x)[n+1])*transpose(v[1:n])*getValue(x)[1:n]
+	return HnTVector{T}(v)
+end
+
+@doc doc"""
+    randomMPoint(M)
+"""
+function randomMPoint(M::Hyperbolic)
+	n = M.dimension
+	x = randn(Float64, n+1)
+	x[n+1] = sqrt(transpose(x[1:n])*x[1:n] + 1)
+	return HnPoint{Float64}(x)
+end
+
+@doc doc"""
+    randomTVector(M)
+"""
+function randomTVector(M::Hyperbolic, x::HnPoint{T}) where {T <: AbstractFloat}
+	n = M.dimension
+	ξ = randn(Float64, n+1)
+	project(M,x,ξ)
+end
+
 typeofTVector(::Type{HnPoint{T}}) where T = HnTVector{T}
-typeofMPoint(::Type{HnTVector{T}}) where T = HnPoint{T} 
+typeofMPoint(::Type{HnTVector{T}}) where T = HnPoint{T}
 
 @doc doc"""
     typicalDistance(M)
