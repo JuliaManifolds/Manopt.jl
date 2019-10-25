@@ -11,6 +11,7 @@ export parallelTransport, randomMPoint, randomTVector, typeofMPoint, typeofTVect
 export zeroTVector
 export show, getValue
 export validateMPoint, validateTVector
+export project
 
 export symRem
 # Types
@@ -53,7 +54,7 @@ getValue(x::S1Point) = x.value
 @doc doc"""
     S1TVector <: TVector
 
-a tangent vector $\xi\in\mathbb S^1$ represented by a real valiue
+a tangent vector $\xi\in\mathbb S^1$ represented by a real value
 `getValue(ξ)`$\in\mathbb R$.
 """
 struct S1TVector <: TVector
@@ -169,6 +170,11 @@ at the [`S1Point`](@ref)` y`.
 Since the [`Sphere`](@ref) `M` is represented in angles this is the identity.
 """
 parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
+@doc doc"""
+    project(M,x,q)
+"""
+project(M::Circle, x::S1Point, v::Float64) = S1TVector(v%(2pi))
+
 @doc doc"""
     randomMPoint(M,:Uniform)
 
