@@ -116,6 +116,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     Hδ = getHessian(p, o.x, δOld)
     # Compute curvature (often called kappa).
     δHδ = dot(p.M, o.x, δOld, Hδ)
+    print("δHδ = $δHδ \n")
     # Note that if d_Hd == 0, we will exit at the next "if" anyway.
     α = zrOld/δHδ
     # <neweta,neweta>_P =

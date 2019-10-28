@@ -338,7 +338,18 @@ mutable struct stopWhenCurvatureIsNegative <: StoppingCriterion
     stopWhenCurvatureIsNegative() = new("")
 end
 function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    if dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ)) <= 0 && i > 0
+    z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
+    zrOld = dot(p.M, o.x, z, o.residual)
+    δOld = o.δ
+    Hδ = getHessian(p, o.x, δOld)
+    δHδ = dot(p.M, o.x, δOld, Hδ)
+    α = zrOld/δHδ
+    resi = o.residual - α * Hδ
+    z = o.useRand ? resi : getPreconditioner(p, o.x, resi)
+    zr = dot(p.M, o.x, z, resi)
+    β = zr/zrOld
+    δ = tangent(p.M, o.x, z + β * o.δ)
+    if dot(p.M, o.x, δ, getHessian(p, o.x, δ)) <= 0 && i > 0
         c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))) <= 0).\n"
         return true
     end
