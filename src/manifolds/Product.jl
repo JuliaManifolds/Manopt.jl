@@ -90,8 +90,6 @@ returns the corresponding [`ProdPoint`](@ref).
 """
 exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( exp.(M.manifolds, getValue(x), getValue(ξ)) )
 
-project(M::Product, x::ProdPoint, v::Array{<:Any}) = ProdTVector( project.(M.manifolds, getValue(x), v ) )
-
 @doc doc"""
    log(M,x,y)
 
@@ -131,6 +129,11 @@ computes the product parallelTransport map on the [`Product`](@ref) manifold `M`
 and returns the corresponding [`ProdTVector`](@ref).
 """
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
+
+@doc doc"""
+    project(M,x,v)
+"""
+project(M::Product, x::ProdPoint, v::Array{<:Any}) = ProdTVector( project.(M.manifolds, getValue(x), v ) )
 
 typeofTVector(x::ProdPoint) = ProdTVector{Array{TVector,ndims(x.value)}}
 typeofTVector(::Type{ProdPoint{Array{MPoint,N}}}) where N = ProdTVector{Array{TVector,N}}

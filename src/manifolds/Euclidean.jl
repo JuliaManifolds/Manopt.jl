@@ -134,7 +134,7 @@ the identity.
 """
 parallelTransport(M::Euclidean, x::RnPoint{T}, y::RnPoint{T}, ξ::RnTVector{T})  where {T <: AbstractFloat} = ξ
 @doc doc"""
-    project(M,x,q)
+    project(M,x,v)
 """
 project(M::Euclidean, x::RnPoint{T}, v::Vector{T}) where {T <: AbstractFloat} = RnTVector{T}(v)
 @doc doc"""

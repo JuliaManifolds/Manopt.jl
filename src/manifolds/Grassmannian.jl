@@ -286,12 +286,12 @@ function parallelTransport(M::Grassmannian{T}, x::GrPoint{T}, y::GrPoint{T}, ξ:
 end
 
 @doc doc"""
-    project(M,x,q)
+    project(M,x,v)
 
-project a matrix q orthogonally on the [`GrPoint`](@ref) `x` of the manifold
+project a matrix v orthogonally on the [`GrPoint`](@ref) `x` of the manifold
 [`Grassmannian`](@ref) manifold `M`. The formula reads
 
-$\operatorname{proj}_{\mathcal M}(x,q) = q-x({\bar x}^\mathrm{T}q),$
+$\operatorname{proj}_{\mathcal M}(x,v) = v-x({\bar x}^\mathrm{T}v),$
 
 i.e. the difference matrix of the image and the output matrix lies in
 the orthogonal complement of all [`GrTVector`](@ref)s from the tangent space
@@ -300,9 +300,9 @@ $T_x\mathcal M$ at [`GrPoint`](@ref) `x`.
 # see also
 [`parallelTransport`](@ref), [`randomTVector`](@ref)
 """
-function project(M::Grassmannian{T},x::GrPoint{T},q::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  	A = getValue(x)'*q
-  	B = q - getValue(x)*A
+function project(M::Grassmannian{T},x::GrPoint{T},v::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+  	A = getValue(x)'*v
+  	B = v - getValue(x)*A
   	return GrTVector(B)
 end
 

@@ -261,10 +261,10 @@ Since we have only stored the skew-symmetric matrix as a
 parallelTransport(M::Rotations,x::SOPoint,y::SOPoint,ξ::SOTVector) = ξ
 
 @doc doc"""
-    project(M,x,q)
+    project(M,x,v)
 """
-function project(M::Rotations, x::SOPoint, q::Matrix)
-  A= 0.5*(transpose(getValue(x))*q - transpose(transpose(getValue(x))*q))
+function project(M::Rotations, x::SOPoint, v::Matrix)
+  A= 0.5*(transpose(getValue(x))*v - transpose(transpose(getValue(x))*v))
   SOTVector(1/norm(A)*A)
 end
 @doc doc"""
