@@ -54,8 +54,8 @@ getValue(x::RnPoint) = length(x.value)==1 ? x.value[1] : x.value
 @doc doc"""
     RnTVector <: TVector
 
-the point $\xi\in\mathcal M$ for $\mathcal M=\mathbb R^n$ represented by an
-$n$-dimensional `Vector{T}`, where `T <: AbstractFloat`.
+the tangent vector $\xi \in T_x\mathcal M$ for $\mathcal M=\mathbb R^n$
+represented by an $n$-dimensional `Vector{T}`, where `T <: AbstractFloat`.
 """
 struct RnTVector{T <: AbstractFloat}  <: TVector
   value::Vector{T}
@@ -135,6 +135,11 @@ the identity.
 parallelTransport(M::Euclidean, x::RnPoint{T}, y::RnPoint{T}, ξ::RnTVector{T})  where {T <: AbstractFloat} = ξ
 @doc doc"""
     project(M,x,v)
+
+project a $n$-dimensional `Vector{T}` v on the tangent space of the
+[`RnPoint{T}`](@ref) `x`. Since the tangent space is identical to the
+$\mathbb R^n$, the mapping can be realized with the identity, i.e.
+$\operatorname{project}(M,x,v) = v$.
 """
 project(M::Euclidean, x::RnPoint{T}, v::Vector{T}) where {T <: AbstractFloat} = RnTVector{T}(v)
 @doc doc"""

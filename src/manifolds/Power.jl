@@ -173,6 +173,10 @@ parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) =
 
 @doc doc"""
     project(M,x,v)
+
+compute the product project map on the [`Power`](@ref) manifold `M`
+of the [`PowPoint`](@ref) `x`. `v` is an array of the elements, embedded in the
+same space as the manifold, which get projected elementwise.
 """
 project(M::Power, x::PowPoint, v::Array{<:Any}) = PowTVector( project.(Ref(M.manifold), getValue(x), v ) )
 

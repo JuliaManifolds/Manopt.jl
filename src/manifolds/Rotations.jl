@@ -262,6 +262,9 @@ parallelTransport(M::Rotations,x::SOPoint,y::SOPoint,ξ::SOTVector) = ξ
 
 @doc doc"""
     project(M,x,v)
+
+project a $n\times n$ `Matrix` v on the tangent space of the
+[`SOPoint`](@ref) `x`.
 """
 function project(M::Rotations, x::SOPoint, v::Matrix)
   A= 0.5*(transpose(getValue(x))*v - transpose(transpose(getValue(x))*v))

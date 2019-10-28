@@ -93,7 +93,7 @@ exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( exp.(M
 @doc doc"""
    log(M,x,y)
 
-computes the product logarithmic map from [`PowPoint`](@ref) `x` to `y` on the
+computes the product logarithmic map from [`ProdPoint`](@ref) `x` to `y` on the
 [`Product`](@ref) manifold `M` and returns the corresponding
 [`ProdTVector`](@ref).
 """
@@ -132,6 +132,10 @@ parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = Pro
 
 @doc doc"""
     project(M,x,v)
+
+compute the product project map on the [`Product`](@ref) manifold `M`
+of the [`ProdPoint`](@ref) `x`. `v` is an array of the elements, embedded in the
+same space as the manifold, which get projected elementwise.
 """
 project(M::Product, x::ProdPoint, v::Array{<:Any}) = ProdTVector( project.(M.manifolds, getValue(x), v ) )
 

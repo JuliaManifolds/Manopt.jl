@@ -249,7 +249,7 @@ algorithm reached superlinear convergence.
 
 # Constructor
 
-stopIfResidualIsReducedByPower(iRN, θ)
+    stopIfResidualIsReducedByPower(iRN, θ)
 
 initialize the stopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
@@ -285,7 +285,7 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 
 # Constructor
 
-stopWhenTrustRegionIsExceeded()
+    stopWhenTrustRegionIsExceeded()
 
 initialize the stopWhenTrustRegionIsExceeded functor to indicate to stop after
 the norm of the next iterate is greater than the trust-region radius.
@@ -313,11 +313,7 @@ end
 @doc doc"""
     stopWhenCurvatureIsNegative <: StoppingCriterion
 
-terminate the algorithm when the curvature is negative. In this case, the model
-is not strictly convex, and the stepsize as computed does not give a reduction
-of the model.
-
-A functor for testing if the curvatureof the model is negative, i.e.
+A functor for testing if the curvature of the model is negative, i.e.
 $\langle \delta_k, \operatorname{Hess}[F](\delta_k)\rangle_x \leqq 0$.
 In this case, the model is not strictly convex, and the stepsize as computed
 does not give a reduction of the model.
@@ -328,7 +324,7 @@ does not give a reduction of the model.
 
 # Constructor
 
-stopWhenCurvatureIsNegative()
+    stopWhenCurvatureIsNegative()
 
 initialize the stopWhenCurvatureIsNegative functor to indicate to stop after
 the inner product of the search direction and the hessian applied on the search
