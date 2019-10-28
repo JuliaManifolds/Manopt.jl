@@ -19,6 +19,7 @@ export randomMPoint, randomTVector
 export typeofMPoint, typeofTVector
 export validateMPoint, validateTVector
 export zeroTVector
+export project
 # Types
 # ---
 @doc doc"""
@@ -87,7 +88,7 @@ getValue(ξ::SPDTVector) = ξ.value
 # ---
 @doc doc"""
     distance(M,x,y)
-    
+
 compute the Riemannian distance on the [`SymmetricPositiveDefinite`](@ref)
 manifold $\mathcal M=\mathcal P(n)$, given by
 
@@ -224,6 +225,14 @@ function parallelTransport(M::SymmetricPositiveDefinite,x::SPDPoint,y::SPDPoint,
 end
 
 @doc doc"""
+    project(M,x,v)
+
+project a $n\times n$ `Matrix` v on the tangent space of the
+[`SPDPoint`](@ref) `x`.
+"""
+project(M::SymmetricPositiveDefinite, x::SPDPoint, v::Matrix) = SPDTVector(0.5*(v+transpose(v)))
+
+@doc doc"""
     randomMPoint(M,:Gaussian[, σ=1.0])
 
 gerenate a random symmetric positive definite matrix on the
@@ -299,7 +308,7 @@ eigenvalues $\lambda_i$, $i=1,\ldots,n$ of `ξ` as
 ```
 """
 function tangentONB(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector)
-    xSqrt = sqrt(getValue(x)) 
+    xSqrt = sqrt(getValue(x))
     v = eigvecs(getValue(ξ))
     Ξ = [
         SPDTVector( (i==j ? 1/2 : 1/sqrt(2))*
@@ -313,7 +322,7 @@ function tangentONB(M::SymmetricPositiveDefinite,x::SPDPoint,ξ::SPDTVector)
 end
 
 typeofTVector(::Type{SPDPoint{T}}) where T = SPDTVector{T}
-typeofMPoint(::Type{SPDTVector{T}}) where T = SPDPoint{T} 
+typeofMPoint(::Type{SPDTVector{T}}) where T = SPDPoint{T}
 
 @doc doc"""
     typicalDistance(M)
