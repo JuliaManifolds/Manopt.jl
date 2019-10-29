@@ -48,45 +48,46 @@ Repeat until a convergence criterion is reached
 The result is given by the last computed $η_k$.
 
 ## Remarks
-1. The $\operatorname{P}(\cdot)$ denotes the symmetric, positive deﬁnite
-    preconditioner. It is required if a randomized approach is used i.e. using
-    a random tangent vector $\eta$`=`[`randomTVector`](@ref)`(M,x)` as initial
-    vector. The idea behind it is to avoid saddle points. Preconditioning is
-    simply a rescaling of the variables and thus a redeﬁnition of the shape of
-    the trust region. Ideally $\operatorname{P}(\cdot)$ is a cheap, positive
-    approximation of the inverse of the Hessian of $F$ at $x$. On
-    default, the preconditioner is just the identity.
-2. To step number 2: Obtain $\tau$ from the positive root of
-    $\left\lVert \eta_k + \tau \delta_k \right\rVert_{\operatorname{P}, x} = \Delta$
-    what becomes after the conversion of the equation to
-    ````math
-    \tau = \frac{-\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +
-    \sqrt{\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x}^{2} +
-    \langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x} ( \Delta^2 -
-    \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x})}}
-    {\langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x}}.
-    ````
-    It can occur that $\langle \delta_k, \operatorname{Hess}[F] (\delta_k)_ {x} \rangle_{x}
-    = \kappa \leqq 0$ at iteration $k$. In this case, the model is not strictly
-    convex, and the stepsize $\alpha =\frac{\langle r_k, z_k \rangle_{x}}
-    {\kappa}$ computed in step 1. does not give a reduction in the modelfunction
-    $m_{x}(\cdot)$. Indeed, $m_{x}(\cdot)$ is unbounded from below along the
-    line $\eta_k + \alpha \delta_k$. If our aim is to minimize the model within
-    the trust-region, it makes far more sense to reduce $m_{x}(\cdot)$ along
-    $\eta_k + \alpha \delta_k$ as much as we can while staying within the
-    trust-region, and this means moving to the trust-region boundary along this
-    line. Thus when $\kappa \leqq 0$ at iteration k, we replace $\alpha =
-    \frac{\langle r_k, z_k \rangle_{x}}{\kappa}$ with $\tau$ described as above.
-    The other possibility is that $\eta_{k+1}$ would lie outside the trust-region at
-    iteration k (i.e. $\langle \eta_k, \eta_k \rangle_{x}^{* }
-    \geqq {\Delta}^2$ what can be identified with the norm of $\eta_{k+1}$). In
-    particular, when $\operatorname{Hess}[F] (\cdot)_ {x}$ is positive deﬁnite
-    and $\eta_{k+1}$ lies outside the trust region, the solution to the
-    trust-region problem must lie on the trust-region boundary. Thus, there
-    is no reason to continue with the conjugate gradient iteration, as it
-    stands, as subsequent iterates will move further outside the trust-region
-    boundary. A sensible strategy, just as in the case considered above, is to
-    move to the trust-region boundary by ﬁnding $\tau$.
+The $\operatorname{P}(\cdot)$ denotes the symmetric, positive deﬁnite
+preconditioner. It is required if a randomized approach is used i.e. using
+a random tangent vector $\eta$`=`[`randomTVector`](@ref)`(M,x)` as initial
+vector. The idea behind it is to avoid saddle points. Preconditioning is
+simply a rescaling of the variables and thus a redeﬁnition of the shape of
+the trust region. Ideally $\operatorname{P}(\cdot)$ is a cheap, positive
+approximation of the inverse of the Hessian of $F$ at $x$. On
+default, the preconditioner is just the identity.
+
+To step number 2: Obtain $\tau$ from the positive root of
+$\left\lVert \eta_k + \tau \delta_k \right\rVert_{\operatorname{P}, x} = \Delta$
+what becomes after the conversion of the equation to
+````math
+ \tau = \frac{-\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +
+ \sqrt{\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x}^{2} +
+ \langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x} ( \Delta^2 -
+ \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x})}}
+ {\langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x}}.
+````
+It can occur that $\langle \delta_k, \operatorname{Hess}[F] (\delta_k)_ {x} \rangle_{x}
+= \kappa \leqq 0$ at iteration $k$. In this case, the model is not strictly
+convex, and the stepsize $\alpha =\frac{\langle r_k, z_k \rangle_{x}}
+{\kappa}$ computed in step 1. does not give a reduction in the modelfunction
+$m_{x}(\cdot)$. Indeed, $m_{x}(\cdot)$ is unbounded from below along the
+line $\eta_k + \alpha \delta_k$. If our aim is to minimize the model within
+the trust-region, it makes far more sense to reduce $m_{x}(\cdot)$ along
+$\eta_k + \alpha \delta_k$ as much as we can while staying within the
+trust-region, and this means moving to the trust-region boundary along this
+line. Thus when $\kappa \leqq 0$ at iteration k, we replace $\alpha =
+\frac{\langle r_k, z_k \rangle_{x}}{\kappa}$ with $\tau$ described as above.
+The other possibility is that $\eta_{k+1}$ would lie outside the trust-region at
+iteration k (i.e. $\langle \eta_k, \eta_k \rangle_{x}^{* }
+\geqq {\Delta}^2$ what can be identified with the norm of $\eta_{k+1}$). In
+particular, when $\operatorname{Hess}[F] (\cdot)_ {x}$ is positive deﬁnite
+and $\eta_{k+1}$ lies outside the trust region, the solution to the
+trust-region problem must lie on the trust-region boundary. Thus, there
+is no reason to continue with the conjugate gradient iteration, as it
+stands, as subsequent iterates will move further outside the trust-region
+boundary. A sensible strategy, just as in the case considered above, is to
+move to the trust-region boundary by ﬁnding $\tau$.
 
 ## Interface
 
