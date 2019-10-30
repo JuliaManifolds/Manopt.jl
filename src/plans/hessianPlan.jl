@@ -304,7 +304,7 @@ function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: Hessia
     a4 = dot(p.M, o.x, o.δ, getPreconditioner(p, o.x, o.δ))
     norm = dot(p.M, o.x, o.η, o.η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4
     if norm >= o.Δ^2 && i > 0
-        c.reason = "Trust-region radius violation (‖η‖ = $norm >= $(o.Δ) = Δ). \n"
+        c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.Δ^2) = Δ²). \n"
         return true
     end
     return false
@@ -350,7 +350,7 @@ function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianP
     β = zr/zrOld
     δ = tangent(p.M, o.x, z + β * o.δ)
     if dot(p.M, o.x, δ, getHessian(p, o.x, δ)) <= 0 && i > 0
-        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))) <= 0).\n"
+        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(dot(p.M, o.x, δ, getHessian(p, o.x, δ))) <= 0).\n"
         return true
     end
     return false
