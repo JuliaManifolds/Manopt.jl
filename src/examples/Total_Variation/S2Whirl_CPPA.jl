@@ -51,7 +51,7 @@ x0 = f
     λ = i -> π/(2*i),
     returnOptions = true
 )
-y = getResult(o)
+y = getSolverResult(o)
 yRec = getRecord(o)
 #
 # Results
