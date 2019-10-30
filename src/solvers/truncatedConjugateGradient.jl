@@ -53,10 +53,17 @@ see the reference:
     where for the default, the maximal number of iterations is [`manifoldDimension`](@ref),
     the power factor is `θ`, the reduction factor is `κ`.
     .
+* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+    complete [`Options`](@ref) re returned. This can be used to access recorded values.
+    If set to false (default) just the optimal value `xOpt` if returned
+
+and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
 # Output
 * `η` – an approximate solution of the trust-region subproblem in
     $\mathcal{T_{x}M}$.
+OR
+* `options` - the options returned by the solver (see `returnOptions`)
 
 # see also
     [`trustRegions.jl`](@ref)
@@ -76,17 +83,18 @@ function truncatedConjugateGradient(M::mT,
             stopWhenTrustRegionIsExceeded(),
             stopWhenCurvatureIsNegative()
         ),
-
+        returnOptions = false,
         kwargs... #collect rest
     ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zeroTVector(M,x),Δ,zeroTVector(M,x),useRandom)
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
-    if hasRecord(resultO)
-        return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
+    if returnOptions
+        resultO
+    else
+        return getSolverResult(resultO)
     end
-    return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     o.η = o.useRand ? o.η : zeroTVector(p.M,o.x)
@@ -159,6 +167,5 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     β = zr/zrOld
     o.δ = tangent(p.M, o.x, z + β * o.δ)
 end
-function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    return o.η, o
-end
+getSolverResult(o::O) where {O <: TruncatedConjugateGradientOptions} = o.η
+

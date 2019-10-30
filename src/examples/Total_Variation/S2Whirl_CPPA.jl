@@ -44,12 +44,15 @@ prior(x) = norm(norm.(Ref(pixelM),getValue(repeat(x,iRep...)), getValue(Λ(x)) )
 cost(x) = fidelity(x) + α*prior(x)
 proximalMaps = [(λ,x) -> proxDistance(M,λ,f,x,2), (λ,x) -> proxTV(M,α*λ,x,1)]
 x0 = f
-@time y, yRec = cyclicProximalPoint(M,cost,proximalMaps,x0;
+@time o = cyclicProximalPoint(M,cost,proximalMaps,x0;
     debug = [:Iteration," | ", DebugProximalParameter()," | ", :Change, " | ", :Cost, "\n",100,:Stop],
     record = [:Iteration, :Iterate, :Cost],
     stoppingCriterion = stopAfterIteration(maxIterations),
-    λ = i -> π/(2*i)
+    λ = i -> π/(2*i),
+    returnOptions = true
 )
+y = getResult(o)
+yRec = getRecord(o)
 #
 # Results
 if ExportResult

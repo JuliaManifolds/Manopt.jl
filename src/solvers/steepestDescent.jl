@@ -21,29 +21,34 @@ different choices of $s_k$ available (see `stepsize` option below).
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
 * `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-
+* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+    complete [`Options`](@ref) re returned. This can be used to access recorded values.
+    If set to false (default) just the optimal value `xOpt` if returned
+...
 and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
-* `record` - if activated (using the `record` key, see [`RecordOptions`](@ref)
-  an array containing the recorded values.
+OR
+* `options` - the options returned by the solver (see `returnOptions`)
 """
 function steepestDescent(M::mT,
     F::Function, ∇F::Function, x::MP;
     stepsize::Stepsize = ConstantStepsize(1.0),
     retraction::Function = exp,
     stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenGradientNormLess(10.0^-8)),
+    returnOptions=false,
     kwargs... #collect rest
   ) where {mT <: Manifold, MP <: MPoint}
   p = GradientProblem(M,F,∇F)
   o = GradientDescentOptions(x,stoppingCriterion,stepsize,retraction)
   o = decorateOptions(o; kwargs...)
   resultO = solve(p,o)
-  if hasRecord(resultO)
-      return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
+  if returnOptions
+    return resultO
+  else
+    return getSolverResult(resultO)
   end
-  return getSolverResult(p,resultO)
 end
 #
 # Solver functions
@@ -55,4 +60,4 @@ function doSolverStep!(p::P,o::O,iter) where {P <: GradientProblem, O <: Gradien
     o.∇ = getGradient(p,o.x)
     o.x = o.retraction(p.M, o.x , -getStepsize!(p,o,iter) * o.∇)
 end
-getSolverResult(p::P,o::O) where {P <: GradientProblem, O <: GradientDescentOptions} = o.x
+getSolverResult(o::O) where {O <: GradientDescentOptions} = o.x

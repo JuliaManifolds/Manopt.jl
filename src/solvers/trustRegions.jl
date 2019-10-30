@@ -34,32 +34,35 @@ see the reference:
 
 # Optional
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
-        that should approximate the inverse of the Hessian)
+  that should approximate the inverse of the Hessian)
 * `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(1000),
-        `[`stopWhenGradientNormLess`](@ref)`(10^(-6))) a functor inheriting
-        from [`StoppingCriterion`](@ref) indicating when to stop.
+  `[`stopWhenGradientNormLess`](@ref)`(10^(-6))) a functor inheriting
+  from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
 * `Δ` - the (initial) trust-region radius
 * `useRandom` – set to true if the trust-region solve is to be initiated with a
-        random tangent vector. If set to true, no preconditioner will be
-        used. This option is set to true in some scenarios to escape saddle
-        points, but is otherwise seldom activated.
+  random tangent vector. If set to true, no preconditioner will be
+  used. This option is set to true in some scenarios to escape saddle
+  points, but is otherwise seldom activated.
 * `ρ_prime` – Accept/reject threshold: if ρ (the performance ratio for the
-        iterate) is at least ρ', the outer iteration is accepted.
-        Otherwise, it is rejected. In case it is rejected, the trust-region
-        radius will have been decreased. To ensure this, ρ' >= 0 must be
-        strictly smaller than 1/4. If ρ_prime is negative, the algorithm is not
-        guaranteed to produce monotonically decreasing cost values. It is
-        strongly recommended to set ρ' > 0, to aid convergence.
+  iterate) is at least ρ', the outer iteration is accepted.
+  Otherwise, it is rejected. In case it is rejected, the trust-region
+  radius will have been decreased. To ensure this, ρ' >= 0 must be
+  strictly smaller than 1/4. If ρ_prime is negative, the algorithm is not
+  guaranteed to produce monotonically decreasing cost values. It is
+  strongly recommended to set ρ' > 0, to aid convergence.
 * `ρ_regularization` – Close to convergence, evaluating the performance ratio ρ
-        is numerically challenging. Meanwhile, close to convergence, the
-        quadratic model should be a good fit and the steps should be
-        accepted. Regularization lets ρ go to 1 as the model decrease and
-        the actual decrease go to zero. Set this option to zero to disable
-        regularization (not recommended). When this is not zero, it may happen
-        that the iterates produced are not monotonically improving the cost
-        when very close to convergence. This is because the corrected cost
-        improvement could change sign if it is negative but very small.
+  is numerically challenging. Meanwhile, close to convergence, the
+  quadratic model should be a good fit and the steps should be
+  accepted. Regularization lets ρ go to 1 as the model decrease and
+  the actual decrease go to zero. Set this option to zero to disable
+  regularization (not recommended). When this is not zero, it may happen
+  that the iterates produced are not monotonically improving the cost
+  when very close to convergence. This is because the corrected cost
+  improvement could change sign if it is negative but very small.
+* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+  complete [`Options`](@ref) re returned. This can be used to access recorded values.
+  If set to false (default) just the optimal value `xOpt` if returned
 
 # Output
 * `x` – the last reached point on the manifold
@@ -76,8 +79,9 @@ function trustRegions(M::mT,
         Δ_bar::Float64 = sqrt(manifoldDimension(M)),
         Δ::Float64 = Δ_bar/8,
         useRandom::Bool = false, ρ_prime::Float64 = 0.1,
-        ρ_regularization::Float64=1000.
-        ,kwargs... #collect rest
+        ρ_regularization::Float64=1000.,
+        returnOptions=false,
+        kwargs... #collect rest
         ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
 
         if ρ_prime >= 0.25
@@ -98,10 +102,11 @@ function trustRegions(M::mT,
 
         o = decorateOptions(o; kwargs...)
         resultO = solve(p,o)
-        if hasRecord(resultO)
-                return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
+        if returnOptions
+          return resultO
+        else
+          return getSolverResult(resultO)
         end
-        return getSolverResult(p,resultO)
 end
 
 function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions}
@@ -121,9 +126,12 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 end
         end
         # Solve TR subproblem approximately
-        (η, option) = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
+        opt = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
-        debug = [:Iteration," ",:Stop])
+        debug = [:Iteration," ",:Stop],
+        returnOptions=true)
+        option = getOptions(opt) # remove decorators
+        η = getSolverResult(option)
         SR = getActiveStoppingCriteria(option.stop)
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
@@ -193,7 +201,4 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 o.x = x_prop
         end
 end
-
-function getSolverResult(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions}
-        return o.x
-end
+getSolverResult(o::O) where {O <: TrustRegionsOptions} = o.x

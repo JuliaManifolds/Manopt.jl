@@ -27,13 +27,13 @@ function doSolverStep!(p::P,o::O, i) where {P <: Problem, O <: RecordOptions}
     get(o.recordDictionary, :All,   RecordGroup() )(p, getOptions(o), i)
 end
 """
-    getSolverResult(p,o)
+    getSolverResult(o)
 
 Return the final result after all iterations that is stored within the
 (modified during the iterations) [`Options`](@ref)` o`.
 """
-function getSolverResult(p::P,o::O) where {P <: Problem, O <: RecordOptions}
-    return getSolverResult(p, o.options)
+function getSolverResult(o::O) where {O <: RecordOptions}
+    return getSolverResult(o.options)
 end
 """
     stopSolver!(p,o,i)

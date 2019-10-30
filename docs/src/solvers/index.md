@@ -60,12 +60,13 @@ The following decorators are available.
 The decorator to print debug during the iterations can be activated by
 decorating the [`Options`](@ref) with [`DebugOptions`](@ref) and implementing
 your own [`DebugAction`](@ref)s.
-For example printing a gradient from the [`GradientDescentOptions`](@ref) is automatically available, as explained in the [`steepestDescent`](@ref) solver.
+For example printing a gradient from the [`GradientDescentOptions`](@ref) is
+automatically available, as explained in the [`steepestDescent`](@ref) solver.
 
 ```@docs
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: DebugOptions}
-getSolverResult(p::P,o::O) where {P <: Problem, O <: DebugOptions}
+getSolverResult(o::O) where {O <: DebugOptions}
 stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: DebugOptions}
 ```
 
@@ -80,7 +81,7 @@ automatically available, as explained in the [`steepestDescent`](@ref) solver.
 ```@docs
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: RecordOptions}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: RecordOptions}
-getSolverResult(p::P,o::O) where {P <: Problem, O <: RecordOptions}
+getSolverResult(o::O) where {O <: RecordOptions}
 stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: RecordOptions}
 ```
 
@@ -99,6 +100,6 @@ algorithm, if you want to provide one.
 ```@docs
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: Options}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: Options}
-getSolverResult(p::P,o::O) where {P <: Problem, O <: Options}
+getSolverResult(o::O) where {O <: Options}
 stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: Options}
 ```
