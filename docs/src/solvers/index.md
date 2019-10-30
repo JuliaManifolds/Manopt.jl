@@ -32,6 +32,7 @@ Stopping criteria are implemented as a `functor`, i.e. inherit from the base typ
 
 ```@docs
 StoppingCriterion
+StoppingCriterionSet
 ```
 
 ```@autodocs
@@ -40,10 +41,12 @@ Pages = ["plans/stoppingCriterion.jl"]
 Order = [:type]
 ```
 
-as well as the function
+as well as the functions
 
 ```@docs
 getReason
+getStoppingCriteriaArray
+getActiveStoppingCriteria
 ```
 
 further stopping criteria might be available for individual Solvers.

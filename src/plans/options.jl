@@ -5,7 +5,8 @@
 #
 import Base: copy
 
-export StoppingCriterion, Stepsize
+export StoppingCriterion, StoppingCriterionSet
+export Stepsize
 export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
 export Options, getOptions, getReason
 export IsOptionsDecorator
@@ -53,6 +54,15 @@ By default each `StoppingCriterion` should provide a fiels `reason` to provide
 details when a criteion is met (and that is empty otherwise).
 """
 abstract type StoppingCriterion end
+@doc doc""" 
+    StoppingCriterionGroup <: StoppingCriterion
+
+An abstract type for a Stopping Criterion that itself consists of a set of
+Stopping criteria. In total it acts as a stopping criterion itself. Examples
+are [`stopWhenAny`](@ref) and [`stopWhenAll`](@ref) that can be used to
+combine stopping criteria.
+"""
+abstract type StoppingCriterionSet <: StoppingCriterion end
 #
 #
 # StepsizeOptions
