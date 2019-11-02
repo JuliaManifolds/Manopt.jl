@@ -295,29 +295,26 @@ the norm of the next iterate is greater than the trust-region radius.
 """
 mutable struct stopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
-    stopWhenTrustRegionIsExceeded() = new("")
+    storage::StoreOptionsAction
+    stopWhenTrustRegionIsExceeded(a::StoreOptionsAction=StoreOptionsAction( (:η, :δ, :residual) )) = new("", a)
 end
 function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
-    zrOld = dot(p.M, o.x, z, o.residual)
-    δOld = o.δ
-    Hδ = getHessian(p, o.x, δOld)
-    δHδ = dot(p.M, o.x, δOld, Hδ)
-    α = zrOld/δHδ
-    resi = o.residual - α * Hδ
-    z = o.useRand ? resi : getPreconditioner(p, o.x, resi)
-    zr = dot(p.M, o.x, z, resi)
-    β = zr/zrOld
-    δ = tangent(p.M, o.x, z + β * o.δ)
-    a1 = dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, o.residual) : o.residual, o.residual)
-    a2 = dot(p.M, o.x, o.δ, getHessian(p, o.x, o.δ))
-    a3 = dot( p.M, o.x, o.η, getPreconditioner(p, o.x, o.δ))
-    a4 = dot(p.M, o.x, o.δ, getPreconditioner(p, o.x, o.δ))
-    norm = dot(p.M, o.x, o.η, o.η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4
-    if norm >= o.Δ^2 && i > 0
-        c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.Δ^2) = Δ²). \n"
-        return true
+    if hasStorage(c.storage,:δ) && hasStorage(c.storage,:η) && hasStorage(c.storage,:residual)
+        η = getStorage(c.storage,:δ)
+        δ = getStorage(c.storage,:δ)
+        residual = getStorage(c.storage,:δ)
+        a1 = dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, residual) : residual, residual)
+        a2 = dot(p.M, o.x, δ, getHessian(p, o.x, δ))
+        a3 = dot( p.M, o.x, η, getPreconditioner(p, o.x, δ))
+        a4 = dot(p.M, o.x, δ, getPreconditioner(p, o.x, δ))
+        norm = dot(p.M, o.x, η, η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4
+        if norm >= o.Δ^2 && i >= 0
+            c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.Δ^2) = Δ²). \n"
+            c.storage(p,o,i)
+            return true
+        end
     end
+    c.storage(p,o,i)
     return false
 end
 
@@ -347,7 +344,7 @@ dircetion is less than zero.
 mutable struct stopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
     storage::StoreOptionsAction
-    stopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction( (:δ) )) = new("", a)
+    stopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction( (:δ, ) )) = new("", a)
 end
 function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if hasStorage(c.storage,:δ)
