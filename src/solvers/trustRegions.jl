@@ -193,11 +193,11 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 o.Δ = o.Δ
         end
         D=o.Δ
-        print("Δ = $D \n")
+        print("\n \n Δ = $D \n \n")
         # Choose to accept or reject the proposed step based on the model
         # performance. Note the strict inequality.
         if model_decreased && ρ > o.ρ_prime
-                print("‖η‖ = $(norm(p.M, o.x, η)) \n")
+                print("\n \n ‖η‖ = $(norm(p.M, o.x, η)) \n \n")
                 o.x = x_prop
         end
 end
