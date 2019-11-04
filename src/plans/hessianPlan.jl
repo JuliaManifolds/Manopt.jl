@@ -300,9 +300,9 @@ mutable struct stopWhenTrustRegionIsExceeded <: StoppingCriterion
 end
 function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if hasStorage(c.storage,:δ) && hasStorage(c.storage,:η) && hasStorage(c.storage,:residual)
-        η = getStorage(c.storage,:δ)
+        η = getStorage(c.storage,:η)
         δ = getStorage(c.storage,:δ)
-        residual = getStorage(c.storage,:δ)
+        residual = getStorage(c.storage,:residual)
         a1 = dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, residual) : residual, residual)
         a2 = dot(p.M, o.x, δ, getHessian(p, o.x, δ))
         a3 = dot( p.M, o.x, η, getPreconditioner(p, o.x, δ))
