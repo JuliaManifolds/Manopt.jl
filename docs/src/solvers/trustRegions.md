@@ -45,18 +45,17 @@ Repeat until a convergence criterion is reached
     $m_{k}({x}^{* })=m_{k}(x_k)+\langle\eta_k,\operatorname{Grad}[F] (x_k)\rangle_{x_k}
     +\frac{1}{2}\langle\eta_k,\operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}$
     describes the quadratic model function with $m_{k}(x_k) = F(x_k)$.
-6. If $\rho < \frac{1}{4}$ or $m_{k}(x_k)-m_{k}({x}^{* }) \leqq 0$ or
+6. If $\rho < \frac{1}{4}$ or $m_{k}(x_k)-m_{k}({x}^{* }) \leq 0$ or
     $\rho = \pm \infty$ set $\Delta =\frac{1}{4} \Delta$. Else if
     $\rho > \frac{3}{4}$ and the Steihaug-Toint truncated conjugate-gradient
     method stopped because of a negative curvature or exceeding the trust-region
-    ($\operatorname{norm}(\eta_k) \geqq \Delta$) set
+    ($\operatorname{norm}(\eta_k) \geq \Delta$) set
     $\Delta = \operatorname{min}(2 \Delta, \bar{\Delta})$.
     If none of the two cases applies, the trust-region radius $\Delta$ remains
     unchanged.
-7. If $m_{k}(x_k)-m_{k}({x}^{* }) \geqq 0$ and $\rho > \rho'$ set
+7. If $m_{k}(x_k)-m_{k}({x}^{* }) \geq 0$ and $\rho > \rho'$ set
     $x_k = {x}^{* }$.
 8. Set $k = k+1$.
-
 
 ## Result
 

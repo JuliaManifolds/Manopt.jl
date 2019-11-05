@@ -215,9 +215,7 @@ end
     project(M,x,v)
 """
 function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: AbstractFloat}
-	n = M.dimension
-	v[n+1] = (1/getValue(x)[n+1])*transpose(v[1:n])*getValue(x)[1:n]
-	return HnTVector{T}(v)
+    error("project not yet implemented on Hyperbolic space.");
 end
 
 @doc doc"""

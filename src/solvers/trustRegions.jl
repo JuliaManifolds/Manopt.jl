@@ -35,8 +35,8 @@ see the reference:
 # Optional
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
-* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(1000),
-  `[`stopWhenGradientNormLess`](@ref)`(10^(-6))) a functor inheriting
+* `stoppingCriterion` – ([`stopWhenAny`](@ref)([`stopAfterIteration`](@ref)`(1000)`,
+  [`stopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
 * `Δ` - the (initial) trust-region radius
@@ -128,7 +128,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Solve TR subproblem approximately
         opt = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
-        debug = [:Iteration," ",:Stop],
+        #debug = [:Iteration," ",:Stop],
         returnOptions=true)
         option = getOptions(opt) # remove decorators
         η = getSolverResult(option)
@@ -162,7 +162,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 end
         end
         # Compute the tentative next iterate (the proposal)
-        x_prop  = retraction(p.M, o.x, η)
+        x_prop  = exp(p.M, o.x, η)
         # Compute the function value of the proposal
         fx_prop = getCost(p, x_prop)
         # Check the performance of the quadratic model against the actual cost.
@@ -192,12 +192,9 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         else
                 o.Δ = o.Δ
         end
-        D=o.Δ
-        print("\n \n Δ = $D \n \n")
         # Choose to accept or reject the proposed step based on the model
         # performance. Note the strict inequality.
         if model_decreased && ρ > o.ρ_prime
-                print("\n \n ‖η‖ = $(norm(p.M, o.x, η)) \n \n")
                 o.x = x_prop
         end
 end

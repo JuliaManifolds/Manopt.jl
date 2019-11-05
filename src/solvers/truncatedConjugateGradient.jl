@@ -124,7 +124,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     Hδ = getHessian(p, o.x, δOld)
     # Compute curvature (often called kappa).
     δHδ = dot(p.M, o.x, δOld, Hδ)
-    print("\n \n δHδ = $δHδ \n \n")
     # Note that if d_Hd == 0, we will exit at the next "if" anyway.
     α = zrOld/δHδ
     # <neweta,neweta>_P =
@@ -138,7 +137,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     if δHδ <= 0 || e_Pe_new >= o.Δ^2
         tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_Pe))) / d_Pd
         o.η = ηOld - tau * (δOld)
-        print("\n \n τ = $tau \n \n")
     else
         # No negative curvature and eta_prop inside TR: accept it.
         o.η = ηOld - α * (δOld)

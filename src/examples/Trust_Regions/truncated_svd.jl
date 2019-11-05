@@ -81,7 +81,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     print("x = $x\n")
     X = trustRegions(M, cost, rgrad, x, rhess;
         Δ_bar=4*sqrt(2*p),
-        debug = [:Iteration, " ", :Cost, "\n", 1, :Stop]
+        debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop]
     )
 
     U = getValue(getValue(X)[1])
