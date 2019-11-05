@@ -282,13 +282,17 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`getReason`](@ref).
+* `storage` – stores the necessary parameters `η, δ, residual` to check the
+    criterion.
 
 # Constructor
 
-    stopWhenTrustRegionIsExceeded()
+    stopWhenTrustRegionIsExceeded([a])
 
 initialize the stopWhenTrustRegionIsExceeded functor to indicate to stop after
-the norm of the next iterate is greater than the trust-region radius.
+the norm of the next iterate is greater than the trust-region radius using the
+[`StoreOptionsAction`](@ref) `a`, which is initialized to store
+`:η, :δ, :residual` by default.
 
 # See also
 [`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
@@ -329,14 +333,17 @@ does not give a reduction of the model.
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`getReason`](@ref).
+* `storage` – stores the necessary parameter `δ` to check the
+    criterion.
 
 # Constructor
 
-    stopWhenCurvatureIsNegative()
+    stopWhenCurvatureIsNegative([a])
 
 initialize the stopWhenCurvatureIsNegative functor to indicate to stop after
 the inner product of the search direction and the hessian applied on the search
-dircetion is less than zero.
+dircetion is less than zero using the [`StoreOptionsAction`](@ref) `a`, which
+is initialized to just store `:δ` by default.
 
 # See also
 [`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
