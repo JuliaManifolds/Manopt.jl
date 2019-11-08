@@ -73,6 +73,7 @@ see the reference:
 function trustRegions(M::mT,
         F::Function, ∇F::Function,
         x::MP, H::Union{Function,Missing};
+        retraction::Function = retraction,
         preconditioner::Function = (M,x,ξ) -> ξ,
         stoppingCriterion::StoppingCriterion = stopWhenAny(
         stopAfterIteration(1000), stopWhenGradientNormLess(10^(-6))),
@@ -98,7 +99,7 @@ function trustRegions(M::mT,
 
         p = HessianProblem(M,F,∇F,H,preconditioner)
 
-        o = TrustRegionsOptions(x,stoppingCriterion,Δ,Δ_bar,useRandom,ρ_prime,ρ_regularization)
+        o = TrustRegionsOptions(x,stoppingCriterion,Δ,Δ_bar,retraction,useRandom,ρ_prime,ρ_regularization)
 
         o = decorateOptions(o; kwargs...)
         resultO = solve(p,o)
@@ -162,7 +163,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 end
         end
         # Compute the tentative next iterate (the proposal)
-        x_prop  = exp(p.M, o.x, η)
+        x_prop  = o.retraction(p.M, o.x, η)
         # Compute the function value of the proposal
         fx_prop = getCost(p, x_prop)
         # Check the performance of the quadratic model against the actual cost.

@@ -128,11 +128,12 @@ mutable struct TrustRegionsOptions <: HessianOptions
     stop::StoppingCriterion
     Δ::Float64
     Δ_bar::Float64
+    retraction::Function
     useRand::Bool
     ρ_prime::Float64
     ρ_regularization::Float64
     TrustRegionsOptions(x::P, stop::StoppingCriterion, δ::Float64, δ_bar::Float64,
-    useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,useRand,ρ_prime,ρ_regularization)
+    retr::Function, useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,retr,useRand,ρ_prime,ρ_regularization)
 end
 
 @doc doc"""
