@@ -29,9 +29,32 @@ $\rho' = 0.1$ on default. Set $k=0$.
 
 Repeat until a convergence criterion is reached
 
-1. Set $\eta$`=`[`randomTVector`](@ref)`(M,x)` if using randomized approach. Else
-    set $\eta$`=`[`zeroTVector`](@ref)`(M,x)`.
-2. Set $\eta^{* }$`=`[`truncatedConjugateGradient`](@ref)`(M, F, ∇F, x_k, η, H, Δ; preconditioner, useRandom)`.
+1. Set $\eta$ as a random tangent vector if using randomized approach. Else
+    set $\eta$ as the zero vector in the tangential space.
+2. Set $\eta^{* }$ as the solution of the trust-region subproblem, computed by
+    the [`truncatedConjugateGradient`](@ref) method with $\eta$ as initial
+    vector.
+3. If using randomized approach compare $\eta^{* }$ with the Cauchy point
+    $\eta_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$ by the model function $m_{k}(\cdot)$. If the
+    model decrease is larger by using the Cauchy point, set
+    $\eta^{* } = \eta_{c}^{* }$.
+4. Set ${x}^{* } = \operatorname{Retr}_{x_k}(\eta^{* })$.
+5. Set $\rho = \frac{F(x_k)-F({x}^{* })}{m_{k}(x_k)-m_{k}({x}^{* })}$, where
+    $m_{k}(\cdot)$ describes the quadratic model function.
+6. Update the trust-region radius:
+        1. If $\rho < \frac{1}{4}$ or $m_{k}(x_k)-m_{k}({x}^{* }) \leq 0$ or
+        $\rho = \pm \infty$ set $\Delta =\frac{1}{4} \Delta$.
+        2. If $\rho > \frac{3}{4}$ and the Steihaug-Toint truncated conjugate-gradient
+        method stopped because of a negative curvature or exceeding the trust-region
+        ($\operatorname{norm}(\eta_k) \geq \Delta$) set
+        $\Delta = \operatorname{min}(2 \Delta, \bar{\Delta})$.
+        3. If none of the two cases applies, the trust-region radius $\Delta$ remains
+        unchanged.
+7. If $m_{k}(x_k)-m_{k}({x}^{* }) \geq 0$ and $\rho > \rho'$ set
+    $x_k = {x}^{* }$.
+8. Set $k = k+1$.
+
+
 3. If using randomized approach set
     $\eta_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$.
     If
@@ -63,12 +86,14 @@ The result is given by the last computed $x_k$.
 
 ## Remarks for the steps
 
-1. To step number 1: Using randomized approach means using a random tangent vector as initial
-    vector for the approximal solve of the trust-regions subproblem.
-    If this is the case, keep in mind that the vector must be in the
+1. To step number 1: Using randomized approach means using a random tangent
+    vector as initial vector for the approximal solve of the trust-regions
+    subproblem. If this is the case, keep in mind that the vector must be in the
     trust-region radius. This is achieved by multiplying
     `η = `[`randomTVector`](@ref)`(M,x)` by `sqrt(4,eps(Float64))` as long as
     its norm is greater than the current trust-region radius $\Delta$.
+    For not using randomized approach, one can get the zero  tangent
+    vector with `η = `[`zeroTVector`](@ref)`(M,x)`.
 2. To step number 2: Obtain $\eta^{* }$ by (approximately) solving the
     trust-regions subproblem with the Steihaug-Toint truncated
     conjugate-gradient method. The problem as well as the solution method is
