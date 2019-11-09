@@ -215,7 +215,28 @@ end
     project(M,x,v)
 """
 function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: AbstractFloat}
-    error("project not yet implemented on Hyperbolic space.");
+    X = getValue(x)
+	n = manifoldDimension(M)
+	b = zeros(n)
+	A = zeros(n,n)
+	ξ = zeros(n+1)
+	for i = 1:n
+		b[i] = -v[i] - (X[i]/X[n+1]) * v[n+1]
+	end
+	for i = 1:n
+		for j = 1:n
+			if i==j
+				A[i,j] = 1 + (X[i]/X[n+1])^2
+			end
+			A[i,j] = (X[i]*X[j])/X[n+1]^2
+		end
+	end
+	ξ[1:n] = A\b
+	for i=1:n
+		ξ[n+1] = ξ[n+1] + ξ[i]*X[i]
+	end
+	ξ[n+1] = (1/X[n+1])*ξ[n+1]
+	return HnTVector(1/norm(ξ)*ξ)
 end
 
 @doc doc"""
