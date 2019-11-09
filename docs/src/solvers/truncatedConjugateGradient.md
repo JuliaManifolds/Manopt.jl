@@ -3,7 +3,9 @@
 The aim is to solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{\eta \in T_{x}M} m_{x}(\eta) = F(x) + \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
+\operatorname*{arg\,min}_{\eta \in T_{x}\mathcal{M}} m_{x}(\eta) = F(x) +
+\langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle
+\operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
 ```
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leq {\Delta}^2

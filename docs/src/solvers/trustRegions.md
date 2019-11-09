@@ -8,21 +8,22 @@ min_{x \in \mathcal{M}} F(x)
 
 by using the Riemannian trust-regions solver. It is number one choice for smooth
 optimization. This trust-region method uses the Steihaug-Toint truncated
-conjugate-gradient method to solve the inner minimization problems called the
-trust-regions subproblem. This inner solve can be preconditioned: simply provide
-a preconditioner. If no Hessian of the cost function $F$ is provided, a standard
-approximation of the Hessian based on the gradient $∇F$ with
-[`approxHessianFD`](@ref) will be computed.
+conjugate-gradient method to solve the inner minimization problem called the
+trust-regions subproblem. This inner solve can be preconditioned by providing
+a preconditioner (symmetric and positive deﬁnite, an approximation of the
+inverse of the Hessian of $F$). If no Hessian of the cost function $F$ is
+provided, a standard approximation of the Hessian based on the gradient
+$\nabla F$ with [`approxHessianFD`](@ref) will be computed.
 
 ## Initialization
 
-Initialize $x_0 = x$ which is an initial point $x$ on the manifold. It can be
-given by the caller or set $x_0$`=`[`randomMPoint`](@ref)`(M)`.
-Set the initial trust-region radius $\Delta =\frac{1}{8} \bar{\Delta}$ where
-$\bar{\Delta}$ is the maximum radius the trust-region can have. Usually one uses
+Initialize $x_0 = x$ with an initial point $x$ on the manifold. It can be
+given by the caller or set randomly. Set the initial trust-region radius
+$\Delta =\frac{1}{8} \bar{\Delta}$ where $\bar{\Delta}$ is the maximum radius
+the trust-region can have. Usually one uses
 the root of the manifold dimension $\operatorname{dim}(\mathcal{M})$.
-For accepting the next iterate and evaluating the new trust-region radius we
-need an accept/reject threshold $\rho' \in [0,\frac{1}{4})$, which is  
+For accepting the next iterate and evaluating the new trust-region radius one
+needs an accept/reject threshold $\rho' \in [0,\frac{1}{4})$, which is  
 $\rho' = 0.1$ on default. Set $k=0$.
 
 ## Iteration
@@ -30,10 +31,9 @@ $\rho' = 0.1$ on default. Set $k=0$.
 Repeat until a convergence criterion is reached
 
 1. Set $\eta$ as a random tangent vector if using randomized approach. Else
-    set $\eta$ as the zero vector in the tangential space.
+    set $\eta$ as the zero vector in the tangential space $T_{x_k}\mathcal{M}$.
 2. Set $\eta^{* }$ as the solution of the trust-region subproblem, computed by
-    the [`truncatedConjugateGradient`](@ref) method with $\eta$ as initial
-    vector.
+    the tcg-method with $\eta$ as initial vector.
 3. If using randomized approach compare $\eta^{* }$ with the Cauchy point
     $\eta_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$ by the model function $m_{x_k}(\cdot)$. If the
     model decrease is larger by using the Cauchy point, set
@@ -46,7 +46,7 @@ Repeat until a convergence criterion is reached
     \text{or} \, m_{x_k}(\eta)-m_{x_k}(\eta^{* }) \leq 0 \, \text{or}  \,
     \rho = \pm \infty , \\ \operatorname{min}(2 \Delta, \bar{\Delta}) &
     \rho > \frac{3}{4} \, \text{and the tcg-method stopped because of negative
-    curvature or exceeding the trust-region} \\ \Delta & \, \text{otherwise.}
+    curvature or exceeding the trust-region}, \\ \Delta & \, \text{otherwise.}
     \end{cases}$
 7. If $m_{x_k}(\eta)-m_{x_k}(\eta^{* }) \geq 0$ and $\rho > \rho'$ set
     $x_k = {x}^{* }$.
@@ -57,6 +57,9 @@ Repeat until a convergence criterion is reached
 The result is given by the last computed $x_k$.
 
 ## Remarks for the steps
+
+To the Initialization: A random point on the manifold can be generated with
+[`randomMPoint`](@ref)`(M)`.
 
 To step number 1: Using randomized approach means using a random tangent
 vector as initial vector for the approximal solve of the trust-regions
@@ -70,21 +73,23 @@ vector with `η = `[`zeroTVector`](@ref)`(M,x)`.
 To step number 2: Obtain $\eta^{* }$ by (approximately) solving the
 trust-regions subproblem
 ```math
-\operatorname*{arg\,min}_{\eta \in T_{x_k}M} m_{x_k}(\eta) = F(x_k) +
+\operatorname*{arg\,min}_{\eta \in T_{x_k}\mathcal{M}} m_{x_k}(\eta) = F(x_k) +
 \langle \nabla F(x_k), \eta \rangle_{x_k} + \frac{1}{2} \langle
 \operatorname{Hess}[F](\eta)_ {x_k}, \eta \rangle_{x_k}
 ```
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x_k} \leq {\Delta}^2
 ```
-with the Steihaug-Toint truncated conjugate-gradient method. The problem as well
-as the solution method is described in the [`truncatedConjugateGradient`](@ref).
+with the Steihaug-Toint truncated conjugate-gradient (tcg) method. The problem
+as well as the solution method is described in the
+[`truncatedConjugateGradient`](@ref).
 
-To step number 3: If using random tangent vector as initial vector, compare result with the
-Cauchy point. Convergence proofs assume that we achieve at least (a fraction
-of) the reduction of the Cauchy point. The idea is to go in the direction of
-the gradient to an optimal point. This can be on the edge, but also before.
-The parameter \tau_{k}^{c} for the optimal length is defined by
+To step number 3: If using a random tangent vector as an initial vector, compare
+the result of the tcg-method with the Cauchy point. Convergence proofs assume
+that one achieves at least (a fraction of) the reduction of the Cauchy point.
+The idea is to go in the direction of the gradient to an optimal point. This
+can be on the edge, but also before.
+The parameter $\tau_{c}$ for the optimal length is defined by
 ```math
 \tau_{c} = \begin{cases} 1 & \langle \operatorname{Grad}[F] (x_k), \,
 \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leqq 0 , \\

@@ -231,11 +231,11 @@ function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: Abstrac
 			A[i,j] = (X[i]*X[j])/X[n+1]^2
 		end
 	end
-	ξ[1:n] = A\b
-	for i=1:n
-		ξ[n+1] = ξ[n+1] + ξ[i]*X[i]
+	if det(A) ≈ 0 atol = 10. ^(-15)
+		error("Projection is not posible.")
 	end
-	ξ[n+1] = (1/X[n+1])*ξ[n+1]
+	ξ[1:n] = A\b
+	ξ[n+1] = (1/X[n+1])* transpose(X[1:n])*ξ[1:n]
 	return HnTVector(1/norm(ξ)*ξ)
 end
 
