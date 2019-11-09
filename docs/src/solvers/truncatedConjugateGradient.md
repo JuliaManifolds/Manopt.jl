@@ -6,7 +6,7 @@ The aim is to solve the trust-region subproblem
 \operatorname*{arg\,min}_{\eta \in T_{x}M} m_{x}(\eta) = F(x) + \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
 ```
 ```math
-\text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
+\text{s.t.} \; \langle \eta, \eta \rangle_{x} \leq {\Delta}^2
 ```
 
 on a manifold by using the Steihaug-Toint truncated conjugate-gradient method.

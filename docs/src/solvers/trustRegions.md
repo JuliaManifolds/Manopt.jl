@@ -35,48 +35,20 @@ Repeat until a convergence criterion is reached
     the [`truncatedConjugateGradient`](@ref) method with $\eta$ as initial
     vector.
 3. If using randomized approach compare $\eta^{* }$ with the Cauchy point
-    $\eta_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$ by the model function $m_{k}(\cdot)$. If the
+    $\eta_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$ by the model function $m_{x_k}(\cdot)$. If the
     model decrease is larger by using the Cauchy point, set
     $\eta^{* } = \eta_{c}^{* }$.
 4. Set ${x}^{* } = \operatorname{Retr}_{x_k}(\eta^{* })$.
-5. Set $\rho = \frac{F(x_k)-F({x}^{* })}{m_{k}(x_k)-m_{k}({x}^{* })}$, where
-    $m_{k}(\cdot)$ describes the quadratic model function.
+5. Set $\rho = \frac{F(x_k)-F({x}^{* })}{m_{x_k}(\eta)-m_{x_k}(\eta^{* })}$, where
+    $m_{x_k}(\cdot)$ describes the quadratic model function.
 6. Update the trust-region radius:
-        1. If $\rho < \frac{1}{4}$ or $m_{k}(x_k)-m_{k}({x}^{* }) \leq 0$ or
-        $\rho = \pm \infty$ set $\Delta =\frac{1}{4} \Delta$.
-        2. If $\rho > \frac{3}{4}$ and the Steihaug-Toint truncated conjugate-gradient
-        method stopped because of a negative curvature or exceeding the trust-region
-        ($\operatorname{norm}(\eta_k) \geq \Delta$) set
-        $\Delta = \operatorname{min}(2 \Delta, \bar{\Delta})$.
-        3. If none of the two cases applies, the trust-region radius $\Delta$ remains
-        unchanged.
-7. If $m_{k}(x_k)-m_{k}({x}^{* }) \geq 0$ and $\rho > \rho'$ set
-    $x_k = {x}^{* }$.
-8. Set $k = k+1$.
-
-
-3. If using randomized approach set
-    $\eta_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$.
-    If
-    $F(x_k) + \langle \eta_{c}^{* },\operatorname{Grad}[F] (x_k)\rangle_{x_k}
-    +\frac{1}{2}\langle \eta_{c}^{* }, \operatorname{Hess}[F] (\eta_{c}^{* })_ {x_k}\rangle_{x_k}
-    < F(x_k) + \langle\ \eta^{* }, \operatorname{Grad}[F] (x_k) \rangle_{x_k}
-    +\frac{1}{2} \langle \eta^{* }, \operatorname{Hess}[F] (\eta^{* })_ {x_k} \rangle_{x_k}$
-    replace the update vector $\eta^{* }$ with the cauchy point $\eta_{c}^{* }$.
-4. Set ${x}^{* }$ `=`[`retraction`](@ref)`(M, x_k, η*)`.
-5. Set $\rho = \frac{F(x_k)-F({x}^{* })}{m_{k}(x_k)-m_{k}({x}^{* })}$, where
-    $m_{k}({x}^{* })=m_{k}(x_k)+\langle\eta_k,\operatorname{Grad}[F] (x_k)\rangle_{x_k}
-    +\frac{1}{2}\langle\eta_k,\operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}$
-    describes the quadratic model function with $m_{k}(x_k) = F(x_k)$.
-6. If $\rho < \frac{1}{4}$ or $m_{k}(x_k)-m_{k}({x}^{* }) \leq 0$ or
-    $\rho = \pm \infty$ set $\Delta =\frac{1}{4} \Delta$. Else if
-    $\rho > \frac{3}{4}$ and the Steihaug-Toint truncated conjugate-gradient
-    method stopped because of a negative curvature or exceeding the trust-region
-    ($\operatorname{norm}(\eta_k) \geq \Delta$) set
-    $\Delta = \operatorname{min}(2 \Delta, \bar{\Delta})$.
-    If none of the two cases applies, the trust-region radius $\Delta$ remains
-    unchanged.
-7. If $m_{k}(x_k)-m_{k}({x}^{* }) \geq 0$ and $\rho > \rho'$ set
+    $\Delta = \begin{cases} \frac{1}{4} \Delta & \rho < \frac{1}{4} \,
+    \text{or} \, m_{x_k}(\eta)-m_{x_k}(\eta^{* }) \leq 0 \, \text{or}  \,
+    \rho = \pm \infty , \\ \operatorname{min}(2 \Delta, \bar{\Delta}) &
+    \rho > \frac{3}{4} \, \text{and the tcg-method stopped because of negative
+    curvature or exceeding the trust-region} \\ \Delta & \, \text{otherwise.}
+    \end{cases}$
+7. If $m_{x_k}(\eta)-m_{x_k}(\eta^{* }) \geq 0$ and $\rho > \rho'$ set
     $x_k = {x}^{* }$.
 8. Set $k = k+1$.
 
@@ -86,29 +58,63 @@ The result is given by the last computed $x_k$.
 
 ## Remarks for the steps
 
-1. To step number 1: Using randomized approach means using a random tangent
-    vector as initial vector for the approximal solve of the trust-regions
-    subproblem. If this is the case, keep in mind that the vector must be in the
-    trust-region radius. This is achieved by multiplying
-    `η = `[`randomTVector`](@ref)`(M,x)` by `sqrt(4,eps(Float64))` as long as
-    its norm is greater than the current trust-region radius $\Delta$.
-    For not using randomized approach, one can get the zero  tangent
-    vector with `η = `[`zeroTVector`](@ref)`(M,x)`.
-2. To step number 2: Obtain $\eta^{* }$ by (approximately) solving the
-    trust-regions subproblem with the Steihaug-Toint truncated
-    conjugate-gradient method. The problem as well as the solution method is
-    described in the [`truncatedConjugateGradient`](@ref).
-3. To step number 3: If using random tangent vector as initial vector, compare result with the
-    Cauchy point. Convergence proofs assume that we achieve at least (a fraction
-    of) the reduction of the Cauchy point. The idea is to go in the direction of
-    the gradient to an optimal point. This can be on the edge, but also before.
-    The optimal length is defined by
-    $\tau_{k}^{c} = \begin{cases} 1 & \langle \operatorname{Grad}[F] (x_k), \, \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leqq 0 , \\ \operatorname{min}(\frac{{\operatorname{norm}(\operatorname{Grad}[F] (x_k))}^3}{\Delta \langle \operatorname{Grad}[F] (x_k), \, \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise.} \end{cases}$
-4. To step number 6: We know that the [`truncatedConjugateGradient`](@ref) algorithm stopped for
-    these reasons when the stopping criteria [`stopWhenCurvatureIsNegative`](@ref),
-    [`stopWhenTrustRegionIsExceeded`](@ref) are activated.
-6. To step number 7: The last step is to decide if the new point ${x}^{* }$ is
-    accepted.
+To step number 1: Using randomized approach means using a random tangent
+vector as initial vector for the approximal solve of the trust-regions
+subproblem. If this is the case, keep in mind that the vector must be in the
+trust-region radius. This is achieved by multiplying
+`η = `[`randomTVector`](@ref)`(M,x)` by `sqrt(4,eps(Float64))` as long as
+its norm is greater than the current trust-region radius $\Delta$.
+For not using randomized approach, one can get the zero  tangent
+vector with `η = `[`zeroTVector`](@ref)`(M,x)`.
+
+To step number 2: Obtain $\eta^{* }$ by (approximately) solving the
+trust-regions subproblem
+```math
+\operatorname*{arg\,min}_{\eta \in T_{x_k}M} m_{x_k}(\eta) = F(x_k) +
+\langle \nabla F(x_k), \eta \rangle_{x_k} + \frac{1}{2} \langle
+\operatorname{Hess}[F](\eta)_ {x_k}, \eta \rangle_{x_k}
+```
+```math
+\text{s.t.} \; \langle \eta, \eta \rangle_{x_k} \leq {\Delta}^2
+```
+with the Steihaug-Toint truncated conjugate-gradient method. The problem as well
+as the solution method is described in the [`truncatedConjugateGradient`](@ref).
+
+To step number 3: If using random tangent vector as initial vector, compare result with the
+Cauchy point. Convergence proofs assume that we achieve at least (a fraction
+of) the reduction of the Cauchy point. The idea is to go in the direction of
+the gradient to an optimal point. This can be on the edge, but also before.
+The parameter \tau_{k}^{c} for the optimal length is defined by
+```math
+\tau_{c} = \begin{cases} 1 & \langle \operatorname{Grad}[F] (x_k), \,
+\operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leqq 0 , \\
+\operatorname{min}(\frac{{\operatorname{norm}(\operatorname{Grad}[F] (x_k))}^3}
+{\Delta \langle \operatorname{Grad}[F] (x_k), \,
+\operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise.}
+\end{cases}
+```
+To check the model decrease one compares
+$m_{x_k}(\eta_{c}^{* }) = F(x_k) + \langle \eta_{c}^{* },
+\operatorname{Grad}[F] (x_k)\rangle_{x_k} + \frac{1}{2}\langle \eta_{c}^{* },
+\operatorname{Hess}[F] (\eta_{c}^{* })_ {x_k}\rangle_{x_k}$ with
+$m_{x_k}(\eta^{* }) = F(x_k) + \langle \eta^{* },
+\operatorname{Grad}[F] (x_k)\rangle_{x_k} + \frac{1}{2}\langle \eta^{* },
+\operatorname{Hess}[F] (\eta^{* })_ {x_k}\rangle_{x_k}$.
+If $m_{x_k}(\eta_{c}^{* }) < m_{x_k}(\eta^{* })$ then is
+$m_{x_k}(\eta_{c}^{* })$ the better choice.
+
+To step number 4: $\operatorname{Retr}_{x_k}(\cdot)$ denotes the retraction, a
+mapping $\operatorname{Retr}_{x_k}:T_{x_k}\mathcal{M} \rightarrow \mathcal{M}$
+wich approximates the exponential map. In some cases it is cheaper to use this
+instead of the exponential.
+
+To step number 6: One knows that the [`truncatedConjugateGradient`](@ref) algorithm stopped for
+these reasons when the stopping criteria [`stopWhenCurvatureIsNegative`](@ref),
+[`stopWhenTrustRegionIsExceeded`](@ref) are activated.
+
+To step number 7: The last step is to decide if the new point ${x}^{* }$ is
+accepted.
+
 ## Interface
 
 ```@docs
