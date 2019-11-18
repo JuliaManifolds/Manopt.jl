@@ -219,18 +219,9 @@ function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: Abstrac
 	n = manifoldDimension(M)
 	b = zeros(n)
 	A = zeros(n,n)
-	ξ = zeros(n+1)
-	for i = 1:n
-		b[i] = -v[i] - (X[i]/X[n+1]) * v[n+1]
-	end
-	for i = 1:n
-		for j = 1:n
-			if i==j
-				A[i,j] = 1 + (X[i]/X[n+1])^2
-			end
-			A[i,j] = (X[i]*X[j])/X[n+1]^2
-		end
-	end
+    ξ = zeros(n+1)
+    b = - v[1:n] + v[n+1]/X[n+1] * X[1:n]
+    A = X[1:n]*X[1:n]' / (X[n+1]^2) + one(A)
 	if det(A) ≈ 0 atol = 10. ^(-15)
 		error("Projection is not posible.")
 	end
