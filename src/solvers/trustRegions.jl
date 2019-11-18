@@ -15,14 +15,14 @@ the gradient ∇F will be computed.
 For solving the the inner trust-region subproblem of finding an update-vector,
 it uses the Steihaug-Toint truncated conjugate-gradient method.
 For a description of the algorithm and theorems offering convergence guarantees,
-see the reference:
+see the references
 
-* [ABG07] P.-A. Absil, C.G. Baker, K.A. Gallivan,
+* P.-A. Absil, C.G. Baker, K.A. Gallivan,
         Trust-region methods on Riemannian manifolds, FoCM, 2007.
-* [AMS08] P.-A. Absil, R. Mahony and R. Sepulchre,
+* P.-A. Absil, R. Mahony and R. Sepulchre,
         Optimization Algorithms on Matrix Manifolds, Princeton University Press,
         2008.
-* [CGT2000] A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
+* A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
         MPS, 2000.
 
 # Input

@@ -56,7 +56,7 @@ Repeat until a convergence criterion is reached
 
 The result is given by the last computed $x_k$.
 
-## Remarks for the steps
+## Remarks
 
 To the Initialization: A random point on the manifold can be generated with
 [`randomMPoint`](@ref)`(M)`.
@@ -92,7 +92,7 @@ can be on the edge, but also before.
 The parameter $\tau_{c}$ for the optimal length is defined by
 ```math
 \tau_{c} = \begin{cases} 1 & \langle \operatorname{Grad}[F] (x_k), \,
-\operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leqq 0 , \\
+\operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leq 0 , \\
 \operatorname{min}(\frac{{\operatorname{norm}(\operatorname{Grad}[F] (x_k))}^3}
 {\Delta \langle \operatorname{Grad}[F] (x_k), \,
 \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise.}
