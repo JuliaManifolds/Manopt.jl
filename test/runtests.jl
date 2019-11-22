@@ -17,7 +17,7 @@ using Test
     include("manifolds/testExtended.jl")
     include("manifolds/testCombined.jl")
 end
-@testset "Plan Tests         " begin 
+@testset "Plan Tests         " begin
     include("plans/testDebug.jl")
     include("plans/testRecord.jl")
     include("plans/testGradientPlan.jl")
@@ -41,4 +41,5 @@ end
     include("solvers/testDR.jl")
     include("solvers/testCPP.jl")
     include("solvers/testGradDesc.jl")
+    include("solvers/testTrustRegions.jl")
 end
