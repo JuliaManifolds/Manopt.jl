@@ -63,4 +63,13 @@
     )
 
     @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
+
+    XuR = trustRegions(M, cost, rgrad, x, rhess;
+        Δ_bar=4*sqrt(2*2),
+        useRandom = true,
+        debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop]
+    )
+
+    @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-13)
+
 end
