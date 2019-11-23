@@ -19,11 +19,12 @@ see the references
 
 * P.-A. Absil, C.G. Baker, K.A. Gallivan,
         Trust-region methods on Riemannian manifolds, FoCM, 2007.
+        DOI: 10.1007/s10208-005-0179-9
 * P.-A. Absil, R. Mahony and R. Sepulchre,
         Optimization Algorithms on Matrix Manifolds, Princeton University Press,
-        2008.
+        2008. DOI: 10.1515/9781400830244
 * A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
-        MPS, 2000.
+        MPS, 2000. DOI: 10.1137/1.9780898719857
 
 # Input
 * `M` – a manifold $\mathcal M$
