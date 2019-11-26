@@ -1,34 +1,7 @@
-#
-#   SVD decomposition of a matrix truncated to a rank
-#
-using Manopt
-import LinearAlgebra: norm, svd, Diagonal
-export truncated_svd
+@testset "Manopt Trust-Region" begin
+    A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
-"""
-    truncated_svd(A, p)
-
-return a singular value decomposition of a real valued matrix A truncated to
-rank p.
-
-# Input
-* `A` – a real-valued matrix A of size mxn
-* `p` – an integer p in min { m, n }
-
-# Output
-* `U` – an orthonormal matrix of size mxp
-* `V` – an orthonormal matrix of size nxp
-* `S` – a diagonal matrix of size pxp with nonnegative and decreasing diagonal
-        entries
-"""
-function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
-    (m, n) = size(A)
-
-    if p > min(m,n)
-        throw( ErrorException("The Rank p=$p must be smaller than the smallest dimension of A = $min(m, n).") )
-    end
-
-    prod = [Grassmannian(p, m), Grassmannian(p, n)]
+    prod = [Grassmannian(2, 3), Grassmannian(2, 3)]
 
     M = Product(prod)
 
@@ -52,7 +25,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     end
 
     function e2rHess(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-	    pxHess = getValue(project(M,x,Hess))
+      pxHess = getValue(project(M,x,Hess))
         xtGrad = getValue(x)'*eGrad
         ξxtGrad = getValue(ξ)*xtGrad
         return GrTVector(pxHess - ξxtGrad)
@@ -78,24 +51,25 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     end
 
     x = randomMPoint(M)
-    print("x = $x\n")
+
+    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
+    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = -0.1)
+    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ = -0.1)
+    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = 0.1, Δ = 0.11)
+
     X = trustRegions(M, cost, rgrad, x, rhess;
-        Δ_bar=4*sqrt(2*p),
+        Δ_bar=4*sqrt(2*2),
         debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop]
     )
 
-    U = getValue(getValue(X)[1])
-    V = getValue(getValue(X)[2])
+    @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
 
-    Spp = transpose(U)*A*V
-    SVD = svd(Spp)
-    U = U*SVD.U
-    S = SVD.S
-    V = V*SVD.V
+    XuR = trustRegions(M, cost, rgrad, x, rhess;
+        Δ_bar=4*sqrt(2*2),
+        useRandom = true,
+        debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop]
+    )
 
-    return [U, S, V]
+    @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-13)
+
 end
-
-A=[1. 2. 3. 4.; 5. 6. 7. 8.; 9. 10. 11. 12.; 13. 14. 15. 16.]
-
-truncated_svd(A,2)
