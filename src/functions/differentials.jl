@@ -68,7 +68,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `M`     – a [`Power`](@ref) manifold
 * `x`     – a [`PowPoint`](@ref).
 * `ξ`     – a [`PowTVector`](@ref).
-#
+
 # Ouput
 * `ν` – resulting tangent vector in $T_x\mathcal N$ representing the differentials of the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.

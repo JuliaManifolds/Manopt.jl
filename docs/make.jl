@@ -30,6 +30,7 @@ makedocs(
     sitename = "Manopt.jl",
     pages = [
         "Home" => "index.md",
+        "About" => "about.md",
         "Manifolds" => [
             "Introduction" => "manifolds/index.md",
             "Combinations of Manifolds" => "manifolds/combined.md",
@@ -72,5 +73,5 @@ makedocs(
 )
 deploydocs(
     repo   = "github.com/kellertuer/Manopt.jl",
-    devbranch = "development"
+   # devbranch = "development"
 )

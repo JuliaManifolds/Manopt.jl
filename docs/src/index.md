@@ -88,11 +88,6 @@ $g(t; x,y)$ | geodesic connecting $x,y\in\mathcal M$ with $t\in [0,1]$
 $\langle \cdot, \cdot\rangle_x$ | Riemannian inner product on $T_x\mathcal M$
 $\operatorname{PT}_{x\to y}\xi$ | parallel transport of $\xi\in T_x\mathcal M$ from $x$ to $y$ along $g(\cdot;x,y)$
 
-## Contribute
-
-If you notice a typo, have a question or would like even to contribute, give me a note
-at `manopt@ronnybergmann.net` or visit the [GitHub repository](https://github.com/kellertuer/Manopt.jl/) to clone/fork the repository.
-
 ## Literature
 
 ```@raw html
