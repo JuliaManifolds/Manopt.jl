@@ -32,9 +32,15 @@
 
     @test norm(M,x,ξ) == sqrt(dot(M,x,ξ,ξ))
     
-    # parallelTransport
-    # random
-    # validate
+    X = GraphEdgePoint([x1 x2; x1 x2])
+    Ξ = GraphEdgeTVector([ξ1 ξ2; ξ1 ξ2])
+    @test getValue(X) == [x1 x2; x1 x2]
+    @test getValue(Ξ) == [ξ1 ξ2; ξ1 ξ2]
+    @test distance(M,x,x) == 0.
+    @test dot(M,X,Ξ,Ξ) == 0.
+    @test manifoldDimension(X) == 12
+    @test distance(M, exp(M,X,log(M,X,X)), X) == 0.
+    @test norm(M,X,Ξ) == norm( [ norm.(getValue.(getValue(Ξ))) ...] )
     
     @test typicalDistance(M) ≈ sqrt(6) atol=5*10^(-16)
 
@@ -45,4 +51,6 @@
     @test "$M" == "The manifold on vertices and edges of a graph of The 3-dimensional Euclidean space of (vertex manifold) dimension 6."
     @test "$x" == "GraphVertexV[Rn([1.0, 0.0, 0.0]), Rn([0.0, 2.0, 0.0])]"
     @test "$ξ" == "GraphVertexT[RnT([0.0, 1.0, 1.0]), RnT([1.0, 0.0, 1.0])]"
+    @test "$X" == "GraphEdgeV[Rn([1.0, 0.0, 0.0]), Rn([1.0, 0.0, 0.0]), Rn([0.0, 2.0, 0.0]), Rn([0.0, 2.0, 0.0])]"
+    @test "$Ξ" == "GraphEdgeT[RnT([0.0, 1.0, 1.0]), RnT([0.0, 1.0, 1.0]), RnT([1.0, 0.0, 1.0]), RnT([1.0, 0.0, 1.0])]"
 end
