@@ -40,11 +40,11 @@ and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 function NelderMead(M::mT,
     F::Function,
     population::Array{MP,1} = [randomMPoint(M) for i=1:(manifoldDimension(M)+1) ];
-    stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenGradientNormLess(10.0^-8)),
+    stoppingCriterion::StoppingCriterion = stopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
     kwargs... #collect rest
   ) where {mT <: Manifold, MP <: MPoint}
-  p = costProblem(M,F)
+  p = CostProblem(M,F)
   o = NelderMeadOptions(population, stoppingCriterion;
     α = α, γ = γ, ρ = ρ, σ = σ)
   o = decorateOptions(o; kwargs...)
@@ -63,13 +63,10 @@ function initializeSolver!(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOp
     o.x = o.population[argmin(o.costs)] # select min
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadOptions}
-    # compute mean
-    m = mean(p.M,p.population)
-    # enables accessing both costs and population and avoids rearranging them internally
+    m = mean(p.M, o.population)
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
-    # log to last
     ξ =log( p.M, m, o.population[last(ind)])
-    # --- Reflection ---
+    # reflect last
     xr = exp(p.M, m, - o.α * ξ )
     Costr = getCost(p,xr)
     # is it better than the worst but not better than the best?
@@ -112,11 +109,11 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     end
     # --- Shrink ---
     for i=2:length(ind)
-        o.population[ind[i]] = geodesic(M, o.population[ind[1]], o.population[ind[i]], o.σ)
+        o.population[ind[i]] = geodesic(p.M, o.population[ind[1]], o.population[ind[i]], o.σ)
         # update cost
         o.costs[ind[i]] = getCost(p, o.population[ind[i]])
     end
     # store best
-    o.x = o.population[ argmin[o.costs] ]
+    o.x = o.population[ argmin(o.costs) ]
 end
 getSolverResult(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions} = o.x

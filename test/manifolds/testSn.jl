@@ -40,7 +40,8 @@ xT = MPointE(x); yT = MPointE(y); zT = MPointE(z);
 @test typicalDistance(M) == π
 @test "$M" == "The 2-Sphere"
 @test "$x" == "Sn([1.0, 0.0, 0.0])"
-@test "$ξ" == "SnT([0.0, 1.5708, 0.0])"
+showξ = SnTVector([0., 0., 0.])
+@test "$showξ" == "SnT([0.0, 0.0, 0.0])"
 #
 #
 #

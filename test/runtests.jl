@@ -41,4 +41,5 @@ end
     include("solvers/testDR.jl")
     include("solvers/testCPP.jl")
     include("solvers/testGradDesc.jl")
+    include("solvers/testNelderMead.jl")
 end
