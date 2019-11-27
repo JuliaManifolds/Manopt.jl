@@ -138,6 +138,13 @@ returns the corresponding [`GraphVertexPoint`](@ref).
 """
 exp(M::Graph, x::GraphVertexPoint, ξ::GraphVertexTVector, t::Float64=1.0) = GraphVertexPoint( exp.(Ref(M.manifold), getValue(x) , getValue(ξ) ))
 """
+    exp(M,x,ξ[, t=1.0])
+
+computes the product exponential map on the [`Graph`](@ref) vertices and
+returns the corresponding [`GraphEdgePoint`](@ref).
+"""
+exp(M::Graph, x::GraphEdgePoint, ξ::GraphEdgeTVector, t::Float64=1.0) = GraphEdgePoint( exp.(Ref(M.manifold), getValue(x) , getValue(ξ) ))
+"""
     log(M,x,y)
 
 computes the product logarithmic map on the [`Graph`](@ref) for two

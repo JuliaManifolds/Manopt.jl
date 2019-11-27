@@ -37,7 +37,7 @@
     @test getValue(X) == [x1 x2; x1 x2]
     @test getValue(Ξ) == [ξ1 ξ2; ξ1 ξ2]
     @test distance(M,x,x) == 0.
-    @test dot(M,X,Ξ,Ξ) == 0.
+    @test dot(M,X,Ξ,Ξ) == 8.0
     @test manifoldDimension(X) == 12
     @test distance(M, exp(M,X,log(M,X,X)), X) == 0.
     @test norm(M,X,Ξ) == norm( [ norm.(getValue.(getValue(Ξ))) ...] )
