@@ -1,6 +1,6 @@
 export HessianProblem, HessianOptions
 export TruncatedConjugateGradientOptions, TrustRegionsOptions
-export approxHessianFD
+export approxHessianFD, getHessian
 export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, stopWhenCurvatureIsNegative, stopWhenTrustRegionIsExceeded
 
 #
@@ -190,7 +190,7 @@ function approxHessianFD(p::HessianProblem, x::P, ξ::T, stepsize::Float64=2.0^(
     x1 = retraction(p.M, x, ξ, c)
     grad1 = getGradient(p, x1)
     grad1 = parallelTransport(p.M, x1, x, grad1)
-    return TVector((getValue(grad1)-getValue(grad))/c)
+    return (grad1 - grad)/c
 end
 
 @doc doc"""

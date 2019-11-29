@@ -58,18 +58,25 @@
     @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = 0.1, Δ = 0.11)
 
     X = trustRegions(M, cost, rgrad, x, rhess;
-        Δ_bar=4*sqrt(2*2),
-        debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop]
+        Δ_bar=4*sqrt(2*2)
     )
 
     @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
 
     XuR = trustRegions(M, cost, rgrad, x, rhess;
         Δ_bar=4*sqrt(2*2),
-        useRandom = true,
-        debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop]
+        useRandom = true
     )
 
-    @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-13)
+    @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-12)
 
+    XaH = trustRegions(M, cost, rgrad, x, missing;
+        stopAfterIteration(2000),
+        Δ_bar=4*sqrt(2*2)
+    )
+
+    @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-12)
+
+    ξ = randomTVector(M,x)
+    @test_throws ErrorException getHessian(SubGradientProblem(M,cost,rgrad),x, ξ)
 end
