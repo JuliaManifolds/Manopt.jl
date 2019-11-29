@@ -369,8 +369,6 @@ function retraction(M::Stiefel{T},x::StPoint{T},ξ::StTVector{T},t::Float64=1.0)
   return retractionQR(M,x,ξ,t)
 end
 
-tangent(M::Stiefel, x::StPoint, q::Matrix) = project(M,x,q)
-
 @doc doc"""
     ξ = zeroTVector(M,x)
 
