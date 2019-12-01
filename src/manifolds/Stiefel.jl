@@ -7,7 +7,7 @@ import LinearAlgebra: norm, dot, nullspace, det, tr, qr, triu, rank, svd, diag, 
 import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Stiefel, StPoint, StTVector, getValue
 export dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, project, retraction, inverseRetraction
-export zeroTVector, injectivity_radius, tangent
+export zeroTVector, injectivityRadius, tangent
 #
 # Type definitions
 #
@@ -138,7 +138,7 @@ end
 
 return the injectivity radius of the [`Stiefel`](@ref) manifold `M`$= \mathrm{St}(k,n)$.
 """
-injectivity_radius(M::Stiefel) = sqrt(M.dimensioncolumns)
+injectivityRadius(M::Stiefel) = sqrt(M.dimensioncolumns)
 
 @doc doc"""
     inverseRetractionPolar(M,x,y)

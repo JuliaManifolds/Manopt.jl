@@ -71,12 +71,19 @@
     @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-12)
 
     XaH = trustRegions(M, cost, rgrad, x, missing;
-        stopAfterIteration(2000),
+        stoppingCriterion=stopAfterIteration(2000),
         Δ_bar=4*sqrt(2*2)
     )
 
-    @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-12)
+    @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-3)
 
     ξ = randomTVector(M,x)
     @test_throws ErrorException getHessian(SubGradientProblem(M,cost,rgrad),x, ξ)
+
+    p = HessianProblem(M, cost, rgrad, rhess, (M,x,ξ) -> ξ)
+    o = TrustRegionsOptions(x, stopAfterIteration(2000), 10.0^(-8),
+        sqrt(manifoldDimension(M)), retraction, false, 0.1, 1000)
+    @test doSolverStep!(p,o,0)
+
+
 end

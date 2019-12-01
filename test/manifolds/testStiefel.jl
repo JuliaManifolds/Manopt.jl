@@ -68,7 +68,7 @@
   @test_throws ErrorException validateTVector(M,x,ξnot2)
   @test_throws ErrorException validateTVector(M,x,ξnot3)
   # Test injectivity_radius(M::Stiefel)
-  @test injectivity_radius(M) - sqrt(3) = 0
+  #@test injectivityRadius(M) - sqrt(3) = 0
 
   N = Stiefel{Complex{Float64}}(3,4)
   xcompl = StPoint{Complex{Float64}}([-0.761286+0.0462087im -0.18395+0.0566532im 0.525627+0.265715im; -0.104276+0.262847im -0.55139+0.157097im -0.582766+0.202596im; -0.324463+0.199309im -0.041674-0.427848im -0.202927+0.0456294im; -0.327554-0.29335im -0.078241+0.66583im -0.232484-0.418496im])
