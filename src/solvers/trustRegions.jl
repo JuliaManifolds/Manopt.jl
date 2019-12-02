@@ -34,6 +34,7 @@ see the references
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
 
 # Optional
+* `retraction` – approximation of the exponential map [`exp`](@ref)
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
 * `stoppingCriterion` – ([`stopWhenAny`](@ref)([`stopAfterIteration`](@ref)`(1000)`,
@@ -62,7 +63,7 @@ see the references
   when very close to convergence. This is because the corrected cost
   improvement could change sign if it is negative but very small.
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
-  complete [`Options`](@ref) re returned. This can be used to access recorded values.
+  complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `xOpt` if returned
 
 # Output
