@@ -10,7 +10,7 @@ import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Grassmannian, GrPoint, GrTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, retraction, inverseRetraction
 export parallelTransport, randomTVector, randomMPoint, validateMPoint, validateTVector
-export project, zeroTVector, injectivity_radius, tangent
+export project, zeroTVector, injectivityRadius, tangent
 #
 # Type definitions
 #
@@ -155,11 +155,11 @@ function exp(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},t::Float64=1.0) w
 end
 
 @doc doc"""
-    injectivity_radius(M)
+    injectivityRadius(M)
 
 return the injectivity radius of the [`Grassmannian`](@ref) manifold `M`$= \mathrm{Gr}(k,n)$.
 """
-injectivity_radius(M::Grassmannian) = sqrt(M.dimensionsubspace)
+injectivityRadius(M::Grassmannian) = sqrt(M.dimensionsubspace)
 
 @doc doc"""
     inverseRetraction(M,x,y)

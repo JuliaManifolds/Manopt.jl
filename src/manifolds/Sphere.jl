@@ -9,7 +9,7 @@ export distance, dot, exp, log, manifoldDimension, norm
 export randomMPoint, opposite, parallelTransport, zeroTVector
 export validateMPoint, validateTVector
 export project
-export zeroTVector, typeofMPoint, typeofTVector, injectivity_radius
+export zeroTVector, typeofMPoint, typeofTVector, injectivityRadius
 #
 # Type definitions
 #
@@ -122,11 +122,11 @@ function exp(M::Sphere,x::SnPoint,ξ::SnTVector,t::Float64=1.0)
   end
 end
 @doc doc"""
-    injectivity_radius(M)
+    injectivityRadius(M)
 
 return the injectivity radius of the [`Sphere`](@ref) manifold `M`$=\mathbb S^n$.
 """
-injectivity_radius(M::Sphere) = pi
+injectivityRadius(M::Sphere) = pi
 @doc doc"""
     log(M,x,y)
 Compute the logarithmic map on the [`Sphere`](@ref)

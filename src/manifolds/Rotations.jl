@@ -7,7 +7,7 @@ import LinearAlgebra: Diagonal, norm, dot, nullspace, det, tr, qr, triu, eigvals
 import Base: exp, log, show, rand, Matrix
 export Rotations, SOPoint, SOTVector, getValue
 export addNoise, distance, dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, retraction, inverseRetraction
-export zeroTVector, injectivity_radius, project
+export zeroTVector, injectivityRadius, project
 #
 # Type definitions
 #
@@ -184,11 +184,11 @@ end
 inverseRetraction(M::Rotations, x::SOPoint, y::SOPoint) = inverseRetractionQR(M,x,y)
 
 @doc doc"""
-    injectivity_radius(M)
+    injectivityRadius(M)
 
 return the injectivity radius of the [`Rotations`](@ref) manifold `M`$=\mathrm{SO}(n)$.
 """
-injectivity_radius(M::Rotations) = pi*sqrt(M.dimension)
+injectivityRadius(M::Rotations) = pi*sqrt(M.dimension)
 
 @doc doc"""
     log(M,x,y)

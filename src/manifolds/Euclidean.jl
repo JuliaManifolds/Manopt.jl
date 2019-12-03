@@ -6,7 +6,7 @@ import LinearAlgebra: I, norm
 import Base: exp, log, show
 export Euclidean, RnPoint, RnTVector
 export distance, exp, log, norm, dot, manifoldDimension, show, getValue
-export zeroTVector, tangentONB, randomMPoint, randomTVector, injectivity_radius
+export zeroTVector, tangentONB, randomMPoint, randomTVector, injectivityRadius
 export project
 export validateMPoint, validateTVector, typeofMPoint, typeofTVector
 # Types
@@ -102,11 +102,11 @@ $x+t*\xi$, where the scaling parameter `t` is optional.
 """
 exp(M::Euclidean,x::RnPoint{T},ξ::RnTVector{T},t::Float64=1.0) where {T <: AbstractFloat} = RnPoint(getValue(x) + t*getValue(ξ) )
 @doc doc"""
-    injectivity_radius(M)
+    injectivityRadius(M)
 
 return the injectivity radius of the [`Euclidean`](@ref) manifold `M`$=\mathbb R^n$.
 """
-injectivity_radius(M::Euclidean) = sqrt(M.dimension)
+injectivityRadius(M::Euclidean) = sqrt(M.dimension)
 @doc doc"""
     log(M,x,y)
 
