@@ -51,7 +51,7 @@
   @test norm( getValue(log(M, x, y)) - getValue(ξ) ) ≈ 0 atol = 10.0^(-16)
   @test norm( getValue(log(M, x, z)) - getValue(μ) ) ≈ 0 atol = 10.0^(-16)
   @test distance(M, exp(M,x,log(M,x,y)) , y ) ≈ 0 atol = 5*10. ^(-8)
-  @test norm( getValue(log(M,x,exp(M,x,ξ))) - getValue(ξ) ) ≈ 0 atol = 10. ^(-15)
+  @test norm( getValue(log(M,x,exp(M,x,ξ))) - getValue(ξ) ) ≈ 0 atol = 10. ^(-14)
   @test_throws ErrorException log(M,x,yanti)
   #Test retraction
   @test norm( getValue(inverseRetraction(M,x,retraction(M,x,ξ))) - getValue(ξ)) ≈ 0 atol = 10.0^(-14)

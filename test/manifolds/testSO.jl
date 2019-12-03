@@ -40,8 +40,8 @@
   @test distance(M,x,xanti) ≈ π atol=10.0^(-16) # antipodal ponts
   @test distance(M,x,z) ≈ norm(M,x,μ) atol=10.0^(-16)
   # Test Exponential and logarithm for both usual and antipodal points
-  @test norm(getValue(log(M, x, y2)) - getValue(ξ)) ≈ 0 atol = 10.0^(-16)
-  @test norm(getValue(log(M, x, z2)) - getValue(μ)) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(log(M, x, y2)) - getValue(ξ)) ≈ 0 atol = 10.0^(-15)
+  @test norm(getValue(log(M, x, z2)) - getValue(μ)) ≈ 0 atol = 10.0^(-15)
   @test norm(getValue(exp(M,x,log(M,x,y))) - getValue(y)) ≈ 0 atol = 10.0^(-15)
   @test norm(getValue(log(M,x,exp(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-15)
   @test_throws ErrorException log(M,x,xanti)

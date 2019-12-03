@@ -38,9 +38,9 @@
   @test norm(getValue(inverseRetractionQR(M,x,retractionQR(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
   @test norm(getValue(inverseRetraction(M,x,retraction(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
   @test norm(getValue(inverseRetractionPolar(M,x,retractionPolar(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
-  @test norm(transpose(getValue(retractionQR(M,x,ω))) * getValue(retractionQR(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
-  @test norm(transpose(getValue(retraction(M,x,ω))) * getValue(retraction(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
-  @test norm(transpose(getValue(retractionPolar(M,x,ω))) * getValue(retractionPolar(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
+  @test norm(transpose(getValue(retractionQR(M,x,ω))) * getValue(retractionQR(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-14)
+  @test norm(transpose(getValue(retraction(M,x,ω))) * getValue(retraction(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-14)
+  @test norm(transpose(getValue(retractionPolar(M,x,ω))) * getValue(retractionPolar(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-14)
   #Test manifoldDimension
   @test manifoldDimension(M) == manifoldDimension(x)
   @test manifoldDimension(M) == 6
@@ -69,7 +69,7 @@
   @test_throws ErrorException validateTVector(M,x,ξnot3)
   # Test injectivityRadius(M::Stiefel)
   @test injectivityRadius(M) ≈ sqrt(3)
-  
+
   N = Stiefel{Complex{Float64}}(3,4)
   xcompl = StPoint{Complex{Float64}}([-0.761286+0.0462087im -0.18395+0.0566532im 0.525627+0.265715im; -0.104276+0.262847im -0.55139+0.157097im -0.582766+0.202596im; -0.324463+0.199309im -0.041674-0.427848im -0.202927+0.0456294im; -0.327554-0.29335im -0.078241+0.66583im -0.232484-0.418496im])
   ycompl = StPoint{Complex{Float64}}(Complex{Float64}[-0.503249+0.0451954im -0.106808-0.271355im -0.422033-0.674388im; 0.263371-0.361562im -0.212757-0.435859im -0.208488+0.233779im; 0.598422-0.153485im 0.289058+0.159355im -0.254219-0.321635im; -0.240499-0.32419im 0.252482+0.712056im -0.314129+0.0470639im])
