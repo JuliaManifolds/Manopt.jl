@@ -74,7 +74,7 @@
         stoppingCriterion = stopWhenAny(stopAfterIteration(2000), stopWhenGradientNormLess(10^(-6))),
         Δ_bar=4*sqrt(2*2),
     )
-    @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-11)
+    @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-10)
 
     ξ = randomTVector(M,x)
     @test_throws ErrorException getHessian(SubGradientProblem(M,cost,rgrad),x, ξ)
