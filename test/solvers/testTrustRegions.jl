@@ -1,4 +1,6 @@
 @testset "Manopt Trust-Region" begin
+    import Random: seed!
+    seed!(42);
     A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
     prod = [Grassmannian(2, 3), Grassmannian(2, 3)]
@@ -70,7 +72,7 @@
 
     @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-12)
 
-    XaH = trustRegions(M, cost, rgrad, x, (p,x,ξ) -> approxHessianFD(p,x, x -> rgrad(p,x), ξ; stepsize=2^(-11));
+    XaH = trustRegions(M, cost, rgrad, x, (p,x,ξ) -> approxHessianFD(p,x, x -> rgrad(p,x), ξ; stepsize=2^(-9));
         stoppingCriterion = stopWhenAny(stopAfterIteration(2000), stopWhenGradientNormLess(10^(-6))),
         Δ_bar=4*sqrt(2*2),
     )
