@@ -175,7 +175,7 @@ parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
 
 project a number v on the tangent space of the [`S1Point`](@ref) `x`.
 """
-project(M::Circle, x::S1Point, v::Float64) = S1TVector(v%(2pi))
+project(M::Circle, x::S1Point, v::Float64) = S1TVector(symRem(v))
 
 @doc doc"""
     randomMPoint(M,:Uniform)
