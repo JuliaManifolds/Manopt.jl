@@ -206,22 +206,21 @@ function parallelTransport(M::Hyperbolic, x::HnPoint{T}, y::HnPoint{T}, ξ::HnTV
 end
 
 @doc doc"""
-    project(M,x,v)
+	ξ = project(M,x,v)
+
+perform an orthogonal projection with respect to the Minkowski inner product,
+i.e. `ξ` is a tangent vector at the [`HnPoint`](@ref) `x` on [`Hyperbolic`](@ref) space `M`.
+
+The formula reads
+````math
+\xi = v + \langle x,v\rangle_{\mathrm{M}} x,
+````
+where $\langle \cdot, \cdot \rangle_{\mathrm{M}$ denotes the Minkowski inner
+product in the embedding, see [`MinkowskiDot`](@ref).
 """
 function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: AbstractFloat}
-    X = getValue(x)
-	n = manifoldDimension(M)
-	b = zeros(n)
-	A = zeros(n,n)
-    ξ = zeros(n+1)
-    b = - v[1:n] + v[n+1]/X[n+1] * X[1:n]
-    A = X[1:n]*X[1:n]' / (X[n+1]^2) + one(A)
-	if det(A) ≈ 0 atol = 10. ^(-15)
-		error("Projection is not posible.")
-	end
-	ξ[1:n] = A\b
-	ξ[n+1] = (1/X[n+1])* transpose(X[1:n])*ξ[1:n]
-	return HnTVector(1/norm(ξ)*ξ)
+    X = getValue(x) 
+	return HnTVector(v + MinkowskiDot(X,v)*X)
 end
 
 @doc doc"""
