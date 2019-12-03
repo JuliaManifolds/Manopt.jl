@@ -200,5 +200,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         if model_decreased && ρ > o.ρ_prime
                 o.x = x_prop
         end
+        return nothing
 end
 getSolverResult(o::O) where {O <: TrustRegionsOptions} = o.x
