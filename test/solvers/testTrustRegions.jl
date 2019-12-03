@@ -59,9 +59,9 @@
     @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ = -0.1)
     @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = 0.1, Δ = 0.11)
 
-    X = trustRegions(M, cost, rgrad, x, rhess;
-        Δ_bar=4*sqrt(2*2)
-    )
+    X = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2) )
+    opt = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), returnOptions=true )
+    @test getSolverResult(opt)==X
 
     @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
 

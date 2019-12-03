@@ -112,8 +112,7 @@ function trustRegions(M::mT,
         end
 end
 
-function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions}
-end
+initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions} = nothing
 
 function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionsOptions}
         # Determine eta0
