@@ -37,7 +37,7 @@ struct Stiefel{T<:Union{U, Complex{U}} where U<:AbstractFloat} <: Manifold
     if dimensioncolumns > dimensionrows
       throw(ErrorException("dimensioncolumns can't be bigger than dimensionrows: $dimensioncolumns > $dimensionrows"))
     else
-     new("Stiefel-Manifold St($dimensioncolumns,$dimensionrows) in $T", dimensionrows, dimensioncolumns,"V($dimensioncolumns,$dimensionrows)")
+     new("Stiefel-Manifold V($dimensioncolumns,$dimensionrows) in $T", dimensionrows, dimensioncolumns,"V($dimensioncolumns,$dimensionrows)")
     end
   end
 end
@@ -420,3 +420,10 @@ function validateTVector(M::Stiefel{T}, x::StPoint{T}, ξ::StTVector{T}) where T
     throw( ErrorException("The matrix $x'$ξ must be skew-symmetric!") )
   end
 end
+
+#
+#
+# --- Display functions for the objects/types
+show(io::IO, M::Stiefel) = print(io, "The $(M.name)");
+show(io::IO, x::StPoint) = print(io, "StPoint($( getValue(x) ))");
+show(io::IO, ξ::StTVector) = print(io, "StTVector($( getValue(ξ) ))");

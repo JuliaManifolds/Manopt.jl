@@ -31,7 +31,7 @@ struct Rotations <: Manifold
   name::String
   dimension::Int
   abbreviation::String
-  Rotations(n::Int) = new("of the set of rotations in R$n",n, "SO($n)")
+  Rotations(n::Int) = new("manifold of the set of rotations in R$n",n, "SO($n)")
 end
 
 @doc doc"""
@@ -405,3 +405,10 @@ function validateTVector(M::Rotations, x::SOPoint, ξ::SOTVector)
   end
   return true
 end
+
+#
+#
+# --- Display functions for the objects/types
+show(io::IO, M::Rotations) = print(io, "The $(M.name), $(M.abbreviation)");
+show(io::IO, x::SOPoint) = print(io, "SOPoint($( getValue(x) ))");
+show(io::IO, ξ::SOTVector) = print(io, "SOTVector($( getValue(ξ) ))");

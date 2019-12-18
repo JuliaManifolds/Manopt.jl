@@ -41,7 +41,7 @@ struct Grassmannian{T<:Union{U, Complex{U}} where U<:AbstractFloat} <: Manifold
     	if dimensionsubspace > dimensionvecspace
       		throw(ErrorException("dimensionsubspace can't be bigger than dimensionvecspace: $dimensionsubspace > $dimensionvecspace"))
     	else
-     		new("of the set of $dimensionsubspace-dimensional subspaces in K$dimensionvecspace in $T", dimensionsubspace, dimensionvecspace,"Gr($dimensionsubspace,$dimensionvecspace)")
+     		new("manifold of the set of $dimensionsubspace-dimensional subspaces in K$dimensionvecspace in $T", dimensionsubspace, dimensionvecspace,"Gr($dimensionsubspace,$dimensionvecspace)")
     	end
   	end
 end
@@ -394,3 +394,10 @@ function validateTVector(M::Grassmannian{T}, x::GrPoint{T}, ξ::GrTVector{T},) w
     	throw( ErrorException("The matrix $x'$ξ must be skew-symmetric!") )
   	end
 end
+
+#
+#
+# --- Display functions for the objects/types
+show(io::IO, M::Grassmannian) = print(io, "The $(M.name), $(M.abbreviation)");
+show(io::IO, x::GrPoint) = print(io, "GrPoint($( getValue(x) ))");
+show(io::IO, ξ::GrTVector) = print(io, "GrTVector($( getValue(ξ) ))");
