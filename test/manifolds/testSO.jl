@@ -18,7 +18,11 @@
   w = randomMPoint(M)
   s = rand(Float64)
   Random.seed!(1)
-
+  # test project
+  @test project(M,x,getValue(log(M,x,y))) == log(M,x,y)
+  @test validateTVector(M, x, project(M,x,getValue(y)))
+  # Test injectivity radius
+  @test injectivityRadius(M) == π*sqrt(3)
   # Test unary operator
   # Test Dimension
   @test manifoldDimension(x)==3

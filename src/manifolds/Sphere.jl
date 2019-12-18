@@ -126,7 +126,7 @@ end
 
 return the injectivity radius of the [`Sphere`](@ref) manifold `M`$=\mathbb S^n$.
 """
-injectivityRadius(M::Sphere) = pi
+injectivityRadius(M::Sphere) = π
 @doc doc"""
     log(M,x,y)
 Compute the logarithmic map on the [`Sphere`](@ref)
@@ -186,7 +186,10 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
 	return ξ - ( νL > 0 ? dot(M,x,ν,ξ)*(ν + log(M,y,x))/νL^2 : zeroTVector(M,x) )
 end
 @doc doc"""
-    project(M,x,q)
+    project(M,x,v)
+
+project a vector from the embedding onto the tangent space $T_x\mathbb S^n$ of
+a point $x$ in the [`Sphere`](@ref) `M`.
 """
 project(M::Sphere, x::SnPoint, v::Vector{T}) where {T <: AbstractFloat} = SnTVector{T}(v - getValue(x)*(transpose(getValue(x))*v))
 @doc doc"""

@@ -22,6 +22,7 @@ end
     include("plans/testRecord.jl")
     include("plans/testGradientPlan.jl")
     include("plans/testSubGradientPlan.jl")
+    include("plans/testStoppingCriteria.jl")
 end
 @testset "Algorithm Tests    " begin
     include("algorithms/testBasicsAlgs.jl")

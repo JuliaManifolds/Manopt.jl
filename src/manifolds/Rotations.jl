@@ -188,7 +188,7 @@ inverseRetraction(M::Rotations, x::SOPoint, y::SOPoint) = inverseRetractionQR(M,
 
 return the injectivity radius of the [`Rotations`](@ref) manifold `M`$=\mathrm{SO}(n)$.
 """
-injectivityRadius(M::Rotations) = pi*sqrt(M.dimension)
+injectivityRadius(M::Rotations) = π*sqrt(M.dimension)
 
 @doc doc"""
     log(M,x,y)
@@ -268,7 +268,7 @@ project a $n\times n$ `Matrix` v on the tangent space of the
 """
 function project(M::Rotations, x::SOPoint, v::Matrix)
   A= 0.5*(transpose(getValue(x))*v - transpose(transpose(getValue(x))*v))
-  SOTVector(1/norm(A)*A)
+  SOTVector(A)
 end
 @doc doc"""
     randomTVector(M,x[, type=:Gaussian, σ=1.0])

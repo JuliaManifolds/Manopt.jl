@@ -19,6 +19,10 @@
   μ2 = log(M,x,w)
   w2 = exp(M,x,μ2)
 
+  @test injectivityRadius(M) == 2
+  @test norm(M,x,project(M,x,getValue(ξ)) - ξ) ≈ 0 atol = 10^-15
+  @test norm(M,x,project(M,x,getValue(ξ)) - tangent(M,x,getValue(ξ))) ≈ 0 atol = 10^-15
+
   # Test Grassmannian
   @test_throws ErrorException Grassmannian(6, 4)
   # Test Dimension
