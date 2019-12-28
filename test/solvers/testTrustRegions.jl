@@ -87,4 +87,8 @@
         sqrt(manifoldDimension(M)), retraction, true, 0.1, 1000.)
     @test doSolverStep!(p,o,0) == nothing
 
+    η = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5)
+    ηOpt = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5; returnOptions=true)
+    @test getSolverResult(ηOpt)==η
+
 end
