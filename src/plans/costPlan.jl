@@ -68,7 +68,7 @@ mutable struct NelderMeadOptions{P <: MPoint} <: Options
     NelderMeadOptions(M::mT,
         stop::StoppingCriterion = stopAfterIteration(2000);
         α = 1., γ = 2., ρ=1/2, σ = 1/2
-    ) where {mT <: Manifold } = 
+    ) where {mT <: Manifold } =
         new{typeof(randomMPoint(M))}(
             [randomMPoint(M) for i=1:(manifoldDimension(M)+1) ],
             stop, α, γ, ρ, σ, randomMPoint(M),[] )
@@ -76,4 +76,5 @@ mutable struct NelderMeadOptions{P <: MPoint} <: Options
         stop::StoppingCriterion = stopAfterIteration(2000);
         α = 1., γ = 2., ρ=1/2, σ = 1/2
     ) where {P <: MPoint} = new{P}(p, stop, α, γ, ρ, σ, p[1],[] )
-end 
+end
+getSolverResult(o::NelderMeadOptions) = o.x

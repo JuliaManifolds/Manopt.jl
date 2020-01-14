@@ -7,7 +7,10 @@ M = Euclidean(6)
 Rosenbrock(x::RnPoint) = Rosenbrock(getValue(x))
 Rosenbrock(x) = sum( [ 100*( x[2*i-1]^2-x[2*i] )^2 + (x[2*i-1]-1)^2 for i=1:div(length(x),2) ] )
 
-x,rec = NelderMead(M,Rosenbrock, record=[RecordCost()])
+o = NelderMead(M,Rosenbrock, record=[RecordCost()], returnOptions=true)
+
+x = getSolverResult(o)
+rec = getRecord(o)
 
 nonincreasing = [ rec[i] >= rec[i+1] for i=1:length(rec)-1 ]
 
