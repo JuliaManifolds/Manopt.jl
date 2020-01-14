@@ -1,7 +1,9 @@
 export cyclicProximalPoint
 @doc doc"""
     cyclicProximalPoint(M, F, proximalMaps, x)
+
 perform a cyclic proximal point algorithm.
+
 # Input
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
@@ -16,17 +18,23 @@ the default values are given in brackets
 * `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
 * `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000),`[`stopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
+* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+    complete [`Options`](@ref) re returned. This can be used to access recorded values.
+    If set to false (default) just the optimal value `xOpt` if returned
+...
+and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
-* `record` – (if activated) a String containing the stopping criterion stopping
-  reason.
+OR
+* `options` - the options returned by the solver (see `returnOptions`)
 """
 function cyclicProximalPoint(M::Mc,
   F::Function, proximalMaps::Array{Function,N} where N, x0::MP;
   evaluationOrder::EvalOrder = LinearEvalOrder(),
   stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(5000), stopWhenChangeLess(10.0^-12)),
   λ = i -> typicalDistance(M)/2/i,
+  returnOptions=false,
   kwargs... #decorator options
   ) where {Mc <: Manifold, MP <: MPoint}
     p = ProximalProblem(M,F,proximalMaps)
@@ -34,10 +42,11 @@ function cyclicProximalPoint(M::Mc,
     
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
-    if hasRecord(resultO)
-        return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
+    if returnOptions
+        return resultO
+    else
+        return getSolverResult(resultO)
     end
-    return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::ProximalProblem, o::CyclicProximalPointOptions)
     c = length(p.proximalMaps)
@@ -51,7 +60,7 @@ function doSolverStep!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
     end
     o.order = updateOrder(c,iter,o.order,o.orderType)
 end
-getSolverResult(p::ProximalProblem, o::CyclicProximalPointOptions) = o.x
+getSolverResult(o::CyclicProximalPointOptions) = o.x
 updateOrder(n,i,o,::LinearEvalOrder) = o
 updateOrder(n,i,o,::RandomEvalOrder) = collect(1:n)[randperm(length(o))]
 updateOrder(n,i,o,::FixedRandomEvalOrder) = (i==0) ? collect(1:n)[randperm(length(o))] : o

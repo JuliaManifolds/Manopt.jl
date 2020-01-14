@@ -34,13 +34,16 @@ the default parameter is given in brackets
   parallel Douglas–Rachford implicitly works on a [`Power`](@ref) manifold and
   its first argument is the result then (assuming all are equal after the second
   prox.
-
-and the ones that are passed to [`decorateOptions`](@ref) for the decorators.
+* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+    complete [`Options`](@ref) re returned. This can be used to access recorded values.
+    If set to false (default) just the optimal value `xOpt` if returned
+...
+and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
 # Output
-* `xOpt` – the resulting point of the Douglas Rachford algorithm
-* `record` - if activated (using the `record` key, see [`RecordOptions`](@ref)
-  an array containing the recorded values.
+* `xOpt` – the resulting (approximately critical) point of gradientDescent
+OR
+* `options` - the options returned by the solver (see `returnOptions`)
 """
 function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, x::P;
     λ::Function = (iter) -> 1.0,
@@ -48,6 +51,7 @@ function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, 
     R = reflection,
     parallel::Int = 0,
     stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenChangeLess(10.0^-5)),
+    returnOptions=false,
     kwargs... #especially may contain decorator options
 ) where {mT <: Manifold, P <: MPoint}
     if length(proxes) < 2
@@ -74,10 +78,11 @@ function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, 
 
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
-    if hasRecord(resultO)
-        return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
+    if returnOptions
+        return resultO
+    else
+        return getSolverResult(resultO)
     end
-    return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::ProximalProblem,o::DouglasRachfordOptions)
 end
@@ -89,6 +94,4 @@ function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
     # relaxation
     o.s = geodesic(p.M,o.s,snew,o.α(iter))
 end
-function getSolverResult(p::ProximalProblem,o::DouglasRachfordOptions)
-    return o.parallel ? o.x[1] : o.x
-end
+getSolverResult(o::DouglasRachfordOptions) = o.parallel ? o.x[1] : o.x

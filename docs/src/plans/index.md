@@ -27,7 +27,7 @@ might be decorated) by calling [`getOptions`](@ref).
 
 ### Decorators for Options
 
-Options can be decorated using the following trait and function to initialize 
+Options can be decorated using the following trait and function to initialize
 
 ```@docs
 IsOptionsDecorator
@@ -81,10 +81,13 @@ recordOrReset!
 ```
 
 ### [Stepsize and Linesearch](@id Stepsize)
+
 The step size determination is implemented as a `Functor` based on
+
 ```@docs
 Stepsize
 ```
+
 in general there are
 
 ```@autodocs
@@ -94,8 +97,10 @@ Order = [:type]
 ```
 
 ## Problems
+
 A problem usually contains its cost function and provides and
 implementation to access the cost
+
 ```@docs
 Problem
 getCost
@@ -103,6 +108,7 @@ getCost
 
 For any algorithm that involves a cyclic evalutaion, e.g.
 [`cyclicProximalPoint`](@ref), one can specify the [`EvalOrder`](@ref) as
+
 ```@docs
 EvalOrder
 LinearEvalOrder
@@ -111,24 +117,30 @@ FixedRandomEvalOrder
 ```
 
 ### Gradient based problem
+
 ```@docs
 GradientProblem
 getGradient
 ```
 
 ### Subgradient based problem
+
 ```@docs
 SubGradientProblem
 getSubGradient
 ```
 
 ### [Proximal Map(s) based problem](@id ProximalProblem)
+
 ```@docs
 ProximalProblem
 getProximalMap
 ```
 
 ### Further planned problems
+
 ```@docs
 HessianProblem
+getHessian
+getPreconditioner
 ```

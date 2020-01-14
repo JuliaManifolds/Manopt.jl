@@ -29,13 +29,5 @@ getProximalMap(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
     throw(ErrorException("No proximal map No. $(i) found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 getSubGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
         throw(ErrorException("no subgradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
-
-"""
-    HessianProblem <: Problem
-For now this is just a dummy problem to carry information about a Problem also providing a Hessian
-"""
-mutable struct HessianProblem{mT <: Manifold} <: Problem
-    M::mT
-    costFunction::Function
-    Heassian::Function
-end
+getHessian(p::Pr,x::P,ξ::T) where {Pr <: Problem, P <: MPoint, T <: TVector} =
+    throw(ErrorException("no hessian found in $(typeof(p)) to evaluate at point $(typeof(x)) and tangent vector $(typeof(ξ))."))

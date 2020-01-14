@@ -19,6 +19,10 @@
   μ2 = log(M,x,w)
   w2 = exp(M,x,μ2)
 
+  @test injectivityRadius(M) == 2
+  @test norm(M,x,project(M,x,getValue(ξ)) - ξ) ≈ 0 atol = 10^-15
+  @test norm(M,x,project(M,x,getValue(ξ)) - tangent(M,x,getValue(ξ))) ≈ 0 atol = 10^-15
+
   # Test Grassmannian
   @test_throws ErrorException Grassmannian(6, 4)
   # Test Dimension
@@ -51,13 +55,14 @@
   @test norm( getValue(log(M, x, y)) - getValue(ξ) ) ≈ 0 atol = 10.0^(-16)
   @test norm( getValue(log(M, x, z)) - getValue(μ) ) ≈ 0 atol = 10.0^(-16)
   @test distance(M, exp(M,x,log(M,x,y)) , y ) ≈ 0 atol = 5*10. ^(-8)
-  @test norm( getValue(log(M,x,exp(M,x,ξ))) - getValue(ξ) ) ≈ 0 atol = 10. ^(-15)
+  @test norm( getValue(log(M,x,exp(M,x,ξ))) - getValue(ξ) ) ≈ 0 atol = 10. ^(-14)
   @test_throws ErrorException log(M,x,yanti)
   #Test retraction
   @test norm( getValue(inverseRetraction(M,x,retraction(M,x,ξ))) - getValue(ξ)) ≈ 0 atol = 10.0^(-14)
   @test norm( transpose(getValue(retraction(M,x,ξ))) * getValue(retraction(M,x,ξ)) - one(transpose(getValue(x))*getValue(x)) ) ≈ 0 atol = 10.0^(-14)
   # Test parallelTransport
-  @test norm(getValue(parallelTransport(M,x,z,η)) - projection(M,z,getValue(η))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(M,x,z,η)) - getValue(project(M,z,getValue(η)))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(M,x,x,η)) - getValue(η)) ≈ 0 atol = 10.0^(-16)
   # Test zeroTVector
   @test norm(M,x,zeroTVector(M,x)) ≈ 0 atol = 10.0^(-16)
   # Test validateMPoint and validateTVector
@@ -110,7 +115,9 @@
   # Test addNoise
   @test norm( getValue(x2compl)'*getValue(x2compl) - one(getValue(x2compl)'*getValue(x2compl)) ) ≈ 0 atol=10.0^(-5)
   @test norm( getValue(x3compl)'*getValue(x3compl) - one(getValue(x3compl)'*getValue(x3compl)) ) ≈ 0 atol=10.0^(-6)
-
+  # Test parallelTransport
+  @test norm(getValue(parallelTransport(N,xcompl,zcompl,ηcompl)) - getValue(project(N,zcompl,getValue(ηcompl)))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(N,xcompl,xcompl,ηcompl)) - getValue(ηcompl)) ≈ 0 atol = 10.0^(-14)
   #Test manifoldDimension
   @test manifoldDimension(N) == manifoldDimension(wcompl)
   @test manifoldDimension(N) == 16

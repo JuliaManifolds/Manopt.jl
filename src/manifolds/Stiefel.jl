@@ -6,8 +6,8 @@
 import LinearAlgebra: norm, dot, nullspace, det, tr, qr, triu, rank, svd, diag, sylvester, lyap, Diagonal
 import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Stiefel, StPoint, StTVector, getValue
-export dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, projection, retraction, inverseRetraction
-export zeroTVector
+export dot, exp, log, manifoldDimension, norm, parallelTransport, randomTVector, randomMPoint, retractionQR, retractionPolar, inverseRetractionPolar, inverseRetractionQR, project, retraction, inverseRetraction
+export zeroTVector, injectivityRadius, tangent
 #
 # Type definitions
 #
@@ -30,18 +30,18 @@ parameter `d` sets the `DataType` of the matrix entries.
 """
 struct Stiefel{T<:Union{U, Complex{U}} where U<:AbstractFloat} <: Manifold
   name::String
-  dimensionlines::Int
+  dimensionrows::Int
   dimensioncolumns::Int
   abbreviation::String
-  function Stiefel{T}(dimensioncolumns::Int, dimensionlines::Int) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-    if dimensioncolumns > dimensionlines
-      throw(ErrorException("dimensioncolumns can't be bigger than dimensionlines: $dimensioncolumns > $dimensionlines"))
+  function Stiefel{T}(dimensioncolumns::Int, dimensionrows::Int) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+    if dimensioncolumns > dimensionrows
+      throw(ErrorException("dimensioncolumns can't be bigger than dimensionrows: $dimensioncolumns > $dimensionrows"))
     else
-     new("Stiefel-Manifold St($dimensioncolumns,$dimensionlines) in $T", dimensionlines, dimensioncolumns,"V($dimensioncolumns,$dimensionlines)")
+     new("Stiefel-Manifold V($dimensioncolumns,$dimensionrows) in $T", dimensionrows, dimensioncolumns,"V($dimensioncolumns,$dimensionrows)")
     end
   end
 end
-Stiefel(dimensionlines::Int, dimensioncolumns::Int, D::DataType=Float64) = Stiefel{D}(dimensionlines::Int, dimensioncolumns::Int)
+Stiefel(dimensionrows::Int, dimensioncolumns::Int, D::DataType=Float64) = Stiefel{D}(dimensionrows::Int, dimensioncolumns::Int)
 
 @doc doc"""
     StPoint <: MPoint
@@ -107,7 +107,7 @@ end
 @doc doc"""
     exp(M,x,ξ [,t=1.0])
 
-compute the exponential map on the [`Stiefel`](@ref) manifold `M`$=\mathrm{SO}(n)$ with
+compute the exponential map on the [`Stiefel`](@ref) manifold `M`$= \mathrm{St}(k,n)$ with
 respect to the [`StPoint`](@ref) `x` and the [`StTVector`](@ref) `ξ`, which can
 be shortened with `t` to `tξ`. The formula reads
 
@@ -132,6 +132,13 @@ function exp(M::Stiefel{T},x::StPoint{T},ξ::StTVector{T},t::Float64=1.0) where 
   Y = [getValue(x) Ξ] * exp([getValue(x)'*Ξ -Ξ'*Ξ; I getValue(x)'*Ξ]) * [exp(-getValue(x)'*Ξ); Z]
   StPoint{T}(Y)
 end
+
+@doc doc"""
+    injectivityRadius(M)
+
+return the injectivity radius of the [`Stiefel`](@ref) manifold `M`$= \mathrm{St}(k,n)$.
+"""
+injectivityRadius(M::Stiefel) = sqrt(M.dimensioncolumns)
 
 @doc doc"""
     inverseRetractionPolar(M,x,y)
@@ -219,10 +226,10 @@ and for $\mathbb{K}=\mathbb{C}$
 $2nk - k^2.$
 """
 function manifoldDimension(M::Stiefel{T}) where T<:AbstractFloat
-  return Int(M.dimensionlines * M.dimensioncolumns - 0.5 * M.dimensioncolumns * (M.dimensioncolumns + 1))
+  return Int(M.dimensionrows * M.dimensioncolumns - 0.5 * M.dimensioncolumns * (M.dimensioncolumns + 1))
 end
 function manifoldDimension(M::Stiefel{T}) where T<:Complex{U} where U<:AbstractFloat
-  return Int(2 * M.dimensionlines * M.dimensioncolumns - (M.dimensioncolumns)^2)
+  return Int(2 * M.dimensionrows * M.dimensioncolumns - (M.dimensioncolumns)^2)
 end
 
 @doc doc"""
@@ -251,15 +258,15 @@ The formula reads
 
 $P_{x\to y}(\xi) = \operatorname{proj}_{\mathcal M}(y,\xi).$
 
-where $\operatorname{proj}_{\mathcal M}$ is the projection onto the
+where $\operatorname{proj}_{\mathcal M}$ is the project onto the
 tangent space $T_y\mathcal M$.
 """
 function parallelTransport(M::Stiefel{T}, x::StPoint{T}, y::StPoint{T}, ξ::StTVector{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-    projection(M,y,getValue(ξ))
+    project(M,y,getValue(ξ))
 end
 
 @doc doc"""
-    projection(M,x,q)
+    project(M,x,q)
 
 project a `Matrix q` orthogonally on the tangent space of the
 [`StPoint`](@ref) `x` on the [`Stiefel`](@ref) manifold `M`. The formula reads
@@ -273,7 +280,7 @@ $B=\frac{1}{2} (x^{\mathrm{T}}{\bar q})^{\mathrm{T}} {\bar x}^{\mathrm{T}}q.$
 # see also
 [`parallelTransport`](@ref), [`randomTVector`](@ref)
 """
-function projection(M::Stiefel{T}, x::StPoint{T}, q::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+function project(M::Stiefel{T}, x::StPoint{T}, q::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
     A = getValue(x)'*q
     B = 0.5 * (A' + A)
     return StTVector{T}(q - getValue(x) * B)
@@ -288,7 +295,7 @@ return a random (Gaussian) [`StPoint`](@ref) `x` on the manifold
 component of the QR decomposition of the random matrix of size $n×k$.
 """
 function randomMPoint(M::Stiefel{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-    A = σ*randn(T, (M.dimensionlines, M.dimensioncolumns))
+    A = σ*randn(T, (M.dimensionrows, M.dimensioncolumns))
     return StPoint{T}( Matrix(qr(A).Q) )
 end
 
@@ -297,11 +304,11 @@ end
 
 return a random vector [`StTVector`](@ref) in the tangential space
 $T_x\mathrm{St}(k,n)$ by generating a random matrix of size $n×k$ and projecting
-it onto [`StPoint`](@ref) `x` with [`projection`](@ref).
+it onto [`StPoint`](@ref) `x` with [`project`](@ref).
 """
 function randomTVector(M::Stiefel{T}, x::StPoint{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  y = σ * randn(T, (M.dimensionlines,M.dimensioncolumns))
-  Y = projection(M, x, y)
+  y = σ * randn(T, (M.dimensionrows,M.dimensioncolumns))
+  Y = project(M, x, y)
   return 1/(norm(getValue(Y))) * Y
 end
 
@@ -352,7 +359,7 @@ function retractionQR(M::Stiefel{T},x::StPoint{T},ξ::StTVector{T},t::Float64=1.
   QRdecomp = qr(y)
   d = diag(QRdecomp.R)
   D = Diagonal( sign.( sign.(d .+ 0.5) ) )
-  B = zeros(M.dimensionlines,M.dimensioncolumns)
+  B = zeros(M.dimensionrows,M.dimensioncolumns)
   B[1:M.dimensioncolumns,1:M.dimensioncolumns] = D
   A = QRdecomp.Q * B
   StPoint{T}(A)
@@ -380,11 +387,11 @@ validate that the [`StPoint`](@ref) `x` is a valid point on the
 as well as that all columns are orthonormal.
 """
 function validateMPoint(M::Stiefel{T}, x::StPoint{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  if size(getValue(x), 1) ≠ M.dimensionlines
-    throw( ErrorException("The dimension of $x must be $(M.dimensionlines) × $(M.dimensioncolumns) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
+  if size(getValue(x), 1) ≠ M.dimensionrows
+    throw( ErrorException("The dimension of $x must be $(M.dimensionrows) × $(M.dimensioncolumns) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
   end
   if size(getValue(x), 2) ≠ M.dimensioncolumns
-    throw( ErrorException("The dimension of $x must be $(M.dimensionlines) × $(M.dimensioncolumns) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
+    throw( ErrorException("The dimension of $x must be $(M.dimensionrows) × $(M.dimensioncolumns) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
   end
 if rank(getValue(x)) ≠ M.dimensioncolumns #is this necessary?
     throw( ErrorException("$x must have  full rank.") )
@@ -403,13 +410,20 @@ validate that the [`StTVector`](@ref) `ξ` is a valid tangent vector to
 dimensions agree and ${\bar x}^{\mathrm{T}}$ is skew symmetric.
 """
 function validateTVector(M::Stiefel{T}, x::StPoint{T}, ξ::StTVector{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  if size(getValue(ξ), 1) ≠ M.dimensionlines
-    throw( ErrorException("The dimension of $ξ must be $(M.dimensionlines) × $(M.dimensioncolumns) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
+  if size(getValue(ξ), 1) ≠ M.dimensionrows
+    throw( ErrorException("The dimension of $ξ must be $(M.dimensionrows) × $(M.dimensioncolumns) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
   end
   if size(getValue(ξ), 2) ≠ M.dimensioncolumns
-    throw( ErrorException("The dimension of $ξ must be $(M.dimensionlines) × $(M.dimensioncolumns) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
+    throw( ErrorException("The dimension of $ξ must be $(M.dimensionrows) × $(M.dimensioncolumns) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
   end
   if norm(getValue(x)'*getValue(ξ) + getValue(ξ)'*getValue(x)) > 10^(-15)
     throw( ErrorException("The matrix $x'$ξ must be skew-symmetric!") )
   end
 end
+
+#
+#
+# --- Display functions for the objects/types
+show(io::IO, M::Stiefel) = print(io, "The $(M.name)");
+show(io::IO, x::StPoint) = print(io, "StPoint($( getValue(x) ))");
+show(io::IO, ξ::StTVector) = print(io, "StTVector($( getValue(ξ) ))");

@@ -55,13 +55,16 @@ catch y
   end
 end
 x0 = f
-@time y, r = DouglasRachford(M, cost, [prox1,prox2], f;
+@time o = DouglasRachford(M, cost, [prox1,prox2], f;
   λ = i -> η, α = i -> λ, # map from Paper notation of BPS16 to toolbox notation
   debug = [:Iteration," | ", :Change, " | ", :Cost,"\n",10,:Stop],
   record = [:Iteration, :Cost ],
   stoppingCriterion = sC,
-  parallel=5
+  parallel=5,
+  returnOptions = true
 )
+y = getSolverResult(o)
+r = getRecord(o)
 #
 # Result
 numIter = length(r)

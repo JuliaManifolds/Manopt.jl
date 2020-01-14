@@ -45,7 +45,7 @@ proxes = [ (λ,x) -> proxDistance(N,λ,data,x),
     (λ,x) -> proxTV(N,α*λ,x),
     (λ,x) -> proxTV2(N,β*λ,x) ]
 
-fR, r = cyclicProximalPoint(N,F,proxes, data;
+o = cyclicProximalPoint(N,F,proxes, data;
     λ = i -> π/i,
     debug = Dict(:Stop => DebugStoppingCriterion(),
                  :Step => DebugEvery(DebugGroup([
@@ -56,8 +56,11 @@ fR, r = cyclicProximalPoint(N,F,proxes, data;
                   ]),1000),
                  :Start => DebugDivider("Starting the solver\n")
             ),
-    record = [:Iteration, :Cost, :Change, :Iterate]
+    record = [:Iteration, :Cost, :Change, :Iterate],
+    returnOptions=true
 )
+fR = getSolverResult(o)
+r = getRecord(o)
 #
 # Result
 if plotAndExportResult

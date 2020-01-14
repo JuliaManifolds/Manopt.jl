@@ -45,6 +45,8 @@ module Manopt
   include("solvers/cyclicProximalPoint.jl")
   include("solvers/DouglasRachford.jl")
   include("solvers/steepestDescent.jl")
+  include("solvers/truncatedConjugateGradient.jl")
+  include("solvers/trustRegions.jl")
   include("solvers/subGradientMethod.jl")
   # extended metasolvers
   include("solvers/debugSolver.jl")

@@ -8,7 +8,7 @@
     ∂f = y -> distance(M,x,y) == 0 ? zeroTVector(M,y) : -2*log(M,y,x)/distance(M,x,y)
     p = SubGradientProblem(M,f, ∂f)
     oR = solve(p,o)
-    xHat = getSolverResult(p,oR)
+    xHat = getSolverResult(oR)
     @test getInitialStepsize(p,o) == 0.1
     @test getStepsize!(p,o,1) == 0.1
     @test getLastStepsize(p,o,1) == 0.1

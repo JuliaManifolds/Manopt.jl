@@ -18,6 +18,10 @@ The following algorithms are currently available
 [Cyclic Proximal Point](@ref CPPSolver) | `cyclicProximalPoint.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointOptions`](@ref)
 [Douglas–Rachford](@ref DRSolver) | `DouglasRachford.jl` | [`ProximalProblem`](@ref), [`DouglasRachfordOptions`](@ref)
 [Subgradient Method](@ref SubgradientSolver) | `subGradientMethod.jl` | [`SubGradientProblem`](@ref), [`SubGradientMethodOptions`](@ref)
+[Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncatedConjugateGradient.jl` | [`HessianProblem`](@ref),
+[`TruncatedConjugateGradientOptions`](@ref)
+[The Riemannian Trust-Regions Solver](@ref trustRegions) | `trustRegions.jl` |
+[`HessianProblem`](@ref), [`TrustRegionsOptions`](@ref)
 
 Note that the [`Options`](@ref) can also be decorated to enhance your algorithm
 by general additional properties.
@@ -28,6 +32,7 @@ Stopping criteria are implemented as a `functor`, i.e. inherit from the base typ
 
 ```@docs
 StoppingCriterion
+StoppingCriterionSet
 ```
 
 ```@autodocs
@@ -36,10 +41,12 @@ Pages = ["plans/stoppingCriterion.jl"]
 Order = [:type]
 ```
 
-as well as the function
+as well as the functions
 
 ```@docs
 getReason
+getStoppingCriteriaArray
+getActiveStoppingCriteria
 ```
 
 further stopping criteria might be available for individual Solvers.
@@ -53,12 +60,13 @@ The following decorators are available.
 The decorator to print debug during the iterations can be activated by
 decorating the [`Options`](@ref) with [`DebugOptions`](@ref) and implementing
 your own [`DebugAction`](@ref)s.
-For example printing a gradient from the [`GradientDescentOptions`](@ref) is automatically available, as explained in the [`steepestDescent`](@ref) solver.
+For example printing a gradient from the [`GradientDescentOptions`](@ref) is
+automatically available, as explained in the [`steepestDescent`](@ref) solver.
 
 ```@docs
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: DebugOptions}
-getSolverResult(p::P,o::O) where {P <: Problem, O <: DebugOptions}
+getSolverResult(o::O) where {O <: DebugOptions}
 stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: DebugOptions}
 ```
 
@@ -73,7 +81,7 @@ automatically available, as explained in the [`steepestDescent`](@ref) solver.
 ```@docs
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: RecordOptions}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: RecordOptions}
-getSolverResult(p::P,o::O) where {P <: Problem, O <: RecordOptions}
+getSolverResult(o::O) where {O <: RecordOptions}
 stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: RecordOptions}
 ```
 
@@ -92,6 +100,6 @@ algorithm, if you want to provide one.
 ```@docs
 initializeSolver!(p::P,o::O) where {P <: Problem, O <: Options}
 doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: Options}
-getSolverResult(p::P,o::O) where {P <: Problem, O <: Options}
+getSolverResult(o::O) where {O <: Options}
 stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: Options}
 ```

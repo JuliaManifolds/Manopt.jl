@@ -10,6 +10,7 @@ export validateMPoint, validateTVector
 export randomMPoint, randomTVector
 export zeroTVector, typeofMPoint, typeofTVector
 export show, getValue
+export project
 @doc doc"""
     Product{M<:Manifold} <: Manifold
 
@@ -92,7 +93,7 @@ exp(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( exp.(M
 @doc doc"""
    log(M,x,y)
 
-computes the product logarithmic map from [`PowPoint`](@ref) `x` to `y` on the
+computes the product logarithmic map from [`ProdPoint`](@ref) `x` to `y` on the
 [`Product`](@ref) manifold `M` and returns the corresponding
 [`ProdTVector`](@ref).
 """
@@ -129,6 +130,15 @@ and returns the corresponding [`ProdTVector`](@ref).
 """
 parallelTransport(M::Product, x::ProdPoint, y::ProdPoint, ξ::ProdTVector) = ProdTVector( parallelTransport.(M.manifolds, getValue(x), getValue(y), getValue(ξ)) )
 
+@doc doc"""
+    project(M,x,v)
+
+compute the product project map on the [`Product`](@ref) manifold `M`
+of the [`ProdPoint`](@ref) `x`. `v` is an array of the elements, embedded in the
+same space as the manifold, which get projected elementwise.
+"""
+project(M::Product, x::ProdPoint, v::Array{<:Any}) = ProdTVector( project.(M.manifolds, getValue(x), v ) )
+
 typeofTVector(x::ProdPoint) = ProdTVector{Array{TVector,ndims(x.value)}}
 typeofTVector(::Type{ProdPoint{Array{MPoint,N}}}) where N = ProdTVector{Array{TVector,N}}
 
@@ -146,19 +156,27 @@ randomMPoint(M::Product, options...) = ProdPoint([ randomMPoint(m, options...) f
     randomTVector(M,x)
 
 generate a random tangent vector in the tangent space of the
-[`ProdPoint`](@ref) `x` on [`Power`](@ref) manifold `M`.
+[`ProdPoint`](@ref) `x` on [`Product`](@ref) manifold `M`.
 """
 randomTVector(M::Product,x::ProdPoint, options...) where N = ProdTVector([
     randomTVector(M.manifolds[i], getValue(x)[i], options...)
     for i in CartesianIndices(getValue(x))
 ])
 @doc doc"""
+    retraction(M,x,ξ [,t=1.0])
+
+move the [`ProdPoint`](@ref) `x` in the direction of the [`ProdTVector`](@ref) `ξ`
+on the [`Product`](@ref) manifold `M`.
+"""
+retraction(M::Product, x::ProdPoint,ξ::ProdTVector,t::Float64=1.0) = ProdPoint( retraction.(M.manifolds, getValue(x), getValue(ξ)) )
+@doc doc"""
     typicalDistance(M)
 
 returns the typical distance on [`Product`](@ref) manifold `M`, which is the
 minimum of the internal ones.
 """
-typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) );
+typicalDistance(M::Product) = sqrt( length(M.manifolds)*sum( typicalDistance.(M.manifolds).^2 ) )
+
 @doc doc"""
     validateMPoint(M,x)
 
@@ -175,6 +193,8 @@ function validateMPoint(M::Product, x::ProdPoint)
     validateMPoint.(M.manifolds,getValue(x))
     return true
 end
+
+tangent(M::Product, x::ProdPoint,ξ::ProdTVector) = ProdTVector( tangent.(M.manifolds, getValue(x), getValue(ξ) ) )
 
 @doc doc"""
     validateTVector(M,x,ξ)

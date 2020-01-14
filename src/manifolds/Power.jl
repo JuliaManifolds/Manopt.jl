@@ -168,8 +168,18 @@ norm(M::Power, x::PowPoint, ξ::PowTVector) = sqrt( dot(M,x,ξ,ξ) )
 compute the product parallelTransport map on the [`Power`](@ref) manifold `M`
 from the [`PowPoint`](@ref) `x` to `y` of the [`PowTVector`](@ref) `ξ`.
 """
-parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) = 
+parallelTransport(M::Power, x::PowPoint, y::PowPoint, ξ::PowTVector) =
     PowTVector( parallelTransport.(Ref(M.manifold), getValue(x), getValue(y), getValue(ξ)) )
+
+@doc doc"""
+    project(M,x,v)
+
+compute the product project map on the [`Power`](@ref) manifold `M`
+of the [`PowPoint`](@ref) `x`. `v` is an array of the elements, embedded in the
+same space as the manifold, which get projected elementwise.
+"""
+project(M::Power, x::PowPoint, v::Array{<:Any}) = PowTVector( project.(Ref(M.manifold), getValue(x), v ) )
+
 
 @doc doc"""
     randomMPoint(M)

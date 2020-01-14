@@ -6,7 +6,8 @@ import LinearAlgebra: I, norm
 import Base: exp, log, show
 export Euclidean, RnPoint, RnTVector
 export distance, exp, log, norm, dot, manifoldDimension, show, getValue
-export zeroTVector, tangentONB, randomMPoint, randomTVector
+export zeroTVector, tangentONB, randomMPoint, randomTVector, injectivityRadius
+export project
 export validateMPoint, validateTVector, typeofMPoint, typeofTVector
 # Types
 # ---
@@ -53,8 +54,8 @@ getValue(x::RnPoint) = length(x.value)==1 ? x.value[1] : x.value
 @doc doc"""
     RnTVector <: TVector
 
-the point $\xi\in\mathcal M$ for $\mathcal M=\mathbb R^n$ represented by an
-$n$-dimensional `Vector{T}`, where `T <: AbstractFloat`.
+the tangent vector $\xi \in T_x\mathcal M$ for $\mathcal M=\mathbb R^n$
+represented by an $n$-dimensional `Vector{T}`, where `T <: AbstractFloat`.
 """
 struct RnTVector{T <: AbstractFloat}  <: TVector
   value::Vector{T}
@@ -101,6 +102,12 @@ $x+t*\xi$, where the scaling parameter `t` is optional.
 """
 exp(M::Euclidean,x::RnPoint{T},ξ::RnTVector{T},t::Float64=1.0) where {T <: AbstractFloat} = RnPoint(getValue(x) + t*getValue(ξ) )
 @doc doc"""
+    injectivityRadius(M)
+
+return the injectivity radius of the [`Euclidean`](@ref) manifold `M`$=\mathbb R^n$.
+"""
+injectivityRadius(M::Euclidean) = sqrt(M.dimension)
+@doc doc"""
     log(M,x,y)
 
 computes the logarithmic map on the [`Euclidean`](@ref) manifold `M`, i.e. $y-x$.
@@ -126,6 +133,15 @@ compute the parallel transport  the [`Euclidean`](@ref) manifold `M`, which is
 the identity.
 """
 parallelTransport(M::Euclidean, x::RnPoint{T}, y::RnPoint{T}, ξ::RnTVector{T})  where {T <: AbstractFloat} = ξ
+@doc doc"""
+    project(M,x,v)
+
+project a $n$-dimensional `Vector{T}` v on the tangent space of the
+[`RnPoint{T}`](@ref) `x`. Since the tangent space is identical to the
+$\mathbb R^n$, the mapping can be realized with the identity, i.e.
+$\operatorname{project}(M,x,v) = v$.
+"""
+project(M::Euclidean, x::RnPoint{T}, v::Vector{T}) where {T <: AbstractFloat} = RnTVector{T}(v)
 @doc doc"""
     randomMPoint(M[,T=Float64])
 
@@ -161,8 +177,8 @@ tangentONB(M::Euclidean, x::RnPoint{T}, ξ::RnTVector{T}) where {T <: AbstractFl
     for i in 1:manifoldDimension(x)], zeros(manifoldDimension(x))
 
 typeofTVector(::Type{RnPoint{T}}) where T = RnTVector{T}
-typeofMPoint(::Type{RnTVector{T}}) where T = RnPoint{T} 
-                        
+typeofMPoint(::Type{RnTVector{T}}) where T = RnPoint{T}
+
 @doc doc"""
     typicalDistance(M)
 
@@ -175,7 +191,7 @@ typicalDistance(M::Euclidean) = sqrt(M.dimension)
 
 Checks that a [`RnPoint`](@ref) `x` has a valid value for a point on the
 [`Euclidean`](@ref) manifold `M`$=\mathbb R^n$, which is the case if the
-dimensions fit. 
+dimensions fit.
 """
 validateMPoint(M::Euclidean, x::RnPoint) = manifoldDimension(M) == manifoldDimension(x)
 
@@ -185,7 +201,7 @@ validateMPoint(M::Euclidean, x::RnPoint) = manifoldDimension(M) == manifoldDimen
 Checks, that the [`RnTVector`](@ref) `ξ` is a valid tangent vector in the
 tangent space of the [`RnPoint`](@ref) `x` ont the [`Euclidean`](@ref)
 manifold `M`, which is always the case as long as their vector dimensions agree.
-""" 
+"""
 validateTVector(M::Euclidean,x::RnPoint,ξ::RnTVector) = length(getValue(x) )== length(getValue(ξ))
 
 @doc doc"""

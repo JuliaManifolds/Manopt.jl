@@ -3,6 +3,7 @@ x = SnPoint([1.,0.,0.])
 y = SnPoint([0.,1.,0.])
 z = SnPoint([0.,0.,1.])
 M = Sphere(2)
+@test injectivityRadius(M) == π
 ξ = log(M,x,y)
 y2 = exp(M,x,ξ)
 ν = log(M,x,z)
@@ -16,6 +17,8 @@ y2 = exp(M,x,ξ)
 @test norm( getValue( mean(M,[x,y,z]) ) - 1/sqrt(3)*ones(3)) ≈ 0 atol=10.0^(-7)
 @test norm( getValue( mean(M,[x,y]) ) - [1/sqrt(2),1/sqrt(2),0] ) ≈ 0 atol=10.0^(-15)
 @test manifoldDimension(M) == manifoldDimension(x)
+# Test projection
+project(M,x,getValue(ξ)) == ξ
 # Test randoms
 @test validateMPoint(M,randomMPoint(M))
 @test validateTVector(M,x,randomTVector(M,x))
@@ -27,7 +30,7 @@ xT = MPointE(x); yT = MPointE(y); zT = MPointE(z);
 @test tangentONB(M,x,y) == ( [SnTVector([0.,1.,0.]), SnTVector([0., 0., 1.])], [0.,1.] )
 #
 @test_throws ErrorException validateMPoint(M,SnPoint([1.,0.]))
-@test_throws ErrorException validateMPoint(M,SnPoint([2.,0.,0.])) 
+@test_throws ErrorException validateMPoint(M,SnPoint([2.,0.,0.]))
 @test_throws ErrorException validateTVector(M,x,SnTVector([1., 0.]))
 @test_throws ErrorException validateTVector(M,x,log(M,z,x))
 
@@ -40,7 +43,7 @@ xT = MPointE(x); yT = MPointE(y); zT = MPointE(z);
 @test typicalDistance(M) == π
 @test "$M" == "The 2-Sphere"
 @test "$x" == "Sn([1.0, 0.0, 0.0])"
-@test "$ξ" == "SnT([0.0, 1.5708, 0.0])"
+@test "$(SnTVector([1.0, 0.0, 0.0]))" == "SnT([1.0, 0.0, 0.0])"
 #
 #
 #

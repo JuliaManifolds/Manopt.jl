@@ -51,11 +51,7 @@ end
 Initialize the solver to the optimization [`Problem`](@ref) by initializing all
 values in the [`Options`](@ref)` o`.
 """
-function initializeSolver!(p::P,o::O) where {P <: Problem, O <: Options}
-    sig1 = string( typeof(p) )
-    sig2 = string( typeof(o) )
-    throw( ErrorException("Initialization of a solver corresponding to the $sig1 and $sig2 not yet implemented." ) )
-end
+initializeSolver!(p::P,o::O) where {P <: Problem, O <: Options} = throw( ErrorException("Initialization of a solver corresponding to the $(typeof(p)) and $(typeof(o)) not yet implemented." ) )
 """
     doSolverStep!(p,o,iter)
 
@@ -68,16 +64,12 @@ function doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: Options}
     throw( ErrorException("Initialization of a solver corresponding to the $sig1 and $sig2 not yet implemented." ) )
 end
 """
-    getSolverResult(p,o)
+    getSolverResult(o)
 
 Return the final result after all iterations that is stored within the
 (modified during the iterations) [`Options`](@ref) `o`.
 """
-function getSolverResult(p::P,o::O) where {P <: Problem, O <: Options}
-    sig1 = string( typeof(p) )
-    sig2 = string( typeof(o) )
-    throw( ErrorException("Initialization of a solver corresponding to the $sig1 and $sig2 not yet implemented." ) )
-end
+getSolverResult(o::O) where {O <: Options} = throw( ErrorException("There is no implementation of getSolverResult for a $(typeof(o)) yet." ) )
 """
     stopSolver!(p,o,i)
 

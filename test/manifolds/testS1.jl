@@ -2,8 +2,8 @@
     M = Circle()
     x = S1Point(0.)
     y = opposite(M,x)
-    z = randomMPoint(M)
-    η = randomTVector(M,x)
+    z = S1Point(1.1)
+    η = S1TVector(1.3)
     @test getValue(x) == 0.
     ξ = S1TVector(2*π/3)
     @test getValue(ξ) == 2*π/3
@@ -31,7 +31,8 @@
     @test "$(S1TVector(0.))" == "S1T(0.0)"
     @test_throws ErrorException validateMPoint(M,S1Point(2*π))
     @test_throws ErrorException validateMPoint(M,S1Point(-2*π))
-
+    @test project(M,x,getValue(ξ)) == ξ
+    @test getValue(project(M,x,getValue(ξ)+2*π)) ≈ getValue(ξ)
     # Test manifoldDimension
     @test manifoldDimension(M) == 1
     @test manifoldDimension(x) == 1

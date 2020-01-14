@@ -8,6 +8,7 @@ export Hyperbolic, HnPoint, HnTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export typeofMPoint, typeofTVector, MinkowskiDot
 export validateMPoint, validateTVector, zeroTVector
+export randomMPoint, project, randomTVector
 #
 # Type definitions
 #
@@ -71,7 +72,7 @@ $n$-dimensional [`Hyperbolic`](@ref) space $\mathbb H^n$. To be precise
 $\xi\in\mathbb R^{n+1}$ is hyperbocally orthogonal to $x\in\mathbb R^{n+1}$,
 i.e. orthogonal with respect to the Minkowski inner product
 
-$\langle \xi, x \rangle_{\mathrm{M}} = -\xi_{n+1}x_{n+1} + \sum_{k=1}^n \xi_k x_k = 0$ 
+$\langle \xi, x \rangle_{\mathrm{M}} = -\xi_{n+1}x_{n+1} + \sum_{k=1}^n \xi_k x_k = 0$
 """
 struct HnTVector{T <: AbstractFloat}  <: TVector
     value::Vector{T}
@@ -80,7 +81,7 @@ struct HnTVector{T <: AbstractFloat}  <: TVector
 end
 HnTVector(value::T) where {T <: AbstractFloat} = HnTVector{T}(value)
 HnTVector(value::Vector{T})  where {T <: AbstractFloat}  = HnTVector{T}(value)
-  
+
 getValue(ξ::HnTVector) = length(ξ.value)==1 ? ξ.value[1] : ξ.value
 
 # Traits
@@ -204,8 +205,45 @@ function parallelTransport(M::Hyperbolic, x::HnPoint{T}, y::HnPoint{T}, ξ::HnTV
 	return ξ - ( νL > 0 ? dot(M,x,ν,ξ)*(ν + log(M,y,x))/νL^2 : zeroTVector(M,x) )
 end
 
+@doc doc"""
+	ξ = project(M,x,v)
+
+perform an orthogonal projection with respect to the Minkowski inner product,
+i.e. `ξ` is a tangent vector at the [`HnPoint`](@ref) `x` on [`Hyperbolic`](@ref) space `M`.
+
+The formula reads
+````math
+\xi = v + \langle x,v\rangle_{\mathrm{M}} x,
+````
+where $\langle \cdot, \cdot \rangle_{\mathrm{M}$ denotes the Minkowski inner
+product in the embedding, see [`MinkowskiDot`](@ref).
+"""
+function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: AbstractFloat}
+    X = getValue(x) 
+	return HnTVector(v + MinkowskiDot(X,v)*X)
+end
+
+@doc doc"""
+    randomMPoint(M)
+"""
+function randomMPoint(M::Hyperbolic)
+	n = M.dimension
+	x = randn(Float64, n+1)
+	x[n+1] = sqrt(transpose(x[1:n])*x[1:n] + 1)
+	return HnPoint{Float64}(x)
+end
+
+@doc doc"""
+    randomTVector(M)
+"""
+function randomTVector(M::Hyperbolic, x::HnPoint{T}) where {T <: AbstractFloat}
+	n = M.dimension
+	ξ = randn(Float64, n+1)
+	project(M,x,ξ)
+end
+
 typeofTVector(::Type{HnPoint{T}}) where T = HnTVector{T}
-typeofMPoint(::Type{HnTVector{T}}) where T = HnPoint{T} 
+typeofMPoint(::Type{HnTVector{T}}) where T = HnPoint{T}
 
 @doc doc"""
     typicalDistance(M)

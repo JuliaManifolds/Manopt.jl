@@ -8,7 +8,8 @@ export Sphere, SnPoint, SnTVector,show, getValue
 export distance, dot, exp, log, manifoldDimension, norm
 export randomMPoint, opposite, parallelTransport, zeroTVector
 export validateMPoint, validateTVector
-export zeroTVector, typeofMPoint, typeofTVector
+export project
+export zeroTVector, typeofMPoint, typeofTVector, injectivityRadius
 #
 # Type definitions
 #
@@ -121,6 +122,12 @@ function exp(M::Sphere,x::SnPoint,ξ::SnTVector,t::Float64=1.0)
   end
 end
 @doc doc"""
+    injectivityRadius(M)
+
+return the injectivity radius of the [`Sphere`](@ref) manifold `M`$=\mathbb S^n$.
+"""
+injectivityRadius(M::Sphere) = π
+@doc doc"""
     log(M,x,y)
 Compute the logarithmic map on the [`Sphere`](@ref)
 $\mathcal M=\mathbb S^n$, i.e. the [`SnTVector`](@ref) whose corresponding
@@ -179,6 +186,13 @@ function parallelTransport(M::Sphere, x::SnPoint, y::SnPoint, ξ::SnTVector)
 	return ξ - ( νL > 0 ? dot(M,x,ν,ξ)*(ν + log(M,y,x))/νL^2 : zeroTVector(M,x) )
 end
 @doc doc"""
+    project(M,x,v)
+
+project a vector from the embedding onto the tangent space $T_x\mathbb S^n$ of
+a point $x$ in the [`Sphere`](@ref) `M`.
+"""
+project(M::Sphere, x::SnPoint, v::Vector{T}) where {T <: AbstractFloat} = SnTVector{T}(v - getValue(x)*(transpose(getValue(x))*v))
+@doc doc"""
     randomMPoint(M [,:Gaussian, σ=1.0])
 
 return a random point on the Sphere by projecting a normal distirbuted vector
@@ -217,7 +231,7 @@ function tangentONB(M::Sphere,x::SnPoint,ξ::SnTVector)
     return Ξ,κ
 end
 typeofTVector(::Type{SnPoint{T}}) where T = SnTVector{T}
-typeofMPoint(::Type{SnTVector{T}}) where T = SnPoint{T} 
+typeofMPoint(::Type{SnTVector{T}}) where T = SnPoint{T}
 """
     typicalDistance(M)
 
@@ -277,4 +291,4 @@ zeroTVector(M::Sphere, x::SnPoint) = SnTVector(  zero( getValue(x) )  );
 # ---
 show(io::IO, M::Sphere) = print(io,"The $(M.name)")
 show(io::IO, p::SnPoint) = print(io, "Sn($( getValue(p) ))")
-show(io::IO, ξ::SnTVector) = print(io, "SnT($( getValue(ξ) ))") 
+show(io::IO, ξ::SnTVector) = print(io, "SnT($( getValue(ξ) ))")
