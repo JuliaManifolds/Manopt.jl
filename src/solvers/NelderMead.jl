@@ -33,9 +33,9 @@ and
 and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
 # Output
-* `xOpt` – the resulting (approximately critical) point of gradientDescent
-* `record` - if activated (using the `record` key, see [`RecordOptions`](@ref)
-  an array containing the recorded values.
+* either `x` the last iterate or the complete options depending on the optional
+  keyword `returnOptions`, which is false by default (hence then only `x` is
+  returned).
 """
 function NelderMead(M::mT,
     F::Function,

@@ -57,7 +57,6 @@ module Manopt
   include("plots/SpherePlots.jl")
   # helpers
   include("helpers/errorMeasures.jl")
-  include("helpers/imageHelpers.jl")
   # Exports
   include("helpers/exports/Asymptote.jl")
   # data

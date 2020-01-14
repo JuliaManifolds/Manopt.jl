@@ -60,7 +60,7 @@ For a description of the algorithm and more details see
   improvement could change sign if it is negative but very small.
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
-  If set to false (default) just the optimal value `xOpt` if returned
+  If set to false (default) just the optimal value `xOpt` is returned
 
 # Output
 * `x` – the last reached point on the manifold
