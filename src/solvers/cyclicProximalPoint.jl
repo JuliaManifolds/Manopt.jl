@@ -19,9 +19,8 @@ the default values are given in brackets
   summable) sequence of λi
 * `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000),`[`stopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `xOpt` if returned
-...
+  complete [`Options`](@ref) are returned. This can be used to access recorded values.
+  If set to false (default) just the optimal value `xOpt` if returned
 and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
 # Output
@@ -39,7 +38,7 @@ function cyclicProximalPoint(M::Mc,
   ) where {Mc <: Manifold, MP <: MPoint}
     p = ProximalProblem(M,F,proximalMaps)
     o = CyclicProximalPointOptions(x0,stoppingCriterion,λ,evaluationOrder)
-    
+
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions

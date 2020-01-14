@@ -18,7 +18,6 @@ module Manopt
   # specific manifolds
   include("manifolds/Circle.jl")
   include("manifolds/Euclidean.jl")
-  include("manifolds/Graph.jl")
   include("manifolds/Grassmannian.jl")
   include("manifolds/Hyperbolic.jl")
   include("manifolds/Rotations.jl")

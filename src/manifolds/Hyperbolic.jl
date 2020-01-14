@@ -220,18 +220,8 @@ where $\langle \cdot, \cdot \rangle_{\mathrm{M}$ denotes the Minkowski inner
 product in the embedding, see [`MinkowskiDot`](@ref).
 """
 function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: AbstractFloat}
-    X = getValue(x) 
+    X = getValue(x)
 	return HnTVector(v + MinkowskiDot(X,v)*X)
-end
-
-@doc doc"""
-    randomMPoint(M)
-"""
-function randomMPoint(M::Hyperbolic)
-	n = M.dimension
-	x = randn(Float64, n+1)
-	x[n+1] = sqrt(transpose(x[1:n])*x[1:n] + 1)
-	return HnPoint{Float64}(x)
 end
 
 @doc doc"""
@@ -257,7 +247,6 @@ function randomMPoint(M::Hyperbolic)
     a = randn( manifoldDimension(M) )
     return HnPoint( [a..., sqrt( sum( (a.^2) ) + 1 )] )
 end
-
 
 @doc doc"""
     typicalDistance(M)

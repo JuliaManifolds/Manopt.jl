@@ -20,7 +20,7 @@ and
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `population` – (n+1 `randomMPoint(M)`) an initial population of $n+1$ points, where $n$
   is the dimension of the manifold `M`.
-  
+
 # Optional
 
 * `stoppingCriterion` – ([`stopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
@@ -42,17 +42,19 @@ function NelderMead(M::mT,
     population::Array{MP,1} = [randomMPoint(M) for i=1:(manifoldDimension(M)+1) ];
     stoppingCriterion::StoppingCriterion = stopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
+    returnOptions=false,
     kwargs... #collect rest
   ) where {mT <: Manifold, MP <: MPoint}
-  p = CostProblem(M,F)
-  o = NelderMeadOptions(population, stoppingCriterion;
+    p = CostProblem(M,F)
+    o = NelderMeadOptions(population, stoppingCriterion;
     α = α, γ = γ, ρ = ρ, σ = σ)
-  o = decorateOptions(o; kwargs...)
-  resultO = solve(p,o)
-  if hasRecord(resultO)
-      return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
-  end
-  return getSolverResult(p,resultO)
+    o = decorateOptions(o; kwargs...)
+    resultO = solve(p,o)
+    if returnOptions
+        return resultO
+    else
+        return getSolverResult(resultO)
+    end
 end
 #
 # Solver functions
@@ -90,7 +92,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     # --- Contraction ---
     if Costr > o.costs[ind[end-1]] # even worse than second worst
         if Costr < o.costs[last(ind)] # but at least better tham last
-            # outside contraction    
+            # outside contraction
             xc = exp(p.M, m, - o.ρ*ξ)
             Costc = getCost(p,xc)
             if Costc < Costr # better than reflected -> store as last
@@ -98,7 +100,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
                 o.costs[last(ind)] = Costr
             end
         else # even worse than last -> inside contraction
-            # outside contraction    
+            # outside contraction
             xc = exp(p.M, m, o.ρ*ξ)
             Costc = getCost(p,xc)
             if Costc < o.costs[last(ind)] # better than last ? -> store
