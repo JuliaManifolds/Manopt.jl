@@ -15,9 +15,3 @@ that can be loaded using the following data functions
   artificialSPDImage
   artificialSPDImage2
 ```
-
-# Manifold Constructors
-
-```@docs
-  constructImageGraph
-```

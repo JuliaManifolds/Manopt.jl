@@ -64,7 +64,7 @@ OR
 * `options` - the options returned by the solver (see `returnOptions`)
 
 # see also
-[`trustRegions.jl`](@ref)
+[`trustRegions`](@ref)
 """
 function truncatedConjugateGradient(M::mT,
         F::Function, ∇F::Function, x::MP, η::T,
