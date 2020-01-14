@@ -11,6 +11,7 @@ export parallelTransport, randomMPoint, randomTVector, typeofMPoint, typeofTVect
 export zeroTVector
 export show, getValue
 export validateMPoint, validateTVector
+export project
 
 export symRem
 # Types
@@ -53,7 +54,7 @@ getValue(x::S1Point) = x.value
 @doc doc"""
     S1TVector <: TVector
 
-a tangent vector $\xi\in\mathbb S^1$ represented by a real valiue
+a tangent vector $\xi\in\mathbb S^1$ represented by a real value
 `getValue(ξ)`$\in\mathbb R$.
 """
 struct S1TVector <: TVector
@@ -170,6 +171,13 @@ Since the [`Sphere`](@ref) `M` is represented in angles this is the identity.
 """
 parallelTransport(M::Circle, x::S1Point, y::S1Point, ξ::S1TVector) = ξ
 @doc doc"""
+    project(M,x,v)
+
+project a number v on the tangent space of the [`S1Point`](@ref) `x`.
+"""
+project(M::Circle, x::S1Point, v::Float64) = S1TVector(symRem(v))
+
+@doc doc"""
     randomMPoint(M,:Uniform)
 
 return a random [`S1Point`](@ref) on the [`Circle`](@ref) $\mathbb S^1$ by
@@ -214,7 +222,7 @@ $\dot g(0) = \xi$, i.e. $\kappa_1$ corresponding to $\Xi_1=\xi$ is zero.
 tangentONB(M::Circle, x::S1Point, y::S1Point) = tangentONB(M,x,log(M,x,y))
 
 typeofTVector(::Type{S1Point}) = S1TVector
-typeofMPoint(::Type{S1TVector}) = S1Point 
+typeofMPoint(::Type{S1TVector}) = S1Point
 
 """
     typicalDistance(M)
@@ -250,7 +258,7 @@ end
     validateMPoint(M,x)
 
 validate, that a [`S1Point`](@ref) `x` has a valid value for a point on the
-[`Circle`](@ref) `M`$=\mathbb S^1$, i.e. is within $[-\pi,\pi)$. 
+[`Circle`](@ref) `M`$=\mathbb S^1$, i.e. is within $[-\pi,\pi)$.
 """
 function validateMPoint(M::Circle, x::S1Point)
     if (getValue(x) < - π) || (getValue(x) >= π) # out of range
@@ -266,7 +274,7 @@ end
 validate, that the [`S1TVector`](@ref) `ξ` is a valid tangent vector in the
 tangent space of the [`S1Point`](@ref) `x` ont the [`Circle`](@ref) `M`$=\mathbb S^1$,
 though this is always the case since all real values are valid.
-""" 
+"""
 function validateTVector(M::Circle,x::S1Point,ξ::S1TVector)
     return true
 end

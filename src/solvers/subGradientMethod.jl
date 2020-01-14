@@ -22,19 +22,23 @@ the argument `∂F` should always return _one_ element from the subgradient.
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
 * `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-
+* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+    complete [`Options`](@ref) re returned. This can be used to access recorded values.
+    If set to false (default) just the optimal value `xOpt` if returned
+...
 and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
-* `record` - if activated (using the `record` key, see [`RecordOptions`](@ref)
-  an array containing the recorded values.
+OR
+* `options` - the options returned by the solver (see `returnOptions`)
 """
 function subGradientMethod(M::mT,
         F::Function, ∂F::Function, x::MP;
         retraction::Function = exp,
         stepsize::Stepsize = DecreasingStepsize( typicalDistance(M)/5),
         stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
+        returnOptions = false,
         kwargs... #especially may contain debug
     ) where {mT <: Manifold, MP <: MPoint}
     p = SubGradientProblem(M,F,∂F)
@@ -42,10 +46,11 @@ function subGradientMethod(M::mT,
 
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
-    if hasRecord(resultO)
-        return getSolverResult(p,getOptions(resultO)), getRecord(resultO)
+    if returnOptions
+        return resultO
+    else
+        return getSolverResult(resultO)
     end
-    return getSolverResult(p,resultO)
 end
 function initializeSolver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.xOptimal = o.x
@@ -59,9 +64,7 @@ function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
         o.xOptimal = o.x
     end
 end
-function getSolverResult(p::SubGradientProblem, o::SubGradientMethodOptions)
-    return o.xOptimal
-end
+getSolverResult(o::SubGradientMethodOptions) = o.xOptimal
 
 #
 # TODO specific debugs and records.

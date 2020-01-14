@@ -8,9 +8,9 @@ include("recordOptions.jl")
 
 include("costPlan.jl")
 include("gradientPlan.jl")
+include("hessianPlan.jl")
 include("proximalPlan.jl")
 include("subGradientPlan.jl")
-
 
 include("stoppingCriterion.jl")
 include("stepsize.jl")

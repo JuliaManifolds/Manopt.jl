@@ -52,6 +52,8 @@ makedocs(
             "Gradient Descent" => "solvers/gradientDescent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Subgradient Method" => "solvers/subGradientMethod.md",
+            "Steihaug-Toint TCG Method" => "solvers/truncatedConjugateGradient.md",
+            "Riemannian Trust-Regions Solver" => "solvers/trustRegions.md"
          ],
         "Functions" => [
             "Introduction" => "functions/index.md",

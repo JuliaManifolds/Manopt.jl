@@ -23,12 +23,14 @@
     @test RecordOptions(o,Dict(:A => a)).recordDictionary[:A] == a
     @test isa( RecordOptions(o, [:Iteration]).recordDictionary[:All].group[1], RecordIteration)
     @test !hasRecord(o)
+    @test_throws ErrorException getRecord(o)
+    @test getOptions(o) == o
     @test !hasRecord(DebugOptions(o,[]))
     @test hasRecord(rO)
     @test_throws ErrorException getRecord(o)
     @test length( getRecord(rO,:All) ) == 0
-    @test length( getRecord(rO) ) == 0 
-    @test length(  getRecord(DebugOptions( rO,[]) )  ) == 0 
+    @test length( getRecord(rO) ) == 0
+    @test length(  getRecord(DebugOptions( rO,[]) )  ) == 0
     @test_throws ErrorException getRecord(RecordOptions(o,Dict{Symbol,RecordAction}()))
     @test_throws ErrorException getRecord(o)
     @test getRecord(rO) == Array{Int64,1}()
@@ -96,7 +98,7 @@
     @test g.recordedValues == [0.]
     o.x = RnPoint([3.,2.])
     g(p,o,2)
-    @test g.recordedValues == [0.,1.]    
+    @test g.recordedValues == [0.,1.]
     #RecordFactory
     o.∇ = RnTVector([0.,0.])
     rf = RecordFactory(o,[:Cost,:∇])

@@ -10,7 +10,7 @@ import Base: exp, log, show, cat, rand, Matrix, real, atan
 export Grassmannian, GrPoint, GrTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, retraction, inverseRetraction
 export parallelTransport, randomTVector, randomMPoint, validateMPoint, validateTVector
-export projection, zeroTVector
+export project, zeroTVector, injectivityRadius, tangent
 #
 # Type definitions
 #
@@ -33,17 +33,17 @@ number of rows and `k` is the number of columns of the matrices and the optional
 parameter `d` sets the `DataType` of the matrix entries.
 """
 struct Grassmannian{T<:Union{U, Complex{U}} where U<:AbstractFloat} <: Manifold
-  name::String
-  dimensionsubspace::Int
-  dimensionvecspace::Int
-  abbreviation::String
-  function Grassmannian{T}(dimensionsubspace::Int, dimensionvecspace::Int) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-    if dimensionsubspace > dimensionvecspace
-      throw(ErrorException("dimensionsubspace can't be bigger than dimensionvecspace: $dimensionsubspace > $dimensionvecspace"))
-    else
-     new("of the set of $dimensionsubspace-dimensional subspaces in K$dimensionvecspace in $T", dimensionsubspace, dimensionvecspace,"Gr($dimensionsubspace,$dimensionvecspace)")
-    end
-  end
+	name::String
+	dimensionsubspace::Int
+	dimensionvecspace::Int
+	abbreviation::String
+  	function Grassmannian{T}(dimensionsubspace::Int, dimensionvecspace::Int) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+    	if dimensionsubspace > dimensionvecspace
+      		throw(ErrorException("dimensionsubspace can't be bigger than dimensionvecspace: $dimensionsubspace > $dimensionvecspace"))
+    	else
+     		new("manifold of the set of $dimensionsubspace-dimensional subspaces in K$dimensionvecspace in $T", dimensionsubspace, dimensionvecspace,"Gr($dimensionsubspace,$dimensionvecspace)")
+    	end
+  	end
 end
 Grassmannian(dimensionsubspace::Int, dimensionvecspace::Int, D::DataType=Float64) = Grassmannian{D}(dimensionsubspace, dimensionvecspace)
 
@@ -61,8 +61,8 @@ subspace its columns span.
 where `p::Matrix` is an orthonormal matrix of dimension $n×k$.
 """
 struct GrPoint{T<:Union{U, Complex{U}} where U<:AbstractFloat} <: MPoint
-  value::Matrix{T}
-  GrPoint{T}(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = new(value)
+  	value::Matrix{T}
+  	GrPoint{T}(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = new(value)
 end
 GrPoint(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = GrPoint{T}(value)
 getValue(x::GrPoint) = x.value;
@@ -86,8 +86,8 @@ T_x\mathrm{Gr}(k,n) = \bigl\{
 where `ξ` is an $n\times k$ `Matrix` that satisfies the above.
 """
 struct GrTVector{T<:Union{U, Complex{U}} where U<:AbstractFloat} <: TVector
-  value::Matrix{T}
-  GrTVector{T}(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = new(value)
+  	value::Matrix{T}
+  	GrTVector{T}(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = new(value)
 end
 GrTVector(value::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat = GrTVector{T}(value)
 getValue(ξ::GrTVector) = ξ.value;
@@ -105,7 +105,7 @@ from $T_x\mathcal M$ of the [`Grassmannian`](@ref) manifold `M` given by
 $\langle \xi, \nu \rangle_x = \operatorname{Re}(\operatorname{tr}(\xi^{\mathrm{T}} ν)),$
 """
 function dot(M::Grassmannian{T}, x::GrPoint{T}, ξ::GrTVector{T}, ν::GrTVector{T})::Float64 where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  return real(tr(getValue(ξ)' * getValue(ν)))
+  	return real(tr(getValue(ξ)' * getValue(ν)))
 end
 
 @doc doc"""
@@ -122,15 +122,15 @@ where
 $b_{i}=\begin{cases} 0 & \text{if} \; S_i≧1 \\ \operatorname{acos}(S_i) & \, \text{if} \; S_i<1 \end{cases}.$
 """
 function distance(M::Grassmannian{T},x::GrPoint{T},y::GrPoint{T})::Float64 where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  if x==y
-	return 0
-  else
-    z = getValue(x)'*getValue(y)
-    a = svd(z).S
-    b = zero(a)
-    b[a.<1] = acos.(a[a.<1])
-	return norm(real(b), 2)
-  end
+  	if x==y
+		return 0
+  	else
+    	z = getValue(x)'*getValue(y)
+    	a = svd(z).S
+    	b = zero(a)
+    	b[a.<1] = (acos.(a[a.<1])).^2
+		return sqrt(sum(b))
+  	end
 end
 
 @doc doc"""
@@ -148,11 +148,18 @@ The resulting point $y$ of the exponential map is then the matrix $Q$ of the
 QR decomposition $A=QR$ of $A$.
 """
 function exp(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},t::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  ξ = t*ξ
-  d = svd(getValue(ξ))
-  Y = getValue(x) * d.V * cos(Diagonal(d.S)) * (d.V)' + (d.U) * sin(Diagonal(d.S)) * (d.V)'
-  GrPoint( Matrix( qr(Y).Q ) )
+  	ξ = t*ξ
+  	d = svd(getValue(ξ))
+  	Y = getValue(x) * d.V * cos(Diagonal(d.S)) * (d.V)' + (d.U) * sin(Diagonal(d.S)) * (d.V)'
+  	GrPoint( Matrix( qr(Y).Q ) )
 end
+
+@doc doc"""
+    injectivityRadius(M)
+
+return the injectivity radius of the [`Grassmannian`](@ref) manifold `M`$= \mathrm{Gr}(k,n)$.
+"""
+injectivityRadius(M::Grassmannian) = sqrt(M.dimensionsubspace)
 
 @doc doc"""
     inverseRetraction(M,x,y)
@@ -169,9 +176,9 @@ This function is implemented only for the case $\mathbb{K}=\mathbb{R}$.
 This is also the standard retraction.
 """
 function inverseRetraction(M::Grassmannian{T},x::GrPoint{T},y::GrPoint{T}) where T<:AbstractFloat
-  U = getValue(y)/(transpose(getValue(x))*getValue(y))
-  A = U-getValue(x)
-  GrPoint{T}(A)
+  	U = getValue(y)/(transpose(getValue(x))*getValue(y))
+  	A = U-getValue(x)
+  	GrPoint(A)
 end
 
 @doc doc"""
@@ -193,15 +200,15 @@ $USV = ({\bar y}^\mathrm{T}x)^{-1} ( {\bar y}^\mathrm{T} - {\bar y}^\mathrm{T}x{
 and the $\operatorname{atan}$ is meant elementwise.
 """
 function log(M::Grassmannian{T},x::GrPoint{T},y::GrPoint{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  Z = getValue(y)'*getValue(x)
-  if det(Z)≠0
-   W = Z\(getValue(y)'-Z*getValue(x)')
-   d = svd(W, full = false)
-   A = (d.V)*atan(Diagonal(svd(W, full = false).S))*(d.U)'
-   GrTVector{T}(A)
-  else
-   throw( ErrorException("The points $x and $y are antipodal, thus these input parameters are invalid.") )
-  end
+  	Z = getValue(y)'*getValue(x)
+  	if det(Z)≠0
+   		W = Z\(getValue(y)'-Z*getValue(x)')
+   		d = svd(W, full = false)
+   		A = (d.V)*atan(Diagonal(svd(W, full = false).S))*(d.U)'
+   		GrTVector(A)
+  	else
+   		throw( ErrorException("The points $x and $y are antipodal, thus these input parameters are invalid.") )
+  	end
 end
 
 @doc doc"""
@@ -257,7 +264,7 @@ where $\xi_{ij}$ are the entries of the matrix `ξ`, i.e. the norm is given by
 the Frobenius norm of `ξ`.
 """
 function norm(M::Grassmannian{T}, x::GrPoint{T}, ξ::GrTVector{T})::Float64 where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  norm(getValue(ξ))
+  	norm(getValue(ξ))
 end
 
 @doc doc"""
@@ -271,20 +278,20 @@ The formula reads
 
 $P_{x\to y}(\xi) = \operatorname{proj}_{\mathcal M}(y,\xi).$
 
-where $\operatorname{proj}_{\mathcal M}$ is the [`projection`](@ref) onto the
+where $\operatorname{proj}_{\mathcal M}$ is the [`project`](@ref) onto the
 tangent space $T_y\mathcal M$.
 """
 function parallelTransport(M::Grassmannian{T}, x::GrPoint{T}, y::GrPoint{T}, ξ::GrTVector{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
- GrTVector(projection(M,y,getValue(ξ)))
+ 	project(M,y,getValue(ξ))
 end
 
 @doc doc"""
-    projection(M,x,q)
+    project(M,x,v)
 
-project a matrix q orthogonally on the [`GrPoint`](@ref) `x` of the manifold
+project a matrix v orthogonally on the [`GrPoint`](@ref) `x` of the manifold
 [`Grassmannian`](@ref) manifold `M`. The formula reads
 
-$\operatorname{proj}_{\mathcal M}(x,q) = q-x({\bar x}^\mathrm{T}q),$
+$\operatorname{proj}_{\mathcal M}(x,v) = v-x({\bar x}^\mathrm{T}v),$
 
 i.e. the difference matrix of the image and the output matrix lies in
 the orthogonal complement of all [`GrTVector`](@ref)s from the tangent space
@@ -293,10 +300,10 @@ $T_x\mathcal M$ at [`GrPoint`](@ref) `x`.
 # see also
 [`parallelTransport`](@ref), [`randomTVector`](@ref)
 """
-function projection(M::Grassmannian{T},x::GrPoint{T},q::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  A = getValue(x)'*q
-  B = q - getValue(x)*A
-  return B
+function project(M::Grassmannian{T},x::GrPoint{T},v::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+  	A = getValue(x)'*v
+  	B = v - getValue(x)*A
+  	return GrTVector(B)
 end
 
 @doc doc"""
@@ -307,9 +314,9 @@ generating a random (Gaussian) matrix with standard deviation `σ` in matching
 size, which is orthonormal.
 """
 function randomMPoint(M::Grassmannian{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  V = σ * randn(T, (M.dimensionvecspace, M.dimensionsubspace))
-  A = qr(V).Q[:,1:M.dimensionsubspace]
-  GrPoint{T}( A )
+  	V = σ * randn(T, (M.dimensionvecspace, M.dimensionsubspace))
+  	A = qr(V).Q[:,1:M.dimensionsubspace]
+  	GrPoint{T}( A )
 end
 
 
@@ -318,13 +325,13 @@ end
 
 return a (Gaussian) random vector [`GrTVector`](@ref) in the tangential space
 $T_x\mathrm{Gr}(k,n)$ with mean zero and standard deviation `σ` by projecting
-a random Matrix onto the  [`GrPoint`](@ref) `x` with [`projection`](@ref).
+a random Matrix onto the  [`GrPoint`](@ref) `x` with [`project`](@ref).
 """
 function randomTVector(M::Grassmannian{T},x::GrPoint{T}, ::Val{:Gaussian}, σ::Float64=1.0) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  y = σ * randn(T, (M.dimensionvecspace,M.dimensionsubspace))
-  Y = projection(M, x, y)
-  Y = Y/norm(Y)
-  GrTVector(Y)
+  	y = σ * randn(T, (M.dimensionvecspace,M.dimensionsubspace))
+  	Y = project(M, x, y)
+  	Y = Y/norm(getValue(Y))
+	return Y
 end
 
 @doc doc"""
@@ -347,6 +354,8 @@ function retraction(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},t::Float64
     GrPoint{T}(A)
 end
 
+tangent(M::Grassmannian, x::GrPoint, q::Matrix) = project(M,x,q)
+
 @doc doc"""
     zeroTVector(M,x)
 
@@ -354,34 +363,41 @@ return a zero tangent vector in the tangent space of the [`GrPoint`](@ref) on
 the [`Grassmannian`](@ref) manifold `M`.
 """
 function zeroTVector(M::Grassmannian{T}, x::GrPoint{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  return GrTVector{T}(zeros(M.dimensionvecspace,M.dimensionsubspace))
+  	return GrTVector{T}(zeros(M.dimensionvecspace,M.dimensionsubspace))
 end
 
 function validateMPoint(M::Grassmannian{T}, x::GrPoint{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  if size(getValue(x), 1) ≠ M.dimensionvecspace
-    throw( ErrorException("The dimension of $x must be $(M.dimensionvecspace) × $(M.dimensionsubspace) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
-  end
-  if size(getValue(x), 2) ≠ M.dimensionsubspace
-    throw( ErrorException("The dimension of $x must be $(M.dimensionvecspace) × $(M.dimensionsubspace) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
-  end
-  if rank(getValue(x)) ≠ M.dimensionsubspace
-    throw( ErrorException("$x must have  full rank.") )
-  end
+  	if size(getValue(x), 1) ≠ M.dimensionvecspace
+    	throw( ErrorException("The dimension of $x must be $(M.dimensionvecspace) × $(M.dimensionsubspace) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
+  	end
+  	if size(getValue(x), 2) ≠ M.dimensionsubspace
+    	throw( ErrorException("The dimension of $x must be $(M.dimensionvecspace) × $(M.dimensionsubspace) but it is $(size(getValue(x), 1)) × $(size(getValue(x), 2)).") )
+  	end
+  	if rank(getValue(x)) ≠ M.dimensionsubspace
+    	throw( ErrorException("$x must have  full rank.") )
+  	end
 
-  z=getValue(x)'*getValue(x)
-  if z ≉ one(z)
-    throw( ErrorException("$x has to be orthonormal but it's not.") )
-  end
+  	z=getValue(x)'*getValue(x)
+  	if z ≉ one(z)
+    	throw( ErrorException("$x has to be orthonormal but it's not.") )
+  	end
 end
 
 function validateTVector(M::Grassmannian{T}, x::GrPoint{T}, ξ::GrTVector{T},) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-  if size(getValue(ξ), 1) ≠ M.dimensionvecspace
-    throw( ErrorException("The dimension of $ξ must be $(M.dimensionvecspace) × $(M.dimensionsubspace) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
-  end
-  if size(getValue(ξ), 2) ≠ M.dimensionsubspace
-    throw( ErrorException("The dimension of $ξ must be $(M.dimensionvecspace) × $(M.dimensionsubspace) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
-  end
-  if norm(getValue(x)'*getValue(ξ) + getValue(ξ)'*getValue(x)) > 10^(-15)
-    throw( ErrorException("The matrix $x'$ξ must be skew-symmetric!") )
-  end
+  	if size(getValue(ξ), 1) ≠ M.dimensionvecspace
+    	throw( ErrorException("The dimension of $ξ must be $(M.dimensionvecspace) × $(M.dimensionsubspace) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
+  	end
+  	if size(getValue(ξ), 2) ≠ M.dimensionsubspace
+    	throw( ErrorException("The dimension of $ξ must be $(M.dimensionvecspace) × $(M.dimensionsubspace) but it is $(size(getValue(ξ), 1)) × $(size(getValue(ξ), 2))") )
+  	end
+  	if norm(getValue(x)'*getValue(ξ) + getValue(ξ)'*getValue(x)) > 10^(-15)
+    	throw( ErrorException("The matrix $x'$ξ must be skew-symmetric!") )
+  	end
 end
+
+#
+#
+# --- Display functions for the objects/types
+show(io::IO, M::Grassmannian) = print(io, "The $(M.name), $(M.abbreviation)");
+show(io::IO, x::GrPoint) = print(io, "GrPoint($( getValue(x) ))");
+show(io::IO, ξ::GrTVector) = print(io, "GrTVector($( getValue(ξ) ))");

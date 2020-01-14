@@ -1,4 +1,6 @@
 @testset "The Hyperbolic Manifold" begin
+    import Random: seed!
+    seed!(42);
     M = Hyperbolic(2)
     @test typicalDistance(M) == sqrt(2)
     @test getValue(HnPoint(1.)) == 1.
@@ -29,7 +31,11 @@
     @test typeofMPoint(typeof(ξ)) == HnPoint{Float64}
     @test typeofTVector(x) == HnTVector{Float64}
     @test typeofMPoint(ξ) == HnPoint{Float64}
-
+    # test random and project
+    @test getValue(project(M,x,[1., 1., 5.])) ≈ getValue(ξ)
+    getValue(project(M,x,getValue(ξ))) ≈ getValue(ξ)
+    @test validateMPoint(M,randomMPoint(M))
+    @test validateTVector(M,x,randomTVector(M,x))
     @test "$(M)" == "The 2-Hyperbolic Space."
     @test "$(x)" == "Hn([0.0, 0.0, 1.0])"
     @test "$(ξ)" == "HnT([1.0, 1.0, 0.0])"

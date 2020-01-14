@@ -27,11 +27,12 @@ y = ProdPoint([y1,y2])
 @test distance(M,x,y) == sqrt(distance(M1,x1,y1)^2 + distance(M2,x2,y2).^2)
 @test dot(M,x,ξ,η) == dot(M1,x1,ξ1,η1) + dot(M2,x2,ξ2,η2)
 @test distance( M, exp(M,x,ξ), ProdPoint([exp(M1,x1,ξ1),exp(M2,x2,ξ2)]) ) == 0
-@test norm( M, x, log(M,x,y) - ProdTVector([log(M1,x1,y1), log(M2,x2,y2)]) ) ≈ 0 
+@test norm( M, x, log(M,x,y) - ProdTVector([log(M1,x1,y1), log(M2,x2,y2)]) ) ≈ 0
 @test manifoldDimension(x) == 5
 @test manifoldDimension(M) == 5
+@test project(M,x,getValue.(getValue(ξ))) == ξ
 @test norm(M,y, parallelTransport(M,x,y,ξ) - ProdTVector([
-    parallelTransport(M1,x1,y1,ξ1), parallelTransport(M2,x2,y2,ξ2) ]) ) ≈ 0 
+    parallelTransport(M1,x1,y1,ξ1), parallelTransport(M2,x2,y2,ξ2) ]) ) ≈ 0
 
 @test typeofMPoint(ξ) == ProdPoint{Array{MPoint,1}}
 @test typeofTVector(x) == ProdTVector{Array{TVector,1}}
@@ -43,9 +44,9 @@ y = ProdPoint([y1,y2])
 @test_throws DomainError validateMPoint(Product([M1]),x)
 @test_throws DomainError validateTVector(M,x,ProdTVector([ξ1]))
 
-@test typicalDistance(M) ≈ sqrt( 2* (typicalDistance(M1).^2 + typicalDistance(M2).^2) ) 
+@test typicalDistance(M) ≈ sqrt( 2* (typicalDistance(M1).^2 + typicalDistance(M2).^2) )
 
-@test zeroTVector(M,x) == ProdTVector([zeroTVector(M1,x1), zeroTVector(M2,x2)]) 
+@test zeroTVector(M,x) == ProdTVector([zeroTVector(M1,x1), zeroTVector(M2,x2)])
 
 @test "$M" == "The Product Manifold of [ $(M1), $(M2) ]"
 @test "$x" == "Prod[ $(x1), $(x2) ]"
@@ -66,6 +67,8 @@ y = PowPoint([y1,y1])
 @test distance(M, copy(x), x) == 0
 @test norm(M,x, ξ - copy(ξ)) == 0
 @test ndims(x) == ndims(x.value)
+@test ndims(x) == ndims(getValue(x))
+@test project(M,x,getValue.(getValue(ξ))) == ξ
 @test getValue(x) == [x1,x1]
 @test getValue(ξ) == [ξ1,ξ1]
 #
@@ -91,7 +94,7 @@ xG = PowPoint([x1 x1;y1 y1])
 #
 @test getValue.(getValue( adjointJacobiField(M, x, y, 0.5, ξ))) == getValue.(
         adjointJacobiField.(Ref(M1), [x1,x1], [y1,y1], 0.5, [ξ1,ξ1]) )
-@test getValue.(getValue( jacobiField(M, x, y, 0.5, ξ))) == 
+@test getValue.(getValue( jacobiField(M, x, y, 0.5, ξ))) ==
         getValue.(jacobiField.(Ref(M1), [x1,x1], [y1,y1], 0.5, [ξ1,ξ1]) )
 #
 @test distance(M,x,y) ≈ sqrt(2)*distance(M1,x1,y1)
@@ -120,7 +123,7 @@ xG = PowPoint([x1 x1;y1 y1])
 
 @test typicalDistance(M) ≈ sqrt( 2 ) * typicalDistance(M1)
 
-@test zeroTVector(M,x) == PowTVector([zeroTVector(M1,x1), zeroTVector(M1,x1)]) 
+@test zeroTVector(M,x) == PowTVector([zeroTVector(M1,x1), zeroTVector(M1,x1)])
 
 a0 = RnTVector([0.,0.,0.]); a1 = RnTVector([1.,0.,0.]);
 a2 = RnTVector([0.,1.,0.]); a3 = RnTVector([0.,0.,1.])
@@ -149,6 +152,9 @@ xE = MPointE(x)
 @test getTangent(x) == ξ1
 @test getBase(xE) == MPointE(x1)
 @test getTangent(xE) == TVectorE(ξ1,x1)
+
+@test typeofTVector(xT) == TBTVector{RnTVector{Float64}}
+@test typeofMPoint(log(M,x,y)) == TBPoint{RnPoint{Float64},RnTVector{Float64}}
 
 ξ = TBTVector(ξ1,η1)
 ξT = TBTVector( (ξ1,η1) )

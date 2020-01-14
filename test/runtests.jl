@@ -17,11 +17,12 @@ using Test
     include("manifolds/testExtended.jl")
     include("manifolds/testCombined.jl")
 end
-@testset "Plan Tests         " begin 
+@testset "Plan Tests         " begin
     include("plans/testDebug.jl")
     include("plans/testRecord.jl")
     include("plans/testGradientPlan.jl")
     include("plans/testSubGradientPlan.jl")
+    include("plans/testStoppingCriteria.jl")
 end
 @testset "Algorithm Tests    " begin
     include("algorithms/testBasicsAlgs.jl")
@@ -42,4 +43,5 @@ end
     include("solvers/testCPP.jl")
     include("solvers/testGradDesc.jl")
     include("solvers/testNelderMead.jl")
+    include("solvers/testTrustRegions.jl")
 end

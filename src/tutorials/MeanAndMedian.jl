@@ -152,10 +152,13 @@ nothing #hide
 # where the `Function` is a helper for global scope to infer the correct type.
 #
 # We then call the [`cyclicProximalPoint`](@ref) as
-xMedian, values = cyclicProximalPoint(M,F2,proxes,data[1];
+o = cyclicProximalPoint(M,F2,proxes,data[1];
     debug = [:Iteration," | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
-    record = [:Iteration, :Change, :Cost]
+    record = [:Iteration, :Change, :Cost],
+    returnOptions = true
 )
+xMedian = getSolverResult(o)
+values = getRecord(o)
 nothing # hide
 # where the differences to [`steepestDescent`](@ref) are as follows
 # 

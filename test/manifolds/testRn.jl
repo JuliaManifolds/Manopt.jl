@@ -13,7 +13,7 @@
     w2 = 4.
     e1 = -1.
     e2 =  2.
-    
+
     x1 = RnPoint(v1)
     x2 = RnPoint(v2)
     ξ1 = RnTVector(d1)
@@ -39,7 +39,8 @@
     @test exp(N,y1, η1) == RnPoint(w1 + e1)
     @test exp(N,y2, η2) == RnPoint(w2 + e2)
 
-    @test log(M,x1,x2) == RnTVector(v2-v1)   
+    @test injectivityRadius(M) == sqrt(3)
+    @test log(M,x1,x2) == RnTVector(v2-v1)
     @test log(N,y1,y2) == RnTVector(w2-w1)
 
     @test manifoldDimension(M) == 3
@@ -47,9 +48,10 @@
     @test manifoldDimension(N) == 1
     @test manifoldDimension(N) == manifoldDimension(y1)
 
-    @test norm(M,x1,ξ1) == norm(d1)  
+    @test project(M, x1, getValue(ξ1) ) == ξ1
+    @test norm(M,x1,ξ1) == norm(d1)
     @test norm(N,y1,η1) == abs(e1)
-    
+
     @test parallelTransport(M,x1,x2,ξ1) == ξ1
     @test parallelTransport(N,y1,y2,η1) == η1
 
@@ -74,7 +76,7 @@
 
     @test zeroTVector(M,x1) == RnTVector(zeros(3))
     @test zeroTVector(N,y1) == RnTVector(zeros(1))
-    
+
     @test "$(M)" == "The 3-dimensional Euclidean space"
     @test "$(x1)" == "Rn([1.0, 0.0, 0.0])"
     @test "$(ξ1)" == "RnT([0.0, 1.0, 1.0])"

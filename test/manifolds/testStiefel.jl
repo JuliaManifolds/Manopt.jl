@@ -38,9 +38,9 @@
   @test norm(getValue(inverseRetractionQR(M,x,retractionQR(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
   @test norm(getValue(inverseRetraction(M,x,retraction(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
   @test norm(getValue(inverseRetractionPolar(M,x,retractionPolar(M,x,ω))) - getValue(ω)) ≈ 0 atol = 10.0^(-14)
-  @test norm(transpose(getValue(retractionQR(M,x,ω))) * getValue(retractionQR(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
-  @test norm(transpose(getValue(retraction(M,x,ω))) * getValue(retraction(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
-  @test norm(transpose(getValue(retractionPolar(M,x,ω))) * getValue(retractionPolar(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-15)
+  @test norm(transpose(getValue(retractionQR(M,x,ω))) * getValue(retractionQR(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-14)
+  @test norm(transpose(getValue(retraction(M,x,ω))) * getValue(retraction(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-14)
+  @test norm(transpose(getValue(retractionPolar(M,x,ω))) * getValue(retractionPolar(M,x,ω)) - one(transpose(getValue(x))*getValue(x))) ≈ 0 atol = 10.0^(-14)
   #Test manifoldDimension
   @test manifoldDimension(M) == manifoldDimension(x)
   @test manifoldDimension(M) == 6
@@ -48,7 +48,8 @@
   # Test distance – not yet implemented
   @test_throws DomainError distance(M,x,y)
   # Test parallelTransport
-  @test norm(getValue(parallelTransport(M,x,z,η)) - getValue(projection(M,z,getValue(η)))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(M,x,z,η)) - getValue(project(M,z,getValue(η)))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(M,x,x,η)) - getValue(η)) ≈ 0 atol = 10.0^(-16)
   # Test zeroTVector
   @test norm(M,x,zeroTVector(M,x)) ≈ 0 atol = 10.0^(-16)
   # Test validateMPoint and validateTVector
@@ -66,7 +67,8 @@
   @test_throws ErrorException validateTVector(M,x,ξnot1)
   @test_throws ErrorException validateTVector(M,x,ξnot2)
   @test_throws ErrorException validateTVector(M,x,ξnot3)
-
+  # Test injectivityRadius(M::Stiefel)
+  @test injectivityRadius(M) ≈ sqrt(3)
 
   N = Stiefel{Complex{Float64}}(3,4)
   xcompl = StPoint{Complex{Float64}}([-0.761286+0.0462087im -0.18395+0.0566532im 0.525627+0.265715im; -0.104276+0.262847im -0.55139+0.157097im -0.582766+0.202596im; -0.324463+0.199309im -0.041674-0.427848im -0.202927+0.0456294im; -0.327554-0.29335im -0.078241+0.66583im -0.232484-0.418496im])
@@ -101,8 +103,8 @@
   @test norm(getValue(x2compl)'*getValue(x2compl) - one(getValue(x2compl)'*getValue(x2compl))) ≈ 0 atol=10.0^(-5)
   @test norm(getValue(x3compl)'*getValue(x3compl) - one(getValue(x3compl)'*getValue(x3compl))) ≈ 0 atol=10.0^(-5)
   # Test parallelTransport
-  @test norm(getValue(parallelTransport(N,xcompl,zcompl,ηcompl)) - getValue(projection(N,zcompl,getValue(ηcompl)))) ≈ 0 atol = 10.0^(-16)
-
+  @test norm(getValue(parallelTransport(N,xcompl,zcompl,ηcompl)) - getValue(project(N,zcompl,getValue(ηcompl)))) ≈ 0 atol = 10.0^(-16)
+  @test norm(getValue(parallelTransport(N,xcompl,xcompl,ηcompl)) - getValue(ηcompl)) ≈ 0 atol = 10.0^(-5)
   #Test manifoldDimension
   @test manifoldDimension(N) == manifoldDimension(wcompl)
   @test manifoldDimension(N) == 15
