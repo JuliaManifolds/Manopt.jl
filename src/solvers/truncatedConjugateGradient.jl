@@ -19,13 +19,11 @@ with the Steihaug-Toint truncated conjugate-gradient method.
 For a description of the algorithm and theorems offering convergence guarantees,
 see the reference:
 
-* [ABG07] P.-A. Absil, C.G. Baker, K.A. Gallivan,
-        Trust-region methods on Riemannian manifolds, FoCM, 2007.
-* [AMS08] P.-A. Absil, R. Mahony and R. Sepulchre,
-        Optimization Algorithms on Matrix Manifolds, Princeton University Press,
-        2008.
-* [CGT2000] A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
-        MPS, 2000.
+* P.-A. Absil, C.G. Baker, K.A. Gallivan,
+    Trust-region methods on Riemannian manifolds, FoCM, 2007.
+    doi: [10.1007/s10208-005-0179-9](https://doi.org/10.1007/s10208-005-0179-9)
+* A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
+    MPS, 2000. doi: [10.1137/1.9780898719857](https://doi.org/10.1137/1.9780898719857)
 
 # Input
 * `M` – a manifold $\mathcal M$
@@ -66,7 +64,7 @@ OR
 * `options` - the options returned by the solver (see `returnOptions`)
 
 # see also
-    [`trustRegions.jl`](@ref)
+[`trustRegions.jl`](@ref)
 """
 function truncatedConjugateGradient(M::mT,
         F::Function, ∇F::Function, x::MP, η::T,

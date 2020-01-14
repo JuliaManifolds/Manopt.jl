@@ -14,17 +14,13 @@ If no Hessian H is provided, a standard approximation of the Hessian based on
 the gradient ∇F will be computed.
 For solving the the inner trust-region subproblem of finding an update-vector,
 it uses the Steihaug-Toint truncated conjugate-gradient method.
-For a description of the algorithm and theorems offering convergence guarantees,
-see the references
+For a description of the algorithm and more details see
 
 * P.-A. Absil, C.G. Baker, K.A. Gallivan,
-        Trust-region methods on Riemannian manifolds, FoCM, 2007.
-        DOI: 10.1007/s10208-005-0179-9
-* P.-A. Absil, R. Mahony and R. Sepulchre,
-        Optimization Algorithms on Matrix Manifolds, Princeton University Press,
-        2008. DOI: 10.1515/9781400830244
+    Trust-region methods on Riemannian manifolds, FoCM, 2007.
+    doi: [10.1007/s10208-005-0179-9](https://doi.org/10.1007/s10208-005-0179-9)
 * A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
-        MPS, 2000. DOI: 10.1137/1.9780898719857
+    MPS, 2000. doi: [10.1137/1.9780898719857](https://doi.org/10.1137/1.9780898719857)
 
 # Input
 * `M` – a manifold $\mathcal M$

@@ -3,12 +3,13 @@
 The aim is to solve an optimization problem on a manifold
 
 ```math
-min_{x \in \mathcal{M}} F(x)
+\operatorname*{min}_{x \in \mathcal{M}} F(x)
 ```
 
 by using the Riemannian trust-regions solver. It is number one choice for smooth
 optimization. This trust-region method uses the Steihaug-Toint truncated
-conjugate-gradient method to solve the inner minimization problem called the
+conjugate-gradient method [`truncatedConjugateGradient`](@ref)
+to solve the inner minimization problem called the
 trust-regions subproblem. This inner solve can be preconditioned by providing
 a preconditioner (symmetric and positive deﬁnite, an approximation of the
 inverse of the Hessian of $F$). If no Hessian of the cost function $F$ is
@@ -23,7 +24,7 @@ $\Delta =\frac{1}{8} \bar{\Delta}$ where $\bar{\Delta}$ is the maximum radius
 the trust-region can have. Usually one uses
 the root of the manifold dimension $\operatorname{dim}(\mathcal{M})$.
 For accepting the next iterate and evaluating the new trust-region radius one
-needs an accept/reject threshold $\rho' \in [0,\frac{1}{4})$, which is  
+needs an accept/reject threshold $\rho' \in [0,\frac{1}{4})$, which is
 $\rho' = 0.1$ on default. Set $k=0$.
 
 ## Iteration
