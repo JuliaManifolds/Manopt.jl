@@ -2,7 +2,6 @@ using Manopt
 using Test
 @testset "Manifold Tests     " begin
     include("manifolds/testGr.jl")
-    include("manifolds/testGraph.jl")
     include("manifolds/testHn.jl")
     include("manifolds/testRn.jl")
     include("manifolds/testS1.jl")
@@ -11,7 +10,6 @@ using Test
     include("manifolds/testSPD.jl")
     include("manifolds/testStiefel.jl")
     include("manifolds/testSym.jl")
-    include("manifolds/testGraphConstruction.jl")
     #
     include("manifolds/testManifold.jl")
     include("manifolds/testExtended.jl")
@@ -42,5 +40,6 @@ end
     include("solvers/testDR.jl")
     include("solvers/testCPP.jl")
     include("solvers/testGradDesc.jl")
+    include("solvers/testNelderMead.jl")
     include("solvers/testTrustRegions.jl")
 end

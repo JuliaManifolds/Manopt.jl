@@ -7,6 +7,7 @@ import Base: exp, log, show
 export Hyperbolic, HnPoint, HnTVector, getValue
 export distance, dot, exp, log, manifoldDimension, norm, parallelTransport
 export typeofMPoint, typeofTVector, MinkowskiDot
+export randomMPoint
 export validateMPoint, validateTVector, zeroTVector
 export randomMPoint, project, randomTVector
 #
@@ -219,18 +220,8 @@ where $\langle \cdot, \cdot \rangle_{\mathrm{M}$ denotes the Minkowski inner
 product in the embedding, see [`MinkowskiDot`](@ref).
 """
 function project(M::Hyperbolic, x::HnPoint{T}, v::Vector{T}) where {T <: AbstractFloat}
-    X = getValue(x) 
+    X = getValue(x)
 	return HnTVector(v + MinkowskiDot(X,v)*X)
-end
-
-@doc doc"""
-    randomMPoint(M)
-"""
-function randomMPoint(M::Hyperbolic)
-	n = M.dimension
-	x = randn(Float64, n+1)
-	x[n+1] = sqrt(transpose(x[1:n])*x[1:n] + 1)
-	return HnPoint{Float64}(x)
 end
 
 @doc doc"""
@@ -246,10 +237,22 @@ typeofTVector(::Type{HnPoint{T}}) where T = HnTVector{T}
 typeofMPoint(::Type{HnTVector{T}}) where T = HnPoint{T}
 
 @doc doc"""
+    randomMPoint(M:Hyperbolic)
+
+generate a random point by creating a `randn` point in
+$\mathbb R^n$ and calculate the remaining point such that the
+[`MinkowskiDot`](@ref) is `-1`.
+"""
+function randomMPoint(M::Hyperbolic)
+    a = randn( manifoldDimension(M) )
+    return HnPoint( [a..., sqrt( sum( (a.^2) ) + 1 )] )
+end
+
+@doc doc"""
     typicalDistance(M)
 returns the typical distance on the [`Hyperbolic`](@ref) space `M`: $\sqrt{n}$.
 """
-typicalDistance(M::Hyperbolic) = sqrt(M.dimension);
+typicalDistance(M::Hyperbolic) = sqrt(M.dimension)
 @doc doc"""
     validateMPoint(M,x)
 

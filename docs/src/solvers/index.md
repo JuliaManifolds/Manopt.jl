@@ -17,6 +17,7 @@ The following algorithms are currently available
 [steepest Descent](@ref GradientDescentSolver) | `steepestDescent.jl` |  [`GradientProblem`](@ref), [`GradientDescentOptions`](@ref)
 [Cyclic Proximal Point](@ref CPPSolver) | `cyclicProximalPoint.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointOptions`](@ref)
 [Douglas–Rachford](@ref DRSolver) | `DouglasRachford.jl` | [`ProximalProblem`](@ref), [`DouglasRachfordOptions`](@ref)
+[Nelder-Mead](@ref NelderMeadSolver) | `NelderMead.jl` | [`CostProblem`](@ref), [`NelderMeadOptions`](@ref)
 [Subgradient Method](@ref SubgradientSolver) | `subGradientMethod.jl` | [`SubGradientProblem`](@ref), [`SubGradientMethodOptions`](@ref)
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncatedConjugateGradient.jl` | [`HessianProblem`](@ref),
 [`TruncatedConjugateGradientOptions`](@ref)

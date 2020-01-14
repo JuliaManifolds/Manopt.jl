@@ -73,27 +73,3 @@ Modules = [Manopt]
 Pages = ["manifolds/Product.jl"]
 Order = [:function]
 ```
-
-## Graph Manifold
-
-The Graph manifold provides methods for two often interacting manifolds on
-a given graph $\mathcal G = (\mathcal V,\mathcal E)$: A vertex graph manifold,
-$\mathcal M^{\lvert \mathcal V\rvert}$ and an edge manifold $\mathcal N^{\lvert \mathcal E\rvert}$
-for two [`Manifold`](@ref)s $\mathcal M$ and $\mathcal N$. For example $\mathcal N$
-might be the tangent bundle of $\mathcal M$.
-
-### Types
-
-```@autodocs
-Modules = [Manopt]
-Pages = ["manifolds/Graph.jl"]
-Order = [:type]
-```
-
-### Functions
-
-```@autodocs
-Modules = [Manopt]
-Pages = ["manifolds/Graph.jl"]
-Order = [:function]
-```

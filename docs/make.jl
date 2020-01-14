@@ -50,6 +50,7 @@ makedocs(
             "Cyclic Proximal Point" => "solvers/cyclicProximalPoint.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Gradient Descent" => "solvers/gradientDescent.md",
+            "Nelder–Mead" => "solvers/NelderMead.md",
             "Subgradient Method" => "solvers/subGradientMethod.md",
             "Steihaug-Toint TCG Method" => "solvers/truncatedConjugateGradient.md",
             "Riemannian Trust-Regions Solver" => "solvers/trustRegions.md"

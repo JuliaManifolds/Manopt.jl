@@ -62,6 +62,7 @@ y = PowPoint([y1,y1])
 ξ = PowTVector([ξ1,ξ1])
 η = PowTVector([η1,η1])
 #
+@test ndims(x) == 1
 @test size(x) == size(x.value)
 @test distance(M, copy(x), x) == 0
 @test norm(M,x, ξ - copy(ξ)) == 0
@@ -164,6 +165,9 @@ xE = MPointE(x)
 @test getTangent(ξ) == η1
 @test getBase(ξE) == TVectorE(ξ1,x1)
 @test getTangent(ξE) == TVectorE(η1,x1)
+
+@test typeofTVector(x) == typeof(ξ)
+@test typeofMPoint(ξ) == typeof(x)
 
 @test 2*ξ == TBTVector(2*ξ1, 2*η1)
 @test ξ+ξ == TBTVector(ξ1+ξ1,η1+η1)

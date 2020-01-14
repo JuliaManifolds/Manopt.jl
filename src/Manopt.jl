@@ -18,7 +18,6 @@ module Manopt
   # specific manifolds
   include("manifolds/Circle.jl")
   include("manifolds/Euclidean.jl")
-  include("manifolds/Graph.jl")
   include("manifolds/Grassmannian.jl")
   include("manifolds/Hyperbolic.jl")
   include("manifolds/Rotations.jl")
@@ -44,6 +43,7 @@ module Manopt
   # ...solvers (2) specific solvers
   include("solvers/cyclicProximalPoint.jl")
   include("solvers/DouglasRachford.jl")
+  include("solvers/NelderMead.jl")
   include("solvers/steepestDescent.jl")
   include("solvers/truncatedConjugateGradient.jl")
   include("solvers/trustRegions.jl")
@@ -57,7 +57,6 @@ module Manopt
   include("plots/SpherePlots.jl")
   # helpers
   include("helpers/errorMeasures.jl")
-  include("helpers/imageHelpers.jl")
   # Exports
   include("helpers/exports/Asymptote.jl")
   # data

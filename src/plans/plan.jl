@@ -6,6 +6,7 @@ include("options.jl")
 include("debugOptions.jl")
 include("recordOptions.jl")
 
+include("costPlan.jl")
 include("gradientPlan.jl")
 include("hessianPlan.jl")
 include("proximalPlan.jl")
