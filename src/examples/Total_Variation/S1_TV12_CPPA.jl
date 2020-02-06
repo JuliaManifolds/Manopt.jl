@@ -21,18 +21,18 @@ end
 #
 # Manifolds and Data
 M = Circle()
-N = Power(M,(n,))
+N = PowerManifold(M,(n,))
 f = artificialS1Signal(n)
-xCompare = PowPoint(f)
+xCompare = f
 fn = addNoise.(Ref(M),f,:Gaussian,σ)
-data = PowPoint(fn)
+data = fn
 t = range(0.,1.,length=n)
 
 if plotAndExportResult
-    scene = scatter(t,getValue.(f),
+    scene = scatter(t,f,
         markersize=2, markercolor = dataColor, markerstrokecolor=dataColor,
         lab="original")
-    scatter!(scene,t,getValue.(fn),
+    scatter!(scene,t,fn,
         markersize=2, markercolor = nColor, markerstrokecolor=nColor,
         lab="noisy")
     yticks!([-π,-π/2,0,π/2,π], ["-\\pi", "- \\pi/2", "0", "\\pi/2", "\\pi"])
@@ -64,10 +64,10 @@ r = getRecord(o)
 #
 # Result
 if plotAndExportResult
-    scene = scatter(t,getValue.(f),
+    scene = scatter(t,f,
         markersize=2, markercolor = dataColor, markerstrokecolor=dataColor,
         lab="original")
-    scatter!(scene,t,getValue.(getValue(fR)),
+    scatter!(scene,t,fR,
         markersize=2, markercolor = nColor, markerstrokecolor=nColor,
         lab="reconstruction")
     yticks!([-π,-π/2,0,π/2,π], ["-\\pi", "- \\pi/2", "0", "\\pi/2", "\\pi"])

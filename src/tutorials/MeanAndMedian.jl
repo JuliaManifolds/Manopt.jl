@@ -1,4 +1,4 @@
-# # [Getting Started: Optimize!](@id Optimize) 
+# # [Getting Started: Optimize!](@id Optimize)
 #
 # This example illustrates how to set up and solve optimization problems and how
 # to further get data from the algorithm using [`DebugOptions`](@ref) and
@@ -6,8 +6,8 @@
 #
 # To start from the quite general case: A __Solver__ is an algorithm that aims
 # to solve
-# 
-# $\operatorname*{argmin}_{x\in\mathcal M} f(x)$
+#
+# $\operatorname*{argmin}_{x∈\mathcal M} f(x)$
 #
 # where $\mathcal M$ is a [`Manifold`](@ref) and
 # $f\colon\mathcal M \to \mathbb R$ is the cost function.
@@ -27,7 +27,7 @@
 # cost function $f$ as well as `gradient` storing the gradient function
 # corresponding to $f$. Accessing both functions can be done directly but should
 # be encapsulated using [`getCost`](@ref)`(p,x)` and [`getGradient`](@ref)`(p,x)`,
-# where in both cases `x` is an [`MPoint`](@ref) on the [`Manifold`](@ref) `M`.
+# where in both cases `x` is a point on the [`Manifold`](@ref) `M`.
 # Second, the [`GradientDescentOptions`](@ref) specify that the algorithm to solve
 # the [`GradientProblem`](@ref) will be the [gradient
 # descent](https://en.wikipedia.org/wiki/Gradient_descent) algorithm. It requires
@@ -53,7 +53,7 @@ using Random, Colors
 n = 100
 σ = π/8
 M = Sphere(2)
-x = SnPoint(1/sqrt(2)*[1., 0., 1.])
+x = 1/sqrt(2)*[1., 0., 1.]
 Random.seed!(42)
 data = addNoise.(Ref(M), repeat([x],n),Ref(σ))
 nothing #hide
@@ -83,7 +83,7 @@ renderAsymptote(exportFolder*"/startDataAndCenter.asy",asyExportS2Signals; #src
 #md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
 #md # )
 #md # ```
-#md # 
+#md #
 #md # ![The data of noisy versions of $x$](../assets/images/tutorials/startDataAndCenter.png)
 #
 # ## Computing the Mean
@@ -136,7 +136,7 @@ renderAsymptote(exportFolder*"/startDataCenterMean.asy",asyExportS2Signals; #src
 #md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
 #md # )
 #md # ```
-#md # 
+#md #
 #md # ![The resulting mean (orange)](../assets/images/tutorials/startDataCenterMean.png)
 #
 # ## Computing the Median
@@ -161,7 +161,7 @@ xMedian = getSolverResult(o)
 values = getRecord(o)
 nothing # hide
 # where the differences to [`steepestDescent`](@ref) are as follows
-# 
+#
 # * the third parameter is now an Array of proximal maps
 # * debug is reduces to only every 50th iteration
 # * we further activated a [`RecordAction`](@ref) using the `record=` optional
@@ -193,11 +193,11 @@ renderAsymptote(exportFolder*"/startDataCenterMedianAndMean.asy",asyExportS2Sign
 #md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
 #md # )
 #md # ```
-#md # 
+#md #
 #md # ![The resulting mean (orange) and median (magenta)](../assets/images/tutorials/startDataCenterMedianAndMean.png)
 #
 # ## Literature
-# 
+#
 # ```@raw html
 # <ul>
 # <li id="Bačák2014">[<a>Bačák, 2014</a>]
@@ -209,7 +209,7 @@ renderAsymptote(exportFolder*"/startDataCenterMedianAndMean.asy",asyExportS2Sign
 #    Afsari, B; Tron, R.; Vidal, R.: <emph>On the Convergence of Gradient
 #    Descent for Finding the Riemannian Center of Mass</emph>,
 #    SIAM Journal on Control and Optimization, Volume 51, Issue 3,
-#    pp. 2230–2260. 
+#    pp. 2230–2260.
 #    doi: <a href="https://doi.org/10.1137/12086282X">10.1137/12086282X</a>,
 #    arxiv: <a href="https://arxiv.org/abs/1201.0925">1201.0925</a></li>
 # </ul>

@@ -5,7 +5,7 @@
 export CostProblem
 export NelderMeadOptions
 
-@doc doc"""
+@doc raw"""
     CostProblem <: Problem
 
 speficy a problem for solvers just based on cost functions, i.e.
@@ -24,7 +24,7 @@ struct CostProblem{mT <: Manifold} <: Problem
     costFunction::Function
 end
 
-@doc doc"""
+@doc raw"""
     NelderMeadOptions <: Options
 
 Describes all parameters and the state of a Nealer-Mead heuristic based
@@ -36,7 +36,7 @@ The naming of these parameters follows the [Wikipedia article](https://en.wikipe
 of the Euclidean case. The default is given in brackets, the required value range
 after the description
 
-* `population` – an `Array{`[`MPoint`](@ref)`,1}` of $n+1$ points $x_i$, $i=1,\ldots,n+1$, where $n$ is the
+* `population` – an `Array{`point`,1}` of $n+1$ points $x_i$, $i=1,\ldots,n+1$, where $n$ is the
   dimension of the manifold.
 * `stoppingCriterion` – ([`stopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
 * `retraction` – (`exp`) the rectraction to use
@@ -54,10 +54,10 @@ construct a Nelder-Mead Option with a set of `dimension(M)+1` random points.
 
     NelderMead(p, stop retr; α=1. , γ=2., ρ=1/2, σ=1/2)
 
-construct a Nelder-Mead Option with a set `p` of [`MPoint`](@ref)s
+construct a Nelder-Mead Option with a set `p` of points
 """
 mutable struct NelderMeadOptions{T} <: Options
-    population::Array{P,1}
+    population::Array{T,1}
     stop::StoppingCriterion
     α::Real
     γ::Real
@@ -66,16 +66,22 @@ mutable struct NelderMeadOptions{T} <: Options
     x::T
     costs::Array{Float64,1}
     function NelderMeadOptions(
-        M::MT,
-        stop::StoppingCriterion = stopAfterIteration(2000);
-        α = 1., γ = 2., ρ=1/2, σ = 1/2
+        M::MT;
+        stop::StoppingCriterion = stopAfterIteration(2000),
+        α = 1.,
+        γ = 2.,
+        ρ=1/2,
+        σ = 1/2
     ) where {MT <: Manifold }
         new{typeof(rand(M))}(
             [rand(M) for i=1:(manifold_dimension(M)+1) ],
             stop, α, γ, ρ, σ, rand(M),[] )
-    NelderMeadOptions(p::Array{T,1},
+    end
+    function NelderMeadOptions(p::Array{T,1},
         stop::StoppingCriterion = stopAfterIteration(2000);
         α = 1., γ = 2., ρ=1/2, σ = 1/2
-    ) where {T} = new{T}(p, stop, α, γ, ρ, σ, p[1],[])
+    ) where {T}
+        return new{T}(p, stop, α, γ, ρ, σ, p[1],[])
+    end
 end
 getSolverResult(o::NelderMeadOptions) = o.x

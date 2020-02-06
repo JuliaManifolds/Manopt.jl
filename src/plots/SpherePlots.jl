@@ -7,8 +7,8 @@
 # """
 #     plot(M::Sphere, signals) – plot signals on the two sphere
 # """
-# function plot(M::Sphere,signals::Array{Array{SnPoint,1},1})
-#     if manifoldDimension(M) > 2
+# function plot(M::Sphere,signals::Array{Array{T,1},1}) where {T}
+#     if manifold_dimension(M) > 2
 #         error("Plot only works for functions on S2")
 #     end
 #     plotlyjs()
@@ -22,14 +22,14 @@
 #     f = :white,
 #     axis=nothing,colorbar=nothing,legend=nothing,border=:none)
 #     for signal in signals
-#         if any(manifoldDimension.(signal) .> 2)
+#         if any(manifold_dimension.(signal) .> 2)
 #             error("This plot method only works for points on S2.");
 #         end
-#         xS = [ getValue(p)[1] for p in signal]
-#         yS = [ getValue(p)[2] for p in signal]
-#         zS = [ getValue(p)[3] for p in signal]
+#         xS = [ p[1] for p in signal]
+#         yS = [ p[2] for p in signal]
+#         zS = [ p[3] for p in signal]
 #         scatter3d!(xS,yS,zS)
 #     end
 #     return current()
 # end
-# plot(M::Sphere, signal::Array{SnPoint,1}) = plot(M,[signal])
+# plot(M::Sphere, signal::Array{T,1}) where T = plot(M,[signal])

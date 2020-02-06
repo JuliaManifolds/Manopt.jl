@@ -30,7 +30,7 @@ A general super type for all options.
 # Fields
 The following fields are assumed to be default. If you use different ones,
 provide the access functions accordingly
-* `x` an [`MPoint`](@ref) with the current iterate
+* `x` a point with the current iterate
 * `stop` a [`StoppingCriterion`](@ref).
 
 """
@@ -38,7 +38,7 @@ abstract type Options end
 #
 # StoppingCriterion meta
 #
-@doc doc""" 
+@doc raw"""
     StoppingCriterion
 
 An abstract type for the functors representing stoping criteria, i.e. they are
@@ -54,7 +54,7 @@ By default each `StoppingCriterion` should provide a fiels `reason` to provide
 details when a criteion is met (and that is empty otherwise).
 """
 abstract type StoppingCriterion end
-@doc doc""" 
+@doc raw"""
     StoppingCriterionGroup <: StoppingCriterion
 
 An abstract type for a Stopping Criterion that itself consists of a set of
@@ -111,7 +111,7 @@ l elements there is one chosen permutation used for each iteration cycle.
 """
 mutable struct FixedRandomEvalOrder <: EvalOrder end
 
-@doc doc"""
+@doc raw"""
     getOptions(O)
 
 return the undecorated [`Options`](@ref) of the (possibly) decorated `O`.
@@ -124,7 +124,7 @@ getOptions(O) = error("Not implemented for types that are not `Options`")
 @traitfn getOptions(o::O) where {O <: Options; !IsOptionsDecorator{O}} = o
 @traitfn getOptions(o::O) where {O <: Options; IsOptionsDecorator{O}} = getOptions(o.options)
 
-@doc doc"""
+@doc raw"""
     getReason(o)
 
 return the current reason stored within the [`StoppingCriterion`](@ref) from
@@ -136,7 +136,7 @@ getReason(o::O) where O <: Options = getReason( getOptions(o).stop )
 #
 # Common Actions for decorated Options
 #
-@doc doc"""
+@doc raw"""
     Action
 
 a common `Type` for `Actions` that might be triggered in decoraters,
@@ -145,11 +145,11 @@ for example [`DebugOptions`](@ref) or [`RecordOptions`](@ref).
 abstract type Action end
 
 
-@doc doc"""
+@doc raw"""
     StoreTupleAction <: Action
 
 internal storage for [`Action`](@ref)s to store a tuple of fields from an
-[`Options`](@ref)s 
+[`Options`](@ref)s
 
 This functor posesses the usual interface of functions called during an
 iteration, i.e. acts on `(p,o,i)`, where `p` is a [`Problem`](@ref),

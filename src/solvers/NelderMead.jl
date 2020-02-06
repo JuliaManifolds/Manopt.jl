@@ -3,7 +3,7 @@
 #
 export initializeSolver!, doSolverStep!, getSolverResult
 export NelderMead
-@doc doc"""
+@doc raw"""
     NelderMead(M, F [, p])
 perform a nelder mead minimization problem for the cost funciton `F` on the
 manifold `M`. If the initial population `p` is not given, a random set of
@@ -18,7 +18,7 @@ and
 
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `population` – (n+1 `randomMPoint(M)`) an initial population of $n+1$ points, where $n$
+* `population` – (n+1 `rand(M)`) an initial population of $n+1$ points, where $n$
   is the dimension of the manifold `M`.
 
 # Optional
@@ -37,14 +37,14 @@ and the ones that are passed to [`decorateOptions`](@ref) for decorators.
   keyword `returnOptions`, which is false by default (hence then only `x` is
   returned).
 """
-function NelderMead(M::mT,
+function NelderMead(M::MT,
     F::Function,
-    population::Array{MP,1} = [randomMPoint(M) for i=1:(manifoldDimension(M)+1) ];
+    population::Array{T,1};
     stoppingCriterion::StoppingCriterion = stopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
     returnOptions=false,
     kwargs... #collect rest
-  ) where {mT <: Manifold, MP <: MPoint}
+  ) where {MT <: Manifold,T}
     p = CostProblem(M,F)
     o = NelderMeadOptions(population, stoppingCriterion;
     α = α, γ = γ, ρ = ρ, σ = σ)

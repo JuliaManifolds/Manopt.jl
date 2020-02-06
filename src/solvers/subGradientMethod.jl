@@ -2,7 +2,7 @@
 # A simple steepest descent algorithm implementation
 #
 export subGradientMethod
-@doc doc"""
+@doc raw"""
     subGradientMethod(M, F, ∂F, x)
 perform a subgradient method $x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))$,
 
@@ -15,7 +15,7 @@ the argument `∂F` should always return _one_ element from the subgradient.
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `∂F`: the (sub)gradient $\partial F\colon\mathcal M\to T\mathcal M$ of F
   restricted to always only returning one value/element from the subgradient
-* `x` – an initial value $x\in\mathcal M$
+* `x` – an initial value $x ∈ \mathcal M$
 
 # Optional
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
@@ -34,16 +34,17 @@ OR
 * `options` - the options returned by the solver (see `returnOptions`)
 """
 function subGradientMethod(M::mT,
-        F::Function, ∂F::Function, x::MP;
+        F::Function,
+        ∂F::Function,
+        x;
         retraction::Function = exp,
         stepsize::Stepsize = DecreasingStepsize( typicalDistance(M)/5),
         stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
         returnOptions = false,
         kwargs... #especially may contain debug
-    ) where {mT <: Manifold, MP <: MPoint}
+    ) where {mT <: Manifold}
     p = SubGradientProblem(M,F,∂F)
     o = SubGradientMethodOptions(x,stoppingCriterion, stepsize, retraction)
-
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions
@@ -54,7 +55,7 @@ function subGradientMethod(M::mT,
 end
 function initializeSolver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.xOptimal = o.x
-    o.∂ = zeroTVector(p.M,o.x)
+    zero_tangent_vector!(p.M,o.∂,o.x)
 end
 function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     o.∂ = getSubGradient(p,o.x)

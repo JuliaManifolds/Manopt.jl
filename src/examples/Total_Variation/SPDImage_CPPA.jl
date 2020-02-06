@@ -26,17 +26,17 @@ if ExportOrig
     renderAsymptote(resultsFolder*experimentName*"-orig.asy"; data=f, scaleAxes=(7.5,7.5,7.5))
 end
 #
-# Parameters 
+# Parameters
 α = 6.
 maxIterations = 4000
 #
 # Build Problem for L2-TV
-M = Power(pixelM,size(f))
+M = PowerManifold(pixelM,size(f))
 d = length(size(f))
 rep(d) = (d>1) ? [ones(Int,d)...,d] : d
 fidelity(x) = 1/2*distance(M,x,f)^2
 Λ(x) = forwardLogs(M,x) # on T_xN
-prior(x) = norm(norm.(Ref(pixelM),getValue(repeat(x,rep(d)...)),getValue(Λ(x))),1)
+prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x)),1)
 #
 # Setup and Optimize
 cost(x) =  fidelity(x) + α*prior(x)

@@ -11,7 +11,7 @@ export RecordActionFactory, RecordFactory
 # record Options Decorator
 #
 #
-@doc doc"""
+@doc raw"""
     RecordAction
 
 A `RecordAction` is a small functor to record values.
@@ -25,10 +25,10 @@ called from within [`stopSolver!`](@ref) which returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
 * `recordedValues` an `Array` of the recorded values.
-""" 
+"""
 abstract type RecordAction <: Action end
 
-@doc doc"""
+@doc raw"""
     RecordOptions <: Options
 
 append to any [`Options`](@ref) the decorator with record functionality,
@@ -78,7 +78,7 @@ hasRecord(o::RecordOptions) = true
 @traitfn hasRecord(o::O) where {O <: Options; !IsOptionsDecorator{O}} = false
 
 # default - stored in the recordedValues field of the RecordAction
-@doc doc"""
+@doc raw"""
     getRecord(o[,s=:Step])
 
 return the recorded values from within the [`RecordOptions`](@ref) `o` that where
@@ -97,7 +97,7 @@ end
 @traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; IsOptionsDecorator{O}} = getRecord(o.options,s)
 @traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; !IsOptionsDecorator{O}} = error("No Record decoration found")
 
-@doc doc"""
+@doc raw"""
     getRecord(r)
 
 return the recorded values stored within a [`RecordAction`](@ref) `r`.
@@ -109,7 +109,7 @@ getRecord(r::R) where {R <: RecordAction} = r.recordedValues
 
 either record (`i>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
 or reset (`i<0`) the internal storage, where `v` has to match the internal
-value type of the corresponding Recordaction. 
+value type of the corresponding Recordaction.
 """
 function recordOrReset!(r::R,v,i::Int) where {R <: RecordAction}
     if i > 0
@@ -144,7 +144,7 @@ function (d::RecordGroup)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
 end
 getRecord(r::RecordGroup) = [zip( getRecord.(r.group)...)...]
 
-@doc doc"""
+@doc raw"""
     RecordEvery <: RecordAction
 
 record only every $i$th iteration.
@@ -172,7 +172,7 @@ getRecord(r::RecordEvery) = getRecord(r.record)
 #
 # Special single ones
 #
-@doc doc"""
+@doc raw"""
     RecordChange <: RecordAction
 
 debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
@@ -186,9 +186,7 @@ mutable struct RecordChange <: RecordAction
     recordedValues::Array{Float64,1}
     storage::StoreOptionsAction
     RecordChange(a::StoreOptionsAction=StoreOptionsAction( (:x,) ) ) = new(Array{Float64,1}(),a)
-    function RecordChange(x0::MPoint,
-            a::StoreOptionsAction=StoreOptionsAction( (:x,) ),
-        )
+    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:x,)))
         updateStorage!(a,Dict(:x=>x0))
         return new(Array{Float64,1}(),a)
     end
@@ -202,7 +200,7 @@ function (r::RecordChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     return r.recordedValues
 end
 
-@doc doc"""
+@doc raw"""
     RecordEntry{T} <: RecordAction
 
 record a certain fields entry of type {T} during the iterates
@@ -221,7 +219,7 @@ RecordEntry(e::T,f::Symbol) where T = RecordEntry{T}(f)
 RecordEntry(d::DataType,f::Symbol) = RecordEntry{d}(f)
 (r::RecordEntry{T})(p::Pr,o::O,i::Int) where {T, Pr <: Problem, O <: Options} = recordOrReset!(r, getfield(o, r.field), i)
 
-@doc doc"""
+@doc raw"""
     RecordEntryChange{T} <: RecordAction
 
 record a certain entries change during iterates
@@ -229,7 +227,7 @@ record a certain entries change during iterates
 # Additional Fields
 * `recordedValues` – the recorded Iterates
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
-* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry 
+* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
 * `storage` – a [`StoreOptionsAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
 mutable struct RecordEntryChange <: RecordAction
@@ -256,7 +254,7 @@ function (r::RecordEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Opti
     r.storage(p,o,i)
 end
 
-@doc doc"""
+@doc raw"""
     RecordIterate <: RecordAction
 
 record the iterate
@@ -268,19 +266,20 @@ initialize the iterate record array to the type of `x0`, e.g. your initial data.
 
     RecordIterate(P)
 
-initialize the iterate record array to the data type `P`, where `P<:MPoint`holds.
+initialize the iterate record array to the data type `T`.
 """
-mutable struct RecordIterate{P <: MPoint} <: RecordAction
-    recordedValues::Array{P,1}
-    RecordIterate{P}() where {P <: MPoint} = new(Array{P,1}())
+mutable struct RecordIterate{T} <: RecordAction
+    recordedValues::Array{T,1}
+    RecordIterate{T}() where {T} = new(Array{T,1}())
 end
-RecordIterate(p::P) where {P <: MPoint} = RecordIterate{P}()
-RecordIterate(d::DataType) = (<:(d,MPoint)) ? RecordIterate{d}() : throw(ErrorException("Unknown manifold point (<:MPoint) DataType  $d"))
-RecordIterate() = throw(ErrorException("The iterate's data type has to be provided, i.e. either RecordIterate(x0) or RecordIterate(<:MPoint)"))
+RecordIterate(p::T) where {T} = RecordIterate{T}()
+RecordIterate() = throw(ErrorException("The iterate's data type has to be provided, i.e. RecordIterate(x0)."))
 
-(r::RecordIterate{P})(p::Pr,o::O,i::Int) where {P <: MPoint, Pr <: Problem, O <: Options} = recordOrReset!(r, o.x, i)
+function (r::RecordIterate{T})(p::Pr,o::O,i::Int) where {Pr <: Problem, O <: Options,T}
+    return recordOrReset!(r, o.x, i)
+end
 
-@doc doc"""
+@doc raw"""
     RecordIteration <: RecordAction
 
 record the current iteration
@@ -290,8 +289,8 @@ mutable struct RecordIteration <: RecordAction
     RecordIteration() = new(Array{Int,1}())
 end
 (r::RecordIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, i, i)
-    
-@doc doc"""
+
+@doc raw"""
     RecordCost <: RecordAction
 
 record the current cost function value, see [`getCost`](@ref).
@@ -303,7 +302,7 @@ end
 (r::RecordCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, getCost(p,o.x), i)
 
 
-@doc doc"""
+@doc raw"""
     RecordFactory(a)
 
 given an array of `Symbol`s and [`RecordAction`](@ref)s and `Ints`
@@ -330,7 +329,7 @@ function RecordFactory(o::O, a::Array{<:Any,1} ) where {O <: Options}
     dictionary = Dict{Symbol,RecordAction}(:All => record)
     return dictionary
 end
-@doc doc"""
+@doc raw"""
     RecordActionFactory(s)
 
 create a [`RecordAction`](@ref) where

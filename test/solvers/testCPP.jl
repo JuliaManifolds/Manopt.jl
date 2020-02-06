@@ -1,8 +1,8 @@
 @testset "Manopt Cyclic Proximal Point" begin
 using Dates
 n = 100
-N = Power(Circle(),(n,))
-f = PowPoint(artificialS1Signal(n))
+N = PowerManifold(Circle(),(n,))
+f = artificialS1Signal(n)
 F = x -> costL2TV(N,f,0.5,x)
 proxes = [ (λ,x) -> proxDistance(N,λ,f,x), (λ,x) -> proxTV(N,0.5*λ,x) ]
 o = cyclicProximalPoint(N,F,proxes, f;
@@ -13,7 +13,7 @@ o = cyclicProximalPoint(N,F,proxes, f;
     returnOptions=true
     )
 fR = getSolverResult(o)
-rec = getRecord(o) 
+rec = getRecord(o)
 @test F(f) > F(fR)
 #
 o = CyclicProximalPointOptions(f, stopAfterIteration(1), i -> π/(2*i))

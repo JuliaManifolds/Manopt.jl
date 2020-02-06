@@ -28,7 +28,7 @@ end
 (s::ConstantStepsize)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = s.length
 getInitialStepsize(s::ConstantStepsize) = s.length
 
-@doc doc"""
+@doc raw"""
     DecreasingStepsize()
 
 A functor that represents several decreasing step sizes
@@ -79,7 +79,7 @@ the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
 
-@doc doc"""
+@doc raw"""
     ArmijoLineseach <: Linesearch
 
 A functor representing Armijo line seach including the last runs state, i.e. a
@@ -90,7 +90,7 @@ last step size.
 * `retraction` – ([`exp`](@ref Manopt.exp)) the rectraction used in line search
 * `contractionFactor` – (`0.95`) exponent for line search reduction
 * `sufficientDecrease` – (`0.1`) gain within Armijo's rule
-* `lastStepSize` – (`initialstepsize`) the last step size we start the search with 
+* `lastStepSize` – (`initialstepsize`) the last step size we start the search with
 
 # Constructor
 
@@ -103,9 +103,9 @@ faces are available:
 * based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
   and a current iterate `i`.
 * with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [`Manifold`](@ref) `M`, a current
-  [`MPoint`](@ref) `x` a function `F`, that maps from the manifold to the reals,
-  its gradient (a [`TVector`](@ref)) `∇F`$=\nabla F(x)$ at  `x` and an optional
-  search direction [`TVector`](@ref) `η-∇F` are the arguments. 
+  point `x` a function `F`, that maps from the manifold to the reals,
+  its gradient (a tangent vector) `∇F`$=\nabla F(x)$ at  `x` and an optional
+  search direction tangent vector `η-∇F` are the arguments.
 """
 mutable struct ArmijoLinesearch <: Linesearch
     initialStepsize::Float64
@@ -119,23 +119,23 @@ mutable struct ArmijoLinesearch <: Linesearch
         contractionFactor::Float64=0.95,
         sufficientDecrease::Float64=0.1) = new(s, r, contractionFactor, sufficientDecrease,s)
 end
-function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η::T=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options, T <: TVector}
+function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
     a(p.M, o.x, p.costFunction, getGradient(p,o.x), η)
 end
-function (a::ArmijoLinesearch)(M::mT, x::P, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, P <: MPoint, T <: TVector}
+function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, T}
     # for local shortness
     s = a.stepsizeOld
     retr = a.retraction
     f0 = F(x)
     xNew = retr(M,x,s*η)
     fNew = F(xNew)
-    while fNew < f0 + a.sufficientDecrease*s*dot(M, x, η, ∇F) # increase
+    while fNew < f0 + a.sufficientDecrease*s*inner(M, x, η, ∇F) # increase
         xNew = retr(M,x,s*η)
         fNew = F(xNew)
         s = s/a.contractionFactor
     end
     s = s*a.contractionFactor # correct last
-    while fNew > f0 + a.sufficientDecrease*s*dot(M, x, η, ∇F) # decrease
+    while fNew > f0 + a.sufficientDecrease*s*inner(M, x, η, ∇F) # decrease
         s = a.contractionFactor * s
         xNew = retr(M,x,s*η)
         fNew = F(xNew)

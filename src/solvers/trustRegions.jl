@@ -5,7 +5,7 @@ using Manopt
 import Base: identity
 export trustRegions
 
-@doc doc"""
+@doc raw"""
     trustRegions(M, F, ∇F, x, H)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds.
@@ -26,7 +26,7 @@ For a description of the algorithm and more details see
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F \colon \mathcal M \to \mathbb R$ to minimize
 * `∇F`- the gradient $\nabla F \colon \mathcal M \to T \mathcal M$ of $F$
-* `x` – an initial value $x \in \mathcal M$
+* `x` – an initial value $x  ∈  \mathcal M$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
 
 # Optional
@@ -68,44 +68,51 @@ For a description of the algorithm and more details see
 # see also
 [`truncatedConjugateGradient`](@ref)
 """
-function trustRegions(M::mT,
-        F::Function, ∇F::Function,
-        x::MP, H::Union{Function,Missing};
-        retraction::Function = retraction,
-        preconditioner::Function = (M,x,ξ) -> ξ,
-        stoppingCriterion::StoppingCriterion = stopWhenAny(
-        stopAfterIteration(1000), stopWhenGradientNormLess(10^(-6))),
-        Δ_bar::Float64 = sqrt(manifoldDimension(M)),
-        Δ::Float64 = Δ_bar/8,
-        useRandom::Bool = false, ρ_prime::Float64 = 0.1,
-        ρ_regularization::Float64=1000.,
-        returnOptions=false,
-        kwargs... #collect rest
-        ) where {mT <: Manifold, MP <: MPoint, T <: TVector}
-
-        if ρ_prime >= 0.25
-                throw( ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime.") )
-        end
-
-        if Δ_bar <= 0
-                throw( ErrorException("Δ_bar must be positive but it is $Δ_bar.") )
-        end
-
-        if Δ <= 0 || Δ > Δ_bar
-                throw( ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ.") )
-        end
-
-        p = HessianProblem(M,F,∇F,H,preconditioner)
-
-        o = TrustRegionsOptions(x,stoppingCriterion,Δ,Δ_bar,retraction,useRandom,ρ_prime,ρ_regularization)
-
-        o = decorateOptions(o; kwargs...)
-        resultO = solve(p,o)
-        if returnOptions
-          return resultO
-        else
-          return getSolverResult(resultO)
-        end
+function trustRegions(
+    M::MT,
+    F::Function,
+    ∇F::Function,
+    x,
+    H::Union{Function,Missing};
+    retraction::Function = retraction,
+    preconditioner::Function = (M,x,ξ) -> ξ,
+    stoppingCriterion::StoppingCriterion = stopWhenAny(
+        stopAfterIteration(1000),
+        stopWhenGradientNormLess(10^(-6))
+    ),
+    Δ_bar = sqrt(manifold_dimension(M)),
+    Δ = Δ_bar/8,
+    useRandom::Bool = false,
+    ρ_prime::Float64 = 0.1,
+    ρ_regularization=1000.,
+    returnOptions=false,
+    kwargs... #collect rest
+    ) where {MT <: Manifold}
+    (ρ_prime >= 0.25) && throw( ErrorException(
+        "ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime."
+    ))
+    (Δ_bar <= 0) && throw( ErrorException("Δ_bar must be positive but it is $Δ_bar.") )
+    (Δ <= 0 || Δ > Δ_bar) &&  throw( ErrorException(
+        "Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."
+    ))
+    p = HessianProblem(M,F,∇F,H,preconditioner)
+    o = TrustRegionsOptions(
+        x,
+        stoppingCriterion,
+        Δ,
+        Δ_bar,
+        retraction,
+        useRandom,
+        ρ_prime,
+        ρ_regularization
+    )
+    o = decorateOptions(o; kwargs...)
+    resultO = solve(p,o)
+    if returnOptions
+        return resultO
+    else
+        return getSolverResult(resultO)
+    end
 end
 
 initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions} = nothing
@@ -141,7 +148,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         if o.useRand
                 # Check the curvature,
                 Hgrad = getHessian(p, o.x, grad)
-                gradHgrad = dot(p.M, o.x, grad, Hgrad)
+                gradHgrad = inner(p.M, o.x, grad, Hgrad)
                 if gradHgrad <= 0
                         tau_c = 1
                 else
@@ -152,8 +159,8 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 Hη_c = (-tau_c * o.Δ / norm_grad) * Hgrad
                 # Now that we have computed the Cauchy point in addition to the
                 # returned eta, we might as well keep the best of them.
-                mdle  = fx + dot(p.M, o.x, grad, η) + .5 * dot(p.M, o.x, Hη, η)
-                mdlec = fx + dot(p.M, o.x, grad, η_c) + .5 * dot(p.M, o.x, Hη_c, η_c)
+                mdle  = fx + inner(p.M, o.x, grad, η) + .5 * inner(p.M, o.x, Hη, η)
+                mdlec = fx + inner(p.M, o.x, grad, η_c) + .5 * inner(p.M, o.x, Hη_c, η_c)
                 if mdlec < mdle
                         η = η_c
                         Hη = Hη_c
@@ -165,7 +172,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         fx_prop = getCost(p, x_prop)
         # Check the performance of the quadratic model against the actual cost.
         ρnum = fx - fx_prop
-        ρden = -dot(p.M, o.x, η, grad) - 0.5*dot(p.M, o.x, η, Hη)
+        ρden = -inner(p.M, o.x, η, grad) - 0.5*inner(p.M, o.x, η, Hη)
         # Since, at convergence, both ρnum and ρden become extremely small,
         # computing ρ is numerically challenging. The break with ρnum and ρden
         # can thus lead to a large error in rho, making the

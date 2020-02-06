@@ -3,7 +3,7 @@
 # This example explains how to compute the gradient of the second order
 # difference mid point model using [`adjointJacobiField`](@ref)s.
 #
-# This example also illustrates the [`Power`](@ref) manifold as well
+# This example also illustrates the `PowerManifold` manifold as well
 # as [`ArmijoLinesearch`](@ref).
 
 # We first initialize the manifold
@@ -18,24 +18,24 @@ TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE") # vectors
 TolVibrantTeal = RGBA{Float64}(colorant"#009988") # geo
 asyResolution = 2
 nothing #hide
-# Assume we have two [`SnPoint`](@ref)s $x,y$ on the equator of the
+# Assume we have two points $x,y$ on the equator of the
 # [`Sphere`](@ref)`(2)` $\mathcal M = \mathbb S^2$
 # and a point $y$ near the north pole
 M = Sphere(2)
-x = SnPoint([1., 0., 0.])
-z = SnPoint([0., 1., 0.])
+x = [1., 0., 0.]
+z = [0., 1., 0.]
 c = midPoint(M,x,z)
-#src y is the north pole just bend a little bit towards 
-y = geodesic(M, SnPoint([0., 0., 1.]), c, 0.1)
+#src y is the north pole just bend a little bit towards
+y = geodesic(M, [0., 0., 1.]), c, 0.1
 [c,y]
 # Now the second order absolute difference can be stated as (see [[Bačák, Bergmann, Steidl, Weinmann, 2016](#BacakBergmannSteidlWeinmann2016)])
 #
-# $d_2(x,y,z) := \min_{c\in\mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z\in\mathcal M,$
+# $d_2(x,y,z) := \min_{c ∈ \mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z∈\mathcal M,$
 #
 # where $\mathcal C_{x,z}$ is the set of all mid points $g(\frac{1}{2};x,z)$, where $g$
 # is a (not necessarily minimizing) geodesic connecting $x$ and $z$.
-# 
-# For illustration we further define the point opposite of 
+#
+# For illustration we further define the point opposite of
 c2 = opposite(M,c)
 # and draw the geodesic connecting $y$ and the nearest mid point $c$, namely
 T = [0:0.1:1.0...]
@@ -49,7 +49,7 @@ renderAsymptote(exportFolder*"/SecondOrderData.asy",asyExportS2Signals; #src
     colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]), #src
     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
 ) #src
-#md # 
+#md #
 #md # ```julia
 #md # renderAsymptote("secondOrderData.asy",asyExportS2Signals;
 #md #     render = asyResolution,
@@ -68,9 +68,9 @@ costTV2(M, (x,y,z) )
 # returns, see [`costTV2`](@ref) for reference. But also its gradient can be
 # easily computed since it is just a distance with respect to $y$ and a
 # concatenation of a geodesic, where the start or end point is the argument,
-# respectively, with a distance. 
+# respectively, with a distance.
 # Hence the [adjoint differentials](@ref adjointDifferentialFunctions)
-# [`AdjDxGeo`](@ref) and [`AdjDyGeo`](@ref) can be employed,
+# [`AdjDpGeo`](@ref) and [`AdjDqGeo`](@ref) can be employed,
 # see [`gradTV2`](@ref) for details.
 # we obtain
 (ξx, ξy, ξz) = gradTV2(M, (x,y,z) )
@@ -80,7 +80,7 @@ costTV2(M, (x,y,z) )
 renderAsymptote(exportFolder*"/SecondOrderGradient.asy",asyExportS2Signals; #src
     render = asyResolution, #src
     points = [ [x,y,z], [c,c2] ], #src
-    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
+    tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
     colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]), #src
     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
 ) #src
@@ -89,12 +89,12 @@ renderAsymptote(exportFolder*"/SecondOrderGradient.asy",asyExportS2Signals; #src
 #md # renderAsymptote("SecondOrderGradient.asy",asyExportS2Signals;
 #md #    render = asyResolution,
 #md #    points = [ [x,y,z], [c,c2] ],
-#md #    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
+#md #    tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )],
 #md #    colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]),
 #md #    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
 #md # )
 #md # ```
-#md # 
+#md #
 #md # ![Three points $x,y,z$ and the negative gradient of the second order absolute difference](../assets/images/tutorials/SecondOrderGradient.png)
 #
 # If we now perform a gradient step, we obtain the three points
@@ -108,7 +108,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
     render = asyResolution, #src
     points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ], #src
     curves = [ geoPts_yncn ], #src
-    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
+    tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
     colors=Dict(:tvectors => [TolVibrantCyan], #src
                 :points => [black, TolVibrantBlue, TolVibrantOrange], #src
                 :curves => [TolVibrantTeal] #src
@@ -121,7 +121,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
 #md #     render = asyResolution,
 #md #     points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ],
 #md #     curves = [ geoPts_yncn ] ,
-#md #     tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
+#md #     tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )],
 #md #     colors=Dict(:tvectors => [TolVibrantCyan],
 #md #         :points => [black, TolVibrantBlue, TolVibrantOrange],
 #md #         :curves => [TolVibrantTeal]
@@ -129,7 +129,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
 #md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
 #md # )
 #md # ```
-#md 
+#md
 #md # ![A gradient Step](../assets/images/tutorials/SecondOrderMin1.png)
 #
 # One can see, that this step slightly “overshoots”, i.e. $y$ is now even below $c$.
@@ -137,12 +137,12 @@ renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
 costTV2(M, (xn, yn, zn) )
 #
 # But we can also search for the best step size using [`ArmijoLinesearch`](@ref)
-# on the [`Power`](@ref) manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
-p = PowPoint([x,y,z])
-N = Power(M,3)
+# on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
+p = [x,y,z]
+N = PowerManifold(M,3)
 s = ArmijoLinesearch(1.0,exp,0.999,0.96)(N, p,
-    x -> costTV2(M, Tuple(getValue(x))),
-    PowTVector( [ gradTV2(M, (x,y,z))... ] ) # transform from tuple to PowTVector
+    x -> costTV2(M, Tuple(x)),
+     [ gradTV2(M, (x,y,z))... ]  # transform from tuple to PowTVector
 )
 # and for the new points
 xm, ym, zm = exp.(Ref(M), [x,y,z], s*[-ξx,-ξy,-ξz])
@@ -154,7 +154,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin2.asy",asyExportS2Signals; #src
     render = asyResolution, #src
     points = [ [x,y,z], [c,c2,cm], [xm,ym,zm] ], #src
     curves = [ geoPts_xmzm ], #src
-    tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
+    tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
     colors=Dict(:tvectors => [TolVibrantCyan], #src
                 :points => [black, TolVibrantBlue, TolVibrantOrange], #src
                 :curves => [TolVibrantTeal] #src
@@ -167,7 +167,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin2.asy",asyExportS2Signals; #src
 #md #     render = asyResolution,
 #md #     points = [ [x,y,z], [c,c2,cm], [xm,ym,zm] ],
 #md #     curves = [ geoPts_xmzm ] ,
-#md #     tVectors = [TVectorE.( [-ξx, -ξy, -ξz], [x, y, z] )],
+#md #     tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )],
 #md #     colors=Dict(:tvectors => [TolVibrantCyan],
 #md #                 :points => [black, TolVibrantBlue, TolVibrantOrange],
 #md #                 :curves => [TolVibrantTeal]
@@ -184,7 +184,7 @@ costTV2( M, (xm, ym, zm) )
 # are quite close.
 #
 # ## Literature
-# 
+#
 # ```@raw html
 # <ul>
 # <li id="BačákBergmannSteidlWeinmann2016">[<a>Bačák, Bergmann, Steidl, Weinmann, 2016</a>]

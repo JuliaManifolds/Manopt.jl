@@ -8,7 +8,7 @@ export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 # Debug Options Decorator
 #
 #
-@doc doc"""
+@doc raw"""
     DebugAction
 
 A `DebugAction` is a small functor to print/issue debug output.
@@ -23,10 +23,10 @@ to indicate a call from [`stopSolver!`](@ref) that returns true afterwards.
 # Fields (assumed by subtypes to exist)
 * `print` method to perform the actual print. Can for example be set to a file export,
 or to @info. The default is the `print` function on the default `Base.stdout`.
-""" 
+"""
 abstract type DebugAction <: Action end
 
-@doc doc"""
+@doc raw"""
     DebugOptions <: Options
 
 The debug options append to any options a debug functionality, i.e. they act as
@@ -91,7 +91,7 @@ function (d::DebugGroup)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     end
 end
 
-@doc doc"""
+@doc raw"""
     DebugEvery <: DebugAction
 
 evaluate and print debug only every $i$th iteration. Otherwise no print is performed.
@@ -116,7 +116,7 @@ end
 #
 # Special single ones
 #
-@doc doc"""
+@doc raw"""
     DebugChange(a,prefix,print)
 
 debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
@@ -144,7 +144,7 @@ function (d::DebugChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     d.storage(p,o,i)
     d.print(s)
 end
-@doc doc"""
+@doc raw"""
     DebugIterate <: DebugAction
 
 debug for the current iterate (stored in `o.x`).
@@ -159,7 +159,7 @@ mutable struct DebugIterate <: DebugAction
 end
 (d::DebugIterate)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*"$(o.x)" : "")
 
-@doc doc"""
+@doc raw"""
     DebugIteration <: DebugAction
 
 debug for the current iteration (prefixed with `#`)
@@ -169,8 +169,8 @@ mutable struct DebugIteration <: DebugAction
     DebugIteration(print::Function=print) = new(print)
 end
 (d::DebugIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>0) ? "# $(i)" : ((i==0) ? "Initial" : "") )
-    
-@doc doc"""
+
+@doc raw"""
     DebugCost <: DebugAction
 
 print the current cost function value, see [`getCost`](@ref).
@@ -192,7 +192,7 @@ mutable struct DebugCost <: DebugAction
 end
 (d::DebugCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*string(getCost(p,o.x)) : "")
 
-@doc doc"""
+@doc raw"""
     DebugDivider <: DebugAction
 
 print a small `div`ider (default `" | "`).
@@ -208,7 +208,7 @@ mutable struct DebugDivider <: DebugAction
 end
 (d::DebugDivider)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print((i>=0) ? d.divider : "")
 
-@doc doc"""
+@doc raw"""
     DebugEntry <: RecordAction
 
 print a certain fields entry of type {T} during the iterates
@@ -230,7 +230,7 @@ end
 (d::DebugEntry)(p::Pr,o::O,i::Int) where {Pr <: Problem, O <: Options} = d.print(
     (i>=0) ? d.prefix*" "*string(getfield(o, d.field)) : "")
 
-@doc doc"""
+@doc raw"""
     DebugEntryChange{T} <: DebugAction
 
 print a certain entries change during iterates
@@ -239,7 +239,7 @@ print a certain entries change during iterates
 * `print` – (`print`) function to print the result
 * `prefix` – (`"Change of :x"`) prefix to the print out
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
-* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry 
+* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
 * `storage` – a [`StoreOptionsAction`](@ref) to store the previous value of `:f`
 
 # Constructors
@@ -282,7 +282,7 @@ function (d::DebugEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Optio
     d.print(s)
 end
 
-@doc doc"""
+@doc raw"""
     DebugStoppingCriterion <: DebugAction
 
 print the Reason provided by the stopping criterion. Usually this should be
@@ -294,7 +294,7 @@ mutable struct DebugStoppingCriterion <: DebugAction
 end
 (d::DebugStoppingCriterion)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0 || i==typemin(Int)) ? getReason(o) : "")
 
-@doc doc"""
+@doc raw"""
     DebugFactory(a)
 
 given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
@@ -330,7 +330,7 @@ function DebugFactory(a::Array{<:Any,1} )
     end
     return dictionary
 end
-@doc doc"""
+@doc raw"""
     DebugActionFactory(s)
 
 create a [`DebugAction`](@ref) where

@@ -3,16 +3,16 @@
 #
 export gradTV, gradTV2, gradIntrICTV12, forwardLogs
 export gradDistance
-@doc doc"""
+@doc raw"""
     gradDistance(M,y,x[, p=2])
 
-compute the (sub)gradient of the distance (squared) 
+compute the (sub)gradient of the distance (squared)
 
 ```math
 f(x) = \frac{1}{2} d^p_{\mathcal M}(x,y)
 ```
 
-to a fixed [`MPoint`](@ref)` y` on the [`Manifold`](@ref) `M` and `p` is an
+to a fixed point `y` on the manifold `M` and `p` is an
 integer. The gradient reads
 
 ```math
@@ -21,7 +21,7 @@ integer. The gradient reads
 
 for $p\neq 1$ or $x\neq  y$. Note that for the remaining case $p=1$,
 $x=y$ the function is not differentiable. This function returns then the
-[`zeroTVector`](@ref)`(M,x)`, since this is an element of the subdifferential.
+[`zero_tangent_vector`](@ref)`(M,x)`, since this is an element of the subdifferential.
 
 # Optional
 
@@ -30,16 +30,16 @@ $x=y$ the function is not differentiable. This function returns then the
 """
 gradDistance(M,y,x,p::Int=2) = (p==2) ? -log(M,x,y) : -distance(M,x,y)^(p-2)*log(M,x,y)
 
-@doc doc"""
+@doc raw"""
     ∇u,⁠∇v = gradIntrICTV12(M,f,u,v,α,β)
 
 compute (sub)gradient of the intrinsic infimal convolution model using the mid point
-model of second order differences, see [`costTV2`](@ref), i.e. for some $f\in\mathcal M$
-on a [`Power`](@ref) manifold $\mathcal M$ this function computes the (sub)gradient of
+model of second order differences, see [`costTV2`](@ref), i.e. for some $f ∈ \mathcal M$
+on a `PowerManifold` manifold $\mathcal M$ this function computes the (sub)gradient of
 
 ```math
 E(u,v) =
-\frac{1}{2}\sum_{i\in\mathcal G} d_{\mathcal M}(g(\frac{1}{2},v_i,w_i),f_i)
+\frac{1}{2}\sum_{i ∈ \mathcal G} d_{\mathcal M}(g(\frac{1}{2},v_i,w_i),f_i)
 + \alpha
 \bigl(
 \beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w)
@@ -48,53 +48,53 @@ E(u,v) =
 where both total variations refer to the intrinsic ones, [`gradTV`](@ref) and
 [`gradTV2`](@ref), respectively.
 """
-function gradIntrICTV12(M::mT,f::P,u::P,v::P,α,β) where {mT <: Manifold, P <: MPoint}
+function gradIntrICTV12(M::mT,f,u,v,α,β) where {mT <: Manifold}
   c = midPoint(M,u,v,f)
   iL = log(M,c,f)
-  return AdjDxGeo(M,u,v,1/2,iL) + α*β*gradTV(M,u), AdjDyGeo(M,u,v,1/2,iL) + α * (1-β) * gradTV2(M,v)
+  return AdjDpGeo(M,u,v,1/2,iL) + α*β*gradTV(M,u), AdjDqGeo(M,u,v,1/2,iL) + α * (1-β) * gradTV2(M,v)
 end
-@doc doc"""
+@doc raw"""
     gradTV(M,(x,y),[p=1])
 
 compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
 to both $x$ and $y$.
 """
-function gradTV(M::mT where {mT <: Manifold}, xT::Tuple{P,P} where {P <: MPoint}, p::Number=1)
-  x = xT[1];
-  y = xT[2];
+function gradTV(M::MT, xT::Tuple{T,T}, p=1)where {MT <: Manifold, T}
+  p = xT[1];
+  q = xT[2];
   if p==2
-      return (-log(M,x,y), -log(M,y,x))
+      return (-log(M,p,q), -log(M,q,p))
   else
-    d = distance(M,x,y);
+    d = distance(M,p,q);
     if d==0 # subdifferential containing zero
-      return (zeroTVector(M,x),zeroTVector(M,y))
+      return (zero_tangent_vector(M,p),zero_tangent_vector(M,q))
     else
-      return (-log(M,x,y)/(d^(2-p)), -log(M,y,x)/(d^(2-p)))
+      return (-log(M,p,q)/(d^(2-p)), -log(M,q,p)/(d^(2-p)))
     end
   end
 end
-@doc doc"""
+@doc raw"""
     ξ = gradTV(M,λ,x,[p])
 Compute the (sub)gradient $\partial F$ of all forward differences orrucirng,
 in the power manifold array, i.e. of the function
 
-$F(x) = \sum_{i}\sum_{j\in\mathcal I_i} d^p(x_i,x_j)$
+$F(x) = \sum_{i}\sum_{j ∈ \mathcal I_i} d^p(x_i,x_j)$
 
-where $i$ runs over all indices of the [`Power`](@ref) manifold `M`
+where $i$ runs over all indices of the `PowerManifold` manifold `M`
 and $\mathcal I_i$ denotes the forward neighbors of $i$.
 
 # Input
-* `M` – a [`Power`](@ref) manifold
-* `x` – a [`PowPoint`](@ref).
+* `M` – a `PowerManifold` manifold
+* `x` – a point.
 
 # Ouput
 * ξ – resulting tangent vector in $T_x\mathcal M$.
 """
-function gradTV(M::Power,x::PowPoint,p::Int=1)::PowTVector
-  R = CartesianIndices(M.powerSize)
-  d = length(M.powerSize)
+function gradTV(M::PowerManifold{N,T},x,p::Int=1) where {N <: Manifold, T}
+  R = CartesianIndices(T)
+  d = length(T)
   maxInd = last(R)
-  ξ = zeroTVector(M,x)
+  ξ = zero_tangent_vector(M,x)
   c = costTV(M,x,p,0)
   for i in R # iterate over all pixel
     di = 0.
@@ -115,28 +115,28 @@ function gradTV(M::Power,x::PowPoint,p::Int=1)::PowTVector
   return ξ
 end
 
-@doc doc"""
+@doc raw"""
     ξ = forwardLogs(M,x)
 
 compute the forward logs $F$ (generalizing forward differences) orrucirng,
 in the power manifold array, the function
 
 ```math
-$F_i(x) = \sum_{j\in\mathcal I_i} \log_{x_i} x_j,\quad i \in \mathcal G,
+$F_i(x) = \sum_{j ∈ \mathcal I_i} \log_{x_i} x_j,\quad i  ∈  \mathcal G,
 ```
 
-where $\mathcal G$ is the set of indices of the [`Power`](@ref) manifold `M`
+where $\mathcal G$ is the set of indices of the `PowerManifold` manifold `M`
 and $\mathcal I_i$ denotes the forward neighbors of $i$.
 
 # Input
-* `M` – a [`Power`](@ref) manifold
-* `x` – a [`PowPoint`](@ref).
+* `M` – a `PowerManifold` manifold
+* `x` – a point.
 
 # Ouput
 * `ξ` – resulting tangent vector in $T_x\mathcal M$ representing the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function forwardLogs(M::Power, x::PowPoint{P,Nt}) where {P <: MPoint, Nt}
+function forwardLogs(M::PowerManifold, x)
   sX = size(x)
   R = CartesianIndices(sX)
   d = length(sX)
@@ -147,9 +147,9 @@ function forwardLogs(M::Power, x::PowPoint{P,Nt}) where {P <: MPoint, Nt}
   else
     d2 = 1
   end
-  N = Power(M.manifold, (prod(sX)*d,) )
-  xT = PowPoint(repeat(getValue(x),inner=d2))
-  ξ = zeroTVector(N,xT)
+  N = PowerManifold(M.manifold, (prod(sX)*d,) )
+  xT = repeat(x,inner=d2)
+  ξ = zero_tangent_vector(N,xT)
   for i in R # iterate over all pixel
     for k in 1:d # for all direction combinations
       I = [i.I...] # array of index
@@ -163,20 +163,20 @@ function forwardLogs(M::Power, x::PowPoint{P,Nt}) where {P <: MPoint, Nt}
   return ξ
 end
 
-@doc doc"""
+@doc raw"""
     gradTV2(M,(x,y,z),p)
 
 computes the (sub) gradient of $\frac{1}{p}d_2^p(x,y,z)$ with respect
 to $x$, $y$, and $z$, where $d_2$ denotes the second order absolute difference
 using the mid point model, i.e. let
 ```math
-  \mathcal C = \bigl\{ c\in \mathcal M \ |\ g(\tfrac{1}{2};x_1,x_3) \text{ for some geodesic }g\bigr\}
+  \mathcal C = \bigl\{ c ∈  \mathcal M \ |\ g(\tfrac{1}{2};x_1,x_3) \text{ for some geodesic }g\bigr\}
 ```
 denote the mid points between $x$ and $z$ on the manifold $\mathcal M$.
 Then the absolute second order difference is defined as
 
 ```math
-d_2(x,y,z) = \min_{c\in\mathcal C_{x,z}} d(c,y).
+d_2(x,y,z) = \min_{c ∈ \mathcal C_{x,z}} d(c,y).
 ```
 
 While the (sub)gradient with respect to $y$ is easy, the other two require
@@ -184,7 +184,7 @@ the evaluation of an [`adjointJacobiField`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """
-function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoint}, p::Number=1)
+function gradTV2(M::MT, xT::Tuple{T,T,T}, p::Number=1) where {MT <: Manifold, T}
   x = xT[1];
   y = xT[2];
   z = xT[3];
@@ -192,27 +192,27 @@ function gradTV2(M::mT where {mT <: Manifold}, xT::Tuple{P,P,P} where {P <: MPoi
   d = distance(M,y,c)
   innerLog = -log(M,c,y)
   if p==2
-      return ( AdjDxGeo(M,x,z,1/2,innerLog), -log(M,y,c), AdjDyGeo(M,x,z,1/2,innerLog))
+      return ( AdjDpGeo(M,x,z,1/2,innerLog), -log(M,y,c), AdjDqGeo(M,x,z,1/2,innerLog))
   else
     if d==0 # subdifferential containing zero
-      return (zeroTVector(M,x),zeroTVector(M,y),zeroTVector(M,z))
+      return (zero_tangent_vector(M,x),zero_tangent_vector(M,y),zero_tangent_vector(M,z))
     else
-      return ( AdjDxGeo(M,x,z,1/2,innerLog/(d^(2-p))), -log(M,y,c)/(d^(2-p)), AdjDyGeo(M,x,z,1/2,innerLog/(d^(2-p))) )
+      return ( AdjDpGeo(M,x,z,1/2,innerLog/(d^(2-p))), -log(M,y,c)/(d^(2-p)), AdjDqGeo(M,x,z,1/2,innerLog/(d^(2-p))) )
     end
   end
 end
-@doc doc"""
+@doc raw"""
     gradTV2(M,x [,p=1])
 
 computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
-[`PowPoint`](@ref) `x`, where `M` is the corresponding [`Power`](@ref) manifold.
+point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function gradTV2(M::Power,x::PowPoint,p::Int=1)::PowTVector
-  R = CartesianIndices(M.powerSize)
-  d = length(M.powerSize)
+function gradTV2(M::PowerManifold{N,T}, x, p::Int=1) where {N <: Manifold, T}
+  R = CartesianIndices(T)
+  d = length(T)
   minInd, maxInd = first(R), last(R)
-  ξ = zeroTVector(M,x)
+  ξ = zero_tangent_vector(M,x)
   c = costTV2(M,x,p,false)
   for i in R # iterate over all pixel
     di = 0.

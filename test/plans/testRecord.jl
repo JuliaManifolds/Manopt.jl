@@ -2,7 +2,7 @@
     # helper to get debug as string
     io = IOBuffer()
     M = Euclidean(2)
-    x = RnPoint([4.,2.])
+    x = [4.,2.]
     o = GradientDescentOptions(x,stopAfterIteration(20), ConstantStepsize(1.))
     f = y -> distance(M,y,x).^2
     ∇f = y -> -2*log(M,y,x)
@@ -60,17 +60,15 @@
     c = RecordChange()
     c(p,o,1)
     @test c.recordedValues == [0.] # no x0 -> assume x0 is the first iterate
-    o.x = RnPoint([3.,2.])
+    o.x = [3.,2.]
     c(p,o,2)
     @test c.recordedValues == [0.,1.] # no x0 -> assume x0 is the first iterate
-    c = RecordChange(RnPoint([4.,2.]))
+    c = RecordChange([4.,2.])
     c(p,o,1)
     @test c.recordedValues == [1.] # no x0 -> assume x0 is the first iterate
     # RecordEntry
     o.x = x
     d = RecordEntry(x,:x)
-    d2 = RecordEntry(RnPoint{Float64},:x)
-    @test d.field == d2.field
     d(p,o,1)
     @test d.recordedValues == [x]
     # RecordEntryChange
@@ -81,26 +79,24 @@
     @test e.field == e2.field
     e(p,o,1)
     @test e.recordedValues == [0.]
-    o.x = RnPoint([3.0,2.0])
+    o.x = [3.0,2.0]
     e(p,o,2)
     @test e.recordedValues == [0.,1.]
     # RecordIterate
     o.x = x
     f = RecordIterate(x)
-    f2 = RecordIterate(RnPoint{Float64})
     @test_throws ErrorException RecordIterate()
-    @test f.recordedValues == f2.recordedValues
     f(p,o,1)
     @test f.recordedValues == [x]
     # RecordCost
     g = RecordCost()
     g(p,o,1)
     @test g.recordedValues == [0.]
-    o.x = RnPoint([3.,2.])
+    o.x = [3.,2.]
     g(p,o,2)
     @test g.recordedValues == [0.,1.]
     #RecordFactory
-    o.∇ = RnTVector([0.,0.])
+    o.∇ = [0.,0.]
     rf = RecordFactory(o,[:Cost,:∇])
     @test isa(rf[:All], RecordGroup)
     @test isa(rf[:All].group[1], RecordCost)

@@ -3,7 +3,7 @@
 The aim is to solve an optimization problem on a manifold
 
 ```math
-\operatorname*{min}_{x \in \mathcal{M}} F(x)
+\operatorname*{min}_{x  ∈  \mathcal{M}} F(x)
 ```
 
 by using the Riemannian trust-regions solver. It is number one choice for smooth
@@ -24,7 +24,7 @@ $\Delta =\frac{1}{8} \bar{\Delta}$ where $\bar{\Delta}$ is the maximum radius
 the trust-region can have. Usually one uses
 the root of the manifold dimension $\operatorname{dim}(\mathcal{M})$.
 For accepting the next iterate and evaluating the new trust-region radius one
-needs an accept/reject threshold $\rho' \in [0,\frac{1}{4})$, which is
+needs an accept/reject threshold $\rho'  ∈  [0,\frac{1}{4})$, which is
 $\rho' = 0.1$ on default. Set $k=0$.
 
 ## Iteration
@@ -45,7 +45,7 @@ Repeat until a convergence criterion is reached
 6. Update the trust-region radius:
     $\Delta = \begin{cases} \frac{1}{4} \Delta & \rho < \frac{1}{4} \,
     \text{or} \, m_{x_k}(\eta)-m_{x_k}(\eta^{* }) \leq 0 \, \text{or}  \,
-    \rho = \pm \infty , \\ \operatorname{min}(2 \Delta, \bar{\Delta}) &
+    \rho = \pm  ∈ fty , \\ \operatorname{min}(2 \Delta, \bar{\Delta}) &
     \rho > \frac{3}{4} \, \text{and the tcg-method stopped because of negative
     curvature or exceeding the trust-region}, \\ \Delta & \, \text{otherwise.}
     \end{cases}$
@@ -59,28 +59,29 @@ The result is given by the last computed $x_k$.
 
 ## Remarks
 
-To the Initialization: A random point on the manifold can be generated with
-[`randomMPoint`](@ref)`(M)`.
+To the Initialization: A random point on the manifold.
 
 To step number 1: Using randomized approach means using a random tangent
 vector as initial vector for the approximal solve of the trust-regions
 subproblem. If this is the case, keep in mind that the vector must be in the
 trust-region radius. This is achieved by multiplying
-`η = `[`randomTVector`](@ref)`(M,x)` by `sqrt(4,eps(Float64))` as long as
+`η` by `sqrt(4,eps(Float64))` as long as
 its norm is greater than the current trust-region radius $\Delta$.
-For not using randomized approach, one can get the zero  tangent
-vector with `η = `[`zeroTVector`](@ref)`(M,x)`.
+For not using randomized approach, one can get the zero tangent vector.
 
 To step number 2: Obtain $\eta^{* }$ by (approximately) solving the
 trust-regions subproblem
+
 ```math
-\operatorname*{arg\,min}_{\eta \in T_{x_k}\mathcal{M}} m_{x_k}(\eta) = F(x_k) +
+\operatorname*{arg\,min}_{\eta  ∈  T_{x_k}\mathcal{M}} m_{x_k}(\eta) = F(x_k) +
 \langle \nabla F(x_k), \eta \rangle_{x_k} + \frac{1}{2} \langle
 \operatorname{Hess}[F](\eta)_ {x_k}, \eta \rangle_{x_k}
 ```
+
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x_k} \leq {\Delta}^2
 ```
+
 with the Steihaug-Toint truncated conjugate-gradient (tcg) method. The problem
 as well as the solution method is described in the
 [`truncatedConjugateGradient`](@ref).

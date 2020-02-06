@@ -1,11 +1,11 @@
 @testset "Subgradient Plan" begin
     M = Euclidean(2)
-    x = RnPoint([4., 2.])
-    x0 = RnPoint([5.,2.])
+    x = [4., 2.]
+    x0 = [5.,2.]
     o = SubGradientMethodOptions(x0,stopAfterIteration(200), DecreasingStepsize(0.1))
-    o.∂ = RnTVector([1., 0.])
+    o.∂ = [1., 0.]
     f = y -> distance(M,y,x)
-    ∂f = y -> distance(M,x,y) == 0 ? zeroTVector(M,y) : -2*log(M,y,x)/distance(M,x,y)
+    ∂f = y -> distance(M,x,y) == 0 ? zero_tangent_vector(M,y) : -2*log(M,y,x)/distance(M,x,y)
     p = SubGradientProblem(M,f, ∂f)
     oR = solve(p,o)
     xHat = getSolverResult(oR)

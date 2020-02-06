@@ -1,5 +1,5 @@
 export DouglasRachford
-@doc doc"""
+@doc raw"""
      DouglasRachford(M, F, proxMaps, x)
 Computes the Douglas-Rachford algorithm on the manifold $\mathcal M$, initial
 data $x_0$ and the (two) proximal maps `proxMaps`.
@@ -16,7 +16,7 @@ i.e. component wise in a vector.
 * `F` – a cost function consisting of a sum of cost functions
 * `proxes` – functions of the form `(λ,x)->...` performing a proximal map,
   where `⁠λ` denotes the proximal parameter, for each of the summands of `F`.
-* `x0` – initial data $x_0\in\mathcal M$
+* `x0` – initial data $x_0 ∈ \mathcal M$
 
 # Optional values
 the default parameter is given in brackets
@@ -29,9 +29,9 @@ the default parameter is given in brackets
   to perform the reflection of `x` at the prox `p`.
 * `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200),`[`stopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
-  [`Power`](@ref) manifold with two proxes. This can be used to trigger
+  `PowerManifold` manifold with two proxes. This can be used to trigger
   parallel Douglas–Rachford if you enter with two proxes. Keep in mind, that a
-  parallel Douglas–Rachford implicitly works on a [`Power`](@ref) manifold and
+  parallel Douglas–Rachford implicitly works on a `PowerManifold` manifold and
   its first argument is the result then (assuming all are equal after the second
   prox.
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
@@ -45,7 +45,7 @@ and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `returnOptions`)
 """
-function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, x::P;
+function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, x;
     λ::Function = (iter) -> 1.0,
     α::Function = (iter) -> 0.9,
     R = reflection,
@@ -53,7 +53,7 @@ function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, 
     stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenChangeLess(10.0^-5)),
     returnOptions=false,
     kwargs... #especially may contain decorator options
-) where {mT <: Manifold, P <: MPoint}
+) where {MT <: Manifold}
     if length(proxes) < 2
         throw(
          ErrorException("Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps.")
@@ -63,12 +63,12 @@ function DouglasRachford(M::mT, F::Function, proxes::Array{Function,N} where N, 
         prox2 = proxes[2]
     else # more than 2 -> parallelDouglasRachford
         parallel = length(proxes)
-        prox1 = (λ,x) -> PowPoint([proxes[i](λ,x[i]) for i in 1:parallel])
-        prox2 = (λ,x) -> PowPoint( fill(mean(M.manifold,getValue(x)),parallel) )
+        prox1 = (λ,x) -> [proxes[i](λ,x[i]) for i in 1:parallel]
+        prox2 = (λ,x) -> fill(mean(M.manifold,x),parallel)
     end
     if parallel > 0
-        M = Power(M,parallel)
-        x = PowPoint([copy(x) for i=1:parallel])
+        M = PowerManifold(M,parallel)
+        x = [copy(x) for i=1:parallel]
         nF = x -> F(x[1])
     else
         nF = F

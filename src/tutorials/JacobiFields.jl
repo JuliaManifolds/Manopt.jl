@@ -16,9 +16,9 @@ TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
 TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
 TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 nothing #hide
-# Assume we have two [`SnPoint`](@ref)s on the equator of the [`Sphere`](@ref)`(2)` $\mathcal M = \mathbb S^2$
+# Assume we have two points on the equator of the [`Sphere`](@ref)`(2)` $\mathcal M = \mathbb S^2$
 M = Sphere(2)
-x,y = [ SnPoint([1.,0.,0.]), SnPoint([0.,1.,0.])]
+x,y = [ [1.,0.,0.], [0.,1.,0.]]
 # their connecting [`geodesic`](@ref) (sampled at `100` points)
 geodesicCurve = geodesic(M,x,y,100);
 asyResolution = 2
@@ -39,16 +39,16 @@ renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
 #md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.,1.,.5)
 #md # )
 #md # ```
-#md # 
+#md #
 #md # ![A geodesic connecting two points on the equator](../assets/images/tutorials/jacobiGeodesic.png)
 #
 # where $x$ is on the left. Then this tutorial solves the following task:
-# 
-# Given a direction $\xi_x\in T_x\mathcal M$, for example the [`SnTVector`](@ref)
-ξx = SnTVector([0.,0.4,0.5])
+#
+# Given a direction $\xi_x∈ T_x\mathcal M$, for example the [`SnTVector`](@ref)
+ξx = [0.,0.4,0.5]
 # we move the start point $x$ into, how does any point on the geodesic move?
 #
-# Or mathematically: Compute $D_x g(t; x,y)$ for some fixed $t\in[0,1]$
+# Or mathematically: Compute $D_x g(t; x,y)$ for some fixed $t∈[0,1]$
 # and a given direction $\xi_x$.
 # Of course two cases are quite easy: For $t=0$ we are in $x$ and how $x$ “moves”
 # is already known, so $D_x g(0;x,y) = \xi$. On the other side, for $t=1$,
@@ -59,7 +59,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
 # vector field along the [`geodesic`](@ref) given as follows: The _geodesic variation_
 # $\Gamma_{g,\xi}(s,t)$ is defined for some $\varepsilon > 0$ as
 #
-# $\Gamma_{g,\xi}(s,t):=\exp{\gamma_{x,\xi}(s)}[t\log_{g(s;x,\xi)}y],\qquad s\in(-\varepsilon,\varepsilon),\ t\in[0,1].$
+# $\Gamma_{g,\xi}(s,t):=\exp{\gamma_{x,\xi}(s)}[t\log_{g(s;x,\xi)}y],\qquad s∈(-\varepsilon,\varepsilon),\ t∈[0,1].$
 #
 # Intuitively we make a small step $s$ into direction $\xi$ using the geodesic
 # $g(\cdot; x,\xi)$ and from $z=g(s; x,\xi)$ we follow (in $t$) the geodesic
@@ -84,12 +84,12 @@ Z = geodesic(M,x,y,T)
 nothing #hide
 # the geodesic moves as
 ηx = jacobiField.(Ref(M), Ref(x), Ref(y), T, Ref(ξx) )
-# which can also be called using [`DxGeo`](@ref).
+# which can also be called using [`DpGeo`](@ref).
 # We can add to the image above by creating extended tangent vectors
-# [`TVectorE`](@ref) the include their base points
-Vx = TVectorE.(ηx,Z)
+# [`Tuple`](@ref) the include their base points
+Vx = Tuple.(ηx,Z)
 # and add that as one further set to the Asymptote export.
-renderAsymptote(exportFolder*"/jacobiGeodesicDxGeo.asy",asyExportS2Signals; #src
+renderAsymptote(exportFolder*"/jacobiGeodesicDpGeo.asy",asyExportS2Signals; #src
     render = asyResolution, #src
     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx], #src
     colors=Dict( #src
@@ -101,7 +101,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesicDxGeo.asy",asyExportS2Signals; #src
 ) #src
 #md #
 #md # ```julia
-#md # renderAsymptote("jacobiGeodesicDxGeo.asy",asyExportS2Signals;
+#md # renderAsymptote("jacobiGeodesicDpGeo.asy",asyExportS2Signals;
 #md #     render = asyResolution,
 #md #     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx],
 #md #     colors=Dict(
@@ -113,13 +113,13 @@ renderAsymptote(exportFolder*"/jacobiGeodesicDxGeo.asy",asyExportS2Signals; #src
 #md # )
 #md # ```
 #
-#md # ![A Jacobi field for $D_xg(t,x,y)[\eta]$](../assets/images/tutorials/jacobiGeodesicDxGeo.png)
+#md # ![A Jacobi field for $D_xg(t,x,y)[\eta]$](../assets/images/tutorials/jacobiGeodesicDpGeo.png)
 #
 # If we further move the end point, too, we can derive that Differential in direction
-ξy = SnTVector([0.2,0.,-0.5])
-ηy = DyGeo.(Ref(M),Ref(x),Ref(y),T,Ref(ξy))
-Vy = TVectorE.(ηy,Z)
-# and we can look at the total effect, where the [`TVectorE`](@ref)s even verify
+ξy = [0.2,0.,-0.5]
+ηy = DqGeo.(Ref(M),Ref(x),Ref(y),T,Ref(ξy))
+Vy = Tuple.(ηy,Z)
+# and we can look at the total effect, where the [`Tuple`](@ref)s even verify
 # that only tangent vectors are added that have a common base point
 Vb = Vx .+ Vy
 renderAsymptote(exportFolder*"/jacobiGeodesicResult.asy",asyExportS2Signals; #src
@@ -148,7 +148,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesicResult.asy",asyExportS2Signals; #sr
 #md # ![A Jacobi field for the effect of two differentials (blue) in sum (teal)](../assets/images/tutorials/jacobiGeodesicResult.png)
 #
 # ## Literature
-# 
+#
 # ```@raw html
 # <ul><li id="doCarmo1992">[<a>doCarmo1992</a>] do Carmo, M. P.:
 #    <emph>Riemannian Geometry</emph>, Mathematics: Theory & Applications,

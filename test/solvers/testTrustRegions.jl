@@ -8,9 +8,7 @@
     M = Product(prod)
 
     function cost(X::ProdPoint{Array{GrPoint{Float64},1}})
-        U = getValue(getValue(X)[1])
-        V = getValue(getValue(X)[2])
-        return -0.5 * norm(transpose(U) * A * V)^2
+        return -0.5 * norm(transpose(X[1]) * A * X[2])^2
     end
 
     function egrad(X::Array{Matrix{Float64},1})
@@ -22,14 +20,14 @@
     end
 
     function rgrad(M::Product, X::ProdPoint{Array{GrPoint{Float64},1}})
-        eG = egrad( getValue.(getValue(X)) )
-        return ProdTVector( project.(M.manifolds, getValue(X), eG) )
+        eG = egrad( X )
+        return ProdTVector( project_tangent.(M.manifolds, X, eG) )
     end
 
     function e2rHess(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-      pxHess = getValue(project(M,x,Hess))
-        xtGrad = getValue(x)'*eGrad
-        ξxtGrad = getValue(ξ)*xtGrad
+        pxHess = project(M,x,Hess)
+        xtGrad = x'*eGrad
+        ξxtGrad = ξ*xtGrad
         return GrTVector(pxHess - ξxtGrad)
     end
 
@@ -47,12 +45,12 @@
             ]
     end
     function rhess(M::Product, X::ProdPoint{Array{GrPoint{Float64},1}}, H::ProdTVector{Array{GrTVector{Float64},1}})
-        eG = egrad( getValue.(getValue(X)) )
-        eH = eHess( getValue.(getValue(X)), getValue.(getValue(H)) )
-        return ProdTVector( e2rHess.(M.manifolds, getValue(X), getValue(H), eG, eH) )
+        eG = egrad( X )
+        eH = eHess( X, H )
+        return ProdTVector( e2rHess.(M.manifolds, X, H, eG, eH) )
     end
 
-    x = randomMPoint(M)
+    x = rand(M)
 
     @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
     @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = -0.1)
@@ -84,7 +82,7 @@
     # Test the random step trust region
     p = HessianProblem(M, cost, rgrad, rhess, (M,x,ξ) -> ξ)
     o = TrustRegionsOptions(x, stopAfterIteration(2000), 10.0^(-8),
-        sqrt(manifoldDimension(M)), retraction, true, 0.1, 1000.)
+        sqrt(manifold_dimension(M)), retraction, true, 0.1, 1000.)
     @test doSolverStep!(p,o,0) == nothing
 
     η = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5)

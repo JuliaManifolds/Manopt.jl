@@ -4,7 +4,7 @@
 export initializeSolver!, doSolverStep!, getSolverResult
 export steepestDescent
 export DebugGradient, DebugGradientNorm, DebugStepsize
-@doc doc"""
+@doc raw"""
     steepestDescent(M, F, ∇F, x)
 perform a steepestDescent $x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)$ with
 different choices of $s_k$ available (see `stepsize` option below).
@@ -13,7 +13,7 @@ different choices of $s_k$ available (see `stepsize` option below).
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
-* `x` – an initial value $x\in\mathcal M$
+* `x` – an initial value $x ∈ \mathcal M$
 
 # Optional
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
@@ -33,13 +33,13 @@ OR
 * `options` - the options returned by the solver (see `returnOptions`)
 """
 function steepestDescent(M::mT,
-    F::Function, ∇F::Function, x::MP;
+    F::Function, ∇F::Function, x;
     stepsize::Stepsize = ConstantStepsize(1.0),
     retraction::Function = exp,
     stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenGradientNormLess(10.0^-8)),
     returnOptions=false,
     kwargs... #collect rest
-  ) where {mT <: Manifold, MP <: MPoint}
+  ) where {mT <: Manifold}
   p = GradientProblem(M,F,∇F)
   o = GradientDescentOptions(x,stoppingCriterion,stepsize,retraction)
   o = decorateOptions(o; kwargs...)

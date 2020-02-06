@@ -9,7 +9,7 @@ export getCost, getProximalMap
 export DebugProximalParameter
 export RecordProximalParameter
 
-@doc doc"""
+@doc raw"""
     ProximalProblem <: Problem
 specify a problem for solvers based on the evaluation of proximal map(s).
 
@@ -36,12 +36,12 @@ mutable struct ProximalProblem{mT <: Manifold} <: Problem
     length(nOP) != length(proxMaps) ? throw(ErrorException("The numberOfProxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
     new{mT}(M,cF,proxMaps,nOP)
 end
-@doc doc"""
+@doc raw"""
     getProximalMap(p,λ,x,i)
 
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
-function getProximalMap(p::P,λ,x::MP,i) where {P <: ProximalProblem{M} where M <: Manifold, MP<:MPoint}
+function getProximalMap(p::P,λ,x,i) where {P <: ProximalProblem{M} where M <: Manifold}
     if i>length(p.proximalMaps)
         throw( ErrorException("the $(i)th entry does not exists, only $(length(p.proximalMaps)) available.") )
     end
@@ -58,7 +58,7 @@ end
 stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
 
 # Fields
-* `x0` – an [`MPoint`](@ref) to start
+* `x0` – an point to start
 * `stoppingCriterion` – a function `@(iter,x,xnew,λ_k)` based on the current
     `iter`, `x` and `xnew` as well as the current value of `λ`.
 * `λ` – (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
@@ -69,23 +69,29 @@ stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
 # See also
 [`cyclicProximalPoint`](@ref)
 """
-mutable struct CyclicProximalPointOptions{P} <: Options where {P <: MPoint}
-    x::P
+mutable struct CyclicProximalPointOptions <: Options
+    x
     stop::StoppingCriterion
     λ::Function
     orderType::EvalOrder
     order::Array{Int,1}
-    CyclicProximalPointOptions{P}(x::P,s::StoppingCriterion, λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) where {P <: MPoint} = new(x,s,λ,o,[])
 end
-CyclicProximalPointOptions(x::P,s::StoppingCriterion,λ::Function=(iter)-> 1.0/iter,o::EvalOrder=LinearEvalOrder()) where {P <: MPoint} = CyclicProximalPointOptions{P}(x,s,λ,o)
-@doc doc"""
+function CyclicProximalPointOptions(
+    x,
+    s::StoppingCriterion,
+    λ::Function=(iter)-> 1.0/iter,
+    o::EvalOrder=LinearEvalOrder()
+    )
+    return CyclicProximalPointOptions(x,s,λ,o,[])
+end
+@doc raw"""
     DouglasRachfordOptions <: Options
 
 Store all options required for the DouglasRachford algorithm,
 
 # Fields
 * `x` - the current iterate (result) For the parallel Douglas-Rachford, this is
-  not a value from the [`Power`](@ref) manifold but the mean.
+  not a value from the `PowerManifold` manifold but the mean.
 * `s` – the last result of the double reflection at the proxes relaxed by `α`.
 * `λ` – (`(iter)->1.0`) function to provide the value for the proximal parameter
   during the calls
@@ -99,18 +105,23 @@ Store all options required for the DouglasRachford algorithm,
   or not.
 """
 mutable struct DouglasRachfordOptions <: Options
-    x::P where {P <: MPoint}
-    s::P where {P <: MPoint}
+    x
+    s
     λ::Function
     α::Function
     R::Function
     stop::StoppingCriterion
     parallel::Bool
-    DouglasRachfordOptions(x::P where {P <: MPoint}, λ::Function=(iter)->1.0,
-        α::Function=(iter)->0.9, R=reflection,
+    function DouglasRachfordOptions(
+        x,
+        λ::Function=(iter)->1.0,
+        α::Function=(iter)->0.9,
+        R=reflect,
         stop::StoppingCriterion = stopAfterIteration(300),
         parallel=false
-    ) = new(x,x,λ,α,reflection,stop,parallel)
+    )
+    return new(x,x,λ,α,R,stop,parallel)
+    end
 end
 #
 # Debug
@@ -119,7 +130,7 @@ end
 #
 # Debug the Cyclic Proximal point parameter
 #
-@doc doc"""
+@doc raw"""
     DebugProximalParameter <: DebugAction
 
 print the current iterates proximal point algorithm parameter given by
@@ -135,7 +146,7 @@ end
 
 #
 # Record
-@doc doc"""
+@doc raw"""
     RecordProximalParameter <: RecordAction
 
 recoed the current iterates proximal point algorithm parameter given by in

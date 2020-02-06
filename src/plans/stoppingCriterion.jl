@@ -10,7 +10,7 @@ export getStoppingCriteriaArray
 export getReason
 # defaults
 
-@doc doc"""
+@doc raw"""
     getReason(c)
 
 return the current reason stored within a [`StoppingCriterion`](@ref) `c`.
@@ -18,14 +18,14 @@ This reason is empty if the criterion has never been met.
 """
 getReason(c::sC) where sC <: StoppingCriterion = c.reason
 
-@doc doc"""
+@doc raw"""
     getStoppingCriteriaArray(c)
 return the array of internally stored [`StoppingCriterion`](@ref)s for a
 [`StoppingCriterionSet`](@ref) `c`.
 """
 getStoppingCriteriaArray(c::S) where {S <: StoppingCriterionSet} = error("getStoppingCriteriaArray() not defined for a $(typeof(c)).")
 
-@doc doc"""
+@doc raw"""
     stopAfterIteration <: StoppingCriterion
 
 A functor for an easy stopping criterion, i.e. to stop after a maximal number
@@ -106,7 +106,7 @@ function (c::stopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Opt
     c.storage(p,o,i)
     return false
 end
-@doc doc"""
+@doc raw"""
     stopWhenAll <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
@@ -132,7 +132,7 @@ function (c::stopWhenAll)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
 end
 getStoppingCriteriaArray(c::stopWhenAll) = c.criteria
 
-@doc doc"""
+@doc raw"""
     stopWhenAny <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
@@ -213,7 +213,7 @@ function (c::stopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     end
     return false
 end
-@doc doc"""
+@doc raw"""
     getActiveStoppingCriteria(c)
 
 returns all active stopping criteria, if any, that are within a

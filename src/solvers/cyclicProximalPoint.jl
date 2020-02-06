@@ -1,5 +1,5 @@
 export cyclicProximalPoint
-@doc doc"""
+@doc raw"""
     cyclicProximalPoint(M, F, proximalMaps, x)
 
 perform a cyclic proximal point algorithm.
@@ -8,7 +8,7 @@ perform a cyclic proximal point algorithm.
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `proximalMaps` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of $F$
-* `x` – an initial value $x\in\mathcal M$
+* `x` – an initial value $x ∈ \mathcal M$
 
 # Optional
 the default values are given in brackets
@@ -28,14 +28,14 @@ and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `returnOptions`)
 """
-function cyclicProximalPoint(M::Mc,
-  F::Function, proximalMaps::Array{Function,N} where N, x0::MP;
+function cyclicProximalPoint(M::MT,
+  F::Function, proximalMaps::Array{Function,N} where N, x0;
   evaluationOrder::EvalOrder = LinearEvalOrder(),
   stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(5000), stopWhenChangeLess(10.0^-12)),
   λ = i -> typicalDistance(M)/2/i,
   returnOptions=false,
   kwargs... #decorator options
-  ) where {Mc <: Manifold, MP <: MPoint}
+  ) where {MT <: Manifold}
     p = ProximalProblem(M,F,proximalMaps)
     o = CyclicProximalPointOptions(x0,stoppingCriterion,λ,evaluationOrder)
 

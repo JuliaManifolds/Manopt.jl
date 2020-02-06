@@ -25,27 +25,27 @@ if ExportOrig
   renderAsymptote(resultsFolder*experimantName*"orig.asy", asyExportSPDData; data=f, scaleAxes=(7.5,7.5,7.5))
 end
 #
-# Parameters 
+# Parameters
 η  = 0.58
 λ = 0.93
 α = 6.
 #
 # Build Problem for L2-TV
 pixelM = SymmetricPositiveDefinite(3);
-M = Power(pixelM,size(f))
+M = PowerManifold(pixelM,size(f))
 d = length(size(f))
 rep(d) = (d>1) ? [ones(Int,d)...,d] : d
 fidelity(x) = 1/2*distance(M,x,f)^2
 Λ(x) = forwardLogs(M,x) # on T_xN
-prior(x) = norm(norm.(Ref(pixelM),getValue(repeat(x,rep(d)...)),getValue(Λ(x))),1)
+prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x),1)
 #
 # Setup & Optimize
 print("--- Douglas–Rachford with η: ",η," and λ: ",λ," ---\n")
 cost(x) = fidelity(x) + α*prior(x)
-prox1 = (η,x) -> PowPoint(cat( proxDistance(M,η,f,x[1]), proxParallelTV(M,α*η,getValue(x[2:5])), dims=1))
-prox2 = (η,x) -> PowPoint(fill(mean(M,getValue(x);stoppingCriterion=stopAfterIteration(20)),5))
+prox1 = (η,x) -> cat( proxDistance(M,η,f,x[1]), proxParallelTV(M,α*η,x[2:5]), dims=1)
+prox2 = (η,x) -> fill(mean(M,x;stoppingCriterion=stopAfterIteration(20)),5)
 sC = stopAfterIteration(400)
-try 
+try
   costFunctionThreshold = load(resultsFolder*comparisonData)["compareCostFunctionValue"]
   global sC = stopWhenCostLess(costFunctionThreshold)
   @info "Comparison to CPPA (`SPDImage_CPPA.jl`) and its cost of $costFunctionThreshold."

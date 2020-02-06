@@ -10,7 +10,7 @@ export RecordGradient, RecordGradientNorm, RecordStepsize
 #
 # Problem
 #
-@doc doc"""
+@doc raw"""
     GradientProblem <: Problem
 specify a problem for gradient based algorithms.
 
@@ -33,23 +33,23 @@ end
 """
     getGradient(p,x)
 
-evaluate the gradient of a [`GradientProblem`](@ref)`p` at the [`MPoint`](@ref) `x`.
+evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x`.
 """
-function getGradient(p::P,x::MP) where {P <: GradientProblem{M} where M <: Manifold, MP <: MPoint}
+function getGradient(p::P,x) where {P <: GradientProblem{M} where M <: Manifold}
   return p.gradient(x)
 end
 #
 # Options
 #
 """
-    GradientDescentOptions{P,T} <: Options where {P <: MPoint, T <: TVector}
+    GradientDescentOptions{P,T} <: Options
 
 Describes a Gradient based descent algorithm, with
 
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `x0` – an [`MPoint`](@ref) as starting point
+* `x0` – an a point (of type `P`) on a manifold as starting point
 * `stoppingCriterion` – ([`stopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
 * `retraction` – (`exp`) the rectraction to use
@@ -57,24 +57,24 @@ a default value is given in brackets if a parameter can be left out in initializ
 # Constructor
 
     GradientDescentOptions(x, stop, s [, retr=exp])
- 
+
 construct a Gradient Descent Option with the fields and defaults as above
 
 # See also
 [`steepestDescent`](@ref), [`GradientProblem`](@ref)
 """
-mutable struct GradientDescentOptions{P <: MPoint, T <: TVector} <: Options
-    x::P where {P <: MPoint}
+mutable struct GradientDescentOptions{P,T} <: Options
+    x::P
     stop::StoppingCriterion
     stepsize::Stepsize
-    ∇::T where {T <: TVector}
+    ∇::T
     retraction::Function
     GradientDescentOptions{P,T}(
         initialX::P,
         s::StoppingCriterion = stopAfterIteration(100),
         stepsize::Stepsize = ConstantStepsize(1.),
         retraction::Function=exp
-    ) where {P <: MPoint, T <: TVector} = (
+    ) where {P,T} = (
         o = new{P,typeofTVector(P)}();
         o.x = initialX;
         o.stop = s;
@@ -83,12 +83,12 @@ mutable struct GradientDescentOptions{P <: MPoint, T <: TVector} <: Options
         return o
     )
 end
-GradientDescentOptions(x::P,stop::StoppingCriterion,s::Stepsize,retraction::Function=exp) where {P <: MPoint} = GradientDescentOptions{P,typeofTVector(P)}(x,stop,s,retraction)
+GradientDescentOptions(x::P,stop::StoppingCriterion,s::Stepsize,retraction::Function=exp) where {P} = GradientDescentOptions{P,T}(x,stop,s,retraction)
 #
 # Debugs
 #
 
-@doc doc"""
+@doc raw"""
     DebugGradient <: DebugAction
 
 debug for the gradient evaluated at the current iterate
@@ -111,7 +111,7 @@ mutable struct DebugGradient <: DebugAction
 end
 (d::DebugGradient)(p::GradientProblem,o::GradientDescentOptions,i::Int) = d.print((i>=0) ? d.prefix*""*string(o.∇) : "")
 
-@doc doc"""
+@doc raw"""
     DebugGradientNorm <: DebugAction
 
 debug for gradient evaluated at the current iterate.
@@ -134,7 +134,7 @@ mutable struct DebugGradientNorm <: DebugAction
 end
 (d::DebugGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>=0) ? d.prefix*"$(norm(p.M,o.x,o.∇))" : "")
 
-@doc doc"""
+@doc raw"""
     DebugStepsize <: DebugAction
 
 debug for the current step size.
@@ -160,7 +160,7 @@ end
 #
 # Records
 #
-@doc doc"""
+@doc raw"""
     RecordGradient <: RecordAction
 
 record the gradient evaluated at the current iterate
@@ -168,16 +168,16 @@ record the gradient evaluated at the current iterate
 # Constructors
     RecordGradient(ξ)
 
-initialize the [`RecordAction`](@ref) to the corresponding type of the [`TVector`](@ref).
+initialize the [`RecordAction`](@ref) to the corresponding type of the tangent vector.
 """
-mutable struct RecordGradient{T <: TVector} <: RecordAction
+mutable struct RecordGradient{T} <: RecordAction
     recordedValues::Array{T,1}
-    RecordGradient{T}() where {T <: TVector} = new(Array{T,1}())
+    RecordGradient{T}() where {T} = new(Array{T,1}())
 end
-RecordGradient(ξ::T) where {T <: TVector} = RecordGradient{T}()
-(r::RecordGradient{T})(p::P,o::O,i::Int) where {T <: TVector, P <: GradientProblem, O <: GradientDescentOptions} = recordOrReset!(r, o.∇, i)
+RecordGradient(ξ::T) where {T} = RecordGradient{T}()
+(r::RecordGradient{T})(p::P,o::O,i::Int) where {T, P <: GradientProblem, O <: GradientDescentOptions} = recordOrReset!(r, o.∇, i)
 
-@doc doc"""
+@doc raw"""
     RecordGradientNorm <: RecordAction
 
 record the norm of the current gradient
@@ -188,7 +188,7 @@ mutable struct RecordGradientNorm <: RecordAction
 end
 (r::RecordGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = recordOrReset!(r, norm(p.M,o.x,o.∇), i)
 
-@doc doc"""
+@doc raw"""
     RecordStepsize <: RecordAction
 
 record the step size
