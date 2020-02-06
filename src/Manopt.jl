@@ -4,31 +4,9 @@
 module Manopt
   using SimpleTraits
   using Markdown
-# Manifolds
-  include("manifolds/Manifold.jl") #base type
-  # errors for false combinations of types or nonimplemented cases
-  include("manifolds/defaults/manifoldFallbacks.jl")
-  # Extended Vector decorations
-  include("manifolds/defaults/extendedData.jl")
+  using ManifoldsBase
 
-  # Traits (properties/decorators)
-  include("manifolds/traits/EmbeddedManifold.jl")
-  include("manifolds/traits/LieGroup.jl")
-  include("manifolds/traits/MatrixManifold.jl")
-  # specific manifolds
-  include("manifolds/Circle.jl")
-  include("manifolds/Euclidean.jl")
-  include("manifolds/Grassmannian.jl")
-  include("manifolds/Hyperbolic.jl")
-  include("manifolds/Rotations.jl")
-  include("manifolds/Sphere.jl")
-  include("manifolds/Stiefel.jl")
-  include("manifolds/SymmetricPositiveDefinite.jl")
-  include("manifolds/Symmetric.jl")
-  include("manifolds/TangentBundle.jl")
-  # meta
-  include("manifolds/Power.jl")
-  include("manifolds/Product.jl")
+
   # ...corresponding plans consisting of problems and options
   include("plans/plan.jl")
   # Functions

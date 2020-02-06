@@ -56,25 +56,26 @@ construct a Nelder-Mead Option with a set of `dimension(M)+1` random points.
 
 construct a Nelder-Mead Option with a set `p` of [`MPoint`](@ref)s
 """
-mutable struct NelderMeadOptions{P <: MPoint} <: Options
+mutable struct NelderMeadOptions{T} <: Options
     population::Array{P,1}
     stop::StoppingCriterion
     α::Real
     γ::Real
     ρ::Real
     σ::Real
-    x::P
+    x::T
     costs::Array{Float64,1}
-    NelderMeadOptions(M::mT,
+    function NelderMeadOptions(
+        M::MT,
         stop::StoppingCriterion = stopAfterIteration(2000);
         α = 1., γ = 2., ρ=1/2, σ = 1/2
-    ) where {mT <: Manifold } =
-        new{typeof(randomMPoint(M))}(
-            [randomMPoint(M) for i=1:(manifoldDimension(M)+1) ],
-            stop, α, γ, ρ, σ, randomMPoint(M),[] )
-    NelderMeadOptions(p::Array{P,1},
+    ) where {MT <: Manifold }
+        new{typeof(rand(M))}(
+            [rand(M) for i=1:(manifold_dimension(M)+1) ],
+            stop, α, γ, ρ, σ, rand(M),[] )
+    NelderMeadOptions(p::Array{T,1},
         stop::StoppingCriterion = stopAfterIteration(2000);
         α = 1., γ = 2., ρ=1/2, σ = 1/2
-    ) where {P <: MPoint} = new{P}(p, stop, α, γ, ρ, σ, p[1],[] )
+    ) where {T} = new{T}(p, stop, α, γ, ρ, σ, p[1],[])
 end
 getSolverResult(o::NelderMeadOptions) = o.x
