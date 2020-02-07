@@ -367,9 +367,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[Interpolations]]
 deps = ["AxisAlgorithms", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
-git-tree-sha1 = "c7579b2617b513d8e6eb9f4b91837eefe7080af8"
+git-tree-sha1 = "96b16bb44b1037f42a50e3fa9ba38dd78c9c1a3e"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.12.8"
+version = "0.12.7"
 
 [[IntervalSets]]
 deps = ["Dates", "EllipsisNotation", "Statistics"]
@@ -525,9 +525,9 @@ version = "1.0.1"
 
 [[PlotUtils]]
 deps = ["Colors", "Dates", "Printf", "Random", "Reexport"]
-git-tree-sha1 = "22bd7d0a1f4665d66317d6c89a57f6bba9f2560d"
+git-tree-sha1 = "a146cb72ec962aec81d478de49d1011db06dd754"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "0.6.2"
+version = "0.6.3"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryTypes", "JSON", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "Reexport", "Requires", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
@@ -553,9 +553,9 @@ version = "2.3.1"
 
 [[QuartzImageIO]]
 deps = ["ColorTypes", "ColorVectorSpace", "FileIO", "FixedPointNumbers", "ImageCore", "Libdl"]
-git-tree-sha1 = "813432448a8f06a1316943c3456dcf043afacd96"
+git-tree-sha1 = "57814d8168a072aa6ad852e3ac8c409a0f349f9b"
 uuid = "dca85d43-d64c-5e67-8c65-017450d5d020"
-version = "0.6.0"
+version = "0.7.0"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets"]
