@@ -40,7 +40,7 @@ computes $D_xlog_xy[\eta]$.
 # See also
  [`DyLog`](@ref), [`jacobiField`](@ref)
 """
-DqLog(M::mT, x, y, η) where {mT <: Manifold} = jacobiField(M,x,y,0.0,η,βDplog)
+DqLog(M::mT, x, y, η) where {mT <: Manifold} = jacobiField(M,x,y,0.0,η,βDpLog)
 @doc raw"""
     DyLog(M,x,y,η)
 computes $D_ylog_xy[\eta]$.
@@ -48,7 +48,7 @@ computes $D_ylog_xy[\eta]$.
 # See also
  [`DqLog`](@ref), [`jacobiField`](@ref)
 """
-DyLog(M::mT, x, y, η) where {mT <: Manifold} = jacobiField(M,y,x,1.0,η,βDqlog)
+DyLog(M::MT, x, y, η) where {MT <: Manifold} = jacobiField(M,y,x,1.0,η,βDqLog)
 
 @doc raw"""
     ν = DforwardLogs(M,x,ξ)
@@ -73,13 +73,17 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `ν` – resulting tangent vector in $T_x\mathcal N$ representing the differentials of the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function DforwardLogs(M::PowerManifold,x, ξ)
-  sξ = size(ξ)
-  R = CartesianIndices(sξ)
-  d = length(sξ)
+function DforwardLogs(M::PowerManifold{MT,T,TPR},x, ξ) where {MT <: Manifold, T <: Tuple, TPR}
+  R = CartesianIndices([T.parameters...])
+  d = length([T.parameters...])
   maxInd = [last(R).I...]
   d2 = (d>1) ? ones(Int,d+1) + (d-1)*(1:(d+1) .== d+1 ) : d
-  N = PowerManifold(M.manifold,(sξ...,d))
+  if d > 1
+    N = PowerManifold(M.manifold, NestedPowerRepresentation(), T.parameters...,d)
+  else
+        N = PowerManifold(M.manifold, NestedPowerRepresentation(), T.parameters...)
+  end
+  print(N)
   ν = zero_tangent_vector(N, repeat(x,inner=d2) )
   for i in R # iterate over all pixel
     for k in 1:d # for all direction combinations

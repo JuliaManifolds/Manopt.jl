@@ -27,6 +27,6 @@ The following weights functions are available
 βDxg
 βDpExp
 βDXExp
-βDplog
-βDqlog
+βDpLog
+βDqLog
 ```

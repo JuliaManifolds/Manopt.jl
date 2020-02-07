@@ -57,7 +57,7 @@ computes the adjoint of $D_p log_p q[X]$.
 # See also
 [`DqLog`](@ref), [`adjointJacobiField`](@ref)
 """
-AdjDpLog(M::mT, p, q, X) where {mT <: Manifold} = adjointJacobiField(M, p, q, 0., X, βDplog)
+AdjDpLog(M::mT, p, q, X) where {mT <: Manifold} = adjointJacobiField(M, p, q, 0., X, βDpLog)
 
 @doc raw"""
     AdjDqLog(M, p, q, X)
@@ -67,7 +67,7 @@ Compute the adjoint of $D_q log_p q[X]$.
 # See also
 [`DqLog`](@ref), [`adjointJacobiField`](@ref)
 """
-AdjDqLog(M::MT, p, q, X) where {MT <: Manifold} = adjointJacobiField(M, p, q, 1., X, βDqlog)
+AdjDqLog(M::MT, p, q, X) where {MT <: Manifold} = adjointJacobiField(M, p, q, 1., X, βDqLog)
 
 @doc raw"""
     Y = AdjDforwardLogs(M, p, X)

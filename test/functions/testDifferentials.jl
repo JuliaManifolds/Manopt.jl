@@ -16,7 +16,7 @@ for t in [0,0.15,0.33,0.66,0.9]
     @test DpGeo(M,x,x,t,ξ) == (1-t)*ξ
     @test norm(M,x,DqGeo(M,x,x,t,ξ) - t*ξ)  ≈ 0 atol=10.0^(-16)
 end
-Mp = PowerManifold(M,2)
+Mp = PowerManifold(M, NestedPowerRepresentation(), 2)
 xP = [x,y,x]
 yP = [x,x,y]
 ξP = [ξ, zero_tangent_vector(M,x), -ξ]
@@ -28,8 +28,8 @@ yP = [x,x,y]
 #
 # Single differentials on Hn
 M2 = SymmetricPositiveDefinite(2)
-x2 = SPDPoint([1. 0.; 0. 1.])
-ξ2 = SPDTVector([0.5 1.;1. 0.5])
+x2 = [1. 0.; 0. 1.]
+ξ2 = [0.5 1.;1. 0.5]
 y2 = exp(M2,x2,ξ2)
 # Text differentials (1) Dx of Log_xy
 @test norm(M2, x2, DqLog(M2, x2, x2, ξ2) + ξ2) ≈ 0 atol=4*10^(-16)

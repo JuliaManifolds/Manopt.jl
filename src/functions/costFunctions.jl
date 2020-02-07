@@ -14,14 +14,7 @@ E(u,v) =
   +\alpha\bigl( \beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w) \bigr).
 ```
 """
-function costIntrICTV12(
-    M::mT,
-    f::ProductRepr,
-    u::ProductRepr,
-    v::ProductRepr,
-    α,
-    β
-    ) where {mT <: Manifold}
+function costIntrICTV12(M::mT, f, u, v, α, β) where {mT <: Manifold}
     return 1/2*distance(M, geodesic(M, u, v, 0.5), f)^2
       + α * β * costTV(M, u)
       + α * (1-β) * costTV2(M, v)
@@ -41,7 +34,7 @@ E(x) = d_{\mathcal M}^2(f,x) + \alpha \operatorname{TV}(x)
 # See also
 [`costTV`](@ref)
 """
-costL2TV(M, f::ProductRepr, α, x::ProductRepr) = 1/2 * distance(M, f, x)^2  +  α*costTV(M, x)
+costL2TV(M, f, α, x) = 1/2 * distance(M, f, x)^2  +  α*costTV(M, x)
 
 @doc raw"""
     costL2TVTV2(M, f, α, β, x)
@@ -58,8 +51,7 @@ E(x) = d_{\mathcal M}^2(f,x) + \alpha\operatorname{TV}(x)
 # See also
 [`costTV`](@ref), [`costTV2`](@ref)
 """
-costL2TVTV2(M::PowerManifold, f::ProductRepr, α, β, x::ProductRepr) =
-  1/2*distance(M,f,x)^2 + α*costTV(M,x) + β*costTV2(M,x)
+costL2TVTV2(M::PowerManifold, f, α, β, x) = 1/2*distance(M,f,x)^2 + α*costTV(M,x) + β*costTV2(M,x)
 
 @doc raw"""
     costL2TV2(M, f, β, x)
@@ -74,7 +66,7 @@ E(x) = d_{\mathcal M}^2(f,x) + \beta\operatorname{TV}_2(x)
 # See also
 [`costTV2`](@ref)
 """
-function costL2TV2(M::PowerManifold, f::ProductRepr, β, x::ProductRepr)
+function costL2TV2(M::PowerManifold, f, β, x)
     return 1/2*distance(M,f,x)^2 + β*costTV2(M,x)
 end
 
@@ -114,9 +106,9 @@ E^q(x) = \sum_{i ∈ \mathcal G}
 # See also
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::PowerManifold, x::ProductRepr, p=1, q=1)
-  R = CartesianIndices(M.powerSize)
-  d = length(M.powerSize)
+function costTV(M::PowerManifold{MT,Type{S}}, x, p=1, q=1) where {MT,S}
+  R = CartesianIndices([S.parameters...])
+  d = length([S.parameters...])
   maxInd = last(R)
   cost = fill(0.,M.powerSize)
   for k in 1:d # for all directions
@@ -154,7 +146,7 @@ $d_2^p(x_1,x_2,x_3) = \min_{c ∈ \mathcal C} d_{\mathcal M}(c,x_2).$
 """
 function costTV2(M::MT, x::Tuple{T,T,T}, p=1) where {MT <: Manifold, T}
   # note that here mid_point returns the closest to x2 from the e midpoints between x1 x3
-  return 1/p*distance(M,mid_point(M,pointTuple[1],pointTuple[3]),pointTuple[2])^p
+  return 1/p*distance(M,mid_point(M,x[1],x[3]),x[2])^p
 end
 @doc raw"""
     costTV2(M,x [,p=1])
@@ -179,10 +171,13 @@ nearest to $x_i$.
 [`gradTV2`](@ref), [`proxTV2`](@ref)
 """
 function costTV2(M::PowerManifold{N,T}, x, p::Int=1, Sum::Bool=true) where {N <: Manifold, T}
-  R = CartesianIndices(T)
-  d = length(T)
+  print(T)
+  print(T.parameters)
+  Tt = Tuple(T.parameters)
+  R = CartesianIndices( Tt )
+  d = length(Tt)
   minInd, maxInd = first(R), last(R)
-  cost = fill(0.,T)
+  cost = fill(0., Tt)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
     for i in R # iterate over all pixel

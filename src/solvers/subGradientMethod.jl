@@ -38,7 +38,7 @@ function subGradientMethod(M::mT,
         ∂F::Function,
         x;
         retraction::Function = exp,
-        stepsize::Stepsize = DecreasingStepsize( typicalDistance(M)/5),
+        stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M,x)/5),
         stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
         returnOptions = false,
         kwargs... #especially may contain debug

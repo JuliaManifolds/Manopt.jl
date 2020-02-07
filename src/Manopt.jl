@@ -13,6 +13,7 @@ module Manopt
         exp,
         exp!,
         log,
+        injectivity_radius,
         inner,
         geodesic,
         norm,
@@ -21,18 +22,29 @@ module Manopt
         zero_tangent_vector,
         zero_tangent_vector!
     import Manifolds:
+        _read,
+        _write,
         Sphere,
         Euclidean,
         Circle,
+        SymmetricPositiveDefinite,
+        AbstractPowerManifold,
         PowerManifold,
         ProductManifold,
         ProductRepr,
-        DiagonalizingOrthonormalBasis
+        DiagonalizingOrthonormalBasis,
+        ArrayPowerRepresentation,
+        NestedPowerRepresentation
     import Manifolds:
+        _read,
+        _write,
         get_basis,
-        get_coefficient,
+        get_coordinates,
         get_vector,
+        get_vectors,
+        get_iterator,
         mean,
+        representation_size,
         sym_rem,
         ℝ,
         ℂ,
@@ -41,6 +53,7 @@ module Manopt
     import Random:
         randperm
 
+    using LinearAlgebra: Symmetric, eigen, svd
     """
         mid_point(M, p, q, x)
 
@@ -69,6 +82,7 @@ module Manopt
     opposite(::Circle{ℂ},x) = -x
 
     rand(::Manifold) = error("Not yet implemented.")
+
     include("plans/plan.jl")
     # Functions
     include("functions/adjointDifferentials.jl")
@@ -112,6 +126,7 @@ export
     getProximalMap,
     log,
     mid_point,
+    sym_rem,
     vector_transport_to,
     vector_transport_to!,
     zero_tangent_vector,

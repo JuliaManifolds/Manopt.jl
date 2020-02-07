@@ -102,8 +102,8 @@ The parameter `λ` is the prox parameter.
   points evaluated (in a cylic order).
 """
 function proxTV(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N <: Manifold, T}
-  R = CartesianIndices(T)
-  d = length(T)
+  R = CartesianIndices([T.parameters...])
+  d = length([T.parameters...])
   maxInd = Tuple(last(R))
   y = copy(x)
   for k in 1:d # for all directions
@@ -208,7 +208,7 @@ function proxTV2(M::mT,λ,pointTuple::Tuple{T,T,T},p::Int=1;
     ))
   end
   PowX = [pointTuple...]
-  PowM = PowerManifold(M,(3,))
+  PowM = PowerManifold(M,3)
   xInit = PowX
   F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
   ∂F(x) = log(PowM,x,PowX) + λ*gradTV2(PowM,x)
@@ -219,12 +219,12 @@ function proxTV2(M::Circle,λ,pointTuple::Tuple{T,T,T},p::Int=1) where {T}
   w = [1., -2. ,1. ]
   x = pointTuple
   if p==1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
-    m = min( λ, abs(  symRem( sum( x .* w  ) ) )/(inner(w,w))   )
-    s = sign( symRem(sum(x .* w)) )
-    return Tuple(  symRem.( x  .-  m .* s .* w ) )
+    m = min( λ, abs(  sym_rem( sum( x .* w  ) ) )/(inner(w,w))   )
+    s = sign( sym_rem(sum(x .* w)) )
+    return Tuple(  sym_rem.( x  .-  m .* s .* w ) )
   elseif p==2 # Theorem 3.6 ibd.
-    t = λ * symRem( sum( x .* w ) ) / (1 + λ*inner(w,w) )
-    return Tuple( symRem.( x - t.*w )  )
+    t = λ * sym_rem( sum( x .* w ) ) / (1 + λ*inner(w,w) )
+    return Tuple( sym_rem.( x - t.*w )  )
   else
     throw(ErrorException(
       "Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"

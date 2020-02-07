@@ -90,9 +90,9 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 # Ouput
 * ξ – resulting tangent vector in $T_x\mathcal M$.
 """
-function gradTV(M::PowerManifold{N,T},x,p::Int=1) where {N <: Manifold, T}
-  R = CartesianIndices(T)
-  d = length(T)
+function gradTV(M::PowerManifold{N,Tuple{S}},x,p::Int=1) where {N <: Manifold, S}
+  R = CartesianIndices([S.parameters...])
+  d = length([S.parameters...])
   maxInd = last(R)
   ξ = zero_tangent_vector(M,x)
   c = costTV(M,x,p,0)
@@ -147,7 +147,7 @@ function forwardLogs(M::PowerManifold, x)
   else
     d2 = 1
   end
-  N = PowerManifold(M.manifold, (prod(sX)*d,) )
+  N = PowerManifold(M.manifold, prod(sX)*d)
   xT = repeat(x,inner=d2)
   ξ = zero_tangent_vector(N,xT)
   for i in R # iterate over all pixel
@@ -184,7 +184,7 @@ the evaluation of an [`adjointJacobiField`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """
-function gradTV2(M::MT, xT::Tuple{T,T,T}, p::Number=1) where {MT <: Manifold, T}
+function gradTV2(M::MT, xT, p::Number=1) where {MT <: Manifold, T}
   x = xT[1];
   y = xT[2];
   z = xT[3];
@@ -208,9 +208,9 @@ computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function gradTV2(M::PowerManifold{N,T}, x, p::Int=1) where {N <: Manifold, T}
-  R = CartesianIndices(T)
-  d = length(T)
+function gradTV2(M::PowerManifold{N,Type{S}}, x, p::Int=1) where {N <: Manifold, S<:Tuple}
+  R = CartesianIndices([S.parameters...])
+  d = length([S.parameters...])
   minInd, maxInd = first(R), last(R)
   ξ = zero_tangent_vector(M,x)
   c = costTV2(M,x,p,false)

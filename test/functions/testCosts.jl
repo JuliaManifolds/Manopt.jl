@@ -1,6 +1,6 @@
 @testset "Test Costs" begin
     M = Sphere(2)
-    N = PowerManifold(M,(3,3))
+    N = PowerManifold(M, NestedPowerRepresentation(), 3, 3)
     f = repeat([[1.,0.,0.]],3,3)
     x = repeat([[1.,0.,0.]],3,3)
     x[2,1] = [0., 1., 0.]

@@ -3,7 +3,7 @@
 # JacobiFields
 #
 #
-export βDxg, βDpExp, βDXExp, βDplog, βDqlog
+export βDxg, βDpExp, βDXExp, βDpLog, βDqLog
 
 @doc raw"""
     βDxg(κ,t,d)
@@ -96,7 +96,7 @@ function βDXExp(κ,t,d)
     end
 end
 @doc raw"""
-    βDplog(κ,t,d)
+    βDpLog(κ,t,d)
 
 weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_p \log_p q[X]$. They are
@@ -113,7 +113,7 @@ with respect to its start point $D_p \log_p q[X]$. They are
 
 [`DqLog`](@ref), [`DyLog`](@ref), [`jacobiField`](@ref)
 """
-function βDplog(κ::Number,t::Number,d::Number)
+function βDpLog(κ::Number,t::Number,d::Number)
     if (d==0) || (κ==0)
         return -1.0
     else
@@ -125,7 +125,7 @@ function βDplog(κ::Number,t::Number,d::Number)
     end
 end
 @doc raw"""
-    βDqlog(κ,t,d)
+    βDqLog(κ,t,d)
 
 weights for the JacobiField corresponding to the differential of the logarithmic
 map with respect to its argument $D_q \log_p q[X]$. They are
@@ -142,7 +142,7 @@ map with respect to its argument $D_q \log_p q[X]$. They are
 
 [`DyLog`](@ref), [`jacobiField`](@ref)
 """
-function βDqlog(κ::Number,t::Number,d::Number)
+function βDqLog(κ::Number,t::Number,d::Number)
     if (d==0) || (κ==0)
         return 1.0
     else
@@ -164,14 +164,26 @@ $Y ∈ T_p\mathcal M$. The main difference to [`jacobiField`](@ref) is the,
 that the input `X` and the output `Y` switched tangent spaces.
 For detais see [`jacobiField`](@ref)
 """
-function adjointJacobiField(
-    M::MT, p, q, t, X, β::Function=βDpGeo) where {MT<:Manifold}
-    x = geodesic(M,p,q,t) # Point the TzM of the resulting vector lies in
+function adjointJacobiField(M::AbstractPowerManifold,p,q,t,X,β::Function=βDpGeo)
+    rep_size = representation_size(M.manifold)
+    for i in get_iterator(M)
+        _write(M, rep_size, adjointJacobiField(M.manifold,
+            _read(M, rep_size, p, i),
+            _read(M, rep_size, q, i),
+            t,
+            _read(M, rep_size, X, i),
+            β
+            )
+        )
+    end
+end
+function adjointJacobiField(M::MT, p, q, t, X, β::Function=βDpGeo) where {MT<:Manifold}
+    x = geodesic(M,p,q,t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
-    Θ = vector_transport_to.(Ref(M),Ref(p),B.vectors, Ref(x), Ref(ParallelTransport()))# Frame at z
+    Θ = vector_transport_to.(Ref(M),Ref(p),B.vectors, Ref(x), Ref(ParallelTransport()))
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
     ξ = sum(
-        (inner.(Ref(M),Ref(x),Ref(X),Θ)) .* (β.(B.kappas,Ref(t),distance(M,p,q))) .* B.vectors
+        (inner.(Ref(M),Ref(x),Ref(X),Θ)) .* (β.(B.kappas,Ref(t),Ref(distance(M,p,q)))) .* B.vectors
     )
 end
 

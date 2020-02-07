@@ -4,7 +4,7 @@
   p = [1.,0.,0.]
   q = [0.,1.,0.]
   M = Sphere(2)
-  N = PowerManifold(M,(2,))
+  N = PowerManifold(M, NestedPowerRepresentation(), 2)
   @test_throws ErrorException proxDistance(M, 1., p, q, 3)
   @test distance(M, proxDistance(M, distance(M,p,q)/2, p,q,1), mid_point(M,p,q)) ≈ 0
   (r,s) = proxTV(M,π/4,(p,q))
@@ -14,7 +14,7 @@
   (t,u) = proxTV(M,π/8,(p,q));
   @test_throws ErrorException proxTV(M, π, (p,q), 3)
   # they cross correlate
-  @test ( abs(t.value[1]-u.value[2])< eps(Float64) && abs(t.value[2]-u.value[1]) < eps(Float64) && abs(t.value[3]-u.value[3])< eps(Float64) )
+  @test ( abs(t[1]-u[2])< eps(Float64) && abs(t[2]-u[1]) < eps(Float64) && abs(t[3]-u[3])< eps(Float64) )
   @test distance(M,t,u) == π/4 # and have moved half their distance
   #
   (v,w) = proxTV(M,1.,(p,q),2)
@@ -25,7 +25,7 @@
   T = proxTV(N, π/8, [p,q])
   @test distance(N, T, [t, u]) ≈ 0
   # parallelproxTV
-  N2 = PowerManifold(M,(3,))
+  N2 = PowerManifold(M, NestedPowerRepresentation(), 3)
   r = mid_point(M,p,q)
   s, t = proxTV(M, π/16, (r, q) )
   u, v = proxTV(M, π/16, (p, r) )
@@ -43,13 +43,13 @@
   M2 = Circle()
   pS, rS, qS = [-0.5, 0.1, 0.5]
   d = inner( [pS, rS, qS], [1., -2., 1.] )
-  m = min(0.3, abs( symRem(d)/6) )
-  s = sign(symRem(d))
-  pSc, rSc, qSc = symRem.( [pS, rS, qS]) .- m .* s .* [1., -2., 1.] )
+  m = min(0.3, abs( sym_rem(d)/6) )
+  s = sign(sym_rem(d))
+  pSc, rSc, qSc = sym_rem.( [pS, rS, qS] .- m .* s .* [1., -2., 1.] )
   pSr, rSr, qSr = proxTV2(M2, 0.3, (pS, rS, qS) )
   @test sum( distance.(Ref(M2), [pSc, rSc, qSc], [pSr, rSr, qSr]) ) ≈ 0
   # p=2
-  t = 0.3*symRem(d)/(1+0.3*6.)
+  t = 0.3*sym_rem(d)/(1+0.3*6.)
   @test sum(
     distance.( Ref(M2),
       [proxTV2(M2,0.3,(pS, rS, qS),2)...],
