@@ -69,21 +69,30 @@ mutable struct GradientDescentOptions{P,T} <: Options
     stepsize::Stepsize
     ∇::T
     retraction::Function
-    GradientDescentOptions{P,T}(
+    function GradientDescentOptions{P}(
+        M::MT,
         initialX::P,
         s::StoppingCriterion = stopAfterIteration(100),
         stepsize::Stepsize = ConstantStepsize(1.),
         retraction::Function=exp
-    ) where {P,T} = (
-        o = new{P,typeofTVector(P)}();
+    ) where {MT <: Manifold, P}
+        o = new{P,typeof(zero_tangent_vector(M,initialX))}();
         o.x = initialX;
         o.stop = s;
         o.retraction = retraction;
         o.stepsize = stepsize;
         return o
-    )
+    end
 end
-GradientDescentOptions(x::P,stop::StoppingCriterion,s::Stepsize,retraction::Function=exp) where {P} = GradientDescentOptions{P,T}(x,stop,s,retraction)
+function GradientDescentOptions(
+    M::MT,
+    x::P,
+    stop::StoppingCriterion,
+    s::Stepsize,
+    retraction::Function=exp
+) where { MT<:Manifold, P}
+    return GradientDescentOptions{P}(M,x,stop,s,retraction)
+end
 #
 # Debugs
 #

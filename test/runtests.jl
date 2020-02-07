@@ -7,9 +7,6 @@ using Test
     include("plans/testSubGradientPlan.jl")
     include("plans/testStoppingCriteria.jl")
 end
-@testset "Algorithm Tests    " begin
-    include("algorithms/testBasicsAlgs.jl")
-end
 @testset "Function Tests     " begin
     include("functions/testAdjointDifferentials.jl")
     include("functions/testDifferentials.jl")

@@ -23,7 +23,7 @@ function artificialInSARImage(pts::Integer)
   # main and minor axis of the ellipse
   axes_inv = [6,25]
   # values for the hyperboloid
-  midPoint = [0.275;0.275]
+  mid_point = [0.275;0.275]
   radius = 0.18
   values = [range(-0.5,0.5,length = pts)...]
   # Steps
@@ -40,7 +40,7 @@ function artificialInSARImage(pts::Integer)
     # circle
     Xr = cosA*values[i] - sinA*values[j]
     Yr = cosA*values[j] + sinA*values[i]
-    v = ( (Xr-midPoint[1])^2 + (Yr-midPoint[2])^2 )/radius^2
+    v = ( (Xr-mid_point[1])^2 + (Yr-mid_point[2])^2 )/radius^2
     k2 = v <= 1.0 ? 4.0*pi*(1.0-v) : 0.0
     #
     Xr = cosS*values[i] - sinS*values[j]
@@ -275,7 +275,7 @@ function artificialSPDImage2(pts=64, fraction = 0.66)
             )
       end
       if ( col > 1) # and then in Y direction
-        C = exp(M, C, parallelTransport(M,Zo,C, log(M,Zo,Zl)), (col - 1.)/(pts-1) )
+        C = exp(M, C, vector_transport_to(M, Zo, log(M,Zo,Zl), C, ParallelTransport()), (col - 1.)/(pts-1) )
       end
       data[row,col] = C
     end
@@ -325,6 +325,6 @@ function artificialS2Lemniscate(p,t::Float64, a::Float64=π/2.)
     base = [0.,0.,tP]
     xc = a * (cos(t)/(sin(t)^2+1.))
     yc = a * (cos(t)*sin(t)/(sin(t)^2+1.))
-    tV = parallelTransport(M,base,p,[xc,yc,0.])
+    tV = vector_transport_to(M,base,[xc,yc,0.],p, ParallelTransport())
     return exp(M,p,tV)
 end

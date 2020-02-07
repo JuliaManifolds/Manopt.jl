@@ -55,12 +55,12 @@ function subGradientMethod(M::mT,
 end
 function initializeSolver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.xOptimal = o.x
-    zero_tangent_vector!(p.M,o.∂,o.x)
+    o.∂ = zero_tangent_vector(p.M, o.x)
 end
 function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     o.∂ = getSubGradient(p,o.x)
     s = getStepsize!(p,o,iter)
-    o.x = o.retraction(p.M,o.x,-s*o.∂)
+    o.retract!(p.M, o.x, o.x, -s*o.∂)
     if getCost(p,o.x) < getCost(p,o.xOptimal)
         o.xOptimal = o.x
     end

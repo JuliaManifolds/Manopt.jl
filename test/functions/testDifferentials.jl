@@ -9,7 +9,7 @@ M = Sphere(2)
 @test DyLog(M,x,x,ξ) == ξ
 @test DyLog(M,x,y,ξ) == zero_tangent_vector(M,y)
 @test DpExp(M,x,zero_tangent_vector(M,x),ξ) == ξ
-@test norm(M,y, DpExp(M,x,ξ,ξ) - [-π/2, 0., 0.])) ≈ 0 atol=2*10^(-16
+@test norm(M,y, DpExp(M,x,ξ,ξ) - [-π/2, 0., 0.]) ≈ 0 atol=2*10^(-16)
 @test DξExp(M,x,zero_tangent_vector(M,x),ξ) == ξ
 @test norm(M,y,DξExp(M,x,ξ,zero_tangent_vector(M,x))) ≈ 0
 for t in [0,0.15,0.33,0.66,0.9]
@@ -20,8 +20,11 @@ Mp = PowerManifold(M,2)
 xP = [x,y,x]
 yP = [x,x,y]
 ξP = [ξ, zero_tangent_vector(M,x), -ξ]
-@test norm(Mp,xP, DforwardLogs(Mp,xP,ξP)
-     - [-ξ, [π/2, 0., 0.],zero_tangent_vector(M,x)])  )  ≈ 0 atol=3*10.0^(-16
+@test norm(
+        Mp,
+        xP,
+        DforwardLogs(Mp,xP,ξP)
+     - [-ξ, [π/2, 0., 0.],zero_tangent_vector(M,x)] )  ≈ 0 atol=3*10.0^(-16)
 #
 # Single differentials on Hn
 M2 = SymmetricPositiveDefinite(2)

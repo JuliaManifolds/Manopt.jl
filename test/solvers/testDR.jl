@@ -5,13 +5,13 @@
     q = [0., 1., 0.]
     r = [0., 0., 1.]
     start = [0.,0.,1.]
-    result = midPoint(M,p,q)
+    result = mid_point(M,p,q)
     F(x) = distance(M,x,p)^2 + distance(M,x,q)^2
     prox1 = (η,x) -> proxDistance(M,η,p,x)
     prox2 = (η,x) -> proxDistance(M,η,q,x)
     xHat = DouglasRachford(M,F,[prox1,prox2],start)
     @test F(start) > F(xHat)
-    @test distance(M,xHat,midPoint(M,p,q)) ≈ 0
+    @test distance(M,xHat,mid_point(M,p,q)) ≈ 0
     # but we can also compute the riemannian center of mass (locally) on Sn
     # though also this is not that usweful, but easy to test that DR works
     F2(x) = distance(M,x,p)^2 + distance(M,x,q)^2 + distance(M,x,r)^2

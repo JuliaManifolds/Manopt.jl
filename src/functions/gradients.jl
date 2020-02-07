@@ -49,7 +49,7 @@ where both total variations refer to the intrinsic ones, [`gradTV`](@ref) and
 [`gradTV2`](@ref), respectively.
 """
 function gradIntrICTV12(M::mT,f,u,v,α,β) where {mT <: Manifold}
-  c = midPoint(M,u,v,f)
+  c = mid_point(M,u,v,f)
   iL = log(M,c,f)
   return AdjDpGeo(M,u,v,1/2,iL) + α*β*gradTV(M,u), AdjDqGeo(M,u,v,1/2,iL) + α * (1-β) * gradTV2(M,v)
 end
@@ -188,7 +188,7 @@ function gradTV2(M::MT, xT::Tuple{T,T,T}, p::Number=1) where {MT <: Manifold, T}
   x = xT[1];
   y = xT[2];
   z = xT[3];
-  c = midPoint(M,x,z,y) # nearest mid point of x and z to y
+  c = mid_point(M,x,z,y) # nearest mid point of x and z to y
   d = distance(M,y,c)
   innerLog = -log(M,c,y)
   if p==2

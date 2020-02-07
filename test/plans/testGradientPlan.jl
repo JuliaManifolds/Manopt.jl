@@ -2,7 +2,7 @@
     io = IOBuffer()
     M = Euclidean(2)
     x = [4.,2.]
-    o = GradientDescentOptions(x,stopAfterIteration(20), ConstantStepsize(1.))
+    o = GradientDescentOptions(M, x, stopAfterIteration(20), ConstantStepsize(1.))
     o.∇ = [1., 0.]
     f = y -> distance(M,y,x).^2
     ∇f = y -> -2*log(M,y,x)
@@ -18,10 +18,10 @@
     # Additional Specific Debugs
     a1 = DebugGradient(false, x -> print(io,x))
     a1(p,o,1)
-    @test String(take!(io)) == "∇F(x):RnT([1.0, 0.0])"
+    @test String(take!(io)) == "∇F(x):[1.0, 0.0]"
     a1a = DebugGradient("s:", x -> print(io,x))
     a1a(p,o,1)
-    @test String(take!(io)) == "s:RnT([1.0, 0.0])"
+    @test String(take!(io)) == "s:[1.0, 0.0]"
     a2 = DebugGradientNorm(false, x -> print(io,x))
     a2(p,o,1)
     @test String(take!(io)) == "|∇F(x)|:1.0"

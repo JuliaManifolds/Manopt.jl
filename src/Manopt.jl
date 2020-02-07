@@ -6,13 +6,20 @@ module Manopt
     using Markdown
     import Random: rand
     import ManifoldsBase:
+        AbstractVectorTransportMethod,
+        ParallelTransport,
         Manifold,
         distance,
         exp,
+        exp!,
         log,
         inner,
         geodesic,
-        norm
+        norm,
+        vector_transport_to,
+        vector_transport_to!,
+        zero_tangent_vector,
+        zero_tangent_vector!
     import Manifolds:
         Sphere,
         Euclidean,
@@ -20,36 +27,42 @@ module Manopt
         PowerManifold,
         ProductManifold,
         ProductRepr,
-        DiagonalizingOrthonormalBasis,
+        DiagonalizingOrthonormalBasis
+    import Manifolds:
+        get_basis,
+        get_coefficient,
+        get_vector,
         mean,
         sym_rem,
         ℝ,
-        ℂ
+        ℂ,
+        ×,
+        ^
     import Random:
         randperm
 
     """
-        midPoint(M, p, q, x)
+        mid_point(M, p, q, x)
 
     Compute the mid point between p and q. If there is more than one mid point
     of (not neccessarily miniizing) geodesics (i.e. on the sphere), the one nearest
     to z is returned.
     """
-    midPoint(M::MT, p, q, x) where {MT <: Manifold} = midPoint(M, p, q)
+    mid_point(M::MT, p, q, x) where {MT <: Manifold} = mid_point(M, p, q)
 
-    midPoint!(M::MT, y, p, q, x) where {MT <: Manifold} = midPoint!(M, y, p, q)
+    mid_point!(M::MT, y, p, q, x) where {MT <: Manifold} = mid_point!(M, y, p, q)
 
     """
-        midPoint(M, p, q)
+        mid_point(M, p, q)
 
     Compute the (geodesic) mid point of the two points `p` and `q` on the
     manfold `M`. If the geodesic is not unique, either a deterministic choice is taken or
     an error is raised depending on the manifold. For the deteministic choixe, see
-    [`midPoint(M, p, q, x)`](@ref), the mid point closest to a third point
+    [`mid_point(M, p, q, x)`](@ref), the mid point closest to a third point
     `x`.
     """
-    midPoint(M::MT, p, q) where {MT <: Manifold} = exp(M, p, log(M, p, q), 0.5)
-    midPoint!(M::MT, y, p, q) where {MT <: Manifold} = exp!(M, y, p, log(M, p, q), 0.5)
+    mid_point(M::MT, p, q) where {MT <: Manifold} = exp(M, p, log(M, p, q), 0.5)
+    mid_point!(M::MT, y, p, q) where {MT <: Manifold} = exp!(M, y, p, log(M, p, q), 0.5)
 
     opposite(::Sphere,x) = -x
     opposite(::Circle{ℝ},x) = sym_rem(x+π)
@@ -74,18 +87,15 @@ module Manopt
     include("solvers/truncatedConjugateGradient.jl")
     include("solvers/trustRegions.jl")
     include("solvers/subGradientMethod.jl")
-    # extended metasolvers
     include("solvers/debugSolver.jl")
     include("solvers/recordSolver.jl")
-    # Plots
     include("plots/SpherePlots.jl")
-    # helpers
     include("helpers/errorMeasures.jl")
-    # Exports
     include("helpers/exports/Asymptote.jl")
-    # data
     include("data/artificialDataFunctions.jl")
 
+export
+    ×, ^, ℝ, ℂ
 export
     AdjDpGeo,
     AdjDqGeo,
@@ -97,9 +107,27 @@ export
     distance,
     exp,
     getGradient,
+    getSubGradient,
     getCost,
     getProximalMap,
     log,
+    mid_point,
+    vector_transport_to,
+    vector_transport_to!,
+    zero_tangent_vector,
+    zero_tangent_vector!
+export
     Problem,
+    SubGradientProblem,
+    GradientProblem,
     HessianProblem
+export
+    GradientDescentOptions,
+    SubGradientMethodOptions
+export
+    Circle,
+    Euclidean,
+    Sphere,
+    PowerManifold,
+    PorductManifold
 end

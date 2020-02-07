@@ -6,7 +6,7 @@
   M = Sphere(2)
   N = PowerManifold(M,(2,))
   @test_throws ErrorException proxDistance(M, 1., p, q, 3)
-  @test distance(M, proxDistance(M, distance(M,p,q)/2, p,q,1), midPoint(M,p,q)) ≈ 0
+  @test distance(M, proxDistance(M, distance(M,p,q)/2, p,q,1), mid_point(M,p,q)) ≈ 0
   (r,s) = proxTV(M,π/4,(p,q))
   @test norm( r - s ) < eps(Float64)
   # i.e. they are moved together
@@ -26,7 +26,7 @@
   @test distance(N, T, [t, u]) ≈ 0
   # parallelproxTV
   N2 = PowerManifold(M,(3,))
-  r = midPoint(M,p,q)
+  r = mid_point(M,p,q)
   s, t = proxTV(M, π/16, (r, q) )
   u, v = proxTV(M, π/16, (p, r) )
   y = proxParallelTV(N2, π/16, [[p,r,q], [p,r,q]])

@@ -33,12 +33,12 @@ stepCurve = geodesic(M,x0,xHat,[range(0,3/4,length=50)...])
 # two steps back - we don't know the function globally so this is merely random
 ηP1 = [0.,-0.2,-0.45]
 xP1 = exp(M,x0,ηP1)
-ηP2 = parallelTransport(M,x0,xP1,[0.,-0.7,0.55])
+ηP2 = vector_transport_to(M, x0, [0.,-0.7,0.55], xP1, ParallelTransport())
 xP2 = exp(M,xP1,ηP2)
 stepCurveP1 = geodesic(M,xP2,xP1,[range(0,1,length=50)...])
 stepCurveP2 = geodesic(M,xP1,x0,[range(0,1,length=50)...])
 
-renderAsymptote("Logo.png", asyExportS2Signals;
+asyExportS2Signals("Logo.png";
     curves=[c1,c2,c3,c4,c5,c6,c7,stepCurve,stepCurveP1,stepCurveP2],
     points = [[xP1,xP2,x0,stepCurve[end]],[xHat]],
     tVectors = [ [stepVec] ],
