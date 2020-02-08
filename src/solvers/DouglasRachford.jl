@@ -92,6 +92,6 @@ function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
     o.x = getProximalMap(p,o.λ(iter),snew,2)
     snew = o.R(p.M,o.x,snew)
     # relaxation
-    o.s = geodesic(p.M,o.s,snew,o.α(iter))
+    o.s = shortest_geodesic(p.M,o.s,snew,o.α(iter))
 end
 getSolverResult(o::DouglasRachfordOptions) = o.parallel ? o.x[1] : o.x

@@ -164,21 +164,26 @@ $Y ∈ T_p\mathcal M$. The main difference to [`jacobiField`](@ref) is the,
 that the input `X` and the output `Y` switched tangent spaces.
 For detais see [`jacobiField`](@ref)
 """
-function adjointJacobiField(M::AbstractPowerManifold,p,q,t,X,β::Function=βDpGeo)
+function adjointJacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=βDpGeo)
     rep_size = representation_size(M.manifold)
     for i in get_iterator(M)
-        _write(M, rep_size, adjointJacobiField(M.manifold,
-            _read(M, rep_size, p, i),
-            _read(M, rep_size, q, i),
-            t,
-            _read(M, rep_size, X, i),
-            β
-            )
+        _write(
+            M,
+            rep_size,
+            adjointJacobiField(
+                M.manifold,
+                _read(M, rep_size, p, i),
+                _read(M, rep_size, q, i),
+                t,
+                _read(M, rep_size, X, i),
+                β
+            ),
+            i
         )
     end
 end
 function adjointJacobiField(M::MT, p, q, t, X, β::Function=βDpGeo) where {MT<:Manifold}
-    x = geodesic(M,p,q,t)
+    x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     Θ = vector_transport_to.(Ref(M),Ref(p),B.vectors, Ref(x), Ref(ParallelTransport()))
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
@@ -198,11 +203,11 @@ result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
 [`adjointJacobiField`](@ref)
 """
 function jacobiField(M::MT, p, q, t, X, β::Function=βDgx) where {MT <: Manifold}
-    x = geodesic(M, p, q, t);
+    x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
-    Θ = vector_transport_to.( Ref(M), Ref(p), Ref(x), B.vectors, Ref(ParallelTransport()))
+    Θ = vector_transport_to.( Ref(M), Ref(p), B.vectors, Ref(x), Ref(ParallelTransport()))
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    ξ = sum(
+    Y = sum(
         (inner.(Ref(M),Ref(p),Ref(X),B.vectors)) .* (β.(B.kappas,Ref(t),Ref(distance(M,p,q)))) .* Θ
     )
 end

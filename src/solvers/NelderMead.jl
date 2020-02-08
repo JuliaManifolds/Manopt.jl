@@ -111,7 +111,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     end
     # --- Shrink ---
     for i=2:length(ind)
-        o.population[ind[i]] = geodesic(p.M, o.population[ind[1]], o.population[ind[i]], o.σ)
+        o.population[ind[i]] = shortest_geodesic(p.M, o.population[ind[1]], o.population[ind[i]], o.σ)
         # update cost
         o.costs[ind[i]] = getCost(p, o.population[ind[i]])
     end

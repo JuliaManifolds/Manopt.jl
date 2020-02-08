@@ -93,23 +93,23 @@ Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
 `Y` – resulting tangent vector in $T_p\mathcal M$ representing the adjoint
   differentials of the logs.
 """
-function AdjDforwardLogs(M::PowerManifold, p, X)
-  sX = size(p)
-  R = CartesianIndices(sX)
-  d = length(sX)
-  maxInd = [last(R).I...] # maxInd as Array
-  N = M.manifold^(sX...,d)
-  Y = zero_tangent_vector(M,p)
-  for i in R # iterate over all pixel
-    for k in 1:d # for all direction combinations
-        I = [i.I...] # array of index
-        J = I .+ 1 .* (1:d .== k) #i + e_k is j
-        if all( J .<= maxInd ) # is this neighbor in range?
-            j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-            Y[i] += AdjDpLog(M.manifold,p[i],p[j],X[i,k])
-            Y[j] += AdjDqLog(M.manifold,p[i],p[j],X[i,k])
-        end
-    end # directions
-  end # i in R
-  return Y
+function AdjDforwardLogs(M::PowerManifold{MT,T}, p, X) where {MT <: Manifold, T}
+    power_size = [T.parameters...]
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    maxInd = [last(R).I...] # maxInd as Array
+    N = M.manifold^(power_size...,d)
+    Y = zero_tangent_vector(M,p)
+    for i in R # iterate over all pixel
+        for k in 1:d # for all direction combinations
+            I = [i.I...] # array of index
+            J = I .+ 1 .* (1:d .== k) #i + e_k is j
+            if all( J .<= maxInd ) # is this neighbor in range?
+                j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+                Y[i] += AdjDpLog(M.manifold,p[i],p[j],X[i,k])
+                Y[j] += AdjDqLog(M.manifold,p[i],p[j],X[i,k])
+            end
+        end # directions
+    end # i in R
+    return Y
 end

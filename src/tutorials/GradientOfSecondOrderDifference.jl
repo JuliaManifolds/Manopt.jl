@@ -26,7 +26,7 @@ x = [1., 0., 0.]
 z = [0., 1., 0.]
 c = mid_point(M,x,z)
 #src y is the north pole just bend a little bit towards
-y = geodesic(M, [0., 0., 1.]), c, 0.1
+y = shortest_geodesic(M, [0., 0., 1.]), c, 0.1
 [c,y]
 # Now the second order absolute difference can be stated as (see [[Bačák, Bergmann, Steidl, Weinmann, 2016](#BacakBergmannSteidlWeinmann2016)])
 #
@@ -39,7 +39,7 @@ y = geodesic(M, [0., 0., 1.]), c, 0.1
 c2 = opposite(M,c)
 # and draw the geodesic connecting $y$ and the nearest mid point $c$, namely
 T = [0:0.1:1.0...]
-geoPts_yc = geodesic(M,y,c,T)
+geoPts_yc = shortest_geodesic(M,y,c,T)
 nothing #hide
 # looks as follows using [`renderAsymptote`](@ref) with the [`asyExportS2Signals`](@ref) export
 renderAsymptote(exportFolder*"/SecondOrderData.asy",asyExportS2Signals; #src
@@ -101,7 +101,7 @@ renderAsymptote(exportFolder*"/SecondOrderGradient.asy",asyExportS2Signals; #src
 xn, yn, zn = exp.(Ref(M), [x,y,z], [-ξx,-ξy,-ξz])
 # as well we the new mid point
 cn = mid_point(M,xn,zn)
-geoPts_yncn = geodesic(M,yn,cn,T)
+geoPts_yncn = shortest_geodesic(M,yn,cn,T)
 nothing #hide
 # and obtain the new situation
 renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
@@ -147,7 +147,7 @@ s = ArmijoLinesearch(1.0,exp,0.999,0.96)(N, p,
 # and for the new points
 xm, ym, zm = exp.(Ref(M), [x,y,z], s*[-ξx,-ξy,-ξz])
 cm = mid_point(M,xm,zm)
-geoPts_xmzm = geodesic(M,xm,zm,T)
+geoPts_xmzm = shortest_geodesic(M,xm,zm,T)
 nothing #hide
 # we obtain again with
 renderAsymptote(exportFolder*"/SecondOrderMin2.asy",asyExportS2Signals; #src

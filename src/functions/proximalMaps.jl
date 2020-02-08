@@ -102,26 +102,27 @@ The parameter `λ` is the prox parameter.
   points evaluated (in a cylic order).
 """
 function proxTV(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N <: Manifold, T}
-  R = CartesianIndices([T.parameters...])
-  d = length([T.parameters...])
-  maxInd = Tuple(last(R))
-  y = copy(x)
-  for k in 1:d # for all directions
-    ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-    for l in 0:1
-      for i in R # iterate over all pixel
-        if (i[k] % 2) == l
-          I = [i.I...] # array of index
-          J = I .+ 1 .* (1:d .== k) #i + e_k is j
-          if all( J .<= maxInd ) # is this neighbor in range?
-            j = CartesianIndex(J...) # neigbbor index as Cartesian Index
-            (y[i],y[j]) = proxTV( M.manifold,λ,(y[i],y[j]),p) # Compute TV on these
-          end
-        end
-      end # i in R
-    end # even odd
-  end # directions
-  return y
+    power_size = [T.parameters...]
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    maxInd = Tuple(last(R))
+    y = copy(x)
+    for k in 1:d # for all directions
+        ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+        for l in 0:1
+            for i in R # iterate over all pixel
+                if (i[k] % 2) == l
+                    I = [i.I...] # array of index
+                    J = I .+ 1 .* (1:d .== k) #i + e_k is j
+                    if all( J .<= maxInd ) # is this neighbor in range?
+                        j = CartesianIndex(J...) # neigbbor index as Cartesian Index
+                        (y[i],y[j]) = proxTV( M.manifold,λ,(y[i],y[j]),p) # Compute TV on these
+                    end
+                end
+            end # i in R
+        end # even odd
+    end # directions
+    return y
 end
 @doc raw"""
     ξ = proxParallelTV(M,λ,x [,p=1])
@@ -208,7 +209,7 @@ function proxTV2(M::mT,λ,pointTuple::Tuple{T,T,T},p::Int=1;
     ))
   end
   PowX = [pointTuple...]
-  PowM = PowerManifold(M,3)
+  PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
   xInit = PowX
   F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
   ∂F(x) = log(PowM,x,PowX) + λ*gradTV2(PowM,x)

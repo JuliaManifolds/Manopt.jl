@@ -18,7 +18,7 @@
   @test distance(M,t,u) == π/4 # and have moved half their distance
   #
   (v,w) = proxTV(M,1.,(p,q),2)
-  vC, wC = geodesic(M, p, q, [1/3, 2/3])
+  vC, wC = shortest_geodesic(M, p, q, [1/3, 2/3])
   @test distance(M, v, vC) ≈ 0
   @test distance(M, w, wC) ≈ 0
   # proxTV on Power

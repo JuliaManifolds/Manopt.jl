@@ -17,15 +17,16 @@ computes $D_yg(t;x,y)[\eta]$.
 """
 DqGeo(M::mT, x, y, t, η) where {mT <: Manifold} = jacobiField(M,y,x,1-t,η,βDxg)
 @doc raw"""
-    DpExp(M,x,ξ,η)
-computes $D_x\exp_x\xi[\eta]$.
+    DpExp(M, p, X, Y)
+
+Compute $D_p\exp_p X[Y]$.
 
 # See also
- [`DξExp`](@ref), [`jacobiField`](@ref)
+[`DXExp`](@ref), [`jacobiField`](@ref)
 """
-DpExp(M::MT,x,ξ,η) where {MT <: Manifold}= jacobiField(M,x,exp(M,x,ξ),1.0,η,βDpExp)
+DpExp(M::MT,p,X,Y) where {MT <: Manifold} = jacobiField(M, p, exp(M,p,X), 1.0, Y, βDpExp)
 @doc raw"""
-    DξExp(M,x,ξ,η)
+    DXExp(M,x,ξ,η)
 computes $D_\xi\exp_x\xi[\eta]$.
 Note that $\xi ∈  T_\xi(T_x\mathcal M) = T_x\mathcal M$ is still a tangent vector.
 
@@ -73,29 +74,30 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `ν` – resulting tangent vector in $T_x\mathcal N$ representing the differentials of the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function DforwardLogs(M::PowerManifold{MT,T,TPR},x, ξ) where {MT <: Manifold, T <: Tuple, TPR}
-  R = CartesianIndices([T.parameters...])
-  d = length([T.parameters...])
-  maxInd = [last(R).I...]
-  d2 = (d>1) ? ones(Int,d+1) + (d-1)*(1:(d+1) .== d+1 ) : d
-  if d > 1
-    N = PowerManifold(M.manifold, NestedPowerRepresentation(), T.parameters...,d)
-  else
-        N = PowerManifold(M.manifold, NestedPowerRepresentation(), T.parameters...)
-  end
-  print(N)
-  ν = zero_tangent_vector(N, repeat(x,inner=d2) )
-  for i in R # iterate over all pixel
-    for k in 1:d # for all direction combinations
-      I = [i.I...] # array of index
-      J = I .+ 1 .* (1:d .== k) #i + e_k is j
-      if all( J .<= maxInd )
-        # this is neighbor in range,
-        j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-        # collects two, namely in kth direction since xi appears as base and arg
-        ν[i,k] = DqLog(M.manifold,x[i],x[j],ξ[i]) + DyLog(M.manifold,x[i],x[j],ξ[j])
-      end
-    end # directions
-  end # i in R
-  return ν
+function DforwardLogs(M::PowerManifold{MT,T,TPR}, p, X) where {MT <: Manifold, T, TPR}
+    power_size = [T.parameters...]
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    maxInd = [last(R).I...]
+    d2 = (d>1) ? ones(Int,d+1) + (d-1)*(1:(d+1) .== d+1 ) : 1
+    if d > 1
+        N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...,d)
+    else
+        N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...)
+    end
+    Y = zero_tangent_vector(N, repeat(p,inner=d2) )
+    for i in R # iterate over all pixel
+        for k in 1:d # for all direction combinations
+            I = [i.I...] # array of index
+            J = I .+ 1 .* (1:d .== k) #i + e_k is j
+            if all( J .<= maxInd )
+                # this is neighbor in range,
+                j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+                # collects two, namely in kth direction since xi appears as base and arg
+                print(i," ",k," ",j," ", DqLog(M.manifold,p[i],p[j],X[i]) + DyLog(M.manifold,p[i],p[j],X[j]) )
+                Y[i,k] = DqLog(M.manifold,p[i],p[j],X[i]) + DyLog(M.manifold,p[i],p[j],X[j])
+            end
+        end # directions
+    end # i in R
+    return Y
 end

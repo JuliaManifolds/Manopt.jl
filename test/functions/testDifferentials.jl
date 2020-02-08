@@ -1,50 +1,50 @@
 @testset "Differentials on Sn(2) and SPD(2)" begin
-x = [1.,0.,0.]
-y = [0.,1.,0.]
+p = [1.,0.,0.]
+q = [0.,1.,0.]
 M = Sphere(2)
-ξ = log(M,x,y)
+X = log(M,p,q)
 # Text differentials (1) Dx of Log_xy
-@test DqLog(M,x,x,ξ) == -ξ
-@test DqLog(M,x,y,ξ) == -ξ
-@test DyLog(M,x,x,ξ) == ξ
-@test DyLog(M,x,y,ξ) == zero_tangent_vector(M,y)
-@test DpExp(M,x,zero_tangent_vector(M,x),ξ) == ξ
-@test norm(M,y, DpExp(M,x,ξ,ξ) - [-π/2, 0., 0.]) ≈ 0 atol=2*10^(-16)
-@test DξExp(M,x,zero_tangent_vector(M,x),ξ) == ξ
-@test norm(M,y,DξExp(M,x,ξ,zero_tangent_vector(M,x))) ≈ 0
+@test DqLog(M,p,p,X) == -X
+@test DqLog(M,p,q,X) == -X
+@test DyLog(M,p,p,X) == X
+@test DyLog(M,p,q,X) == zero_tangent_vector(M,q)
+@test DpExp(M,p,zero_tangent_vector(M,p),X) == X
+@test norm(M,q, DpExp(M,p,X,X) - [-π/2, 0., 0.]) ≈ 0 atol=6*10^(-16)
+@test DξExp(M,p,zero_tangent_vector(M,p),X) == X
+@test norm(M,q,DξExp(M,p,X,zero_tangent_vector(M,p))) ≈ 0
 for t in [0,0.15,0.33,0.66,0.9]
-    @test DpGeo(M,x,x,t,ξ) == (1-t)*ξ
-    @test norm(M,x,DqGeo(M,x,x,t,ξ) - t*ξ)  ≈ 0 atol=10.0^(-16)
+    @test DpGeo(M,p,p,t,X) == (1-t)*X
+    @test norm(M,p,DqGeo(M,p,p,t,X) - t*X)  ≈ 0 atol=10.0^(-16)
 end
-Mp = PowerManifold(M, NestedPowerRepresentation(), 2)
-xP = [x,y,x]
-yP = [x,x,y]
-ξP = [ξ, zero_tangent_vector(M,x), -ξ]
+N = PowerManifold(M, NestedPowerRepresentation(), 3)
+x = [p,q,p]
+y = [p,p,q]
+V = [X, zero_tangent_vector(M,p), -X]
 @test norm(
-        Mp,
-        xP,
-        DforwardLogs(Mp,xP,ξP)
-     - [-ξ, [π/2, 0., 0.],zero_tangent_vector(M,x)] )  ≈ 0 atol=3*10.0^(-16)
+        N,
+        x,
+        DforwardLogs(N,x,V)
+     - [-X, [π/2, 0., 0.],zero_tangent_vector(M,p)] )  ≈ 0 atol=8*10.0^(-16)
 #
 # Single differentials on Hn
 M2 = SymmetricPositiveDefinite(2)
-x2 = [1. 0.; 0. 1.]
-ξ2 = [0.5 1.;1. 0.5]
-y2 = exp(M2,x2,ξ2)
+p2 = [1. 0.; 0. 1.]
+X2 = [0.5 1.;1. 0.5]
+q2 = exp(M2,p2,X2)
 # Text differentials (1) Dx of Log_xy
-@test norm(M2, x2, DqLog(M2, x2, x2, ξ2) + ξ2) ≈ 0 atol=4*10^(-16)
-@test norm(M2, y2, DqLog(M2, x2, y2, ξ2) + ξ2) ≈ 0 atol=4*10^(-16)
-@test norm(M2, x2, DyLog(M2, x2, x2, ξ2) - ξ2) ≈ 0 atol=4*10^(-16)
-@test norm(M2, y2, DyLog(M2, x2, y2, zero_tangent_vector(M2,x2))) ≈ 0 atol=4*10^(-16)
-@test norm(M2, x2, DpExp(M2, x2, zero_tangent_vector(M2,x2), ξ2) - ξ2) ≈ 0 atol=4*10^(-16)
-@test norm(M2, x2, DξExp(M2,x2,zero_tangent_vector(M2,x2),ξ2) - ξ2) ≈ 0 atol=4*10^(-16)
+@test norm(M2, p2, DqLog(M2, p2, p2, X2) + X2) ≈ 0 atol=4*10^(-16)
+@test norm(M2, q2, DqLog(M2, p2, q2, X2) + X2) ≈ 0 atol=4*10^(-16)
+@test norm(M2, p2, DyLog(M2, p2, p2, X2) - X2) ≈ 0 atol=4*10^(-16)
+@test norm(M2, q2, DyLog(M2, p2, q2, zero_tangent_vector(M2,p2))) ≈ 0 atol=4*10^(-16)
+@test norm(M2, p2, DpExp(M2, p2, zero_tangent_vector(M2,p2), X2) - X2) ≈ 0 atol=4*10^(-16)
+@test norm(M2, p2, DξExp(M2,p2,zero_tangent_vector(M2,p2),X2) - X2) ≈ 0 atol=4*10^(-16)
 for t in [0,0.15,0.33,0.66,0.9]
-    @test norm(M2, x2, DpGeo(M2, x2, x2, t, ξ2) - (1-t)*ξ2 ) ≈ 0 atol=4*10^(-16)
-    @test norm(M2, x2, DqGeo(M2, x2, x2, t, ξ2) - t*ξ2) ≈ 0 atol=4*10.0^(-16)
+    @test norm(M2, p2, DpGeo(M2, p2, p2, t, X2) - (1-t)*X2 ) ≈ 0 atol=4*10^(-16)
+    @test norm(M2, p2, DqGeo(M2, p2, p2, t, X2) - t*X2) ≈ 0 atol=4*10.0^(-16)
 end
-@test norm(M2, y2, DpGeo(M2, x2, y2, 1., ξ2)) ≈ 0 atol=4*10.0^(-16)
-@test norm(M2, y2, DpExp(M2, x2, ξ2, zero_tangent_vector(M2,x2) )) ≈ 0 atol=4*10.0^(-16)
-@test norm(M2,y2,DξExp(M2,x2,ξ2,zero_tangent_vector(M2,x2))) ≈ 0 atol=4*10.0^(-16)
+@test norm(M2, q2, DpGeo(M2, p2, q2, 1., X2)) ≈ 0 atol=4*10.0^(-16)
+@test norm(M2, q2, DpExp(M2, p2, X2, zero_tangent_vector(M2,p2) )) ≈ 0 atol=4*10.0^(-16)
+@test norm(M2,q2,DξExp(M2,p2,X2,zero_tangent_vector(M2,p2))) ≈ 0 atol=4*10.0^(-16)
 end
 #
 # And a final Rn

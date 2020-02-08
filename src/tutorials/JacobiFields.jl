@@ -20,7 +20,7 @@ nothing #hide
 M = Sphere(2)
 x,y = [ [1.,0.,0.], [0.,1.,0.]]
 # their connecting [`geodesic`](@ref) (sampled at `100` points)
-geodesicCurve = geodesic(M,x,y,100);
+geodesicCurve = shortest_geodesic(M,x,y,100);
 asyResolution = 2
 nothing #hide
 # looks as follows using [`renderAsymptote`](@ref) with the [`asyExportS2Signals`](@ref) export
@@ -80,7 +80,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
 T = [0:0.1:1.0...]
 nothing #hide
 # namely
-Z = geodesic(M,x,y,T)
+Z = shortest_geodesic(M,x,y,T)
 nothing #hide
 # the geodesic moves as
 ηx = jacobiField.(Ref(M), Ref(x), Ref(y), T, Ref(ξx) )

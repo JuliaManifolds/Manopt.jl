@@ -15,7 +15,7 @@ E(u,v) =
 ```
 """
 function costIntrICTV12(M::mT, f, u, v, α, β) where {mT <: Manifold}
-    return 1/2*distance(M, geodesic(M, u, v, 0.5), f)^2
+    return 1/2*distance(M, shortest_geodesic(M, u, v, 0.5), f)^2
       + α * β * costTV(M, u)
       + α * (1-β) * costTV2(M, v)
 end
@@ -84,7 +84,7 @@ E(x_1,x_2) = d_{\mathcal M}^p(x_1,x_2), \quad x_1,x_2 ∈ \mathcal M
 
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::MT, x::Tuple{T}, p::Int=1) where {MT <: Manifold, T}
+function costTV(M::MT, x::Tuple{T,T}, p::Int=1) where {MT <: Manifold, T}
   return distance(M,x[1],x[2])^p
 end
 @doc raw"""
@@ -106,26 +106,27 @@ E^q(x) = \sum_{i ∈ \mathcal G}
 # See also
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::PowerManifold{MT,Type{S}}, x, p=1, q=1) where {MT,S}
-  R = CartesianIndices([S.parameters...])
-  d = length([S.parameters...])
-  maxInd = last(R)
-  cost = fill(0.,M.powerSize)
-  for k in 1:d # for all directions
-    ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-    for i in R # iterate over all pixel
-      j = i+ek # compute neighbor
-      if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-        cost[i] += costTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
-      end
+function costTV(M::PowerManifold{MT,T}, x, p=1, q=1) where {MT <: Manifold, T}
+    power_size = [T.parameters...]
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    maxInd = last(R)
+    cost = fill(0.,Tuple(power_size))
+    for k in 1:d # for all directions
+        ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+        for i in R # iterate over all pixel
+            j = i+ek # compute neighbor
+            if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
+                cost[i] += costTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
+            end
+        end
     end
-  end
-  cost = (cost).^(1/p)
-  if q > 0
-    return sum(cost.^q)^(1/q)
-  else
-    return cost
-  end
+    cost = (cost).^(1/p)
+    if q > 0
+        return sum(cost.^q)^(1/q)
+    else
+        return cost
+    end
 end
 @doc raw"""
     costTV2(M,(x1,x2,x3) [,p=1])

@@ -90,14 +90,15 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 # Ouput
 * ξ – resulting tangent vector in $T_x\mathcal M$.
 """
-function gradTV(M::PowerManifold{N,Tuple{S}},x,p::Int=1) where {N <: Manifold, S}
-  R = CartesianIndices([S.parameters...])
-  d = length([S.parameters...])
-  maxInd = last(R)
-  ξ = zero_tangent_vector(M,x)
-  c = costTV(M,x,p,0)
-  for i in R # iterate over all pixel
-    di = 0.
+function gradTV(M::PowerManifold{N,T,TPR},x,p::Int=1) where {N <: Manifold, T,TPR}
+    power_size = [T.parameters...]
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    maxInd = last(R)
+    X = zero_tangent_vector(M,x)
+    c = costTV(M,x,p,0)
+    for i in R # iterate over all pixel
+        di = 0.
     for k in 1:d # for all direction combinations
       ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
       j = i+ek # compute neighbor
@@ -107,12 +108,12 @@ function gradTV(M::PowerManifold{N,Tuple{S}},x,p::Int=1) where {N <: Manifold, S
         else
           g = gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
         end
-        ξ[i] += g[1]
-        ξ[j] += g[2]
+        X[i] += g[1]
+        X[j] += g[2]
       end
     end # directions
   end # i in R
-  return ξ
+  return X
 end
 
 @doc raw"""
@@ -136,31 +137,32 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `ξ` – resulting tangent vector in $T_x\mathcal M$ representing the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function forwardLogs(M::PowerManifold, x)
-  sX = size(x)
-  R = CartesianIndices(sX)
-  d = length(sX)
-  maxInd = [last(R).I...] # maxInd as Array
-  if d > 1
-    d2 = fill(1,d+1)
-    d2[d+1] = d
-  else
-    d2 = 1
-  end
-  N = PowerManifold(M.manifold, prod(sX)*d)
-  xT = repeat(x,inner=d2)
-  ξ = zero_tangent_vector(N,xT)
-  for i in R # iterate over all pixel
-    for k in 1:d # for all direction combinations
-      I = [i.I...] # array of index
-      J = I .+ 1 .* (1:d .== k) #i + e_k is j
-      if all( J .<= maxInd ) # is this neighbor in range?
-        j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-        ξ[i,k] = log(M.manifold,x[i],x[j]) # Compute log and store in kth entry
-      end
-    end # directions
-  end # i in R
-  return ξ
+function forwardLogs(M::PowerManifold{MT,T,TPR}, x) where {MT <: Manifold, T, TPR}
+    power_size = [T.parameters...]
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    sX = size(x)
+    maxInd = [last(R).I...] # maxInd as Array
+    if d > 1
+        d2 = fill(1,d+1)
+        d2[d+1] = d
+    else
+        d2 = 1
+    end
+    N = PowerManifold(M.manifold, prod(sX)*d)
+    xT = repeat(x,inner=d2)
+    ξ = zero_tangent_vector(N,xT)
+    for i in R # iterate over all pixel
+        for k in 1:d # for all direction combinations
+            I = [i.I...] # array of index
+            J = I .+ 1 .* (1:d .== k) #i + e_k is j
+            if all( J .<= maxInd ) # is this neighbor in range?
+                j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+                ξ[i,k] = log(M.manifold,x[i],x[j]) # Compute log and store in kth entry
+            end
+        end # directions
+    end # i in R
+    return ξ
 end
 
 @doc raw"""
@@ -208,29 +210,30 @@ computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function gradTV2(M::PowerManifold{N,Type{S}}, x, p::Int=1) where {N <: Manifold, S<:Tuple}
-  R = CartesianIndices([S.parameters...])
-  d = length([S.parameters...])
-  minInd, maxInd = first(R), last(R)
-  ξ = zero_tangent_vector(M,x)
-  c = costTV2(M,x,p,false)
-  for i in R # iterate over all pixel
-    di = 0.
-    for k in 1:d # for all direction combinations (TODO)
-      ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-      jF = i+ek # compute forward neighbor
-      jB = i-ek # compute backward neighbor
-      if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
-        if p != 1
-          g = (c[i] == 0 ? 1 : 1/c[i]) .* gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
-        else
-          g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
-        end
-        ξ[jB] += g[1]
-        ξ[i] += g[2]
-        ξ[jF] += g[3]
-      end
-    end # directions
-  end # i in R
-  return ξ
+function gradTV2(M::PowerManifold{N,T,TPR}, x, p::Int=1) where {N <: Manifold, T, TPR}
+    power_size = [T.parameters...]
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    minInd, maxInd = first(R), last(R)
+    ξ = zero_tangent_vector(M,x)
+    c = costTV2(M,x,p,false)
+    for i in R # iterate over all pixel
+        di = 0.
+        for k in 1:d # for all direction combinations (TODO)
+            ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+            jF = i+ek # compute forward neighbor
+            jB = i-ek # compute backward neighbor
+            if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
+                if p != 1
+                    g = (c[i] == 0 ? 1 : 1/c[i]) .* gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
+                else
+                    g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
+                end
+                ξ[jB] += g[1]
+                ξ[i] += g[2]
+                ξ[jF] += g[3]
+            end
+        end # directions
+    end # i in R
+    return ξ
 end
