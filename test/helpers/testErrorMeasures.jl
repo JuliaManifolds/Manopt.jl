@@ -1,12 +1,13 @@
 @testset "Manopt.jl Error Measures" begin
     M = Sphere(2)
-    N = PowerManifold(M,(2,))
+    N = PowerManifold(M, 2)
     using Random: seed!
     seed!(42)
-    w = rand(M)
-    x = rand(M)
-    y = rand(M)
-    z = rand(M)
+    d = Manifolds.uniform_distribution(M,[1.0,0.0,0.0])
+    w = rand(d)
+    x = rand(d)
+    y = rand(d)
+    z = rand(d)
     a = [w,x]
     b = [y,z]
     @test meanSquaredError(M,x,y) == distance(M,x,y)^2

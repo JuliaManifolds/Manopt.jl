@@ -84,6 +84,9 @@ module Manopt
 
     rand(::Manifold) = error("Not yet implemented.")
 
+    relfect(M::Manifold, f::Function, x) = reflect(M::Manifold, f(x), x)
+    relfect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
+
     include("plans/plan.jl")
     # Functions
     include("functions/adjointDifferentials.jl")

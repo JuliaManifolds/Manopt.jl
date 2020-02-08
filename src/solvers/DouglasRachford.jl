@@ -48,7 +48,7 @@ OR
 function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, x;
     λ::Function = (iter) -> 1.0,
     α::Function = (iter) -> 0.9,
-    R = reflection,
+    R = reflect,
     parallel::Int = 0,
     stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenChangeLess(10.0^-5)),
     returnOptions=false,

@@ -3,9 +3,7 @@
     seed!(42);
     A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
-    prod = [Grassmannian(2, 3), Grassmannian(2, 3)]
-
-    M = Product(prod)
+    M = Grassmann(2, 3) × Grassmann(2, 3)
 
     function cost(X::ProdPoint{Array{GrPoint{Float64},1}})
         return -0.5 * norm(transpose(X[1]) * A * X[2])^2

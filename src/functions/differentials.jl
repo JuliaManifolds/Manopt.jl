@@ -94,7 +94,6 @@ function DforwardLogs(M::PowerManifold{MT,T,TPR}, p, X) where {MT <: Manifold, T
                 # this is neighbor in range,
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
                 # collects two, namely in kth direction since xi appears as base and arg
-                print(i," ",k," ",j," ", DqLog(M.manifold,p[i],p[j],X[i]) + DyLog(M.manifold,p[i],p[j],X[j]) )
                 Y[i,k] = DqLog(M.manifold,p[i],p[j],X[i]) + DyLog(M.manifold,p[i],p[j],X[j])
             end
         end # directions

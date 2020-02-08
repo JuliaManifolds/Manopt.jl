@@ -91,7 +91,7 @@ to $[-\pi,\pi)$.
 function artificialS1Signal(pts::Integer=500)
   t = range(0., 1., length=pts)
   f = artificialS1Signal.(t)
-  return sym_rem(f)
+  return sym_rem.(f)
 end
 @doc raw"""
     artificialS1Signal(x)
@@ -104,7 +104,7 @@ of phase-valued data introduces in Sec. 5.1 of
 
 for values outside that intervall, this Signal is `missing`.
 """
-function artificialS1Signal(x::Number)
+function artificialS1Signal(x::Real)
     if x < 0
         y = missing
     elseif x <= 1/4
@@ -137,7 +137,7 @@ generate an artificial image of data on the 2 sphere,
 """
 function artificialS2WhirlImage(pts::Int=64)
   M = Sphere(2)
-  N = PowerManifold(M, (pts,pts) )
+  N = PowerManifold(M, pts, pts)
   # background - default rotations
   img = artificialS2RotationsImage(pts, (0.5,0.5) )
   # Set WhirlPatches
@@ -173,7 +173,7 @@ creates an image with a rotation on each axis as a parametrization.
 """
 function artificialS2RotationsImage(pts::Int=64,rotations::Tuple{Float64,Float64}=(.5,.5))
   M = Sphere(2)
-  N = PowerManifold(M, (pts,pts) )
+  N = PowerManifold(M, pts, pts)
   img = Matrix(undef,pts,pts)
   north = [1.,0.,0.]
   Rxy(a) = [cos(a) -sin(a) 0.; sin(a) cos(a) 0.; 0. 0. 1]
@@ -199,16 +199,12 @@ create a whirl within the `pts`$\times$`pts` patch of
   pole.
 """
 function artificialS2WhirlPatch(pts::Int=5)
-  M = Sphere(2)
-  N = PowerManifold(M, (pts,pts) )
-  patch = fill([0.,0.,-1.]),pts,pts
+  patch = fill( [0.,0.,-1.], pts, pts)
   scaleFactor = sqrt( (pts-1)^2 / 2 )*3/π;
   for i=1:pts
     for j=1:pts
       if i!=(pts+1)/2 || j != (pts+1)/2
-        # direction within the patch⁠
         α = atan( (j-(pts+1)/2), (i-(pts+1)/2) );
-        # scaled length
         β = sqrt( (j-(pts+1)/2)^2 + (i-(pts+1)/2)^2 )/scaleFactor;
         patch[i,j] = [sin(α)*sin(π/2-β), -cos(α)*sin(π/2-β), cos(π/2-β)]
       end
@@ -227,7 +223,7 @@ function artificialSPDImage(pts::Int=64, stepsize = 1.5)
   v1 = abs.(2*pi .* r .- pi)
   v2 = pi .* r;
   v3 = range(0, stop = 3*(1-1/pts), length = 2*pts);
-  data = fill( SPDPoint( Matrix{Float64}(I,3,3) ), pts, pts )
+  data = fill( Matrix{Float64}(I,3,3), pts, pts )
   for row = 1:pts
     for col = 1:pts
       A = [cos(v1[col]) -sin(v1[col]) 0. ; sin(v1[col]) cos(v1[col]) 0. ; 0. 0. 1.]
@@ -238,7 +234,7 @@ function artificialSPDImage(pts::Int=64, stepsize = 1.5)
       scale = [ 1 + stepsize/2 * ( (row + col) > pts ? 1 : 0)
                 1 + v3[row + col] - stepsize * ( col > pts/2 ? 1 : 0)
                 4 - v3[row + col] + stepsize * ( row > pts/2 ? 1 : 0) ]
-      data[row, col] = SPDPoint( A * B * C * Diagonal(scale) * C' * B' * A' )
+      data[row, col] = A * B * C * Diagonal(scale) * C' * B' * A'
     end
   end
   return data
@@ -250,20 +246,20 @@ create an artificial image of symmetric positive definite matrices of size
 `pts`$\times$`pts` pixel with right hand side `fraction` is moved upwards.
 """
 function artificialSPDImage2(pts=64, fraction = 0.66)
-  Zl = SPDPoint( 4. * Matrix{Float64}(I,3,3) )
+  Zl = 4. * Matrix{Float64}(I,3,3)
   # create a first matrix
   α = 2. * π/3;
   β = π/3;
   B = [  1. 0. 0. ; 0. cos(β) -sin(β) ; 0. sin(β) cos(β)  ]
   A = [  cos(α) -sin(α) 0. ; sin(α) cos(α) 0. ; 0. 0. 1.  ]
-  Zo = SPDPoint( A * B * Diagonal( [2., 4., 8.] ) * B' * A' )
+  Zo = A * B * Diagonal( [2., 4., 8.] ) * B' * A'
   # create a second matrix
   α = -4. * π/3;
   β = -π/3;
   B = [  1. 0. 0. ; 0. cos(β) -sin(β) ; 0. sin(β) cos(β)  ]
   A = [  cos(α) -sin(α) 0. ; sin(α) cos(α) 0. ; 0. 0. 1.  ]
-  Zt = SPDPoint( A * B * Diagonal( [ 8. / sqrt(2.), 8., sqrt(2.) ] ) * B' * A' )
-  data = fill( SPDPoint( Matrix{Float64}(I,3,3) ), pts, pts )
+  Zt = A * B * Diagonal( [ 8. / sqrt(2.), 8., sqrt(2.) ] ) * B' * A'
+  data = fill( Matrix{Float64}(I,3,3) , pts, pts )
   M = SymmetricPositiveDefinite(3)
   for row = 1 : pts
     for col = 1 : pts
