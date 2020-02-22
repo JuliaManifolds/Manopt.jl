@@ -82,10 +82,10 @@ module Manopt
     opposite(::Circle{ℝ},x) = sym_rem(x+π)
     opposite(::Circle{ℂ},x) = -x
 
-    rand(::Manifold) = error("Not yet implemented.")
+    rand(::Manifold) = error("random not yet implemented.")
 
-    relfect(M::Manifold, f::Function, x) = reflect(M::Manifold, f(x), x)
-    relfect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
+    reflect(M::Manifold, pr::Function, x) = reflect(M::Manifold, pr(x), x)
+    reflect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
 
     include("plans/plan.jl")
     # Functions

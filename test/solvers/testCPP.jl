@@ -1,7 +1,7 @@
 @testset "Manopt Cyclic Proximal Point" begin
 using Dates
 n = 100
-N = PowerManifold(Circle(),(n,))
+N = PowerManifold(Circle(),n)
 f = artificialS1Signal(n)
 F = x -> costL2TV(N,f,0.5,x)
 proxes = [ (λ,x) -> proxDistance(N,λ,f,x), (λ,x) -> proxTV(N,0.5*λ,x) ]

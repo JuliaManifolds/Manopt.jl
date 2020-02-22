@@ -20,7 +20,7 @@
   @test abs(x-sum(r)/length(r)) ≈ 0 atol=5*10.0^(-14)
   # Test Fallbacks -> we can't do steps with the wrong combination
   p = SubGradientProblem(M,F,∇F)
-  o = GradientDescentOptions(f[1],stopAfterIteration(20),ConstantStepsize(1.))
+  o = GradientDescentOptions(M, f[1],stopAfterIteration(20),ConstantStepsize(1.))
   @test_throws ErrorException initializeSolver!(p,o)
   @test_throws ErrorException doSolverStep!(p,o,1)
 end

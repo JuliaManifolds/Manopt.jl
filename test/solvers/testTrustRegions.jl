@@ -5,7 +5,7 @@
 
     M = Grassmann(2, 3) × Grassmann(2, 3)
 
-    function cost(X::ProdPoint{Array{GrPoint{Float64},1}})
+    function cost(X::Array{Matrix{Float64},1})
         return -0.5 * norm(transpose(X[1]) * A * X[2])^2
     end
 
@@ -17,16 +17,16 @@
         return [ -AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V) ];
     end
 
-    function rgrad(M::Product, X::ProdPoint{Array{GrPoint{Float64},1}})
+    function rgrad(M::ProductManifold, X::Array{Matrix{Float64},1})
         eG = egrad( X )
         return ProdTVector( project_tangent.(M.manifolds, X, eG) )
     end
 
-    function e2rHess(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+    function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
         pxHess = project(M,x,Hess)
         xtGrad = x'*eGrad
         ξxtGrad = ξ*xtGrad
-        return GrTVector(pxHess - ξxtGrad)
+        return pxHess - ξxtGrad
     end
 
     function eHess(X::Array{Matrix{Float64},1}, H::Array{Matrix{Float64},1})
@@ -42,10 +42,10 @@
                  -(AtUdot*transpose(AtU)*V + AtU*transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot)
             ]
     end
-    function rhess(M::Product, X::ProdPoint{Array{GrPoint{Float64},1}}, H::ProdTVector{Array{GrTVector{Float64},1}})
+    function rhess(M::ProductManifold, X::Array{Matrix{Float64},1}, H::Array{Matrix{Float64},1})
         eG = egrad( X )
         eH = eHess( X, H )
-        return ProdTVector( e2rHess.(M.manifolds, X, H, eG, eH) )
+        return e2rHess.(M.manifolds, X, H, eG, eH)
     end
 
     x = rand(M)
