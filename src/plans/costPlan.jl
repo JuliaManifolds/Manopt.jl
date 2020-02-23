@@ -73,9 +73,9 @@ mutable struct NelderMeadOptions{T} <: Options
         ρ=1/2,
         σ = 1/2
     ) where {MT <: Manifold }
-        new{typeof(rand(M))}(
-            [rand(M) for i=1:(manifold_dimension(M)+1) ],
-            stop, α, γ, ρ, σ, rand(M),[] )
+        new{typeof(random_point(M))}(
+            [random_point(M) for i=1:(manifold_dimension(M)+1) ],
+            stop, α, γ, ρ, σ, random_point(M),[] )
     end
     function NelderMeadOptions(p::Array{T,1},
         stop::StoppingCriterion = stopAfterIteration(2000);

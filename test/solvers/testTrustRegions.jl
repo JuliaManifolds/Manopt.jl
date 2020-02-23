@@ -3,7 +3,7 @@
     seed!(42);
     A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
-    M = Grassmann(2, 3) × Grassmann(2, 3)
+    M = Grassmann(3,2) × Grassmann(3,2)
 
     function cost(X::Array{Matrix{Float64},1})
         return -0.5 * norm(transpose(X[1]) * A * X[2])^2
@@ -19,7 +19,7 @@
 
     function rgrad(M::ProductManifold, X::Array{Matrix{Float64},1})
         eG = egrad( X )
-        return ProdTVector( project_tangent.(M.manifolds, X, eG) )
+        return project_tangent.(M.manifolds, X, eG)
     end
 
     function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
@@ -48,7 +48,7 @@
         return e2rHess.(M.manifolds, X, H, eG, eH)
     end
 
-    x = rand(M)
+    x = random_point(M)
 
     @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
     @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = -0.1)
@@ -74,7 +74,7 @@
     )
     @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-10)
 
-    ξ = randomTVector(M,x)
+    ξ = random_tangent(M,x)
     @test_throws ErrorException getHessian(SubGradientProblem(M,cost,rgrad),x, ξ)
 
     # Test the random step trust region

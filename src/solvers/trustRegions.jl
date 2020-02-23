@@ -74,7 +74,7 @@ function trustRegions(
     ∇F::Function,
     x,
     H::Union{Function,Missing};
-    retraction::Function = retraction,
+    retraction::Function = exp,
     preconditioner::Function = (M,x,ξ) -> ξ,
     stoppingCriterion::StoppingCriterion = stopWhenAny(
         stopAfterIteration(1000),
@@ -124,7 +124,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 eta = zeroTVector(p.M, o.x)
         else
                 # Random vector in T_x M (this has to be very small)
-                eta = 10.0^(-6)*randomTVector(p.M, o.x)
+                eta = 10.0^(-6)*random_tangent(p.M, o.x)
                 while norm(p.M, o.x, eta) > o.Δ
                         # Must be inside trust-region
                         eta = sqrt(sqrt(eps(Float64)))*eta

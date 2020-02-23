@@ -67,7 +67,7 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
         prox2 = (λ,x) -> fill(mean(M.manifold,x),parallel)
     end
     if parallel > 0
-        M = PowerManifold(M,parallel)
+        M = PowerManifold(M, NestedPowerRepresentation(), parallel)
         x = [copy(x) for i=1:parallel]
         nF = x -> F(x[1])
     else
@@ -88,7 +88,7 @@ function initializeSolver!(p::ProximalProblem,o::DouglasRachfordOptions)
 end
 function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
     pP = getProximalMap(p,o.λ(iter),o.s,1)
-    snew = o.R(p.M,pP, o.s);
+    snew = o.R(p.M, pP, o.s);
     o.x = getProximalMap(p,o.λ(iter),snew,2)
     snew = o.R(p.M,o.x,snew)
     # relaxation

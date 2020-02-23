@@ -6,6 +6,8 @@ module Manopt
     using Markdown
     import Random: rand
     import ManifoldsBase:
+        ×,
+        ^,
         AbstractVectorTransportMethod,
         ParallelTransport,
         Manifold,
@@ -13,21 +15,34 @@ module Manopt
         exp,
         exp!,
         log,
+        log!,
         injectivity_radius,
         inner,
         geodesic,
+        manifold_dimension,
         norm,
+        project_point,
+        project_point!,
+        project_tangent,
+        project_tangent!,
+        retract,
+        retract!,
         shortest_geodesic,
         vector_transport_to,
         vector_transport_to!,
         zero_tangent_vector,
         zero_tangent_vector!
     import Manifolds:
+        ℝ, ℂ,
         _read,
         _write,
-        Sphere,
-        Euclidean,
         Circle,
+        Euclidean,
+        Hyperbolic,
+        Grassmann,
+        Rotations,
+        Sphere,
+        Stiefel,
         SymmetricPositiveDefinite,
         AbstractPowerManifold,
         PowerManifold,
@@ -54,7 +69,7 @@ module Manopt
     import Random:
         randperm
 
-    using LinearAlgebra: Symmetric, eigen, svd
+    using LinearAlgebra: Symmetric, eigen, svd, qr
     """
         mid_point(M, p, q, x)
 
@@ -81,8 +96,6 @@ module Manopt
     opposite(::Sphere,x) = -x
     opposite(::Circle{ℝ},x) = sym_rem(x+π)
     opposite(::Circle{ℂ},x) = -x
-
-    rand(::Manifold) = error("random not yet implemented.")
 
     reflect(M::Manifold, pr::Function, x) = reflect(M::Manifold, pr(x), x)
     reflect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
@@ -112,6 +125,7 @@ module Manopt
     include("helpers/exports/Asymptote.jl")
     include("data/artificialDataFunctions.jl")
 
+    include("random.jl")
 export
     ×, ^, ℝ, ℂ
 export
@@ -130,7 +144,14 @@ export
     getCost,
     getProximalMap,
     log,
+    manifold_dimension,
     mid_point,
+    project_point,
+    project_point!,
+    project_tangent,
+    project_tangent!,
+    random_point,
+    random_tangent,
     shortest_geodesic,
     sym_rem,
     vector_transport_to,
@@ -148,7 +169,12 @@ export
 export
     Circle,
     Euclidean,
+    Hyperbolic,
+    Grassmann,
+    Rotations,
     Sphere,
-    PowerManifold,
-    PorductManifold
+    Stiefel,
+    SymmetricPositiveDefinite,
+    ProductManifold,
+    PowerManifold
 end

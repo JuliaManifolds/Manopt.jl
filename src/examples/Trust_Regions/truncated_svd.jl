@@ -75,7 +75,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         return e2rHess.(M.manifolds, X, H, eG, eH)
     end
 
-    x = rand(M)
+    x = random_point(M)
     print("x = $x\n")
     X = trustRegions(M, cost, rgrad, x, rhess;
         Δ_bar=4*sqrt(2*p),

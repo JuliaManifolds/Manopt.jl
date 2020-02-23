@@ -18,7 +18,7 @@ and
 
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `population` – (n+1 `rand(M)`) an initial population of $n+1$ points, where $n$
+* `population` – (n+1 `random_point(M)`) an initial population of $n+1$ points, where $n$
   is the dimension of the manifold `M`.
 
 # Optional
@@ -39,7 +39,7 @@ and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 """
 function NelderMead(M::MT,
     F::Function,
-    population::Array{T,1};
+    population = [random_point(M) for i=1:(manifoldDimension(M)+1) ];
     stoppingCriterion::StoppingCriterion = stopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
     returnOptions=false,
