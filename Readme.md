@@ -3,9 +3,9 @@
 Optimization on Manifolds.
 
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://kellertuer.github.io/Manopt.jl/stable)
-[![Build Status](https://travis-ci.com/kellertuer/Manopt.jl.svg?branch=master)](https://travis-ci.com/kellertuer/Manopt.jl)
-[![codecov](https://codecov.io/gh/kellertuer/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/kellertuer/Manopt.jl)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://manoptjl.org/stable)
+[![Build Status](https://travis-ci.com/JuliaManifolds/Manopt.jl.svg?branch=master)](https://travis-ci.com/JuliaManifolds/Manopt.jl)
+[![codecov](https://codecov.io/gh/JuliaManifolds/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaManifolds/Manopt.jl)
 
 For a function f that maps from a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold)
 ℳ onto the real line, we aim to solve
@@ -25,8 +25,7 @@ In Julia you can get started by just typing
 ] add Manopt
 ```
 
-then checkout the [Getting Started: Optimize!](https://kellertuer.github.io/Manopt.jl/stable/tutorials/MeanAndMedian/) tutorial or the 
-[examples](https://github.com/kellertuer/Manopt.jl/tree/master/src/examples)
+then checkout the [Getting Started: Optimize!]((https://manoptjl.org/stable/tutorials/MeanAndMedian/) tutorial or the
+[examples](https://github.com/JuliaManifolds/Manopt.jl/tree/master/src/examples)
 in this repository, where you might want to adapt the `resultsFolder` string.
-You can also read the [documentation](https://kellertuer.github.io/Manopt.jl/stable).
-
+You can also read the [documentation](https://manoptjl.org/stable).

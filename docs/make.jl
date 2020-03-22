@@ -74,6 +74,6 @@ makedocs(
     ]
 )
 deploydocs(
-    repo   = "github.com/kellertuer/Manopt.jl",
+    repo   = "github.com/JuliaManifolds/Manopt.jl",
    # devbranch = "development"
 )
