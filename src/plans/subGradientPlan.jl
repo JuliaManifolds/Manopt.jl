@@ -68,11 +68,11 @@ mutable struct SubGradientMethodOptions{P,T} <: Options where {P,T}
     end
 end
 function SubGradientMethodOptions(
-    M::TM,
+    M::Manifold,
     x::P,
     sC::StoppingCriterion,
     s::Stepsize,
     retr!::Function=exp!
-    ) where {TM <: Manifold, P}
+) where {P}
     return SubGradientMethodOptions{P}(M, x, sC, s, retr!)
 end
