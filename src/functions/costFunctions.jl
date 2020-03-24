@@ -171,8 +171,6 @@ nearest to $x_i$.
 [`gradTV2`](@ref), [`proxTV2`](@ref)
 """
 function costTV2(M::PowerManifold{N,T}, x, p::Int=1, Sum::Bool=true) where {N <: Manifold, T}
-  print(T)
-  print(T.parameters)
   Tt = Tuple(T.parameters)
   R = CartesianIndices( Tt )
   d = length(Tt)
