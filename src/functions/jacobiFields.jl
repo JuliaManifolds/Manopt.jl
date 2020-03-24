@@ -175,7 +175,7 @@ function adjointJacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=�
         )
     end
 end
-function adjointJacobiField(M::MT, p, q, t, X, β::Function=βDpGeo) where {MT<:Manifold}
+function adjointJacobiField(M::Manifold, p, q, t, X, β::Function=βDpGeo)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)

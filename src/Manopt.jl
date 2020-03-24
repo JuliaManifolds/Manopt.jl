@@ -59,7 +59,7 @@ module Manopt
         SymmetricPositiveDefinite,
         Stiefel,
         Sphere
-    using Manifolds:
+    using Manifolds: # Wishlist for Base
         NestedPowerRepresentation,
         mean,
         median,

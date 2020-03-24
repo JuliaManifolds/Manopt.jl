@@ -33,18 +33,18 @@ and the ones that are passed to [`decorateOptions`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `returnOptions`)
 """
-function subGradientMethod(M::mT,
+function subGradientMethod(M::Manifold,
         F::Function,
         ∂F::Function,
         x;
-        retraction::Function = exp,
+        retraction::Function = exp!,
         stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M,x)/5),
         stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
         returnOptions = false,
         kwargs... #especially may contain debug
-    ) where {mT <: Manifold}
+    )
     p = SubGradientProblem(M,F,∂F)
-    o = SubGradientMethodOptions(x,stoppingCriterion, stepsize, retraction)
+    o = SubGradientMethodOptions(M,x,stoppingCriterion, stepsize, retraction)
     o = decorateOptions(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions
@@ -66,7 +66,3 @@ function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     end
 end
 getSolverResult(o::SubGradientMethodOptions) = o.xOptimal
-
-#
-# TODO specific debugs and records.
-#
