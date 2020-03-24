@@ -1,15 +1,3 @@
-#
-# This file provides a systematic way to state stopping criteria employing functors
-#
-using Dates: Period, Nanosecond, value
-export stopAfterIteration, stopWhenChangeLess, stopWhenGradientNormLess
-export stopWhenCostLess, stopAfter
-export stopWhenAll, stopWhenAny
-export getActiveStoppingCriteria
-export getStoppingCriteriaArray
-export getReason
-# defaults
-
 @doc raw"""
     getReason(c)
 

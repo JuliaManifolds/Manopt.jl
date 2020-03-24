@@ -6,7 +6,7 @@
   M = Sphere(2)
   N = PowerManifold(M, NestedPowerRepresentation(), 2)
   @test_throws ErrorException proxDistance(M, 1., p, q, 3)
-  @test distance(M, proxDistance(M, distance(M,p,q)/2, p,q,1), geodesic(M, p, q, 0.5)) ≈ 0
+  @test distance(M, proxDistance(M, distance(M,p,q)/2, p,q,1), shortest_geodesic(M, p, q, 0.5)) ≈ 0
   (r,s) = proxTV(M,π/4,(p,q))
   @test norm( r - s ) < eps(Float64)
   # i.e. they are moved together

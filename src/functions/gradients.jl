@@ -205,7 +205,7 @@ computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function gradTV2(M::PowerManifold{N,T,TPR}, x, p::Int=1) where {N <: Manifold, T, TPR}
+function gradTV2(M::PowerManifold{N,T,NestedPowerRepresentation}, x, p::Int=1) where {N <: Manifold, T}
     power_size = [T.parameters...]
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)

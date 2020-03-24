@@ -8,6 +8,7 @@ module Manopt
     using SimpleTraits
     using Markdown
     using LinearAlgebra
+    using Dates: Period, Nanosecond, value
     import Random:
         rand,
         randperm
@@ -72,10 +73,9 @@ module Manopt
 
     Compute the mid point between p and q. If there is more than one mid point
     of (not neccessarily miniizing) geodesics (i.e. on the sphere), the one nearest
-    to z is returned.
+    to x is returned.
     """
     mid_point(M::MT, p, q, x) where {MT <: Manifold} = mid_point(M, p, q)
-
     mid_point!(M::MT, y, p, q, x) where {MT <: Manifold} = mid_point!(M, y, p, q)
 
     """
@@ -139,6 +139,9 @@ export meanSquaredError, meanAverageError
 export proxDistance, proxTV, proxParallelTV, proxTV2, proxCollaborativeTV
 export random_point, random_tangent
 export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, stopWhenCurvatureIsNegative, stopWhenTrustRegionIsExceeded
+export stopAfterIteration, stopWhenChangeLess, stopWhenGradientNormLess, stopWhenCostLess
+export stopAfter, stopWhenAll, stopWhenAny
+export getActiveStoppingCriteria, getStoppingCriteriaArray, getReason
 
 export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
 export DebugChange, DebugIterate, DebugIteration, DebugDivider

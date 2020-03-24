@@ -1,6 +1,6 @@
 @testset "gradient TV." begin
     M = Circle()
-    N = PowerManifold(M, 4)
+    N = PowerManifold(M, NestedPowerRepresentation(), 4)
     x = [0.1,0.2,0.3,0.5]
     tvTestξ =  [-1.0,0.,0.,1.]
     @test gradTV(N,x) == tvTestξ
@@ -14,7 +14,7 @@
     @test gradTV2(N2,x2) == zeros(3)
     @test gradTV2(N2,x2,2) == zeros(3)
     @test norm(N, x, gradIntrICTV12(N,x,x,x,1.,1.)[1] - [-1., 0., 0., 1.] ) ≈ 0
-    @test norm(N, x, gradIntrICTV12(N,x,x,x,1.,1.)[2] - zero_tangent_vector(N,x)) ≈ 0
+    @test norm(N, x, gradIntrICTV12(N,x,x,x,1.,1.)[2]) ≈ 0
     @test gradTV(M, (0., 0.),2) == (0., 0.)
     # 2d forward forwardLogs
     N3 = PowerManifold(M,2,2)

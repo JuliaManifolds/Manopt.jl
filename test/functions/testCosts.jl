@@ -6,7 +6,7 @@
     x[2,1] = [0., 1., 0.]
 
     @test costIntrICTV12(N,f,f,f,0.,0.) == 0.
-    @test costIntrICTV12(N,f,x,x,0.,0.) == 1/2*distance(N, geodesic(N, x, f, 0.5),f)^2
+    @test costIntrICTV12(N,f,x,x,0.,0.) == 1/2*distance(N, x, f)^2
     @test costIntrICTV12(N, x, x, x, 2., .5) ≈ costTV2(N,x) + costTV(N,x)
     @test costIntrICTV12(N, x, x, x, 1., 0.) ≈ costTV2(N,x)
     @test costIntrICTV12(N, x, x, x, 1., 1.) ≈ costTV(N,x)
