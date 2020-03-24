@@ -1,4 +1,5 @@
 # Functions
+
 There are several functions required within optimization, most prominently
 [costFunctions](@ref CostFunctions) and [gradients](@ref GradientFunctions). This package includes
 several cost functions and corresponding gradients, but also corresponding

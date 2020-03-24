@@ -1,4 +1,3 @@
-export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2,costIntrICTV12
 
 @doc raw"""
     costIntrICTV12(M, f, u, v, α, β)

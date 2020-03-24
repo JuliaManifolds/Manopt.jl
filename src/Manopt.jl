@@ -2,8 +2,12 @@
 `Manopt.jl` – Optimization on Manifolds in Julia.
 """
 module Manopt
+    using Colors
+    using ColorSchemes
+    using ColorTypes
     using SimpleTraits
     using Markdown
+    using LinearAlgebra
     import Random: rand
     import ManifoldsBase:
         ×,
@@ -126,55 +130,20 @@ module Manopt
     include("data/artificialDataFunctions.jl")
 
     include("random.jl")
-export
-    ×, ^, ℝ, ℂ
-export
-    AdjDpGeo,
-    AdjDqGeo,
-    AdjDpExp,
-    AdjDpExp,
-    AdjDpLog,
-    AdjDqLog,
-    AdjDforwardLogs,
-    distance,
-    exp,
-    geodesic,
-    getGradient,
-    getSubGradient,
-    getCost,
-    getProximalMap,
-    log,
-    manifold_dimension,
-    mid_point,
-    project_point,
-    project_point!,
-    project_tangent,
-    project_tangent!,
-    random_point,
-    random_tangent,
-    shortest_geodesic,
-    sym_rem,
-    vector_transport_to,
-    vector_transport_to!,
-    zero_tangent_vector,
-    zero_tangent_vector!
-export
-    Problem,
-    SubGradientProblem,
-    GradientProblem,
-    HessianProblem
+export ×, ^, ℝ, ℂ
+export βDxg, βDpExp, βDXExp, βDpLog, βDqLog
+export adjointJacobiField
+export AdjDpGeo, AdjDqGeo, AdjDpExp, AdjDpExp, AdjDpLog, AdjDqLog, AdjDforwardLogs
+export asyExportS2Signals, asyExportS2Data, asyExportSPDData
+export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
+export DpGeo, DqGeo, DpExp,DξExp, DqLog, DyLog, DforwardLogs
+export jacobiField
+export gradTV, gradTV2, gradIntrICTV12, forwardLogs, gradDistance
+export getCost, getGradient, getSubGradient, getProximalMap
+export proxDistance, proxTV, proxParallelTV, proxTV2, proxCollaborativeTV
+export random_point, random_tangent
+export Problem, SubGradientProblem, GradientProblem, HessianProblem
 export
     GradientDescentOptions,
     SubGradientMethodOptions
-export
-    Circle,
-    Euclidean,
-    Hyperbolic,
-    Grassmann,
-    Rotations,
-    Sphere,
-    Stiefel,
-    SymmetricPositiveDefinite,
-    ProductManifold,
-    PowerManifold
 end

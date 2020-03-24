@@ -1,14 +1,3 @@
-#
-# Manopt.jl – Proximal maps
-#
-# This file provides several proximal maps on manifolds or on small
-# product manifolds, like M^2
-#
-# ---
-# Manopt.jl - R. Bergmann – 2017-07-06
-
-export proxDistance, proxTV, proxParallelTV, proxTV2, proxCollaborativeTV
-
 @doc raw"""
     y = proxDistance(M,λ,f,x [,p=2])
 

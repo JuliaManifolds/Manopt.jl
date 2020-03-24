@@ -1,8 +1,3 @@
-#
-#
-#
-export gradTV, gradTV2, gradIntrICTV12, forwardLogs
-export gradDistance
 @doc raw"""
     gradDistance(M,y,x[, p=2])
 

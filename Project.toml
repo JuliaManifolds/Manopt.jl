@@ -1,7 +1,7 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
-version = "0.1.1"
+version = "0.2.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -34,7 +34,7 @@ Colors = "0.11.2"
 DataFrames = "0.20.0"
 Images = "0.20.1, 0.21"
 JLD2 = "0.1.11"
-ManifoldsBase = "0.5.0"
+ManifoldsBase = "0.7"
 Plots = "0.28.4, 0.29"
 QuartzImageIO = "0.6.0, 0.7"
 RecipesBase = "0.7.0, 0.8"

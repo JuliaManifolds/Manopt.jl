@@ -1,5 +1,3 @@
-export DpGeo, DqGeo, DpExp,DξExp, DqLog, DyLog
-export DforwardLogs
 @doc raw"""
     DpGeo(M, p, q, t, X)
 computes $D_p g(t;x,y)[\eta]$.

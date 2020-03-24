@@ -1,4 +1,5 @@
 # [Gradients](@id GradientFunctions)
+
 For a function $f\colon\mathcal M\to\mathbb R$
 the Riemannian gradient $\nabla f(x)$ at $x∈\mathcal M$
 is given by the unique tangent vector fulfilling

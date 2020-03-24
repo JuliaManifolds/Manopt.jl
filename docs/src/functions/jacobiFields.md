@@ -23,6 +23,7 @@ Note that in different references some factors might be a little different,
 for example when using unit speed geodesics.
 
 The following weights functions are available
+
 ```@docs
 βDxg
 βDpExp

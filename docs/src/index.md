@@ -31,38 +31,25 @@ many manifolds and algorithms, which can easily be enhanced, for example to
 
 ## Main Features
 
-**1. Functions on Manifolds**
-Several functions are available, implemented on an arbitrary manifold, [cost
-functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions), and
-[gradients](@ref GradientFunctions) as well as [proximal maps](@ref
-proximalMapFunctions), but also several [jacobi Fields](@ref
-JacobiFieldFunctions) and their [adjoints](@ref adjointDifferentialFunctions).
+### Functions on Manifolds
 
-**2. Optimization Algorithms (Solvers)**
-For every optimization algorithm, a [solver](@ref Solvers) is implemented based
-on a [`Problem`](@ref) that describes the problem to solve and its
-[`Options`](@ref) that set up the solver, store interims values. Together they
+Several functions are available, implemented on an arbitrary manifold, [cost functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions), and [gradients](@ref GradientFunctions) as well as [proximal maps](@ref proximalMapFunctions), but also several [jacobi Fields](@ref JacobiFieldFunctions) and their [adjoints](@ref adjointDifferentialFunctions).
+
+### Optimization Algorithms (Solvers)
+
+For every optimization algorithm, a [solver](@ref Solvers) is implemented based on a [`Problem`](@ref) that describes the problem to solve and its [`Options`](@ref) that set up the solver, store interims values. Together they
 form a [plan](@ref planSection).
 
-**3. Visualization**
-To visualize and interpret results, `Manopt.jl` aims to provide both easy plot
-functions as well as [exports](@ref Exports). Furthermore a system to get
-[debug](@ref DebugOptions) during the iterations of an algorithms as well as
-[record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of
-values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the
-[Getting Started: Optimize!](@ref Optimize) tutorial how to easily activate
-this.
+### Visualization
 
-All four parts are accompanied by a documentation that can also be accessed from
-within `Julia REPL` and provides detailed information, e.g. the formula for an
-[exponential or logarithmic map on the manifold of symmetric positive definite matrices](@ref SymmetricPositiveDefiniteManifold) or literature references for an algorithm like [`cyclicProximalPoint`](@ref).
+To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugOptions) during the iterations of an algorithms as well as [record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+[`RecordIterate`](@ref). Take a look at the [Getting Started: Optimize!](@ref Optimize) tutorial how to easily activate this.
+
+All four parts are accompanied by a documentation that can also be accessed from within `Julia REPL` and provides detailed information, e.g. the formula for an [exponential or logarithmic map on the manifold of symmetric positive definite matrices](@ref SymmetricPositiveDefiniteManifold) or literature references for an algorithm like [`cyclicProximalPoint`](@ref).
 
 ## Notation
 
-During this documentation, we refer to a variable with e.g. both `x` and $x$
-depending on whether the context refers to a code fragment or a mathematical
-formula, respectively.
+During this documentation, we refer to a variable with e.g. both `x` and $x$ depending on whether the context refers to a code fragment or a mathematical formula, respectively.
 
 | Symbol | used for
 |:---|:---|

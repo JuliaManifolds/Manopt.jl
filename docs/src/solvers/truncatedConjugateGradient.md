@@ -7,6 +7,7 @@ The aim is to solve the trust-region subproblem
 \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle
 \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
 ```
+
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leq {\Delta}^2
 ```

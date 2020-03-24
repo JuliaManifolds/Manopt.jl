@@ -1,10 +1,3 @@
-#
-#
-# JacobiFields
-#
-#
-export βDxg, βDpExp, βDXExp, βDpLog, βDqLog
-
 @doc raw"""
     βDxg(κ,t,d)
 

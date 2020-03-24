@@ -1,6 +1,3 @@
-using ColorTypes, Colors, ColorSchemes
-import LinearAlgebra: eigen, eigvals, tril
-export asyExportS2Signals, asyExportS2Data, asyExportSPDData
 @doc raw"""
     asyExportS2Signals(filename; points, curves, tVectors, colors, options...)
 Export given `points`, `curves`, and `tVectors` on the sphere $\mathbb S^2$
