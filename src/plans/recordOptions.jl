@@ -26,7 +26,7 @@ called from within [`stopSolver!`](@ref) which returns true afterwards.
 # Fields (assumed by subtypes to exist)
 * `recordedValues` an `Array` of the recorded values.
 """
-abstract type RecordAction <: Action end
+abstract type RecordAction <: AbstractOptionsAction end
 
 @doc raw"""
     RecordOptions <: Options

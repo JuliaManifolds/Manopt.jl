@@ -74,7 +74,7 @@ function artificialS1SlopeSignal(pts::Integer = 500, slope::Float64=4.)
     f[(1/2 .< t) .& (t .<= 2/3)] .= max(f[f .!= 0]...) .- slope * π * 1/2 .+ slope * π * t[(1/2 .< t) .& (t .<= 2/3)]
     f[(2/3 .< t) .& (t .<= 5/6)] .= max(f[f .!= 0]...) .- slope * 2*π * 2/3 .+ slope * 2 * π * t[(2/3 .< t) .& (t .<= 5/6)]
     f[ 5/6 .< t] .= max(f[f .!= 0]...) .- slope * 4 * π * 5/6 .+ slope * 4 * π * t[ 5/6 .< t]
-    return sym_rem.(f)
+    return mod.(f .+ Float64(π), Ref(2*π)) .- Float64(π)
 end
 
 @doc raw"""
@@ -91,7 +91,7 @@ to $[-\pi,\pi)$.
 function artificialS1Signal(pts::Integer=500)
   t = range(0., 1., length=pts)
   f = artificialS1Signal.(t)
-  return sym_rem.(f)
+  return mod.(f .+ Float64(π), Ref(2*π)) .- Float64(π)
 end
 @doc raw"""
     artificialS1Signal(x)
@@ -157,7 +157,7 @@ function artificialS2WhirlImage(pts::Int=64)
     r = [ pC[1] .+ ( -pSH:(pSH+s) ), pC[2] .+ ( -pSH:(pSH+s) ) ]
     patch = artificialS2WhirlPatch(pS)
     if pSgn==-1 # opposite ?
-      patch = opposite.(Ref(M), patch)
+      patch = -patch
     end
     img[ r... ] = patch
   end

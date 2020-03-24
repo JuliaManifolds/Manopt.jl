@@ -1,13 +1,3 @@
-import Base: stdout
-export DebugOptions, getOptions
-export DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange, DebugIterate, DebugIteration, DebugDivider
-export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
-#
-#
-# Debug Options Decorator
-#
-#
 @doc raw"""
     DebugAction
 
@@ -24,7 +14,7 @@ to indicate a call from [`stopSolver!`](@ref) that returns true afterwards.
 * `print` method to perform the actual print. Can for example be set to a file export,
 or to @info. The default is the `print` function on the default `Base.stdout`.
 """
-abstract type DebugAction <: Action end
+abstract type DebugAction <: AbstractOptionsAction end
 
 @doc raw"""
     DebugOptions <: Options

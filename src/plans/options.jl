@@ -1,18 +1,3 @@
-#
-# While a problem consists of all things one has to know about the Optimization
-# problem itself (independent of the solver), the options collect parameters,
-# that steer the solver (indipendent of the problem at hand)
-#
-import Base: copy
-
-export StoppingCriterion, StoppingCriterionSet
-export Stepsize
-export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
-export Options, getOptions, getReason
-export IsOptionsDecorator
-
-export Action, StoreOptionsAction
-export hasStorage, getStorage, updateStorage!
 
 """
     IsOptionsDecorator{O}
@@ -137,16 +122,15 @@ getReason(o::O) where O <: Options = getReason( getOptions(o).stop )
 # Common Actions for decorated Options
 #
 @doc raw"""
-    Action
+    AbstractOptionsAction
 
-a common `Type` for `Actions` that might be triggered in decoraters,
+a common `Type` for `AbstractOptionsActions` that might be triggered in decoraters,
 for example [`DebugOptions`](@ref) or [`RecordOptions`](@ref).
 """
-abstract type Action end
-
+abstract type AbstractOptionsAction end
 
 @doc raw"""
-    StoreTupleAction <: Action
+    StoreTupleAction <: AbstractOptionsAbstractOptionsAction
 
 internal storage for [`Action`](@ref)s to store a tuple of fields from an
 [`Options`](@ref)s
@@ -159,7 +143,7 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`Problem`](@ref),
 * `values` – a dictionary to store interims values based on certain `Symbols`
 * `keys` – an `NTuple` of `Symbols` to refer to fields of `Options`
 * `once` – whether to update the internal values only once per iteration
-* `lastStored` – last iterate, where this `Action` was called (to determine `once`
+* `lastStored` – last iterate, where this `AbstractOptionsAction` was called (to determine `once`
 
 # Constructiors
 
@@ -174,7 +158,7 @@ Initialize the Functor to a set of keys, where the dictionary is initialized to
 be empty. Further, `once` determines whether more that one update per iteration
 are effective, otherwise only the first update is stored, all others are ignored.
 """
-mutable struct StoreOptionsAction <: Action
+mutable struct StoreOptionsAction <: AbstractOptionsAction
     values::Dict{Symbol,<:Any}
     keys::NTuple{N,Symbol} where N
     once::Bool

@@ -1,10 +1,3 @@
-#
-# A very simple problem for all solvers that just require a cost
-#
-
-export CostProblem
-export NelderMeadOptions
-
 @doc raw"""
     CostProblem <: Problem
 

@@ -19,7 +19,7 @@
 
     function rgrad(M::ProductManifold, X::Array{Matrix{Float64},1})
         eG = egrad( X )
-        return project_tangent.(M.manifolds, X, eG)
+        return project.(M.manifolds, X, eG)
     end
 
     function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat

@@ -1,11 +1,4 @@
-export HessianProblem, HessianOptions
-export TruncatedConjugateGradientOptions, TrustRegionsOptions
-export approxHessianFD, getHessian
-export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, stopWhenCurvatureIsNegative, stopWhenTrustRegionIsExceeded
 
-#
-# Problem
-#
 @doc raw"""
     HessianProblem <: Problem
 
@@ -162,7 +155,7 @@ end
 evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the point `x`
 applied to a tangent vector `ξ`.
 """
-function getHessian(p::Pr,x, ξ; stepsize=2*10^(-14)) where {Pr <: HessianProblem}
+function getHessian(p::HessianProblem, x, ξ; stepsize=2*10^(-14))
     if ismissing(p.hessian)
         return approxHessianFD(p.M, x -> getGradient(p.M,x) ,x,ξ; stepsize=stepsize)
     else
@@ -176,7 +169,7 @@ end
 evaluate the gradient of a [`HessianProblem`](@ref)`p` at the
 point `x`.
 """
-getGradient(p::Pr,x) where {Pr <: HessianProblem} = p.gradient(p.M,x)
+getGradient(p::HessianProblem,x) = p.gradient(p.M,x)
 @doc raw"""
     getPreconditioner(p,x,ξ)
 

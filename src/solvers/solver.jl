@@ -38,7 +38,7 @@ function decorateOptions(o::O;
                     RecordAction, # single action
                     Array{RecordAction,1}, # a group to be set in :All
                     Dict{Symbol,RecordAction}, # a dictionary for precise settings
-                    Array{<:Any,1} # a formated string with symbols or Actions
+                    Array{<:Any,1} # a formated string with symbols orAbstractOptionsActions
                     }=missing,
     ) where {O <: Options}
     o = ismissing(debug) ? o : DebugOptions(o,debug)

@@ -1,6 +1,6 @@
 @testset "Gradient Plan" begin
     io = IOBuffer()
-    M = Euclidean(2)
+    M = ManifoldsBase.DefaultManifold(2)
     x = [4.,2.]
     o = GradientDescentOptions(M, x, stopAfterIteration(20), ConstantStepsize(1.))
     o.∇ = [1., 0.]

@@ -37,7 +37,7 @@ decorateOptions
 In general decorators often perform actions so we introduce
 
 ```@docs
-Action
+AbstractOptionsAction
 ```
 
 as well as a helper for storing values using keys, i.e.

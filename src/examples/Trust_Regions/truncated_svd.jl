@@ -50,7 +50,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     end
 
     function e2rHess(M, x, ξ, eGrad,Hess)
-	    pxHess = project_tangent(M,x,Hess)
+	    pxHess = project(M,x,Hess)
         xtGrad = x'*eGrad
         ξxtGrad = ξ*xtGrad
         return pxHess - ξxtGrad

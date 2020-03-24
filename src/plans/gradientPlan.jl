@@ -1,15 +1,3 @@
-#
-# Gradient Plan
-#
-export GradientProblem, GradientDescentOptions
-export getGradient, getCost, getInitialStepsize
-
-export DebugGradient, DebugGradientNorm, DebugStepsize
-export RecordGradient, RecordGradientNorm, RecordStepsize
-
-#
-# Problem
-#
 @doc raw"""
     GradientProblem <: Problem
 specify a problem for gradient based algorithms.

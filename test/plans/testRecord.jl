@@ -1,7 +1,7 @@
 @testset "Record Options" begin
     # helper to get debug as string
     io = IOBuffer()
-    M = Euclidean(2)
+    M = ManifoldsBase.DefaultManifold(2)
     x = [4.,2.]
     o = GradientDescentOptions(M, x, stopAfterIteration(20), ConstantStepsize(1.))
     f = y -> distance(M,y,x).^2

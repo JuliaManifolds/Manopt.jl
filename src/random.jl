@@ -94,7 +94,7 @@ return a random point on the Sphere by projecting a normal distirbuted vector
 from within the embedding to the sphere.
 """
 function random_point(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)
-	return project_point(M, σ * randn(manifold_dimension(M)+1))
+	return project(M, σ * randn(manifold_dimension(M)+1))
 end
 
 @doc doc"""
@@ -122,7 +122,7 @@ zero and standard deviation `σ` by projecting a random Matrix onto the  `x` wit
 """
 function random_tangent(::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
     Z = σ * randn(eltype(p), size(p))
-    X = project_tangent(M, p, Z)
+    X = project(M, p, Z)
     X = X/norm(X)
 	return X
 end
@@ -135,7 +135,7 @@ with respect to the Minkowsky metric.
 """
 function random_tangent(M::Hyperbolic, p, ::Val{:Gaussian})
     Y = randn(eltype(p), size(p))
-    X = project_tangent(M, p, Y)
+    X = project(M, p, Y)
     return X
 end
 

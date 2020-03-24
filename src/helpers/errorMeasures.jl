@@ -1,4 +1,3 @@
-export meanSquaredError, meanAverageError
 @doc raw"""
     meanSquaredError(M, p, q)
 

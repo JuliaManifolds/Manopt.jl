@@ -1,7 +1,7 @@
 @testset "Debug Options" begin
     # helper to get debug as string
     io = IOBuffer()
-    M = Euclidean(2)
+    M = ManifoldsBase.DefaultManifold(2)
     x = [4.,2.]
     o = GradientDescentOptions(M, x, stopAfterIteration(20), ConstantStepsize(1.))
     f = y -> distance(M,y,x).^2
@@ -13,7 +13,7 @@
     @test DebugOptions(o,[a1]).debugDictionary[:All].group[1] == a1
     @test DebugOptions(o,Dict(:A => a1)).debugDictionary[:A] == a1
     @test DebugOptions(o, ["|"]).debugDictionary[:All].group[1].divider == a1.divider
-    # single Actions
+    # single AbstractOptionsActions
     # DebugDivider
     a1(p,o,0); s =
     @test String(take!(io)) == "|"
