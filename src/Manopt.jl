@@ -58,8 +58,14 @@ module Manopt
         Rotations,
         SymmetricPositiveDefinite,
         Stiefel,
-        Sphere,
-        mean
+        Sphere
+    using Manifolds:
+        NestedPowerRepresentation,
+        mean,
+        median,
+        get_iterator,
+        _read,
+        _write
 
     """
         mid_point(M, p, q, x)

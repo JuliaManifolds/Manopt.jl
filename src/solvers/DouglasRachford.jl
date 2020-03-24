@@ -61,6 +61,7 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
     elseif length(proxes) == 2
         prox1 = proxes[1]
         prox2 = proxes[2]
+        parallel = 0
     else # more than 2 -> parallelDouglasRachford
         parallel = length(proxes)
         prox1 = (λ,x) -> [proxes[i](λ,x[i]) for i in 1:parallel]

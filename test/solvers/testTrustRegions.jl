@@ -3,7 +3,8 @@
     seed!(42);
     A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
-    M = Grassmann(3,2) × Grassmann(3,2)
+    N = Grassmann(3,2)
+    M = N × N
 
     function cost(X::Array{Matrix{Float64},1})
         return -0.5 * norm(transpose(X[1]) * A * X[2])^2
@@ -19,7 +20,7 @@
 
     function rgrad(M::ProductManifold, X::Array{Matrix{Float64},1})
         eG = egrad( X )
-        return project.(M.manifolds, X, eG)
+        return project_tangent.(M.manifolds, X, eG)
     end
 
     function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat

@@ -178,10 +178,15 @@ end
 function adjointJacobiField(M::MT, p, q, t, X, β::Function=βDpGeo) where {MT<:Manifold}
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
-    Θ = vector_transport_to.(Ref(M),Ref(p),B.vectors, Ref(x), Ref(ParallelTransport()))
+    V = get_vectors(M, p, B)
+    Θ = vector_transport_to.(Ref(M),Ref(p), V, Ref(x), Ref(ParallelTransport()))
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
     ξ = sum(
-        (inner.(Ref(M),Ref(x),Ref(X),Θ)) .* (β.(B.kappas,Ref(t),Ref(distance(M,p,q)))) .* B.vectors
+        (
+            inner.(Ref(M),Ref(x),Ref(X),Θ)
+        ) .* (
+            β.(B.data.eigenvalues,Ref(t),Ref(distance(M,p,q)))
+        ) .* V
     )
 end
 
@@ -198,9 +203,14 @@ result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
 function jacobiField(M::MT, p, q, t, X, β::Function=βDgx) where {MT <: Manifold}
     x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
-    Θ = vector_transport_to.( Ref(M), Ref(p), B.vectors, Ref(x), Ref(ParallelTransport()))
+    V = get_vectors(M, p, B)
+    Θ = vector_transport_to.( Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
     Y = sum(
-        (inner.(Ref(M),Ref(p),Ref(X),B.vectors)) .* (β.(B.kappas,Ref(t),Ref(distance(M,p,q)))) .* Θ
+        (
+            inner.(Ref(M), Ref(p), Ref(X), V)
+        ) .* (
+            β.(B.data.eigenvalues,Ref(t),Ref(distance(M,p,q)))
+        ) .* Θ
     )
 end

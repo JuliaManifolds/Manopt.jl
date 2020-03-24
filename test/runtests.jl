@@ -8,14 +8,14 @@ using Test
     include("plans/testStoppingCriteria.jl")
 end
 @testset "Function Tests     " begin
-#     include("functions/testAdjointDifferentials.jl")
-#     include("functions/testDifferentials.jl")
-#     include("functions/testCosts.jl")
-#     include("functions/testGradients.jl")
-#     include("functions/testProximalMaps.jl")
+    include("functions/testAdjointDifferentials.jl")
+    include("functions/testDifferentials.jl")
+    include("functions/testCosts.jl")
+    include("functions/testGradients.jl")
+    include("functions/testProximalMaps.jl")
 end
 @testset "Helper & Data Tests" begin
-#   include("helpers/testErrorMeasures.jl")
+    include("helpers/testErrorMeasures.jl")
     include("helpers/testData.jl")
 end
 @testset "Solver Tests       " begin
