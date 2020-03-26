@@ -22,6 +22,8 @@ module Manopt
         AbstractVectorTransportMethod,
         ParallelTransport,
         Manifold,
+        allocate_result,
+        allocate_result_type,
         distance,
         exp,
         exp!,
@@ -92,6 +94,17 @@ module Manopt
 
     reflect(M::Manifold, pr::Function, x) = reflect(M::Manifold, pr(x), x)
     reflect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
+
+    @doc raw"""
+        sym_rem(x,[T=π])
+
+    Compute symmetric remainder of `x` with respect to the interall 2*`T`, i.e.
+    `(x+T)%2T`, where the default for `T` is $π$
+    """
+    function sym_rem(x::N, T = π) where {N<:Number}
+        return (x ≈ T ? convert(N, -T) : rem(x, convert(N, 2 * T), RoundNearest))
+    end
+    sym_rem(x, T = π) where {N} = map(sym_rem, x, Ref(T))
 
     include("plans/plan.jl")
     # Functions

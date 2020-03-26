@@ -55,16 +55,16 @@ compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
 to both $x$ and $y$.
 """
 function gradTV(M::MT, xT::Tuple{T,T}, p=1)where {MT <: Manifold, T}
-  p = xT[1];
-  q = xT[2];
+  x = xT[1];
+  y = xT[2];
   if p==2
-      return (-log(M,p,q), -log(M,q,p))
+      return (-log(M,x,y), -log(M,y,x))
   else
-    d = distance(M,p,q);
+    d = distance(M,x,y);
     if d==0 # subdifferential containing zero
-      return (zero_tangent_vector(M,p),zero_tangent_vector(M,q))
+      return (zero_tangent_vector(M,x),zero_tangent_vector(M,y))
     else
-      return (-log(M,p,q)/(d^(2-p)), -log(M,q,p)/(d^(2-p)))
+      return (-log(M,x,y)/(d^(2-p)), -log(M,y,x)/(d^(2-p)))
     end
   end
 end
@@ -88,28 +88,28 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 function gradTV(M::PowerManifold{N,T,TPR},x,p::Int=1) where {N <: Manifold, T,TPR}
     power_size = [T.parameters...]
     rep_size = representation_size(M.manifold)
-    R = CartesianIndices(power_size)
+    R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = last(R)
     X = zero_tangent_vector(M,x)
     c = costTV(M,x,p,0)
     for i in R # iterate over all pixel
         di = 0.
-    for k in 1:d # for all direction combinations
-      ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-      j = i+ek # compute neighbor
-      if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-        if p != 1
-          g = (c[i]==0 ? 1 : 1/c[i]) .* gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
-        else
-          g = gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
-        end
-        copyto!(_write(M, rep_size, X, i), _read(M, rep_size, X, i) + g[1])
-        copyto!(_write(M, rep_size, X, j), _read(M, rep_size, X, j) + g[2])
-      end
-    end # directions
-  end # i in R
-  return X
+        for k in 1:d # for all direction combinations
+            ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+            j = i+ek # compute neighbor
+            if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
+                if p != 1
+                    g = (c[i]==0 ? 1 : 1/c[i]) .* gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
+                else
+                    g = gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
+                end
+                X[i] += g[1]
+                X[j] += g[2]
+            end
+        end # directions
+    end # i in R
+    return X
 end
 
 @doc raw"""
@@ -209,7 +209,7 @@ point `x`, where `M` is the corresponding `PowerManifold`.
 function gradTV2(M::PowerManifold{N,T}, x, p::Int=1) where {N <: Manifold, T}
     power_size = [T.parameters...]
     rep_size = representation_size(M.manifold)
-    R = CartesianIndices(power_size)
+    R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     minInd, maxInd = first(R), last(R)
     ξ = zero_tangent_vector(M,x)
@@ -226,9 +226,9 @@ function gradTV2(M::PowerManifold{N,T}, x, p::Int=1) where {N <: Manifold, T}
                 else
                     g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
                 end
-                copyto!( _write(M, rep_size, ξ, jB), _read(M, rep_size, ξ, jB) + g[1])
-                copyto!( _write(M, rep_size, ξ, i), _read(M, rep_size, ξ, i) + g[2])
-                copyto!( _write(M, rep_size, ξ, jF), _read(M, rep_size, ξ, jF) + g[3])
+                ξ[jB] += g[1]
+                ξ[i]  += g[2]
+                ξ[jF] += g[3]
             end
         end # directions
     end # i in R

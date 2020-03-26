@@ -207,13 +207,13 @@ function proxTV2(M::mT,λ,pointTuple::Tuple{T,T,T},p::Int=1;
 end
 function proxTV2(M::Circle,λ,pointTuple::Tuple{T,T,T},p::Int=1) where {T}
   w = [1., -2. ,1. ]
-  x = pointTuple
+  x = [pointTuple...]
   if p==1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
-    m = min( λ, abs(  sym_rem( sum( x .* w  ) ) )/(inner(w,w))   )
+    m = min( λ, abs(  sym_rem( sum( x .* w  ) ) )/(dot(w,w))   )
     s = sign( sym_rem(sum(x .* w)) )
     return Tuple(  sym_rem.( x  .-  m .* s .* w ) )
   elseif p==2 # Theorem 3.6 ibd.
-    t = λ * sym_rem( sum( x .* w ) ) / (1 + λ*inner(w,w) )
+    t = λ * sym_rem( sum( x .* w ) ) / (1 + λ*dot(w,w) )
     return Tuple( sym_rem.( x - t.*w )  )
   else
     throw(ErrorException(
@@ -324,7 +324,7 @@ function proxCollaborativeTV(N::PowerManifold, λ, x, Ξ,p=2.,q=1.)
       normΞ = norm.(Ref(N.manifold), x, Ξ)
       return  max.(normΞ .- λ, 0.) ./ ( (normΞ .== 0) .+ normΞ )  .*  Ξ
     elseif p==2 # Example 3 case 3
-      norms = sqrt.( sum( norm.(Ref(N.manifold),x,Ξ)).^2, dims=d+1)
+      norms = sqrt.( sum( norm.(Ref(N.manifold),x,Ξ).^2, dims=d+1))
       normΞ = repeat(norms,inner=iRep)
       # if the norm is zero add 1 to avoid division by zero, also then the
       # nominator is already (max(-λ,0) = 0) so it stays zero then
@@ -334,7 +334,7 @@ function proxCollaborativeTV(N::PowerManifold, λ, x, Ξ,p=2.,q=1.)
     end
   elseif q==Inf
     if p==2
-      norms = sqrt.( sum( norm.(Ref(N.manifold),x,Ξ)).^2, dims=d+1)
+      norms = sqrt.( sum( norm.(Ref(N.manifold),x,Ξ).^2, dims=d+1))
       normΞ = repeat(norms,inner=iRep)
     elseif p==1
       norms = sum( norm.(Ref(N.manifold), x, Ξ), dims=d+1)
@@ -344,9 +344,7 @@ function proxCollaborativeTV(N::PowerManifold, λ, x, Ξ,p=2.,q=1.)
     else
       throw( ErrorException("The case p=$p, q=$q is not yet implemented"))
     end
-    return PowTVector(
-      λ .* Ξ) ./ max.(Ref(λ), normΞ
-    )
+    return (λ .* Ξ) ./ max.(Ref(λ), normΞ)
   end # end q
   throw( ErrorException("The case p=$p, q=$q is not yet implemented"))
 end

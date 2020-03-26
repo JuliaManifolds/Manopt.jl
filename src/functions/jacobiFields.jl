@@ -163,27 +163,42 @@ function adjointJacobiField(M::Manifold, p, q, t, X, β::Function=βDpGeo)
     V = get_vectors(M, p, B)
     Θ = vector_transport_to.(Ref(M),Ref(p), V, Ref(x), Ref(ParallelTransport()))
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    ξ = sum(
+    Y = sum(
         (
             inner.(Ref(M),Ref(x),Ref(X),Θ)
         ) .* (
             β.(B.data.eigenvalues,Ref(t),Ref(distance(M,p,q)))
         ) .* V
     )
+    return Y
+end
+function adjointJacobiField(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βDpGeo)
+    x = shortest_geodesic(M, p, q, t)
+    B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
+    V = get_vectors(M, p, B)
+    Θ = vector_transport_to.(Ref(M),Ref(p), V, Ref(x), Ref(ParallelTransport()))
+    # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
+    Y = sum(
+        (
+            inner.(Ref(M),Ref(x),Ref(X),Θ)
+        ) .* (
+            β.(B.data.eigenvalues,Ref(t),Ref(distance(M,p,q)))
+        ) .* V
+    )[1]
+    return Y
 end
 function adjointJacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=βDpGeo)
     rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjointJacobiField, p, X)
     for i in get_iterator(M)
-        _write(M, rep_size, Y, i) = adjointJacobiField(
-            M.manifold,
-            _read(M, rep_size, p, i),
-            _read(M, rep_size, q, i),
-            t,
-            _read(M, rep_size, X, i),
-            β
-        )
+        lY = adjointJacobiField(M.manifold, p[i], q[i], t, X[i], β)
+        if size(lY) == ()
+            Y[i] = lY
+        else
+            Y[i] .= lY
+        end
     end
+    return Y
 end
 
 @doc doc"""
@@ -201,29 +216,43 @@ function jacobiField(M::Manifold, p, q, t, X, β::Function=βDgx)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
     Θ = vector_transport_to.( Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
+    Y = zero_tangent_vector(M,p)
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y = sum(
+    Y .= sum(
         (
             inner.(Ref(M), Ref(p), Ref(X), V)
         ) .* (
             β.(B.data.eigenvalues,Ref(t),Ref(distance(M,p,q)))
         ) .* Θ
     )
+    return Y
+end
+function jacobiField(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βDgx)
+    x = shortest_geodesic(M, p, q, t);
+    B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
+    V = get_vectors(M, p, B)
+    Θ = vector_transport_to.( Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
+    Y = zero_tangent_vector(M,p)
+    # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
+    Y .= sum(
+        (
+            inner.(Ref(M), Ref(p), Ref(X), V)
+        ) .* (
+            β.(B.data.eigenvalues,Ref(t),Ref(distance(M,p,q)))
+        ) .* Θ
+    )[1]
+    return Y
 end
 function jacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=βDgx)
     rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjointJacobiField, p, X)
     for i in get_iterator(M)
-        copyto!(
-            _write(M, rep_size, Y, i),
-            jacobiField(
-                M.manifold,
-                _read(M, rep_size, p, i),
-                _read(M, rep_size, q, i),
-                t,
-                _read(M, rep_size, X, i),
-                β
-            )
-        )
+        lY = jacobiField(M.manifold, p[i], q[i], t, X[i], β)
+        if size(lY) == ()
+            Y[i] = lY
+        else
+            Y[i] .= lY
+        end
     end
+    return Y
 end

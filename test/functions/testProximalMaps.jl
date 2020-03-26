@@ -38,11 +38,12 @@
   p2, r2, q2 = proxTV2(M,1., (p,r,q) )
   sum(distance.(Ref(M), [p,r,q], [p2, r2, q2] )) ≈ 0
   @test_throws ErrorException proxTV2(M, 1., (p,r,q), 2) # since proxTV is only defined for p=1
-  distance(PowerManifold(M,3), [p2,r2,q2], proxTV2(PowerManifold(M,3),1., [p,r,q])) ≈ 0
+  distance(PowerManifold(M,NestedPowerRepresentation(), 3), [p2,r2,q2], proxTV2(PowerManifold(M, NestedPowerRepresentation(), 3),1., [p,r,q])) ≈ 0
   # Circle
   M2 = Circle()
+  N2 = PowerManifold(M2,3)
   pS, rS, qS = [-0.5, 0.1, 0.5]
-  d = inner( [pS, rS, qS], [1., -2., 1.] )
+  d = dot([pS, rS, qS], [1., -2., 1.])
   m = min(0.3, abs( sym_rem(d)/6) )
   s = sign(sym_rem(d))
   pSc, rSc, qSc = sym_rem.( [pS, rS, qS] .- m .* s .* [1., -2., 1.] )
