@@ -87,7 +87,8 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 """
 function gradTV(M::PowerManifold{N,T,TPR},x,p::Int=1) where {N <: Manifold, T,TPR}
     power_size = [T.parameters...]
-    R = CartesianIndices(Tuple(power_size))
+    rep_size = representation_size(M.manifold)
+    R = CartesianIndices(power_size)
     d = length(power_size)
     maxInd = last(R)
     X = zero_tangent_vector(M,x)
@@ -103,8 +104,8 @@ function gradTV(M::PowerManifold{N,T,TPR},x,p::Int=1) where {N <: Manifold, T,TP
         else
           g = gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
         end
-        X[i] += g[1]
-        X[j] += g[2]
+        copyto!(_write(M, rep_size, X, i), _read(M, rep_size, X, i) + g[1])
+        copyto!(_write(M, rep_size, X, j), _read(M, rep_size, X, j) + g[2])
       end
     end # directions
   end # i in R
@@ -205,9 +206,10 @@ computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function gradTV2(M::PowerManifold{N,T,NestedPowerRepresentation}, x, p::Int=1) where {N <: Manifold, T}
+function gradTV2(M::PowerManifold{N,T}, x, p::Int=1) where {N <: Manifold, T}
     power_size = [T.parameters...]
-    R = CartesianIndices(Tuple(power_size))
+    rep_size = representation_size(M.manifold)
+    R = CartesianIndices(power_size)
     d = length(power_size)
     minInd, maxInd = first(R), last(R)
     ξ = zero_tangent_vector(M,x)
@@ -224,9 +226,9 @@ function gradTV2(M::PowerManifold{N,T,NestedPowerRepresentation}, x, p::Int=1) w
                 else
                     g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
                 end
-                ξ[jB] += g[1]
-                ξ[i] += g[2]
-                ξ[jF] += g[3]
+                copyto!( _write(M, rep_size, ξ, jB), _read(M, rep_size, ξ, jB) + g[1])
+                copyto!( _write(M, rep_size, ξ, i), _read(M, rep_size, ξ, i) + g[2])
+                copyto!( _write(M, rep_size, ξ, jF), _read(M, rep_size, ξ, jF) + g[3])
             end
         end # directions
     end # i in R

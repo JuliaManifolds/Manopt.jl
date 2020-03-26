@@ -157,24 +157,6 @@ $Y ∈ T_p\mathcal M$. The main difference to [`jacobiField`](@ref) is the,
 that the input `X` and the output `Y` switched tangent spaces.
 For detais see [`jacobiField`](@ref)
 """
-function adjointJacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=βDpGeo)
-    rep_size = representation_size(M.manifold)
-    for i in get_iterator(M)
-        _write(
-            M,
-            rep_size,
-            adjointJacobiField(
-                M.manifold,
-                _read(M, rep_size, p, i),
-                _read(M, rep_size, q, i),
-                t,
-                _read(M, rep_size, X, i),
-                β
-            ),
-            i
-        )
-    end
-end
 function adjointJacobiField(M::Manifold, p, q, t, X, β::Function=βDpGeo)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
@@ -189,6 +171,20 @@ function adjointJacobiField(M::Manifold, p, q, t, X, β::Function=βDpGeo)
         ) .* V
     )
 end
+function adjointJacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=βDpGeo)
+    rep_size = representation_size(M.manifold)
+    Y = allocate_result(M, adjointJacobiField, p, X)
+    for i in get_iterator(M)
+        _write(M, rep_size, Y, i) = adjointJacobiField(
+            M.manifold,
+            _read(M, rep_size, p, i),
+            _read(M, rep_size, q, i),
+            t,
+            _read(M, rep_size, X, i),
+            β
+        )
+    end
+end
 
 @doc doc"""
     Y = jacobiField(M, p, q, t, X, β)
@@ -200,7 +196,7 @@ result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
 
 [`adjointJacobiField`](@ref)
 """
-function jacobiField(M::MT, p, q, t, X, β::Function=βDgx) where {MT <: Manifold}
+function jacobiField(M::Manifold, p, q, t, X, β::Function=βDgx)
     x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -213,4 +209,21 @@ function jacobiField(M::MT, p, q, t, X, β::Function=βDgx) where {MT <: Manifol
             β.(B.data.eigenvalues,Ref(t),Ref(distance(M,p,q)))
         ) .* Θ
     )
+end
+function jacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=βDgx)
+    rep_size = representation_size(M.manifold)
+    Y = allocate_result(M, adjointJacobiField, p, X)
+    for i in get_iterator(M)
+        copyto!(
+            _write(M, rep_size, Y, i),
+            jacobiField(
+                M.manifold,
+                _read(M, rep_size, p, i),
+                _read(M, rep_size, q, i),
+                t,
+                _read(M, rep_size, X, i),
+                β
+            )
+        )
+    end
 end

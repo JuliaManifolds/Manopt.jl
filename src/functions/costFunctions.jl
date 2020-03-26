@@ -14,9 +14,9 @@ E(u,v) =
 ```
 """
 function costIntrICTV12(M::mT, f, u, v, α, β) where {mT <: Manifold}
-    return 1/2*distance(M, shortest_geodesic(M, u, v, 0.5), f)^2
-      + α * β * costTV(M, u)
-      + α * (1-β) * costTV2(M, v)
+    IC = 1/2*distance(M, shortest_geodesic(M, u, v, 0.5), f)^2
+    TV12 = β * costTV(M, u) + (1-β) * costTV2(M, v)
+    return  IC + α*TV12
 end
 
 @doc raw"""

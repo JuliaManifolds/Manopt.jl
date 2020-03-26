@@ -260,7 +260,8 @@ The parameter `λ` is the prox parameter.
   evaluated (in a cylic order).
 """
 function proxTV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
-  R = CartesianIndices(T)
+  power_size = [T.parameters...]
+  R = CartesianIndices(power_size)
   d = length(size(x))
   minInd = [first(R).I...]
   maxInd = [last(R).I...]
