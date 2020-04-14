@@ -81,17 +81,17 @@
   @test_throws ErrorException proxTV2(M3, 0.3, (pS, rS, qS),3)
   ξR, ηR, νR = [pS, rS, qS]
   N3 = PowerManifold(M3,3)
-  P = [pR, rR, qR]
-  Ξ = [ξR, ηR, νR]
+  P = [pR rR qR]
+  Ξ = [ξR ηR νR]
   @test proxCollaborativeTV(N3,0.,P, Ξ,1, 1) == Ξ
   @test proxCollaborativeTV(N3,0.,P, Ξ,1., 1) == Ξ
   @test proxCollaborativeTV(N3,0.,P, Ξ,1, 1.) == Ξ
   @test proxCollaborativeTV(N3,0.,P, Ξ,1., 1.) == Ξ
 
   @test proxCollaborativeTV(N3,0.,P, Ξ, 2, 1) == Ξ
-  @test norm(N3,P, proxCollaborativeTV(N3,0.,P, Ξ, 2, Inf) - zero_tangent_vector(N3,P)) ≈ 0
-  @test norm(N3,P, proxCollaborativeTV(N3,0.,P, Ξ, 1, Inf) - zero_tangent_vector(N3,P)) ≈ 0
-  @test norm(N3,P, proxCollaborativeTV(N3,0.,P, Ξ, Inf, Inf) - zero_tangent_vector(N3,P)) ≈ 0
+  @test norm(N3,P, proxCollaborativeTV(N3,0.,P, Ξ, 2, Inf)) ≈ 0
+  @test norm(N3,P, proxCollaborativeTV(N3,0.,P, Ξ, 1, Inf)) ≈ 0
+  @test norm(N3,P, proxCollaborativeTV(N3,0.,P, Ξ, Inf, Inf)) ≈ 0
   @test_throws ErrorException proxCollaborativeTV(N3,0.,P, Ξ, 3,3)
   @test_throws ErrorException proxCollaborativeTV(N3,0.,P, Ξ, 3,1)
   @test_throws ErrorException proxCollaborativeTV(N3,0.,P, Ξ, 3,Inf)

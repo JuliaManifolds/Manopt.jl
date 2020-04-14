@@ -91,7 +91,7 @@ The parameter `λ` is the prox parameter.
   points evaluated (in a cylic order).
 """
 function proxTV(M::PowerManifold{𝔽,N,T}, λ, x, p::Int=1) where {𝔽,N<:Manifold,T}
-    power_size = [T.parameters...]
+    power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = Tuple(last(R))
@@ -260,7 +260,7 @@ The parameter `λ` is the prox parameter.
   evaluated (in a cylic order).
 """
 function proxTV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
-  power_size = [T.parameters...]
+  power_size = power_dimensions(M)
   R = CartesianIndices(power_size)
   d = length(size(x))
   minInd = [first(R).I...]
@@ -307,17 +307,18 @@ details.
 """
 function proxCollaborativeTV(N::PowerManifold, λ, x, Ξ,p=2.,q=1.)
   # Ξ = forwardLogs(M,x)
-  if length(size(x)) == 1
+  pdims = power_dimensions(N)
+  if length(pdims) == 1
     d = 1
     s = 1
-    iRep = 1
+    iRep = (1,)
   else
-    d = size(x)[end]
-    s = length(size(x))-1
+    d = pdims[end]
+    s = length(pdims)-1
     if s != d
       throw( ErrorException( "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not." ))
     end
-    iRep = [Integer.(ones(d))...,d]
+    iRep = (Integer.(ones(d))...,d)
   end
   if q==1 # Example 3 case 2
     if p==1
@@ -325,26 +326,32 @@ function proxCollaborativeTV(N::PowerManifold, λ, x, Ξ,p=2.,q=1.)
       return  max.(normΞ .- λ, 0.) ./ ( (normΞ .== 0) .+ normΞ )  .*  Ξ
     elseif p==2 # Example 3 case 3
       norms = sqrt.( sum( norm.(Ref(N.manifold),x,Ξ).^2, dims=d+1))
-      normΞ = repeat(norms,inner=iRep)
+      if length(iRep) > 1
+        norms = repeat(norms,inner=iRep)
+      end
       # if the norm is zero add 1 to avoid division by zero, also then the
       # nominator is already (max(-λ,0) = 0) so it stays zero then
-      return  max.(normΞ .- λ, 0.) ./ ( (normΞ .== 0) .+ normΞ )  .*  Ξ
+      return  max.(norms .- λ, 0.) ./ ( (norms .== 0) .+ norms )  .*  Ξ
     else
       throw( ErrorException("The case p=$p, q=$q is not yet implemented"))
     end
   elseif q==Inf
     if p==2
       norms = sqrt.( sum( norm.(Ref(N.manifold),x,Ξ).^2, dims=d+1))
-      normΞ = repeat(norms,inner=iRep)
+      if length(iRep) > 1
+        norms = repeat(norms,inner=iRep)
+      end
     elseif p==1
       norms = sum( norm.(Ref(N.manifold), x, Ξ), dims=d+1)
-      normΞ = repeat(norms,inner=iRep)
+      if length(iRep) > 1
+        norms = repeat(norms,inner=iRep)
+      end
     elseif p==Inf
-      normΞ = norm.(Ref(N.manifold),x,Ξ)
+      norms = norm.(Ref(N.manifold),x,Ξ)
     else
       throw( ErrorException("The case p=$p, q=$q is not yet implemented"))
     end
-    return (λ .* Ξ) ./ max.(Ref(λ), normΞ)
+    return (λ .* Ξ) ./ max.(Ref(λ), norms)
   end # end q
   throw( ErrorException("The case p=$p, q=$q is not yet implemented"))
 end

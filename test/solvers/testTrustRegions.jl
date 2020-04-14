@@ -18,9 +18,10 @@
         return [ -AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V) ];
     end
 
-    function rgrad(M::ProductManifold, X::Array{Matrix{Float64},1})
-        eG = egrad( X )
-        return project_tangent.(M.manifolds, X, eG)
+    function rgrad(M::ProductManifold, X)
+        eG = egrad([submanifold_component(M,X,1),submanifold_component(M,X,2)])
+        se = ShapeSpecification(ArrayReshaper(), M.manifolds...)
+        return prod_point(se, project.(M.manifolds, X, eG) )
     end
 
     function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat

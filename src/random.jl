@@ -32,8 +32,10 @@ function random_point(M::Grassmann{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64=1.0)
     return A
 end
 
-random_point(M::ProductManifold, o...) = [ random_point(N, o...) for N in M.manifolds ]
-
+function random_point(M::ProductManifold, o...)
+    se = ShapeSpecification(ArrayReshaper(), M.manifolds...)
+    prod_point(se, [ random_point(N,o...) for N in M.manifolds ]...)
+end
 @doc doc"""
     randomMPoint(M::Rotations[, type=:Gaussian, σ=1.0])
 

@@ -94,7 +94,7 @@ Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
   differentials of the logs.
 """
 function AdjDforwardLogs(M::PowerManifold{ℝ,MT,T}, p, X) where {MT <: Manifold, T}
-    power_size = [T.parameters...]
+    power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = [last(R).I...] # maxInd as Array

@@ -68,7 +68,11 @@ module Manopt
         median,
         get_iterator,
         _read,
-        _write
+        _write,
+        power_dimensions,
+        ArrayReshaper,
+        prod_point,
+        ShapeSpecification
 
     """
         mid_point(M, p, q, x)

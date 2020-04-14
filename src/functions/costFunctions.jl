@@ -13,7 +13,7 @@ E(u,v) =
   +\alpha\bigl( \beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w) \bigr).
 ```
 """
-function costIntrICTV12(M::mT, f, u, v, α, β) where {mT <: Manifold}
+function costIntrICTV12(M::Manifold, f, u, v, α, β)
     IC = 1/2*distance(M, shortest_geodesic(M, u, v, 0.5), f)^2
     TV12 = β * costTV(M, u) + (1-β) * costTV2(M, v)
     return  IC + α*TV12
@@ -83,7 +83,7 @@ E(x_1,x_2) = d_{\mathcal M}^p(x_1,x_2), \quad x_1,x_2 ∈ \mathcal M
 
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::MT, x::Tuple{T,T}, p::Int=1) where {MT <: Manifold, T}
+function costTV(M::Manifold, x::Tuple{T,T}, p::Int=1) where {T}
   return distance(M,x[1],x[2])^p
 end
 @doc raw"""
@@ -105,8 +105,8 @@ E^q(x) = \sum_{i ∈ \mathcal G}
 # See also
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::PowerManifold{𝔽,MT,T}, x, p=1, q=1) where {𝔽, MT <: Manifold, T}
-    power_size = [T.parameters...]
+function costTV(M::PowerManifold, x, p=1, q=1)
+    power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = last(R)
@@ -170,8 +170,8 @@ nearest to $x_i$.
 # See also
 [`gradTV2`](@ref), [`proxTV2`](@ref)
 """
-function costTV2(M::PowerManifold{𝔽,N,T}, x, p::Int=1, Sum::Bool=true) where {𝔽, N <: Manifold, T}
-  Tt = Tuple(T.parameters)
+function costTV2(M::PowerManifold, x, p::Int=1, Sum::Bool=true)
+  Tt = Tuple( power_dimensions(M) )
   R = CartesianIndices( Tt )
   d = length(Tt)
   minInd, maxInd = first(R), last(R)
