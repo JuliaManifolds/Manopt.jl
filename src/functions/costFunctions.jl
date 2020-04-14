@@ -105,7 +105,7 @@ E^q(x) = \sum_{i ∈ \mathcal G}
 # See also
 [`gradTV`](@ref), [`proxTV`](@ref)
 """
-function costTV(M::PowerManifold{MT,T}, x, p=1, q=1) where {MT <: Manifold, T}
+function costTV(M::PowerManifold{𝔽,MT,T}, x, p=1, q=1) where {𝔽, MT <: Manifold, T}
     power_size = [T.parameters...]
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -170,7 +170,7 @@ nearest to $x_i$.
 # See also
 [`gradTV2`](@ref), [`proxTV2`](@ref)
 """
-function costTV2(M::PowerManifold{N,T}, x, p::Int=1, Sum::Bool=true) where {N <: Manifold, T}
+function costTV2(M::PowerManifold{𝔽,N,T}, x, p::Int=1, Sum::Bool=true) where {𝔽, N <: Manifold, T}
   Tt = Tuple(T.parameters)
   R = CartesianIndices( Tt )
   d = length(Tt)

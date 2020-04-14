@@ -72,7 +72,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `ν` – resulting tangent vector in $T_x\mathcal N$ representing the differentials of the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function DforwardLogs(M::PowerManifold{MT,T,TPR}, p, X) where {MT <: Manifold, T, TPR}
+function DforwardLogs(M::PowerManifold{𝔽,MT,T,TPR}, p, X) where {𝔽,MT <: Manifold, T, TPR}
     power_size = [T.parameters...]
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)

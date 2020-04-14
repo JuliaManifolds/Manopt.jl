@@ -78,6 +78,7 @@
   #
   # collaborative integer tests
   #
+  @test_throws ErrorException proxTV2(M3, 0.3, (pS, rS, qS),3)
   ξR, ηR, νR = [pS, rS, qS]
   N3 = PowerManifold(M3,3)
   P = [pR, rR, qR]

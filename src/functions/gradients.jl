@@ -85,7 +85,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 # Ouput
 * ξ – resulting tangent vector in $T_x\mathcal M$.
 """
-function gradTV(M::PowerManifold{N,T,TPR},x,p::Int=1) where {N <: Manifold, T,TPR}
+function gradTV(M::PowerManifold{𝔽,N,T},x,p::Int=1) where {𝔽,N<: Manifold,T}
     power_size = [T.parameters...]
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
@@ -133,7 +133,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `ξ` – resulting tangent vector in $T_x\mathcal M$ representing the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function forwardLogs(M::PowerManifold{MT,T,TPR}, x) where {MT <: Manifold, T, TPR}
+function forwardLogs(M::PowerManifold{𝔽,MT,T}, x) where {𝔽,MT<:Manifold,T}
     power_size = [T.parameters...]
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -206,7 +206,7 @@ computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function gradTV2(M::PowerManifold{N,T}, x, p::Int=1) where {N <: Manifold, T}
+function gradTV2(M::PowerManifold{𝔽,N,T}, x, p::Int=1) where {𝔽,N<:Manifold,T}
     power_size = [T.parameters...]
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))

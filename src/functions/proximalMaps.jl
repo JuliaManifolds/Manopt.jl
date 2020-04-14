@@ -90,7 +90,7 @@ The parameter `λ` is the prox parameter.
 * `y` – resulting  point containinf with all mentioned proximal
   points evaluated (in a cylic order).
 """
-function proxTV(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N <: Manifold, T}
+function proxTV(M::PowerManifold{𝔽,N,T}, λ, x, p::Int=1) where {𝔽,N<:Manifold,T}
     power_size = [T.parameters...]
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
