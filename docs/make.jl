@@ -24,8 +24,7 @@ for (i,tutorial) in enumerate(tutorials)
     push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath,tutorial*".md") )
 end
 makedocs(
-    # for development, we disable prettyurls
-    # format = Documenter.HTML(prettyurls = false),
+    format = Documenter.HTML(prettyurls = false),
     modules = [Manopt],
     sitename = "Manopt.jl",
     pages = [
