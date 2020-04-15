@@ -2,7 +2,7 @@
 # Collection of step sizes
 #
 export ConstantStepsize, DecreasingStepsize
-export Linesearch, ArmijoLinesearch
+export Linesearch, linesearch_armijo
 export get_stepsize!, getInitialStepsize, getLastStepsize
 #
 # Simple ones
@@ -69,7 +69,7 @@ getInitialStepsize(s::DecreasingStepsize) = s.length
     Linesearch <: Stepsize
 
 An abstract functor to represent line search type step size deteminations, see
-[`Stepsize`](@ref) for details. One example is the [`ArmijoLinesearch`](@ref)
+[`Stepsize`](@ref) for details. One example is the [`linesearch_armijo`](@ref)
 functor.
 
 Compared to simple step sizes, the linesearch functors provide an interface of
@@ -102,27 +102,27 @@ This method returns the functor to perform Armijo line search, where two inter
 faces are available:
 * based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
   and a current iterate `i`.
-* with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [`Manifold`](@ref) `M`, a current
+* with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`, a current
   point `x` a function `F`, that maps from the manifold to the reals,
   its gradient (a tangent vector) `∇F`$=\nabla F(x)$ at  `x` and an optional
   search direction tangent vector `η-∇F` are the arguments.
 """
-mutable struct ArmijoLinesearch <: Linesearch
+mutable struct linesearch_armijo <: Linesearch
     initialStepsize::Float64
     retraction::Function
     contractionFactor::Float64
     sufficientDecrease::Float64
     stepsizeOld::Float64
-    ArmijoLinesearch(
+    linesearch_armijo(
         s::Float64=1.0,
         r::Function=exp,
         contractionFactor::Float64=0.95,
         sufficientDecrease::Float64=0.1) = new(s, r, contractionFactor, sufficientDecrease,s)
 end
-function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
+function (a::linesearch_armijo)(p::P,o::O,i::Int, η=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
     a(p.M, o.x, p.cost, getGradient(p,o.x), η)
 end
-function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, T}
+function (a::linesearch_armijo)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, T}
     # for local shortness
     s = a.stepsizeOld
     retr = a.retraction
@@ -143,7 +143,7 @@ function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) wher
     a.stepsizeOld = s
     return s
 end
-getInitialStepsize(a::ArmijoLinesearch) = a.initialStepsize
+getInitialStepsize(a::linesearch_armijo) = a.initialStepsize
 
 #
 # Access functions
@@ -158,4 +158,4 @@ getInitialStepsize(a::ArmijoLinesearch) = a.initialStepsize
 @traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; !is_options_decorator{O}} = getLastStepsize(p,o,o.stepsize,vars...)
 
 getLastStepsize(p::P,o::O,s::S,vars...) where {P <: Problem, O <: Options,S <: Stepsize} = s(p,o,vars...)
-getLastStepsize(p::P,o::O,s::ArmijoLinesearch,vars...) where {P <: Problem, O <: Options} = s.stepsizeOld
+getLastStepsize(p::P,o::O,s::linesearch_armijo,vars...) where {P <: Problem, O <: Options} = s.stepsizeOld

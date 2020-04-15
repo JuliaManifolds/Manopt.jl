@@ -58,7 +58,7 @@ end
     artificial_S1_slope_signal([pts=500, slope=4.])
 
 Creates a Signal of (phase-valued) data represented on the
-[`Circle`](@ref)` `[`Manifold`](@ref) with increasing slope.
+[Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)` `[Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) with increasing slope.
 
 # Optional
 * `pts` – (`500`) number of points to sample the function.
@@ -82,7 +82,7 @@ end
 
 generate a real-valued signal having piecewise constant, linear and quadratic
 intervals with jumps in between. If the resulting manifold the data lives on,
-is the [`Circle`](@ref) the data is also wrapped
+is the [Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) the data is also wrapped
 to $[-\pi,\pi)$.
 
 # Optional
@@ -192,7 +192,7 @@ end
     artificial_S2_whirl_patch([pts=5])
 
 create a whirl within the `pts`$\times$`pts` patch of
-[`Sphere`](@ref)`(2)`-valued image data.
+[Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html)(@ref)`(2)`-valued image data.
 
 # Optional Parameters
 * `pts` – (`5`) size of the patch. If the number is odd, the center is the north
@@ -282,10 +282,10 @@ end
 @doc raw"""
     artificial_S2_lemniscate(p [,pts=128,a=π/2,interval=[0,2π])
 
-generate a Signal on the [`Sphere`](@ref)`(2)` $\mathbb S^2$ by creating the
+generate a Signal on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathbb S^2$ by creating the
 [Lemniscate of Bernoulli](https://en.wikipedia.org/wiki/Lemniscate_of_Bernoulli)
 in the tangent space of `p` sampled at `pts` points and use `exp` to get a
-signal on the [`Sphere`](@ref)`(2)`.
+signal on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html).
 
 # Input
 * `p` – the tangent space the Lemniscate is created in
@@ -302,10 +302,10 @@ end
 @doc raw"""
     artificial_S2_lemniscate(p,t; a=π/2)
 
-generate a point from the signal on the [`Sphere`](@ref)`(2)` $\mathbb S^2$ by
+generate a point from the signal on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathbb S^2$ by
 creating the [Lemniscate of Bernoulli](https://en.wikipedia.org/wiki/Lemniscate_of_Bernoulli)
 in the tangent space of `p` sampled at `t` and use èxp` to obtain a point on
-the [`Sphere`](@ref)`(2)`.
+the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html).
 
 # Input
 * `p` – the tangent space the Lemniscate is created in

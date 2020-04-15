@@ -9,7 +9,7 @@
   ∇F(x) = 1/5*sum(-log.(Ref(M),Ref(x),f))
   o = steepestDescent(M,F,∇F,f[1];
     stoppingCriterion = StopWhenAny(stopAfterIteration(200), StopWhenChangeLess(10^-16)),
-    stepsize = ArmijoLinesearch(1.,exp,0.99,0.1),
+    stepsize = linesearch_armijo(1.,exp,0.99,0.1),
     debug = [:Iteration," ",:Cost, :Stop, 100,"\n"],
     record = [:Iteration, :Cost, 1],
     returnOptions = true

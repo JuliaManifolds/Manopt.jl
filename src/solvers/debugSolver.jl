@@ -16,8 +16,8 @@ values in the [`DebugOptions`](@ref)` o`.
 """
 function initialize_solver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
     initialize_solver!(p,o.options)
-    get(o.debugDictionary,:Start,DebugDivider(""))(p,getOptions(o),0)
-    get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),0)
+    get(o.debugDictionary,:Start,DebugDivider(""))(p,get_options(o),0)
+    get(o.debugDictionary,:All,DebugDivider(""))(p,get_options(o),0)
 end
 """
     step_solver!(p,o,iter)
@@ -26,8 +26,8 @@ the values in the [`Options`](@ref)` o.options` and print `Debug`.
 """
 function step_solver!(p::P,o::O, i) where {P <: Problem, O <: DebugOptions}
     step_solver!(p,o.options,i)
-    get(o.debugDictionary,:Step,DebugDivider(""))(p,getOptions(o),i)
-    get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),i)
+    get(o.debugDictionary,:Step,DebugDivider(""))(p,get_options(o),i)
+    get(o.debugDictionary,:All,DebugDivider(""))(p,get_options(o),i)
 end
 """
     get_solver_result(o)
@@ -46,8 +46,8 @@ should stop at iteration `i`. If so, print all debug from `:All` and `:Final`.
 function stop_solver!(p::P,o::O,i::Int) where {P <: Problem, O <: DebugOptions}
     s = stop_solver!(p,o.options,i)
     if s
-        get(o.debugDictionary,:Stop,DebugDivider(""))(p,getOptions(o),typemin(Int))
-        get(o.debugDictionary,:All,DebugDivider(""))(p,getOptions(o),typemin(Int))
+        get(o.debugDictionary,:Stop,DebugDivider(""))(p,get_options(o),typemin(Int))
+        get(o.debugDictionary,:All,DebugDivider(""))(p,get_options(o),typemin(Int))
     end
     return s
 end

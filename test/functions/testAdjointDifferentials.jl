@@ -6,13 +6,13 @@ y = [0.,1.,0.]
 M = Sphere(2)
 ξ = log(M,x,y)
 # Text differentials (1) Dx of Log_xy
-@test AdjDpLog(M,x,x,ξ) == -ξ
-@test AdjDqLog(M,x,x,ξ) == ξ
-@test AdjDpExp(M,x,zero_tangent_vector(M,x),ξ) == ξ
-@test AdjDpExp(M,x,zero_tangent_vector(M,x),ξ) == ξ
+@test adjoint_differential_log_basepoint(M,x,x,ξ) == -ξ
+@test adjoint_differential_log_argument(M,x,x,ξ) == ξ
+@test adjoint_differential_exp_basepoint(M,x,zero_tangent_vector(M,x),ξ) == ξ
+@test adjoint_differential_exp_basepoint(M,x,zero_tangent_vector(M,x),ξ) == ξ
 for t in [0,0.15,0.33,0.66,0.9]
-    @test AdjDpGeo(M,x,x,t,ξ) == (1-t)*ξ
-    @test norm(M,x,AdjDqGeo(M,x,x,t,ξ) - t*ξ)  ≈ 0 atol=10.0^(-16)
+    @test adjoint_differential_geodesic_startpoint(M,x,x,t,ξ) == (1-t)*ξ
+    @test norm(M,x,adjoint_differential_geodesic_endpoint(M,x,x,t,ξ) - t*ξ)  ≈ 0 atol=10.0^(-16)
 end
 Mp = PowerManifold(M, NestedPowerRepresentation(), 3)
 xP = [x, y, x]
@@ -21,6 +21,6 @@ yP = [x, x, y]
 @test norm(
         Mp,
         xP,
-        AdjDforward_logs(Mp,xP,ξP) - [-ξ, zero_tangent_vector(M,x), zero_tangent_vector(M,x)]
+        adjoint_differential_forward_logs(Mp,xP,ξP) - [-ξ, zero_tangent_vector(M,x), zero_tangent_vector(M,x)]
     ) ≈ 0 atol=4*10.0^(-16)
 end

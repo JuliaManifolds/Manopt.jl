@@ -4,11 +4,11 @@
 # difference mid point model using [`adjoint_Jacobi_field`](@ref)s.
 #
 # This example also illustrates the `PowerManifold` manifold as well
-# as [`ArmijoLinesearch`](@ref).
+# as [`linesearch_armijo`](@ref).
 
 # We first initialize the manifold
 exportFolder = joinpath(@__DIR__,"..","..","docs","src","assets","images","tutorials") #src
-using Manopt
+using Manopt, Manifolds
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)
 using Colors
 black = RGBA{Float64}(colorant"#000000")
@@ -19,7 +19,7 @@ TolVibrantTeal = RGBA{Float64}(colorant"#009988") # geo
 asyResolution = 2
 nothing #hide
 # Assume we have two points $x,y$ on the equator of the
-# [`Sphere`](@ref)`(2)` $\mathcal M = \mathbb S^2$
+# [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathcal M = \mathbb S^2$
 # and a point $y$ near the north pole
 M = Sphere(2)
 x = [1., 0., 0.]
@@ -70,7 +70,7 @@ costTV2(M, (x,y,z) )
 # concatenation of a geodesic, where the start or end point is the argument,
 # respectively, with a distance.
 # Hence the [adjoint differentials](@ref adjointDifferentialFunctions)
-# [`AdjDpGeo`](@ref) and [`AdjDqGeo`](@ref) can be employed,
+# [`adjoint_differential_geodesic_startpoint`](@ref) and [`adjoint_differential_geodesic_endpoint`](@ref) can be employed,
 # see [`∇TV2`](@ref) for details.
 # we obtain
 (ξx, ξy, ξz) = ∇TV2(M, (x,y,z) )
@@ -136,11 +136,11 @@ asymptote_export_S2_signals(exportFolder*"/SecondOrderMin1.asy"; #src
 # and the cost function is still at
 costTV2(M, (xn, yn, zn) )
 #
-# But we can also search for the best step size using [`ArmijoLinesearch`](@ref)
+# But we can also search for the best step size using [`linesearch_armijo`](@ref)
 # on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
 p = [x,y,z]
 N = PowerManifold(M,3)
-s = ArmijoLinesearch(1.0,exp,0.999,0.96)(N, p,
+s = linesearch_armijo(1.0,exp,0.999,0.96)(N, p,
     x -> costTV2(M, Tuple(x)),
      [ ∇TV2(M, (x,y,z))... ]  # transform from tuple to PowTVector
 )

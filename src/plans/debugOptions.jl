@@ -26,7 +26,7 @@ The default occasion is `:All` and for example solvers join this field with
 `:Start`, `:Step` and `:Stop` at the beginning, every iteration or the
 end of the algorithm, respectively
 
-The original options can still be accessed using the [`getOptions`](@ref) function.
+The original options can still be accessed using the [`get_options`](@ref) function.
 
 # Fields (defaults in brackets)
 * `options` – the options that are extended by debug information
@@ -128,8 +128,8 @@ mutable struct DebugChange <: DebugAction
         ) = new(print, prefix, a)
 end
 function (d::DebugChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    s = (i>0) ? ( hasStorage(d.storage, :x) ? d.prefix * string(
-            distance(p.M, o.x, getStorage(d.storage, :x))
+    s = (i>0) ? ( has_storage(d.storage, :x) ? d.prefix * string(
+            distance(p.M, o.x, get_storage(d.storage, :x))
             ) : "") : ""
     d.storage(p,o,i)
     d.print(s)
@@ -260,13 +260,13 @@ mutable struct DebugEntryChange <: DebugAction
             prefix = "Change of $f:",
             print::Function=print
         )
-        updateStorage!(a,Dict(f=>v))
+        update_storage!(a,Dict(f=>v))
         return new(print, prefix, f, d, a)
     end
 end
 function (d::DebugEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    s= (i>0) ? ( hasStorage(d.storage,d.field) ? d.prefix * string(
-            d.distance( p, o, getproperty(o, d.field), getStorage(d.storage,d.field))
+    s= (i>0) ? ( has_storage(d.storage,d.field) ? d.prefix * string(
+            d.distance( p, o, getproperty(o, d.field), get_storage(d.storage,d.field))
             ) : "") : ""
     d.storage(p,o,i)
     d.print(s)
@@ -282,7 +282,7 @@ mutable struct DebugStoppingCriterion <: DebugAction
     print::Function
     DebugStoppingCriterion(print::Function=print) = new(print)
 end
-(d::DebugStoppingCriterion)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0 || i==typemin(Int)) ? getReason(o) : "")
+(d::DebugStoppingCriterion)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0 || i==typemin(Int)) ? get_reason(o) : "")
 
 @doc raw"""
     DebugFactory(a)

@@ -10,9 +10,9 @@
     a = RecordIteration()
     # constructors
     rO = RecordOptions(o,a)
-    @test getOptions(o) == o
-    @test getOptions(rO) == o
-    @test_throws ErrorException getOptions(p)
+    @test get_options(o) == o
+    @test get_options(rO) == o
+    @test_throws ErrorException get_options(p)
     #
     @test getInitialStepsize(p,rO) == 1.
     @test get_stepsize!(p,rO,1) == 1.
@@ -24,7 +24,7 @@
     @test isa( RecordOptions(o, [:Iteration]).recordDictionary[:All].group[1], RecordIteration)
     @test !hasRecord(o)
     @test_throws ErrorException getRecord(o)
-    @test getOptions(o) == o
+    @test get_options(o) == o
     @test !hasRecord(DebugOptions(o,[]))
     @test hasRecord(rO)
     @test_throws ErrorException getRecord(o)
@@ -74,7 +74,7 @@
     # RecordEntryChange
     o.x = x
     e = RecordEntryChange(:x, (p,o,x,y) -> distance(p.M,x,y))
-    @test updateStorage!(e.storage,o) == (:x,)
+    @test update_storage!(e.storage,o) == (:x,)
     e2 = RecordEntryChange(x,:x,(p,o,x,y) -> distance(p.M,x,y))
     @test e.field == e2.field
     e(p,o,1)

@@ -14,7 +14,7 @@ export RecordProximalParameter
 specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
-* `M`            - a [`Manifold`](@ref) $\mathcal M$
+* `M`            - a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathcal M$
 * `cost` - a function $F\colon\mathcal M\to\mathbb R$ to
   minimize
 * `proxes` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$

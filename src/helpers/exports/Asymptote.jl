@@ -153,7 +153,7 @@ end
 @doc raw"""
     asymptote_export_S2_data(filename)
 Export given `data` as an array of points on the sphere, i.e. one-, two-
-or three-dimensional data with points on the `Sphere(2)` $\mathbb S^2$.
+or three-dimensional data with points on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathbb S^2$.
 
 # Input
 * `filename` – a file to store the Asymptote code in.

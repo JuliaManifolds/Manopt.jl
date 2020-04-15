@@ -135,9 +135,9 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegi
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         #debug = [:Iteration," ",:Stop],
         returnOptions=true)
-        option = getOptions(opt) # remove decorators
+        option = get_options(opt) # remove decorators
         η = get_solver_result(option)
-        SR = getActiveStoppingCriteria(option.stop)
+        SR = get_active_stopping_criteria(option.stop)
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x

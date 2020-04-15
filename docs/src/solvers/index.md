@@ -45,9 +45,9 @@ Order = [:type]
 as well as the functions
 
 ```@docs
-getReason
-getStoppingCriteriaArray
-getActiveStoppingCriteria
+get_reason
+get_stopping_criteria
+get_active_stopping_criteria
 ```
 
 further stopping criteria might be available for individual Solvers.

@@ -226,7 +226,7 @@ In this case the algorithm reached linear convergence.
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
     $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-  reached, see [`getReason`](@ref).
+  reached, see [`get_reason`](@ref).
 
 # Constructor
 
@@ -266,7 +266,7 @@ algorithm reached superlinear convergence.
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
     $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-    reached, see [`getReason`](@ref).
+    reached, see [`get_reason`](@ref).
 
 # Constructor
 
@@ -302,7 +302,7 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-    reached, see [`getReason`](@ref).
+    reached, see [`get_reason`](@ref).
 * `storage` – stores the necessary parameters `η, δ, residual` to check the
     criterion.
 
@@ -324,10 +324,10 @@ mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     StopWhenTrustRegionIsExceeded(a::StoreOptionsAction=StoreOptionsAction( (:η, :δ, :residual) )) = new("", a)
 end
 function (c::StopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    if hasStorage(c.storage,:δ) && hasStorage(c.storage,:η) && hasStorage(c.storage,:residual)
-        η = getStorage(c.storage,:η)
-        δ = getStorage(c.storage,:δ)
-        residual = getStorage(c.storage,:residual)
+    if has_storage(c.storage,:δ) && has_storage(c.storage,:η) && has_storage(c.storage,:residual)
+        η = get_storage(c.storage,:η)
+        δ = get_storage(c.storage,:δ)
+        residual = get_storage(c.storage,:residual)
         a1 = inner(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, residual) : residual, residual)
         a2 = inner(p.M, o.x, δ, getHessian(p, o.x, δ))
         a3 = inner(p.M, o.x, η, getPreconditioner(p, o.x, δ))
@@ -353,7 +353,7 @@ does not give a reduction of the model.
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-    reached, see [`getReason`](@ref).
+    reached, see [`get_reason`](@ref).
 * `storage` – stores the necessary parameter `δ` to check the
     criterion.
 
@@ -375,8 +375,8 @@ mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     StopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction( (:δ, ) )) = new("", a)
 end
 function (c::StopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    if hasStorage(c.storage,:δ)
-        δ = getStorage(c.storage,:δ)
+    if has_storage(c.storage,:δ)
+        δ = get_storage(c.storage,:δ)
         if inner(p.M, o.x, δ, getHessian(p, o.x, δ)) <= 0 && i > 0
             c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(inner(p.M, o.x, δ, getHessian(p, o.x, δ))) <= 0).\n"
             c.storage(p,o,i)

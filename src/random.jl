@@ -4,7 +4,7 @@ random_point(M::Manifold) = random_point(M, Val(:Gaussian))
 @doc doc"""
     random_point(M, :Uniform)
 
-return a random point on the [`Circle`](@ref) $\mathbb S^1$ by
+return a random point on the [Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathbb S^1$ by
 picking a random element from $[-\pi,\pi)$ uniformly.
 """
 random_point(M::Circle, ::Val{:Uniform}) = sym_rem(rand()*2*π)
@@ -110,7 +110,7 @@ random_tangent(M::Manifold, p) = random_tangent(M,p,Val(:Gaussian))
     random_tangent(M::Circle, x[, :Gaussian, σ=1.0])
 
 return a random tangent vector from the tangent space of the point `x` on the
-[`Circle`](@ref) $\mathbb S^1$ by using a normal distribution with
+[Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathbb S^1$ by using a normal distribution with
 mean 0 and standard deviation 1.
 """
 random_tangent(M::Circle, p, ::Val{:Gaussian}, σ::Real=1.0) = σ*randn()

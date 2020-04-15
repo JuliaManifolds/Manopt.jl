@@ -17,13 +17,13 @@ Generally the type
 
 ```@docs
 Options
-getOptions
+get_options
 ```
 
 Since the `Options` directly relate to a solver, they are documented with the
 corresponding [Solvers](@ref).
 You can always access the options (since they
-might be decorated) by calling [`getOptions`](@ref).
+might be decorated) by calling [`get_options`](@ref).
 
 ### Decorators for Options
 
@@ -44,9 +44,9 @@ as well as a helper for storing values using keys, i.e.
 
 ```@docs
 StoreOptionsAction
-getStorage
-hasStorage
-updateStorage!
+get_storage
+has_storage
+update_storage!
 ```
 
 #### [Debug Options](@id DebugOptions)

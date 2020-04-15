@@ -1,63 +1,73 @@
 @doc raw"""
-    DpGeo(M, p, q, t, X)
-computes $D_p g(t;x,y)[\eta]$.
+    differential_geodesic_startpoint(M, p, q, t, X)
+computes $D_p g(t;p,q)[\eta]$.
 
 # See also
- [`DqGeo`](@ref), [`jacobi_field`](@ref)
+ [`differential_geodesic_endpoint`](@ref), [`jacobi_field`](@ref)
 """
-DpGeo(M::mT,x,y,t,η) where {mT <: Manifold} = jacobi_field(M,x,y,t,η,βDxg)
+differential_geodesic_startpoint(M::mT,x,y,t,η) where {mT <: Manifold} = jacobi_field(M,x,y,t,η,βDxg)
 @doc raw"""
-    DqGeo(M,x,y,t,η)
-computes $D_yg(t;x,y)[\eta]$.
+    differential_geodesic_endpoint(M,x,y,t,η)
+computes $D_qg(t;p,q)[\eta]$.
 
 # See also
- [`DpGeo`](@ref), [`jacobi_field`](@ref)
+ [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
-DqGeo(M::mT, x, y, t, η) where {mT <: Manifold} = jacobi_field(M,y,x,1-t,η,βDxg)
+differential_geodesic_endpoint(M::mT, x, y, t, η) where {mT <: Manifold} = jacobi_field(M,y,x,1-t,η,βDxg)
 @doc raw"""
-    DpExp(M, p, X, Y)
+    differential_exp_basepoint(M, p, X, Y)
 
 Compute $D_p\exp_p X[Y]$.
 
 # See also
-[`DXExp`](@ref), [`jacobi_field`](@ref)
+[`differential_exp_argument`](@ref), [`jacobi_field`](@ref)
 """
-DpExp(M::MT,p,X,Y) where {MT <: Manifold} = jacobi_field(M, p, exp(M,p,X), 1.0, Y, βDpExp)
+function differential_exp_basepoint(M::Manifold,p,X,Y)
+    return jacobi_field(M, p, exp(M,p,X), 1.0, Y, βdifferential_exp_basepoint)
+end
 @doc raw"""
-    DXExp(M,x,ξ,η)
-computes $D_\xi\exp_x\xi[\eta]$.
-Note that $\xi ∈  T_\xi(T_x\mathcal M) = T_x\mathcal M$ is still a tangent vector.
+    differential_exp_argument(M, p, X, Y)
+computes $D_X\exp_pX[Y]$.
+Note that $X ∈  T_X(T_p\mathcal M) = T_p\mathcal M$ is still a tangent vector.
 
 # See also
- [`DpExp`](@ref), [`jacobi_field`](@ref)
+ [`differential_exp_basepoint`](@ref), [`jacobi_field`](@ref)
 """
-DξExp(M::MT, x, ξ, η) where {MT <: Manifold} = jacobi_field(M,x,exp(M,x,ξ),1.0,η,βDXExp)
+function differential_exp_argument(M::Manifold, p, X, Y)
+    return jacobi_field(M,p,exp(M,p,X),1.0,Y,βdifferential_exp_argument)
+end
+
 @doc raw"""
-    DqLog(M,x,y,η)
-computes $D_xlog_xy[\eta]$.
+    differential_log_basepoint(M, p, q, X)
+computes $D_p\log_pq[X]$.
 
 # See also
- [`DyLog`](@ref), [`jacobi_field`](@ref)
+ [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
 """
-DqLog(M::mT, x, y, η) where {mT <: Manifold} = jacobi_field(M,x,y,0.0,η,βDpLog)
+function differential_log_basepoint(M::Manifold, p, q, X)
+    return jacobi_field(M,p,q,0.0,X,βdifferential_log_basepoint)
+end
+
 @doc raw"""
-    DyLog(M,x,y,η)
-computes $D_ylog_xy[\eta]$.
+    differential_log_argument(M,p,q,X)
+computes $D_q\log_p,q[X]$.
 
 # See also
- [`DqLog`](@ref), [`jacobi_field`](@ref)
+ [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
 """
-DyLog(M::MT, x, y, η) where {MT <: Manifold} = jacobi_field(M,y,x,1.0,η,βDqLog)
+function differential_log_argument(M::Manifold, p, q, X)
+    return jacobi_field(M,q,p,1.0,X,βdifferential_log_argument)
+end
 
 @doc raw"""
-    ν = Dforward_logs(M,x,ξ)
+    Y = differential_forward_logs(M, p, X)
 
 compute the differenital of [`forward_logs`](@ref) $F$ on the `PowerManifold` manifold
-`M` at `x` and direction `ξ` ,
+`M` at `p` and direction `X` ,
 in the power manifold array, the differential of the function
 
 ```math
-F_i(x) = \sum_{j ∈ \mathcal I_i} \log_{x_i} x_j$, \quad i  ∈  \mathcal G,
+F_i(x) = \sum_{j ∈ \mathcal I_i} \log_{p_i} p_j$, \quad i  ∈  \mathcal G,
 ```
 
 where $\mathcal G$ is the set of indices of the `PowerManifold` manifold `M`
@@ -65,14 +75,14 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 
 # Input
 * `M`     – a `PowerManifold` manifold
-* `x`     – a point.
-* `ξ`     – a tangent vector.
+* `p`     – a point.
+* `X`     – a tangent vector.
 
 # Ouput
-* `ν` – resulting tangent vector in $T_x\mathcal N$ representing the differentials of the logs, where
+* `Y` – resulting tangent vector in $T_x\mathcal N$ representing the differentials of the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function Dforward_logs(M::PowerManifold, p, X)
+function differential_forward_logs(M::PowerManifold, p, X)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -92,7 +102,7 @@ function Dforward_logs(M::PowerManifold, p, X)
                 # this is neighbor in range,
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
                 # collects two, namely in kth direction since xi appears as base and arg
-                Y[i,k] = DqLog(M.manifold,p[i],p[j],X[i]) + DyLog(M.manifold,p[i],p[j],X[j])
+                Y[i,k] = differential_log_argument(M.manifold,p[i],p[j],X[i]) + differential_log_argument(M.manifold,p[i],p[j],X[j])
             end
         end # directions
     end # i in R

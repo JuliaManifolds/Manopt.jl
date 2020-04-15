@@ -12,8 +12,8 @@ the encapsulated `options` from within the [`RecordOptions`](@ref)` o`.
 """
 function initialize_solver!(p::P,o::O) where {P <: Problem, O <: RecordOptions}
     initialize_solver!(p,o.options)
-    get(o.recordDictionary, :Start, RecordGroup() )(p, getOptions(o), 0)
-    get(o.recordDictionary, :All,   RecordGroup() )(p, getOptions(o), 0)
+    get(o.recordDictionary, :Start, RecordGroup() )(p, get_options(o), 0)
+    get(o.recordDictionary, :All,   RecordGroup() )(p, get_options(o), 0)
 end
 """
     step_solver!(p,o,iter)
@@ -23,8 +23,8 @@ the values in the [`Options`](@ref)` o.options` and record the result(s).
 """
 function step_solver!(p::P,o::O, i) where {P <: Problem, O <: RecordOptions}
     step_solver!(p,o.options,i)
-    get(o.recordDictionary, :Step, RecordGroup() )(p, getOptions(o), i)
-    get(o.recordDictionary, :All,   RecordGroup() )(p, getOptions(o), i)
+    get(o.recordDictionary, :Step, RecordGroup() )(p, get_options(o), i)
+    get(o.recordDictionary, :All,   RecordGroup() )(p, get_options(o), i)
 end
 """
     get_solver_result(o)
@@ -45,8 +45,8 @@ If so, do a (final) record to `:All` and `:Stop`.
 function stop_solver!(p::P,o::O,i::Int) where {P <: Problem, O <: RecordOptions}
     s = stop_solver!(p,o.options,i)
     if s
-        get(o.recordDictionary, :Stop, RecordGroup() )(p, getOptions(o), typemin(Int) )
-        get(o.recordDictionary, :All,   RecordGroup() )(p, getOptions(o), typemin(Int ))
+        get(o.recordDictionary, :Stop, RecordGroup() )(p, get_options(o), typemin(Int) )
+        get(o.recordDictionary, :All,   RecordGroup() )(p, get_options(o), typemin(Int ))
     end
     return s
 end

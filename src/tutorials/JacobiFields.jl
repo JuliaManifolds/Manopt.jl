@@ -4,11 +4,11 @@
 # `Manopt.jl`.
 # For this tutorial you should be familiar with the basic terminology on a
 # manifold like the exponential and logarithmic map as well as
-# [`geodesic`](@ref)s.
+# [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s.
 #
 # We first initialize the manifold
 exportFolder = joinpath(@__DIR__,"..","..","docs","src","assets","images","tutorials") #src
-using Manopt
+using Manopt, Manifolds
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)
 using Colors
 black = RGBA{Float64}(colorant"#000000")
@@ -16,10 +16,10 @@ TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
 TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
 TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 nothing #hide
-# Assume we have two points on the equator of the [`Sphere`](@ref)`(2)` $\mathcal M = \mathbb S^2$
+# Assume we have two points on the equator of the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathcal M = \mathbb S^2$
 M = Sphere(2)
 x,y = [ [1.,0.,0.], [0.,1.,0.]]
-# their connecting [`geodesic`](@ref) (sampled at `100` points)
+# their connecting [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) (sampled at `100` points)
 geodesicCurve = shortest_geodesic(M,x,y,100);
 asyResolution = 2
 nothing #hide
@@ -56,7 +56,7 @@ asymptote_export_S2_signals(exportFolder*"/jacobiGeodesic.asy"; #src
 # (in $T_y\mathcal M$).
 #
 # For all other cases we employ a [`jacobi_field`](@ref), which is a (tangent)
-# vector field along the [`geodesic`](@ref) given as follows: The _geodesic variation_
+# vector field along the [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) given as follows: The _geodesic variation_
 # $\Gamma_{g,\xi}(s,t)$ is defined for some $\varepsilon > 0$ as
 #
 # $\Gamma_{g,\xi}(s,t):=\exp{\gamma_{x,\xi}(s)}[t\log_{g(s;x,\xi)}y],\qquad s∈(-\varepsilon,\varepsilon),\ t∈[0,1].$
@@ -84,12 +84,12 @@ Z = shortest_geodesic(M,x,y,T)
 nothing #hide
 # the geodesic moves as
 ηx = jacobi_field.(Ref(M), Ref(x), Ref(y), T, Ref(ξx) )
-# which can also be called using [`DpGeo`](@ref).
+# which can also be called using [`differential_geodesic_startpoint`](@ref).
 # We can add to the image above by creating extended tangent vectors
 # [`Tuple`](@ref) the include their base points
 Vx = Tuple.(ηx,Z)
 # and add that as one further set to the Asymptote export.
-asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicDpGeo.asy"; #src
+asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
     render = asyResolution, #src
     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx], #src
     colors=Dict( #src
@@ -101,7 +101,7 @@ asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicDpGeo.asy"; #src
 ) #src
 #md #
 #md # ```julia
-#md # asymptote_export_S2_signals("jacobiGeodesicDpGeo.asy";
+#md # asymptote_export_S2_signals("jacobiGeodesicdifferential_geodesic_startpoint.asy";
 #md #     render = asyResolution,
 #md #     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx],
 #md #     colors=Dict(
@@ -113,11 +113,11 @@ asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicDpGeo.asy"; #src
 #md # )
 #md # ```
 #
-#md # ![A Jacobi field for $D_xg(t,x,y)[\eta]$](../assets/images/tutorials/jacobiGeodesicDpGeo.png)
+#md # ![A Jacobi field for $D_xg(t,x,y)[\eta]$](../assets/images/tutorials/jacobiGeodesicdifferential_geodesic_startpoint.png)
 #
 # If we further move the end point, too, we can derive that Differential in direction
 ξy = [0.2,0.,-0.5]
-ηy = DqGeo.(Ref(M),Ref(x),Ref(y),T,Ref(ξy))
+ηy = differential_geodesic_endpoint.(Ref(M),Ref(x),Ref(y),T,Ref(ξy))
 Vy = Tuple.(ηy,Z)
 # and we can look at the total effect, where the [`Tuple`](@ref)s even verify
 # that only tangent vectors are added that have a common base point

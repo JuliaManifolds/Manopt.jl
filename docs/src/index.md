@@ -45,8 +45,6 @@ form a [plan](@ref planSection).
 To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugOptions) during the iterations of an algorithms as well as [record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [Getting Started: Optimize!](@ref Optimize) tutorial how to easily activate this.
 
-All four parts are accompanied by a documentation that can also be accessed from within `Julia REPL` and provides detailed information, e.g. the formula for an [exponential or logarithmic map on the manifold of symmetric positive definite matrices](@ref SymmetricPositiveDefiniteManifold) or literature references for an algorithm like [`cyclic_proximal_point`](@ref).
-
 ## Notation
 
 During this documentation, we refer to a variable with e.g. both `x` and $x$ depending on whether the context refers to a code fragment or a mathematical formula, respectively.

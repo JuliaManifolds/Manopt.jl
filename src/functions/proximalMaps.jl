@@ -5,7 +5,7 @@ compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ with
 parameter λ of $\varphi(x) = \frac{1}{p}d_{\mathcal M}^p(f,x)$.
 
 # Input
-* `M` – a [`Manifold`](@ref) $\mathcal M$
+* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathcal M$
 * `λ` – the prox parameter
 * `f` – a point $f ∈ \mathcal M$ (the data)
 * `x` – the argument of the proximal map
@@ -41,7 +41,7 @@ $\varphi(x,y) = d_{\mathcal M}^p(x,y)$ with
 parameter `λ`.
 
 # Input
-* `M` – a [`Manifold`](@ref)
+* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
 * `λ` – a real value, parameter of the proximal map
 * `(x1,x2)` – a tuple of two points,
 
@@ -78,7 +78,7 @@ elemets of `x` and `j = i+e_k`, where `e_k` is the $k$th unitvector.
 The parameter `λ` is the prox parameter.
 
 # Input
-* `M` – a [`Manifold`](@ref)
+* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
 * `λ` – a real value, parameter of the proximal map
 * `x` – a point.
 
@@ -247,7 +247,7 @@ neighbors (along any dimension in the array of `x`).
 The parameter `λ` is the prox parameter.
 
 # Input
-* `M` – a [`Manifold`](@ref)
+* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
 * `λ` – a real value, parameter of the proximal map
 * `x` – a points.
 

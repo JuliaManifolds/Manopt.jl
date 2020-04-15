@@ -26,8 +26,8 @@ The following weights functions are available
 
 ```@docs
 βDxg
-βDpExp
-βDXExp
-βDpLog
-βDqLog
+βdifferential_exp_basepoint
+βdifferential_exp_argument
+βdifferential_log_basepoint
+βdifferential_log_argument
 ```

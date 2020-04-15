@@ -15,8 +15,8 @@ integer. The gradient reads
 ```
 
 for $p\neq 1$ or $x\neq  y$. Note that for the remaining case $p=1$,
-$x=y$ the function is not differentiable. This function returns then the
-[`zero_tangent_vector`](@ref)`(M,x)`, since this is an element of the subdifferential.
+$x=y$ the function is not differentiable. In this case, the function returns the
+corresponding zero tangent vector, since this is an element of the subdifferential.
 
 # Optional
 
@@ -46,7 +46,7 @@ where both total variations refer to the intrinsic ones, [`∇TV`](@ref) and
 function ∇intrinsic_infimal_convolution_TV12(M::mT,f,u,v,α,β) where {mT <: Manifold}
   c = mid_point(M,u,v,f)
   iL = log(M,c,f)
-  return AdjDpGeo(M,u,v,1/2,iL) + α*β*∇TV(M,u), AdjDqGeo(M,u,v,1/2,iL) + α * (1-β) * ∇TV2(M,v)
+  return adjoint_differential_geodesic_startpoint(M,u,v,1/2,iL) + α*β*∇TV(M,u), adjoint_differential_geodesic_endpoint(M,u,v,1/2,iL) + α * (1-β) * ∇TV2(M,v)
 end
 @doc raw"""
     ∇TV(M,(x,y),[p=1])
@@ -190,12 +190,12 @@ function ∇TV2(M::MT, xT, p::Number=1) where {MT <: Manifold}
   d = distance(M,y,c)
   innerLog = -log(M,c,y)
   if p==2
-      return ( AdjDpGeo(M,x,z,1/2,innerLog), -log(M,y,c), AdjDqGeo(M,x,z,1/2,innerLog))
+      return ( adjoint_differential_geodesic_startpoint(M,x,z,1/2,innerLog), -log(M,y,c), adjoint_differential_geodesic_endpoint(M,x,z,1/2,innerLog))
   else
     if d==0 # subdifferential containing zero
       return (zero_tangent_vector(M,x),zero_tangent_vector(M,y),zero_tangent_vector(M,z))
     else
-      return ( AdjDpGeo(M,x,z,1/2,innerLog/(d^(2-p))), -log(M,y,c)/(d^(2-p)), AdjDqGeo(M,x,z,1/2,innerLog/(d^(2-p))) )
+      return ( adjoint_differential_geodesic_startpoint(M,x,z,1/2,innerLog/(d^(2-p))), -log(M,y,c)/(d^(2-p)), adjoint_differential_geodesic_endpoint(M,x,z,1/2,innerLog/(d^(2-p))) )
     end
   end
 end

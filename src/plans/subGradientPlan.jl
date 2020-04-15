@@ -8,7 +8,7 @@
 A structure to store information about a subgradient based optimization problem
 
 # Fields
-* `manifold` – a [`Manifold`](@ref)
+* `manifold` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
 * `cost` – the function $F$ to be minimized
 * `subgradient` – a function returning a subgradient $\partial F$ of $F$
 

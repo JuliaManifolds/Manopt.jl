@@ -9,7 +9,7 @@
 #
 # $\operatorname*{argmin}_{x∈\mathcal M} f(x)$
 #
-# where $\mathcal M$ is a [`Manifold`](@ref) and
+# where $\mathcal M$ is a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and
 # $f\colon\mathcal M \to \mathbb R$ is the cost function.
 #
 # In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](@ref)
@@ -27,7 +27,7 @@
 # cost function $f$ as well as `gradient` storing the gradient function
 # corresponding to $f$. Accessing both functions can be done directly but should
 # be encapsulated using [`get_cost`](@ref)`(p,x)` and [`getGradient`](@ref)`(p,x)`,
-# where in both cases `x` is a point on the [`Manifold`](@ref) `M`.
+# where in both cases `x` is a point on the [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`.
 # Second, the [`GradientDescentOptions`](@ref) specify that the algorithm to solve
 # the [`GradientProblem`](@ref) will be the [gradient
 # descent](https://en.wikipedia.org/wiki/Gradient_descent) algorithm. It requires
@@ -47,7 +47,7 @@
 # ## The given Dataset
 #
 exportFolder = joinpath(@__DIR__,"..","..","docs","src","assets","images","tutorials") #src
-using Manopt
+using Manopt, Manifolds
 using Random, Colors
 # For a persistent random set we use
 n = 100

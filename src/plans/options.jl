@@ -97,26 +97,26 @@ l elements there is one chosen permutation used for each iteration cycle.
 mutable struct FixedRandomEvalOrder <: EvalOrder end
 
 @doc raw"""
-    getOptions(O)
+    get_options(O)
 
 return the undecorated [`Options`](@ref) of the (possibly) decorated `O`.
 As long as your decorated options stores the options within `o.options` and
 implements the `SimpleTrait` `is_options_decorator`, this is behaviour is optained
 automatically.
 """
-getOptions(O) = error("Not implemented for types that are not `Options`")
+get_options(O) = error("Not implemented for types that are not `Options`")
 # this might seem like a trick/fallback just for documentation reasons
-@traitfn getOptions(o::O) where {O <: Options; !is_options_decorator{O}} = o
-@traitfn getOptions(o::O) where {O <: Options; is_options_decorator{O}} = getOptions(o.options)
+@traitfn get_options(o::O) where {O <: Options; !is_options_decorator{O}} = o
+@traitfn get_options(o::O) where {O <: Options; is_options_decorator{O}} = get_options(o.options)
 
 @doc raw"""
-    getReason(o)
+    get_reason(o)
 
 return the current reason stored within the [`StoppingCriterion`](@ref) from
 within the [`Options`](@ref) This reason is empty if the criterion has never
 been met.
 """
-getReason(o::O) where O <: Options = getReason( getOptions(o).stop )
+get_reason(o::O) where O <: Options = get_reason( get_options(o).stop )
 
 #
 # Common Actions for decorated Options
@@ -173,33 +173,33 @@ function (a::StoreOptionsAction)(p::P,o::O,i::Int) where {P <: Problem, O <: Opt
     a.lastStored = i
 end
 """
-    getStorage(a,key)
+    get_storage(a,key)
 
 return the internal value of the [`StoreOptionsAction`](@ref) `a` at the
 `Symbol` `key`.
 """
-getStorage(a::StoreOptionsAction,key) = a.values[key]
+get_storage(a::StoreOptionsAction,key) = a.values[key]
 """
-    getStorage(a,key)
+    get_storage(a,key)
 
 return whether the [`StoreOptionsAction`](@ref) `a` has a value stored at the
 `Symbol` `key`.
 """
-hasStorage(a::StoreOptionsAction,key) = haskey(a.values,key)
+has_storage(a::StoreOptionsAction,key) = haskey(a.values,key)
 """
-    updateStorage!(a,o)
+    update_storage!(a,o)
 
 update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given on
 the [`Options`](@ref) `o`.
 """
-updateStorage!(a::StoreOptionsAction,o::O) where {O <: Options} = updateStorage!(a, Dict( key => getproperty(o, key) for key in a.keys) )
+update_storage!(a::StoreOptionsAction,o::O) where {O <: Options} = update_storage!(a, Dict( key => getproperty(o, key) for key in a.keys) )
 """
-    updateStorage!(a,o)
+    update_storage!(a,o)
 
 update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given in
 the dictionary `d`. The values are merged, where the values from `d` are preferred.
 """
-function updateStorage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any}) where {O <: Options}
+function update_storage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any}) where {O <: Options}
     merge!(a.values, d)
     # update keys
     a.keys = Tuple( keys(a.values) )

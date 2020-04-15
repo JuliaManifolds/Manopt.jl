@@ -38,7 +38,7 @@ The default occasion is `:All` and for example solvers join this field with
 `:Start`, `:Step` and `:Stop` at the beginning, every iteration or the
 end of the algorithm, respectively
 
-The original options can still be accessed using the [`getOptions`](@ref) function.
+The original options can still be accessed using the [`get_options`](@ref) function.
 
 # Fields
 * `options` – the options that are extended by debug information
@@ -63,7 +63,7 @@ end
 RecordOptions(o::O, dR::D) where {O <: Options, D <: RecordAction} = RecordOptions{O}(o,Dict(:All => dR))
 RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = RecordOptions{O}(o,Dict(:All => RecordGroup(dR)))
 RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o,dR)
-RecordOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = RecordOptions{O}(o, RecordFactory(getOptions(o),format))
+RecordOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = RecordOptions{O}(o, RecordFactory(get_options(o),format))
 
 @traitimpl is_options_decorator{RecordOptions}
 
@@ -187,13 +187,13 @@ mutable struct RecordChange <: RecordAction
     storage::StoreOptionsAction
     RecordChange(a::StoreOptionsAction=StoreOptionsAction( (:x,) ) ) = new(Array{Float64,1}(),a)
     function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:x,)))
-        updateStorage!(a,Dict(:x=>x0))
+        update_storage!(a,Dict(:x=>x0))
         return new(Array{Float64,1}(),a)
     end
 end
 function (r::RecordChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     recordOrReset!(r,
-        hasStorage(r.storage, :x) ? distance(p.M,o.x, getStorage(r.storage,:x) ) : 0.0,
+        has_storage(r.storage, :x) ? distance(p.M,o.x, get_storage(r.storage,:x) ) : 0.0,
         i
     )
     r.storage(p,o,i)
@@ -243,13 +243,13 @@ mutable struct RecordEntryChange <: RecordAction
     function RecordEntryChange(v::T where T, f::Symbol, d::Function,
             a::StoreOptionsAction=StoreOptionsAction( (f,) )
         )
-        updateStorage!(a,Dict(f=>v))
+        update_storage!(a,Dict(f=>v))
         return new(Array{Float64,1}(),f, d, a)
     end
 end
 function (r::RecordEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     recordOrReset!(r,
-        hasStorage(r.storage, r.field) ? r.distance(p,o, getfield(o, r.field), getStorage(r.storage, r.field) ) : 0.0,
+        has_storage(r.storage, r.field) ? r.distance(p,o, getfield(o, r.field), get_storage(r.storage, r.field) ) : 0.0,
     i)
     r.storage(p,o,i)
 end

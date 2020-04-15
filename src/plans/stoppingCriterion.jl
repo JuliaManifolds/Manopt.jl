@@ -1,17 +1,17 @@
 @doc raw"""
-    getReason(c)
+    get_reason(c)
 
 return the current reason stored within a [`StoppingCriterion`](@ref) `c`.
 This reason is empty if the criterion has never been met.
 """
-getReason(c::sC) where sC <: StoppingCriterion = c.reason
+get_reason(c::sC) where sC <: StoppingCriterion = c.reason
 
 @doc raw"""
-    getStoppingCriteriaArray(c)
+    get_stopping_criteria(c)
 return the array of internally stored [`StoppingCriterion`](@ref)s for a
 [`StoppingCriterionSet`](@ref) `c`.
 """
-getStoppingCriteriaArray(c::S) where {S <: StoppingCriterionSet} = error("getStoppingCriteriaArray() not defined for a $(typeof(c)).")
+get_stopping_criteria(c::S) where {S <: StoppingCriterionSet} = error("get_stopping_criteria() not defined for a $(typeof(c)).")
 
 @doc raw"""
     stopAfterIteration <: StoppingCriterion
@@ -22,7 +22,7 @@ of iterations.
 # Fields
 * `maxIter` – stores the maximal iteration number where to stop at
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-  reached, see [`getReason`](@ref).
+  reached, see [`get_reason`](@ref).
 
 # Constructor
 
@@ -83,8 +83,8 @@ mutable struct StopWhenChangeLess <: StoppingCriterion
     StopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction( (:x,) )) = new(ε,"",a)
 end
 function (c::StopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if hasStorage(c.storage,:x)
-        xOld = getStorage(c.storage,:x)
+    if has_storage(c.storage,:x)
+        xOld = get_storage(c.storage,:x)
         if distance(p.M, o.x, xOld) < c.threshold && i>0
             c.reason = "The algorithm performed a step with a change ($(distance(p.M, o.x, xOld))) less than $(c.threshold).\n"
             c.storage(p,o,i)
@@ -113,12 +113,12 @@ mutable struct StopWhenAll <: StoppingCriterionSet
 end
 function (c::StopWhenAll)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if all([ subC(p,o,i) for subC in c.criteria])
-        c.reason = string( [ getReason(subC) for subC in c.criteria ]... )
+        c.reason = string( [ get_reason(subC) for subC in c.criteria ]... )
         return true
     end
     return false
 end
-getStoppingCriteriaArray(c::StopWhenAll) = c.criteria
+get_stopping_criteria(c::StopWhenAll) = c.criteria
 
 @doc raw"""
     StopWhenAny <: StoppingCriterion
@@ -139,12 +139,12 @@ mutable struct StopWhenAny <: StoppingCriterionSet
 end
 function (c::StopWhenAny)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if any([ subC(p,o,i) for subC in c.criteria])
-        c.reason = string( [ getReason(subC) for subC in c.criteria ]... )
+        c.reason = string( [ get_reason(subC) for subC in c.criteria ]... )
         return true
     end
     return false
 end
-getStoppingCriteriaArray(c::StopWhenAny) = c.criteria
+get_stopping_criteria(c::StopWhenAny) = c.criteria
 """
     StopWhenCostLess <: StoppingCriterion
 
@@ -202,7 +202,7 @@ function (c::stopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     return false
 end
 @doc raw"""
-    getActiveStoppingCriteria(c)
+    get_active_stopping_criteria(c)
 
 returns all active stopping criteria, if any, that are within a
 [`StoppingCriterion`](@ref) `c`, and indicated a stop, i.e. their reason is
@@ -212,13 +212,13 @@ array if no stop is incated or the stopping criterion as the only element of
 an array. For a [`StoppingCriterionSet`](@ref) all internal (even nested)
 criteria that indicate to stop are returned.
 """
-function getActiveStoppingCriteria(c::sCS) where sCS<:StoppingCriterionSet
-    c = getActiveStoppingCriteria.(getStoppingCriteriaArray(c))
+function get_active_stopping_criteria(c::sCS) where sCS<:StoppingCriterionSet
+    c = get_active_stopping_criteria.(get_stopping_criteria(c))
     return vcat(c...)
 end
 # for non-array containing stopping criteria, the recursion ends in either
 # returning nothing or an 1-element array contianing itself
-function getActiveStoppingCriteria(c::sC) where sC <: StoppingCriterion
+function get_active_stopping_criteria(c::sC) where sC <: StoppingCriterion
     if c.reason != ""
         return [c] # recursion top
     else
