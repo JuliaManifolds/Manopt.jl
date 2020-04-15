@@ -55,7 +55,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
 # $g(1; x,y) = y$ which is fixed, so $D_x g(1; x,y)$ is the zero tangent vector
 # (in $T_y\mathcal M$).
 #
-# For all other cases we employ a [`jacobiField`](@ref), which is a (tangent)
+# For all other cases we employ a [`jacobi_field`](@ref), which is a (tangent)
 # vector field along the [`geodesic`](@ref) given as follows: The _geodesic variation_
 # $\Gamma_{g,\xi}(s,t)$ is defined for some $\varepsilon > 0$ as
 #
@@ -72,7 +72,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
 # $J_{g,\xi}(t) = 0$. In symmetric spaces we can compute the solution, since the
 # system of ODEs decouples, see for example [do Carmo](#doCarmo1992),
 # Chapter 4.2. Within `Manopt.jl` this is implemented as
-# [`jacobiField`](@ref)`(M,x,y,t,ξ[,β])`, where the optional parameter (function)
+# [`jacobi_field`](@ref)`(M,x,y,t,ξ[,β])`, where the optional parameter (function)
 # `β` specifies, which Jacobi field we want to evaluate and the one used here is
 # the default.
 #
@@ -83,7 +83,7 @@ nothing #hide
 Z = shortest_geodesic(M,x,y,T)
 nothing #hide
 # the geodesic moves as
-ηx = jacobiField.(Ref(M), Ref(x), Ref(y), T, Ref(ξx) )
+ηx = jacobi_field.(Ref(M), Ref(x), Ref(y), T, Ref(ξx) )
 # which can also be called using [`DpGeo`](@ref).
 # We can add to the image above by creating extended tangent vectors
 # [`Tuple`](@ref) the include their base points

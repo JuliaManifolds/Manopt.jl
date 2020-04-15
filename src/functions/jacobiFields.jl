@@ -1,7 +1,7 @@
 @doc raw"""
     βDxg(κ,t,d)
 
-weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
+weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_x g(t;p,q)[X]$.
 They are
 
@@ -19,7 +19,7 @@ Due to a symmetry agrument, these are also used to compute $D_q g(t; p,q)[\eta]$
 
 # See also
 
-[`DqGeo`](@ref), [`DpGeo`](@ref), [`jacobiField`](@ref)
+[`DqGeo`](@ref), [`DpGeo`](@ref), [`jacobi_field`](@ref)
 """
 function βDxg(κ,t,d)
     if (d==0) || (κ==0)
@@ -35,7 +35,7 @@ end
 @doc raw"""
     βDpExp(κ,t,d)
 
-weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
+weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_p \exp_p X [Y]$. They are
 
 ```math
@@ -48,7 +48,7 @@ with respect to its start point $D_p \exp_p X [Y]$. They are
 
 # See also
 
-[`DpExp`](@ref), [`jacobiField`](@ref)
+[`DpExp`](@ref), [`jacobi_field`](@ref)
 """
 function βDpExp(κ,t,d)
     if κ < 0
@@ -62,7 +62,7 @@ end
 @doc raw"""
     βDXExp(κ,t,d)
 
-weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
+weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_X \exp_p X[Y]$. They are
 
 ```math
@@ -75,7 +75,7 @@ $\beta(\kappa) = \begin{cases}
 
 # See also
 
-[`DξExp`](@ref), [`jacobiField`](@ref)
+[`DξExp`](@ref), [`jacobi_field`](@ref)
 """
 function βDXExp(κ,t,d)
     if (d==0) || (κ==0)
@@ -91,7 +91,7 @@ end
 @doc raw"""
     βDpLog(κ,t,d)
 
-weights for the [`jacobiField`](@ref) corresponding to the differential of the geodesic
+weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_p \log_p q[X]$. They are
 
 ```math
@@ -104,7 +104,7 @@ with respect to its start point $D_p \log_p q[X]$. They are
 
 # See also
 
-[`DqLog`](@ref), [`DyLog`](@ref), [`jacobiField`](@ref)
+[`DqLog`](@ref), [`DyLog`](@ref), [`jacobi_field`](@ref)
 """
 function βDpLog(κ::Number,t::Number,d::Number)
     if (d==0) || (κ==0)
@@ -133,7 +133,7 @@ map with respect to its argument $D_q \log_p q[X]$. They are
 
 # See also
 
-[`DyLog`](@ref), [`jacobiField`](@ref)
+[`DyLog`](@ref), [`jacobi_field`](@ref)
 """
 function βDqLog(κ::Number,t::Number,d::Number)
     if (d==0) || (κ==0)
@@ -148,16 +148,16 @@ function βDqLog(κ::Number,t::Number,d::Number)
 end
 
 @doc raw"""
-    Y = adjointJacobiField(M, p, q, t, X, β)
+    Y = adjoint_Jacobi_field(M, p, q, t, X, β)
 
 Compute the AdjointJacobiField $J$ along the geodesic $γ_{p,q}$ on the manifold
 $\mathcal M$ with initial conditions (depending on the application)
 $X ∈ T_{γ_{p,q}(t)}\mathcal M$ and weights $β$. The result is a vector
-$Y ∈ T_p\mathcal M$. The main difference to [`jacobiField`](@ref) is the,
+$Y ∈ T_p\mathcal M$. The main difference to [`jacobi_field`](@ref) is the,
 that the input `X` and the output `Y` switched tangent spaces.
-For detais see [`jacobiField`](@ref)
+For detais see [`jacobi_field`](@ref)
 """
-function adjointJacobiField(M::Manifold, p, q, t, X, β::Function=βDpGeo)
+function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β::Function=βDpGeo)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -172,7 +172,7 @@ function adjointJacobiField(M::Manifold, p, q, t, X, β::Function=βDpGeo)
     )
     return Y
 end
-function adjointJacobiField(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βDpGeo)
+function adjoint_Jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βDpGeo)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -187,11 +187,11 @@ function adjointJacobiField(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, 
     )[1]
     return Y
 end
-function adjointJacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=βDpGeo)
+function adjoint_Jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function=βDpGeo)
     rep_size = representation_size(M.manifold)
-    Y = allocate_result(M, adjointJacobiField, p, X)
+    Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
-        lY = adjointJacobiField(M.manifold, p[i], q[i], t, X[i], β)
+        lY = adjoint_Jacobi_field(M.manifold, p[i], q[i], t, X[i], β)
         if size(lY) == ()
             Y[i] = lY
         else
@@ -202,16 +202,16 @@ function adjointJacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=�
 end
 
 @doc doc"""
-    Y = jacobiField(M, p, q, t, X, β)
-compute the jacobiField $J$ along the geodesic $γ_{p,q}$ on the manifold $\mathcal M$ with
+    Y = jacobi_field(M, p, q, t, X, β)
+compute the Jacobi jield $J$ along the geodesic $γ_{p,q}$ on the manifold $\mathcal M$ with
 initial conditions (depending on the application) $X ∈ T_p\mathcal M$ and weights $β$. The
 result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
 
 # See also
 
-[`adjointJacobiField`](@ref)
+[`adjoint_Jacobi_field`](@ref)
 """
-function jacobiField(M::Manifold, p, q, t, X, β::Function=βDgx)
+function jacobi_field(M::Manifold, p, q, t, X, β::Function=βDgx)
     x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -227,7 +227,7 @@ function jacobiField(M::Manifold, p, q, t, X, β::Function=βDgx)
     )
     return Y
 end
-function jacobiField(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βDgx)
+function jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βDgx)
     x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -243,11 +243,11 @@ function jacobiField(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Fun
     )[1]
     return Y
 end
-function jacobiField(M::AbstractPowerManifold, p, q, t, X, β::Function=βDgx)
+function jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function=βDgx)
     rep_size = representation_size(M.manifold)
-    Y = allocate_result(M, adjointJacobiField, p, X)
+    Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
-        lY = jacobiField(M.manifold, p[i], q[i], t, X[i], β)
+        lY = jacobi_field(M.manifold, p[i], q[i], t, X[i], β)
         if size(lY) == ()
             Y[i] = lY
         else

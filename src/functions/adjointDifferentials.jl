@@ -5,9 +5,9 @@ Compute the adjoint of $D_p γ(t; p, q)[X]$.
 
 # See also
 
-[`DpGeo`](@ref), [`adjointJacobiField`](@ref)
+[`DpGeo`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-AdjDpGeo(M::MT, p, q, t, X) where {MT <: Manifold} = adjointJacobiField(M, p, q, t, X, βDxg)
+AdjDpGeo(M::MT, p, q, t, X) where {MT <: Manifold} = adjoint_Jacobi_field(M, p, q, t, X, βDxg)
 
 @doc raw"""
     AdjDqGeo(M, p, q, t, X)
@@ -16,10 +16,10 @@ Compute the adjoint of $D_q γ(t; p, q)[X]$.
 
 # See also
 
-[`DqGeo`](@ref), [`adjointJacobiField`](@ref)
+[`DqGeo`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function AdjDqGeo(M::MT, p, q, t, X) where {MT <: Manifold}
-    return adjointJacobiField(M, q, p, 1-t, X, βDxg)
+    return adjoint_Jacobi_field(M, q, p, 1-t, X, βDxg)
 end
 
 @doc raw"""
@@ -29,10 +29,10 @@ Computes the adjoint of $D_p \exp_p X[Y]$.
 
 # See also
 
-[`DpExp`](@ref), [`adjointJacobiField`](@ref)
+[`DpExp`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function AdjDpExp(M::MT, p, X, Y) where {MT <: Manifold}
-    return adjointJacobiField(M, p, exp(M, p, X), 1., Y, βDpExp)
+    return adjoint_Jacobi_field(M, p, exp(M, p, X), 1., Y, βDpExp)
 end
 
 @doc raw"""
@@ -43,10 +43,10 @@ Note that $X ∈  T_p(T_p\mathcal M) = T_p\mathcal M$ is still a tangent vector.
 
 # See also
 
-[`DξExp`](@ref), [`adjointJacobiField`](@ref)
+[`DξExp`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function AdjDXExp(M::mT, p, X, Y) where {mT <: Manifold}
-    return adjointJacobiField(M, p, exp(M, p, X), 1.0, Y, βDXExp)
+    return adjoint_Jacobi_field(M, p, exp(M, p, X), 1.0, Y, βDXExp)
 end
 
 @doc raw"""
@@ -55,9 +55,9 @@ end
 computes the adjoint of $D_p log_p q[X]$.
 
 # See also
-[`DqLog`](@ref), [`adjointJacobiField`](@ref)
+[`DqLog`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-AdjDpLog(M::mT, p, q, X) where {mT <: Manifold} = adjointJacobiField(M, p, q, 0., X, βDpLog)
+AdjDpLog(M::mT, p, q, X) where {mT <: Manifold} = adjoint_Jacobi_field(M, p, q, 0., X, βDpLog)
 
 @doc raw"""
     AdjDqLog(M, p, q, X)
@@ -65,9 +65,9 @@ AdjDpLog(M::mT, p, q, X) where {mT <: Manifold} = adjointJacobiField(M, p, q, 0.
 Compute the adjoint of $D_q log_p q[X]$.
 
 # See also
-[`DqLog`](@ref), [`adjointJacobiField`](@ref)
+[`DqLog`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-AdjDqLog(M::MT, p, q, X) where {MT <: Manifold} = adjointJacobiField(M, p, q, 1., X, βDqLog)
+AdjDqLog(M::MT, p, q, X) where {MT <: Manifold} = adjoint_Jacobi_field(M, p, q, 1., X, βDqLog)
 
 @doc raw"""
     Y = AdjDforwardLogs(M, p, X)

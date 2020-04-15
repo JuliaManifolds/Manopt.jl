@@ -3,51 +3,51 @@
 computes $D_p g(t;x,y)[\eta]$.
 
 # See also
- [`DqGeo`](@ref), [`jacobiField`](@ref)
+ [`DqGeo`](@ref), [`jacobi_field`](@ref)
 """
-DpGeo(M::mT,x,y,t,η) where {mT <: Manifold} = jacobiField(M,x,y,t,η,βDxg)
+DpGeo(M::mT,x,y,t,η) where {mT <: Manifold} = jacobi_field(M,x,y,t,η,βDxg)
 @doc raw"""
     DqGeo(M,x,y,t,η)
 computes $D_yg(t;x,y)[\eta]$.
 
 # See also
- [`DpGeo`](@ref), [`jacobiField`](@ref)
+ [`DpGeo`](@ref), [`jacobi_field`](@ref)
 """
-DqGeo(M::mT, x, y, t, η) where {mT <: Manifold} = jacobiField(M,y,x,1-t,η,βDxg)
+DqGeo(M::mT, x, y, t, η) where {mT <: Manifold} = jacobi_field(M,y,x,1-t,η,βDxg)
 @doc raw"""
     DpExp(M, p, X, Y)
 
 Compute $D_p\exp_p X[Y]$.
 
 # See also
-[`DXExp`](@ref), [`jacobiField`](@ref)
+[`DXExp`](@ref), [`jacobi_field`](@ref)
 """
-DpExp(M::MT,p,X,Y) where {MT <: Manifold} = jacobiField(M, p, exp(M,p,X), 1.0, Y, βDpExp)
+DpExp(M::MT,p,X,Y) where {MT <: Manifold} = jacobi_field(M, p, exp(M,p,X), 1.0, Y, βDpExp)
 @doc raw"""
     DXExp(M,x,ξ,η)
 computes $D_\xi\exp_x\xi[\eta]$.
 Note that $\xi ∈  T_\xi(T_x\mathcal M) = T_x\mathcal M$ is still a tangent vector.
 
 # See also
- [`DpExp`](@ref), [`jacobiField`](@ref)
+ [`DpExp`](@ref), [`jacobi_field`](@ref)
 """
-DξExp(M::MT, x, ξ, η) where {MT <: Manifold} = jacobiField(M,x,exp(M,x,ξ),1.0,η,βDXExp)
+DξExp(M::MT, x, ξ, η) where {MT <: Manifold} = jacobi_field(M,x,exp(M,x,ξ),1.0,η,βDXExp)
 @doc raw"""
     DqLog(M,x,y,η)
 computes $D_xlog_xy[\eta]$.
 
 # See also
- [`DyLog`](@ref), [`jacobiField`](@ref)
+ [`DyLog`](@ref), [`jacobi_field`](@ref)
 """
-DqLog(M::mT, x, y, η) where {mT <: Manifold} = jacobiField(M,x,y,0.0,η,βDpLog)
+DqLog(M::mT, x, y, η) where {mT <: Manifold} = jacobi_field(M,x,y,0.0,η,βDpLog)
 @doc raw"""
     DyLog(M,x,y,η)
 computes $D_ylog_xy[\eta]$.
 
 # See also
- [`DqLog`](@ref), [`jacobiField`](@ref)
+ [`DqLog`](@ref), [`jacobi_field`](@ref)
 """
-DyLog(M::MT, x, y, η) where {MT <: Manifold} = jacobiField(M,y,x,1.0,η,βDqLog)
+DyLog(M::MT, x, y, η) where {MT <: Manifold} = jacobi_field(M,y,x,1.0,η,βDqLog)
 
 @doc raw"""
     ν = DforwardLogs(M,x,ξ)

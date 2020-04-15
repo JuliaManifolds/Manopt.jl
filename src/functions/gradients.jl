@@ -178,7 +178,7 @@ d_2(x,y,z) = \min_{c ∈ \mathcal C_{x,z}} d(c,y).
 ```
 
 While the (sub)gradient with respect to $y$ is easy, the other two require
-the evaluation of an [`adjointJacobiField`](@ref).
+the evaluation of an [`adjoint_Jacobi_field`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """

@@ -162,12 +162,12 @@ export AbstractOptionsAction, StoreOptionsAction
 export hasStorage, getStorage, updateStorage!
 
 export βDxg, βDpExp, βDXExp, βDpLog, βDqLog
-export adjointJacobiField
+export adjoint_Jacobi_field
 export AdjDpGeo, AdjDqGeo, AdjDpExp, AdjDpExp, AdjDpLog, AdjDqLog, AdjDforwardLogs
 export asyExportS2Signals, asyExportS2Data, asyExportSPDData
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export DpGeo, DqGeo, DpExp,DξExp, DqLog, DyLog, DforwardLogs
-export jacobiField
+export jacobi_field
 export gradTV, gradTV2, gradIntrICTV12, forwardLogs, gradDistance
 export getCost, getGradient, getSubGradient, getProximalMap, getOptions, getInitialStepsize
 export getHessian, approxHessianFD

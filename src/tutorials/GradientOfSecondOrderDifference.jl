@@ -1,7 +1,7 @@
 # # [Illustration of the Gradient of a Second Order Difference](@id secondOrderDifferenceGrad)
 #
 # This example explains how to compute the gradient of the second order
-# difference mid point model using [`adjointJacobiField`](@ref)s.
+# difference mid point model using [`adjoint_Jacobi_field`](@ref)s.
 #
 # This example also illustrates the `PowerManifold` manifold as well
 # as [`ArmijoLinesearch`](@ref).
