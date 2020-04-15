@@ -33,7 +33,7 @@ function random_point(M::Grassmann{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64=1.0)
 end
 
 function random_point(M::ProductManifold, o...)
-    ProductRepr([ random_point(N,o...) for N in M.manifolds ])
+    ProductRepr([ random_point(N,o...) for N in M.manifolds ]...)
 end
 @doc doc"""
     randomMPoint(M::Rotations[, type=:Gaussian, σ=1.0])
@@ -99,6 +99,14 @@ function random_point(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)
 end
 
 @doc doc"""
+    random_tangent(M,p)
+
+generate a random tangent vector in the tangent space of `p` on `M`. By default
+this is a `:Gaussian` distribution.
+"""
+random_tangent(M::Manifold, p) = random_tangent(M,p,Val(:Gaussian))
+
+@doc doc"""
     random_tangent(M::Circle, x[, :Gaussian, σ=1.0])
 
 return a random tangent vector from the tangent space of the point `x` on the
@@ -116,12 +124,12 @@ standard deviation `σ`.
 random_tangent(M::Euclidean, p, ::Val{:Gaussian}, σ::Float64=1.0) = σ * randn(T,manifold_dimension(M))
 
 @doc doc"""
-    randomTVector(M,x [,type=:Gaussian, σ=1.0])
+    random_tangent(M,x [,type=:Gaussian, σ=1.0])
 
 return a (Gaussian) random vector from the tangent space $T_x\mathrm{Gr}(n,k)$ with mean
 zero and standard deviation `σ` by projecting a random Matrix onto the  `x` with [`project`](@ref).
 """
-function random_tangent(::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
+function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
     Z = σ * randn(eltype(p), size(p))
     X = project(M, p, Z)
     X = X/norm(X)
@@ -129,7 +137,7 @@ function random_tangent(::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
 end
 
 @doc doc"""
-    randomTVector(M::Hyperpolic, p)
+    random_tangent(M::Hyperpolic, p)
 
 generate a random point on the Hyperbolic manifold by projecting a point from the embedding
 with respect to the Minkowsky metric.
@@ -167,7 +175,7 @@ function random_tangent(M::ProductManifold, p, options...)
         M.manifolds,
         submanifold_components(M, p)
     )
-    return X
+    return ProductRepr(X...)
 end
 
 @doc doc"""

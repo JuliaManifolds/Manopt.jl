@@ -93,7 +93,7 @@ Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
 `Y` – resulting tangent vector in $T_p\mathcal M$ representing the adjoint
   differentials of the logs.
 """
-function AdjDforwardLogs(M::PowerManifold{ℝ,MT,T}, p, X) where {MT <: Manifold, T}
+function AdjDforwardLogs(M::PowerManifold, p, X)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)

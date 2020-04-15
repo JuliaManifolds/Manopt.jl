@@ -177,6 +177,6 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     zr = inner(p.M, o.x, z, o.residual)
     # Compute new search direction.
     β = zr/zrOld
-    o.δ = tangent(p.M, o.x, z + β * o.δ)
+    o.δ = project(p.M, o.x, z + β * o.δ)
 end
 getSolverResult(o::O) where {O <: TruncatedConjugateGradientOptions} = o.η

@@ -73,7 +73,9 @@ module Manopt
         ArrayReshaper,
         prod_point,
         ShapeSpecification,
-        ProductRepr
+        ProductRepr,
+        submanifold_components,
+        submanifold_component
 
     """
         mid_point(M, p, q, x)

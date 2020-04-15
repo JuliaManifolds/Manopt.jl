@@ -121,7 +121,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Determine eta0
         if o.useRand==false
                 # Pick the zero vector
-                eta = zeroTVector(p.M, o.x)
+                eta = zero_tangent_vector(p.M, o.x)
         else
                 # Random vector in T_x M (this has to be very small)
                 eta = 10.0^(-6)*random_tangent(p.M, o.x)

@@ -207,7 +207,7 @@ function approxHessianFD(M::MT, x, gradFct::Function, ξ; stepsize::Float64=2.0^
     end
     c = stepsize / norm_xi
     grad = gradFct(x)
-    x1 = retraction(M, x, ξ, c)
+    x1 = exp(M, x, ξ, c)
     grad1 = gradFct(x1)
     grad1 = vector_transport_to(M, x1, grad1, x, ParallelTransport())
     return (grad1 - grad)/c

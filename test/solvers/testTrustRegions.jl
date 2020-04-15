@@ -6,6 +6,9 @@
     N = Grassmann(3,2)
     M = N × N
 
+    function cost(X::ProductRepr)
+        return cost([submanifold_components(X)...])
+    end
     function cost(X::Array{Matrix{Float64},1})
         return -0.5 * norm(transpose(X[1]) * A * X[2])^2
     end
@@ -19,15 +22,16 @@
     end
 
     function rgrad(M::ProductManifold, X::ProductRepr)
-        eG = egrad([submanifold_component(M,X,1),submanifold_component(M,X,2)])
-        return Manifolds.ProductRepr(project.(M.manifolds, X, eG)...)
+        eG = egrad([submanifold_components(M,X)...])
+        x = [submanifold_components(M,X)...]
+        return Manifolds.ProductRepr(project.(M.manifolds, x, eG)...)
     end
 
     function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
         pxHess = project(M,x,Hess)
         xtGrad = x'*eGrad
         ξxtGrad = ξ*xtGrad
-        return ProductRepr(pxHess - ξxtGrad)
+        return pxHess - ξxtGrad
     end
 
     function eHess(X::Array{Matrix{Float64},1}, H::Array{Matrix{Float64},1})
@@ -45,11 +49,11 @@
     end
 
     function rhess(M::ProductManifold, X::ProductRepr, H::ProductRepr)
-        x = submanifold_components(X)
-        h = submanifold_components(H)
+        x = [submanifold_components(M,X)...]
+        h = [submanifold_components(M,H)...]
         eG = egrad(x)
         eH = eHess(x,h)
-        return e2rHess.(M.manifolds, x, h, eG, eH)
+        return Manifolds.ProductRepr(e2rHess.(M.manifolds, x, h, eG, eH)...)
     end
 
     x = random_point(M)
@@ -61,7 +65,7 @@
 
     X = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2) )
     opt = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), returnOptions=true )
-    @test getSolverResult(opt)==X
+    @test isapprox(M,X,getSolverResult(opt))
 
     @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
 
@@ -75,7 +79,7 @@
     XaH = trustRegions(M, cost, rgrad, x, (p,x,ξ) -> approxHessianFD(p,x, x -> rgrad(p,x), ξ; stepsize=2^(-9));
         stoppingCriterion = stopWhenAny(stopAfterIteration(2000), stopWhenGradientNormLess(10^(-6))),
         Δ_bar=4*sqrt(2*2),
-    )
+    ) # retraction not defined
     @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-10)
 
     ξ = random_tangent(M,x)
@@ -84,11 +88,11 @@
     # Test the random step trust region
     p = HessianProblem(M, cost, rgrad, rhess, (M,x,ξ) -> ξ)
     o = TrustRegionsOptions(x, stopAfterIteration(2000), 10.0^(-8),
-        sqrt(manifold_dimension(M)), retraction, true, 0.1, 1000.)
+        sqrt(manifold_dimension(M)), retract, true, 0.1, 1000.)
     @test doSolverStep!(p,o,0) == nothing
 
     η = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5)
     ηOpt = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5; returnOptions=true)
-    @test getSolverResult(ηOpt)==η
+    @test submanifold_components(getSolverResult(ηOpt)) == submanifold_components(η)
 
 end
