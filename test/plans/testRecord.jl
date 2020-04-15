@@ -15,7 +15,7 @@
     @test_throws ErrorException getOptions(p)
     #
     @test getInitialStepsize(p,rO) == 1.
-    @test getStepsize!(p,rO,1) == 1.
+    @test get_stepsize!(p,rO,1) == 1.
     @test getLastStepsize(p,rO,1) == 1.
     #
     @test rO.recordDictionary[:All] == a

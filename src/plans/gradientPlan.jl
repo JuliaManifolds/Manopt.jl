@@ -4,7 +4,7 @@ specify a problem for gradient based algorithms.
 
 # Fields
 * `M`            – a manifold $\mathcal M$
-* `costFunction` – a function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `cost` – a function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `gradient`     – the gradient $\nabla F\colon\mathcal M
   \to \mathcal T\mathcal M$ of the cost function $F$
 
@@ -15,7 +15,7 @@ specify a problem for gradient based algorithms.
 # """
 mutable struct GradientProblem{mT <: Manifold} <: Problem
   M::mT
-  costFunction::Function
+  cost::Function
   gradient::Function
 end
 """

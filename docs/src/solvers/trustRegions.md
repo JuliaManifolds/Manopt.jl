@@ -116,8 +116,8 @@ wich approximates the exponential map. In some cases it is cheaper to use this
 instead of the exponential.
 
 To step number 6: One knows that the [`truncatedConjugateGradient`](@ref) algorithm stopped for
-these reasons when the stopping criteria [`stopWhenCurvatureIsNegative`](@ref),
-[`stopWhenTrustRegionIsExceeded`](@ref) are activated.
+these reasons when the stopping criteria [`StopWhenCurvatureIsNegative`](@ref),
+[`StopWhenTrustRegionIsExceeded`](@ref) are activated.
 
 To step number 7: The last step is to decide if the new point ${x}^{* }$ is
 accepted.

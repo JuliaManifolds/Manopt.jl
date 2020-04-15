@@ -1,4 +1,4 @@
-using Manopt, Plots
+using Manopt, Manifolds, Plots
 #
 # Settings
 resultsFolder = "src/examples/Total_Variation/S1_TV/"
@@ -21,8 +21,8 @@ end
 #
 # Manifolds and Data
 M = Circle()
-N = PowerManifold(M,(n,))
-f = artificialS1Signal(n)
+N = PowerManifold(M,n)
+f = artificial_S1_signal(n)
 xCompare = f
 fn = addNoise.(Ref(M),f,:Gaussian,σ)
 data = fn
@@ -45,7 +45,7 @@ proxes = [ (λ,x) -> proxDistance(N,λ,data,x),
     (λ,x) -> proxTV(N,α*λ,x),
     (λ,x) -> proxTV2(N,β*λ,x) ]
 
-o = cyclicProximalPoint(N,F,proxes, data;
+o = cyclic_proximal_point(N,F,proxes, data;
     λ = i -> π/i,
     debug = Dict(:Stop => DebugStoppingCriterion(),
                  :Step => DebugEvery(DebugGroup([
@@ -59,7 +59,7 @@ o = cyclicProximalPoint(N,F,proxes, data;
     record = [:Iteration, :Cost, :Change, :Iterate],
     returnOptions=true
 )
-fR = getSolverResult(o)
+fR = get_solver_result(o)
 r = getRecord(o)
 #
 # Result

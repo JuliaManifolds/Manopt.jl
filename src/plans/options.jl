@@ -1,11 +1,11 @@
 
 """
-    IsOptionsDecorator{O}
+    is_options_decorator{O}
 
 A trait to specify that a certain `Option` decorates, i.e. internally
 stores the original [`Options`](@ref) under consideration.
 """
-@traitdef IsOptionsDecorator{O}
+@traitdef is_options_decorator{O}
 
 """
     Options
@@ -44,7 +44,7 @@ abstract type StoppingCriterion end
 
 An abstract type for a Stopping Criterion that itself consists of a set of
 Stopping criteria. In total it acts as a stopping criterion itself. Examples
-are [`stopWhenAny`](@ref) and [`stopWhenAll`](@ref) that can be used to
+are [`StopWhenAny`](@ref) and [`StopWhenAll`](@ref) that can be used to
 combine stopping criteria.
 """
 abstract type StoppingCriterionSet <: StoppingCriterion end
@@ -101,13 +101,13 @@ mutable struct FixedRandomEvalOrder <: EvalOrder end
 
 return the undecorated [`Options`](@ref) of the (possibly) decorated `O`.
 As long as your decorated options stores the options within `o.options` and
-implements the `SimpleTrait` `IsOptionsDecorator`, this is behaviour is optained
+implements the `SimpleTrait` `is_options_decorator`, this is behaviour is optained
 automatically.
 """
 getOptions(O) = error("Not implemented for types that are not `Options`")
 # this might seem like a trick/fallback just for documentation reasons
-@traitfn getOptions(o::O) where {O <: Options; !IsOptionsDecorator{O}} = o
-@traitfn getOptions(o::O) where {O <: Options; IsOptionsDecorator{O}} = getOptions(o.options)
+@traitfn getOptions(o::O) where {O <: Options; !is_options_decorator{O}} = o
+@traitfn getOptions(o::O) where {O <: Options; is_options_decorator{O}} = getOptions(o.options)
 
 @doc raw"""
     getReason(o)

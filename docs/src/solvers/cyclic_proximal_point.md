@@ -19,7 +19,7 @@ For a convergence result on
 see [[Bačák, 2014](#Bačák2014)].
 
 ```@docs
-cyclicProximalPoint
+cyclic_proximal_point
 ```
 
 ```@docs

@@ -20,7 +20,7 @@ if !isdir(resultsFolder)
 end
 #
 # Manifold & Data
-f = artificialSPDImage2(32)
+f = artificial_SPD_image2(32)
 if ExportOrig
   renderAsymptote(resultsFolder*experimantName*"orig.asy", asyExportSPDData; data=f, scaleAxes=(7.5,7.5,7.5))
 end
@@ -46,9 +46,9 @@ prox1 = (η,x) -> cat( proxDistance(M,η,f,x[1]), proxParallelTV(M,α*η,x[2:5])
 prox2 = (η,x) -> fill(mean(M,x;stoppingCriterion=stopAfterIteration(20)),5)
 sC = stopAfterIteration(400)
 try
-  costFunctionThreshold = load(resultsFolder*comparisonData)["compareCostFunctionValue"]
-  global sC = stopWhenCostLess(costFunctionThreshold)
-  @info "Comparison to CPPA (`SPDImage_CPPA.jl`) and its cost of $costFunctionThreshold."
+  cost_threshold = load(resultsFolder*comparisonData)["compareCostFunctionValue"]
+  global sC = StopWhenCostLess(cost_threshold)
+  @info "Comparison to CPPA (`SPDImage_CPPA.jl`) and its cost of $cost_threshold."
 catch y
   if isa(y, SystemError)
     @info "Comparison to CPPA only possible after runninng `SPDImage_CPPA.jl` its cost was stored."
@@ -63,7 +63,7 @@ x0 = f
   parallel=5,
   returnOptions = true
 )
-y = getSolverResult(o)
+y = get_solver_result(o)
 r = getRecord(o)
 #
 # Result

@@ -30,13 +30,14 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
 
     M = ProductManifold(Grassmannian(p, m), Grassmannian(p, n))
 
-    function cost(X)
-        U = X[1]
-        V = X[2]
-        return -0.5 * norm(transpose(U) * A * V)^2
+    function cost(X::ProductRepr)
+        return cost([submanifold_components(X)...])
+    end
+    function cost(X::Array{Matrix{Float64},1})
+        return -0.5 * norm(transpose(X[1]) * A * X[2])^2
     end
 
-    function egrad(X)
+    function egrad(X::Array{Matrix{Float64},1})
         U = X[1]
         V = X[2]
         AV = A*V
@@ -44,19 +45,20 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         return [ -AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V) ];
     end
 
-    function rgrad(M, X)
-        eG = egrad(X)
-        return project.(M.manifolds, X, eG)
+    function rgrad(M::ProductManifold, X::ProductRepr)
+        eG = egrad([submanifold_components(M,X)...])
+        x = [submanifold_components(M,X)...]
+        return Manifolds.ProductRepr(project.(M.manifolds, x, eG)...)
     end
 
-    function e2rHess(M, x, ξ, eGrad,Hess)
-	    pxHess = project(M,x,Hess)
+    function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+        pxHess = project(M,x,Hess)
         xtGrad = x'*eGrad
         ξxtGrad = ξ*xtGrad
         return pxHess - ξxtGrad
     end
 
-    function eHess(X, H)
+    function eHess(X::Array{Matrix{Float64},1}, H::Array{Matrix{Float64},1})
         U = X[1]
         V = X[2]
         Udot = H[1]
@@ -69,10 +71,13 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
                  -(AtUdot*transpose(AtU)*V + AtU*transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot)
             ]
     end
-    function rhess(M, X, H)
-        eG = egrad(X)
-        eH = eHess(X,H)
-        return e2rHess.(M.manifolds, X, H, eG, eH)
+
+    function rhess(M::ProductManifold, X::ProductRepr, H::ProductRepr)
+        x = [submanifold_components(M,X)...]
+        h = [submanifold_components(M,H)...]
+        eG = egrad(x)
+        eH = eHess(x,h)
+        return Manifolds.ProductRepr(e2rHess.(M.manifolds, x, h, eG, eH)...)
     end
 
     x = random_point(M)

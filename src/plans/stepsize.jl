@@ -3,7 +3,7 @@
 #
 export ConstantStepsize, DecreasingStepsize
 export Linesearch, ArmijoLinesearch
-export getStepsize!, getInitialStepsize, getLastStepsize
+export get_stepsize!, getInitialStepsize, getLastStepsize
 #
 # Simple ones
 #
@@ -120,7 +120,7 @@ mutable struct ArmijoLinesearch <: Linesearch
         sufficientDecrease::Float64=0.1) = new(s, r, contractionFactor, sufficientDecrease,s)
 end
 function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
-    a(p.M, o.x, p.costFunction, getGradient(p,o.x), η)
+    a(p.M, o.x, p.cost, getGradient(p,o.x), η)
 end
 function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, T}
     # for local shortness
@@ -148,14 +148,14 @@ getInitialStepsize(a::ArmijoLinesearch) = a.initialStepsize
 #
 # Access functions
 #
-@traitfn getStepsize!(p::P, o::O,vars...) where {P <: Problem, O <: Options; IsOptionsDecorator{O}} = getStepsize!(p, o.options,vars...)
-@traitfn getStepsize!(p::P, o::O,vars...) where {P <: Problem, O <: Options; !IsOptionsDecorator{O}} = o.stepsize(p,o,vars...)
+@traitfn get_stepsize!(p::P, o::O,vars...) where {P <: Problem, O <: Options; is_options_decorator{O}} = get_stepsize!(p, o.options,vars...)
+@traitfn get_stepsize!(p::P, o::O,vars...) where {P <: Problem, O <: Options; !is_options_decorator{O}} = o.stepsize(p,o,vars...)
 
-@traitfn getInitialStepsize(p::P,o::O,vars...) where {P <: Problem, O <: Options; !IsOptionsDecorator{O}} = getInitialStepsize(o.stepsize)
-@traitfn getInitialStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; IsOptionsDecorator{O}} = getInitialStepsize(p, o.options)
+@traitfn getInitialStepsize(p::P,o::O,vars...) where {P <: Problem, O <: Options; !is_options_decorator{O}} = getInitialStepsize(o.stepsize)
+@traitfn getInitialStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; is_options_decorator{O}} = getInitialStepsize(p, o.options)
 
-@traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; IsOptionsDecorator{O}} = getLastStepsize(p, o.options,vars...)
-@traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; !IsOptionsDecorator{O}} = getLastStepsize(p,o,o.stepsize,vars...)
+@traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; is_options_decorator{O}} = getLastStepsize(p, o.options,vars...)
+@traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; !is_options_decorator{O}} = getLastStepsize(p,o,o.stepsize,vars...)
 
 getLastStepsize(p::P,o::O,s::S,vars...) where {P <: Problem, O <: Options,S <: Stepsize} = s(p,o,vars...)
 getLastStepsize(p::P,o::O,s::ArmijoLinesearch,vars...) where {P <: Problem, O <: Options} = s.stepsizeOld

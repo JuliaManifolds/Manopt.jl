@@ -182,7 +182,7 @@ geodesic from `x1` to `x3` that is closest to `x2`.
 * `p` – (`1`) exponent of the distance of the TV term
 
 # Optional
-`kwargs...` – parameters for the internal [`subGradientMethod`](@ref)
+`kwargs...` – parameters for the internal [`subgradient_method`](@ref)
     (if `M` is neither `Euclidean` nor `Circle`, since for these a closed form
     is given)
 
@@ -202,7 +202,7 @@ function proxTV2(M::mT,λ,pointTuple::Tuple{T,T,T},p::Int=1;
   xInit = PowX
   F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
   ∂F(x) = log(PowM,x,PowX) + λ*∇TV2(PowM,x)
-  xR = subGradientMethod(PowM,F,∂F,xInit;stoppingCriterion=stoppingCriterion, kwargs...)
+  xR = subgradient_method(PowM,F,∂F,xInit;stoppingCriterion=stoppingCriterion, kwargs...)
   return (xR...,)
 end
 function proxTV2(M::Circle,λ,pointTuple::Tuple{T,T,T},p::Int=1) where {T}

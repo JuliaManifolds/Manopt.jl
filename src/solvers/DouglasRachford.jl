@@ -27,7 +27,7 @@ the default parameter is given in brackets
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflection`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
-* `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200),`[`stopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
+* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
   `PowerManifold` manifold with two proxes. This can be used to trigger
   parallel Douglas–Rachford if you enter with two proxes. Keep in mind, that a
@@ -38,7 +38,7 @@ the default parameter is given in brackets
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `xOpt` if returned
 ...
-and the ones that are passed to [`decorateOptions`](@ref) for decorators.
+and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
@@ -50,7 +50,7 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
     α::Function = (iter) -> 0.9,
     R = reflect,
     parallel::Int = 0,
-    stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenChangeLess(10.0^-5)),
+    stoppingCriterion::StoppingCriterion = StopWhenAny( stopAfterIteration(200), StopWhenChangeLess(10.0^-5)),
     returnOptions=false,
     kwargs... #especially may contain decorator options
 ) where {MT <: Manifold}
@@ -77,17 +77,17 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
     p = ProximalProblem(M,nF,[prox1,prox2])
     o = DouglasRachfordOptions(x, λ, α, reflect, stoppingCriterion,parallel > 0)
 
-    o = decorateOptions(o; kwargs...)
+    o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions
         return resultO
     else
-        return getSolverResult(resultO)
+        return get_solver_result(resultO)
     end
 end
-function initializeSolver!(p::ProximalProblem,o::DouglasRachfordOptions)
+function initialize_solver!(p::ProximalProblem,o::DouglasRachfordOptions)
 end
-function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
+function step_solver!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
     pP = getProximalMap(p,o.λ(iter),o.s,1)
     snew = o.R(p.M, pP, o.s);
     o.x = getProximalMap(p,o.λ(iter),snew,2)
@@ -95,4 +95,4 @@ function doSolverStep!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
     # relaxation
     o.s = shortest_geodesic(p.M,o.s,snew,o.α(iter))
 end
-getSolverResult(o::DouglasRachfordOptions) = o.parallel ? o.x[1] : o.x
+get_solver_result(o::DouglasRachfordOptions) = o.parallel ? o.x[1] : o.x

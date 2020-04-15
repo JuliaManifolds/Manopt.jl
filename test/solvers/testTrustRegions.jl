@@ -66,7 +66,7 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
     X = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2) )
     opt = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), returnOptions=true )
-    @test isapprox(M,X,getSolverResult(opt))
+    @test isapprox(M,X,get_solver_result(opt))
 
     @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
 
@@ -90,9 +90,9 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
             stepsize=2^(-9),
             transport=ProductVectorTransport(ProjectionTransport(),ProjectionTransport())
         );
-        stoppingCriterion = stopWhenAny(
+        stoppingCriterion = StopWhenAny(
             stopAfterIteration(2000),
-            stopWhenGradientNormLess(10^(-6))
+            StopWhenGradientNormLess(10^(-6))
         ),
         Δ_bar=4*sqrt(2*2),
     )
@@ -105,9 +105,9 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
     p = HessianProblem(M, cost, rgrad, rhess, (M,x,ξ) -> ξ)
     o = TrustRegionsOptions(x, stopAfterIteration(2000), 10.0^(-8),
         sqrt(manifold_dimension(M)), retract, true, 0.1, 1000.)
-    @test doSolverStep!(p,o,0) == nothing
+    @test step_solver!(p,o,0) == nothing
 
     η = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5)
     ηOpt = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5; returnOptions=true)
-    @test submanifold_components(getSolverResult(ηOpt)) == submanifold_components(η)
+    @test submanifold_components(get_solver_result(ηOpt)) == submanifold_components(η)
 end

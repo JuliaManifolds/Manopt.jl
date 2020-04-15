@@ -15,7 +15,7 @@ ExportResultVideo = false
 ExportTable = true
 #
 # Manifold and Data
-f = artificialSPDImage2(32)
+f = artificial_SPD_image2(32)
 pixelM = SymmetricPositiveDefinite(3)
 resultsFolder = "src/examples/Total_Variation/SPD_TV/"
 experimentName = "ImageCPPA"
@@ -40,15 +40,15 @@ prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x)),1)
 #
 # Setup and Optimize
 cost(x) =  fidelity(x) + α*prior(x)
-proximalMaps = [(λ,x) -> proxDistance(M,λ,f,x,2), (λ,x) -> proxTV(M,α*λ,x,1)]
+proxes = [(λ,x) -> proxDistance(M,λ,f,x,2), (λ,x) -> proxTV(M,α*λ,x,1)]
 x0 = f
-@time o = cyclicProximalPoint(M,cost,proximalMaps,x0;
+@time o = cyclic_proximal_point(M,cost,proxes,x0;
 debug = [:Iteration," | ", DebugProximalParameter()," | ", :Change, " | ", :Cost, "\n",100,:Stop],
 record = [:Iteration, :Iterate, :Cost],
 stoppingCriterion = stopAfterIteration(maxIterations),
 returnOptions = true
 )
-y = getSolverResult(o)
+y = get_solver_result(o)
 yRec = getRecord(o)
 #
 # Results

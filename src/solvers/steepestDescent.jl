@@ -1,7 +1,7 @@
 #
 # A simple steepest descent algorithm implementation
 #
-export initializeSolver!, doSolverStep!, getSolverResult
+export initialize_solver!, step_solver!, get_solver_result
 export steepestDescent
 export DebugGradient, DebugGradientNorm, DebugStepsize
 @doc raw"""
@@ -19,13 +19,13 @@ different choices of $s_k$ available (see `stepsize` option below).
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
   functor.
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
-* `stoppingCriterion` – (`[`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+* `stoppingCriterion` – (`[`StopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `xOpt` if returned
 ...
-and the ones that are passed to [`decorateOptions`](@ref) for decorators.
+and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
@@ -36,28 +36,28 @@ function steepestDescent(M::mT,
     F::Function, ∇F::Function, x;
     stepsize::Stepsize = ConstantStepsize(1.0),
     retraction::Function = exp,
-    stoppingCriterion::StoppingCriterion = stopWhenAny( stopAfterIteration(200), stopWhenGradientNormLess(10.0^-8)),
+    stoppingCriterion::StoppingCriterion = StopWhenAny( stopAfterIteration(200), StopWhenGradientNormLess(10.0^-8)),
     returnOptions=false,
     kwargs... #collect rest
   ) where {mT <: Manifold}
   p = GradientProblem(M,F,∇F)
   o = GradientDescentOptions(M, x, stoppingCriterion,stepsize,retraction)
-  o = decorateOptions(o; kwargs...)
+  o = decorate_options(o; kwargs...)
   resultO = solve(p,o)
   if returnOptions
     return resultO
   else
-    return getSolverResult(resultO)
+    return get_solver_result(resultO)
   end
 end
 #
 # Solver functions
 #
-function initializeSolver!(p::P,o::O) where {P <: GradientProblem, O <: GradientDescentOptions}
+function initialize_solver!(p::P,o::O) where {P <: GradientProblem, O <: GradientDescentOptions}
     o.∇ = getGradient(p,o.x)
 end
-function doSolverStep!(p::P,o::O,iter) where {P <: GradientProblem, O <: GradientDescentOptions}
+function step_solver!(p::P,o::O,iter) where {P <: GradientProblem, O <: GradientDescentOptions}
     o.∇ = getGradient(p,o.x)
-    o.x = o.retraction(p.M, o.x , -getStepsize!(p,o,iter) * o.∇)
+    o.x = o.retraction(p.M, o.x , -get_stepsize!(p,o,iter) * o.∇)
 end
-getSolverResult(o::O) where {O <: GradientDescentOptions} = o.x
+get_solver_result(o::O) where {O <: GradientDescentOptions} = o.x

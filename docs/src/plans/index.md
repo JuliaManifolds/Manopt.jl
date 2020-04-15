@@ -30,8 +30,8 @@ might be decorated) by calling [`getOptions`](@ref).
 Options can be decorated using the following trait and function to initialize
 
 ```@docs
-IsOptionsDecorator
-decorateOptions
+is_options_decorator
+decorate_options
 ```
 
 In general decorators often perform actions so we introduce
@@ -107,7 +107,7 @@ get_cost
 ```
 
 For any algorithm that involves a cyclic evalutaion, e.g.
-[`cyclicProximalPoint`](@ref), one can specify the [`EvalOrder`](@ref) as
+[`cyclic_proximal_point`](@ref), one can specify the [`EvalOrder`](@ref) as
 
 ```@docs
 EvalOrder
@@ -132,7 +132,7 @@ getGradient
 
 ```@docs
 SubGradientProblem
-getSubGradient
+get_subgradient
 ```
 
 ### [Proximal Map(s) based problem](@id ProximalProblem)

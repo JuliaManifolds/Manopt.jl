@@ -9,8 +9,8 @@ A structure to store information about a subgradient based optimization problem
 
 # Fields
 * `manifold` – a [`Manifold`](@ref)
-* `costFunction` – the function $F$ to be minimized
-* `subGradient` – a function returning a subgradient $\partial F$ of $F$
+* `cost` – the function $F$ to be minimized
+* `subgradient` – a function returning a subgradient $\partial F$ of $F$
 
 # Constructor
 
@@ -22,20 +22,20 @@ at a point.
 """
 mutable struct SubGradientProblem{mT <: Manifold} <: Problem
     M::mT
-    costFunction::Function
-    subGradient::Function
+    cost::Function
+    subgradient::Function
 end
 """
-    getSubGradient(p,x)
+    get_subgradient(p,x)
 
 Evaluate the (sub)gradient of a [`SubGradientProblem`](@ref)` p` at the point `x`.
 """
-function getSubGradient(p::P, x) where {P <: SubGradientProblem{M} where M <: Manifold}
-    return p.subGradient(x)
+function get_subgradient(p::P, x) where {P <: SubGradientProblem{M} where M <: Manifold}
+    return p.subgradient(x)
 end
 """
     SubGradientMethodOptions <: Options
-stories option values for a [`subGradientMethod`](@ref) solver
+stories option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 * `retraction` – the retration to use within

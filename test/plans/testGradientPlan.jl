@@ -8,13 +8,13 @@
     ∇f = y -> -2*log(M,y,x)
     p = GradientProblem(M,f,∇f)
     @test getInitialStepsize(p,o) == 1.
-    @test getStepsize!(p,o,1) == 1.
+    @test get_stepsize!(p,o,1) == 1.
     @test getLastStepsize(p,o,1) == 1.
     # Check Fallbacks of Problen
     @test get_cost(p,o.x) == 0.
     @test getGradient(p,o.x) == zero_tangent_vector(M,x)
     @test_throws ErrorException getProximalMap(p,1.,o.x,1)
-    @test_throws ErrorException getSubGradient(p,o.x)
+    @test_throws ErrorException get_subgradient(p,o.x)
     # Additional Specific Debugs
     a1 = DebugGradient(false, x -> print(io,x))
     a1(p,o,1)

@@ -6,7 +6,7 @@ specify a problem for hessian based algorithms.
 
 # Fields
 * `M`            : a manifold $\mathcal M$
-* `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `cost` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `gradient`     : the gradient $\nabla F\colon\mathcal M
   \to \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}[F] (\cdot)_ {x} \colon \mathcal T_{x} \mathcal M
@@ -19,7 +19,7 @@ specify a problem for hessian based algorithms.
 """
 struct HessianProblem{mT <: Manifold} <: Problem
     M::mT
-    costFunction::Function
+    cost::Function
     gradient::Function
     hessian::Union{Function,Missing}
     precon::Function
@@ -294,7 +294,7 @@ function (c::stopIfResidualIsReducedByPower)(p::P,o::O,i::Int) where {P <: Hessi
 end
 
 @doc raw"""
-    stopWhenTrustRegionIsExceeded <: StoppingCriterion
+    StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
 A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
 mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
@@ -308,9 +308,9 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 
 # Constructor
 
-    stopWhenTrustRegionIsExceeded([a])
+    StopWhenTrustRegionIsExceeded([a])
 
-initialize the stopWhenTrustRegionIsExceeded functor to indicate to stop after
+initialize the StopWhenTrustRegionIsExceeded functor to indicate to stop after
 the norm of the next iterate is greater than the trust-region radius using the
 [`StoreOptionsAction`](@ref) `a`, which is initialized to store
 `:η, :δ, :residual` by default.
@@ -318,12 +318,12 @@ the norm of the next iterate is greater than the trust-region radius using the
 # See also
 [`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
 """
-mutable struct stopWhenTrustRegionIsExceeded <: StoppingCriterion
+mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
     storage::StoreOptionsAction
-    stopWhenTrustRegionIsExceeded(a::StoreOptionsAction=StoreOptionsAction( (:η, :δ, :residual) )) = new("", a)
+    StopWhenTrustRegionIsExceeded(a::StoreOptionsAction=StoreOptionsAction( (:η, :δ, :residual) )) = new("", a)
 end
-function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function (c::StopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if hasStorage(c.storage,:δ) && hasStorage(c.storage,:η) && hasStorage(c.storage,:residual)
         η = getStorage(c.storage,:η)
         δ = getStorage(c.storage,:δ)
@@ -344,7 +344,7 @@ function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: Hessia
 end
 
 @doc raw"""
-    stopWhenCurvatureIsNegative <: StoppingCriterion
+    StopWhenCurvatureIsNegative <: StoppingCriterion
 
 A functor for testing if the curvature of the model is negative, i.e.
 $\langle \delta_k, \operatorname{Hess}[F](\delta_k)\rangle_x \leqq 0$.
@@ -359,9 +359,9 @@ does not give a reduction of the model.
 
 # Constructor
 
-    stopWhenCurvatureIsNegative([a])
+    StopWhenCurvatureIsNegative([a])
 
-initialize the stopWhenCurvatureIsNegative functor to indicate to stop after
+initialize the StopWhenCurvatureIsNegative functor to indicate to stop after
 the inner product of the search direction and the hessian applied on the search
 dircetion is less than zero using the [`StoreOptionsAction`](@ref) `a`, which
 is initialized to just store `:δ` by default.
@@ -369,12 +369,12 @@ is initialized to just store `:δ` by default.
 # See also
 [`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
 """
-mutable struct stopWhenCurvatureIsNegative <: StoppingCriterion
+mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
     storage::StoreOptionsAction
-    stopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction( (:δ, ) )) = new("", a)
+    StopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction( (:δ, ) )) = new("", a)
 end
-function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function (c::StopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     if hasStorage(c.storage,:δ)
         δ = getStorage(c.storage,:δ)
         if inner(p.M, o.x, δ, getHessian(p, o.x, δ)) <= 0 && i > 0

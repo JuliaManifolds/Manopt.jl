@@ -15,25 +15,25 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
 * `M`            - a [`Manifold`](@ref) $\mathcal M$
-* `costFunction` - a function $F\colon\mathcal M\to\mathbb R$ to
+* `cost` - a function $F\colon\mathcal M\to\mathbb R$ to
   minimize
-* `proximalMaps` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
+* `proxes` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
   as functions (λ,x) -> y, i.e. the prox parameter λ also belongs to the signature of the proximal map.
-* `numberOfProxes` - (length(proximalMaps)) number of proxmal Maps,
+* `number_of_proxes` - (length(proxes)) number of proxmal Maps,
   e.g. if one of the maps is a compined one such that the proximal Maps
   functions return more than one entry per function
 
 # See also
-[`cyclicProximalPoint`](@ref), [`get_cost`](@ref), [`getProximalMap`](@ref)
+[`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`getProximalMap`](@ref)
 """
 mutable struct ProximalProblem{mT <: Manifold} <: Problem
   M::mT
-  costFunction::Function
-  proximalMaps::Array{Function,N} where N
-  numberOfProxes::Array{Int,1}
+  cost::Function
+  proxes::Array{Function,N} where N
+  number_of_proxes::Array{Int,1}
   ProximalProblem(M::mT, cF::Function, proxMaps::Array{Function,1}) where {mT <: Manifold}= new{mT}(M,cF,proxMaps,ones(length(proxMaps)))
   ProximalProblem(M::mT, cF::Function, proxMaps::Array{Function,1}, nOP::Array{Int,1}) where {mT <: Manifold} =
-    length(nOP) != length(proxMaps) ? throw(ErrorException("The numberOfProxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
+    length(nOP) != length(proxMaps) ? throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
     new{mT}(M,cF,proxMaps,nOP)
 end
 @doc raw"""
@@ -42,10 +42,10 @@ end
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
 function getProximalMap(p::P,λ,x,i) where {P <: ProximalProblem{M} where M <: Manifold}
-    if i>length(p.proximalMaps)
-        throw( ErrorException("the $(i)th entry does not exists, only $(length(p.proximalMaps)) available.") )
+    if i>length(p.proxes)
+        throw( ErrorException("the $(i)th entry does not exists, only $(length(p.proxes)) available.") )
     end
-    return p.proximalMaps[i](λ,x);
+    return p.proxes[i](λ,x);
 end
 #
 #
@@ -55,7 +55,7 @@ end
 """
     CyclicProximalPointOptions <: Options
 
-stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
+stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
 * `x0` – an point to start
@@ -67,7 +67,7 @@ stores options for the [`cyclicProximalPoint`](@ref) algorithm. These are the
     iteration, and [`FixedRandomEvalOrder`](@ref)`()` that fixes a random cycle for all iterations.
 
 # See also
-[`cyclicProximalPoint`](@ref)
+[`cyclic_proximal_point`](@ref)
 """
 mutable struct CyclicProximalPointOptions <: Options
     x

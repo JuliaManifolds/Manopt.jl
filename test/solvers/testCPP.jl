@@ -2,17 +2,17 @@
 using Dates
 n = 100
 N = PowerManifold(Circle(),n)
-f = artificialS1Signal(n)
+f = artificial_S1_signal(n)
 F = x -> costL2TV(N,f,0.5,x)
 proxes = [ (λ,x) -> proxDistance(N,λ,f,x), (λ,x) -> proxTV(N,0.5*λ,x) ]
-o = cyclicProximalPoint(N,F,proxes, f;
+o = cyclic_proximal_point(N,F,proxes, f;
     λ = i -> π/(2*i),
-    stoppingCriterion = stopWhenAll( stopAfter(Second(10)), stopAfterIteration(5000) ),
+    stoppingCriterion = StopWhenAll( stopAfter(Second(10)), stopAfterIteration(5000) ),
     debug = [DebugIterate()," ",DebugCost()," ",DebugProximalParameter(),"\n",10000],
     record = [RecordProximalParameter(), RecordIterate(f), RecordCost()],
     returnOptions=true
     )
-fR = getSolverResult(o)
+fR = get_solver_result(o)
 rec = getRecord(o)
 @test F(f) > F(fR)
 #

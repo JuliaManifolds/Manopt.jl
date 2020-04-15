@@ -1,7 +1,7 @@
 #
 # A simple steepest descent algorithm implementation
 #
-export initializeSolver!, doSolverStep!, getSolverResult
+export initialize_solver!, step_solver!, get_solver_result
 export NelderMead
 @doc raw"""
     NelderMead(M, F [, p])
@@ -30,7 +30,7 @@ and
 * `ρ` – (`1/2`) contraction parameter, $0 < \rho \leq \frac{1}{2}$,
 * `σ` – (`1/2`) shrink coefficient, $0 < \sigma \leq 1$
 
-and the ones that are passed to [`decorateOptions`](@ref) for decorators.
+and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
 * either `x` the last iterate or the complete options depending on the optional
@@ -48,23 +48,23 @@ function NelderMead(M::MT,
     p = CostProblem(M,F)
     o = NelderMeadOptions(population, stoppingCriterion;
     α = α, γ = γ, ρ = ρ, σ = σ)
-    o = decorateOptions(o; kwargs...)
+    o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions
         return resultO
     else
-        return getSolverResult(resultO)
+        return get_solver_result(resultO)
     end
 end
 #
 # Solver functions
 #
-function initializeSolver!(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions}
+function initialize_solver!(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions}
     # init cost and x
     o.costs = get_cost.(Ref(p), o.population )
     o.x = o.population[argmin(o.costs)] # select min
 end
-function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadOptions}
+function step_solver!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadOptions}
     m = mean(p.M, o.population)
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
     ξ =log( p.M, m, o.population[last(ind)])
@@ -118,4 +118,4 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     # store best
     o.x = o.population[ argmin(o.costs) ]
 end
-getSolverResult(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions} = o.x
+get_solver_result(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions} = o.x

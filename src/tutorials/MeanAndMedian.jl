@@ -15,7 +15,7 @@
 # In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](@ref)
 # `p` and [`Options`](@ref) `o`. While former contains __static__ data,
 # most prominently the manifold $\mathcal M$ (usually as `p.M`) and the cost
-# function $f$ (usually as `p.costFunction`), the latter contains __dynamic__
+# function $f$ (usually as `p.cost`), the latter contains __dynamic__
 # data, i.e. things that usually change during the algorithm, are allowed to
 # change, or specify the details of the algorithm to use. Together they form a
 # `plan`. A `plan` uniquely determines the algorithm to use and provide all
@@ -151,13 +151,13 @@ proxes = Function[ (λ,y) -> proxDistance(M,λ/n,di,y,1) for di in data ]
 nothing #hide
 # where the `Function` is a helper for global scope to infer the correct type.
 #
-# We then call the [`cyclicProximalPoint`](@ref) as
-o = cyclicProximalPoint(M,F2,proxes,data[1];
+# We then call the [`cyclic_proximal_point`](@ref) as
+o = cyclic_proximal_point(M,F2,proxes,data[1];
     debug = [:Iteration," | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
     record = [:Iteration, :Change, :Cost],
     returnOptions = true
 )
-xMedian = getSolverResult(o)
+xMedian = get_solver_result(o)
 values = getRecord(o)
 nothing # hide
 # where the differences to [`steepestDescent`](@ref) are as follows

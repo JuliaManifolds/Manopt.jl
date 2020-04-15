@@ -7,14 +7,14 @@ gradient free ones.
 # Fields
 
 * `M`            – a manifold $\mathcal M$
-* `costFunction` – a function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `cost` – a function $F\colon\mathcal M\to\mathbb R$ to minimize
 
 # See also
 [`NelderMead`](@ref)
 """
 struct CostProblem{mT <: Manifold} <: Problem
     M::mT
-    costFunction::Function
+    cost::Function
 end
 
 @doc raw"""
@@ -77,4 +77,4 @@ mutable struct NelderMeadOptions{T} <: Options
         return new{T}(p, stop, α, γ, ρ, σ, p[1],[])
     end
 end
-getSolverResult(o::NelderMeadOptions) = o.x
+get_solver_result(o::NelderMeadOptions) = o.x

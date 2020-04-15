@@ -113,8 +113,8 @@ stopIfResidualIsReducedByPower
 stopIfResidualIsReducedByFactor
 ```
 ```@docs
-stopWhenTrustRegionIsExceeded
+StopWhenTrustRegionIsExceeded
 ```
 ```@docs
-stopWhenCurvatureIsNegative
+StopWhenCurvatureIsNegative
 ```

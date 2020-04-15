@@ -33,8 +33,8 @@ For a description of the algorithm and more details see
 * `retraction` – approximation of the exponential map [`exp`](@ref)
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
-* `stoppingCriterion` – ([`stopWhenAny`](@ref)([`stopAfterIteration`](@ref)`(1000)`,
-  [`stopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
+* `stoppingCriterion` – ([`StopWhenAny`](@ref)([`stopAfterIteration`](@ref)`(1000)`,
+  [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
 * `Δ` - the (initial) trust-region radius
@@ -76,9 +76,9 @@ function trustRegions(
     H::Union{Function,Missing};
     retraction::Function = exp,
     preconditioner::Function = (M,x,ξ) -> ξ,
-    stoppingCriterion::StoppingCriterion = stopWhenAny(
+    stoppingCriterion::StoppingCriterion = StopWhenAny(
         stopAfterIteration(1000),
-        stopWhenGradientNormLess(10^(-6))
+        StopWhenGradientNormLess(10^(-6))
     ),
     Δ_bar = sqrt(manifold_dimension(M)),
     Δ = Δ_bar/8,
@@ -106,18 +106,18 @@ function trustRegions(
         ρ_prime,
         ρ_regularization
     )
-    o = decorateOptions(o; kwargs...)
+    o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions
         return resultO
     else
-        return getSolverResult(resultO)
+        return get_solver_result(resultO)
     end
 end
 
-initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions} = nothing
+initialize_solver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions} = nothing
 
-function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionsOptions}
+function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionsOptions}
         # Determine eta0
         if o.useRand==false
                 # Pick the zero vector
@@ -131,12 +131,12 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
                 end
         end
         # Solve TR subproblem approximately
-        opt = truncatedConjugateGradient(p.M,p.costFunction,p.gradient,
+        opt = truncatedConjugateGradient(p.M,p.cost,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         #debug = [:Iteration," ",:Stop],
         returnOptions=true)
         option = getOptions(opt) # remove decorators
-        η = getSolverResult(option)
+        η = get_solver_result(option)
         SR = getActiveStoppingCriteria(option.stop)
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
@@ -192,7 +192,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # then reduce the TR radius.
         if ρ < 1/4 || model_decreased == false || isnan(ρ)
                 o.Δ = o.Δ/4
-        elseif ρ > 3/4 && any([typeof(s) in [stopWhenTrustRegionIsExceeded,stopWhenCurvatureIsNegative] for s in SR] )
+        elseif ρ > 3/4 && any([typeof(s) in [StopWhenTrustRegionIsExceeded,StopWhenCurvatureIsNegative] for s in SR] )
                 o.Δ = min(2*o.Δ, o.Δ_bar)
         else
                 o.Δ = o.Δ
@@ -204,4 +204,4 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         end
         return nothing
 end
-getSolverResult(o::O) where {O <: TrustRegionsOptions} = o.x
+get_solver_result(o::O) where {O <: TrustRegionsOptions} = o.x

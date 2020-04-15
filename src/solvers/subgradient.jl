@@ -1,9 +1,9 @@
 #
 # A simple steepest descent algorithm implementation
 #
-export subGradientMethod
+export subgradient_method
 @doc raw"""
-    subGradientMethod(M, F, ∂F, x)
+    subgradient_method(M, F, ∂F, x)
 perform a subgradient method $x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))$,
 
 where $\mathrm{retr}$ is a retraction, $s_k$ can be specified as a function but is
@@ -20,20 +20,20 @@ the argument `∂F` should always return _one_ element from the subgradient.
 # Optional
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
-* `stoppingCriterion` – ([`stopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`stopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `xOpt` if returned
 ...
-and the ones that are passed to [`decorateOptions`](@ref) for decorators.
+and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
 OR
 * `options` - the options returned by the solver (see `returnOptions`)
 """
-function subGradientMethod(M::Manifold,
+function subgradient_method(M::Manifold,
         F::Function,
         ∂F::Function,
         x;
@@ -45,24 +45,24 @@ function subGradientMethod(M::Manifold,
     )
     p = SubGradientProblem(M,F,∂F)
     o = SubGradientMethodOptions(M,x,stoppingCriterion, stepsize, retraction)
-    o = decorateOptions(o; kwargs...)
+    o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions
         return resultO
     else
-        return getSolverResult(resultO)
+        return get_solver_result(resultO)
     end
 end
-function initializeSolver!(p::SubGradientProblem, o::SubGradientMethodOptions)
+function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.xOptimal = o.x
     o.∂ = zero_tangent_vector(p.M, o.x)
 end
-function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
-    o.∂ = getSubGradient(p,o.x)
-    s = getStepsize!(p,o,iter)
+function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
+    o.∂ = get_subgradient(p,o.x)
+    s = get_stepsize!(p,o,iter)
     o.retract!(p.M, o.x, o.x, -s*o.∂)
     if get_cost(p,o.x) < get_cost(p,o.xOptimal)
         o.xOptimal = o.x
     end
 end
-getSolverResult(o::SubGradientMethodOptions) = o.xOptimal
+get_solver_result(o::SubGradientMethodOptions) = o.xOptimal

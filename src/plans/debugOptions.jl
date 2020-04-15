@@ -8,7 +8,7 @@ a [`Problem`](@ref) `p`, [`Options`](@ref) `o` and the current iterate `i`.
 By convention `i=0` is interpreted as "For Initialization only", i.e. only debug
 info that prints initialization reacts, `i<0` triggers updates of variables
 internally but does not trigger any output. Finally `typemin(Int)` is used
-to indicate a call from [`stopSolver!`](@ref) that returns true afterwards.
+to indicate a call from [`stop_solver!`](@ref) that returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
 * `print` method to perform the actual print. Can for example be set to a file export,
@@ -52,7 +52,7 @@ DebugOptions(o::O, dD::Array{<:DebugAction,1}) where {O <: Options} = DebugOptio
 DebugOptions(o::O, dD::Dict{Symbol,<:DebugAction}) where {O <: Options} = DebugOptions{O}(o,dD)
 DebugOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = DebugOptions{O}(o, DebugFactory(format))
 
-@traitimpl IsOptionsDecorator{DebugOptions}
+@traitimpl is_options_decorator{DebugOptions}
 
 #
 # Meta Debugs
@@ -168,7 +168,7 @@ print the current cost function value, see [`get_cost`](@ref).
 # Constructors
     DebugCost(long,print)
 
-where `long` indicated whether to print `F(x):` (default) or `costFunction: `
+where `long` indicated whether to print `F(x):` (default) or `cost: `
 
     DebugCost(prefix,print)
 

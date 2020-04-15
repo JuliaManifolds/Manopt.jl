@@ -15,10 +15,10 @@ The following algorithms are currently available
 | Solver  | File   | Problem & Option  |
 ----------|--------|-------------------|
 [steepest Descent](@ref GradientDescentSolver) | `steepestDescent.jl` |  [`GradientProblem`](@ref), [`GradientDescentOptions`](@ref)
-[Cyclic Proximal Point](@ref CPPSolver) | `cyclicProximalPoint.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointOptions`](@ref)
+[Cyclic Proximal Point](@ref CPPSolver) | `cyclic_proximal_point.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointOptions`](@ref)
 [Douglas–Rachford](@ref DRSolver) | `DouglasRachford.jl` | [`ProximalProblem`](@ref), [`DouglasRachfordOptions`](@ref)
 [Nelder-Mead](@ref NelderMeadSolver) | `NelderMead.jl` | [`CostProblem`](@ref), [`NelderMeadOptions`](@ref)
-[Subgradient Method](@ref SubgradientSolver) | `subGradientMethod.jl` | [`SubGradientProblem`](@ref), [`SubGradientMethodOptions`](@ref)
+[Subgradient Method](@ref SubgradientSolver) | `subgradient_method.jl` | [`SubGradientProblem`](@ref), [`SubGradientMethodOptions`](@ref)
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncatedConjugateGradient.jl` | [`HessianProblem`](@ref),
 [`TruncatedConjugateGradientOptions`](@ref)
 [The Riemannian Trust-Regions Solver](@ref trustRegions) | `trustRegions.jl` |
@@ -65,10 +65,10 @@ For example printing a gradient from the [`GradientDescentOptions`](@ref) is
 automatically available, as explained in the [`steepestDescent`](@ref) solver.
 
 ```@docs
-initializeSolver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
-doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: DebugOptions}
-getSolverResult(o::O) where {O <: DebugOptions}
-stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: DebugOptions}
+initialize_solver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
+step_solver!(p::P,o::O, iter) where {P <: Problem, O <: DebugOptions}
+get_solver_result(o::O) where {O <: DebugOptions}
+stop_solver!(p::P,o::O, i::Int) where {P <: Problem, O <: DebugOptions}
 ```
 
 ### [Record Solver](@id RecordSolver)
@@ -80,10 +80,10 @@ For example recording the gradient from the [`GradientDescentOptions`](@ref) is
 automatically available, as explained in the [`steepestDescent`](@ref) solver.
 
 ```@docs
-initializeSolver!(p::P,o::O) where {P <: Problem, O <: RecordOptions}
-doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: RecordOptions}
-getSolverResult(o::O) where {O <: RecordOptions}
-stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: RecordOptions}
+initialize_solver!(p::P,o::O) where {P <: Problem, O <: RecordOptions}
+step_solver!(p::P,o::O, iter) where {P <: Problem, O <: RecordOptions}
+get_solver_result(o::O) where {O <: RecordOptions}
+stop_solver!(p::P,o::O, i::Int) where {P <: Problem, O <: RecordOptions}
 ```
 
 ## Technical Details
@@ -99,8 +99,8 @@ It uses the following methods, which also need to be implemented on your own
 algorithm, if you want to provide one.
 
 ```@docs
-initializeSolver!(p::P,o::O) where {P <: Problem, O <: Options}
-doSolverStep!(p::P,o::O, iter) where {P <: Problem, O <: Options}
-getSolverResult(o::O) where {O <: Options}
-stopSolver!(p::P,o::O, i::Int) where {P <: Problem, O <: Options}
+initialize_solver!(p::P,o::O) where {P <: Problem, O <: Options}
+step_solver!(p::P,o::O, iter) where {P <: Problem, O <: Options}
+get_solver_result(o::O) where {O <: Options}
+stop_solver!(p::P,o::O, i::Int) where {P <: Problem, O <: Options}
 ```

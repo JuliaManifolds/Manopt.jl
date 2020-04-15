@@ -1,7 +1,7 @@
 # [Subgradient Method](@id SubgradientSolver)
 
 ```@docs
-subGradientMethod
+subgradient_method
 ```
 
 ## Options

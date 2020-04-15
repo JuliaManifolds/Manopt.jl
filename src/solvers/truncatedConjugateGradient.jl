@@ -44,9 +44,9 @@ see the reference:
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
-* `stoppingCriterion` – ([`stopWhenAny`](@ref), [`stopAfterIteration`](@ref),
+* `stoppingCriterion` – ([`StopWhenAny`](@ref), [`stopAfterIteration`](@ref),
     [`stopIfResidualIsReducedByFactor`](@ref), [`stopIfResidualIsReducedByPower`](@ref),
-    [`stopWhenCurvatureIsNegative`](@ref), [`stopWhenTrustRegionIsExceeded`](@ref) )
+    [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
     where for the default, the maximal number of iterations is [`manifold_dimension`](@ref),
     the power factor is `θ`, the reduction factor is `κ`.
@@ -55,7 +55,7 @@ see the reference:
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `xOpt` is returned
 
-and the ones that are passed to [`decorateOptions`](@ref) for decorators.
+and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
 * `η` – an approximate solution of the trust-region subproblem in
@@ -78,7 +78,7 @@ function truncatedConjugateGradient(
     θ::Float64 = 1.0,
     κ::Float64 = 0.1,
     useRandom::Bool = false,
-    stoppingCriterion::StoppingCriterion = stopWhenAny(
+    stoppingCriterion::StoppingCriterion = StopWhenAny(
         stopAfterIteration(manifold_dimension(M)),
         stopIfResidualIsReducedByPower(
             sqrt(inner(M, x,
@@ -94,23 +94,23 @@ function truncatedConjugateGradient(
             )),
             κ
         ),
-        stopWhenTrustRegionIsExceeded(),
-        stopWhenCurvatureIsNegative()
+        StopWhenTrustRegionIsExceeded(),
+        StopWhenCurvatureIsNegative()
         ),
         returnOptions = false,
         kwargs... #collect rest
     ) where {mT <: Manifold}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zero_tangent_vector(M,x),Δ,zero_tangent_vector(M,x),useRandom)
-    o = decorateOptions(o; kwargs...)
+    o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions
         resultO
     else
-        return getSolverResult(resultO)
+        return get_solver_result(resultO)
     end
 end
-function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function initialize_solver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     o.η = o.useRand ? o.η : zero_tangent_vector(p.M,o.x)
     Hη = o.useRand ? getHessian(p, o.x, o.η) : zero_tangent_vector(p.M,o.x)
     o.residual = getGradient(p,o.x) + Hη
@@ -127,7 +127,7 @@ function initializeSolver!(p::P,o::O) where {P <: HessianProblem, O <: Truncated
     # model value.
     # o.model_value = o.useRand ? 0 : inner(p.M,o.x,o.η,getGradient(p,o.x)) + 0.5 * inner(p.M,o.x,o.η,Hη)
 end
-function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
     ηOld = o.η
     δOld = o.δ
     z = o.useRand ? o.residual : getPreconditioner(p, o.x, o.residual)
@@ -179,4 +179,4 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncate
     β = zr/zrOld
     o.δ = project(p.M, o.x, z + β * o.δ)
 end
-getSolverResult(o::O) where {O <: TruncatedConjugateGradientOptions} = o.η
+get_solver_result(o::O) where {O <: TruncatedConjugateGradientOptions} = o.η

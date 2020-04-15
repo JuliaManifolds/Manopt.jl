@@ -21,7 +21,7 @@
     record = [RecordCost(), RecordProximalParameter()],
     returnOptions=true
     )
-    xHat2 = getSolverResult(o)
+    xHat2 = get_solver_result(o)
     drec2 = getRecord(o)
     xCmp = 1/sqrt(3)*ones(3)
     # since the default does not run that long -> rough estimate

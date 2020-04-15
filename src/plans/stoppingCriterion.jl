@@ -44,17 +44,17 @@ function (c::stopAfterIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Opt
     return false
 end
 """
-    stopWhenGradientNormLess <: StoppingCriterion
+    StopWhenGradientNormLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the gradient from within
 a [`GradientProblem`](@ref).
 """
-mutable struct stopWhenGradientNormLess <: StoppingCriterion
+mutable struct StopWhenGradientNormLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    stopWhenGradientNormLess(ε::Float64) = new(ε,"")
+    StopWhenGradientNormLess(ε::Float64) = new(ε,"")
 end
-function (c::stopWhenGradientNormLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopWhenGradientNormLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if norm(p.M,o.x,getGradient(p,o.x)) < c.threshold
         c.reason = "The algorithm reached approximately critical point; the gradient norm ($(norm(p.M,o.x,getGradient(p,o.x)))) is less than $(c.threshold).\n"
         return true
@@ -62,7 +62,7 @@ function (c::stopWhenGradientNormLess)(p::P,o::O,i::Int) where {P <: Problem, O 
     return false
 end
 """
-    stopWhenChangeLess <: StoppingCriterion
+    StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
 optimization variable from within a [`Options`](@ref), i.e `o.x`.
@@ -70,19 +70,19 @@ For the storage a [`StoreOptionsAction`](@ref) is used
 
 # Constructor
 
-    stopWhenChangeLess(ε[, a])
+    StopWhenChangeLess(ε[, a])
 
 initialize the stopping criterion to a threshold `ε` using the
 [`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:x` by
 default.
 """
-mutable struct stopWhenChangeLess <: StoppingCriterion
+mutable struct StopWhenChangeLess <: StoppingCriterion
     threshold::Float64
     reason::String
     storage::StoreOptionsAction
-    stopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction( (:x,) )) = new(ε,"",a)
+    StopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction( (:x,) )) = new(ε,"",a)
 end
-function (c::stopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if hasStorage(c.storage,:x)
         xOld = getStorage(c.storage,:x)
         if distance(p.M, o.x, xOld) < c.threshold && i>0
@@ -95,74 +95,74 @@ function (c::stopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Opt
     return false
 end
 @doc raw"""
-    stopWhenAll <: StoppingCriterion
+    StopWhenAll <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _all_ indicate to stop. The `reseason` is given by the concatenation of all
 reasons.
 
 # Constructor
-    stopWhenAll(c::Array{StoppingCriterion,1})
-    stopWhenAll(c::StoppingCriterion,...)
+    StopWhenAll(c::Array{StoppingCriterion,1})
+    StopWhenAll(c::StoppingCriterion,...)
 """
-mutable struct stopWhenAll <: StoppingCriterionSet
+mutable struct StopWhenAll <: StoppingCriterionSet
     criteria::Array{StoppingCriterion,1}
     reason::String
-    stopWhenAll(c::Array{StoppingCriterion,1}) = new(c,"")
-    stopWhenAll(c...) = new([c...],"")
+    StopWhenAll(c::Array{StoppingCriterion,1}) = new(c,"")
+    StopWhenAll(c...) = new([c...],"")
 end
-function (c::stopWhenAll)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopWhenAll)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if all([ subC(p,o,i) for subC in c.criteria])
         c.reason = string( [ getReason(subC) for subC in c.criteria ]... )
         return true
     end
     return false
 end
-getStoppingCriteriaArray(c::stopWhenAll) = c.criteria
+getStoppingCriteriaArray(c::StopWhenAll) = c.criteria
 
 @doc raw"""
-    stopWhenAny <: StoppingCriterion
+    StopWhenAny <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _any_ single one indicates to stop. The `reseason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
 
 # Constructor
-    stopWhenAny(c::Array{StoppingCriterion,1})
-    stopWhenAny(c::StoppingCriterion,...)
+    StopWhenAny(c::Array{StoppingCriterion,1})
+    StopWhenAny(c::StoppingCriterion,...)
 """
-mutable struct stopWhenAny <: StoppingCriterionSet
+mutable struct StopWhenAny <: StoppingCriterionSet
     criteria::Array{StoppingCriterion,1}
     reason::String
-    stopWhenAny(c::Array{StoppingCriterion,1}) = new(c,"")
-    stopWhenAny(c::StoppingCriterion...) = stopWhenAny([c...])
+    StopWhenAny(c::Array{StoppingCriterion,1}) = new(c,"")
+    StopWhenAny(c::StoppingCriterion...) = StopWhenAny([c...])
 end
-function (c::stopWhenAny)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopWhenAny)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if any([ subC(p,o,i) for subC in c.criteria])
         c.reason = string( [ getReason(subC) for subC in c.criteria ]... )
         return true
     end
     return false
 end
-getStoppingCriteriaArray(c::stopWhenAny) = c.criteria
+getStoppingCriteriaArray(c::StopWhenAny) = c.criteria
 """
-    stopWhenCostLess <: StoppingCriterion
+    StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
 optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,o.x)`.
 
 # Constructor
 
-    stopWhenCostLess(ε)
+    StopWhenCostLess(ε)
 
 initialize the stopping criterion to a threshold `ε`.
 """
-mutable struct stopWhenCostLess <: StoppingCriterion
+mutable struct StopWhenCostLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    stopWhenCostLess(ε::Float64) = new(ε,"")
+    StopWhenCostLess(ε::Float64) = new(ε,"")
 end
-function (c::stopWhenCostLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopWhenCostLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if i > 0 && get_cost(p,o.x) < c.threshold
         c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less then the threshold ($(c.threshold)).\n"
         return true

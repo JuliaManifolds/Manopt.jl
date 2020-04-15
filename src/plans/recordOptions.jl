@@ -21,7 +21,7 @@ a [`Problem`](@ref) `p`, [`Options`](@ref) `o` and the current iterate `i`.
 By convention `i<=0` is interpreted as "For Initialization only", i.e. only
 initialize internal values, but not trigger any record, the same holds for
 `i=typemin(Inf)` which is used to indicate `stop`, i.e. that the record is
-called from within [`stopSolver!`](@ref) which returns true afterwards.
+called from within [`stop_solver!`](@ref) which returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
 * `recordedValues` an `Array` of the recorded values.
@@ -65,7 +65,7 @@ RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = Record
 RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o,dR)
 RecordOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = RecordOptions{O}(o, RecordFactory(getOptions(o),format))
 
-@traitimpl IsOptionsDecorator{RecordOptions}
+@traitimpl is_options_decorator{RecordOptions}
 
 """
     hasRecord(o)
@@ -74,8 +74,8 @@ check whether the [`Options`](@ref)` o` are decorated with
 [`RecordOptions`](@ref)
 """
 hasRecord(o::RecordOptions) = true
-@traitfn hasRecord(o::O) where {O <: Options; IsOptionsDecorator{O}} = hasRecord(o.options)
-@traitfn hasRecord(o::O) where {O <: Options; !IsOptionsDecorator{O}} = false
+@traitfn hasRecord(o::O) where {O <: Options; is_options_decorator{O}} = hasRecord(o.options)
+@traitfn hasRecord(o::O) where {O <: Options; !is_options_decorator{O}} = false
 
 # default - stored in the recordedValues field of the RecordAction
 @doc raw"""
@@ -94,8 +94,8 @@ function getRecord(o::RecordOptions,s::Symbol=:Step)
         error("No record known for key found, since neither :$s nor :All are present.")
     end
 end
-@traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; IsOptionsDecorator{O}} = getRecord(o.options,s)
-@traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; !IsOptionsDecorator{O}} = error("No Record decoration found")
+@traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; is_options_decorator{O}} = getRecord(o.options,s)
+@traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; !is_options_decorator{O}} = error("No Record decoration found")
 
 @doc raw"""
     getRecord(r)

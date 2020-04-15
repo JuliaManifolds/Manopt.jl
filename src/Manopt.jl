@@ -132,7 +132,7 @@ module Manopt
     include("plans/plan.jl")
     # Functions
     include("functions/adjointDifferentials.jl")
-    include("functions/costFunctions.jl")
+    include("functions/costs.jl")
     include("functions/differentials.jl")
     include("functions/gradients.jl")
     include("functions/jacobiFields.jl")
@@ -140,13 +140,13 @@ module Manopt
     # ...solvers (1) general framework
     include("solvers/solver.jl")
     # ...solvers (2) specific solvers
-    include("solvers/cyclicProximalPoint.jl")
+    include("solvers/cyclic_proximal_point.jl")
     include("solvers/DouglasRachford.jl")
     include("solvers/NelderMead.jl")
     include("solvers/steepestDescent.jl")
     include("solvers/truncatedConjugateGradient.jl")
     include("solvers/trustRegions.jl")
-    include("solvers/subGradientMethod.jl")
+    include("solvers/subgradient.jl")
     include("solvers/debugSolver.jl")
     include("solvers/recordSolver.jl")
     include("plots/SpherePlots.jl")
@@ -169,14 +169,14 @@ export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export DpGeo, DqGeo, DpExp,DξExp, DqLog, DyLog, Dforward_logs
 export jacobi_field
 export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇distance
-export get_cost, getGradient, getSubGradient, getProximalMap, getOptions, getInitialStepsize
+export get_cost, getGradient, get_subgradient, getProximalMap, getOptions, getInitialStepsize
 export getHessian, approxHessianFD
 export meanSquaredError, meanAverageError
 export proxDistance, proxTV, proxParallelTV, proxTV2, proxCollaborativeTV
 export random_point, random_tangent
-export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, stopWhenCurvatureIsNegative, stopWhenTrustRegionIsExceeded
-export stopAfterIteration, stopWhenChangeLess, stopWhenGradientNormLess, stopWhenCostLess
-export stopAfter, stopWhenAll, stopWhenAny
+export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, StopWhenCurvatureIsNegative, StopWhenTrustRegionIsExceeded
+export stopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
+export stopAfter, StopWhenAll, StopWhenAny
 export getActiveStoppingCriteria, getStoppingCriteriaArray, getReason
 
 export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
@@ -194,6 +194,7 @@ export TruncatedConjugateGradientOptions, TrustRegionsOptions
 export StoppingCriterion, StoppingCriterionSet, Stepsize
 export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
 export Options, getOptions, getReason
-export IsOptionsDecorator
+export is_options_decorator
 
+export cyclic_proximal_point
 end
