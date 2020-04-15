@@ -1,10 +1,4 @@
-@testset "Manopt Trust-Region" begin
-    import Random: seed!
-    seed!(42);
-    A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
-
-    N = Grassmann(3,2)
-    M = N × N
+A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
     function cost(X::ProductRepr)
         return cost([submanifold_components(X)...])
@@ -56,6 +50,13 @@
         return Manifolds.ProductRepr(e2rHess.(M.manifolds, x, h, eG, eH)...)
     end
 
+@testset "Manopt Trust-Region" begin
+    import Random: seed!
+    seed!(42);
+
+    N = Grassmann(3,2)
+    M = N × N
+
     x = random_point(M)
 
     @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
@@ -76,10 +77,25 @@
 
     @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-12)
 
-    XaH = trustRegions(M, cost, rgrad, x, (p,x,ξ) -> approxHessianFD(p,x, x -> rgrad(p,x), ξ; stepsize=2^(-9));
-        stoppingCriterion = stopWhenAny(stopAfterIteration(2000), stopWhenGradientNormLess(10^(-6))),
+    XaH = trustRegions(
+        M,
+        cost,
+        rgrad,
+        x,
+        (p,x,ξ) -> approxHessianFD(
+            p,
+            x,
+            x -> rgrad(p,x),
+            ξ;
+            stepsize=2^(-9),
+            transport=ProductVectorTransport(ProjectionTransport(),ProjectionTransport())
+        );
+        stoppingCriterion = stopWhenAny(
+            stopAfterIteration(2000),
+            stopWhenGradientNormLess(10^(-6))
+        ),
         Δ_bar=4*sqrt(2*2),
-    ) # retraction not defined
+    )
     @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-10)
 
     ξ = random_tangent(M,x)
@@ -94,5 +110,4 @@
     η = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5)
     ηOpt = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5; returnOptions=true)
     @test submanifold_components(getSolverResult(ηOpt)) == submanifold_components(η)
-
 end
