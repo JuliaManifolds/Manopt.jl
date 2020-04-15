@@ -41,8 +41,8 @@ c2 = opposite(M,c)
 T = [0:0.1:1.0...]
 geoPts_yc = shortest_geodesic(M,y,c,T)
 nothing #hide
-# looks as follows using [`renderAsymptote`](@ref) with the [`asyExportS2Signals`](@ref) export
-renderAsymptote(exportFolder*"/SecondOrderData.asy",asyExportS2Signals; #src
+# looks as follows using the [`asymptote_export_S2_signals`](@ref) export
+asymptote_export_S2_signals(exportFolder*"/SecondOrderData.asy"; #src
     render = asyResolution, #src
     curves = [ geoPts_yc ], #src
     points = [ [x,y,z], [c,c2] ], #src
@@ -51,7 +51,7 @@ renderAsymptote(exportFolder*"/SecondOrderData.asy",asyExportS2Signals; #src
 ) #src
 #md #
 #md # ```julia
-#md # renderAsymptote("secondOrderData.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("secondOrderData.asy";
 #md #     render = asyResolution,
 #md #     curves = [ geoPts_yc ],
 #md #     points = [ [x,y,z], [c,c2] ],
@@ -77,7 +77,7 @@ costTV2(M, (x,y,z) )
 #
 # When we aim to minimize this, we look at the negative gradient, i.e.
 # we can draw this as
-renderAsymptote(exportFolder*"/SecondOrderGradient.asy",asyExportS2Signals; #src
+asymptote_export_S2_signals(exportFolder*"/SecondOrderGradient.asy"; #src
     render = asyResolution, #src
     points = [ [x,y,z], [c,c2] ], #src
     tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )], #src
@@ -86,7 +86,7 @@ renderAsymptote(exportFolder*"/SecondOrderGradient.asy",asyExportS2Signals; #src
 ) #src
 #md #
 #md # ```julia
-#md # renderAsymptote("SecondOrderGradient.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("SecondOrderGradient.asy";
 #md #    render = asyResolution,
 #md #    points = [ [x,y,z], [c,c2] ],
 #md #    tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )],
@@ -104,7 +104,7 @@ cn = mid_point(M,xn,zn)
 geoPts_yncn = shortest_geodesic(M,yn,cn,T)
 nothing #hide
 # and obtain the new situation
-renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
+asymptote_export_S2_signals(exportFolder*"/SecondOrderMin1.asy"; #src
     render = asyResolution, #src
     points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ], #src
     curves = [ geoPts_yncn ], #src
@@ -117,7 +117,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin1.asy",asyExportS2Signals; #src
 ) #src
 #md #
 #md # ```julia
-#md # renderAsymptote("SecondOrderMin1.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("SecondOrderMin1.asy";
 #md #     render = asyResolution,
 #md #     points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ],
 #md #     curves = [ geoPts_yncn ] ,
@@ -150,7 +150,7 @@ cm = mid_point(M,xm,zm)
 geoPts_xmzm = shortest_geodesic(M,xm,zm,T)
 nothing #hide
 # we obtain again with
-renderAsymptote(exportFolder*"/SecondOrderMin2.asy",asyExportS2Signals; #src
+asymptote_export_S2_signals(exportFolder*"/SecondOrderMin2.asy"; #src
     render = asyResolution, #src
     points = [ [x,y,z], [c,c2,cm], [xm,ym,zm] ], #src
     curves = [ geoPts_xmzm ], #src
@@ -163,7 +163,7 @@ renderAsymptote(exportFolder*"/SecondOrderMin2.asy",asyExportS2Signals; #src
 ) #src
 #md #
 #md # ```julia
-#md # renderAsymptote("SecondOrderMin2.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("SecondOrderMin2.asy";
 #md #     render = asyResolution,
 #md #     points = [ [x,y,z], [c,c2,cm], [xm,ym,zm] ],
 #md #     curves = [ geoPts_xmzm ] ,

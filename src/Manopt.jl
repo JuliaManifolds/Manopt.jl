@@ -164,7 +164,7 @@ export hasStorage, getStorage, updateStorage!
 export βDxg, βDpExp, βDXExp, βDpLog, βDqLog
 export adjoint_Jacobi_field
 export AdjDpGeo, AdjDqGeo, AdjDpExp, AdjDpExp, AdjDpLog, AdjDqLog, AdjDforward_logs
-export asyExportS2Signals, asyExportS2Data, asyExportSPDData
+export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export DpGeo, DqGeo, DpExp,DξExp, DqLog, DyLog, Dforward_logs
 export jacobi_field

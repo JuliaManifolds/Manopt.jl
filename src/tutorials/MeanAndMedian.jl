@@ -69,14 +69,14 @@ nothing #hide
 #
 asyResolution = 2
 nothing #hide
-renderAsymptote(exportFolder*"/startDataAndCenter.asy",asyExportS2Signals; #src
+asymptote_export_S2_signals(exportFolder*"/startDataAndCenter.asy"; #src
     render = asyResolution, #src
     points = [ [x], data], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]), #src
     dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
 ) #src
 #md # ```julia
-#md # renderAsymptote("startDataAndCenter.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("startDataAndCenter.asy";
 #md #     render = asyResolution,
 #md #     points = [ [x], data],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
@@ -122,14 +122,14 @@ xMean = steepestDescent(M,F,∇F,data[1];
 )
 nothing #hide
 #
-renderAsymptote(exportFolder*"/startDataCenterMean.asy",asyExportS2Signals; #src
+asymptote_export_S2_signals(exportFolder*"/startDataCenterMean.asy"; #src
     render = asyResolution, #src
     points = [ [x], data, [xMean] ], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]), #src
     dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
 ) #src
 #md # ```julia
-#md # renderAsymptote("startDataCenterMean.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("startDataCenterMean.asy";
 #md #     render = asyResolution,
 #md #     points = [ [x], data, [xMean] ],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]),
@@ -179,14 +179,14 @@ nothing # hide
 values
 # The resulting median and mean for the data hence are
 #
-renderAsymptote(exportFolder*"/startDataCenterMedianAndMean.asy",asyExportS2Signals; #src
+asymptote_export_S2_signals(exportFolder*"/startDataCenterMedianAndMean.asy"; #src
     render = asyResolution, #src
     points = [ [x], data, [xMean], [xMedian] ], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]), #src
     dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
 ) #src
 #md # ```julia
-#md # renderAsymptote("startDataCenterMean.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("startDataCenterMean.asy";
 #md #     render = asyResolution,
 #md #     points = [ [x], data, [xMean], [xMedian] ],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]),

@@ -22,7 +22,7 @@ end
 # Manifold & Data
 f = artificial_SPD_image2(32)
 if ExportOrig
-  renderAsymptote(resultsFolder*experimantName*"orig.asy", asyExportSPDData; data=f, scaleAxes=(7.5,7.5,7.5))
+  asymptote_export_SPD(resultsFolder*experimantName*"orig.asy"; data=f, scaleAxes=(7.5,7.5,7.5))
 end
 #
 # Parameters
@@ -69,7 +69,7 @@ r = getRecord(o)
 # Result
 numIter = length(r)
 if ExportResult
-  renderAsymptote(resultsFolder*experimantName*"img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy", asyExportSPDData; data=y, render=4, scaleAxes=(7.5,7.5,7.5) )
+  asymptote_export_SPD(resultsFolder*experimantName*"img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy"; data=y, render=4, scaleAxes=(7.5,7.5,7.5) )
 end
 if ExportTable
   A = cat( [ri[1] for ri in r], [ri[2] for ri in r]; dims=2 )

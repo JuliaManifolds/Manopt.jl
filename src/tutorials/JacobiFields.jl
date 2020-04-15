@@ -23,8 +23,8 @@ x,y = [ [1.,0.,0.], [0.,1.,0.]]
 geodesicCurve = shortest_geodesic(M,x,y,100);
 asyResolution = 2
 nothing #hide
-# looks as follows using [`renderAsymptote`](@ref) with the [`asyExportS2Signals`](@ref) export
-renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
+# looks as follows using the [`asymptote_export_S2_signals`](@ref) export
+asymptote_export_S2_signals(exportFolder*"/jacobiGeodesic.asy"; #src
     render = asyResolution, #src
     curves=[geodesicCurve], points = [ [x,y] ], #src
     colors=Dict(:curves => [black], :points => [TolVibrantOrange]), #src
@@ -32,7 +32,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesic.asy",asyExportS2Signals; #src
 )#src
 #md #
 #md # ```julia
-#md # renderAsymptote("jacobiGeodesic.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("jacobiGeodesic.asy";
 #md #     render = asyResolution,
 #md #     curves=[geodesicCurve], points = [ [x,y] ],
 #md #     colors=Dict(:curves => [black], :points => [TolVibrantOrange]),
@@ -89,7 +89,7 @@ nothing #hide
 # [`Tuple`](@ref) the include their base points
 Vx = Tuple.(ηx,Z)
 # and add that as one further set to the Asymptote export.
-renderAsymptote(exportFolder*"/jacobiGeodesicDpGeo.asy",asyExportS2Signals; #src
+asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicDpGeo.asy"; #src
     render = asyResolution, #src
     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx], #src
     colors=Dict( #src
@@ -101,7 +101,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesicDpGeo.asy",asyExportS2Signals; #src
 ) #src
 #md #
 #md # ```julia
-#md # renderAsymptote("jacobiGeodesicDpGeo.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("jacobiGeodesicDpGeo.asy";
 #md #     render = asyResolution,
 #md #     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx],
 #md #     colors=Dict(
@@ -122,7 +122,7 @@ Vy = Tuple.(ηy,Z)
 # and we can look at the total effect, where the [`Tuple`](@ref)s even verify
 # that only tangent vectors are added that have a common base point
 Vb = Vx .+ Vy
-renderAsymptote(exportFolder*"/jacobiGeodesicResult.asy",asyExportS2Signals; #src
+asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicResult.asy"; #src
     render = asyResolution, #src
     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx,Vy,Vb], #src
     colors=Dict( #src
@@ -133,7 +133,7 @@ renderAsymptote(exportFolder*"/jacobiGeodesicResult.asy",asyExportS2Signals; #sr
     dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,0.) #src
 ) #src
 #md # ```julia
-#md # renderAsymptote("jacobiGeodesicResult.asy",asyExportS2Signals;
+#md # asymptote_export_S2_signals("jacobiGeodesicResult.asy";
 #md #    render = asyResolution,
 #md #    curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx,Vy,Vb],
 #md #    colors=Dict(

@@ -13,3 +13,6 @@ src/examples/**/*.mp4
 src/examples/**/*.jld2
 docs/src/tutorials/*.md
 .vscode
+examples/Total_Variation/S2_TV
+examples/Total_Variation/Hn_TV
+examples/Total_Variation/S1_TV

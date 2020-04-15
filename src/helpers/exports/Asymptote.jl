@@ -1,5 +1,5 @@
 @doc raw"""
-    asyExportS2Signals(filename; points, curves, tVectors, colors, options...)
+    asymptote_export_S2_signals(filename; points, curves, tVectors, colors, options...)
 Export given `points`, `curves`, and `tVectors` on the sphere $\mathbb S^2$
 to Asymptote.
 
@@ -32,7 +32,7 @@ to Asymptote.
 * `sphereLineWidth` – (`0.5`) line width of the lines on the sphere
 * `target` – (`(0.,0.,0.)`) position the camera points at
 """
-function asyExportS2Signals(filename::String;
+function asymptote_export_S2_signals(filename::String;
     points::Array{Array{T,1},1} where T = Array{Array{T,1},1}(undef,0),
     curves::Array{Array{T,1},1} where T = Array{Array{T,1},1}(undef,0),
     tVectors::Array{Array{Tuple{T,T},1},1} where T= Array{Array{Tuple{Float64,Float64},1},1}(undef,0),
@@ -151,7 +151,7 @@ function asyExportS2Signals(filename::String;
     end
 end
 @doc raw"""
-    asyExportS2Data(filename)
+    asymptote_export_S2_data(filename)
 Export given `data` as an array of points on the sphere, i.e. one-, two-
 or three-dimensional data with points on the `Sphere(2)` $\mathbb S^2$.
 
@@ -171,7 +171,7 @@ or three-dimensional data with points on the `Sphere(2)` $\mathbb S^2$.
 * `target` - position the camera points at (default: center of xy-plane within
   data).
 """
-function asyExportS2Data(filename::String;
+function asymptote_export_S2_data(filename::String;
     data = fill([0.,0.,1.],0,0),
     arrowHeadSize::Float64 = 1.8,
     scaleAxes = (1/3.,1/3.,1/3.),
@@ -208,7 +208,7 @@ function asyExportS2Data(filename::String;
     end
 end
 @doc raw"""
-    asyExportSPDData(filename)
+    asymptote_export_SPD(filename)
 
 export given `data` as a point on a `Power{SPDPoint}` manifold, i.e. one-, two-
 or three-dimensional data with points on the manifold of symmetric positive
@@ -232,7 +232,7 @@ definite matrices.
 Both values `cameraPosition` and `target` are scaled by `scaledAxes*EW`, where
 `EW` is the maximal eigenvalue in the `data`.
 """
-function asyExportSPDData(filename::String;
+function asymptote_export_SPD(filename::String;
     data = fill(Matrix{Float64}(I,3,3),0,0),
     scaleAxes = (1/3.,1/3.,1/3.) #multiplied with the maximal eigenvalue if data is present
       .* ( length(data) > 0 ? maximum(maximum(eigvals.( data ))) : 1 ),
