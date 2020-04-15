@@ -72,7 +72,8 @@ module Manopt
         power_dimensions,
         ArrayReshaper,
         prod_point,
-        ShapeSpecification
+        ShapeSpecification,
+        ProductRepr
 
     """
         mid_point(M, p, q, x)
@@ -96,7 +97,24 @@ module Manopt
     mid_point(M::MT, p, q) where {MT <: Manifold} = exp(M, p, log(M, p, q), 0.5)
     mid_point!(M::MT, y, p, q) where {MT <: Manifold} = exp!(M, y, p, log(M, p, q), 0.5)
 
+    @doc raw"""
+        reflect(M, f, x)
+
+    reflect the point `x` from the manifold `M` at the point `f(x)` of the
+    function $f\colon \mathcal M \to \mathcal M$.
+    """
     reflect(M::Manifold, pr::Function, x) = reflect(M::Manifold, pr(x), x)
+
+    @doc raw"""
+        reflect(M, p, x)
+
+    reflect the point `x` from the manifold `M` at point `x`, i.e.
+
+    ````math
+        \operatorname{refl}_p(x) = \exp_p(-\log_p x).
+    ````
+    where exp and log denote the exponential and logarithmic map on `M`.
+    """
     reflect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
 
     @doc raw"""
@@ -108,7 +126,6 @@ module Manopt
     function sym_rem(x::N, T = π) where {N<:Number}
         return (x ≈ T ? convert(N, -T) : rem(x, convert(N, 2 * T), RoundNearest))
     end
-    sym_rem(x, T = π) where {N} = map(sym_rem, x, Ref(T))
 
     include("plans/plan.jl")
     # Functions

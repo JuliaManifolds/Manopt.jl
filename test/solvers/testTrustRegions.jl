@@ -18,17 +18,16 @@
         return [ -AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V) ];
     end
 
-    function rgrad(M::ProductManifold, X)
+    function rgrad(M::ProductManifold, X::ProductRepr)
         eG = egrad([submanifold_component(M,X,1),submanifold_component(M,X,2)])
-        se = ShapeSpecification(ArrayReshaper(), M.manifolds...)
-        return prod_point(se, project.(M.manifolds, X, eG) )
+        return Manifolds.ProductRepr(project.(M.manifolds, X, eG)...)
     end
 
     function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
         pxHess = project(M,x,Hess)
         xtGrad = x'*eGrad
         ξxtGrad = ξ*xtGrad
-        return pxHess - ξxtGrad
+        return ProductRepr(pxHess - ξxtGrad)
     end
 
     function eHess(X::Array{Matrix{Float64},1}, H::Array{Matrix{Float64},1})
@@ -44,10 +43,13 @@
                  -(AtUdot*transpose(AtU)*V + AtU*transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot)
             ]
     end
-    function rhess(M::ProductManifold, X::Array{Matrix{Float64},1}, H::Array{Matrix{Float64},1})
-        eG = egrad( X )
-        eH = eHess( X, H )
-        return e2rHess.(M.manifolds, X, H, eG, eH)
+
+    function rhess(M::ProductManifold, X::ProductRepr, H::ProductRepr)
+        x = submanifold_components(X)
+        h = submanifold_components(H)
+        eG = egrad(x)
+        eH = eHess(x,h)
+        return e2rHess.(M.manifolds, x, h, eG, eH)
     end
 
     x = random_point(M)

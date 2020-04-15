@@ -1,5 +1,5 @@
-using Manopt, ManifoldsBase, Manifolds, LinearAlgebra
-using Test
+using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
+
 @testset "Plan Tests         " begin
     include("plans/testDebug.jl")
     include("plans/testRecord.jl")
