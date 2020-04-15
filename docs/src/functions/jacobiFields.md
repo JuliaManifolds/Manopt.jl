@@ -24,10 +24,7 @@ for example when using unit speed geodesics.
 
 The following weights functions are available
 
-```@docs
-βDxg
-βdifferential_exp_basepoint
-βdifferential_exp_argument
-βdifferential_log_basepoint
-βdifferential_log_argument
+```@autodocs
+Modules = [Manopt]
+Pages   = ["jacobiFields.jl"]
 ```

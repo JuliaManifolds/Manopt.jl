@@ -1,5 +1,5 @@
 @doc raw"""
-    βDxg(κ,t,d)
+    βdifferential_geodesic_startpoint(κ,t,d)
 
 weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
 with respect to its start point $D_x g(t;p,q)[X]$.
@@ -21,7 +21,7 @@ Due to a symmetry agrument, these are also used to compute $D_q g(t; p,q)[\eta]$
 
 [`differential_geodesic_endpoint`](@ref), [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
-function βDxg(κ,t,d)
+function βdifferential_geodesic_startpoint(κ,t,d)
     if (d==0) || (κ==0)
         return (1-t)
     else
@@ -211,7 +211,7 @@ result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
 
 [`adjoint_Jacobi_field`](@ref)
 """
-function jacobi_field(M::Manifold, p, q, t, X, β::Function=βDgx)
+function jacobi_field(M::Manifold, p, q, t, X, β::Function=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -227,7 +227,7 @@ function jacobi_field(M::Manifold, p, q, t, X, β::Function=βDgx)
     )
     return Y
 end
-function jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βDgx)
+function jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -243,7 +243,7 @@ function jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Fu
     )[1]
     return Y
 end
-function jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function=βDgx)
+function jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function=βdifferential_geodesic_startpoint)
     rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)

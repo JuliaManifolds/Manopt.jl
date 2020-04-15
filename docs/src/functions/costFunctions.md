@@ -4,5 +4,5 @@ The following cost functions are available
 
 ```@autodocs
 Modules = [Manopt]
-Pages   = ["costFunctions.jl"]
+Pages   = ["costs.jl"]
 ```

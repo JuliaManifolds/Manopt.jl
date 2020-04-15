@@ -26,7 +26,7 @@ x = [1., 0., 0.]
 z = [0., 1., 0.]
 c = mid_point(M,x,z)
 #src y is the north pole just bend a little bit towards
-y = shortest_geodesic(M, [0., 0., 1.]), c, 0.1
+y = shortest_geodesic(M, [0., 0., 1.], c, 0.1)
 [c,y]
 # Now the second order absolute difference can be stated as (see [[Bačák, Bergmann, Steidl, Weinmann, 2016](#BacakBergmannSteidlWeinmann2016)])
 #
@@ -36,7 +36,7 @@ y = shortest_geodesic(M, [0., 0., 1.]), c, 0.1
 # is a (not necessarily minimizing) geodesic connecting $x$ and $z$.
 #
 # For illustration we further define the point opposite of
-c2 = opposite(M,c)
+c2 = -c
 # and draw the geodesic connecting $y$ and the nearest mid point $c$, namely
 T = [0:0.1:1.0...]
 geoPts_yc = shortest_geodesic(M,y,c,T)
@@ -139,7 +139,7 @@ costTV2(M, (xn, yn, zn) )
 # But we can also search for the best step size using [`linesearch_armijo`](@ref)
 # on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
 p = [x,y,z]
-N = PowerManifold(M,3)
+N = PowerManifold(M, NestedPowerRepresentation(),3)
 s = linesearch_armijo(1.0,exp,0.999,0.96)(N, p,
     x -> costTV2(M, Tuple(x)),
      [ ∇TV2(M, (x,y,z))... ]  # transform from tuple to PowTVector

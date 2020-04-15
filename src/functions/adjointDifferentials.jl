@@ -7,7 +7,7 @@ Compute the adjoint of $D_p γ(t; p, q)[X]$.
 
 [`differential_geodesic_startpoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-adjoint_differential_geodesic_startpoint(M::MT, p, q, t, X) where {MT <: Manifold} = adjoint_Jacobi_field(M, p, q, t, X, βDxg)
+adjoint_differential_geodesic_startpoint(M::MT, p, q, t, X) where {MT <: Manifold} = adjoint_Jacobi_field(M, p, q, t, X, βdifferential_geodesic_startpoint)
 
 @doc raw"""
     adjoint_differential_geodesic_endpoint(M, p, q, t, X)
@@ -19,7 +19,7 @@ Compute the adjoint of $D_q γ(t; p, q)[X]$.
 [`differential_geodesic_endpoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function adjoint_differential_geodesic_endpoint(M::MT, p, q, t, X) where {MT <: Manifold}
-    return adjoint_Jacobi_field(M, q, p, 1-t, X, βDxg)
+    return adjoint_Jacobi_field(M, q, p, 1-t, X, βdifferential_geodesic_startpoint)
 end
 
 @doc raw"""

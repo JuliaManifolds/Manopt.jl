@@ -5,7 +5,7 @@ computes $D_p g(t;p,q)[\eta]$.
 # See also
  [`differential_geodesic_endpoint`](@ref), [`jacobi_field`](@ref)
 """
-differential_geodesic_startpoint(M::mT,x,y,t,η) where {mT <: Manifold} = jacobi_field(M,x,y,t,η,βDxg)
+differential_geodesic_startpoint(M::mT,x,y,t,η) where {mT <: Manifold} = jacobi_field(M,x,y,t,η,βdifferential_geodesic_startpoint)
 @doc raw"""
     differential_geodesic_endpoint(M,x,y,t,η)
 computes $D_qg(t;p,q)[\eta]$.
@@ -13,7 +13,7 @@ computes $D_qg(t;p,q)[\eta]$.
 # See also
  [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
-differential_geodesic_endpoint(M::mT, x, y, t, η) where {mT <: Manifold} = jacobi_field(M,y,x,1-t,η,βDxg)
+differential_geodesic_endpoint(M::mT, x, y, t, η) where {mT <: Manifold} = jacobi_field(M,y,x,1-t,η,βdifferential_geodesic_startpoint)
 @doc raw"""
     differential_exp_basepoint(M, p, X, Y)
 

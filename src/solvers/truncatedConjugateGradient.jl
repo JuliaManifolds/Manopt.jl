@@ -48,8 +48,8 @@ see the reference:
     [`stopIfResidualIsReducedByFactor`](@ref), [`stopIfResidualIsReducedByPower`](@ref),
     [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
-    where for the default, the maximal number of iterations is [`manifold_dimension`](@ref),
-    the power factor is `θ`, the reduction factor is `κ`.
+    where for the default, the maximal number of iterations is set to the dimension of the
+    manifold, the power factor is `θ`, the reduction factor is `κ`.
     .
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.

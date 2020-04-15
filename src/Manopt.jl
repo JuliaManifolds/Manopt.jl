@@ -161,8 +161,9 @@ export ×, ^, ℝ, ℂ
 export AbstractOptionsAction, StoreOptionsAction
 export has_storage, get_storage, update_storage!
 
-export βDxg, βdifferential_exp_basepoint, βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
-export adjoint_Jacobi_field
+export random_point, random_tangent, mid_point
+
+export βdifferential_geodesic_startpoint, βdifferential_exp_basepoint, βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
 export adjoint_differential_geodesic_startpoint, adjoint_differential_geodesic_endpoint
 export adjoint_differential_exp_basepoint, adjoint_differential_exp_argument
 export adjoint_differential_log_basepoint, adjoint_differential_log_argument
@@ -172,7 +173,7 @@ export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export differential_geodesic_startpoint, differential_geodesic_endpoint
 export differential_exp_basepoint, differential_exp_argument
 export differential_log_basepoint, differential_log_argument, differential_forward_logs
-export jacobi_field
+export jacobi_field, adjoint_Jacobi_field
 export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇distance
 export get_cost, getGradient, get_subgradient, getProximalMap, get_options, getInitialStepsize
 export getHessian, approxHessianFD

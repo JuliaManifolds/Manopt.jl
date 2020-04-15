@@ -86,8 +86,8 @@ nothing #hide
 ηx = jacobi_field.(Ref(M), Ref(x), Ref(y), T, Ref(ξx) )
 # which can also be called using [`differential_geodesic_startpoint`](@ref).
 # We can add to the image above by creating extended tangent vectors
-# [`Tuple`](@ref) the include their base points
-Vx = Tuple.(ηx,Z)
+# the include their base points
+Vx = [ Tuple([a,b]) for (a,b) ∈ zip(Z,ηx) ]
 # and add that as one further set to the Asymptote export.
 asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
     render = asyResolution, #src
@@ -118,10 +118,10 @@ asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicdifferential_geodesic_s
 # If we further move the end point, too, we can derive that Differential in direction
 ξy = [0.2,0.,-0.5]
 ηy = differential_geodesic_endpoint.(Ref(M),Ref(x),Ref(y),T,Ref(ξy))
-Vy = Tuple.(ηy,Z)
+Vy = [ Tuple([a,b]) for (a,b) ∈ zip(Z,ηy) ]
 # and we can look at the total effect, where the [`Tuple`](@ref)s even verify
 # that only tangent vectors are added that have a common base point
-Vb = Vx .+ Vy
+Vb = [ Tuple([a,b+c]) for (a,b) ∈ zip(Z,ηy+ηx) ]
 asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicResult.asy"; #src
     render = asyResolution, #src
     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx,Vy,Vb], #src

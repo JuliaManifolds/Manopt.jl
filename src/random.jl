@@ -187,7 +187,7 @@ a random skew-symmetric matrix. The function takes the real upper triangular mat
 (Gaussian) random matrix $A$ with dimension $n\times n$ and subtracts its transposed matrix.
 Finally, the matrix is ​​normalized.
 """
-function randomTVector(M::Rotations, p, ::Val{:Gaussian}, σ::Real=1.0)
+function random_tangent(M::Rotations, p, ::Val{:Gaussian}, σ::Real=1.0)
   if manifold_dimension(M)
     return zeros(1,1)
   else
@@ -225,12 +225,12 @@ function random_tangent(M::SymmetricPositiveDefinite, p, ::Val{:Gaussian}, σ::F
 end
 
 @doc doc"""
-    randomTVector(M,x [,:Gaussian,σ = 1.0])
+    random_tangent(M,x [,:Gaussian,σ = 1.0])
 generate a random tangent vector in the tangent space of the [`SPDPoint`](@ref)
 `x` on the [`SymmetricPositiveDefinite`](@ref) manifold `M` by using a Rician distribution
 with standard deviation `σ`.
 """
-function randomTVector(M::SymmetricPositiveDefinite, p, ::Val{:Rician}, σ::Real = 0.01)
+function random_tangent(M::SymmetricPositiveDefinite, p, ::Val{:Rician}, σ::Real = 0.01)
     # Rician
     C = cholesky( Hermitian(p) )
     R = sqrt(σ) * triu( randn(size(p,1), size(p,2)), 0)

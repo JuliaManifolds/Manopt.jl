@@ -5,7 +5,7 @@ M = Sphere(2)
 X = log(M,p,q)
 # Text differentials (1) Dx of Log_xy
 @test differential_log_argument(M,p,p,X) == X
-@test differential_log_argument(M,p,p,X) == X
+@test differential_log_argument(M,q,p,X) == -X ≈ 0 atol=6*10^(-16)
 @test differential_log_argument(M,p,q,X) == zero_tangent_vector(M,q)
 @test differential_exp_basepoint(M,p,zero_tangent_vector(M,p),X) == X
 @test norm(M,q, differential_exp_basepoint(M,p,X,X) - [-π/2, 0., 0.]) ≈ 0 atol=6*10^(-16)
