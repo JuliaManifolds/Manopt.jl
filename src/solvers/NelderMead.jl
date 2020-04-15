@@ -61,7 +61,7 @@ end
 #
 function initializeSolver!(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions}
     # init cost and x
-    o.costs = getCost.(Ref(p), o.population )
+    o.costs = get_cost.(Ref(p), o.population )
     o.x = o.population[argmin(o.costs)] # select min
 end
 function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadOptions}
@@ -70,7 +70,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     ξ =log( p.M, m, o.population[last(ind)])
     # reflect last
     xr = exp(p.M, m, - o.α * ξ )
-    Costr = getCost(p,xr)
+    Costr = get_cost(p,xr)
     # is it better than the worst but not better than the best?
     if Costr >= o.costs[first(ind)] && Costr < o.costs[last(ind)]
         # store as last
@@ -80,7 +80,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     # --- Expansion ---
     if Costr < o.costs[first(ind)] # reflected is better than fist -> expand
         xe = exp(p.M, m, - o.γ * o.α * ξ)
-        Coste = getCost(p,xe)
+        Coste = get_cost(p,xe)
         if Coste < Costr # expanded successful
             o.population[last(ind)] = xe
             o.costs[last(ind)] = Coste
@@ -94,7 +94,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
         if Costr < o.costs[last(ind)] # but at least better tham last
             # outside contraction
             xc = exp(p.M, m, - o.ρ*ξ)
-            Costc = getCost(p,xc)
+            Costc = get_cost(p,xc)
             if Costc < Costr # better than reflected -> store as last
                 o.population[last(ind)] = xr
                 o.costs[last(ind)] = Costr
@@ -102,7 +102,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
         else # even worse than last -> inside contraction
             # outside contraction
             xc = exp(p.M, m, o.ρ*ξ)
-            Costc = getCost(p,xc)
+            Costc = get_cost(p,xc)
             if Costc < o.costs[last(ind)] # better than last ? -> store
                 o.population[last(ind)] = xr
                 o.costs[last(ind)] = Costr
@@ -113,7 +113,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     for i=2:length(ind)
         o.population[ind[i]] = shortest_geodesic(p.M, o.population[ind[1]], o.population[ind[i]], o.σ)
         # update cost
-        o.costs[ind[i]] = getCost(p, o.population[ind[i]])
+        o.costs[ind[i]] = get_cost(p, o.population[ind[i]])
     end
     # store best
     o.x = o.population[ argmin(o.costs) ]

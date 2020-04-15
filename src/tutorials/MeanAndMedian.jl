@@ -26,7 +26,7 @@
 # A gradient plan consists of a [`GradientProblem`](@ref) with the fields `M`,
 # cost function $f$ as well as `gradient` storing the gradient function
 # corresponding to $f$. Accessing both functions can be done directly but should
-# be encapsulated using [`getCost`](@ref)`(p,x)` and [`getGradient`](@ref)`(p,x)`,
+# be encapsulated using [`get_cost`](@ref)`(p,x)` and [`getGradient`](@ref)`(p,x)`,
 # where in both cases `x` is a point on the [`Manifold`](@ref) `M`.
 # Second, the [`GradientDescentOptions`](@ref) specify that the algorithm to solve
 # the [`GradientProblem`](@ref) will be the [gradient
@@ -94,10 +94,10 @@ renderAsymptote(exportFolder*"/startDataAndCenter.asy",asyExportS2Signals; #src
 # [Riemannian Center of Mass](https://arxiv.org/abs/1407.2087).
 #
 F = y -> sum(1/(2*n) * distance.(Ref(M),Ref(y),data).^2)
-∇F = y -> sum(1/n*gradDistance.(Ref(M),data,Ref(y)))
+∇F = y -> sum(1/n*∇distance.(Ref(M),data,Ref(y)))
 nothing #hide
 #
-# note that the [`gradDistance`](@ref) defaults to the case `p=2`, i.e. the
+# note that the [`∇distance`](@ref) defaults to the case `p=2`, i.e. the
 # gradient of the squared distance. For details on convergence of the gradient
 # descent for this problem, see [[Afsari, Tron, Vidal, 2013](#AfsariTronVidal2013)]
 #

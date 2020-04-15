@@ -70,9 +70,9 @@ Compute the adjoint of $D_q log_p q[X]$.
 AdjDqLog(M::MT, p, q, X) where {MT <: Manifold} = adjoint_Jacobi_field(M, p, q, 1., X, βDqLog)
 
 @doc raw"""
-    Y = AdjDforwardLogs(M, p, X)
+    Y = AdjDforward_logs(M, p, X)
 
-Compute the adjoint differential of [`forwardLogs`](@ref) $F$ orrucirng,
+Compute the adjoint differential of [`forward_logs`](@ref) $F$ orrucirng,
 in the power manifold array `p`, the differential of the function
 
 $F_i(p) = \sum_{j ∈ \mathcal I_i} \log_{p_i} p_j$
@@ -93,7 +93,7 @@ Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
 `Y` – resulting tangent vector in $T_p\mathcal M$ representing the adjoint
   differentials of the logs.
 """
-function AdjDforwardLogs(M::PowerManifold, p, X)
+function AdjDforward_logs(M::PowerManifold, p, X)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)

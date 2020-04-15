@@ -21,6 +21,6 @@ yP = [x, x, y]
 @test norm(
         Mp,
         xP,
-        AdjDforwardLogs(Mp,xP,ξP) - [-ξ, zero_tangent_vector(M,x), zero_tangent_vector(M,x)]
+        AdjDforward_logs(Mp,xP,ξP) - [-ξ, zero_tangent_vector(M,x), zero_tangent_vector(M,x)]
     ) ≈ 0 atol=4*10.0^(-16)
 end

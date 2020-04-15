@@ -142,7 +142,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
         grad = getGradient(p, o.x)
-        fx = getCost(p, o.x)
+        fx = get_cost(p, o.x)
         norm_grad = norm(p.M, o.x, grad)
         # If using randomized approach, compare result with the Cauchy point.
         if o.useRand
@@ -169,7 +169,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustReg
         # Compute the tentative next iterate (the proposal)
         x_prop  = o.retraction(p.M, o.x, η)
         # Compute the function value of the proposal
-        fx_prop = getCost(p, x_prop)
+        fx_prop = get_cost(p, x_prop)
         # Check the performance of the quadratic model against the actual cost.
         ρnum = fx - fx_prop
         ρden = -inner(p.M, o.x, η, grad) - 0.5*inner(p.M, o.x, η, Hη)

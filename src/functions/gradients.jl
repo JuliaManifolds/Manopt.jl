@@ -1,5 +1,5 @@
 @doc raw"""
-    gradDistance(M,y,x[, p=2])
+    ∇distance(M,y,x[, p=2])
 
 compute the (sub)gradient of the distance (squared)
 
@@ -23,10 +23,10 @@ $x=y$ the function is not differentiable. This function returns then the
 * `p` – (`2`) the exponent of the distance,  i.e. the default is the squared
   distance
 """
-gradDistance(M,y,x,p::Int=2) = (p==2) ? -log(M,x,y) : -distance(M,x,y)^(p-2)*log(M,x,y)
+∇distance(M,y,x,p::Int=2) = (p==2) ? -log(M,x,y) : -distance(M,x,y)^(p-2)*log(M,x,y)
 
 @doc raw"""
-    ∇u,⁠∇v = gradIntrICTV12(M,f,u,v,α,β)
+    ∇u,⁠∇v = ∇intrinsic_infimal_convolution_TV12(M,f,u,v,α,β)
 
 compute (sub)gradient of the intrinsic infimal convolution model using the mid point
 model of second order differences, see [`costTV2`](@ref), i.e. for some $f ∈ \mathcal M$
@@ -40,21 +40,21 @@ E(u,v) =
 \beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w)
 \bigr),
 ```
-where both total variations refer to the intrinsic ones, [`gradTV`](@ref) and
-[`gradTV2`](@ref), respectively.
+where both total variations refer to the intrinsic ones, [`∇TV`](@ref) and
+[`∇TV2`](@ref), respectively.
 """
-function gradIntrICTV12(M::mT,f,u,v,α,β) where {mT <: Manifold}
+function ∇intrinsic_infimal_convolution_TV12(M::mT,f,u,v,α,β) where {mT <: Manifold}
   c = mid_point(M,u,v,f)
   iL = log(M,c,f)
-  return AdjDpGeo(M,u,v,1/2,iL) + α*β*gradTV(M,u), AdjDqGeo(M,u,v,1/2,iL) + α * (1-β) * gradTV2(M,v)
+  return AdjDpGeo(M,u,v,1/2,iL) + α*β*∇TV(M,u), AdjDqGeo(M,u,v,1/2,iL) + α * (1-β) * ∇TV2(M,v)
 end
 @doc raw"""
-    gradTV(M,(x,y),[p=1])
+    ∇TV(M,(x,y),[p=1])
 
 compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
 to both $x$ and $y$.
 """
-function gradTV(M::MT, xT::Tuple{T,T}, p=1)where {MT <: Manifold, T}
+function ∇TV(M::MT, xT::Tuple{T,T}, p=1)where {MT <: Manifold, T}
   x = xT[1];
   y = xT[2];
   if p==2
@@ -69,7 +69,7 @@ function gradTV(M::MT, xT::Tuple{T,T}, p=1)where {MT <: Manifold, T}
   end
 end
 @doc raw"""
-    ξ = gradTV(M,λ,x,[p])
+    ξ = ∇TV(M,λ,x,[p])
 Compute the (sub)gradient $\partial F$ of all forward differences orrucirng,
 in the power manifold array, i.e. of the function
 
@@ -85,7 +85,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 # Ouput
 * ξ – resulting tangent vector in $T_x\mathcal M$.
 """
-function gradTV(M::PowerManifold,x,p::Int=1)
+function ∇TV(M::PowerManifold,x,p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
@@ -100,9 +100,9 @@ function gradTV(M::PowerManifold,x,p::Int=1)
             j = i+ek # compute neighbor
             if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
                 if p != 1
-                    g = (c[i]==0 ? 1 : 1/c[i]) .* gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
+                    g = (c[i]==0 ? 1 : 1/c[i]) .* ∇TV(M.manifold,(x[i],x[j]),p) # Compute TV on these
                 else
-                    g = gradTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
+                    g = ∇TV(M.manifold,(x[i],x[j]),p) # Compute TV on these
                 end
                 X[i] += g[1]
                 X[j] += g[2]
@@ -113,7 +113,7 @@ function gradTV(M::PowerManifold,x,p::Int=1)
 end
 
 @doc raw"""
-    ξ = forwardLogs(M,x)
+    ξ = forward_logs(M,x)
 
 compute the forward logs $F$ (generalizing forward differences) orrucirng,
 in the power manifold array, the function
@@ -133,7 +133,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `ξ` – resulting tangent vector in $T_x\mathcal M$ representing the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function forwardLogs(M::PowerManifold, x)
+function forward_logs(M::PowerManifold, x)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -162,7 +162,7 @@ function forwardLogs(M::PowerManifold, x)
 end
 
 @doc raw"""
-    gradTV2(M,(x,y,z),p)
+    ∇TV2(M,(x,y,z),p)
 
 computes the (sub) gradient of $\frac{1}{p}d_2^p(x,y,z)$ with respect
 to $x$, $y$, and $z$, where $d_2$ denotes the second order absolute difference
@@ -182,7 +182,7 @@ the evaluation of an [`adjoint_Jacobi_field`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """
-function gradTV2(M::MT, xT, p::Number=1) where {MT <: Manifold}
+function ∇TV2(M::MT, xT, p::Number=1) where {MT <: Manifold}
   x = xT[1];
   y = xT[2];
   z = xT[3];
@@ -200,13 +200,13 @@ function gradTV2(M::MT, xT, p::Number=1) where {MT <: Manifold}
   end
 end
 @doc raw"""
-    gradTV2(M,x [,p=1])
+    ∇TV2(M,x [,p=1])
 
 computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function gradTV2(M::PowerManifold, x, p::Int=1)
+function ∇TV2(M::PowerManifold, x, p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
@@ -222,9 +222,9 @@ function gradTV2(M::PowerManifold, x, p::Int=1)
             jB = i-ek # compute backward neighbor
             if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
                 if p != 1
-                    g = (c[i] == 0 ? 1 : 1/c[i]) .* gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
+                    g = (c[i] == 0 ? 1 : 1/c[i]) .* ∇TV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
                 else
-                    g = gradTV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
+                    g = ∇TV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
                 end
                 ξ[jB] += g[1]
                 ξ[i]  += g[2]

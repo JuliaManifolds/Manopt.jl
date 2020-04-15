@@ -201,7 +201,7 @@ function proxTV2(M::mT,λ,pointTuple::Tuple{T,T,T},p::Int=1;
   PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
   xInit = PowX
   F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
-  ∂F(x) = log(PowM,x,PowX) + λ*gradTV2(PowM,x)
+  ∂F(x) = log(PowM,x,PowX) + λ*∇TV2(PowM,x)
   xR = subGradientMethod(PowM,F,∂F,xInit;stoppingCriterion=stoppingCriterion, kwargs...)
   return (xR...,)
 end
@@ -306,7 +306,7 @@ norm is not on a manifold but on a vector space, see their Example 3 for
 details.
 """
 function proxCollaborativeTV(N::PowerManifold, λ, x, Ξ,p=2.,q=1.)
-  # Ξ = forwardLogs(M,x)
+  # Ξ = forward_logs(M,x)
   pdims = power_dimensions(N)
   if length(pdims) == 1
     d = 1

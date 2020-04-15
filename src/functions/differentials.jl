@@ -50,9 +50,9 @@ computes $D_ylog_xy[\eta]$.
 DyLog(M::MT, x, y, η) where {MT <: Manifold} = jacobi_field(M,y,x,1.0,η,βDqLog)
 
 @doc raw"""
-    ν = DforwardLogs(M,x,ξ)
+    ν = Dforward_logs(M,x,ξ)
 
-compute the differenital of [`forwardLogs`](@ref) $F$ on the `PowerManifold` manifold
+compute the differenital of [`forward_logs`](@ref) $F$ on the `PowerManifold` manifold
 `M` at `x` and direction `ξ` ,
 in the power manifold array, the differential of the function
 
@@ -72,7 +72,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `ν` – resulting tangent vector in $T_x\mathcal N$ representing the differentials of the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function DforwardLogs(M::PowerManifold, p, X)
+function Dforward_logs(M::PowerManifold, p, X)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)

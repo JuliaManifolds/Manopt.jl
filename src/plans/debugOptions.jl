@@ -163,7 +163,7 @@ end
 @doc raw"""
     DebugCost <: DebugAction
 
-print the current cost function value, see [`getCost`](@ref).
+print the current cost function value, see [`get_cost`](@ref).
 
 # Constructors
     DebugCost(long,print)
@@ -180,7 +180,7 @@ mutable struct DebugCost <: DebugAction
     DebugCost(long::Bool=false,print::Function=print) = new(print, long ? "Cost Function: " : "F(x): ")
     DebugCost(prefix::String,print::Function=print) = new(print,prefix)
 end
-(d::DebugCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*string(getCost(p,o.x)) : "")
+(d::DebugCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*string(get_cost(p,o.x)) : "")
 
 @doc raw"""
     DebugDivider <: DebugAction

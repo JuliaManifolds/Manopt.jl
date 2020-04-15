@@ -103,7 +103,7 @@ implementation to access the cost
 
 ```@docs
 Problem
-getCost
+get_cost
 ```
 
 For any algorithm that involves a cyclic evalutaion, e.g.

@@ -13,11 +13,11 @@ abstract type Problem end
 # 1) Function defaults / Fallbacks
 #
 """
-    getCost(p,x)
+    get_cost(p,x)
 
 evaluate the cost function `F` stored within a [`Problem`](@ref) at the point `x`.
 """
-function getCost(p::P,x) where {P <: Problem}
+function get_cost(p::P,x) where {P <: Problem}
   return p.costFunction(x)
 end
 getGradient(p::Pr,x) where {Pr <: Problem} =

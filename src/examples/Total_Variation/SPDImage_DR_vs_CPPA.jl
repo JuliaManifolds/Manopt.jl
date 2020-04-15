@@ -36,7 +36,7 @@ M = PowerManifold(pixelM,size(f))
 d = length(size(f))
 rep(d) = (d>1) ? [ones(Int,d)...,d] : d
 fidelity(x) = 1/2*distance(M,x,f)^2
-Λ(x) = forwardLogs(M,x) # on T_xN
+Λ(x) = forward_logs(M,x) # on T_xN
 prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x),1)
 #
 # Setup & Optimize

@@ -71,9 +71,9 @@ costTV2(M, (x,y,z) )
 # respectively, with a distance.
 # Hence the [adjoint differentials](@ref adjointDifferentialFunctions)
 # [`AdjDpGeo`](@ref) and [`AdjDqGeo`](@ref) can be employed,
-# see [`gradTV2`](@ref) for details.
+# see [`∇TV2`](@ref) for details.
 # we obtain
-(ξx, ξy, ξz) = gradTV2(M, (x,y,z) )
+(ξx, ξy, ξz) = ∇TV2(M, (x,y,z) )
 #
 # When we aim to minimize this, we look at the negative gradient, i.e.
 # we can draw this as
@@ -142,7 +142,7 @@ p = [x,y,z]
 N = PowerManifold(M,3)
 s = ArmijoLinesearch(1.0,exp,0.999,0.96)(N, p,
     x -> costTV2(M, Tuple(x)),
-     [ gradTV2(M, (x,y,z))... ]  # transform from tuple to PowTVector
+     [ ∇TV2(M, (x,y,z))... ]  # transform from tuple to PowTVector
 )
 # and for the new points
 xm, ym, zm = exp.(Ref(M), [x,y,z], s*[-ξx,-ξy,-ξz])

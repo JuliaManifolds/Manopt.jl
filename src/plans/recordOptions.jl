@@ -293,13 +293,13 @@ end
 @doc raw"""
     RecordCost <: RecordAction
 
-record the current cost function value, see [`getCost`](@ref).
+record the current cost function value, see [`get_cost`](@ref).
 """
 mutable struct RecordCost <: RecordAction
     recordedValues::Array{Float64,1}
     RecordCost() = new(Array{Float64,1}())
 end
-(r::RecordCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, getCost(p,o.x), i)
+(r::RecordCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, get_cost(p,o.x), i)
 
 
 @doc raw"""

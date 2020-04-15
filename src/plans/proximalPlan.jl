@@ -5,7 +5,7 @@
 #
 export ProximalProblem
 export CyclicProximalPointOptions, DouglasRachfordOptions
-export getCost, getProximalMap
+export get_cost, getProximalMap
 export DebugProximalParameter
 export RecordProximalParameter
 
@@ -24,7 +24,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
   functions return more than one entry per function
 
 # See also
-[`cyclicProximalPoint`](@ref), [`getCost`](@ref), [`getProximalMap`](@ref)
+[`cyclicProximalPoint`](@ref), [`get_cost`](@ref), [`getProximalMap`](@ref)
 """
 mutable struct ProximalProblem{mT <: Manifold} <: Problem
   M::mT

@@ -61,7 +61,7 @@ function doSolverStep!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     o.∂ = getSubGradient(p,o.x)
     s = getStepsize!(p,o,iter)
     o.retract!(p.M, o.x, o.x, -s*o.∂)
-    if getCost(p,o.x) < getCost(p,o.xOptimal)
+    if get_cost(p,o.x) < get_cost(p,o.xOptimal)
         o.xOptimal = o.x
     end
 end

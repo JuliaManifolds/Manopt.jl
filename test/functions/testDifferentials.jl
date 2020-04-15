@@ -23,7 +23,7 @@ V = [X, zero_tangent_vector(M,p), -X]
 @test norm(
         N,
         x,
-        DforwardLogs(N,x,V)
+        Dforward_logs(N,x,V)
      - [-X, [π/2, 0., 0.],zero_tangent_vector(M,p)] )  ≈ 0 atol=8*10.0^(-16)
 #
 # Single differentials on Hn

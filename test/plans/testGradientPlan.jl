@@ -11,7 +11,7 @@
     @test getStepsize!(p,o,1) == 1.
     @test getLastStepsize(p,o,1) == 1.
     # Check Fallbacks of Problen
-    @test getCost(p,o.x) == 0.
+    @test get_cost(p,o.x) == 0.
     @test getGradient(p,o.x) == zero_tangent_vector(M,x)
     @test_throws ErrorException getProximalMap(p,1.,o.x,1)
     @test_throws ErrorException getSubGradient(p,o.x)

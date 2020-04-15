@@ -149,7 +149,7 @@ getStoppingCriteriaArray(c::stopWhenAny) = c.criteria
     stopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`Problem`](@ref), i.e `getCost(p,o.x)`.
+optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,o.x)`.
 
 # Constructor
 
@@ -163,8 +163,8 @@ mutable struct stopWhenCostLess <: StoppingCriterion
     stopWhenCostLess(ε::Float64) = new(ε,"")
 end
 function (c::stopWhenCostLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if i > 0 && getCost(p,o.x) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(getCost(p,o.x))) less then the threshold ($(c.threshold)).\n"
+    if i > 0 && get_cost(p,o.x) < c.threshold
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less then the threshold ($(c.threshold)).\n"
         return true
     end
     return false

@@ -14,7 +14,7 @@ using Manifolds
     @test getStepsize!(p,o,1) == 0.1
     @test getLastStepsize(p,o,1) == 0.1
     # Check Fallbacks of Problen
-    @test getCost(p,x) == 0.
+    @test get_cost(p,x) == 0.
     @test norm(M,x,getSubGradient(p,x)) == 0
     @test_throws ErrorException getGradient(p,o.x)
     @test_throws ErrorException getProximalMap(p,1.,o.x,1)
