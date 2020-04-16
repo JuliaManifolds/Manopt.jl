@@ -97,12 +97,12 @@ Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
 `Y` – resulting tangent vector in $T_p\mathcal M$ representing the adjoint
   differentials of the logs.
 """
-function adjoint_differential_forward_logs(M::PowerManifold, p, X)
+function adjoint_differential_forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p, X) where {𝔽,TM,TSize,TPR}
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = [last(R).I...] # maxInd as Array
-    N = M.manifold^(power_size...,d)
+    N = PowerManifold(M.manifold, TPR(), power_size..., d)
     Y = zero_tangent_vector(M,p)
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
