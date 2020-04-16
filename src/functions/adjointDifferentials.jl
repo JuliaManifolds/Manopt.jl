@@ -114,11 +114,11 @@ function adjoint_differential_forward_logs(M::PowerManifold, p, X)
                 set_component!(
                     M,
                     Y,
-                    get_component(M,Y,i) + adjoint_differential_log_basepoint(
+                    get_component(M,Y,i) .+ adjoint_differential_log_basepoint(
                         M.manifold,
                         get_component(M,p,i),
                         get_component(M,p,j),
-                        get_component(N,X,i,j),
+                        get_component(N,X,i,k),
                     ),
                     i,
                 )
