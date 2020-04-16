@@ -191,12 +191,16 @@ function adjoint_Jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function
     rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
-        lY = adjoint_Jacobi_field(M.manifold, p[i], q[i], t, X[i], β)
-        if size(lY) == ()
-            Y[i] = lY
-        else
-            Y[i] .= lY
-        end
+        #lY = adjoint_Jacobi_field(M.manifold, p[i], q[i], t, X[i], β)
+        lY = adjoint_Jacobi_field(
+            M.manifold,
+            get_component(M,p,i),
+            get_component(M,q,i),
+            t,
+            get_component(M,X,i),
+            β,
+        )
+        set_component!(M,Y,lY,i)
     end
     return Y
 end
@@ -247,12 +251,20 @@ function jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function=βdiffe
     rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
-        lY = jacobi_field(M.manifold, p[i], q[i], t, X[i], β)
-        if size(lY) == ()
-            Y[i] = lY
-        else
-            Y[i] .= lY
-        end
+        #lY = jacobi_field(M.manifold, p[i], q[i], t, X[i], β)
+        set_component!(
+            M,
+            Y,
+            jacobi_field(
+                M.manifold,
+                get_component(M,p,i),
+                get_component(M,q,i),
+                t,
+                get_component(M,X,i),
+                β,
+            ),
+            i,
+        )
     end
     return Y
 end

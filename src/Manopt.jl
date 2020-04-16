@@ -75,7 +75,9 @@ module Manopt
         ShapeSpecification,
         ProductRepr,
         submanifold_components,
-        submanifold_component
+        submanifold_component,
+        get_component,
+        set_component!
 
     include("plans/plan.jl")
     # Functions

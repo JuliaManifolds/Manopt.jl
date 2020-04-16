@@ -57,7 +57,9 @@ computes the adjoint of $D_p log_p q[X]$.
 # See also
 [`differential_log_basepoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-adjoint_differential_log_basepoint(M::mT, p, q, X) where {mT <: Manifold} = adjoint_Jacobi_field(M, p, q, 0., X, βdifferential_log_basepoint)
+function adjoint_differential_log_basepoint(M::Manifold, p, q, X)
+    return adjoint_Jacobi_field(M, p, q, 0., X, βdifferential_log_basepoint)
+end
 
 @doc raw"""
     adjoint_differential_log_argument(M, p, q, X)
@@ -67,7 +69,9 @@ Compute the adjoint of $D_q log_p q[X]$.
 # See also
 [`differential_log_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-adjoint_differential_log_argument(M::MT, p, q, X) where {MT <: Manifold} = adjoint_Jacobi_field(M, p, q, 1., X, βdifferential_log_argument)
+function adjoint_differential_log_argument(M::Manifold, p, q, X)
+    return adjoint_Jacobi_field(M, p, q, 1., X, βdifferential_log_argument)
+end
 
 @doc raw"""
     Y = adjoint_differential_forward_logs(M, p, X)
@@ -106,8 +110,30 @@ function adjoint_differential_forward_logs(M::PowerManifold, p, X)
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all( J .<= maxInd ) # is this neighbor in range?
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-                Y[i] += adjoint_differential_log_basepoint(M.manifold,p[i],p[j],X[i,k])
-                Y[j] += adjoint_differential_log_argument(M.manifold,p[i],p[j],X[i,k])
+                # Y[i] += adjoint_differential_log_basepoint(M.manifold,p[i],p[j],X[i,k])
+                set_component!(
+                    M,
+                    Y,
+                    get_component(M,Y,i) + adjoint_differential_log_basepoint(
+                        M.manifold,
+                        get_component(M,p,i),
+                        get_component(M,p,j),
+                        get_component(N,X,i,j),
+                    ),
+                    i,
+                )
+                # Y[j] += adjoint_differential_log_argument(M.manifold,p[i],p[j],X[i,k])
+                set_component!(
+                    M,
+                    Y,
+                    get_component(M,Y,j) + adjoint_differential_log_basepoint(
+                        M.manifold,
+                        get_component(M,p,i),
+                        get_component(M,p,j),
+                        get_component(N,X,i,k),
+                    ),
+                    i,
+                )
             end
         end # directions
     end # i in R

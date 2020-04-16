@@ -116,7 +116,11 @@ function costTV(M::PowerManifold, x, p=1, q=1)
         for i in R # iterate over all pixel
             j = i+ek # compute neighbor
             if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-                cost[i] += costTV(M.manifold,(x[i],x[j]),p) # Compute TV on these
+                cost[i] += costTV(
+                    M.manifold,
+                    (get_component(M,x,i),get_component(M,x,j)),
+                    p
+                )
             end
         end
     end
@@ -171,20 +175,25 @@ nearest to $x_i$.
 [`∇TV2`](@ref), [`proxTV2`](@ref)
 """
 function costTV2(M::PowerManifold, x, p::Int=1, Sum::Bool=true)
-  Tt = Tuple( power_dimensions(M) )
-  R = CartesianIndices( Tt )
-  d = length(Tt)
-  minInd, maxInd = first(R), last(R)
-  cost = fill(0., Tt)
-  for k in 1:d # for all directions
-    ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-    for i in R # iterate over all pixel
-      jF = i+ek # compute forward neighbor
-      jB = i-ek # compute backward neighbor
-      if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
-        cost[i] += costTV2( M.manifold, (x[jB], x[i], x[jF]),p ) # Compute TV on these
-      end
-    end # i in R
+    Tt = Tuple( power_dimensions(M) )
+    R = CartesianIndices( Tt )
+    d = length(Tt)
+    minInd, maxInd = first(R), last(R)
+    cost = fill(0., Tt)
+    for k in 1:d # for all directions
+        ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+        for i in R # iterate over all pixel
+            jF = i+ek # compute forward neighbor
+            jB = i-ek # compute backward neighbor
+            if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
+                cost[i] += costTV2(
+                    M.manifold,
+                    (get_component(M,x,jB),get_component(M,x,i),get_component(M,x,jF)),
+                    p,
+                )
+
+            end
+        end # i in R
   end # directions
   if p != 1
     cost = (cost).^(1/p)
