@@ -106,6 +106,7 @@ function differential_forward_logs(M::PowerManifold, p, X)
                 #            + differential_log_argument(M.manifold,p[i],p[j],X[j])
                 set_component!(
                     N,
+                    Y,
                     differential_log_basepoint(
                         M.manifold,
                         get_component(M,p,i),

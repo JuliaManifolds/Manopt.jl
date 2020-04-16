@@ -44,13 +44,13 @@
   N2 = PowerManifold(M2,3)
   pS, rS, qS = [-0.5, 0.1, 0.5]
   d = dot([pS, rS, qS], [1., -2., 1.])
-  m = min(0.3, abs( sym_rem(d)/6) )
-  s = sign(sym_rem(d))
-  pSc, rSc, qSc = sym_rem.( [pS, rS, qS] .- m .* s .* [1., -2., 1.] )
+  m = min(0.3, abs( Manopt.sym_rem(d)/6) )
+  s = sign(Manopt.sym_rem(d))
+  pSc, rSc, qSc = Manopt.sym_rem.( [pS, rS, qS] .- m .* s .* [1., -2., 1.] )
   pSr, rSr, qSr = proxTV2(M2, 0.3, (pS, rS, qS) )
   @test sum( distance.(Ref(M2), [pSc, rSc, qSc], [pSr, rSr, qSr]) ) ≈ 0
   # p=2
-  t = 0.3*sym_rem(d)/(1+0.3*6.)
+  t = 0.3*Manopt.sym_rem(d)/(1+0.3*6.)
   @test sum(
     distance.( Ref(M2),
       [proxTV2(M2,0.3,(pS, rS, qS),2)...],
