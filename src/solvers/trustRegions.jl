@@ -30,7 +30,7 @@ For a description of the algorithm and more details see
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
 
 # Optional
-* `retraction` – approximation of the exponential map [`exp`](@ref)
+* `retraction` – approximation of the exponential map
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
 * `stoppingCriterion` – ([`StopWhenAny`](@ref)([`stopAfterIteration`](@ref)`(1000)`,

@@ -44,7 +44,7 @@ asymptote_export_S2_signals(exportFolder*"/jacobiGeodesic.asy"; #src
 #
 # where $x$ is on the left. Then this tutorial solves the following task:
 #
-# Given a direction $\xi_x∈ T_x\mathcal M$, for example the [`SnTVector`](@ref)
+# Given a direction $\xi_x∈ T_x\mathcal M$, for example
 ξx = [0.,0.4,0.5]
 # we move the start point $x$ into, how does any point on the geodesic move?
 #
@@ -119,8 +119,7 @@ asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicdifferential_geodesic_s
 ξy = [0.2,0.,-0.5]
 ηy = differential_geodesic_endpoint.(Ref(M),Ref(x),Ref(y),T,Ref(ξy))
 Vy = [ Tuple([a,b]) for (a,b) ∈ zip(Z,ηy) ]
-# and we can look at the total effect, where the [`Tuple`](@ref)s even verify
-# that only tangent vectors are added that have a common base point
+# and we can combine both keeping the base point
 Vb = [ Tuple([a,b+c]) for (a,b) ∈ zip(Z,ηy+ηx) ]
 asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicResult.asy"; #src
     render = asyResolution, #src

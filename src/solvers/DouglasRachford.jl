@@ -25,7 +25,7 @@ the default parameter is given in brackets
 * `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.
   $t_{k+1} = g(α_k; t_k, s_k)$, where $s_k$ is the result
   of the double reflection involved in the DR algorithm
-* `R` – ([`reflection`](@ref)) method employed in the iteration
+* `R` – ([`reflect`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
 * `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a

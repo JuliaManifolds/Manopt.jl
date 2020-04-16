@@ -77,60 +77,9 @@ module Manopt
         submanifold_components,
         submanifold_component
 
-    """
-        mid_point(M, p, q, x)
-
-    Compute the mid point between p and q. If there is more than one mid point
-    of (not neccessarily miniizing) geodesics (i.e. on the sphere), the one nearest
-    to x is returned.
-    """
-    mid_point(M::MT, p, q, x) where {MT <: Manifold} = mid_point(M, p, q)
-    mid_point!(M::MT, y, p, q, x) where {MT <: Manifold} = mid_point!(M, y, p, q)
-
-    """
-        mid_point(M, p, q)
-
-    Compute the (geodesic) mid point of the two points `p` and `q` on the
-    manfold `M`. If the geodesic is not unique, either a deterministic choice is taken or
-    an error is raised depending on the manifold. For the deteministic choixe, see
-    [`mid_point(M, p, q, x)`](@ref), the mid point closest to a third point
-    `x`.
-    """
-    mid_point(M::MT, p, q) where {MT <: Manifold} = exp(M, p, log(M, p, q), 0.5)
-    mid_point!(M::MT, y, p, q) where {MT <: Manifold} = exp!(M, y, p, log(M, p, q), 0.5)
-
-    @doc raw"""
-        reflect(M, f, x)
-
-    reflect the point `x` from the manifold `M` at the point `f(x)` of the
-    function $f\colon \mathcal M \to \mathcal M$.
-    """
-    reflect(M::Manifold, pr::Function, x) = reflect(M::Manifold, pr(x), x)
-
-    @doc raw"""
-        reflect(M, p, x)
-
-    reflect the point `x` from the manifold `M` at point `x`, i.e.
-
-    ````math
-        \operatorname{refl}_p(x) = \exp_p(-\log_p x).
-    ````
-    where exp and log denote the exponential and logarithmic map on `M`.
-    """
-    reflect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
-
-    @doc raw"""
-        sym_rem(x,[T=π])
-
-    Compute symmetric remainder of `x` with respect to the interall 2*`T`, i.e.
-    `(x+T)%2T`, where the default for `T` is $π$
-    """
-    function sym_rem(x::N, T = π) where {N<:Number}
-        return (x ≈ T ? convert(N, -T) : rem(x, convert(N, 2 * T), RoundNearest))
-    end
-
     include("plans/plan.jl")
     # Functions
+    include("functions/manifold.jl")
     include("functions/adjointDifferentials.jl")
     include("functions/costs.jl")
     include("functions/differentials.jl")
@@ -161,9 +110,10 @@ export ×, ^, ℝ, ℂ
 export AbstractOptionsAction, StoreOptionsAction
 export has_storage, get_storage, update_storage!
 
-export random_point, random_tangent, mid_point
+export random_point, random_tangent, mid_point, mid_point!, reflect, sym_rem
 
-export βdifferential_geodesic_startpoint, βdifferential_exp_basepoint, βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
+export βdifferential_geodesic_startpoint, βdifferential_exp_basepoint
+export  βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
 export adjoint_differential_geodesic_startpoint, adjoint_differential_geodesic_endpoint
 export adjoint_differential_exp_basepoint, adjoint_differential_exp_argument
 export adjoint_differential_log_basepoint, adjoint_differential_log_argument

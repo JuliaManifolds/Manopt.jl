@@ -98,7 +98,7 @@ Store all options required for the DouglasRachford algorithm,
 * `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
   $x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})$, where $t^{(k)}$ is the result
   of the double reflection involved in the DR algorithm
-* `R` – ([`reflection`](@ref)) method employed in the iteration to perform the reflection of `x` at
+* `R` – ([`reflect`](@ref)) method employed in the iteration to perform the reflection of `x` at
   the prox `p`.
 * `stop` – ([`stopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
 * `parallel` – (`false`) inducate whether we are running a pallel Douglas-Rachford

@@ -48,7 +48,8 @@ makedocs(
             "Adjoint Differentials" => "functions/adjointDifferentials.md",
             "Gradients" => "functions/gradients.md",
             "JacobiFields" => "functions/jacobiFields.md",
-            "Proximal Maps" => "functions/proximalMaps.md"
+            "Proximal Maps" => "functions/proximalMaps.md",
+            "Specific manifold functions" => "functions/manifold.md"
         ],
         "Helpers" => [
             "Data" => "helpers/data.md",

@@ -130,9 +130,9 @@ for example [`DebugOptions`](@ref) or [`RecordOptions`](@ref).
 abstract type AbstractOptionsAction end
 
 @doc raw"""
-    StoreTupleAction <: AbstractOptionsAbstractOptionsAction
+    StoreTupleAction <: AbstractOptionsAction
 
-internal storage for [`Action`](@ref)s to store a tuple of fields from an
+internal storage for [`AbstractOptionsAction`](@ref)s to store a tuple of fields from an
 [`Options`](@ref)s
 
 This functor posesses the usual interface of functions called during an

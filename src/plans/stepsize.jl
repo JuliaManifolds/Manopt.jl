@@ -87,7 +87,7 @@ last step size.
 
 # Fields
 * `initialStepsize` – (`1.0`) and initial step size
-* `retraction` – ([`exp`](@ref Manopt.exp)) the rectraction used in line search
+* `retraction` – the rectraction used in line search
 * `contractionFactor` – (`0.95`) exponent for line search reduction
 * `sufficientDecrease` – (`0.1`) gain within Armijo's rule
 * `lastStepSize` – (`initialstepsize`) the last step size we start the search with
