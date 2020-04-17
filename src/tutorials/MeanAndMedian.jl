@@ -55,7 +55,7 @@ n = 100
 M = Sphere(2)
 x = 1/sqrt(2)*[1., 0., 1.]
 Random.seed!(42)
-data = addNoise.(Ref(M), repeat([x],n),Ref(σ))
+data = [exp(M,x,random_tangent(M,x,Val(:Gaussian),σ)) for i ∈ 1:n ]
 nothing #hide
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)
 black = RGBA{Float64}(colorant"#000000")
@@ -67,21 +67,19 @@ nothing #hide
 #
 # Then our data looks like
 #
-asyResolution = 2
-nothing #hide
 asymptote_export_S2_signals(exportFolder*"/startDataAndCenter.asy"; #src
-    render = asyResolution, #src
     points = [ [x], data], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]), #src
     dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
 ) #src
+render_asymptote(exportFolder*"/startDataAndCenter.asy"; render = 2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataAndCenter.asy";
-#md #     render = asyResolution,
 #md #     points = [ [x], data],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
 #md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
 #md # )
+#md # render_asymptote("startDataAndCenter.asy"; render = 2)
 #md # ```
 #md #
 #md # ![The data of noisy versions of $x$](../assets/images/tutorials/startDataAndCenter.png)
@@ -123,18 +121,18 @@ xMean = steepestDescent(M,F,∇F,data[1];
 nothing #hide
 #
 asymptote_export_S2_signals(exportFolder*"/startDataCenterMean.asy"; #src
-    render = asyResolution, #src
     points = [ [x], data, [xMean] ], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]), #src
     dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
 ) #src
+render_asymptote(exportFolder*"/startDataCenterMean.asy"; render = 2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataCenterMean.asy";
-#md #     render = asyResolution,
 #md #     points = [ [x], data, [xMean] ],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]),
 #md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
 #md # )
+#md # render_asymptote("startDataCenterMean.asy"; render = 2)
 #md # ```
 #md #
 #md # ![The resulting mean (orange)](../assets/images/tutorials/startDataCenterMean.png)
@@ -180,18 +178,18 @@ values
 # The resulting median and mean for the data hence are
 #
 asymptote_export_S2_signals(exportFolder*"/startDataCenterMedianAndMean.asy"; #src
-    render = asyResolution, #src
     points = [ [x], data, [xMean], [xMedian] ], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]), #src
     dotSize = 3.5, cameraPosition = (1.,.5,.5) #src
 ) #src
+render_asymptote(exportFolder*"/startDataCenterMedianAndMean.asy"; render = 2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataCenterMean.asy";
-#md #     render = asyResolution,
 #md #     points = [ [x], data, [xMean], [xMedian] ],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]),
 #md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
 #md # )
+#md # render_asymptote("startDataCenterMedianAndMean.asy"; render = 2)
 #md # ```
 #md #
 #md # ![The resulting mean (orange) and median (magenta)](../assets/images/tutorials/startDataCenterMedianAndMean.png)

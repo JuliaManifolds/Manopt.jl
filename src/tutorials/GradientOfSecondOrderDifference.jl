@@ -47,7 +47,7 @@ asymptote_export_S2_signals(exportFolder*"/SecondOrderData.asy"; #src
     colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]), #src
     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5) #src
 ) #src
-render_asymptote(exportFolder*"/SecondOrderData.asy"; render=2)
+render_asymptote(exportFolder*"/SecondOrderData.asy"; render=2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("secondOrderData.asy";
@@ -92,7 +92,7 @@ render_asymptote(exportFolder*"/SecondOrderGradient.asy"; render=2) #src
 #md #    colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]),
 #md #    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
 #md # )
-#md # render_asymptote(exportFolder*"SecondOrderGradient.asy"; render=2)
+#md # render_asymptote("SecondOrderGradient.asy"; render=2)
 #md # ```
 #md #
 #md # ![Three points $x,y,z$ and the negative gradient of the second order absolute difference](../assets/images/tutorials/SecondOrderGradient.png)

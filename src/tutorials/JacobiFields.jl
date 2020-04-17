@@ -100,7 +100,7 @@ asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicdifferential_geodesic_s
     ), #src
     dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,.5) #src
 ) #src
-render_asymptote(exportFolder*"/jacobiGeodesicdifferential_geodesic_startpoint.asy"; render = 2)
+render_asymptote(exportFolder*"/jacobiGeodesicdifferential_geodesic_startpoint.asy"; render = 2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesicdifferential_geodesic_startpoint.asy";
@@ -133,7 +133,7 @@ asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicResult.asy"; #src
     ), #src
     dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,0.) #src
 ) #src
-render_asymptote(exportFolder*"/jacobiGeodesicResult.asy"; render = 2)
+render_asymptote(exportFolder*"/jacobiGeodesicResult.asy"; render = 2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesicResult.asy";
 #md #    render = asyResolution,

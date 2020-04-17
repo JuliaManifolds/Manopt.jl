@@ -6,7 +6,9 @@ currentprojection=perspective( camera = (1.0, 0.5, 0.5), target = (0.0, 0.0, 0.0
 currentlight=nolight;
 
 revolution S=sphere(O,1);
-draw(surface(S), surfacepen=lightgrey+opacity(.6), meshpen=0.6*white+linewidth(.5pt));
+pen SpherePen = rgb(0.85,0.85,0.85)+opacity(0.6);
+pen SphereLinePen = rgb(0.75,0.75,0.75)+opacity(0.6)+linewidth(0.5pt);
+draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);
 
 /*
   Colors
@@ -120,5 +122,5 @@ dot( (0.6872863333404206,0.3125266629826787,0.6557168450851263), pointStyle2);
 dot( (0.7869589814086407,-0.06860798972047082,0.6131790157260683), pointStyle2);
 dot( (0.7945350267395241,0.5277702561023419,0.30028760889802253), pointStyle2);
 dot( (0.5978099212985191,0.2789860548837508,0.751525168691947), pointStyle2);
-dot( (0.7923175841710152,0.09773887681112069,0.6022291572706204), pointStyle3);
-dot( (0.7901532189574749,0.07883822506421762,0.6078177562723073), pointStyle4);
+dot( (0.7923175841297168,0.09773887682107818,0.6022291572454814), pointStyle3);
+dot( (0.7900862473787478,0.07873416601311863,0.607918294514429), pointStyle4);
