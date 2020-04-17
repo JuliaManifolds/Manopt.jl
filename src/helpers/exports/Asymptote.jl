@@ -33,10 +33,10 @@ to Asymptote.
 * `target` – (`(0.,0.,0.)`) position the camera points at
 """
 function asymptote_export_S2_signals(filename::String;
-    points::Array{Array{T,1},1} where T = Array{Array{T,1},1}(undef,0),
-    curves::Array{Array{T,1},1} where T = Array{Array{T,1},1}(undef,0),
-    tVectors::Array{Array{Tuple{T,T},1},1} where T= Array{Array{Tuple{Float64,Float64},1},1}(undef,0),
-    colors::Dict{Symbol, Array{RGBA{Float64},1} }  = Dict{Symbol,Array{RGBA{Float64},1}}(),
+    points::Array{Array{T,1},1} where T = Array{Array{Float64,1},1}(undef,0),
+    curves::Array{Array{T,1},1} where T = Array{Array{Float64,1},1}(undef,0),
+    tVectors::Array{Array{Tuple{T,T},1},1} where T = Array{Array{Tuple{Float64,Float64},1},1}(undef,0),
+    colors::Dict{Symbol, Array{RGBA{Float64},1} } = Dict{Symbol,Array{RGBA{Float64},1}}(),
     arrowHeadSize::Float64 = 6.,
     cameraPosition::Tuple{Float64,Float64,Float64} = (1., 1., 0.),
     lineWidth::Float64 = 1.0,
@@ -111,7 +111,7 @@ function asymptote_export_S2_signals(filename::String;
         for pSet in points
             i=i+1
             for point in pSet
-                write(io,string("inner (",string([string(v,",") for v in point]...)[1:end-1],"), pointStyle$(i));\n"));
+                write(io,string("dot( (",string([string(v,",") for v in point]...)[1:end-1],"), pointStyle$(i));\n"));
             end
         end
         i=0
@@ -138,8 +138,8 @@ function asymptote_export_S2_signals(filename::String;
             j=0
             for vector in tVecs
                 j=j+1
-                base = getBasePoint(vector)
-                endPoints = base + vector
+                base = vector[1]
+                endPoints = base + vector[2]
                 write(io,string("draw( (",
                     string( [string(v,",") for v in base]...)[1:end-1],")--(",
                     string( [string(v,",") for v in endPoints]...)[1:end-1],
@@ -284,4 +284,32 @@ function asymptote_export_SPD(filename::String;
     finally
       close(io)
     end
+end
+
+export renderAsymptote, asyExportS2Signals, asyExportS2Data, asyExportSPDData
+"""
+    render_asymptote(filename; render=4, format="png", ...)
+render an exported asymptote file specified in the `filename`, which can also
+be given as a relative or full path
+
+# Input
+
+* `filename` – filename of the exported `asy` and rendered image
+
+# Keyword Arguments
+
+the default values are given in brackets
+
+* `render` – (`4`) render level of asymptote, i.e. its `-render` option
+* `format` – (`"png"`) final rendered format, i.e. asymptote's `-f` option
+* `export_file` - (the filename with format as ending) specify the export filename
+"""
+function render_asymptote(
+    filename;
+    render::Int=4,
+    format="png",
+    exportFolder = string( filename[1:( [findlast(".",filename)...][1])], format),
+)
+    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(exportFolder))" $(filename)`
+    run(renderCmd)
 end

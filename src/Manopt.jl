@@ -108,19 +108,19 @@ module Manopt
     include("random.jl")
 
 export ×, ^, ℝ, ℂ
-
 export AbstractOptionsAction, StoreOptionsAction
 export has_storage, get_storage, update_storage!
 
 export random_point, random_tangent, mid_point, mid_point!, reflect, sym_rem
 
 export βdifferential_geodesic_startpoint, βdifferential_exp_basepoint
-export  βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
+export βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
 export adjoint_differential_geodesic_startpoint, adjoint_differential_geodesic_endpoint
 export adjoint_differential_exp_basepoint, adjoint_differential_exp_argument
 export adjoint_differential_log_basepoint, adjoint_differential_log_argument
 export adjoint_differential_forward_logs
 export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
+export render_asymptote
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export differential_geodesic_startpoint, differential_geodesic_endpoint
 export differential_exp_basepoint, differential_exp_argument
