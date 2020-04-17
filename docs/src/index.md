@@ -45,32 +45,35 @@ form a [plan](@ref planSection).
 To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugOptions) during the iterations of an algorithms as well as [record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [Getting Started: Optimize!](@ref Optimize) tutorial how to easily activate this.
 
-## Notation
+## Manifolds
 
-During this documentation, we refer to a variable with e.g. both `x` and $x$ depending on whether the context refers to a code fragment or a mathematical formula, respectively.
+This project is build upon [ManifoldsBase.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html), a generic interface to implement manifolds. Certain functions are extended for specific manifolds from [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/), but all other manifolds from that package can be used here, too.
 
-| Symbol | used for
-|:---|:---|
-$\mathcal M, \mathcal N$ | a manifold
-$d,d_1,\ldots,d_n$ | dimension(s) of a manifold
-$x,y,z,x_1,\ldots,x_n$ | points on a manifold
-$T_x\mathcal M$ | the tangent space of $x ∈ \mathcal M$
-$\xi,\nu,\eta,\xi_1,\ldots,\xi_n$ | tangent vectors, might be extended by the base point, i.e. $\xi_x$
-$\log_xy$ | logarithmic map
-$\exp_x\xi$ | exponential map
-$g(t; x,y)$ | geodesic connecting $x,y ∈ \mathcal M$ with $t ∈  [0,1]$
-$\langle \cdot, \cdot\rangle_x$ | Riemannian inner product on $T_x\mathcal M$
-$\operatorname{PT}_{x\to y}\xi$ | parallel transport of $\xi ∈  T_x\mathcal M$ from $x$ to $y$ along $g(\cdot;x,y)$
+The notation in the documentation aims to follow the same [notation](https://juliamanifolds.github.io/Manifolds.jl/stable/notation.html) from these packages.
 
 ## Literature
 
+If you want to get started with manifolds, one book is [[do Carmo, 1992](#doCarmo1992)],
+and if you want do directly dive into optimization on manifolds, my favourite reference is
+[[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)], which is also available
+online for free.
+
 ```@raw html
-<ul><li id="AbsilMahonySepulchre2008">
+<ul>
+<li id="AbsilMahonySepulchre2008">
     [<a>Absil, Mahony, Sepulchre, 2008</a>]
     P.-A. Absil, R. Mahony and R. Sepulchre,
-    <emph>Optimization Algorithms on
-    Matrix Manifolds</emph>, Princeton University Press, 2008,
+    <emph>Optimization Algorithms on Matrix Manifolds</emph>,
+    Princeton University Press, 2008,
     doi: <a href="https://doi.org/10.1515/9781400830244">10.1515/9781400830244</a>,
     <a href="http://press.princeton.edu/chapters/absil/">open access</a>.
-</li></ul>
+</li>
+<li id="doCarmo1992">
+    [<a>doCarmo, 1992</a>]
+    M. P. do Carmo,
+    <emph>Riemannian Geometry</emph>,
+    Birkhäuser Boston, 1992,
+    ISBN: 0-8176-3490-8.
+</li>
+</ul>
 ```
