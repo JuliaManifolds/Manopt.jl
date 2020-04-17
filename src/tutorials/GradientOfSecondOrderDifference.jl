@@ -60,9 +60,9 @@ render_asymptote(exportFolder*"/SecondOrderData.asy"; render=2)
 #md # render_asymptote("SecondOrderData.asy"; render=2)
 #md # ```
 #
-#md # ![Three points $x,y,z$ and the midpoint $c=c(x,z)$ (blue)](../assets/images/tutorials/SecondOrderData.png)
+#md # ![Three points $p,r,q$ and the midpoint $c=c(p,q)$ (blue)](../assets/images/tutorials/SecondOrderData.png)
 #
-# Since we moved $y$ 10% along the geodesic from the north pole to $c$, the distance
+# Since we moved $r$ 10% along the geodesic from the north pole to $c$, the distance
 # to $c$ is $\frac{9\pi}{20}\approx 1.4137$, and this is also what
 costTV2(M, (p,r,q) )
 # returns, see [`costTV2`](@ref) for reference. But also its gradient can be
@@ -98,14 +98,14 @@ render_asymptote(exportFolder*"/SecondOrderGradient.asy"; render=2) #src
 #md # ![Three points $x,y,z$ and the negative gradient of the second order absolute difference](../assets/images/tutorials/SecondOrderGradient.png)
 #
 # If we now perform a gradient step, we obtain the three points
-xn, yn, zn = exp.(Ref(M), [p,r,q], [-Xp,-Xr,-Xq])
+pn, rn, qn = exp.(Ref(M), [p,r,q], [-Xp,-Xr,-Xq])
 # as well we the new mid point
-cn = mid_point(M,xn,zn)
-geoPts_yncn = shortest_geodesic(M,yn,cn,T)
+cn = mid_point(M,pn,qn)
+geoPts_yncn = shortest_geodesic(M,rn,cn,T)
 nothing #hide
 # and obtain the new situation
 asymptote_export_S2_signals(exportFolder*"/SecondOrderMin1.asy"; #src
-    points = [ [p,r,q], [c,c2,cn], [xn,yn,zn] ], #src
+    points = [ [p,r,q], [c,c2,cn], [pn,rn,qn] ], #src
     curves = [ geoPts_yncn ], #src
     tVectors = [Tuple.([ [p, -Xp], [r, Xr], [q, Xq] ])], #src
     colors=Dict(:tvectors => [TolVibrantCyan], #src
@@ -132,9 +132,9 @@ render_asymptote(exportFolder*"/SecondOrderMin1.asy"; render=2) #src
 #md
 #md # ![A gradient Step](../assets/images/tutorials/SecondOrderMin1.png)
 #
-# One can see, that this step slightly “overshoots”, i.e. $y$ is now even below $c$.
+# One can see, that this step slightly “overshoots”, i.e. $r$ is now even below $c$.
 # and the cost function is still at
-costTV2(M, (xn, yn, zn) )
+costTV2(M, (pn, rn, qn) )
 #
 # But we can also search for the best step size using [`linesearch_armijo`](@ref)
 # on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
@@ -180,7 +180,7 @@ render_asymptote(exportFolder*"/SecondOrderMin2.asy"; render=2) #src
 #
 # Here, the cost function yields
 costTV2( M, (pm, rm, qm) )
-# which is nearly zero, as one can also see, since the new center $c$ and $y$
+# which is nearly zero, as one can also see, since the new center $c$ and $r$
 # are quite close.
 #
 # ## Literature

@@ -8,8 +8,7 @@ and export these, for example to `csv`.
 
 The following functions provide exports both in graphics and/or raw data using [Asymptote](https://sourceforge.net/projects/asymptote/).
 
-```@docs
-asymptote_export_S2_signals
-asymptote_export_S2_data
-asymptote_export_SPD
+```@autodocs
+Modules = [Manopt]
+Pages   = ["Asymptote.jl"]
 ```
