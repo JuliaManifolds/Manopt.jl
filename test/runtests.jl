@@ -1,6 +1,7 @@
 using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
 
 @testset "Plan Tests         " begin
+    include("plans/test_options.jl")
     include("plans/testDebug.jl")
     include("plans/test_nelder_mead_plan.jl")
     include("plans/testGradientPlan.jl")
@@ -14,6 +15,7 @@ end
     include("functions/testCosts.jl")
     include("functions/testGradients.jl")
     include("functions/testProximalMaps.jl")
+    include("functions/test_manifold.jl")
 end
 @testset "Helper & Data Tests" begin
     include("helpers/testErrorMeasures.jl")

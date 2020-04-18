@@ -4,14 +4,14 @@ Random.seed!(42)
 # Test the additional manifold functions
 #
 @testset "Additional Manifold functions" begin
-    @testset "mid point & reflect"
+    @testset "mid point & reflect" begin
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
         q = [0.0, 1.0, 0.0]
 
         r = mid_point(M,p,q)
         r2 = similar(r)
-        mid_point!(M,r,p,q)
+        mid_point!(M,r2,p,q)
         r3 = shortest_geodesic(M,p,q,0.5)
         @test isapprox(M,r,r2)
         @test isapprox(M,r2,r3)
@@ -43,7 +43,7 @@ Random.seed!(42)
         pg = random_point(Mg)
         @test is_manifold_point(Mg, pg, true)
         Xg = random_tangent(Mg,pg)
-        @test is_tangent_vector(Mg, pg, Xg, true; atol=10^(-15))
+        @test is_tangent_vector(Mg, pg, Xg, true; atol=10^(-14))
 
         Mp = ProductManifold(Mg,Me)
         pp = random_point(Mp)
@@ -73,9 +73,9 @@ Random.seed!(42)
         pspd = random_point(Mspd)
         @test is_manifold_point(Mspd,pspd;atol=10^(-14))
         Xspd = random_tangent(Mspd,pspd)
-        @test is_tangent_vector(Mspd,pspd,Xspd, true; atol=10^(-16))
+        @test is_tangent_vector(Mspd,pspd,Xspd, true; atol=10^(-15))
         Xspd2 = random_tangent(Mspd,pspd, Val(:Rician))
-        @test is_tangent_vector(Mspd,pspd,Xspd2,true;atol=10^(-16))
+        @test is_tangent_vector(Mspd,pspd,Xspd2,true;atol=10^(-15))
 
         Mst = Stiefel(3,2)
         pst = random_point(Mst)
