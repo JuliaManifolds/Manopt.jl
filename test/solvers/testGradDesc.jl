@@ -30,6 +30,6 @@
     # Test Fallbacks -> we can't do steps with the wrong combination
     p = SubGradientProblem(M,F,∇F)
     o = GradientDescentOptions(M, f[1],StopAfterIteration(20),ConstantStepsize(1.))
-    @test_throws ErrorException initialize_solver!(p,o)
-    @test_throws ErrorException step_solver!(p,o,1)
+    @test_throws MethodError initialize_solver!(p,o)
+    @test_throws MethodError step_solver!(p,o,1)
 end

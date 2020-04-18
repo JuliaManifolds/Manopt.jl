@@ -1,6 +1,6 @@
 # Specific manifold functions
 
-A few functions simplify algorithms.
+This small section extends the functions available from [ManifoldsBase.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html) and [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/), espcially a few random generators, that are simpler than the functions available.
 
 ```@autodocs
 Modules = [Manopt]

@@ -13,9 +13,11 @@ Random.seed!(42)
         r2 = similar(r)
         mid_point!(M,r2,p,q)
         r3 = shortest_geodesic(M,p,q,0.5)
+        r4 = mid_point(M,p,q,q)
         @test isapprox(M,r,r2)
         @test isapprox(M,r2,r3)
-        #
+        @test isapprox(M,r3,r4)
+
         r4 = mid_point(M,p,-p,q)
         r5 = similar(r4)
         mid_point!(M,r5,p,-p,q)

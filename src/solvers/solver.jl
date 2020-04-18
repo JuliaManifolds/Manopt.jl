@@ -51,25 +51,23 @@ end
 Initialize the solver to the optimization [`Problem`](@ref) by initializing all
 values in the [`Options`](@ref)` o`.
 """
-initialize_solver!(p::P,o::O) where {P <: Problem, O <: Options} = throw( ErrorException("Initialization of a solver corresponding to the $(typeof(p)) and $(typeof(o)) not yet implemented." ) )
+function initialize_solver! end
+
 """
     step_solver!(p,o,iter)
 
 Do one iteration step (the `iter`th) for [`Problem`](@ref)` p` by modifying
 the values in the [`Options`](@ref) `o`.
 """
-function step_solver!(p::P,o::O, iter) where {P <: Problem, O <: Options}
-    sig1 = string( typeof(p) )
-    sig2 = string( typeof(o) )
-    throw( ErrorException("Initialization of a solver corresponding to the $sig1 and $sig2 not yet implemented." ) )
-end
+function step_solver! end
+
 """
     get_solver_result(o)
 
 Return the final result after all iterations that is stored within the
 (modified during the iterations) [`Options`](@ref) `o`.
 """
-function get_solver_result(o::Options) end
+function get_solver_result end
 
 """
     stop_solver!(p,o,i)
@@ -78,7 +76,7 @@ depending on the current [`Problem`](@ref) `p`, the current state of the solver
 stored in [`Options`](@ref) `o` and the current iterate `i` this function determines
 whether to stop the solver by calling the [`StoppingCriterion`](@ref).
 """
-stop_solver!(p::P,o::O, i::Int) where {P <: Problem, O <: Options} = o.stop(p,o,i)
+stop_solver!(p::Problem,o::Options, i::Int) = o.stop(p,o,i)
 
 """
     solve(p,o)
@@ -87,7 +85,7 @@ run the solver implemented for the [`Problem`](@ref)` p` and the
 [`Options`](@ref)` o` employing [`initialize_solver!`](@ref), [`step_solver!`](@ref),
 as well as the [`stop_solver!`](@ref) of the solver.
 """
-function solve(p::P, o::O) where {P <: Problem, O <: Options}
+function solve(p::Problem, o::Options)
     iter::Integer = 0
     initialize_solver!(p,o)
     while !stop_solver!(p,o,iter)

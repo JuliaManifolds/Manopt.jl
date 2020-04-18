@@ -64,11 +64,9 @@ your own [`DebugAction`](@ref)s.
 For example printing a gradient from the [`GradientDescentOptions`](@ref) is
 automatically available, as explained in the [`steepest_descent`](@ref) solver.
 
-```@docs
-initialize_solver!(p::P,o::O) where {P <: Problem, O <: DebugOptions}
-step_solver!(p::P,o::O, iter) where {P <: Problem, O <: DebugOptions}
-get_solver_result(o::O) where {O <: DebugOptions}
-stop_solver!(p::P,o::O, i::Int) where {P <: Problem, O <: DebugOptions}
+```@autodocs
+Modules = [Manopt]
+Pages   = ["debug_solver.jl"]
 ```
 
 ### [Record Solver](@id RecordSolver)
@@ -79,11 +77,9 @@ your own [`RecordAction`](@ref)s.
 For example recording the gradient from the [`GradientDescentOptions`](@ref) is
 automatically available, as explained in the [`steepest_descent`](@ref) solver.
 
-```@docs
-initialize_solver!(p::P,o::O) where {P <: Problem, O <: RecordOptions}
-step_solver!(p::P,o::O, iter) where {P <: Problem, O <: RecordOptions}
-get_solver_result(o::O) where {O <: RecordOptions}
-stop_solver!(p::P,o::O, i::Int) where {P <: Problem, O <: RecordOptions}
+```@autodocs
+Modules = [Manopt]
+Pages   = ["record_solver.jl"]
 ```
 
 ## Technical Details
@@ -91,7 +87,7 @@ stop_solver!(p::P,o::O, i::Int) where {P <: Problem, O <: RecordOptions}
  The main function a solver calls is
 
 ```@docs
-solve(p::P, o::O) where {P <: Problem, O <: Options}
+solve(p::Problem, o::Options)
 ```
 
 which is a framework, that you in general should not change or redefine.
@@ -99,8 +95,8 @@ It uses the following methods, which also need to be implemented on your own
 algorithm, if you want to provide one.
 
 ```@docs
-initialize_solver!(p::P,o::O) where {P <: Problem, O <: Options}
-step_solver!(p::P,o::O, iter) where {P <: Problem, O <: Options}
-get_solver_result(o::O) where {O <: Options}
-stop_solver!(p::P,o::O, i::Int) where {P <: Problem, O <: Options}
+initialize_solver!
+step_solver!
+get_solver_result
+stop_solver!(p::Problem, o::Options, i::Int)
 ```

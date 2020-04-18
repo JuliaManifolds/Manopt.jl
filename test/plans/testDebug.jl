@@ -8,6 +8,7 @@
     ∇f = y -> -2*log(M,y,x)
     p = GradientProblem(M,f,∇f)
     a1 = DebugDivider("|",x -> print(io,x))
+    @test Manopt.dispatch_options_decorator(DebugOptions(o,a1)) === Val{true}()
     # constructors
     @test DebugOptions(o,a1).debugDictionary[:All] == a1
     @test DebugOptions(o,[a1]).debugDictionary[:All].group[1] == a1

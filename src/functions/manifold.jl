@@ -42,8 +42,14 @@
         reflect(M, f, x)
 
     reflect the point `x` from the manifold `M` at the point `f(x)` of the
-    function $f\colon \mathcal M \to \mathcal M$.
+    function $f\colon \mathcal M \to \mathcal M$, i.e.,
+
+    ````math
+        \operatorname{refl}_f(x) = \operatorname{refl}_{f(x)}(x),
+    ````
+    see also [`reflect`](@ref reflect(M::Manifold, p, x))`(M,p,x)`.
     """
+
     reflect(M::Manifold, pr::Function, x) = reflect(M::Manifold, pr(x), x)
 
     @doc raw"""

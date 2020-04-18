@@ -12,6 +12,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     a = RecordIteration()
     # constructors
     rO = RecordOptions(o,a)
+    @test Manopt.dispatch_options_decorator(rO) === Val{true}()
     @test get_options(o) == o
     @test get_options(rO) == o
     @test_throws MethodError get_options(p)

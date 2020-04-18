@@ -19,4 +19,10 @@
     sn = StopWhenAny(StopAfterIteration(10), s3)
     # then s3 is the only active one
     @test get_active_stopping_criteria(sn) == [s3]
+    sm = StopWhenAll(StopAfterIteration(10),s3)
+    @test !sm(p,o,9)
+    @test sm(p,o,11)
+    an = sm.reason
+    m = match(r"^((.*)\n)+",an)
+    @test length(m.captures)==2 # both have to be active
 end
