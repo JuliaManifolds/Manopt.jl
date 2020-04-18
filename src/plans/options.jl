@@ -18,7 +18,7 @@ abstract type Options end
 """
     dispatch_options_decorator(o::Options)
 
-Indicate internally, whether an [`Option`](@ref) `o` to be of decorating type, i.e.
+Indicate internally, whether an [`Options`](@ref) `o` to be of decorating type, i.e.
 it stores (encapsulates) options in itself, by default in the field `o. options`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
