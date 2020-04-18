@@ -1,10 +1,3 @@
-#
-#   Riemannian Trust-Tegions Solver For Optimization On Manifolds
-#
-using Manopt
-import Base: identity
-export trust_regions
-
 @doc raw"""
     trust_regions(M, F, ∇F, x, H)
 

@@ -1,8 +1,3 @@
-#
-#   Truncated Conjugate-Gradient Method
-#
-export truncatedConjugateGradient
-
 @doc raw"""
     truncatedConjugateGradient(M, F, ∇F, x, η, H, Δ)
 

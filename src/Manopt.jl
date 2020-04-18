@@ -12,7 +12,8 @@ module Manopt
         rand,
         randperm
     import Base:
-        copy
+        copy,
+        identity
     import ManifoldsBase:
         ℝ,
         ℂ,
@@ -130,7 +131,7 @@ export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇di
 export get_cost, getGradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
 export getHessian, approxHessianFD
 export meanSquaredError, meanAverageError
-export proxDistance, proxTV, proxParallelTV, proxTV2, proxCollaborativeTV
+export prox_distance, prox_TV, prox_parallel_TV, prox_TV2, prox_collaborative_TV
 export random_point, random_tangent
 export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, StopWhenCurvatureIsNegative, StopWhenTrustRegionIsExceeded
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
@@ -145,6 +146,9 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export RecordGradient, RecordGradientNorm, RecordStepsize
 
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
+export NelderMead, steepest_descent, subgradient_method, truncatedConjugateGradient, trust_regions
+
+export DebugGradient, DebugGradientNorm, DebugStepsize
 
 export GradientDescentOptions, HessianOptions, SubGradientMethodOptions, NelderMeadOptions
 export TruncatedConjugateGradientOptions, TrustRegionsOptions
@@ -153,6 +157,14 @@ export StoppingCriterion, StoppingCriterionSet, Stepsize
 export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
 export Options, get_options
 export is_options_decorator, dispatch_options_decorator
+
+export decorate_options
+export initialize_solver!, step_solver!, get_solver_result, stop_solver!
+export solve
+
+export ConstantStepsize, DecreasingStepsize
+export Linesearch, ArmijoLinesearch
+export get_stepsize, get_initial_stepsize, get_last_stepsize
 
 export cyclic_proximal_point
 end

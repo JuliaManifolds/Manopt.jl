@@ -1,12 +1,3 @@
-#
-# Collection of step sizes
-#
-export ConstantStepsize, DecreasingStepsize
-export Linesearch, ArmijoLinesearch
-export get_stepsize, get_initial_stepsize, get_last_stepsize
-#
-# Simple ones
-#
 """
     ConstantStepsize <: Stepsize
 

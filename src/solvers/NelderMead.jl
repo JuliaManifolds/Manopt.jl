@@ -1,8 +1,3 @@
-#
-# A simple steepest descent algorithm implementation
-#
-export initialize_solver!, step_solver!, get_solver_result
-export NelderMead
 @doc raw"""
     NelderMead(M, F [, p])
 perform a nelder mead minimization problem for the cost funciton `F` on the

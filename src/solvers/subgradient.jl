@@ -1,7 +1,3 @@
-#
-# A simple steepest descent algorithm implementation
-#
-export subgradient_method
 @doc raw"""
     subgradient_method(M, F, ∂F, x)
 perform a subgradient method $x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))$,

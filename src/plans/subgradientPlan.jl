@@ -1,7 +1,3 @@
-#
-# SubGradient Plan
-#
-
 @doc raw"""
     SubGradientProblem <: Problem
 

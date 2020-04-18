@@ -1,7 +1,7 @@
 using Manopt, Manifolds, Plots
 #
 # Settings
-resultsFolder = "src/examples/Total_Variation/S1_TV/"
+resultsFolder = "examples/Total_Variation/S1_TV/"
 experimentName = "S1_TV12"
 plotAndExportResult = true
 
@@ -24,7 +24,7 @@ M = Circle()
 N = PowerManifold(M, n)
 f = artificial_S1_signal(n)
 xCompare = f
-fn = addNoise.(Ref(M), f, :Gaussian, σ)
+fn = exp.(Ref(M),f, random_tangent.(Ref(M),f, Val(:Gaussian), σ))
 data = fn
 t = range(0.0, 1.0, length = n)
 
@@ -46,16 +46,19 @@ if plotAndExportResult
         markerstrokecolor = nColor,
         lab = "noisy",
     )
-    yticks!([-π, -π / 2, 0, π / 2, π], ["-\\pi", "- \\pi/2", "0", "\\pi/2", "\\pi"])
+    yticks!(
+        [-π, -π/2, 0, π/2, π],
+        [raw"$-\pi$",raw"$-\frac{\pi}{2}$",raw"$0$",raw"$\frac{\pi}{2}$",raw"$\pi$"]
+    )
     png(scene, "$(resultsFolder)$(experimentName)-original.png")
 end
 #
 # Setup and Optimize
 F = x -> costL2TVTV2(N, data, α, β, x)
 proxes = [
-    (λ, x) -> proxDistance(N, λ, data, x),
-    (λ, x) -> proxTV(N, α * λ, x),
-    (λ, x) -> proxTV2(N, β * λ, x),
+    (λ, x) -> prox_distance(N, λ, data, x),
+    (λ, x) -> prox_TV(N, α * λ, x),
+    (λ, x) -> prox_TV2(N, β * λ, x),
 ]
 
 o = cyclic_proximal_point(
@@ -63,7 +66,7 @@ o = cyclic_proximal_point(
     F,
     proxes,
     data;
-    λ = i -> π / i,
+    λ = i -> π / (2*i),
     debug = Dict(
         :Stop => DebugStoppingCriterion(),
         :Step => DebugEvery(
@@ -106,7 +109,10 @@ if plotAndExportResult
         markerstrokecolor = nColor,
         lab = "reconstruction",
     )
-    yticks!([-π, -π / 2, 0, π / 2, π], ["-\\pi", "- \\pi/2", "0", "\\pi/2", "\\pi"])
+    yticks!(
+        [-π, -π/2, 0, π/2, π],
+        [raw"$-\pi$",raw"$-\frac{\pi}{2}$",raw"$0$",raw"$\frac{\pi}{2}$",raw"$\pi$"]
+    )
     png(scene, "$(resultsFolder)$(experimentName)-result.png")
 end
 

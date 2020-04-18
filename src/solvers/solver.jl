@@ -1,12 +1,3 @@
-#
-#
-# A general framework for solvers of problems on Manifolds
-#
-# This file introduces fallbacks for not yet implemented parts and the general
-# function to run the solver
-export decorate_options
-export initialize_solver!, step_solver!, get_solver_result, stop_solver!
-export solve
 @doc raw"""
     decorate_options(o)
 

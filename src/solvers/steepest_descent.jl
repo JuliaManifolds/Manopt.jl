@@ -1,9 +1,3 @@
-#
-# A simple steepest descent algorithm implementation
-#
-export initialize_solver!, step_solver!, get_solver_result
-export steepest_descent
-export DebugGradient, DebugGradientNorm, DebugStepsize
 @doc raw"""
     steepest_descent(M, F, ∇F, x)
 perform a steepest_descent $x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)$ with

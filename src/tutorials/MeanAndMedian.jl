@@ -145,7 +145,7 @@ render_asymptote(exportFolder*"/startDataCenterMean.asy"; render = 2) #src
 # algorithm, described in the same reference. We define
 #
 F2 = y -> sum( 1/(2*n) * distance.(Ref(M),Ref(y),data))
-proxes = Function[ (λ,y) -> proxDistance(M,λ/n,di,y,1) for di in data ]
+proxes = Function[ (λ,y) -> prox_distance(M,λ/n,di,y,1) for di in data ]
 nothing #hide
 # where the `Function` is a helper for global scope to infer the correct type.
 #

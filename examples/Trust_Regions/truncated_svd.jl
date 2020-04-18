@@ -1,9 +1,8 @@
 #
 #   SVD decomposition of a matrix truncated to a rank
 #
-using Manopt
+using Manopt, Manifolds
 import LinearAlgebra: norm, svd, Diagonal
-export truncated_svd
 
 """
     truncated_svd(A, p)
@@ -28,7 +27,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         throw( ErrorException("The Rank p=$p must be smaller than the smallest dimension of A = $min(m, n).") )
     end
 
-    M = ProductManifold(Grassmannian(p, m), Grassmannian(p, n))
+    M = ProductManifold(Grassmann(m,p), Grassmann(n,p))
 
     function cost(X::ProductRepr)
         return cost([submanifold_components(X)...])
@@ -81,14 +80,13 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     end
 
     x = random_point(M)
-    print("x = $x\n")
     X = trust_regions(M, cost, rgrad, x, rhess;
         Δ_bar=4*sqrt(2*p),
         debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop]
     )
 
-    U = X[1]
-    V = X[2]
+    U = get_component(M,X,1)
+    V = get_component(M,X,2)
 
     Spp = transpose(U)*A*V
     SVD = svd(Spp)

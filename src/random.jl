@@ -1,4 +1,3 @@
-
 random_point(M::Manifold) = random_point(M, Val(:Gaussian))
 
 @doc doc"""
