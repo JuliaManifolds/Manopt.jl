@@ -2,10 +2,11 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
 
 @testset "Plan Tests         " begin
     include("plans/testDebug.jl")
-    include("plans/testRecord.jl")
+    include("plans/test_nelder_mead_plan.jl")
     include("plans/testGradientPlan.jl")
-    include("plans/testSubGradientPlan.jl")
+    include("plans/testRecord.jl")
     include("plans/testStoppingCriteria.jl")
+    include("plans/testSubGradientPlan.jl")
 end
 @testset "Function Tests     " begin
     include("functions/testAdjointDifferentials.jl")

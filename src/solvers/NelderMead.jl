@@ -23,7 +23,7 @@ and
 
 # Optional
 
-* `stoppingCriterion` – ([`stopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
+* `stoppingCriterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
 * `γ` – (`2.`) expansion parameter ($\gamma$)
@@ -40,7 +40,7 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 function NelderMead(M::MT,
     F::Function,
     population = [random_point(M) for i=1:(manifoldDimension(M)+1) ];
-    stoppingCriterion::StoppingCriterion = stopAfterIteration(200000),
+    stoppingCriterion::StoppingCriterion = StopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
     returnOptions=false,
     kwargs... #collect rest

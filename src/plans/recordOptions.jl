@@ -3,7 +3,7 @@ export RecordAction
 export RecordGroup, RecordEvery
 export RecordChange, RecordCost, RecordIterate, RecordIteration
 export RecordEntry, RecordEntryChange
-export getRecord, hasRecord
+export get_record, has_record
 export RecordActionFactory, RecordFactory
 
 #
@@ -65,53 +65,55 @@ RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = Record
 RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o,dR)
 RecordOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = RecordOptions{O}(o, RecordFactory(get_options(o),format))
 
-@traitimpl is_options_decorator{RecordOptions}
+dispatch_options_decorator(o::RecordOptions) = Val(true)
 
 """
-    hasRecord(o)
+    has_record(o)
 
 check whether the [`Options`](@ref)` o` are decorated with
 [`RecordOptions`](@ref)
 """
-hasRecord(o::RecordOptions) = true
-@traitfn hasRecord(o::O) where {O <: Options; is_options_decorator{O}} = hasRecord(o.options)
-@traitfn hasRecord(o::O) where {O <: Options; !is_options_decorator{O}} = false
+has_record(o::RecordOptions) = true
+has_record(o::Options) = has_record(o,dispatch_options_decorator(o))
+has_record(o::Options, ::Val{true}) = has_record(o.options)
+has_record(o::Options, ::Val{false}) = false
 
 # default - stored in the recordedValues field of the RecordAction
 @doc raw"""
-    getRecord(o[,s=:Step])
+    get_record(o[,s=:Step])
 
 return the recorded values from within the [`RecordOptions`](@ref) `o` that where
 recorded with respect to the `Symbol s` as an `Array`. The default refers to
 any recordings during an Iteration represented by the Symbol `:Step`
 """
-function getRecord(o::RecordOptions,s::Symbol=:Step)
+function get_record(o::RecordOptions,s::Symbol=:Step)
     if haskey(o.recordDictionary,s)
-        return getRecord(o.recordDictionary[s])
+        return get_record(o.recordDictionary[s])
     elseif haskey(o.recordDictionary,:All)
-        return getRecord(o.recordDictionary[:All])
+        return get_record(o.recordDictionary[:All])
     else
         error("No record known for key found, since neither :$s nor :All are present.")
     end
 end
-@traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; is_options_decorator{O}} = getRecord(o.options,s)
-@traitfn getRecord(o::O, s::Symbol=:Step) where {O <: Options; !is_options_decorator{O}} = error("No Record decoration found")
+get_record(o::Options, s::Symbol=:Step) = get_record(o,s,dispatch_options_decorator(o))
+get_record(o::Options, s, ::Val{true}) = get_record(o.options,s)
+get_record(o::Options, s, ::Val{false}) = error("No Record decoration found")
 
 @doc raw"""
-    getRecord(r)
+    get_record(r)
 
 return the recorded values stored within a [`RecordAction`](@ref) `r`.
 """
-getRecord(r::R) where {R <: RecordAction} = r.recordedValues
+get_record(r::R) where {R <: RecordAction} = r.recordedValues
 
 """
-    recordOrReset!(r,v,i)
+    record_or_eset!(r,v,i)
 
 either record (`i>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
 or reset (`i<0`) the internal storage, where `v` has to match the internal
 value type of the corresponding Recordaction.
 """
-function recordOrReset!(r::R,v,i::Int) where {R <: RecordAction}
+function record_or_eset!(r::R,v,i::Int) where {R <: RecordAction}
     if i > 0
         push!(r.recordedValues,v)
     elseif i < 0 && i > typemin(Int) # reset if negative but not stop indication
@@ -142,7 +144,7 @@ function (d::RecordGroup)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
         ri(p,o,i)
     end
 end
-getRecord(r::RecordGroup) = [zip( getRecord.(r.group)...)...]
+get_record(r::RecordGroup) = [zip( get_record.(r.group)...)...]
 
 @doc raw"""
     RecordEvery <: RecordAction
@@ -168,7 +170,7 @@ function (d::RecordEvery)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
         d.record(p,o,0)
     end
 end
-getRecord(r::RecordEvery) = getRecord(r.record)
+get_record(r::RecordEvery) = get_record(r.record)
 #
 # Special single ones
 #
@@ -192,7 +194,7 @@ mutable struct RecordChange <: RecordAction
     end
 end
 function (r::RecordChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    recordOrReset!(r,
+    record_or_eset!(r,
         has_storage(r.storage, :x) ? distance(p.M,o.x, get_storage(r.storage,:x) ) : 0.0,
         i
     )
@@ -217,7 +219,7 @@ mutable struct RecordEntry{T} <: RecordAction
 end
 RecordEntry(e::T,f::Symbol) where T = RecordEntry{T}(f)
 RecordEntry(d::DataType,f::Symbol) = RecordEntry{d}(f)
-(r::RecordEntry{T})(p::Pr,o::O,i::Int) where {T, Pr <: Problem, O <: Options} = recordOrReset!(r, getfield(o, r.field), i)
+(r::RecordEntry{T})(p::Pr,o::O,i::Int) where {T, Pr <: Problem, O <: Options} = record_or_eset!(r, getfield(o, r.field), i)
 
 @doc raw"""
     RecordEntryChange{T} <: RecordAction
@@ -248,7 +250,7 @@ mutable struct RecordEntryChange <: RecordAction
     end
 end
 function (r::RecordEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    recordOrReset!(r,
+    record_or_eset!(r,
         has_storage(r.storage, r.field) ? r.distance(p,o, getfield(o, r.field), get_storage(r.storage, r.field) ) : 0.0,
     i)
     r.storage(p,o,i)
@@ -276,7 +278,7 @@ RecordIterate(p::T) where {T} = RecordIterate{T}()
 RecordIterate() = throw(ErrorException("The iterate's data type has to be provided, i.e. RecordIterate(x0)."))
 
 function (r::RecordIterate{T})(p::Pr,o::O,i::Int) where {Pr <: Problem, O <: Options,T}
-    return recordOrReset!(r, o.x, i)
+    return record_or_eset!(r, o.x, i)
 end
 
 @doc raw"""
@@ -288,7 +290,7 @@ mutable struct RecordIteration <: RecordAction
     recordedValues::Array{Int,1}
     RecordIteration() = new(Array{Int,1}())
 end
-(r::RecordIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, i, i)
+(r::RecordIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = record_or_eset!(r, i, i)
 
 @doc raw"""
     RecordCost <: RecordAction
@@ -299,7 +301,7 @@ mutable struct RecordCost <: RecordAction
     recordedValues::Array{Float64,1}
     RecordCost() = new(Array{Float64,1}())
 end
-(r::RecordCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = recordOrReset!(r, get_cost(p,o.x), i)
+(r::RecordCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = record_or_eset!(r, get_cost(p,o.x), i)
 
 
 @doc raw"""

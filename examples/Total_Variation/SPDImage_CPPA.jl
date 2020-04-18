@@ -23,43 +23,73 @@ if !isdir(resultsFolder)
     mkdir(resultsFolder)
 end
 if ExportOrig
-    asyExport(resultsFolder*experimentName*"-orig.asy"; data=f, scaleAxes=(7.5,7.5,7.5))
+    asyExport(
+        resultsFolder * experimentName * "-orig.asy";
+        data = f,
+        scaleAxes = (7.5, 7.5, 7.5),
+    )
 end
 #
 # Parameters
-α = 6.
+α = 6.0
 maxIterations = 4000
 #
 # Build Problem for L2-TV
-M = PowerManifold(pixelM,size(f))
+M = PowerManifold(pixelM, size(f))
 d = length(size(f))
-rep(d) = (d>1) ? [ones(Int,d)...,d] : d
-fidelity(x) = 1/2*distance(M,x,f)^2
-Λ(x) = forward_logs(M,x) # on T_xN
-prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x)),1)
+rep(d) = (d > 1) ? [ones(Int, d)..., d] : d
+fidelity(x) = 1 / 2 * distance(M, x, f)^2
+Λ(x) = forward_logs(M, x) # on T_xN
+prior(x) = norm(norm.(Ref(pixelM), repeat(x, rep(d)...), Λ(x)), 1)
 #
 # Setup and Optimize
-cost(x) =  fidelity(x) + α*prior(x)
-proxes = [(λ,x) -> proxDistance(M,λ,f,x,2), (λ,x) -> proxTV(M,α*λ,x,1)]
+cost(x) = fidelity(x) + α * prior(x)
+proxes = [(λ, x) -> proxDistance(M, λ, f, x, 2), (λ, x) -> proxTV(M, α * λ, x, 1)]
 x0 = f
-@time o = cyclic_proximal_point(M,cost,proxes,x0;
-debug = [:Iteration," | ", DebugProximalParameter()," | ", :Change, " | ", :Cost, "\n",100,:Stop],
-record = [:Iteration, :Iterate, :Cost],
-stoppingCriterion = stopAfterIteration(maxIterations),
-returnOptions = true
+@time o = cyclic_proximal_point(
+    M,
+    cost,
+    proxes,
+    x0;
+    debug = [
+        :Iteration,
+        " | ",
+        DebugProximalParameter(),
+        " | ",
+        :Change,
+        " | ",
+        :Cost,
+        "\n",
+        100,
+        :Stop,
+    ],
+    record = [:Iteration, :Iterate, :Cost],
+    stoppingCriterion = StopAfterIteration(maxIterations),
+    returnOptions = true,
 )
 y = get_solver_result(o)
-yRec = getRecord(o)
+yRec = get_record(o)
 #
 # Results
 if ExportResult
-    asymptote_export_SPD(resultsFolder*experimentName*"-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy"; data=y, render=4, scaleAxes=(7.5,7.5,7.5) )
+    asymptote_export_SPD(
+        resultsFolder *
+        experimentName *
+        "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
+        data = y,
+        render = 4,
+        scaleAxes = (7.5, 7.5, 7.5),
+    )
 end
 if ExportTable
-    A = cat( [ y[1] for y in yRec], [y[3] for y in yRec]; dims=2 )
-    CSV.write(string(resultsFolder*experimentName*"ResultCost.csv"),
-    DataFrame(A), writeheader=false);
-    save(resultsFolder*experimentName*"-CostValue.jld2",
-    Dict("compareCostFunctionValue" => last(yRec)[3])
+    A = cat([y[1] for y in yRec], [y[3] for y in yRec]; dims = 2)
+    CSV.write(
+        string(resultsFolder * experimentName * "ResultCost.csv"),
+        DataFrame(A),
+        writeheader = false,
+    )
+    save(
+        resultsFolder * experimentName * "-CostValue.jld2",
+        Dict("compareCostFunctionValue" => last(yRec)[3]),
     )
 end

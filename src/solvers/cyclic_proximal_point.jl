@@ -16,7 +16,7 @@ the default values are given in brackets
   cycle permuted sequence ([`RandomEvalOrder`](@ref)) or the default linear one.
 * `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
-* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
+* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `xOpt` if returned
@@ -30,7 +30,7 @@ OR
 function cyclic_proximal_point(M::MT,
   F::Function, proxes::Array{Function,N} where N, x0;
   evaluationOrder::EvalOrder = LinearEvalOrder(),
-  stoppingCriterion::StoppingCriterion = StopWhenAny( stopAfterIteration(5000), StopWhenChangeLess(10.0^-12)),
+  stoppingCriterion::StoppingCriterion = StopWhenAny( StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)),
   λ = i -> 1/i,
   returnOptions=false,
   kwargs... #decorator options

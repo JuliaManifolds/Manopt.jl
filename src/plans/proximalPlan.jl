@@ -100,7 +100,7 @@ Store all options required for the DouglasRachford algorithm,
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflect`](@ref)) method employed in the iteration to perform the reflection of `x` at
   the prox `p`.
-* `stop` – ([`stopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
+* `stop` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
 * `parallel` – (`false`) inducate whether we are running a pallel Douglas-Rachford
   or not.
 """
@@ -117,7 +117,7 @@ mutable struct DouglasRachfordOptions <: Options
         λ::Function=(iter)->1.0,
         α::Function=(iter)->0.9,
         R=reflect,
-        stop::StoppingCriterion = stopAfterIteration(300),
+        stop::StoppingCriterion = StopAfterIteration(300),
         parallel=false
     )
     return new(x,x,λ,α,R,stop,parallel)
@@ -156,5 +156,5 @@ mutable struct RecordProximalParameter <: RecordAction
     recordedValues::Array{Float64,1}
     RecordProximalParameter() = new(Array{Float64,1}())
 end
-(r::RecordProximalParameter)(p::P,o::O,i::Int) where {P <: ProximalProblem, O <: CyclicProximalPointOptions} = recordOrReset!(r, o.λ(i), i)
-(r::RecordProximalParameter)(p::P,o::O,i::Int) where {P <: ProximalProblem, O <: DouglasRachfordOptions} = recordOrReset!(r, o.λ(i), i)
+(r::RecordProximalParameter)(p::P,o::O,i::Int) where {P <: ProximalProblem, O <: CyclicProximalPointOptions} = record_or_eset!(r, o.λ(i), i)
+(r::RecordProximalParameter)(p::P,o::O,i::Int) where {P <: ProximalProblem, O <: DouglasRachfordOptions} = record_or_eset!(r, o.λ(i), i)

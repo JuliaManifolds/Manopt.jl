@@ -59,25 +59,25 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
     x = random_point(M)
 
-    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
-    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = -0.1)
-    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ = -0.1)
-    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = 0.1, Δ = 0.11)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar = -0.1)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ = -0.1)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar = 0.1, Δ = 0.11)
 
-    X = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2) )
-    opt = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), returnOptions=true )
+    X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2) )
+    opt = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), returnOptions=true )
     @test isapprox(M,X,get_solver_result(opt))
 
     @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
 
-    XuR = trustRegions(M, cost, rgrad, x, rhess;
+    XuR = trust_regions(M, cost, rgrad, x, rhess;
         Δ_bar=4*sqrt(2*2),
         useRandom = true
     )
 
     @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-12)
 
-    XaH = trustRegions(
+    XaH = trust_regions(
         M,
         cost,
         rgrad,
@@ -91,7 +91,7 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
             transport=ProductVectorTransport(ProjectionTransport(),ProjectionTransport())
         );
         stoppingCriterion = StopWhenAny(
-            stopAfterIteration(2000),
+            StopAfterIteration(2000),
             StopWhenGradientNormLess(10^(-6))
         ),
         Δ_bar=4*sqrt(2*2),
@@ -103,7 +103,7 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
     # Test the random step trust region
     p = HessianProblem(M, cost, rgrad, rhess, (M,x,ξ) -> ξ)
-    o = TrustRegionsOptions(x, stopAfterIteration(2000), 10.0^(-8),
+    o = TrustRegionsOptions(x, StopAfterIteration(2000), 10.0^(-8),
         sqrt(manifold_dimension(M)), retract, true, 0.1, 1000.)
     @test step_solver!(p,o,0) == nothing
 

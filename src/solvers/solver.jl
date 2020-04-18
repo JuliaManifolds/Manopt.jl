@@ -69,7 +69,8 @@ end
 Return the final result after all iterations that is stored within the
 (modified during the iterations) [`Options`](@ref) `o`.
 """
-get_solver_result(o::O) where {O <: Options} = throw( ErrorException("There is no implementation of get_solver_result for a $(typeof(o)) yet." ) )
+function get_solver_result(o::Options) end
+
 """
     stop_solver!(p,o,i)
 

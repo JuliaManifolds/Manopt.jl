@@ -9,7 +9,7 @@ specify a problem for gradient based algorithms.
   \to \mathcal T\mathcal M$ of the cost function $F$
 
 # See also
-[`steepestDescent`](@ref)
+[`steepest_descent`](@ref)
 [`GradientDescentOptions`](@ref)
 
 # """
@@ -38,7 +38,7 @@ Describes a Gradient based descent algorithm, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x0` – an a point (of type `P`) on a manifold as starting point
-* `stoppingCriterion` – ([`stopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
+* `stoppingCriterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
 * `retraction` – (`exp`) the rectraction to use
 
@@ -49,7 +49,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a Gradient Descent Option with the fields and defaults as above
 
 # See also
-[`steepestDescent`](@ref), [`GradientProblem`](@ref)
+[`steepest_descent`](@ref), [`GradientProblem`](@ref)
 """
 mutable struct GradientDescentOptions{P,T} <: Options
     x::P
@@ -60,11 +60,11 @@ mutable struct GradientDescentOptions{P,T} <: Options
     function GradientDescentOptions{P}(
         M::MT,
         initialX::P,
-        s::StoppingCriterion = stopAfterIteration(100),
+        s::StoppingCriterion = StopAfterIteration(100),
         stepsize::Stepsize = ConstantStepsize(1.),
         retraction::Function=exp
     ) where {MT <: Manifold, P}
-        o = new{P,typeof(zero_tangent_vector(M,initialX))}();
+        o = new{P,typeof(initialX)}();
         o.x = initialX;
         o.stop = s;
         o.retraction = retraction;
@@ -75,8 +75,8 @@ end
 function GradientDescentOptions(
     M::MT,
     x::P,
-    stop::StoppingCriterion,
-    s::Stepsize,
+    stop::StoppingCriterion = StopAfterIteration(100),
+    s::Stepsize = ConstantStepsize(1.),
     retraction::Function=exp
 ) where { MT<:Manifold, P}
     return GradientDescentOptions{P}(M,x,stop,s,retraction)
@@ -152,7 +152,7 @@ mutable struct DebugStepsize <: DebugAction
         long ? "step size:" : "s:")
     DebugStepsize(prefix::String,print::Function=print) = new(print,prefix)
 end
-(d::DebugStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>0) ? d.prefix*"$(getLastStepsize(p,o,i))" : "")
+(d::DebugStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>0) ? d.prefix*"$(get_last_stepsize(p,o,i))" : "")
 
 #
 # Records
@@ -172,7 +172,7 @@ mutable struct RecordGradient{T} <: RecordAction
     RecordGradient{T}() where {T} = new(Array{T,1}())
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
-(r::RecordGradient{T})(p::P,o::O,i::Int) where {T, P <: GradientProblem, O <: GradientDescentOptions} = recordOrReset!(r, o.∇, i)
+(r::RecordGradient{T})(p::P,o::O,i::Int) where {T, P <: GradientProblem, O <: GradientDescentOptions} = record_or_eset!(r, o.∇, i)
 
 @doc raw"""
     RecordGradientNorm <: RecordAction
@@ -183,7 +183,7 @@ mutable struct RecordGradientNorm <: RecordAction
     recordedValues::Array{Float64,1}
     RecordGradientNorm() = new(Array{Float64,1}())
 end
-(r::RecordGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = recordOrReset!(r, norm(p.M,o.x,o.∇), i)
+(r::RecordGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = record_or_eset!(r, norm(p.M,o.x,o.∇), i)
 
 @doc raw"""
     RecordStepsize <: RecordAction
@@ -194,4 +194,4 @@ mutable struct RecordStepsize <: RecordAction
     recordedValues::Array{Float64,1}
     RecordStepsize() = new(Array{Float64,1}())
 end
-(r::RecordStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = recordOrReset!(r, getLastStepsize(p,o,i), i)
+(r::RecordStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = record_or_eset!(r, get_last_stepsize(p,o,i), i)

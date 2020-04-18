@@ -35,7 +35,7 @@
 # [`Stepsize`](@ref) `o.stepsize` and a retraction `o.retraction` and it
 # internally stores the last evaluation of the gradient at `o.∇` for convenience.
 # The only mandatory parameter is the initial value `x0`, though the defaults for
-# both the stopping criterion ([`stopAfterIteration`](@ref)`(100)`) as well as the
+# both the stopping criterion ([`StopAfterIteration`](@ref)`(100)`) as well as the
 # stepsize ([`ConstantStepsize`](@ref)`(1.)` are quite conservative, but are
 # chosen to be as simple as possible.
 #
@@ -100,8 +100,8 @@ nothing #hide
 # descent for this problem, see [[Afsari, Tron, Vidal, 2013](#AfsariTronVidal2013)]
 #
 # The easiest way to call the gradient descent is now to call
-# [`steepestDescent`](@ref)
-xMean = steepestDescent(M,F,∇F,data[1])
+# [`steepest_descent`](@ref)
+xMean = steepest_descent(M,F,∇F,data[1])
 nothing; #hide
 # but in order to get more details, we further add the `debug=` options, which
 # act as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern)
@@ -115,7 +115,7 @@ nothing; #hide
 # Here, the format shorthand and the [`DebugFactory`] are used, which returns a
 # [`DebugGroup`](@ref) of [`DebugAction`](@ref) performed each iteration and the stop,
 # respectively.
-xMean = steepestDescent(M,F,∇F,data[1];
+xMean = steepest_descent(M,F,∇F,data[1];
    debug = [:Iteration," | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop]
 )
 nothing #hide
@@ -156,9 +156,9 @@ o = cyclic_proximal_point(M,F2,proxes,data[1];
     returnOptions = true
 )
 xMedian = get_solver_result(o)
-values = getRecord(o)
+values = get_record(o)
 nothing # hide
-# where the differences to [`steepestDescent`](@ref) are as follows
+# where the differences to [`steepest_descent`](@ref) are as follows
 #
 # * the third parameter is now an Array of proximal maps
 # * debug is reduces to only every 50th iteration

@@ -5,8 +5,26 @@
     of (not neccessarily miniizing) geodesics (i.e. on the sphere), the one nearest
     to x is returned.
     """
-    mid_point(M::MT, p, q, x) where {MT <: Manifold} = mid_point(M, p, q)
-    mid_point!(M::MT, y, p, q, x) where {MT <: Manifold} = mid_point!(M, y, p, q)
+    mid_point(M::Manifold, p, q, x) = mid_point(M, p, q)
+    mid_point!(M::Manifold, y, p, q, x) = mid_point!(M, y, p, q)
+
+    function mid_point(M::Sphere, p, q, x)
+        if isapprox(M,p,-q)
+            X = log(M,p,x)/distance(M,p,x)*π
+        else
+            X = log(M,p,q)
+        end
+        return exp(M,p,0.5*X)
+    end
+    function mid_point!(M::Sphere, y, p, q, x)
+        if isapprox(M,p,-q)
+            X = log(M,p,x)/distance(M,p,x)*π
+        else
+            X = log(M,p,q)
+        end
+        y .= exp(M,p,0.5*X)
+        return y
+    end
 
     """
         mid_point(M, p, q)
@@ -17,8 +35,8 @@
     [`mid_point(M, p, q, x)`](@ref), the mid point closest to a third point
     `x`.
     """
-    mid_point(M::MT, p, q) where {MT <: Manifold} = exp(M, p, log(M, p, q), 0.5)
-    mid_point!(M::MT, y, p, q) where {MT <: Manifold} = exp!(M, y, p, log(M, p, q), 0.5)
+    mid_point(M::Manifold, p, q) = exp(M, p, log(M, p, q), 0.5)
+    mid_point!(M::Manifold, y, p, q) = exp!(M, y, p, log(M, p, q), 0.5)
 
     @doc raw"""
         reflect(M, f, x)

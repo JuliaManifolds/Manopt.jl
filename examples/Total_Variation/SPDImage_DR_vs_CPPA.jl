@@ -43,8 +43,8 @@ prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x),1)
 print("--- Douglas–Rachford with η: ",η," and λ: ",λ," ---\n")
 cost(x) = fidelity(x) + α*prior(x)
 prox1 = (η,x) -> cat( proxDistance(M,η,f,x[1]), proxParallelTV(M,α*η,x[2:5]), dims=1)
-prox2 = (η,x) -> fill(mean(M,x;stoppingCriterion=stopAfterIteration(20)),5)
-sC = stopAfterIteration(400)
+prox2 = (η,x) -> fill(mean(M,x;stoppingCriterion=StopAfterIteration(20)),5)
+sC = StopAfterIteration(400)
 try
   cost_threshold = load(resultsFolder*comparisonData)["compareCostFunctionValue"]
   global sC = StopWhenCostLess(cost_threshold)
@@ -64,7 +64,7 @@ x0 = f
   returnOptions = true
 )
 y = get_solver_result(o)
-r = getRecord(o)
+r = get_record(o)
 #
 # Result
 numIter = length(r)

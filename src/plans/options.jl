@@ -1,11 +1,5 @@
 
-"""
-    is_options_decorator{O}
-
-A trait to specify that a certain `Option` decorates, i.e. internally
-stores the original [`Options`](@ref) under consideration.
-"""
-@traitdef is_options_decorator{O}
+@inline _extract_val(::Val{T}) where {T} = T
 
 """
     Options
@@ -20,6 +14,26 @@ provide the access functions accordingly
 
 """
 abstract type Options end
+
+"""
+    dispatch_options_decorator(o::Options)
+
+Indicate internally, whether an [`Option`](@ref) `o` to be of decorating type, i.e.
+it stores (encapsulates) options in itself, by default in the field `o. options`.
+
+Decorators indicate this by returning `Val{true}` for further dispatch.
+
+The default is `Val{false}`, i.e. by default an options is not decorated.
+"""
+dispatch_options_decorator(O::Options) = Val(false)
+
+"""
+    is_options_decorator(o::Options)
+
+Indicate, whether [`Options`](@ref) `o` are of decorator type.
+"""
+is_options_decorator(O::Options) = _extract_val(dispatch_options_decorator(O))
+
 #
 # StoppingCriterion meta
 #
@@ -28,7 +42,7 @@ abstract type Options end
 
 An abstract type for the functors representing stoping criteria, i.e. they are
 callable structures. The naming Scheme follows functions, see for
-example [`stopAfterIteration`](@ref).
+example [`StopAfterIteration`](@ref).
 
 Every StoppingCriterion has to provide a constructor and its function has to have
 the interface `(p,o,i)` where a [`Problem`](@ref) as well as [`Options`](@ref)
@@ -97,17 +111,16 @@ l elements there is one chosen permutation used for each iteration cycle.
 mutable struct FixedRandomEvalOrder <: EvalOrder end
 
 @doc raw"""
-    get_options(O)
+    get_options(o::Options)
 
-return the undecorated [`Options`](@ref) of the (possibly) decorated `O`.
-As long as your decorated options stores the options within `o.options` and
-implements the `SimpleTrait` `is_options_decorator`, this is behaviour is optained
-automatically.
+return the undecorated [`Options`](@ref) of the (possibly) decorated `o`.
+As long as your decorated options store the options within `o.options` and
+the [`dispatch_options_decorator`](@ref) is set to `Val{true}`,
+the internal options are extracted.
 """
-get_options(O) = error("Not implemented for types that are not `Options`")
-# this might seem like a trick/fallback just for documentation reasons
-@traitfn get_options(o::O) where {O <: Options; !is_options_decorator{O}} = o
-@traitfn get_options(o::O) where {O <: Options; is_options_decorator{O}} = get_options(o.options)
+get_options(o::Options) = get_options(o,dispatch_options_decorator(o))
+get_options(o::Options, ::Val{false}) = o
+get_options(o::Options, ::Val{true}) = get_options(o.options)
 
 @doc raw"""
     get_reason(o)

@@ -30,6 +30,7 @@ might be decorated) by calling [`get_options`](@ref).
 Options can be decorated using the following trait and function to initialize
 
 ```@docs
+dispatch_options_decorator
 is_options_decorator
 decorate_options
 ```
@@ -77,7 +78,7 @@ Further specific [`RecordAction`](@ref)s can be found at the specific Options.
 there's one internal helper that might be useful for you own actions, namely
 
 ```@docs
-recordOrReset!
+record_or_eset!
 ```
 
 ### [Stepsize and Linesearch](@id Stepsize)
@@ -117,6 +118,7 @@ FixedRandomEvalOrder
 ```
 
 ### Cost based problem
+
 ```@docs
 CostProblem
 ```

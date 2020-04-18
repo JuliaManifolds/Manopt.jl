@@ -15,7 +15,7 @@ specify a problem for hessian based algorithms.
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 struct HessianProblem{mT <: Manifold} <: Problem
     M::mT
@@ -60,7 +60,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a truncated conjugate-gradient Option with the fields as above.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 mutable struct TruncatedConjugateGradientOptions{P,T} <: HessianOptions
     x::P
@@ -124,7 +124,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a trust-regions Option with the fields as above.
 
 # See also
-[`trustRegions`](@ref)
+[`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions <: HessianOptions
     x
@@ -237,7 +237,7 @@ the norm of the current residual is lesser than the norm of the initial residual
 iRN times κ.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 mutable struct stopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
@@ -277,7 +277,7 @@ the norm of the current residual is lesser than the norm of the initial residual
 iRN to the power of 1+θ.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 mutable struct stopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
@@ -316,7 +316,7 @@ the norm of the next iterate is greater than the trust-region radius using the
 `:η, :δ, :residual` by default.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
@@ -367,7 +367,7 @@ dircetion is less than zero using the [`StoreOptionsAction`](@ref) `a`, which
 is initialized to just store `:δ` by default.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String

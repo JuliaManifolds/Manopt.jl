@@ -44,7 +44,7 @@ see the reference:
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
-* `stoppingCriterion` – ([`StopWhenAny`](@ref), [`stopAfterIteration`](@ref),
+* `stoppingCriterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),
     [`stopIfResidualIsReducedByFactor`](@ref), [`stopIfResidualIsReducedByPower`](@ref),
     [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
@@ -64,7 +64,7 @@ OR
 * `options` - the options returned by the solver (see `returnOptions`)
 
 # see also
-[`trustRegions`](@ref)
+[`trust_regions`](@ref)
 """
 function truncatedConjugateGradient(
     M::mT,
@@ -79,7 +79,7 @@ function truncatedConjugateGradient(
     κ::Float64 = 0.1,
     useRandom::Bool = false,
     stoppingCriterion::StoppingCriterion = StopWhenAny(
-        stopAfterIteration(manifold_dimension(M)),
+        StopAfterIteration(manifold_dimension(M)),
         stopIfResidualIsReducedByPower(
             sqrt(inner(M, x,
                 ∇F(M,x) + ( useRandom ? H(M,x,η) : zero_tangent_vector(M,x) ),

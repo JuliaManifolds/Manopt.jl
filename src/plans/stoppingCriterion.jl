@@ -14,7 +14,7 @@ return the array of internally stored [`StoppingCriterion`](@ref)s for a
 get_stopping_criteria(c::S) where {S <: StoppingCriterionSet} = error("get_stopping_criteria() not defined for a $(typeof(c)).")
 
 @doc raw"""
-    stopAfterIteration <: StoppingCriterion
+    StopAfterIteration <: StoppingCriterion
 
 A functor for an easy stopping criterion, i.e. to stop after a maximal number
 of iterations.
@@ -26,17 +26,17 @@ of iterations.
 
 # Constructor
 
-    stopAfterIteration(maxIter)
+    StopAfterIteration(maxIter)
 
 initialize the stopafterIteration functor to indicate to stop after `maxIter`
 iterations.
 """
-mutable struct stopAfterIteration <: StoppingCriterion
+mutable struct StopAfterIteration <: StoppingCriterion
     maxIter::Int
     reason::String
-    stopAfterIteration(mIter::Int) = new(mIter,"")
+    StopAfterIteration(mIter::Int) = new(mIter,"")
 end
-function (c::stopAfterIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopAfterIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if i > c.maxIter
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
@@ -171,7 +171,7 @@ function (c::StopWhenCostLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Optio
 end
 
 """
-    stopAfter <: StoppingCriterion
+    StopAfter <: StoppingCriterion
 
 store a threshold when to stop looking at the complete runtime. It uses
 `time_ns()` to measure the time and you provide a `Period` as a time limit,
@@ -179,17 +179,17 @@ i.e. `Minute(15)`
 
 # Constructor
 
-    stopAfter(t)
+    StopAfter(t)
 
 initialize the stopping criterion to a `Period t` to stop after.
 """
-mutable struct stopAfter <: StoppingCriterion
+mutable struct StopAfter <: StoppingCriterion
     threshold::Period
     reason::String
     start::Nanosecond
-    stopAfter(t::Period) = value(t) < 0 ? error("You must provide a positive time period") : new(t,"", Nanosecond(0))
+    StopAfter(t::Period) = value(t) < 0 ? error("You must provide a positive time period") : new(t,"", Nanosecond(0))
 end
-function (c::stopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if value(c.start) == 0 || i <= 0 # (re)start timer
         c.start = Nanosecond(time_ns())
     else

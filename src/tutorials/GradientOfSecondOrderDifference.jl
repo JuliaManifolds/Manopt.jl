@@ -4,7 +4,7 @@
 # difference mid point model using [`adjoint_Jacobi_field`](@ref)s.
 #
 # This example also illustrates the `PowerManifold` manifold as well
-# as [`linesearch_armijo`](@ref).
+# as [`ArmijoLinesearch`](@ref).
 
 # We first initialize the manifold
 exportFolder = joinpath(@__DIR__,"..","..","docs","src","assets","images","tutorials") #src
@@ -136,11 +136,11 @@ render_asymptote(exportFolder*"/SecondOrderMin1.asy"; render=2) #src
 # and the cost function is still at
 costTV2(M, (pn, rn, qn) )
 #
-# But we can also search for the best step size using [`linesearch_armijo`](@ref)
+# But we can also search for the best step size using [`ArmijoLinesearch`](@ref)
 # on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
 x = [p,r,q]
 N = PowerManifold(M, NestedPowerRepresentation(),3)
-s = linesearch_armijo(1.0,exp,0.999,0.96)(N, x,
+s = ArmijoLinesearch(1.0,exp,0.999,0.96)(N, x,
     x -> costTV2(M, Tuple(x)),
      [ ∇TV2(M, (p,r,q))... ]  # transform from tuple to PowTVector
 )

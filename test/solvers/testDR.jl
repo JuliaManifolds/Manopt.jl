@@ -9,6 +9,7 @@
     F(x) = distance(M, x, p)^2 + distance(M, x, q)^2
     prox1 = (η,x) -> proxDistance(M, η, p, x)
     prox2 = (η,x) -> proxDistance(M, η, q, x)
+    @test_throws ErrorException DouglasRachford(M,F,Array{Function,1}([prox1,]),start) # we need more than one prox
     xHat = DouglasRachford(M,F,[prox1,prox2],start)
     @test F(start) > F(xHat)
     @test_broken distance(M, xHat, result) ≈ 0
@@ -22,7 +23,7 @@
     returnOptions=true
     )
     xHat2 = get_solver_result(o)
-    drec2 = getRecord(o)
+    drec2 = get_record(o)
     xCmp = 1/sqrt(3)*ones(3)
     # since the default does not run that long -> rough estimate
     @test_broken distance(M,xHat2,xCmp) ≈ 0 atol = 10^(-5)

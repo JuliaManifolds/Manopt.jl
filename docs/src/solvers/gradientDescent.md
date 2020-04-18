@@ -5,7 +5,7 @@ CurrentModule = Manopt
 ```
 
 ```@docs
-  steepestDescent
+  steepest_descent
 ```
 
 ## Options

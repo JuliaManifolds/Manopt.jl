@@ -2,14 +2,14 @@
     io = IOBuffer()
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.,2.]
-    o = GradientDescentOptions(M, x, stopAfterIteration(20), ConstantStepsize(1.))
+    o = GradientDescentOptions(M, x, StopAfterIteration(20), ConstantStepsize(1.))
     o.∇ = [1., 0.]
     f = y -> distance(M,y,x).^2
     ∇f = y -> -2*log(M,y,x)
     p = GradientProblem(M,f,∇f)
-    @test getInitialStepsize(p,o) == 1.
-    @test get_stepsize!(p,o,1) == 1.
-    @test getLastStepsize(p,o,1) == 1.
+    @test get_initial_stepsize(p,o) == 1.
+    @test get_stepsize(p,o,1) == 1.
+    @test get_last_stepsize(p,o,1) == 1.
     # Check Fallbacks of Problen
     @test get_cost(p,o.x) == 0.
     @test getGradient(p,o.x) == zero_tangent_vector(M,x)

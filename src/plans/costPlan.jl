@@ -31,7 +31,7 @@ after the description
 
 * `population` – an `Array{`point`,1}` of $n+1$ points $x_i$, $i=1,\ldots,n+1$, where $n$ is the
   dimension of the manifold.
-* `stoppingCriterion` – ([`stopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
+* `stoppingCriterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
 * `retraction` – (`exp`) the rectraction to use
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
 * `γ` – (`2.`) expansion parameter ($\gamma>0$)
@@ -60,21 +60,20 @@ mutable struct NelderMeadOptions{T} <: Options
     costs::Array{Float64,1}
     function NelderMeadOptions(
         M::MT;
-        stop::StoppingCriterion = stopAfterIteration(2000),
+        stop::StoppingCriterion = StopAfterIteration(2000),
         α = 1.,
         γ = 2.,
         ρ=1/2,
         σ = 1/2
     ) where {MT <: Manifold }
-        new{typeof(random_point(M))}(
-            [random_point(M) for i=1:(manifold_dimension(M)+1) ],
-            stop, α, γ, ρ, σ, random_point(M),[] )
+        p = [random_point(M) for i=1:(manifold_dimension(M)+1) ]
+        new{eltype(p)}(p, stop, α, γ, ρ, σ, p[1],[])
     end
-    function NelderMeadOptions(p::Array{T,1},
-        stop::StoppingCriterion = stopAfterIteration(2000);
+    function NelderMeadOptions(population::Array{T,1},
+        stop::StoppingCriterion = StopAfterIteration(2000);
         α = 1., γ = 2., ρ=1/2, σ = 1/2
     ) where {T}
-        return new{T}(p, stop, α, γ, ρ, σ, p[1],[])
+        return new{T}(population, stop, α, γ, ρ, σ, population[1],[])
     end
 end
 get_solver_result(o::NelderMeadOptions) = o.x

@@ -190,7 +190,7 @@ geodesic from `x1` to `x3` that is closest to `x2`.
 * `(y1,y2,y3)` – resulting tuple of points of the proximal map
 """
 function proxTV2(M::mT,λ,pointTuple::Tuple{T,T,T},p::Int=1;
-  stoppingCriterion::StoppingCriterion = stopAfterIteration(5),
+  stoppingCriterion::StoppingCriterion = StopAfterIteration(5),
   kwargs...) where {mT <: Manifold,T}
   if p != 1
     throw(ErrorException(

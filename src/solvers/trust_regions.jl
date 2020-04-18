@@ -3,10 +3,10 @@
 #
 using Manopt
 import Base: identity
-export trustRegions
+export trust_regions
 
 @doc raw"""
-    trustRegions(M, F, ∇F, x, H)
+    trust_regions(M, F, ∇F, x, H)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds.
 It will attempt to minimize the cost function F on the Manifold M.
@@ -33,7 +33,7 @@ For a description of the algorithm and more details see
 * `retraction` – approximation of the exponential map
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
-* `stoppingCriterion` – ([`StopWhenAny`](@ref)([`stopAfterIteration`](@ref)`(1000)`,
+* `stoppingCriterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
@@ -68,7 +68,7 @@ For a description of the algorithm and more details see
 # see also
 [`truncatedConjugateGradient`](@ref)
 """
-function trustRegions(
+function trust_regions(
     M::MT,
     F::Function,
     ∇F::Function,
@@ -77,7 +77,7 @@ function trustRegions(
     retraction::Function = exp,
     preconditioner::Function = (M,x,ξ) -> ξ,
     stoppingCriterion::StoppingCriterion = StopWhenAny(
-        stopAfterIteration(1000),
+        StopAfterIteration(1000),
         StopWhenGradientNormLess(10^(-6))
     ),
     Δ_bar = sqrt(manifold_dimension(M)),

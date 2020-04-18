@@ -3,25 +3,22 @@ using Manopt, Documenter, Literate
 # generate examples using Literate
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
 tutorialsRelativePath = "tutorials/"
-tutorialsOutputPath = joinpath(@__DIR__,"src/"*tutorialsRelativePath)
-tutorials  = [
-    "MeanAndMedian",
-    "GradientOfSecondOrderDifference",
-    "JacobiFields",
-    ]
-menuEntries = [
-    "Getting Started: Optimize!",
-    "Gradient of \$d_2\$",
-    "Jacobi Fields"]
+tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
+tutorials = ["MeanAndMedian", "GradientOfSecondOrderDifference", "JacobiFields"]
+menuEntries = ["Getting Started: Optimize!", "Gradient of \$d_2\$", "Jacobi Fields"]
 TutorialMenu = Array{Pair{String,String},1}()
-for (i,tutorial) in enumerate(tutorials)
+for (i, tutorial) in enumerate(tutorials)
     global TutorialMenu
-    sourceFile = joinpath(tutorialsInputPath,tutorial*".jl")
-    targetFile = joinpath(tutorialsOutputPath,tutorial*"md")
-    Literate.markdown(sourceFile,tutorialsOutputPath; name=tutorial,
-    # codefence = "```julia" => "```",
-    credit=false)
-    push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath,tutorial*".md") )
+    sourceFile = joinpath(tutorialsInputPath, tutorial * ".jl")
+    targetFile = joinpath(tutorialsOutputPath, tutorial * "md")
+    Literate.markdown(
+        sourceFile,
+        tutorialsOutputPath;
+        name = tutorial,
+        # codefence = "```julia" => "```",
+        credit = false,
+    )
+    push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
 end
 makedocs(
     format = Documenter.HTML(prettyurls = false),
@@ -39,8 +36,8 @@ makedocs(
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Subgradient method" => "solvers/subgradient.md",
             "Steihaug-Toint TCG Method" => "solvers/truncatedConjugateGradient.md",
-            "Riemannian Trust-Regions Solver" => "solvers/trustRegions.md"
-         ],
+            "Riemannian Trust-Regions Solver" => "solvers/trust_regions.md",
+        ],
         "Functions" => [
             "Introduction" => "functions/index.md",
             "cost functions" => "functions/costFunctions.md",
@@ -49,7 +46,7 @@ makedocs(
             "Gradients" => "functions/gradients.md",
             "JacobiFields" => "functions/jacobiFields.md",
             "Proximal Maps" => "functions/proximalMaps.md",
-            "Specific manifold functions" => "functions/manifold.md"
+            "Specific manifold functions" => "functions/manifold.md",
         ],
         "Helpers" => [
             "Data" => "helpers/data.md",
@@ -58,9 +55,9 @@ makedocs(
         ],
         "Tutorials" => TutorialMenu,
         "Function Index" => "list.md",
-    ]
+    ],
 )
 deploydocs(
-    repo   = "github.com/JuliaManifolds/Manopt.jl",
-   # devbranch = "development"
+    repo = "github.com/JuliaManifolds/Manopt.jl",
+    # devbranch = "development"
 )

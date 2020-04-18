@@ -11,7 +11,11 @@ x0 = [ randn(6) for i=1:7 ]
 o = NelderMead(M, Rosenbrock, x0; record=[RecordCost()], returnOptions=true)
 
 x = get_solver_result(o)
-rec = getRecord(o)
+rec = get_record(o)
+
+x2 = o = NelderMead(M, Rosenbrock, x0)
+
+@test x==x2
 
 nonincreasing = [ rec[i] >= rec[i+1] for i=1:length(rec)-1 ]
 

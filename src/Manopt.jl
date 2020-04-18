@@ -5,7 +5,6 @@ module Manopt
     using Colors
     using ColorSchemes
     using ColorTypes
-    using SimpleTraits
     using Markdown
     using LinearAlgebra
     using Dates: Period, Nanosecond, value
@@ -64,6 +63,7 @@ module Manopt
         Sphere
     using Manifolds: # Wishlist for Base
         NestedPowerRepresentation,
+        ArrayPowerRepresentation,
         mean,
         median,
         get_iterator,
@@ -94,9 +94,9 @@ module Manopt
     include("solvers/cyclic_proximal_point.jl")
     include("solvers/DouglasRachford.jl")
     include("solvers/NelderMead.jl")
-    include("solvers/steepestDescent.jl")
+    include("solvers/steepest_descent.jl")
     include("solvers/truncatedConjugateGradient.jl")
-    include("solvers/trustRegions.jl")
+    include("solvers/trust_regions.jl")
     include("solvers/subgradient.jl")
     include("solvers/debugSolver.jl")
     include("solvers/recordSolver.jl")
@@ -127,14 +127,14 @@ export differential_exp_basepoint, differential_exp_argument
 export differential_log_basepoint, differential_log_argument, differential_forward_logs
 export jacobi_field, adjoint_Jacobi_field
 export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇distance
-export get_cost, getGradient, get_subgradient, getProximalMap, get_options, getInitialStepsize
+export get_cost, getGradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
 export getHessian, approxHessianFD
 export meanSquaredError, meanAverageError
 export proxDistance, proxTV, proxParallelTV, proxTV2, proxCollaborativeTV
 export random_point, random_tangent
 export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, StopWhenCurvatureIsNegative, StopWhenTrustRegionIsExceeded
-export stopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
-export stopAfter, StopWhenAll, StopWhenAny
+export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
+export StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 
 export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
@@ -152,7 +152,7 @@ export TruncatedConjugateGradientOptions, TrustRegionsOptions
 export StoppingCriterion, StoppingCriterionSet, Stepsize
 export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
 export Options, get_options
-export is_options_decorator
+export is_options_decorator, dispatch_options_decorator
 
 export cyclic_proximal_point
 end

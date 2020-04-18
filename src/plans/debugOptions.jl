@@ -52,7 +52,7 @@ DebugOptions(o::O, dD::Array{<:DebugAction,1}) where {O <: Options} = DebugOptio
 DebugOptions(o::O, dD::Dict{Symbol,<:DebugAction}) where {O <: Options} = DebugOptions{O}(o,dD)
 DebugOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = DebugOptions{O}(o, DebugFactory(format))
 
-@traitimpl is_options_decorator{DebugOptions}
+dispatch_options_decorator(o::DebugOptions) = Val(true)
 
 #
 # Meta Debugs

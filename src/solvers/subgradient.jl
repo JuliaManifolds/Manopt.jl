@@ -20,7 +20,7 @@ the argument `∂F` should always return _one_ element from the subgradient.
 # Optional
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
-* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`stopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
@@ -39,7 +39,7 @@ function subgradient_method(M::Manifold,
         x;
         retraction::Function = exp!,
         stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M,x)/5),
-        stoppingCriterion::StoppingCriterion = stopAfterIteration(5000),
+        stoppingCriterion::StoppingCriterion = StopAfterIteration(5000),
         returnOptions = false,
         kwargs... #especially may contain debug
     )
@@ -59,7 +59,7 @@ function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
 end
 function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     o.∂ = get_subgradient(p,o.x)
-    s = get_stepsize!(p,o,iter)
+    s = get_stepsize(p,o,iter)
     o.retract!(p.M, o.x, o.x, -s*o.∂)
     if get_cost(p,o.x) < get_cost(p,o.xOptimal)
         o.xOptimal = o.x

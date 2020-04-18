@@ -1,4 +1,4 @@
-# [The Riemannian Trust-Regions Solver](@id trustRegions)
+# [The Riemannian Trust-Regions Solver](@id trust_regions)
 
 The aim is to solve an optimization problem on a manifold
 
@@ -125,7 +125,7 @@ accepted.
 ## Interface
 
 ```@docs
-trustRegions
+trust_regions
 ```
 
 ## Options
