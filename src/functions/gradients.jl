@@ -133,11 +133,11 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 * `ξ` – resulting tangent vector in $T_x\mathcal M$ representing the logs, where
   $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
 """
-function forward_logs(M::PowerManifold, x)
+function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSize,TPR}
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    sX = size(x)
+    sX = size(p)
     maxInd = [last(R).I...] # maxInd as Array
     if d > 1
         d2 = fill(1,d+1)
@@ -145,20 +145,26 @@ function forward_logs(M::PowerManifold, x)
     else
         d2 = 1
     end
-    N = PowerManifold(M.manifold, prod(sX)*d)
-    xT = repeat(x,inner=d2)
-    ξ = zero_tangent_vector(N,xT)
+    N = PowerManifold(M.manifold, TPR(), power_size..., d)
+    xT = repeat(p,inner=d2)
+    X = zero_tangent_vector(N,xT)
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
             I = [i.I...] # array of index
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all( J .<= maxInd ) # is this neighbor in range?
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-                ξ[i,k] = log(M.manifold,x[i],x[j]) # Compute log and store in kth entry
+                set_component!(
+                    N,
+                    X,
+                    log(M.manifold, get_component(M,p,i), get_component(M,p,j)),
+                    i,
+                    k,
+                ) # Compute log and store in kth entry
             end
         end # directions
     end # i in R
-    return ξ
+    return X
 end
 
 @doc raw"""
@@ -200,20 +206,20 @@ function ∇TV2(M::MT, xT, p::Number=1) where {MT <: Manifold}
   end
 end
 @doc raw"""
-    ∇TV2(M,x [,p=1])
+    ∇TV2(M,q [,p=1])
 
 computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function ∇TV2(M::PowerManifold, x, p::Int=1)
+function ∇TV2(M::PowerManifold, q, p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     minInd, maxInd = first(R), last(R)
-    ξ = zero_tangent_vector(M,x)
-    c = costTV2(M,x,p,false)
+    X = zero_tangent_vector(M,q)
+    c = costTV2(M,q,p,false)
     for i in R # iterate over all pixel
         di = 0.
         for k in 1:d # for all direction combinations (TODO)
@@ -222,15 +228,15 @@ function ∇TV2(M::PowerManifold, x, p::Int=1)
             jB = i-ek # compute backward neighbor
             if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
                 if p != 1
-                    g = (c[i] == 0 ? 1 : 1/c[i]) .* ∇TV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
+                    g = (c[i] == 0 ? 1 : 1/c[i]) .* ∇TV2(M.manifold,(q[jB],q[i],q[jF]),p) # Compute TV2 on these
                 else
-                    g = ∇TV2(M.manifold,(x[jB],x[i],x[jF]),p) # Compute TV2 on these
+                    g = ∇TV2(M.manifold,(q[jB],q[i],q[jF]),p) # Compute TV2 on these
                 end
-                ξ[jB] += g[1]
-                ξ[i]  += g[2]
-                ξ[jF] += g[3]
+                set_component!(M,X,g[1],jB)
+                set_component!(M,X,g[2],i)
+                set_component!(M,X,g[3],jF)
             end
         end # directions
     end # i in R
-    return ξ
+    return X
 end

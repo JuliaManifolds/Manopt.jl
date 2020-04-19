@@ -11,7 +11,6 @@ using Images, CSV, DataFrames, LinearAlgebra, JLD2
 # Settings
 ExportResult = true
 ExportOrig = true
-ExportResultVideo = false
 ExportTable = true
 asy_render_detail = 2
 #

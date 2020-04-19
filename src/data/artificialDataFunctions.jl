@@ -171,7 +171,7 @@ creates an image with a rotation on each axis as a parametrization.
 """
 function artificial_S2_rotation_image(pts::Int=64,rotations::Tuple{Float64,Float64}=(.5,.5))
   M = Sphere(2)
-  img = Matrix{Array{Float64,1}}(undef,pts,pts)
+  img = fill(zeros(3),pts,pts)
   north = [1.,0.,0.]
   Rxy(a) = [cos(a) -sin(a) 0.; sin(a) cos(a) 0.; 0. 0. 1]
   Rxz(a) = [cos(a) 0. -sin(a); 0. 1. 0.; sin(a) 0. cos(a)]

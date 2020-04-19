@@ -10,8 +10,8 @@ using Images, CSV, DataFrames, LinearAlgebra, JLD2
 
 #
 # Settings
-ExportResult = false
-ExportOrig = false
+ExportResult = true
+ExportOrig = true
 ExportTable = true
 asymptote_render_detail = 2
 resultsFolder = "examples/Total_Variation/S2_TV/"
@@ -59,7 +59,7 @@ x0 = f
         " | ",
         :Cost,
         "\n",
-        1,
+        100,
         :Stop,
     ],
     record = [:Iteration, :Iterate, :Cost],
