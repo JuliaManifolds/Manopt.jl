@@ -36,7 +36,7 @@ end
 maxIterations = 4000
 #
 # Build Problem for L2-TV
-M = PowerManifold(pixelM, size(f)...)
+M = PowerManifold(pixelM, NestedPowerRepresentation(), size(f)...)
 d = length(size(f))
 rep(d) = (d > 1) ? [ones(Int, d)..., d] : d
 fidelity(x) = 1 / 2 * distance(M, x, f)^2

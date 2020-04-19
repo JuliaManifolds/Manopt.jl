@@ -13,7 +13,7 @@ ExportOrig = false
 ExportResult = true
 ExportTable = true
 asy_render_detail = 2
-resultsFolder = "examples/Total_Variation/SPD_TV/
+resultsFolder = "examples/Total_Variation/SPD_TV/"
 comparisonData = "ImageCPPA-CostValue.jld2"
 experimantName = "ImageDR"
 if !isdir(resultsFolder)
@@ -34,15 +34,15 @@ end
 #
 # Build Problem for L2-TV
 pixelM = SymmetricPositiveDefinite(3);
-M = PowerManifold(pixelM,size(f))
+M = PowerManifold(pixelM, NestedPowerRepresentation(), size(f)...)
 d = length(size(f))
 rep(d) = (d>1) ? [ones(Int,d)...,d] : d
 fidelity(x) = 1/2*distance(M,x,f)^2
 Λ(x) = forward_logs(M,x) # on T_xN
-prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x),1)
+prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x)),1)
 #
 # Setup & Optimize
-print("--- Douglas–Rachford with η: ",η," and λ: ",λ," ---\n")
+print("--- Douglas–Rachford with η: $(η) and λ: $(λ) ---\n")
 cost(x) = fidelity(x) + α*prior(x)
 prox1 = (η,x) -> cat( prox_distance(M,η,f,x[1]), prox_parallel_TV(M,α*η,x[2:5]), dims=1)
 prox2 = (η,x) -> fill(mean(M,x;stoppingCriterion=StopAfterIteration(20)),5)

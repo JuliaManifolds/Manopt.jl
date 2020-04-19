@@ -189,9 +189,9 @@ geodesic from `x1` to `x3` that is closest to `x2`.
 # Output
 * `(y1,y2,y3)` – resulting tuple of points of the proximal map
 """
-function prox_TV2(M::mT,λ,pointTuple::Tuple{T,T,T},p::Int=1;
+function prox_TV2(M::Manifold,λ,pointTuple::Tuple{T,T,T},p::Int=1;
   stoppingCriterion::StoppingCriterion = StopAfterIteration(5),
-  kwargs...) where {mT <: Manifold,T}
+  kwargs...) where {T}
   if p != 1
     throw(ErrorException(
       "Proximal Map of TV2(M,λ,pT,p) not implemented for p=$(p) (requires p=1) on general manifolds."
