@@ -5,7 +5,7 @@
 #
 # where the example is the same data as for the corresponding CP algorithm
 #
-using Manopt
+using Manopt, Manifolds
 using Images, CSV, DataFrames, LinearAlgebra, JLD2
 #
 # Settings
@@ -13,21 +13,23 @@ ExportResult = true
 ExportOrig = true
 ExportResultVideo = false
 ExportTable = true
+asy_render_detail = 2
 #
 # Manifold and Data
 f = artificial_SPD_image2(32)
 pixelM = SymmetricPositiveDefinite(3)
-resultsFolder = "src/examples/Total_Variation/SPD_TV/"
+resultsFolder = "examples/Total_Variation/SPD_TV/"
 experimentName = "ImageCPPA"
 if !isdir(resultsFolder)
     mkdir(resultsFolder)
 end
 if ExportOrig
-    asyExport(
+    asymptote_export_SPD(
         resultsFolder * experimentName * "-orig.asy";
         data = f,
         scaleAxes = (7.5, 7.5, 7.5),
     )
+    render_asymptote(resultsFolder * experimentName * "-orig.asy", render=asy_render_detail)
 end
 #
 # Parameters
@@ -35,7 +37,7 @@ end
 maxIterations = 4000
 #
 # Build Problem for L2-TV
-M = PowerManifold(pixelM, size(f))
+M = PowerManifold(pixelM, size(f)...)
 d = length(size(f))
 rep(d) = (d > 1) ? [ones(Int, d)..., d] : d
 fidelity(x) = 1 / 2 * distance(M, x, f)^2
@@ -77,8 +79,13 @@ if ExportResult
         experimentName *
         "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
         data = y,
-        render = 4,
         scaleAxes = (7.5, 7.5, 7.5),
+    )
+    render_asymptote(
+        resultsFolder *
+        experimentName *
+        "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
+        render=asy_render_detail,
     )
 end
 if ExportTable

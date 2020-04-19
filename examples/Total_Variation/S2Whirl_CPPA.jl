@@ -5,16 +5,16 @@
 #
 # where the example is the same data as for the corresponding CP algorithm
 #
-using Manopt
+using Manopt, Manifolds
 using Images, CSV, DataFrames, LinearAlgebra, JLD2
 
 #
 # Settings
 ExportResult = true
 ExportOrig = true
-ExportResultVideo = false
 ExportTable = true
-resultsFolder = "src/examples/Total_Variation/S2_TV/"
+asymptote_render_detail = 2
+resultsFolder = "examples/Total_Variation/S2_TV/"
 experimentName = "WhirlCPPA"
 if !isdir(resultsFolder)
     mkdir(resultsFolder)
@@ -26,7 +26,7 @@ pixelM = Sphere(2);
 
 if ExportOrig
     asymptote_export_S2_data(resultsFolder * experimentName * "-orig.asy"; data = f)
-    render_asymptote(resultsFolder * experimentName * "-orig.asy"; render=4)
+    render_asymptote(resultsFolder * experimentName * "-orig.asy"; render=asymptote_render_detail)
 end
 #
 # Parameters
@@ -34,7 +34,7 @@ end
 maxIterations = 4000
 #
 # Build Problem for L2-TV
-M = PowerManifold(pixelM, size(f))
+M = PowerManifold(pixelM, NestedPowerRepresentation(), size(f)...)
 d = length(size(f))
 iRep = [Integer.(ones(d))..., d]
 fidelity(x) = 1 / 2 * distance(M, x, f)^2
@@ -59,7 +59,7 @@ x0 = f
         " | ",
         :Cost,
         "\n",
-        100,
+        1,
         :Stop,
     ],
     record = [:Iteration, :Iterate, :Cost],
@@ -77,8 +77,13 @@ if ExportResult
         experimentName *
         "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
         data = y,
-        render = 4,
     ) #(6)
+    render_asymptote(
+        resultsFolder *
+        experimentName *
+        "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
+        render=asymptote_render_detail
+    )
 end
 if ExportTable
     A = cat([y[1] for y in yRec], [y[3] for y in yRec]; dims = 2)
