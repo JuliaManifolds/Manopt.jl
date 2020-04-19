@@ -2,9 +2,6 @@
 # Define a global problem and ist constructors
 #
 # ---
-import Random: randperm
-export getGradient, getCost, getProximalMap
-export Problem, HessianProblem
 
 """
     Problem
@@ -16,18 +13,24 @@ abstract type Problem end
 # 1) Function defaults / Fallbacks
 #
 """
-    getCost(p,x)
+    get_cost(p,x)
 
-evaluate the cost function `F` stored within a [`Problem`](@ref) at the [`MPoint`](@ref) `x`.
+evaluate the cost function `F` stored within a [`Problem`](@ref) at the point `x`.
 """
-function getCost(p::P,x::MP) where {P <: Problem, MP <: MPoint}
-  return p.costFunction(x)
+function get_cost(p::P,x) where {P <: Problem}
+  return p.cost(x)
 end
-getGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
-    throw(ErrorException("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
-getProximalMap(p::Pr,λ,x::P,i) where {Pr <: Problem, P <: MPoint} =
+function getGradient(p::Problem,x)
+    throw(ErrorException(
+        "no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."
+    ))
+end
+function getProximalMap(p::Problem,λ,x,i)
     throw(ErrorException("No proximal map No. $(i) found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
-getSubGradient(p::Pr,x::P) where {Pr <: Problem, P <: MPoint} =
-        throw(ErrorException("no subgradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
-getHessian(p::Pr,x::P,ξ::T) where {Pr <: Problem, P <: MPoint, T <: TVector} =
+end
+function get_subgradient(p::Problem,x)
+    throw(ErrorException("no subgradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
+end
+function getHessian(p::Problem,x,ξ)
     throw(ErrorException("no hessian found in $(typeof(p)) to evaluate at point $(typeof(x)) and tangent vector $(typeof(ξ))."))
+end

@@ -1,27 +1,27 @@
 @testset "Gradient Plan" begin
     io = IOBuffer()
-    M = Euclidean(2)
-    x = RnPoint([4.,2.])
-    o = GradientDescentOptions(x,stopAfterIteration(20), ConstantStepsize(1.))
-    o.∇ = RnTVector([1., 0.])
+    M = ManifoldsBase.DefaultManifold(2)
+    x = [4.,2.]
+    o = GradientDescentOptions(M, x, StopAfterIteration(20), ConstantStepsize(1.))
+    o.∇ = [1., 0.]
     f = y -> distance(M,y,x).^2
     ∇f = y -> -2*log(M,y,x)
     p = GradientProblem(M,f,∇f)
-    @test getInitialStepsize(p,o) == 1.
-    @test getStepsize!(p,o,1) == 1.
-    @test getLastStepsize(p,o,1) == 1.
+    @test get_initial_stepsize(p,o) == 1.
+    @test get_stepsize(p,o,1) == 1.
+    @test get_last_stepsize(p,o,1) == 1.
     # Check Fallbacks of Problen
-    @test getCost(p,o.x) == 0.
-    @test getGradient(p,o.x) == zeroTVector(M,x)
+    @test get_cost(p,o.x) == 0.
+    @test getGradient(p,o.x) == zero_tangent_vector(M,x)
     @test_throws ErrorException getProximalMap(p,1.,o.x,1)
-    @test_throws ErrorException getSubGradient(p,o.x)
+    @test_throws ErrorException get_subgradient(p,o.x)
     # Additional Specific Debugs
     a1 = DebugGradient(false, x -> print(io,x))
     a1(p,o,1)
-    @test String(take!(io)) == "∇F(x):RnT([1.0, 0.0])"
+    @test String(take!(io)) == "∇F(x):[1.0, 0.0]"
     a1a = DebugGradient("s:", x -> print(io,x))
     a1a(p,o,1)
-    @test String(take!(io)) == "s:RnT([1.0, 0.0])"
+    @test String(take!(io)) == "s:[1.0, 0.0]"
     a2 = DebugGradientNorm(false, x -> print(io,x))
     a2(p,o,1)
     @test String(take!(io)) == "|∇F(x)|:1.0"

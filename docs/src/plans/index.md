@@ -17,36 +17,37 @@ Generally the type
 
 ```@docs
 Options
-getOptions
+get_options
 ```
 
 Since the `Options` directly relate to a solver, they are documented with the
 corresponding [Solvers](@ref).
 You can always access the options (since they
-might be decorated) by calling [`getOptions`](@ref).
+might be decorated) by calling [`get_options`](@ref).
 
 ### Decorators for Options
 
 Options can be decorated using the following trait and function to initialize
 
 ```@docs
-IsOptionsDecorator
-decorateOptions
+dispatch_options_decorator
+is_options_decorator
+decorate_options
 ```
 
 In general decorators often perform actions so we introduce
 
 ```@docs
-Action
+AbstractOptionsAction
 ```
 
 as well as a helper for storing values using keys, i.e.
 
 ```@docs
 StoreOptionsAction
-getStorage
-hasStorage
-updateStorage!
+get_storage
+has_storage
+update_storage!
 ```
 
 #### [Debug Options](@id DebugOptions)
@@ -77,7 +78,7 @@ Further specific [`RecordAction`](@ref)s can be found at the specific Options.
 there's one internal helper that might be useful for you own actions, namely
 
 ```@docs
-recordOrReset!
+record_or_eset!
 ```
 
 ### [Stepsize and Linesearch](@id Stepsize)
@@ -103,11 +104,11 @@ implementation to access the cost
 
 ```@docs
 Problem
-getCost
+get_cost
 ```
 
 For any algorithm that involves a cyclic evalutaion, e.g.
-[`cyclicProximalPoint`](@ref), one can specify the [`EvalOrder`](@ref) as
+[`cyclic_proximal_point`](@ref), one can specify the [`EvalOrder`](@ref) as
 
 ```@docs
 EvalOrder
@@ -117,6 +118,7 @@ FixedRandomEvalOrder
 ```
 
 ### Cost based problem
+
 ```@docs
 CostProblem
 ```
@@ -132,7 +134,7 @@ getGradient
 
 ```@docs
 SubGradientProblem
-getSubGradient
+get_subgradient
 ```
 
 ### [Proximal Map(s) based problem](@id ProximalProblem)

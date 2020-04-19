@@ -10,7 +10,7 @@ Manopt.Manopt
 
 For a function $f\colon\mathcal M \to \mathbb R$ defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) $\mathcal M$ we aim to solve
 
-$\operatorname*{argmin}_{x\in\mathcal M} f(x),$
+$\operatorname*{argmin}_{x ∈ \mathcal M} f(x),$
 
 or in other words: find the point $x$ on the manifold, where $f$ reaches its minimal function value.
 
@@ -31,72 +31,49 @@ many manifolds and algorithms, which can easily be enhanced, for example to
 
 ## Main Features
 
-**1. Manifolds**
-Manifolds consist of three elements: a [`Manifold`](@ref) type that stores
-general information about the manifold, for example a name, or for example in
-order to generate a [`randomMPoint`](@ref), an [`MPoint`](@ref) storing data to
-represent a point on the manifold, for example a vector or a matrix, and a
-[`TVector`](@ref) string data to represent a point in a tangent space
-$T_x\mathcal M$ of such an [`MPoint`](@ref). If a manifold has certain
-properties, for example if it is a [matrix manifold](@ref MatrixManifold) or a [Lie
-group](@ref LieGroup), see for example the binary operator [`⊗`](@ref). For a
-list of available manifolds, see [the list of manifolds](@ref Manifolds)
+### Functions on Manifolds
 
-**2. Functions on Manifolds**
-Several functions are available, implemented on an arbitrary manifold, [cost
-functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions), and
-[gradients](@ref GradientFunctions) as well as [proximal maps](@ref
-proximalMapFunctions), but also several [jacobi Fields](@ref
-JacobiFieldFunctions) and their [adjoints](@ref adjointDifferentialFunctions).
+Several functions are available, implemented on an arbitrary manifold, [cost functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions), and [gradients](@ref GradientFunctions) as well as [proximal maps](@ref proximalMapFunctions), but also several [jacobi Fields](@ref JacobiFieldFunctions) and their [adjoints](@ref adjointDifferentialFunctions).
 
-**3. Optimization Algorithms (Solvers)**
-For every optimization algorithm, a [solver](@ref Solvers) is implemented based
-on a [`Problem`](@ref) that describes the problem to solve and its
-[`Options`](@ref) that set up the solver, store interims values. Together they
+### Optimization Algorithms (Solvers)
+
+For every optimization algorithm, a [solver](@ref Solvers) is implemented based on a [`Problem`](@ref) that describes the problem to solve and its [`Options`](@ref) that set up the solver, store interims values. Together they
 form a [plan](@ref planSection).
 
-**4. Visualization**
-To visualize and interpret results, `Manopt.jl` aims to provide both easy plot
-functions as well as [exports](@ref Exports). Furthermore a system to get
-[debug](@ref DebugOptions) during the iterations of an algorithms as well as
-[record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of
-values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the
-[Getting Started: Optimize!](@ref Optimize) tutorial how to easily activate
-this.
+### Visualization
 
-All four parts are accompanied by a documentation that can also be accessed from
-within `Julia REPL` and provides detailed information, e.g. the formula for an
-[exponential or logarithmic map on the manifold of symmetric positive definite matrices](@ref SymmetricPositiveDefiniteManifold) or literature references for an algorithm like [`cyclicProximalPoint`](@ref).
+To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugOptions) during the iterations of an algorithms as well as [record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+[`RecordIterate`](@ref). Take a look at the [Getting Started: Optimize!](@ref Optimize) tutorial how to easily activate this.
 
-## Notation
+## Manifolds
 
-During this documentation, we refer to a variable with e.g. both `x` and $x$
-depending on whether the context refers to a code fragment or a mathematical
-formula, respectively.
+This project is build upon [ManifoldsBase.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html), a generic interface to implement manifolds. Certain functions are extended for specific manifolds from [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/), but all other manifolds from that package can be used here, too.
 
-| Symbol | used for
-|:---|:---|
-$\mathcal M, \mathcal N$ | a manifold
-$d,d_1,\ldots,d_n$ | dimension(s) of a manifold
-$x,y,z,x_1,\ldots,x_n$ | points on a manifold
-$T_x\mathcal M$ | the tangent space of $x\in\mathcal M$
-$\xi,\nu,\eta,\xi_1,\ldots,\xi_n$ | tangent vectors, might be extended by the base point, i.e. $\xi_x$
-$\log_xy$ | logarithmic map
-$\exp_x\xi$ | exponential map
-$g(t; x,y)$ | geodesic connecting $x,y\in\mathcal M$ with $t\in [0,1]$
-$\langle \cdot, \cdot\rangle_x$ | Riemannian inner product on $T_x\mathcal M$
-$\operatorname{PT}_{x\to y}\xi$ | parallel transport of $\xi\in T_x\mathcal M$ from $x$ to $y$ along $g(\cdot;x,y)$
+The notation in the documentation aims to follow the same [notation](https://juliamanifolds.github.io/Manifolds.jl/stable/notation.html) from these packages.
 
 ## Literature
 
+If you want to get started with manifolds, one book is [[do Carmo, 1992](#doCarmo1992)],
+and if you want do directly dive into optimization on manifolds, my favourite reference is
+[[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)], which is also available
+online for free.
+
 ```@raw html
-<ul><li id="AbsilMahonySepulchre2008">
+<ul>
+<li id="AbsilMahonySepulchre2008">
     [<a>Absil, Mahony, Sepulchre, 2008</a>]
     P.-A. Absil, R. Mahony and R. Sepulchre,
-    <emph>Optimization Algorithms on
-    Matrix Manifolds</emph>, Princeton University Press, 2008,
+    <emph>Optimization Algorithms on Matrix Manifolds</emph>,
+    Princeton University Press, 2008,
     doi: <a href="https://doi.org/10.1515/9781400830244">10.1515/9781400830244</a>,
     <a href="http://press.princeton.edu/chapters/absil/">open access</a>.
-</li></ul>
+</li>
+<li id="doCarmo1992">
+    [<a>doCarmo, 1992</a>]
+    M. P. do Carmo,
+    <emph>Riemannian Geometry</emph>,
+    Birkhäuser Boston, 1992,
+    ISBN: 0-8176-3490-8.
+</li>
+</ul>
 ```

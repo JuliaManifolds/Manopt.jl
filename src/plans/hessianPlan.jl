@@ -1,19 +1,12 @@
-export HessianProblem, HessianOptions
-export TruncatedConjugateGradientOptions, TrustRegionsOptions
-export approxHessianFD, getHessian
-export stopIfResidualIsReducedByFactor, stopIfResidualIsReducedByPower, stopWhenCurvatureIsNegative, stopWhenTrustRegionIsExceeded
 
-#
-# Problem
-#
-@doc doc"""
+@doc raw"""
     HessianProblem <: Problem
 
 specify a problem for hessian based algorithms.
 
 # Fields
 * `M`            : a manifold $\mathcal M$
-* `costFunction` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `cost` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
 * `gradient`     : the gradient $\nabla F\colon\mathcal M
   \to \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}[F] (\cdot)_ {x} \colon \mathcal T_{x} \mathcal M
@@ -22,11 +15,11 @@ specify a problem for hessian based algorithms.
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 struct HessianProblem{mT <: Manifold} <: Problem
     M::mT
-    costFunction::Function
+    cost::Function
     gradient::Function
     hessian::Union{Function,Missing}
     precon::Function
@@ -37,7 +30,7 @@ abstract type HessianOptions <: Options end
 #
 # Options
 #
-@doc doc"""
+@doc raw"""
     TruncatedConjugateGradientOptions <: HessianOptions
 
 describe the Steihaug-Toint truncated conjugate-gradient method, with
@@ -45,12 +38,12 @@ describe the Steihaug-Toint truncated conjugate-gradient method, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `x` : a [`MPoint`](@ref), where the trust-region subproblem needs
+* `x` : a point, where the trust-region subproblem needs
     to be solved
 * `stop` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
     indicator and a reason based on an iteration number, the gradient and the
     last and current iterates
-* `η` : a [`TVector`](@ref) (called update vector), which solves the
+* `η` : a tangent vector (called update vector), which solves the
     trust-region subproblem after successful calculation by the algorithm
 * `δ` : search direction
 * `Δ` : the trust-region radius
@@ -67,20 +60,30 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a truncated conjugate-gradient Option with the fields as above.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
-mutable struct TruncatedConjugateGradientOptions <: HessianOptions
-    x::P where {P <: MPoint}
+mutable struct TruncatedConjugateGradientOptions{P,T} <: HessianOptions
+    x::P
     stop::StoppingCriterion
-    η::T where {T <: TVector}
-    δ::T where {T <: TVector}
-    Δ::Float64
-    residual::T where {T <: TVector}
+    η::T
+    δ::T
+    Δ
+    residual::T
     useRand::Bool
-    TruncatedConjugateGradientOptions(x::P,stop::StoppingCriterion,η::T,δ::T,Δ::Float64,residual::T,uR::Bool) where {P <: MPoint, T <: TVector} = new(x,stop,η,δ,Δ,residual,uR)
+    function TruncatedConjugateGradientOptions(
+        x::P,
+        stop::StoppingCriterion,
+        η::T,
+        δ::T,
+        Δ,
+        residual::T,
+        uR::Bool
+        ) where {P, T}
+        return new{typeof(x),typeof(η)}(x,stop,η,δ,Δ,residual,uR)
+    end
 end
 
-@doc doc"""
+@doc raw"""
     TrustRegionsOptions <: HessianOptions
 
 describe the trust-regions solver, with
@@ -88,7 +91,7 @@ describe the trust-regions solver, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `x` : a [`MPoint`](@ref) as starting point
+* `x` : a point as starting point
 * `stop` : a function s,r = @(o,iter) returning a stop
     indicator and a reason based on an iteration number and the gradient
 * `Δ` : the (initial) trust-region radius
@@ -121,79 +124,96 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a trust-regions Option with the fields as above.
 
 # See also
-[`trustRegions`](@ref)
+[`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions <: HessianOptions
-    x::P where {P <: MPoint}
+    x
     stop::StoppingCriterion
-    Δ::Float64
-    Δ_bar::Float64
+    Δ
+    Δ_bar
     retraction::Function
     useRand::Bool
-    ρ_prime::Float64
-    ρ_regularization::Float64
-    TrustRegionsOptions(x::P, stop::StoppingCriterion, δ::Float64, δ_bar::Float64,
-    retr::Function, useRand::Bool, ρ_prime::Float64, ρ_regularization::Float64) where {P <: MPoint} = new(x,stop,δ,δ_bar,retr,useRand,ρ_prime,ρ_regularization)
+    ρ_prime
+    ρ_regularization
+    function TrustRegionsOptions(
+        x,
+        stop::StoppingCriterion,
+        Δ,
+        Δ_bar,
+        retr::Function,
+        useRand::Bool,
+        ρ_prime,
+        ρ_regularization
+        )
+        return new(x, stop, Δ, Δ_bar, retr, useRand, ρ_prime, ρ_regularization)
+    end
 end
 
-@doc doc"""
+@doc raw"""
     getHessian(p,x,ξ)
 
-evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the [`MPoint`](@ref) `x`
-applied to a [`TVector`](@ref) `ξ`.
+evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the point `x`
+applied to a tangent vector `ξ`.
 """
-getHessian(p::Pr,x::P,ξ::V; stepsize=2*10^(-14)) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = ismissing(p.hessian) ? approxHessianFD(p.M, x -> getGradient(p.M,x) ,x,ξ; stepsize=stepsize) : p.hessian(p.M,x,ξ)
-@doc doc"""
+function getHessian(p::HessianProblem, x, ξ; stepsize=2*10^(-14))
+    if ismissing(p.hessian)
+        return approxHessianFD(p.M, x -> getGradient(p.M,x) ,x,ξ; stepsize=stepsize)
+    else
+        return p.hessian(p.M,x,ξ)
+    end
+end
+
+@doc raw"""
     getGradient(p,x)
 
 evaluate the gradient of a [`HessianProblem`](@ref)`p` at the
-[`MPoint`](@ref) `x`.
+point `x`.
 """
-getGradient(p::Pr,x::P) where {Pr <: HessianProblem, P <: MPoint} = p.gradient(p.M,x)
-@doc doc"""
+getGradient(p::HessianProblem,x) = p.gradient(p.M,x)
+@doc raw"""
     getPreconditioner(p,x,ξ)
 
 evaluate the symmetric, positive deﬁnite preconditioner (approximation of the
 inverse of the Hessian of the cost function `F`) of a
-[`HessianProblem`](@ref) `p` at the [`MPoint`](@ref) `x`applied to a
-[`TVector`](@ref) `ξ`.
+[`HessianProblem`](@ref) `p` at the point `x`applied to a
+tangent vector `ξ`.
 """
-getPreconditioner(p::Pr,x::P, ξ::V) where {Pr <: HessianProblem, P <: MPoint, V <: TVector} = p.precon(p.M, x, ξ)
+getPreconditioner(p::Pr, x, ξ) where {Pr <: HessianProblem} = p.precon(p.M, x, ξ)
 
-@doc doc"""
+@doc raw"""
     approxHessianFD(p,x,ξ,[stepsize=2.0^(-14)])
 
 return an approximated solution of the Hessian of the cost function applied to
-a [`TVector`](@ref) `ξ` by using a generic finite difference approximation
+a tangent vector `ξ` by using a generic finite difference approximation
 based on computations of the gradient.
 
 Input
 * `p` – a Manopt problem structure (already containing the manifold and enough
         information to compute the cost gradient)
-* `x` – a [`MPoint`](@ref) where the Hessian is ​​to be approximated
-* `ξ` – a [`TVector`](@ref) on which the approximated Hessian is ​​to be applied
+* `x` – a point where the Hessian is ​​to be approximated
+* `ξ` – a tangent vector on which the approximated Hessian is ​​to be applied
 
 # Optional
 * `stepsize` – the length of the step with which the method should work
 
 # Output
-* a [`TVector`](@ref) generated by applying the approximated Hessian to the
-    [`TVector`](@ref) ξ
+* a tangent vector generated by applying the approximated Hessian to the
+    tangent vector ξ
 """
-function approxHessianFD(M::MT, x::P, gradFct::Function, ξ::T; stepsize::Float64=2.0^(-14)) where {MT <: Manifold, P <: MPoint, T <: TVector}
+function approxHessianFD(M::MT, x, gradFct::Function, ξ; stepsize=2.0^(-14), transport=ParallelTransport()) where {MT <: Manifold}
     norm_xi = norm(M,x,ξ)
     if norm_xi < eps(Float64)
-        return zeroTVector(M, x)
+        return zero_tangent_vector(M, x)
     end
     c = stepsize / norm_xi
     grad = gradFct(x)
-    x1 = retraction(M, x, ξ, c)
+    x1 = exp(M, x, ξ, c)
     grad1 = gradFct(x1)
-    grad1 = parallelTransport(M, x1, x, grad1)
-    return (grad1 - grad)/c
+    grad1 = vector_transport_to(M, x1, grad1, x, transport)
+    return (1/c)*(grad1 - grad)
 end
 
-@doc doc"""
+@doc raw"""
     stopIfResidualIsReducedByFactor <: StoppingCriterion
 
 A functor for testing if the norm of residual at the current iterate is reduced
@@ -206,7 +226,7 @@ In this case the algorithm reached linear convergence.
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
     $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-  reached, see [`getReason`](@ref).
+  reached, see [`get_reason`](@ref).
 
 # Constructor
 
@@ -217,7 +237,7 @@ the norm of the current residual is lesser than the norm of the initial residual
 iRN times κ.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 mutable struct stopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
@@ -233,7 +253,7 @@ function (c::stopIfResidualIsReducedByFactor)(p::P,o::O,i::Int) where {P <: Hess
     return false
 end
 
-@doc doc"""
+@doc raw"""
     stopIfResidualIsReducedByPower <: StoppingCriterion
 
 A functor for testing if the norm of residual at the current iterate is reduced
@@ -246,7 +266,7 @@ algorithm reached superlinear convergence.
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
     $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-    reached, see [`getReason`](@ref).
+    reached, see [`get_reason`](@ref).
 
 # Constructor
 
@@ -257,7 +277,7 @@ the norm of the current residual is lesser than the norm of the initial residual
 iRN to the power of 1+θ.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
 mutable struct stopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
@@ -273,8 +293,8 @@ function (c::stopIfResidualIsReducedByPower)(p::P,o::O,i::Int) where {P <: Hessi
     return false
 end
 
-@doc doc"""
-    stopWhenTrustRegionIsExceeded <: StoppingCriterion
+@doc raw"""
+    StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
 A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
 mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
@@ -282,37 +302,37 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-    reached, see [`getReason`](@ref).
+    reached, see [`get_reason`](@ref).
 * `storage` – stores the necessary parameters `η, δ, residual` to check the
     criterion.
 
 # Constructor
 
-    stopWhenTrustRegionIsExceeded([a])
+    StopWhenTrustRegionIsExceeded([a])
 
-initialize the stopWhenTrustRegionIsExceeded functor to indicate to stop after
+initialize the StopWhenTrustRegionIsExceeded functor to indicate to stop after
 the norm of the next iterate is greater than the trust-region radius using the
 [`StoreOptionsAction`](@ref) `a`, which is initialized to store
 `:η, :δ, :residual` by default.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
-mutable struct stopWhenTrustRegionIsExceeded <: StoppingCriterion
+mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
     storage::StoreOptionsAction
-    stopWhenTrustRegionIsExceeded(a::StoreOptionsAction=StoreOptionsAction( (:η, :δ, :residual) )) = new("", a)
+    StopWhenTrustRegionIsExceeded(a::StoreOptionsAction=StoreOptionsAction( (:η, :δ, :residual) )) = new("", a)
 end
-function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    if hasStorage(c.storage,:δ) && hasStorage(c.storage,:η) && hasStorage(c.storage,:residual)
-        η = getStorage(c.storage,:η)
-        δ = getStorage(c.storage,:δ)
-        residual = getStorage(c.storage,:residual)
-        a1 = dot(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, residual) : residual, residual)
-        a2 = dot(p.M, o.x, δ, getHessian(p, o.x, δ))
-        a3 = dot( p.M, o.x, η, getPreconditioner(p, o.x, δ))
-        a4 = dot(p.M, o.x, δ, getPreconditioner(p, o.x, δ))
-        norm = dot(p.M, o.x, η, η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4
+function (c::StopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+    if has_storage(c.storage,:δ) && has_storage(c.storage,:η) && has_storage(c.storage,:residual)
+        η = get_storage(c.storage,:η)
+        δ = get_storage(c.storage,:δ)
+        residual = get_storage(c.storage,:residual)
+        a1 = inner(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, residual) : residual, residual)
+        a2 = inner(p.M, o.x, δ, getHessian(p, o.x, δ))
+        a3 = inner(p.M, o.x, η, getPreconditioner(p, o.x, δ))
+        a4 = inner(p.M, o.x, δ, getPreconditioner(p, o.x, δ))
+        norm = inner(p.M, o.x, η, η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4
         if norm >= o.Δ^2 && i >= 0
             c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.Δ^2) = Δ²). \n"
             c.storage(p,o,i)
@@ -323,8 +343,8 @@ function (c::stopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: Hessia
     return false
 end
 
-@doc doc"""
-    stopWhenCurvatureIsNegative <: StoppingCriterion
+@doc raw"""
+    StopWhenCurvatureIsNegative <: StoppingCriterion
 
 A functor for testing if the curvature of the model is negative, i.e.
 $\langle \delta_k, \operatorname{Hess}[F](\delta_k)\rangle_x \leqq 0$.
@@ -333,32 +353,32 @@ does not give a reduction of the model.
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-    reached, see [`getReason`](@ref).
+    reached, see [`get_reason`](@ref).
 * `storage` – stores the necessary parameter `δ` to check the
     criterion.
 
 # Constructor
 
-    stopWhenCurvatureIsNegative([a])
+    StopWhenCurvatureIsNegative([a])
 
-initialize the stopWhenCurvatureIsNegative functor to indicate to stop after
+initialize the StopWhenCurvatureIsNegative functor to indicate to stop after
 the inner product of the search direction and the hessian applied on the search
 dircetion is less than zero using the [`StoreOptionsAction`](@ref) `a`, which
 is initialized to just store `:δ` by default.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trustRegions`](@ref)
+[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
 """
-mutable struct stopWhenCurvatureIsNegative <: StoppingCriterion
+mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
     storage::StoreOptionsAction
-    stopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction( (:δ, ) )) = new("", a)
+    StopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction( (:δ, ) )) = new("", a)
 end
-function (c::stopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    if hasStorage(c.storage,:δ)
-        δ = getStorage(c.storage,:δ)
-        if dot(p.M, o.x, δ, getHessian(p, o.x, δ)) <= 0 && i > 0
-            c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(dot(p.M, o.x, δ, getHessian(p, o.x, δ))) <= 0).\n"
+function (c::StopWhenCurvatureIsNegative)(p::P,o::O,i::Int) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+    if has_storage(c.storage,:δ)
+        δ = get_storage(c.storage,:δ)
+        if inner(p.M, o.x, δ, getHessian(p, o.x, δ)) <= 0 && i > 0
+            c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(inner(p.M, o.x, δ, getHessian(p, o.x, δ))) <= 0).\n"
             c.storage(p,o,i)
             return true
         end

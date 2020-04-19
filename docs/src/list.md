@@ -15,14 +15,6 @@ Modules = [Manopt]
 Order   = [:type]
 ```
 
-## Manifold Functions
-
-```@index
-Modules = [Manopt]
-Pages = ["manifolds/index.md"]
-Order   = [:function]
-```
-
 ## Solver Functions
 
 ```@index
@@ -34,5 +26,5 @@ Pages = ["plans/index.md", "solvers/index.md"]
 
 ```@index
 Modules = [Manopt]
-Pages = ["functions/adjointDifferentials.md", "functions/costFunctions.md", "functions/differentials.md", "functions/gradients.md", "functions/jacobiFields.md", "functions/proximalMaps.md"]
+Pages = ["functions/adjointDifferentials.md", "functions/costs.md", "functions/differentials.md", "functions/gradients.md", "functions/jacobiFields.md", "functions/proximalMaps.md"]
 ```

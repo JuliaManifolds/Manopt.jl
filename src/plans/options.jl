@@ -1,26 +1,5 @@
-#
-# While a problem consists of all things one has to know about the Optimization
-# problem itself (independent of the solver), the options collect parameters,
-# that steer the solver (indipendent of the problem at hand)
-#
-import Base: copy
 
-export StoppingCriterion, StoppingCriterionSet
-export Stepsize
-export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
-export Options, getOptions, getReason
-export IsOptionsDecorator
-
-export Action, StoreOptionsAction
-export hasStorage, getStorage, updateStorage!
-
-"""
-    IsOptionsDecorator{O}
-
-A trait to specify that a certain `Option` decorates, i.e. internally
-stores the original [`Options`](@ref) under consideration.
-"""
-@traitdef IsOptionsDecorator{O}
+@inline _extract_val(::Val{T}) where {T} = T
 
 """
     Options
@@ -30,20 +9,40 @@ A general super type for all options.
 # Fields
 The following fields are assumed to be default. If you use different ones,
 provide the access functions accordingly
-* `x` an [`MPoint`](@ref) with the current iterate
+* `x` a point with the current iterate
 * `stop` a [`StoppingCriterion`](@ref).
 
 """
 abstract type Options end
+
+"""
+    dispatch_options_decorator(o::Options)
+
+Indicate internally, whether an [`Options`](@ref) `o` to be of decorating type, i.e.
+it stores (encapsulates) options in itself, by default in the field `o. options`.
+
+Decorators indicate this by returning `Val{true}` for further dispatch.
+
+The default is `Val{false}`, i.e. by default an options is not decorated.
+"""
+dispatch_options_decorator(O::Options) = Val(false)
+
+"""
+    is_options_decorator(o::Options)
+
+Indicate, whether [`Options`](@ref) `o` are of decorator type.
+"""
+is_options_decorator(O::Options) = _extract_val(dispatch_options_decorator(O))
+
 #
 # StoppingCriterion meta
 #
-@doc doc""" 
+@doc raw"""
     StoppingCriterion
 
 An abstract type for the functors representing stoping criteria, i.e. they are
 callable structures. The naming Scheme follows functions, see for
-example [`stopAfterIteration`](@ref).
+example [`StopAfterIteration`](@ref).
 
 Every StoppingCriterion has to provide a constructor and its function has to have
 the interface `(p,o,i)` where a [`Problem`](@ref) as well as [`Options`](@ref)
@@ -54,12 +53,12 @@ By default each `StoppingCriterion` should provide a fiels `reason` to provide
 details when a criteion is met (and that is empty otherwise).
 """
 abstract type StoppingCriterion end
-@doc doc""" 
+@doc raw"""
     StoppingCriterionGroup <: StoppingCriterion
 
 An abstract type for a Stopping Criterion that itself consists of a set of
 Stopping criteria. In total it acts as a stopping criterion itself. Examples
-are [`stopWhenAny`](@ref) and [`stopWhenAll`](@ref) that can be used to
+are [`StopWhenAny`](@ref) and [`StopWhenAll`](@ref) that can be used to
 combine stopping criteria.
 """
 abstract type StoppingCriterionSet <: StoppingCriterion end
@@ -111,45 +110,43 @@ l elements there is one chosen permutation used for each iteration cycle.
 """
 mutable struct FixedRandomEvalOrder <: EvalOrder end
 
-@doc doc"""
-    getOptions(O)
+@doc raw"""
+    get_options(o::Options)
 
-return the undecorated [`Options`](@ref) of the (possibly) decorated `O`.
-As long as your decorated options stores the options within `o.options` and
-implements the `SimpleTrait` `IsOptionsDecorator`, this is behaviour is optained
-automatically.
+return the undecorated [`Options`](@ref) of the (possibly) decorated `o`.
+As long as your decorated options store the options within `o.options` and
+the [`dispatch_options_decorator`](@ref) is set to `Val{true}`,
+the internal options are extracted.
 """
-getOptions(O) = error("Not implemented for types that are not `Options`")
-# this might seem like a trick/fallback just for documentation reasons
-@traitfn getOptions(o::O) where {O <: Options; !IsOptionsDecorator{O}} = o
-@traitfn getOptions(o::O) where {O <: Options; IsOptionsDecorator{O}} = getOptions(o.options)
+get_options(o::Options) = get_options(o,dispatch_options_decorator(o))
+get_options(o::Options, ::Val{false}) = o
+get_options(o::Options, ::Val{true}) = get_options(o.options)
 
-@doc doc"""
-    getReason(o)
+@doc raw"""
+    get_reason(o)
 
 return the current reason stored within the [`StoppingCriterion`](@ref) from
 within the [`Options`](@ref) This reason is empty if the criterion has never
 been met.
 """
-getReason(o::O) where O <: Options = getReason( getOptions(o).stop )
+get_reason(o::O) where O <: Options = get_reason( get_options(o).stop )
 
 #
 # Common Actions for decorated Options
 #
-@doc doc"""
-    Action
+@doc raw"""
+    AbstractOptionsAction
 
-a common `Type` for `Actions` that might be triggered in decoraters,
+a common `Type` for `AbstractOptionsActions` that might be triggered in decoraters,
 for example [`DebugOptions`](@ref) or [`RecordOptions`](@ref).
 """
-abstract type Action end
+abstract type AbstractOptionsAction end
 
+@doc raw"""
+    StoreTupleAction <: AbstractOptionsAction
 
-@doc doc"""
-    StoreTupleAction <: Action
-
-internal storage for [`Action`](@ref)s to store a tuple of fields from an
-[`Options`](@ref)s 
+internal storage for [`AbstractOptionsAction`](@ref)s to store a tuple of fields from an
+[`Options`](@ref)s
 
 This functor posesses the usual interface of functions called during an
 iteration, i.e. acts on `(p,o,i)`, where `p` is a [`Problem`](@ref),
@@ -159,7 +156,7 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`Problem`](@ref),
 * `values` – a dictionary to store interims values based on certain `Symbols`
 * `keys` – an `NTuple` of `Symbols` to refer to fields of `Options`
 * `once` – whether to update the internal values only once per iteration
-* `lastStored` – last iterate, where this `Action` was called (to determine `once`
+* `lastStored` – last iterate, where this `AbstractOptionsAction` was called (to determine `once`
 
 # Constructiors
 
@@ -174,7 +171,7 @@ Initialize the Functor to a set of keys, where the dictionary is initialized to
 be empty. Further, `once` determines whether more that one update per iteration
 are effective, otherwise only the first update is stored, all others are ignored.
 """
-mutable struct StoreOptionsAction <: Action
+mutable struct StoreOptionsAction <: AbstractOptionsAction
     values::Dict{Symbol,<:Any}
     keys::NTuple{N,Symbol} where N
     once::Bool
@@ -189,33 +186,33 @@ function (a::StoreOptionsAction)(p::P,o::O,i::Int) where {P <: Problem, O <: Opt
     a.lastStored = i
 end
 """
-    getStorage(a,key)
+    get_storage(a,key)
 
 return the internal value of the [`StoreOptionsAction`](@ref) `a` at the
 `Symbol` `key`.
 """
-getStorage(a::StoreOptionsAction,key) = a.values[key]
+get_storage(a::StoreOptionsAction,key) = a.values[key]
 """
-    getStorage(a,key)
+    get_storage(a,key)
 
 return whether the [`StoreOptionsAction`](@ref) `a` has a value stored at the
 `Symbol` `key`.
 """
-hasStorage(a::StoreOptionsAction,key) = haskey(a.values,key)
+has_storage(a::StoreOptionsAction,key) = haskey(a.values,key)
 """
-    updateStorage!(a,o)
+    update_storage!(a,o)
 
 update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given on
 the [`Options`](@ref) `o`.
 """
-updateStorage!(a::StoreOptionsAction,o::O) where {O <: Options} = updateStorage!(a, Dict( key => getproperty(o, key) for key in a.keys) )
+update_storage!(a::StoreOptionsAction,o::O) where {O <: Options} = update_storage!(a, Dict( key => getproperty(o, key) for key in a.keys) )
 """
-    updateStorage!(a,o)
+    update_storage!(a,o)
 
 update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given in
 the dictionary `d`. The values are merged, where the values from `d` are preferred.
 """
-function updateStorage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any}) where {O <: Options}
+function update_storage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any}) where {O <: Options}
     merge!(a.values, d)
     # update keys
     a.keys = Tuple( keys(a.values) )

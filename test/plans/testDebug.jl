@@ -1,21 +1,22 @@
 @testset "Debug Options" begin
     # helper to get debug as string
     io = IOBuffer()
-    M = Euclidean(2)
-    x = RnPoint([4.,2.])
-    o = GradientDescentOptions(x,stopAfterIteration(20), ConstantStepsize(1.))
+    M = ManifoldsBase.DefaultManifold(2)
+    x = [4.,2.]
+    o = GradientDescentOptions(M, x, StopAfterIteration(20), ConstantStepsize(1.))
     f = y -> distance(M,y,x).^2
     ∇f = y -> -2*log(M,y,x)
     p = GradientProblem(M,f,∇f)
     a1 = DebugDivider("|",x -> print(io,x))
+    @test Manopt.dispatch_options_decorator(DebugOptions(o,a1)) === Val{true}()
     # constructors
     @test DebugOptions(o,a1).debugDictionary[:All] == a1
     @test DebugOptions(o,[a1]).debugDictionary[:All].group[1] == a1
     @test DebugOptions(o,Dict(:A => a1)).debugDictionary[:A] == a1
     @test DebugOptions(o, ["|"]).debugDictionary[:All].group[1].divider == a1.divider
-    # single Actions
+    # single AbstractOptionsActions
     # DebugDivider
-    a1(p,o,0); s = 
+    a1(p,o,0); s =
     @test String(take!(io)) == "|"
     #DebugGroup
     DebugGroup([a1,a1])(p,o,0)
@@ -40,7 +41,7 @@
     # Change
     a2 = DebugChange(StoreOptionsAction( (:x,) ), "Last: ", x -> print(io,x))
     a2(p,o,0) # init
-    o.x = RnPoint([3.,2.])
+    o.x = [3.,2.]
     a2(p,o,1)
     @test String(take!(io)) == "Last: 1.0"
     # Iterate
@@ -61,8 +62,8 @@
     @test String(take!(io)) == ""
     a4(p,o,0) # init
     @test String(take!(io)) == ""
-    #change 
-    o.x = RnPoint([3.,2.])
+    #change
+    o.x = [3.,2.]
     a3(p,o,1)
     @test String(take!(io)) == "Last: 1.0"
     a4(p,o,1)

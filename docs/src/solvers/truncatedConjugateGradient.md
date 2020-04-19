@@ -3,10 +3,11 @@
 The aim is to solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{\eta \in T_{x}\mathcal{M}} m_{x}(\eta) = F(x) +
+\operatorname*{arg\,min}_{\eta  ∈  T_{x}\mathcal{M}} m_{x}(\eta) = F(x) +
 \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle
 \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
 ```
+
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leq {\Delta}^2
 ```
@@ -18,8 +19,8 @@ preconditioner, guaranteeing that we do not re-enter the trust-region.
 
 ## Initialization
 
-Initialize $\eta_0 = \eta$ if using randomized approach else
-$\eta_0$`=`[`zeroTVector`](@ref)`(M,x)`, $r_0 = \nabla F(x)$,
+Initialize $\eta_0 = \eta$ if using randomized approach and
+$\eta$ the zero tangent vector otherwise, $r_0 = \nabla F(x)$,
 $z_0 = \operatorname{P}(r_0)$, $\delta_0 = z_0$ and $k=0$
 
 ## Iteration
@@ -52,7 +53,7 @@ The result is given by the last computed $η_k$.
 ## Remarks
 The $\operatorname{P}(\cdot)$ denotes the symmetric, positive deﬁnite
 preconditioner. It is required if a randomized approach is used i.e. using
-a random tangent vector $\eta$`=`[`randomTVector`](@ref)`(M,x)` as initial
+a random tangent vector $\eta$ as initial
 vector. The idea behind it is to avoid saddle points. Preconditioning is
 simply a rescaling of the variables and thus a redeﬁnition of the shape of
 the trust region. Ideally $\operatorname{P}(\cdot)$ is a cheap, positive
@@ -112,8 +113,8 @@ stopIfResidualIsReducedByPower
 stopIfResidualIsReducedByFactor
 ```
 ```@docs
-stopWhenTrustRegionIsExceeded
+StopWhenTrustRegionIsExceeded
 ```
 ```@docs
-stopWhenCurvatureIsNegative
+StopWhenCurvatureIsNegative
 ```

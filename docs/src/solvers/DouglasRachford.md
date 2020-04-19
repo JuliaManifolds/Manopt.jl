@@ -14,10 +14,10 @@ Further define the Reflection operator at the proximal map as
 
 $\operatorname{refl}_{\lambda f}(x) = \exp_{\operatorname{prox}_{\lambda f}(x)} \bigl( -\log_{\operatorname{prox}_{\lambda f}(x)} x \bigr)$.
 
-Let $\alpha_k\in [0,1]$ with $\sum_{k\in\mathbb N} \alpha_k(1-\alpha_k) = \infty$
+Let $\alpha_k ∈  [0,1]$ with $\sum_{k ∈ \mathbb N} \alpha_k(1-\alpha_k) =  ∈ fty$
 and $\lambda > 0$ which might depend on iteration $k$ as well) be given.
 
-Then the (P)DRA algorithm for initial data $x_0\in\mathcal H$ as
+Then the (P)DRA algorithm for initial data $x_0 ∈ \mathcal H$ as
 
 ## Initialization
 

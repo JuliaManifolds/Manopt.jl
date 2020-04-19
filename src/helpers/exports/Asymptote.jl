@@ -1,55 +1,5 @@
-using ColorTypes, Colors, ColorSchemes
-import LinearAlgebra: eigen, eigvals, tril
-export renderAsymptote, asyExportS2Signals, asyExportS2Data, asyExportSPDData
-"""
-    renderAsymptote(filename, exportFct=missing; render=4, format="png", ...)
-render an exported `asy`. The export function can be provided but might also
-be infered by the optional arguments, i.e. type of `data`
-(or `curves`, `points` and `tVectors`) provided.
-
-# Input
-
-* `filename` – filename of the exported `asy` and rendered image
-* `exportFct`: (`missing`) a function creating an `asy` file with `kwargs` as optional
-  arguments and the `filename` string as its only mandatory argument. If this
-  function is not given, we infere it from kwargs, i.e. `data` indicates that
-  `asyExportXData` is used. `points`, `curves` or `tVectors` indicate, that
-  `asyExportS2Signals` is infered.
-
-# Keyword Arguments
-
-the default values are given in brackets
-
-* `render` – (`4`) render level of asymptote, i.e. its `-render` option
-* `format` – (`"png"`) final rendered format, i.e. asymptote's `-f` option
-
-all further keyword arguments are passed down to the `exportFct` call.
-
-# See also
-[`asyExportS2Signals`](@ref)
-"""
-function renderAsymptote(filename, exportFunction::Union{Function,Missing}=missing; render::Int=4, format="png",
-    exportFolder = string( filename[1:( [findlast(".",filename)...][1])], format), kwargs...)
-    if ismissing(exportFunction) # try to determine type automatically
-        kwargs_dict = Dict(kwargs)
-        if haskey(kwargs_dict,:data) # asyExport$MData? check whether PowPoint Data is a SPD point
-            if isa( first(getValue(kwargs_dict[:data])), SPDPoint)
-                exportFunction = asyExportSPDData
-            elseif isa( first(getValue(kwargs_dict[:data])), SnPoint)
-                exportFunction = asyExportS2Data
-            end
-        elseif haskey(kwargs_dict,:points) || haskey(kwargs_dict,:curves) || haskey(kwargs_dict, :tVectors) # asyExportS2Signals
-            exportFunction = asyExportS2Signals
-        else
-            throw(ErrorException("Could not find a suitable export function (automatically), please provide an exportFunction."))
-        end
-    end # end if ismissing
-    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(exportFolder))" $(filename)`
-    exportFunction(filename; kwargs...)
-    run(renderCmd)
-end
-@doc doc"""
-    asyExportS2Signals(filename; points, curves, tVectors, colors, options...)
+@doc raw"""
+    asymptote_export_S2_signals(filename; points, curves, tVectors, colors, options...)
 Export given `points`, `curves`, and `tVectors` on the sphere $\mathbb S^2$
 to Asymptote.
 
@@ -60,12 +10,12 @@ to Asymptote.
 * `colors` - dictionary of color arrays (indexed by symbols `:points`, `:curves`
   and `:tvector`) where each entry has to provide as least as many colors as
   the length of the corresponding sets.
-* `curves` – an `Array` of `Arrays` of `SnPoints` where each inner array is
+* `curves` – an `Array` of `Arrays` of points on the sphere, where each inner array is
   interpreted as a curve and is accompanied by an entry within `colors`
-* `points` – an `Array` of `Arrays` of `SnPoints` where each inner array is
+* `points` – an `Array` of `Arrays` of points on the sphere where each inner array is
   itnerpreted as a set of points and is accompanied by an entry within `colors`
-* `tVectors` – an `Array` of `Arrays` of extended `SnTVector`s
-  (`TVectorE{SnTVector}`) where each set of vectors is accompanied by an entry
+* `tVectors` – an `Array` of `Arrays` of tuples, where the first is a points, the second a
+  tangent vector and each set of vectors is accompanied by an entry
   from within `colors`
 
 # Optional Arguments (Asymptote)
@@ -82,11 +32,11 @@ to Asymptote.
 * `sphereLineWidth` – (`0.5`) line width of the lines on the sphere
 * `target` – (`(0.,0.,0.)`) position the camera points at
 """
-function asyExportS2Signals(filename::String;
-    points::Array{Array{SnPoint{T},1},1} where T = Array{Array{SnPoint{Float64},1},1}(undef,0),
-    curves::Array{Array{SnPoint{T},1},1} where T = Array{Array{SnPoint{Float64},1},1}(undef,0),
-    tVectors::Array{Array{TVectorE{SnTVector{T},SnPoint{T}},1},1} where T= Array{Array{TVectorE{SnTVector{Float64},SnPoint{Float64}},1},1}(undef,0),
-    colors::Dict{Symbol, Array{RGBA{Float64},1} }  = Dict{Symbol,Array{RGBA{Float64},1}}(),
+function asymptote_export_S2_signals(filename::String;
+    points::Array{Array{T,1},1} where T = Array{Array{Float64,1},1}(undef,0),
+    curves::Array{Array{T,1},1} where T = Array{Array{Float64,1},1}(undef,0),
+    tVectors::Array{Array{Tuple{T,T},1},1} where T = Array{Array{Tuple{Float64,Float64},1},1}(undef,0),
+    colors::Dict{Symbol, Array{RGBA{Float64},1} } = Dict{Symbol,Array{RGBA{Float64},1}}(),
     arrowHeadSize::Float64 = 6.,
     cameraPosition::Tuple{Float64,Float64,Float64} = (1., 1., 0.),
     lineWidth::Float64 = 1.0,
@@ -161,7 +111,7 @@ function asyExportS2Signals(filename::String;
         for pSet in points
             i=i+1
             for point in pSet
-                write(io,string("dot( (",string([string(v,",") for v in getValue(point)]...)[1:end-1],"), pointStyle$(i));\n"));
+                write(io,string("dot( (",string([string(v,",") for v in point]...)[1:end-1],"), pointStyle$(i));\n"));
             end
         end
         i=0
@@ -174,7 +124,7 @@ function asyExportS2Signals(filename::String;
             j=0
             for point in curve
                 j=j+1
-                pString = "("*string([ "$v," for v in getValue(point)]...)[1:end-1]*")"
+                pString = "("*string([ "$v," for v in point]...)[1:end-1]*")"
                 write(io, j>1 ? " .. $(pString)" : pString)
             end
             write( io,string(";\n draw(p$(i), curveStyle$(i));\n") );
@@ -188,8 +138,8 @@ function asyExportS2Signals(filename::String;
             j=0
             for vector in tVecs
                 j=j+1
-                base = getValue(getBasePoint(vector))
-                endPoints = base + getValue(vector)
+                base = vector[1]
+                endPoints = base + vector[2]
                 write(io,string("draw( (",
                     string( [string(v,",") for v in base]...)[1:end-1],")--(",
                     string( [string(v,",") for v in endPoints]...)[1:end-1],
@@ -200,16 +150,16 @@ function asyExportS2Signals(filename::String;
         close(io)
     end
 end
-@doc doc"""
-    asyExportS2Data(filename)
-Export given `data` as a point on a `Power{SnPoint}` manifold, i.e. one-, two-
-or three-dimensional data with points on the [`Sphere`](@ref)`(2)` $\mathbb S^2$.
+@doc raw"""
+    asymptote_export_S2_data(filename)
+Export given `data` as an array of points on the sphere, i.e. one-, two-
+or three-dimensional data with points on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathbb S^2$.
 
 # Input
 * `filename` – a file to store the Asymptote code in.
 
 # Optional Arguments (Data)
-* `data` – a `PowPoint` representing the 1-,2-, or 3-D array of `SnPoints`
+* `data` – a point representing the 1-,2-, or 3-D array of points
 * `elevationColorScheme` - A `ColorScheme` for elevation
 * `scaleAxes` - (`(1/3,1/3,1/3)`) move spheres closer to each other by a factor
   per direction
@@ -221,8 +171,8 @@ or three-dimensional data with points on the [`Sphere`](@ref)`(2)` $\mathbb S^2$
 * `target` - position the camera points at (default: center of xy-plane within
   data).
 """
-function asyExportS2Data(filename::String;
-    data::PowPoint = PowPoint(fill(SnPoint([0.,0.,1.]),0,0)),
+function asymptote_export_S2_data(filename::String;
+    data = fill([0.,0.,1.],0,0),
     arrowHeadSize::Float64 = 1.8,
     scaleAxes = (1/3.,1/3.,1/3.),
     cameraPosition::Tuple{Float64,Float64,Float64} = scaleAxes.*( (size(data,1)-1)/2 ,(size(data,2)-1)/2, max(size(data,3),0)+10),
@@ -241,7 +191,7 @@ function asyExportS2Data(filename::String;
       for x=1:dims[1]
         for y=1:dims[2]
           for z=1:dims[3]
-            v = Tuple(getValue(data[x,y,z])) #extract value
+            v = Tuple(data[x,y,z]) #extract value
             el = asin( min(1,max(-1,v[3])) ); # since 3 is between -1 and 1 this yields a value between 0 and pi
             # map elevation to colormap
             c = get(elevationColorScheme,el+π/2, (0.,Float64(π)) );
@@ -257,8 +207,8 @@ function asyExportS2Data(filename::String;
       close(io)
     end
 end
-@doc doc"""
-    asyExportSPDData(filename)
+@doc raw"""
+    asymptote_export_SPD(filename)
 
 export given `data` as a point on a `Power{SPDPoint}` manifold, i.e. one-, two-
 or three-dimensional data with points on the manifold of symmetric positive
@@ -268,7 +218,7 @@ definite matrices.
 * `filename` – a file to store the Asymptote code in.
 
 # Optional Arguments (Data)
-* `data` – a `PowPoint` representing the 1-,2-, or 3-D array of `SPDPoints`
+* `data` – a point representing the 1-,2-, or 3-D array of `SPDPoints`
 * `colorScheme` - A `ColorScheme` for Geometric Anisotropy Index
 * `scaleAxes` - (`(1/3,1/3,1/3)`) move symmetric positive definite matrices
   closer to each other by a factor per direction compared to the distance
@@ -282,10 +232,10 @@ definite matrices.
 Both values `cameraPosition` and `target` are scaled by `scaledAxes*EW`, where
 `EW` is the maximal eigenvalue in the `data`.
 """
-function asyExportSPDData(filename::String;
-    data::PowPoint = PowPoint(fill(SPDPoint(Matrix{Float64}(I,3,3)),0,0)),
+function asymptote_export_SPD(filename::String;
+    data = fill(Matrix{Float64}(I,3,3),0,0),
     scaleAxes = (1/3.,1/3.,1/3.) #multiplied with the maximal eigenvalue if data is present
-      .* ( length(getValue(data)) > 0 ? maximum(maximum(eigvals.( getValue.(getValue(data)) ))) : 1 ),
+      .* ( length(data) > 0 ? maximum(maximum(eigvals.( data ))) : 1 ),
     cameraPosition::Tuple{Float64,Float64,Float64} = ( (size(data,1)-1)/2 ,(size(data,2)-1)/2, max(size(data,3),0.)+10.),
     target::Tuple{Float64,Float64,Float64} = ( (size(data,1)-1)/2 ,(size(data,2)-1)/2, 0.),
     colorScheme = ColorSchemes.viridis,
@@ -313,7 +263,7 @@ function asyExportSPDData(filename::String;
       for x=1:dims[1]
         for y=1:dims[2]
           for z=1:dims[3]
-            A = getValue(data[x,y,z]) #extract matrix
+            A = data[x,y,z] #extract matrix
             F = eigen(A)
             if maximum(abs.(A)) > 0. # a nonzero matrix (exclude several pixel
               # Following Moakher & Batchelor: Geometric Anisotropic Index:
@@ -334,4 +284,32 @@ function asyExportSPDData(filename::String;
     finally
       close(io)
     end
+end
+
+export renderAsymptote, asyExportS2Signals, asyExportS2Data, asyExportSPDData
+"""
+    render_asymptote(filename; render=4, format="png", ...)
+render an exported asymptote file specified in the `filename`, which can also
+be given as a relative or full path
+
+# Input
+
+* `filename` – filename of the exported `asy` and rendered image
+
+# Keyword Arguments
+
+the default values are given in brackets
+
+* `render` – (`4`) render level of asymptote, i.e. its `-render` option
+* `format` – (`"png"`) final rendered format, i.e. asymptote's `-f` option
+* `export_file` - (the filename with format as ending) specify the export filename
+"""
+function render_asymptote(
+    filename;
+    render::Int=4,
+    format="png",
+    exportFolder = string( filename[1:( [findlast(".",filename)...][1])], format),
+)
+    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(exportFolder))" $(filename)`
+    run(renderCmd)
 end

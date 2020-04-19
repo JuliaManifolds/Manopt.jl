@@ -1,32 +1,20 @@
-#
-# This file provides a systematic way to state stopping criteria employing functors
-#
-using Dates: Period, Nanosecond, value
-export stopAfterIteration, stopWhenChangeLess, stopWhenGradientNormLess
-export stopWhenCostLess, stopAfter
-export stopWhenAll, stopWhenAny
-export getActiveStoppingCriteria
-export getStoppingCriteriaArray
-export getReason
-# defaults
-
-@doc doc"""
-    getReason(c)
+@doc raw"""
+    get_reason(c)
 
 return the current reason stored within a [`StoppingCriterion`](@ref) `c`.
 This reason is empty if the criterion has never been met.
 """
-getReason(c::sC) where sC <: StoppingCriterion = c.reason
+get_reason(c::sC) where sC <: StoppingCriterion = c.reason
 
-@doc doc"""
-    getStoppingCriteriaArray(c)
+@doc raw"""
+    get_stopping_criteria(c)
 return the array of internally stored [`StoppingCriterion`](@ref)s for a
 [`StoppingCriterionSet`](@ref) `c`.
 """
-getStoppingCriteriaArray(c::S) where {S <: StoppingCriterionSet} = error("getStoppingCriteriaArray() not defined for a $(typeof(c)).")
+get_stopping_criteria(c::S) where {S <: StoppingCriterionSet} = error("get_stopping_criteria() not defined for a $(typeof(c)).")
 
-@doc doc"""
-    stopAfterIteration <: StoppingCriterion
+@doc raw"""
+    StopAfterIteration <: StoppingCriterion
 
 A functor for an easy stopping criterion, i.e. to stop after a maximal number
 of iterations.
@@ -34,21 +22,21 @@ of iterations.
 # Fields
 * `maxIter` – stores the maximal iteration number where to stop at
 * `reason` – stores a reason of stopping if the stopping criterion has one be
-  reached, see [`getReason`](@ref).
+  reached, see [`get_reason`](@ref).
 
 # Constructor
 
-    stopAfterIteration(maxIter)
+    StopAfterIteration(maxIter)
 
 initialize the stopafterIteration functor to indicate to stop after `maxIter`
 iterations.
 """
-mutable struct stopAfterIteration <: StoppingCriterion
+mutable struct StopAfterIteration <: StoppingCriterion
     maxIter::Int
     reason::String
-    stopAfterIteration(mIter::Int) = new(mIter,"")
+    StopAfterIteration(mIter::Int) = new(mIter,"")
 end
-function (c::stopAfterIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopAfterIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if i > c.maxIter
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
@@ -56,17 +44,17 @@ function (c::stopAfterIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Opt
     return false
 end
 """
-    stopWhenGradientNormLess <: StoppingCriterion
+    StopWhenGradientNormLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the gradient from within
 a [`GradientProblem`](@ref).
 """
-mutable struct stopWhenGradientNormLess <: StoppingCriterion
+mutable struct StopWhenGradientNormLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    stopWhenGradientNormLess(ε::Float64) = new(ε,"")
+    StopWhenGradientNormLess(ε::Float64) = new(ε,"")
 end
-function (c::stopWhenGradientNormLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopWhenGradientNormLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if norm(p.M,o.x,getGradient(p,o.x)) < c.threshold
         c.reason = "The algorithm reached approximately critical point; the gradient norm ($(norm(p.M,o.x,getGradient(p,o.x)))) is less than $(c.threshold).\n"
         return true
@@ -74,7 +62,7 @@ function (c::stopWhenGradientNormLess)(p::P,o::O,i::Int) where {P <: Problem, O 
     return false
 end
 """
-    stopWhenChangeLess <: StoppingCriterion
+    StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
 optimization variable from within a [`Options`](@ref), i.e `o.x`.
@@ -82,21 +70,21 @@ For the storage a [`StoreOptionsAction`](@ref) is used
 
 # Constructor
 
-    stopWhenChangeLess(ε[, a])
+    StopWhenChangeLess(ε[, a])
 
 initialize the stopping criterion to a threshold `ε` using the
 [`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:x` by
 default.
 """
-mutable struct stopWhenChangeLess <: StoppingCriterion
+mutable struct StopWhenChangeLess <: StoppingCriterion
     threshold::Float64
     reason::String
     storage::StoreOptionsAction
-    stopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction( (:x,) )) = new(ε,"",a)
+    StopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction( (:x,) )) = new(ε,"",a)
 end
-function (c::stopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if hasStorage(c.storage,:x)
-        xOld = getStorage(c.storage,:x)
+function (c::StopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    if has_storage(c.storage,:x)
+        xOld = get_storage(c.storage,:x)
         if distance(p.M, o.x, xOld) < c.threshold && i>0
             c.reason = "The algorithm performed a step with a change ($(distance(p.M, o.x, xOld))) less than $(c.threshold).\n"
             c.storage(p,o,i)
@@ -106,84 +94,84 @@ function (c::stopWhenChangeLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Opt
     c.storage(p,o,i)
     return false
 end
-@doc doc"""
-    stopWhenAll <: StoppingCriterion
+@doc raw"""
+    StopWhenAll <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _all_ indicate to stop. The `reseason` is given by the concatenation of all
 reasons.
 
 # Constructor
-    stopWhenAll(c::Array{StoppingCriterion,1})
-    stopWhenAll(c::StoppingCriterion,...)
+    StopWhenAll(c::Array{StoppingCriterion,1})
+    StopWhenAll(c::StoppingCriterion,...)
 """
-mutable struct stopWhenAll <: StoppingCriterionSet
+mutable struct StopWhenAll <: StoppingCriterionSet
     criteria::Array{StoppingCriterion,1}
     reason::String
-    stopWhenAll(c::Array{StoppingCriterion,1}) = new(c,"")
-    stopWhenAll(c...) = new([c...],"")
+    StopWhenAll(c::Array{StoppingCriterion,1}) = new(c,"")
+    StopWhenAll(c...) = new([c...],"")
 end
-function (c::stopWhenAll)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopWhenAll)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if all([ subC(p,o,i) for subC in c.criteria])
-        c.reason = string( [ getReason(subC) for subC in c.criteria ]... )
+        c.reason = string( [ get_reason(subC) for subC in c.criteria ]... )
         return true
     end
     return false
 end
-getStoppingCriteriaArray(c::stopWhenAll) = c.criteria
+get_stopping_criteria(c::StopWhenAll) = c.criteria
 
-@doc doc"""
-    stopWhenAny <: StoppingCriterion
+@doc raw"""
+    StopWhenAny <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _any_ single one indicates to stop. The `reseason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
 
 # Constructor
-    stopWhenAny(c::Array{StoppingCriterion,1})
-    stopWhenAny(c::StoppingCriterion,...)
+    StopWhenAny(c::Array{StoppingCriterion,1})
+    StopWhenAny(c::StoppingCriterion,...)
 """
-mutable struct stopWhenAny <: StoppingCriterionSet
+mutable struct StopWhenAny <: StoppingCriterionSet
     criteria::Array{StoppingCriterion,1}
     reason::String
-    stopWhenAny(c::Array{StoppingCriterion,1}) = new(c,"")
-    stopWhenAny(c::StoppingCriterion...) = stopWhenAny([c...])
+    StopWhenAny(c::Array{StoppingCriterion,1}) = new(c,"")
+    StopWhenAny(c::StoppingCriterion...) = StopWhenAny([c...])
 end
-function (c::stopWhenAny)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopWhenAny)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if any([ subC(p,o,i) for subC in c.criteria])
-        c.reason = string( [ getReason(subC) for subC in c.criteria ]... )
+        c.reason = string( [ get_reason(subC) for subC in c.criteria ]... )
         return true
     end
     return false
 end
-getStoppingCriteriaArray(c::stopWhenAny) = c.criteria
+get_stopping_criteria(c::StopWhenAny) = c.criteria
 """
-    stopWhenCostLess <: StoppingCriterion
+    StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`Problem`](@ref), i.e `getCost(p,o.x)`.
+optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,o.x)`.
 
 # Constructor
 
-    stopWhenCostLess(ε)
+    StopWhenCostLess(ε)
 
 initialize the stopping criterion to a threshold `ε`.
 """
-mutable struct stopWhenCostLess <: StoppingCriterion
+mutable struct StopWhenCostLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    stopWhenCostLess(ε::Float64) = new(ε,"")
+    StopWhenCostLess(ε::Float64) = new(ε,"")
 end
-function (c::stopWhenCostLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if i > 0 && getCost(p,o.x) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(getCost(p,o.x))) less then the threshold ($(c.threshold)).\n"
+function (c::StopWhenCostLess)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+    if i > 0 && get_cost(p,o.x) < c.threshold
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less then the threshold ($(c.threshold)).\n"
         return true
     end
     return false
 end
 
 """
-    stopAfter <: StoppingCriterion
+    StopAfter <: StoppingCriterion
 
 store a threshold when to stop looking at the complete runtime. It uses
 `time_ns()` to measure the time and you provide a `Period` as a time limit,
@@ -191,17 +179,17 @@ i.e. `Minute(15)`
 
 # Constructor
 
-    stopAfter(t)
+    StopAfter(t)
 
 initialize the stopping criterion to a `Period t` to stop after.
 """
-mutable struct stopAfter <: StoppingCriterion
+mutable struct StopAfter <: StoppingCriterion
     threshold::Period
     reason::String
     start::Nanosecond
-    stopAfter(t::Period) = value(t) < 0 ? error("You must provide a positive time period") : new(t,"", Nanosecond(0))
+    StopAfter(t::Period) = value(t) < 0 ? error("You must provide a positive time period") : new(t,"", Nanosecond(0))
 end
-function (c::stopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (c::StopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     if value(c.start) == 0 || i <= 0 # (re)start timer
         c.start = Nanosecond(time_ns())
     else
@@ -213,8 +201,8 @@ function (c::stopAfter)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     end
     return false
 end
-@doc doc"""
-    getActiveStoppingCriteria(c)
+@doc raw"""
+    get_active_stopping_criteria(c)
 
 returns all active stopping criteria, if any, that are within a
 [`StoppingCriterion`](@ref) `c`, and indicated a stop, i.e. their reason is
@@ -224,13 +212,13 @@ array if no stop is incated or the stopping criterion as the only element of
 an array. For a [`StoppingCriterionSet`](@ref) all internal (even nested)
 criteria that indicate to stop are returned.
 """
-function getActiveStoppingCriteria(c::sCS) where sCS<:StoppingCriterionSet
-    c = getActiveStoppingCriteria.(getStoppingCriteriaArray(c))
+function get_active_stopping_criteria(c::sCS) where sCS<:StoppingCriterionSet
+    c = get_active_stopping_criteria.(get_stopping_criteria(c))
     return vcat(c...)
 end
 # for non-array containing stopping criteria, the recursion ends in either
 # returning nothing or an 1-element array contianing itself
-function getActiveStoppingCriteria(c::sC) where sC <: StoppingCriterion
+function get_active_stopping_criteria(c::sC) where sC <: StoppingCriterion
     if c.reason != ""
         return [c] # recursion top
     else

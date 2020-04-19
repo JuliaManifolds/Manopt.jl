@@ -1,12 +1,3 @@
-#
-# Collection of step sizes
-#
-export ConstantStepsize, DecreasingStepsize
-export Linesearch, ArmijoLinesearch
-export getStepsize!, getInitialStepsize, getLastStepsize
-#
-# Simple ones
-#
 """
     ConstantStepsize <: Stepsize
 
@@ -26,9 +17,9 @@ mutable struct ConstantStepsize <: Stepsize
     ConstantStepsize(s::Real) = new(s)
 end
 (s::ConstantStepsize)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = s.length
-getInitialStepsize(s::ConstantStepsize) = s.length
+get_initial_stepsize(s::ConstantStepsize) = s.length
 
-@doc doc"""
+@doc raw"""
     DecreasingStepsize()
 
 A functor that represents several decreasing step sizes
@@ -60,7 +51,7 @@ mutable struct DecreasingStepsize <: Stepsize
     DecreasingStepsize(l::Real=1.0, f::Real=1.0, a::Real=0.0, e::Real=1.0) = new(l,f,a,e)
 end
 (s::DecreasingStepsize)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = (s.length - i*s.subtrahend)*(s.factor^i)/(i^(s.exponent))
-getInitialStepsize(s::DecreasingStepsize) = s.length
+get_initial_stepsize(s::DecreasingStepsize) = s.length
 
 #
 # Linesearch
@@ -79,7 +70,7 @@ the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
 
-@doc doc"""
+@doc raw"""
     ArmijoLineseach <: Linesearch
 
 A functor representing Armijo line seach including the last runs state, i.e. a
@@ -87,10 +78,10 @@ last step size.
 
 # Fields
 * `initialStepsize` – (`1.0`) and initial step size
-* `retraction` – ([`exp`](@ref Manopt.exp)) the rectraction used in line search
+* `retraction` – the rectraction used in line search
 * `contractionFactor` – (`0.95`) exponent for line search reduction
 * `sufficientDecrease` – (`0.1`) gain within Armijo's rule
-* `lastStepSize` – (`initialstepsize`) the last step size we start the search with 
+* `lastStepSize` – (`initialstepsize`) the last step size we start the search with
 
 # Constructor
 
@@ -102,10 +93,10 @@ This method returns the functor to perform Armijo line search, where two inter
 faces are available:
 * based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
   and a current iterate `i`.
-* with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [`Manifold`](@ref) `M`, a current
-  [`MPoint`](@ref) `x` a function `F`, that maps from the manifold to the reals,
-  its gradient (a [`TVector`](@ref)) `∇F`$=\nabla F(x)$ at  `x` and an optional
-  search direction [`TVector`](@ref) `η-∇F` are the arguments. 
+* with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`, a current
+  point `x` a function `F`, that maps from the manifold to the reals,
+  its gradient (a tangent vector) `∇F`$=\nabla F(x)$ at  `x` and an optional
+  search direction tangent vector `η-∇F` are the arguments.
 """
 mutable struct ArmijoLinesearch <: Linesearch
     initialStepsize::Float64
@@ -119,23 +110,23 @@ mutable struct ArmijoLinesearch <: Linesearch
         contractionFactor::Float64=0.95,
         sufficientDecrease::Float64=0.1) = new(s, r, contractionFactor, sufficientDecrease,s)
 end
-function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η::T=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options, T <: TVector}
-    a(p.M, o.x, p.costFunction, getGradient(p,o.x), η)
+function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
+    a(p.M, o.x, p.cost, getGradient(p,o.x), η)
 end
-function (a::ArmijoLinesearch)(M::mT, x::P, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, P <: MPoint, T <: TVector}
+function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, T}
     # for local shortness
     s = a.stepsizeOld
     retr = a.retraction
     f0 = F(x)
     xNew = retr(M,x,s*η)
     fNew = F(xNew)
-    while fNew < f0 + a.sufficientDecrease*s*dot(M, x, η, ∇F) # increase
+    while fNew < f0 + a.sufficientDecrease*s*inner(M, x, η, ∇F) # increase
         xNew = retr(M,x,s*η)
         fNew = F(xNew)
         s = s/a.contractionFactor
     end
     s = s*a.contractionFactor # correct last
-    while fNew > f0 + a.sufficientDecrease*s*dot(M, x, η, ∇F) # decrease
+    while fNew > f0 + a.sufficientDecrease*s*inner(M, x, η, ∇F) # decrease
         s = a.contractionFactor * s
         xNew = retr(M,x,s*η)
         fNew = F(xNew)
@@ -143,19 +134,42 @@ function (a::ArmijoLinesearch)(M::mT, x::P, F::Function, ∇F::T, η::T=-∇F) w
     a.stepsizeOld = s
     return s
 end
-getInitialStepsize(a::ArmijoLinesearch) = a.initialStepsize
+get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 
 #
 # Access functions
 #
-@traitfn getStepsize!(p::P, o::O,vars...) where {P <: Problem, O <: Options; IsOptionsDecorator{O}} = getStepsize!(p, o.options,vars...)
-@traitfn getStepsize!(p::P, o::O,vars...) where {P <: Problem, O <: Options; !IsOptionsDecorator{O}} = o.stepsize(p,o,vars...)
+function get_stepsize(p::Problem, o::Options, vars...)
+    return get_stepsize(p,o,dispatch_options_decorator(o),vars...)
+end
+function get_stepsize(p::Problem,o::Options,::Val{true}, vars...)
+    return get_stepsize(p, o.options, vars...)
+end
+get_stepsize(p::Problem, o::Options, ::Val{false}, vars...) = o.stepsize(p, o, vars...)
 
-@traitfn getInitialStepsize(p::P,o::O,vars...) where {P <: Problem, O <: Options; !IsOptionsDecorator{O}} = getInitialStepsize(o.stepsize)
-@traitfn getInitialStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; IsOptionsDecorator{O}} = getInitialStepsize(p, o.options)
+function get_initial_stepsize(p::Problem, o::Options, vars...)
+    return get_initial_stepsize(
+        p::Problem,
+        o::Options,
+        dispatch_options_decorator(o),
+        vars...
+    )
+end
+function get_initial_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
+    return get_initial_stepsize(p, o.options)
+end
+get_initial_stepsize(p::Problem, o::Options, ::Val{false}, vars...) = get_initial_stepsize(o.stepsize)
 
-@traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; IsOptionsDecorator{O}} = getLastStepsize(p, o.options,vars...)
-@traitfn getLastStepsize(p::P, o::O,vars...) where {P <: Problem, O <: Options; !IsOptionsDecorator{O}} = getLastStepsize(p,o,o.stepsize,vars...)
-
-getLastStepsize(p::P,o::O,s::S,vars...) where {P <: Problem, O <: Options,S <: Stepsize} = s(p,o,vars...)
-getLastStepsize(p::P,o::O,s::ArmijoLinesearch,vars...) where {P <: Problem, O <: Options} = s.stepsizeOld
+function get_last_stepsize(p::Problem, o::Options, vars...)
+    return get_last_stepsize(p, o, dispatch_options_decorator(o), vars...)
+end
+function get_last_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
+    return get_last_stepsize(p, o.options,vars...)
+end
+function get_last_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
+    return get_last_stepsize(p,o,o.stepsize,vars...)
+end
+#
+# dispatch on stepsize
+get_last_stepsize(p::Problem, o::Options, s::Stepsize,vars...) = s(p,o,vars...)
+get_last_stepsize(p::Problem, o::Options, s::ArmijoLinesearch, vars...) = s.stepsizeOld

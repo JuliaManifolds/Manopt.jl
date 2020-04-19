@@ -5,4 +5,4 @@ Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-Documenter = "~0.22"
+Documenter = "0.24"

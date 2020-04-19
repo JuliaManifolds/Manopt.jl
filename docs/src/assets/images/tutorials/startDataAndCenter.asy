@@ -6,7 +6,9 @@ currentprojection=perspective( camera = (1.0, 0.5, 0.5), target = (0.0, 0.0, 0.0
 currentlight=nolight;
 
 revolution S=sphere(O,1);
-draw(surface(S), surfacepen=lightgrey+opacity(.6), meshpen=0.6*white+linewidth(.5pt));
+pen SpherePen = rgb(0.85,0.85,0.85)+opacity(0.6);
+pen SphereLinePen = rgb(0.75,0.75,0.75)+opacity(0.6)+linewidth(0.5pt);
+draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);
 
 /*
   Colors

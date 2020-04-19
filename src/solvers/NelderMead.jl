@@ -1,9 +1,4 @@
-#
-# A simple steepest descent algorithm implementation
-#
-export initializeSolver!, doSolverStep!, getSolverResult
-export NelderMead
-@doc doc"""
+@doc raw"""
     NelderMead(M, F [, p])
 perform a nelder mead minimization problem for the cost funciton `F` on the
 manifold `M`. If the initial population `p` is not given, a random set of
@@ -18,59 +13,59 @@ and
 
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `population` – (n+1 `randomMPoint(M)`) an initial population of $n+1$ points, where $n$
+* `population` – (n+1 `random_point(M)`) an initial population of $n+1$ points, where $n$
   is the dimension of the manifold `M`.
 
 # Optional
 
-* `stoppingCriterion` – ([`stopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
+* `stoppingCriterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
 * `γ` – (`2.`) expansion parameter ($\gamma$)
 * `ρ` – (`1/2`) contraction parameter, $0 < \rho \leq \frac{1}{2}$,
 * `σ` – (`1/2`) shrink coefficient, $0 < \sigma \leq 1$
 
-and the ones that are passed to [`decorateOptions`](@ref) for decorators.
+and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
 * either `x` the last iterate or the complete options depending on the optional
   keyword `returnOptions`, which is false by default (hence then only `x` is
   returned).
 """
-function NelderMead(M::mT,
+function NelderMead(M::MT,
     F::Function,
-    population::Array{MP,1} = [randomMPoint(M) for i=1:(manifoldDimension(M)+1) ];
-    stoppingCriterion::StoppingCriterion = stopAfterIteration(200000),
+    population = [random_point(M) for i=1:(manifoldDimension(M)+1) ];
+    stoppingCriterion::StoppingCriterion = StopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
     returnOptions=false,
     kwargs... #collect rest
-  ) where {mT <: Manifold, MP <: MPoint}
+  ) where {MT <: Manifold,T}
     p = CostProblem(M,F)
     o = NelderMeadOptions(population, stoppingCriterion;
     α = α, γ = γ, ρ = ρ, σ = σ)
-    o = decorateOptions(o; kwargs...)
+    o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
     if returnOptions
         return resultO
     else
-        return getSolverResult(resultO)
+        return get_solver_result(resultO)
     end
 end
 #
 # Solver functions
 #
-function initializeSolver!(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions}
+function initialize_solver!(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions}
     # init cost and x
-    o.costs = getCost.(Ref(p), o.population )
+    o.costs = get_cost.(Ref(p), o.population )
     o.x = o.population[argmin(o.costs)] # select min
 end
-function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadOptions}
+function step_solver!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadOptions}
     m = mean(p.M, o.population)
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
     ξ =log( p.M, m, o.population[last(ind)])
     # reflect last
     xr = exp(p.M, m, - o.α * ξ )
-    Costr = getCost(p,xr)
+    Costr = get_cost(p,xr)
     # is it better than the worst but not better than the best?
     if Costr >= o.costs[first(ind)] && Costr < o.costs[last(ind)]
         # store as last
@@ -80,7 +75,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     # --- Expansion ---
     if Costr < o.costs[first(ind)] # reflected is better than fist -> expand
         xe = exp(p.M, m, - o.γ * o.α * ξ)
-        Coste = getCost(p,xe)
+        Coste = get_cost(p,xe)
         if Coste < Costr # expanded successful
             o.population[last(ind)] = xe
             o.costs[last(ind)] = Coste
@@ -94,7 +89,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
         if Costr < o.costs[last(ind)] # but at least better tham last
             # outside contraction
             xc = exp(p.M, m, - o.ρ*ξ)
-            Costc = getCost(p,xc)
+            Costc = get_cost(p,xc)
             if Costc < Costr # better than reflected -> store as last
                 o.population[last(ind)] = xr
                 o.costs[last(ind)] = Costr
@@ -102,7 +97,7 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
         else # even worse than last -> inside contraction
             # outside contraction
             xc = exp(p.M, m, o.ρ*ξ)
-            Costc = getCost(p,xc)
+            Costc = get_cost(p,xc)
             if Costc < o.costs[last(ind)] # better than last ? -> store
                 o.population[last(ind)] = xr
                 o.costs[last(ind)] = Costr
@@ -111,11 +106,11 @@ function doSolverStep!(p::P,o::O,iter) where {P <: CostProblem, O <: NelderMeadO
     end
     # --- Shrink ---
     for i=2:length(ind)
-        o.population[ind[i]] = geodesic(p.M, o.population[ind[1]], o.population[ind[i]], o.σ)
+        o.population[ind[i]] = shortest_geodesic(p.M, o.population[ind[1]], o.population[ind[i]], o.σ)
         # update cost
-        o.costs[ind[i]] = getCost(p, o.population[ind[i]])
+        o.costs[ind[i]] = get_cost(p, o.population[ind[i]])
     end
     # store best
     o.x = o.population[ argmin(o.costs) ]
 end
-getSolverResult(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions} = o.x
+get_solver_result(p::P,o::O) where {P <: CostProblem, O <: NelderMeadOptions} = o.x

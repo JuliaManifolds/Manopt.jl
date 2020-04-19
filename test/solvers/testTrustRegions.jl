@@ -1,16 +1,10 @@
-@testset "Manopt Trust-Region" begin
-    import Random: seed!
-    seed!(42);
-    A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
+A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
 
-    prod = [Grassmannian(2, 3), Grassmannian(2, 3)]
-
-    M = Product(prod)
-
-    function cost(X::ProdPoint{Array{GrPoint{Float64},1}})
-        U = getValue(getValue(X)[1])
-        V = getValue(getValue(X)[2])
-        return -0.5 * norm(transpose(U) * A * V)^2
+    function cost(X::ProductRepr)
+        return cost([submanifold_components(X)...])
+    end
+    function cost(X::Array{Matrix{Float64},1})
+        return -0.5 * norm(transpose(X[1]) * A * X[2])^2
     end
 
     function egrad(X::Array{Matrix{Float64},1})
@@ -21,16 +15,17 @@
         return [ -AV*(transpose(AV)*U), -AtU*(transpose(AtU)*V) ];
     end
 
-    function rgrad(M::Product, X::ProdPoint{Array{GrPoint{Float64},1}})
-        eG = egrad( getValue.(getValue(X)) )
-        return ProdTVector( project.(M.manifolds, getValue(X), eG) )
+    function rgrad(M::ProductManifold, X::ProductRepr)
+        eG = egrad([submanifold_components(M,X)...])
+        x = [submanifold_components(M,X)...]
+        return Manifolds.ProductRepr(project.(M.manifolds, x, eG)...)
     end
 
-    function e2rHess(M::Grassmannian{T},x::GrPoint{T},ξ::GrTVector{T},eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
-      pxHess = getValue(project(M,x,Hess))
-        xtGrad = getValue(x)'*eGrad
-        ξxtGrad = getValue(ξ)*xtGrad
-        return GrTVector(pxHess - ξxtGrad)
+    function e2rHess(M::Grassmann, x, ξ, eGrad::Matrix{T},Hess::Matrix{T}) where T<:Union{U, Complex{U}} where U<:AbstractFloat
+        pxHess = project(M,x,Hess)
+        xtGrad = x'*eGrad
+        ξxtGrad = ξ*xtGrad
+        return pxHess - ξxtGrad
     end
 
     function eHess(X::Array{Matrix{Float64},1}, H::Array{Matrix{Float64},1})
@@ -46,49 +41,73 @@
                  -(AtUdot*transpose(AtU)*V + AtU*transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot)
             ]
     end
-    function rhess(M::Product, X::ProdPoint{Array{GrPoint{Float64},1}}, H::ProdTVector{Array{GrTVector{Float64},1}})
-        eG = egrad( getValue.(getValue(X)) )
-        eH = eHess( getValue.(getValue(X)), getValue.(getValue(H)) )
-        return ProdTVector( e2rHess.(M.manifolds, getValue(X), getValue(H), eG, eH) )
+
+    function rhess(M::ProductManifold, X::ProductRepr, H::ProductRepr)
+        x = [submanifold_components(M,X)...]
+        h = [submanifold_components(M,H)...]
+        eG = egrad(x)
+        eH = eHess(x,h)
+        return Manifolds.ProductRepr(e2rHess.(M.manifolds, x, h, eG, eH)...)
     end
 
-    x = randomMPoint(M)
+@testset "Manopt Trust-Region" begin
+    import Random: seed!
+    seed!(42);
 
-    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
-    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = -0.1)
-    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ = -0.1)
-    @test_throws ErrorException trustRegions(M, cost, rgrad, x, rhess; Δ_bar = 0.1, Δ = 0.11)
+    N = Grassmann(3,2)
+    M = N × N
 
-    X = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2) )
-    opt = trustRegions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), returnOptions=true )
-    @test getSolverResult(opt)==X
+    x = random_point(M)
+
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar = -0.1)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ = -0.1)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar = 0.1, Δ = 0.11)
+
+    X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2) )
+    opt = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), returnOptions=true )
+    @test isapprox(M,X,get_solver_result(opt))
 
     @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
 
-    XuR = trustRegions(M, cost, rgrad, x, rhess;
+    XuR = trust_regions(M, cost, rgrad, x, rhess;
         Δ_bar=4*sqrt(2*2),
         useRandom = true
     )
 
     @test cost(XuR) + 142.5 ≈ 0 atol=10.0^(-12)
 
-    XaH = trustRegions(M, cost, rgrad, x, (p,x,ξ) -> approxHessianFD(p,x, x -> rgrad(p,x), ξ; stepsize=2^(-9));
-        stoppingCriterion = stopWhenAny(stopAfterIteration(2000), stopWhenGradientNormLess(10^(-6))),
+    XaH = trust_regions(
+        M,
+        cost,
+        rgrad,
+        x,
+        (p,x,ξ) -> approxHessianFD(
+            p,
+            x,
+            x -> rgrad(p,x),
+            ξ;
+            stepsize=2^(-9),
+            transport=ProductVectorTransport(ProjectionTransport(),ProjectionTransport())
+        );
+        stoppingCriterion = StopWhenAny(
+            StopAfterIteration(2000),
+            StopWhenGradientNormLess(10^(-6))
+        ),
         Δ_bar=4*sqrt(2*2),
     )
     @test cost(XaH) + 142.5 ≈ 0 atol=10.0^(-10)
 
-    ξ = randomTVector(M,x)
+    ξ = random_tangent(M,x)
     @test_throws ErrorException getHessian(SubGradientProblem(M,cost,rgrad),x, ξ)
 
     # Test the random step trust region
     p = HessianProblem(M, cost, rgrad, rhess, (M,x,ξ) -> ξ)
-    o = TrustRegionsOptions(x, stopAfterIteration(2000), 10.0^(-8),
-        sqrt(manifoldDimension(M)), retraction, true, 0.1, 1000.)
-    @test doSolverStep!(p,o,0) == nothing
+    o = TrustRegionsOptions(x, StopAfterIteration(2000), 10.0^(-8),
+        sqrt(manifold_dimension(M)), retract, true, 0.1, 1000.)
+    @test step_solver!(p,o,0) == nothing
 
     η = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5)
     ηOpt = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5; returnOptions=true)
-    @test getSolverResult(ηOpt)==η
-
+    @test submanifold_components(get_solver_result(ηOpt)) == submanifold_components(η)
 end
