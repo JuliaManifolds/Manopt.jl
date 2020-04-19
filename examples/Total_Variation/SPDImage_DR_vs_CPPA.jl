@@ -44,7 +44,8 @@ prior(x) = norm(norm.(Ref(pixelM), repeat(x,rep(d)...), Λ(x)),1)
 # Setup & Optimize
 print("--- Douglas–Rachford with η: $(η) and λ: $(λ) ---\n")
 cost(x) = fidelity(x) + α*prior(x)
-prox1 = (η,x) -> cat( prox_distance(M,η,f,x[1]), prox_parallel_TV(M,α*η,x[2:5]), dims=1)
+N = PowerManifold(pixelM, NestedPowerRepresentation(),5)
+prox1 = (η,x) -> cat( prox_distance(M,η,f,get_component(N,x,1)), prox_parallel_TV(M,α*η,get_component(N,x,2:5)), dims=1)
 prox2 = (η,x) -> fill(mean(M,x;stoppingCriterion=StopAfterIteration(20)),5)
 sC = StopAfterIteration(400)
 try
