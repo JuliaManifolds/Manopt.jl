@@ -137,8 +137,6 @@ generate an artificial image of data on the 2 sphere,
 """
 function artificial_S2_whirl_image(pts::Int=64)
   M = Sphere(2)
-  N = PowerManifold(M, pts, pts)
-  # background - default rotations
   img = artificial_S2_rotation_image(pts, (0.5,0.5) )
   # Set WhirlPatches
   sc = pts/64
@@ -173,8 +171,7 @@ creates an image with a rotation on each axis as a parametrization.
 """
 function artificial_S2_rotation_image(pts::Int=64,rotations::Tuple{Float64,Float64}=(.5,.5))
   M = Sphere(2)
-  N = PowerManifold(M, pts, pts)
-  img = Matrix(undef,pts,pts)
+  img = Matrix{Array{Float64,1}}(undef,pts,pts)
   north = [1.,0.,0.]
   Rxy(a) = [cos(a) -sin(a) 0.; sin(a) cos(a) 0.; 0. 0. 1]
   Rxz(a) = [cos(a) 0. -sin(a); 0. 1. 0.; sin(a) 0. cos(a)]

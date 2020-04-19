@@ -10,8 +10,8 @@ using Images, CSV, DataFrames, LinearAlgebra, JLD2
 
 #
 # Settings
-ExportResult = true
-ExportOrig = true
+ExportResult = false
+ExportOrig = false
 ExportTable = true
 asymptote_render_detail = 2
 resultsFolder = "examples/Total_Variation/S2_TV/"
