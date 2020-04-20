@@ -153,7 +153,7 @@ nothing #hide
 o = cyclic_proximal_point(M,F2,proxes,data[1];
     debug = [:Iteration," | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
     record = [:Iteration, :Change, :Cost],
-    returnOptions = true
+    return_options = true
 )
 xMedian = get_solver_result(o)
 values = get_record(o)

@@ -7,10 +7,10 @@ include("debugOptions.jl")
 include("recordOptions.jl")
 
 include("costPlan.jl")
-include("gradientPlan.jl")
+include("gradient_plan.jl")
 include("hessianPlan.jl")
 include("proximalPlan.jl")
-include("subgradientPlan.jl")
+include("subgradient_plan.jl")
 
 include("stoppingCriterion.jl")
 include("stepsize.jl")

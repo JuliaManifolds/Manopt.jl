@@ -14,7 +14,7 @@ o = cyclic_proximal_point(
     stoppingCriterion = StopAfterIteration(100),
     debug = [DebugIterate()," ",DebugCost()," ",DebugProximalParameter(),"\n",10000],
     record = [RecordProximalParameter(), RecordIterate(f), RecordCost()],
-    returnOptions=true
+    return_options=true
     )
 fR = get_solver_result(o)
 fR2 = cyclic_proximal_point(

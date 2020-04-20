@@ -12,7 +12,7 @@
         stepsize = ArmijoLinesearch(1.,exp,0.99,0.1),
         debug = [:Iteration," ",:Cost, :Stop, 100,"\n"],
         record = [:Iteration, :Cost, 1],
-        returnOptions = true
+        return_options = true
     )
     x = get_solver_result(o)
     x2 = steepest_descent(

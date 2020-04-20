@@ -46,7 +46,7 @@ see the reference:
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
     .
-* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `xOpt` is returned
 
@@ -56,7 +56,7 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 * `η` – an approximate solution of the trust-region subproblem in
     $\mathcal{T_{x}M}$.
 OR
-* `options` - the options returned by the solver (see `returnOptions`)
+* `options` - the options returned by the solver (see `return_options`)
 
 # see also
 [`trust_regions`](@ref)
@@ -92,14 +92,14 @@ function truncatedConjugateGradient(
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative()
         ),
-        returnOptions = false,
+        return_options = false,
         kwargs... #collect rest
     ) where {mT <: Manifold}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zero_tangent_vector(M,x),Δ,zero_tangent_vector(M,x),useRandom)
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
-    if returnOptions
+    if return_options
         resultO
     else
         return get_solver_result(resultO)

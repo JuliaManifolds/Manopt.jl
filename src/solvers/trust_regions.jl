@@ -51,7 +51,7 @@ For a description of the algorithm and more details see
   that the iterates produced are not monotonically improving the cost
   when very close to convergence. This is because the corrected cost
   improvement could change sign if it is negative but very small.
-* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `xOpt` is returned
 
@@ -78,7 +78,7 @@ function trust_regions(
     useRandom::Bool = false,
     ρ_prime::Float64 = 0.1,
     ρ_regularization=1000.,
-    returnOptions=false,
+    return_options=false,
     kwargs... #collect rest
     ) where {MT <: Manifold}
     (ρ_prime >= 0.25) && throw( ErrorException(
@@ -101,7 +101,7 @@ function trust_regions(
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
-    if returnOptions
+    if return_options
         return resultO
     else
         return get_solver_result(resultO)
@@ -127,7 +127,7 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegi
         opt = truncatedConjugateGradient(p.M,p.cost,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         #debug = [:Iteration," ",:Stop],
-        returnOptions=true)
+        return_options=true)
         option = get_options(opt) # remove decorators
         η = get_solver_result(option)
         SR = get_active_stopping_criteria(option.stop)

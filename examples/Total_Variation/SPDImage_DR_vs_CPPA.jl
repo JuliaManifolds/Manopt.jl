@@ -64,7 +64,7 @@ x0 = f
     record = [:Iteration, :Cost ],
     stoppingCriterion = sC,
     parallel=5,
-    returnOptions = true
+    return_options = true
 )
 y = get_solver_result(o)
 r = get_record(o)

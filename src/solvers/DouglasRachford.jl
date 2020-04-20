@@ -34,7 +34,7 @@ the default parameter is given in brackets
   parallel Douglas–Rachford implicitly works on a `PowerManifold` manifold and
   its first argument is the result then (assuming all are equal after the second
   prox.
-* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `xOpt` if returned
 ...
@@ -43,7 +43,7 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
 OR
-* `options` - the options returned by the solver (see `returnOptions`)
+* `options` - the options returned by the solver (see `return_options`)
 """
 function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, x;
     λ::Function = (iter) -> 1.0,
@@ -51,7 +51,7 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
     R = reflect,
     parallel::Int = 0,
     stoppingCriterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenChangeLess(10.0^-5)),
-    returnOptions=false,
+    return_options=false,
     kwargs... #especially may contain decorator options
 ) where {MT <: Manifold}
     if length(proxes) < 2
@@ -79,7 +79,7 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
 
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
-    if returnOptions
+    if return_options
         return resultO
     else
         return get_solver_result(resultO)

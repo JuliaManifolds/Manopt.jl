@@ -20,6 +20,7 @@ module Manopt
         ×,
         ^,
         AbstractVectorTransportMethod,
+        AbstractRetractionMethod,
         ParallelTransport,
         Manifold,
         allocate_result,
@@ -146,7 +147,9 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export RecordGradient, RecordGradientNorm, RecordStepsize
 
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
+
 export NelderMead, steepest_descent, subgradient_method, truncatedConjugateGradient, trust_regions
+export cyclic_proximal_point, conjugate_gradient_descent
 
 export DebugGradient, DebugGradientNorm, DebugStepsize
 
@@ -166,5 +169,4 @@ export ConstantStepsize, DecreasingStepsize
 export Linesearch, ArmijoLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 
-export cyclic_proximal_point
 end

@@ -65,7 +65,7 @@ x0 = f
     record = [:Iteration, :Iterate, :Cost],
     stoppingCriterion = StopAfterIteration(maxIterations),
     λ = i -> π / (2 * i),
-    returnOptions = true,
+    return_options = true,
 )
 y = get_solver_result(o)
 yRec = get_record(o)

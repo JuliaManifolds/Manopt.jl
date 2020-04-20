@@ -17,7 +17,7 @@ the default values are given in brackets
 * `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
 * `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
-* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `xOpt` if returned
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
@@ -25,14 +25,14 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
 OR
-* `options` - the options returned by the solver (see `returnOptions`)
+* `options` - the options returned by the solver (see `return_options`)
 """
 function cyclic_proximal_point(M::MT,
   F::Function, proxes::Array{Function,N} where N, x0;
   evaluationOrder::EvalOrder = LinearEvalOrder(),
   stoppingCriterion::StoppingCriterion = StopWhenAny( StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)),
   λ = i -> 1/i,
-  returnOptions=false,
+  return_options=false,
   kwargs... #decorator options
   ) where {MT <: Manifold}
     p = ProximalProblem(M,F,proxes)
@@ -40,7 +40,7 @@ function cyclic_proximal_point(M::MT,
 
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
-    if returnOptions
+    if return_options
         return resultO
     else
         return get_solver_result(resultO)

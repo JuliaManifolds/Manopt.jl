@@ -65,7 +65,7 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
     @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar = 0.1, Δ = 0.11)
 
     X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2) )
-    opt = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), returnOptions=true )
+    opt = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4*sqrt(2*2), return_options=true )
     @test isapprox(M,X,get_solver_result(opt))
 
     @test cost(X) + 142.5 ≈ 0 atol=10.0^(-13)
@@ -108,6 +108,6 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
     @test step_solver!(p,o,0) == nothing
 
     η = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5)
-    ηOpt = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5; returnOptions=true)
+    ηOpt = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true)
     @test submanifold_components(get_solver_result(ηOpt)) == submanifold_components(η)
 end
