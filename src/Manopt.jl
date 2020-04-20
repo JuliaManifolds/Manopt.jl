@@ -21,6 +21,7 @@ module Manopt
         ^,
         AbstractVectorTransportMethod,
         AbstractRetractionMethod,
+        ExponentialRetraction,
         ParallelTransport,
         Manifold,
         allocate_result,

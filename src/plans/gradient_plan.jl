@@ -52,20 +52,20 @@ construct a Gradient Descent Option with the fields and defaults as above
 # See also
 [`steepest_descent`](@ref), [`GradientProblem`](@ref)
 """
-mutable struct GradientDescentOptions{P,T} <: Options
+mutable struct GradientDescentOptions{P} <: Options
     x::P
     stop::StoppingCriterion
     stepsize::Stepsize
-    ∇::T
+    ∇::P
     retraction_method::AbstractRetractionMethod
     function GradientDescentOptions{P}(
-        M::MT,
+        M::Manifold,
         initialX::P,
         s::StoppingCriterion = StopAfterIteration(100),
         stepsize::Stepsize = ConstantStepsize(1.),
         retraction::AbstractRetractionMethod=ExponentialRetraction(),
-    ) where {MT <: Manifold, P}
-        o = new{P,typeof(initialX)}();
+    ) where {P}
+        o = new{P}();
         o.x = initialX;
         o.stop = s;
         o.retraction_method = retraction;
@@ -74,12 +74,12 @@ mutable struct GradientDescentOptions{P,T} <: Options
     end
 end
 function GradientDescentOptions(
-    M::MT,
+    M::Manifold,
     x::P,
     stop::StoppingCriterion = StopAfterIteration(100),
     s::Stepsize = ConstantStepsize(1.),
-    retraction::Function=exp
-) where { MT<:Manifold, P}
+    retraction::AbstractRetractionMethod = ExponentialRetraction(),
+) where {P}
     return GradientDescentOptions{P}(M,x,stop,s,retraction)
 end
 #
@@ -125,14 +125,14 @@ mutable struct ConjugateGradientDescentOptions{T} <: Options
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
     function ConjugateGradientDescentOptions{T}(
-        x0::P,
+        x0::T,
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
         retr::AbstractRetractionMethod = ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod = ParallelTransport(),
-    ) where {P,T}
-        o = new{P,T}();
+    ) where {T}
+        o = new{T}();
         o.x = x0
         o.stop = sC
         o.retraction_method = retr
@@ -208,7 +208,7 @@ mutable struct HeestenesStiefelCoefficient <: DirectionUpdateRule
         return new(transort_method,storage_action)
     end
 end
-function (u::HeestenesStiefedlCoefficient)(
+function (u::HeestenesStiefelCoefficient)(
     p::GradientProblem,
     o::ConjugateGradientDescentOptions,
     i,
