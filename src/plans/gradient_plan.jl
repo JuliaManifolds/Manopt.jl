@@ -112,7 +112,7 @@ specify options for a conjugate gradient descent algoritm, that solves a
 * `retraction` – a function to perform a step on the manifold
 
 # See also
-[`conjugateGradientDescent`](@ref), [`GradientProblem`](@ref), [`ArmijoLinesearch`](@ref)
+[`conjugate_gradient_descent`](@ref), [`GradientProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
 mutable struct ConjugateGradientDescentOptions{T} <: Options
     x::T
@@ -157,7 +157,7 @@ end
 The simplest rule to update is to have no influence of the last direction and
 hence return an update $\beta = 0$ for all [`ConjugateGradientDescentOptions`](@ref)` o`
 
-*See also*: [`conjugateGradientDescent`](@ref)
+*See also*: [`conjugate_gradient_descent`](@ref)
 """
 mutable struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
 function (u::SteepestDirectionUpdateRule)(
@@ -196,7 +196,7 @@ where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at
 Construct the Heestens Stiefel coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
 
-*See also*: [`conjugateGradientDescent`](@ref)
+*See also*: [`conjugate_gradient_descent`](@ref)
 """
 mutable struct HeestenesStiefelCoefficient <: DirectionUpdateRule
     transport_method::AbstractVectorTransportMethod
@@ -244,7 +244,7 @@ adapted to manifolds:
 $ \beta_k =
 \frac{\lVert \xi_{k+1}\rVert_{x_{k+1}}^2}{\lVert \xi_{k}\rVert_{x_{k}}^2}.$
 
-*See also*: [`conjugateGradientDescent`](@ref)
+*See also*: [`conjugate_gradient_descent`](@ref)
 """
 mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
@@ -293,7 +293,7 @@ $\beta_k =
 Construct the Polyak coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
 
-*See also*: [`conjugateGradientDescent`](@ref)
+*See also*: [`conjugate_gradient_descent`](@ref)
 
 """
 mutable struct PolyakCoefficient <: DirectionUpdateRule
@@ -337,7 +337,7 @@ $\beta_k =
 \frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
 {\langle -\delta_k,\xi_k \rangle_{x_k}}.$
 
-*See also*: [`conjugateGradientDescent`](@ref)
+*See also*: [`conjugate_gradient_descent`](@ref)
 """
 mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
@@ -378,7 +378,7 @@ $\beta_k =
 \frac{ \langle \xi_{k+1},\nu_k \rangle_{x_{k+1}} }
 {\langle -\delta_k,\xi_k \rangle_{x_k}}.$
 
-*See also*: [`conjugateGradientDescent`](@ref)
+*See also*: [`conjugate_gradient_descent`](@ref)
 
 # Constructor
     LiuStoreyCoefficient(t::AbstractVectorTransportMethod=ParallelTransport(), a::StoreOptionsAction=())
@@ -434,7 +434,7 @@ $\beta_k =
 \frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
 {\langle P_{x_k\to x_{k+1}}\delta_k, \nu_k \rangle_{x_{k+1}}}.$
 
-*See also*: [`conjugateGradientDescent`](@ref)
+*See also*: [`conjugate_gradient_descent`](@ref)
 
 # Constructor
     DaiYuanCoefficient(t::AbstractVectorTransportMethod=ParallelTransport(), a::StoreOptionsAction=())
@@ -489,7 +489,7 @@ P_{x_k\to x_{k+1}}\delta_k,
 
 This method includes a numerical stability proposed by those authors.
 
-*See also*: [`conjugateGradientDescent`](@ref)
+*See also*: [`conjugate_gradient_descent`](@ref)
 
 # Constructor
     HagerZhangCoefficient(t::AbstractVectorTransportMethod=ParallelTransport(), a::StoreOptionsAction=())

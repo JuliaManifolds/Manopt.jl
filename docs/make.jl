@@ -59,5 +59,5 @@ makedocs(
 )
 deploydocs(
     repo = "github.com/JuliaManifolds/Manopt.jl",
-    # devbranch = "development"
+    push_preview = true
 )

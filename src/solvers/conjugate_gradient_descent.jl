@@ -42,7 +42,7 @@ Further, the step size $s_k$ may be refined by a line search.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function conjugateGradientDescent(
+function conjugate_gradient_descent(
     M::Manifold,
     F::Function,
     ∇F::Function,
