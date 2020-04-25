@@ -19,11 +19,11 @@ mutable struct GradientProblem{mT <: Manifold} <: Problem
   gradient::Function
 end
 """
-    getGradient(p,x)
+    get_gradient(p,x)
 
 evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x`.
 """
-function getGradient(p::P,x) where {P <: GradientProblem{M} where M <: Manifold}
+function get_gradient(p::P,x) where {P <: GradientProblem{M} where M <: Manifold}
   return p.gradient(x)
 end
 #
@@ -59,7 +59,6 @@ mutable struct GradientDescentOptions{P} <: Options
     ∇::P
     retraction_method::AbstractRetractionMethod
     function GradientDescentOptions{P}(
-        M::Manifold,
         initialX::P,
         s::StoppingCriterion = StopAfterIteration(100),
         stepsize::Stepsize = ConstantStepsize(1.),
@@ -74,13 +73,12 @@ mutable struct GradientDescentOptions{P} <: Options
     end
 end
 function GradientDescentOptions(
-    M::Manifold,
     x::P,
     stop::StoppingCriterion = StopAfterIteration(100),
     s::Stepsize = ConstantStepsize(1.),
     retraction::AbstractRetractionMethod = ExponentialRetraction(),
 ) where {P}
-    return GradientDescentOptions{P}(M,x,stop,s,retraction)
+    return GradientDescentOptions{P}(x,stop,s,retraction)
 end
 #
 # Conjugate Gradient Descent
@@ -95,7 +93,7 @@ individual one that provides these values.
 """
 abstract type DirectionUpdateRule end
 
-@doc doc"""
+@doc raw"""
     ConjugateGradientOptions <: Options
 
 specify options for a conjugate gradient descent algoritm, that solves a
@@ -148,103 +146,138 @@ function ConjugateGradientDescentOptions(
     s::Stepsize,
     dU::DirectionUpdateRule,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
+    vtr::AbstractVectorTransportMethod = ParallelTransport(),
 ) where {T}
-    return ConjugateGradientDescentOptions{T}(x, sC, s, dU, retr)
-end
-@doc doc"""
-    steepestDirectionUpdateRule <: DirectionUpdateRule
-
-The simplest rule to update is to have no influence of the last direction and
-hence return an update $\beta = 0$ for all [`ConjugateGradientDescentOptions`](@ref)` o`
-
-*See also*: [`conjugate_gradient_descent`](@ref)
-"""
-mutable struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
-function (u::SteepestDirectionUpdateRule)(
-    p::GradientProblem,
-    o::ConjugateGradientDescentOptions,
-    i,
-)
-    return 0.0
+    return ConjugateGradientDescentOptions{T}(x, sC, s, dU, retr, vtr)
 end
 
-@doc doc"""
-    HeestenesStiefelCoefficient <: DirectionUpdateRule
+@doc raw"""
+    ConjugateDescentCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
 $x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
 direction $\delta=\delta_k$, where the last three ones are stored in the
-variables with prequel `Old` based on
+variables with prequel `Old` based on [^Flethcer1987] adapted to manifolds:
 
-> M.R. Hestenes, E.L. Stiefel, __Methods of conjugate gradients for solving linear systems__,
-> J. Research Nat. Bur. Standards, 49 (1952), pp. 409–436.
-> doi: [10.6028/jres.049.044](http://dx.doi.org/10.6028/jres.049.044)
+$\beta_k =
+\frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
+{\langle -\delta_k,\xi_k \rangle_{x_k}}.$
 
-adapted to manifolds as follows: let $\nu_k = \xi_{k+1} - P_{x_k\to x_{k+1}}\xi_k$.
-Then the update reads
-
-````math
-\beta_k =   \frac{\langle \xi_{k+1}, \nu_k \rangle_{x_{k+1}} }
-    { \langle P_{x_{k+1}\gets x_k} \delta_k, \nu_k\rangle_{x_{k+1}} },
-````
-where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
+See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    HeestenesStiefelCoefficient(t::AbstractVectorTransportMethod=ParallelTransport(), a::StoreOptionsAction=())
+    ConjugateDescentCoefficient(a::StoreOptionsAction=())
 
-Construct the Heestens Stiefel coefficient update rule, where the parallel transport is the
-default vector transport and a new storage is created by default.
+Construct the conjugate descnt coefficient update rule, a new storage is created by default.
 
-*See also*: [`conjugate_gradient_descent`](@ref)
+[^Flethcer1987]:
+    > R. Fletcher, __Practical Methods of Optimization vol. 1: Unconstrained Optimization__
+    > John Wiley & Sons, New York, 1987. doi [10.1137/1024028](https://doi.org/10.1137/1024028)
 """
-mutable struct HeestenesStiefelCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
-    function HeestenesStiefelCoefficient(
-        transort_method::AbstractVectorTransportMethod=ParallelTransport(),
-        storage_action::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
-    )
-        return new(transort_method,storage_action)
-    end
+    ConjugateDescentCoefficient(  a::StoreOptionsAction=StoreOptionsAction( (:x, :∇) )  ) = new(a)
 end
-function (u::HeestenesStiefelCoefficient)(
+function (u::ConjugateDescentCoefficient)(
     p::GradientProblem,
     o::ConjugateGradientDescentOptions,
-    i,
+    i
 )
+    if !all( has_storage.(Ref(u.storage), [:x, :∇]))
+        update_storage!(u.storage,o) # if not given store current as old
+        return 0.0
+    end
+    xOld, ∇Old = get_storage.( Ref(u.storage), [:x, :∇] )
+    update_storage!(u.storage,o)
+    return inner(p.M, o.x, o.∇, o.∇) / inner(p.M, xOld, -o.δ, ∇Old)
+end
+
+@doc raw"""
+    DaiYuanCoefficient <: DirectionUpdateRule
+
+Computes an update coefficient for the conjugate gradient method, where
+the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
+$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
+direction $\delta=\delta_k$, where the last three ones are stored in the
+variables with prequel `Old` based on [^DaiYuan1999]
+
+adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$,
+where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
+
+Then the coefficient reads
+
+````math
+\beta_k =
+\frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
+{\langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}}}.
+````
+
+See also [`conjugate_gradient_descent`](@ref)
+
+# Constructor
+    DaiYuanCoefficient(
+        t::AbstractVectorTransportMethod=ParallelTransport(),
+        a::StoreOptionsAction=(),
+    )
+
+Construct the Dai Yuan coefficient update rule, where the parallel transport is the
+default vector transport and a new storage is created by default.
+
+[^DaiYuan1999]:
+    > [Y. H. Dai and Y. Yuan, A nonlinear conjugate gradient method with a strong global convergence property,
+    > SIAM J. Optim., 10 (1999), pp. 177–182.
+    > doi: [10.1137/S1052623497318992](https://doi.org/10.1137/S1052623497318992)
+"""
+mutable struct DaiYuanCoefficient <: DirectionUpdateRule
+    transport_method::AbstractVectorTransportMethod
+    storage::StoreOptionsAction
+    function DaiYuanCoefficient(
+        t::AbstractVectorTransportMethod=ParallelTransport(),
+        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
+    )
+        return new(t,a)
+    end
+end
+function (u::DaiYuanCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
     if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
         update_storage!(u.storage,o) # if not given store current as old
+        return 0.0
     end
     xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
     update_storage!(u.storage,o)
-    ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transort_method)
-    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transort_method)
-    ν = o.∇ - ∇tr #notation from [HZ06]
-    β = inner(p.M, o.x, o.∇, ν) / inner(p.M, o.x, δtr, ν)
-    return max(0,β)
+
+    ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
+    ν = o.∇ - ∇tr #notation y from [HZ06]
+    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
+    return inner(p.M, o.x, o.∇, o.∇)  /  inner(p.M, xOld, δtr, ν)
 end
 
-
-@doc doc"""
+@doc raw"""
     FletcherReevesCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
 $x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
 direction $\delta=\delta_k$, where the last three ones are stored in the
-variables with prequel `Old` based on
+variables with prequel `Old` based on [^FletcherReeves1964] adapted to manifolds:
 
-> R. Fletcher and C. Reeves, __Function minimization by conjugate gradients__,
-> Comput. J., 7 (1964), pp. 149–154.
-> doi: [10.1093/comjnl/7.2.149](http://dx.doi.org/10.1093/comjnl/7.2.149)
+````math
+\beta_k =
+\frac{\lVert \xi_{k+1}\rVert_{x_{k+1}}^2}{\lVert \xi_{k}\rVert_{x_{k}}^2}.
+````
 
-adapted to manifolds:
+See also [`conjugate_gradient_descent`](@ref)
 
-$ \beta_k =
-\frac{\lVert \xi_{k+1}\rVert_{x_{k+1}}^2}{\lVert \xi_{k}\rVert_{x_{k}}^2}.$
+# Constructor
+    FletcherReevesCoefficient(a::StoreOptionsAction=())
 
-*See also*: [`conjugate_gradient_descent`](@ref)
+Construct the Fletcher Reeves coefficient update rule, a new storage is created by default.
+
+[^FletcherReeves1964]:
+    > R. Fletcher and C. Reeves, Function minimization by conjugate gradients,
+    > Comput. J., 7 (1964), pp. 149–154.
+    > doi: [10.1093/comjnl/7.2.149](http://dx.doi.org/10.1093/comjnl/7.2.149)
 """
 mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
@@ -263,129 +296,169 @@ function (u::FletcherReevesCoefficient)(
     return inner(p.M, o.x, o.∇, o.∇)/inner(p.M, xOld, ∇Old, ∇Old)
 end
 
-
-@doc doc"""
-    PolyakCoefficient <: DirectionUpdateRule
+@doc raw"""
+    HagerZhangCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
 $x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the
-variables with prequel `Old` based on
-
-> B. T. Polyak, __The conjugate gradient method in extreme problems__
-> USSR Comp. Math. Math. Phys., 9 (1969), pp. 94–112.
-> doi: [10.1016/0041-5553(69)90035-4](https://doi.org/10.1016/0041-5553(69)90035-4)
-
+direction $\delta=\delta_k$, where the last three ones are stored in the variables with
+prequel `Old` based on [^HagerZhang2005]
 adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$,
 where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
 
-Then the update reads
+````math
+\beta_k = \Bigl\langle\nu_k -
+\frac{ 2\lVert \nu_k\rVert_{x_{k+1}}^2 }{ \langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}} }
+P_{x_{k+1}\gets x_k}\delta_k,
+\frac{\xi_{k+1}}{ \langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}} }
+\Bigr\rangle_{x_{k+1}}.
+````
 
-$\beta_k =
-\frac{ \langle \xi_{k+1}, \nu_k \rangle_{x_{k+1}} }
-{\lVert \xi_k \rVert_{x_k} }.$
+This method includes a numerical stability proposed by those authors.
 
+See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    PolyakCoefficient(t::AbstractVectorTransportMethod=ParallelTransport(), a::StoreOptionsAction=())
+    HagerZhangCoefficient(
+        t::AbstractVectorTransportMethod=ParallelTransport(),
+        a::StoreOptionsAction=(),
+    )
 
-Construct the Polyak coefficient update rule, where the parallel transport is the
+Construct the Hager Zhang coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
 
-*See also*: [`conjugate_gradient_descent`](@ref)
-
+[^HagerZhang2005]:
+    > [W. W. Hager and H. Zhang, __A new conjugate gradient method with guaranteed descent and an efficient line search__,
+    > SIAM J. Optim, (16), pp. 170-192, 2005.
+    > doi: [10.1137/030601880](https://doi.org/10.1137/030601880)
 """
-mutable struct PolyakCoefficient <: DirectionUpdateRule
+mutable struct HagerZhangCoefficient <: DirectionUpdateRule
     transport_method::AbstractVectorTransportMethod
     storage::StoreOptionsAction
-    function PolyakCoefficient(
+    function HagerZhangCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇) ),
+        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
     )
         return new(t,a)
     end
 end
-function (u::PolyakCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
-    if !all( has_storage.(Ref(u.storage), [:x, :∇]))
+function (u::HagerZhangCoefficient)(p::P, o::O, i) where {P <: GradientProblem, O <: ConjugateGradientDescentOptions}
+    if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
         update_storage!(u.storage,o) # if not given store current as old
+        return 0.0
     end
-    xOld, ∇Old = get_storage.( Ref(u.storage), [:x, :∇] )
+    xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
     update_storage!(u.storage,o)
 
     ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
-    ν = o.∇-∇tr
-    β = inner(p.M, o.x, o.∇, ν) / inner(p.M, xOld, ∇Old, ∇Old)
-    return max(0,β)
+    ν = o.∇ - ∇tr #notation y from [HZ06]
+    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
+    denom = inner(p.M, o.x, δtr, ν)
+    νknormsq = inner(p.M, o.x, ν, ν)
+    β = inner(p.M, o.x, ν, o.∇)/denom - 2*νknormsq*inner(p.M, o.x, δtr, o.∇) / denom^2
+    # Numerical stability from Manopt / Hager-Zhang paper
+    ξn = norm(p.M, o.x, o.∇)
+    η = -1 / ( ξn * min(0.01,norm(p.M, xOld, ∇Old)) )
+    return max(β,η)
 end
 
-@doc doc"""
-    ConjugateDescentCoefficient <: DirectionUpdateRule
+@doc raw"""
+    HeestenesStiefelCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
 $x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
 direction $\delta=\delta_k$, where the last three ones are stored in the
-variables with prequel `Old` based on
+variables with prequel `Old` based on [^HeestensStiefel1952]
 
-> R. Fletcher, __Practical Methods of Optimization vol. 1: Unconstrained Optimization__
-> John Wiley & Sons, New York, 1987. doi [10.1137/1024028](https://doi.org/10.1137/1024028)
+adapted to manifolds as follows: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$.
+Then the update reads
 
-adapted to manifolds:
+````math
+\beta_k = \frac{\langle \xi_{k+1}, \nu_k \rangle_{x_{k+1}} }
+    { \langle P_{x_{k+1}\gets x_k} \delta_k, \nu_k\rangle_{x_{k+1}} },
+````
+where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
 
-$\beta_k =
-\frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
-{\langle -\delta_k,\xi_k \rangle_{x_k}}.$
+# Constructor
+    HeestenesStiefelCoefficient(
+        t::AbstractVectorTransportMethod=ParallelTransport(),
+        a::StoreOptionsAction=()
+    )
 
-*See also*: [`conjugate_gradient_descent`](@ref)
+Construct the Heestens Stiefel coefficient update rule, where the parallel transport is the
+default vector transport and a new storage is created by default.
+
+See also [`conjugate_gradient_descent`](@ref)
+
+[^HeestensStiefel1952]:
+    > M.R. Hestenes, E.L. Stiefel, Methods of conjugate gradients for solving linear systems,
+    > J. Research Nat. Bur. Standards, 49 (1952), pp. 409–436.
+    > doi: [10.6028/jres.049.044](http://dx.doi.org/10.6028/jres.049.044)
 """
-mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
+mutable struct HeestenesStiefelCoefficient <: DirectionUpdateRule
+    transport_method::AbstractVectorTransportMethod
     storage::StoreOptionsAction
-    ConjugateDescentCoefficient(  a::StoreOptionsAction=StoreOptionsAction( (:x, :∇) )  ) = new(a)
+    function HeestenesStiefelCoefficient(
+        transort_method::AbstractVectorTransportMethod=ParallelTransport(),
+        storage_action::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
+    )
+        return new(transort_method,storage_action)
+    end
 end
-function (u::ConjugateDescentCoefficient)(
+function (u::HeestenesStiefelCoefficient)(
     p::GradientProblem,
     o::ConjugateGradientDescentOptions,
-    i
+    i,
 )
-    if !all( has_storage.(Ref(u.storage), [:x, :∇]))
+    if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
         update_storage!(u.storage,o) # if not given store current as old
+        return 0.0
     end
-    xOld, ∇Old = get_storage.( Ref(u.storage), [:x, :∇] )
+    xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
     update_storage!(u.storage,o)
-    return inner(p.M, o.x, o.∇, o.∇) / inner(p.M, xOld, -o.δ, ∇Old)
+    ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
+    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
+    ν = o.∇ - ∇tr #notation from [HZ06]
+    β = inner(p.M, o.x, o.∇, ν) / inner(p.M, o.x, δtr, ν)
+    return max(0,β)
 end
 
-@doc doc"""
+@doc raw"""
     LiuStoreyCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
 $x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
 direction $\delta=\delta_k$, where the last three ones are stored in the
-variables with prequel `Old` based on
-
-> [Y. Liu and C. Storey, __Efficient generalized conjugate gradient algorithms, Part 1: Theory__
-> J. Optim. Theory Appl., 69 (1991), pp. 129–137.
-> doi: [10.1007/BF00940464](https://doi.org/10.1007/BF00940464)
-
+variables with prequel `Old` based on [^LuiStorey1991]
 adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$,
 where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
 
 Then the coefficient reads
 
-$\beta_k =
+````math
+\beta_k = -
 \frac{ \langle \xi_{k+1},\nu_k \rangle_{x_{k+1}} }
-{\langle -\delta_k,\xi_k \rangle_{x_k}}.$
+{\langle \delta_k,\xi_k \rangle_{x_k}}.
+````
 
-*See also*: [`conjugate_gradient_descent`](@ref)
+See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    LiuStoreyCoefficient(t::AbstractVectorTransportMethod=ParallelTransport(), a::StoreOptionsAction=())
+    LiuStoreyCoefficient(
+        t::AbstractVectorTransportMethod=ParallelTransport(),
+        a::StoreOptionsAction=()
+    )
 
 Construct the Lui Storey coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
 
+[^LuiStorey1991]:
+    > [Y. Liu and C. Storey, Efficient generalized conjugate gradient algorithms, Part 1: Theory
+    > J. Optim. Theory Appl., 69 (1991), pp. 129–137.
+    > doi: [10.1007/BF00940464](https://doi.org/10.1007/BF00940464)
 """
 mutable struct LiuStoreyCoefficient <: DirectionUpdateRule
     transport_method::AbstractVectorTransportMethod
@@ -409,127 +482,92 @@ function (u::LiuStoreyCoefficient)(
     update_storage!(u.storage,o)
     ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
     ν = o.∇-∇tr # notation y from [HZ06]
-    return inner(p.M, o.x, o.∇, ν)  /  inner(p.M, xOld, δOld, ∇Old)
+    return inner(p.M, o.x, o.∇, ν)  /  inner(p.M, xOld, -δOld, ∇Old)
 end
 
-@doc doc"""
-    DaiYuanCoefficient <: DirectionUpdateRule
+
+
+@doc raw"""
+    PolakRibiereCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
 $x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
 direction $\delta=\delta_k$, where the last three ones are stored in the
-variables with prequel `Old` based on
+variables with prequel `Old` based on [^PolakRibiere1969][^Polyak1969]
 
-> [Y. H. Dai and Y. Yuan, __A nonlinear conjugate gradient method with a strong global convergence property,__
-> SIAM J. Optim., 10 (1999), pp. 177–182.
-> doi: [10.1137/S1052623497318992](https://doi.org/10.1137/S1052623497318992)
-
-adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_k\to x_{k+1}}\xi_k$,
+adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$,
 where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
 
-Then the coefficient reads
-
-$\beta_k =
-\frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
-{\langle P_{x_k\to x_{k+1}}\delta_k, \nu_k \rangle_{x_{k+1}}}.$
-
-*See also*: [`conjugate_gradient_descent`](@ref)
+Then the update reads
+````math
+\beta_k =
+\frac{ \langle \xi_{k+1}, \nu_k \rangle_{x_{k+1}} }
+{\lVert \xi_k \rVert_{x_k}^2 }.
+````
 
 # Constructor
-    DaiYuanCoefficient(t::AbstractVectorTransportMethod=ParallelTransport(), a::StoreOptionsAction=())
+    PolakRibiereCoefficient(
+        t::AbstractVectorTransportMethod=ParallelTransport(),
+        a::StoreOptionsAction=()
+    )
 
-Construct the Dai Yuan coefficient update rule, where the parallel transport is the
+Construct the PolakRibiere coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
+
+See also [`conjugate_gradient_descent`](@ref)
+
+[^PolakRibiere1969]:
+    > E. Polak, G. Ribiere, Note sur la convergence de méthodes de directions conjuguées
+    > ESAIM: Mathematical Modelling and Numerical Analysis - Modélisation Mathématique et Analyse Numérique, Tome 3 (1969) no. R1, p. 35-43,
+    > url: [http://www.numdam.org/item/?id=M2AN_1969__3_1_35_0](http://www.numdam.org/item/?id=M2AN_1969__3_1_35_0)
+
+[^Polyak1969]:
+    > B. T. Polyak, The conjugate gradient method in extreme problems,
+    > USSR Comp. Math. Math. Phys., 9 (1969), pp. 94–112.
+    > doi: [10.1016/0041-5553(69)90035-4](https://doi.org/10.1016/0041-5553(69)90035-4)
 """
-mutable struct DaiYuanCoefficient <: DirectionUpdateRule
+mutable struct PolakRibiereCoefficient <: DirectionUpdateRule
     transport_method::AbstractVectorTransportMethod
     storage::StoreOptionsAction
-    function DaiYuanCoefficient(
+    function PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
+        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇) ),
     )
         return new(t,a)
     end
 end
-function (u::DaiYuanCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
-    if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+function (u::PolakRibiereCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
+    if !all( has_storage.(Ref(u.storage), [:x, :∇]))
         update_storage!(u.storage,o) # if not given store current as old
     end
-    xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
+    xOld, ∇Old = get_storage.( Ref(u.storage), [:x, :∇] )
     update_storage!(u.storage,o)
 
     ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
-    ν = o.∇ - ∇tr #notation y from [HZ06]
-    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
-    return inner(p.M, o.x, o.∇, o.∇)  /  inner(p.M, xOld, δtr, ν)
+    ν = o.∇-∇tr
+    β = inner(p.M, o.x, o.∇, ν) / inner(p.M, xOld, ∇Old, ∇Old)
+    return max(0,β)
 end
 
-@doc doc"""
-    HagerZhangCoefficient <: DirectionUpdateRule
+@doc raw"""
+    steepestDirectionUpdateRule <: DirectionUpdateRule
 
-Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the variables with
-prequel `Old` based on
+The simplest rule to update is to have no influence of the last direction and
+hence return an update $\beta = 0$ for all [`ConjugateGradientDescentOptions`](@ref)` o`
 
-> [W. W. Hager and H. Zhang, __A new conjugate gradient method with guaranteed descent and an efficient line search__,
-> SIAM J. Optim, (16), pp. 170-192, 2005.
-> doi: [10.1137/030601880](https://doi.org/10.1137/030601880)
-
-adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_k\to x_{k+1}}\xi_k$,
-where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
-
-$\beta_k = \Bigl\langle\nu_k -
-\frac{ 2\lVert \nu_k\rVert_{x_{k+1}}^2 }{ \langle P_{x_k\to x_{k+1}}\delta_k, \nu_k \rangle_{x_{k+1}} }
-P_{x_k\to x_{k+1}}\delta_k,
-\frac{\xi_{k+1}}{ \langle P_{x_k\to x_{k+1}}\delta_k, \nu_k \rangle_{x_{k+1}} }
-\Bigr\rangle_{x_{k+1}}.$
-
-This method includes a numerical stability proposed by those authors.
-
-*See also*: [`conjugate_gradient_descent`](@ref)
-
-# Constructor
-    HagerZhangCoefficient(t::AbstractVectorTransportMethod=ParallelTransport(), a::StoreOptionsAction=())
-
-Construct the Hager Zhang coefficient update rule, where the parallel transport is the
-default vector transport and a new storage is created by default.
-
+See also [`conjugate_gradient_descent`](@ref)
 """
-mutable struct HagerZhangCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
-    storage::StoreOptionsAction
-    function HagerZhangCoefficient(
-        t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
-    )
-        return new(t,a)
-    end
-end
-function (u::HagerZhangCoefficient)(p::P, o::O, i) where {P <: GradientProblem, O <: ConjugateGradientDescentOptions}
-    if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
-        update_storage!(u.storage,o) # if not given store current as old
-    end
-    xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
-    update_storage!(u.storage,o)
-
-    ∇tr = vector_transport_to(p.M, xOld, o.∇, o.x, u.transort_method)
-    ν = o.∇ - ∇tr #notation y from [HZ06]
-    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
-    denom = inner(M, o.x, δtr, ν)
-    νknormsq = inner(M, o.x, xOld, ν, ν)
-    β = inner(p.M, o.x, ν, o.∇)/denom - 2*νknormsq*inner(p.M, o.x, δtr, o.∇) / denom^2
-    # Numerical stability from Manopt / Hager-Zhang paper
-    ξn = norm(p.M, o.x, o.∇)
-    η = -1 / ( ξn * min(0.01,norm(p.M, xOld, ∇Old)) )
-    return max(β,η)
+mutable struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
+function (u::SteepestDirectionUpdateRule)(
+    p::GradientProblem,
+    o::ConjugateGradientDescentOptions,
+    i,
+)
+    return 0.0
 end
 
-#
-# Debugs
-#
+
 @doc raw"""
     DebugGradient <: DebugAction
 

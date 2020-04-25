@@ -30,12 +30,13 @@ makedocs(
         "Plans" => "plans/index.md",
         "Solvers" => [
             "Introduction" => "solvers/index.md",
+            "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Gradient Descent" => "solvers/gradientDescent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Subgradient method" => "solvers/subgradient.md",
-            "Steihaug-Toint TCG Method" => "solvers/truncatedConjugateGradient.md",
+            "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Riemannian Trust-Regions Solver" => "solvers/trust_regions.md",
         ],
         "Functions" => [

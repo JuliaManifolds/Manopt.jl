@@ -15,7 +15,7 @@ specify a problem for hessian based algorithms.
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 struct HessianProblem{mT <: Manifold} <: Problem
     M::mT
@@ -60,7 +60,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a truncated conjugate-gradient Option with the fields as above.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct TruncatedConjugateGradientOptions{P,T} <: HessianOptions
     x::P
@@ -157,28 +157,28 @@ applied to a tangent vector `ξ`.
 """
 function getHessian(p::HessianProblem, x, ξ; stepsize=2*10^(-14))
     if ismissing(p.hessian)
-        return approxHessianFD(p.M, x -> getGradient(p.M,x) ,x,ξ; stepsize=stepsize)
+        return approxHessianFD(p.M, x -> get_gradient(p.M,x) ,x,ξ; stepsize=stepsize)
     else
         return p.hessian(p.M,x,ξ)
     end
 end
 
 @doc raw"""
-    getGradient(p,x)
+    get_gradient(p,x)
 
 evaluate the gradient of a [`HessianProblem`](@ref)`p` at the
 point `x`.
 """
-getGradient(p::HessianProblem,x) = p.gradient(p.M,x)
+get_gradient(p::HessianProblem,x) = p.gradient(p.M,x)
 @doc raw"""
-    getPreconditioner(p,x,ξ)
+    get_preconditioner(p,x,ξ)
 
 evaluate the symmetric, positive deﬁnite preconditioner (approximation of the
 inverse of the Hessian of the cost function `F`) of a
 [`HessianProblem`](@ref) `p` at the point `x`applied to a
 tangent vector `ξ`.
 """
-getPreconditioner(p::Pr, x, ξ) where {Pr <: HessianProblem} = p.precon(p.M, x, ξ)
+get_preconditioner(p::Pr, x, ξ) where {Pr <: HessianProblem} = p.precon(p.M, x, ξ)
 
 @doc raw"""
     approxHessianFD(p,x,ξ,[stepsize=2.0^(-14)])
@@ -224,7 +224,7 @@ In this case the algorithm reached linear convergence.
 # Fields
 * `κ` – the reduction factor
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
+    $\eta$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
   reached, see [`get_reason`](@ref).
 
@@ -237,7 +237,7 @@ the norm of the current residual is lesser than the norm of the initial residual
 iRN times κ.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct stopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
@@ -264,7 +264,7 @@ algorithm reached superlinear convergence.
 # Fields
 * `θ` – part of the reduction power
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $\eta$ of the Steihaug-Toint tcg mehtod [`truncatedConjugateGradient`](@ref)
+    $\eta$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
 
@@ -277,7 +277,7 @@ the norm of the current residual is lesser than the norm of the initial residual
 iRN to the power of 1+θ.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct stopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
@@ -316,7 +316,7 @@ the norm of the next iterate is greater than the trust-region radius using the
 `:η, :δ, :residual` by default.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
@@ -328,10 +328,10 @@ function (c::StopWhenTrustRegionIsExceeded)(p::P,o::O,i::Int) where {P <: Hessia
         η = get_storage(c.storage,:η)
         δ = get_storage(c.storage,:δ)
         residual = get_storage(c.storage,:residual)
-        a1 = inner(p.M, o.x, o.useRand ? getPreconditioner(p, o.x, residual) : residual, residual)
+        a1 = inner(p.M, o.x, o.useRand ? get_preconditioner(p, o.x, residual) : residual, residual)
         a2 = inner(p.M, o.x, δ, getHessian(p, o.x, δ))
-        a3 = inner(p.M, o.x, η, getPreconditioner(p, o.x, δ))
-        a4 = inner(p.M, o.x, δ, getPreconditioner(p, o.x, δ))
+        a3 = inner(p.M, o.x, η, get_preconditioner(p, o.x, δ))
+        a4 = inner(p.M, o.x, δ, get_preconditioner(p, o.x, δ))
         norm = inner(p.M, o.x, η, η) - 2*( a1 / a2 ) * a3 + (a1 / a2)^2 * a4
         if norm >= o.Δ^2 && i >= 0
             c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.Δ^2) = Δ²). \n"
@@ -367,7 +367,7 @@ dircetion is less than zero using the [`StoreOptionsAction`](@ref) `a`, which
 is initialized to just store `:δ` by default.
 
 # See also
-[`truncatedConjugateGradient`](@ref), [`trust_regions`](@ref)
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String

@@ -20,7 +20,7 @@ evaluate the cost function `F` stored within a [`Problem`](@ref) at the point `x
 function get_cost(p::P,x) where {P <: Problem}
   return p.cost(x)
 end
-function getGradient(p::Problem,x)
+function get_gradient(p::Problem,x)
     throw(ErrorException(
         "no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."
     ))

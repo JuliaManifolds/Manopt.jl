@@ -95,7 +95,7 @@ move to the trust-region boundary by ﬁnding $\tau$.
 ## Interface
 
 ```@docs
-  truncatedConjugateGradient
+  truncated_conjugate_gradient_descent
 ```
 
 ## Options

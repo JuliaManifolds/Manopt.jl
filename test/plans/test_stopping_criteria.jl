@@ -9,7 +9,7 @@
     s3 = StopWhenCostLess(0.1)
     p = GradientProblem(Euclidean(1), x->x^2, x->2x)
     a = ArmijoLinesearch()
-    o = GradientDescentOptions(Euclidean(1),1.0)
+    o = GradientDescentOptions(1.0)
     @test !s3(p,o,1)
     @test length(s3.reason) == 0
     o.x = 0.3

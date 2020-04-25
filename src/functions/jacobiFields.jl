@@ -205,7 +205,7 @@ function adjoint_Jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function
     return Y
 end
 
-@doc doc"""
+@doc raw"""
     Y = jacobi_field(M, p, q, t, X, β)
 compute the Jacobi jield $J$ along the geodesic $γ_{p,q}$ on the manifold $\mathcal M$ with
 initial conditions (depending on the application) $X ∈ T_p\mathcal M$ and weights $β$. The

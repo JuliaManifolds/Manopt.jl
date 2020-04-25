@@ -16,7 +16,7 @@ mutable struct ConstantStepsize <: Stepsize
     length::Float64
     ConstantStepsize(s::Real) = new(s)
 end
-(s::ConstantStepsize)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = s.length
+(s::ConstantStepsize)(p::P,o::O,i::Int, vars...) where {P <: Problem, O <: Options} = s.length
 get_initial_stepsize(s::ConstantStepsize) = s.length
 
 @doc raw"""
@@ -53,9 +53,6 @@ end
 (s::DecreasingStepsize)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = (s.length - i*s.subtrahend)*(s.factor^i)/(i^(s.exponent))
 get_initial_stepsize(s::DecreasingStepsize) = s.length
 
-#
-# Linesearch
-#
 """
     Linesearch <: Stepsize
 
@@ -78,7 +75,8 @@ last step size.
 
 # Fields
 * `initialStepsize` – (`1.0`) and initial step size
-* `retraction` – the rectraction used in line search
+* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
+  the exponential map
 * `contractionFactor` – (`0.95`) exponent for line search reduction
 * `sufficientDecrease` – (`0.1`) gain within Armijo's rule
 * `lastStepSize` – (`initialstepsize`) the last step size we start the search with
@@ -100,35 +98,37 @@ faces are available:
 """
 mutable struct ArmijoLinesearch <: Linesearch
     initialStepsize::Float64
-    retraction::Function
+    retraction_method::AbstractRetractionMethod
     contractionFactor::Float64
     sufficientDecrease::Float64
     stepsizeOld::Float64
-    ArmijoLinesearch(
+    function ArmijoLinesearch(
         s::Float64=1.0,
-        r::Function=exp,
+        r::AbstractRetractionMethod = ExponentialRetraction(),
         contractionFactor::Float64=0.95,
-        sufficientDecrease::Float64=0.1) = new(s, r, contractionFactor, sufficientDecrease,s)
+        sufficientDecrease::Float64=0.1
+    )
+        return new(s, r, contractionFactor, sufficientDecrease,s)
+    end
 end
-function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η=-getGradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
-    a(p.M, o.x, p.cost, getGradient(p,o.x), η)
+function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
+    a(p.M, o.x, p.cost, get_gradient(p,o.x), η)
 end
 function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, T}
     # for local shortness
     s = a.stepsizeOld
-    retr = a.retraction
     f0 = F(x)
-    xNew = retr(M,x,s*η)
+    xNew = retract(M, x, s*η, a.retraction_method)
     fNew = F(xNew)
     while fNew < f0 + a.sufficientDecrease*s*inner(M, x, η, ∇F) # increase
-        xNew = retr(M,x,s*η)
+        xNew = retract(M,x,s*η,a.retraction_method)
         fNew = F(xNew)
         s = s/a.contractionFactor
     end
     s = s*a.contractionFactor # correct last
     while fNew > f0 + a.sufficientDecrease*s*inner(M, x, η, ∇F) # decrease
         s = a.contractionFactor * s
-        xNew = retr(M,x,s*η)
+        xNew = retract(M, x, s*η, a.retraction_method)
         fNew = F(xNew)
     end
     a.stepsizeOld = s
@@ -136,9 +136,13 @@ function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) wher
 end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 
-#
-# Access functions
-#
+@doc raw"""
+    get_stepsize(p::Problem, o::Options, vars...)
+
+return the stepsize stored within [`Options`](@ref) `o` when solving [`Problem`](@ref) `p`.
+This method also works for decorated options and the [`Stepsize`](@ref) function within
+the options, by default stored in `o.stepsize`.
+"""
 function get_stepsize(p::Problem, o::Options, vars...)
     return get_stepsize(p,o,dispatch_options_decorator(o),vars...)
 end

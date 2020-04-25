@@ -107,7 +107,7 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
         sqrt(manifold_dimension(M)), retract, true, 0.1, 1000.)
     @test step_solver!(p,o,0) == nothing
 
-    η = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5)
-    ηOpt = truncatedConjugateGradient(M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true)
+    η = truncated_conjugate_gradient_descent(M, cost, rgrad, x, ξ, rhess, 0.5)
+    ηOpt = truncated_conjugate_gradient_descent(M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true)
     @test submanifold_components(get_solver_result(ηOpt)) == submanifold_components(η)
 end

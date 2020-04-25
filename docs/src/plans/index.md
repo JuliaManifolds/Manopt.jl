@@ -94,7 +94,7 @@ in general there are
 ```@autodocs
 Modules = [Manopt]
 Pages = ["plans/stepsize.jl"]
-Order = [:type]
+Order = [:type,:function]
 ```
 
 ## Problems
@@ -127,7 +127,7 @@ CostProblem
 
 ```@docs
 GradientProblem
-getGradient
+get_gradient
 ```
 
 ### Subgradient based problem
@@ -149,5 +149,5 @@ getProximalMap
 ```@docs
 HessianProblem
 getHessian
-getPreconditioner
+get_preconditioner
 ```

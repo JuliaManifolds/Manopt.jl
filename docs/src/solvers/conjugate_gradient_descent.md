@@ -25,6 +25,8 @@ FletcherReevesCoefficient
 HagerZhangCoefficient
 HeestenesStiefelCoefficient
 LiuStoreyCoefficient
-PolyakCoefficient
+PolakRibiereCoefficient
 SteepestDirectionUpdateRule
 ```
+
+# Literature

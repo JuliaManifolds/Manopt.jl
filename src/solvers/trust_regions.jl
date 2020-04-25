@@ -59,7 +59,7 @@ For a description of the algorithm and more details see
 * `x` – the last reached point on the manifold
 
 # see also
-[`truncatedConjugateGradient`](@ref)
+[`truncated_conjugate_gradient_descent`](@ref)
 """
 function trust_regions(
     M::MT,
@@ -124,7 +124,7 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegi
                 end
         end
         # Solve TR subproblem approximately
-        opt = truncatedConjugateGradient(p.M,p.cost,p.gradient,
+        opt = truncated_conjugate_gradient_descent(p.M,p.cost,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         #debug = [:Iteration," ",:Stop],
         return_options=true)
@@ -134,7 +134,7 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegi
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
-        grad = getGradient(p, o.x)
+        grad = get_gradient(p, o.x)
         fx = get_cost(p, o.x)
         norm_grad = norm(p.M, o.x, grad)
         # If using randomized approach, compare result with the Cauchy point.
