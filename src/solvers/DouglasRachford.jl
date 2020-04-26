@@ -27,14 +27,14 @@ the default parameter is given in brackets
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflect`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
-* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
   `PowerManifold` manifold with two proxes. This can be used to trigger
   parallel Douglas–Rachford if you enter with two proxes. Keep in mind, that a
   parallel Douglas–Rachford implicitly works on a `PowerManifold` manifold and
   its first argument is the result then (assuming all are equal after the second
   prox.
-* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `xOpt` if returned
 ...
@@ -43,15 +43,15 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
 OR
-* `options` - the options returned by the solver (see `returnOptions`)
+* `options` - the options returned by the solver (see `return_options`)
 """
 function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, x;
     λ::Function = (iter) -> 1.0,
     α::Function = (iter) -> 0.9,
     R = reflect,
     parallel::Int = 0,
-    stoppingCriterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenChangeLess(10.0^-5)),
-    returnOptions=false,
+    stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenChangeLess(10.0^-5)),
+    return_options=false,
     kwargs... #especially may contain decorator options
 ) where {MT <: Manifold}
     if length(proxes) < 2
@@ -75,18 +75,17 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
         nF = F
     end
     p = ProximalProblem(M,nF,[prox1,prox2])
-    o = DouglasRachfordOptions(x, λ, α, reflect, stoppingCriterion,parallel > 0)
+    o = DouglasRachfordOptions(x, λ, α, reflect, stopping_criterion,parallel > 0)
 
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
-    if returnOptions
+    if return_options
         return resultO
     else
         return get_solver_result(resultO)
     end
 end
-function initialize_solver!(p::ProximalProblem,o::DouglasRachfordOptions)
-end
+function initialize_solver!(p::ProximalProblem,o::DouglasRachfordOptions) end
 function step_solver!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
     pP = getProximalMap(p,o.λ(iter),o.s,1)
     snew = o.R(p.M, pP, o.s);

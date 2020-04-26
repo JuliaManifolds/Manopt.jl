@@ -26,7 +26,7 @@
 # A gradient plan consists of a [`GradientProblem`](@ref) with the fields `M`,
 # cost function $f$ as well as `gradient` storing the gradient function
 # corresponding to $f$. Accessing both functions can be done directly but should
-# be encapsulated using [`get_cost`](@ref)`(p,x)` and [`getGradient`](@ref)`(p,x)`,
+# be encapsulated using [`get_cost`](@ref)`(p,x)` and [`get_gradient`](@ref)`(p,x)`,
 # where in both cases `x` is a point on the [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`.
 # Second, the [`GradientDescentOptions`](@ref) specify that the algorithm to solve
 # the [`GradientProblem`](@ref) will be the [gradient
@@ -153,7 +153,7 @@ nothing #hide
 o = cyclic_proximal_point(M,F2,proxes,data[1];
     debug = [:Iteration," | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
     record = [:Iteration, :Change, :Cost],
-    returnOptions = true
+    return_options = true
 )
 xMedian = get_solver_result(o)
 values = get_record(o)

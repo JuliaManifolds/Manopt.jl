@@ -8,7 +8,7 @@ The aim is to solve an optimization problem on a manifold
 
 by using the Riemannian trust-regions solver. It is number one choice for smooth
 optimization. This trust-region method uses the Steihaug-Toint truncated
-conjugate-gradient method [`truncatedConjugateGradient`](@ref)
+conjugate-gradient method [`truncated_conjugate_gradient_descent`](@ref)
 to solve the inner minimization problem called the
 trust-regions subproblem. This inner solve can be preconditioned by providing
 a preconditioner (symmetric and positive deﬁnite, an approximation of the
@@ -84,7 +84,7 @@ trust-regions subproblem
 
 with the Steihaug-Toint truncated conjugate-gradient (tcg) method. The problem
 as well as the solution method is described in the
-[`truncatedConjugateGradient`](@ref).
+[`truncated_conjugate_gradient_descent`](@ref).
 
 To step number 3: If using a random tangent vector as an initial vector, compare
 the result of the tcg-method with the Cauchy point. Convergence proofs assume
@@ -115,7 +115,7 @@ mapping $\operatorname{Retr}_{x_k}:T_{x_k}\mathcal{M} \rightarrow \mathcal{M}$
 wich approximates the exponential map. In some cases it is cheaper to use this
 instead of the exponential.
 
-To step number 6: One knows that the [`truncatedConjugateGradient`](@ref) algorithm stopped for
+To step number 6: One knows that the [`truncated_conjugate_gradient_descent`](@ref) algorithm stopped for
 these reasons when the stopping criteria [`StopWhenCurvatureIsNegative`](@ref),
 [`StopWhenTrustRegionIsExceeded`](@ref) are activated.
 

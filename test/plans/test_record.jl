@@ -5,7 +5,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     io = IOBuffer()
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.,2.]
-    o = GradientDescentOptions(M, x, StopAfterIteration(20), ConstantStepsize(1.))
+    o = GradientDescentOptions(x, StopAfterIteration(20), ConstantStepsize(1.))
     f = y -> distance(M,y,x).^2
     ∇f = y -> -2*log(M,y,x)
     p = GradientProblem(M,f,∇f)

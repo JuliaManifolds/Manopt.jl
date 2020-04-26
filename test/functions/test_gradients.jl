@@ -1,4 +1,6 @@
-@testset "gradient TV." begin
+using Manifolds, Manopt, Test, ManifoldsBase
+
+@testset "gradients" begin
     M = Circle()
     N = PowerManifold(M, 4)
     x = [0.1,0.2,0.3,0.5]
@@ -23,4 +25,9 @@
     x3C = cat(x3, x3; dims=3)
     tC = cat([.2 .3; 0. 0.], [.1 0.; .2 0.] ; dims=3)
     @test norm(N3C, x3C, forward_logs(N3,x3)-tC) ≈ 0 atol=10^(-16)
+
+    M = Circle()
+    p = 0
+    q = π/4
+    @test  ∇distance(M,p,q) == q-p
 end

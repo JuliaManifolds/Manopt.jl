@@ -1,3 +1,5 @@
+using Manifolds, Manopt, Test, ManifoldsBase
+
 @testset "Differentials" begin
     p = [1.,0.,0.]
     q = [0.,1.,0.]
@@ -28,6 +30,7 @@
                 differential_forward_logs(N,x,V)
                 - [-X, [π/2, 0., 0.],zero_tangent_vector(M,p)]
             ) ≈ 0 atol=8*10.0^(-16)
+        @test differential_log_argument(N, x, y, V) == [ V[1], V[2], V[2] ]
     end
     @testset "Differentials on SPD(2)" begin
         #
@@ -48,11 +51,20 @@
         @test norm(M2, q2, differential_geodesic_startpoint(M2, p2, q2, 1., X2)) ≈ 0 atol=4*10.0^(-16)
         @test norm(M2, q2, differential_exp_basepoint(M2, p2, X2, zero_tangent_vector(M2,p2) )) ≈ 0 atol=4*10.0^(-16)
         @test norm(M2,q2,differential_exp_argument(M2,p2,X2,zero_tangent_vector(M2,p2))) ≈ 0 atol=4*10.0^(-16)
+        # test coeff of log_basepoint, since it is not always expicitly used.
+        @test βdifferential_log_basepoint(-1.0, 1.0, 2.0) ≈ -2*cosh(2.0)/sinh(2.0)
     end
     @testset "Differentials on Euclidean(2)" begin
         M3 = Euclidean(2)
         x3 = [1., 2.]
         ξ3 = [1.,0.]
         @test norm(M3, x3, differential_exp_basepoint(M3, x3, ξ3, ξ3) - ξ3) ≈ 0 atol=4*10.0^(-16)
+    end
+    @testset "Differentials on the Circle" begin
+        M = Circle()
+        p = 0
+        q = π/4
+        X = π/8
+        @test differential_log_argument(M,p,q,X) == X
     end
 end

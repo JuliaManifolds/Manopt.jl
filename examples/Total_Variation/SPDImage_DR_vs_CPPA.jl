@@ -46,7 +46,7 @@ print("--- Douglas–Rachford with η: $(η) and λ: $(λ) ---\n")
 cost(x) = fidelity(x) + α*prior(x)
 N = PowerManifold(pixelM, NestedPowerRepresentation(),5)
 prox1 = (η,x) -> cat( prox_distance(M,η,f,get_component(N,x,1)), prox_parallel_TV(M,α*η,get_component(N,x,2:5)), dims=1)
-prox2 = (η,x) -> fill(mean(M,x;stoppingCriterion=StopAfterIteration(20)),5)
+prox2 = (η,x) -> fill(mean(M,x;stopping_criterion=StopAfterIteration(20)),5)
 sC = StopAfterIteration(400)
 try
     cost_threshold = load(resultsFolder*comparisonData)["compareCostFunctionValue"]
@@ -62,9 +62,9 @@ x0 = f
     λ = i -> η, α = i -> λ, # map from Paper notation of BPS16 to toolbox notation
     debug = [:Iteration," | ", :Change, " | ", :Cost,"\n",10,:Stop],
     record = [:Iteration, :Cost ],
-    stoppingCriterion = sC,
+    stopping_criterion = sC,
     parallel=5,
-    returnOptions = true
+    return_options = true
 )
 y = get_solver_result(o)
 r = get_record(o)

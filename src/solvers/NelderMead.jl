@@ -18,7 +18,7 @@ and
 
 # Optional
 
-* `stoppingCriterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
 * `γ` – (`2.`) expansion parameter ($\gamma$)
@@ -29,23 +29,23 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
 * either `x` the last iterate or the complete options depending on the optional
-  keyword `returnOptions`, which is false by default (hence then only `x` is
+  keyword `return_options`, which is false by default (hence then only `x` is
   returned).
 """
 function NelderMead(M::MT,
     F::Function,
     population = [random_point(M) for i=1:(manifoldDimension(M)+1) ];
-    stoppingCriterion::StoppingCriterion = StopAfterIteration(200000),
+    stopping_criterion::StoppingCriterion = StopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
-    returnOptions=false,
+    return_options=false,
     kwargs... #collect rest
   ) where {MT <: Manifold,T}
     p = CostProblem(M,F)
-    o = NelderMeadOptions(population, stoppingCriterion;
+    o = NelderMeadOptions(population, stopping_criterion;
     α = α, γ = γ, ρ = ρ, σ = σ)
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
-    if returnOptions
+    if return_options
         return resultO
     else
         return get_solver_result(resultO)

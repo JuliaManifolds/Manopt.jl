@@ -26,7 +26,7 @@ For a description of the algorithm and more details see
 * `retraction` – approximation of the exponential map
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
-* `stoppingCriterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
+* `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
@@ -51,7 +51,7 @@ For a description of the algorithm and more details see
   that the iterates produced are not monotonically improving the cost
   when very close to convergence. This is because the corrected cost
   improvement could change sign if it is negative but very small.
-* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `xOpt` is returned
 
@@ -59,7 +59,7 @@ For a description of the algorithm and more details see
 * `x` – the last reached point on the manifold
 
 # see also
-[`truncatedConjugateGradient`](@ref)
+[`truncated_conjugate_gradient_descent`](@ref)
 """
 function trust_regions(
     M::MT,
@@ -69,7 +69,7 @@ function trust_regions(
     H::Union{Function,Missing};
     retraction::Function = exp,
     preconditioner::Function = (M,x,ξ) -> ξ,
-    stoppingCriterion::StoppingCriterion = StopWhenAny(
+    stopping_criterion::StoppingCriterion = StopWhenAny(
         StopAfterIteration(1000),
         StopWhenGradientNormLess(10^(-6))
     ),
@@ -78,7 +78,7 @@ function trust_regions(
     useRandom::Bool = false,
     ρ_prime::Float64 = 0.1,
     ρ_regularization=1000.,
-    returnOptions=false,
+    return_options=false,
     kwargs... #collect rest
     ) where {MT <: Manifold}
     (ρ_prime >= 0.25) && throw( ErrorException(
@@ -91,7 +91,7 @@ function trust_regions(
     p = HessianProblem(M,F,∇F,H,preconditioner)
     o = TrustRegionsOptions(
         x,
-        stoppingCriterion,
+        stopping_criterion,
         Δ,
         Δ_bar,
         retraction,
@@ -101,7 +101,7 @@ function trust_regions(
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
-    if returnOptions
+    if return_options
         return resultO
     else
         return get_solver_result(resultO)
@@ -124,17 +124,17 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegi
                 end
         end
         # Solve TR subproblem approximately
-        opt = truncatedConjugateGradient(p.M,p.cost,p.gradient,
+        opt = truncated_conjugate_gradient_descent(p.M,p.cost,p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         #debug = [:Iteration," ",:Stop],
-        returnOptions=true)
+        return_options=true)
         option = get_options(opt) # remove decorators
         η = get_solver_result(option)
         SR = get_active_stopping_criteria(option.stop)
         Hη = getHessian(p, o.x, η)
         # Initialize the cost function F und the gradient of the cost function
         # ∇F at the point x
-        grad = getGradient(p, o.x)
+        grad = get_gradient(p, o.x)
         fx = get_cost(p, o.x)
         norm_grad = norm(p.M, o.x, grad)
         # If using randomized approach, compare result with the Cauchy point.

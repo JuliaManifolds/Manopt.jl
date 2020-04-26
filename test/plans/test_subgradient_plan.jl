@@ -16,6 +16,6 @@ using Manifolds
     # Check Fallbacks of Problen
     @test get_cost(p,x) == 0.
     @test norm(M,x,get_subgradient(p,x)) == 0
-    @test_throws ErrorException getGradient(p,o.x)
+    @test_throws ErrorException get_gradient(p,o.x)
     @test_throws ErrorException getProximalMap(p,1.,o.x,1)
 end

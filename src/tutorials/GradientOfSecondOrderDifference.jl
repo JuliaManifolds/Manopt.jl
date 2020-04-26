@@ -140,7 +140,7 @@ costTV2(M, (pn, rn, qn) )
 # on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
 x = [p,r,q]
 N = PowerManifold(M, NestedPowerRepresentation(),3)
-s = ArmijoLinesearch(1.0,exp,0.999,0.96)(N, x,
+s = ArmijoLinesearch(1.0,ExponentialRetraction(),0.999,0.96)(N, x,
     x -> costTV2(M, Tuple(x)),
      [ ∇TV2(M, (p,r,q))... ]  # transform from tuple to PowTVector
 )

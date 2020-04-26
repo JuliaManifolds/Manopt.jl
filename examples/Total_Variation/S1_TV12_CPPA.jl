@@ -85,7 +85,7 @@ o = cyclic_proximal_point(
         :Start => DebugDivider("Starting the solver\n"),
     ),
     record = [:Iteration, :Cost, :Change, :Iterate],
-    returnOptions = true,
+    return_options = true,
 )
 fR = get_solver_result(o)
 r = get_record(o)

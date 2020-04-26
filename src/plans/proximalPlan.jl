@@ -59,7 +59,7 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
 * `x0` – an point to start
-* `stoppingCriterion` – a function `@(iter,x,xnew,λ_k)` based on the current
+* `stopping_criterion` – a function `@(iter,x,xnew,λ_k)` based on the current
     `iter`, `x` and `xnew` as well as the current value of `λ`.
 * `λ` – (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
 * `evaluationOrder` – ([`LinearEvalOrder`](@ref)`()`) how to cycle through the proximal maps.

@@ -16,9 +16,9 @@ the argument `∂F` should always return _one_ element from the subgradient.
 # Optional
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
-* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-* `returnOptions` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `xOpt` if returned
 ...
@@ -27,7 +27,7 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 # Output
 * `xOpt` – the resulting (approximately critical) point of gradientDescent
 OR
-* `options` - the options returned by the solver (see `returnOptions`)
+* `options` - the options returned by the solver (see `return_options`)
 """
 function subgradient_method(M::Manifold,
         F::Function,
@@ -35,15 +35,15 @@ function subgradient_method(M::Manifold,
         x;
         retraction::Function = exp!,
         stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M,x)/5),
-        stoppingCriterion::StoppingCriterion = StopAfterIteration(5000),
-        returnOptions = false,
+        stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
+        return_options = false,
         kwargs... #especially may contain debug
     )
     p = SubGradientProblem(M,F,∂F)
-    o = SubGradientMethodOptions(M,x,stoppingCriterion, stepsize, retraction)
+    o = SubGradientMethodOptions(M,x,stopping_criterion, stepsize, retraction)
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
-    if returnOptions
+    if return_options
         return resultO
     else
         return get_solver_result(resultO)

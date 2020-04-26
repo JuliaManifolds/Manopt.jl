@@ -1,3 +1,5 @@
+using Manifolds, Manopt, Test, ManifoldsBase
+
 @testset "Differentials (on Sphere(2))" begin
 # The Adjoint Differentials test using the same variables as the differentials
 # test

@@ -2,7 +2,7 @@
     io = IOBuffer()
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.,2.]
-    o = GradientDescentOptions(M, x, StopAfterIteration(20), ConstantStepsize(1.))
+    o = GradientDescentOptions(x, StopAfterIteration(20), ConstantStepsize(1.))
     o.∇ = [1., 0.]
     f = y -> distance(M,y,x).^2
     ∇f = y -> -2*log(M,y,x)
@@ -12,7 +12,7 @@
     @test get_last_stepsize(p,o,1) == 1.
     # Check Fallbacks of Problen
     @test get_cost(p,o.x) == 0.
-    @test getGradient(p,o.x) == zero_tangent_vector(M,x)
+    @test get_gradient(p,o.x) == zero_tangent_vector(M,x)
     @test_throws ErrorException getProximalMap(p,1.,o.x,1)
     @test_throws ErrorException get_subgradient(p,o.x)
     # Additional Specific Debugs

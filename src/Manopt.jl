@@ -20,6 +20,8 @@ module Manopt
         ×,
         ^,
         AbstractVectorTransportMethod,
+        AbstractRetractionMethod,
+        ExponentialRetraction,
         ParallelTransport,
         Manifold,
         allocate_result,
@@ -89,14 +91,15 @@ module Manopt
     include("functions/gradients.jl")
     include("functions/jacobiFields.jl")
     include("functions/proximalMaps.jl")
-    # ...solvers (1) general framework
+    # solvers general framework
     include("solvers/solver.jl")
-    # ...solvers (2) specific solvers
+    # specific solvers
+    include("solvers/conjugate_gradient_descent.jl")
     include("solvers/cyclic_proximal_point.jl")
     include("solvers/DouglasRachford.jl")
     include("solvers/NelderMead.jl")
     include("solvers/steepest_descent.jl")
-    include("solvers/truncatedConjugateGradient.jl")
+    include("solvers/truncated_conjugate_gradient_descent.jl")
     include("solvers/trust_regions.jl")
     include("solvers/subgradient.jl")
     include("solvers/debug_solver.jl")
@@ -128,7 +131,7 @@ export differential_exp_basepoint, differential_exp_argument
 export differential_log_basepoint, differential_log_argument, differential_forward_logs
 export jacobi_field, adjoint_Jacobi_field
 export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇distance
-export get_cost, getGradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
+export get_cost, get_gradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
 export getHessian, approxHessianFD
 export meanSquaredError, meanAverageError
 export prox_distance, prox_TV, prox_parallel_TV, prox_TV2, prox_collaborative_TV
@@ -146,17 +149,36 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export RecordGradient, RecordGradientNorm, RecordStepsize
 
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
-export NelderMead, steepest_descent, subgradient_method, truncatedConjugateGradient, trust_regions
+
+export NelderMead, steepest_descent, subgradient_method, truncated_conjugate_gradient_descent, trust_regions
+export cyclic_proximal_point, conjugate_gradient_descent
 
 export DebugGradient, DebugGradientNorm, DebugStepsize
 
-export GradientDescentOptions, HessianOptions, SubGradientMethodOptions, NelderMeadOptions
-export TruncatedConjugateGradientOptions, TrustRegionsOptions
+export Options, get_options
+export is_options_decorator, dispatch_options_decorator
+
+export
+    ConjugateGradientDescentOptions,
+    GradientDescentOptions,
+    HessianOptions,
+    SubGradientMethodOptions,
+    NelderMeadOptions,
+    TruncatedConjugateGradientOptions,
+    TrustRegionsOptions
+
+export DirectionUpdateRule,
+    SteepestDirectionUpdateRule,
+    HeestenesStiefelCoefficient,
+    FletcherReevesCoefficient,
+    PolakRibiereCoefficient,
+    ConjugateDescentCoefficient,
+    LiuStoreyCoefficient,
+    DaiYuanCoefficient,
+    HagerZhangCoefficient
 
 export StoppingCriterion, StoppingCriterionSet, Stepsize
 export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
-export Options, get_options
-export is_options_decorator, dispatch_options_decorator
 
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!
@@ -166,5 +188,4 @@ export ConstantStepsize, DecreasingStepsize
 export Linesearch, ArmijoLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 
-export cyclic_proximal_point
 end
