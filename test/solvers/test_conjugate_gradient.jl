@@ -93,6 +93,12 @@ end
 
 # @testset "Conjugate Gradient runs" begin
 
+# A = Diagonal([1., 2., 3.])
+
+# M = Sphere(size(A,1)-1)
+# F(x) = x'*A*x
+# euclidean_∇F(x) = -2*A*x
+# ∇F(x) = project(M,x,euclidean_∇F(x))
 
 # x = [1.,2.,3.]/sqrt(14.)
 # xOpt = conjugate_gradient_descent(

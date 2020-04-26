@@ -238,7 +238,7 @@ function jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Fu
     Θ = vector_transport_to.( Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
     Y = zero_tangent_vector(M,p)
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y .= sum(
+    Y = sum(
         (
             inner.(Ref(M), Ref(p), Ref(X), V)
         ) .* (

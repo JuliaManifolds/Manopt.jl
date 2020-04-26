@@ -10,16 +10,16 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
     include("plans/test_subgradient_plan.jl")
 end
 @testset "Function Tests     " begin
-    include("functions/testAdjointDifferentials.jl")
-    include("functions/testDifferentials.jl")
-    include("functions/testCosts.jl")
-    include("functions/testGradients.jl")
-    include("functions/testProximalMaps.jl")
+    include("functions/test_adjoint_differentials.jl")
+    include("functions/test_differentials.jl")
+    include("functions/test_costs.jl")
+    include("functions/test_gradients.jl")
+    include("functions/test_proximal_maps.jl")
     include("functions/test_manifold.jl")
 end
 @testset "Helper & Data Tests" begin
-    include("helpers/testErrorMeasures.jl")
-    include("helpers/testData.jl")
+    include("helpers/test_error_measures.jl")
+    include("helpers/test_data.jl")
 end
 @testset "Solver Tests       " begin
     include("solvers/test_conjugate_gradient.jl")

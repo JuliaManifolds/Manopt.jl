@@ -1,3 +1,5 @@
+using Manifolds, Manopt, Test, ManifoldsBase
+
 @testset "Differentials" begin
     p = [1.,0.,0.]
     q = [0.,1.,0.]
@@ -28,6 +30,7 @@
                 differential_forward_logs(N,x,V)
                 - [-X, [π/2, 0., 0.],zero_tangent_vector(M,p)]
             ) ≈ 0 atol=8*10.0^(-16)
+        @test differential_log_argument(N, x, y, V) == [ V[1], V[2], V[2] ]
     end
     @testset "Differentials on SPD(2)" begin
         #
@@ -54,5 +57,12 @@
         x3 = [1., 2.]
         ξ3 = [1.,0.]
         @test norm(M3, x3, differential_exp_basepoint(M3, x3, ξ3, ξ3) - ξ3) ≈ 0 atol=4*10.0^(-16)
+    end
+    @testset "Differentials on the Circle" begin
+        M = Circle()
+        p = 0
+        q = π/4
+        X = π/8
+        @test differential_log_argument(M,p,q,X) == X
     end
 end

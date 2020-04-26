@@ -1,4 +1,5 @@
-using Manifolds, Manopt, Test
+using Manifolds, Manopt, Test, ManifoldsBase
+
 using Random
 Random.seed!(42)
 # Test the additional manifold functions
@@ -17,6 +18,9 @@ Random.seed!(42)
         @test isapprox(M,r,r2)
         @test isapprox(M,r2,r3)
         @test isapprox(M,r3,r4)
+        r5 = similar(r4)
+        mid_point!(M,r5,p,q,q)
+        @test isapprox(M,r4,r5)
 
         r4 = mid_point(M,p,-p,q)
         r5 = similar(r4)
@@ -27,6 +31,21 @@ Random.seed!(42)
         @test isapprox(M,reflect(M,p,q),-q)
         f = x->x
         @test reflect(M,f,q) == q
+
+        M2 = Euclidean(2)
+        p2 = [1.0, 0.0]
+        q2 = [0.0, 1.0]
+        s = mid_point(M2,p2,q2)
+        s2 = similar(s)
+        mid_point!(M2,s2,p2,q2)
+        @test s==s2
+        @test s==(p2+q2)/2
+        s = mid_point(M2,p2,q2,s)
+        @test s==s2
+        s2 = similar(s)
+        mid_point!(M2,s2,p2,q2,s)
+        @test s==s2
+
     end
     @testset "random" begin
         Mc = Circle()
