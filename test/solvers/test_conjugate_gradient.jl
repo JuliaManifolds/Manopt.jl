@@ -90,25 +90,24 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     O.δ = δ2
     @test O.coefficient(P,O,2) == dot(∇2,diff)/dot(∇1,∇1)
 end
+@testset "Conjugate Gradient runs – Low Rank matrix approx" begin
+    A = Diagonal([2.0,1.1,1.0])
+    M = Sphere(size(A,1)-1)
+    F(x) = x'*A*x
+    euclidean_∇F(x) = 2*A*x
+    ∇F(x) = project(M,x,euclidean_∇F(x))
 
-# @testset "Conjugate Gradient runs" begin
-
-# A = Diagonal([1., 2., 3.])
-
-# M = Sphere(size(A,1)-1)
-# F(x) = x'*A*x
-# euclidean_∇F(x) = -2*A*x
-# ∇F(x) = project(M,x,euclidean_∇F(x))
-
-# x = [1.,2.,3.]/sqrt(14.)
-# xOpt = conjugate_gradient_descent(
-#     M,
-#     F,
-#     ∇F,
-#     x;
-#     stepsize=ArmijoLinesearch(),
-#     coefficient=FletcherReeves(),
-#     debug=[:Iteration," | ",:Cost," | ",:Iterate," | ",DebugEntry(:β)," | ", DebugEntry(:δ),"\n"],
-# )
-
-#end
+    x0 = [2.0,0.0,2.0]/sqrt(8.)
+    xOpt = conjugate_gradient_descent(
+        M,
+        F,
+        ∇F,
+        x0;
+        stepsize=ArmijoLinesearch(),
+        coefficient=FletcherReevesCoefficient(),
+        stopping_criterion=StopAfterIteration(15),
+        #debug=[:Iteration," | ",:Cost," | ",:Iterate," |\n"],
+    )
+    @test isapprox(F(xOpt),minimum(eigvals(A)), atol=1.2*10^-4)
+    @test isapprox(xOpt, eigvecs(A)[:,size(A,1)], atol=1.7*10^-2)
+end

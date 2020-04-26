@@ -27,7 +27,7 @@ the default parameter is given in brackets
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflect`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
-* `stoppingCriterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
   `PowerManifold` manifold with two proxes. This can be used to trigger
   parallel Douglas–Rachford if you enter with two proxes. Keep in mind, that a
@@ -50,7 +50,7 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
     α::Function = (iter) -> 0.9,
     R = reflect,
     parallel::Int = 0,
-    stoppingCriterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenChangeLess(10.0^-5)),
+    stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenChangeLess(10.0^-5)),
     return_options=false,
     kwargs... #especially may contain decorator options
 ) where {MT <: Manifold}
@@ -75,7 +75,7 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
         nF = F
     end
     p = ProximalProblem(M,nF,[prox1,prox2])
-    o = DouglasRachfordOptions(x, λ, α, reflect, stoppingCriterion,parallel > 0)
+    o = DouglasRachfordOptions(x, λ, α, reflect, stopping_criterion,parallel > 0)
 
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)

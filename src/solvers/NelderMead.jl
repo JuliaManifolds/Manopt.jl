@@ -18,7 +18,7 @@ and
 
 # Optional
 
-* `stoppingCriterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
 * `γ` – (`2.`) expansion parameter ($\gamma$)
@@ -35,13 +35,13 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 function NelderMead(M::MT,
     F::Function,
     population = [random_point(M) for i=1:(manifoldDimension(M)+1) ];
-    stoppingCriterion::StoppingCriterion = StopAfterIteration(200000),
+    stopping_criterion::StoppingCriterion = StopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
     return_options=false,
     kwargs... #collect rest
   ) where {MT <: Manifold,T}
     p = CostProblem(M,F)
-    o = NelderMeadOptions(population, stoppingCriterion;
+    o = NelderMeadOptions(population, stopping_criterion;
     α = α, γ = γ, ρ = ρ, σ = σ)
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)

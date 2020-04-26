@@ -39,7 +39,7 @@ see the reference:
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
-* `stoppingCriterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),
+* `stopping_criterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),
     [`stopIfResidualIsReducedByFactor`](@ref), [`stopIfResidualIsReducedByPower`](@ref),
     [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
@@ -73,7 +73,7 @@ function truncated_conjugate_gradient_descent(
     θ::Float64 = 1.0,
     κ::Float64 = 0.1,
     useRandom::Bool = false,
-    stoppingCriterion::StoppingCriterion = StopWhenAny(
+    stopping_criterion::StoppingCriterion = StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
         stopIfResidualIsReducedByPower(
             sqrt(inner(M, x,
@@ -96,7 +96,7 @@ function truncated_conjugate_gradient_descent(
         kwargs... #collect rest
     ) where {mT <: Manifold}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
-    o = TruncatedConjugateGradientOptions(x,stoppingCriterion,η,zero_tangent_vector(M,x),Δ,zero_tangent_vector(M,x),useRandom)
+    o = TruncatedConjugateGradientOptions(x,stopping_criterion,η,zero_tangent_vector(M,x),Δ,zero_tangent_vector(M,x),useRandom)
     o = decorate_options(o; kwargs...)
     resultO = solve(p,o)
     if return_options

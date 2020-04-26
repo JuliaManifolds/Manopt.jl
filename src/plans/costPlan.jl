@@ -31,7 +31,7 @@ after the description
 
 * `population` – an `Array{`point`,1}` of $n+1$ points $x_i$, $i=1,\ldots,n+1$, where $n$ is the
   dimension of the manifold.
-* `stoppingCriterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
 * `retraction` – (`exp`) the rectraction to use
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
 * `γ` – (`2.`) expansion parameter ($\gamma>0$)

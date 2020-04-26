@@ -38,7 +38,7 @@ Describes a Gradient based descent algorithm, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x0` – an a point (of type `P`) on a manifold as starting point
-* `stoppingCriterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
 * `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
   the exponential map

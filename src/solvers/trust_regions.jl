@@ -26,7 +26,7 @@ For a description of the algorithm and more details see
 * `retraction` – approximation of the exponential map
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
-* `stoppingCriterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
+* `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
@@ -69,7 +69,7 @@ function trust_regions(
     H::Union{Function,Missing};
     retraction::Function = exp,
     preconditioner::Function = (M,x,ξ) -> ξ,
-    stoppingCriterion::StoppingCriterion = StopWhenAny(
+    stopping_criterion::StoppingCriterion = StopWhenAny(
         StopAfterIteration(1000),
         StopWhenGradientNormLess(10^(-6))
     ),
@@ -91,7 +91,7 @@ function trust_regions(
     p = HessianProblem(M,F,∇F,H,preconditioner)
     o = TrustRegionsOptions(
         x,
-        stoppingCriterion,
+        stopping_criterion,
         Δ,
         Δ_bar,
         retraction,

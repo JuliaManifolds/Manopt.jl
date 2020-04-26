@@ -90,7 +90,7 @@ A=[1. 2. 3.; 4. 5. 6.; 7. 8. 9.]
             stepsize=2^(-9),
             transport=ProductVectorTransport(ProjectionTransport(),ProjectionTransport())
         );
-        stoppingCriterion = StopWhenAny(
+        stopping_criterion = StopWhenAny(
             StopAfterIteration(2000),
             StopWhenGradientNormLess(10^(-6))
         ),

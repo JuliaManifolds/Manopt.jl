@@ -63,7 +63,7 @@ x0 = f
         :Stop,
     ],
     record = [:Iteration, :Iterate, :Cost],
-    stoppingCriterion = StopAfterIteration(maxIterations),
+    stopping_criterion = StopAfterIteration(maxIterations),
     λ = i -> π / (2 * i),
     return_options = true,
 )

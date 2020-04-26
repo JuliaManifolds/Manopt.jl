@@ -190,7 +190,7 @@ geodesic from `x1` to `x3` that is closest to `x2`.
 * `(y1,y2,y3)` – resulting tuple of points of the proximal map
 """
 function prox_TV2(M::Manifold,λ,pointTuple::Tuple{T,T,T},p::Int=1;
-  stoppingCriterion::StoppingCriterion = StopAfterIteration(5),
+  stopping_criterion::StoppingCriterion = StopAfterIteration(5),
   kwargs...) where {T}
   if p != 1
     throw(ErrorException(
@@ -202,7 +202,7 @@ function prox_TV2(M::Manifold,λ,pointTuple::Tuple{T,T,T},p::Int=1;
   xInit = PowX
   F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
   ∂F(x) = log(PowM,x,PowX) + λ*∇TV2(PowM,x)
-  xR = subgradient_method(PowM,F,∂F,xInit;stoppingCriterion=stoppingCriterion, kwargs...)
+  xR = subgradient_method(PowM,F,∂F,xInit;stopping_criterion=stopping_criterion, kwargs...)
   return (xR...,)
 end
 function prox_TV2(M::Circle,λ,pointTuple::Tuple{T,T,T},p::Int=1) where {T}

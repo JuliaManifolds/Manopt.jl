@@ -38,7 +38,7 @@ They all compute $\beta_k$ such that this algorithm updates the search direction
     If set to false (default) just the optimal value `xOpt` if returned
 * `stepsize` - (`Constant(1.)`) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
-* `stoppingCriterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
+* `stopping_criterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
   a function indicating when to stop.
 * `vector_transport_method` – (`ParallelTransport()`) vector transport method to transport
   the old descent direction when computing the new descent direction.
@@ -56,7 +56,7 @@ function conjugate_gradient_descent(
     coefficient::DirectionUpdateRule = SteepestDirectionUpdateRule(),
     stepsize::Stepsize = ConstantStepsize(1.),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    stoppingCriterion::StoppingCriterion = StopWhenAny(
+    stopping_criterion::StoppingCriterion = StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
     transport_method = ParallelTransport(),
@@ -66,7 +66,7 @@ function conjugate_gradient_descent(
     p = GradientProblem(M,F,∇F)
     o = ConjugateGradientDescentOptions(
         x,
-        stoppingCriterion,stepsize,
+        stopping_criterion,stepsize,
         coefficient,
         retraction_method,
         transport_method,

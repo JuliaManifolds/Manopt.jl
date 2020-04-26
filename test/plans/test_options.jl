@@ -38,6 +38,7 @@ end
     @test get_options(dr) == o
     @test get_options(d) == o
     @test get_options(o) == o
+    @test get_options(o,Val(false)) == o
 
     @test Manopt._extract_val(Val(true))
     @test !Manopt._extract_val(Val(false))

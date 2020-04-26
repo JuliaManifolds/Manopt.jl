@@ -65,7 +65,7 @@ x0 = f
         :Stop,
     ],
     record = [:Iteration, :Iterate, :Cost],
-    stoppingCriterion = StopAfterIteration(maxIterations),
+    stopping_criterion = StopAfterIteration(maxIterations),
     return_options = true,
 )
 y = get_solver_result(o)
