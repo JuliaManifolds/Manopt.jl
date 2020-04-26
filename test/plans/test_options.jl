@@ -29,9 +29,16 @@ end
     @test is_options_decorator(d)
     @test !is_options_decorator(o)
 
+    @test dispatch_options_decorator(r) === Val(true)
+    @test dispatch_options_decorator(dr) === Val(true)
+    @test dispatch_options_decorator(d) === Val(true)
+    @test dispatch_options_decorator(o) === Val(false)
+
     @test get_options(r) == o
     @test get_options(dr) == o
     @test get_options(d) == o
     @test get_options(o) == o
 
+    @test Manopt._extract_val(Val(true))
+    @test !Manopt._extract_val(Val(false))
 end

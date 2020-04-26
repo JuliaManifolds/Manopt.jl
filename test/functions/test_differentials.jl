@@ -51,6 +51,8 @@ using Manifolds, Manopt, Test, ManifoldsBase
         @test norm(M2, q2, differential_geodesic_startpoint(M2, p2, q2, 1., X2)) ≈ 0 atol=4*10.0^(-16)
         @test norm(M2, q2, differential_exp_basepoint(M2, p2, X2, zero_tangent_vector(M2,p2) )) ≈ 0 atol=4*10.0^(-16)
         @test norm(M2,q2,differential_exp_argument(M2,p2,X2,zero_tangent_vector(M2,p2))) ≈ 0 atol=4*10.0^(-16)
+        # test coeff of log_basepoint, since it is not always expicitly used.
+        @test βdifferential_log_basepoint(-1.0, 1.0, 2.0) ≈ -2*cosh(2.0)/sinh(2.0)
     end
     @testset "Differentials on Euclidean(2)" begin
         M3 = Euclidean(2)
