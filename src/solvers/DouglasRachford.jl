@@ -85,8 +85,7 @@ function DouglasRachford(M::MT, F::Function, proxes::Array{Function,N} where N, 
         return get_solver_result(resultO)
     end
 end
-function initialize_solver!(p::ProximalProblem,o::DouglasRachfordOptions)
-end
+function initialize_solver!(p::ProximalProblem,o::DouglasRachfordOptions) end
 function step_solver!(p::ProximalProblem,o::DouglasRachfordOptions,iter)
     pP = getProximalMap(p,o.λ(iter),o.s,1)
     snew = o.R(p.M, pP, o.s);
