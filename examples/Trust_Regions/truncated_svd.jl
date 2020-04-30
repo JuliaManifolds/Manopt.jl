@@ -84,10 +84,8 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         Δ_bar=4*sqrt(2*p),
         debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop]
     )
-
-    U = get_component(M,X,1)
-    V = get_component(M,X,2)
-
+    U = X[M,1]
+    V = X[M,2]
     Spp = transpose(U)*A*V
     SVD = svd(Spp)
     U = U*SVD.U
