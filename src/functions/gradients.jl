@@ -154,13 +154,7 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all( J .<= maxInd ) # is this neighbor in range?
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-                set_component!(
-                    N,
-                    X,
-                    log(M.manifold, get_component(M,p,i), get_component(M,p,j)),
-                    i,
-                    k,
-                ) # Compute log and store in kth entry
+                X[N, Tuple(i)..., k] = log(M.manifold,p[M, Tuple(i)...], p[M, Tuple(j)...])
             end
         end # directions
     end # i in R

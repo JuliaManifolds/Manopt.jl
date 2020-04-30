@@ -80,7 +80,9 @@ module Manopt
         submanifold_components,
         submanifold_component,
         get_component,
-        set_component!
+        set_component!,
+        getindex,
+        setindex!
 
     include("plans/plan.jl")
     # Functions

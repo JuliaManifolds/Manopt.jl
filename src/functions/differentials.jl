@@ -104,23 +104,17 @@ function differential_forward_logs(M::PowerManifold, p, X)
                 # collects two, namely in kth direction since xi appears as base and arg
                 # Y[i,k] = differential_log_basepoint(M.manifold,p[i],p[j],X[i])
                 #            + differential_log_argument(M.manifold,p[i],p[j],X[j])
-                set_component!(
-                    N,
-                    Y,
-                    differential_log_basepoint(
+                Y[M, I...,k] = Y[M, I..., k] + differential_log_basepoint(
                         M.manifold,
-                        get_component(M,p,i),
-                        get_component(M,p,j),
-                        get_component(M,X,i),
+                        p[M, I...],
+                        p[M, J...],
+                        X[M, I...],
                     ) + differential_log_argument(
                         M.manifold,
-                        get_component(M,p,i),
-                        get_component(M,p,j),
-                        get_component(M,X,j),
-                    ),
-                    i,
-                    k,
-                )
+                        p[M, I...],
+                        p[M, J...],
+                        X[M, J...],
+                    )
             end
         end # directions
     end # i in R

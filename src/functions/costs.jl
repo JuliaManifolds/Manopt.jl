@@ -116,11 +116,7 @@ function costTV(M::PowerManifold, x, p=1, q=1)
         for i in R # iterate over all pixel
             j = i+ek # compute neighbor
             if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-                cost[i] += costTV(
-                    M.manifold,
-                    (get_component(M,x,i),get_component(M,x,j)),
-                    p
-                )
+                cost[i] += costTV(M.manifold, (x[M,Tuple(i)...], x[M,Tuple(j)...]), p)
             end
         end
     end
@@ -149,8 +145,8 @@ $d_2^p(x_1,x_2,x_3) = \min_{c ∈ \mathcal C} d_{\mathcal M}(c,x_2).$
 [`∇TV2`](@ref), [`prox_TV2`](@ref)
 """
 function costTV2(M::MT, x::Tuple{T,T,T}, p=1) where {MT <: Manifold, T}
-  # note that here mid_point returns the closest to x2 from the e midpoints between x1 x3
-  return 1/p*distance(M,mid_point(M,x[1],x[3]),x[2])^p
+    # note that here mid_point returns the closest to x2 from the e midpoints between x1 x3
+    return 1/p*distance(M,mid_point(M,x[1],x[3]),x[2])^p
 end
 @doc raw"""
     costTV2(M,x [,p=1])
@@ -188,10 +184,9 @@ function costTV2(M::PowerManifold, x, p::Int=1, Sum::Bool=true)
             if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
                 cost[i] += costTV2(
                     M.manifold,
-                    (get_component(M,x,jB),get_component(M,x,i),get_component(M,x,jF)),
+                    (x[M,Tuple(jB)...], x[M,Tuple(i)...], x[M,Tuple(jF)...]),
                     p,
                 )
-
             end
         end # i in R
   end # directions

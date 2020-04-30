@@ -110,29 +110,17 @@ function adjoint_differential_forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, 
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all( J .<= maxInd ) # is this neighbor in range?
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-                # Y[i] += adjoint_differential_log_basepoint(M.manifold,p[i],p[j],X[i,k])
-                set_component!(
-                    M,
-                    Y,
-                    get_component(M,Y,i) .+ adjoint_differential_log_basepoint(
-                        M.manifold,
-                        get_component(M,p,i),
-                        get_component(M,p,j),
-                        get_component(N,X,i,k),
-                    ),
-                    i,
+                Y[M,I...] = Y[M,I...] + adjoint_differential_log_basepoint(
+                    M.manifold,
+                    p[M,I...],
+                    p[M,J...],
+                    X[N,I...,k],
                 )
-                # Y[j] += adjoint_differential_log_argument(M.manifold,p[i],p[j],X[i,k])
-                set_component!(
-                    M,
-                    Y,
-                    get_component(M,Y,j) + adjoint_differential_log_basepoint(
-                        M.manifold,
-                        get_component(M,p,i),
-                        get_component(M,p,j),
-                        get_component(N,X,i,k),
-                    ),
-                    i,
+                Y[M,J...] = Y[M,J...] + adjoint_differential_log_argument(
+                    M.manifold,
+                    p[M,I...],
+                    p[M,J...],
+                    X[N,I...,k],
                 )
             end
         end # directions
