@@ -1,5 +1,56 @@
 
 @doc raw"""
+    costAccelerationBezier(M::Manifold, B::Array{Array{P,1},1}, pts::Array{Float64,1})
+
+compute the value of the discrete Acceleration of the composite Bezier curve
+
+$\sum_{i=1}^{N-1}\frac{d^2_2 [ B(t_{i-1}), B(t_{i}), B(t_{i+1})]}{\Delta_t^3}$
+
+where for this formula the `pts` along the curve are equispaced and denoted by
+$t_i$ and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
+(squared).
+"""
+function costAccelerationBezier(
+    M::Manifold,
+    B::Array{Array{P,1},1},
+    pts::Array{Float64,1},
+) where {P}
+    p = de_casteljau(M,B,pts)
+    n = length(p)
+    f = p[ [1,3:n...,n] ]
+    b = p[ [1,1:(n-2)...,n] ]
+    d = distance.(Ref(M), p, geodesic.(Ref(M),f,b,Ref(0.5))).^2
+    samplingFactor = 1/(( ( max(pts...) - min(pts...) )/(n-1) )^3)
+    return samplingFactor*sum(d)
+end
+@doc raw"""
+    costL2AccelerationBezier(M,B,pts,λ,d)
+
+compute the value of the discrete Acceleration of the composite Bezier curve
+together with a data term, i.e.
+
+````math
+\frac{\lambda}{2}\sum_{i=0}^{m} d_{\mathcal M}(d_i, c_B(i))^2+
+\sum_{i=1}^{m-1}\frac{d^2_2 [ B(t_{i-1}), B(t_{i}), B(t_{i+1})]}{\Delta_t^3}
+````
+
+where for this formula the `pts` along the curve are equispaced and denoted by
+$t_i$ and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
+(squared), the junction points are denoted by $p_i$, and to each $p_i$ corresponds
+one data item in the manifold points given in `d`.
+"""
+function costL2AccelerationBezier(
+    M::Manifold,
+    B::Array{Array{P,1},1},
+    pts::Array{Float64,1},
+    λ::Float64,
+    d::Array{P,1}
+) where {P}
+    p = get_bezier_junctions(M,B)
+    return costAccelerationBezier(M,B,pts) + λ/2*sum(distance.(Ref(M),p,d).^2)
+end
+
+@doc raw"""
     costIntrICTV12(M, f, u, v, α, β)
 
 Compute the intrinsic infimal convolution model, where the addition is replaced

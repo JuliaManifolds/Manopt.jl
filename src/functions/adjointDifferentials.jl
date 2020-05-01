@@ -1,4 +1,97 @@
 @doc raw"""
+    adjoint_differential_bezier_control(M,b,t,η)
+
+evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
+with respect to its control points `b` based on a point `t` $\in[0,1]$ on the
+curve and a tangent vector $\eta\in T_{\beta(t)}\mathcal M$.
+
+See [`de_casteljau`](@ref) for more details on the curve.
+"""
+function adjoint_differential_bezier_control(
+    M::Manifold,
+    b::Array{P,1},
+    t::Float64,
+    η::Q) where {P,Q}
+  if length(b) == 2
+    return [
+        adjoint_differential_geodesic_startpoint(M,b[1],b[2],t,η),
+        adjoint_differential_geodesic_endpointl(M,b[1],b[2],t,η),
+    ]
+  else
+    bInner = shortest_geodesic.(Ref(M), b[1:end-1], b[2:end],Ref(t))
+    ξInner = adjoint_differential_bezier_control(M,bInner,t,η)
+    startEffects = [
+        adjoint_differential_geodesic_startpoint.(Ref(M),b[1:end-1], b[2:end],Ref(t),ξInner)...,
+        zeroTVector(M,b[end]),
+    ]
+    endEffects = [
+        zeroTVector(M,b[1]),
+        adjoint_differential_geodesic_endpointl.(Ref(M),b[1:end-1], b[2:end],Ref(t),ξInner)...
+    ]
+    return startEffects .+ endEffects
+  end
+end
+@doc raw"""
+    adjoint_differential_bezier_control(M,b,t,X)
+
+evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
+with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n that
+are pointwise in $ t_i\in[0,1]$ on the curve and given corresponding tangential
+vectors $X = (\eta_i)_{i=1}^n$, $\eta_i\in T_{\beta(t_i)}\mathcal M$
+
+See [`de_casteljau`](@ref) for more details on the curve.
+"""
+function adjoint_differential_bezier_control(
+    M::Manifold,
+    b::Array{P,1},
+    t::Array{Float64,1},
+    X::Array{Q,1}
+) where {P,Q}
+    return sum(adjoint_differential_bezier_control.(Ref(M),Ref(b),t,X))
+end
+
+@doc raw"""
+    adjoint_differential_bezier_control(M,B,t,X)
+
+evaluate the adjoint of the differential of a composite Bézier curve on the
+manifold `M` with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n$
+that are pointwise in $t_i\in[0,1]$ on the curve and given corresponding tangential
+vectors $X = (\eta_i)_{i=1}^n$, $\eta_i\in T_{\beta(t_i)}\mathcal M$
+
+See [`de_casteljau`](@ref) for more details on the curve.
+"""
+function adjoint_differential_bezier_control(
+    M::Manifold,
+    B::Array{Array{P,1},1},
+    t::Float64,
+    X::Q
+) where {P,Q}
+  # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
+  if (0 > t) || ( t > length(B) )
+    error("The parameter ",t," to evaluate the composite Bézier curve at is outside the interval [0,",length(B),"].")
+  end
+  Y = broadcast( b -> zeroTVector.(Ref(M),b) , B) # Double broadcast
+  seg = max(ceil(Int,t),1)
+  localT = ceil(Int,t) == 0 ? 0. : t - seg+1
+  Y[seg] = adjoint_differential_bezier_control(M,B[seg], localT, X)
+  return Y
+end
+@doc raw"""
+    adjoint_differential_bezier_control(M,B,t,η)
+evaluate the adjoint of the differential with respect to the controlpoints.
+
+See [`de_casteljau`](@ref) for more details on the curve.
+"""
+function adjoint_differential_bezier_control(
+    M::Manifold,
+    B::Array{Array{P,1},1},
+    T::Array{Float64,1},
+    X::Array{Q,1}
+) where {P,Q}
+  return broadcast(+, adjoint_differential_bezier_control.(Ref(M),Ref(B), T, X)... )
+end
+
+@doc raw"""
     adjoint_differential_geodesic_startpoint(M,p, q, t, X)
 
 Compute the adjoint of $D_p γ(t; p, q)[X]$.

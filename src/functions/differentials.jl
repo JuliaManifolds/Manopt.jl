@@ -1,4 +1,117 @@
 @doc raw"""
+    differential_bezier(M::Manifold, b::Array{P,1}, t::Float, X::Array{Q,1})
+
+evaluate the differential of the Bézier curve with respect to its control points
+`b` and tangent vectors `X` given in the tangent spaces of the control points. The result
+is the “change” of the curve at `t`$\in[0,1]$.
+
+See [`de_casteljau`](@ref) for more details on the curve.
+"""
+function differential_bezier_control(
+    M::Manifold,
+    b::Array{P,1},
+    t::Float64,
+    X::Array{Q,1}
+) where {P,Q}
+  # iterative, because recursively would be too many Casteljau evals
+  for l = length(b):-1:2
+    X = differential_geodesic_startpoint.(
+        Ref(M),
+        b[1:end-1],
+        b[2:end],
+        Ref(t),
+        X[1:end-1]
+    ) .+ differential_geodesic_endpoint.(
+        Ref(M),
+        b[1:end-1],
+        b[2:end],
+        Ref(t),
+        X[2:end]
+    )
+    b = shortest_geodesic.(Ref(M), b[1:end-1], b[2:end], Ref(t))
+  end
+  return X
+end
+@doc raw"""
+    differential_bezier_control(
+        M::Manifold,
+        b::Array{P,1},
+        T::Array{Float64,1},
+        X::Array{Q,1},
+    )
+
+evaluate the differential of the Bézier curve with respect to its control points
+`b` and tangent vectors `X` in the tangent spaces of the control points. The result
+is the “change” of the curve at the points `T`, elementwise in $\in[0,1]$.
+
+See [`de_casteljau`](@ref) for more details on the curve.
+"""
+function differential_bezier_control(
+    M::Manifold,
+    b::Array{P,1},
+    T::Array{Float64,1},
+    X::Array{Q,1},
+) where {P,Q}
+    return differential_bezier_control.(Ref(M),Ref(b),T,Ref(X))
+end
+@doc raw"""
+    differential_bezier_control(
+        M::Manifold,
+        B::Array{Array{P,1},1},
+        t::Float64,
+        X::Array{Array{T,1},1}
+    )
+
+evaluate the differential of the composite Bézier curve with respect to its
+control points `B` and tangent vectors `Ξ` in the tangent spaces of the control
+points. The result is the “change” of the curve at `t` $\in[0,N]$, which depends
+only on the corresponding segment. Here, $N$ is the length of `B`.
+
+See [`de_casteljau`](@ref) for more details on the curve.
+"""
+function differential_bezier_control(
+    M::Manifold,
+    B::Array{Array{P,1},1},
+    t::Float64,
+    X::Array{Array{Q,1},1}
+) where {P,Q}
+  if (0 > t) || ( t > length(B) )
+    error("The parameter ",t," to evaluate the composite Bézier curve at is outside the interval [0,",length(B),"].")
+  end
+  seg = max(ceil(Int,t),1)
+  localT = ceil(Int,t) == 0 ? 0. : t - seg+1
+  Y = differential_bezier_control(M,B[seg],localT,X[seg])
+  if ((t+1) == seg) && (seg > 1) # boundary case, -> seg-1 is also affecting the boundary differential
+    Y .+= differential_bezier_control(M,B[seg-1],localT+1,X[seg-1])
+  end
+  return Y
+end
+@doc raw"""
+    differential_bezier_control(
+        M::Manifold,
+        B::Array{Array{P,1},1},
+        t::Float64,
+        X::Array{Array{T,1},1}
+    )
+
+evaluate the differential of the composite Bézier curve with respect to its
+control points `B` and tangent vectors `X` in the tangent spaces of the control
+points. The result is the “change” of the curve at `pts`, which are elementwise
+in $[0,N]$, and each depending the corresponding segment(s). Here, $N$ is the
+length of `B`.
+
+See [`de_casteljau`](@ref) for more details on the curve.
+"""
+function differential_bezier_control(
+    M::Manifold,
+    B::Array{Array{P,1},1},
+    T::Array{Float64,1},
+    Ξ::Array{Array{Q,1},1}
+) where {P,Q}
+    return differential_bezier_control.(Ref(M),Ref(B),T,Ref(Ξ))
+end
+
+@doc raw"""
     differential_geodesic_startpoint(M, p, q, t, X)
 computes $D_p g(t;p,q)[\eta]$.
 
@@ -6,6 +119,7 @@ computes $D_p g(t;p,q)[\eta]$.
  [`differential_geodesic_endpoint`](@ref), [`jacobi_field`](@ref)
 """
 differential_geodesic_startpoint(M::mT,x,y,t,η) where {mT <: Manifold} = jacobi_field(M,x,y,t,η,βdifferential_geodesic_startpoint)
+
 @doc raw"""
     differential_geodesic_endpoint(M,x,y,t,η)
 computes $D_qg(t;p,q)[\eta]$.
@@ -14,6 +128,7 @@ computes $D_qg(t;p,q)[\eta]$.
  [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
 differential_geodesic_endpoint(M::mT, x, y, t, η) where {mT <: Manifold} = jacobi_field(M,y,x,1-t,η,βdifferential_geodesic_startpoint)
+
 @doc raw"""
     differential_exp_basepoint(M, p, X, Y)
 
@@ -25,6 +140,7 @@ Compute $D_p\exp_p X[Y]$.
 function differential_exp_basepoint(M::Manifold,p,X,Y)
     return jacobi_field(M, p, exp(M,p,X), 1.0, Y, βdifferential_exp_basepoint)
 end
+
 @doc raw"""
     differential_exp_argument(M, p, X, Y)
 computes $D_X\exp_pX[Y]$.

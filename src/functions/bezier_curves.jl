@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     de_casteljau(M::Manifold, b::Array{P,1}) -> Function
 
 return the Bézier curve $\beta(\cdot;p_0,\ldots,b_n)\colon [0,1] \to \mathcal M$ defined
@@ -74,7 +74,7 @@ end
 de_casteljau(M::Manifold, b, t::Real) = de_casteljau(M,b)(t)
 de_casteljau(M::Manifold, b, T::AbstractVector) = map(t -> de_casteljau(M,b,t), T)
 
-@doc doc"""
+@doc raw"""
     get_bezier_junction_tangent_vectors(M::Manifold, B::Array{Array{P,1},1})
     get_bezier_junction_tangent_vectors(M::Manifold, b::Array{P,1})
 
@@ -93,7 +93,7 @@ function get_bezier_junction_tangent_vectors(M,b::Array{P,1}) where {P}
     return get_bezier_junction_tangent_vectors(M,[b])
 end
 
-@doc doc"""
+@doc raw"""
     get_bezier_junctions(M::Manifold, B::Array{Array{P,1},1})
     get_bezier_junctions(M::Manifold, b::Array{P,1})
 
@@ -108,7 +108,7 @@ function get_bezier_junctions(M::Manifold, b::Array{P,1}) where {P}
     return get_bezier_junction_points(M,[b])
 end
 
-@doc doc"""
+@doc raw"""
     get_bezier_inner_points(M::Manifold, B::Array{Array{P,1},1} )
     get_bezier_inner_points(M::Manifold, b::Array{P,1})
 
@@ -120,7 +120,7 @@ function get_bezier_inner_points(M::Manifold, B::Array{Array{P,1},1}) where {P}
     return vcat([b[2:end-1] for b in B]... )
 end
 
-@doc doc"""
+@doc raw"""
     get_bezier_points(M::MAnifold, B:Array{Array{P,1},1}, reduce::Symbol=:none)
     get_bezier_points(M::Manifold, b::Array{P,1}, reduce::Symbol=:none)
 
