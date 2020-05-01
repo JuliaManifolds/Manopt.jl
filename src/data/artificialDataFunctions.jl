@@ -4,11 +4,6 @@
 #
 #
 import LinearAlgebra: I, Diagonal
-export artificial_S1_signal, artificial_S1_slope_signal, artificialIn_SAR_image
-export artificial_SPD_image, artificial_SPD_image2
-export artificial_S2_whirl_image, artificial_S2_whirl_patch
-export artificial_S2_rotation_image
-export artificial_S2_whirl_patch, artificial_S2_lemniscate
 
 @doc raw"""
     artificialIn_SAR_image([pts=500])
@@ -209,6 +204,41 @@ function artificial_S2_whirl_patch(pts::Int=5)
   end
   return patch
 end
+
+function artificial_S2_composite_bezier_curve()
+  M = Sphere(2)
+  d0 = [0.0,  0.0, 1.0]
+  d1 = [0.0, -1.0, 0.0]
+  d2 = [-1.0, 0.0, 0.0]
+  d3 = [0.0, 0.0, -1.0]
+  #
+  # control points - where b1- and b2- are constructed by the C1 condition
+  #
+  # We define three segments: 1
+  b00 = d0 # also known as p0
+  ξ0 = π/(8. *sqrt(2.)) .* [1., -1., 0.] # staring direction from d0
+  b01 = exp(M, d0, ξ0 ) # b0+
+  ξ1 = π/(4. * sqrt(2)) .* [1., 0., 1.]
+  # b02 or b1- and b11 or b1+ are constructed by this vector with opposing sign
+  # to achieve a C1 curve
+  b02 = exp(M, d1, ξ1)
+  b03 = d1
+  # 2
+  b10 = d1
+  b11 = exp(M, d1, -ξ1) # yields c1 condition
+  ξ2 = -π/(4*sqrt(2)) .* [0., 1., -1.]
+  b12 = exp(M, d2, ξ2 )
+  b13 = d2
+  # 3
+  b20 = d2
+  b21 = exp(M, d2, -ξ2)
+  ξ3 = π/(8. * sqrt(2)) .* [-1., 1., 0.]
+  b22 = exp(M, d3, ξ3)
+  b23 = d3
+  # hence the matrix of controlpoints for the curve reads
+  return [ (b00,b01,b02,b03), (b10,b11,b12,b13), (b20,b21,b22,b23) ]
+end
+
 @doc raw"""
     artificial_SPD_image([pts=64, stepsize=1.5])
 

@@ -122,6 +122,14 @@ module Manopt
 
     export βdifferential_geodesic_startpoint, βdifferential_exp_basepoint
     export βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
+
+    export artificial_S1_signal, artificial_S1_slope_signal, artificialIn_SAR_image
+    export artificial_SPD_image, artificial_SPD_image2
+    export artificial_S2_whirl_image, artificial_S2_whirl_patch
+    export artificial_S2_rotation_image
+    export artificial_S2_whirl_patch, artificial_S2_lemniscate
+    export artificial_S2_composite_bezier_curve
+
     export adjoint_differential_geodesic_startpoint, adjoint_differential_geodesic_endpoint
     export adjoint_differential_exp_basepoint, adjoint_differential_exp_argument
     export adjoint_differential_log_basepoint, adjoint_differential_log_argument

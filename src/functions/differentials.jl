@@ -1,5 +1,5 @@
 @doc raw"""
-    differential_bezier(M::Manifold, b::Array{P,1}, t::Float, X::Array{Q,1})
+    differential_bezier(M::Manifold, b::NTuple{N,P}, t::Float, X::Array{Q,1})
 
 evaluate the differential of the Bézier curve with respect to its control points
 `b` and tangent vectors `X` given in the tangent spaces of the control points. The result
@@ -9,10 +9,10 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
     M::Manifold,
-    b::Array{P,1},
+    b::NTuple{N,P},
     t::Float64,
     X::Array{Q,1}
-) where {P,Q}
+) where {P,Q,N}
   # iterative, because recursively would be too many Casteljau evals
   for l = length(b):-1:2
     X = differential_geodesic_startpoint.(
@@ -35,7 +35,7 @@ end
 @doc raw"""
     differential_bezier_control(
         M::Manifold,
-        b::Array{P,1},
+        b::NTuple{N,P},
         T::Array{Float64,1},
         X::Array{Q,1},
     )
@@ -48,16 +48,16 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
     M::Manifold,
-    b::Array{P,1},
+    b::NTuple{N,P},
     T::Array{Float64,1},
     X::Array{Q,1},
-) where {P,Q}
+) where {P,Q,N}
     return differential_bezier_control.(Ref(M),Ref(b),T,Ref(X))
 end
 @doc raw"""
     differential_bezier_control(
         M::Manifold,
-        B::Array{Array{P,1},1},
+        B::Array{NTuple{N,P},1},
         t::Float64,
         X::Array{Array{T,1},1}
     )
@@ -71,7 +71,7 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
     M::Manifold,
-    B::Array{Array{P,1},1},
+    B::Array{P,1},
     t::Float64,
     X::Array{Array{Q,1},1}
 ) where {P,Q}
@@ -89,7 +89,7 @@ end
 @doc raw"""
     differential_bezier_control(
         M::Manifold,
-        B::Array{Array{P,1},1},
+        B::Array{NTuple{N,P},1},
         t::Float64,
         X::Array{Array{T,1},1}
     )
@@ -100,11 +100,17 @@ points. The result is the “change” of the curve at `pts`, which are elementw
 in $[0,N]$, and each depending the corresponding segment(s). Here, $N$ is the
 length of `B`.
 
-See [`de_casteljau`](@ref) for more details on the curve.
+See [`de_casteljau`](@ref) for more details on the curve and [^BergmannGousenbourger2018].
+
+[^BergmannGousenbourger2018]:
+    > R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
+    > by minimizing the acceleration of a Bézier curve_.
+    > Frontiers in Applied Mathematics and Statistics, 2018.
+    > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059)
 """
 function differential_bezier_control(
     M::Manifold,
-    B::Array{Array{P,1},1},
+    B::Array{P,1},
     T::Array{Float64,1},
     Ξ::Array{Array{Q,1},1}
 ) where {P,Q}

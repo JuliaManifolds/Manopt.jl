@@ -9,15 +9,21 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
-    b::Array{P,1},
+    b::NTuple{2,P},
     t::Float64,
-    η::Q) where {P,Q}
-  if length(b) == 2
+    η::Q,
+) where {P,Q}
     return [
         adjoint_differential_geodesic_startpoint(M,b[1],b[2],t,η),
         adjoint_differential_geodesic_endpointl(M,b[1],b[2],t,η),
     ]
-  else
+end
+function adjoint_differential_bezier_control(
+    M::Manifold,
+    b::NTuple{N,P},
+    t::Float64,
+    η::Q,
+) where {P,Q,N}
     bInner = shortest_geodesic.(Ref(M), b[1:end-1], b[2:end],Ref(t))
     ξInner = adjoint_differential_bezier_control(M,bInner,t,η)
     startEffects = [
@@ -29,7 +35,6 @@ function adjoint_differential_bezier_control(
         adjoint_differential_geodesic_endpointl.(Ref(M),b[1:end-1], b[2:end],Ref(t),ξInner)...
     ]
     return startEffects .+ endEffects
-  end
 end
 @doc raw"""
     adjoint_differential_bezier_control(M,b,t,X)
@@ -39,14 +44,20 @@ with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n that
 are pointwise in $ t_i\in[0,1]$ on the curve and given corresponding tangential
 vectors $X = (\eta_i)_{i=1}^n$, $\eta_i\in T_{\beta(t_i)}\mathcal M$
 
-See [`de_casteljau`](@ref) for more details on the curve.
+See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbourger2018].
+
+[^BergmannGousenbourger2018]:
+    > R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
+    > by minimizing the acceleration of a Bézier curve_.
+    > Frontiers in Applied Mathematics and Statistics, 2018.
+    > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059)
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
-    b::Array{P,1},
+    b::NTuple{N,P},
     t::Array{Float64,1},
     X::Array{Q,1}
-) where {P,Q}
+) where {P,Q,N}
     return sum(adjoint_differential_bezier_control.(Ref(M),Ref(b),t,X))
 end
 
@@ -62,12 +73,12 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
-    B::Array{Array{P,1},1},
+    B::Array{P,1},
     t::Float64,
     X::Q
 ) where {P,Q}
   # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
-  if (0 > t) || ( t > length(B) )
+  if (0 > t) || ( t > length(B))
     error("The parameter ",t," to evaluate the composite Bézier curve at is outside the interval [0,",length(B),"].")
   end
   Y = broadcast( b -> zeroTVector.(Ref(M),b) , B) # Double broadcast
@@ -84,7 +95,7 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
-    B::Array{Array{P,1},1},
+    B::Array{P,1},
     T::Array{Float64,1},
     X::Array{Q,1}
 ) where {P,Q}

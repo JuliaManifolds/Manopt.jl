@@ -1,5 +1,5 @@
 @doc raw"""
-    ∇acceleration_bezier(M::Manifold, B::Array{Array{P,1},1},T)
+    ∇acceleration_bezier(M::Manifold, B::Array{NTuple{N,P},1},T)
 
 compute the gradient of the discretized acceleration of a (composite) Bézier curve $c_B(t)$
 on the `Manifold` `M` with respect to its control points `B`. The curve is
@@ -10,7 +10,7 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function ∇acceleration_bezier(
     M::Manifold,
-    B::Array{Array{P,1},1},
+    B::Array{P,1},
     T::Array{Float64,1},
 ) where {P}
     gradB = _∇acceleration_bezier(M,B,T)
@@ -23,9 +23,9 @@ function ∇acceleration_bezier(
 end
 function ∇acceleration_bezier(
     M::Manifold,
-    b::Array{P,1},
+    b::NTuple{N,P},
     T::Array{Float64,1},
-) where {P}
+) where {P,N}
     gradb = _∇acceleration_bezier(M,[b],T)[1]
     gradb[1] = zeroTVector(M,b[1])
     gradb[end] = zeroTVector(M,b[end])
@@ -46,12 +46,11 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function ∇L2_acceleration_bezier(
     M::Manifold,
-    B::Array{Array{P,1},1},
+    B::Array{P,1},
     T::Array{Float64,1},
     λ::Float64,
     d::Array{P,1},
 ) where {P}
-    m = length(first(B))
     gradB = _∇acceleration_bezier(M,B,T)
     # add start and end data grad
     gradB[1][1] = gradB[1][1] + λ*∇distance(M,B[1][1],first(d))
@@ -71,7 +70,7 @@ end
 # common helper for the two acceleration grads
 function _∇acceleration_bezier(
     M::Manifold,
-    B::Array{Array{P,1},1},
+    B::Array{P,1},
     T::Array{Float64,1}
 ) where {P}
     n = length(T)
