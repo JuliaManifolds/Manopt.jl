@@ -137,7 +137,7 @@ module Manopt
     export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
     export render_asymptote
     export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
-    export costL2AccelerationBezier, costAccelerationBezier
+    export cost_L2_acceleration_bezier, cost_acceleration_bezier
     export differential_geodesic_startpoint, differential_geodesic_endpoint
     export differential_exp_basepoint, differential_exp_argument
     export differential_log_basepoint, differential_log_argument, differential_forward_logs

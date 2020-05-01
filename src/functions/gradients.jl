@@ -45,55 +45,55 @@ the Bézier curve.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function ∇L2_acceleration_bezier(
-    M::Manifold,
+    M::PowerManifold,
     B::Array{P,1},
     T::Array{Float64,1},
     λ::Float64,
     d::Array{P,1},
 ) where {P}
-    gradB = _∇acceleration_bezier(M,B,T)
+    gradB = _∇acceleration_bezier(M.manifold,B,T)
     # add start and end data grad
-    gradB[1][1] = gradB[1][1] + λ*∇distance(M,B[1][1],first(d))
+    gradB[1][1] = gradB[1][1] + λ*∇distance(M.manifold,B[1][1],first(d))
     # include data term
     for k=2:length(B)
         m = length(B[k])
-        η = λ*∇distance(M, B[k][1], d[k])
+        η = λ*∇distance(M.manifold, B[k][1], d[k])
         # copy to second entry
         gradB[k-1][m] = gradB[k-1][m] + η
         gradB[k][1] = gradB[k][1] + η
     end
     # add start and end data grad
-    gradB[end][end] = gradB[end][end] + λ*∇distance(M,B[end][end],last(d))
+    gradB[end][end] = gradB[end][end] + λ*∇distance(M.manifold,B[end][end],last(d))
     return gradB
 end
 
 # common helper for the two acceleration grads
 function _∇acceleration_bezier(
-    M::Manifold,
+    M::PowerManifold,
     B::Array{P,1},
     T::Array{Float64,1}
 ) where {P}
     n = length(T)
-    p = de_casteljau(M,B,T)
+    p = de_casteljau(M.Manifold,B,T)
     center = p
     forward = p[ [1, 3:n..., n] ]
     backward = p[ [1,1:(n-2)..., n] ]
-    mid = mid_point.(Ref(M), forward,backward)
+    mid = mid_point.(Ref(M.manifold), forward,backward)
     samplingFactor = 1/(( ( max(T...) - min(T...) )/(n-1) )^3)
     # where the point of interest appears...
-    inner = -2 .* samplingFactor .* log.(Ref(M),mid,center)
+    inner = -2 .* samplingFactor .* log.(Ref(M.manifold),mid,center)
     asForward = adjoint_differential_geodesic_startpoint.(Ref(M),forward,backward, Ref(0.5), inner)
-    asCenter = - 2*samplingFactor*log.(Ref(M),center,mid)
-    asBackward = adjoint_differential_geodesic_endpoint.(Ref(M),forward,backward, Ref(0.5), inner )
+    asCenter = - 2*samplingFactor*log.(Ref(M.manifold),center,mid)
+    asBackward = adjoint_differential_geodesic_endpoint.(Ref(M.manifold),forward,backward, Ref(0.5), inner )
     # effect of these to the centrol points is the preliminary gradient
     ∇B =  adjoint_differential_bezier_control(M,B,T[ [1,3:n...,n]],asForward) .+ adjoint_differential_bezier_control(M,B,T,asCenter) .+ adjoint_differential_bezier_control(M,B,T[ [1,1:(n-2)...,n] ],asBackward)
     # include c0 & C1 condition
     for k=length(B):-1:2
         m = length(B[k])
         # updates b-, b+, p
-        X1 = ∇B[k-1][m-1] + adjoint_differential_geodesic_startpoint(M, B[k-1][m-1],B[k][1],2.,∇B[k][2])
-        X2 = ∇B[k][2] + adjoint_differential_geodesic_startpoint(M, B[k][2],B[k][1],2., -∇B[k-1][m-1])
-        X3 = ∇B[k-1][m] + ∇B[k][1] + adjoint_differential_geodesic_endpoint(M, B[k-1][m-1], B[k][1], 2., ∇B[k][2])
+        X1 = ∇B[k-1][m-1] + adjoint_differential_geodesic_startpoint(M.manifold, B[k-1][m-1],B[k][1],2.,∇B[k][2])
+        X2 = ∇B[k][2] + adjoint_differential_geodesic_startpoint(M.manifold, B[k][2],B[k][1],2., -∇B[k-1][m-1])
+        X3 = ∇B[k-1][m] + ∇B[k][1] + adjoint_differential_geodesic_endpoint(M.manifold, B[k-1][m-1], B[k][1], 2., ∇B[k][2])
         ∇B[k-1][m-1] = X1
         ∇B[k][2] = X2
         ∇B[k][1] = X3

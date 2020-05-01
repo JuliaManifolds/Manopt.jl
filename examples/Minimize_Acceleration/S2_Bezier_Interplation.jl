@@ -46,12 +46,12 @@ if asyExport
     render_asymptote(experimentFolder*experimentName*"-orig.asy"; render = 4)
 end
 
-matB = hcat(B...)
-N = M^size(matB)
-F(B) = costAccelerationBezier(N,B, curve_samples)
-∇F(B) = gradAccelerationBezier(N,B, curve_samples)
+matB = hcat([[b...] for b in B]...) # to a matrix of points
+N = PowerManifold(M,prod(size(matB)))
+F(B) = cost_l2_acceleration_bezier(N,B, curve_samples)
+∇F(B) = ∇l2_acceleration_bezier(N,B, curve_samples)
 x0 = PowPoint(matB)
-PowBMinIP = steepestDescent(N, F, ∇F, x0;
+B_opt = steepestDescent(N, F, ∇F, x0;
     stepsize = ArmijoLinesearch(0.05,exp,0.99,0.01), # use Armijo lineSearch
     stoppingCriterion = stopWhenAny(stopWhenChangeLess(10.0^(-5)),
                                     stopWhenGradientNormLess(10.0^-5),
