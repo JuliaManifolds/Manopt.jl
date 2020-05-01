@@ -191,5 +191,11 @@ module Manopt
     export Linesearch, ArmijoLinesearch
     export get_stepsize, get_initial_stepsize, get_last_stepsize
 
+    export
+        de_casteljau,
+        get_bezier_inner_points,
+        get_bezier_junction_tangent_vectors,
+        get_bezier_junctions,
+        get_bezier_points
 
 end
