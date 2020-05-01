@@ -226,9 +226,9 @@ function ∇TV2(M::PowerManifold, q, p::Int=1)
                 else
                     g = ∇TV2(M.manifold,(q[jB],q[i],q[jF]),p) # Compute TV2 on these
                 end
-                set_component!(M,X,g[1],jB)
-                set_component!(M,X,g[2],i)
-                set_component!(M,X,g[3],jF)
+                X[M,Tuple(jB)...] = g[1]
+                X[M,Tuple(i)...] = g[2]
+                X[M,Tuple(jF)...] = g[3]
             end
         end # directions
     end # i in R
