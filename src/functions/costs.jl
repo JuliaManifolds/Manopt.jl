@@ -12,7 +12,7 @@ $t_i$ and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
 """
 function cost_acceleration_bezier(
     M::Manifold,
-    B::Array{P,1},1},
+    B::Array{P,1},
     pts::Array{Float64,1},
 ) where {P}
     p = de_casteljau(M.manifold,B,pts)
