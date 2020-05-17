@@ -104,7 +104,6 @@ module Manopt
     include("solvers/subgradient.jl")
     include("solvers/debug_solver.jl")
     include("solvers/record_solver.jl")
-    include("plots/SpherePlots.jl")
     include("helpers/errorMeasures.jl")
     include("helpers/exports/Asymptote.jl")
     include("data/artificialDataFunctions.jl")
