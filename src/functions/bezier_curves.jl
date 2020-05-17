@@ -15,7 +15,9 @@ shortest geodesic connecting $a,b\in\mathcal M$. Then the curve is defined by th
 ````
 and `P` is the type of a point on the `Manifold` `M`.
 
+````julia
     de_casteljau(M::Manifold, B::Array{NTuple{N,P},1}) -> Function
+````
 
 Given a vector of control points
 $B=\bigl( (b_{0,0},\ldots,b_{n_0,0}),\ldots,(b_{0,m},\ldots b_{n_m,m}) \bigr)$,
@@ -32,13 +34,14 @@ c_B(t) :=
     \end{cases}
 ````
 
+````julia
     de_casteljau(M::Manifold, b::NTuple{N,P}, t::Real)
     de_casteljau(M::Manifold, B::Arrray{NTuple{N,P},1}, t::Real)
     de_casteljau(M::Manifold, b::NTuple{N,P}, T::AbstractVector) -> AbstractVector
     de_casteljau(M::Manifold, B::Arrray{NTuple{N,P},1}, T::AbstractVector) -> AbstractVector
+````
 
-Return the point at time `t` or points at times `t` in `T` along the Bézier curve.
-
+Evaluate the Bézier curve at time `t` or at times `t` in `T`.
 
 [^Casteljau1959]:
     > de Casteljau, P.: Outillage methodes calcul, Enveloppe Soleau 40.040 (1959),
@@ -216,7 +219,7 @@ curve consists of
   the second to last is skipped (despite for the laszt segment again), hence $k = 2 - m + \sum_{i=1}{m} d_i$
   and at a junction point $b_n$ with its given next point $b_{n-1}$, i.e. this is the first inner
   point of a new segment, the last inner point before the junction is computed as
-  $c = \exp_{b_n}(-\log_{b_n} b_{n+1}$ such that the assumed differentiability holds
+  $c = \exp_{b_n}(-\log_{b_n} b_{n+1})$ such that the assumed differentiability holds
 """
 function get_bezier_tuple(
     M::Manifold,
