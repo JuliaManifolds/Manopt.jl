@@ -5,8 +5,20 @@ Compute the mid point between p and q. If there is more than one mid point
 of (not neccessarily minimizing) geodesics (i.e. on the sphere), the one nearest
 to x is returned.
 """
-mid_point(M::Manifold, p, q, x) = mid_point(M, p, q)
-mid_point!(M::Manifold, y, p, q, x) = mid_point!(M, y, p, q)
+mid_point(M::Manifold, p, q, ::Any) = mid_point(M, p, q)
+mid_point!(M::Manifold, y, p, q, ::Any) = mid_point!(M, y, p, q)
+
+function mid_point(M::Circle, p, q)
+    return exp(M,p,0.5*log(M,p,q))
+end
+function mid_point(M::Circle, p, q, x)
+    if distance(M,p,q) ≈ π
+        X = 0.5*log(M,p,q)
+        Y = log(p,x)
+        return exp(M, p, (sign(X) == sign(Y) ? 1 : -1)*X)
+    end
+    return mid_point(M,p,q)
+end
 
 function mid_point(M::Sphere, p, q, x)
     if isapprox(M,p,-q)
@@ -25,18 +37,6 @@ function mid_point!(M::Sphere, y, p, q, x)
     y .= exp(M,p,0.5*X)
     return y
 end
-
-"""
-    mid_point(M, p, q)
-
-Compute the (geodesic) mid point of the two points `p` and `q` on the
-manfold `M`. If the geodesic is not unique, either a deterministic choice is taken or
-an error is raised depending on the manifold. For the deteministic choixe, see
-[`mid_point(M, p, q, x)`](@ref), the mid point closest to a third point
-`x`.
-"""
-mid_point(M::Manifold, p, q) = exp(M, p, log(M, p, q), 0.5)
-mid_point!(M::Manifold, y, p, q) = exp!(M, y, p, log(M, p, q), 0.5)
 
 @doc raw"""
     reflect(M, f, x)

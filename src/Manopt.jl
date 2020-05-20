@@ -35,6 +35,8 @@ module Manopt
         inner,
         geodesic,
         manifold_dimension,
+        mid_point,
+        mid_point!,
         norm,
         project,
         project!,
