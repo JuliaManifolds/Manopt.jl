@@ -22,4 +22,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
       - uses: codecov/codecov-action@v1
+          file: ./lcov.info
+          name: codecov-umbrella
+          fail_ci_if_error: false
         if: ${{ matrix.julia-version == '1.4' && matrix.os =='ubuntu-latest' }}
