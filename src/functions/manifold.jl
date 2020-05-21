@@ -1,3 +1,43 @@
+"""
+    mid_point(M, p, q, x)
+
+Compute the mid point between p and q. If there is more than one mid point
+of (not neccessarily minimizing) geodesics (i.e. on the sphere), the one nearest
+to x is returned.
+"""
+mid_point(M::Manifold, p, q, ::Any) = mid_point(M, p, q)
+mid_point!(M::Manifold, y, p, q, ::Any) = mid_point!(M, y, p, q)
+
+function mid_point(M::Circle, p, q)
+    return exp(M,p,0.5*log(M,p,q))
+end
+function mid_point(M::Circle, p, q, x)
+    if distance(M,p,q) ≈ π
+        X = 0.5*log(M,p,q)
+        Y = log(p,x)
+        return exp(M, p, (sign(X) == sign(Y) ? 1 : -1)*X)
+    end
+    return mid_point(M,p,q)
+end
+
+function mid_point(M::Sphere, p, q, x)
+    if isapprox(M,p,-q)
+        X = log(M,p,x)/distance(M,p,x)*π
+    else
+        X = log(M,p,q)
+    end
+    return exp(M,p,0.5*X)
+end
+function mid_point!(M::Sphere, y, p, q, x)
+    if isapprox(M,p,-q)
+        X = log(M,p,x)/distance(M,p,x)*π
+    else
+        X = log(M,p,q)
+    end
+    y .= exp(M,p,0.5*X)
+    return y
+end
+
 @doc raw"""
     reflect(M, f, x)
 
