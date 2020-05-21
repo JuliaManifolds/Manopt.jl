@@ -12,12 +12,13 @@ This example appeared in Sec. 5.2, second example, of
 #
 using Manopt, Manifolds, Colors, ColorSchemes
 asyExport = true #export data and results to asyExport
+λ = 2.0
 
 curve_samples = [range(0,3,length=31)...] # sample curve for the gradient
 curve_samples_plot = [range(0,3,length=11)...] # sample curve for asy exports
 
 experimentFolder = "examples/Minimize_Acceleration/S2_Bezier/"
-experimentName = "Bezier_Interpolation"
+experimentName = "Bezier_Approximation"
 
 cameraPosition = (-1., -0.7, 0.3)
 curveColor = RGBA{Float64}(colorant"#000000")
@@ -32,6 +33,7 @@ bColor = RGBA{Float64}(colorant"#009988") # inner control points: Tol Vibrant te
 M = Sphere(2)
 B = artificial_S2_composite_bezier_curve()
 cP = de_casteljau(M,B,curve_samples_plot)
+dataP = get_bezier_junctions(M,B)
 # export original data.
 if asyExport
     asymptote_export_S2_signals(experimentFolder*experimentName*"-orig.asy";
@@ -49,11 +51,11 @@ tup2mat(B) = hcat([[b...] for b in B]...)
 mat2tup(matB) = [Tuple(matB[:,i]) for i=1:size(matB,2)]
 matB = tup2mat(B)
 N = PowerManifold(M, NestedPowerRepresentation(), size(matB)...)
-F(matB) = cost_acceleration_bezier(M, mat2tup(matB), curve_samples)
-∇F(matB) = tup2mat(∇acceleration_bezier(M, mat2tup(matB), curve_samples))
+F(matB) = cost_L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP)
+∇F(matB) = tup2mat(∇L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP))
 x0 = matB
 Bmat_opt = steepest_descent(N, F, ∇F, x0;
-    stepsize = ArmijoLinesearch(0.05,ExponentialRetraction(),0.99,0.01), # use Armijo lineSearch
+    stepsize = ArmijoLinesearch(0.05,ExponentialRetraction(),0.99,0.05), # use Armijo lineSearch
     stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-5)),
                                     StopWhenGradientNormLess(10.0^-5),
                                     StopAfterIteration(300),

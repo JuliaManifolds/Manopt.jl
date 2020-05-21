@@ -99,7 +99,9 @@ function adjoint_differential_bezier_control(
     T::Array{Float64,1},
     X::Array{Q,1}
 ) where {P,Q}
-  return broadcast(+, adjoint_differential_bezier_control.(Ref(M),Ref(B), T, X)... )
+    Y = adjoint_differential_bezier_control.(Ref(M),Ref(B), T, X)
+    # an array per point containing an tuple per segment of points
+    return sum_bezier_tangents(Y...)
 end
 
 @doc raw"""

@@ -17,8 +17,8 @@ function ∇acceleration_bezier(
     gradB = _∇acceleration_bezier(M,B,T; transport_method = transport_method)
     for k=1:length(B) # we interpolate so we do not move end points
         m = length(B[k])
-        gradB[k][1] = zero_tangent_vector(M, B[k][1])
-        gradB[k][m] = zero_tangent_vector(M, B[k][m])
+        gradB[k][1] .= zero_tangent_vector(M, B[k][1])
+        gradB[k][m] .= zero_tangent_vector(M, B[k][m])
     end
     return gradB
 end
@@ -27,9 +27,9 @@ function ∇acceleration_bezier(
     b::NTuple{N,P},
     T::Array{Float64,1},
 ) where {P,N}
-    gradb = _∇acceleration_bezier(M,[b],T)[1]
-    gradb[1] = zero_tangent_vector(M,b[1])
-    gradb[end] = zero_tangent_vector(M,b[end])
+    gradb .= _∇acceleration_bezier(M,[b],T)[1]
+    gradb[1] .= zero_tangent_vector(M,b[1])
+    gradb[end] .= zero_tangent_vector(M,b[end])
     return gradb
 end
 
@@ -55,17 +55,17 @@ function ∇L2_acceleration_bezier(
 ) where {P,Q}
     gradB = _∇acceleration_bezier(M, B, T; transport_method = transport_method)
     # add start and end data grad
-    gradB[1][1] = gradB[1][1] + λ*∇distance(M,B[1][1],first(d))
+    gradB[1][1] .= gradB[1][1] .+ λ*∇distance(M,B[1][1],first(d))
     # include data term
     for k=2:length(B)
         m = length(B[k])
         η = λ*∇distance(M, B[k][1], d[k])
         # copy to second entry
-        gradB[k-1][m] = gradB[k-1][m] + η
-        gradB[k][1] = gradB[k][1] + η
+        gradB[k-1][m] .= gradB[k-1][m] .+ η
+        gradB[k][1] .= gradB[k][1] .+ η
     end
     # add start and end data grad
-    gradB[end][end] = gradB[end][end] + λ*∇distance(M,B[end][end],last(d))
+    gradB[end][end] .= gradB[end][end] .+ λ*∇distance(M,B[end][end],last(d))
     return gradB
 end
 
@@ -89,10 +89,11 @@ function _∇acceleration_bezier(
     asCenter = - 2*samplingFactor*log.(Ref(M),center,mid)
     asBackward = adjoint_differential_geodesic_endpoint.(Ref(M),forward,backward, Ref(0.5), inner )
     # effect of these to the centrol points is the preliminary gradient
-    ∇B =  adjoint_differential_bezier_control(
-        M,
-        B,
-        T[ [1,3:n...,n]],asForward) .+ adjoint_differential_bezier_control(M,B,T,asCenter) .+ adjoint_differential_bezier_control(M,B,T[ [1,1:(n-2)...,n] ],asBackward)
+    ∇B = sum_bezier_tangents(
+        adjoint_differential_bezier_control(M, B, T[ [1,3:n...,n]],asForward),
+        adjoint_differential_bezier_control(M,B,T,asCenter),
+        adjoint_differential_bezier_control(M,B,T[ [1,1:(n-2)...,n] ],asBackward)
+    )
     # include c0 & C1 condition
     for k=length(B):-1:2
         m = length(B[k])
@@ -103,9 +104,25 @@ function _∇acceleration_bezier(
         ∇B[k-1][m-1] .= X1
         ∇B[k][2] .= X2
         ∇B[k][1] .= X3
-        ∇B[k-1][m] .= - vector_transport(M, B[k][1], X3, B[k-1][m], transport_method)
+        ∇B[k-1][m] .= - vector_transport_to(M, B[k][1], X3, B[k-1][m], transport_method)
     end
     return ∇B
+end
+
+
+#
+# Helper to sum bezier tangents, since they have a strange format:
+# Summing arrays of tuples of points assuming the arrays are same length the tuples too, and the points match
+#
+function sum_bezier_tangents(x...)
+    s = first(x)
+    length(x) == 1 && return s
+    for i=2:length(x) # per summand x[i]
+        for j=1:length(s) # per segment s[j] (x[i][j])
+            s[j] = s[j] .+ x[i][j] #.+ works for tuples so it elementwise adds the points
+        end
+    end
+    return s
 end
 
 @doc raw"""
