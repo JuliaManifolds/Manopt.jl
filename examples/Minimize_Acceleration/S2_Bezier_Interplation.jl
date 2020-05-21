@@ -12,6 +12,7 @@ This example appeared in Sec. 5.2, second example, of
 #
 using Manopt, Manifolds, Colors, ColorSchemes
 asyExport = true #export data and results to asyExport
+λ = 2.0
 
 curve_samples = [range(0,3,length=31)...] # sample curve for the gradient
 curve_samples_plot = [range(0,3,length=11)...] # sample curve for asy exports
@@ -32,6 +33,7 @@ bColor = RGBA{Float64}(colorant"#009988") # inner control points: Tol Vibrant te
 M = Sphere(2)
 B = artificial_S2_composite_bezier_curve()
 cP = de_casteljau(M,B,curve_samples_plot)
+dataP = get_bezier_junctions(M,B)
 # export original data.
 if asyExport
     asymptote_export_S2_signals(experimentFolder*experimentName*"-orig.asy";
@@ -45,22 +47,22 @@ if asyExport
     )
     render_asymptote(experimentFolder*experimentName*"-orig.asy"; render = 4)
 end
-
-matB = hcat([[b...] for b in B]...) # to a matrix of points
-N = PowerManifold(M,prod(size(matB)))
-F(B) = cost_l2_acceleration_bezier(N,B, curve_samples)
-∇F(B) = ∇l2_acceleration_bezier(N,B, curve_samples)
-x0 = PowPoint(matB)
-B_opt = steepestDescent(N, F, ∇F, x0;
-    stepsize = ArmijoLinesearch(0.05,exp,0.99,0.01), # use Armijo lineSearch
-    stoppingCriterion = stopWhenAny(stopWhenChangeLess(10.0^(-5)),
-                                    stopWhenGradientNormLess(10.0^-5),
-                                    stopAfterIteration(300)
+tup2mat(B) = hcat([[b...] for b in B]...)
+mat2tup(matB) = [Tuple(matB[:,i]) for i=1:size(matB,2)]
+matB = tup2mat(B)
+N = PowerManifold(M, NestedPowerRepresentation(), size(matB)...)
+F(matB) = cost_L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP)
+∇F(matB) = ∇L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP)
+x0 = matB
+B_opt = steepest_descent(N, F, ∇F, x0;
+    stepsize = ArmijoLinesearch(0.05,ExponentialRetraction(),0.99,0.01), # use Armijo lineSearch
+    stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-5)),
+                                    StopWhenGradientNormLess(10.0^-5),
+                                    StopAfterIteration(300),
                                 ),
     debug = [:Stop, :Iteration," | ",
         :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n"]
   )
-BMinIP = [ getValue(PowBMinIP)[:,i] for i=1:size(getValue(PowBMinIP))[2] ]
 
 if asyExport
   renderAsymptote(experimentFolder*experimentName*"-result.asy", asyExportS2Signals;

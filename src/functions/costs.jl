@@ -15,11 +15,11 @@ function cost_acceleration_bezier(
     B::Array{P,1},
     pts::Array{Float64,1},
 ) where {P}
-    p = de_casteljau(M.manifold,B,pts)
+    p = de_casteljau(M,B,pts)
     n = length(p)
     f = p[ [1,3:n...,n] ]
     b = p[ [1,1:(n-2)...,n] ]
-    d = distance.(Ref(M.manifold), p, geodesic.(Ref(M.manifold),f,b,Ref(0.5))).^2
+    d = distance.(Ref(M), p, shortest_geodesic.(Ref(M),f,b,Ref(0.5))).^2
     samplingFactor = 1/(( ( max(pts...) - min(pts...) )/(n-1) )^3)
     return samplingFactor*sum(d)
 end
@@ -41,13 +41,13 @@ one data item in the manifold points given in `d`.
 """
 function cost_L2_acceleration_bezier(
     M::Manifold,
-    B::Array{Array{P,1},1},
+    B::Array{P,1},
     pts::Array{Float64,1},
     λ::Float64,
-    d::Array{P,1}
-) where {P}
-    p = get_bezier_junctions(M.manifold,B)
-    return costAccelerationBezier(M,B,pts) + λ/2*sum(distance.(Ref(M.manifold),p,d).^2)
+    d::Array{Q,1}
+) where {P,Q}
+    p = get_bezier_junctions(M,B)
+    return cost_acceleration_bezier(M,B,pts) + λ/2*sum(distance.(Ref(M),p,d).^2)
 end
 
 @doc raw"""

@@ -15,7 +15,7 @@ function adjoint_differential_bezier_control(
 ) where {P,Q}
     return [
         adjoint_differential_geodesic_startpoint(M,b[1],b[2],t,η),
-        adjoint_differential_geodesic_endpointl(M,b[1],b[2],t,η),
+        adjoint_differential_geodesic_endpoint(M,b[1],b[2],t,η),
     ]
 end
 function adjoint_differential_bezier_control(
@@ -28,11 +28,11 @@ function adjoint_differential_bezier_control(
     ξInner = adjoint_differential_bezier_control(M,bInner,t,η)
     startEffects = [
         adjoint_differential_geodesic_startpoint.(Ref(M),b[1:end-1], b[2:end],Ref(t),ξInner)...,
-        zeroTVector(M,b[end]),
+        zero_tangent_vector(M,b[end]),
     ]
     endEffects = [
-        zeroTVector(M,b[1]),
-        adjoint_differential_geodesic_endpointl.(Ref(M),b[1:end-1], b[2:end],Ref(t),ξInner)...
+        zero_tangent_vector(M,b[1]),
+        adjoint_differential_geodesic_endpoint.(Ref(M),b[1:end-1], b[2:end],Ref(t),ξInner)...
     ]
     return startEffects .+ endEffects
 end
@@ -81,10 +81,10 @@ function adjoint_differential_bezier_control(
   if (0 > t) || ( t > length(B))
     error("The parameter ",t," to evaluate the composite Bézier curve at is outside the interval [0,",length(B),"].")
   end
-  Y = broadcast( b -> zeroTVector.(Ref(M),b) , B) # Double broadcast
+  Y = broadcast( b -> zero_tangent_vector.(Ref(M),b) , B) # Double broadcast
   seg = max(ceil(Int,t),1)
   localT = ceil(Int,t) == 0 ? 0. : t - seg+1
-  Y[seg] = adjoint_differential_bezier_control(M,B[seg], localT, X)
+  Y[seg] = Tuple(adjoint_differential_bezier_control(M,B[seg], localT, X))
   return Y
 end
 @doc raw"""
