@@ -678,3 +678,32 @@ mutable struct RecordStepsize <: RecordAction
     RecordStepsize() = new(Array{Float64,1}())
 end
 (r::RecordStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = record_or_eset!(r, get_last_stepsize(p,o,i), i)
+
+
+@doc raw"""
+    quasi_Newton_Options <: Options
+"""
+abstract type quasi_Newton_Options <: Options end
+
+mutable struct Limited_Memory_quasi_Newton_Options <: quasi_Newton_Options
+    x::P
+    stop::StoppingCriterion
+
+    Retraction::Function
+    Vector_Transport::Function
+
+    Step_Memory::Array{T,1}
+    Gradient_Memory::Array{T,1}
+end
+
+mutable struct Standard_quasi_Newton_Options <: quasi_Newton_Options
+    x::P
+    stop::StoppingCriterion
+
+    Retraction::Function
+    Vector_Transport::Function
+
+    η::T
+    Hessian_Inverse_Aproximation::Function
+
+end
