@@ -13,9 +13,11 @@ $t_i$ and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
 function cost_acceleration_bezier(
     M::Manifold,
     B::Array{P,1},
+    degrees::Array{Int,1},
     pts::Array{Float64,1},
 ) where {P}
-    p = de_casteljau(M,B,pts)
+    Bt = get_bezier_tuple(M, B, degrees, :differentiable)
+    p = de_casteljau(M, Bt, pts)
     n = length(p)
     f = p[ [1,3:n...,n] ]
     b = p[ [1,1:(n-2)...,n] ]
@@ -42,12 +44,14 @@ one data item in the manifold points given in `d`.
 function cost_L2_acceleration_bezier(
     M::Manifold,
     B::Array{P,1},
+    degrees::Array{Int,1},
     pts::Array{Float64,1},
     λ::Float64,
     d::Array{Q,1}
 ) where {P,Q}
-    p = get_bezier_junctions(M,B)
-    return cost_acceleration_bezier(M,B,pts) + λ/2*sum((distance.(Ref(M),p,d)).^2)
+    Bt = get_bezier_tuple(M, B, degrees, :differentiable)
+    p = get_bezier_junctions(M,Bt)
+    return cost_acceleration_bezier(M, B, degrees, pts) + λ/2*sum((distance.(Ref(M),p,d)).^2)
 end
 
 @doc raw"""

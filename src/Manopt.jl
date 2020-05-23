@@ -205,9 +205,12 @@ module Manopt
 
     export
         de_casteljau,
+        get_bezier_degrees,
+        get_bezier_degree,
         get_bezier_inner_points,
         get_bezier_junction_tangent_vectors,
         get_bezier_junctions,
-        get_bezier_points
+        get_bezier_points,
+        get_bezier_tuple
 
 end

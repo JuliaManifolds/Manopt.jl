@@ -11,16 +11,16 @@ See [`de_casteljau`](@ref) for more details on the curve.
 function ∇acceleration_bezier(
     M::Manifold,
     B::Array{P,1},
+    degree::Array{Int,1},
     T::Array{Float64,1};
     transport_method::AbstractVectorTransportMethod = ParallelTransport()
 ) where {P}
-    gradB = _∇acceleration_bezier(M,B,T; transport_method = transport_method)
+    gradB = _∇acceleration_bezier(M, B, degree, T; transport_method = transport_method)
     for k=1:length(B) # we interpolate so we do not move end points
-        m = length(B[k])
         gradB[k][1] .= zero_tangent_vector(M, B[k][1])
-        gradB[k][m] .= zero_tangent_vector(M, B[k][m])
     end
-    return gradB
+    gradB[end][end] .= zero_tangent_vector(M, B[end][end])
+    return get_bezier_points(M, gradB, :differentiable)
 end
 function ∇acceleration_bezier(
     M::Manifold,
@@ -48,36 +48,35 @@ See [`de_casteljau`](@ref) for more details on the curve.
 function ∇L2_acceleration_bezier(
     M::Manifold,
     B::Array{P,1},
+    degrees::Array{Int,1},
     T::Array{Float64,1},
     λ::Float64,
     d::Array{Q,1};
     transport_method::AbstractVectorTransportMethod = ParallelTransport(),
 ) where {P,Q}
-    gradB = _∇acceleration_bezier(M, B, T; transport_method = transport_method)
+    gradB = _∇acceleration_bezier(M, B, degrees, T; transport_method = transport_method)
     # add start and end data grad
-    gradB[1][1] .= gradB[1][1] .+ λ*∇distance(M,B[1][1],first(d))
     # include data term
-    for k=2:length(B)
-        m = length(B[k])
+    for k=1:length(degrees)
         η = λ*∇distance(M, B[k][1], d[k])
         # copy to second entry
-        gradB[k-1][m] .= gradB[k-1][m] .+ η
         gradB[k][1] .= gradB[k][1] .+ η
     end
-    # add start and end data grad
     gradB[end][end] .= gradB[end][end] .+ λ*∇distance(M,B[end][end],last(d))
-    return gradB
+    return get_bezier_points(M, gradB, :differentiable)
 end
 
 # common helper for the two acceleration grads
 function _∇acceleration_bezier(
     M::Manifold,
     B::Array{P,1},
+    degrees::Array{Int,1},
     T::Array{Float64,1};
     transport_method::AbstractVectorTransportMethod = ParallelTransport()
 ) where {P}
+    Bt = get_bezier_tuple(M, B, degrees, :differentiable )
     n = length(T)
-    p = de_casteljau(M,B,T)
+    p = de_casteljau(M,Bt,T)
     center = p
     forward = p[ [1, 3:n..., n] ]
     backward = p[ [1,1:(n-2)..., n] ]
@@ -90,19 +89,25 @@ function _∇acceleration_bezier(
     asBackward = adjoint_differential_geodesic_endpoint.(Ref(M),forward,backward, Ref(0.5), inner )
     # effect of these to the centrol points is the preliminary gradient
     ∇B = sum_bezier_tangents(
-        adjoint_differential_bezier_control(M, B, T[ [1,3:n...,n]],asForward),
-        adjoint_differential_bezier_control(M,B,T,asCenter),
-        adjoint_differential_bezier_control(M,B,T[ [1,1:(n-2)...,n] ],asBackward)
+        adjoint_differential_bezier_control(M, Bt, T[ [1,3:n...,n]],asForward),
+        adjoint_differential_bezier_control(M, Bt, T, asCenter),
+        adjoint_differential_bezier_control(M, Bt, T[ [1,1:(n-2)...,n] ], asBackward)
     )
+    for k=1:length(Bt)-1
+        m = length(Bt[k])
+        X = ∇B[k+1][1] + ∇B[k][m]
+        ∇B[k][m] .= X
+        ∇B[k+1][1] .= X
+    end
     # include c0 & C1 condition
-    for k=length(B):-1:2
-        m = length(B[k])
+    for k=length(Bt):-1:2
+        m = length(Bt[k])
         # updates b-
-        X1 = ∇B[k-1][m-1] .+ adjoint_differential_geodesic_startpoint(M, B[k-1][m-1],B[k][1],2.,∇B[k][2])
+        X1 = ∇B[k-1][m-1] .+ adjoint_differential_geodesic_startpoint(M, Bt[k-1][m-1], Bt[k][1], 2., ∇B[k][2])
         # update b+
-        X2 = ∇B[k][2] .+ adjoint_differential_geodesic_startpoint(M, B[k][2],B[k][1],2., ∇B[k-1][m-1])
+        X2 = ∇B[k][2] .+ adjoint_differential_geodesic_startpoint(M, Bt[k][2], Bt[k][1], 2., ∇B[k-1][m-1])
         # update p - effect from left and right segment as well as from c1 cond
-        X3 = ∇B[k-1][m] .+ ∇B[k][1] .+ adjoint_differential_geodesic_endpoint(M, B[k-1][m-1], B[k][1], 2., ∇B[k][2])
+        X3 = ∇B[k][1] .+ adjoint_differential_geodesic_endpoint(M, Bt[k-1][m-1], Bt[k][1], 2., ∇B[k][2])
         # store
         ∇B[k-1][m-1] .= X1
         ∇B[k][2] .= X2

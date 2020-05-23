@@ -11,7 +11,6 @@ This example appeared in Sec. 5.2, second example, of
 # Load Manopt and required packages
 #
 using Manopt, Manifolds, Colors, ColorSchemes, Makie
-asyExport = true #export data and results to asyExport
 λ = 50.0
 
 curve_samples = [range(0,3,length=1601)...] # sample curve for the gradient
@@ -44,23 +43,13 @@ B = [   (p0, exp(M, p0, t0p), exp(M, p1, -t1p), p1),
     ]
 
 cP = de_casteljau(M,B,curve_samples_plot)
-cPmat = hcat([[b...] for b in cP]...)
-scene = lines(cPmat[1,:], cPmat[2,:], cPmat[3,:])
-scatter!(scene,
-    [p0[1], p1[1], p2[1], p3[1]],
-    [p0[2], p1[2], p2[2], p3[2]],
-    [p0[3], p1[3], p2[3], p3[3]],
-    color = pColor
-    )
 dataP = get_bezier_junctions(M,B)
-tup2mat(B) = hcat([[b...] for b in B]...)
-mat2tup(matB) = [Tuple(matB[:,i]) for i=1:size(matB,2)]
-matB = tup2mat(B)
-N = PowerManifold(M, NestedPowerRepresentation(), size(matB)...)
-F(matB) = cost_L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP)
-∇F(matB) = tup2mat(∇L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP))
-x0 = matB
-Bmat_opt = steepest_descent(N, F, ∇F, x0;
+pB = get_bezier_points(M, B, :differentiable)
+N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
+F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_samples,λ,dataP)
+∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_samples,λ,dataP)
+x0 = pB
+pB_opt = steepest_descent(N, F, ∇F, x0;
     stepsize = ArmijoLinesearch(1.0,ExponentialRetraction(),0.5,0.0001), # use Armijo lineSearch
     stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-15)),
                                     StopWhenGradientNormLess(10.0^-5),
@@ -69,10 +58,18 @@ Bmat_opt = steepest_descent(N, F, ∇F, x0;
     debug = [:Stop, :Iteration," | ",
         :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n"]
 )
-B_opt = mat2tup(Bmat_opt)
+B_opt = get_bezier_tuple(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
 res_cp = get_bezier_junctions(M, B_opt)
 res_curve = de_casteljau(M,B_opt,curve_samples_plot)
 resPmat = hcat([[b...] for b in res_curve]...)
+
+scene = lines(cPmat[1,:], cPmat[2,:], cPmat[3,:])
+scatter!(scene,
+    [p0[1], p1[1], p2[1], p3[1]],
+    [p0[2], p1[2], p2[2], p3[2]],
+    [p0[3], p1[3], p2[3], p3[3]],
+    color = pColor
+    )
 
 lines!(scene, resPmat[1,:], resPmat[2,:], resPmat[3,:], color = ξColor, linewidth = 1.5)
 scatter!(scene,

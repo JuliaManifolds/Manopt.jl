@@ -126,7 +126,7 @@ returns the inner (i.e. despite start and end) points of the segments of the
 composite Bézier curve specified by the control points `B`. For a single segment `b`,
 its inner points are returned
 """
-function get_bezier_inner_points(M::Manifold, B::Array{P,1}) where {P}
+function get_bezier_inner_points(::Manifold, B::Array{P,1}) where {P}
     return cat(
         [[b[2:end-1]...] for b in B]...;
         dims=1,
@@ -155,10 +155,10 @@ If only one segment is given, all points of `b` – i.e. `b` itself is returned.
 function get_bezier_points(M::Manifold, B::Array{P,1}, reduce::Symbol=:default) where {P}
     return get_bezier_points(M,B,Val(reduce))
 end
-function get_bezier_points(M::Manifold, B::Array{P,1}, ::Val{:default}) where {P}
+function get_bezier_points(::Manifold, B::Array{P,1}, ::Val{:default}) where {P}
     return cat( [ [b...] for b in B]...; dims=1)
 end
-function get_bezier_points(M::Manifold, B::Array{P,1}, ::Val{:continuous}) where {P}
+function get_bezier_points(::Manifold, B::Array{P,1}, ::Val{:continuous}) where {P}
     return cat(
         [ [b[1:end-1]...] for b in B]...,
         [last(last(B))];
@@ -167,9 +167,10 @@ function get_bezier_points(M::Manifold, B::Array{P,1}, ::Val{:continuous}) where
 end
 function get_bezier_points(M::Manifold, B::Array{P,1}, ::Val{:differentiable}) where {P}
     return cat(
-        [ [b[1:end-2]...] for b in B]...,
-        [last(B)[end-1]],
-        [last(B)[end]];
+        [first(B)[1]],
+        [first(B)[2]],
+        [ [b[3:end]...] for b in B]...,
+        ;
         dims=1,
     )
 end
@@ -235,7 +236,7 @@ function get_bezier_tuple(M::Manifold, b::Array{P,1}, d, ::Val{:default}) where 
     startindices = endindices - d
     return [Tuple(b[si:ei]) for (si,ei) in zip(startindices,endindices)]
 end
-function get_bezier_tuple(M::Manifold, b::Array{P,1}, d, ::Val{:continuous}) where {P}
+function get_bezier_tuple(::Manifold, b::Array{P,1}, d, ::Val{:continuous}) where {P}
     length(b) != (sum(d)+1) && error(
         "The number of control points $(length(b)) does not match (for degrees $(d) expcted $(sum(d)+1) points."
     )
@@ -254,18 +255,17 @@ function get_bezier_tuple(M::Manifold, b::Array{P,1}, d, ::Val{:differentiable})
     length(b) != (sum(d .-1)+2) && error(
         "The number of control points $(length(b)) does not match (for degrees $(d) expcted $(sum(d.-1)+2) points."
     )
-    nums = d .+ [(i==length(d)) ? 1 : -1 for i ∈ 1:length(d)]
+    nums = d .+ [(i==1) ? 1 : -1 for i ∈ 1:length(d)]
     endindices = cumsum(nums)
     startindices = cumsum(nums) - nums .+ 1
-    return [
-            [ # for all append the start of the new also as last
-                Tuple([
-                    b[startindices[i]:endindices[i]]...,
-                    exp(M,b[startindices[i+1]], -log(M,b[startindices[i+1]], b[startindices[i+1]+1])),
-                    b[startindices[i+1]],
+    return [ # for all append the start of the new also as last
+            Tuple(b[startindices[1]:endindices[1]]),
+                [   Tuple([
+                    b[endindices[i-1]],
+                    exp(M,b[endindices[i-1]], -log(M,b[endindices[i-1]], b[endindices[i-1]-1])),
+                    b[startindices[i]:endindices[i]]...
                 ])
-                    for i ∈ 1:length(startindices)-1
+                    for i ∈ 2:length(startindices)
             ]..., # despite for the last
-            Tuple(b[startindices[end]:endindices[end]]),
         ]
 end
