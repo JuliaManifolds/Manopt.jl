@@ -107,7 +107,7 @@ returns the start and end point(s) of the segments of the composite Bézier curv
 specified by the control points `B`. For just one segment `b`, its start and end points
 are returned.
 """
-function get_bezier_junctions(M::Manifold, B::Array{P,1}, double_inner=false) where {P}
+function get_bezier_junctions(::Manifold, B::Array{P,1}, double_inner=false) where {P}
     return cat(
         [ double_inner ? [b[[1,end]]...] : [b[1]] for b in B ]...,
         double_inner ? [] : [last(last(B))];
@@ -165,7 +165,7 @@ function get_bezier_points(::Manifold, B::Array{P,1}, ::Val{:continuous}) where 
         dims=1,
     )
 end
-function get_bezier_points(M::Manifold, B::Array{P,1}, ::Val{:differentiable}) where {P}
+function get_bezier_points(::Manifold, B::Array{P,1}, ::Val{:differentiable}) where {P}
     return cat(
         [first(B)[1]],
         [first(B)[2]],
@@ -174,7 +174,7 @@ function get_bezier_points(M::Manifold, B::Array{P,1}, ::Val{:differentiable}) w
         dims=1,
     )
 end
-get_bezier_points(M::Manifold, b::NTuple{N,P}, s::Symbol=:none) where {P,N} = b
+get_bezier_points(M::Manifold, b::NTuple{N,P}, ::Symbol=:none) where {P,N} = b
 
 @doc raw"""
     get_bezier_degree(M::Manifold, b::NTuple{N,P})

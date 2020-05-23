@@ -43,6 +43,7 @@ B = [   (p0, exp(M, p0, t0p), exp(M, p1, -t1p), p1),
     ]
 
 cP = de_casteljau(M,B,curve_samples_plot)
+cPmat = hcat([[b...] for b in cP]...)
 dataP = get_bezier_junctions(M,B)
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
@@ -50,7 +51,7 @@ F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_sample
 ∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_samples,λ,dataP)
 x0 = pB
 pB_opt = steepest_descent(N, F, ∇F, x0;
-    stepsize = ArmijoLinesearch(1.0,ExponentialRetraction(),0.5,0.0001), # use Armijo lineSearch
+    stepsize = ArmijoLinesearch(1.0,ExponentialRetraction(),0.5,0.001), # use Armijo lineSearch
     stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-15)),
                                     StopWhenGradientNormLess(10.0^-5),
                                     StopAfterIteration(300),

@@ -47,15 +47,13 @@ if asyExport
     )
     render_asymptote(experimentFolder*experimentName*"-orig.asy"; render = 4)
 end
-tup2mat(B) = hcat([[b...] for b in B]...)
-mat2tup(matB) = [Tuple(matB[:,i]) for i=1:size(matB,2)]
-matB = tup2mat(B)
-N = PowerManifold(M, NestedPowerRepresentation(), size(matB)...)
-F(matB) = cost_L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP)
-∇F(matB) = tup2mat(∇L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP))
-x0 = matB
-Bmat_opt = steepest_descent(N, F, ∇F, x0;
-    stepsize = ArmijoLinesearch(0.05,ExponentialRetraction(),0.99,0.001), # use Armijo lineSearch
+pB = get_bezier_points(M, B, :differentiable)
+N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
+F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_samples,λ,dataP)
+∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_samples,λ,dataP)
+x0 = pB
+pB_opt = steepest_descent(N, F, ∇F, x0;
+    stepsize = ArmijoLinesearch(0.05,ExponentialRetraction(),0.5,0.001), # use Armijo lineSearch
     stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-5)),
                                     StopWhenGradientNormLess(10.0^-5),
                                     StopAfterIteration(300),
@@ -63,7 +61,7 @@ Bmat_opt = steepest_descent(N, F, ∇F, x0;
     debug = [:Stop, :Iteration," | ",
         :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n"]
   )
-B_opt = mat2tup(Bmat_opt)
+B_opt = get_bezier_tuple(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
 res_curve = de_casteljau(M,B_opt,curve_samples_plot)
 #res_curve ./= norm.(res_curve)
 if asyExport

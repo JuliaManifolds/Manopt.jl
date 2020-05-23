@@ -11,15 +11,17 @@ See [`de_casteljau`](@ref) for more details on the curve.
 function ∇acceleration_bezier(
     M::Manifold,
     B::Array{P,1},
-    degree::Array{Int,1},
+    degrees::Array{Int,1},
     T::Array{Float64,1};
     transport_method::AbstractVectorTransportMethod = ParallelTransport()
 ) where {P}
-    gradB = _∇acceleration_bezier(M, B, degree, T; transport_method = transport_method)
-    for k=1:length(B) # we interpolate so we do not move end points
-        gradB[k][1] .= zero_tangent_vector(M, B[k][1])
+    gradB = _∇acceleration_bezier(M, B, degrees, T; transport_method = transport_method)
+    Bt = get_bezier_tuple(M, B, degrees, :differentiable )
+    for k=1:length(Bt) # we interpolate so we do not move end points
+        gradB[k][end] .= zero_tangent_vector(M, Bt[k][end])
+        gradB[k][1] .= zero_tangent_vector(M, Bt[k][1])
     end
-    gradB[end][end] .= zero_tangent_vector(M, B[end][end])
+    gradB[end][end] .= zero_tangent_vector(M, Bt[end][end])
     return get_bezier_points(M, gradB, :differentiable)
 end
 function ∇acceleration_bezier(
@@ -55,14 +57,15 @@ function ∇L2_acceleration_bezier(
     transport_method::AbstractVectorTransportMethod = ParallelTransport(),
 ) where {P,Q}
     gradB = _∇acceleration_bezier(M, B, degrees, T; transport_method = transport_method)
+    Bt = get_bezier_tuple(M, B, degrees, :differentiable )
     # add start and end data grad
     # include data term
     for k=1:length(degrees)
-        η = λ*∇distance(M, B[k][1], d[k])
+        η = λ*∇distance(M, Bt[k][1], d[k])
         # copy to second entry
         gradB[k][1] .= gradB[k][1] .+ η
     end
-    gradB[end][end] .= gradB[end][end] .+ λ*∇distance(M,B[end][end],last(d))
+    gradB[end][end] .= gradB[end][end] .+ λ*∇distance(M,Bt[end][end],last(d))
     return get_bezier_points(M, gradB, :differentiable)
 end
 
