@@ -97,14 +97,17 @@ function _∇acceleration_bezier(
     # include c0 & C1 condition
     for k=length(B):-1:2
         m = length(B[k])
-        # updates b-, b+, p
-        X1 = ∇B[k-1][m-1] + adjoint_differential_geodesic_startpoint(M, B[k-1][m-1],B[k][1],2.,∇B[k][2])
-        X2 = ∇B[k][2] + adjoint_differential_geodesic_startpoint(M, B[k][2],B[k][1],2., -∇B[k-1][m-1])
-        X3 = ∇B[k-1][m] + ∇B[k][1] + adjoint_differential_geodesic_endpoint(M, B[k-1][m-1], B[k][1], 2., ∇B[k][2])
+        # updates b-
+        X1 = ∇B[k-1][m-1] .+ adjoint_differential_geodesic_startpoint(M, B[k-1][m-1],B[k][1],2.,∇B[k][2])
+        # update b+
+        X2 = ∇B[k][2] .+ adjoint_differential_geodesic_startpoint(M, B[k][2],B[k][1],2., ∇B[k-1][m-1])
+        # update p - effect from left and right segment as well as from c1 cond
+        X3 = ∇B[k-1][m] .+ ∇B[k][1] .+ adjoint_differential_geodesic_endpoint(M, B[k-1][m-1], B[k][1], 2., ∇B[k][2])
+        # store
         ∇B[k-1][m-1] .= X1
         ∇B[k][2] .= X2
         ∇B[k][1] .= X3
-        ∇B[k-1][m] .= - vector_transport_to(M, B[k][1], X3, B[k-1][m], transport_method)
+        ∇B[k-1][m] .= X3
     end
     return ∇B
 end

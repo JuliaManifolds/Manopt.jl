@@ -47,7 +47,7 @@ function cost_L2_acceleration_bezier(
     d::Array{Q,1}
 ) where {P,Q}
     p = get_bezier_junctions(M,B)
-    return cost_acceleration_bezier(M,B,pts) + λ/2*sum(distance.(Ref(M),p,d).^2)
+    return cost_acceleration_bezier(M,B,pts) + λ/2*sum((distance.(Ref(M),p,d)).^2)
 end
 
 @doc raw"""

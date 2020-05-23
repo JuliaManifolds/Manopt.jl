@@ -12,7 +12,7 @@ This example appeared in Sec. 5.2, second example, of
 #
 using Manopt, Manifolds, Colors, ColorSchemes
 asyExport = true #export data and results to asyExport
-λ = 2.0
+λ = 10.0
 
 curve_samples = [range(0,3,length=31)...] # sample curve for the gradient
 curve_samples_plot = [range(0,3,length=11)...] # sample curve for asy exports
@@ -55,7 +55,7 @@ F(matB) = cost_L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP)
 ∇F(matB) = tup2mat(∇L2_acceleration_bezier(M, mat2tup(matB), curve_samples,λ,dataP))
 x0 = matB
 Bmat_opt = steepest_descent(N, F, ∇F, x0;
-    stepsize = ArmijoLinesearch(0.05,ExponentialRetraction(),0.99,0.05), # use Armijo lineSearch
+    stepsize = ArmijoLinesearch(0.05,ExponentialRetraction(),0.99,0.001), # use Armijo lineSearch
     stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-5)),
                                     StopWhenGradientNormLess(10.0^-5),
                                     StopAfterIteration(300),
@@ -64,11 +64,20 @@ Bmat_opt = steepest_descent(N, F, ∇F, x0;
         :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n"]
   )
 B_opt = mat2tup(Bmat_opt)
+res_curve = de_casteljau(M,B_opt,curve_samples_plot)
+#res_curve ./= norm.(res_curve)
 if asyExport
       asymptote_export_S2_signals(experimentFolder*experimentName*"-result.asy";
-        curves = [de_casteljau(M,B_opt,curve_samples_plot)],
+        curves = [res_curve],
         points = [ get_bezier_junctions(M,B_opt), get_bezier_inner_points(M,B_opt) ],
-        tVectors = [[Tuple(a) for a in zip(get_bezier_junctions(M,B_opt,true), get_bezier_junction_tangent_vectors(M,B_opt))]],
+        tVectors = [
+            [
+                Tuple(a) for a in zip(
+                    get_bezier_junctions(M,B_opt,true),
+                    get_bezier_junction_tangent_vectors(M,B_opt)
+                )
+            ]
+        ],
         colors = Dict(:curves => [curveColor], :points => [dColor, bColor], :tvectors => [ξColor]),
         cameraPosition = cameraPosition,
         arrowHeadSize = 10.,
