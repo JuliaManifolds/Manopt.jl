@@ -1,5 +1,9 @@
 @doc raw"""
-    adjoint_differential_bezier_control(M,b,t,η)
+    adjoint_differential_bezier_control(
+        M::Manifold,
+        b::BezierSegment,
+        t::Float64,
+        η::Q)
 
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a point `t` $\in[0,1]$ on the
@@ -9,35 +13,50 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
-    b::NTuple{2,P},
+    b::BezierSegment,
     t::Float64,
     η::Q,
-) where {P,Q}
-    return [
-        adjoint_differential_geodesic_startpoint(M,b[1],b[2],t,η),
-        adjoint_differential_geodesic_endpoint(M,b[1],b[2],t,η),
-    ]
-end
-function adjoint_differential_bezier_control(
-    M::Manifold,
-    b::NTuple{N,P},
-    t::Float64,
-    η::Q,
-) where {P,Q,N}
-    bInner = shortest_geodesic.(Ref(M), b[1:end-1], b[2:end],Ref(t))
-    ξInner = adjoint_differential_bezier_control(M,bInner,t,η)
-    startEffects = [
-        adjoint_differential_geodesic_startpoint.(Ref(M),b[1:end-1], b[2:end],Ref(t),ξInner)...,
-        zero_tangent_vector(M,b[end]),
-    ]
-    endEffects = [
-        zero_tangent_vector(M,b[1]),
-        adjoint_differential_geodesic_endpoint.(Ref(M),b[1:end-1], b[2:end],Ref(t),ξInner)...
-    ]
-    return startEffects .+ endEffects
+) where {Q}
+    if length(b.pts) == 2
+        return BezierSegment(
+            [
+            adjoint_differential_geodesic_startpoint(M,b.pts[1],b.pts[2],t,η),
+            adjoint_differential_geodesic_endpoint(M,b.pts[1],b.pts[2],t,η),
+            ]
+        )
+    else
+        bInner = shortest_geodesic.(Ref(M), b.pts[1:end-1], b.pts[2:end],Ref(t))
+        ξInner = adjoint_differential_bezier_control(M, BezierSegment(bInner), t, η)
+        startEffects = [
+            adjoint_differential_geodesic_startpoint.(
+                Ref(M),
+                b.pts[1:end-1],
+                b.pts[2:end],
+                Ref(t),
+                ξInner.pts
+            )...,
+            zero_tangent_vector(M,b.pts[end]),
+        ]
+        endEffects = [
+            zero_tangent_vector(M,b.pts[1]),
+            adjoint_differential_geodesic_endpoint.(
+                Ref(M),
+                b.pts[1:end-1],
+                b.pts[2:end],
+                Ref(t),
+                ξInner.pts
+            )...
+        ]
+        return BezierSegment(startEffects .+ endEffects)
+    end
 end
 @doc raw"""
-    adjoint_differential_bezier_control(M,b,t,X)
+    adjoint_differential_bezier_control(
+        M::Manifold,
+        b::BezierSegment,
+        t::Array{Float64,1},
+        X::Array{Q,1}
+    )
 
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n that
@@ -54,15 +73,21 @@ See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbour
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
-    b::NTuple{N,P},
-    t::Array{Float64,1},
-    X::Array{Q,1}
-) where {P,Q,N}
-    return sum(adjoint_differential_bezier_control.(Ref(M),Ref(b),t,X))
+    b::BezierSegment,
+    t::AbstractVecOrMat{Float64},
+    X::AbstractVector{Q}
+) where {Q}
+    effects = [b.pts for b in adjoint_differential_bezier_control.(Ref(M),Ref(b),t,X)]
+    return BezierSegment(sum(effects))
 end
 
 @doc raw"""
-    adjoint_differential_bezier_control(M,B,t,X)
+    adjoint_differential_bezier_control(
+        M::MAnifold,
+        B::AbstractVector{<:BezierSegment},
+        t::Float64,
+        X
+    )
 
 evaluate the adjoint of the differential of a composite Bézier curve on the
 manifold `M` with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n$
@@ -73,19 +98,19 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
-    B::Array{P,1},
+    B::AbstractVector{<:BezierSegment},
     t::Float64,
     X::Q
-) where {P,Q}
-  # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
-  if (0 > t) || ( t > length(B))
-    error("The parameter ",t," to evaluate the composite Bézier curve at is outside the interval [0,",length(B),"].")
-  end
-  Y = broadcast( b -> zero_tangent_vector.(Ref(M),b) , B) # Double broadcast
-  seg = max(ceil(Int,t),1)
-  localT = ceil(Int,t) == 0 ? 0. : t - seg+1
-  Y[seg] = Tuple(adjoint_differential_bezier_control(M,B[seg], localT, X))
-  return Y
+) where {Q}
+    # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
+    if (0 > t) || ( t > length(B))
+        error("The parameter ",t," to evaluate the composite Bézier curve at is outside the interval [0,",length(B),"].")
+    end
+    Y = broadcast( b -> BezierSegment(zero_tangent_vector.(Ref(M),b.pts)) , B) # Double broadcast
+    seg = max(ceil(Int,t),1)
+    localT = ceil(Int,t) == 0 ? 0. : t - seg+1
+    Y[seg].pts .= adjoint_differential_bezier_control(M,B[seg], localT, X).pts
+    return Y
 end
 @doc raw"""
     adjoint_differential_bezier_control(M,B,t,η)
@@ -95,13 +120,18 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
-    B::Array{P,1},
-    T::Array{Float64,1},
-    X::Array{Q,1}
+    B::AbstractVector{<:BezierSegment},
+    T::AbstractVector{Float64},
+    X::AbstractVector{Q}
 ) where {P,Q}
-    Y = adjoint_differential_bezier_control.(Ref(M),Ref(B), T, X)
-    # an array per point containing an tuple per segment of points
-    return sum_bezier_tangents(Y...)
+    BT = adjoint_differential_bezier_control.(Ref(M),Ref(B), T, X)
+    Y = broadcast( b -> BezierSegment(zero_tangent_vector.(Ref(M),b.pts)) , B) # Double broadcast
+    for Bn ∈ BT # for all times
+        for i ∈ 1:length(Bn)
+            Y[i].pts .+= Bn[i].pts
+        end
+    end
+    return Y
 end
 
 @doc raw"""

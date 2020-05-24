@@ -22,15 +22,11 @@ Due to a symmetry agrument, these are also used to compute $D_q g(t; p,q)[\eta]$
 [`differential_geodesic_endpoint`](@ref), [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
 function βdifferential_geodesic_startpoint(κ,t,d)
-    if (d==0) || (κ==0)
-        return (1-t)
-    else
-        if κ < 0
-            return sinh(sqrt(-κ)*(1-t)*d)/sinh(sqrt(-κ)*d)
-        elseif κ > 0
-            return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d)
-        end
-    end
+    (κ==0) && return (1-t)
+    (d==0) && return 0
+    (κ < 0) && return sinh(sqrt(-κ)*(1-t)*d)/sinh(sqrt(-κ)*d)
+    (κ > 0) && return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d)
+    @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 @doc raw"""
     βdifferential_exp_basepoint(κ,t,d)

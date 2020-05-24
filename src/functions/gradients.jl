@@ -1,8 +1,13 @@
 @doc raw"""
-    ∇acceleration_bezier(M::Manifold, B::Array{NTuple{N,P},1},T)
+    ∇acceleration_bezier(
+        M::Manifold,
+        B::AbstractVector{P},
+        degrees::AbstractVector{Int}
+        T)
 
 compute the gradient of the discretized acceleration of a (composite) Bézier curve $c_B(t)$
-on the `Manifold` `M` with respect to its control points `B`. The curve is
+on the `Manifold` `M` with respect to its control points `B` given as a point on the
+`PowerManifold` assuming C1 conditions and known `degrees`. The curve is
 evaluated at the points given in `T` (elementwise in $[0,N]$, where $N$ is the
 number of segments of the Bézier curve).
 
@@ -10,28 +15,27 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function ∇acceleration_bezier(
     M::Manifold,
-    B::Array{P,1},
-    degrees::Array{Int,1},
-    T::Array{Float64,1};
-    transport_method::AbstractVectorTransportMethod = ParallelTransport()
+    B::AbstractVector{P},
+    degrees::AbstractVector{Int},
+    T::AbstractVector{Float64},
 ) where {P}
-    gradB = _∇acceleration_bezier(M, B, degrees, T; transport_method = transport_method)
-    Bt = get_bezier_tuple(M, B, degrees, :differentiable )
+    gradB = _∇acceleration_bezier(M, B, degrees, T)
+    Bt = get_bezier_segments(M, B, degrees, :differentiable)
     for k=1:length(Bt) # we interpolate so we do not move end points
-        gradB[k][end] .= zero_tangent_vector(M, Bt[k][end])
-        gradB[k][1] .= zero_tangent_vector(M, Bt[k][1])
+        gradB[k].pts[end] .= zero_tangent_vector(M, Bt[k].pts[end])
+        gradB[k].pts[1] .= zero_tangent_vector(M, Bt[k].pts[1])
     end
-    gradB[end][end] .= zero_tangent_vector(M, Bt[end][end])
+    gradB[end].pts[end] .= zero_tangent_vector(M, Bt[end].pts[end])
     return get_bezier_points(M, gradB, :differentiable)
 end
 function ∇acceleration_bezier(
     M::Manifold,
-    b::NTuple{N,P},
-    T::Array{Float64,1},
-) where {P,N}
-    gradb .= _∇acceleration_bezier(M,[b],T)[1]
-    gradb[1] .= zero_tangent_vector(M,b[1])
-    gradb[end] .= zero_tangent_vector(M,b[end])
+    b::BezierSegment,
+    T::AbstractVector{Float64},
+)
+    gradb .= _∇acceleration_bezier(M,[b,],T)[1]
+    gradb.pts[1] .= zero_tangent_vector(M,b[1])
+    gradb.pts[end] .= zero_tangent_vector(M,b[end])
     return gradb
 end
 
@@ -49,91 +53,93 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function ∇L2_acceleration_bezier(
     M::Manifold,
-    B::Array{P,1},
-    degrees::Array{Int,1},
-    T::Array{Float64,1},
+    B::AbstractVector{P},
+    degrees::AbstractVector{Int},
+    T::AbstractVector{Float64},
     λ::Float64,
-    d::Array{Q,1};
-    transport_method::AbstractVectorTransportMethod = ParallelTransport(),
+    d::AbstractVector{Q};
 ) where {P,Q}
-    gradB = _∇acceleration_bezier(M, B, degrees, T; transport_method = transport_method)
-    Bt = get_bezier_tuple(M, B, degrees, :differentiable )
+    gradB = _∇acceleration_bezier(M, B, degrees, T)
+    Bt = get_bezier_segments(M, B, degrees, :differentiable )
     # add start and end data grad
     # include data term
-    for k=1:length(degrees)
-        η = λ*∇distance(M, Bt[k][1], d[k])
-        # copy to second entry
-        gradB[k][1] .= gradB[k][1] .+ η
+    for k=1:length(Bt)
+        gradB[k].pts[1] .+= λ*∇distance(M, Bt[k].pts[1], d[k])
+        k > 1 && (gradB[k-1].pts[end] .+= λ*∇distance(M, Bt[k].pts[1], d[k]))
     end
-    gradB[end][end] .= gradB[end][end] .+ λ*∇distance(M,Bt[end][end],last(d))
+    gradB[end].pts[end] .+= λ*∇distance(M,Bt[end].pts[end],last(d))
     return get_bezier_points(M, gradB, :differentiable)
 end
 
 # common helper for the two acceleration grads
 function _∇acceleration_bezier(
     M::Manifold,
-    B::Array{P,1},
-    degrees::Array{Int,1},
-    T::Array{Float64,1};
-    transport_method::AbstractVectorTransportMethod = ParallelTransport()
+    B::AbstractVector{P},
+    degrees::AbstractVector{Int},
+    T::AbstractVector{Float64}
 ) where {P}
-    Bt = get_bezier_tuple(M, B, degrees, :differentiable )
+    Bt = get_bezier_segments(M, B, degrees, :differentiable )
     n = length(T)
+    m = length(Bt)
     p = de_casteljau(M,Bt,T)
     center = p
     forward = p[ [1, 3:n..., n] ]
     backward = p[ [1,1:(n-2)..., n] ]
-    mid = mid_point.(Ref(M), forward,backward)
-    samplingFactor = 1/(( ( max(T...) - min(T...) )/(n-1) )^3)
+    mid = mid_point.(Ref(M), backward, forward)
     # where the point of interest appears...
-    inner = -2 .* samplingFactor .* log.(Ref(M),mid,center)
+    dt = ( max(T...) - min(T...) )/(n-1)
+    inner = -2/((dt)^3) .* log.(Ref(M),mid,center)
     asForward = adjoint_differential_geodesic_startpoint.(Ref(M),forward,backward, Ref(0.5), inner)
-    asCenter = - 2*samplingFactor*log.(Ref(M),center,mid)
+    asCenter = - 2/((dt)^3) .* log.(Ref(M),center,mid)
     asBackward = adjoint_differential_geodesic_endpoint.(Ref(M),forward,backward, Ref(0.5), inner )
     # effect of these to the centrol points is the preliminary gradient
-    ∇B = sum_bezier_tangents(
-        adjoint_differential_bezier_control(M, Bt, T[ [1,3:n...,n]],asForward),
-        adjoint_differential_bezier_control(M, Bt, T, asCenter),
-        adjoint_differential_bezier_control(M, Bt, T[ [1,1:(n-2)...,n] ], asBackward)
-    )
-    for k=1:length(Bt)-1
-        m = length(Bt[k])
-        X = ∇B[k+1][1] + ∇B[k][m]
-        ∇B[k][m] .= X
-        ∇B[k+1][1] .= X
+    ∇B = [
+        BezierSegment(a.pts .+ b.pts .+ c.pts)
+        for (a,b,c) in zip(
+            adjoint_differential_bezier_control(M, Bt, T[ [1,3:n...,n]],asForward),
+            adjoint_differential_bezier_control(M, Bt, T, asCenter),
+            adjoint_differential_bezier_control(M, Bt, T[ [1,1:(n-2)...,n] ], asBackward)
+        )
+    ]
+    for k=1:length(Bt)-1 # add both effects of left and right segments
+        X = ∇B[k+1].pts[1] + ∇B[k].pts[end]
+        ∇B[k].pts[end] .= X
+        ∇B[k+1].pts[1] .= X
     end
     # include c0 & C1 condition
     for k=length(Bt):-1:2
-        m = length(Bt[k])
+        m = length(Bt[k].pts)
         # updates b-
-        X1 = ∇B[k-1][m-1] .+ adjoint_differential_geodesic_startpoint(M, Bt[k-1][m-1], Bt[k][1], 2., ∇B[k][2])
-        # update b+
-        X2 = ∇B[k][2] .+ adjoint_differential_geodesic_startpoint(M, Bt[k][2], Bt[k][1], 2., ∇B[k-1][m-1])
+        X1 = ∇B[k-1].pts[end-1] .+ adjoint_differential_geodesic_startpoint(
+            M,
+            Bt[k-1].pts[end-1],
+            Bt[k].pts[1],
+            2.,
+            ∇B[k].pts[2]
+        )
+        # update b+ - though removed in reduced form
+        X2 = ∇B[k].pts[2] .+ adjoint_differential_geodesic_startpoint(
+            M,
+            Bt[k].pts[2],
+            Bt[k].pts[1],
+            2.,
+            ∇B[k-1].pts[end-1]
+        )
         # update p - effect from left and right segment as well as from c1 cond
-        X3 = ∇B[k][1] .+ adjoint_differential_geodesic_endpoint(M, Bt[k-1][m-1], Bt[k][1], 2., ∇B[k][2])
+        X3 = ∇B[k].pts[1] .+ adjoint_differential_geodesic_endpoint(
+            M,
+            Bt[k-1].pts[m-1],
+            Bt[k].pts[1],
+            2.,
+            ∇B[k].pts[2]
+        )
         # store
-        ∇B[k-1][m-1] .= X1
-        ∇B[k][2] .= X2
-        ∇B[k][1] .= X3
-        ∇B[k-1][m] .= X3
+        ∇B[k-1].pts[end-1] .= X1
+        ∇B[k].pts[2] .= X2
+        ∇B[k].pts[1] .= X3
+        ∇B[k-1].pts[end] .= X3
     end
     return ∇B
-end
-
-
-#
-# Helper to sum bezier tangents, since they have a strange format:
-# Summing arrays of tuples of points assuming the arrays are same length the tuples too, and the points match
-#
-function sum_bezier_tangents(x...)
-    s = first(x)
-    length(x) == 1 && return s
-    for i=2:length(x) # per summand x[i]
-        for j=1:length(s) # per segment s[j] (x[i][j])
-            s[j] = s[j] .+ x[i][j] #.+ works for tuples so it elementwise adds the points
-        end
-    end
-    return s
 end
 
 @doc raw"""

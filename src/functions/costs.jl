@@ -16,7 +16,7 @@ function cost_acceleration_bezier(
     degrees::Array{Int,1},
     pts::Array{Float64,1},
 ) where {P}
-    Bt = get_bezier_tuple(M, B, degrees, :differentiable)
+    Bt = get_bezier_segments(M, B, degrees, :differentiable)
     p = de_casteljau(M, Bt, pts)
     n = length(p)
     f = p[ [1,3:n...,n] ]
@@ -49,7 +49,7 @@ function cost_L2_acceleration_bezier(
     λ::Float64,
     d::Array{Q,1}
 ) where {P,Q}
-    Bt = get_bezier_tuple(M, B, degrees, :differentiable)
+    Bt = get_bezier_segments(M, B, degrees, :differentiable)
     p = get_bezier_junctions(M,Bt)
     return cost_acceleration_bezier(M, B, degrees, pts) + λ/2*sum((distance.(Ref(M),p,d)).^2)
 end

@@ -89,8 +89,8 @@ module Manopt
     include("plans/plan.jl")
     # Functions
     include("functions/manifold.jl")
-    include("functions/adjointDifferentials.jl")
     include("functions/bezier_curves.jl")
+    include("functions/adjointDifferentials.jl")
     include("functions/costs.jl")
     include("functions/differentials.jl")
     include("functions/gradients.jl")
@@ -204,6 +204,7 @@ module Manopt
     export get_stepsize, get_initial_stepsize, get_last_stepsize
 
     export
+        BezierSegment,
         de_casteljau,
         get_bezier_degrees,
         get_bezier_degree,
@@ -211,6 +212,6 @@ module Manopt
         get_bezier_junction_tangent_vectors,
         get_bezier_junctions,
         get_bezier_points,
-        get_bezier_tuple
+        get_bezier_segments
 
 end

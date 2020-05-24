@@ -37,9 +37,9 @@ t1p = -π/(4 * sqrt(2)) * [1.0, 0.0, 1.0];
 t2p = π/(4 * sqrt(2)) * [0.0, 1.0, -1.0];
 t3m = π/8 * [-1.0, 0.0, 0.0]
 
-B = [   (p0, exp(M, p0, t0p), exp(M, p1, -t1p), p1),
-        (p1, exp(M, p1, t1p), exp(M, p2, -t2p), p2),
-        (p2, exp(M, p2, t2p), exp(M, p3, t3m), p3),
+B = [  BezierSegment([p0, exp(M, p0, t0p), exp(M, p1, -t1p), p1]),
+       BezierSegment([p1, exp(M, p1, t1p), exp(M, p2, -t2p), p2]),
+       BezierSegment([p2, exp(M, p2, t2p), exp(M, p3, t3m), p3]),
     ]
 
 cP = de_casteljau(M,B,curve_samples_plot)
@@ -51,15 +51,15 @@ F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_sample
 ∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_samples,λ,dataP)
 x0 = pB
 pB_opt = steepest_descent(N, F, ∇F, x0;
-    stepsize = ArmijoLinesearch(1.0,ExponentialRetraction(),0.5,0.001), # use Armijo lineSearch
-    stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-15)),
-                                    StopWhenGradientNormLess(10.0^-5),
+    stepsize = ArmijoLinesearch(1.0,ExponentialRetraction(),0.5,0.0001), # use Armijo lineSearch
+    stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-16)),
+                                    StopWhenGradientNormLess(10.0^-9),
                                     StopAfterIteration(300),
                                 ),
     debug = [:Stop, :Iteration," | ",
         :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n"]
 )
-B_opt = get_bezier_tuple(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
+B_opt = get_bezier_segments(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
 res_cp = get_bezier_junctions(M, B_opt)
 res_curve = de_casteljau(M,B_opt,curve_samples_plot)
 resPmat = hcat([[b...] for b in res_curve]...)

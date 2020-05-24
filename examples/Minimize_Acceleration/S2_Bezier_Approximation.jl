@@ -53,15 +53,15 @@ F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_sample
 ∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M,B), curve_samples,λ,dataP)
 x0 = pB
 pB_opt = steepest_descent(N, F, ∇F, x0;
-    stepsize = ArmijoLinesearch(0.05,ExponentialRetraction(),0.5,0.001), # use Armijo lineSearch
+    stepsize = ArmijoLinesearch(1.0,ExponentialRetraction(),0.5,0.001), # use Armijo lineSearch
     stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-5)),
-                                    StopWhenGradientNormLess(10.0^-5),
+                                    StopWhenGradientNormLess(10.0^-7),
                                     StopAfterIteration(300),
                                 ),
     debug = [:Stop, :Iteration," | ",
         :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n"]
   )
-B_opt = get_bezier_tuple(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
+B_opt = get_bezier_segments(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
 res_curve = de_casteljau(M,B_opt,curve_samples_plot)
 #res_curve ./= norm.(res_curve)
 if asyExport
