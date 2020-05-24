@@ -91,7 +91,7 @@ function _∇acceleration_bezier(
     inner = -2/((dt)^3) .* log.(Ref(M),mid,center)
     asForward = adjoint_differential_geodesic_startpoint.(Ref(M),forward,backward, Ref(0.5), inner)
     asCenter = - 2/((dt)^3) .* log.(Ref(M),center,mid)
-    asBackward = adjoint_differential_geodesic_endpoint.(Ref(M),forward,backward, Ref(0.5), inner )
+    asBackward = adjoint_differential_geodesic_startpoint.(Ref(M),backward, forward, Ref(0.5), inner )
     # effect of these to the centrol points is the preliminary gradient
     ∇B = [
         BezierSegment(a.pts .+ b.pts .+ c.pts)

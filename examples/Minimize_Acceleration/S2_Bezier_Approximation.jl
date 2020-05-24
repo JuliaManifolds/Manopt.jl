@@ -14,8 +14,8 @@ using Manopt, Manifolds, Colors, ColorSchemes
 asyExport = true #export data and results to asyExport
 λ = 10.0
 
-curve_samples = [range(0,3,length=31)...] # sample curve for the gradient
-curve_samples_plot = [range(0,3,length=11)...] # sample curve for asy exports
+curve_samples = [range(0,3,length=101)...] # sample curve for the gradient
+curve_samples_plot = [range(0,3,length=201)...] # sample curve for asy exports
 
 experimentFolder = "examples/Minimize_Acceleration/S2_Bezier/"
 experimentName = "Bezier_Approximation"
@@ -59,14 +59,16 @@ pB_opt = steepest_descent(N, F, ∇F, x0;
                                     StopAfterIteration(300),
                                 ),
     debug = [:Stop, :Iteration," | ",
-        :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n"]
+        :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n",
+    #    :∇, "\n\n"
+    ]
   )
 B_opt = get_bezier_segments(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
 res_curve = de_casteljau(M,B_opt,curve_samples_plot)
 #res_curve ./= norm.(res_curve)
 if asyExport
       asymptote_export_S2_signals(experimentFolder*experimentName*"-result.asy";
-        curves = [res_curve],
+        curves = [res_curve,cP],
         points = [ get_bezier_junctions(M,B_opt), get_bezier_inner_points(M,B_opt) ],
         tVectors = [
             [
@@ -76,10 +78,10 @@ if asyExport
                 )
             ]
         ],
-        colors = Dict(:curves => [curveColor], :points => [dColor, bColor], :tvectors => [ξColor]),
+        colors = Dict(:curves => [curveColor, pColor], :points => [dColor, bColor], :tvectors => [ξColor]),
         cameraPosition = cameraPosition,
         arrowHeadSize = 10.,
-        lineWidths= [1.5, 1.5], dotSize = 4.
+        lineWidths= [1.5, 0.75, 1.5], dotSize = 4.
     )
     render_asymptote(experimentFolder*experimentName*"-result.asy"; render = 4)
 end

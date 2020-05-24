@@ -22,10 +22,10 @@ Due to a symmetry agrument, these are also used to compute $D_q g(t; p,q)[\eta]$
 [`differential_geodesic_endpoint`](@ref), [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
 function βdifferential_geodesic_startpoint(κ,t,d)
-    (κ==0) && return (1-t)
-    (d==0) && return 0
-    (κ < 0) && return sinh(sqrt(-κ)*(1-t)*d)/sinh(sqrt(-κ)*d)
-    (κ > 0) && return sin(sqrt(κ)*(1-t)*d)/sin(sqrt(κ)*d)
+    (κ==0) && return 1.0-t
+    (d==0) && return 1.0
+    (κ < 0) && return sinh(sqrt(-κ)*(1.0-t)*d)/sinh(sqrt(-κ)*d)
+    (κ > 0) && return sin(sqrt(κ)*(1.0-t)*d)/sin(sqrt(κ)*d)
     @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 @doc raw"""
@@ -46,14 +46,10 @@ with respect to its start point $D_p \exp_p X [Y]$. They are
 
 [`differential_exp_basepoint`](@ref), [`jacobi_field`](@ref)
 """
-function βdifferential_exp_basepoint(κ,t,d)
-    if κ < 0
-        return cosh(sqrt(-κ)*d)
-    elseif κ > 0
-        return cos(sqrt(κ)*d)
-    else
-        return 1.0;
-    end
+function βdifferential_exp_basepoint(κ, ::Number, d)
+    (κ < 0) && return cosh(sqrt(-κ)*d)
+    (κ > 0) && return cos(sqrt(κ)*d)
+    return 1.0
 end
 @doc raw"""
     βdifferential_exp_argument(κ,t,d)
@@ -73,16 +69,11 @@ $\beta(\kappa) = \begin{cases}
 
 [`differential_exp_argument`](@ref), [`jacobi_field`](@ref)
 """
-function βdifferential_exp_argument(κ,t,d)
-    if (d==0) || (κ==0)
-        return 1.0
-    else
-        if κ < 0
-            return sinh(sqrt(-κ)*d)/( d*sqrt((-κ)) )
-        elseif κ > 0
-            return sin( sqrt(κ)*d )/( d*sqrt(κ) )
-        end
-    end
+function βdifferential_exp_argument(κ, ::Number, d)
+    ((κ==0) || (d==0)) && return 1.0
+    (κ < 0) && return sinh(sqrt(-κ)*d)/( d*sqrt((-κ)) )
+    (κ > 0) && return sin( sqrt(κ)*d )/( d*sqrt(κ) )
+    @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 @doc raw"""
     βdifferential_log_basepoint(κ,t,d)
@@ -102,16 +93,11 @@ with respect to its start point $D_p \log_p q[X]$. They are
 
 [`differential_log_argument`](@ref), [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
 """
-function βdifferential_log_basepoint(κ::Number,t::Number,d::Number)
-    if (d==0) || (κ==0)
-        return -1.0
-    else
-        if κ < 0
-            return - sqrt(-κ)*d*cosh(sqrt(-κ)*d)/sinh(sqrt(-κ)*d)
-        else #if κ > 0
-            return - sqrt(κ)*d*cos(sqrt(κ)*d)/sin(sqrt(κ)*d)
-        end
-    end
+function βdifferential_log_basepoint(κ, ::Number, d)
+    ((d==0) || (κ==0)) && return -1.0
+    (κ < 0) && return - sqrt(-κ)*d*cosh(sqrt(-κ)*d)/sinh(sqrt(-κ)*d)
+    (κ > 0) && return - sqrt(κ)*d*cos(sqrt(κ)*d)/sin(sqrt(κ)*d)
+    @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 @doc raw"""
     βdifferential_log_argument(κ,t,d)
@@ -131,16 +117,11 @@ map with respect to its argument $D_q \log_p q[X]$. They are
 
 [`differential_log_basepoint`](@ref), [`jacobi_field`](@ref)
 """
-function βdifferential_log_argument(κ::Number,t::Number,d::Number)
-    if (d==0) || (κ==0)
-        return 1.0
-    else
-        if κ < 0
-            return sqrt(-κ)*d/sinh(sqrt(-κ)*d)
-        else #if κ > 0
-            return sqrt(κ)*d/sin(sqrt(κ)*d)
-        end
-    end
+function βdifferential_log_argument(κ, ::Number, d)
+    (d==0) || (κ==0) && return 1.0
+    (κ < 0) && return sqrt(-κ)*d/sinh(sqrt(-κ)*d)
+    (κ > 0) && return sqrt(κ)*d/sin(sqrt(κ)*d)
+    @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 
 @doc raw"""

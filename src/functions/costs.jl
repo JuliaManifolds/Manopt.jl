@@ -18,7 +18,7 @@ function cost_acceleration_bezier(
 ) where {P}
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     p = de_casteljau(M, Bt, pts)
-    n = length(p)
+    n = length(pts)
     f = p[ [1,3:n...,n] ]
     b = p[ [1,1:(n-2)...,n] ]
     d = distance.(Ref(M), p, shortest_geodesic.(Ref(M),f,b,Ref(0.5))).^2

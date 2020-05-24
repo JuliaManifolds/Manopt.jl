@@ -13,8 +13,8 @@ This example appeared in Sec. 5.2, second example, of
 using Manopt, Manifolds, Colors, ColorSchemes
 asyExport = true #export data and results to asyExport
 
-curve_samples = [range(0,3,length=31)...] # sample curve for the gradient
-curve_samples_plot = [range(0,3,length=11)...] # sample curve for asy exports
+curve_samples = [range(0,3,length=101)...] # sample curve for the gradient
+curve_samples_plot = [range(0,3,length=201)...] # sample curve for asy exports
 
 experimentFolder = "examples/Minimize_Acceleration/S2_Bezier/"
 experimentName = "Bezier_Interpolation"
@@ -53,7 +53,7 @@ x0 = pB
 pB_opt = steepest_descent(N, F, ∇F, x0;
     stepsize = ArmijoLinesearch(1.0,ExponentialRetraction(),0.5,0.0001), # use Armijo lineSearch
     stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-7)),
-                                    StopWhenGradientNormLess(10.0^-5),
+                                    StopWhenGradientNormLess(7*10.0^-5),
                                     StopAfterIteration(300),
                                 ),
     debug = [:Stop, :Iteration," | ",
@@ -62,13 +62,13 @@ pB_opt = steepest_descent(N, F, ∇F, x0;
 B_opt = get_bezier_segments(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
 if asyExport
       asymptote_export_S2_signals(experimentFolder*experimentName*"-result.asy";
-        curves = [de_casteljau(M,B_opt,curve_samples_plot)],
+        curves = [de_casteljau(M,B_opt,curve_samples_plot),cP],
         points = [ get_bezier_junctions(M,B_opt), get_bezier_inner_points(M,B_opt) ],
         tVectors = [[Tuple(a) for a in zip(get_bezier_junctions(M,B_opt,true), get_bezier_junction_tangent_vectors(M,B_opt))]],
-        colors = Dict(:curves => [curveColor], :points => [dColor, bColor], :tvectors => [ξColor]),
+        colors = Dict(:curves => [curveColor,pColor], :points => [dColor, bColor], :tvectors => [ξColor]),
         cameraPosition = cameraPosition,
         arrowHeadSize = 10.,
-        lineWidths= [1.5, 1.5], dotSize = 4.
+        lineWidths= [1.5, 0.75, 1.5], dotSize = 4.
     )
     render_asymptote(experimentFolder*experimentName*"-result.asy"; render = 4)
 end
