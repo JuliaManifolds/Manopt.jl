@@ -683,51 +683,39 @@ end
 @doc raw"""
     quasi_Newton_Options <: Options
 """
-abstract type quasi_Newton_Options <: Options end
+abstract type QuasiNewtonOptions <: Options end
+abstract type LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
 
-mutable struct Limited_Memory_quasi_Newton_Options{P,T} <: quasi_Newton_Options
+struct BFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
+    ∇::T
+    retraction_method::AbstractRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
     stop::StoppingCriterion
+end
+struct CautousBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+    x::P
+    ∇::T
+    c_fct::Function
+    retraction_method::AbstractRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
+    stop::StoppingCriterion
+end
+struct DFPQuasiNewton{P,T} <: QuasiNewtonOptions
+    x::P
+    ∇::T
+    retraction_method::AbstractRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
+    stop::StoppingCriterion
+end
+struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
+    x::P
+
+    gradient_diffrences::AbstractVector{T}
+    steps::AbstractVctor{T}
+    current_memory_size::Int
 
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
-
-    step_memory::Array{T,1}
-    gradient_memory::Array{T,1}
-
-    cautious::Bool
-    cautious_function::Function
-
-    function Limited_Memory_quasi_Newton_Options(x::P,
-        stop::StoppingCriterion,
-        retraction_method::AbstractRetractionMethod,
-        vector_transport_method::AbstractVectorTransportMethod,
-        m::Int{64}
-        cautious::Bool
-        cautious_function::Function) where {P,T}
-        return new{P, T}(x,stop,Retraction,vector_transport_method,Array{T,1},Array{T,1},cautious,cautious_function)
-    end
-end
-
-mutable struct Standard_quasi_Newton_Options <: quasi_Newton_Options
-    x::P
     stop::StoppingCriterion
-
-    retraction_method::Function
-    vector_transport_method::Function
-
-    hessian_inverse_aproximation::Function
-
-    cautious::Bool
-    cautious_function::Function
-
-    function Standard_quasi_Newton_Options(x::P,
-        stop::StoppingCriterion,
-        retraction_method::Function,
-        vector_transport_method::Function,
-        hessian_inverse_aproximation::Function
-        cautious::Bool
-        cautious_function::Function) where {P,T}
-        return new{typeof(x)}(x,stop,retraction_method,vector_transport_method,hessian_inverse_aproximation,cautious,cautious_function)
-    end
 end
