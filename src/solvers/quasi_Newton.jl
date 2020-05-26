@@ -31,7 +31,7 @@ function step_solver!(p::P,o::O,iter) where {P <: GradientProblem, O <: quasi_Ne
 
         # Compute Step
         x_old = o.x
-        o.x = o.Retraction(p.M, o.x)
+        retract!(p.M, o.x, o.x, α*η, o.retraction_method)
 
         # Update the Parameters
         update_Parameters(p, o, η, α, x_old)
@@ -66,13 +66,15 @@ end
 
 
 function update_Parameters(p::GradientProblem, o::Standard_quasi_Newton_Options, α::Float64, η::T, x::p)
-        yk = get_gradient(p,o.x) - o.Vector_Transport(x, o.x, get_gradient(p,x))
+        gradf_xold = get_gradient(p,x)
+
+        yk = get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
         sk = o.Vector_Transport(x, o.x, α*η)
 
         if o.cautious == true
                 sk_yk = dot(p.M, o.x, sk, yk)
                 norm_sk = norm(p.M, o.x, sk)
-                bound = o.cautious_Function(norm(p.M, x, get_gradient(p,x)))
+                bound = o.cautious_Function(norm(p.M, x, gradf_xold))
 
                 if norm_sk != 0 && (sk_yk / norm_sk) >= bound
                         # Update of the Function / Matrix
