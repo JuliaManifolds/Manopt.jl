@@ -19,6 +19,14 @@ using Manopt, Manifolds, Test
         pts2 = de_casteljau(M,B,2 .* t)
         @test sum(distance.(Ref(M),pts,pts2)) ≈ 0
 
+        #
+        @test sum(
+                norm.(
+                   ∇acceleration_bezier(M, B[1], collect(range(0.0,1.0,length=20))).pts .-
+                   [[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]]
+                )
+            ) ≈ 0 atol=10^(-12)
+
         # cost and gradient
         T = collect(range(0.0,2.0,length=51))
         degrees = get_bezier_degrees(M,B)

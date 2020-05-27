@@ -98,6 +98,7 @@ function de_casteljau(M::Manifold, b::BezierSegment)
     end
 end
 function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment})
+    length(B) == 1 && return de_casteljau(M, B[1])
     return function (t)
         ((0<t) || (t> length(B))) && DomainError(
             "Parameter $(t) outside of domain of the composite Bézier curve [0,$(length(B))]."

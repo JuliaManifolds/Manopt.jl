@@ -47,9 +47,9 @@ function ∇acceleration_bezier(
     b::BezierSegment,
     T::AbstractVector{<:AbstractFloat},
 )
-    gradb .= _∇acceleration_bezier(M,[b,],T)[1]
-    gradb.pts[1] .= zero_tangent_vector(M,b[1])
-    gradb.pts[end] .= zero_tangent_vector(M,b[end])
+    gradb = _∇acceleration_bezier(M,b.pts, [get_bezier_degree(M,b),], T)[1]
+    zero_tangent_vector!(M, gradb.pts[1],b.pts[1])
+    zero_tangent_vector!(M, gradb.pts[end], b.pts[end])
     return gradb
 end
 
