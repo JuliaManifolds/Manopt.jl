@@ -26,7 +26,10 @@ pixelM = Sphere(2);
 
 if ExportOrig
     asymptote_export_S2_data(resultsFolder * experimentName * "-orig.asy"; data = f)
-    render_asymptote(resultsFolder * experimentName * "-orig.asy"; render=asymptote_render_detail)
+    render_asymptote(
+        resultsFolder * experimentName * "-orig.asy";
+        render = asymptote_render_detail,
+    )
 end
 #
 # Parameters
@@ -82,7 +85,7 @@ if ExportResult
         resultsFolder *
         experimentName *
         "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
-        render=asymptote_render_detail
+        render = asymptote_render_detail,
     )
 end
 if ExportTable

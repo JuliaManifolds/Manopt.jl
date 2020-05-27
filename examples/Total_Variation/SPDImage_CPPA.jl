@@ -28,7 +28,10 @@ if ExportOrig
         data = f,
         scaleAxes = (7.5, 7.5, 7.5),
     )
-    render_asymptote(resultsFolder * experimentName * "-orig.asy", render=asy_render_detail)
+    render_asymptote(
+        resultsFolder * experimentName * "-orig.asy",
+        render = asy_render_detail,
+    )
 end
 #
 # Parameters
@@ -84,7 +87,7 @@ if ExportResult
         resultsFolder *
         experimentName *
         "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
-        render=asy_render_detail,
+        render = asy_render_detail,
     )
 end
 if ExportTable

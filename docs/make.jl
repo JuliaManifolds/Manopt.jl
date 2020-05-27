@@ -36,7 +36,8 @@ makedocs(
             "Gradient Descent" => "solvers/gradientDescent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Subgradient method" => "solvers/subgradient.md",
-            "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
+            "Steihaug-Toint TCG Method" =>
+                "solvers/truncated_conjugate_gradient_descent.md",
             "Riemannian Trust-Regions Solver" => "solvers/trust_regions.md",
         ],
         "Functions" => [
@@ -59,7 +60,4 @@ makedocs(
         "Function Index" => "list.md",
     ],
 )
-deploydocs(
-    repo = "github.com/JuliaManifolds/Manopt.jl",
-    push_preview = true
-)
+deploydocs(repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)
