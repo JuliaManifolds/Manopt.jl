@@ -10,10 +10,15 @@ compute the gradient of the discretized acceleration of a (composite) Bézier cu
 on the `Manifold` `M` with respect to its control points `B` given as a point on the
 `PowerManifold` assuming C1 conditions and known `degrees`. The curve is
 evaluated at the points given in `T` (elementwise in $[0,N]$, where $N$ is the
-number of segments of the Bézier curve). This gradient is computed using
+number of segments of the Bézier curve). The [`get_bezier_junctions`](@ref) are fixed for
+this gradient (interpolation constraint). For the unconstrained gradient,
+see [`∇L2_acceleration_bezier`](@ref) and set $λ=0$ therein. This gradient is computed using
 [`adjoint_Jacobi_field`](@ref)s. For details, see [^BergmannGousenbourger2018].
-
 See [`de_casteljau`](@ref) for more details on the curve.
+
+# See also
+
+[`cost_acceleration_bezier`](@ref),  [`∇L2_acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref).
 
 [^BergmannGousenbourger2018]:
     > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
@@ -61,10 +66,17 @@ end
 compute the gradient of the discretized acceleration of a composite Bézier curve
 on the `Manifold` `M` with respect to its control points `B` together with a
 data term that relates the junction points `p_i` to the data `d` with a weigth
-$\lambda$ comapred to the acceleration. The curve is evaluated at the points
+$\lambda$ comapared to the acceleration. The curve is evaluated at the points
 given in `pts` (elementwise in $[0,N]$), where $N$ is the number of segments of
 the Bézier curve. The summands are [`∇distance`](@ref) for the data term
-and [`∇acceleration_bezier`](@ref).
+and [`∇acceleration_bezier`](@ref) for the acceleration with interpolation constrains.
+Here the [`get_bezier_junctions`](@ref) are included in the optimization, i.e. setting $λ=0$
+yields the unconstrained acceleration minimization. Note that this is ill-posed, since
+any Bézier curve identical to a geodesic is a minimizer.
+
+# See also
+
+[`∇acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref).
 """
 function ∇L2_acceleration_bezier(
     M::Manifold,

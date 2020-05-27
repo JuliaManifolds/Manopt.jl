@@ -17,6 +17,10 @@ $t_i$, $i=1,\ldots,N$, and $d_2$ refers to the second order absolute difference 
 
 This acceleration discretization was introduced in[^BergmannGousenbourger2018].
 
+# See also
+
+[`∇acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`∇L2_acceleration_bezier`](@ref)
+
 [^BergmannGousenbourger2018]:
     > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
     > manifolds by minimizing the acceleration of a Bézier curve.
@@ -46,14 +50,19 @@ compute the value of the discrete Acceleration of the composite Bezier curve
 together with a data term, i.e.
 
 ````math
-\frac{\lambda}{2}\sum_{i=0}^{m} d_{\mathcal M}(d_i, c_B(i))^2+
-\sum_{i=1}^{m-1}\frac{d^2_2 [ B(t_{i-1}), B(t_{i}), B(t_{i+1})]}{\Delta_t^3}
+\frac{\lambda}{2}\sum_{i=0}^{N} d_{\mathcal M}(d_i, c_B(i))^2+
+\sum_{i=1}^{N-1}\frac{d^2_2 [ B(t_{i-1}), B(t_{i}), B(t_{i+1})]}{\Delta_t^3}
 ````
 
 where for this formula the `pts` along the curve are equispaced and denoted by
 $t_i$ and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
 (squared), the junction points are denoted by $p_i$, and to each $p_i$ corresponds
-one data item in the manifold points given in `d`.
+one data item in the manifold points given in `d`. For details on the acceleration
+approximation, see [`cost_acceleration_bezier`](@ref).
+
+# See also
+
+[`∇L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref), [`∇acceleration_bezier`](@ref)
 """
 function cost_L2_acceleration_bezier(
     M::Manifold,
