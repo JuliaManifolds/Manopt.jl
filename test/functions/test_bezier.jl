@@ -1,6 +1,6 @@
 using Manopt, Manifolds, Test
 
-@testset "Bezier Tests"
+@testset "Bezier Tests" begin
     @testset "General Bezier Tests" begin
         repr(BezierSegment([[0.0,0.0],[0.0,0.0]])) == "BezierSegment([[0.0, 0.0], [0.0, 0.0]])"
     end
