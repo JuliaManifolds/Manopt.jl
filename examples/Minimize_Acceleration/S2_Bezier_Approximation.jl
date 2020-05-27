@@ -59,9 +59,7 @@ pB_opt = steepest_descent(N, F, ∇F, x0;
                                     StopAfterIteration(300),
                                 ),
     debug = [:Stop, :Iteration," | ",
-        :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n",
-    #    :∇, "\n\n"
-    ]
+        :Cost, " | ", DebugGradientNorm(), " | ", DebugStepsize(), " | ", :Change, "\n", 25]
   )
 B_opt = get_bezier_segments(M, pB_opt, get_bezier_degrees(M,B), :differentiable)
 res_curve = de_casteljau(M,B_opt,curve_samples_plot)

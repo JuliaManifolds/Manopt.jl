@@ -64,10 +64,12 @@ function ∇L2_acceleration_bezier(
     # add start and end data grad
     # include data term
     for k=1:length(Bt)
-        gradB[k].pts[1] .+= λ*∇distance(M, Bt[k].pts[1], d[k])
-        k > 1 && (gradB[k-1].pts[end] .+= λ*∇distance(M, Bt[k].pts[1], d[k]))
+        gradB[k].pts[1] .+= λ*∇distance(M, d[k], Bt[k].pts[1])
+        if k > 1
+            gradB[k-1].pts[end] .+= λ*∇distance(M, d[k], Bt[k].pts[1])
+        end
     end
-    gradB[end].pts[end] .+= λ*∇distance(M,Bt[end].pts[end],last(d))
+    gradB[end].pts[end] .+= λ*∇distance(M, d[end], Bt[end].pts[end])
     return get_bezier_points(M, gradB, :differentiable)
 end
 
@@ -88,10 +90,10 @@ function _∇acceleration_bezier(
     mid = mid_point.(Ref(M), backward, forward)
     # where the point of interest appears...
     dt = ( max(T...) - min(T...) )/(n-1)
-    inner = -2/((dt)^3) .* log.(Ref(M),mid,center)
+    inner =  - 2/((dt)^3) .* log.(Ref(M),mid,center)
     asForward = adjoint_differential_geodesic_startpoint.(Ref(M),forward,backward, Ref(0.5), inner)
-    asCenter = - 2/((dt)^3) .* log.(Ref(M),center,mid)
-    asBackward = adjoint_differential_geodesic_startpoint.(Ref(M),backward, forward, Ref(0.5), inner )
+    asCenter = - 2/((dt)^3)*log.(Ref(M),center,mid)
+    asBackward = adjoint_differential_geodesic_endpoint.(Ref(M), forward, backward, Ref(0.5), inner )
     # effect of these to the centrol points is the preliminary gradient
     ∇B = [
         BezierSegment(a.pts .+ b.pts .+ c.pts)

@@ -77,7 +77,7 @@ function adjoint_differential_bezier_control(
     t::AbstractVecOrMat{Float64},
     X::AbstractVector{Q}
 ) where {Q}
-    effects = [b.pts for b in adjoint_differential_bezier_control.(Ref(M),Ref(b),t,X)]
+    effects = [bt.pts for bt ∈ adjoint_differential_bezier_control.(Ref(M),Ref(b),t,X)]
     return BezierSegment(sum(effects))
 end
 
