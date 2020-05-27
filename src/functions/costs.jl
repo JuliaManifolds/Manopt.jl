@@ -1,28 +1,42 @@
 
 @doc raw"""
-    cost_acceleration_bezier(M::Manifold, B::Array{Array{P,1},1}, pts::Array{Float64,1})
+    cost_acceleration_bezier(
+        M::Manifold,
+        B::AbstractVector{<:BezierSegment},
+        degrees::AbstractVector{<:Integer},
+        T::AbstractVector{<:AbstractFloat},
+    )
 
 compute the value of the discrete Acceleration of the composite Bezier curve
 
 $\sum_{i=1}^{N-1}\frac{d^2_2 [ B(t_{i-1}), B(t_{i}), B(t_{i+1})]}{\Delta_t^3}$
 
 where for this formula the `pts` along the curve are equispaced and denoted by
-$t_i$ and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
+$t_i$, $i=1,\ldots,N$, and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
 (squared).
+
+This acceleration discretization was introduced in[^BergmannGousenbourger2018].
+
+[^BergmannGousenbourger2018]:
+    > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
+    > manifolds by minimizing the acceleration of a Bézier curve.
+    > Frontiers in Applied Mathematics and Statistics (2018).
+    > doi [10.3389/fams.2018.00059](http://dx.doi.org/10.3389/fams.2018.00059),
+    > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function cost_acceleration_bezier(
     M::Manifold,
-    B::Array{P,1},
-    degrees::Array{Int,1},
-    pts::Array{Float64,1},
-) where {P}
+    B::AbstractVector{<:BezierSegment},
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector{<:AbstractFloat},
+)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
-    p = de_casteljau(M, Bt, pts)
-    n = length(pts)
+    p = de_casteljau(M, Bt, T)
+    n = length(T)
     f = p[ [1,3:n...,n] ]
     b = p[ [1,1:(n-2)...,n] ]
     d = distance.(Ref(M), p, shortest_geodesic.(Ref(M),f,b,Ref(0.5))).^2
-    samplingFactor = 1/(( ( max(pts...) - min(pts...) )/(n-1) )^3)
+    samplingFactor = 1/(( ( max(T...) - min(T...) )/(n-1) )^3)
     return samplingFactor*sum(d)
 end
 @doc raw"""

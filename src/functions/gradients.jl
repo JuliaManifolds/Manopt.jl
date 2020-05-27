@@ -1,23 +1,32 @@
 @doc raw"""
     ∇acceleration_bezier(
         M::Manifold,
-        B::AbstractVector{P},
-        degrees::AbstractVector{Int}
-        T)
+        B::AbstractVector{<:BezierSegment},
+        degrees::AbstractVector{<:Integer}
+        T::AbstractVector{<:AbstractFloat}
+    )
 
 compute the gradient of the discretized acceleration of a (composite) Bézier curve $c_B(t)$
 on the `Manifold` `M` with respect to its control points `B` given as a point on the
 `PowerManifold` assuming C1 conditions and known `degrees`. The curve is
 evaluated at the points given in `T` (elementwise in $[0,N]$, where $N$ is the
-number of segments of the Bézier curve).
+number of segments of the Bézier curve). This gradient is computed using
+[`adjoint_Jacobi_field`](@ref)s. For details, see [^BergmannGousenbourger2018].
 
 See [`de_casteljau`](@ref) for more details on the curve.
+
+[^BergmannGousenbourger2018]:
+    > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
+    > manifolds by minimizing the acceleration of a Bézier curve.
+    > Frontiers in Applied Mathematics and Statistics (2018).
+    > doi [10.3389/fams.2018.00059](http://dx.doi.org/10.3389/fams.2018.00059),
+    > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function ∇acceleration_bezier(
     M::Manifold,
-    B::AbstractVector{P},
-    degrees::AbstractVector{Int},
-    T::AbstractVector{Float64},
+    B::AbstractVector{<:BezierSegment},
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector{<:AbstractFloat},
 ) where {P}
     gradB = _∇acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
@@ -31,7 +40,7 @@ end
 function ∇acceleration_bezier(
     M::Manifold,
     b::BezierSegment,
-    T::AbstractVector{Float64},
+    T::AbstractVector{<:AbstractFloat},
 )
     gradb .= _∇acceleration_bezier(M,[b,],T)[1]
     gradb.pts[1] .= zero_tangent_vector(M,b[1])
@@ -40,25 +49,31 @@ function ∇acceleration_bezier(
 end
 
 @doc raw"""
-    ∇L2_acceleration_bezier(M,B,pts,λ,d)
+    ∇L2_acceleration_bezier(
+        M::Manifold,
+        B::AbstractVector{<:BezierSegment},
+        degrees::AbstractVector{<:Integer},
+        T::AbstractVector{<:AbstractFloat},
+        λ::Float64,
+        d::AbstractVector{Q}
+    )
 
 compute the gradient of the discretized acceleration of a composite Bézier curve
 on the `Manifold` `M` with respect to its control points `B` together with a
 data term that relates the junction points `p_i` to the data `d` with a weigth
 $\lambda$ comapred to the acceleration. The curve is evaluated at the points
 given in `pts` (elementwise in $[0,N]$), where $N$ is the number of segments of
-the Bézier curve.
-
-See [`de_casteljau`](@ref) for more details on the curve.
+the Bézier curve. The summands are [`∇distance`](@ref) for the data term
+and [`∇acceleration_bezier`](@ref).
 """
 function ∇L2_acceleration_bezier(
     M::Manifold,
-    B::AbstractVector{P},
-    degrees::AbstractVector{Int},
-    T::AbstractVector{Float64},
+    B::AbstractVector{<:BezierSegment},
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector{<:AbstractFloat},
     λ::Float64,
-    d::AbstractVector{Q};
-) where {P,Q}
+    d::AbstractVector{Q}
+) where {Q}
     gradB = _∇acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable )
     # add start and end data grad

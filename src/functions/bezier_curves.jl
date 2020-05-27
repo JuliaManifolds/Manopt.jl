@@ -64,7 +64,11 @@ c_B(t) :=
     de_casteljau(M::Manifold, b::BezierSegment, t::Real)
     de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment}, t::Real)
     de_casteljau(M::Manifold, b::BezierSegment, T::AbstractVector) -> AbstractVector
-    de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment}, T::AbstractVector) -> AbstractVector
+    de_casteljau(
+        M::Manifold,
+        B::AbstractVector{<:BezierSegment},
+        T::AbstractVector
+    ) -> AbstractVector
 ````
 
 Evaluate the Bézier curve at time `t` or at times `t` in `T`.
@@ -148,7 +152,7 @@ end
 
 @doc raw"""
     get_bezier_inner_points(M::Manifold, B::AbstractVector{<:BezierSegment} )
-    get_bezier_inner_points(M::Manifold, b::NTuple{N,P})
+    get_bezier_inner_points(M::Manifold, b::BezierSegment)
 
 returns the inner (i.e. despite start and end) points of the segments of the
 composite Bézier curve specified by the control points `B`. For a single segment `b`,
@@ -165,7 +169,11 @@ function get_bezier_inner_points(::Manifold, b::BezierSegment)
 end
 
 @doc raw"""
-    get_bezier_points(M::MAnifold, B::AbstractVector{<:BezierSegment}, reduce::Symbol=:default)
+    get_bezier_points(
+        M::MAnifold,
+        B::AbstractVector{<:BezierSegment},
+        reduce::Symbol=:default
+    )
     get_bezier_points(M::Manifold, b::BezierSegment, reduce::Symbol=:default)
 
 returns the control points of the segments of the composite Bézier curve
@@ -181,7 +189,7 @@ This method reduces the points depending on the optional `reduce` symbol
   $\log_{b_{0,i}}b_{1,i} = -\log_{b_{n_{i-1},i-1}}b_{n_{i-1}-1,i-1}$ holds.
   hence $b_{n_{i-1}-1,i-1}$ is ommited.
 
-If only one segment is given, all points of `b` – i.e. `b` itself is returned.
+If only one segment is given, all points of `b` – i.e. `b.pts` is returned.
 """
 function get_bezier_points(
     M::Manifold,
