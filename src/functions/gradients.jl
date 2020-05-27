@@ -1,7 +1,7 @@
 @doc raw"""
     ∇acceleration_bezier(
         M::Manifold,
-        B::AbstractVector{<:BezierSegment},
+        B::AbstractVector{P},
         degrees::AbstractVector{<:Integer}
         T::AbstractVector{<:AbstractFloat}
     )
@@ -29,7 +29,7 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function ∇acceleration_bezier(
     M::Manifold,
-    B::AbstractVector{<:BezierSegment},
+    B::AbstractVector{P},
     degrees::AbstractVector{<:Integer},
     T::AbstractVector{<:AbstractFloat},
 ) where {P}
@@ -56,12 +56,12 @@ end
 @doc raw"""
     ∇L2_acceleration_bezier(
         M::Manifold,
-        B::AbstractVector{<:BezierSegment},
+        B::AbstractVector{P},
         degrees::AbstractVector{<:Integer},
         T::AbstractVector{<:AbstractFloat},
         λ::Float64,
-        d::AbstractVector{Q}
-    )
+        d::AbstractVector{P}
+    ) where {P}
 
 compute the gradient of the discretized acceleration of a composite Bézier curve
 on the `Manifold` `M` with respect to its control points `B` together with a
@@ -74,18 +74,22 @@ Here the [`get_bezier_junctions`](@ref) are included in the optimization, i.e. s
 yields the unconstrained acceleration minimization. Note that this is ill-posed, since
 any Bézier curve identical to a geodesic is a minimizer.
 
+Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
+together with the `degrees` of the segments and assuming a differentiable curve, the segmenents
+can internally be reconstructed.
+
 # See also
 
 [`∇acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref).
 """
 function ∇L2_acceleration_bezier(
     M::Manifold,
-    B::AbstractVector{<:BezierSegment},
+    B::AbstractVector{P},
     degrees::AbstractVector{<:Integer},
     T::AbstractVector{<:AbstractFloat},
     λ::Float64,
-    d::AbstractVector{Q}
-) where {Q}
+    d::AbstractVector{P}
+) where {P}
     gradB = _∇acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable )
     # add start and end data grad

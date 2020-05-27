@@ -23,7 +23,7 @@ Due to a symmetry agrument, these are also used to compute $D_q g(t; p,q)[\eta]$
 """
 function βdifferential_geodesic_startpoint(κ,t,d)
     (κ==0) && return 1.0-t
-    (d==0) && return 1.0
+    (d==0) && return 1.0-t
     (κ < 0) && return sinh(sqrt(-κ)*(1.0-t)*d)/sinh(sqrt(-κ)*d)
     (κ > 0) && return sin(sqrt(κ)*(1.0-t)*d)/sin(sqrt(κ)*d)
     @assert false "imaginary or non-numeric d=$d or κ=$κ"
@@ -118,7 +118,8 @@ map with respect to its argument $D_q \log_p q[X]$. They are
 [`differential_log_basepoint`](@ref), [`jacobi_field`](@ref)
 """
 function βdifferential_log_argument(κ, ::Number, d)
-    (d==0) || (κ==0) && return 1.0
+    (d==0) && return 1.0
+    (κ==0) && return 1.0
     (κ < 0) && return sqrt(-κ)*d/sinh(sqrt(-κ)*d)
     (κ > 0) && return sqrt(κ)*d/sin(sqrt(κ)*d)
     @assert false "imaginary or non-numeric d=$d or κ=$κ"

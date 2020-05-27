@@ -2,10 +2,10 @@
 @doc raw"""
     cost_acceleration_bezier(
         M::Manifold,
-        B::AbstractVector{<:BezierSegment},
+        B::AbstractVector{P},
         degrees::AbstractVector{<:Integer},
         T::AbstractVector{<:AbstractFloat},
-    )
+    ) where {P}
 
 compute the value of the discrete Acceleration of the composite Bezier curve
 
@@ -13,7 +13,9 @@ $\sum_{i=1}^{N-1}\frac{d^2_2 [ B(t_{i-1}), B(t_{i}), B(t_{i+1})]}{\Delta_t^3}$
 
 where for this formula the `pts` along the curve are equispaced and denoted by
 $t_i$, $i=1,\ldots,N$, and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
-(squared).
+(squared). Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
+together with the `degrees` of the segments and assuming a differentiable curve, the segmenents
+can internally be reconstructed.
 
 This acceleration discretization was introduced in[^BergmannGousenbourger2018].
 
@@ -30,10 +32,10 @@ This acceleration discretization was introduced in[^BergmannGousenbourger2018].
 """
 function cost_acceleration_bezier(
     M::Manifold,
-    B::AbstractVector{<:BezierSegment},
+    B::AbstractVector{P},
     degrees::AbstractVector{<:Integer},
     T::AbstractVector{<:AbstractFloat},
-)
+) where {P}
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     p = de_casteljau(M, Bt, T)
     n = length(T)
@@ -59,6 +61,10 @@ $t_i$ and $d_2$ refers to the second order absolute difference [`costTV2`](@ref)
 (squared), the junction points are denoted by $p_i$, and to each $p_i$ corresponds
 one data item in the manifold points given in `d`. For details on the acceleration
 approximation, see [`cost_acceleration_bezier`](@ref).
+Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
+together with the `degrees` of the segments and assuming a differentiable curve, the
+segmenents can internally be reconstructed.
+
 
 # See also
 
@@ -66,15 +72,15 @@ approximation, see [`cost_acceleration_bezier`](@ref).
 """
 function cost_L2_acceleration_bezier(
     M::Manifold,
-    B::Array{P,1},
-    degrees::Array{Int,1},
-    pts::Array{Float64,1},
-    λ::Float64,
-    d::Array{Q,1}
-) where {P,Q}
+    B::AbstractVector{P},
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector{<:AbstractFloat},
+    λ::AbstractFloat,
+    d::AbstractVector{P}
+) where {P}
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     p = get_bezier_junctions(M,Bt)
-    return cost_acceleration_bezier(M, B, degrees, pts) + λ/2*sum((distance.(Ref(M),p,d)).^2)
+    return cost_acceleration_bezier(M, B, degrees, T) + λ/2*sum((distance.(Ref(M),p,d)).^2)
 end
 
 @doc raw"""
