@@ -73,7 +73,6 @@ function βdifferential_exp_argument(κ, ::Number, d)
     ((κ==0) || (d==0)) && return 1.0
     (κ < 0) && return sinh(sqrt(-κ)*d)/( d*sqrt((-κ)) )
     (κ > 0) && return sin( sqrt(κ)*d )/( d*sqrt(κ) )
-    @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 @doc raw"""
     βdifferential_log_basepoint(κ,t,d)
@@ -97,7 +96,6 @@ function βdifferential_log_basepoint(κ, ::Number, d)
     ((d==0) || (κ==0)) && return -1.0
     (κ < 0) && return - sqrt(-κ)*d*cosh(sqrt(-κ)*d)/sinh(sqrt(-κ)*d)
     (κ > 0) && return - sqrt(κ)*d*cos(sqrt(κ)*d)/sin(sqrt(κ)*d)
-    @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 @doc raw"""
     βdifferential_log_argument(κ,t,d)
@@ -122,7 +120,6 @@ function βdifferential_log_argument(κ, ::Number, d)
     (κ==0) && return 1.0
     (κ < 0) && return sqrt(-κ)*d/sinh(sqrt(-κ)*d)
     (κ > 0) && return sqrt(κ)*d/sin(sqrt(κ)*d)
-    @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 
 @doc raw"""

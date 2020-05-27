@@ -36,10 +36,10 @@ function ∇acceleration_bezier(
     gradB = _∇acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     for k=1:length(Bt) # we interpolate so we do not move end points
-        gradB[k].pts[end] .= zero_tangent_vector(M, Bt[k].pts[end])
-        gradB[k].pts[1] .= zero_tangent_vector(M, Bt[k].pts[1])
+        zero_tangent_vector!(M, gradB[k].pts[end], Bt[k].pts[end])
+        zero_tangent_vector!(M, gradB[k].pts[1], Bt[k].pts[1])
     end
-    gradB[end].pts[end] .= zero_tangent_vector(M, Bt[end].pts[end])
+    zero_tangent_vector!(M, gradB[end].pts[end], Bt[end].pts[end])
     return get_bezier_points(M, gradB, :differentiable)
 end
 function ∇acceleration_bezier(
