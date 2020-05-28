@@ -46,6 +46,16 @@ Random.seed!(42)
         mid_point!(M2,s2,p2,q2,s)
         @test s==s2
 
+        M = Circle()
+        p = 0
+        q = π
+        @test mid_point(M,p,q,1.0) ≈ π/2
+        @test mid_point(M,p,q,-1.0) ≈ -π/2
+        @test mid_point(M,0,π/2) ≈ π/4
+
+        p = π-0.1
+        q = -π+0.1
+        @test mid_point(M,p,q) ≈ -π
     end
     @testset "random" begin
         Mc = Circle()

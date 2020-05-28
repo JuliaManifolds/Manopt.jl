@@ -222,7 +222,7 @@ function get_bezier_points(
         dims=1,
     )
 end
-get_bezier_points(::Manifold, b::BezierSegment, ::Symbol=:none) = b.pts
+get_bezier_points(::Manifold, b::BezierSegment, ::Symbol=:default) = b.pts
 
 @doc raw"""
     get_bezier_degree(M::Manifold, b::BezierSegment)

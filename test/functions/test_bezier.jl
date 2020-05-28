@@ -1,6 +1,6 @@
 using Manopt, Manifolds, Test
 
-@testset "Bezier Tests"
+@testset "Bezier Tests" begin
     @testset "General Bezier Tests" begin
         repr(BezierSegment([[0.0,0.0],[0.0,0.0]])) == "BezierSegment([[0.0, 0.0], [0.0, 0.0]])"
     end
@@ -51,5 +51,36 @@ using Manopt, Manifolds, Test
         @test cost_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) ≈ 0 atol=10^(-10)
         z[4][1] = 0.0
         @test norm(Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈ 0 atol=10^(-12)
+    end
+    @testset "Spherical Data" begin
+        M = Sphere(2)
+        B = artificial_S2_composite_bezier_curve()
+        @test de_casteljau(M, B, [0.0,1.0,2.0,3.0]) ≈ [B[1].pts[1], B[2].pts[1], B[3].pts[1], B[3].pts[4]]
+        @test get_bezier_junction_tangent_vectors(M,B) ≈ [
+            log(M,B[1].pts[1], B[1].pts[2]), log(M,B[1].pts[4], B[1].pts[3]),
+            log(M,B[2].pts[1], B[2].pts[2]), log(M,B[2].pts[4], B[2].pts[3]),
+            log(M,B[3].pts[1], B[3].pts[2]), log(M,B[3].pts[4], B[3].pts[3]),
+        ]
+        @test get_bezier_junction_tangent_vectors(M,B[1]) ≈ [
+            log(M,B[1].pts[1], B[1].pts[2]), log(M,B[1].pts[4], B[1].pts[3]),
+        ]
+        @test get_bezier_junctions(M, B[1]) == B[1].pts[[1,end]]
+        @test get_bezier_inner_points(M,B) == [B[1].pts[2],B[1].pts[3],B[2].pts[2],B[2].pts[3],B[3].pts[2],B[3].pts[3]]
+        @test get_bezier_inner_points(M,B[1]) == [B[1].pts[2],B[1].pts[3]]
+
+        @test get_bezier_points(M,B) == cat([[b.pts...] for b in B]...,dims=1)
+        @test get_bezier_points(M,B, :continuous) == cat([[b.pts[[1:3]...]...] for b in B]...,[B[3].pts[4]],dims=1)
+        @test get_bezier_points(M,B, :differentiable) == cat([B[1].pts[[1,2]]...],[b.pts[[3,4]] for b in B]...,dims=1)
+        @test get_bezier_points(M,B[1]) == B[1].pts
+        # for segments just check that they
+        d = get_bezier_degrees(M,B)
+        A = get_bezier_segments(M, get_bezier_points(M,B),d)
+        @test [A[i].pts for i ∈ 1:3] == [B[i].pts for i ∈ 1:3]
+        A = get_bezier_segments(M, get_bezier_points(M,B,:continuous),d, :continuous)
+        @test [A[i].pts for i ∈ 1:3] == [B[i].pts for i ∈ 1:3]
+        A = get_bezier_segments(M, get_bezier_points(M,B,:differentiable),d, :differentiable)
+        @test [A[i].pts for i ∈ 1:3] == [B[i].pts for i ∈ 1:3]
+
+        @test_throws ErrorException adjoint_differential_bezier_control(M,B,7.0,zero_tangent_vector(M,B[1].pts[1]))
     end
 end
