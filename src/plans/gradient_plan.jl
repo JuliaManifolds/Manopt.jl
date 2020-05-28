@@ -685,37 +685,88 @@ end
 """
 abstract type QuasiNewtonOptions <: Options end
 abstract type LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
+abstract type CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
 
 struct BFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
+
+    inverse_hessian_approximation::Function
+
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
+
     stop::StoppingCriterion
 end
-struct CautousBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+
+struct CautiuosBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
-    c_fct::Function
+
+    inverse_hessian_approximation::Function
+
+    cautiuos::Bool
+    cautiuos_fct::Function
+
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
+
     stop::StoppingCriterion
 end
+
 struct DFPQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
+
+    inverse_hessian_approximation::Function
+
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
+
     stop::StoppingCriterion
 end
+
+struct CautiuosDFPQuasiNewton{P,T} <: QuasiNewtonOptions
+    x::P
+    ∇::T
+
+    inverse_hessian_approximation::Function
+
+    cautiuos::Bool
+    cautiuos_fct::Function
+
+    retraction_method::AbstractRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
+
+    stop::StoppingCriterion
+end
+
 struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
     x::P
 
     gradient_diffrences::AbstractVector{T}
-    steps::AbstractVctor{T}
+    steps::AbstractVector{T}
+
+    memory_size::Int
     current_memory_size::Int
 
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
+
+    stop::StoppingCriterion
+end
+
+struct CautiuosRLBFGSOptions{P,T} <: CautiuosLimitedMemoryQuasiNewtonOptions
+    x::P
+
+    gradient_diffrences::AbstractVector{T}
+    steps::AbstractVector{T}
+
+    memory_size::Int
+    current_memory_size::Int
+
+    retraction_method::AbstractRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
+
     stop::StoppingCriterion
 end
