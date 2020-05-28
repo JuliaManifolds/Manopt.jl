@@ -4,8 +4,8 @@
 # minimizer their acceleration, i.e. how to get a curve that is as straight or as geodesic
 # while fulfilling constraints
 #
-# This example also illustrates the `PowerManifold` manifold as well
-# as [`ArmijoLinesearch`](@ref).
+# This example also illustrates how to apply the minimization on the corresponding [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html) manifold using a [`gradient_descent`](@ref) with [`ArmijoLinesearch`](@ref).
+#
 # ## Table of contents
 # * [Setup](@ref SetupTB)
 # * [de Casteljau algorithm on manifolds](@ref Casteljau)
@@ -14,6 +14,7 @@
 # * [Literature](@ref LiteratureBT)
 #
 # ## [Setup](@id SetupTB)
+#
 # We first initialize the necessary packages
 exportFolder = joinpath(@__DIR__,"..","..","docs","src","assets","images","tutorials") #src
 using Manopt, Manifolds
@@ -66,7 +67,7 @@ asymptote_export_S2_signals(exportFolder*"/Casteljau-illustr.asy"; #src
 render_asymptote(exportFolder*"/Casteljau-illustr.asy"; render=2) #src
 #md # ![Illustration of de Casteljau's algorithm on the Sphere.](../assets/images/tutorials/Casteljau-illustr.png)
 #
-# To evaluate a Bézier curve knowing its [`BezierSegment`](@ref), use [`de_casteljau`](@ref)
+# To evaluate a Bézier curve knowing its [`BezierSegment`](@ref), use [`de_casteljau`](@ref).
 #
 # From the control points (blue) and their geodesics, ont evaluation per geodesic yields three interims points (cyan), their two successive geodeics another two points (teal) and at its geodesic at $t=0.66$ we obtain the point on the curve.
 # There are a few nice observations to make, that hold also for these Bézier curves on manifolds:

@@ -60,7 +60,7 @@ function F(pB)
 end
 ∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP)
 x0 = pB
-pB_opt = steepest_descent(
+pB_opt = gradient_descent(
     N,
     F,
     ∇F,
