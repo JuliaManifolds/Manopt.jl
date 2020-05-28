@@ -60,9 +60,7 @@ using Manifolds: #temporary for random
     SymmetricPositiveDefinite,
     Stiefel,
     Sphere
-import Manifolds:
-    mid_point,
-    mid_point!
+import Manifolds: mid_point, mid_point!
 using Manifolds: # Wishlist for Base
     NestedPowerRepresentation,
     ArrayPowerRepresentation,
