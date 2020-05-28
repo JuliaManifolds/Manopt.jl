@@ -22,6 +22,7 @@ using Colors
 black = RGBA{Float64}(colorant"#000000")
 TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
 TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
+TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
 TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
 TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 geo_pts = collect(range(0.0,1.0,length=101)) #hide
@@ -77,7 +78,7 @@ render_asymptote(exportFolder*"/Casteljau-illustr.asy"; render=2) #src
 # For more details on these properties, see for example [^PopielNoakes2007].
 # ## [Composite Bézier curves](@id CompositeBezier)
 # With the properties of a single Bézier curve, also called Bézier segment, we can “stitch” curves together. Let $a_0,\ldots,a_n$ and $b_0,\ldots,b_m$ be two sets of controlpoints for the Bézier segments $c(t)$ and $d(t)$, respectively.
-# We define the composite Bézier curve by $B(t) = \begin{cases} c(t) & \text{ if } 0\leq t < 1, \\ d(t-1) & \text{ if } 1\leq t \leq 2\end{cases}$ where $t\in[0,2]$.
+# We define the composite Bézier curve by $B(t) = \begin{cases} c(t) & \text{ if } 0\leq t < 1, \\ d(t-1) & \text{ if } 1\leq t \leq 2,\end{cases}$ where $t\in[0,2]$.
 # This can of course be generalised straight forward to more than two cases.
 # With the properties from the previous section we can now state that
 #
@@ -114,21 +115,151 @@ render_asymptote(exportFolder*"/Bezier-composite-curve.asy"; render = 2) #src
 #md # ![Illustration of a differentiable composite Bézier curve with 3 segments.](../assets/images/tutorials/Bezier-composite-curve.png)
 #
 # ## [Minimizing the acceleration of a composite Bézier curve](@id MinAccBezier)
-# See [^BergmannGousenbourger2018].
+# The motivation to minimize the acceleration of the composite Bézier curve is, that the curve should get “straighter” or more geodesic like.
+# If we discretize the curve $B(t)$ with its control points denoted by $b_{i,j}$ for the $j$th note in the $i$th segment, the discretized model for equispaced $t_i$, $i=0,\ldots,N$ in the domain of $B$ reads[^BergmannGousenbourger2018]
 #
+# $A(b) \coloneqq\sum_{i=1}^{N-1}\frac{\mathrm{d}^2_2 \bigl[ B(t_{i-1}), B(t_{i}), B(t_{i+1}) \bigr]}{\Delta_t^3},$
+#
+# where $\mathrm{d}_2$ denotes the second order finite difference using the mid point approach, see [`costTV2`](@ref)[^BacakBergmannSteidlWeinmann2016],
+#
+# $d_2(x,y,z) := \min_{c ∈ \mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z∈\mathcal M.$
+#
+# Another model is based on logarithmic maps, see [^BoumalAbsil2011], but that is not considered here.
+# An advantage of the model considered here is, that it only consist of the evaluation of geodesics.
+# This yields a gradient of $A(b)$ with respect to $b$ [`adjoint_Jacobi_field`](@ref)s. The following image shows the negative gradient (scaled)
+#
+gradFullB = Manopt._∇acceleration_bezier(M, get_bezier_points(M, B, :differentiable), [3,3,3], collect(range(0.0,3.0,length=151))) # src
+asymptote_export_S2_signals(exportFolder*"/Bezier-composite-curve-gradient.asy"; #src
+    curves = [de_casteljau(M, B, bezier_pts),], #src
+    points = [get_bezier_junctions(M, B), get_bezier_inner_points(M, B)], #src
+    tVectors = [[ #src
+        Tuple(a) #src
+        for #src
+        a in #src
+        zip(get_bezier_points(M, B, :continuous), -0.05 .* get_bezier_points(M,gradFullB, :continuous)) #src
+    ]], #src
+    colors = Dict( #src
+        :curves => [black], #src
+        :points => [TolVibrantBlue, TolVibrantTeal], #src
+        :tvectors => [TolVibrantOrange], #src
+    ), #src
+    cameraPosition = cameraPosition, #src
+    arrowHeadSize = 10.0, #src
+    lineWidths = [1.5, 1.5], #src
+    dotSize = 4.0, #src
+) #src
+render_asymptote(exportFolder*"/Bezier-composite-curve-gradient.asy"; render = 2) #src
+#md # ![Illustration of the gradient of the acceleration with respect to the control points.](../assets/images/tutorials/Bezier-composite-curve-gradient.png)
+#
+# In the following we consider two cases: Interpolation, which fixes the junction and end points of $B(t)$
+# and approximation, where a weight and a dataterm are additionally introduced.
+#
+# ### Interpolation
+# For interpolation, the junction points are fixed and their gradient entries are hence set to zero.
+# After transferring to the already mentioned [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html), we can then perform a [`gradient_descent`](@ref) as follows
+curve_samples = collect(range(0.0,3.0,length=151)) #exactness of approximating d^2
+pB = get_bezier_points(M, B, :differentiable)
+N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
+F(pB) = cost_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
+∇F(pB) = ∇acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
+x0 = pB
+pB_opt_ip = gradient_descent(N,F, ∇F, x0;
+    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001),
+    stopping_criterion = StopWhenChangeLess(5* 10.0^(-7)),
+    debug = [:Iteration, " | ", :Cost, " | ", DebugGradientNorm()," | ", DebugStepsize(),
+        " | ", :Change, "\n",:Stop,10],
+)
+# and the result looks like
+B_opt_ip = get_bezier_segments(M, pB_opt_ip, get_bezier_degrees(M, B), :differentiable) #src
+asymptote_export_S2_signals(exportFolder*"/Bezier-IP-Min.asy"; #src
+    curves = [de_casteljau(M, B_opt_ip, bezier_pts), de_casteljau(M, B, bezier_pts)], #src
+    points = [get_bezier_junctions(M, B_opt_ip), get_bezier_inner_points(M, B_opt_ip)], #src
+    tVectors = [[Tuple(a) for a in zip( #src
+            get_bezier_junctions(M, B_opt_ip, true), #src
+            get_bezier_junction_tangent_vectors(M, B_opt_ip), #src
+        ) #src
+    ]], #src
+    colors = Dict( #src
+        :curves => [TolVibrantBlue, black], #src
+        :points => [TolVibrantBlue, TolVibrantTeal], #src
+        :tvectors => [TolVibrantCyan], #src
+    ), #src
+    cameraPosition = cameraPosition, #src
+    arrowHeadSize = 10.0, #src
+    lineWidths = [1.5, 0.75, 1.5], #src
+    dotSize = 4.0, #src
+) #src
+render_asymptote(exportFolder*"/Bezier-IP-Min.asy"; render = 2) #src
+# #md # ![Interpolation Min Acc](../assets/images/tutorials/Bezier-IP-Min.png)
+#
+# ### Approximation
+# Similarly if we introduce the junction points as data fixed given $d_i$ and set (for simplicity) $p_i=b_{i,0}$ and $p_{n+1}=b_{n,4}$
+# and set $λ=3$ in
+#
+# $\frac{\lambda}{2}\sum_{k=0}^3 d_{\mathcal M}(d_i,p_i)^2 + A(b)$,
+#
+# then $λ$ models how important closeness to the data $d_i$ is.
+#
+λ = 3.0
+d = get_bezier_junctions(M, B)
+F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
+∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
+x0 = pB
+pB_opt_appr = gradient_descent(N, F, ∇F, x0;
+    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
+    stopping_criterion = StopWhenChangeLess(10.0^(-5)),
+    debug = [:Iteration, " | ", :Cost, " | ", DebugGradientNorm()," | ", DebugStepsize(),
+        " | ", :Change, "\n",:Stop,50],
+)
+# and the result looks like
+B_opt_appr = get_bezier_segments(M, pB_opt_appr, get_bezier_degrees(M, B), :differentiable) #src
+asymptote_export_S2_signals(exportFolder*"/Bezier-Appr-Min.asy"; #src
+    curves = [de_casteljau(M, B_opt_appr, bezier_pts), de_casteljau(M, B, bezier_pts)], #src
+    points = [d,get_bezier_junctions(M, B_opt_appr), get_bezier_inner_points(M, B_opt_appr)], #src
+    tVectors = [[Tuple(a) for a in zip( #src
+            get_bezier_junctions(M, B_opt_appr, true), #src
+            get_bezier_junction_tangent_vectors(M, B_opt_appr), #src
+        ) #src
+    ]], #src
+    colors = Dict( #src
+        :curves => [TolVibrantBlue, black], #src
+        :points => [TolVibrantOrange, TolVibrantBlue, TolVibrantTeal], #src
+        :tvectors => [TolVibrantCyan], #src
+    ), #src
+    cameraPosition = cameraPosition, #src
+    arrowHeadSize = 10.0, #src
+    lineWidths = [1.5, 0.75, 1.5], #src
+    dotSize = 4.0, #src
+)
+render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2)
+# #md # ![Approximation min Acc](../assets/images/tutorials/Bezier-Appr-Min.png)
+#
+
 # ## [Literature](@id LiteratureBT)
+#
+# [^BacakBergmannSteidlWeinmann2016]:
+#     > Bačák, M, Bergmann, R., Steidl, G. and Weinmann, A.: _A second order nonsmooth
+#     > variational model for restoring manifold-valued images_,
+#     > SIAM Journal on Scientific Computations, Volume 38, Number 1, pp. A567–597,
+#     > doi: [10.1137/15M101988X](https://doi.org/10.1137/15M101988X),
+#     > arXiv: [1506.02409](https://arxiv.org/abs/1506.02409)
 # [^BergmannGousenbourger2018]:
 #     > R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
 #     > by minimizing the acceleration of a Bézier curve_.
 #     > Frontiers in Applied Mathematics and Statistics, 2018.
 #     > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059)
+# [^BoumalAbsil2011]:
+#     > Boumal, N. and Absil, P.-A.: _A discrete regression method on manifolds and its application to data on SO(n)._
+#     > In: IFAC Proceedings Volumes (IFAC-PapersOnline). Vol. 18. Milano (2011). p. 2284–89.
+#     > doi: [10.3182/20110828-6-IT-1002.00542](https://dx.doi.org/10.3389/10.3182/20110828-6-IT-1002.00542)
+#     > [www](https://web.math.princeton.edu/~nboumal/papers/Boumal_Absil_A_discrete_regression_method_on_manifolds_and_its_application_to_data_on_SOn.pdf)
 # [^Casteljau1959]:
-#     > de Casteljau, P.: Outillage methodes calcul, Enveloppe Soleau 40.040 (1959),
+#     > de Casteljau, P.: _Outillage methodes calcul_, Enveloppe Soleau 40.040 (1959),
 #     > Institute National de la Propriété Industrielle, Paris.
 # [^Casteljau1963]:
-#     > de Casteljau, P.: Courbes et surfaces à pôles, Microfiche P 4147-1,
+#     > de Casteljau, P.: _Courbes et surfaces à pôles_, Microfiche P 4147-1,
 #     > André Citroën Automobile SA, Paris, (1963).
 # [^PopielNoakes2007]:
-#     > Popiel, T. and Noakes, L.: Bézier curves and $C^2$ interpolation in Riemannian
-#     > manifolds. Journal of Approximation Theory (2007), 148(2), pp. 111–127.-
+#     > Popiel, T. and Noakes, L.: _Bézier curves and $C^2$ interpolation in Riemannian
+#     > manifolds_. Journal of Approximation Theory (2007), 148(2), pp. 111–127.-
 #     > doi: [10.1016/j.jat.2007.03.002](https://doi.org/10.1016/j.jat.2007.03.002).

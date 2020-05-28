@@ -1,6 +1,6 @@
 @doc raw"""
-    steepest_descent(M, F, ∇F, x)
-perform a steepest_descent $x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)$ with
+    gradient_descent(M, F, ∇F, x)
+perform a gradient_descent $x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)$ with
 different choices of $s_k$ available (see `stepsize` option below).
 
 # Input
@@ -26,7 +26,7 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function steepest_descent(M::mT,
+function gradient_descent(M::mT,
     F::Function, ∇F::Function, x;
     stepsize::Stepsize = ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),

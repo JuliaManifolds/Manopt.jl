@@ -9,7 +9,7 @@ specify a problem for gradient based algorithms.
   \to \mathcal T\mathcal M$ of the cost function $F$
 
 # See also
-[`steepest_descent`](@ref)
+[`gradient_descent`](@ref)
 [`GradientDescentOptions`](@ref)
 
 # """
@@ -50,7 +50,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a Gradient Descent Option with the fields and defaults as above
 
 # See also
-[`steepest_descent`](@ref), [`GradientProblem`](@ref)
+[`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """
 mutable struct GradientDescentOptions{P} <: Options
     x::P

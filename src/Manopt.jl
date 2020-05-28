@@ -98,7 +98,7 @@ include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/NelderMead.jl")
-include("solvers/steepest_descent.jl")
+include("solvers/gradient_descent.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
 include("solvers/subgradient.jl")
@@ -165,7 +165,7 @@ export RecordGradient, RecordGradientNorm, RecordStepsize
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
 
 export NelderMead,
-    steepest_descent,
+    gradient_descent,
     subgradient_method,
     truncated_conjugate_gradient_descent,
     trust_regions
