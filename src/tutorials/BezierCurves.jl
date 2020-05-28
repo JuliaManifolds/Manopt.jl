@@ -169,7 +169,9 @@ pB_opt_ip = gradient_descent(N,F, ∇F, x0;
     debug = [:Iteration, " | ", :Cost, " | ", DebugGradientNorm()," | ", DebugStepsize(),
         " | ", :Change, "\n",:Stop,10],
 )
+#
 # and the result looks like
+#
 B_opt_ip = get_bezier_segments(M, pB_opt_ip, get_bezier_degrees(M, B), :differentiable) #src
 asymptote_export_S2_signals(exportFolder*"/Bezier-IP-Min.asy"; #src
     curves = [de_casteljau(M, B_opt_ip, bezier_pts), de_casteljau(M, B, bezier_pts)], #src
@@ -190,7 +192,7 @@ asymptote_export_S2_signals(exportFolder*"/Bezier-IP-Min.asy"; #src
     dotSize = 4.0, #src
 ) #src
 render_asymptote(exportFolder*"/Bezier-IP-Min.asy"; render = 2) #src
-# #md # ![Interpolation Min Acc](../assets/images/tutorials/Bezier-IP-Min.png)
+#md # ![Interpolation Min Acc](../assets/images/tutorials/Bezier-IP-Min.png)
 #
 # ### Approximation
 # Similarly if we introduce the junction points as data fixed given $d_i$ and set (for simplicity) $p_i=b_{i,0}$ and $p_{n+1}=b_{n,4}$
@@ -211,7 +213,9 @@ pB_opt_appr = gradient_descent(N, F, ∇F, x0;
     debug = [:Iteration, " | ", :Cost, " | ", DebugGradientNorm()," | ", DebugStepsize(),
         " | ", :Change, "\n",:Stop,50],
 )
+#
 # and the result looks like
+#
 B_opt_appr = get_bezier_segments(M, pB_opt_appr, get_bezier_degrees(M, B), :differentiable) #src
 asymptote_export_S2_signals(exportFolder*"/Bezier-Appr-Min.asy"; #src
     curves = [de_casteljau(M, B_opt_appr, bezier_pts), de_casteljau(M, B, bezier_pts)], #src
@@ -230,10 +234,9 @@ asymptote_export_S2_signals(exportFolder*"/Bezier-Appr-Min.asy"; #src
     arrowHeadSize = 10.0, #src
     lineWidths = [1.5, 0.75, 1.5], #src
     dotSize = 4.0, #src
-)
-render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2)
-# #md # ![Approximation min Acc](../assets/images/tutorials/Bezier-Appr-Min.png)
-#
+) #src
+render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2) #src
+#md # ![Approximation min Acc](../assets/images/tutorials/Bezier-Appr-Min.png)
 
 # ## [Literature](@id LiteratureBT)
 #
