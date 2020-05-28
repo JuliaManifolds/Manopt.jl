@@ -4,8 +4,8 @@ using Manopt, Documenter, Literate
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
 tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
-tutorials = ["MeanAndMedian", "GradientOfSecondOrderDifference", "JacobiFields"]
-menuEntries = ["Getting Started: Optimize!", "Gradient of \$d_2\$", "Jacobi Fields"]
+tutorials = ["MeanAndMedian", "BezierCurves","GradientOfSecondOrderDifference", "JacobiFields"]
+menuEntries = ["getting Started: Optimize!", "work with Bézier curves","see the gradient of \$d_2\$", "use Jacobi Fields"]
 TutorialMenu = Array{Pair{String,String},1}()
 for (i, tutorial) in enumerate(tutorials)
     global TutorialMenu
@@ -27,6 +27,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "About" => "about.md",
+        "How to..." => TutorialMenu,
         "Plans" => "plans/index.md",
         "Solvers" => [
             "Introduction" => "solvers/index.md",
@@ -56,7 +57,6 @@ makedocs(
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
         ],
-        "Tutorials" => TutorialMenu,
         "Function Index" => "list.md",
     ],
 )
