@@ -74,7 +74,7 @@ See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbour
 function adjoint_differential_bezier_control(
     M::Manifold,
     b::BezierSegment,
-    t::AbstractVecOrMat{Float64},
+    t::AbstractVector{Float64},
     X::AbstractVector{Q}
 ) where {Q}
     effects = [bt.pts for bt ∈ adjoint_differential_bezier_control.(Ref(M),Ref(b),t,X)]

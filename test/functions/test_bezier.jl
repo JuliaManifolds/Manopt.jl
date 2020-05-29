@@ -81,6 +81,47 @@ using Manopt, Manifolds, Test
         A = get_bezier_segments(M, get_bezier_points(M,B,:differentiable),d, :differentiable)
         @test [A[i].pts for i ∈ 1:3] == [B[i].pts for i ∈ 1:3]
 
+        # out of range
         @test_throws ErrorException adjoint_differential_bezier_control(M,B,7.0,zero_tangent_vector(M,B[1].pts[1]))
+        # a shortcut to evaluate the adjoint at several points is equal to seperate evals
+        b = B[2]
+        @test isapprox(
+            adjoint_differential_bezier_control(
+                M,
+                b,
+                [0.0, 1.0],
+                [log(M, b.pts[1], b.pts[2]), -log(M, b.pts[4], b.pts[3])]
+            ).pts,
+            adjoint_differential_bezier_control(
+                M,
+                b,
+                0.0,
+                log(M, b.pts[1], b.pts[2])
+            ).pts + adjoint_differential_bezier_control(
+                M,
+                b,
+                1.0,
+                -log(M, b.pts[4], b.pts[3])).pts
+        )
+        # differential
+        X = BezierSegment(
+            [log(M,b.pts[1],b.pts[2]), [zero_tangent_vector(M,b.pts[i]) for i ∈ 2:4]...]
+        )
+        @test differential_bezier_control(M, b, 0.0, X) ≈ X.pts[1]
+        dT1 = differential_bezier_control.(Ref(M), Ref(b), [0.0, 1.0], Ref(X))
+        dT2 = differential_bezier_control(M, b, [0.0,1.0], X)
+        @test dT1 ≈ dT2
+        X2 = [
+            BezierSegment([[0.0,0.0,0.0] for i ∈ 1:4]),
+            X,
+            BezierSegment([[0.0,0.0,0.0] for i ∈ 1:4])
+        ]
+        @test_throws DomainError differential_bezier_control(M,B,20.0,X2)
+        dbT2a = differential_bezier_control(M,B,1.0,X2)
+        @test dbT2a ≈ X.pts[1]
+        dbT1 = differential_bezier_control.(Ref(M), Ref(B), [1.0, 2.0], Ref(X2))
+        dbT2 = [dbT2a, differential_bezier_control(M,B,2.0,X2)]
+        @test dT1 ≈ dbT1
+        @test dbT2 ≈ dbT1
     end
 end

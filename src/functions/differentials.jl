@@ -1,5 +1,5 @@
 @doc raw"""
-    differential_bezier(M::Manifold, b::BezierSegment, t::Float, X::Array{Q,1})
+    differential_bezier(M::Manifold, b::BezierSegment, t::Float, X::BezierSegment)
 
 evaluate the differential of the Bézier curve with respect to its control points
 `b` and tangent vectors `X` given in the tangent spaces of the control points. The result
@@ -11,34 +11,35 @@ function differential_bezier_control(
     M::Manifold,
     b::BezierSegment,
     t::Float64,
-    X::Array{Q,1}
-) where {P,Q,N}
+    X::BezierSegment
+) where {Q}
   # iterative, because recursively would be too many Casteljau evals
-  c = b.pts
-  for l = length(b):-1:2
-    X = differential_geodesic_startpoint.(
+  c = deepcopy(b.pts)
+  Y = similar(X.pts)
+  for l = length(c):-1:2
+    Y[1:l-1] .= differential_geodesic_startpoint.(
         Ref(M),
-        c[1:end-1],
-        c[2:end],
+        c[1:l-1],
+        c[2:l],
         Ref(t),
-        X[1:end-1]
+        X.pts[1:l-1]
     ) .+ differential_geodesic_endpoint.(
         Ref(M),
-        c[1:end-1],
-        c[2:end],
+        c[1:l-1],
+        c[2:l],
         Ref(t),
-        X[2:end]
+        X.pts[2:l]
     )
-    c = shortest_geodesic.(Ref(M), b[1:end-1], b[2:end], Ref(t))
+    c[1:l-1] = shortest_geodesic.(Ref(M), c[1:l-1], c[2:l], Ref(t))
   end
-  return BezierSegment(X)
+  return Y[1]
 end
 @doc raw"""
     differential_bezier_control(
         M::Manifold,
         b::NTuple{N,P},
         T::Array{Float64,1},
-        X::Array{Q,1},
+        X::BezierSegment,
     )
 
 evaluate the differential of the Bézier curve with respect to its control points
@@ -51,8 +52,8 @@ function differential_bezier_control(
     M::Manifold,
     b::BezierSegment,
     T::Array{Float64,1},
-    X::Array{Q,1},
-) where {P,Q,N}
+    X::BezierSegment,
+)
     return differential_bezier_control.(Ref(M),Ref(b),T,Ref(X))
 end
 @doc raw"""
@@ -60,7 +61,7 @@ end
         M::Manifold,
         B::AbstractVector{<:BezierSegment},
         t::Float64,
-        X::Array{Array{T,1},1}
+        X::AbstractVector{<:BezierSegment}
     )
 
 evaluate the differential of the composite Bézier curve with respect to its
@@ -75,15 +76,19 @@ function differential_bezier_control(
     B::AbstractVector{<:BezierSegment},
     t::Float64,
     X::AbstractVector{<:BezierSegment},
-) where {P,Q}
+)
   if (0 > t) || ( t > length(B) )
-    error("The parameter ",t," to evaluate the composite Bézier curve at is outside the interval [0,",length(B),"].")
+    return throw(
+        DomainError(t,
+            "The parameter $(t) to evaluate the composite Bézier curve at is outside the interval [0,$(length(B))]."
+        )
+    )
   end
   seg = max(ceil(Int,t),1)
   localT = ceil(Int,t) == 0 ? 0. : t - seg+1
   Y = differential_bezier_control(M,B[seg],localT,X[seg])
-  if ((t+1) == seg) && (seg > 1) # boundary case, -> seg-1 is also affecting the boundary differential
-    Y.pts .+= differential_bezier_control(M,B[seg-1],localT+1,X[seg-1]).pts
+  if (Integer(t) == seg) && (seg < length(B)) # boundary case, -> seg-1 is also affecting the boundary differential
+    Y .+= differential_bezier_control(M,B[seg+1],localT-1,X[seg+1])
   end
   return Y
 end

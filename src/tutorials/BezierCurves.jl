@@ -255,8 +255,8 @@ render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2) #src
 # [^BoumalAbsil2011]:
 #     > Boumal, N. and Absil, P.-A.: _A discrete regression method on manifolds and its application to data on SO(n)._
 #     > In: IFAC Proceedings Volumes (IFAC-PapersOnline). Vol. 18. Milano (2011). p. 2284–89.
-#     > doi: [10.3182/20110828-6-IT-1002.00542](https://dx.doi.org/10.3389/10.3182/20110828-6-IT-1002.00542)
-#     > [www](https://web.math.princeton.edu/~nboumal/papers/Boumal_Absil_A_discrete_regression_method_on_manifolds_and_its_application_to_data_on_SOn.pdf)
+#     > doi: [10.3182/20110828-6-IT-1002.00542](https://dx.doi.org/10.3389/10.3182/20110828-6-IT-1002.00542),
+#     > web: [www](https://web.math.princeton.edu/~nboumal/papers/Boumal_Absil_A_discrete_regression_method_on_manifolds_and_its_application_to_data_on_SOn.pdf)
 # [^Casteljau1959]:
 #     > de Casteljau, P.: _Outillage methodes calcul_, Enveloppe Soleau 40.040 (1959),
 #     > Institute National de la Propriété Industrielle, Paris.

@@ -43,7 +43,7 @@ for i ∈ eachindex(λRange)
     ∇F(pB) = ∇L2_acceleration_bezier(M, pB, degs, curve_samples, λ, d)
     results[i] = gradient_descent(N, F, ∇F, x0;
         stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
-        stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-5)), StopAfterIteration(600)),
+        stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-5)), StopAfterIteration(1000)),
         debug = [:Stop, "$(λ) ", :Iteration, " | ", :Cost, " | ", DebugGradientNorm(),
         " | ", DebugStepsize(), " | ", :Change, "\n", 200],
     )

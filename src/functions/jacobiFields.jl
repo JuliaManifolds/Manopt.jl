@@ -26,7 +26,6 @@ function βdifferential_geodesic_startpoint(κ,t,d)
     (d==0) && return 1.0-t
     (κ < 0) && return sinh(sqrt(-κ)*(1.0-t)*d)/sinh(sqrt(-κ)*d)
     (κ > 0) && return sin(sqrt(κ)*(1.0-t)*d)/sin(sqrt(κ)*d)
-    @assert false "imaginary or non-numeric d=$d or κ=$κ"
 end
 @doc raw"""
     βdifferential_exp_basepoint(κ,t,d)
