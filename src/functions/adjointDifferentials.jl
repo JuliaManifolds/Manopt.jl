@@ -17,7 +17,8 @@ function adjoint_differential_bezier_control(
     t::Float64,
     η::Q,
 ) where {Q}
-    if length(b.pts) == 2
+    n = length(b.pts)
+    if n == 2
         return BezierSegment(
             [
             adjoint_differential_geodesic_startpoint(M,b.pts[1],b.pts[2],t,η),
@@ -25,30 +26,34 @@ function adjoint_differential_bezier_control(
             ]
         )
     else
-        bInner = shortest_geodesic.(Ref(M), b.pts[1:end-1], b.pts[2:end],Ref(t))
-        ξInner = adjoint_differential_bezier_control(M, BezierSegment(bInner), t, η)
-        startEffects = [
-            adjoint_differential_geodesic_startpoint.(
-                Ref(M),
-                b.pts[1:end-1],
-                b.pts[2:end],
-                Ref(t),
-                ξInner.pts
-            )...,
-            zero_tangent_vector(M,b.pts[end]),
-        ]
-        endEffects = [
-            zero_tangent_vector(M,b.pts[1]),
-            adjoint_differential_geodesic_endpoint.(
-                Ref(M),
-                b.pts[1:end-1],
-                b.pts[2:end],
-                Ref(t),
-                ξInner.pts
-            )...
-        ]
-        return BezierSegment(startEffects .+ endEffects)
+        c = [ b.pts, [similar.(b.pts[1:l]) for l=(n-1):-1:2 ]... ]
+        for i=2:n-1 # casteljau on the tree -> forward with interims storage
+            c[i] .= shortest_geodesic.(Ref(M), c[i-1][1:end-1], c[i-1][2:end],Ref(t))
+        end
+        Y = [η, [similar(η) for i=1:(n-1)]...]
+        for i=(n-1):-1:1 # propagate adjoints -> backward without interims storage
+            Y[1:(n-i+1)] .= [ # take previous results and add start&end point effects
+                    adjoint_differential_geodesic_startpoint.(
+                        Ref(M),
+                        c[i][1:end-1],
+                        c[i][2:end],
+                        Ref(t),
+                        Y[1:(n-i)],
+                    )...,
+                    zero_tangent_vector(M,c[i][end]),
+                ] .+ [
+                    zero_tangent_vector(M,c[i][1]),
+                    adjoint_differential_geodesic_endpoint.(
+                        Ref(M),
+                        c[i][1:end-1],
+                        c[i][2:end],
+                        Ref(t),
+                        Y[1:(n-i)],
+                    )...
+                ]
+        end
     end
+    return BezierSegment(Y)
 end
 @doc raw"""
     adjoint_differential_bezier_control(

@@ -119,8 +119,8 @@ using Manopt, Manifolds, Test
         @test_throws DomainError differential_bezier_control(M,B,20.0,X2)
         dbT2a = differential_bezier_control(M,B,1.0,X2)
         @test dbT2a ≈ X.pts[1]
+        dbT2 = differential_bezier_control(M, B, [1.0, 2.0], X2)
         dbT1 = differential_bezier_control.(Ref(M), Ref(B), [1.0, 2.0], Ref(X2))
-        dbT2 = [dbT2a, differential_bezier_control(M,B,2.0,X2)]
         @test dT1 ≈ dbT1
         @test dbT2 ≈ dbT1
     end
