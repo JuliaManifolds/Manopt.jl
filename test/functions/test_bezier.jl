@@ -18,7 +18,13 @@ using Manopt, Manifolds, Test
         pts = shortest_geodesic(M, pT, pB, t)
         pts2 = de_casteljau(M,B,2 .* t)
         @test sum(distance.(Ref(M),pts,pts2)) ≈ 0
-
+        aX = log(M,pT,pC)
+        aT1 = adjoint_differential_bezier_control(M,BezierSegment([pT,pC]),0.5,aX).pts
+        aT2 = [
+            adjoint_differential_geodesic_startpoint(M,pT,pC,0.5,aX),
+            adjoint_differential_geodesic_endpoint(M,pT,pC,0.5,aX),
+        ]
+        @test aT1 ≈ aT2
         #
         @test sum(
                 norm.(
