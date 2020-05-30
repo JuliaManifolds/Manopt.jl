@@ -58,6 +58,16 @@ using Manopt, Manifolds, Test
         z[4][1] = 0.0
         @test norm(Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈ 0 atol=10^(-12)
     end
+    @testset "de Casteljau variants" begin
+        M = Sphere(2)
+        B = artificial_S2_composite_bezier_curve()
+        b = B[2]
+        b2s = BezierSegment([b.pts[1],b.pts[end]])
+        f1 = de_casteljau(M,b) # fct -> recursive
+        pts1 = f1.([0.0, 0.5, 1.0])
+        pts2 = de_casteljau(M,b,[0.0,.5,1.0])
+        @test pts1 ≈ pts2
+    end
     @testset "Spherical Data" begin
         M = Sphere(2)
         B = artificial_S2_composite_bezier_curve()
