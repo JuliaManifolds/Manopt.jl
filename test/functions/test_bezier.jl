@@ -63,10 +63,25 @@ using Manopt, Manifolds, Test
         B = artificial_S2_composite_bezier_curve()
         b = B[2]
         b2s = BezierSegment([b.pts[1],b.pts[end]])
-        f1 = de_casteljau(M,b) # fct -> recursive
+        # (a) 2 points -> geo special case
+        f1 = de_casteljau(M,b2s) # fct -> recursive
         pts1 = f1.([0.0, 0.5, 1.0])
-        pts2 = de_casteljau(M,b,[0.0,.5,1.0])
+        pts2 = de_casteljau(M,b2s,[0.0,.5,1.0])
         @test pts1 ≈ pts2
+        # (b) one segment
+        f2 = de_casteljau(M,b) # fct -> recursive
+        pts3 = f2.([0.0, 0.5, 1.0])
+        pts4 = de_casteljau(M,b,[0.0,.5,1.0])
+        @test pts3 ≈ pts4
+        # (c) whole composites
+        f3 = de_casteljau(M,B) # fct -> recursive
+        pts5 = f3.([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
+        pts6 = de_casteljau(M,B,[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
+        @test pts5 ≈ pts6
+        @test_throws DomainError f3(-0.1)
+        @test_throws DomainError de_casteljau(M, B, -0.1)
+        @test_throws DomainError f3(3.5)
+        @test_throws DomainError de_casteljau(M, B, 3.5)
     end
     @testset "Spherical Data" begin
         M = Sphere(2)
