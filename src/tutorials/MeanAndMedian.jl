@@ -1,4 +1,4 @@
-# # [Getting Started: Optimize!](@id Optimize)
+# # [Get started: Optimize!](@id Optimize)
 #
 # This example illustrates how to set up and solve optimization problems and how
 # to further get data from the algorithm using [`DebugOptions`](@ref) and
@@ -65,7 +65,7 @@ TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
 nothing #hide
 #
-# Then our data looks like
+# Then our data rendered using [`asymptote_export_S2_signals`](@ref) looks like
 #
 asymptote_export_S2_signals(exportFolder*"/startDataAndCenter.asy"; #src
     points = [ [x], data], #src

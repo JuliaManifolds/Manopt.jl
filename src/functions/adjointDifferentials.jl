@@ -74,7 +74,8 @@ See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbour
     > R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
     > by minimizing the acceleration of a Bézier curve_.
     > Frontiers in Applied Mathematics and Statistics, 2018.
-    > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059)
+    > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
+    > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function adjoint_differential_bezier_control(
     M::Manifold,

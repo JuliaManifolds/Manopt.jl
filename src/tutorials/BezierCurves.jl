@@ -1,4 +1,4 @@
-# # [Bezier Curves and their Acceleration](@id BezierCurvesTutorial)
+# # [Bezier Curves and their acceleration](@id BezierCurvesTutorial)
 #
 # This tutorial illustrates how Bézier curves are generalized to Manfiolds and how to
 # minimizer their acceleration, i.e. how to get a curve that is as straight or as geodesic
@@ -91,7 +91,7 @@ render_asymptote(exportFolder*"/Casteljau-illustr.asy"; render=2) #src
 # You can reduce storage by calling [`get_bezier_points`](@ref), though for econstruciton with [`get_bezier_segments`](@ref) you also need [`get_bezier_degrees`](@ref).
 # The reduced storage is represented as an array of points, i.e. an element of the corresponding [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html).
 #
-# For the three segment example from the beginning this looks as follows:
+# For the three segment example from the beginning this looks as follows[^1]
 #
 asymptote_export_S2_signals(exportFolder*"/Bezier-composite-curve.asy"; #src
     curves = [de_casteljau(M, B, bezier_pts),], #src
@@ -237,8 +237,22 @@ asymptote_export_S2_signals(exportFolder*"/Bezier-Appr-Min.asy"; #src
     dotSize = 4.0, #src
 ) #src
 render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2) #src
+#
 #md # ![Approximation min Acc](../assets/images/tutorials/Bezier-Appr-Min.png)
-
+#
+# The role of $\lambda$ can be interpreted as follows: for large values of $\lambda$, the
+# minimizer, i.e. the resulting curve, is closer to the original Bézier junction points.
+# For small $\lambda$ the resting curve is closer to a geodesic and the control points are closer to the curve.
+# For $\lambda=0$ _any_ (not necessarily shortest) geodesic is a solution and the problem is ill-posed.
+# To illustrate the effect of $\lambda$, the following image contains 1000 runs for $\lambda=10$ in dark currant to $\lambda=0.01$ in bright yellow.
+#
+#md # ![Approximation min Acc](../assets/images/tutorials/Bezier_Approximation_video-Summary-result.png)
+#
+# The effect of the data term can also be seen in the following video
+#
+#md # ![Video of the effect of lambda, the weight of the dataterm](../assets/videos/tutorials/Bezier_Approximation_video-movie.mp4)
+#
+#
 # ## [Literature](@id LiteratureBT)
 #
 # [^BacakBergmannSteidlWeinmann2016]:
@@ -251,7 +265,8 @@ render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2) #src
 #     > R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
 #     > by minimizing the acceleration of a Bézier curve_.
 #     > Frontiers in Applied Mathematics and Statistics, 2018.
-#     > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059)
+#     > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
+#     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 # [^BoumalAbsil2011]:
 #     > Boumal, N. and Absil, P.-A.: _A discrete regression method on manifolds and its application to data on SO(n)._
 #     > In: IFAC Proceedings Volumes (IFAC-PapersOnline). Vol. 18. Milano (2011). p. 2284–89.
@@ -267,3 +282,6 @@ render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2) #src
 #     > Popiel, T. and Noakes, L.: _Bézier curves and $C^2$ interpolation in Riemannian
 #     > manifolds_. Journal of Approximation Theory (2007), 148(2), pp. 111–127.-
 #     > doi: [10.1016/j.jat.2007.03.002](https://doi.org/10.1016/j.jat.2007.03.002).
+# [^1]:
+#     > The images are rendered using [`asymptote_export_S2_signals`](@ref).
+#     > For code examples, see [Get started: Optimize!](@ref Optimize).

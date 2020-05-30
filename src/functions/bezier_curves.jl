@@ -106,8 +106,25 @@ function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment})
         de_casteljau(M,B[max(ceil(Int,t),1)], ceil(Int,t) == 0 ? 0. : t-ceil(Int,t)+1)
     end
 end
-de_casteljau(M::Manifold, b, t::Real) = de_casteljau(M,b)(t)
-de_casteljau(M::Manifold, b, T::AbstractVector) = map(t -> de_casteljau(M,b,t), T)
+# the direct evaluation can be done iteratively
+function de_casteljau(M::Manifold, b::BezierSegment, t::Real)
+    if length(b.pts) == 2
+        return shortest_geodesic(M, b.pts[1], b.pts[2], t)
+    else
+        c = deepcopy(b.pts)
+        for l=length(c):-1:2 # casteljau on the tree -> forward with interims storage
+            c[1:(l-1)] .= shortest_geodesic.(Ref(M), c[1:(l-1)], c[2:l],Ref(t))
+        end
+    end
+    return c[1]
+end
+function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment},t::Real)
+    ((0<t) || (t> length(B))) && DomainError(
+        "Parameter $(t) outside of domain of the composite Bézier curve [0,$(length(B))]."
+    )
+    return de_casteljau(M,B[max(ceil(Int,t),1)], ceil(Int,t) == 0 ? 0. : t-ceil(Int,t)+1)
+end
+de_casteljau(M::Manifold, b, T::AbstractVector) = de_casteljau.(Ref(M), Ref(b), T)
 
 @doc raw"""
     get_bezier_junction_tangent_vectors(M::Manifold, B::AbstractVector{<:BezierSegment})

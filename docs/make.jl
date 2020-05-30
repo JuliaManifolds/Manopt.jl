@@ -5,7 +5,7 @@ tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
 tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = ["MeanAndMedian", "BezierCurves","GradientOfSecondOrderDifference", "JacobiFields"]
-menuEntries = ["getting Started: Optimize!", "work with Bézier curves","see the gradient of \$d_2\$", "use Jacobi Fields"]
+menuEntries = ["get Started: Optimize!", "work with Bézier curves","see the gradient of \$d_2\$", "use Jacobi Fields"]
 TutorialMenu = Array{Pair{String,String},1}()
 for (i, tutorial) in enumerate(tutorials)
     global TutorialMenu

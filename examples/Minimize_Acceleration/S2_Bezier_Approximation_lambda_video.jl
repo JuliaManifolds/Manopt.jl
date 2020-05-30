@@ -5,7 +5,8 @@ This example appeared in Sec. 5.2, second example, of
 > R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
 > by minimizing the acceleration of a Bézier curve_.
 > Frontiers in Applied Mathematics and Statistics, 2018.
-> doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059)
+> doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
+> arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 #
 # Load Manopt and required packages
@@ -13,6 +14,7 @@ This example appeared in Sec. 5.2, second example, of
 using Manopt, Manifolds, Colors, ColorSchemes
 import Printf.@sprintf
 import ColorSchemes.viridis
+render_detail = 2
 asy_export = true
 asy_export_summary = true
 render_video = true
@@ -43,7 +45,7 @@ for i ∈ eachindex(λRange)
     ∇F(pB) = ∇L2_acceleration_bezier(M, pB, degs, curve_samples, λ, d)
     results[i] = gradient_descent(N, F, ∇F, x0;
         stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
-        stopping_criterion = StopWhenAny(StopWhenChangeLess(10.0^(-5)), StopAfterIteration(1000)),
+        stopping_criterion = StopWhenAny(StopWhenChangeLess(5*10.0^(-6)), StopAfterIteration(15000)),
         debug = [:Stop, "$(λ) ", :Iteration, " | ", :Cost, " | ", DebugGradientNorm(),
         " | ", DebugStepsize(), " | ", :Change, "\n", 200],
     )
@@ -67,7 +69,7 @@ if asy_export
             lineWidths = [1., 0.5],
             dotSize = 2.0,
         )
-        render_asymptote(experimentFolder * experimentName * "-$(@sprintf "%04.0f" i)-result.asy"; render = 4)
+        render_asymptote(experimentFolder * experimentName * "-$(@sprintf "%04.0f" i)-result.asy"; render = render_detail)
     end
 end
 if asy_export_summary
@@ -78,7 +80,7 @@ if asy_export_summary
         cameraPosition = cameraPosition,
         lineWidths = [0.75, [1.5 for i ∈ eachindex(λRange)]...],
     )
-    render_asymptote(experimentFolder * experimentName * "-Summary-result.asy"; render = 4)
+    render_asymptote(experimentFolder * experimentName * "-Summary-result.asy"; render = render_detail)
 end
 if render_video
     cmd = `ffmpeg -i $(experimentFolder)$(experimentName)-%04d-result.png -r 25 -framerate 60 -c:v libx264 -crf 20 -pix_fmt yuv420p -y $(experimentFolder)$(experimentName)-movie.mp4`
