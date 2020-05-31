@@ -109,7 +109,7 @@ length of `B`.
 See [`de_casteljau`](@ref) for more details on the curve and [^BergmannGousenbourger2018].
 
 [^BergmannGousenbourger2018]:
-    > R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
+    > Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds
     > by minimizing the acceleration of a Bézier curve_.
     > Frontiers in Applied Mathematics and Statistics, 2018.
     > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),

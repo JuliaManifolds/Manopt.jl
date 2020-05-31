@@ -204,7 +204,35 @@ function artificial_S2_whirl_patch(pts::Int=5)
   end
   return patch
 end
+@doc raw"""
+    artificial_S2_composite_bezier_curve()
 
+Create the artificial curve in the `Sphere(2)` consisting of 3 segments between the four
+points
+
+````math
+p_0 = \begin{bmatrix}0&0&1\end{bmatrix}^{\mathrm{T}},
+p_1 = \begin{bmatrix}0&-1&0\end{bmatrix}^{\mathrm{T}},
+p_2 = \begin{bmatrix}-1&0&0\end{bmatrix}^{\mathrm{T}},
+p_3 = \begin{bmatrix}0&0&-1\end{bmatrix}^{\mathrm{T}},
+````
+
+where each segment is a cubic Bezér curve, i.e. each point, except $p_3$ has a first point
+within the following segment $b_i^+$, $i=0,1,2$ and a last point within the previous
+segment, except for $p_0$, which are denoted by $b_i^-$, $i=1,2,3$.
+This curve is differentiable by the conditions $b_i^- = \gamma_{b_i^+,p_i}(2)$, $i=1,2$,
+where $\gamma_{a,b}$ is the [`shortest_geodesic`](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) connecting $a$ and $b$.
+The remaining points are defined as
+
+````math
+\begin{aligned}
+    b_0^+ &= \exp_{p_0}\frac{\pi}{8\sqrt{2}}\begin{pmatrix}1&-1&0\end{pmatrix}^{\mathrm{T}},&
+    b_1^+ &= \exp_{p_1}-\frac{\pi}{4\sqrt{2}}\begin{pmatrix}-1&0&1\end{pmatrix}^{\mathrm{T}},\\
+    b_2^+ &= \exp_{p_2}\frac{\pi}{4\sqrt{2}}\begin{pmatrix}0&1&-1\end{pmatrix}^{\mathrm{T}},&
+    b_3^- &= \exp_{p_3}-\frac{\pi}{8\sqrt{2}}\begin{pmatrix}-1&1&0\end{pmatrix}^{\mathrm{T}}.
+\end{aligned}
+````
+"""
 function artificial_S2_composite_bezier_curve()
     M = Sphere(2)
     d0 = [0.0,  0.0, 1.0]

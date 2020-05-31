@@ -2,7 +2,7 @@
 # Minimize the acceleration of a composite Bézier curve on $\mathbb R^3$ with interpolation
 
 This example appeared in Sec. 5.2, second example, of
-> R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
+> Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds
 > by minimizing the acceleration of a Bézier curve_.
 > Frontiers in Applied Mathematics and Statistics, 2018.
 > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),

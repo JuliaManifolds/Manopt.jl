@@ -1,6 +1,6 @@
-# # [Bezier Curves and their acceleration](@id BezierCurvesTutorial)
+# # [Bezier curves and their acceleration](@id BezierCurvesTutorial)
 #
-# This tutorial illustrates how Bézier curves are generalized to Manfiolds and how to
+# This tutorial illustrates how Bézier curves are generalized to manfiolds and how to
 # minimizer their acceleration, i.e. how to get a curve that is as straight or as geodesic
 # while fulfilling constraints
 #
@@ -9,8 +9,8 @@
 # ## Table of contents
 # * [Setup](@ref SetupTB)
 # * [de Casteljau algorithm on manifolds](@ref Casteljau)
-# * [Composite Bézire Curves](@ref CompositeBezier)
-# * [Minimizing the Acceleration of a Bézier curve](@ref MinAccBezier)
+# * [Composite Bézire curves](@ref CompositeBezier)
+# * [Minimizing the acceleration of a Bézier curve](@ref MinAccBezier)
 # * [Literature](@ref LiteratureBT)
 #
 # ## [Setup](@id SetupTB)
@@ -30,7 +30,8 @@ geo_pts = collect(range(0.0,1.0,length=101)) #hide
 bezier_pts = collect(range(0.0,3.0,length=201)) #hide
 cameraPosition = (-1.0, -0.7, 0.3) #hide
 nothing #hide
-# Then we load our data, a composite Bezier curve consisting of 3segments on the Sphere
+# Then we load our data, see [`artificial_S2_composite_bezier_curve`](@ref), a composite
+# Bezier curve consisting of 3 segments on the Sphere
 B = artificial_S2_composite_bezier_curve();
 #
 # ## [De Casteljau algorithm on manifolds](@id Casteljau)
@@ -67,9 +68,10 @@ asymptote_export_S2_signals(exportFolder*"/Casteljau-illustr.asy"; #src
 render_asymptote(exportFolder*"/Casteljau-illustr.asy"; render=2) #src
 #md # ![Illustration of de Casteljau's algorithm on the Sphere.](../assets/images/tutorials/Casteljau-illustr.png)
 #
-# To evaluate a Bézier curve knowing its [`BezierSegment`](@ref), use [`de_casteljau`](@ref).
-#
 # From the control points (blue) and their geodesics, ont evaluation per geodesic yields three interims points (cyan), their two successive geodeics another two points (teal) and at its geodesic at $t=0.66$ we obtain the point on the curve.
+#
+# In Manopt.jl, to evaluate a Bézier curve knowing its [`BezierSegment`](@ref), use [`de_casteljau`](@ref).
+#
 # There are a few nice observations to make, that hold also for these Bézier curves on manifolds:
 # * The curve starts in the first controlpoint $b_0$ and ends in the last controlpoint $b_3$
 # * The tangent vector to the curve at the start $\dot c(0)$ is equal to $\log_{b_0}b_1 = \dot\gamma_{b_0,b_0}(0)$, where $\gamma_{a,b}$ denotes the shortest geodesic.
@@ -84,7 +86,7 @@ render_asymptote(exportFolder*"/Casteljau-illustr.asy"; render=2) #src
 # With the properties from the previous section we can now state that
 #
 # * the curve $B(t)$ is continuous if $c(1)=d(0)$ or in other words $a_n=b_0$
-# * the curve $B(t)$ is differentiable if additionally $\cdot c(1)=\cdot d(0)$ or in other words $-\log_{a_n}a_{n-1} = \log_{b_0}b_1$. This is equivalent to $a_n=b_0 = \gamma_{a_{n-1}b_1}(\tfrac{1}{2})$.
+# * the curve $B(t)$ is differentiable if additionally $\dot c(1)=\dot d(0)$ or in other words $-\log_{a_n}a_{n-1} = \log_{b_0}b_1$. This is equivalent to $a_n=b_0 = \gamma_{a_{n-1}b_1}(\tfrac{1}{2})$.
 #
 # One nice interpretation of the last characterization is, that the tangents $\log_{a_n}a_{n-1}$ and $\log_{b_0}b_1$ point into opposite directions.
 # For a continuous curve, the first point of every segment (except for the first segment) can be ommitted, for a differentiable curve the first two points (except for the first segment) can be ommitted.
@@ -119,11 +121,15 @@ render_asymptote(exportFolder*"/Bezier-composite-curve.asy"; render = 2) #src
 # The motivation to minimize the acceleration of the composite Bézier curve is, that the curve should get “straighter” or more geodesic like.
 # If we discretize the curve $B(t)$ with its control points denoted by $b_{i,j}$ for the $j$th note in the $i$th segment, the discretized model for equispaced $t_i$, $i=0,\ldots,N$ in the domain of $B$ reads[^BergmannGousenbourger2018]
 #
-# $A(b) \coloneqq\sum_{i=1}^{N-1}\frac{\mathrm{d}^2_2 \bigl[ B(t_{i-1}), B(t_{i}), B(t_{i+1}) \bigr]}{\Delta_t^3},$
+# ````math
+# A(b) \coloneqq\sum_{i=1}^{N-1}\frac{\mathrm{d}^2_2 \bigl[ B(t_{i-1}), B(t_{i}), B(t_{i+1}) \bigr]}{\Delta_t^3},
+# ````
 #
 # where $\mathrm{d}_2$ denotes the second order finite difference using the mid point approach, see [`costTV2`](@ref)[^BacakBergmannSteidlWeinmann2016],
 #
-# $d_2(x,y,z) := \min_{c ∈ \mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z∈\mathcal M.$
+# ````math
+# d_2(x,y,z) := \min_{c ∈ \mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z∈\mathcal M.
+# ````
 #
 # Another model is based on logarithmic maps, see [^BoumalAbsil2011], but that is not considered here.
 # An advantage of the model considered here is, that it only consist of the evaluation of geodesics.
@@ -199,7 +205,9 @@ render_asymptote(exportFolder*"/Bezier-IP-Min.asy"; render = 2) #src
 # Similarly if we introduce the junction points as data fixed given $d_i$ and set (for simplicity) $p_i=b_{i,0}$ and $p_{n+1}=b_{n,4}$
 # and set $λ=3$ in
 #
-# $\frac{\lambda}{2}\sum_{k=0}^3 d_{\mathcal M}(d_i,p_i)^2 + A(b)$,
+# ````math
+# \frac{\lambda}{2}\sum_{k=0}^3 d_{\mathcal M}(d_i,p_i)^2 + A(b),
+# ````
 #
 # then $λ$ models how important closeness to the data $d_i$ is.
 #
@@ -248,7 +256,7 @@ render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2) #src
 #
 #md # ![Approximation min Acc](../assets/images/tutorials/Bezier_Approximation_video-Summary-result.png)
 #
-# The effect of the data term can also be seen in the following video
+# The effect of the data term can also be seen in the following video, which starts a little slow and takes about 40 seconds.
 #
 #md # ![Video of the effect of lambda, the weight of the dataterm](../assets/videos/tutorials/Bezier_Approximation_video-movie.mp4)
 #
@@ -256,13 +264,13 @@ render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2) #src
 # ## [Literature](@id LiteratureBT)
 #
 # [^BacakBergmannSteidlWeinmann2016]:
-#     > Bačák, M, Bergmann, R., Steidl, G. and Weinmann, A.: _A second order nonsmooth
+#     > Bačák, M., Bergmann, R., Steidl, G. and Weinmann, A.: _A second order nonsmooth
 #     > variational model for restoring manifold-valued images_,
 #     > SIAM Journal on Scientific Computations, Volume 38, Number 1, pp. A567–597,
 #     > doi: [10.1137/15M101988X](https://doi.org/10.1137/15M101988X),
 #     > arXiv: [1506.02409](https://arxiv.org/abs/1506.02409)
 # [^BergmannGousenbourger2018]:
-#     > R. Bergmann, P.-Y. Gousenbourger: _A variational model for data fitting on manifolds
+#     > Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds
 #     > by minimizing the acceleration of a Bézier curve_.
 #     > Frontiers in Applied Mathematics and Statistics, 2018.
 #     > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
