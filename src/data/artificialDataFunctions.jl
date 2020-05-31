@@ -4,11 +4,6 @@
 #
 #
 import LinearAlgebra: I, Diagonal
-export artificial_S1_signal, artificial_S1_slope_signal, artificialIn_SAR_image
-export artificial_SPD_image, artificial_SPD_image2
-export artificial_S2_whirl_image, artificial_S2_whirl_patch
-export artificial_S2_rotation_image
-export artificial_S2_whirl_patch, artificial_S2_lemniscate
 
 @doc raw"""
     artificialIn_SAR_image([pts=500])
@@ -209,6 +204,73 @@ function artificial_S2_whirl_patch(pts::Int=5)
   end
   return patch
 end
+@doc raw"""
+    artificial_S2_composite_bezier_curve()
+
+Create the artificial curve in the `Sphere(2)` consisting of 3 segments between the four
+points
+
+````math
+p_0 = \begin{bmatrix}0&0&1\end{bmatrix}^{\mathrm{T}},
+p_1 = \begin{bmatrix}0&-1&0\end{bmatrix}^{\mathrm{T}},
+p_2 = \begin{bmatrix}-1&0&0\end{bmatrix}^{\mathrm{T}},
+p_3 = \begin{bmatrix}0&0&-1\end{bmatrix}^{\mathrm{T}},
+````
+
+where each segment is a cubic Bezér curve, i.e. each point, except $p_3$ has a first point
+within the following segment $b_i^+$, $i=0,1,2$ and a last point within the previous
+segment, except for $p_0$, which are denoted by $b_i^-$, $i=1,2,3$.
+This curve is differentiable by the conditions $b_i^- = \gamma_{b_i^+,p_i}(2)$, $i=1,2$,
+where $\gamma_{a,b}$ is the [`shortest_geodesic`](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) connecting $a$ and $b$.
+The remaining points are defined as
+
+````math
+\begin{aligned}
+    b_0^+ &= \exp_{p_0}\frac{\pi}{8\sqrt{2}}\begin{pmatrix}1&-1&0\end{pmatrix}^{\mathrm{T}},&
+    b_1^+ &= \exp_{p_1}-\frac{\pi}{4\sqrt{2}}\begin{pmatrix}-1&0&1\end{pmatrix}^{\mathrm{T}},\\
+    b_2^+ &= \exp_{p_2}\frac{\pi}{4\sqrt{2}}\begin{pmatrix}0&1&-1\end{pmatrix}^{\mathrm{T}},&
+    b_3^- &= \exp_{p_3}-\frac{\pi}{8\sqrt{2}}\begin{pmatrix}-1&1&0\end{pmatrix}^{\mathrm{T}}.
+\end{aligned}
+````
+"""
+function artificial_S2_composite_bezier_curve()
+    M = Sphere(2)
+    d0 = [0.0,  0.0, 1.0]
+    d1 = [0.0, -1.0, 0.0]
+    d2 = [-1.0, 0.0, 0.0]
+    d3 = [0.0, 0.0, -1.0]
+    #
+    # control points - where b1- and b2- are constructed by the C1 condition
+    #
+    # We define three segments: 1
+    b00 = d0 # also known as p0
+    ξ0 = π/(8. *sqrt(2.)) .* [1., -1., 0.] # staring direction from d0
+    b01 = exp(M, d0, ξ0 ) # b0+
+    ξ1 = π/(4. * sqrt(2)) .* [1., 0., 1.]
+    # b02 or b1- and b11 or b1+ are constructed by this vector with opposing sign
+    # to achieve a C1 curve
+    b02 = exp(M, d1, ξ1)
+    b03 = d1
+    # 2
+    b10 = d1
+    b11 = exp(M, d1, -ξ1) # yields c1 condition
+    ξ2 = -π/(4*sqrt(2)) .* [0., 1., -1.]
+    b12 = exp(M, d2, ξ2 )
+    b13 = d2
+    # 3
+    b20 = d2
+    b21 = exp(M, d2, -ξ2)
+    ξ3 = π/(8. * sqrt(2)) .* [-1., 1., 0.]
+    b22 = exp(M, d3, ξ3)
+    b23 = d3
+    # hence the matrix of controlpoints for the curve reads
+    return [
+        BezierSegment([b00,b01,b02,b03]),
+        BezierSegment([b10,b11,b12,b13]),
+        BezierSegment([b20,b21,b22,b23]),
+    ]
+end
+
 @doc raw"""
     artificial_SPD_image([pts=64, stepsize=1.5])
 

@@ -1,4 +1,181 @@
 @doc raw"""
+    ∇acceleration_bezier(
+        M::Manifold,
+        B::AbstractVector{P},
+        degrees::AbstractVector{<:Integer}
+        T::AbstractVector{<:AbstractFloat}
+    )
+
+compute the gradient of the discretized acceleration of a (composite) Bézier curve $c_B(t)$
+on the `Manifold` `M` with respect to its control points `B` given as a point on the
+`PowerManifold` assuming C1 conditions and known `degrees`. The curve is
+evaluated at the points given in `T` (elementwise in $[0,N]$, where $N$ is the
+number of segments of the Bézier curve). The [`get_bezier_junctions`](@ref) are fixed for
+this gradient (interpolation constraint). For the unconstrained gradient,
+see [`∇L2_acceleration_bezier`](@ref) and set $λ=0$ therein. This gradient is computed using
+[`adjoint_Jacobi_field`](@ref)s. For details, see [^BergmannGousenbourger2018].
+See [`de_casteljau`](@ref) for more details on the curve.
+
+# See also
+
+[`cost_acceleration_bezier`](@ref),  [`∇L2_acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref).
+
+[^BergmannGousenbourger2018]:
+    > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
+    > manifolds by minimizing the acceleration of a Bézier curve.
+    > Frontiers in Applied Mathematics and Statistics (2018).
+    > doi [10.3389/fams.2018.00059](http://dx.doi.org/10.3389/fams.2018.00059),
+    > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
+"""
+function ∇acceleration_bezier(
+    M::Manifold,
+    B::AbstractVector{P},
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector{<:AbstractFloat},
+) where {P}
+    gradB = _∇acceleration_bezier(M, B, degrees, T)
+    Bt = get_bezier_segments(M, B, degrees, :differentiable)
+    for k=1:length(Bt) # we interpolate so we do not move end points
+        zero_tangent_vector!(M, gradB[k].pts[end], Bt[k].pts[end])
+        zero_tangent_vector!(M, gradB[k].pts[1], Bt[k].pts[1])
+    end
+    zero_tangent_vector!(M, gradB[end].pts[end], Bt[end].pts[end])
+    return get_bezier_points(M, gradB, :differentiable)
+end
+function ∇acceleration_bezier(
+    M::Manifold,
+    b::BezierSegment,
+    T::AbstractVector{<:AbstractFloat},
+)
+    gradb = _∇acceleration_bezier(M,b.pts, [get_bezier_degree(M,b),], T)[1]
+    zero_tangent_vector!(M, gradb.pts[1],b.pts[1])
+    zero_tangent_vector!(M, gradb.pts[end], b.pts[end])
+    return gradb
+end
+
+@doc raw"""
+    ∇L2_acceleration_bezier(
+        M::Manifold,
+        B::AbstractVector{P},
+        degrees::AbstractVector{<:Integer},
+        T::AbstractVector{<:AbstractFloat},
+        λ::Float64,
+        d::AbstractVector{P}
+    ) where {P}
+
+compute the gradient of the discretized acceleration of a composite Bézier curve
+on the `Manifold` `M` with respect to its control points `B` together with a
+data term that relates the junction points `p_i` to the data `d` with a weigth
+$\lambda$ comapared to the acceleration. The curve is evaluated at the points
+given in `pts` (elementwise in $[0,N]$), where $N$ is the number of segments of
+the Bézier curve. The summands are [`∇distance`](@ref) for the data term
+and [`∇acceleration_bezier`](@ref) for the acceleration with interpolation constrains.
+Here the [`get_bezier_junctions`](@ref) are included in the optimization, i.e. setting $λ=0$
+yields the unconstrained acceleration minimization. Note that this is ill-posed, since
+any Bézier curve identical to a geodesic is a minimizer.
+
+Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
+together with the `degrees` of the segments and assuming a differentiable curve, the segmenents
+can internally be reconstructed.
+
+# See also
+
+[`∇acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref).
+"""
+function ∇L2_acceleration_bezier(
+    M::Manifold,
+    B::AbstractVector{P},
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector{<:AbstractFloat},
+    λ::Float64,
+    d::AbstractVector{P}
+) where {P}
+    gradB = _∇acceleration_bezier(M, B, degrees, T)
+    Bt = get_bezier_segments(M, B, degrees, :differentiable )
+    # add start and end data grad
+    # include data term
+    for k=1:length(Bt)
+        gradB[k].pts[1] .+= λ*∇distance(M, d[k], Bt[k].pts[1])
+        if k > 1
+            gradB[k-1].pts[end] .+= λ*∇distance(M, d[k], Bt[k].pts[1])
+        end
+    end
+    gradB[end].pts[end] .+= λ*∇distance(M, d[end], Bt[end].pts[end])
+    return get_bezier_points(M, gradB, :differentiable)
+end
+
+# common helper for the two acceleration grads
+function _∇acceleration_bezier(
+    M::Manifold,
+    B::AbstractVector{P},
+    degrees::AbstractVector{Int},
+    T::AbstractVector{Float64}
+) where {P}
+    Bt = get_bezier_segments(M, B, degrees, :differentiable )
+    n = length(T)
+    m = length(Bt)
+    p = de_casteljau(M,Bt,T)
+    center = p
+    forward = p[ [1, 3:n..., n] ]
+    backward = p[ [1,1:(n-2)..., n] ]
+    mid = mid_point.(Ref(M), backward, forward)
+    # where the point of interest appears...
+    dt = ( max(T...) - min(T...) )/(n-1)
+    inner =  - 2/((dt)^3) .* log.(Ref(M),mid,center)
+    asForward = adjoint_differential_geodesic_startpoint.(Ref(M),forward,backward, Ref(0.5), inner)
+    asCenter = - 2/((dt)^3)*log.(Ref(M),center,mid)
+    asBackward = adjoint_differential_geodesic_endpoint.(Ref(M), forward, backward, Ref(0.5), inner )
+    # effect of these to the centrol points is the preliminary gradient
+    ∇B = [
+        BezierSegment(a.pts .+ b.pts .+ c.pts)
+        for (a,b,c) in zip(
+            adjoint_differential_bezier_control(M, Bt, T[ [1,3:n...,n]],asForward),
+            adjoint_differential_bezier_control(M, Bt, T, asCenter),
+            adjoint_differential_bezier_control(M, Bt, T[ [1,1:(n-2)...,n] ], asBackward)
+        )
+    ]
+    for k=1:length(Bt)-1 # add both effects of left and right segments
+        X = ∇B[k+1].pts[1] + ∇B[k].pts[end]
+        ∇B[k].pts[end] .= X
+        ∇B[k+1].pts[1] .= X
+    end
+    # include c0 & C1 condition
+    for k=length(Bt):-1:2
+        m = length(Bt[k].pts)
+        # updates b-
+        X1 = ∇B[k-1].pts[end-1] .+ adjoint_differential_geodesic_startpoint(
+            M,
+            Bt[k-1].pts[end-1],
+            Bt[k].pts[1],
+            2.,
+            ∇B[k].pts[2]
+        )
+        # update b+ - though removed in reduced form
+        X2 = ∇B[k].pts[2] .+ adjoint_differential_geodesic_startpoint(
+            M,
+            Bt[k].pts[2],
+            Bt[k].pts[1],
+            2.,
+            ∇B[k-1].pts[end-1]
+        )
+        # update p - effect from left and right segment as well as from c1 cond
+        X3 = ∇B[k].pts[1] .+ adjoint_differential_geodesic_endpoint(
+            M,
+            Bt[k-1].pts[m-1],
+            Bt[k].pts[1],
+            2.,
+            ∇B[k].pts[2]
+        )
+        # store
+        ∇B[k-1].pts[end-1] .= X1
+        ∇B[k].pts[2] .= X2
+        ∇B[k].pts[1] .= X3
+        ∇B[k-1].pts[end] .= X3
+    end
+    return ∇B
+end
+
+@doc raw"""
     ∇distance(M,y,x[, p=2])
 
 compute the (sub)gradient of the distance (squared)
@@ -154,13 +331,7 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all( J .<= maxInd ) # is this neighbor in range?
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-                set_component!(
-                    N,
-                    X,
-                    log(M.manifold, get_component(M,p,i), get_component(M,p,j)),
-                    i,
-                    k,
-                ) # Compute log and store in kth entry
+                X[N, Tuple(i)..., k] = log(M.manifold,p[M, Tuple(i)...], p[M, Tuple(j)...])
             end
         end # directions
     end # i in R
@@ -232,9 +403,9 @@ function ∇TV2(M::PowerManifold, q, p::Int=1)
                 else
                     g = ∇TV2(M.manifold,(q[jB],q[i],q[jF]),p) # Compute TV2 on these
                 end
-                set_component!(M,X,g[1],jB)
-                set_component!(M,X,g[2],i)
-                set_component!(M,X,g[3],jF)
+                X[M,Tuple(jB)...] = g[1]
+                X[M,Tuple(i)...] = g[2]
+                X[M,Tuple(jF)...] = g[3]
             end
         end # directions
     end # i in R

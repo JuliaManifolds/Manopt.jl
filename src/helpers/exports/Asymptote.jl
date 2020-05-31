@@ -59,7 +59,7 @@ function asymptote_export_S2_signals(filename::String;
             "camera = $(cameraPosition), ",
             "target = $(target) );\n",
             "currentlight=nolight;\n\n",
-            "revolution S=sphere(O,1);\n",
+            "revolution S=sphere(O,0.995);\n",
             "pen SpherePen = rgb($(red(sphereColor)),",
             "$(green(sphereColor)),$(blue(sphereColor)))",
             "+opacity($(alpha(sphereColor)));\n",
@@ -98,7 +98,7 @@ function asymptote_export_S2_signals(filename::String;
                 end
                 write(io,string("pen $(penPrefix)Style$(i) = ",
                     "rgb($(red(c)),$(green(c)),$(blue(c)))",
-                    (key==:curves || key==:tvectors) ? "+linewidth($(lineWidths[i])pt)" : "",
+                    (key==:curves) ? "+linewidth($(lineWidths[i])pt)" : "",
                     (key==:tvectors) ? "+linewidth($(lineWidths[length(curves)+i])pt)" : "",
                     (key==:points) ? "+linewidth($(dotSizes[i])pt)" : "",
                     "+opacity($(alpha(c)));\n"));

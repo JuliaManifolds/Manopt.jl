@@ -11,6 +11,7 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
 end
 @testset "Function Tests     " begin
     include("functions/test_adjoint_differentials.jl")
+    include("functions/test_bezier.jl")
     include("functions/test_differentials.jl")
     include("functions/test_costs.jl")
     include("functions/test_gradients.jl")

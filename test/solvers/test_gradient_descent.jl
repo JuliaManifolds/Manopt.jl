@@ -7,7 +7,7 @@
     f = r;
     F(x) = 1/10*sum(distance.(Ref(M),f,Ref(x)).^2)
     ∇F(x) = 1/5*sum(-log.(Ref(M),Ref(x),f))
-    o = steepest_descent(M,F,∇F,f[1];
+    o = gradient_descent(M,F,∇F,f[1];
         stopping_criterion = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(10^-16)),
         stepsize = ArmijoLinesearch(1.,ExponentialRetraction(),0.99,0.1),
         debug = [:Iteration," ",:Cost, :Stop, 100,"\n"],
@@ -15,7 +15,7 @@
         return_options = true
     )
     x = get_solver_result(o)
-    x2 = steepest_descent(
+    x2 = gradient_descent(
         M,
         F,
         ∇F,
