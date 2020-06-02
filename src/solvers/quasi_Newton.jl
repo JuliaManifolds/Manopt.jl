@@ -67,7 +67,7 @@ function get_quasi_Newton_Direction(p::GradientProblem, o::RLBFGSOptions{P,T})
 
         for i in 1 : k
                 omega = dot(p.M, o.x, o.stepsgradient_diffrences[i], r) / dot(p.M, o.x, o.steps[i], o.stepsgradient_diffrences[i])
-                r = r  (inner_s_q[i] + omega) * o.steps[i])
+                r = r + inner_s_q[i] + omega) * o.steps[i]
         end
 
         return r
