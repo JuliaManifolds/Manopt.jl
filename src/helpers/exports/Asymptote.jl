@@ -20,6 +20,7 @@ to Asymptote.
 
 # Optional Arguments (Asymptote)
 * `arrowHeadSize` - (`6.0`) size of the arrowheads of the tangent vectors
+* `arrowHeadSizes` – overrides the previous value to specify a value per tVector set.
 * `cameraPosition` - (`(1., 1., 0.)`) position of the camera in the Asymptote
   szene
 * `lineWidth` – (`1.0`) size of the lines used to draw the curves.
@@ -38,6 +39,7 @@ function asymptote_export_S2_signals(filename::String;
     tVectors::Array{Array{Tuple{T,T},1},1} where T = Array{Array{Tuple{Float64,Float64},1},1}(undef,0),
     colors::Dict{Symbol, Array{RGBA{Float64},1} } = Dict{Symbol,Array{RGBA{Float64},1}}(),
     arrowHeadSize::Float64 = 6.,
+    arrowHeadSizes::Array{Float64,1} = fill(arrowHeadSize,length(tVectors)),
     cameraPosition::Tuple{Float64,Float64,Float64} = (1., 1., 0.),
     lineWidth::Float64 = 1.0,
     lineWidths::Array{Float64,1} = fill(lineWidth,length(curves)+length(tVectors)),
@@ -143,7 +145,7 @@ function asymptote_export_S2_signals(filename::String;
                 write(io,string("draw( (",
                     string( [string(v,",") for v in base]...)[1:end-1],")--(",
                     string( [string(v,",") for v in endPoints]...)[1:end-1],
-                    "), tVectorStyle$(i),Arrow3($(arrowHeadSize)));\n"));
+                    "), tVectorStyle$(i),Arrow3($(arrowHeadSizes[i])));\n"));
             end
         end
     finally
