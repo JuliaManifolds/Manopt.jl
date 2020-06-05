@@ -55,18 +55,18 @@ function get_quasi_Newton_Direction(p::GradientProblem, o::RLBFGSOptions{P,T})
         inner_s_q = zeros(k)
 
         for i in k : -1 : 1
-                inner_s_q[i] = dot(p.M, o.x, o.steps[i], q) / dot(p.M, o.x, o.steps[i], o.stepsgradient_diffrences[i])
+                inner_s_q[i] = inner(p.M, o.x, o.steps[i], q) / inner(p.M, o.x, o.steps[i], o.stepsgradient_diffrences[i])
                 q =  q - inner_s_q[i]*o.stepsgradient_diffrences[i]
         end
 
         if k == 1
                 r = q
         else
-                r = (dot(p.M, o.x, o.steps[k-1], o.stepsgradient_diffrences[k-1]) / norm(p.M, o.x, o.stepsgradient_diffrences[k-1])^2) * q
+                r = (inner(p.M, o.x, o.steps[k-1], o.stepsgradient_diffrences[k-1]) / norm(p.M, o.x, o.stepsgradient_diffrences[k-1])^2) * q
         end
 
         for i in 1 : k
-                omega = dot(p.M, o.x, o.stepsgradient_diffrences[i], r) / dot(p.M, o.x, o.steps[i], o.stepsgradient_diffrences[i])
+                omega = inner(p.M, o.x, o.stepsgradient_diffrences[i], r) / inner(p.M, o.x, o.steps[i], o.stepsgradient_diffrences[i])
                 r = r + inner_s_q[i] + omega) * o.steps[i]
         end
 
@@ -78,11 +78,20 @@ end
 
 function update_Parameters(p::GradientProblem, o::BFGSQuasiNewton{P,T}, α::Float64, η::T, x::p)
         gradf_xold = o.∇
-        β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
+        β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
         sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
-        o.inverse_hessian_approximation = # Update of the Function / Matrix
+        b = vector_transport_to.(p.M, x, o.inverse_hessian_approximation, o.x, o.vector_transport_method)
+        onb = create_onb(p.M, o.x)
+
+        n = manifold_dimension(p.M)
+        Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; onb)
+        skyk = inner(p.M, o.x, yk, sk)
+
+        for i in 1:n
+                o.inverse_hessian_approximation[i] = b[i] - (inner(p.M, o.x, onb[i], sk) / skyk) * Bkyk - (inner(p.M, o.x, Bkyk, onb[i]) / skyk) * sk + ((inner(p.M, o.x, yk, Bkyk)*inner(p.M, o.x, sk, onb[i])) / skyk^2) * sk + (inner(p.M, o.x, sk, onb[i]) / skyk) * sk
+        end
 end
 
 function update_Parameters(p::GradientProblem, o::CautiuosBFGSQuasiNewton{P,T}, α::Float64, η::T, x::p)
@@ -91,15 +100,24 @@ function update_Parameters(p::GradientProblem, o::CautiuosBFGSQuasiNewton{P,T}, 
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
         sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
-        sk_yk = dot(p.M, o.x, sk, yk)
+        sk_yk = inner(p.M, o.x, sk, yk)
         norm_sk = norm(p.M, o.x, sk)
 
         bound = o.cautious_Function(norm(p.M, x, gradf_xold))
 
         if norm_sk != 0 && (sk_yk / norm_sk) >= bound
-                o.inverse_hessian_approximation = # Update of the Function / Matrix
+                b = vector_transport_to.(p.M, x, o.inverse_hessian_approximation, o.x, o.vector_transport_method)
+                onb = create_onb(p.M, o.x)
+
+                n = manifold_dimension(p.M)
+                Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; onb)
+                skyk = inner(p.M, o.x, yk, sk)
+
+                for i in 1:n
+                        o.inverse_hessian_approximation[i] = b[i] - (inner(p.M, o.x, onb[i], sk) / skyk) * Bkyk - (inner(p.M, o.x, Bkyk, onb[i]) / skyk) * sk + ((inner(p.M, o.x, yk, Bkyk)*inner(p.M, o.x, sk, onb[i])) / skyk^2) * sk + (inner(p.M, o.x, sk, onb[i]) / skyk) * sk
+                end
         else
-                o.inverse_hessian_approximation = # Transport of the old Function / Matrix to the new tagent space
+                o.inverse_hessian_approximation = vector_transport_to.(p.M, x, o.inverse_hessian_approximation, o.x, o.vector_transport_method)
         end
 
 end
@@ -149,7 +167,7 @@ function update_Parameters(p::GradientProblem, o::CautiuosLimitedMemoryQuasiNewt
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
         sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
-        sk_yk = dot(p.M, o.x, sk, yk)
+        sk_yk = inner(p.M, o.x, sk, yk)
         norm_sk = norm(p.M, o.x, sk)
         bound = o.cautious_Function(norm(p.M, x, get_gradient(p,x)))
 
@@ -189,6 +207,17 @@ function update_Parameters(p::GradientProblem, o::CautiuosLimitedMemoryQuasiNewt
                 end
         end
 
+end
+
+function square_matrix_vector_product(M::Manifold, p::MPoint, A::Array{TVector,1}, X::TVector; e::Array{TVector,1} = create_onb(M, p))
+        Y = zero_tangent_vector(M,p)
+        n = manifold_dimension(M)
+
+        for i in 1 : n
+                Y = Y + inner(M, p, A[i], X) * e[i]
+        end
+
+        return Y
 end
 
 

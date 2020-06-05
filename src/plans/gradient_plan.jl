@@ -691,7 +691,7 @@ struct BFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
-    inverse_hessian_approximation::Function
+    inverse_hessian_approximation::Array{T,1}
 
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
@@ -703,7 +703,7 @@ struct CautiuosBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
-    inverse_hessian_approximation::Function
+    inverse_hessian_approximation::Array{T,1}
 
     cautiuos::Bool
     cautiuos_fct::Function
@@ -718,7 +718,7 @@ struct DFPQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
-    inverse_hessian_approximation::Function
+    inverse_hessian_approximation::Array{T,1}
 
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
@@ -730,7 +730,7 @@ struct CautiuosDFPQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
-    inverse_hessian_approximation::Function
+    inverse_hessian_approximation::Array{T,1}
 
     cautiuos::Bool
     cautiuos_fct::Function
