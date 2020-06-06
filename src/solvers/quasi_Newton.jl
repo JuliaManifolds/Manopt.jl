@@ -41,7 +41,7 @@ end
 
 function get_quasi_Newton_Direction(p::GradientProblem, o::QuasiNewtonOptions)
         o.∇ = get_gradient(p,o.x)
-        return -o.Hessian_Inverse_Aproximation(p.M, o.x, o.∇)
+        return square_matrix_vector_product(p.M, o.x, o.inverse_hessian_approximation, -o.∇)
 end
 
 # Limited memory variants
@@ -103,7 +103,7 @@ function update_Parameters(p::GradientProblem, o::CautiuosBFGSQuasiNewton{P,T}, 
         sk_yk = inner(p.M, o.x, sk, yk)
         norm_sk = norm(p.M, o.x, sk)
 
-        bound = o.cautious_Function(norm(p.M, x, gradf_xold))
+        bound = o.cautious_fct(norm(p.M, x, gradf_xold))
 
         if norm_sk != 0 && (sk_yk / norm_sk) >= bound
                 b = vector_transport_to.(p.M, x, o.inverse_hessian_approximation, o.x, o.vector_transport_method)
@@ -169,7 +169,7 @@ function update_Parameters(p::GradientProblem, o::CautiuosLimitedMemoryQuasiNewt
 
         sk_yk = inner(p.M, o.x, sk, yk)
         norm_sk = norm(p.M, o.x, sk)
-        bound = o.cautious_Function(norm(p.M, x, get_gradient(p,x)))
+        bound = o.cautious_fct(norm(p.M, x, get_gradient(p,x)))
 
         if norm_sk != 0 && (sk_yk / norm_sk) >= bound
                 if o.current_memory_size >= o.memory_size

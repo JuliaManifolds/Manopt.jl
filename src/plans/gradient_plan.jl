@@ -705,7 +705,6 @@ struct CautiuosBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
 
     inverse_hessian_approximation::Array{T,1}
 
-    cautiuos::Bool
     cautiuos_fct::Function
 
     retraction_method::AbstractRetractionMethod
@@ -732,7 +731,6 @@ struct CautiuosDFPQuasiNewton{P,T} <: QuasiNewtonOptions
 
     inverse_hessian_approximation::Array{T,1}
 
-    cautiuos::Bool
     cautiuos_fct::Function
 
     retraction_method::AbstractRetractionMethod
@@ -767,6 +765,8 @@ struct CautiuosRLBFGSOptions{P,T} <: CautiuosLimitedMemoryQuasiNewtonOptions
 
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
+
+    cautiuos_fct::Function
 
     stop::StoppingCriterion
 end
