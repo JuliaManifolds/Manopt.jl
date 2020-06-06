@@ -1,7 +1,7 @@
 # # [Bezier curves and their acceleration](@id BezierCurvesTutorial)
 #
-# This tutorial illustrates how Bézier curves are generalized to manfiolds and how to
-# minimizer their acceleration, i.e. how to get a curve that is as straight or as geodesic
+# This tutorial illustrates how Bézier curves are generalized to manifolds and how to
+# minimize their acceleration, i.e. how to get a curve that is as straight or as geodesic
 # while fulfilling constraints
 #
 # This example also illustrates how to apply the minimization on the corresponding [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html) manifold using a [`gradient_descent`](@ref) with [`ArmijoLinesearch`](@ref).
