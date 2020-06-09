@@ -18,11 +18,11 @@ function quasi_Newton(
 end
 
 
-function initialize_solver!(p::P,o::O) where {P <: GradientProblem, O <: quasi_Newton_Options}
+function initialize_solver!(::GradientProblem,::QuasiNewtonOptions}
 end
 
 
-function step_solver!(p::P,o::O,o.current_memory_size) where {P <: GradientProblem, O <: quasi_Newton_Options}
+function step_solver!(p::GradientProblem,o::QuasiNewtonOptions,iter)
         # Compute BFGS direction
         η = get_quasi_Newton_Direction(p, o)
 
@@ -76,7 +76,7 @@ end
 
 # Updating the parameters
 
-function update_Parameters(p::GradientProblem, o::BFGSQuasiNewton{P,T}, α::Float64, η::T, x::p)
+function update_Parameters(p::GradientProblem, o::BFGSQuasiNewton{P,T}, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = o.∇
         β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -94,7 +94,7 @@ function update_Parameters(p::GradientProblem, o::BFGSQuasiNewton{P,T}, α::Floa
         end
 end
 
-function update_Parameters(p::GradientProblem, o::CautiuosBFGSQuasiNewton{P,T}, α::Float64, η::T, x::p)
+function update_Parameters(p::GradientProblem, o::CautiuosBFGSQuasiNewton{P,T}, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = o.∇
         β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -124,7 +124,7 @@ end
 
 # Limited memory variants
 
-function update_Parameters(p::GradientProblem, o:: LimitedMemoryQuasiNewtonOptions, α::Float64, η::T, x::p)
+function update_Parameters(p::GradientProblem, o:: LimitedMemoryQuasiNewtonOptions, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = o.∇
         β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -161,7 +161,7 @@ function update_Parameters(p::GradientProblem, o:: LimitedMemoryQuasiNewtonOptio
 end
 
 
-function update_Parameters(p::GradientProblem, o::CautiuosLimitedMemoryQuasiNewtonOptions, α::Float64, η::T, x::p)
+function update_Parameters(p::GradientProblem, o::CautiuosLimitedMemoryQuasiNewtonOptions, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = o.∇
         β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -209,7 +209,7 @@ function update_Parameters(p::GradientProblem, o::CautiuosLimitedMemoryQuasiNewt
 
 end
 
-function square_matrix_vector_product(M::Manifold, p::MPoint, A::Array{TVector,1}, X::TVector; e::Array{TVector,1} = create_onb(M, p))
+function square_matrix_vector_product(M::Manifold, p::P, A::AbstractVector{T}, X::T; e::AbstractVector{T} = create_onb(M, p)) where {P,T}
         Y = zero_tangent_vector(M,p)
         n = manifold_dimension(M)
 
@@ -221,4 +221,4 @@ function square_matrix_vector_product(M::Manifold, p::MPoint, A::Array{TVector,1
 end
 
 
-get_solver_result(o::O) where {O <: quasi_Newton_Options} = o.x
+get_solver_result(o::O) where {O <: QuasiNewtonOptions} = o.x

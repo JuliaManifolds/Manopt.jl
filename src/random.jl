@@ -139,7 +139,7 @@ doc"""
 generate a Gaussian random vector on the `Euclidean` manifold `M` with
 standard deviation `σ`.
 """
-random_tangent(M::Euclidean, p, ::Val{:Gaussian}, σ::Float64=1.0) = σ * randn(manifold_dimension(M))
+random_tangent(M::Euclidean, p, ::Val{:Gaussian}, σ::Float64=1.0) = σ * randn(representation_size(M))
 
 @doc raw"""
     random_tangent(M::GRassmann,x[,type=:Gaussian, σ=1.0])

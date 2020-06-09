@@ -681,7 +681,7 @@ end
 
 
 @doc raw"""
-    quasi_Newton_Options <: Options
+    QuasiNewtonOptions <: Options
 """
 abstract type QuasiNewtonOptions <: Options end
 abstract type LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
