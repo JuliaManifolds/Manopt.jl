@@ -687,7 +687,9 @@ abstract type QuasiNewtonOptions <: Options end
 abstract type LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
 abstract type CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
 
-struct BFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+
+# BFGS
+struct RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
@@ -697,9 +699,39 @@ struct BFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     vector_transport_method::AbstractVectorTransportMethod
 
     stop::StoppingCriterion
+
+    function RBFGSQuasiNewton{P,T}(
+        x::P,
+        grad_x::T,
+        b::Array{T,1};
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        s::StoppingCriterion = StopAfterIteration(100)
+    ) where {P,T}
+        o = new{P,t}()
+        o.x = x
+        o.∇ = grad_x
+        o.inverse_hessian_approximation = b
+        o.retraction_method = retr
+        o.vector_transport_method = vtr
+        o.stop = s
+        return o
+    end
+end
+function RBFGSQuasiNewton(
+    x::P,
+    grad_x::T,
+    b::Array{T,1};
+    retr::AbstractRetractionMethod = ExponentialRetraction(),
+    vtr::AbstractVectorTransportMethod = ParallelTransport(),
+    s::StoppingCriterion = StopAfterIteration(100)
+) where {P,T}
+    return RBFGSQuasiNewton{P,T}(x,grad_x,b,retr,vtr,s)
 end
 
-struct CautiuosBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+
+# Cautious RBFGS
+struct CautiuosRBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
@@ -711,9 +743,42 @@ struct CautiuosBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     vector_transport_method::AbstractVectorTransportMethod
 
     stop::StoppingCriterion
+
+    function CautiuosRBFGSQuasiNewton{P,T}(
+        x::P,
+        grad_x::T,
+        b::Array{T,1},
+        caut::Function;
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        s::StoppingCriterion = StopAfterIteration(100)
+    ) where {P,T}
+        o = new{P,t}()
+        o.x = x
+        o.∇ = grad_x
+        o.inverse_hessian_approximation = b
+        o.cautiuos_fct = caut
+        o.retraction_method = retr
+        o.vector_transport_method = vtr
+        o.stop = s
+        return o
+    end
+end
+function CautiuosRBFGSQuasiNewton(
+    x::P,
+    grad_x::T,
+    b::Array{T,1},
+    caut::Function;
+    retr::AbstractRetractionMethod = ExponentialRetraction(),
+    vtr::AbstractVectorTransportMethod = ParallelTransport(),
+    s::StoppingCriterion = StopAfterIteration(100)
+) where {P,T}
+    return CautiuosRBFGSQuasiNewton{P,T}(x,grad_x,b,caut,retr,vtr,s)
 end
 
-struct DFPQuasiNewton{P,T} <: QuasiNewtonOptions
+
+# RDFP
+struct RDFPQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
@@ -723,9 +788,40 @@ struct DFPQuasiNewton{P,T} <: QuasiNewtonOptions
     vector_transport_method::AbstractVectorTransportMethod
 
     stop::StoppingCriterion
+
+    function RDFPQuasiNewton{P,T}(
+        x::P,
+        grad_x::T,
+        b::Array{T,1};
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        s::StoppingCriterion = StopAfterIteration(100)
+    ) where {P,T}
+        o = new{P,t}()
+        o.x = x
+        o.∇ = grad_x
+        o.inverse_hessian_approximation = b
+        o.retraction_method = retr
+        o.vector_transport_method = vtr
+        o.stop = s
+        return o
+    end
+end
+function RDFPQuasiNewton(
+    x::P,
+    grad_x::T,
+    b::Array{T,1};
+    retr::AbstractRetractionMethod = ExponentialRetraction(),
+    vtr::AbstractVectorTransportMethod = ParallelTransport(),
+    s::StoppingCriterion = StopAfterIteration(100)
+) where {P,T}
+    return RDFPQuasiNewton{P,T}(x,grad_x,b,retr,vtr,s)
 end
 
-struct CautiuosDFPQuasiNewton{P,T} <: QuasiNewtonOptions
+
+
+# Cautious RDFP
+struct CautiuosRDFPQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
@@ -737,8 +833,41 @@ struct CautiuosDFPQuasiNewton{P,T} <: QuasiNewtonOptions
     vector_transport_method::AbstractVectorTransportMethod
 
     stop::StoppingCriterion
+
+    function CautiuosRDFPQuasiNewton{P,T}(
+        x::P,
+        grad_x::T,
+        b::Array{T,1},
+        caut::Function;
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        s::StoppingCriterion = StopAfterIteration(100)
+    ) where {P,T}
+        o = new{P,t}()
+        o.x = x
+        o.∇ = grad_x
+        o.inverse_hessian_approximation = b
+        o.cautiuos_fct = caut
+        o.retraction_method = retr
+        o.vector_transport_method = vtr
+        o.stop = s
+        return o
+    end
+end
+function CautiuosRDFPQuasiNewton(
+    x::P,
+    grad_x::T,
+    b::Array{T,1},
+    caut::Function;
+    retr::AbstractRetractionMethod = ExponentialRetraction(),
+    vtr::AbstractVectorTransportMethod = ParallelTransport(),
+    s::StoppingCriterion = StopAfterIteration(100)
+) where {P,T}
+    return CautiuosRDFPQuasiNewton{P,T}(x,grad_x,b,caut,retr,vtr,s)
 end
 
+
+# Riemannian Limited Memory BFGS
 struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
     x::P
 
@@ -752,13 +881,52 @@ struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
     vector_transport_method::AbstractVectorTransportMethod
 
     stop::StoppingCriterion
+
+    function RLBFGSOptions{P,T}(
+        x::P,
+        grad_diff::AbstractVector{T},
+        it_diff::AbstractVector{T};
+        mem::Int = 30,
+        cur::Int = 0,
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        s::StoppingCriterion = StopAfterIteration(100)
+    ) where {P,T}
+        o = new{P,t}()
+        o.x = x
+        o.gradient_diffrences = grad_diff
+        o.steps = it_diff
+        o.memory_size = mem
+        o.current_memory_size = cur
+        o.retraction_method = retr
+        o.vector_transport_method = vtr
+        o.stop = s
+        return o
+    end
+end
+function RLBFGSOptions(
+    x::P,
+    grad_diff::AbstractVector{T},
+    it_diff::AbstractVector{T};
+    mem::Int = 30,
+    cur::Int = 0,
+    retr::AbstractRetractionMethod = ExponentialRetraction(),
+    vtr::AbstractVectorTransportMethod = ParallelTransport(),
+    s::StoppingCriterion = StopAfterIteration(100)
+) where {P,T}
+    return RLBFGSOptions{P,T}(x,grad_diff,it_diff,mem,cur,retr,vtr,s)
 end
 
+
+
+# Cautious Riemannian Limited Memory BFGS
 struct CautiuosRLBFGSOptions{P,T} <: CautiuosLimitedMemoryQuasiNewtonOptions
     x::P
 
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
+
+    cautiuos_fct::Function
 
     memory_size::Int
     current_memory_size::Int
@@ -766,7 +934,42 @@ struct CautiuosRLBFGSOptions{P,T} <: CautiuosLimitedMemoryQuasiNewtonOptions
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
 
-    cautiuos_fct::Function
-
     stop::StoppingCriterion
+
+    function RLBFGSOptions{P,T}(
+        x::P,
+        grad_diff::AbstractVector{T},
+        it_diff::AbstractVector{T},
+        caut::Function;
+        mem::Int = 30,
+        cur::Int = 0,
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        s::StoppingCriterion = StopAfterIteration(100)
+    ) where {P,T}
+        o = new{P,t}()
+        o.x = x
+        o.gradient_diffrences = grad_diff
+        o.steps = it_diff
+        o.cautiuos_fct = caut
+        o.memory_size = mem
+        o.current_memory_size = cur
+        o.retraction_method = retr
+        o.vector_transport_method = vtr
+        o.stop = s
+        return o
+    end
+end
+function RLBFGSOptions(
+    x::P,
+    grad_diff::AbstractVector{T},
+    it_diff::AbstractVector{T},
+    caut::Function;
+    mem::Int = 30,
+    cur::Int = 0,
+    retr::AbstractRetractionMethod = ExponentialRetraction(),
+    vtr::AbstractVectorTransportMethod = ParallelTransport(),
+    s::StoppingCriterion = StopAfterIteration(100)
+) where {P,T}
+    return RLBFGSOptions{P,T}(x,grad_diff,it_diff,caut,mem,cur,retr,vtr,s)
 end

@@ -76,7 +76,7 @@ end
 
 # Updating the parameters
 
-function update_Parameters(p::GradientProblem, o::BFGSQuasiNewton{P,T}, α::Float64, η::T, x::P) where {P,T}
+function update_Parameters(p::GradientProblem, o::RBFGSQuasiNewton{P,T}, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = o.∇
         β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -94,7 +94,7 @@ function update_Parameters(p::GradientProblem, o::BFGSQuasiNewton{P,T}, α::Floa
         end
 end
 
-function update_Parameters(p::GradientProblem, o::CautiuosBFGSQuasiNewton{P,T}, α::Float64, η::T, x::P) where {P,T}
+function update_Parameters(p::GradientProblem, o::CautiuosRBFGSQuasiNewton{P,T}, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = o.∇
         β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
