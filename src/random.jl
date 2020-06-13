@@ -16,7 +16,7 @@ generate a random point on the `Euclidean` manifold `M`, where the
 optional parameter determines the type of the entries of the
 resulting point on the Euclidean space d.
 """
-random_point(M::Euclidean) = randn(manifold_dimension(M))
+random_point(M::Euclidean) = randn(representation_size(M))
 
 @doc raw"""
     random_point(M::Grassmannian [,type=:Gaussian, σ=1.0])
