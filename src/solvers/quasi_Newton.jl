@@ -18,7 +18,9 @@ function quasi_Newton(
 end
 
 
-function initialize_solver!(::GradientProblem,::QuasiNewtonOptions}
+function initialize_solver!(p::GradientProblem,o::QuasiNewtonOptions)
+    o.steps = [zero_tangent_vector(p.M,o.x) for i ∈ 1:o.memory_size]
+    o.gradient_differences = [zero_tangent_vector(p.M,o.x) for i ∈ 1:o.memory_size]
 end
 
 

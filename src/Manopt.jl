@@ -158,6 +158,8 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export Options, get_options
 export is_options_decorator, dispatch_options_decorator
 
+export RLBFGSOptions
+
 export
     ConjugateGradientDescentOptions,
     GradientDescentOptions,

@@ -868,7 +868,7 @@ end
 
 
 # Riemannian Limited Memory BFGS
-struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
+mutable struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
     x::P
 
     gradient_diffrences::AbstractVector{T}
@@ -892,7 +892,7 @@ struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
         vtr::AbstractVectorTransportMethod = ParallelTransport(),
         s::StoppingCriterion = StopAfterIteration(100)
     ) where {P,T}
-        o = new{P,t}()
+        o = new{P,T}()
         o.x = x
         o.gradient_diffrences = grad_diff
         o.steps = it_diff
@@ -914,7 +914,13 @@ function RLBFGSOptions(
     vtr::AbstractVectorTransportMethod = ParallelTransport(),
     s::StoppingCriterion = StopAfterIteration(100)
 ) where {P,T}
-    return RLBFGSOptions{P,T}(x,grad_diff,it_diff,mem,cur,retr,vtr,s)
+    return RLBFGSOptions{P,T}(x,grad_diff,it_diff;
+        mem = mem,
+        cur = cur,
+        retr = retr,
+        vtr = vtr,
+        s = s
+    )
 end
 
 
@@ -922,39 +928,34 @@ end
 # Cautious Riemannian Limited Memory BFGS
 struct CautiuosRLBFGSOptions{P,T} <: CautiuosLimitedMemoryQuasiNewtonOptions
     x::P
-
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
-
     cautiuos_fct::Function
-
     memory_size::Int
     current_memory_size::Int
-
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
-
     stop::StoppingCriterion
 
-    function RLBFGSOptions{P,T}(
+    function CautiuosRLBFGSOptions{P,T}(
         x::P,
         grad_diff::AbstractVector{T},
-        it_diff::AbstractVector{T},
-        caut::Function;
-        mem::Int = 30,
+        it_diff::AbstractVector{T};
+        cautious_function::Function = x -> x*10^(-4),
+        memory_size::Int = 30,
         cur::Int = 0,
-        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod = ParallelTransport(),
         s::StoppingCriterion = StopAfterIteration(100)
     ) where {P,T}
-        o = new{P,t}()
+        o = new{P,T}()
         o.x = x
         o.gradient_diffrences = grad_diff
         o.steps = it_diff
-        o.cautiuos_fct = caut
-        o.memory_size = mem
+        o.cautiuos_fct = cautious_function
+        o.memory_size = memory_size
         o.current_memory_size = cur
-        o.retraction_method = retr
+        o.retraction_method = retraction_method
         o.vector_transport_method = vtr
         o.stop = s
         return o

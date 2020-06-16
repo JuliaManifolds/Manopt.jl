@@ -11,13 +11,8 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     M = Euclidean(3,3)
     x = random_point(M)
 
-    steps = Array{TVector, 1}
-    graddiffs = Array{TVector, 1}
-
-    for i in 1 : 30
-        steps[i] = zero_tangent_vector(M,x)
-        graddiffs[i] = zero_tangent_vector(M,x)
-    end
+    steps = [zero_tangent_vector(M,x) for i ∈ 1:30]
+    graddiffs = [zero_tangent_vector(M,x) for i ∈ 1:30]
 
     p = GradientProblem(M,F,∇F)
     o = RLBFGSOptions(x,graddiffs,steps)
