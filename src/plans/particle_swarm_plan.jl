@@ -43,7 +43,7 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
     function ParticleSwarmOptions{P,T}(
         x0::AbstractVector{P},
         velocity::AbstractVector{T},
-        inertia::Real,
+        inertia::Real = 0.65,
         social_weight::Real = 1.4,
         cognitive_weight::Real = 1.4,
         stop::StoppingCriterion = (StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
@@ -66,10 +66,10 @@ end
 function ParticleSwarmOptions(
     x0::AbstractVector{P}
     velocity::AbstractVector{T}
-    inertia::Real
+    inertia::Real = 0.65,
     social_weight::Real = 1.4,
     cognitive_weight::Real = 1.4,
-    stop::StoppingCriterion = StopAfterIteration(500),
+    stop::StoppingCriterion = (StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
     retraction::AbstractRetractionMethod = ExponentialRetraction(),
     inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
 ) where {P,T}
