@@ -11,9 +11,9 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 * `x0` – a set of points (of type `AbstractVector{P}`) on a manifold as starting particle positions
 * `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
-* `inertia` – the inertia of the patricles
-* `social_weight` – a social weight factor
-* `cognitive_weight` – a cognitive weight factor
+* `inertia` – the inertia of the patricles, defaults to 0.65
+* `social_weight` – a social weight factor, defaults to 1.4
+* `cognitive_weight` – a cognitive weight factor, defaults to 1.4
 * `stopping_criterion` – (`[`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500), `[`StopWhenChangeLess`](@ref)`(10^{-4})))
   a [`StoppingCriterion`](@ref)
 * `retraction_method` – ([`ExponentialRetraction`](@ref)) the rectraction to use, defaults to
