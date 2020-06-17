@@ -28,6 +28,30 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 
+function particle_swarm(M::mT,
+  F::Function;
+  x0::AbstractVector{P},
+  velocity::AbstractVector{T},
+  inertia::Real = 0.65,
+  social_weight::Real = 1.4,
+  cognitive_weight::Real = 1.4,
+  stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenChangeLess(10.0^-4)),
+  retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
+  inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+  return_options=false,
+  kwargs... #collect rest
+) where {mT <: Manifold}
+p = CostProblem(M,F)
+o = ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stopping_criterion, retraction_method, inverse_retraction_method)
+o = decorate_options(o; kwargs...)
+resultO = solve(p,o)
+if return_options
+  return resultO
+else
+  return get_solver_result(resultO)
+end
+end
+
 #
 # Solver functions
 #
@@ -39,7 +63,7 @@ function initialize_solver!(p::CostProblem,o::ParticleSwarmOptions)
   g_cost = p.cost(o.g)
 end
 function step_solver!(p::CostProblem,o::ParticleSwarmOptions,iter)
-  while o.stop == true
+  while o.stopping_criterion == true
     iter += 1
     for i = 1:length(o.x)
       o.velocity[i] .= o.inertia .* o.velocity[i] + o.cognitive_weight * rand(1) .* inverse_retract(p.M, o.x[i], o.p[i], o.inverse_retraction_method) + o.social_weight * rand(1) .* inverse_retract(p.M, o.x[i], o.g, o.inverse_retraction_method)
