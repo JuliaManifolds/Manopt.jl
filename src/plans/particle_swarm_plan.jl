@@ -22,7 +22,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stop[, retraction_method=ExponentialRetraction(), inverse_retraction_method=LogarithmicInverseRetraction()])
+    ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stopping_criterion[, retraction_method=ExponentialRetraction(), inverse_retraction_method=LogarithmicInverseRetraction()])
 
 construct a particle swarm Option with the fields and defaults as above
 
@@ -37,7 +37,7 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
     inertia::Real
     social_weight::Real
     cognitive_weight::Real
-    stop::StoppingCriterion
+    stopping_criterion::StoppingCriterion
     retraction_method::AbstractRetractionMethod
     inverse_retraction_method::AbstractInverseRetractionMethod
     function ParticleSwarmOptions{P,T}(
@@ -46,7 +46,7 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
         inertia::Real = 0.65,
         social_weight::Real = 1.4,
         cognitive_weight::Real = 1.4,
-        stop::StoppingCriterion = (StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
+        stopping_criterion::StoppingCriterion = StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
     ) where {P}
@@ -57,21 +57,21 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
         o.inertia = inertia;
         o.social_weight = social_weight;
         o.cognitive_weight = cognitive_weight;
-        o.stop = stop;
+        o.stopping_criterion = stopping_criterion;
         o.retraction_method = retraction_method;
         o.inverse_retraction_method = inverse_retraction_method;
         return o
     end
 end
 function ParticleSwarmOptions(
-    x0::AbstractVector{P}
-    velocity::AbstractVector{T}
+    x0::AbstractVector{P},
+    velocity::AbstractVector{T},
     inertia::Real = 0.65,
     social_weight::Real = 1.4,
     cognitive_weight::Real = 1.4,
-    stop::StoppingCriterion = (StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
-    retraction::AbstractRetractionMethod = ExponentialRetraction(),
+    stopping_criterion::StoppingCriterion = StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
+    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
 ) where {P,T}
-    return ParticleSwarmOptions{P,T}(x0,velocity,inertia,social_weight,cognitive_weight,stop,retraction,inverse_retraction_method)
+    return ParticleSwarmOptions{P,T}(x0,velocity,inertia,social_weight,cognitive_weight,stopping_criterion,retraction_method,inverse_retraction_method)
 end
