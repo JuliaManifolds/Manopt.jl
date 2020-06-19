@@ -41,15 +41,15 @@ function particle_swarm(M::mT,
   return_options=false,
   kwargs... #collect rest
 ) where {mT <: Manifold}
-p = CostProblem(M,F)
-o = ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stopping_criterion, retraction_method, inverse_retraction_method)
-o = decorate_options(o; kwargs...)
-resultO = solve(p,o)
-if return_options
-  return resultO
-else
-  return get_solver_result(resultO)
-end
+  p = CostProblem(M,F)
+  o = ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stopping_criterion, retraction_method, inverse_retraction_method)
+  o = decorate_options(o; kwargs...)
+  resultO = solve(p,o)
+  if return_options
+    return resultO
+  else
+    return get_solver_result(resultO)
+  end
 end
 
 #
@@ -57,24 +57,20 @@ end
 #
 function initialize_solver!(p::CostProblem,o::ParticleSwarmOptions) 
   j = argmin([p.cost(y) for y ∈ o.x])
-  o.g = o.x[j]
+  o.g = deepcopy(o.x[j])
   o.velocity = [random_tangent(M, y) for y ∈ o.x]
   p_cost = [p.cost(o.p[i]) for i ∈ 1:length(o.p)]
   g_cost = p.cost(o.g)
 end
 function step_solver!(p::CostProblem,o::ParticleSwarmOptions,iter)
-  while o.stopping_criterion == true
-    iter += 1
-    for i = 1:length(o.x)
-      o.velocity[i] .= o.inertia .* o.velocity[i] + o.cognitive_weight * rand(1) .* inverse_retract(p.M, o.x[i], o.p[i], o.inverse_retraction_method) + o.social_weight * rand(1) .* inverse_retract(p.M, o.x[i], o.g, o.inverse_retraction_method)
-      o.x[i] .= retract(p.M, o.x[i], o.velocity[i], o.retraction_method)
-      if p.cost(o.x[i]) < p_cost[i]
-        o.p[i] = o.x[i] 
-        p_cost[i] = o.p[i]
-        if p_cost[i] < g_cost
-          o.g = o.p[i]
-          g_cost = p.cost(o.g)
-        end
+  for i = 1:length(o.x)
+    o.velocity[i] .= o.inertia .* o.velocity[i] + o.cognitive_weight * rand(1) .* inverse_retract(p.M, o.x[i], o.p[i], o.inverse_retraction_method) + o.social_weight * rand(1) .* inverse_retract(p.M, o.x[i], o.g, o.inverse_retraction_method)
+    o.x[i] .= retract(p.M, o.x[i], o.velocity[i], o.retraction_method)
+    if p.cost(o.x[i]) < p_cost[i]
+      o.p[i] = o.x[i] 
+      if p_cost[i] < g_cost
+        o.g = o.p[i]
+        g_cost = p.cost(o.g)
       end
     end
   end
