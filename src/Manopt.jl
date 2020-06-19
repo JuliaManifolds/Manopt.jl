@@ -104,6 +104,7 @@ module Manopt
     include("solvers/subgradient.jl")
     include("solvers/debug_solver.jl")
     include("solvers/record_solver.jl")
+    include("solvers/quasi_Newton.jl")
     include("plots/SpherePlots.jl")
     include("helpers/errorMeasures.jl")
     include("helpers/exports/Asymptote.jl")
@@ -159,6 +160,7 @@ export Options, get_options
 export is_options_decorator, dispatch_options_decorator
 
 export RLBFGSOptions
+export quasi_Newton
 
 export
     ConjugateGradientDescentOptions,
