@@ -689,7 +689,7 @@ abstract type CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
 
 
 # BFGS
-struct RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+mutable struct RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
@@ -731,7 +731,7 @@ end
 
 
 # Cautious RBFGS
-struct CautiuosRBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+mutable struct CautiuosRBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
@@ -778,7 +778,7 @@ end
 
 
 # RDFP
-struct RDFPQuasiNewton{P,T} <: QuasiNewtonOptions
+mutable struct RDFPQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
@@ -819,9 +819,8 @@ function RDFPQuasiNewton(
 end
 
 
-
 # Cautious RDFP
-struct CautiuosRDFPQuasiNewton{P,T} <: QuasiNewtonOptions
+mutable struct CautiuosRDFPQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
 
@@ -924,9 +923,8 @@ function RLBFGSOptions(
 end
 
 
-
 # Cautious Riemannian Limited Memory BFGS
-struct CautiuosRLBFGSOptions{P,T} <: CautiuosLimitedMemoryQuasiNewtonOptions
+mutable struct CautiuosRLBFGSOptions{P,T} <: CautiuosLimitedMemoryQuasiNewtonOptions
     x::P
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
