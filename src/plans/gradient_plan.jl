@@ -689,6 +689,23 @@ abstract type CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
 
 
 # BFGS
+@doc raw"""
+    RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+
+specify options for a Riemannian BFGS algorithm, that solves a
+[`GradientProblem`].
+
+# Fields
+* `x` – the current iterate, a point on a manifold
+* `∇` – the current gradient
+* `inverse_hessian_approximation` - the a representantation of the approximation of the hessian ath the current iterate, an array of tangent vectors
+* `retraction_method` – a function to perform a step on the manifold
+* `vector_transport_method` – a function to perform a step on the manifold
+* `stop` – a [`StoppingCriterion`](@ref)
+
+# See also
+[`GradientProblem`](@ref)
+"""
 mutable struct RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
