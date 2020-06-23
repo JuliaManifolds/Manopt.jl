@@ -9,7 +9,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     ∇F(x) = - A - B - C + 3*x
 
     M = Euclidean(3,3)
-    x = random_point(M)
+    x = [0. 0. 0.; 0. 1. 0.; 0. 0. 0.]
 
     steps = [zero_tangent_vector(M,x) for i ∈ 1:30]
     graddiffs = [zero_tangent_vector(M,x) for i ∈ 1:30]
