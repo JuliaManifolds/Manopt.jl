@@ -684,7 +684,20 @@ end
     QuasiNewtonOptions <: Options
 """
 abstract type QuasiNewtonOptions <: Options end
+
+@doc raw"""
+    CautiuosQuasiNewtonOptions <: QuasiNewtonOptions
+"""
+abstract type CautiuosQuasiNewtonOptions <: QuasiNewtonOptions end
+
+@doc raw"""
+    LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions
+"""
 abstract type LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
+
+@doc raw"""
+    CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions
+"""
 abstract type CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
 
 
@@ -698,9 +711,11 @@ specify options for a Riemannian BFGS algorithm, that solves a
 # Fields
 * `x` – the current iterate, a point on a manifold
 * `∇` – the current gradient
-* `inverse_hessian_approximation` - the a representantation of the approximation of the hessian ath the current iterate, an array of tangent vectors
+* `inverse_hessian_approximation` - a representantation of the approximation of
+    the hessian at the current iterate, an array of tangent vectors
 * `retraction_method` – a function to perform a step on the manifold
-* `vector_transport_method` – a function to perform a step on the manifold
+* `vector_transport_method` – a function to transport a vector of the tangent
+    space of one iterate to the tangent space of another iterate
 * `stop` – a [`StoppingCriterion`](@ref)
 
 # See also
@@ -748,7 +763,7 @@ end
 
 
 # Cautious RBFGS
-mutable struct CautiuosRBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+mutable struct CautiuosRBFGSQuasiNewton{P,T} <: CautiuosQuasiNewtonOptions
     x::P
     ∇::T
 
@@ -795,6 +810,25 @@ end
 
 
 # RDFP
+@doc raw"""
+    RDFPQuasiNewton{P,T} <: QuasiNewtonOptions
+
+specify options for a Riemannian DFP algorithm, that solves a
+[`GradientProblem`].
+
+# Fields
+* `x` – the current iterate, a point on a manifold
+* `∇` – the current gradient
+* `inverse_hessian_approximation` - a representantation of the approximation of
+    the hessian at the current iterate, an array of tangent vectors
+* `retraction_method` – a function to perform a step on the manifold
+* `vector_transport_method` – a function to transport a vector of the tangent
+    space of one iterate to the tangent space of another iterate
+* `stop` – a [`StoppingCriterion`](@ref)
+
+# See also
+[`GradientProblem`](@ref)
+"""
 mutable struct RDFPQuasiNewton{P,T} <: QuasiNewtonOptions
     x::P
     ∇::T
@@ -837,7 +871,7 @@ end
 
 
 # Cautious RDFP
-mutable struct CautiuosRDFPQuasiNewton{P,T} <: QuasiNewtonOptions
+mutable struct CautiuosRDFPQuasiNewton{P,T} <: CautiuosQuasiNewtonOptions
     x::P
     ∇::T
 
@@ -883,7 +917,28 @@ function CautiuosRDFPQuasiNewton(
 end
 
 
-# Riemannian Limited Memory BFGS
+# Riemannian Limited-Memory BFGS
+@doc raw"""
+    RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
+
+specify options for a Riemannian limited-memory BFGS algorithm, that solves a
+[`GradientProblem`].
+
+# Fields
+* `x` – the current iterate, a point on a manifold
+* `gradient_diffrences` – the stored differences between the gradients of the
+    iterates, an arry of tangent vectors
+* `steps` - the stored steps between the iterates, an arry of tangent vectors
+* `memory_size` - maximum number of stored data, an integer
+* `current_memory_size` - the current number of stored data, an integer
+* `retraction_method` – a function to perform a step on the manifold
+* `vector_transport_method` – a function to transport a vector of the tangent
+    space of one iterate to the tangent space of another iterate
+* `stop` – a [`StoppingCriterion`](@ref)
+
+# See also
+[`GradientProblem`](@ref)
+"""
 mutable struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
     x::P
 
