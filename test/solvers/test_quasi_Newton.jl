@@ -17,5 +17,5 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     p = GradientProblem(M,F,∇F)
     o = RLBFGSOptions(x,graddiffs,steps)
 
-    @test step_solver!(p,o,0)
+    @test step_solver!(p,o,1)
 end
