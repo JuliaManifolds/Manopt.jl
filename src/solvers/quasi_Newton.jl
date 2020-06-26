@@ -34,7 +34,7 @@ function step_solver!(p::GradientProblem,o::QuasiNewtonOptions,iter)
         # Compute Step
         x_old = o.x
         print(x_old)
-        retract!(p.M, o.x, o.x, α*η, o.retraction_method)
+        o.x = retract(p.M, o.x, α*η, o.retraction_method)
         print(x_old)
         # Update the Parameters
         update_parameters(p, o, α, η, x_old)
@@ -129,16 +129,16 @@ function update_parameters(p::GradientProblem, o::LimitedMemoryQuasiNewtonOption
         print(xk)
         gradf_xold = get_gradient(p,xk)
         # print(gradf_xold)
-        # beta = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
-        yk = get_gradient(p,o.x) - vector_transport_to(p.M, xk, gradf_xold, o.x, o.vector_transport_method)
+        β = norm(p.M, xk, α*η) / norm(p.M, o.x, vector_transport_to(p.M, xk, α*η, o.x, o.vector_transport_method))
+        yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, xk, gradf_xold, o.x, o.vector_transport_method)
         # print(get_gradient(p,o.x))
         # print(vector_transport_to(p.M, xk, gradf_xold, o.x, o.vector_transport_method))
         sk = vector_transport_to(p.M, xk, α*η, o.x, o.vector_transport_method)
 
         if o.current_memory_size >= o.memory_size
                 for  i in 2 : o.memory_size
-                        o.steps[i] = vector_transport_to(p.M, x, o.steps[i], o.x, o.vector_transport_method)
-                        o.gradient_diffrences[i] = vector_transport_to(p.M, x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
+                        o.steps[i] = vector_transport_to(p.M, xk, o.steps[i], o.x, o.vector_transport_method)
+                        o.gradient_diffrences[i] = vector_transport_to(p.M, xk, o.gradient_diffrences[i], o.x, o.vector_transport_method)
                 end
 
                 if o.memory_size > 1
@@ -153,8 +153,8 @@ function update_parameters(p::GradientProblem, o::LimitedMemoryQuasiNewtonOption
         else
 
                 for i in 1:o.current_memory_size
-                        o.steps[i] = vector_transport_to(p.M, x, o.steps[i], o.x, o.vector_transport_method)
-                        o.gradient_diffrences[i] = vector_transport_to(p.M, x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
+                        o.steps[i] = vector_transport_to(p.M, xk, o.steps[i], o.x, o.vector_transport_method)
+                        o.gradient_diffrences[i] = vector_transport_to(p.M, xk, o.gradient_diffrences[i], o.x, o.vector_transport_method)
                 end
 
                 o.steps[o.current_memory_size + 1] = sk
