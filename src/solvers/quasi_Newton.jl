@@ -1,5 +1,22 @@
 @doc raw"""
     quasi_Newton(M, F, ∇F, x, H, )
+
+evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
+It will attempt to minimize the cost function F on the Manifold M.
+
+# Input
+* `M` – a manifold $\mathcal{M}$
+* `F` – a cost function $F \colon \mathcal{M} \to \mathbb{R}$ to minimize
+* `∇F`- the gradient $\nabla F \colon \mathcal M \to \tangent{x}$ of $F$
+* `x` – an initial value $x \in \mathcal{M}$
+
+# Optional
+
+# Output
+* `x` – the last reached point on the manifold
+
+# see also
+
 """
 function quasi_Newton(
     M::MT,
