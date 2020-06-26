@@ -159,7 +159,7 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export Options, get_options
 export is_options_decorator, dispatch_options_decorator
 
-export RLBFGSOptions
+export RLBFGSOptions, RBFGSQuasiNewton
 export quasi_Newton
 
 export
