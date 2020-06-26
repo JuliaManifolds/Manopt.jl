@@ -13,12 +13,12 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
 
     steps = [zero_tangent_vector(M,x) for i ∈ 1:30]
     graddiffs = [zero_tangent_vector(M,x) for i ∈ 1:30]
-    basis = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis()))
+    approximation = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis()))
     grad_x = zero_tangent_vector(M,x)
 
     p = GradientProblem(M,F,∇F)
     o_lm = RLBFGSOptions(x,graddiffs,steps)
-    # o = RBFGSQuasiNewton(x,grad_x,basis)
+    # o = RBFGSQuasiNewton(x,grad_x,approximation)
 
     @test step_solver!(p,o_lm,1)
     # @test step_solver!(p,o,1)
