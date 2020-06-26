@@ -29,7 +29,7 @@ function step_solver!(p::GradientProblem,o::QuasiNewtonOptions,iter)
         η = get_quasi_newton_direction(p, o)
 
         # Execute line-search
-        α = 0.5 # Here is a method needed for computing a suitable stepsize
+        α = 1. # Here is a method needed for computing a suitable stepsize
 
         # Compute Step
         x_old = o.x
@@ -71,7 +71,7 @@ function get_quasi_newton_direction(p::GradientProblem, o::RLBFGSOptions)
                 r = r + (inner_s_q[i] + omega) * o.steps[i]
         end
 
-        return r
+        return -r
 end
 
 
