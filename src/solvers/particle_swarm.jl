@@ -28,19 +28,20 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 
-function particle_swarm(M::mT,
+function particle_swarm(M::Manifold,
   F::Function;
-  x0::AbstractVector{P},
-  velocity::AbstractVector{T},
+  x0::AbstractVector{P} = [random_point(M) for i = 1:n],
+  velocity::AbstractVector{T} = [random_tangent(M, y) for y ∈ x0],
+  n::Int = 100,
   inertia::Real = 0.65,
   social_weight::Real = 1.4,
   cognitive_weight::Real = 1.4,
   stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenChangeLess(10.0^-4)),
   retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-  inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+  inverse_retraction_method::AbstractInverseRetractionMethod = LogarithmicInverseRetraction(),
   return_options=false,
   kwargs... #collect rest
-) where {mT <: Manifold}
+) where {P,T}
   p = CostProblem(M,F)
   o = ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stopping_criterion, retraction_method, inverse_retraction_method)
   o = decorate_options(o; kwargs...)
@@ -58,7 +59,6 @@ end
 function initialize_solver!(p::CostProblem,o::ParticleSwarmOptions) 
   j = argmin([p.cost(y) for y ∈ o.x])
   o.g = deepcopy(o.x[j])
-  o.velocity = [random_tangent(M, y) for y ∈ o.x]
 end
 function step_solver!(p::CostProblem,o::ParticleSwarmOptions,iter)
   for i = 1:length(o.x)

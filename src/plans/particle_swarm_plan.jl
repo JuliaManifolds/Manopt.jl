@@ -37,7 +37,7 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
     inertia::Real
     social_weight::Real
     cognitive_weight::Real
-    stopping_criterion::StoppingCriterion
+    stop::StoppingCriterion
     retraction_method::AbstractRetractionMethod
     inverse_retraction_method::AbstractInverseRetractionMethod
     function ParticleSwarmOptions{P,T}(
@@ -49,15 +49,15 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
         stopping_criterion::StoppingCriterion = StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
-    ) where {P}
-        o = new{P}();
+    ) where {P,T}
+        o = new{P,T}();
         o.x = x0;
         o.p = deepcopy(x0);
         o.velocity = velocity;
         o.inertia = inertia;
         o.social_weight = social_weight;
         o.cognitive_weight = cognitive_weight;
-        o.stopping_criterion = stopping_criterion;
+        o.stop = stopping_criterion;
         o.retraction_method = retraction_method;
         o.inverse_retraction_method = inverse_retraction_method;
         return o
