@@ -136,6 +136,98 @@ function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) wher
 end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 
+
+@doc raw"""
+    WolfePowellLineseach <: Linesearch
+"""
+mutable struct WolfePowellLineseach <: Linesearch
+    retraction_method::AbstractRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
+
+    c_1::Float64
+    c_2::Float64
+
+    function WolfePowellLineseach(
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        c_1::Float64=0.5,
+        c_2::Float64=1.
+    )
+        return new(retr, vtr, c_1, c_2)
+    end
+end
+
+
+function (a::WolfePowellLineseach)(p::P, o::O, F::Function, η::T) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options, T}
+
+    s = 1.
+    s_plus = 1.
+    s_minus = 1.
+
+    f0 = F(x)
+    gradient_x = get_gradient(p, o.x)
+    xNew = retract(p.M, o.x, s*η, a.retraction_method)
+    fNew = F(xNew)
+
+
+    if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
+
+        while fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
+            s_minus = s_minus * 0.5
+            s = s_minus
+            xNew = retract(p.M, o.x, s*η, a.retraction_method)
+            fNew = F(xNew)
+        end
+
+        s_plus = 2. * s_minus
+
+        while inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+            s = (s_minus + s_plus)/2
+
+            xNew = retract(p.M, o.x, s*η, a.retraction_method)
+            fNew = F(xNew)
+
+            if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
+                s_minus = s
+            else
+                s_plus = s
+            end
+        end
+    else
+
+        if inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+
+            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
+                s_plus = s_plus * 2.
+                s = s_plus
+
+                xNew = retract(p.M, o.x, s*η, a.retraction_method)
+                fNew = F(xNew)
+            end
+
+            s_minus = s_plus/2.
+
+            while inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+                s = (s_minus + s_plus)/2
+
+                xNew = retract(p.M, o.x, s*η, a.retraction_method)
+                fNew = F(xNew)
+
+                if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
+                    s_minus = s
+                else
+                    s_plus = s
+                end
+            end
+
+        end
+    end
+
+    s = s_minus
+    return s
+end
+
+
 @doc raw"""
     get_stepsize(p::Problem, o::Options, vars...)
 
