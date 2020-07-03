@@ -15,7 +15,7 @@ M = Manifolds.Sphere(2)
 # Plot Settings
 n_lon = 201
 n_lat = 101
-lat = range(-π/2, π/2; length=n_lat)
+lat = range(0, π; length=n_lat)
 lon = range(-π, π; length=n_lon)
 sphere_color = colorant"rgb(223 186 105)"
 plane_color = colorant"rgb(255 254 223)"
@@ -29,7 +29,7 @@ mesh_pts = [spherical_to_euclidean(θ,φ) for θ ∈ lat, φ ∈ lon]
 data = [F(spherical_to_euclidean(θ,φ)) for θ ∈ lat, φ ∈ lon]
 # Init contour plot
 scene = Scene()
-mesh!(scene, Makie.Sphere(Point3f0(0), 1f0), color=data, colormap = manopt_pre_scheme, levels=50, interpolate=false)
+mesh!(scene, Makie.Sphere(Point3f0(0), 0.975f0), color=data, colormap = ColorSchemes.viridis, levels=50, interpolate=false)
 
 #
 # Run PSO
