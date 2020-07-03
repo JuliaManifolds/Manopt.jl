@@ -13,3 +13,5 @@ CurrentModule = Manopt
 ```@docs
 ParticleSwarmOptions
 ```
+
+## Literature

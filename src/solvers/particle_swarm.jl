@@ -2,18 +2,31 @@
     patricle_swarm(M, F)
 
 perform the particle swarm optimization algorithm (PSO), starting with the initial
-particle positions x0.
-##Insert source
+particle positions $x_0$[^Borckmans2010].
+
+```math
+```
+
+[^Borckmans2010]:
+    > P. B. Borckmans, M. Ishteva, P.-A. Absil, __A Modified Particle Swarm Optimization Algorithm for the Best Low Multilinear Rank Approximation of Higher-Order Tensors__,
+    > In: Dorigo M. et al. (eds) Swarm Intelligence. ANTS 2010. Lecture Notes in Computer Science, vol 6234. Springer, Berlin, Heidelberg,
+    > doi [10.1007/978-3-642-15461-4_2](https://doi.org/10.1007/978-3-642-15461-4_2)
+
 
 # Input
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
 
 # Optional
-* `x0` – the initial positions of each particle in the swarm $x0_i ∈ \mathcal M$ for $i = 1, \dots, N$
-* `retraction_method` – ([`ExponentialRetraction`](@ref)) a `retraction(M,x,ξ)` to use.
-* `inverse_retraction_method` - ([`LogarithmicInverseRetraction`](@ref)) an `inverse_retraction(M,x,y)` to use.
-* `stopping_criterion` – (`[`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500), `[`StopWhenChangeLess`](@ref)`(10^{-4})))
+* `n` - (`100`) number of random initial positions of x0
+* `x0´ – the initial positions of each particle in the swarm $x0_i ∈ \mathcal M$ for $i = 1, \dots, n$, per default these are n [`random_point`](@ref)s
+* `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a [`random_tangent`](@ref) per inital position 
+* `inertia` – (`0.65`) the inertia of the patricles
+* `social_weight` – (`1.4`) a social weight factor
+* `cognitive_weight` – (`1.4`) a cognitive weight factor
+* `retraction_method` – `ExponentialRetraction` a `retraction(M,x,ξ)` to use.
+* `inverse_retraction_method` - `LogarithmicInverseRetraction` an `inverse_retraction(M,x,y)` to use.
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, `[`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) are returned. This can be used to access recorded values.
@@ -27,7 +40,6 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-
 function particle_swarm(M::Manifold,
   F::Function;
   x0::AbstractVector{P} = [random_point(M) for i = 1:n],
