@@ -1,4 +1,6 @@
 using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
+using Random
+Random.seed!(42)
 @testset "Particle Swarm" begin
     # Test the particle swarm algorithm
     A = [1.0 3.0 4.0; 3.0 -2.0 -6.0; 4.0 -6.0 5.0];
@@ -28,14 +30,14 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
         x_start = [random_point(M) for i = 1:3]
         v_start = [random_tangent(M, y) for y ∈ x_start]
         p = CostProblem(M,F)
-        o = ParticleSwarmOptions(x_start, v_start)
+        o = ParticleSwarmOptions(deepcopy(x_start), v_start)
         initialize_solver!(p, o)
         step_solver!(p, o, 1)
         for i = 1:3
             # check that the new particle locations are on the manifold
-            @test check_manifold_point(M, o.x[i]) == nothing
+            @test is_manifold_point(M, o.x[i], true) 
             # check that the new velocities are tangent vectors of the original particle locations
-            @test check_tangent_vector(M, o.velocity[i], x_start[i]) == nothing
+            @test is_tangent_vector(M, x_start[i], o.velocity[i], true; atol = 5*10^(-16)) 
         end
     end
 end
