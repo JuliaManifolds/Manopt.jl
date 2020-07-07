@@ -150,24 +150,24 @@ mutable struct WolfePowellLineseach <: Linesearch
     function WolfePowellLineseach(
         retr::AbstractRetractionMethod = ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod = ParallelTransport(),
-        c_1::Float64=0.5,
-        c_2::Float64=1.
+        c_1::Float64=10^(-4),
+        c_2::Float64=0.9
     )
         return new(retr, vtr, c_1, c_2)
     end
 end
 
 
-function (a::WolfePowellLineseach)(p::P, o::O, F::Function, η::T) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options, T}
+function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
 
     s = 1.
     s_plus = 1.
     s_minus = 1.
 
-    f0 = F(x)
+    f0 = p.cost(o.x)
     gradient_x = get_gradient(p, o.x)
     xNew = retract(p.M, o.x, s*η, a.retraction_method)
-    fNew = F(xNew)
+    fNew = p.cost(xNew)
 
 
     if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
@@ -176,7 +176,7 @@ function (a::WolfePowellLineseach)(p::P, o::O, F::Function, η::T) where {P <: G
             s_minus = s_minus * 0.5
             s = s_minus
             xNew = retract(p.M, o.x, s*η, a.retraction_method)
-            fNew = F(xNew)
+            fNew = p.cost(xNew)
         end
 
         s_plus = 2. * s_minus
@@ -185,7 +185,7 @@ function (a::WolfePowellLineseach)(p::P, o::O, F::Function, η::T) where {P <: G
             s = (s_minus + s_plus)/2
 
             xNew = retract(p.M, o.x, s*η, a.retraction_method)
-            fNew = F(xNew)
+            fNew = p.cost(xNew)
 
             if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
                 s_minus = s
@@ -202,7 +202,7 @@ function (a::WolfePowellLineseach)(p::P, o::O, F::Function, η::T) where {P <: G
                 s = s_plus
 
                 xNew = retract(p.M, o.x, s*η, a.retraction_method)
-                fNew = F(xNew)
+                fNew = p.cost(xNew)
             end
 
             s_minus = s_plus/2.
@@ -211,7 +211,7 @@ function (a::WolfePowellLineseach)(p::P, o::O, F::Function, η::T) where {P <: G
                 s = (s_minus + s_plus)/2
 
                 xNew = retract(p.M, o.x, s*η, a.retraction_method)
-                fNew = F(xNew)
+                fNew = p.cost(xNew)
 
                 if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
                     s_minus = s

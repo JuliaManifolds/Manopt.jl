@@ -160,7 +160,7 @@ export Options, get_options
 export is_options_decorator, dispatch_options_decorator
 
 export RLBFGSOptions, RBFGSQuasiNewton
-export quasi_Newton
+export quasi_Newton, WolfePowellLineseach
 
 export
     ConjugateGradientDescentOptions,

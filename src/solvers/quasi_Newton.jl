@@ -46,13 +46,11 @@ function step_solver!(p::GradientProblem,o::QuasiNewtonOptions,iter)
         η = get_quasi_newton_direction(p, o)
 
         # Execute line-search
-        α = 1. # Here is a method needed for computing a suitable stepsize
-
+        α = o.stepsize(p,o,iter,η)
+        print(α," ")
         # Compute Step
         x_old = o.x
-        print(x_old)
         o.x = retract(p.M, o.x, α*η, o.retraction_method)
-        print(x_old)
         # Update the Parameters
         update_parameters(p, o, α, η, x_old)
 end
@@ -143,13 +141,9 @@ end
 # Limited memory variants
 
 function update_parameters(p::GradientProblem, o::LimitedMemoryQuasiNewtonOptions, α::Float64, η::T, xk::P) where {P,T}
-        print(xk)
         gradf_xold = get_gradient(p,xk)
-        # print(gradf_xold)
         β = norm(p.M, xk, α*η) / norm(p.M, o.x, vector_transport_to(p.M, xk, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, xk, gradf_xold, o.x, o.vector_transport_method)
-        # print(get_gradient(p,o.x))
-        # print(vector_transport_to(p.M, xk, gradf_xold, o.x, o.vector_transport_method))
         sk = vector_transport_to(p.M, xk, α*η, o.x, o.vector_transport_method)
 
         if o.current_memory_size >= o.memory_size

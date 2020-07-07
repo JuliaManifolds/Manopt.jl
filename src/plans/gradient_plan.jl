@@ -941,17 +941,14 @@ specify options for a Riemannian limited-memory BFGS algorithm, that solves a
 """
 mutable struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
     x::P
-
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
-
     memory_size::Int
     current_memory_size::Int
-
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
-
     stop::StoppingCriterion
+    stepsize::Stepsize
 
     function RLBFGSOptions{P,T}(
         x::P,
@@ -961,7 +958,8 @@ mutable struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
         cur::Int = 0,
         retr::AbstractRetractionMethod = ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod = ParallelTransport(),
-        s::StoppingCriterion = StopAfterIteration(100)
+        s::StoppingCriterion = StopAfterIteration(100),
+        stepsize::Stepsize = WolfePowellLineseach()
     ) where {P,T}
         o = new{P,T}()
         o.x = x
@@ -972,6 +970,7 @@ mutable struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
         o.retraction_method = retr
         o.vector_transport_method = vtr
         o.stop = s
+        o.stepsize = stepsize
         return o
     end
 end
@@ -983,14 +982,16 @@ function RLBFGSOptions(
     cur::Int = 0,
     retr::AbstractRetractionMethod = ExponentialRetraction(),
     vtr::AbstractVectorTransportMethod = ParallelTransport(),
-    s::StoppingCriterion = StopAfterIteration(100)
+    s::StoppingCriterion = StopAfterIteration(100),
+    stepsize::Stepsize = WolfePowellLineseach()
 ) where {P,T}
     return RLBFGSOptions{P,T}(x,grad_diff,it_diff;
         mem = mem,
         cur = cur,
         retr = retr,
         vtr = vtr,
-        s = s
+        s = s,
+        stepsize = stepsize
     )
 end
 
