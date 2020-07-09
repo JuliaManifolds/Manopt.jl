@@ -11,6 +11,7 @@ include("gradient_plan.jl")
 include("hessianPlan.jl")
 include("proximalPlan.jl")
 include("subgradient_plan.jl")
+include("particle_swarm_plan.jl")
 
 include("stoppingCriterion.jl")
 include("stepsize.jl")

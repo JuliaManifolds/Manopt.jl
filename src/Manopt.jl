@@ -21,7 +21,9 @@ module Manopt
         ^,
         AbstractVectorTransportMethod,
         AbstractRetractionMethod,
+        AbstractInverseRetractionMethod,
         ExponentialRetraction,
+        LogarithmicInverseRetraction,
         ParallelTransport,
         Manifold,
         allocate_result,
@@ -42,6 +44,8 @@ module Manopt
         project!,
         retract,
         retract!,
+        inverse_retract,
+        inverse_retract!,
         shortest_geodesic,
         vector_transport_to,
         vector_transport_to!,
@@ -104,6 +108,7 @@ module Manopt
     include("solvers/truncated_conjugate_gradient_descent.jl")
     include("solvers/trust_regions.jl")
     include("solvers/subgradient.jl")
+    include("solvers/particle_swarm.jl")
     include("solvers/debug_solver.jl")
     include("solvers/record_solver.jl")
     include("helpers/errorMeasures.jl")
@@ -152,7 +157,7 @@ export RecordGradient, RecordGradientNorm, RecordStepsize
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
 
 export NelderMead, steepest_descent, subgradient_method, truncated_conjugate_gradient_descent, trust_regions
-export cyclic_proximal_point, conjugate_gradient_descent
+export cyclic_proximal_point, conjugate_gradient_descent, particle_swarm
 
 export DebugGradient, DebugGradientNorm, DebugStepsize
 
@@ -166,7 +171,8 @@ export
     SubGradientMethodOptions,
     NelderMeadOptions,
     TruncatedConjugateGradientOptions,
-    TrustRegionsOptions
+    TrustRegionsOptions,
+    ParticleSwarmOptions
 
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,
