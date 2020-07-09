@@ -9,12 +9,12 @@ Describes a particle swarm optimizing algorithm, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `x0` – a set of points (of type `AbstractVector{P}`) on a manifold as starting particle positions
+* `x0` – a set of points (of type `AbstractVector{P}`) on a manifold as initial particle positions
 * `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, `[`StopWhenChangeLess`](@ref)`(10^{-4})))`
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `retraction_method` – `ExponentialRetraction` the rectraction to use, defaults to
   the exponential map
@@ -24,7 +24,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
     ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stopping_criterion[, retraction_method=ExponentialRetraction(), inverse_retraction_method=LogarithmicInverseRetraction()])
 
-construct a particle swarm Option with the fields and defaults as above
+construct a particle swarm Option with the fields and defaults as above.
 
 # See also
 [`particle_swarm`](@ref)
