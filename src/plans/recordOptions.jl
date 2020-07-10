@@ -115,7 +115,7 @@ value type of the corresponding Recordaction.
 """
 function record_or_eset!(r::R,v,i::Int) where {R <: RecordAction}
     if i > 0
-        push!(r.recordedValues,v)
+        push!(r.recordedValues,deepcopy(v))
     elseif i < 0 && i > typemin(Int) # reset if negative but not stop indication
         r.recordedValues = Array{typeof(v),1}()
     end

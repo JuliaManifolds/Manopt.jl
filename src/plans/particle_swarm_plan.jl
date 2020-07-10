@@ -40,6 +40,7 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
     stop::StoppingCriterion
     retraction_method::AbstractRetractionMethod
     inverse_retraction_method::AbstractInverseRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
     function ParticleSwarmOptions{P,T}(
         x0::AbstractVector{P},
         velocity::AbstractVector{T},
@@ -49,6 +50,7 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
         stopping_criterion::StoppingCriterion = StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport()
     ) where {P,T}
         o = new{P,T}();
         o.x = x0;
@@ -60,6 +62,7 @@ mutable struct ParticleSwarmOptions{P,T} <: Options
         o.stop = stopping_criterion;
         o.retraction_method = retraction_method;
         o.inverse_retraction_method = inverse_retraction_method;
+        o.vector_transport_method = vector_transport_method
         return o
     end
 end
@@ -72,6 +75,7 @@ function ParticleSwarmOptions(
     stopping_criterion::StoppingCriterion = StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport()
 ) where {P,T}
-    return ParticleSwarmOptions{P,T}(x0,velocity,inertia,social_weight,cognitive_weight,stopping_criterion,retraction_method,inverse_retraction_method)
+    return ParticleSwarmOptions{P,T}(x0,velocity,inertia,social_weight,cognitive_weight,stopping_criterion,retraction_method,inverse_retraction_method, vector_transport_method)
 end
