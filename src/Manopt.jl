@@ -19,6 +19,7 @@ import ManifoldsBase:
     AbstractRetractionMethod,
     AbstractInverseRetractionMethod,
     ExponentialRetraction,
+    LogarithmicInverseRetraction,
     ParallelTransport,
     Manifold,
     allocate_result,
