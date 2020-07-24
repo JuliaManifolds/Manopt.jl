@@ -40,6 +40,8 @@ import ManifoldsBase:
     project!,
     retract,
     retract!,
+    inverse_retract,
+    inverse_retract!,
     shortest_geodesic,
     vector_transport_to,
     vector_transport_to!,
