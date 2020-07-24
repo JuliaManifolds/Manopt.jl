@@ -8,13 +8,10 @@ to x is returned.
 mid_point(M::Manifold, p, q, ::Any) = mid_point(M, p, q)
 mid_point!(M::Manifold, y, p, q, ::Any) = mid_point!(M, y, p, q)
 
-function mid_point(M::Circle, p, q)
-    return exp(M,p,0.5*log(M,p,q))
-end
 function mid_point(M::Circle, p, q, x)
     if distance(M,p,q) ≈ π
         X = 0.5*log(M,p,q)
-        Y = log(p,x)
+        Y = log(M,p,x)
         return exp(M, p, (sign(X) == sign(Y) ? 1 : -1)*X)
     end
     return mid_point(M,p,q)

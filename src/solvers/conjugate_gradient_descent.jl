@@ -10,7 +10,7 @@ and one can employ different rules to update the descent direction $\delta_k$ ba
 the last direction $\delta_{k-1}$ and both gradients $\nabla f(x_k)$,$\nabla f(x_{k-1})$.
 The [`Stepsize`](@ref) $s_k$ may be determined by a [`Linesearch`](@ref).
 
-Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`steepest_descent`](@ref),
+Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
 [`ConjugateDescentCoefficient`](@ref), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HeestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).

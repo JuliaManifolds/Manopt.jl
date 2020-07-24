@@ -212,7 +212,7 @@ update_storage!(a::StoreOptionsAction,o::O) where {O <: Options} = update_storag
 update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given in
 the dictionary `d`. The values are merged, where the values from `d` are preferred.
 """
-function update_storage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any}) where {O <: Options}
+function update_storage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any})
     merge!(a.values, d)
     # update keys
     a.keys = Tuple( keys(a.values) )

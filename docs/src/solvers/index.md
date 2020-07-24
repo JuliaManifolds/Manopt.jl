@@ -14,7 +14,7 @@ The following algorithms are currently available
 
 | Solver  | File   | Problem & Option  |
 ----------|--------|-------------------|
-[steepest Descent](@ref GradientDescentSolver) | `steepest_descent.jl` |  [`GradientProblem`](@ref), [`GradientDescentOptions`](@ref)
+[steepest Descent](@ref GradientDescentSolver) | `gradient_descent.jl` |  [`GradientProblem`](@ref), [`GradientDescentOptions`](@ref)
 [Cyclic Proximal Point](@ref CPPSolver) | `cyclic_proximal_point.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointOptions`](@ref)
 [Douglas–Rachford](@ref DRSolver) | `DouglasRachford.jl` | [`ProximalProblem`](@ref), [`DouglasRachfordOptions`](@ref)
 [Nelder-Mead](@ref NelderMeadSolver) | `NelderMead.jl` | [`CostProblem`](@ref), [`NelderMeadOptions`](@ref)
@@ -62,7 +62,7 @@ The decorator to print debug during the iterations can be activated by
 decorating the [`Options`](@ref) with [`DebugOptions`](@ref) and implementing
 your own [`DebugAction`](@ref)s.
 For example printing a gradient from the [`GradientDescentOptions`](@ref) is
-automatically available, as explained in the [`steepest_descent`](@ref) solver.
+automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
 ```@autodocs
 Modules = [Manopt]
@@ -75,7 +75,7 @@ The decorator to record certain values during the iterations can be activated by
 decorating the [`Options`](@ref) with [`RecordOptions`](@ref) and implementing
 your own [`RecordAction`](@ref)s.
 For example recording the gradient from the [`GradientDescentOptions`](@ref) is
-automatically available, as explained in the [`steepest_descent`](@ref) solver.
+automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
 ```@autodocs
 Modules = [Manopt]
