@@ -17,6 +17,7 @@ import ManifoldsBase:
     ^,
     AbstractVectorTransportMethod,
     AbstractRetractionMethod,
+    AbstractInverseRetractionMethod,
     ExponentialRetraction,
     ParallelTransport,
     Manifold,
