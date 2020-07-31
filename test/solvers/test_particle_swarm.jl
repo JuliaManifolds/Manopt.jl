@@ -30,14 +30,14 @@ Random.seed!(42)
         x_start = [random_point(M) for i = 1:3]
         v_start = [random_tangent(M, y) for y ∈ x_start]
         p = CostProblem(M,F)
-        o = ParticleSwarmOptions(deepcopy(x_start), v_start)
+        o = ParticleSwarmOptions(x_start, v_start)
         initialize_solver!(p, o)
         step_solver!(p, o, 1)
         for i = 1:3
             # check that the new particle locations are on the manifold
             @test is_manifold_point(M, o.x[i], true) 
             # check that the new velocities are tangent vectors of the original particle locations
-            @test is_tangent_vector(M, x_start[i], o.velocity[i], true; atol = 5*10^(-16)) 
+            @test is_tangent_vector(M, o.x[i], o.velocity[i], true; atol = 5*10^(-16)) 
         end
     end
 end
