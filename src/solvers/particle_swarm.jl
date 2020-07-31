@@ -9,7 +9,7 @@ The aim of PSO is to find the particle position $g$ on the `Manifold M` that sol
 To this end, a swarm of particles is moved around the `Manifold M` in the following manner.
 For every particle $k$ we compute the new particle velocities $v_k^{(i+1)}$ in every step $i$ of the algorithm by
 ```math
-v_k^{(i+1)} = \omega \, \operatorname{T}_{x_k^{(i)}\gets x_k^{(i-1)}}v_k + c \,  r_1  \operatorname{retr}_{x_k^{(i)}}^{-1}(p_k^{(i)}) + s \,  r_2 \operatorname{retr}_{x_k^{(i)}}^{-1}(g),
+v_k^{(i+1)} = \omega \, \operatorname{T}_{x_k^{(i)}\gets x_k^{(i-1)}}v_k^{(i)} + c \,  r_1  \operatorname{retr}_{x_k^{(i)}}^{-1}(p_k^{(i)}) + s \,  r_2 \operatorname{retr}_{x_k^{(i)}}^{-1}(g),
 ```
 where $x_k^{(i)}$ is the current particle position, $\omega$ denotes the inertia,
 $c$ and $s$ are a cognitive and a social weight, respectively,
@@ -50,7 +50,7 @@ i.e. $p_k^{(i)}$ is the best known position for the particle $k$ and $g^{(i)}$ i
 
 # Optional
 * `n` - (`100`) number of random initial positions of x0
-* `x0` – the initial positions of each particle in the swarm $x0_k ∈ \mathcal M$ for $k = 1, \dots, n$, per default these are n [`random_point`](@ref)s
+* `x0` – the initial positions of each particle in the swarm $x_k^{(0)} ∈ \mathcal M$ for $k = 1, \dots, n$, per default these are n [`random_point`](@ref)s
 * `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a [`random_tangent`](@ref) per inital position
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
