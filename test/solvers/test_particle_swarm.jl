@@ -1,18 +1,27 @@
 using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
 using Random
-Random.seed!(42)
 @testset "Particle Swarm" begin
     # Test the particle swarm algorithm
     A = [1.0 3.0 4.0; 3.0 -2.0 -6.0; 4.0 -6.0 5.0];
     @testset "Eucliedean Particle Swarm" begin
         M = Euclidean(3)
         F(x) = (x'*A*x)/(x'*x);
-        x_start = [[1.0, 2.0, 3.0],[4.0, 5.0, 6.0],[7.0, 8.0, 9.0]];
+        x_start = [[1.0, 2.0, 3.0],[4.0, 5.0, 6.0],[7.0, 8.0, 9.0]];  
+        x_start2 = deepcopy(x_start)
+        
+        Random.seed!(35)
         o = particle_swarm(M,F;
             x0 = x_start,
             return_options = true
         )
         g = get_solver_result(o)
+        
+        Random.seed!(35)
+        g2 = particle_swarm(M,F;
+            x0 = x_start2,
+            return_options = false
+        )
+        @test isequal(g, g2)
         
         # the cost of g and the p[i]'s are not greater after one step 
         j = argmin([F(y) for y ∈ x_start])
@@ -25,6 +34,7 @@ Random.seed!(42)
         end
     end
     @testset "Spherical Particle Swarm" begin
+        Random.seed!(42)
         M = Sphere(2)
         F(x) = transpose(x)*A*x;
         x_start = [random_point(M) for i = 1:3]
