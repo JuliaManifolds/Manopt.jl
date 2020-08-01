@@ -7,9 +7,9 @@ The aim of PSO is to find the particle position $g$ on the `Manifold M` that sol
 \min_{x \in \mathcal{M}} F(x).
 ```
 To this end, a swarm of particles is moved around the `Manifold M` in the following manner.
-For every particle $k$ we compute the new particle velocities $v_k^{(i+1)}$ in every step $i$ of the algorithm by
+For every particle $k$ we compute the new particle velocities $v_k^{(i)}$ in every step $i$ of the algorithm by
 ```math
-v_k^{(i+1)} = \omega \, \operatorname{T}_{x_k^{(i)}\gets x_k^{(i-1)}}v_k^{(i)} + c \,  r_1  \operatorname{retr}_{x_k^{(i)}}^{-1}(p_k^{(i)}) + s \,  r_2 \operatorname{retr}_{x_k^{(i)}}^{-1}(g),
+v_k^{(i)} = \omega \, \operatorname{T}_{x_k^{(i)}\gets x_k^{(i-1)}}v_k^{(i-1)} + c \,  r_1  \operatorname{retr}_{x_k^{(i)}}^{-1}(p_k^{(i)}) + s \,  r_2 \operatorname{retr}_{x_k^{(i)}}^{-1}(g),
 ```
 where $x_k^{(i)}$ is the current particle position, $\omega$ denotes the inertia,
 $c$ and $s$ are a cognitive and a social weight, respectively,
@@ -19,7 +19,7 @@ $\operatorname{T}$ is a vector transport.
 
 Then the position of the particle is updated as
 ```math
-x_k^{(i+1)} = \operatorname{retr}_{x_k^{(i)}}(v_k^{(i+1)}),
+x_k^{(i+1)} = \operatorname{retr}_{x_k^{(i)}}(v_k^{(i)}),
 ```
 where $\operatorname{retr}$ denotes a retraction on the `Manifold` `M`. At the end of each step for every particle, we set
 ```math
