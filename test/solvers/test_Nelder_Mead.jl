@@ -1,6 +1,8 @@
 #
 #
 #
+using Random
+Random.seed!(29)
 @testset "Test Nelder-Mead" begin
 M = Euclidean(6)
 # From Wikipedia https://en.wikipedia.org/wiki/Rosenbrock_function

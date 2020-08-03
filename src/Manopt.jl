@@ -17,7 +17,9 @@ import ManifoldsBase:
     ^,
     AbstractVectorTransportMethod,
     AbstractRetractionMethod,
+    AbstractInverseRetractionMethod,
     ExponentialRetraction,
+    LogarithmicInverseRetraction,
     ParallelTransport,
     Manifold,
     allocate_result,
@@ -38,6 +40,8 @@ import ManifoldsBase:
     project!,
     retract,
     retract!,
+    inverse_retract,
+    inverse_retract!,
     shortest_geodesic,
     vector_transport_to,
     vector_transport_to!,
@@ -99,6 +103,7 @@ include("solvers/cyclic_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/NelderMead.jl")
 include("solvers/gradient_descent.jl")
+include("solvers/particle_swarm.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
 include("solvers/subgradient.jl")
@@ -169,7 +174,7 @@ export NelderMead,
     subgradient_method,
     truncated_conjugate_gradient_descent,
     trust_regions
-export cyclic_proximal_point, conjugate_gradient_descent
+export cyclic_proximal_point, conjugate_gradient_descent, particle_swarm
 
 export DebugGradient, DebugGradientNorm, DebugStepsize
 
@@ -182,7 +187,8 @@ export ConjugateGradientDescentOptions,
     SubGradientMethodOptions,
     NelderMeadOptions,
     TruncatedConjugateGradientOptions,
-    TrustRegionsOptions
+    TrustRegionsOptions,
+    ParticleSwarmOptions
 
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,

@@ -218,7 +218,7 @@ return a random tangent vector in the tangent space of `x` on the `Sphere` `M`.
 """
 function random_tangent(M::Sphere, p, ::Val{:Gaussian}, σ::Float64=1.0)
     n = σ * randn( size(p) ) # Gaussian in embedding
-    return n - dot(n, p)*p #project to TpM (keeps Gaussianness)
+    return project(M, p, n) #project to TpM (keeps Gaussianness)
 end
 
 @doc raw"""

@@ -36,6 +36,7 @@ makedocs(
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Gradient Descent" => "solvers/gradientDescent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
+            "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Subgradient method" => "solvers/subgradient.md",
             "Steihaug-Toint TCG Method" =>
                 "solvers/truncated_conjugate_gradient_descent.md",
