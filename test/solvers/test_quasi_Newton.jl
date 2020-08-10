@@ -19,7 +19,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     p = GradientProblem(M,F,∇F)
     o_lm = RLBFGSOptions(x,graddiffs,steps)
     o_lm_strong = RLBFGSOptions(x,graddiffs,steps;stepsize = StrongWolfePowellLineseach())
-    # o = RBFGSQuasiNewton(x,grad_x,approximation)
+    o = RBFGSQuasiNewton(x,grad_x,approximation)
     s = WolfePowellLineseach()
     s(p,o_lm,1)
 
@@ -28,5 +28,5 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
 
     @test step_solver!(p,o_lm,1)
     @test step_solver!(p,o_lm_strong,1)
-    # @test step_solver!(p,o,1)
+    @test step_solver!(p,o,1)
 end

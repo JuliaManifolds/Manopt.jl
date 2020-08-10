@@ -224,6 +224,8 @@ function update_parameters(p::GradientProblem, o::CautiuosLimitedMemoryQuasiNewt
 
 end
 
+import ManifoldsBase
+
 function square_matrix_vector_product(M::Manifold, p::P, A::AbstractVector{T}, X::T; orthonormal_basis::AbstractVector{T} = get_vectors(M, p, get_basis(M, p, DefaultOrthonormalBasis()))) where {P,T}
         Y = zero_tangent_vector(M,p)
         n = manifold_dimension(M)
