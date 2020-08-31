@@ -24,6 +24,7 @@ module Manopt
         ExponentialRetraction,
         ParallelTransport,
         Manifold,
+        DefaultOrthonormalBasis,
         allocate_result,
         allocate_result_type,
         distance,

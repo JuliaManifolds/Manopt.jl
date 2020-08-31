@@ -98,7 +98,7 @@ function update_parameters(p::GradientProblem, o::RBFGSQuasiNewton{P,T}, α::Flo
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
         sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
-        b = vector_transport_to.(p.M, x, o.inverse_hessian_approximation, o.x, o.vector_transport_method)
+        b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
         basis = get_vectors(p.M, o.x, get_basis(p.M, o.x, DefaultOrthonormalBasis())) # Here we need to compute an array of orthogonal basis vectors
 
         n = manifold_dimension(p.M)
