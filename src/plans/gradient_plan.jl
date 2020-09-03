@@ -13,10 +13,10 @@ specify a problem for gradient based algorithms.
 [`GradientDescentOptions`](@ref)
 
 # """
-mutable struct GradientProblem{mT <: Manifold} <: Problem
+struct GradientProblem{mT <: Manifold, TCost<:Base.Callable, TGradient<:Base.Callable} <: Problem
   M::mT
-  cost::Function
-  gradient::Function
+  cost::TCost
+  gradient::TGradient
 end
 """
     get_gradient(p,x)
@@ -52,19 +52,19 @@ construct a Gradient Descent Option with the fields and defaults as above
 # See also
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """
-mutable struct GradientDescentOptions{P} <: Options
+mutable struct GradientDescentOptions{P,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod} <: Options
     x::P
-    stop::StoppingCriterion
-    stepsize::Stepsize
+    stop::TStop
+    stepsize::TStepsize
     ∇::P
-    retraction_method::AbstractRetractionMethod
+    retraction_method::TRTM
     function GradientDescentOptions{P}(
         initialX::P,
         s::StoppingCriterion = StopAfterIteration(100),
         stepsize::Stepsize = ConstantStepsize(1.),
         retraction::AbstractRetractionMethod=ExponentialRetraction(),
     ) where {P}
-        o = new{P}();
+        o = new{P,typeof(s),typeof(stepsize),typeof(retraction)}();
         o.x = initialX;
         o.stop = s;
         o.retraction_method = retraction;

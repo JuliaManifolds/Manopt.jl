@@ -55,15 +55,15 @@ construct record decorated [`Options`](@ref), where `dR` can be
   `recordDictionary`(@ref) within the dictionary at `:All`.
 * a `Dict{Symbol,RecordAction}`.
 """
-mutable struct RecordOptions{O <: Options} <: Options
+mutable struct RecordOptions{O <: Options, TRD<:NamedTuple} <: Options
     options::O
-    recordDictionary::Dict{Symbol, <: RecordAction}
-    RecordOptions{O}(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = new(o,dR)
+    recordDictionary::TRD
+    RecordOptions{O}(o::O; kwargs...) where {O <: Options} = new{O,typeof(values(kwargs))}(o,values(kwargs))
 end
-RecordOptions(o::O, dR::D) where {O <: Options, D <: RecordAction} = RecordOptions{O}(o,Dict(:All => dR))
-RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = RecordOptions{O}(o,Dict(:All => RecordGroup(dR)))
-RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o,dR)
-RecordOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = RecordOptions{O}(o, RecordFactory(get_options(o),format))
+RecordOptions(o::O, dR::D) where {O <: Options, D <: RecordAction} = RecordOptions{O}(o; All = dR)
+RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = RecordOptions{O}(o; All = RecordGroup(dR))
+RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o; dR...)
+RecordOptions(o::O, format::Vector{<:Any}) where {O <: Options} = RecordOptions{O}(o; RecordFactory(get_options(o),format)...)
 
 dispatch_options_decorator(o::RecordOptions) = Val(true)
 
@@ -328,8 +328,7 @@ function RecordFactory(o::O, a::Array{<:Any,1} ) where {O <: Options}
     if length(e) > 0
         record = RecordEvery(record,last(e))
     end
-    dictionary = Dict{Symbol,RecordAction}(:All => record)
-    return dictionary
+    return (; All = record)
 end
 @doc raw"""
     RecordActionFactory(s)
@@ -351,5 +350,5 @@ function RecordActionFactory(o::O,s::Symbol) where {O <: Options}
     elseif (s==:Cost)
         return RecordCost()
     end
-        return RecordEntry(getfield(o,s),s)
+    return RecordEntry(getfield(o,s),s)
 end
