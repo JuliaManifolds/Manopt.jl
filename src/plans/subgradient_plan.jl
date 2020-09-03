@@ -18,8 +18,8 @@ at a point.
 """
 mutable struct SubGradientProblem{mT <: Manifold} <: Problem
     M::mT
-    cost::Function
-    subgradient::Function
+    cost::Base.Callable
+    subgradient::Base.Callable
 end
 """
     get_subgradient(p,x)
@@ -42,7 +42,7 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `∂` the current element from the possivle subgradients at `x` that is used
 """
 mutable struct SubGradientMethodOptions{P,T} <: Options where {P,T}
-    retract!::Function
+    retract!::Base.Callable
     stepsize::Stepsize
     stop::StoppingCriterion
     x::P
@@ -53,7 +53,7 @@ mutable struct SubGradientMethodOptions{P,T} <: Options where {P,T}
         x::P,
         sC::StoppingCriterion,
         s::Stepsize,
-        retr!::Function=exp!
+        retr!::Base.Callable=exp!
         ) where {TM <: Manifold, P}
         o = new{P,typeof(zero_tangent_vector(M,x))}();
         o.x = x;
@@ -68,7 +68,7 @@ function SubGradientMethodOptions(
     x::P,
     sC::StoppingCriterion,
     s::Stepsize,
-    retr!::Function=exp!
+    retr!::Base.Callable=exp!
 ) where {P}
     return SubGradientMethodOptions{P}(M, x, sC, s, retr!)
 end

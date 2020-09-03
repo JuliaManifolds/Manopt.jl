@@ -583,11 +583,11 @@ display the short (`false`) or long (`true`) default text for the gradient.
 display the a `prefix` in front of the gradient.
 """
 mutable struct DebugGradient <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
-    DebugGradient(long::Bool=false,print::Function=print) = new(print,
+    DebugGradient(long::Bool=false,print::Base.Callable=print) = new(print,
         long ? "Gradient: " : "∇F(x):")
-    DebugGradient(prefix::String,print::Function=print) = new(print,prefix)
+    DebugGradient(prefix::String,print::Base.Callable=print) = new(print,prefix)
 end
 (d::DebugGradient)(p::GradientProblem,o::GradientDescentOptions,i::Int) = d.print((i>=0) ? d.prefix*""*string(o.∇) : "")
 
@@ -606,11 +606,11 @@ display the short (`false`) or long (`true`) default text for the gradient norm.
 display the a `prefix` in front of the gradientnorm.
 """
 mutable struct DebugGradientNorm <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
-    DebugGradientNorm(long::Bool=false,print::Function=print) = new(print,
+    DebugGradientNorm(long::Bool=false,print::Base.Callable=print) = new(print,
         long ? "Norm of the Gradient: " : "|∇F(x)|:")
-    DebugGradientNorm(prefix::String,print::Function=print) = new(print,prefix)
+    DebugGradientNorm(prefix::String,print::Base.Callable=print) = new(print,prefix)
 end
 (d::DebugGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>=0) ? d.prefix*"$(norm(p.M,o.x,o.∇))" : "")
 
@@ -629,11 +629,11 @@ display the short (`false`) or long (`true`) default text for the step size.
 display the a `prefix` in front of the step size.
 """
 mutable struct DebugStepsize <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
-    DebugStepsize(long::Bool=false,print::Function=print) = new(print,
+    DebugStepsize(long::Bool=false,print::Base.Callable=print) = new(print,
         long ? "step size:" : "s:")
-    DebugStepsize(prefix::String,print::Function=print) = new(print,prefix)
+    DebugStepsize(prefix::String,print::Base.Callable=print) = new(print,prefix)
 end
 (d::DebugStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>0) ? d.prefix*"$(get_last_stepsize(p,o,i))" : "")
 

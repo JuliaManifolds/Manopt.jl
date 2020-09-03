@@ -20,7 +20,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 * `proxes` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
   as functions (λ,x) -> y, i.e. the prox parameter λ also belongs to the signature of the proximal map.
 * `number_of_proxes` - (length(proxes)) number of proxmal Maps,
-  e.g. if one of the maps is a compined one such that the proximal Maps
+  e.g. if one of the maps is a combined one such that the proximal Maps
   functions return more than one entry per function
 
 # See also
@@ -28,11 +28,11 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 """
 mutable struct ProximalProblem{mT <: Manifold} <: Problem
   M::mT
-  cost::Function
-  proxes::Array{Function,N} where N
-  number_of_proxes::Array{Int,1}
-  ProximalProblem(M::mT, cF::Function, proxMaps::Array{Function,1}) where {mT <: Manifold}= new{mT}(M,cF,proxMaps,ones(length(proxMaps)))
-  ProximalProblem(M::mT, cF::Function, proxMaps::Array{Function,1}, nOP::Array{Int,1}) where {mT <: Manifold} =
+  cost::Base.Callable
+  proxes::Vector{<:Base.Callable}
+  number_of_proxes::Vector{Int}
+  ProximalProblem(M::mT, cF::Base.Callable, proxMaps::Vector{<:Base.Callable}) where {mT <: Manifold}= new{mT}(M,cF,proxMaps,ones(length(proxMaps)))
+  ProximalProblem(M::mT, cF::Base.Callable, proxMaps::Vector{<:Base.Callable}, nOP::Vector{Int}) where {mT <: Manifold} =
     length(nOP) != length(proxMaps) ? throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
     new{mT}(M,cF,proxMaps,nOP)
 end
@@ -72,14 +72,14 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 mutable struct CyclicProximalPointOptions <: Options
     x
     stop::StoppingCriterion
-    λ::Function
+    λ::Base.Callable
     orderType::EvalOrder
     order::Array{Int,1}
 end
 function CyclicProximalPointOptions(
     x,
     s::StoppingCriterion,
-    λ::Function=(iter)-> 1.0/iter,
+    λ::Base.Callable=(iter)-> 1.0/iter,
     o::EvalOrder=LinearEvalOrder()
     )
     return CyclicProximalPointOptions(x,s,λ,o,[])
@@ -107,15 +107,15 @@ Store all options required for the DouglasRachford algorithm,
 mutable struct DouglasRachfordOptions <: Options
     x
     s
-    λ::Function
-    α::Function
-    R::Function
+    λ::Base.Callable
+    α::Base.Callable
+    R::Base.Callable
     stop::StoppingCriterion
     parallel::Bool
     function DouglasRachfordOptions(
         x,
-        λ::Function=(iter)->1.0,
-        α::Function=(iter)->0.9,
+        λ::Base.Callable=(iter)->1.0,
+        α::Base.Callable=(iter)->0.9,
         R=reflect,
         stop::StoppingCriterion = StopAfterIteration(300),
         parallel=false
@@ -137,9 +137,9 @@ print the current iterates proximal point algorithm parameter given by
 [`Options`](@ref)s `o.λ`.
 """
 mutable struct DebugProximalParameter <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
-    DebugProximalParameter(long::Bool=false,print::Function=print) = new(print, long ? "Proximal Map Parameter λ(i):" : "λ:" )
+    DebugProximalParameter(long::Bool=false,print::Base.Callable=print) = new(print, long ? "Proximal Map Parameter λ(i):" : "λ:" )
 end
 (d::DebugProximalParameter)(p::ProximalProblem,o::DouglasRachfordOptions,i::Int) = d.print((i>0) ? d.prefix*string(o.λ(i)) : "")
 (d::DebugProximalParameter)(p::ProximalProblem,o::CyclicProximalPointOptions,i::Int) = d.print((i>0) ? d.prefix*string(o.λ(i)) : "")

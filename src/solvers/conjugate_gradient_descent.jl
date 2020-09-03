@@ -50,8 +50,8 @@ OR
 """
 function conjugate_gradient_descent(
     M::Manifold,
-    F::Function,
-    ∇F::Function,
+    F::Base.Callable,
+    ∇F::Base.Callable,
     x;
     coefficient::DirectionUpdateRule = SteepestDirectionUpdateRule(),
     stepsize::Stepsize = ConstantStepsize(1.),

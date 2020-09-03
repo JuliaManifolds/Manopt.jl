@@ -63,12 +63,12 @@ For a description of the algorithm and more details see
 """
 function trust_regions(
     M::MT,
-    F::Function,
-    ∇F::Function,
+    F::TF,
+    ∇F::TdF,
     x,
-    H::Union{Function,Missing};
-    retraction::Function = exp,
-    preconditioner::Function = (M,x,ξ) -> ξ,
+    H::TH;
+    retraction::Tretr = exp,
+    preconditioner::Tprec = (M,x,ξ) -> ξ,
     stopping_criterion::StoppingCriterion = StopWhenAny(
         StopAfterIteration(1000),
         StopWhenGradientNormLess(10^(-6))
@@ -80,7 +80,7 @@ function trust_regions(
     ρ_regularization=1000.,
     return_options=false,
     kwargs... #collect rest
-    ) where {MT <: Manifold}
+    ) where {MT <: Manifold, TF <: Base.Callable, TdF <: Base.Callable, TH <: Union{Base.Callable,Missing}, Tretr <: Base.Callable, Tprec <: Base.Callable}
     (ρ_prime >= 0.25) && throw( ErrorException(
         "ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime."
     ))

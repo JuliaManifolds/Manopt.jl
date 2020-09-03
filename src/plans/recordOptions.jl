@@ -233,20 +233,20 @@ record a certain entries change during iterates
 * `storage` – a [`StoreOptionsAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
 mutable struct RecordEntryChange <: RecordAction
-    recordedValues::Array{Float64,1}
+    recordedValues::Vector{Float64}
     field::Symbol
-    distance::Function
+    distance::Base.Callable
     storage::StoreOptionsAction
     RecordEntryChange(
             f::Symbol,
-            d::Function,
+            d::Base.Callable,
             a::StoreOptionsAction=StoreOptionsAction( (f,) )
-        ) = new(Array{Float64,1}(),f,d,a)
-    function RecordEntryChange(v::T where T, f::Symbol, d::Function,
+        ) = new(Float64[],f,d,a)
+    function RecordEntryChange(v::T where T, f::Symbol, d::Base.Callable,
             a::StoreOptionsAction=StoreOptionsAction( (f,) )
         )
         update_storage!(a,Dict(f=>v))
-        return new(Array{Float64,1}(),f, d, a)
+        return new(Float64[],f, d, a)
     end
 end
 function (r::RecordEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}

@@ -47,7 +47,7 @@ function $f\colon \mathcal M \to \mathcal M$, i.e.,
 see also [`reflect`](@ref reflect(M::Manifold, p, x))`(M,p,x)`.
 """
 
-reflect(M::Manifold, pr::Function, x) = reflect(M::Manifold, pr(x), x)
+reflect(M::Manifold, pr::Base.Callable, x) = reflect(M::Manifold, pr(x), x)
 
 @doc raw"""
     reflect(M, p, x)

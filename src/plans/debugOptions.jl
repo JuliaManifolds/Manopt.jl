@@ -119,12 +119,12 @@ during the last iteration. See [`DebugEntryChange`](@ref)
 * `print` – (`print`) default method to peform the print.
 """
 mutable struct DebugChange <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
     storage::StoreOptionsAction
     DebugChange(a::StoreOptionsAction=StoreOptionsAction( (:x,) ),
             prefix = "Last Change: ",
-            print::Function=print
+            print::Base.Callable=print
         ) = new(print, prefix, a)
 end
 function (d::DebugChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
@@ -143,9 +143,9 @@ debug for the current iterate (stored in `o.x`).
 * `long::Bool` whether to print `x:` or `current iterate`
 """
 mutable struct DebugIterate <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
-    DebugIterate(print::Function=print,long::Bool=false) = new(print, long ? "current Iterate:" : "x:")
+    DebugIterate(print::Base.Callable=print,long::Bool=false) = new(print, long ? "current Iterate:" : "x:")
 end
 (d::DebugIterate)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*"$(o.x)" : "")
 
@@ -155,8 +155,8 @@ end
 debug for the current iteration (prefixed with `#`)
 """
 mutable struct DebugIteration <: DebugAction
-    print::Function
-    DebugIteration(print::Function=print) = new(print)
+    print::Base.Callable
+    DebugIteration(print::Base.Callable=print) = new(print)
 end
 (d::DebugIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>0) ? "# $(i)" : ((i==0) ? "Initial" : "") )
 
@@ -175,10 +175,10 @@ where `long` indicated whether to print `F(x):` (default) or `cost: `
 set a prefix manually.
 """
 mutable struct DebugCost <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
-    DebugCost(long::Bool=false,print::Function=print) = new(print, long ? "Cost Function: " : "F(x): ")
-    DebugCost(prefix::String,print::Function=print) = new(print,prefix)
+    DebugCost(long::Bool=false,print::Base.Callable=print) = new(print, long ? "Cost Function: " : "F(x): ")
+    DebugCost(prefix::String,print::Base.Callable=print) = new(print,prefix)
 end
 (d::DebugCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*string(get_cost(p,o.x)) : "")
 
@@ -192,9 +192,9 @@ print a small `div`ider (default `" | "`).
 
 """
 mutable struct DebugDivider <: DebugAction
-    print::Function
+    print::Base.Callable
     divider::String
-    DebugDivider(divider=" | ",print::Function=print) = new(print,divider)
+    DebugDivider(divider=" | ",print::Base.Callable=print) = new(print,divider)
 end
 (d::DebugDivider)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print((i>=0) ? d.divider : "")
 
@@ -212,10 +212,10 @@ print a certain fields entry of type {T} during the iterates
 
 """
 mutable struct DebugEntry <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
     field::Symbol
-    DebugEntry(f::Symbol,prefix="$f:",print::Function=print) = new(print,prefix,f)
+    DebugEntry(f::Symbol,prefix="$f:",print::Base.Callable=print) = new(print,prefix,f)
 end
 (d::DebugEntry)(p::Pr,o::O,i::Int) where {Pr <: Problem, O <: Options} = d.print(
     (i>=0) ? d.prefix*" "*string(getfield(o, d.field)) : "")
@@ -245,20 +245,20 @@ initialize the Debug to a field `f` and a `distance` `d` with initial value `v`
 for the history of `o.field`.
 """
 mutable struct DebugEntryChange <: DebugAction
-    print::Function
+    print::Base.Callable
     prefix::String
     field::Symbol
-    distance::Function
+    distance::Base.Callable
     storage::StoreOptionsAction
-    DebugEntryChange(f::Symbol,d::Function,
+    DebugEntryChange(f::Symbol,d::Base.Callable,
             a::StoreOptionsAction=StoreOptionsAction( (f,) ),
             prefix = "Change of $f:",
-            print::Function=print
+            print::Base.Callable=print
         ) = new(print, prefix, f, d, a)
-    function DebugEntryChange(v::T where T, f::Symbol, d::Function,
+    function DebugEntryChange(v::T where T, f::Symbol, d::Base.Callable,
             a::StoreOptionsAction=StoreOptionsAction( (f,) ),
             prefix = "Change of $f:",
-            print::Function=print
+            print::Base.Callable=print
         )
         update_storage!(a,Dict(f=>v))
         return new(print, prefix, f, d, a)
@@ -279,8 +279,8 @@ print the Reason provided by the stopping criterion. Usually this should be
 empty, unless the algorithm stops.
 """
 mutable struct DebugStoppingCriterion <: DebugAction
-    print::Function
-    DebugStoppingCriterion(print::Function=print) = new(print)
+    print::Base.Callable
+    DebugStoppingCriterion(print::Base.Callable=print) = new(print)
 end
 (d::DebugStoppingCriterion)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0 || i==typemin(Int)) ? get_reason(o) : "")
 

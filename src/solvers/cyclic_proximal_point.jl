@@ -28,7 +28,7 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function cyclic_proximal_point(M::MT,
-  F::Function, proxes::Array{Function,N} where N, x0;
+  F::Base.Callable, proxes::Vector{<:Base.Callable}, x0;
   evaluationOrder::EvalOrder = LinearEvalOrder(),
   stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)),
   λ = i -> 1/i,

@@ -30,15 +30,15 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function subgradient_method(M::Manifold,
-        F::Function,
-        ∂F::Function,
+        F::TF,
+        ∂F::TdF,
         x;
-        retraction::Function = exp!,
+        retraction::TRetr = exp!,
         stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M,x)/5),
         stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
         return_options = false,
         kwargs... #especially may contain debug
-    )
+    ) where {TF<:Base.Callable,TdF<:Base.Callable,TRetr<:Base.Callable}
     p = SubGradientProblem(M,F,∂F)
     o = SubGradientMethodOptions(M,x,stopping_criterion, stepsize, retraction)
     o = decorate_options(o; kwargs...)
