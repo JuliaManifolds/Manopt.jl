@@ -86,7 +86,7 @@ function particle_swarm(M::Manifold,
   vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
   return_options=false,
   kwargs... #collect rest
-) where {TF<:Base.Callable}
+) where {TF}
   p = CostProblem(M,F)
   o = ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stopping_criterion, retraction_method, inverse_retraction_method, vector_transport_method)
   o = decorate_options(o; kwargs...)

@@ -38,7 +38,7 @@ function subgradient_method(M::Manifold,
         stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
         return_options = false,
         kwargs... #especially may contain debug
-    ) where {TF<:Base.Callable,TdF<:Base.Callable,TRetr<:Base.Callable}
+    ) where {TF,TdF,TRetr}
     p = SubGradientProblem(M,F,∂F)
     o = SubGradientMethodOptions(M,x,stopping_criterion, stepsize, retraction)
     o = decorate_options(o; kwargs...)

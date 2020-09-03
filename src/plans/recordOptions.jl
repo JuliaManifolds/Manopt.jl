@@ -235,14 +235,14 @@ record a certain entries change during iterates
 mutable struct RecordEntryChange <: RecordAction
     recordedValues::Vector{Float64}
     field::Symbol
-    distance::Base.Callable
+    distance::Any
     storage::StoreOptionsAction
     RecordEntryChange(
             f::Symbol,
-            d::Base.Callable,
+            d,
             a::StoreOptionsAction=StoreOptionsAction( (f,) )
         ) = new(Float64[],f,d,a)
-    function RecordEntryChange(v::T where T, f::Symbol, d::Base.Callable,
+    function RecordEntryChange(v::T where T, f::Symbol, d,
             a::StoreOptionsAction=StoreOptionsAction( (f,) )
         )
         update_storage!(a,Dict(f=>v))

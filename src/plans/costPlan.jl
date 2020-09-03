@@ -12,7 +12,7 @@ gradient free ones.
 # See also
 [`NelderMead`](@ref)
 """
-struct CostProblem{mT <: Manifold, Tcost <: Base.Callable} <: Problem
+struct CostProblem{mT <: Manifold, Tcost} <: Problem
     M::mT
     cost::Tcost
 end

@@ -129,7 +129,7 @@ return the current reason stored within the [`StoppingCriterion`](@ref) from
 within the [`Options`](@ref) This reason is empty if the criterion has never
 been met.
 """
-get_reason(o::O) where O <: Options = get_reason( get_options(o).stop )
+get_reason(o::Options) = get_reason( get_options(o).stop )
 
 #
 # Common Actions for decorated Options

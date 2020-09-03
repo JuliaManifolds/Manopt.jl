@@ -50,8 +50,8 @@ OR
 """
 function conjugate_gradient_descent(
     M::Manifold,
-    F::Base.Callable,
-    ∇F::Base.Callable,
+    F::TF,
+    ∇F::TDF,
     x;
     coefficient::DirectionUpdateRule = SteepestDirectionUpdateRule(),
     stepsize::Stepsize = ConstantStepsize(1.),
@@ -62,7 +62,7 @@ function conjugate_gradient_descent(
     transport_method = ParallelTransport(),
     return_options=false,
     kwargs...
-)
+) where {TF, TDF}
     p = GradientProblem(M,F,∇F)
     o = ConjugateGradientDescentOptions(
         x,

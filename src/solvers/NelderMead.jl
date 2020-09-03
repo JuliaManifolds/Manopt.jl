@@ -39,7 +39,7 @@ function NelderMead(M::MT,
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
     return_options=false,
     kwargs... #collect rest
-  ) where {MT <: Manifold,TF<:Base.Callable}
+  ) where {MT <: Manifold,TF}
     p = CostProblem(M,F)
     o = NelderMeadOptions(population, stopping_criterion;
     α = α, γ = γ, ρ = ρ, σ = σ)

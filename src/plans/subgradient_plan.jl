@@ -16,17 +16,17 @@ Generate the [`Problem`] for a subgradient problem, i.e. a function `f` on the
 manifold `M` and a function `∂f` that returns an element from the subdifferential
 at a point.
 """
-mutable struct SubGradientProblem{mT <: Manifold} <: Problem
+struct SubGradientProblem{mT <: Manifold,TCost,TSubgradient} <: Problem
     M::mT
-    cost::Base.Callable
-    subgradient::Base.Callable
+    cost::TCost
+    subgradient::TSubgradient
 end
 """
     get_subgradient(p,x)
 
 Evaluate the (sub)gradient of a [`SubGradientProblem`](@ref)` p` at the point `x`.
 """
-function get_subgradient(p::P, x) where {P <: SubGradientProblem{M} where M <: Manifold}
+function get_subgradient(p::SubGradientProblem, x)
     return p.subgradient(x)
 end
 """
@@ -42,7 +42,7 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `∂` the current element from the possivle subgradients at `x` that is used
 """
 mutable struct SubGradientMethodOptions{P,T} <: Options where {P,T}
-    retract!::Base.Callable
+    retract!::Any
     stepsize::Stepsize
     stop::StoppingCriterion
     x::P
@@ -53,7 +53,7 @@ mutable struct SubGradientMethodOptions{P,T} <: Options where {P,T}
         x::P,
         sC::StoppingCriterion,
         s::Stepsize,
-        retr!::Base.Callable=exp!
+        retr! = exp!
         ) where {TM <: Manifold, P}
         o = new{P,typeof(zero_tangent_vector(M,x))}();
         o.x = x;
@@ -68,7 +68,7 @@ function SubGradientMethodOptions(
     x::P,
     sC::StoppingCriterion,
     s::Stepsize,
-    retr!::Base.Callable=exp!
+    retr! = exp!
 ) where {P}
     return SubGradientMethodOptions{P}(M, x, sC, s, retr!)
 end

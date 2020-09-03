@@ -13,7 +13,7 @@ specify a problem for gradient based algorithms.
 [`GradientDescentOptions`](@ref)
 
 # """
-struct GradientProblem{mT <: Manifold, TCost<:Base.Callable, TGradient<:Base.Callable} <: Problem
+struct GradientProblem{mT <: Manifold, TCost, TGradient} <: Problem
   M::mT
   cost::TCost
   gradient::TGradient
@@ -23,7 +23,7 @@ end
 
 evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x`.
 """
-function get_gradient(p::P,x) where {P <: GradientProblem{M} where M <: Manifold}
+function get_gradient(p::GradientProblem, x)
   return p.gradient(x)
 end
 #
@@ -112,16 +112,16 @@ specify options for a conjugate gradient descent algoritm, that solves a
 # See also
 [`conjugate_gradient_descent`](@ref), [`GradientProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
-mutable struct ConjugateGradientDescentOptions{T} <: Options
+mutable struct ConjugateGradientDescentOptions{T,TCoeff<:DirectionUpdateRule,TStepsize<:Stepsize,TStop<:StoppingCriterion,TRetr<:AbstractRetractionMethod,TVTM<:AbstractVectorTransportMethod} <: Options
     x::T
     ∇::T
     δ::T
     β::Float64
-    coefficient::DirectionUpdateRule
-    stepsize::Stepsize
-    stop::StoppingCriterion
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
+    coefficient::TCoeff
+    stepsize::TStepsize
+    stop::TStop
+    retraction_method::TRetr
+    vector_transport_method::TVTM
     function ConjugateGradientDescentOptions{T}(
         x0::T,
         sC::StoppingCriterion,
@@ -130,7 +130,7 @@ mutable struct ConjugateGradientDescentOptions{T} <: Options
         retr::AbstractRetractionMethod = ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod = ParallelTransport(),
     ) where {T}
-        o = new{T}();
+        o = new{T,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         o.x = x0
         o.stop = sC
         o.retraction_method = retr
@@ -229,14 +229,14 @@ default vector transport and a new storage is created by default.
     > SIAM J. Optim., 10 (1999), pp. 177–182.
     > doi: [10.1137/S1052623497318992](https://doi.org/10.1137/S1052623497318992)
 """
-mutable struct DaiYuanCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function DaiYuanCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
         a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
     )
-        return new(t,a)
+        return new{typeof(t)}(t,a)
     end
 end
 function (u::DaiYuanCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
@@ -333,14 +333,14 @@ default vector transport and a new storage is created by default.
     > SIAM J. Optim, (16), pp. 170-192, 2005.
     > doi: [10.1137/030601880](https://doi.org/10.1137/030601880)
 """
-mutable struct HagerZhangCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function HagerZhangCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
         a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
     )
-        return new(t,a)
+        return new{typeof(t)}(t,a)
     end
 end
 function (u::HagerZhangCoefficient)(p::P, o::O, i) where {P <: GradientProblem, O <: ConjugateGradientDescentOptions}
@@ -397,14 +397,14 @@ See also [`conjugate_gradient_descent`](@ref)
     > J. Research Nat. Bur. Standards, 49 (1952), pp. 409–436.
     > doi: [10.6028/jres.049.044](http://dx.doi.org/10.6028/jres.049.044)
 """
-mutable struct HeestenesStiefelCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct HeestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function HeestenesStiefelCoefficient(
-        transort_method::AbstractVectorTransportMethod=ParallelTransport(),
+        transport_method::AbstractVectorTransportMethod=ParallelTransport(),
         storage_action::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
     )
-        return new(transort_method,storage_action)
+        return new{typeof(transport_method)}(transport_method,storage_action)
     end
 end
 function (u::HeestenesStiefelCoefficient)(
@@ -460,14 +460,14 @@ default vector transport and a new storage is created by default.
     > J. Optim. Theory Appl., 69 (1991), pp. 129–137.
     > doi: [10.1007/BF00940464](https://doi.org/10.1007/BF00940464)
 """
-mutable struct LiuStoreyCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function LiuStoreyCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
         a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
     )
-        return new(t,a)
+        return new{typeof(t)}(t,a)
     end
 end
 function (u::LiuStoreyCoefficient)(
@@ -527,14 +527,14 @@ See also [`conjugate_gradient_descent`](@ref)
     > USSR Comp. Math. Math. Phys., 9 (1969), pp. 94–112.
     > doi: [10.1016/0041-5553(69)90035-4](https://doi.org/10.1016/0041-5553(69)90035-4)
 """
-mutable struct PolakRibiereCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
         a::StoreOptionsAction=StoreOptionsAction( (:x, :∇) ),
     )
-        return new(t,a)
+        return new{typeof(t)}(t,a)
     end
 end
 function (u::PolakRibiereCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
@@ -551,14 +551,14 @@ function (u::PolakRibiereCoefficient)(p::GradientProblem, o::ConjugateGradientDe
 end
 
 @doc raw"""
-    steepestDirectionUpdateRule <: DirectionUpdateRule
+    SteepestDirectionUpdateRule <: DirectionUpdateRule
 
 The simplest rule to update is to have no influence of the last direction and
 hence return an update $\beta = 0$ for all [`ConjugateGradientDescentOptions`](@ref)` o`
 
 See also [`conjugate_gradient_descent`](@ref)
 """
-mutable struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
+struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
 function (u::SteepestDirectionUpdateRule)(
     p::GradientProblem,
     o::ConjugateGradientDescentOptions,
@@ -583,11 +583,11 @@ display the short (`false`) or long (`true`) default text for the gradient.
 display the a `prefix` in front of the gradient.
 """
 mutable struct DebugGradient <: DebugAction
-    print::Base.Callable
+    print::Any
     prefix::String
-    DebugGradient(long::Bool=false,print::Base.Callable=print) = new(print,
+    DebugGradient(long::Bool=false,print=print) = new(print,
         long ? "Gradient: " : "∇F(x):")
-    DebugGradient(prefix::String,print::Base.Callable=print) = new(print,prefix)
+    DebugGradient(prefix::String,print=print) = new(print,prefix)
 end
 (d::DebugGradient)(p::GradientProblem,o::GradientDescentOptions,i::Int) = d.print((i>=0) ? d.prefix*""*string(o.∇) : "")
 
@@ -606,11 +606,11 @@ display the short (`false`) or long (`true`) default text for the gradient norm.
 display the a `prefix` in front of the gradientnorm.
 """
 mutable struct DebugGradientNorm <: DebugAction
-    print::Base.Callable
+    print::Any
     prefix::String
-    DebugGradientNorm(long::Bool=false,print::Base.Callable=print) = new(print,
+    DebugGradientNorm(long::Bool=false,print=print) = new(print,
         long ? "Norm of the Gradient: " : "|∇F(x)|:")
-    DebugGradientNorm(prefix::String,print::Base.Callable=print) = new(print,prefix)
+    DebugGradientNorm(prefix::String,print=print) = new(print,prefix)
 end
 (d::DebugGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>=0) ? d.prefix*"$(norm(p.M,o.x,o.∇))" : "")
 
@@ -629,11 +629,11 @@ display the short (`false`) or long (`true`) default text for the step size.
 display the a `prefix` in front of the step size.
 """
 mutable struct DebugStepsize <: DebugAction
-    print::Base.Callable
+    print::Any
     prefix::String
-    DebugStepsize(long::Bool=false,print::Base.Callable=print) = new(print,
+    DebugStepsize(long::Bool=false,print=print) = new(print,
         long ? "step size:" : "s:")
-    DebugStepsize(prefix::String,print::Base.Callable=print) = new(print,prefix)
+    DebugStepsize(prefix::String,print=print) = new(print,prefix)
 end
 (d::DebugStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>0) ? d.prefix*"$(get_last_stepsize(p,o,i))" : "")
 

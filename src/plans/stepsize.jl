@@ -114,7 +114,7 @@ end
 function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
     a(p.M, o.x, p.cost, get_gradient(p,o.x), η)
 end
-function (a::ArmijoLinesearch)(M::mT, x, F::TF, ∇F::T, η::T=-∇F) where {mT <: Manifold, TF<:Base.Callable, T}
+function (a::ArmijoLinesearch)(M::mT, x, F::TF, ∇F::T, η::T=-∇F) where {mT <: Manifold, TF, T}
     # for local shortness
     s = a.stepsizeOld
     f0 = F(x)

@@ -94,7 +94,7 @@ function truncated_conjugate_gradient_descent(
         ),
         return_options = false,
         kwargs... #collect rest
-    ) where {mT <: Manifold, TF<:Base.Callable, TdF<:Base.Callable, Tprec<:Base.Callable}
+    ) where {mT <: Manifold, TF, TdF, Tprec}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TruncatedConjugateGradientOptions(x,stopping_criterion,η,zero_tangent_vector(M,x),Δ,zero_tangent_vector(M,x),useRandom)
     o = decorate_options(o; kwargs...)

@@ -80,7 +80,7 @@ function trust_regions(
     ρ_regularization=1000.,
     return_options=false,
     kwargs... #collect rest
-    ) where {MT <: Manifold, TF <: Base.Callable, TdF <: Base.Callable, TH <: Union{Base.Callable,Missing}, Tretr <: Base.Callable, Tprec <: Base.Callable}
+    ) where {MT <: Manifold, TF, TdF, TH, Tretr, Tprec}
     (ρ_prime >= 0.25) && throw( ErrorException(
         "ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime."
     ))

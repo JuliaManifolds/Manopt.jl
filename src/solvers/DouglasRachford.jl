@@ -45,15 +45,15 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function DouglasRachford(M::MT, F::TF, proxes::Vector{<:Base.Callable}, x;
+function DouglasRachford(M::MT, F::TF, proxes::Vector{<:Any}, x;
     λ::Tλ = (iter) -> 1.0,
     α::Tα = (iter) -> 0.9,
-    R = reflect,
+    R::TR = reflect,
     parallel::Int = 0,
     stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenChangeLess(10.0^-5)),
     return_options=false,
     kwargs... #especially may contain decorator options
-) where {MT <: Manifold, TF<:Base.Callable, Tλ<:Base.Callable, Tα<:Base.Callable}
+) where {MT <: Manifold, TF, Tλ, Tα, TR}
     if length(proxes) < 2
         throw(
          ErrorException("Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps.")
