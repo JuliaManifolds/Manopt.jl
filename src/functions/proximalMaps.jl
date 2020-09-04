@@ -101,8 +101,7 @@ function prox_TV(M::PowerManifold{𝔽,N,T}, λ, x, p::Int=1) where {𝔽,N<:Man
         for l in 0:1
             for i in R # iterate over all pixel
                 if (i[k] % 2) == l
-                    I = [i.I...] # array of index
-                    J = I .+ 1 .* (1:d .== k) #i + e_k is j
+                    J = i.I .+ ek.I #i + e_k is j
                     if all( J .<= maxInd ) # is this neighbor in range?
                         j = CartesianIndex(J...) # neigbbor index as Cartesian Index
                         (y[i],y[j]) = prox_TV( M.manifold,λ,(y[i],y[j]),p) # Compute TV on these
@@ -152,8 +151,7 @@ function prox_parallel_TV(M::PowerManifold, λ, x::Array{T,1}, p::Int=1) where {
     for l in 0:1 # even odd
       for i in R # iterate over all pixel
         if (i[k] % 2) == l
-          I = [i.I...] # array of index
-          J = I .+ 1 .* (1:d .== k) #i + e_k is j
+          J = i.I .+ ek.I #i + e_k is j
           if all( J .<= maxInd ) # is this neighbor in range?
             j = CartesianIndex(J...) # neigbbor index as Cartesian Index
             # parallel means we apply each (direction even/odd) to a seperate copy of the data.
@@ -267,12 +265,12 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
   maxInd = [last(R).I...]
   y = copy(x)
   for k in 1:d # for all directions
+    ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
     for l in 0:1
       for i in R # iterate over all pixel
         if (i[k] % 3) == l
-          I = [i.I...] # array of index
-          JForward = I .+ 1 .* (1:d .== k) #i + e_k
-          JBackward = I .+ 1 .* (1:d .== k) # i - e_k
+          JForward = i.I .+ ek.I #i + e_k
+          JBackward = i.I .- ek.I # i - e_k
           if all( JForward .<= maxInd ) && all( JBackward .>= minInd)
             jForward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
             jBackward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
