@@ -55,11 +55,11 @@ end
 #
 # Setup and Optimize
 F = x -> costL2TVTV2(N, data, α, β, x)
-proxes = [
+proxes = (
     (λ, x) -> prox_distance(N, λ, data, x, 2),
     (λ, x) -> prox_TV(N, α * λ, x),
     (λ, x) -> prox_TV2(N, β * λ, x),
-]
+)
 
 o = cyclic_proximal_point(
     N,

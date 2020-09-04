@@ -33,19 +33,22 @@
     p = ProximalProblem(N,F,proxes,[1,2])
     @test_throws ErrorException getProximalMap(p,1.,f,3)
 
-    order1 = Manopt.update_cpp_order(3,0,1:3,RandomEvalOrder())
+    order1 = collect(1:3)
+    Manopt.update_cpp_order!(order1,3,0,RandomEvalOrder())
     @test all(isinteger.(order1))
     @test minimum(order1) == 1
     @test maximum(order1) == 3
 
     # i=0 introduce new fixed ranom order
-    order2 = Manopt.update_cpp_order(3,0,1:3,FixedRandomEvalOrder())
+    order2 = collect(1:3)
+    Manopt.update_cpp_order!(order2,3,0,FixedRandomEvalOrder())
     @test all(isinteger.(order2))
     @test minimum(order2) == 1
     @test maximum(order2) == 3
-    order3 = Manopt.update_cpp_order(3,1,order2,FixedRandomEvalOrder())
+    order3 = copy(order2)
+    Manopt.update_cpp_order!(order3,3,1,FixedRandomEvalOrder())
     @test order3 == order2 # only update on i=0
 
-    @test Manopt.update_cpp_order(3,0,1:3,LinearEvalOrder()) == 1:3
-    @test Manopt.update_cpp_order(3,1,1:3,LinearEvalOrder()) == 1:3
+    @test Manopt.update_cpp_order!(collect(1:3),3,0,LinearEvalOrder()) == 1:3
+    @test Manopt.update_cpp_order!(collect(1:3),3,1,LinearEvalOrder()) == 1:3
 end

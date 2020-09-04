@@ -28,7 +28,7 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function cyclic_proximal_point(M::MT,
-  F::TF, proxes::Tuple, x0;
+  F::TF, proxes::Union{Tuple,AbstractVector}, x0;
   evaluationOrder::EvalOrder = LinearEvalOrder(),
   stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)),
   λ = i -> 1/i,
@@ -48,7 +48,8 @@ function cyclic_proximal_point(M::MT,
 end
 function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointOptions)
     c = length(p.proxes)
-    o.order = update_cpp_order(c,0,[1:c...],o.orderType)
+    o.order = collect(1:c)
+    update_cpp_order!(o.order,c,0,o.orderType)
 end
 function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
     c = length(p.proxes)
@@ -56,9 +57,9 @@ function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
     for k=o.order
         o.x = getProximalMap(p,λi,o.x,k)
     end
-    o.order = update_cpp_order(c,iter,o.order,o.orderType)
+    update_cpp_order!(o.order,c,iter,o.orderType)
 end
 get_solver_result(o::CyclicProximalPointOptions) = o.x
-update_cpp_order(n,i,o,::LinearEvalOrder) = o
-update_cpp_order(n,i,o,::RandomEvalOrder) = collect(1:n)[randperm(length(o))]
-update_cpp_order(n,i,o,::FixedRandomEvalOrder) = (i==0) ? collect(1:n)[randperm(length(o))] : o
+update_cpp_order!(o,n,i,::LinearEvalOrder) = o
+update_cpp_order!(o,n,i,::RandomEvalOrder) = shuffle!(o)
+update_cpp_order!(o,n,i,::FixedRandomEvalOrder) = (i==0) ? shuffle!(o) : o

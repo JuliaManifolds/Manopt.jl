@@ -26,13 +26,13 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 # See also
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`getProximalMap`](@ref)
 """
-mutable struct ProximalProblem{mT <: Manifold,TCost,TProxes<:Tuple} <: Problem
+mutable struct ProximalProblem{mT <: Manifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <: Problem
   M::mT
   cost::TCost
   proxes::TProxes
   number_of_proxes::Vector{Int}
-  ProximalProblem(M::mT, cF, proxMaps::Tuple) where {mT <: Manifold}= new{mT,typeof(cF),typeof(proxMaps)}(M,cF,proxMaps,ones(length(proxMaps)))
-  ProximalProblem(M::mT, cF, proxMaps::Tuple, nOP::Vector{Int}) where {mT <: Manifold} =
+  ProximalProblem(M::mT, cF, proxMaps::Union{Tuple,AbstractVector}) where {mT <: Manifold}= new{mT,typeof(cF),typeof(proxMaps)}(M,cF,proxMaps,ones(length(proxMaps)))
+  ProximalProblem(M::mT, cF, proxMaps::Union{Tuple,AbstractVector}, nOP::Vector{Int}) where {mT <: Manifold} =
     length(nOP) != length(proxMaps) ? throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
     new{mT,typeof(cF),typeof(proxMaps)}(M,cF,proxMaps,nOP)
 end
@@ -45,7 +45,7 @@ function getProximalMap(p::ProximalProblem,λ,x,i)
     if i>length(p.proxes)
         throw( ErrorException("the $(i)th entry does not exists, only $(length(p.proxes)) available.") )
     end
-    return p.proxes[i](λ,x);
+    return p.proxes[i](λ,x)::typeof(x)
 end
 #
 #
