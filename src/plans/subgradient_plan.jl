@@ -41,34 +41,20 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `xOptimal` – optimal value
 * `∂` the current element from the possivle subgradients at `x` that is used
 """
-mutable struct SubGradientMethodOptions{P,T} <: Options where {P,T}
-    retract!::Any
-    stepsize::Stepsize
+mutable struct SubGradientMethodOptions{TRetract<:AbstractRetractionMethod,TStepsize,P,T} <: Options where {P,T}
+    retraction_method::TRetract
+    stepsize::TStepsize
     stop::StoppingCriterion
     x::P
     xOptimal::P
     ∂::T
-    function SubGradientMethodOptions{P}(
+    function SubGradientMethodOptions(
         M::TM,
         x::P,
         sC::StoppingCriterion,
         s::Stepsize,
-        retr! = exp!
+        retraction_method = ExponentialRetraction()
         ) where {TM <: Manifold, P}
-        o = new{P,typeof(zero_tangent_vector(M,x))}();
-        o.x = x;
-        o.xOptimal = x;
-        o.stepsize = s; o.retract! = retr!;
-        o.stop = sC;
-        return o
+        return new{typeof(retraction_method),typeof(s),P,typeof(zero_tangent_vector(M,x))}(retraction_method, s, sC, x, x)
     end
-end
-function SubGradientMethodOptions(
-    M::Manifold,
-    x::P,
-    sC::StoppingCriterion,
-    s::Stepsize,
-    retr! = exp!
-) where {P}
-    return SubGradientMethodOptions{P}(M, x, sC, s, retr!)
 end

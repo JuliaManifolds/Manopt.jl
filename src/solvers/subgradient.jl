@@ -33,7 +33,7 @@ function subgradient_method(M::Manifold,
         F::TF,
         ∂F::TdF,
         x;
-        retraction::TRetr = exp!,
+        retraction::TRetr = ExponentialRetraction(),
         stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M,x)/5),
         stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
         return_options = false,
@@ -56,7 +56,7 @@ end
 function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     o.∂ = get_subgradient(p,o.x)
     s = get_stepsize(p,o,iter)
-    o.retract!(p.M, o.x, o.x, -s*o.∂)
+    retract!(p.M, o.x, o.x, -s*o.∂, o.retraction_method)
     if get_cost(p,o.x) < get_cost(p,o.xOptimal)
         o.xOptimal = o.x
     end
