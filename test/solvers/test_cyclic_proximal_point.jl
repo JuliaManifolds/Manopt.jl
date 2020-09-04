@@ -4,7 +4,7 @@
     N = PowerManifold(Circle(),n)
     f = artificial_S1_signal(n)
     F = x -> costL2TV(N,f,0.5,x)
-    proxes = [ (λ,x) -> prox_distance(N,λ,f,x), (λ,x) -> prox_TV(N,0.5*λ,x) ]
+    proxes = ( (λ,x) -> prox_distance(N,λ,f,x), (λ,x) -> prox_TV(N,0.5*λ,x) )
     o = cyclic_proximal_point(
         N,
         F,

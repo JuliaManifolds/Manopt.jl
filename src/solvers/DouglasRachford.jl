@@ -74,7 +74,7 @@ function DouglasRachford(M::MT, F::TF, proxes::Vector{<:Any}, x;
     else
         nF = F
     end
-    p = ProximalProblem(M,nF,[prox1,prox2])
+    p = ProximalProblem(M,nF,(prox1,prox2))
     o = DouglasRachfordOptions(x, λ, α, reflect, stopping_criterion,parallel > 0)
 
     o = decorate_options(o; kwargs...)

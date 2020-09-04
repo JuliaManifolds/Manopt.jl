@@ -26,22 +26,22 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 # See also
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`getProximalMap`](@ref)
 """
-mutable struct ProximalProblem{mT <: Manifold} <: Problem
+mutable struct ProximalProblem{mT <: Manifold,TCost,TProxes<:Tuple} <: Problem
   M::mT
-  cost::Any
-  proxes::Vector{<:Any}
+  cost::TCost
+  proxes::TProxes
   number_of_proxes::Vector{Int}
-  ProximalProblem(M::mT, cF, proxMaps::Vector{<:Any}) where {mT <: Manifold}= new{mT}(M,cF,proxMaps,ones(length(proxMaps)))
-  ProximalProblem(M::mT, cF, proxMaps::Vector{<:Any}, nOP::Vector{Int}) where {mT <: Manifold} =
+  ProximalProblem(M::mT, cF, proxMaps::Tuple) where {mT <: Manifold}= new{mT,typeof(cF),typeof(proxMaps)}(M,cF,proxMaps,ones(length(proxMaps)))
+  ProximalProblem(M::mT, cF, proxMaps::Tuple, nOP::Vector{Int}) where {mT <: Manifold} =
     length(nOP) != length(proxMaps) ? throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
-    new{mT}(M,cF,proxMaps,nOP)
+    new{mT,typeof(cF),typeof(proxMaps)}(M,cF,proxMaps,nOP)
 end
 @doc raw"""
     getProximalMap(p,λ,x,i)
 
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
-function getProximalMap(p::P,λ,x,i) where {P <: ProximalProblem{M} where M <: Manifold}
+function getProximalMap(p::ProximalProblem,λ,x,i)
     if i>length(p.proxes)
         throw( ErrorException("the $(i)th entry does not exists, only $(length(p.proxes)) available.") )
     end
@@ -69,12 +69,12 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 # See also
 [`cyclic_proximal_point`](@ref)
 """
-mutable struct CyclicProximalPointOptions <: Options
-    x
-    stop::StoppingCriterion
-    λ::Any
-    orderType::EvalOrder
-    order::Array{Int,1}
+mutable struct CyclicProximalPointOptions{TX,TStop<:StoppingCriterion,Tλ,TOrder<:EvalOrder} <: Options
+    x::TX
+    stop::TStop
+    λ::Tλ
+    orderType::TOrder
+    order::Vector{Int}
 end
 function CyclicProximalPointOptions(
     x,
@@ -82,7 +82,7 @@ function CyclicProximalPointOptions(
     λ=(iter)-> 1.0/iter,
     o::EvalOrder=LinearEvalOrder()
     )
-    return CyclicProximalPointOptions(x,s,λ,o,[])
+    return CyclicProximalPointOptions{typeof(x),typeof(s),typeof(λ),typeof(o)}(x,s,λ,o,[])
 end
 @doc raw"""
     DouglasRachfordOptions <: Options
