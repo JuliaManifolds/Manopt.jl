@@ -94,7 +94,7 @@ function prox_TV(M::PowerManifold{𝔽,N,T}, λ, x, p::Int=1) where {𝔽,N<:Man
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    maxInd = Tuple(last(R))
+    maxInd = last(R).I
     y = copy(x)
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
@@ -195,7 +195,7 @@ function prox_TV2(M::Manifold,λ,pointTuple::Tuple{T,T,T},p::Int=1;
       "Proximal Map of TV2(M,λ,pT,p) not implemented for p=$(p) (requires p=1) on general manifolds."
     ))
   end
-  PowX = [pointTuple...]
+  PowX = SVector(pointTuple)
   PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
   xInit = PowX
   F(x) = 1/2*distance(PowM,PowX,x)^2 + λ*costTV2(PowM,x)
@@ -204,15 +204,16 @@ function prox_TV2(M::Manifold,λ,pointTuple::Tuple{T,T,T},p::Int=1;
   return (xR...,)
 end
 function prox_TV2(M::Circle,λ,pointTuple::Tuple{T,T,T},p::Int=1) where {T}
-  w = [1., -2. ,1. ]
-  x = [pointTuple...]
+  w = @SVector [1., -2. ,1. ]
+  x = SVector(pointTuple)
   if p==1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
-    m = min( λ, abs(  sym_rem( sum( x .* w  ) ) )/(dot(w,w))   )
-    s = sign( sym_rem(sum(x .* w)) )
-    return Tuple(  sym_rem.( x  .-  m .* s .* w ) )
+    sr_dot_xw = sym_rem(sum( x .* w ))
+    m = min( λ, abs(  sr_dot_xw )/(dot(w,w))   )
+    s = sign( sr_dot_xw )
+    return sym_rem.( x  .-  m .* s .* w )
   elseif p==2 # Theorem 3.6 ibd.
     t = λ * sym_rem( sum( x .* w ) ) / (1 + λ*dot(w,w) )
-    return Tuple( sym_rem.( x - t.*w )  )
+    return sym_rem.( x - t.*w )
   else
     throw(ErrorException(
       "Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"
@@ -220,15 +221,15 @@ function prox_TV2(M::Circle,λ,pointTuple::Tuple{T,T,T},p::Int=1) where {T}
   end
 end
 function prox_TV2(M::Euclidean,λ,pointTuple::Tuple{T,T,T},p::Int=1) where {T}
-  w = [1., -2. ,1. ]
-  x = [pointTuple...]
+  w = @SVector [1., -2. ,1. ]
+  x = SVector(pointTuple)
   if p==1 # Example 3.2 in Bergmann, Laus, Steidl, Weinmann, 2014.
     m = min.(Ref(λ),  abs.( x .* w  ) / (dot(w,w))   )
     s = sign.( sum(x .* w) )
     return x  .-  m .* s .* w
   elseif p==2 # Theorem 3.6 ibd.
     t = λ * sum( x .* w ) / (1 + λ*dot(w,w) )
-    return x - t.*w
+    return x .- t.*w
   else
     throw(ErrorException(
       "Proximal Map of TV2(Euclidean,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"
@@ -261,8 +262,8 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
   power_size = power_dimensions(M)
   R = CartesianIndices(power_size)
   d = length(size(x))
-  minInd = [first(R).I...]
-  maxInd = [last(R).I...]
+  minInd = first(R).I
+  maxInd = last(R).I
   y = copy(x)
   for k in 1:d # for all directions
     ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
@@ -275,7 +276,7 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
             jForward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
             jBackward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
             (y[jBackward], y[i], y[jForward]) =
-              prox_TV2( M.manifold, λ, (y[jBackward], y[i], y[jForward]),p) # Compute TV on these
+              prox_TV2( M.manifold, λ, (y[jBackward], y[i], y[jForward]),p).data # Compute TV on these
           end
         end # if mod 3
       end # i in R

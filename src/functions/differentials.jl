@@ -215,7 +215,7 @@ function differential_forward_logs(M::PowerManifold, p, X)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    maxInd = [last(R).I...]
+    maxInd = last(R).I
     d2 = (d>1) ? ones(Int,d+1) + (d-1)*(1:(d+1) .== d+1 ) : 1
     if d > 1
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...,d)
@@ -223,10 +223,11 @@ function differential_forward_logs(M::PowerManifold, p, X)
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...)
     end
     Y = zero_tangent_vector(N, repeat(p,inner=d2) )
+    e_k_vals = [ 1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
-            I = [i.I...] # array of index
-            J = I .+ 1 .* (1:d .== k) #i + e_k is j
+            I = i.I # array of index
+            J = I .+ e_k_vals[k] #i + e_k is j
             if all( J .<= maxInd )
                 # this is neighbor in range,
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index

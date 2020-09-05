@@ -315,7 +315,7 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     sX = size(p)
-    maxInd = [last(R).I...] # maxInd as Array
+    maxInd = last(R).I
     if d > 1
         d2 = fill(1,d+1)
         d2[d+1] = d
@@ -325,13 +325,14 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
     N = PowerManifold(M.manifold, TPR(), power_size..., d)
     xT = repeat(p,inner=d2)
     X = zero_tangent_vector(N,xT)
+    e_k_vals = [ 1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
-            I = [i.I...] # array of index
-            J = I .+ 1 .* (1:d .== k) #i + e_k is j
+            I = i.I
+            J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all( J .<= maxInd ) # is this neighbor in range?
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-                X[N, Tuple(i)..., k] = log(M.manifold,p[M, Tuple(i)...], p[M, Tuple(j)...])
+                X[N, i.I..., k] = log(M.manifold,p[M, i.I...], p[M, j.I...])
             end
         end # directions
     end # i in R
@@ -403,9 +404,9 @@ function ∇TV2(M::PowerManifold, q, p::Int=1)
                 else
                     g = ∇TV2(M.manifold,(q[jB],q[i],q[jF]),p) # Compute TV2 on these
                 end
-                X[M,Tuple(jB)...] = g[1]
-                X[M,Tuple(i)...] = g[2]
-                X[M,Tuple(jF)...] = g[3]
+                X[M,jB.I...] = g[1]
+                X[M,i.I...] = g[2]
+                X[M,jF.I...] = g[3]
             end
         end # directions
     end # i in R
