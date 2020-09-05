@@ -27,13 +27,13 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function gradient_descent(M::mT,
-    F::Function, ∇F::Function, x;
+    F::TF, ∇F::TDF, x;
     stepsize::Stepsize = ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenGradientNormLess(10.0^-8)),
     return_options=false,
     kwargs... #collect rest
-  ) where {mT <: Manifold}
+  ) where {mT <: Manifold, TF, TDF}
   p = GradientProblem(M,F,∇F)
   o = GradientDescentOptions(x, stopping_criterion,stepsize,retraction_method)
   o = decorate_options(o; kwargs...)

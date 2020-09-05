@@ -96,9 +96,9 @@ faces are available:
   its gradient (a tangent vector) `∇F`$=\nabla F(x)$ at  `x` and an optional
   search direction tangent vector `η-∇F` are the arguments.
 """
-mutable struct ArmijoLinesearch <: Linesearch
+mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     initialStepsize::Float64
-    retraction_method::AbstractRetractionMethod
+    retraction_method::TRM
     contractionFactor::Float64
     sufficientDecrease::Float64
     stepsizeOld::Float64
@@ -108,13 +108,13 @@ mutable struct ArmijoLinesearch <: Linesearch
         contractionFactor::Float64=0.95,
         sufficientDecrease::Float64=0.1
     )
-        return new(s, r, contractionFactor, sufficientDecrease,s)
+        return new{typeof(r)}(s, r, contractionFactor, sufficientDecrease,s)
     end
 end
 function (a::ArmijoLinesearch)(p::P,o::O,i::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
     a(p.M, o.x, p.cost, get_gradient(p,o.x), η)
 end
-function (a::ArmijoLinesearch)(M::mT, x, F::Function, ∇F::T, η::T=-∇F) where {mT <: Manifold, T}
+function (a::ArmijoLinesearch)(M::mT, x, F::TF, ∇F::T, η::T=-∇F) where {mT <: Manifold, TF, T}
     # for local shortness
     s = a.stepsizeOld
     f0 = F(x)

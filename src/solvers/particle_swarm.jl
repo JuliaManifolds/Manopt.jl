@@ -73,10 +73,10 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function particle_swarm(M::Manifold,
-  F::Function;
+  F::TF;
   n::Int = 100,
-  x0::AbstractVector{P} = [random_point(M) for i = 1:n],
-  velocity::AbstractVector{T} = [random_tangent(M, y) for y ∈ x0],
+  x0::AbstractVector = [random_point(M) for i = 1:n],
+  velocity::AbstractVector = [random_tangent(M, y) for y ∈ x0],
   inertia::Real = 0.65,
   social_weight::Real = 1.4,
   cognitive_weight::Real = 1.4,
@@ -86,7 +86,7 @@ function particle_swarm(M::Manifold,
   vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
   return_options=false,
   kwargs... #collect rest
-) where {P,T}
+) where {TF}
   p = CostProblem(M,F)
   o = ParticleSwarmOptions(x0, velocity, inertia, social_weight, cognitive_weight, stopping_criterion, retraction_method, inverse_retraction_method, vector_transport_method)
   o = decorate_options(o; kwargs...)

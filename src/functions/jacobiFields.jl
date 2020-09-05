@@ -131,7 +131,7 @@ $Y ∈ T_p\mathcal M$. The main difference to [`jacobi_field`](@ref) is the,
 that the input `X` and the output `Y` switched tangent spaces.
 For detais see [`jacobi_field`](@ref)
 """
-function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β::Function=βdifferential_geodesic_startpoint)
+function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -146,7 +146,7 @@ function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β::Function=βdifferenti
     )
     return Y
 end
-function adjoint_Jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βdifferential_geodesic_startpoint)
+function adjoint_Jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -161,7 +161,7 @@ function adjoint_Jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real
     )[1]
     return Y
 end
-function adjoint_Jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function=βdifferential_geodesic_startpoint)
+function adjoint_Jacobi_field(M::AbstractPowerManifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
     rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
@@ -181,7 +181,7 @@ result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
 
 [`adjoint_Jacobi_field`](@ref)
 """
-function jacobi_field(M::Manifold, p, q, t, X, β::Function=βdifferential_geodesic_startpoint)
+function jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -197,7 +197,7 @@ function jacobi_field(M::Manifold, p, q, t, X, β::Function=βdifferential_geode
     )
     return Y
 end
-function jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Function=βdifferential_geodesic_startpoint)
+function jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t);
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M,p,q)))
     V = get_vectors(M, p, B)
@@ -213,7 +213,7 @@ function jacobi_field(M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β::Fu
     )[1]
     return Y
 end
-function jacobi_field(M::AbstractPowerManifold, p, q, t, X, β::Function=βdifferential_geodesic_startpoint)
+function jacobi_field(M::AbstractPowerManifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
     rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)

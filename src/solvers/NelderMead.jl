@@ -33,13 +33,13 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
   returned).
 """
 function NelderMead(M::MT,
-    F::Function,
+    F::TF,
     population = [random_point(M) for i=1:(manifoldDimension(M)+1) ];
     stopping_criterion::StoppingCriterion = StopAfterIteration(200000),
     α = 1., γ = 2., ρ=1/2, σ = 1/2,
     return_options=false,
     kwargs... #collect rest
-  ) where {MT <: Manifold,T}
+  ) where {MT <: Manifold,TF}
     p = CostProblem(M,F)
     o = NelderMeadOptions(population, stopping_criterion;
     α = α, γ = γ, ρ = ρ, σ = σ)

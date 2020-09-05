@@ -102,17 +102,17 @@ when _all_ indicate to stop. The `reseason` is given by the concatenation of all
 reasons.
 
 # Constructor
-    StopWhenAll(c::Array{StoppingCriterion,1})
+    StopWhenAll(c::NTuple{N,StoppingCriterion} where N)
     StopWhenAll(c::StoppingCriterion,...)
 """
-mutable struct StopWhenAll <: StoppingCriterionSet
-    criteria::Array{StoppingCriterion,1}
+mutable struct StopWhenAll{TCriteria<:Tuple} <: StoppingCriterionSet
+    criteria::TCriteria
     reason::String
-    StopWhenAll(c::Array{StoppingCriterion,1}) = new(c,"")
-    StopWhenAll(c...) = new([c...],"")
+    StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...),"")
+    StopWhenAll(c...) = new{typeof(c)}(c,"")
 end
 function (c::StopWhenAll)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if all([ subC(p,o,i) for subC in c.criteria])
+    if all(subC -> subC(p,o,i), c.criteria)
         c.reason = string( [ get_reason(subC) for subC in c.criteria ]... )
         return true
     end
@@ -128,17 +128,17 @@ when _any_ single one indicates to stop. The `reseason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
 
 # Constructor
-    StopWhenAny(c::Array{StoppingCriterion,1})
-    StopWhenAny(c::StoppingCriterion,...)
+    StopWhenAny(c::NTuple{N,StoppingCriterion} where N)
+    StopWhenAny(c::StoppingCriterion...)
 """
-mutable struct StopWhenAny <: StoppingCriterionSet
-    criteria::Array{StoppingCriterion,1}
+mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
+    criteria::TCriteria
     reason::String
-    StopWhenAny(c::Array{StoppingCriterion,1}) = new(c,"")
-    StopWhenAny(c::StoppingCriterion...) = StopWhenAny([c...])
+    StopWhenAny(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...),"")
+    StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c)
 end
 function (c::StopWhenAny)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if any([ subC(p,o,i) for subC in c.criteria])
+    if any(subC -> subC(p,o,i), c.criteria)
         c.reason = string( [ get_reason(subC) for subC in c.criteria ]... )
         return true
     end

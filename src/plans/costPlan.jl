@@ -12,9 +12,9 @@ gradient free ones.
 # See also
 [`NelderMead`](@ref)
 """
-struct CostProblem{mT <: Manifold} <: Problem
+struct CostProblem{mT <: Manifold, Tcost} <: Problem
     M::mT
-    cost::Function
+    cost::Tcost
 end
 
 @doc raw"""
@@ -49,15 +49,15 @@ construct a Nelder-Mead Option with a set of `dimension(M)+1` random points.
 
 construct a Nelder-Mead Option with a set `p` of points
 """
-mutable struct NelderMeadOptions{T} <: Options
-    population::Array{T,1}
+mutable struct NelderMeadOptions{T,Tα<:Real,Tγ<:Real,Tρ<:Real,Tσ<:Real} <: Options
+    population::Vector{T}
     stop::StoppingCriterion
-    α::Real
-    γ::Real
-    ρ::Real
-    σ::Real
+    α::Tα
+    γ::Tγ
+    ρ::Tρ
+    σ::Tσ
     x::T
-    costs::Array{Float64,1}
+    costs::Vector{Float64}
     function NelderMeadOptions(
         M::MT;
         stop::StoppingCriterion = StopAfterIteration(2000),
@@ -67,13 +67,13 @@ mutable struct NelderMeadOptions{T} <: Options
         σ = 1/2
     ) where {MT <: Manifold }
         p = [random_point(M) for i=1:(manifold_dimension(M)+1) ]
-        new{eltype(p)}(p, stop, α, γ, ρ, σ, p[1],[])
+        new{eltype(p),typeof(α),typeof(γ),typeof(ρ),typeof(σ)}(p, stop, α, γ, ρ, σ, p[1],[])
     end
-    function NelderMeadOptions(population::Array{T,1},
+    function NelderMeadOptions(population::Vector{T},
         stop::StoppingCriterion = StopAfterIteration(2000);
         α = 1., γ = 2., ρ=1/2, σ = 1/2
     ) where {T}
-        return new{T}(population, stop, α, γ, ρ, σ, population[1],[])
+        return new{T,typeof(α),typeof(γ),typeof(ρ),typeof(σ)}(population, stop, α, γ, ρ, σ, population[1],[])
     end
 end
 get_solver_result(o::NelderMeadOptions) = o.x

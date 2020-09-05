@@ -55,15 +55,15 @@ construct record decorated [`Options`](@ref), where `dR` can be
   `recordDictionary`(@ref) within the dictionary at `:All`.
 * a `Dict{Symbol,RecordAction}`.
 """
-mutable struct RecordOptions{O <: Options} <: Options
+mutable struct RecordOptions{O <: Options, TRD<:NamedTuple} <: Options
     options::O
-    recordDictionary::Dict{Symbol, <: RecordAction}
-    RecordOptions{O}(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = new(o,dR)
+    recordDictionary::TRD
+    RecordOptions{O}(o::O; kwargs...) where {O <: Options} = new{O,typeof(values(kwargs))}(o,values(kwargs))
 end
-RecordOptions(o::O, dR::D) where {O <: Options, D <: RecordAction} = RecordOptions{O}(o,Dict(:All => dR))
-RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = RecordOptions{O}(o,Dict(:All => RecordGroup(dR)))
-RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o,dR)
-RecordOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = RecordOptions{O}(o, RecordFactory(get_options(o),format))
+RecordOptions(o::O, dR::D) where {O <: Options, D <: RecordAction} = RecordOptions{O}(o; All = dR)
+RecordOptions(o::O, dR::Array{ <: RecordAction,1}) where {O <: Options} = RecordOptions{O}(o; All = RecordGroup(dR))
+RecordOptions(o::O, dR::Dict{Symbol, <: RecordAction}) where {O <: Options} = RecordOptions{O}(o; dR...)
+RecordOptions(o::O, format::Vector{<:Any}) where {O <: Options} = RecordOptions{O}(o; RecordFactory(get_options(o),format)...)
 
 dispatch_options_decorator(o::RecordOptions) = Val(true)
 
@@ -233,20 +233,20 @@ record a certain entries change during iterates
 * `storage` – a [`StoreOptionsAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
 mutable struct RecordEntryChange <: RecordAction
-    recordedValues::Array{Float64,1}
+    recordedValues::Vector{Float64}
     field::Symbol
-    distance::Function
+    distance::Any
     storage::StoreOptionsAction
     RecordEntryChange(
             f::Symbol,
-            d::Function,
+            d,
             a::StoreOptionsAction=StoreOptionsAction( (f,) )
-        ) = new(Array{Float64,1}(),f,d,a)
-    function RecordEntryChange(v::T where T, f::Symbol, d::Function,
+        ) = new(Float64[],f,d,a)
+    function RecordEntryChange(v::T where T, f::Symbol, d,
             a::StoreOptionsAction=StoreOptionsAction( (f,) )
         )
         update_storage!(a,Dict(f=>v))
-        return new(Array{Float64,1}(),f, d, a)
+        return new(Float64[],f, d, a)
     end
 end
 function (r::RecordEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
@@ -328,8 +328,7 @@ function RecordFactory(o::O, a::Array{<:Any,1} ) where {O <: Options}
     if length(e) > 0
         record = RecordEvery(record,last(e))
     end
-    dictionary = Dict{Symbol,RecordAction}(:All => record)
-    return dictionary
+    return (; All = record)
 end
 @doc raw"""
     RecordActionFactory(s)
@@ -351,5 +350,5 @@ function RecordActionFactory(o::O,s::Symbol) where {O <: Options}
     elseif (s==:Cost)
         return RecordCost()
     end
-        return RecordEntry(getfield(o,s),s)
+    return RecordEntry(getfield(o,s),s)
 end

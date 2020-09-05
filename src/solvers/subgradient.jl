@@ -30,15 +30,15 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function subgradient_method(M::Manifold,
-        F::Function,
-        ∂F::Function,
+        F::TF,
+        ∂F::TdF,
         x;
-        retraction::Function = exp!,
+        retraction::TRetr = ExponentialRetraction(),
         stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M,x)/5),
         stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
         return_options = false,
         kwargs... #especially may contain debug
-    )
+    ) where {TF,TdF,TRetr}
     p = SubGradientProblem(M,F,∂F)
     o = SubGradientMethodOptions(M,x,stopping_criterion, stepsize, retraction)
     o = decorate_options(o; kwargs...)
@@ -56,7 +56,7 @@ end
 function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
     o.∂ = get_subgradient(p,o.x)
     s = get_stepsize(p,o,iter)
-    o.retract!(p.M, o.x, o.x, -s*o.∂)
+    retract!(p.M, o.x, o.x, -s*o.∂, o.retraction_method)
     if get_cost(p,o.x) < get_cost(p,o.xOptimal)
         o.xOptimal = o.x
     end

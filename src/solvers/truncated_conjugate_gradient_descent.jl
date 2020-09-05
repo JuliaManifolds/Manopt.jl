@@ -63,13 +63,13 @@ OR
 """
 function truncated_conjugate_gradient_descent(
     M::mT,
-    F::Function,
-    ∇F::Function,
+    F::TF,
+    ∇F::TdF,
     x,
     η,
     H::Union{Function,Missing},
     Δ::Float64;
-    preconditioner::Function = (M,x,ξ) -> ξ,
+    preconditioner::Tprec = (M,x,ξ) -> ξ,
     θ::Float64 = 1.0,
     κ::Float64 = 0.1,
     useRandom::Bool = false,
@@ -94,7 +94,7 @@ function truncated_conjugate_gradient_descent(
         ),
         return_options = false,
         kwargs... #collect rest
-    ) where {mT <: Manifold}
+    ) where {mT <: Manifold, TF, TdF, Tprec}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TruncatedConjugateGradientOptions(x,stopping_criterion,η,zero_tangent_vector(M,x),Δ,zero_tangent_vector(M,x),useRandom)
     o = decorate_options(o; kwargs...)

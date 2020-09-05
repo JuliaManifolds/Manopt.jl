@@ -8,6 +8,8 @@ using ColorTypes
 using Markdown
 using LinearAlgebra
 using Dates: Period, Nanosecond, value
+using Random: shuffle!
+using StaticArrays
 import Random: rand, randperm
 import Base: copy, identity
 import ManifoldsBase:
