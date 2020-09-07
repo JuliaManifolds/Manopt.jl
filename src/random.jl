@@ -153,7 +153,9 @@ generate a random tangent vector in the tangent space of `p` on `M`. By default
 this is a `:Gaussian` distribution.
 """
 random_tangent(M::Manifold, p, options...) = random_tangent(M, p, :Gaussian, options...)
-random_tangent(M::Manifold, p, s::Symbol, options...) = random_tangent(M, p, Val(s), options...)
+function random_tangent(M::Manifold, p, s::Symbol, options...)
+    return random_tangent(M, p, Val(s), options...)
+end
 
 @doc raw"""
     random_tangent(M::Circle, p [, :Gaussian, σ=1.0])
