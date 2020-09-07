@@ -39,11 +39,11 @@ function cost_acceleration_bezier(
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     p = de_casteljau(M, Bt, T)
     n = length(T)
-    f = p[ [1,3:n...,n] ]
-    b = p[ [1,1:(n-2)...,n] ]
-    d = distance.(Ref(M), p, shortest_geodesic.(Ref(M),f,b,Ref(0.5))).^2
-    samplingFactor = 1/(( ( max(T...) - min(T...) )/(n-1) )^3)
-    return samplingFactor*sum(d)
+    f = p[[1, 3:n..., n]]
+    b = p[[1, 1:(n - 2)..., n]]
+    d = distance.(Ref(M), p, shortest_geodesic.(Ref(M), f, b, Ref(0.5))) .^ 2
+    samplingFactor = 1 / (((max(T...) - min(T...)) / (n - 1))^3)
+    return samplingFactor * sum(d)
 end
 @doc raw"""
     cost_L2_acceleration_bezier(M,B,pts,λ,d)
@@ -76,11 +76,12 @@ function cost_L2_acceleration_bezier(
     degrees::AbstractVector{<:Integer},
     T::AbstractVector{<:AbstractFloat},
     λ::AbstractFloat,
-    d::AbstractVector{P}
+    d::AbstractVector{P},
 ) where {P}
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
-    p = get_bezier_junctions(M,Bt)
-    return cost_acceleration_bezier(M, B, degrees, T) + λ/2*sum((distance.(Ref(M),p,d)).^2)
+    p = get_bezier_junctions(M, Bt)
+    return cost_acceleration_bezier(M, B, degrees, T) +
+           λ / 2 * sum((distance.(Ref(M), p, d)) .^ 2)
 end
 
 @doc raw"""
@@ -98,9 +99,9 @@ E(u,v) =
 ```
 """
 function costIntrICTV12(M::Manifold, f, u, v, α, β)
-    IC = 1/2*distance(M, shortest_geodesic(M, u, v, 0.5), f)^2
-    TV12 = β * costTV(M, u) + (1-β) * costTV2(M, v)
-    return  IC + α*TV12
+    IC = 1 / 2 * distance(M, shortest_geodesic(M, u, v, 0.5), f)^2
+    TV12 = β * costTV(M, u) + (1 - β) * costTV2(M, v)
+    return IC + α * TV12
 end
 
 @doc raw"""
@@ -117,7 +118,7 @@ E(x) = d_{\mathcal M}^2(f,x) + \alpha \operatorname{TV}(x)
 # See also
 [`costTV`](@ref)
 """
-costL2TV(M, f, α, x) = 1/2 * distance(M, f, x)^2  +  α*costTV(M, x)
+costL2TV(M, f, α, x) = 1 / 2 * distance(M, f, x)^2 + α * costTV(M, x)
 
 @doc raw"""
     costL2TVTV2(M, f, α, β, x)
@@ -134,7 +135,9 @@ E(x) = d_{\mathcal M}^2(f,x) + \alpha\operatorname{TV}(x)
 # See also
 [`costTV`](@ref), [`costTV2`](@ref)
 """
-costL2TVTV2(M::PowerManifold, f, α, β, x) = 1/2*distance(M,f,x)^2 + α*costTV(M,x) + β*costTV2(M,x)
+function costL2TVTV2(M::PowerManifold, f, α, β, x)
+    return 1 / 2 * distance(M, f, x)^2 + α * costTV(M, x) + β * costTV2(M, x)
+end
 
 @doc raw"""
     costL2TV2(M, f, β, x)
@@ -150,7 +153,7 @@ E(x) = d_{\mathcal M}^2(f,x) + \beta\operatorname{TV}_2(x)
 [`costTV2`](@ref)
 """
 function costL2TV2(M::PowerManifold, f, β, x)
-    return 1/2*distance(M,f,x)^2 + β*costTV2(M,x)
+    return 1 / 2 * distance(M, f, x)^2 + β * costTV2(M, x)
 end
 
 @doc raw"""
@@ -167,8 +170,8 @@ E(x_1,x_2) = d_{\mathcal M}^p(x_1,x_2), \quad x_1,x_2 ∈ \mathcal M
 
 [`∇TV`](@ref), [`prox_TV`](@ref)
 """
-function costTV(M::Manifold, x::Tuple{T,T}, p::Int=1) where {T}
-  return distance(M,x[1],x[2])^p
+function costTV(M::Manifold, x::Tuple{T,T}, p::Int = 1) where {T}
+    return distance(M, x[1], x[2])^p
 end
 @doc raw"""
     costTV(M,x [,p=2,q=1])
@@ -189,24 +192,24 @@ E^q(x) = \sum_{i ∈ \mathcal G}
 # See also
 [`∇TV`](@ref), [`prox_TV`](@ref)
 """
-function costTV(M::PowerManifold, x, p=1, q=1)
+function costTV(M::PowerManifold, x, p = 1, q = 1)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = last(R)
-    cost = fill(0.,Tuple(power_size))
+    cost = fill(0.0, Tuple(power_size))
     for k in 1:d # for all directions
-        ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+        ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
         for i in R # iterate over all pixel
-            j = i+ek # compute neighbor
-            if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
-                cost[i] += costTV(M.manifold, (x[M,Tuple(i)...], x[M,Tuple(j)...]), p)
+            j = i + ek # compute neighbor
+            if all(map(<=, j.I, maxInd.I)) # is this neighbor in range?
+                cost[i] += costTV(M.manifold, (x[M, Tuple(i)...], x[M, Tuple(j)...]), p)
             end
         end
     end
-    cost = (cost).^(1/p)
+    cost = (cost) .^ (1 / p)
     if q > 0
-        return sum(cost.^q)^(1/q)
+        return sum(cost .^ q)^(1 / q)
     else
         return cost
     end
@@ -228,9 +231,9 @@ $d_2^p(x_1,x_2,x_3) = \min_{c ∈ \mathcal C} d_{\mathcal M}(c,x_2).$
 # See also
 [`∇TV2`](@ref), [`prox_TV2`](@ref)
 """
-function costTV2(M::MT, x::Tuple{T,T,T}, p=1) where {MT <: Manifold, T}
+function costTV2(M::MT, x::Tuple{T,T,T}, p = 1) where {MT<:Manifold,T}
     # note that here mid_point returns the closest to x2 from the e midpoints between x1 x3
-    return 1/p*distance(M,mid_point(M,x[1],x[3]),x[2])^p
+    return 1 / p * distance(M, mid_point(M, x[1], x[3]), x[2])^p
 end
 @doc raw"""
     costTV2(M,x [,p=1])
@@ -254,32 +257,32 @@ nearest to $x_i$.
 # See also
 [`∇TV2`](@ref), [`prox_TV2`](@ref)
 """
-function costTV2(M::PowerManifold, x, p::Int=1, Sum::Bool=true)
-    Tt = Tuple( power_dimensions(M) )
-    R = CartesianIndices( Tt )
+function costTV2(M::PowerManifold, x, p::Int = 1, Sum::Bool = true)
+    Tt = Tuple(power_dimensions(M))
+    R = CartesianIndices(Tt)
     d = length(Tt)
     minInd, maxInd = first(R), last(R)
-    cost = fill(0., Tt)
+    cost = fill(0.0, Tt)
     for k in 1:d # for all directions
-        ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
+        ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
         for i in R # iterate over all pixel
-            jF = i+ek # compute forward neighbor
-            jB = i-ek # compute backward neighbor
-            if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
+            jF = i + ek # compute forward neighbor
+            jB = i - ek # compute backward neighbor
+            if all(map(<=, jF.I, maxInd.I)) && all(map(>=, jB.I, minInd.I)) # are neighbors in range?
                 cost[i] += costTV2(
                     M.manifold,
-                    (x[M,Tuple(jB)...], x[M,Tuple(i)...], x[M,Tuple(jF)...]),
+                    (x[M, Tuple(jB)...], x[M, Tuple(i)...], x[M, Tuple(jF)...]),
                     p,
                 )
             end
         end # i in R
-  end # directions
-  if p != 1
-    cost = (cost).^(1/p)
-  end
-  if Sum
-    return sum(cost)
-  else
-    return cost
-  end
+    end # directions
+    if p != 1
+        cost = (cost) .^ (1 / p)
+    end
+    if Sum
+        return sum(cost)
+    else
+        return cost
+    end
 end

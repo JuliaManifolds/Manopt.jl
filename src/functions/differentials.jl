@@ -11,28 +11,30 @@ function differential_bezier_control(
     M::Manifold,
     b::BezierSegment,
     t::Float64,
-    X::BezierSegment
+    X::BezierSegment,
 ) where {Q}
-  # iterative, because recursively would be too many Casteljau evals
-  c = deepcopy(b.pts)
-  Y = similar(X.pts)
-  for l = length(c):-1:2
-    Y[1:l-1] .= differential_geodesic_startpoint.(
-        Ref(M),
-        c[1:l-1],
-        c[2:l],
-        Ref(t),
-        X.pts[1:l-1]
-    ) .+ differential_geodesic_endpoint.(
-        Ref(M),
-        c[1:l-1],
-        c[2:l],
-        Ref(t),
-        X.pts[2:l]
-    )
-    c[1:l-1] = shortest_geodesic.(Ref(M), c[1:l-1], c[2:l], Ref(t))
-  end
-  return Y[1]
+    # iterative, because recursively would be too many Casteljau evals
+    c = deepcopy(b.pts)
+    Y = similar(X.pts)
+    for l in length(c):-1:2
+        Y[1:(l - 1)] .=
+            differential_geodesic_startpoint.(
+                Ref(M),
+                c[1:(l - 1)],
+                c[2:l],
+                Ref(t),
+                X.pts[1:(l - 1)],
+            ) .+
+            differential_geodesic_endpoint.(
+                Ref(M),
+                c[1:(l - 1)],
+                c[2:l],
+                Ref(t),
+                X.pts[2:l],
+            )
+        c[1:(l - 1)] = shortest_geodesic.(Ref(M), c[1:(l - 1)], c[2:l], Ref(t))
+    end
+    return Y[1]
 end
 @doc raw"""
     differential_bezier_control(
@@ -54,7 +56,7 @@ function differential_bezier_control(
     T::Array{Float64,1},
     X::BezierSegment,
 )
-    return differential_bezier_control.(Ref(M),Ref(b),T,Ref(X))
+    return differential_bezier_control.(Ref(M), Ref(b), T, Ref(X))
 end
 @doc raw"""
     differential_bezier_control(
@@ -77,20 +79,19 @@ function differential_bezier_control(
     t::Float64,
     X::AbstractVector{<:BezierSegment},
 )
-  if (0 > t) || ( t > length(B) )
-    return throw(
-        DomainError(t,
-            "The parameter $(t) to evaluate the composite Bézier curve at is outside the interval [0,$(length(B))]."
-        )
-    )
-  end
-  seg = max(ceil(Int,t),1)
-  localT = ceil(Int,t) == 0 ? 0. : t - seg+1
-  Y = differential_bezier_control(M,B[seg],localT,X[seg])
-  if (Integer(t) == seg) && (seg < length(B)) # boundary case, -> seg-1 is also affecting the boundary differential
-    Y .+= differential_bezier_control(M,B[seg+1],localT-1,X[seg+1])
-  end
-  return Y
+    if (0 > t) || (t > length(B))
+        return throw(DomainError(
+            t,
+            "The parameter $(t) to evaluate the composite Bézier curve at is outside the interval [0,$(length(B))].",
+        ))
+    end
+    seg = max(ceil(Int, t), 1)
+    localT = ceil(Int, t) == 0 ? 0.0 : t - seg + 1
+    Y = differential_bezier_control(M, B[seg], localT, X[seg])
+    if (Integer(t) == seg) && (seg < length(B)) # boundary case, -> seg-1 is also affecting the boundary differential
+        Y .+= differential_bezier_control(M, B[seg + 1], localT - 1, X[seg + 1])
+    end
+    return Y
 end
 @doc raw"""
     differential_bezier_control(
@@ -119,9 +120,9 @@ function differential_bezier_control(
     M::Manifold,
     B::AbstractVector{<:BezierSegment},
     T::Array{Float64,1},
-    Ξ::AbstractVector{<:BezierSegment}
+    Ξ::AbstractVector{<:BezierSegment},
 )
-    return differential_bezier_control.(Ref(M),Ref(B),T,Ref(Ξ))
+    return differential_bezier_control.(Ref(M), Ref(B), T, Ref(Ξ))
 end
 
 @doc raw"""
@@ -131,7 +132,9 @@ computes $D_p g(t;p,q)[\eta]$.
 # See also
  [`differential_geodesic_endpoint`](@ref), [`jacobi_field`](@ref)
 """
-differential_geodesic_startpoint(M::mT,x,y,t,η) where {mT <: Manifold} = jacobi_field(M,x,y,t,η,βdifferential_geodesic_startpoint)
+function differential_geodesic_startpoint(M::mT, x, y, t, η) where {mT<:Manifold}
+    return jacobi_field(M, x, y, t, η, βdifferential_geodesic_startpoint)
+end
 
 @doc raw"""
     differential_geodesic_endpoint(M,x,y,t,η)
@@ -140,7 +143,9 @@ computes $D_qg(t;p,q)[\eta]$.
 # See also
  [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
-differential_geodesic_endpoint(M::mT, x, y, t, η) where {mT <: Manifold} = jacobi_field(M,y,x,1-t,η,βdifferential_geodesic_startpoint)
+function differential_geodesic_endpoint(M::mT, x, y, t, η) where {mT<:Manifold}
+    return jacobi_field(M, y, x, 1 - t, η, βdifferential_geodesic_startpoint)
+end
 
 @doc raw"""
     differential_exp_basepoint(M, p, X, Y)
@@ -150,8 +155,8 @@ Compute $D_p\exp_p X[Y]$.
 # See also
 [`differential_exp_argument`](@ref), [`jacobi_field`](@ref)
 """
-function differential_exp_basepoint(M::Manifold,p,X,Y)
-    return jacobi_field(M, p, exp(M,p,X), 1.0, Y, βdifferential_exp_basepoint)
+function differential_exp_basepoint(M::Manifold, p, X, Y)
+    return jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_basepoint)
 end
 
 @doc raw"""
@@ -163,7 +168,7 @@ Note that $X ∈  T_X(T_p\mathcal M) = T_p\mathcal M$ is still a tangent vector.
  [`differential_exp_basepoint`](@ref), [`jacobi_field`](@ref)
 """
 function differential_exp_argument(M::Manifold, p, X, Y)
-    return jacobi_field(M,p,exp(M,p,X),1.0,Y,βdifferential_exp_argument)
+    return jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_argument)
 end
 
 @doc raw"""
@@ -174,7 +179,7 @@ computes $D_p\log_pq[X]$.
  [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
 """
 function differential_log_basepoint(M::Manifold, p, q, X)
-    return jacobi_field(M,p,q,0.0,X,βdifferential_log_basepoint)
+    return jacobi_field(M, p, q, 0.0, X, βdifferential_log_basepoint)
 end
 
 @doc raw"""
@@ -185,7 +190,7 @@ computes $D_q\log_p,q[X]$.
  [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
 """
 function differential_log_argument(M::Manifold, p, q, X)
-    return jacobi_field(M,q,p,1.0,X,βdifferential_log_argument)
+    return jacobi_field(M, q, p, 1.0, X, βdifferential_log_argument)
 end
 
 @doc raw"""
@@ -216,30 +221,33 @@ function differential_forward_logs(M::PowerManifold, p, X)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = last(R).I
-    d2 = (d>1) ? ones(Int,d+1) + (d-1)*(1:(d+1) .== d+1 ) : 1
+    d2 = (d > 1) ? ones(Int, d + 1) + (d - 1) * (1:(d + 1) .== d + 1) : 1
     if d > 1
-        N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...,d)
+        N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size..., d)
     else
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...)
     end
-    Y = zero_tangent_vector(N, repeat(p,inner=d2) )
-    e_k_vals = [ 1 * (1:d .== k) for k in 1:d]
+    Y = zero_tangent_vector(N, repeat(p, inner = d2))
+    e_k_vals = [1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
             I = i.I # array of index
             J = I .+ e_k_vals[k] #i + e_k is j
-            if all( J .<= maxInd )
+            if all(J .<= maxInd)
                 # this is neighbor in range,
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
                 # collects two, namely in kth direction since xi appears as base and arg
                 # Y[i,k] = differential_log_basepoint(M.manifold,p[i],p[j],X[i])
                 #            + differential_log_argument(M.manifold,p[i],p[j],X[j])
-                Y[M, I...,k] = Y[M, I..., k] + differential_log_basepoint(
+                Y[M, I..., k] =
+                    Y[M, I..., k] +
+                    differential_log_basepoint(
                         M.manifold,
                         p[M, I...],
                         p[M, J...],
                         X[M, I...],
-                    ) + differential_log_argument(
+                    ) +
+                    differential_log_argument(
                         M.manifold,
                         p[M, I...],
                         p[M, J...],

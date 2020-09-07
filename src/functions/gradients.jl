@@ -35,7 +35,7 @@ function ∇acceleration_bezier(
 ) where {P}
     gradB = _∇acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
-    for k=1:length(Bt) # we interpolate so we do not move end points
+    for k in 1:length(Bt) # we interpolate so we do not move end points
         zero_tangent_vector!(M, gradB[k].pts[end], Bt[k].pts[end])
         zero_tangent_vector!(M, gradB[k].pts[1], Bt[k].pts[1])
     end
@@ -47,8 +47,8 @@ function ∇acceleration_bezier(
     b::BezierSegment,
     T::AbstractVector{<:AbstractFloat},
 )
-    gradb = _∇acceleration_bezier(M,b.pts, [get_bezier_degree(M,b),], T)[1]
-    zero_tangent_vector!(M, gradb.pts[1],b.pts[1])
+    gradb = _∇acceleration_bezier(M, b.pts, [get_bezier_degree(M, b)], T)[1]
+    zero_tangent_vector!(M, gradb.pts[1], b.pts[1])
     zero_tangent_vector!(M, gradb.pts[end], b.pts[end])
     return gradb
 end
@@ -88,19 +88,19 @@ function ∇L2_acceleration_bezier(
     degrees::AbstractVector{<:Integer},
     T::AbstractVector{<:AbstractFloat},
     λ::Float64,
-    d::AbstractVector{P}
+    d::AbstractVector{P},
 ) where {P}
     gradB = _∇acceleration_bezier(M, B, degrees, T)
-    Bt = get_bezier_segments(M, B, degrees, :differentiable )
+    Bt = get_bezier_segments(M, B, degrees, :differentiable)
     # add start and end data grad
     # include data term
-    for k=1:length(Bt)
-        gradB[k].pts[1] .+= λ*∇distance(M, d[k], Bt[k].pts[1])
+    for k in 1:length(Bt)
+        gradB[k].pts[1] .+= λ * ∇distance(M, d[k], Bt[k].pts[1])
         if k > 1
-            gradB[k-1].pts[end] .+= λ*∇distance(M, d[k], Bt[k].pts[1])
+            gradB[k - 1].pts[end] .+= λ * ∇distance(M, d[k], Bt[k].pts[1])
         end
     end
-    gradB[end].pts[end] .+= λ*∇distance(M, d[end], Bt[end].pts[end])
+    gradB[end].pts[end] .+= λ * ∇distance(M, d[end], Bt[end].pts[end])
     return get_bezier_points(M, gradB, :differentiable)
 end
 
@@ -109,68 +109,80 @@ function _∇acceleration_bezier(
     M::Manifold,
     B::AbstractVector{P},
     degrees::AbstractVector{Int},
-    T::AbstractVector{Float64}
+    T::AbstractVector{Float64},
 ) where {P}
-    Bt = get_bezier_segments(M, B, degrees, :differentiable )
+    Bt = get_bezier_segments(M, B, degrees, :differentiable)
     n = length(T)
     m = length(Bt)
-    p = de_casteljau(M,Bt,T)
+    p = de_casteljau(M, Bt, T)
     center = p
-    forward = p[ [1, 3:n..., n] ]
-    backward = p[ [1,1:(n-2)..., n] ]
+    forward = p[[1, 3:n..., n]]
+    backward = p[[1, 1:(n - 2)..., n]]
     mid = mid_point.(Ref(M), backward, forward)
     # where the point of interest appears...
-    dt = ( max(T...) - min(T...) )/(n-1)
-    inner =  - 2/((dt)^3) .* log.(Ref(M),mid,center)
-    asForward = adjoint_differential_geodesic_startpoint.(Ref(M),forward,backward, Ref(0.5), inner)
-    asCenter = - 2/((dt)^3)*log.(Ref(M),center,mid)
-    asBackward = adjoint_differential_geodesic_endpoint.(Ref(M), forward, backward, Ref(0.5), inner )
+    dt = (max(T...) - min(T...)) / (n - 1)
+    inner = -2 / ((dt)^3) .* log.(Ref(M), mid, center)
+    asForward =
+        adjoint_differential_geodesic_startpoint.(
+            Ref(M),
+            forward,
+            backward,
+            Ref(0.5),
+            inner,
+        )
+    asCenter = -2 / ((dt)^3) * log.(Ref(M), center, mid)
+    asBackward =
+        adjoint_differential_geodesic_endpoint.(Ref(M), forward, backward, Ref(0.5), inner)
     # effect of these to the centrol points is the preliminary gradient
     ∇B = [
         BezierSegment(a.pts .+ b.pts .+ c.pts)
-        for (a,b,c) in zip(
-            adjoint_differential_bezier_control(M, Bt, T[ [1,3:n...,n]],asForward),
+        for
+        (a, b, c) in zip(
+            adjoint_differential_bezier_control(M, Bt, T[[1, 3:n..., n]], asForward),
             adjoint_differential_bezier_control(M, Bt, T, asCenter),
-            adjoint_differential_bezier_control(M, Bt, T[ [1,1:(n-2)...,n] ], asBackward)
+            adjoint_differential_bezier_control(M, Bt, T[[1, 1:(n - 2)..., n]], asBackward),
         )
     ]
-    for k=1:length(Bt)-1 # add both effects of left and right segments
-        X = ∇B[k+1].pts[1] + ∇B[k].pts[end]
+    for k in 1:(length(Bt) - 1) # add both effects of left and right segments
+        X = ∇B[k + 1].pts[1] + ∇B[k].pts[end]
         ∇B[k].pts[end] .= X
-        ∇B[k+1].pts[1] .= X
+        ∇B[k + 1].pts[1] .= X
     end
     # include c0 & C1 condition
-    for k=length(Bt):-1:2
+    for k in length(Bt):-1:2
         m = length(Bt[k].pts)
         # updates b-
-        X1 = ∇B[k-1].pts[end-1] .+ adjoint_differential_geodesic_startpoint(
-            M,
-            Bt[k-1].pts[end-1],
-            Bt[k].pts[1],
-            2.,
-            ∇B[k].pts[2]
-        )
+        X1 =
+            ∇B[k - 1].pts[end - 1] .+ adjoint_differential_geodesic_startpoint(
+                M,
+                Bt[k - 1].pts[end - 1],
+                Bt[k].pts[1],
+                2.0,
+                ∇B[k].pts[2],
+            )
         # update b+ - though removed in reduced form
-        X2 = ∇B[k].pts[2] .+ adjoint_differential_geodesic_startpoint(
-            M,
-            Bt[k].pts[2],
-            Bt[k].pts[1],
-            2.,
-            ∇B[k-1].pts[end-1]
-        )
+        X2 =
+            ∇B[k].pts[2] .+ adjoint_differential_geodesic_startpoint(
+                M,
+                Bt[k].pts[2],
+                Bt[k].pts[1],
+                2.0,
+                ∇B[k - 1].pts[end - 1],
+            )
         # update p - effect from left and right segment as well as from c1 cond
-        X3 = ∇B[k].pts[1] .+ adjoint_differential_geodesic_endpoint(
-            M,
-            Bt[k-1].pts[m-1],
-            Bt[k].pts[1],
-            2.,
-            ∇B[k].pts[2]
-        )
+        X3 =
+            ∇B[k].pts[1] .+ adjoint_differential_geodesic_endpoint(
+                M,
+                Bt[k - 1].pts[m - 1],
+                Bt[k].pts[1],
+                2.0,
+                ∇B[k].pts[2],
+            )
         # store
-        ∇B[k-1].pts[end-1] .= X1
+        ∇B[k - 1].pts[end - 1] .= X1
         ∇B[k].pts[2] .= X2
         ∇B[k].pts[1] .= X3
-        ∇B[k-1].pts[end] .= X3
+        ∇B[k - 1].pts[end] .= X3
     end
     return ∇B
 end
@@ -200,7 +212,9 @@ corresponding zero tangent vector, since this is an element of the subdifferenti
 * `p` – (`2`) the exponent of the distance,  i.e. the default is the squared
   distance
 """
-∇distance(M,y,x,p::Int=2) = (p==2) ? -log(M,x,y) : -distance(M,x,y)^(p-2)*log(M,x,y)
+function ∇distance(M, y, x, p::Int = 2)
+    return (p == 2) ? -log(M, x, y) : -distance(M, x, y)^(p - 2) * log(M, x, y)
+end
 
 @doc raw"""
     ∇u,⁠∇v = ∇intrinsic_infimal_convolution_TV12(M,f,u,v,α,β)
@@ -220,10 +234,11 @@ E(u,v) =
 where both total variations refer to the intrinsic ones, [`∇TV`](@ref) and
 [`∇TV2`](@ref), respectively.
 """
-function ∇intrinsic_infimal_convolution_TV12(M::mT,f,u,v,α,β) where {mT <: Manifold}
-  c = mid_point(M,u,v,f)
-  iL = log(M,c,f)
-  return adjoint_differential_geodesic_startpoint(M,u,v,1/2,iL) + α*β*∇TV(M,u), adjoint_differential_geodesic_endpoint(M,u,v,1/2,iL) + α * (1-β) * ∇TV2(M,v)
+function ∇intrinsic_infimal_convolution_TV12(M::mT, f, u, v, α, β) where {mT<:Manifold}
+    c = mid_point(M, u, v, f)
+    iL = log(M, c, f)
+    return adjoint_differential_geodesic_startpoint(M, u, v, 1 / 2, iL) + α * β * ∇TV(M, u),
+    adjoint_differential_geodesic_endpoint(M, u, v, 1 / 2, iL) + α * (1 - β) * ∇TV2(M, v)
 end
 @doc raw"""
     ∇TV(M,(x,y),[p=1])
@@ -231,19 +246,19 @@ end
 compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
 to both $x$ and $y$.
 """
-function ∇TV(M::MT, xT::Tuple{T,T}, p=1)where {MT <: Manifold, T}
-  x = xT[1];
-  y = xT[2];
-  if p==2
-      return (-log(M,x,y), -log(M,y,x))
-  else
-    d = distance(M,x,y);
-    if d==0 # subdifferential containing zero
-      return (zero_tangent_vector(M,x),zero_tangent_vector(M,y))
+function ∇TV(M::MT, xT::Tuple{T,T}, p = 1) where {MT<:Manifold,T}
+    x = xT[1]
+    y = xT[2]
+    if p == 2
+        return (-log(M, x, y), -log(M, y, x))
     else
-      return (-log(M,x,y)/(d^(2-p)), -log(M,y,x)/(d^(2-p)))
+        d = distance(M, x, y)
+        if d == 0 # subdifferential containing zero
+            return (zero_tangent_vector(M, x), zero_tangent_vector(M, y))
+        else
+            return (-log(M, x, y) / (d^(2 - p)), -log(M, y, x) / (d^(2 - p)))
+        end
     end
-  end
 end
 @doc raw"""
     ξ = ∇TV(M,λ,x,[p])
@@ -262,24 +277,24 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 # Ouput
 * ξ – resulting tangent vector in $T_x\mathcal M$.
 """
-function ∇TV(M::PowerManifold,x,p::Int=1)
+function ∇TV(M::PowerManifold, x, p::Int = 1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = last(R)
-    X = zero_tangent_vector(M,x)
-    c = costTV(M,x,p,0)
+    X = zero_tangent_vector(M, x)
+    c = costTV(M, x, p, 0)
     for i in R # iterate over all pixel
-        di = 0.
+        di = 0.0
         for k in 1:d # for all direction combinations
-            ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-            j = i+ek # compute neighbor
-            if all( map(<=, j.I, maxInd.I)) # is this neighbor in range?
+            ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
+            j = i + ek # compute neighbor
+            if all(map(<=, j.I, maxInd.I)) # is this neighbor in range?
                 if p != 1
-                    g = (c[i]==0 ? 1 : 1/c[i]) .* ∇TV(M.manifold,(x[i],x[j]),p) # Compute TV on these
+                    g = (c[i] == 0 ? 1 : 1 / c[i]) .* ∇TV(M.manifold, (x[i], x[j]), p) # Compute TV on these
                 else
-                    g = ∇TV(M.manifold,(x[i],x[j]),p) # Compute TV on these
+                    g = ∇TV(M.manifold, (x[i], x[j]), p) # Compute TV on these
                 end
                 X[i] += g[1]
                 X[j] += g[2]
@@ -317,22 +332,22 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
     sX = size(p)
     maxInd = last(R).I
     if d > 1
-        d2 = fill(1,d+1)
-        d2[d+1] = d
+        d2 = fill(1, d + 1)
+        d2[d + 1] = d
     else
         d2 = 1
     end
     N = PowerManifold(M.manifold, TPR(), power_size..., d)
-    xT = repeat(p,inner=d2)
-    X = zero_tangent_vector(N,xT)
-    e_k_vals = [ 1 * (1:d .== k) for k in 1:d]
+    xT = repeat(p, inner = d2)
+    X = zero_tangent_vector(N, xT)
+    e_k_vals = [1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
-            if all( J .<= maxInd ) # is this neighbor in range?
+            if all(J .<= maxInd) # is this neighbor in range?
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-                X[N, i.I..., k] = log(M.manifold,p[M, i.I...], p[M, j.I...])
+                X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             end
         end # directions
     end # i in R
@@ -360,22 +375,46 @@ the evaluation of an [`adjoint_Jacobi_field`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """
-function ∇TV2(M::MT, xT, p::Number=1) where {MT <: Manifold}
-  x = xT[1];
-  y = xT[2];
-  z = xT[3];
-  c = mid_point(M,x,z,y) # nearest mid point of x and z to y
-  d = distance(M,y,c)
-  innerLog = -log(M,c,y)
-  if p==2
-      return ( adjoint_differential_geodesic_startpoint(M,x,z,1/2,innerLog), -log(M,y,c), adjoint_differential_geodesic_endpoint(M,x,z,1/2,innerLog))
-  else
-    if d==0 # subdifferential containing zero
-      return (zero_tangent_vector(M,x),zero_tangent_vector(M,y),zero_tangent_vector(M,z))
+function ∇TV2(M::MT, xT, p::Number = 1) where {MT<:Manifold}
+    x = xT[1]
+    y = xT[2]
+    z = xT[3]
+    c = mid_point(M, x, z, y) # nearest mid point of x and z to y
+    d = distance(M, y, c)
+    innerLog = -log(M, c, y)
+    if p == 2
+        return (
+            adjoint_differential_geodesic_startpoint(M, x, z, 1 / 2, innerLog),
+            -log(M, y, c),
+            adjoint_differential_geodesic_endpoint(M, x, z, 1 / 2, innerLog),
+        )
     else
-      return ( adjoint_differential_geodesic_startpoint(M,x,z,1/2,innerLog/(d^(2-p))), -log(M,y,c)/(d^(2-p)), adjoint_differential_geodesic_endpoint(M,x,z,1/2,innerLog/(d^(2-p))) )
+        if d == 0 # subdifferential containing zero
+            return (
+                zero_tangent_vector(M, x),
+                zero_tangent_vector(M, y),
+                zero_tangent_vector(M, z),
+            )
+        else
+            return (
+                adjoint_differential_geodesic_startpoint(
+                    M,
+                    x,
+                    z,
+                    1 / 2,
+                    innerLog / (d^(2 - p)),
+                ),
+                -log(M, y, c) / (d^(2 - p)),
+                adjoint_differential_geodesic_endpoint(
+                    M,
+                    x,
+                    z,
+                    1 / 2,
+                    innerLog / (d^(2 - p)),
+                ),
+            )
+        end
     end
-  end
 end
 @doc raw"""
     ∇TV2(M,q [,p=1])
@@ -384,29 +423,31 @@ computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function ∇TV2(M::PowerManifold, q, p::Int=1)
+function ∇TV2(M::PowerManifold, q, p::Int = 1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     minInd, maxInd = first(R), last(R)
-    X = zero_tangent_vector(M,q)
-    c = costTV2(M,q,p,false)
+    X = zero_tangent_vector(M, q)
+    c = costTV2(M, q, p, false)
     for i in R # iterate over all pixel
-        di = 0.
+        di = 0.0
         for k in 1:d # for all direction combinations (TODO)
-            ek = CartesianIndex(ntuple(i  ->  (i==k) ? 1 : 0, d) ) #k th unit vector
-            jF = i+ek # compute forward neighbor
-            jB = i-ek # compute backward neighbor
-            if all( map(<=, jF.I, maxInd.I) ) && all( map(>=, jB.I, minInd.I)) # are neighbors in range?
+            ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
+            jF = i + ek # compute forward neighbor
+            jB = i - ek # compute backward neighbor
+            if all(map(<=, jF.I, maxInd.I)) && all(map(>=, jB.I, minInd.I)) # are neighbors in range?
                 if p != 1
-                    g = (c[i] == 0 ? 1 : 1/c[i]) .* ∇TV2(M.manifold,(q[jB],q[i],q[jF]),p) # Compute TV2 on these
+                    g =
+                        (c[i] == 0 ? 1 : 1 / c[i]) .*
+                        ∇TV2(M.manifold, (q[jB], q[i], q[jF]), p) # Compute TV2 on these
                 else
-                    g = ∇TV2(M.manifold,(q[jB],q[i],q[jF]),p) # Compute TV2 on these
+                    g = ∇TV2(M.manifold, (q[jB], q[i], q[jF]), p) # Compute TV2 on these
                 end
-                X[M,jB.I...] = g[1]
-                X[M,i.I...] = g[2]
-                X[M,jF.I...] = g[3]
+                X[M, jB.I...] = g[1]
+                X[M, i.I...] = g[2]
+                X[M, jF.I...] = g[3]
             end
         end # directions
     end # i in R

@@ -27,19 +27,25 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function cyclic_proximal_point(M::MT,
-  F::TF, proxes::Union{Tuple,AbstractVector}, x0;
-  evaluationOrder::EvalOrder = LinearEvalOrder(),
-  stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)),
-  λ = i -> 1/i,
-  return_options=false,
-  kwargs... #decorator options
-  ) where {MT <: Manifold,TF}
-    p = ProximalProblem(M,F,proxes)
-    o = CyclicProximalPointOptions(x0,stopping_criterion,λ,evaluationOrder)
+function cyclic_proximal_point(
+    M::MT,
+    F::TF,
+    proxes::Union{Tuple,AbstractVector},
+    x0;
+    evaluationOrder::EvalOrder = LinearEvalOrder(),
+    stopping_criterion::StoppingCriterion = StopWhenAny(
+        StopAfterIteration(5000),
+        StopWhenChangeLess(10.0^-12),
+    ),
+    λ = i -> 1 / i,
+    return_options = false,
+    kwargs..., #decorator options
+) where {MT<:Manifold,TF}
+    p = ProximalProblem(M, F, proxes)
+    o = CyclicProximalPointOptions(x0, stopping_criterion, λ, evaluationOrder)
 
     o = decorate_options(o; kwargs...)
-    resultO = solve(p,o)
+    resultO = solve(p, o)
     if return_options
         return resultO
     else
@@ -49,17 +55,17 @@ end
 function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointOptions)
     c = length(p.proxes)
     o.order = collect(1:c)
-    update_cpp_order!(o.order,c,0,o.orderType)
+    return update_cpp_order!(o.order, c, 0, o.orderType)
 end
 function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
     c = length(p.proxes)
     λi = o.λ(iter)
-    for k=o.order
-        o.x = getProximalMap(p,λi,o.x,k)
+    for k in o.order
+        o.x = getProximalMap(p, λi, o.x, k)
     end
-    update_cpp_order!(o.order,c,iter,o.orderType)
+    return update_cpp_order!(o.order, c, iter, o.orderType)
 end
 get_solver_result(o::CyclicProximalPointOptions) = o.x
-update_cpp_order!(o,n,i,::LinearEvalOrder) = o
-update_cpp_order!(o,n,i,::RandomEvalOrder) = shuffle!(o)
-update_cpp_order!(o,n,i,::FixedRandomEvalOrder) = (i==0) ? shuffle!(o) : o
+update_cpp_order!(o, n, i, ::LinearEvalOrder) = o
+update_cpp_order!(o, n, i, ::RandomEvalOrder) = shuffle!(o)
+update_cpp_order!(o, n, i, ::FixedRandomEvalOrder) = (i == 0) ? shuffle!(o) : o

@@ -18,22 +18,25 @@ one is used to activate certain decorators.
 # See also
 [`DebugOptions`](@ref), [`RecordOptions`](@ref)
 """
-function decorate_options(o::O;
-        debug::Union{Missing, # none
-                    DebugAction, # single one for :All
-                    Array{DebugAction,1}, # a group that's put into :All
-                    Dict{Symbol,DebugAction}, # the most elaborate, a dictionary
-                    Array{<:Any,1}, # short hand for Factory.
-                    }=missing,
-        record::Union{Missing, # none
-                    RecordAction, # single action
-                    Array{RecordAction,1}, # a group to be set in :All
-                    Dict{Symbol,RecordAction}, # a dictionary for precise settings
-                    Array{<:Any,1} # a formated string with symbols orAbstractOptionsActions
-                    }=missing,
-    ) where {O <: Options}
-    o = ismissing(debug) ? o : DebugOptions(o,debug)
-    o = ismissing(record) ? o : RecordOptions(o,record)
+function decorate_options(
+    o::O;
+    debug::Union{
+        Missing, # none
+        DebugAction, # single one for :All
+        Array{DebugAction,1}, # a group that's put into :All
+        Dict{Symbol,DebugAction}, # the most elaborate, a dictionary
+        Array{<:Any,1}, # short hand for Factory.
+    } = missing,
+    record::Union{
+        Missing, # none
+        RecordAction, # single action
+        Array{RecordAction,1}, # a group to be set in :All
+        Dict{Symbol,RecordAction}, # a dictionary for precise settings
+        Array{<:Any,1}, # a formated string with symbols orAbstractOptionsActions
+    } = missing,
+) where {O<:Options}
+    o = ismissing(debug) ? o : DebugOptions(o, debug)
+    o = ismissing(record) ? o : RecordOptions(o, record)
     return o
 end
 """
@@ -67,7 +70,7 @@ depending on the current [`Problem`](@ref) `p`, the current state of the solver
 stored in [`Options`](@ref) `o` and the current iterate `i` this function determines
 whether to stop the solver by calling the [`StoppingCriterion`](@ref).
 """
-stop_solver!(p::Problem,o::Options, i::Int) = o.stop(p,o,i)
+stop_solver!(p::Problem, o::Options, i::Int) = o.stop(p, o, i)
 
 """
     solve(p,o)
@@ -78,10 +81,10 @@ as well as the [`stop_solver!`](@ref) of the solver.
 """
 function solve(p::Problem, o::Options)
     iter::Integer = 0
-    initialize_solver!(p,o)
-    while !stop_solver!(p,o,iter)
-        iter = iter+1
-        step_solver!(p,o,iter)
+    initialize_solver!(p, o)
+    while !stop_solver!(p, o, iter)
+        iter = iter + 1
+        step_solver!(p, o, iter)
     end
     return o
 end

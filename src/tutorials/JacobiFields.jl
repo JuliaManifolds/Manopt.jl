@@ -7,7 +7,8 @@
 # [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s.
 #
 # We first initialize the manifold
-exportFolder = joinpath(@__DIR__,"..","..","docs","src","assets","images","tutorials") #src
+exportFolder = #src
+    joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials") #src
 using Manopt, Manifolds
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)
 using Colors
@@ -18,17 +19,21 @@ TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 nothing #hide
 # Assume we have two points on the equator of the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathcal M = \mathbb S^2$
 M = Sphere(2)
-p,q = [ [1.,0.,0.], [0.,1.,0.]]
+p, q = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
 # their connecting [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) (sampled at `100` points)
-geodesicCurve = shortest_geodesic(M,p,q,[0:0.1:1.0...]);
+geodesicCurve = shortest_geodesic(M, p, q, [0:0.1:1.0...]);
 nothing #hide
 # looks as follows using the [`asymptote_export_S2_signals`](@ref) export
-asymptote_export_S2_signals(exportFolder*"/jacobiGeodesic.asy"; #src
-    curves=[geodesicCurve], points = [ [p,q] ], #src
-    colors=Dict(:curves => [black], :points => [TolVibrantOrange]), #src
-    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.,1.,.5) #src
+asymptote_export_S2_signals( #src
+    exportFolder * "/jacobiGeodesic.asy"; #src
+    curves = [geodesicCurve], #src
+    points = [[p, q]], #src
+    colors = Dict(:curves => [black], :points => [TolVibrantOrange]), #src
+    dotSize = 3.5, #src
+    lineWidth = 0.75, #src
+    cameraPosition = (1.0, 1.0, 0.5), #src
 )#src
-render_asymptote(exportFolder*"/jacobiGeodesic.asy"; render = 2) #src
+render_asymptote(exportFolder * "/jacobiGeodesic.asy"; render = 2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesic.asy";
@@ -45,7 +50,7 @@ render_asymptote(exportFolder*"/jacobiGeodesic.asy"; render = 2) #src
 # where $x$ is on the left. Then this tutorial solves the following task:
 #
 # Given a direction $X_p∈ T_x\mathcal M$, for example
-X = [0.,0.4,0.5]
+X = [0.0, 0.4, 0.5]
 # we move the start point $x$ into, how does any point on the geodesic move?
 #
 # Or mathematically: Compute $D_p g(t; p,q)$ for some fixed $t∈[0,1]$
@@ -82,25 +87,33 @@ X = [0.,0.4,0.5]
 T = [0:0.1:1.0...]
 nothing #hide
 # namely
-r = shortest_geodesic(M,p,q,T)
+r = shortest_geodesic(M, p, q, T)
 nothing #hide
 # the geodesic moves as
-W = jacobi_field.(Ref(M), Ref(p), Ref(q), T, Ref(X) )
+W = jacobi_field.(Ref(M), Ref(p), Ref(q), T, Ref(X))
 # which can also be called using [`differential_geodesic_startpoint`](@ref).
 # We can add to the image above by creating extended tangent vectors
 # the include their base points
-V = [ Tuple([a,b]) for (a,b) ∈ zip(r,W) ]
+V = [Tuple([a, b]) for (a, b) in zip(r, W)]
 # and add that as one further set to the Asymptote export.
-asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
-    curves=[geodesicCurve], points = [ [p,q], r], tVectors = [V], #src
-    colors=Dict( #src
+asymptote_export_S2_signals( #src
+    exportFolder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
+    curves = [geodesicCurve], #src
+    points = [[p, q], r], #src
+    tVectors = [V], #src
+    colors = Dict( #src
         :curves => [black], #src
-        :points => [TolVibrantOrange,TolVibrantCyan], #src
-        :tvectors => [TolVibrantCyan] #src
+        :points => [TolVibrantOrange, TolVibrantCyan], #src
+        :tvectors => [TolVibrantCyan], #src
     ), #src
-    dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,.5) #src
+    dotSizes = [3.5, 2.0], #src
+    lineWidth = 0.75, #src
+    cameraPosition = (1.0, 1.0, 0.5), #src
 ) #src
-render_asymptote(exportFolder*"/jacobiGeodesicdifferential_geodesic_startpoint.asy"; render = 2) #src
+render_asymptote( #src
+    exportFolder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
+    render = 2, #src
+) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesicdifferential_geodesic_startpoint.asy";
@@ -119,21 +132,26 @@ render_asymptote(exportFolder*"/jacobiGeodesicdifferential_geodesic_startpoint.a
 #md # ![A Jacobi field for $D_xg(t,x,y)[\eta]$](../assets/images/tutorials/jacobiGeodesicdifferential_geodesic_startpoint.png)
 #
 # If we further move the end point, too, we can derive that Differential in direction
-Xq = [0.2,0.,-0.5]
-W2 = differential_geodesic_endpoint.(Ref(M),Ref(p),Ref(q),T,Ref(Xq))
-V2 = [ Tuple([a,b]) for (a,b) ∈ zip(r,W2) ]
+Xq = [0.2, 0.0, -0.5]
+W2 = differential_geodesic_endpoint.(Ref(M), Ref(p), Ref(q), T, Ref(Xq))
+V2 = [Tuple([a, b]) for (a, b) in zip(r, W2)]
 # and we can combine both keeping the base point
-V3 = [ Tuple([a,b]) for (a,b) ∈ zip(r,W2+W) ]
-asymptote_export_S2_signals(exportFolder*"/jacobiGeodesicResult.asy"; #src
-    curves=[geodesicCurve], points = [ [p,q], r], tVectors = [V,V2,V3], #src
-    colors=Dict( #src
+V3 = [Tuple([a, b]) for (a, b) in zip(r, W2 + W)]
+asymptote_export_S2_signals( #src
+    exportFolder * "/jacobiGeodesicResult.asy"; #src
+    curves = [geodesicCurve], #src
+    points = [[p, q], r], #src
+    tVectors = [V, V2, V3], #src
+    colors = Dict( #src
         :curves => [black], #src
-        :points => [TolVibrantOrange,TolVibrantCyan], #src
-        :tvectors => [TolVibrantCyan,TolVibrantCyan,TolVibrantTeal] #src
+        :points => [TolVibrantOrange, TolVibrantCyan], #src
+        :tvectors => [TolVibrantCyan, TolVibrantCyan, TolVibrantTeal], #src
     ), #src
-    dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,0.) #src
+    dotSizes = [3.5, 2.0], #src
+    lineWidth = 0.75, #src
+    cameraPosition = (1.0, 1.0, 0.0), #src
 ) #src
-render_asymptote(exportFolder*"/jacobiGeodesicResult.asy"; render = 2) #src
+render_asymptote(exportFolder * "/jacobiGeodesicResult.asy"; render = 2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesicResult.asy";
 #md #    render = asyResolution,

@@ -26,32 +26,38 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function gradient_descent(M::mT,
-    F::TF, ∇F::TDF, x;
+function gradient_descent(
+    M::mT,
+    F::TF,
+    ∇F::TDF,
+    x;
     stepsize::Stepsize = ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    stopping_criterion::StoppingCriterion = StopWhenAny( StopAfterIteration(200), StopWhenGradientNormLess(10.0^-8)),
-    return_options=false,
-    kwargs... #collect rest
-  ) where {mT <: Manifold, TF, TDF}
-  p = GradientProblem(M,F,∇F)
-  o = GradientDescentOptions(x, stopping_criterion,stepsize,retraction_method)
-  o = decorate_options(o; kwargs...)
-  resultO = solve(p,o)
-  if return_options
-    return resultO
-  else
-    return get_solver_result(resultO)
-  end
+    stopping_criterion::StoppingCriterion = StopWhenAny(
+        StopAfterIteration(200),
+        StopWhenGradientNormLess(10.0^-8),
+    ),
+    return_options = false,
+    kwargs..., #collect rest
+) where {mT<:Manifold,TF,TDF}
+    p = GradientProblem(M, F, ∇F)
+    o = GradientDescentOptions(x, stopping_criterion, stepsize, retraction_method)
+    o = decorate_options(o; kwargs...)
+    resultO = solve(p, o)
+    if return_options
+        return resultO
+    else
+        return get_solver_result(resultO)
+    end
 end
 #
 # Solver functions
 #
-function initialize_solver!(p::P,o::O) where {P <: GradientProblem, O <: GradientDescentOptions}
-    o.∇ = get_gradient(p,o.x)
+function initialize_solver!(p::P, o::O) where {P<:GradientProblem,O<:GradientDescentOptions}
+    return o.∇ = get_gradient(p, o.x)
 end
-function step_solver!(p::P,o::O,iter) where {P <: GradientProblem, O <: GradientDescentOptions}
-    o.∇ = get_gradient(p,o.x)
-    o.x = retract(p.M, o.x , -get_stepsize(p,o,iter) * o.∇, o.retraction_method)
+function step_solver!(p::P, o::O, iter) where {P<:GradientProblem,O<:GradientDescentOptions}
+    o.∇ = get_gradient(p, o.x)
+    return o.x = retract(p.M, o.x, -get_stepsize(p, o, iter) * o.∇, o.retraction_method)
 end
-get_solver_result(o::O) where {O <: GradientDescentOptions} = o.x
+get_solver_result(o::O) where {O<:GradientDescentOptions} = o.x

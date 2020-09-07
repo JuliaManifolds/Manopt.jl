@@ -29,7 +29,16 @@ construct a particle swarm Option with the fields and defaults as above.
 # See also
 [`particle_swarm`](@ref)
 """
-mutable struct ParticleSwarmOptions{TX<:AbstractVector,TG,TVelocity<:AbstractVector,TParams<:Real,TStopping<:StoppingCriterion,TRetraction<:AbstractRetractionMethod,TInvRetraction<:AbstractInverseRetractionMethod,TVTM<:AbstractVectorTransportMethod} <: Options
+mutable struct ParticleSwarmOptions{
+    TX<:AbstractVector,
+    TG,
+    TVelocity<:AbstractVector,
+    TParams<:Real,
+    TStopping<:StoppingCriterion,
+    TRetraction<:AbstractRetractionMethod,
+    TInvRetraction<:AbstractInverseRetractionMethod,
+    TVTM<:AbstractVectorTransportMethod,
+} <: Options
     x::TX
     p::TX
     g::TG
@@ -47,12 +56,24 @@ mutable struct ParticleSwarmOptions{TX<:AbstractVector,TG,TVelocity<:AbstractVec
         inertia::TParams = 0.65,
         social_weight::TParams = 1.4,
         cognitive_weight::TParams = 1.4,
-        stopping_criterion::StoppingCriterion = StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport()
+        stopping_criterion::StoppingCriterion = StopWhenAny(
+            StopAfterIteration(500),
+            StopWhenChangeLess(10.0^(-4)),
+        ),
+        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
+        inverse_retraction_method::AbstractInverseRetractionMethod = LogarithmicInverseRetraction(),
+        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
     ) where {P,TParams}
-        o = new{typeof(x0),P,typeof(velocity),TParams,typeof(stopping_criterion),typeof(retraction_method),typeof(inverse_retraction_method),typeof(vector_transport_method)}()
+        o = new{
+            typeof(x0),
+            P,
+            typeof(velocity),
+            TParams,
+            typeof(stopping_criterion),
+            typeof(retraction_method),
+            typeof(inverse_retraction_method),
+            typeof(vector_transport_method),
+        }()
         o.x = x0
         o.p = deepcopy(x0)
         o.velocity = velocity
@@ -72,10 +93,23 @@ function ParticleSwarmOptions(
     inertia::Real = 0.65,
     social_weight::Real = 1.4,
     cognitive_weight::Real = 1.4,
-    stopping_criterion::StoppingCriterion = StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))),
+    stopping_criterion::StoppingCriterion = StopWhenAny(
+        StopAfterIteration(500),
+        StopWhenChangeLess(10.0^(-4)),
+    ),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport()
+    inverse_retraction_method::AbstractInverseRetractionMethod = LogarithmicInverseRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
 ) where {P,T}
-    return ParticleSwarmOptions{P}(x0,velocity,inertia,social_weight,cognitive_weight,stopping_criterion,retraction_method,inverse_retraction_method, vector_transport_method)
+    return ParticleSwarmOptions{P}(
+        x0,
+        velocity,
+        inertia,
+        social_weight,
+        cognitive_weight,
+        stopping_criterion,
+        retraction_method,
+        inverse_retraction_method,
+        vector_transport_method,
+    )
 end

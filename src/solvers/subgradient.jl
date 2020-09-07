@@ -29,20 +29,21 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function subgradient_method(M::Manifold,
-        F::TF,
-        ∂F::TdF,
-        x;
-        retraction::TRetr = ExponentialRetraction(),
-        stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M,x)/5),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
-        return_options = false,
-        kwargs... #especially may contain debug
-    ) where {TF,TdF,TRetr}
-    p = SubGradientProblem(M,F,∂F)
-    o = SubGradientMethodOptions(M,x,stopping_criterion, stepsize, retraction)
+function subgradient_method(
+    M::Manifold,
+    F::TF,
+    ∂F::TdF,
+    x;
+    retraction::TRetr = ExponentialRetraction(),
+    stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M, x) / 5),
+    stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
+    return_options = false,
+    kwargs..., #especially may contain debug
+) where {TF,TdF,TRetr}
+    p = SubGradientProblem(M, F, ∂F)
+    o = SubGradientMethodOptions(M, x, stopping_criterion, stepsize, retraction)
     o = decorate_options(o; kwargs...)
-    resultO = solve(p,o)
+    resultO = solve(p, o)
     if return_options
         return resultO
     else
@@ -51,13 +52,13 @@ function subgradient_method(M::Manifold,
 end
 function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.xOptimal = o.x
-    o.∂ = zero_tangent_vector(p.M, o.x)
+    return o.∂ = zero_tangent_vector(p.M, o.x)
 end
-function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions,iter)
-    o.∂ = get_subgradient(p,o.x)
-    s = get_stepsize(p,o,iter)
-    retract!(p.M, o.x, o.x, -s*o.∂, o.retraction_method)
-    if get_cost(p,o.x) < get_cost(p,o.xOptimal)
+function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions, iter)
+    o.∂ = get_subgradient(p, o.x)
+    s = get_stepsize(p, o, iter)
+    retract!(p.M, o.x, o.x, -s * o.∂, o.retraction_method)
+    if get_cost(p, o.x) < get_cost(p, o.xOptimal)
         o.xOptimal = o.x
     end
 end

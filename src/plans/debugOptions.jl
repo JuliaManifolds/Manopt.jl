@@ -44,13 +44,21 @@ construct debug decorated options, where `dD` can be
 """
 mutable struct DebugOptions{O<:Options} <: Options
     options::O
-    debugDictionary::Dict{Symbol, <: DebugAction}
-    DebugOptions{O}(o::O, dA::Dict{Symbol,<:DebugAction}) where {O <: Options} = new(o,dA)
+    debugDictionary::Dict{Symbol,<:DebugAction}
+    DebugOptions{O}(o::O, dA::Dict{Symbol,<:DebugAction}) where {O<:Options} = new(o, dA)
 end
-DebugOptions(o::O, dD::D) where {O <: Options, D <: DebugAction} = DebugOptions{O}(o,Dict(:All => dD))
-DebugOptions(o::O, dD::Array{<:DebugAction,1}) where {O <: Options} = DebugOptions{O}(o,Dict(:All => DebugGroup(dD)))
-DebugOptions(o::O, dD::Dict{Symbol,<:DebugAction}) where {O <: Options} = DebugOptions{O}(o,dD)
-DebugOptions(o::O, format::Array{<:Any,1}) where {O <: Options} = DebugOptions{O}(o, DebugFactory(format))
+function DebugOptions(o::O, dD::D) where {O<:Options,D<:DebugAction}
+    return DebugOptions{O}(o, Dict(:All => dD))
+end
+function DebugOptions(o::O, dD::Array{<:DebugAction,1}) where {O<:Options}
+    return DebugOptions{O}(o, Dict(:All => DebugGroup(dD)))
+end
+function DebugOptions(o::O, dD::Dict{Symbol,<:DebugAction}) where {O<:Options}
+    return DebugOptions{O}(o, dD)
+end
+function DebugOptions(o::O, format::Array{<:Any,1}) where {O<:Options}
+    return DebugOptions{O}(o, DebugFactory(format))
+end
 
 dispatch_options_decorator(o::DebugOptions) = Val(true)
 
@@ -72,12 +80,12 @@ but relies on the internal prints. It still concatenates the result and returns
 the complete string
 """
 mutable struct DebugGroup <: DebugAction
-  group::Array{DebugAction,1}
-  DebugGroup(g::Array{<:DebugAction,1}) = new(g)
+    group::Array{DebugAction,1}
+    DebugGroup(g::Array{<:DebugAction,1}) = new(g)
 end
-function (d::DebugGroup)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (d::DebugGroup)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     for di in d.group
-        di(p,o,i)
+        di(p, o, i)
     end
 end
 
@@ -93,13 +101,15 @@ mutable struct DebugEvery <: DebugAction
     debug::DebugAction
     every::Int
     alwaysUpdate::Bool
-    DebugEvery(d::DebugAction,every::Int=1,alwaysUpdate::Bool=true) = new(d,every,alwaysUpdate)
+    function DebugEvery(d::DebugAction, every::Int = 1, alwaysUpdate::Bool = true)
+        return new(d, every, alwaysUpdate)
+    end
 end
-function (d::DebugEvery)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    if (rem(i,d.every)==0)
-        d.debug(p,o,i)
+function (d::DebugEvery)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    if (rem(i, d.every) == 0)
+        d.debug(p, o, i)
     elseif d.alwaysUpdate
-        d.debug(p,o,-1)
+        d.debug(p, o, -1)
     end
 end
 
@@ -122,17 +132,23 @@ mutable struct DebugChange <: DebugAction
     print::Any
     prefix::String
     storage::StoreOptionsAction
-    DebugChange(a::StoreOptionsAction=StoreOptionsAction( (:x,) ),
-            prefix = "Last Change: ",
-            print=print
-        ) = new(print, prefix, a)
+    function DebugChange(
+        a::StoreOptionsAction = StoreOptionsAction((:x,)),
+        prefix = "Last Change: ",
+        print = print,
+    )
+        return new(print, prefix, a)
+    end
 end
-function (d::DebugChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    s = (i>0) ? ( has_storage(d.storage, :x) ? d.prefix * string(
-            distance(p.M, o.x, get_storage(d.storage, :x))
-            ) : "") : ""
-    d.storage(p,o,i)
-    d.print(s)
+function (d::DebugChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    s = (i > 0) ?
+        (
+        has_storage(d.storage, :x) ?
+            d.prefix * string(distance(p.M, o.x, get_storage(d.storage, :x))) : ""
+    ) :
+        ""
+    d.storage(p, o, i)
+    return d.print(s)
 end
 @doc raw"""
     DebugIterate <: DebugAction
@@ -145,9 +161,13 @@ debug for the current iterate (stored in `o.x`).
 mutable struct DebugIterate <: DebugAction
     print::Any
     prefix::String
-    DebugIterate(print=print,long::Bool=false) = new(print, long ? "current Iterate:" : "x:")
+    function DebugIterate(print = print, long::Bool = false)
+        return new(print, long ? "current Iterate:" : "x:")
+    end
 end
-(d::DebugIterate)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*"$(o.x)" : "")
+function (d::DebugIterate)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    return d.print((i >= 0) ? d.prefix * "$(o.x)" : "")
+end
 
 @doc raw"""
     DebugIteration <: DebugAction
@@ -156,9 +176,11 @@ debug for the current iteration (prefixed with `#`)
 """
 mutable struct DebugIteration <: DebugAction
     print::Any
-    DebugIteration(print=print) = new(print)
+    DebugIteration(print = print) = new(print)
 end
-(d::DebugIteration)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>0) ? "# $(i)" : ((i==0) ? "Initial" : "") )
+function (d::DebugIteration)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    return d.print((i > 0) ? "# $(i)" : ((i == 0) ? "Initial" : ""))
+end
 
 @doc raw"""
     DebugCost <: DebugAction
@@ -177,10 +199,14 @@ set a prefix manually.
 mutable struct DebugCost <: DebugAction
     print::Any
     prefix::String
-    DebugCost(long::Bool=false,print=print) = new(print, long ? "Cost Function: " : "F(x): ")
-    DebugCost(prefix::String,print=print) = new(print,prefix)
+    function DebugCost(long::Bool = false, print = print)
+        return new(print, long ? "Cost Function: " : "F(x): ")
+    end
+    DebugCost(prefix::String, print = print) = new(print, prefix)
 end
-(d::DebugCost)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0) ? d.prefix*string(get_cost(p,o.x)) : "")
+function (d::DebugCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    return d.print((i >= 0) ? d.prefix * string(get_cost(p, o.x)) : "")
+end
 
 @doc raw"""
     DebugDivider <: DebugAction
@@ -194,9 +220,11 @@ print a small `div`ider (default `" | "`).
 mutable struct DebugDivider <: DebugAction
     print::Any
     divider::String
-    DebugDivider(divider=" | ",print=print) = new(print,divider)
+    DebugDivider(divider = " | ", print = print) = new(print, divider)
 end
-(d::DebugDivider)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print((i>=0) ? d.divider : "")
+function (d::DebugDivider)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    return d.print((i >= 0) ? d.divider : "")
+end
 
 @doc raw"""
     DebugEntry <: RecordAction
@@ -215,10 +243,11 @@ mutable struct DebugEntry <: DebugAction
     print::Any
     prefix::String
     field::Symbol
-    DebugEntry(f::Symbol,prefix="$f:",print=print) = new(print,prefix,f)
+    DebugEntry(f::Symbol, prefix = "$f:", print = print) = new(print, prefix, f)
 end
-(d::DebugEntry)(p::Pr,o::O,i::Int) where {Pr <: Problem, O <: Options} = d.print(
-    (i>=0) ? d.prefix*" "*string(getfield(o, d.field)) : "")
+function (d::DebugEntry)(p::Pr, o::O, i::Int) where {Pr<:Problem,O<:Options}
+    return d.print((i >= 0) ? d.prefix * " " * string(getfield(o, d.field)) : "")
+end
 
 @doc raw"""
     DebugEntryChange{T} <: DebugAction
@@ -250,26 +279,42 @@ mutable struct DebugEntryChange <: DebugAction
     field::Symbol
     distance::Any
     storage::StoreOptionsAction
-    DebugEntryChange(f::Symbol,d,
-            a::StoreOptionsAction=StoreOptionsAction( (f,) ),
-            prefix = "Change of $f:",
-            print=print
-        ) = new(print, prefix, f, d, a)
-    function DebugEntryChange(v::T where T, f::Symbol, d,
-            a::StoreOptionsAction=StoreOptionsAction( (f,) ),
-            prefix = "Change of $f:",
-            print=print
-        )
-        update_storage!(a,Dict(f=>v))
+    function DebugEntryChange(
+        f::Symbol,
+        d,
+        a::StoreOptionsAction = StoreOptionsAction((f,)),
+        prefix = "Change of $f:",
+        print = print,
+    )
+        return new(print, prefix, f, d, a)
+    end
+    function DebugEntryChange(
+        v::T where {T},
+        f::Symbol,
+        d,
+        a::StoreOptionsAction = StoreOptionsAction((f,)),
+        prefix = "Change of $f:",
+        print = print,
+    )
+        update_storage!(a, Dict(f => v))
         return new(print, prefix, f, d, a)
     end
 end
-function (d::DebugEntryChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    s= (i>0) ? ( has_storage(d.storage,d.field) ? d.prefix * string(
-            d.distance( p, o, getproperty(o, d.field), get_storage(d.storage,d.field))
-            ) : "") : ""
-    d.storage(p,o,i)
-    d.print(s)
+function (d::DebugEntryChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    s = (i > 0) ?
+        (
+        has_storage(d.storage, d.field) ?
+            d.prefix * string(d.distance(
+            p,
+            o,
+            getproperty(o, d.field),
+            get_storage(d.storage, d.field),
+        )) :
+            ""
+    ) :
+        ""
+    d.storage(p, o, i)
+    return d.print(s)
 end
 
 @doc raw"""
@@ -280,9 +325,11 @@ empty, unless the algorithm stops.
 """
 mutable struct DebugStoppingCriterion <: DebugAction
     print::Any
-    DebugStoppingCriterion(print=print) = new(print)
+    DebugStoppingCriterion(print = print) = new(print)
 end
-(d::DebugStoppingCriterion)(p::P,o::O,i::Int) where {P <: Problem, O <: Options} = d.print( (i>=0 || i==typemin(Int)) ? get_reason(o) : "")
+function (d::DebugStoppingCriterion)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    return d.print((i >= 0 || i == typemin(Int)) ? get_reason(o) : "")
+end
 
 @doc raw"""
     DebugFactory(a)
@@ -299,19 +346,19 @@ given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
 * any [`DebugAction`](@ref) is directly included
 * an Integer `k`introduces that debug is only printed every `k`th iteration
 """
-function DebugFactory(a::Array{<:Any,1} )
+function DebugFactory(a::Array{<:Any,1})
     # filter out every
     group = Array{DebugAction,1}()
-    for s in filter(x -> !isa(x,Int) && x!=:Stop, a) # filter ints and stop
-        push!(group,DebugActionFactory(s) )
+    for s in filter(x -> !isa(x, Int) && x != :Stop, a) # filter ints and stop
+        push!(group, DebugActionFactory(s))
     end
     dictionary = Dict{Symbol,DebugAction}()
     if length(group) > 0
         debug = DebugGroup(group)
         # filter ints
-        e = filter(x -> isa(x,Int),a)
+        e = filter(x -> isa(x, Int), a)
         if length(e) > 0
-            debug = DebugEvery(debug,last(e))
+            debug = DebugEvery(debug, last(e))
         end
         dictionary[:All] = debug
     end
@@ -331,16 +378,16 @@ create a [`DebugAction`](@ref) where
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
 """
 DebugActionFactory(s::String) = DebugDivider(s)
-DebugActionFactory(a::A) where {A <: DebugAction} = a
+DebugActionFactory(a::A) where {A<:DebugAction} = a
 function DebugActionFactory(s::Symbol)
-    if (s==:Change)
+    if (s == :Change)
         return DebugChange()
-    elseif (s==:Iteration)
+    elseif (s == :Iteration)
         return DebugIteration()
-    elseif (s==:Iterate)
+    elseif (s == :Iterate)
         return DebugIterate()
-    elseif (s==:Cost)
+    elseif (s == :Cost)
         return DebugCost()
     end
-        return DebugEntry(s)
+    return DebugEntry(s)
 end

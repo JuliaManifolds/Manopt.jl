@@ -118,7 +118,7 @@ As long as your decorated options store the options within `o.options` and
 the [`dispatch_options_decorator`](@ref) is set to `Val{true}`,
 the internal options are extracted.
 """
-get_options(o::Options) = get_options(o,dispatch_options_decorator(o))
+get_options(o::Options) = get_options(o, dispatch_options_decorator(o))
 get_options(o::Options, ::Val{false}) = o
 get_options(o::Options, ::Val{true}) = get_options(o.options)
 
@@ -129,7 +129,7 @@ return the current reason stored within the [`StoppingCriterion`](@ref) from
 within the [`Options`](@ref) This reason is empty if the criterion has never
 been met.
 """
-get_reason(o::Options) = get_reason( get_options(o).stop )
+get_reason(o::Options) = get_reason(get_options(o).stop)
 
 #
 # Common Actions for decorated Options
@@ -173,17 +173,22 @@ are effective, otherwise only the first update is stored, all others are ignored
 """
 mutable struct StoreOptionsAction <: AbstractOptionsAction
     values::Dict{Symbol,<:Any}
-    keys::NTuple{N,Symbol} where N
+    keys::NTuple{N,Symbol} where {N}
     once::Bool
     lastStored::Int
-    StoreOptionsAction(keys::NTuple{N,Symbol} where N = NTuple{0,Symbol}(),once=true) = new(Dict{Symbol,Any}(), keys, once,-1 )
+    function StoreOptionsAction(
+        keys::NTuple{N,Symbol} where {N} = NTuple{0,Symbol}(),
+        once = true,
+    )
+        return new(Dict{Symbol,Any}(), keys, once, -1)
+    end
 end
-function (a::StoreOptionsAction)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
+function (a::StoreOptionsAction)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     #update values (maybe only once)
     if !a.once || a.lastStored != i
-        merge!(a.values, Dict( key => getproperty(o,key) for key in a.keys) )
+        merge!(a.values, Dict(key => getproperty(o, key) for key in a.keys))
     end
-    a.lastStored = i
+    return a.lastStored = i
 end
 """
     get_storage(a,key)
@@ -191,29 +196,31 @@ end
 return the internal value of the [`StoreOptionsAction`](@ref) `a` at the
 `Symbol` `key`.
 """
-get_storage(a::StoreOptionsAction,key) = a.values[key]
+get_storage(a::StoreOptionsAction, key) = a.values[key]
 """
     get_storage(a,key)
 
 return whether the [`StoreOptionsAction`](@ref) `a` has a value stored at the
 `Symbol` `key`.
 """
-has_storage(a::StoreOptionsAction,key) = haskey(a.values,key)
+has_storage(a::StoreOptionsAction, key) = haskey(a.values, key)
 """
     update_storage!(a,o)
 
 update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given on
 the [`Options`](@ref) `o`.
 """
-update_storage!(a::StoreOptionsAction,o::O) where {O <: Options} = update_storage!(a, Dict( key => getproperty(o, key) for key in a.keys) )
+function update_storage!(a::StoreOptionsAction, o::O) where {O<:Options}
+    return update_storage!(a, Dict(key => getproperty(o, key) for key in a.keys))
+end
 """
     update_storage!(a,o)
 
 update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given in
 the dictionary `d`. The values are merged, where the values from `d` are preferred.
 """
-function update_storage!(a::StoreOptionsAction,d::Dict{Symbol,<:Any})
+function update_storage!(a::StoreOptionsAction, d::Dict{Symbol,<:Any})
     merge!(a.values, d)
     # update keys
-    a.keys = Tuple( keys(a.values) )
+    return a.keys = Tuple(keys(a.values))
 end

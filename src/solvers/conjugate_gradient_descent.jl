@@ -54,40 +54,43 @@ function conjugate_gradient_descent(
     ∇F::TDF,
     x;
     coefficient::DirectionUpdateRule = SteepestDirectionUpdateRule(),
-    stepsize::Stepsize = ConstantStepsize(1.),
+    stepsize::Stepsize = ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     stopping_criterion::StoppingCriterion = StopWhenAny(
-        StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
+        StopAfterIteration(500),
+        StopWhenGradientNormLess(10^(-8)),
     ),
     transport_method = ParallelTransport(),
-    return_options=false,
-    kwargs...
-) where {TF, TDF}
-    p = GradientProblem(M,F,∇F)
+    return_options = false,
+    kwargs...,
+) where {TF,TDF}
+    p = GradientProblem(M, F, ∇F)
     o = ConjugateGradientDescentOptions(
         x,
-        stopping_criterion,stepsize,
+        stopping_criterion,
+        stepsize,
         coefficient,
         retraction_method,
         transport_method,
-        )
+    )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p,o)
+    resultO = solve(p, o)
     if return_options
         return resultO
     end
     return get_solver_result(resultO)
 end
-function initialize_solver!(p::GradientProblem,o::ConjugateGradientDescentOptions)
-    o.∇ = get_gradient(p,o.x)
+function initialize_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions)
+    o.∇ = get_gradient(p, o.x)
     o.δ = -o.∇
-    o.β = 0.
+    return o.β = 0.0
 end
 function step_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
     xOld = o.x
     o.x = retract(p.M, o.x, get_stepsize(p, o, i, o.δ) * o.δ, o.retraction_method)
     o.∇ = get_gradient(p, o.x)
-    o.β = o.coefficient(p,o,i)
-    o.δ = -o.∇ + o.β * vector_transport_to(p.M, xOld, o.δ, o.x, o.vector_transport_method)
+    o.β = o.coefficient(p, o, i)
+    return o.δ =
+        -o.∇ + o.β * vector_transport_to(p.M, xOld, o.δ, o.x, o.vector_transport_method)
 end
 get_solver_result(o::ConjugateGradientDescentOptions) = o.x

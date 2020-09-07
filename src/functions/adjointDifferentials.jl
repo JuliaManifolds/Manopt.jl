@@ -19,37 +19,37 @@ function adjoint_differential_bezier_control(
 ) where {Q}
     n = length(b.pts)
     if n == 2
-        return BezierSegment(
-            [
-            adjoint_differential_geodesic_startpoint(M,b.pts[1],b.pts[2],t,η),
-            adjoint_differential_geodesic_endpoint(M,b.pts[1],b.pts[2],t,η),
-            ]
-        )
+        return BezierSegment([
+            adjoint_differential_geodesic_startpoint(M, b.pts[1], b.pts[2], t, η),
+            adjoint_differential_geodesic_endpoint(M, b.pts[1], b.pts[2], t, η),
+        ])
     else
-        c = [ b.pts, [similar.(b.pts[1:l]) for l=(n-1):-1:2 ]... ]
-        for i=2:n-1 # casteljau on the tree -> forward with interims storage
-            c[i] .= shortest_geodesic.(Ref(M), c[i-1][1:end-1], c[i-1][2:end],Ref(t))
+        c = [b.pts, [similar.(b.pts[1:l]) for l in (n - 1):-1:2]...]
+        for i in 2:(n - 1) # casteljau on the tree -> forward with interims storage
+            c[i] .=
+                shortest_geodesic.(Ref(M), c[i - 1][1:(end - 1)], c[i - 1][2:end], Ref(t))
         end
-        Y = [η, [similar(η) for i=1:(n-1)]...]
-        for i=(n-1):-1:1 # propagate adjoints -> backward without interims storage
-            Y[1:(n-i+1)] .= [ # take previous results and add start&end point effects
+        Y = [η, [similar(η) for i in 1:(n - 1)]...]
+        for i in (n - 1):-1:1 # propagate adjoints -> backward without interims storage
+            Y[1:(n - i + 1)] .=
+                [ # take previous results and add start&end point effects
                     adjoint_differential_geodesic_startpoint.(
                         Ref(M),
-                        c[i][1:end-1],
+                        c[i][1:(end - 1)],
                         c[i][2:end],
                         Ref(t),
-                        Y[1:(n-i)],
+                        Y[1:(n - i)],
                     )...,
-                    zero_tangent_vector(M,c[i][end]),
+                    zero_tangent_vector(M, c[i][end]),
                 ] .+ [
-                    zero_tangent_vector(M,c[i][1]),
+                    zero_tangent_vector(M, c[i][1]),
                     adjoint_differential_geodesic_endpoint.(
                         Ref(M),
-                        c[i][1:end-1],
+                        c[i][1:(end - 1)],
                         c[i][2:end],
                         Ref(t),
-                        Y[1:(n-i)],
-                    )...
+                        Y[1:(n - i)],
+                    )...,
                 ]
         end
     end
@@ -81,9 +81,9 @@ function adjoint_differential_bezier_control(
     M::Manifold,
     b::BezierSegment,
     t::AbstractVector{Float64},
-    X::AbstractVector{Q}
+    X::AbstractVector{Q},
 ) where {Q}
-    effects = [bt.pts for bt ∈ adjoint_differential_bezier_control.(Ref(M),Ref(b),t,X)]
+    effects = [bt.pts for bt in adjoint_differential_bezier_control.(Ref(M), Ref(b), t, X)]
     return BezierSegment(sum(effects))
 end
 
@@ -106,16 +106,22 @@ function adjoint_differential_bezier_control(
     M::Manifold,
     B::AbstractVector{<:BezierSegment},
     t::Float64,
-    X::Q
+    X::Q,
 ) where {Q}
     # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
-    if (0 > t) || ( t > length(B))
-        error("The parameter ",t," to evaluate the composite Bézier curve at is outside the interval [0,",length(B),"].")
+    if (0 > t) || (t > length(B))
+        error(
+            "The parameter ",
+            t,
+            " to evaluate the composite Bézier curve at is outside the interval [0,",
+            length(B),
+            "].",
+        )
     end
-    Y = broadcast( b -> BezierSegment(zero_tangent_vector.(Ref(M),b.pts)) , B) # Double broadcast
-    seg = max(ceil(Int,t),1)
-    localT = ceil(Int,t) == 0 ? 0. : t - seg+1
-    Y[seg].pts .= adjoint_differential_bezier_control(M,B[seg], localT, X).pts
+    Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
+    seg = max(ceil(Int, t), 1)
+    localT = ceil(Int, t) == 0 ? 0.0 : t - seg + 1
+    Y[seg].pts .= adjoint_differential_bezier_control(M, B[seg], localT, X).pts
     return Y
 end
 @doc raw"""
@@ -128,12 +134,12 @@ function adjoint_differential_bezier_control(
     M::Manifold,
     B::AbstractVector{<:BezierSegment},
     T::AbstractVector{Float64},
-    X::AbstractVector{Q}
+    X::AbstractVector{Q},
 ) where {P,Q}
-    BT = adjoint_differential_bezier_control.(Ref(M),Ref(B), T, X)
-    Y = broadcast( b -> BezierSegment(zero_tangent_vector.(Ref(M),b.pts)) , B) # Double broadcast
-    for Bn ∈ BT # for all times
-        for i ∈ 1:length(Bn)
+    BT = adjoint_differential_bezier_control.(Ref(M), Ref(B), T, X)
+    Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
+    for Bn in BT # for all times
+        for i in 1:length(Bn)
             Y[i].pts .+= Bn[i].pts
         end
     end
@@ -149,7 +155,9 @@ Compute the adjoint of $D_p γ(t; p, q)[X]$.
 
 [`differential_geodesic_startpoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-adjoint_differential_geodesic_startpoint(M::MT, p, q, t, X) where {MT <: Manifold} = adjoint_Jacobi_field(M, p, q, t, X, βdifferential_geodesic_startpoint)
+function adjoint_differential_geodesic_startpoint(M::MT, p, q, t, X) where {MT<:Manifold}
+    return adjoint_Jacobi_field(M, p, q, t, X, βdifferential_geodesic_startpoint)
+end
 
 @doc raw"""
     adjoint_differential_geodesic_endpoint(M, p, q, t, X)
@@ -160,8 +168,8 @@ Compute the adjoint of $D_q γ(t; p, q)[X]$.
 
 [`differential_geodesic_endpoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_geodesic_endpoint(M::MT, p, q, t, X) where {MT <: Manifold}
-    return adjoint_Jacobi_field(M, q, p, 1-t, X, βdifferential_geodesic_startpoint)
+function adjoint_differential_geodesic_endpoint(M::MT, p, q, t, X) where {MT<:Manifold}
+    return adjoint_Jacobi_field(M, q, p, 1 - t, X, βdifferential_geodesic_startpoint)
 end
 
 @doc raw"""
@@ -173,8 +181,8 @@ Computes the adjoint of $D_p \exp_p X[Y]$.
 
 [`differential_exp_basepoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_exp_basepoint(M::MT, p, X, Y) where {MT <: Manifold}
-    return adjoint_Jacobi_field(M, p, exp(M, p, X), 1., Y, βdifferential_exp_basepoint)
+function adjoint_differential_exp_basepoint(M::MT, p, X, Y) where {MT<:Manifold}
+    return adjoint_Jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_basepoint)
 end
 
 @doc raw"""
@@ -187,7 +195,7 @@ Note that $X ∈  T_p(T_p\mathcal M) = T_p\mathcal M$ is still a tangent vector.
 
 [`differential_exp_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_exp_argument(M::mT, p, X, Y) where {mT <: Manifold}
+function adjoint_differential_exp_argument(M::mT, p, X, Y) where {mT<:Manifold}
     return adjoint_Jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_argument)
 end
 
@@ -200,7 +208,7 @@ computes the adjoint of $D_p log_p q[X]$.
 [`differential_log_basepoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function adjoint_differential_log_basepoint(M::Manifold, p, q, X)
-    return adjoint_Jacobi_field(M, p, q, 0., X, βdifferential_log_basepoint)
+    return adjoint_Jacobi_field(M, p, q, 0.0, X, βdifferential_log_basepoint)
 end
 
 @doc raw"""
@@ -212,7 +220,7 @@ Compute the adjoint of $D_q log_p q[X]$.
 [`differential_log_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function adjoint_differential_log_argument(M::Manifold, p, q, X)
-    return adjoint_Jacobi_field(M, p, q, 1., X, βdifferential_log_argument)
+    return adjoint_Jacobi_field(M, p, q, 1.0, X, βdifferential_log_argument)
 end
 
 @doc raw"""
@@ -239,31 +247,37 @@ Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
 `Y` – resulting tangent vector in $T_p\mathcal M$ representing the adjoint
   differentials of the logs.
 """
-function adjoint_differential_forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p, X) where {𝔽,TM,TSize,TPR}
+function adjoint_differential_forward_logs(
+    M::PowerManifold{𝔽,TM,TSize,TPR},
+    p,
+    X,
+) where {𝔽,TM,TSize,TPR}
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = last(R).I
     N = PowerManifold(M.manifold, TPR(), power_size..., d)
-    Y = zero_tangent_vector(M,p)
+    Y = zero_tangent_vector(M, p)
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
             I = [i.I...] # array of index
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
-            if all( J .<= maxInd ) # is this neighbor in range?
+            if all(J .<= maxInd) # is this neighbor in range?
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
-                Y[M,I...] = Y[M,I...] + adjoint_differential_log_basepoint(
-                    M.manifold,
-                    p[M,I...],
-                    p[M,J...],
-                    X[N,I...,k],
-                )
-                Y[M,J...] = Y[M,J...] + adjoint_differential_log_argument(
-                    M.manifold,
-                    p[M,I...],
-                    p[M,J...],
-                    X[N,I...,k],
-                )
+                Y[M, I...] =
+                    Y[M, I...] + adjoint_differential_log_basepoint(
+                        M.manifold,
+                        p[M, I...],
+                        p[M, J...],
+                        X[N, I..., k],
+                    )
+                Y[M, J...] =
+                    Y[M, J...] + adjoint_differential_log_argument(
+                        M.manifold,
+                        p[M, I...],
+                        p[M, J...],
+                        X[N, I..., k],
+                    )
             end
         end # directions
     end # i in R

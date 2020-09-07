@@ -16,7 +16,8 @@
 # ## [Setup](@id SetupTB)
 #
 # We first initialize the necessary packages
-exportFolder = joinpath(@__DIR__,"..","..","docs","src","assets","images","tutorials") #src
+exportFolder = #src
+    joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials") #src
 using Manopt, Manifolds
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)
 using Colors
@@ -26,8 +27,8 @@ TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
 TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
 TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
 TolVibrantTeal = RGBA{Float64}(colorant"#009988")
-geo_pts = collect(range(0.0,1.0,length=101)) #hide
-bezier_pts = collect(range(0.0,3.0,length=201)) #hide
+geo_pts = collect(range(0.0, 1.0, length = 101)) #hide
+bezier_pts = collect(range(0.0, 3.0, length = 201)) #hide
 cameraPosition = (-1.0, -0.7, 0.3) #hide
 nothing #hide
 # Then we load our data, see [`artificial_S2_composite_bezier_curve`](@ref), a composite
@@ -46,26 +47,38 @@ b = B[2].pts
 #
 # We will illustrate this using these points $b=(b_1,b_2,b_3,b_4)$ on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html) $\mathbb S^2$.
 # Let's evaliuate this at the point $t=\frac{1}{4}\in [0,1]$. We first compute
-t=0.66
-pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4],Ref(t))
+t = 0.66
+pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t))
 # We obtain 3 points on the geodesics connecting the control points. Repeating this again twice
-pts2 = shortest_geodesic.(Ref(M), pts1[1:2], pts1[2:3],Ref(t))
-p = shortest_geodesic(M, pts2[1], pts2[2],t)
+pts2 = shortest_geodesic.(Ref(M), pts1[1:2], pts1[2:3], Ref(t))
+p = shortest_geodesic(M, pts2[1], pts2[2], t)
 # we obtain the point on the Bézier curve $c(t)$.
 # This procedure is illustrated in the following image:
 #
-curves1 = [shortest_geodesic(M, b[i], b[i+1],geo_pts) for i=1:3] #src
-curves2 = [shortest_geodesic(M, pts1[i], pts1[i+1],geo_pts) for i=1:2] #src
-curves3 = [shortest_geodesic(M, pts2[1], pts2[2],geo_pts),] #src
-asymptote_export_S2_signals(exportFolder*"/Casteljau-illustr.asy"; #src
-    points = [b, pts1, pts2, [p,]], #src
-    curves = [curves1..., curves2..., curves3..., de_casteljau(M,B[2],geo_pts)], #src
-    colors=Dict(:points => [TolVibrantBlue, TolVibrantCyan, TolVibrantTeal, TolVibrantOrange], #src
-                :curves => [TolVibrantBlue, TolVibrantBlue, TolVibrantBlue, TolVibrantCyan, TolVibrantCyan, TolVibrantTeal, black] #src
-                ), #src
-    dotSize = 3.5, lineWidths = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5], cameraPosition = cameraPosition #src
+curves1 = [shortest_geodesic(M, b[i], b[i + 1], geo_pts) for i in 1:3] #src
+curves2 = [shortest_geodesic(M, pts1[i], pts1[i + 1], geo_pts) for i in 1:2] #src
+curves3 = [shortest_geodesic(M, pts2[1], pts2[2], geo_pts)] #src
+asymptote_export_S2_signals( #src
+    exportFolder * "/Casteljau-illustr.asy"; #src
+    points = [b, pts1, pts2, [p]], #src
+    curves = [curves1..., curves2..., curves3..., de_casteljau(M, B[2], geo_pts)], #src
+    colors = Dict( #src
+        :points => [TolVibrantBlue, TolVibrantCyan, TolVibrantTeal, TolVibrantOrange], #src
+        :curves => [ #src
+            TolVibrantBlue, #src
+            TolVibrantBlue, #src
+            TolVibrantBlue, #src
+            TolVibrantCyan, #src
+            TolVibrantCyan, #src
+            TolVibrantTeal, #src
+            black, #src
+        ], #src
+    ), #src
+    dotSize = 3.5, #src
+    lineWidths = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5], #src
+    cameraPosition = cameraPosition, #src
 ) #src
-render_asymptote(exportFolder*"/Casteljau-illustr.asy"; render=2) #src
+render_asymptote(exportFolder * "/Casteljau-illustr.asy"; render = 2) #src
 #md # ![Illustration of de Casteljau's algorithm on the Sphere.](../assets/images/tutorials/Casteljau-illustr.png)
 #
 # From the control points (blue) and their geodesics, ont evaluation per geodesic yields three interims points (cyan), their two successive geodeics another two points (teal) and at its geodesic at $t=0.66$ we obtain the point on the curve.
@@ -95,8 +108,9 @@ render_asymptote(exportFolder*"/Casteljau-illustr.asy"; render=2) #src
 #
 # For the three segment example from the beginning this looks as follows[^1]
 #
-asymptote_export_S2_signals(exportFolder*"/Bezier-composite-curve.asy"; #src
-    curves = [de_casteljau(M, B, bezier_pts),], #src
+asymptote_export_S2_signals( #src
+    exportFolder * "/Bezier-composite-curve.asy"; #src
+    curves = [de_casteljau(M, B, bezier_pts)], #src
     points = [get_bezier_junctions(M, B), get_bezier_inner_points(M, B)], #src
     tVectors = [[ #src
         Tuple(a) #src
@@ -114,7 +128,7 @@ asymptote_export_S2_signals(exportFolder*"/Bezier-composite-curve.asy"; #src
     lineWidths = [1.5, 1.5], #src
     dotSize = 4.0, #src
 ) #src
-render_asymptote(exportFolder*"/Bezier-composite-curve.asy"; render = 2) #src
+render_asymptote(exportFolder * "/Bezier-composite-curve.asy"; render = 2) #src
 #md # ![Illustration of a differentiable composite Bézier curve with 3 segments.](../assets/images/tutorials/Bezier-composite-curve.png)
 #
 # ## [Minimizing the acceleration of a composite Bézier curve](@id MinAccBezier)
@@ -135,15 +149,24 @@ render_asymptote(exportFolder*"/Bezier-composite-curve.asy"; render = 2) #src
 # An advantage of the model considered here is, that it only consist of the evaluation of geodesics.
 # This yields a gradient of $A(b)$ with respect to $b$ [`adjoint_Jacobi_field`](@ref)s. The following image shows the negative gradient (scaled)
 #
-gradFullB = Manopt._∇acceleration_bezier(M, get_bezier_points(M, B, :differentiable), [3,3,3], collect(range(0.0,3.0,length=151))) # src
-asymptote_export_S2_signals(exportFolder*"/Bezier-composite-curve-gradient.asy"; #src
-    curves = [de_casteljau(M, B, bezier_pts),], #src
+gradFullB = Manopt._∇acceleration_bezier( #src
+    M, #src
+    get_bezier_points(M, B, :differentiable), #src
+    [3, 3, 3], #src
+    collect(range(0.0, 3.0, length = 151)), #src
+) #src
+asymptote_export_S2_signals( #src
+    exportFolder * "/Bezier-composite-curve-gradient.asy"; #src
+    curves = [de_casteljau(M, B, bezier_pts)], #src
     points = [get_bezier_junctions(M, B), get_bezier_inner_points(M, B)], #src
     tVectors = [[ #src
         Tuple(a) #src
         for #src
         a in #src
-        zip(get_bezier_points(M, B, :continuous), -0.05 .* get_bezier_points(M,gradFullB, :continuous)) #src
+        zip( #src
+            get_bezier_points(M, B, :continuous), #src
+            -0.05 .* get_bezier_points(M, gradFullB, :continuous), #src
+        ) #src
     ]], #src
     colors = Dict( #src
         :curves => [black], #src
@@ -155,7 +178,7 @@ asymptote_export_S2_signals(exportFolder*"/Bezier-composite-curve-gradient.asy";
     lineWidths = [1.5, 1.5], #src
     dotSize = 4.0, #src
 ) #src
-render_asymptote(exportFolder*"/Bezier-composite-curve-gradient.asy"; render = 2) #src
+render_asymptote(exportFolder * "/Bezier-composite-curve-gradient.asy"; render = 2) #src
 #md # ![Illustration of the gradient of the acceleration with respect to the control points.](../assets/images/tutorials/Bezier-composite-curve-gradient.png)
 #
 # In the following we consider two cases: Interpolation, which fixes the junction and end points of $B(t)$
@@ -164,26 +187,46 @@ render_asymptote(exportFolder*"/Bezier-composite-curve-gradient.asy"; render = 2
 # ### Interpolation
 # For interpolation, the junction points are fixed and their gradient entries are hence set to zero.
 # After transferring to the already mentioned [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html), we can then perform a [`gradient_descent`](@ref) as follows
-curve_samples = collect(range(0.0,3.0,length=151)) #exactness of approximating d^2
+curve_samples = collect(range(0.0, 3.0, length = 151)) #exactness of approximating d^2
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
 F(pB) = cost_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
 ∇F(pB) = ∇acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
 x0 = pB
-pB_opt_ip = gradient_descent(N,F, ∇F, x0;
+pB_opt_ip = gradient_descent(
+    N,
+    F,
+    ∇F,
+    x0;
     stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001),
-    stopping_criterion = StopWhenChangeLess(5* 10.0^(-7)),
-    debug = [:Iteration, " | ", :Cost, " | ", DebugGradientNorm()," | ", DebugStepsize(),
-        " | ", :Change, "\n",:Stop,10],
+    stopping_criterion = StopWhenChangeLess(5 * 10.0^(-7)),
+    debug = [
+        :Iteration,
+        " | ",
+        :Cost,
+        " | ",
+        DebugGradientNorm(),
+        " | ",
+        DebugStepsize(),
+        " | ",
+        :Change,
+        "\n",
+        :Stop,
+        10,
+    ],
 )
 #
 # and the result looks like
 #
 B_opt_ip = get_bezier_segments(M, pB_opt_ip, get_bezier_degrees(M, B), :differentiable) #src
-asymptote_export_S2_signals(exportFolder*"/Bezier-IP-Min.asy"; #src
+asymptote_export_S2_signals( #src
+    exportFolder * "/Bezier-IP-Min.asy"; #src
     curves = [de_casteljau(M, B_opt_ip, bezier_pts), de_casteljau(M, B, bezier_pts)], #src
     points = [get_bezier_junctions(M, B_opt_ip), get_bezier_inner_points(M, B_opt_ip)], #src
-    tVectors = [[Tuple(a) for a in zip( #src
+    tVectors = [[ #src
+        Tuple(a) #src
+        for #src
+        a in zip( #src
             get_bezier_junctions(M, B_opt_ip, true), #src
             get_bezier_junction_tangent_vectors(M, B_opt_ip), #src
         ) #src
@@ -198,7 +241,7 @@ asymptote_export_S2_signals(exportFolder*"/Bezier-IP-Min.asy"; #src
     lineWidths = [1.5, 0.75, 1.5], #src
     dotSize = 4.0, #src
 ) #src
-render_asymptote(exportFolder*"/Bezier-IP-Min.asy"; render = 2) #src
+render_asymptote(exportFolder * "/Bezier-IP-Min.asy"; render = 2) #src
 #md # ![Interpolation Min Acc](../assets/images/tutorials/Bezier-IP-Min.png)
 #
 # ### Approximation
@@ -216,20 +259,44 @@ d = get_bezier_junctions(M, B)
 F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
 ∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
 x0 = pB
-pB_opt_appr = gradient_descent(N, F, ∇F, x0;
+pB_opt_appr = gradient_descent(
+    N,
+    F,
+    ∇F,
+    x0;
     stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
     stopping_criterion = StopWhenChangeLess(10.0^(-5)),
-    debug = [:Iteration, " | ", :Cost, " | ", DebugGradientNorm()," | ", DebugStepsize(),
-        " | ", :Change, "\n",:Stop,50],
+    debug = [
+        :Iteration,
+        " | ",
+        :Cost,
+        " | ",
+        DebugGradientNorm(),
+        " | ",
+        DebugStepsize(),
+        " | ",
+        :Change,
+        "\n",
+        :Stop,
+        50,
+    ],
 )
 #
 # and the result looks like
 #
 B_opt_appr = get_bezier_segments(M, pB_opt_appr, get_bezier_degrees(M, B), :differentiable) #src
-asymptote_export_S2_signals(exportFolder*"/Bezier-Appr-Min.asy"; #src
+asymptote_export_S2_signals( #src
+    exportFolder * "/Bezier-Appr-Min.asy"; #src
     curves = [de_casteljau(M, B_opt_appr, bezier_pts), de_casteljau(M, B, bezier_pts)], #src
-    points = [d,get_bezier_junctions(M, B_opt_appr), get_bezier_inner_points(M, B_opt_appr)], #src
-    tVectors = [[Tuple(a) for a in zip( #src
+    points = [ #src
+        d, #src
+        get_bezier_junctions(M, B_opt_appr), #src
+        get_bezier_inner_points(M, B_opt_appr), #src
+    ], #src
+    tVectors = [[ #src
+        Tuple(a) #src
+        for #src
+        a in zip( #src
             get_bezier_junctions(M, B_opt_appr, true), #src
             get_bezier_junction_tangent_vectors(M, B_opt_appr), #src
         ) #src
@@ -244,7 +311,7 @@ asymptote_export_S2_signals(exportFolder*"/Bezier-Appr-Min.asy"; #src
     lineWidths = [1.5, 0.75, 1.5], #src
     dotSize = 4.0, #src
 ) #src
-render_asymptote(exportFolder*"/Bezier-Appr-Min.asy"; render = 2) #src
+render_asymptote(exportFolder * "/Bezier-Appr-Min.asy"; render = 2) #src
 #
 #md # ![Approximation min Acc](../assets/images/tutorials/Bezier-Appr-Min.png)
 #

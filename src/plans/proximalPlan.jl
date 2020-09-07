@@ -26,26 +26,40 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 # See also
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`getProximalMap`](@ref)
 """
-mutable struct ProximalProblem{mT <: Manifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <: Problem
-  M::mT
-  cost::TCost
-  proxes::TProxes
-  number_of_proxes::Vector{Int}
-  ProximalProblem(M::mT, cF, proxMaps::Union{Tuple,AbstractVector}) where {mT <: Manifold}= new{mT,typeof(cF),typeof(proxMaps)}(M,cF,proxMaps,ones(length(proxMaps)))
-  ProximalProblem(M::mT, cF, proxMaps::Union{Tuple,AbstractVector}, nOP::Vector{Int}) where {mT <: Manifold} =
-    length(nOP) != length(proxMaps) ? throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
-    new{mT,typeof(cF),typeof(proxMaps)}(M,cF,proxMaps,nOP)
+mutable struct ProximalProblem{mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <:
+               Problem
+    M::mT
+    cost::TCost
+    proxes::TProxes
+    number_of_proxes::Vector{Int}
+    function ProximalProblem(
+        M::mT,
+        cF,
+        proxMaps::Union{Tuple,AbstractVector},
+    ) where {mT<:Manifold}
+        return new{mT,typeof(cF),typeof(proxMaps)}(M, cF, proxMaps, ones(length(proxMaps)))
+    end
+    function ProximalProblem(
+        M::mT,
+        cF,
+        proxMaps::Union{Tuple,AbstractVector},
+        nOP::Vector{Int},
+    ) where {mT<:Manifold}
+        return length(nOP) != length(proxMaps) ?
+               throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps)).")) :
+               new{mT,typeof(cF),typeof(proxMaps)}(M, cF, proxMaps, nOP)
+    end
 end
 @doc raw"""
     getProximalMap(p,λ,x,i)
 
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
-function getProximalMap(p::ProximalProblem,λ,x,i)
-    if i>length(p.proxes)
-        throw( ErrorException("the $(i)th entry does not exists, only $(length(p.proxes)) available.") )
+function getProximalMap(p::ProximalProblem, λ, x, i)
+    if i > length(p.proxes)
+        throw(ErrorException("the $(i)th entry does not exists, only $(length(p.proxes)) available."))
     end
-    return p.proxes[i](λ,x)::typeof(x)
+    return p.proxes[i](λ, x)::typeof(x)
 end
 #
 #
@@ -69,7 +83,12 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 # See also
 [`cyclic_proximal_point`](@ref)
 """
-mutable struct CyclicProximalPointOptions{TX,TStop<:StoppingCriterion,Tλ,TOrder<:EvalOrder} <: Options
+mutable struct CyclicProximalPointOptions{
+    TX,
+    TStop<:StoppingCriterion,
+    Tλ,
+    TOrder<:EvalOrder,
+} <: Options
     x::TX
     stop::TStop
     λ::Tλ
@@ -79,10 +98,16 @@ end
 function CyclicProximalPointOptions(
     x,
     s::StoppingCriterion,
-    λ=(iter)-> 1.0/iter,
-    o::EvalOrder=LinearEvalOrder()
+    λ = (iter) -> 1.0 / iter,
+    o::EvalOrder = LinearEvalOrder(),
+)
+    return CyclicProximalPointOptions{typeof(x),typeof(s),typeof(λ),typeof(o)}(
+        x,
+        s,
+        λ,
+        o,
+        [],
     )
-    return CyclicProximalPointOptions{typeof(x),typeof(s),typeof(λ),typeof(o)}(x,s,λ,o,[])
 end
 @doc raw"""
     DouglasRachfordOptions <: Options
@@ -114,13 +139,13 @@ mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR} <: Options
     parallel::Bool
     function DouglasRachfordOptions(
         x,
-        λ=(iter)->1.0,
-        α=(iter)->0.9,
-        R=reflect,
+        λ = (iter) -> 1.0,
+        α = (iter) -> 0.9,
+        R = reflect,
         stop::StoppingCriterion = StopAfterIteration(300),
-        parallel=false
+        parallel = false,
     )
-    return new{typeof(x),typeof(λ),typeof(α),typeof(R)}(x,x,λ,α,R,stop,parallel)
+        return new{typeof(x),typeof(λ),typeof(α),typeof(R)}(x, x, λ, α, R, stop, parallel)
     end
 end
 #
@@ -139,10 +164,20 @@ print the current iterates proximal point algorithm parameter given by
 mutable struct DebugProximalParameter <: DebugAction
     print::Any
     prefix::String
-    DebugProximalParameter(long::Bool=false,print=print) = new(print, long ? "Proximal Map Parameter λ(i):" : "λ:" )
+    function DebugProximalParameter(long::Bool = false, print = print)
+        return new(print, long ? "Proximal Map Parameter λ(i):" : "λ:")
+    end
 end
-(d::DebugProximalParameter)(p::ProximalProblem,o::DouglasRachfordOptions,i::Int) = d.print((i>0) ? d.prefix*string(o.λ(i)) : "")
-(d::DebugProximalParameter)(p::ProximalProblem,o::CyclicProximalPointOptions,i::Int) = d.print((i>0) ? d.prefix*string(o.λ(i)) : "")
+function (d::DebugProximalParameter)(p::ProximalProblem, o::DouglasRachfordOptions, i::Int)
+    return d.print((i > 0) ? d.prefix * string(o.λ(i)) : "")
+end
+function (d::DebugProximalParameter)(
+    p::ProximalProblem,
+    o::CyclicProximalPointOptions,
+    i::Int,
+)
+    return d.print((i > 0) ? d.prefix * string(o.λ(i)) : "")
+end
 
 #
 # Record
@@ -156,5 +191,17 @@ mutable struct RecordProximalParameter <: RecordAction
     recordedValues::Array{Float64,1}
     RecordProximalParameter() = new(Array{Float64,1}())
 end
-(r::RecordProximalParameter)(p::P,o::O,i::Int) where {P <: ProximalProblem, O <: CyclicProximalPointOptions} = record_or_eset!(r, o.λ(i), i)
-(r::RecordProximalParameter)(p::P,o::O,i::Int) where {P <: ProximalProblem, O <: DouglasRachfordOptions} = record_or_eset!(r, o.λ(i), i)
+function (r::RecordProximalParameter)(
+    p::P,
+    o::O,
+    i::Int,
+) where {P<:ProximalProblem,O<:CyclicProximalPointOptions}
+    return record_or_eset!(r, o.λ(i), i)
+end
+function (r::RecordProximalParameter)(
+    p::P,
+    o::O,
+    i::Int,
+) where {P<:ProximalProblem,O<:DouglasRachfordOptions}
+    return record_or_eset!(r, o.λ(i), i)
+end
