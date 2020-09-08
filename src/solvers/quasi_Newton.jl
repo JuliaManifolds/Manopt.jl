@@ -22,9 +22,15 @@ function quasi_Newton(
     M::MT,
     F::Function,
     ∇F::Function,
-    x,
-    H::Union{Function,Missing}
-    ) where {MT <: Manifold}
+    x;
+    broyden_factor::Float64 = 0.0,
+    cautious_update::Bool=false,
+    cautious_function::Function = (x) -> x*10^-4,
+    memory_size::Int = 20,
+    memory = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
+    memory_position = 0,
+    step_size::Stepsize = ConstantStepsize(1.0)
+) where {MT <: Manifold}
 
 
     if return_options
@@ -106,10 +112,16 @@ function update_parameters(p::GradientProblem, o::RBFGSQuasiNewton{P,T}, α::Flo
         skyk = inner(p.M, o.x, yk, sk)
 
         for i in 1:n
-                o.inverse_hessian_approximation[i] = b[i] - (inner(p.M, o.x, basis[i], sk) / skyk) * Bkyk - (inner(p.M, o.x, Bkyk, basis[i]) / skyk) * sk + ((inner(p.M, o.x, yk, Bkyk)*inner(p.M, o.x, sk, basis[i])) / skyk^2) * sk + (inner(p.M, o.x, sk, basis[i]) / skyk) * sk
+        o.inverse_hessian_approximation[i] = b[i] - (inner(p.M, o.x, basis[i], sk) / skyk) * Bkyk - (inner(p.M, o.x, Bkyk, basis[i]) / skyk) * sk + ((inner(p.M, o.x, yk, Bkyk)*inner(p.M, o.x, sk, basis[i])) / skyk^2) * sk + (inner(p.M, o.x, sk, basis[i]) / skyk) * sk
         end
 end
-
+#
+# (o.broyden_factor==1.0) && return f(p,o, Val(:DFP))
+# (o.broyden_factor==0.0) && return f(p,o, Val(:BFGS))
+# X = f(p,o, Val(:BFGS))
+# Y = f(p,o, Val(:DFP))
+# return o.broyden_factor*x + (1-o.broyden_factor)*Y
+#
 function update_parameters(p::GradientProblem, o::CautiuosRBFGSQuasiNewton{P,T}, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = o.∇
         β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))

@@ -683,22 +683,22 @@ end
 @doc raw"""
     QuasiNewtonOptions <: Options
 """
-abstract type QuasiNewtonOptions <: Options end
+abstract type AbstractQuasiNewtonOptions <: Options end
 
 @doc raw"""
     CautiuosQuasiNewtonOptions <: QuasiNewtonOptions
 """
-abstract type CautiuosQuasiNewtonOptions <: QuasiNewtonOptions end
+abstract type CautiuosQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
 
 @doc raw"""
     LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions
 """
-abstract type LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
+abstract type LimitedMemoryQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
 
 @doc raw"""
     CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions
 """
-abstract type CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions end
+abstract type CautiuosLimitedMemoryQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
 
 
 # BFGS
@@ -717,11 +717,11 @@ specify options for a Riemannian BFGS algorithm, that solves a
 * `vector_transport_method` – a function to transport a vector of the tangent
     space of one iterate to the tangent space of another iterate
 * `stop` – a [`StoppingCriterion`](@ref)
-
+* `broyden_factor` – whether to use BFGS (0.0), DFP (1.0) or a mix of both.
 # See also
 [`GradientProblem`](@ref)
 """
-mutable struct RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+mutable struct QuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
     inverse_hessian_approximation::Array{T,1}
@@ -729,15 +729,17 @@ mutable struct RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
     vector_transport_method::AbstractVectorTransportMethod
     stop::StoppingCriterion
     stepsize::Stepsize
+    broyden_factor::Float64
 
-    function RBFGSQuasiNewton{P,T}(
+    function QuasiNewtonOptions{P,T}(
         x::P,
         grad_x::T,
         inverse_hessian_approximation::Array{T,1};
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
         stop::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = WolfePowellLineseach()
+        stepsize::Stepsize = WolfePowellLineseach(),
+        broyden_factor::Float64 = 0.0
     ) where {P,T}
         o = new{P,T}()
         o.x = x
@@ -747,23 +749,27 @@ mutable struct RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
         o.vector_transport_method = vector_transport_method
         o.stop = stop
         o.stepsize = stepsize
+        o.broyden_factor = broyden_factor
         return o
     end
 end
-function RBFGSQuasiNewton(
+function QuasiNewtonOptions(
     x::P,
     grad_x::T,
     inverse_hessian_approximation::Array{T,1};
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
     stop::StoppingCriterion = StopAfterIteration(100),
-    stepsize::Stepsize = WolfePowellLineseach()
+    stepsize::Stepsize = WolfePowellLineseach(),
+    broyden_factor::Float64 = 0.0
 ) where {P,T}
-    return RBFGSQuasiNewton{P,T}(x,grad_x,inverse_hessian_approximation;
+    return QuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation;
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
         stop = stop,
-        stepsize = stepsize)
+        stepsize = stepsize,
+        broyden_factor = broyden_factor
+        )
 end
 
 
@@ -839,7 +845,7 @@ specify options for a Riemannian DFP algorithm, that solves a
 # See also
 [`GradientProblem`](@ref)
 """
-mutable struct RDFPQuasiNewton{P,T} <: QuasiNewtonOptions
+mutable struct RDFPQuasiNewton{P,T} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
     inverse_hessian_approximation::Array{T,1}

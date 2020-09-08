@@ -160,7 +160,7 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export Options, get_options
 export is_options_decorator, dispatch_options_decorator
 
-export RLBFGSOptions, RBFGSQuasiNewton
+export RLBFGSOptions, QuasiNewtonOptions
 export quasi_Newton, WolfePowellLineseach, StrongWolfePowellLineseach
 
 export
