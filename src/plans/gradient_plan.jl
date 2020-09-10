@@ -774,7 +774,7 @@ end
 
 
 # Cautious RBFGS
-mutable struct CautiuosRBFGSQuasiNewton{P,T} <: CautiuosQuasiNewtonOptions
+mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
     inverse_hessian_approximation::Array{T,1}
@@ -783,6 +783,7 @@ mutable struct CautiuosRBFGSQuasiNewton{P,T} <: CautiuosQuasiNewtonOptions
     vector_transport_method::AbstractVectorTransportMethod
     stop::StoppingCriterion
     stepsize::Stepsize
+    broyden_factor::Float64
 
     function CautiuosRBFGSQuasiNewton{P,T}(
         x::P,
@@ -792,7 +793,8 @@ mutable struct CautiuosRBFGSQuasiNewton{P,T} <: CautiuosQuasiNewtonOptions
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
         stop::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = WolfePowellLineseach()
+        stepsize::Stepsize = WolfePowellLineseach(),
+        broyden_factor::Float64 = 0.0
     ) where {P,T}
         o = new{P,t}()
         o.x = x
@@ -803,6 +805,7 @@ mutable struct CautiuosRBFGSQuasiNewton{P,T} <: CautiuosQuasiNewtonOptions
         o.vector_transport_method = vector_transport_method
         o.stop = stop
         o.stepsize = stepsize
+        o.broyden_factor = broyden_factor
         return o
     end
 end
@@ -814,132 +817,16 @@ function CautiuosRBFGSQuasiNewton(
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
     stop::StoppingCriterion = StopAfterIteration(100),
-    stepsize::Stepsize = WolfePowellLineseach()
+    stepsize::Stepsize = WolfePowellLineseach(),
+    broyden_factor::Float64 = 0.0
 ) where {P,T}
     return CautiuosRBFGSQuasiNewton{P,T}(x,grad_x,inverse_hessian_approximation;
         cautiuos_function = cautiuos_function,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
         stop = stop,
-        stepsize = stepsize)
-end
-
-
-# RDFP
-@doc raw"""
-    RDFPQuasiNewton{P,T} <: QuasiNewtonOptions
-
-specify options for a Riemannian DFP algorithm, that solves a
-[`GradientProblem`].
-
-# Fields
-* `x` – the current iterate, a point on a manifold
-* `∇` – the current gradient
-* `inverse_hessian_approximation` - a representantation of the approximation of
-    the hessian at the current iterate, an array of tangent vectors
-* `retraction_method` – a function to perform a step on the manifold
-* `vector_transport_method` – a function to transport a vector of the tangent
-    space of one iterate to the tangent space of another iterate
-* `stop` – a [`StoppingCriterion`](@ref)
-
-# See also
-[`GradientProblem`](@ref)
-"""
-mutable struct RDFPQuasiNewton{P,T} <: AbstractQuasiNewtonOptions
-    x::P
-    ∇::T
-    inverse_hessian_approximation::Array{T,1}
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
-    stop::StoppingCriterion
-    stepsize::Stepsize
-
-    function RDFPQuasiNewton{P,T}(
-        x::P,
-        grad_x::T,
-        inverse_hessian_approximation::Array{T,1};
-        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-        stop::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = WolfePowellLineseach()
-    ) where {P,T}
-        o = new{P,t}()
-        o.x = x
-        o.∇ = grad_x
-        o.inverse_hessian_approximation = inverse_hessian_approximation
-        o.retraction_method = retraction_method
-        o.vector_transport_method = vector_transport_method
-        o.stop = stop
-        o.stepsize = stepsize
-        return o
-    end
-end
-function RDFPQuasiNewton(
-    x::P,
-    grad_x::T,
-    inverse_hessian_approximation::Array{T,1};
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    stop::StoppingCriterion = StopAfterIteration(100),
-    stepsize::Stepsize = WolfePowellLineseach()
-) where {P,T}
-    return RDFPQuasiNewton{P,T}(x,grad_x,inverse_hessian_approximation;
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
-        stop = stop,
-        stepsize = stepsize)
-end
-
-
-# Cautious RDFP
-mutable struct CautiuosRDFPQuasiNewton{P,T} <: CautiuosQuasiNewtonOptions
-    x::P
-    ∇::T
-    inverse_hessian_approximation::Array{T,1}
-    cautiuos_function::Function
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
-    stop::StoppingCriterion
-    stepsize::Stepsize
-
-    function CautiuosRDFPQuasiNewton{P,T}(
-        x::P,
-        grad_x::T,
-        inverse_hessian_approximation::Array{T,1};
-        cautious_function::Function = x -> x*10^(-4),
-        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-        stop::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = WolfePowellLineseach()
-    ) where {P,T}
-        o = new{P,t}()
-        o.x = x
-        o.∇ = grad_x
-        o.inverse_hessian_approximation = inverse_hessian_approximation
-        o.cautiuos_function = cautiuos_function
-        o.retraction_method = retraction_method
-        o.vector_transport_method = vector_transport_method
-        o.stop = stop
-        o.stepsize = stepsize
-        return o
-    end
-end
-function CautiuosRDFPQuasiNewton(
-    x::P,
-    grad_x::T,
-    inverse_hessian_approximation::Array{T,1};
-    cautious_function::Function = x -> x*10^(-4),
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    stop::StoppingCriterion = StopAfterIteration(100),
-    stepsize::Stepsize = WolfePowellLineseach()
-) where {P,T}
-    return CautiuosRDFPQuasiNewton{P,T}(x,grad_x,inverse_hessian_approximation;
-        cautiuos_function = cautiuos_function,
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
-        stop = stop,
-        stepsize = stepsize)
+        stepsize = stepsize,
+        broyden_factor = broyden_factor)
 end
 
 
