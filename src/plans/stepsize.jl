@@ -174,16 +174,6 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
             fNew = p.cost(xNew)
         end
         s_plus = 2. * s_minus
-        while inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
-            s = (s_minus + s_plus)/2
-            xNew = retract(p.M, o.x, s*η, a.retraction_method)
-            fNew = p.cost(xNew)
-            if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-                s_minus = s
-            else
-                s_plus = s
-            end
-        end
     else
         if inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
             while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
@@ -193,7 +183,9 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
                 fNew = p.cost(xNew)
             end
             s_minus = s_plus/2.
-            while inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+        end
+    end
+    while inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
                 s = (s_minus + s_plus)/2
                 xNew = retract(p.M, o.x, s*η, a.retraction_method)
                 fNew = p.cost(xNew)
@@ -202,8 +194,6 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
                 else
                     s_plus = s
                 end
-            end
-        end
     end
     s = s_minus
     return s
@@ -232,44 +222,23 @@ end
 
 
 function (a::StrongWolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
-
     s = 1.
     s_plus = 1.
     s_minus = 1.
-
     f0 = p.cost(o.x)
     gradient_x = get_gradient(p, o.x)
     xNew = retract(p.M, o.x, s*η, a.retraction_method)
     fNew = p.cost(xNew)
-
-
     if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-
         while fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
             s_minus = s_minus * 0.5
             s = s_minus
             xNew = retract(p.M, o.x, s*η, a.retraction_method)
             fNew = p.cost(xNew)
         end
-
         s_plus = 2. * s_minus
-
-        while abs(inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η)) > a.c_2 * abs(inner(p.M, o.x, η, gradient_x))
-            s = (s_minus + s_plus)/2
-
-            xNew = retract(p.M, o.x, s*η, a.retraction_method)
-            fNew = p.cost(xNew)
-
-            if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-                s_minus = s
-            else
-                s_plus = s
-            end
-        end
     else
-
         if abs(inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η)) > a.c_2 * abs(inner(p.M, o.x, η, gradient_x))
-
             while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
                 s_plus = s_plus * 2.
                 s = s_plus
@@ -277,25 +246,19 @@ function (a::StrongWolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient
                 xNew = retract(p.M, o.x, s*η, a.retraction_method)
                 fNew = p.cost(xNew)
             end
-
             s_minus = s_plus/2.
-
-            while abs(inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η)) > a.c_2 * abs(inner(p.M, o.x, η, gradient_x))
-                s = (s_minus + s_plus)/2
-
-                xNew = retract(p.M, o.x, s*η, a.retraction_method)
-                fNew = p.cost(xNew)
-
-                if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-                    s_minus = s
-                else
-                    s_plus = s
-                end
-            end
-
         end
     end
-
+    while abs(inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η)) > a.c_2 * abs(inner(p.M, o.x, η, gradient_x))
+            s = (s_minus + s_plus)/2
+            xNew = retract(p.M, o.x, s*η, a.retraction_method)
+            fNew = p.cost(xNew)
+            if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
+                s_minus = s
+            else
+                s_plus = s
+            end
+    end
     s = s_minus
     return s
 end
