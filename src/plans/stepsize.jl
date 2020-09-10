@@ -146,6 +146,72 @@ end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 
 @doc raw"""
+    NonmonotoneLineseach <: Linesearch
+
+A functor representing a nonmonotone line seach.
+
+# Fields
+* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
+  the exponential map
+* `stepsizeReduction` – (`0.5`) ... in the interval (0,1)
+* `sufficientDecrease` – (`0.1`) ... in the interval (0,1)
+* `M` – (1) an integer parameter greater than zero
+* `maxStepsize` – upper bound for the step size greater than zero
+* `minStepsize` – lower bound for the step size between zero and maxStepsize
+* `lastStepSize` – the last step size we start the search with
+
+# Constructor
+
+    NonmonotoneLineSearch()
+
+with the Fields above in their order as optional arguments.
+
+This method returns the functor to perform nonmonotone line search.
+"""
+mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
+    retraction_method::TRM
+    stepsizeReduction::Float64
+    sufficientDecrease::Float64
+    M::Int
+    maxStepsize::Float64
+    minStepsize::Float64
+    stepsizeOld::Float64
+    function NonmonotoneLinesearch(
+        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
+        stepsizeReduction::Float64 = 0.5,
+        sufficientDecrease::Float64 = 0.1,
+        M::Int = 1,
+        maxStepsize::Float64, #set standard, note in Fields
+        minStepsize::Float64, #set standard, note in Fields
+    )
+    #return
+    end
+end
+#=
+function (a::NonmonotoneLinesearch)(
+    p::P,
+    o::O,
+    i::Int,
+    η = -get_gradient(p, o.x),
+) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
+    return a(p.M, o.x, p.cost, get_gradient(p, o.x), η)
+end
+=#
+function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, η::T = -∇F) where {mT<:Manifold,TF,T}
+    s = a.stepsizeOld
+    f0 = F(x)
+    h = 0
+    xNew = retract(M, x, stepsizeReduction^h * s * η, a.retraction_method)
+    fNew = F(xNew)
+    while fNew <
+        h = h + 1
+        xNew = retract(M, x, stepsizeReduction^h * s * η, a.retraction_method)
+        fNew = F(xNew)
+    end
+    
+end
+
+@doc raw"""
     get_stepsize(p::Problem, o::Options, vars...)
 
 return the stepsize stored within [`Options`](@ref) `o` when solving [`Problem`](@ref) `p`.
