@@ -688,17 +688,17 @@ abstract type AbstractQuasiNewtonOptions <: Options end
 @doc raw"""
     CautiuosQuasiNewtonOptions <: QuasiNewtonOptions
 """
-abstract type CautiuosQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
+abstract type AbstractCautiuosQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
 
 @doc raw"""
     LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions
 """
-abstract type LimitedMemoryQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
+abstract type AbstractLimitedMemoryQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
 
 @doc raw"""
     CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions
 """
-abstract type CautiuosLimitedMemoryQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
+abstract type AbstractCautiuosLimitedMemoryQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
 
 
 # BFGS
@@ -774,7 +774,7 @@ end
 
 
 # Cautious RBFGS
-mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
+mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractCautiuosQuasiNewtonOptions
     x::P
     ∇::T
     inverse_hessian_approximation::Array{T,1}
@@ -785,7 +785,7 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     stepsize::Stepsize
     broyden_factor::Float64
 
-    function CautiuosRBFGSQuasiNewton{P,T}(
+    function CautiuosQuasiNewtonOptions{P,T}(
         x::P,
         grad_x::T,
         inverse_hessian_approximation::Array{T,1};
@@ -809,7 +809,7 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
         return o
     end
 end
-function CautiuosRBFGSQuasiNewton(
+function CautiuosQuasiNewtonOptions(
     x::P,
     grad_x::T,
     inverse_hessian_approximation::Array{T,1};
@@ -820,7 +820,7 @@ function CautiuosRBFGSQuasiNewton(
     stepsize::Stepsize = WolfePowellLineseach(),
     broyden_factor::Float64 = 0.0
 ) where {P,T}
-    return CautiuosRBFGSQuasiNewton{P,T}(x,grad_x,inverse_hessian_approximation;
+    return CautiuosQuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation;
         cautiuos_function = cautiuos_function,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
@@ -852,7 +852,7 @@ specify options for a Riemannian limited-memory BFGS algorithm, that solves a
 # See also
 [`GradientProblem`](@ref)
 """
-mutable struct RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
+mutable struct RLBFGSOptions{P,T} <: AbstractLimitedMemoryQuasiNewtonOptions
     x::P
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
@@ -910,7 +910,7 @@ end
 
 
 # Cautious Riemannian Limited Memory BFGS
-mutable struct CautiuosRLBFGSOptions{P,T} <: CautiuosLimitedMemoryQuasiNewtonOptions
+mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractCautiuosLimitedMemoryQuasiNewtonOptions
     x::P
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}

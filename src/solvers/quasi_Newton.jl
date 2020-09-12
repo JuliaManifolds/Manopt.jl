@@ -23,21 +23,55 @@ function quasi_Newton(
     F::Function,
     ∇F::Function,
     x;
+    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
     broyden_factor::Float64 = 0.0,
     cautious_update::Bool=false,
     cautious_function::Function = (x) -> x*10^-4,
     memory_size::Int = 20,
-    memory = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
+    memory_steps = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
+    memory_gradients = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
     memory_position = 0,
-    step_size::Stepsize = ConstantStepsize(1.0)
+    step_size::Stepsize = ConstantStepsize(1.0),
+    stopping_criterion::StoppingCriterion = StopWhenAny(
+        StopAfterIteration(1000),
+        StopWhenGradientNormLess(10^(-6)))
 ) where {MT <: Manifold}
 
+        (broyden_factor < 0. || broyden_factor > 1.) && throw( ErrorException( "broyden_factor must be in the interval [0,1], but it is $broyden_factor."))
 
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+        (size(memory_steps) > memory_size) && throw( ErrorException( "The number of given vectors in memory_steps be less than or equal to $memory_size, but it is $size(memory_steps)."))
+
+        (size(memory_gradients) > memory_size) && throw( ErrorException( "The number of given vectors in memory_steps be less than or equal to $memory_size, but it is $size(memory_steps)."))
+
+        (size(memory_gradients) != size(memory_steps)) && throw( ErrorException( "The number of given vectors in memory_steps be less than or equal to $memory_size, but it is $size(memory_steps)."))
+
+        # I need to find out, where the 'memory_position' starts.
+
+        grad_x = ∇F(x)
+
+        if memory_size < 0 
+                approximation = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis()))
+                if cautious_update == true
+                        o = CautiuosQuasiNewtonOptions(x, grad_x, approximation; cautious_function = cautious_function, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
+                else
+                        o = QuasiNewtonOptions(x, grad_x, approximation; retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
+                end
+        else
+                if cautious_update == true
+                        o = CautiuosRLBFGSOptions(x, memory_gradients, memory_steps; cautious_function = cautious_function, memory_size = memory_size, current_memory_size = memory_position, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size)
+                else
+                        o = RLBFGSOptions(x, memory_gradients, memory_steps; memory_size = memory_size, current_memory_size = memory_position, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size)
+                end
+        end
+
+        p = GradientProblem(M,F,∇F)
+
+        if return_options
+                return resultO
+        else
+                return get_solver_result(resultO)
+        end
 end
 
 
