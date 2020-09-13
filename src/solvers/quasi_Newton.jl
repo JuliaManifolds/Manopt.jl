@@ -40,11 +40,15 @@ function quasi_Newton(
 
         (broyden_factor < 0. || broyden_factor > 1.) && throw( ErrorException( "broyden_factor must be in the interval [0,1], but it is $broyden_factor."))
 
-        (size(memory_steps) > memory_size) && throw( ErrorException( "The number of given vectors in memory_steps be less than or equal to $memory_size, but it is $size(memory_steps)."))
+        (size(memory_steps) > memory_size) && throw( ErrorException( "The number of given vectors in memory_steps must be less than or equal to $memory_size, but it is $size(memory_steps)."))
 
-        (size(memory_gradients) > memory_size) && throw( ErrorException( "The number of given vectors in memory_steps be less than or equal to $memory_size, but it is $size(memory_steps)."))
+        (size(memory_gradients) > memory_size) && throw( ErrorException( "The number of given vectors in memory_steps must be less than or equal to $memory_size, but it is $size(memory_steps)."))
 
         (size(memory_gradients) != size(memory_steps)) && throw( ErrorException( "The number of given vectors in memory_steps be less than or equal to $memory_size, but it is $size(memory_steps)."))
+
+        if memory_position != size(memory_steps)
+                memory_position = size(memory_steps)
+        end
 
         # I need to find out, where the 'memory_position' starts.
 
@@ -75,36 +79,35 @@ function quasi_Newton(
 end
 
 
-function initialize_solver!(p::GradientProblem,o::QuasiNewtonOptions)
-    o.steps = [zero_tangent_vector(p.M,o.x) for i ∈ 1:o.memory_size]
-    o.gradient_differences = [zero_tangent_vector(p.M,o.x) for i ∈ 1:o.memory_size]
+function initialize_solver!(p::GradientProblem,o:::Union{QuasiNewtonOptions{P,T}, CautiuosQuasiNewtonOptions{P,T}})
+end
+
+function initialize_solver!(p::GradientProblem,o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}})
+        if o.current_memory_size < o.memory_size
+                o.steps = append!(o.steps, [zero_tangent_vector(p.M,o.x) for i ∈ (o.current_memory_size + 1):o.memory_size])
+                o.gradient_differences = append!(o.gradient_differences, [zero_tangent_vector(p.M,o.x) for i ∈ (o.current_memory_size + 1):o.memory_size])
+        end
 end
 
 
-function step_solver!(p::GradientProblem,o::QuasiNewtonOptions,iter)
-        # Compute BFGS direction
+function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
         η = get_quasi_newton_direction(p, o)
-
-        # Execute line-search
         α = o.stepsize(p,o,iter,η)
-        print(α," ")
-        # Compute Step
         x_old = o.x
         o.x = retract(p.M, o.x, α*η, o.retraction_method)
-        # Update the Parameters
         update_parameters(p, o, α, η, x_old)
 end
 
 # Computing the direction
 
-function get_quasi_newton_direction(p::GradientProblem, o::QuasiNewtonOptions)
+function get_quasi_newton_direction(p::GradientProblem, o::Union{QuasiNewtonOptions{P,T}, CautiuosQuasiNewtonOptions{P,T}})
         o.∇ = get_gradient(p,o.x)
         return square_matrix_vector_product(p.M, o.x, o.inverse_hessian_approximation, -o.∇)
 end
 
 # Limited memory variants
 
-function get_quasi_newton_direction(p::GradientProblem, o::RLBFGSOptions)
+function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}})
         q = get_gradient(p,o.x)
         o.current_memory_size
 
@@ -132,21 +135,27 @@ end
 
 # Updating the parameters
 
-function update_parameters(p::GradientProblem, o::RBFGSQuasiNewton{P,T}, α::Float64, η::T, x::P) where {P,T}
+function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = o.∇
         β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
         sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
         b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
-        basis = get_vectors(p.M, o.x, get_basis(p.M, o.x, DefaultOrthonormalBasis())) # Here we need to compute an array of orthogonal basis vectors
+        basis = get_vectors(p.M, o.x, get_basis(p.M, o.x, DefaultOrthonormalBasis())) 
 
         n = manifold_dimension(p.M)
         Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = basis)
         skyk = inner(p.M, o.x, yk, sk)
 
-        for i in 1:n
-        o.inverse_hessian_approximation[i] = b[i] - (inner(p.M, o.x, basis[i], sk) / skyk) * Bkyk - (inner(p.M, o.x, Bkyk, basis[i]) / skyk) * sk + ((inner(p.M, o.x, yk, Bkyk)*inner(p.M, o.x, sk, basis[i])) / skyk^2) * sk + (inner(p.M, o.x, sk, basis[i]) / skyk) * sk
+        if o.broyden_factor == 1.0
+                # I need to implement a DFP Update
+        end
+
+        if o.broyden_factor == 0.0
+                for i in 1:n
+                        o.inverse_hessian_approximation[i] = b[i] - (inner(p.M, o.x, basis[i], sk) / skyk) * Bkyk - (inner(p.M, o.x, Bkyk, basis[i]) / skyk) * sk + ((inner(p.M, o.x, yk, Bkyk)*inner(p.M, o.x, sk, basis[i])) / skyk^2) * sk + (inner(p.M, o.x, sk, basis[i]) / skyk) * sk
+                end
         end
 end
 #
@@ -186,7 +195,7 @@ end
 
 # Limited memory variants
 
-function update_parameters(p::GradientProblem, o::LimitedMemoryQuasiNewtonOptions, α::Float64, η::T, xk::P) where {P,T}
+function update_parameters(p::GradientProblem, o::RLBFGSOptions{P,T}, α::Float64, η::T, xk::P) where {P,T}
         gradf_xold = get_gradient(p,xk)
         β = norm(p.M, xk, α*η) / norm(p.M, o.x, vector_transport_to(p.M, xk, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, xk, gradf_xold, o.x, o.vector_transport_method)
@@ -222,7 +231,7 @@ function update_parameters(p::GradientProblem, o::LimitedMemoryQuasiNewtonOption
 end
 
 
-function update_parameters(p::GradientProblem, o::CautiuosLimitedMemoryQuasiNewtonOptions, α::Float64, η::T, x::P) where {P,T}
+function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α::Float64, η::T, x::P) where {P,T}
         gradf_xold = get_gradient(p,x)
         β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -282,4 +291,4 @@ function square_matrix_vector_product(M::Manifold, p::P, A::AbstractVector{T}, X
 end
 
 
-get_solver_result(o::O) where {O <: QuasiNewtonOptions} = o.x
+get_solver_result(o::O) where {O <: AbstractQuasiNewtonOptions} = o.x
