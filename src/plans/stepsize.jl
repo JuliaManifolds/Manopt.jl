@@ -155,7 +155,7 @@ A functor representing a nonmonotone line seach.
   the exponential map
 * `stepsizeReduction` – (`0.5`) ... in the interval (0,1)
 * `sufficientDecrease` – (`0.1`) ... in the interval (0,1)
-* `M` – (1) an integer parameter greater than zero
+* `M` – (10) an integer parameter greater than zero
 * `maxStepsize` – upper bound for the step size greater than zero
 * `minStepsize` – lower bound for the step size between zero and maxStepsize
 * `lastStepSize` – the last step size we start the search with
@@ -168,47 +168,54 @@ with the Fields above in their order as optional arguments.
 
 This method returns the functor to perform nonmonotone line search.
 """
-mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
+mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, P<:AbstractVector} <: Linesearch
     retraction_method::TRM
     stepsizeReduction::Float64
     sufficientDecrease::Float64
-    M::Int
+    memory_size::Int
     maxStepsize::Float64
     minStepsize::Float64
     stepsizeOld::Float64
+    old_f::P
     function NonmonotoneLinesearch(
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         stepsizeReduction::Float64 = 0.5,
         sufficientDecrease::Float64 = 0.1,
-        M::Int = 1,
+        memory_size::Int = 10,
         maxStepsize::Float64, #set standard, note in Fields
         minStepsize::Float64, #set standard, note in Fields
+        stepsizeOld::Float64, #set standard, note in Fields
+        old_f::P, #set standard, note in Fields
     )
-    #return
+    return new{typeof(retraction_method), typeof(old_f)}(retraction_method, stepsizeReduction, sufficientDecrease, memory_size, maxStepsize, minStepsize, stepsizeOld, old_f)
     end
 end
-#=
 function (a::NonmonotoneLinesearch)(
     p::P,
     o::O,
     i::Int,
     η = -get_gradient(p, o.x),
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
-    return a(p.M, o.x, p.cost, get_gradient(p, o.x), η)
+    return a(p.M, o.x, p.cost, get_gradient(p, o.x), i, η)
 end
-=#
-function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, η::T = -∇F) where {mT<:Manifold,TF,T}
-    s = a.stepsizeOld
+function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = -∇F) where {mT<:Manifold,TF,T}
+    #s = a.stepsizeOld
     f0 = F(x)
     h = 0
-    xNew = retract(M, x, stepsizeReduction^h * s * η, a.retraction_method)
+    xNew = retract(M, x, a.stepsizeReduction^h * BarzilaiBorwein_stepsize * η, a.retraction_method)
     fNew = F(xNew)
-    while fNew <
+    f_change = a.sufficientDecrease * a.stepsizeReduction^h * BarzilaiBorwein_stepsize * inner(M, x, ∇F, ∇F)
+    fbound = max([a.old_f[iter + 1 - j] - f_change for j in 1:min(iter + 1, a.memory_size)])       
+    while fNew > fbound
         h = h + 1
-        xNew = retract(M, x, stepsizeReduction^h * s * η, a.retraction_method)
+        xNew = retract(M, x, a.stepsizeReduction^h * BarzilaiBorwein_stepsize * η, a.retraction_method)
         fNew = F(xNew)
-    end
-    
+        f_change = a.sufficientDecrease * a.stepsizeReduction^h * BarzilaiBorwein_stepsize * inner(M, x, ∇F, ∇F)
+        fbound = max([a.old_f[iter + 1 - j] - f_change for j in 1:min(iter + 1, a.memory_size)]) 
+    end 
+    s = a.stepsizeReduction^h * BarzilaiBorwein_stepsize
+    a.stepsizeOld = s
+    return s 
 end
 
 @doc raw"""
