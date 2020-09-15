@@ -155,10 +155,11 @@ A functor representing a nonmonotone line seach.
   the exponential map
 * `stepsizeReduction` – (`0.5`) ... in the interval (0,1)
 * `sufficientDecrease` – (`0.1`) ... in the interval (0,1)
-* `M` – (10) an integer parameter greater than zero
-* `maxStepsize` – upper bound for the step size greater than zero
-* `minStepsize` – lower bound for the step size between zero and maxStepsize
+* `M` – (`10`) an integer parameter greater than zero
+* `maxStepsize` – (`1e3`) upper bound for the step size greater than zero
+* `minStepsize` – (`1e-3`) lower bound for the step size between zero and maxStepsize
 * `lastStepSize` – the last step size we start the search with
+* `strategy` – (`direct`) defines if the new step size is computed in a direct, indirect or alternating way
 
 # Constructor
 
@@ -177,17 +178,19 @@ mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, P<:AbstractV
     minStepsize::Float64
     stepsizeOld::Float64
     old_f::P
+    strategy::String
     function NonmonotoneLinesearch(
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         stepsizeReduction::Float64 = 0.5,
         sufficientDecrease::Float64 = 0.1,
         memory_size::Int = 10,
-        maxStepsize::Float64, #set standard, note in Fields
-        minStepsize::Float64, #set standard, note in Fields
+        maxStepsize::Float64 = 1e3, 
+        minStepsize::Float64 = 1e-3, 
         stepsizeOld::Float64, #set standard, note in Fields
         old_f::P, #set standard, note in Fields
+        strategy::String = "direct",
     )
-    return new{typeof(retraction_method), typeof(old_f)}(retraction_method, stepsizeReduction, sufficientDecrease, memory_size, maxStepsize, minStepsize, stepsizeOld, old_f)
+    return new{typeof(retraction_method), typeof(old_f)}(retraction_method, stepsizeReduction, sufficientDecrease, memory_size, maxStepsize, minStepsize, stepsizeOld, old_f, strategy)
     end
 end
 function (a::NonmonotoneLinesearch)(
@@ -196,16 +199,54 @@ function (a::NonmonotoneLinesearch)(
     i::Int,
     η = -get_gradient(p, o.x),
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
-    return a(p.M, o.x, p.cost, get_gradient(p, o.x), i, η)
+    return a(p.M, o.x, p.cost, get_gradient(p, o.x), i, η, o.vector_transport_method)
 end
-function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = -∇F) where {mT<:Manifold,TF,T}
-    #s = a.stepsizeOld
+function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = -∇F, vector_transport_method) where {mT<:Manifold,TF,T}
+    s = a.stepsizeOld
+
+    #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space 
+    grad_diff = ∇F - vector_transport_to(M, xOld, gradOld, x, vector_transport_method)        #define xOld, gradOld
+    #x_diff
+    x_diff = - s * vector_transport_to(M, xOld, gradOld, x, vector_transport_method)
+
+    #compute the new Barzilai-Borwein step size
+    #indirect strategy
+    if a.strategy == "inverse"
+        if inner(M, x, x_diff, grad_diff) > 0       #why nominator > 0 here?
+            BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, x_diff, grad_diff)/inner(M, x, grad_diff, grad_diff)))
+        else
+            BarzilaiBorwein_stepsize = maxStepsize
+        end
+    #alternating strategy
+    elseif a.strategy == "alternating"
+        if inner(M, x, x_diff, grad_diff) > 0
+            if iter % 2 == 0        
+                BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, x_diff, grad_diff)/inner(M, x, grad_diff, grad_diff)))
+            else
+                BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, x_diff, x_diff)/inner(M, x, x_diff, grad_diff)))
+            end
+        else
+            BarzilaiBorwein_stepsize = maxStepsize
+        end
+    #direct strategy
+    else
+        if a.strategy != "direct"
+            print("The strategy '", a.strategy,"' is not defined. Instead the strategy 'direct' is used.")
+        end
+        if inner(M, x, x_diff, grad_diff) > 0
+            BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, x_diff, x_diff)/inner(M, x, x_diff, grad_diff)))
+        else
+            BarzilaiBorwein_stepsize = maxStepsize
+        end
+    end
+
     f0 = F(x)
     h = 0
     xNew = retract(M, x, a.stepsizeReduction^h * BarzilaiBorwein_stepsize * η, a.retraction_method)
     fNew = F(xNew)
     f_change = a.sufficientDecrease * a.stepsizeReduction^h * BarzilaiBorwein_stepsize * inner(M, x, ∇F, ∇F)
-    fbound = max([a.old_f[iter + 1 - j] - f_change for j in 1:min(iter + 1, a.memory_size)])       
+    fbound = max([a.old_f[iter + 1 - j] - f_change for j in 1:min(iter + 1, a.memory_size)])  
+    #find the smallest h for which fNew <= fbound    
     while fNew > fbound
         h = h + 1
         xNew = retract(M, x, a.stepsizeReduction^h * BarzilaiBorwein_stepsize * η, a.retraction_method)
@@ -213,6 +254,8 @@ function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = 
         f_change = a.sufficientDecrease * a.stepsizeReduction^h * BarzilaiBorwein_stepsize * inner(M, x, ∇F, ∇F)
         fbound = max([a.old_f[iter + 1 - j] - f_change for j in 1:min(iter + 1, a.memory_size)]) 
     end 
+   
+    #set and return the new step size
     s = a.stepsizeReduction^h * BarzilaiBorwein_stepsize
     a.stepsizeOld = s
     return s 
