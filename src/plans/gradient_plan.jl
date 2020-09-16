@@ -685,20 +685,7 @@ end
 """
 abstract type AbstractQuasiNewtonOptions <: Options end
 
-@doc raw"""
-    CautiuosQuasiNewtonOptions <: QuasiNewtonOptions
-"""
-abstract type AbstractCautiuosQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
 
-@doc raw"""
-    LimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions
-"""
-abstract type AbstractLimitedMemoryQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
-
-@doc raw"""
-    CautiuosLimitedMemoryQuasiNewtonOptions <: QuasiNewtonOptions
-"""
-abstract type AbstractCautiuosLimitedMemoryQuasiNewtonOptions <: AbstractQuasiNewtonOptions end
 
 
 # BFGS
@@ -774,7 +761,7 @@ end
 
 
 # Cautious RBFGS
-mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractCautiuosQuasiNewtonOptions
+mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
     inverse_hessian_approximation::Array{T,1}
@@ -852,11 +839,10 @@ specify options for a Riemannian limited-memory BFGS algorithm, that solves a
 # See also
 [`GradientProblem`](@ref)
 """
-mutable struct RLBFGSOptions{P,T} <: AbstractLimitedMemoryQuasiNewtonOptions
+mutable struct RLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
-    memory_size::Int
     current_memory_size::Int
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
@@ -867,7 +853,6 @@ mutable struct RLBFGSOptions{P,T} <: AbstractLimitedMemoryQuasiNewtonOptions
         x::P,
         gradient_diffrences::AbstractVector{T},
         steps::AbstractVector{T};
-        memory_size::Int = 30,
         current_memory_size::Int = 0,
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
@@ -878,7 +863,6 @@ mutable struct RLBFGSOptions{P,T} <: AbstractLimitedMemoryQuasiNewtonOptions
         o.x = x
         o.gradient_diffrences = gradient_diffrences
         o.steps = steps
-        o.memory_size = memory_size
         o.current_memory_size = current_memory_size
         o.retraction_method = retraction_method
         o.vector_transport_method = vector_transport_method
@@ -891,7 +875,6 @@ function RLBFGSOptions(
     x::P,
     gradient_diffrences::AbstractVector{T},
     steps::AbstractVector{T};
-    memory_size::Int = 30,
     current_memory_size::Int = 0,
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
@@ -899,7 +882,6 @@ function RLBFGSOptions(
     stepsize::Stepsize = WolfePowellLineseach()
 ) where {P,T}
     return RLBFGSOptions{P,T}(x,gradient_diffrences,steps;
-        memory_size = memory_size,
         current_memory_size = current_memory_size,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
@@ -910,12 +892,11 @@ end
 
 
 # Cautious Riemannian Limited Memory BFGS
-mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractCautiuosLimitedMemoryQuasiNewtonOptions
+mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
     cautiuos_function::Function
-    memory_size::Int
     current_memory_size::Int
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
@@ -927,7 +908,6 @@ mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractCautiuosLimitedMemoryQuasiN
         gradient_diffrences::AbstractVector{T},
         steps::AbstractVector{T};
         cautious_function::Function = x -> x*10^(-4),
-        memory_size::Int = 30,
         current_memory_size::Int = 0,
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
@@ -939,7 +919,6 @@ mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractCautiuosLimitedMemoryQuasiN
         o.gradient_diffrences = gradient_diffrences
         o.steps = steps
         o.cautiuos_function = cautious_function
-        o.memory_size = memory_size
         o.current_memory_size = current_memory_size
         o.retraction_method = retraction_method
         o.vector_transport_method = vector_transport_method
@@ -953,7 +932,6 @@ function CautiuosRLBFGSOptions(
     gradient_diffrences::AbstractVector{T},
     steps::AbstractVector{T};
     cautious_function::Function = x -> x*10^(-4),
-    memory_size::Int = 30,
     current_memory_size::Int = 0,
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
@@ -962,7 +940,6 @@ function CautiuosRLBFGSOptions(
 ) where {P,T}
     return CautiuosRLBFGSOptions{P,T}(x,gradient_diffrences,steps;
         cautious_function = cautious_function,
-        memory_size = memory_size,
         current_memory_size = current_memory_size,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
