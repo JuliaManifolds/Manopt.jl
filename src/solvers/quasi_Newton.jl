@@ -27,7 +27,7 @@ function quasi_Newton(
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
     broyden_factor::Float64 = 0.0,
     cautious_update::Bool=false,
-    cautious_function::Function = (x) -> x*10^-4,
+    cautious_function::Function = (x) -> x*10^(-4),
     memory_size::Int = 20,
     memory_steps = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
     memory_gradients = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
@@ -173,7 +173,7 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 	skyk = inner(p.M, o.x, yk, sk)
 	norm_sk = norm(p.M, o.x, sk)
 
-	bound = o.cautious_fct(norm(p.M, x, gradf_xold))
+	bound = o.cautious_function(norm(p.M, x, gradf_xold))
 
 	if norm_sk != 0 && (skyk / norm_sk) >= bound
 		b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
@@ -265,10 +265,11 @@ function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α
         β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
         yk = β*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
         sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
+		memory_steps_size = length(o.steps)
 
         sk_yk = inner(p.M, o.x, sk, yk)
         norm_sk = norm(p.M, o.x, sk)
-        bound = o.cautious_fct(norm(p.M, x, get_gradient(p,x)))
+        bound = o.cautious_function(norm(p.M, x, get_gradient(p,x)))
 
         if norm_sk != 0 && (sk_yk / norm_sk) >= bound
                 if o.current_memory_size >= memory_steps_size

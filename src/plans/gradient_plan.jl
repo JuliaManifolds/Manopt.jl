@@ -765,7 +765,7 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
     inverse_hessian_approximation::Array{T,1}
-    cautiuos_function::Function
+    cautious_function::Function
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
     stop::StoppingCriterion
@@ -783,11 +783,11 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
         stepsize::Stepsize = WolfePowellLineseach(),
         broyden_factor::Float64 = 0.0
     ) where {P,T}
-        o = new{P,t}()
+        o = new{P,T}()
         o.x = x
         o.∇ = grad_x
         o.inverse_hessian_approximation = inverse_hessian_approximation
-        o.cautiuos_function = cautiuos_function
+        o.cautious_function = cautious_function
         o.retraction_method = retraction_method
         o.vector_transport_method = vector_transport_method
         o.stop = stop
@@ -808,7 +808,7 @@ function CautiuosQuasiNewtonOptions(
     broyden_factor::Float64 = 0.0
 ) where {P,T}
     return CautiuosQuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation;
-        cautiuos_function = cautiuos_function,
+        cautious_function = cautious_function,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
         stop = stop,
@@ -896,7 +896,7 @@ mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
-    cautiuos_function::Function
+    cautious_function::Function
     current_memory_size::Int
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
@@ -918,7 +918,7 @@ mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
         o.x = x
         o.gradient_diffrences = gradient_diffrences
         o.steps = steps
-        o.cautiuos_function = cautious_function
+        o.cautious_function = cautious_function
         o.current_memory_size = current_memory_size
         o.retraction_method = retraction_method
         o.vector_transport_method = vector_transport_method
