@@ -148,17 +148,28 @@ get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 @doc raw"""
     NonmonotoneLineseach <: Linesearch
 
-A functor representing a nonmonotone line seach.
+A functor representing a nonmonotone line seach using the Barzilai-Borwein step size[^Iannazzo2018]. Together with a gradient descent algorithm 
+this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. However, different than in the paper 
+by Iannazzo and Porcelli, our implementation of the nonmonotone line search performs first steps 4 to 6 and subsequently steps 1 to 2 of the RBBNMLS. 
+Step 3 of RBBNMLS is a gradient descent step into the direction found with the nonlinear line search.
+
+[^Iannazzo2018]:
+    > B. Iannazzo, M. Porcelli, __The Riemannian Barzilai–Borwein Method with Nonmonotone Line Search and the Matrix Geometric Mean Computation__,
+    > In: IMA Journal of Numerical Analysis. Volume 38, Issue 1, January 2018, Pages 495–517,
+    > doi [10.1093/imanum/drx015](https://doi.org/10.1093/imanum/drx015)
+
 
 # Fields
 * `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
   the exponential map
-* `stepsizeReduction` – (`0.5`) ... in the interval (0,1)
-* `sufficientDecrease` – (`0.1`) ... in the interval (0,1)
-* `M` – (`10`) an integer parameter greater than zero
-* `maxStepsize` – (`1e3`) upper bound for the step size greater than zero
-* `minStepsize` – (`1e-3`) lower bound for the step size between zero and maxStepsize
+* `stepsizeReduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
+* `sufficientDecrease` – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
+* `M` – (`10`) the number of iterations after which the cost function value has to be sufficiently decreased
+* `maxStepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than zero
+* `minStepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size between zero and maxStepsize
 * `lastStepSize` – the last step size we start the search with
+* `lastPoint` – the x-value of the previous iteration 
+* `oldCosts` – a vector of the values of the cost function from the last `M` iterations
 * `strategy` – (`direct`) defines if the new step size is computed in a direct, indirect or alternating way
 
 # Constructor
@@ -169,7 +180,7 @@ with the Fields above in their order as optional arguments.
 
 This method returns the functor to perform nonmonotone line search.
 """
-mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, P<:AbstractVector} <: Linesearch
+mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, P<:MPoint, T<:AbstractVector} <: Linesearch
     retraction_method::TRM
     stepsizeReduction::Float64
     sufficientDecrease::Float64
@@ -177,17 +188,19 @@ mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, P<:AbstractV
     maxStepsize::Float64
     minStepsize::Float64
     stepsizeOld::Float64
-    old_f::P
+    xOld::P
+    old_f::T
     strategy::String
     function NonmonotoneLinesearch(
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         stepsizeReduction::Float64 = 0.5,
-        sufficientDecrease::Float64 = 0.1,
+        sufficientDecrease::Float64 = 1e-4,
         memory_size::Int = 10,
         maxStepsize::Float64 = 1e3, 
         minStepsize::Float64 = 1e-3, 
         stepsizeOld::Float64, #set standard, note in Fields
-        old_f::P, #set standard, note in Fields
+        xOld::P, #set standard, note in Fields
+        old_f::T, #set standard, note in Fields
         strategy::String = "direct",
     )
     return new{typeof(retraction_method), typeof(old_f)}(retraction_method, stepsizeReduction, sufficientDecrease, memory_size, maxStepsize, minStepsize, stepsizeOld, old_f, strategy)
@@ -205,9 +218,10 @@ function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = 
     s = a.stepsizeOld
 
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space 
-    grad_diff = ∇F - vector_transport_to(M, xOld, gradOld, x, vector_transport_method)        #define xOld, gradOld
-    #x_diff
-    x_diff = - s * vector_transport_to(M, xOld, gradOld, x, vector_transport_method)
+    gradOld = gradient(M, F, a.xOld)    #backend?
+    grad_diff = ∇F - vector_transport_to(M, a.xOld, gradOld, x, vector_transport_method)        
+    #transport the previous step into the tangent space of the current manifold point
+    x_diff = - s * vector_transport_to(M, a.xOld, gradOld, x, vector_transport_method)
 
     #compute the new Barzilai-Borwein step size
     #indirect strategy
@@ -231,7 +245,7 @@ function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = 
     #direct strategy
     else
         if a.strategy != "direct"
-            print("The strategy '", a.strategy,"' is not defined. Instead the strategy 'direct' is used.")
+            print("The strategy '", a.strategy,"' is not defined. The 'direct' strategy is used instead.")
         end
         if inner(M, x, x_diff, grad_diff) > 0
             BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, x_diff, x_diff)/inner(M, x, x_diff, grad_diff)))
@@ -240,12 +254,13 @@ function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = 
         end
     end
 
+    #compute the new step size with the help of the Barzilai-Borwein step size
     f0 = F(x)
     h = 0
     xNew = retract(M, x, a.stepsizeReduction^h * BarzilaiBorwein_stepsize * η, a.retraction_method)
     fNew = F(xNew)
     f_change = a.sufficientDecrease * a.stepsizeReduction^h * BarzilaiBorwein_stepsize * inner(M, x, ∇F, ∇F)
-    fbound = max([a.old_f[iter + 1 - j] - f_change for j in 1:min(iter + 1, a.memory_size)])  
+    fbound = max([a.old_f[iter + 1 - j] - f_change for j in 1:min(iter + 1, a.memory_size)])    #if only the last memory_size f are saved we have to call the value differently
     #find the smallest h for which fNew <= fbound    
     while fNew > fbound
         h = h + 1
