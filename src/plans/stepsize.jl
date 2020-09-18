@@ -121,29 +121,63 @@ function (a::ArmijoLinesearch)(
     i::Int,
     η = -get_gradient(p, o.x),
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
-    return a(p.M, o.x, p.cost, get_gradient(p, o.x), η)
-end
-function (a::ArmijoLinesearch)(M::mT, x, F::TF, ∇F::T, η::T = -∇F) where {mT<:Manifold,TF,T}
-    # for local shortness
-    s = a.stepsizeOld
-    f0 = F(x)
-    xNew = retract(M, x, s * η, a.retraction_method)
-    fNew = F(xNew)
-    while fNew < f0 + a.sufficientDecrease * s * inner(M, x, η, ∇F) # increase
-        xNew = retract(M, x, s * η, a.retraction_method)
-        fNew = F(xNew)
-        s = s / a.contractionFactor
-    end
-    s = s * a.contractionFactor # correct last
-    while fNew > f0 + a.sufficientDecrease * s * inner(M, x, η, ∇F) # decrease
-        s = a.contractionFactor * s
-        xNew = retract(M, x, s * η, a.retraction_method)
-        fNew = F(xNew)
-    end
-    a.stepsizeOld = s
-    return s
+    a.stepsizeOld = linesearch_backtrack(
+        p.M,
+        p.cost,
+        o.x,
+        get_gradient(p, o.x),
+        a.stepsizeOld,
+        a.sufficientDecrease,
+        a.contractionFactor,
+        a.retraction_method,
+        η,
+    )
+    return a.stepsizeOld
 end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
+
+@doc raw"""
+    linesearch_backtrack(M, F, x, ∇F, s, decrease, contract, retr, η = -∇F, f0 = F(x))
+
+perform a linesearch for
+* a manifold `M`
+* a cost function `F`,
+* an iterate `x`
+* the gradient $∇F(x)``
+* an initial stepsize `s` usually called $γ$
+* a sufficient `decrease`
+* a `contract`ion factor $σ$
+* a `retr`action, which defaults to the `ExponentialRetraction()`
+* a search direction $η = -∇F(x)$
+* an offset, $f_0 = F(x)$
+"""
+function linesearch_backtrack(
+    M::Manifold,
+    F::TF,
+    x,
+    ∇F::T,
+    s,
+    decrease,
+    contract,
+    retr::AbstractRetractionMethod = ExponentialRetraction(),
+    η::T = -∇F,
+    f0 = F(x),
+    ) where {TF, T}
+    xNew = retract(M, x, s * η, retr)
+    fNew = F(xNew)
+    while fNew < f0 + decrease * s * inner(M, x, η, ∇F) # increase
+        xNew = retract(M, x, s * η, retr)
+        fNew = F(xNew)
+        s = s / contract
+    end
+    s = s * contract # correct last
+    while fNew > f0 + decrease * s * inner(M, x, η, ∇F) # decrease
+        s = contract * s
+        xNew = retract(M, x, s * η, retr)
+        fNew = F(xNew)
+    end
+    return s
+end
 
 @doc raw"""
     get_stepsize(p::Problem, o::Options, vars...)
