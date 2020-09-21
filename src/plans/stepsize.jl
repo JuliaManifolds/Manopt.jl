@@ -164,7 +164,7 @@ Step 3 of RBBNMLS is a gradient descent step into the direction found with the n
   the exponential map
 * `stepsizeReduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
 * `sufficientDecrease` – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
-* `M` – (`10`) the number of iterations after which the cost function value has to be sufficiently decreased
+* `memory` – (`10`) the number of iterations after which the cost function value has to be sufficiently decreased
 * `maxStepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than zero
 * `minStepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size between zero and maxStepsize
 * `lastStepSize` – the last step size we start the search with
@@ -180,7 +180,7 @@ with the Fields above in their order as optional arguments.
 
 This method returns the functor to perform nonmonotone line search.
 """
-mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, P<:MPoint, T<:AbstractVector} <: Linesearch
+mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, T<:AbstractVector} <: Linesearch
     retraction_method::TRM
     stepsizeReduction::Float64
     sufficientDecrease::Float64
@@ -188,22 +188,36 @@ mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, P<:MPoint, T
     maxStepsize::Float64
     minStepsize::Float64
     stepsizeOld::Float64
-    xOld::P
+    storage::StoreOptionsAction
     old_f::T
-    strategy::String
+    strategy::Symbol
     function NonmonotoneLinesearch(
+        manifold::Manifold,
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         stepsizeReduction::Float64 = 0.5,
         sufficientDecrease::Float64 = 1e-4,
         memory_size::Int = 10,
+        a::StoreOptionsAction = StoreOptionsAction((:x, :∇)),
         maxStepsize::Float64 = 1e3, 
         minStepsize::Float64 = 1e-3, 
-        stepsizeOld::Float64, #set standard, note in Fields
-        xOld::P, #set standard, note in Fields
-        old_f::T, #set standard, note in Fields
-        strategy::String = "direct",
+        stepsizeOld::Float64 = 1.0, # note in Fields
+        strategy::Symbol = :direct,
     )
-    return new{typeof(retraction_method), typeof(old_f)}(retraction_method, stepsizeReduction, sufficientDecrease, memory_size, maxStepsize, minStepsize, stepsizeOld, old_f, strategy)
+    if strategy ∉ [:direct, :inverse, :alternating] 
+        @warn string("The strategy '", strategy,"' is not defined. The 'direct' strategy is used instead.")
+        strategy = :direct
+    end
+    return new{typeof(retraction_method), typeof(old_f)}(
+        retraction_method, 
+        stepsizeReduction, 
+        sufficientDecrease, 
+        memory_size, 
+        maxStepsize, 
+        minStepsize, 
+        stepsizeOld, 
+        a, 
+        zeros(memory_size), 
+        strategy)
     end
 end
 function (a::NonmonotoneLinesearch)(
@@ -212,27 +226,38 @@ function (a::NonmonotoneLinesearch)(
     i::Int,
     η = -get_gradient(p, o.x),
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
-    return a(p.M, o.x, p.cost, get_gradient(p, o.x), i, η, o.vector_transport_method)
+    if !all(has_storage.(Ref(abspath.storage), [:x, :∇])
+        xOld = o.x
+        ∇Old = get_gradient(p, o.x)
+    else
+        xOld, ∇Old = get_storage.(Ref(a.storage), [:x, :∇])
+    end
+    update_storage!(a.storage, o)
+    return a(p.M, o.x, p.cost, get_gradient(p, o.x), xOld, ∇Old, i, η, o.vector_transport_method)
 end
-function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = -∇F, vector_transport_method) where {mT<:Manifold,TF,T}
+function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, xOld, ∇Old, iter::Int, η::T = -∇F, vector_transport_method) where {mT<:Manifold,TF,T}
     s = a.stepsizeOld
 
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space 
-    gradOld = gradient(M, F, a.xOld)    #backend?
-    grad_diff = ∇F - vector_transport_to(M, a.xOld, gradOld, x, vector_transport_method)        
+    gradOld #save
+    grad_diff = ∇F - vector_transport_to(M, a.x_old, gradOld, x, vector_transport_method)        
     #transport the previous step into the tangent space of the current manifold point
-    x_diff = - s * vector_transport_to(M, a.xOld, gradOld, x, vector_transport_method)
+    x_diff = - s * vector_transport_to(M, a.x_old, gradOld, x, vector_transport_method)
 
     #compute the new Barzilai-Borwein step size
+    inner(M, x, x_diff, grad_diff)
+    s2 = inner(M, x, grad_diff, grad_diff)
+    s2 = s2==0 ? 1.0 : s2
+    inner(M, x, x_diff, x_diff)
     #indirect strategy
-    if a.strategy == "inverse"
-        if inner(M, x, x_diff, grad_diff) > 0       #why nominator > 0 here?
+    if a.strategy == :inverse
+        if inner(M, x, x_diff, grad_diff) > 0       
             BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, x_diff, grad_diff)/inner(M, x, grad_diff, grad_diff)))
         else
             BarzilaiBorwein_stepsize = maxStepsize
         end
     #alternating strategy
-    elseif a.strategy == "alternating"
+    elseif a.strategy == :alternating
         if inner(M, x, x_diff, grad_diff) > 0
             if iter % 2 == 0        
                 BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, x_diff, grad_diff)/inner(M, x, grad_diff, grad_diff)))
@@ -244,11 +269,8 @@ function (a::NonmonotonLinesearch)(M::mT, x, F::TF, ∇F::T, iter::Int, η::T = 
         end
     #direct strategy
     else
-        if a.strategy != "direct"
-            print("The strategy '", a.strategy,"' is not defined. The 'direct' strategy is used instead.")
-        end
         if inner(M, x, x_diff, grad_diff) > 0
-            BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, x_diff, x_diff)/inner(M, x, x_diff, grad_diff)))
+            BarzilaiBorwein_stepsize = min(maxStepsize, max(minStepsize, inner(M, x, grad_diff, grad_diff)/inner(M, x, x_diff, grad_diff)))
         else
             BarzilaiBorwein_stepsize = maxStepsize
         end
