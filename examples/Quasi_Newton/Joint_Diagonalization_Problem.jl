@@ -1,12 +1,11 @@
 #
 #   The joint diagonalization problem on the Stiefel manifold St(n,k)
 #
-using Manopt, Manifolds, ManifoldsBase, LinearAlgebra
+using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random
 import Manifolds: vector_transport_to!
-
 struct IdentityTransport <: AbstractVectorTransportMethod end
 vector_transport_to!(::Stiefel,Y,p,X,q,::IdentityTransport) = (Y .= X)
-
+Random.seed!(42)
 # Parameters
 n = 5
 k = 3
@@ -19,13 +18,8 @@ end
 
 M = Stiefel(n,k)
 
-function F(X::Array{Float64,2})
-    f = 0
-    for i = 1 : m
-        f = f + norm(diag(transpose(X) * A[:, :, i] * X))^2
-    end
-    return -f
-end
+
+F(X::Array{Float64,2}) = -sum([ norm(diag(transpose(X) * A[:, :, i] * X))^2 for i ∈ 1:m])
 
 function ∇F(X::Array{Float64,2})
     g = zero_tangent_vector(M,X)
@@ -38,4 +32,4 @@ end
 
 x = random_point(M)
 
-quasi_Newton(M,F,∇F,x;vector_transport_method = IdentityTransport())
+quasi_Newton(M,F,∇F,x;vector_transport_method = IdentityTransport(), cautious_update = true)

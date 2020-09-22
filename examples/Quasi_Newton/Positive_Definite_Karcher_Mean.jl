@@ -1,3 +1,6 @@
+#
+#   Posituve Definite Karcher Mean (Matlab Manopt)
+#
 using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random
 Random.seed!(42)
 n = 5
