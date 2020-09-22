@@ -169,7 +169,7 @@ end
 evaluate the gradient of a [`HessianProblem`](@ref)`p` at the
 point `x`.
 """
-get_gradient(p::HessianProblem,x) = p.gradient(p.M,x)
+get_gradient(p::HessianProblem,x) = p.gradient(x)
 @doc raw"""
     get_preconditioner(p,x,ξ)
 
