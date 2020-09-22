@@ -124,7 +124,7 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegi
                 end
         end
         # Solve TR subproblem approximately
-        opt = truncated_conjugate_gradient_descent(p.M,p.cost,p.gradient,
+        opt = truncated_conjugate_gradient_descent(p.M,p.cost, p.gradient,
         o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
         #debug = [:Iteration," ",:Stop],
         return_options=true)
