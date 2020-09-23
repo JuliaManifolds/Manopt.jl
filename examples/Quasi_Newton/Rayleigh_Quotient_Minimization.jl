@@ -1,12 +1,13 @@
 #
 #   Rayleigh quotient minimization on S^n
 #
-using Manopt, Manifolds, ManifoldsBase
+using Manopt, Manifolds, ManifoldsBase, Random
+Random.seed!(42)
 """
     rayleigh_quotient_minimization(A)
 
 """
-n = 5
+n = 10
 A = rand(n,n)
 A = (transpose(A) + A)/2
 M = Sphere(n-1)
