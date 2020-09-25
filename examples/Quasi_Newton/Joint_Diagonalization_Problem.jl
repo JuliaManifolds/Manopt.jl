@@ -24,12 +24,11 @@ F(X::Array{Float64,2}) = -sum([ norm(diag(transpose(X) * A[:, :, i] * X))^2 for 
 function ∇F(X::Array{Float64,2})
     g = zero_tangent_vector(M,X)
     for i = 1 : m
-        g = g - 4 * A[:, :, i] * X * norm(diag(transpose(X) * A[:, :, i] * X))^2
+        g = g - 4 * A[:, :, i] * X * norm(diag(transpose(X) * A[:, :, i] * X))
     end
-    X_g = transpose(X)*g
-    return g - X * (X_g + transpose(X_g)) / 2
+    project(M,X,g)
 end
 
 x = random_point(M)
 
-quasi_Newton(M,F,∇F,x;vector_transport_method = IdentityTransport(), cautious_update = true)
+quasi_Newton(M,F,∇F,x; vector_transport_method = IdentityTransport(), cautious_update = true, step_size = StrongWolfePowellLineseach(ExponentialRetraction(), IdentityTransport()))
