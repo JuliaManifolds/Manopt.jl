@@ -712,6 +712,7 @@ mutable struct QuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
     inverse_hessian_approximation::Array{T,1}
+    basis::Array{T,1}
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
     stop::StoppingCriterion
@@ -721,7 +722,8 @@ mutable struct QuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     function QuasiNewtonOptions{P,T}(
         x::P,
         grad_x::T,
-        inverse_hessian_approximation::Array{T,1};
+        inverse_hessian_approximation::Array{T,1},
+        basis::Array{T,1};
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
         stop::StoppingCriterion = StopAfterIteration(100),
@@ -732,6 +734,7 @@ mutable struct QuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
         o.x = x
         o.∇ = grad_x
         o.inverse_hessian_approximation = inverse_hessian_approximation
+        o.basis = basis
         o.retraction_method = retraction_method
         o.vector_transport_method = vector_transport_method
         o.stop = stop
@@ -743,14 +746,15 @@ end
 function QuasiNewtonOptions(
     x::P,
     grad_x::T,
-    inverse_hessian_approximation::Array{T,1};
+    inverse_hessian_approximation::Array{T,1},
+    basis::Array{T,1};
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
     stop::StoppingCriterion = StopAfterIteration(100),
     stepsize::Stepsize = WolfePowellLineseach(),
     broyden_factor::Float64 = 0.0
 ) where {P,T}
-    return QuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation;
+    return QuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation,basis;
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
         stop = stop,
@@ -765,6 +769,7 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
     inverse_hessian_approximation::Array{T,1}
+    basis::Array{T,1}
     cautious_function::Function
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
@@ -775,7 +780,8 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     function CautiuosQuasiNewtonOptions{P,T}(
         x::P,
         grad_x::T,
-        inverse_hessian_approximation::Array{T,1};
+        inverse_hessian_approximation::Array{T,1},
+        basis::Array{T,1};
         cautious_function::Function = x -> x*10^(-4),
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
@@ -787,6 +793,7 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
         o.x = x
         o.∇ = grad_x
         o.inverse_hessian_approximation = inverse_hessian_approximation
+        o.basis = basis
         o.cautious_function = cautious_function
         o.retraction_method = retraction_method
         o.vector_transport_method = vector_transport_method
@@ -799,7 +806,8 @@ end
 function CautiuosQuasiNewtonOptions(
     x::P,
     grad_x::T,
-    inverse_hessian_approximation::Array{T,1};
+    inverse_hessian_approximation::Array{T,1},
+    basis::Array{T,1};
     cautious_function::Function = x -> x*10^(-4),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
@@ -807,7 +815,7 @@ function CautiuosQuasiNewtonOptions(
     stepsize::Stepsize = WolfePowellLineseach(),
     broyden_factor::Float64 = 0.0
 ) where {P,T}
-    return CautiuosQuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation;
+    return CautiuosQuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation,basis;
         cautious_function = cautious_function,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,

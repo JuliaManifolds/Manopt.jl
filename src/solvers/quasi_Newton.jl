@@ -34,7 +34,7 @@ function quasi_Newton(
     memory_position = 0,
     step_size::Stepsize = WolfePowellLineseach(retraction_method, vector_transport_method),
     stopping_criterion::StoppingCriterion = StopWhenAny(
-        StopAfterIteration(max(100, memory_size)),
+        StopAfterIteration(max(1000, memory_size)),
         StopWhenGradientNormLess(10^(-6))),
 	return_options=false,
     kwargs...
@@ -53,9 +53,9 @@ function quasi_Newton(
 		grad_x = ∇F(x)
 		approximation = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis()))
 		if cautious_update == true
-			o = CautiuosQuasiNewtonOptions(x, grad_x, approximation; cautious_function = cautious_function, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
+			o = CautiuosQuasiNewtonOptions(x, grad_x, approximation, approximation; cautious_function = cautious_function, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
 		else
-			o = QuasiNewtonOptions(x, grad_x, approximation; retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
+			o = QuasiNewtonOptions(x, grad_x, approximation, approximation; retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
 		end
 	else
 		if cautious_update == true
@@ -82,23 +82,23 @@ function initialize_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions)
 end
 
 function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
-	print(" $(o.x) \n")
+	# print(" $(o.x) \n")
 	η = get_quasi_newton_direction(p, o)
-	print(" $(η) \n")
+	# print(" $(η) \n")
 	α = o.stepsize(p,o,iter,η)
 	print(" $(α) \n")
 	x_old = o.x
 	o.x = retract(p.M, o.x, α*η, o.retraction_method)
-	print(" $(o.x) \n")
+	# print(" $(o.x) \n")
 	update_parameters(p, o, α, η, x_old)
-	print(" \n")
+	# print(" \n")
 end
 
 # Computing the direction
 
 function get_quasi_newton_direction(p::GradientProblem, o::Union{QuasiNewtonOptions{P,T}, CautiuosQuasiNewtonOptions{P,T}}) where {P, T}
 	o.∇ = get_gradient(p,o.x)
-	return square_matrix_vector_product(p.M, o.x, o.inverse_hessian_approximation, -o.∇)
+	return square_matrix_vector_product(p.M, o.x, o.inverse_hessian_approximation, -o.∇; orthonormal_basis = o.basis)
 end
 
 # Limited memory variants
@@ -142,14 +142,14 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
 	b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
-	basis = get_vectors(p.M, o.x, get_basis(p.M, o.x, DefaultOrthonormalBasis()))
+	o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
 
 	n = manifold_dimension(p.M)
-	Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = basis)
+	Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
 	skyk = inner(p.M, o.x, yk, sk)
 
 	if o.broyden_factor==1.0
-		new_approx = update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
+		new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
 		for i = 1:n
 			o.inverse_hessian_approximation[i] = new_approx[i]
 		end
@@ -158,7 +158,7 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	# (o.broyden_factor==1.0) && o.inverse_hessian_approximation .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
 
 	if o.broyden_factor==0.0
-		new_approx = update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
+		new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
 		for i = 1:n
 			o.inverse_hessian_approximation[i] = new_approx[i]
 		end
@@ -167,8 +167,8 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	# (o.broyden_factor==0.0) && o.inverse_hessian_approximation .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
 
 	if o.broyden_factor > 0 && o.broyden_factor < 1
-		X .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
-		Y .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
+		X .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
+		Y .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
 		o.inverse_hessian_approximation .= [ o.broyden_factor*x + (1 - o.broyden_factor) * y for (x,y) ∈ zip(X,Y) ]
 	end
 end
@@ -186,13 +186,13 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 
 	if norm_sk != 0 && (skyk / norm_sk) >= bound
 		b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
-		basis = get_vectors(p.M, o.x, get_basis(p.M, o.x, DefaultOrthonormalBasis()))
+		o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
 
 		n = manifold_dimension(p.M)
-		Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = basis)
+		Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
 
 		if o.broyden_factor==1.0
-			new_approx = update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
+			new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
 			for i = 1:n
 				o.inverse_hessian_approximation[i] = new_approx[i]
 			end
@@ -201,7 +201,7 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 		# (o.broyden_factor==1.0) && o.inverse_hessian_approximation .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
 
 		if o.broyden_factor==0.0
-			new_approx = update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
+			new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
 			for i = 1:n
 				o.inverse_hessian_approximation[i] = new_approx[i]
 			end
@@ -210,8 +210,8 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 		# (o.broyden_factor==0.0) && o.inverse_hessian_approximation .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
 
 		if o.broyden_factor > 0 && o.broyden_factor < 1
-			X .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
-			Y .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
+			X .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
+			Y .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
 			o.inverse_hessian_approximation .= [ o.broyden_factor*x + (1 - o.broyden_factor) * y for (x,y) ∈ zip(X,Y) ]
 		end
 	else
@@ -227,7 +227,7 @@ end
 
 function update_Newton_Hessian(M::Manifold, p::P, b::AbstractVector{T}, basis::AbstractVector{T}, sk::T, yk::T, Bkyk::T, skyk::Float64, n::Int, ::Val{:DFP}) where {P,T}
 	# I need to implement a DFP Update
-	return get_vectors(M, p, get_basis(M, p, DefaultOrthonormalBasis()))
+	return basis
 end
 
 # Limited memory variants
