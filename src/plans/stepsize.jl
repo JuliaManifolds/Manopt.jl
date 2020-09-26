@@ -182,18 +182,18 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
                 xNew = retract(p.M, o.x, s*η, a.retraction_method)
                 fNew = p.cost(xNew)
             end
-            s_minus = s_plus/2.
         end
+        s_minus = s_plus/2.
     end
     while inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
-                s = (s_minus + s_plus)/2
-                xNew = retract(p.M, o.x, s*η, a.retraction_method)
-                fNew = p.cost(xNew)
-                if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-                    s_minus = s
-                else
-                    s_plus = s
-                end
+            s = (s_minus + s_plus)/2
+            xNew = retract(p.M, o.x, s*η, a.retraction_method)
+            fNew = p.cost(xNew)
+            if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
+                s_minus = s
+            else
+                s_plus = s
+            end
     end
     s = s_minus
     return s
@@ -262,6 +262,53 @@ function (a::StrongWolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient
     s = s_minus
     return s
 end
+
+
+@doc raw"""
+    StrongWolfePowellLineseachNocedal <: Linesearch
+"""
+mutable struct StrongWolfePowellLineseachNocedal<: Linesearch
+    retraction_method::AbstractRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
+
+    c_1::Float64
+    c_2::Float64
+    max::Float64
+    previous::Float64
+    zoom::Bool
+
+    function StrongWolfePowellLineseachNocedal(
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        c_1::Float64=10^(-4),
+        c_2::Float64=0.9,
+        max::Float64 = 100,
+        previous::Float64 = 0,
+        zoom::Bool = false
+    )
+        return new(retr, vtr, c_1, c_2, max, previous, zoom)
+    end
+end
+
+
+function (a::StrongWolfePowellLineseachNocedal)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
+    s = 1
+    f0 = p.cost(o.x)
+    gradient_x = get_gradient(p, o.x)
+    while a.zoom == false
+        xNew = retract(p.M, o.x, s*η, a.retraction_method)
+        fNew = p.cost(xNew)
+
+        if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
+            s = zoom()
+            a.zoom = true
+        end
+
+        if abs(inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η)) <= - a.c_2 * abs(inner(p.M, o.x, η, gradient_x))
+            s =
+
+end
+
 
 
 @doc raw"""
