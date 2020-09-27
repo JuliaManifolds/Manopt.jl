@@ -185,15 +185,17 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
             s_minus = s_plus/2.
         end
     end
+    xNew = retract(p.M, o.x, s_minus*η, a.retraction_method)
     while inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
-                s = (s_minus + s_plus)/2
-                xNew = retract(p.M, o.x, s*η, a.retraction_method)
-                fNew = p.cost(xNew)
-                if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-                    s_minus = s
-                else
-                    s_plus = s
-                end
+        s = (s_minus + s_plus)/2
+        xNew = retract(p.M, o.x, s*η, a.retraction_method)
+        fNew = p.cost(xNew)
+        if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
+            s_minus = s
+        else
+            s_plus = s
+        end
+        xNew = retract(p.M, o.x, s_minus*η, a.retraction_method)
     end
     s = s_minus
     return s

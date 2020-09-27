@@ -4,7 +4,7 @@
 using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random
 import Manifolds: vector_transport_to!
 struct IdentityTransport <: AbstractVectorTransportMethod end
-vector_transport_to!(::Stiefel,Y,p,X,q,::IdentityTransport) = (Y .= X)
+vector_transport_to!(::Stiefel,Y,p,X,q,::IdentityTransport) = (Y .= project(M, q, X))
 Random.seed!(42)
 n = 32
 k = 32
