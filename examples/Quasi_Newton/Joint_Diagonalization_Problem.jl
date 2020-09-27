@@ -4,7 +4,7 @@
 using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random
 import Manifolds: vector_transport_to!
 struct IdentityTransport <: AbstractVectorTransportMethod end
-vector_transport_to!(::Stiefel,Y,p,X,q,::IdentityTransport) = (Y .= X)
+vector_transport_to!(::Stiefel,Y,p,X,q,::IdentityTransport) = (Y .= project(M, q, X))
 Random.seed!(42)
 # Parameters
 n = 5
@@ -31,4 +31,4 @@ end
 
 x = random_point(M)
 
-quasi_Newton(M,F,∇F,x; vector_transport_method = IdentityTransport(), cautious_update = true, step_size = StrongWolfePowellLineseach(ExponentialRetraction(), IdentityTransport()))
+quasi_Newton(M,F,∇F,x; vector_transport_method = IdentityTransport(), cautious_update = true, debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
