@@ -275,8 +275,8 @@ function adjoint_differential_forward_logs(
                 Y[M, J...] =
                     Y[M, J...] + adjoint_differential_log_argument(
                         M.manifold,
-                        p[M, I...],
                         p[M, J...],
+                        p[M, I...],
                         X[N, I..., k],
                     )
             end
