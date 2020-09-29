@@ -220,7 +220,8 @@ Compute the adjoint of $D_q log_p q[X]$.
 [`differential_log_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function adjoint_differential_log_argument(M::Manifold, p, q, X)
-    return adjoint_Jacobi_field(M, p, q, 1.0, X, βdifferential_log_argument)
+    # order of p and q has to be reversed in this call, cf. Persch, 2018 Lemma 2.3
+    return adjoint_Jacobi_field(M, q, p, 1.0, X, βdifferential_log_argument)
 end
 
 @doc raw"""

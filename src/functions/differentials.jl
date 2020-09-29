@@ -184,12 +184,13 @@ end
 
 @doc raw"""
     differential_log_argument(M,p,q,X)
-computes $D_q\log_p,q[X]$.
+computes $D_q\log_pq[X]$.
 
 # See also
  [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
 """
 function differential_log_argument(M::Manifold, p, q, X)
+    # order of p and q has to be reversed in this call, cf. Persch, 2018 Lemma 2.3
     return jacobi_field(M, q, p, 1.0, X, βdifferential_log_argument)
 end
 

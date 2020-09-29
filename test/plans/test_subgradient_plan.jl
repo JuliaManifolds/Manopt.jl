@@ -7,7 +7,8 @@ using Manifolds
     o.∂ = [1.0, 0.0]
     f = y -> distance(M, y, x)
     ∂f =
-        y -> distance(M, x, y) == 0 ? zero_tangent_vector(M, y) :
+        y ->
+            distance(M, x, y) == 0 ? zero_tangent_vector(M, y) :
             -2 * log(M, y, x) / distance(M, x, y)
     p = SubGradientProblem(M, f, ∂f)
     oR = solve(p, o)

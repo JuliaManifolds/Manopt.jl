@@ -162,7 +162,7 @@ function linesearch_backtrack(
     retr::AbstractRetractionMethod = ExponentialRetraction(),
     η::T = -∇F,
     f0 = F(x),
-    ) where {TF, T}
+) where {TF,T}
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
     while fNew < f0 + decrease * s * inner(M, x, η, ∇F) # increase

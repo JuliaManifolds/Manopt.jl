@@ -141,11 +141,12 @@ mutable struct DebugChange <: DebugAction
     end
 end
 function (d::DebugChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    s = (i > 0) ?
+    s =
+        (i > 0) ?
         (
-        has_storage(d.storage, :x) ?
+            has_storage(d.storage, :x) ?
             d.prefix * string(distance(p.M, o.x, get_storage(d.storage, :x))) : ""
-    ) :
+        ) :
         ""
     d.storage(p, o, i)
     return d.print(s)
@@ -301,17 +302,18 @@ mutable struct DebugEntryChange <: DebugAction
     end
 end
 function (d::DebugEntryChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    s = (i > 0) ?
+    s =
+        (i > 0) ?
         (
-        has_storage(d.storage, d.field) ?
+            has_storage(d.storage, d.field) ?
             d.prefix * string(d.distance(
-            p,
-            o,
-            getproperty(o, d.field),
-            get_storage(d.storage, d.field),
-        )) :
+                p,
+                o,
+                getproperty(o, d.field),
+                get_storage(d.storage, d.field),
+            )) :
             ""
-    ) :
+        ) :
         ""
     d.storage(p, o, i)
     return d.print(s)
