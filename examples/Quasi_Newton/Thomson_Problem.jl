@@ -36,4 +36,4 @@ end
 
 x = random_point(M)
 
-quasi_Newton(M,F,∇F,x; debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
+quasi_Newton(M,F,∇F,x;vector_transport_method = PowerVectorTransport(ParallelTransport()), debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])

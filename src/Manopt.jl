@@ -51,7 +51,9 @@ module Manopt
         get_coordinates,
         get_vector,
         get_vectors,
-        representation_size
+        representation_size,
+        is_manifold_point,
+        is_tangent_vector
     using Manifolds:
         AbstractPowerManifold,
         PowerManifold

@@ -86,7 +86,7 @@ function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
 	η = get_quasi_newton_direction(p, o)
 	# print(" $(η) \n")
 	α = o.stepsize(p,o,iter,η)
-	 print(" $(α) \n")
+	# print(" $(α) \n")
 	x_old = o.x
 	o.x = retract(p.M, o.x, α*η, o.retraction_method)
 	# print(" $(o.x) \n")
@@ -127,7 +127,7 @@ function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P
 		ω = inner(p.M, o.x, o.gradient_diffrences[i], r) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i])
 		r = r + (ξ[i] - ω) * o.steps[i]
 	end
-
+	r = project(p.M, o.x, r)
 	return -r
 end
 

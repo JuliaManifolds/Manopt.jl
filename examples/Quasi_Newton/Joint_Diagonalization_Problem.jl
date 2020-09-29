@@ -31,4 +31,4 @@ end
 
 x = random_point(M)
 
-quasi_Newton(M,F,∇F,x; vector_transport_method = IdentityTransport(), cautious_update = true, debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
+quasi_Newton(M,F,∇F,x; memory_size = 1000, vector_transport_method = IdentityTransport(), cautious_update = true, debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
