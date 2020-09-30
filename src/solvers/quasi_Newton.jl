@@ -142,7 +142,9 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
 	b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
+	b = [ project(p.M, o.x, v) for v ∈ b ]
 	o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
+	o.basis = [ project(p.M, o.x, v) for v ∈ o.basis ]
 
 	n = manifold_dimension(p.M)
 	Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
@@ -186,7 +188,9 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 
 	if norm_sk != 0 && (skyk / norm_sk) >= bound
 		b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
+		b = [ project(p.M, o.x, v) for v ∈ b ]
 		o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
+		o.basis = [ project(p.M, o.x, v) for v ∈ o.basis ]
 
 		n = manifold_dimension(p.M)
 		Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
