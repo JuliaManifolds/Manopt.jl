@@ -274,6 +274,57 @@ end
 
 
 @doc raw"""
+    WolfePowellLineseachHuang <: Linesearch
+"""
+mutable struct WolfePowellLineseachHuang<: Linesearch
+    retraction_method::AbstractRetractionMethod
+    vector_transport_method::AbstractVectorTransportMethod
+
+    c_1::Float64
+    c_2::Float64
+
+    function WolfePowellLineseachHuang(
+        retr::AbstractRetractionMethod = ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        c_1::Float64=10^(-4),
+        c_2::Float64=0.999
+    )
+        return new(retr, vtr, c_1, c_2)
+    end
+end
+
+
+function (a::WolfePowellLineseachHuang)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
+    α = 0.
+    β = Inf
+    t = 1.
+    f0 = p.cost(o.x)
+    gradient_x = get_gradient(p, o.x)
+    xNew = retract(p.M, o.x, t*η, a.retraction_method)
+    fNew = p.cost(xNew)
+
+    while fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, gradient_x) && inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+        if fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, gradient_x)
+            β = t
+        else
+            if inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+                α = t
+            end
+        end
+        if β < Inf
+            t = (α + β)/2
+        else
+            t = 2*α
+        end
+        xNew = retract(p.M, o.x, t*η, a.retraction_method)
+        fNew = p.cost(xNew)
+    end
+    return t
+end
+
+
+
+@doc raw"""
     StrongWolfePowellLineseachNocedal <: Linesearch
 """
 mutable struct StrongWolfePowellLineseachNocedal<: Linesearch
