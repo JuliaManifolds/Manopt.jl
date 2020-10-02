@@ -7,8 +7,9 @@ Random.seed!(42)
     rayleigh_quotient_minimization(A)
 
 """
-n = 20
-A = diagm(1:n)
+n = 300
+A = randn(n,n)
+A = (A + A')/2
 M = Sphere(n-1)
 F(X::Array{Float64,1}) = transpose(X)*A*X
 ∇F(X::Array{Float64,1}) = 2*project(M,X,A*X)

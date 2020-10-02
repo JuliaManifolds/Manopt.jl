@@ -4,6 +4,7 @@
 using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random
 import Manifolds: vector_transport_to!
 vector_transport_to!(::Stiefel,Y,p,X,q,::ProjectionTransport) = (Y .= project(M, q, X))
+# see Huang:2013, 10.3.2 Vector Transport
 Random.seed!(42)
 n = 32
 k = 32

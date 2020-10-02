@@ -303,12 +303,8 @@ end
 import ManifoldsBase
 
 function square_matrix_vector_product(M::Manifold, p::P, A::AbstractVector{T}, X::T; orthonormal_basis::AbstractVector{T} = get_vectors(M, p, get_basis(M, p, DefaultOrthonormalBasis()))) where {P,T}
-        Y = zero_tangent_vector(M,p)
         n = manifold_dimension(M)
-        for i in 1 : n
-                Y = Y + inner(M, p, A[i], X) * orthonormal_basis[i]
-        end
-        return Y
+        Y = sum([inner(M, p, A[i], X) * orthonormal_basis[i] for i ∈ 1:n])
 end
 
 
