@@ -84,9 +84,11 @@ end
 function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
 	# print(" $(o.x) \n")
 	η = get_quasi_newton_direction(p, o)
+	gradient = get_gradient(p,o.x)
+	print(" $(inner(p.M, o.x, η, gradient)) \n")
 	# print(" $(η) \n")
 	α = o.stepsize(p,o,iter,η)
-	# print(" $(α) \n")
+	 print(" $(α) \n")
 	x_old = o.x
 	o.x = retract(p.M, o.x, α*η, o.retraction_method)
 	# print(" $(o.x) \n")
@@ -185,6 +187,7 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 	norm_sk = norm(p.M, o.x, sk)
 
 	bound = o.cautious_function(norm(p.M, x, gradf_xold))
+	n = manifold_dimension(p.M)
 
 	if norm_sk != 0 && (skyk / norm_sk) >= bound
 		b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
@@ -192,7 +195,7 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 		o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
 		o.basis = [ project(p.M, o.x, v) for v ∈ o.basis ]
 
-		n = manifold_dimension(p.M)
+
 		Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
 
 		if o.broyden_factor==1.0
@@ -219,7 +222,9 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 			o.inverse_hessian_approximation .= [ o.broyden_factor*x + (1 - o.broyden_factor) * y for (x,y) ∈ zip(X,Y) ]
 		end
 	else
-		o.inverse_hessian_approximation = vector_transport_to.(p.M, x, o.inverse_hessian_approximation, o.x, o.vector_transport_method)
+		for i = 1:n
+			o.inverse_hessian_approximation[i] = vector_transport_to(p.M, x, o.inverse_hessian_approximation[i], o.x, o.vector_transport_method)
+		end
 	end
 
 end
