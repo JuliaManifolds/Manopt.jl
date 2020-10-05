@@ -166,8 +166,8 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
     gradient_x = get_gradient(p, o.x)
     xNew = retract(p.M, o.x, s*η, a.retraction_method)
     fNew = p.cost(xNew)
-    print(" $(norm(p.M, o.x, gradient_x))  \n")
-    print(" $(inner(p.M, o.x, η, gradient_x))  \n")
+    # print(" $(norm(p.M, o.x, gradient_x))  \n")
+    # print(" $(inner(p.M, o.x, η, gradient_x))  \n")
     if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
         while fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
             s_minus = s_minus * 0.5
@@ -176,7 +176,7 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
             fNew = p.cost(xNew)
         end
         s_plus = 2. * s_minus
-        print("($s, $s_plus) + $(is_manifold_point(p.M, xNew, true))  \n")
+        # print("($s, $s_plus) + $(is_manifold_point(p.M, xNew, true))  \n")
     else
         if inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
             while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
@@ -186,7 +186,7 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
                 fNew = p.cost(xNew)
             end
             s_minus = s_plus/2.
-            print("($s, $s_minus) - $(is_manifold_point(p.M, xNew, true))\n")
+            # print("($s, $s_minus) - $(is_manifold_point(p.M, xNew, true))\n")
         end
     end
     xNew = retract(p.M, o.x, s_minus*η, a.retraction_method)
@@ -200,7 +200,7 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
             s_plus = s
         end
         xNew = retract(p.M, o.x, s_minus*η, a.retraction_method)
-        print("($s, $s_minus, $s_plus) \n")
+        # print("($s, $s_minus, $s_plus) \n")
     end
     s = s_minus
     return s

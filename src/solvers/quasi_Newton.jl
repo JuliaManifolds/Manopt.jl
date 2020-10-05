@@ -84,11 +84,13 @@ end
 function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
 	# print(" $(o.x) \n")
 	η = get_quasi_newton_direction(p, o)
-	gradient = get_gradient(p,o.x)
-	print(" $(inner(p.M, o.x, η, gradient)) \n")
+	# gradient = get_gradient(p,o.x)
+	# print(" $(inner(p.M, o.x, η, gradient)) \n")
 	# print(" $(η) \n")
+	# print(" $(norm(p.M, o.x, η)) \n")
+	# η = η/norm(p.M, o.x, η)
 	α = o.stepsize(p,o,iter,η)
-	 print(" $(α) \n")
+	# print(" $(α) \n")
 	x_old = o.x
 	o.x = retract(p.M, o.x, α*η, o.retraction_method)
 	# print(" $(o.x) \n")
@@ -100,7 +102,8 @@ end
 
 function get_quasi_newton_direction(p::GradientProblem, o::Union{QuasiNewtonOptions{P,T}, CautiuosQuasiNewtonOptions{P,T}}) where {P, T}
 	o.∇ = get_gradient(p,o.x)
-	return square_matrix_vector_product(p.M, o.x, o.inverse_hessian_approximation, -o.∇; orthonormal_basis = o.basis)
+	η = square_matrix_vector_product(p.M, o.x, o.inverse_hessian_approximation, -o.∇; orthonormal_basis = o.basis)
+	return η/norm(p.M, o.x, η)
 end
 
 # Limited memory variants
@@ -143,13 +146,20 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	yk = (β^(-1))*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
-	b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
-	b = [ project(p.M, o.x, v) for v ∈ b ]
+
 	o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
-	o.basis = [ project(p.M, o.x, v) for v ∈ o.basis ]
+	# o.basis = [ project(p.M, o.x, v) for v ∈ o.basis ]
+
+
+	# print("$(norm(p.M, o.x, o.basis[1])) \n")
+	# print("$(inner(p.M, o.x, o.basis[1], o.basis[2])) \n")
+
+	b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
+	# b = [ project(p.M, o.x, v) for v ∈ b ]
 
 	n = manifold_dimension(p.M)
 	Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
+
 	skyk = inner(p.M, o.x, yk, sk)
 
 	if o.broyden_factor==1.0
