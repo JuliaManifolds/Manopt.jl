@@ -147,15 +147,18 @@ render_asymptote(exportFolder * "/SecondOrderMin1.asy"; render = 2) #src
 # and the cost function is still at
 costTV2(M, (pn, rn, qn))
 #
-# But we can also search for the best step size using [`ArmijoLinesearch`](@ref)
+# But we can also search for the best step size using [`linesearch_backtrack`](@ref)
 # on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
 x = [p, r, q]
 N = PowerManifold(M, NestedPowerRepresentation(), 3)
-s = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.999, 0.96)(
-    N,
-    x,
+s = linesearch_backtrack(
+    M,
     x -> costTV2(M, Tuple(x)),
+    x,
     [∇TV2(M, (p, r, q))...],  # transform from tuple to PowTVector
+    1.0, # initial stepsize guess
+    0.999, # decrease
+    0.96,  #contract
 )
 # and for the new points
 pm, rm, qm = exp.(Ref(M), [p, r, q], s * [-Xp, -Xr, -Xq])
