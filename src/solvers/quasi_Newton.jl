@@ -94,7 +94,7 @@ function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
 	x_old = o.x
 	o.x = retract(p.M, o.x, α*η, o.retraction_method)
 	# print(" $(o.x) \n")
-	update_parameters(p, o, α, η, x_old)
+	update_parameters(p, o, α, η, x_old, iter)
 	# print(" \n")
 end
 
@@ -143,7 +143,7 @@ end
 
 # Updating the parameters
 
-function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::Float64, η::T, x::P) where {P,T}
+function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	gradf_xold = o.∇
 	# print("gradf_xold: $gradf_xold \n")
 	β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
@@ -162,6 +162,9 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	# print("$(inner(p.M, o.x, o.basis[1], o.basis[2])) \n")
 
 	b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
+	if iter == 1
+		b = [ (inner(p.M, o.x, sk, yk) / norm(p.M, o.x, yk)^2) * v for v ∈ o.inverse_hessian_approximation ]
+	end
 	# b = [ project(p.M, o.x, v) for v ∈ b ]
 
 	n = manifold_dimension(p.M)
