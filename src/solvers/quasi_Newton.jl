@@ -32,6 +32,8 @@ function quasi_Newton(
     memory_steps = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
     memory_gradients = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
     memory_position = 0,
+	initial_operator = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis())),
+    scalling_initial_operator::Bool = true,
     step_size::Stepsize = WolfePowellLineseach(retraction_method, vector_transport_method),
     stopping_criterion::StoppingCriterion = StopWhenAny(
         StopAfterIteration(max(1000, memory_size)),
@@ -51,11 +53,11 @@ function quasi_Newton(
 
 	if memory_size < 0 && memory_steps_size == 0
 		grad_x = ∇F(x)
-		approximation = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis()))
+		basis = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis()))
 		if cautious_update == true
-			o = CautiuosQuasiNewtonOptions(x, grad_x, approximation, approximation; cautious_function = cautious_function, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
+			o = CautiuosQuasiNewtonOptions(x, grad_x, initial_operator, basis; scalling_initial_operator = scalling_initial_operator, cautious_function = cautious_function, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
 		else
-			o = QuasiNewtonOptions(x, grad_x, approximation, approximation; retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
+			o = QuasiNewtonOptions(x, grad_x, initial_operator, basis; scalling_initial_operator = scalling_initial_operator, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
 		end
 	else
 		if cautious_update == true
@@ -162,7 +164,8 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	# print("$(inner(p.M, o.x, o.basis[1], o.basis[2])) \n")
 
 	b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
-	if iter == 1
+
+	if iter == 1 && o.scalling_initial_operator == true
 		b = [ (inner(p.M, o.x, sk, yk) / norm(p.M, o.x, yk)^2) * v for v ∈ o.inverse_hessian_approximation ]
 	end
 	# b = [ project(p.M, o.x, v) for v ∈ b ]
@@ -194,7 +197,7 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	end
 end
 
-function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T}, α::Float64, η::T, x::P) where {P,T}
+function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	gradf_xold = o.∇
 	β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
 	yk = (β^(-1))*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -208,9 +211,13 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 
 	if norm_sk != 0 && (skyk / norm_sk) >= bound
 		b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
-		b = [ project(p.M, o.x, v) for v ∈ b ]
+
+		if iter == 1 && o.scalling_initial_operator == true
+			b = [ (inner(p.M, o.x, sk, yk) / norm(p.M, o.x, yk)^2) * v for v ∈ o.inverse_hessian_approximation ]
+		end
+
 		o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
-		o.basis = [ project(p.M, o.x, v) for v ∈ o.basis ]
+
 
 
 		Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
@@ -258,12 +265,12 @@ end
 
 # Limited memory variants
 
-function update_parameters(p::GradientProblem, o::RLBFGSOptions{P,T}, α::Float64, η::T, x::P) where {P,T}
+function update_parameters(p::GradientProblem, o::RLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
     limited_memory_update(p,o,α,η,x)
 end
 
 
-function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α::Float64, η::T, x::P) where {P,T}
+function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	gradf_xold = get_gradient(p,x)
     β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
     yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
