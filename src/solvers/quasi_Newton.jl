@@ -84,20 +84,17 @@ function initialize_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions)
 end
 
 function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
-	# print(" $(norm(p.M, o.x, get_gradient(p,o.x))) \n")
+
 	η = get_quasi_newton_direction(p, o)
 
-	# gradient = get_gradient(p,o.x)
-	# print(" $(inner(p.M, o.x, η, gradient)) \n")
-	# print(" $(η) \n")
-	# print(" $(norm(p.M, o.x, η)) \n")
 	α = o.stepsize(p,o,iter,η)
-	# print(" $(α) \n")
+
 	x_old = o.x
+
 	o.x = retract(p.M, o.x, α*η, o.retraction_method)
-	# print(" $(o.x) \n")
+
 	update_parameters(p, o, α, η, x_old, iter)
-	# print(" \n")
+
 end
 
 # Computing the direction
@@ -108,37 +105,30 @@ function get_quasi_newton_direction(p::GradientProblem, o::Union{QuasiNewtonOpti
 	return η/norm(p.M, o.x, η)
 end
 
-# Limited memory variants
 
 function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}) where {P, T}
 	q = get_gradient(p,o.x)
 	current_memory = o.current_memory_size
 	ξ = zeros(current_memory)
-	# print("q1: $(is_tangent_vector(p.M, o.x, q)) \n")
 
 	for i in current_memory : -1 : 1
-		# print("$i $(o.steps[i]) --- $(o.gradient_diffrences[i]) | $(inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i])) \n")
 		ξ[i] = inner(p.M, o.x, o.steps[i], q) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i])
 		q =  q - ξ[i]*o.gradient_diffrences[i]
 	end
-	# print("q2: $(is_tangent_vector(p.M, o.x, q)) \n")
 
 	if current_memory == 0
 		r = q
 	else
-		# print("$(o.gradient_diffrences[current_memory - 1]) \n")
-		# print("$(norm(p.M, o.x, o.gradient_diffrences[current_memory - 1])) \n")
 		r = (inner(p.M, o.x, o.steps[current_memory], o.gradient_diffrences[current_memory]) / norm(p.M, o.x, o.gradient_diffrences[current_memory])^2) * q
-		# print("r1: $(is_tangent_vector(p.M, o.x, r)) \n")
 	end
-	# print("r: $r \n")
 
 	for i in 1 : current_memory
 		ω = inner(p.M, o.x, o.gradient_diffrences[i], r) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i])
 		r = r + (ξ[i] - ω) * o.steps[i]
 	end
-	#print("r2: $(is_tangent_vector(p.M, o.x, r)) \n")
+
 	r = project(p.M, o.x, r)
+
 	return -r
 end
 
@@ -147,30 +137,20 @@ end
 
 function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	gradf_xold = o.∇
-	# print("gradf_xold: $gradf_xold \n")
 	β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
-	# print("beta: $β \n")
 	yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
-	# print("sk: $(sk) \n")
-	# print("yk: $(yk) \n")
-
 
 	o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
-	# o.basis = [ project(p.M, o.x, v) for v ∈ o.basis ]
-
-
-	# print("$(norm(p.M, o.x, o.basis[1])) \n")
-	# print("$(inner(p.M, o.x, o.basis[1], o.basis[2])) \n")
 
 	b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
 
 	if iter == 1 && o.scalling_initial_operator == true
 		b = [ (inner(p.M, o.x, sk, yk) / norm(p.M, o.x, yk)^2) * v for v ∈ o.inverse_hessian_approximation ]
 	end
-	# b = [ project(p.M, o.x, v) for v ∈ b ]
 
 	n = manifold_dimension(p.M)
+
 	Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
 
 	skyk = inner(p.M, o.x, yk, sk)
@@ -218,8 +198,6 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 
 		o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
 
-
-
 		Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
 
 		if o.broyden_factor==1.0
@@ -229,16 +207,12 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 			end
 		end
 
-		# (o.broyden_factor==1.0) && o.inverse_hessian_approximation .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
-
 		if o.broyden_factor==0.0
 			new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
 			for i = 1:n
 				o.inverse_hessian_approximation[i] = new_approx[i]
 			end
 		end
-
-		# (o.broyden_factor==0.0) && o.inverse_hessian_approximation .= update_Newton_Hessian(p.M, o.x, b, basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
 
 		if o.broyden_factor > 0 && o.broyden_factor < 1
 			X .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
@@ -275,6 +249,7 @@ function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α
     β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
     yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
     sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
+
 	sk_yk = inner(p.M, o.x, sk, yk)
 	norm_sk = norm(p.M, o.x, sk)
 	bound = o.cautious_function(norm(p.M, x, get_gradient(p,x)))
@@ -292,14 +267,10 @@ end
 
 function limited_memory_update(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}, α::Float64, η::T, x::P) where {P,T}
 	gradf_xold = get_gradient(p,x)
-	# print("gradf_xold: $gradf_xold \n")
     β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
-	# print("beta: $β \n")
     yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
-	# print("y: $yk \n")
     sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
-	# print("sk: $(sk) \n")
-	# print("yk: $(yk) \n")
+
 	memory_steps_size = length(o.steps)
 	current_memory = o.current_memory_size
 
@@ -339,5 +310,18 @@ function square_matrix_vector_product(M::Manifold, p::P, A::AbstractVector{T}, X
         Y = sum([inner(M, p, A[i], X) * orthonormal_basis[i] for i ∈ 1:n])
 end
 
+function operator_to_matrix(M::Manifold, p::P, operator::Function; orthonormal_basis::AbstractVector{T} = get_vectors(M, p, get_basis(M, p, DefaultOrthonormalBasis()))) where {P,T}
+	n = length(orthonormal_basis)
+	matrix = [zero_tangent_vector(M,p) for _ ∈ 1:n]
+	column = [operator(orthonormal_basis[j]) for j ∈ 1:n]
+
+	for j = 1:n
+		for i = 1:n
+			matrix[j] = matrix[j] + inner(M,p,column[i],orthonormal_basis[j])*orthonormal_basis[i]
+		end
+	end
+
+	return matrix
+end
 
 get_solver_result(o::O) where {O <: AbstractQuasiNewtonOptions} = o.x
