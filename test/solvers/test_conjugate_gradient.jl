@@ -109,6 +109,6 @@ end
         stopping_criterion = StopAfterIteration(15),
         #debug=[:Iteration," | ",:Cost," | ",:Iterate," |\n"],
     )
-    @test isapprox(F(xOpt), minimum(eigvals(A)); atol = 1.2 * 10^-4)
-    @test isapprox(xOpt, eigvecs(A)[:, size(A, 1)]; atol = 1.7 * 10^-2)
+    @test isapprox(F(xOpt), minimum(eigvals(A)); atol = 2.0 * 10^-4)
+    @test isapprox(xOpt, eigvecs(A)[:, size(A, 1)]; atol = 3.0 * 10^-2)
 end
