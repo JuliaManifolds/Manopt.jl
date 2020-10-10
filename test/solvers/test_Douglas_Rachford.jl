@@ -5,7 +5,7 @@
     q = [0.0, 1.0, 0.0]
     r = [0.0, 0.0, 1.0]
     start = [0.0, 0.0, 1.0]
-    result = result = geodesic(M, p, q, distance(M,p,q)/2)
+    result = result = geodesic(M, p, q, distance(M, p, q) / 2)
     F(x) = distance(M, x, p)^2 + distance(M, x, q)^2
     prox1 = (η, x) -> prox_distance(M, η, p, x)
     prox2 = (η, x) -> prox_distance(M, η, q, x)
@@ -22,13 +22,13 @@
         F2,
         [prox1, prox2, prox3],
         start;
-        debug = [DebugCost(), DebugIterate(), DebugProximalParameter(), 100],
-        record = [RecordCost(), RecordProximalParameter()],
-        return_options = true,
+        debug=[DebugCost(), DebugIterate(), DebugProximalParameter(), 100],
+        record=[RecordCost(), RecordProximalParameter()],
+        return_options=true,
     )
     xHat2 = get_solver_result(o)
     drec2 = get_record(o)
-    result2 = mean(M,[p,q,r])
+    result2 = mean(M, [p, q, r])
     # since the default does not run that long -> rough estimate
     @test distance(M, xHat2, result2) ≈ 0
 end

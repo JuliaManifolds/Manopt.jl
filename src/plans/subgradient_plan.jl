@@ -54,14 +54,10 @@ mutable struct SubGradientMethodOptions{TRetract<:AbstractRetractionMethod,TStep
         x::P,
         sC::StoppingCriterion,
         s::Stepsize,
-        retraction_method = ExponentialRetraction(),
+        retraction_method=ExponentialRetraction(),
     ) where {TM<:Manifold,P}
         return new{typeof(retraction_method),typeof(s),P,typeof(zero_tangent_vector(M, x))}(
-            retraction_method,
-            s,
-            sC,
-            x,
-            x,
+            retraction_method, s, sC, x, x
         )
     end
 end

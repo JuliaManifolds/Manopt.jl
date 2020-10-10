@@ -69,11 +69,11 @@ function truncated_conjugate_gradient_descent(
     η,
     H::Union{Function,Missing},
     Δ::Float64;
-    preconditioner::Tprec = (M, x, ξ) -> ξ,
-    θ::Float64 = 1.0,
-    κ::Float64 = 0.1,
-    useRandom::Bool = false,
-    stopping_criterion::StoppingCriterion = StopWhenAny(
+    preconditioner::Tprec=(M, x, ξ) -> ξ,
+    θ::Float64=1.0,
+    κ::Float64=0.1,
+    useRandom::Bool=false,
+    stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
         stopIfResidualIsReducedByPower(
             sqrt(inner(
@@ -96,7 +96,7 @@ function truncated_conjugate_gradient_descent(
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),
     ),
-    return_options = false,
+    return_options=false,
     kwargs..., #collect rest
 ) where {mT<:Manifold,TF,TdF,Tprec}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
@@ -118,8 +118,7 @@ function truncated_conjugate_gradient_descent(
     end
 end
 function initialize_solver!(
-    p::P,
-    o::O,
+    p::P, o::O
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     o.η = o.useRand ? o.η : zero_tangent_vector(p.M, o.x)
     Hη = o.useRand ? getHessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
@@ -138,9 +137,7 @@ function initialize_solver!(
     # o.model_value = o.useRand ? 0 : inner(p.M,o.x,o.η,get_gradient(p,o.x)) + 0.5 * inner(p.M,o.x,o.η,Hη)
 end
 function step_solver!(
-    p::P,
-    o::O,
-    iter,
+    p::P, o::O, iter
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     ηOld = o.η
     δOld = o.δ

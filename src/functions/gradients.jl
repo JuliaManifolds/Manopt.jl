@@ -43,9 +43,7 @@ function ∇acceleration_bezier(
     return get_bezier_points(M, gradB, :differentiable)
 end
 function ∇acceleration_bezier(
-    M::Manifold,
-    b::BezierSegment,
-    T::AbstractVector{<:AbstractFloat},
+    M::Manifold, b::BezierSegment, T::AbstractVector{<:AbstractFloat}
 )
     gradb = _∇acceleration_bezier(M, b.pts, [get_bezier_degree(M, b)], T)[1]
     zero_tangent_vector!(M, gradb.pts[1], b.pts[1])
@@ -124,11 +122,7 @@ function _∇acceleration_bezier(
     inner = -2 / ((dt)^3) .* log.(Ref(M), mid, center)
     asForward =
         adjoint_differential_geodesic_startpoint.(
-            Ref(M),
-            forward,
-            backward,
-            Ref(0.5),
-            inner,
+            Ref(M), forward, backward, Ref(0.5), inner
         )
     asCenter = -2 / ((dt)^3) * log.(Ref(M), center, mid)
     asBackward =
@@ -154,29 +148,17 @@ function _∇acceleration_bezier(
         # updates b-
         X1 =
             ∇B[k - 1].pts[end - 1] .+ adjoint_differential_geodesic_startpoint(
-                M,
-                Bt[k - 1].pts[end - 1],
-                Bt[k].pts[1],
-                2.0,
-                ∇B[k].pts[2],
+                M, Bt[k - 1].pts[end - 1], Bt[k].pts[1], 2.0, ∇B[k].pts[2]
             )
         # update b+ - though removed in reduced form
         X2 =
             ∇B[k].pts[2] .+ adjoint_differential_geodesic_startpoint(
-                M,
-                Bt[k].pts[2],
-                Bt[k].pts[1],
-                2.0,
-                ∇B[k - 1].pts[end - 1],
+                M, Bt[k].pts[2], Bt[k].pts[1], 2.0, ∇B[k - 1].pts[end - 1]
             )
         # update p - effect from left and right segment as well as from c1 cond
         X3 =
             ∇B[k].pts[1] .+ adjoint_differential_geodesic_endpoint(
-                M,
-                Bt[k - 1].pts[m - 1],
-                Bt[k].pts[1],
-                2.0,
-                ∇B[k].pts[2],
+                M, Bt[k - 1].pts[m - 1], Bt[k].pts[1], 2.0, ∇B[k].pts[2]
             )
         # store
         ∇B[k - 1].pts[end - 1] .= X1
@@ -212,7 +194,7 @@ corresponding zero tangent vector, since this is an element of the subdifferenti
 * `p` – (`2`) the exponent of the distance,  i.e. the default is the squared
   distance
 """
-function ∇distance(M, y, x, p::Int = 2)
+function ∇distance(M, y, x, p::Int=2)
     return (p == 2) ? -log(M, x, y) : -distance(M, x, y)^(p - 2) * log(M, x, y)
 end
 
@@ -246,7 +228,7 @@ end
 compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
 to both $x$ and $y$.
 """
-function ∇TV(M::MT, xT::Tuple{T,T}, p = 1) where {MT<:Manifold,T}
+function ∇TV(M::MT, xT::Tuple{T,T}, p=1) where {MT<:Manifold,T}
     x = xT[1]
     y = xT[2]
     if p == 2
@@ -277,7 +259,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 # Ouput
 * ξ – resulting tangent vector in $T_x\mathcal M$.
 """
-function ∇TV(M::PowerManifold, x, p::Int = 1)
+function ∇TV(M::PowerManifold, x, p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
@@ -338,7 +320,7 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
         d2 = 1
     end
     N = PowerManifold(M.manifold, TPR(), power_size..., d)
-    xT = repeat(p, inner = d2)
+    xT = repeat(p; inner=d2)
     X = zero_tangent_vector(N, xT)
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
@@ -375,7 +357,7 @@ the evaluation of an [`adjoint_Jacobi_field`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """
-function ∇TV2(M::MT, xT, p::Number = 1) where {MT<:Manifold}
+function ∇TV2(M::MT, xT, p::Number=1) where {MT<:Manifold}
     x = xT[1]
     y = xT[2]
     z = xT[3]
@@ -398,19 +380,11 @@ function ∇TV2(M::MT, xT, p::Number = 1) where {MT<:Manifold}
         else
             return (
                 adjoint_differential_geodesic_startpoint(
-                    M,
-                    x,
-                    z,
-                    1 / 2,
-                    innerLog / (d^(2 - p)),
+                    M, x, z, 1 / 2, innerLog / (d^(2 - p))
                 ),
                 -log(M, y, c) / (d^(2 - p)),
                 adjoint_differential_geodesic_endpoint(
-                    M,
-                    x,
-                    z,
-                    1 / 2,
-                    innerLog / (d^(2 - p)),
+                    M, x, z, 1 / 2, innerLog / (d^(2 - p))
                 ),
             )
         end
@@ -423,7 +397,7 @@ computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function ∇TV2(M::PowerManifold, q, p::Int = 1)
+function ∇TV2(M::PowerManifold, q, p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))

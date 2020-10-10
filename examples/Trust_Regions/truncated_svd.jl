@@ -20,7 +20,7 @@ rank p.
 * `S` – a diagonal matrix of size pxp with nonnegative and decreasing diagonal
         entries
 """
-function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
+function truncated_svd(A::Array{Float64,2}=randn(42, 60), p::Int64=5)
     (m, n) = size(A)
 
     if p > min(m, n)
@@ -51,11 +51,7 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
     end
 
     function e2rHess(
-        M::Grassmann,
-        x,
-        ξ,
-        eGrad::Matrix{T},
-        Hess::Matrix{T},
+        M::Grassmann, x, ξ, eGrad::Matrix{T}, Hess::Matrix{T}
     ) where {T<:Union{U,Complex{U}}} where {U<:AbstractFloat}
         pxHess = project(M, x, Hess)
         xtGrad = x' * eGrad
@@ -101,8 +97,8 @@ function truncated_svd(A::Array{Float64,2} = randn(42, 60), p::Int64 = 5)
         rgrad,
         x,
         rhess;
-        Δ_bar = 4 * sqrt(2 * p),
-        debug = [:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop],
+        Δ_bar=4 * sqrt(2 * p),
+        debug=[:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop],
     )
     U = X[M, 1]
     V = X[M, 2]

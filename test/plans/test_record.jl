@@ -25,8 +25,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test RecordOptions(o, [a]).recordDictionary[:All].group[1] == a
     @test RecordOptions(o, Dict(:A => a)).recordDictionary[:A] == a
     @test isa(
-        RecordOptions(o, [:Iteration]).recordDictionary[:All].group[1],
-        RecordIteration,
+        RecordOptions(o, [:Iteration]).recordDictionary[:All].group[1], RecordIteration
     )
     @test !has_record(o)
     @test_throws ErrorException get_record(o)

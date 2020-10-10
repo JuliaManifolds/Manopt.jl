@@ -29,7 +29,7 @@ optional parameter determines the type of the entries of the
 resulting point on the Euclidean space d.
 """
 random_point(M::Euclidean) = randn(manifold_dimension(M))
-random_point(M::Euclidean, ::Val{:Gaussian}, σ = 1.0) = σ * randn(manifold_dimension(M))
+random_point(M::Euclidean, ::Val{:Gaussian}, σ=1.0) = σ * randn(manifold_dimension(M))
 
 @doc raw"""
     random_point(M::Grassmannian, :Gaussian [, σ=1.0])
@@ -38,7 +38,7 @@ return a random point `x` on `Grassmannian` manifold `M` by
 generating a random (Gaussian) matrix with standard deviation `σ` in matching
 size, which is orthonormal.
 """
-function random_point(::Grassmann{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64 = 1.0) where {n,k,𝔽}
+function random_point(::Grassmann{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64=1.0) where {n,k,𝔽}
     V = σ * randn(𝔽 === ℝ ? Float64 : ComplexF64, (n, k))
     A = qr(V).Q[:, 1:k]
     return A
@@ -51,18 +51,16 @@ generate a random point on the `AbstractPowerManfold` `M` given `options` that a
 passed on.
 """
 function random_point(
-    M::AbstractPowerManifold{𝔽,Mt,NestedPowerRepresentation},
-    options...,
+    M::AbstractPowerManifold{𝔽,Mt,NestedPowerRepresentation}, options...
 ) where {𝔽,Mt}
     return [random_point(M.manifold, options...) for i in get_iterator(M)]
 end
 function random_point(
-    M::AbstractPowerManifold{𝔽,Mt,ArrayPowerRepresentation},
-    options...,
+    M::AbstractPowerManifold{𝔽,Mt,ArrayPowerRepresentation}, options...
 ) where {𝔽,Mt}
     return cat(
-        [random_point(M.manifold, options...) for i in get_iterator(M)]...,
-        dims = length(representation_size(M.manifold)) + 1,
+        [random_point(M.manifold, options...) for i in get_iterator(M)]...;
+        dims=length(representation_size(M.manifold)) + 1,
     )
 end
 
@@ -93,7 +91,7 @@ D_{ij}=\begin{cases}
 It can happen that the matrix gets -1 as a determinant. In this case, the first
 and second columns are swapped.
 """
-function random_point(M::Rotations, ::Val{:Gaussian}, σ::Real = 1.0)
+function random_point(M::Rotations, ::Val{:Gaussian}, σ::Real=1.0)
     d = manifold_dimension(M)
     if d == 1
         return ones(1, 1)
@@ -116,9 +114,7 @@ gerenate a random symmetric positive definite matrix on the
 `SymmetricPositiveDefinite` manifold `M`.
 """
 function random_point(
-    ::SymmetricPositiveDefinite{N},
-    ::Val{:Gaussian},
-    σ::Float64 = 1.0,
+    ::SymmetricPositiveDefinite{N}, ::Val{:Gaussian}, σ::Float64=1.0
 ) where {N}
     D = Diagonal(1 .+ randn(N)) # random diagonal matrix
     s = qr(σ * randn(N, N)) # random q
@@ -132,7 +128,7 @@ return a random (Gaussian) point `x` on the `Stiefel` manifold `M` by generating
 matrix with standard deviation `σ` and return the orthogonalized version, i.e. return ​​the Q
 component of the QR decomposition of the random matrix of size $n×k$.
 """
-function random_point(::Stiefel{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64 = 1.0) where {n,k,𝔽}
+function random_point(::Stiefel{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64=1.0) where {n,k,𝔽}
     A = σ * randn(𝔽 === ℝ ? Float64 : ComplexF64, n, k)
     return Matrix(qr(A).Q)
 end
@@ -142,7 +138,7 @@ end
 return a random point on the Sphere by projecting a normal distirbuted vector
 from within the embedding to the sphere.
 """
-function random_point(M::Sphere, ::Val{:Gaussian}, σ::Float64 = 1.0)
+function random_point(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)
     return project(M, σ * randn(manifold_dimension(M) + 1))
 end
 
@@ -164,9 +160,9 @@ return a random tangent vector from the tangent space of the point `p` on the
 [Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathbb S^1$ by using a normal distribution with
 mean 0 and standard deviation 1.
 """
-random_tangent(::Circle, p, ::Val{:Gaussian}, σ::Real = 1.0) = σ * randn()
+random_tangent(::Circle, p, ::Val{:Gaussian}, σ::Real=1.0) = σ * randn()
 
-function random_tangent(M::Euclidean, p, ::Val{:Gaussian}, σ::Float64 = 1.0)
+function random_tangent(M::Euclidean, p, ::Val{:Gaussian}, σ::Float64=1.0)
     return σ * randn(manifold_dimension(M))
 end
 
@@ -176,7 +172,7 @@ end
 return a (Gaussian) random vector from the tangent space $T_x\mathrm{Gr}(n,k)$ with mean
 zero and standard deviation `σ` by projecting a random Matrix onto the  `x`.
 """
-function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64 = 1.0)
+function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
     Z = σ * randn(eltype(p), size(p))
     X = project(M, p, Z)
     X = X ./ norm(X)
@@ -189,7 +185,7 @@ end
 generate a random point on the Hyperbolic manifold by projecting a point from the embedding
 with respect to the Minkowsky metric.
 """
-function random_tangent(M::Hyperbolic, p, ::Val{:Gaussian}, σ = 1.0)
+function random_tangent(M::Hyperbolic, p, ::Val{:Gaussian}, σ=1.0)
     Y = σ * randn(eltype(p), size(p))
     X = project(M, p, Y)
     return X
@@ -228,7 +224,7 @@ a random skew-symmetric matrix. The function takes the real upper triangular mat
 (Gaussian) random matrix $A$ with dimension $n\times n$ and subtracts its transposed matrix.
 Finally, the matrix is ​​normalized.
 """
-function random_tangent(M::Rotations, p, ::Val{:Gaussian}, σ::Real = 1.0)
+function random_tangent(M::Rotations, p, ::Val{:Gaussian}, σ::Real=1.0)
     d = manifold_dimension(M)
     if d == 1
         return zeros(1, 1)
@@ -245,7 +241,7 @@ end
 
 return a random tangent vector in the tangent space of `p` on the `Sphere` `M`.
 """
-function random_tangent(M::Sphere, p, ::Val{:Gaussian}, σ::Float64 = 1.0)
+function random_tangent(M::Sphere, p, ::Val{:Gaussian}, σ::Float64=1.0)
     n = σ * randn(size(p)) # Gaussian in embedding
     return project(M, p, n) #project to TpM (keeps Gaussianness)
 end
@@ -257,12 +253,7 @@ generate a random tangent vector in the tangent space of the point `p` on the
 `SymmetricPositiveDefinite` manifold `M` by using a Gaussian distribution
 with standard deviation `σ` on an ONB of the tangent space.
 """
-function random_tangent(
-    M::SymmetricPositiveDefinite,
-    p,
-    ::Val{:Gaussian},
-    σ::Float64 = 0.01,
-)
+function random_tangent(M::SymmetricPositiveDefinite, p, ::Val{:Gaussian}, σ::Float64=0.01)
     # generate ONB in TxM
     I = one(p)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(I))
@@ -278,7 +269,7 @@ generate a random tangent vector in the tangent space of `p` on
 the `SymmetricPositiveDefinite` manifold `M` by using a Rician distribution
 with standard deviation `σ`.
 """
-function random_tangent(::SymmetricPositiveDefinite, p, ::Val{:Rician}, σ::Real = 0.01)
+function random_tangent(::SymmetricPositiveDefinite, p, ::Val{:Rician}, σ::Real=0.01)
     # Rician
     C = cholesky(Hermitian(p))
     R = C.L + sqrt(σ) * triu(randn(size(p, 1), size(p, 2)), 0)

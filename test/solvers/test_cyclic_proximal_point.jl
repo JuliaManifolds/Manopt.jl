@@ -10,28 +10,17 @@
         F,
         proxes,
         f;
-        λ = i -> π / (2 * i),
-        stopping_criterion = StopAfterIteration(100),
-        debug = [
-            DebugIterate(),
-            " ",
-            DebugCost(),
-            " ",
-            DebugProximalParameter(),
-            "\n",
-            10000,
+        λ=i -> π / (2 * i),
+        stopping_criterion=StopAfterIteration(100),
+        debug=[
+            DebugIterate(), " ", DebugCost(), " ", DebugProximalParameter(), "\n", 10000
         ],
-        record = [RecordProximalParameter(), RecordIterate(f), RecordCost()],
-        return_options = true,
+        record=[RecordProximalParameter(), RecordIterate(f), RecordCost()],
+        return_options=true,
     )
     fR = get_solver_result(o)
     fR2 = cyclic_proximal_point(
-        N,
-        F,
-        proxes,
-        f;
-        λ = i -> π / (2 * i),
-        stopping_criterion = StopAfterIteration(100),
+        N, F, proxes, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
     )
     @test fR == fR2
     rec = get_record(o)
