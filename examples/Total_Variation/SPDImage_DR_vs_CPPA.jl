@@ -35,7 +35,7 @@ if ExportOrig
 end
 #
 # Parameters
-η = 1.
+η = 0.7
 λ = 0.9
 α = 6.0
 #
@@ -53,8 +53,8 @@ print("--- Douglas–Rachford with η: $(η) and λ: $(λ) ---\n")
 cost(x) = fidelity(x[1]) + α * prior(x[1])
 N = PowerManifold(M, NestedPowerRepresentation(), 5)
 prox1 = (η, x) -> [prox_distance(M, η, f, x[1]), prox_parallel_TV(M, α * η, x[2:5])...]
-prox2 = (η, x) -> fill(mean(M, x, GradientDescentEstimation(); stop_iter=200), 5)
-sC = StopAfterIteration(400)
+prox2 = (η, x) -> fill(mean(M, x, GradientDescentEstimation(); stop_iter = 200), 5)
+sC = StopWhenAny(StopAfterIteration(400), StopWhenChangeLess(10^-5))
 try
     cost_threshold = load(resultsFolder * comparisonData)["compareCostFunctionValue"]
     global sC = StopWhenCostLess(cost_threshold)
