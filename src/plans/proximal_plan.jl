@@ -46,7 +46,7 @@ mutable struct ProximalProblem{mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractV
         nOP::Vector{Int},
     ) where {mT<:Manifold}
         return if length(nOP) != length(proxMaps)
-            throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of Proxes ($(length(proxMaps))."))
+            throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of proxes ($(length(proxMaps))."))
         else
             new{mT,typeof(cF),typeof(proxMaps)}(M, cF, proxMaps, nOP)
         end

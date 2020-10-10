@@ -120,7 +120,7 @@ function random_point(
     ::Val{:Gaussian},
     σ::Float64 = 1.0,
 ) where {N}
-    D = Diagonal(1 .+ randn(N)) # random diagonal matrix
+    D = Diagonal(1 .+ rand(N)) # random diagonal matrix
     s = qr(σ * randn(N, N)) # random q
     return s.Q * D * transpose(s.Q)
 end

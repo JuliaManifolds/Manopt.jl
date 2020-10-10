@@ -54,7 +54,7 @@ update_storage!
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["plans/debugOptions.jl"]
+Pages = ["plans/debug_options.jl"]
 Order = [:type, :function]
 ```
 
@@ -66,7 +66,7 @@ Further specific [`DebugAction`](@ref)s can be found at the specific Options.
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["plans/recordOptions.jl"]
+Pages = ["plans/record_options.jl"]
 Order = [:type, :function]
 Private = false
 ```
