@@ -28,8 +28,8 @@ using Manifolds, Manopt, Test, ManifoldsBase
     N3 = PowerManifold(M, 2, 2)
     N3C = PowerManifold(M, 2, 2, 2)
     x3 = [0.1 0.2; 0.3 0.5]
-    x3C = cat(x3, x3; dims=3)
-    tC = cat([0.2 0.3; 0.0 0.0], [0.1 0.0; 0.2 0.0]; dims=3)
+    x3C = cat(x3, x3; dims = 3)
+    tC = cat([0.2 0.3; 0.0 0.0], [0.1 0.0; 0.2 0.0]; dims = 3)
     @test norm(N3C, x3C, forward_logs(N3, x3) - tC) ≈ 0 atol = 10^(-16)
 
     M = Circle()

@@ -12,7 +12,10 @@ curve and a tangent vector $\eta\in T_{\beta(t)}\mathcal M$.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
-    M::Manifold, b::BezierSegment, t::Float64, η::Q
+    M::Manifold,
+    b::BezierSegment,
+    t::Float64,
+    η::Q,
 ) where {Q}
     n = length(b.pts)
     if n == 2
@@ -31,13 +34,21 @@ function adjoint_differential_bezier_control(
             Y[1:(n - i + 1)] .=
                 [ # take previous results and add start&end point effects
                     adjoint_differential_geodesic_startpoint.(
-                        Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y[1:(n - i)]
+                        Ref(M),
+                        c[i][1:(end - 1)],
+                        c[i][2:end],
+                        Ref(t),
+                        Y[1:(n - i)],
                     )...,
                     zero_tangent_vector(M, c[i][end]),
                 ] .+ [
                     zero_tangent_vector(M, c[i][1]),
                     adjoint_differential_geodesic_endpoint.(
-                        Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y[1:(n - i)]
+                        Ref(M),
+                        c[i][1:(end - 1)],
+                        c[i][2:end],
+                        Ref(t),
+                        Y[1:(n - i)],
                     )...,
                 ]
         end
@@ -67,7 +78,10 @@ See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbour
     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function adjoint_differential_bezier_control(
-    M::Manifold, b::BezierSegment, t::AbstractVector{Float64}, X::AbstractVector{Q}
+    M::Manifold,
+    b::BezierSegment,
+    t::AbstractVector{Float64},
+    X::AbstractVector{Q},
 ) where {Q}
     effects = [bt.pts for bt in adjoint_differential_bezier_control.(Ref(M), Ref(b), t, X)]
     return BezierSegment(sum(effects))
@@ -89,7 +103,10 @@ vectors $X = (\eta_i)_{i=1}^n$, $\eta_i\in T_{\beta(t_i)}\mathcal M$
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
-    M::Manifold, B::AbstractVector{<:BezierSegment}, t::Float64, X::Q
+    M::Manifold,
+    B::AbstractVector{<:BezierSegment},
+    t::Float64,
+    X::Q,
 ) where {Q}
     # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
     if (0 > t) || (t > length(B))
@@ -232,7 +249,9 @@ Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
   differentials of the logs.
 """
 function adjoint_differential_forward_logs(
-    M::PowerManifold{𝔽,TM,TSize,TPR}, p, X
+    M::PowerManifold{𝔽,TM,TSize,TPR},
+    p,
+    X,
 ) where {𝔽,TM,TSize,TPR}
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
@@ -248,11 +267,17 @@ function adjoint_differential_forward_logs(
                 j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
                 Y[M, I...] =
                     Y[M, I...] + adjoint_differential_log_basepoint(
-                        M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
+                        M.manifold,
+                        p[M, I...],
+                        p[M, J...],
+                        X[N, I..., k],
                     )
                 Y[M, J...] =
                     Y[M, J...] + adjoint_differential_log_argument(
-                        M.manifold, p[M, J...], p[M, I...], X[N, I..., k]
+                        M.manifold,
+                        p[M, J...],
+                        p[M, I...],
+                        X[N, I..., k],
                     )
             end
         end # directions

@@ -7,7 +7,9 @@
     N = PowerManifold(M, NestedPowerRepresentation(), 2)
     @test_throws ErrorException prox_distance(M, 1.0, p, q, 3)
     @test distance(
-        M, prox_distance(M, distance(M, p, q) / 2, p, q, 1), shortest_geodesic(M, p, q, 0.5)
+        M,
+        prox_distance(M, distance(M, p, q) / 2, p, q, 1),
+        shortest_geodesic(M, p, q, 0.5),
     ) ≈ 0
     (r, s) = prox_TV(M, π / 4, (p, q))
     @test norm(r - s) < eps(Float64)

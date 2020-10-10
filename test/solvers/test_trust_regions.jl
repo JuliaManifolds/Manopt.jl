@@ -22,7 +22,11 @@ function rgrad(M::ProductManifold, X::ProductRepr)
 end
 
 function e2rHess(
-    M::Grassmann, x, ξ, eGrad::Matrix{T}, Hess::Matrix{T}
+    M::Grassmann,
+    x,
+    ξ,
+    eGrad::Matrix{T},
+    Hess::Matrix{T},
 ) where {T<:Union{U,Complex{U}}} where {U<:AbstractFloat}
     pxHess = project(M, x, Hess)
     xtGrad = x' * eGrad
@@ -70,20 +74,34 @@ end
 
     x = random_point(M)
 
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; ρ_prime=0.3)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=-0.1)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ=-0.1)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=0.1, Δ=0.11)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; ρ_prime = 0.3)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar = -0.1)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ = -0.1)
+    @test_throws ErrorException trust_regions(
+        M,
+        cost,
+        rgrad,
+        x,
+        rhess;
+        Δ_bar = 0.1,
+        Δ = 0.11,
+    )
 
-    X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2))
+    X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar = 4 * sqrt(2 * 2))
     opt = trust_regions(
-        M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2), return_options=true
+        M,
+        cost,
+        rgrad,
+        x,
+        rhess;
+        Δ_bar = 4 * sqrt(2 * 2),
+        return_options = true,
     )
     @test isapprox(M, X, get_solver_result(opt))
 
     @test cost(X) + 142.5 ≈ 0 atol = 10.0^(-13)
 
-    XuR = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2), useRandom=true)
+    XuR = trust_regions(M, cost, rgrad, x, rhess; Δ_bar = 4 * sqrt(2 * 2), useRandom = true)
 
     @test cost(XuR) + 142.5 ≈ 0 atol = 10.0^(-12)
 
@@ -97,13 +115,17 @@ end
             x,
             x -> rgrad(p, x),
             ξ;
-            stepsize=2^(-9),
-            transport=ProductVectorTransport(ProjectionTransport(), ProjectionTransport()),
+            stepsize = 2^(-9),
+            transport = ProductVectorTransport(
+                ProjectionTransport(),
+                ProjectionTransport(),
+            ),
         );
-        stopping_criterion=StopWhenAny(
-            StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
+        stopping_criterion = StopWhenAny(
+            StopAfterIteration(2000),
+            StopWhenGradientNormLess(10^(-6)),
         ),
-        Δ_bar=4 * sqrt(2 * 2),
+        Δ_bar = 4 * sqrt(2 * 2),
     )
     @test cost(XaH) + 142.5 ≈ 0 atol = 10.0^(-10)
 
@@ -126,7 +148,14 @@ end
 
     η = truncated_conjugate_gradient_descent(M, cost, rgrad, x, ξ, rhess, 0.5)
     ηOpt = truncated_conjugate_gradient_descent(
-        M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true
+        M,
+        cost,
+        rgrad,
+        x,
+        ξ,
+        rhess,
+        0.5;
+        return_options = true,
     )
     @test submanifold_components(get_solver_result(ηOpt)) == submanifold_components(η)
 end

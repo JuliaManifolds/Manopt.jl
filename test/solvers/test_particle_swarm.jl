@@ -10,11 +10,11 @@ using Random
         x_start2 = deepcopy(x_start)
 
         Random.seed!(35)
-        o = particle_swarm(M, F; x0=x_start, return_options=true)
+        o = particle_swarm(M, F; x0 = x_start, return_options = true)
         g = get_solver_result(o)
 
         Random.seed!(35)
-        g2 = particle_swarm(M, F; x0=x_start2, return_options=false)
+        g2 = particle_swarm(M, F; x0 = x_start2, return_options = false)
         @test isequal(g, g2)
 
         # the cost of g and the p[i]'s are not greater after one step 
@@ -41,7 +41,7 @@ using Random
             # check that the new particle locations are on the manifold
             @test is_manifold_point(M, o.x[i], true)
             # check that the new velocities are tangent vectors of the original particle locations
-            @test is_tangent_vector(M, o.x[i], o.velocity[i], true; atol=5 * 10^(-16))
+            @test is_tangent_vector(M, o.x[i], o.velocity[i], true; atol = 5 * 10^(-16))
         end
     end
 end

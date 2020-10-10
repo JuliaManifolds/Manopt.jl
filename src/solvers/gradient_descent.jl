@@ -31,12 +31,13 @@ function gradient_descent(
     F::TF,
     ∇F::TDF,
     x;
-    stepsize::Stepsize=ConstantStepsize(1.0),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(200), StopWhenGradientNormLess(10.0^-8)
+    stepsize::Stepsize = ConstantStepsize(1.0),
+    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
+    stopping_criterion::StoppingCriterion = StopWhenAny(
+        StopAfterIteration(200),
+        StopWhenGradientNormLess(10.0^-8),
     ),
-    return_options=false,
+    return_options = false,
     kwargs..., #collect rest
 ) where {mT<:Manifold,TF,TDF}
     p = GradientProblem(M, F, ∇F)

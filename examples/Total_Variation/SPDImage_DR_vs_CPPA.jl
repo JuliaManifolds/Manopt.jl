@@ -24,9 +24,14 @@ end
 f = artificial_SPD_image2(32)
 if ExportOrig
     asymptote_export_SPD(
-        resultsFolder * experimantName * "orig.asy"; data=f, scaleAxes=(7.5, 7.5, 7.5)
+        resultsFolder * experimantName * "orig.asy";
+        data = f,
+        scaleAxes = (7.5, 7.5, 7.5),
     )
-    render_asymptote(resultsFolder * experimentName * "-orig.asy"; render=asy_render_detail)
+    render_asymptote(
+        resultsFolder * experimentName * "-orig.asy";
+        render = asy_render_detail,
+    )
 end
 #
 # Parameters
@@ -48,9 +53,12 @@ print("--- Douglas–Rachford with η: $(η) and λ: $(λ) ---\n")
 cost(x) = fidelity(x) + α * prior(x)
 N = PowerManifold(pixelM, NestedPowerRepresentation(), 5)
 prox1 =
-    (η, x) ->
-        cat(prox_distance(M, η, f, x[N, 1]), prox_parallel_TV(M, α * η, x[N, 2:5]); dims=1)
-prox2 = (η, x) -> fill(mean(M, x; stopping_criterion=StopAfterIteration(20)), 5)
+    (η, x) -> cat(
+        prox_distance(M, η, f, x[N, 1]),
+        prox_parallel_TV(M, α * η, x[N, 2:5]);
+        dims = 1,
+    )
+prox2 = (η, x) -> fill(mean(M, x; stopping_criterion = StopAfterIteration(20)), 5)
 sC = StopAfterIteration(400)
 try
     cost_threshold = load(resultsFolder * comparisonData)["compareCostFunctionValue"]
@@ -67,13 +75,13 @@ x0 = f
     cost,
     [prox1, prox2],
     f;
-    λ=i -> η,
-    α=i -> λ, # map from Paper notation of BPS16 to toolbox notation
-    debug=[:Iteration, " | ", :Change, " | ", :Cost, "\n", 10, :Stop],
-    record=[:Iteration, :Cost],
-    stopping_criterion=sC,
-    parallel=5,
-    return_options=true,
+    λ = i -> η,
+    α = i -> λ, # map from Paper notation of BPS16 to toolbox notation
+    debug = [:Iteration, " | ", :Change, " | ", :Cost, "\n", 10, :Stop],
+    record = [:Iteration, :Cost],
+    stopping_criterion = sC,
+    parallel = 5,
+    return_options = true,
 )
 y = get_solver_result(o)
 r = get_record(o)
@@ -85,18 +93,22 @@ if ExportResult
         resultsFolder *
         experimantName *
         "img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy";
-        data=y,
-        render=4,
-        scaleAxes=(7.5, 7.5, 7.5),
+        data = y,
+        render = 4,
+        scaleAxes = (7.5, 7.5, 7.5),
     )
     render_asymptote(
         resultsFolder *
         experimentName *
         "img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy";
-        render=asy_render_detail,
+        render = asy_render_detail,
     )
 end
 if ExportTable
-    A = cat([ri[1] for ri in r], [ri[2] for ri in r]; dims=2)
-    CSV.write(resultsFolder * experimantName * "-Cost.csv", DataFrame(A); writeheader=false)
+    A = cat([ri[1] for ri in r], [ri[2] for ri in r]; dims = 2)
+    CSV.write(
+        resultsFolder * experimantName * "-Cost.csv",
+        DataFrame(A);
+        writeheader = false,
+    )
 end

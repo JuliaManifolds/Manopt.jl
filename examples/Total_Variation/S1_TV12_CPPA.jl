@@ -26,25 +26,25 @@ f = artificial_S1_signal(n)
 xCompare = f
 fn = exp.(Ref(M), f, random_tangent.(Ref(M), f, Val(:Gaussian), σ))
 data = fn
-t = range(0.0, 1.0; length=n)
+t = range(0.0, 1.0; length = n)
 
 if plotAndExportResult
     scene = scatter(
         t,
         f;
-        markersize=2,
-        markercolor=dataColor,
-        markerstrokecolor=dataColor,
-        lab="original",
+        markersize = 2,
+        markercolor = dataColor,
+        markerstrokecolor = dataColor,
+        lab = "original",
     )
     scatter!(
         scene,
         t,
         fn;
-        markersize=2,
-        markercolor=nColor,
-        markerstrokecolor=nColor,
-        lab="noisy",
+        markersize = 2,
+        markercolor = nColor,
+        markerstrokecolor = nColor,
+        lab = "noisy",
     )
     yticks!(
         [-π, -π / 2, 0, π / 2, π],
@@ -66,8 +66,8 @@ o = cyclic_proximal_point(
     F,
     proxes,
     data;
-    λ=i -> π / (2 * i),
-    debug=Dict(
+    λ = i -> π / (2 * i),
+    debug = Dict(
         :Stop => DebugStoppingCriterion(),
         :Step => DebugEvery(
             DebugGroup([
@@ -84,8 +84,8 @@ o = cyclic_proximal_point(
         ),
         :Start => DebugDivider("Starting the solver\n"),
     ),
-    record=[:Iteration, :Cost, :Change, :Iterate],
-    return_options=true,
+    record = [:Iteration, :Cost, :Change, :Iterate],
+    return_options = true,
 )
 fR = get_solver_result(o)
 r = get_record(o)
@@ -95,19 +95,19 @@ if plotAndExportResult
     scene = scatter(
         t,
         f;
-        markersize=2,
-        markercolor=dataColor,
-        markerstrokecolor=dataColor,
-        lab="original",
+        markersize = 2,
+        markercolor = dataColor,
+        markerstrokecolor = dataColor,
+        lab = "original",
     )
     scatter!(
         scene,
         t,
         fR;
-        markersize=2,
-        markercolor=nColor,
-        markerstrokecolor=nColor,
-        lab="reconstruction",
+        markersize = 2,
+        markercolor = nColor,
+        markerstrokecolor = nColor,
+        lab = "reconstruction",
     )
     yticks!(
         [-π, -π / 2, 0, π / 2, π],

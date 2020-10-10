@@ -60,27 +60,41 @@ mutable struct NelderMeadOptions{T,Tα<:Real,Tγ<:Real,Tρ<:Real,Tσ<:Real} <: O
     costs::Vector{Float64}
     function NelderMeadOptions(
         M::MT;
-        stop::StoppingCriterion=StopAfterIteration(2000),
-        α=1.0,
-        γ=2.0,
-        ρ=1 / 2,
-        σ=1 / 2,
+        stop::StoppingCriterion = StopAfterIteration(2000),
+        α = 1.0,
+        γ = 2.0,
+        ρ = 1 / 2,
+        σ = 1 / 2,
     ) where {MT<:Manifold}
         p = [random_point(M) for i in 1:(manifold_dimension(M) + 1)]
         return new{eltype(p),typeof(α),typeof(γ),typeof(ρ),typeof(σ)}(
-            p, stop, α, γ, ρ, σ, p[1], []
+            p,
+            stop,
+            α,
+            γ,
+            ρ,
+            σ,
+            p[1],
+            [],
         )
     end
     function NelderMeadOptions(
         population::Vector{T},
-        stop::StoppingCriterion=StopAfterIteration(2000);
-        α=1.0,
-        γ=2.0,
-        ρ=1 / 2,
-        σ=1 / 2,
+        stop::StoppingCriterion = StopAfterIteration(2000);
+        α = 1.0,
+        γ = 2.0,
+        ρ = 1 / 2,
+        σ = 1 / 2,
     ) where {T}
         return new{T,typeof(α),typeof(γ),typeof(ρ),typeof(σ)}(
-            population, stop, α, γ, ρ, σ, population[1], []
+            population,
+            stop,
+            α,
+            γ,
+            ρ,
+            σ,
+            population[1],
+            [],
         )
     end
 end

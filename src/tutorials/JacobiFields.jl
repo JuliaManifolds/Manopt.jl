@@ -7,9 +7,8 @@
 # [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s.
 #
 # We first initialize the manifold
-exportFolder = joinpath(
-    @__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials"
-) #src
+exportFolder =
+    joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials") #src
 using Manopt, Manifolds
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)
 using Colors
@@ -27,14 +26,14 @@ nothing #hide
 # looks as follows using the [`asymptote_export_S2_signals`](@ref) export
 asymptote_export_S2_signals( #src
     exportFolder * "/jacobiGeodesic.asy"; #src
-    curves=[geodesicCurve], #src
-    points=[[p, q]], #src
-    colors=Dict(:curves => [black], :points => [TolVibrantOrange]), #src
-    dotSize=3.5, #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.0, 1.0, 0.5), #src
+    curves = [geodesicCurve], #src
+    points = [[p, q]], #src
+    colors = Dict(:curves => [black], :points => [TolVibrantOrange]), #src
+    dotSize = 3.5, #src
+    lineWidth = 0.75, #src
+    cameraPosition = (1.0, 1.0, 0.5), #src
 )#src
-render_asymptote(exportFolder * "/jacobiGeodesic.asy"; render=2) #src
+render_asymptote(exportFolder * "/jacobiGeodesic.asy"; render = 2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesic.asy";
@@ -99,21 +98,21 @@ V = [Tuple([a, b]) for (a, b) in zip(r, W)]
 # and add that as one further set to the Asymptote export.
 asymptote_export_S2_signals( #src
     exportFolder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
-    curves=[geodesicCurve], #src
-    points=[[p, q], r], #src
-    tVectors=[V], #src
-    colors=Dict( #src
+    curves = [geodesicCurve], #src
+    points = [[p, q], r], #src
+    tVectors = [V], #src
+    colors = Dict( #src
         :curves => [black], #src
         :points => [TolVibrantOrange, TolVibrantCyan], #src
         :tvectors => [TolVibrantCyan], #src
     ), #src
-    dotSizes=[3.5, 2.0], #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.0, 1.0, 0.5), #src
+    dotSizes = [3.5, 2.0], #src
+    lineWidth = 0.75, #src
+    cameraPosition = (1.0, 1.0, 0.5), #src
 ) #src
 render_asymptote( #src
     exportFolder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
-    render=2, #src
+    render = 2, #src
 ) #src
 #md #
 #md # ```julia
@@ -140,19 +139,19 @@ V2 = [Tuple([a, b]) for (a, b) in zip(r, W2)]
 V3 = [Tuple([a, b]) for (a, b) in zip(r, W2 + W)]
 asymptote_export_S2_signals( #src
     exportFolder * "/jacobiGeodesicResult.asy"; #src
-    curves=[geodesicCurve], #src
-    points=[[p, q], r], #src
-    tVectors=[V, V2, V3], #src
-    colors=Dict( #src
+    curves = [geodesicCurve], #src
+    points = [[p, q], r], #src
+    tVectors = [V, V2, V3], #src
+    colors = Dict( #src
         :curves => [black], #src
         :points => [TolVibrantOrange, TolVibrantCyan], #src
         :tvectors => [TolVibrantCyan, TolVibrantCyan, TolVibrantTeal], #src
     ), #src
-    dotSizes=[3.5, 2.0], #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.0, 1.0, 0.0), #src
+    dotSizes = [3.5, 2.0], #src
+    lineWidth = 0.75, #src
+    cameraPosition = (1.0, 1.0, 0.0), #src
 ) #src
-render_asymptote(exportFolder * "/jacobiGeodesicResult.asy"; render=2) #src
+render_asymptote(exportFolder * "/jacobiGeodesicResult.asy"; render = 2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesicResult.asy";
 #md #    render = asyResolution,

@@ -18,11 +18,11 @@ render_detail = 2
 asy_export = true
 asy_export_summary = true
 render_video = true
-λRange = collect(range(10.0, 0.0; length=1001))[1:(end - 1)] #exclude zero.
-colors = RGBA.(get.(Ref(viridis), range(0.0, 1.0; length=length(λRange))))
+λRange = collect(range(10.0, 0.0; length = 1001))[1:(end - 1)] #exclude zero.
+colors = RGBA.(get.(Ref(viridis), range(0.0, 1.0; length = length(λRange))))
 
-curve_samples = [range(0, 3; length=101)...] # sample curve for the gradient
-curve_samples_plot = [range(0, 3; length=201)...] # sample curve for asy exports
+curve_samples = [range(0, 3; length = 101)...] # sample curve for the gradient
+curve_samples_plot = [range(0, 3; length = 201)...] # sample curve for asy exports
 
 experimentFolder = "examples/Minimize_Acceleration/S2_Bezier/video/"
 experimentName = "Bezier_Approximation_video"
@@ -48,11 +48,12 @@ for i in eachindex(λRange)
         F,
         ∇F,
         x0;
-        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
-        stopping_criterion=StopWhenAny(
-            StopWhenChangeLess(5 * 10.0^(-6)), StopAfterIteration(15000)
+        stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
+        stopping_criterion = StopWhenAny(
+            StopWhenChangeLess(5 * 10.0^(-6)),
+            StopAfterIteration(15000),
         ),
-        debug=[
+        debug = [
             :Stop,
             "$(λ) ",
             :Iteration,
@@ -78,31 +79,33 @@ if asy_export
         B_opt = get_bezier_segments(M, results[i], degs, :differentiable)
         asymptote_export_S2_signals(
             experimentFolder * experimentName * "-$(@sprintf "%04.0f" i)-result.asy";
-            curves=[resulting_curves[i], cP],
-            points=[get_bezier_junctions(M, B_opt), get_bezier_inner_points(M, B_opt)],
-            colors=Dict(
-                :curves => [colors[i], curveColor], :points => [colors[i], colors[i]]
+            curves = [resulting_curves[i], cP],
+            points = [get_bezier_junctions(M, B_opt), get_bezier_inner_points(M, B_opt)],
+            colors = Dict(
+                :curves => [colors[i], curveColor],
+                :points => [colors[i], colors[i]],
             ),
-            cameraPosition=cameraPosition,
-            lineWidths=[1.0, 0.5],
-            dotSize=2.0,
+            cameraPosition = cameraPosition,
+            lineWidths = [1.0, 0.5],
+            dotSize = 2.0,
         )
         render_asymptote(
             experimentFolder * experimentName * "-$(@sprintf "%04.0f" i)-result.asy";
-            render=render_detail,
+            render = render_detail,
         )
     end
 end
 if asy_export_summary
     asymptote_export_S2_signals(
         experimentFolder * experimentName * "-Summary-result.asy";
-        curves=[cP, resulting_curves...],
-        colors=Dict(:curves => [curveColor, colors...]),
-        cameraPosition=cameraPosition,
-        lineWidths=[0.75, [1.5 for i in eachindex(λRange)]...],
+        curves = [cP, resulting_curves...],
+        colors = Dict(:curves => [curveColor, colors...]),
+        cameraPosition = cameraPosition,
+        lineWidths = [0.75, [1.5 for i in eachindex(λRange)]...],
     )
     render_asymptote(
-        experimentFolder * experimentName * "-Summary-result.asy"; render=render_detail
+        experimentFolder * experimentName * "-Summary-result.asy";
+        render = render_detail,
     )
 end
 if render_video

@@ -25,9 +25,10 @@ f = artificial_S2_whirl_image(64)
 pixelM = Sphere(2);
 
 if ExportOrig
-    asymptote_export_S2_data(resultsFolder * experimentName * "-orig.asy"; data=f)
+    asymptote_export_S2_data(resultsFolder * experimentName * "-orig.asy"; data = f)
     render_asymptote(
-        resultsFolder * experimentName * "-orig.asy"; render=asymptote_render_detail
+        resultsFolder * experimentName * "-orig.asy";
+        render = asymptote_render_detail,
     )
 end
 #
@@ -52,7 +53,7 @@ x0 = f
     cost,
     proxes,
     x0;
-    debug=[
+    debug = [
         :Iteration,
         " | ",
         DebugProximalParameter(),
@@ -64,10 +65,10 @@ x0 = f
         100,
         :Stop,
     ],
-    record=[:Iteration, :Iterate, :Cost],
-    stopping_criterion=StopAfterIteration(maxIterations),
-    λ=i -> π / (2 * i),
-    return_options=true,
+    record = [:Iteration, :Iterate, :Cost],
+    stopping_criterion = StopAfterIteration(maxIterations),
+    λ = i -> π / (2 * i),
+    return_options = true,
 )
 y = get_solver_result(o)
 yRec = get_record(o)
@@ -78,21 +79,21 @@ if ExportResult
         resultsFolder *
         experimentName *
         "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
-        data=y,
+        data = y,
     ) #(6)
     render_asymptote(
         resultsFolder *
         experimentName *
         "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
-        render=asymptote_render_detail,
+        render = asymptote_render_detail,
     )
 end
 if ExportTable
-    A = cat([y[1] for y in yRec], [y[3] for y in yRec]; dims=2)
+    A = cat([y[1] for y in yRec], [y[3] for y in yRec]; dims = 2)
     CSV.write(
         string(resultsFolder * experimentName * "-Result.csv"),
         DataFrame(A);
-        writeheader=false,
+        writeheader = false,
     )
     save(
         resultsFolder * experimentName * "-CostValue.jld2",

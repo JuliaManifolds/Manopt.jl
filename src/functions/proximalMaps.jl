@@ -16,7 +16,7 @@ parameter λ of $\varphi(x) = \frac{1}{p}d_{\mathcal M}^p(f,x)$.
 # Ouput
 * `y` – the result of the proximal map of $\varphi$
 """
-function prox_distance(M::Manifold, λ, f, x, p::Int=2)
+function prox_distance(M::Manifold, λ, f, x, p::Int = 2)
     d = distance(M, f, x)
     if p == 2
         t = λ / (1 + λ)
@@ -51,7 +51,12 @@ parameter `λ`.
 * `(y1,y2)` – resulting tuple of points of the
   $\operatorname{prox}_{\lambda\varphi}($ `(x1,x2)` $)$
 """
-function prox_TV(M::mT, λ::Number, pointTuple::Tuple{T,T}, p::Int=1) where {mT<:Manifold,T}
+function prox_TV(
+    M::mT,
+    λ::Number,
+    pointTuple::Tuple{T,T},
+    p::Int = 1,
+) where {mT<:Manifold,T}
     x1 = pointTuple[1]
     x2 = pointTuple[2]
     d = distance(M, x1, x2)
@@ -86,7 +91,7 @@ The parameter `λ` is the prox parameter.
 * `y` – resulting  point containinf with all mentioned proximal
   points evaluated (in a cylic order).
 """
-function prox_TV(M::PowerManifold{𝔽,N,T}, λ, x, p::Int=1) where {𝔽,N<:Manifold,T}
+function prox_TV(M::PowerManifold{𝔽,N,T}, λ, x, p::Int = 1) where {𝔽,N<:Manifold,T}
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -132,7 +137,7 @@ The parameter `λ` is the prox parameter.
 
 *See also* [`prox_TV`](@ref)
 """
-function prox_parallel_TV(M::PowerManifold, λ, x::Array{T,1}, p::Int=1) where {T}
+function prox_parallel_TV(M::PowerManifold, λ, x::Array{T,1}, p::Int = 1) where {T}
     R = CartesianIndices(x[1])
     d = ndims(x[1])
     if length(x) != 2 * d
@@ -151,9 +156,8 @@ function prox_parallel_TV(M::PowerManifold, λ, x::Array{T,1}, p::Int=1) where {
                     if all(J .<= maxInd) # is this neighbor in range?
                         j = CartesianIndex(J...) # neigbbor index as Cartesian Index
                         # parallel means we apply each (direction even/odd) to a seperate copy of the data.
-                        (y[k, l + 1][i], y[k, l + 1][j]) = prox_TV(
-                            M.manifold, λ, (x[k, l + 1][i], x[k, l + 1][j]), p
-                        ) # Compute TV on these
+                        (y[k, l + 1][i], y[k, l + 1][j]) =
+                            prox_TV(M.manifold, λ, (x[k, l + 1][i], x[k, l + 1][j]), p) # Compute TV on these
                     end
                 end
             end # i in R
@@ -189,8 +193,8 @@ function prox_TV2(
     M::Manifold,
     λ,
     pointTuple::Tuple{T,T,T},
-    p::Int=1;
-    stopping_criterion::StoppingCriterion=StopAfterIteration(5),
+    p::Int = 1;
+    stopping_criterion::StoppingCriterion = StopAfterIteration(5),
     kwargs...,
 ) where {T}
     if p != 1
@@ -202,11 +206,16 @@ function prox_TV2(
     F(x) = 1 / 2 * distance(PowM, PowX, x)^2 + λ * costTV2(PowM, x)
     ∂F(x) = log(PowM, x, PowX) + λ * ∇TV2(PowM, x)
     xR = subgradient_method(
-        PowM, F, ∂F, xInit; stopping_criterion=stopping_criterion, kwargs...
+        PowM,
+        F,
+        ∂F,
+        xInit;
+        stopping_criterion = stopping_criterion,
+        kwargs...,
     )
     return (xR...,)
 end
-function prox_TV2(M::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
+function prox_TV2(M::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int = 1) where {T}
     w = @SVector [1.0, -2.0, 1.0]
     x = SVector(pointTuple)
     if p == 1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
@@ -221,7 +230,7 @@ function prox_TV2(M::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
         throw(ErrorException("Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"))
     end
 end
-function prox_TV2(M::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
+function prox_TV2(M::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int = 1) where {T}
     w = @SVector [1.0, -2.0, 1.0]
     x = SVector(pointTuple)
     if p == 1 # Example 3.2 in Bergmann, Laus, Steidl, Weinmann, 2014.
@@ -257,7 +266,7 @@ The parameter `λ` is the prox parameter.
 * `y` – resulting point with all mentioned proximal points
   evaluated (in a cylic order).
 """
-function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
+function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int = 1) where {N,T}
     power_size = power_dimensions(M)
     R = CartesianIndices(power_size)
     d = length(size(x))
@@ -276,7 +285,10 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
                         jBackward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
                         (y[jBackward], y[i], y[jForward]) =
                             prox_TV2(
-                                M.manifold, λ, (y[jBackward], y[i], y[jForward]), p
+                                M.manifold,
+                                λ,
+                                (y[jBackward], y[i], y[jForward]),
+                                p,
                             ).data # Compute TV on these
                     end
                 end # if mod 3
@@ -305,7 +317,7 @@ _Collaborative Total Variation: A General Framework for Vectorial TV Models_
 norm is not on a manifold but on a vector space, see their Example 3 for
 details.
 """
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0)
+function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p = 2.0, q = 1.0)
     # Ξ = forward_logs(M,x)
     pdims = power_dimensions(N)
     if length(pdims) == 1
@@ -325,9 +337,9 @@ function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0)
             normΞ = norm.(Ref(N.manifold), x, Ξ)
             return max.(normΞ .- λ, 0.0) ./ ((normΞ .== 0) .+ normΞ) .* Ξ
         elseif p == 2 # Example 3 case 3
-            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
+            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims = d + 1))
             if length(iRep) > 1
-                norms = repeat(norms; inner=iRep)
+                norms = repeat(norms; inner = iRep)
             end
             # if the norm is zero add 1 to avoid division by zero, also then the
             # nominator is already (max(-λ,0) = 0) so it stays zero then
@@ -337,14 +349,14 @@ function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0)
         end
     elseif q == Inf
         if p == 2
-            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
+            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims = d + 1))
             if length(iRep) > 1
-                norms = repeat(norms; inner=iRep)
+                norms = repeat(norms; inner = iRep)
             end
         elseif p == 1
-            norms = sum(norm.(Ref(N.manifold), x, Ξ); dims=d + 1)
+            norms = sum(norm.(Ref(N.manifold), x, Ξ); dims = d + 1)
             if length(iRep) > 1
-                norms = repeat(norms; inner=iRep)
+                norms = repeat(norms; inner = iRep)
             end
         elseif p == Inf
             norms = norm.(Ref(N.manifold), x, Ξ)
@@ -355,7 +367,7 @@ function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0)
     end # end q
     return throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Float64=1.0)
+function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Float64 = 1.0)
     return prox_collaborative_TV(N, λ, x, Ξ, Float64(p), q)
 end
 function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Float64, q::Int)

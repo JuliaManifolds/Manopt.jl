@@ -67,17 +67,18 @@ function trust_regions(
     ∇F::TdF,
     x,
     H::TH;
-    retraction::Tretr=exp,
-    preconditioner::Tprec=(M, x, ξ) -> ξ,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(1000), StopWhenGradientNormLess(10^(-6))
+    retraction::Tretr = exp,
+    preconditioner::Tprec = (M, x, ξ) -> ξ,
+    stopping_criterion::StoppingCriterion = StopWhenAny(
+        StopAfterIteration(1000),
+        StopWhenGradientNormLess(10^(-6)),
     ),
-    Δ_bar=sqrt(manifold_dimension(M)),
-    Δ=Δ_bar / 8,
-    useRandom::Bool=false,
-    ρ_prime::Float64=0.1,
-    ρ_regularization=1000.0,
-    return_options=false,
+    Δ_bar = sqrt(manifold_dimension(M)),
+    Δ = Δ_bar / 8,
+    useRandom::Bool = false,
+    ρ_prime::Float64 = 0.1,
+    ρ_regularization = 1000.0,
+    return_options = false,
     kwargs..., #collect rest
 ) where {MT<:Manifold,TF,TdF,TH,Tretr,Tprec}
     (ρ_prime >= 0.25) &&
@@ -87,7 +88,14 @@ function trust_regions(
         throw(ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."))
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TrustRegionsOptions(
-        x, stopping_criterion, Δ, Δ_bar, retraction, useRandom, ρ_prime, ρ_regularization
+        x,
+        stopping_criterion,
+        Δ,
+        Δ_bar,
+        retraction,
+        useRandom,
+        ρ_prime,
+        ρ_regularization,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -122,10 +130,10 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
         eta,
         p.hessian,
         o.Δ;
-        preconditioner=p.precon,
-        useRandom=o.useRand,
+        preconditioner = p.precon,
+        useRandom = o.useRand,
         #debug = [:Iteration," ",:Stop],
-        return_options=true,
+        return_options = true,
     )
     option = get_options(opt) # remove decorators
     η = get_solver_result(option)

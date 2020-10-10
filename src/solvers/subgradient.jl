@@ -34,10 +34,10 @@ function subgradient_method(
     F::TF,
     ∂F::TdF,
     x;
-    retraction::TRetr=ExponentialRetraction(),
-    stepsize::Stepsize=DecreasingStepsize(injectivity_radius(M, x) / 5),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
-    return_options=false,
+    retraction::TRetr = ExponentialRetraction(),
+    stepsize::Stepsize = DecreasingStepsize(injectivity_radius(M, x) / 5),
+    stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
+    return_options = false,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr}
     p = SubGradientProblem(M, F, ∂F)

@@ -4,9 +4,8 @@ using Manopt, Documenter, Literate
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
 tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
-tutorials = [
-    "MeanAndMedian", "BezierCurves", "GradientOfSecondOrderDifference", "JacobiFields"
-]
+tutorials =
+    ["MeanAndMedian", "BezierCurves", "GradientOfSecondOrderDifference", "JacobiFields"]
 menuEntries = [
     "get Started: Optimize!",
     "work with Bézier curves",
@@ -21,17 +20,17 @@ for (i, tutorial) in enumerate(tutorials)
     Literate.markdown(
         sourceFile,
         tutorialsOutputPath;
-        name=tutorial,
+        name = tutorial,
         # codefence = "```julia" => "```",
-        credit=false,
+        credit = false,
     )
     push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
 end
 makedocs(;
-    format=Documenter.HTML(; prettyurls=false),
-    modules=[Manopt],
-    sitename="Manopt.jl",
-    pages=[
+    format = Documenter.HTML(; prettyurls = false),
+    modules = [Manopt],
+    sitename = "Manopt.jl",
+    pages = [
         "Home" => "index.md",
         "About" => "about.md",
         "How to..." => TutorialMenu,
@@ -68,4 +67,4 @@ makedocs(;
         "Function Index" => "list.md",
     ],
 )
-deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)
+deploydocs(; repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)
