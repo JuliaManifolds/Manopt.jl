@@ -63,10 +63,10 @@ mutable struct RecordOptions{O<:Options,TRD<:NamedTuple} <: Options
     end
 end
 function RecordOptions(o::O, dR::D) where {O<:Options,D<:RecordAction}
-    return RecordOptions{O}(o; All = dR)
+    return RecordOptions{O}(o; All=dR)
 end
 function RecordOptions(o::O, dR::Array{<:RecordAction,1}) where {O<:Options}
-    return RecordOptions{O}(o; All = RecordGroup(dR))
+    return RecordOptions{O}(o; All=RecordGroup(dR))
 end
 function RecordOptions(o::O, dR::Dict{Symbol,<:RecordAction}) where {O<:Options}
     return RecordOptions{O}(o; dR...)
@@ -96,7 +96,7 @@ return the recorded values from within the [`RecordOptions`](@ref) `o` that wher
 recorded with respect to the `Symbol s` as an `Array`. The default refers to
 any recordings during an Iteration represented by the Symbol `:Step`
 """
-function get_record(o::RecordOptions, s::Symbol = :Step)
+function get_record(o::RecordOptions, s::Symbol=:Step)
     if haskey(o.recordDictionary, s)
         return get_record(o.recordDictionary[s])
     elseif haskey(o.recordDictionary, :All)
@@ -105,7 +105,7 @@ function get_record(o::RecordOptions, s::Symbol = :Step)
         error("No record known for key found, since neither :$s nor :All are present.")
     end
 end
-get_record(o::Options, s::Symbol = :Step) = get_record(o, s, dispatch_options_decorator(o))
+get_record(o::Options, s::Symbol=:Step) = get_record(o, s, dispatch_options_decorator(o))
 get_record(o::Options, s, ::Val{true}) = get_record(o.options, s)
 get_record(o::Options, s, ::Val{false}) = error("No Record decoration found")
 
@@ -169,7 +169,7 @@ mutable struct RecordEvery <: RecordAction
     record::RecordAction
     every::Int
     alwaysUpdate::Bool
-    function RecordEvery(r::RecordAction, every::Int = 1, alwaysUpdate::Bool = true)
+    function RecordEvery(r::RecordAction, every::Int=1, alwaysUpdate::Bool=true)
         return new(r, every, alwaysUpdate)
     end
 end
@@ -199,10 +199,10 @@ during the last iteration.
 mutable struct RecordChange <: RecordAction
     recordedValues::Array{Float64,1}
     storage::StoreOptionsAction
-    function RecordChange(a::StoreOptionsAction = StoreOptionsAction((:x,)))
+    function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:x,)))
         return new(Array{Float64,1}(), a)
     end
-    function RecordChange(x0, a::StoreOptionsAction = StoreOptionsAction((:x,)))
+    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:x,)))
         update_storage!(a, Dict(:x => x0))
         return new(Array{Float64,1}(), a)
     end
@@ -254,18 +254,11 @@ mutable struct RecordEntryChange <: RecordAction
     field::Symbol
     distance::Any
     storage::StoreOptionsAction
-    function RecordEntryChange(
-        f::Symbol,
-        d,
-        a::StoreOptionsAction = StoreOptionsAction((f,)),
-    )
+    function RecordEntryChange(f::Symbol, d, a::StoreOptionsAction=StoreOptionsAction((f,)))
         return new(Float64[], f, d, a)
     end
     function RecordEntryChange(
-        v::T where {T},
-        f::Symbol,
-        d,
-        a::StoreOptionsAction = StoreOptionsAction((f,)),
+        v::T where {T}, f::Symbol, d, a::StoreOptionsAction=StoreOptionsAction((f,))
     )
         update_storage!(a, Dict(f => v))
         return new(Float64[], f, d, a)
@@ -361,7 +354,7 @@ function RecordFactory(o::O, a::Array{<:Any,1}) where {O<:Options}
     if length(e) > 0
         record = RecordEvery(record, last(e))
     end
-    return (; All = record)
+    return (; All=record)
 end
 @doc raw"""
     RecordActionFactory(s)

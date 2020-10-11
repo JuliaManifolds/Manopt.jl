@@ -14,8 +14,8 @@ This example appeared in Sec. 5.2, second example, of
 using Manopt, Manifolds, Colors, ColorSchemes, Makie
 λ = 50.0
 
-curve_samples = [range(0, 3; length = 1601)...] # sample curve for the gradient
-curve_samples_plot = [range(0, 3; length = 1601)...] # sample curve for asy exports
+curve_samples = [range(0, 3; length=1601)...] # sample curve for the gradient
+curve_samples_plot = [range(0, 3; length=1601)...] # sample curve for asy exports
 
 experimentFolder = "examples/Minimize_Acceleration/R3_Bezier/"
 experimentName = "Bezier_R3_Approximation"
@@ -51,12 +51,7 @@ pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
 function F(pB)
     return cost_L2_acceleration_bezier(
-        M,
-        pB,
-        get_bezier_degrees(M, B),
-        curve_samples,
-        λ,
-        dataP,
+        M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP
     )
 end
 ∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP)
@@ -66,13 +61,13 @@ pB_opt = gradient_descent(
     F,
     ∇F,
     x0;
-    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001), # use Armijo lineSearch
-    stopping_criterion = StopWhenAny(
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001), # use Armijo lineSearch
+    stopping_criterion=StopWhenAny(
         StopWhenChangeLess(10.0^(-16)),
         StopWhenGradientNormLess(10.0^-9),
         StopAfterIteration(300),
     ),
-    debug = [
+    debug=[
         :Stop,
         :Iteration,
         " | ",
@@ -97,14 +92,14 @@ scatter!(
     [p0[1], p1[1], p2[1], p3[1]],
     [p0[2], p1[2], p2[2], p3[2]],
     [p0[3], p1[3], p2[3], p3[3]];
-    color = pColor,
+    color=pColor,
 )
 
-lines!(scene, resPmat[1, :], resPmat[2, :], resPmat[3, :]; color = ξColor, linewidth = 1.5)
+lines!(scene, resPmat[1, :], resPmat[2, :], resPmat[3, :]; color=ξColor, linewidth=1.5)
 scatter!(
     scene,
     [res_cp[1][1], res_cp[2][1], res_cp[3][1], res_cp[4][1]],
     [res_cp[1][2], res_cp[2][2], res_cp[3][2], res_cp[4][2]],
     [res_cp[1][3], res_cp[2][3], res_cp[3][3], res_cp[4][3]];
-    color = dColor,
+    color=dColor,
 )

@@ -32,13 +32,12 @@ function cyclic_proximal_point(
     F::TF,
     proxes::Union{Tuple,AbstractVector},
     x0;
-    evaluationOrder::EvalOrder = LinearEvalOrder(),
-    stopping_criterion::StoppingCriterion = StopWhenAny(
-        StopAfterIteration(5000),
-        StopWhenChangeLess(10.0^-12),
+    evaluationOrder::EvalOrder=LinearEvalOrder(),
+    stopping_criterion::StoppingCriterion=StopWhenAny(
+        StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)
     ),
-    λ = i -> 1 / i,
-    return_options = false,
+    λ=i -> 1 / i,
+    return_options=false,
     kwargs..., #decorator options
 ) where {MT<:Manifold,TF}
     p = ProximalProblem(M, F, proxes)

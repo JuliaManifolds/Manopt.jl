@@ -46,8 +46,9 @@
 #
 # ## The given Dataset
 #
-exportFolder =
-    joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials") #src
+exportFolder = joinpath(
+    @__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials"
+) #src
 using Manopt, Manifolds
 using Random, Colors
 # For a persistent random set we use
@@ -70,12 +71,12 @@ nothing #hide
 #
 asymptote_export_S2_signals( #src
     exportFolder * "/startDataAndCenter.asy"; #src
-    points = [[x], data], #src
-    colors = Dict(:points => [TolVibrantBlue, TolVibrantTeal]), #src
-    dotSize = 3.5, #src
-    cameraPosition = (1.0, 0.5, 0.5), #src
+    points=[[x], data], #src
+    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]), #src
+    dotSize=3.5, #src
+    cameraPosition=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataAndCenter.asy"; render = 2) #src
+render_asymptote(exportFolder * "/startDataAndCenter.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataAndCenter.asy";
 #md #     points = [ [x], data],
@@ -123,18 +124,18 @@ xMean = gradient_descent(
     F,
     ∇F,
     data[1];
-    debug = [:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
 )
 nothing #hide
 #
 asymptote_export_S2_signals( #src
     exportFolder * "/startDataCenterMean.asy"; #src
-    points = [[x], data, [xMean]], #src
-    colors = Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]), #src
-    dotSize = 3.5, #src
-    cameraPosition = (1.0, 0.5, 0.5), #src
+    points=[[x], data, [xMean]], #src
+    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]), #src
+    dotSize=3.5, #src
+    cameraPosition=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataCenterMean.asy"; render = 2) #src
+render_asymptote(exportFolder * "/startDataCenterMean.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataCenterMean.asy";
 #md #     points = [ [x], data, [xMean] ],
@@ -164,9 +165,9 @@ o = cyclic_proximal_point(
     F2,
     proxes,
     data[1];
-    debug = [:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
-    record = [:Iteration, :Change, :Cost],
-    return_options = true,
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
+    record=[:Iteration, :Change, :Cost],
+    return_options=true,
 )
 xMedian = get_solver_result(o)
 values = get_record(o)
@@ -192,14 +193,14 @@ values
 #
 asymptote_export_S2_signals( #src
     exportFolder * "/startDataCenterMedianAndMean.asy"; #src
-    points = [[x], data, [xMean], [xMedian]], #src
-    colors = Dict( #src
+    points=[[x], data, [xMean], [xMedian]], #src
+    colors=Dict( #src
         :points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta], #src
     ), #src
-    dotSize = 3.5, #src
-    cameraPosition = (1.0, 0.5, 0.5), #src
+    dotSize=3.5, #src
+    cameraPosition=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataCenterMedianAndMean.asy"; render = 2) #src
+render_asymptote(exportFolder * "/startDataCenterMedianAndMean.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataCenterMean.asy";
 #md #     points = [ [x], data, [xMean], [xMedian] ],

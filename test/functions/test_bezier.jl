@@ -15,7 +15,7 @@ using Manopt, Manifolds, Test
             BezierSegment(shortest_geodesic(M, pC, pB, [0.0, 1 / 3, 2 / 3, 1.0])),
         ]
         # this is equispaced, so the pure cost is zero and the gradient is a zero-vector
-        t = collect(range(0.0, 1.0; length = 5))
+        t = collect(range(0.0, 1.0; length=5))
         pts = shortest_geodesic(M, pT, pB, t)
         pts2 = de_casteljau(M, B, 2 .* t)
         @test sum(distance.(Ref(M), pts, pts2)) ≈ 0
@@ -28,12 +28,12 @@ using Manopt, Manifolds, Test
         @test aT1 ≈ aT2
         #
         @test sum(norm.(
-            ∇acceleration_bezier(M, B[1], collect(range(0.0, 1.0; length = 20))).pts .-
+            ∇acceleration_bezier(M, B[1], collect(range(0.0, 1.0; length=20))).pts .-
             [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
         )) ≈ 0 atol = 10^(-12)
 
         # cost and gradient
-        T = collect(range(0.0, 2.0; length = 51))
+        T = collect(range(0.0, 2.0; length=51))
         degrees = get_bezier_degrees(M, B)
         Bvec = get_bezier_points(M, B, :differentiable)
         Mp = PowerManifold(M, NestedPowerRepresentation(), length(Bvec))
@@ -53,9 +53,7 @@ using Manopt, Manifolds, Test
               λ / 2 * distance(M, d[2], pC) .^ 2
         # when the data are the junctions
         @test norm(
-            Mp,
-            Bvec,
-            ∇L2_acceleration_bezier(M, Bvec, degrees, T, λ, [pT, pC, pB]) - z,
+            Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, λ, [pT, pC, pB]) - z
         ) ≈ 0 atol = 10^(-12)
         z[4][1] = -0.9
         @test norm(Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, λ, d) - z) ≈ 0 atol =
@@ -111,11 +109,11 @@ using Manopt, Manifolds, Test
               [B[1].pts[2], B[1].pts[3], B[2].pts[2], B[2].pts[3], B[3].pts[2], B[3].pts[3]]
         @test get_bezier_inner_points(M, B[1]) == [B[1].pts[2], B[1].pts[3]]
 
-        @test get_bezier_points(M, B) == cat([[b.pts...] for b in B]...; dims = 1)
+        @test get_bezier_points(M, B) == cat([[b.pts...] for b in B]...; dims=1)
         @test get_bezier_points(M, B, :continuous) ==
-              cat([[b.pts[[1:3]...]...] for b in B]..., [B[3].pts[4]]; dims = 1)
+              cat([[b.pts[[1:3]...]...] for b in B]..., [B[3].pts[4]]; dims=1)
         @test get_bezier_points(M, B, :differentiable) ==
-              cat([B[1].pts[[1, 2]]...], [b.pts[[3, 4]] for b in B]...; dims = 1)
+              cat([B[1].pts[[1, 2]]...], [b.pts[[3, 4]] for b in B]...; dims=1)
         @test get_bezier_points(M, B[1]) == B[1].pts
         # for segments just check that they
         d = get_bezier_degrees(M, B)
@@ -124,36 +122,26 @@ using Manopt, Manifolds, Test
         A = get_bezier_segments(M, get_bezier_points(M, B, :continuous), d, :continuous)
         @test [A[i].pts for i in 1:3] == [B[i].pts for i in 1:3]
         A = get_bezier_segments(
-            M,
-            get_bezier_points(M, B, :differentiable),
-            d,
-            :differentiable,
+            M, get_bezier_points(M, B, :differentiable), d, :differentiable
         )
         @test [A[i].pts for i in 1:3] == [B[i].pts for i in 1:3]
 
         # out of range
         @test_throws ErrorException adjoint_differential_bezier_control(
-            M,
-            B,
-            7.0,
-            zero_tangent_vector(M, B[1].pts[1]),
+            M, B, 7.0, zero_tangent_vector(M, B[1].pts[1])
         )
         # a shortcut to evaluate the adjoint at several points is equal to seperate evals
         b = B[2]
         @test isapprox(
             adjoint_differential_bezier_control(
-                M,
-                b,
-                [0.0, 1.0],
-                [log(M, b.pts[1], b.pts[2]), -log(M, b.pts[4], b.pts[3])],
+                M, b, [0.0, 1.0], [log(M, b.pts[1], b.pts[2]), -log(M, b.pts[4], b.pts[3])]
             ).pts,
             adjoint_differential_bezier_control(M, b, 0.0, log(M, b.pts[1], b.pts[2])).pts +
             adjoint_differential_bezier_control(M, b, 1.0, -log(M, b.pts[4], b.pts[3])).pts,
         )
         # differential
         X = BezierSegment([
-            log(M, b.pts[1], b.pts[2]),
-            [zero_tangent_vector(M, b.pts[i]) for i in 2:4]...,
+            log(M, b.pts[1], b.pts[2]), [zero_tangent_vector(M, b.pts[i]) for i in 2:4]...
         ])
         @test differential_bezier_control(M, b, 0.0, X) ≈ X.pts[1]
         dT1 = differential_bezier_control.(Ref(M), Ref(b), [0.0, 1.0], Ref(X))

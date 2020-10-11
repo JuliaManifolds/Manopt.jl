@@ -75,20 +75,19 @@ OR
 function particle_swarm(
     M::Manifold,
     F::TF;
-    n::Int = 100,
-    x0::AbstractVector = [random_point(M) for i in 1:n],
-    velocity::AbstractVector = [random_tangent(M, y) for y in x0],
-    inertia::Real = 0.65,
-    social_weight::Real = 1.4,
-    cognitive_weight::Real = 1.4,
-    stopping_criterion::StoppingCriterion = StopWhenAny(
-        StopAfterIteration(200),
-        StopWhenChangeLess(10.0^-4),
+    n::Int=100,
+    x0::AbstractVector=[random_point(M) for i in 1:n],
+    velocity::AbstractVector=[random_tangent(M, y) for y in x0],
+    inertia::Real=0.65,
+    social_weight::Real=1.4,
+    cognitive_weight::Real=1.4,
+    stopping_criterion::StoppingCriterion=StopWhenAny(
+        StopAfterIteration(200), StopWhenChangeLess(10.0^-4)
     ),
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    inverse_retraction_method::AbstractInverseRetractionMethod = LogarithmicInverseRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    return_options = false,
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+    return_options=false,
     kwargs..., #collect rest
 ) where {TF}
     p = CostProblem(M, F)
@@ -129,8 +128,9 @@ function step_solver!(p::CostProblem, o::ParticleSwarmOptions, iter)
             inverse_retract(p.M, o.x[i], o.g, o.inverse_retraction_method)
         xOld = o.x[i]
         o.x[i] = retract(p.M, o.x[i], o.velocity[i], o.retraction_method)
-        o.velocity[i] =
-            vector_transport_to(p.M, xOld, o.velocity[i], o.x[i], o.vector_transport_method)
+        o.velocity[i] = vector_transport_to(
+            p.M, xOld, o.velocity[i], o.x[i], o.vector_transport_method
+        )
         if p.cost(o.x[i]) < p.cost(o.p[i])
             o.p[i] = o.x[i]
             if p.cost(o.p[i]) < p.cost(o.g)

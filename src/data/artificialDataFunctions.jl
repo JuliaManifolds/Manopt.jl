@@ -24,7 +24,7 @@ function artificialIn_SAR_image(pts::Integer)
     # values for the hyperboloid
     mid_point = [0.275; 0.275]
     radius = 0.18
-    values = [range(-0.5, 0.5; length = pts)...]
+    values = [range(-0.5, 0.5; length=pts)...]
     # Steps
     aSteps = 60.0
     cosS = cosd(aSteps)
@@ -69,8 +69,8 @@ Creates a Signal of (phase-valued) data represented on the
 * `pts` – (`500`) number of points to sample the function.
 * `slope` – (`4.0`) initial slope that gets increased afterwards
 """
-function artificial_S1_slope_signal(pts::Integer = 500, slope::Float64 = 4.0)
-    t = range(0.0, 1.0; length = pts)
+function artificial_S1_slope_signal(pts::Integer=500, slope::Float64=4.0)
+    t = range(0.0, 1.0; length=pts)
     f = zero(t)
     f[t .<= 1 / 6] .= -π / 2 .+ slope * π / 8 * t[t .<= 1 / 6]
     # In the following terms, the first max
@@ -102,8 +102,8 @@ to $[-\pi,\pi)$.
 # Optional
 * `pts` – (`500`) number of points to sample the function
 """
-function artificial_S1_signal(pts::Integer = 500)
-    t = range(0.0, 1.0; length = pts)
+function artificial_S1_signal(pts::Integer=500)
+    t = range(0.0, 1.0; length=pts)
     f = artificial_S1_signal.(t)
     return mod.(f .+ Float64(π), Ref(2 * π)) .- Float64(π)
 end
@@ -149,7 +149,7 @@ generate an artificial image of data on the 2 sphere,
 # Arguments
 * `pts` – (`64`) size of the image in `pts`$\times$`pts` pixel.
 """
-function artificial_S2_whirl_image(pts::Int = 64)
+function artificial_S2_whirl_image(pts::Int=64)
     M = Sphere(2)
     img = artificial_S2_rotation_image(pts, (0.5, 0.5))
     # Set WhirlPatches
@@ -159,8 +159,7 @@ function artificial_S2_whirl_image(pts::Int = 64)
         Integer.(floor.(
             sc .*
             [[35, 7] [25, 41] [32, 25] [7, 60] [10, 5] [41, 58] [11, 41] [23, 56] [38, 45] [
-                16,
-                28,
+                16, 28
             ] [55, 42] [51, 16]],
         ))
     patchSigns = [1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]
@@ -189,8 +188,7 @@ creates an image with a rotation on each axis as a parametrization.
 * `rotations` – (`(.5,.5)`) number of total rotations performed on the axes.
 """
 function artificial_S2_rotation_image(
-    pts::Int = 64,
-    rotations::Tuple{Float64,Float64} = (0.5, 0.5),
+    pts::Int=64, rotations::Tuple{Float64,Float64}=(0.5, 0.5)
 )
     M = Sphere(2)
     img = fill(zeros(3), pts, pts)
@@ -217,7 +215,7 @@ create a whirl within the `pts`$\times$`pts` patch of
 * `pts` – (`5`) size of the patch. If the number is odd, the center is the north
   pole.
 """
-function artificial_S2_whirl_patch(pts::Int = 5)
+function artificial_S2_whirl_patch(pts::Int=5)
     patch = fill([0.0, 0.0, -1.0], pts, pts)
     scaleFactor = sqrt((pts - 1)^2 / 2) * 3 / π
     for i in 1:pts
@@ -225,8 +223,9 @@ function artificial_S2_whirl_patch(pts::Int = 5)
             if i != (pts + 1) / 2 || j != (pts + 1) / 2
                 α = atan((j - (pts + 1) / 2), (i - (pts + 1) / 2))
                 β = sqrt((j - (pts + 1) / 2)^2 + (i - (pts + 1) / 2)^2) / scaleFactor
-                patch[i, j] =
-                    [sin(α) * sin(π / 2 - β), -cos(α) * sin(π / 2 - β), cos(π / 2 - β)]
+                patch[i, j] = [
+                    sin(α) * sin(π / 2 - β), -cos(α) * sin(π / 2 - β), cos(π / 2 - β)
+                ]
             end
         end
     end
@@ -305,11 +304,11 @@ end
 create an artificial image of symmetric positive definite matrices of size
 `pts`$\times$`pts` pixel with a jump of size `stepsize`.
 """
-function artificial_SPD_image(pts::Int = 64, stepsize = 1.5)
-    r = range(0; stop = 1 - 1 / pts, length = pts)
+function artificial_SPD_image(pts::Int=64, stepsize=1.5)
+    r = range(0; stop=1 - 1 / pts, length=pts)
     v1 = abs.(2 * pi .* r .- pi)
     v2 = pi .* r
-    v3 = range(0; stop = 3 * (1 - 1 / pts), length = 2 * pts)
+    v3 = range(0; stop=3 * (1 - 1 / pts), length=2 * pts)
     data = fill(Matrix{Float64}(I, 3, 3), pts, pts)
     for row in 1:pts
         for col in 1:pts
@@ -336,7 +335,7 @@ end
 create an artificial image of symmetric positive definite matrices of size
 `pts`$\times$`pts` pixel with right hand side `fraction` is moved upwards.
 """
-function artificial_SPD_image2(pts = 64, fraction = 0.66)
+function artificial_SPD_image2(pts=64, fraction=0.66)
     Zl = 4.0 * Matrix{Float64}(I, 3, 3)
     # create a first matrix
     α = 2.0 * π / 3
@@ -395,16 +394,9 @@ signal on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/mani
   refers to one closed curve
 """
 function artificial_S2_lemniscate(
-    p,
-    pts::Integer = 128,
-    a::Float64 = π / 2.0,
-    interval::Array{Float64,1} = [0.0, 2.0 * π],
+    p, pts::Integer=128, a::Float64=π / 2.0, interval::Array{Float64,1}=[0.0, 2.0 * π]
 )
-    return artificial_S2_lemniscate.(
-        Ref(p),
-        range(interval[1], interval[2]; length = pts),
-        a,
-    )
+    return artificial_S2_lemniscate.(Ref(p), range(interval[1], interval[2]; length=pts), a)
 end
 @doc raw"""
     artificial_S2_lemniscate(p,t; a=π/2)
@@ -422,7 +414,7 @@ the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphe
  * `a` – (`π/2`) defines a half axis of the Lemniscate to cover a
    half sphere.
 """
-function artificial_S2_lemniscate(p, t::Float64, a::Float64 = π / 2.0)
+function artificial_S2_lemniscate(p, t::Float64, a::Float64=π / 2.0)
     M = Sphere(2)
     tP = 2.0 * Float64(p[1] >= 0.0) - 1.0 # Take north or south pole
     base = [0.0, 0.0, tP]

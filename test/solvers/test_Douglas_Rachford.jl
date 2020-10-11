@@ -22,9 +22,9 @@
         F2,
         [prox1, prox2, prox3],
         start;
-        debug = [DebugCost(), DebugIterate(), DebugProximalParameter(), 100],
-        record = [RecordCost(), RecordProximalParameter()],
-        return_options = true,
+        debug=[DebugCost(), DebugIterate(), DebugProximalParameter(), 100],
+        record=[RecordCost(), RecordProximalParameter()],
+        return_options=true,
     )
     xHat2 = get_solver_result(o)
     drec2 = get_record(o)

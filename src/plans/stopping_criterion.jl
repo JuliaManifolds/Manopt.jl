@@ -82,10 +82,7 @@ mutable struct StopWhenChangeLess <: StoppingCriterion
     threshold::Float64
     reason::String
     storage::StoreOptionsAction
-    function StopWhenChangeLess(
-        ε::Float64,
-        a::StoreOptionsAction = StoreOptionsAction((:x,)),
-    )
+    function StopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:x,)))
         return new(ε, "", a)
     end
 end
