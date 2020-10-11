@@ -21,6 +21,9 @@ struct TestOptions <: Options end
     @test length(s3.reason) > 0
     # repack
     sn = StopWhenAny(StopAfterIteration(10), s3)
+    sn2 = StopWhenAny([StopAfterIteration(10), s3])
+    @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
+    @test get_stopping_criteria(sn)[2].threshold == get_stopping_criteria(sn2)[2].threshold
     # then s3 is the only active one
     @test get_active_stopping_criteria(sn) == [s3]
     @test get_active_stopping_criteria(s3) == [s3]
@@ -41,4 +44,5 @@ end
     @test s(p, o, 1) == false
     sleep(1.02)
     @test s(p, o, 2) == true
+    @test_throws ErrorException StopAfter(Second(-1))
 end

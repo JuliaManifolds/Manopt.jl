@@ -53,25 +53,19 @@ function conjugate_gradient_descent(
     F::TF,
     ∇F::TDF,
     x;
-    coefficient::DirectionUpdateRule = SteepestDirectionUpdateRule(),
-    stepsize::Stepsize = ConstantStepsize(1.0),
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    stopping_criterion::StoppingCriterion = StopWhenAny(
-        StopAfterIteration(500),
-        StopWhenGradientNormLess(10^(-8)),
+    coefficient::DirectionUpdateRule=SteepestDirectionUpdateRule(),
+    stepsize::Stepsize=ConstantStepsize(1.0),
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    stopping_criterion::StoppingCriterion=StopWhenAny(
+        StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
-    transport_method = ParallelTransport(),
-    return_options = false,
+    transport_method=ParallelTransport(),
+    return_options=false,
     kwargs...,
 ) where {TF,TDF}
     p = GradientProblem(M, F, ∇F)
     o = ConjugateGradientDescentOptions(
-        x,
-        stopping_criterion,
-        stepsize,
-        coefficient,
-        retraction_method,
-        transport_method,
+        x, stopping_criterion, stepsize, coefficient, retraction_method, transport_method
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)

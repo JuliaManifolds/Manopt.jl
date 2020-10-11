@@ -48,7 +48,7 @@ mutable struct DecreasingStepsize <: Stepsize
     factor::Float64
     subtrahend::Float64
     exponent::Float64
-    function DecreasingStepsize(l::Real = 1.0, f::Real = 1.0, a::Real = 0.0, e::Real = 1.0)
+    function DecreasingStepsize(l::Real=1.0, f::Real=1.0, a::Real=0.0, e::Real=1.0)
         return new(l, f, a, e)
     end
 end
@@ -107,19 +107,16 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     sufficientDecrease::Float64
     stepsizeOld::Float64
     function ArmijoLinesearch(
-        s::Float64 = 1.0,
-        r::AbstractRetractionMethod = ExponentialRetraction(),
-        contractionFactor::Float64 = 0.95,
-        sufficientDecrease::Float64 = 0.1,
+        s::Float64=1.0,
+        r::AbstractRetractionMethod=ExponentialRetraction(),
+        contractionFactor::Float64=0.95,
+        sufficientDecrease::Float64=0.1,
     )
         return new{typeof(r)}(s, r, contractionFactor, sufficientDecrease, s)
     end
 end
 function (a::ArmijoLinesearch)(
-    p::P,
-    o::O,
-    i::Int,
-    η = -get_gradient(p, o.x),
+    p::P, o::O, i::Int, η=-get_gradient(p, o.x)
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
     a.stepsizeOld = linesearch_backtrack(
         p.M,
@@ -159,9 +156,9 @@ function linesearch_backtrack(
     s,
     decrease,
     contract,
-    retr::AbstractRetractionMethod = ExponentialRetraction(),
-    η::T = -∇F,
-    f0 = F(x),
+    retr::AbstractRetractionMethod=ExponentialRetraction(),
+    η::T=-∇F,
+    f0=F(x),
 ) where {TF,T}
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
@@ -196,10 +193,7 @@ get_stepsize(p::Problem, o::Options, ::Val{false}, vars...) = o.stepsize(p, o, v
 
 function get_initial_stepsize(p::Problem, o::Options, vars...)
     return get_initial_stepsize(
-        p::Problem,
-        o::Options,
-        dispatch_options_decorator(o),
-        vars...,
+        p::Problem, o::Options, dispatch_options_decorator(o), vars...
     )
 end
 function get_initial_stepsize(p::Problem, o::Options, ::Val{true}, vars...)

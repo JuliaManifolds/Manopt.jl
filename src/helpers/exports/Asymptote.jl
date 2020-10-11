@@ -35,27 +35,25 @@ to Asymptote.
 """
 function asymptote_export_S2_signals(
     filename::String;
-    points::Array{Array{T,1},1} where {T} = Array{Array{Float64,1},1}(undef, 0),
-    curves::Array{Array{T,1},1} where {T} = Array{Array{Float64,1},1}(undef, 0),
-    tVectors::Array{Array{Tuple{T,T},1},1} where {T} = Array{
-        Array{Tuple{Float64,Float64},1},
-        1,
+    points::Array{Array{T,1},1} where {T}=Array{Array{Float64,1},1}(undef, 0),
+    curves::Array{Array{T,1},1} where {T}=Array{Array{Float64,1},1}(undef, 0),
+    tVectors::Array{Array{Tuple{T,T},1},1} where {T}=Array{
+        Array{Tuple{Float64,Float64},1},1
     }(
-        undef,
-        0,
+        undef, 0
     ),
-    colors::Dict{Symbol,Array{RGBA{Float64},1}} = Dict{Symbol,Array{RGBA{Float64},1}}(),
-    arrowHeadSize::Float64 = 6.0,
-    arrowHeadSizes::Array{Float64,1} = fill(arrowHeadSize, length(tVectors)),
-    cameraPosition::Tuple{Float64,Float64,Float64} = (1.0, 1.0, 0.0),
-    lineWidth::Float64 = 1.0,
-    lineWidths::Array{Float64,1} = fill(lineWidth, length(curves) + length(tVectors)),
-    dotSize::Float64 = 1.0,
-    dotSizes::Array{Float64,1} = fill(dotSize, length(points)),
-    sphereColor::RGBA{Float64} = RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
-    sphereLineColor::RGBA{Float64} = RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
-    sphereLineWidth::Float64 = 0.5,
-    target::Tuple{Float64,Float64,Float64} = (0.0, 0.0, 0.0),
+    colors::Dict{Symbol,Array{RGBA{Float64},1}}=Dict{Symbol,Array{RGBA{Float64},1}}(),
+    arrowHeadSize::Float64=6.0,
+    arrowHeadSizes::Array{Float64,1}=fill(arrowHeadSize, length(tVectors)),
+    cameraPosition::Tuple{Float64,Float64,Float64}=(1.0, 1.0, 0.0),
+    lineWidth::Float64=1.0,
+    lineWidths::Array{Float64,1}=fill(lineWidth, length(curves) + length(tVectors)),
+    dotSize::Float64=1.0,
+    dotSizes::Array{Float64,1}=fill(dotSize, length(points)),
+    sphereColor::RGBA{Float64}=RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
+    sphereLineColor::RGBA{Float64}=RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
+    sphereLineWidth::Float64=0.5,
+    target::Tuple{Float64,Float64,Float64}=(0.0, 0.0, 0.0),
 )
     io = open(filename, "w")
     try
@@ -113,8 +111,11 @@ function asymptote_export_S2_signals(
                         "pen $(penPrefix)Style$(i) = ",
                         "rgb($(red(c)),$(green(c)),$(blue(c)))",
                         (key == :curves) ? "+linewidth($(lineWidths[i])pt)" : "",
-                        (key == :tvectors) ?
-                        "+linewidth($(lineWidths[length(curves)+i])pt)" : "",
+                        if (key == :tvectors)
+                            "+linewidth($(lineWidths[length(curves)+i])pt)"
+                        else
+                            ""
+                        end,
                         (key == :points) ? "+linewidth($(dotSizes[i])pt)" : "",
                         "+opacity($(alpha(c)));\n",
                     ),
@@ -203,20 +204,16 @@ or three-dimensional data with points on the [Sphere](https://juliamanifolds.git
 """
 function asymptote_export_S2_data(
     filename::String;
-    data = fill([0.0, 0.0, 1.0], 0, 0),
-    arrowHeadSize::Float64 = 1.8,
-    scaleAxes = (1 / 3.0, 1 / 3.0, 1 / 3.0),
-    cameraPosition::Tuple{Float64,Float64,Float64} = scaleAxes .* (
-        (size(data, 1) - 1) / 2,
-        (size(data, 2) - 1) / 2,
-        max(size(data, 3), 0) + 10,
+    data=fill([0.0, 0.0, 1.0], 0, 0),
+    arrowHeadSize::Float64=1.8,
+    scaleAxes=(1 / 3.0, 1 / 3.0, 1 / 3.0),
+    cameraPosition::Tuple{Float64,Float64,Float64}=scaleAxes .* (
+        (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0) + 10
     ),
-    target::Tuple{Float64,Float64,Float64} = scaleAxes .* (
-        (size(data, 1) - 1) / 2,
-        (size(data, 2) - 1) / 2,
-        0.0,
+    target::Tuple{Float64,Float64,Float64}=scaleAxes .* (
+        (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, 0.0
     ),
-    elevationColorScheme = ColorSchemes.viridis,
+    elevationColorScheme=ColorSchemes.viridis,
 )
     io = open(filename, "w")
     try
@@ -283,20 +280,16 @@ Both values `cameraPosition` and `target` are scaled by `scaledAxes*EW`, where
 """
 function asymptote_export_SPD(
     filename::String;
-    data = fill(Matrix{Float64}(I, 3, 3), 0, 0),
-    scaleAxes = (1 / 3.0, 1 / 3.0, 1 / 3.0) .*
-                (length(data) > 0 ? maximum(maximum(eigvals.(data))) : 1),
-    cameraPosition::Tuple{Float64,Float64,Float64} = (
-        (size(data, 1) - 1) / 2,
-        (size(data, 2) - 1) / 2,
-        max(size(data, 3), 0.0) + 10.0,
+    data=fill(Matrix{Float64}(I, 3, 3), 0, 0),
+    scaleAxes=(1 / 3.0, 1 / 3.0, 1 / 3.0) .*
+              (length(data) > 0 ? maximum(maximum(eigvals.(data))) : 1),
+    cameraPosition::Tuple{Float64,Float64,Float64}=(
+        (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0.0) + 10.0
     ),
-    target::Tuple{Float64,Float64,Float64} = (
-        (size(data, 1) - 1) / 2,
-        (size(data, 2) - 1) / 2,
-        0.0,
+    target::Tuple{Float64,Float64,Float64}=(
+        (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, 0.0
     ),
-    colorScheme = ColorSchemes.viridis,
+    colorScheme=ColorSchemes.viridis,
 )
     io = open(filename, "w")
     try
@@ -334,7 +327,7 @@ function asymptote_export_SPD(
                         Lλ = log.(λ)
                         GAI = sqrt(
                             2 / 3 * sum(Lλ .^ 2) -
-                            2 / 3 * sum(sum(tril(Lλ * Lλ', -1), dims = 1), dims = 2)[1],
+                            2 / 3 * sum(sum(tril(Lλ * Lλ', -1); dims=1); dims=2)[1],
                         )
                         c = get(colorScheme, GAI / (1 + GAI), (0, 1))
                         write(
@@ -376,9 +369,9 @@ the default values are given in brackets
 """
 function render_asymptote(
     filename;
-    render::Int = 4,
-    format = "png",
-    exportFolder = string(filename[1:([findlast(".", filename)...][1])], format),
+    render::Int=4,
+    format="png",
+    exportFolder=string(filename[1:([findlast(".", filename)...][1])], format),
 )
     renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(exportFolder))" $(filename)`
     return run(renderCmd)

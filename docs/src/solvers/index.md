@@ -38,7 +38,7 @@ StoppingCriterionSet
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["plans/stoppingCriterion.jl"]
+Pages = ["plans/stopping_criterion.jl"]
 Order = [:type]
 ```
 

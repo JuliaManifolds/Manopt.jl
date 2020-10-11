@@ -177,8 +177,7 @@ mutable struct StoreOptionsAction <: AbstractOptionsAction
     once::Bool
     lastStored::Int
     function StoreOptionsAction(
-        keys::NTuple{N,Symbol} where {N} = NTuple{0,Symbol}(),
-        once = true,
+        keys::NTuple{N,Symbol} where {N}=NTuple{0,Symbol}(), once=true
     )
         return new(Dict{Symbol,Any}(), keys, once, -1)
     end

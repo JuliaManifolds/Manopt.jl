@@ -1,5 +1,4 @@
 @testset "Data" begin
-
     @test artificialIn_SAR_image(2) == 2 * π * ones(2, 2)
 
     @test artificial_S1_slope_signal(20, 0.0) == repeat([-π / 2], 20)
@@ -29,5 +28,4 @@
 
     @test length(artificial_S2_lemniscate([0.0, 0.0, 1.0], 20)) == 20
     @test length(artificial_S2_lemniscate([0.0, 0.0, 1.0], 20)[1]) == 3
-
 end

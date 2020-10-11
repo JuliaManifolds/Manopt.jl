@@ -35,17 +35,17 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 function NelderMead(
     M::MT,
     F::TF,
-    population = [random_point(M) for i in 1:(manifoldDimension(M) + 1)];
-    stopping_criterion::StoppingCriterion = StopAfterIteration(200000),
-    α = 1.0,
-    γ = 2.0,
-    ρ = 1 / 2,
-    σ = 1 / 2,
-    return_options = false,
+    population=[random_point(M) for i in 1:(manifoldDimension(M) + 1)];
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200000),
+    α=1.0,
+    γ=2.0,
+    ρ=1 / 2,
+    σ=1 / 2,
+    return_options=false,
     kwargs..., #collect rest
 ) where {MT<:Manifold,TF}
     p = CostProblem(M, F)
-    o = NelderMeadOptions(population, stopping_criterion; α = α, γ = γ, ρ = ρ, σ = σ)
+    o = NelderMeadOptions(population, stopping_criterion; α=α, γ=γ, ρ=ρ, σ=σ)
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
     if return_options
@@ -109,8 +109,9 @@ function step_solver!(p::P, o::O, iter) where {P<:CostProblem,O<:NelderMeadOptio
     end
     # --- Shrink ---
     for i in 2:length(ind)
-        o.population[ind[i]] =
-            shortest_geodesic(p.M, o.population[ind[1]], o.population[ind[i]], o.σ)
+        o.population[ind[i]] = shortest_geodesic(
+            p.M, o.population[ind[1]], o.population[ind[i]], o.σ
+        )
         # update cost
         o.costs[ind[i]] = get_cost(p, o.population[ind[i]])
     end

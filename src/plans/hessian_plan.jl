@@ -25,11 +25,7 @@ struct HessianProblem{mT<:Manifold,TCost,TGradient,THessian,TPrecon} <: Problem
     precon::TPrecon
     function HessianProblem(M::mT, cost, grad, hess, pre) where {mT<:Manifold}
         return new{mT,typeof(cost),typeof(grad),typeof(hess),typeof(pre)}(
-            M,
-            cost,
-            grad,
-            hess,
-            pre,
+            M, cost, grad, hess, pre
         )
     end
 end
@@ -79,13 +75,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T} <: HessianOptions
     residual::T
     useRand::Bool
     function TruncatedConjugateGradientOptions(
-        x::P,
-        stop::StoppingCriterion,
-        η::T,
-        δ::T,
-        Δ,
-        residual::T,
-        uR::Bool,
+        x::P, stop::StoppingCriterion, η::T, δ::T, Δ, residual::T, uR::Bool
     ) where {P,T}
         return new{typeof(x),typeof(η)}(x, stop, η, δ, Δ, residual, uR)
     end
@@ -135,13 +125,7 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    TX,
-    TStop<:StoppingCriterion,
-    TΔ,
-    TΔ_bar,
-    TRetr,
-    Tρ_prime,
-    Tρ_reg,
+    TX,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr,Tρ_prime,Tρ_reg
 } <: HessianOptions
     x::TX
     stop::TStop
@@ -159,9 +143,9 @@ end
 evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the point `x`
 applied to a tangent vector `ξ`.
 """
-function getHessian(p::HessianProblem, x, ξ; stepsize = 2 * 10^(-14))
+function getHessian(p::HessianProblem, x, ξ; stepsize=2 * 10^(-14))
     if ismissing(p.hessian)
-        return approxHessianFD(p.M, x -> get_gradient(p.M, x), x, ξ; stepsize = stepsize)
+        return approxHessianFD(p.M, x -> get_gradient(p.M, x), x, ξ; stepsize=stepsize)
     else
         return p.hessian(p.M, x, ξ)
     end
@@ -205,12 +189,7 @@ Input
     tangent vector ξ
 """
 function approxHessianFD(
-    M::MT,
-    x,
-    gradFct,
-    ξ;
-    stepsize = 2.0^(-14),
-    transport = ParallelTransport(),
+    M::MT, x, gradFct, ξ; stepsize=2.0^(-14), transport=ParallelTransport()
 ) where {MT<:Manifold}
     norm_xi = norm(M, x, ξ)
     if norm_xi < eps(Float64)
@@ -257,9 +236,7 @@ mutable struct stopIfResidualIsReducedByFactor <: StoppingCriterion
     stopIfResidualIsReducedByFactor(iRN::Float64, κ::Float64) = new(κ, iRN, "")
 end
 function (c::stopIfResidualIsReducedByFactor)(
-    p::P,
-    o::O,
-    i::Int,
+    p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm * c.κ && i > 0
         c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
@@ -301,9 +278,7 @@ mutable struct stopIfResidualIsReducedByPower <: StoppingCriterion
     stopIfResidualIsReducedByPower(iRN::Float64, θ::Float64) = new(θ, iRN, "")
 end
 function (c::stopIfResidualIsReducedByPower)(
-    p::P,
-    o::O,
-    i::Int,
+    p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1 + c.θ) && i > 0
         c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
@@ -341,15 +316,13 @@ mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
     storage::StoreOptionsAction
     function StopWhenTrustRegionIsExceeded(
-        a::StoreOptionsAction = StoreOptionsAction((:η, :δ, :residual)),
+        a::StoreOptionsAction=StoreOptionsAction((:η, :δ, :residual))
     )
         return new("", a)
     end
 end
 function (c::StopWhenTrustRegionIsExceeded)(
-    p::P,
-    o::O,
-    i::Int,
+    p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if has_storage(c.storage, :δ) &&
        has_storage(c.storage, :η) &&
@@ -358,10 +331,7 @@ function (c::StopWhenTrustRegionIsExceeded)(
         δ = get_storage(c.storage, :δ)
         residual = get_storage(c.storage, :residual)
         a1 = inner(
-            p.M,
-            o.x,
-            o.useRand ? get_preconditioner(p, o.x, residual) : residual,
-            residual,
+            p.M, o.x, o.useRand ? get_preconditioner(p, o.x, residual) : residual, residual
         )
         a2 = inner(p.M, o.x, δ, getHessian(p, o.x, δ))
         a3 = inner(p.M, o.x, η, get_preconditioner(p, o.x, δ))
@@ -406,14 +376,12 @@ is initialized to just store `:δ` by default.
 mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
     storage::StoreOptionsAction
-    function StopWhenCurvatureIsNegative(a::StoreOptionsAction = StoreOptionsAction((:δ,)))
+    function StopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction((:δ,)))
         return new("", a)
     end
 end
 function (c::StopWhenCurvatureIsNegative)(
-    p::P,
-    o::O,
-    i::Int,
+    p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if has_storage(c.storage, :δ)
         δ = get_storage(c.storage, :δ)
