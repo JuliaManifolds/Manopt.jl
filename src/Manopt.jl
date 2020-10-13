@@ -211,7 +211,7 @@ export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve
 
 export ConstantStepsize, DecreasingStepsize
-export Linesearch, ArmijoLinesearch
+export Linesearch, ArmijoLinesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 
 export BezierSegment,
