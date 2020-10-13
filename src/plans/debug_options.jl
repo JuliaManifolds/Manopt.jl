@@ -101,7 +101,7 @@ mutable struct DebugEvery <: DebugAction
     debug::DebugAction
     every::Int
     alwaysUpdate::Bool
-    function DebugEvery(d::DebugAction, every::Int = 1, alwaysUpdate::Bool = true)
+    function DebugEvery(d::DebugAction, every::Int=1, alwaysUpdate::Bool=true)
         return new(d, every, alwaysUpdate)
     end
 end
@@ -133,20 +133,23 @@ mutable struct DebugChange <: DebugAction
     prefix::String
     storage::StoreOptionsAction
     function DebugChange(
-        a::StoreOptionsAction = StoreOptionsAction((:x,)),
-        prefix = "Last Change: ",
-        print = print,
+        a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Last Change: ", print=print
     )
         return new(print, prefix, a)
     end
 end
 function (d::DebugChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    s = (i > 0) ?
+    s = if (i > 0)
         (
-        has_storage(d.storage, :x) ?
-            d.prefix * string(distance(p.M, o.x, get_storage(d.storage, :x))) : ""
-    ) :
+            if has_storage(d.storage, :x)
+                d.prefix * string(distance(p.M, o.x, get_storage(d.storage, :x)))
+            else
+                ""
+            end
+        )
+    else
         ""
+    end
     d.storage(p, o, i)
     return d.print(s)
 end
@@ -161,7 +164,7 @@ debug for the current iterate (stored in `o.x`).
 mutable struct DebugIterate <: DebugAction
     print::Any
     prefix::String
-    function DebugIterate(print = print, long::Bool = false)
+    function DebugIterate(print=print, long::Bool=false)
         return new(print, long ? "current Iterate:" : "x:")
     end
 end
@@ -176,7 +179,7 @@ debug for the current iteration (prefixed with `#`)
 """
 mutable struct DebugIteration <: DebugAction
     print::Any
-    DebugIteration(print = print) = new(print)
+    DebugIteration(print=print) = new(print)
 end
 function (d::DebugIteration)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return d.print((i > 0) ? "# $(i)" : ((i == 0) ? "Initial" : ""))
@@ -199,10 +202,10 @@ set a prefix manually.
 mutable struct DebugCost <: DebugAction
     print::Any
     prefix::String
-    function DebugCost(long::Bool = false, print = print)
+    function DebugCost(long::Bool=false, print=print)
         return new(print, long ? "Cost Function: " : "F(x): ")
     end
-    DebugCost(prefix::String, print = print) = new(print, prefix)
+    DebugCost(prefix::String, print=print) = new(print, prefix)
 end
 function (d::DebugCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return d.print((i >= 0) ? d.prefix * string(get_cost(p, o.x)) : "")
@@ -220,7 +223,7 @@ print a small `div`ider (default `" | "`).
 mutable struct DebugDivider <: DebugAction
     print::Any
     divider::String
-    DebugDivider(divider = " | ", print = print) = new(print, divider)
+    DebugDivider(divider=" | ", print=print) = new(print, divider)
 end
 function (d::DebugDivider)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return d.print((i >= 0) ? d.divider : "")
@@ -243,7 +246,7 @@ mutable struct DebugEntry <: DebugAction
     print::Any
     prefix::String
     field::Symbol
-    DebugEntry(f::Symbol, prefix = "$f:", print = print) = new(print, prefix, f)
+    DebugEntry(f::Symbol, prefix="$f:", print=print) = new(print, prefix, f)
 end
 function (d::DebugEntry)(p::Pr, o::O, i::Int) where {Pr<:Problem,O<:Options}
     return d.print((i >= 0) ? d.prefix * " " * string(getfield(o, d.field)) : "")
@@ -282,9 +285,9 @@ mutable struct DebugEntryChange <: DebugAction
     function DebugEntryChange(
         f::Symbol,
         d,
-        a::StoreOptionsAction = StoreOptionsAction((f,)),
-        prefix = "Change of $f:",
-        print = print,
+        a::StoreOptionsAction=StoreOptionsAction((f,)),
+        prefix="Change of $f:",
+        print=print,
     )
         return new(print, prefix, f, d, a)
     end
@@ -292,27 +295,28 @@ mutable struct DebugEntryChange <: DebugAction
         v::T where {T},
         f::Symbol,
         d,
-        a::StoreOptionsAction = StoreOptionsAction((f,)),
-        prefix = "Change of $f:",
-        print = print,
+        a::StoreOptionsAction=StoreOptionsAction((f,)),
+        prefix="Change of $f:",
+        print=print,
     )
         update_storage!(a, Dict(f => v))
         return new(print, prefix, f, d, a)
     end
 end
 function (d::DebugEntryChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    s = (i > 0) ?
+    s = if (i > 0)
         (
-        has_storage(d.storage, d.field) ?
-            d.prefix * string(d.distance(
-            p,
-            o,
-            getproperty(o, d.field),
-            get_storage(d.storage, d.field),
-        )) :
-            ""
-    ) :
+            if has_storage(d.storage, d.field)
+                d.prefix * string(d.distance(
+                    p, o, getproperty(o, d.field), get_storage(d.storage, d.field)
+                ))
+            else
+                ""
+            end
+        )
+    else
         ""
+    end
     d.storage(p, o, i)
     return d.print(s)
 end
@@ -325,7 +329,7 @@ empty, unless the algorithm stops.
 """
 mutable struct DebugStoppingCriterion <: DebugAction
     print::Any
-    DebugStoppingCriterion(print = print) = new(print)
+    DebugStoppingCriterion(print=print) = new(print)
 end
 function (d::DebugStoppingCriterion)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return d.print((i >= 0 || i == typemin(Int)) ? get_reason(o) : "")

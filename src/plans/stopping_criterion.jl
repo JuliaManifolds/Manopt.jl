@@ -82,10 +82,7 @@ mutable struct StopWhenChangeLess <: StoppingCriterion
     threshold::Float64
     reason::String
     storage::StoreOptionsAction
-    function StopWhenChangeLess(
-        ε::Float64,
-        a::StoreOptionsAction = StoreOptionsAction((:x,)),
-    )
+    function StopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:x,)))
         return new(ε, "", a)
     end
 end
@@ -195,8 +192,11 @@ mutable struct StopAfter <: StoppingCriterion
     reason::String
     start::Nanosecond
     function StopAfter(t::Period)
-        return value(t) < 0 ? error("You must provide a positive time period") :
-               new(t, "", Nanosecond(0))
+        return if value(t) < 0
+            error("You must provide a positive time period")
+        else
+            new(t, "", Nanosecond(0))
+        end
     end
 end
 function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}

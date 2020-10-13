@@ -8,10 +8,7 @@ is the “change” of the curve at `t`$\in[0,1]$.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
-    M::Manifold,
-    b::BezierSegment,
-    t::Float64,
-    X::BezierSegment,
+    M::Manifold, b::BezierSegment, t::Float64, X::BezierSegment
 ) where {Q}
     # iterative, because recursively would be too many Casteljau evals
     c = deepcopy(b.pts)
@@ -19,18 +16,10 @@ function differential_bezier_control(
     for l in length(c):-1:2
         Y[1:(l - 1)] .=
             differential_geodesic_startpoint.(
-                Ref(M),
-                c[1:(l - 1)],
-                c[2:l],
-                Ref(t),
-                X.pts[1:(l - 1)],
+                Ref(M), c[1:(l - 1)], c[2:l], Ref(t), X.pts[1:(l - 1)]
             ) .+
             differential_geodesic_endpoint.(
-                Ref(M),
-                c[1:(l - 1)],
-                c[2:l],
-                Ref(t),
-                X.pts[2:l],
+                Ref(M), c[1:(l - 1)], c[2:l], Ref(t), X.pts[2:l]
             )
         c[1:(l - 1)] = shortest_geodesic.(Ref(M), c[1:(l - 1)], c[2:l], Ref(t))
     end
@@ -51,10 +40,7 @@ is the “change” of the curve at the points `T`, elementwise in $\in[0,1]$.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
-    M::Manifold,
-    b::BezierSegment,
-    T::Array{Float64,1},
-    X::BezierSegment,
+    M::Manifold, b::BezierSegment, T::Array{Float64,1}, X::BezierSegment
 )
     return differential_bezier_control.(Ref(M), Ref(b), T, Ref(X))
 end
@@ -184,12 +170,13 @@ end
 
 @doc raw"""
     differential_log_argument(M,p,q,X)
-computes $D_q\log_p,q[X]$.
+computes $D_q\log_pq[X]$.
 
 # See also
  [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
 """
 function differential_log_argument(M::Manifold, p, q, X)
+    # order of p and q has to be reversed in this call, cf. Persch, 2018 Lemma 2.3
     return jacobi_field(M, q, p, 1.0, X, βdifferential_log_argument)
 end
 
@@ -227,7 +214,7 @@ function differential_forward_logs(M::PowerManifold, p, X)
     else
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...)
     end
-    Y = zero_tangent_vector(N, repeat(p, inner = d2))
+    Y = zero_tangent_vector(N, repeat(p; inner=d2))
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
@@ -242,16 +229,10 @@ function differential_forward_logs(M::PowerManifold, p, X)
                 Y[M, I..., k] =
                     Y[M, I..., k] +
                     differential_log_basepoint(
-                        M.manifold,
-                        p[M, I...],
-                        p[M, J...],
-                        X[M, I...],
+                        M.manifold, p[M, I...], p[M, J...], X[M, I...]
                     ) +
                     differential_log_argument(
-                        M.manifold,
-                        p[M, I...],
-                        p[M, J...],
-                        X[M, J...],
+                        M.manifold, p[M, I...], p[M, J...], X[M, J...]
                     )
             end
         end # directions

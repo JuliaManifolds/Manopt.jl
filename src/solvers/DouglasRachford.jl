@@ -50,15 +50,14 @@ function DouglasRachford(
     F::TF,
     proxes::Vector{<:Any},
     x;
-    λ::Tλ = (iter) -> 1.0,
-    α::Tα = (iter) -> 0.9,
-    R::TR = reflect,
-    parallel::Int = 0,
-    stopping_criterion::StoppingCriterion = StopWhenAny(
-        StopAfterIteration(200),
-        StopWhenChangeLess(10.0^-5),
+    λ::Tλ=(iter) -> 1.0,
+    α::Tα=(iter) -> 0.9,
+    R::TR=reflect,
+    parallel::Int=0,
+    stopping_criterion::StoppingCriterion=StopWhenAny(
+        StopAfterIteration(200), StopWhenChangeLess(10.0^-5)
     ),
-    return_options = false,
+    return_options=false,
     kwargs..., #especially may contain decorator options
 ) where {MT<:Manifold,TF,Tλ,Tα,TR}
     if length(proxes) < 2

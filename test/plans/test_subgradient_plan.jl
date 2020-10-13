@@ -6,9 +6,11 @@ using Manifolds
     o = SubGradientMethodOptions(M, x0, StopAfterIteration(200), DecreasingStepsize(0.1))
     o.∂ = [1.0, 0.0]
     f = y -> distance(M, y, x)
-    ∂f =
-        y -> distance(M, x, y) == 0 ? zero_tangent_vector(M, y) :
-            -2 * log(M, y, x) / distance(M, x, y)
+    ∂f = y -> if distance(M, x, y) == 0
+        zero_tangent_vector(M, y)
+    else
+        -2 * log(M, y, x) / distance(M, x, y)
+    end
     p = SubGradientProblem(M, f, ∂f)
     oR = solve(p, o)
     xHat = get_solver_result(oR)

@@ -14,8 +14,8 @@ This example appeared in Sec. 5.2, second example, of
 using Manopt, Manifolds, Colors, ColorSchemes
 asyExport = true #export data and results to asyExport
 
-curve_samples = [range(0, 3, length = 101)...] # sample curve for the gradient
-curve_samples_plot = [range(0, 3, length = 201)...] # sample curve for asy exports
+curve_samples = [range(0, 3; length=101)...] # sample curve for the gradient
+curve_samples_plot = [range(0, 3; length=201)...] # sample curve for asy exports
 
 experimentFolder = "examples/Minimize_Acceleration/S2_Bezier/"
 experimentName = "Bezier_Interpolation"
@@ -37,25 +37,23 @@ cP = de_casteljau(M, B, curve_samples_plot)
 if asyExport
     asymptote_export_S2_signals(
         experimentFolder * experimentName * "-orig.asy";
-        curves = [cP],
-        points = [get_bezier_junctions(M, B), get_bezier_inner_points(M, B)],
-        tVectors = [[
+        curves=[cP],
+        points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)],
+        tVectors=[[
             Tuple(a)
             for
             a in
             zip(get_bezier_junctions(M, B, true), get_bezier_junction_tangent_vectors(M, B))
         ]],
-        colors = Dict(
-            :curves => [curveColor],
-            :points => [dColor, bColor],
-            :tvectors => [ξColor],
+        colors=Dict(
+            :curves => [curveColor], :points => [dColor, bColor], :tvectors => [ξColor]
         ),
-        cameraPosition = cameraPosition,
-        arrowHeadSize = 10.0,
-        lineWidths = [1.5, 1.5],
-        dotSize = 4.0,
+        cameraPosition=cameraPosition,
+        arrowHeadSize=10.0,
+        lineWidths=[1.5, 1.5],
+        dotSize=4.0,
     )
-    render_asymptote(experimentFolder * experimentName * "-orig.asy"; render = 4)
+    render_asymptote(experimentFolder * experimentName * "-orig.asy"; render=4)
 end
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
@@ -67,13 +65,13 @@ pB_opt = gradient_descent(
     F,
     ∇F,
     x0;
-    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001), # use Armijo lineSearch
-    stopping_criterion = StopWhenAny(
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001), # use Armijo lineSearch
+    stopping_criterion=StopWhenAny(
         StopWhenChangeLess(10.0^(-7)),
         StopWhenGradientNormLess(7 * 10.0^-5),
         StopAfterIteration(300),
     ),
-    debug = [
+    debug=[
         :Stop,
         :Iteration,
         " | ",
@@ -91,9 +89,9 @@ B_opt = get_bezier_segments(M, pB_opt, get_bezier_degrees(M, B), :differentiable
 if asyExport
     asymptote_export_S2_signals(
         experimentFolder * experimentName * "-result.asy";
-        curves = [de_casteljau(M, B_opt, curve_samples_plot), cP],
-        points = [get_bezier_junctions(M, B_opt), get_bezier_inner_points(M, B_opt)],
-        tVectors = [[
+        curves=[de_casteljau(M, B_opt, curve_samples_plot), cP],
+        points=[get_bezier_junctions(M, B_opt), get_bezier_inner_points(M, B_opt)],
+        tVectors=[[
             Tuple(a)
             for
             a in zip(
@@ -101,15 +99,15 @@ if asyExport
                 get_bezier_junction_tangent_vectors(M, B_opt),
             )
         ]],
-        colors = Dict(
+        colors=Dict(
             :curves => [curveColor, pColor],
             :points => [dColor, bColor],
             :tvectors => [ξColor],
         ),
-        cameraPosition = cameraPosition,
-        arrowHeadSize = 10.0,
-        lineWidths = [1.5, 0.75, 1.5],
-        dotSize = 4.0,
+        cameraPosition=cameraPosition,
+        arrowHeadSize=10.0,
+        lineWidths=[1.5, 0.75, 1.5],
+        dotSize=4.0,
     )
-    render_asymptote(experimentFolder * experimentName * "-result.asy"; render = 4)
+    render_asymptote(experimentFolder * experimentName * "-result.asy"; render=4)
 end

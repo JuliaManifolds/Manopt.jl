@@ -7,8 +7,9 @@
 # as [`ArmijoLinesearch`](@ref).
 
 # We first initialize the manifold
-exportFolder = #src
-    joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials") #src
+exportFolder = joinpath(
+    @__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials"
+) #src
 using Manopt, Manifolds
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)
 using Colors
@@ -44,14 +45,14 @@ nothing #hide
 # looks as follows using the [`asymptote_export_S2_signals`](@ref) export
 asymptote_export_S2_signals( #src
     exportFolder * "/SecondOrderData.asy"; #src
-    curves = [geoPts_yc], #src
-    points = [[p, r, q], [c, c2]], #src
-    colors = Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]), #src
-    dotSize = 3.5, #src
-    lineWidth = 0.75, #src
-    cameraPosition = (1.2, 1.0, 0.5), #src
+    curves=[geoPts_yc], #src
+    points=[[p, r, q], [c, c2]], #src
+    colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]), #src
+    dotSize=3.5, #src
+    lineWidth=0.75, #src
+    cameraPosition=(1.2, 1.0, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/SecondOrderData.asy"; render = 2) #src
+render_asymptote(exportFolder * "/SecondOrderData.asy"; render=2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("secondOrderData.asy";
@@ -83,14 +84,14 @@ costTV2(M, (p, r, q))
 # we can draw this as
 asymptote_export_S2_signals( #src
     exportFolder * "/SecondOrderGradient.asy"; #src
-    points = [[p, r, q], [c, c2]], #src
-    tVectors = [Tuple.([[p, -Xp], [r, -Xr], [q, Xq]])], #src
-    colors = Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]), #src
-    dotSize = 3.5, #src
-    lineWidth = 0.75, #src
-    cameraPosition = (1.2, 1.0, 0.5), #src
+    points=[[p, r, q], [c, c2]], #src
+    tVectors=[Tuple.([[p, -Xp], [r, -Xr], [q, Xq]])], #src
+    colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]), #src
+    dotSize=3.5, #src
+    lineWidth=0.75, #src
+    cameraPosition=(1.2, 1.0, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/SecondOrderGradient.asy"; render = 2) #src
+render_asymptote(exportFolder * "/SecondOrderGradient.asy"; render=2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("SecondOrderGradient.asy";
@@ -113,19 +114,19 @@ nothing #hide
 # and obtain the new situation
 asymptote_export_S2_signals( #src
     exportFolder * "/SecondOrderMin1.asy"; #src
-    points = [[p, r, q], [c, c2, cn], [pn, rn, qn]], #src
-    curves = [geoPts_yncn], #src
-    tVectors = [Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
-    colors = Dict( #src #src
+    points=[[p, r, q], [c, c2, cn], [pn, rn, qn]], #src
+    curves=[geoPts_yncn], #src
+    tVectors=[Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
+    colors=Dict( #src #src
         :tvectors => [TolVibrantCyan], #src
         :points => [black, TolVibrantBlue, TolVibrantOrange], #src
         :curves => [TolVibrantTeal], #src
     ), #src
-    dotSize = 3.5, #src
-    lineWidth = 0.75, #src
-    cameraPosition = (1.2, 1.0, 0.5), #src
+    dotSize=3.5, #src
+    lineWidth=0.75, #src
+    cameraPosition=(1.2, 1.0, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/SecondOrderMin1.asy"; render = 2) #src
+render_asymptote(exportFolder * "/SecondOrderMin1.asy"; render=2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("SecondOrderMin1.asy";
@@ -147,15 +148,18 @@ render_asymptote(exportFolder * "/SecondOrderMin1.asy"; render = 2) #src
 # and the cost function is still at
 costTV2(M, (pn, rn, qn))
 #
-# But we can also search for the best step size using [`ArmijoLinesearch`](@ref)
+# But we can also search for the best step size using [`linesearch_backtrack`](@ref)
 # on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
 x = [p, r, q]
 N = PowerManifold(M, NestedPowerRepresentation(), 3)
-s = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.999, 0.96)(
-    N,
-    x,
+s = linesearch_backtrack(
+    M,
     x -> costTV2(M, Tuple(x)),
+    x,
     [∇TV2(M, (p, r, q))...],  # transform from tuple to PowTVector
+    1.0, # initial stepsize guess
+    0.999, # decrease
+    0.96,  #contract
 )
 # and for the new points
 pm, rm, qm = exp.(Ref(M), [p, r, q], s * [-Xp, -Xr, -Xq])
@@ -165,19 +169,19 @@ nothing #hide
 # we obtain again with
 asymptote_export_S2_signals( #src
     exportFolder * "/SecondOrderMin2.asy"; #src
-    points = [[p, r, q], [c, c2, cm], [pm, rm, qm]], #src
-    curves = [geoPts_xmzm], #src
-    tVectors = [Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
-    colors = Dict( #src
+    points=[[p, r, q], [c, c2, cm], [pm, rm, qm]], #src
+    curves=[geoPts_xmzm], #src
+    tVectors=[Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
+    colors=Dict( #src
         :tvectors => [TolVibrantCyan], #src
         :points => [black, TolVibrantBlue, TolVibrantOrange], #src
         :curves => [TolVibrantTeal], #src
     ), #src
-    dotSize = 3.5, #src
-    lineWidth = 0.75, #src
-    cameraPosition = (1.2, 1.0, 0.5), #src
+    dotSize=3.5, #src
+    lineWidth=0.75, #src
+    cameraPosition=(1.2, 1.0, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/SecondOrderMin2.asy"; render = 2) #src
+render_asymptote(exportFolder * "/SecondOrderMin2.asy"; render=2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("SecondOrderMin2.asy";

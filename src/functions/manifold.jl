@@ -67,6 +67,6 @@ reflect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
 Compute symmetric remainder of `x` with respect to the interall 2*`T`, i.e.
 `(x+T)%2T`, where the default for `T` is $π$
 """
-function sym_rem(x::N, T = π) where {N<:Number}
+function sym_rem(x::N, T=π) where {N<:Number}
     return (x ≈ T ? convert(N, -T) : rem(x, convert(N, 2 * T), RoundNearest))
 end

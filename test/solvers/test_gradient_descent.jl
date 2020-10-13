@@ -12,14 +12,11 @@
         F,
         ∇F,
         f[1];
-        stopping_criterion = StopWhenAny(
-            StopAfterIteration(200),
-            StopWhenChangeLess(10^-16),
-        ),
-        stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
-        debug = [:Iteration, " ", :Cost, :Stop, 100, "\n"],
-        record = [:Iteration, :Cost, 1],
-        return_options = true,
+        stopping_criterion=StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(10^-16)),
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
+        debug=[:Iteration, " ", :Cost, :Stop, 100, "\n"],
+        record=[:Iteration, :Cost, 1],
+        return_options=true,
     )
     x = get_solver_result(o)
     x2 = gradient_descent(
@@ -27,11 +24,8 @@
         F,
         ∇F,
         f[1];
-        stopping_criterion = StopWhenAny(
-            StopAfterIteration(200),
-            StopWhenChangeLess(10^-16),
-        ),
-        stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
+        stopping_criterion=StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(10^-16)),
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
     )
     @test x == x2  
     x3 = gradient_descent(
