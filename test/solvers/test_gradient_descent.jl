@@ -33,7 +33,25 @@
         ),
         stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
     )
-    @test x == x2
+    @test x == x2  
+    x3 = gradient_descent(
+        M,
+        F,
+        ∇F,
+        f[1];
+        stopping_criterion = StopWhenAny(
+            StopAfterIteration(500),
+            StopWhenChangeLess(10^-16),
+        ),
+        stepsize = NonmonotoneLinesearch(1.0, ExponentialRetraction(), ParallelTransport(), 0.99, 0.1, 2, 1e-7, π/2, :direct),
+        debug = [:Stop]
+    )
+    @test isapprox(x, x3; atol = 1e-13) 
+    
+    @test_throws DomainError NonmonotoneLinesearch(1.0, ExponentialRetraction(), ParallelTransport(), 0.99, 0.1, 2, 0.0, π/2, :direct)
+    @test_throws DomainError NonmonotoneLinesearch(1.0, ExponentialRetraction(), ParallelTransport(), 0.99, 0.1, 2, π/2, π/4, :direct)
+    @test_throws DomainError NonmonotoneLinesearch(1.0, ExponentialRetraction(), ParallelTransport(), 0.99, 0.1, 0, π/4, π/2, :direct) 
+    
     rec = get_record(o)
     # after one step for local enough data -> equal to real valued data
     @test abs(x - sum(r) / length(r)) ≈ 0 atol = 5 * 10.0^(-14)
