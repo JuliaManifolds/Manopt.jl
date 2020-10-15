@@ -32,7 +32,7 @@ function quasi_Newton(
     memory_steps = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
     memory_gradients = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
     memory_position = 0,
-	initial_operator = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis())),
+	initial_operator = Matrix(I,manifold_dimension(M), manifold_dimension(M)),
     scalling_initial_operator::Bool = true,
     step_size::Stepsize = WolfePowellLineseach(retraction_method, vector_transport_method),
     stopping_criterion::StoppingCriterion = StopWhenAny(
@@ -51,9 +51,9 @@ function quasi_Newton(
 
 	(memory_steps_size < memory_position) && throw( ErrorException( "The number of given vectors in memory_steps ($memory_steps_size) is too small compared to memory_position ($memory_position)."))
 
+	grad_x = ∇F(x)
 	if memory_size < 0 && memory_steps_size == 0
-		grad_x = ∇F(x)
-		basis = get_vectors(M, x, get_basis(M, x, DefaultOrthonormalBasis()))
+		basis = get_basis(M, x, DefaultOrthonormalBasis())
 		if cautious_update == true
 			o = CautiuosQuasiNewtonOptions(x, grad_x, initial_operator, basis; scalling_initial_operator = scalling_initial_operator, cautious_function = cautious_function, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size, broyden_factor = broyden_factor)
 		else
@@ -61,9 +61,9 @@ function quasi_Newton(
 		end
 	else
 		if cautious_update == true
-			o = CautiuosRLBFGSOptions(x, memory_gradients, memory_steps; cautious_function = cautious_function, current_memory_size = memory_position, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size)
+			o = CautiuosRLBFGSOptions(x, grad_x, memory_gradients, memory_steps; cautious_function = cautious_function, current_memory_size = memory_position, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size)
 		else
-			o = RLBFGSOptions(x, memory_gradients, memory_steps; current_memory_size = memory_position, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size)
+			o = RLBFGSOptions(x, grad_x, memory_gradients, memory_steps; current_memory_size = memory_position, retraction_method = retraction_method, vector_transport_method = vector_transport_method, stop = stopping_criterion, stepsize = step_size)
 		end
 	end
 
@@ -84,7 +84,7 @@ function initialize_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions)
 end
 
 function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
-
+	o.∇ = get_gradient(p,o.x)
 	η = get_quasi_newton_direction(p, o)
 
 	α = o.stepsize(p,o,iter,η)
@@ -100,14 +100,13 @@ end
 # Computing the direction
 
 function get_quasi_newton_direction(p::GradientProblem, o::Union{QuasiNewtonOptions{P,T}, CautiuosQuasiNewtonOptions{P,T}}) where {P, T}
-	o.∇ = get_gradient(p,o.x)
-	η = square_matrix_vector_product(p.M, o.x, o.inverse_hessian_approximation, -o.∇; orthonormal_basis = o.basis)
-	return η/norm(p.M, o.x, η)
+	gradient = get_coordinates(p.M,o.x,o.∇,o.basis)
+	return get_vector(p.M,o.x,-o.inverse_hessian_approximation*gradient,o.basis)
 end
 
 
 function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}) where {P, T}
-	q = get_gradient(p,o.x)
+	q = o.∇
 	current_memory = o.current_memory_size
 	ξ = zeros(current_memory)
 
@@ -141,101 +140,70 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 	yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
-	o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
+	o.basis.data .= [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ get_vectors(p.M,o.x,o.basis) ]
 
-	b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
+	yk_c = get_coordinates(p.M, o.x, yk, o.basis)
+	sk_c = get_coordinates(p.M, o.x, sk, o.basis)
+	skyk_c = dot(sk_c, yk_c)
 
 	if iter == 1 && o.scalling_initial_operator == true
-		b = [ (inner(p.M, o.x, sk, yk) / norm(p.M, o.x, yk)^2) * v for v ∈ o.inverse_hessian_approximation ]
+		o.inverse_hessian_approximation = skyk_c/dot(yk_c, yk_c) * o.inverse_hessian_approximation
 	end
 
-	n = manifold_dimension(p.M)
-
-	Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
-
-	skyk = inner(p.M, o.x, yk, sk)
 
 	if o.broyden_factor==1.0
-		new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
-		for i = 1:n
-			o.inverse_hessian_approximation[i] = new_approx[i]
-		end
+		o.inverse_hessian_approximation = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c) 
 	end
 
-
 	if o.broyden_factor==0.0
-		new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
-		for i = 1:n
-			o.inverse_hessian_approximation[i] = new_approx[i]
-		end
+		o.inverse_hessian_approximation = (I - sk_c * yk_c' / skyk_c) * o.inverse_hessian_approximation * (I - yk_c * sk_c' / skyk_c) + sk_c * sk_c' / skyk_c
 	end
 
 	if o.broyden_factor > 0 && o.broyden_factor < 1
-		X .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
-		Y .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
-		o.inverse_hessian_approximation .= [ o.broyden_factor*x + (1 - o.broyden_factor) * y for (x,y) ∈ zip(X,Y) ]
+		RBFGS = (I - sk_c * yk_c' / skyk_c) * o.inverse_hessian_approximation * (I - yk_c * sk_c' / skyk_c) + sk_c * sk_c' / skyk_c
+		DFP = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c) 
+		o.inverse_hessian_approximation = (1 - o.broyden_factor) * RBFGS + o.broyden_factor * DFP
 	end
 end
 
 function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	gradf_xold = o.∇
 	β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
-	yk = (β^(-1))*get_gradient(p,o.x) - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
+	yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
-	skyk = inner(p.M, o.x, yk, sk)
-	norm_sk = norm(p.M, o.x, sk)
+	o.basis.data .= [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ get_vectors(p.M,o.x,o.basis) ]
+
+	yk_c = get_coordinates(p.M, o.x, yk, o.basis)
+	sk_c = get_coordinates(p.M, o.x, sk, o.basis)
+	skyk_c = dot(sk_c, yk_c)
+	sksk_c = dot(sk_c, sk_c)
 
 	bound = o.cautious_function(norm(p.M, x, gradf_xold))
-	n = manifold_dimension(p.M)
 
-	if norm_sk != 0 && (skyk / norm_sk) >= bound
-		b = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.inverse_hessian_approximation ]
+	if sksk_c != 0 && (skyk_c / sksk_c) >= bound
 
 		if iter == 1 && o.scalling_initial_operator == true
-			b = [ (inner(p.M, o.x, sk, yk) / norm(p.M, o.x, yk)^2) * v for v ∈ o.inverse_hessian_approximation ]
+			o.inverse_hessian_approximation = skyk_c/dot(yk_c, yk_c) * o.inverse_hessian_approximation
 		end
 
-		o.basis = [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ o.basis ]
-
-		Bkyk = square_matrix_vector_product(p.M, o.x, b, yk; orthonormal_basis = o.basis)
-
 		if o.broyden_factor==1.0
-			new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
-			for i = 1:n
-				o.inverse_hessian_approximation[i] = new_approx[i]
-			end
+			o.inverse_hessian_approximation = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c) 
 		end
 
 		if o.broyden_factor==0.0
-			new_approx = update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
-			for i = 1:n
-				o.inverse_hessian_approximation[i] = new_approx[i]
-			end
+			o.inverse_hessian_approximation = (I - sk_c * yk_c' / skyk_c) * o.inverse_hessian_approximation * (I - yk_c * sk_c' / skyk_c) + sk_c * sk_c' / skyk_c
 		end
 
 		if o.broyden_factor > 0 && o.broyden_factor < 1
-			X .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:BFGS))
-			Y .= update_Newton_Hessian(p.M, o.x, b, o.basis, sk, yk, Bkyk, skyk, n, Val(:DFP))
-			o.inverse_hessian_approximation .= [ o.broyden_factor*x + (1 - o.broyden_factor) * y for (x,y) ∈ zip(X,Y) ]
-		end
-	else
-		for i = 1:n
-			o.inverse_hessian_approximation[i] = vector_transport_to(p.M, x, o.inverse_hessian_approximation[i], o.x, o.vector_transport_method)
+			RBFGS = (I - sk_c * yk_c' / skyk_c) * o.inverse_hessian_approximation * (I - yk_c * sk_c' / skyk_c) + sk_c * sk_c' / skyk_c
+			DFP = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c) 
+			o.inverse_hessian_approximation = (1 - o.broyden_factor) * RBFGS + o.broyden_factor * DFP
 		end
 	end
 
 end
 
-function update_Newton_Hessian(M::Manifold, p::P, b::AbstractVector{T}, basis::AbstractVector{T}, sk::T, yk::T, Bkyk::T, skyk::Float64, n::Int, ::Val{:BFGS}) where {P,T}
-	return [b[i] - (inner(M, p, basis[i], sk) / skyk) * Bkyk - (inner(M, p, Bkyk, basis[i]) / skyk) * sk + ((inner(M, p, yk, Bkyk)*inner(M, p, sk, basis[i])) / skyk^2) * sk + (inner(M, p, sk, basis[i])
-	/ skyk) * sk for i ∈ 1:n]
-end
-
-function update_Newton_Hessian(M::Manifold, p::P, b::AbstractVector{T}, basis::AbstractVector{T}, sk::T, yk::T, Bkyk::T, skyk::Float64, n::Int, ::Val{:DFP}) where {P,T}
-	# I need to implement a DFP Update
-	return basis
-end
 
 # Limited memory variants
 
@@ -245,7 +213,7 @@ end
 
 
 function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
-	gradf_xold = get_gradient(p,x)
+	gradf_xold = o.∇
     β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
     yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
     sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
@@ -266,7 +234,7 @@ function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α
 end
 
 function limited_memory_update(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}, α::Float64, η::T, x::P) where {P,T}
-	gradf_xold = get_gradient(p,x)
+	gradf_xold = o.∇
     β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
     yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
     sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
@@ -303,12 +271,7 @@ function limited_memory_update(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, 
     end
 end
 
-import ManifoldsBase
 
-function square_matrix_vector_product(M::Manifold, p::P, A::AbstractVector{T}, X::T; orthonormal_basis::AbstractVector{T} = get_vectors(M, p, get_basis(M, p, DefaultOrthonormalBasis()))) where {P,T}
-        n = manifold_dimension(M)
-        Y = sum([inner(M, p, A[i], X) * orthonormal_basis[i] for i ∈ 1:n])
-end
 
 function operator_to_matrix(M::Manifold, p::P, operator::Function; orthonormal_basis::AbstractVector{T} = get_vectors(M, p, get_basis(M, p, DefaultOrthonormalBasis()))) where {P,T}
 	n = length(orthonormal_basis)

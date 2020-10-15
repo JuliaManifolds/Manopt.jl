@@ -19,6 +19,7 @@ module Manopt
         ℂ,
         ×,
         ^,
+        AbstractBasis,
         AbstractVectorTransportMethod,
         AbstractRetractionMethod,
         ExponentialRetraction,

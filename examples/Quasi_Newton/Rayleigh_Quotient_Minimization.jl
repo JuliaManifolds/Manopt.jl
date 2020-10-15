@@ -16,4 +16,5 @@ F(X::Array{Float64,1}) = transpose(X)*A*X
 ∇2F(X::Array{Float64,1}, ξ::Array{Float64,1}) = 2*project(M,X,A*ξ - ξ*X'*A*X)
 x = random_point(M)
 op = operator_to_matrix(M,x,(ξ) -> ∇2F(x, ξ))
-quasi_Newton(M,F,∇F,x; memory_size = -250, debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
+
+@time quasi_Newton(M,F,∇F,x; memory_size = -250,  cautious_update=true, stopping_criterion = StopWhenGradientNormLess(norm(M,x,∇F(x))*10^(-6)),debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])

@@ -708,11 +708,11 @@ specify options for a Riemannian BFGS algorithm, that solves a
 # See also
 [`GradientProblem`](@ref)
 """
-mutable struct QuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
+mutable struct QuasiNewtonOptions{P,T,B<:AbstractBasis} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
-    inverse_hessian_approximation::Array{T,1}
-    basis::Array{T,1}
+    inverse_hessian_approximation::AbstractMatrix
+    basis::B
     scalling_initial_operator::Bool
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
@@ -720,19 +720,19 @@ mutable struct QuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     stepsize::Stepsize
     broyden_factor::Float64
 
-    function QuasiNewtonOptions{P,T}(
+    function QuasiNewtonOptions{P,T,B}(
         x::P,
         grad_x::T,
-        inverse_hessian_approximation::Array{T,1},
-        basis::Array{T,1};
+        inverse_hessian_approximation::AbstractMatrix,
+        basis::B;
         scalling_initial_operator::Bool = true,
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
         vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
         stop::StoppingCriterion = StopAfterIteration(100),
         stepsize::Stepsize = WolfePowellLineseach(),
         broyden_factor::Float64 = 0.0
-    ) where {P,T}
-        o = new{P,T}()
+    ) where {P,T,B<:AbstractBasis}
+        o = new{P,T,B}()
         o.x = x
         o.∇ = grad_x
         o.inverse_hessian_approximation = inverse_hessian_approximation
@@ -749,16 +749,16 @@ end
 function QuasiNewtonOptions(
     x::P,
     grad_x::T,
-    inverse_hessian_approximation::Array{T,1},
-    basis::Array{T,1};
+    inverse_hessian_approximation::AbstractMatrix,
+    basis::B;
     scalling_initial_operator::Bool = true,
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
     stop::StoppingCriterion = StopAfterIteration(100),
     stepsize::Stepsize = WolfePowellLineseach(),
     broyden_factor::Float64 = 0.0
-) where {P,T}
-    return QuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation,basis;
+) where {P,T,B<:AbstractBasis}
+    return QuasiNewtonOptions{P,T,B}(x,grad_x,inverse_hessian_approximation,basis;
         scalling_initial_operator = scalling_initial_operator,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
@@ -770,11 +770,11 @@ end
 
 
 # Cautious RBFGS
-mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
+mutable struct CautiuosQuasiNewtonOptions{P,T,B<:AbstractBasis} <: AbstractQuasiNewtonOptions
     x::P
     ∇::T
-    inverse_hessian_approximation::Array{T,1}
-    basis::Array{T,1}
+    inverse_hessian_approximation::AbstractMatrix
+    basis::B
     scalling_initial_operator::Bool
     cautious_function::Function
     retraction_method::AbstractRetractionMethod
@@ -786,8 +786,8 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
     function CautiuosQuasiNewtonOptions{P,T}(
         x::P,
         grad_x::T,
-        inverse_hessian_approximation::Array{T,1},
-        basis::Array{T,1};
+        inverse_hessian_approximation::AbstractMatrix,
+        basis::B;
         scalling_initial_operator::Bool = true,
         cautious_function::Function = x -> x*10^(-4),
         retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
@@ -795,8 +795,8 @@ mutable struct CautiuosQuasiNewtonOptions{P,T} <: AbstractQuasiNewtonOptions
         stop::StoppingCriterion = StopAfterIteration(100),
         stepsize::Stepsize = WolfePowellLineseach(),
         broyden_factor::Float64 = 0.0
-    ) where {P,T}
-        o = new{P,T}()
+    ) where {P,T,B<:AbstractBasis}
+        o = new{P,T,B}()
         o.x = x
         o.∇ = grad_x
         o.inverse_hessian_approximation = inverse_hessian_approximation
@@ -814,8 +814,8 @@ end
 function CautiuosQuasiNewtonOptions(
     x::P,
     grad_x::T,
-    inverse_hessian_approximation::Array{T,1},
-    basis::Array{T,1};
+    inverse_hessian_approximation::AbstractMatrix,
+    basis::B;
     scalling_initial_operator::Bool = true,
     cautious_function::Function = x -> x*10^(-4),
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
@@ -823,7 +823,7 @@ function CautiuosQuasiNewtonOptions(
     stop::StoppingCriterion = StopAfterIteration(100),
     stepsize::Stepsize = WolfePowellLineseach(),
     broyden_factor::Float64 = 0.0
-) where {P,T}
+) where {P,T,B<:AbstractBasis}
     return CautiuosQuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation,basis;
         scalling_initial_operator = scalling_initial_operator,
         cautious_function = cautious_function,
@@ -859,6 +859,7 @@ specify options for a Riemannian limited-memory BFGS algorithm, that solves a
 """
 mutable struct RLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
+    ∇::T
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
     current_memory_size::Int
@@ -869,6 +870,7 @@ mutable struct RLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
 
     function RLBFGSOptions{P,T}(
         x::P,
+        ∇::T,
         gradient_diffrences::AbstractVector{T},
         steps::AbstractVector{T};
         current_memory_size::Int = 0,
@@ -879,6 +881,7 @@ mutable struct RLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
     ) where {P,T}
         o = new{P,T}()
         o.x = x
+        o.∇ = ∇
         o.gradient_diffrences = gradient_diffrences
         o.steps = steps
         o.current_memory_size = current_memory_size
@@ -891,6 +894,7 @@ mutable struct RLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
 end
 function RLBFGSOptions(
     x::P,
+    ∇::T,
     gradient_diffrences::AbstractVector{T},
     steps::AbstractVector{T};
     current_memory_size::Int = 0,
@@ -899,7 +903,7 @@ function RLBFGSOptions(
     stop::StoppingCriterion = StopAfterIteration(100),
     stepsize::Stepsize = WolfePowellLineseach()
 ) where {P,T}
-    return RLBFGSOptions{P,T}(x,gradient_diffrences,steps;
+    return RLBFGSOptions{P,T}(x,∇,gradient_diffrences,steps;
         current_memory_size = current_memory_size,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
@@ -912,6 +916,7 @@ end
 # Cautious Riemannian Limited Memory BFGS
 mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
     x::P
+    ∇::T
     gradient_diffrences::AbstractVector{T}
     steps::AbstractVector{T}
     cautious_function::Function
@@ -923,6 +928,7 @@ mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
 
     function CautiuosRLBFGSOptions{P,T}(
         x::P,
+        ∇::T,
         gradient_diffrences::AbstractVector{T},
         steps::AbstractVector{T};
         cautious_function::Function = x -> x*10^(-4),
@@ -934,6 +940,7 @@ mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
     ) where {P,T}
         o = new{P,T}()
         o.x = x
+        o.∇ = ∇
         o.gradient_diffrences = gradient_diffrences
         o.steps = steps
         o.cautious_function = cautious_function
@@ -947,6 +954,7 @@ mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
 end
 function CautiuosRLBFGSOptions(
     x::P,
+    ∇::T,
     gradient_diffrences::AbstractVector{T},
     steps::AbstractVector{T};
     cautious_function::Function = x -> x*10^(-4),
@@ -956,7 +964,7 @@ function CautiuosRLBFGSOptions(
     stop::StoppingCriterion = StopAfterIteration(100),
     stepsize::Stepsize = WolfePowellLineseach()
 ) where {P,T}
-    return CautiuosRLBFGSOptions{P,T}(x,gradient_diffrences,steps;
+    return CautiuosRLBFGSOptions{P,T}(x,∇,gradient_diffrences,steps;
         cautious_function = cautious_function,
         current_memory_size = current_memory_size,
         retraction_method = retraction_method,
