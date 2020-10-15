@@ -324,7 +324,7 @@ function artificial_SPD_image(pts::Int=64, stepsize=1.5)
                 1 + v3[row + col] - stepsize * (col > pts / 2 ? 1 : 0)
                 4 - v3[row + col] + stepsize * (row > pts / 2 ? 1 : 0)
             ]
-            data[row, col] = A * B * C * Diagonal(scale) * C' * B' * A'
+            data[row, col] = Matrix(Symmetric(A * B * C * Diagonal(scale) * C' * B' * A'))
         end
     end
     return data
@@ -342,7 +342,7 @@ function artificial_SPD_image2(pts=64, fraction=0.66)
     β = π / 3
     B = [1.0 0.0 0.0; 0.0 cos(β) -sin(β); 0.0 sin(β) cos(β)]
     A = [cos(α) -sin(α) 0.0; sin(α) cos(α) 0.0; 0.0 0.0 1.0]
-    Zo = A * B * Diagonal([2.0, 4.0, 8.0]) * B' * A'
+    Zo = Matrix(Symmetric(A * B * Diagonal([2.0, 4.0, 8.0]) * B' * A'))
     # create a second matrix
     α = -4.0 * π / 3
     β = -π / 3
@@ -367,7 +367,9 @@ function artificial_SPD_image2(pts=64, fraction=0.66)
                 C = exp(
                     M,
                     C,
-                    vector_transport_to(M, Zo, log(M, Zo, Zl), C, ParallelTransport()),
+                    vector_transport_to(
+                        M, Symmetric(Zo), log(M, Zo, Zl), Symmetric(C), ParallelTransport()
+                    ),
                     (col - 1.0) / (pts - 1),
                 )
             end

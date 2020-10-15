@@ -118,7 +118,7 @@ function random_point(
 ) where {N}
     D = Diagonal(1 .+ rand(N)) # random diagonal matrix
     s = qr(σ * randn(N, N)) # random q
-    return s.Q * D * transpose(s.Q)
+    return Matrix(Symmetric(s.Q * D * transpose(s.Q)))
 end
 
 @doc raw"""
