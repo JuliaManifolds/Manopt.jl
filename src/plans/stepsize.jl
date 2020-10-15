@@ -240,7 +240,9 @@ with the Fields above in their order as optional arguments.
 
 This method returns the functor to perform nonmonotone line search.
 """
-mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, VTM<:AbstractVectorTransportMethod, T<:AbstractVector} <: Linesearch
+mutable struct NonmonotoneLinesearch{
+    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,T<:AbstractVector
+} <: Linesearch
     retraction_method::TRM
     vector_transport_method::VTM
     stepsize_reduction::Float64
@@ -252,49 +254,59 @@ mutable struct NonmonotoneLinesearch{TRM<:AbstractRetractionMethod, VTM<:Abstrac
     strategy::Symbol
     storage::StoreOptionsAction
     function NonmonotoneLinesearch(
-        initial_stepsize::Float64 = 1.0, 
-        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-        stepsize_reduction::Float64 = 0.5,
-        sufficient_decrease::Float64 = 1e-4,
-        memory_size::Int = 10,
-        min_stepsize::Float64 = 1e-3, 
-        max_stepsize::Float64 = 1e3,         
-        strategy::Symbol = :direct,
-        storage::StoreOptionsAction = StoreOptionsAction((:x, :∇)),
+        initial_stepsize::Float64=1.0,
+        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+        vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+        stepsize_reduction::Float64=0.5,
+        sufficient_decrease::Float64=1e-4,
+        memory_size::Int=10,
+        min_stepsize::Float64=1e-3,
+        max_stepsize::Float64=1e3,
+        strategy::Symbol=:direct,
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :∇)),
     )
-    if strategy ∉ [:direct, :inverse, :alternating] 
-        @warn string("The strategy '", strategy,"' is not defined. The 'direct' strategy is used instead.")
-        strategy = :direct
-    end
-    if min_stepsize <= 0.0 
-        throw(DomainError(min_stepsize, "The lower bound for the step size min_stepsize has to be greater than zero."))
-    end
-    if max_stepsize <= min_stepsize 
-        throw(DomainError(max_stepsize, "The upper bound for the step size max_stepsize has to be greater its lower bound min_stepsize."))
-    end
-    if memory_size <= 0 
-        throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
-    end
-    return new{typeof(retraction_method), typeof(vector_transport_method), Vector{Float64}}(
-        retraction_method,
-        vector_transport_method, 
-        stepsize_reduction, 
-        sufficient_decrease, 
-        min_stepsize, 
-        max_stepsize,
-        initial_stepsize,   
-        zeros(memory_size), 
-        strategy,
-        storage)
+        if strategy ∉ [:direct, :inverse, :alternating]
+            @warn string(
+                "The strategy '",
+                strategy,
+                "' is not defined. The 'direct' strategy is used instead.",
+            )
+            strategy = :direct
+        end
+        if min_stepsize <= 0.0
+            throw(DomainError(
+                min_stepsize,
+                "The lower bound for the step size min_stepsize has to be greater than zero.",
+            ))
+        end
+        if max_stepsize <= min_stepsize
+            throw(DomainError(
+                max_stepsize,
+                "The upper bound for the step size max_stepsize has to be greater its lower bound min_stepsize.",
+            ))
+        end
+        if memory_size <= 0
+            throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
+        end
+        return new{
+            typeof(retraction_method),typeof(vector_transport_method),Vector{Float64}
+        }(
+            retraction_method,
+            vector_transport_method,
+            stepsize_reduction,
+            sufficient_decrease,
+            min_stepsize,
+            max_stepsize,
+            initial_stepsize,
+            zeros(memory_size),
+            strategy,
+            storage,
+        )
     end
 end
 function (a::NonmonotoneLinesearch)(
-    p::P,
-    o::O,
-    i::Int,
-    η = -get_gradient(p, o.x),
-) where {P<:GradientProblem{mT} where {mT<:Manifold}, O<:Options}
+    p::P, o::O, i::Int, η=-get_gradient(p, o.x)
+) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
     if !all(has_storage.(Ref(a.storage), [:x, :∇]))
         old_x = o.x
         old_∇ = get_gradient(p, o.x)
@@ -303,40 +315,44 @@ function (a::NonmonotoneLinesearch)(
     end
     update_storage!(a.storage, o)
     return a(p.M, o.x, p.cost, get_gradient(p, o.x), η, old_x, old_∇, i)
-end 
-function (a::NonmonotoneLinesearch)(M::mT, x, F::TF, ∇F::T, η::T , old_x, old_∇, iter::Int) where {mT<:Manifold,TF,T}
+end
+function (a::NonmonotoneLinesearch)(
+    M::mT, x, F::TF, ∇F::T, η::T, old_x, old_∇, iter::Int
+) where {mT<:Manifold,TF,T}
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space 
-    grad_diff = ∇F - vector_transport_to(M, old_x, old_∇, x, a.vector_transport_method)        
+    grad_diff = ∇F - vector_transport_to(M, old_x, old_∇, x, a.vector_transport_method)
     #transport the previous step into the tangent space of the current manifold point
-    x_diff = - a.initial_stepsize * vector_transport_to(M, old_x, old_∇, x, a.vector_transport_method)
+    x_diff =
+        -a.initial_stepsize *
+        vector_transport_to(M, old_x, old_∇, x, a.vector_transport_method)
 
     #compute the new Barzilai-Borwein step size
     s1 = inner(M, x, x_diff, grad_diff)
     s2 = inner(M, x, grad_diff, grad_diff)
-    s2 = s2==0 ? 1.0 : s2
+    s2 = s2 == 0 ? 1.0 : s2
     s3 = inner(M, x, x_diff, x_diff)
     #indirect strategy
     if a.strategy == :inverse
-        if s1 > 0       
-            BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s1/s2))
+        if s1 > 0
+            BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s1 / s2))
         else
             BarzilaiBorwein_stepsize = a.max_stepsize
         end
-    #alternating strategy
+        #alternating strategy
     elseif a.strategy == :alternating
         if s1 > 0
-            if iter % 2 == 0        
-                BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s1/s2))
+            if iter % 2 == 0
+                BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s1 / s2))
             else
-                BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s3/s1))
+                BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s3 / s1))
             end
         else
             BarzilaiBorwein_stepsize = a.max_stepsize
         end
-    #direct strategy
+        #direct strategy
     else
         if s1 > 0
-            BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s2/s1))
+            BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s2 / s1))
         else
             BarzilaiBorwein_stepsize = a.max_stepsize
         end
@@ -345,11 +361,11 @@ function (a::NonmonotoneLinesearch)(M::mT, x, F::TF, ∇F::T, η::T , old_x, old
     memory_size = length(a.old_costs)
     if iter <= memory_size
         a.old_costs[iter] = F(x)
-    else 
-        a.old_costs[1:(memory_size-1)] = a.old_costs[2:memory_size]
+    else
+        a.old_costs[1:(memory_size - 1)] = a.old_costs[2:memory_size]
         a.old_costs[memory_size] = F(x)
     end
-    
+
     #compute the new step size with the help of the Barzilai-Borwein step size
     a.initial_stepsize = linesearch_backtrack(
         M,
@@ -361,10 +377,10 @@ function (a::NonmonotoneLinesearch)(M::mT, x, F::TF, ∇F::T, η::T , old_x, old
         a.stepsize_reduction,
         a.retraction_method,
         η,
-        maximum([a.old_costs[j] for j in 1:min(iter, memory_size)])    
+        maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]),
     )
     return a.initial_stepsize
-end 
+end
 
 @doc raw"""
     get_stepsize(p::Problem, o::Options, vars...)
