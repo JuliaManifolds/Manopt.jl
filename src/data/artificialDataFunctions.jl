@@ -367,7 +367,9 @@ function artificial_SPD_image2(pts=64, fraction=0.66)
                 C = exp(
                     M,
                     C,
-                    vector_transport_to(M, Symmetric(Zo), log(M, Zo, Zl), Symmetric(C), ParallelTransport()),
+                    vector_transport_to(
+                        M, Symmetric(Zo), log(M, Zo, Zl), Symmetric(C), ParallelTransport()
+                    ),
                     (col - 1.0) / (pts - 1),
                 )
             end
