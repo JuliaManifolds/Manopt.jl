@@ -273,18 +273,18 @@ end
 
 
 
-function operator_to_matrix(M::Manifold, p::P, operator::Function; orthonormal_basis::AbstractVector{T} = get_vectors(M, p, get_basis(M, p, DefaultOrthonormalBasis()))) where {P,T}
-	n = length(orthonormal_basis)
-	matrix = [zero_tangent_vector(M,p) for _ ∈ 1:n]
-	column = [operator(orthonormal_basis[j]) for j ∈ 1:n]
+function operator_to_matrix(M::Manifold, x::P, operator::Function; basis::B = get_basis(M, x, DefaultOrthonormalBasis())) where {P,T,B<:AbstractBasis}
 
-	for j = 1:n
-		for i = 1:n
-			matrix[j] = matrix[j] + inner(M,p,column[i],orthonormal_basis[j])*orthonormal_basis[i]
-		end
+	orthonormal_basis = get_vectors(M, x, basis)
+	n = length(orthonormal_basis)
+	matrix_rep = zeros(n, n)
+	column = [operator(orthonormal_basis[i]) for i ∈ 1:n]
+	
+	for i = 1:n
+		matrix_rep[:,i] = get_coordinates(M, x, column[i], basis)
 	end
 
-	return matrix
+	return matrix_rep
 end
 
 get_solver_result(o::O) where {O <: AbstractQuasiNewtonOptions} = o.x
