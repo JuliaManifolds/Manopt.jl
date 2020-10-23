@@ -21,7 +21,7 @@ this toolbox provide an easy access to optimization methods on manifolds
 for [Julia](https://julialang.org), including example data and visualization methods.
 
 If you want to delve right into `Manopt.jl` check out the
-[Getting Started: Optimize!](@ref Optimize) tutorial.
+[Get started: Optimize!](@ref Optimize) tutorial.
 
 `Manopt.jl` makes it easy to use an algorithm for your favorite
 manifold as well as a manifold for your favorite algorithm. It already provides
@@ -43,7 +43,7 @@ form a [plan](@ref planSection).
 ### Visualization
 
 To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugOptions) during the iterations of an algorithms as well as [record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the [Getting Started: Optimize!](@ref Optimize) tutorial how to easily activate this.
+[`RecordIterate`](@ref). Take a look at the [Get started: Optimize!](@ref Optimize) tutorial how to easily activate this.
 
 ## Manifolds
 

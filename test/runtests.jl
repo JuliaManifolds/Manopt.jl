@@ -11,6 +11,7 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
 end
 @testset "Function Tests     " begin
     include("functions/test_adjoint_differentials.jl")
+    include("functions/test_bezier.jl")
     include("functions/test_differentials.jl")
     include("functions/test_costs.jl")
     include("functions/test_gradients.jl")
@@ -28,4 +29,5 @@ end
     include("solvers/test_gradient_descent.jl")
     include("solvers/test_Nelder_Mead.jl")
     include("solvers/test_trust_regions.jl")
+    include("solvers/test_particle_swarm.jl")
 end

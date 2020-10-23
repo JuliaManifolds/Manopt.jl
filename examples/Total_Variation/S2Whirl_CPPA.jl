@@ -25,8 +25,10 @@ f = artificial_S2_whirl_image(64)
 pixelM = Sphere(2);
 
 if ExportOrig
-    asymptote_export_S2_data(resultsFolder * experimentName * "-orig.asy"; data = f)
-    render_asymptote(resultsFolder * experimentName * "-orig.asy"; render=asymptote_render_detail)
+    asymptote_export_S2_data(resultsFolder * experimentName * "-orig.asy"; data=f)
+    render_asymptote(
+        resultsFolder * experimentName * "-orig.asy"; render=asymptote_render_detail
+    )
 end
 #
 # Parameters
@@ -43,14 +45,14 @@ prior(x) = norm(norm.(Ref(pixelM), repeat(x, iRep...), Λ(x)), 1)
 #
 # Setup and Optimize
 cost(x) = fidelity(x) + α * prior(x)
-proxes = [(λ, x) -> prox_distance(M, λ, f, x, 2), (λ, x) -> prox_TV(M, α * λ, x, 1)]
+proxes = ((λ, x) -> prox_distance(M, λ, f, x, 2), (λ, x) -> prox_TV(M, α * λ, x, 1))
 x0 = f
 @time o = cyclic_proximal_point(
     M,
     cost,
     proxes,
     x0;
-    debug = [
+    debug=[
         :Iteration,
         " | ",
         DebugProximalParameter(),
@@ -62,10 +64,10 @@ x0 = f
         100,
         :Stop,
     ],
-    record = [:Iteration, :Iterate, :Cost],
-    stopping_criterion = StopAfterIteration(maxIterations),
-    λ = i -> π / (2 * i),
-    return_options = true,
+    record=[:Iteration, :Iterate, :Cost],
+    stopping_criterion=StopAfterIteration(maxIterations),
+    λ=i -> π / (2 * i),
+    return_options=true,
 )
 y = get_solver_result(o)
 yRec = get_record(o)
@@ -76,21 +78,21 @@ if ExportResult
         resultsFolder *
         experimentName *
         "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
-        data = y,
+        data=y,
     ) #(6)
     render_asymptote(
         resultsFolder *
         experimentName *
         "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
-        render=asymptote_render_detail
+        render=asymptote_render_detail,
     )
 end
 if ExportTable
-    A = cat([y[1] for y in yRec], [y[3] for y in yRec]; dims = 2)
+    A = cat([y[1] for y in yRec], [y[3] for y in yRec]; dims=2)
     CSV.write(
         string(resultsFolder * experimentName * "-Result.csv"),
-        DataFrame(A),
-        writeheader = false,
+        DataFrame(A);
+        writeheader=false,
     )
     save(
         resultsFolder * experimentName * "-CostValue.jld2",

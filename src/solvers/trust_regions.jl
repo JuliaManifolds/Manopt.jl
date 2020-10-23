@@ -63,44 +63,34 @@ For a description of the algorithm and more details see
 """
 function trust_regions(
     M::MT,
-    F::Function,
-    ∇F::Function,
+    F::TF,
+    ∇F::TdF,
     x,
-    H::Union{Function,Missing};
-    retraction::Function = exp,
-    preconditioner::Function = (M,x,ξ) -> ξ,
-    stopping_criterion::StoppingCriterion = StopWhenAny(
-        StopAfterIteration(1000),
-        StopWhenGradientNormLess(10^(-6))
+    H::TH;
+    retraction::Tretr=exp,
+    preconditioner::Tprec=(M, x, ξ) -> ξ,
+    stopping_criterion::StoppingCriterion=StopWhenAny(
+        StopAfterIteration(1000), StopWhenGradientNormLess(10^(-6))
     ),
-    Δ_bar = sqrt(manifold_dimension(M)),
-    Δ = Δ_bar/8,
-    useRandom::Bool = false,
-    ρ_prime::Float64 = 0.1,
-    ρ_regularization=1000.,
+    Δ_bar=sqrt(manifold_dimension(M)),
+    Δ=Δ_bar / 8,
+    useRandom::Bool=false,
+    ρ_prime::Float64=0.1,
+    ρ_regularization=1000.0,
     return_options=false,
-    kwargs... #collect rest
-    ) where {MT <: Manifold}
-    (ρ_prime >= 0.25) && throw( ErrorException(
-        "ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime."
-    ))
-    (Δ_bar <= 0) && throw( ErrorException("Δ_bar must be positive but it is $Δ_bar.") )
-    (Δ <= 0 || Δ > Δ_bar) &&  throw( ErrorException(
-        "Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."
-    ))
-    p = HessianProblem(M,F,∇F,H,preconditioner)
+    kwargs..., #collect rest
+) where {MT<:Manifold,TF,TdF,TH,Tretr,Tprec}
+    (ρ_prime >= 0.25) &&
+        throw(ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime."))
+    (Δ_bar <= 0) && throw(ErrorException("Δ_bar must be positive but it is $Δ_bar."))
+    (Δ <= 0 || Δ > Δ_bar) &&
+        throw(ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."))
+    p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TrustRegionsOptions(
-        x,
-        stopping_criterion,
-        Δ,
-        Δ_bar,
-        retraction,
-        useRandom,
-        ρ_prime,
-        ρ_regularization
+        x, stopping_criterion, Δ, Δ_bar, retraction, useRandom, ρ_prime, ρ_regularization
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p,o)
+    resultO = solve(p, o)
     if return_options
         return resultO
     else
@@ -108,93 +98,105 @@ function trust_regions(
     end
 end
 
-initialize_solver!(p::P,o::O) where {P <: HessianProblem, O <: TrustRegionsOptions} = nothing
+initialize_solver!(p::P, o::O) where {P<:HessianProblem,O<:TrustRegionsOptions} = nothing
 
-function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TrustRegionsOptions}
-        # Determine eta0
-        if o.useRand==false
-                # Pick the zero vector
-                eta = zero_tangent_vector(p.M, o.x)
-        else
-                # Random vector in T_x M (this has to be very small)
-                eta = 10.0^(-6)*random_tangent(p.M, o.x)
-                while norm(p.M, o.x, eta) > o.Δ
-                        # Must be inside trust-region
-                        eta = sqrt(sqrt(eps(Float64)))*eta
-                end
+function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegionsOptions}
+    # Determine eta0
+    if o.useRand == false
+        # Pick the zero vector
+        eta = zero_tangent_vector(p.M, o.x)
+    else
+        # Random vector in T_x M (this has to be very small)
+        eta = 10.0^(-6) * random_tangent(p.M, o.x)
+        while norm(p.M, o.x, eta) > o.Δ
+            # Must be inside trust-region
+            eta = sqrt(sqrt(eps(Float64))) * eta
         end
-        # Solve TR subproblem approximately
-        opt = truncated_conjugate_gradient_descent(p.M,p.cost, p.gradient,
-        o.x,eta,p.hessian,o.Δ;preconditioner=p.precon,useRandom=o.useRand,
+    end
+    # Solve TR subproblem approximately
+    opt = truncated_conjugate_gradient_descent(
+        p.M,
+        p.cost,
+        p.gradient,
+        o.x,
+        eta,
+        p.hessian,
+        o.Δ;
+        preconditioner=p.precon,
+        useRandom=o.useRand,
         #debug = [:Iteration," ",:Stop],
-        return_options=true)
-        option = get_options(opt) # remove decorators
-        η = get_solver_result(option)
-        SR = get_active_stopping_criteria(option.stop)
-        Hη = getHessian(p, o.x, η)
-        # Initialize the cost function F und the gradient of the cost function
-        # ∇F at the point x
-        grad = get_gradient(p, o.x)
-        fx = get_cost(p, o.x)
-        norm_grad = norm(p.M, o.x, grad)
-        # If using randomized approach, compare result with the Cauchy point.
-        if o.useRand
-                # Check the curvature,
-                Hgrad = getHessian(p, o.x, grad)
-                gradHgrad = inner(p.M, o.x, grad, Hgrad)
-                if gradHgrad <= 0
-                        tau_c = 1
-                else
-                        tau_c = min( norm_grad^3 /(o.Δ * gradHgrad), 1)
-                end
-                # and generate the Cauchy point.
-                η_c = (-tau_c * o.Δ / norm_grad) * grad
-                Hη_c = (-tau_c * o.Δ / norm_grad) * Hgrad
-                # Now that we have computed the Cauchy point in addition to the
-                # returned eta, we might as well keep the best of them.
-                mdle  = fx + inner(p.M, o.x, grad, η) + .5 * inner(p.M, o.x, Hη, η)
-                mdlec = fx + inner(p.M, o.x, grad, η_c) + .5 * inner(p.M, o.x, Hη_c, η_c)
-                if mdlec < mdle
-                        η = η_c
-                        Hη = Hη_c
-                end
-        end
-        # Compute the tentative next iterate (the proposal)
-        x_prop  = o.retraction(p.M, o.x, η)
-        # Compute the function value of the proposal
-        fx_prop = get_cost(p, x_prop)
-        # Check the performance of the quadratic model against the actual cost.
-        ρnum = fx - fx_prop
-        ρden = -inner(p.M, o.x, η, grad) - 0.5*inner(p.M, o.x, η, Hη)
-        # Since, at convergence, both ρnum and ρden become extremely small,
-        # computing ρ is numerically challenging. The break with ρnum and ρden
-        # can thus lead to a large error in rho, making the
-        # acceptance / rejection erratic. Meanwhile, close to convergence,
-        # steps are usually trustworthy and we should transition to a Newton-
-        # like method, with rho=1 consistently. The heuristic thus shifts both
-        # rhonum and rhoden by a small amount such that far from convergence,
-        # the shift is irrelevant and close to convergence, the ratio rho goes
-        # to 1, effectively promoting acceptance of the step.
-        ρ_reg = max(1, abs(fx)) * eps(Float64) * o.ρ_regularization
-        ρnum = ρnum + ρ_reg
-        ρden = ρden + ρ_reg
-        model_decreased = (ρden >= 0)
-        ρ = ρnum / ρden
-        # Choose the new TR radius based on the model performance.
-        # If the actual decrease is smaller than 1/4 of the predicted decrease,
-        # then reduce the TR radius.
-        if ρ < 1/4 || model_decreased == false || isnan(ρ)
-                o.Δ = o.Δ/4
-        elseif ρ > 3/4 && any([typeof(s) in [StopWhenTrustRegionIsExceeded,StopWhenCurvatureIsNegative] for s in SR] )
-                o.Δ = min(2*o.Δ, o.Δ_bar)
+        return_options=true,
+    )
+    option = get_options(opt) # remove decorators
+    η = get_solver_result(option)
+    SR = get_active_stopping_criteria(option.stop)
+    Hη = getHessian(p, o.x, η)
+    # Initialize the cost function F und the gradient of the cost function
+    # ∇F at the point x
+    grad = get_gradient(p, o.x)
+    fx = get_cost(p, o.x)
+    norm_grad = norm(p.M, o.x, grad)
+    # If using randomized approach, compare result with the Cauchy point.
+    if o.useRand
+        # Check the curvature,
+        Hgrad = getHessian(p, o.x, grad)
+        gradHgrad = inner(p.M, o.x, grad, Hgrad)
+        if gradHgrad <= 0
+            tau_c = 1
         else
-                o.Δ = o.Δ
+            tau_c = min(norm_grad^3 / (o.Δ * gradHgrad), 1)
         end
-        # Choose to accept or reject the proposed step based on the model
-        # performance. Note the strict inequality.
-        if model_decreased && ρ > o.ρ_prime
-                o.x = x_prop
+        # and generate the Cauchy point.
+        η_c = (-tau_c * o.Δ / norm_grad) * grad
+        Hη_c = (-tau_c * o.Δ / norm_grad) * Hgrad
+        # Now that we have computed the Cauchy point in addition to the
+        # returned eta, we might as well keep the best of them.
+        mdle = fx + inner(p.M, o.x, grad, η) + 0.5 * inner(p.M, o.x, Hη, η)
+        mdlec = fx + inner(p.M, o.x, grad, η_c) + 0.5 * inner(p.M, o.x, Hη_c, η_c)
+        if mdlec < mdle
+            η = η_c
+            Hη = Hη_c
         end
-        return nothing
+    end
+    # Compute the tentative next iterate (the proposal)
+    x_prop = o.retraction(p.M, o.x, η)
+    # Compute the function value of the proposal
+    fx_prop = get_cost(p, x_prop)
+    # Check the performance of the quadratic model against the actual cost.
+    ρnum = fx - fx_prop
+    ρden = -inner(p.M, o.x, η, grad) - 0.5 * inner(p.M, o.x, η, Hη)
+    # Since, at convergence, both ρnum and ρden become extremely small,
+    # computing ρ is numerically challenging. The break with ρnum and ρden
+    # can thus lead to a large error in rho, making the
+    # acceptance / rejection erratic. Meanwhile, close to convergence,
+    # steps are usually trustworthy and we should transition to a Newton-
+    # like method, with rho=1 consistently. The heuristic thus shifts both
+    # rhonum and rhoden by a small amount such that far from convergence,
+    # the shift is irrelevant and close to convergence, the ratio rho goes
+    # to 1, effectively promoting acceptance of the step.
+    ρ_reg = max(1, abs(fx)) * eps(Float64) * o.ρ_regularization
+    ρnum = ρnum + ρ_reg
+    ρden = ρden + ρ_reg
+    model_decreased = (ρden >= 0)
+    ρ = ρnum / ρden
+    # Choose the new TR radius based on the model performance.
+    # If the actual decrease is smaller than 1/4 of the predicted decrease,
+    # then reduce the TR radius.
+    if ρ < 1 / 4 || model_decreased == false || isnan(ρ)
+        o.Δ = o.Δ / 4
+    elseif ρ > 3 / 4 && any([
+        typeof(s) in [StopWhenTrustRegionIsExceeded, StopWhenCurvatureIsNegative]
+        for s in SR
+    ])
+        o.Δ = min(2 * o.Δ, o.Δ_bar)
+    else
+        o.Δ = o.Δ
+    end
+    # Choose to accept or reject the proposed step based on the model
+    # performance. Note the strict inequality.
+    if model_decreased && ρ > o.ρ_prime
+        o.x = x_prop
+    end
+    return nothing
 end
-get_solver_result(o::O) where {O <: TrustRegionsOptions} = o.x
+get_solver_result(o::O) where {O<:TrustRegionsOptions} = o.x

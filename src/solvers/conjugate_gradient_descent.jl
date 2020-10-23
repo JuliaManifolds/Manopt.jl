@@ -10,7 +10,7 @@ and one can employ different rules to update the descent direction $\delta_k$ ba
 the last direction $\delta_{k-1}$ and both gradients $\nabla f(x_k)$,$\nabla f(x_{k-1})$.
 The [`Stepsize`](@ref) $s_k$ may be determined by a [`Linesearch`](@ref).
 
-Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`steepest_descent`](@ref),
+Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
 [`ConjugateDescentCoefficient`](@ref), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HeestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
@@ -50,44 +50,41 @@ OR
 """
 function conjugate_gradient_descent(
     M::Manifold,
-    F::Function,
-    ∇F::Function,
+    F::TF,
+    ∇F::TDF,
     x;
-    coefficient::DirectionUpdateRule = SteepestDirectionUpdateRule(),
-    stepsize::Stepsize = ConstantStepsize(1.),
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    stopping_criterion::StoppingCriterion = StopWhenAny(
+    coefficient::DirectionUpdateRule=SteepestDirectionUpdateRule(),
+    stepsize::Stepsize=ConstantStepsize(1.0),
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
-    transport_method = ParallelTransport(),
+    transport_method=ParallelTransport(),
     return_options=false,
-    kwargs...
-)
-    p = GradientProblem(M,F,∇F)
+    kwargs...,
+) where {TF,TDF}
+    p = GradientProblem(M, F, ∇F)
     o = ConjugateGradientDescentOptions(
-        x,
-        stopping_criterion,stepsize,
-        coefficient,
-        retraction_method,
-        transport_method,
-        )
+        x, stopping_criterion, stepsize, coefficient, retraction_method, transport_method
+    )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p,o)
+    resultO = solve(p, o)
     if return_options
         return resultO
     end
     return get_solver_result(resultO)
 end
-function initialize_solver!(p::GradientProblem,o::ConjugateGradientDescentOptions)
-    o.∇ = get_gradient(p,o.x)
+function initialize_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions)
+    o.∇ = get_gradient(p, o.x)
     o.δ = -o.∇
-    o.β = 0.
+    return o.β = 0.0
 end
 function step_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
     xOld = o.x
     o.x = retract(p.M, o.x, get_stepsize(p, o, i, o.δ) * o.δ, o.retraction_method)
     o.∇ = get_gradient(p, o.x)
-    o.β = o.coefficient(p,o,i)
-    o.δ = -o.∇ + o.β * vector_transport_to(p.M, xOld, o.δ, o.x, o.vector_transport_method)
+    o.β = o.coefficient(p, o, i)
+    return o.δ =
+        -o.∇ + o.β * vector_transport_to(p.M, xOld, o.δ, o.x, o.vector_transport_method)
 end
 get_solver_result(o::ConjugateGradientDescentOptions) = o.x

@@ -24,50 +24,50 @@ M = Circle()
 N = PowerManifold(M, n)
 f = artificial_S1_signal(n)
 xCompare = f
-fn = exp.(Ref(M),f, random_tangent.(Ref(M),f, Val(:Gaussian), σ))
+fn = exp.(Ref(M), f, random_tangent.(Ref(M), f, Val(:Gaussian), σ))
 data = fn
-t = range(0.0, 1.0, length = n)
+t = range(0.0, 1.0; length=n)
 
 if plotAndExportResult
     scene = scatter(
         t,
-        f,
-        markersize = 2,
-        markercolor = dataColor,
-        markerstrokecolor = dataColor,
-        lab = "original",
+        f;
+        markersize=2,
+        markercolor=dataColor,
+        markerstrokecolor=dataColor,
+        lab="original",
     )
     scatter!(
         scene,
         t,
-        fn,
-        markersize = 2,
-        markercolor = nColor,
-        markerstrokecolor = nColor,
-        lab = "noisy",
+        fn;
+        markersize=2,
+        markercolor=nColor,
+        markerstrokecolor=nColor,
+        lab="noisy",
     )
     yticks!(
-        [-π, -π/2, 0, π/2, π],
-        [raw"$-\pi$",raw"$-\frac{\pi}{2}$",raw"$0$",raw"$\frac{\pi}{2}$",raw"$\pi$"]
+        [-π, -π / 2, 0, π / 2, π],
+        [raw"$-\pi$", raw"$-\frac{\pi}{2}$", raw"$0$", raw"$\frac{\pi}{2}$", raw"$\pi$"],
     )
     png(scene, "$(resultsFolder)$(experimentName)-original.png")
 end
 #
 # Setup and Optimize
 F = x -> costL2TVTV2(N, data, α, β, x)
-proxes = [
-    (λ, x) -> prox_distance(N, λ, data, x,2),
+proxes = (
+    (λ, x) -> prox_distance(N, λ, data, x, 2),
     (λ, x) -> prox_TV(N, α * λ, x),
     (λ, x) -> prox_TV2(N, β * λ, x),
-]
+)
 
 o = cyclic_proximal_point(
     N,
     F,
     proxes,
     data;
-    λ = i -> π / (2*i),
-    debug = Dict(
+    λ=i -> π / (2 * i),
+    debug=Dict(
         :Stop => DebugStoppingCriterion(),
         :Step => DebugEvery(
             DebugGroup([
@@ -84,8 +84,8 @@ o = cyclic_proximal_point(
         ),
         :Start => DebugDivider("Starting the solver\n"),
     ),
-    record = [:Iteration, :Cost, :Change, :Iterate],
-    return_options = true,
+    record=[:Iteration, :Cost, :Change, :Iterate],
+    return_options=true,
 )
 fR = get_solver_result(o)
 r = get_record(o)
@@ -94,24 +94,24 @@ r = get_record(o)
 if plotAndExportResult
     scene = scatter(
         t,
-        f,
-        markersize = 2,
-        markercolor = dataColor,
-        markerstrokecolor = dataColor,
-        lab = "original",
+        f;
+        markersize=2,
+        markercolor=dataColor,
+        markerstrokecolor=dataColor,
+        lab="original",
     )
     scatter!(
         scene,
         t,
-        fR,
-        markersize = 2,
-        markercolor = nColor,
-        markerstrokecolor = nColor,
-        lab = "reconstruction",
+        fR;
+        markersize=2,
+        markercolor=nColor,
+        markerstrokecolor=nColor,
+        lab="reconstruction",
     )
     yticks!(
-        [-π, -π/2, 0, π/2, π],
-        [raw"$-\pi$",raw"$-\frac{\pi}{2}$",raw"$0$",raw"$\frac{\pi}{2}$",raw"$\pi$"]
+        [-π, -π / 2, 0, π / 2, π],
+        [raw"$-\pi$", raw"$-\frac{\pi}{2}$", raw"$0$", raw"$\frac{\pi}{2}$", raw"$\pi$"],
     )
     png(scene, "$(resultsFolder)$(experimentName)-result.png")
 end

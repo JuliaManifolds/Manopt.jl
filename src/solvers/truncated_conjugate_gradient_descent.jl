@@ -63,55 +63,69 @@ OR
 """
 function truncated_conjugate_gradient_descent(
     M::mT,
-    F::Function,
-    ∇F::Function,
+    F::TF,
+    ∇F::TdF,
     x,
     η,
     H::Union{Function,Missing},
     Δ::Float64;
-    preconditioner::Function = (M,x,ξ) -> ξ,
-    θ::Float64 = 1.0,
-    κ::Float64 = 0.1,
-    useRandom::Bool = false,
-    stopping_criterion::StoppingCriterion = StopWhenAny(
+    preconditioner::Tprec=(M, x, ξ) -> ξ,
+    θ::Float64=1.0,
+    κ::Float64=0.1,
+    useRandom::Bool=false,
+    stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
         stopIfResidualIsReducedByPower(
-            sqrt(inner(M, x,
-                ∇F(x) + ( useRandom ? H(M,x,η) : zero_tangent_vector(M,x) ),
-                ∇F(x) + ( useRandom ? H(M,x,η) : zero_tangent_vector(M,x) )
+            sqrt(inner(
+                M,
+                x,
+                ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
             )),
-            θ
+            θ,
         ),
         stopIfResidualIsReducedByFactor(
-            sqrt(inner(M, x,
-                ∇F(x) + ( useRandom ? H(M,x,η) : zero_tangent_vector(M,x) ),
-                ∇F(x) + ( useRandom ? H(M,x,η) : zero_tangent_vector(M,x) )
+            sqrt(inner(
+                M,
+                x,
+                ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
             )),
-            κ
+            κ,
         ),
         StopWhenTrustRegionIsExceeded(),
-        StopWhenCurvatureIsNegative()
-        ),
-        return_options = false,
-        kwargs... #collect rest
-    ) where {mT <: Manifold}
+        StopWhenCurvatureIsNegative(),
+    ),
+    return_options=false,
+    kwargs..., #collect rest
+) where {mT<:Manifold,TF,TdF,Tprec}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
-    o = TruncatedConjugateGradientOptions(x,stopping_criterion,η,zero_tangent_vector(M,x),Δ,zero_tangent_vector(M,x),useRandom)
+    o = TruncatedConjugateGradientOptions(
+        x,
+        stopping_criterion,
+        η,
+        zero_tangent_vector(M, x),
+        Δ,
+        zero_tangent_vector(M, x),
+        useRandom,
+    )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p,o)
+    resultO = solve(p, o)
     if return_options
         resultO
     else
         return get_solver_result(resultO)
     end
 end
-function initialize_solver!(p::P,o::O) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
-    o.η = o.useRand ? o.η : zero_tangent_vector(p.M,o.x)
-    Hη = o.useRand ? getHessian(p, o.x, o.η) : zero_tangent_vector(p.M,o.x)
-    o.residual = get_gradient(p,o.x) + Hη
+function initialize_solver!(
+    p::P, o::O
+) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
+    o.η = o.useRand ? o.η : zero_tangent_vector(p.M, o.x)
+    Hη = o.useRand ? getHessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
+    o.residual = get_gradient(p, o.x) + Hη
     # Initial search direction (we maintain -delta in memory, called mdelta, to
     # avoid a change of sign of the tangent vector.)
-    o.δ = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
+    return o.δ = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
     # If the Hessian or a linear Hessian approximation is in use, it is
     # theoretically guaranteed that the model value decreases strictly
     # with each iteration of tCG. Hence, there is no need to monitor the model
@@ -122,7 +136,9 @@ function initialize_solver!(p::P,o::O) where {P <: HessianProblem, O <: Truncate
     # model value.
     # o.model_value = o.useRand ? 0 : inner(p.M,o.x,o.η,get_gradient(p,o.x)) + 0.5 * inner(p.M,o.x,o.η,Hη)
 end
-function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: TruncatedConjugateGradientOptions}
+function step_solver!(
+    p::P, o::O, iter
+) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     ηOld = o.η
     δOld = o.δ
     z = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
@@ -134,13 +150,13 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncated
     # Compute curvature (often called kappa).
     δHδ = inner(p.M, o.x, δOld, Hδ)
     # Note that if d_Hd == 0, we will exit at the next "if" anyway.
-    α = zrOld/δHδ
+    α = zrOld / δHδ
     # <neweta,neweta>_P =
     # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
     e_Pd = -inner(p.M, o.x, ηOld, o.useRand ? δOld : get_preconditioner(p, o.x, δOld)) # It must be clarified if it's negative or not
     d_Pd = inner(p.M, o.x, δOld, o.useRand ? δOld : get_preconditioner(p, o.x, δOld))
     e_Pe = inner(p.M, o.x, ηOld, o.useRand ? ηOld : get_preconditioner(p, o.x, ηOld))
-    e_Pe_new = e_Pe + 2α*e_Pd + α^2*d_Pd # vielleicht müssen doch die weiteren Optionen gespeichert werden
+    e_Pe_new = e_Pe + 2α * e_Pd + α^2 * d_Pd # vielleicht müssen doch die weiteren Optionen gespeichert werden
     # Check against negative curvature and trust-region radius violation.
     # If either condition triggers, we bail out.
     if δHδ <= 0 || e_Pe_new >= o.Δ^2
@@ -155,8 +171,11 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncated
         # previous eta (which necessarily is the best reached so far, according
         # to the model cost). Otherwise, we accept the new eta and go on.
         # -> Stopping Criterion
-        old_model_value = inner(p.M,o.x,ηOld,get_gradient(p,o.x)) + 0.5 * inner(p.M,o.x,ηOld,HηOld)
-        new_model_value = inner(p.M,o.x,o.η,get_gradient(p,o.x)) + 0.5 * inner(p.M,o.x,o.η,getHessian(p, o.x, o.η))
+        old_model_value =
+            inner(p.M, o.x, ηOld, get_gradient(p, o.x)) + 0.5 * inner(p.M, o.x, ηOld, HηOld)
+        new_model_value =
+            inner(p.M, o.x, o.η, get_gradient(p, o.x)) +
+            0.5 * inner(p.M, o.x, o.η, getHessian(p, o.x, o.η))
         if new_model_value >= old_model_value
             o.η = ηOld
         end
@@ -171,7 +190,7 @@ function step_solver!(p::P,o::O,iter) where {P <: HessianProblem, O <: Truncated
     # Compute new z'*r.
     zr = inner(p.M, o.x, z, o.residual)
     # Compute new search direction.
-    β = zr/zrOld
-    o.δ = project(p.M, o.x, z + β * o.δ)
+    β = zr / zrOld
+    return o.δ = project(p.M, o.x, z + β * o.δ)
 end
-get_solver_result(o::O) where {O <: TruncatedConjugateGradientOptions} = o.η
+get_solver_result(o::O) where {O<:TruncatedConjugateGradientOptions} = o.η

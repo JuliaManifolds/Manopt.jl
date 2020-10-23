@@ -9,22 +9,22 @@ specify a problem for gradient based algorithms.
   \to \mathcal T\mathcal M$ of the cost function $F$
 
 # See also
-[`steepest_descent`](@ref)
+[`gradient_descent`](@ref)
 [`GradientDescentOptions`](@ref)
 
 # """
-mutable struct GradientProblem{mT <: Manifold} <: Problem
-  M::mT
-  cost::Function
-  gradient::Function
+struct GradientProblem{mT<:Manifold,TCost,TGradient} <: Problem
+    M::mT
+    cost::TCost
+    gradient::TGradient
 end
 """
     get_gradient(p,x)
 
 evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x`.
 """
-function get_gradient(p::P,x) where {P <: GradientProblem{M} where M <: Manifold}
-  return p.gradient(x)
+function get_gradient(p::GradientProblem, x)
+    return p.gradient(x)
 end
 #
 # Options
@@ -50,35 +50,37 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a Gradient Descent Option with the fields and defaults as above
 
 # See also
-[`steepest_descent`](@ref), [`GradientProblem`](@ref)
+[`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """
-mutable struct GradientDescentOptions{P} <: Options
+mutable struct GradientDescentOptions{
+    P,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
+} <: Options
     x::P
-    stop::StoppingCriterion
-    stepsize::Stepsize
+    stop::TStop
+    stepsize::TStepsize
     ∇::P
-    retraction_method::AbstractRetractionMethod
+    retraction_method::TRTM
     function GradientDescentOptions{P}(
         initialX::P,
-        s::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = ConstantStepsize(1.),
+        s::StoppingCriterion=StopAfterIteration(100),
+        stepsize::Stepsize=ConstantStepsize(1.0),
         retraction::AbstractRetractionMethod=ExponentialRetraction(),
     ) where {P}
-        o = new{P}();
-        o.x = initialX;
-        o.stop = s;
-        o.retraction_method = retraction;
-        o.stepsize = stepsize;
+        o = new{P,typeof(s),typeof(stepsize),typeof(retraction)}()
+        o.x = initialX
+        o.stop = s
+        o.retraction_method = retraction
+        o.stepsize = stepsize
         return o
     end
 end
 function GradientDescentOptions(
     x::P,
-    stop::StoppingCriterion = StopAfterIteration(100),
-    s::Stepsize = ConstantStepsize(1.),
-    retraction::AbstractRetractionMethod = ExponentialRetraction(),
+    stop::StoppingCriterion=StopAfterIteration(100),
+    s::Stepsize=ConstantStepsize(1.0),
+    retraction::AbstractRetractionMethod=ExponentialRetraction(),
 ) where {P}
-    return GradientDescentOptions{P}(x,stop,s,retraction)
+    return GradientDescentOptions{P}(x, stop, s, retraction)
 end
 #
 # Conjugate Gradient Descent
@@ -112,25 +114,32 @@ specify options for a conjugate gradient descent algoritm, that solves a
 # See also
 [`conjugate_gradient_descent`](@ref), [`GradientProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
-mutable struct ConjugateGradientDescentOptions{T} <: Options
+mutable struct ConjugateGradientDescentOptions{
+    T,
+    TCoeff<:DirectionUpdateRule,
+    TStepsize<:Stepsize,
+    TStop<:StoppingCriterion,
+    TRetr<:AbstractRetractionMethod,
+    TVTM<:AbstractVectorTransportMethod,
+} <: Options
     x::T
     ∇::T
     δ::T
     β::Float64
-    coefficient::DirectionUpdateRule
-    stepsize::Stepsize
-    stop::StoppingCriterion
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
+    coefficient::TCoeff
+    stepsize::TStepsize
+    stop::TStop
+    retraction_method::TRetr
+    vector_transport_method::TVTM
     function ConjugateGradientDescentOptions{T}(
         x0::T,
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
-        retr::AbstractRetractionMethod = ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        retr::AbstractRetractionMethod=ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod=ParallelTransport(),
     ) where {T}
-        o = new{T}();
+        o = new{T,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         o.x = x0
         o.stop = sC
         o.retraction_method = retr
@@ -146,7 +155,7 @@ function ConjugateGradientDescentOptions(
     s::Stepsize,
     dU::DirectionUpdateRule,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
-    vtr::AbstractVectorTransportMethod = ParallelTransport(),
+    vtr::AbstractVectorTransportMethod=ParallelTransport(),
 ) where {T}
     return ConjugateGradientDescentOptions{T}(x, sC, s, dU, retr, vtr)
 end
@@ -177,19 +186,19 @@ Construct the conjugate descnt coefficient update rule, a new storage is created
 """
 mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
-    ConjugateDescentCoefficient(  a::StoreOptionsAction=StoreOptionsAction( (:x, :∇) )  ) = new(a)
+    function ConjugateDescentCoefficient(a::StoreOptionsAction=StoreOptionsAction((:x, :∇)))
+        return new(a)
+    end
 end
 function (u::ConjugateDescentCoefficient)(
-    p::GradientProblem,
-    o::ConjugateGradientDescentOptions,
-    i
+    p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all( has_storage.(Ref(u.storage), [:x, :∇]))
-        update_storage!(u.storage,o) # if not given store current as old
+    if !all(has_storage.(Ref(u.storage), [:x, :∇]))
+        update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, ∇Old = get_storage.( Ref(u.storage), [:x, :∇] )
-    update_storage!(u.storage,o)
+    xOld, ∇Old = get_storage.(Ref(u.storage), [:x, :∇])
+    update_storage!(u.storage, o)
     return inner(p.M, o.x, o.∇, o.∇) / inner(p.M, xOld, -o.δ, ∇Old)
 end
 
@@ -229,28 +238,29 @@ default vector transport and a new storage is created by default.
     > SIAM J. Optim., 10 (1999), pp. 177–182.
     > doi: [10.1137/S1052623497318992](https://doi.org/10.1137/S1052623497318992)
 """
-mutable struct DaiYuanCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <:
+               DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function DaiYuanCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
+        a::StoreOptionsAction=StoreOptionsAction((:x, :∇, :δ)),
     )
-        return new(t,a)
+        return new{typeof(t)}(t, a)
     end
 end
 function (u::DaiYuanCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
-    if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
-        update_storage!(u.storage,o) # if not given store current as old
+    if !all(has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+        update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
-    update_storage!(u.storage,o)
+    xOld, ∇Old, δOld = get_storage.(Ref(u.storage), [:x, :∇, :δ])
+    update_storage!(u.storage, o)
 
     ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
     ν = o.∇ - ∇tr #notation y from [HZ06]
     δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
-    return inner(p.M, o.x, o.∇, o.∇)  /  inner(p.M, xOld, δtr, ν)
+    return inner(p.M, o.x, o.∇, o.∇) / inner(p.M, xOld, δtr, ν)
 end
 
 @doc raw"""
@@ -281,19 +291,17 @@ Construct the Fletcher Reeves coefficient update rule, a new storage is created 
 """
 mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
-    FletcherReevesCoefficient(  a::StoreOptionsAction=StoreOptionsAction( (:x, :∇) )  ) = new(a)
+    FletcherReevesCoefficient(a::StoreOptionsAction=StoreOptionsAction((:x, :∇))) = new(a)
 end
 function (u::FletcherReevesCoefficient)(
-    p::GradientProblem,
-    o::ConjugateGradientDescentOptions,
-    i,
+    p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all( has_storage.(Ref(u.storage), [:x, :∇]))
-        update_storage!(u.storage,o) # if not given store current as old
+    if !all(has_storage.(Ref(u.storage), [:x, :∇]))
+        update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, ∇Old = get_storage.( Ref(u.storage), [:x, :∇] )
-    update_storage!(u.storage,o)
-    return inner(p.M, o.x, o.∇, o.∇)/inner(p.M, xOld, ∇Old, ∇Old)
+    xOld, ∇Old = get_storage.(Ref(u.storage), [:x, :∇])
+    update_storage!(u.storage, o)
+    return inner(p.M, o.x, o.∇, o.∇) / inner(p.M, xOld, ∇Old, ∇Old)
 end
 
 @doc raw"""
@@ -333,34 +341,37 @@ default vector transport and a new storage is created by default.
     > SIAM J. Optim, (16), pp. 170-192, 2005.
     > doi: [10.1137/030601880](https://doi.org/10.1137/030601880)
 """
-mutable struct HagerZhangCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
+               DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function HagerZhangCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
+        a::StoreOptionsAction=StoreOptionsAction((:x, :∇, :δ)),
     )
-        return new(t,a)
+        return new{typeof(t)}(t, a)
     end
 end
-function (u::HagerZhangCoefficient)(p::P, o::O, i) where {P <: GradientProblem, O <: ConjugateGradientDescentOptions}
-    if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
-        update_storage!(u.storage,o) # if not given store current as old
+function (u::HagerZhangCoefficient)(
+    p::P, o::O, i
+) where {P<:GradientProblem,O<:ConjugateGradientDescentOptions}
+    if !all(has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+        update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
-    update_storage!(u.storage,o)
+    xOld, ∇Old, δOld = get_storage.(Ref(u.storage), [:x, :∇, :δ])
+    update_storage!(u.storage, o)
 
     ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
     ν = o.∇ - ∇tr #notation y from [HZ06]
     δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
     denom = inner(p.M, o.x, δtr, ν)
     νknormsq = inner(p.M, o.x, ν, ν)
-    β = inner(p.M, o.x, ν, o.∇)/denom - 2*νknormsq*inner(p.M, o.x, δtr, o.∇) / denom^2
+    β = inner(p.M, o.x, ν, o.∇) / denom - 2 * νknormsq * inner(p.M, o.x, δtr, o.∇) / denom^2
     # Numerical stability from Manopt / Hager-Zhang paper
     ξn = norm(p.M, o.x, o.∇)
-    η = -1 / ( ξn * min(0.01,norm(p.M, xOld, ∇Old)) )
-    return max(β,η)
+    η = -1 / (ξn * min(0.01, norm(p.M, xOld, ∇Old)))
+    return max(β, η)
 end
 
 @doc raw"""
@@ -397,32 +408,31 @@ See also [`conjugate_gradient_descent`](@ref)
     > J. Research Nat. Bur. Standards, 49 (1952), pp. 409–436.
     > doi: [10.6028/jres.049.044](http://dx.doi.org/10.6028/jres.049.044)
 """
-mutable struct HeestenesStiefelCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct HeestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
+               DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function HeestenesStiefelCoefficient(
-        transort_method::AbstractVectorTransportMethod=ParallelTransport(),
-        storage_action::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
+        transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+        storage_action::StoreOptionsAction=StoreOptionsAction((:x, :∇, :δ)),
     )
-        return new(transort_method,storage_action)
+        return new{typeof(transport_method)}(transport_method, storage_action)
     end
 end
 function (u::HeestenesStiefelCoefficient)(
-    p::GradientProblem,
-    o::ConjugateGradientDescentOptions,
-    i,
+    p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
-        update_storage!(u.storage,o) # if not given store current as old
+    if !all(has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+        update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
-    update_storage!(u.storage,o)
+    xOld, ∇Old, δOld = get_storage.(Ref(u.storage), [:x, :∇, :δ])
+    update_storage!(u.storage, o)
     ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
     δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
     ν = o.∇ - ∇tr #notation from [HZ06]
     β = inner(p.M, o.x, o.∇, ν) / inner(p.M, o.x, δtr, ν)
-    return max(0,β)
+    return max(0, β)
 end
 
 @doc raw"""
@@ -460,32 +470,29 @@ default vector transport and a new storage is created by default.
     > J. Optim. Theory Appl., 69 (1991), pp. 129–137.
     > doi: [10.1007/BF00940464](https://doi.org/10.1007/BF00940464)
 """
-mutable struct LiuStoreyCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <:
+               DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function LiuStoreyCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇, :δ) ),
+        a::StoreOptionsAction=StoreOptionsAction((:x, :∇, :δ)),
     )
-        return new(t,a)
+        return new{typeof(t)}(t, a)
     end
 end
 function (u::LiuStoreyCoefficient)(
-    p::GradientProblem,
-    o::ConjugateGradientDescentOptions,
-    i,
+    p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all( has_storage.(Ref(u.storage), [:x, :∇, :δ]))
-        update_storage!(u.storage,o) # if not given store current as old
+    if !all(has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+        update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, ∇Old, δOld = get_storage.( Ref(u.storage), [:x, :∇, :δ] )
-    update_storage!(u.storage,o)
+    xOld, ∇Old, δOld = get_storage.(Ref(u.storage), [:x, :∇, :δ])
+    update_storage!(u.storage, o)
     ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
-    ν = o.∇-∇tr # notation y from [HZ06]
-    return inner(p.M, o.x, o.∇, ν)  /  inner(p.M, xOld, -δOld, ∇Old)
+    ν = o.∇ - ∇tr # notation y from [HZ06]
+    return inner(p.M, o.x, o.∇, ν) / inner(p.M, xOld, -δOld, ∇Old)
 end
-
-
 
 @doc raw"""
     PolakRibiereCoefficient <: DirectionUpdateRule
@@ -527,46 +534,46 @@ See also [`conjugate_gradient_descent`](@ref)
     > USSR Comp. Math. Math. Phys., 9 (1969), pp. 94–112.
     > doi: [10.1016/0041-5553(69)90035-4](https://doi.org/10.1016/0041-5553(69)90035-4)
 """
-mutable struct PolakRibiereCoefficient <: DirectionUpdateRule
-    transport_method::AbstractVectorTransportMethod
+mutable struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <:
+               DirectionUpdateRule
+    transport_method::TVTM
     storage::StoreOptionsAction
     function PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction( (:x, :∇) ),
+        a::StoreOptionsAction=StoreOptionsAction((:x, :∇)),
     )
-        return new(t,a)
+        return new{typeof(t)}(t, a)
     end
 end
-function (u::PolakRibiereCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
-    if !all( has_storage.(Ref(u.storage), [:x, :∇]))
-        update_storage!(u.storage,o) # if not given store current as old
+function (u::PolakRibiereCoefficient)(
+    p::GradientProblem, o::ConjugateGradientDescentOptions, i
+)
+    if !all(has_storage.(Ref(u.storage), [:x, :∇]))
+        update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, ∇Old = get_storage.( Ref(u.storage), [:x, :∇] )
-    update_storage!(u.storage,o)
+    xOld, ∇Old = get_storage.(Ref(u.storage), [:x, :∇])
+    update_storage!(u.storage, o)
 
     ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
-    ν = o.∇-∇tr
+    ν = o.∇ - ∇tr
     β = inner(p.M, o.x, o.∇, ν) / inner(p.M, xOld, ∇Old, ∇Old)
-    return max(0,β)
+    return max(0, β)
 end
 
 @doc raw"""
-    steepestDirectionUpdateRule <: DirectionUpdateRule
+    SteepestDirectionUpdateRule <: DirectionUpdateRule
 
 The simplest rule to update is to have no influence of the last direction and
 hence return an update $\beta = 0$ for all [`ConjugateGradientDescentOptions`](@ref)` o`
 
 See also [`conjugate_gradient_descent`](@ref)
 """
-mutable struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
+struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
 function (u::SteepestDirectionUpdateRule)(
-    p::GradientProblem,
-    o::ConjugateGradientDescentOptions,
-    i,
+    p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
     return 0.0
 end
-
 
 @doc raw"""
     DebugGradient <: DebugAction
@@ -583,13 +590,16 @@ display the short (`false`) or long (`true`) default text for the gradient.
 display the a `prefix` in front of the gradient.
 """
 mutable struct DebugGradient <: DebugAction
-    print::Function
+    print::Any
     prefix::String
-    DebugGradient(long::Bool=false,print::Function=print) = new(print,
-        long ? "Gradient: " : "∇F(x):")
-    DebugGradient(prefix::String,print::Function=print) = new(print,prefix)
+    function DebugGradient(long::Bool=false, print=print)
+        return new(print, long ? "Gradient: " : "∇F(x):")
+    end
+    DebugGradient(prefix::String, print=print) = new(print, prefix)
 end
-(d::DebugGradient)(p::GradientProblem,o::GradientDescentOptions,i::Int) = d.print((i>=0) ? d.prefix*""*string(o.∇) : "")
+function (d::DebugGradient)(p::GradientProblem, o::GradientDescentOptions, i::Int)
+    return d.print((i >= 0) ? d.prefix * "" * string(o.∇) : "")
+end
 
 @doc raw"""
     DebugGradientNorm <: DebugAction
@@ -606,13 +616,18 @@ display the short (`false`) or long (`true`) default text for the gradient norm.
 display the a `prefix` in front of the gradientnorm.
 """
 mutable struct DebugGradientNorm <: DebugAction
-    print::Function
+    print::Any
     prefix::String
-    DebugGradientNorm(long::Bool=false,print::Function=print) = new(print,
-        long ? "Norm of the Gradient: " : "|∇F(x)|:")
-    DebugGradientNorm(prefix::String,print::Function=print) = new(print,prefix)
+    function DebugGradientNorm(long::Bool=false, print=print)
+        return new(print, long ? "Norm of the Gradient: " : "|∇F(x)|:")
+    end
+    DebugGradientNorm(prefix::String, print=print) = new(print, prefix)
 end
-(d::DebugGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>=0) ? d.prefix*"$(norm(p.M,o.x,o.∇))" : "")
+function (d::DebugGradientNorm)(
+    p::P, o::O, i::Int
+) where {P<:GradientProblem,O<:GradientDescentOptions}
+    return d.print((i >= 0) ? d.prefix * "$(norm(p.M,o.x,o.∇))" : "")
+end
 
 @doc raw"""
     DebugStepsize <: DebugAction
@@ -629,13 +644,18 @@ display the short (`false`) or long (`true`) default text for the step size.
 display the a `prefix` in front of the step size.
 """
 mutable struct DebugStepsize <: DebugAction
-    print::Function
+    print::Any
     prefix::String
-    DebugStepsize(long::Bool=false,print::Function=print) = new(print,
-        long ? "step size:" : "s:")
-    DebugStepsize(prefix::String,print::Function=print) = new(print,prefix)
+    function DebugStepsize(long::Bool=false, print=print)
+        return new(print, long ? "step size:" : "s:")
+    end
+    DebugStepsize(prefix::String, print=print) = new(print, prefix)
 end
-(d::DebugStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = d.print((i>0) ? d.prefix*"$(get_last_stepsize(p,o,i))" : "")
+function (d::DebugStepsize)(
+    p::P, o::O, i::Int
+) where {P<:GradientProblem,O<:GradientDescentOptions}
+    return d.print((i > 0) ? d.prefix * "$(get_last_stepsize(p,o,i))" : "")
+end
 
 #
 # Records
@@ -655,7 +675,11 @@ mutable struct RecordGradient{T} <: RecordAction
     RecordGradient{T}() where {T} = new(Array{T,1}())
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
-(r::RecordGradient{T})(p::P,o::O,i::Int) where {T, P <: GradientProblem, O <: GradientDescentOptions} = record_or_eset!(r, o.∇, i)
+function (r::RecordGradient{T})(
+    p::P, o::O, i::Int
+) where {T,P<:GradientProblem,O<:GradientDescentOptions}
+    return record_or_eset!(r, o.∇, i)
+end
 
 @doc raw"""
     RecordGradientNorm <: RecordAction
@@ -666,7 +690,11 @@ mutable struct RecordGradientNorm <: RecordAction
     recordedValues::Array{Float64,1}
     RecordGradientNorm() = new(Array{Float64,1}())
 end
-(r::RecordGradientNorm)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = record_or_eset!(r, norm(p.M,o.x,o.∇), i)
+function (r::RecordGradientNorm)(
+    p::P, o::O, i::Int
+) where {P<:GradientProblem,O<:GradientDescentOptions}
+    return record_or_eset!(r, norm(p.M, o.x, o.∇), i)
+end
 
 @doc raw"""
     RecordStepsize <: RecordAction
@@ -677,8 +705,10 @@ mutable struct RecordStepsize <: RecordAction
     recordedValues::Array{Float64,1}
     RecordStepsize() = new(Array{Float64,1}())
 end
-(r::RecordStepsize)(p::P,o::O,i::Int) where {P <: GradientProblem, O <: GradientDescentOptions} = record_or_eset!(r, get_last_stepsize(p,o,i), i)
 
+function (r::RecordStepsize)(p::P, o::O, i::Int) where {P<:GradientProblem,O<:GradientDescentOptions}
+    return record_or_eset!(r, get_last_stepsize(p, o, i), i)
+end
 
 @doc raw"""
     QuasiNewtonOptions <: Options
