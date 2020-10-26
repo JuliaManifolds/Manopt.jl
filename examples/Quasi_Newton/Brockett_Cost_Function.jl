@@ -13,6 +13,8 @@ A = randn(n,n)
 A = (A + A')
 N = diagm(k:-1:1)
 F(X::Array{Float64,2}) = tr(X' * A * X * N)
-∇F(X::Array{Float64,2}) = project(M, X, 2 * A * X * N)
+∇F(X::Array{Float64,2}) = 2 * A * X * N - X * X' * A * X * N - X * N * X' * A * X
 x = random_point(M)
-B1 = quasi_Newton(M,F,∇F,x; memory_size = 1000, vector_transport_method = ProjectionTransport(), debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
+@time quasi_Newton(M,F,∇F,x; memory_size = 32, vector_transport_method = ProjectionTransport(), stopping_criterion = StopWhenGradientNormLess(norm(M,x,∇F(x))*10^(-6)),debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
+
+# ∇F(X::Array{Float64,2}) = project(M, X, 2 * A * X * N)
