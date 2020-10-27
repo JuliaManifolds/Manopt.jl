@@ -1,7 +1,7 @@
 #
 #   Brockett Cost Function on Stiefel(n,k)
 #
-using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random
+using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random, BenchmarkTools
 import Manifolds: vector_transport_to!
 vector_transport_to!(::Stiefel,Y,p,X,q,::ProjectionTransport) = (Y .= project(M, q, X))
 # see Huang:2013, 10.3.2 Vector Transport
@@ -15,6 +15,4 @@ N = diagm(k:-1:1)
 F(X::Array{Float64,2}) = tr(X' * A * X * N)
 ∇F(X::Array{Float64,2}) = 2 * A * X * N - X * X' * A * X * N - X * N * X' * A * X
 x = random_point(M)
-@time quasi_Newton(M,F,∇F,x; memory_size = 32, vector_transport_method = ProjectionTransport(), stopping_criterion = StopWhenGradientNormLess(norm(M,x,∇F(x))*10^(-6)),debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
-
-# ∇F(X::Array{Float64,2}) = project(M, X, 2 * A * X * N)
+@benchmark quasi_Newton(M,F,∇F,x; memory_size = 4, vector_transport_method = ProjectionTransport(), stopping_criterion = StopWhenGradientNormLess(norm(M,x,∇F(x))*10^(-6)), debug = [:Iteration, " ", :Cost, "\n", 1, :Stop]) seconds = 60 samples = 100
