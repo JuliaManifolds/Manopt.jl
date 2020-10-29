@@ -92,7 +92,7 @@ It can happen that the matrix gets -1 as a determinant. In this case, the first
 and second columns are swapped.
 """
 function random_point(M::Rotations, ::Val{:Gaussian}, σ::Real=1.0)
-    d = manifold_dimension(M)
+    d = Int(0.5 + sqrt(0.25 + 2 * manifold_dimension(M)))
     if d == 1
         return ones(1, 1)
     else
