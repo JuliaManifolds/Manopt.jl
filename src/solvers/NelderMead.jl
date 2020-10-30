@@ -19,7 +19,6 @@ and
 # Optional
 
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
-* `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
 * `γ` – (`2.`) expansion parameter ($\gamma$)
 * `ρ` – (`1/2`) contraction parameter, $0 < \rho \leq \frac{1}{2}$,
@@ -77,7 +76,7 @@ function step_solver!(p::P, o::O, iter) where {P<:CostProblem,O<:NelderMeadOptio
     end
     # --- Expansion ---
     if Costr < o.costs[first(ind)] # reflected is better than fist -> expand
-        xe = exp(p.M, m, -o.γ * o.α * ξ)
+        xe = retract(p.M, m, -o.γ * o.α * ξ, o.retraction_method)
         Coste = get_cost(p, xe)
         if Coste < Costr # expanded successful
             o.population[last(ind)] = xe
@@ -109,8 +108,14 @@ function step_solver!(p::P, o::O, iter) where {P<:CostProblem,O<:NelderMeadOptio
     end
     # --- Shrink ---
     for i in 2:length(ind)
-        o.population[ind[i]] = shortest_geodesic(
-            p.M, o.population[ind[1]], o.population[ind[i]], o.σ
+        o.population[ind[i]] = retract(
+            p.M,
+            o.population[ind[1]],
+            inverse_retract(
+                p.M, o.population[ind[1]], o.population[ind[i]], o.inverse_retraction_method
+            ),
+            o.σ,
+            o.retraction_method,
         )
         # update cost
         o.costs[ind[i]] = get_cost(p, o.population[ind[i]])
