@@ -55,9 +55,9 @@ i.e. $p_k^{(i)}$ is the best known position for the particle $k$ and $g^{(i)}$ i
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
-* `retraction_method` – `ExponentialRetraction` a `retraction(M,x,ξ)` to use.
-* `inverse_retraction_method` - `LogarithmicInverseRetraction` an `inverse_retraction(M,x,y)` to use.
-* `vector_transport_mthod` - `ParallelTransport` a vector transport method to use.
+* `retraction_method` – (`ExponentialRetraction`) a `retraction(M,x,ξ)` to use.
+* `inverse_retraction_method` - (`LogarithmicInverseRetraction`) an `inverse_retraction(M,x,y)` to use.
+* `vector_transport_mthod` - (`ParallelTransport`) a vector transport method to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the

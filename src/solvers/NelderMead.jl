@@ -23,6 +23,8 @@ and
 * `γ` – (`2.`) expansion parameter ($\gamma$)
 * `ρ` – (`1/2`) contraction parameter, $0 < \rho \leq \frac{1}{2}$,
 * `σ` – (`1/2`) shrink coefficient, $0 < \sigma \leq 1$
+* `retraction_method` – (`ExponentialRetraction`) the rectraction to use
+* `inverse_retraction_method` - (`LogarithmicInverseRetraction`) an inverse retraction to use.
 
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
@@ -40,11 +42,22 @@ function NelderMead(
     γ=2.0,
     ρ=1 / 2,
     σ=1 / 2,
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
     return_options=false,
     kwargs..., #collect rest
 ) where {MT<:Manifold,TF}
     p = CostProblem(M, F)
-    o = NelderMeadOptions(population, stopping_criterion; α=α, γ=γ, ρ=ρ, σ=σ)
+    o = NelderMeadOptions(
+        population,
+        stopping_criterion;
+        α=α,
+        γ=γ,
+        ρ=ρ,
+        σ=σ,
+        retraction_method=retraction_method,
+        inverse_retraction_method=inverse_retraction_method,
+    )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
     if return_options
@@ -56,17 +69,17 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(p::P, o::O) where {P<:CostProblem,O<:NelderMeadOptions}
+function initialize_solver!(p::CostProblem, o::NelderMeadOptions)
     # init cost and x
     o.costs = get_cost.(Ref(p), o.population)
     return o.x = o.population[argmin(o.costs)] # select min
 end
-function step_solver!(p::P, o::O, iter) where {P<:CostProblem,O<:NelderMeadOptions}
+function step_solver!(p::CostProblem, o::NelderMeadOptions, iter)
     m = mean(p.M, o.population)
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
-    ξ = log(p.M, m, o.population[last(ind)])
+    ξ = inverse_retract(p.M, m, o.population[last(ind)], o.inverse_retraction_method)
     # reflect last
-    xr = exp(p.M, m, -o.α * ξ)
+    xr = retract(p.M, m, -o.α * ξ, o.retraction_method)
     Costr = get_cost(p, xr)
     # is it better than the worst but not better than the best?
     if Costr >= o.costs[first(ind)] && Costr < o.costs[last(ind)]
@@ -90,7 +103,7 @@ function step_solver!(p::P, o::O, iter) where {P<:CostProblem,O<:NelderMeadOptio
     if Costr > o.costs[ind[end - 1]] # even worse than second worst
         if Costr < o.costs[last(ind)] # but at least better tham last
             # outside contraction
-            xc = exp(p.M, m, -o.ρ * ξ)
+            xc = retract(p.M, m, -o.ρ * ξ, o.retraction_method)
             Costc = get_cost(p, xc)
             if Costc < Costr # better than reflected -> store as last
                 o.population[last(ind)] = xr
@@ -98,7 +111,7 @@ function step_solver!(p::P, o::O, iter) where {P<:CostProblem,O<:NelderMeadOptio
             end
         else # even worse than last -> inside contraction
             # outside contraction
-            xc = exp(p.M, m, o.ρ * ξ)
+            xc = retract(p.M, m, o.ρ * ξ, o.retraction_method)
             Costc = get_cost(p, xc)
             if Costc < o.costs[last(ind)] # better than last ? -> store
                 o.population[last(ind)] = xr
