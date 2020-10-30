@@ -1,5 +1,5 @@
 @doc raw"""
-    quasi_Newton(M, F, ∇F, x, H, )
+    quasi_Newton(M, F, ∇F, x)
 
 evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
 It will attempt to minimize the cost function F on the Manifold M.
