@@ -101,7 +101,7 @@ mutable struct NelderMeadOptions{
         γ=2.0,
         ρ=1 / 2,
         σ=1 / 2,
-        retraction::AbstractRetractionMethod=ExponentialRetraction(),
+        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
     ) where {T}
         return new{
