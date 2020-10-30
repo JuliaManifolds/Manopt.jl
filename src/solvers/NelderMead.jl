@@ -35,7 +35,7 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 function NelderMead(
     M::MT,
     F::TF,
-    population=[random_point(M) for i in 1:(manifoldDimension(M) + 1)];
+    population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     stopping_criterion::StoppingCriterion=StopAfterIteration(200000),
     α=1.0,
     γ=2.0,
