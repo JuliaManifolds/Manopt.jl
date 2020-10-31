@@ -7,8 +7,7 @@ sample_times_n_300 = []
 
 for i in 1:10
     x = random_point(M_n_300)
-    norm_gradient_stopping = norm(M_n_300,x,∇F_n_300(x))*10^(-6)
-    bench_n_300 = @benchmark quasi_Newton(M_n_300, F_n_300, ∇F_n_300, $x; memory_size = -1, stopping_criterion = StopWhenGradientNormLess($norm_gradient_stopping)) seconds = 20 samples = 3
+    bench_n_300 = @benchmark quasi_Newton(M_n_300, F_n_300, ∇F_n_300, $x; memory_size = -1, stopping_criterion = StopWhenGradientNormLess(norm(M_n_300,$x,∇F_n_300($x))*10^(-6))) seconds = 600 samples = 10 evals = 1
     append!(sample_times_n_300, bench_n_300.times)
 end
 
