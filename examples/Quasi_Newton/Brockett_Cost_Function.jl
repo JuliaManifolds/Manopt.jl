@@ -1,12 +1,12 @@
 #
 #   Brockett Cost Function on Stiefel(n,k)
 #
-using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random, BenchmarkTools
+using Manopt, Manifolds, LinearAlgebra, Random
 import Manifolds: vector_transport_to!
 vector_transport_to!(::Stiefel,Y,p,X,q,::ProjectionTransport) = (Y .= project(M, q, X))
 Random.seed!(42)
-n = 32
-k = 32
+n = 1000
+k = 5
 M = Stiefel(n,k)
 A = randn(n,n)
 A = (A + A')
