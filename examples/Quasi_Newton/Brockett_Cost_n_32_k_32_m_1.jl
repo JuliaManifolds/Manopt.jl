@@ -1,3 +1,5 @@
+import Manifolds: vector_transport_to!
+vector_transport_to!(::Stiefel,Y,p,X,q,::ProjectionTransport) = (Y .= project(M_n_32_k_32_m_1, q, X))
 M_n_32_k_32_m_1 = Stiefel(32,32)
 A_n_32_k_32_m_1 = randn(32,32)
 A_n_32_k_32_m_1 = (A_n_32_k_32_m_1 + A_n_32_k_32_m_1')
