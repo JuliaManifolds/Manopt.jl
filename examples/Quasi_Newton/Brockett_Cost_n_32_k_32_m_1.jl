@@ -10,7 +10,7 @@ sample_times_n_32_k_32_m_1 = []
 
 for i in 1:10
     x = random_point(M_n_32_k_32_m_1)
-    bench_n_32_k_32_m_1 = @benchmark quasi_Newton(M_n_32_k_32_m_1, F_n_32_k_32_m_1, ∇F_n_32_k_32_m_1, $x; memory_size = 1, vector_transport_method = ProjectionTransport(), stopping_criterion = StopWhenGradientNormLess(norm(M_n_32_k_32_m_1,$x,∇F_n_32_k_32_m_1($x))*10^(-6))) seconds = 600 samples = 10 evals = 1
+    bench_n_32_k_32_m_1 = @benchmark quasi_Newton(M_n_32_k_32_m_1, F_n_32_k_32_m_1, ∇F_n_32_k_32_m_1, $x; memory_size = 1, vector_transport_method = ProjectionTransport(), retraction_method = QRRetraction(), stopping_criterion = StopWhenGradientNormLess(norm(M_n_32_k_32_m_1,$x,∇F_n_32_k_32_m_1($x))*10^(-6))) seconds = 600 samples = 10 evals = 1
     append!(sample_times_n_32_k_32_m_1, bench_n_32_k_32_m_1.times)
 end
 
