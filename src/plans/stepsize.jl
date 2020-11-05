@@ -467,7 +467,7 @@ mutable struct StrongWolfePowellLineseach <: Linesearch
         retr::AbstractRetractionMethod = ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod = ParallelTransport(),
         c_1::Float64=10^(-4),
-        c_2::Float64=0.9
+        c_2::Float64=0.999
     )
         return new(retr, vtr, c_1, c_2)
     end
@@ -588,7 +588,7 @@ mutable struct StrongWolfePowellLineseachNocedal<: Linesearch
         retr::AbstractRetractionMethod = ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod = ParallelTransport(),
         c_1::Float64=10^(-4),
-        c_2::Float64=0.9,
+        c_2::Float64=0.999,
         max::Float64 = 100,
         previous::Float64 = 0,
         zoom::Bool = false

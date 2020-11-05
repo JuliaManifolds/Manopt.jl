@@ -13,6 +13,6 @@ result10 = include("Brockett_Cost_n_1000_k_5_m_4.jl")
 
 # 1: 5.54300803101, 2: 4.8789544849899995, 3: 3.68018880896, 4: 4.5959611331, 5: 4.09507762708, 6: 6.04108661799
 
-# Rsults wir qr retracion: 1: 1.22898721893, 2: 1.38175401899, 3: 1.13636194809, 4: 1.27112093505, 5: 1.47338937186, 6: 2.47918032505, 7: 110.92842842, 8: 127.56145800019999, 9: 161.05876126
+# Results for qr retracion: 1: 1.22898721893, 2: 1.38175401899, 3: 1.13636194809, 4: 1.27112093505, 5: 1.47338937186, 6: 2.47918032505, 7: 110.92842842, 8: 127.56145800019999, 9: 161.05876126, 10: failed
 
 print("Brockett Cost Function \n Experiment 1, n = 32, k = 32, memory = 1: $result1 seconds. \n Experiment 2, n = 32, k = 32, memory = 2: $result2 seconds. \n Experiment 3, n = 32, k = 32, memory = 4: $result3 seconds. \n Experiment 4, n = 32, k = 32, memory = 8: $result4 seconds. \n Experiment 5, n = 32, k = 32, memory = 16: $result5 seconds. \n Experiment 6, n = 32, k = 32, memory = 32: $result6 seconds. \n Experiment 7, n = 1000, k = 2, memory = 4: $result7 seconds. \n Experiment 8, n = 1000, k = 3, memory = 4: $result8 seconds. \n Experiment 9, n = 1000, k = 4, memory = 4: $result9 seconds. \n Experiment 10, n = 1000, k = 5, memory = 4: $result10 seconds. \n")

@@ -22,17 +22,17 @@ function quasi_Newton(
     M::MT,
     F::Function,
     ∇F::Function,
-    x;
+    x::P;
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
     broyden_factor::Float64 = 0.0,
     cautious_update::Bool=false,
     cautious_function::Function = (x) -> x*10^(-4),
     memory_size::Int = 20,
-    memory_steps = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
-    memory_gradients = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
-    memory_position = 0,
-	initial_operator = Matrix(I,manifold_dimension(M), manifold_dimension(M)),
+    memory_steps::AbstractVector{T} = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
+    memory_gradients::AbstractVector{T} = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
+    memory_position::Int = 0,
+	initial_operator::AbstractMatrix = Matrix(I,manifold_dimension(M), manifold_dimension(M)),
     scalling_initial_operator::Bool = true,
     step_size::Stepsize = WolfePowellLineseach(retraction_method, vector_transport_method),
     stopping_criterion::StoppingCriterion = StopWhenAny(
@@ -40,7 +40,7 @@ function quasi_Newton(
         StopWhenGradientNormLess(10^(-6))),
 	return_options=false,
     kwargs...
-) where {MT <: Manifold}
+) where {MT <: Manifold, P, T}
 
 	(broyden_factor < 0. || broyden_factor > 1.) && throw( ErrorException( "broyden_factor must be in the interval [0,1], but it is $broyden_factor."))
 
