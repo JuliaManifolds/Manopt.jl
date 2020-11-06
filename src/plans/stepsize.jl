@@ -445,6 +445,10 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
         else
             s_plus = s
         end
+
+        if abs(s_plus - s_minus) <= 10^(-13)
+            break
+        end
         xNew = retract(p.M, o.x, s_minus*η, a.retraction_method)
         # print("($s, $s_minus, $s_plus) \n")
     end

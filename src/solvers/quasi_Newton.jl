@@ -222,7 +222,7 @@ function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α
 	norm_sk = norm(p.M, o.x, sk)
 	bound = o.cautious_function(norm(p.M, x, get_gradient(p,x)))
 
-	if norm_sk != 0 && (sk_yk / norm_sk) >= bound
+	if norm_sk != 0 && (sk_yk / norm_sk^2) >= bound
 		limited_memory_update(p,o,α,η,x)
 	else
 		memory_steps_size = length(o.steps)

@@ -10,7 +10,8 @@ sample_times_n_1000_k_5_m_4 = []
 
 for i in 1:5
     x = random_point(M_n_1000_k_5_m_4)
-    bench_n_1000_k_5_m_4 = @benchmark quasi_Newton(M_n_1000_k_5_m_4, F_n_1000_k_5_m_4, ∇F_n_1000_k_5_m_4, $x; memory_size = 4, vector_transport_method = ProjectionTransport(), retraction_method = QRRetraction(), stopping_criterion = StopWhenGradientNormLess(norm(M_n_1000_k_5_m_4,$x,∇F_n_1000_k_5_m_4($x))*10^(-6))) seconds = 600 samples = 1 evals = 1
+    bench_n_1000_k_5_m_4 = @benchmark quasi_Newton(M_n_1000_k_5_m_4, F_n_1000_k_5_m_4, ∇F_n_1000_k_5_m_4, $x; memory_size = 4, vector_transport_method = ProjectionTransport(), retraction_method = QRRetraction(),
+    cautious_update = true, stopping_criterion = StopWhenGradientNormLess(norm(M_n_1000_k_5_m_4,$x,∇F_n_1000_k_5_m_4($x))*10^(-6))) seconds = 600 samples = 1 evals = 1
     append!(sample_times_n_1000_k_5_m_4, bench_n_1000_k_5_m_4.times)
 end
 
