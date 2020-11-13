@@ -18,21 +18,21 @@ m2(m) = repeat(m,inner=rep(length(size(m))))
 #
 fidelity(x) = 1/2*distance(M,x,f)^2
 function Λ(x)
-    return ProductRepr(m2(x),forwardLogs(M,x)) # on N=TM, namely in T_xM
+    return ProductRepr(m2(x),forward_logs(M,x)) # on N=TM, namely in T_xM
 end
 function prior(x)
   # inner 2-norm over logs, 1-norm over the pixel
-  return norm(norm.(Ref(pixelM),getValue(x), getValue(getTangent(Λ(x)))), 1)
+  return norm(norm.(Ref(pixelM), x, getTangent(Λ(x))), 1)
 end
 cost(x) = (1/α)*fidelity(x) + prior(x)
 
-proxFidelity(M,m,λ,x) = proxDistance(M,λ/α,f,x,2)
+proxFidelity(M,m,λ,x) = prox_distance(M,λ/α,f,x,2)
 proxPriorDual(N,n,λ,ξ) = ProductRepr(
     getBase(ξ),
     projCollaborativeTV(getBase(N),λ,getBase(n),getTangent(ξ), Inf, Inf)
 )
-DΛ(m,ξm) = TProductRepr(
+DΛ(m,ξm) = ProductRepr(
     repeat( ξm, inner=rep(length(size(m))) ),
-    DforwardLogs(M,m,ξm)
+    differential_forward_logs(M, m, ξm)
 )
-AdjDΛ(m,ξn) = AdjDforwardLogs(M,m,getTangent(ξn))
+AdjDΛ(m,ξn) = adjoint_differential_forward_logs(M, m, getTangent(ξn))
