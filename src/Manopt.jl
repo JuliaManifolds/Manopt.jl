@@ -171,12 +171,14 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export RecordGradient, RecordGradientNorm, RecordStepsize
 
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
+export PrimalDualProblem, LinearizedPrimalDualProblem, ExactPrimalDualProblem
 
 export NelderMead,
     gradient_descent,
     subgradient_method,
     truncated_conjugate_gradient_descent,
-    trust_regions
+    trust_regions,
+    Chambolle_Pock
 export cyclic_proximal_point, conjugate_gradient_descent, particle_swarm
 
 export DebugGradient, DebugGradientNorm, DebugStepsize
