@@ -100,6 +100,7 @@ include("functions/proximalMaps.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
@@ -167,11 +168,17 @@ export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, Debu
 export DebugChange, DebugIterate, DebugIteration, DebugDivider
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 export DebugGradient, DebugGradientNorm, DebugStepsize
+export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate
+export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIterate
+export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 
 export RecordGradient, RecordGradientNorm, RecordStepsize
+export RecordPrimalBaseChange, RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
+export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
+
 
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
-export PrimalDualProblem, LinearizedPrimalDualProblem, ExactPrimalDualProblem
+export PrimalDualProblem
 
 export NelderMead,
     gradient_descent,
@@ -193,7 +200,8 @@ export ConjugateGradientDescentOptions,
     NelderMeadOptions,
     TruncatedConjugateGradientOptions,
     TrustRegionsOptions,
-    ParticleSwarmOptions
+    ParticleSwarmOptions,
+    PrimalDualOptions
 
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,

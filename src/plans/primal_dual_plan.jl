@@ -115,67 +115,41 @@ mutable struct ChambollePockOptions{P,Q,T} <: PrimalDualOptions
     end
 end
 
-doc"""
-    evaluatePrimalPoximalMap(p,o,λ,x)
-
-evaluate $\operatorname{prox}_{\lambda F}(x)$ for the primal part $F$
-of the [`PrimalDualProblem`](@ref)` p` containing $F(x) + G(\Lambda x)$ to
-optimize.
-"""
-function evaluate_primal_proximal_map(p::P,o::O,λ,x) where {P <: PrimalDualProblem, O <: PrimalDualOptions}
-    return p.prox_F(p.M,o.m,λ,x)
-end
-doc"""
-    evaluateDualPoximalMap(p,o,λ,ξ)
-
-evaluate $\operatorname{prox}_{\lambda G^*}(x)$ for the dual part $G^*$
-of the [`PrimalDualProblem`](@ref)` p` containing $F(x) + G(\Lambda x)$ to
-optimize.
-"""
-function evaluate_dual_proximal_map(p::P,o::O,λ,ξ) where {P <: PrimalDualProblem, O <: PrimalDualOptions}
-    return p.prox_G_dual(p.N,o.n,λ,ξ)
-end
-
-@doc doc"""
-    update_prox_parameters!(o)
-update the prox parameters as described in Algorithm 2 of Chambolle, Pock, 2010, i.e.
-1. $\theta_{n} = \frac{1}{\sqrt{1+2\gamma\tau_n}}$
-2. $\tau_{n+1} = \theta_n\tau_n$
-3. $\sigma_{n+1} = \frac{\sigma_n}{\theta_n}$
-"""
-function update_prox_parameters!(o::O) where {O <: PrimalDualOptions}
-  if o.acceleration > 0
-    o.relaxation = 1/sqrt(1+2*o.acceleration * o.primalStepSize)
-    o.primalStepSize = o.primalStepSize*o.relaxation
-    o.dualStepSize = o.dualStepSize/o.relaxation
-  end
-end
-
-primal_residual(p::P,o::O,xOld,ξOld,nOld) where {P <: PrimalDualProblem, O <: ChambollePockOptions } =
-    norm(p.M, o.x,
+function primal_residual(p::PrimalDualProblem,o::ChambollePockOptions,xOld,ξOld,nOld)
+    return norm(p.M, o.x,
         1/o.primalStepSize*log(p.M, o.x, xOld) -
         parallelTransport(p.M,o.m,o.x,
-            p.adjDΛ(o.m, vector_transpor_tot(p.N,nOld,ξOld,o.n, ParallelTransport()) - o.ξ)
+            p.adjDΛ(o.m, vector_transpor_tot(p.N,nOld,ξOld,o.n) - o.ξ)
         )
     )
-#=
-    dual_residual(p::linearizedPrimalDualProblem,o::O,xOld,ξOld,nOld) where {O <: ChambollePockOptions } =
-    norm(p.N, o.n,
-        1/o.dualStepSize * (vector_transport_to(p.N,o.nOld,o.ξOld,o.n, ParallelTransport()) - o.ξ) -
-        p.DΛ(o.m, vector_transport_to(p.M, o.x, log(p.M,o.x,xOld), o.m, ParallelTransport()) )
-    )
-dual_residual(p::exactPrimalDualProblem, o::O,xOld,ξOld,nOld) where {O <: ChambollePockOptions } =
-    norm(p.N, o.n,
-        1/o.dualStepSize * (vector_transport_to(p.N,o.nOld,ξOld,o.n, ParallelTransport()) - o.n) -
-        log(p.N,o.n,
-            p.Λ( exp(p.M, o.m, vector_transport_to(p.M,o.x,log(p.M,o.x,xOld),o.m, ParallelTransport())))
+end
+function dual_residual(p::PrimalDualProblem,o::ChambollePockOptions,xOld,ξOld,nOld)
+    if o.type === :linearized
+        return norm(p.N, o.n,
+            1/o.dualStepSize * (vector_transport_to(p.N,o.nOld,o.ξOld,o.n) - o.ξ) -
+            p.fordward_operator(o.m, vector_transport_to(p.M, o.x, log(p.M,o.x,xOld), o.m) )
         )
-    )
-=#
-#
+    elseif o.type === :exact
+        return norm(p.N, o.n,
+            1/o.dualStepSize * (vector_transport_to(p.N,o.nOld,ξOld,o.n, ParallelTransport()) - o.n) -
+            log(p.N,o.n,
+                p.Λ( exp(p.M, o.m, vector_transport_to(p.M,o.x,log(p.M,o.x,xOld),o.m, ParallelTransport())))
+            )
+        )
+    else
+        error("Unknown ChambollePock type $(o.type).")
+    end
+end
 #
 # Special Debuggers
 #
+@doc raw"""
+    DebugDualResidual <: DebugAction
+
+A Debug action to print the dual residual.
+The constructor accepts a printing function and some (shared) storage, which
+should at least record `:x`, `:ξ` and `:n`.
+"""
 mutable struct DebugDualResidual <: DebugAction
     print::Function
     prefix::String
@@ -199,12 +173,19 @@ function (d::DebugDualResidual)(p::P,o::ChambollePockOptions, i::Int) where {P <
     d.storage(p ,o, i)
 end
 
+@doc raw"""
+    DebugPrimalResidual <: DebugAction
+
+A Debug action to print the primal residual.
+The constructor accepts a printing function and some (shared) storage, which
+should at least record `:x`, `:ξ` and `:n`.
+"""
 mutable struct DebugPrimalResidual <: DebugAction
     print::Function
     prefix::String
     storage::StoreOptionsAction
     DebugPrimalResidual(a::StoreOptionsAction=StoreOptionsAction( (:x,:ξ,:n) ),
-        print::Function=print) = new(print,"Dual Residual: ",a)
+        print::Function=print) = new(print,"Primal Residual: ",a)
     function DebugPrimalResidual(
             values::Tuple{P,T,Q},
             a::StoreOptionsAction=StoreOptionsAction( (:x,:ξ,:n) ),
@@ -221,7 +202,13 @@ function (d::DebugPrimalResidual)(p::P,o::ChambollePockOptions, i::Int) where {P
     end
     d.storage(p,o,i)
 end
+@doc raw"""
+    DebugPrimalDualResidual <: DebugAction
 
+A Debug action to print the primaldual residual.
+The constructor accepts a printing function and some (shared) storage, which
+should at least record `:x`, `:ξ` and `:n`.
+"""
 mutable struct DebugPrimalDualResidual <: DebugAction
     print::Function
     prefix::String
@@ -248,12 +235,38 @@ end
 #
 # Debugs
 #
+"""
+    DebugPrimalChange(opts...)
+
+Print the change of the primal variable by using [`DebugChange`](@ref),
+see their constructors for detail.
+"""
 DebugPrimalChange(opts...) = DebugChange(opts...)
+
+"""
+    DebugPrimalIterate(opts...)
+
+Print the change of the primal variable by using [`DebugIterate`](@ref),
+see their constructors for detail.
+"""
 DebugPrimalIterate(opts...) = DebugIterate(opts...)
 
-# Use Fallback
+"""
+    DebugDualIterate(e)
+
+Print the dual variable by using [`DebugEntry`](@ref),
+see their constructors for detail.
+This method is further set display `o.ξ`.
+"""
 DebugDualIterate(e) = DebugEntry(e,:ξ)
-# DebugDualChange(e) = DebugEntryChange(e, :ξ, (p,o,ξ,ν) -> norm(p.M,o.n,ξ,ν) )
+
+"""
+    DebugDualChange(opts...)
+
+Print the change of the dual variable, similar to [`DebugChange`](@ref),
+see their constructors for detail, but with a different calculation of the change,
+since the dual variable lives in (possibly different) tangent spaces.
+"""
 mutable struct DebugDualChange <: DebugAction
     print::Function
     prefix::String
@@ -278,10 +291,36 @@ function (d::DebugDualChange)(p::P,o::ChambollePockOptions, i::Int) where {P <: 
     d.storage(p,o,i)
 end
 
+"""
+    DebugDualBaseIterate(e)
+
+Print the dual base variable by using [`DebugEntry`](@ref),
+see their constructors for detail.
+This method is further set display `o.n`.
+"""
 DebugDualBaseIterate(e) = DebugEntry(e,:n)
+"""
+    DebugDualChange(opts...)
+
+Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
+see their constructors for detail, on `o.n`.
+"""
 DebugDualBaseChange(e) = DebugEntryChange(e, :n, (p,o,x,y) -> distance(p.N,x,y) )
 
+"""
+    DebugPrimalBaseIterate(e)
+
+Print the primal base variable by using [`DebugEntry`](@ref),
+see their constructors for detail.
+This method is further set display `o.m`.
+"""
 DebugPrimalBaseIterate(e) = DebugEntry(e,:m)
+"""
+    DebugPrimalBaseChange(opts...)
+
+Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
+see their constructors for detail, on `o.n`.
+"""
 DebugPrimalBaseChange(e) = DebugEntryChange(e, :m, (p,o,x,y) -> distance(p.M,x,y) )
 
 #
@@ -289,13 +328,46 @@ DebugPrimalBaseChange(e) = DebugEntryChange(e, :m, (p,o,x,y) -> distance(p.M,x,y
 #
 
 # Primals are just the entries
-RecordPrimalChange(opts...) = RecordChange(opts...)
-RecordPrimalIterate(opts...) = RecordIterate(opts...)
+"""
+    RecordPrimalChange(a)
 
-# Use Fallback
+Create an [`RecordAction`](@ref) that records the primal value change,
+i.e. [`RecordChange`](@ref), since we just redord the change of `o.x`.
+"""
+RecordPrimalChange(a) = RecordChange(a)
+
+"""
+    RecordDualBaseIterate(e)
+
+Create an [`RecordAction`](@ref) that records the dual base point,
+i.e. [`RecordIterate`](@ref), i.e. `o.x`.
+"""
+RecordPrimalIterate(e) = RecordIterate(e)
+
+"""
+    RecordDualIterate(e)
+
+Create an [`RecordAction`](@ref) that records the dual base point,
+i.e. [`RecordEntry`](@ref) of `o.ξ`, so .
+"""
 RecordDualIterate(e) = RecordEntry(e,:ξ)
 
 # RecordDualChange(e) = RecordEntryChange(e, :ξ, (p,o,ξ,ν) -> norm(p.M,o.n,ξ,ν) )
+"""
+    RecordDualChange <: RecordAction
+
+Create an [`RecordAction`](@ref) that records the dual value change.
+While this is similar to a [`RecordEntry`](@ref), we further have to store
+the base point to compute the change.
+
+# constructor
+
+    RecordDualChange(a=StoreOptionsAction((:ξ,:n))
+    RecordDualChange(values::Tuple{T,P},a=StoreOptionsAction((:ξ,:n))
+
+Create the action either with a given (shared) Storage, which can be set to the
+`values` Tuple, if that is provided).
+"""
 mutable struct RecordDualChange <: RecordAction
     recordedValues::Array{Float64,1}
     storage::StoreOptionsAction
@@ -319,8 +391,33 @@ function (r::RecordDualChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Optio
     r.storage(p ,o, i)
 end
 
+"""
+    RecordDualBaseIterate(e)
+
+Create an [`RecordAction`](@ref) that records the dual base point,
+i.e. [`RecordEntry`](@ref) of `o.n`.
+"""
 RecordDualBaseIterate(e) = RecordEntry(e,:n)
+
+"""
+    RecordDualBaseChange(e)
+
+Create an [`RecordAction`](@ref) that records the dual base point change,
+i.e. [`RecordEntryChange`](@ref) of `o.n` with distance to the last value to store a value.
+"""
 RecordDualBaseChange(e) = RecordEntryChange(e, :n, (p,o,x,y) -> distance(p.N,x,y) )
 
+"""
+    RecordPrimalBaseIterate(e)
+
+Create an [`RecordAction`](@ref) that records the primal base point,
+i.e. [`RecordEntry`](@ref) of `o.m`.
+"""
 RecordPrimalBaseIterate(e) = RecordEntry(e,:m)
+"""
+    RecordPrimalBaseChange(e)
+
+Create an [`RecordAction`](@ref) that records the primal base point change,
+i.e. [`RecordEntryChange`](@ref) of `o.m` with distance to the last value to store a value.
+"""
 RecordPrimalBaseChange(e) = RecordEntryChange(e, :m, (p,o,x,y) -> distance(p.M,x,y) )

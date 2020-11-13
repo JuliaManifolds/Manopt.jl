@@ -46,8 +46,8 @@
 #
 # ## The given Dataset
 #
-exportFolder = joinpath(
-    @__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials"
+exportFolder = joinpath( #src
+    @__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials", #src
 ) #src
 using Manopt, Manifolds
 using Random, Colors

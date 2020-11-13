@@ -22,7 +22,6 @@ for (i, tutorial) in enumerate(tutorials)
         sourceFile,
         tutorialsOutputPath;
         name=tutorial,
-        # codefence = "```julia" => "```",
         credit=false,
     )
     push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
@@ -38,6 +37,7 @@ makedocs(;
         "Plans" => "plans/index.md",
         "Solvers" => [
             "Introduction" => "solvers/index.md",
+            "Chambolle-Pock" => "solvers/ChambollePock.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",

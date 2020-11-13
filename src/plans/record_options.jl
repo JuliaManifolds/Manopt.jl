@@ -295,12 +295,12 @@ mutable struct RecordIterate{T} <: RecordAction
     recordedValues::Array{T,1}
     RecordIterate{T}() where {T} = new(Array{T,1}())
 end
-RecordIterate(p::T) where {T} = RecordIterate{T}()
+RecordIterate(::T) where {T} = RecordIterate{T}()
 function RecordIterate()
     return throw(ErrorException("The iterate's data type has to be provided, i.e. RecordIterate(x0)."))
 end
 
-function (r::RecordIterate{T})(p::Pr, o::O, i::Int) where {Pr<:Problem,O<:Options,T}
+function (r::RecordIterate{T})(::Problem, o::Options, i) where {T}
     return record_or_eset!(r, o.x, i)
 end
 

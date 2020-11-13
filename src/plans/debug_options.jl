@@ -158,6 +158,9 @@ end
 
 debug for the current iterate (stored in `o.x`).
 
+# Constructor
+    DebugIterate(print=print, long::Bool=false)
+
 # Parameters
 * `long::Bool` whether to print `x:` or `current iterate`
 """
