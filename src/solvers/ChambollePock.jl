@@ -13,7 +13,7 @@ and $\Lambda\colon\mathcal M \to \mathcal N$. The remaining input parameters are
 * `x,ξ` primal and dual start points $x\in\mathcal M$ and $\xi\in T_n\mathcal N$
 * `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
 * `forward_operator` the operator $Λ(⋅)$ or its linearization $DΛ(⋅)[⋅]$, depending on whether `:exact` or `:linearized` is chosen.
-* `adjDΛ` the adjoint $DΛ^*$ of the linearized operator $DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N$
+* `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N$
 * `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
 
 By default, this performs the exact Riemannian Chambolle Pock algorithm, see the opional parameter
@@ -33,8 +33,8 @@ For more details on the algorithm, see[^BHLSTVN2020].
 * `type` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
   Note that this changes the arguments the `forward_operator` will be called with ()
 * `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
-* `update_primal_base` – (`(p,o,i) -> o.m`) function to update `m` (identity by default)
-* `update_dual_base` – (`(p,o,i) -> o.n`) function to update `n` (identity by default)
+* `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
+* `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
 
 [^BHLSTVN2020]:
     > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
@@ -56,22 +56,22 @@ function ChambollePock(
     adjoint_DΛ::Function;
     acceleration = 0.05,
     dual_stepsize = 1/sqrt(8),
-    Λ::Union{Function,Missing},
+    Λ::Union{Function,Missing}=missing,
     primal_stepsize = 1/sqrt(8),
     relaxation = 1.0,
     relax::Symbol = :primal,
-    stoppingCriterion::StoppingCriterion = stopAfterIteration(200),
-    update_primal_base::Function = (p,o,i) -> o.m,
-    update_dual_base::Function = (p,o,i) -> o.n,
+    stopping_criterion::StoppingCriterion = stopAfterIteration(200),
+    update_primal_base::Union{Function,Missing} = missing,
+    update_dual_base::Union{Function,Missing} = missing,
     type = ismissing(Λ) ? :exact : :linearized,
     return_options=false,
     kwargs...
 ) where {mT <: Manifold, nT <: Manifold,P,Q,T}
-    p = exactPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_DΛ, Λ)
-    o = ChambollePockOptions(m,n,x,ξ, primalStepSize, dualStepSize;
+    p = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_DΛ, Λ)
+    o = ChambollePockOptions(m,n,x,ξ, primal_stepsize, dual_stepsize;
         acceleration = acceleration,
         relaxation= relaxation,
-        stoppingCriterion = stoppingCriterion,
+        stopping_criterion = stopping_criterion,
         relax = relax,
         update_primal_base = update_primal_base,
         update_dual_base = update_dual_base,
@@ -91,10 +91,13 @@ end
 
 function step_solver!(p::PrimalDualProblem, o::ChambollePockOptions, iter)
    primal_dual_step!(p, o, Val(o.relax))
-   n_old = deepcopy(o.n)
-   o.n = o.update_dual_base(p, o, iter)
-   vector_transport_to!(p.N, o.ξ, n_old, o.ξ, o.n,)
-   vector_transport_to!(p.N, o.ξbar, n_old, o.ξbar, o.nTransport())
+   o.m = ismissing(o.update_primal_base) ? o.m : o.update_primal_base(p, o, iter)
+   if !ismissing(o.update_dual_base)
+        n_old = deepcopy(o.n)
+        o.n = o.update_dual_base(p, o, iter)
+        vector_transport_to!(p.N, o.ξ, n_old, o.ξ, o.n,)
+        vector_transport_to!(p.N, o.ξbar, n_old, o.ξbar, o.nTransport())
+   end
    return o
 end
 #
@@ -108,14 +111,14 @@ function primal_dual_step!(
     dual_update!(p, o, o.xbar, Val(o.type))
     ptξn = ismissing(p.Λ) ? o.ξ : vector_transport_to(p.N, o.n, o.ξ, p.Λ(o.m))
     xOld = o.x
-    o.x = o.prox_F(p.M, o.m, o.primalStepSize,
+    o.x = o.prox_F(p.M, o.m, o.primal_stepsize,
         exp(
             p.M,
             o.x,
             vector_transport_to(
                 p.M,
                 o.m,
-                - o.primalStepSize * ( p.adjDΛ(o.m, ptξn) ),
+                - o.primal_stepsize * ( p.adjoint_linearized_operator(o.m, ptξn) ),
                 o.x
             )
         )
@@ -133,14 +136,19 @@ function primal_dual_step!(
     ::Val{:dual}
     )
     ptξbar = ismissing(p.Λ) ? o.ξbar : vector_transport_to(p.N, o.n, o.ξbar, p.Λ(o.m))
-    o.x = prox_F(
+    o.x = p.prox_F(
         p.M,
         o.m,
-        o.primalStepSize,
+        o.primal_stepsize,
         exp(
             p.M,
             o.x,
-            parallelTransport(p.M, o.m, - o.primalStepSize * ( p.adjDΛ(o.m, ptξbar) ), o.x)
+            vector_transport_to(
+                p.M,
+                o.m,
+                - o.primal_stepsize * ( p.adjoint_linearized_operator(o.m, ptξbar) ),
+                o.x,
+            )
         )
     )
     ξ_old = o.ξ
@@ -159,7 +167,7 @@ function dual_update!(p::PrimalDualProblem, o::ChambollePockOptions, start::P, :
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     ξUpdate = ismissing(p.Λ) ? ξUpdate : vector_transport_to(p.N,p.Λ(o.m),ξUpdate,o.n)
     # (3) to the dual update
-    o.ξ = o.prox_G_dual(p.N, o.n, o.dualStepSize, o.ξ + o.dualStepSize * ξUpdate)
+    o.ξ = p.prox_G_dual(p.N, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξUpdate)
     return o
 end
 #
@@ -167,11 +175,11 @@ end
 # depending on whether its primal relaxed or dual relaxed we start from start=o.x or start=o.xbar here
 #
 function dual_update!(p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:exact}) where {P}
-    o.ξ = o.prox_G_dual(
+    o.ξ = p.prox_G_dual(
         p.N,
         o.n,
-        o.dualStepSize,
-        o.ξ + o.dualStepSize * log(p.N,o.n, p.forward_operator(start))
+        o.dual_stepsize,
+        o.ξ + o.dual_stepsize * log(p.N,o.n, p.forward_operator(start))
     )
     return o
 end
@@ -186,7 +194,7 @@ update the prox parameters as described in Algorithm 2 of Chambolle, Pock, 2010,
 function update_prox_parameters!(o::O) where {O <: PrimalDualOptions}
     if o.acceleration > 0
         o.relaxation = 1/sqrt(1+2*o.acceleration * o.primal_stepsize)
-        o.primal_sepsize = o.primal_stepsize * o.relaxation
+        o.primal_stepsize = o.primal_stepsize * o.relaxation
         o.dual_stepsize = o.dual_stepsize/o.relaxation
     end
     return o

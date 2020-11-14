@@ -17,7 +17,7 @@ Describes a Problem for the linearized Chambolle-Pock algorithm.
 
 # Constructor
 
-    LinearizedPrimalDualProblem(M, N, costzF,DΛ,adjDΛ,proxF,proxGDual,Λ=missing)
+    LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,proxF,proxGDual,Λ=missing)
 
 """
 mutable struct PrimalDualProblem{mT <: Manifold, nT <: Manifold} <: Problem
@@ -28,7 +28,7 @@ mutable struct PrimalDualProblem{mT <: Manifold, nT <: Manifold} <: Problem
     prox_G_dual::Function
     forward_operator::Function
     adjoint_linearized_operator::Function
-    Λ::Function
+    Λ::Union{Function,Missing}
 end
 function PrimalDualProblem(
     M::mT,
@@ -86,8 +86,8 @@ mutable struct ChambollePockOptions{P,Q,T} <: PrimalDualOptions
   xbar::P
   ξ::T
   ξbar::T
-  primalStepSize::Float64
-  dualStepSize::Float64
+  primal_stepsize::Float64
+  dual_stepsize::Float64
   acceleration::Float64
   relaxation::Float64
   relax::Symbol
@@ -105,33 +105,36 @@ mutable struct ChambollePockOptions{P,Q,T} <: PrimalDualOptions
     acceleration::Float64 = 0.0,
     relaxation::Float64 = 1.0,
     relax::Symbol = :primal,
-    stop::StoppingCriterion = StopAfterIteration(300),
+    stopping_criterion::StoppingCriterion = StopAfterIteration(300),
     type::Symbol = :exact,
-    updatePrimalBasePoint::Union{Function,Missing} = (p,o,i) -> o.m,
-    updateDualBasePoint::Union{Function,Missing}= (p,o,i) -> o.n,
+    update_primal_base::Union{Function,Missing} = missing,
+    update_dual_base::Union{Function,Missing} = missing,
     ) where {P,Q,T}
-       return ChambollePockOptions{P,Q,T}(m,n,x,x,ξ,ξ,primal_stepsize,dual_stepsize,
-        acceleration,relaxation,relax,stop,type,update_primal_base,update_dual_base)
+       return new{P,Q,T}(
+            m,n,x,x,ξ,ξ,primal_stepsize,dual_stepsize,
+            acceleration,relaxation,relax,stopping_criterion,type,
+            update_primal_base,update_dual_base
+        )
     end
 end
 
 function primal_residual(p::PrimalDualProblem,o::ChambollePockOptions,xOld,ξOld,nOld)
     return norm(p.M, o.x,
-        1/o.primalStepSize*log(p.M, o.x, xOld) -
+        1/o.primal_stepsize*log(p.M, o.x, xOld) -
         parallelTransport(p.M,o.m,o.x,
-            p.adjDΛ(o.m, vector_transpor_tot(p.N,nOld,ξOld,o.n) - o.ξ)
+            p.adjoint_linearized_operator(o.m, vector_transpor_tot(p.N,nOld,ξOld,o.n) - o.ξ)
         )
     )
 end
 function dual_residual(p::PrimalDualProblem,o::ChambollePockOptions,xOld,ξOld,nOld)
     if o.type === :linearized
         return norm(p.N, o.n,
-            1/o.dualStepSize * (vector_transport_to(p.N,o.nOld,o.ξOld,o.n) - o.ξ) -
+            1/o.dual_stepsize * (vector_transport_to(p.N,o.nOld,o.ξOld,o.n) - o.ξ) -
             p.fordward_operator(o.m, vector_transport_to(p.M, o.x, log(p.M,o.x,xOld), o.m) )
         )
     elseif o.type === :exact
         return norm(p.N, o.n,
-            1/o.dualStepSize * (vector_transport_to(p.N,o.nOld,ξOld,o.n, ParallelTransport()) - o.n) -
+            1/o.dual_stepsize * (vector_transport_to(p.N,o.nOld,ξOld,o.n, ParallelTransport()) - o.n) -
             log(p.N,o.n,
                 p.Λ( exp(p.M, o.m, vector_transport_to(p.M,o.x,log(p.M,o.x,xOld),o.m, ParallelTransport())))
             )

@@ -99,3 +99,8 @@ if ExportTable
     A = cat([ri[1] for ri in r], [ri[2] for ri in r]; dims=2)
     CSV.write(resultsFolder * experimantName * "-Cost.csv", DataFrame(A); writeheader=false)
 end
+
+M = PowerManifold(Sphere(2),3)
+p = [1.0,0.0,0.0]
+P = [p,p,p]
+X = log(M,P,P)

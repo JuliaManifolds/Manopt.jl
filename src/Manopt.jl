@@ -185,7 +185,8 @@ export NelderMead,
     subgradient_method,
     truncated_conjugate_gradient_descent,
     trust_regions,
-    Chambolle_Pock
+    ChambollePock
+
 export cyclic_proximal_point, conjugate_gradient_descent, particle_swarm
 
 export DebugGradient, DebugGradientNorm, DebugStepsize

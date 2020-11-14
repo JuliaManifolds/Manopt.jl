@@ -9,29 +9,30 @@ using Manopt, Manifolds
 using Images, CSV, DataFrames, LinearAlgebra, JLD2, Dates
 #
 # Settings
-ExportOrig = false
-ExportResult = true
-ExportTable = true
+export_original = false
+export_result = true
+export_table = true
+use_debug = true
 asy_render_detail = 2
-resultsFolder = "examples/Total_Variation/SPD_TV/"
-comparisonData = "ImageCPPA-CostValue.jld2"
-experimantName = "ImageCP"
-if !isdir(resultsFolder)
-    mkdir(resultsFolder)
+results_folder = "examples/Total_Variation/SPD_TV/"
+comparison_data = "ImageCPPA-CostValue.jld2"
+experimant_name = "ImageCP"
+if !isdir(results_folder)
+    mkdir(results_folder)
 end
 #
 # Manifold & Data
 f = artificial_SPD_image2(32)
-if ExportOrig
+if export_original
     asymptote_export_SPD(
-        resultsFolder * experimantName * "orig.asy"; data=f, scaleAxes=(7.5, 7.5, 7.5)
+        results_folder * experimant_name * "orig.asy"; data=f, scaleAxes=(7.5, 7.5, 7.5)
     )
-    render_asymptote(resultsFolder * experimentName * "-orig.asy"; render=asy_render_detail)
+    render_asymptote(results_folder * experimentName * "-orig.asy"; render=asy_render_detail)
 end
 #
 # Setup & Optimize
 try
-    cost_threshold = load(resultsFolder * comparisonData)["compareCostFunctionValue"]
+    cost_threshold = load(results_folder * comparison_data)["compareCostFunctionValue"]
     global sC = StopWhenAny(
         StopAfterIteration(400), StopWhenChangeLess(10^-5), StopWhenCostLess(cost_threshold)
     )
@@ -57,17 +58,17 @@ pixelM = SymmetricPositiveDefinite(3)
 #
 include("CP_TVModelFunctions.jl")
 
-m = fill(Matrix(I,3,3),size(f))
+m = fill(Matrix{Float64}(I,3,3),size(f))
 n = Λ(m)
 x0 = f
-ξ0 = TBTVector(zeroTVector(M2,m2(m)), zeroTVector(M2,m2(m)))
+ξ0 = ProductRepr(zero_tangent_vector(M2,m2(m)), zero_tangent_vector(M2,m2(m)))
 
 #
 # Stoping Criterion: Beat CPPA
 #
-sC = stopAfterIteration(400)
+sC = StopAfterIteration(400)
 try
-  costFunctionThreshold = load(resultsFolder*comparisonData)["compareCostFunctionValue"]
+  costFunctionThreshold = load(results_folder*comparison_data)["compareCostFunctionValue"]
   global sC = stopWhenCostLess(costFunctionThreshold)
   @info "Comparison to CPPA (`SPDImage_CPPA.jl`) and its cost of $costFunctionThreshold."
 catch y
@@ -76,16 +77,15 @@ catch y
   end
 end
 @info "with parameters σ: $σ | τ: $τ | θ: $θ | γ: $γ."
-@time a = linearizedChambollePock(M, N, cost,
-  x0, ξ0, m, n,
-  DΛ,AdjDΛ, proxFidelity, proxPriorDual;
-  primalStepSize = σ, dualStepSize = τ, relaxation = θ, acceleration = γ,
-  relaxType = relaxDual,
-  debug = useDebug ? [:Iteration," | ", :Cost, "\n",10,:Stop] : missing,
-  record = exportTable ? [:Iteration, :Cost ] : missing,
-  stoppingCriterion = sC
+@time a = ChambollePock(M, N, cost, x0, ξ0, m, n, proxFidelity, proxPriorDual, DΛ, AdjDΛ;
+  primal_stepsize = σ, dual_stepsize = τ, relaxation = θ, acceleration = γ,
+  relax = :dual,
+  debug = use_debug ? [:Iteration," | ", :Cost, "\n",10,:Stop] : missing,
+  record = export_table ? [:Iteration, :Cost ] : missing,
+  stopping_criterion = sC,
+  type = :linearized
 )
-if exportTable
+if export_table
   y = a[1]
   r = a[2]
 else
@@ -93,23 +93,23 @@ else
 end
 
 numIter = length(r)
-if ExportResult
+if export_result
     asymptote_export_SPD(
-        resultsFolder *
-        experimantName *
+        results_folder *
+        experimant_name *
         "img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy";
         data=y,
         render=4,
         scaleAxes=(7.5, 7.5, 7.5),
     )
     render_asymptote(
-        resultsFolder *
+        results_folder *
         experimentName *
         "img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy";
         render=asy_render_detail,
     )
 end
-if ExportTable
+if export_table
     A = cat([ri[1] for ri in r], [ri[2] for ri in r]; dims=2)
-    CSV.write(resultsFolder * experimantName * "-Cost.csv", DataFrame(A); writeheader=false)
+    CSV.write(results_folder * experimant_name * "-Cost.csv", DataFrame(A); writeheader=false)
 end
