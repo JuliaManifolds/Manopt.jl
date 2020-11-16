@@ -1,0 +1,70 @@
+#
+# This small part introduces both debug and record for C(k)
+# including this file, you can use
+# DebugCk() within debug = and RecordCk() within record =
+#
+# you have to have x_hat defined.
+function tilde_x_old(p, o, x_old, ξbar_old)
+    return exp(
+        p.M,
+        x_old,
+        vector_transport_to(
+            p.M,
+            o.m,
+            - o.primal_stepsize * p.adjoint_linearized_operator(o.m,ξbar_old),
+            x_old,
+        )
+    )
+end
+function ζk(p, o, x_old, ξbar_old)
+    return vector_transport_to(
+        p.M,
+        x_old,
+        log(p.M, x_old, o.x) - vector_transport_to(
+            p.M,
+            tilde_x_old(p, o, x_old,ξbar_old),
+            x_old,
+            log(p.M, tilde_x_old(p,o,x_old,ξbar_old),x_hat)
+        ),
+        o.m,
+    ) - log(p.M,o.m,o.x) + log(p.M,o.m,x_hat)
+end
+function Ck(p, o, x_old, ξ_bar_old)
+    return 1/o.primal_stepsize*distance(
+        p.M,
+        x_old,
+        tilde_x_old(p, o, x_old, ξ_bar_old)
+    )^2 + inner(p.N, o.n, ξ_bar_old, p.forward_operator(o.m, ζk(p, o, x_old, ξ_bar_old)) )
+end
+
+struct DebugCk <: DebugAction
+    print::Function
+    prefix::String
+    storage::StoreOptionsAction
+    DebugCk(
+    a::StoreOptionsAction=StoreOptionsAction( (:x, :ξbar) ),
+    print::Function=print) = new(print,"C(k): ",a)
+end
+function (d::DebugCk)(p::P,o::ChambollePockOptions, i::Int) where {P <: PrimalDualProblem}
+    if all( has_storage.(Ref(d.storage), [:x, :ξbar] ) ) && i > 0 # all values stored
+        x_old, ξ_bar_old = get_storage.(Ref(d.storage), [:x, :ξbar ]) #fetch
+        d.print(d.prefix * "$(Ck(p, o, x_old,ξ_bar_old))")
+    end
+    d.storage(p,o,i)
+end
+
+struct RecordCk <: RecordAction
+    recordedValues::Array{Float64,1}
+    storage::StoreOptionsAction
+    function RecordCk(a::StoreOptionsAction = StoreOptionsAction( (:x, :ξbar) ))
+        return new(Array{Float64,1}(),a)
+    end
+end
+function (r::RecordCk)(p::P,o::ChambollePockOptions,i::Int) where {P <: PrimalDualProblem}
+    if all( has_storage.(Ref(r.storage), [:x, :ξbar] ) ) && i > 0 # all values stored
+        x_old = get_storage(r.storage, :x)
+        ξ_bar_old = get_storage(r.storage, :ξbar)
+        Manopt.record_or_reset!(r, Ck(p,o,x_old,ξ_bar_old), i)
+    end
+    r.storage(p,o,i)
+end

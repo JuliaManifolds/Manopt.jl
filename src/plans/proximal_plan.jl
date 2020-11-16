@@ -179,10 +179,10 @@ end
 function (r::RecordProximalParameter)(
     p::P, o::O, i::Int
 ) where {P<:ProximalProblem,O<:CyclicProximalPointOptions}
-    return record_or_eset!(r, o.λ(i), i)
+    return record_or_reset!(r, o.λ(i), i)
 end
 function (r::RecordProximalParameter)(
     p::P, o::O, i::Int
 ) where {P<:ProximalProblem,O<:DouglasRachfordOptions}
-    return record_or_eset!(r, o.λ(i), i)
+    return record_or_reset!(r, o.λ(i), i)
 end

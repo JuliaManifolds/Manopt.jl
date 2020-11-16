@@ -92,7 +92,7 @@ mutable struct ChambollePockOptions{P,Q,T} <: PrimalDualOptions
   relaxation::Float64
   relax::Symbol
   stop::StoppingCriterion
-  type::Symbol
+  variant::Symbol
   update_primal_base::Union{Function,Missing}
   update_dual_base::Union{Function,Missing}
   function ChambollePockOptions(
@@ -106,17 +106,18 @@ mutable struct ChambollePockOptions{P,Q,T} <: PrimalDualOptions
     relaxation::Float64 = 1.0,
     relax::Symbol = :primal,
     stopping_criterion::StoppingCriterion = StopAfterIteration(300),
-    type::Symbol = :exact,
+    variant::Symbol = :exact,
     update_primal_base::Union{Function,Missing} = missing,
     update_dual_base::Union{Function,Missing} = missing,
     ) where {P,Q,T}
        return new{P,Q,T}(
-            m,n,x,x,ξ,ξ,primal_stepsize,dual_stepsize,
-            acceleration,relaxation,relax,stopping_criterion,type,
+            m,n,x,deepcopy(x),ξ,deepcopy(ξ),primal_stepsize,dual_stepsize,
+            acceleration,relaxation,relax,stopping_criterion,variant,
             update_primal_base,update_dual_base
         )
     end
 end
+get_solver_result(o::ChambollePockOptions) = o.x
 
 function primal_residual(p::PrimalDualProblem,o::ChambollePockOptions,xOld,ξOld,nOld)
     return norm(p.M, o.x,
@@ -127,12 +128,12 @@ function primal_residual(p::PrimalDualProblem,o::ChambollePockOptions,xOld,ξOld
     )
 end
 function dual_residual(p::PrimalDualProblem,o::ChambollePockOptions,xOld,ξOld,nOld)
-    if o.type === :linearized
+    if o.variant === :linearized
         return norm(p.N, o.n,
             1/o.dual_stepsize * (vector_transport_to(p.N,o.nOld,o.ξOld,o.n) - o.ξ) -
             p.fordward_operator(o.m, vector_transport_to(p.M, o.x, log(p.M,o.x,xOld), o.m) )
         )
-    elseif o.type === :exact
+    elseif o.variant === :exact
         return norm(p.N, o.n,
             1/o.dual_stepsize * (vector_transport_to(p.N,o.nOld,ξOld,o.n, ParallelTransport()) - o.n) -
             log(p.N,o.n,
@@ -140,7 +141,7 @@ function dual_residual(p::PrimalDualProblem,o::ChambollePockOptions,xOld,ξOld,n
             )
         )
     else
-        error("Unknown ChambollePock type $(o.type).")
+        error("Unknown ChambollePock type $(o.variant).")
     end
 end
 #
@@ -387,10 +388,11 @@ end
 function (r::RecordDualChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
     v=0.0
     if all( has_storage.(Ref(r.storage), [:n, :ξ] ) ) # both old values stored
-        nOld,ξOld = get_storage.(Ref(r.storage), [:n,:ξ]) #fetch
-        v = norm(p.N, o.n, vector_transport_to(p.N, nOld, ξOld, o.n, ParallelTransport()) - o.ξ)
+        n_old = get_storage(r.storage, :n)
+        ξ_old = get_storage(r.storage, :ξ)
+        v = norm(p.N, o.n, vector_transport_to(p.N, n_old, ξ_old, o.n) - o.ξ)
     end
-    record_or_reset!(r, v, i)
+    Manopt.record_or_reset!(r, v, i)
     r.storage(p ,o, i)
 end
 

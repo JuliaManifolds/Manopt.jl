@@ -286,18 +286,17 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
     return y
 end
 @doc raw"""
-    prox_collaborative_TV(M,λ,x [,p=2,q=1])
+    project_collaborative_TV(M,λ,x [,p=2,q=1])
 
-compute the prox of the collaborative TV prox for x on the `PowerManifold`
-manifold, i.e. of the function
+compute the projection onto collaborative Norm unit (or α-) ball, i.e. of the function
 
 ```math
-F^q(x) = \sum_{i ∈ \mathcal G}
-  \Bigl( \sum_{j ∈ \mathcal I_i}
+F^q(x) = \sum_{i\in\mathcal G}
+  \Bigl( \sum_{j\in\mathcal I_i}
     \sum_{k=1^d} \lVert X_{i,j}\rVert_x^p\Bigr)^\frac{q/p},
 ```
 
-where $\mathcal G$ is the set of indices for $x ∈ \mathcal M$ and $\mathcal I_i$
+where $\mathcal G$ is the set of indices for $x\in\mathcal M$ and $\mathcal I_i$
 is the set of its forward neighbors.
 This is adopted from the paper by Duran, Möller, Sbert, Cremers:
 _Collaborative Total Variation: A General Framework for Vectorial TV Models_
@@ -305,7 +304,7 @@ _Collaborative Total Variation: A General Framework for Vectorial TV Models_
 norm is not on a manifold but on a vector space, see their Example 3 for
 details.
 """
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0)
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=1.0)
     # Ξ = forward_logs(M,x)
     pdims = power_dimensions(N)
     if length(pdims) == 1
@@ -351,16 +350,16 @@ function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0)
         else
             throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
         end
-        return (λ .* Ξ) ./ max.(Ref(λ), norms)
+        return (α .* Ξ) ./ max.(Ref(α), norms)
     end # end q
     return throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Float64=1.0)
-    return prox_collaborative_TV(N, λ, x, Ξ, Float64(p), q)
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Float64=1.0, α=1.0)
+    return project_collaborative_TV(N, λ, x, Ξ, Float64(p), q, α)
 end
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Float64, q::Int)
-    return prox_collaborative_TV(N, λ, x, Ξ, p, Float64(q))
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Float64, q::Int, α=1.0)
+    return project_collaborative_TV(N, λ, x, Ξ, p, Float64(q), α)
 end
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Int)
-    return prox_collaborative_TV(N, λ, x, Ξ, Float64(p), Float64(q))
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Int, α=1.0)
+    return project_collaborative_TV(N, λ, x, Ξ, Float64(p), Float64(q), α)
 end

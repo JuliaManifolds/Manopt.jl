@@ -80,10 +80,10 @@ end
 @time a = ChambollePock(M, N, cost, x0, ξ0, m, n, proxFidelity, proxPriorDual, DΛ, AdjDΛ;
   primal_stepsize = σ, dual_stepsize = τ, relaxation = θ, acceleration = γ,
   relax = :dual,
-  debug = use_debug ? [:Iteration," | ", :Cost, "\n",10,:Stop] : missing,
+  debug = use_debug ? [:Iteration," | ", :Cost, "\n",1,:Stop] : missing,
   record = export_table ? [:Iteration, :Cost ] : missing,
   stopping_criterion = sC,
-  type = :linearized
+  variant = :linearized
 )
 if export_table
   y = a[1]

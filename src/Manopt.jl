@@ -154,7 +154,7 @@ export get_cost,
     get_gradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
 export getHessian, approxHessianFD
 export meanSquaredError, meanAverageError
-export prox_distance, prox_TV, prox_parallel_TV, prox_TV2, prox_collaborative_TV
+export prox_distance, prox_TV, prox_parallel_TV, prox_TV2, project_collaborative_TV
 export random_point, random_tangent
 export stopIfResidualIsReducedByFactor,
     stopIfResidualIsReducedByPower,
@@ -202,7 +202,8 @@ export ConjugateGradientDescentOptions,
     TruncatedConjugateGradientOptions,
     TrustRegionsOptions,
     ParticleSwarmOptions,
-    PrimalDualOptions
+    PrimalDualOptions,
+    ChambollePockOptions
 
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,

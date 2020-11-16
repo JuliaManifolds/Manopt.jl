@@ -30,7 +30,7 @@ For more details on the algorithm, see[^BHLSTVN2020].
 * `primal_stepsize` – (`1/sqrt(8)`)
 * `relaxation` – (`1.`)
 * `relax` – (`:primal`) whether to relax the primal or dual
-* `type` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
+* `variant` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
   Note that this changes the arguments the `forward_operator` will be called with ()
 * `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
@@ -60,10 +60,10 @@ function ChambollePock(
     primal_stepsize = 1/sqrt(8),
     relaxation = 1.0,
     relax::Symbol = :primal,
-    stopping_criterion::StoppingCriterion = stopAfterIteration(200),
+    stopping_criterion::StoppingCriterion = StopAfterIteration(200),
     update_primal_base::Union{Function,Missing} = missing,
     update_dual_base::Union{Function,Missing} = missing,
-    type = ismissing(Λ) ? :exact : :linearized,
+    variant = ismissing(Λ) ? :exact : :linearized,
     return_options=false,
     kwargs...
 ) where {mT <: Manifold, nT <: Manifold,P,Q,T}
@@ -75,7 +75,7 @@ function ChambollePock(
         relax = relax,
         update_primal_base = update_primal_base,
         update_dual_base = update_dual_base,
-        type = type
+        variant = variant
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -95,8 +95,8 @@ function step_solver!(p::PrimalDualProblem, o::ChambollePockOptions, iter)
    if !ismissing(o.update_dual_base)
         n_old = deepcopy(o.n)
         o.n = o.update_dual_base(p, o, iter)
-        vector_transport_to!(p.N, o.ξ, n_old, o.ξ, o.n,)
-        vector_transport_to!(p.N, o.ξbar, n_old, o.ξbar, o.nTransport())
+        o.ξ = vector_transport_to(p.N, n_old, o.ξ, o.n,)
+        o.ξbar = vector_transport_to(p.N, n_old, o.ξbar, o.n)
    end
    return o
 end
@@ -108,7 +108,7 @@ function primal_dual_step!(
     o::ChambollePockOptions,
     ::Val{:primal}
     )
-    dual_update!(p, o, o.xbar, Val(o.type))
+    dual_update!(p, o, o.xbar, Val(o.variant))
     ptξn = ismissing(p.Λ) ? o.ξ : vector_transport_to(p.N, o.n, o.ξ, p.Λ(o.m))
     xOld = o.x
     o.x = o.prox_F(p.M, o.m, o.primal_stepsize,
@@ -152,7 +152,7 @@ function primal_dual_step!(
         )
     )
     ξ_old = o.ξ
-    dual_update!(p, o, o.x, Val(o.type))
+    dual_update!(p, o, o.x, Val(o.variant))
     update_prox_parameters!(o)
     o.ξbar = o.ξ + o.relaxation * (o.ξ - ξ_old)
     return o

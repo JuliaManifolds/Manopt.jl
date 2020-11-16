@@ -678,7 +678,7 @@ RecordGradient(ξ::T) where {T} = RecordGradient{T}()
 function (r::RecordGradient{T})(
     p::P, o::O, i::Int
 ) where {T,P<:GradientProblem,O<:GradientDescentOptions}
-    return record_or_eset!(r, o.∇, i)
+    return record_or_reset!(r, o.∇, i)
 end
 
 @doc raw"""
@@ -693,7 +693,7 @@ end
 function (r::RecordGradientNorm)(
     p::P, o::O, i::Int
 ) where {P<:GradientProblem,O<:GradientDescentOptions}
-    return record_or_eset!(r, norm(p.M, o.x, o.∇), i)
+    return record_or_reset!(r, norm(p.M, o.x, o.∇), i)
 end
 
 @doc raw"""
@@ -708,5 +708,5 @@ end
 function (r::RecordStepsize)(
     p::P, o::O, i::Int
 ) where {P<:GradientProblem,O<:GradientDescentOptions}
-    return record_or_eset!(r, get_last_stepsize(p, o, i), i)
+    return record_or_reset!(r, get_last_stepsize(p, o, i), i)
 end

@@ -117,13 +117,13 @@ return the recorded values stored within a [`RecordAction`](@ref) `r`.
 get_record(r::R) where {R<:RecordAction} = r.recordedValues
 
 """
-    record_or_eset!(r,v,i)
+    record_or_reset!(r,v,i)
 
 either record (`i>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
 or reset (`i<0`) the internal storage, where `v` has to match the internal
 value type of the corresponding Recordaction.
 """
-function record_or_eset!(r::R, v, i::Int) where {R<:RecordAction}
+function record_or_reset!(r::R, v, i::Int) where {R<:RecordAction}
     if i > 0
         push!(r.recordedValues, deepcopy(v))
     elseif i < 0 && i > typemin(Int) # reset if negative but not stop indication
@@ -208,7 +208,7 @@ mutable struct RecordChange <: RecordAction
     end
 end
 function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    record_or_eset!(
+    record_or_reset!(
         r,
         has_storage(r.storage, :x) ? distance(p.M, o.x, get_storage(r.storage, :x)) : 0.0,
         i,
@@ -235,7 +235,7 @@ end
 RecordEntry(e::T, f::Symbol) where {T} = RecordEntry{T}(f)
 RecordEntry(d::DataType, f::Symbol) = RecordEntry{d}(f)
 function (r::RecordEntry{T})(p::Pr, o::O, i::Int) where {T,Pr<:Problem,O<:Options}
-    return record_or_eset!(r, getfield(o, r.field), i)
+    return record_or_reset!(r, getfield(o, r.field), i)
 end
 
 @doc raw"""
@@ -265,7 +265,7 @@ mutable struct RecordEntryChange <: RecordAction
     end
 end
 function (r::RecordEntryChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    record_or_eset!(
+    record_or_reset!(
         r,
         if has_storage(r.storage, r.field)
             r.distance(p, o, getfield(o, r.field), get_storage(r.storage, r.field))
@@ -301,7 +301,7 @@ function RecordIterate()
 end
 
 function (r::RecordIterate{T})(::Problem, o::Options, i) where {T}
-    return record_or_eset!(r, o.x, i)
+    return record_or_reset!(r, o.x, i)
 end
 
 @doc raw"""
@@ -314,7 +314,7 @@ mutable struct RecordIteration <: RecordAction
     RecordIteration() = new(Array{Int,1}())
 end
 function (r::RecordIteration)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    return record_or_eset!(r, i, i)
+    return record_or_reset!(r, i, i)
 end
 
 @doc raw"""
@@ -327,7 +327,7 @@ mutable struct RecordCost <: RecordAction
     RecordCost() = new(Array{Float64,1}())
 end
 function (r::RecordCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    return record_or_eset!(r, get_cost(p, o.x), i)
+    return record_or_reset!(r, get_cost(p, o.x), i)
 end
 
 @doc raw"""

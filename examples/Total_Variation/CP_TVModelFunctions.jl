@@ -29,7 +29,7 @@ cost(x) = (1/α)*fidelity(x) + prior(x)
 proxFidelity(M,m,λ,x) = prox_distance(M,λ/α,f,x,2)
 proxPriorDual(N,n,λ,ξ) = ProductRepr(
     submanifold_component(N,ξ,1),
-    prox_collaborative_TV(
+    project_collaborative_TV(
         base_manifold(N),
         λ,
         submanifold_component(N,n,1),
