@@ -8,8 +8,7 @@ using Images, CSV, DataFrames, LinearAlgebra
 #
 # Settings
 experiment_name = "S2_WhirlImage_CP"
-export_primal = true
-export_orig = true
+export_orig = false
 export_primal = true
 export_primal_video = false
 export_table = true
@@ -25,8 +24,8 @@ video_folder = joinpath(results_folder,"video")
 (export_primal_video && !isdir(video_folder)) && mkdir(video_folder)
 #
 # Experiment Parameters
-σ = 0.25
-τ = 0.25
+σ = 0.35
+τ = 0.35
 γ = 0.2
 θ = 1.0
 α = 1.5
@@ -73,7 +72,7 @@ function patchMean(f)
     mP = deepcopy(f)
     for i=1:64, j=1:64
         sub = f[max(i-pW,1):min(i+pW,64),max(j-pW,1):min(j+pW,64)]
-        mP[i,j] = mean(pixelM,vec(getValue(sub)))
+        mP[i,j] = mean(pixelM,vec(sub))
     end
     return mP
 end
@@ -87,14 +86,12 @@ experiments = [
      Dict( :name => "mWest", :m => deepcopy(west_image) ),
 ]
 
-dataMean = mean(pixelM,vec(getValue(f)))
 #
 # Defaults
-#
 x0 = deepcopy(f)
 m = mP
-ξ0 = TBTVector(zeroTVector(M2,m2(m)), zeroTVector(M2,m2(m)))
-records = Array{Array{Tuple{Int,Float64,PowPoint},1},1}()
+ξ0 = ProductRepr(zero_tangent_vector(M2,m2(m)), zero_tangent_vector(M2,m2(m)))
+records = Array{Array{Tuple{Int,Float64,Array},1},1}()
 for e in experiments
     name = e[:name]
     print("\n --- Running Experiment $name ---")
@@ -103,11 +100,10 @@ for e in experiments
     # Any Entry in the dictionary overwrites the above default
     @time o = ChambollePock(M, N, cost,
         get(e,:x, x0),
-        #if no \xi   is given take zero vectors in m (if given or its default)
-        get(e, :ξ, zeroTVector(N, get(e, :n, Λ( get(e, :m, m) ) ))),
+        get(e, :ξ, zero_tangent_vector(N, get(e, :n, Λ( get(e, :m, m) ) ))),
         get(e, :m, m),
         get(e, :n, Λ( get(e, :m, m) ) ),
-        prox_F, prox_G_dual,
+        proxFidelity, proxPriorDual,
         DΛ,AdjDΛ;
         primal_stepsize = get(e, :σ, σ),
         dual_stepsize = get(e, :τ, τ),
@@ -117,7 +113,8 @@ for e in experiments
         debug = [:Iteration," | ", :Cost,"\n",
         export_primal_video ? DebugRenderAsy(video_folder, experiment_name * name) : "", 1,:Stop],
         record = [:Iteration, :Cost, :Iterate],
-        stoppingCriterion = stopAfterIteration(get(e, :maxIter, 300)),
+        stopping_criterion = StopAfterIteration(get(e, :maxIter, 300)),
+        variant = :linearized,
     )
     push!(records, get_record(r))
     if export_primal
@@ -126,7 +123,9 @@ for e in experiments
         render_asymptote(result_file; render = asy_render_size)
     end
     if export_primal_video
-        run(`ffmpeg -framerate 15 -pattern_type glob -i $(join_path(video_folder, experiment_name*name*"-vid-*.png")) -c:v libx264 -vf pad=ceil\(iw/2\)*2:ceil\(ih/2\)*2 -pix_fmt yuv420p $(join_path(results_folder, experiment_name*name*".mp4"))`)
+        source = join_path(video_folder, experiment_name*name*"-vid-*.png")
+        dest = join_path(results_folder, experiment_name*name*".mp4")
+        #run(`ffmpeg -framerate 15 -pattern_type glob -i $(source) -c:v libx264 -vf pad=ceil\(iw/2\)*2:ceil\(ih/2\)*2 -pix_fmt yuv420p $(dest)`)
     end
 end
 #
