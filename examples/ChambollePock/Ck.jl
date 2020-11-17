@@ -23,8 +23,8 @@ function ζk(p, o, x_old, ξbar_old)
         log(p.M, x_old, o.x) - vector_transport_to(
             p.M,
             tilde_x_old(p, o, x_old,ξbar_old),
+            log(p.M, tilde_x_old(p,o,x_old,ξbar_old),x_hat),
             x_old,
-            log(p.M, tilde_x_old(p,o,x_old,ξbar_old),x_hat)
         ),
         o.m,
     ) - log(p.M,o.m,o.x) + log(p.M,o.m,x_hat)

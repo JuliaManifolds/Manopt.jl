@@ -15,7 +15,7 @@ export_table = true
 use_debug = true
 asy_render_detail = 2
 results_folder = joinpath(@__DIR__,"Image_TV")
-comparison_data = joinpath(@__DIR__,"data","ImageCPPA-CostValue.jld2")
+comparison_data = joinpath(@__DIR__,"data","SPD_Image_CPPA-cost.jld2")
 experiment_name = "SPD_Image_CP"
 !isdir(results_folder) && mkdir(results_folder)
 #
@@ -26,11 +26,19 @@ if export_original
     asymptote_export_SPD(fn; data=f, scaleAxes=(7.5, 7.5, 7.5) )
     render_asymptote(fn; render=asy_render_detail)
 end
-cost_threshold = load(comparison_data)["compareCostFunctionValue"]
-sC = StopWhenAny(
-    StopAfterIteration(400), StopWhenCostLess(cost_threshold)
-)
-@info "Comparison to CPPA (`SPDImage_CPPA.jl`) and its cost of $cost_threshold."
+sC = StopAfterIteration(400)
+try
+    cppa_data = load(comparison_data)
+    cost_threshold = cppa_data["cost_function_value"]
+    cppa_iter = cppa_data["iterations"]
+    global sC = StopWhenAny(
+        StopAfterIteration(400), StopWhenCostLess(cost_threshold)
+    )
+    @info "Comparison to CPPA (`SPDImage_CPPA.jl`) and its cost after $(cppa_iter) iterations of $cost_threshold."
+catch e
+    msg = sprint(showerror, e)
+    @info "Comparison to CPPA (`CyclicProximalPoint/SPDImage_CPPA.jl`) not possible, data file $(comparison_data) either missing or corrupted.\n Error: $(msg).\n\n Starting with a default stopping criterion."
+end
 #
 # ## Parameters
 #

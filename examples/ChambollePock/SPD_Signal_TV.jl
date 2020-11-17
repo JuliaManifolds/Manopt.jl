@@ -2,10 +2,12 @@
 Minimize total variation of a signal of SPD data.
 
 This example is part of Example 6.1 in the publication
+
 > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez,
 > Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds,
 > arXiv: [1908.02022](https://arxiv.org/abs/1908.02022)
 > __accepted for publication in Foundations of Computational Mathematics__
+
 """
 
 using Manopt, Manifolds, LinearAlgebra
@@ -13,15 +15,14 @@ using Manopt, Manifolds, LinearAlgebra
 #
 # Script Settings
 experiment_name = "SPD_Signal_TV_CP"
-experiment_subfolder = "SPD_Signal_TV"
 export_orig = true
 export_primal = true
-export_table = true
-use_debug = true
+export_table = false
+use_debug = false
 #
 # Automatic Script Settings
 current_folder = @__DIR__
-export_any = export_orig || export_primal || export_table
+export_any = export_orig || export_primal || export_table
 results_folder = joinpath(current_folder,"Signal_TV")
 # Create folder if we have an export
 (export_any && !isdir(results_folder)) && mkdir(results_folder)
@@ -47,21 +48,23 @@ base = Matrix{Float64}(I,3,3)
 p1 = exp(pixelM,base,ξ)
 p2 = exp(pixelM,base,-ξ)
 f = vcat( fill(p1, signal_section_size) , fill(p2, signal_section_size) )
+#
+# Compute exact minimizer
+include("Signal_TV_commons.jl")
+jump_height = distance(pixelM, f[signal_section_size],f[signal_section_size+1])
+δ = min(2/(size(f,1)*jump_height)*α,1/2)
+x_hat = shortest_geodesic(M,f,reverse(f),δ)
+include("Ck.jl")
+
 if noise_level > 0
     f = [ exp(pixelM, p, random_tangent(pixelM, p, noise_type, noise_level)) for p ∈ f]
 end
+
 if export_orig
     orig_file = joinpath(results_folder,experiment_name*"-original.asy")
     asymptote_export_SPD(orig_file,data=f)
     render_asymptote(orig_file)
 end
-include("Signal_TV_commons.jl")
-#
-# Compute exact minimizer
-jumpHeight = distance(pixelM, f[signal_section_size],f[signal_section_size+1])
-δ = min(2/(size(f,1)*jumpHeight)*α,1/2)
-x_hat = geodesic(M,f,reverse(f),δ)
-include("Ck.jl")
 #
 # Initial values
 m = fill(base,size(f))
@@ -71,19 +74,26 @@ x0 = deepcopy(f)
 
 storage = StoreOptionsAction( (:x, :n, :ξbar) )
 
-@time a = ChambollePock(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, DΛ, adjoint_DΛ;
+@time o = ChambollePock(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, DΛ, adjoint_DΛ;
     primal_stepsize = σ, dual_stepsize = τ, relaxation = θ, acceleration = γ,
     relax = :dual,
     variant = :linearized,
-    debug = use_debug ? [:Iteration," ", DebugPrimalChange(), #" | ", DebugCk(storage),
+    debug = use_debug ? [:Iteration," ", DebugPrimalChange(), " | ", DebugCk(storage),
         " | ", :Cost,"\n",100,:Stop] : missing,
-    record = export_table ? [:Iteration, RecordPrimalChange(x0), RecordDualChange( (ξ0,n) ),  :Cost, #RecordCk(),
+    record = export_table ? [:Iteration, RecordPrimalChange(x0), RecordDualChange( (ξ0,n) ),  :Cost, RecordCk(),
         ] : missing,
-    stopping_criterion = StopAfterIteration(max_iterations)
+    stopping_criterion = StopAfterIteration(max_iterations),
+    return_options = true,
 )
-
+y = get_solver_result(o)
+if has_record(o)
+    r = get_record(o)
+    Ck_values = [ s[5] for s ∈ r ]
+    println("The Ck Estimate lies between $(minimum(Ck_values)) and $(maximum(Ck_values))")
+end
+println("Distance from result to minimizer: ",distance(M,x_hat,y),"\n")
 if export_primal
-    orig_file = joinpath(results_folder,experiment_name*"-original.asy")
-    asymptote_export_SPD(orig_file,data=f)
+    orig_file = joinpath(results_folder,experiment_name*"-result.asy")
+    asymptote_export_SPD(orig_file,data=y)
     render_asymptote(orig_file)
 end
