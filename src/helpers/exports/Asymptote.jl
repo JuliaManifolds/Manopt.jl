@@ -349,7 +349,6 @@ function asymptote_export_SPD(
     end
 end
 
-export renderAsymptote, asyExportS2Signals, asyExportS2Data, asyExportSPDData
 """
     render_asymptote(filename; render=4, format="png", ...)
 render an exported asymptote file specified in the `filename`, which can also

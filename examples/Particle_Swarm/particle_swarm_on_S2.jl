@@ -10,11 +10,6 @@ function euclidean_to_spherical(x, y, z)
     return [acos(z / sqrt(x^2 + y^2 + z^2)), atan(y, x), sqrt(x^2 + y^2 + z^2)]
 end
 
-# A = Diagonal([2.0, 1.0, 0.5])
-# B = rot_z(pi/4)*Diagonal([4.0, 1.0, 2.0])rot_z(-π/4)
-# C = rot_x(π/8)*rot_y(-π/4)*Diagonal([0.5, 2.0, 3.0])*rot_y(π/4)*rot_x(-π/8)
-# D = A+B-C
-# F(x) = x'*D*x
 bob(x, x0, r=1) = (norm(x - x0) <= r) ? 1 - norm(x - x0) / r : 0
 p1 = [0.0, 0.0, 1.0]
 function F(x)
