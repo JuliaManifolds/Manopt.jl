@@ -151,7 +151,7 @@ function primal_dual_step!(
             )
         )
     )
-    ξ_old = o.ξ
+    ξ_old = deepcopy(o.ξ)
     dual_update!(p, o, o.x, Val(o.variant))
     update_prox_parameters!(o)
     o.ξbar = o.ξ + o.relaxation * (o.ξ - ξ_old)
@@ -163,11 +163,11 @@ end
 #
 function dual_update!(p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:linearized}) where {P}
     # (1) compute update direction
-    ξUpdate = p.forward_operator(o.m, log(p.M, o.m, start))
+    ξ_update = p.forward_operator(o.m, log(p.M, o.m, start))
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
-    ξUpdate = ismissing(p.Λ) ? ξUpdate : vector_transport_to(p.N,p.Λ(o.m),ξUpdate,o.n)
+    ξ_update = ismissing(p.Λ) ? ξ_update : vector_transport_to(p.N,p.Λ(o.m),ξ_update,o.n)
     # (3) to the dual update
-    o.ξ = p.prox_G_dual(p.N, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξUpdate)
+    o.ξ = p.prox_G_dual(p.N, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
     return o
 end
 #

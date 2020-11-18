@@ -9,9 +9,9 @@ using Images, CSV, DataFrames, LinearAlgebra
 # Settings
 experiment_name = "S2_WhirlImage_CP"
 export_orig = false
-export_primal = true
+export_primal = false
 export_primal_video = false
-export_table = true
+export_table = false
 asy_render_size = 2
 #
 # Automatic Settings
@@ -24,8 +24,8 @@ video_folder = joinpath(results_folder,"video")
 (export_primal_video && !isdir(video_folder)) && mkdir(video_folder)
 #
 # Experiment Parameters
-σ = 0.35
-τ = 0.35
+σ = 0.25
+τ = 0.25
 γ = 0.2
 θ = 1.0
 α = 1.5
@@ -48,7 +48,7 @@ struct DebugRenderAsy <: DebugAction
     folder::String
     DebugRenderAsy(f,n) = new(n,f)
 end
-function (d::DebugRenderAsy)(p::P,o::ChambollePockOptions, i::Int) where {P <: PrimalDualProblem}
+function (d::DebugRenderAsy)(::PrimalDualProblem, ::ChambollePockOptions, i)
     if i >=0
         orig_file = joinpath(d.folder, d.name*"-vid-$(lpad(i[1],7,"0")).asy")
         asymptote_export_S2_data(orig_file,data=f)
@@ -59,38 +59,22 @@ end
 #
 # Experiments (entries overwrite defaults from below)
 #
-data_mean = mean(pixelM, vec(f));
+data_mean = mean(pixelM, vec(f), GradientDescentEstimation(); stop_iter=5)
 mean_image = fill(data_mean,size(f))
 west_image = fill([1., 0., 0.], size(f))
-front_image = fill([0., 1., 0.], size(f))
-north_image = fill([0., 0., 1.], size(f))
-south_image = fill([0., 0., -1.], size(f))
-
-# Compute patch mean
-pW = 1
-function patchMean(f)
-    mP = deepcopy(f)
-    for i=1:64, j=1:64
-        sub = f[max(i-pW,1):min(i+pW,64),max(j-pW,1):min(j+pW,64)]
-        mP[i,j] = mean(pixelM,vec(sub))
-    end
-    return mP
-end
-mP = patchMean(f)
 #
 # Build Experiments
 #
 
 experiments = [
      Dict( :name => "mMean", :m => deepcopy(mean_image)),
-     Dict( :name => "mWest", :m => deepcopy(west_image) ),
+     Dict( :name => "mWest", :m => deepcopy(west_image)),
 ]
 
 #
 # Defaults
 x0 = deepcopy(f)
-m = mP
-ξ0 = ProductRepr(zero_tangent_vector(M2,m2(m)), zero_tangent_vector(M2,m2(m)))
+m = deepcopy(mean_image)
 records = Array{Array{Tuple{Int,Float64,Array},1},1}()
 for e in experiments
     name = e[:name]
@@ -99,24 +83,25 @@ for e in experiments
     #
     # Any Entry in the dictionary overwrites the above default
     @time o = ChambollePock(M, N, cost,
-        get(e,:x, x0),
-        get(e, :ξ, zero_tangent_vector(N, get(e, :n, Λ( get(e, :m, m) ) ))),
+        get(e, :x, x0),
+        get(e, :ξ, zero_tangent_vector(N, get(e, :n, Λ(get(e, :m, m))))),
         get(e, :m, m),
         get(e, :n, Λ( get(e, :m, m) ) ),
         proxFidelity, proxPriorDual,
-        DΛ,AdjDΛ;
+        DΛ, AdjDΛ;
         primal_stepsize = get(e, :σ, σ),
         dual_stepsize = get(e, :τ, τ),
         relaxation = get(e, :θ, θ),
         acceleration = get(e, :γ, γ),
         relax = :dual,
-        debug = [:Iteration," | ", :Cost,"\n",
-        export_primal_video ? DebugRenderAsy(video_folder, experiment_name * name) : "", 1,:Stop],
+        debug = [:Iteration," | ", :Cost, "\n",
+        export_primal_video ? DebugRenderAsy(video_folder, experiment_name * name) : "", 100,:Stop],
         record = [:Iteration, :Cost, :Iterate],
         stopping_criterion = StopAfterIteration(get(e, :maxIter, 300)),
         variant = :linearized,
+        return_options = true,
     )
-    push!(records, get_record(r))
+    push!(records, get_record(o))
     if export_primal
         result_file = joinpath(results_folder, experiment_name*"-result.asy")
         asymptote_export_S2_data(result_file,data=get_solver_result(o))

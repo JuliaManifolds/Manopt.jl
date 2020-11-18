@@ -222,18 +222,13 @@ function differential_forward_logs(M::PowerManifold, p, X)
             J = I .+ e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd)
                 # this is neighbor in range,
-                j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
                 # collects two, namely in kth direction since xi appears as base and arg
-                # Y[i,k] = differential_log_basepoint(M.manifold,p[i],p[j],X[i])
-                #            + differential_log_argument(M.manifold,p[i],p[j],X[j])
-                Y[M, I..., k] =
-                    Y[M, I..., k] +
-                    differential_log_basepoint(
-                        M.manifold, p[M, I...], p[M, J...], X[M, I...]
-                    ) +
-                    differential_log_argument(
-                        M.manifold, p[M, I...], p[M, J...], X[M, J...]
-                    )
+                Y[M, I..., k] = Y[M, I..., k] .+ differential_log_basepoint(
+                    M.manifold,
+                    p[M, I...],
+                    p[M, J...],
+                    X[M, I...],
+                ) .+ differential_log_argument(M.manifold, p[M, I...], p[M, J...], X[M, J...])
             end
         end # directions
     end # i in R

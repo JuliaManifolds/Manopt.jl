@@ -305,7 +305,6 @@ norm is not on a manifold but on a vector space, see their Example 3 for
 details.
 """
 function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=1.0)
-    # Ξ = forward_logs(M,x)
     pdims = power_dimensions(N)
     if length(pdims) == 1
         d = 1
