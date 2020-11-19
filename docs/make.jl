@@ -18,12 +18,7 @@ for (i, tutorial) in enumerate(tutorials)
     global TutorialMenu
     sourceFile = joinpath(tutorialsInputPath, tutorial * ".jl")
     targetFile = joinpath(tutorialsOutputPath, tutorial * "md")
-    Literate.markdown(
-        sourceFile,
-        tutorialsOutputPath;
-        name=tutorial,
-        credit=false,
-    )
+    Literate.markdown(sourceFile, tutorialsOutputPath; name=tutorial, credit=false)
     push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
 end
 makedocs(;

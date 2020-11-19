@@ -60,8 +60,8 @@ initialized automatically and values with a default may be left out.
 
 * `m` - base point on $ \mathcal M $
 * `n` - base point on $ \mathcal N $
-* `x` - an initial point on $x^{(0)} \in \mathcal M $ (and its previous iterate)
-* `ξ` - an initial tangent vector $\xi^{(0)}\in T^*\mathcal N $ (and its previous iterate)
+* `x` - an initial point on $x^{(0)} \in \mathcal M$ (and its previous iterate)
+* `ξ` - an initial tangent vector $\xi^{(0)}\in T^*\mathcal N$ (and its previous iterate)
 * `xbar` - the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `ξbar` - the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `Θ` – factor to damp the helping $\tilde x$
@@ -195,14 +195,15 @@ on the `o.variant` used:
 
 For the `:lineaized` it reads
 ```math
-\frac{1}{τ}\Bigl\lVert
+\Bigl\lVert
+\frac{1}{τ}\bigl(
 V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
+- ξ_k
+\bigr)
 -
 DΛ(m)\bigl[
 V_{m\gets x}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}
 \bigr]
-\operatorname{retr}^{-1}_{x_{k}}x_{k-1} -
-V_{x\gets m}\bigl(DΛ*[m](V_{n_k\gets n_{k-1}}ξ_{k-1}) - ξ_k \bigr)
 \Bigr\rVert
 ```
 
@@ -215,6 +216,7 @@ V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
 \operatorname{retr}^{-1}_{n_{k}}\bigl(
 Λ(\operatorname{retr}_{m_{k}}(V_{m\gets x}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}))
 \bigr)
+\Bigr\rVert
 ```
 
 where in both cases $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref).
