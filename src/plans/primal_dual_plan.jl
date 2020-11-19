@@ -180,9 +180,9 @@ get_solver_result(o::ChambollePockOptions) = o.x
 Compute the primal residual at current iterate $k$ given the necessary values $x_{k-1},
 ξ_{k-1}, and $n_{k-1}$ from the previous iterate.
 ```math
-\frac{1}{σ}\Bigl\lVert
-\operatorname{retr}^{-1}_{x_{k}}x_{k-1} -
-V_{x\gets m}\bigl(DΛ*[m](V_{n_k\gets n_{k-1}}ξ_{k-1}) - ξ_k \bigr)
+\Bigl\lVert
+\frac{1}{σ}\operatorname{retr}^{-1}_{x_{k}}x_{k-1} -
+V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 \Bigr\rVert
 ```
 where $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref)
@@ -220,20 +220,20 @@ V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
 - ξ_k
 \bigr)
 -
-DΛ(m)\bigl[
-V_{m\gets x}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}
+DΛ(m_k)\bigl[
+V_{m_k\gets x_k}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}
 \bigr]
 \Bigr\rVert
 ```
 
 and for the `:exact` variant
 
-    ```math
+```math
 \Bigl\lVert
 \frac{1}{τ} V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
 -
 \operatorname{retr}^{-1}_{n_{k}}\bigl(
-Λ(\operatorname{retr}_{m_{k}}(V_{m\gets x}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}))
+Λ(\operatorname{retr}_{m_{k}}(V_{m_k\gets x_k}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}))
 \bigr)
 \Bigr\rVert
 ```

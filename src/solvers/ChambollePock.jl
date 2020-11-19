@@ -235,9 +235,9 @@ end
     update_prox_parameters!(o)
 update the prox parameters as described in Algorithm 2 of Chambolle, Pock, 2010, i.e.
 
-1. $\theta_{n} = \frac{1}{\sqrt{1+2\gamma\tau_n}}$
-2. $\tau_{n+1} = \theta_n\tau_n$
-3. $\sigma_{n+1} = \frac{\sigma_n}{\theta_n}$
+1. ``\theta_{n} = \frac{1}{\sqrt{1+2\gamma\tau_n}}``
+2. ``\tau_{n+1} = \theta_n\tau_n``
+3. ``\sigma_{n+1} = \frac{\sigma_n}{\theta_n}``
 """
 function update_prox_parameters!(o::O) where {O<:PrimalDualOptions}
     if o.acceleration > 0

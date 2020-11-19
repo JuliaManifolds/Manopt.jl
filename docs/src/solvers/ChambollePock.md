@@ -1,7 +1,9 @@
-# [Chambolle-Pock](@id ChambollePockSolver)
+# [The Riemannian Chambolle-Pock Algorithm](@id ChambollePockSolver)
 
-The Riemannian Chambolle–Pock is a generalization of the Chambolle–Pock algorithm[^ChambollePock2011]
-to minimize
+The Riemannian Chambolle–Pock is a generalization of the Chambolle–Pock algorithm[^ChambollePock2011].
+It is also known as primal dual hybrig gradient (PDHG) or primal dual proximal splitting (PDPS) algorithm.
+
+In order to minimize over $p\in\mathcal M§ the cost function consisting of
 
 ```math
 F(p) + G(\Lambda(p)),
@@ -27,13 +29,19 @@ As an initialization, perform $\bar p^{(0)} \gets p^{(0)}$.
 
 The algorithms performs the steps $k=1,\ldots,$ (until a [`StoppingCriterion`](@ref) is fulfilled with)
 
-1. $\xi^{(k+1)}_n = \operatorname{prox}_{\tau_k G_n^*}\Bigl(\xi_n^{(k)} + \tau_k \bigl(\log_n \Lambda (\bar p^{(k)})\bigr)^\flat\Bigr)$
-2. $p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \operatorname{PT}_{p^{(k)}\gets m}\bigl(-\sigma_k D\Lambda(m)^*[\xi_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)$
+1. ```math
+   \xi^{(k+1)}_n = \operatorname{prox}_{\tau_k G_n^*}\Bigl(\xi_n^{(k)} + \tau_k \bigl(\log_n \Lambda (\bar p^{(k)})\bigr)^\flat\Bigr)
+   ```
+2. ```math
+   p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \operatorname{PT}_{p^{(k)}\gets m}\bigl(-\sigma_k D\Lambda(m)^*[\xi_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)
+   ```
 3. Update
-   * relaxation $\theta_k = (1+2\gamma\sigma_k)^{-\frac{1}{2}}$
-   * primal step size $\sigma_{k+1} = \sigma_k\theta_k$
-   * dual step size $\tau_{k+1} =  \frac{\tau_k}{\theta_k}$
-4. $\bar p^{(k+1)}  = \exp_{p^{(k+1)}}\bigl(-\theta_k \log_{p^{(k+1)}} p^{(k)}\bigr)$
+   * ``\theta_k = (1+2\gamma\sigma_k)^{-\frac{1}{2}}``
+   * ``\sigma_{k+1} = \sigma_k\theta_k``
+   * ``\tau_{k+1} =  \frac{\tau_k}{\theta_k}``
+4. ```math
+   \bar p^{(k+1)}  = \exp_{p^{(k+1)}}\bigl(-\theta_k \log_{p^{(k+1)}} p^{(k)}\bigr)
+   ```
 
 Furthermore you can exchange the exponential map, the logarithmic map, and the parallel transport
 by a retraction, an in verse retraction and a vector transport.
