@@ -1,5 +1,5 @@
 #
-# Minimize the acceleration of a composite Bézier curve on the Sphere S2 with interpolation
+# Minimize the acceleration of a composite Bézier curve on the Sphere S2 with approximation
 #
 # This example appeared in Sec. 5.2, second example, of
 #
@@ -10,8 +10,8 @@
 # > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 #
 using Manopt, Manifolds, Colors, ColorSchemes
-results_folder = joinpath(@__DIR__,"Minimize_Acceleration_Bezier")
 experiment_name = "Bezier_Approximation"
+results_folder = joinpath(@__DIR__,"Minimize_Acceleration_Bezier")
 asy_export = true #export data and results to asyExport
 λ = 10.0
 

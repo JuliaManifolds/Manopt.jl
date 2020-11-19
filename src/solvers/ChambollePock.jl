@@ -19,7 +19,7 @@ and $\Lambda\colon\mathcal M \to \mathcal N$. The remaining input parameters are
 By default, this performs the exact Riemannian Chambolle Pock algorithm, see the opional parameter
 `DΛ` for ther linearized variant.
 
-For more details on the algorithm, see[^BHLSTVN2020].
+For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020].
 
 # Optional Parameters
 
@@ -31,16 +31,19 @@ For more details on the algorithm, see[^BHLSTVN2020].
 * `relaxation` – (`1.`)
 * `relax` – (`:primal`) whether to relax the primal or dual
 * `variant` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
-  Note that this changes the arguments the `forward_operator` will be called with ()
+  Note that this changes the arguments the `forward_operator` will be called.
 * `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
+* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
+* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
+* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
 
-[^BHLSTVN2020]:
+[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
     > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
-    > Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds
+    > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
     > arXiv: [1908.02022](http://arxiv.org/abs/1908.02022)
-    > accepted for publication in Foundadtions of Computational Mathematics
+    > accepted for publication in Foundations of Computational Mathematics
 """
 function ChambollePock(
     M::mT,
@@ -63,19 +66,34 @@ function ChambollePock(
     stopping_criterion::StoppingCriterion = StopAfterIteration(200),
     update_primal_base::Union{Function,Missing} = missing,
     update_dual_base::Union{Function,Missing} = missing,
+    retraction_method::RM = ExponentialRetraction(),
+    inverse_retraction_method::IRM = LogarithmicInverseRetraction(),
+    vector_transport_method::VTM = ParallelTransport(),
     variant = ismissing(Λ) ? :exact : :linearized,
     return_options=false,
     kwargs...
-) where {mT <: Manifold, nT <: Manifold,P,Q,T}
+) where {
+    mT <: Manifold,
+    nT <: Manifold,
+    P,
+    Q,
+    T,
+    RM<:AbstractRetractionMethod,
+    IRM<:AbstractInverseRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+}
     p = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_DΛ, Λ)
-    o = ChambollePockOptions(m,n,x,ξ, primal_stepsize, dual_stepsize;
+    o = ChambollePockOptions(m, n, x, ξ, primal_stepsize, dual_stepsize;
         acceleration = acceleration,
         relaxation= relaxation,
         stopping_criterion = stopping_criterion,
         relax = relax,
         update_primal_base = update_primal_base,
         update_dual_base = update_dual_base,
-        variant = variant
+        variant = variant,
+        retraction_method = retraction_method,
+        inverse_retraction_method = inverse_retraction_method,
+        vector_transport_method = vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -95,8 +113,8 @@ function step_solver!(p::PrimalDualProblem, o::ChambollePockOptions, iter)
    if !ismissing(o.update_dual_base)
         n_old = deepcopy(o.n)
         o.n = o.update_dual_base(p, o, iter)
-        o.ξ = vector_transport_to(p.N, n_old, o.ξ, o.n,)
-        o.ξbar = vector_transport_to(p.N, n_old, o.ξbar, o.n)
+        o.ξ = vector_transport_to(p.N, n_old, o.ξ, o.n, o.vector_transport_method)
+        o.ξbar = vector_transport_to(p.N, n_old, o.ξbar, o.n, o.vector_transport_method)
    end
    return o
 end
@@ -109,22 +127,35 @@ function primal_dual_step!(
     ::Val{:primal}
     )
     dual_update!(p, o, o.xbar, Val(o.variant))
-    ptξn = ismissing(p.Λ) ? o.ξ : vector_transport_to(p.N, o.n, o.ξ, p.Λ(o.m))
+    ptξn = ismissing(p.Λ) ? o.ξ : vector_transport_to(
+        p.N,
+        o.n,
+        o.ξ,
+        p.Λ(o.m),
+        o.vector_transport_method,
+    )
     xOld = o.x
     o.x = o.prox_F(p.M, o.m, o.primal_stepsize,
-        exp(
+        retract(
             p.M,
             o.x,
             vector_transport_to(
                 p.M,
                 o.m,
                 - o.primal_stepsize * ( p.adjoint_linearized_operator(o.m, ptξn) ),
-                o.x
-            )
+                o.x,
+                o.vector_transport_method,
+            ),
+            o.retraction_method,
         )
     )
     update_prox_parameters!(o)
-    o.xbar = exp(p.M,o.x, - o.relaxation * log(p.M, o.x, xOld ) )
+    o.xbar = retract(
+        p.M,
+        o.x,
+        - o.relaxation * inverse_retract(p.M, o.x, xOld, o.inverse_retraction_method),
+        o.retraction_method,
+    )
     return o
 end
 #
@@ -135,12 +166,18 @@ function primal_dual_step!(
     o::ChambollePockOptions,
     ::Val{:dual}
     )
-    ptξbar = ismissing(p.Λ) ? o.ξbar : vector_transport_to(p.N, o.n, o.ξbar, p.Λ(o.m))
+    ptξbar = ismissing(p.Λ) ? o.ξbar : vector_transport_to(
+        p.N,
+        o.n,
+        o.ξbar,
+        p.Λ(o.m),
+        o.vector_transport_method,
+    )
     o.x = p.prox_F(
         p.M,
         o.m,
         o.primal_stepsize,
-        exp(
+        retract(
             p.M,
             o.x,
             vector_transport_to(
@@ -148,7 +185,9 @@ function primal_dual_step!(
                 o.m,
                 - o.primal_stepsize * ( p.adjoint_linearized_operator(o.m, ptξbar) ),
                 o.x,
-            )
+                o.vector_transport_method,
+            ),
+            o.retraction_method
         )
     )
     ξ_old = deepcopy(o.ξ)
@@ -163,9 +202,9 @@ end
 #
 function dual_update!(p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:linearized}) where {P}
     # (1) compute update direction
-    ξ_update = p.forward_operator(o.m, log(p.M, o.m, start))
+    ξ_update = p.forward_operator(o.m, inverse_retract(p.M, o.m, start, o.inverse_retraction_method))
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
-    ξ_update = ismissing(p.Λ) ? ξ_update : vector_transport_to(p.N,p.Λ(o.m),ξ_update,o.n)
+    ξ_update = ismissing(p.Λ) ? ξ_update : vector_transport_to(p.N, p.Λ(o.m), ξ_update, o.n, o.vector_transport_method)
     # (3) to the dual update
     o.ξ = p.prox_G_dual(p.N, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
     return o
@@ -179,7 +218,7 @@ function dual_update!(p::PrimalDualProblem, o::ChambollePockOptions, start::P, :
         p.N,
         o.n,
         o.dual_stepsize,
-        o.ξ + o.dual_stepsize * log(p.N,o.n, p.forward_operator(start))
+        o.ξ + o.dual_stepsize * inverse_retract(p.N,o.n, p.forward_operator(start), o.inverse_retraction_method)
     )
     return o
 end

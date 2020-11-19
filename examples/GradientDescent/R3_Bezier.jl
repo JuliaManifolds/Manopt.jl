@@ -1,5 +1,5 @@
 #
-# Minimize the acceleration of a composite Bézier curve on $\mathbb R^3$ with interpolation
+# Minimize the acceleration of a composite Bézier curve on $\mathbb R^3$ with approximation
 #
 # This example appeared in Sec. 5.2, second example, of
 #
@@ -9,7 +9,6 @@
 # > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
 # > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 #
-# Load Manopt and required packages
 using Manopt, Manifolds, Colors, ColorSchemes, Makie
 
 experiment_name = "Bezier_R3_Approximation"

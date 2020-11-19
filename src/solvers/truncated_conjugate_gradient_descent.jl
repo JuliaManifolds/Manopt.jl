@@ -40,7 +40,7 @@ see the reference:
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
 * `stopping_criterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),
-    [`stopIfResidualIsReducedByFactor`](@ref), [`stopIfResidualIsReducedByPower`](@ref),
+    [`StopIfResidualIsReducedByFactor`](@ref), [`StopIfResidualIsReducedByPower`](@ref),
     [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
     where for the default, the maximal number of iterations is set to the dimension of the
@@ -75,7 +75,7 @@ function truncated_conjugate_gradient_descent(
     useRandom::Bool=false,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
-        stopIfResidualIsReducedByPower(
+        StopIfResidualIsReducedByPower(
             sqrt(inner(
                 M,
                 x,
@@ -84,7 +84,7 @@ function truncated_conjugate_gradient_descent(
             )),
             θ,
         ),
-        stopIfResidualIsReducedByFactor(
+        StopIfResidualIsReducedByFactor(
             sqrt(inner(
                 M,
                 x,
