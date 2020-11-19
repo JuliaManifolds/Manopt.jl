@@ -1,15 +1,12 @@
-"""
-Minimize total variation of a signal of R3 data.
-
-This example is part of Example 6.1 in the publication
-
-> R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez,
-> Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds,
-> arXiv: [1908.02022](https://arxiv.org/abs/1908.02022)
-> __accepted for publication in Foundations of Computational Mathematics__
-
-"""
-
+#
+# Minimize total variation of a signal of R3 data.
+#
+# This example is part of Example 6.1 in the publication
+#
+# > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez,
+# > Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds,
+# > arXiv: [1908.02022](https://arxiv.org/abs/1908.02022)
+#
 using Manopt, Manifolds, LinearAlgebra
 
 #

@@ -1,10 +1,15 @@
-"""
-Denoise an S2 valued image with TV using the linearized Chambolle-Pock algorithm.
-"""
-
-using Manopt, Manifolds
-using Images, CSV, DataFrames, LinearAlgebra
-
+#
+# Denoise an S2 valued image demonstrating the effect of using different base points m
+#
+# L2-TV functional with anisotropic TV
+#
+# This example is used in Section 6.2 of
+#
+# > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez:
+# > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
+# > arXiv: [1908.02022](https://arxiv.org/abs/1908.02022)
+#
+using CSV, DataFrames, LinearAlgebra, Manopt, Manifolds
 #
 # Settings
 experiment_name = "S2_WhirlImage_CP"
@@ -19,7 +24,6 @@ current_folder = @__DIR__
 export_any = export_orig || export_primal || export_primal_video || export_table
 results_folder = joinpath(current_folder,"Image_TV")
 video_folder = joinpath(results_folder,"video")
-# Create folder if we have an export
 (export_any && !isdir(results_folder)) && mkdir(results_folder)
 (export_primal_video && !isdir(video_folder)) && mkdir(video_folder)
 #

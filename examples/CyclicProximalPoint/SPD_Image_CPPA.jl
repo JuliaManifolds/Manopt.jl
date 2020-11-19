@@ -1,9 +1,15 @@
 #
-# Denoise an SPD Example with Cyclic Proximal Point applied to the
+# Denoise an SPD Example with Cyclic Proximal Point to minimize the
 #
 # L2-TV functional with anisotropic TV
 #
-# where the example is the same data as for the corresponding CP algorithm
+# where the example is the same data and cost as for SPD_Image_CP_vs_CPPA
+#
+# This example and its data is used for comparison in Section 6.2 of
+#
+# > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez:
+# > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
+# > arXiv: [1908.02022](https://arxiv.org/abs/1908.02022)
 #
 using Manopt, Manifolds
 using Images, CSV, DataFrames, LinearAlgebra, JLD2
@@ -82,8 +88,7 @@ if export_table
     CSV.write(table_filename, DataFrame(A); writeheader=false)
 end
 if export_function_value
-    fctval_folder = joinpath(results_folder, "..", "..", "ChambollePock", "data")
-    fctval_filename = joinpath(fctval_folder, experiment_name * "-cost.jld2")
-    values = Dict("cost_function_value" => last(yRec)[3], "iterations" => length(yRec))
+    fctval_filename = joinpath(results_folder, experiment_name * "-cost.jld2")
+    values = Dict("cost_function_value" => last(yRec)[3], "iterations" => length(yRec)-1)
     save(fctval_filename, values)
 end

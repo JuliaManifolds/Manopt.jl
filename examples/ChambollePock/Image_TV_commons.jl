@@ -42,4 +42,4 @@ DΛ(m,ξm) = ProductRepr(
     repeat(ξm, inner=rep(length(size(m))) ),
     differential_forward_logs(M, m, ξm),
 )
-AdjDΛ(m,ξn) = adjoint_differential_forward_logs(M, m, submanifold_component(N, ξn, 2))
+AdjDΛ(m,ξn) = adjoint_differential_forward_logs(M, m, submanifold_component(N, ξn, 2));

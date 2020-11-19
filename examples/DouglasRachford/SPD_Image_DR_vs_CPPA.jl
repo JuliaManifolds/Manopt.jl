@@ -1,9 +1,13 @@
 #
-# Denoise an SPD Example with the linearized Riemannian Chambolle-Pock algorithm
+# Denoise an SPD Example with Douglas Rachford
+#
+# Denoise an SPD Example with Parallel Douglas-Rachford to minimize the
 #
 # L2-TV functional with anisotropic TV
 #
-# This example is used in Section 6.2 of
+# where the example is the same data and cost as for SPD_Image_CP_vs_CPPA
+#
+# This example and its data is used for comparison in Section 6.2 of
 #
 # > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez:
 # > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
@@ -13,19 +17,24 @@ using Manopt, Manifolds
 using Images, CSV, DataFrames, LinearAlgebra, JLD2, Dates
 #
 # Settings
-experiment_name = "SPD_Image_CP"
-export_original = true
+experiment_name = "SPD_Image_DR"
+export_orig = true
 export_result = true
 export_table = true
 use_debug = true
 asy_render_detail = 2
-results_folder = joinpath(@__DIR__,"Image_TV")
+results_folder = joinpath(@__DIR__, "Image_TV")
 comparison_data = joinpath(@__DIR__,"..","CyclicProximalPoint","Image_TV","SPD_Image_CPPA-cost.jld2")
 !isdir(results_folder) && mkdir(results_folder)
 #
+# Parameters
+η = 0.58
+λ = 0.93
+α = 6.0
+#
 # Manifold & Data
 f = artificial_SPD_image2(32)
-if export_original
+if export_orig
     fn = joinpath(results_folder, experiment_name * "-orig.asy")
     asymptote_export_SPD(fn; data=f, scaleAxes=(7.5, 7.5, 7.5) )
     render_asymptote(fn; render=asy_render_detail)
@@ -44,37 +53,38 @@ catch e
     @info "Comparison to CPPA (`CyclicProximalPoint/SPDImage_CPPA.jl`) not possible, data file $(comparison_data) either missing or corrupted.\n Error: $(msg).\n\n Starting with a default stopping criterion."
 end
 #
-# Parameters
-L = sqrt(8)
-α = 6.0
-σ = 0.40
-τ = 0.40
-θ = 1.
-γ = 0.2
-pixelM = SymmetricPositiveDefinite(3)
+# Build Problem for L2-TV
+pixelM = SymmetricPositiveDefinite(3);
+M = PowerManifold(pixelM, NestedPowerRepresentation(), size(f)...)
+d = length(size(f))
+rep(d) = (d > 1) ? [ones(Int, d)..., d] : d
+fidelity(x) = 1 / 2 * distance(M, x, f)^2
+Λ(x) = forward_logs(M, x) # on T_xN
+prior(x) = norm(norm.(Ref(pixelM), repeat(x, rep(d)...), Λ(x)), 1)
 #
-# load TV model
-#
-include("Image_TV_commons.jl")
-
-m = fill(Matrix{Float64}(I,3,3),size(f))
-n = Λ(m)
-x0 = f
-ξ0 = ProductRepr(zero_tangent_vector(M2,m2(m)), zero_tangent_vector(M2,m2(m)))
-
-@info "with parameters σ: $σ | τ: $τ | θ: $θ | γ: $γ."
-@time o = ChambollePock(M, N, cost, x0, ξ0, m, n, proxFidelity, proxPriorDual, DΛ, AdjDΛ;
-    primal_stepsize = σ, dual_stepsize = τ, relaxation = θ, acceleration = γ,
-    relax = :dual,
+# Setup & Optimize
+print("--- Douglas–Rachford with η: $(η) and λ: $(λ) ---\n")
+cost(x) = 1/α * fidelity(x[1]) + prior(x[1])
+N = PowerManifold(M, NestedPowerRepresentation(), 5)
+prox1 = (η, x) -> [prox_distance(M, η, f, x[1]), prox_parallel_TV(M, α * η, x[2:5])...]
+prox2 = (η, x) -> fill(mean(M, x, GradientDescentEstimation(); stop_iter=4), 5)
+x0 = fill(f, 5)
+@time o = DouglasRachford(
+    N,
+    cost,
+    [prox1, prox2],
+    x0;
+    λ=i -> η,
+    α=i -> λ, # map from Paper notation of BPS16 to toolbox notation
     debug = use_debug ? [:Iteration," | ", :Cost, "\n",10,:Stop] : missing,
     record = export_table ? [:Iteration, :Cost ] : missing,
-    stopping_criterion = sC,
-    variant = :linearized,
-    return_options = true
+    stopping_criterion=sC,
+    return_options=true,
 )
-y = get_solver_result(o)
+y = get_solver_result(o)[1]
 export_table && (r = get_record(o))
-
+#
+# Result
 numIter = length(r)
 if export_result
     fn = joinpath(
@@ -85,7 +95,8 @@ if export_result
     render_asymptote(fn; render=asy_render_detail)
 end
 if export_table
-    A = cat([ri[1] for ri in r], [ri[2] for ri in r]; dims=2)
+    # scale cost back for saving such that its comparable with the other two results
+    A = cat([ri[1] for ri in r], [ri[2]/α for ri in r]; dims=2)
     CSV.write(
         joinpath(results_folder, experiment_name * "-Cost.csv"),
         DataFrame(A);
