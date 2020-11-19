@@ -17,8 +17,8 @@ using Manopt, Manifolds, Colors, ColorSchemes
 import Printf.@sprintf
 import ColorSchemes.viridis
 
-results_folder = joinpath(@__DIR__,"Minimize_Acceleration_Bezier", "video")
-final_folder = joinpath(@__DIR__,"Minimize_Acceleration_Bezier")
+results_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier", "video")
+final_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier")
 experiment_name = "Bezier_Approximation_video"
 
 render_detail = 2
@@ -30,7 +30,6 @@ colors = RGBA.(get.(Ref(viridis), range(0.0, 1.0; length=length(λRange))))
 
 curve_samples = [range(0, 3; length=101)...] # sample curve for the gradient
 curve_samples_plot = [range(0, 3; length=201)...] # sample curve for asy exports
-
 
 cameraPosition = (-1.0, -0.7, 0.3)
 curveColor = RGBA{Float64}(colorant"#AAAAAA")
@@ -78,7 +77,7 @@ for i in eachindex(λRange)
 end
 if asy_export
     print("Exporting...\n")
-    s = joinpath(results_folder,experiment_name)
+    s = joinpath(results_folder, experiment_name)
     for i in eachindex(λRange)
         print("$(λRange[i])..")
         B_opt = get_bezier_segments(M, results[i], degs, :differentiable)
@@ -93,11 +92,11 @@ if asy_export
             lineWidths=[1.0, 0.5],
             dotSize=2.0,
         )
-        render_asymptote( s * "-$(@sprintf "%04.0f" i)-result.asy"; render = render_detail)
+        render_asymptote(s * "-$(@sprintf "%04.0f" i)-result.asy"; render=render_detail)
     end
 end
 if asy_export_summary
-    s = joinpath(results_folder,experiment_name)
+    s = joinpath(results_folder, experiment_name)
     asymptote_export_S2_signals(
         s * "-Summary-result.asy";
         curves=[cP, resulting_curves...],
@@ -108,8 +107,8 @@ if asy_export_summary
     render_asymptote(s * "-Summary-result.asy"; render=render_detail)
 end
 if render_video
-    s = joinpath(results_folder,experiment_name)
-    s2 = joinpath(final_folder,experiment_name)
+    s = joinpath(results_folder, experiment_name)
+    s2 = joinpath(final_folder, experiment_name)
     cmd = `ffmpeg -i $(s)-%04d-result.png -r 25 -framerate 60 -c:v libx264 -crf 20 -pix_fmt yuv420p -y $(s2)-movie.mp4`
     run(cmd)
 end

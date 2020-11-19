@@ -89,17 +89,17 @@ storage = StoreOptionsAction((:x, :n, :ξbar))
     variant=:linearized,
     debug=if use_debug
         [
-        :Iteration,
-        " ",
-        DebugPrimalChange(),
-        " | ",
-        DebugCk(storage),
-        " | ",
-        :Cost,
-        "\n",
-        100,
-        :Stop,
-    ]
+            :Iteration,
+            " ",
+            DebugPrimalChange(),
+            " | ",
+            DebugCk(storage),
+            " | ",
+            :Cost,
+            "\n",
+            100,
+            :Stop,
+        ]
     else
         missing
     end,

@@ -11,7 +11,7 @@
 #
 using Manopt, Manifolds, Colors, ColorSchemes
 experiment_name = "Bezier_Approximation"
-results_folder = joinpath(@__DIR__,"Minimize_Acceleration_Bezier")
+results_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier")
 asy_export = true #export data and results to asyExport
 λ = 10.0
 

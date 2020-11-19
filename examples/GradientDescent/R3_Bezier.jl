@@ -12,7 +12,7 @@
 using Manopt, Manifolds, Colors, ColorSchemes, Makie
 
 experiment_name = "Bezier_R3_Approximation"
-results_folder = joinpath(@__DIR__,"Minimize_Acceleration_Bezier")
+results_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier")
 λ = 50.0
 curve_samples = [range(0, 3; length=1601)...] # sample curve for the gradient
 curve_samples_plot = [range(0, 3; length=1601)...] # sample curve for asy exports
@@ -99,4 +99,4 @@ scatter!(
     [res_cp[1][3], res_cp[2][3], res_cp[3][3], res_cp[4][3]];
     color=dColor,
 )
-Makie.save(joinpath(results_folder, experiment_name*"-result.png"), scene)
+Makie.save(joinpath(results_folder, experiment_name * "-result.png"), scene)

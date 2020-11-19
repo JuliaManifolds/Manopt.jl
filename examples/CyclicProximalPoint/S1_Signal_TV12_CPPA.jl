@@ -13,7 +13,7 @@
 using Manopt, Manifolds, Plots
 #
 # Settings
-results_folder = joinpath(@__DIR__,"Signal_TV")
+results_folder = joinpath(@__DIR__, "Signal_TV")
 experiment_name = "S1_Signal_TV12_CPPA"
 export_orig = true
 export_result = true
@@ -61,7 +61,7 @@ if export_orig
         [-π, -π / 2, 0, π / 2, π],
         [raw"$-\pi$", raw"$-\frac{\pi}{2}$", raw"$0$", raw"$\frac{\pi}{2}$", raw"$\pi$"],
     )
-    png(scene, joinpath(results_folder, experiment_name*"-original.png"))
+    png(scene, joinpath(results_folder, experiment_name * "-original.png"))
 end
 #
 # Setup and Optimize
@@ -78,7 +78,18 @@ o = cyclic_proximal_point(
     proxes,
     data;
     λ=i -> π / (2 * i),
-    debug=[:Iteration, " | ", DebugProximalParameter(), " | ", :Cost, " | ", :Change, "\n", 1000, :Stop],
+    debug=[
+        :Iteration,
+        " | ",
+        DebugProximalParameter(),
+        " | ",
+        :Cost,
+        " | ",
+        :Change,
+        "\n",
+        1000,
+        :Stop,
+    ],
     record=[:Iteration, :Cost, :Change, :Iterate],
     return_options=true,
 )
@@ -108,7 +119,7 @@ if export_result
         [-π, -π / 2, 0, π / 2, π],
         [raw"$-\pi$", raw"$-\frac{\pi}{2}$", raw"$0$", raw"$\frac{\pi}{2}$", raw"$\pi$"],
     )
-    png(scene, joinpath(results_folder, experiment_name*"-result.png"))
+    png(scene, joinpath(results_folder, experiment_name * "-result.png"))
 end
 
 print("MSE (input):  ", 1 / n * distance(N, xCompare, data)^2, "\n")

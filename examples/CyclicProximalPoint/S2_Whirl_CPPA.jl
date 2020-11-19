@@ -71,7 +71,10 @@ yRec = get_record(o)
 #
 # Results
 if export_result
-    result_filename = joinpath(results_folder, experiment_name * "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy")
+    result_filename = joinpath(
+        results_folder,
+        experiment_name * "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy",
+    )
     asymptote_export_S2_data(result_filename; data=y)
     render_asymptote(result_filename; render=asymptote_render_detail)
 end
@@ -82,6 +85,6 @@ if export_table
 end
 if export_function_value
     fctval_filename = joinpath(results_folder, experiment_name * "-cost.jld2")
-    values = Dict("cost_function_value" => last(yRec)[3], "iterations" => length(yRec)-1)
+    values = Dict("cost_function_value" => last(yRec)[3], "iterations" => length(yRec) - 1)
     save(fctval_filename, values)
 end

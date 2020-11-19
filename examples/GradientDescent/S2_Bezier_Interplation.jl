@@ -9,7 +9,7 @@
 # > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 #
 using Manopt, Manifolds, Colors, ColorSchemes
-results_folder = joinpath(@__DIR__,"Minimize_Acceleration_Bezier")
+results_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier")
 experiment_name = "Bezier_Interpolation"
 asy_export = true #export data and results to asyExport
 

@@ -20,7 +20,7 @@ Describes a Problem for the linearized Chambolle-Pock algorithm.
     LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ=forward_operator)
 
 """
-mutable struct PrimalDualProblem{mT <: Manifold, nT <: Manifold} <: Problem
+mutable struct PrimalDualProblem{mT<:Manifold,nT<:Manifold} <: Problem
     M::mT
     N::nT
     cost::Function
@@ -38,9 +38,11 @@ function PrimalDualProblem(
     prox_G_dual,
     forward_operator,
     adjoint_linearized_operator,
-    Λ=forward_operator
-) where {mT <: Manifold, nT <: Manifold}
-    return PrimalDualProblem{mT,nT}(M,N,cost,prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ)
+    Λ=forward_operator,
+) where {mT<:Manifold,nT<:Manifold}
+    return PrimalDualProblem{mT,nT}(
+        M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator, Λ
+    )
 end
 
 @doc raw"""
@@ -131,16 +133,16 @@ mutable struct ChambollePockOptions{
         ξ::T,
         primal_stepsize::Float64,
         dual_stepsize::Float64;
-        acceleration::Float64 = 0.0,
-        relaxation::Float64 = 1.0,
-        relax::Symbol = :primal,
-        stopping_criterion::StoppingCriterion = StopAfterIteration(300),
-        variant::Symbol = :exact,
-        update_primal_base::Union{Function,Missing} = missing,
-        update_dual_base::Union{Function,Missing} = missing,
-        retraction_method::RM = ExponentialRetraction(),
-        inverse_retraction_method::IRM = LogarithmicInverseRetraction(),
-        vector_transport_method::VTM = ParallelTransport(),
+        acceleration::Float64=0.0,
+        relaxation::Float64=1.0,
+        relax::Symbol=:primal,
+        stopping_criterion::StoppingCriterion=StopAfterIteration(300),
+        variant::Symbol=:exact,
+        update_primal_base::Union{Function,Missing}=missing,
+        update_dual_base::Union{Function,Missing}=missing,
+        retraction_method::RM=ExponentialRetraction(),
+        inverse_retraction_method::IRM=LogarithmicInverseRetraction(),
+        vector_transport_method::VTM=ParallelTransport(),
     ) where {
         P,
         Q,
@@ -150,10 +152,24 @@ mutable struct ChambollePockOptions{
         VTM<:AbstractVectorTransportMethod,
     }
         return new{P,Q,T,RM,IRM,VTM}(
-            m,n,x,deepcopy(x),ξ,deepcopy(ξ),primal_stepsize,dual_stepsize,
-            acceleration,relaxation,relax,stopping_criterion,variant,
-            update_primal_base,update_dual_base,
-            retraction_method, inverse_retraction_method, vector_transport_method,
+            m,
+            n,
+            x,
+            deepcopy(x),
+            ξ,
+            deepcopy(ξ),
+            primal_stepsize,
+            dual_stepsize,
+            acceleration,
+            relaxation,
+            relax,
+            stopping_criterion,
+            variant,
+            update_primal_base,
+            update_dual_base,
+            retraction_method,
+            inverse_retraction_method,
+            vector_transport_method,
         )
     end
 end
@@ -172,8 +188,11 @@ V_{x\gets m}\bigl(DΛ*[m](V_{n_k\gets n_{k-1}}ξ_{k-1}) - ξ_k \bigr)
 where $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref)
 """
 function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
-    return norm(p.M, o.x,
-        1/o.primal_stepsize*inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method) -
+    return norm(
+        p.M,
+        o.x,
+        1 / o.primal_stepsize *
+        inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method) -
         vector_transport_to(
             p.M,
             o.m,
@@ -183,7 +202,7 @@ function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, �
             ),
             o.x,
             o.vector_transport_method,
-        )
+        ),
     )
 end
 @doc raw"""
@@ -210,8 +229,8 @@ V_{m\gets x}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}
 and for the `:exact` variant
 
     ```math
-\frac{1}{τ}\Bigl\lVert
-V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
+\Bigl\lVert
+\frac{1}{τ} V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
 -
 \operatorname{retr}^{-1}_{n_{k}}\bigl(
 Λ(\operatorname{retr}_{m_{k}}(V_{m\gets x}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}))
@@ -221,42 +240,35 @@ V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
 
 where in both cases $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref).
 """
-function dual_residual(p::PrimalDualProblem,o::ChambollePockOptions,x_old,ξ_old,n_old)
+function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
     if o.variant === :linearized
         return norm(
             p.N,
             o.n,
-            1/o.dual_stepsize * (vector_transport_to(
-                p.N,
-                n_old,
-                ξ_old,
-                o.n,
-                o.vector_transport_method
-            ) - o.ξ) -
-                p.fordward_operator(
+            1 / o.dual_stepsize *
+            (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ) -
+            p.fordward_operator(
+                o.m,
+                vector_transport_to(
+                    p.M,
+                    o.x,
+                    inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
                     o.m,
-                    vector_transport_to(
-                        p.M,
-                        o.x,
-                        inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
-                        o.m,
-                        o.vector_transport_method,
-                    ),
-                )
+                    o.vector_transport_method,
+                ),
+            ),
         )
     elseif o.variant === :exact
-        return norm(p.N, o.n,
-            1/o.dual_stepsize * (vector_transport_to(
-                p.N,
-                o.nOld,
-                ξ_old,
-                o.n,
-                o.vector_transport_method,
-            ) - o.n) -
-            inverse_retract(
+        return norm(
+            p.N,
+            o.n,
+            1 / o.dual_stepsize * (
+                vector_transport_to(p.N, o.nOld, ξ_old, o.n, o.vector_transport_method) -
+                o.n
+            ) - inverse_retract(
                 p.N,
                 o.n,
-                p.Λ( retract(
+                p.Λ(retract(
                     p.M,
                     o.m,
                     vector_transport_to(
@@ -268,8 +280,8 @@ function dual_residual(p::PrimalDualProblem,o::ChambollePockOptions,x_old,ξ_old
                     ),
                     o.retraction_method,
                 )),
-                o.inverse_retraction_method
-            )
+                o.inverse_retraction_method,
+            ),
         )
     else
         error("Unknown ChambollePock variant $(o.variant).")
@@ -289,23 +301,26 @@ mutable struct DebugDualResidual <: DebugAction
     print::Function
     prefix::String
     storage::StoreOptionsAction
-    DebugDualResidual(a::StoreOptionsAction=StoreOptionsAction( (:x,:ξ,:n) ),
-        print::Function=print) = new(print,"Dual Residual: ",a)
     function DebugDualResidual(
-            values::Tuple{P,P,T},
-            a::StoreOptionsAction=StoreOptionsAction( (:x,:ξ,:n) ),
-            print::Function=print
-        ) where {P,T}
-        update_storage!(a, Dict( k=>v for (k,v) in zip( (:x, :ξ, :n), values ) ) )
-        return new(print,"Dual Residual: ",a)
+        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), print::Function=print
+    )
+        return new(print, "Dual Residual: ", a)
+    end
+    function DebugDualResidual(
+        values::Tuple{P,P,T},
+        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        print::Function=print,
+    ) where {P,T}
+        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        return new(print, "Dual Residual: ", a)
     end
 end
-function (d::DebugDualResidual)(p::PrimalDualProblem,o::ChambollePockOptions, i::Int)
-    if all( has_storage.(Ref(d.storage), [:x, :ξ, :n] ) ) && i > 0 # all values stored
+function (d::DebugDualResidual)(p::PrimalDualProblem, o::ChambollePockOptions, i::Int)
+    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print( d.prefix * string(dual_residual(p,o,xOld,ξOld,nOld)) )
+        print(d.prefix * string(dual_residual(p, o, xOld, ξOld, nOld)))
     end
-    d.storage(p ,o, i)
+    return d.storage(p, o, i)
 end
 
 @doc raw"""
@@ -319,23 +334,28 @@ mutable struct DebugPrimalResidual <: DebugAction
     print::Function
     prefix::String
     storage::StoreOptionsAction
-    DebugPrimalResidual(a::StoreOptionsAction=StoreOptionsAction( (:x,:ξ,:n) ),
-        print::Function=print) = new(print,"Primal Residual: ",a)
     function DebugPrimalResidual(
-            values::Tuple{P,T,Q},
-            a::StoreOptionsAction=StoreOptionsAction( (:x,:ξ,:n) ),
-            print::Function=print
-        ) where {P,T,Q}
-        update_storage!(a, Dict( k=>v for (k,v) in zip( (:x, :ξ, :n), values ) ) )
-        return new(print,"Primal Residual: ",a)
+        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), print::Function=print
+    )
+        return new(print, "Primal Residual: ", a)
+    end
+    function DebugPrimalResidual(
+        values::Tuple{P,T,Q},
+        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        print::Function=print,
+    ) where {P,T,Q}
+        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        return new(print, "Primal Residual: ", a)
     end
 end
-function (d::DebugPrimalResidual)(p::P,o::ChambollePockOptions, i::Int) where {P <: PrimalDualProblem}
-    if all( has_storage.(Ref(d.storage), [:x, :ξ, :n] ) ) && i > 0 # all values stored
+function (d::DebugPrimalResidual)(
+    p::P, o::ChambollePockOptions, i::Int
+) where {P<:PrimalDualProblem}
+    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print( d.prefix * string(primal_residual(p,o,xOld,ξOld,nOld)) )
+        print(d.prefix * string(primal_residual(p, o, xOld, ξOld, nOld)))
     end
-    d.storage(p,o,i)
+    return d.storage(p, o, i)
 end
 @doc raw"""
     DebugPrimalDualResidual <: DebugAction
@@ -348,23 +368,35 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     print::Function
     prefix::String
     storage::StoreOptionsAction
-    DebugPrimalDualResidual(a::StoreOptionsAction=StoreOptionsAction( (:x, :ξ, :n) ),
-        print::Function=print) = new(print,"Dual Residual: ",a)
     function DebugPrimalDualResidual(
-            values::Tuple{P,T,Q},
-            a::StoreOptionsAction=StoreOptionsAction( (:x, :ξ, :n) ),
-            print::Function=print
-        ) where {P,Q,T}
-        update_storage!(a, Dict( k=>v for (k,v) in zip( (:x, :ξ, :n), values ) ) )
-        return new(print,"Dual Residual",a)
+        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), print::Function=print
+    )
+        return new(print, "Dual Residual: ", a)
+    end
+    function DebugPrimalDualResidual(
+        values::Tuple{P,T,Q},
+        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        print::Function=print,
+    ) where {P,Q,T}
+        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        return new(print, "Dual Residual", a)
     end
 end
-function (d::DebugPrimalDualResidual)(p::P,o::ChambollePockOptions, i::Int) where {P <: PrimalDualProblem}
-    if all( has_storage.(Ref(d.storage), [:x, :ξ, :n] ) ) && i > 0 # all values stored
+function (d::DebugPrimalDualResidual)(
+    p::P, o::ChambollePockOptions, i::Int
+) where {P<:PrimalDualProblem}
+    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print( d.prefix * string( (primal_residual(p,o,xOld,ξOld,nOld) + dual_residual(p,o,xOld,ξOld,nOld))/manifold_dimension(p.M) ) )
+        print(
+            d.prefix * string(
+                (
+                    primal_residual(p, o, xOld, ξOld, nOld) +
+                    dual_residual(p, o, xOld, ξOld, nOld)
+                ) / manifold_dimension(p.M),
+            ),
+        )
     end
-    d.storage(p,o,i)
+    return d.storage(p, o, i)
 end
 
 #
@@ -393,7 +425,7 @@ Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.ξ`.
 """
-DebugDualIterate(e) = DebugEntry(e,:ξ)
+DebugDualIterate(e) = DebugEntry(e, :ξ)
 
 """
     DebugDualChange(opts...)
@@ -406,24 +438,32 @@ mutable struct DebugDualChange <: DebugAction
     print::Function
     prefix::String
     storage::StoreOptionsAction
-    DebugDualChange(
-        a::StoreOptionsAction=StoreOptionsAction( (:ξ,:n) ),
-        print::Function=print) = new(print,"Dual Change: ",a)
+    function DebugDualChange(
+        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)), print::Function=print
+    )
+        return new(print, "Dual Change: ", a)
+    end
     function DebugDualChange(
         values::Tuple{T,P},
-        a::StoreOptionsAction=StoreOptionsAction( (:ξ,:n) ),
-        print::Function=print
+        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
+        print::Function=print,
     ) where {P,T}
-        update_storage!(a, Dict{Symbol,Any}( k=>v for (k,v) in zip( (:ξ,:n), values ) ) )
-        return new(print,"Dual Change: ",a)
+        update_storage!(a, Dict{Symbol,Any}(k => v for (k, v) in zip((:ξ, :n), values)))
+        return new(print, "Dual Change: ", a)
     end
 end
-function (d::DebugDualChange)(p::P,o::ChambollePockOptions, i::Int) where {P <: PrimalDualProblem}
-    if all( has_storage.(Ref(d.storage), [:ξ, :n] ) ) && i > 0 # all values stored
+function (d::DebugDualChange)(
+    p::P, o::ChambollePockOptions, i::Int
+) where {P<:PrimalDualProblem}
+    if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
-        print( d.prefix * string( norm(p.N, o.n, vector_transport(p.N,nOld,ξOld,o.n, ParallelTransport()) - o.ξ) ) )
+        print(
+            d.prefix * string(norm(
+                p.N, o.n, vector_transport(p.N, nOld, ξOld, o.n, ParallelTransport()) - o.ξ
+            )),
+        )
     end
-    d.storage(p,o,i)
+    return d.storage(p, o, i)
 end
 
 """
@@ -433,14 +473,14 @@ Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.n`.
 """
-DebugDualBaseIterate(e) = DebugEntry(e,:n)
+DebugDualBaseIterate(e) = DebugEntry(e, :n)
 """
     DebugDualChange(opts...)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-DebugDualBaseChange(e) = DebugEntryChange(e, :n, (p,o,x,y) -> distance(p.N,x,y) )
+DebugDualBaseChange(e) = DebugEntryChange(e, :n, (p, o, x, y) -> distance(p.N, x, y))
 
 """
     DebugPrimalBaseIterate(e)
@@ -449,14 +489,14 @@ Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.m`.
 """
-DebugPrimalBaseIterate(e) = DebugEntry(e,:m)
+DebugPrimalBaseIterate(e) = DebugEntry(e, :m)
 """
     DebugPrimalBaseChange(opts...)
 
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-DebugPrimalBaseChange(e) = DebugEntryChange(e, :m, (p,o,x,y) -> distance(p.M,x,y) )
+DebugPrimalBaseChange(e) = DebugEntryChange(e, :m, (p, o, x, y) -> distance(p.M, x, y))
 
 #
 # Records
@@ -485,7 +525,7 @@ RecordPrimalIterate(e) = RecordIterate(e)
 Create an [`RecordAction`](@ref) that records the dual base point,
 i.e. [`RecordEntry`](@ref) of `o.ξ`, so .
 """
-RecordDualIterate(e) = RecordEntry(e,:ξ)
+RecordDualIterate(e) = RecordEntry(e, :ξ)
 
 # RecordDualChange(e) = RecordEntryChange(e, :ξ, (p,o,ξ,ν) -> norm(p.M,o.n,ξ,ν) )
 """
@@ -506,25 +546,25 @@ Create the action either with a given (shared) Storage, which can be set to the
 mutable struct RecordDualChange <: RecordAction
     recordedValues::Array{Float64,1}
     storage::StoreOptionsAction
-    RecordDualChange(a::StoreOptionsAction=StoreOptionsAction( (:ξ,:n) ) ) =
-        new(Array{Float64,1}(), a)
+    function RecordDualChange(a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)))
+        return new(Array{Float64,1}(), a)
+    end
     function RecordDualChange(
-        values::Tuple{T,P},
-        a::StoreOptionsAction=StoreOptionsAction( (:ξ,:n) )
+        values::Tuple{T,P}, a::StoreOptionsAction=StoreOptionsAction((:ξ, :n))
     ) where {T,P}
-        update_storage!(a, Dict{Symbol,Any}( k=>v for (k,v) in zip( (:ξ, :n), values ) ) )
+        update_storage!(a, Dict{Symbol,Any}(k => v for (k, v) in zip((:ξ, :n), values)))
         return new(Array{Float64,1}(), a)
     end
 end
-function (r::RecordDualChange)(p::P,o::O,i::Int) where {P <: Problem, O <: Options}
-    v=0.0
-    if all( has_storage.(Ref(r.storage), [:n, :ξ] ) ) # both old values stored
+function (r::RecordDualChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    v = 0.0
+    if all(has_storage.(Ref(r.storage), [:n, :ξ])) # both old values stored
         n_old = get_storage(r.storage, :n)
         ξ_old = get_storage(r.storage, :ξ)
         v = norm(p.N, o.n, vector_transport_to(p.N, n_old, ξ_old, o.n) - o.ξ)
     end
     Manopt.record_or_reset!(r, v, i)
-    r.storage(p ,o, i)
+    return r.storage(p, o, i)
 end
 
 """
@@ -533,7 +573,7 @@ end
 Create an [`RecordAction`](@ref) that records the dual base point,
 i.e. [`RecordEntry`](@ref) of `o.n`.
 """
-RecordDualBaseIterate(e) = RecordEntry(e,:n)
+RecordDualBaseIterate(e) = RecordEntry(e, :n)
 
 """
     RecordDualBaseChange(e)
@@ -541,7 +581,7 @@ RecordDualBaseIterate(e) = RecordEntry(e,:n)
 Create an [`RecordAction`](@ref) that records the dual base point change,
 i.e. [`RecordEntryChange`](@ref) of `o.n` with distance to the last value to store a value.
 """
-RecordDualBaseChange(e) = RecordEntryChange(e, :n, (p,o,x,y) -> distance(p.N,x,y) )
+RecordDualBaseChange(e) = RecordEntryChange(e, :n, (p, o, x, y) -> distance(p.N, x, y))
 
 """
     RecordPrimalBaseIterate(e)
@@ -549,11 +589,11 @@ RecordDualBaseChange(e) = RecordEntryChange(e, :n, (p,o,x,y) -> distance(p.N,x,y
 Create an [`RecordAction`](@ref) that records the primal base point,
 i.e. [`RecordEntry`](@ref) of `o.m`.
 """
-RecordPrimalBaseIterate(e) = RecordEntry(e,:m)
+RecordPrimalBaseIterate(e) = RecordEntry(e, :m)
 """
     RecordPrimalBaseChange(e)
 
 Create an [`RecordAction`](@ref) that records the primal base point change,
 i.e. [`RecordEntryChange`](@ref) of `o.m` with distance to the last value to store a value.
 """
-RecordPrimalBaseChange(e) = RecordEntryChange(e, :m, (p,o,x,y) -> distance(p.M,x,y) )
+RecordPrimalBaseChange(e) = RecordEntryChange(e, :m, (p, o, x, y) -> distance(p.M, x, y))

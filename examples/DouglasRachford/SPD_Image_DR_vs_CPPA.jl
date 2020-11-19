@@ -24,7 +24,9 @@ export_table = true
 use_debug = true
 asy_render_detail = 2
 results_folder = joinpath(@__DIR__, "Image_TV")
-comparison_data = joinpath(@__DIR__,"..","CyclicProximalPoint","Image_TV","SPD_Image_CPPA-cost.jld2")
+comparison_data = joinpath(
+    @__DIR__, "..", "CyclicProximalPoint", "Image_TV", "SPD_Image_CPPA-cost.jld2"
+)
 !isdir(results_folder) && mkdir(results_folder)
 #
 # Parameters
@@ -36,7 +38,7 @@ comparison_data = joinpath(@__DIR__,"..","CyclicProximalPoint","Image_TV","SPD_I
 f = artificial_SPD_image2(32)
 if export_orig
     fn = joinpath(results_folder, experiment_name * "-orig.asy")
-    asymptote_export_SPD(fn; data=f, scaleAxes=(7.5, 7.5, 7.5) )
+    asymptote_export_SPD(fn; data=f, scaleAxes=(7.5, 7.5, 7.5))
     render_asymptote(fn; render=asy_render_detail)
 end
 sC = StopAfterIteration(400)
@@ -44,9 +46,7 @@ try
     cppa_data = load(comparison_data)
     cost_threshold = cppa_data["cost_function_value"]
     cppa_iter = cppa_data["iterations"]
-    global sC = StopWhenAny(
-        StopAfterIteration(400), StopWhenCostLess(cost_threshold)
-    )
+    global sC = StopWhenAny(StopAfterIteration(400), StopWhenCostLess(cost_threshold))
     @info "Comparison to CPPA (`SPDImage_CPPA.jl`) and its cost after $(cppa_iter) iterations of $cost_threshold."
 catch e
     msg = sprint(showerror, e)
@@ -64,7 +64,7 @@ prior(x) = norm(norm.(Ref(pixelM), repeat(x, rep(d)...), Λ(x)), 1)
 #
 # Setup & Optimize
 print("--- Douglas–Rachford with η: $(η) and λ: $(λ) ---\n")
-cost(x) = 1/α * fidelity(x[1]) + prior(x[1])
+cost(x) = 1 / α * fidelity(x[1]) + prior(x[1])
 N = PowerManifold(M, NestedPowerRepresentation(), 5)
 prox1 = (η, x) -> [prox_distance(M, η, f, x[1]), prox_parallel_TV(M, α * η, x[2:5])...]
 prox2 = (η, x) -> fill(mean(M, x, GradientDescentEstimation(); stop_iter=4), 5)
@@ -76,8 +76,8 @@ x0 = fill(f, 5)
     x0;
     λ=i -> η,
     α=i -> λ, # map from Paper notation of BPS16 to toolbox notation
-    debug = use_debug ? [:Iteration," | ", :Cost, "\n",10,:Stop] : missing,
-    record = export_table ? [:Iteration, :Cost ] : missing,
+    debug=use_debug ? [:Iteration, " | ", :Cost, "\n", 10, :Stop] : missing,
+    record=export_table ? [:Iteration, :Cost] : missing,
     stopping_criterion=sC,
     return_options=true,
 )
@@ -89,17 +89,17 @@ numIter = length(r)
 if export_result
     fn = joinpath(
         results_folder,
-        experiment_name * "img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy"
+        experiment_name * "img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy",
     )
-    asymptote_export_SPD(fn; data=y, scaleAxes=(7.5, 7.5, 7.5) )
+    asymptote_export_SPD(fn; data=y, scaleAxes=(7.5, 7.5, 7.5))
     render_asymptote(fn; render=asy_render_detail)
 end
 if export_table
     # scale cost back for saving such that its comparable with the other two results
-    A = cat([ri[1] for ri in r], [ri[2]/α for ri in r]; dims=2)
+    A = cat([ri[1] for ri in r], [ri[2] / α for ri in r]; dims=2)
     CSV.write(
         joinpath(results_folder, experiment_name * "-Cost.csv"),
         DataFrame(A);
-        writeheader=false
+        writeheader=false,
     )
 end

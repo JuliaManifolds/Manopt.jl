@@ -56,7 +56,7 @@ x0 = f
     cost,
     proxes,
     x0;
-    λ = i -> 4/i,
+    λ=i -> 4 / i,
     stopping_criterion=StopAfterIteration(maxIterations),
     debug=[
         :Iteration,
@@ -89,6 +89,6 @@ if export_table
 end
 if export_function_value
     fctval_filename = joinpath(results_folder, experiment_name * "-cost.jld2")
-    values = Dict("cost_function_value" => last(yRec)[3], "iterations" => length(yRec)-1)
+    values = Dict("cost_function_value" => last(yRec)[3], "iterations" => length(yRec) - 1)
     save(fctval_filename, values)
 end

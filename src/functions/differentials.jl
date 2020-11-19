@@ -223,12 +223,12 @@ function differential_forward_logs(M::PowerManifold, p, X)
             if all(J .<= maxInd)
                 # this is neighbor in range,
                 # collects two, namely in kth direction since xi appears as base and arg
-                Y[M, I..., k] = Y[M, I..., k] .+ differential_log_basepoint(
-                    M.manifold,
-                    p[M, I...],
-                    p[M, J...],
-                    X[M, I...],
-                ) .+ differential_log_argument(M.manifold, p[M, I...], p[M, J...], X[M, J...])
+                Y[M, I..., k] =
+                    Y[M, I..., k] .+ differential_log_basepoint(
+                        M.manifold, p[M, I...], p[M, J...], X[M, I...]
+                    ) .+ differential_log_argument(
+                        M.manifold, p[M, I...], p[M, J...], X[M, J...]
+                    )
             end
         end # directions
     end # i in R

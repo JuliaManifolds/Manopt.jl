@@ -115,7 +115,7 @@ map with respect to its argument $D_q \log_p q[X]$. They are
 [`differential_log_basepoint`](@ref), [`jacobi_field`](@ref)
 """
 function βdifferential_log_argument(κ, ::Number, d)
-    ((d == 0)  || (κ == 0)) && return 1.0
+    ((d == 0) || (κ == 0)) && return 1.0
     (κ < 0) && return sqrt(-κ) * d / sinh(sqrt(-κ) * d)
     return sqrt(κ) * d / sin(sqrt(κ) * d)
 end

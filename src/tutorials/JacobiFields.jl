@@ -8,7 +8,14 @@
 #
 # We first initialize the manifold
 exportFolder = joinpath( #src
-    @__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials", #src
+    @__DIR__,
+    "..",
+    "..",
+    "docs",
+    "src",
+    "assets",
+    "images",
+    "tutorials", #src
 ) #src
 using Manopt, Manifolds
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)

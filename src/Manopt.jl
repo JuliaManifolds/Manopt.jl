@@ -156,7 +156,8 @@ export jacobi_field, adjoint_Jacobi_field
 export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇distance
 export ∇acceleration_bezier, ∇L2_acceleration_bezier
 
-export get_cost, get_gradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
+export get_cost,
+    get_gradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
 
 export getHessian, approxHessianFD
 
@@ -183,7 +184,8 @@ export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIter
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 
 export RecordGradient, RecordGradientNorm, RecordStepsize
-export RecordPrimalBaseChange, RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
+export RecordPrimalBaseChange,
+    RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
