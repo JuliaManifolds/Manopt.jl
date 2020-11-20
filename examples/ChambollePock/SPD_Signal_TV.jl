@@ -18,8 +18,8 @@ export_table = false
 use_debug = false
 #
 # Automatic Script Settings
-export_any = export_orig || export_primal || export_table
 results_folder = joinpath(@__DIR__, "Signal_TV")
+export_any = export_orig || export_primal || export_table
 # Create folder if we have an export
 (export_any && !isdir(results_folder)) && mkdir(results_folder)
 #
