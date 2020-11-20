@@ -47,13 +47,13 @@ makedocs(;
         "Functions" => [
             "Introduction" => "functions/index.md",
             "Bézier curves" => "functions/bezier.md",
-            "Cost functions" => "functions/costFunctions.md",
+            "Cost functions" => "functions/costs.md",
             "Differentials" => "functions/differentials.md",
-            "Adjoint Differentials" => "functions/adjointDifferentials.md",
+            "Adjoint Differentials" => "functions/adjoint_differentials.md",
             "Gradients" => "functions/gradients.md",
-            "JacobiFields" => "functions/jacobiFields.md",
-            "Proximal Maps" => "functions/proximalMaps.md",
-            "Specific manifold functions" => "functions/manifold.md",
+            "Jacobi Fields" => "functions/Jacobi_fields.md",
+            "Proximal Maps" => "functions/proximal_maps.md",
+            "Specific Manifold Functions" => "functions/manifold.md",
         ],
         "Helpers" => [
             "Data" => "helpers/data.md",
