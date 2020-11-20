@@ -319,7 +319,8 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
     else
         d2 = 1
     end
-    N = PowerManifold(M.manifold, TPR(), power_size..., d)
+    sN = d>1 ? [power_size...,d] : [power_size...]
+    N = PowerManifold(M.manifold, TPR(), sN...)
     xT = repeat(p; inner=d2)
     X = zero_tangent_vector(N, xT)
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
