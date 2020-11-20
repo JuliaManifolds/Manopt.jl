@@ -99,9 +99,9 @@
     @test project_collaborative_TV(N3, 0.0, P, Ξ, 1.0, 1.0) == Ξ
 
     @test project_collaborative_TV(N3, 0.0, P, Ξ, 2, 1) == Ξ
-    @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, 2, Inf)) ≈ 0
-    @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, 1, Inf)) ≈ 0
-    @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, Inf, Inf)) ≈ 0
+    @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, 2, Inf)) ≈ norm(Ξ)
+    @test sum(abs.(project_collaborative_TV(N3, 0.0, P, Ξ, 1, Inf))) ≈ 1.0
+    @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, Inf, Inf)) ≈ norm(Ξ)
     @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, 3)
     @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, 1)
     @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, Inf)
