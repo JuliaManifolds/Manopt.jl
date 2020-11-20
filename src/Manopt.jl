@@ -91,12 +91,12 @@ include("plans/plan.jl")
 # Functions
 include("functions/manifold.jl")
 include("functions/bezier_curves.jl")
-include("functions/adjointDifferentials.jl")
+include("functions/adjoint_differentials.jl")
 include("functions/costs.jl")
 include("functions/differentials.jl")
 include("functions/gradients.jl")
-include("functions/jacobiFields.jl")
-include("functions/proximalMaps.jl")
+include("functions/Jacobi_fields.jl")
+include("functions/proximal_maps.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers

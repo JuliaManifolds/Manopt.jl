@@ -32,7 +32,7 @@ dispatch_options_decorator(::Options) = Val(false)
 
 Indicate, whether [`Options`](@ref) `o` are of decorator type.
 """
-is_options_decorator(::Options) = _extract_val(dispatch_options_decorator(O))
+is_options_decorator(o::Options) = _extract_val(dispatch_options_decorator(o))
 
 #
 # StoppingCriterion meta
