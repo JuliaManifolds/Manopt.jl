@@ -82,7 +82,9 @@ function ChambollePock(
     IRM<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    p = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linear_operator, Λ)
+    p = PrimalDualProblem(
+        M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linear_operator, Λ
+    )
     o = ChambollePockOptions(
         m,
         n,
@@ -220,7 +222,9 @@ end
 function dual_update!(
     p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:exact}
 ) where {P}
-    ξ_update = inverse_retract(p.N, o.n, p.forward_operator(start), o.inverse_retraction_method)
+    ξ_update = inverse_retract(
+        p.N, o.n, p.forward_operator(start), o.inverse_retraction_method
+    )
     t = p.prox_G_dual(p.N, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
     o.ξ = t
     return o

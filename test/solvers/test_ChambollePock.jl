@@ -6,10 +6,10 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     #
     pixelM = Sphere(2)
     M = PowerManifold(pixelM, NestedPowerRepresentation(), 2)
-    data = [ [1.0, 0.0, 0.0], 1/sqrt(2) .* [1.0, 1.0, 0.0] ]
+    data = [[1.0, 0.0, 0.0], 1 / sqrt(2) .* [1.0, 1.0, 0.0]]
     α = 1
     # known minimizer
-    δ = min(α / distance(pixelM,data[1],data[2]), 0.5)
+    δ = min(α / distance(pixelM, data[1], data[2]), 0.5)
     x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = TangentBundle(M)
     fidelity(x) = 1 / 2 * distance(M, x, f)^2
@@ -32,20 +32,24 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
         )
     end
     DΛ(m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
-    adjoint_DΛ(m, ξ) = adjoint_differential_forward_logs(M, m, submanifold_component(N, ξ, 2))
+    function adjoint_DΛ(m, ξ)
+        return adjoint_differential_forward_logs(M, m, submanifold_component(N, ξ, 2))
+    end
 
-    m = fill(mid_point(pixelM,data[1],data[2]),2)
+    m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(m)
     x0 = deepcopy(data)
     ξ0 = ProductRepr(zero_tangent_vector(M, m), zero_tangent_vector(M, m))
     @testset "Test Variants" begin
-        callargs_linearized = [M,N,cost,x0,ξ0,m,n,prox_F,prox_G_dual,DΛ,adjoint_DΛ]
-        o1 = ChambollePock(callargs_linearized...;relax=:dual,variant=:linearized)
-        o2 = ChambollePock(callargs_linearized...;relax=:primal,variant=:linearized)
+        callargs_linearized = [
+            M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, DΛ, adjoint_DΛ
+        ]
+        o1 = ChambollePock(callargs_linearized...; relax=:dual, variant=:linearized)
+        o2 = ChambollePock(callargs_linearized...; relax=:primal, variant=:linearized)
         @test o1 ≈ o2
-        callargs_exact = [M,N,cost,x0,ξ0,m,n,prox_F,prox_G_dual,Λ,adjoint_DΛ]
-        o3 = ChambollePock(callargs_exact...;relax=:dual,variant=:exact)
-        o4 = ChambollePock(callargs_exact...;relax=:primal,variant=:exact)
+        callargs_exact = [M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, Λ, adjoint_DΛ]
+        o3 = ChambollePock(callargs_exact...; relax=:dual, variant=:exact)
+        o4 = ChambollePock(callargs_exact...; relax=:primal, variant=:exact)
         @test o3 ≈ o4
         @test o1 ≈ o3
     end
