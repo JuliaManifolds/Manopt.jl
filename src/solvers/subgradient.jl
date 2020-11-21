@@ -53,14 +53,14 @@ function subgradient_method(
 end
 function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.xOptimal = o.x
-    return o.∂ = zero_tangent_vector(p.M, o.x)
+    o.∂ = zero_tangent_vector(p.M, o.x)
+    return o
 end
 function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions, iter)
     o.∂ = get_subgradient(p, o.x)
     s = get_stepsize(p, o, iter)
     retract!(p.M, o.x, o.x, -s * o.∂, o.retraction_method)
-    if get_cost(p, o.x) < get_cost(p, o.xOptimal)
-        o.xOptimal = o.x
-    end
+    (get_cost(p, o.x) < get_cost(p, o.xOptimal)) && (o.xOptimal = o.x)
+    return o
 end
 get_solver_result(o::SubGradientMethodOptions) = o.xOptimal

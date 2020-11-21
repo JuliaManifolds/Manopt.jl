@@ -115,6 +115,11 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
 
+        d7a = DebugDualChange((ξ0, n), a, io)
+        d7a(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s, "Dual Change:")
+
         d8 = DebugDualBaseIterate(io)
         d8(p_exact, o_exact, 1)
         s = String(take!(io))
