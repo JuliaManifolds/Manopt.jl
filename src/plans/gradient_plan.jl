@@ -590,15 +590,16 @@ display the short (`false`) or long (`true`) default text for the gradient.
 display the a `prefix` in front of the gradient.
 """
 mutable struct DebugGradient <: DebugAction
-    print::Any
+    io::IO
     prefix::String
-    function DebugGradient(long::Bool=false, print=print)
-        return new(print, long ? "Gradient: " : "∇F(x):")
+    function DebugGradient(long::Bool=false, io::IO=stdout)
+        return new(io, long ? "Gradient: " : "∇F(x):")
     end
-    DebugGradient(prefix::String, print=print) = new(print, prefix)
+    DebugGradient(prefix::String, io::IO=stdout) = new(io, prefix)
 end
-function (d::DebugGradient)(p::GradientProblem, o::GradientDescentOptions, i::Int)
-    return d.print((i >= 0) ? d.prefix * "" * string(o.∇) : "")
+function (d::DebugGradient)(::GradientProblem, o::GradientDescentOptions, i::Int)
+    print(d.io, (i >= 0) ? d.prefix * "" * string(o.∇) : "")
+    return nothing
 end
 
 @doc raw"""
@@ -616,17 +617,16 @@ display the short (`false`) or long (`true`) default text for the gradient norm.
 display the a `prefix` in front of the gradientnorm.
 """
 mutable struct DebugGradientNorm <: DebugAction
-    print::Any
+    io::IO
     prefix::String
-    function DebugGradientNorm(long::Bool=false, print=print)
-        return new(print, long ? "Norm of the Gradient: " : "|∇F(x)|:")
+    function DebugGradientNorm(long::Bool=false, io::IO=stdout)
+        return new(io, long ? "Norm of the Gradient: " : "|∇F(x)|:")
     end
-    DebugGradientNorm(prefix::String, print=print) = new(print, prefix)
+    DebugGradientNorm(prefix::String, io::IO=stdout) = new(io, prefix)
 end
-function (d::DebugGradientNorm)(
-    p::P, o::O, i::Int
-) where {P<:GradientProblem,O<:GradientDescentOptions}
-    return d.print((i >= 0) ? d.prefix * "$(norm(p.M,o.x,o.∇))" : "")
+function (d::DebugGradientNorm)(p::GradientProblem, o::GradientDescentOptions, i::Int)
+    print(d.io, (i >= 0) ? d.prefix * "$(norm(p.M,o.x,o.∇))" : "")
+    return nothing
 end
 
 @doc raw"""
@@ -644,17 +644,16 @@ display the short (`false`) or long (`true`) default text for the step size.
 display the a `prefix` in front of the step size.
 """
 mutable struct DebugStepsize <: DebugAction
-    print::Any
+    io::IO
     prefix::String
-    function DebugStepsize(long::Bool=false, print=print)
-        return new(print, long ? "step size:" : "s:")
+    function DebugStepsize(long::Bool=false, io::IO=stdout)
+        return new(io, long ? "step size:" : "s:")
     end
-    DebugStepsize(prefix::String, print=print) = new(print, prefix)
+    DebugStepsize(prefix::String, io::IO=stdout) = new(io, prefix)
 end
-function (d::DebugStepsize)(
-    p::P, o::O, i::Int
-) where {P<:GradientProblem,O<:GradientDescentOptions}
-    return d.print((i > 0) ? d.prefix * "$(get_last_stepsize(p,o,i))" : "")
+function (d::DebugStepsize)(p::GradientProblem, o::GradientDescentOptions, i::Int)
+    print(d.io, (i > 0) ? d.prefix * "$(get_last_stepsize(p,o,i))" : "")
+    return nothing
 end
 
 #
@@ -676,8 +675,10 @@ mutable struct RecordGradient{T} <: RecordAction
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
 function (r::RecordGradient{T})(
-    p::P, o::O, i::Int
-) where {T,P<:GradientProblem,O<:GradientDescentOptions}
+    ::GradientProblem,
+    o::GradientDescentOptions,
+    i::Int,
+) where{T}
     return record_or_reset!(r, o.∇, i)
 end
 

@@ -149,19 +149,21 @@ print the current iterates proximal point algorithm parameter given by
 [`Options`](@ref)s `o.λ`.
 """
 mutable struct DebugProximalParameter <: DebugAction
-    print::Any
+    io::IO
     prefix::String
-    function DebugProximalParameter(long::Bool=false, print=print)
-        return new(print, long ? "Proximal Map Parameter λ(i):" : "λ:")
+    function DebugProximalParameter(long::Bool=false, io::IO=stdout)
+        return new(io, long ? "Proximal Map Parameter λ(i):" : "λ:")
     end
 end
-function (d::DebugProximalParameter)(p::ProximalProblem, o::DouglasRachfordOptions, i::Int)
-    return d.print((i > 0) ? d.prefix * string(o.λ(i)) : "")
+function (d::DebugProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
+    print(d.io,(i > 0) ? d.prefix * string(o.λ(i)) : "")
+    return nothing
 end
 function (d::DebugProximalParameter)(
-    p::ProximalProblem, o::CyclicProximalPointOptions, i::Int
+    ::ProximalProblem, o::CyclicProximalPointOptions, i::Int
 )
-    return d.print((i > 0) ? d.prefix * string(o.λ(i)) : "")
+    print(d.io, (i > 0) ? d.prefix * string(o.λ(i)) : "")
+    return nothing
 end
 
 #
@@ -177,12 +179,16 @@ mutable struct RecordProximalParameter <: RecordAction
     RecordProximalParameter() = new(Array{Float64,1}())
 end
 function (r::RecordProximalParameter)(
-    p::P, o::O, i::Int
-) where {P<:ProximalProblem,O<:CyclicProximalPointOptions}
+    ::ProximalProblem,
+    o::CyclicProximalPointOptions,
+    i::Int,
+)
     return record_or_reset!(r, o.λ(i), i)
 end
 function (r::RecordProximalParameter)(
-    p::P, o::O, i::Int
-) where {P<:ProximalProblem,O<:DouglasRachfordOptions}
-    return record_or_reset!(r, o.λ(i), i)
+    ::ProximalProblem,
+    o::DouglasRachfordOptions,
+    i::Int,
+)
+  return record_or_reset!(r, o.λ(i), i)
 end

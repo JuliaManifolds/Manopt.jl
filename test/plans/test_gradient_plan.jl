@@ -16,22 +16,22 @@
     @test_throws ErrorException getProximalMap(p, 1.0, o.x, 1)
     @test_throws ErrorException get_subgradient(p, o.x)
     # Additional Specific Debugs
-    a1 = DebugGradient(false, x -> print(io, x))
+    a1 = DebugGradient(false, io)
     a1(p, o, 1)
     @test String(take!(io)) == "∇F(x):[1.0, 0.0]"
-    a1a = DebugGradient("s:", x -> print(io, x))
+    a1a = DebugGradient("s:", io)
     a1a(p, o, 1)
     @test String(take!(io)) == "s:[1.0, 0.0]"
-    a2 = DebugGradientNorm(false, x -> print(io, x))
+    a2 = DebugGradientNorm(false, io)
     a2(p, o, 1)
     @test String(take!(io)) == "|∇F(x)|:1.0"
-    a2a = DebugGradientNorm("s:", x -> print(io, x))
+    a2a = DebugGradientNorm("s:", io)
     a2a(p, o, 1)
     @test String(take!(io)) == "s:1.0"
-    a3 = DebugStepsize(false, x -> print(io, x))
+    a3 = DebugStepsize(false, io)
     a3(p, o, 1)
     @test String(take!(io)) == "s:1.0"
-    a3a = DebugStepsize("S:", x -> print(io, x))
+    a3a = DebugStepsize("S:", io)
     a3a(p, o, 1)
     @test String(take!(io)) == "S:1.0"
     # Additional Specific Records

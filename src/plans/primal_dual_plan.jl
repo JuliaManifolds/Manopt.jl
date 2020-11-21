@@ -67,8 +67,8 @@ initialized automatically and values with a default may be left out.
 * `xbar` - the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `ξbar` - the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `Θ` – factor to damp the helping $\tilde x$
-* `primal_stepsize` – proximal parameter of the primal prox
-* `dual_stepsize` – proximnal parameter of the dual prox
+* `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
+* `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
 * `acceleration` – (`0.`) acceleration factor due to Chambolle & Pock
 * `relaxation` – (`1.`) relaxation in the primal relaxation step (to compute `xbar`)
 * `relax` – (`_primal`) which variable to relax (`:primal` or `:dual`)
@@ -131,8 +131,8 @@ mutable struct ChambollePockOptions{
         n::Q,
         x::P,
         ξ::T,
-        primal_stepsize::Float64,
-        dual_stepsize::Float64;
+        primal_stepsize::Float64=1/sqrt(8),
+        dual_stepsize::Float64=1/sqrt(8);
         acceleration::Float64=0.0,
         relaxation::Float64=1.0,
         relax::Symbol=:primal,
@@ -198,7 +198,7 @@ function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, �
             o.m,
             p.adjoint_linearized_operator(
                 o.m,
-                vector_transpor_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ,
+                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ,
             ),
             o.x,
             o.vector_transport_method,
@@ -247,7 +247,7 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             o.n,
             1 / o.dual_stepsize *
             (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ) -
-            p.fordward_operator(
+            p.forward_operator(
                 o.m,
                 vector_transport_to(
                     p.M,
@@ -263,7 +263,7 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             p.N,
             o.n,
             1 / o.dual_stepsize * (
-                vector_transport_to(p.N, o.nOld, ξ_old, o.n, o.vector_transport_method) -
+                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
                 o.n
             ) - inverse_retract(
                 p.N,
@@ -284,7 +284,7 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             ),
         )
     else
-        error("Unknown ChambollePock variant $(o.variant).")
+        throw(DomainError(o.variant, "Unknown Chambolle–Pock variant, allowed are `:exact` or `:linearized`."))
     end
 end
 #

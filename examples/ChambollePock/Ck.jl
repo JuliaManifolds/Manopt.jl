@@ -36,19 +36,19 @@ function Ck(p, o, x_old, ξ_bar_old)
 end
 
 struct DebugCk <: DebugAction
-    print::Function
+    io::IO
     prefix::String
     storage::StoreOptionsAction
     function DebugCk(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξbar)), print::Function=print
+        a::StoreOptionsAction=StoreOptionsAction((:x, :ξbar)), io::IO=stdout,
     )
-        return new(print, "C(k): ", a)
+        return new(io, "C(k): ", a)
     end
 end
 function (d::DebugCk)(p::P, o::ChambollePockOptions, i::Int) where {P<:PrimalDualProblem}
     if all(has_storage.(Ref(d.storage), [:x, :ξbar])) && i > 0 # all values stored
         x_old, ξ_bar_old = get_storage.(Ref(d.storage), [:x, :ξbar]) #fetch
-        d.print(d.prefix * "$(Ck(p, o, x_old,ξ_bar_old))")
+        print(d.io, d.prefix * "$(Ck(p, o, x_old,ξ_bar_old))")
     end
     return d.storage(p, o, i)
 end
