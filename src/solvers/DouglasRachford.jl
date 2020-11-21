@@ -91,9 +91,9 @@ function DouglasRachford(
 end
 function initialize_solver!(p::ProximalProblem, o::DouglasRachfordOptions) end
 function step_solver!(p::ProximalProblem, o::DouglasRachfordOptions, iter)
-    pP = getProximalMap(p, o.λ(iter), o.s, 1)
+    pP = get_proximal_map(p, o.λ(iter), o.s, 1)
     snew = o.R(p.M, pP, o.s)
-    o.x = getProximalMap(p, o.λ(iter), snew, 2)
+    o.x = get_proximal_map(p, o.λ(iter), snew, 2)
     snew = o.R(p.M, o.x, snew)
     # relaxation
     return o.s = shortest_geodesic(p.M, o.s, snew, o.α(iter))

@@ -100,6 +100,11 @@ Random.seed!(42)
         Xr = random_tangent(Mr, pr)
         @test is_tangent_vector(Mr, pr, Xr)
 
+        Mr2 = Rotations(1) # only one point, so there is no randomness, but well
+        pr2 = random_point(Mr2)
+        @test is_manifold_point(Mr2, pr2)
+        @test is_tangent_vector(Mr2, pr2, random_tangent(Mr2, pr2))
+
         Mspd = SymmetricPositiveDefinite(3)
         pspd = random_point(Mspd)
         @test is_manifold_point(Mspd, pspd; atol=10^(-14))

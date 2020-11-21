@@ -25,14 +25,14 @@ Decorators indicate this by returning `Val{true}` for further dispatch.
 
 The default is `Val{false}`, i.e. by default an options is not decorated.
 """
-dispatch_options_decorator(O::Options) = Val(false)
+dispatch_options_decorator(::Options) = Val(false)
 
 """
     is_options_decorator(o::Options)
 
 Indicate, whether [`Options`](@ref) `o` are of decorator type.
 """
-is_options_decorator(O::Options) = _extract_val(dispatch_options_decorator(O))
+is_options_decorator(o::Options) = _extract_val(dispatch_options_decorator(o))
 
 #
 # StoppingCriterion meta
@@ -53,6 +53,7 @@ By default each `StoppingCriterion` should provide a fiels `reason` to provide
 details when a criteion is met (and that is empty otherwise).
 """
 abstract type StoppingCriterion end
+
 @doc raw"""
     StoppingCriterionGroup <: StoppingCriterion
 
@@ -92,17 +93,20 @@ abstract type Stepsize end
 type for specifying an evaluation order for any cyclicly evaluated algorithms
 """
 abstract type EvalOrder end
+
 """
     LinearEvalOrder <: EvalOrder
 evaluate in a linear order, i.e. for each cycle of length l evaluate in the
 order 1,2,...,l.
 """
 mutable struct LinearEvalOrder <: EvalOrder end
+
 """
     RandomEvalOrder <: EvalOrder
 choose a random order for each evaluation of the l functionals.
 """
 mutable struct RandomEvalOrder <: EvalOrder end
+
 """
     FixedRandomEvalOrder <: EvalOrder
 Choose a random order once and evaluate always in this order, i.e. for
@@ -175,20 +179,21 @@ mutable struct StoreOptionsAction <: AbstractOptionsAction
     values::Dict{Symbol,<:Any}
     keys::NTuple{N,Symbol} where {N}
     once::Bool
-    lastStored::Int
+    last_stored::Int
     function StoreOptionsAction(
         keys::NTuple{N,Symbol} where {N}=NTuple{0,Symbol}(), once=true
     )
         return new(Dict{Symbol,Any}(), keys, once, -1)
     end
 end
-function (a::StoreOptionsAction)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (a::StoreOptionsAction)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
     #update values (maybe only once)
-    if !a.once || a.lastStored != i
-        merge!(a.values, Dict(key => getproperty(o, key) for key in a.keys))
+    if !a.once || a.last_stored != i
+        merge!(a.values, Dict{Symbol,Any}(key => getproperty(o, key) for key in a.keys))
     end
-    return a.lastStored = i
+    return a.last_stored = i
 end
+
 """
     get_storage(a,key)
 
@@ -196,6 +201,7 @@ return the internal value of the [`StoreOptionsAction`](@ref) `a` at the
 `Symbol` `key`.
 """
 get_storage(a::StoreOptionsAction, key) = a.values[key]
+
 """
     get_storage(a,key)
 
@@ -203,6 +209,7 @@ return whether the [`StoreOptionsAction`](@ref) `a` has a value stored at the
 `Symbol` `key`.
 """
 has_storage(a::StoreOptionsAction, key) = haskey(a.values, key)
+
 """
     update_storage!(a,o)
 
@@ -212,6 +219,7 @@ the [`Options`](@ref) `o`.
 function update_storage!(a::StoreOptionsAction, o::O) where {O<:Options}
     return update_storage!(a, Dict(key => getproperty(o, key) for key in a.keys))
 end
+
 """
     update_storage!(a,o)
 

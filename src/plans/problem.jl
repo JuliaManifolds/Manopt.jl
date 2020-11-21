@@ -23,7 +23,7 @@ end
 function get_gradient(p::Problem, x)
     return throw(ErrorException("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x))."))
 end
-function getProximalMap(p::Problem, λ, x, i)
+function get_proximal_map(p::Problem, λ, x, i)
     return throw(ErrorException("No proximal map No. $(i) found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ))."))
 end
 function get_subgradient(p::Problem, x)

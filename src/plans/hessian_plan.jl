@@ -204,7 +204,7 @@ function approxHessianFD(
 end
 
 @doc raw"""
-    stopIfResidualIsReducedByFactor <: StoppingCriterion
+    StopIfResidualIsReducedByFactor <: StoppingCriterion
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a factor compared to the norm of the initial residual, i.e.
@@ -220,22 +220,22 @@ In this case the algorithm reached linear convergence.
 
 # Constructor
 
-    stopIfResidualIsReducedByFactor(iRN, κ)
+    StopIfResidualIsReducedByFactor(iRN, κ)
 
-initialize the stopIfResidualIsReducedByFactor functor to indicate to stop after
+initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
 iRN times κ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct stopIfResidualIsReducedByFactor <: StoppingCriterion
+mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
     initialResidualNorm::Float64
     reason::String
-    stopIfResidualIsReducedByFactor(iRN::Float64, κ::Float64) = new(κ, iRN, "")
+    StopIfResidualIsReducedByFactor(iRN::Float64, κ::Float64) = new(κ, iRN, "")
 end
-function (c::stopIfResidualIsReducedByFactor)(
+function (c::StopIfResidualIsReducedByFactor)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm * c.κ && i > 0
@@ -246,7 +246,7 @@ function (c::stopIfResidualIsReducedByFactor)(
 end
 
 @doc raw"""
-    stopIfResidualIsReducedByPower <: StoppingCriterion
+    StopIfResidualIsReducedByPower <: StoppingCriterion
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a power of 1+θ compared to the norm of the initial residual, i.e.
@@ -262,22 +262,22 @@ algorithm reached superlinear convergence.
 
 # Constructor
 
-    stopIfResidualIsReducedByPower(iRN, θ)
+    StopIfResidualIsReducedByPower(iRN, θ)
 
-initialize the stopIfResidualIsReducedByFactor functor to indicate to stop after
+initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
 iRN to the power of 1+θ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct stopIfResidualIsReducedByPower <: StoppingCriterion
+mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
     initialResidualNorm::Float64
     reason::String
-    stopIfResidualIsReducedByPower(iRN::Float64, θ::Float64) = new(θ, iRN, "")
+    StopIfResidualIsReducedByPower(iRN::Float64, θ::Float64) = new(θ, iRN, "")
 end
-function (c::stopIfResidualIsReducedByPower)(
+function (c::StopIfResidualIsReducedByPower)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1 + c.θ) && i > 0

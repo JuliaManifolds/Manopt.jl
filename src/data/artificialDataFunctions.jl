@@ -9,6 +9,15 @@ import LinearAlgebra: I, Diagonal
     artificialIn_SAR_image([pts=500])
 generate an artificial InSAR image, i.e. phase valued data, of size `pts` x
 `pts` points.
+
+This data set was introduced for the numerical examples in
+
+> Bergmann, R., Laus, F., Steidl, G., Weinmann, A.:
+> _Second Order Differences of Cyclic Data and Applications in Variational Denoising_
+> SIAM J. Imaging Sci., 7(4), 2916–2953, 2014.
+> doi: [10.1137/140969993](https://dx.doi.org/10.1137/140969993)
+> arxiv: [1405.5349](https://arxiv.org/abs/1405.5349)
+
 """
 function artificialIn_SAR_image(pts::Integer)
     # variables
@@ -48,11 +57,8 @@ function artificialIn_SAR_image(pts::Integer)
         Yr = cosS * values[j] + sinS * values[i]
         k3 = 0.0
         for m in 1:8
-            k3 += if (abs(Xr + midP[1] + m * l) + abs(Yr + midP[2] + m * l)) <= l
-                2 * pi * (m / 8)
-            else
-                0.0
-            end
+            in_range = (abs(Xr + midP[1] + m * l) + abs(Yr + midP[2] + m * l)) ≤ l
+            k3 += in_range ? 2 * pi * (m / 8) : 0.0
         end
         img[i, j] = mod(k1 + k2 + k3 - pi, 2 * pi) + pi
     end
@@ -68,6 +74,15 @@ Creates a Signal of (phase-valued) data represented on the
 # Optional
 * `pts` – (`500`) number of points to sample the function.
 * `slope` – (`4.0`) initial slope that gets increased afterwards
+
+This data set was introduced for the numerical examples in
+
+> Bergmann, R., Laus, F., Steidl, G., Weinmann, A.:
+> _Second Order Differences of Cyclic Data and Applications in Variational Denoising_
+> SIAM J. Imaging Sci., 7(4), 2916–2953, 2014.
+> doi: [10.1137/140969993](https://dx.doi.org/10.1137/140969993)
+> arxiv: [1405.5349](https://arxiv.org/abs/1405.5349)
+
 """
 function artificial_S1_slope_signal(pts::Integer=500, slope::Float64=4.0)
     t = range(0.0, 1.0; length=pts)
@@ -101,6 +116,13 @@ to $[-\pi,\pi)$.
 
 # Optional
 * `pts` – (`500`) number of points to sample the function
+
+> Bergmann, R., Laus, F., Steidl, G., Weinmann, A.:
+> _Second Order Differences of Cyclic Data and Applications in Variational Denoising_
+> SIAM J. Imaging Sci., 7(4), 2916–2953, 2014.
+> doi: [10.1137/140969993](https://dx.doi.org/10.1137/140969993)
+> arxiv: [1405.5349](https://arxiv.org/abs/1405.5349)
+
 """
 function artificial_S1_signal(pts::Integer=500)
     t = range(0.0, 1.0; length=pts)
@@ -112,9 +134,11 @@ end
 evaluate the example signal $f(x), x ∈  [0,1]$,
 of phase-valued data introduces in Sec. 5.1 of
 
-> Bergmann, Laus, Steidl, Weinmann, Second Order Differences of Cyclic Data and
-> Applications in Variational Denoising, SIAM J. Imaging Sci., 7(4), 2916–2953, 2014.
+> Bergmann, R., Laus, F., Steidl, G., Weinmann, A.:
+> _Second Order Differences of Cyclic Data and Applications in Variational Denoising_
+> SIAM J. Imaging Sci., 7(4), 2916–2953, 2014.
 > doi: [10.1137/140969993](https://dx.doi.org/10.1137/140969993)
+> arxiv: [1405.5349](https://arxiv.org/abs/1405.5349)
 
 for values outside that intervall, this Signal is `missing`.
 """
@@ -148,6 +172,16 @@ generate an artificial image of data on the 2 sphere,
 
 # Arguments
 * `pts` – (`64`) size of the image in `pts`$\times$`pts` pixel.
+
+This example dataset was used in the numerical example in Section 5.5 of
+
+> Laus, F., Nikolova, M., Persch, J., Steidl, G.:
+> _A Nonlocal Denoising Algorithm for Manifold-Valued Images Using Second Order Statistics_,
+> SIAM J. Imaging Sci., 10(1), 416–448, 2017.
+> doi: [ 10.1137/16M1087114](https://dx.doi.org/10.1137/16M1087114)
+> arxiv: [1607.08481](https://arxiv.org/abs/1607.08481)
+
+It is based on [`artificial_S2_rotation_image`](@ref) extended by small whirl patches.
 """
 function artificial_S2_whirl_image(pts::Int=64)
     M = Sphere(2)
@@ -186,6 +220,15 @@ creates an image with a rotation on each axis as a parametrization.
 # Optional Parameters
 * `pts` – (`64`) number of pixels along one dimension
 * `rotations` – (`(.5,.5)`) number of total rotations performed on the axes.
+
+This dataset was used in the numerical example of Section 5.1 of
+
+> Bačák, M., Bergmann, R., Steidl, G., Weinmann, A.:
+> _A Second Order Non-Smooth Variational Model for Restoring Manifold-Valued Images_
+> SIAM J. Sci. Comput. 38(1), A567–A597, 2016.
+> doi: [10.1137/15M101988X](https://dx.doi.org/10.1137/15M101988X)
+> arxiv: [1506.02409](https://arxiv.org/abs/1506.02409)
+
 """
 function artificial_S2_rotation_image(
     pts::Int=64, rotations::Tuple{Float64,Float64}=(0.5, 0.5)
@@ -210,6 +253,8 @@ end
 
 create a whirl within the `pts`$\times$`pts` patch of
 [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html)(@ref)`(2)`-valued image data.
+
+These patches are used within [`artificial_S2_whirl_image`](@ref).
 
 # Optional Parameters
 * `pts` – (`5`) size of the patch. If the number is odd, the center is the north
@@ -259,6 +304,15 @@ The remaining points are defined as
     b_3^- &= \exp_{p_3}-\frac{\pi}{8\sqrt{2}}\begin{pmatrix}-1&1&0\end{pmatrix}^{\mathrm{T}}.
 \end{aligned}
 ````
+
+This example was used within minimization of acceleration of the paper
+
+> Bergmann, R., Gousenbourger, P.-Y.:
+> _A variational model for data fitting on manifolds by minimizing the acceleration of a Bézier curve_,
+> Front. Appl. Math. Stat. 12, 2018.
+> doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059)
+> arxiv: [1807.10090](https://arxiv.org/abs/1807.10090)
+
 """
 function artificial_S2_composite_bezier_curve()
     M = Sphere(2)
@@ -303,6 +357,15 @@ end
 
 create an artificial image of symmetric positive definite matrices of size
 `pts`$\times$`pts` pixel with a jump of size `stepsize`.
+
+This dataset was used in the numerical example of Section 5.2 of
+
+> Bačák, M., Bergmann, R., Steidl, G., Weinmann, A.:
+> _A Second Order Non-Smooth Variational Model for Restoring Manifold-Valued Images_
+> SIAM J. Sci. Comput. 38(1), A567–A597, 2016.
+> doi: [10.1137/15M101988X](https://dx.doi.org/10.1137/15M101988X)
+> arxiv: [1506.02409](https://arxiv.org/abs/1506.02409)
+
 """
 function artificial_SPD_image(pts::Int=64, stepsize=1.5)
     r = range(0; stop=1 - 1 / pts, length=pts)
@@ -334,6 +397,15 @@ end
 
 create an artificial image of symmetric positive definite matrices of size
 `pts`$\times$`pts` pixel with right hand side `fraction` is moved upwards.
+
+This data set was introduced in the numerical examples of Section of
+
+> Bergmann, R., Persch, J., Steidl, G.:
+> _A Parallel Douglas Rachford Algorithm for Minimizing ROF-like Functionals on Images with Values in Symmetric Hadamard Manifolds_
+> SIAM J. Imaging. Sci. 9(3), pp. 901-937, 2016.
+> doi: [10.1137/15M1052858](https://dx.doi.org/10.1137/15M1052858)
+> arxiv: [1512.02814](https://arxiv.org/abs/1512.02814)
+
 """
 function artificial_SPD_image2(pts=64, fraction=0.66)
     Zl = 4.0 * Matrix{Float64}(I, 3, 3)
@@ -394,6 +466,15 @@ signal on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/mani
    half sphere.
 * `interval` – (`[0,2*π]`) range to sample the lemniscate at, the default value
   refers to one closed curve
+
+This dataset was used in the numerical example of Section 5.1 of
+
+> Bačák, M., Bergmann, R., Steidl, G., Weinmann, A.:
+> _A Second Order Non-Smooth Variational Model for Restoring Manifold-Valued Images_
+> SIAM J. Sci. Comput. 38(1), A567–A597, 2016.
+> doi: [10.1137/15M101988X](https://dx.doi.org/10.1137/15M101988X)
+> arxiv: [1506.02409](https://arxiv.org/abs/1506.02409)
+
 """
 function artificial_S2_lemniscate(
     p, pts::Integer=128, a::Float64=π / 2.0, interval::Array{Float64,1}=[0.0, 2.0 * π]
@@ -415,7 +496,16 @@ the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphe
 # Optional Values
  * `a` – (`π/2`) defines a half axis of the Lemniscate to cover a
    half sphere.
-"""
+
+This dataset was used in the numerical example of Section 5.1 of
+
+> Bačák, M., Bergmann, R., Steidl, G., Weinmann, A.:
+> _A Second Order Non-Smooth Variational Model for Restoring Manifold-Valued Images_
+> SIAM J. Sci. Comput. 38(1), A567–A597, 2016.
+> doi: [10.1137/15M101988X](https://dx.doi.org/10.1137/15M101988X)
+> arxiv: [1506.02409](https://arxiv.org/abs/1506.02409)
+
+ """
 function artificial_S2_lemniscate(p, t::Float64, a::Float64=π / 2.0)
     M = Sphere(2)
     tP = 2.0 * Float64(p[1] >= 0.0) - 1.0 # Take north or south pole

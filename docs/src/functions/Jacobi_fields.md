@@ -26,5 +26,5 @@ The following weights functions are available
 
 ```@autodocs
 Modules = [Manopt]
-Pages   = ["jacobiFields.jl"]
+Pages   = ["Jacobi_fields.jl"]
 ```

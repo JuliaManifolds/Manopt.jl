@@ -1,24 +1,22 @@
-@doc raw"""
-# Minimize the acceleration of a composite Bézier curve on $\mathbb R^3$ with interpolation
-
-This example appeared in Sec. 5.2, second example, of
-> Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds
-> by minimizing the acceleration of a Bézier curve_.
-> Frontiers in Applied Mathematics and Statistics, 2018.
-> doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
-> arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
-"""
 #
-# Load Manopt and required packages
+# Minimize the acceleration of a composite Bézier curve on $\mathbb R^3$ with approximation
+#
+# This example appeared in Sec. 5.2, second example, of
+#
+# > Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds
+# > by minimizing the acceleration of a Bézier curve_.
+# > Frontiers in Applied Mathematics and Statistics, 2018.
+# > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
+# > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 #
 using Manopt, Manifolds, Colors, ColorSchemes, Makie
-λ = 50.0
 
+experiment_name = "Bezier_R3_Approximation"
+results_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier")
+!isdir(results_folder) && mkdir(results_folder)
+λ = 50.0
 curve_samples = [range(0, 3; length=1601)...] # sample curve for the gradient
 curve_samples_plot = [range(0, 3; length=1601)...] # sample curve for asy exports
-
-experimentFolder = "examples/Minimize_Acceleration/R3_Bezier/"
-experimentName = "Bezier_R3_Approximation"
 
 sColor = RGBA{Float64}(colorant"#BBBBBB")
 dColor = RGBA{Float64}(colorant"#EE7733") # data Color: Tol Vibrant Orange
@@ -94,7 +92,6 @@ scatter!(
     [p0[3], p1[3], p2[3], p3[3]];
     color=pColor,
 )
-
 lines!(scene, resPmat[1, :], resPmat[2, :], resPmat[3, :]; color=ξColor, linewidth=1.5)
 scatter!(
     scene,
@@ -103,3 +100,4 @@ scatter!(
     [res_cp[1][3], res_cp[2][3], res_cp[3][3], res_cp[4][3]];
     color=dColor,
 )
+Makie.save(joinpath(results_folder, experiment_name * "-result.png"), scene)

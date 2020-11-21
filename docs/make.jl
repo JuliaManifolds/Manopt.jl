@@ -18,13 +18,7 @@ for (i, tutorial) in enumerate(tutorials)
     global TutorialMenu
     sourceFile = joinpath(tutorialsInputPath, tutorial * ".jl")
     targetFile = joinpath(tutorialsOutputPath, tutorial * "md")
-    Literate.markdown(
-        sourceFile,
-        tutorialsOutputPath;
-        name=tutorial,
-        # codefence = "```julia" => "```",
-        credit=false,
-    )
+    Literate.markdown(sourceFile, tutorialsOutputPath; name=tutorial, credit=false)
     push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
 end
 makedocs(;
@@ -38,10 +32,11 @@ makedocs(;
         "Plans" => "plans/index.md",
         "Solvers" => [
             "Introduction" => "solvers/index.md",
+            "Chambolle-Pock" => "solvers/ChambollePock.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
-            "Gradient Descent" => "solvers/gradientDescent.md",
+            "Gradient Descent" => "solvers/gradient_descent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Subgradient method" => "solvers/subgradient.md",
@@ -52,13 +47,13 @@ makedocs(;
         "Functions" => [
             "Introduction" => "functions/index.md",
             "Bézier curves" => "functions/bezier.md",
-            "Cost functions" => "functions/costFunctions.md",
+            "Cost functions" => "functions/costs.md",
             "Differentials" => "functions/differentials.md",
-            "Adjoint Differentials" => "functions/adjointDifferentials.md",
+            "Adjoint Differentials" => "functions/adjoint_differentials.md",
             "Gradients" => "functions/gradients.md",
-            "JacobiFields" => "functions/jacobiFields.md",
-            "Proximal Maps" => "functions/proximalMaps.md",
-            "Specific manifold functions" => "functions/manifold.md",
+            "Jacobi Fields" => "functions/Jacobi_fields.md",
+            "Proximal Maps" => "functions/proximal_maps.md",
+            "Specific Manifold Functions" => "functions/manifold.md",
         ],
         "Helpers" => [
             "Data" => "helpers/data.md",

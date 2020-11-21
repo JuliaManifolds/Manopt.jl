@@ -7,8 +7,15 @@
 # [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s.
 #
 # We first initialize the manifold
-exportFolder = joinpath(
-    @__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials"
+exportFolder = joinpath( #src
+    @__DIR__,
+    "..",
+    "..",
+    "docs",
+    "src",
+    "assets",
+    "images",
+    "tutorials", #src
 ) #src
 using Manopt, Manifolds
 # and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)

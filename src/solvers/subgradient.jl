@@ -4,7 +4,8 @@ perform a subgradient method $x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))$,
 
 where $\mathrm{retr}$ is a retraction, $s_k$ can be specified as a function but is
 usually set to a constant value. Though the subgradient might be set valued,
-the argument `∂F` should always return _one_ element from the subgradient.
+the argument `∂F` should always return _one_ element from the subgradient, but
+not necessarily determistic.
 
 # Input
 * `M` – a manifold $\mathcal M$
@@ -16,16 +17,16 @@ the argument `∂F` should always return _one_ element from the subgradient.
 # Optional
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `xOpt` if returned
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
+  complete [`Options`](@ref) re returned. This can be used to access recorded values.
+  If set to false (default) just the optimal value `xOpt` if returned
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `xOpt` – the resulting (approximately critical) point of gradientDescent
+* `xOpt` – the resulting (approximately critical) point of the subgradient method
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
@@ -35,7 +36,7 @@ function subgradient_method(
     ∂F::TdF,
     x;
     retraction::TRetr=ExponentialRetraction(),
-    stepsize::Stepsize=DecreasingStepsize(injectivity_radius(M, x) / 5),
+    stepsize::Stepsize=ConstantStepsize(1.0),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     return_options=false,
     kwargs..., #especially may contain debug
@@ -52,14 +53,14 @@ function subgradient_method(
 end
 function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.xOptimal = o.x
-    return o.∂ = zero_tangent_vector(p.M, o.x)
+    o.∂ = zero_tangent_vector(p.M, o.x)
+    return o
 end
 function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions, iter)
     o.∂ = get_subgradient(p, o.x)
     s = get_stepsize(p, o, iter)
     retract!(p.M, o.x, o.x, -s * o.∂, o.retraction_method)
-    if get_cost(p, o.x) < get_cost(p, o.xOptimal)
-        o.xOptimal = o.x
-    end
+    (get_cost(p, o.x) < get_cost(p, o.xOptimal)) && (o.xOptimal = o.x)
+    return o
 end
 get_solver_result(o::SubGradientMethodOptions) = o.xOptimal

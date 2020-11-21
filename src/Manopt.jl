@@ -91,15 +91,16 @@ include("plans/plan.jl")
 # Functions
 include("functions/manifold.jl")
 include("functions/bezier_curves.jl")
-include("functions/adjointDifferentials.jl")
+include("functions/adjointdifferentials.jl")
 include("functions/costs.jl")
 include("functions/differentials.jl")
 include("functions/gradients.jl")
-include("functions/jacobiFields.jl")
-include("functions/proximalMaps.jl")
+include("functions/Jacobi_fields.jl")
+include("functions/proximal_maps.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
@@ -137,26 +138,37 @@ export adjoint_differential_geodesic_startpoint, adjoint_differential_geodesic_e
 export adjoint_differential_exp_basepoint, adjoint_differential_exp_argument
 export adjoint_differential_log_basepoint, adjoint_differential_log_argument
 export adjoint_differential_forward_logs, adjoint_differential_bezier_control
+
 export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
 export render_asymptote
+
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export cost_L2_acceleration_bezier, cost_acceleration_bezier
+
 export differential_geodesic_startpoint, differential_geodesic_endpoint
 export differential_exp_basepoint, differential_exp_argument
 export differential_log_basepoint, differential_log_argument, differential_forward_logs
 export differential_bezier_control
+
 export linesearch_backtrack
 export jacobi_field, adjoint_Jacobi_field
+
 export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇distance
 export ∇acceleration_bezier, ∇L2_acceleration_bezier
+
 export get_cost,
-    get_gradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
+    get_gradient, get_subgradient, get_proximal_map, get_options, get_initial_stepsize
+
 export getHessian, approxHessianFD
+
 export meanSquaredError, meanAverageError
-export prox_distance, prox_TV, prox_parallel_TV, prox_TV2, prox_collaborative_TV
+
+export prox_distance, prox_TV, prox_parallel_TV, prox_TV2, project_collaborative_TV
+
 export random_point, random_tangent
-export stopIfResidualIsReducedByFactor,
-    stopIfResidualIsReducedByPower,
+
+export StopIfResidualIsReducedByFactor,
+    StopIfResidualIsReducedByPower,
     StopWhenCurvatureIsNegative,
     StopWhenTrustRegionIsExceeded
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
@@ -167,16 +179,25 @@ export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, Debu
 export DebugChange, DebugIterate, DebugIteration, DebugDivider
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 export DebugGradient, DebugGradientNorm, DebugStepsize
+export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate
+export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIterate
+export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 
 export RecordGradient, RecordGradientNorm, RecordStepsize
+export RecordPrimalBaseChange,
+    RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
+export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 
 export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
+export PrimalDualProblem
 
 export NelderMead,
     gradient_descent,
     subgradient_method,
     truncated_conjugate_gradient_descent,
-    trust_regions
+    trust_regions,
+    ChambollePock
+
 export cyclic_proximal_point, conjugate_gradient_descent, particle_swarm
 
 export DebugGradient, DebugGradientNorm, DebugStepsize
@@ -191,7 +212,10 @@ export ConjugateGradientDescentOptions,
     NelderMeadOptions,
     TruncatedConjugateGradientOptions,
     TrustRegionsOptions,
-    ParticleSwarmOptions
+    ParticleSwarmOptions,
+    PrimalDualOptions,
+    ChambollePockOptions
+export primal_residual, dual_residual
 
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,

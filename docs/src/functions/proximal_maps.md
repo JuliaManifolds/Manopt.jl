@@ -17,9 +17,9 @@ $\displaystyle\operatorname{prox}_{\lambda\varphi}(x^\star) = x^\star,$
 i.e. a minimizer is a fixed point of the proximal map.
 
 This page lists all proximal maps available within Manopt. To add you own, just
-extend the `functions/proximalMaps.jl` file.
+extend the `functions/proximal_maps.jl` file.
 
 ```@autodocs
 Modules = [Manopt]
-Pages   = ["proximalMaps.jl"]
+Pages   = ["proximal_maps.jl"]
 ```
