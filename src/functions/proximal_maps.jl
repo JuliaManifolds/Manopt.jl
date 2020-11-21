@@ -206,7 +206,7 @@ function prox_TV2(
     )
     return (xR...,)
 end
-function prox_TV2(M::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
+function prox_TV2(::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
     w = @SVector [1.0, -2.0, 1.0]
     x = SVector(pointTuple)
     if p == 1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
@@ -221,7 +221,7 @@ function prox_TV2(M::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
         throw(ErrorException("Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"))
     end
 end
-function prox_TV2(M::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
+function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
     w = @SVector [1.0, -2.0, 1.0]
     x = SVector(pointTuple)
     if p == 1 # Example 3.2 in Bergmann, Laus, Steidl, Weinmann, 2014.
@@ -272,11 +272,12 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
                     JForward = i.I .+ ek.I #i + e_k
                     JBackward = i.I .- ek.I # i - e_k
                     if all(JForward .<= maxInd) && all(JBackward .>= minInd)
-                        jForward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
-                        jBackward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
                         (y[jBackward], y[i], y[jForward]) =
                             prox_TV2(
-                                M.manifold, λ, (y[jBackward], y[i], y[jForward]), p
+                                M.manifold,
+                                λ,
+                                (y[M, JBackward...], y[M, i.I...], y[M, JForward...]),
+                                p,
                             ).data # Compute TV on these
                     end
                 end # if mod 3

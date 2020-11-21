@@ -85,7 +85,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         X = π / 8
         @test differential_log_argument(M, p, q, X) == X
     end
-    @test "forward logs on a multivariate power manifold" begin
+    @testset "forward logs on a multivariate power manifold" begin
         S = Sphere(2)
         M = PowerManifold(S, NestedPowerRepresentation(), 2,2)
         p = [ zeros(3) for i ∈ [1,2], j ∈ [1,2]]
@@ -105,13 +105,15 @@ using Manifolds, Manopt, Test, ManifoldsBase
         X = zero_tangent_vector(M,p)
         X[1,1] .= [0.0, 0.5, 0.5]
         t2 = differential_forward_logs(M,p,X)
-        @test t2[1,1,1] ≈ differential_log_basepoint(S, p[1,1], p[2,1], X[1,1]) +
+        a = differential_log_basepoint(S, p[1,1], p[2,1], X[1,1]) +
             differential_log_argument(S, p[1,1], p[2,1], X[2,1])
+        @test t2[1,1,1] ≈ a
         @test t2[1,2,1] ≈ zero_tangent_vector(S,p[1,2]) atol = 1e-17
         @test t2[2,1,1] ≈ zero_tangent_vector(S,p[2,1]) atol = 1e-17
         @test t2[2,2,1] ≈ zero_tangent_vector(S,p[2,2]) atol = 1e-17
-        @test t2[1,1,2] ≈ differential_log_basepoint(S, p[1,1], p[1,2], X[1,1]) +
+        b = differential_log_basepoint(S, p[1,1], p[1,2], X[1,1]) +
             differential_log_argument(S, p[1,1], p[1,2], X[1,2])
+        @test t2[1,1,2] ≈ b
         @test t2[1,2,2] ≈ zero_tangent_vector(S,p[1,2]) atol = 1e-17
         @test t2[2,1,2] ≈ zero_tangent_vector(S,p[2,1]) atol = 1e-17
         @test t2[2,2,2] ≈ zero_tangent_vector(S,p[2,2]) atol = 1e-17
