@@ -141,7 +141,7 @@ get_subgradient
 
 ```@docs
 ProximalProblem
-getProximalMap
+get_proximal_map
 ```
 
 ### Further planned problems

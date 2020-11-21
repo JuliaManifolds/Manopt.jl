@@ -5,7 +5,7 @@
 #
 export ProximalProblem
 export CyclicProximalPointOptions, DouglasRachfordOptions
-export get_cost, getProximalMap
+export get_cost, get_proximal_map
 export DebugProximalParameter
 export RecordProximalParameter
 
@@ -24,7 +24,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
   functions return more than one entry per function
 
 # See also
-[`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`getProximalMap`](@ref)
+[`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
 """
 mutable struct ProximalProblem{mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <:
                Problem
@@ -48,11 +48,11 @@ mutable struct ProximalProblem{mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractV
     end
 end
 @doc raw"""
-    getProximalMap(p,λ,x,i)
+    get_proximal_map(p,λ,x,i)
 
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
-function getProximalMap(p::ProximalProblem, λ, x, i)
+function get_proximal_map(p::ProximalProblem, λ, x, i)
     if i > length(p.proxes)
         throw(ErrorException("the $(i)th entry does not exists, only $(length(p.proxes)) available."))
     end

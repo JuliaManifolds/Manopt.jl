@@ -157,7 +157,7 @@ export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇di
 export ∇acceleration_bezier, ∇L2_acceleration_bezier
 
 export get_cost,
-    get_gradient, get_subgradient, getProximalMap, get_options, get_initial_stepsize
+    get_gradient, get_subgradient, get_proximal_map, get_options, get_initial_stepsize
 
 export getHessian, approxHessianFD
 

@@ -60,7 +60,7 @@ function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
     c = length(p.proxes)
     λi = o.λ(iter)
     for k in o.order
-        o.x = getProximalMap(p, λi, o.x, k)
+        o.x = get_proximal_map(p, λi, o.x, k)
     end
     return update_cpp_order!(o.order, c, iter, o.orderType)
 end

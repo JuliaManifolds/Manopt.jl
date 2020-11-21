@@ -13,7 +13,7 @@
     # Check Fallbacks of Problen
     @test get_cost(p, o.x) == 0.0
     @test get_gradient(p, o.x) == zero_tangent_vector(M, x)
-    @test_throws ErrorException getProximalMap(p, 1.0, o.x, 1)
+    @test_throws ErrorException get_proximal_map(p, 1.0, o.x, 1)
     @test_throws ErrorException get_subgradient(p, o.x)
     # Additional Specific Debugs
     a1 = DebugGradient(false, io)
