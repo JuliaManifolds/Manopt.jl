@@ -50,8 +50,8 @@ using Manifolds, Manopt, Test, ManifoldsBase
     b = RecordGroup([RecordIteration(), RecordIteration()])
     b(p, o, 1)
     b(p, o, 2)
-    @test b.group[1].recordedValues == [1, 2]
-    @test b.group[2].recordedValues == [1, 2]
+    @test b.group[1].recorded_values == [1, 2]
+    @test b.group[2].recorded_values == [1, 2]
     @test get_record(b) == [(1, 1), (2, 2)]
     #RecordEvery
     c = RecordEvery(a, 10, true)
@@ -64,21 +64,21 @@ using Manifolds, Manopt, Test, ManifoldsBase
     # RecordChange
     c = RecordChange()
     c(p, o, 1)
-    @test c.recordedValues == [0.0] # no x0 -> assume x0 is the first iterate
+    @test c.recorded_values == [0.0] # no x0 -> assume x0 is the first iterate
     o.x = [3.0, 2.0]
     c(p, o, 2)
-    @test c.recordedValues == [0.0, 1.0] # no x0 -> assume x0 is the first iterate
+    @test c.recorded_values == [0.0, 1.0] # no x0 -> assume x0 is the first iterate
     c = RecordChange([4.0, 2.0])
     c(p, o, 1)
-    @test c.recordedValues == [1.0] # no x0 -> assume x0 is the first iterate
+    @test c.recorded_values == [1.0] # no x0 -> assume x0 is the first iterate
     # RecordEntry
     o.x = x
     d = RecordEntry(x, :x)
     d(p, o, 1)
-    @test d.recordedValues == [x]
+    @test d.recorded_values == [x]
     d2 = RecordEntry(typeof(x), :x)
     d2(p, o, 1)
-    @test d2.recordedValues == [x]
+    @test d2.recorded_values == [x]
     # RecordEntryChange
     o.x = x
     e = RecordEntryChange(:x, (p, o, x, y) -> distance(p.M, x, y))
@@ -86,23 +86,23 @@ using Manifolds, Manopt, Test, ManifoldsBase
     e2 = RecordEntryChange(x, :x, (p, o, x, y) -> distance(p.M, x, y))
     @test e.field == e2.field
     e(p, o, 1)
-    @test e.recordedValues == [0.0]
+    @test e.recorded_values == [0.0]
     o.x = [3.0, 2.0]
     e(p, o, 2)
-    @test e.recordedValues == [0.0, 1.0]
+    @test e.recorded_values == [0.0, 1.0]
     # RecordIterate
     o.x = x
     f = RecordIterate(x)
     @test_throws ErrorException RecordIterate()
     f(p, o, 1)
-    @test f.recordedValues == [x]
+    @test f.recorded_values == [x]
     # RecordCost
     g = RecordCost()
     g(p, o, 1)
-    @test g.recordedValues == [0.0]
+    @test g.recorded_values == [0.0]
     o.x = [3.0, 2.0]
     g(p, o, 2)
-    @test g.recordedValues == [0.0, 1.0]
+    @test g.recorded_values == [0.0, 1.0]
     #RecordFactory
     o.∇ = [0.0, 0.0]
     rf = RecordFactory(o, [:Cost, :∇])

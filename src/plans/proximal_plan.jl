@@ -175,7 +175,7 @@ recoed the current iterates proximal point algorithm parameter given by in
 [`Options`](@ref)s `o.λ`.
 """
 mutable struct RecordProximalParameter <: RecordAction
-    recordedValues::Array{Float64,1}
+    recorded_values::Array{Float64,1}
     RecordProximalParameter() = new(Array{Float64,1}())
 end
 function (r::RecordProximalParameter)(

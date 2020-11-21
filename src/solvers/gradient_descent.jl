@@ -59,4 +59,4 @@ function step_solver!(p::P, o::O, iter) where {P<:GradientProblem,O<:GradientDes
     o.∇ = get_gradient(p, o.x)
     return o.x = retract(p.M, o.x, -get_stepsize(p, o, iter) * o.∇, o.retraction_method)
 end
-get_solver_result(o::O) where {O<:GradientDescentOptions} = o.x
+get_solver_result(o::GradientDescentOptions) = o.x

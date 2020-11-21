@@ -37,13 +37,13 @@
     # Additional Specific Records
     b1 = RecordGradient(o.∇)
     b1(p, o, 1)
-    @test b1.recordedValues == [o.∇]
+    @test b1.recorded_values == [o.∇]
     b2 = RecordGradientNorm()
     b2(p, o, 1)
-    @test b2.recordedValues == [1.0]
+    @test b2.recorded_values == [1.0]
     b3 = RecordStepsize()
     b3(p, o, 1)
     b3(p, o, 2)
     b3(p, o, 3)
-    @test b3.recordedValues == [1.0, 1.0, 1.0]
+    @test b3.recorded_values == [1.0, 1.0, 1.0]
 end

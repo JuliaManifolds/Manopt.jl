@@ -52,7 +52,7 @@ function (d::DebugCk)(p::P, o::ChambollePockOptions, i::Int) where {P<:PrimalDua
 end
 
 struct RecordCk <: RecordAction
-    recordedValues::Array{Float64,1}
+    recorded_values::Array{Float64,1}
     storage::StoreOptionsAction
     function RecordCk(a::StoreOptionsAction=StoreOptionsAction((:x, :ξbar)))
         return new(Array{Float64,1}(), a)

@@ -310,10 +310,10 @@ mutable struct DebugDualResidual <: DebugAction
         return new(io, "Dual Residual: ", a)
     end
     function DebugDualResidual(
-        values::Tuple{P,P,T},
+        values::Tuple{P,T,Q},
         a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
-    ) where {P,T}
+    ) where {P,T,Q}
         update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
         return new(io, "Dual Residual: ", a)
     end
@@ -382,7 +382,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
         io::IO=stdout,
     ) where {P,Q,T}
         update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "PD Residual", a)
+        return new(io, "PD Residual: ", a)
     end
 end
 function (d::DebugPrimalDualResidual)(
@@ -527,71 +527,39 @@ end
 Create an [`RecordAction`](@ref) that records the primal value change,
 i.e. [`RecordChange`](@ref), since we just redord the change of `o.x`.
 """
-RecordPrimalChange(a) = RecordChange(a)
+RecordPrimalChange() = RecordChange()
 
 """
-    RecordDualBaseIterate(e)
+    RecordDualBaseIterate(x)
 
 Create an [`RecordAction`](@ref) that records the dual base point,
 i.e. [`RecordIterate`](@ref), i.e. `o.x`.
 """
-RecordPrimalIterate(e) = RecordIterate(e)
+RecordPrimalIterate(x) = RecordIterate(x)
 
 """
-    RecordDualIterate(e)
+    RecordDualIterate(ξ)
 
 Create an [`RecordAction`](@ref) that records the dual base point,
 i.e. [`RecordEntry`](@ref) of `o.ξ`, so .
 """
-RecordDualIterate(e) = RecordEntry(e, :ξ)
+RecordDualIterate(ξ) = RecordEntry(ξ, :ξ)
 
-# RecordDualChange(e) = RecordEntryChange(e, :ξ, (p,o,ξ,ν) -> norm(p.M,o.n,ξ,ν) )
 """
-    RecordDualChange <: RecordAction
-
-Create an [`RecordAction`](@ref) that records the dual value change.
-While this is similar to a [`RecordEntry`](@ref), we further have to store
-the base point to compute the change.
-
-# constructor
-
-    RecordDualChange(a=StoreOptionsAction((:ξ,:n))
-    RecordDualChange(values::Tuple{T,P},a=StoreOptionsAction((:ξ,:n))
+    RecordDualChange()
 
 Create the action either with a given (shared) Storage, which can be set to the
 `values` Tuple, if that is provided).
 """
-mutable struct RecordDualChange <: RecordAction
-    recordedValues::Array{Float64,1}
-    storage::StoreOptionsAction
-    function RecordDualChange(a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)))
-        return new(Array{Float64,1}(), a)
-    end
-    function RecordDualChange(
-        values::Tuple{T,P}, a::StoreOptionsAction=StoreOptionsAction((:ξ, :n))
-    ) where {T,P}
-        update_storage!(a, Dict{Symbol,Any}(k => v for (k, v) in zip((:ξ, :n), values)))
-        return new(Array{Float64,1}(), a)
-    end
-end
-function (r::RecordDualChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    v = 0.0
-    if all(has_storage.(Ref(r.storage), [:n, :ξ])) # both old values stored
-        n_old = get_storage(r.storage, :n)
-        ξ_old = get_storage(r.storage, :ξ)
-        v = norm(p.N, o.n, vector_transport_to(p.N, n_old, ξ_old, o.n) - o.ξ)
-    end
-    Manopt.record_or_reset!(r, v, i)
-    return r.storage(p, o, i)
-end
+RecordDualChange() = RecordEntryChange(:ξ, (p, o, x, y) -> distance(p.N, x, y))
 
 """
-    RecordDualBaseIterate(e)
+    RecordDualBaseIterate(n)
 
 Create an [`RecordAction`](@ref) that records the dual base point,
 i.e. [`RecordEntry`](@ref) of `o.n`.
 """
-RecordDualBaseIterate(e) = RecordEntry(e, :n)
+RecordDualBaseIterate(n) = RecordEntry(n, :n)
 
 """
     RecordDualBaseChange(e)
@@ -599,19 +567,19 @@ RecordDualBaseIterate(e) = RecordEntry(e, :n)
 Create an [`RecordAction`](@ref) that records the dual base point change,
 i.e. [`RecordEntryChange`](@ref) of `o.n` with distance to the last value to store a value.
 """
-RecordDualBaseChange(e) = RecordEntryChange(e, :n, (p, o, x, y) -> distance(p.N, x, y))
+RecordDualBaseChange() = RecordEntryChange(:n, (p, o, x, y) -> distance(p.N, x, y))
 
 """
-    RecordPrimalBaseIterate(e)
+    RecordPrimalBaseIterate(x)
 
 Create an [`RecordAction`](@ref) that records the primal base point,
 i.e. [`RecordEntry`](@ref) of `o.m`.
 """
-RecordPrimalBaseIterate(e) = RecordEntry(e, :m)
+RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
 """
-    RecordPrimalBaseChange(e)
+    RecordPrimalBaseChange()
 
 Create an [`RecordAction`](@ref) that records the primal base point change,
 i.e. [`RecordEntryChange`](@ref) of `o.m` with distance to the last value to store a value.
 """
-RecordPrimalBaseChange(e) = RecordEntryChange(e, :m, (p, o, x, y) -> distance(p.M, x, y))
+RecordPrimalBaseChange() = RecordEntryChange(:m, (p, o, x, y) -> distance(p.M, x, y))

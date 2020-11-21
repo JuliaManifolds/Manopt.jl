@@ -670,7 +670,7 @@ record the gradient evaluated at the current iterate
 initialize the [`RecordAction`](@ref) to the corresponding type of the tangent vector.
 """
 mutable struct RecordGradient{T} <: RecordAction
-    recordedValues::Array{T,1}
+    recorded_values::Array{T,1}
     RecordGradient{T}() where {T} = new(Array{T,1}())
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
@@ -686,7 +686,7 @@ end
 record the norm of the current gradient
 """
 mutable struct RecordGradientNorm <: RecordAction
-    recordedValues::Array{Float64,1}
+    recorded_values::Array{Float64,1}
     RecordGradientNorm() = new(Array{Float64,1}())
 end
 function (r::RecordGradientNorm)(
@@ -701,7 +701,7 @@ end
 record the step size
 """
 mutable struct RecordStepsize <: RecordAction
-    recordedValues::Array{Float64,1}
+    recorded_values::Array{Float64,1}
     RecordStepsize() = new(Array{Float64,1}())
 end
 function (r::RecordStepsize)(

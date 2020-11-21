@@ -20,7 +20,7 @@ Random.seed!(29)
         nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
         @test any(map(!, nonincreasing)) == false
 
-        x2 = o = NelderMead(M, Rosenbrock, x0)
+        x2 = NelderMead(M, Rosenbrock, x0)
         @test x == x2
     end
     @testset "Rotations" begin

@@ -119,5 +119,7 @@
         X[1, 1, 1] .= [0.0, 0.5, 0.5]
         norm(project_collaborative_TV(M, 1, p, X, 2, 1)) ≈ 0
         @test norm(project_collaborative_TV(M, 0.5, p, X, 2, 1)) ≈ (norm(X[1, 1, 1]) - 0.5)
+        Nf = PowerManifold(S, NestedPowerRepresentation(), 2, 2, 1)
+        @test_throws ErrorException project_collaborative_TV(Nf, 1, p, X, 2, 1)
     end
 end

@@ -136,4 +136,3 @@ function step_solver!(p::CostProblem, o::NelderMeadOptions, iter)
     # store best
     return o.x = o.population[argmin(o.costs)]
 end
-get_solver_result(p::P, o::O) where {P<:CostProblem,O<:NelderMeadOptions} = o.x

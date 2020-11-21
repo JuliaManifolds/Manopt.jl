@@ -56,5 +56,12 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             callargs_linearized...; relax=:dual, variant=:linearized, return_options=true
         )
         @test get_solver_result(o1a) == o1
+        o2a = ChambollePock(
+            callargs_linearized...;
+            relax=:dual,
+            variant=:linearized,
+            update_dual_base=(p, o, i) -> o.n,
+        )
+        @test o2a ≈ o3
     end
 end

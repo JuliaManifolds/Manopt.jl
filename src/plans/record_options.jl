@@ -24,7 +24,7 @@ initialize internal values, but not trigger any record, the same holds for
 called from within [`stop_solver!`](@ref) which returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
-* `recordedValues` an `Array` of the recorded values.
+* `recorded_values` an `Array` of the recorded values.
 """
 abstract type RecordAction <: AbstractOptionsAction end
 
@@ -88,7 +88,7 @@ has_record(o::Options) = has_record(o, dispatch_options_decorator(o))
 has_record(o::Options, ::Val{true}) = has_record(o.options)
 has_record(o::Options, ::Val{false}) = false
 
-# default - stored in the recordedValues field of the RecordAction
+# default - stored in the recorded_values field of the RecordAction
 @doc raw"""
     get_record(o[,s=:Step])
 
@@ -114,7 +114,7 @@ get_record(o::Options, s, ::Val{false}) = error("No Record decoration found")
 
 return the recorded values stored within a [`RecordAction`](@ref) `r`.
 """
-get_record(r::R) where {R<:RecordAction} = r.recordedValues
+get_record(r::R) where {R<:RecordAction} = r.recorded_values
 
 """
     record_or_reset!(r,v,i)
@@ -125,9 +125,9 @@ value type of the corresponding Recordaction.
 """
 function record_or_reset!(r::R, v, i::Int) where {R<:RecordAction}
     if i > 0
-        push!(r.recordedValues, deepcopy(v))
+        push!(r.recorded_values, deepcopy(v))
     elseif i < 0 && i > typemin(Int) # reset if negative but not stop indication
-        r.recordedValues = Array{typeof(v),1}()
+        r.recorded_values = Array{typeof(v),1}()
     end
 end
 """
@@ -197,7 +197,7 @@ during the last iteration.
   as the last value (to compute the change)
 """
 mutable struct RecordChange <: RecordAction
-    recordedValues::Array{Float64,1}
+    recorded_values::Array{Float64,1}
     storage::StoreOptionsAction
     function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:x,)))
         return new(Array{Float64,1}(), a)
@@ -214,7 +214,7 @@ function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
         i,
     )
     r.storage(p, o, i)
-    return r.recordedValues
+    return r.recorded_values
 end
 
 @doc raw"""
@@ -223,12 +223,12 @@ end
 record a certain fields entry of type {T} during the iterates
 
 # Fields
-* `recordedValues` – the recorded Iterates
+* `recorded_values` – the recorded Iterates
 * `field` – Symbol the entry can be accessed with within [`Options`](@ref)
 
 """
 mutable struct RecordEntry{T} <: RecordAction
-    recordedValues::Array{T,1}
+    recorded_values::Array{T,1}
     field::Symbol
     RecordEntry{T}(f::Symbol) where {T} = new(Array{T,1}(), f)
 end
@@ -244,13 +244,13 @@ end
 record a certain entries change during iterates
 
 # Additional Fields
-* `recordedValues` – the recorded Iterates
+* `recorded_values` – the recorded Iterates
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
 * `storage` – a [`StoreOptionsAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
 mutable struct RecordEntryChange <: RecordAction
-    recordedValues::Vector{Float64}
+    recorded_values::Vector{Float64}
     field::Symbol
     distance::Any
     storage::StoreOptionsAction
@@ -292,7 +292,7 @@ initialize the iterate record array to the type of `x0`, e.g. your initial data.
 initialize the iterate record array to the data type `T`.
 """
 mutable struct RecordIterate{T} <: RecordAction
-    recordedValues::Array{T,1}
+    recorded_values::Array{T,1}
     RecordIterate{T}() where {T} = new(Array{T,1}())
 end
 RecordIterate(::T) where {T} = RecordIterate{T}()
@@ -310,7 +310,7 @@ end
 record the current iteration
 """
 mutable struct RecordIteration <: RecordAction
-    recordedValues::Array{Int,1}
+    recorded_values::Array{Int,1}
     RecordIteration() = new(Array{Int,1}())
 end
 function (r::RecordIteration)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
@@ -323,7 +323,7 @@ end
 record the current cost function value, see [`get_cost`](@ref).
 """
 mutable struct RecordCost <: RecordAction
-    recordedValues::Array{Float64,1}
+    recorded_values::Array{Float64,1}
     RecordCost() = new(Array{Float64,1}())
 end
 function (r::RecordCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
