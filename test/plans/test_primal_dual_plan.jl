@@ -156,7 +156,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
         io = IOBuffer()
 
         for r in [
-            RecordPrimalChange(a),
+            RecordPrimalChange(),
             RecordPrimalIterate(x0),
             RecordDualIterate(ξ0),
             RecordDualChange(),
