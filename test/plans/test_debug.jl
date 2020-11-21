@@ -57,19 +57,10 @@
     # DEbugEntryChange - reset
     o.x = x
     a3 = DebugEntryChange(
-        :x,
-        (p, o, x, y) -> distance(p.M, x, y),
-        StoreOptionsAction((:x,)),
-        "Last: ",
-        io,
+        :x, (p, o, x, y) -> distance(p.M, x, y), StoreOptionsAction((:x,)), "Last: ", io
     )
     a4 = DebugEntryChange(
-        x,
-        :x,
-        (p, o, x, y) -> distance(p.M, x, y),
-        StoreOptionsAction((:x,)),
-        "Last: ",
-        io,
+        x, :x, (p, o, x, y) -> distance(p.M, x, y), StoreOptionsAction((:x,)), "Last: ", io
     )
     a3(p, o, 0) # init
     @test String(take!(io)) == ""

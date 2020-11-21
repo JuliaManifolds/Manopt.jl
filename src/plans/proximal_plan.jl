@@ -156,7 +156,7 @@ mutable struct DebugProximalParameter <: DebugAction
     end
 end
 function (d::DebugProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
-    print(d.io,(i > 0) ? d.prefix * string(o.λ(i)) : "")
+    print(d.io, (i > 0) ? d.prefix * string(o.λ(i)) : "")
     return nothing
 end
 function (d::DebugProximalParameter)(
@@ -179,16 +179,10 @@ mutable struct RecordProximalParameter <: RecordAction
     RecordProximalParameter() = new(Array{Float64,1}())
 end
 function (r::RecordProximalParameter)(
-    ::ProximalProblem,
-    o::CyclicProximalPointOptions,
-    i::Int,
+    ::ProximalProblem, o::CyclicProximalPointOptions, i::Int
 )
     return record_or_reset!(r, o.λ(i), i)
 end
-function (r::RecordProximalParameter)(
-    ::ProximalProblem,
-    o::DouglasRachfordOptions,
-    i::Int,
-)
-  return record_or_reset!(r, o.λ(i), i)
+function (r::RecordProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
+    return record_or_reset!(r, o.λ(i), i)
 end

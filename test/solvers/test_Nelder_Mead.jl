@@ -13,7 +13,7 @@ Random.seed!(29)
                 for i in 1:div(length(x), 2)
             ])
         end
-        x0 = [8*randn(6) for i in 1:7]
+        x0 = [8 * randn(6) for i in 1:7]
         o = NelderMead(M, Rosenbrock, x0; record=[RecordCost()], return_options=true)
         x = get_solver_result(o)
         rec = get_record(o)

@@ -131,8 +131,8 @@ mutable struct ChambollePockOptions{
         n::Q,
         x::P,
         ξ::T,
-        primal_stepsize::Float64=1/sqrt(8),
-        dual_stepsize::Float64=1/sqrt(8);
+        primal_stepsize::Float64=1 / sqrt(8),
+        dual_stepsize::Float64=1 / sqrt(8);
         acceleration::Float64=0.0,
         relaxation::Float64=1.0,
         relax::Symbol=:primal,
@@ -198,7 +198,8 @@ function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, �
             o.m,
             p.adjoint_linearized_operator(
                 o.m,
-                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ,
+                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
+                o.ξ,
             ),
             o.x,
             o.vector_transport_method,
@@ -262,10 +263,9 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
         return norm(
             p.N,
             o.n,
-            1 / o.dual_stepsize * (
-                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
-                o.n
-            ) - inverse_retract(
+            1 / o.dual_stepsize *
+            (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.n) -
+            inverse_retract(
                 p.N,
                 o.n,
                 p.Λ(retract(
@@ -284,7 +284,10 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             ),
         )
     else
-        throw(DomainError(o.variant, "Unknown Chambolle–Pock variant, allowed are `:exact` or `:linearized`."))
+        throw(DomainError(
+            o.variant,
+            "Unknown Chambolle–Pock variant, allowed are `:exact` or `:linearized`.",
+        ))
     end
 end
 #
@@ -387,7 +390,8 @@ function (d::DebugPrimalDualResidual)(
 ) where {P<:PrimalDualProblem}
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(d.io,
+        print(
+            d.io,
             d.prefix * string(
                 (
                     primal_residual(p, o, xOld, ξOld, nOld) +
@@ -425,7 +429,7 @@ Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.ξ`.
 """
-DebugDualIterate(opts...) = DebugEntry(:ξ, "ξ:",opts...)
+DebugDualIterate(opts...) = DebugEntry(:ξ, "ξ:", opts...)
 
 """
     DebugDualChange(opts...)
@@ -457,7 +461,8 @@ function (d::DebugDualChange)(
 ) where {P<:PrimalDualProblem}
     if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
-        print(d.io,
+        print(
+            d.io,
             d.prefix * string(norm(
                 p.N,
                 o.n,
@@ -482,13 +487,9 @@ DebugDualBaseIterate(io::IO=stdout) = DebugEntry(:n, "n:", io)
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugDualBaseChange(a::StoreOptionsAction=StoreOptionsAction((:n)),io::IO=stdout)
+function DebugDualBaseChange(a::StoreOptionsAction=StoreOptionsAction((:n)), io::IO=stdout)
     return DebugEntryChange(
-        :n,
-        (p, o, x, y) -> distance(p.N, x, y),
-        a,
-        "Dual Base Change:",
-        io,
+        :n, (p, o, x, y) -> distance(p.N, x, y), a, "Dual Base Change:", io
     )
 end
 
@@ -499,7 +500,7 @@ Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.m`.
 """
-DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:",io)
+DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:", io)
 
 """
     DebugPrimalBaseChange(a::StoreOptionsAction=StoreOptionsAction((:m)),io::IO=stdout)
@@ -507,13 +508,11 @@ DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:",io)
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugPrimalBaseChange(a::StoreOptionsAction=StoreOptionsAction((:m)),io::IO=stdout)
+function DebugPrimalBaseChange(
+    a::StoreOptionsAction=StoreOptionsAction((:m)), io::IO=stdout
+)
     return DebugEntryChange(
-        :m,
-        (p, o, x, y) -> distance(p.M, x, y),
-        a,
-        "Primal Base Change:",
-        io,
+        :m, (p, o, x, y) -> distance(p.M, x, y), a, "Primal Base Change:", io
     )
 end
 

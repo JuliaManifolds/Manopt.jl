@@ -133,7 +133,9 @@ mutable struct DebugChange <: DebugAction
     prefix::String
     storage::StoreOptionsAction
     function DebugChange(
-        a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Last Change: ", io::IO=stdout,
+        a::StoreOptionsAction=StoreOptionsAction((:x,)),
+        prefix="Last Change: ",
+        io::IO=stdout,
     )
         return new(io, prefix, a)
     end
@@ -151,7 +153,7 @@ function (d::DebugChange)(p::Problem, o::Options, i::Int)
         ""
     end
     d.storage(p, o, i)
-    print(d.io,s)
+    print(d.io, s)
     return nothing
 end
 @doc raw"""
@@ -173,7 +175,7 @@ mutable struct DebugIterate <: DebugAction
     end
 end
 function (d::DebugIterate)(::Problem, o::Options, i::Int)
-    print(d.io,(i >= 0) ? d.prefix * "$(o.x)" : "")
+    print(d.io, (i >= 0) ? d.prefix * "$(o.x)" : "")
     return nothing
 end
 

@@ -675,10 +675,8 @@ mutable struct RecordGradient{T} <: RecordAction
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
 function (r::RecordGradient{T})(
-    ::GradientProblem,
-    o::GradientDescentOptions,
-    i::Int,
-) where{T}
+    ::GradientProblem, o::GradientDescentOptions, i::Int
+) where {T}
     return record_or_reset!(r, o.∇, i)
 end
 

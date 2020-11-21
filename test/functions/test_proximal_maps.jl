@@ -108,16 +108,16 @@
 
     @testset "Multivariate project collaborative TV" begin
         S = Sphere(2)
-        M = PowerManifold(S, NestedPowerRepresentation(), 2,2,2)
-        p = [ zeros(3) for i ∈ [1,2], j ∈ [1,2], k ∈ [1,2]]
-        p[1,1,1] = [1.0, 0.0, 0.0]
-        p[1,2,1] = 1/sqrt(2) .* [1.0, 1.0, 0.0]
-        p[2,1,1] = 1/sqrt(2) .* [1.0, 0.0, 1.0]
-        p[2,2,1] = [0.0, 1.0, 0.0]
-        p[:,:,2] = deepcopy(p[:,:,1])
-        X = zero_tangent_vector(M,p)
-        X[1,1,1] .= [0.0, 0.5, 0.5]
-        norm( project_collaborative_TV(M, 1, p, X, 2, 1) ) ≈ 0
-        @test norm( project_collaborative_TV(M, 0.5, p, X, 2, 1) ) ≈ (norm(X[1,1,1])-0.5)
+        M = PowerManifold(S, NestedPowerRepresentation(), 2, 2, 2)
+        p = [zeros(3) for i in [1, 2], j in [1, 2], k in [1, 2]]
+        p[1, 1, 1] = [1.0, 0.0, 0.0]
+        p[1, 2, 1] = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
+        p[2, 1, 1] = 1 / sqrt(2) .* [1.0, 0.0, 1.0]
+        p[2, 2, 1] = [0.0, 1.0, 0.0]
+        p[:, :, 2] = deepcopy(p[:, :, 1])
+        X = zero_tangent_vector(M, p)
+        X[1, 1, 1] .= [0.0, 0.5, 0.5]
+        norm(project_collaborative_TV(M, 1, p, X, 2, 1)) ≈ 0
+        @test norm(project_collaborative_TV(M, 0.5, p, X, 2, 1)) ≈ (norm(X[1, 1, 1]) - 0.5)
     end
 end

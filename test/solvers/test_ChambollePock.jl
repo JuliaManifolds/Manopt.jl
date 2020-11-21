@@ -52,7 +52,9 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
         o4 = ChambollePock(callargs_exact...; relax=:primal, variant=:exact)
         @test o3 ≈ o4
         @test o1 ≈ o3
-        o1a = ChambollePock(callargs_linearized...; relax=:dual, variant=:linearized, return_options = true)
+        o1a = ChambollePock(
+            callargs_linearized...; relax=:dual, variant=:linearized, return_options=true
+        )
         @test get_solver_result(o1a) == o1
     end
 end
