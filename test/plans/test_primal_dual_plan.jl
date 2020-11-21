@@ -45,15 +45,15 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     p_linearized = PrimalDualProblem(M,N, cost, prox_F, prox_G_dual, DΛ, adjoint_DΛ, missing)
     o_exact = ChambollePockOptions(m,n,x0,ξ0; variant=:exact)
     o_linearized = ChambollePockOptions(m,n,x0,ξ0; variant=:linearized)
+    n_old = ProductRepr(submanifold_component(N,n,1), submanifold_component(N,n,2))
+    x_old = copy(x0)
+    ξ_old = ProductRepr(submanifold_component(N,ξ0,1), submanifold_component(N,ξ0,2))
 
     @testset "Primal/Dual residual" begin
         p_exact = PrimalDualProblem(M,N, cost, prox_F, prox_G_dual, Λ, adjoint_DΛ)
         p_linearized = PrimalDualProblem(M,N, cost, prox_F, prox_G_dual, DΛ, adjoint_DΛ, missing)
         o_exact = ChambollePockOptions(m,n,x0,ξ0; variant=:exact)
         o_linearized = ChambollePockOptions(m,n,x0,ξ0; variant=:linearized)
-        n_old = ProductRepr(submanifold_component(N,n,1), submanifold_component(N,n,2))
-        x_old = copy(x0)
-        ξ_old = ProductRepr(submanifold_component(N,ξ0,1), submanifold_component(N,ξ0,2))
         @test primal_residual(p_exact,o_exact,x_old, ξ_old, n_old) ≈ 0 atol=1e-16
         @test primal_residual(p_linearized,o_linearized,x_old, ξ_old, n_old) ≈ 0 atol=1e-16
         @test dual_residual(p_exact,o_exact,x_old, ξ_old, n_old) ≈ 4.0 atol=1e-16
@@ -70,4 +70,67 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
         @test_throws DomainError dual_residual(p_exact,o_err,x_old, ξ_old, n_old)
 
     end
+    @testset "Debug prints" begin
+        a=StoreOptionsAction((:x, :ξ, :n, :m))
+        update_storage!(a, Dict(:x=>x_old, :ξ=>ξ_old,:n=>n_old,:m=>copy(m)))
+        io = IOBuffer()
+
+        d1 = DebugDualResidual(a,io)
+        d1(p_exact,o_exact, 1)
+        s = String(take!(io))
+        @test s == "Dual Residual: 4.0"
+
+        d2 = DebugPrimalResidual(a,io)
+        d2(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s,"Primal Residual: ")
+
+        d3 = DebugPrimalDualResidual(a,io)
+        d3(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s,"PD Residual: ")
+
+        d4 = DebugPrimalChange(a,io)
+        d4(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s, "Primal Change: ")
+
+        d5 = DebugPrimalIterate(io)
+        d5(p_exact,o_exact,1)
+        s = String(take!(io))
+        @test startswith(s, "x:")
+
+        d6 = DebugDualIterate(io)
+        d6(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s, "ξ:")
+
+        d7 = DebugDualChange(a,io)
+        d7(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s, "Dual Change:")
+
+        d8 = DebugDualBaseIterate(io)
+        d8(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s, "n:")
+
+        d9 = DebugDualBaseChange(a,io)
+        d9(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s, "Dual Base Change:")
+
+        d10 = DebugPrimalBaseIterate(io)
+        d10(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s, "m:")
+
+        d11 = DebugPrimalBaseChange(a,io)
+        d11(p_exact, o_exact, 1)
+        s = String(take!(io))
+        @test startswith(s, "Primal Base Change:")
+    end
+    #@testset "Records" begin
+
+    #end
 #end

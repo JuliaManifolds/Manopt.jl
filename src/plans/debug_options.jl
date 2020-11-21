@@ -160,7 +160,7 @@ end
 debug for the current iterate (stored in `o.x`).
 
 # Constructor
-    DebugIterate(print=print, long::Bool=false)
+    DebugIterate(io=stdout, long::Bool=false)
 
 # Parameters
 * `long::Bool` whether to print `x:` or `current iterate`
@@ -247,7 +247,7 @@ print a certain fields entry of type {T} during the iterates
 
 # Constructor
 
-    DebugEntry(f[, prefix="$f:", print=print])
+    DebugEntry(f[, prefix="$f:", io=stdout])
 
 """
 mutable struct DebugEntry <: DebugAction
@@ -256,7 +256,7 @@ mutable struct DebugEntry <: DebugAction
     field::Symbol
     DebugEntry(f::Symbol, prefix="$f:", io::IO=stdout) = new(io, prefix, f)
 end
-function (d::DebugEntry)(p::Pr, o::O, i::Int) where {Pr<:Problem,O<:Options}
+function (d::DebugEntry)(::Problem, o::Options, i::Int)
     print(d.io, (i >= 0) ? d.prefix * " " * string(getfield(o, d.field)) : "")
     return nothing
 end
@@ -275,12 +275,12 @@ print a certain entries change during iterates
 
 # Constructors
 
-    DebugEntryChange(f,d[, a, prefix, print])
+    DebugEntryChange(f,d[, a, prefix, io])
 
 initialize the Debug to a field `f` and a `distance` `d`.
 
 
-    DebugEntryChange(v,f,d[, a, prefix="Change of $f:", print])
+    DebugEntryChange(v,f,d[, a, prefix="Change of $f:", io])
 
 initialize the Debug to a field `f` and a `distance` `d` with initial value `v`
 for the history of `o.field`.
