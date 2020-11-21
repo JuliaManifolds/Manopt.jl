@@ -107,8 +107,18 @@ end
         stepsize=ArmijoLinesearch(),
         coefficient=FletcherReevesCoefficient(),
         stopping_criterion=StopAfterIteration(15),
-        #debug=[:Iteration," | ",:Cost," | ",:Iterate," |\n"],
     )
     @test isapprox(F(xOpt), minimum(eigvals(A)); atol=2.0 * 10^-4)
     @test isapprox(xOpt, eigvecs(A)[:, size(A, 1)]; atol=3.0 * 10^-2)
+    xOpt2 = conjugate_gradient_descent(
+        M,
+        F,
+        ∇F,
+        x0;
+        stepsize=ArmijoLinesearch(),
+        coefficient=FletcherReevesCoefficient(),
+        stopping_criterion=StopAfterIteration(15),
+        return_options = true,
+    )
+    @test get_solver_result(xOpt2) == xOpt
 end

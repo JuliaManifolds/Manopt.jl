@@ -24,10 +24,10 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 # Optional Parameters
 
 * `acceleration` – (`0.05`)
-* `dual_stepsize` – (`1/sqrt(8)`)
+* `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the primal prox
 * `Λ` (`missing`) the exact operator, that is required if the forward operator is linearized;
   `missing` indicates, that the forward operator is exact.
-* `primal_stepsize` – (`1/sqrt(8)`)
+* `primal_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
 * `relaxation` – (`1.`)
 * `relax` – (`:primal`) whether to relax the primal or dual
 * `variant` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.

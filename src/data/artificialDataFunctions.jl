@@ -57,11 +57,8 @@ function artificialIn_SAR_image(pts::Integer)
         Yr = cosS * values[j] + sinS * values[i]
         k3 = 0.0
         for m in 1:8
-            k3 += if (abs(Xr + midP[1] + m * l) + abs(Yr + midP[2] + m * l)) <= l
-                2 * pi * (m / 8)
-            else
-                0.0
-            end
+            in_range = (abs(Xr + midP[1] + m * l) + abs(Yr + midP[2] + m * l)) ≤ l
+            k3 += in_range ? 2 * pi * (m / 8) : 0.0
         end
         img[i, j] = mod(k1 + k2 + k3 - pi, 2 * pi) + pi
     end

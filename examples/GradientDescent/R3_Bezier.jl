@@ -13,6 +13,7 @@ using Manopt, Manifolds, Colors, ColorSchemes, Makie
 
 experiment_name = "Bezier_R3_Approximation"
 results_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier")
+!isdir(results_folder) && mkdir(results_folder)
 λ = 50.0
 curve_samples = [range(0, 3; length=1601)...] # sample curve for the gradient
 curve_samples_plot = [range(0, 3; length=1601)...] # sample curve for asy exports

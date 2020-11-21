@@ -18,7 +18,9 @@ import Printf.@sprintf
 import ColorSchemes.viridis
 
 results_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier", "video")
+!isdir(results_folder) && mkdir(results_folder)
 final_folder = joinpath(@__DIR__, "Minimize_Acceleration_Bezier")
+!isdir(final_folder) && mkdir(final_folder)
 experiment_name = "Bezier_Approximation_video"
 
 render_detail = 2
@@ -96,7 +98,7 @@ if asy_export
     end
 end
 if asy_export_summary
-    s = joinpath(results_folder, experiment_name)
+    s = joinpath(final_folder, experiment_name)
     asymptote_export_S2_signals(
         s * "-Summary-result.asy";
         curves=[cP, resulting_curves...],
