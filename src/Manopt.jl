@@ -109,6 +109,7 @@ include("solvers/gradient_descent.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
+include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
@@ -119,6 +120,30 @@ include("data/artificialDataFunctions.jl")
 include("random.jl")
 
 export ×, ^, ℝ, ℂ
+
+export Problem,
+    ProximalProblem,
+    CostProblem,
+    SubGradientProblem,
+    GradientProblem,
+    HessianProblem,
+    PrimalDualProblem,
+    StochasticGradientProblem
+
+export CyclicProximalPointOptions, DouglasRachfordOptions
+
+export Options,
+    ConjugateGradientDescentOptions,
+    GradientDescentOptions,
+    HessianOptions,
+    SubGradientMethodOptions,
+    NelderMeadOptions,
+    TruncatedConjugateGradientOptions,
+    TrustRegionsOptions,
+    ParticleSwarmOptions,
+    PrimalDualOptions,
+    ChambollePockOptions
+
 export AbstractOptionsAction, StoreOptionsAction
 export has_storage, get_storage, update_storage!
 
@@ -182,14 +207,13 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate
 export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIterate
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
+export DebugProximalParameter
 
 export RecordGradient, RecordGradientNorm, RecordStepsize
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
-
-export CostProblem, Problem, SubGradientProblem, GradientProblem, HessianProblem
-export PrimalDualProblem
+export RecordProximalParameter
 
 export NelderMead,
     gradient_descent,
@@ -205,16 +229,6 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export Options, get_options
 export is_options_decorator, dispatch_options_decorator
 
-export ConjugateGradientDescentOptions,
-    GradientDescentOptions,
-    HessianOptions,
-    SubGradientMethodOptions,
-    NelderMeadOptions,
-    TruncatedConjugateGradientOptions,
-    TrustRegionsOptions,
-    ParticleSwarmOptions,
-    PrimalDualOptions,
-    ChambollePockOptions
 export primal_residual, dual_residual
 
 export DirectionUpdateRule,
@@ -228,7 +242,6 @@ export DirectionUpdateRule,
     HagerZhangCoefficient
 
 export StoppingCriterion, StoppingCriterionSet, Stepsize
-export EvalOrder, LinearEvalOrder, RandomEvalOrder, FixedRandomEvalOrder
 
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!

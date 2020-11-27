@@ -38,7 +38,7 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `stepsize` – a [`Stepsize`](@ref)
 * `stop` – a [`StoppingCriterion`](@ref)
 * `x` – (initial or current) value the algorithm is at
-* `xOptimal` – optimal value
+* `x_optimal` – optimal value
 * `∂` the current element from the possivle subgradients at `x` that is used
 """
 mutable struct SubGradientMethodOptions{TRetract<:AbstractRetractionMethod,TStepsize,P,T} <:
@@ -47,7 +47,7 @@ mutable struct SubGradientMethodOptions{TRetract<:AbstractRetractionMethod,TStep
     stepsize::TStepsize
     stop::StoppingCriterion
     x::P
-    xOptimal::P
+    x_optimal::P
     ∂::T
     function SubGradientMethodOptions(
         M::TM,

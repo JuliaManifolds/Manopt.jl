@@ -39,7 +39,7 @@
 # stepsize ([`ConstantStepsize`](@ref)`(1.)` are quite conservative, but are
 # chosen to be as simple as possible.
 #
-# With these two at hand, running the algorithm just requires to call `xOpt = solve(p,o)`.
+# With these two at hand, running the algorithm just requires to call `x_opt = solve(p,o)`.
 #
 # In the following two examples we will see, how to use a higher level interface
 # that allows to more easily activate for example a debug output or record values during the iterations

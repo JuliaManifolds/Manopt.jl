@@ -35,7 +35,7 @@ They all compute $\beta_k$ such that this algorithm updates the search direction
 * `retraction_method` - (`ExponentialRetraction`) a retraction method to use, by default the exponntial map
 * `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `xOpt` if returned
+    If set to false (default) just the optimal value `x_opt` if returned
 * `stepsize` - (`Constant(1.)`) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
 * `stopping_criterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
@@ -44,7 +44,7 @@ They all compute $\beta_k$ such that this algorithm updates the search direction
   the old descent direction when computing the new descent direction.
 
 # Output
-* `xOpt` – the resulting (approximately critical) point of gradientDescent
+* `x_opt` – the resulting (approximately critical) point of gradientDescent
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
