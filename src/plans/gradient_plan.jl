@@ -118,7 +118,7 @@ end
 # Processors
 #
 function (s::Gradient)(p::GradientProblem, o::GradientDescentOptions, i)
-    return get_stepsize(p, o, i), -get_gradient(p, o.x)
+    return get_stepsize(p, o, i), get_gradient(p, o.x)
 end
 
 """
@@ -166,8 +166,8 @@ function MomentumGradient(
     return MomentumGradient{typeof(∇),typeof(momentum)}(∇, momentum, s)
 end
 function (s::MomentumGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
-    o.∇ = o.momentum * o.∇ - o.stepsize(p, o, i) .* s.direction(p.o.i)
-    return 1.0, o.∇
+    ∇ = o.momentum * o.∇ - o.stepsize(p, o, i) .* s.direction(p.o.i)
+    return 1.0, -∇
 end
 
 """
@@ -216,7 +216,7 @@ function AverageGradient(
 end
 function (s::AverageGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
     s.gradients = [s.direction(p, o, i), s.gradients[1:(end - 1)]...]
-    return 1.0, 1 / length(s.gradients) .* sum(s.gradients)
+    return 1.0, -1 / length(s.gradients) .* sum(s.gradients)
 end
 
 @doc raw"""
@@ -276,7 +276,7 @@ function (s::Nesterov)(p::GradientProblem, o::AbstractGradientDescentOptions, i)
         ((1 - α) * o.γ) / γbar .* inverse_retract(p.M, y, o.v) - α / γbar .* gradf_yk,
     )
     o.γ = 1 / (1 + o.shrinkage(i)) * γbar
-    return h, 1 / h .* inverse_retract(p.M, o.x, xn) # outer update
+    return h, -1 / h .* inverse_retract(p.M, o.x, xn) # outer update
 end
 
 #

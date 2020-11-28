@@ -183,36 +183,52 @@ A functor representing a nonmonotone line seach using the Barzilai-Borwein step 
 this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. We shifted the order of the algorithm steps from the paper
 by Iannazzo and Porcelli so that in each iteration we first find
 
-$y_{k} = \nabla F(x_{k}) - \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1}))$
+```math
+y_{k} = \nabla F(x_{k}) - \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1}))
+```
 
 and
 
-$s_{k} = - \alpha_{k-1} * \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1})),$
+```math
+s_{k} = - \alpha_{k-1} * \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1})),
+```
 
 where $\alpha_{k-1}$ is the step size computed in the last iteration and $\operatorname{T}$ is a vector transport.
 We then find the Barzilai–Borwein step size
 
-$α_k^{\text{BB}} = \begin{cases}
+```math
+α_k^{\text{BB}} = \begin{cases}
 \min(α_{\text{max}}, \max(α_{\text{min}}, τ_{k})),  & \text{if } ⟨s_{k}, y_{k}⟩_{x_k} > 0,\\
 α_{\text{max}}, & \text{else,}
-\end{cases}$
+\end{cases}
+```
 
 where
 
-$τ_{k} = \frac{⟨s_{k}, s_{k}⟩_{x_k}}{⟨s_{k}, y_{k}⟩_{x_k}},$
+```math
+τ_{k} = \frac{⟨s_{k}, s_{k}⟩_{x_k}}{⟨s_{k}, y_{k}⟩_{x_k}},
+```
 
 if the direct strategy is chosen,
 
-$τ_{k} = \frac{⟨s_{k}, y_{k}⟩_{x_k}}{⟨y_{k}, y_{k}⟩_{x_k}},$
+```math
+τ_{k} = \frac{⟨s_{k}, y_{k}⟩_{x_k}}{⟨y_{k}, y_{k}⟩_{x_k}},
+```
 
 in case of the inverse strategy and an alternation between the two in case of the alternating strategy. Then we find the smallest $h = 0, 1, 2 …$ such that
 
-$F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \nabla F(x_k))) \leq \max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\nabla F(x_k), \nabla F(x_k)⟩_{x_k},$
+```math
+F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \nabla F(x_k)))
+\leq
+\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\nabla F(x_k), \nabla F(x_k)⟩_{x_k},
+```
 
 where $σ$ is a step length reduction factor $\in (0,1)$, $m$ is the number of iterations after which the function value has to be lower than the current one
 and $γ$ is the sufficient decrease parameter $\in (0,1)$. We can then find the new stepsize by
 
-$α_k = σ^h α_k^{\text{BB}}.$
+```math
+α_k = σ^h α_k^{\text{BB}}.
+```
 
 [^Iannazzo2018]:
     > B. Iannazzo, M. Porcelli, __The Riemannian Barzilai–Borwein Method with Nonmonotone Line Search and the Matrix Geometric Mean Computation__,

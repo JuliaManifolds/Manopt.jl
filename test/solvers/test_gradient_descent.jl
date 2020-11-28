@@ -33,7 +33,9 @@
         F,
         ∇F,
         f[1];
-        stopping_criterion=StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10^-16)),
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+        ),
         stepsize=NonmonotoneLinesearch(
             1.0,
             ExponentialRetraction(),
@@ -53,7 +55,9 @@
         F,
         ∇F,
         f[1];
-        stopping_criterion=StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10^-16)),
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+        ),
         stepsize=NonmonotoneLinesearch(
             1.0,
             ExponentialRetraction(),
@@ -73,7 +77,9 @@
         F,
         ∇F,
         f[1];
-        stopping_criterion=StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10^-16)),
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+        ),
         stepsize=NonmonotoneLinesearch(
             1.0,
             ExponentialRetraction(),

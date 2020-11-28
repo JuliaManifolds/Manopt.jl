@@ -72,8 +72,8 @@ end
 function step_solver!(
     p::StochasticGradientProblem, o::StochasticGradientDescentOptions, iter
 )
-    η = o.direction(p, o, i)
-    retract!(p.M, o.x, o.x, η)
+    s, η = o.direction(p, o, i)
+    retract!(p.M, o.x, o.x, -s * η)
     # move forward in cycle
     o.k = ((o.k) % length(o.order)) + 1
     return o
