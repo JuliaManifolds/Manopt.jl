@@ -276,7 +276,7 @@ function (s::Nesterov)(p::GradientProblem, o::AbstractGradientDescentOptions, i)
         ((1 - α) * o.γ) / γbar .* inverse_retract(p.M, y, o.v) - α / γbar .* gradf_yk,
     )
     o.γ = 1 / (1 + o.shrinkage(i)) * γbar
-    return h, 1/h .* inverse_retract(p.M, o.x, xn) # outer update
+    return h, 1 / h .* inverse_retract(p.M, o.x, xn) # outer update
 end
 
 #
