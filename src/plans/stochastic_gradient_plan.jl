@@ -142,7 +142,7 @@ function (s::StochasticGradient)(
     ((k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
     # i is the gradient to choose, either from the order or completely random
     j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[k]
-    return -o.stepsize(p, o, iter) .* get_gradient(p, j, o.x)
+    return o.stepsize(p, o, iter), get_gradient(p, j, o.x)
 end
 function MomentumGradient(
     p::StochasticGradientProblem,
