@@ -42,9 +42,7 @@ end
 
 Evaluate all summands gradients ``\{∇f_i\}_{i=1}^n`` at `x`.
 """
-function get_gradients(P::StochasticGradientProblem{<:Manifold,TC,<:Function}, x) where {TC}
-    return P.∇(x)
-end
+get_gradients(P::StochasticGradientProblem{<:Manifold,TC,<:Function}, x) where {TC} = P.∇(x)
 function get_gradients(
     P::StochasticGradientProblem{<:Manifold,TC,<:AbstractVector}, x
 ) where {TC}
@@ -68,147 +66,100 @@ function get_gradient(
 end
 
 """
-    AbstractStochasticGradientOptions <: Options
+    AbstractStochasticGradientDescentOptions <: Options
 
 A generic type for all options related to stochastic gradient descent methods
 """
-abstract type AbstractStochasticGradientOptions <: Options end
+abstract type AbstractStochasticGradientProcessor <: AbstractGradientProcessor end
 
 """
-    StochasticGradientOptions <: AbstractStochasticGradientOptions
+    StochasticGradientDescentOptions <: AbstractStochasticGradientDescentOptions
 
 Store the following fields for a default stochastic gradient descent algorithm,
 see also [`StochasticGradientProblem`](@ref) and [`stochastic_gradient_descent`](@ref).
+
+# fields
 
 # Fields
 * `x` the current iterate
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
-* `evaluation_order` – (`:RandomOrder`) how to cycle through the gradients. Possible values are
-  * `:RandomOrder` choose a random permutation per epoche (cycle through all gradients)
-  * `:FixedRandomOrder` choose one permutation for all epoches
-  * `:LinearOrder` – cycle through the gradients in a linear fashion
-  * `:Random` – choose a random gradient each step
+* `evaluation_order` – (`:Random`) – whether
+  to use a randomly permuted sequence (`:FixedRandom`), a per
+  cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `order` the current permutation
 * `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
 
 # Constructor
-    StochasticGradientOptions(x)
+    StochasticGradientDescentOptions(x)
 
-Create a [`StochasticGradientOptions`](@ref) with start point `x`.
+Create a [`StochasticGradientDescentOptions`](@ref) with start point `x`.
 all other fields are optional keyword arguments.
 """
-struct StochasticGradientOptions{
-    TX,TStop<:StoppingCriterion,TStep<:Stepsize,RM<:AbstractRetractionMethod
-} <: AbstractStochasticGradientOptions
-    x::TX
-    stopping_criterion::TStop
-    stepsize::TStep
-    order_type::Symbol
-    order::Vector{Int}
-    retraction_method::RM
-    k::Int # current iterate
-end
-function StochasticGradientOptions(
-    x;
-    stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(0.1),
-    order_type::Symbol=:RandomOrder,
-    order=[],
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-)
-    return StochasticGradientOptions{
-        typeof(x),typeof(stoping_criterion),typeof(step_size),typeof(retraction_method)
-    }(
-        x, stoping_criterion, stepsize, order_type, order, retraction_method, 0
-    )
-end
-
-@doc raw"""
-    MomentumStochasticGradientOptions <: AbstractStochasticGradientOptions
-
-Store the following fields for a default stochastic gradient descent algorithm,
-see also [`StochasticGradientProblem`](@ref) and [`stochastic_gradient_descent`](@ref).
-
-Compared to the classic [`StochasticGradientOptions`](@ref) these options further
-store the last direction as `∇` and update the new direction as
-```math
-    ∇_{k} = αP_{x_k\gets x_{k-1}}∇_{k-1} - η∇f_j(x_k)
-```
-where ``η`` is the `stepsize`, ``α`` is the `momentum` and the last direktion
-``∇_{k-1}`` is also transported to the current tangent space (see `vector_transport_method`)
-
-# Fields
-* `x` - the current iterate
-* `∇` - the last update direction
-* `momentum` (`0.2`) the effect of the previous direction to the current
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
-* `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
-* `evaluation_order` – (`:RandomOrder`) how to cycle through the gradients. Possible values are
-  * `:RandomOrder` choose a random permutation per epoche (cycle through all gradients)
-  * `:FixedRandomOrder` choose one permutation for all epoches
-  * `:LinearOrder` – cycle through the gradients in a linear fashion
-  * `:Random` – choose a random gradient each step
-* `order` the current permutation
-* `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
-* `vector_transport_method` – (`ParallelTransport()`) vector transport for the old direction
-
-# Constructor
-    StochasticGradientOptions(x)
-
-Create a [`StochasticGradientOptions`](@ref) with start point `x`.
-all other fields are optional keyword arguments.
-"""
-struct MomentumStochasticGradientOptions{
+struct StochasticGradientDescentOptions{
     TX,
-    TN,
-    R<:Real,
+    D<:AbstractGradientProcessor,
     TStop<:StoppingCriterion,
     TStep<:Stepsize,
     RM<:AbstractRetractionMethod,
-    VTM<:AbstractVectorTransportMethod,
-} <: AbstractStochasticGradientOptions
+} <: AbstractGradientDescentOptions
     x::TX
-    ∇::TN
-    momentum::R
+    direction::D
     stopping_criterion::TStop
     stepsize::TStep
     order_type::Symbol
     order::Vector{Int}
     retraction_method::RM
-    vector_transport_method::VTM
     k::Int # current iterate
 end
-function MomentumStochasticGradientOptions(
-    x,
-    ∇;
-    stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(0.1),
+function StochasticGradientDescentOptions(
+    x;
+    direction::AbstractGradientProcessor=StochasticGradient(),
     order_type::Symbol=:RandomOrder,
     order=[],
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-    momentum::Real=0.2,
+    stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
+    stepsize::Stepsize=ConstantStepsize(0.1),
 )
-    return StochasticGradientOptions{
-        typeof(x),
-        typeof(∇),
-        typeof(momentum).typeof(stoping_criterion),
-        typeof(step_size),
-        typeof(retraction_method),
-        typeof(vector_transport_method),
+    return StochasticGradientDescentOptions{
+        typeof(x),typeof(stoping_criterion),typeof(step_size)
     }(
-        x,
-        ∇,
-        stoping_criterion,
-        stepsize,
-        order_type,
-        order,
-        retraction_method,
-        vector_transport_method,
-        0,
+        x, direction, stoping_criterion, stepsize, order_type, order, retraction_method, 0
     )
 end
 
-struct AdaStochasticGradientOptions <: AbstractStochasticGradientOptions end
-struct AveragingStochasticGradientOptions <: AbstractStochasticGradientOptions end
+"""
+    StochasticGradient <: AbstractGradientProcessor
+
+The default gradient processor, which just evaluates the (stochastic) gradient or a subset
+thereof.
+"""
+struct StochasticGradient <: AbstractStochasticGradientProcessor end
+function (s::StochasticGradient)(
+    p::StochasticGradientProblem, o::StochasticGradientDescentOptions, i
+)
+    # for each new epoche choose new order if we are at random order
+    ((k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
+    # i is the gradient to choose, either from the order or completely random
+    j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[k]
+    return -o.stepsize(p, o, iter) .* get_gradient(p, j, o.x)
+end
+function MomentumGradient(
+    p::StochasticGradientProblem,
+    x0::P,
+    s::AbstractGradientProcessor=StochasticGradient();
+    ∇=zero_tangent_vector(p.M, x0),
+    momentum=0.2,
+) where {P}
+    return MomentumGradient{typeof(∇),typeof(momentum)}(∇, momentum, s)
+end
+
+function AverageGradient(
+    p::StochasticGradientProblem,
+    x0::P,
+    n::Int=10,
+    s::AbstractGradientProcessor=StochatsticGradient();
+    gradients=fill(zero_tangent_vector(p.M, x0), n),
+) where {P}
+    return AverageGradient{eltype(gradients)}(gradients, s)
+end

@@ -39,6 +39,7 @@ makedocs(;
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
+            "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
             "Subgradient method" => "solvers/subgradient.md",
             "Steihaug-Toint TCG Method" =>
                 "solvers/truncated_conjugate_gradient_descent.md",
@@ -49,7 +50,7 @@ makedocs(;
             "Bézier curves" => "functions/bezier.md",
             "Cost functions" => "functions/costs.md",
             "Differentials" => "functions/differentials.md",
-            "Adjoint Differentials" => "functions/adjoint_differentials.md",
+            "Adjoint Differentials" => "functions/adjointdifferentials.md",
             "Gradients" => "functions/gradients.md",
             "Jacobi Fields" => "functions/Jacobi_fields.md",
             "Proximal Maps" => "functions/proximal_maps.md",

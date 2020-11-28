@@ -12,9 +12,9 @@ perform a cyclic proximal point algorithm.
 
 # Optional
 the default values are given in brackets
-* `evaluation_order` – (`:LinearOrder`) – whether
-  to use a randomly permuted sequence (`:FixedRandomOrder`), a per
-  cycle permuted sequence (`RandomOrder`) or the default linear one.
+* `evaluation_order` – (`:Linear`) – whether
+  to use a randomly permuted sequence (`:FixedRandom`), a per
+  cycle permuted sequence (`Random`) or the default linear one.
 * `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
@@ -33,7 +33,7 @@ function cyclic_proximal_point(
     F::Function,
     proxes::Union{Tuple,AbstractVector},
     x0;
-    evaluation_order::Symbol=:LinearOrder,
+    evaluation_order::Symbol=:Linear,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)
     ),
@@ -55,7 +55,7 @@ end
 function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointOptions)
     c = length(p.proxes)
     o.order = collect(1:c)
-    (o.order_type == :FixedRandomOrder) && shuffle!(o.order)
+    (o.order_type == :FixedRandom) && shuffle!(o.order)
     return o
 end
 function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
@@ -64,7 +64,7 @@ function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
     for k in o.order
         o.x = get_proximal_map(p, λi, o.x, k)
     end
-    (o.order_type == :RandomOrder) && shuffle(o.order)
+    (o.order_type == :Random) && shuffle(o.order)
     return o
 end
 get_solver_result(o::CyclicProximalPointOptions) = o.x

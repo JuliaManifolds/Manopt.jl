@@ -46,7 +46,7 @@
 #
 # ## The given Dataset
 #
-exportFolder = joinpath( #src
+export_folder = joinpath( #src
     @__DIR__,
     "..",
     "..",
@@ -77,13 +77,13 @@ nothing #hide
 # Then our data rendered using [`asymptote_export_S2_signals`](@ref) looks like
 #
 asymptote_export_S2_signals( #src
-    exportFolder * "/startDataAndCenter.asy"; #src
+    export_folder * "/startDataAndCenter.asy"; #src
     points=[[x], data], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]), #src
     dotSize=3.5, #src
     cameraPosition=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataAndCenter.asy"; render=2) #src
+render_asymptote(export_folder * "/startDataAndCenter.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataAndCenter.asy";
 #md #     points = [ [x], data],
@@ -136,13 +136,13 @@ xMean = gradient_descent(
 nothing #hide
 #
 asymptote_export_S2_signals( #src
-    exportFolder * "/startDataCenterMean.asy"; #src
+    export_folder * "/startDataCenterMean.asy"; #src
     points=[[x], data, [xMean]], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]), #src
     dotSize=3.5, #src
     cameraPosition=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataCenterMean.asy"; render=2) #src
+render_asymptote(export_folder * "/startDataCenterMean.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataCenterMean.asy";
 #md #     points = [ [x], data, [xMean] ],
@@ -199,7 +199,7 @@ values
 # The resulting median and mean for the data hence are
 #
 asymptote_export_S2_signals( #src
-    exportFolder * "/startDataCenterMedianAndMean.asy"; #src
+    export_folder * "/startDataCenterMedianAndMean.asy"; #src
     points=[[x], data, [xMean], [xMedian]], #src
     colors=Dict( #src
         :points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta], #src
@@ -207,7 +207,7 @@ asymptote_export_S2_signals( #src
     dotSize=3.5, #src
     cameraPosition=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataCenterMedianAndMean.asy"; render=2) #src
+render_asymptote(export_folder * "/startDataCenterMedianAndMean.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataCenterMean.asy";
 #md #     points = [ [x], data, [xMean], [xMedian] ],

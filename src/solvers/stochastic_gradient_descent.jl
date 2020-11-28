@@ -12,9 +12,9 @@ perform a stochastic gradient descent
 
 # Optional
 * `cost` – (`missing`) you can provide a cost function for example to track the function value
-* `evaluation_order` – ([`RandomEvalOrder`](@ref)`()`) how to cycle through the gradients.
-  Other values are [`LinearEvalOrder`](@ref)`()` that takes a new random order each
-  iteration, and [`FixedRandomEvalOrder`](@ref)`()` that fixes a random cycle for all iterations.
+* `evaluation_order` – (`:Random`) – whether
+  to use a randomly permuted sequence (`:FixedRandom`), a per
+  cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
 * `order_type` (`:RandomOder`) a type of ordering of gradient evaluations.
@@ -32,9 +32,10 @@ function stochastic_gradient_descent(
     ∇F::Union{Function,AbstractVector{<:Function}},
     x0;
     cost::Union{Function,Missing}=Missing(),
+    direction::AbstractGradientProcessor=StochasticGradtient(),
     stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
     stepsize::Stepsize=ConstantStepsize(0.1),
-    order_type::Symbol=:RandomOrder,
+    order_type::Symbol=:Random,
     order=collect(1:(∇F isa Function ? length(∇F(x)) : length(∇F))),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
@@ -44,27 +45,15 @@ function stochastic_gradient_descent(
     if ((momentum) > 1.0 || (momentum < 0.0))
         error("Momentum hast to be in [0,1] not $momentum.")
     end
-    if momentum == 0.0
-        o = StochasticGradientOptions(
-            x0;
-            stoping_criterion=stoping_criterion,
-            stepsize=stepsize,
-            order_type=order_type,
-            order=order,
-            retraction_method=retraction_method,
-        )
-    else
-        o = MomentumStochasticGradientOptions(
-            x0,
-            zero_tangent_vector(M, x0);
-            stoping_criterion=stoping_criterion,
-            stepsize=stepsize,
-            order_type=order_type,
-            order=order,
-            retraction_method=retraction_method,
-            vector_transport_method=vector_transport_method,
-        )
-    end
+    o = StochasticGradientDescentOptions(
+        x0;
+        stoping_criterion=stoping_criterion,
+        stepsize=stepsize,
+        order_type=order_type,
+        order=order,
+        direction=direction,
+        retraction_method=retraction_method,
+    )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
     if return_options
@@ -74,36 +63,19 @@ function stochastic_gradient_descent(
     end
 end
 function initialize_solver!(
-    ::StochasticGradientProblem, o::AbstractStochasticGradientOptions
+    ::StochasticGradientProblem, o::StochasticGradientDescentOptions
 )
     o.k = 1
-    (o.order_type == :FixedRandomOrder) && (shuffle!(o.order))
+    (o.order_type == :FixedRandom) && (shuffle!(o.order))
     return o
 end
-function step_solver!(p::StochasticGradientProblem, o::StochasticGradientOptions, iter)
-    # for each new epoche choose new order if we are at random order
-    ((k == 1) && (o.order_type == :RandomOrder)) && shuffle!(o.order)
-    # i is the gradient to choose, either from the order or completely random
-    j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[k]
-    # evaluate the gradient and do step
-    retract!(p.M, o.x, o.x, -o.stepsize(p, o, iter) .* get_gradient(p, j, o.x))
-    # move forward in cycle
-    return o.k = ((o.k) % length(o.order)) + 1
-end
 function step_solver!(
-    p::StochasticGradientProblem, o::MomentumStochasticGradientOptions, iter
+    p::StochasticGradientProblem, o::StochasticGradientDescentOptions, iter
 )
-    # for each new epoche choose new order if we are at random order
-    ((k == 1) && (o.order_type == :RandomOrder)) && shuffle!(o.order)
-    # i is the gradient to choose, either from the order or completely random
-    j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[k]
-    x_old = deepcopy(o.x)
-    o.∇ .= o.momentum .* o.∇ - o.stepsize(p, o, iter) .* get_gradient(p, j, o.x)
-    # evaluate the gradient and do step
-    retract!(p.M, o.x, x_old, -o.stepsize(p, o, iter) .* get_gradient(p, j, o.x))
-    # parallel transport direction to new tangent space
-    vector_transport_to!(p.M, o.∇, x_old, o.∇, o.x, o.vector_transport_method)
+    η = o.direction(p, o, i)
+    retract!(p.M, o.x, o.x, η)
     # move forward in cycle
-    return o.k = ((o.k) % length(o.order)) + 1
+    o.k = ((o.k) % length(o.order)) + 1
+    return o
 end
-get_solver_result(o::AbstractStochasticGradientOptions) = o.x
+get_solver_result(o::StochasticGradientDescentOptions) = o.x

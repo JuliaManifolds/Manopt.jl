@@ -34,7 +34,7 @@ end
 stories option values for a [`subgradient_method`](@ref) solver
 
 # Fields
-* `retraction` – the retration to use within
+* `retraction_method` – the retration to use within
 * `stepsize` – a [`Stepsize`](@ref)
 * `stop` – a [`StoppingCriterion`](@ref)
 * `x` – (initial or current) value the algorithm is at

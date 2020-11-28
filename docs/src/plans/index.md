@@ -117,7 +117,9 @@ CostProblem
 
 ```@docs
 GradientProblem
+StochasticGradientProblem
 get_gradient
+get_gradients
 ```
 
 ### Subgradient based problem

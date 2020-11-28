@@ -125,13 +125,13 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    TX,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr,Tρ_prime,Tρ_reg
+    TX,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr<:AbstractRetractionMethod,Tρ_prime,Tρ_reg
 } <: HessianOptions
     x::TX
     stop::TStop
     Δ::TΔ
     Δ_bar::TΔ_bar
-    retraction::TRetr
+    retraction_method::TRetr
     useRand::Bool
     ρ_prime::Tρ_prime
     ρ_regularization::Tρ_reg
@@ -189,7 +189,7 @@ Input
     tangent vector ξ
 """
 function approxHessianFD(
-    M::MT, x, gradFct, ξ; stepsize=2.0^(-14), transport=ParallelTransport()
+    M::MT, x, gradFct, ξ; stepsize=2.0^(-14), vector_transport_method=ParallelTransport()
 ) where {MT<:Manifold}
     norm_xi = norm(M, x, ξ)
     if norm_xi < eps(Float64)
@@ -199,7 +199,7 @@ function approxHessianFD(
     grad = gradFct(x)
     x1 = exp(M, x, ξ, c)
     grad1 = gradFct(x1)
-    grad1 = vector_transport_to(M, x1, grad1, x, transport)
+    grad1 = vector_transport_to(M, x1, grad1, x, vector_transport_method)
     return (1 / c) * (grad1 - grad)
 end
 

@@ -30,7 +30,4 @@
     p = ProximalProblem(N, F, proxes, [1, 2])
     @test_throws ErrorException get_proximal_map(p, 1.0, f, 3)
     @test_throws ErrorException ProximalProblem(N, F, proxes, [1, 2, 2])
-
-    @test Manopt.update_cpp_order!(collect(1:3), 3, 0, LinearEvalOrder()) == 1:3
-    @test Manopt.update_cpp_order!(collect(1:3), 3, 1, LinearEvalOrder()) == 1:3
 end

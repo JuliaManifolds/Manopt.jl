@@ -133,16 +133,18 @@ export Problem,
 export CyclicProximalPointOptions, DouglasRachfordOptions
 
 export Options,
+    AbstractGradientDescentOptions,
+    ChambollePockOptions,
     ConjugateGradientDescentOptions,
     GradientDescentOptions,
     HessianOptions,
+    ParticleSwarmOptions,
+    PrimalDualOptions,
+    StochasticGradientDescentOptions,
     SubGradientMethodOptions,
     NelderMeadOptions,
     TruncatedConjugateGradientOptions,
-    TrustRegionsOptions,
-    ParticleSwarmOptions,
-    PrimalDualOptions,
-    ChambollePockOptions
+    TrustRegionsOptions
 
 export AbstractOptionsAction, StoreOptionsAction
 export has_storage, get_storage, update_storage!
@@ -240,6 +242,9 @@ export DirectionUpdateRule,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
     HagerZhangCoefficient
+
+export AbstractGradientProcessor,
+    Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
 
 export StoppingCriterion, StoppingCriterionSet, Stepsize
 
