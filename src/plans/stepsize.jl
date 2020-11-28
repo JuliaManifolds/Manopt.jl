@@ -116,7 +116,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     end
 end
 function (a::ArmijoLinesearch)(
-    p::P, o::O, i::Int, η=-get_gradient(p, o.x)
+    p::P, o::O, ::Int, η=-get_gradient(p, o.x)
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
     a.stepsizeOld = linesearch_backtrack(
         p.M,
@@ -179,25 +179,25 @@ end
 @doc raw"""
     NonmonotoneLinesearch <: Linesearch
 
-A functor representing a nonmonotone line seach using the Barzilai-Borwein step size[^Iannazzo2018]. Together with a gradient descent algorithm 
-this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. We shifted the order of the algorithm steps from the paper 
-by Iannazzo and Porcelli so that in each iteration we first find 
+A functor representing a nonmonotone line seach using the Barzilai-Borwein step size[^Iannazzo2018]. Together with a gradient descent algorithm
+this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. We shifted the order of the algorithm steps from the paper
+by Iannazzo and Porcelli so that in each iteration we first find
 
 $y_{k} = \nabla F(x_{k}) - \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1}))$
 
-and 
+and
 
 $s_{k} = - \alpha_{k-1} * \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1})),$
 
-where $\alpha_{k-1}$ is the step size computed in the last iteration and $\operatorname{T}$ is a vector transport. 
-We then find the Barzilai–Borwein step size 
+where $\alpha_{k-1}$ is the step size computed in the last iteration and $\operatorname{T}$ is a vector transport.
+We then find the Barzilai–Borwein step size
 
 $α_k^{\text{BB}} = \begin{cases}
 \min(α_{\text{max}}, \max(α_{\text{min}}, τ_{k})),  & \text{if } ⟨s_{k}, y_{k}⟩_{x_k} > 0,\\
 α_{\text{max}}, & \text{else,}
 \end{cases}$
 
-where 
+where
 
 $τ_{k} = \frac{⟨s_{k}, s_{k}⟩_{x_k}}{⟨s_{k}, y_{k}⟩_{x_k}},$
 
@@ -209,7 +209,7 @@ in case of the inverse strategy and an alternation between the two in case of th
 
 $F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \nabla F(x_k))) \leq \max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\nabla F(x_k), \nabla F(x_k)⟩_{x_k},$
 
-where $σ$ is a step length reduction factor $\in (0,1)$, $m$ is the number of iterations after which the function value has to be lower than the current one 
+where $σ$ is a step length reduction factor $\in (0,1)$, $m$ is the number of iterations after which the function value has to be lower than the current one
 and $γ$ is the sufficient decrease parameter $\in (0,1)$. We can then find the new stepsize by
 
 $α_k = σ^h α_k^{\text{BB}}.$
@@ -319,7 +319,7 @@ end
 function (a::NonmonotoneLinesearch)(
     M::mT, x, F::TF, ∇F::T, η::T, old_x, old_∇, iter::Int
 ) where {mT<:Manifold,TF,T}
-    #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space 
+    #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space
     grad_diff = ∇F - vector_transport_to(M, old_x, old_∇, x, a.vector_transport_method)
     #transport the previous step into the tangent space of the current manifold point
     x_diff =
