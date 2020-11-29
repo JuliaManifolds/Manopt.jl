@@ -91,9 +91,9 @@ function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
 
 	x_old = o.x
 
-	o.x = retract(p.M, o.x, α*η, o.retraction_method)
+	retract!(p.M, o.x, o.x, α*η, o.retraction_method)
 
-	update_parameters(p, o, α, η, x_old, iter)
+	update_parameters!(p, o, α, η, x_old, iter)
 
 end
 
@@ -125,22 +125,22 @@ function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P
 		ω = inner(p.M, o.x, o.gradient_diffrences[i], r) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i])
 		r = r + (ξ[i] - ω) * o.steps[i]
 	end
-
-	r = project(p.M, o.x, r)
-
+	project!(p.M, r, o.x, r)
 	return -r
 end
 
 
 # Updating the parameters
 
-function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
+function update_parameters!(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	gradf_xold = o.∇
 	β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
 	yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
 
-	o.basis.data .= [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ get_vectors(p.M,o.x,o.basis) ]
+	for i=1:length(o.basis.data)
+		vector_transport_to!(p.M, o.basis.data[i], x, o.basis.data[i], o.x, o.vector_transport_method)
+	end
 
 	yk_c = get_coordinates(p.M, o.x, yk, o.basis)
 	sk_c = get_coordinates(p.M, o.x, sk, o.basis)
@@ -152,7 +152,7 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 
 
 	if o.broyden_factor==1.0
-		o.inverse_hessian_approximation = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c) 
+		o.inverse_hessian_approximation = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c)
 	end
 
 	if o.broyden_factor==0.0
@@ -161,12 +161,13 @@ function update_parameters(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::F
 
 	if o.broyden_factor > 0 && o.broyden_factor < 1
 		RBFGS = (I - sk_c * yk_c' / skyk_c) * o.inverse_hessian_approximation * (I - yk_c * sk_c' / skyk_c) + sk_c * sk_c' / skyk_c
-		DFP = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c) 
+		DFP = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c)
 		o.inverse_hessian_approximation = (1 - o.broyden_factor) * RBFGS + o.broyden_factor * DFP
 	end
+	return o
 end
 
-function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
+function update_parameters!(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	gradf_xold = o.∇
 	β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
 	yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -188,7 +189,7 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 		end
 
 		if o.broyden_factor==1.0
-			o.inverse_hessian_approximation = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c) 
+			o.inverse_hessian_approximation = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c)
 		end
 
 		if o.broyden_factor==0.0
@@ -197,22 +198,22 @@ function update_parameters(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T
 
 		if o.broyden_factor > 0 && o.broyden_factor < 1
 			RBFGS = (I - sk_c * yk_c' / skyk_c) * o.inverse_hessian_approximation * (I - yk_c * sk_c' / skyk_c) + sk_c * sk_c' / skyk_c
-			DFP = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c) 
+			DFP = o.inverse_hessian_approximation + sk_c * sk_c' / skyk_c - o.inverse_hessian_approximation * yk_c * (o.inverse_hessian_approximation * yk_c)' / dot(yk_c, o.inverse_hessian_approximation * yk_c)
 			o.inverse_hessian_approximation = (1 - o.broyden_factor) * RBFGS + o.broyden_factor * DFP
 		end
 	end
-
+	return o
 end
 
 
 # Limited memory variants
 
-function update_parameters(p::GradientProblem, o::RLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
-    limited_memory_update(p,o,α,η,x)
+function update_parameters!(p::GradientProblem, o::RLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
+    return limited_memory_update!(p,o,α,η,x)
 end
 
 
-function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
+function update_parameters!(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	gradf_xold = o.∇
     β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
     yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -223,7 +224,7 @@ function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α
 	bound = o.cautious_function(norm(p.M, x, get_gradient(p,x)))
 
 	if norm_sk != 0 && (sk_yk / norm_sk^2) >= bound
-		limited_memory_update(p,o,α,η,x)
+		limited_memory_update!(p,o,α,η,x)
 	else
 		memory_steps_size = length(o.steps)
         for  i = 1 : min(o.current_memory_size, memory_steps_size)
@@ -231,9 +232,10 @@ function update_parameters(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α
 			o.gradient_diffrences[i] = vector_transport_to(p.M, x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
         end
 	end
+	return o
 end
 
-function limited_memory_update(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}, α::Float64, η::T, x::P) where {P,T}
+function limited_memory_update!(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}, α::Float64, η::T, x::P) where {P,T}
 	gradf_xold = o.∇
     β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
     yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
@@ -244,47 +246,33 @@ function limited_memory_update(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, 
 
     if current_memory >= memory_steps_size
         for  i in 2 : memory_steps_size
-            o.steps[i] = vector_transport_to(p.M, x, o.steps[i], o.x, o.vector_transport_method)
-            o.gradient_diffrences[i] = vector_transport_to(p.M, x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
+            vector_transport_to!(p.M, o.steps[i-1], x, o.steps[i], o.x, o.vector_transport_method)
+            vector_transport_to!(p.M, o.gradient_diffrences[i-1], x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
         end
-
-        if memory_steps_size > 1
-			o.steps[1:(memory_steps_size-1)] = o.steps[2:memory_steps_size]
-			o.gradient_diffrences[1:(memory_steps_size-1)] = o.gradient_diffrences[2:memory_steps_size]
-        end
-
         if memory_steps_size > 0
             o.steps[memory_steps_size] = sk
             o.gradient_diffrences[memory_steps_size] = yk
         end
     else
-
         for i in 1:current_memory
-            o.steps[i] = vector_transport_to(p.M, x, o.steps[i], o.x, o.vector_transport_method)
-            o.gradient_diffrences[i] = vector_transport_to(p.M, x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
+            vector_transport_to!(p.M, o.steps[i], x, o.steps[i], o.x, o.vector_transport_method)
+            vector_transport_to!(p.M, o.gradient_diffrences[i], x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
         end
-
         o.steps[current_memory + 1] = sk
         o.gradient_diffrences[current_memory + 1] = yk
-
         o.current_memory_size = current_memory + 1
-    end
+	end
+	return o
 end
 
-
-
 function operator_to_matrix(M::Manifold, x::P, operator::Function; basis::B = get_basis(M, x, DefaultOrthonormalBasis())) where {P,T,B<:AbstractBasis}
-
 	orthonormal_basis = get_vectors(M, x, basis)
 	n = length(orthonormal_basis)
 	matrix_rep = zeros(n, n)
 	column = [operator(orthonormal_basis[i]) for i ∈ 1:n]
-	
 	for i = 1:n
 		matrix_rep[:,i] = get_coordinates(M, x, column[i], basis)
 	end
-
 	return matrix_rep
 end
-
 get_solver_result(o::O) where {O <: AbstractQuasiNewtonOptions} = o.x
