@@ -270,7 +270,9 @@ function AverageGradient(
     gradients=fill(zero_tangent_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM}
-    return AverageGradient{P,eltype(gradients),VTM}(gradients, s, vector_transport_method)
+    return AverageGradient{P,eltype(gradients),VTM}(
+        gradients, deepcopy(x0), s, vector_transport_method
+    )
 end
 function (a::AverageGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
     pop!(a.gradients)

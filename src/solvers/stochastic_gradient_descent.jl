@@ -42,7 +42,7 @@ function stochastic_gradient_descent(
     return_options=false,
     kwargs...,
 )
-    p = StochasticGradientProblem(M, cost, ∇F)
+    p = StochasticGradientProblem(M, ∇F; cost=cost)
     o = StochasticGradientDescentOptions(
         x0;
         stoping_criterion=stoping_criterion,

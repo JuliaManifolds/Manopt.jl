@@ -26,9 +26,30 @@ using Manopt, Manifolds, Test
         step_solver!(p1, o, 1)
         @test o.x == exp(M, p, get_gradient(p1, 1, p))
     end
+    @testset "Momentum and Average Processor Constructors" begin
+        p1 = StochasticGradientProblem(M, s∇F1)
+        p2 = GradientProblem(M, F, ∇F)
+        m1 = MomentumGradient(M, p, StochasticGradient())
+        m2 = MomentumGradient(p1, p)
+        @test m1.direction == m2.direction #both use StochasticGradient
+        m3 = MomentumGradient(M, p)
+        m4 = MomentumGradient(p2, p)
+        @test m3.direction == m4.direction #both use Gradient
+        a1 = AverageGradient(M, p, 10, StochasticGradient())
+        a2 = AverageGradient(p1, p, 10)
+        @test a1.direction == a2.direction #both use StochasticGradient
+        a3 = AverageGradient(M, p, 10)
+        a4 = AverageGradient(p2, p, 10)
+        @test a3.direction == a4.direction #both use Gradient
+    end
     @testset "Comparing Stochastic Methods" begin
         x1 = stochastic_gradient_descent(M, s∇F1, deepcopy(p); order_type=:Linear)
         @test norm(x1) ≈ 1
+        o1 = stochastic_gradient_descent(
+            M, s∇F1, deepcopy(p); order_type=:Linear, return_options=true
+        )
+        x1a = get_solver_result(o1)
+        @test x1 == x1a
         x2 = stochastic_gradient_descent(M, s∇F1, deepcopy(p); order_type=:FixedRandom)
         @test norm(x2) ≈ 1
         x3 = stochastic_gradient_descent(M, s∇F1, deepcopy(p); order_type=:Random)

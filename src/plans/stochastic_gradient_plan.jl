@@ -7,10 +7,8 @@ A stochastic gradient problem consists of
 * an array of gradients, i.e. a function that returns and array or an array of functions ``\{∇f_i\}_{i=1}^n``.
 
 # Constructors
-    StochasticGradientProblem(M::Manifold, ∇::Function)
-    StochasticGradientProblem(M::Manifold, cost::Function, ∇::Function)
-    StochasticGradientProblem(M::Manifold, ∇::AbstractVector{<:Function})
-    StochasticGradientProblem(M::Manifold, cost::Function, ∇::::AbstractVector{<:Function})
+    StochasticGradientProblem(M::Manifold, ∇::Function; cost=Missing())
+    StochasticGradientProblem(M::Manifold, ∇::AbstractVector{<:Function}; cost=Missing())
 
 Create a Stochastic gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
@@ -20,21 +18,15 @@ struct StochasticGradientProblem{MT<:Manifold,TCost,TGradient} <: Problem
     cost::TCost
     ∇::TGradient
 end
-function StochasticGradientProblem(M::TM, ∇::Function) where {TM<:Manifold}
-    return StochasticGradientProblem{TM,Missing,Function}(M, Missing(), ∇)
-end
-function StochasticGradientProblem(M::TM, cost::Function, ∇::Function) where {TM<:Manifold}
-    return StochasticGradientProblem{TM,Function,Function}(M, cost, ∇)
+function StochasticGradientProblem(
+    M::TM, ∇::Function; cost::Union{Function,Missing}=Missing()
+) where {TM<:Manifold}
+    return StochasticGradientProblem{TM,typeof(cost),Function}(M, cost, ∇)
 end
 function StochasticGradientProblem(
-    M::TM, ∇::AbstractVector{<:Function}
+    M::TM, ∇::AbstractVector{<:Function}; cost::Union{Function,Missing}=Missing()
 ) where {TM<:Manifold}
-    return StochasticGradientProblem{TM,Missing,typeof(∇)}(M, Missing(), ∇)
-end
-function StochasticGradientProblem(
-    M::TM, cost::Function, ∇::AbstractVector{<:Function}
-) where {TM<:Manifold}
-    return StochasticGradientProblem{TM,Function,typeof(∇)}(M, cost, ∇)
+    return StochasticGradientProblem{TM,typeof(cost),typeof(∇)}(M, cost, ∇)
 end
 
 @doc raw"""
@@ -160,14 +152,15 @@ function MomentumGradient(
         deepcopy(x0), ∇, momentum, s, vector_transport_method
     )
 end
-
 function AverageGradient(
     p::StochasticGradientProblem,
     x0::P,
     n::Int=10,
-    s::AbstractGradientProcessor=StochatsticGradient();
+    s::AbstractGradientProcessor=StochasticGradient();
     gradients=fill(zero_tangent_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM}
-    return AverageGradient{eltype(gradients),VTM}(gradients, s)
+    return AverageGradient{P,eltype(gradients),VTM}(
+        gradients, deepcopy(x0), s, vector_transport_method
+    )
 end
