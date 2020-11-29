@@ -316,7 +316,7 @@ This compute a Nesterov type update using the following steps, see [^ZhangSra201
 3. ``y_k = \operatorname{retr}_{x_k}\Bigl(\frac{α_kγ_k}{γ_k + α_kμ}\operatorname{retr}^{-1}_{x_k}v_k \Bigr)``
 4. ``x_{k+1} = \operatorname{retr}_{y_k}(-h_k ∇f(y_k))``
 5. ``v_{k+1} = `\operatorname{retr}_{y_k}\Bigl(\frac{(1-α_k)γ_k}{\barγ_k}\operatorname{retr}_{y_k}^{-1}(v_k) - \frac{α_k}{\bar γ_{k+1}}∇f(y_k) \Bigr)``
-6. ``γ_{k+1} = \frac{1}{1+β_k}\bar γ_{k+1}
+6. ``γ_{k+1} = \frac{1}{1+β_k}\bar γ_{k+1}``
 
 Then the direction from ``x_k`` to ``x_k+1``, i.e. ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
 
