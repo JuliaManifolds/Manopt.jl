@@ -124,13 +124,18 @@ end
 """
     MomentumGradient <: AbstractGradientProcessor
 
-Append a momentum to a gradient processor
+Append a momentum to a gradient processor, where the last direction and last iterate are
+stored and the new is composed as ``\nabla_i = m*\nabla_{i-1}' - s d_i``,
+where ``sd_i`` is the current (inner) direction and ``\nabla_{i-1}'`` is the vector transported
+last direction multiplied by momentum ``m``.
 
 # Fields
 * `∇` – (`zero_tangent_vector(M,x0)`) the last gradient/direction update added as momentum
+* `last_iterate` - remember the last iterate for parallel transporting the last direction
 * `momentum` – (`0.2`) factor for momentum
 * `direction` – internal [`AbstractGradientProcessor`](@ref) to determine directions to
   add the momentum to.
+* `vector_transport_method` vector transport method to use
 
 # Constructors
     MomentumGradient(
@@ -138,47 +143,72 @@ Append a momentum to a gradient processor
         x0,
         s::AbstractGradientProcessor=Gradient();
         ∇=zero_tangent_vector(p.M, o.x), momentum=0.2
+       vector_transport_method=ParallelTransport(),
     )
 
 Add momentum to a gradient problem, where by default just a gradient evaluation is used
+Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`](@ref) `p`.
 
     MomentumGradient(
         p::StochasticGradientProblem
         x0
         s::AbstractGradientProcessor=StochasticGradient();
         ∇=zero_tangent_vector(p.M, x0), momentum=0.2
+       vector_transport_method=ParallelTransport(),
     )
 
 Add momentum to a stochastic gradient problem, where by default just a stochastic gradient evaluation is used
 """
-mutable struct MomentumGradient{T,R<:Real} <: AbstractGradientProcessor
+mutable struct MomentumGradient{P,T,R<:Real, VTM <: AbstractVectorTransportMethod} <: AbstractGradientProcessor
     ∇::T
+    last_iterate::P
     momentum::R
     direction::AbstractGradientProcessor
+    vector_transport_method::VTM
 end
 function MomentumGradient(
     p::GradientProblem,
     x0::P,
     s::AbstractGradientProcessor=Gradient();
+    last_iterate = x0,
+    vector_transport_method::VTM=ParallelTransport(),
     ∇=zero_tangent_vector(p.M, x0),
     momentum=0.2,
-) where {P}
-    return MomentumGradient{typeof(∇),typeof(momentum)}(∇, momentum, s)
+) where {P, VTM <: AbstractVectorTransportMethod}
+    return MomentumGradient{P, typeof(∇), typeof(momentum), VTM}(deepcopy(x0), ∇, momentum, s, vector_transport_method)
 end
-function (s::MomentumGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
-    ∇ = o.momentum * o.∇ - o.stepsize(p, o, i) .* s.direction(p.o.i)
-    return 1.0, -∇
+function MomentumGradient(
+    M::Manifold,
+    x0::P,
+    s::AbstractGradientProcessor=Gradient();
+    ∇=zero_tangent_vector(M, x0),
+    last_iterate = x0,
+    momentum=0.2,
+    vector_transport_method::VTM = ParallelTransport()
+) where {P, VTM<:AbstractVectorTransportMethod}
+    return MomentumGradient{P, typeof(∇), typeof(momentum), VTM}(deepcopy(x0), ∇, momentum, s, vector_transport_method)
+end
+function (m::MomentumGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
+    s, d = m.direction(p, o, i) #get inner direction and step size
+    old_d = m.momentum * vector_transport_to(p.M, m.last_iterate, m.∇, o.x, m.vector_transport_method)
+    m.∇ = old_d - s .* d
+    m.last_iterate = deepcopy(o.x)
+    return s, -m.∇
 end
 
 """
     AverageGradient <: AbstractGradientProcessor
 
-Add an average of gradients to a gradient processor
+Add an average of gradients to a gradient processor. A set of previous directions (from the
+inner processor) and the last iterate are stored, average is taken after vector transporting
+them to the current iterates tangent space.
 
 # Fields
 * `gradients` – (fill(`zero_tangent_vector(M,x0),n)`) the last `n` gradient/direction updates
+* `last_iterate` – last iterate (needed to transport the gradients)
 * `direction` – internal [`AbstractGradientProcessor`](@ref) to determine directions to
   apply the averaging to
+* `vector_transport_method` - vector transport method to use
 
 # Constructors
     AverageGradient(
@@ -187,9 +217,12 @@ Add an average of gradients to a gradient processor
         n::Int=10
         s::AbstractGradientProcessor=Gradient();
         gradients = fill(zero_tangent_vector(p.M, o.x),n),
+        last_iterate = deepcopy(x0),
+        vector_transport_method = ParallelTransport()
     )
 
 Add average to a gradient problem, `n` determines the size of averaging and `gradients` can be prefilled with some history
+Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`](@ref) `p`.
 
     AverageGradient(
         p::StochasticGradientProblem
@@ -197,13 +230,27 @@ Add average to a gradient problem, `n` determines the size of averaging and `gra
         n::Int=10
         s::AbstractGradientProcessor=StochasticGradient();
         gradients = fill(zero_tangent_vector(p.M, o.x),n),
+        last_iterate = deepcopy(x0),
+        vector_transport_method = ParallelTransport()
     )
 
 Add average to a stochastic gradient problem, `n` determines the size of averaging and `gradients` can be prefilled with some history
 """
-mutable struct AverageGradient{T} <: AbstractGradientProcessor
+mutable struct AverageGradient{P,T, VTM <: AbstractVectorTransportMethod} <: AbstractGradientProcessor
     gradients::AbstractVector{T}
+    last_iterate::P
     direction::AbstractGradientProcessor
+    vector_transport_method::VTM
+end
+function AverageGradient(
+    M::Manifold,
+    x0::P,
+    n::Int=10,
+    s::AbstractGradientProcessor=Gradient();
+    gradients=fill(zero_tangent_vector(M, x0), n),
+    vector_transport_method::VTM=ParallelTransport(),
+) where {P, VTM<:AbstractVectorTransportMethod}
+    return AverageGradient{P,eltype(gradients),VTM}(gradients, x0, s,vector_transport_method)
 end
 function AverageGradient(
     p::GradientProblem,
@@ -211,12 +258,20 @@ function AverageGradient(
     n::Int=10,
     s::AbstractGradientProcessor=Gradient();
     gradients=fill(zero_tangent_vector(p.M, x0), n),
-) where {P}
-    return AverageGradient{eltype(gradients)}(gradients, s)
+    vector_transport_method::VTM=ParallelTransport(),
+) where {P, VTM}
+    return AverageGradient{P,eltype(gradients),VTM}(gradients, s, vector_transport_method)
 end
-function (s::AverageGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
-    s.gradients = [s.direction(p, o, i), s.gradients[1:(end - 1)]...]
-    return 1.0, -1 / length(s.gradients) .* sum(s.gradients)
+function (a::AverageGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
+    pop!(a.gradients)
+    s, d = a.direction(p, o, i) #get inner gradient and step
+    a.gradients = vcat( [d], a.gradients )
+    for i ∈ 1:(length(a.gradients)-1) #transport & shift inplace
+        vector_transport_to!(p.M, a.gradients[i], a.last_iterate, a.gradients[i+1], o.x, a.vector_transport_method)
+    end
+    a.gradients[1] = d
+    a.last_iterate = deepcopy(o.x)
+    return s, -1 / length(a.gradients) .* sum(a.gradients)
 end
 
 @doc raw"""

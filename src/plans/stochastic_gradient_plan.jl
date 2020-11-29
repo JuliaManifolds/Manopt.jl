@@ -29,7 +29,7 @@ end
 function StochasticGradientProblem(
     M::TM, ∇::AbstractVector{<:Function}
 ) where {TM<:Manifold}
-    return StochasticGradientProblem{TM,Missing,Function}(M, Missing(), ∇)
+    return StochasticGradientProblem{TM,Missing,typeof(∇)}(M, Missing(), ∇)
 end
 function StochasticGradientProblem(
     M::TM, cost::Function, ∇::AbstractVector{<:Function}
@@ -96,7 +96,7 @@ see also [`StochasticGradientProblem`](@ref) and [`stochastic_gradient_descent`]
 Create a [`StochasticGradientDescentOptions`](@ref) with start point `x`.
 all other fields are optional keyword arguments.
 """
-struct StochasticGradientDescentOptions{
+mutable struct StochasticGradientDescentOptions{
     TX,
     D<:AbstractGradientProcessor,
     TStop<:StoppingCriterion,
@@ -105,10 +105,10 @@ struct StochasticGradientDescentOptions{
 } <: AbstractGradientDescentOptions
     x::TX
     direction::D
-    stopping_criterion::TStop
+    stop::TStop
     stepsize::TStep
     order_type::Symbol
-    order::Vector{Int}
+    order::Vector{<:Int}
     retraction_method::RM
     k::Int # current iterate
 end
@@ -116,13 +116,13 @@ function StochasticGradientDescentOptions(
     x;
     direction::AbstractGradientProcessor=StochasticGradient(),
     order_type::Symbol=:RandomOrder,
-    order=[],
+    order::Vector{<:Int}=Int[],
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(0.1),
+    stepsize::Stepsize=ConstantStepsize(1.0),
 )
     return StochasticGradientDescentOptions{
-        typeof(x),typeof(stoping_criterion),typeof(step_size)
+        typeof(x), typeof(direction), typeof(stoping_criterion), typeof(stepsize), typeof(retraction_method),
     }(
         x, direction, stoping_criterion, stepsize, order_type, order, retraction_method, 0
     )
@@ -136,12 +136,12 @@ thereof.
 """
 struct StochasticGradient <: AbstractStochasticGradientProcessor end
 function (s::StochasticGradient)(
-    p::StochasticGradientProblem, o::StochasticGradientDescentOptions, i
+    p::StochasticGradientProblem, o::StochasticGradientDescentOptions, iter
 )
     # for each new epoche choose new order if we are at random order
-    ((k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
+    ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
     # i is the gradient to choose, either from the order or completely random
-    j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[k]
+    j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[o.k]
     return o.stepsize(p, o, iter), get_gradient(p, j, o.x)
 end
 function MomentumGradient(
@@ -150,8 +150,9 @@ function MomentumGradient(
     s::AbstractGradientProcessor=StochasticGradient();
     ∇=zero_tangent_vector(p.M, x0),
     momentum=0.2,
-) where {P}
-    return MomentumGradient{typeof(∇),typeof(momentum)}(∇, momentum, s)
+    vector_transport_method::VTM=ParallelTransport(),
+) where {P, VTM <: AbstractVectorTransportMethod}
+    return MomentumGradient{P, typeof(∇),typeof(momentum), VTM}(deepcopy(x0), ∇, momentum, s, vector_transport_method)
 end
 
 function AverageGradient(
@@ -160,6 +161,7 @@ function AverageGradient(
     n::Int=10,
     s::AbstractGradientProcessor=StochatsticGradient();
     gradients=fill(zero_tangent_vector(p.M, x0), n),
-) where {P}
-    return AverageGradient{eltype(gradients)}(gradients, s)
+    vector_transport_method::VTM=ParallelTransport(),
+) where {P, VTM}
+    return AverageGradient{eltype(gradients),VTM}(gradients, s)
 end

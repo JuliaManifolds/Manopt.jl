@@ -32,19 +32,17 @@ function stochastic_gradient_descent(
     ∇F::Union{Function,AbstractVector{<:Function}},
     x0;
     cost::Union{Function,Missing}=Missing(),
-    direction::AbstractGradientProcessor=StochasticGradtient(),
-    stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(0.1),
+    direction::AbstractGradientProcessor=StochasticGradient(),
+    stoping_criterion::StoppingCriterion=StopAfterIteration(10000),
+    stepsize::Stepsize=ConstantStepsize(1.0),
     order_type::Symbol=:Random,
-    order=collect(1:(∇F isa Function ? length(∇F(x)) : length(∇F))),
+    order=collect(1:(∇F isa Function ? length(∇F(x0)) : length(∇F))),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-    momentum::Float64=0.0,
+    return_options = false,
+    kwargs...
 )
     p = StochasticGradientProblem(M, cost, ∇F)
-    if ((momentum) > 1.0 || (momentum < 0.0))
-        error("Momentum hast to be in [0,1] not $momentum.")
-    end
     o = StochasticGradientDescentOptions(
         x0;
         stoping_criterion=stoping_criterion,
@@ -72,7 +70,7 @@ end
 function step_solver!(
     p::StochasticGradientProblem, o::StochasticGradientDescentOptions, iter
 )
-    s, η = o.direction(p, o, i)
+    s, η = o.direction(p, o, iter)
     retract!(p.M, o.x, o.x, -s * η)
     # move forward in cycle
     o.k = ((o.k) % length(o.order)) + 1
