@@ -159,7 +159,8 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
 
 Add momentum to a stochastic gradient problem, where by default just a stochastic gradient evaluation is used
 """
-mutable struct MomentumGradient{P,T,R<:Real, VTM <: AbstractVectorTransportMethod} <: AbstractGradientProcessor
+mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
+               AbstractGradientProcessor
     ∇::T
     last_iterate::P
     momentum::R
@@ -170,27 +171,33 @@ function MomentumGradient(
     p::GradientProblem,
     x0::P,
     s::AbstractGradientProcessor=Gradient();
-    last_iterate = x0,
+    last_iterate=x0,
     vector_transport_method::VTM=ParallelTransport(),
     ∇=zero_tangent_vector(p.M, x0),
     momentum=0.2,
-) where {P, VTM <: AbstractVectorTransportMethod}
-    return MomentumGradient{P, typeof(∇), typeof(momentum), VTM}(deepcopy(x0), ∇, momentum, s, vector_transport_method)
+) where {P,VTM<:AbstractVectorTransportMethod}
+    return MomentumGradient{P,typeof(∇),typeof(momentum),VTM}(
+        deepcopy(x0), ∇, momentum, s, vector_transport_method
+    )
 end
 function MomentumGradient(
     M::Manifold,
     x0::P,
     s::AbstractGradientProcessor=Gradient();
     ∇=zero_tangent_vector(M, x0),
-    last_iterate = x0,
+    last_iterate=x0,
     momentum=0.2,
-    vector_transport_method::VTM = ParallelTransport()
-) where {P, VTM<:AbstractVectorTransportMethod}
-    return MomentumGradient{P, typeof(∇), typeof(momentum), VTM}(deepcopy(x0), ∇, momentum, s, vector_transport_method)
+    vector_transport_method::VTM=ParallelTransport(),
+) where {P,VTM<:AbstractVectorTransportMethod}
+    return MomentumGradient{P,typeof(∇),typeof(momentum),VTM}(
+        deepcopy(x0), ∇, momentum, s, vector_transport_method
+    )
 end
 function (m::MomentumGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
     s, d = m.direction(p, o, i) #get inner direction and step size
-    old_d = m.momentum * vector_transport_to(p.M, m.last_iterate, m.∇, o.x, m.vector_transport_method)
+    old_d =
+        m.momentum *
+        vector_transport_to(p.M, m.last_iterate, m.∇, o.x, m.vector_transport_method)
     m.∇ = old_d - s .* d
     m.last_iterate = deepcopy(o.x)
     return s, -m.∇
@@ -236,7 +243,8 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
 
 Add average to a stochastic gradient problem, `n` determines the size of averaging and `gradients` can be prefilled with some history
 """
-mutable struct AverageGradient{P,T, VTM <: AbstractVectorTransportMethod} <: AbstractGradientProcessor
+mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
+               AbstractGradientProcessor
     gradients::AbstractVector{T}
     last_iterate::P
     direction::AbstractGradientProcessor
@@ -249,8 +257,10 @@ function AverageGradient(
     s::AbstractGradientProcessor=Gradient();
     gradients=fill(zero_tangent_vector(M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
-) where {P, VTM<:AbstractVectorTransportMethod}
-    return AverageGradient{P,eltype(gradients),VTM}(gradients, x0, s,vector_transport_method)
+) where {P,VTM<:AbstractVectorTransportMethod}
+    return AverageGradient{P,eltype(gradients),VTM}(
+        gradients, x0, s, vector_transport_method
+    )
 end
 function AverageGradient(
     p::GradientProblem,
@@ -259,15 +269,22 @@ function AverageGradient(
     s::AbstractGradientProcessor=Gradient();
     gradients=fill(zero_tangent_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
-) where {P, VTM}
+) where {P,VTM}
     return AverageGradient{P,eltype(gradients),VTM}(gradients, s, vector_transport_method)
 end
 function (a::AverageGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
     pop!(a.gradients)
     s, d = a.direction(p, o, i) #get inner gradient and step
-    a.gradients = vcat( [d], a.gradients )
-    for i ∈ 1:(length(a.gradients)-1) #transport & shift inplace
-        vector_transport_to!(p.M, a.gradients[i], a.last_iterate, a.gradients[i+1], o.x, a.vector_transport_method)
+    a.gradients = vcat([d], a.gradients)
+    for i in 1:(length(a.gradients) - 1) #transport & shift inplace
+        vector_transport_to!(
+            p.M,
+            a.gradients[i],
+            a.last_iterate,
+            a.gradients[i + 1],
+            o.x,
+            a.vector_transport_method,
+        )
     end
     a.gradients[1] = d
     a.last_iterate = deepcopy(o.x)
@@ -322,7 +339,7 @@ function Nesterov(
     x0::P,
     γ::T=0.001,
     μ::T=0.9,
-    shrinkage::Function = i -> 0.8;
+    shrinkage::Function=i -> 0.8;
     inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
 ) where {P,T}
     return Nesterov{P,T}(γ, μ, deepcopy(x0), shrinkage, inverse_retraction_method)
@@ -330,11 +347,13 @@ end
 function (s::Nesterov)(p::GradientProblem, o::AbstractGradientDescentOptions, i)
     h = get_stepsize(p, o, i)
     α = (h * (s.γ - s.μ) + sqrt(h^2 * (s.γ - s.μ)^2 + 4 * h * s.γ)) / 2
-    γbar = (1 - α)*s.γ + α * s.μ
+    γbar = (1 - α) * s.γ + α * s.μ
     y = retract(p.M, o.x, (α * s.γ) / (s.γ + α * s.μ) .* inverse_retract(p.M, o.x, s.v))
     gradf_yk = get_gradient(p, y)
     xn = retract(p.M, y, -h * gradf_yk)
-    d = ((1 - α) * s.γ) / γbar .* inverse_retract(p.M, y, s.v, s.inverse_retraction_method) - α / γbar .* gradf_yk
+    d =
+        ((1 - α) * s.γ) / γbar .*
+        inverse_retract(p.M, y, s.v, s.inverse_retraction_method) - α / γbar .* gradf_yk
     s.v = retract(p.M, y, d, o.retraction_method)
     s.γ = 1 / (1 + s.shrinkage(i)) * γbar
     return h, -1 / h .* inverse_retract(p.M, o.x, xn) # outer update

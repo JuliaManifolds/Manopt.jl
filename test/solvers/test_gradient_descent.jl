@@ -102,7 +102,7 @@
         stopping_criterion=StopWhenAny(
             StopAfterIteration(1000), StopWhenChangeLess(10^-16)
         ),
-        direction = Nesterov(f[1]),
+        direction=Nesterov(f[1]),
         debug=[:Stop],
     )
     @test isapprox(x, x6; atol=1e-13)

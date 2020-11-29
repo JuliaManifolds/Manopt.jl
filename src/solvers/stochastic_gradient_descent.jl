@@ -39,8 +39,8 @@ function stochastic_gradient_descent(
     order=collect(1:(∇F isa Function ? length(∇F(x0)) : length(∇F))),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-    return_options = false,
-    kwargs...
+    return_options=false,
+    kwargs...,
 )
     p = StochasticGradientProblem(M, cost, ∇F)
     o = StochasticGradientDescentOptions(

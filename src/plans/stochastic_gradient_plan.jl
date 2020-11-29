@@ -122,7 +122,11 @@ function StochasticGradientDescentOptions(
     stepsize::Stepsize=ConstantStepsize(1.0),
 )
     return StochasticGradientDescentOptions{
-        typeof(x), typeof(direction), typeof(stoping_criterion), typeof(stepsize), typeof(retraction_method),
+        typeof(x),
+        typeof(direction),
+        typeof(stoping_criterion),
+        typeof(stepsize),
+        typeof(retraction_method),
     }(
         x, direction, stoping_criterion, stepsize, order_type, order, retraction_method, 0
     )
@@ -151,8 +155,10 @@ function MomentumGradient(
     ∇=zero_tangent_vector(p.M, x0),
     momentum=0.2,
     vector_transport_method::VTM=ParallelTransport(),
-) where {P, VTM <: AbstractVectorTransportMethod}
-    return MomentumGradient{P, typeof(∇),typeof(momentum), VTM}(deepcopy(x0), ∇, momentum, s, vector_transport_method)
+) where {P,VTM<:AbstractVectorTransportMethod}
+    return MomentumGradient{P,typeof(∇),typeof(momentum),VTM}(
+        deepcopy(x0), ∇, momentum, s, vector_transport_method
+    )
 end
 
 function AverageGradient(
@@ -162,6 +168,6 @@ function AverageGradient(
     s::AbstractGradientProcessor=StochatsticGradient();
     gradients=fill(zero_tangent_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
-) where {P, VTM}
+) where {P,VTM}
     return AverageGradient{eltype(gradients),VTM}(gradients, s)
 end
