@@ -146,6 +146,13 @@ export Options,
     TruncatedConjugateGradientOptions,
     TrustRegionsOptions
 
+export AbstractGradientProcessor,
+    AverageGradient,
+    Gradient,
+    MomentumGradient,
+    Nesterov,
+    StochasticGradient
+
 export AbstractOptionsAction, StoreOptionsAction
 export has_storage, get_storage, update_storage!
 

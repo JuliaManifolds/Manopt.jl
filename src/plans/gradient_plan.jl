@@ -151,7 +151,7 @@ Add momentum to a gradient problem, where by default just a gradient evaluation 
 
 Add momentum to a stochastic gradient problem, where by default just a stochastic gradient evaluation is used
 """
-struct MomentumGradient{T,R<:Real} <: AbstractGradientProcessor
+mutable struct MomentumGradient{T,R<:Real} <: AbstractGradientProcessor
     ∇::T
     momentum::R
     direction::AbstractGradientProcessor
@@ -201,7 +201,7 @@ Add average to a gradient problem, `n` determines the size of averaging and `gra
 
 Add average to a stochastic gradient problem, `n` determines the size of averaging and `gradients` can be prefilled with some history
 """
-struct AverageGradient{T} <: AbstractGradientProcessor
+mutable struct AverageGradient{T} <: AbstractGradientProcessor
     gradients::AbstractVector{T}
     direction::AbstractGradientProcessor
 end
@@ -223,13 +223,15 @@ end
     Nesterov <: AbstractGradientProcessor
 
 ## Fields
+* `γ`
+* `μ` the strong convexity coefficient
 * `v` (=``=v_k``, ``v_0=x_0``) an interims point to compute the next gradient evaluation point `y_k`
-* ``
+* `shrinkage` (`= i -> 0.8`) a function to compute the shrinkage ``β_k`` per iterate.
 
 Let's assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex.
 Given
 * a step size ``h_k<\frac{1}{L}`` (from the [`GradientDescentOptions`](@ref)
-* a shrinkage parameter ``β_k``
+* a `shrinkage` parameter ``β_k``
 * and a current iterate $x_k$
 * as well as the interims values $γ_k`` and ``v_k`` from the previous iterate.
 
@@ -244,10 +246,17 @@ This compute a Nesterov type update using the following steps, see [^ZhangSra201
 
 Then the direction from ``x_k`` to ``x_k+1``, i.e. ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
 
+# Constructor
+    Nesterov(x0::P, γ=0.001, μ=0.9, schrinkage = k -> 0.8;
+        inverse_retraction_method=LogarithmicInverseRetraction())
+
+Initialize the Nesterov acceleration, where `x0` initializes `v`.
+
 [^ZhangSra2018]:
-    >
+    > H. Zhang, S. Sra: _Towards Riemannian Accelerated Gradient Methods_,
+    > Preprint, 2018, arXiv: [1806.02812](https://arxiv.org/abs/1806.02812)
 """
-struct Nesterov{P,T<:Real} <: AbstractGradientProcessor
+mutable struct Nesterov{P,T<:Real} <: AbstractGradientProcessor
     γ::T
     μ::T
     v::P
@@ -256,26 +265,23 @@ struct Nesterov{P,T<:Real} <: AbstractGradientProcessor
 end
 function Nesterov(
     x0::P,
-    γ::T,
-    μ::T,
-    shrinkage::Function;
+    γ::T=0.001,
+    μ::T=0.9,
+    shrinkage::Function = i -> 0.8;
     inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
 ) where {P,T}
     return Nesterov{P,T}(γ, μ, deepcopy(x0), shrinkage, inverse_retraction_method)
 end
 function (s::Nesterov)(p::GradientProblem, o::AbstractGradientDescentOptions, i)
     h = get_stepsize(p, o, i)
-    α = (h(o.γ - o.μ) + sqrt(h^2 * (o.γ - o.μ)^2 + 4 * h * o.γ)) / 2
-    γbar = (1 - α)o.γ + α * o.μ
-    y = retract(p.M, o.x, (α * o.γ) / (o.γ + α * o.μ) .* inverse_retract(p.M, o.x, s.v))
+    α = (h * (s.γ - s.μ) + sqrt(h^2 * (s.γ - s.μ)^2 + 4 * h * s.γ)) / 2
+    γbar = (1 - α)*s.γ + α * s.μ
+    y = retract(p.M, o.x, (α * s.γ) / (s.γ + α * s.μ) .* inverse_retract(p.M, o.x, s.v))
     gradf_yk = get_gradient(p, y)
     xn = retract(p.M, y, -h * gradf_yk)
-    o.v = retract(
-        p.M,
-        y,
-        ((1 - α) * o.γ) / γbar .* inverse_retract(p.M, y, o.v) - α / γbar .* gradf_yk,
-    )
-    o.γ = 1 / (1 + o.shrinkage(i)) * γbar
+    d = ((1 - α) * s.γ) / γbar .* inverse_retract(p.M, y, s.v, s.inverse_retraction_method) - α / γbar .* gradf_yk
+    s.v = retract(p.M, y, d, o.retraction_method)
+    s.γ = 1 / (1 + s.shrinkage(i)) * γbar
     return h, -1 / h .* inverse_retract(p.M, o.x, xn) # outer update
 end
 

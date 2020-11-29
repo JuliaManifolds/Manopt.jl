@@ -94,6 +94,18 @@
         debug=[:Stop],
     )
     @test isapprox(x, x5; atol=1e-13)
+    x6 = gradient_descent(
+        M,
+        F,
+        ∇F,
+        f[1];
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+        ),
+        direction = Nesterov(f[1]),
+        debug=[:Stop],
+    )
+    @test isapprox(x, x6; atol=1e-13)
 
     @test_logs (
         :warn,
