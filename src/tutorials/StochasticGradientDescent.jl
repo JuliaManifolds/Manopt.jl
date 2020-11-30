@@ -10,7 +10,7 @@
 #
 # ```math
 # \operatorname*{arg\,min}_{x\in\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
-#   \operatorname{d}_{\mathcal M}(x,p_i),
+#   \operatorname{d}^2_{\mathcal M}(x,p_i),
 # ```
 # which of course can be (and is) solved by a gradient descent, see the [introductionary tutorial](@ref Optimize).
 # If ``N`` is very large it might be quite expensive to evaluate the complete gradient.
@@ -33,6 +33,7 @@ black = RGBA{Float64}(colorant"#000000")
 TolVibrantOrange = RGBA{Float64}(colorant"#EE7733") # Start
 TolVibrantBlue = RGBA{Float64}(colorant"#0077BB") # a path
 TolVibrantTeal = RGBA{Float64}(colorant"#009988") # points
+nothing #hide
 #
 # And optain a large data set
 n = 5000
@@ -73,37 +74,33 @@ render_asymptote(export_folder * "/centerAndLargeData.asy"; render=2) #src
 # For the mean we have as a gradient
 #
 # ```math
-#  ∇F(x) = \sum_{i=1}^N ∇f_i \quad \text{where} ∇f_i(x) = \log_x p_i
+#  ∇F(x) = \sum_{i=1}^N ∇f_i(x) \quad \text{where} ∇f_i(x) = -\log_x p_i
 # ```
 #
 # Which we define as
 F(x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
 ∇F(x) = [∇distance(M, p, x) for p in data]
-∇f = [x -> ∇distance(M, p, x) for p in data]
+∇f = [x -> ∇distance(M, p, x) for p in data];
 # The calls are only slightly different, but notice that accessing the 2nd gradient element
-# requires evaluating all logs in the first function
-@time ∇F(x)[2]
-@time ∇f[2](x)
+# requires evaluating all logs in the first function.
 # So while you can use both `∇F` and `∇f` in the following call, the second one is faster:
-@time x_opt1 = stochastic_gradient_descent(M, ∇F, x)
-d1 = distance(M, x, x_opt1)
-@time x_opt2 = stochastic_gradient_descent(M, ∇f, x)
-d2 = distance(M, x, x_opt2)
+@time x_opt1 = stochastic_gradient_descent(M, ∇F, x);
+# versus
+@time x_opt2 = stochastic_gradient_descent(M, ∇f, x);
 # This result is reasonably close. But we can improve it by using a [`DirectionUpdateRule`](@ref),
-# namely
-# 1. [`MomentumGradient`](@ref), which requires both the manifold and the initial value,
+# namely:
+# On the one hand [`MomentumGradient`](@ref), which requires both the manifold and the initial value,
 #    in order to keep track of the iterate and parallel transport the last direction to the current iterate.
-#    you can also set a `vector_transport_method`, if [`ParallelTransport`](@ref)`()` is not
+#    you can also set a `vector_transport_method`, if `ParallelTransport()` is not
 #    available on your manifold. Here we simply do
-x_opt3 = stochastic_gradient_descent(
+@time x_opt3 = stochastic_gradient_descent(
     M, ∇f, x; direction=MomentumGradient(M, x, StochasticGradient())
-)
-d3 = distance(M, x, x_opt3)
-# 2. Similarly the [`AverageGradient`](@ref) computes an average of the last `n` gradients, i.e.
+);
+# And on the other hand the [`AverageGradient`](@ref) computes an average of the last `n` gradients, i.e.
 @time x_opt4 = stochastic_gradient_descent(
     M, ∇f, x; direction=AverageGradient(M, x, 10, StochasticGradient())
-)
-d4 = distance(M, x, x_opt4)
+);
+# note that the default [`StoppingCriterion`](@ref) is a fixed number of iterations.
 #
 # Note that since you can apply both also in the [`Gradient`](@ref) case of [`gradient_descent`](@ref),
 # both constructors have to know that internally the default avaluation of the Stochastic gradient
@@ -111,7 +108,9 @@ d4 = distance(M, x, x_opt4)
 #
 # For this small example you can of course also use a gradient descent with [`ArmijoLinesearch`](@ref),
 # but it will be a little slower usually
-@time x_opt5 = gradient_descent(M, F, x -> sum(∇F(x)), x; stepsize=ArmijoLinesearch())
-d5 = distance(M, x, x_opt5)
+@time x_opt5 = gradient_descent(M, F, x -> sum(∇F(x)), x; stepsize=ArmijoLinesearch());
 # but it is for sure faster than the variant above that evaluates the full gradient on every iteration,
 # since stochastic gradient descent takes more iterations.
+#
+# Note that all 5 of couse yield the same result
+[distance(M, x, y) for y ∈ [x_opt1, x_opt2, x_opt3, x_opt4, x_opt5] ]
