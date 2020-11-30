@@ -47,7 +47,9 @@ function asymptote_export_S2_signals(
     arrow_head_sizes::Array{Float64,1}=fill(arrow_head_size, length(tangent_vectors)),
     camera_position::Tuple{Float64,Float64,Float64}=(1.0, 1.0, 0.0),
     line_width::Float64=1.0,
-    line_widths::Array{Float64,1}=fill(line_width, length(curves) + length(tangent_vectors)),
+    line_widths::Array{Float64,1}=fill(
+        line_width, length(curves) + length(tangent_vectors)
+    ),
     dot_size::Float64=1.0,
     dot_sizes::Array{Float64,1}=fill(dot_size, length(points)),
     sphere_color::RGBA{Float64}=RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
@@ -282,7 +284,7 @@ function asymptote_export_SPD(
     filename::String;
     data=fill(Matrix{Float64}(I, 3, 3), 0, 0),
     scale_axes=(1 / 3.0, 1 / 3.0, 1 / 3.0) .*
-              (length(data) > 0 ? maximum(maximum(eigvals.(data))) : 1),
+               (length(data) > 0 ? maximum(maximum(eigvals.(data))) : 1),
     camera_position::Tuple{Float64,Float64,Float64}=(
         (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0.0) + 10.0
     ),

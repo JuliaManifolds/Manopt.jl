@@ -161,7 +161,6 @@ export getHessian, approxHessianFD
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
-
 export DirectionUpdateRule,
     Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
 

@@ -63,6 +63,9 @@ render_asymptote(export_folder * "/centerAndLargeData.asy"; render=2) #src
 #md #
 #md # ![The data of noisy versions of $x$](../assets/images/tutorials/centerAndLargeData.png)
 #
+# Note that due to the construction of the points as zero mean tangent vectors, the mean should
+# be very close to our initial point `x`.
+#
 # In order to use the stochastic gradient, we now need a function that returns the vector of gradients.
 # There are two ways to define it in `Manopt.jl`: as one function, that returns a vector or a vector of funtions.
 #
@@ -74,10 +77,41 @@ render_asymptote(export_folder * "/centerAndLargeData.asy"; render=2) #src
 # ```
 #
 # Which we define as
-∇F(x) = [ log(M,x,p) for p ∈ data ]
-∇f = [ x -> log(M, x, p) for p ∈ data ]
+F(x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
+∇F(x) = [∇distance(M, p, x) for p in data]
+∇f = [x -> ∇distance(M, p, x) for p in data]
 # The calls are only slightly different, but notice that accessing the 2nd gradient element
 # requires evaluating all logs in the first function
-[ ∇Fk = ∇F(p)[k], ∇f[k](p) ]
-# With these we can directly get started with the stochastic gradient descent
-x = stochastic_gradient_descent(M,∇F,p)
+@time ∇F(x)[2]
+@time ∇f[2](x)
+# So while you can use both `∇F` and `∇f` in the following call, the second one is faster:
+@time x_opt1 = stochastic_gradient_descent(M, ∇F, x)
+d1 = distance(M, x, x_opt1)
+@time x_opt2 = stochastic_gradient_descent(M, ∇f, x)
+d2 = distance(M, x, x_opt2)
+# This result is reasonably close. But we can improve it by using a [`DirectionUpdateRule`](@ref),
+# namely
+# 1. [`MomentumGradient`](@ref), which requires both the manifold and the initial value,
+#    in order to keep track of the iterate and parallel transport the last direction to the current iterate.
+#    you can also set a `vector_transport_method`, if [`ParallelTransport`](@ref)`()` is not
+#    available on your manifold. Here we simply do
+x_opt3 = stochastic_gradient_descent(
+    M, ∇f, x; direction=MomentumGradient(M, x, StochasticGradient())
+)
+d3 = distance(M, x, x_opt3)
+# 2. Similarly the [`AverageGradient`](@ref) computes an average of the last `n` gradients, i.e.
+@time x_opt4 = stochastic_gradient_descent(
+    M, ∇f, x; direction=AverageGradient(M, x, 10, StochasticGradient())
+)
+d4 = distance(M, x, x_opt4)
+#
+# Note that since you can apply both also in the [`Gradient`](@ref) case of [`gradient_descent`](@ref),
+# both constructors have to know that internally the default avaluation of the Stochastic gradient
+# (choosing one gradient $∇f_k$ at random) has to be specified.
+#
+# For this small example you can of course also use a gradient descent with [`ArmijoLinesearch`](@ref),
+# but it will be a little slower usually
+@time x_opt5 = gradient_descent(M, F, x -> sum(∇F(x)), x; stepsize=ArmijoLinesearch())
+d5 = distance(M, x, x_opt5)
+# but it is for sure faster than the variant above that evaluates the full gradient on every iteration,
+# since stochastic gradient descent takes more iterations.
