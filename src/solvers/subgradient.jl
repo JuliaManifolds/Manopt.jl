@@ -21,12 +21,12 @@ not necessarily determistic.
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
   complete [`Options`](@ref) re returned. This can be used to access recorded values.
-  If set to false (default) just the optimal value `xOpt` if returned
+  If set to false (default) just the optimal value `x_opt` if returned
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `xOpt` – the resulting (approximately critical) point of the subgradient method
+* `x_opt` – the resulting (approximately critical) point of the subgradient method
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
@@ -52,7 +52,7 @@ function subgradient_method(
     end
 end
 function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
-    o.xOptimal = o.x
+    o.x_optimal = o.x
     o.∂ = zero_tangent_vector(p.M, o.x)
     return o
 end
@@ -60,7 +60,7 @@ function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions, iter)
     o.∂ = get_subgradient(p, o.x)
     s = get_stepsize(p, o, iter)
     retract!(p.M, o.x, o.x, -s * o.∂, o.retraction_method)
-    (get_cost(p, o.x) < get_cost(p, o.xOptimal)) && (o.xOptimal = o.x)
+    (get_cost(p, o.x) < get_cost(p, o.x_optimal)) && (o.x_optimal = o.x)
     return o
 end
-get_solver_result(o::SubGradientMethodOptions) = o.xOptimal
+get_solver_result(o::SubGradientMethodOptions) = o.x_optimal

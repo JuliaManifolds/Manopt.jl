@@ -83,36 +83,6 @@ and returns a number, namely the stepsize to use.
 [`Linesearch`](@ref)
 """
 abstract type Stepsize end
-#
-#
-# Evalualtion Orders
-#
-#
-"""
-    EvalOrder
-type for specifying an evaluation order for any cyclicly evaluated algorithms
-"""
-abstract type EvalOrder end
-
-"""
-    LinearEvalOrder <: EvalOrder
-evaluate in a linear order, i.e. for each cycle of length l evaluate in the
-order 1,2,...,l.
-"""
-mutable struct LinearEvalOrder <: EvalOrder end
-
-"""
-    RandomEvalOrder <: EvalOrder
-choose a random order for each evaluation of the l functionals.
-"""
-mutable struct RandomEvalOrder <: EvalOrder end
-
-"""
-    FixedRandomEvalOrder <: EvalOrder
-Choose a random order once and evaluate always in this order, i.e. for
-l elements there is one chosen permutation used for each iteration cycle.
-"""
-mutable struct FixedRandomEvalOrder <: EvalOrder end
 
 @doc raw"""
     get_options(o::Options)

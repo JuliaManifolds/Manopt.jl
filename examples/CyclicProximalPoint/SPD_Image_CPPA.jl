@@ -35,7 +35,7 @@ f = artificial_SPD_image2(32)
 pixelM = SymmetricPositiveDefinite(3)
 if export_orig
     orig_filename = joinpath(results_folder, experiment_name * "-orig.asy")
-    asymptote_export_SPD(orig_filename; data=f, scaleAxes=(7.5, 7.5, 7.5))
+    asymptote_export_SPD(orig_filename; data=f, scale_axes=(7.5, 7.5, 7.5))
     render_asymptote(orig_filename; render=asy_render_detail)
 end
 
@@ -79,7 +79,7 @@ yRec = get_record(o)
 # Results
 if export_result
     result_filename = joinpath(results_folder, experiment_name * "-result.asy")
-    asymptote_export_SPD(result_filename; data=y, scaleAxes=(7.5, 7.5, 7.5))
+    asymptote_export_SPD(result_filename; data=y, scale_axes=(7.5, 7.5, 7.5))
     render_asymptote(result_filename; render=asy_render_detail)
 end
 if export_table

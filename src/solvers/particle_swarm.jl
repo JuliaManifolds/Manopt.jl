@@ -62,7 +62,7 @@ i.e. $p_k^{(i)}$ is the best known position for the particle $k$ and $g^{(i)}$ i
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) are returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `xOpt` if returned
+    If set to false (default) just the optimal value `x_opt` if returned
 
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.

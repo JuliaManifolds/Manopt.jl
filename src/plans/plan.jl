@@ -13,6 +13,7 @@ include("proximal_plan.jl")
 include("subgradient_plan.jl")
 include("particle_swarm_plan.jl")
 include("primal_dual_plan.jl")
+include("stochastic_gradient_plan.jl")
 
 include("stopping_criterion.jl")
 include("stepsize.jl")

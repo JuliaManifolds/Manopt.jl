@@ -32,13 +32,12 @@ after the description
 * `population` – an `Array{`point`,1}` of $n+1$ points $x_i$, $i=1,\ldots,n+1$, where $n$ is the
   dimension of the manifold.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
-* `retraction` – (`exp`) the rectraction to use
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
 * `γ` – (`2.`) expansion parameter ($\gamma>0$)
 * `ρ` – (`1/2`) contraction parameter, $0 < \rho \leq \frac{1}{2}$,
 * `σ` – (`1/2`) shrink coefficient, $0 < \sigma \leq 1$
 * `x` – (`p[1]`) - a field to collect the current best value
-* `retraction_method` – `ExponentialRetraction` the rectraction to use, defaults to
+* `retraction_method` – `ExponentialRetraction()` the rectraction to use, defaults to
   the exponential map
 * `inverse_retraction_method` - `LogarithmicInverseRetraction` an `inverse_retraction(M,x,y)` to use.
 

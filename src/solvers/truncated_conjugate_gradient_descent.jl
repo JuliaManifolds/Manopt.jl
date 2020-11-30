@@ -48,7 +48,7 @@ see the reference:
     .
 * `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `xOpt` is returned
+    If set to false (default) just the optimal value `x_opt` is returned
 
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 

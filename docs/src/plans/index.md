@@ -107,16 +107,6 @@ Problem
 get_cost
 ```
 
-For any algorithm that involves a cyclic evalutaion, e.g.
-[`cyclic_proximal_point`](@ref), one can specify the [`EvalOrder`](@ref) as
-
-```@docs
-EvalOrder
-LinearEvalOrder
-RandomEvalOrder
-FixedRandomEvalOrder
-```
-
 ### Cost based problem
 
 ```@docs
@@ -127,7 +117,9 @@ CostProblem
 
 ```@docs
 GradientProblem
+StochasticGradientProblem
 get_gradient
+get_gradients
 ```
 
 ### Subgradient based problem

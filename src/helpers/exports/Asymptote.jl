@@ -1,6 +1,6 @@
 @doc raw"""
-    asymptote_export_S2_signals(filename; points, curves, tVectors, colors, options...)
-Export given `points`, `curves`, and `tVectors` on the sphere $\mathbb S^2$
+    asymptote_export_S2_signals(filename; points, curves, tangent_vectors, colors, options...)
+Export given `points`, `curves`, and `tangent_vectors` on the sphere $\mathbb S^2$
 to Asymptote.
 
 # Input
@@ -14,45 +14,47 @@ to Asymptote.
   interpreted as a curve and is accompanied by an entry within `colors`
 * `points` – an `Array` of `Arrays` of points on the sphere where each inner array is
   itnerpreted as a set of points and is accompanied by an entry within `colors`
-* `tVectors` – an `Array` of `Arrays` of tuples, where the first is a points, the second a
+* `tangent_vectors` – an `Array` of `Arrays` of tuples, where the first is a points, the second a
   tangent vector and each set of vectors is accompanied by an entry
   from within `colors`
 
 # Optional Arguments (Asymptote)
-* `arrowHeadSize` - (`6.0`) size of the arrowheads of the tangent vectors
-* `arrowHeadSizes` – overrides the previous value to specify a value per tVector set.
-* `cameraPosition` - (`(1., 1., 0.)`) position of the camera in the Asymptote
+* `arrow_head_size` - (`6.0`) size of the arrowheads of the tangent vectors
+* `arrow_head_sizes` – overrides the previous value to specify a value per tVector set.
+* `camera_position` - (`(1., 1., 0.)`) position of the camera in the Asymptote
   szene
-* `lineWidth` – (`1.0`) size of the lines used to draw the curves.
-* `lineWidths` – overrides the previous value to specify a value per curve and tVector set.
-* `dotSize` – (`1.0`) size of the dots used to draw the points.
-* `dotSizes` – overrides the previous value to specify a value per point set.
-* `sphereColor` – (`RGBA{Float64}(0.85, 0.85, 0.85, 0.6)`) color of the sphere
+* `line_width` – (`1.0`) size of the lines used to draw the curves.
+* `line_widths` – overrides the previous value to specify a value per curve and tVector set.
+* `dot_size` – (`1.0`) size of the dots used to draw the points.
+* `dot_sizes` – overrides the previous value to specify a value per point set.
+* `sphere_color` – (`RGBA{Float64}(0.85, 0.85, 0.85, 0.6)`) color of the sphere
   the data is drawn on
-* `sphereLineColor` –  (`RGBA{Float64}(0.75, 0.75, 0.75, 0.6)`) color of the lines on the sphere
-* `sphereLineWidth` – (`0.5`) line width of the lines on the sphere
+* `sphere_line_color` –  (`RGBA{Float64}(0.75, 0.75, 0.75, 0.6)`) color of the lines on the sphere
+* `sphere_line_width` – (`0.5`) line width of the lines on the sphere
 * `target` – (`(0.,0.,0.)`) position the camera points at
 """
 function asymptote_export_S2_signals(
     filename::String;
     points::Array{Array{T,1},1} where {T}=Array{Array{Float64,1},1}(undef, 0),
     curves::Array{Array{T,1},1} where {T}=Array{Array{Float64,1},1}(undef, 0),
-    tVectors::Array{Array{Tuple{T,T},1},1} where {T}=Array{
+    tangent_vectors::Array{Array{Tuple{T,T},1},1} where {T}=Array{
         Array{Tuple{Float64,Float64},1},1
     }(
         undef, 0
     ),
     colors::Dict{Symbol,Array{RGBA{Float64},1}}=Dict{Symbol,Array{RGBA{Float64},1}}(),
-    arrowHeadSize::Float64=6.0,
-    arrowHeadSizes::Array{Float64,1}=fill(arrowHeadSize, length(tVectors)),
-    cameraPosition::Tuple{Float64,Float64,Float64}=(1.0, 1.0, 0.0),
-    lineWidth::Float64=1.0,
-    lineWidths::Array{Float64,1}=fill(lineWidth, length(curves) + length(tVectors)),
-    dotSize::Float64=1.0,
-    dotSizes::Array{Float64,1}=fill(dotSize, length(points)),
-    sphereColor::RGBA{Float64}=RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
-    sphereLineColor::RGBA{Float64}=RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
-    sphereLineWidth::Float64=0.5,
+    arrow_head_size::Float64=6.0,
+    arrow_head_sizes::Array{Float64,1}=fill(arrow_head_size, length(tangent_vectors)),
+    camera_position::Tuple{Float64,Float64,Float64}=(1.0, 1.0, 0.0),
+    line_width::Float64=1.0,
+    line_widths::Array{Float64,1}=fill(
+        line_width, length(curves) + length(tangent_vectors)
+    ),
+    dot_size::Float64=1.0,
+    dot_sizes::Array{Float64,1}=fill(dot_size, length(points)),
+    sphere_color::RGBA{Float64}=RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
+    sphere_line_color::RGBA{Float64}=RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
+    sphere_line_width::Float64=0.5,
     target::Tuple{Float64,Float64,Float64}=(0.0, 0.0, 0.0),
 )
     io = open(filename, "w")
@@ -66,16 +68,16 @@ function asymptote_export_S2_signals(
                 "import settings;\nimport three;\nimport solids;",
                 "unitsize(4cm);\n\n",
                 "currentprojection=perspective( ",
-                "camera = $(cameraPosition), ",
+                "camera = $(camera_position), ",
                 "target = $(target) );\n",
                 "currentlight=nolight;\n\n",
                 "revolution S=sphere(O,0.995);\n",
-                "pen SpherePen = rgb($(red(sphereColor)),",
-                "$(green(sphereColor)),$(blue(sphereColor)))",
-                "+opacity($(alpha(sphereColor)));\n",
-                "pen SphereLinePen = rgb($(red(sphereLineColor)),",
-                "$(green(sphereLineColor)),$(blue(sphereLineColor)))",
-                "+opacity($(alpha(sphereLineColor)))+linewidth($(sphereLineWidth)pt);\n",
+                "pen SpherePen = rgb($(red(sphere_color)),",
+                "$(green(sphere_color)),$(blue(sphere_color)))",
+                "+opacity($(alpha(sphere_color)));\n",
+                "pen SphereLinePen = rgb($(red(sphere_line_color)),",
+                "$(green(sphere_line_color)),$(blue(sphere_line_color)))",
+                "+opacity($(alpha(sphere_line_color)))+linewidth($(sphere_line_width)pt);\n",
                 "draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);\n",
             ),
         )
@@ -92,7 +94,7 @@ function asymptote_export_S2_signals(
                 sets = length(curves)
             elseif key == :tvectors
                 penPrefix = "tVector"
-                sets = length(tVectors)
+                sets = length(tangent_vectors)
             end
             if length(value) < sets
                 throw(ErrorException("Not enough colors ($(length(value))) provided for $(sets) sets in $(key)."))
@@ -102,7 +104,7 @@ function asymptote_export_S2_signals(
             for c in value
                 i = i + 1
                 if i > sets
-                    # avoid access errors in lineWidth or dotSizes if more colors then sets are given
+                    # avoid access errors in line_width or dot_sizes if more colors then sets are given
                     break
                 end
                 write(
@@ -110,13 +112,13 @@ function asymptote_export_S2_signals(
                     string(
                         "pen $(penPrefix)Style$(i) = ",
                         "rgb($(red(c)),$(green(c)),$(blue(c)))",
-                        (key == :curves) ? "+linewidth($(lineWidths[i])pt)" : "",
+                        (key == :curves) ? "+linewidth($(line_widths[i])pt)" : "",
                         if (key == :tvectors)
-                            "+linewidth($(lineWidths[length(curves)+i])pt)"
+                            "+linewidth($(line_widths[length(curves)+i])pt)"
                         else
                             ""
                         end,
-                        (key == :points) ? "+linewidth($(dotSizes[i])pt)" : "",
+                        (key == :points) ? "+linewidth($(dot_sizes[i])pt)" : "",
                         "+opacity($(alpha(c)));\n",
                     ),
                 )
@@ -155,10 +157,10 @@ function asymptote_export_S2_signals(
             write(io, string(";\n draw(p$(i), curveStyle$(i));\n"))
         end
         i = 0
-        if length(tVectors) > 0
+        if length(tangent_vectors) > 0
             write(io, "\n/*\n  Exported tangent vectors\n*/\n")
         end
-        for tVecs in tVectors
+        for tVecs in tangent_vectors
             i = i + 1
             j = 0
             for vector in tVecs
@@ -172,7 +174,7 @@ function asymptote_export_S2_signals(
                         string([string(v, ",") for v in base]...)[1:(end - 1)],
                         ")--(",
                         string([string(v, ",") for v in endPoints]...)[1:(end - 1)],
-                        "), tVectorStyle$(i),Arrow3($(arrowHeadSizes[i])));\n",
+                        "), tVectorStyle$(i),Arrow3($(arrow_head_sizes[i])));\n",
                     ),
                 )
             end
@@ -191,13 +193,13 @@ or three-dimensional data with points on the [Sphere](https://juliamanifolds.git
 
 # Optional Arguments (Data)
 * `data` – a point representing the 1-,2-, or 3-D array of points
-* `elevationColorScheme` - A `ColorScheme` for elevation
-* `scaleAxes` - (`(1/3,1/3,1/3)`) move spheres closer to each other by a factor
+* `elevation_color_scheme` - A `ColorScheme` for elevation
+* `scale_axes` - (`(1/3,1/3,1/3)`) move spheres closer to each other by a factor
   per direction
 
 # Optional Arguments (Asymptote)
-* `arrowHeadSize` - (`1.8`) size of the arrowheads of the vectors (in mm)
-* `cameraPosition` - position of the camrea (default: centered above xy-plane)
+* `arrow_head_size` - (`1.8`) size of the arrowheads of the vectors (in mm)
+* `camera_position` - position of the camrea (default: centered above xy-plane)
   szene
 * `target` - position the camera points at (default: center of xy-plane within
   data).
@@ -205,15 +207,15 @@ or three-dimensional data with points on the [Sphere](https://juliamanifolds.git
 function asymptote_export_S2_data(
     filename::String;
     data=fill([0.0, 0.0, 1.0], 0, 0),
-    arrowHeadSize::Float64=1.8,
-    scaleAxes=(1 / 3.0, 1 / 3.0, 1 / 3.0),
-    cameraPosition::Tuple{Float64,Float64,Float64}=scaleAxes .* (
+    arrow_head_size::Float64=1.8,
+    scale_axes=(1 / 3.0, 1 / 3.0, 1 / 3.0),
+    camera_position::Tuple{Float64,Float64,Float64}=scale_axes .* (
         (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0) + 10
     ),
-    target::Tuple{Float64,Float64,Float64}=scaleAxes .* (
+    target::Tuple{Float64,Float64,Float64}=scale_axes .* (
         (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, 0.0
     ),
-    elevationColorScheme=ColorSchemes.viridis,
+    elevation_color_scheme=ColorSchemes.viridis,
 )
     io = open(filename, "w")
     try
@@ -222,9 +224,9 @@ function asymptote_export_S2_data(
             string(
                 "import settings;\nimport three;\n",
                 "size(7cm);\n",
-                "DefaultHead.size=new real(pen p=currentpen) {return $(arrowHeadSize)mm;};\n",
+                "DefaultHead.size=new real(pen p=currentpen) {return $(arrow_head_size)mm;};\n",
                 "currentprojection=perspective( ",
-                "camera = $(cameraPosition), up=Y,",
+                "camera = $(camera_position), up=Y,",
                 "target = $(target) );\n\n",
             ),
         )
@@ -235,14 +237,14 @@ function asymptote_export_S2_data(
                     v = Tuple(data[x, y, z]) #extract value
                     el = asin(min(1, max(-1, v[3]))) # since 3 is between -1 and 1 this yields a value between 0 and pi
                     # map elevation to colormap
-                    c = get(elevationColorScheme, el + π / 2, (0.0, Float64(π)))
+                    c = get(elevation_color_scheme, el + π / 2, (0.0, Float64(π)))
                     # write arrow in this colormap
                     # transpose image to comply with image adresses (first index column downwards, second rows)
                     write(
                         io,
                         string(
-                            "draw( $(scaleAxes.*(x-1,y-1,z-1))",
-                            "--$(scaleAxes.*(x-1,y-1,z-1).+v),",
+                            "draw( $(scale_axes.*(x-1,y-1,z-1))",
+                            "--$(scale_axes.*(x-1,y-1,z-1).+v),",
                             " rgb($(red(c)),$(green(c)),$(blue(c))), Arrow3);\n",
                         ),
                     )
@@ -265,31 +267,31 @@ definite matrices.
 
 # Optional Arguments (Data)
 * `data` – a point representing the 1-,2-, or 3-D array of `SPDPoints`
-* `colorScheme` - A `ColorScheme` for Geometric Anisotropy Index
-* `scaleAxes` - (`(1/3,1/3,1/3)`) move symmetric positive definite matrices
+* `color_scheme` - A `ColorScheme` for Geometric Anisotropy Index
+* `scale_axes` - (`(1/3,1/3,1/3)`) move symmetric positive definite matrices
   closer to each other by a factor per direction compared to the distance
   esimated by the maximal eigenvalue of all involved SPD points
 
 # Optional Arguments (Asymptote)
-* `cameraPosition` - position of the camrea (default: centered above xy-plane)
+* `camera_position` - position of the camrea (default: centered above xy-plane)
   szene.
 * `target` - position the camera points at (default: center of xy-plane within data).
 
-Both values `cameraPosition` and `target` are scaled by `scaledAxes*EW`, where
+Both values `camera_position` and `target` are scaled by `scaledAxes*EW`, where
 `EW` is the maximal eigenvalue in the `data`.
 """
 function asymptote_export_SPD(
     filename::String;
     data=fill(Matrix{Float64}(I, 3, 3), 0, 0),
-    scaleAxes=(1 / 3.0, 1 / 3.0, 1 / 3.0) .*
-              (length(data) > 0 ? maximum(maximum(eigvals.(data))) : 1),
-    cameraPosition::Tuple{Float64,Float64,Float64}=(
+    scale_axes=(1 / 3.0, 1 / 3.0, 1 / 3.0) .*
+               (length(data) > 0 ? maximum(maximum(eigvals.(data))) : 1),
+    camera_position::Tuple{Float64,Float64,Float64}=(
         (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0.0) + 10.0
     ),
     target::Tuple{Float64,Float64,Float64}=(
         (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, 0.0
     ),
-    colorScheme=ColorSchemes.viridis,
+    color_scheme=ColorSchemes.viridis,
 )
     io = open(filename, "w")
     try
@@ -305,11 +307,11 @@ function asymptote_export_SPD(
                 "  T[0][3] = pos.x;\n  T[1][3] = pos.y;\n  T[2][3] = pos.z;\n",
                 "  return T*unitsphere;\n}\n\n",
                 "size(200);\n\n",
-                "real gDx=$(scaleAxes[1]);\n",
-                "real gDy=$(scaleAxes[2]);\n",
-                "real gDz=$(scaleAxes[3]);\n\n",
+                "real gDx=$(scale_axes[1]);\n",
+                "real gDy=$(scale_axes[2]);\n",
+                "real gDz=$(scale_axes[3]);\n\n",
                 "currentprojection=perspective(up=Y, ",
-                "camera = (gDx*$(cameraPosition[1]),gDy*$(cameraPosition[2]),gDz*$(cameraPosition[3])), ",
+                "camera = (gDx*$(camera_position[1]),gDy*$(camera_position[2]),gDz*$(camera_position[3])), ",
                 "target = (gDx*$(target[1]),gDy*$(target[2]),gDz*$(target[3])) );\n",
                 "currentlight=Viewport;\n\n",
             ),
@@ -329,7 +331,7 @@ function asymptote_export_SPD(
                             2 / 3 * sum(Lλ .^ 2) -
                             2 / 3 * sum(sum(tril(Lλ * Lλ', -1); dims=1); dims=2)[1],
                         )
-                        c = get(colorScheme, GAI / (1 + GAI), (0, 1))
+                        c = get(color_scheme, GAI / (1 + GAI), (0, 1))
                         write(
                             io,
                             string(
@@ -370,8 +372,8 @@ function render_asymptote(
     filename;
     render::Int=4,
     format="png",
-    exportFolder=string(filename[1:([findlast(".", filename)...][1])], format),
+    export_folder=string(filename[1:([findlast(".", filename)...][1])], format),
 )
-    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(exportFolder))" $(filename)`
+    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(export_folder))" $(filename)`
     return run(renderCmd)
 end

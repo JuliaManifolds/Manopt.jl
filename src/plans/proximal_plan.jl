@@ -3,12 +3,6 @@
 # Proximal Point Problem and Options
 #
 #
-export ProximalProblem
-export CyclicProximalPointOptions, DouglasRachfordOptions
-export get_cost, get_proximal_map
-export DebugProximalParameter
-export RecordProximalParameter
-
 @doc raw"""
     ProximalProblem <: Problem
 specify a problem for solvers based on the evaluation of proximal map(s).
@@ -69,32 +63,27 @@ end
 stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
-* `x0` – an point to start
-* `stopping_criterion` – a function `@(iter,x,xnew,λ_k)` based on the current
-    `iter`, `x` and `xnew` as well as the current value of `λ`.
+* `x` – the current iterate
+* `stopping_criterion` – a [`StoppingCriterion`](@ref)
 * `λ` – (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
-* `evaluationOrder` – ([`LinearEvalOrder`](@ref)`()`) how to cycle through the proximal maps.
-    Other values are [`RandomEvalOrder`](@ref)`()` that takes a new random order each
-    iteration, and [`FixedRandomEvalOrder`](@ref)`()` that fixes a random cycle for all iterations.
+* `evaluation_order` – (`:LinearOrder`) – whether
+  to use a randomly permuted sequence (`:FixedRandomOrder`), a per
+  cycle permuted sequence (`RandomOrder`) or the default linear one.
 
 # See also
 [`cyclic_proximal_point`](@ref)
 """
-mutable struct CyclicProximalPointOptions{
-    TX,TStop<:StoppingCriterion,Tλ,TOrder<:EvalOrder
-} <: Options
+mutable struct CyclicProximalPointOptions{TX,TStop<:StoppingCriterion,Tλ} <: Options
     x::TX
     stop::TStop
     λ::Tλ
-    orderType::TOrder
-    order::Vector{Int}
+    order_type::Symbol
+    order::AbstractVector{Int}
 end
 function CyclicProximalPointOptions(
-    x, s::StoppingCriterion, λ=(iter) -> 1.0 / iter, o::EvalOrder=LinearEvalOrder()
+    x, s::StoppingCriterion, λ=(iter) -> 1.0 / iter, o::Symbol=:LinearOrder
 )
-    return CyclicProximalPointOptions{typeof(x),typeof(s),typeof(λ),typeof(o)}(
-        x, s, λ, o, []
-    )
+    return CyclicProximalPointOptions{typeof(x),typeof(s),typeof(λ)}(x, s, λ, o, [])
 end
 @doc raw"""
     DouglasRachfordOptions <: Options

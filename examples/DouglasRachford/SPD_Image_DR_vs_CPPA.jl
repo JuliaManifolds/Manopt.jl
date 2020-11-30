@@ -38,7 +38,7 @@ comparison_data = joinpath(
 f = artificial_SPD_image2(32)
 if export_orig
     fn = joinpath(results_folder, experiment_name * "-orig.asy")
-    asymptote_export_SPD(fn; data=f, scaleAxes=(7.5, 7.5, 7.5))
+    asymptote_export_SPD(fn; data=f, scale_axes=(7.5, 7.5, 7.5))
     render_asymptote(fn; render=asy_render_detail)
 end
 sC = StopAfterIteration(400)
@@ -91,7 +91,7 @@ if export_result
         results_folder,
         experiment_name * "img-result-$(numIter)-α$(replace(string(α), "." => "-")).asy",
     )
-    asymptote_export_SPD(fn; data=y, scaleAxes=(7.5, 7.5, 7.5))
+    asymptote_export_SPD(fn; data=y, scale_axes=(7.5, 7.5, 7.5))
     render_asymptote(fn; render=asy_render_detail)
 end
 if export_table
