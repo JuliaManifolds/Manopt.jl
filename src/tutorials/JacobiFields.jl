@@ -7,14 +7,14 @@
 # [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s.
 #
 # We first initialize the manifold
-exportFolder = joinpath( #src
-    @__DIR__,
-    "..",
-    "..",
-    "docs",
-    "src",
-    "assets",
-    "images",
+export_folder = joinpath( #src
+    @__DIR__, #src
+    "..", #src
+    "..", #src
+    "docs", #src
+    "src", #src
+    "assets", #src
+    "images", #src
     "tutorials", #src
 ) #src
 using Manopt, Manifolds
@@ -33,7 +33,7 @@ geodesicCurve = shortest_geodesic(M, p, q, [0:0.1:1.0...]);
 nothing #hide
 # looks as follows using the [`asymptote_export_S2_signals`](@ref) export
 asymptote_export_S2_signals( #src
-    exportFolder * "/jacobiGeodesic.asy"; #src
+    export_folder * "/jacobiGeodesic.asy"; #src
     curves=[geodesicCurve], #src
     points=[[p, q]], #src
     colors=Dict(:curves => [black], :points => [TolVibrantOrange]), #src
@@ -41,7 +41,7 @@ asymptote_export_S2_signals( #src
     lineWidth=0.75, #src
     cameraPosition=(1.0, 1.0, 0.5), #src
 )#src
-render_asymptote(exportFolder * "/jacobiGeodesic.asy"; render=2) #src
+render_asymptote(export_folder * "/jacobiGeodesic.asy"; render=2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesic.asy";
@@ -105,7 +105,7 @@ W = jacobi_field.(Ref(M), Ref(p), Ref(q), T, Ref(X))
 V = [Tuple([a, b]) for (a, b) in zip(r, W)]
 # and add that as one further set to the Asymptote export.
 asymptote_export_S2_signals( #src
-    exportFolder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
+    export_folder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
     curves=[geodesicCurve], #src
     points=[[p, q], r], #src
     tVectors=[V], #src
@@ -119,7 +119,7 @@ asymptote_export_S2_signals( #src
     cameraPosition=(1.0, 1.0, 0.5), #src
 ) #src
 render_asymptote( #src
-    exportFolder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
+    export_folder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
     render=2, #src
 ) #src
 #md #
@@ -146,7 +146,7 @@ V2 = [Tuple([a, b]) for (a, b) in zip(r, W2)]
 # and we can combine both keeping the base point
 V3 = [Tuple([a, b]) for (a, b) in zip(r, W2 + W)]
 asymptote_export_S2_signals( #src
-    exportFolder * "/jacobiGeodesicResult.asy"; #src
+    export_folder * "/jacobiGeodesicResult.asy"; #src
     curves=[geodesicCurve], #src
     points=[[p, q], r], #src
     tVectors=[V, V2, V3], #src
@@ -159,7 +159,7 @@ asymptote_export_S2_signals( #src
     lineWidth=0.75, #src
     cameraPosition=(1.0, 1.0, 0.0), #src
 ) #src
-render_asymptote(exportFolder * "/jacobiGeodesicResult.asy"; render=2) #src
+render_asymptote(export_folder * "/jacobiGeodesicResult.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesicResult.asy";
 #md #    render = asyResolution,

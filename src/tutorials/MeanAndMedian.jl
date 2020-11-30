@@ -47,13 +47,13 @@
 # ## The given Dataset
 #
 export_folder = joinpath( #src
-    @__DIR__,
-    "..",
-    "..",
-    "docs",
-    "src",
-    "assets",
-    "images",
+    @__DIR__, #src
+    "..", #src
+    "..", #src
+    "docs", #src
+    "src", #src
+    "assets", #src
+    "images", #src
     "tutorials", #src
 ) #src
 using Manopt, Manifolds

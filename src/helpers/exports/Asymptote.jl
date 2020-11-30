@@ -370,8 +370,8 @@ function render_asymptote(
     filename;
     render::Int=4,
     format="png",
-    exportFolder=string(filename[1:([findlast(".", filename)...][1])], format),
+    export_folder=string(filename[1:([findlast(".", filename)...][1])], format),
 )
-    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(exportFolder))" $(filename)`
+    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(export_folder))" $(filename)`
     return run(renderCmd)
 end

@@ -91,7 +91,7 @@ include("plans/plan.jl")
 # Functions
 include("functions/manifold.jl")
 include("functions/bezier_curves.jl")
-include("functions/adjointdifferentials.jl")
+include("functions/adjoint_differentials.jl")
 include("functions/costs.jl")
 include("functions/differentials.jl")
 include("functions/gradients.jl")

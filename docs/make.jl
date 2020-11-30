@@ -5,10 +5,11 @@ tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
 tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
-    "MeanAndMedian", "BezierCurves", "GradientOfSecondOrderDifference", "JacobiFields"
+    "MeanAndMedian", "StochasticGradientDescent", "BezierCurves", "GradientOfSecondOrderDifference", "JacobiFields"
 ]
 menuEntries = [
     "get Started: Optimize!",
+    "do stochastic gradient descent",
     "work with Bézier curves",
     "see the gradient of \$d_2\$",
     "use Jacobi Fields",
