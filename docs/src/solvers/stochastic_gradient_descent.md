@@ -5,7 +5,7 @@ CurrentModule = Manopt
 ```
 
 ```@docs
-  stochastic_gradient_descent
+stochastic_gradient_descent
 ```
 
 ## Options
