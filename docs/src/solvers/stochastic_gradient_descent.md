@@ -14,7 +14,7 @@ CurrentModule = Manopt
 StochasticGradientDescentOptions
 ```
 
-Additionally, the options share a [`AbstractGradientProcessor`](@ref),
+Additionally, the options share a [`DirectionUpdateRule`](@ref),
 so you can also apply [`MomentumGradient`](@ref) and [`AverageGradient`](@ref) here.
 The most inner one should always be.
 

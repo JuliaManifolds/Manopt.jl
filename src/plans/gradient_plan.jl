@@ -28,24 +28,21 @@ function get_gradient(p::GradientProblem, x)
 end
 
 """
-    AbstractGradientProcessor
+    DirectionUpdateRule
 
-A generic type to process gradients.
-Subtypes should be a functor implementing a function
-
-    (p,o,i) -> s, d
-
-that computes an update direction `d` together with a step size `s` based on
-a [`GradientProblem`](@ref) `p`, [`AbstractGradientDescentOptions`](@ref) `o` and the
-current iterate `i`.
+A general functor, that handles direction update rules. It's field(s) is usually
+only a [`StoreOptionsAction`](@ref) by default initialized to the fields required
+for the specific coefficient, but can also be replaced by a (common, global)
+individual one that provides these values.
 """
-abstract type AbstractGradientProcessor end
-"""
-    Gradient <: AbstractGradientProcessor
+abstract type DirectionUpdateRule end
 
-The default gradient processor, which just evaluates the gradient.
 """
-struct Gradient <: AbstractGradientProcessor end
+    Gradient <: DirectionUpdateRule
+
+The default gradient direction update is the identity, i.e. it just evaluates the gradient.
+"""
+struct Gradient <: DirectionUpdateRule end
 
 """
     AbstractGradientDescentOptions <: Options
@@ -82,7 +79,7 @@ mutable struct GradientDescentOptions{
     P,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
 } <: AbstractGradientDescentOptions
     x::P
-    direction::AbstractGradientProcessor
+    direction::DirectionUpdateRule
     stop::TStop
     stepsize::TStepsize
     ∇::P
@@ -92,7 +89,7 @@ mutable struct GradientDescentOptions{
         s::StoppingCriterion=StopAfterIteration(100),
         stepsize::Stepsize=ConstantStepsize(1.0),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        direction::AbstractGradientProcessor=Gradient(),
+        direction::DirectionUpdateRule=Gradient(),
     ) where {P}
         o = new{P,typeof(s),typeof(stepsize),typeof(retraction_method)}()
         o.x = initialX
@@ -108,7 +105,7 @@ function GradientDescentOptions(
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    direction::AbstractGradientProcessor=Gradient(),
+    direction::DirectionUpdateRule=Gradient(),
 ) where {P}
     return GradientDescentOptions{P}(
         x, stopping_criterion, stepsize, retraction_method, direction
@@ -122,7 +119,7 @@ function (s::Gradient)(p::GradientProblem, o::GradientDescentOptions, i)
 end
 
 """
-    MomentumGradient <: AbstractGradientProcessor
+    MomentumGradient <: DirectionUpdateRule
 
 Append a momentum to a gradient processor, where the last direction and last iterate are
 stored and the new is composed as ``\nabla_i = m*\nabla_{i-1}' - s d_i``,
@@ -133,7 +130,7 @@ last direction multiplied by momentum ``m``.
 * `∇` – (`zero_tangent_vector(M,x0)`) the last gradient/direction update added as momentum
 * `last_iterate` - remember the last iterate for parallel transporting the last direction
 * `momentum` – (`0.2`) factor for momentum
-* `direction` – internal [`AbstractGradientProcessor`](@ref) to determine directions to
+* `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
   add the momentum to.
 * `vector_transport_method` vector transport method to use
 
@@ -141,7 +138,7 @@ last direction multiplied by momentum ``m``.
     MomentumGradient(
         p::GradientProlem,
         x0,
-        s::AbstractGradientProcessor=Gradient();
+        s::DirectionUpdateRule=Gradient();
         ∇=zero_tangent_vector(p.M, o.x), momentum=0.2
        vector_transport_method=ParallelTransport(),
     )
@@ -152,7 +149,7 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
     MomentumGradient(
         p::StochasticGradientProblem
         x0
-        s::AbstractGradientProcessor=StochasticGradient();
+        s::DirectionUpdateRule=StochasticGradient();
         ∇=zero_tangent_vector(p.M, x0), momentum=0.2
        vector_transport_method=ParallelTransport(),
     )
@@ -160,17 +157,17 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
 Add momentum to a stochastic gradient problem, where by default just a stochastic gradient evaluation is used
 """
 mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
-               AbstractGradientProcessor
+               DirectionUpdateRule
     ∇::T
     last_iterate::P
     momentum::R
-    direction::AbstractGradientProcessor
+    direction::DirectionUpdateRule
     vector_transport_method::VTM
 end
 function MomentumGradient(
     p::GradientProblem,
     x0::P,
-    s::AbstractGradientProcessor=Gradient();
+    s::DirectionUpdateRule=Gradient();
     last_iterate=x0,
     vector_transport_method::VTM=ParallelTransport(),
     ∇=zero_tangent_vector(p.M, x0),
@@ -183,7 +180,7 @@ end
 function MomentumGradient(
     M::Manifold,
     x0::P,
-    s::AbstractGradientProcessor=Gradient();
+    s::DirectionUpdateRule=Gradient();
     ∇=zero_tangent_vector(M, x0),
     last_iterate=x0,
     momentum=0.2,
@@ -204,7 +201,7 @@ function (m::MomentumGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
 end
 
 """
-    AverageGradient <: AbstractGradientProcessor
+    AverageGradient <: DirectionUpdateRule
 
 Add an average of gradients to a gradient processor. A set of previous directions (from the
 inner processor) and the last iterate are stored, average is taken after vector transporting
@@ -213,7 +210,7 @@ them to the current iterates tangent space.
 # Fields
 * `gradients` – (fill(`zero_tangent_vector(M,x0),n)`) the last `n` gradient/direction updates
 * `last_iterate` – last iterate (needed to transport the gradients)
-* `direction` – internal [`AbstractGradientProcessor`](@ref) to determine directions to
+* `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
   apply the averaging to
 * `vector_transport_method` - vector transport method to use
 
@@ -222,7 +219,7 @@ them to the current iterates tangent space.
         p::GradientProlem,
         x0,
         n::Int=10
-        s::AbstractGradientProcessor=Gradient();
+        s::DirectionUpdateRule=Gradient();
         gradients = fill(zero_tangent_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
         vector_transport_method = ParallelTransport()
@@ -235,7 +232,7 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
         p::StochasticGradientProblem
         x0
         n::Int=10
-        s::AbstractGradientProcessor=StochasticGradient();
+        s::DirectionUpdateRule=StochasticGradient();
         gradients = fill(zero_tangent_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
         vector_transport_method = ParallelTransport()
@@ -244,17 +241,17 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
 Add average to a stochastic gradient problem, `n` determines the size of averaging and `gradients` can be prefilled with some history
 """
 mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
-               AbstractGradientProcessor
+               DirectionUpdateRule
     gradients::AbstractVector{T}
     last_iterate::P
-    direction::AbstractGradientProcessor
+    direction::DirectionUpdateRule
     vector_transport_method::VTM
 end
 function AverageGradient(
     M::Manifold,
     x0::P,
     n::Int=10,
-    s::AbstractGradientProcessor=Gradient();
+    s::DirectionUpdateRule=Gradient();
     gradients=fill(zero_tangent_vector(M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM<:AbstractVectorTransportMethod}
@@ -266,7 +263,7 @@ function AverageGradient(
     p::GradientProblem,
     x0::P,
     n::Int=10,
-    s::AbstractGradientProcessor=Gradient();
+    s::DirectionUpdateRule=Gradient();
     gradients=fill(zero_tangent_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM}
@@ -294,7 +291,7 @@ function (a::AverageGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
 end
 
 @doc raw"""
-    Nesterov <: AbstractGradientProcessor
+    Nesterov <: DirectionUpdateRule
 
 ## Fields
 * `γ`
@@ -330,7 +327,7 @@ Initialize the Nesterov acceleration, where `x0` initializes `v`.
     > H. Zhang, S. Sra: _Towards Riemannian Accelerated Gradient Methods_,
     > Preprint, 2018, arXiv: [1806.02812](https://arxiv.org/abs/1806.02812)
 """
-mutable struct Nesterov{P,T<:Real} <: AbstractGradientProcessor
+mutable struct Nesterov{P,T<:Real} <: DirectionUpdateRule
     γ::T
     μ::T
     v::P
@@ -364,15 +361,6 @@ end
 #
 # Conjugate Gradient Descent
 #
-"""
-    DirectionUpdateRule
-
-A general functor, that handles direction update rules. It's field(s) is usually
-only a [`StoreOptionsAction`](@ref) by default initialized to the fields required
-for the specific coefficient, but can also be replaced by a (common, global)
-individual one that provides these values.
-"""
-abstract type DirectionUpdateRule end
 
 @doc raw"""
     ConjugateGradientOptions <: Options

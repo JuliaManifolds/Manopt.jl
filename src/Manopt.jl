@@ -161,6 +161,18 @@ export getHessian, approxHessianFD
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
+
+export DirectionUpdateRule,
+    Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
+
+# Actions
+export AbstractOptionsAction, StoreOptionsAction
+export has_storage, get_storage, update_storage!
+
+#
+# Direction Update Rules
+export DirectionUpdateRule,
+    AverageGradient, Gradient, MomentumGradient, Nesterov, StochasticGradient
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,
     HeestenesStiefelCoefficient,
@@ -170,18 +182,6 @@ export DirectionUpdateRule,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
     HagerZhangCoefficient
-
-export AbstractGradientProcessor,
-    Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
-
-# Actions
-export AbstractOptionsAction, StoreOptionsAction
-export has_storage, get_storage, update_storage!
-
-#
-# Processors
-export AbstractGradientProcessor,
-    AverageGradient, Gradient, MomentumGradient, Nesterov, StochasticGradient
 #
 # Solvers
 export ChambollePock,

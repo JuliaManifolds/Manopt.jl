@@ -15,12 +15,12 @@ AbstractGradientDescentOptions
 GradientDescentOptions
 ```
 
-## GradientProcessor
+## Direction Update Rules
 
-A field of the options is the `direction`, a [`AbstractGradientProcessor`](@ref), which by default [`Gradient`](@ref) just evaluates the gradient but can be enhanced for example to
+A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`Gradient`](@ref) just evaluates the gradient but can be enhanced for example to
 
 ```@docs
-AbstractGradientProcessor
+DirectionUpdateRule
 Gradient
 MomentumGradient
 AverageGradient

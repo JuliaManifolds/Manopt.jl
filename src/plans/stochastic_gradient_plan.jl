@@ -62,7 +62,7 @@ end
 
 A generic type for all options related to stochastic gradient descent methods
 """
-abstract type AbstractStochasticGradientProcessor <: AbstractGradientProcessor end
+abstract type AbstractStochasticGradientProcessor <: DirectionUpdateRule end
 
 """
     StochasticGradientDescentOptions <: AbstractStochasticGradientDescentOptions
@@ -90,7 +90,7 @@ all other fields are optional keyword arguments.
 """
 mutable struct StochasticGradientDescentOptions{
     TX,
-    D<:AbstractGradientProcessor,
+    D<:DirectionUpdateRule,
     TStop<:StoppingCriterion,
     TStep<:Stepsize,
     RM<:AbstractRetractionMethod,
@@ -106,7 +106,7 @@ mutable struct StochasticGradientDescentOptions{
 end
 function StochasticGradientDescentOptions(
     x;
-    direction::AbstractGradientProcessor=StochasticGradient(),
+    direction::DirectionUpdateRule=StochasticGradient(),
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
@@ -125,7 +125,7 @@ function StochasticGradientDescentOptions(
 end
 
 """
-    StochasticGradient <: AbstractGradientProcessor
+    StochasticGradient <: DirectionUpdateRule
 
 The default gradient processor, which just evaluates the (stochastic) gradient or a subset
 thereof.
@@ -143,7 +143,7 @@ end
 function MomentumGradient(
     p::StochasticGradientProblem,
     x0::P,
-    s::AbstractGradientProcessor=StochasticGradient();
+    s::DirectionUpdateRule=StochasticGradient();
     ∇=zero_tangent_vector(p.M, x0),
     momentum=0.2,
     vector_transport_method::VTM=ParallelTransport(),
@@ -156,7 +156,7 @@ function AverageGradient(
     p::StochasticGradientProblem,
     x0::P,
     n::Int=10,
-    s::AbstractGradientProcessor=StochasticGradient();
+    s::DirectionUpdateRule=StochasticGradient();
     gradients=fill(zero_tangent_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM}

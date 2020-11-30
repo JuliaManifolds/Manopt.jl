@@ -32,7 +32,7 @@ function stochastic_gradient_descent(
     ∇F::Union{Function,AbstractVector{<:Function}},
     x0;
     cost::Union{Function,Missing}=Missing(),
-    direction::AbstractGradientProcessor=StochasticGradient(),
+    direction::DirectionUpdateRule=StochasticGradient(),
     stoping_criterion::StoppingCriterion=StopAfterIteration(10000),
     stepsize::Stepsize=ConstantStepsize(1.0),
     order_type::Symbol=:Random,
