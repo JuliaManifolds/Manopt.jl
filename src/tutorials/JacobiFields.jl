@@ -37,9 +37,9 @@ asymptote_export_S2_signals( #src
     curves=[geodesicCurve], #src
     points=[[p, q]], #src
     colors=Dict(:curves => [black], :points => [TolVibrantOrange]), #src
-    dotSize=3.5, #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.0, 1.0, 0.5), #src
+    dot_size=3.5, #src
+    line_width=0.75, #src
+    camera_position=(1.0, 1.0, 0.5), #src
 )#src
 render_asymptote(export_folder * "/jacobiGeodesic.asy"; render=2) #src
 #md #
@@ -48,7 +48,7 @@ render_asymptote(export_folder * "/jacobiGeodesic.asy"; render=2) #src
 #md #     render = asyResolution,
 #md #     curves=[geodesicCurve], points = [ [x,y] ],
 #md #     colors=Dict(:curves => [black], :points => [TolVibrantOrange]),
-#md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.,1.,.5)
+#md #     dot_size = 3.5, line_width = 0.75, camera_position = (1.,1.,.5)
 #md # )
 #md # render_asymptote("jacobiGeodesic.asy"; render = 2)
 #md # ```
@@ -108,15 +108,15 @@ asymptote_export_S2_signals( #src
     export_folder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
     curves=[geodesicCurve], #src
     points=[[p, q], r], #src
-    tVectors=[V], #src
+    tangent_vectors=[V], #src
     colors=Dict( #src
         :curves => [black], #src
         :points => [TolVibrantOrange, TolVibrantCyan], #src
         :tvectors => [TolVibrantCyan], #src
     ), #src
-    dotSizes=[3.5, 2.0], #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.0, 1.0, 0.5), #src
+    dot_sizes=[3.5, 2.0], #src
+    line_width=0.75, #src
+    camera_position=(1.0, 1.0, 0.5), #src
 ) #src
 render_asymptote( #src
     export_folder * "/jacobiGeodesicdifferential_geodesic_startpoint.asy"; #src
@@ -126,13 +126,13 @@ render_asymptote( #src
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesicdifferential_geodesic_startpoint.asy";
 #md #     render = asyResolution,
-#md #     curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx],
+#md #     curves=[geodesicCurve], points = [ [x,y], Z], tangent_vectors = [Vx],
 #md #     colors=Dict(
 #md #         :curves => [black],
 #md #         :points => [TolVibrantOrange,TolVibrantCyan],
 #md #         :tvectors => [TolVibrantCyan]
 #md #     ),
-#md #     dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,.5)
+#md #     dot_sizes = [3.5,2.], line_width = 0.75, camera_position = (1.,1.,.5)
 #md # )
 #md # render_asymptote("jacobiGeodesicdifferential_geodesic_startpoint.asy"; render = 2)
 #md # ```
@@ -149,27 +149,27 @@ asymptote_export_S2_signals( #src
     export_folder * "/jacobiGeodesicResult.asy"; #src
     curves=[geodesicCurve], #src
     points=[[p, q], r], #src
-    tVectors=[V, V2, V3], #src
+    tangent_vectors=[V, V2, V3], #src
     colors=Dict( #src
         :curves => [black], #src
         :points => [TolVibrantOrange, TolVibrantCyan], #src
         :tvectors => [TolVibrantCyan, TolVibrantCyan, TolVibrantTeal], #src
     ), #src
-    dotSizes=[3.5, 2.0], #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.0, 1.0, 0.0), #src
+    dot_sizes=[3.5, 2.0], #src
+    line_width=0.75, #src
+    camera_position=(1.0, 1.0, 0.0), #src
 ) #src
 render_asymptote(export_folder * "/jacobiGeodesicResult.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("jacobiGeodesicResult.asy";
 #md #    render = asyResolution,
-#md #    curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx,Vy,Vb],
+#md #    curves=[geodesicCurve], points = [ [x,y], Z], tangent_vectors = [Vx,Vy,Vb],
 #md #    colors=Dict(
 #md #        :curves => [black],
 #md #        :points => [TolVibrantOrange,TolVibrantCyan],
 #md #        :tvectors => [TolVibrantCyan,TolVibrantCyan,TolVibrantTeal]
 #md #   ),
-#md #   dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,0.)
+#md #   dot_sizes = [3.5,2.], line_width = 0.75, camera_position = (1.,1.,0.)
 #md # )
 #md # render_asymptote("jacobiGeodesicResult.asy"; render = 2)
 #md # ```

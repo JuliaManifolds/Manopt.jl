@@ -55,9 +55,9 @@ asymptote_export_S2_signals( #src
     curves=[geoPts_yc], #src
     points=[[p, r, q], [c, c2]], #src
     colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]), #src
-    dotSize=3.5, #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.2, 1.0, 0.5), #src
+    dot_size=3.5, #src
+    line_width=0.75, #src
+    camera_position=(1.2, 1.0, 0.5), #src
 ) #src
 render_asymptote(export_folder * "/SecondOrderData.asy"; render=2) #src
 #md #
@@ -67,7 +67,7 @@ render_asymptote(export_folder * "/SecondOrderData.asy"; render=2) #src
 #md #     curves = [ geoPts_yc ],
 #md #     points = [ [x,y,z], [c,c2] ],
 #md #     colors=Dict(:curves => [TolVibrantTeal], :points => [black, TolVibrantBlue]),
-#md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
+#md #     dot_size = 3.5, line_width = 0.75, camera_position = (1.2,1.,.5)
 #md # )
 #md # render_asymptote("SecondOrderData.asy"; render=2)
 #md # ```
@@ -92,20 +92,20 @@ costTV2(M, (p, r, q))
 asymptote_export_S2_signals( #src
     export_folder * "/SecondOrderGradient.asy"; #src
     points=[[p, r, q], [c, c2]], #src
-    tVectors=[Tuple.([[p, -Xp], [r, -Xr], [q, Xq]])], #src
+    tangent_vectors=[Tuple.([[p, -Xp], [r, -Xr], [q, Xq]])], #src
     colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]), #src
-    dotSize=3.5, #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.2, 1.0, 0.5), #src
+    dot_size=3.5, #src
+    line_width=0.75, #src
+    camera_position=(1.2, 1.0, 0.5), #src
 ) #src
 render_asymptote(export_folder * "/SecondOrderGradient.asy"; render=2) #src
 #md #
 #md # ```julia
 #md # asymptote_export_S2_signals("SecondOrderGradient.asy";
 #md #    points = [ [x,y,z], [c,c2] ],
-#md #    tVectors = [Tuple.([ [p, -Xp], [r, -Xr], [q, Xq]])], #src
+#md #    tangent_vectors = [Tuple.([ [p, -Xp], [r, -Xr], [q, Xq]])], #src
 #md #    colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]),
-#md #    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
+#md #    dot_size = 3.5, line_width = 0.75, camera_position = (1.2,1.,.5)
 #md # )
 #md # render_asymptote("SecondOrderGradient.asy"; render=2)
 #md # ```
@@ -123,15 +123,15 @@ asymptote_export_S2_signals( #src
     export_folder * "/SecondOrderMin1.asy"; #src
     points=[[p, r, q], [c, c2, cn], [pn, rn, qn]], #src
     curves=[geoPts_yncn], #src
-    tVectors=[Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
+    tangent_vectors=[Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
     colors=Dict( #src #src
         :tvectors => [TolVibrantCyan], #src
         :points => [black, TolVibrantBlue, TolVibrantOrange], #src
         :curves => [TolVibrantTeal], #src
     ), #src
-    dotSize=3.5, #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.2, 1.0, 0.5), #src
+    dot_size=3.5, #src
+    line_width=0.75, #src
+    camera_position=(1.2, 1.0, 0.5), #src
 ) #src
 render_asymptote(export_folder * "/SecondOrderMin1.asy"; render=2) #src
 #md #
@@ -139,12 +139,12 @@ render_asymptote(export_folder * "/SecondOrderMin1.asy"; render=2) #src
 #md # asymptote_export_S2_signals("SecondOrderMin1.asy";
 #md #     points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ],
 #md #     curves = [ geoPts_yncn ] ,
-#md #     tVectors = [Tuple.([ [p, -Xp], [r, Xr], [q, Xq] ])],
+#md #     tangent_vectors = [Tuple.([ [p, -Xp], [r, Xr], [q, Xq] ])],
 #md #     colors=Dict(:tvectors => [TolVibrantCyan],
 #md #         :points => [black, TolVibrantBlue, TolVibrantOrange],
 #md #         :curves => [TolVibrantTeal]
 #md #     ),
-#md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
+#md #     dot_size = 3.5, line_width = 0.75, camera_position = (1.2,1.,.5)
 #md # )
 #md # render_asymptote("SecondOrderMin1.asy"; render=2)
 #md # ```
@@ -178,15 +178,15 @@ asymptote_export_S2_signals( #src
     export_folder * "/SecondOrderMin2.asy"; #src
     points=[[p, r, q], [c, c2, cm], [pm, rm, qm]], #src
     curves=[geoPts_xmzm], #src
-    tVectors=[Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
+    tangent_vectors=[Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
     colors=Dict( #src
         :tvectors => [TolVibrantCyan], #src
         :points => [black, TolVibrantBlue, TolVibrantOrange], #src
         :curves => [TolVibrantTeal], #src
     ), #src
-    dotSize=3.5, #src
-    lineWidth=0.75, #src
-    cameraPosition=(1.2, 1.0, 0.5), #src
+    dot_size=3.5, #src
+    line_width=0.75, #src
+    camera_position=(1.2, 1.0, 0.5), #src
 ) #src
 render_asymptote(export_folder * "/SecondOrderMin2.asy"; render=2) #src
 #md #
@@ -194,12 +194,12 @@ render_asymptote(export_folder * "/SecondOrderMin2.asy"; render=2) #src
 #md # asymptote_export_S2_signals("SecondOrderMin2.asy";
 #md #     points = [ [x,y,z], [c,c2,cm], [xm,ym,zm] ],
 #md #     curves = [ geoPts_xmzm ] ,
-#md #     tVectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )],
+#md #     tangent_vectors = [Tuple.( [-ξx, -ξy, -ξz], [x, y, z] )],
 #md #     colors=Dict(:tvectors => [TolVibrantCyan],
 #md #                 :points => [black, TolVibrantBlue, TolVibrantOrange],
 #md #                 :curves => [TolVibrantTeal]
 #md #                 ),
-#md #     dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.2,1.,.5)
+#md #     dot_size = 3.5, line_width = 0.75, camera_position = (1.2,1.,.5)
 #md # )
 #md # render_asymptote("SecondOrderMin2.asy"; render=2) #src
 #md # ```

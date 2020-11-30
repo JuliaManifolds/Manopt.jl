@@ -16,7 +16,7 @@ asy_export = true #export data and results to asyExport
 curve_samples = [range(0, 3; length=101)...] # sample curve for the gradient
 curve_samples_plot = [range(0, 3; length=201)...] # sample curve for asy exports
 
-cameraPosition = (-1.0, -0.7, 0.3)
+camera_position = (-1.0, -0.7, 0.3)
 curveColor = RGBA{Float64}(colorant"#000000")
 sColor = RGBA{Float64}(colorant"#BBBBBB")
 dColor = RGBA{Float64}(colorant"#EE7733") # data Color: Tol Vibrant Orange
@@ -35,7 +35,7 @@ if asy_export
         joinpath(results_folder, experiment_name * "-orig.asy");
         curves=[cP],
         points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)],
-        tVectors=[[
+        tangent_vectors=[[
             Tuple(a)
             for
             a in
@@ -44,10 +44,10 @@ if asy_export
         colors=Dict(
             :curves => [curveColor], :points => [dColor, bColor], :tvectors => [ξColor]
         ),
-        cameraPosition=cameraPosition,
-        arrowHeadSize=10.0,
-        lineWidths=[1.5, 1.5],
-        dotSize=4.0,
+        camera_position=camera_position,
+        arrow_head_size=10.0,
+        line_widths=[1.5, 1.5],
+        dot_size=4.0,
     )
     render_asymptote(joinpath(results_folder, experiment_name * "-orig.asy"); render=4)
 end
@@ -87,7 +87,7 @@ if asy_export
         joinpath(results_folder, experiment_name * "-result.asy");
         curves=[de_casteljau(M, B_opt, curve_samples_plot), cP],
         points=[get_bezier_junctions(M, B_opt), get_bezier_inner_points(M, B_opt)],
-        tVectors=[[
+        tangent_vectors=[[
             Tuple(a)
             for
             a in zip(
@@ -100,10 +100,10 @@ if asy_export
             :points => [dColor, bColor],
             :tvectors => [ξColor],
         ),
-        cameraPosition=cameraPosition,
-        arrowHeadSize=10.0,
-        lineWidths=[1.5, 0.75, 1.5],
-        dotSize=4.0,
+        camera_position=camera_position,
+        arrow_head_size=10.0,
+        line_widths=[1.5, 0.75, 1.5],
+        dot_size=4.0,
     )
     render_asymptote(joinpath(results_folder, experiment_name * "-result.asy"); render=4)
 end

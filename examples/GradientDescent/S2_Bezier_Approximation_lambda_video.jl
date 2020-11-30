@@ -33,7 +33,7 @@ colors = RGBA.(get.(Ref(viridis), range(0.0, 1.0; length=length(λRange))))
 curve_samples = [range(0, 3; length=101)...] # sample curve for the gradient
 curve_samples_plot = [range(0, 3; length=201)...] # sample curve for asy exports
 
-cameraPosition = (-1.0, -0.7, 0.3)
+camera_position = (-1.0, -0.7, 0.3)
 curveColor = RGBA{Float64}(colorant"#AAAAAA")
 M = Sphere(2)
 B = artificial_S2_composite_bezier_curve()
@@ -90,9 +90,9 @@ if asy_export
             colors=Dict(
                 :curves => [colors[i], curveColor], :points => [colors[i], colors[i]]
             ),
-            cameraPosition=cameraPosition,
-            lineWidths=[1.0, 0.5],
-            dotSize=2.0,
+            camera_position=camera_position,
+            line_widths=[1.0, 0.5],
+            dot_size=2.0,
         )
         render_asymptote(s * "-$(@sprintf "%04.0f" i)-result.asy"; render=render_detail)
     end
@@ -103,8 +103,8 @@ if asy_export_summary
         s * "-Summary-result.asy";
         curves=[cP, resulting_curves...],
         colors=Dict(:curves => [curveColor, colors...]),
-        cameraPosition=cameraPosition,
-        lineWidths=[0.75, [1.5 for i in eachindex(λRange)]...],
+        camera_position=camera_position,
+        line_widths=[0.75, [1.5 for i in eachindex(λRange)]...],
     )
     render_asymptote(s * "-Summary-result.asy"; render=render_detail)
 end

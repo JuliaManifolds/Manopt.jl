@@ -37,7 +37,7 @@ TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
 TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 geo_pts = collect(range(0.0, 1.0; length=101)) #hide
 bezier_pts = collect(range(0.0, 3.0; length=201)) #hide
-cameraPosition = (-1.0, -0.7, 0.3) #hide
+camera_position = (-1.0, -0.7, 0.3) #hide
 nothing #hide
 # Then we load our data, see [`artificial_S2_composite_bezier_curve`](@ref), a composite
 # Bezier curve consisting of 3 segments on the Sphere
@@ -82,9 +82,9 @@ asymptote_export_S2_signals( #src
             black, #src
         ], #src
     ), #src
-    dotSize=3.5, #src
-    lineWidths=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5], #src
-    cameraPosition=cameraPosition, #src
+    dot_size=3.5, #src
+    line_widths=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5], #src
+    camera_position=camera_position, #src
 ) #src
 render_asymptote(export_folder * "/Casteljau-illustr.asy"; render=2) #src
 #md # ![Illustration of de Casteljau's algorithm on the Sphere.](../assets/images/tutorials/Casteljau-illustr.png)
@@ -120,7 +120,7 @@ asymptote_export_S2_signals( #src
     export_folder * "/Bezier-composite-curve.asy"; #src
     curves=[de_casteljau(M, B, bezier_pts)], #src
     points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)], #src
-    tVectors=[[ #src
+    tangent_vectors=[[ #src
         Tuple(a) #src
         for #src
         a in #src
@@ -131,10 +131,10 @@ asymptote_export_S2_signals( #src
         :points => [TolVibrantBlue, TolVibrantTeal], #src
         :tvectors => [TolVibrantCyan], #src
     ), #src
-    cameraPosition=cameraPosition, #src
-    arrowHeadSize=10.0, #src
-    lineWidths=[1.5, 1.5], #src
-    dotSize=4.0, #src
+    camera_position=camera_position, #src
+    arrow_head_size=10.0, #src
+    line_widths=[1.5, 1.5], #src
+    dot_size=4.0, #src
 ) #src
 render_asymptote(export_folder * "/Bezier-composite-curve.asy"; render=2) #src
 #md # ![Illustration of a differentiable composite Bézier curve with 3 segments.](../assets/images/tutorials/Bezier-composite-curve.png)
@@ -167,7 +167,7 @@ asymptote_export_S2_signals( #src
     export_folder * "/Bezier-composite-curve-gradient.asy"; #src
     curves=[de_casteljau(M, B, bezier_pts)], #src
     points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)], #src
-    tVectors=[[ #src
+    tangent_vectors=[[ #src
         Tuple(a) #src
         for #src
         a in #src
@@ -181,10 +181,10 @@ asymptote_export_S2_signals( #src
         :points => [TolVibrantBlue, TolVibrantTeal], #src
         :tvectors => [TolVibrantOrange], #src
     ), #src
-    cameraPosition=cameraPosition, #src
-    arrowHeadSize=10.0, #src
-    lineWidths=[1.5, 1.5], #src
-    dotSize=4.0, #src
+    camera_position=camera_position, #src
+    arrow_head_size=10.0, #src
+    line_widths=[1.5, 1.5], #src
+    dot_size=4.0, #src
 ) #src
 render_asymptote(export_folder * "/Bezier-composite-curve-gradient.asy"; render=2) #src
 #md # ![Illustration of the gradient of the acceleration with respect to the control points.](../assets/images/tutorials/Bezier-composite-curve-gradient.png)
@@ -231,7 +231,7 @@ asymptote_export_S2_signals( #src
     export_folder * "/Bezier-IP-Min.asy"; #src
     curves=[de_casteljau(M, B_opt_ip, bezier_pts), de_casteljau(M, B, bezier_pts)], #src
     points=[get_bezier_junctions(M, B_opt_ip), get_bezier_inner_points(M, B_opt_ip)], #src
-    tVectors=[[ #src
+    tangent_vectors=[[ #src
         Tuple(a) #src
         for #src
         a in zip( #src
@@ -244,10 +244,10 @@ asymptote_export_S2_signals( #src
         :points => [TolVibrantBlue, TolVibrantTeal], #src
         :tvectors => [TolVibrantCyan], #src
     ), #src
-    cameraPosition=cameraPosition, #src
-    arrowHeadSize=10.0, #src
-    lineWidths=[1.5, 0.75, 1.5], #src
-    dotSize=4.0, #src
+    camera_position=camera_position, #src
+    arrow_head_size=10.0, #src
+    line_widths=[1.5, 0.75, 1.5], #src
+    dot_size=4.0, #src
 ) #src
 render_asymptote(export_folder * "/Bezier-IP-Min.asy"; render=2) #src
 #md # ![Interpolation Min Acc](../assets/images/tutorials/Bezier-IP-Min.png)
@@ -301,7 +301,7 @@ asymptote_export_S2_signals( #src
         get_bezier_junctions(M, B_opt_appr), #src
         get_bezier_inner_points(M, B_opt_appr), #src
     ], #src
-    tVectors=[[ #src
+    tangent_vectors=[[ #src
         Tuple(a) #src
         for #src
         a in zip( #src
@@ -314,10 +314,10 @@ asymptote_export_S2_signals( #src
         :points => [TolVibrantOrange, TolVibrantBlue, TolVibrantTeal], #src
         :tvectors => [TolVibrantCyan], #src
     ), #src
-    cameraPosition=cameraPosition, #src
-    arrowHeadSize=10.0, #src
-    lineWidths=[1.5, 0.75, 1.5], #src
-    dotSize=4.0, #src
+    camera_position=camera_position, #src
+    arrow_head_size=10.0, #src
+    line_widths=[1.5, 0.75, 1.5], #src
+    dot_size=4.0, #src
 ) #src
 render_asymptote(export_folder * "/Bezier-Appr-Min.asy"; render=2) #src
 #
