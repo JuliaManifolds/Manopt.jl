@@ -113,4 +113,4 @@ F(x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
 # since stochastic gradient descent takes more iterations.
 #
 # Note that all 5 of couse yield the same result
-[distance(M, x, y) for y ∈ [x_opt1, x_opt2, x_opt3, x_opt4, x_opt5] ]
+[distance(M, x, y) for y in [x_opt1, x_opt2, x_opt3, x_opt4, x_opt5]]
