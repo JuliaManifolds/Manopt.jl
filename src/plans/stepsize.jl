@@ -418,8 +418,9 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
         while fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
             s_minus = s_minus * 0.5
             s = s_minus
-            xNew = retract(p.M, o.x, s*η, a.retraction_method)
+            retract!(p.M, xNew, o.x, s*η, a.retraction_method)
             fNew = p.cost(xNew)
+            print("1 \n")
         end
         s_plus = 2. * s_minus
         # print("($s, $s_plus) + $(is_manifold_point(p.M, xNew, true))  \n")
@@ -428,15 +429,17 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
             while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
                 s_plus = s_plus * 2.
                 s = s_plus
-                xNew = retract(p.M, o.x, s*η, a.retraction_method)
+                retract!(p.M, xNew, o.x, s*η, a.retraction_method)
                 fNew = p.cost(xNew)
+                print("2 \n")
             end
             s_minus = s_plus/2.
             # print("($s, $s_minus) - $(is_manifold_point(p.M, xNew, true))\n")
         end
     end
-    xNew = retract(p.M, o.x, s_minus*η, a.retraction_method)
-    while inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+    retract!(p.M, xNew, o.x, s_minus*η, a.retraction_method)
+    g = vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method)
+    while inner(p.M, o.x, g, η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
         s = (s_minus + s_plus)/2
         retract!(p.M, xNew, o.x, s*η, a.retraction_method)
         fNew = p.cost(xNew)
@@ -450,73 +453,8 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
             break
         end
         retract!(p.M, xNew, o.x, s_minus*η, a.retraction_method)
-    end
-    s = s_minus
-    return s
-end
-
-
-@doc raw"""
-    StrongWolfePowellLineseach <: Linesearch
-"""
-mutable struct StrongWolfePowellLineseach <: Linesearch
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
-
-    c_1::Float64
-    c_2::Float64
-
-    function StrongWolfePowellLineseach(
-        retr::AbstractRetractionMethod = ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod = ParallelTransport(),
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999
-    )
-        return new(retr, vtr, c_1, c_2)
-    end
-end
-
-
-function (a::StrongWolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
-    s = 1.
-    s_plus = 1.
-    s_minus = 1.
-    f0 = p.cost(o.x)
-    gradient_x = get_gradient(p, o.x)
-    xNew = retract(p.M, o.x, s*η, a.retraction_method)
-    fNew = p.cost(xNew)
-    if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-        while fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
-            s_minus = s_minus * 0.5
-            s = s_minus
-            xNew = retract(p.M, o.x, s*η, a.retraction_method)
-            fNew = p.cost(xNew)
-        end
-        s_plus = 2. * s_minus
-    else
-        if abs(inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η)) > a.c_2 * abs(inner(p.M, o.x, η, gradient_x))
-            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
-                s_plus = s_plus * 2.
-                s = s_plus
-
-                xNew = retract(p.M, o.x, s*η, a.retraction_method)
-                fNew = p.cost(xNew)
-            end
-            s_minus = s_plus/2.
-        end
-    end
-    xNew = retract(p.M, o.x, s_minus*η, a.retraction_method)
-    while abs(inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η)) > a.c_2 * abs(inner(p.M, o.x, η, gradient_x))
-        s = (s_minus + s_plus)/2
-        xNew = retract(p.M, o.x, s*η, a.retraction_method)
-        fNew = p.cost(xNew)
-        if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-            s_minus = s
-        else
-            s_plus = s
-        end
-        xNew = retract(p.M, o.x, s_minus*η, a.retraction_method)
-        print("($s, $s_minus, $s_plus) \n")
+        vector_transport_to!(p.M, g, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method)
+        print("3 \n")
     end
     s = s_minus
     return s
@@ -571,61 +509,6 @@ function (a::WolfePowellLineseachHuang)(p::P, o::O, iter::Int, η=-get_gradient(
     end
     return t
 end
-
-
-
-@doc raw"""
-    StrongWolfePowellLineseachNocedal <: Linesearch
-"""
-mutable struct StrongWolfePowellLineseachNocedal<: Linesearch
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
-
-    c_1::Float64
-    c_2::Float64
-    max::Float64
-    previous::Float64
-    zoom::Bool
-
-    function StrongWolfePowellLineseachNocedal(
-        retr::AbstractRetractionMethod = ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod = ParallelTransport(),
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999,
-        max::Float64 = 100,
-        previous::Float64 = 0,
-        zoom::Bool = false
-    )
-        return new(retr, vtr, c_1, c_2, max, previous, zoom)
-    end
-end
-
-
-function (a::StrongWolfePowellLineseachNocedal)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
-    s = 1
-    f0 = p.cost(o.x)
-    gradient_x = get_gradient(p, o.x)
-    while a.zoom == false
-        xNew = retract(p.M, o.x, s*η, a.retraction_method)
-        fNew = p.cost(xNew)
-
-        if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-            s = zoom()
-            a.zoom = true
-        end
-
-        if abs(inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η)) <= - a.c_2 * abs(inner(p.M, o.x, η, gradient_x))
-            s =0
-        end
-    end
-end
-
-function zoom_function()
-end
-
-function interpolation()
-end
-
 
 
 @doc raw"""

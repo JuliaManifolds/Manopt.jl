@@ -133,10 +133,10 @@ end
 # Updating the parameters
 
 function update_parameters!(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
-	gradf_xold = o.∇
-	β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
-	yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
+	vector_transport_to!(p.M, o.∇, x, o.∇, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
+	β = norm(p.M, x, α*η) / norm(p.M, o.x, sk)
+	yk = get_gradient(p,o.x)/β - o.∇
 
 	for i=1:length(o.basis.data)
 		vector_transport_to!(p.M, o.basis.data[i], x, o.basis.data[i], o.x, o.vector_transport_method)
@@ -168,10 +168,10 @@ function update_parameters!(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::
 end
 
 function update_parameters!(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
-	gradf_xold = o.∇
-	β = norm(p.M, x, α*η) / norm(p.M, x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
-	yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
+	vector_transport_to!(p.M, o.∇, x, o.∇, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
+	β = norm(p.M, x, α*η) / norm(p.M, o.x, sk)
+	yk = get_gradient(p,o.x)/β - o.∇
 
 	o.basis.data .= [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ get_vectors(p.M,o.x,o.basis) ]
 
@@ -209,38 +209,37 @@ end
 # Limited memory variants
 
 function update_parameters!(p::GradientProblem, o::RLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
-    return limited_memory_update!(p,o,α,η,x)
+	vector_transport_to!(p.M, o.∇, x, o.∇, o.x, o.vector_transport_method)
+	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
+	β = norm(p.M, x, α*η) / norm(p.M, o.x, sk)
+	yk = get_gradient(p,o.x)/β - o.∇
+    return limited_memory_update!(p,o,sk,yk,x)
 end
 
 
 function update_parameters!(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
-	gradf_xold = o.∇
-    β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
-    yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
-    sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
+	vector_transport_to!(p.M, o.∇, x, o.∇, o.x, o.vector_transport_method)
+	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
+	β = norm(p.M, x, α*η) / norm(p.M, o.x, sk)
+	yk = get_gradient(p,o.x)/β - o.∇
 
 	sk_yk = inner(p.M, o.x, sk, yk)
 	norm_sk = norm(p.M, o.x, sk)
 	bound = o.cautious_function(norm(p.M, x, get_gradient(p,x)))
 
 	if norm_sk != 0 && (sk_yk / norm_sk^2) >= bound
-		limited_memory_update!(p,o,α,η,x)
+		limited_memory_update!(p,o,sk,yk,x)
 	else
 		memory_steps_size = length(o.steps)
         for  i = 1 : min(o.current_memory_size, memory_steps_size)
-			o.steps[i] = vector_transport_to(p.M, x, o.steps[i], o.x, o.vector_transport_method)
-			o.gradient_diffrences[i] = vector_transport_to(p.M, x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
+			vector_transport_to!(p.M, o.steps[i], x, o.steps[i], o.x, o.vector_transport_method)
+			vector_transport_to!(p.M, o.gradient_diffrences[i], x, o.gradient_diffrences[i], o.x, o.vector_transport_method)
         end
 	end
 	return o
 end
 
-function limited_memory_update!(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}, α::Float64, η::T, x::P) where {P,T}
-	gradf_xold = o.∇
-    β = norm(p.M, x, α*η) / norm(p.M, o.x, vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method))
-    yk = get_gradient(p,o.x)/β - vector_transport_to(p.M, x, gradf_xold, o.x, o.vector_transport_method)
-    sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
-
+function limited_memory_update!(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}, sk::T, yk::T, x::P) where {P,T}
 	memory_steps_size = length(o.steps)
 	current_memory = o.current_memory_size
 

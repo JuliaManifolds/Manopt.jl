@@ -1,5 +1,5 @@
 import Manifolds: vector_transport_to!
-vector_transport_to!(::Stiefel,Y,p,X,q,::ProjectionTransport) = (Y .= project(M_n_1000_k_5_m_4, q, X))
+vector_transport_to!(::Stiefel,Y,p,X,q,::ProjectionTransport) = project!(M_n_1000_k_5_m_4, Y, q, X)
 M_n_1000_k_5_m_4 = Stiefel(1000,5)
 A_n_1000_k_5_m_4 = randn(1000,1000)
 A_n_1000_k_5_m_4 = (A_n_1000_k_5_m_4 + A_n_1000_k_5_m_4')
