@@ -420,7 +420,6 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
             s = s_minus
             retract!(p.M, xNew, o.x, s*η, a.retraction_method)
             fNew = p.cost(xNew)
-            print("1 \n")
         end
         s_plus = 2. * s_minus
         # print("($s, $s_plus) + $(is_manifold_point(p.M, xNew, true))  \n")
@@ -431,7 +430,6 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
                 s = s_plus
                 retract!(p.M, xNew, o.x, s*η, a.retraction_method)
                 fNew = p.cost(xNew)
-                print("2 \n")
             end
             s_minus = s_plus/2.
             # print("($s, $s_minus) - $(is_manifold_point(p.M, xNew, true))\n")
@@ -454,7 +452,6 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
         end
         retract!(p.M, xNew, o.x, s_minus*η, a.retraction_method)
         vector_transport_to!(p.M, g, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method)
-        print("3 \n")
     end
     s = s_minus
     return s

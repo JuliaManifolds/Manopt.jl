@@ -7,8 +7,8 @@ import Manifolds: vector_transport_to!
 vector_transport_to!(::Stiefel,Y,p,X,q,::ProjectionTransport) = project!(M, Y, q, X)
 
 Random.seed!(42)
-n = 1000
-k = 5
+n = 32
+k = 32
 M = Stiefel(n,k)
 A = randn(n,n)
 A = (A + A')
