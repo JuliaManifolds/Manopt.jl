@@ -17,12 +17,14 @@ import ManifoldsBase:
     ℂ,
     ×,
     ^,
+    AbstractPowerManifold,
     AbstractVectorTransportMethod,
     AbstractRetractionMethod,
     AbstractInverseRetractionMethod,
     ExponentialRetraction,
     LogarithmicInverseRetraction,
     ParallelTransport,
+    PowerManifold,
     Manifold,
     allocate_result,
     allocate_result_type,
@@ -55,7 +57,6 @@ import ManifoldsBase:
     get_vector,
     get_vectors,
     representation_size
-using Manifolds: AbstractPowerManifold, PowerManifold
 using Manifolds: #temporary for random
     Circle,
     Euclidean,
