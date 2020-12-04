@@ -3,18 +3,12 @@
 # Proximal Point Problem and Options
 #
 #
-export ProximalProblem
-export CyclicProximalPointOptions, DouglasRachfordOptions
-export get_cost, getProximalMap
-export DebugProximalParameter
-export RecordProximalParameter
-
 @doc raw"""
     ProximalProblem <: Problem
 specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
-* `M`            - a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathcal M$
+* `M` - a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathcal M$
 * `cost` - a function $F\colon\mathcal M\to\mathbb R$ to
   minimize
 * `proxes` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
@@ -24,7 +18,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
   functions return more than one entry per function
 
 # See also
-[`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`getProximalMap`](@ref)
+[`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
 """
 mutable struct ProximalProblem{mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <:
                Problem
@@ -48,11 +42,11 @@ mutable struct ProximalProblem{mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractV
     end
 end
 @doc raw"""
-    getProximalMap(p,λ,x,i)
+    get_proximal_map(p,λ,x,i)
 
 evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter `λ`$>0$.
 """
-function getProximalMap(p::ProximalProblem, λ, x, i)
+function get_proximal_map(p::ProximalProblem, λ, x, i)
     if i > length(p.proxes)
         throw(ErrorException("the $(i)th entry does not exists, only $(length(p.proxes)) available."))
     end
@@ -69,32 +63,27 @@ end
 stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
-* `x0` – an point to start
-* `stopping_criterion` – a function `@(iter,x,xnew,λ_k)` based on the current
-    `iter`, `x` and `xnew` as well as the current value of `λ`.
+* `x` – the current iterate
+* `stopping_criterion` – a [`StoppingCriterion`](@ref)
 * `λ` – (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
-* `evaluationOrder` – ([`LinearEvalOrder`](@ref)`()`) how to cycle through the proximal maps.
-    Other values are [`RandomEvalOrder`](@ref)`()` that takes a new random order each
-    iteration, and [`FixedRandomEvalOrder`](@ref)`()` that fixes a random cycle for all iterations.
+* `evaluation_order` – (`:LinearOrder`) – whether
+  to use a randomly permuted sequence (`:FixedRandomOrder`), a per
+  cycle permuted sequence (`RandomOrder`) or the default linear one.
 
 # See also
 [`cyclic_proximal_point`](@ref)
 """
-mutable struct CyclicProximalPointOptions{
-    TX,TStop<:StoppingCriterion,Tλ,TOrder<:EvalOrder
-} <: Options
+mutable struct CyclicProximalPointOptions{TX,TStop<:StoppingCriterion,Tλ} <: Options
     x::TX
     stop::TStop
     λ::Tλ
-    orderType::TOrder
-    order::Vector{Int}
+    order_type::Symbol
+    order::AbstractVector{Int}
 end
 function CyclicProximalPointOptions(
-    x, s::StoppingCriterion, λ=(iter) -> 1.0 / iter, o::EvalOrder=LinearEvalOrder()
+    x, s::StoppingCriterion, λ=(iter) -> 1.0 / iter, o::Symbol=:LinearOrder
 )
-    return CyclicProximalPointOptions{typeof(x),typeof(s),typeof(λ),typeof(o)}(
-        x, s, λ, o, []
-    )
+    return CyclicProximalPointOptions{typeof(x),typeof(s),typeof(λ)}(x, s, λ, o, [])
 end
 @doc raw"""
     DouglasRachfordOptions <: Options
@@ -149,19 +138,21 @@ print the current iterates proximal point algorithm parameter given by
 [`Options`](@ref)s `o.λ`.
 """
 mutable struct DebugProximalParameter <: DebugAction
-    print::Any
+    io::IO
     prefix::String
-    function DebugProximalParameter(long::Bool=false, print=print)
-        return new(print, long ? "Proximal Map Parameter λ(i):" : "λ:")
+    function DebugProximalParameter(long::Bool=false, io::IO=stdout)
+        return new(io, long ? "Proximal Map Parameter λ(i):" : "λ:")
     end
 end
-function (d::DebugProximalParameter)(p::ProximalProblem, o::DouglasRachfordOptions, i::Int)
-    return d.print((i > 0) ? d.prefix * string(o.λ(i)) : "")
+function (d::DebugProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
+    print(d.io, (i > 0) ? d.prefix * string(o.λ(i)) : "")
+    return nothing
 end
 function (d::DebugProximalParameter)(
-    p::ProximalProblem, o::CyclicProximalPointOptions, i::Int
+    ::ProximalProblem, o::CyclicProximalPointOptions, i::Int
 )
-    return d.print((i > 0) ? d.prefix * string(o.λ(i)) : "")
+    print(d.io, (i > 0) ? d.prefix * string(o.λ(i)) : "")
+    return nothing
 end
 
 #
@@ -173,16 +164,14 @@ recoed the current iterates proximal point algorithm parameter given by in
 [`Options`](@ref)s `o.λ`.
 """
 mutable struct RecordProximalParameter <: RecordAction
-    recordedValues::Array{Float64,1}
+    recorded_values::Array{Float64,1}
     RecordProximalParameter() = new(Array{Float64,1}())
 end
 function (r::RecordProximalParameter)(
-    p::P, o::O, i::Int
-) where {P<:ProximalProblem,O<:CyclicProximalPointOptions}
-    return record_or_eset!(r, o.λ(i), i)
+    ::ProximalProblem, o::CyclicProximalPointOptions, i::Int
+)
+    return record_or_reset!(r, o.λ(i), i)
 end
-function (r::RecordProximalParameter)(
-    p::P, o::O, i::Int
-) where {P<:ProximalProblem,O<:DouglasRachfordOptions}
-    return record_or_eset!(r, o.λ(i), i)
+function (r::RecordProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
+    return record_or_reset!(r, o.λ(i), i)
 end

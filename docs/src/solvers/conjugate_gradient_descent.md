@@ -17,10 +17,11 @@ ConjugateGradientDescentOptions
 
 ## Available Coefficients
 
+The update rules act as [`DirectionUpdateRule`](@ref), which internally always first evaluate the gradient itself.
+
 ```@docs
 ConjugateDescentCoefficient
 DaiYuanCoefficient
-DirectionUpdateRule
 FletcherReevesCoefficient
 HagerZhangCoefficient
 HeestenesStiefelCoefficient

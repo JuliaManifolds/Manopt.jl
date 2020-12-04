@@ -1,0 +1,20 @@
+{
+    "creators": [
+        {
+            "affiliation": "Technische Universität Chemnitz",
+            "name": "Bergmann, Ronny",
+            "orcid": "0000-0001-8342-7218"
+        }
+    ],
+    "description": "Manopt.jl is a Julia package for optimization on manifolds.",
+    "keywords": [
+        "Riemannian manifolds",
+        "optimization",
+        "manifolds",
+        "Julia",
+        "Programming"
+    ],
+    "license": "MIT",
+    "title": "Manopt.jl",
+    "upload_type": "software"
+}

@@ -36,12 +36,12 @@ the default parameter is given in brackets
   prox.
 * `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `xOpt` if returned
+    If set to false (default) just the optimal value `x_opt` if returned
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `xOpt` – the resulting (approximately critical) point of gradientDescent
+* `x_opt` – the resulting (approximately critical) point of gradientDescent
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
@@ -91,9 +91,9 @@ function DouglasRachford(
 end
 function initialize_solver!(p::ProximalProblem, o::DouglasRachfordOptions) end
 function step_solver!(p::ProximalProblem, o::DouglasRachfordOptions, iter)
-    pP = getProximalMap(p, o.λ(iter), o.s, 1)
+    pP = get_proximal_map(p, o.λ(iter), o.s, 1)
     snew = o.R(p.M, pP, o.s)
-    o.x = getProximalMap(p, o.λ(iter), snew, 2)
+    o.x = get_proximal_map(p, o.λ(iter), snew, 2)
     snew = o.R(p.M, o.x, snew)
     # relaxation
     return o.s = shortest_geodesic(p.M, o.s, snew, o.α(iter))

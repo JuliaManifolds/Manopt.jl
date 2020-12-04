@@ -27,7 +27,7 @@ $z_0 = \operatorname{P}(r_0)$, $\delta_0 = z_0$ and $k=0$
 
 Repeat until a convergence criterion is reached
 
-1. Set $\kappa = \langle \delta_k, \operatorname{Hess}[F] (\delta_k)_ {x} \rangle_{x}$,
+1. Set $\kappa = \langle \delta_k, \operatorname{Hess}[F] (\delta_k)_{x} \rangle_{x}$,
     $\alpha =\frac{\langle r_k, z_k \rangle_{x}}{\kappa}$ and
     $\langle \eta_k, \eta_k \rangle_{x}^{* } = \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x} +
     2\alpha \langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +  {\alpha}^2
@@ -36,8 +36,8 @@ Repeat until a convergence criterion is reached
     return $\eta_{k+1} = \eta_k + \tau \delta_k$ and stop.
 3. Set $\eta_{k}^{* }= \eta_k + \alpha \delta_k$, if
     $\langle \eta_k, \eta_k \rangle_{x} + \frac{1}{2} \langle \eta_k,
-    \operatorname{Hess}[F] (\eta_k)_ {x} \rangle_{x} \leqq \langle \eta_k^{* },
-    \eta_k^{* } \rangle_{x} + \frac{1}{2} \langle \eta_k^{* },
+    \operatorname{Hess}[F] (\eta_k)_{x} \rangle_{x} \leqq \langle \eta_k^{* },
+    \eta_k^{*} \rangle_{x} + \frac{1}{2} \langle \eta_k^{* },
     \operatorname{Hess}[F] (\eta_k)_ {x} \rangle_{x}$
     set $\eta_{k+1} = \eta_k$ else set $\eta_{k+1} = \eta_{k}^{* }$.
 4. Set $r_{k+1} = r_k + \alpha \operatorname{Hess}[F] (\delta_k)_ {x}$,
@@ -51,6 +51,7 @@ Repeat until a convergence criterion is reached
 The result is given by the last computed $η_k$.
 
 ## Remarks
+
 The $\operatorname{P}(\cdot)$ denotes the symmetric, positive deﬁnite
 preconditioner. It is required if a randomized approach is used i.e. using
 a random tangent vector $\eta$ as initial
@@ -63,6 +64,7 @@ default, the preconditioner is just the identity.
 To step number 2: Obtain $\tau$ from the positive root of
 $\left\lVert \eta_k + \tau \delta_k \right\rVert_{\operatorname{P}, x} = \Delta$
 what becomes after the conversion of the equation to
+
 ````math
  \tau = \frac{-\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +
  \sqrt{\langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x}^{2} +
@@ -70,7 +72,8 @@ what becomes after the conversion of the equation to
  \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x})}}
  {\langle \delta_k, \operatorname{P}(\delta_k) \rangle_{x}}.
 ````
-It can occur that $\langle \delta_k, \operatorname{Hess}[F] (\delta_k)_ {x} \rangle_{x}
+
+It can occur that $\langle \delta_k, \operatorname{Hess}[F] (\delta_k)_{x} \rangle_{x}
 = \kappa \leqq 0$ at iteration $k$. In this case, the model is not strictly
 convex, and the stepsize $\alpha =\frac{\langle r_k, z_k \rangle_{x}}
 {\kappa}$ computed in step 1. does not give a reduction in the modelfunction
@@ -84,7 +87,7 @@ line. Thus when $\kappa \leqq 0$ at iteration k, we replace $\alpha =
 The other possibility is that $\eta_{k+1}$ would lie outside the trust-region at
 iteration k (i.e. $\langle \eta_k, \eta_k \rangle_{x}^{* }
 \geqq {\Delta}^2$ what can be identified with the norm of $\eta_{k+1}$). In
-particular, when $\operatorname{Hess}[F] (\cdot)_ {x}$ is positive deﬁnite
+particular, when $\operatorname{Hess}[F] (\cdot)_{x}$ is positive deﬁnite
 and $\eta_{k+1}$ lies outside the trust region, the solution to the
 trust-region problem must lie on the trust-region boundary. Thus, there
 is no reason to continue with the conjugate gradient iteration, as it
@@ -107,14 +110,8 @@ TruncatedConjugateGradientOptions
 ## Additional Stopping Criteria
 
 ```@docs
-stopIfResidualIsReducedByPower
-```
-```@docs
-stopIfResidualIsReducedByFactor
-```
-```@docs
+StopIfResidualIsReducedByPower
+StopIfResidualIsReducedByFactor
 StopWhenTrustRegionIsExceeded
-```
-```@docs
 StopWhenCurvatureIsNegative
 ```

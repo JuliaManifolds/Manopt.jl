@@ -206,7 +206,7 @@ function prox_TV2(
     )
     return (xR...,)
 end
-function prox_TV2(M::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
+function prox_TV2(::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
     w = @SVector [1.0, -2.0, 1.0]
     x = SVector(pointTuple)
     if p == 1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
@@ -221,7 +221,7 @@ function prox_TV2(M::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
         throw(ErrorException("Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"))
     end
 end
-function prox_TV2(M::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
+function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
     w = @SVector [1.0, -2.0, 1.0]
     x = SVector(pointTuple)
     if p == 1 # Example 3.2 in Bergmann, Laus, Steidl, Weinmann, 2014.
@@ -272,11 +272,12 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
                     JForward = i.I .+ ek.I #i + e_k
                     JBackward = i.I .- ek.I # i - e_k
                     if all(JForward .<= maxInd) && all(JBackward .>= minInd)
-                        jForward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
-                        jBackward = CartesianIndex{d}(JForward...) # neigbbor index as Cartesian Index
                         (y[jBackward], y[i], y[jForward]) =
                             prox_TV2(
-                                M.manifold, λ, (y[jBackward], y[i], y[jForward]), p
+                                M.manifold,
+                                λ,
+                                (y[M, JBackward...], y[M, i.I...], y[M, JForward...]),
+                                p,
                             ).data # Compute TV on these
                     end
                 end # if mod 3
@@ -286,18 +287,17 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
     return y
 end
 @doc raw"""
-    prox_collaborative_TV(M,λ,x [,p=2,q=1])
+    project_collaborative_TV(M,λ,x [,p=2,q=1])
 
-compute the prox of the collaborative TV prox for x on the `PowerManifold`
-manifold, i.e. of the function
+compute the projection onto collaborative Norm unit (or α-) ball, i.e. of the function
 
 ```math
-F^q(x) = \sum_{i ∈ \mathcal G}
-  \Bigl( \sum_{j ∈ \mathcal I_i}
+F^q(x) = \sum_{i\in\mathcal G}
+  \Bigl( \sum_{j\in\mathcal I_i}
     \sum_{k=1^d} \lVert X_{i,j}\rVert_x^p\Bigr)^\frac{q/p},
 ```
 
-where $\mathcal G$ is the set of indices for $x ∈ \mathcal M$ and $\mathcal I_i$
+where $\mathcal G$ is the set of indices for $x\in\mathcal M$ and $\mathcal I_i$
 is the set of its forward neighbors.
 This is adopted from the paper by Duran, Möller, Sbert, Cremers:
 _Collaborative Total Variation: A General Framework for Vectorial TV Models_
@@ -305,8 +305,7 @@ _Collaborative Total Variation: A General Framework for Vectorial TV Models_
 norm is not on a manifold but on a vector space, see their Example 3 for
 details.
 """
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0)
-    # Ξ = forward_logs(M,x)
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=1.0)
     pdims = power_dimensions(N)
     if length(pdims) == 1
         d = 1
@@ -351,16 +350,16 @@ function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0)
         else
             throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
         end
-        return (λ .* Ξ) ./ max.(Ref(λ), norms)
+        return (α .* Ξ) ./ max.(Ref(α), norms)
     end # end q
     return throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Float64=1.0)
-    return prox_collaborative_TV(N, λ, x, Ξ, Float64(p), q)
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Float64=1.0, α=1.0)
+    return project_collaborative_TV(N, λ, x, Ξ, Float64(p), q, α)
 end
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Float64, q::Int)
-    return prox_collaborative_TV(N, λ, x, Ξ, p, Float64(q))
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Float64, q::Int, α=1.0)
+    return project_collaborative_TV(N, λ, x, Ξ, p, Float64(q), α)
 end
-function prox_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Int)
-    return prox_collaborative_TV(N, λ, x, Ξ, Float64(p), Float64(q))
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Int, α=1.0)
+    return project_collaborative_TV(N, λ, x, Ξ, Float64(p), Float64(q), α)
 end

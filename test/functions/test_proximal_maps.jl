@@ -93,16 +93,33 @@
     N3 = PowerManifold(M3, 3)
     P = [pR rR qR]
     Ξ = [ξR ηR νR]
-    @test prox_collaborative_TV(N3, 0.0, P, Ξ, 1, 1) == Ξ
-    @test prox_collaborative_TV(N3, 0.0, P, Ξ, 1.0, 1) == Ξ
-    @test prox_collaborative_TV(N3, 0.0, P, Ξ, 1, 1.0) == Ξ
-    @test prox_collaborative_TV(N3, 0.0, P, Ξ, 1.0, 1.0) == Ξ
+    @test project_collaborative_TV(N3, 0.0, P, Ξ, 1, 1) == Ξ
+    @test project_collaborative_TV(N3, 0.0, P, Ξ, 1.0, 1) == Ξ
+    @test project_collaborative_TV(N3, 0.0, P, Ξ, 1, 1.0) == Ξ
+    @test project_collaborative_TV(N3, 0.0, P, Ξ, 1.0, 1.0) == Ξ
 
-    @test prox_collaborative_TV(N3, 0.0, P, Ξ, 2, 1) == Ξ
-    @test norm(N3, P, prox_collaborative_TV(N3, 0.0, P, Ξ, 2, Inf)) ≈ 0
-    @test norm(N3, P, prox_collaborative_TV(N3, 0.0, P, Ξ, 1, Inf)) ≈ 0
-    @test norm(N3, P, prox_collaborative_TV(N3, 0.0, P, Ξ, Inf, Inf)) ≈ 0
-    @test_throws ErrorException prox_collaborative_TV(N3, 0.0, P, Ξ, 3, 3)
-    @test_throws ErrorException prox_collaborative_TV(N3, 0.0, P, Ξ, 3, 1)
-    @test_throws ErrorException prox_collaborative_TV(N3, 0.0, P, Ξ, 3, Inf)
+    @test project_collaborative_TV(N3, 0.0, P, Ξ, 2, 1) == Ξ
+    @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, 2, Inf)) ≈ norm(Ξ)
+    @test sum(abs.(project_collaborative_TV(N3, 0.0, P, Ξ, 1, Inf))) ≈ 1.0
+    @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, Inf, Inf)) ≈ norm(Ξ)
+    @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, 3)
+    @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, 1)
+    @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, Inf)
+
+    @testset "Multivariate project collaborative TV" begin
+        S = Sphere(2)
+        M = PowerManifold(S, NestedPowerRepresentation(), 2, 2, 2)
+        p = [zeros(3) for i in [1, 2], j in [1, 2], k in [1, 2]]
+        p[1, 1, 1] = [1.0, 0.0, 0.0]
+        p[1, 2, 1] = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
+        p[2, 1, 1] = 1 / sqrt(2) .* [1.0, 0.0, 1.0]
+        p[2, 2, 1] = [0.0, 1.0, 0.0]
+        p[:, :, 2] = deepcopy(p[:, :, 1])
+        X = zero_tangent_vector(M, p)
+        X[1, 1, 1] .= [0.0, 0.5, 0.5]
+        norm(project_collaborative_TV(M, 1, p, X, 2, 1)) ≈ 0
+        @test norm(project_collaborative_TV(M, 0.5, p, X, 2, 1)) ≈ (norm(X[1, 1, 1]) - 0.5)
+        Nf = PowerManifold(S, NestedPowerRepresentation(), 2, 2, 1)
+        @test_throws ErrorException project_collaborative_TV(Nf, 1, p, X, 2, 1)
+    end
 end

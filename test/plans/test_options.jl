@@ -12,6 +12,12 @@ struct TestOptions <: Options end
     @test get_last_stepsize(p, o, a) == 1.0
     @test get_initial_stepsize(a) == 1.0
 end
+@testset "Decresaing Stepsize" begin
+    ds = DecreasingStepsize(10.0, 1.0, 0.0, 1.0)
+    @test get_initial_stepsize(ds) == 10.0
+    @test ds(TestProblem(), TestOptions(), 1) == 10.0
+    @test ds(TestProblem(), TestOptions(), 2) == 5.0
+end
 
 @testset "Decorator Options test" begin
     o = TestOptions()

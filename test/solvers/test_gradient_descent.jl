@@ -1,4 +1,4 @@
-@testset "Manopt Gradient Descent" begin
+@testset "Gradient Descent" begin
     # Test the gradient descent with
     # the distance function squared
     # on S1, such that we can easily also verify exp and log
@@ -33,7 +33,9 @@
         F,
         ∇F,
         f[1];
-        stopping_criterion=StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10^-16)),
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+        ),
         stepsize=NonmonotoneLinesearch(
             1.0,
             ExponentialRetraction(),
@@ -53,7 +55,9 @@
         F,
         ∇F,
         f[1];
-        stopping_criterion=StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10^-16)),
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+        ),
         stepsize=NonmonotoneLinesearch(
             1.0,
             ExponentialRetraction(),
@@ -73,7 +77,9 @@
         F,
         ∇F,
         f[1];
-        stopping_criterion=StopWhenAny(StopAfterIteration(500), StopWhenChangeLess(10^-16)),
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+        ),
         stepsize=NonmonotoneLinesearch(
             1.0,
             ExponentialRetraction(),
@@ -88,6 +94,18 @@
         debug=[:Stop],
     )
     @test isapprox(x, x5; atol=1e-13)
+    x6 = gradient_descent(
+        M,
+        F,
+        ∇F,
+        f[1];
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+        ),
+        direction=Nesterov(f[1]),
+        debug=[:Stop],
+    )
+    @test isapprox(x, x6; atol=1e-13)
 
     @test_logs (
         :warn,
@@ -134,7 +152,9 @@
     @test abs(x - sum(r) / length(r)) ≈ 0 atol = 5 * 10.0^(-14)
     # Test Fallbacks -> we can't do steps with the wrong combination
     p = SubGradientProblem(M, F, ∇F)
-    o = GradientDescentOptions(f[1], StopAfterIteration(20), ConstantStepsize(1.0))
+    o = GradientDescentOptions(
+        f[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
+    )
     @test_throws MethodError initialize_solver!(p, o)
     @test_throws MethodError step_solver!(p, o, 1)
 end

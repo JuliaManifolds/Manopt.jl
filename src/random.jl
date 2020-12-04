@@ -226,7 +226,7 @@ Finally, the matrix is ​​normalized.
 """
 function random_tangent(M::Rotations, p, ::Val{:Gaussian}, σ::Real=1.0)
     d = manifold_dimension(M)
-    if d == 1
+    if d == 0
         return zeros(1, 1)
     else
         A = σ * randn(Float64, d, d)

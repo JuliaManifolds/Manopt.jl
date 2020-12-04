@@ -125,13 +125,13 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    TX,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr,Tρ_prime,Tρ_reg
+    TX,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr<:AbstractRetractionMethod,Tρ_prime,Tρ_reg
 } <: HessianOptions
     x::TX
     stop::TStop
     Δ::TΔ
     Δ_bar::TΔ_bar
-    retraction::TRetr
+    retraction_method::TRetr
     useRand::Bool
     ρ_prime::Tρ_prime
     ρ_regularization::Tρ_reg
@@ -189,7 +189,7 @@ Input
     tangent vector ξ
 """
 function approxHessianFD(
-    M::MT, x, gradFct, ξ; stepsize=2.0^(-14), transport=ParallelTransport()
+    M::MT, x, gradFct, ξ; stepsize=2.0^(-14), vector_transport_method=ParallelTransport()
 ) where {MT<:Manifold}
     norm_xi = norm(M, x, ξ)
     if norm_xi < eps(Float64)
@@ -199,12 +199,12 @@ function approxHessianFD(
     grad = gradFct(x)
     x1 = exp(M, x, ξ, c)
     grad1 = gradFct(x1)
-    grad1 = vector_transport_to(M, x1, grad1, x, transport)
+    grad1 = vector_transport_to(M, x1, grad1, x, vector_transport_method)
     return (1 / c) * (grad1 - grad)
 end
 
 @doc raw"""
-    stopIfResidualIsReducedByFactor <: StoppingCriterion
+    StopIfResidualIsReducedByFactor <: StoppingCriterion
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a factor compared to the norm of the initial residual, i.e.
@@ -220,22 +220,22 @@ In this case the algorithm reached linear convergence.
 
 # Constructor
 
-    stopIfResidualIsReducedByFactor(iRN, κ)
+    StopIfResidualIsReducedByFactor(iRN, κ)
 
-initialize the stopIfResidualIsReducedByFactor functor to indicate to stop after
+initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
 iRN times κ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct stopIfResidualIsReducedByFactor <: StoppingCriterion
+mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
     initialResidualNorm::Float64
     reason::String
-    stopIfResidualIsReducedByFactor(iRN::Float64, κ::Float64) = new(κ, iRN, "")
+    StopIfResidualIsReducedByFactor(iRN::Float64, κ::Float64) = new(κ, iRN, "")
 end
-function (c::stopIfResidualIsReducedByFactor)(
+function (c::StopIfResidualIsReducedByFactor)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm * c.κ && i > 0
@@ -246,7 +246,7 @@ function (c::stopIfResidualIsReducedByFactor)(
 end
 
 @doc raw"""
-    stopIfResidualIsReducedByPower <: StoppingCriterion
+    StopIfResidualIsReducedByPower <: StoppingCriterion
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a power of 1+θ compared to the norm of the initial residual, i.e.
@@ -262,22 +262,22 @@ algorithm reached superlinear convergence.
 
 # Constructor
 
-    stopIfResidualIsReducedByPower(iRN, θ)
+    StopIfResidualIsReducedByPower(iRN, θ)
 
-initialize the stopIfResidualIsReducedByFactor functor to indicate to stop after
+initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
 iRN to the power of 1+θ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct stopIfResidualIsReducedByPower <: StoppingCriterion
+mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
     initialResidualNorm::Float64
     reason::String
-    stopIfResidualIsReducedByPower(iRN::Float64, θ::Float64) = new(θ, iRN, "")
+    StopIfResidualIsReducedByPower(iRN::Float64, θ::Float64) = new(θ, iRN, "")
 end
-function (c::stopIfResidualIsReducedByPower)(
+function (c::StopIfResidualIsReducedByPower)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1 + c.θ) && i > 0

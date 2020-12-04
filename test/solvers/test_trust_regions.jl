@@ -98,7 +98,9 @@ end
             x -> rgrad(p, x),
             ξ;
             stepsize=2^(-9),
-            transport=ProductVectorTransport(ProjectionTransport(), ProjectionTransport()),
+            vector_transport_method=ProductVectorTransport(
+                ProjectionTransport(), ProjectionTransport()
+            ),
         );
         stopping_criterion=StopWhenAny(
             StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
@@ -117,7 +119,7 @@ end
         StopAfterIteration(2000),
         10.0^(-8),
         sqrt(manifold_dimension(M)),
-        retract,
+        ExponentialRetraction(),
         true,
         0.1,
         1000.0,

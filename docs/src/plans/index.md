@@ -78,7 +78,7 @@ Further specific [`RecordAction`](@ref)s can be found at the specific Options.
 there's one internal helper that might be useful for you own actions, namely
 
 ```@docs
-record_or_eset!
+record_or_reset!
 ```
 
 ### [Stepsize and Linesearch](@id Stepsize)
@@ -107,16 +107,6 @@ Problem
 get_cost
 ```
 
-For any algorithm that involves a cyclic evalutaion, e.g.
-[`cyclic_proximal_point`](@ref), one can specify the [`EvalOrder`](@ref) as
-
-```@docs
-EvalOrder
-LinearEvalOrder
-RandomEvalOrder
-FixedRandomEvalOrder
-```
-
 ### Cost based problem
 
 ```@docs
@@ -127,7 +117,9 @@ CostProblem
 
 ```@docs
 GradientProblem
+StochasticGradientProblem
 get_gradient
+get_gradients
 ```
 
 ### Subgradient based problem
@@ -141,7 +133,7 @@ get_subgradient
 
 ```@docs
 ProximalProblem
-getProximalMap
+get_proximal_map
 ```
 
 ### Further planned problems

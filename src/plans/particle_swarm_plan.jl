@@ -16,9 +16,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `retraction_method` – `ExponentialRetraction` the rectraction to use, defaults to
-  the exponential map
-* `inverse_retraction_method` - `LogarithmicInverseRetraction` an `inverse_retraction(M,x,y)` to use.
+* `retraction_method` – (`ExponentialRetraction`) the rectraction to use
+* `inverse_retraction_method` - (`LogarithmicInverseRetraction`) an inverse retraction to use.
 
 # Constructor
 
@@ -50,24 +49,24 @@ mutable struct ParticleSwarmOptions{
     retraction_method::TRetraction
     inverse_retraction_method::TInvRetraction
     vector_transport_method::TVTM
-    function ParticleSwarmOptions{P}(
+    function ParticleSwarmOptions(
         x0::AbstractVector,
         velocity::AbstractVector,
-        inertia::TParams=0.65,
-        social_weight::TParams=1.4,
-        cognitive_weight::TParams=1.4,
+        inertia=0.65,
+        social_weight=1.4,
+        cognitive_weight=1.4,
         stopping_criterion::StoppingCriterion=StopWhenAny(
             StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))
         ),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
         vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-    ) where {P,TParams}
+    )
         o = new{
             typeof(x0),
-            P,
+            eltype(x0),
             typeof(velocity),
-            TParams,
+            typeof(inertia + social_weight + cognitive_weight),
             typeof(stopping_criterion),
             typeof(retraction_method),
             typeof(inverse_retraction_method),
@@ -85,29 +84,4 @@ mutable struct ParticleSwarmOptions{
         o.vector_transport_method = vector_transport_method
         return o
     end
-end
-function ParticleSwarmOptions(
-    x0::AbstractVector{P},
-    velocity::AbstractVector,
-    inertia::Real=0.65,
-    social_weight::Real=1.4,
-    cognitive_weight::Real=1.4,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))
-    ),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-) where {P,T}
-    return ParticleSwarmOptions{P}(
-        x0,
-        velocity,
-        inertia,
-        social_weight,
-        cognitive_weight,
-        stopping_criterion,
-        retraction_method,
-        inverse_retraction_method,
-        vector_transport_method,
-    )
 end

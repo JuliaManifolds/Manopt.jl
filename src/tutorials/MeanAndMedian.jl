@@ -39,15 +39,22 @@
 # stepsize ([`ConstantStepsize`](@ref)`(1.)` are quite conservative, but are
 # chosen to be as simple as possible.
 #
-# With these two at hand, running the algorithm just requires to call `xOpt = solve(p,o)`.
+# With these two at hand, running the algorithm just requires to call `x_opt = solve(p,o)`.
 #
 # In the following two examples we will see, how to use a higher level interface
 # that allows to more easily activate for example a debug output or record values during the iterations
 #
 # ## The given Dataset
 #
-exportFolder = joinpath(
-    @__DIR__, "..", "..", "docs", "src", "assets", "images", "tutorials"
+export_folder = joinpath( #src
+    @__DIR__, #src
+    "..", #src
+    "..", #src
+    "docs", #src
+    "src", #src
+    "assets", #src
+    "images", #src
+    "tutorials", #src
 ) #src
 using Manopt, Manifolds
 using Random, Colors
@@ -70,18 +77,18 @@ nothing #hide
 # Then our data rendered using [`asymptote_export_S2_signals`](@ref) looks like
 #
 asymptote_export_S2_signals( #src
-    exportFolder * "/startDataAndCenter.asy"; #src
+    export_folder * "/startDataAndCenter.asy"; #src
     points=[[x], data], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]), #src
-    dotSize=3.5, #src
-    cameraPosition=(1.0, 0.5, 0.5), #src
+    dot_size=3.5, #src
+    camera_position=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataAndCenter.asy"; render=2) #src
+render_asymptote(export_folder * "/startDataAndCenter.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataAndCenter.asy";
 #md #     points = [ [x], data],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
-#md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
+#md #     dot_size = 3.5, camera_position = (1.,.5,.5)
 #md # )
 #md # render_asymptote("startDataAndCenter.asy"; render = 2)
 #md # ```
@@ -129,18 +136,18 @@ xMean = gradient_descent(
 nothing #hide
 #
 asymptote_export_S2_signals( #src
-    exportFolder * "/startDataCenterMean.asy"; #src
+    export_folder * "/startDataCenterMean.asy"; #src
     points=[[x], data, [xMean]], #src
     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]), #src
-    dotSize=3.5, #src
-    cameraPosition=(1.0, 0.5, 0.5), #src
+    dot_size=3.5, #src
+    camera_position=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataCenterMean.asy"; render=2) #src
+render_asymptote(export_folder * "/startDataCenterMean.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataCenterMean.asy";
 #md #     points = [ [x], data, [xMean] ],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]),
-#md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
+#md #     dot_size = 3.5, camera_position = (1.,.5,.5)
 #md # )
 #md # render_asymptote("startDataCenterMean.asy"; render = 2)
 #md # ```
@@ -192,20 +199,20 @@ values
 # The resulting median and mean for the data hence are
 #
 asymptote_export_S2_signals( #src
-    exportFolder * "/startDataCenterMedianAndMean.asy"; #src
+    export_folder * "/startDataCenterMedianAndMean.asy"; #src
     points=[[x], data, [xMean], [xMedian]], #src
     colors=Dict( #src
         :points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta], #src
     ), #src
-    dotSize=3.5, #src
-    cameraPosition=(1.0, 0.5, 0.5), #src
+    dot_size=3.5, #src
+    camera_position=(1.0, 0.5, 0.5), #src
 ) #src
-render_asymptote(exportFolder * "/startDataCenterMedianAndMean.asy"; render=2) #src
+render_asymptote(export_folder * "/startDataCenterMedianAndMean.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("startDataCenterMean.asy";
 #md #     points = [ [x], data, [xMean], [xMedian] ],
 #md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]),
-#md #     dotSize = 3.5, cameraPosition = (1.,.5,.5)
+#md #     dot_size = 3.5, camera_position = (1.,.5,.5)
 #md # )
 #md # render_asymptote("startDataCenterMedianAndMean.asy"; render = 2)
 #md # ```

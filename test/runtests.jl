@@ -5,6 +5,7 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
     include("plans/test_debug.jl")
     include("plans/test_nelder_mead_plan.jl")
     include("plans/test_gradient_plan.jl")
+    include("plans/test_primal_dual_plan.jl")
     include("plans/test_record.jl")
     include("plans/test_stopping_criteria.jl")
     include("plans/test_subgradient_plan.jl")
@@ -23,6 +24,7 @@ end
     include("helpers/test_data.jl")
 end
 @testset "Solver Tests       " begin
+    include("solvers/test_ChambollePock.jl")
     include("solvers/test_conjugate_gradient.jl")
     include("solvers/test_Douglas_Rachford.jl")
     include("solvers/test_cyclic_proximal_point.jl")
@@ -30,4 +32,5 @@ end
     include("solvers/test_Nelder_Mead.jl")
     include("solvers/test_trust_regions.jl")
     include("solvers/test_particle_swarm.jl")
+    include("solvers/test_stochastic_gradient_descent.jl")
 end

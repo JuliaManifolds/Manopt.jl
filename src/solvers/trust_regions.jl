@@ -53,7 +53,7 @@ For a description of the algorithm and more details see
   improvement could change sign if it is negative but very small.
 * `return_options` – (`false`) – if actiavated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
-  If set to false (default) just the optimal value `xOpt` is returned
+  If set to false (default) just the optimal value `x_opt` is returned
 
 # Output
 * `x` – the last reached point on the manifold
@@ -67,7 +67,7 @@ function trust_regions(
     ∇F::TdF,
     x,
     H::TH;
-    retraction::Tretr=exp,
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(1000), StopWhenGradientNormLess(10^(-6))
@@ -79,7 +79,7 @@ function trust_regions(
     ρ_regularization=1000.0,
     return_options=false,
     kwargs..., #collect rest
-) where {MT<:Manifold,TF,TdF,TH,Tretr,Tprec}
+) where {MT<:Manifold,TF,TdF,TH,Tprec}
     (ρ_prime >= 0.25) &&
         throw(ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime."))
     (Δ_bar <= 0) && throw(ErrorException("Δ_bar must be positive but it is $Δ_bar."))
@@ -87,7 +87,14 @@ function trust_regions(
         throw(ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."))
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TrustRegionsOptions(
-        x, stopping_criterion, Δ, Δ_bar, retraction, useRandom, ρ_prime, ρ_regularization
+        x,
+        stopping_criterion,
+        Δ,
+        Δ_bar,
+        retraction_method,
+        useRandom,
+        ρ_prime,
+        ρ_regularization,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -159,7 +166,7 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
         end
     end
     # Compute the tentative next iterate (the proposal)
-    x_prop = o.retraction(p.M, o.x, η)
+    x_prop = retract(p.M, o.x, η, o.retraction_method)
     # Compute the function value of the proposal
     fx_prop = get_cost(p, x_prop)
     # Check the performance of the quadratic model against the actual cost.

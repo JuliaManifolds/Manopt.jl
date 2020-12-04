@@ -2,5 +2,5 @@
 
 ```@autodocs
 Modules = [Manopt]
-Pages   = ["adjointDifferentials.jl"]
+Pages   = ["adjoint_differentials.jl"]
 ```

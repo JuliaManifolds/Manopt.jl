@@ -1,5 +1,5 @@
 #
-# Denoise an SPD Example with Cyclic Proximal Point applied to the
+# Denoise an S2-valued image Example with Cyclic Proximal Point applied to the
 #
 # L2-TV functional with anisotropic TV
 #
@@ -7,28 +7,25 @@
 #
 using Manopt, Manifolds
 using Images, CSV, DataFrames, LinearAlgebra, JLD2
-
 #
 # Settings
-ExportResult = true
-ExportOrig = true
-ExportTable = true
+experiment_name = "S2_Whirl_CPPA"
+results_folder = joinpath(@__DIR__, "S2_TV")
+export_result = true
+export_orig = true
+export_table = true
+export_function_value = true
 asymptote_render_detail = 2
-resultsFolder = "examples/Total_Variation/S2_TV/"
-experimentName = "WhirlCPPA"
-if !isdir(resultsFolder)
-    mkdir(resultsFolder)
-end
+!isdir(results_folder) && mkdir(results_folder)
 #
 # Manifold & Data
 f = artificial_S2_whirl_image(64)
 pixelM = Sphere(2);
 
-if ExportOrig
-    asymptote_export_S2_data(resultsFolder * experimentName * "-orig.asy"; data=f)
-    render_asymptote(
-        resultsFolder * experimentName * "-orig.asy"; render=asymptote_render_detail
-    )
+if export_orig
+    orig_filename = joinpath(results_folder, experiment_name * "-orig.asy")
+    asymptote_export_S2_data(orig_filename; data=f)
+    render_asymptote(orig_filename; render=asymptote_render_detail)
 end
 #
 # Parameters
@@ -73,29 +70,21 @@ y = get_solver_result(o)
 yRec = get_record(o)
 #
 # Results
-if ExportResult
-    asymptote_export_S2_data(
-        resultsFolder *
-        experimentName *
-        "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
-        data=y,
-    ) #(6)
-    render_asymptote(
-        resultsFolder *
-        experimentName *
-        "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy";
-        render=asymptote_render_detail,
+if export_result
+    result_filename = joinpath(
+        results_folder,
+        experiment_name * "-result-$(maxIterations)-α$(replace(string(α), "." => "-")).asy",
     )
+    asymptote_export_S2_data(result_filename; data=y)
+    render_asymptote(result_filename; render=asymptote_render_detail)
 end
-if ExportTable
+if export_table
     A = cat([y[1] for y in yRec], [y[3] for y in yRec]; dims=2)
-    CSV.write(
-        string(resultsFolder * experimentName * "-Result.csv"),
-        DataFrame(A);
-        writeheader=false,
-    )
-    save(
-        resultsFolder * experimentName * "-CostValue.jld2",
-        Dict("compareCostFunctionValue" => last(yRec)[3]),
-    )
+    table_filename = joinpath(results_folder, experiment_name * "-recorded-cost.csv")
+    CSV.write(table_filename, DataFrame(A); writeheader=false)
+end
+if export_function_value
+    fctval_filename = joinpath(results_folder, experiment_name * "-cost.jld2")
+    values = Dict("cost_function_value" => last(yRec)[3], "iterations" => length(yRec) - 1)
+    save(fctval_filename, values)
 end
