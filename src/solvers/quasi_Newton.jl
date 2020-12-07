@@ -132,7 +132,7 @@ end
 function update_parameters!(p::GradientProblem, o::QuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	vector_transport_to!(p.M, o.∇, x, o.∇, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
-	
+
 	yk = get_gradient(p,o.x) - o.∇
 
 	for i=1:length(o.basis.data)
@@ -167,10 +167,11 @@ end
 function update_parameters!(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	vector_transport_to!(p.M, o.∇, x, o.∇, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
-	
-	yk = get_gradient(p,o.x) - o.∇
 
-	o.basis.data .= [ vector_transport_to(p.M, x, v, o.x, o.vector_transport_method) for v ∈ get_vectors(p.M,o.x,o.basis) ]
+	yk = get_gradient(p,o.x) - o.∇
+	for i= 1:length(o.basis.data)
+		vector_transport_to!(p.M, o.basis.data[i], x, o.basis.data[i], o.x, o.vector_transport_method)
+	end
 
 	yk_c = get_coordinates(p.M, o.x, yk, o.basis)
 	sk_c = get_coordinates(p.M, o.x, sk, o.basis)
@@ -208,7 +209,7 @@ end
 function update_parameters!(p::GradientProblem, o::RLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	vector_transport_to!(p.M, o.∇, x, o.∇, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
-	
+
 	yk = get_gradient(p,o.x) - o.∇
     return limited_memory_update!(p,o,sk,yk,x)
 end
