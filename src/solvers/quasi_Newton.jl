@@ -112,15 +112,15 @@ function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P
 
 	for i in current_memory : -1 : 1
 		ξ[i] = inner(p.M, o.x, o.steps[i], r) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i])
-		r =  r - ξ[i]*o.gradient_diffrences[i]
+		r .=  r .- ξ[i] .* o.gradient_diffrences[i]
 	end
 
 	if current_memory != 0
-		r = (inner(p.M, o.x, o.steps[current_memory], o.gradient_diffrences[current_memory]) / norm(p.M, o.x, o.gradient_diffrences[current_memory])^2) * r
+		r .= (inner(p.M, o.x, o.steps[current_memory], o.gradient_diffrences[current_memory]) / norm(p.M, o.x, o.gradient_diffrences[current_memory])^2) .* r
 	end
 
 	for i in 1 : current_memory
-		r = r + (ξ[i] - (inner(p.M, o.x, o.gradient_diffrences[i], r) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i]))) * o.steps[i]
+		r .= r .+ (ξ[i] - (inner(p.M, o.x, o.gradient_diffrences[i], r) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i]))) .* o.steps[i]
 	end
 	project!(p.M, r, o.x, r)
 	return -r
@@ -178,7 +178,7 @@ function update_parameters!(p::GradientProblem, o::CautiuosQuasiNewtonOptions{P,
 	skyk_c = dot(sk_c, yk_c)
 	sksk_c = dot(sk_c, sk_c)
 
-	bound = o.cautious_function(norm(p.M, x, gradf_xold))
+	bound = o.cautious_function(norm(p.M, x, o.∇))
 
 	if sksk_c != 0 && (skyk_c / sksk_c) >= bound
 
