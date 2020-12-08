@@ -5,17 +5,32 @@ evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
 It will attempt to minimize the cost function F on the Manifold M.
 
 # Input
-* `M` – a manifold $\mathcal{M}$
-* `F` – a cost function $F \colon \mathcal{M} \to \mathbb{R}$ to minimize
-* `∇F`- the gradient $\nabla F \colon \mathcal M \to \tangent{x}$ of $F$
-* `x` – an initial value $x \in \mathcal{M}$
+* `M` – a manifold $\mathcal{M}$.
+* `F` – a cost function $F \colon \mathcal{M} \to \mathbb{R}$ to minimize.
+* `∇F`– the gradient $\nabla F \colon \mathcal M \to \tangent{x}$ of $F$.
+* `x` – an initial value $x \in \mathcal{M}$.
 
 # Optional
+* `retraction_method` – `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
+* `vector_transport_method` – (`ParallelTransport()`) a vector transport to use, by default the parallel transport.
+* `broyden_factor` – (`0.`) – specifies the proportion of DFP update in the convex combination if the Broyden Class method is to be used. By default, BFGS is used.
+* `cautious_update` – (`false`) – specifies whether a cautious update should be used, which means that a decision rule based on the calculated values decides whether the operator remains the same and no new information is received, or whether it is updated as usual. 
+* `cautious_function` – (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero at 0 and strictly increasing at 0. 
+* `memory_size` – (`20`) – number of vectors to be stored. 
+* `memory_steps`– (`[`[`zero_tangent_vector`](@ref)`(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $s_k$ for a LRBFGS method.
+* `memory_gradients` – (`[`[`zero_tangent_vector`](@ref)`(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $y_k$ for a LRBFGS method.
+* `initial_operator` – (`Matrix(I, [`manifold_dimension`](@ref)`(M), [`manifold_dimension`](@ref)`(M))`) – the initial operator, represented as a matrix. 
+* `scalling_initial_operator` – (`true`) specifies if the initial operator is scalled after the first step but before the first update. 
+* `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`) specify a [`Stepsize`](@ref) functor.
+* `stopping_criterion`– ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(max(1000, memory_size)), `[`StopWhenGradientNormLess`](@ref)`(10.0^68))`)
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
+    complete [`Options`](@ref) are returned. This can be used to access recorded values.
+    If set to false (default) just the optimal value `x_opt` if returned
 
 # Output
-* `x` – the last reached point on the manifold
-
-# see also
+* `x_opt` – the resulting (approximately critical) point of the quasi–Newton method
+OR
+* `options` – the options returned by the solver (see `return_options`)
 
 """
 function quasi_Newton(
