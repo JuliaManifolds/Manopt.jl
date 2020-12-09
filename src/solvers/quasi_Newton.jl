@@ -14,13 +14,13 @@ It will attempt to minimize the cost function F on the Manifold M.
 * `retraction_method` – `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
 * `vector_transport_method` – (`ParallelTransport()`) a vector transport to use, by default the parallel transport.
 * `broyden_factor` – (`0.`) – specifies the proportion of DFP update in the convex combination if the Broyden Class method is to be used. By default, BFGS is used.
-* `cautious_update` – (`false`) – specifies whether a cautious update should be used, which means that a decision rule based on the calculated values decides whether the operator remains the same and no new information is received, or whether it is updated as usual. 
-* `cautious_function` – (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero at 0 and strictly increasing at 0. 
-* `memory_size` – (`20`) – number of vectors to be stored. 
+* `cautious_update` – (`false`) – specifies whether a cautious update should be used, which means that a decision rule based on the calculated values decides whether the operator remains the same and no new information is received, or whether it is updated as usual.
+* `cautious_function` – (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero at 0 and strictly increasing at 0.
+* `memory_size` – (`20`) – number of vectors to be stored.
 * `memory_steps`– (`[`[`zero_tangent_vector`](@ref)`(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $s_k$ for a LRBFGS method.
 * `memory_gradients` – (`[`[`zero_tangent_vector`](@ref)`(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $y_k$ for a LRBFGS method.
-* `initial_operator` – (`Matrix(I, [`manifold_dimension`](@ref)`(M), [`manifold_dimension`](@ref)`(M))`) – the initial operator, represented as a matrix. 
-* `scalling_initial_operator` – (`true`) specifies if the initial operator is scalled after the first step but before the first update. 
+* `initial_operator` – (`Matrix(I, [`manifold_dimension`](@ref)`(M), [`manifold_dimension`](@ref)`(M))`) – the initial operator, represented as a matrix.
+* `scalling_initial_operator` – (`true`) specifies if the initial operator is scalled after the first step but before the first update.
 * `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`) specify a [`Stepsize`](@ref) functor.
 * `stopping_criterion`– ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(max(1000, memory_size)), `[`StopWhenGradientNormLess`](@ref)`(10.0^68))`)
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
@@ -120,13 +120,33 @@ function get_quasi_newton_direction(p::GradientProblem, o::Union{QuasiNewtonOpti
 end
 
 
+"""
+	get_quasi_newton_direction(p::GradientProblem, o::RLBFGSOptions)
+	get_quasi_newton_direction(p::GradientProblem, o::CautiousRLBFGSOptions)
+
+Compute the limited memory variant of the limited memory L-BFGS update using the two-loop
+recursion [^HuangAbsilGallivan2006], cf. Algorithm 7.4 of [^NocedalWright2006] for the Euclidean description)
+
+[^NocedalWright2015]:
+	> Nocedal, J., Wright, S. J.: Numerical Optimization, Springer New York, NY, 2006.
+	> doi: [10.1007/978-0-387-40065-5](https://doi.org/10.1007/978-0-387-40065-5)
+
+[^HuangAbsilGallivan2015]:
+	>   Huang, W., Absil, P.-A., Gallivan, K. A.:
+    > _A Broyden class of quasi-Newton methods for Riemannian optimization_,
+	> SIAM Journal on Optimization (25.3), pp. 1660–1685, 2015.
+	> doi: [10.1137/140955483](https://doi.org/10.1137/140955483)
+	> PDF: [https://www.math.fsu.edu/~aluffi/archive/paper488.pdf](https://www.math.fsu.edu/~aluffi/archive/paper488.pdf)
+"""
 function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P,T}, CautiuosRLBFGSOptions{P,T}}) where {P, T}
 	r = o.∇
 	current_memory = o.current_memory_size
 	ξ = zeros(current_memory)
+	ρ = zeros(current_memory)
 
 	for i in current_memory : -1 : 1
-		ξ[i] = inner(p.M, o.x, o.steps[i], r) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i])
+		ρ[i] = 1 / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i])
+		ξ[i] = inner(p.M, o.x, o.steps[i], r) * ρ[i]
 		r .=  r .- ξ[i] .* o.gradient_diffrences[i]
 	end
 
@@ -135,7 +155,8 @@ function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P
 	end
 
 	for i in 1 : current_memory
-		r .= r .+ (ξ[i] - (inner(p.M, o.x, o.gradient_diffrences[i], r) / inner(p.M, o.x, o.steps[i], o.gradient_diffrences[i]))) .* o.steps[i]
+		ω = ρ[i]*inner(p.M, o.x, o.gradient_diffrences[i],r)
+		r .= r .+ (ξ[i] - ω) .* o.steps[i]
 	end
 	project!(p.M, r, o.x, r)
 	return -r
