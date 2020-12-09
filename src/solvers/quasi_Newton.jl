@@ -100,8 +100,11 @@ end
 
 function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
 	o.∇ = get_gradient(p,o.x)
+	print("\n")
+	# print("$(o.∇) \n")
+	print("\n")
 	η = get_quasi_newton_direction(p, o)
-
+	print("$(o.∇ - get_gradient(p,o.x)) \n")
 	α = o.stepsize(p,o,iter,η)
 
 	x_old = o.x
@@ -112,7 +115,12 @@ function step_solver!(p::GradientProblem,o::AbstractQuasiNewtonOptions,iter)
 
 end
 
-# Computing the direction
+"""
+	get_quasi_newton_direction(p::GradientProblem, o::QuasiNewtonOptions)
+	get_quasi_newton_direction(p::GradientProblem, o::CautiuosQuasiNewtonOptions)
+
+Compute the quasi-Newton search direction.
+"""
 
 function get_quasi_newton_direction(p::GradientProblem, o::Union{QuasiNewtonOptions{P,T}, CautiuosQuasiNewtonOptions{P,T}}) where {P, T}
 	gradient = get_coordinates(p.M,o.x,o.∇,o.basis)
@@ -124,8 +132,8 @@ end
 	get_quasi_newton_direction(p::GradientProblem, o::RLBFGSOptions)
 	get_quasi_newton_direction(p::GradientProblem, o::CautiousRLBFGSOptions)
 
-Compute the limited memory variant of the limited memory L-BFGS update using the two-loop
-recursion [^HuangAbsilGallivan2006], cf. Algorithm 7.4 of [^NocedalWright2006] for the Euclidean description)
+Compute the limited-memory RBFGS variant of the search direction using the two-loop
+recursion [^HuangAbsilGallivan2006] (cf. Algorithm 7.4 of [^NocedalWright2006] for the Euclidean description)
 
 [^NocedalWright2015]:
 	> Nocedal, J., Wright, S. J.: Numerical Optimization, Springer New York, NY, 2006.
@@ -254,7 +262,8 @@ end
 function update_parameters!(p::GradientProblem, o::CautiuosRLBFGSOptions{P,T}, α::Float64, η::T, x::P, iter) where {P,T}
 	vector_transport_to!(p.M, o.∇, x, o.∇, o.x, o.vector_transport_method)
 	sk = vector_transport_to(p.M, x, α*η, o.x, o.vector_transport_method)
-	yk = get_gradient(p,o.x) - o.∇
+	beta = norm(p.M, x, α*η) / norm(p.M, o.x, sk)
+	yk = get_gradient(p,o.x)/beta - o.∇
 
 	sk_yk = inner(p.M, o.x, sk, yk)
 	norm_sk = norm(p.M, o.x, sk)
