@@ -166,7 +166,7 @@ export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
 export RLBFGSOptions, QuasiNewtonOptions
-export quasi_Newton, WolfePowellLineseach, StrongWolfePowellLineseach, operator_to_matrix, square_matrix_vector_product
+export quasi_Newton, WolfePowellLineseach, StrongWolfePowellLineseach, operator_to_matrix, square_matrix_vector_product, WolfePowellLineseachHuang
 
 export
     ConjugateGradientDescentOptions,
