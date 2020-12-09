@@ -151,7 +151,7 @@ function get_quasi_newton_direction(p::GradientProblem, o::Union{RLBFGSOptions{P
 	end
 
 	if current_memory != 0
-		r .= (inner(p.M, o.x, o.steps[current_memory], o.gradient_diffrences[current_memory]) / norm(p.M, o.x, o.gradient_diffrences[current_memory])^2) .* r
+		r .= 1 / ( ρ[current_memory] * norm(p.M, o.x, o.gradient_diffrences[current_memory])^2) .* r
 	end
 
 	for i in 1 : current_memory
