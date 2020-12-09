@@ -1,6 +1,6 @@
 using Manifolds, Manopt, Random, LinearAlgebra, BenchmarkTools, Profile
 import Manifolds: vector_transport_to!
-vector_transport_to!(M::Stiefel,Y,p,X,q,::ProjectionTransport) = project!(M, q, X)
+vector_transport_to!(M::Stiefel,Y,p,X,q,::ProjectionTransport) = project!(M, Y, q, X)
 Random.seed!(42)
 M = Stiefel(1000,3)
 A = randn(1000,1000)
