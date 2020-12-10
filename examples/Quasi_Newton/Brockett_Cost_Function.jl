@@ -21,6 +21,6 @@ memory_size = 4,
 vector_transport_method = ProjectionTransport(), 
 retraction_method = QRRetraction(), 
 cautious_update = true, 
-cautious_function = (x) -> 0, 
+# cautious_function = (x) -> 0, 
 stopping_criterion = StopWhenGradientNormLess(norm(M,x,∇F(x))*10^(-6)), 
 debug = [:Iteration, " ", :Cost, "\n", 1, :Stop]) 
