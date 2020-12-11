@@ -506,12 +506,13 @@ function (a::WolfePowellLineseachHuang)(p::P, o::O, iter::Int, η=-get_gradient(
     gradient_x = get_gradient(p, o.x)
     xNew = retract(p.M, o.x, t*η, a.retraction_method)
     fNew = p.cost(xNew)
+    gradient_new = get_gradient(p, xNew)
 
-    while fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, gradient_x) && inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+    while fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, gradient_x) && inner(p.M, o.x, vector_transport_to!(p.M, gradient_new, xNew, gradient_new, o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
         if fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, gradient_x)
             β = t
         else
-            if inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+            if inner(p.M, o.x, gradient_new, η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
                 α = t
             end
         end
@@ -520,8 +521,9 @@ function (a::WolfePowellLineseachHuang)(p::P, o::O, iter::Int, η=-get_gradient(
         else
             t = 2*α
         end
-        xNew = retract(p.M, o.x, t*η, a.retraction_method)
+        retract!(p.M, xNew, o.x, t*η, a.retraction_method)
         fNew = p.cost(xNew)
+        gradient_new = get_gradient(p, xNew)
     end
     return t
 end
