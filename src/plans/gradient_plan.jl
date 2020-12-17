@@ -978,294 +978,157 @@ function (r::RecordStepsize)(
 end
 
 @doc raw"""
-    QuasiNewtonOptions <: Options
+    AbstractQuasiNewtonDirectionUpdate
+
+An abstract represresenation of an Quasi Newton Update rule to determine the next direction
+given current [`AbstractQuasiNewtonOptions`](@ref).
+
+All subtypes should be functors, i.e. one should be able to call them as `H(M,x,d)` to compute a new direction update.
 """
-abstract type AbstractQuasiNewtonOptions <: Options end
+abstract type AbstractQuasiNewtonDirectionUpdate end
 
+abstract type AbstractQuasiNewtonType end
+struct BFGS <: AbstractQuasiNewtonType end
+struct InverseBFGS <: AbstractQuasiNewtonType end
+struct DFP <: AbstractQuasiNewtonType end
+struct InverseDFP <: AbstractQuasiNewtonType end
 
-
-
-# BFGS
 @doc raw"""
-    RBFGSQuasiNewton{P,T} <: QuasiNewtonOptions
+    QuasiNewtonOptions <: Options
 
-specify options for a Riemannian BFGS algorithm, that solves a
-[`GradientProblem`].
+Theese Quasi Newton [`Options`](@ref) represent any quasi newton based method and can be
+used with any update rule for the direction.
 
 # Fields
 * `x` – the current iterate, a point on a manifold
 * `∇` – the current gradient
-* `inverse_hessian_approximation` - a representantation of the approximation of
-    the hessian at the current iterate, an array of tangent vectors
+* `sk` – the current step
+* `yk` the current gradient difference
+* `dirction_update` - a [`AbstractQuasiNewtonDirectionUpdate`] rule.
 * `retraction_method` – a function to perform a step on the manifold
-* `vector_transport_method` – a function to transport a vector of the tangent
-    space of one iterate to the tangent space of another iterate
 * `stop` – a [`StoppingCriterion`](@ref)
-* `broyden_factor` – whether to use BFGS (0.0), DFP (1.0) or a mix of both.
+
 # See also
 [`GradientProblem`](@ref)
 """
-mutable struct QuasiNewtonOptions{P,T,B<:AbstractBasis} <: AbstractQuasiNewtonOptions
+mutable struct QuasiNewtonOptions{P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize, RTR <: AbstractRetractionMethod, VT <: AbstractVectorTransportMethod} <: Options
     x::P
     ∇::T
-    inverse_hessian_approximation::AbstractMatrix
-    basis::B
-    scalling_initial_operator::Bool
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
-    stop::StoppingCriterion
-    stepsize::Stepsize
-    broyden_factor::Float64
-
-    function QuasiNewtonOptions{P,T,B}(
-        x::P,
-        grad_x::T,
-        inverse_hessian_approximation::AbstractMatrix,
-        basis::B;
-        scalling_initial_operator::Bool = true,
-        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-        stop::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = WolfePowellLineseach(),
-        broyden_factor::Float64 = 0.0
-    ) where {P,T,B<:AbstractBasis}
-        o = new{P,T,B}()
-        o.x = x
-        o.∇ = grad_x
-        o.inverse_hessian_approximation = inverse_hessian_approximation
-        o.basis = basis
-        o.scalling_initial_operator = scalling_initial_operator
-        o.retraction_method = retraction_method
-        o.vector_transport_method = vector_transport_method
-        o.stop = stop
-        o.stepsize = stepsize
-        o.broyden_factor = broyden_factor
-        return o
-    end
+    sk::T
+    yk::T
+    direction_update::U
+    retraction_method::RTR
+    stepsize::S
+    stop::SC
+    vector_transport_method::VT
 end
 function QuasiNewtonOptions(
     x::P,
-    grad_x::T,
-    inverse_hessian_approximation::AbstractMatrix,
-    basis::B;
-    scalling_initial_operator::Bool = true,
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    stop::StoppingCriterion = StopAfterIteration(100),
-    stepsize::Stepsize = WolfePowellLineseach(),
-    broyden_factor::Float64 = 0.0
-) where {P,T,B<:AbstractBasis}
-    return QuasiNewtonOptions{P,T,B}(x,grad_x,inverse_hessian_approximation,basis;
-        scalling_initial_operator = scalling_initial_operator,
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
-        stop = stop,
-        stepsize = stepsize,
-        broyden_factor = broyden_factor
-        )
-end
-
-
-# Cautious RBFGS
-mutable struct CautiuosQuasiNewtonOptions{P,T,B<:AbstractBasis} <: AbstractQuasiNewtonOptions
-    x::P
-    ∇::T
-    inverse_hessian_approximation::AbstractMatrix
-    basis::B
-    scalling_initial_operator::Bool
-    cautious_function::Function
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
-    stop::StoppingCriterion
-    stepsize::Stepsize
-    broyden_factor::Float64
-
-    function CautiuosQuasiNewtonOptions{P,T}(
-        x::P,
-        grad_x::T,
-        inverse_hessian_approximation::AbstractMatrix,
-        basis::B;
-        scalling_initial_operator::Bool = true,
-        cautious_function::Function = x -> x*10^(-4),
-        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-        stop::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = WolfePowellLineseach(),
-        broyden_factor::Float64 = 0.0
-    ) where {P,T,B<:AbstractBasis}
-        o = new{P,T,B}()
-        o.x = x
-        o.∇ = grad_x
-        o.inverse_hessian_approximation = inverse_hessian_approximation
-        o.basis = basis
-        o.scalling_initial_operator = scalling_initial_operator
-        o.cautious_function = cautious_function
-        o.retraction_method = retraction_method
-        o.vector_transport_method = vector_transport_method
-        o.stop = stop
-        o.stepsize = stepsize
-        o.broyden_factor = broyden_factor
-        return o
-    end
-end
-function CautiuosQuasiNewtonOptions(
-    x::P,
-    grad_x::T,
-    inverse_hessian_approximation::AbstractMatrix,
-    basis::B;
-    scalling_initial_operator::Bool = true,
-    cautious_function::Function = x -> x*10^(-4),
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    stop::StoppingCriterion = StopAfterIteration(100),
-    stepsize::Stepsize = WolfePowellLineseach(),
-    broyden_factor::Float64 = 0.0
-) where {P,T,B<:AbstractBasis}
-    return CautiuosQuasiNewtonOptions{P,T}(x,grad_x,inverse_hessian_approximation,basis;
-        scalling_initial_operator = scalling_initial_operator,
-        cautious_function = cautious_function,
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
-        stop = stop,
-        stepsize = stepsize,
-        broyden_factor = broyden_factor)
-end
-
-
-# Riemannian Limited-Memory BFGS
-@doc raw"""
-    RLBFGSOptions{P,T} <: LimitedMemoryQuasiNewtonOptions
-
-specify options for a Riemannian limited-memory BFGS algorithm, that solves a
-[`GradientProblem`].
-
-# Fields
-* `x` – the current iterate, a point on a manifold
-* `gradient_diffrences` – the stored differences between the gradients of the
-    iterates, an arry of tangent vectors
-* `steps` - the stored steps between the iterates, an arry of tangent vectors
-* `memory_size` - maximum number of stored data, an integer
-* `current_memory_size` - the current number of stored data, an integer
-* `retraction_method` – a function to perform a step on the manifold
-* `vector_transport_method` – a function to transport a vector of the tangent
-    space of one iterate to the tangent space of another iterate
-* `stop` – a [`StoppingCriterion`](@ref)
-
-# See also
-[`GradientProblem`](@ref)
-"""
-mutable struct RLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
-    x::P
-    ∇::T
-    gradient_diffrences::AbstractVector{T}
-    steps::AbstractVector{T}
-    current_memory_size::Int
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
-    stop::StoppingCriterion
-    stepsize::Stepsize
-
-    function RLBFGSOptions{P,T}(
-        x::P,
-        ∇::T,
-        gradient_diffrences::AbstractVector{T},
-        steps::AbstractVector{T};
-        current_memory_size::Int = 0,
-        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-        stop::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = WolfePowellLineseach()
-    ) where {P,T}
-        o = new{P,T}()
-        o.x = x
-        o.∇ = ∇
-        o.gradient_diffrences = gradient_diffrences
-        o.steps = steps
-        o.current_memory_size = current_memory_size
-        o.retraction_method = retraction_method
-        o.vector_transport_method = vector_transport_method
-        o.stop = stop
-        o.stepsize = stepsize
-        return o
-    end
-end
-function RLBFGSOptions(
-    x::P,
     ∇::T,
-    gradient_diffrences::AbstractVector{T},
-    steps::AbstractVector{T};
-    current_memory_size::Int = 0,
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    stop::StoppingCriterion = StopAfterIteration(100),
-    stepsize::Stepsize = WolfePowellLineseach()
-) where {P,T}
-    return RLBFGSOptions{P,T}(x,∇,gradient_diffrences,steps;
-        current_memory_size = current_memory_size,
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
-        stop = stop,
-        stepsize = stepsize
+    direction_update::U,
+    stop::SC,
+    stepsize::S;
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport()
+) where {P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize}
+    return QuasiNewtonOptions{P,T,U,SC,S,typeof(retraction_method), typeof(vector_transport_method)}(
+        x,∇,deepcopy(∇), deepcopy(∇),
+        direction_update, retraction_method, stepsize, stop, vector_transport_method)
+end
+
+mutable struct QuasiNewtonDirectionUpdate{NT<:AbstractQuasiNewtonType, B<:AbstractBasis, VT<:AbstractVectorTransportMethod, M<:AbstractMatrix} <: AbstractQuasiNewtonDirectionUpdate
+    basis::B
+    matrix::M
+    scale::Bool
+    update::NT
+    vector_transport_method::VT
+end
+function QuasiNewtonDirectionUpdate(
+    update::AbstractQuasiNewtonType,
+    basis::B,
+    m::M,
+    ;
+    scale::Bool = true,
+    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport()
+) where {M <: AbstractMatrix, B<:AbstractBasis}
+    return QuasiNewtonDirectionUpdate{typeof(update), B, typeof(vector_transport_method), M}(
+        basis, m, scale, update, vector_transport_method)
+end
+function (d::QuasiNewtonDirectionUpdate{T})(p,o) where {T<:Union{InverseBFGS,InverseDFP}}
+    return get_vector(
+                p.M,
+                o.x,
+                -d.matrix*get_coordinates(p.M, o.x, o.∇, d.basis),
+                d.basis
+    )
+end
+function (d::QuasiNewtonDirectionUpdate{T})(p,o) where {T<:Union{BFGS,DFP}}
+    return get_vector(p.M, o.x,
+        -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis)
     )
 end
 
-
-# Cautious Riemannian Limited Memory BFGS
-mutable struct CautiuosRLBFGSOptions{P,T} <: AbstractQuasiNewtonOptions
-    x::P
-    ∇::T
-    gradient_diffrences::AbstractVector{T}
-    steps::AbstractVector{T}
-    cautious_function::Function
-    current_memory_size::Int
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
-    stop::StoppingCriterion
-    stepsize::Stepsize
-
-    function CautiuosRLBFGSOptions{P,T}(
-        x::P,
-        ∇::T,
-        gradient_diffrences::AbstractVector{T},
-        steps::AbstractVector{T};
-        cautious_function::Function = x -> x*10^(-4),
-        current_memory_size::Int = 0,
-        retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-        stop::StoppingCriterion = StopAfterIteration(100),
-        stepsize::Stepsize = WolfePowellLineseach()
-    ) where {P,T}
-        o = new{P,T}()
-        o.x = x
-        o.∇ = ∇
-        o.gradient_diffrences = gradient_diffrences
-        o.steps = steps
-        o.cautious_function = cautious_function
-        o.current_memory_size = current_memory_size
-        o.retraction_method = retraction_method
-        o.vector_transport_method = vector_transport_method
-        o.stop = stop
-        o.stepsize = stepsize
-        return o
-    end
+struct Broyden{U1 <: AbstractQuasiNewtonDirectionUpdate, U2 <: AbstractQuasiNewtonDirectionUpdate}
+    update1::U1
+    update2::U2
+    factor::Float64
 end
-function CautiuosRLBFGSOptions(
-    x::P,
-    ∇::T,
-    gradient_diffrences::AbstractVector{T},
-    steps::AbstractVector{T};
-    cautious_function::Function = x -> x*10^(-4),
-    current_memory_size::Int = 0,
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
+function Broyden(u1::U1 , u2::U2, factor=1.0) where {U1 <: AbstractQuasiNewtonDirectionUpdate, U2 <: AbstractQuasiNewtonDirectionUpdate}
+    return Broyden{U1,U2}(u1,u2,factor)
+end
+function (d::Broyden)(p,o)
+    return (1-d.factor)*d.update1(p,o) + d.factor*d.update2(p,o)
+end
+
+mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{NT<:AbstractQuasiNewtonType, T, VT <: AbstractVectorTransportMethod}
+    method::NT
+    sk_memory::AbstractVector{T}
+    yk_memory::AbstractVector{T}
+    memory_size::Int
+    scale::Float64
+    vector_transport_method::VT
+end
+function LimitedMemoryQuasiNewctionDirectionUpdate(
+    method::NT,
+    init::T,
+    memory_size::Int;
+    scale::Bool = true,
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    stop::StoppingCriterion = StopAfterIteration(100),
-    stepsize::Stepsize = WolfePowellLineseach()
-) where {P,T}
-    return CautiuosRLBFGSOptions{P,T}(x,∇,gradient_diffrences,steps;
-        cautious_function = cautious_function,
-        current_memory_size = current_memory_size,
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
-        stop = stop,
-        stepsize = stepsize)
+) where {NT<:AbstractQuasiNewtonType, T, VT <: AbstractVectorTransportMethod}
+    skm = [deepcopy(init) for _=1:memory_size]
+    ykm = [deepcopy(init) for _=1:memory_size]
+    return LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,typeof(vector_transport_method)}(
+        method, skm, ykm, 0, scale, vector_transport_method
+    )
+end
+function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p,o)
+	r = deepcopy(o.∇)
+	ξ = zeros(d.memory_size)
+	ρ = zeros(d.memory_size)
+	for i ∈ d.memory_size : -1 : 1
+		ρ[i] = 1 / inner(p.M, o.x, d.sk_memory[i], d.yk_memory[i])
+		ξ[i] = inner(p.M, o.x, d.sk_memory[i], r) * ρ[i]
+		r .=  r .- ξ[i] .* d.yk_memory[i]
+	end
+	if d.memory_size != 0
+		r .= 1 / ( ρ[d.memory_size] * norm(p.M, o.x, d.yk_memory[d.memory_size])^2) .* r
+	end
+	for i in 1 : current_memory
+		ω = ρ[i]*inner(p.M, o.x, d.yk_memory[i],r)
+		r .= r .+ (ξ[i] - ω) .* d.sk_memory[i]
+	end
+	return -r
+end
+
+
+struct CautiousUpdate{U<:AbstractQuasiNewtonDirectionUpdate} <: AbstractQuasiNewtonDirectionUpdate
+    update::U
+    φ::Function
+end
+function CautiousUpdate(
+    update::U
+    ;
+    φ::Function = x -> x #cautious update function
+) where {U<:AbstractQuasiNewtonDirectionUpdate}
+    return CautiousUpdate{U}(lmqn)
 end
