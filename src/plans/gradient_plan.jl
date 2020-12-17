@@ -1011,7 +1011,7 @@ used with any update rule for the direction.
 # See also
 [`GradientProblem`](@ref)
 """
-struct QuasiNewtonOptions{P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize, RTR <: AbstractRetractionMethod, VT <: AbstractVectorTransportMethod} <: Options
+mutable struct QuasiNewtonOptions{P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize, RTR <: AbstractRetractionMethod, VT <: AbstractVectorTransportMethod} <: Options
     x::P
     ∇::T
     sk::T
@@ -1020,6 +1020,7 @@ struct QuasiNewtonOptions{P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:Stoppin
     retraction_method::RTR
     stepsize::S
     stop::SC
+    vector_transport_method::VT
 end
 function QuasiNewtonOptions(
     x::P,
@@ -1030,10 +1031,12 @@ function QuasiNewtonOptions(
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport()
 ) where {P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize}
-    return QuasiNewtonOptions{P,T,U,SC,S,typeof(retraction_method), typeof(vector_transport_method)}(x,∇,deepcopy(∇), deepcopy(∇), direction_update, retraction_method, stepsize, stop, vector_transport_method)
+    return QuasiNewtonOptions{P,T,U,SC,S,typeof(retraction_method), typeof(vector_transport_method)}(
+        x,∇,deepcopy(∇), deepcopy(∇),
+        direction_update, retraction_method, stepsize, stop, vector_transport_method)
 end
 
-struct QuasiNewtonDirectionUpdate{NT<:AbstractQuasiNewtonType, B<:AbstractBasis, VT<:AbstractVectorTransportMethod, M<:AbstractMatrix} <: AbstractQuasiNewtonDirectionUpdate
+mutable struct QuasiNewtonDirectionUpdate{NT<:AbstractQuasiNewtonType, B<:AbstractBasis, VT<:AbstractVectorTransportMethod, M<:AbstractMatrix} <: AbstractQuasiNewtonDirectionUpdate
     basis::B
     matrix::M
     scale::Bool
@@ -1048,11 +1051,15 @@ function QuasiNewtonDirectionUpdate(
     scale::Bool = true,
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport()
 ) where {M <: AbstractMatrix, B<:AbstractBasis}
-    return QuasiNewtonDirectionUpdate{typeof(update), B, typeof(vector_transport_method), M}(basis, m, update, vector_transport_method)
+    return QuasiNewtonDirectionUpdate{typeof(update), B, typeof(vector_transport_method), M}(
+        basis, m, scale, update, vector_transport_method)
 end
 function (d::QuasiNewtonDirectionUpdate{T})(p,o) where {T<:Union{InverseBFGS,InverseDFP}}
-    return get_vector(p.M, o.x,
-        -d.matrix*get_coordinates(p.M, o.x, o.∇, d.basis)
+    return get_vector(
+                p.M,
+                o.x,
+                -d.matrix*get_coordinates(p.M, o.x, o.∇, d.basis),
+                d.basis
     )
 end
 function (d::QuasiNewtonDirectionUpdate{T})(p,o) where {T<:Union{BFGS,DFP}}
@@ -1073,7 +1080,7 @@ function (d::Broyden)(p,o)
     return (1-d.factor)*d.update1(p,o) + d.factor*d.update2(p,o)
 end
 
-struct LimitedMemoryQuasiNewctionDirectionUpdate{NT<:AbstractQuasiNewtonType, T, VT <: AbstractVectorTransportMethod}
+mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{NT<:AbstractQuasiNewtonType, T, VT <: AbstractVectorTransportMethod}
     method::NT
     sk_memory::AbstractVector{T}
     yk_memory::AbstractVector{T}
