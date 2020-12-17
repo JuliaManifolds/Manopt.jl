@@ -988,10 +988,10 @@ All subtypes should be functors, i.e. one should be able to call them as `H(M,x,
 abstract type AbstractQuasiNewtonDirectionUpdate end
 
 abstract type AbstractQuasiNewtonType end
-struct BFGS <: QuasiNewtonType end
-struct InverseBFGS <: QuasiNewtonType end
-struct DFP <: QuasiNewtonType end
-struct InverseDFP <: QuasiNewtonType end
+struct BFGS <: AbstractQuasiNewtonType end
+struct InverseBFGS <: AbstractQuasiNewtonType end
+struct DFP <: AbstractQuasiNewtonType end
+struct InverseDFP <: AbstractQuasiNewtonType end
 
 @doc raw"""
     QuasiNewtonOptions <: Options
@@ -1011,7 +1011,7 @@ used with any update rule for the direction.
 # See also
 [`GradientProblem`](@ref)
 """
-struct QuasiNewtonOptions{P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize, RTR <: AbstractRetractionMethod} <: Options
+struct QuasiNewtonOptions{P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize, RTR <: AbstractRetractionMethod, VT <: AbstractVectorTransportMethod} <: Options
     x::P
     ∇::T
     sk::T
@@ -1025,17 +1025,18 @@ function QuasiNewtonOptions(
     x::P,
     ∇::T,
     direction_update::U,
-    retraction_method::RTR,
     stop::SC,
-    stepsize::S,
-) where {P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize, RTR <: AbstractRetractionMethod}
-    return QuasiNewtonOptions{P,T,U,SC,S,RTR}(x,∇,deepcopy(∇), deepcopy(∇), direction_update, retraction_method, stepsize, stop)
+    stepsize::S;
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport()
+) where {P,T,U<:AbstractQuasiNewtonDirectionUpdate, SC<:StoppingCriterion, S<:Stepsize}
+    return QuasiNewtonOptions{P,T,U,SC,S,typeof(retraction_method), typeof(vector_transport_method)}(x,∇,deepcopy(∇), deepcopy(∇), direction_update, retraction_method, stepsize, stop, vector_transport_method)
 end
 
-struct QuasiNewtonDirectionUpdate{NT<:AbstractQuasiNewtonType, B<:AbstractBasis, VT<:AbstractVectorTransportMethod,M:AbstractMatrix} <: AbstractQuasiNewtonDirectionUpdate
+struct QuasiNewtonDirectionUpdate{NT<:AbstractQuasiNewtonType, B<:AbstractBasis, VT<:AbstractVectorTransportMethod, M<:AbstractMatrix} <: AbstractQuasiNewtonDirectionUpdate
     basis::B
     matrix::M
-    scale::Float64
+    scale::Bool
     update::NT
     vector_transport_method::VT
 end
@@ -1044,10 +1045,20 @@ function QuasiNewtonDirectionUpdate(
     basis::B,
     m::M,
     ;
-    scale = 1.0
+    scale::Bool = true,
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport()
 ) where {M <: AbstractMatrix, B<:AbstractBasis}
-    return InverseBFGS{typeof(update), B, typeof(vector_transport_method), M}(basis, m, update, vector_transport_method)
+    return QuasiNewtonDirectionUpdate{typeof(update), B, typeof(vector_transport_method), M}(basis, m, update, vector_transport_method)
+end
+function (d::QuasiNewtonDirectionUpdate{T})(p,o) where {T<:Union{InverseBFGS,InverseDFP}}
+    return get_vector(p.M, o.x,
+        -d.matrix*get_coordinates(p.M, o.x, o.∇, d.basis)
+    )
+end
+function (d::QuasiNewtonDirectionUpdate{T})(p,o) where {T<:Union{BFGS,DFP}}
+    return get_vector(p.M, o.x,
+        -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis)
+    )
 end
 
 struct Broyden{U1 <: AbstractQuasiNewtonDirectionUpdate, U2 <: AbstractQuasiNewtonDirectionUpdate}
@@ -1055,39 +1066,62 @@ struct Broyden{U1 <: AbstractQuasiNewtonDirectionUpdate, U2 <: AbstractQuasiNewt
     update2::U2
     factor::Float64
 end
-function Broyden(u1::U1 , u2::U2, factor=1.0)
+function Broyden(u1::U1 , u2::U2, factor=1.0) where {U1 <: AbstractQuasiNewtonDirectionUpdate, U2 <: AbstractQuasiNewtonDirectionUpdate}
     return Broyden{U1,U2}(u1,u2,factor)
+end
+function (d::Broyden)(p,o)
+    return (1-d.factor)*d.update1(p,o) + d.factor*d.update2(p,o)
 end
 
 struct LimitedMemoryQuasiNewctionDirectionUpdate{NT<:AbstractQuasiNewtonType, T, VT <: AbstractVectorTransportMethod}
     method::NT
-    sk_memory::Vector{T}
-    yk_memory::Vectior{T}
+    sk_memory::AbstractVector{T}
+    yk_memory::AbstractVector{T}
     memory_size::Int
-    scale::Float
+    scale::Float64
     vector_transport_method::VT
 end
 function LimitedMemoryQuasiNewctionDirectionUpdate(
     method::NT,
     init::T,
-    memorysize::Int;
+    memory_size::Int;
     scale = 1.0,
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
 ) where {NT<:AbstractQuasiNewtonType, T, VT <: AbstractVectorTransportMethod}
     skm = [deepcopy(init) for _=1:memory_size]
     ykm = [deepcopy(init) for _=1:memory_size]
     return LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,typeof(vector_transport_method)}(
-        method, skm, ykm, memorysize, scale, vector_transport_method
+        method, skm, ykm, 0, scale, vector_transport_method
     )
 end
-struct CautiousUpdate{NT<:AbstractQuasiNewtonType, T, VT<:AbstractVectorTransportMethod} <: AbstractQuasiNewtonDirectionUpdate
-    method::LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,VT}
+function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p,o)
+	r = deepcopy(o.∇)
+	ξ = zeros(d.memory_size)
+	ρ = zeros(d.memory_size)
+	for i ∈ d.memory_size : -1 : 1
+		ρ[i] = 1 / inner(p.M, o.x, d.sk_memory[i], d.yk_memory[i])
+		ξ[i] = inner(p.M, o.x, d.sk_memory[i], r) * ρ[i]
+		r .=  r .- ξ[i] .* d.yk_memory[i]
+	end
+	if d.memory_size != 0
+		r .= 1 / ( ρ[d.memory_size] * norm(p.M, o.x, d.yk_memory[d.memory_size])^2) .* r
+	end
+	for i in 1 : current_memory
+		ω = ρ[i]*inner(p.M, o.x, d.yk_memory[i],r)
+		r .= r .+ (ξ[i] - ω) .* d.sk_memory[i]
+	end
+	return -r
+end
+
+
+struct CautiousUpdate{U<:AbstractQuasiNewtonDirectionUpdate} <: AbstractQuasiNewtonDirectionUpdate
+    update::U
     φ::Function
 end
 function CautiousUpdate(
-    lmqn::LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,VT}
+    update::U
     ;
     φ::Function = x -> x #cautious update function
-) where {NT<:AbstractQuasiNewtonType, T, VT<:AbstractVectorTransportMethod}
-    return CautiousUpdate{NT, T, VT}(lmqn)
+) where {U<:AbstractQuasiNewtonDirectionUpdate}
+    return CautiousUpdate{U}(lmqn)
 end
