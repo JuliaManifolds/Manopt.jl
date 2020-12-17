@@ -1085,7 +1085,7 @@ function LimitedMemoryQuasiNewctionDirectionUpdate(
     method::NT,
     init::T,
     memory_size::Int;
-    scale = 1.0,
+    scale::Bool = true,
     vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
 ) where {NT<:AbstractQuasiNewtonType, T, VT <: AbstractVectorTransportMethod}
     skm = [deepcopy(init) for _=1:memory_size]

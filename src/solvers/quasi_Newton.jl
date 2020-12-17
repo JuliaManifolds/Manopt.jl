@@ -37,16 +37,14 @@ function quasi_Newton(
     M::MT,
     F::Function,
     ∇F::Function,
-    x::P;
+	x::P;
     retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    broyden_factor::Float64 = 0.0,
+	vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
+	basis::AbstractBasis = DefaultOrthonormalBasis()
+	direction_update::AbstractQuasiNewtonDirectionUpdate=InverseBFGS()
     cautious_update::Bool=false,
     cautious_function::Function = (x) -> x*10^(-4),
     memory_size::Int = 20,
-    memory_steps::AbstractVector{T} = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
-    memory_gradients::AbstractVector{T} = [zero_tangent_vector(M,x) for _ ∈ 1:memory_size],
-    memory_position::Int = 0,
 	initial_operator::AbstractMatrix = Matrix(I,manifold_dimension(M), manifold_dimension(M)),
     scalling_initial_operator::Bool = true,
     step_size::Stepsize = WolfePowellLineseach(retraction_method, vector_transport_method),
@@ -56,16 +54,36 @@ function quasi_Newton(
 	return_options=false,
     kwargs...
 ) where {MT <: Manifold, P, T}
-
-	(broyden_factor < 0. || broyden_factor > 1.) && throw( ErrorException( "broyden_factor must be in the interval [0,1], but it is $broyden_factor."))
-
-	memory_steps_size = length(memory_steps)
-	g = length(memory_gradients)
-
-	(memory_steps_size != g) && throw( ErrorException( "The number of given vectors in memory_steps ($memory_steps_size) is different from the number of memory_gradients ($g)."))
-
-	(memory_steps_size < memory_position) && throw( ErrorException( "The number of given vectors in memory_steps ($memory_steps_size) is too small compared to memory_position ($memory_position)."))
-
+	if memory_size >= 0
+		local_dir_upd = LimitedMemoryQuasiNewctionDirectionUpdate(
+			direction_update,
+			zero_tangent_vector(M,x),
+			memory_size;
+			scale = scalling_initial_operator,
+			vector_transport_method = vector_transport_method
+		)
+	else
+		local_dir_upd = QuasiNewtonDirectionUpdate(
+			direction_update,
+			basis,
+			initial_operator;
+			scale = scalling_initial_operator,
+			vector_transport_method = vector_transport_method
+		)
+	end
+	if cautious_update
+		local_dir_upd = CautiousUpdate(
+			local_dir_upd;
+			φ = cautious_function
+		)
+	end
+	o = QuasiNewtonOptions(x,∇F(x),
+		direction_update,
+		stop,
+		step_size,
+		retraction_method,
+		vector_transport_method
+	)
 	grad_x = ∇F(x)
 	if memory_size < 0 && memory_steps_size == 0
 		basis = get_basis(M, x, DefaultOrthonormalBasis())
