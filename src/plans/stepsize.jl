@@ -398,7 +398,6 @@ function (a::NonmonotoneLinesearch)(
     return a.initial_stepsize
 end
 
-
 @doc raw"""
     WolfePowellLineseach <: Linesearch
 """
@@ -410,54 +409,65 @@ mutable struct WolfePowellLineseach <: Linesearch
     c_2::Float64
 
     function WolfePowellLineseach(
-        retr::AbstractRetractionMethod = ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        retr::AbstractRetractionMethod=ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod=ParallelTransport(),
         c_1::Float64=10^(-4),
-        c_2::Float64=0.999
+        c_2::Float64=0.999,
     )
         return new(retr, vtr, c_1, c_2)
     end
 end
 
-
-function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
-    s = 1.
-    s_plus = 1.
-    s_minus = 1.
+function (a::WolfePowellLineseach)(
+    p::P, o::O, iter::Int, η=-get_gradient(p, o.x)
+) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
+    s = 1.0
+    s_plus = 1.0
+    s_minus = 1.0
     f0 = p.cost(o.x)
     gradient_x = get_gradient(p, o.x)
-    xNew = retract(p.M, o.x, s*η, a.retraction_method)
+    xNew = retract(p.M, o.x, s * η, a.retraction_method)
     fNew = p.cost(xNew)
     # print(" $(norm(p.M, o.x, gradient_x))  \n")
     # print(" $(inner(p.M, o.x, η, gradient_x))  \n")
     if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
-        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)) && (s_minus > 10^(-7)) # decrease
+        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)) &&
+            (s_minus > 10^(-7)) # decrease
             s_minus = s_minus * 0.5
             s = s_minus
-            retract!(p.M, xNew, o.x, s*η, a.retraction_method)
+            retract!(p.M, xNew, o.x, s * η, a.retraction_method)
             fNew = p.cost(xNew)
             #print("1 \n")
         end
-        s_plus = 2. * s_minus
+        s_plus = 2.0 * s_minus
         # print("($s, $s_plus) + $(is_manifold_point(p.M, xNew, true))  \n")
     else
-        if inner(p.M, o.x, vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+        if inner(
+            p.M,
+            o.x,
+            vector_transport_to(
+                p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method
+            ),
+            η,
+        ) < a.c_2 * inner(p.M, o.x, η, gradient_x)
             while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x) # increase
-                s_plus = s_plus * 2.
+                s_plus = s_plus * 2.0
                 s = s_plus
-                retract!(p.M, xNew, o.x, s*η, a.retraction_method)
+                retract!(p.M, xNew, o.x, s * η, a.retraction_method)
                 fNew = p.cost(xNew)
                 #print("2 \n")
             end
-            s_minus = s_plus/2.
+            s_minus = s_plus / 2.0
             # print("($s, $s_minus) - $(is_manifold_point(p.M, xNew, true))\n")
         end
     end
-    retract!(p.M, xNew, o.x, s_minus*η, a.retraction_method)
-    g = vector_transport_to(p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method)
+    retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
+    g = vector_transport_to(
+        p.M, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method
+    )
     while inner(p.M, o.x, g, η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
-        s = (s_minus + s_plus)/2
-        retract!(p.M, xNew, o.x, s*η, a.retraction_method)
+        s = (s_minus + s_plus) / 2
+        retract!(p.M, xNew, o.x, s * η, a.retraction_method)
         fNew = p.cost(xNew)
         if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, gradient_x)
             s_minus = s
@@ -468,19 +478,20 @@ function (a::WolfePowellLineseach)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x
         if abs(s_plus - s_minus) <= 10^(-13)
             break
         end
-        retract!(p.M, xNew, o.x, s_minus*η, a.retraction_method)
-        vector_transport_to!(p.M, g, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method)
+        retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
+        vector_transport_to!(
+            p.M, g, xNew, get_gradient(p, xNew), o.x, a.vector_transport_method
+        )
         #print("3 \n")
     end
     s = s_minus
     return s
 end
 
-
 @doc raw"""
     WolfePowellLineseachHuang <: Linesearch
 """
-mutable struct WolfePowellLineseachHuang<: Linesearch
+mutable struct WolfePowellLineseachHuang <: Linesearch
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
 
@@ -488,27 +499,36 @@ mutable struct WolfePowellLineseachHuang<: Linesearch
     c_2::Float64
 
     function WolfePowellLineseachHuang(
-        retr::AbstractRetractionMethod = ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod = ParallelTransport(),
+        retr::AbstractRetractionMethod=ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod=ParallelTransport(),
         c_1::Float64=10^(-4),
-        c_2::Float64=0.999
+        c_2::Float64=0.999,
     )
         return new(retr, vtr, c_1, c_2)
     end
 end
 
-
-function (a::WolfePowellLineseachHuang)(p::P, o::O, iter::Int, η=-get_gradient(p,o.x)) where {P <: GradientProblem{mT} where mT <: Manifold, O <: Options}
-    α = 0.
+function (a::WolfePowellLineseachHuang)(
+    p::P, o::O, iter::Int, η=-get_gradient(p, o.x)
+) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
+    α = 0.0
     β = Inf
-    t = 1.
+    t = 1.0
     f0 = p.cost(o.x)
     gradient_x = get_gradient(p, o.x)
-    xNew = retract(p.M, o.x, t*η, a.retraction_method)
+    xNew = retract(p.M, o.x, t * η, a.retraction_method)
     fNew = p.cost(xNew)
     gradient_new = get_gradient(p, xNew)
 
-    while fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, gradient_x) && inner(p.M, o.x, vector_transport_to!(p.M, gradient_new, xNew, gradient_new, o.x, a.vector_transport_method), η) < a.c_2 * inner(p.M, o.x, η, gradient_x)
+    while fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, gradient_x) &&
+        inner(
+            p.M,
+            o.x,
+            vector_transport_to!(
+                p.M, gradient_new, xNew, gradient_new, o.x, a.vector_transport_method
+            ),
+            η,
+        ) < a.c_2 * inner(p.M, o.x, η, gradient_x)
         if fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, gradient_x)
             β = t
         else
@@ -517,17 +537,16 @@ function (a::WolfePowellLineseachHuang)(p::P, o::O, iter::Int, η=-get_gradient(
             end
         end
         if β < Inf
-            t = (α + β)/2
+            t = (α + β) / 2
         else
-            t = 2*α
+            t = 2 * α
         end
-        retract!(p.M, xNew, o.x, t*η, a.retraction_method)
+        retract!(p.M, xNew, o.x, t * η, a.retraction_method)
         fNew = p.cost(xNew)
         gradient_new = get_gradient(p, xNew)
     end
     return t
 end
-
 
 @doc raw"""
     get_stepsize(p::Problem, o::Options, vars...)

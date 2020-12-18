@@ -145,7 +145,7 @@ applied to a tangent vector `ξ`.
 """
 function getHessian(p::HessianProblem, x, ξ; stepsize=2 * 10^(-14))
     if ismissing(p.hessian)
-        return approxHessianFD(p.M, x, (x) -> get_gradient(p,x), ξ; stepsize=stepsize)
+        return approxHessianFD(p.M, x, (x) -> get_gradient(p, x), ξ; stepsize=stepsize)
     else
         return p.hessian(p.M, x, ξ)
     end
@@ -157,7 +157,7 @@ end
 evaluate the gradient of a [`HessianProblem`](@ref)`p` at the
 point `x`.
 """
-get_gradient(p::HessianProblem,x) = p.gradient(x)
+get_gradient(p::HessianProblem, x) = p.gradient(x)
 @doc raw"""
     get_preconditioner(p,x,ξ)
 

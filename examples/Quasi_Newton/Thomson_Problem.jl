@@ -5,14 +5,14 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Random
 Random.seed!(42)
 n = 50
 m = 20
-M = Oblique(n,m)
+M = Oblique(n, m)
 
 function F(X::Array{Float64,2})
     f = 0
     for i in 1:m
         for j in 1:m
             if i != j
-                f = f + 1/(norm(X[:,i]-X[:,j])^2)
+                f = f + 1 / (norm(X[:, i] - X[:, j])^2)
             end
         end
     end
@@ -20,20 +20,29 @@ function F(X::Array{Float64,2})
 end
 
 function ∇F(X::Array{Float64,2})
-    g = zeros(n,m)
-    Id = Matrix(I,n,n)
+    g = zeros(n, m)
+    Id = Matrix(I, n, n)
     for i in 1:m
-        f = zeros(n,1)
+        f = zeros(n, 1)
         for j in 1:m
             if i != j
-                f = f + 1 / (1. - X[:,i]'*X[:,j]) * X[:,j]
+                f = f + 1 / (1.0 - X[:, i]' * X[:, j]) * X[:, j]
             end
         end
-        g[:,i] = (Id - X[:,i]*X[:,i]')*f
+        g[:, i] = (Id - X[:, i] * X[:, i]') * f
     end
     return g
 end
 
 x = random_point(M)
 
-@time quasi_Newton(M,F,∇F,x; memory_size = 100, vector_transport_method = PowerVectorTransport(ParallelTransport()), stopping_criterion = StopWhenGradientNormLess(norm(M,x,∇F(x))*10^(-6)),debug = [:Iteration, " ", :Cost, "\n", 1, :Stop])
+@time quasi_Newton(
+    M,
+    F,
+    ∇F,
+    x;
+    memory_size=100,
+    vector_transport_method=PowerVectorTransport(ParallelTransport()),
+    stopping_criterion=StopWhenGradientNormLess(norm(M, x, ∇F(x)) * 10^(-6)),
+    debug=[:Iteration, " ", :Cost, "\n", 1, :Stop],
+)

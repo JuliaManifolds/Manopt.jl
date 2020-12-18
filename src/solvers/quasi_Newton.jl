@@ -38,57 +38,57 @@ function quasi_Newton(
     F::Function,
     ∇F::Function,
     x::P;
-    retraction_method::AbstractRetractionMethod = ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod = ParallelTransport(),
-    basis::AbstractBasis = DefaultOrthonormalBasis(),
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+    basis::AbstractBasis=DefaultOrthonormalBasis(),
     direction_update::AbstractQuasiNewtonType=InverseBFGS(),
     cautious_update::Bool=false,
-    cautious_function::Function = (x) -> x*10^(-4),
-    memory_size::Int = 20,
-    initial_operator::AbstractMatrix = Matrix{Float64}(I,manifold_dimension(M), manifold_dimension(M)),
-    scalling_initial_operator::Bool = true,
-    step_size::Stepsize = WolfePowellLineseach(retraction_method, vector_transport_method),
-    stopping_criterion::StoppingCriterion = StopWhenAny(
-        StopAfterIteration(max(1000, memory_size)),
-        StopWhenGradientNormLess(10^(-6))),
+    cautious_function::Function=x -> x * 10^(-4),
+    memory_size::Int=20,
+    initial_operator::AbstractMatrix=Matrix{Float64}(
+        I, manifold_dimension(M), manifold_dimension(M)
+    ),
+    scalling_initial_operator::Bool=true,
+    step_size::Stepsize=WolfePowellLineseach(retraction_method, vector_transport_method),
+    stopping_criterion::StoppingCriterion=StopWhenAny(
+        StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
+    ),
     return_options=false,
-    kwargs...
-) where {MT <: Manifold, P}
+    kwargs...,
+) where {MT<:Manifold,P}
     if memory_size >= 0
         local_dir_upd = LimitedMemoryQuasiNewctionDirectionUpdate(
             direction_update,
-            zero_tangent_vector(M,x),
+            zero_tangent_vector(M, x),
             memory_size;
-            scale = scalling_initial_operator,
-            vector_transport_method = vector_transport_method
+            scale=scalling_initial_operator,
+            vector_transport_method=vector_transport_method,
         )
     else
         local_dir_upd = QuasiNewtonDirectionUpdate(
             direction_update,
             basis,
             initial_operator;
-            scale = scalling_initial_operator,
-            vector_transport_method = vector_transport_method
+            scale=scalling_initial_operator,
+            vector_transport_method=vector_transport_method,
         )
     end
     if cautious_update
-        local_dir_upd = CautiousUpdate(
-            local_dir_upd;
-            φ = cautious_function
-        )
+        local_dir_upd = CautiousUpdate(local_dir_upd; θ=cautious_function)
     end
-    o = QuasiNewtonOptions(x,
+    o = QuasiNewtonOptions(
+        x,
         ∇F(x),
         local_dir_upd,
         stopping_criterion,
         step_size;
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
     )
-    p = GradientProblem(M,F,∇F)
+    p = GradientProblem(M, F, ∇F)
 
     o = decorate_options(o; kwargs...)
-    resultO = solve(p,o)
+    resultO = solve(p, o)
 
     if return_options
         return resultO
@@ -97,22 +97,25 @@ function quasi_Newton(
     end
 end
 
+function initialize_solver!(::GradientProblem, ::QuasiNewtonOptions) end
 
-function initialize_solver!(::GradientProblem,::QuasiNewtonOptions)
-end
-
-function step_solver!(p::GradientProblem,o::QuasiNewtonOptions,iter)
-    o.∇ = get_gradient(p,o.x)
+function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
+    o.∇ = get_gradient(p, o.x)
     η = o.direction_update(p, o)
-    α = o.stepsize(p,o,iter,η)
-    x_old = o.x
-    retract!(p.M, o.x, o.x, α*η, o.retraction_method)
+    α = o.stepsize(p, o, iter, η)
+    x_old = deepcopy(o.x)
+    retract!(p.M, o.x, o.x, α * η, o.retraction_method)
+    β = cautious_scale(p.M, o.direction_update, x_old, α*η, o.x,  o.vector_transport_method)
     # update sk
-    vector_transport_to!(p.M, o.sk, x_old, α*η, o.x, o.vector_transport_method)
+    vector_transport_to!(p.M, o.sk, x_old, α * η, o.x, o.vector_transport_method)
     # reuse ∇
     vector_transport_to!(p.M, o.∇, x_old, o.∇, o.x, o.vector_transport_method)
-    o.yk = get_gradient(p,o.x) - o.∇
-    update_hessian!(o.direction_update, p, o, x_old, iter)
+    o.yk = (get_gradient(p, o.x) - o.∇)/β
+    return update_hessian!(o.direction_update, p, o, x_old, iter)
+end
+cautious_scale(::Manifold, ::AbstractQuasiNewtonDirectionUpdate, x_old, v, x, vt) = 1.0
+function cautious_scale(M::Manifold, ::CautiousUpdate, x_old, v, x, vt)
+    return norm(M, x_old, v) / norm(M, x, vector_transport_to(M, x_old, v, x, vt))
 end
 # update the HEssian representation
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old, iter)
@@ -122,9 +125,11 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
 
     if iter == 1 && d.scale == true
-        d.matrix = skyk_c/inner(p.M, o.x, o.yk, o.yk) * d.matrix
+        d.matrix = skyk_c / inner(p.M, o.x, o.yk, o.yk) * d.matrix
     end
-    d.matrix = (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) + sk_c * sk_c' / skyk_c
+    return d.matrix =
+        (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
+        sk_c * sk_c' / skyk_c
 end
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseDFP}, p, o, x_old, iter)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
@@ -133,21 +138,31 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseDFP}, p, o, x_old,
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
 
     if iter == 1 && d.scale == true
-        d.matrix = skyk_c/norm(p.M, o.x, o.yk)^2 * d.matrix
+        d.matrix = skyk_c / norm(p.M, o.x, o.yk)^2 * d.matrix
     end
-    d.matrix = d.matrix + sk_c * sk_c' / skyk_c - d.matrix * yk_c * (d.matrix * yk_c)' / dot(yk_c, d.matrix * yk_c)
+    return d.matrix =
+        d.matrix + sk_c * sk_c' / skyk_c -
+        d.matrix * yk_c * (d.matrix * yk_c)' / dot(yk_c, d.matrix * yk_c)
 end
 
-update_basis!(b::AbstractBasis, ::Manifold, ::P, ::P, ::AbstractVectorTransportMethod) where {P} = b
-function update_basis!(b::CachedBasis, M::Manifold, x::P, y::P, v::AbstractVectorTransportMethod) where {P}
-    for i=1:length(b.data)
+function update_basis!(
+    b::AbstractBasis, ::Manifold, ::P, ::P, ::AbstractVectorTransportMethod
+) where {P}
+    return b
+end
+function update_basis!(
+    b::CachedBasis, M::Manifold, x::P, y::P, v::AbstractVectorTransportMethod
+) where {P}
+    for i in 1:length(b.data)
         vector_transport_to!(M, b.data[i], y, b.data[i], x, v)
     end
     return b
 end
 # all matrix cautious ones
-function update_hessian!(d::CautiousUpdate{U}, p, o, x_old, iter) where {U <: AbstractQuasiNewtonDirectionUpdate}
-    bound = d.φ(norm(p.M, o.x, o.∇))
+function update_hessian!(
+    d::CautiousUpdate{U}, p, o, x_old, iter
+) where {U<:AbstractQuasiNewtonDirectionUpdate}
+    bound = d.θ(norm(p.M, o.x, o.∇))
     sk_normsq = norm(p.M, o.x, o.sk)^2
     if sk_normsq != 0 && (inner(p.M, o.x, o.sk, o.yk) / sk_normsq) >= bound
         update_hessian!(d.update, p, o, x_old, iter)
@@ -155,36 +170,71 @@ function update_hessian!(d::CautiousUpdate{U}, p, o, x_old, iter) where {U <: Ab
     return d
 end
 # all limited memory updates
-function update_hessian!(d::LimitedMemoryQuasiNewctionDirectionUpdate{U}, p, o, x_old, iter) where{U <: AbstractQuasiNewtonType}
-    (d.memory_size==0) && return d
+function update_hessian!(
+    d::LimitedMemoryQuasiNewctionDirectionUpdate{U}, p, o, x_old, iter
+) where {U<:AbstractQuasiNewtonType}
+    (d.memory_size == 0) && return d
     if d.memory_size == length(d.sk_memory)
-        for  i in 2 : d.memory_size
-            vector_transport_to!(p.M, d.sk_memory[i-1], x_old, d.sk_memory[i], o.x, d.vector_transport_method)
-            vector_transport_to!(p.M, o.yk_memory[i-1], x_old, d.yk_memory[i], o.x, d.vector_transport_method)
+        for i in 2:(d.memory_size)
+            vector_transport_to!(
+                p.M,
+                d.sk_memory[i - 1],
+                x_old,
+                d.sk_memory[i],
+                o.x,
+                d.vector_transport_method,
+            )
+            vector_transport_to!(
+                p.M,
+                o.yk_memory[i - 1],
+                x_old,
+                d.yk_memory[i],
+                o.x,
+                d.vector_transport_method,
+            )
         end
         d.sk_memory[memory_steps_size] .= o.sk
         d.yk_memory[memory_steps_size] .= o.yk
     else
-        for i in 1:d.memory_size
-            vector_transport_to!(p.M, d.sk_memory[i], x, d.sk_memory[i], o.x, d.vector_transport_method)
-            vector_transport_to!(p.M, d.yk_memory[i], x, d.yk_memory[i], o.x, o.vector_transport_method)
+        for i in 1:(d.memory_size)
+            vector_transport_to!(
+                p.M, d.sk_memory[i], x, d.sk_memory[i], o.x, d.vector_transport_method
+            )
+            vector_transport_to!(
+                p.M, d.yk_memory[i], x, d.yk_memory[i], o.x, o.vector_transport_method
+            )
         end
-        d.memory_size +=1
+        d.memory_size += 1
         d.steps[d.memory_size] = o.sk
         d.gradient_diffrences[d.memory_size] = o.yk
     end
 end
 # all Cautious Limited Memory
-function update_hessian!(d::CautiousUpdate{LimitedMemoryQuasiNewctionDirectionUpdate{U}}, p, o, x_old, iter) where {U<:AbstractQuasiNewtonType}
-    bound = d.φ(norm(p.M, x_old, get_gradient(p, x_old)))
+function update_hessian!(
+    d::CautiousUpdate{LimitedMemoryQuasiNewctionDirectionUpdate{U}}, p, o, x_old, iter
+) where {U<:AbstractQuasiNewtonType}
+    bound = d.θ(norm(p.M, x_old, get_gradient(p, x_old)))
     sk_normsq = norm(p.M, o.x, o.sk)^2
-
     if sk_normsq != 0 && (inner(p.M, o.x, o.sk, o.yk) / sk_normsq) >= bound
         update_hessian(d.update, p, o, x_old, iter)
     else # just PT but do not save
-        for  i = 1 : d.update.memory_size
-            vector_transport_to!(p.M, d.update.sk_memory[i], x_old, d.update.sk_memory[i], o.x, o.vector_transport_method)
-            vector_transport_to!(p.M, d.update.yk_memory[i], x_old, o.update.yk_memory[i], o.x, o.vector_transport_method)
+        for i in 1:(d.update.memory_size)
+            vector_transport_to!(
+                p.M,
+                d.update.sk_memory[i],
+                x_old,
+                d.update.sk_memory[i],
+                o.x,
+                o.vector_transport_method,
+            )
+            vector_transport_to!(
+                p.M,
+                d.update.yk_memory[i],
+                x_old,
+                o.update.yk_memory[i],
+                o.x,
+                o.vector_transport_method,
+            )
         end
     end
     return d

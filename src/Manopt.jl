@@ -166,13 +166,18 @@ export getHessian, approxHessianFD
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
-export QuasiNewtonOptions, LimitedMemoryQuasiNewctionDirectionUpdate, QuasiNewtonDirectionUpdate
+export QuasiNewtonOptions,
+    LimitedMemoryQuasiNewctionDirectionUpdate, QuasiNewtonDirectionUpdate
 export CautiousUpdate, BFGS, InverseBFGS, DFP, InverseDFP, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonType
-export quasi_Newton, WolfePowellLineseach, StrongWolfePowellLineseach, operator_to_matrix, square_matrix_vector_product, WolfePowellLineseachHuang
+export quasi_Newton,
+    WolfePowellLineseach,
+    StrongWolfePowellLineseach,
+    operator_to_matrix,
+    square_matrix_vector_product,
+    WolfePowellLineseachHuang
 
-export
-    ConjugateGradientDescentOptions,
+export ConjugateGradientDescentOptions,
     GradientDescentOptions,
     HessianOptions,
     SubGradientMethodOptions,
