@@ -174,40 +174,13 @@ function update_hessian!(
     d::LimitedMemoryQuasiNewctionDirectionUpdate{U}, p, o, x_old, iter
 ) where {U<:AbstractQuasiNewtonType}
     (d.memory_size == 0) && return d
-    if d.memory_size == length(d.sk_memory)
-        for i in 2:(d.memory_size)
-            vector_transport_to!(
-                p.M,
-                d.sk_memory[i - 1],
-                x_old,
-                d.sk_memory[i],
-                o.x,
-                d.vector_transport_method,
-            )
-            vector_transport_to!(
-                p.M,
-                o.yk_memory[i - 1],
-                x_old,
-                d.yk_memory[i],
-                o.x,
-                d.vector_transport_method,
-            )
-        end
-        d.sk_memory[memory_steps_size] .= o.sk
-        d.yk_memory[memory_steps_size] .= o.yk
-    else
-        for i in 1:(d.memory_size)
-            vector_transport_to!(
-                p.M, d.sk_memory[i], x, d.sk_memory[i], o.x, d.vector_transport_method
-            )
-            vector_transport_to!(
-                p.M, d.yk_memory[i], x, d.yk_memory[i], o.x, o.vector_transport_method
-            )
-        end
-        d.memory_size += 1
-        d.steps[d.memory_size] = o.sk
-        d.gradient_diffrences[d.memory_size] = o.yk
+    (length(d.memory) == d.memory_size) && dequeue!(d.memory) # remove oldest
+    # transport all
+    for m ∈ d.memory
+        vector_transport_to!(p.M, m[1], x_old, m[1], o.x, d.vector_transport_method)
+        vector_transport_to!(p.M, m[2], x_old, m[2], o.x, d.vector_transport_method)
     end
+    enqueue!(d.memory, (o.sk, o.yk)) # add newest
 end
 # all Cautious Limited Memory
 function update_hessian!(
@@ -216,25 +189,13 @@ function update_hessian!(
     bound = d.θ(norm(p.M, x_old, get_gradient(p, x_old)))
     sk_normsq = norm(p.M, o.x, o.sk)^2
     if sk_normsq != 0 && (inner(p.M, o.x, o.sk, o.yk) / sk_normsq) >= bound
+        # classical memory update
         update_hessian(d.update, p, o, x_old, iter)
-    else # just PT but do not save
-        for i in 1:(d.update.memory_size)
-            vector_transport_to!(
-                p.M,
-                d.update.sk_memory[i],
-                x_old,
-                d.update.sk_memory[i],
-                o.x,
-                o.vector_transport_method,
-            )
-            vector_transport_to!(
-                p.M,
-                d.update.yk_memory[i],
-                x_old,
-                o.update.yk_memory[i],
-                o.x,
-                o.vector_transport_method,
-            )
+    else
+        # just PT but do not save
+        for m ∈ d.memory
+            vector_transport_to!(p.M, m[1], x_old, m[1], o.x, d.vector_transport_method)
+            vector_transport_to!(p.M, m[2], x_old, m[2], o.x, d.vector_transport_method)
         end
     end
     return d

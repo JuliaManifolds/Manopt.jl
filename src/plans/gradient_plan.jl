@@ -891,7 +891,7 @@ mutable struct DebugGradientNorm <: DebugAction
     end
     DebugGradientNorm(prefix::String, io::IO=stdout) = new(io, prefix)
 end
-function (d::DebugGradientNorm)(p::GradientProblem, o::GradientDescentOptions, i::Int)
+function (d::DebugGradientNorm)(p::GradientProblem, o::Options, i::Int)
     print(d.io, (i >= 0) ? d.prefix * "$(norm(p.M,o.x,o.∇))" : "")
     return nothing
 end
@@ -1107,40 +1107,41 @@ mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{
     NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod
 } <: AbstractQuasiNewtonDirectionUpdate
     method::NT
-    sk_memory::AbstractVector{T}
-    yk_memory::AbstractVector{T}
+    memory::Queue{Tuple{T,T}}
     memory_size::Int
     scale::Float64
     vector_transport_method::VT
 end
 function LimitedMemoryQuasiNewctionDirectionUpdate(
     method::NT,
-    init::T,
+    ::T,
     memory_size::Int;
     scale::Bool=true,
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
 ) where {NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod}
-    skm = [deepcopy(init) for _ in 1:memory_size]
-    ykm = [deepcopy(init) for _ in 1:memory_size]
     return LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,typeof(vector_transport_method)}(
-        method, skm, ykm, 0, scale, vector_transport_method
+        method, Queue{Tuple{T,T}}(), memory_size, scale, vector_transport_method
     )
 end
 function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
     r = deepcopy(o.∇)
-    ξ = zeros(d.memory_size)
-    ρ = zeros(d.memory_size)
-    for i in (d.memory_size):-1:1
-        ρ[i] = 1 / inner(p.M, o.x, d.sk_memory[i], d.yk_memory[i])
-        ξ[i] = inner(p.M, o.x, d.sk_memory[i], r) * ρ[i]
-        r .= r .- ξ[i] .* d.yk_memory[i]
+    s = length(d.memory)
+    s == 0 && return -r
+    ξ = zeros(s)
+    ρ = zeros(s)
+    i = s
+    for m ∈ reverse_iter(d.memory)
+        ρ[i] = 1 / inner(p.M, o.x, m[1], m[2]) # 1 sk 2 yk
+        ξ[i] = inner(p.M, o.x, m[1], r) * ρ[i]
+        r .= r .- ξ[i] .* m[2]
+        i -= 1
     end
-    if d.memory_size != 0
-        r .= 1 / (ρ[d.memory_size] * norm(p.M, o.x, d.yk_memory[d.memory_size])^2) .* r
-    end
-    for i in 1:d.memory_size
-        ω = ρ[i] * inner(p.M, o.x, d.yk_memory[i], r)
-        r .= r .+ (ξ[i] - ω) .* d.sk_memory[i]
+    r .= 1 / (last(ρ) * norm(p.M, o.x, last(d.memory)[2])^2) .* r
+    i = 1
+    for m ∈ d.memory
+        ω = ρ[i] * inner(p.M, o.x, m[2], r)
+        r .= r .+ (ξ[i] - ω) .* m[1]
+        i += 1
     end
     return -r
 end
