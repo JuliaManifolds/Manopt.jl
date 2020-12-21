@@ -1087,7 +1087,7 @@ function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP}}
     return get_vector(p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis))
 end
 
-struct Broyden{
+mutable struct Broyden{
     U1<:AbstractQuasiNewtonDirectionUpdate,U2<:AbstractQuasiNewtonDirectionUpdate
 } <: AbstractQuasiNewtonDirectionUpdate
     update1::U1

@@ -111,7 +111,8 @@ function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
     # reuse ∇
     vector_transport_to!(p.M, o.∇, x_old, o.∇, o.x, o.vector_transport_method)
     o.yk = (get_gradient(p, o.x) - o.∇)/β
-    return update_hessian!(o.direction_update, p, o, x_old, iter)
+    update_hessian!(o.direction_update, p, o, x_old, iter)
+    return o
 end
 cautious_scale(::Manifold, ::AbstractQuasiNewtonDirectionUpdate, x_old, v, x, vt) = 1.0
 function cautious_scale(M::Manifold, ::CautiousUpdate, x_old, v, x, vt)
@@ -190,7 +191,7 @@ function update_hessian!(
     sk_normsq = norm(p.M, o.x, o.sk)^2
     if sk_normsq != 0 && (inner(p.M, o.x, o.sk, o.yk) / sk_normsq) >= bound
         # classical memory update
-        update_hessian(d.update, p, o, x_old, iter)
+        update_hessian!(d.update, p, o, x_old, iter)
     else
         # just PT but do not save
         for m ∈ d.memory
