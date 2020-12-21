@@ -175,13 +175,17 @@ function update_hessian!(
     d::LimitedMemoryQuasiNewctionDirectionUpdate{U}, p, o, x_old, iter
 ) where {U<:AbstractQuasiNewtonType}
     (d.memory_size == 0) && return d
-    (length(d.memory) == d.memory_size) && dequeue!(d.memory) # remove oldest
-    # transport all
-    for m ∈ d.memory
-        vector_transport_to!(p.M, m[1], x_old, m[1], o.x, d.vector_transport_method)
-        vector_transport_to!(p.M, m[2], x_old, m[2], o.x, d.vector_transport_method)
+    if length(d.memory_s) == d.memory_size # remove oldest
+         dequeue!(d.memory_s)
+         dequeue!(d.memory_y)
     end
-    enqueue!(d.memory, (o.sk, o.yk)) # add newest
+    # transport all
+    for (s,y) ∈ zip(d.memory_s, d.memory_y)
+        vector_transport_to!(p.M, s, x_old, s, o.x, d.vector_transport_method)
+        vector_transport_to!(p.M, y, x_old, y, o.x, d.vector_transport_method)
+    end
+    enqueue!(d.memory_s, o.sk) # add newest
+    enqueue!(d.memory_y, o.yk) # add newest
 end
 # all Cautious Limited Memory
 function update_hessian!(
@@ -194,9 +198,9 @@ function update_hessian!(
         update_hessian!(d.update, p, o, x_old, iter)
     else
         # just PT but do not save
-        for m ∈ d.memory
-            vector_transport_to!(p.M, m[1], x_old, m[1], o.x, d.vector_transport_method)
-            vector_transport_to!(p.M, m[2], x_old, m[2], o.x, d.vector_transport_method)
+        for (s,y) ∈ zip(d.memory_s, d.memory_y)
+            vector_transport_to!(p.M, s, x_old, s, o.x, d.vector_transport_method)
+            vector_transport_to!(p.M, y, x_old, y, o.x, d.vector_transport_method)
         end
     end
     return d
