@@ -1107,9 +1107,8 @@ mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{
     NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod
 } <: AbstractQuasiNewtonDirectionUpdate
     method::NT
-    memory_s::Queue{T}
-    memory_y::Queue{T}
-    memory_size::Int
+    memory_s::CircularBuffer{T}
+    memory_y::CircularBuffer{T}
     scale::Float64
     vector_transport_method::VT
 end
@@ -1121,7 +1120,7 @@ function LimitedMemoryQuasiNewctionDirectionUpdate(
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
 ) where {NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod}
     return LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,typeof(vector_transport_method)}(
-        method, Queue{T}(), Queue{T}(), memory_size, scale, vector_transport_method
+        method, CircularBuffer{T}(memory_size), CircularBuffer{T}(memory_size), scale, vector_transport_method
     )
 end
 function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
@@ -1130,19 +1129,16 @@ function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
     m == 0 && return -r
     ξ = zeros(m)
     ρ = zeros(m)
-    i = m
-    for (s,y) ∈ zip(reverse_iter(d.memory_s), reverse_iter(d.memory_y))
-        ρ[i] = 1 / inner(p.M, o.x, s, y) # 1 sk 2 yk
-        ξ[i] = inner(p.M, o.x, s, r) * ρ[i]
-        r .= r .- ξ[i] .* y
+    for i=m:-1:1
+        ρ[i] = 1 / inner(p.M, o.x, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
+        ξ[i] = inner(p.M, o.x, d.memory_s[i], r) * ρ[i]
+        r .= r .- ξ[i] .* d.memory_y[i]
         i -= 1
     end
     r .= 1 / (last(ρ) * norm(p.M, o.x, last(d.memory_y))^2) .* r
-    i = 1
-    for (s,y) ∈ zip(d.memory_s, d.memory_y)
-        ω = ρ[i] * inner(p.M, o.x, y, r)
-        r .= r .+ (ξ[i] - ω) .* s
-        i += 1
+    for i=1:m
+        ω = ρ[i] * inner(p.M, o.x, d.memory_y[i], r)
+        r .= r .+ (ξ[i] - ω) .* d.memory_s[i]
     end
     return -r
 end
