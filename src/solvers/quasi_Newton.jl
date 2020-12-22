@@ -36,7 +36,7 @@ OR
 function quasi_Newton(
     M::MT,
     F::Function,
-    ∇F::Function,
+    ∇F::G,
     x::P;
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
@@ -55,7 +55,7 @@ function quasi_Newton(
     ),
     return_options=false,
     kwargs...,
-) where {MT<:Manifold,P}
+) where {MT<:Manifold,P,G}
     if memory_size >= 0
         local_dir_upd = LimitedMemoryQuasiNewctionDirectionUpdate(
             direction_update,
