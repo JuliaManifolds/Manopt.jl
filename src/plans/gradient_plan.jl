@@ -38,11 +38,11 @@ individual one that provides these values.
 abstract type DirectionUpdateRule end
 
 """
-    Gradient <: DirectionUpdateRule
+    IdentityUpdateRule <: DirectionUpdateRule
 
 The default gradient direction update is the identity, i.e. it just evaluates the gradient.
 """
-struct Gradient <: DirectionUpdateRule end
+struct IdentityUpdateRule <: DirectionUpdateRule end
 
 """
     AbstractGradientDescentOptions <: Options
@@ -114,7 +114,7 @@ end
 #
 # Processors
 #
-function (s::Gradient)(p::GradientProblem, o::GradientDescentOptions, i)
+function (s::IdentityUpdateRule)(p::GradientProblem, o::GradientDescentOptions, i)
     return get_stepsize(p, o, i), get_gradient(p, o.x)
 end
 
@@ -167,7 +167,7 @@ end
 function MomentumGradient(
     p::GradientProblem,
     x0::P,
-    s::DirectionUpdateRule=Gradient();
+    s::DirectionUpdateRule=IdentityUpdateRule();
     last_iterate=x0,
     vector_transport_method::VTM=ParallelTransport(),
     ∇=zero_tangent_vector(p.M, x0),
