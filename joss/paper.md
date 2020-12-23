@@ -74,4 +74,18 @@ F(y) = sum(1/(2*n) * distance.(Ref(M), pts, Ref(y)).^2)
 xMean = gradient_descent(M, F, ∇F, pts[1])
 ```
 
+In order to print the iteration, the current iterate, change and cost every $50$th iteration as well as the stopping reason and record iteration number, change and cost, these can be specified as optional parameters. These can then be easily accessed using the `get_record` function.
+
+```julia
+o = gradient_descent(M, F, ∇F, pts[1],
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
+    record=[:Iteration, :Change, :Cost],
+)
+xMean3 = get_solver_result(o)
+values = get_record(o)
+```
+# Requirements
+`Manopt.jl` is based on `ManifoldsBase.jl`.
+This package is available in the general Julia registry. Using it together with `Manifolds.jl` is recommended, since this package provides a library of manifolds.
+
 # References
