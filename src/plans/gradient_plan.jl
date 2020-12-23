@@ -992,6 +992,8 @@ struct BFGS <: AbstractQuasiNewtonType end
 struct InverseBFGS <: AbstractQuasiNewtonType end
 struct DFP <: AbstractQuasiNewtonType end
 struct InverseDFP <: AbstractQuasiNewtonType end
+struct SR1 <: AbstractQuasiNewtonType end
+struct InverseSR1 <: AbstractQuasiNewtonType end
 
 @doc raw"""
     QuasiNewtonOptions <: Options
@@ -1078,12 +1080,12 @@ function QuasiNewtonDirectionUpdate(
         basis, m, scale, update, vector_transport_method
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{InverseBFGS,InverseDFP}}
+function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1}}
     return get_vector(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP}}
+function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1}}
     return get_vector(p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis))
 end
 

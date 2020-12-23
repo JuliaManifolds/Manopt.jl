@@ -118,7 +118,7 @@ cautious_scale(::Manifold, ::AbstractQuasiNewtonDirectionUpdate, x_old, v, x, vt
 function cautious_scale(M::Manifold, ::CautiousUpdate, x_old, v, x, vt)
     return norm(M, x_old, v) / norm(M, x, vector_transport_to(M, x_old, v, x, vt))
 end
-# update the HEssian representation
+# update the Hessian representation
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old, iter)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
@@ -132,6 +132,19 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old
         (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
         sk_c * sk_c' / skyk_c
 end
+function update_hessian!(d::QuasiNewtonDirectionUpdate{BFGS}, p, o, x_old, iter)
+    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
+    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
+    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
+    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+
+    if iter == 1 && d.scale == true
+        d.matrix = skyk_c / inner(p.M, o.x, o.yk, o.yk) * d.matrix
+    end
+    return d.matrix =
+        d.matrix + yk_c * yk_c' / skyk_c -
+        d.matrix * sk_c * sk_c' * d.matrix / dot(sk_c, d.matrix * sk_c)
+end
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseDFP}, p, o, x_old, iter)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, o.basis)
@@ -143,7 +156,20 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseDFP}, p, o, x_old,
     end
     return d.matrix =
         d.matrix + sk_c * sk_c' / skyk_c -
-        d.matrix * yk_c * (d.matrix * yk_c)' / dot(yk_c, d.matrix * yk_c)
+        d.matrix * yk_c * yk_c' * d.matrix / dot(yk_c, d.matrix * yk_c)
+end
+function update_hessian!(d::QuasiNewtonDirectionUpdate{DFP}, p, o, x_old, iter)
+    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
+    yk_c = get_coordinates(p.M, o.x, o.yk, o.basis)
+    sk_c = get_coordinates(p.M, o.x, o.sk, o.basis)
+    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+
+    if iter == 1 && d.scale == true
+        d.matrix = skyk_c / norm(p.M, o.x, o.yk)^2 * d.matrix
+    end
+    return d.matrix =
+        (I - yk_c * sk_c' / skyk_c) * d.matrix * (I - sk_c * yk_c' / skyk_c) +
+        yk_c * yk_c' / skyk_c
 end
 
 function update_basis!(
@@ -207,6 +233,32 @@ function update_hessian!(d::Broyden, p, o, x_old, iter)
     update_hessian!(d.update1, p, o, x_old, iter)
     update_hessian!(d.update2, p, o, x_old, iter)
     return d
+end
+
+# SR-1 update
+function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old, iter)
+    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
+    yk_c = get_coordinates(p.M, o.x, o.yk, o.basis)
+    sk_c = get_coordinates(p.M, o.x, o.sk, o.basis)
+    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+
+    if iter == 1 && d.scale == true
+        d.matrix = skyk_c / norm(p.M, o.x, o.yk)^2 * d.matrix
+    end
+    return d.matrix =
+        d.matrix + (sk_c - d.matrix * yk_c) * (sk_c - d.matrix * yk_c)' / (sk_c - d.matrix * yk_c)' * yk_c
+end
+function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
+    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
+    yk_c = get_coordinates(p.M, o.x, o.yk, o.basis)
+    sk_c = get_coordinates(p.M, o.x, o.sk, o.basis)
+    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+
+    if iter == 1 && d.scale == true
+        d.matrix = skyk_c / norm(p.M, o.x, o.yk)^2 * d.matrix
+    end
+    return d.matrix =
+        d.matrix + (yk_c - d.matrix * sk_c) * (yk_c - d.matrix * sk_c)' / (yk_c - d.matrix * sk_c)' * sk_c
 end
 
 get_solver_result(o::QuasiNewtonOptions) = o.x
