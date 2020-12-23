@@ -1162,6 +1162,4 @@ function CautiousUpdate(
 ) where {U<:AbstractQuasiNewtonDirectionUpdate}
     return CautiousUpdate{U}(update, θ)
 end
-function (d::CautiousUpdate)(p, o)
-    return d.update(p, o)
-end
+(d::CautiousUpdate)(p, o) = d.update(p, o)
