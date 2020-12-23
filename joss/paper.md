@@ -51,8 +51,6 @@ By providing always a default, the start for a user can start right away and mod
 
 Using a decorator pattern, the `Options` can be encapsulated in `DebugOptions` or `RecordOptions` which either print or record arbitrary data stored within the `Options`. This enables to investigate how the optimization is performed in detail and use the algorithms from within this package also for numerical analysis.
 
-# Available Algorithms
-
 # Example
 
 `Manopt.jl` is registered in the general Julia registry and can hence be installed typing `]add Manopt` in Julia REPL.
@@ -84,7 +82,20 @@ o = gradient_descent(M, F, ∇F, pts[1],
 xMean3 = get_solver_result(o)
 values = get_record(o)
 ```
+
+# Other software
+
+There are two projects that are similar to `Manopt.jl`, though less flexible for example concerning the stopping criteria, which are [`Manopt`](https://manopt.org) in Matlab and [`pymanopt`](https://pymanopt.org) in Python.
+Similarly [`ROPTLIB`](https://www.math.fsu.edu/~whuang2/Indices/index_ROPTLIB.html) is a package for optimization on Manifolds in C++.
+While all three packages cover some algorithm, most are less flexible for example in stating the stopping criterion, which is fixed to mainly maximal number of iterations or a small gradient. Most prominently, `Manopt.jl` is the first package that also covers methods for high-performance and high-dimensional nonsmooth optimization on manifolds.
+
+# Quality control and contributions
+
+`Manopt.jl` uses GitHub Actions and a continuous integration testing with the most recent version of Julia all supported versions of Julia
+ on macOS, Linux and Windows. The tests cover most of the library and can also be run locally in Julia REPL with `]test Manopt`
+Support and submission of contributions to the library are handled through the GitHub repository via issues or by pull requests
 # Requirements
+
 `Manopt.jl` is based on `ManifoldsBase.jl`.
 This package is available in the general Julia registry. Using it together with `Manifolds.jl` is recommended, since this package provides a library of manifolds.
 
