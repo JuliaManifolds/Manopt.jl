@@ -192,7 +192,7 @@ export has_storage, get_storage, update_storage!
 #
 # Direction Update Rules
 export DirectionUpdateRule,
-    Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
+    IdentityUpdateRule, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,
     HeestenesStiefelCoefficient,
