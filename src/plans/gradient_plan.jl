@@ -1080,7 +1080,9 @@ function QuasiNewtonDirectionUpdate(
         basis, m, scale, update, vector_transport_method
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1}}
+function (d::QuasiNewtonDirectionUpdate{T})(
+    p, o
+) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1}}
     return get_vector(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
@@ -1129,21 +1131,22 @@ function LimitedMemoryQuasiNewctionDirectionUpdate(
         CircularBuffer{T}(memory_size),
         zeros(memory_size),
         zeros(memory_size),
-        scale, vector_transport_method
+        scale,
+        vector_transport_method,
     )
 end
 function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
     r = deepcopy(o.∇)
     m = length(d.memory_s)
     m == 0 && return -r
-    for i=m:-1:1
+    for i in m:-1:1
         d.ρ[i] = 1 / inner(p.M, o.x, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
         d.ξ[i] = inner(p.M, o.x, d.memory_s[i], r) * d.ρ[i]
         r .= r .- d.ξ[i] .* d.memory_y[i]
         i -= 1
     end
     r .= 1 / (d.ρ[m] * norm(p.M, o.x, last(d.memory_y))^2) .* r
-    for i=1:m
+    for i in 1:m
         r .= r .+ (d.ξ[i] - d.ρ[i] * inner(p.M, o.x, d.memory_y[i], r)) .* d.memory_s[i]
     end
     return -r
@@ -1160,5 +1163,5 @@ function CautiousUpdate(
     return CautiousUpdate{U}(update, θ)
 end
 function (d::CautiousUpdate)(p, o)
-    return d.update(p,o)
+    return d.update(p, o)
 end

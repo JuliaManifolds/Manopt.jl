@@ -429,8 +429,7 @@ function (a::WolfePowellLineseach)(
     fNew = p.cost(xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
     if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)
-        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)) &&
-            (s_minus > 10^(-7)) # decrease
+        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)) && (s_minus > 10^(-7)) # decrease
             s_minus = s_minus * 0.5
             s = s_minus
             retract!(p.M, xNew, o.x, s * η, a.retraction_method)

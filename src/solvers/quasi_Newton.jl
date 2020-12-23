@@ -105,12 +105,14 @@ function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
     α = o.stepsize(p, o, iter, η)
     x_old = deepcopy(o.x)
     retract!(p.M, o.x, o.x, α * η, o.retraction_method)
-    β = cautious_scale(p.M, o.direction_update, x_old, α*η, o.x,  o.vector_transport_method)
+    β = cautious_scale(
+        p.M, o.direction_update, x_old, α * η, o.x, o.vector_transport_method
+    )
     # update sk
     vector_transport_to!(p.M, o.sk, x_old, α * η, o.x, o.vector_transport_method)
     # reuse ∇
     vector_transport_to!(p.M, o.∇, x_old, o.∇, o.x, o.vector_transport_method)
-    o.yk = (get_gradient(p, o.x) - o.∇)/β
+    o.yk = (get_gradient(p, o.x) - o.∇) / β
     update_hessian!(o.direction_update, p, o, x_old, iter)
     return o
 end
@@ -203,13 +205,17 @@ function update_hessian!(
     (capacity(d.memory_s) == 0) && return d
     # only transport the first if it does not get overwritten at the end
     start = length(d.memory_s) == capacity(d.memory_s) ? 2 : 1
-    for i=start:length(d.memory_s)
-        vector_transport_to!(p.M, d.memory_s[i], x_old, d.memory_s[i], o.x, d.vector_transport_method)
-        vector_transport_to!(p.M, d.memory_y[i], x_old, d.memory_y[i], o.x, d.vector_transport_method)
+    for i in start:length(d.memory_s)
+        vector_transport_to!(
+            p.M, d.memory_s[i], x_old, d.memory_s[i], o.x, d.vector_transport_method
+        )
+        vector_transport_to!(
+            p.M, d.memory_y[i], x_old, d.memory_y[i], o.x, d.vector_transport_method
+        )
     end
     # add newest
     push!(d.memory_s, o.sk)
-    push!(d.memory_y, o.yk)
+    return push!(d.memory_y, o.yk)
 end
 # all Cautious Limited Memory
 function update_hessian!(
@@ -222,9 +228,13 @@ function update_hessian!(
         update_hessian!(d.update, p, o, x_old, iter)
     else
         # just PT but do not save
-        for i=1:length(d.memory_s)
-            vector_transport_to!(p.M, d.memory_s[i], x_old, d.memory_s[i], o.x, d.vector_transport_method)
-            vector_transport_to!(p.M, d.memory_y[i], x_old, d.memory_y[i], o.x, d.vector_transport_method)
+        for i in 1:length(d.memory_s)
+            vector_transport_to!(
+                p.M, d.memory_s[i], x_old, d.memory_s[i], o.x, d.vector_transport_method
+            )
+            vector_transport_to!(
+                p.M, d.memory_y[i], x_old, d.memory_y[i], o.x, d.vector_transport_method
+            )
         end
     end
     return d
@@ -246,7 +256,9 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
         d.matrix = skyk_c / norm(p.M, o.x, o.yk)^2 * d.matrix
     end
     return d.matrix =
-        d.matrix + (sk_c - d.matrix * yk_c) * (sk_c - d.matrix * yk_c)' / (sk_c - d.matrix * yk_c)' * yk_c
+        d.matrix +
+        (sk_c - d.matrix * yk_c) * (sk_c - d.matrix * yk_c)' / (sk_c - d.matrix * yk_c)' *
+        yk_c
 end
 function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
@@ -258,7 +270,9 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
         d.matrix = skyk_c / norm(p.M, o.x, o.yk)^2 * d.matrix
     end
     return d.matrix =
-        d.matrix + (yk_c - d.matrix * sk_c) * (yk_c - d.matrix * sk_c)' / (yk_c - d.matrix * sk_c)' * sk_c
+        d.matrix +
+        (yk_c - d.matrix * sk_c) * (yk_c - d.matrix * sk_c)' / (yk_c - d.matrix * sk_c)' *
+        sk_c
 end
 
 get_solver_result(o::QuasiNewtonOptions) = o.x
