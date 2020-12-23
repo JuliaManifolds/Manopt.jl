@@ -30,6 +30,7 @@ end
     include("solvers/test_cyclic_proximal_point.jl")
     include("solvers/test_gradient_descent.jl")
     include("solvers/test_Nelder_Mead.jl")
+    include("solvers/test_quasi_Newton.jl")
     include("solvers/test_trust_regions.jl")
     include("solvers/test_particle_swarm.jl")
     include("solvers/test_stochastic_gradient_descent.jl")
