@@ -25,7 +25,7 @@ Based on a generic optimization framework together with the interface `Manifolds
 # Statement of Need
 
 In many applications and optimization tasks, nonlinear data appears naturally.
-For example when data on the sphere is measured, diffusion data can be captures as a signal or multivariate data of symmetric positive definite matrices [REF] or orientations like they appear for EBSD data [REF]. Another example are fixed rank matrices, as they appear in dictionary learning, which might be incomplete.
+For example when data on the sphere is measured, diffusion data can be captures as a signal or multivariate data of symmetric positive definite matrices or orientations like they appear for EBSD data. Another example are fixed rank matrices, as they appear in dictionary learning, which might be incomplete.
 
 Working on these data, for example denoising, inpainting, or performing matrix completion can be phrased as an optimization problem
 
