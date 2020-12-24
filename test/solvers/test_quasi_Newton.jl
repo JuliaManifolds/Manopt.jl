@@ -13,33 +13,28 @@ Random.seed!(42)
     M = Euclidean(4, 4)
     x = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
     x_lrbfgs = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x
-        )
+        M, F, ∇F, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
+    )
     x_clrbfgs = quasi_Newton(
         M,
         F,
         ∇F,
         x;
-        cautious_update = true,
-        )
+        cautious_update=true,
+        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+    )
     x_rbfgs = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        memory_size=-1,
-        )
+        M, F, ∇F, x; memory_size=-1, stopping_criterion=StopWhenGradientNormLess(10^(-6))
+    )
     x_crbfgs = quasi_Newton(
         M,
         F,
         ∇F,
         x;
         memory_size=-1,
-        cautious_update = true,
-        )
+        cautious_update=true,
+        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+    )
 
     @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
     @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)

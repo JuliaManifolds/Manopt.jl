@@ -62,7 +62,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x0` – an a point (of type `P`) on a manifold as starting point
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
-* `direction` - ([`Gradient`](@ref)) a processor to compute the gradient
+* `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
 * `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
   the exponential map
 
@@ -89,7 +89,7 @@ mutable struct GradientDescentOptions{
         s::StoppingCriterion=StopAfterIteration(100),
         stepsize::Stepsize=ConstantStepsize(1.0),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        direction::DirectionUpdateRule=Gradient(),
+        direction::DirectionUpdateRule=IdentityUpdateRule(),
     ) where {P}
         o = new{P,typeof(s),typeof(stepsize),typeof(retraction_method)}()
         o.x = initialX
@@ -105,7 +105,7 @@ function GradientDescentOptions(
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    direction::DirectionUpdateRule=Gradient(),
+    direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P}
     return GradientDescentOptions{P}(
         x, stopping_criterion, stepsize, retraction_method, direction
@@ -180,7 +180,7 @@ end
 function MomentumGradient(
     M::Manifold,
     x0::P,
-    s::DirectionUpdateRule=Gradient();
+    s::DirectionUpdateRule=IdentityUpdateRule();
     ∇=zero_tangent_vector(M, x0),
     last_iterate=x0,
     momentum=0.2,
@@ -219,7 +219,7 @@ them to the current iterates tangent space.
         p::GradientProlem,
         x0,
         n::Int=10
-        s::DirectionUpdateRule=Gradient();
+        s::DirectionUpdateRule=IdentityUpdateRule();
         gradients = fill(zero_tangent_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
         vector_transport_method = ParallelTransport()
@@ -251,7 +251,7 @@ function AverageGradient(
     M::Manifold,
     x0::P,
     n::Int=10,
-    s::DirectionUpdateRule=Gradient();
+    s::DirectionUpdateRule=IdentityUpdateRule();
     gradients=fill(zero_tangent_vector(M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM<:AbstractVectorTransportMethod}
@@ -263,7 +263,7 @@ function AverageGradient(
     p::GradientProblem,
     x0::P,
     n::Int=10,
-    s::DirectionUpdateRule=Gradient();
+    s::DirectionUpdateRule=IdentityUpdateRule();
     gradients=fill(zero_tangent_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM}
@@ -837,7 +837,7 @@ See also [`conjugate_gradient_descent`](@ref)
 """
 struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
 function (u::SteepestDirectionUpdateRule)(
-    p::GradientProblem, o::ConjugateGradientDescentOptions, i
+    ::GradientProblem, ::ConjugateGradientDescentOptions, i
 )
     return 0.0
 end
@@ -1080,7 +1080,9 @@ function QuasiNewtonDirectionUpdate(
         basis, m, scale, update, vector_transport_method
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1}}
+function (d::QuasiNewtonDirectionUpdate{T})(
+    p, o
+) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1}}
     return get_vector(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
@@ -1129,21 +1131,22 @@ function LimitedMemoryQuasiNewctionDirectionUpdate(
         CircularBuffer{T}(memory_size),
         zeros(memory_size),
         zeros(memory_size),
-        scale, vector_transport_method
+        scale,
+        vector_transport_method,
     )
 end
 function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
     r = deepcopy(o.∇)
     m = length(d.memory_s)
     m == 0 && return -r
-    for i=m:-1:1
+    for i in m:-1:1
         d.ρ[i] = 1 / inner(p.M, o.x, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
         d.ξ[i] = inner(p.M, o.x, d.memory_s[i], r) * d.ρ[i]
         r .= r .- d.ξ[i] .* d.memory_y[i]
         i -= 1
     end
     r .= 1 / (d.ρ[m] * norm(p.M, o.x, last(d.memory_y))^2) .* r
-    for i=1:m
+    for i in 1:m
         r .= r .+ (d.ξ[i] - d.ρ[i] * inner(p.M, o.x, d.memory_y[i], r)) .* d.memory_s[i]
     end
     return -r
@@ -1159,6 +1162,4 @@ function CautiousUpdate(
 ) where {U<:AbstractQuasiNewtonDirectionUpdate}
     return CautiousUpdate{U}(update, θ)
 end
-function (d::CautiousUpdate)(p, o)
-    return d.update(p,o)
-end
+(d::CautiousUpdate)(p, o) = d.update(p, o)
