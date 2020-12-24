@@ -14,9 +14,11 @@ function run_rayleigh_experiment(n::Int; seed=42)
         ∇F,
         x;
         memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(
-            norm(M, x, ∇F(x)) * 10^(-6)
-        ),
+        stopping_criterion=StopWhenAny(
+        StopAfterIteration(max(10000)), StopWhenGradientNormLess(
+            10^(-6)
+        )),
+        debug=[:Iteration, " ", :Cost, "\n", 1, :Stop]
     )
 end
 io = IOBuffer()
