@@ -40,44 +40,22 @@ Random.seed!(42)
     @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
     @test norm(x_rbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
     @test norm(x_crbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
-    
+
     # Rayleigh Quotient minimization
-    A_Ray = randn(300,300)
+    A_Ray = randn(300, 300)
     A_Ray = (A_Ray + A_Ray') / 2
     F_Ray(X::Array{Float64,1}) = X' * A_Ray * X
     ∇F_Ray(X::Array{Float64,1}) = 2 * (A_Ray * X - X * X' * A_Ray * X)
     M_Ray = Sphere(299)
     x_Ray = random_point(M_Ray)
-    x_solution_Ray = abs.(eigvecs(A_Ray)[:,1])
+    x_solution_Ray = abs.(eigvecs(A_Ray)[:, 1])
 
-    x_lrbfgs_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray
-        )
-    x_clrbfgs_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        cautious_update = true,
-        )
-    x_rbfgs_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        memory_size=-1,
-        )
+    x_lrbfgs_Ray = quasi_Newton(M_Ray, F_Ray, ∇F_Ray, x_Ray)
+    x_clrbfgs_Ray = quasi_Newton(M_Ray, F_Ray, ∇F_Ray, x_Ray; cautious_update=true)
+    x_rbfgs_Ray = quasi_Newton(M_Ray, F_Ray, ∇F_Ray, x_Ray; memory_size=-1)
     x_crbfgs_Ray = quasi_Newton(
-       M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        memory_size=-1,
-        cautious_update = true,
-        )
+        M_Ray, F_Ray, ∇F_Ray, x_Ray; memory_size=-1, cautious_update=true
+    )
 
     @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 10.0^(-14)
     @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 10.0^(-14)
