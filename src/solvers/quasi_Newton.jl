@@ -123,10 +123,11 @@ function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
     return o
 end
 
-function locking_condition_scale(M::Manifold, ::AbstractQuasiNewtonDirectionUpdate, x_old, v, x, vt)
+function locking_condition_scale(
+    M::Manifold, ::AbstractQuasiNewtonDirectionUpdate, x_old, v, x, vt
+)
     return norm(M, x_old, v) / norm(M, x, vector_transport_to(M, x_old, v, x, vt))
 end
-
 
 # Inverese BFGS update 
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old, iter)
@@ -138,7 +139,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
     # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
-    
+
     # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
         d.matrix = skyk_c / inner(p.M, o.x, o.yk, o.yk) * d.matrix
@@ -160,7 +161,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{BFGS}, p, o, x_old, iter)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
     # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
-    
+
     # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
         d.matrix = inner(p.M, o.x, o.yk, o.yk) / skyk_c * d.matrix
@@ -182,7 +183,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseDFP}, p, o, x_old,
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
     # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
-    
+
     # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
         d.matrix = inner(p.M, o.x, o.sk, o.sk) / skyk_c * d.matrix
@@ -346,7 +347,5 @@ function update_hessian!(d::Broyden, p, o, x_old, iter)
     update_hessian!(d.update2, p, o, x_old, iter)
     return d
 end
-
-
 
 get_solver_result(o::QuasiNewtonOptions) = o.x
