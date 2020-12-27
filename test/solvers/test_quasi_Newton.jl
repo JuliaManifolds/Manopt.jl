@@ -52,7 +52,7 @@ Random.seed!(42)
     x_solution_Ray = abs.(eigvecs(A_Ray)[:, 1])
 
     x_lrbfgs_Ray = quasi_Newton(
-        M_Ray, F_Ray, ∇F_Ray, x_Ray; stopping_criterion=StopWhenGradientNormLess(10^(-11))
+        M_Ray, F_Ray, ∇F_Ray, x_Ray; stopping_criterion=StopWhenGradientNormLess(10^(-12))
     )
     x_clrbfgs_Ray = quasi_Newton(
         M_Ray,
@@ -60,7 +60,7 @@ Random.seed!(42)
         ∇F_Ray,
         x_Ray;
         cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-11)),
+        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
     x_rbfgs_Ray = quasi_Newton(
         M_Ray,
@@ -68,7 +68,7 @@ Random.seed!(42)
         ∇F_Ray,
         x_Ray;
         memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-11)),
+        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
     x_crbfgs_Ray = quasi_Newton(
         M_Ray,
@@ -77,11 +77,11 @@ Random.seed!(42)
         x_Ray;
         memory_size=-1,
         cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-11)),
+        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
 
-    @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 10.0^(-14)
-    @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 10.0^(-14)
-    @test norm(abs.(x_rbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 10.0^(-14)
-    @test norm(abs.(x_crbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 10.0^(-14)
+    @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    @test norm(abs.(x_rbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    @test norm(abs.(x_crbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
 end
