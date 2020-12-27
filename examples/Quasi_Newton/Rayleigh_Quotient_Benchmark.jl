@@ -1,7 +1,7 @@
 using Manopt, Manifolds, ManifoldsBase, Random, LinearAlgebra, BenchmarkTools
+Random.seed!(42)
 
-function run_rayleigh_experiment(n::Int; seed=42)
-    Random.seed!(seed)
+function run_rayleigh_experiment(n::Int)
     A = randn(n, n)
     A = (A + A') / 2
     F(X::Array{Float64,1}) = X' * A * X
@@ -13,16 +13,16 @@ function run_rayleigh_experiment(n::Int; seed=42)
         F,
         ∇F,
         x;
-        memory_size=-1,
+        #memory_size=-1,
         stopping_criterion=StopWhenAny(
-            StopAfterIteration(max(10000)), StopWhenGradientNormLess(10^(-6))
+            StopAfterIteration(max(1000)), StopWhenGradientNormLess(10^(-6))
         ),
         debug=[:Iteration, " ", :Cost, "\n", 1, :Stop],
     )
 end
 io = IOBuffer()
 
-for n in [100, 300]
+for n in [100]
     b = @benchmark run_rayleigh_experiment($n) samples = 30
     show(io, "text/plain", b)
     s = String(take!(io))

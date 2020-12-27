@@ -1143,13 +1143,12 @@ function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
         d.ρ[i] = 1 / inner(p.M, o.x, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
         d.ξ[i] = inner(p.M, o.x, d.memory_s[i], r) * d.ρ[i]
         r .= r .- d.ξ[i] .* d.memory_y[i]
-        i -= 1
     end
     r .= 1 / (d.ρ[m] * norm(p.M, o.x, last(d.memory_y))^2) .* r
     for i in 1:m
         r .= r .+ (d.ξ[i] - d.ρ[i] * inner(p.M, o.x, d.memory_y[i], r)) .* d.memory_s[i]
     end
-    return -r
+    return -project(p.M, o.x, r)
 end
 
 struct CautiousUpdate{U<:AbstractQuasiNewtonDirectionUpdate} <:
