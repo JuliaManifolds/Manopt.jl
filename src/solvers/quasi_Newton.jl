@@ -229,7 +229,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
 
     # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
-        d.matrix = skyk_c / norm(p.M, o.x, o.yk)^2 * d.matrix
+        d.matrix = skyk_c / inner(p.M, o.x, o.yk, o.yk) * d.matrix
     end
 
     # computing the new matrix which represents the approximating operator in the next iteration
@@ -252,7 +252,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
 
     # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
-        d.matrix = skyk_c / norm(p.M, o.x, o.yk)^2 * d.matrix
+        d.matrix = inner(p.M, o.x, o.yk, o.yk) / skyk_c * d.matrix
     end
 
     # computing the new matrix which represents the approximating operator in the next iteration
