@@ -129,7 +129,19 @@ function locking_condition_scale(
     return norm(M, x_old, v) / norm(M, x, vector_transport_to(M, x_old, v, x, vt))
 end
 
-# Inverese BFGS update 
+@doc raw"""
+    update_hessian!(d, p, o, x, iter)
+
+update the matrix wich represents with respect to an orthoormal basis
+in the tangent space the approximating operator of the quasi-Newton method.
+
+# Input
+* `d` – 
+* `p` – 
+* `o`– 
+* `x` – 
+* `iter` – 
+"""
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old, iter)
     # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)

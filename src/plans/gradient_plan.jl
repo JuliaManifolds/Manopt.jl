@@ -988,11 +988,30 @@ All subtypes should be functors, i.e. one should be able to call them as `H(M,x,
 abstract type AbstractQuasiNewtonDirectionUpdate end
 
 abstract type AbstractQuasiNewtonType end
+
+@doc raw"""
+    BFGS <: AbstractQuasiNewtonType
+"""
 struct BFGS <: AbstractQuasiNewtonType end
+@doc raw"""
+    InverseBFGS <: AbstractQuasiNewtonType
+"""
 struct InverseBFGS <: AbstractQuasiNewtonType end
+@doc raw"""
+    DFP <: AbstractQuasiNewtonType
+"""
 struct DFP <: AbstractQuasiNewtonType end
+@doc raw"""
+    InverseDFP <: AbstractQuasiNewtonType
+"""
 struct InverseDFP <: AbstractQuasiNewtonType end
+@doc raw"""
+    SR1 <: AbstractQuasiNewtonType
+"""
 struct SR1 <: AbstractQuasiNewtonType end
+@doc raw"""
+    InverseSR1 <: AbstractQuasiNewtonType
+"""
 struct InverseSR1 <: AbstractQuasiNewtonType end
 
 @doc raw"""
@@ -1006,7 +1025,7 @@ used with any update rule for the direction.
 * `∇` – the current gradient
 * `sk` – the current step
 * `yk` the current gradient difference
-* `dirction_update` - a [`AbstractQuasiNewtonDirectionUpdate`] rule.
+* `direction_update` - a [`AbstractQuasiNewtonDirectionUpdate`] rule.
 * `retraction_method` – a function to perform a step on the manifold
 * `stop` – a [`StoppingCriterion`](@ref)
 
