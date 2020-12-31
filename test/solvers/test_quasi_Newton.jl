@@ -12,13 +12,9 @@ Random.seed!(42)
     ∇F(x) = -A - B - C + 3 * x
     M = Euclidean(4, 4)
     x = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
-    
+
     x_lrbfgs = quasi_Newton(
-        M, 
-        F, 
-        ∇F, 
-        x; 
-        stopping_criterion=StopWhenGradientNormLess(10^(-6))
+        M, F, ∇F, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
     )
     x_clrbfgs = quasi_Newton(
         M,
@@ -29,12 +25,7 @@ Random.seed!(42)
         stopping_criterion=StopWhenGradientNormLess(10^(-6)),
     )
     x_inverse_rbfgs = quasi_Newton(
-        M, 
-        F, 
-        ∇F, 
-        x; 
-        memory_size=-1, 
-        stopping_criterion=StopWhenGradientNormLess(10^(-6))
+        M, F, ∇F, x; memory_size=-1, stopping_criterion=StopWhenGradientNormLess(10^(-6))
     )
     x_inverse_crbfgs = quasi_Newton(
         M,
@@ -50,7 +41,7 @@ Random.seed!(42)
         F,
         ∇F,
         x;
-        direction_update = BFGS(),
+        direction_update=BFGS(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -59,26 +50,26 @@ Random.seed!(42)
         F,
         ∇F,
         x;
-        direction_update = BFGS(),
+        direction_update=BFGS(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
     x_inverse_dfp = quasi_Newton(
-        M, 
-        F, 
-        ∇F, 
-        x; 
-        direction_update = InverseDFP(), 
-        memory_size=-1, 
-        stopping_criterion=StopWhenGradientNormLess(10^(-6))
+        M,
+        F,
+        ∇F,
+        x;
+        direction_update=InverseDFP(),
+        memory_size=-1,
+        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
     )
     x_inverse_cdfp = quasi_Newton(
         M,
         F,
         ∇F,
         x;
-        direction_update = InverseDFP(),
+        direction_update=InverseDFP(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -88,7 +79,7 @@ Random.seed!(42)
         F,
         ∇F,
         x;
-        direction_update = DFP(),
+        direction_update=DFP(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -97,26 +88,26 @@ Random.seed!(42)
         F,
         ∇F,
         x;
-        direction_update = DFP(),
+        direction_update=DFP(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
     x_inverse_sr1 = quasi_Newton(
-        M, 
-        F, 
-        ∇F, 
-        x; 
-        direction_update = InverseSR1(), 
-        memory_size=-1, 
-        stopping_criterion=StopWhenGradientNormLess(10^(-6))
+        M,
+        F,
+        ∇F,
+        x;
+        direction_update=InverseSR1(),
+        memory_size=-1,
+        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
     )
     x_inverse_csr1 = quasi_Newton(
         M,
         F,
         ∇F,
         x;
-        direction_update = InverseSR1(),
+        direction_update=InverseSR1(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -126,7 +117,7 @@ Random.seed!(42)
         F,
         ∇F,
         x;
-        direction_update = SR1(),
+        direction_update=SR1(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -135,7 +126,7 @@ Random.seed!(42)
         F,
         ∇F,
         x;
-        direction_update = SR1(),
+        direction_update=SR1(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
@@ -167,11 +158,7 @@ Random.seed!(42)
     x_solution_Ray = abs.(eigvecs(A_Ray)[:, 1])
 
     x_lrbfgs_Ray = quasi_Newton(
-        M_Ray, 
-        F_Ray, 
-        ∇F_Ray, 
-        x_Ray; 
-        stopping_criterion=StopWhenGradientNormLess(10^(-12))
+        M_Ray, F_Ray, ∇F_Ray, x_Ray; stopping_criterion=StopWhenGradientNormLess(10^(-12))
     )
     x_clrbfgs_Ray = quasi_Newton(
         M_Ray,
@@ -203,7 +190,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = BFGS(),
+        direction_update=BFGS(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -212,7 +199,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = BFGS(),
+        direction_update=BFGS(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
@@ -222,7 +209,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = InverseDFP(),
+        direction_update=InverseDFP(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -231,7 +218,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = InverseDFP(),
+        direction_update=InverseDFP(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
@@ -241,7 +228,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = DFP(),
+        direction_update=DFP(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -250,7 +237,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = DFP(),
+        direction_update=DFP(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
@@ -260,7 +247,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = InverseSR1(),
+        direction_update=InverseSR1(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -269,7 +256,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = InverseSR1(),
+        direction_update=InverseSR1(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
@@ -279,7 +266,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = SR1(),
+        direction_update=SR1(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -288,7 +275,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = SR1(),
+        direction_update=SR1(),
         memory_size=-1,
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
