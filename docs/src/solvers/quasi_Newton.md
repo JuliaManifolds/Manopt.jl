@@ -2,16 +2,16 @@
 
 The aim is to minimize a real-valued function on a Riemannian manifold, i.e.
 
-$\min f(x), \quad x \in \mathcal{M}$.
+$\min f(x), \quad x \in \mathcal{M}.$
 
 Riemannian quasi-Newtonian methods are as generalizations of their Euclidean counterparts Riemannian line search methods. These methods first determine a search direction $\eta_k$ in each iteration, which is a tangent vector in the tangent space $\tangent{x_k}$ at the current iterate $x_k$, then serach for a suitable stepsize $\alpha_k$ along the curve $\gamma(\alpha) = R_{x_k}(\alpha \eta_k)$ which is determined by a chosen retractio $R \colon \tangent{} \to \mathcal{M}$ and the search direction $\eta_k$. The next iterate is obtained by
 
-$x_{k+1} = R_{x_k}(\alpha_k \eta_k)$.
+$x_{k+1} = R_{x_k}(\alpha_k \eta_k).$
 
 The choice of a computationally efficient retraction is important, because it can influence the rate of convergence. 
 In quasi-Newton methods, the search direction is given by
 
-$\eta_k = -{\mathcal{H}_k}^{-1}[\operatorname{grad} f (x_k)] = -\mathcal{B}_k [\operatorname{grad} f (x_k)]$
+$\eta_k = -{\mathcal{H}_k}^{-1}[\operatorname{grad} f (x_k)] = -\mathcal{B}_k [\operatorname{grad} f (x_k)],$
 
 where $\mathcal{H}_k \colon \tangent{x_k} \to \tangent{x_k}$ is a positive definite self-adjoint operator, which approximates the action of the Hessian $\operatorname{Hess} f (x_k)[\cdot]$ and $\mathcal{B}_k = {\mathcal{H}_k}^{-1}$. The idea of quasi-Newton methods is instead of creating a complete new approximation of the Hessian operator $\operatorname{Hess} f(x_{k+1})$ or its inverse at every iteration, the previous operator $\mathcal{H}_k$ or $\mathcal{B}_k$ is updated by a convenient formula using the obtained information about the curvature of the objective function during the iteration. The resulting operator $\mathcal{H}_{k+1}$ or $\mathcal{B}_{k+1}$ acts on the tangent space $\tangent{x_{k+1}}$ of the freshly computed iterate $x_{k+1}$.
 In order to get a well-defined method, the following requirements are placed on the new operator $\mathcal{H}_{k+1}$ or $\mathcal{B}_{k+1}$ that is created by an update. Since the Hessian $\operatorname{Hess} f(x_{k+1})$ is a self-adjoint operator on the tangent space $\tangent{x_{k+1}}$, and $\mathcal{H}_{k+1}$ approximates it, we require that $\mathcal{H}_{k+1}$ or $\mathcal{B}_{k+1}$ is also self-adjoint on $\tangent{x_{k+1}}$. In order to achieve a steady descent, we want $\eta_k$ to be a descent direction in each iteration. Therefore we require, that $\mathcal{H}_{k+1}$ or $\mathcal{B}_{k+1}$ is a positive definite operator on $\tangent{x_{k+1}}$. In order to get information about the cruvature of the objective function into the new operator $\mathcal{H}_{k+1}$ or $\mathcal{B}_{k+1}$, we require that it satisfies a form of a Riemannian quasi-Newton equation:

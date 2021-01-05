@@ -56,6 +56,7 @@ function quasi_Newton(
     return_options=false,
     kwargs...,
 ) where {MT<:Manifold,P,G}
+
     if memory_size >= 0
         local_dir_upd = LimitedMemoryQuasiNewctionDirectionUpdate(
             direction_update,
@@ -76,6 +77,7 @@ function quasi_Newton(
     if cautious_update
         local_dir_upd = CautiousUpdate(local_dir_upd; θ=cautious_function)
     end
+
     o = QuasiNewtonOptions(
         x,
         ∇F(x),
@@ -156,7 +158,6 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old
     if iter == 1 && d.scale == true
         d.matrix = skyk_c / inner(p.M, o.x, o.yk, o.yk) * d.matrix
     end
-
     # computing the new matrix which represents the approximating operator in the next iteration
     return d.matrix =
         (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
@@ -310,7 +311,7 @@ end
 # Limited-memory update
 function update_hessian!(
     d::LimitedMemoryQuasiNewctionDirectionUpdate{U}, p, o, x_old, iter
-) where {U<:AbstractQuasiNewtonType}
+) where {U<:InverseBFGS}
     (capacity(d.memory_s) == 0) && return d
     # only transport the first if it does not get overwritten at the end
     start = length(d.memory_s) == capacity(d.memory_s) ? 2 : 1

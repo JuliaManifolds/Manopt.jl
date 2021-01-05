@@ -16,136 +16,33 @@ Random.seed!(42)
     x_lrbfgs = quasi_Newton(
         M, F, ∇F, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
     )
+
+    x = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
+
     x_clrbfgs = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-    )
-    x_inverse_rbfgs = quasi_Newton(
-        M, F, ∇F, x; memory_size=-1, stopping_criterion=StopWhenGradientNormLess(10^(-6))
-    )
-    x_inverse_crbfgs = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-    )
-    x_direct_rbfgs = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=BFGS(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_crbfgs = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=BFGS(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_inverse_dfp = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=InverseDFP(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-    )
-    x_inverse_cdfp = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=InverseDFP(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-    )
-    x_direct_dfp = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=DFP(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_cdfp = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=DFP(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_inverse_sr1 = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=InverseSR1(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-    )
-    x_inverse_csr1 = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=InverseSR1(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-    )
-    x_direct_sr1 = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=SR1(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_csr1 = quasi_Newton(
-        M,
-        F,
-        ∇F,
-        x;
-        direction_update=SR1(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+        M, F, ∇F, x; cautious_update = true, stopping_criterion=StopWhenGradientNormLess(10^(-6))
     )
 
     @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
     @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_inverse_rbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_inverse_crbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_direct_rbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_direct_crbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_inverse_dfp - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_inverse_cdfp - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_direct_dfp - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_direct_cdfp - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_inverse_sr1 - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_inverse_csr1 - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_direct_sr1 - x_solution) ≈ 0 atol = 10.0^(-14)
-    @test norm(x_direct_csr1 - x_solution) ≈ 0 atol = 10.0^(-14)
+
+    for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP()], c in [true, false]
+        x = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
+        x_direction = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            direction_update=T,
+            cautious_update = c,
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+        )
+        @test norm(x_direction - x_solution) ≈ 0 atol = 10.0^(-14)
+    end
+   
+
+    
 
     # Rayleigh Quotient minimization
     n = 30
