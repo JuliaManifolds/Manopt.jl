@@ -241,16 +241,12 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
     # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
 
-    # scaling the matrix before the first update is done
-    if iter == 1 && d.scale == true
-        d.matrix = skyk_c / inner(p.M, o.x, o.yk, o.yk) * d.matrix
-    end
-
     # computing the new matrix which represents the approximating operator in the next iteration
+    srvec = sk_c - d.matrix * yk_c
     return d.matrix =
         d.matrix +
-        (sk_c - d.matrix * yk_c) * (sk_c - d.matrix * yk_c)' / (sk_c - d.matrix * yk_c)' *
-        yk_c
+        srvec * srvec' / (srvec' *
+        yk_c)
 end
 
 # SR-1 update
@@ -264,16 +260,11 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
     # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
 
-    # scaling the matrix before the first update is done
-    if iter == 1 && d.scale == true
-        d.matrix = inner(p.M, o.x, o.yk, o.yk) / skyk_c * d.matrix
-    end
-
     # computing the new matrix which represents the approximating operator in the next iteration
+    srvec = yk_c - d.matrix * sk_c
     return d.matrix =
         d.matrix +
-        (yk_c - d.matrix * sk_c) * (yk_c - d.matrix * sk_c)' / (yk_c - d.matrix * sk_c)' *
-        sk_c
+        srvec * srvec' / (srvec' * sk_c)
 end
 
 function update_basis!(

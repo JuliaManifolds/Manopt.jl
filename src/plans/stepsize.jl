@@ -429,7 +429,7 @@ function (a::WolfePowellLineseach)(
     fNew = p.cost(xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
     if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)
-        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)) && (s_minus > 10^(-7)) # decrease
+        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             s = s_minus
             retract!(p.M, xNew, o.x, s * η, a.retraction_method)
@@ -439,7 +439,7 @@ function (a::WolfePowellLineseach)(
     else
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
         if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
-            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇) # increase
+            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇) && (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
                 s = s_plus
                 retract!(p.M, xNew, o.x, s * η, a.retraction_method)
@@ -459,7 +459,7 @@ function (a::WolfePowellLineseach)(
         else
             s_plus = s
         end
-        if abs(s_plus - s_minus) <= 10^(-13)
+        if abs(s_plus - s_minus) <= 10^(-12)
             break
         end
         retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)

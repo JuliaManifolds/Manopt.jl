@@ -26,7 +26,7 @@ Random.seed!(42)
     @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
     @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
 
-    for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP()], c in [true, false]
+    for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP(), InverseSR1(), SR1()], c in [true, false]
         x = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
         x_direction = quasi_Newton(
             M,
@@ -51,12 +51,16 @@ Random.seed!(42)
     F_Ray(X::Array{Float64,1}) = X' * A_Ray * X
     ∇F_Ray(X::Array{Float64,1}) = 2 * (A_Ray * X - X * X' * A_Ray * X)
     M_Ray = Sphere(n - 1)
-    x_Ray = random_point(M_Ray)
     x_solution_Ray = abs.(eigvecs(A_Ray)[:, 1])
+
+    x_Ray = random_point(M_Ray)
 
     x_lrbfgs_Ray = quasi_Newton(
         M_Ray, F_Ray, ∇F_Ray, x_Ray; stopping_criterion=StopWhenGradientNormLess(10^(-12))
     )
+
+    x_Ray = random_point(M_Ray)
+
     x_clrbfgs_Ray = quasi_Newton(
         M_Ray,
         F_Ray,
@@ -65,131 +69,77 @@ Random.seed!(42)
         cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
-    x_inverse_rbfgs_Ray = quasi_Newton(
+
+
+    @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+
+    @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+ 
+    for T in [InverseBFGS(), BFGS()], c in [true, false]
+        x_Ray = random_point(M_Ray)
+        x_direction_Ray = quasi_Newton(
+            M_Ray,
+            F_Ray,
+            ∇F_Ray,
+            x_Ray;
+            direction_update = T,
+            cautious_update = c,
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+        )
+        @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    end
+
+    x_Ray = random_point(M_Ray)
+
+    x_inverseDFP_Ray = quasi_Newton(
         M_Ray,
         F_Ray,
         ∇F_Ray,
         x_Ray;
+        direction_update = InverseDFP(),
         memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_inverse_crbfgs_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_rbfgs_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=BFGS(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_crbfgs_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=BFGS(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_inverse_dfp_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=InverseDFP(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_inverse_cdfp_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=InverseDFP(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_dfp_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=DFP(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_cdfp_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=DFP(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_inverse_sr1_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=InverseSR1(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_inverse_csr1_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=InverseSR1(),
-        memory_size=-1,
-        cautious_update=true,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_sr1_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=SR1(),
-        memory_size=-1,
-        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-    )
-    x_direct_csr1_Ray = quasi_Newton(
-        M_Ray,
-        F_Ray,
-        ∇F_Ray,
-        x_Ray;
-        direction_update=SR1(),
-        memory_size=-1,
-        cautious_update=true,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
 
-    @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_inverse_rbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_inverse_crbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_direct_rbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_direct_crbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_inverse_dfp_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_inverse_cdfp_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_direct_dfp_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_direct_cdfp_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_inverse_sr1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_inverse_csr1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_direct_sr1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-    @test norm(abs.(x_direct_csr1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    x_Ray = random_point(M_Ray)
+
+    x_directDFP_Ray = quasi_Newton(
+        M_Ray,
+        F_Ray,
+        ∇F_Ray,
+        x_Ray;
+        direction_update = DFP(),
+        memory_size=-1,
+        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+    )
+
+    x_Ray = random_point(M_Ray)
+
+    x_inverseSR1_Ray = quasi_Newton(
+        M_Ray,
+        F_Ray,
+        ∇F_Ray,
+        x_Ray;
+        direction_update = InverseSR1(),
+        memory_size=-1,
+        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+    )
+
+    x_Ray = random_point(M_Ray)
+
+    x_directSR1_Ray = quasi_Newton(
+        M_Ray,
+        F_Ray,
+        ∇F_Ray,
+        x_Ray;
+        direction_update = SR1(),
+        memory_size=-1,
+        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+    )
+
+    @test norm(abs.(x_inverseDFP_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    @test norm(abs.(x_directDFP_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    @test norm(abs.(x_inverseSR1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    @test norm(abs.(x_directSR1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
 end
