@@ -80,11 +80,13 @@ function trust_regions(
     return_options=false,
     kwargs..., #collect rest
 ) where {MT<:Manifold,TF,TdF,TH,Tprec}
-    (ρ_prime >= 0.25) &&
-        throw(ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime."))
+    (ρ_prime >= 0.25) && throw(
+        ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime.")
+    )
     (Δ_bar <= 0) && throw(ErrorException("Δ_bar must be positive but it is $Δ_bar."))
-    (Δ <= 0 || Δ > Δ_bar) &&
-        throw(ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."))
+    (Δ <= 0 || Δ > Δ_bar) && throw(
+        ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."),
+    )
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TrustRegionsOptions(
         x,
@@ -192,8 +194,8 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
     if ρ < 1 / 4 || model_decreased == false || isnan(ρ)
         o.Δ = o.Δ / 4
     elseif ρ > 3 / 4 && any([
-        typeof(s) in [StopWhenTrustRegionIsExceeded, StopWhenCurvatureIsNegative]
-        for s in SR
+        typeof(s) in [StopWhenTrustRegionIsExceeded, StopWhenCurvatureIsNegative] for
+        s in SR
     ])
         o.Δ = min(2 * o.Δ, o.Δ_bar)
     else

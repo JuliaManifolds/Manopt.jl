@@ -56,7 +56,6 @@ function quasi_Newton(
     return_options=false,
     kwargs...,
 ) where {MT<:Manifold,P,G}
-
     if memory_size >= 0
         local_dir_upd = LimitedMemoryQuasiNewctionDirectionUpdate(
             direction_update,
@@ -243,10 +242,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = sk_c - d.matrix * yk_c
-    return d.matrix =
-        d.matrix +
-        srvec * srvec' / (srvec' *
-        yk_c)
+    return d.matrix = d.matrix + srvec * srvec' / (srvec' * yk_c)
 end
 
 # SR-1 update
@@ -262,9 +258,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = yk_c - d.matrix * sk_c
-    return d.matrix =
-        d.matrix +
-        srvec * srvec' / (srvec' * sk_c)
+    return d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
 end
 
 function update_basis!(

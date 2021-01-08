@@ -61,11 +61,13 @@
     @test sum(distance.(Ref(M2), [pSc, rSc, qSc], [pSr, rSr, qSr])) ≈ 0
     # p=2
     t = 0.3 * Manopt.sym_rem(d) / (1 + 0.3 * 6.0)
-    @test sum(distance.(
-        Ref(M2),
-        [prox_TV2(M2, 0.3, (pS, rS, qS), 2)...],
-        [pS, rS, qS] .- t .* [1.0, -2.0, 1.0],
-    )) ≈ 0
+    @test sum(
+        distance.(
+            Ref(M2),
+            [prox_TV2(M2, 0.3, (pS, rS, qS), 2)...],
+            [pS, rS, qS] .- t .* [1.0, -2.0, 1.0],
+        ),
+    ) ≈ 0
     # others fail
     @test_throws ErrorException prox_TV2(M2, 0.3, (pS, rS, qS), 3)
     # Rn
@@ -78,11 +80,13 @@
     @test sum(distance.(Ref(M3), [pRc, rRc, qRc], [pRr, rRr, qRr])) ≈ 0
     # p=2
     t = 0.3 * d / (1 + 0.3 * 6.0)
-    @test sum(distance.(
-        Ref(M3),
-        [prox_TV2(M3, 0.3, (pR, rR, qR), 2)...],
-        [pR, rR, qR] .- t .* [1.0, -2.0, 1.0],
-    )) ≈ 0
+    @test sum(
+        distance.(
+            Ref(M3),
+            [prox_TV2(M3, 0.3, (pR, rR, qR), 2)...],
+            [pR, rR, qR] .- t .* [1.0, -2.0, 1.0],
+        ),
+    ) ≈ 0
     # others fail
     @test_throws ErrorException prox_TV2(M3, 0.3, (pR, rR, qR), 3)
     #

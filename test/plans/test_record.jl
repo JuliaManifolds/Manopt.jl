@@ -114,9 +114,11 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test isa(RecordFactory(o, [2])[:All], RecordEvery)
     @test rf[:All].group[2].field == :∇
     @test length(rf[:All].group) == 2
-    @test all(isa.(
-        RecordFactory(o, [:Cost, :Iteration, :Change, :Iterate])[:All].group,
-        [RecordCost, RecordIteration, RecordChange, RecordIterate],
-    ))
+    @test all(
+        isa.(
+            RecordFactory(o, [:Cost, :Iteration, :Change, :Iterate])[:All].group,
+            [RecordCost, RecordIteration, RecordChange, RecordIterate],
+        ),
+    )
     @test RecordActionFactory(o, g) == g
 end

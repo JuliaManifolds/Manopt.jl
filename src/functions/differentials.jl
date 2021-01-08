@@ -66,10 +66,12 @@ function differential_bezier_control(
     X::AbstractVector{<:BezierSegment},
 )
     if (0 > t) || (t > length(B))
-        return throw(DomainError(
-            t,
-            "The parameter $(t) to evaluate the composite Bézier curve at is outside the interval [0,$(length(B))].",
-        ))
+        return throw(
+            DomainError(
+                t,
+                "The parameter $(t) to evaluate the composite Bézier curve at is outside the interval [0,$(length(B))].",
+            ),
+        )
     end
     seg = max(ceil(Int, t), 1)
     localT = ceil(Int, t) == 0 ? 0.0 : t - seg + 1

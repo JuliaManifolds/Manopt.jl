@@ -92,9 +92,11 @@
     @test length(df[:All].group) == 1
     df = DebugFactory([:Stop, "|", 20])
     @test isa(df[:All], DebugEvery)
-    @test all(isa.(
-        DebugFactory([:Change, :Iteration, :Iterate, :Cost, :x])[:All].group,
-        [DebugChange, DebugIteration, DebugIterate, DebugCost, DebugEntry],
-    ))
+    @test all(
+        isa.(
+            DebugFactory([:Change, :Iteration, :Iterate, :Cost, :x])[:All].group,
+            [DebugChange, DebugIteration, DebugIterate, DebugCost, DebugEntry],
+        ),
+    )
     @test DebugActionFactory(a3) == a3
 end

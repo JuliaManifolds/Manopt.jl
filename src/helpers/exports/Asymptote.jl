@@ -97,7 +97,11 @@ function asymptote_export_S2_signals(
                 sets = length(tangent_vectors)
             end
             if length(value) < sets
-                throw(ErrorException("Not enough colors ($(length(value))) provided for $(sets) sets in $(key)."))
+                throw(
+                    ErrorException(
+                        "Not enough colors ($(length(value))) provided for $(sets) sets in $(key).",
+                    ),
+                )
             end
             i = 0
             # export all colors

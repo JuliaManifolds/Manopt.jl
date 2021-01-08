@@ -109,7 +109,9 @@
 
     @test_logs (
         :warn,
-        string("The strategy 'indirect' is not defined. The 'direct' strategy is used instead."),
+        string(
+            "The strategy 'indirect' is not defined. The 'direct' strategy is used instead."
+        ),
     ) NonmonotoneLinesearch(
         1.0,
         ExponentialRetraction(),

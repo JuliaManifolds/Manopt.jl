@@ -20,13 +20,20 @@ Random.seed!(42)
     x = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
 
     x_clrbfgs = quasi_Newton(
-        M, F, ∇F, x; cautious_update = true, stopping_criterion=StopWhenGradientNormLess(10^(-6))
+        M,
+        F,
+        ∇F,
+        x;
+        cautious_update=true,
+        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
     )
 
     @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
     @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
 
-    for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP(), InverseSR1(), SR1()], c in [true, false]
+    for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP(), InverseSR1(), SR1()],
+c in [true, false]
+
         x = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
         x_direction = quasi_Newton(
             M,
@@ -34,15 +41,12 @@ Random.seed!(42)
             ∇F,
             x;
             direction_update=T,
-            cautious_update = c,
+            cautious_update=c,
             memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
         @test norm(x_direction - x_solution) ≈ 0 atol = 10.0^(-14)
     end
-   
-
-    
 
     # Rayleigh Quotient minimization
     n = 30
@@ -70,11 +74,10 @@ Random.seed!(42)
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
 
-
     @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
 
     @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
- 
+
     for T in [InverseBFGS(), BFGS()], c in [true, false]
         x_Ray = random_point(M_Ray)
         x_direction_Ray = quasi_Newton(
@@ -82,8 +85,8 @@ Random.seed!(42)
             F_Ray,
             ∇F_Ray,
             x_Ray;
-            direction_update = T,
-            cautious_update = c,
+            direction_update=T,
+            cautious_update=c,
             memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
@@ -97,7 +100,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = InverseDFP(),
+        direction_update=InverseDFP(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -109,7 +112,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = DFP(),
+        direction_update=DFP(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -121,7 +124,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = InverseSR1(),
+        direction_update=InverseSR1(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
@@ -133,7 +136,7 @@ Random.seed!(42)
         F_Ray,
         ∇F_Ray,
         x_Ray;
-        direction_update = SR1(),
+        direction_update=SR1(),
         memory_size=-1,
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
