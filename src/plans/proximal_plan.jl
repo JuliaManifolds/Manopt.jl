@@ -35,7 +35,11 @@ mutable struct ProximalProblem{mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractV
         M::mT, cF, proxMaps::Union{Tuple,AbstractVector}, nOP::Vector{Int}
     ) where {mT<:Manifold}
         return if length(nOP) != length(proxMaps)
-            throw(ErrorException("The number_of_proxes ($(nOP)) has to be the same length as the number of proxes ($(length(proxMaps))."))
+            throw(
+                ErrorException(
+                    "The number_of_proxes ($(nOP)) has to be the same length as the number of proxes ($(length(proxMaps)).",
+                ),
+            )
         else
             new{mT,typeof(cF),typeof(proxMaps)}(M, cF, proxMaps, nOP)
         end
@@ -48,7 +52,11 @@ evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M`
 """
 function get_proximal_map(p::ProximalProblem, λ, x, i)
     if i > length(p.proxes)
-        throw(ErrorException("the $(i)th entry does not exists, only $(length(p.proxes)) available."))
+        throw(
+            ErrorException(
+                "the $(i)th entry does not exists, only $(length(p.proxes)) available."
+            ),
+        )
     end
     return p.proxes[i](λ, x)::typeof(x)
 end

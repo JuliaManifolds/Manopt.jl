@@ -76,21 +76,25 @@ function truncated_conjugate_gradient_descent(
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
         StopIfResidualIsReducedByPower(
-            sqrt(inner(
-                M,
-                x,
-                ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-            )),
+            sqrt(
+                inner(
+                    M,
+                    x,
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                ),
+            ),
             θ,
         ),
         StopIfResidualIsReducedByFactor(
-            sqrt(inner(
-                M,
-                x,
-                ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-            )),
+            sqrt(
+                inner(
+                    M,
+                    x,
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                ),
+            ),
             κ,
         ),
         StopWhenTrustRegionIsExceeded(),

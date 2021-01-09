@@ -190,12 +190,14 @@ function artificial_S2_whirl_image(pts::Int=64)
     sc = pts / 64
     patchSizes = floor.(sc .* [9, 9, 9, 9, 11, 11, 11, 15, 15, 15, 17, 21])
     patchCenters =
-        Integer.(floor.(
-            sc .*
-            [[35, 7] [25, 41] [32, 25] [7, 60] [10, 5] [41, 58] [11, 41] [23, 56] [38, 45] [
-                16, 28
-            ] [55, 42] [51, 16]],
-        ))
+        Integer.(
+            floor.(
+                sc .*
+                [[35, 7] [25, 41] [32, 25] [7, 60] [10, 5] [41, 58] [11, 41] [23, 56] [
+                    38, 45
+                ] [16, 28] [55, 42] [51, 16]],
+            ),
+        )
     patchSigns = [1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]
     for i in 1:length(patchSizes)
         pS = Integer(patchSizes[i])

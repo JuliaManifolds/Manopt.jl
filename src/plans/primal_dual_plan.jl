@@ -268,26 +268,30 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             inverse_retract(
                 p.N,
                 o.n,
-                p.Λ(retract(
-                    p.M,
-                    o.m,
-                    vector_transport_to(
+                p.Λ(
+                    retract(
                         p.M,
-                        o.x,
-                        inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
                         o.m,
-                        ParallelTransport(),
+                        vector_transport_to(
+                            p.M,
+                            o.x,
+                            inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
+                            o.m,
+                            ParallelTransport(),
+                        ),
+                        o.retraction_method,
                     ),
-                    o.retraction_method,
-                )),
+                ),
                 o.inverse_retraction_method,
             ),
         )
     else
-        throw(DomainError(
-            o.variant,
-            "Unknown Chambolle–Pock variant, allowed are `:exact` or `:linearized`.",
-        ))
+        throw(
+            DomainError(
+                o.variant,
+                "Unknown Chambolle–Pock variant, allowed are `:exact` or `:linearized`.",
+            ),
+        )
     end
 end
 #
@@ -463,11 +467,14 @@ function (d::DebugDualChange)(
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
         print(
             d.io,
-            d.prefix * string(norm(
-                p.N,
-                o.n,
-                vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) - o.ξ,
-            )),
+            d.prefix * string(
+                norm(
+                    p.N,
+                    o.n,
+                    vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) -
+                    o.ξ,
+                ),
+            ),
         )
     end
     return d.storage(p, o, i)

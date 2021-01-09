@@ -61,7 +61,11 @@ function DouglasRachford(
     kwargs..., #especially may contain decorator options
 ) where {MT<:Manifold,TF,Tλ,Tα,TR}
     if length(proxes) < 2
-        throw(ErrorException("Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps."))
+        throw(
+            ErrorException(
+                "Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps.",
+            ),
+        )
     elseif length(proxes) == 2
         prox1 = proxes[1]
         prox2 = proxes[2]

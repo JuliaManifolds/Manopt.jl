@@ -39,9 +39,7 @@ if asy_export
         curves=[cP],
         points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)],
         tangent_vectors=[[
-            Tuple(a)
-            for
-            a in
+            Tuple(a) for a in
             zip(get_bezier_junctions(M, B, true), get_bezier_junction_tangent_vectors(M, B))
         ]],
         colors=Dict(
@@ -98,9 +96,7 @@ if asy_export
         curves=[res_curve, cP],
         points=[get_bezier_junctions(M, B_opt), get_bezier_inner_points(M, B_opt)],
         tangent_vectors=[[
-            Tuple(a)
-            for
-            a in zip(
+            Tuple(a) for a in zip(
                 get_bezier_junctions(M, B_opt, true),
                 get_bezier_junction_tangent_vectors(M, B_opt),
             )
