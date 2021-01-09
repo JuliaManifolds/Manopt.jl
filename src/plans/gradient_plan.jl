@@ -991,26 +991,38 @@ abstract type AbstractQuasiNewtonType end
 
 @doc raw"""
     BFGS <: AbstractQuasiNewtonType
+
+$H^{BFGS}_{k+1} = H^{BFGS}_k + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} - \frac{H^{BFGS}_k s_k s^{\mathrm{T}}_k H^{BFGS}_k }{s^{\mathrm{T}}_k H^{BFGS}_k s_k}$
 """
 struct BFGS <: AbstractQuasiNewtonType end
 @doc raw"""
     InverseBFGS <: AbstractQuasiNewtonType
+
+$B^{BFGS}_{k+1}  = \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} \Big{)} B^{BFGS}_k \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} \Big{)} + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}$
 """
 struct InverseBFGS <: AbstractQuasiNewtonType end
 @doc raw"""
     DFP <: AbstractQuasiNewtonType
+
+$H^{DFP}_{k+1} = \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} \Big{)} H^{DFP}_k \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} \Big{)} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}$
 """
 struct DFP <: AbstractQuasiNewtonType end
 @doc raw"""
     InverseDFP <: AbstractQuasiNewtonType
+
+$B^{DFP}_{k+1} = B^{DFP}_k + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} - \frac{B^{DFP}_k y_k y^{\mathrm{T}}_k B^{DFP}_k}{y^{\mathrm{T}}_k B^{DFP}_k y_k}$
 """
 struct InverseDFP <: AbstractQuasiNewtonType end
 @doc raw"""
     SR1 <: AbstractQuasiNewtonType
+
+$H^{SR1}_{k+1} = H^{SR1}_k + \frac{(y_k - H^{SR1}_k s_k) (y_k - H^{SR1}_k s_k)^{\mathrm{T}}}{(y_k - H^{SR1}_k s_k)^{\mathrm{T}} s_k}$
 """
 struct SR1 <: AbstractQuasiNewtonType end
 @doc raw"""
     InverseSR1 <: AbstractQuasiNewtonType
+
+$B^{SR1}_{k+1} = B^{SR1}_k + \frac{(s_k - B^{SR1}_k y_k) (s_k - B^{SR1}_k y_k)^{\mathrm{T}}}{(s_k - B^{SR1}_k y_k)^{\mathrm{T}} y_k}$
 """
 struct InverseSR1 <: AbstractQuasiNewtonType end
 
