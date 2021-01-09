@@ -1172,14 +1172,13 @@ function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
     return -project(p.M, o.x, r)
 end
 
-struct CautiousUpdate{U<:AbstractQuasiNewtonDirectionUpdate} <:
-       AbstractQuasiNewtonDirectionUpdate
+mutable struct CautiousUpdate{U} <: AbstractQuasiNewtonDirectionUpdate where {U <: Union{QuasiNewtonDirectionUpdate, LimitedMemoryQuasiNewctionDirectionUpdate{T}}} where {T <: AbstractQuasiNewtonType}
     update::U
     θ::Function
 end
 function CautiousUpdate(
     update::U; θ::Function=x -> x
-) where {U<:AbstractQuasiNewtonDirectionUpdate}
+) where {U <: Union{QuasiNewtonDirectionUpdate, LimitedMemoryQuasiNewctionDirectionUpdate{T}}} where {T <: AbstractQuasiNewtonType}
     return CautiousUpdate{U}(update, θ)
 end
 (d::CautiousUpdate)(p, o) = d.update(p, o)

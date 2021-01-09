@@ -74,7 +74,7 @@ function quasi_Newton(
             vector_transport_method=vector_transport_method,
         )
     end
-    if cautious_update
+    if cautious_update == true
         local_dir_upd = CautiousUpdate(local_dir_upd; θ=cautious_function)
     end
 
@@ -286,7 +286,7 @@ end
 # Cautious update
 function update_hessian!(
     d::CautiousUpdate{U}, p, o, x_old, iter
-) where {U<:AbstractQuasiNewtonDirectionUpdate}
+) where {U<:QuasiNewtonDirectionUpdate}
     # computing the bound used in the decission rule
     bound = d.θ(norm(p.M, o.x, o.∇))
     sk_normsq = norm(p.M, o.x, o.sk)^2
@@ -324,8 +324,8 @@ end
 
 # all Cautious Limited Memory
 function update_hessian!(
-    d::CautiousUpdate{LimitedMemoryQuasiNewctionDirectionUpdate{U}}, p, o, x_old, iter
-) where {U<:AbstractQuasiNewtonType}
+    d::CautiousUpdate{LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,VT}}, p, o, x_old, iter
+) where {NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod}
     # computing the bound used in the decission rule
     bound = d.θ(norm(p.M, x_old, get_gradient(p, x_old)))
     sk_normsq = norm(p.M, o.x, o.sk)^2
@@ -335,12 +335,12 @@ function update_hessian!(
         update_hessian!(d.update, p, o, x_old, iter)
     else
         # the stored vectores are just transported to the new tangent space, sk and yk are not added
-        for i in 1:length(d.memory_s)
+        for i in 1:length(d.update.memory_s)
             vector_transport_to!(
-                p.M, d.memory_s[i], x_old, d.memory_s[i], o.x, d.vector_transport_method
+                p.M, d.update.memory_s[i], x_old, d.update.memory_s[i], o.x, d.update.vector_transport_method
             )
             vector_transport_to!(
-                p.M, d.memory_y[i], x_old, d.memory_y[i], o.x, d.vector_transport_method
+                p.M, d.update.memory_y[i], x_old, d.update.memory_y[i], o.x, d.update.vector_transport_method
             )
         end
     end
