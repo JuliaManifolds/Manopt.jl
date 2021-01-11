@@ -137,11 +137,48 @@ in the update, it can be shown that choosing a stepsize $\alpha_k > 0$ that sati
 
 ## Cautious BFGS
 
-As in the Euclidean case, the Riemannian BFGS method is not globally convergent for general objective functions. To mitigate this obstacle, the cautious update has been generalised to Riemannian manifolds. For that, in each iteration, based on a decision rule, either the usual update is used or the current operator is transported into the upcoming tangential, which in turn means that the update consists of the vector transport of B only. In summary, this can be expressed as follows:
+As in the Euclidean case, the Riemannian BFGS method is not globally convergent for general objective functions. To mitigate this obstacle, the cautious update has been generalised to Riemannian manifolds. For that, in each iteration, based on a decision rule, either the usual update is used or the current operator is transported into the upcoming tangent, which in turn means that the update consists of the vector transport of B only. In summary, this can be expressed as follows:
 
 $\mathcal{B}^{CRBFGS}_{k+1} = \begin{cases} \text{using \cref{RiemannianInverseBFGSFormula}}, & \; \frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} \geq \theta(\lVert \operatorname{grad} f(x_k) \rVert_{x_k}), \\ \widetilde{\mathcal{B}}^{CRBFGS}_k, & \; \text{otherwise}, \end{cases}$
 
 ## Limited-memory Riemannian BFGS
+
+As in the Euclidean case, for manifolds of very large dimensions, both the memory required and the computationally cost can be extremely high for quasi-Newton methods, since in each iteration an operator on the tangent space with the same dimension of the manifold must be transported and stored. To overcome this obstacle, the limited-memory BFGS method was generalised for the Riemannian setup. 
+At the beginning of the k-th iteration, the search direction $\eta_k = \mathcal{B}^{LRBFGS}_k [\operatorname{grad}f(x_k)]$ is calculated using the two-loop recursion with $m$ ($<$ dimension of the manifold) stored tangent vectors $\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1} \subset T_{x_k} \mathcal{M}$ and a positive definite selfadjoint operator $\mathcal{B}^{(0)}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ that varies from iteration to iteration:
+
+\begin{algorithm}[H]
+	\begin{algorithmic}[1]
+        \State $q = \operatorname{grad} f(x_k)$
+        
+        \For{$i = k-1, k-2, \cdots, k-m$}
+            \State $\rho_i = \frac{1}{g_{x_k}(\widetilde{s}_i, \widetilde{y}_i)}$
+            \State $\xi_i = \rho_i g_{x_k}(\widetilde{s}_i, q)$ 
+            \State $q = q - \xi_i \widetilde{y}_i$
+        \EndFor
+
+        \State $r = \mathcal{B}^{(0)}_k[q]$
+        
+        \For{$i = k-m, k-m+1, \cdots, k-1$}
+            \State $\omega = \rho_i g_{x_k}(\widetilde{y}_i, r)$ 
+            \State $r= r  + (\xi_i - \omega) \widetilde{s}_i$
+		\EndFor
+		
+		\State \textbf{Stop with result} $\mathcal{B}^{LRBFGS}_k[\operatorname{grad} f(x_k)]$.
+    \end{algorithmic}
+\end{algorithm}
+
+This algorithm can be understood that the usual RBFGS update is executed $m$ times in a row on $\mathcal{B}^{(0)}_k$ and is directly applied on $\operatorname{grad}f(x_k)$. Therefore, only inner products and linear combinations in the tangent space are needed. We note that the resulting operator $\mathcal{B}^{LRBFGS}_k$ is an approximation of the operator $\mathcal{B}^{RBFGS}_k$, since for k>m the information of all previous iterations is not included in the operator (unless of course one chooses m as large as the maximum number of iterations).
+
+The operator $\mathcal{B}^{(0)}_k$ can be chosen to be fixed in each iteration, but the principle known to be successful from the Euclidean case can easily be generalised for the Riemannian setup by choosing $\mathcal{B}^{(0)}_k[\cdot] = c_k \id_{T_{x_k} \mathcal{M}}[\cdot],$ where
+
+$
+c_k = \frac{\widetilde{s}^{\flat}_{k-1} \widetilde{y}_{k-1}}{\widetilde{y}^{\flat}_{k-1} \widetilde{y}_{k-1}} = \frac{s^{\flat}_{k-1} y_{k-1}}{y^{\flat}_{k-1} y_{k-1}} = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})}.
+$
+
+For the first iteration usually the identity operator is used. In the $k$-th iteration, the next iterate is calculated as usual, i.e. $x_{k+1} = R_{x_k}(\alpha_k \eta_k)$, where alpha is a step size that satisfies the wolfe conditions. Then comes the crux of the algortihmus, which has a memory advantage over the usual quasi-Newton methods. When updating, the oldest vector pair $\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}$ of the set $\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}$ is exchanged with the newest vector pair $\{ \widetilde{s}_k, \widetilde{y}_k\}$. There are two cases: if there is still free memory, i.e. $k < m$, the previously stored vector pairs $\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}$ have to be transported into the new tangent space $T_{x_k} \mathcal{M}$; if there is no free memory, the oldest pair has to be discarded and then all the remaining vector pairs are transported into the new tangent space. This method ensures that all tangent vectors are in the correct tangent space, i.e. T, so that in the next iteration the search direction can be recursively calculated again. After that we calculate and store s and y . This ensures that new information about the target function is always included and the old, probably no longer relevant, information is discarded. 
+
+
+In summary, the algorithm takes the following form:
 
 
 ## Interface

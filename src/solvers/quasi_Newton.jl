@@ -11,7 +11,7 @@ It will attempt to minimize the cost function F on the Manifold M.
 * `x` – an initial value $x \in \mathcal{M}$.
 
 # Optional
-* `retraction_method` – `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
+* `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
 * `vector_transport_method` – (`ParallelTransport()`) a vector transport to use, by default the parallel transport.
 * `broyden_factor` – (`0.`) – specifies the proportion of DFP update in the convex combination if the Broyden Class method is to be used. By default, BFGS is used.
 * `cautious_update` – (`false`) – specifies whether a cautious update should be used, which means that a decision rule based on the calculated values decides whether the operator remains the same and no new information is received, or whether it is updated as usual.
@@ -137,12 +137,15 @@ update the matrix wich represents with respect to an orthoormal basis
 in the tangent space the approximating operator of the quasi-Newton method.
 
 # Input
-* `d` – 
-* `p` – 
-* `o`– 
-* `x` – 
-* `iter` – 
+* `d` – an abstract quasi-Newton direction update, which indicates which quasi-Newton method is used.
+* `p` – a gradient problem.
+* `o` – quasi-Newton options.
+* `x` – the current iterate.
+* `iter` – number of iterations.
 """
+update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, ::Any, ::Any, ::Any, ::Any)
+
+
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old, iter)
     # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)

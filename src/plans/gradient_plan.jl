@@ -992,37 +992,61 @@ abstract type AbstractQuasiNewtonType end
 @doc raw"""
     BFGS <: AbstractQuasiNewtonType
 
+indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian BFGS update is used in the Riemannian quasi-Newton method. The operator $\mathcal{H}^{RBFGS}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{RBFGS}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean BFGS formula for matrices is used, i.e.
+
 $H^{BFGS}_{k+1} = H^{BFGS}_k + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} - \frac{H^{BFGS}_k s_k s^{\mathrm{T}}_k H^{BFGS}_k }{s^{\mathrm{T}}_k H^{BFGS}_k s_k}$
+
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
 """
 struct BFGS <: AbstractQuasiNewtonType end
 @doc raw"""
     InverseBFGS <: AbstractQuasiNewtonType
 
+indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian BFGS update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RBFGS}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{RBFGS}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse BFGS formula for matrices is used, i.e.
+
 $B^{BFGS}_{k+1}  = \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} \Big{)} B^{BFGS}_k \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} \Big{)} + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}$
+
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
 """
 struct InverseBFGS <: AbstractQuasiNewtonType end
 @doc raw"""
     DFP <: AbstractQuasiNewtonType
 
+indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian DFP update is used in the Riemannian quasi-Newton method. The operator $\mathcal{H}^{RDFP}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{DFP}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean DFP formula for matrices is used, i.e.
+
 $H^{DFP}_{k+1} = \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} \Big{)} H^{DFP}_k \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} \Big{)} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}$
+
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
 """
 struct DFP <: AbstractQuasiNewtonType end
 @doc raw"""
     InverseDFP <: AbstractQuasiNewtonType
 
+indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian DFP update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RDFP}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{DFP}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse DFP formula for matrices is used, i.e.
+
 $B^{DFP}_{k+1} = B^{DFP}_k + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} - \frac{B^{DFP}_k y_k y^{\mathrm{T}}_k B^{DFP}_k}{y^{\mathrm{T}}_k B^{DFP}_k y_k}$
+
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
 """
 struct InverseDFP <: AbstractQuasiNewtonType end
 @doc raw"""
     SR1 <: AbstractQuasiNewtonType
 
+indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian SR1 update is used in the Riemannian quasi-Newton method. The operator $\mathcal{H}^{RSR1}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{SR1}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean SR1 formula for matrices is used, i.e.
+
 $H^{SR1}_{k+1} = H^{SR1}_k + \frac{(y_k - H^{SR1}_k s_k) (y_k - H^{SR1}_k s_k)^{\mathrm{T}}}{(y_k - H^{SR1}_k s_k)^{\mathrm{T}} s_k}$
+
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
 """
 struct SR1 <: AbstractQuasiNewtonType end
 @doc raw"""
     InverseSR1 <: AbstractQuasiNewtonType
 
+indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian SR1 update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RSR1}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{RSR1}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse SR1 formula for matrices is used, i.e.
+
 $B^{SR1}_{k+1} = B^{SR1}_k + \frac{(s_k - B^{SR1}_k y_k) (s_k - B^{SR1}_k y_k)^{\mathrm{T}}}{(s_k - B^{SR1}_k y_k)^{\mathrm{T}} y_k}$
+
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
 """
 struct InverseSR1 <: AbstractQuasiNewtonType end
 
