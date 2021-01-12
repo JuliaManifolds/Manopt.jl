@@ -197,7 +197,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{DFP}, p, o, x_old, iter)
 end
 
 # Inverse SR-1 update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old, iter)
+function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old, ::Int)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -209,7 +209,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
 end
 
 # SR-1 update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
+function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, ::Int)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -228,7 +228,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBroyden}, p, o, x_
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
     ykBkyk_c = yk_c' * d.matrix * yk_c
 
-    φ = update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, ykBkyk_c, d.update.update_rule)
+    φ = update_broyden_factor!(d, sk_c, yk_c, skyk_c, ykBkyk_c, d.update.update_rule)
     # computing the new matrix which represents the approximating operator in the next iteration
     d.matrix =
         d.matrix - (d.matrix * yk_c * yk_c' * d.matrix) / ykBkyk_c +
@@ -241,14 +241,14 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBroyden}, p, o, x_
 end
 
 # Broyden update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{Broyden}, p, o, x_old, iter)
+function update_hessian!(d::QuasiNewtonDirectionUpdate{Broyden}, p, o, x_old, ::Int)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
     skHksk_c = sk_c' * d.matrix * sk_c
 
-    φ = update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, d.update.update_rule)
+    φ = update_broyden_factor!(d, sk_c, yk_c, skyk_c, skHksk_c, d.update.update_rule)
     # computing the new matrix which represents the approximating operator in the next iteration
     d.matrix =
         d.matrix - (d.matrix * sk_c * sk_c' * d.matrix) / skHksk_c +
@@ -260,15 +260,15 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{Broyden}, p, o, x_old, it
     return d
 end
 
-function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, s::Symbol)
-    return update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, Val(s))
+function update_broyden_factor!(d, sk_c, yk_c, skyk_c, skHksk_c, s::Symbol)
+    return update_broyden_factor!(d, sk_c, yk_c, skyk_c, skHksk_c, Val(s))
 end
 
-function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, ::Val{:constant})
+function update_broyden_factor!(d, ::Any, ::Any, ::Any, ::Any, ::Val{:constant})
     return d.update.φ
 end
 
-function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, ::Val{:Davidon})
+function update_broyden_factor!(d, ::Any, yk_c, skyk_c, skHksk_c, ::Val{:Davidon})
     yk_c_c = d.matrix \ yk_c
     ykyk_c_c = yk_c' * yk_c_c
     if skyk_c <= 2 * (skHksk_c * ykyk_c_c) / (skHksk_c + ykyk_c_c)
@@ -279,7 +279,7 @@ function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, ::Val{:David
     end
 end
 
-function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, ykBkyk_c, ::Val{:InverseDavidon})
+function update_broyden_factor!(d, sk_c, ::Any, skyk_c, ykBkyk_c, ::Val{:InverseDavidon})
     sk_c_c = d.matrix \ sk_c
     sksk_c_c = sk_c' * sk_c_c
     if skyk_c <= 2 * (ykBkyk_c * sksk_c_c) / (ykBkyk_c + sksk_c_c)
@@ -321,7 +321,7 @@ end
 
 # Limited-memory update
 function update_hessian!(
-    d::LimitedMemoryQuasiNewctionDirectionUpdate{U}, p, o, x_old, iter
+    d::LimitedMemoryQuasiNewctionDirectionUpdate{U}, p, o, x_old, ::Int
 ) where {U<:InverseBFGS}
     (capacity(d.memory_s) == 0) && return d
     # only transport the first if it does not get overwritten at the end
