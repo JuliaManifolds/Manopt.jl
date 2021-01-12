@@ -145,7 +145,6 @@ in the tangent space the approximating operator of the quasi-Newton method.
 """
 update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, ::Any, ::Any, ::Any, ::Any)
 
-
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old, iter)
     # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
@@ -334,10 +333,20 @@ function update_hessian!(
         # the stored vectores are just transported to the new tangent space, sk and yk are not added
         for i in 1:length(d.update.memory_s)
             vector_transport_to!(
-                p.M, d.update.memory_s[i], x_old, d.update.memory_s[i], o.x, d.update.vector_transport_method
+                p.M,
+                d.update.memory_s[i],
+                x_old,
+                d.update.memory_s[i],
+                o.x,
+                d.update.vector_transport_method,
             )
             vector_transport_to!(
-                p.M, d.update.memory_y[i], x_old, d.update.memory_y[i], o.x, d.update.vector_transport_method
+                p.M,
+                d.update.memory_y[i],
+                x_old,
+                d.update.memory_y[i],
+                o.x,
+                d.update.vector_transport_method,
             )
         end
     end
