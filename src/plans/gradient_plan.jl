@@ -1157,12 +1157,12 @@ function QuasiNewtonDirectionUpdate(
 end
 function (d::QuasiNewtonDirectionUpdate{T})(
     p, o
-) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1}}
+) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
     return get_vector(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1}}
+function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     return get_vector(
         p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
