@@ -171,4 +171,43 @@ c in [true, false]
     @test norm(abs.(x_directSR1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
     @test norm(abs.(x_directBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
     @test norm(abs.(x_inverseBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+
+    # Brockett Cost Function
+    import Manifolds: vector_transport_to!
+    function vector_transport_to!(M::Stiefel, Y, p, X, q, ::ProjectionTransport)
+        return project!(M, Y, q, X)
+    end
+
+    struct GradF
+        A::Matrix{Float64}
+        N::Diagonal{Float64,Vector{Float64}}
+    end
+    function (∇F::GradF)(X::Array{Float64,2})
+        AX = ∇F.A * X
+        XpAX = X' * AX
+        return 2 .* AX * ∇F.N .- X * XpAX * ∇F.N .- X * ∇F.N * XpAX
+    end
+
+    n = 64
+    k = 8
+    M_brockett = Stiefel(n, k)
+    A_brockett = randn(n, n)
+    A_brockett = (A_brockett + A_brockett') / 2
+    F_brockett(X::Array{Float64,2}) = tr((X' * A_brockett * X) * Diagonal(k:-1:1))
+    function ∇F_brockett(X::Array{Float64,2})
+        return GradF(A_brockett, Diagonal(Float64.(collect(k:-1:1))))(X)
+    end
+    x_brockett = random_point(M_brockett)
+
+    x_inverseBFGSCautious_brockett = quasi_Newton(
+        M_brockett,
+        F_brockett,
+        ∇F_brockett,
+        x_brockett;
+        memory_size=2,
+        vector_transport_method=ProjectionTransport(),
+        retraction_method=QRRetraction(),
+        cautious_update=true,
+        stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+    )
 end
