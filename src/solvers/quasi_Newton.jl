@@ -260,11 +260,11 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{Broyden}, p, o, x_old, it
     return d
 end
 
-function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c::Float64, s::Symbol)
-    return update_broyden_factor!(o, d, sk_c, yk_c, Val(s))
+function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, s::Symbol)
+    return update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, Val(s))
 end
 
-function update_broyden_factor!(o, d, sk_c, yk_c, ::Val{:constant})
+function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, ::Val{:constant})
     return d.update.φ
 end
 

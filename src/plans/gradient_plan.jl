@@ -1054,7 +1054,7 @@ struct InverseSR1 <: AbstractQuasiNewtonType end
     Broyden <: AbstractQuasiNewtonType
 
 """
-struct Broyden <: AbstractQuasiNewtonType
+mutable struct Broyden <: AbstractQuasiNewtonType
     φ::Float64
     update_rule::Symbol
 end
@@ -1064,7 +1064,7 @@ Broyden(φ::Float64) = Broyden(φ, :constant)
     InverseBroyden <: AbstractQuasiNewtonType
 
 """
-struct InverseBroyden <: AbstractQuasiNewtonType
+mutable struct InverseBroyden <: AbstractQuasiNewtonType
     φ::Float64
     update_rule::Symbol
 end

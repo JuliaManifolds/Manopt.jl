@@ -50,7 +50,6 @@ Random.seed!(42)
         )
         @test x_lrbfgs_cached_2 == x_lrbfgs
 
-
         x = zeros(Float64, 4, 4)
         x_clrbfgs = quasi_Newton(
             M,
@@ -124,8 +123,16 @@ Random.seed!(42)
             @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
         end
 
-        for T in
-            [InverseDFP(), DFP(), InverseSR1(), SR1(), Broyden(0.5), InverseBroyden(0.5)]
+        for T in [
+            InverseDFP(),
+            DFP(),
+            InverseSR1(),
+            SR1(),
+            Broyden(0.5),
+            InverseBroyden(0.5),
+            Broyden(0.5, :Davidon),
+            Broyden(0.5, :InverseDavidon),
+        ]
             x_Ray = Matrix{Float64}(I, n, n)[n, :]
             x_direction_Ray = quasi_Newton(
                 M_Ray,
