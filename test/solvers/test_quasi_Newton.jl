@@ -195,7 +195,7 @@ Random.seed!(42)
         @test norm(abs.(x_directBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
         @test norm(abs.(x_inverseBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
     end
-    @tesset "Brocket" begin
+    @testset "Brocket" begin
         struct GradF
             A::Matrix{Float64}
             N::Diagonal{Float64,Vector{Float64}}
