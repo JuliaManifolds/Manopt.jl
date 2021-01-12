@@ -102,24 +102,16 @@ function initialize_solver!(::GradientProblem, ::QuasiNewtonOptions) end
 
 function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
     o.∇ = get_gradient(p, o.x)
-    # compute serach direction
     η = o.direction_update(p, o)
-    # compute stepsize
     α = o.stepsize(p, o, iter, η)
     x_old = deepcopy(o.x)
-    # compute next iterate
     retract!(p.M, o.x, o.x, α * η, o.retraction_method)
-    # compute locking condition parameter
     β = locking_condition_scale(
         p.M, o.direction_update, x_old, α * η, o.x, o.vector_transport_method
     )
-    # compute new sk
     vector_transport_to!(p.M, o.sk, x_old, α * η, o.x, o.vector_transport_method)
-    # reuse ∇
     vector_transport_to!(p.M, o.∇, x_old, o.∇, o.x, o.vector_transport_method)
-    # compute new yk
     o.yk = get_gradient(p, o.x) / β - o.∇
-    # update of the approximating operator
     update_hessian!(o.direction_update, p, o, x_old, iter)
     return o
 end
@@ -146,163 +138,126 @@ in the tangent space the approximating operator of the quasi-Newton method.
 update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, ::Any, ::Any, ::Any, ::Any)
 
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old, iter)
-    # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    # compute coordinates of yk
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    # compute coordinates of sk
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
-
-    # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
         d.matrix = skyk_c / inner(p.M, o.x, o.yk, o.yk) * d.matrix
     end
-    # computing the new matrix which represents the approximating operator in the next iteration
-    return d.matrix =
+    d.matrix =
         (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
         sk_c * sk_c' / skyk_c
+    return d
 end
 
-# BFGS update 
+# BFGS update
 function update_hessian!(d::QuasiNewtonDirectionUpdate{BFGS}, p, o, x_old, iter)
-    # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    # compute coordinates of yk
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    # compute coordinates of sk
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
-
-    # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
         d.matrix = inner(p.M, o.x, o.yk, o.yk) / skyk_c * d.matrix
     end
-
-    # computing the new matrix which represents the approximating operator in the next iteration
-    return d.matrix =
+    d.matrix =
         d.matrix + yk_c * yk_c' / skyk_c -
         d.matrix * sk_c * sk_c' * d.matrix / dot(sk_c, d.matrix * sk_c)
+    return d
 end
 
-# Inverese DFP update 
+# Inverese DFP update
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseDFP}, p, o, x_old, iter)
-    # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    # compute coordinates of yk
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    # compute coordinates of sk
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
-
-    # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
         d.matrix = inner(p.M, o.x, o.sk, o.sk) / skyk_c * d.matrix
     end
-
-    # computing the new matrix which represents the approximating operator in the next iteration
-    return d.matrix =
+    d.matrix =
         d.matrix + sk_c * sk_c' / skyk_c -
         d.matrix * yk_c * yk_c' * d.matrix / dot(yk_c, d.matrix * yk_c)
+    return d
 end
 
-# DFP update 
+# DFP update
 function update_hessian!(d::QuasiNewtonDirectionUpdate{DFP}, p, o, x_old, iter)
-    # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    # compute coordinates of yk
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    # compute coordinates of sk
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
-
-    # scaling the matrix before the first update is done
     if iter == 1 && d.scale == true
         d.matrix = skyk_c / inner(p.M, o.x, o.sk, o.sk) * d.matrix
     end
-
-    # computing the new matrix which represents the approximating operator in the next iteration
-    return d.matrix =
+    d.matrix =
         (I - yk_c * sk_c' / skyk_c) * d.matrix * (I - sk_c * yk_c' / skyk_c) +
         yk_c * yk_c' / skyk_c
+    return d
 end
 
 # Inverse SR-1 update
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old, iter)
-    # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    # compute coordinates of yk
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    # compute coordinates of sk
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = sk_c - d.matrix * yk_c
     return d.matrix = d.matrix + srvec * srvec' / (srvec' * yk_c)
+    return d
 end
 
 # SR-1 update
 function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
-    # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    # compute coordinates of yk
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    # compute coordinates of sk
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = yk_c - d.matrix * sk_c
     return d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
+    return d
 end
 
 # Inverse Broyden update
 function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBroyden}, p, o, x_old, iter)
-    # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    # compute coordinates of yk
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    # compute coordinates of sk
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
     ykBkyk_c = yk_c' * d.matrix * yk_c
 
     φ = update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, ykBkyk_c, d.update.update_rule)
     # computing the new matrix which represents the approximating operator in the next iteration
-    return d.matrix =
+    d.matrix =
         d.matrix - (d.matrix * yk_c * yk_c' * d.matrix) / ykBkyk_c +
         (sk_c * sk_c') / skyk_c +
         φ *
         ykBkyk_c *
         (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c) *
         (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c)'
+    return d
 end
 
 # Broyden update
 function update_hessian!(d::QuasiNewtonDirectionUpdate{Broyden}, p, o, x_old, iter)
-    # transport orthonormal basis in new tangent space
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    # compute coordinates of yk
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    # compute coordinates of sk
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    # compute real-valued inner product of sk and yk
     skyk_c = inner(p.M, o.x, o.sk, o.yk)
     skHksk_c = sk_c' * d.matrix * sk_c
 
     φ = update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c, d.update.update_rule)
     # computing the new matrix which represents the approximating operator in the next iteration
-    return d.matrix =
+    d.matrix =
         d.matrix - (d.matrix * sk_c * sk_c' * d.matrix) / skHksk_c +
         (yk_c * yk_c') / skyk_c +
         φ *
         skHksk_c *
         (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c) *
         (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c)'
+    return d
 end
 
 function update_broyden_factor!(o, d, sk_c, yk_c, skyk_c, skHksk_c::Float64, s::Symbol)
