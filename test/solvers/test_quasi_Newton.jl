@@ -68,7 +68,8 @@ Random.seed!(42)
         end
     end
     @testset "Rayleigh Quotient Minimzation" begin
-        n = 30
+        n = 9
+        rayleigh_atol = 2e-12
         A_Ray = randn(n, n)
         A_Ray = (A_Ray + A_Ray') / 2
         F_Ray(X::Array{Float64,1}) = X' * A_Ray * X
@@ -97,9 +98,9 @@ Random.seed!(42)
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
 
-        @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+        @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
 
-        @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+        @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
 
         for T in [InverseBFGS(), BFGS()], c in [true, false]
             x_Ray = random_point(M_Ray)
@@ -113,7 +114,7 @@ Random.seed!(42)
                 memory_size=-1,
                 stopping_criterion=StopWhenGradientNormLess(10^(-12)),
             )
-            @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+            @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
         end
 
         x_Ray = random_point(M_Ray)
@@ -188,12 +189,12 @@ Random.seed!(42)
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
 
-        @test norm(abs.(x_inverseDFP_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-        @test norm(abs.(x_directDFP_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-        @test norm(abs.(x_inverseSR1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-        @test norm(abs.(x_directSR1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-        @test norm(abs.(x_directBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
-        @test norm(abs.(x_inverseBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+        @test norm(abs.(x_inverseDFP_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+        @test norm(abs.(x_directDFP_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+        @test norm(abs.(x_inverseSR1_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+        @test norm(abs.(x_directSR1_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+        @test norm(abs.(x_directBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+        @test norm(abs.(x_inverseBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
     end
     @testset "Brocket" begin
         struct GradF
