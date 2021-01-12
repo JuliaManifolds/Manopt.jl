@@ -193,8 +193,10 @@ Random.seed!(42)
         @test norm(abs.(x_directDFP_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
         @test norm(abs.(x_inverseSR1_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
         @test norm(abs.(x_directSR1_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
-        @test norm(abs.(x_directBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
-        @test norm(abs.(x_inverseBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+        @test norm(abs.(x_directBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol =
+            rayleigh_atol
+        @test norm(abs.(x_inverseBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol =
+            rayleigh_atol
     end
     @testset "Brocket" begin
         struct GradF
