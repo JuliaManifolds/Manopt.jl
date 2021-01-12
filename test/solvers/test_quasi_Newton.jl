@@ -69,7 +69,7 @@ Random.seed!(42)
     end
     @testset "Rayleigh Quotient Minimzation" begin
         n = 9
-        rayleigh_atol = 2e-12
+        rayleigh_atol = 1e-12
         A_Ray = randn(n, n)
         A_Ray = (A_Ray + A_Ray') / 2
         F_Ray(X) = X' * A_Ray * X
@@ -77,7 +77,7 @@ Random.seed!(42)
         M_Ray = Sphere(n - 1)
         x_solution_Ray = abs.(eigvecs(A_Ray)[:, 1])
 
-        x_Ray = random_point(M_Ray)
+        x_Ray = Matrix{Float64}(I, n, n)[n, :]
 
         x_lrbfgs_Ray = quasi_Newton(
             M_Ray,
@@ -87,7 +87,7 @@ Random.seed!(42)
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
 
-        x_Ray = random_point(M_Ray)
+        x_Ray = Matrix{Float64}(I, n, n)[n, :]
 
         x_clrbfgs_Ray = quasi_Newton(
             M_Ray,
@@ -103,7 +103,7 @@ Random.seed!(42)
         @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
 
         for T in [InverseBFGS(), BFGS()], c in [true, false]
-            x_Ray = random_point(M_Ray)
+            x_Ray = Matrix{Float64}(I, n, n)[n, :]
             x_direction_Ray = quasi_Newton(
                 M_Ray,
                 F_Ray,
@@ -117,87 +117,22 @@ Random.seed!(42)
             @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
         end
 
-        x_Ray = random_point(M_Ray)
-
-        x_inverseDFP_Ray = quasi_Newton(
-            M_Ray,
-            F_Ray,
-            ∇F_Ray,
-            x_Ray;
-            direction_update=InverseDFP(),
-            memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-        )
-
-        x_Ray = random_point(M_Ray)
-
-        x_directDFP_Ray = quasi_Newton(
-            M_Ray,
-            F_Ray,
-            ∇F_Ray,
-            x_Ray;
-            direction_update=DFP(),
-            memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-        )
-
-        x_Ray = random_point(M_Ray)
-
-        x_inverseSR1_Ray = quasi_Newton(
-            M_Ray,
-            F_Ray,
-            ∇F_Ray,
-            x_Ray;
-            direction_update=InverseSR1(),
-            memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-        )
-
-        x_Ray = random_point(M_Ray)
-
-        x_directSR1_Ray = quasi_Newton(
-            M_Ray,
-            F_Ray,
-            ∇F_Ray,
-            x_Ray;
-            direction_update=SR1(),
-            memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-        )
-
-        x_Ray = random_point(M_Ray)
-
-        x_directBroydenConstant_Ray = quasi_Newton(
-            M_Ray,
-            F_Ray,
-            ∇F_Ray,
-            x_Ray;
-            direction_update=Broyden(0.5),
-            memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-        )
-
-        x_Ray = random_point(M_Ray)
-
-        x_inverseBroydenConstant_Ray = quasi_Newton(
-            M_Ray,
-            F_Ray,
-            ∇F_Ray,
-            x_Ray;
-            direction_update=InverseBroyden(0.5),
-            memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-        )
-
-        @test norm(abs.(x_inverseDFP_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
-        @test norm(abs.(x_directDFP_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
-        @test norm(abs.(x_inverseSR1_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
-        @test norm(abs.(x_directSR1_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
-        @test norm(abs.(x_directBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol =
-            rayleigh_atol
-        @test norm(abs.(x_inverseBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol =
-            rayleigh_atol
+        for T in
+            [InverseDFP(), DFP(), InverseSR1(), SR1(), Broyden(0.5), InverseBroyden(0.5)]
+            x_Ray = Matrix{Float64}(I, n, n)[n, :]
+            x_direction_Ray = quasi_Newton(
+                M_Ray,
+                F_Ray,
+                ∇F_Ray,
+                x_Ray;
+                direction_update=T,
+                memory_size=-1,
+                stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+            )
+            @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+        end
     end
+    print("A")
     @testset "Brocket" begin
         struct GradF
             A::Matrix{Float64}
