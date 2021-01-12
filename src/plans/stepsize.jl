@@ -509,10 +509,10 @@ function (a::WolfePowellLineseachHuang)(
         inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
         if fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.∇)
             β = t
-        else
-            if inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
+        elseif inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
                 α = t
-            end
+        else
+            return t
         end
         if β < Inf
             t = (α + β) / 2
