@@ -39,6 +39,18 @@ Random.seed!(42)
         )
         @test x_lrbfgs_cached == x_lrbfgs
 
+        x_lrbfgs_cached_2 = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+            basis=get_basis(M, x, DefaultOrthonormalBasis()),
+            memory_size=-1,
+        )
+        @test x_lrbfgs_cached_2 == x_lrbfgs
+
+
         x = zeros(Float64, 4, 4)
         x_clrbfgs = quasi_Newton(
             M,
@@ -78,7 +90,6 @@ Random.seed!(42)
         x_solution_Ray = abs.(eigvecs(A_Ray)[:, 1])
 
         x_Ray = Matrix{Float64}(I, n, n)[n, :]
-
         x_lrbfgs_Ray = quasi_Newton(
             M_Ray,
             F_Ray,
@@ -86,9 +97,9 @@ Random.seed!(42)
             x_Ray;
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
+        @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
 
         x_Ray = Matrix{Float64}(I, n, n)[n, :]
-
         x_clrbfgs_Ray = quasi_Newton(
             M_Ray,
             F_Ray,
@@ -97,10 +108,6 @@ Random.seed!(42)
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
-
-        @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
-
-        @test norm(abs.(x_clrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
 
         for T in [InverseBFGS(), BFGS()], c in [true, false]
             x_Ray = Matrix{Float64}(I, n, n)[n, :]
