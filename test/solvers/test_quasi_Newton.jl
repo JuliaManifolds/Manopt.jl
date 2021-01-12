@@ -141,8 +141,34 @@ c in [true, false]
         stopping_criterion=StopWhenGradientNormLess(10^(-12)),
     )
 
+    x_Ray = random_point(M_Ray)
+
+    x_directBroydenConstant_Ray = quasi_Newton(
+        M_Ray,
+        F_Ray,
+        ∇F_Ray,
+        x_Ray;
+        direction_update=Broyden(0.5),
+        memory_size=-1,
+        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+    )
+
+    x_Ray = random_point(M_Ray)
+
+    x_inverseBroydenConstant_Ray = quasi_Newton(
+        M_Ray,
+        F_Ray,
+        ∇F_Ray,
+        x_Ray;
+        direction_update=InverseBroyden(0.5),
+        memory_size=-1,
+        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+    )
+
     @test norm(abs.(x_inverseDFP_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
     @test norm(abs.(x_directDFP_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
     @test norm(abs.(x_inverseSR1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
     @test norm(abs.(x_directSR1_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    @test norm(abs.(x_directBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
+    @test norm(abs.(x_inverseBroydenConstant_Ray) - x_solution_Ray) ≈ 0 atol = 2e-13
 end

@@ -1068,7 +1068,7 @@ struct InverseBroyden <: AbstractQuasiNewtonType
     φ::Float64
     update_rule::Symbol
 end
-InverseBroyden(φ::Float64) = InverseBroyden(φ, constant)
+InverseBroyden(φ::Float64) = InverseBroyden(φ, :constant)
 
 @doc raw"""
     QuasiNewtonOptions <: Options
