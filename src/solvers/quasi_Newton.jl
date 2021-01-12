@@ -282,7 +282,7 @@ end
 # Cautious update
 function update_hessian!(
     d::CautiousUpdate{U}, p, o, x_old, iter
-) where {U<:QuasiNewtonDirectionUpdate}
+) where {U<:AbstractQuasiNewtonDirectionUpdate}
     # computing the bound used in the decission rule
     bound = d.θ(norm(p.M, o.x, o.∇))
     sk_normsq = norm(p.M, o.x, o.sk)^2
