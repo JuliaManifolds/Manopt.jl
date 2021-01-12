@@ -72,8 +72,8 @@ Random.seed!(42)
         rayleigh_atol = 2e-12
         A_Ray = randn(n, n)
         A_Ray = (A_Ray + A_Ray') / 2
-        F_Ray(X::Array{Float64,1}) = X' * A_Ray * X
-        ∇F_Ray(X::Array{Float64,1}) = 2 * (A_Ray * X - X * X' * A_Ray * X)
+        F_Ray(X) = X' * A_Ray * X
+        ∇F_Ray(X) = 2 * (A_Ray * X - X * (X' * A_Ray * X))
         M_Ray = Sphere(n - 1)
         x_solution_Ray = abs.(eigvecs(A_Ray)[:, 1])
 
