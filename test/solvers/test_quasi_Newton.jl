@@ -132,7 +132,6 @@ Random.seed!(42)
             @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
         end
     end
-    print("A")
     @testset "Brocket" begin
         struct GradF
             A::Matrix{Float64}
