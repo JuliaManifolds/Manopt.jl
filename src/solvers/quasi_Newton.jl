@@ -204,7 +204,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = sk_c - d.matrix * yk_c
-    return d.matrix = d.matrix + srvec * srvec' / (srvec' * yk_c)
+    d.matrix = d.matrix + srvec * srvec' / (srvec' * yk_c)
     return d
 end
 
@@ -216,7 +216,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, iter)
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = yk_c - d.matrix * sk_c
-    return d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
+    d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
     return d
 end
 
@@ -313,12 +313,9 @@ function update_hessian!(
     # computing the bound used in the decission rule
     bound = d.θ(norm(p.M, o.x, o.∇))
     sk_normsq = norm(p.M, o.x, o.sk)^2
-
-    # if the decission rule is fulfilled, the operator is updated as usual
     if sk_normsq != 0 && (inner(p.M, o.x, o.sk, o.yk) / sk_normsq) >= bound
         update_hessian!(d.update, p, o, x_old, iter)
     end
-
     return d
 end
 
@@ -342,7 +339,8 @@ function update_hessian!(
 
     # add newest
     push!(d.memory_s, o.sk)
-    return push!(d.memory_y, o.yk)
+    push!(d.memory_y, o.yk)
+    return d
 end
 
 # all Cautious Limited Memory
