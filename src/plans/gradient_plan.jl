@@ -996,7 +996,7 @@ indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian BFGS update
 
 $H^{BFGS}_{k+1} = H^{BFGS}_k + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} - \frac{H^{BFGS}_k s_k s^{\mathrm{T}}_k H^{BFGS}_k }{s^{\mathrm{T}}_k H^{BFGS}_k s_k}$
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
 struct BFGS <: AbstractQuasiNewtonType end
 @doc raw"""
@@ -1006,7 +1006,7 @@ indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian BFG
 
 $B^{BFGS}_{k+1}  = \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} \Big{)} B^{BFGS}_k \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} \Big{)} + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}$
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
 struct InverseBFGS <: AbstractQuasiNewtonType end
 @doc raw"""
@@ -1016,7 +1016,7 @@ indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian DFP update 
 
 $H^{DFP}_{k+1} = \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} \Big{)} H^{DFP}_k \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} \Big{)} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}$
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
 struct DFP <: AbstractQuasiNewtonType end
 @doc raw"""
@@ -1026,7 +1026,7 @@ indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian DFP
 
 $B^{DFP}_{k+1} = B^{DFP}_k + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} - \frac{B^{DFP}_k y_k y^{\mathrm{T}}_k B^{DFP}_k}{y^{\mathrm{T}}_k B^{DFP}_k y_k}$
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
 struct InverseDFP <: AbstractQuasiNewtonType end
 @doc raw"""
@@ -1036,7 +1036,7 @@ indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian SR1 update 
 
 $H^{SR1}_{k+1} = H^{SR1}_k + \frac{(y_k - H^{SR1}_k s_k) (y_k - H^{SR1}_k s_k)^{\mathrm{T}}}{(y_k - H^{SR1}_k s_k)^{\mathrm{T}} s_k}$
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
 struct SR1 <: AbstractQuasiNewtonType end
 @doc raw"""
@@ -1046,9 +1046,29 @@ indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian SR1
 
 $B^{SR1}_{k+1} = B^{SR1}_k + \frac{(s_k - B^{SR1}_k y_k) (s_k - B^{SR1}_k y_k)^{\mathrm{T}}}{(s_k - B^{SR1}_k y_k)^{\mathrm{T}} y_k}$
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there. 
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
 struct InverseSR1 <: AbstractQuasiNewtonType end
+
+"""
+    Broyden <: AbstractQuasiNewtonType
+
+"""
+struct Broyden <: AbstractQuasiNewtonType
+    φ::Float64
+    update_rule::Symbol
+end
+Broyden(φ::Float64) = Broyden(φ, :constant)
+
+"""
+    InverseBroyden <: AbstractQuasiNewtonType
+
+"""
+struct InverseBroyden <: AbstractQuasiNewtonType
+    φ::Float64
+    update_rule::Symbol
+end
+InverseBroyden(φ::Float64) = InverseBroyden(φ, :constant)
 
 @doc raw"""
     QuasiNewtonOptions <: Options
@@ -1147,23 +1167,6 @@ function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1}}
         p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-
-mutable struct Broyden{
-    U1<:AbstractQuasiNewtonDirectionUpdate,U2<:AbstractQuasiNewtonDirectionUpdate
-} <: AbstractQuasiNewtonDirectionUpdate
-    update1::U1
-    update2::U2
-    factor::Float64
-end
-function Broyden(
-    u1::U1, u2::U2, factor=1.0
-) where {U1<:AbstractQuasiNewtonDirectionUpdate,U2<:AbstractQuasiNewtonDirectionUpdate}
-    return Broyden{U1,U2}(u1, u2, factor)
-end
-function (d::Broyden)(p, o)
-    return (1 - d.factor) * d.update1(p, o) + d.factor * d.update2(p, o)
-end
-
 mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{
     NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod
 } <: AbstractQuasiNewtonDirectionUpdate
