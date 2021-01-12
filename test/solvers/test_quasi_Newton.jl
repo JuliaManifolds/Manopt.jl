@@ -79,7 +79,11 @@ Random.seed!(42)
         x_Ray = random_point(M_Ray)
 
         x_lrbfgs_Ray = quasi_Newton(
-            M_Ray, F_Ray, ∇F_Ray, x_Ray; stopping_criterion=StopWhenGradientNormLess(10^(-12))
+            M_Ray,
+            F_Ray,
+            ∇F_Ray,
+            x_Ray;
+            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
 
         x_Ray = random_point(M_Ray)
