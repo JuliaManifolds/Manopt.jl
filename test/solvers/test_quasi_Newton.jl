@@ -61,6 +61,20 @@ Random.seed!(42)
         )
         @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
 
+        x = zeros(Float64, 4, 4)
+        x_rbfgs_Huang = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            memory_size=-1,
+            step_size=WolfePowellLineseachHuang(
+                ExponentialRetraction(), ParallelTransport()
+            ),
+            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+        )
+        @test norm(x_rbfgs_Huang - x_solution) ≈ 0 atol = 10.0^(-14)
+
         for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP(), InverseSR1(), SR1()]
             for c in [true, false]
                 x = zeros(Float64, 4, 4)
