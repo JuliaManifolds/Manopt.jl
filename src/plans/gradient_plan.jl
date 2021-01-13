@@ -1050,9 +1050,14 @@ where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthono
 """
 struct InverseSR1 <: AbstractQuasiNewtonType end
 
-"""
+@doc raw"""
     Broyden <: AbstractQuasiNewtonType
 
+indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian Broyden update is used in the Riemannian quasi-Newton method, which can be seen as a convex combination of the RBFGS and the RDFP updates. The operator $\mathcal{H}^{RBroyden}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{Broyden}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean Broyden formula for matrices is used, i.e.
+
+$H^{Broyden}_{k+1} = H^{Broyden}_k - \frac{H^{Broyden}_k s_k s^{\mathrm{T}}_k H^{Broyden}_k}{s^{\mathrm{T}}_k H^{Broyden}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} + \phi_k s^{\mathrm{T}}_k H^{Broyden}_k s_k (\frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^{Broyden}_k s_k}{s^{\mathrm{T}}_k H^{Broyden}_k s_k}) (\frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^{Broyden}_k s_k}{s^{\mathrm{T}}_k H^{Broyden}_k s_k})^{\mathrm{T}}_k$
+
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The factor $\phi_k$ can either be fixed in the interval $[0,1]$ or calculated by a formula in each iteration. The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
 mutable struct Broyden <: AbstractQuasiNewtonType
     φ::Float64
@@ -1060,9 +1065,14 @@ mutable struct Broyden <: AbstractQuasiNewtonType
 end
 Broyden(φ::Float64) = Broyden(φ, :constant)
 
-"""
+@doc raw"""
     InverseBroyden <: AbstractQuasiNewtonType
 
+indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian Broyden update is used in the Riemannian quasi-Newton method, which can be seen as a convex combination of the inverse RBFGS and the inverse RDFP updates. The operator $\mathcal{B}^{RBroyden}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{Broyden}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse Broyden formula for matrices is used, i.e.
+
+$B^{Broyden}_{k+1} = B^{Broyden}_k - \frac{B^{Broyden}_k y_k y^{\mathrm{T}}_k B^{Broyden}_k}{y^{\mathrm{T}}_k B^{Broyden}_k y_k} + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} + \phi_k y^{\mathrm{T}}_k B^{Broyden}_k y_k (\frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^{Broyden}_k y_k}{y^{\mathrm{T}}_k B^{Broyden}_k y_k}) (\frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^{Broyden}_k y_k}{y^{\mathrm{T}}_k B^{Broyden}_k y_k})^{\mathrm{T}}_k$
+
+where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The factor $\phi_k$ can either be fixed in the interval $[0,1]$ or calculated by a formula in each iteration. The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
 mutable struct InverseBroyden <: AbstractQuasiNewtonType
     φ::Float64
