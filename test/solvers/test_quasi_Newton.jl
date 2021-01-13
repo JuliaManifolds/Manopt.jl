@@ -95,46 +95,63 @@ Random.seed!(42)
     @testset "Rayleigh Quotient Minimzation" begin
         n = 9
         rayleigh_atol = 1e-12
-        A_Ray = randn(n, n)
-        A_Ray = (A_Ray + A_Ray') / 2
-        F_Ray(X) = X' * A_Ray * X
-        ∇F_Ray(X) = 2 * (A_Ray * X - X * (X' * A_Ray * X))
-        M_Ray = Sphere(n - 1)
-        x_solution_Ray = abs.(eigvecs(A_Ray)[:, 1])
+        A = randn(n, n)
+        A = (A + A') / 2
+        F(X) = X' * A * X
+        ∇F(X) = 2 * (A * X - X * (X' * A * X))
+        M = Sphere(n - 1)
+        x_solution = abs.(eigvecs(A)[:, 1])
 
-        x_Ray = Matrix{Float64}(I, n, n)[n, :]
-        x_lrbfgs_Ray = quasi_Newton(
-            M_Ray,
-            F_Ray,
-            ∇F_Ray,
-            x_Ray;
+        x = Matrix{Float64}(I, n, n)[n, :]
+        x_lrbfgs = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            basis = get_basis(M, x, DefaultOrthonormalBasis()),
+            memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
-        @test norm(abs.(x_lrbfgs_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+        @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
 
-        x_Ray = Matrix{Float64}(I, n, n)[n, :]
-        x_clrbfgs_Ray = quasi_Newton(
-            M_Ray,
-            F_Ray,
-            ∇F_Ray,
-            x_Ray;
+        x = Matrix{Float64}(I, n, n)[n, :]
+        x_clrbfgs = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
 
+        x = Matrix{Float64}(I, n, n)[n, :]
+        x_cached_lrbfgs = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            basis = get_basis(M, x, DefaultOrthonormalBasis()),
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+        )
+        @test norm(abs.(x_cached_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
+
+
+
+
         for T in [InverseBFGS(), BFGS()], c in [true, false]
-            x_Ray = Matrix{Float64}(I, n, n)[n, :]
-            x_direction_Ray = quasi_Newton(
-                M_Ray,
-                F_Ray,
-                ∇F_Ray,
-                x_Ray;
+            x = Matrix{Float64}(I, n, n)[n, :]
+            x_direction = quasi_Newton(
+                M,
+                F,
+                ∇F,
+                x;
                 direction_update=T,
                 cautious_update=c,
                 memory_size=-1,
                 stopping_criterion=StopWhenGradientNormLess(10^(-12)),
             )
-            @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+            @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
 
         for T in [
@@ -147,17 +164,17 @@ Random.seed!(42)
             Broyden(0.5, :Davidon),
             Broyden(0.5, :InverseDavidon),
         ]
-            x_Ray = Matrix{Float64}(I, n, n)[n, :]
-            x_direction_Ray = quasi_Newton(
-                M_Ray,
-                F_Ray,
-                ∇F_Ray,
-                x_Ray;
+            x = Matrix{Float64}(I, n, n)[n, :]
+            x_direction = quasi_Newton(
+                M,
+                F,
+                ∇F,
+                x;
                 direction_update=T,
                 memory_size=-1,
                 stopping_criterion=StopWhenGradientNormLess(10^(-12)),
             )
-            @test norm(abs.(x_direction_Ray) - x_solution_Ray) ≈ 0 atol = rayleigh_atol
+            @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
     end
     @testset "Brocket" begin

@@ -297,11 +297,11 @@ function update_basis!(
 end
 
 function update_basis!(
-    b::CachedBasis, M::Manifold, x::P, y::P, v::AbstractVectorTransportMethod
+    b::CachedBasis, M::Manifold, x::P, y::P, m::AbstractVectorTransportMethod
 ) where {P}
     # transport all basis tangent vectors in the tangent space of the next iterate
-    for i in 1:length(b.data)
-        vector_transport_to!(M, b.data[i], y, b.data[i], x, v)
+    for v in b.data
+        vector_transport_to!(M, v, x, v, y, m)
     end
     return b
 end
