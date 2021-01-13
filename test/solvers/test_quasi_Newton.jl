@@ -108,7 +108,7 @@ Random.seed!(42)
             F,
             ∇F,
             x;
-            basis = get_basis(M, x, DefaultOrthonormalBasis()),
+            basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
@@ -130,14 +130,11 @@ Random.seed!(42)
             F,
             ∇F,
             x;
-            basis = get_basis(M, x, DefaultOrthonormalBasis()),
+            basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
         @test norm(abs.(x_cached_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
-
-
-
 
         for T in [InverseBFGS(), BFGS()], c in [true, false]
             x = Matrix{Float64}(I, n, n)[n, :]
