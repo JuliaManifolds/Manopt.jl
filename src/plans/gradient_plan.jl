@@ -988,14 +988,14 @@ All subtypes should be functors, i.e. one should be able to call them as `H(M,x,
 abstract type AbstractQuasiNewtonDirectionUpdate end
 
 """
-    AbstractQuasiNewtonType
+    AbstractQuasiNewtonUpdateRule
 
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
 """
-abstract type AbstractQuasiNewtonType end
+abstract type AbstractQuasiNewtonUpdateRule end
 
 @doc raw"""
-    BFGS <: AbstractQuasiNewtonType
+    BFGS <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian BFGS update is used in the Riemannian quasi-Newton method.
 The Hessian matrix $H_k^\mathrm{BFGS}_k$ is either given with respect to a basis in $T_{x_k} \mathcal{M}$ or build from
@@ -1013,9 +1013,9 @@ s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad} f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
 ```
 """
-struct BFGS <: AbstractQuasiNewtonType end
+struct BFGS <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
-    InverseBFGS <: AbstractQuasiNewtonType
+    InverseBFGS <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian BFGS update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RBFGS}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{RBFGS}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse BFGS formula for matrices is used, i.e.
 
@@ -1023,9 +1023,9 @@ $B^\mathrm{BFGS}_{k+1}  = \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm
 
 where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
-struct InverseBFGS <: AbstractQuasiNewtonType end
+struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
-    DFP <: AbstractQuasiNewtonType
+    DFP <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian DFP update is used in the Riemannian quasi-Newton method. The operator $\mathcal{H}^{RDFP}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{DFP}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean DFP formula for matrices is used, i.e.
 
@@ -1033,9 +1033,9 @@ $H^{DFP}_{k+1} = \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k}{s
 
 where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
-struct DFP <: AbstractQuasiNewtonType end
+struct DFP <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
-    InverseDFP <: AbstractQuasiNewtonType
+    InverseDFP <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian DFP update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RDFP}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{DFP}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse DFP formula for matrices is used, i.e.
 
@@ -1043,9 +1043,9 @@ $B^{DFP}_{k+1} = B^{DFP}_k + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} -
 
 where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
-struct InverseDFP <: AbstractQuasiNewtonType end
+struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
-    SR1 <: AbstractQuasiNewtonType
+    SR1 <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian SR1 update is used in the Riemannian quasi-Newton method. The operator $\mathcal{H}^{RSR1}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{SR1}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean SR1 formula for matrices is used, i.e.
 
@@ -1053,9 +1053,9 @@ $H^{SR1}_{k+1} = H^{SR1}_k + \frac{(y_k - H^{SR1}_k s_k) (y_k - H^{SR1}_k s_k)^{
 
 where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
-struct SR1 <: AbstractQuasiNewtonType end
+struct SR1 <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
-    InverseSR1 <: AbstractQuasiNewtonType
+    InverseSR1 <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian SR1 update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RSR1}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{RSR1}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse SR1 formula for matrices is used, i.e.
 
@@ -1063,10 +1063,10 @@ $B^{SR1}_{k+1} = B^{SR1}_k + \frac{(s_k - B^{SR1}_k y_k) (s_k - B^{SR1}_k y_k)^{
 
 where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
-struct InverseSR1 <: AbstractQuasiNewtonType end
+struct InverseSR1 <: AbstractQuasiNewtonUpdateRule end
 
 @doc raw"""
-    Broyden <: AbstractQuasiNewtonType
+    Broyden <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian Broyden update is used in the Riemannian quasi-Newton method, which can be seen as a convex combination of the RBFGS and the RDFP updates. The operator $\mathcal{H}^{RBroyden}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{Broyden}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean Broyden formula for matrices is used, i.e.
 
@@ -1074,14 +1074,14 @@ $H^{Broyden}_{k+1} = H^{Broyden}_k - \frac{H^{Broyden}_k s_k s^{\mathrm{T}}_k H^
 
 where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The factor $\phi_k$ can either be fixed in the interval $[0,1]$ or calculated by a formula in each iteration. The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
-mutable struct Broyden <: AbstractQuasiNewtonType
+mutable struct Broyden <: AbstractQuasiNewtonUpdateRule
     φ::Float64
     update_rule::Symbol
 end
 Broyden(φ::Float64) = Broyden(φ, :constant)
 
 @doc raw"""
-    InverseBroyden <: AbstractQuasiNewtonType
+    InverseBroyden <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian Broyden update is used in the Riemannian quasi-Newton method, which can be seen as a convex combination of the inverse RBFGS and the inverse RDFP updates. The operator $\mathcal{B}^{RBroyden}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{Broyden}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse Broyden formula for matrices is used, i.e.
 
@@ -1089,7 +1089,7 @@ $B^{Broyden}_{k+1} = B^{Broyden}_k - \frac{B^{Broyden}_k y_k y^{\mathrm{T}}_k B^
 
 where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The factor $\phi_k$ can either be fixed in the interval $[0,1]$ or calculated by a formula in each iteration. The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
 """
-mutable struct InverseBroyden <: AbstractQuasiNewtonType
+mutable struct InverseBroyden <: AbstractQuasiNewtonUpdateRule
     φ::Float64
     update_rule::Symbol
 end
@@ -1157,7 +1157,7 @@ function QuasiNewtonOptions(
 end
 
 mutable struct QuasiNewtonDirectionUpdate{
-    NT<:AbstractQuasiNewtonType,
+    NT<:AbstractQuasiNewtonUpdateRule,
     B<:AbstractBasis,
     VT<:AbstractVectorTransportMethod,
     M<:AbstractMatrix,
@@ -1169,7 +1169,7 @@ mutable struct QuasiNewtonDirectionUpdate{
     vector_transport_method::VT
 end
 function QuasiNewtonDirectionUpdate(
-    update::AbstractQuasiNewtonType,
+    update::AbstractQuasiNewtonUpdateRule,
     basis::B,
     m::M,
     ;
@@ -1193,7 +1193,7 @@ function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,B
     )
 end
 mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{
-    NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod
+    NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod
 } <: AbstractQuasiNewtonDirectionUpdate
     method::NT
     memory_s::CircularBuffer{T}
@@ -1209,7 +1209,7 @@ function LimitedMemoryQuasiNewctionDirectionUpdate(
     memory_size::Int;
     scale::Bool=true,
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-) where {NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod}
+) where {NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod}
     return LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,typeof(vector_transport_method)}(
         method,
         CircularBuffer{T}(memory_size),
@@ -1240,7 +1240,7 @@ mutable struct CautiousUpdate{U} <: AbstractQuasiNewtonDirectionUpdate where {
     U<:Union{
         QuasiNewtonDirectionUpdate,LimitedMemoryQuasiNewctionDirectionUpdate{T}
     },
-} where {T<:AbstractQuasiNewtonType}
+} where {T<:AbstractQuasiNewtonUpdateRule}
     update::U
     θ::Function
 end
@@ -1250,7 +1250,7 @@ function CautiousUpdate(
     U<:Union{
         QuasiNewtonDirectionUpdate,LimitedMemoryQuasiNewctionDirectionUpdate{T}
     },
-} where {T<:AbstractQuasiNewtonType}
+} where {T<:AbstractQuasiNewtonUpdateRule}
     return CautiousUpdate{U}(update, θ)
 end
 (d::CautiousUpdate)(p, o) = d.update(p, o)

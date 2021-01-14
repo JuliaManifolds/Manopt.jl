@@ -41,7 +41,7 @@ function quasi_Newton(
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
     basis::AbstractBasis=DefaultOrthonormalBasis(),
-    direction_update::AbstractQuasiNewtonType=InverseBFGS(),
+    direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     cautious_update::Bool=false,
     cautious_function::Function=x -> x * 10^(-4),
     memory_size::Int=20,
@@ -346,7 +346,7 @@ end
 # all Cautious Limited Memory
 function update_hessian!(
     d::CautiousUpdate{LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,VT}}, p, o, x_old, iter
-) where {NT<:AbstractQuasiNewtonType,T,VT<:AbstractVectorTransportMethod}
+) where {NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod}
     # computing the bound used in the decission rule
     bound = d.θ(norm(p.M, x_old, get_gradient(p, x_old)))
     sk_normsq = norm(p.M, o.x, o.sk)^2

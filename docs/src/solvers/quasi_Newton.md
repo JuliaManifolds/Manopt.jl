@@ -1,5 +1,9 @@
 # [Riemannian quasi-Newton methods](@id quasiNewton)
 
+```@meta
+    CurrentModule = Manopt
+```
+
 The aim is to minimize a real-valued function on a Riemannian manifold, i.e.
 
 ```math
@@ -35,7 +39,7 @@ In the following we denote the specific operators in matrix notation and hence u
 The following update rules for either ``\mathcal{H}_{k+1}`` or ``\mathcal B_{k+1}`` are available.
 
 ```@docs
-AbstractQuasiNewtonType
+AbstractQuasiNewtonUpdateRule
 BFGS
 DFP
 Broyden
@@ -142,10 +146,6 @@ In summary, the algorithm takes the following form:
 
 
 ## Interface
-
-```@meta
-    CurrentModule = Manopt
-```
 
 ```@docs
     quasi_Newton

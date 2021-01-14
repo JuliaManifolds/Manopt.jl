@@ -171,7 +171,7 @@ export QuasiNewtonOptions,
     LimitedMemoryQuasiNewctionDirectionUpdate, QuasiNewtonDirectionUpdate
 export CautiousUpdate, BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
-export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonType
+export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export quasi_Newton,
     WolfePowellLineseach,
     StrongWolfePowellLineseach,
