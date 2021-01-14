@@ -146,7 +146,7 @@ In summary, the algorithm takes the following form:
 ```@meta
     CurrentModule = Manopt
 ```
-å
+
 ```@docs
     quasi_Newton
 ```
