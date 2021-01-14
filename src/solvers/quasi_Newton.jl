@@ -6,8 +6,8 @@ It will attempt to minimize the cost function F on the Manifold M.
 
 # Input
 * `M` – a manifold $\mathcal{M}$.
-* `F` – a cost function $F \colon \mathcal{M} \to \mathbb{R}$ to minimize.
-* `∇F`– the gradient $\nabla F \colon \mathcal M \to \tangent{x}$ of $F$.
+* `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
+* `∇F`– the gradient ``∇F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
 * `x` – an initial value $x \in \mathcal{M}$.
 
 # Optional
@@ -17,9 +17,9 @@ It will attempt to minimize the cost function F on the Manifold M.
 * `cautious_update` – (`false`) – specifies whether a cautious update should be used, which means that a decision rule based on the calculated values decides whether the operator remains the same and no new information is received, or whether it is updated as usual.
 * `cautious_function` – (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero at 0 and strictly increasing at 0.
 * `memory_size` – (`20`) – number of vectors to be stored.
-* `memory_steps`– (`[`[`zero_tangent_vector`](@ref)`(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $s_k$ for a LRBFGS method.
-* `memory_gradients` – (`[`[`zero_tangent_vector`](@ref)`(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $y_k$ for a LRBFGS method.
-* `initial_operator` – (`Matrix(I, [`manifold_dimension`](@ref)`(M), [`manifold_dimension`](@ref)`(M))`) – the initial operator, represented as a matrix.
+* `memory_steps`– (`[`zero_tangent_vector(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $s_k$ for a LRBFGS method.
+* `memory_gradients` – (`[`zero_tangent_vector(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $y_k$ for a LRBFGS method.
+* `initial_operator` – (`Matrix(I, manifold_dimension(M), manifold_dimension(M))`) – the initial operator, represented as a matrix.
 * `scalling_initial_operator` – (`true`) specifies if the initial operator is scalled after the first step but before the first update.
 * `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`) specify a [`Stepsize`](@ref) functor.
 * `stopping_criterion`– ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(max(1000, memory_size)), `[`StopWhenGradientNormLess`](@ref)`(10.0^68))`)

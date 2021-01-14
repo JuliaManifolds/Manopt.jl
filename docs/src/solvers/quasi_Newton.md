@@ -8,7 +8,7 @@ Riemannian quasi-Newtonian methods are as generalizations of their Euclidean cou
 
 $x_{k+1} = R_{x_k}(\alpha_k \eta_k).$
 
-The choice of a computationally efficient retraction is important, because it can influence the rate of convergence. 
+The choice of a computationally efficient retraction is important, because it can influence the rate of convergence.
 In quasi-Newton methods, the search direction is given by
 
 $\eta_k = -{\mathcal{H}_k}^{-1}[\operatorname{grad} f (x_k)] = -\mathcal{B}_k [\operatorname{grad} f (x_k)],$
@@ -18,12 +18,11 @@ In order to get a well-defined method, the following requirements are placed on 
 
 $\mathcal{H}_{k+1} [T_{x_k \rightarrow x_{k+1}}({R_{x_k}}^{-1}(x_{k+1}))] = \operatorname{grad} f(x_{k+1}) - T_{x_k \rightarrow x_{k+1}}(\operatorname{grad} f(x_k))$
 
-or 
+or
 
 $\mathcal{B}_{k+1} [\operatorname{grad} f(x_{k+1}) - T_{x_k \rightarrow x_{k+1}}(\operatorname{grad} f(x_k))] = T_{x_k \rightarrow x_{k+1}}({R_{x_k}}^{-1}(x_{k+1}))$
 
-where $T_{x_k \rightarrow x_{k+1}} \colon T_{x_k} \mathcal{M} \to T_{x_{k+1}} \mathcal{M}$ and the chosen retraction $R$ is the associated retraction of $T$. 
-The idea of Riemannian quasi-Newton methods is to generate an operator $\mathcal{H}_{k+1}$ or $\mathcal{B}_{k+1}$ which meets all these requirements by a convenient update formula. Thereby, the quasi-Newton update formulas for matrices known from the Euclidean case were generalised for the Riemannian setup. 
+where $T_{x_k \rightarrow x_{k+1}} \colon T_{x_k} \mathcal{M} \to T_{x_{k+1}} \mathcal{M}$ and the chosen retraction $R$ is the associated retraction of $T$.
 
 ## Operator Updates
 
@@ -33,17 +32,17 @@ Of course, in any update one wants to take over the information already stored i
 
 $\widetilde{\mathcal{H}}_k = T^{S}_{x_k, \alpha_k \eta_k} \circ \mathcal{H}_k \circ {T^{S}_{x_k, \alpha_k \eta_k}}^{-1} \colon T_{x_{k+1}} \mathcal{M} \to T_{x_{k+1}} \mathcal{M},$
 
-where $T^{S}_{x_k, \alpha_k \eta_k} \colon T_{x_k} \mathcal{M} \to T_{R_{x_k}(\alpha_k \eta_k)} \mathcal{M}$ is an isometric vector transport and $R_{x_k}(\cdot)$ is its associated retraction. Of course, one could take any vector transport $T \colon T_{x_k} \mathcal{M} \to T_{x_{k+1}} \mathcal{M}$ to which $R$ is the associated retraction, i.e. $x_{k+1} = R_{x_k}(\alpha_k \eta_k) \in \mathcal{M}$, but since we want to take on the positive definiteness and self-adjointness of the operator $\mathcal{H}_k$, this is in general only ensured by an isometric vector transport $T^S$. The same method is used to define $\widetilde{\mathcal{B}}_k \colon T_{x_{k+1}} \mathcal{M} \to T_{x_{k+1}} \mathcal{M}$. 
-To get the curvature information of the objective function into the update formula, the tangent vectors 
+where $T^{S}_{x_k, \alpha_k \eta_k} \colon T_{x_k} \mathcal{M} \to T_{R_{x_k}(\alpha_k \eta_k)} \mathcal{M}$ is an isometric vector transport and $R_{x_k}(\cdot)$ is its associated retraction. Of course, one could take any vector transport $T \colon T_{x_k} \mathcal{M} \to T_{x_{k+1}} \mathcal{M}$ to which $R$ is the associated retraction, i.e. $x_{k+1} = R_{x_k}(\alpha_k \eta_k) \in \mathcal{M}$, but since we want to take on the positive definiteness and self-adjointness of the operator $\mathcal{H}_k$, this is in general only ensured by an isometric vector transport $T^S$. The same method is used to define $\widetilde{\mathcal{B}}_k \colon T_{x_{k+1}} \mathcal{M} \to T_{x_{k+1}} \mathcal{M}$.
+To get the curvature information of the objective function into the update formula, the tangent vectors
 
 $s_k = T^{S}_{x_k, \alpha_k \eta_k}(\alpha_k \eta_k) \in T_{x_{k+1}} \mathcal{M}$
 
-and 
+and
 
 $y_k = \operatorname{grad} f(x_{k+1}) - T^{S}_{x_k, \alpha_k \eta_k}(\operatorname{grad} f(x_k)) \in T_{x_{k+1}} \mathcal{M}$
 
 are defined. Here, of course, the same vector transport as for $\widetilde{\mathcal{H}}_k$, or $\widetilde{\mathcal{B}}_k$ is used.
-In Euclidean quasi-Newton methods, the property that $s_k s_k^{\mathrm{T}}$ is a positive definite symmetric rank one matrix is used to construct matrix updates. For the generalisation we need the musical isomorphism $\flat$, which turns a tangent vector into a cotangent vector, i.e. 
+In Euclidean quasi-Newton methods, the property that $s_k s_k^{\mathrm{T}}$ is a positive definite symmetric rank one matrix is used to construct matrix updates. For the generalisation we need the musical isomorphism $\flat$, which turns a tangent vector into a cotangent vector, i.e.
 
 $\flat \colon \; T_{x} \mathcal{M} \ni \xi_x \mapsto \xi^{\flat}_x \in T^{*}_{x} \mathcal{M}$
 
@@ -51,8 +50,8 @@ and $\xi^{\flat}_x \colon T_{x} \mathcal{M} \to T_{x} \mathcal{M}$ satisfies
 
 $\xi^{\flat}_x(\eta_x) = g_x(\xi_x,\eta_x),$
 
-where $g_x \colon T_{x} \mathcal{M} \times T_{x} \mathcal{M} \to \mathbb{R}$ is the chosen Riemannian metric of the manifold $\mathcal{M}$. This allows one to define e.g. $y_k y^{\flat}_k$, which is a postive definite self-adjoint rank one operator on $T_{x_k} \mathcal{M}$. 
-With these definitions and terms, the following update formulas can now be defined. We note that all the methods described here satisfy a form of the Riemannian quasi-Newton equation. 
+where $g_x \colon T_{x} \mathcal{M} \times T_{x} \mathcal{M} \to \mathbb{R}$ is the chosen Riemannian metric of the manifold $\mathcal{M}$. This allows one to define e.g. $y_k y^{\flat}_k$, which is a postive definite self-adjoint rank one operator on $T_{x_k} \mathcal{M}$.
+With these definitions and terms, the following update formulas can now be defined. We note that all the methods described here satisfy a form of the Riemannian quasi-Newton equation.
 The Riemannian BFGS update, also called RBFGS update, is a rank two operator update which turns a positive definite self-adjoint operator $\mathcal{H}^{RBFGS}_k$ on $T_{x_k} \mathcal{M}$ into a positive definite self-adjoint operator $\mathcal{H}^{RBFGS}_{k+1}$ on $T_{x_{k+1}} \mathcal{M}$, if $g_{x_{k+1}}(s_k, y_k) > 0$ holds:
 
 $\mathcal{H}^{RBFGS}_{k+1} [\cdot] = \widetilde{\mathcal{H}}^{RBFGS}_k [\cdot] + \frac{y_k y^{\flat}_k[\cdot]}{s^{\flat}_k [y_k]} - \frac{\widetilde{\mathcal{H}}^{RBFGS}_k [s_k] s^{\flat}_k (\widetilde{\mathcal{H}}^{RBFGS}_k [\cdot])}{s^{\flat}_k (\widetilde{\mathcal{H}}^{RBFGS}_k [s_k])}.$
@@ -81,7 +80,7 @@ Another Riemannian quasi-Newton update, which does not transfer the positive def
 
 $\mathcal{H}^{RSR1}_{k+1} [\cdot] = \widetilde{\mathcal{H}}^{RSR1}_k [\cdot] + \frac{(y_k - \widetilde{\mathcal{H}}^{RSR1}_k [s_k])(y_k - \widetilde{\mathcal{H}}^{RSR1}_k [s_k])^{\flat}[\cdot]}{(y_k - \widetilde{\mathcal{H}}^{RSR1}_k [s_k])^{\flat}[s_k]}.$
 
-By replacing the triple $(\widetilde{\mathcal{H}}^{RSR1}_k, s_k, y_k)$ by the triple $(\widetilde{\mathcal{B}}^{SR1}_k, y_k, s_k)$ we get the inverse SR1 update:  
+By replacing the triple $(\widetilde{\mathcal{H}}^{RSR1}_k, s_k, y_k)$ by the triple $(\widetilde{\mathcal{B}}^{SR1}_k, y_k, s_k)$ we get the inverse SR1 update:
 
 $\mathcal{B}^{RSR1}_{k+1} [\cdot] = \widetilde{\mathcal{B}}^{RSR1}_k [\cdot] + \frac{(s_k - \widetilde{\mathcal{B}}^{RSR1}_k [y_k])(s_k - \widetilde{\mathcal{B}}^{RSR1}_k [y_k])^{\flat}[\cdot]}{(s_k - \widetilde{\mathcal{B}}^{RSR1}_k [y_k])^{\flat}[y_k]}.$
 
@@ -105,15 +104,15 @@ The result is given by the last computed $x_K$.
 
 ## Locking condition
 
-Essential for the positive definiteness of the operators $\mathcal{H}_{k+1}$ or $\mathcal{B}_{k+1}$ for many methods is the fulfilment of 
+Essential for the positive definiteness of the operators $\mathcal{H}_{k+1}$ or $\mathcal{B}_{k+1}$ for many methods is the fulfilment of
 
 $g_{x_{k+1}}(s_k, y_k) > 0,$
 
-which is the so-called Riemannian curvature condition. If this condition holds in each iteration, the corresponding update, which uses an isometric vector transport $T^S$, produces a sequence of positive definite self-adjoint operators $\{ \mathcal{H}_k \}_k$ or $\{ \mathcal{B}_k \}_k$. The same association exists, of course, in the Euclidean case, where the fulfilment of the curvature condition $s^{\mathrm{T}}_k y_k$ is ensured by choosing a stepsize $\alpha_k > 0$ in each ietartion that fulfils the Wolfe conditions. The generalisation of the Wolfe conditions for Riemannian manifolds is that the stepsize $\alpha_k > 0$ satisfies 
+which is the so-called Riemannian curvature condition. If this condition holds in each iteration, the corresponding update, which uses an isometric vector transport $T^S$, produces a sequence of positive definite self-adjoint operators $\{ \mathcal{H}_k \}_k$ or $\{ \mathcal{B}_k \}_k$. The same association exists, of course, in the Euclidean case, where the fulfilment of the curvature condition $s^{\mathrm{T}}_k y_k$ is ensured by choosing a stepsize $\alpha_k > 0$ in each ietartion that fulfils the Wolfe conditions. The generalisation of the Wolfe conditions for Riemannian manifolds is that the stepsize $\alpha_k > 0$ satisfies
 
 $f( R_{x_k}(\alpha_k \eta_k)) \leq f(x_k) + c_1 \alpha_k g_{x_k} (\operatorname{grad} f(x_k), \eta_k)$
 
-and 
+and
 
 $\frac{\mathrm{d}}{\mathrm{d}t} f(R_{x_k}(t \; \eta_k)) \vert_{t=\alpha_k} \geq c_2 \frac{\mathrm{d}}{\mathrm{d}t} f(R_{x_k}(t \; \eta_k)) \vert_{t=0}.$
 
@@ -125,15 +124,15 @@ Unfortunately, in general, a stepsize $\alpha_k > 0$ that satisfies the Riemanni
 
 $T^{S}{x, \xi_x}(\xi_x) = \beta T^{R}{x, \xi_x}(\xi_x), \quad \beta = \frac{\lVert \xi_x \rVert_x}{\lVert T^{R}{x, \xi_x}(\xi_x) \rVert_{R_{x}(\xi_x)}}.$
 
-where $T^R$ is again the vector transport by differentiated retraction. With the requirement that the isometric vector transport $T^S$ and its associared retraction $R$ satisfies the locking condition and using the tangent vector 
+where $T^R$ is again the vector transport by differentiated retraction. With the requirement that the isometric vector transport $T^S$ and its associared retraction $R$ satisfies the locking condition and using the tangent vector
 
 $y_k = {\beta_k}^{-1} \operatorname{grad} f(x_{k+1}) - T^{S}{x_k, \alpha_k \eta_k}(\operatorname{grad} f(x_k)),$
 
-where 
+where
 
 $\beta_k = \frac{\lVert \alpha_k \eta_k \rVert_{x_k}}{\lVert \lVert T^{R}{x_k, \alpha_k \eta_k}(\alpha_k \eta_k) \rVert_{x_{k+1}}},$
 
-in the update, it can be shown that choosing a stepsize $\alpha_k > 0$ that satisfies the Riemannian wolfe conditions leads to the fulfilment of the Riemannian curvature condition, which in turn implies that the operator generated by the updates is positive definite. 
+in the update, it can be shown that choosing a stepsize $\alpha_k > 0$ that satisfies the Riemannian wolfe conditions leads to the fulfilment of the Riemannian curvature condition, which in turn implies that the operator generated by the updates is positive definite.
 
 ## Cautious BFGS
 
@@ -143,26 +142,26 @@ $\mathcal{B}^{CRBFGS}_{k+1} = \begin{cases} \text{using \cref{RiemannianInverseB
 
 ## Limited-memory Riemannian BFGS
 
-As in the Euclidean case, for manifolds of very large dimensions, both the memory required and the computationally cost can be extremely high for quasi-Newton methods, since in each iteration an operator on the tangent space with the same dimension of the manifold must be transported and stored. To overcome this obstacle, the limited-memory BFGS method was generalised for the Riemannian setup. 
+As in the Euclidean case, for manifolds of very large dimensions, both the memory required and the computationally cost can be extremely high for quasi-Newton methods, since in each iteration an operator on the tangent space with the same dimension of the manifold must be transported and stored. To overcome this obstacle, the limited-memory BFGS method was generalised for the Riemannian setup.
 At the beginning of the k-th iteration, the search direction $\eta_k = \mathcal{B}^{LRBFGS}_k [\operatorname{grad}f(x_k)]$ is calculated using the two-loop recursion with $m$ ($<$ dimension of the manifold) stored tangent vectors $\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1} \subset T_{x_k} \mathcal{M}$ and a positive definite selfadjoint operator $\mathcal{B}^{(0)}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ that varies from iteration to iteration:
 
 \begin{algorithm}[H]
 	\begin{algorithmic}[1]
         \State $q = \operatorname{grad} f(x_k)$
-        
+
         \For{$i = k-1, k-2, \cdots, k-m$}
             \State $\rho_i = \frac{1}{g_{x_k}(\widetilde{s}_i, \widetilde{y}_i)}$
-            \State $\xi_i = \rho_i g_{x_k}(\widetilde{s}_i, q)$ 
+            \State $\xi_i = \rho_i g_{x_k}(\widetilde{s}_i, q)$
             \State $q = q - \xi_i \widetilde{y}_i$
         \EndFor
 
         \State $r = \mathcal{B}^{(0)}_k[q]$
-        
+
         \For{$i = k-m, k-m+1, \cdots, k-1$}
-            \State $\omega = \rho_i g_{x_k}(\widetilde{y}_i, r)$ 
+            \State $\omega = \rho_i g_{x_k}(\widetilde{y}_i, r)$
             \State $r= r  + (\xi_i - \omega) \widetilde{s}_i$
 		\EndFor
-		
+
 		\State \textbf{Stop with result} $\mathcal{B}^{LRBFGS}_k[\operatorname{grad} f(x_k)]$.
     \end{algorithmic}
 \end{algorithm}
@@ -175,8 +174,7 @@ $
 c_k = \frac{\widetilde{s}^{\flat}_{k-1} \widetilde{y}_{k-1}}{\widetilde{y}^{\flat}_{k-1} \widetilde{y}_{k-1}} = \frac{s^{\flat}_{k-1} y_{k-1}}{y^{\flat}_{k-1} y_{k-1}} = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})}.
 $
 
-For the first iteration usually the identity operator is used. In the $k$-th iteration, the next iterate is calculated as usual, i.e. $x_{k+1} = R_{x_k}(\alpha_k \eta_k)$, where alpha is a step size that satisfies the wolfe conditions. Then comes the crux of the algortihmus, which has a memory advantage over the usual quasi-Newton methods. When updating, the oldest vector pair $\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}$ of the set $\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}$ is exchanged with the newest vector pair $\{ \widetilde{s}_k, \widetilde{y}_k\}$. There are two cases: if there is still free memory, i.e. $k < m$, the previously stored vector pairs $\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}$ have to be transported into the new tangent space $T_{x_k} \mathcal{M}$; if there is no free memory, the oldest pair has to be discarded and then all the remaining vector pairs are transported into the new tangent space. This method ensures that all tangent vectors are in the correct tangent space, i.e. T, so that in the next iteration the search direction can be recursively calculated again. After that we calculate and store s and y . This ensures that new information about the target function is always included and the old, probably no longer relevant, information is discarded. 
-
+For the first iteration usually the identity operator is used. In the $k$-th iteration, the next iterate is calculated as usual, i.e. $x_{k+1} = R_{x_k}(\alpha_k \eta_k)$, where alpha is a step size that satisfies the wolfe conditions. Then comes the crux of the algortihmus, which has a memory advantage over the usual quasi-Newton methods. When updating, the oldest vector pair $\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}$ of the set $\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}$ is exchanged with the newest vector pair $\{ \widetilde{s}_k, \widetilde{y}_k\}$. There are two cases: if there is still free memory, i.e. $k < m$, the previously stored vector pairs $\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}$ have to be transported into the new tangent space $T_{x_k} \mathcal{M}$; if there is no free memory, the oldest pair has to be discarded and then all the remaining vector pairs are transported into the new tangent space. This method ensures that all tangent vectors are in the correct tangent space, i.e. T, so that in the next iteration the search direction can be recursively calculated again. After that we calculate and store s and y . This ensures that new information about the target function is always included and the old, probably no longer relevant, information is discarded.
 
 In summary, the algorithm takes the following form:
 
@@ -184,20 +182,19 @@ In summary, the algorithm takes the following form:
 ## Interface
 
 ```@meta
-CurrentModule = Manopt
+    CurrentModule = Manopt
 ```
-
+å
 ```@docs
-quasi_Newton
+    quasi_Newton
 ```
 
 ## Problem & Options
 
+The quasi Newton algorithm is based on a [`GradientProblem`](@ref).
+
 ```@docs
-GradientProblem
 QuasiNewtonOptions
 ```
 
-
 ## Literature
-
