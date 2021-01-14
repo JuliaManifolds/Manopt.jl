@@ -36,7 +36,7 @@ In the following we denote the specific operators in matrix notation and hence u
 
 ## Operator Updates
 
-The following update rules for either ``\mathcal{H}_{k+1}`` or ``\mathcal B_{k+1}`` are available.
+The following update rules for either ``H_{k+1}`` or `` B_{k+1}`` are available.
 
 ```@docs
 AbstractQuasiNewtonUpdateRule

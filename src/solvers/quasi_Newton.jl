@@ -123,17 +123,14 @@ function locking_condition_scale(
 end
 
 @doc raw"""
-    update_hessian!(d, p, o, x, iter)
+    update_hessian!(d, p, o, x_old, iter)
 
-update the matrix wich represents with respect to an orthoormal basis
-in the tangent space the approximating operator of the quasi-Newton method.
+update the hessian wihtin the [`QuasiNewtonOptions`](@ref) `o` given a [`Probem`](@ref) `p`
+as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `x_old`.
+Note that the current (`iter`th) iterate is already stored in `o.x`.
 
-# Input
-* `d` – an abstract quasi-Newton direction update, which indicates which quasi-Newton method is used.
-* `p` – a gradient problem.
-* `o` – quasi-Newton options.
-* `x` – the current iterate.
-* `iter` – number of iterations.
+See also [`AbstractQuasiNewtonUpdateRule`](@ref) for the different rules that are available
+within `d`.
 """
 update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, ::Any, ::Any, ::Any, ::Any)
 

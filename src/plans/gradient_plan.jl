@@ -998,9 +998,8 @@ abstract type AbstractQuasiNewtonUpdateRule end
     BFGS <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian BFGS update is used in the Riemannian quasi-Newton method.
-The Hessian matrix $H_k^\mathrm{BFGS}_k$ is either given with respect to a basis in $T_{x_k} \mathcal{M}$ or build from
-previous memory of $y_j$, $s_j$, $j<k$.
- We denote by $\tilde H_k^\mathrm{BFGS}$ operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+
+We denote by ``\tilde H_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
@@ -1010,69 +1009,157 @@ H^\mathrm{BFGS}_{k+1} = \tilde H^\mathrm{BFGS}_k + \frac{y_k y^{\mathrm{T}}_k}{s
 where
 ```math
 s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad} f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
 ```
 """
 struct BFGS <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
     InverseBFGS <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian BFGS update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RBFGS}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{RBFGS}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse BFGS formula for matrices is used, i.e.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian BFGS update is used in the Riemannian quasi-Newton method.
 
-$B^\mathrm{BFGS}_{k+1}  = \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} \Big{)} B^\mathrm{BFGS}_k \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} \Big{)} + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}$
+We denote by ``\tilde B_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Then the update formula reads
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
+```math
+B^\mathrm{BFGS}_{k+1}  = \Bigl(
+  \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
+\Bigr)
+\tilde B^\mathrm{BFGS}_k
+\Bigl(
+  \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
+\Bigr) + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+```
+
+where
+```math
+s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+```
 """
 struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
     DFP <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian DFP update is used in the Riemannian quasi-Newton method. The operator $\mathcal{H}^{RDFP}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{DFP}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean DFP formula for matrices is used, i.e.
+indicates in an [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian DFP update is used in the Riemannian quasi-Newton method.
 
-$H^{DFP}_{k+1} = \Big{(} \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} \Big{)} H^{DFP}_k \Big{(} \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} \Big{)} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}$
+We denote by ``\tilde H_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Then the update formula reads
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
+```math
+H^\mathrm{DFP}_{k+1} = \Bigl(
+  \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+\Bigr)
+\tilde H^\mathrm{DFP}_k
+\Bigl(
+  \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+\Bigr) + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+```
+
+where
+```math
+s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+```
 """
 struct DFP <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
     InverseDFP <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian DFP update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RDFP}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{DFP}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse DFP formula for matrices is used, i.e.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian DFP update is used in the Riemannian quasi-Newton method.
 
-$B^{DFP}_{k+1} = B^{DFP}_k + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} - \frac{B^{DFP}_k y_k y^{\mathrm{T}}_k B^{DFP}_k}{y^{\mathrm{T}}_k B^{DFP}_k y_k}$
+We denote by ``\tilde B_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Then the update formula reads
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
+```math
+B^\mathrm{DFP}_{k+1} = \tilde B^\mathrm{DFP}_k
++ \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+- \frac{\tilde B^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \tilde B^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \tilde B^\mathrm{DFP}_k y_k}
+```
+
+where
+```math
+s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+```
 """
 struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
     SR1 <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian SR1 update is used in the Riemannian quasi-Newton method. The operator $\mathcal{H}^{RSR1}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{SR1}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean SR1 formula for matrices is used, i.e.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian SR1 update is used in the Riemannian quasi-Newton method.
 
-$H^{SR1}_{k+1} = H^{SR1}_k + \frac{(y_k - H^{SR1}_k s_k) (y_k - H^{SR1}_k s_k)^{\mathrm{T}}}{(y_k - H^{SR1}_k s_k)^{\mathrm{T}} s_k}$
+We denote by ``\tilde H_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Then the update formula reads
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
+```math
+H^\mathrm{SR1}_{k+1} = \tilde H^\mathrm{SR1}_k
++ \frac{
+  (y_k - \tilde H^\mathrm{SR1}_k s_k) (y_k - \tilde H^\mathrm{SR1}_k s_k)^{\mathrm{T}}
+}{
+(y_k - \tilde H^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
+}
+```
+
+where
+```math
+s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+```
 """
 struct SR1 <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
     InverseSR1 <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian SR1 update is used in the Riemannian quasi-Newton method. The operator $\mathcal{B}^{RSR1}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{RSR1}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse SR1 formula for matrices is used, i.e.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian SR1 update is used in the Riemannian quasi-Newton method.
 
-$B^{SR1}_{k+1} = B^{SR1}_k + \frac{(s_k - B^{SR1}_k y_k) (s_k - B^{SR1}_k y_k)^{\mathrm{T}}}{(s_k - B^{SR1}_k y_k)^{\mathrm{T}} y_k}$
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
+We denote by ``\tilde B_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Then the update formula reads
+
+```math
+B^\mathrm{SR1}_{k+1} = \tilde B^\mathrm{SR1}_k
++ \frac{
+  (s_k - \tilde B^\mathrm{SR1}_k y_k) (s_k - \tilde B^\mathrm{SR1}_k y_k)^{\mathrm{T}}
+}{
+  (s_k - \tilde B^\mathrm{SR1}_k y_k)^{\mathrm{T}} y_k
+}
+```
+
+where
+```math
+s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+```
 """
 struct InverseSR1 <: AbstractQuasiNewtonUpdateRule end
 
 @doc raw"""
     Broyden <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian Broyden update is used in the Riemannian quasi-Newton method, which can be seen as a convex combination of the RBFGS and the RDFP updates. The operator $\mathcal{H}^{RBroyden}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $H^{Broyden}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean Broyden formula for matrices is used, i.e.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian Broyden update is used in the Riemannian quasi-Newton method, which is as a convex combination of [`BFGS`](@ref) and [`DFP`](@ref).
 
-$H^{Broyden}_{k+1} = H^{Broyden}_k - \frac{H^{Broyden}_k s_k s^{\mathrm{T}}_k H^{Broyden}_k}{s^{\mathrm{T}}_k H^{Broyden}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} + \phi_k s^{\mathrm{T}}_k H^{Broyden}_k s_k (\frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^{Broyden}_k s_k}{s^{\mathrm{T}}_k H^{Broyden}_k s_k}) (\frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^{Broyden}_k s_k}{s^{\mathrm{T}}_k H^{Broyden}_k s_k})^{\mathrm{T}}_k$
+We denote by ``\tilde H_k^\mathrm{Br}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Then the update formula reads
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The factor $\phi_k$ can either be fixed in the interval $[0,1]$ or calculated by a formula in each iteration. The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
+```math
+H^\mathrm{Br}_{k+1} = H^\mathrm{Br}_k
+  - \frac{H^\mathrm{Br}_k s_k s^{\mathrm{T}}_k H^\mathrm{Br}_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  + φ_k s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k (\frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k}) (\frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k})^{\mathrm{T}}_k$
+```
+
+where
+
+```math
+s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+```
+
+and ``φ_k`` is the Broydenfactor which is `:constant` by default but can also be set to `:Davidon`.
+
+# Constructor
+    InverseBroyden(φ, update_rule::Symbol = :constant)
+
 """
 mutable struct Broyden <: AbstractQuasiNewtonUpdateRule
     φ::Float64
@@ -1083,11 +1170,28 @@ Broyden(φ::Float64) = Broyden(φ, :constant)
 @doc raw"""
     InverseBroyden <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian Broyden update is used in the Riemannian quasi-Newton method, which can be seen as a convex combination of the inverse RBFGS and the inverse RDFP updates. The operator $\mathcal{B}^{RBroyden}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^{Broyden}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse Broyden formula for matrices is used, i.e.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian Broyden update is used in the Riemannian quasi-Newton method, which can be seen as a convex combination of
+[`InverseBFGS`](@ref) and [`InverseDFP`](@ref) the inverse RBFGS and the inverse RDFP updates. The operator $\mathcal{B}^{RBroyden}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^\mathrm{Br}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse Broyden formula for matrices is used, i.e.
 
-$B^{Broyden}_{k+1} = B^{Broyden}_k - \frac{B^{Broyden}_k y_k y^{\mathrm{T}}_k B^{Broyden}_k}{y^{\mathrm{T}}_k B^{Broyden}_k y_k} + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} + \phi_k y^{\mathrm{T}}_k B^{Broyden}_k y_k (\frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^{Broyden}_k y_k}{y^{\mathrm{T}}_k B^{Broyden}_k y_k}) (\frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^{Broyden}_k y_k}{y^{\mathrm{T}}_k B^{Broyden}_k y_k})^{\mathrm{T}}_k$
+```math
+B^\mathrm{Br}_{k+1} = B^\mathrm{Br}_k
+ - \frac{B^\mathrm{Br}_k y_k y^{\mathrm{T}}_k B^\mathrm{Br}_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}
+   + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+ + φ_k y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k (\frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}) (\frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k})^{\mathrm{T}}_k
+```
 
-where $s_k, y_k$ are stored in [`QuasiNewtonDirectionUpdate`](@ref). The factor $\phi_k$ can either be fixed in the interval $[0,1]$ or calculated by a formula in each iteration. The orthonormal basis is stored in [`QuasiNewtonDirectionUpdate`](@ref) and is transported into the new tangent space $T_{x_{k+1}} \mathcal{M}$ or newly created there.
+where
+
+```math
+s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+```
+
+and $\theta_k$ is the Broydenfactor which is `:constant` by default but can also be set to `:Davidon`.
+
+# Constructor
+    InverseBroyden(φ, update_rule::Symbol = :constant)
+
 """
 mutable struct InverseBroyden <: AbstractQuasiNewtonUpdateRule
     φ::Float64
