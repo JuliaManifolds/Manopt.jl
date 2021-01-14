@@ -1187,7 +1187,7 @@ s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
 ```
 
-and $\theta_k$ is the Broydenfactor which is `:constant` by default but can also be set to `:Davidon`.
+and ``φ_k`` is the Broydenfactor which is `:constant` by default but can also be set to `:Davidon`.
 
 # Constructor
     InverseBroyden(φ, update_rule::Symbol = :constant)
