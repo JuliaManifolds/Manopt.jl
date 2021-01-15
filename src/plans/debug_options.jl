@@ -318,9 +318,11 @@ function (d::DebugEntryChange)(p::Problem, o::Options, i::Int)
     s = if (i > 0)
         (
             if has_storage(d.storage, d.field)
-                d.prefix * string(d.distance(
-                    p, o, getproperty(o, d.field), get_storage(d.storage, d.field)
-                ))
+                d.prefix * string(
+                    d.distance(
+                        p, o, getproperty(o, d.field), get_storage(d.storage, d.field)
+                    ),
+                )
             else
                 ""
             end

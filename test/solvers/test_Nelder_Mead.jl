@@ -9,8 +9,8 @@ Random.seed!(29)
         # From Wikipedia https://en.wikipedia.org/wiki/Rosenbrock_function
         function Rosenbrock(x)
             return sum([
-                100 * (x[2 * i - 1]^2 - x[2 * i])^2 + (x[2 * i - 1] - 1)^2
-                for i in 1:div(length(x), 2)
+                100 * (x[2 * i - 1]^2 - x[2 * i])^2 + (x[2 * i - 1] - 1)^2 for
+                i in 1:div(length(x), 2)
             ])
         end
         x0 = [8 * randn(6) for i in 1:7]

@@ -290,16 +290,20 @@ mutable struct NonmonotoneLinesearch{
             strategy = :direct
         end
         if min_stepsize <= 0.0
-            throw(DomainError(
-                min_stepsize,
-                "The lower bound for the step size min_stepsize has to be greater than zero.",
-            ))
+            throw(
+                DomainError(
+                    min_stepsize,
+                    "The lower bound for the step size min_stepsize has to be greater than zero.",
+                ),
+            )
         end
         if max_stepsize <= min_stepsize
-            throw(DomainError(
-                max_stepsize,
-                "The upper bound for the step size max_stepsize has to be greater its lower bound min_stepsize.",
-            ))
+            throw(
+                DomainError(
+                    max_stepsize,
+                    "The upper bound for the step size max_stepsize has to be greater its lower bound min_stepsize.",
+                ),
+            )
         end
         if memory_size <= 0
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))

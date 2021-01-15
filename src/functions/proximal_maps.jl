@@ -27,7 +27,11 @@ function prox_distance(M::Manifold, λ, f, x, p::Int=2)
             t = 1.0
         end
     else
-        throw(ErrorException("Proximal Map of distance(M,f,x) not implemented for p=$(p) (requires p=1 or 2)"))
+        throw(
+            ErrorException(
+                "Proximal Map of distance(M,f,x) not implemented for p=$(p) (requires p=1 or 2)",
+            ),
+        )
     end
     return exp(M, x, log(M, x, f), t)
 end
@@ -60,7 +64,11 @@ function prox_TV(M::mT, λ::Number, pointTuple::Tuple{T,T}, p::Int=1) where {mT<
     elseif p == 2
         t = λ / (1 + 2 * λ)
     else
-        throw(ErrorException("Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)"))
+        throw(
+            ErrorException(
+                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
+            ),
+        )
     end
     return (exp(M, x1, log(M, x1, x2), t), exp(M, x2, log(M, x2, x1), t))
 end
@@ -136,7 +144,11 @@ function prox_parallel_TV(M::PowerManifold, λ, x::Array{T,1}, p::Int=1) where {
     R = CartesianIndices(x[1])
     d = ndims(x[1])
     if length(x) != 2 * d
-        throw(ErrorException("The number of inputs from the array ($(length(x))) has to be twice the data dimensions ($(d))."))
+        throw(
+            ErrorException(
+                "The number of inputs from the array ($(length(x))) has to be twice the data dimensions ($(d)).",
+            ),
+        )
     end
     maxInd = Tuple(last(R))
     # create an array for even/odd splitted proxes along every dimension
@@ -194,7 +206,11 @@ function prox_TV2(
     kwargs...,
 ) where {T}
     if p != 1
-        throw(ErrorException("Proximal Map of TV2(M,λ,pT,p) not implemented for p=$(p) (requires p=1) on general manifolds."))
+        throw(
+            ErrorException(
+                "Proximal Map of TV2(M,λ,pT,p) not implemented for p=$(p) (requires p=1) on general manifolds.",
+            ),
+        )
     end
     PowX = SVector(pointTuple)
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
@@ -218,7 +234,11 @@ function prox_TV2(::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
         t = λ * sym_rem(sum(x .* w)) / (1 + λ * dot(w, w))
         return sym_rem.(x - t .* w)
     else
-        throw(ErrorException("Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"))
+        throw(
+            ErrorException(
+                "Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)",
+            ),
+        )
     end
 end
 function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
@@ -232,7 +252,11 @@ function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
         t = λ * sum(x .* w) / (1 + λ * dot(w, w))
         return x .- t .* w
     else
-        throw(ErrorException("Proximal Map of TV2(Euclidean,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)"))
+        throw(
+            ErrorException(
+                "Proximal Map of TV2(Euclidean,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)",
+            ),
+        )
     end
 end
 @doc raw"""
@@ -315,7 +339,11 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=
         d = pdims[end]
         s = length(pdims) - 1
         if s != d
-            throw(ErrorException("the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not."))
+            throw(
+                ErrorException(
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                ),
+            )
         end
         iRep = (Integer.(ones(d))..., d)
     end

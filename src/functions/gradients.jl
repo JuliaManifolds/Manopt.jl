@@ -129,9 +129,7 @@ function _∇acceleration_bezier(
         adjoint_differential_geodesic_endpoint.(Ref(M), forward, backward, Ref(0.5), inner)
     # effect of these to the centrol points is the preliminary gradient
     ∇B = [
-        BezierSegment(a.pts .+ b.pts .+ c.pts)
-        for
-        (a, b, c) in zip(
+        BezierSegment(a.pts .+ b.pts .+ c.pts) for (a, b, c) in zip(
             adjoint_differential_bezier_control(M, Bt, T[[1, 3:n..., n]], asForward),
             adjoint_differential_bezier_control(M, Bt, T, asCenter),
             adjoint_differential_bezier_control(M, Bt, T[[1, 1:(n - 2)..., n]], asBackward),

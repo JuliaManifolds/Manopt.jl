@@ -93,7 +93,7 @@ function step_solver!(p::CostProblem, o::NelderMeadOptions, iter)
         Coste = get_cost(p, xe)
         # successful? use the expanded, otherwise still use xr
         o.population[last(ind)] .= Coste < Costr ? xe : xr
-        o.costs[last(ind)] = min(Coste,Costr)
+        o.costs[last(ind)] = min(Coste, Costr)
     end
     # --- Contraction ---
     if Costr > o.costs[ind[end - 1]] # even worse than second worst
