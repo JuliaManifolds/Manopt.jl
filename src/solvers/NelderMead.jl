@@ -91,13 +91,9 @@ function step_solver!(p::CostProblem, o::NelderMeadOptions, iter)
     if Costr < o.costs[first(ind)] # reflected is better than fist -> expand
         xe = retract(p.M, m, -o.γ * o.α * ξ, o.retraction_method)
         Coste = get_cost(p, xe)
-        if Coste < Costr # expanded successful
-            o.population[last(ind)] = xe
-            o.costs[last(ind)] = Coste
-        else # expansion failed but xr is still quite good -> store
-            o.population[last(ind)] = xr
-            o.costs[last(ind)] = Costr
-        end
+        # successful? use the expanded, otherwise still use xr
+        o.population[last(ind)] .= Coste < Costr ? xe : xr
+        o.costs[last(ind)] = min(Coste,Costr)
     end
     # --- Contraction ---
     if Costr > o.costs[ind[end - 1]] # even worse than second worst
