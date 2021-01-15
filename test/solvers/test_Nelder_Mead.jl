@@ -1,7 +1,7 @@
 #
 #
 #
-using Random, Manifolds, Manopt, LinearAlgebra
+using Random, Manifolds, Manopt, LinearAlgebra, Test
 Random.seed!(29)
 @testset "Test Nelder-Mead" begin
     @testset "Euclidean" begin
