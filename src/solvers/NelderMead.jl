@@ -97,12 +97,8 @@ function step_solver!(p::CostProblem, o::NelderMeadOptions, iter)
     end
     # --- Contraction ---
     if Costr > o.costs[ind[end - 1]] # even worse than second worst
-        if Costr < o.costs[last(ind)] # but at least better than last
-            # outside contraction
-            xc = retract(p.M, m, -o.ρ * ξ, o.retraction_method)
-        else # even worse than last -> inside contraction
-            xc = retract(p.M, m, o.ρ * ξ, o.retraction_method)
-        end
+        s = (Costr < o.costs[last(ind)] ? -o.ρ : o.ρ)
+        xc = retract(p.M, m, s * ξ, o.retraction_method)
         Costc = get_cost(p, xc)
         if Costc < o.costs[last(ind)] # better than last ? -> store
             o.population[last(ind)] = xc
