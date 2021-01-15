@@ -27,10 +27,12 @@ using Manopt, Manifolds, Test
         ]
         @test aT1 ≈ aT2
         #
-        @test sum(norm.(
-            ∇acceleration_bezier(M, B[1], collect(range(0.0, 1.0; length=20))).pts .-
-            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-        )) ≈ 0 atol = 10^(-12)
+        @test sum(
+            norm.(
+                ∇acceleration_bezier(M, B[1], collect(range(0.0, 1.0; length=20))).pts .-
+                [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+            ),
+        ) ≈ 0 atol = 10^(-12)
 
         # cost and gradient
         T = collect(range(0.0, 2.0; length=51))

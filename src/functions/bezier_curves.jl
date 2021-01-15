@@ -100,8 +100,11 @@ end
 function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment})
     length(B) == 1 && return de_casteljau(M, B[1])
     return function (t)
-        ((0 > t) || (t > length(B))) &&
-            throw(DomainError("Parameter $(t) outside of domain of the composite Bézier curve [0,$(length(B))]."))
+        ((0 > t) || (t > length(B))) && throw(
+            DomainError(
+                "Parameter $(t) outside of domain of the composite Bézier curve [0,$(length(B))].",
+            ),
+        )
         return de_casteljau(
             M, B[max(ceil(Int, t), 1)], ceil(Int, t) == 0 ? 0.0 : t - ceil(Int, t) + 1
         )
@@ -120,8 +123,11 @@ function de_casteljau(M::Manifold, b::BezierSegment, t::Real)
     return c[1]
 end
 function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment}, t::Real)
-    ((0 > t) || (t > length(B))) &&
-        throw(DomainError("Parameter $(t) outside of domain of the composite Bézier curve [0,$(length(B))]."))
+    ((0 > t) || (t > length(B))) && throw(
+        DomainError(
+            "Parameter $(t) outside of domain of the composite Bézier curve [0,$(length(B))].",
+        ),
+    )
     return de_casteljau(
         M, B[max(ceil(Int, t), 1)], ceil(Int, t) == 0 ? 0.0 : t - ceil(Int, t) + 1
     )
@@ -288,15 +294,16 @@ function get_bezier_segments(::Manifold, c::Array{P,1}, d, ::Val{:default}) wher
     return [BezierSegment(c[si:ei]) for (si, ei) in zip(startindices, endindices)]
 end
 function get_bezier_segments(::Manifold, c::Array{P,1}, d, ::Val{:continuous}) where {P}
-    length(c) != (sum(d) + 1) &&
-        error("The number of control points $(length(c)) does not match (for degrees $(d) expcted $(sum(d)+1) points.")
+    length(c) != (sum(d) + 1) && error(
+        "The number of control points $(length(c)) does not match (for degrees $(d) expcted $(sum(d)+1) points.",
+    )
     nums = d .+ [(i == length(d)) ? 1 : 0 for i in 1:length(d)]
     endindices = cumsum(nums)
     startindices = cumsum(nums) - nums .+ 1
     return [
         [ # for all append the start of the new also as last
-            BezierSegment([c[startindices[i]:endindices[i]]..., c[startindices[i + 1]]])
-            for i in 1:(length(startindices) - 1)
+            BezierSegment([c[startindices[i]:endindices[i]]..., c[startindices[i + 1]]]) for
+            i in 1:(length(startindices) - 1)
         ]..., # despite for the last
         BezierSegment(c[startindices[end]:endindices[end]]),
     ]
@@ -304,8 +311,9 @@ end
 function get_bezier_segments(
     M::Manifold, c::Array{P,1}, d, ::Val{:differentiable}
 ) where {P}
-    length(c) != (sum(d .- 1) + 2) &&
-        error("The number of control points $(length(c)) does not match (for degrees $(d) expcted $(sum(d.-1)+2) points.")
+    length(c) != (sum(d .- 1) + 2) && error(
+        "The number of control points $(length(c)) does not match (for degrees $(d) expcted $(sum(d.-1)+2) points.",
+    )
     nums = d .+ [(i == 1) ? 1 : -1 for i in 1:length(d)]
     endindices = cumsum(nums)
     startindices = cumsum(nums) - nums .+ 1

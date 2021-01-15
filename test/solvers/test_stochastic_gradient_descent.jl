@@ -5,8 +5,8 @@ using Manopt, Manifolds, Test
     p = [0.0, 0.0, 1.0]
     s = 1.0
     pts = [
-        exp(M, p, X)
-        for X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
+        exp(M, p, X) for
+        X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
     F(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
     ∇F(y) = sum([-log(M, y, x) for x in pts])
