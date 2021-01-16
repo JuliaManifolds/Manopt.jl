@@ -174,7 +174,7 @@ Random.seed!(42)
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
     end
-    @testset "Brocket" begin
+    @testset "Brockett" begin
         struct GradF
             A::Matrix{Float64}
             N::Diagonal{Float64,Vector{Float64}}
@@ -185,8 +185,8 @@ Random.seed!(42)
             return 2 .* AX * ∇F.N .- X * XpAX * ∇F.N .- X * ∇F.N * XpAX
         end
 
-        n = 64
-        k = 8
+        n = 1000
+        k = 5
         M_brockett = Stiefel(n, k)
         A_brockett = randn(n, n)
         A_brockett = (A_brockett + A_brockett') / 2
@@ -199,7 +199,7 @@ Random.seed!(42)
             F_brockett,
             ∇F_brockett,
             x_brockett;
-            memory_size=2,
+            memory_size=4,
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
