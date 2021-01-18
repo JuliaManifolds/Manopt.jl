@@ -187,23 +187,37 @@ Random.seed!(42)
 
         n = 1000
         k = 5
-        M_brockett = Stiefel(n, k)
-        A_brockett = randn(n, n)
-        A_brockett = (A_brockett + A_brockett') / 2
-        F_brockett(X) = tr((X' * A_brockett * X) * Diagonal(k:-1:1))
-        ∇F_brockett = GradF(A_brockett, Diagonal(Float64.(collect(k:-1:1))))
-        x_brockett = random_point(M_brockett)
+        M = Stiefel(n, k)
+        A = randn(n, n)
+        A = (A + A') / 2
+        F(X) = tr((X' * A * X) * Diagonal(k:-1:1))
+        ∇F = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
+        x = random_point(M)
 
-        x_inverseBFGSCautious_brockett = quasi_Newton(
-            M_brockett,
-            F_brockett,
-            ∇F_brockett,
-            x_brockett;
+        x_inverseBFGSCautious = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
             memory_size=4,
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
+        x_inverseBFGSHuang = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            memory_size=1,
+            step_size=WolfePowellLineseachHuang(QRRetraction(), ProjectionTransport()),
+            vector_transport_method=ProjectionTransport(),
+            retraction_method=QRRetraction(),
+            direction_update=InverseBroyden(0.5, :Davidon),
+            cautious_update=true,
+            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+        )
+        @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang)
     end
 end
