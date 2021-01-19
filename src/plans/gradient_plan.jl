@@ -999,11 +999,11 @@ abstract type AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian BFGS update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\tilde H_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-H^\mathrm{BFGS}_{k+1} = \tilde H^\mathrm{BFGS}_k + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{BFGS}_k s_k s^{\mathrm{T}}_k H^\mathrm{BFGS}_k }{s^{\mathrm{T}}_k H^\mathrm{BFGS}_k s_k}
+\mathcal{H}^\mathrm{BFGS}_{k+1} = \widetilde{\mathcal{H}}^\mathrm{BFGS}_k  + \frac{y_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{H}}^\mathrm{BFGS}_k s_k s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{BFGS}_k }{s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{BFGS}_k s_k}
 ```
 
 where
@@ -1018,16 +1018,16 @@ struct BFGS <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian BFGS update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\tilde B_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{\mathcal{B}}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-B^\mathrm{BFGS}_{k+1}  = \Bigl(
-  \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
+\mathcal{B}^\mathrm{BFGS}_{k+1}  = \Bigl(
+  \id_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
 \Bigr)
-\tilde B^\mathrm{BFGS}_k
+\widetilde{\mathcal{B}}^\mathrm{BFGS}_k
 \Bigl(
-  \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
+  \id_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
 \Bigr) + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
@@ -1043,16 +1043,16 @@ struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 
 indicates in an [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian DFP update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\tilde H_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-H^\mathrm{DFP}_{k+1} = \Bigl(
-  \mathrm{I}_{n \times n} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+\mathcal{H}^\mathrm{DFP}_{k+1} = \Bigl(
+  \id_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 \Bigr)
-\tilde H^\mathrm{DFP}_k
+\widetilde{\mathcal{H}}^\mathrm{DFP}_k
 \Bigl(
-  \mathrm{I}_{n \times n} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  \id_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 \Bigr) + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
@@ -1068,13 +1068,13 @@ struct DFP <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian DFP update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\tilde B_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{\mathcal{B}}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-B^\mathrm{DFP}_{k+1} = \tilde B^\mathrm{DFP}_k
+\mathcal{B}^\mathrm{DFP}_{k+1} = \widetilde{\mathcal{B}}^\mathrm{DFP}_k
 + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-- \frac{\tilde B^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \tilde B^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \tilde B^\mathrm{DFP}_k y_k}
+- \frac{\widetilde{\mathcal{B}}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{DFP}_k y_k}
 ```
 
 where
@@ -1089,15 +1089,15 @@ struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian SR1 update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\tilde H_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-H^\mathrm{SR1}_{k+1} = \tilde H^\mathrm{SR1}_k
+\mathcal{H}^\mathrm{SR1}_{k+1} = \widetilde{\mathcal{H}}^\mathrm{SR1}_k
 + \frac{
-  (y_k - \tilde H^\mathrm{SR1}_k s_k) (y_k - \tilde H^\mathrm{SR1}_k s_k)^{\mathrm{T}}
+  (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k) (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}}
 }{
-(y_k - \tilde H^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
+(y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
 }
 ```
 
@@ -1114,15 +1114,15 @@ struct SR1 <: AbstractQuasiNewtonUpdateRule end
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian SR1 update is used in the Riemannian quasi-Newton method.
 
 
-We denote by ``\tilde B_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{\mathcal{B}}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-B^\mathrm{SR1}_{k+1} = \tilde B^\mathrm{SR1}_k
+\mathcal{B}^\mathrm{SR1}_{k+1} = \widetilde{\mathcal{B}}^\mathrm{SR1}_k
 + \frac{
-  (s_k - \tilde B^\mathrm{SR1}_k y_k) (s_k - \tilde B^\mathrm{SR1}_k y_k)^{\mathrm{T}}
+  (s_k - \widetilde{\mathcal{B}}^\mathrm{SR1}_k y_k) (s_k - \widetilde{\mathcal{B}}^\mathrm{SR1}_k y_k)^{\mathrm{T}}
 }{
-  (s_k - \tilde B^\mathrm{SR1}_k y_k)^{\mathrm{T}} y_k
+  (s_k - \widetilde{\mathcal{B}}^\mathrm{SR1}_k y_k)^{\mathrm{T}} y_k
 }
 ```
 
@@ -1149,19 +1149,19 @@ StableSR1() = StableSR1(10^(-8))
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that a more stable variant of the Riemanian SR1 update is used in the Riemannian quasi-Newton method. Here, the ordinary Riemanian SR1 update is only used if
 
 ```math
-\lvert (y_k - H^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k \lvert \; \geq \; r \; \lVert s_k \rVert \lVert y_k - H^\mathrm{SR1}_k s_k \rVert 
+\lvert (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k \lvert \; \geq \; r \; \lVert s_k \rVert \lVert y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k \rVert 
 ```
 
 holds, where 
-We denote by ``\tilde H_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-H^\mathrm{SR1}_{k+1} = \tilde H^\mathrm{SR1}_k
+\mathcal{H}^\mathrm{SR1}_{k+1} = \widetilde{\mathcal{H}}^\mathrm{SR1}_k
 + \frac{
-  (y_k - \tilde H^\mathrm{SR1}_k s_k) (y_k - \tilde H^\mathrm{SR1}_k s_k)^{\mathrm{T}}
+  (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k) (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}}
 }{
-(y_k - \tilde H^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
+(y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
 }
 ```
 
@@ -1181,18 +1181,18 @@ InverseStableSR1() = InverseStableSR1(10^(-8))
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian Broyden update is used in the Riemannian quasi-Newton method, which is as a convex combination of [`BFGS`](@ref) and [`DFP`](@ref).
 
-We denote by ``\tilde H_k^\mathrm{Br}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{Br}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-H^\mathrm{Br}_{k+1} = H^\mathrm{Br}_k
-  - \frac{H^\mathrm{Br}_k s_k s^{\mathrm{T}}_k H^\mathrm{Br}_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-  + φ_k s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k
+\mathcal{H}^\mathrm{Br}_{k+1} = \widetilde{\mathcal{H}}^\mathrm{Br}_k
+  - \frac{\widetilde{\mathcal{H}}^\mathrm{Br}_k s_k s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k}{s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  + φ_k s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k s_k
   \Bigl(
-        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k}
+        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{H}}^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k s_k}
   \Bigr)
   \Bigl(
-        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k}
+        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{H}}^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k s_k}
   \Bigr)^{\mathrm{T}}
 ```
 
@@ -1222,19 +1222,19 @@ Indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian Bro
 is used in the Riemannian quasi-Newton method, which is as a convex combination
 of [`InverseBFGS`](@ref) and [`InverseDFP`](@ref).
 
-We denote by ``\tilde H_k^\mathrm{Br}`` the operator concatenated with a vector transport
+We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{Br}`` the operator concatenated with a vector transport
 and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-B^\mathrm{Br}_{k+1} = B^\mathrm{Br}_k
- - \frac{B^\mathrm{Br}_k y_k y^{\mathrm{T}}_k B^\mathrm{Br}_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}
+\mathcal{B}^\mathrm{Br}_{k+1} = \widetilde{\mathcal{B}}^\mathrm{Br}_k
+ - \frac{\widetilde{\mathcal{B}}^\mathrm{Br}_k y_k y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k}{y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}
    + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
- + φ_k y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k
+ + φ_k y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k y_k
  \Bigl(
-     \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}
+     \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}
     \Bigr) \Bigl(
-        \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}
+        \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}
  \Bigr)^{\mathrm{T}}
 ```
 
@@ -1349,7 +1349,9 @@ function (d::QuasiNewtonDirectionUpdate{T})(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,Broyden,StableSR1}}
+function (d::QuasiNewtonDirectionUpdate{T})(
+    p, o
+) where {T<:Union{BFGS,DFP,SR1,Broyden,StableSR1}}
     return get_vector(
         p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )

@@ -218,7 +218,9 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, ::Int)
 end
 
 # Stable inverse SR-1 update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseStableSR1}, p, o, x_old, ::Int)
+function update_hessian!(
+    d::QuasiNewtonDirectionUpdate{InverseStableSR1}, p, o, x_old, ::Int
+)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -239,7 +241,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{StableSR1}, p, o, x_old, 
     srvec = yk_c - d.matrix * sk_c
 
     if dot(srvec, sk_c) >= d.update.r * norm(srvec) * norm(sk_c)
-         # computing the new matrix which represents the approximating operator in the next iteration
+        # computing the new matrix which represents the approximating operator in the next iteration
         d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
         return d
     end

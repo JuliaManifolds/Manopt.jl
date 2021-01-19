@@ -98,7 +98,7 @@ Random.seed!(42)
             F,
             ∇F,
             x;
-            direction_update = StableSR1(),
+            direction_update=StableSR1(),
             memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
@@ -110,7 +110,7 @@ Random.seed!(42)
             F,
             ∇F,
             x;
-            direction_update = InverseStableSR1(),
+            direction_update=InverseStableSR1(),
             memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
@@ -204,7 +204,7 @@ Random.seed!(42)
             F,
             ∇F,
             x;
-            direction_update = StableSR1(),
+            direction_update=StableSR1(),
             memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-9)),
         )
@@ -216,7 +216,7 @@ Random.seed!(42)
             F,
             ∇F,
             x;
-            direction_update = InverseStableSR1(),
+            direction_update=InverseStableSR1(),
             memory_size=-1,
             stopping_criterion=StopWhenGradientNormLess(10^(-9)),
         )
