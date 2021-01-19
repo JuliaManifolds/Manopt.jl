@@ -125,7 +125,7 @@ end
 @doc raw"""
     update_hessian!(d, p, o, x_old, iter)
 
-update the hessian wihtin the [`QuasiNewtonOptions`](@ref) `o` given a [`Probem`](@ref) `p`
+update the hessian wihtin the [`QuasiNewtonOptions`](@ref) `o` given a [`Problem`](@ref) `p`
 as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `x_old`.
 Note that the current (`iter`th) iterate is already stored in `o.x`.
 

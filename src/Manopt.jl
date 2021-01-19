@@ -167,8 +167,7 @@ export getHessian, approxHessianFD
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
-export QuasiNewtonOptions,
-    LimitedMemoryQuasiNewctionDirectionUpdate, QuasiNewtonDirectionUpdate
+export QuasiNewtonOptions, LimitedMemoryQuasiNewctionDirectionUpdate
 export CautiousUpdate, BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
 export InverseStableSR1, StableSR1

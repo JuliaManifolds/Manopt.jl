@@ -981,7 +981,7 @@ end
     AbstractQuasiNewtonDirectionUpdate
 
 An abstract represresenation of an Quasi Newton Update rule to determine the next direction
-given current [`AbstractQuasiNewtonOptions`](@ref).
+given current [`QuasiNewtonOptions`](@ref).
 
 All subtypes should be functors, i.e. one should be able to call them as `H(M,x,d)` to compute a new direction update.
 """
@@ -997,7 +997,7 @@ abstract type AbstractQuasiNewtonUpdateRule end
 @doc raw"""
     BFGS <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`QuasiNewtonDirectionUpdate`](@ref) that the Riemanian BFGS update is used in the Riemannian quasi-Newton method.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian BFGS update is used in the Riemannian quasi-Newton method.
 
 We denote by ``\tilde H_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
@@ -1187,7 +1187,13 @@ Then the update formula reads
 ```math
 H^\mathrm{Br}_{k+1} = H^\mathrm{Br}_k
   - \frac{H^\mathrm{Br}_k s_k s^{\mathrm{T}}_k H^\mathrm{Br}_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-  + φ_k s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k (\frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k}) (\frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k})^{\mathrm{T}}_k$
+  + φ_k s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k
+  \Bigl(
+        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k}
+  \Bigr)
+  \Bigl(
+        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{H^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k H^\mathrm{Br}_k s_k}
+  \Bigr)^{\mathrm{T}}
 ```
 
 where
@@ -1197,10 +1203,10 @@ s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
 ```
 
-and ``φ_k`` is the Broydenfactor which is `:constant` by default but can also be set to `:Davidon`.
+and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
 
 # Constructor
-    InverseBroyden(φ, update_rule::Symbol = :constant)
+    Broyden(φ, update_rule::Symbol = :constant)
 
 """
 mutable struct Broyden <: AbstractQuasiNewtonUpdateRule
@@ -1212,14 +1218,24 @@ Broyden(φ::Float64) = Broyden(φ, :constant)
 @doc raw"""
     InverseBroyden <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian Broyden update is used in the Riemannian quasi-Newton method, which can be seen as a convex combination of
-[`InverseBFGS`](@ref) and [`InverseDFP`](@ref) the inverse RBFGS and the inverse RDFP updates. The operator $\mathcal{B}^{RBroyden}_k \colon T_{x_k} \mathcal{M} \to T_{x_k} \mathcal{M}$ is represented as a matrix $B^\mathrm{Br}_k$ with respect to an orthonormal basis, wich is stored in [`QuasiNewtonDirectionUpdate`](@ref). In the update, the Euclidean inverse Broyden formula for matrices is used, i.e.
+Indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian Broyden update
+is used in the Riemannian quasi-Newton method, which is as a convex combination
+of [`InverseBFGS`](@ref) and [`InverseDFP`](@ref).
+
+We denote by ``\tilde H_k^\mathrm{Br}`` the operator concatenated with a vector transport
+and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Then the update formula reads
 
 ```math
 B^\mathrm{Br}_{k+1} = B^\mathrm{Br}_k
  - \frac{B^\mathrm{Br}_k y_k y^{\mathrm{T}}_k B^\mathrm{Br}_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}
    + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
- + φ_k y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k (\frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}) (\frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k})^{\mathrm{T}}_k
+ + φ_k y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k
+ \Bigl(
+     \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}
+    \Bigr) \Bigl(
+        \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{B^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k B^\mathrm{Br}_k y_k}
+ \Bigr)^{\mathrm{T}}
 ```
 
 where
@@ -1229,7 +1245,7 @@ s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
 ```
 
-and ``φ_k`` is the Broydenfactor which is `:constant` by default but can also be set to `:Davidon`.
+and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
 
 # Constructor
     InverseBroyden(φ, update_rule::Symbol = :constant)

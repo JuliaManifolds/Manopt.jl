@@ -423,7 +423,7 @@ mutable struct WolfePowellLineseach <: Linesearch
 end
 
 function (a::WolfePowellLineseach)(
-    p::P, o::O, iter::Int, η=-get_gradient(p, o.x)
+    p::P, o::O, ::Int, η=-get_gradient(p, o.x)
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
     s = 1.0
     s_plus = 1.0
@@ -494,7 +494,7 @@ mutable struct WolfePowellLineseachHuang <: Linesearch
 end
 
 function (a::WolfePowellLineseachHuang)(
-    p::P, o::O, iter::Int, η=-get_gradient(p, o.x)
+    p::P, o::O, ::Int, η=-get_gradient(p, o.x)
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
     α = 0.0
     β = Inf
@@ -566,4 +566,4 @@ end
 #
 # dispatch on stepsize
 get_last_stepsize(p::Problem, o::Options, s::Stepsize, vars...) = s(p, o, vars...)
-get_last_stepsize(p::Problem, o::Options, s::ArmijoLinesearch, vars...) = s.stepsizeOld
+get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, ::Any...) = s.stepsizeOld
