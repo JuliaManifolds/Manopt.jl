@@ -514,11 +514,7 @@ function (a::WolfePowellLineseachHuang)(
         else
             return t
         end
-        if β < Inf
-            t = (α + β) / 2
-        else
-            t = 2 * α
-        end
+        t = isinf(β) ? 2 * α : (α + β) / 2
         retract!(p.M, xNew, o.x, t * η, a.retraction_method)
         fNew = p.cost(xNew)
         gradient_new = get_gradient(p, xNew)
