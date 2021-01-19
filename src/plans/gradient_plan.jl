@@ -1137,6 +1137,13 @@ struct InverseSR1 <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
     StableSR1 <: AbstractQuasiNewtonUpdateRule
 
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that a more stable variant of the Riemanian SR1 update is used in the Riemannian quasi-Newton method. Here, [`SR1`](@ref) is only used if
+
+```math
+\lvert (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k \lvert \; \geq \; r \; \lVert s_k \rVert \lVert y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k \rVert 
+```
+
+holds, where ``r \in (0,1)``.
 """
 struct StableSR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
@@ -1146,30 +1153,13 @@ StableSR1() = StableSR1(10^(-8))
 @doc raw"""
     InverseStableSR1 <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that a more stable variant of the Riemanian SR1 update is used in the Riemannian quasi-Newton method. Here, the ordinary Riemanian SR1 update is only used if
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that a more stable variant of the Riemanian SR1 update is used in the Riemannian quasi-Newton method. Here, [`InverseSR1`](@ref) is only used if
 
 ```math
-\lvert (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k \lvert \; \geq \; r \; \lVert s_k \rVert \lVert y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k \rVert 
+\lvert (s_k - \widetilde{\mathcal{B}}^\mathrm{InverseSR1}_k y_k)^{\mathrm{T}} y_k \lvert \; \geq \; r \; \lVert y_k \rVert \lVert s_k - \widetilde{\mathcal{B}}^\mathrm{InverseSR1}_k y_k \rVert 
 ```
 
-holds, where 
-We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
-Then the update formula reads
-
-```math
-\mathcal{H}^\mathrm{SR1}_{k+1} = \widetilde{\mathcal{H}}^\mathrm{SR1}_k
-+ \frac{
-  (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k) (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}}
-}{
-(y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
-}
-```
-
-where
-```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
-```
+holds, where ``r \in (0,1)``.
 """
 struct InverseStableSR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
