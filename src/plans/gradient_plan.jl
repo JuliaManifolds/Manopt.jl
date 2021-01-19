@@ -1135,6 +1135,48 @@ y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathca
 struct InverseSR1 <: AbstractQuasiNewtonUpdateRule end
 
 @doc raw"""
+    StableSR1 <: AbstractQuasiNewtonUpdateRule
+
+"""
+struct StableSR1 <: AbstractQuasiNewtonUpdateRule
+    r::Float64
+end
+StableSR1() = StableSR1(10^(-8))
+
+@doc raw"""
+    InverseStableSR1 <: AbstractQuasiNewtonUpdateRule
+
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that a more stable variant of the Riemanian SR1 update is used in the Riemannian quasi-Newton method. Here, the ordinary Riemanian SR1 update is only used if
+
+```math
+\lvert (y_k - H^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k \lvert \; \geq \; r \; \lVert s_k \rVert \lVert y_k - H^\mathrm{SR1}_k s_k \rVert 
+```
+
+holds, where 
+We denote by ``\tilde H_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Then the update formula reads
+
+```math
+H^\mathrm{SR1}_{k+1} = \tilde H^\mathrm{SR1}_k
++ \frac{
+  (y_k - \tilde H^\mathrm{SR1}_k s_k) (y_k - \tilde H^\mathrm{SR1}_k s_k)^{\mathrm{T}}
+}{
+(y_k - \tilde H^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
+}
+```
+
+where
+```math
+s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+```
+"""
+struct InverseStableSR1 <: AbstractQuasiNewtonUpdateRule
+    r::Float64
+end
+InverseStableSR1() = InverseStableSR1(10^(-8))
+
+@doc raw"""
     Broyden <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian Broyden update is used in the Riemannian quasi-Newton method, which is as a convex combination of [`BFGS`](@ref) and [`DFP`](@ref).
@@ -1286,12 +1328,12 @@ function QuasiNewtonDirectionUpdate(
 end
 function (d::QuasiNewtonDirectionUpdate{T})(
     p, o
-) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
+) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden,InverseStableSR1}}
     return get_vector(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,Broyden}}
+function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,Broyden,StableSR1}}
     return get_vector(
         p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )

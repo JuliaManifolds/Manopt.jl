@@ -91,6 +91,30 @@ Random.seed!(42)
                 @test norm(x_direction - x_solution) ≈ 0 atol = 10.0^(-14)
             end
         end
+
+        x = zeros(Float64, 4, 4)
+        x_rbfgs_Stable = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            direction_update = StableSR1(),
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+        )
+        @test norm(x_rbfgs_Stable - x_solution) ≈ 0 atol = 10.0^(-14)
+
+        x = zeros(Float64, 4, 4)
+        x_rbfgs_InverseStable = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            direction_update = InverseStableSR1(),
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+        )
+        @test norm(x_rbfgs_InverseStable - x_solution) ≈ 0 atol = 10.0^(-6)
     end
     @testset "Rayleigh Quotient Minimzation" begin
         n = 9
@@ -173,6 +197,30 @@ Random.seed!(42)
             )
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
+
+        x = Matrix{Float64}(I, n, n)[n, :]
+        x_rbfgs_Stable = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            direction_update = StableSR1(),
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(10^(-9)),
+        )
+        @test norm(abs.(x_rbfgs_Stable) - x_solution) ≈ 0 atol = 10^(-9)
+
+        x = Matrix{Float64}(I, n, n)[n, :]
+        x_rbfgs_InverseStable = quasi_Newton(
+            M,
+            F,
+            ∇F,
+            x;
+            direction_update = InverseStableSR1(),
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(10^(-9)),
+        )
+        @test norm(abs.(x_rbfgs_InverseStable) - x_solution) ≈ 0 atol = 10^(-9)
     end
     @testset "Brockett" begin
         struct GradF
