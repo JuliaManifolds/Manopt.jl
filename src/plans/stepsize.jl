@@ -97,8 +97,8 @@ faces are available:
   and a current iterate `i`.
 * with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`, a current
   point `x` a function `F`, that maps from the manifold to the reals,
-  its gradient (a tangent vector) `∇F`$=\nabla F(x)$ at  `x` and an optional
-  search direction tangent vector `η-∇F` are the arguments.
+  its gradient (a tangent vector) `∇F=∇F(x)` at `x` and an optional
+  search direction tangent vector `η=∇F` are the arguments.
 """
 mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     initialStepsize::Float64
@@ -184,16 +184,16 @@ this line search represents the Riemannian Barzilai-Borwein with nonmonotone lin
 by Iannazzo and Porcelli so that in each iteration we first find
 
 ```math
-y_{k} = \nabla F(x_{k}) - \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1}))
+y_{k} = ∇F(x_{k}) - \operatorname{T}_{x_{k-1} \to x_k}(∇F(x_{k-1}))
 ```
 
 and
 
 ```math
-s_{k} = - \alpha_{k-1} * \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1})),
+s_{k} = - α_{k-1} * \operatorname{T}_{x_{k-1} \to x_k}(∇F(x_{k-1})),
 ```
 
-where $\alpha_{k-1}$ is the step size computed in the last iteration and $\operatorname{T}$ is a vector transport.
+where $α _{k-1}$ is the step size computed in the last iteration and $\operatorname{T}$ is a vector transport.
 We then find the Barzilai–Borwein step size
 
 ```math
@@ -218,9 +218,9 @@ if the direct strategy is chosen,
 in case of the inverse strategy and an alternation between the two in case of the alternating strategy. Then we find the smallest $h = 0, 1, 2 …$ such that
 
 ```math
-F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \nabla F(x_k)))
+F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} ∇F(x_k)))
 \leq
-\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\nabla F(x_k), \nabla F(x_k)⟩_{x_k},
+\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨∇F(x_k), ∇F(x_k)⟩_{x_k},
 ```
 
 where $σ$ is a step length reduction factor $\in (0,1)$, $m$ is the number of iterations after which the function value has to be lower than the current one
@@ -474,16 +474,48 @@ function (a::WolfePowellLineseach)(
 end
 
 @doc raw"""
-    WolfePowellHuangLinesearch <: Linesearch
+    WolfePowellBinaryLinesearch <: Linesearch
+
+A [`Linesearch`](@ref) method that determines a step size `t` fulfilling the Wolfe conditions
+
+based on a binary chop. Let ``η`` be a search direction and ``c_1,c_2>0`` be two constants.
+Then with
+
+```math
+A(t) = f(x_+) ≤ c_1 t ⟨∇f(x), η⟩_{x}
+\quad\text{and}\quad 
+W(t) = ⟨∇f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 ⟨η, ∇f(x)⟩_x,
+```
+
+where ``x_+ = \operatorname{retr}_x(tη)`` is the current trial point, and ``\text{V}`` is a
+vector transport, we perform the following Algorithm similar to Algorithm 7 from [^Huang2014]
+1. set ``α=0``, ``β=∞`` and ``t=1``.
+2. While either ``A(t)`` does not hold or ``W(t)`` does not hold do steps 3-5.
+3. If ``A(t)`` fails, set ``β=t``.
+4. If ``A(t)`` holds but ``W(t)`` fails, set ``α=t``.
+5. If ``β<∞`` set ``t=\frac{α+β}{2}``, otherwise set ``t=2α``.
+
+# Constructor
+    WolfePowellBinaryLinesearch(
+        retr::AbstractRetractionMethod=ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod=ParallelTransport(),
+        c_1::Float64=10^(-4),
+        c_2::Float64=0.999
+    )
+
+[^Huang2014]:
+    > Huang, W.: _Optimization algorithms on Riemannian manifolds with applications_,
+    > Dissertation, Flordia State University, 2014.
+    > [pdf](https://www.math.fsu.edu/~whuang2/pdf/Huang_W_Dissertation_2013.pdf)
 """
-mutable struct WolfePowellHuangLinesearch <: Linesearch
+mutable struct WolfePowellBinaryLinesearch <: Linesearch
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
 
     c_1::Float64
     c_2::Float64
 
-    function WolfePowellHuangLinesearch(
+    function WolfePowellBinaryLinesearch(
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
         c_1::Float64=10^(-4),
@@ -493,7 +525,7 @@ mutable struct WolfePowellHuangLinesearch <: Linesearch
     end
 end
 
-function (a::WolfePowellHuangLinesearch)(
+function (a::WolfePowellBinaryLinesearch)(
     p::P, o::O, ::Int, η=-get_gradient(p, o.x)
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
     α = 0.0
@@ -504,21 +536,20 @@ function (a::WolfePowellHuangLinesearch)(
     fNew = p.cost(xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(p, xNew)
-
-    while fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.∇) &&
-        inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
-        if fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.∇)
-            β = t
-        elseif inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
-            α = t
-        else
-            return t
-        end
+    nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.∇)
+    nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
+    while (nAt || nWt) && (t > 1e-9) && ((α + β) / 2 - t > 1e-9)
+        nAt && (β = t)            # A(t) fails
+        (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t = isinf(β) ? 2 * α : (α + β) / 2
+        # Update trial point
         retract!(p.M, xNew, o.x, t * η, a.retraction_method)
         fNew = p.cost(xNew)
         gradient_new = get_gradient(p, xNew)
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+        # Update conditions
+        nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.∇)
+        nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
     end
     return t
 end

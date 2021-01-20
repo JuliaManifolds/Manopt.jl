@@ -176,7 +176,7 @@ export WolfePowellLineseach,
     StrongWolfePowellLineseach,
     operator_to_matrix,
     square_matrix_vector_product,
-    WolfePowellHuangLinesearch
+    WolfePowellBinaryLinesearch
 
 export ConjugateGradientDescentOptions,
     GradientDescentOptions,
