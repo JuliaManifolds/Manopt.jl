@@ -91,7 +91,6 @@ Random.seed!(42)
                 @test norm(x_direction - x_solution) ≈ 0 atol = 10.0^(-14)
             end
         end
-
     end
     @testset "Rayleigh Quotient Minimzation" begin
         n = 9
