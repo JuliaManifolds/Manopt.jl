@@ -1338,9 +1338,7 @@ function (d::QuasiNewtonDirectionUpdate{T})(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(
-    p, o
-) where {T<:Union{BFGS,DFP,SR1,Broyden}}
+function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     return get_vector(
         p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )

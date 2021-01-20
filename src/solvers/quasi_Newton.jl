@@ -201,7 +201,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = sk_c - d.matrix * yk_c
-    if d.update.r < 0 ||  dot(srvec, yk_c) >= d.update.r * norm(srvec) * norm(yk_c)
+    if d.update.r < 0 || dot(srvec, yk_c) >= d.update.r * norm(srvec) * norm(yk_c)
         d.matrix = d.matrix + srvec * srvec' / (srvec' * yk_c)
     end
     return d
@@ -215,7 +215,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, ::Int)
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = yk_c - d.matrix * sk_c
-    if d.update.r < 0 ||  dot(srvec, sk_c) >= d.update.r * norm(srvec) * norm(sk_c)
+    if d.update.r < 0 || dot(srvec, sk_c) >= d.update.r * norm(srvec) * norm(sk_c)
         d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
     end
     return d
