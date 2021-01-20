@@ -178,7 +178,7 @@ Random.seed!(42)
             SR1(),
             InverseSR1(),
             SR1(1e-9),
-            InverseSR1(1e-9),
+#            InverseSR1(1e-9),
         ]
             x = Matrix{Float64}(I, n, n)[n, :]
             x_direction = quasi_Newton(
