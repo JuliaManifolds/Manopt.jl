@@ -62,7 +62,33 @@ For a description of the algorithm and more details see
 [`truncated_conjugate_gradient_descent`](@ref)
 """
 function trust_regions(
-    M::MT,
+    M::Manifold,
+    F::TF,
+    ∇F::TdF,
+    x,
+    H::TH;
+    kwargs...
+) where {TF,TdF,TH}
+    x_res = allocate(x)
+    copyto!(x_res, x)
+    return trust_regions!(M,F, ∇F, x_res, H; kwargs...)
+end
+@doc raw"""
+    trust_regions!(M, F, ∇F, x, H; kwargs...)
+
+evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `x`.
+
+# Input
+* `M` – a manifold $\mathcal M$
+* `F` – a cost function $F \colon \mathcal M \to \mathbb R$ to minimize
+* `∇F`- the gradient $\nabla F \colon \mathcal M \to T \mathcal M$ of $F$
+* `x` – an initial value $x  ∈  \mathcal M$
+* `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
+
+for more details and all options, see [`trust_regions`](@ref)
+"""
+function trust_regions!(
+    M::Manifold,
     F::TF,
     ∇F::TdF,
     x,
@@ -79,7 +105,7 @@ function trust_regions(
     ρ_regularization=1000.0,
     return_options=false,
     kwargs..., #collect rest
-) where {MT<:Manifold,TF,TdF,TH,Tprec}
+) where {TF,TdF,TH,Tprec}
     (ρ_prime >= 0.25) && throw(
         ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime.")
     )

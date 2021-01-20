@@ -62,7 +62,37 @@ OR
 [`trust_regions`](@ref)
 """
 function truncated_conjugate_gradient_descent(
-    M::mT,
+    M::Manifold,
+    F::TF,
+    ∇F::TdF,
+    x,
+    η,
+    H::Union{Function,Missing},
+    Δ::Float64;
+    kwargs...
+) where {TF, TdF}
+    x_res = allocate(x)
+    copyto!(x_res, x)
+    return truncated_conjugate_gradient_descent!(M, F, ∇F, x_res, η, H, Δ; kwargs...)
+end
+@doc raw"""
+    truncated_conjugate_gradient_descent!(M, F, ∇F, x, η, H, Δ; kwargs...)
+
+solve the trust-region subproblem in place of `x`.
+
+# Input
+* `M` – a manifold $\mathcal M$
+* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `x` – a point on the manifold $x ∈ \mathcal M$
+* `η` – an update tangential vector $\eta ∈ \mathcal{T_{x}M}$
+* `H` – the hessian $H( \mathcal M, x, \xi)$ of F
+* `Δ` – a trust-region radius
+
+For more details and all optional arguments, see [`truncated_conjugate_gradient_descent`](@ref).
+"""
+function truncated_conjugate_gradient_descent!(
+    M::Manifold,
     F::TF,
     ∇F::TdF,
     x,
@@ -102,7 +132,7 @@ function truncated_conjugate_gradient_descent(
     ),
     return_options=false,
     kwargs..., #collect rest
-) where {mT<:Manifold,TF,TdF,Tprec}
+) where {TF,TdF,Tprec}
     p = HessianProblem(M, F, ∇F, H, preconditioner)
     o = TruncatedConjugateGradientOptions(
         x,

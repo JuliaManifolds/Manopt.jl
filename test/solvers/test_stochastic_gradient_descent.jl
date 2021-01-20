@@ -43,21 +43,21 @@ using Manopt, Manifolds, Test
         @test a3.direction == a4.direction #both use Gradient
     end
     @testset "Comparing Stochastic Methods" begin
-        x1 = stochastic_gradient_descent(M, s∇F1, deepcopy(p); order_type=:Linear)
+        x1 = stochastic_gradient_descent(M, s∇F1, p; order_type=:Linear)
         @test norm(x1) ≈ 1
         o1 = stochastic_gradient_descent(
-            M, s∇F1, deepcopy(p); order_type=:Linear, return_options=true
+            M, s∇F1, p; order_type=:Linear, return_options=true
         )
         x1a = get_solver_result(o1)
         @test x1 == x1a
-        x2 = stochastic_gradient_descent(M, s∇F1, deepcopy(p); order_type=:FixedRandom)
+        x2 = stochastic_gradient_descent(M, s∇F1, p; order_type=:FixedRandom)
         @test norm(x2) ≈ 1
-        x3 = stochastic_gradient_descent(M, s∇F1, deepcopy(p); order_type=:Random)
+        x3 = stochastic_gradient_descent(M, s∇F1, p; order_type=:Random)
         @test norm(x3) ≈ 1
         x4 = stochastic_gradient_descent(
             M,
             s∇F1,
-            deepcopy(p);
+            p;
             order_type=:Random,
             direction=AverageGradient(M, p, 10, StochasticGradient()),
         )
@@ -65,7 +65,7 @@ using Manopt, Manifolds, Test
         x5 = stochastic_gradient_descent(
             M,
             s∇F1,
-            deepcopy(p);
+            p;
             order_type=:Random,
             direction=MomentumGradient(M, p, StochasticGradient()),
         )

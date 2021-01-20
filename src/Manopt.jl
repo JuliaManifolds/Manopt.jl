@@ -26,6 +26,7 @@ import ManifoldsBase:
     ParallelTransport,
     PowerManifold,
     Manifold,
+    allocate,
     allocate_result,
     allocate_result_type,
     distance,
@@ -190,10 +191,15 @@ export ChambollePock,
     gradient_descent,
     NelderMead,
     particle_swarm,
+    particle_swarm!,
     stochastic_gradient_descent,
+    stochastic_gradient_descent!,
     subgradient_method,
+    subgradient_method!,
     truncated_conjugate_gradient_descent,
-    trust_regions
+    truncated_conjugate_gradient_descent!,
+    trust_regions,
+    trust_regions!
 # Solver helpers
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!

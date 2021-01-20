@@ -214,11 +214,11 @@ function prox_TV2(
     end
     PowX = SVector(pointTuple)
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
-    xInit = PowX
+    xR = PowX
     F(x) = 1 / 2 * distance(PowM, PowX, x)^2 + λ * costTV2(PowM, x)
     ∂F(x) = log(PowM, x, PowX) + λ * ∇TV2(PowM, x)
-    xR = subgradient_method(
-        PowM, F, ∂F, xInit; stopping_criterion=stopping_criterion, kwargs...
+    subgradient_method!(
+        PowM, F, ∂F, xR; stopping_criterion=stopping_criterion, kwargs...
     )
     return (xR...,)
 end

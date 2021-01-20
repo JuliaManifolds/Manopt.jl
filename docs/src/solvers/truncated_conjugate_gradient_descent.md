@@ -99,6 +99,7 @@ move to the trust-region boundary by ﬁnding $\tau$.
 
 ```@docs
   truncated_conjugate_gradient_descent
+  truncated_conjugate_gradient_descent!
 ```
 
 ## Options

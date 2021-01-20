@@ -1,5 +1,6 @@
 @doc raw"""
     subgradient_method(M, F, ∂F, x)
+
 perform a subgradient method $x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))$,
 
 where $\mathrm{retr}$ is a retraction, $s_k$ can be specified as a function but is
@@ -31,6 +32,31 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function subgradient_method(
+    M::Manifold,
+    F::TF,
+    ∂F::TdF,
+    x;
+    kwargs...
+) where {TF, TdF}
+    x_res = allocate(x)
+    copyto!(x_res, x)
+    return subgradient_method!(M, F, ∂F, x_res; kwargs...)
+end
+@doc raw"""
+    subgradient_method!(M, F, ∂F, x)
+
+perform a subgradient method $x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))$ in place of `x`
+
+# Input
+* `M` – a manifold $\mathcal M$
+* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `∂F`: the (sub)gradient $\partial F\colon\mathcal M\to T\mathcal M$ of F
+  restricted to always only returning one value/element from the subgradient
+* `x` – an initial value $x ∈ \mathcal M$
+
+for more details and all optional parameters, see [`subgradient_method`](@ref).
+"""
+function subgradient_method!(
     M::Manifold,
     F::TF,
     ∂F::TdF,
