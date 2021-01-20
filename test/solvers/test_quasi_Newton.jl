@@ -28,7 +28,6 @@ Random.seed!(42)
         )
         @test lrbfgs_o.x == x_lrbfgs
         # with Cached Basis
-        x = zeros(Float64, 4, 4)
         x_lrbfgs_cached = quasi_Newton(
             M,
             F,
@@ -48,9 +47,8 @@ Random.seed!(42)
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
         )
-        @test x_lrbfgs_cached_2 == x_lrbfgs
+        @test isapprox(M, x_lrbfgs_cached_2, x_lrbfgs; atol=1e-5)
 
-        x = zeros(Float64, 4, 4)
         x_clrbfgs = quasi_Newton(
             M,
             F,
@@ -61,14 +59,13 @@ Random.seed!(42)
         )
         @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
 
-        x = zeros(Float64, 4, 4)
         x_rbfgs_Huang = quasi_Newton(
             M,
             F,
             ∇F,
             x;
             memory_size=-1,
-            step_size=WolfePowellLineseachHuang(
+            step_size=WolfePowellHuangLinesearch(
                 ExponentialRetraction(), ParallelTransport()
             ),
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -77,7 +74,6 @@ Random.seed!(42)
 
         for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP(), InverseSR1(), SR1()]
             for c in [true, false]
-                x = zeros(Float64, 4, 4)
                 x_direction = quasi_Newton(
                     M,
                     F,
@@ -114,7 +110,6 @@ Random.seed!(42)
         )
         @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
 
-        x = Matrix{Float64}(I, n, n)[n, :]
         x_clrbfgs = quasi_Newton(
             M,
             F,
@@ -124,7 +119,6 @@ Random.seed!(42)
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
         )
 
-        x = Matrix{Float64}(I, n, n)[n, :]
         x_cached_lrbfgs = quasi_Newton(
             M,
             F,
@@ -159,7 +153,6 @@ Random.seed!(42)
             Broyden(0.5, :Davidon),
             Broyden(0.5, :InverseDavidon),
         ]
-            x = Matrix{Float64}(I, n, n)[n, :]
             x_direction = quasi_Newton(
                 M,
                 F,
@@ -176,9 +169,8 @@ Random.seed!(42)
             SR1(),
             InverseSR1(),
             SR1(1e-9),
-            #            InverseSR1(1e-9),
+            # InverseSR1(1e-9),
         ]
-            x = Matrix{Float64}(I, n, n)[n, :]
             x_direction = quasi_Newton(
                 M,
                 F,
@@ -209,32 +201,32 @@ Random.seed!(42)
         A = (A + A') / 2
         F(X) = tr((X' * A * X) * Diagonal(k:-1:1))
         ∇F = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
-        x = random_point(M)
 
+        x = Matrix{Float64}(I, n, n)[:, 2:(k + 1)]
         x_inverseBFGSCautious = quasi_Newton(
             M,
             F,
             ∇F,
             x;
-            memory_size=4,
+            memory_size=8,
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
+
         x_inverseBFGSHuang = quasi_Newton(
             M,
             F,
             ∇F,
             x;
-            memory_size=1,
-            step_size=WolfePowellLineseachHuang(QRRetraction(), ProjectionTransport()),
+            memory_size=8,
+            step_size=WolfePowellHuangLinesearch(QRRetraction(), ProjectionTransport()),
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
-            direction_update=InverseBroyden(0.5, :Davidon),
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
-        @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang)
+        @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-5)
     end
 end

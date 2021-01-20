@@ -5,10 +5,10 @@ evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
 It will attempt to minimize the cost function F on the Manifold M.
 
 # Input
-* `M` – a manifold $\mathcal{M}$.
+* `M` – a manifold ``\mathcal{M}``.
 * `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
 * `∇F`– the gradient ``∇F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
-* `x` – an initial value $x \in \mathcal{M}$.
+* `x` – an initial value ``x \in \mathcal{M}``.
 
 # Optional
 * `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
@@ -33,8 +33,28 @@ OR
 * `options` – the options returned by the solver (see `return_options`)
 
 """
-function quasi_Newton(
-    M::MT,
+function quasi_Newton(M::Manifold, F::Function, ∇F::G, x::P; kwargs...) where {P,G}
+    x_res = allocate(x)
+    copyto!(x_res, x)
+    return quasi_Newton!(M, F, ∇F, x_res; kwargs...)
+end
+@doc raw"""
+    quasi_Newton!(M, F, ∇F, x; options...)
+
+evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
+It will attempt to minimize the cost function F on the Manifold M.
+This method works in-place in `x`.
+
+# Input
+* `M` – a manifold ``\mathcal{M}``.
+* `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
+* `∇F`– the gradient ``∇F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
+* `x` – an initial value ``x \in \mathcal{M}``.
+
+For all optional parameters, see [`quasi_Newton`](@ref).
+"""
+function quasi_Newton!(
+    M::Manifold,
     F::Function,
     ∇F::G,
     x::P;
@@ -55,7 +75,7 @@ function quasi_Newton(
     ),
     return_options=false,
     kwargs...,
-) where {MT<:Manifold,P,G}
+) where {P,G}
     if memory_size >= 0
         local_dir_upd = LimitedMemoryQuasiNewctionDirectionUpdate(
             direction_update,
