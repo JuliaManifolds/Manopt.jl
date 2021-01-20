@@ -1408,7 +1408,7 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
     > SIAM J. Optim., 25 (2015), pp. 1660-1685.
     > doi: [10.1137/140955483](https://doi.org/10.1137/140955483)
 """
-mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{
+mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod
 } <: AbstractQuasiNewtonDirectionUpdate
     method::NT
@@ -1475,7 +1475,8 @@ where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0`` 
     > SIAM J. Optim., 28 (2018), pp. 470-495.
     > doi: [10.1137/17M1127582](https://doi.org/10.1137/17M1127582)
 """
-mutable struct CautiousUpdate{U} <: AbstractQuasiNewtonDirectionUpdate where {
+mutable struct QuasiNewtonCautiousDirectionUpdate{U} <:
+               AbstractQuasiNewtonDirectionUpdate where {
     U<:Union{
         QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}
     },
@@ -1483,8 +1484,8 @@ mutable struct CautiousUpdate{U} <: AbstractQuasiNewtonDirectionUpdate where {
     update::U
     θ::Function
 end
-function CautiousUpdate(
-    update::U; θ::Function=x -> x * 10^(-4)
+function QuasiNewtonCautiousDirectionUpdate(
+    update::U; θ::Function=x -> x
 ) where {
     U<:Union{
         QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}
