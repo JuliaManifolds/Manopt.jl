@@ -441,4 +441,4 @@ end
 #
 # dispatch on stepsize
 get_last_stepsize(p::Problem, o::Options, s::Stepsize, vars...) = s(p, o, vars...)
-get_last_stepsize(p::Problem, o::Options, s::ArmijoLinesearch, vars...) = s.stepsizeOld
+get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, ::Any...) = s.stepsizeOld
