@@ -129,8 +129,8 @@ function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
     β = locking_condition_scale(
         p.M, o.direction_update, x_old, α * η, o.x, o.vector_transport_method
     )
-    vector_transport_to!(p.M, o.sk, x_old, α * η, o.x, o.vector_transport_method)
-    vector_transport_to!(p.M, o.∇, x_old, o.∇, o.x, o.vector_transport_method)
+    vector_transport_to!(p.M, o.sk, x_old, α * η, o.x, o.direction_update.vector_transport_method)
+    vector_transport_to!(p.M, o.∇, x_old, o.∇, o.x, o.direction_update.vector_transport_method)
     o.yk = get_gradient(p, o.x) / β - o.∇
     update_hessian!(o.direction_update, p, o, x_old, iter)
     return o
