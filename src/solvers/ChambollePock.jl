@@ -57,17 +57,30 @@ function ChambollePock(
     prox_G_dual::Function,
     forward_operator::Function,
     adjoint_linear_operator::Function;
-    kwargs...
+    kwargs...,
 ) where {P,T,Q}
     x_res = allocate(x)
     copyto!(x_res, x)
     ξ_res = allocate(ξ)
     copyto!(ξ_res, ξ)
     m_res = allocate(m)
-    copyto!(m_res,m)
+    copyto!(m_res, m)
     n_res = allocate(n)
-    copyto!(n_res,n)
-    return ChambollePock!(M, N, cost, x, ξ, m, n, prox_F, prox_G_dual, forward_operator, adjoint_linear_operator; kwargs...)
+    copyto!(n_res, n)
+    return ChambollePock!(
+        M,
+        N,
+        cost,
+        x,
+        ξ,
+        m,
+        n,
+        prox_F,
+        prox_G_dual,
+        forward_operator,
+        adjoint_linear_operator;
+        kwargs...,
+    )
 end
 @doc raw"""
     ChambollePock(M, N, cost, x, ξ, m, n, prox_F, prox_G_dual, forward_operator, adjoint_DΛ)

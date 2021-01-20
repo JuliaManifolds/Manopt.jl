@@ -49,15 +49,11 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function conjugate_gradient_descent(
-    M::Manifold,
-    F::TF,
-    ∇F::TDF,
-    x;
-    kwargs...
+    M::Manifold, F::TF, ∇F::TDF, x; kwargs...
 ) where {TF,TDF}
     x_res = allocate(x)
-    copyto!(x_res,x)
-    return conjugate_gradient_descent!(M,F,∇F, x; kwargs...)
+    copyto!(x_res, x)
+    return conjugate_gradient_descent!(M, F, ∇F, x; kwargs...)
 end
 @doc raw"""
     conjugate_gradient_descent!(M, F, ∇F, x)

@@ -77,10 +77,10 @@ function particle_swarm(
     F::TF;
     n::Int=100,
     x0::AbstractVector=[random_point(M) for i in 1:n],
-    kwargs...
+    kwargs...,
 ) where {TF}
     x_res = allocate(x0)
-    copyto!(x_res,x0)
+    copyto!(x_res, x0)
     return particle_swarm!(M, F; n=n, x0=x_res, kwargs...)
 end
 @doc raw"""

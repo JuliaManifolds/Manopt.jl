@@ -217,9 +217,7 @@ function prox_TV2(
     xR = PowX
     F(x) = 1 / 2 * distance(PowM, PowX, x)^2 + λ * costTV2(PowM, x)
     ∂F(x) = log(PowM, x, PowX) + λ * ∇TV2(PowM, x)
-    subgradient_method!(
-        PowM, F, ∂F, xR; stopping_criterion=stopping_criterion, kwargs...
-    )
+    subgradient_method!(PowM, F, ∂F, xR; stopping_criterion=stopping_criterion, kwargs...)
     return (xR...,)
 end
 function prox_TV2(::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}

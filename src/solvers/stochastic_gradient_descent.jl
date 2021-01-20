@@ -28,13 +28,10 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function stochastic_gradient_descent(
-    M::Manifold,
-    ∇F::Union{Function,AbstractVector{<:Function}},
-    x;
-    kwargs...
+    M::Manifold, ∇F::Union{Function,AbstractVector{<:Function}}, x; kwargs...
 )
     x_res = allocate(x)
-    copyto!(x_res,x)
+    copyto!(x_res, x)
     return stochastic_gradient_descent!(M, ∇F, x_res; kwargs...)
 end
 @doc raw"""

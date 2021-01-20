@@ -62,15 +62,8 @@ OR
 [`trust_regions`](@ref)
 """
 function truncated_conjugate_gradient_descent(
-    M::Manifold,
-    F::TF,
-    ∇F::TdF,
-    x,
-    η,
-    H::Union{Function,Missing},
-    Δ::Float64;
-    kwargs...
-) where {TF, TdF}
+    M::Manifold, F::TF, ∇F::TdF, x, η, H::Union{Function,Missing}, Δ::Float64; kwargs...
+) where {TF,TdF}
     x_res = allocate(x)
     copyto!(x_res, x)
     return truncated_conjugate_gradient_descent!(M, F, ∇F, x_res, η, H, Δ; kwargs...)

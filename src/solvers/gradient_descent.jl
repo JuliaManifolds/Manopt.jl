@@ -27,16 +27,10 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function gradient_descent(
-    M::Manifold,
-    F::TF,
-    ∇F::TDF,
-    x;
-    kwargs...
-) where {TF,TDF}
+function gradient_descent(M::Manifold, F::TF, ∇F::TDF, x; kwargs...) where {TF,TDF}
     x_res = allocate(x)
-    copyto!(x_res,x)
-    return gradient_descent!(M,F,∇F,x_res;kwargs...)
+    copyto!(x_res, x)
+    return gradient_descent!(M, F, ∇F, x_res; kwargs...)
 end
 @doc raw"""
     gradient_descent!(M, F, ∇F, x)
