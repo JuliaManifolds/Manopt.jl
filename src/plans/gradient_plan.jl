@@ -1249,7 +1249,7 @@ InverseBroyden(φ::Float64) = InverseBroyden(φ, :constant)
 @doc raw"""
     QuasiNewtonOptions <: Options
 
-Theese Quasi Newton [`Options`](@ref) represent any quasi newton based method and can be
+These Quasi Newton [`Options`](@ref) represent any quasi-Newton based method and can be
 used with any update rule for the direction.
 
 # Fields
@@ -1307,6 +1307,37 @@ function QuasiNewtonOptions(
     )
 end
 
+@doc raw"""
+    QuasiNewtonDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
+
+These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, where the operator is stored as a matrix. A distinction is made between the update of the approximation of the Hessian, $H_k \mapsto H_{k+1}$, and the update of the apprxomation of the Hessian inverse, $B_k \mapsto B_{k+1}$. For the first case, the coordinates of the search direction ``\eta_k`` with respect to a basis are determined by solving a linear system of equations, i.e.
+
+```math
+\text{Solve} \quad \hat{eta_k} = - H_k \widehat{\operatorname{grad} f(x_k)}
+```
+
+where ``H_k`` is the matrix representing the operator with respect to the basis and grad represents the coordinates of the gradient of the objective function in x:k with respect to the same basis. 
+If an inverse method is chosen and the update concerns the approximation of the Hessian inverse, the coordinates of the search direction are obtained simply by matrix-vector multiplication, i.e.
+
+```math
+\hat{eta_k} = - B_k \widehat{\operatorname{grad} f(x_k)}
+```
+
+where B is the matrix representing the operator with respect to the basis and grad represents the coordinates of the gradient of the objective function in x:k with respect to the same basis. 
+In the end, the search direction is generated from the coordinates and the vectors of the basis in both variants.
+
+# Fields
+* `basis` – 
+* `matrix` – 
+* `scale` – 
+* `update` – 
+* `vector_transport_method` –
+
+# See also
+[`LimitedMemoryQuasiNewctionDirectionUpdate`](@ref)
+[`CautiousUpdate`](@ref)
+[`AbstractQuasiNewtonDirectionUpdate`](@ref)
+"""
 mutable struct QuasiNewtonDirectionUpdate{
     NT<:AbstractQuasiNewtonUpdateRule,
     B<:AbstractBasis,
@@ -1343,6 +1374,24 @@ function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,B
         p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
+
+@doc raw"""
+    LimitedMemoryQuasiNewctionDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
+
+# Fields
+* `method` – 
+* `memory_s` – 
+* `memory_y` – 
+* `ξ` – 
+* `ρ` – 
+* `scale` – 
+* `vector_transport_method` – 
+
+# See also
+[`BFGS`](@ref)
+[`CautiousUpdate`](@ref)
+[`AbstractQuasiNewtonDirectionUpdate`](@ref)
+"""
 mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{
     NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod
 } <: AbstractQuasiNewtonDirectionUpdate
@@ -1387,6 +1436,18 @@ function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
     return -project(p.M, o.x, r)
 end
 
+@doc raw"""
+    CautiousUpdate <: AbstractQuasiNewtonDirectionUpdate
+
+# Fields
+* `update` – 
+* `θ` – 
+
+# See also
+[`QuasiNewtonDirectionUpdate`](@ref)
+[`LimitedMemoryQuasiNewctionDirectionUpdate`](@ref)
+[`AbstractQuasiNewtonDirectionUpdate`](@ref)
+"""
 mutable struct CautiousUpdate{U} <: AbstractQuasiNewtonDirectionUpdate where {
     U<:Union{
         QuasiNewtonDirectionUpdate,LimitedMemoryQuasiNewctionDirectionUpdate{T}
