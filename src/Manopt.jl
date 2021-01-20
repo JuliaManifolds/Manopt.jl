@@ -170,7 +170,6 @@ export primal_residual, dual_residual
 export QuasiNewtonOptions, LimitedMemoryQuasiNewctionDirectionUpdate
 export CautiousUpdate, BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
-export InverseStableSR1, StableSR1
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export quasi_Newton,
     WolfePowellLineseach,
