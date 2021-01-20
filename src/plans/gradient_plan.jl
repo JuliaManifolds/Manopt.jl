@@ -1307,7 +1307,7 @@ function QuasiNewtonOptions(
     )
 end
 
-mutable struct QuasiNewtonDirectionUpdate{
+mutable struct QuasiNewtonMatrixDirectionUpdate{
     NT<:AbstractQuasiNewtonUpdateRule,
     B<:AbstractBasis,
     VT<:AbstractVectorTransportMethod,
@@ -1319,7 +1319,7 @@ mutable struct QuasiNewtonDirectionUpdate{
     update::NT
     vector_transport_method::VT
 end
-function QuasiNewtonDirectionUpdate(
+function QuasiNewtonMatrixDirectionUpdate(
     update::AbstractQuasiNewtonUpdateRule,
     basis::B,
     m::M,
@@ -1327,23 +1327,27 @@ function QuasiNewtonDirectionUpdate(
     scale::Bool=true,
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
 ) where {M<:AbstractMatrix,B<:AbstractBasis}
-    return QuasiNewtonDirectionUpdate{typeof(update),B,typeof(vector_transport_method),M}(
+    return QuasiNewtonMatrixDirectionUpdate{
+        typeof(update),B,typeof(vector_transport_method),M
+    }(
         basis, m, scale, update, vector_transport_method
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(
+function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     p, o
 ) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
     return get_vector(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,Broyden}}
+function (d::QuasiNewtonMatrixDirectionUpdate{T})(
+    p, o
+) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     return get_vector(
         p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{
+mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod
 } <: AbstractQuasiNewtonDirectionUpdate
     method::NT
@@ -1354,14 +1358,14 @@ mutable struct LimitedMemoryQuasiNewctionDirectionUpdate{
     scale::Float64
     vector_transport_method::VT
 end
-function LimitedMemoryQuasiNewctionDirectionUpdate(
+function QuasiNewtonLimitedMemoryDirectionUpdate(
     method::NT,
     ::T,
     memory_size::Int;
     scale::Bool=true,
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
 ) where {NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod}
-    return LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,typeof(vector_transport_method)}(
+    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,typeof(vector_transport_method)}(
         method,
         CircularBuffer{T}(memory_size),
         CircularBuffer{T}(memory_size),
@@ -1371,7 +1375,7 @@ function LimitedMemoryQuasiNewctionDirectionUpdate(
         vector_transport_method,
     )
 end
-function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
+function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(p, o)
     r = deepcopy(o.∇)
     m = length(d.memory_s)
     m == 0 && return -r
@@ -1387,21 +1391,30 @@ function (d::LimitedMemoryQuasiNewctionDirectionUpdate{InverseBFGS})(p, o)
     return -project(p.M, o.x, r)
 end
 
-mutable struct CautiousUpdate{U} <: AbstractQuasiNewtonDirectionUpdate where {
+mutable struct QuasiNewtonCautiousDirectionUpdate{U} <:
+               AbstractQuasiNewtonDirectionUpdate where {
     U<:Union{
-        QuasiNewtonDirectionUpdate,LimitedMemoryQuasiNewctionDirectionUpdate{T}
+        QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}
     },
 } where {T<:AbstractQuasiNewtonUpdateRule}
     update::U
     θ::Function
 end
-function CautiousUpdate(
+function QuasiNewtonCautiousDirectionUpdate(
     update::U; θ::Function=x -> x
 ) where {
     U<:Union{
-        QuasiNewtonDirectionUpdate,LimitedMemoryQuasiNewctionDirectionUpdate{T}
+        QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}
     },
 } where {T<:AbstractQuasiNewtonUpdateRule}
-    return CautiousUpdate{U}(update, θ)
+    return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
 end
-(d::CautiousUpdate)(p, o) = d.update(p, o)
+(d::QuasiNewtonCautiousDirectionUpdate)(p, o) = d.update(p, o)
+
+# access the inner vector transport method
+function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)
+    return u.vector_transport_method
+end
+function get_update_vector_transport(u::QuasiNewtonCautiousDirectionUpdate)
+    return get_update_vector_transport(u.update)
+end

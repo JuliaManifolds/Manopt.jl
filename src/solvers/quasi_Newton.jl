@@ -77,7 +77,7 @@ function quasi_Newton!(
     kwargs...,
 ) where {P,G}
     if memory_size >= 0
-        local_dir_upd = LimitedMemoryQuasiNewctionDirectionUpdate(
+        local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             direction_update,
             zero_tangent_vector(M, x),
             memory_size;
@@ -85,7 +85,7 @@ function quasi_Newton!(
             vector_transport_method=vector_transport_method,
         )
     else
-        local_dir_upd = QuasiNewtonDirectionUpdate(
+        local_dir_upd = QuasiNewtonMatrixDirectionUpdate(
             direction_update,
             basis,
             initial_operator;
@@ -94,7 +94,9 @@ function quasi_Newton!(
         )
     end
     if cautious_update == true
-        local_dir_upd = CautiousUpdate(local_dir_upd; θ=cautious_function)
+        local_dir_upd = QuasiNewtonCautiousDirectionUpdate(
+            local_dir_upd; θ=cautious_function
+        )
     end
 
     o = QuasiNewtonOptions(
@@ -130,10 +132,10 @@ function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
         p.M, o.direction_update, x_old, α * η, o.x, o.vector_transport_method
     )
     vector_transport_to!(
-        p.M, o.sk, x_old, α * η, o.x, o.direction_update.vector_transport_method
+        p.M, o.sk, x_old, α * η, o.x, get_update_vector_transport(o.direction_update)
     )
     vector_transport_to!(
-        p.M, o.∇, x_old, o.∇, o.x, o.direction_update.vector_transport_method
+        p.M, o.∇, x_old, o.∇, o.x, get_update_vector_transport(o.direction_update)
     )
     o.yk = get_gradient(p, o.x) / β - o.∇
     update_hessian!(o.direction_update, p, o, x_old, iter)
@@ -158,7 +160,9 @@ within `d`.
 """
 update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, ::Any, ::Any, ::Any, ::Any)
 
-function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old, iter)
+function update_hessian!(
+    d::QuasiNewtonMatrixDirectionUpdate{InverseBFGS}, p, o, x_old, iter
+)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -173,7 +177,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBFGS}, p, o, x_old
 end
 
 # BFGS update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{BFGS}, p, o, x_old, iter)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{BFGS}, p, o, x_old, iter)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -188,7 +192,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{BFGS}, p, o, x_old, iter)
 end
 
 # Inverese DFP update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseDFP}, p, o, x_old, iter)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{InverseDFP}, p, o, x_old, iter)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -203,7 +207,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseDFP}, p, o, x_old,
 end
 
 # DFP update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{DFP}, p, o, x_old, iter)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{DFP}, p, o, x_old, iter)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -218,7 +222,9 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{DFP}, p, o, x_old, iter)
 end
 
 # Inverse SR-1 update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old, ::Int)
+function update_hessian!(
+    d::QuasiNewtonMatrixDirectionUpdate{InverseSR1}, p, o, x_old, ::Int
+)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -232,7 +238,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
 end
 
 # SR-1 update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, ::Int)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{SR1}, p, o, x_old, ::Int)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -246,7 +252,9 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, ::Int)
 end
 
 # Inverse Broyden update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBroyden}, p, o, x_old, ::Int)
+function update_hessian!(
+    d::QuasiNewtonMatrixDirectionUpdate{InverseBroyden}, p, o, x_old, ::Int
+)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -266,7 +274,7 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBroyden}, p, o, x_
 end
 
 # Broyden update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{Broyden}, p, o, x_old, ::Int)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{Broyden}, p, o, x_old, ::Int)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
@@ -333,7 +341,7 @@ end
 
 # Cautious update
 function update_hessian!(
-    d::CautiousUpdate{U}, p, o, x_old, iter
+    d::QuasiNewtonCautiousDirectionUpdate{U}, p, o, x_old, iter
 ) where {U<:AbstractQuasiNewtonDirectionUpdate}
     # computing the bound used in the decission rule
     bound = d.θ(norm(p.M, o.x, o.∇))
@@ -346,7 +354,7 @@ end
 
 # Limited-memory update
 function update_hessian!(
-    d::LimitedMemoryQuasiNewctionDirectionUpdate{U}, p, o, x_old, ::Int
+    d::QuasiNewtonLimitedMemoryDirectionUpdate{U}, p, o, x_old, ::Int
 ) where {U<:InverseBFGS}
     (capacity(d.memory_s) == 0) && return d
     # only transport the first if it does not get overwritten at the end
@@ -370,7 +378,11 @@ end
 
 # all Cautious Limited Memory
 function update_hessian!(
-    d::CautiousUpdate{LimitedMemoryQuasiNewctionDirectionUpdate{NT,T,VT}}, p, o, x_old, iter
+    d::QuasiNewtonCautiousDirectionUpdate{QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,VT}},
+    p,
+    o,
+    x_old,
+    iter,
 ) where {NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod}
     # computing the bound used in the decission rule
     bound = d.θ(norm(p.M, x_old, get_gradient(p, x_old)))
