@@ -33,6 +33,32 @@ function cyclic_proximal_point(
     F::Function,
     proxes::Union{Tuple,AbstractVector},
     x0;
+    kwargs...
+)
+    x_res = allocate(x0)
+    copyto!(x_res,x0)
+    return cyclic_proximal_point!(M, F, proxes, x_res; kwargs...)
+end
+
+@doc raw"""
+    cyclic_proximal_point!(M, F, proxes, x)
+
+perform a cyclic proximal point algorithm in place of `x`.
+
+# Input
+
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of $F$
+* `x` – an initial value $x ∈ \mathcal M$
+
+for all options, see [`cyclic_proximal_point`](@ref).
+"""
+function cyclic_proximal_point!(
+    M::Manifold,
+    F::Function,
+    proxes::Union{Tuple,AbstractVector},
+    x0;
     evaluation_order::Symbol=:Linear,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)

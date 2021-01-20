@@ -71,7 +71,7 @@ function trust_regions(
 ) where {TF,TdF,TH}
     x_res = allocate(x)
     copyto!(x_res, x)
-    return trust_regions!(M,F, ∇F, x_res, H; kwargs...)
+    return trust_regions!(M, F, ∇F, x_res, H; kwargs...)
 end
 @doc raw"""
     trust_regions!(M, F, ∇F, x, H; kwargs...)

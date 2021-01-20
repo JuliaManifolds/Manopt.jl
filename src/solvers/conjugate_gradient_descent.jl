@@ -53,6 +53,35 @@ function conjugate_gradient_descent(
     F::TF,
     ∇F::TDF,
     x;
+    kwargs...
+) where {TF,TDF}
+    x_res = allocate(x)
+    copyto!(x_res,x)
+    return conjugate_gradient_descent!(M,F,∇F, x; kwargs...)
+end
+@doc raw"""
+    conjugate_gradient_descent!(M, F, ∇F, x)
+
+perform a conjugate gradient based descent in place of `x`, i.e.
+````math
+x_{k+1} = \operatorname{retr}_{x_k} \bigl( s_k\delta_k \bigr),
+````
+where $\operatorname{retr}$ denotes a retraction on the `Manifold` `M`
+
+# Input
+* `M` : a manifold $\mathcal M$
+* `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `∇F`: the gradient $∇ F\colon\mathcal M\to T\mathcal M$ of F
+* `x` : an initial value $x\in\mathcal M$
+
+for more details and options, especially the [`DirectionUpdateRule`](@ref)s,
+ see [`conjugate_gradient_descent`](@ref).
+"""
+function conjugate_gradient_descent!(
+    M::Manifold,
+    F::TF,
+    ∇F::TDF,
+    x;
     coefficient::DirectionUpdateRule=SteepestDirectionUpdateRule(),
     stepsize::Stepsize=ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),

@@ -6,6 +6,7 @@ CurrentModule = Manopt
 
 ```@docs
     NelderMead
+    NelderMead!
 ```
 
 ## Options

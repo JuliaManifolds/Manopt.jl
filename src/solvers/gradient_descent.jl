@@ -1,13 +1,14 @@
 @doc raw"""
     gradient_descent(M, F, ∇F, x)
-perform a gradient_descent $x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)$ with
-different choices of $s_k$ available (see `stepsize` option below).
+
+perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)`` with
+different choices of ``s_k`` available (see `stepsize` option below).
 
 # Input
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
-* `x` – an initial value $x ∈ \mathcal M$
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F\colon\mathcal M\to\mathbb R`` to minimize
+* `∇F` – the gradient ``\nabla F\colon\mathcal M\to T\mathcal M`` of F
+* `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
@@ -27,7 +28,32 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function gradient_descent(
-    M::mT,
+    M::Manifold,
+    F::TF,
+    ∇F::TDF,
+    x;
+    kwargs...
+) where {TF,TDF}
+    x_res = allocate(x)
+    copyto!(x_res,x)
+    return gradient_descent!(M,F,∇F,x_res;kwargs...)
+end
+@doc raw"""
+    gradient_descent!(M, F, ∇F, x)
+
+perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)`` inplace of `x`
+with different choices of ``s_k`` available.
+
+# Input
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F\colon\mathcal M\to\mathbb R`` to minimize
+* `∇F` – the gradient ``\nabla F\colon\mathcal M\to T\mathcal M`` of F
+* `x` – an initial value ``x ∈ \mathcal M``
+
+For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
+"""
+function gradient_descent!(
+    M::Manifold,
     F::TF,
     ∇F::TDF,
     x;
@@ -39,7 +65,7 @@ function gradient_descent(
     direction=Gradient(),
     return_options=false,
     kwargs..., #collect rest
-) where {mT<:Manifold,TF,TDF}
+) where {TF,TDF}
     p = GradientProblem(M, F, ∇F)
     o = GradientDescentOptions(
         x;

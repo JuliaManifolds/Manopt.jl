@@ -1,29 +1,29 @@
 export DouglasRachford
 @doc raw"""
      DouglasRachford(M, F, proxMaps, x)
-Computes the Douglas-Rachford algorithm on the manifold $\mathcal M$, initial
-data $x_0$ and the (two) proximal maps `proxMaps`.
+Computes the Douglas-Rachford algorithm on the manifold ``\mathcal M``, initial
+data ``x_0`` and the (two) proximal maps `proxMaps`.
 
-For $k>2$ proximal
+For ``k>2`` proximal
 maps the problem is reformulated using the parallelDouglasRachford: a vectorial
-proximal map on the power manifold $\mathcal M^k$ and the proximal map of the
+proximal map on the power manifold ``\mathcal M^k`` and the proximal map of the
 set that identifies all entries again, i.e. the Karcher mean. This henve also
 boild down to two proximal maps, though each evauates proximal maps in parallel,
 i.e. component wise in a vector.
 
 # Input
-* `M` – a Riemannian Manifold $\mathcal M$
+* `M` – a Riemannian Manifold ``\mathcal M``
 * `F` – a cost function consisting of a sum of cost functions
 * `proxes` – functions of the form `(λ,x)->...` performing a proximal map,
   where `⁠λ` denotes the proximal parameter, for each of the summands of `F`.
-* `x0` – initial data $x_0 ∈ \mathcal M$
+* `x0` – initial data ``x_0 ∈ \mathcal M``
 
 # Optional values
 the default parameter is given in brackets
 * `λ` – (`(iter) -> 1.0`) function to provide the value for the proximal parameter
   during the calls
 * `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.
-  $t_{k+1} = g(α_k; t_k, s_k)$, where $s_k$ is the result
+  ``t_{k+1} = g(α_k; t_k, s_k)``, where ``s_k`` is the result
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflect`](@ref)) method employed in the iteration
   to perform the reflection of `x` at the prox `p`.
@@ -46,7 +46,39 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function DouglasRachford(
-    M::MT,
+    M::Manifold,
+    F::TF,
+    proxes::Vector{<:Any},
+    x;
+    kwargs...
+) where {TF}
+    x_res = allocate(x)
+    copyto!(x_res,x)
+    return DouglasRachford!(M, F, proxes, x; kwargs...)
+end
+@doc raw"""
+     DouglasRachford(M, F, proxMaps, x)
+Computes the Douglas-Rachford algorithm on the manifold ``\mathcal M``, initial
+data ``x_0`` and the (two) proximal maps `proxMaps` in place of `x`.
+
+For ``k>2`` proximal
+maps the problem is reformulated using the parallelDouglasRachford: a vectorial
+proximal map on the power manifold ``\mathcal M^k`` and the proximal map of the
+set that identifies all entries again, i.e. the Karcher mean. This hence also
+boils down to two proximal maps, though each evauates proximal maps in parallel,
+i.e. component wise in a vector.
+
+# Input
+* `M` – a Riemannian Manifold ``\mathcal M``
+* `F` – a cost function consisting of a sum of cost functions
+* `proxes` – functions of the form `(λ,x)->...` performing a proximal map,
+  where `⁠λ` denotes the proximal parameter, for each of the summands of `F`.
+* `x0` – initial data ``x_0 ∈ \mathcal M``
+
+For more options, see [`DouglasRachford`](@ref).
+"""
+function DouglasRachford!(
+    M::Manifold,
     F::TF,
     proxes::Vector{<:Any},
     x;
@@ -59,7 +91,7 @@ function DouglasRachford(
     ),
     return_options=false,
     kwargs..., #especially may contain decorator options
-) where {MT<:Manifold,TF,Tλ,Tα,TR}
+) where {TF,Tλ,Tα,TR}
     if length(proxes) < 2
         throw(
             ErrorException(

@@ -7,7 +7,7 @@
     f = r
     F(x) = 1 / 10 * sum(distance.(Ref(M), f, Ref(x)) .^ 2)
     ∇F(x) = 1 / 5 * sum(-log.(Ref(M), Ref(x), f))
-    o = gradient_descent(
+    o = gradient_descent!(
         M,
         F,
         ∇F,
@@ -19,7 +19,7 @@
         return_options=true,
     )
     x = get_solver_result(o)
-    x2 = gradient_descent(
+    x2 = gradient_descent!(
         M,
         F,
         ∇F,
@@ -28,7 +28,7 @@
         stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
     )
     @test x == x2
-    x3 = gradient_descent(
+    x3 = gradient_descent!(
         M,
         F,
         ∇F,
@@ -50,7 +50,7 @@
         debug=[:Stop],
     )
     @test isapprox(x, x3; atol=1e-13)
-    x4 = gradient_descent(
+    x4 = gradient_descent!(
         M,
         F,
         ∇F,
@@ -72,7 +72,7 @@
         debug=[:Stop],
     )
     @test isapprox(x, x4; atol=1e-13)
-    x5 = gradient_descent(
+    x5 = gradient_descent!(
         M,
         F,
         ∇F,
@@ -94,7 +94,7 @@
         debug=[:Stop],
     )
     @test isapprox(x, x5; atol=1e-13)
-    x6 = gradient_descent(
+    x6 = gradient_descent!(
         M,
         F,
         ∇F,
