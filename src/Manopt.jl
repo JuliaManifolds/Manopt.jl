@@ -30,6 +30,7 @@ import ManifoldsBase:
     ParallelTransport,
     PowerManifold,
     Manifold,
+    allocate,
     allocate_result,
     allocate_result_type,
     distance,
@@ -170,14 +171,12 @@ export primal_residual, dual_residual
 export QuasiNewtonOptions, LimitedMemoryQuasiNewctionDirectionUpdate
 export CautiousUpdate, BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
-export InverseStableSR1, StableSR1
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
-export quasi_Newton,
-    WolfePowellLineseach,
+export WolfePowellLineseach,
     StrongWolfePowellLineseach,
     operator_to_matrix,
     square_matrix_vector_product,
-    WolfePowellLineseachHuang
+    WolfePowellHuangLinesearch
 
 export ConjugateGradientDescentOptions,
     GradientDescentOptions,
@@ -211,6 +210,8 @@ export ChambollePock,
     gradient_descent,
     NelderMead,
     particle_swarm,
+    quasi_Newton,
+    quasi_Newton!,
     stochastic_gradient_descent,
     subgradient_method,
     truncated_conjugate_gradient_descent,

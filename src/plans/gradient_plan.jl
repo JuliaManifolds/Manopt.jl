@@ -1089,15 +1089,15 @@ struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian SR1 update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{H}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-\mathcal{H}^\mathrm{SR1}_{k+1} = \widetilde{\mathcal{H}}^\mathrm{SR1}_k
+H^\mathrm{SR1}_{k+1} = \widetilde{H}^\mathrm{SR1}_k
 + \frac{
-  (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k) (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}}
+  (y_k - \widetilde{H}^\mathrm{SR1}_k s_k) (y_k - \widetilde{H}^\mathrm{SR1}_k s_k)^{\mathrm{T}}
 }{
-(y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
+(y_k - \widetilde{H}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
 }
 ```
 
@@ -1106,8 +1106,26 @@ where
 s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
 ```
+
+This method can be stabilized by only performing the update if denominator is larger than
+``r\lVert s_k\rVert_{x_{k+1}}\lVert y_k - \widetilde{H}^\mathrm{SR1}_k s_k \rVert_{x_{k+1}}``
+for some ``r>0``. For more details, see Section 6.2 in [^NocedalWright2006]
+
+[^NocedalWright2006]:
+    > Nocedal, J., Wright, S.: Numerical Optimization, Second Edition, Springer, 2006.
+    > doi: [10.1007/978-0-387-40065-5](https://doi.org/10.1007/978-0-387-40065-5)
+
+# Constructor
+    SR1(r::Float64=-1.0)
+
+Generate the `SR1` update, which by default does not include the check (since the default sets ``t<0```)
+
 """
-struct SR1 <: AbstractQuasiNewtonUpdateRule end
+struct SR1 <: AbstractQuasiNewtonUpdateRule
+    r::Float64
+    SR1(r::Float64=-1.0) = new(r)
+end
+
 @doc raw"""
     InverseSR1 <: AbstractQuasiNewtonUpdateRule
 
@@ -1131,40 +1149,21 @@ where
 s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
 ```
+
+This method can be stabilized by only performing the update if denominator is larger than
+``r\lVert y_k\rVert_{x_{k+1}}\lVert s_k - \widetilde{H}^\mathrm{SR1}_k y_k \rVert_{x_{k+1}}``
+for some ``r>0``. For more details, see Section 6.2 in [^NocedalWright2006].
+
+# Constructor
+    InverseSR1(r::Float64=-1.0)
+
+Generate the `InverseSR1` update, which by default does not include the check,
+since the default sets ``t<0```.
 """
-struct InverseSR1 <: AbstractQuasiNewtonUpdateRule end
-
-@doc raw"""
-    StableSR1 <: AbstractQuasiNewtonUpdateRule
-
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that a more stable variant of the Riemanian SR1 update is used in the Riemannian quasi-Newton method. Here, [`SR1`](@ref) is only used if
-
-```math
-\lvert (y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k \lvert \; \geq \; r \; \lVert s_k \rVert \lVert y_k - \widetilde{\mathcal{H}}^\mathrm{SR1}_k s_k \rVert 
-```
-
-holds, where ``r \in (0,1)``.
-"""
-struct StableSR1 <: AbstractQuasiNewtonUpdateRule
+struct InverseSR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
+    InverseSR1(r::Float64=-1.0) = new(r)
 end
-StableSR1() = StableSR1(10^(-8))
-
-@doc raw"""
-    InverseStableSR1 <: AbstractQuasiNewtonUpdateRule
-
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that a more stable variant of the Riemanian SR1 update is used in the Riemannian quasi-Newton method. Here, [`InverseSR1`](@ref) is only used if
-
-```math
-\lvert (s_k - \widetilde{\mathcal{B}}^\mathrm{InverseSR1}_k y_k)^{\mathrm{T}} y_k \lvert \; \geq \; r \; \lVert y_k \rVert \lVert s_k - \widetilde{\mathcal{B}}^\mathrm{InverseSR1}_k y_k \rVert 
-```
-
-holds, where ``r \in (0,1)``.
-"""
-struct InverseStableSR1 <: AbstractQuasiNewtonUpdateRule
-    r::Float64
-end
-InverseStableSR1() = InverseStableSR1(10^(-8))
 
 @doc raw"""
     Broyden <: AbstractQuasiNewtonUpdateRule
@@ -1334,14 +1333,12 @@ function QuasiNewtonDirectionUpdate(
 end
 function (d::QuasiNewtonDirectionUpdate{T})(
     p, o
-) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden,InverseStableSR1}}
+) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
     return get_vector(
         p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )
 end
-function (d::QuasiNewtonDirectionUpdate{T})(
-    p, o
-) where {T<:Union{BFGS,DFP,SR1,Broyden,StableSR1}}
+function (d::QuasiNewtonDirectionUpdate{T})(p, o) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     return get_vector(
         p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
     )

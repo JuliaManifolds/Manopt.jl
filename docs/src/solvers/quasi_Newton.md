@@ -6,6 +6,7 @@
 
 ```@docs
     quasi_Newton
+    quasi_Newton!
 ```
 
 ## Background

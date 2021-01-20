@@ -5,10 +5,10 @@ evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
 It will attempt to minimize the cost function F on the Manifold M.
 
 # Input
-* `M` – a manifold $\mathcal{M}$.
+* `M` – a manifold ``\mathcal{M}``.
 * `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
 * `∇F`– the gradient ``∇F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
-* `x` – an initial value $x \in \mathcal{M}$.
+* `x` – an initial value ``x \in \mathcal{M}``.
 
 # Optional
 * `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
@@ -33,8 +33,28 @@ OR
 * `options` – the options returned by the solver (see `return_options`)
 
 """
-function quasi_Newton(
-    M::MT,
+function quasi_Newton(M::Manifold, F::Function, ∇F::G, x::P; kwargs...) where {P,G}
+    x_res = allocate(x)
+    copyto!(x_res, x)
+    return quasi_Newton!(M, F, ∇F, x_res; kwargs...)
+end
+@doc raw"""
+    quasi_Newton!(M, F, ∇F, x; options...)
+
+evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
+It will attempt to minimize the cost function F on the Manifold M.
+This method works in-place in `x`.
+
+# Input
+* `M` – a manifold ``\mathcal{M}``.
+* `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
+* `∇F`– the gradient ``∇F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
+* `x` – an initial value ``x \in \mathcal{M}``.
+
+For all optional parameters, see [`quasi_Newton`](@ref).
+"""
+function quasi_Newton!(
+    M::Manifold,
     F::Function,
     ∇F::G,
     x::P;
@@ -55,7 +75,7 @@ function quasi_Newton(
     ),
     return_options=false,
     kwargs...,
-) where {MT<:Manifold,P,G}
+) where {P,G}
     if memory_size >= 0
         local_dir_upd = LimitedMemoryQuasiNewctionDirectionUpdate(
             direction_update,
@@ -201,7 +221,9 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseSR1}, p, o, x_old,
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = sk_c - d.matrix * yk_c
-    d.matrix = d.matrix + srvec * srvec' / (srvec' * yk_c)
+    if d.update.r < 0 || dot(srvec, yk_c) >= d.update.r * norm(srvec) * norm(yk_c)
+        d.matrix = d.matrix + srvec * srvec' / (srvec' * yk_c)
+    end
     return d
 end
 
@@ -213,42 +235,14 @@ function update_hessian!(d::QuasiNewtonDirectionUpdate{SR1}, p, o, x_old, ::Int)
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = yk_c - d.matrix * sk_c
-    d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
+    if d.update.r < 0 || dot(srvec, sk_c) >= d.update.r * norm(srvec) * norm(sk_c)
+        d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
+    end
     return d
 end
 
-# Stable inverse SR-1 update
-function update_hessian!(
-    d::QuasiNewtonDirectionUpdate{InverseStableSR1}, p, o, x_old, ::Int
-)
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    srvec = sk_c - d.matrix * yk_c
-
-    if dot(srvec, yk_c) >= d.update.r * norm(srvec) * norm(yk_c)
-        # computing the new matrix which represents the approximating operator in the next iteration
-        d.matrix = d.matrix + srvec * srvec' / (srvec' * yk_c)
-        return d
-    end
-end
-
-# Stable SR-1 update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{StableSR1}, p, o, x_old, ::Int)
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    srvec = yk_c - d.matrix * sk_c
-
-    if dot(srvec, sk_c) >= d.update.r * norm(srvec) * norm(sk_c)
-        # computing the new matrix which represents the approximating operator in the next iteration
-        d.matrix = d.matrix + srvec * srvec' / (srvec' * sk_c)
-        return d
-    end
-end
-
 # Inverse Broyden update
-function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBroyden}, p, o, x_old, iter)
+function update_hessian!(d::QuasiNewtonDirectionUpdate{InverseBroyden}, p, o, x_old, ::Int)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
     sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)

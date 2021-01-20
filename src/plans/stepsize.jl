@@ -474,16 +474,16 @@ function (a::WolfePowellLineseach)(
 end
 
 @doc raw"""
-    WolfePowellLineseachHuang <: Linesearch
+    WolfePowellHuangLinesearch <: Linesearch
 """
-mutable struct WolfePowellLineseachHuang <: Linesearch
+mutable struct WolfePowellHuangLinesearch <: Linesearch
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
 
     c_1::Float64
     c_2::Float64
 
-    function WolfePowellLineseachHuang(
+    function WolfePowellHuangLinesearch(
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
         c_1::Float64=10^(-4),
@@ -493,7 +493,7 @@ mutable struct WolfePowellLineseachHuang <: Linesearch
     end
 end
 
-function (a::WolfePowellLineseachHuang)(
+function (a::WolfePowellHuangLinesearch)(
     p::P, o::O, ::Int, η=-get_gradient(p, o.x)
 ) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
     α = 0.0
