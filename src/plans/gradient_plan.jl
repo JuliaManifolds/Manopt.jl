@@ -1324,15 +1324,14 @@ If a method is chosen where Hessian inverse is approximated, the coordinates of 
 ```
 
 where ``B_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad} f(x_k)}`` as above. In the end, the search direction ``\eta_k`` is generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}`` in both variants.
-In the update, the Euclidean update is used for the matrix H or B and the basis is transported into the upcoming tangent space, preferably with an isometric vector transport, or generated there. 
-
+The [``AbstractQuasiNewtonUpdateRule``] (@ref) indicates which quasi-Newton update rule is used. In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}`` and ``B_{k+1}``, and the basis ``\{b_i\}^{n}_{i=1}`` is transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}`, preferably with an isometric vector transport, or generated there. 
 
 # Fields
 * `basis` – the basis.
 * `matrix` – the matrix which represents the approximating operator.
 * `scale` – indicates whether the initial matrix (= identity matrix) should be scaled before the first update. 
 * `update` – a [`AbstractQuasiNewtonUpdateRule`](@ref).
-* `vector_transport_method` –
+* `vector_transport_method` – a [`AbstractVectorTransportMethod`](@ref).
 
 # See also
 [`LimitedMemoryQuasiNewctionDirectionUpdate`](@ref)
@@ -1381,25 +1380,29 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
 end
 
 @doc raw"""
-    LimitedMemoryQuasiNewctionDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
+    QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any limited-memory quasi-Newton update rule, where the aproximating oprator is represented by stored tangent vectors. 
+This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemanian BFGS update, where the approximating  oprator is represented by ``m`` stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration`. 
+For the calculation of the search direction ``\eta_k``, the generalisation of the two-loop recursion is used (see [^HuangGallivanAbsil2015]), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``\operatorname{grad} f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator 
 
-If the limited-memory Riemannian BFGS method is used, the search direction is calculated using two-loop recursion (see [^HuangGallivanAbsil2015]). The stored pairs of tangent vectors, the gradient of the objective function in x_k and the operator B are used. 
+```math
+\mathcal{B}^{(0)}_k[\cdot] = \frac{\widetilde{s}^{\flat}_{k-1} \widetilde{y}_{k-1}}{\widetilde{y}^{\flat}_{k-1} \widetilde{y}_{k-1}} \id_{T_{x_k} \mathcal{M}}[\cdot] = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})} \id_{T_{x_k} \mathcal{M}}[\cdot]
+```
 
-When updating there are two cases: if there is still free memory, i.e. ``k < m``, the previously stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` have to be transported into the new tangent space ``T_{x_{k+1}} \mathcal{M}``; if there is no free memory, the oldest pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` has to be discarded and then all the remaining vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m+1}^{k-1}`` are transported into the new tangent space ``T_{x_{k+1}} \mathcal{M}``. After that we calculate and store ``s_k = \widetilde{s}_k`` and ``y_k = \widetilde{y}_k``.
+are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update is executed ``m`` times in a row on ``\mathcal{B}^{(0)}_k[\cdot]`` using the tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, and in the same time the resulting operator ``\mathcal{B}^{LRBFGS}_k [\cdot]`` is directly applied on ``\operatorname{grad}f(x_k)``.
+When updating there are two cases: if there is still free memory, i.e. ``k < m``, the previously stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` have to be transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``; if there is no free memory, the oldest pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` has to be discarded and then all the remaining vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m+1}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``. After that we calculate and store ``s_k = \widetilde{s}_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \widetilde{y}_k``. This process ensures that new information about the objective function is always included and the old, probably no longer relevant, information is discarded.
 
 # Fields
-* `method` – 
-* `memory_s` – 
-* `memory_y` – 
-* `ξ` – 
-* `ρ` – 
+* `method` – the maximum number of vector pairs stored.
+* `memory_s` – the set of the stored (and transported) search directions times step size ``\{ \widetilde{s}_i\}_{i=k-m}^{k-1}``. 
+* `memory_y` – set of the stored gradient differences ``\{ \widetilde{y}_i\}_{i=k-m}^{k-1}``.
+* `ξ` – a variable used in the two-loop recursion.
+* `ρ` – a variable used in the two-loop recursion.
 * `scale` – 
-* `vector_transport_method` – 
+* `vector_transport_method` – a [`AbstractVectorTransportMethod`](@ref).
 
 # See also
-[`BFGS`](@ref)
+[`InverseBFGS`](@ref)
 [`CautiousUpdate`](@ref)
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 
@@ -1453,13 +1456,17 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(p, o)
 end
 
 @doc raw"""
-    CautiousUpdate <: AbstractQuasiNewtonDirectionUpdate
+    QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-based on a decision rule, either the usual BFGS update is used or the current operator is transported via an isometric vector transport ``T^{S}`` into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``. In summary, this can be expressed as follows:
+These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, which are based on the idea of a so-called cautious update. The search direction is calculated as given in [`QuasiNewtonDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`]. But the update given in [`QuasiNewtonDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`] is only executed if 
 
-``\mathcal{B}^{CRBFGS}_{k+1} = \begin{cases} \text{using the ordinary BFGS update}, & \; \frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} \geq \theta(\lVert \operatorname{grad} f(x_k) \rVert_{x_k}), \\ \widetilde{\mathcal{B}}^{CRBFGS}_k, & \; \text{otherwise}, \end{cases}``
+```math
+\frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} \geq \theta(\lVert \operatorname{grad} f(x_k) \rVert_{x_k}),
+```
 
-where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0`` and ``\theta`` is strictly increasing at ``0``.
+is satisfied, where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0`` and ``\theta`` is strictly increasing at ``0``. If this is not the case, the corresponding update will be skipped, which means that for [`QuasiNewtonDirectionUpdate`](@ref) the matrix ``H_k`` or ``B_k`` is not updated, but the basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``, and for [`LimitedMemoryQuasiNewctionDirectionUpdate`] neither the oldest vector pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` is discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}`` is added into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``. 
+If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting method follows the method of [^HuangAbsilGallivan2018], taking into account that the corresponding step size is chosen. 
+
 
 # Fields
 * `update` – a [`QuasiNewtonDirectionUpdate`](@ref) or a [`LimitedMemoryQuasiNewctionDirectionUpdate`].
