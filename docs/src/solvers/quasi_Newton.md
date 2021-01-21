@@ -48,6 +48,9 @@ In general these are represented by
 
 ```@docs
 AbstractQuasiNewtonDirectionUpdate
+QuasiNewtonMatrixDirectionUpdate
+QuasiNewtonLimitedMemoryDirectionUpdate
+QuasiNewtonCautiousDirectionUpdate
 ```
 
 ## Hessian Update Rules

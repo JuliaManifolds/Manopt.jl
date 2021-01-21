@@ -1316,7 +1316,7 @@ These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton u
 \text{Solve} \quad \hat{eta_k} = - H_k \widehat{\operatorname{grad} f(x_k)}
 ```
 
-where ``H_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad} f(x_k)}`` represents the coordinates of the gradient of the objective function ``f``` in ``x_k`` with respect to the basis ``\{b_i\}^{n}_{i=1}``. 
+where ``H_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad} f(x_k)}`` represents the coordinates of the gradient of the objective function ``f``` in ``x_k`` with respect to the basis ``\{b_i\}^{n}_{i=1}``.
 If a method is chosen where Hessian inverse is approximated, the coordinates of the search direction ``\eta_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are obtained simply by matrix-vector multiplication, i.e.
 
 ```math
@@ -1329,13 +1329,13 @@ The [``AbstractQuasiNewtonUpdateRule``] (@ref) indicates which quasi-Newton upda
 # Fields
 * `basis` – the basis.
 * `matrix` – the matrix which represents the approximating operator.
-* `scale` – indicates whether the initial matrix (= identity matrix) should be scaled before the first update. 
+* `scale` – indicates whether the initial matrix (= identity matrix) should be scaled before the first update.
 * `update` – a [`AbstractQuasiNewtonUpdateRule`](@ref).
 * `vector_transport_method` – a [`AbstractVectorTransportMethod`](@ref).
 
 # See also
-[`LimitedMemoryQuasiNewctionDirectionUpdate`](@ref)
-[`CautiousUpdate`](@ref)
+[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
+[`QuasiNewtonCautiousDirectionUpdate`](@ref)
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 """
 mutable struct QuasiNewtonMatrixDirectionUpdate{
@@ -1469,13 +1469,12 @@ If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the 
 
 
 # Fields
-* `update` – a [`QuasiNewtonDirectionUpdate`](@ref) or a [`LimitedMemoryQuasiNewctionDirectionUpdate`].
+* `update` – an [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 * `θ` – a monotone increasing function satisfying ``θ(0) = 0`` and ``θ`` is strictly increasing at ``0``.
 
 # See also
-[`QuasiNewtonDirectionUpdate`](@ref)
-[`LimitedMemoryQuasiNewctionDirectionUpdate`](@ref)
-[`AbstractQuasiNewtonDirectionUpdate`](@ref)
+[`QuasiNewtonMatrixDirectionUpdate`](@ref)
+[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 
 [^HuangAbsilGallivan2018]:
     > Huang, Wen and Absil, P.-A and Gallivan, Kyle, AA Riemannian BFGS Method Without Differentiated Retraction for Nonconvex Optimization Problems,
