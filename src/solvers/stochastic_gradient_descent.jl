@@ -28,15 +28,36 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function stochastic_gradient_descent(
+    M::Manifold, ∇F::Union{Function,AbstractVector{<:Function}}, x; kwargs...
+)
+    x_res = allocate(x)
+    copyto!(x_res, x)
+    return stochastic_gradient_descent!(M, ∇F, x_res; kwargs...)
+end
+@doc raw"""
+    stochastic_gradient_descent!(M, ∇F, x)
+
+perform a stochastic gradient descent inplace of `x`.
+
+# Input
+
+* `M` a manifold ``\mathcal M``
+* `∇F` – a gradient function, that either returns a vector of the subgradients
+  or is a vector of gradients
+* `x` – an initial value ``x ∈ \mathcal M``
+
+for all optional parameters, see [`stochastic_gradient_descent`](@ref).
+"""
+function stochastic_gradient_descent!(
     M::Manifold,
     ∇F::Union{Function,AbstractVector{<:Function}},
-    x0;
+    x;
     cost::Union{Function,Missing}=Missing(),
     direction::DirectionUpdateRule=StochasticGradient(),
     stoping_criterion::StoppingCriterion=StopAfterIteration(10000),
     stepsize::Stepsize=ConstantStepsize(1.0),
     order_type::Symbol=:Random,
-    order=collect(1:(∇F isa Function ? length(∇F(x0)) : length(∇F))),
+    order=collect(1:(∇F isa Function ? length(∇F(x)) : length(∇F))),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
     return_options=false,
@@ -44,7 +65,7 @@ function stochastic_gradient_descent(
 )
     p = StochasticGradientProblem(M, ∇F; cost=cost)
     o = StochasticGradientDescentOptions(
-        x0;
+        x;
         stoping_criterion=stoping_criterion,
         stepsize=stepsize,
         order_type=order_type,

@@ -206,17 +206,29 @@ export DirectionUpdateRule,
 #
 # Solvers
 export ChambollePock,
+    ChambollePock!,
     conjugate_gradient_descent,
+    conjugate_gradient_descent!,
     cyclic_proximal_point,
+    cyclic_proximal_point!,
+    DouglasRachford,
+    DouglasRachford!,
     gradient_descent,
+    gradient_descent!,
     NelderMead,
+    NelderMead!,
     particle_swarm,
+    particle_swarm!,
     quasi_Newton,
     quasi_Newton!,
     stochastic_gradient_descent,
+    stochastic_gradient_descent!,
     subgradient_method,
+    subgradient_method!,
     truncated_conjugate_gradient_descent,
-    trust_regions
+    truncated_conjugate_gradient_descent!,
+    trust_regions,
+    trust_regions!
 # Solver helpers
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!

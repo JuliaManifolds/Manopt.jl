@@ -46,8 +46,51 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
     > accepted for publication in Foundations of Computational Mathematics
 """
 function ChambollePock(
-    M::mT,
-    N::nT,
+    M::Manifold,
+    N::Manifold,
+    cost::Function,
+    x::P,
+    ξ::T,
+    m::P,
+    n::Q,
+    prox_F::Function,
+    prox_G_dual::Function,
+    forward_operator::Function,
+    adjoint_linear_operator::Function;
+    kwargs...,
+) where {P,T,Q}
+    x_res = allocate(x)
+    copyto!(x_res, x)
+    ξ_res = allocate(ξ)
+    copyto!(ξ_res, ξ)
+    m_res = allocate(m)
+    copyto!(m_res, m)
+    n_res = allocate(n)
+    copyto!(n_res, n)
+    return ChambollePock!(
+        M,
+        N,
+        cost,
+        x_res,
+        ξ_res,
+        m_res,
+        n_res,
+        prox_F,
+        prox_G_dual,
+        forward_operator,
+        adjoint_linear_operator;
+        kwargs...,
+    )
+end
+@doc raw"""
+    ChambollePock(M, N, cost, x, ξ, m, n, prox_F, prox_G_dual, forward_operator, adjoint_DΛ)
+
+Perform the Riemannian Chambolle–Pock algorithm in place of `x`, `ξ`, and potenitally `m`,
+`n` if they are not fixed. See [`ChambollePock`](@ref) for details and optional parameters.
+"""
+function ChambollePock!(
+    M::Manifold,
+    N::Manifold,
     cost::Function,
     x::P,
     ξ::T,
@@ -73,8 +116,6 @@ function ChambollePock(
     return_options=false,
     kwargs...,
 ) where {
-    mT<:Manifold,
-    nT<:Manifold,
     P,
     Q,
     T,

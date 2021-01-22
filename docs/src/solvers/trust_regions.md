@@ -92,6 +92,7 @@ that one achieves at least (a fraction of) the reduction of the Cauchy point.
 The idea is to go in the direction of the gradient to an optimal point. This
 can be on the edge, but also before.
 The parameter $\tau_{c}$ for the optimal length is defined by
+
 ```math
 \tau_{c} = \begin{cases} 1 & \langle \operatorname{Grad}[F] (x_k), \,
 \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leq 0 , \\
@@ -100,6 +101,7 @@ The parameter $\tau_{c}$ for the optimal length is defined by
 \operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise.}
 \end{cases}
 ```
+
 To check the model decrease one compares
 $m_{x_k}(\eta_{c}^{* }) = F(x_k) + \langle \eta_{c}^{* },
 \operatorname{Grad}[F] (x_k)\rangle_{x_k} + \frac{1}{2}\langle \eta_{c}^{* },
@@ -126,6 +128,7 @@ accepted.
 
 ```@docs
 trust_regions
+trust_regions!
 ```
 
 ## Options

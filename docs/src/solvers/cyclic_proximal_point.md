@@ -20,6 +20,7 @@ see [[Bačák, 2014](#Bačák2014)].
 
 ```@docs
 cyclic_proximal_point
+cyclic_proximal_point!
 ```
 
 ```@docs
