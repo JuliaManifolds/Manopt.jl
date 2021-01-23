@@ -46,6 +46,7 @@ leading to the second prox being the Riemannian mean.
 
 ```@docs
   DouglasRachford
+  DouglasRachford!
 ```
 
 ## Options

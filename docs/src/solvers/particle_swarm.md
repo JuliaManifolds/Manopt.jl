@@ -6,6 +6,7 @@ CurrentModule = Manopt
 
 ```@docs
   particle_swarm
+  particle_swarm!
 ```
 
 ## Options

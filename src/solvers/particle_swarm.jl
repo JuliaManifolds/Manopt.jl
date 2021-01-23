@@ -77,6 +77,33 @@ function particle_swarm(
     F::TF;
     n::Int=100,
     x0::AbstractVector=[random_point(M) for i in 1:n],
+    kwargs...,
+) where {TF}
+    x_res = allocate(x0)
+    copyto!(x_res, x0)
+    return particle_swarm!(M, F; n=n, x0=x_res, kwargs...)
+end
+@doc raw"""
+    patricle_swarm!(M, F; n=100, x0::AbstractVector=[random_point(M) for i in 1:n], kwargs...)
+
+perform the particle swarm optimization algorithm (PSO), starting with the initial particle positions $x_0$[^Borckmans2010]
+in place of `x0`.
+
+# Input
+* `M` – a manifold $\mathcal M$
+* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+
+# Optional
+* `n` - (`100`) number of random initial positions of x0
+* `x0` – the initial positions of each particle in the swarm $x_k^{(0)} ∈ \mathcal M$ for $k = 1, \dots, n$, per default these are n [`random_point`](@ref)s
+
+for more optional arguments, see [`particle_swarm`](@ref).
+"""
+function particle_swarm!(
+    M::Manifold,
+    F::TF;
+    n::Int=100,
+    x0::AbstractVector=[random_point(M) for i in 1:n],
     velocity::AbstractVector=[random_tangent(M, y) for y in x0],
     inertia::Real=0.65,
     social_weight::Real=1.4,
