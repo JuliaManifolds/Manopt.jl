@@ -999,11 +999,11 @@ abstract type AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian BFGS update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{H}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-\mathcal{H}^\mathrm{BFGS}_{k+1} = \widetilde{\mathcal{H}}^\mathrm{BFGS}_k  + \frac{y_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{H}}^\mathrm{BFGS}_k s_k s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{BFGS}_k }{s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{BFGS}_k s_k}
+H^\mathrm{BFGS}_{k+1} = \widetilde{H}^\mathrm{BFGS}_k  + \frac{y_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{BFGS}_k s_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k }{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k s_k}
 ```
 
 where
@@ -1018,16 +1018,16 @@ struct BFGS <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian BFGS update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{\mathcal{B}}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{B}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-\mathcal{B}^\mathrm{BFGS}_{k+1}  = \Bigl(
-  \id_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
+B^\mathrm{BFGS}_{k+1}  = \Bigl(
+  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
 \Bigr)
-\widetilde{\mathcal{B}}^\mathrm{BFGS}_k
+\widetilde{B}^\mathrm{BFGS}_k
 \Bigl(
-  \id_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
+  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
 \Bigr) + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
@@ -1043,16 +1043,16 @@ struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 
 indicates in an [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian DFP update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{H}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-\mathcal{H}^\mathrm{DFP}_{k+1} = \Bigl(
-  \id_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+H^\mathrm{DFP}_{k+1} = \Bigl(
+  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 \Bigr)
-\widetilde{\mathcal{H}}^\mathrm{DFP}_k
+\widetilde{H}^\mathrm{DFP}_k
 \Bigl(
-  \id_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 \Bigr) + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
@@ -1068,13 +1068,13 @@ struct DFP <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian DFP update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{\mathcal{B}}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{B}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-\mathcal{B}^\mathrm{DFP}_{k+1} = \widetilde{\mathcal{B}}^\mathrm{DFP}_k
+B^\mathrm{DFP}_{k+1} = \widetilde{B}^\mathrm{DFP}_k
 + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-- \frac{\widetilde{\mathcal{B}}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{DFP}_k y_k}
+- \frac{\widetilde{B}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k y_k}
 ```
 
 where
@@ -1132,15 +1132,15 @@ end
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian SR1 update is used in the Riemannian quasi-Newton method.
 
 
-We denote by ``\widetilde{\mathcal{B}}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{B}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-\mathcal{B}^\mathrm{SR1}_{k+1} = \widetilde{\mathcal{B}}^\mathrm{SR1}_k
+B^\mathrm{SR1}_{k+1} = \widetilde{B}^\mathrm{SR1}_k
 + \frac{
-  (s_k - \widetilde{\mathcal{B}}^\mathrm{SR1}_k y_k) (s_k - \widetilde{\mathcal{B}}^\mathrm{SR1}_k y_k)^{\mathrm{T}}
+  (s_k - \widetilde{B}^\mathrm{SR1}_k y_k) (s_k - \widetilde{B}^\mathrm{SR1}_k y_k)^{\mathrm{T}}
 }{
-  (s_k - \widetilde{\mathcal{B}}^\mathrm{SR1}_k y_k)^{\mathrm{T}} y_k
+  (s_k - \widetilde{B}^\mathrm{SR1}_k y_k)^{\mathrm{T}} y_k
 }
 ```
 
@@ -1170,18 +1170,18 @@ end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian Broyden update is used in the Riemannian quasi-Newton method, which is as a convex combination of [`BFGS`](@ref) and [`DFP`](@ref).
 
-We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{Br}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+We denote by ``\widetilde{H}_k^\mathrm{Br}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-\mathcal{H}^\mathrm{Br}_{k+1} = \widetilde{\mathcal{H}}^\mathrm{Br}_k
-  - \frac{\widetilde{\mathcal{H}}^\mathrm{Br}_k s_k s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k}{s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-  + φ_k s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k s_k
+H^\mathrm{Br}_{k+1} = \widetilde{H}^\mathrm{Br}_k
+  - \frac{\widetilde{H}^\mathrm{Br}_k s_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k}{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  + φ_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k s_k
   \Bigl(
-        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{H}}^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k s_k}
+        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k s_k}
   \Bigr)
   \Bigl(
-        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{H}}^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k \widetilde{\mathcal{H}}^\mathrm{Br}_k s_k}
+        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k s_k}
   \Bigr)^{\mathrm{T}}
 ```
 
@@ -1211,19 +1211,19 @@ Indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemanian Bro
 is used in the Riemannian quasi-Newton method, which is as a convex combination
 of [`InverseBFGS`](@ref) and [`InverseDFP`](@ref).
 
-We denote by ``\widetilde{\mathcal{H}}_k^\mathrm{Br}`` the operator concatenated with a vector transport
+We denote by ``\widetilde{H}_k^\mathrm{Br}`` the operator concatenated with a vector transport
 and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-\mathcal{B}^\mathrm{Br}_{k+1} = \widetilde{\mathcal{B}}^\mathrm{Br}_k
- - \frac{\widetilde{\mathcal{B}}^\mathrm{Br}_k y_k y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k}{y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}
+B^\mathrm{Br}_{k+1} = \widetilde{B}^\mathrm{Br}_k
+ - \frac{\widetilde{B}^\mathrm{Br}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k y_k}
    + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
- + φ_k y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k y_k
+ + φ_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k y_k
  \Bigl(
-     \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}
+     \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{B}^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k y_k}
     \Bigr) \Bigl(
-        \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k \widetilde{\mathcal{B}}^\mathrm{Br}_k y_k}
+        \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{B}^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k y_k}
  \Bigr)^{\mathrm{T}}
 ```
 
@@ -1310,21 +1310,21 @@ end
 @doc raw"""
     QuasiNewtonDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, where the operator is stored as a matrix. A distinction is made between the update of the approximation of the Hessian, ``H_k \mapsto H_{k+1}``, and the update of the approximation of the Hessian inverse, ``B_k \mapsto B_{k+1}``. For the first case, the coordinates of the search direction ``\eta_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are determined by solving a linear system of equations, i.e.
+These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, where the operator is stored as a matrix. A distinction is made between the update of the approximation of the Hessian, ``H_k \mapsto H_{k+1}``, and the update of the approximation of the Hessian inverse, ``B_k \mapsto B_{k+1}``. For the first case, the coordinates of the search direction ``η_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are determined by solving a linear system of equations, i.e.
 
 ```math
-\text{Solve} \quad \hat{eta_k} = - H_k \widehat{\operatorname{grad} f(x_k)}
+\text{Solve} \quad \hat{η_k} = - H_k \widehat{\operatorname{grad} f(x_k)}
 ```
 
-where ``H_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad} f(x_k)}`` represents the coordinates of the gradient of the objective function ``f``` in ``x_k`` with respect to the basis ``\{b_i\}^{n}_{i=1}``.
-If a method is chosen where Hessian inverse is approximated, the coordinates of the search direction ``\eta_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are obtained simply by matrix-vector multiplication, i.e.
+where ``H_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad} f(x_k)}`` represents the coordinates of the gradient of the objective function ``f`` in ``x_k`` with respect to the basis ``\{b_i\}^{n}_{i=1}``.
+If a method is chosen where Hessian inverse is approximated, the coordinates of the search direction ``η_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are obtained simply by matrix-vector multiplication, i.e.
 
 ```math
-\hat{eta_k} = - B_k \widehat{\operatorname{grad} f(x_k)}
+\hat{η_k} = - B_k \widehat{\operatorname{grad} f(x_k)}
 ```
 
-where ``B_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad} f(x_k)}`` as above. In the end, the search direction ``\eta_k`` is generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}`` in both variants.
-The [``AbstractQuasiNewtonUpdateRule``] (@ref) indicates which quasi-Newton update rule is used. In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}`` and ``B_{k+1}``, and the basis ``\{b_i\}^{n}_{i=1}`` is transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}`, preferably with an isometric vector transport, or generated there. 
+where ``B_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad} f(x_k)}`` as above. In the end, the search direction ``η_k`` is generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}`` in both variants.
+The [``AbstractQuasiNewtonUpdateRule``] (@ref) indicates which quasi-Newton update rule is used. In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}`` and ``B_{k+1}``, and the basis ``\{b_i\}^{n}_{i=1}`` is transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport, or generated there. 
 
 # Fields
 * `basis` – the basis.
@@ -1383,10 +1383,10 @@ end
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
 This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemanian BFGS update, where the approximating  oprator is represented by ``m`` stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration`. 
-For the calculation of the search direction ``\eta_k``, the generalisation of the two-loop recursion is used (see [^HuangGallivanAbsil2015]), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``\operatorname{grad} f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator 
+For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion is used (see [^HuangGallivanAbsil2015]), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``\operatorname{grad} f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator 
 
 ```math
-\mathcal{B}^{(0)}_k[\cdot] = \frac{\widetilde{s}^{\flat}_{k-1} \widetilde{y}_{k-1}}{\widetilde{y}^{\flat}_{k-1} \widetilde{y}_{k-1}} \id_{T_{x_k} \mathcal{M}}[\cdot] = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})} \id_{T_{x_k} \mathcal{M}}[\cdot]
+\mathcal{B}^{(0)}_k[\cdot] = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})} \; \mathrm{id}_{T_{x_k} \mathcal{M}}[\cdot]
 ```
 
 are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update is executed ``m`` times in a row on ``\mathcal{B}^{(0)}_k[\cdot]`` using the tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, and in the same time the resulting operator ``\mathcal{B}^{LRBFGS}_k [\cdot]`` is directly applied on ``\operatorname{grad}f(x_k)``.
@@ -1477,7 +1477,7 @@ If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the 
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 
 [^HuangAbsilGallivan2018]:
-    > Huang, Wen and Absil, P.-A and Gallivan, Kyle, AA Riemannian BFGS Method Without Differentiated Retraction for Nonconvex Optimization Problems,
+    > Huang, Wen and Absil, P.-A and Gallivan, Kyle, A Riemannian BFGS Method Without Differentiated Retraction for Nonconvex Optimization Problems,
     > SIAM J. Optim., 28 (2018), pp. 470-495.
     > doi: [10.1137/17M1127582](https://doi.org/10.1137/17M1127582)
 """
