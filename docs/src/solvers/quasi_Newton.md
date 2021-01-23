@@ -187,7 +187,4 @@ The two-loop recursion can be understood that the usual RBFGS update is executed
 
 ## Literature
 
-[^HuangGallivanAbsil2015]:
-    > Huang, Wen and Gallivan, K. A. and Absil, P.-A., A Broyden Class of Quasi-Newton Methods for Riemannian Optimization,
-    > SIAM J. Optim., 25 (2015), pp. 1660-1685.
-    > doi: [10.1137/140955483](https://doi.org/10.1137/140955483)
+
