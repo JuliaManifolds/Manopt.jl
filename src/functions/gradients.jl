@@ -180,7 +180,7 @@ to a fixed point `y` on the manifold `M` and `p` is an
 integer. The gradient reads
 
 ```math
-  \nabla f(x) = -d_{\mathcal M}^{p-2}(x,y)\log_xy
+  ∇f(x) = -d_{\mathcal M}^{p-2}(x,y)\log_xy
 ```
 
 for $p\neq 1$ or $x\neq  y$. Note that for the remaining case $p=1$,

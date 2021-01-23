@@ -12,7 +12,7 @@ and
 # Input
 
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
 * `population` – (n+1 `random_point(M)`) an initial population of $n+1$ points, where $n$
   is the dimension of the manifold `M`.
 

@@ -17,8 +17,8 @@ For a description of the algorithm and more details see
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F \colon \mathcal M \to \mathbb R$ to minimize
-* `∇F`- the gradient $\nabla F \colon \mathcal M \to T \mathcal M$ of $F$
+* `F` – a cost function $F \colon \mathcal M → ℝ$ to minimize
+* `∇F`- the gradient $∇F \colon \mathcal M → T \mathcal M$ of $F$
 * `x` – an initial value $x  ∈  \mathcal M$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
 
@@ -73,8 +73,8 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds in pl
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F \colon \mathcal M \to \mathbb R$ to minimize
-* `∇F`- the gradient $\nabla F \colon \mathcal M \to T \mathcal M$ of $F$
+* `F` – a cost function $F \colon \mathcal M → ℝ$ to minimize
+* `∇F`- the gradient $∇F \colon \mathcal M → T \mathcal M$ of $F$
 * `x` – an initial value $x  ∈  \mathcal M$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
 

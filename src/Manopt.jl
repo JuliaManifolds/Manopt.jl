@@ -130,7 +130,10 @@ export Problem,
     GradientProblem,
     HessianProblem,
     PrimalDualProblem,
-    StochasticGradientProblem
+    StochasticGradientProblem,
+    EvaluationType,
+    AllocatingEvaluation,
+    MutatingEvaluation
 
 #
 # Options

@@ -1,30 +1,53 @@
 @doc raw"""
-    GradientProblem <: Problem
+    GradientProblem{T} <: Problem{T}
+
 specify a problem for gradient based algorithms.
 
 # Fields
-* `M`            – a manifold $\mathcal M$
-* `cost` – a function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `gradient`     – the gradient $\nabla F\colon\mathcal M
-  \to \mathcal T\mathcal M$ of the cost function $F$
+* `M`        – a manifold ``\mathcal M``
+* `cost`     – a function ``F: \mathcal M → ℝ`` to minimize
+* `gradient` – the gradient ``∇F\colon\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
+
+Depending on the [`EvaluationType`](@ref) `E` the gradient has to be provided differently
+* for an [`AllocatingEvaluation`](@ref) as a function `x -> X` that allocates memory for `X`
+* for an [`MutatingEvaluation`](@ref) as a function `(X,x) -> X` that work inplace of `X`
+
+
+# Constructors
+    GradientProblem(M, cost, gradient; evaluation=AllocatingEvaluation())
 
 # See also
 [`gradient_descent`](@ref)
 [`GradientDescentOptions`](@ref)
 
-# """
-struct GradientProblem{mT<:Manifold,TCost,TGradient} <: Problem
+"""
+struct GradientProblem{T,mT<:Manifold,C,G} <: Problem{T}
     M::mT
-    cost::TCost
-    gradient::TGradient
+    cost::C
+    gradient::G
 end
+function GradientProblem(
+    M::mT, cost::C, gradient::G; evaluation::EvaluationType=AllocatingEvaluation()
+) where {mT<:Manifold,C,G}
+    return GradientProblem{typeof(evaluation),mT,C,G}(M, cost, gradient)
+end
+
 """
     get_gradient(p,x)
 
 evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x`.
 """
-function get_gradient(p::GradientProblem, x)
+function get_gradient(p::GradientProblem{AllocatingEvaluation}, x)
     return p.gradient(x)
+end
+
+"""
+    get_gradient!(p,x)
+
+evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x`.
+"""
+function get_gradient!(p::GradientProblem{MutatingEvaluation}, X, x)
+    return p.gradient(X, x)
 end
 
 """
@@ -303,8 +326,8 @@ Let's assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex.
 Given
 * a step size ``h_k<\frac{1}{L}`` (from the [`GradientDescentOptions`](@ref)
 * a `shrinkage` parameter ``β_k``
-* and a current iterate $x_k$
-* as well as the interims values $γ_k`` and ``v_k`` from the previous iterate.
+* and a current iterate ``x_k``
+* as well as the interims values ``γ_k`` and ``v_k`` from the previous iterate.
 
 This compute a Nesterov type update using the following steps, see [^ZhangSra2018]
 
@@ -432,13 +455,15 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the
+``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^Flethcer1987] adapted to manifolds:
 
-$\beta_k =
+```math
+\beta_k =
 \frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
-{\langle -\delta_k,\xi_k \rangle_{x_k}}.$
+{\langle -\delta_k,\xi_k \rangle_{x_k}}.
+```
 
 See also [`conjugate_gradient_descent`](@ref)
 
@@ -474,12 +499,12 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the
+``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^DaiYuan1999]
 
-adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$,
-where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
+adapted to manifolds: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``,
+where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
 
@@ -535,8 +560,8 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the
+``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^FletcherReeves1964] adapted to manifolds:
 
 ````math
@@ -576,11 +601,11 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the variables with
+``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+direction ``\delta=\delta_k``, where the last three ones are stored in the variables with
 prequel `Old` based on [^HagerZhang2005]
-adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$,
-where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
+adapted to manifolds: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``,
+where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 ````math
 \beta_k = \Bigl\langle\nu_k -
@@ -646,18 +671,18 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the
+``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^HeestensStiefel1952]
 
-adapted to manifolds as follows: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$.
+adapted to manifolds as follows: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``.
 Then the update reads
 
 ````math
 \beta_k = \frac{\langle \xi_{k+1}, \nu_k \rangle_{x_{k+1}} }
     { \langle P_{x_{k+1}\gets x_k} \delta_k, \nu_k\rangle_{x_{k+1}} },
 ````
-where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
+where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 # Constructor
     HeestenesStiefelCoefficient(
@@ -707,11 +732,11 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the
+``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^LuiStorey1991]
-adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$,
-where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
+adapted to manifolds: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``,
+where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
 
@@ -766,12 +791,12 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-$x_k,\xi_k$, the current iterates $x_{k+1},\xi_{k+1}$ and the last update
-direction $\delta=\delta_k$, where the last three ones are stored in the
+``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^PolakRibiere1969][^Polyak1969]
 
-adapted to manifolds: let $\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k$,
-where $P_{a\gets b}(\cdot)$ denotes a vector transport from the tangent space at $a$ to $b$.
+adapted to manifolds: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``,
+where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the update reads
 ````math
@@ -831,7 +856,7 @@ end
     SteepestDirectionUpdateRule <: DirectionUpdateRule
 
 The simplest rule to update is to have no influence of the last direction and
-hence return an update $\beta = 0$ for all [`ConjugateGradientDescentOptions`](@ref)` o`
+hence return an update ``\beta = 0`` for all [`ConjugateGradientDescentOptions`](@ref)` o`
 
 See also [`conjugate_gradient_descent`](@ref)
 """

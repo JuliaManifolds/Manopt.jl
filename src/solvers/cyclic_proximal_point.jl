@@ -6,7 +6,7 @@ perform a cyclic proximal point algorithm.
 # Input
 
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
 * `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of $F$
 * `x` – an initial value $x ∈ \mathcal M$
 
@@ -44,7 +44,7 @@ perform a cyclic proximal point algorithm in place of `x`.
 # Input
 
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
 * `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of $F$
 * `x` – an initial value $x ∈ \mathcal M$
 

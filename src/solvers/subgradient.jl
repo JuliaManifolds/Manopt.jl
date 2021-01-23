@@ -10,8 +10,8 @@ not necessarily determistic.
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∂F`: the (sub)gradient $\partial F\colon\mathcal M\to T\mathcal M$ of F
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
+* `∂F`: the (sub)gradient $\partial F\colon\mathcal M→ T\mathcal M$ of F
   restricted to always only returning one value/element from the subgradient
 * `x` – an initial value $x ∈ \mathcal M$
 
@@ -43,8 +43,8 @@ perform a subgradient method $x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))$ in pla
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∂F`: the (sub)gradient $\partial F\colon\mathcal M\to T\mathcal M$ of F
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
+* `∂F`: the (sub)gradient $\partial F\colon\mathcal M→ T\mathcal M$ of F
   restricted to always only returning one value/element from the subgradient
 * `x` – an initial value $x ∈ \mathcal M$
 

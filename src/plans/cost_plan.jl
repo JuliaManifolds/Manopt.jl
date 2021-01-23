@@ -1,5 +1,5 @@
 @doc raw"""
-    CostProblem <: Problem
+    CostProblem{Manifold, TCost} <: Problem{Evaluationtype}
 
 speficy a problem for solvers just based on cost functions, i.e.
 gradient free ones.
@@ -7,12 +7,12 @@ gradient free ones.
 # Fields
 
 * `M`            – a manifold $\mathcal M$
-* `cost` – a function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `cost` – a function $F: \mathcal M → ℝ$ to minimize
 
 # See also
 [`NelderMead`](@ref)
 """
-struct CostProblem{mT<:Manifold,Tcost} <: Problem
+struct CostProblem{mT<:Manifold,Tcost} <: Problem{EvaluationType}
     M::mT
     cost::Tcost
 end

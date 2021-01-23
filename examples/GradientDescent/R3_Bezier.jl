@@ -1,5 +1,5 @@
 #
-# Minimize the acceleration of a composite Bézier curve on $\mathbb R^3$ with approximation
+# Minimize the acceleration of a composite Bézier curve on $ℝ^3$ with approximation
 #
 # This example appeared in Sec. 5.2, second example, of
 #

@@ -6,18 +6,19 @@ specify a problem for hessian based algorithms.
 
 # Fields
 * `M`            : a manifold $\mathcal M$
-* `cost` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `gradient`     : the gradient $\nabla F\colon\mathcal M
-  \to \mathcal T\mathcal M$ of the cost function $F$
+* `cost` : a function $F\colon\mathcal M→ℝ$ to minimize
+* `gradient`     : the gradient $∇F\colon\mathcal M
+  → \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}[F] (\cdot)_ {x} \colon \mathcal T_{x} \mathcal M
-  \to \mathcal T_{x} \mathcal M$ of the cost function $F$
+  → \mathcal T_{x} \mathcal M$ of the cost function $F$
 * `precon`       : the symmetric, positive deﬁnite
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{mT<:Manifold,TCost,TGradient,THessian,TPrecon} <: Problem
+struct HessianProblem{mT<:Manifold,TCost,TGradient,THessian,TPrecon} <:
+       Problem{AllocatingEvaluation}
     M::mT
     cost::TCost
     gradient::TGradient

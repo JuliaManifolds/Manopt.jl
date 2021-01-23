@@ -27,7 +27,7 @@ Base.show(io::IO, b::BezierSegment) = print(io, "BezierSegment($(b.pts))")
     de_casteljau(M::Manifold, b::BezierSegment NTuple{N,P}) -> Function
 
 return the [Bézier curve](https://en.wikipedia.org/wiki/Bézier_curve)
-$\beta(\cdot;p_0,\ldots,b_n)\colon [0,1] \to \mathcal M$ defined by the control points
+$\beta(\cdot;p_0,\ldots,b_n)\colon [0,1] → \mathcal M$ defined by the control points
 $b_0,\ldots,b_n\in\mathcal M$, $n\in \mathbb N$, as a [`BezierSegment`](@ref).
 This function implements de Casteljau's algorithm[^Casteljau1959][^Casteljau1963] gneralized
 to manifolds[^PopielNoakes2007]: Let $\gamma_{a,b}(t)$ denote the
@@ -48,7 +48,7 @@ and `P` is the type of a point on the `Manifold` `M`.
 Given a vector of Bézier segments, i.e. a vector of control points
 $B=\bigl( (b_{0,0},\ldots,b_{n_0,0}),\ldots,(b_{0,m},\ldots b_{n_m,m}) \bigr)$,
 where the different segments might be of different degree(s) $n_0,\ldots,n_m$. The resulting
-composite Bézier curve $c_B\colon[0,m] \to \mathcal M$ consists of $m$ segments which are
+composite Bézier curve $c_B\colon[0,m] → \mathcal M$ consists of $m$ segments which are
 Bézier curves.
 
 ````math

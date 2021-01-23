@@ -9,9 +9,9 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
 * `M` - a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathcal M$
-* `cost` - a function $F\colon\mathcal M\to\mathbb R$ to
+* `cost` - a function $F\colon\mathcal M→ℝ$ to
   minimize
-* `proxes` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M\to\mathcal M$
+* `proxes` - proximal maps $\operatorname{prox}_{\lambda\varphi}\colon\mathcal M→\mathcal M$
   as functions (λ,x) -> y, i.e. the prox parameter λ also belongs to the signature of the proximal map.
 * `number_of_proxes` - (length(proxes)) number of proxmal Maps,
   e.g. if one of the maps is a combined one such that the proximal Maps
@@ -21,7 +21,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
 """
 mutable struct ProximalProblem{mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <:
-               Problem
+               Problem{AllocatingEvaluation}
     M::mT
     cost::TCost
     proxes::TProxes

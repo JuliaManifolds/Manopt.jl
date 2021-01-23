@@ -1,13 +1,13 @@
 @doc raw"""
     gradient_descent(M, F, ∇F, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)`` with
+perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k∇f(x_k)`` with
 different choices of ``s_k`` available (see `stepsize` option below).
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F\colon\mathcal M\to\mathbb R`` to minimize
-* `∇F` – the gradient ``\nabla F\colon\mathcal M\to T\mathcal M`` of F
+* `F` – a cost function ``F\colon\mathcal M→ℝ`` to minimize
+* `∇F` – the gradient ``∇F\colon\mathcal M→ T\mathcal M`` of F
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
@@ -35,13 +35,13 @@ end
 @doc raw"""
     gradient_descent!(M, F, ∇F, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)`` inplace of `x`
+perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k∇f(x_k)`` inplace of `x`
 with different choices of ``s_k`` available.
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F\colon\mathcal M\to\mathbb R`` to minimize
-* `∇F` – the gradient ``\nabla F\colon\mathcal M\to T\mathcal M`` of F
+* `F` – a cost function ``F\colon\mathcal M→ℝ`` to minimize
+* `∇F` – the gradient ``∇F\colon\mathcal M→ T\mathcal M`` of F
 * `x` – an initial value ``x ∈ \mathcal M``
 
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)

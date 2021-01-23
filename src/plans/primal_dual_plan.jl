@@ -8,7 +8,7 @@ Describes a Problem for the linearized Chambolle-Pock algorithm.
 * `M`, `N` – two manifolds $\mathcal M$, $\mathcal N$
 * `cost` $F + G(Λ(⋅))$ to evaluate interims cost function values
 * `forward_oprator` the operator for the forward operation in the algorthm, either $Λ$ (exact) or $DΛ$ (linearized).
-* `linearized_adjoint_operator` The adjoint differential $(DΛ)^* \colon \mathcal N \to T\mathcal M$
+* `linearized_adjoint_operator` The adjoint differential $(DΛ)^* \colon \mathcal N → T\mathcal M$
 * `prox_F` the proximal map belonging to $f$
 * `prox_G_dual` the proximal map belonging to $g_n^*$
 * `Λ` – (`fordward_operator`) for the linearized variant, this has to be set to the exact forward operator.
@@ -20,7 +20,7 @@ Describes a Problem for the linearized Chambolle-Pock algorithm.
     LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ=forward_operator)
 
 """
-mutable struct PrimalDualProblem{mT<:Manifold,nT<:Manifold} <: Problem
+mutable struct PrimalDualProblem{mT<:Manifold,nT<:Manifold} <: Problem{AllocatingEvaluation}
     M::mT
     N::nT
     cost::Function

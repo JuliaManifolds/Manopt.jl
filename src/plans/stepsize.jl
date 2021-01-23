@@ -97,7 +97,7 @@ faces are available:
   and a current iterate `i`.
 * with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`, a current
   point `x` a function `F`, that maps from the manifold to the reals,
-  its gradient (a tangent vector) `∇F`$=\nabla F(x)$ at  `x` and an optional
+  its gradient (a tangent vector) `∇F`$=∇F(x)$ at  `x` and an optional
   search direction tangent vector `η-∇F` are the arguments.
 """
 mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
@@ -116,8 +116,8 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     end
 end
 function (a::ArmijoLinesearch)(
-    p::P, o::O, ::Int, η=-get_gradient(p, o.x)
-) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
+    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x)
+)
     a.stepsizeOld = linesearch_backtrack(
         p.M,
         p.cost,
@@ -184,13 +184,13 @@ this line search represents the Riemannian Barzilai-Borwein with nonmonotone lin
 by Iannazzo and Porcelli so that in each iteration we first find
 
 ```math
-y_{k} = \nabla F(x_{k}) - \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1}))
+y_{k} = ∇F(x_{k}) - \operatorname{T}_{x_{k-1} → x_k}(∇F(x_{k-1}))
 ```
 
 and
 
 ```math
-s_{k} = - \alpha_{k-1} * \operatorname{T}_{x_{k-1} \to x_k}(\nabla F(x_{k-1})),
+s_{k} = - \alpha_{k-1} * \operatorname{T}_{x_{k-1} → x_k}(∇F(x_{k-1})),
 ```
 
 where $\alpha_{k-1}$ is the step size computed in the last iteration and $\operatorname{T}$ is a vector transport.
@@ -218,9 +218,9 @@ if the direct strategy is chosen,
 in case of the inverse strategy and an alternation between the two in case of the alternating strategy. Then we find the smallest $h = 0, 1, 2 …$ such that
 
 ```math
-F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \nabla F(x_k)))
+F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} ∇F(x_k)))
 \leq
-\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\nabla F(x_k), \nabla F(x_k)⟩_{x_k},
+\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨∇F(x_k), ∇F(x_k)⟩_{x_k},
 ```
 
 where $σ$ is a step length reduction factor $\in (0,1)$, $m$ is the number of iterations after which the function value has to be lower than the current one
@@ -325,8 +325,8 @@ mutable struct NonmonotoneLinesearch{
     end
 end
 function (a::NonmonotoneLinesearch)(
-    p::P, o::O, i::Int, η=-get_gradient(p, o.x)
-) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
+    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x)
+)
     if !all(has_storage.(Ref(a.storage), [:x, :∇]))
         old_x = o.x
         old_∇ = get_gradient(p, o.x)

@@ -8,7 +8,7 @@ CurrentModule = Manopt
 Manopt.Manopt
 ```
 
-For a function $f\colon\mathcal M \to \mathbb R$ defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) $\mathcal M$ we aim to solve
+For a function $f\colon\mathcal M → ℝ$ defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) $\mathcal M$ we aim to solve
 
 $\operatorname*{argmin}_{x ∈ \mathcal M} f(x),$
 

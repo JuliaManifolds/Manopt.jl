@@ -110,7 +110,7 @@ end
     @test cost(XaH) + 142.5 ≈ 0 atol = 10.0^(-10)
 
     ξ = random_tangent(M, x)
-    @test_throws ErrorException getHessian(SubGradientProblem(M, cost, rgrad), x, ξ)
+    @test_throws MethodError getHessian(SubGradientProblem(M, cost, rgrad), x, ξ)
 
     # Test the random step trust region
     p = HessianProblem(M, cost, rgrad, rhess, (M, x, ξ) -> ξ)

@@ -7,7 +7,7 @@ x_{k+1} = \operatorname{retr}_{x_k} \bigl( s_k\delta_k \bigr),
 ````
 where $\operatorname{retr}$ denotes a retraction on the `Manifold` `M`
 and one can employ different rules to update the descent direction $\delta_k$ based on
-the last direction $\delta_{k-1}$ and both gradients $\nabla f(x_k)$,$\nabla f(x_{k-1})$.
+the last direction $\delta_{k-1}$ and both gradients $∇f(x_k)$,$∇f(x_{k-1})$.
 The [`Stepsize`](@ref) $s_k$ may be determined by a [`Linesearch`](@ref).
 
 Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
@@ -17,13 +17,13 @@ Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a
 
 They all compute $\beta_k$ such that this algorithm updates the search direction as
 ````math
-\delta_k=\nabla f(x_k) + \beta_k \delta_{k-1}
+\delta_k=∇f(x_k) + \beta_k \delta_{k-1}
 ````
 
 # Input
 * `M` : a manifold $\mathcal M$
-* `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F`: the gradient $∇ F\colon\mathcal M\to T\mathcal M$ of F
+* `F` : a cost function $F\colon\mathcal M→ℝ$ to minimize
+* `∇F`: the gradient $∇ F\colon\mathcal M→ T\mathcal M$ of F
 * `x` : an initial value $x\in\mathcal M$
 
 # Optional
@@ -66,8 +66,8 @@ where $\operatorname{retr}$ denotes a retraction on the `Manifold` `M`
 
 # Input
 * `M` : a manifold $\mathcal M$
-* `F` : a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F`: the gradient $∇ F\colon\mathcal M\to T\mathcal M$ of F
+* `F` : a cost function $F\colon\mathcal M→ℝ$ to minimize
+* `∇F`: the gradient $∇ F\colon\mathcal M→ T\mathcal M$ of F
 * `x` : an initial value $x\in\mathcal M$
 
 for more details and options, especially the [`DirectionUpdateRule`](@ref)s,

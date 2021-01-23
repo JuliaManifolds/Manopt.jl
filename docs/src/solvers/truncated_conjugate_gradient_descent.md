@@ -4,7 +4,7 @@ The aim is to solve the trust-region subproblem
 
 ```math
 \operatorname*{arg\,min}_{\eta  ∈  T_{x}\mathcal{M}} m_{x}(\eta) = F(x) +
-\langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle
+\langle ∇F(x), \eta \rangle_{x} + \frac{1}{2} \langle
 \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
 ```
 
@@ -20,7 +20,7 @@ preconditioner, guaranteeing that we do not re-enter the trust-region.
 ## Initialization
 
 Initialize $\eta_0 = \eta$ if using randomized approach and
-$\eta$ the zero tangent vector otherwise, $r_0 = \nabla F(x)$,
+$\eta$ the zero tangent vector otherwise, $r_0 = ∇F(x)$,
 $z_0 = \operatorname{P}(r_0)$, $\delta_0 = z_0$ and $k=0$
 
 ## Iteration

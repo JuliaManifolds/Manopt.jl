@@ -9,8 +9,8 @@ In order to minimize over $p\in\mathcal M§ the cost function consisting of
 F(p) + G(\Lambda(p)),
 ```
 
-where $F:\mathcal M \to \overline{\mathbb R}$, $G:\mathcal N \to \overline{\mathbb R}$, and
-$\Lambda:\mathcal M \to\mathcal N$.
+where $F:\mathcal M → \overline{ℝ}$, $G:\mathcal N → \overline{ℝ}$, and
+$\Lambda:\mathcal M →\mathcal N$.
 If the manifolds $\mathcal M$ or $\mathcal N$ are not Hadamard, it has to be considered locally,
 i.e. on geodesically convex sets $\mathcal C \subset \mathcal M$ and $\mathcal D \subset\mathcal N$
 such that $\Lambda(\mathcal C) \subset \mathcal D$.

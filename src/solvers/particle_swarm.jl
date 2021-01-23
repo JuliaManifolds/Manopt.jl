@@ -46,7 +46,7 @@ i.e. $p_k^{(i)}$ is the best known position for the particle $k$ and $g^{(i)}$ i
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
 
 # Optional
 * `n` - (`100`) number of random initial positions of x0
@@ -91,7 +91,7 @@ in place of `x0`.
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
 
 # Optional
 * `n` - (`100`) number of random initial positions of x0

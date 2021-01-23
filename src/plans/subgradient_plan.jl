@@ -16,7 +16,7 @@ Generate the [`Problem`] for a subgradient problem, i.e. a function `f` on the
 manifold `M` and a function `∂f` that returns an element from the subdifferential
 at a point.
 """
-struct SubGradientProblem{mT<:Manifold,TCost,TSubgradient} <: Problem
+struct SubGradientProblem{mT<:Manifold,TCost,TSubgradient} <: Problem{AllocatingEvaluation}
     M::mT
     cost::TCost
     subgradient::TSubgradient

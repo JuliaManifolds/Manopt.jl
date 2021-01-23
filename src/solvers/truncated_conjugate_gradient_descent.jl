@@ -4,7 +4,7 @@
 solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{\eta  ∈  T_{x}M} m_{x}(\eta) = F(x) + \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
+\operatorname*{arg\,min}_{\eta  ∈  T_{x}M} m_{x}(\eta) = F(x) + \langle ∇F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
 ```
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
@@ -22,8 +22,8 @@ see the reference:
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
+* `∇F` – the gradient $∇F\colon\mathcal M→ T\mathcal M$ of F
 * `x` – a point on the manifold $x ∈ \mathcal M$
 * `η` – an update tangential vector $\eta ∈ \mathcal{T_{x}M}$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of F
@@ -75,8 +75,8 @@ solve the trust-region subproblem in place of `x`.
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
+* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
+* `∇F` – the gradient $∇F\colon\mathcal M→ T\mathcal M$ of F
 * `x` – a point on the manifold $x ∈ \mathcal M$
 * `η` – an update tangential vector $\eta ∈ \mathcal{T_{x}M}$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of F

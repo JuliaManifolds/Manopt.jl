@@ -1,3 +1,5 @@
+using Manopt, ManifoldsBase, Test
+
 @testset "Gradient Plan" begin
     io = IOBuffer()
     M = ManifoldsBase.DefaultManifold(2)
@@ -15,8 +17,8 @@
     # Check Fallbacks of Problen
     @test get_cost(p, o.x) == 0.0
     @test get_gradient(p, o.x) == zero_tangent_vector(M, x)
-    @test_throws ErrorException get_proximal_map(p, 1.0, o.x, 1)
-    @test_throws ErrorException get_subgradient(p, o.x)
+    @test_throws MethodError get_proximal_map(p, 1.0, o.x, 1)
+    @test_throws MethodError get_subgradient(p, o.x)
     # Additional Specific Debugs
     a1 = DebugGradient(false, io)
     a1(p, o, 1)

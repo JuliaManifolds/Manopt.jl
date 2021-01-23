@@ -13,7 +13,8 @@ A stochastic gradient problem consists of
 Create a Stochastic gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
 """
-struct StochasticGradientProblem{MT<:Manifold,TCost,TGradient} <: Problem
+struct StochasticGradientProblem{MT<:Manifold,TCost,TGradient} <:
+       Problem{AllocatingEvaluation}
     M::MT
     cost::TCost
     ∇::TGradient

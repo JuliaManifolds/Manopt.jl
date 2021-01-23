@@ -21,8 +21,8 @@ using Manifolds, Manopt, Test
     # Check Fallbacks of Problen
     @test get_cost(p, x) == 0.0
     @test norm(M, x, get_subgradient(p, x)) == 0
-    @test_throws ErrorException get_gradient(p, o.x)
-    @test_throws ErrorException get_proximal_map(p, 1.0, o.x, 1)
+    @test_throws MethodError get_gradient(p, o.x)
+    @test_throws MethodError get_proximal_map(p, 1.0, o.x, 1)
     o2 = subgradient_method(M, f, ∂f, copy(x0); return_options=true)
     xhat2 = get_solver_result(o2)
     @test f(xhat2) <= f(x0)
