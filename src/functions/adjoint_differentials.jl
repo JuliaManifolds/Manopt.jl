@@ -7,7 +7,7 @@
 
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a point `t` $\in[0,1]$ on the
-curve and a tangent vector $\eta\in T_{\beta(t)}\mathcal M$.
+curve and a tangent vector $\eta∈T_{\beta(t)}\mathcal M$.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -55,7 +55,7 @@ end
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n that
 are pointwise in $ t_i\in[0,1]$ on the curve and given corresponding tangential
-vectors $X = (\eta_i)_{i=1}^n$, $\eta_i\in T_{\beta(t_i)}\mathcal M$
+vectors $X = (\eta_i)_{i=1}^n$, $\eta_i∈T_{\beta(t_i)}\mathcal M$
 
 See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbourger2018].
 
@@ -84,7 +84,7 @@ end
 evaluate the adjoint of the differential of a composite Bézier curve on the
 manifold `M` with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n$
 that are pointwise in $t_i\in[0,1]$ on the curve and given corresponding tangential
-vectors $X = (\eta_i)_{i=1}^n$, $\eta_i\in T_{\beta(t_i)}\mathcal M$
+vectors $X = (\eta_i)_{i=1}^n$, $\eta_i∈T_{\beta(t_i)}\mathcal M$
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """

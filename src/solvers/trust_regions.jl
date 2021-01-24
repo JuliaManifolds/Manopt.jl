@@ -145,7 +145,7 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
     opt = truncated_conjugate_gradient_descent(
         p.M,
         p.cost,
-        p.gradient,
+        p.gradient!!,
         o.x,
         eta,
         p.hessian,
@@ -158,7 +158,7 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
     option = get_options(opt) # remove decorators
     η = get_solver_result(option)
     SR = get_active_stopping_criteria(option.stop)
-    Hη = getHessian(p, o.x, η)
+    Hη = get_hessian(p, o.x, η)
     # Initialize the cost function F und the gradient of the cost function
     # ∇F at the point x
     grad = get_gradient(p, o.x)
@@ -167,7 +167,7 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
     # If using randomized approach, compare result with the Cauchy point.
     if o.useRand
         # Check the curvature,
-        Hgrad = getHessian(p, o.x, grad)
+        Hgrad = get_hessian(p, o.x, grad)
         gradHgrad = inner(p.M, o.x, grad, Hgrad)
         if gradHgrad <= 0
             tau_c = 1

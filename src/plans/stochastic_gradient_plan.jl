@@ -45,7 +45,7 @@ end
 @doc raw"""
     get_gradient(P::StochasticGradientProblem, k, x)
 
-Evaluate one of the summands gradients ``∇f_k``, ``k\in \{1,…,n\}``, at `x`.
+Evaluate one of the summands gradients ``∇f_k``, ``k∈\{1,…,n\}``, at `x`.
 """
 function get_gradient(
     P::StochasticGradientProblem{<:Manifold,TC,<:Function}, k, x

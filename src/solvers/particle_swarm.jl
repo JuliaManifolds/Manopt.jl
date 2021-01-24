@@ -4,7 +4,7 @@
 perform the particle swarm optimization algorithm (PSO), starting with the initial particle positions $x_0$[^Borckmans2010].
 The aim of PSO is to find the particle position $g$ on the `Manifold M` that solves
 ```math
-\min_{x \in \mathcal{M}} F(x).
+\min_{x ∈\mathcal{M}} F(x).
 ```
 To this end, a swarm of particles is moved around the `Manifold M` in the following manner.
 For every particle $k$ we compute the new particle velocities $v_k^{(i)}$ in every step $i$ of the algorithm by

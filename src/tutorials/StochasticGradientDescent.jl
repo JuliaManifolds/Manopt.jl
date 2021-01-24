@@ -6,7 +6,7 @@
 #
 # Computationally we look at a very simple but large scale problem,
 # the Riemannian Center of Mass or [Fréchet mean](https://en.wikipedia.org/wiki/Fréchet_mean):
-# For given points ``p_i \in \mathcal M``, ``i=1,\ldots,N`` this optimization problem reads
+# For given points ``p_i ∈\mathcal M``, ``i=1,\ldots,N`` this optimization problem reads
 #
 # ```math
 # \operatorname*{arg\,min}_{x\in\mathcal M} \frac{1}{2}\sum_{i=1}^{N}

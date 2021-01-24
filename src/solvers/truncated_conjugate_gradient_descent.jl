@@ -103,8 +103,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    ∇F(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    ∇F(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             θ,
@@ -114,8 +114,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    ∇F(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    ∇F(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             κ,
@@ -148,7 +148,7 @@ function initialize_solver!(
     p::P, o::O
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     o.η = o.useRand ? o.η : zero_tangent_vector(p.M, o.x)
-    Hη = o.useRand ? getHessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
+    Hη = o.useRand ? get_hessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
     o.residual = get_gradient(p, o.x) + Hη
     # Initial search direction (we maintain -delta in memory, called mdelta, to
     # avoid a change of sign of the tangent vector.)
@@ -171,9 +171,9 @@ function step_solver!(
     z = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
     # this is not correct, it needs to be the inverse of the preconditioner!
     zrOld = inner(p.M, o.x, z, o.residual)
-    HηOld = getHessian(p, o.x, ηOld)
+    HηOld = get_hessian(p, o.x, ηOld)
     # This call is the computationally expensive step.
-    Hδ = getHessian(p, o.x, δOld)
+    Hδ = get_hessian(p, o.x, δOld)
     # Compute curvature (often called kappa).
     δHδ = inner(p.M, o.x, δOld, Hδ)
     # Note that if d_Hd == 0, we will exit at the next "if" anyway.
@@ -202,7 +202,7 @@ function step_solver!(
             inner(p.M, o.x, ηOld, get_gradient(p, o.x)) + 0.5 * inner(p.M, o.x, ηOld, HηOld)
         new_model_value =
             inner(p.M, o.x, o.η, get_gradient(p, o.x)) +
-            0.5 * inner(p.M, o.x, o.η, getHessian(p, o.x, o.η))
+            0.5 * inner(p.M, o.x, o.η, get_hessian(p, o.x, o.η))
         if new_model_value >= old_model_value
             o.η = ηOld
         end

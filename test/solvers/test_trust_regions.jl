@@ -1,3 +1,5 @@
+using Manifolds, Manopt, LinearAlgebra, Test
+
 A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
 
 function cost(X::ProductRepr)
@@ -70,27 +72,29 @@ end
 
     x = random_point(M)
 
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; ρ_prime=0.3)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=-0.1)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ=-0.1)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=0.1, Δ=0.11)
+    lrgrad(x) = rgrad(M,x)
 
-    X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2))
+    @test_throws ErrorException trust_regions(M, cost, x -> rgrad(M,x), x, rhess; ρ_prime=0.3)
+    @test_throws ErrorException trust_regions(M, cost, x -> rgrad(M,x), x, rhess; Δ_bar=-0.1)
+    @test_throws ErrorException trust_regions(M, cost, x -> rgrad(M,x), x, rhess; Δ=-0.1)
+    @test_throws ErrorException trust_regions(M, cost, x -> rgrad(M,x), x, rhess; Δ_bar=0.1, Δ=0.11)
+
+    X = trust_regions(M, cost, x -> rgrad(M,x), x, rhess; Δ_bar=4 * sqrt(2 * 2))
     opt = trust_regions(
-        M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2), return_options=true
+        M, cost, x -> rgrad(M,x), x, rhess; Δ_bar=4 * sqrt(2 * 2), return_options=true
     )
     @test isapprox(M, X, get_solver_result(opt))
 
     @test cost(X) + 142.5 ≈ 0 atol = 10.0^(-13)
 
-    XuR = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2), useRandom=true)
+    XuR = trust_regions(M, cost, x -> rgrad(M,x), x, rhess; Δ_bar=4 * sqrt(2 * 2), useRandom=true)
 
     @test cost(XuR) + 142.5 ≈ 0 atol = 10.0^(-12)
 
     XaH = trust_regions(
         M,
         cost,
-        rgrad,
+        x -> rgrad(M,x),
         x,
         (p, x, ξ) -> approxHessianFD(
             p,
@@ -110,10 +114,10 @@ end
     @test cost(XaH) + 142.5 ≈ 0 atol = 10.0^(-10)
 
     ξ = random_tangent(M, x)
-    @test_throws MethodError getHessian(SubGradientProblem(M, cost, rgrad), x, ξ)
+    @test_throws MethodError get_hessian(SubGradientProblem(M, cost, rgrad), x, ξ)
 
     # Test the random step trust region
-    p = HessianProblem(M, cost, rgrad, rhess, (M, x, ξ) -> ξ)
+    p = HessianProblem(M, cost, x -> rgrad(M,x), rhess, (M, x, ξ) -> ξ)
     o = TrustRegionsOptions(
         x,
         StopAfterIteration(2000),
@@ -124,11 +128,11 @@ end
         0.1,
         1000.0,
     )
-    @test step_solver!(p, o, 0) == nothing
+    @test step_solver!(p, o, 0) === nothing
 
-    η = truncated_conjugate_gradient_descent(M, cost, rgrad, x, ξ, rhess, 0.5)
+    η = truncated_conjugate_gradient_descent(M, cost, x -> rgrad(M,x), x, ξ, rhess, 0.5)
     ηOpt = truncated_conjugate_gradient_descent(
-        M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true
+        M, cost, x -> rgrad(M,x), x, ξ, rhess, 0.5; return_options=true
     )
     @test submanifold_components(get_solver_result(ηOpt)) == submanifold_components(η)
 end

@@ -54,7 +54,7 @@ b = B[2].pts
 # While it is not easy to evaluate polynomials on a manifold, evaluating line segments generalizes to the evaluation of [`shortest_geodesic`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s
 #
 # We will illustrate this using these points $b=(b_1,b_2,b_3,b_4)$ on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html) $\mathbb S^2$.
-# Let's evaliuate this at the point $t=\frac{1}{4}\in [0,1]$. We first compute
+# Let's evaliuate this at the point $t=\frac{1}{4}∈[0,1]$. We first compute
 t = 0.66
 pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t))
 # We obtain 3 points on the geodesics connecting the control points. Repeating this again twice

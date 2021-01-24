@@ -79,11 +79,11 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(p::P, o::O) where {P<:GradientProblem,O<:GradientDescentOptions}
+function initialize_solver!(p::GradientProblem, o::GradientDescentOptions)
     o.∇ = get_gradient(p, o.x)
     return o
 end
-function step_solver!(p::P, o::O, iter) where {P<:GradientProblem,O<:GradientDescentOptions}
+function step_solver!(p::GradientProblem, o::GradientDescentOptions, iter)
     s, o.∇ = o.direction(p, o, iter)
     o.x = retract(p.M, o.x, -s .* o.∇, o.retraction_method)
     return o

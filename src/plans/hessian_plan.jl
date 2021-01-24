@@ -18,10 +18,10 @@ specify a problem for hessian based algorithms.
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 struct HessianProblem{mT<:Manifold,TCost,TGradient,THessian,TPrecon} <:
-       Problem{AllocatingEvaluation}
+       AbstractGradientProblem{AllocatingEvaluation}
     M::mT
     cost::TCost
-    gradient::TGradient
+    gradient!!::TGradient
     hessian::THessian
     precon::TPrecon
     function HessianProblem(M::mT, cost, grad, hess, pre) where {mT<:Manifold}
@@ -139,12 +139,12 @@ mutable struct TrustRegionsOptions{
 end
 
 @doc raw"""
-    getHessian(p,x,ξ)
+    get_hessian(p,x,ξ)
 
 evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the point `x`
 applied to a tangent vector `ξ`.
 """
-function getHessian(p::HessianProblem, x, ξ; stepsize=2 * 10^(-14))
+function get_hessian(p::HessianProblem, x, ξ; stepsize=2 * 10^(-14))
     if ismissing(p.hessian)
         return approxHessianFD(p.M, x -> get_gradient(p.M, x), x, ξ; stepsize=stepsize)
     else
@@ -152,13 +152,6 @@ function getHessian(p::HessianProblem, x, ξ; stepsize=2 * 10^(-14))
     end
 end
 
-@doc raw"""
-    get_gradient(p,x)
-
-evaluate the gradient of a [`HessianProblem`](@ref)`p` at the
-point `x`.
-"""
-get_gradient(p::HessianProblem, x) = p.gradient(p.M, x)
 @doc raw"""
     get_preconditioner(p,x,ξ)
 
@@ -334,7 +327,7 @@ function (c::StopWhenTrustRegionIsExceeded)(
         a1 = inner(
             p.M, o.x, o.useRand ? get_preconditioner(p, o.x, residual) : residual, residual
         )
-        a2 = inner(p.M, o.x, δ, getHessian(p, o.x, δ))
+        a2 = inner(p.M, o.x, δ, get_hessian(p, o.x, δ))
         a3 = inner(p.M, o.x, η, get_preconditioner(p, o.x, δ))
         a4 = inner(p.M, o.x, δ, get_preconditioner(p, o.x, δ))
         norm = inner(p.M, o.x, η, η) - 2 * (a1 / a2) * a3 + (a1 / a2)^2 * a4
@@ -386,8 +379,8 @@ function (c::StopWhenCurvatureIsNegative)(
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if has_storage(c.storage, :δ)
         δ = get_storage(c.storage, :δ)
-        if inner(p.M, o.x, δ, getHessian(p, o.x, δ)) <= 0 && i > 0
-            c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(inner(p.M, o.x, δ, getHessian(p, o.x, δ))) <= 0).\n"
+        if inner(p.M, o.x, δ, get_hessian(p, o.x, δ)) <= 0 && i > 0
+            c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(inner(p.M, o.x, δ, get_hessian(p, o.x, δ))) <= 0).\n"
             c.storage(p, o, i)
             return true
         end

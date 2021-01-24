@@ -140,6 +140,6 @@ get_proximal_map
 
 ```@docs
 HessianProblem
-getHessian
+get_hessian
 get_preconditioner
 ```

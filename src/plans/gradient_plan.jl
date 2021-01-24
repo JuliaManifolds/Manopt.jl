@@ -1,5 +1,12 @@
+"""
+    AbstractGradientProblem{T} <: Problem{T}
+
+An abstract type for all functions that provide a (full) gradient.
+"""
+abstract type AbstractGradientProblem{T} <: Problem{T} end
+
 @doc raw"""
-    GradientProblem{T} <: Problem{T}
+    GradientProblem{T} <: AbstractGradientProblem{T}
 
 specify a problem for gradient based algorithms.
 
@@ -21,10 +28,10 @@ Depending on the [`EvaluationType`](@ref) `E` the gradient has to be provided di
 [`GradientDescentOptions`](@ref)
 
 """
-struct GradientProblem{T,mT<:Manifold,C,G} <: Problem{T}
+struct GradientProblem{T,mT<:Manifold,C,G} <: AbstractGradientProblem{T}
     M::mT
     cost::C
-    gradient::G
+    gradient!!::G
 end
 function GradientProblem(
     M::mT, cost::C, gradient::G; evaluation::EvaluationType=AllocatingEvaluation()
@@ -35,19 +42,35 @@ end
 """
     get_gradient(p,x)
 
-evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x`.
+evaluate the gradient of a [`AbstractGradientProblem{T}`](@ref)`p` at the point `x`.
+This function allocates new memory for the result, even when caled for a
+`T=`[`MutatingEvaluation`](@ref) problem.
 """
-function get_gradient(p::GradientProblem{AllocatingEvaluation}, x)
-    return p.gradient(x)
+get_gradient(p::AbstractGradientProblem, x)
+
+function get_gradient(p::AbstractGradientProblem{AllocatingEvaluation}, x)
+    return p.gradient!!(x)
+end
+function get_gradient(p::AbstractGradientProblem{MutatingEvaluation}, x)
+    X = zero_tangent_vector(M,x)
+    return p.gradient!!(X, x)
 end
 
 """
-    get_gradient!(p,x)
+    get_gradient!(p::Problem{T}, X, x)
 
-evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x`.
+evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x` in place of `X`.
+This works also in place, when the problem is `T=`[`AllocatingEvaluation`](@ref), though
+there might be interims allocations for this case.
 """
-function get_gradient!(p::GradientProblem{MutatingEvaluation}, X, x)
-    return p.gradient(X, x)
+get_gradient!(p::AbstractGradientProblem, X, x)
+
+function get_gradient!(p::AbstractGradientProblem{AllocatingEvaluation}, X, x)
+    return copyto!(X, p.gradient!!(x))
+end
+
+function get_gradient!(p::AbstractGradientProblem{MutatingEvaluation}, X, x)
+    return p.gradient!!(X, x)
 end
 
 """
@@ -138,7 +161,7 @@ end
 # Processors
 #
 function (s::Gradient)(p::GradientProblem, o::GradientDescentOptions, i)
-    return get_stepsize(p, o, i), get_gradient(p, o.x)
+    return get_stepsize(p, o, i), get_gradient!(p, o.∇, o.x)
 end
 
 """

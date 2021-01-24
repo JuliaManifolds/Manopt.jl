@@ -28,7 +28,7 @@ Base.show(io::IO, b::BezierSegment) = print(io, "BezierSegment($(b.pts))")
 
 return the [Bézier curve](https://en.wikipedia.org/wiki/Bézier_curve)
 $\beta(\cdot;p_0,\ldots,b_n)\colon [0,1] → \mathcal M$ defined by the control points
-$b_0,\ldots,b_n\in\mathcal M$, $n\in \mathbb N$, as a [`BezierSegment`](@ref).
+$b_0,\ldots,b_n\in\mathcal M$, $n∈\mathbb N$, as a [`BezierSegment`](@ref).
 This function implements de Casteljau's algorithm[^Casteljau1959][^Casteljau1963] gneralized
 to manifolds[^PopielNoakes2007]: Let $\gamma_{a,b}(t)$ denote the
 shortest geodesic connecting $a,b\in\mathcal M$. Then the curve is defined by the recursion
@@ -54,9 +54,9 @@ Bézier curves.
 ````math
 c_B(t) :=
     \begin{cases}
-        \beta(t; b_{0,0},\ldots,b_{n_0,0}) & \text{ if } t \in [0,1]\\
+        \beta(t; b_{0,0},\ldots,b_{n_0,0}) & \text{ if } t ∈[0,1]\\
         \beta(t-i; b_{0,i},\ldots,b_{n_i,i}) & \text{ if }
-            t\in (i,i+1], \quad i\in\{1,\ldots,m-1\}.
+            t∈(i,i+1], \quad i\in\{1,\ldots,m-1\}.
     \end{cases}
 ````
 

@@ -63,6 +63,7 @@ using Manifolds: #temporary for random
     Euclidean,
     Grassmann,
     Hyperbolic,
+    PositiveNumbers,
     ProductManifold,
     Rotations,
     SymmetricPositiveDefinite,
@@ -120,6 +121,7 @@ include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
 
 include("random.jl")
+include("plans/nonmutating_manifolds_plans.jl")
 
 export ×, ^, ℝ, ℂ
 
@@ -162,7 +164,7 @@ export get_cost,
     get_options,
     get_initial_stepsize,
     get_gradients
-export getHessian, approxHessianFD
+export get_hessian, approxHessianFD
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 

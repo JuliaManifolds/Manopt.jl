@@ -21,7 +21,7 @@ as well as with primal versus dual relaxation (see `relax`). For more details, s
 In the following we note the case of the exact, primal relaxed Riemannian Chambolle–Pock algorithm.
 
 Given base points $m\in\mathcal C$, $n=\Lambda(m)\in\mathcal D$,
-initial primal and dual values $p^{(0)} \in \mathcal C$, $\xi_n^{(0)} \in T_n^*\mathcal N$,
+initial primal and dual values $p^{(0)} ∈\mathcal C$, $\xi_n^{(0)} ∈T_n^*\mathcal N$,
 and primal and dual step sizes $\sigma_0$, $\tau_0$, relaxation $\theta_0$,
 as well as acceleration $\gamma$.
 
