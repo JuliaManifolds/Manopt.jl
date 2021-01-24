@@ -52,7 +52,7 @@ function get_gradient(p::AbstractGradientProblem{AllocatingEvaluation}, x)
     return p.gradient!!(x)
 end
 function get_gradient(p::AbstractGradientProblem{MutatingEvaluation}, x)
-    X = zero_tangent_vector(M,x)
+    X = zero_tangent_vector(M, x)
     return p.gradient!!(X, x)
 end
 

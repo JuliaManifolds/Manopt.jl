@@ -6,7 +6,7 @@ function get_gradient!(p::GradientProblem{AllocatingEvaluation}, X::AbstractFloa
     return X
 end
 function linesearch_backtrack(
-    M::Union{Circle, PositiveNumbers},
+    M::Union{Circle,PositiveNumbers},
     F::TF,
     x,
     ∇F::T,
