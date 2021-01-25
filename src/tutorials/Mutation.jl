@@ -11,36 +11,61 @@ n = 800
 x = zeros(Float64, m + 1)
 x[end] = 1.0
 data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
+#
+# Classical definition
+#
 F(y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)
 ∇F(y) = sum(1 / n * ∇distance.(Ref(M), data, Ref(y)))
-function ∇F!(X, y)
-    return X .= sum(1 / n * ∇distance.(Ref(M), data, Ref(y)))
-end
 
 sc = StopWhenGradientNormLess(10.0^-10)
 x0 = random_point(M)
 m1 = gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
 @btime gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
 
+#
+# Easy to use inplace variant
+#
+function ∇F!(X, y)
+    return X .= sum(1 / n * ∇distance.(Ref(M), data, Ref(y)))
+end
 m2 = deepcopy(x0)
-@btime gradient_descent!(M, F, ∇F, m2; stopping_criterion=sc)
-
-m3 = gradient_descent(M, F, ∇F!, x0; evaluation=MutatingEvaluation(), stopping_criterion=sc)
-@btime gradient_descent(
-    M, F, ∇F!, x0; evaluation=MutatingEvaluation(), stopping_criterion=sc
-)
-
-m4 = deepcopy(x0)
 @btime gradient_descent!(
-    M, F, ∇F!, m4; evaluation=MutatingEvaluation(), stopping_criterion=sc
+    M, F, ∇F!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc
 )
 
+#
+# Memory and time efficient variant
+#
+struct cost{TM,TD}
+    M::TM
+    data::TD
+end
+(f::cost)(y) = sum(1 / (2 * n) * distance.(Ref(f.M), Ref(y), f.data) .^ 2)
+struct grad!{TM,TD,TTMP}
+    M::TM
+    data::TD
+    tmp::TTMP
+end
+function (∇f!::grad!)(X, y)
+    fill!(X, 0)
+    for di in ∇f!.data
+        ∇distance!(∇f!.M, ∇f!.tmp, di, y)
+        X .+= ∇f!.tmp
+    end
+    X ./= n
+    return X
+end
+
+F2 = cost(M, data)
+∇F2! = grad!(M, data, similar(data[1]))
+
+m3 = deepcopy(x0)
+@btime gradient_descent!(
+    $M, $F2, $∇F2!, $m3; evaluation=$(MutatingEvaluation()), stopping_criterion=sc
+)
+
+#
+# All yield the same result
+#
 @test distance(M, m1, m2) ≈ 0
 @test distance(M, m1, m3) ≈ 0
-@test distance(M, m1, m4) ≈ 0
-
-# This results in
-# include("src/tutorials/Mutation.jl")
-#   14.832 ms (170084 allocations: 55.01 MiB)
-#   781.083 μs (9633 allocations: 3.11 MiB)
-#   777.958 μs (9645 allocations: 3.12 MiB)
