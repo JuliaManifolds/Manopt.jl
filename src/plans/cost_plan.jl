@@ -12,7 +12,7 @@ gradient free ones.
 # See also
 [`NelderMead`](@ref)
 """
-struct CostProblem{mT<:Manifold,Tcost} <: Problem{EvaluationType}
+struct CostProblem{mT<:Manifold,Tcost} <: Problem{AbstractEvaluationType}
     M::mT
     cost::Tcost
 end

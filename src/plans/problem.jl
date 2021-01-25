@@ -19,19 +19,19 @@ See [`Options`](@ref) for the changing and solver dependent properties.
 abstract type Problem{T} end
 
 """
-    EvaluationType
+    AbstractEvaluationType
 
 An abstract type to specify the kind of evaluation a [`Problem`](@ref) supports.
 """
-abstract type EvaluationType end
+abstract type AbstractEvaluationType end
 
 """
-    AllocatingEvaluation <: EvaluationType
+    AllocatingEvaluation <: AbstractEvaluationType
 
 A parameter for a [`Problem`](@ref) indicating that the problem uses functions that
 allocate memory for their result, i.e. they work out of place.
 """
-struct AllocatingEvaluation <: EvaluationType end
+struct AllocatingEvaluation <: AbstractEvaluationType end
 
 """
     MutatingEvaluation
@@ -39,7 +39,7 @@ struct AllocatingEvaluation <: EvaluationType end
 A parameter for a [`Problem`](@ref) indicating that the problem uses functions that
 do not allocate memory but work on their input, i.e. inplace.
 """
-struct MutatingEvaluation <: EvaluationType end
+struct MutatingEvaluation <: AbstractEvaluationType end
 
 """
     get_cost(p, x)

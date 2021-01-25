@@ -106,10 +106,11 @@ function initialize_solver!(p::GradientProblem, o::ConjugateGradientDescentOptio
 end
 function step_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
     xOld = o.x
-    o.x = retract(p.M, o.x, get_stepsize(p, o, i, o.δ) * o.δ, o.retraction_method)
-    o.∇ = get_gradient(p, o.x)
+    retract!(p.M, o.x, o.x, get_stepsize(p, o, i, o.δ) * o.δ, o.retraction_method)
+    get_gradient!(p, o.∇, o.x)
     o.β = o.coefficient(p, o, i)
-    return o.δ =
-        -o.∇ + o.β * vector_transport_to(p.M, xOld, o.δ, o.x, o.vector_transport_method)
+    vector_transport_to!(p.M, o.δ, xOld, o.δ, o.x, o.vector_transport_method)
+    o.δ .= -o.∇ .+ o.β * o.δ
+    return o.δ
 end
 get_solver_result(o::ConjugateGradientDescentOptions) = o.x

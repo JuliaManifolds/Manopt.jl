@@ -15,7 +15,7 @@ specify a problem for gradient based algorithms.
 * `cost`     – a function ``F: \mathcal M → ℝ`` to minimize
 * `gradient` – the gradient ``∇F\colon\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
 
-Depending on the [`EvaluationType`](@ref) `E` the gradient has to be provided differently
+Depending on the [`AbstractEvaluationType`](@ref) `E` the gradient has to be provided differently
 * for an [`AllocatingEvaluation`](@ref) as a function `x -> X` that allocates memory for `X`
 * for an [`MutatingEvaluation`](@ref) as a function `(X,x) -> X` that work inplace of `X`
 
@@ -34,17 +34,21 @@ struct GradientProblem{T,mT<:Manifold,C,G} <: AbstractGradientProblem{T}
     gradient!!::G
 end
 function GradientProblem(
-    M::mT, cost::C, gradient::G; evaluation::EvaluationType=AllocatingEvaluation()
+    M::mT, cost::C, gradient::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()
 ) where {mT<:Manifold,C,G}
     return GradientProblem{typeof(evaluation),mT,C,G}(M, cost, gradient)
 end
 
 """
-    get_gradient(p,x)
+    get_gradient(p::AbstractGradientProblem{T},x)
+    get_gradient!(p::AbstractGradientProblem{T}, X, x)
 
 evaluate the gradient of a [`AbstractGradientProblem{T}`](@ref)`p` at the point `x`.
-This function allocates new memory for the result, even when caled for a
-`T=`[`MutatingEvaluation`](@ref) problem.
+
+The evaluation is done in place of `X` for the `!`-variant.
+The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
+When the non-mutating variant is called with a `T=`[`MutatingEvaluation`](@ref)
+memory for the result is allocated.
 """
 get_gradient(p::AbstractGradientProblem, x)
 
@@ -52,18 +56,9 @@ function get_gradient(p::AbstractGradientProblem{AllocatingEvaluation}, x)
     return p.gradient!!(x)
 end
 function get_gradient(p::AbstractGradientProblem{MutatingEvaluation}, x)
-    X = zero_tangent_vector(M, x)
+    X = zero_tangent_vector(p.M, x)
     return p.gradient!!(X, x)
 end
-
-"""
-    get_gradient!(p::Problem{T}, X, x)
-
-evaluate the gradient of a [`GradientProblem`](@ref)`p` at the point `x` in place of `X`.
-This works also in place, when the problem is `T=`[`AllocatingEvaluation`](@ref), though
-there might be interims allocations for this case.
-"""
-get_gradient!(p::AbstractGradientProblem, X, x)
 
 function get_gradient!(p::AbstractGradientProblem{AllocatingEvaluation}, X, x)
     return copyto!(X, p.gradient!!(x))

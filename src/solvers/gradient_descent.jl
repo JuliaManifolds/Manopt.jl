@@ -16,6 +16,8 @@ different choices of ``s_k`` available (see `stepsize` option below).
 * `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `∇F(x)`
+  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `∇F!(X,x)`.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) are returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` if returned
@@ -57,10 +59,11 @@ function gradient_descent!(
         StopAfterIteration(200), StopWhenGradientNormLess(10.0^-8)
     ),
     direction=Gradient(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TDF}
-    p = GradientProblem(M, F, ∇F)
+    p = GradientProblem(M, F, ∇F; evaluation=evaluation)
     o = GradientDescentOptions(
         x;
         stopping_criterion=stopping_criterion,
@@ -85,7 +88,7 @@ function initialize_solver!(p::GradientProblem, o::GradientDescentOptions)
 end
 function step_solver!(p::GradientProblem, o::GradientDescentOptions, iter)
     s, o.∇ = o.direction(p, o, iter)
-    o.x = retract(p.M, o.x, -s .* o.∇, o.retraction_method)
+    retract!(p.M, o.x, o.x, -s .* o.∇, o.retraction_method)
     return o
 end
 get_solver_result(o::GradientDescentOptions) = o.x

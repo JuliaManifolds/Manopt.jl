@@ -169,8 +169,9 @@ end
 
 @doc raw"""
     ∇distance(M,y,x[, p=2])
+    ∇distance!(M,X,y,x[, p=2])
 
-compute the (sub)gradient of the distance (squared)
+compute the (sub)gradient of the distance (squared), in place of `X`.
 
 ```math
 f(x) = \frac{1}{2} d^p_{\mathcal M}(x,y)
@@ -194,6 +195,15 @@ corresponding zero tangent vector, since this is an element of the subdifferenti
 """
 function ∇distance(M, y, x, p::Int=2)
     return (p == 2) ? -log(M, x, y) : -distance(M, x, y)^(p - 2) * log(M, x, y)
+end
+function ∇distance!(M, X, y, x, p::Int=2)
+    log!(M, X, x, y)
+    if p == 2
+        X .*= -one(eltype(X))
+    else
+        X .*= -distance(M, x, y)(p - 2)
+    end
+    return X
 end
 
 @doc raw"""

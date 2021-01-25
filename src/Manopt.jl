@@ -133,7 +133,7 @@ export Problem,
     HessianProblem,
     PrimalDualProblem,
     StochasticGradientProblem,
-    EvaluationType,
+    AbstractEvaluationType,
     AllocatingEvaluation,
     MutatingEvaluation
 
@@ -159,6 +159,7 @@ export Options,
 export linesearch_backtrack
 export get_cost,
     get_gradient,
+    get_gradient!,
     get_subgradient,
     get_proximal_map,
     get_options,
@@ -267,8 +268,14 @@ export differential_bezier_control
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export cost_L2_acceleration_bezier, cost_acceleration_bezier
 # Gradients
-export ∇TV, ∇TV2, ∇intrinsic_infimal_convolution_TV12, forward_logs, ∇distance
-export ∇acceleration_bezier, ∇L2_acceleration_bezier
+export ∇TV,
+    ∇TV2,
+    ∇intrinsic_infimal_convolution_TV12,
+    forward_logs,
+    ∇distance,
+    ∇distance!,
+    ∇acceleration_bezier,
+    ∇L2_acceleration_bezier
 # Proximal maps
 export prox_distance, prox_TV, prox_parallel_TV, prox_TV2, project_collaborative_TV
 # Error measures

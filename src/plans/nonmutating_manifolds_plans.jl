@@ -1,12 +1,13 @@
 #
 # For the manifolds that are nonmutating only, we have to introduce a few special cases
 #
+const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers}
 function get_gradient!(p::GradientProblem{AllocatingEvaluation}, X::AbstractFloat, x)
     X = p.gradient!!(x)
     return X
 end
 function linesearch_backtrack(
-    M::Union{Circle,PositiveNumbers},
+    M::NONMUTATINGMANIFOLDS,
     F::TF,
     x,
     ∇F::T,
@@ -31,4 +32,12 @@ function linesearch_backtrack(
         fNew = F(x_new)
     end
     return s
+end
+# modify gradient descent step_solver
+function step_solver!(
+    p::GradientProblem{T,<:NONMUTATINGMANIFOLDS}, o::GradientDescentOptions, iter
+) where {T}
+    s, o.∇ = o.direction(p, o, iter)
+    o.x = retract(p.M, o.x, -s .* o.∇, o.retraction_method)
+    return o
 end

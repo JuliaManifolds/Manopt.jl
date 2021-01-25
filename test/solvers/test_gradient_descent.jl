@@ -1,7 +1,7 @@
 using Manopt, Manifolds, LinearAlgebra
 
 @testset "Gradient Descent" begin
-    @testset "non-allocating Circle" begin
+    @testset "allocating Circle" begin
         # Test the gradient descent with
         # the distance function squared
         # on S1, such that we can easily also verify exp and log
@@ -175,7 +175,7 @@ using Manopt, Manifolds, LinearAlgebra
         @test_throws MethodError initialize_solver!(p, o)
         @test_throws MethodError step_solver!(p, o, 1)
     end
-    @testset "allocation" begin
+    @testset "mutating Sphere" begin
         M = Sphere(2)
         north = [0.0, 0.0, 1.0]
         pre_pts = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
