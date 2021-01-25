@@ -31,30 +31,13 @@ nothing #hide
 sc = StopWhenGradientNormLess(1e-10)
 x0 = random_point(M)
 m1 = gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
+
 @btime gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
 nothing #hide
 #
-# ## Easy to use inplace variant
+# ## Inplace computation of the gradient
 #
-# A first optimization that – in this example – will just take less than  a 1/20th in time
-# and less then 1/16th of memory allocations, is the idea to perform the gradient
-# computation inplace. We define `∇F!(X,x)` thatz computes the gradient in place of `X`.
-#
-# We further use `gradient_descent!` which works in place of its initial value, here `m2`.
-#
-function ∇F!(X, y)
-    return (X .= sum(1 / n * ∇distance.(Ref(M), data, Ref(y))))
-end
-m2 = deepcopy(x0)
-@btime gradient_descent!(
-    M, F, ∇F!, m2; evaluation=MutatingEvaluation(), stopping_criterion=$sc
-) setup=(m2 = deepcopy($x0))
-nothing #hide
-#
-# ## A more involved and more efficient variant
-#
-# We can reduce the memory allocations even more, when we avoid using global variables
-# encapsulated `∇F!`. We can do this by implementing the gradient as a [functor](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects).
+# We can reduce the memory allocations, by implementing the gradient as a [functor](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects).
 # The motivation is twofold: On the one hand, we want to avoid variables from global scope,
 # for example the manifold `M` or the `data`, to be used within the function
 # For more complicated cost functions it might also be worth considering to do the same.
@@ -80,12 +63,14 @@ end
 # Note that we also have to interpolate all variables passed to the benchmark with a `$`.
 #
 ∇F2! = grad!(M, data, similar(data[1]))
+m2 = deepcopy(x0)
+gradient_descent!(M, F, ∇F2!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc)
+
 @btime gradient_descent!(
-    $M, $F, $∇F2!, m3; evaluation=$(MutatingEvaluation()), stopping_criterion=$sc
-) setup=(m3 = deepcopy($x0))
+    $M, $F, $∇F2!, m2; evaluation=$(MutatingEvaluation()), stopping_criterion=$sc
+) setup = (m2 = deepcopy($x0))
 nothing #hide
 #
-# Mote that all 3 results `m1, m2, m3` are of course the same.
+# Mote that the results `m1`and `m2` are of course the same.
 #
-#@test distance(M, m1, m2) ≈ 0
-#@test distance(M, m1, m3) ≈ 0
+@test distance(M, m1, m2) ≈ 0

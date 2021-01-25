@@ -14,7 +14,7 @@ tutorials = [
 ]
 menuEntries = [
     "get Started: Optimize!",
-    "speed up! with `∇F!`",
+    "speed up! using `∇F!`",
     "do stochastic gradient descent",
     "work with Bézier curves",
     "see the gradient of ``d_2``",
