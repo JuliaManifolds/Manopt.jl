@@ -23,15 +23,15 @@ m1 = gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
 @btime gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
 
 m2 = deepcopy(x0)
-@benchmark gradient_descent!(M, F, ∇F, m2; stopping_criterion=sc)
+@btime gradient_descent!(M, F, ∇F, m2; stopping_criterion=sc)
 
 m3 = gradient_descent(M, F, ∇F!, x0; evaluation=MutatingEvaluation(), stopping_criterion=sc)
-@benchmark gradient_descent(
+@btime gradient_descent(
     M, F, ∇F!, x0; evaluation=MutatingEvaluation(), stopping_criterion=sc
 )
 
 m4 = deepcopy(x0)
-@benchmark gradient_descent!(
+@btime gradient_descent!(
     M, F, ∇F!, m4; evaluation=MutatingEvaluation(), stopping_criterion=sc
 )
 
