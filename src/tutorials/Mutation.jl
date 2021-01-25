@@ -20,18 +20,24 @@ end
 sc = StopWhenGradientNormLess(10.0^-10)
 x0 = random_point(M)
 m1 = gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
-@btime m1 = gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
+@btime gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
 
 m2 = deepcopy(x0)
-@btime gradient_descent!(M, F, ∇F, m2; stopping_criterion=sc)
+@benchmark gradient_descent!(M, F, ∇F, m2; stopping_criterion=sc)
 
-m3 = deepcopy(x0)
-@btime gradient_descent!(
-    M, F, ∇F!, m3; evaluation=MutatingEvaluation(), stopping_criterion=sc
+m3 = gradient_descent(M, F, ∇F!, x0; evaluation=MutatingEvaluation(), stopping_criterion=sc)
+@benchmark gradient_descent(
+    M, F, ∇F!, x0; evaluation=MutatingEvaluation(), stopping_criterion=sc
+)
+
+m4 = deepcopy(x0)
+@benchmark gradient_descent!(
+    M, F, ∇F!, m4; evaluation=MutatingEvaluation(), stopping_criterion=sc
 )
 
 @test distance(M, m1, m2) ≈ 0
 @test distance(M, m1, m3) ≈ 0
+@test distance(M, m1, m4) ≈ 0
 
 # This results in
 # include("src/tutorials/Mutation.jl")
