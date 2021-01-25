@@ -6,6 +6,7 @@ tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
     "MeanAndMedian",
+    "Benchmark",
     "StochasticGradientDescent",
     "BezierCurves",
     "GradientOfSecondOrderDifference",
@@ -13,9 +14,10 @@ tutorials = [
 ]
 menuEntries = [
     "get Started: Optimize!",
+    "speed up! with `∇F!`",
     "do stochastic gradient descent",
     "work with Bézier curves",
-    "see the gradient of \$d_2\$",
+    "see the gradient of ``d_2``",
     "use Jacobi Fields",
 ]
 TutorialMenu = Array{Pair{String,String},1}()
