@@ -32,7 +32,7 @@ struct HessianProblem{T,mT<:Manifold,C,G,H,Pre} <:
         pre::Pre;
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     ) where {mT<:Manifold,C,G,H,Pre}
-        return new{T,mT,C,G,H,Pre}(M, cost, grad, hess, pre)
+        return new{typeof(evaluation),mT,C,G,H,Pre}(M, cost, grad, hess, pre)
     end
 end
 
