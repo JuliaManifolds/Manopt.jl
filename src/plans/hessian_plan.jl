@@ -17,15 +17,22 @@ specify a problem for hessian based algorithms.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{T, mT<:Manifold,C, G, H, Pre} <:
+struct HessianProblem{T,mT<:Manifold,C,G,H,Pre} <:
        AbstractGradientProblem{AllocatingEvaluation}
     M::mT
     cost::C
     gradient!!::G
     hessian!!::H
     precon::Pre
-    function HessianProblem(M::mT, cost::C, grad::G, hess::H, pre::Pre; evaluation::AbstractEvaluationType=AllocatingEvaluation()) where {mT<:Manifold, C, G, H, Pre}
-        return new{T, mT, C, G, H, Pre}(M, cost, grad, hess, pre)
+    function HessianProblem(
+        M::mT,
+        cost::C,
+        grad::G,
+        hess::H,
+        pre::Pre;
+        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    ) where {mT<:Manifold,C,G,H,Pre}
+        return new{T,mT,C,G,H,Pre}(M, cost, grad, hess, pre)
     end
 end
 
