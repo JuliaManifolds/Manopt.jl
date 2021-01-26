@@ -32,7 +32,7 @@ sc = StopWhenGradientNormLess(1e-10)
 x0 = random_point(M)
 m1 = gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
 
-@btime gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
+@btime gradient_descent($M, $F, $∇F, $x0; stopping_criterion=$sc)
 nothing #hide
 #
 # ## Inplace computation of the gradient
@@ -55,7 +55,7 @@ function (∇f!::grad!)(X, y)
         ∇distance!(∇f!.M, ∇f!.tmp, di, y)
         X .+= ∇f!.tmp
     end
-    X ./= n
+    X ./= length(∇f!.data)
     return X
 end
 #
