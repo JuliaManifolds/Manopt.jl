@@ -1006,11 +1006,14 @@ Then the update formula reads
 H^\mathrm{BFGS}_{k+1} = \widetilde{H}^\mathrm{BFGS}_k  + \frac{y_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{BFGS}_k s_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k }{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k s_k}
 ```
 
-where
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+
 ```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
+
+respectively.
 """
 struct BFGS <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
@@ -1031,11 +1034,15 @@ B^\mathrm{BFGS}_{k+1}  = \Bigl(
 \Bigr) + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
-where
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+
 ```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
+
+respectively.
+
 """
 struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
@@ -1056,11 +1063,15 @@ H^\mathrm{DFP}_{k+1} = \Bigl(
 \Bigr) + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
-where
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+
 ```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
+
+respectively.
+
 """
 struct DFP <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
@@ -1077,11 +1088,15 @@ B^\mathrm{DFP}_{k+1} = \widetilde{B}^\mathrm{DFP}_k
 - \frac{\widetilde{B}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k y_k}
 ```
 
-where
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+
 ```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
+
+respectively.
+
 """
 struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 @doc raw"""
@@ -1101,11 +1116,15 @@ H^\mathrm{SR1}_{k+1} = \widetilde{H}^\mathrm{SR1}_k
 }
 ```
 
-where
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+
 ```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
+
+respectively.
+
 
 This method can be stabilized by only performing the update if denominator is larger than
 ``r\lVert s_k\rVert_{x_{k+1}}\lVert y_k - \widetilde{H}^\mathrm{SR1}_k s_k \rVert_{x_{k+1}}``
@@ -1144,11 +1163,15 @@ B^\mathrm{SR1}_{k+1} = \widetilde{B}^\mathrm{SR1}_k
 }
 ```
 
-where
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+
 ```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
+
+respectively.
+
 
 This method can be stabilized by only performing the update if denominator is larger than
 ``r\lVert y_k\rVert_{x_{k+1}}\lVert s_k - \widetilde{H}^\mathrm{SR1}_k y_k \rVert_{x_{k+1}}``
@@ -1185,14 +1208,14 @@ H^\mathrm{Br}_{k+1} = \widetilde{H}^\mathrm{Br}_k
   \Bigr)^{\mathrm{T}}
 ```
 
-where
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
 
 ```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
-and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
+respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
 
 # Constructor
     Broyden(φ, update_rule::Symbol = :constant)
@@ -1227,14 +1250,14 @@ B^\mathrm{Br}_{k+1} = \widetilde{B}^\mathrm{Br}_k
  \Bigr)^{\mathrm{T}}
 ```
 
-where
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
 
 ```math
-s_k = T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-y_k = ∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M}.
+T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
+∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
-and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
+respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
 
 # Constructor
     InverseBroyden(φ, update_rule::Symbol = :constant)

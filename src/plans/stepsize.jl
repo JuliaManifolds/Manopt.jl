@@ -414,11 +414,19 @@ f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨∇f(x), η�
 \Big\vert_{t=α}
 ≥ c_2 \frac{\mathrm{d}}{\mathrm{d}t} f\bigl(\operatorname{retr}_x(tη)\bigr)\Big\vert_{t=0}.
 ```
+
+# Constructor
+
+    WolfePowellLinesearch(
+        retr::AbstractRetractionMethod=ExponentialRetraction(),
+        vtr::AbstractVectorTransportMethod=ParallelTransport(),
+        c_1::Float64=10^(-4),
+        c_2::Float64=0.999
+    )
 """
 mutable struct WolfePowellLineseach <: Linesearch
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
-
     c_1::Float64
     c_2::Float64
 
@@ -506,6 +514,7 @@ vector transport, we perform the following Algorithm similar to Algorithm 7 from
 5. If ``β<∞`` set ``t=\frac{α+β}{2}``, otherwise set ``t=2α``.
 
 # Constructor
+
     WolfePowellBinaryLinesearch(
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),

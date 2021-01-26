@@ -89,7 +89,7 @@ Random.seed!(42)
         end
     end
     @testset "Rayleigh Quotient Minimzation" begin
-        n = 9
+        n = 4
         rayleigh_atol = 1e-12
         A = randn(n, n)
         A = (A + A') / 2
@@ -165,12 +165,7 @@ Random.seed!(42)
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
 
-        for T in [
-            SR1(),
-            InverseSR1(),
-            SR1(1e-9),
-            # InverseSR1(1e-9),
-        ]
+        for T in [SR1(), InverseSR1(), SR1(1e-9), InverseSR1(1e-9)]
             x_direction = quasi_Newton(
                 M,
                 F,
