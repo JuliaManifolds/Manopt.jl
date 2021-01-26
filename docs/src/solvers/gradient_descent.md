@@ -18,11 +18,11 @@ GradientDescentOptions
 
 ## Direction Update Rules
 
-A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`Gradient`](@ref) just evaluates the gradient but can be enhanced for example to
+A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient but can be enhanced for example to
 
 ```@docs
 DirectionUpdateRule
-Gradient
+IdentityUpdateRule
 MomentumGradient
 AverageGradient
 Nesterov

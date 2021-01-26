@@ -144,7 +144,7 @@ applied to a tangent vector `ξ`.
 """
 function get_hessian(p::HessianProblem, x, ξ; stepsize=2 * 10^(-14))
     if ismissing(p.hessian)
-        return approxHessianFD(p.M, x -> get_gradient(p.M, x), x, ξ; stepsize=stepsize)
+        return approxHessianFD(p.M, x, (x) -> get_gradient(p, x), ξ; stepsize=stepsize)
     else
         return p.hessian(p.M, x, ξ)
     end

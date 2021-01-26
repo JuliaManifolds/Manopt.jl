@@ -102,8 +102,9 @@ F(x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
 );
 # note that the default [`StoppingCriterion`](@ref) is a fixed number of iterations.
 #
-# Note that since you can apply both also in the [`Gradient`](@ref) case of [`gradient_descent`](@ref),
-# both constructors have to know that internally the default avaluation of the Stochastic gradient
+# Note that since you can apply both also in case of [`gradient_descent`](@ref),
+# i.e. to use [`IdentityUpdateRule`](@ref) and evaluate the classical gradient,
+# both constructors have to know that internally the default evaluation of the Stochastic gradient
 # (choosing one gradient $∇f_k$ at random) has to be specified.
 #
 # For this small example you can of course also use a gradient descent with [`ArmijoLinesearch`](@ref),

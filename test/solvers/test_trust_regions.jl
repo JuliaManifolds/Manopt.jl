@@ -107,7 +107,7 @@ end
         (p, x, ξ) -> approxHessianFD(
             p,
             x,
-            x -> rgrad(p, x),
+            (X) -> rgrad(M, X),
             ξ;
             stepsize=2^(-9),
             vector_transport_method=ProductVectorTransport(
