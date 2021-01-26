@@ -140,7 +140,7 @@ perform a linesearch for
 * a manifold `M`
 * a cost function `F`,
 * an iterate `x`
-* the gradient $∇F(x)``
+* the gradient ``∇F(x)``
 * an initial stepsize `s` usually called $γ$
 * a sufficient `decrease`
 * a `contract`ion factor $σ$
@@ -234,7 +234,6 @@ and $γ$ is the sufficient decrease parameter $\in (0,1)$. We can then find the 
     > B. Iannazzo, M. Porcelli, __The Riemannian Barzilai–Borwein Method with Nonmonotone Line Search and the Matrix Geometric Mean Computation__,
     > In: IMA Journal of Numerical Analysis. Volume 38, Issue 1, January 2018, Pages 495–517,
     > doi [10.1093/imanum/drx015](https://doi.org/10.1093/imanum/drx015)
-
 
 # Fields
 * `initial_stepsize` – (`1.0`) the step size we start the search with
@@ -404,6 +403,17 @@ end
 
 @doc raw"""
     WolfePowellLineseach <: Linesearch
+
+Do a backgtracking linesearch to find a step size ``α`` that fulfills the
+Wolfe conditions along a search direktion ``η`` starting ffrom ``x``, i.e.
+
+```math
+f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨∇f(x), η⟩_x
+\quad\text{and}\quad
+\frac{\mathrm{d}}{\mathrm{d}t} f\bigr(\operatorname{retr}_x(tη)\bigr)
+\Big\vert_{t=α}
+≥ c_2 \frac{\mathrm{d}}{\mathrm{d}t} f\bigl(\operatorname{retr}_x(tη)\bigr)\Big\vert_{t=0}.
+```
 """
 mutable struct WolfePowellLineseach <: Linesearch
     retraction_method::AbstractRetractionMethod

@@ -1,8 +1,15 @@
 @doc raw"""
     quasi_Newton(M, F, ∇F, x)
 
-evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
-It will attempt to minimize the cost function F on the Manifold M.
+Perform a quasi Newton iteration for `F` on the manifold `M` starting
+in the point `x` using a retration ``R`` and a vector transport ``T``
+
+The ``k``th iteration consists of
+1. Compute the search direction ``η_k``η_k = -\mathcal{B}_k [∇f (x_k)]`` or solve ``\mathcal{H}_k [η_k] = -∇f (x_k)]``.
+2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{x_k}(α η_k)`` e.g. by using [`WolfePowellLineseach`](@ref).
+3. Compute ``x_{k+1} = R_{x_k}(α_k η_k)``.
+4. Define ``s_k = T_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = ∇f(x_{k+1}) - T_{x_k, α_k η_k}(∇f(x_k))``.
+5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_k``.
 
 # Input
 * `M` – a manifold ``\mathcal{M}``.
@@ -10,28 +17,31 @@ It will attempt to minimize the cost function F on the Manifold M.
 * `∇F`– the gradient ``∇F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
 * `x` – an initial value ``x \in \mathcal{M}``.
 
+    stopping_criterion::StoppingCriterion=StopWhenAny(
+        StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
+    ),
+    return_options=false,
+
+
 # Optional
-* `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
+* `basis`                   – (`DefaultOrthonormalBasis()`) basis within the tangent space(s) to represent the Hessian (inverse).
+* `cautious_update`         – (`false`) – whether or not to use a [`QuasiNewtonCautiousDirectionUpdate`](@ref)
+* `cautious_function`       – (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero at 0 and strictly increasing at 0 for the cautious update.
+* `direction_update`        – ([`InverseBFGS`](@ref)`()`) the update rule to use.
+* `initial_operator`        – (`Matrix{Float64}(I,n,n)`) initial matrix to use die the approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
+* `memory_size`             – (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative value to use a full memory representation
+* `retraction_method`       – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
+* `scale_initial_operator`  - (`true`) scale initial operator with ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
+* `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`) specify a [`Stepsize`](@ref).
+* `stopping_criterion`      - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`) specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method` – (`ParallelTransport()`) a vector transport to use, by default the parallel transport.
-* `broyden_factor` – (`0.`) – specifies the proportion of DFP update in the convex combination if the Broyden Class method is to be used. By default, BFGS is used.
-* `cautious_update` – (`false`) – specifies whether a cautious update should be used, which means that a decision rule based on the calculated values decides whether the operator remains the same and no new information is received, or whether it is updated as usual.
-* `cautious_function` – (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero at 0 and strictly increasing at 0.
-* `memory_size` – (`20`) – number of vectors to be stored.
-* `memory_steps`– (`[`zero_tangent_vector(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $s_k$ for a LRBFGS method.
-* `memory_gradients` – (`[`zero_tangent_vector(M,x) for _ ∈ 1:memory_size]`) – the currently stored tangent vectors $y_k$ for a LRBFGS method.
-* `initial_operator` – (`Matrix(I, manifold_dimension(M), manifold_dimension(M))`) – the initial operator, represented as a matrix.
-* `scalling_initial_operator` – (`true`) specifies if the initial operator is scalled after the first step but before the first update.
-* `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`) specify a [`Stepsize`](@ref) functor.
-* `stopping_criterion`– ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(max(1000, memory_size)), `[`StopWhenGradientNormLess`](@ref)`(10.0^68))`)
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) are returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
+
+* `return_options` – (`false`) – specify whether to return just the result `x` (default) or the complete [`Options`](@ref), e.g. to access recorded values. if activated, the extended result, i.e. the
 
 # Output
 * `x_opt` – the resulting (approximately critical) point of the quasi–Newton method
 OR
 * `options` – the options returned by the solver (see `return_options`)
-
 """
 function quasi_Newton(M::Manifold, F::Function, ∇F::G, x::P; kwargs...) where {P,G}
     x_res = allocate(x)
@@ -41,9 +51,8 @@ end
 @doc raw"""
     quasi_Newton!(M, F, ∇F, x; options...)
 
-evaluate a Riemannian quasi-Newton solver for optimization on manifolds.
-It will attempt to minimize the cost function F on the Manifold M.
-This method works in-place in `x`.
+Perform a quasi Newton iteration for `F` on the manifold `M` starting
+in the point `x` using a retration ``R`` and a vector transport ``T``.
 
 # Input
 * `M` – a manifold ``\mathcal{M}``.
@@ -68,7 +77,7 @@ function quasi_Newton!(
     initial_operator::AbstractMatrix=Matrix{Float64}(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
-    scalling_initial_operator::Bool=true,
+    scale_initial_operator::Bool=true,
     step_size::Stepsize=WolfePowellLineseach(retraction_method, vector_transport_method),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
@@ -81,7 +90,7 @@ function quasi_Newton!(
             direction_update,
             zero_tangent_vector(M, x),
             memory_size;
-            scale=scalling_initial_operator,
+            scale=scale_initial_operator,
             vector_transport_method=vector_transport_method,
         )
     else
@@ -89,7 +98,7 @@ function quasi_Newton!(
             direction_update,
             basis,
             initial_operator;
-            scale=scalling_initial_operator,
+            scale=scale_initial_operator,
             vector_transport_method=vector_transport_method,
         )
     end
