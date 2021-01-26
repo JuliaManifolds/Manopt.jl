@@ -9,6 +9,7 @@ using Markdown
 using LinearAlgebra
 using Dates: Period, Nanosecond, value
 using Random: shuffle!
+using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
 import Random: rand, randperm
 import Base: copy, identity
@@ -17,10 +18,13 @@ import ManifoldsBase:
     ℂ,
     ×,
     ^,
+    AbstractBasis,
     AbstractPowerManifold,
     AbstractVectorTransportMethod,
     AbstractRetractionMethod,
     AbstractInverseRetractionMethod,
+    CachedBasis,
+    DefaultOrthonormalBasis,
     ExponentialRetraction,
     LogarithmicInverseRetraction,
     ParallelTransport,
@@ -109,6 +113,7 @@ include("solvers/DouglasRachford.jl")
 include("solvers/NelderMead.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/particle_swarm.jl")
+include("solvers/quasi_Newton.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
 include("solvers/stochastic_gradient_descent.jl")
@@ -163,17 +168,32 @@ export getHessian, approxHessianFD
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
-export DirectionUpdateRule,
-    Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
+export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonCautiousDirectionUpdate,
+    BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
+export InverseBroyden, Broyden
+export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
+export WolfePowellLineseach,
+    StrongWolfePowellLineseach,
+    operator_to_matrix,
+    square_matrix_vector_product,
+    WolfePowellBinaryLinesearch
 
-# Actions
+export ConjugateGradientDescentOptions,
+    GradientDescentOptions,
+    HessianOptions,
+    SubGradientMethodOptions,
+    NelderMeadOptions,
+    TruncatedConjugateGradientOptions,
+    TrustRegionsOptions,
+    ParticleSwarmOptions
 export AbstractOptionsAction, StoreOptionsAction
 export has_storage, get_storage, update_storage!
 
 #
 # Direction Update Rules
 export DirectionUpdateRule,
-    AverageGradient, Gradient, MomentumGradient, Nesterov, StochasticGradient
+    IdentityUpdateRule, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,
     HeestenesStiefelCoefficient,
@@ -199,6 +219,8 @@ export ChambollePock,
     NelderMead!,
     particle_swarm,
     particle_swarm!,
+    quasi_Newton,
+    quasi_Newton!,
     stochastic_gradient_descent,
     stochastic_gradient_descent!,
     subgradient_method,

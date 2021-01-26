@@ -56,6 +56,7 @@ CurrentModule = Manopt
 
 ```@docs
 ChambollePock
+ChambollePock!
 ```
 
 ## Problem & Options

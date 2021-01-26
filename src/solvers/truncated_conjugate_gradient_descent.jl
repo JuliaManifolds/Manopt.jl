@@ -103,8 +103,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    ∇F(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    ∇F(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             θ,
@@ -114,8 +114,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    ∇F(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    ∇F(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             κ,

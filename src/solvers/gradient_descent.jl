@@ -56,7 +56,7 @@ function gradient_descent!(
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(200), StopWhenGradientNormLess(10.0^-8)
     ),
-    direction=Gradient(),
+    direction=IdentityUpdateRule(),
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TDF}

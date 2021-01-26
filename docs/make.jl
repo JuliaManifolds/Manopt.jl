@@ -44,11 +44,12 @@ makedocs(;
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
+            "Quasi-Newton" => "solvers/quasi_Newton.md",
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
             "Subgradient method" => "solvers/subgradient.md",
             "Steihaug-Toint TCG Method" =>
                 "solvers/truncated_conjugate_gradient_descent.md",
-            "Riemannian Trust-Regions Solver" => "solvers/trust_regions.md",
+            "Trust-Regions Solver" => "solvers/trust_regions.md",
         ],
         "Functions" => [
             "Introduction" => "functions/index.md",
