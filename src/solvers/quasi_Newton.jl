@@ -2,10 +2,10 @@
     quasi_Newton(M, F, gradF, x)
 
 Perform a quasi Newton iteration for `F` on the manifold `M` starting
-in the point `x` using a retration ``R`` and a vector transport ``T``
+in the point `x` using a retraction ``R`` and a vector transport ``T``
 
 The ``k``th iteration consists of
-1. Compute the search direction ``η_k``η_k = -\mathcal{B}_k [\operatorname{grad}f (x_k)]`` or solve ``\mathcal{H}_k [η_k] = -\operatorname{grad}f (x_k)]``.
+1. Compute the search direction ``η_k = -\mathcal{B}_k [\operatorname{grad}f (x_k)]`` or solve ``\mathcal{H}_k [η_k] = -\operatorname{grad}f (x_k)]``.
 2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{x_k}(α η_k)`` e.g. by using [`WolfePowellLineseach`](@ref).
 3. Compute ``x_{k+1} = R_{x_k}(α_k η_k)``.
 4. Define ``s_k = T_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \operatorname{grad}f(x_{k+1}) - T_{x_k, α_k η_k}(\operatorname{grad}f(x_k))``.
@@ -52,7 +52,7 @@ end
     quasi_Newton!(M, F, gradF, x; options...)
 
 Perform a quasi Newton iteration for `F` on the manifold `M` starting
-in the point `x` using a retration ``R`` and a vector transport ``T``.
+in the point `x` using a retraction ``R`` and a vector transport ``T``.
 
 # Input
 * `M` – a manifold ``\mathcal{M}``.
