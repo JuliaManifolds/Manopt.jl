@@ -37,7 +37,7 @@ end
 function step_solver!(
     p::GradientProblem{T,<:NONMUTATINGMANIFOLDS}, o::GradientDescentOptions, iter
 ) where {T}
-    s, o.gradient= o.direction(p, o, iter)
+    s, o.gradient = o.direction(p, o, iter)
     o.x = retract(p.M, o.x, -s .* o.gradient, o.retraction_method)
     return o
 end

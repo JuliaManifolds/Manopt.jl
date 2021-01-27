@@ -265,7 +265,9 @@ render_asymptote(export_folder * "/Bezier-IP-Min.asy"; render=2) #src
 λ = 3.0
 d = get_bezier_junctions(M, B)
 F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
-gradF(pB) = grad_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
+function gradF(pB)
+    return grad_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
+end
 x0 = pB
 pB_opt_appr = gradient_descent(
     N,

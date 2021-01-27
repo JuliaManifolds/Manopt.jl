@@ -61,7 +61,9 @@ For a description of the algorithm and more details see
 # see also
 [`truncated_conjugate_gradient_descent`](@ref)
 """
-function trust_regions(M::Manifold, F::TF, gradF::TdF, x, H::TH; kwargs...) where {TF,TdF,TH}
+function trust_regions(
+    M::Manifold, F::TF, gradF::TdF, x, H::TH; kwargs...
+) where {TF,TdF,TH}
     x_res = allocate(x)
     copyto!(x_res, x)
     return trust_regions!(M, F, gradF, x_res, H; kwargs...)

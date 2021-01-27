@@ -144,7 +144,12 @@ function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
         p.M, o.sk, x_old, α * η, o.x, get_update_vector_transport(o.direction_update)
     )
     vector_transport_to!(
-        p.M, o.gradient, x_old, o.gradient, o.x, get_update_vector_transport(o.direction_update)
+        p.M,
+        o.gradient,
+        x_old,
+        o.gradient,
+        o.x,
+        get_update_vector_transport(o.direction_update),
     )
     o.yk = get_gradient(p, o.x) / β - o.gradient
     update_hessian!(o.direction_update, p, o, x_old, iter)

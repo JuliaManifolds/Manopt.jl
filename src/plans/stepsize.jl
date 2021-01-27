@@ -332,9 +332,9 @@ function (a::NonmonotoneLinesearch)(
 )
     if !all(has_storage.(Ref(a.storage), [:x, :gradient]))
         old_x = o.x
-        old_gradient= get_gradient(p, o.x)
+        old_gradient = get_gradient(p, o.x)
     else
-        old_x, old_gradient= get_storage.(Ref(a.storage), [:x, :gradient])
+        old_x, old_gradient = get_storage.(Ref(a.storage), [:x, :gradient])
     end
     update_storage!(a.storage, o)
     return a(p.M, o.x, p.cost, get_gradient(p, o.x), η, old_x, old_gradient, i)
@@ -343,7 +343,8 @@ function (a::NonmonotoneLinesearch)(
     M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int
 ) where {mT<:Manifold,TF,T}
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space
-    grad_diff = gradFx - vector_transport_to(M, old_x, old_gradient, x, a.vector_transport_method)
+    grad_diff =
+        gradFx - vector_transport_to(M, old_x, old_gradient, x, a.vector_transport_method)
     #transport the previous step into the tangent space of the current manifold point
     x_diff =
         -a.initial_stepsize *
@@ -455,7 +456,8 @@ function (a::WolfePowellLineseach)(
     fNew = p.cost(xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
     if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)
-        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)) && (s_minus > 10^(-9)) # decrease
+        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)) &&
+            (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             s = s_minus
             retract!(p.M, xNew, o.x, s * η, a.retraction_method)
@@ -464,8 +466,10 @@ function (a::WolfePowellLineseach)(
         s_plus = 2.0 * s_minus
     else
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
-        if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
-            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient) && (s_plus < 10^(9))# increase
+        if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
+           a.c_2 * inner(p.M, o.x, η, o.gradient)
+            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient) &&
+                (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
                 s = s_plus
                 retract!(p.M, xNew, o.x, s * η, a.retraction_method)
@@ -476,7 +480,8 @@ function (a::WolfePowellLineseach)(
     end
     retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
     vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
-    while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
+    while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
+          a.c_2 * inner(p.M, o.x, η, o.gradient)
         s = (s_minus + s_plus) / 2
         retract!(p.M, xNew, o.x, s * η, a.retraction_method)
         fNew = p.cost(xNew)
@@ -572,7 +577,8 @@ function (a::WolfePowellBinaryLinesearch)(
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
         # Update conditions
         nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.gradient)
-        nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
+        nWt =
+            inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
     end
     return t
 end

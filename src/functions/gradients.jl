@@ -227,8 +227,10 @@ where both total variations refer to the intrinsic ones, [`grad_TV`](@ref) and
 function grad_intrinsic_infimal_convolution_TV12(M::mT, f, u, v, α, β) where {mT<:Manifold}
     c = mid_point(M, u, v, f)
     iL = log(M, c, f)
-    return adjoint_differential_geodesic_startpoint(M, u, v, 1 / 2, iL) + α * β * grad_TV(M, u),
-    adjoint_differential_geodesic_endpoint(M, u, v, 1 / 2, iL) + α * (1 - β) * grad_TV2(M, v)
+    return adjoint_differential_geodesic_startpoint(M, u, v, 1 / 2, iL) +
+           α * β * grad_TV(M, u),
+    adjoint_differential_geodesic_endpoint(M, u, v, 1 / 2, iL) +
+    α * (1 - β) * grad_TV2(M, v)
 end
 @doc raw"""
     grad_TV(M,(x,y),[p=1])

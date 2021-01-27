@@ -20,14 +20,22 @@ struct StochasticGradientProblem{T,MT<:Manifold,TCost,TGradient} <:
     gradient!!::TGradient
 end
 function StochasticGradientProblem(
-    M::TM, gradF::G; cost::Union{Function,Missing}=Missing(), evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    M::TM,
+    gradF::G;
+    cost::Union{Function,Missing}=Missing(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 ) where {TM<:Manifold,G}
     return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),G}(M, cost, gradF)
 end
 function StochasticGradientProblem(
-    M::TM, gradF::AbstractVector{<:Function}; cost::Union{Function,Missing}=Missing(), evaluation::AbstractEvaluationType=AllocatingEvaluation()
+    M::TM,
+    gradF::AbstractVector{<:Function};
+    cost::Union{Function,Missing}=Missing(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 ) where {TM<:Manifold}
-    return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),typeof(gradF)}(M, cost, gradF)
+    return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),typeof(gradF)}(
+        M, cost, gradF
+    )
 end
 
 @doc raw"""
@@ -35,7 +43,11 @@ end
 
 Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `x`.
 """
-get_gradients(P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, x) where {TC} = P.gradient!!(x)
+function get_gradients(
+    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, x
+) where {TC}
+    return P.gradient!!(x)
+end
 function get_gradients(
     P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
 ) where {TC}

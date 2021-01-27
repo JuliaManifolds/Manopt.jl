@@ -52,7 +52,11 @@ function F(pB)
         M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP
     )
 end
-gradF(pB) = grad_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP)
+function gradF(pB)
+    return grad_L2_acceleration_bezier(
+        M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP
+    )
+end
 x0 = pB
 pB_opt = gradient_descent(
     N,

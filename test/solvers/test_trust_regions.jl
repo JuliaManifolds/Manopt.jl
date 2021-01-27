@@ -128,7 +128,7 @@ end
     p = HessianProblem(M, cost, x -> rgrad(M, x), rhess, (M, x, ξ) -> ξ)
     o = TrustRegionsOptions(
         x,
-        rgrad(M,x),
+        rgrad(M, x),
         StopAfterIteration(2000),
         10.0^(-8),
         sqrt(manifold_dimension(M)),

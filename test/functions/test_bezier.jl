@@ -29,7 +29,9 @@ using Manopt, Manifolds, Test
         #
         @test sum(
             norm.(
-                grad_acceleration_bezier(M, B[1], collect(range(0.0, 1.0; length=20))).pts .-
+                grad_acceleration_bezier(
+                    M, B[1], collect(range(0.0, 1.0; length=20))
+                ).pts .-
                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
             ),
         ) ≈ 0 atol = 10^(-12)
@@ -63,8 +65,8 @@ using Manopt, Manifolds, Test
         # when the data is weighted with zero
         @test cost_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) ≈ 0 atol = 10^(-10)
         z[4][1] = 0.0
-        @test norm(Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈ 0 atol =
-            10^(-12)
+        @test norm(Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈
+              0 atol = 10^(-12)
     end
     @testset "de Casteljau variants" begin
         M = Sphere(2)

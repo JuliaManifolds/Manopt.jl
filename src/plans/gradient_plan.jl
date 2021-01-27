@@ -497,7 +497,9 @@ Construct the conjugate descnt coefficient update rule, a new storage is created
 """
 mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
-    function ConjugateDescentCoefficient(a::StoreOptionsAction=StoreOptionsAction((:x, :gradient)))
+    function ConjugateDescentCoefficient(
+        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient))
+    )
         return new(a)
     end
 end
@@ -602,7 +604,11 @@ Construct the Fletcher Reeves coefficient update rule, a new storage is created 
 """
 mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
-    FletcherReevesCoefficient(a::StoreOptionsAction=StoreOptionsAction((:x, :gradient))) = new(a)
+    function FletcherReevesCoefficient(
+        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient))
+    )
+        return new(a)
+    end
 end
 function (u::FletcherReevesCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
@@ -612,7 +618,8 @@ function (u::FletcherReevesCoefficient)(
     end
     xOld, gradientOld = get_storage.(Ref(u.storage), [:x, :gradient])
     update_storage!(u.storage, o)
-    return inner(p.M, o.x, o.gradient, o.gradient) / inner(p.M, xOld, gradientOld, gradientOld)
+    return inner(p.M, o.x, o.gradient, o.gradient) /
+           inner(p.M, xOld, gradientOld, gradientOld)
 end
 
 @doc raw"""
@@ -678,7 +685,9 @@ function (u::HagerZhangCoefficient)(
     δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
     denom = inner(p.M, o.x, δtr, ν)
     νknormsq = inner(p.M, o.x, ν, ν)
-    β = inner(p.M, o.x, ν, o.gradient) / denom - 2 * νknormsq * inner(p.M, o.x, δtr, o.gradient) / denom^2
+    β =
+        inner(p.M, o.x, ν, o.gradient) / denom -
+        2 * νknormsq * inner(p.M, o.x, δtr, o.gradient) / denom^2
     # Numerical stability from Manopt / Hager-Zhang paper
     ξn = norm(p.M, o.x, o.gradient)
     η = -1 / (ξn * min(0.01, norm(p.M, xOld, gradientOld)))
