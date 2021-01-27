@@ -29,7 +29,7 @@ using Manopt, Manifolds, Test
         #
         @test sum(
             norm.(
-                ∇acceleration_bezier(M, B[1], collect(range(0.0, 1.0; length=20))).pts .-
+                grad_acceleration_bezier(M, B[1], collect(range(0.0, 1.0; length=20))).pts .-
                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
             ),
         ) ≈ 0 atol = 10^(-12)
@@ -41,8 +41,8 @@ using Manopt, Manifolds, Test
         Mp = PowerManifold(M, NestedPowerRepresentation(), length(Bvec))
         @test cost_acceleration_bezier(M, Bvec, degrees, T) ≈ 0 atol = 10^-10
         z = zero_tangent_vector(Mp, Bvec)
-        distance(Mp, ∇acceleration_bezier(M, Bvec, degrees, T), z)
-        @test norm(Mp, Bvec, ∇acceleration_bezier(M, Bvec, degrees, T) - z) ≈ 0 atol =
+        distance(Mp, grad_acceleration_bezier(M, Bvec, degrees, T), z)
+        @test norm(Mp, Bvec, grad_acceleration_bezier(M, Bvec, degrees, T) - z) ≈ 0 atol =
             10^(-12)
 
         d = [pT, exp(M, pC, [0.3, 0.0, 0.0]), pB]
@@ -55,15 +55,15 @@ using Manopt, Manifolds, Test
               λ / 2 * distance(M, d[2], pC) .^ 2
         # when the data are the junctions
         @test norm(
-            Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, λ, [pT, pC, pB]) - z
+            Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, λ, [pT, pC, pB]) - z
         ) ≈ 0 atol = 10^(-12)
         z[4][1] = -0.9
-        @test norm(Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, λ, d) - z) ≈ 0 atol =
+        @test norm(Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, λ, d) - z) ≈ 0 atol =
             10^(-12)
         # when the data is weighted with zero
         @test cost_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) ≈ 0 atol = 10^(-10)
         z[4][1] = 0.0
-        @test norm(Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈ 0 atol =
+        @test norm(Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈ 0 atol =
             10^(-12)
     end
     @testset "de Casteljau variants" begin

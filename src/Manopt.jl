@@ -145,13 +145,13 @@ export Problem,
 #
 # Options
 export Options,
-    AbstractGradientDescentOptions,
+    AbstractGradientOptions,
     ChambollePockOptions,
     ConjugateGradientDescentOptions,
     CyclicProximalPointOptions,
     DouglasRachfordOptions,
     GradientDescentOptions,
-    HessianOptions,
+    AbstractHessianOptions,
     NelderMeadOptions,
     ParticleSwarmOptions,
     PrimalDualOptions,
@@ -187,7 +187,7 @@ export WolfePowellLineseach,
 
 export ConjugateGradientDescentOptions,
     GradientDescentOptions,
-    HessianOptions,
+    AbstractHessianOptions,
     SubGradientMethodOptions,
     NelderMeadOptions,
     TruncatedConjugateGradientOptions,
@@ -290,14 +290,14 @@ export differential_bezier_control
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export cost_L2_acceleration_bezier, cost_acceleration_bezier
 # Gradients
-export ∇TV,
-    ∇TV2,
-    ∇intrinsic_infimal_convolution_TV12,
+export grad_TV,
+    grad_TV2,
+    grad_intrinsic_infimal_convolution_TV12,
     forward_logs,
-    ∇distance,
-    ∇distance!,
-    ∇acceleration_bezier,
-    ∇L2_acceleration_bezier
+    grad_distance,
+    grad_distance!,
+    grad_acceleration_bezier,
+    grad_L2_acceleration_bezier
 # Proximal maps
 export prox_distance, prox_TV, prox_parallel_TV, prox_TV2, project_collaborative_TV
 # Error measures

@@ -7,10 +7,10 @@ using Manopt, ManifoldsBase, Test
     o = GradientDescentOptions(
         x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
     )
-    o.∇ = [1.0, 0.0]
+    o.gradient = [1.0, 0.0]
     f = y -> distance(M, y, x) .^ 2
-    ∇f = y -> -2 * log(M, y, x)
-    p = GradientProblem(M, f, ∇f)
+    gradf = y -> -2 * log(M, y, x)
+    p = GradientProblem(M, f, gradf)
     @test get_initial_stepsize(p, o) == 1.0
     @test get_stepsize(p, o, 1) == 1.0
     @test get_last_stepsize(p, o, 1) == 1.0
@@ -22,13 +22,13 @@ using Manopt, ManifoldsBase, Test
     # Additional Specific Debugs
     a1 = DebugGradient(false, io)
     a1(p, o, 1)
-    @test String(take!(io)) == "∇F(x):[1.0, 0.0]"
+    @test String(take!(io)) == "gradF(x):[1.0, 0.0]"
     a1a = DebugGradient("s:", io)
     a1a(p, o, 1)
     @test String(take!(io)) == "s:[1.0, 0.0]"
     a2 = DebugGradientNorm(false, io)
     a2(p, o, 1)
-    @test String(take!(io)) == "|∇F(x)|:1.0"
+    @test String(take!(io)) == "|gradF(x)|:1.0"
     a2a = DebugGradientNorm("s:", io)
     a2a(p, o, 1)
     @test String(take!(io)) == "s:1.0"
@@ -39,9 +39,9 @@ using Manopt, ManifoldsBase, Test
     a3a(p, o, 1)
     @test String(take!(io)) == "S:1.0"
     # Additional Specific Records
-    b1 = RecordGradient(o.∇)
+    b1 = RecordGradient(o.gradient)
     b1(p, o, 1)
-    @test b1.recorded_values == [o.∇]
+    @test b1.recorded_values == [o.gradient]
     b2 = RecordGradientNorm()
     b2(p, o, 1)
     @test b2.recorded_values == [1.0]

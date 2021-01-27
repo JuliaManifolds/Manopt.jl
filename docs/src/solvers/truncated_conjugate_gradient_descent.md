@@ -4,8 +4,8 @@ The aim is to solve the trust-region subproblem
 
 ```math
 \operatorname*{arg\,min}_{\eta  ∈  T_{x}\mathcal{M}} m_{x}(\eta) = F(x) +
-\langle ∇F(x), \eta \rangle_{x} + \frac{1}{2} \langle
-\operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
+\langle \operatorname{grad}F(x), \eta \rangle_{x} + \frac{1}{2} \langle
+\operatorname{Hess}F(x)[\eta], \eta \rangle_{x}
 ```
 
 ```math
@@ -20,14 +20,14 @@ preconditioner, guaranteeing that we do not re-enter the trust-region.
 ## Initialization
 
 Initialize $\eta_0 = \eta$ if using randomized approach and
-$\eta$ the zero tangent vector otherwise, $r_0 = ∇F(x)$,
+$\eta$ the zero tangent vector otherwise, ``r_0 = \operatorname{grad}F(x)``,
 $z_0 = \operatorname{P}(r_0)$, $\delta_0 = z_0$ and $k=0$
 
 ## Iteration
 
 Repeat until a convergence criterion is reached
 
-1. Set $\kappa = \langle \delta_k, \operatorname{Hess}[F] (\delta_k)_{x} \rangle_{x}$,
+1. Set $\kappa = \langle \delta_k, \operatorname{Hess}F(x)[\delta_k] \rangle_{x}$,
     $\alpha =\frac{\langle r_k, z_k \rangle_{x}}{\kappa}$ and
     $\langle \eta_k, \eta_k \rangle_{x}^{* } = \langle \eta_k, \operatorname{P}(\eta_k) \rangle_{x} +
     2\alpha \langle \eta_k, \operatorname{P}(\delta_k) \rangle_{x} +  {\alpha}^2

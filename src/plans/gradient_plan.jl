@@ -13,7 +13,7 @@ specify a problem for gradient based algorithms.
 # Fields
 * `M`        – a manifold ``\mathcal M``
 * `cost`     – a function ``F: \mathcal M → ℝ`` to minimize
-* `gradient` – the gradient ``∇F\colon\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
+* `gradient` – the gradient ``\operatorname{grad}F\colon\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
 
 Depending on the [`AbstractEvaluationType`](@ref) `E` the gradient has to be provided differently
 * for an [`AllocatingEvaluation`](@ref) as a function `x -> X` that allocates memory for `X`
@@ -86,14 +86,14 @@ The default gradient direction update is the identity, i.e. it just evaluates th
 struct IdentityUpdateRule <: DirectionUpdateRule end
 
 """
-    AbstractGradientDescentOptions <: Options
+    AbstractGradientOptions <: Options
 
 A generic [`Options`](@ref) type for gradient based options data.
 """
-abstract type AbstractGradientDescentOptions <: Options end
+abstract type AbstractGradientOptions <: Options end
 
-"""
-    GradientDescentOptions{P,T} <: AbstractGradientDescentOptions
+@doc raw"""
+    GradientDescentOptions{P,T} <: AbstractGradientOptions
 
 Describes a Gradient based descent algorithm, with
 
@@ -101,6 +101,7 @@ Describes a Gradient based descent algorithm, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x0` – an a point (of type `P`) on a manifold as starting point
+* `gradient` – the current gradient ``\operatorname{grad}f(x)``
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
 * `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
@@ -118,12 +119,12 @@ construct a Gradient Descent Option with the fields and defaults as above
 """
 mutable struct GradientDescentOptions{
     P,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
-} <: AbstractGradientDescentOptions
+} <: AbstractGradientOptions
     x::P
     direction::DirectionUpdateRule
     stop::TStop
     stepsize::TStepsize
-    ∇::P
+    gradient::P
     retraction_method::TRTM
     function GradientDescentOptions{P}(
         initialX::P,
@@ -156,19 +157,19 @@ end
 # Processors
 #
 function (s::IdentityUpdateRule)(p::GradientProblem, o::GradientDescentOptions, i)
-    return get_stepsize(p, o, i), get_gradient!(p, o.∇, o.x)
+    return get_stepsize(p, o, i), get_gradient!(p, o.gradient, o.x)
 end
 
 """
     MomentumGradient <: DirectionUpdateRule
 
 Append a momentum to a gradient processor, where the last direction and last iterate are
-stored and the new is composed as ``\nabla_i = m*\nabla_{i-1}' - s d_i``,
-where ``sd_i`` is the current (inner) direction and ``\nabla_{i-1}'`` is the vector transported
+stored and the new is composed as ``η_i = m*η_{i-1}' - s d_i``,
+where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector transported
 last direction multiplied by momentum ``m``.
 
 # Fields
-* `∇` – (`zero_tangent_vector(M,x0)`) the last gradient/direction update added as momentum
+* `gradient` – (`zero_tangent_vector(M,x0)`) the last gradient/direction update added as momentum
 * `last_iterate` - remember the last iterate for parallel transporting the last direction
 * `momentum` – (`0.2`) factor for momentum
 * `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
@@ -180,7 +181,7 @@ last direction multiplied by momentum ``m``.
         p::GradientProlem,
         x0,
         s::DirectionUpdateRule=Gradient();
-        ∇=zero_tangent_vector(p.M, o.x), momentum=0.2
+        gradient=zero_tangent_vector(p.M, o.x), momentum=0.2
        vector_transport_method=ParallelTransport(),
     )
 
@@ -191,7 +192,7 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
         p::StochasticGradientProblem
         x0
         s::DirectionUpdateRule=StochasticGradient();
-        ∇=zero_tangent_vector(p.M, x0), momentum=0.2
+        gradient=zero_tangent_vector(p.M, x0), momentum=0.2
        vector_transport_method=ParallelTransport(),
     )
 
@@ -199,7 +200,7 @@ Add momentum to a stochastic gradient problem, where by default just a stochasti
 """
 mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
-    ∇::T
+    gradient::T
     last_iterate::P
     momentum::R
     direction::DirectionUpdateRule
@@ -211,34 +212,34 @@ function MomentumGradient(
     s::DirectionUpdateRule=IdentityUpdateRule();
     last_iterate=x0,
     vector_transport_method::VTM=ParallelTransport(),
-    ∇=zero_tangent_vector(p.M, x0),
+    gradient=zero_tangent_vector(p.M, x0),
     momentum=0.2,
 ) where {P,VTM<:AbstractVectorTransportMethod}
-    return MomentumGradient{P,typeof(∇),typeof(momentum),VTM}(
-        deepcopy(x0), ∇, momentum, s, vector_transport_method
+    return MomentumGradient{P,typeof(gradient),typeof(momentum),VTM}(
+        deepcopy(x0), gradient, momentum, s, vector_transport_method
     )
 end
 function MomentumGradient(
     M::Manifold,
     x0::P,
     s::DirectionUpdateRule=IdentityUpdateRule();
-    ∇=zero_tangent_vector(M, x0),
+    gradient=zero_tangent_vector(M, x0),
     last_iterate=x0,
     momentum=0.2,
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM<:AbstractVectorTransportMethod}
-    return MomentumGradient{P,typeof(∇),typeof(momentum),VTM}(
-        deepcopy(x0), ∇, momentum, s, vector_transport_method
+    return MomentumGradient{P,typeof(gradient),typeof(momentum),VTM}(
+        deepcopy(x0), gradient, momentum, s, vector_transport_method
     )
 end
-function (m::MomentumGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
+function (m::MomentumGradient)(p::Problem, o::AbstractGradientOptions, i)
     s, d = m.direction(p, o, i) #get inner direction and step size
     old_d =
         m.momentum *
-        vector_transport_to(p.M, m.last_iterate, m.∇, o.x, m.vector_transport_method)
-    m.∇ = old_d - s .* d
+        vector_transport_to(p.M, m.last_iterate, m.gradient, o.x, m.vector_transport_method)
+    m.gradient = old_d - s .* d
     m.last_iterate = deepcopy(o.x)
-    return s, -m.∇
+    return s, -m.gradient
 end
 
 """
@@ -312,7 +313,7 @@ function AverageGradient(
         gradients, deepcopy(x0), s, vector_transport_method
     )
 end
-function (a::AverageGradient)(p::Problem, o::AbstractGradientDescentOptions, i)
+function (a::AverageGradient)(p::Problem, o::AbstractGradientOptions, i)
     pop!(a.gradients)
     s, d = a.direction(p, o, i) #get inner gradient and step
     a.gradients = vcat([d], a.gradients)
@@ -352,8 +353,8 @@ This compute a Nesterov type update using the following steps, see [^ZhangSra201
 1. Copute the positive root, i.e. ``α_k∈(0,1)`` of ``α^2 = h_k\bigl((1-α_k)γ_k+α_k μ\bigr)``.
 2. Set ``\bar γ_k+1 = (1-α_k)γ_k + α_kμ``
 3. ``y_k = \operatorname{retr}_{x_k}\Bigl(\frac{α_kγ_k}{γ_k + α_kμ}\operatorname{retr}^{-1}_{x_k}v_k \Bigr)``
-4. ``x_{k+1} = \operatorname{retr}_{y_k}(-h_k ∇f(y_k))``
-5. ``v_{k+1} = `\operatorname{retr}_{y_k}\Bigl(\frac{(1-α_k)γ_k}{\barγ_k}\operatorname{retr}_{y_k}^{-1}(v_k) - \frac{α_k}{\bar γ_{k+1}}∇f(y_k) \Bigr)``
+4. ``x_{k+1} = \operatorname{retr}_{y_k}(-h_k \operatorname{grad}f(y_k))``
+5. ``v_{k+1} = `\operatorname{retr}_{y_k}\Bigl(\frac{(1-α_k)γ_k}{\barγ_k}\operatorname{retr}_{y_k}^{-1}(v_k) - \frac{α_k}{\bar γ_{k+1}}\operatorname{grad}f(y_k) \Bigr)``
 6. ``γ_{k+1} = \frac{1}{1+β_k}\bar γ_{k+1}``
 
 Then the direction from ``x_k`` to ``x_k+1``, i.e. ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
@@ -384,7 +385,7 @@ function Nesterov(
 ) where {P,T}
     return Nesterov{P,T}(γ, μ, deepcopy(x0), shrinkage, inverse_retraction_method)
 end
-function (s::Nesterov)(p::GradientProblem, o::AbstractGradientDescentOptions, i)
+function (s::Nesterov)(p::GradientProblem, o::AbstractGradientOptions, i)
     h = get_stepsize(p, o, i)
     α = (h * (s.γ - s.μ) + sqrt(h^2 * (s.γ - s.μ)^2 + 4 * h * s.γ)) / 2
     γbar = (1 - α) * s.γ + α * s.μ
@@ -404,14 +405,14 @@ end
 #
 
 @doc raw"""
-    ConjugateGradientOptions <: Options
+    ConjugateGradientOptions <: AbstractGradientOptions
 
 specify options for a conjugate gradient descent algoritm, that solves a
 [`GradientProblem`].
 
 # Fields
 * `x` – the current iterate, a point on a manifold
-* `∇` – the current gradient
+* `gradient` – the current gradient
 * `δ` – the current descent direction, i.e. also tangent vector
 * `β` – the current update coefficient rule, see .
 * `coefficient` – a [`DirectionUpdateRule`](@ref) function to determine the new `β`
@@ -429,9 +430,9 @@ mutable struct ConjugateGradientDescentOptions{
     TStop<:StoppingCriterion,
     TRetr<:AbstractRetractionMethod,
     TVTM<:AbstractVectorTransportMethod,
-} <: Options
+} <: AbstractGradientOptions
     x::T
-    ∇::T
+    gradient::T
     δ::T
     β::Float64
     coefficient::TCoeff
@@ -496,20 +497,20 @@ Construct the conjugate descnt coefficient update rule, a new storage is created
 """
 mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
-    function ConjugateDescentCoefficient(a::StoreOptionsAction=StoreOptionsAction((:x, :∇)))
+    function ConjugateDescentCoefficient(a::StoreOptionsAction=StoreOptionsAction((:x, :gradient)))
         return new(a)
     end
 end
 function (u::ConjugateDescentCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :∇]))
+    if !all(has_storage.(Ref(u.storage), [:x, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, ∇Old = get_storage.(Ref(u.storage), [:x, :∇])
+    xOld, gradientOld = get_storage.(Ref(u.storage), [:x, :gradient])
     update_storage!(u.storage, o)
-    return inner(p.M, o.x, o.∇, o.∇) / inner(p.M, xOld, -o.δ, ∇Old)
+    return inner(p.M, o.x, o.gradient, o.gradient) / inner(p.M, xOld, -o.δ, gradientOld)
 end
 
 @doc raw"""
@@ -554,23 +555,23 @@ mutable struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreOptionsAction
     function DaiYuanCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:x, :∇, :δ)),
+        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
 end
 function (u::DaiYuanCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
-    if !all(has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+    if !all(has_storage.(Ref(u.storage), [:x, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, ∇Old, δOld = get_storage.(Ref(u.storage), [:x, :∇, :δ])
+    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:x, :gradient, :δ])
     update_storage!(u.storage, o)
 
-    ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
-    ν = o.∇ - ∇tr #notation y from [HZ06]
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
+    ν = o.gradient - gradienttr #notation y from [HZ06]
     δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
-    return inner(p.M, o.x, o.∇, o.∇) / inner(p.M, xOld, δtr, ν)
+    return inner(p.M, o.x, o.gradient, o.gradient) / inner(p.M, xOld, δtr, ν)
 end
 
 @doc raw"""
@@ -601,17 +602,17 @@ Construct the Fletcher Reeves coefficient update rule, a new storage is created 
 """
 mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
-    FletcherReevesCoefficient(a::StoreOptionsAction=StoreOptionsAction((:x, :∇))) = new(a)
+    FletcherReevesCoefficient(a::StoreOptionsAction=StoreOptionsAction((:x, :gradient))) = new(a)
 end
 function (u::FletcherReevesCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :∇]))
+    if !all(has_storage.(Ref(u.storage), [:x, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, ∇Old = get_storage.(Ref(u.storage), [:x, :∇])
+    xOld, gradientOld = get_storage.(Ref(u.storage), [:x, :gradient])
     update_storage!(u.storage, o)
-    return inner(p.M, o.x, o.∇, o.∇) / inner(p.M, xOld, ∇Old, ∇Old)
+    return inner(p.M, o.x, o.gradient, o.gradient) / inner(p.M, xOld, gradientOld, gradientOld)
 end
 
 @doc raw"""
@@ -657,7 +658,7 @@ mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreOptionsAction
     function HagerZhangCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:x, :∇, :δ)),
+        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -665,22 +666,22 @@ end
 function (u::HagerZhangCoefficient)(
     p::P, o::O, i
 ) where {P<:GradientProblem,O<:ConjugateGradientDescentOptions}
-    if !all(has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+    if !all(has_storage.(Ref(u.storage), [:x, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, ∇Old, δOld = get_storage.(Ref(u.storage), [:x, :∇, :δ])
+    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:x, :gradient, :δ])
     update_storage!(u.storage, o)
 
-    ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
-    ν = o.∇ - ∇tr #notation y from [HZ06]
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
+    ν = o.gradient - gradienttr #notation y from [HZ06]
     δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
     denom = inner(p.M, o.x, δtr, ν)
     νknormsq = inner(p.M, o.x, ν, ν)
-    β = inner(p.M, o.x, ν, o.∇) / denom - 2 * νknormsq * inner(p.M, o.x, δtr, o.∇) / denom^2
+    β = inner(p.M, o.x, ν, o.gradient) / denom - 2 * νknormsq * inner(p.M, o.x, δtr, o.gradient) / denom^2
     # Numerical stability from Manopt / Hager-Zhang paper
-    ξn = norm(p.M, o.x, o.∇)
-    η = -1 / (ξn * min(0.01, norm(p.M, xOld, ∇Old)))
+    ξn = norm(p.M, o.x, o.gradient)
+    η = -1 / (ξn * min(0.01, norm(p.M, xOld, gradientOld)))
     return max(β, η)
 end
 
@@ -724,7 +725,7 @@ mutable struct HeestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} 
     storage::StoreOptionsAction
     function HeestenesStiefelCoefficient(
         transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-        storage_action::StoreOptionsAction=StoreOptionsAction((:x, :∇, :δ)),
+        storage_action::StoreOptionsAction=StoreOptionsAction((:x, :gradient, :δ)),
     )
         return new{typeof(transport_method)}(transport_method, storage_action)
     end
@@ -732,16 +733,16 @@ end
 function (u::HeestenesStiefelCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+    if !all(has_storage.(Ref(u.storage), [:x, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, ∇Old, δOld = get_storage.(Ref(u.storage), [:x, :∇, :δ])
+    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:x, :gradient, :δ])
     update_storage!(u.storage, o)
-    ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
     δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
-    ν = o.∇ - ∇tr #notation from [HZ06]
-    β = inner(p.M, o.x, o.∇, ν) / inner(p.M, o.x, δtr, ν)
+    ν = o.gradient - gradienttr #notation from [HZ06]
+    β = inner(p.M, o.x, o.gradient, ν) / inner(p.M, o.x, δtr, ν)
     return max(0, β)
 end
 
@@ -786,7 +787,7 @@ mutable struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreOptionsAction
     function LiuStoreyCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:x, :∇, :δ)),
+        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -794,14 +795,14 @@ end
 function (u::LiuStoreyCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :∇, :δ]))
+    if !all(has_storage.(Ref(u.storage), [:x, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, ∇Old, δOld = get_storage.(Ref(u.storage), [:x, :∇, :δ])
+    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:x, :gradient, :δ])
     update_storage!(u.storage, o)
-    ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
-    ν = o.∇ - ∇tr # notation y from [HZ06]
-    return inner(p.M, o.x, o.∇, ν) / inner(p.M, xOld, -δOld, ∇Old)
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
+    ν = o.gradient - gradienttr # notation y from [HZ06]
+    return inner(p.M, o.x, o.gradient, ν) / inner(p.M, xOld, -δOld, gradientOld)
 end
 
 @doc raw"""
@@ -850,7 +851,7 @@ mutable struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreOptionsAction
     function PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:x, :∇)),
+        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -858,15 +859,15 @@ end
 function (u::PolakRibiereCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :∇]))
+    if !all(has_storage.(Ref(u.storage), [:x, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, ∇Old = get_storage.(Ref(u.storage), [:x, :∇])
+    xOld, gradientOld = get_storage.(Ref(u.storage), [:x, :gradient])
     update_storage!(u.storage, o)
 
-    ∇tr = vector_transport_to(p.M, xOld, ∇Old, o.x, u.transport_method)
-    ν = o.∇ - ∇tr
-    β = inner(p.M, o.x, o.∇, ν) / inner(p.M, xOld, ∇Old, ∇Old)
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
+    ν = o.gradient - gradienttr
+    β = inner(p.M, o.x, o.gradient, ν) / inner(p.M, xOld, gradientOld, gradientOld)
     return max(0, β)
 end
 
@@ -903,12 +904,12 @@ mutable struct DebugGradient <: DebugAction
     io::IO
     prefix::String
     function DebugGradient(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Gradient: " : "∇F(x):")
+        return new(io, long ? "Gradient: " : "gradF(x):")
     end
     DebugGradient(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugGradient)(::GradientProblem, o::GradientDescentOptions, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * "" * string(o.∇) : "")
+    print(d.io, (i >= 0) ? d.prefix * "" * string(o.gradient) : "")
     return nothing
 end
 
@@ -930,12 +931,12 @@ mutable struct DebugGradientNorm <: DebugAction
     io::IO
     prefix::String
     function DebugGradientNorm(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Norm of the Gradient: " : "|∇F(x)|:")
+        return new(io, long ? "Norm of the Gradient: " : "|gradF(x)|:")
     end
     DebugGradientNorm(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugGradientNorm)(p::GradientProblem, o::Options, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * "$(norm(p.M,o.x,o.∇))" : "")
+    print(d.io, (i >= 0) ? d.prefix * "$(norm(p.M,o.x,o.gradient))" : "")
     return nothing
 end
 
@@ -987,7 +988,7 @@ RecordGradient(ξ::T) where {T} = RecordGradient{T}()
 function (r::RecordGradient{T})(
     ::GradientProblem, o::GradientDescentOptions, i::Int
 ) where {T}
-    return record_or_reset!(r, o.∇, i)
+    return record_or_reset!(r, o.gradient, i)
 end
 
 @doc raw"""
@@ -1002,7 +1003,7 @@ end
 function (r::RecordGradientNorm)(
     p::P, o::O, i::Int
 ) where {P<:GradientProblem,O<:GradientDescentOptions}
-    return record_or_reset!(r, norm(p.M, o.x, o.∇), i)
+    return record_or_reset!(r, norm(p.M, o.x, o.gradient), i)
 end
 
 @doc raw"""
@@ -1053,7 +1054,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -1081,7 +1082,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -1110,7 +1111,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -1135,7 +1136,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -1163,7 +1164,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -1210,7 +1211,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -1255,7 +1256,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
@@ -1297,7 +1298,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-∇f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(∇ f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
@@ -1320,7 +1321,7 @@ used with any update rule for the direction.
 
 # Fields
 * `x` – the current iterate, a point on a manifold
-* `∇` – the current gradient
+* `gradient` – the current gradient
 * `sk` – the current step
 * `yk` the current gradient difference
 * `direction_update` - an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
@@ -1338,9 +1339,9 @@ mutable struct QuasiNewtonOptions{
     S<:Stepsize,
     RTR<:AbstractRetractionMethod,
     VT<:AbstractVectorTransportMethod,
-} <: Options
+} <: AbstractGradientOptions
     x::P
-    ∇::T
+    gradient::T
     sk::T
     yk::T
     direction_update::U
@@ -1351,7 +1352,7 @@ mutable struct QuasiNewtonOptions{
 end
 function QuasiNewtonOptions(
     x::P,
-    ∇::T,
+    gradient::T,
     direction_update::U,
     stop::SC,
     stepsize::S;
@@ -1362,9 +1363,9 @@ function QuasiNewtonOptions(
         P,T,U,SC,S,typeof(retraction_method),typeof(vector_transport_method)
     }(
         x,
-        ∇,
-        deepcopy(∇),
-        deepcopy(∇),
+        gradient,
+        deepcopy(gradient),
+        deepcopy(gradient),
         direction_update,
         retraction_method,
         stepsize,
@@ -1379,17 +1380,17 @@ end
 These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, where the operator is stored as a matrix. A distinction is made between the update of the approximation of the Hessian, ``H_k \mapsto H_{k+1}``, and the update of the approximation of the Hessian inverse, ``B_k \mapsto B_{k+1}``. For the first case, the coordinates of the search direction ``η_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are determined by solving a linear system of equations, i.e.
 
 ```math
-\text{Solve} \quad \hat{η_k} = - H_k \widehat{∇f(x_k)}
+\text{Solve} \quad \hat{η_k} = - H_k \widehat{\operatorname{grad}f(x_k)}
 ```
 
-where ``H_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{∇f(x_k)}`` represents the coordinates of the gradient of the objective function ``f`` in ``x_k`` with respect to the basis ``\{b_i\}^{n}_{i=1}``.
+where ``H_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad}f(x_k)}`` represents the coordinates of the gradient of the objective function ``f`` in ``x_k`` with respect to the basis ``\{b_i\}^{n}_{i=1}``.
 If a method is chosen where Hessian inverse is approximated, the coordinates of the search direction ``η_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are obtained simply by matrix-vector multiplication, i.e.
 
 ```math
-\hat{η_k} = - B_k \widehat{∇f(x_k)}
+\hat{η_k} = - B_k \widehat{\operatorname{grad}f(x_k)}
 ```
 
-where ``B_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{∇f(x_k)}`` as above. In the end, the search direction ``η_k`` is generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}`` in both variants.
+where ``B_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad}f(x_k)}`` as above. In the end, the search direction ``η_k`` is generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}`` in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used. In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}`` and ``B_{k+1}``, and the basis ``\{b_i\}^{n}_{i=1}`` is transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport, or generated there.
 
 # Fields
@@ -1434,14 +1435,14 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     p, o
 ) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
     return get_vector(
-        p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
+        p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.gradient, d.basis), d.basis
     )
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     p, o
 ) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     return get_vector(
-        p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.∇, d.basis), d.basis
+        p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.gradient, d.basis), d.basis
     )
 end
 
@@ -1449,13 +1450,13 @@ end
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
 This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemanian BFGS update, where the approximating  oprator is represented by ``m`` stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration.
-For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion is used (see [^HuangGallivanAbsil2015]), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``∇f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator
+For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion is used (see [^HuangGallivanAbsil2015]), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``\operatorname{grad}f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator
 
 ```math
 \mathcal{B}^{(0)}_k[\cdot] = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})} \; \mathrm{id}_{T_{x_k} \mathcal{M}}[\cdot]
 ```
 
-are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update is executed ``m`` times in a row on ``\mathcal{B}^{(0)}_k[\cdot]`` using the tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, and in the same time the resulting operator ``\mathcal{B}^{LRBFGS}_k [\cdot]`` is directly applied on ``∇f(x_k)``.
+are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update is executed ``m`` times in a row on ``\mathcal{B}^{(0)}_k[\cdot]`` using the tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, and in the same time the resulting operator ``\mathcal{B}^{LRBFGS}_k [\cdot]`` is directly applied on ``\operatorname{grad}f(x_k)``.
 When updating there are two cases: if there is still free memory, i.e. ``k < m``, the previously stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` have to be transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``; if there is no free memory, the oldest pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` has to be discarded and then all the remaining vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m+1}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``. After that we calculate and store ``s_k = \widetilde{s}_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \widetilde{y}_k``. This process ensures that new information about the objective function is always included and the old, probably no longer relevant, information is discarded.
 
 # Fields
@@ -1506,7 +1507,7 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     )
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(p, o)
-    r = deepcopy(o.∇)
+    r = deepcopy(o.gradient)
     m = length(d.memory_s)
     m == 0 && return -r
     for i in m:-1:1
@@ -1527,7 +1528,7 @@ end
 These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, which are based on the idea of a so-called cautious update. The search direction is calculated as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`]. But the update given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`] is only executed if
 
 ```math
-\frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} \geq \theta(\lVert ∇f(x_k) \rVert_{x_k}),
+\frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} \geq \theta(\lVert \operatorname{grad}f(x_k) \rVert_{x_k}),
 ```
 
 is satisfied, where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0`` and ``\theta`` is strictly increasing at ``0``. If this is not the case, the corresponding update will be skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref) the matrix ``H_k`` or ``B_k`` is not updated, but the basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``, and for [`LimitedMemoryQuasiNewctionDirectionUpdate`] neither the oldest vector pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` is discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}`` is added into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.

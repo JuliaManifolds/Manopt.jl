@@ -9,11 +9,11 @@ using Manopt, Manifolds, LinearAlgebra
         r = [-π / 2, π / 4, 0.0, π / 4]
         f = r
         F(x) = 1 / 10 * sum(distance.(Ref(M), f, Ref(x)) .^ 2)
-        ∇F(x) = 1 / 5 * sum(-log.(Ref(M), Ref(x), f))
+        gradF(x) = 1 / 5 * sum(-log.(Ref(M), Ref(x), f))
         o = gradient_descent!(
             M,
             F,
-            ∇F,
+            gradF,
             f[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(200), StopWhenChangeLess(10^-16)
@@ -27,7 +27,7 @@ using Manopt, Manifolds, LinearAlgebra
         x2 = gradient_descent!(
             M,
             F,
-            ∇F,
+            gradF,
             f[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(200), StopWhenChangeLess(10^-16)
@@ -38,7 +38,7 @@ using Manopt, Manifolds, LinearAlgebra
         x3 = gradient_descent!(
             M,
             F,
-            ∇F,
+            gradF,
             f[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
@@ -60,7 +60,7 @@ using Manopt, Manifolds, LinearAlgebra
         x4 = gradient_descent!(
             M,
             F,
-            ∇F,
+            gradF,
             f[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
@@ -82,7 +82,7 @@ using Manopt, Manifolds, LinearAlgebra
         x5 = gradient_descent!(
             M,
             F,
-            ∇F,
+            gradF,
             f[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
@@ -104,7 +104,7 @@ using Manopt, Manifolds, LinearAlgebra
         x6 = gradient_descent!(
             M,
             F,
-            ∇F,
+            gradF,
             f[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
@@ -168,7 +168,7 @@ using Manopt, Manifolds, LinearAlgebra
         # after one step for local enough data -> equal to real valued data
         @test abs(x - sum(r) / length(r)) ≈ 0 atol = 5 * 10.0^(-14)
         # Test Fallbacks -> we can't do steps with the wrong combination
-        p = SubGradientProblem(M, F, ∇F)
+        p = SubGradientProblem(M, F, gradF)
         o = GradientDescentOptions(
             f[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
         )
@@ -181,8 +181,8 @@ using Manopt, Manifolds, LinearAlgebra
         pre_pts = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
         pts = exp.(Ref(M), Ref(north), pre_pts)
         F(x) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(x)) .^ 2)
-        ∇F(x) = 1 / 4 * sum(-log.(Ref(M), Ref(x), pts))
-        n2 = gradient_descent(M, F, ∇F, pts[1])
+        gradF(x) = 1 / 4 * sum(-log.(Ref(M), Ref(x), pts))
+        n2 = gradient_descent(M, F, gradF, pts[1])
         @test !isapprox(M, pts[1], n2) # n2 is newly allocated and not pts[1]
         @test isapprox(M, north, n2)
     end

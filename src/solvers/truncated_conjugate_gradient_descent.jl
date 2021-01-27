@@ -1,10 +1,10 @@
 @doc raw"""
-    truncated_conjugate_gradient_descent(M, F, ∇F, x, η, H, Δ)
+    truncated_conjugate_gradient_descent(M, F, gradF, x, η, H, Δ)
 
 solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{\eta  ∈  T_{x}M} m_{x}(\eta) = F(x) + \langle ∇F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
+\operatorname*{arg\,min}_{\eta  ∈  T_{x}M} m_{x}(\eta) = F(x) + \langle \operatorname{grad}F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
 ```
 ```math
 \text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
@@ -23,7 +23,7 @@ see the reference:
 # Input
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
-* `∇F` – the gradient $∇F\colon\mathcal M→ T\mathcal M$ of F
+* `gradF` – the gradient $\operatorname{grad}F\colon\mathcal M→ T\mathcal M$ of F
 * `x` – a point on the manifold $x ∈ \mathcal M$
 * `η` – an update tangential vector $\eta ∈ \mathcal{T_{x}M}$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of F
@@ -62,21 +62,21 @@ OR
 [`trust_regions`](@ref)
 """
 function truncated_conjugate_gradient_descent(
-    M::Manifold, F::TF, ∇F::TdF, x, η, H::Union{Function,Missing}, Δ::Float64; kwargs...
+    M::Manifold, F::TF, gradF::TdF, x, η, H::Union{Function,Missing}, Δ::Float64; kwargs...
 ) where {TF,TdF}
     x_res = allocate(x)
     copyto!(x_res, x)
-    return truncated_conjugate_gradient_descent!(M, F, ∇F, x_res, η, H, Δ; kwargs...)
+    return truncated_conjugate_gradient_descent!(M, F, gradF, x_res, η, H, Δ; kwargs...)
 end
 @doc raw"""
-    truncated_conjugate_gradient_descent!(M, F, ∇F, x, η, H, Δ; kwargs...)
+    truncated_conjugate_gradient_descent!(M, F, gradF, x, η, H, Δ; kwargs...)
 
 solve the trust-region subproblem in place of `x`.
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
-* `∇F` – the gradient $∇F\colon\mathcal M→ T\mathcal M$ of F
+* `F` – a cost function $F: \mathcal M→ℝ$ to minimize
+* `gradF` – the gradient $\operatorname{grad}F:\mathcal M → T\mathcal M$ of F
 * `x` – a point on the manifold $x ∈ \mathcal M$
 * `η` – an update tangential vector $\eta ∈ \mathcal{T_{x}M}$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of F
@@ -87,7 +87,7 @@ For more details and all optional arguments, see [`truncated_conjugate_gradient_
 function truncated_conjugate_gradient_descent!(
     M::Manifold,
     F::TF,
-    ∇F::TdF,
+    gradF::TdF,
     x,
     η,
     H::Union{Function,Missing},
@@ -103,8 +103,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             θ,
@@ -114,8 +114,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             κ,
@@ -126,7 +126,7 @@ function truncated_conjugate_gradient_descent!(
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TdF,Tprec}
-    p = HessianProblem(M, F, ∇F, H, preconditioner)
+    p = HessianProblem(M, F, gradF, H, preconditioner)
     o = TruncatedConjugateGradientOptions(
         x,
         stopping_criterion,

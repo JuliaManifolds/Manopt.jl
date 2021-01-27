@@ -1,20 +1,20 @@
 @doc raw"""
-    quasi_Newton(M, F, ∇F, x)
+    quasi_Newton(M, F, gradF, x)
 
 Perform a quasi Newton iteration for `F` on the manifold `M` starting
 in the point `x` using a retration ``R`` and a vector transport ``T``
 
 The ``k``th iteration consists of
-1. Compute the search direction ``η_k``η_k = -\mathcal{B}_k [∇f (x_k)]`` or solve ``\mathcal{H}_k [η_k] = -∇f (x_k)]``.
+1. Compute the search direction ``η_k``η_k = -\mathcal{B}_k [\operatorname{grad}f (x_k)]`` or solve ``\mathcal{H}_k [η_k] = -\operatorname{grad}f (x_k)]``.
 2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{x_k}(α η_k)`` e.g. by using [`WolfePowellLineseach`](@ref).
 3. Compute ``x_{k+1} = R_{x_k}(α_k η_k)``.
-4. Define ``s_k = T_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = ∇f(x_{k+1}) - T_{x_k, α_k η_k}(∇f(x_k))``.
+4. Define ``s_k = T_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \operatorname{grad}f(x_{k+1}) - T_{x_k, α_k η_k}(\operatorname{grad}f(x_k))``.
 5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_k``.
 
 # Input
 * `M` – a manifold ``\mathcal{M}``.
 * `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
-* `∇F`– the gradient ``∇F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
+* `gradF`– the gradient ``\operatorname{grad}F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
 * `x` – an initial value ``x \in \mathcal{M}``.
 
     stopping_criterion::StoppingCriterion=StopWhenAny(
@@ -43,13 +43,13 @@ The ``k``th iteration consists of
 OR
 * `options` – the options returned by the solver (see `return_options`)
 """
-function quasi_Newton(M::Manifold, F::Function, ∇F::G, x::P; kwargs...) where {P,G}
+function quasi_Newton(M::Manifold, F::Function, gradF::G, x::P; kwargs...) where {P,G}
     x_res = allocate(x)
     copyto!(x_res, x)
-    return quasi_Newton!(M, F, ∇F, x_res; kwargs...)
+    return quasi_Newton!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
-    quasi_Newton!(M, F, ∇F, x; options...)
+    quasi_Newton!(M, F, gradF, x; options...)
 
 Perform a quasi Newton iteration for `F` on the manifold `M` starting
 in the point `x` using a retration ``R`` and a vector transport ``T``.
@@ -57,7 +57,7 @@ in the point `x` using a retration ``R`` and a vector transport ``T``.
 # Input
 * `M` – a manifold ``\mathcal{M}``.
 * `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
-* `∇F`– the gradient ``∇F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
+* `gradF`– the gradient ``\operatorname{grad}F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
 * `x` – an initial value ``x \in \mathcal{M}``.
 
 For all optional parameters, see [`quasi_Newton`](@ref).
@@ -65,7 +65,7 @@ For all optional parameters, see [`quasi_Newton`](@ref).
 function quasi_Newton!(
     M::Manifold,
     F::Function,
-    ∇F::G,
+    gradF::G,
     x::P;
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
@@ -108,16 +108,16 @@ function quasi_Newton!(
         )
     end
 
+    p = GradientProblem(M, F, gradF)
     o = QuasiNewtonOptions(
         x,
-        ∇F(x),
+        gradF(x),
         local_dir_upd,
         stopping_criterion,
         step_size;
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    p = GradientProblem(M, F, ∇F)
 
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -132,7 +132,7 @@ end
 function initialize_solver!(::GradientProblem, ::QuasiNewtonOptions) end
 
 function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
-    o.∇ = get_gradient(p, o.x)
+    o.gradient = get_gradient(p, o.x)
     η = o.direction_update(p, o)
     α = o.stepsize(p, o, iter, η)
     x_old = deepcopy(o.x)
@@ -144,9 +144,9 @@ function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
         p.M, o.sk, x_old, α * η, o.x, get_update_vector_transport(o.direction_update)
     )
     vector_transport_to!(
-        p.M, o.∇, x_old, o.∇, o.x, get_update_vector_transport(o.direction_update)
+        p.M, o.gradient, x_old, o.gradient, o.x, get_update_vector_transport(o.direction_update)
     )
-    o.yk = get_gradient(p, o.x) / β - o.∇
+    o.yk = get_gradient(p, o.x) / β - o.gradient
     update_hessian!(o.direction_update, p, o, x_old, iter)
     return o
 end
@@ -353,7 +353,7 @@ function update_hessian!(
     d::QuasiNewtonCautiousDirectionUpdate{U}, p, o, x_old, iter
 ) where {U<:AbstractQuasiNewtonDirectionUpdate}
     # computing the bound used in the decission rule
-    bound = d.θ(norm(p.M, o.x, o.∇))
+    bound = d.θ(norm(p.M, o.x, o.gradient))
     sk_normsq = norm(p.M, o.x, o.sk)^2
     if sk_normsq != 0 && (inner(p.M, o.x, o.sk, o.yk) / sk_normsq) >= bound
         update_hessian!(d.update, p, o, x_old, iter)

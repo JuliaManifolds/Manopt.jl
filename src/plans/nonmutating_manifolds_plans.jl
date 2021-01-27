@@ -10,23 +10,23 @@ function linesearch_backtrack(
     M::NONMUTATINGMANIFOLDS,
     F::TF,
     x,
-    ∇F::T,
+    gradF::T,
     s,
     decrease,
     contract,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
-    η::T=-∇F,
+    η::T=-gradF,
     f0=F(x),
 ) where {TF,T}
     x_new = retract(M, x, s * η, retr)
     fNew = F(x_new)
-    while fNew < f0 + decrease * s * inner(M, x, η, ∇F) # increase
+    while fNew < f0 + decrease * s * inner(M, x, η, gradF) # increase
         x_new = retract(M, x, s * η, retr)
         fNew = F(x_new)
         s = s / contract
     end
     s = s * contract # correct last
-    while fNew > f0 + decrease * s * inner(M, x, η, ∇F) # decrease
+    while fNew > f0 + decrease * s * inner(M, x, η, gradF) # decrease
         s = contract * s
         x_new = retract(M, x, s * η, retr)
         fNew = F(x_new)
@@ -37,7 +37,7 @@ end
 function step_solver!(
     p::GradientProblem{T,<:NONMUTATINGMANIFOLDS}, o::GradientDescentOptions, iter
 ) where {T}
-    s, o.∇ = o.direction(p, o, iter)
-    o.x = retract(p.M, o.x, -s .* o.∇, o.retraction_method)
+    s, o.gradient= o.direction(p, o, iter)
+    o.x = retract(p.M, o.x, -s .* o.gradient, o.retraction_method)
     return o
 end

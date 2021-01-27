@@ -83,9 +83,9 @@ costTV2(M, (p, r, q))
 # respectively, with a distance.
 # Hence the [adjoint differentials](@ref adjointDifferentialFunctions)
 # [`adjoint_differential_geodesic_startpoint`](@ref) and [`adjoint_differential_geodesic_endpoint`](@ref) can be employed,
-# see [`∇TV2`](@ref) for details.
+# see [`grad_TV2`](@ref) for details.
 # we obtain
-(Xp, Xr, Xq) = ∇TV2(M, (p, r, q))
+(Xp, Xr, Xq) = grad_TV2(M, (p, r, q))
 #
 # When we aim to minimize this, we look at the negative gradient, i.e.
 # we can draw this as
@@ -163,7 +163,7 @@ s = linesearch_backtrack(
     M,
     x -> costTV2(M, Tuple(x)),
     x,
-    [∇TV2(M, (p, r, q))...],  # transform from tuple to PowTVector
+    [grad_TV2(M, (p, r, q))...],  # transform from tuple to PowTVector
     1.0, # initial stepsize guess
     0.999, # decrease
     0.96,  #contract

@@ -48,11 +48,11 @@ x0 = pB
 for i in eachindex(λRange)
     λ = λRange[i]
     F(pB) = cost_L2_acceleration_bezier(M, pB, degs, curve_samples, λ, d)
-    ∇F(pB) = ∇L2_acceleration_bezier(M, pB, degs, curve_samples, λ, d)
+    gradF(pB) = grad_L2_acceleration_bezier(M, pB, degs, curve_samples, λ, d)
     results[i] = gradient_descent(
         N,
         F,
-        ∇F,
+        gradF,
         x0;
         stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
         stopping_criterion=StopWhenAny(

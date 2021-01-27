@@ -1,5 +1,5 @@
 @doc raw"""
-    conjugate_gradient_descent(M, F, ∇F, x)
+    conjugate_gradient_descent(M, F, gradF, x)
 
 perform a conjugate gradient based descent
 ````math
@@ -7,7 +7,7 @@ x_{k+1} = \operatorname{retr}_{x_k} \bigl( s_k\delta_k \bigr),
 ````
 where $\operatorname{retr}$ denotes a retraction on the `Manifold` `M`
 and one can employ different rules to update the descent direction $\delta_k$ based on
-the last direction $\delta_{k-1}$ and both gradients $∇f(x_k)$,$∇f(x_{k-1})$.
+the last direction $\delta_{k-1}$ and both gradients $\operatorname{grad}f(x_k)$,$\operatorname{grad}f(x_{k-1})$.
 The [`Stepsize`](@ref) $s_k$ may be determined by a [`Linesearch`](@ref).
 
 Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
@@ -17,13 +17,13 @@ Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a
 
 They all compute $\beta_k$ such that this algorithm updates the search direction as
 ````math
-\delta_k=∇f(x_k) + \beta_k \delta_{k-1}
+\delta_k=\operatorname{grad}f(x_k) + \beta_k \delta_{k-1}
 ````
 
 # Input
 * `M` : a manifold $\mathcal M$
 * `F` : a cost function $F\colon\mathcal M→ℝ$ to minimize
-* `∇F`: the gradient $∇ F\colon\mathcal M→ T\mathcal M$ of F
+* `gradF`: the gradient ``\operatorname{grad}F\colon\mathcal M → T\mathcal M$ of F
 * `x` : an initial value $x\in\mathcal M$
 
 # Optional
@@ -49,14 +49,14 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function conjugate_gradient_descent(
-    M::Manifold, F::TF, ∇F::TDF, x; kwargs...
+    M::Manifold, F::TF, gradF::TDF, x; kwargs...
 ) where {TF,TDF}
     x_res = allocate(x)
     copyto!(x_res, x)
-    return conjugate_gradient_descent!(M, F, ∇F, x; kwargs...)
+    return conjugate_gradient_descent!(M, F, gradF, x; kwargs...)
 end
 @doc raw"""
-    conjugate_gradient_descent!(M, F, ∇F, x)
+    conjugate_gradient_descent!(M, F, gradF, x)
 
 perform a conjugate gradient based descent in place of `x`, i.e.
 ````math
@@ -67,7 +67,7 @@ where $\operatorname{retr}$ denotes a retraction on the `Manifold` `M`
 # Input
 * `M` : a manifold $\mathcal M$
 * `F` : a cost function $F\colon\mathcal M→ℝ$ to minimize
-* `∇F`: the gradient $∇ F\colon\mathcal M→ T\mathcal M$ of F
+* `gradF`: the gradient $\operatorname{grad}F\colon\mathcal M→ T\mathcal M$ of F
 * `x` : an initial value $x\in\mathcal M$
 
 for more details and options, especially the [`DirectionUpdateRule`](@ref)s,
@@ -76,7 +76,7 @@ for more details and options, especially the [`DirectionUpdateRule`](@ref)s,
 function conjugate_gradient_descent!(
     M::Manifold,
     F::TF,
-    ∇F::TDF,
+    gradF::TDF,
     x;
     coefficient::DirectionUpdateRule=SteepestDirectionUpdateRule(),
     stepsize::Stepsize=ConstantStepsize(1.0),
@@ -88,7 +88,7 @@ function conjugate_gradient_descent!(
     return_options=false,
     kwargs...,
 ) where {TF,TDF}
-    p = GradientProblem(M, F, ∇F)
+    p = GradientProblem(M, F, gradF)
     o = ConjugateGradientDescentOptions(
         x, stopping_criterion, stepsize, coefficient, retraction_method, transport_method
     )
@@ -100,17 +100,17 @@ function conjugate_gradient_descent!(
     return get_solver_result(resultO)
 end
 function initialize_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions)
-    o.∇ = get_gradient(p, o.x)
-    o.δ = -o.∇
+    o.gradient = get_gradient(p, o.x)
+    o.δ = -o.gradient
     return o.β = 0.0
 end
 function step_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
     xOld = o.x
     retract!(p.M, o.x, o.x, get_stepsize(p, o, i, o.δ) * o.δ, o.retraction_method)
-    get_gradient!(p, o.∇, o.x)
+    get_gradient!(p, o.gradient, o.x)
     o.β = o.coefficient(p, o, i)
     vector_transport_to!(p.M, o.δ, xOld, o.δ, o.x, o.vector_transport_method)
-    o.δ .= -o.∇ .+ o.β * o.δ
+    o.δ .= -o.gradient .+ o.β * o.δ
     return o.δ
 end
 get_solver_result(o::ConjugateGradientDescentOptions) = o.x

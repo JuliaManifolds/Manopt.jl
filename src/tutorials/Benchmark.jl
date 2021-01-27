@@ -21,18 +21,18 @@ data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n];
 #
 # ## Classical definition
 #
-# The variant from the previous tutorial defines a cost ``F(x)`` and its gradient ``∇F(x)``
+# The variant from the previous tutorial defines a cost ``F(x)`` and its gradient ``gradF(x)``
 F(x) = sum(1 / (2 * n) * distance.(Ref(M), Ref(x), data) .^ 2)
-∇F(x) = sum(1 / n * ∇distance.(Ref(M), data, Ref(x)))
+gradF(x) = sum(1 / n * grad_distance.(Ref(M), data, Ref(x)))
 nothing #hide
 #
 # we further set the stopping criterion to be a little more strict, then we obtain
 #
 sc = StopWhenGradientNormLess(1e-10)
 x0 = random_point(M)
-m1 = gradient_descent(M, F, ∇F, x0; stopping_criterion=sc)
+m1 = gradient_descent(M, F, gradF, x0; stopping_criterion=sc)
 
-@btime gradient_descent($M, $F, $∇F, $x0; stopping_criterion=$sc)
+@btime gradient_descent($M, $F, $gradF, $x0; stopping_criterion=$sc)
 nothing #hide
 #
 # ## Inplace computation of the gradient
@@ -43,31 +43,31 @@ nothing #hide
 # For more complicated cost functions it might also be worth considering to do the same.
 #
 # Here we store the data (as reference) and one temporary memory in order to avoid
-# reallication of memory per `∇distance` computation. We have
+# reallication of memory per `grad_distance` computation. We have
 struct grad!{TM,TD,TTMP}
     M::TM
     data::TD
     tmp::TTMP
 end
-function (∇f!::grad!)(X, y)
+function (gradf!::grad!)(X, x)
     fill!(X, 0)
-    for di in ∇f!.data
-        ∇distance!(∇f!.M, ∇f!.tmp, di, y)
-        X .+= ∇f!.tmp
+    for di in gradf!.data
+        grad_distance!(gradf!.M, gradf!.tmp, di, x)
+        X .+= gradf!.tmp
     end
-    X ./= length(∇f!.data)
+    X ./= length(gradf!.data)
     return X
 end
 #
 # Then we just have to initialize the gradient and perform our final benchmark.
 # Note that we also have to interpolate all variables passed to the benchmark with a `$`.
 #
-∇F2! = grad!(M, data, similar(data[1]))
+gradF2! = grad!(M, data, similar(data[1]))
 m2 = deepcopy(x0)
-gradient_descent!(M, F, ∇F2!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc)
+gradient_descent!(M, F, gradF2!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc)
 
 @btime gradient_descent!(
-    $M, $F, $∇F2!, m2; evaluation=$(MutatingEvaluation()), stopping_criterion=$sc
+    $M, $F, $gradF2!, m2; evaluation=$(MutatingEvaluation()), stopping_criterion=$sc
 ) setup = (m2 = deepcopy($x0))
 nothing #hide
 #

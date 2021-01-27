@@ -4,58 +4,58 @@
 A stochastic gradient problem consists of
 * a `Manifold M`
 * a(n optional) cost function ``f(x) = \displaystyle\sum_{i=1}^n f_i(x)
-* an array of gradients, i.e. a function that returns and array or an array of functions ``\{∇f_i\}_{i=1}^n``.
+* an array of gradients, i.e. a function that returns and array or an array of functions ``\{\operatorname{grad}f_i\}_{i=1}^n``.
 
 # Constructors
-    StochasticGradientProblem(M::Manifold, ∇::Function; cost=Missing())
-    StochasticGradientProblem(M::Manifold, ∇::AbstractVector{<:Function}; cost=Missing())
+    StochasticGradientProblem(M::Manifold, gradF::Function; cost=Missing())
+    StochasticGradientProblem(M::Manifold, gradF::AbstractVector{<:Function}; cost=Missing())
 
 Create a Stochastic gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
 """
-struct StochasticGradientProblem{MT<:Manifold,TCost,TGradient} <:
-       Problem{AllocatingEvaluation}
+struct StochasticGradientProblem{T,MT<:Manifold,TCost,TGradient} <:
+       AbstractGradientProblem{T}
     M::MT
     cost::TCost
-    ∇::TGradient
+    gradient!!::TGradient
 end
 function StochasticGradientProblem(
-    M::TM, ∇::Function; cost::Union{Function,Missing}=Missing()
-) where {TM<:Manifold}
-    return StochasticGradientProblem{TM,typeof(cost),Function}(M, cost, ∇)
+    M::TM, gradF::G; cost::Union{Function,Missing}=Missing(), evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+) where {TM<:Manifold,G}
+    return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),G}(M, cost, gradF)
 end
 function StochasticGradientProblem(
-    M::TM, ∇::AbstractVector{<:Function}; cost::Union{Function,Missing}=Missing()
+    M::TM, gradF::AbstractVector{<:Function}; cost::Union{Function,Missing}=Missing(), evaluation::AbstractEvaluationType=AllocatingEvaluation()
 ) where {TM<:Manifold}
-    return StochasticGradientProblem{TM,typeof(cost),typeof(∇)}(M, cost, ∇)
+    return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),typeof(gradF)}(M, cost, gradF)
 end
 
 @doc raw"""
     get_gradients(P::StochasticGradientProblem, x)
 
-Evaluate all summands gradients ``\{∇f_i\}_{i=1}^n`` at `x`.
+Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `x`.
 """
-get_gradients(P::StochasticGradientProblem{<:Manifold,TC,<:Function}, x) where {TC} = P.∇(x)
+get_gradients(P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, x) where {TC} = P.gradient!!(x)
 function get_gradients(
-    P::StochasticGradientProblem{<:Manifold,TC,<:AbstractVector}, x
+    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
 ) where {TC}
-    return [∇i(x) for ∇i in P.∇]
+    return [grad_i(x) for grad_i in P.gradient!!]
 end
 
 @doc raw"""
     get_gradient(P::StochasticGradientProblem, k, x)
 
-Evaluate one of the summands gradients ``∇f_k``, ``k∈\{1,…,n\}``, at `x`.
+Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x`.
 """
 function get_gradient(
-    P::StochasticGradientProblem{<:Manifold,TC,<:Function}, k, x
+    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, k, x
 ) where {TC}
-    return P.∇(x)[k]
+    return P.gradient!!(x)[k]
 end
 function get_gradient(
-    P::StochasticGradientProblem{<:Manifold,TC,<:AbstractVector}, k, x
+    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, k, x
 ) where {TC}
-    return P.∇[k](x)
+    return P.gradient!![k](x)
 end
 
 """
@@ -95,7 +95,7 @@ mutable struct StochasticGradientDescentOptions{
     TStop<:StoppingCriterion,
     TStep<:Stepsize,
     RM<:AbstractRetractionMethod,
-} <: AbstractGradientDescentOptions
+} <: AbstractGradientOptions
     x::TX
     direction::D
     stop::TStop
@@ -145,12 +145,12 @@ function MomentumGradient(
     p::StochasticGradientProblem,
     x0::P,
     s::DirectionUpdateRule=StochasticGradient();
-    ∇=zero_tangent_vector(p.M, x0),
+    gradient=zero_tangent_vector(p.M, x0),
     momentum=0.2,
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM<:AbstractVectorTransportMethod}
-    return MomentumGradient{P,typeof(∇),typeof(momentum),VTM}(
-        deepcopy(x0), ∇, momentum, s, vector_transport_method
+    return MomentumGradient{P,typeof(gradient),typeof(momentum),VTM}(
+        deepcopy(x0), gradient, momentum, s, vector_transport_method
     )
 end
 function AverageGradient(

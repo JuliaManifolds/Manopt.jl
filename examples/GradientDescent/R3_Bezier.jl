@@ -52,12 +52,12 @@ function F(pB)
         M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP
     )
 end
-∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP)
+gradF(pB) = grad_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP)
 x0 = pB
 pB_opt = gradient_descent(
     N,
     F,
-    ∇F,
+    gradF,
     x0;
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001), # use Armijo lineSearch
     stopping_criterion=StopWhenAny(

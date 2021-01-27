@@ -1,10 +1,10 @@
 @doc raw"""
-    trust_regions(M, F, ∇F, x, H)
+    trust_regions(M, F, gradF, x, H)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds.
 It will attempt to minimize the cost function F on the Manifold M.
 If no Hessian H is provided, a standard approximation of the Hessian based on
-the gradient ∇F will be computed.
+the gradient `gradF` will be computed.
 For solving the the inner trust-region subproblem of finding an update-vector,
 it uses the Steihaug-Toint truncated conjugate-gradient method.
 For a description of the algorithm and more details see
@@ -16,11 +16,11 @@ For a description of the algorithm and more details see
     MPS, 2000. doi: [10.1137/1.9780898719857](https://doi.org/10.1137/1.9780898719857)
 
 # Input
-* `M` – a manifold $\mathcal M$
+* `M` – a manifold $\mathcal M``
 * `F` – a cost function $F \colon \mathcal M → ℝ$ to minimize
-* `∇F`- the gradient $∇F \colon \mathcal M → T \mathcal M$ of $F$
+* `gradF`- the gradient $\operatorname{grad}F \colon \mathcal M → T \mathcal M$ of $F$
 * `x` – an initial value $x  ∈  \mathcal M$
-* `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
+* `H` – the hessian ``Hf(x)\colon T_x\mathcal M → T_x\mathcal M``, ``ξ ↦ Hf(x)[ξ] = ∇_ξ\operatorname{grad}f(x)``
 
 # Optional
 * `retraction` – approximation of the exponential map
@@ -61,20 +61,20 @@ For a description of the algorithm and more details see
 # see also
 [`truncated_conjugate_gradient_descent`](@ref)
 """
-function trust_regions(M::Manifold, F::TF, ∇F::TdF, x, H::TH; kwargs...) where {TF,TdF,TH}
+function trust_regions(M::Manifold, F::TF, gradF::TdF, x, H::TH; kwargs...) where {TF,TdF,TH}
     x_res = allocate(x)
     copyto!(x_res, x)
-    return trust_regions!(M, F, ∇F, x_res, H; kwargs...)
+    return trust_regions!(M, F, gradF, x_res, H; kwargs...)
 end
 @doc raw"""
-    trust_regions!(M, F, ∇F, x, H; kwargs...)
+    trust_regions!(M, F, gradF, x, H; kwargs...)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `x`.
 
 # Input
 * `M` – a manifold $\mathcal M$
-* `F` – a cost function $F \colon \mathcal M → ℝ$ to minimize
-* `∇F`- the gradient $∇F \colon \mathcal M → T \mathcal M$ of $F$
+* `F` – a cost function $F: \mathcal M → ℝ$ to minimize
+* `gradF`- the gradient $\operatorname{grad}F: \mathcal M → T \mathcal M$ of $F$
 * `x` – an initial value $x  ∈  \mathcal M$
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
 
@@ -83,7 +83,7 @@ for more details and all options, see [`trust_regions`](@ref)
 function trust_regions!(
     M::Manifold,
     F::TF,
-    ∇F::TdF,
+    gradF::TdF,
     x,
     H::TH;
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
@@ -106,9 +106,10 @@ function trust_regions!(
     (Δ <= 0 || Δ > Δ_bar) && throw(
         ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."),
     )
-    p = HessianProblem(M, F, ∇F, H, preconditioner)
+    p = HessianProblem(M, F, gradF, H, preconditioner)
     o = TrustRegionsOptions(
         x,
+        gradF(x),
         stopping_criterion,
         Δ,
         Δ_bar,
@@ -126,9 +127,9 @@ function trust_regions!(
     end
 end
 
-initialize_solver!(p::P, o::O) where {P<:HessianProblem,O<:TrustRegionsOptions} = nothing
+initialize_solver!(::HessianProblem, ::TrustRegionsOptions) = nothing
 
-function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegionsOptions}
+function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # Determine eta0
     if o.useRand == false
         # Pick the zero vector
@@ -148,7 +149,7 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
         p.gradient!!,
         o.x,
         eta,
-        p.hessian,
+        p.hessian!!,
         o.Δ;
         preconditioner=p.precon,
         useRandom=o.useRand,
@@ -160,27 +161,27 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
     SR = get_active_stopping_criteria(option.stop)
     Hη = get_hessian(p, o.x, η)
     # Initialize the cost function F und the gradient of the cost function
-    # ∇F at the point x
-    grad = get_gradient(p, o.x)
+    # gradF at the point x
+    get_gradient!(p, o.gradient, o.x)
     fx = get_cost(p, o.x)
-    norm_grad = norm(p.M, o.x, grad)
+    norm_grad = norm(p.M, o.x, o.gradient)
     # If using randomized approach, compare result with the Cauchy point.
     if o.useRand
         # Check the curvature,
-        Hgrad = get_hessian(p, o.x, grad)
-        gradHgrad = inner(p.M, o.x, grad, Hgrad)
+        Hgrad = get_hessian(p, o.x, o.gradient)
+        gradHgrad = inner(p.M, o.x, o.gradient, Hgrad)
         if gradHgrad <= 0
             tau_c = 1
         else
             tau_c = min(norm_grad^3 / (o.Δ * gradHgrad), 1)
         end
         # and generate the Cauchy point.
-        η_c = (-tau_c * o.Δ / norm_grad) * grad
+        η_c = (-tau_c * o.Δ / norm_grad) * o.gradient
         Hη_c = (-tau_c * o.Δ / norm_grad) * Hgrad
         # Now that we have computed the Cauchy point in addition to the
         # returned eta, we might as well keep the best of them.
-        mdle = fx + inner(p.M, o.x, grad, η) + 0.5 * inner(p.M, o.x, Hη, η)
-        mdlec = fx + inner(p.M, o.x, grad, η_c) + 0.5 * inner(p.M, o.x, Hη_c, η_c)
+        mdle = fx + inner(p.M, o.x, o.gradient, η) + 0.5 * inner(p.M, o.x, Hη, η)
+        mdlec = fx + inner(p.M, o.x, o.gradient, η_c) + 0.5 * inner(p.M, o.x, Hη_c, η_c)
         if mdlec < mdle
             η = η_c
             Hη = Hη_c
@@ -192,7 +193,7 @@ function step_solver!(p::P, o::O, iter) where {P<:HessianProblem,O<:TrustRegions
     fx_prop = get_cost(p, x_prop)
     # Check the performance of the quadratic model against the actual cost.
     ρnum = fx - fx_prop
-    ρden = -inner(p.M, o.x, η, grad) - 0.5 * inner(p.M, o.x, η, Hη)
+    ρden = -inner(p.M, o.x, η, o.gradient) - 0.5 * inner(p.M, o.x, η, Hη)
     # Since, at convergence, both ρnum and ρden become extremely small,
     # computing ρ is numerically challenging. The break with ρnum and ρden
     # can thus lead to a large error in rho, making the

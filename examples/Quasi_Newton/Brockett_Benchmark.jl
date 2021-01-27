@@ -6,10 +6,10 @@ struct GradF
     A::Matrix{Float64}
     N::Diagonal{Float64,Vector{Float64}}
 end
-function (∇F::GradF)(X::Array{Float64,2})
-    AX = ∇F.A * X
+function (gradF::GradF)(X::Array{Float64,2})
+    AX = gradF.A * X
     XpAX = X' * AX
-    return 2 .* AX * ∇F.N .- X * XpAX * ∇F.N .- X * ∇F.N * XpAX
+    return 2 .* AX * gradF.N .- X * XpAX * gradF.N .- X * gradF.N * XpAX
 end
 
 function run_brocket_experiment(n::Int, k::Int, m::Int; seed=42)
@@ -18,17 +18,17 @@ function run_brocket_experiment(n::Int, k::Int, m::Int; seed=42)
     A = randn(n, n)
     A = (A + A') / 2
     F(X::Array{Float64,2}) = tr((X' * A * X) * Diagonal(k:-1:1))
-    ∇F = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
+    gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
     x = random_point(M)
     return quasi_Newton(
         M,
         F,
-        ∇F,
+        gradF,
         x;
         memory_size=m,
         vector_transport_method=ProjectionTransport(),
         retraction_method=QRRetraction(),
-        stopping_criterion=StopWhenGradientNormLess(norm(M, x, ∇F(x)) * 10^(-6)),
+        stopping_criterion=StopWhenGradientNormLess(norm(M, x, gradF(x)) * 10^(-6)),
         cautious_update=true,
         #        debug = [:Iteration," ", :Cost, " ", DebugGradientNorm(), "\n", 10],
     )

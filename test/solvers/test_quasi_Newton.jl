@@ -10,18 +10,18 @@ Random.seed!(42)
         ABC = [A, B, C]
         x_solution = mean(ABC)
         F(x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
-        ∇F(x) = -A - B - C + 3 * x
+        gradF(x) = -A - B - C + 3 * x
         M = Euclidean(4, 4)
         x = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
-            M, F, ∇F, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
+            M, F, gradF, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
         )
         @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
         # with Options
         lrbfgs_o = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_options=true,
@@ -31,7 +31,7 @@ Random.seed!(42)
         x_lrbfgs_cached = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
@@ -41,7 +41,7 @@ Random.seed!(42)
         x_lrbfgs_cached_2 = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
@@ -52,7 +52,7 @@ Random.seed!(42)
         x_clrbfgs = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -62,7 +62,7 @@ Random.seed!(42)
         x_rbfgs_Huang = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             memory_size=-1,
             step_size=WolfePowellBinaryLinesearch(
@@ -77,7 +77,7 @@ Random.seed!(42)
                 x_direction = quasi_Newton(
                     M,
                     F,
-                    ∇F,
+                    gradF,
                     x;
                     direction_update=T,
                     cautious_update=c,
@@ -94,7 +94,7 @@ Random.seed!(42)
         A = randn(n, n)
         A = (A + A') / 2
         F(X) = X' * A * X
-        ∇F(X) = 2 * (A * X - X * (X' * A * X))
+        gradF(X) = 2 * (A * X - X * (X' * A * X))
         M = Sphere(n - 1)
         x_solution = abs.(eigvecs(A)[:, 1])
 
@@ -102,7 +102,7 @@ Random.seed!(42)
         x_lrbfgs = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
@@ -113,7 +113,7 @@ Random.seed!(42)
         x_clrbfgs = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-12)),
@@ -122,7 +122,7 @@ Random.seed!(42)
         x_cached_lrbfgs = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
@@ -135,7 +135,7 @@ Random.seed!(42)
             x_direction = quasi_Newton(
                 M,
                 F,
-                ∇F,
+                gradF,
                 x;
                 direction_update=T,
                 cautious_update=c,
@@ -156,7 +156,7 @@ Random.seed!(42)
             x_direction = quasi_Newton(
                 M,
                 F,
-                ∇F,
+                gradF,
                 x;
                 direction_update=T,
                 memory_size=-1,
@@ -169,7 +169,7 @@ Random.seed!(42)
             x_direction = quasi_Newton(
                 M,
                 F,
-                ∇F,
+                gradF,
                 x;
                 direction_update=T,
                 memory_size=-1,
@@ -183,10 +183,10 @@ Random.seed!(42)
             A::Matrix{Float64}
             N::Diagonal{Float64,Vector{Float64}}
         end
-        function (∇F::GradF)(X::Array{Float64,2})
-            AX = ∇F.A * X
+        function (gradF::GradF)(X::Array{Float64,2})
+            AX = gradF.A * X
             XpAX = X' * AX
-            return 2 .* AX * ∇F.N .- X * XpAX * ∇F.N .- X * ∇F.N * XpAX
+            return 2 .* AX * gradF.N .- X * XpAX * gradF.N .- X * gradF.N * XpAX
         end
 
         n = 1000
@@ -195,13 +195,13 @@ Random.seed!(42)
         A = randn(n, n)
         A = (A + A') / 2
         F(X) = tr((X' * A * X) * Diagonal(k:-1:1))
-        ∇F = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
+        gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
 
         x = Matrix{Float64}(I, n, n)[:, 2:(k + 1)]
         x_inverseBFGSCautious = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             memory_size=8,
             vector_transport_method=ProjectionTransport(),
@@ -213,7 +213,7 @@ Random.seed!(42)
         x_inverseBFGSHuang = quasi_Newton(
             M,
             F,
-            ∇F,
+            gradF,
             x;
             memory_size=8,
             step_size=WolfePowellBinaryLinesearch(QRRetraction(), ProjectionTransport()),

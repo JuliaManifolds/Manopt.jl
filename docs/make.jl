@@ -14,7 +14,7 @@ tutorials = [
 ]
 menuEntries = [
     "get Started: Optimize!",
-    "speed up! using `∇F!`",
+    "speed up! using `gradF!`",
     "do stochastic gradient descent",
     "work with Bézier curves",
     "see the gradient of ``d_2``",
@@ -69,6 +69,7 @@ makedocs(;
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
         ],
+        "Notation" => "notation.md",
         "Function Index" => "list.md",
     ],
 )

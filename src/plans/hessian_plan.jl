@@ -7,9 +7,9 @@ specify a problem for hessian based algorithms.
 # Fields
 * `M`            : a manifold $\mathcal M$
 * `cost` : a function $F\colon\mathcal M→ℝ$ to minimize
-* `gradient`     : the gradient $∇F\colon\mathcal M
+* `gradient`     : the gradient $\operatorname{grad}F:\mathcal M
   → \mathcal T\mathcal M$ of the cost function $F$
-* `hessian`      : the hessian $\operatorname{Hess}[F] (\cdot)_ {x} \colon \mathcal T_{x} \mathcal M
+* `hessian`      : the hessian $\operatorname{Hess}F(x)[\cdot]: \mathcal T_{x} \mathcal M
   → \mathcal T_{x} \mathcal M$ of the cost function $F$
 * `precon`       : the symmetric, positive deﬁnite
     preconditioner (approximation of the inverse of the Hessian of $F$)
@@ -18,7 +18,7 @@ specify a problem for hessian based algorithms.
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 struct HessianProblem{T,mT<:Manifold,C,G,H,Pre} <:
-       AbstractGradientProblem{AllocatingEvaluation}
+       AbstractGradientProblem{T}
     M::mT
     cost::C
     gradient!!::G
@@ -36,12 +36,16 @@ struct HessianProblem{T,mT<:Manifold,C,G,H,Pre} <:
     end
 end
 
-abstract type HessianOptions <: Options end
-#
-# Options
-#
 @doc raw"""
-    TruncatedConjugateGradientOptions <: HessianOptions
+    AbstractHessianOptions <: Options
+
+An [`Options`](@ref) type to represent algorithms that employ the Hessian.
+These options are assumed to have a field (`gradient`) to store the current gradient ``\operatorname{grad}f(x)``
+"""
+abstract type AbstractHessianOptions <: AbstractGradientOptions end
+
+@doc raw"""
+    TruncatedConjugateGradientOptions <: AbstractHessianOptions
 
 describe the Steihaug-Toint truncated conjugate-gradient method, with
 
@@ -53,6 +57,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `stop` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
     indicator and a reason based on an iteration number, the gradient and the
     last and current iterates
+* `gradient` : the gradient at the current iterate
 * `η` : a tangent vector (called update vector), which solves the
     trust-region subproblem after successful calculation by the algorithm
 * `δ` : search direction
@@ -72,23 +77,24 @@ construct a truncated conjugate-gradient Option with the fields as above.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct TruncatedConjugateGradientOptions{P,T} <: HessianOptions
+mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real} <: AbstractHessianOptions
     x::P
     stop::StoppingCriterion
     η::T
     δ::T
-    Δ::Any
+    gradient::T
+    Δ::R
     residual::T
     useRand::Bool
     function TruncatedConjugateGradientOptions(
         x::P, stop::StoppingCriterion, η::T, δ::T, Δ, residual::T, uR::Bool
     ) where {P,T}
-        return new{typeof(x),typeof(η)}(x, stop, η, δ, Δ, residual, uR)
+        return new{typeof(x),typeof(η),typeof(Δ)}(x, stop, η, δ, η, Δ, residual, uR)
     end
 end
 
 @doc raw"""
-    TrustRegionsOptions <: HessianOptions
+    TrustRegionsOptions <: AbstractHessianOptions
 
 describe the trust-regions solver, with
 
@@ -131,9 +137,10 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    TX,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr<:AbstractRetractionMethod,Tρ_prime,Tρ_reg
-} <: HessianOptions
-    x::TX
+    P,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr<:AbstractRetractionMethod,Tρ_prime,Tρ_reg
+} <: AbstractHessianOptions
+    x::P
+    gradient::P
     stop::TStop
     Δ::TΔ
     Δ_bar::TΔ_bar
@@ -150,10 +157,10 @@ evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the point `x`
 applied to a tangent vector `ξ`.
 """
 function get_hessian(p::HessianProblem, x, ξ; stepsize=2 * 10^(-14))
-    if ismissing(p.hessian)
+    if ismissing(p.hessian!!)
         return approxHessianFD(p.M, x, (x) -> get_gradient(p, x), ξ; stepsize=stepsize)
     else
-        return p.hessian(p.M, x, ξ)
+        return p.hessian!!(p.M, x, ξ)
     end
 end
 

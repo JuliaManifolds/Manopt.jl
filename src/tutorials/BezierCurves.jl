@@ -157,7 +157,7 @@ render_asymptote(export_folder * "/Bezier-composite-curve.asy"; render=2) #src
 # An advantage of the model considered here is, that it only consist of the evaluation of geodesics.
 # This yields a gradient of $A(b)$ with respect to $b$ [`adjoint_Jacobi_field`](@ref)s. The following image shows the negative gradient (scaled)
 #
-gradFullB = Manopt._∇acceleration_bezier( #src
+gradFullB = Manopt._grad_acceleration_bezier( #src
     M, #src
     get_bezier_points(M, B, :differentiable), #src
     [3, 3, 3], #src
@@ -199,12 +199,12 @@ curve_samples = collect(range(0.0, 3.0; length=151)) #exactness of approximating
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
 F(pB) = cost_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
-∇F(pB) = ∇acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
+gradF(pB) = grad_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
 x0 = pB
 pB_opt_ip = gradient_descent(
     N,
     F,
-    ∇F,
+    gradF,
     x0;
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001),
     stopping_criterion=StopWhenChangeLess(5 * 10.0^(-7)),
@@ -265,12 +265,12 @@ render_asymptote(export_folder * "/Bezier-IP-Min.asy"; render=2) #src
 λ = 3.0
 d = get_bezier_junctions(M, B)
 F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
-∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
+gradF(pB) = grad_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
 x0 = pB
 pB_opt_appr = gradient_descent(
     N,
     F,
-    ∇F,
+    gradF,
     x0;
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
     stopping_criterion=StopWhenChangeLess(10.0^(-5)),

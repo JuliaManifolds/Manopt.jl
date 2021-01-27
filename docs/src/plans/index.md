@@ -109,7 +109,7 @@ get_cost
 
 A problem can be of different type, more specifically, whether its containing functions,
 for example to compute the gradient work with allocation or without. To be precise, an
-allocation function `X = ∇F(x)` allocates memory for its result `X`, while `∇F!(X,x) does not.
+allocation function `X = gradF(x)` allocates memory for its result `X`, while `gradF!(X,x) does not.
 
 ```@docs
 AbstractEvaluationType

@@ -1,5 +1,5 @@
 @doc raw"""
-    ∇acceleration_bezier(
+    grad_acceleration_bezier(
         M::Manifold,
         B::AbstractVector{P},
         degrees::AbstractVector{<:Integer}
@@ -12,13 +12,13 @@ on the `Manifold` `M` with respect to its control points `B` given as a point on
 evaluated at the points given in `T` (elementwise in $[0,N]$, where $N$ is the
 number of segments of the Bézier curve). The [`get_bezier_junctions`](@ref) are fixed for
 this gradient (interpolation constraint). For the unconstrained gradient,
-see [`∇L2_acceleration_bezier`](@ref) and set $λ=0$ therein. This gradient is computed using
+see [`grad_L2_acceleration_bezier`](@ref) and set $λ=0$ therein. This gradient is computed using
 [`adjoint_Jacobi_field`](@ref)s. For details, see [^BergmannGousenbourger2018].
 See [`de_casteljau`](@ref) for more details on the curve.
 
 # See also
 
-[`cost_acceleration_bezier`](@ref),  [`∇L2_acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref).
+[`cost_acceleration_bezier`](@ref),  [`grad_L2_acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref).
 
 [^BergmannGousenbourger2018]:
     > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
@@ -27,13 +27,13 @@ See [`de_casteljau`](@ref) for more details on the curve.
     > doi [10.3389/fams.2018.00059](http://dx.doi.org/10.3389/fams.2018.00059),
     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
-function ∇acceleration_bezier(
+function grad_acceleration_bezier(
     M::Manifold,
     B::AbstractVector{P},
     degrees::AbstractVector{<:Integer},
     T::AbstractVector{<:AbstractFloat},
 ) where {P}
-    gradB = _∇acceleration_bezier(M, B, degrees, T)
+    gradB = _grad_acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     for k in 1:length(Bt) # we interpolate so we do not move end points
         zero_tangent_vector!(M, gradB[k].pts[end], Bt[k].pts[end])
@@ -42,17 +42,17 @@ function ∇acceleration_bezier(
     zero_tangent_vector!(M, gradB[end].pts[end], Bt[end].pts[end])
     return get_bezier_points(M, gradB, :differentiable)
 end
-function ∇acceleration_bezier(
+function grad_acceleration_bezier(
     M::Manifold, b::BezierSegment, T::AbstractVector{<:AbstractFloat}
 )
-    gradb = _∇acceleration_bezier(M, b.pts, [get_bezier_degree(M, b)], T)[1]
+    gradb = _grad_acceleration_bezier(M, b.pts, [get_bezier_degree(M, b)], T)[1]
     zero_tangent_vector!(M, gradb.pts[1], b.pts[1])
     zero_tangent_vector!(M, gradb.pts[end], b.pts[end])
     return gradb
 end
 
 @doc raw"""
-    ∇L2_acceleration_bezier(
+    grad_L2_acceleration_bezier(
         M::Manifold,
         B::AbstractVector{P},
         degrees::AbstractVector{<:Integer},
@@ -66,8 +66,8 @@ on the `Manifold` `M` with respect to its control points `B` together with a
 data term that relates the junction points `p_i` to the data `d` with a weigth
 $\lambda$ comapared to the acceleration. The curve is evaluated at the points
 given in `pts` (elementwise in $[0,N]$), where $N$ is the number of segments of
-the Bézier curve. The summands are [`∇distance`](@ref) for the data term
-and [`∇acceleration_bezier`](@ref) for the acceleration with interpolation constrains.
+the Bézier curve. The summands are [`grad_distance`](@ref) for the data term
+and [`grad_acceleration_bezier`](@ref) for the acceleration with interpolation constrains.
 Here the [`get_bezier_junctions`](@ref) are included in the optimization, i.e. setting $λ=0$
 yields the unconstrained acceleration minimization. Note that this is ill-posed, since
 any Bézier curve identical to a geodesic is a minimizer.
@@ -78,9 +78,9 @@ can internally be reconstructed.
 
 # See also
 
-[`∇acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref).
+[`grad_acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref).
 """
-function ∇L2_acceleration_bezier(
+function grad_L2_acceleration_bezier(
     M::Manifold,
     B::AbstractVector{P},
     degrees::AbstractVector{<:Integer},
@@ -88,22 +88,22 @@ function ∇L2_acceleration_bezier(
     λ::Float64,
     d::AbstractVector{P},
 ) where {P}
-    gradB = _∇acceleration_bezier(M, B, degrees, T)
+    gradB = _grad_acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     # add start and end data grad
     # include data term
     for k in 1:length(Bt)
-        gradB[k].pts[1] .+= λ * ∇distance(M, d[k], Bt[k].pts[1])
+        gradB[k].pts[1] .+= λ * grad_distance(M, d[k], Bt[k].pts[1])
         if k > 1
-            gradB[k - 1].pts[end] .+= λ * ∇distance(M, d[k], Bt[k].pts[1])
+            gradB[k - 1].pts[end] .+= λ * grad_distance(M, d[k], Bt[k].pts[1])
         end
     end
-    gradB[end].pts[end] .+= λ * ∇distance(M, d[end], Bt[end].pts[end])
+    gradB[end].pts[end] .+= λ * grad_distance(M, d[end], Bt[end].pts[end])
     return get_bezier_points(M, gradB, :differentiable)
 end
 
 # common helper for the two acceleration grads
-function _∇acceleration_bezier(
+function _grad_acceleration_bezier(
     M::Manifold,
     B::AbstractVector{P},
     degrees::AbstractVector{Int},
@@ -128,7 +128,7 @@ function _∇acceleration_bezier(
     asBackward =
         adjoint_differential_geodesic_endpoint.(Ref(M), forward, backward, Ref(0.5), inner)
     # effect of these to the centrol points is the preliminary gradient
-    ∇B = [
+    grad_B = [
         BezierSegment(a.pts .+ b.pts .+ c.pts) for (a, b, c) in zip(
             adjoint_differential_bezier_control(M, Bt, T[[1, 3:n..., n]], asForward),
             adjoint_differential_bezier_control(M, Bt, T, asCenter),
@@ -136,40 +136,40 @@ function _∇acceleration_bezier(
         )
     ]
     for k in 1:(length(Bt) - 1) # add both effects of left and right segments
-        X = ∇B[k + 1].pts[1] + ∇B[k].pts[end]
-        ∇B[k].pts[end] .= X
-        ∇B[k + 1].pts[1] .= X
+        X = grad_B[k + 1].pts[1] + grad_B[k].pts[end]
+        grad_B[k].pts[end] .= X
+        grad_B[k + 1].pts[1] .= X
     end
     # include c0 & C1 condition
     for k in length(Bt):-1:2
         m = length(Bt[k].pts)
         # updates b-
         X1 =
-            ∇B[k - 1].pts[end - 1] .+ adjoint_differential_geodesic_startpoint(
-                M, Bt[k - 1].pts[end - 1], Bt[k].pts[1], 2.0, ∇B[k].pts[2]
+            grad_B[k - 1].pts[end - 1] .+ adjoint_differential_geodesic_startpoint(
+                M, Bt[k - 1].pts[end - 1], Bt[k].pts[1], 2.0, grad_B[k].pts[2]
             )
         # update b+ - though removed in reduced form
         X2 =
-            ∇B[k].pts[2] .+ adjoint_differential_geodesic_startpoint(
-                M, Bt[k].pts[2], Bt[k].pts[1], 2.0, ∇B[k - 1].pts[end - 1]
+            grad_B[k].pts[2] .+ adjoint_differential_geodesic_startpoint(
+                M, Bt[k].pts[2], Bt[k].pts[1], 2.0, grad_B[k - 1].pts[end - 1]
             )
         # update p - effect from left and right segment as well as from c1 cond
         X3 =
-            ∇B[k].pts[1] .+ adjoint_differential_geodesic_endpoint(
-                M, Bt[k - 1].pts[m - 1], Bt[k].pts[1], 2.0, ∇B[k].pts[2]
+            grad_B[k].pts[1] .+ adjoint_differential_geodesic_endpoint(
+                M, Bt[k - 1].pts[m - 1], Bt[k].pts[1], 2.0, grad_B[k].pts[2]
             )
         # store
-        ∇B[k - 1].pts[end - 1] .= X1
-        ∇B[k].pts[2] .= X2
-        ∇B[k].pts[1] .= X3
-        ∇B[k - 1].pts[end] .= X3
+        grad_B[k - 1].pts[end - 1] .= X1
+        grad_B[k].pts[2] .= X2
+        grad_B[k].pts[1] .= X3
+        grad_B[k - 1].pts[end] .= X3
     end
-    return ∇B
+    return grad_B
 end
 
 @doc raw"""
-    ∇distance(M,y,x[, p=2])
-    ∇distance!(M,X,y,x[, p=2])
+    grad_distance(M,y,x[, p=2])
+    grad_distance!(M,X,y,x[, p=2])
 
 compute the (sub)gradient of the distance (squared), in place of `X`.
 
@@ -181,7 +181,7 @@ to a fixed point `y` on the manifold `M` and `p` is an
 integer. The gradient reads
 
 ```math
-  ∇f(x) = -d_{\mathcal M}^{p-2}(x,y)\log_xy
+  \operatorname{grad}f(x) = -d_{\mathcal M}^{p-2}(x,y)\log_xy
 ```
 
 for $p\neq 1$ or $x\neq  y$. Note that for the remaining case $p=1$,
@@ -193,10 +193,10 @@ corresponding zero tangent vector, since this is an element of the subdifferenti
 * `p` – (`2`) the exponent of the distance,  i.e. the default is the squared
   distance
 """
-function ∇distance(M, y, x, p::Int=2)
+function grad_distance(M, y, x, p::Int=2)
     return (p == 2) ? -log(M, x, y) : -distance(M, x, y)^(p - 2) * log(M, x, y)
 end
-function ∇distance!(M, X, y, x, p::Int=2)
+function grad_distance!(M, X, y, x, p::Int=2)
     log!(M, X, x, y)
     if p == 2
         X .*= -one(eltype(X))
@@ -207,7 +207,7 @@ function ∇distance!(M, X, y, x, p::Int=2)
 end
 
 @doc raw"""
-    ∇u,⁠∇v = ∇intrinsic_infimal_convolution_TV12(M,f,u,v,α,β)
+    grad_u,⁠ grad_v = grad_intrinsic_infimal_convolution_TV12(M,f,u,v,α,β)
 
 compute (sub)gradient of the intrinsic infimal convolution model using the mid point
 model of second order differences, see [`costTV2`](@ref), i.e. for some $f ∈ \mathcal M$
@@ -221,22 +221,22 @@ E(u,v) =
 \beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w)
 \bigr),
 ```
-where both total variations refer to the intrinsic ones, [`∇TV`](@ref) and
-[`∇TV2`](@ref), respectively.
+where both total variations refer to the intrinsic ones, [`grad_TV`](@ref) and
+[`grad_TV2`](@ref), respectively.
 """
-function ∇intrinsic_infimal_convolution_TV12(M::mT, f, u, v, α, β) where {mT<:Manifold}
+function grad_intrinsic_infimal_convolution_TV12(M::mT, f, u, v, α, β) where {mT<:Manifold}
     c = mid_point(M, u, v, f)
     iL = log(M, c, f)
-    return adjoint_differential_geodesic_startpoint(M, u, v, 1 / 2, iL) + α * β * ∇TV(M, u),
-    adjoint_differential_geodesic_endpoint(M, u, v, 1 / 2, iL) + α * (1 - β) * ∇TV2(M, v)
+    return adjoint_differential_geodesic_startpoint(M, u, v, 1 / 2, iL) + α * β * grad_TV(M, u),
+    adjoint_differential_geodesic_endpoint(M, u, v, 1 / 2, iL) + α * (1 - β) * grad_TV2(M, v)
 end
 @doc raw"""
-    ∇TV(M,(x,y),[p=1])
+    grad_TV(M,(x,y),[p=1])
 
 compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
 to both $x$ and $y$.
 """
-function ∇TV(M::MT, xT::Tuple{T,T}, p=1) where {MT<:Manifold,T}
+function grad_TV(M::MT, xT::Tuple{T,T}, p=1) where {MT<:Manifold,T}
     x = xT[1]
     y = xT[2]
     if p == 2
@@ -251,7 +251,7 @@ function ∇TV(M::MT, xT::Tuple{T,T}, p=1) where {MT<:Manifold,T}
     end
 end
 @doc raw"""
-    ξ = ∇TV(M,λ,x,[p])
+    ξ = grad_TV(M,λ,x,[p])
 Compute the (sub)gradient $\partial F$ of all forward differences orrucirng,
 in the power manifold array, i.e. of the function
 
@@ -267,7 +267,7 @@ and $\mathcal I_i$ denotes the forward neighbors of $i$.
 # Ouput
 * ξ – resulting tangent vector in $T_x\mathcal M$.
 """
-function ∇TV(M::PowerManifold, x, p::Int=1)
+function grad_TV(M::PowerManifold, x, p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
@@ -282,9 +282,9 @@ function ∇TV(M::PowerManifold, x, p::Int=1)
             j = i + ek # compute neighbor
             if all(map(<=, j.I, maxInd.I)) # is this neighbor in range?
                 if p != 1
-                    g = (c[i] == 0 ? 1 : 1 / c[i]) .* ∇TV(M.manifold, (x[i], x[j]), p) # Compute TV on these
+                    g = (c[i] == 0 ? 1 : 1 / c[i]) .* grad_TV(M.manifold, (x[i], x[j]), p) # Compute TV on these
                 else
-                    g = ∇TV(M.manifold, (x[i], x[j]), p) # Compute TV on these
+                    g = grad_TV(M.manifold, (x[i], x[j]), p) # Compute TV on these
                 end
                 X[i] += g[1]
                 X[j] += g[2]
@@ -346,7 +346,7 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
 end
 
 @doc raw"""
-    ∇TV2(M,(x,y,z),p)
+    grad_TV2(M,(x,y,z),p)
 
 computes the (sub) gradient of $\frac{1}{p}d_2^p(x,y,z)$ with respect
 to $x$, $y$, and $z$, where $d_2$ denotes the second order absolute difference
@@ -366,7 +366,7 @@ the evaluation of an [`adjoint_Jacobi_field`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """
-function ∇TV2(M::MT, xT, p::Number=1) where {MT<:Manifold}
+function grad_TV2(M::MT, xT, p::Number=1) where {MT<:Manifold}
     x = xT[1]
     y = xT[2]
     z = xT[3]
@@ -400,13 +400,13 @@ function ∇TV2(M::MT, xT, p::Number=1) where {MT<:Manifold}
     end
 end
 @doc raw"""
-    ∇TV2(M,q [,p=1])
+    grad_TV2(M,q [,p=1])
 
 computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
 with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
-function ∇TV2(M::PowerManifold, q, p::Int=1)
+function grad_TV2(M::PowerManifold, q, p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
@@ -424,9 +424,9 @@ function ∇TV2(M::PowerManifold, q, p::Int=1)
                 if p != 1
                     g =
                         (c[i] == 0 ? 1 : 1 / c[i]) .*
-                        ∇TV2(M.manifold, (q[jB], q[i], q[jF]), p) # Compute TV2 on these
+                        grad_TV2(M.manifold, (q[jB], q[i], q[jF]), p) # Compute TV2 on these
                 else
-                    g = ∇TV2(M.manifold, (q[jB], q[i], q[jF]), p) # Compute TV2 on these
+                    g = grad_TV2(M.manifold, (q[jB], q[i], q[jF]), p) # Compute TV2 on these
                 end
                 X[M, jB.I...] = g[1]
                 X[M, i.I...] = g[2]

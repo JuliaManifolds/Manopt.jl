@@ -5,25 +5,25 @@ using Manifolds, Manopt, Test, ManifoldsBase
     N = PowerManifold(M, 4)
     x = [0.1, 0.2, 0.3, 0.5]
     tvTestξ = [-1.0, 0.0, 0.0, 1.0]
-    @test ∇TV(N, x) == tvTestξ
-    @test ∇TV(M, (x[1], x[1])) ==
+    @test grad_TV(N, x) == tvTestξ
+    @test grad_TV(M, (x[1], x[1])) ==
           (zero_tangent_vector(M, x[1]), zero_tangent_vector(M, x[1]))
-    @test norm(N, x, ∇TV(N, x, 2) - tvTestξ) ≈ 0
+    @test norm(N, x, grad_TV(N, x, 2) - tvTestξ) ≈ 0
     tv2Testξ = [0.0, 0.5, -1.0, 0.5]
-    @test ∇TV2(N, x) == tv2Testξ
+    @test grad_TV2(N, x) == tv2Testξ
     @test norm(N, x, forward_logs(N, x) - [0.1, 0.1, 0.2, 0.0]) ≈ 0 atol = 10^(-16)
     @test norm(
         N,
         x,
-        ∇intrinsic_infimal_convolution_TV12(N, x, x, x, 1.0, 1.0)[1] -
+        grad_intrinsic_infimal_convolution_TV12(N, x, x, x, 1.0, 1.0)[1] -
         [-1.0, 0.0, 0.0, 1.0],
     ) ≈ 0
-    @test norm(N, x, ∇intrinsic_infimal_convolution_TV12(N, x, x, x, 1.0, 1.0)[2]) ≈ 0
+    @test norm(N, x, grad_intrinsic_infimal_convolution_TV12(N, x, x, x, 1.0, 1.0)[2]) ≈ 0
     x2 = [0.1, 0.2, 0.3]
     N2 = PowerManifold(M, size(x2)...)
-    @test ∇TV2(N2, x2) == zeros(3)
-    @test ∇TV2(N2, x2, 2) == zeros(3)
-    @test ∇TV(M, (0.0, 0.0), 2) == (0.0, 0.0)
+    @test grad_TV2(N2, x2) == zeros(3)
+    @test grad_TV2(N2, x2, 2) == zeros(3)
+    @test grad_TV(M, (0.0, 0.0), 2) == (0.0, 0.0)
     # 2d forward logs
     N3 = PowerManifold(M, 2, 2)
     N3C = PowerManifold(M, 2, 2, 2)
@@ -35,5 +35,5 @@ using Manifolds, Manopt, Test, ManifoldsBase
     M = Circle()
     p = 0
     q = π / 4
-    @test ∇distance(M, p, q) == q - p
+    @test grad_distance(M, p, q) == q - p
 end

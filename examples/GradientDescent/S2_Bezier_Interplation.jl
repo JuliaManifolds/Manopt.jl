@@ -52,12 +52,12 @@ end
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
 F(pB) = cost_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
-∇F(pB) = ∇acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
+gradF(pB) = grad_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
 x0 = pB
 pB_opt = gradient_descent(
     N,
     F,
-    ∇F,
+    gradF,
     x0;
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001), # use Armijo lineSearch
     stopping_criterion=StopWhenAny(

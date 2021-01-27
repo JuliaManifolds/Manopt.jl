@@ -7,8 +7,8 @@
         x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
     )
     f = y -> distance(M, y, x) .^ 2
-    ∇f = y -> -2 * log(M, y, x)
-    p = GradientProblem(M, f, ∇f)
+    gradf = y -> -2 * log(M, y, x)
+    p = GradientProblem(M, f, gradf)
     a1 = DebugDivider("|", io)
     @test Manopt.dispatch_options_decorator(DebugOptions(o, a1)) === Val{true}()
     # constructors

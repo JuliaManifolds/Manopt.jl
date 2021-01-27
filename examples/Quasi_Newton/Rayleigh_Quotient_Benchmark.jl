@@ -5,13 +5,13 @@ function run_rayleigh_experiment(n::Int)
     A = randn(n, n)
     A = (A + A') / 2
     F(X::Array{Float64,1}) = X' * A * X
-    ∇F(X::Array{Float64,1}) = 2 * (A * X - X * X' * A * X)
+    gradF(X::Array{Float64,1}) = 2 * (A * X - X * X' * A * X)
     M = Sphere(n - 1)
     x = random_point(M)
     return quasi_Newton(
         M,
         F,
-        ∇F,
+        gradF,
         x;
         #memory_size=-1,
         stopping_criterion=StopWhenAny(

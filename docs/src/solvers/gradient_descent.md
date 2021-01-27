@@ -12,7 +12,7 @@ CurrentModule = Manopt
 ## Options
 
 ```@docs
-AbstractGradientDescentOptions
+AbstractGradientOptions
 GradientDescentOptions
 ```
 

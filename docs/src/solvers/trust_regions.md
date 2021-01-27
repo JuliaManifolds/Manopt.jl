@@ -14,7 +14,7 @@ trust-regions subproblem. This inner solve can be preconditioned by providing
 a preconditioner (symmetric and positive deﬁnite, an approximation of the
 inverse of the Hessian of $F$). If no Hessian of the cost function $F$ is
 provided, a standard approximation of the Hessian based on the gradient
-$∇F$ with [`approxHessianFD`](@ref) will be computed.
+$\operatorname{grad}F$ with [`approxHessianFD`](@ref) will be computed.
 
 ## Initialization
 
@@ -74,7 +74,7 @@ trust-regions subproblem
 
 ```math
 \operatorname*{arg\,min}_{\eta  ∈  T_{x_k}\mathcal{M}} m_{x_k}(\eta) = F(x_k) +
-\langle ∇F(x_k), \eta \rangle_{x_k} + \frac{1}{2} \langle
+\langle \operatorname{grad}F(x_k), \eta \rangle_{x_k} + \frac{1}{2} \langle
 \operatorname{Hess}[F](\eta)_ {x_k}, \eta \rangle_{x_k}
 ```
 
@@ -134,6 +134,7 @@ trust_regions!
 ## Options
 
 ```@docs
+AbstractHessianOptions
 TrustRegionsOptions
 ```
 

@@ -19,7 +19,7 @@ function F(X::Array{Float64,2})
     return f
 end
 
-function ∇F(X::Array{Float64,2})
+function gradF(X::Array{Float64,2})
     g = zeros(n, m)
     Id = Matrix(I, n, n)
     for i in 1:m
@@ -39,10 +39,10 @@ x = random_point(M)
 @time quasi_Newton(
     M,
     F,
-    ∇F,
+    gradF,
     x;
     memory_size=100,
     vector_transport_method=PowerVectorTransport(ParallelTransport()),
-    stopping_criterion=StopWhenGradientNormLess(norm(M, x, ∇F(x)) * 10^(-6)),
+    stopping_criterion=StopWhenGradientNormLess(norm(M, x, gradF(x)) * 10^(-6)),
     debug=[:Iteration, " ", :Cost, "\n", 1, :Stop],
 )

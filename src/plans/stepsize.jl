@@ -97,10 +97,10 @@ This method returns the functor to perform Armijo line search, where two inter
 faces are available:
 * based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
   and a current iterate `i`.
-* with `(M,x,F,∇Fx[,η=-∇Fx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`, a current
+* with `(M, x, F, gradFx[,η=-gradFx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`, a current
   point `x` a function `F`, that maps from the manifold to the reals,
-  its gradient (a tangent vector) `∇F```=∇F(x)`` at  `x` and an optional
-  search direction tangent vector `η-∇F` are the arguments.
+  its gradient (a tangent vector) `gradFx```=\operatorname{grad}F(x)`` at  `x` and an optional
+  search direction tangent vector `η=-gradFx` are the arguments.
 """
 mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     initialStepsize::Float64
@@ -124,7 +124,7 @@ function (a::ArmijoLinesearch)(
         p.M,
         p.cost,
         o.x,
-        get_gradient!(p, o.∇, o.x),
+        get_gradient!(p, o.gradient, o.x),
         a.stepsizeOld,
         a.sufficientDecrease,
         a.contractionFactor,
@@ -136,41 +136,41 @@ end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 
 @doc raw"""
-    linesearch_backtrack(M, F, x, ∇F, s, decrease, contract, retr, η = -∇F, f0 = F(x))
+    linesearch_backtrack(M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x))
 
 perform a linesearch for
 * a manifold `M`
 * a cost function `F`,
 * an iterate `x`
-* the gradient ``∇F(x)``
+* the gradient ``\operatorname{grad}F(x)``
 * an initial stepsize `s` usually called ``γ``
 * a sufficient `decrease`
 * a `contract`ion factor ``σ``
 * a `retr`action, which defaults to the `ExponentialRetraction()`
-* a search direction ``η = -∇F(x)``
+* a search direction ``η = -\operatorname{grad}F(x)``
 * an offset, ``f_0 = F(x)``
 """
 function linesearch_backtrack(
     M::Manifold,
     F::TF,
     x,
-    ∇F::T,
+    gradFx::T,
     s,
     decrease,
     contract,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
-    η::T=-∇F,
+    η::T=-gradFx,
     f0=F(x),
 ) where {TF,T}
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
-    while fNew < f0 + decrease * s * inner(M, x, η, ∇F) # increase
+    while fNew < f0 + decrease * s * inner(M, x, η, gradFx) # increase
         retract!(M, xNew, x, s * η, retr)
         fNew = F(xNew)
         s = s / contract
     end
     s = s * contract # correct last
-    while fNew > f0 + decrease * s * inner(M, x, η, ∇F) # decrease
+    while fNew > f0 + decrease * s * inner(M, x, η, gradFx) # decrease
         s = contract * s
         retract!(M, xNew, x, s * η, retr)
         fNew = F(xNew)
@@ -186,13 +186,13 @@ this line search represents the Riemannian Barzilai-Borwein with nonmonotone lin
 by Iannazzo and Porcelli so that in each iteration we first find
 
 ```math
-y_{k} = ∇F(x_{k}) - \operatorname{T}_{x_{k-1} → x_k}(∇F(x_{k-1}))
+y_{k} = \operatorname{grad}F(x_{k}) - \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1}))
 ```
 
 and
 
 ```math
-s_{k} = - α_{k-1} * \operatorname{T}_{x_{k-1} → x_k}(∇F(x_{k-1})),
+s_{k} = - α_{k-1} * \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1})),
 ```
 
 where ``α_{k-1}`` is the step size computed in the last iteration and ``\operatorname{T}`` is a vector transport.
@@ -221,9 +221,9 @@ in case of the inverse strategy and an alternation between the two in case of th
 alternating strategy. Then we find the smallest ``h = 0, 1, 2, …`` such that
 
 ```math
-F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} ∇F(x_k)))
+F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \operatorname{grad}F(x_k)))
 \leq
-\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨∇F(x_k), ∇F(x_k)⟩_{x_k},
+\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\operatorname{grad}F(x_k), \operatorname{grad}F(x_k)⟩_{x_k},
 ```
 
 where ``σ`` is a step length reduction factor ``∈ (0,1)``, ``m`` is the number of iterations
@@ -249,7 +249,7 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 * `min_stepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
 * `max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
 * `strategy` – (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
-* `storage` – (`x`, `∇F`) a [`StoreOptionsAction`](@ref) to store `old_x` and `old_∇`, the x-value and corresponding gradient of the previous iteration
+* `storage` – (`x`, `gradient`) a [`StoreOptionsAction`](@ref) to store `old_x` and `old_gradient`, the x-value and corresponding gradient of the previous iteration
 
 # Constructor
 
@@ -282,7 +282,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :∇)),
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
     )
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
@@ -330,24 +330,24 @@ end
 function (a::NonmonotoneLinesearch)(
     p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x)
 )
-    if !all(has_storage.(Ref(a.storage), [:x, :∇]))
+    if !all(has_storage.(Ref(a.storage), [:x, :gradient]))
         old_x = o.x
-        old_∇ = get_gradient(p, o.x)
+        old_gradient= get_gradient(p, o.x)
     else
-        old_x, old_∇ = get_storage.(Ref(a.storage), [:x, :∇])
+        old_x, old_gradient= get_storage.(Ref(a.storage), [:x, :gradient])
     end
     update_storage!(a.storage, o)
-    return a(p.M, o.x, p.cost, get_gradient(p, o.x), η, old_x, old_∇, i)
+    return a(p.M, o.x, p.cost, get_gradient(p, o.x), η, old_x, old_gradient, i)
 end
 function (a::NonmonotoneLinesearch)(
-    M::mT, x, F::TF, ∇F::T, η::T, old_x, old_∇, iter::Int
+    M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int
 ) where {mT<:Manifold,TF,T}
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space
-    grad_diff = ∇F - vector_transport_to(M, old_x, old_∇, x, a.vector_transport_method)
+    grad_diff = gradFx - vector_transport_to(M, old_x, old_gradient, x, a.vector_transport_method)
     #transport the previous step into the tangent space of the current manifold point
     x_diff =
         -a.initial_stepsize *
-        vector_transport_to(M, old_x, old_∇, x, a.vector_transport_method)
+        vector_transport_to(M, old_x, old_gradient, x, a.vector_transport_method)
 
     #compute the new Barzilai-Borwein step size
     s1 = inner(M, x, x_diff, grad_diff)
@@ -394,7 +394,7 @@ function (a::NonmonotoneLinesearch)(
         M,
         F,
         x,
-        ∇F,
+        gradFx,
         BarzilaiBorwein_stepsize,
         a.sufficient_decrease,
         a.stepsize_reduction,
@@ -412,7 +412,7 @@ Do a backgtracking linesearch to find a step size ``α`` that fulfills the
 Wolfe conditions along a search direktion ``η`` starting ffrom ``x``, i.e.
 
 ```math
-f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨∇f(x), η⟩_x
+f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨\operatorname{grad}f(x), η⟩_x
 \quad\text{and}\quad
 \frac{\mathrm{d}}{\mathrm{d}t} f\bigr(\operatorname{retr}_x(tη)\bigr)
 \Big\vert_{t=α}
@@ -446,7 +446,7 @@ end
 
 function (a::WolfePowellLineseach)(
     p::P, o::O, ::Int, η=-get_gradient(p, o.x)
-) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
+) where {P<:GradientProblem{T,mT} where {T,mT<:Manifold},O<:Options}
     s = 1.0
     s_plus = 1.0
     s_minus = 1.0
@@ -454,8 +454,8 @@ function (a::WolfePowellLineseach)(
     xNew = retract(p.M, o.x, s * η, a.retraction_method)
     fNew = p.cost(xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
-    if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)
-        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)) && (s_minus > 10^(-9)) # decrease
+    if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)
+        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             s = s_minus
             retract!(p.M, xNew, o.x, s * η, a.retraction_method)
@@ -464,8 +464,8 @@ function (a::WolfePowellLineseach)(
         s_plus = 2.0 * s_minus
     else
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
-        if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
-            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇) && (s_plus < 10^(9))# increase
+        if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
+            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient) && (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
                 s = s_plus
                 retract!(p.M, xNew, o.x, s * η, a.retraction_method)
@@ -476,11 +476,11 @@ function (a::WolfePowellLineseach)(
     end
     retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
     vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
-    while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
+    while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
         s = (s_minus + s_plus) / 2
         retract!(p.M, xNew, o.x, s * η, a.retraction_method)
         fNew = p.cost(xNew)
-        if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.∇)
+        if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)
             s_minus = s
         else
             s_plus = s
@@ -504,9 +504,9 @@ based on a binary chop. Let ``η`` be a search direction and ``c_1,c_2>0`` be tw
 Then with
 
 ```math
-A(t) = f(x_+) ≤ c_1 t ⟨∇f(x), η⟩_{x}
+A(t) = f(x_+) ≤ c_1 t ⟨\operatorname{grad}f(x), η⟩_{x}
 \quad\text{and}\quad 
-W(t) = ⟨∇f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 ⟨η, ∇f(x)⟩_x,
+W(t) = ⟨\operatorname{grad}f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 ⟨η, \operatorname{grad}f(x)⟩_x,
 ```
 
 where ``x_+ = \operatorname{retr}_x(tη)`` is the current trial point, and ``\text{V}`` is a
@@ -550,7 +550,7 @@ end
 
 function (a::WolfePowellBinaryLinesearch)(
     p::P, o::O, ::Int, η=-get_gradient(p, o.x)
-) where {P<:GradientProblem{mT} where {mT<:Manifold},O<:Options}
+) where {P<:GradientProblem{T,mT} where {T,mT<:Manifold},O<:Options}
     α = 0.0
     β = Inf
     t = 1.0
@@ -559,8 +559,8 @@ function (a::WolfePowellBinaryLinesearch)(
     fNew = p.cost(xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(p, xNew)
-    nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.∇)
-    nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
+    nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.gradient)
+    nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
     while (nAt || nWt) && (t > 1e-9) && ((α + β) / 2 - t > 1e-9)
         nAt && (β = t)            # A(t) fails
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
@@ -571,8 +571,8 @@ function (a::WolfePowellBinaryLinesearch)(
         gradient_new = get_gradient(p, xNew)
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
         # Update conditions
-        nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.∇)
-        nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.∇)
+        nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.gradient)
+        nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
     end
     return t
 end

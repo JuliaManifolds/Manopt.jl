@@ -9,12 +9,12 @@ using Manopt, Manifolds, Test
         X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
     F(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
-    ∇F(y) = sum([-log(M, y, x) for x in pts])
-    s∇F1(y) = [-log(M, y, x) for x in pts]
-    s∇F2 = [(y -> -log(M, y, x)) for x in pts]
+    gradF(y) = sum([-log(M, y, x) for x in pts])
+    sgradF1(y) = [-log(M, y, x) for x in pts]
+    sgradF2 = [(y -> -log(M, y, x)) for x in pts]
     @testset "Constructors" begin
-        p1 = StochasticGradientProblem(M, s∇F1)
-        p2 = StochasticGradientProblem(M, s∇F2)
+        p1 = StochasticGradientProblem(M, sgradF1)
+        p2 = StochasticGradientProblem(M, sgradF2)
         @test get_gradient(p1, 1, p) == zeros(3)
         @test get_gradient(p2, 1, p) == zeros(3)
         @test get_gradients(p1, p) == get_gradients(p2, p)
@@ -27,8 +27,8 @@ using Manopt, Manifolds, Test
         @test o.x == exp(M, p, get_gradient(p1, 1, p))
     end
     @testset "Momentum and Average Processor Constructors" begin
-        p1 = StochasticGradientProblem(M, s∇F1)
-        p2 = GradientProblem(M, F, ∇F)
+        p1 = StochasticGradientProblem(M, sgradF1)
+        p2 = GradientProblem(M, F, gradF)
         m1 = MomentumGradient(M, p, StochasticGradient())
         m2 = MomentumGradient(p1, p)
         @test m1.direction == m2.direction #both use StochasticGradient
@@ -43,20 +43,20 @@ using Manopt, Manifolds, Test
         @test a3.direction == a4.direction #both use Gradient
     end
     @testset "Comparing Stochastic Methods" begin
-        x1 = stochastic_gradient_descent(M, s∇F1, p; order_type=:Linear)
+        x1 = stochastic_gradient_descent(M, sgradF1, p; order_type=:Linear)
         @test norm(x1) ≈ 1
         o1 = stochastic_gradient_descent(
-            M, s∇F1, p; order_type=:Linear, return_options=true
+            M, sgradF1, p; order_type=:Linear, return_options=true
         )
         x1a = get_solver_result(o1)
         @test x1 == x1a
-        x2 = stochastic_gradient_descent(M, s∇F1, p; order_type=:FixedRandom)
+        x2 = stochastic_gradient_descent(M, sgradF1, p; order_type=:FixedRandom)
         @test norm(x2) ≈ 1
-        x3 = stochastic_gradient_descent(M, s∇F1, p; order_type=:Random)
+        x3 = stochastic_gradient_descent(M, sgradF1, p; order_type=:Random)
         @test norm(x3) ≈ 1
         x4 = stochastic_gradient_descent(
             M,
-            s∇F1,
+            sgradF1,
             p;
             order_type=:Random,
             direction=AverageGradient(M, p, 10, StochasticGradient()),
@@ -64,7 +64,7 @@ using Manopt, Manifolds, Test
         @test norm(x4) ≈ 1
         x5 = stochastic_gradient_descent(
             M,
-            s∇F1,
+            sgradF1,
             p;
             order_type=:Random,
             direction=MomentumGradient(M, p, StochasticGradient()),

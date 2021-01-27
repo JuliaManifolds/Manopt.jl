@@ -1,13 +1,13 @@
 @doc raw"""
-    gradient_descent(M, F, ∇F, x)
+    gradient_descent(M, F, gradF, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k∇f(x_k)`` with
+perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\operatorname{grad}f(x_k)`` with
 different choices of ``s_k`` available (see `stepsize` option below).
 
 # Input
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F\colon\mathcal M→ℝ`` to minimize
-* `∇F` – the gradient ``∇F\colon\mathcal M→ T\mathcal M`` of F
+* `gradF` – the gradient ``\operatorname{grad}F\colon\mathcal M→ T\mathcal M`` of F
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
@@ -16,8 +16,8 @@ different choices of ``s_k`` available (see `stepsize` option below).
 * `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `∇F(x)`
-  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `∇F!(X,x)`.
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(x)`
+  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(X,x)`.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) are returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` if returned
@@ -29,21 +29,21 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function gradient_descent(M::Manifold, F::TF, ∇F::TDF, x; kwargs...) where {TF,TDF}
+function gradient_descent(M::Manifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
     x_res = allocate(x)
     copyto!(x_res, x)
-    return gradient_descent!(M, F, ∇F, x_res; kwargs...)
+    return gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
-    gradient_descent!(M, F, ∇F, x)
+    gradient_descent!(M, F, gradF, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k∇f(x_k)`` inplace of `x`
+perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\operatorname{grad}f(x_k)`` inplace of `x`
 with different choices of ``s_k`` available.
 
 # Input
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F\colon\mathcal M→ℝ`` to minimize
-* `∇F` – the gradient ``∇F\colon\mathcal M→ T\mathcal M`` of F
+* `gradF` – the gradient ``\operatorname{grad}F\colon\mathcal M→ T\mathcal M`` of F
 * `x` – an initial value ``x ∈ \mathcal M``
 
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
@@ -51,7 +51,7 @@ For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_des
 function gradient_descent!(
     M::Manifold,
     F::TF,
-    ∇F::TDF,
+    gradF::TDF,
     x;
     stepsize::Stepsize=ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
@@ -63,7 +63,7 @@ function gradient_descent!(
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TDF}
-    p = GradientProblem(M, F, ∇F; evaluation=evaluation)
+    p = GradientProblem(M, F, gradF; evaluation=evaluation)
     o = GradientDescentOptions(
         x;
         stopping_criterion=stopping_criterion,
@@ -83,12 +83,12 @@ end
 # Solver functions
 #
 function initialize_solver!(p::GradientProblem, o::GradientDescentOptions)
-    o.∇ = get_gradient(p, o.x)
+    o.gradient = get_gradient(p, o.x)
     return o
 end
 function step_solver!(p::GradientProblem, o::GradientDescentOptions, iter)
-    s, o.∇ = o.direction(p, o, iter)
-    retract!(p.M, o.x, o.x, -s .* o.∇, o.retraction_method)
+    s, o.gradient = o.direction(p, o, iter)
+    retract!(p.M, o.x, o.x, -s .* o.gradient, o.retraction_method)
     return o
 end
 get_solver_result(o::GradientDescentOptions) = o.x

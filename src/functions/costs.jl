@@ -21,7 +21,7 @@ This acceleration discretization was introduced in[^BergmannGousenbourger2018].
 
 # See also
 
-[`∇acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`∇L2_acceleration_bezier`](@ref)
+[`grad_acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`grad_L2_acceleration_bezier`](@ref)
 
 [^BergmannGousenbourger2018]:
     > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
@@ -68,7 +68,7 @@ segmenents can internally be reconstructed.
 
 # See also
 
-[`∇L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref), [`∇acceleration_bezier`](@ref)
+[`grad_L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref), [`grad_acceleration_bezier`](@ref)
 """
 function cost_L2_acceleration_bezier(
     M::Manifold,
@@ -168,7 +168,7 @@ E(x_1,x_2) = d_{\mathcal M}^p(x_1,x_2), \quad x_1,x_2 ∈ \mathcal M
 
 # See also
 
-[`∇TV`](@ref), [`prox_TV`](@ref)
+[`grad_TV`](@ref), [`prox_TV`](@ref)
 """
 function costTV(M::Manifold, x::Tuple{T,T}, p::Int=1) where {T}
     return distance(M, x[1], x[2])^p
@@ -190,7 +190,7 @@ E^q(x) = \sum_{i ∈ \mathcal G}
 ```
 
 # See also
-[`∇TV`](@ref), [`prox_TV`](@ref)
+[`grad_TV`](@ref), [`prox_TV`](@ref)
 """
 function costTV(M::PowerManifold, x, p=1, q=1)
     power_size = power_dimensions(M)
@@ -229,7 +229,7 @@ the set of mid points between $x_1$ and $x_3$. Then the functionr reads
 $d_2^p(x_1,x_2,x_3) = \min_{c ∈ \mathcal C} d_{\mathcal M}(c,x_2).$
 
 # See also
-[`∇TV2`](@ref), [`prox_TV2`](@ref)
+[`grad_TV2`](@ref), [`prox_TV2`](@ref)
 """
 function costTV2(M::MT, x::Tuple{T,T,T}, p=1) where {MT<:Manifold,T}
     # note that here mid_point returns the closest to x2 from the e midpoints between x1 x3
@@ -255,7 +255,7 @@ where $c_i(\cdot,\cdot)$ denotes the mid point between its two arguments that is
 nearest to $x_i$.
 
 # See also
-[`∇TV2`](@ref), [`prox_TV2`](@ref)
+[`grad_TV2`](@ref), [`prox_TV2`](@ref)
 """
 function costTV2(M::PowerManifold, x, p::Int=1, Sum::Bool=true)
     Tt = Tuple(power_dimensions(M))

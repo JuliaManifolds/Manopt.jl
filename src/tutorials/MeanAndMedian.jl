@@ -33,7 +33,7 @@
 # descent](https://en.wikipedia.org/wiki/Gradient_descent) algorithm. It requires
 # an initial value `o.x0`, a [`StoppingCriterion`](@ref) `o.stop`, a
 # [`Stepsize`](@ref) `o.stepsize` and a retraction `o.retraction` and it
-# internally stores the last evaluation of the gradient at `o.∇` for convenience.
+# internally stores the last evaluation of the gradient at `o.gradient` for convenience.
 # The only mandatory parameter is the initial value `x0`, though the defaults for
 # both the stopping criterion ([`StopAfterIteration`](@ref)`(100)`) as well as the
 # stepsize ([`ConstantStepsize`](@ref)`(1.)` are quite conservative, but are
@@ -103,16 +103,16 @@ render_asymptote(export_folder * "/startDataAndCenter.asy"; render=2) #src
 # [Riemannian Center of Mass](https://arxiv.org/abs/1407.2087).
 #
 F = y -> sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)
-∇F = y -> sum(1 / n * ∇distance.(Ref(M), data, Ref(y)))
+gradF = y -> sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 nothing #hide
 #
-# note that the [`∇distance`](@ref) defaults to the case `p=2`, i.e. the
+# note that the [`grad_distance`](@ref) defaults to the case `p=2`, i.e. the
 # gradient of the squared distance. For details on convergence of the gradient
 # descent for this problem, see [[Afsari, Tron, Vidal, 2013](#AfsariTronVidal2013)]
 #
 # The easiest way to call the gradient descent is now to call
 # [`gradient_descent`](@ref)
-xMean = gradient_descent(M, F, ∇F, data[1])
+xMean = gradient_descent(M, F, gradF, data[1])
 nothing; #hide
 # but in order to get more details, we further add the `debug=` options, which
 # act as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern)
@@ -129,7 +129,7 @@ nothing; #hide
 xMean = gradient_descent(
     M,
     F,
-    ∇F,
+    gradF,
     data[1];
     debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
 )
