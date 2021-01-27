@@ -239,6 +239,7 @@ export ChambollePock,
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve
+export ApproxHessianFiniteDifference
 #
 # Stepsize
 export ConstantStepsize, DecreasingStepsize

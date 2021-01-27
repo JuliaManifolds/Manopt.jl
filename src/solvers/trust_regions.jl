@@ -133,16 +133,14 @@ initialize_solver!(::HessianProblem, ::TrustRegionsOptions) = nothing
 
 function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # Determine eta0
-    if o.useRand == false
-        # Pick the zero vector
-        eta = zero_tangent_vector(p.M, o.x)
-    else
-        # Random vector in T_x M (this has to be very small)
+    if o.useRand
         eta = 10.0^(-6) * random_tangent(p.M, o.x)
         while norm(p.M, o.x, eta) > o.Δ
             # Must be inside trust-region
             eta = sqrt(sqrt(eps(Float64))) * eta
         end
+    else
+        eta = zero_tangent_vector(p.M, o.x)
     end
     # Solve TR subproblem approximately
     opt = truncated_conjugate_gradient_descent(
@@ -155,7 +153,6 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         o.Δ;
         preconditioner=p.precon,
         useRandom=o.useRand,
-        #debug = [:Iteration," ",:Stop],
         return_options=true,
     )
     option = get_options(opt) # remove decorators
@@ -230,4 +227,4 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     end
     return nothing
 end
-get_solver_result(o::O) where {O<:TrustRegionsOptions} = o.x
+get_solver_result(o::TrustRegionsOptions) = o.x

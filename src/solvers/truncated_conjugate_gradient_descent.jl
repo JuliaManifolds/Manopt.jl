@@ -62,8 +62,8 @@ OR
 [`trust_regions`](@ref)
 """
 function truncated_conjugate_gradient_descent(
-    M::Manifold, F::TF, gradF::TdF, x, η, H::Union{Function,Missing}, Δ::Float64; kwargs...
-) where {TF,TdF}
+    M::Manifold, F::TF, gradF::TG, x, η, H::TH, Δ::Float64; kwargs...
+) where {TF,TG,TH}
     x_res = allocate(x)
     copyto!(x_res, x)
     return truncated_conjugate_gradient_descent!(M, F, gradF, x_res, η, H, Δ; kwargs...)
@@ -87,10 +87,10 @@ For more details and all optional arguments, see [`truncated_conjugate_gradient_
 function truncated_conjugate_gradient_descent!(
     M::Manifold,
     F::TF,
-    gradF::TdF,
+    gradF::TG,
     x,
     η,
-    H::Union{Function,Missing},
+    H::TH,
     Δ::Float64;
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     θ::Float64=1.0,
@@ -125,7 +125,7 @@ function truncated_conjugate_gradient_descent!(
     ),
     return_options=false,
     kwargs..., #collect rest
-) where {TF,TdF,Tprec}
+) where {TF,TG,TH,Tprec}
     p = HessianProblem(M, F, gradF, H, preconditioner)
     o = TruncatedConjugateGradientOptions(
         x,
@@ -164,7 +164,7 @@ function initialize_solver!(
     # o.model_value = o.useRand ? 0 : inner(p.M,o.x,o.η,get_gradient(p,o.x)) + 0.5 * inner(p.M,o.x,o.η,Hη)
 end
 function step_solver!(
-    p::P, o::O, iter
+    p::P, o::O, ::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     ηOld = o.η
     δOld = o.δ
