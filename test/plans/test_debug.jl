@@ -20,10 +20,8 @@
     # DebugDivider
     a1(p, o, 0)
     s = @test String(take!(io)) == "|"
-    #DebugGroup
     DebugGroup([a1, a1])(p, o, 0)
     @test String(take!(io)) == "||"
-    # Debug Every
     DebugEvery(a1, 10, false)(p, o, 9)
     @test String(take!(io)) == ""
     DebugEvery(a1, 10, true)(p, o, 10)
@@ -84,7 +82,6 @@
     DebugStoppingCriterion(io)(p, o, 21)
     @test String(take!(io)) ==
           "The algorithm reached its maximal number of iterations (20).\n"
-    #DebugFactory
     df = DebugFactory([:Stop, "|"])
     @test isa(df[:Stop], DebugStoppingCriterion)
     @test isa(df[:All], DebugGroup)

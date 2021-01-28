@@ -86,9 +86,9 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real} <: AbstractHessian
     residual::T
     useRand::Bool
     function TruncatedConjugateGradientOptions(
-        x::P, stop::StoppingCriterion, η::T, δ::T, Δ, residual::T, uR::Bool
+        x::P, stop::StoppingCriterion, η::T, δ::T, grad::T, Δ, residual::T, uR::Bool
     ) where {P,T}
-        return new{typeof(x),typeof(η),typeof(Δ)}(x, stop, η, δ, η, Δ, residual, uR)
+        return new{typeof(x),typeof(η),typeof(Δ)}(x, stop, η, δ, grad, Δ, residual, uR)
     end
 end
 
@@ -207,7 +207,7 @@ function ApproxHessianFiniteDifference(
     grad::G;
     steplength::R=2^-14,
     evaluation=AllocatingEvaluation(),
-    retration_method::RTR=ExponentialRetraction(),
+    retraction_method::RTR=ExponentialRetraction(),
     vector_transport_method::VTR=ParallelTransport(),
 ) where {
     mT<:Manifold,
@@ -219,32 +219,32 @@ function ApproxHessianFiniteDifference(
 }
     X = zero_tangent_vector(M, x)
     Y = zero_tangent_vector(M, x)
-    return new{typeof(evaluation),mT,P,typeof(X),G,RTR,VTR,R}(
+    return ApproxHessianFiniteDifference{typeof(evaluation),mT,P,typeof(X),G,RTR,VTR,R}(
         M, x, grad, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
 function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(x, X)
     X = zero_tangent_vector(f.M, x)
-    norm_X = norm(M, x, X)
-    (norm_X < eps(eltype(X))) && return zero_tangent_vector!(M, X, x)
+    norm_X = norm(f.M, x, X)
+    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(f.M, X, x)
     c = f.stepsize / norm_X
     f.grad_tmp = f.gradient!!(x)
-    f.x_dir = retract(M, x, c * X, f.retraction_method)
+    f.x_dir = retract(f.M, x, c * X, f.retraction_method)
     f.grad_tmp_dir = f.gradient!!(f.x_dir)
     f.grad_tmp_dir = vector_transport_to(
-        M, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
+        f.M, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
     )
     return (1 / c) * (f.grad_tmp_dir - f.grad_tmp)
 end
 function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(Y, x, X)
-    norm_X = norm(M, x, X)
-    (norm_X < eps(eltype(X))) && return zero_tangent_vector!(M, X, x)
+    norm_X = norm(f.M, x, X)
+    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(f.M, X, x)
     c = f.stepsize / norm_X
     f.gradient!!(f.grad_tmp, x)
-    retract!(M, f.x_dir, x, c * X, f.retraction_method)
+    retract!(f.M, f.x_dir, x, c * X, f.retraction_method)
     f.gradient!!(f.grad_tmp_dir, f.x_dir)
     vector_transport_to!(
-        M, f.grad_tmp_dir, f.x_dir, f.grad_tmp_dir, x, vector_transport_method
+        f.M, f.grad_tmp_dir, f.x_dir, f.grad_tmp_dir, x, vector_transport_method
     )
     Y .= (1 / c) .* (f.grad_tmp_dir .- f.grad_tmp)
     return Y

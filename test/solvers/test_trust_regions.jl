@@ -97,14 +97,9 @@ end
     )
     @test isapprox(M, X, get_solver_result(opt))
 
+    pfff(q, X) = rhess(M, q, X)
     XuR = trust_regions(
-        M,
-        cost,
-        x -> rgrad(M, x),
-        x,
-        (q, X) -> rhess(M, q, X);
-        Δ_bar=4 * sqrt(2 * 2),
-        useRandom=true,
+        M, cost, x -> rgrad(M, x), x, pfff; Δ_bar=4 * sqrt(2 * 2), useRandom=true
     )
 
     @test cost(XuR) + 142.5 ≈ 0 atol = 10.0^(-12)
@@ -118,7 +113,7 @@ end
             M,
             x,
             x -> rgrad(M, x);
-            stepsize=2^(-9),
+            steplength=2^(-9),
             vector_transport_method=ProductVectorTransport(
                 ProjectionTransport(), ProjectionTransport()
             ),
@@ -148,7 +143,9 @@ end
     )
     @test step_solver!(p, o, 0) === nothing
 
-    η = truncated_conjugate_gradient_descent(M, cost, x -> rgrad(M, x), x, ξ, (q, X) -> rhess(M, q, X), 0.5)
+    η = truncated_conjugate_gradient_descent(
+        M, cost, x -> rgrad(M, x), x, ξ, (q, X) -> rhess(M, q, X), 0.5
+    )
     ηOpt = truncated_conjugate_gradient_descent(
         M, cost, x -> rgrad(M, x), x, ξ, (q, X) -> rhess(M, q, X), 0.5; return_options=true
     )
