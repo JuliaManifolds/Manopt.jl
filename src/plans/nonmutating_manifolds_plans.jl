@@ -6,6 +6,10 @@ function get_gradient!(p::GradientProblem{AllocatingEvaluation}, X::AbstractFloa
     X = p.gradient!!(p.M, x)
     return X
 end
+function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y::AbstractFloat, x, X)
+    Y = p.hessian!!(p.M, x)
+    return X
+end
 function linesearch_backtrack(
     M::NONMUTATINGMANIFOLDS,
     F::TF,

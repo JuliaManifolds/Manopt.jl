@@ -31,7 +31,7 @@ For a description of the algorithm and more details see
   from [`StoppingCriterion`](@ref) indicating when to stop.
 * `Δ_bar` – the maximum trust-region radius
 * `Δ` - the (initial) trust-region radius
-* `useRandom` – set to true if the trust-region solve is to be initiated with a
+* `randomize` – set to true if the trust-region solve is to be initiated with a
   random tangent vector. If set to true, no preconditioner will be
   used. This option is set to true in some scenarios to escape saddle
   points, but is otherwise seldom activated.
@@ -95,7 +95,7 @@ function trust_regions!(
     ),
     Δ_bar=sqrt(manifold_dimension(M)),
     Δ=Δ_bar / 8,
-    useRandom::Bool=false,
+    randomize::Bool=false,
     ρ_prime::Float64=0.1,
     ρ_regularization=1000.0,
     return_options=false,
@@ -111,12 +111,11 @@ function trust_regions!(
     p = HessianProblem(M, F, gradF, H, preconditioner)
     o = TrustRegionsOptions(
         x,
-        gradF(M, x),
-        stopping_criterion,
         Δ,
         Δ_bar,
+        stopping_criterion,
         retraction_method,
-        useRandom,
+        randomize,
         ρ_prime,
         ρ_regularization,
     )
@@ -129,90 +128,80 @@ function trust_regions!(
     end
 end
 
-initialize_solver!(::HessianProblem, ::TrustRegionsOptions) = nothing
+function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
+    get_gradient!(p, o.gradient, o.x)
+    o.η = zero_tangent_vector(p.M, o.x)
+    o.Hη = zero_tangent_vector(p.M, o.x)
+    o.x_proposal = deepcopy(o.x)
+    o.f_proposal = zero(o.Δ)
+
+    o.η_Cauchy = zero_tangent_vector(p.M, o.x)
+    o.Hη_Cauchy = zero_tangent_vector(p.M, o.x)
+    o.τ = zero(o.Δ)
+    o.Hgrad = zero_tangent_vector(p.M, o.x)
+end
 
 function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # Determine eta0
-    if o.useRand == false
-        # Pick the zero vector
-        eta = zero_tangent_vector(p.M, o.x)
-    else
+    if o.randomize == false
         # Random vector in T_x M (this has to be very small)
-        eta = 10.0^(-6) * random_tangent(p.M, o.x)
+        o.η = random_tangent(p.M, o.x, 10.0^(-6))
         while norm(p.M, o.x, eta) > o.Δ
             # Must be inside trust-region
-            eta = sqrt(sqrt(eps(Float64))) * eta
+            o.η .*= sqrt(sqrt(eps(Float64)))
         end
+    else
+        zero_tangent_vector!(p.M, o.η, o.x)
     end
     # Solve TR subproblem approximately
-    opt = truncated_conjugate_gradient_descent(
+    opt = truncated_conjugate_gradient_descent!(
         p.M,
         p.cost,
         p.gradient!!,
         o.x,
-        eta,
+        o.η,
         p.hessian!!,
         o.Δ;
         preconditioner=p.precon,
-        useRandom=o.useRand,
+        randomize=o.useRand,
         return_options=true,
     )
     option = get_options(opt) # remove decorators
-    η = get_solver_result(option)
     SR = get_active_stopping_criteria(option.stop)
-    Hη = get_hessian(p, o.x, η)
+    get_hessia!n(p, o.Hη, o.x, o.η)
     # Initialize the cost function F und the gradient of the cost function
     # gradF at the point x
     get_gradient!(p, o.gradient, o.x)
     fx = get_cost(p, o.x)
     norm_grad = norm(p.M, o.x, o.gradient)
     # If using randomized approach, compare result with the Cauchy point.
-    if o.useRand
+    if o.randomize
         # Check the curvature,
-        Hgrad = get_hessian(p, o.x, o.gradient)
-        gradHgrad = inner(p.M, o.x, o.gradient, Hgrad)
-        if gradHgrad <= 0
-            tau_c = 1
-        else
-            tau_c = min(norm_grad^3 / (o.Δ * gradHgrad), 1)
-        end
-        # and generate the Cauchy point.
-        η_c = (-tau_c * o.Δ / norm_grad) * o.gradient
-        Hη_c = (-tau_c * o.Δ / norm_grad) * Hgrad
-        # Now that we have computed the Cauchy point in addition to the
-        # returned eta, we might as well keep the best of them.
-        mdle = fx + inner(p.M, o.x, o.gradient, η) + 0.5 * inner(p.M, o.x, Hη, η)
-        mdlec = fx + inner(p.M, o.x, o.gradient, η_c) + 0.5 * inner(p.M, o.x, Hη_c, η_c)
-        if mdlec < mdle
-            η = η_c
-            Hη = Hη_c
+        get_hessian!(p, o.Hgrad, o.x, o.gradient)
+        o.τ = inner(p.M, o.x, o.gradient, o.Hgrad)
+        o.τ = (o.τ <= 0) ? one(o.τ) : o.τ = min(norm_grad^3 / (o.Δ * o.τ), 1)
+        # compare to Cauchy point and store best
+        mdle = fx + inner(p.M, o.x, o.gradient, o.η) + 0.5 * inner(p.M, o.x, o.Hη, o.η)
+        mdle_Cauchy = fx
+            - o.τ * o.Δ * norm(p.M, o.x, o.gradient)
+            + 0.5 * o.τ^2 * o.Δ^2 / (norm_grad^2) * inner(p.M, o.x, o.Hgrad, o.gradient)
+        if mdle_Cauchy < mdle
+            copyto!(o.η, (-o.τ * o.Δ / norm_grad) * o.gradient)
+            copyto!(o.Hη, (-o.τ * o.Δ / norm_grad) * o.Hgrad)
         end
     end
     # Compute the tentative next iterate (the proposal)
-    x_prop = retract(p.M, o.x, η, o.retraction_method)
+    retract!(p.M, o.x_proposal, o.x, p-η, o.retraction_method)
     # Compute the function value of the proposal
-    fx_prop = get_cost(p, x_prop)
+    o.f_proposal = get_cost(p, o.x_proposal)
     # Check the performance of the quadratic model against the actual cost.
-    ρnum = fx - fx_prop
-    ρden = -inner(p.M, o.x, η, o.gradient) - 0.5 * inner(p.M, o.x, η, Hη)
-    # Since, at convergence, both ρnum and ρden become extremely small,
-    # computing ρ is numerically challenging. The break with ρnum and ρden
-    # can thus lead to a large error in rho, making the
-    # acceptance / rejection erratic. Meanwhile, close to convergence,
-    # steps are usually trustworthy and we should transition to a Newton-
-    # like method, with rho=1 consistently. The heuristic thus shifts both
-    # rhonum and rhoden by a small amount such that far from convergence,
-    # the shift is irrelevant and close to convergence, the ratio rho goes
-    # to 1, effectively promoting acceptance of the step.
     ρ_reg = max(1, abs(fx)) * eps(Float64) * o.ρ_regularization
-    ρnum = ρnum + ρ_reg
-    ρden = ρden + ρ_reg
-    model_decreased = (ρden >= 0)
-    ρ = ρnum / ρden
+    ρ = (fx - fx_prop + ρ_reg) / (-inner(p.M, o.x, η, o.gradient) - 0.5 * inner(p.M, o.x, η, Hη) + ρ_reg)
+    model_decreased = (-inner(p.M, o.x, η, o.gradient) - 0.5 * inner(p.M, o.x, η, Hη) + ρ_reg) ≥ 0
     # Choose the new TR radius based on the model performance.
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.
-    if ρ < 1 / 4 || model_decreased == false || isnan(ρ)
+    if ρ < 1 / 4 || !model_decreased || isnan(ρ)
         o.Δ = o.Δ / 4
     elseif ρ > 3 / 4 && any([
         typeof(s) in [StopWhenTrustRegionIsExceeded, StopWhenCurvatureIsNegative] for
@@ -225,8 +214,8 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # Choose to accept or reject the proposed step based on the model
     # performance. Note the strict inequality.
     if model_decreased && ρ > o.ρ_prime
-        o.x = x_prop
+        copyto!(o.x, o.x_proposal)
     end
-    return nothing
+    return o
 end
 get_solver_result(o::TrustRegionsOptions) = o.x

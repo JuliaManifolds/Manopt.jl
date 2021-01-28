@@ -136,17 +136,63 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    P,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr<:AbstractRetractionMethod,Tρ_prime,Tρ_reg
+    P, T, SC<:StoppingCriterion, RTR<:AbstractRetractionMethod, R<:Real
 } <: AbstractHessianOptions
     x::P
-    gradient::P
-    stop::TStop
-    Δ::TΔ
-    Δ_bar::TΔ_bar
-    retraction_method::TRetr
-    useRand::Bool
-    ρ_prime::Tρ_prime
-    ρ_regularization::Tρ_reg
+    gradient::T
+    stop::SC
+    Δ::R
+    Δ_bar::R
+    retraction_method::RTR
+    randomize::Bool
+    ρ_prime::R
+    ρ_regularization::R
+
+    x_proposal::P
+    f_proposal::R
+
+    # Random
+    Hgrad::T
+    η::T
+    Hη::T
+    η_Cauchy::T
+    Hη_Cauchy::T
+    τ::R
+    function TrustRegionsOptions{P,T,R}(
+        x::P,
+        Δ::R, Δ_bar::R, ρ_prime::R, ρ_regularization::R,
+        randomize::Bool,
+        stopping_citerion::StoppingCriterion,
+        retraction_method::AbstractRetractionMethod
+    ) where {P,T,R<:Real}
+        o = new{P,T,typeof(stopping_citerion), typeof(retraction_method),R}()
+        o.x = x
+        o.stop = stopping_citerion
+        o.Δ = Δ
+        o.Δ_bar = Δ_bar::R
+        o.ρ_prime = ρ_prime
+        o.ρ_regularization = ρ_regularization
+        o.randomize = randomize
+        return o
+    end
+end
+function TrustRegionsOptions(
+    x::P,
+    Δ::R, Δ_bar::R, ρ_prime::R, ρ_regularization::R,
+    randomize::Bool,
+    stopping_citerion::SC;
+    retraction_method::RTR=ExponentialRetraction()
+) where {P, R<:Real, SC<:StoppingCriterion, RTR <: AbstractRetractionMethod}
+    return TrustRegionsOptions{P,T,R}(
+        x,
+        Δ,
+        Δ_bar,
+        ρ_prime,
+        ρ_regularization,
+        randomize,
+        stopping_citerion,
+        retraction_method,
+    )
 end
 
 @doc raw"""

@@ -77,8 +77,8 @@ solve the trust-region subproblem in place of `x`.
 * `M` – a manifold $\mathcal M$
 * `F` – a cost function $F: \mathcal M→ℝ$ to minimize
 * `gradF` – the gradient $\operatorname{grad}F:\mathcal M → T\mathcal M$ of F
-* `x` – a point on the manifold $x ∈ \mathcal M$
-* `η` – an update tangential vector $\eta ∈ \mathcal{T_{x}M}$
+* `x` – a point on the manifold ``x ∈ \mathcal M``
+* `η` – an update tangential vector ``η ∈ \mathcal{T_{x}M}``
 * `H` – the hessian $H( \mathcal M, x, \xi)$ of F
 * `Δ` – a trust-region radius
 
