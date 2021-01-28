@@ -8,7 +8,7 @@ using Manopt, Manifolds, LinearAlgebra
         M = Circle()
         r = [-π / 2, π / 4, 0.0, π / 4]
         f = r
-        F(x) = 1 / 10 * sum(distance.(Ref(M), f, Ref(x)) .^ 2)
+        F(M, x) = 1 / 10 * sum(distance.(Ref(M), f, Ref(x)) .^ 2)
         gradF(M, x) = 1 / 5 * sum(-log.(Ref(M), Ref(x), f))
         o = gradient_descent!(
             M,

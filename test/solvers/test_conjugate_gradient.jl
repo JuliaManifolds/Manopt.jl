@@ -94,7 +94,7 @@ end
 @testset "Conjugate Gradient runs – Low Rank matrix approx" begin
     A = Diagonal([2.0, 1.1, 1.0])
     M = Sphere(size(A, 1) - 1)
-    F(x) = x' * A * x
+    F(::Sphere, x) = x' * A * x
     gradF(M, x) = project(M, x, 2 * A * x) # project the Euclidean gradient
 
     x0 = [2.0, 0.0, 2.0] / sqrt(8.0)
@@ -107,7 +107,7 @@ end
         coefficient=FletcherReevesCoefficient(),
         stopping_criterion=StopAfterIteration(15),
     )
-    @test isapprox(F(x_opt), minimum(eigvals(A)); atol=2.0 * 10^-4)
+    @test isapprox(F(M, x_opt), minimum(eigvals(A)); atol=2.0 * 10^-4)
     @test isapprox(x_opt, eigvecs(A)[:, size(A, 1)]; atol=3.0 * 10^-2)
     x_opt2 = conjugate_gradient_descent(
         M,

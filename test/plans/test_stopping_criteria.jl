@@ -12,7 +12,7 @@ struct TestOptions <: Options end
     @test get_stopping_criteria(s)[1].maxIter == get_stopping_criteria(s2)[1].maxIter
 
     s3 = StopWhenCostLess(0.1)
-    p = GradientProblem(Euclidean(1), (M,x) -> x^2, x -> 2x)
+    p = GradientProblem(Euclidean(1), (M, x) -> x^2, x -> 2x)
     o = GradientDescentOptions(1.0)
     @test !s3(p, o, 1)
     @test length(s3.reason) == 0

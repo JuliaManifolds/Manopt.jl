@@ -9,7 +9,7 @@ Random.seed!(42)
         C = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; -5.0 0.0 0.0 0.0]
         ABC = [A, B, C]
         x_solution = mean(ABC)
-        F(x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
+        F(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
         gradF(::Euclidean, x) = -A - B - C + 3 * x
         M = Euclidean(4, 4)
         x = zeros(Float64, 4, 4)
@@ -94,7 +94,7 @@ Random.seed!(42)
         A = randn(n, n)
         A = (A + A') / 2
         M = Sphere(n - 1)
-        F(X) = X' * A * X
+        F(::Sphere, X) = X' * A * X
         gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         x_solution = abs.(eigvecs(A)[:, 1])
 
@@ -194,7 +194,7 @@ Random.seed!(42)
         M = Stiefel(n, k)
         A = randn(n, n)
         A = (A + A') / 2
-        F(X) = tr((X' * A * X) * Diagonal(k:-1:1))
+        F(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
         gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
 
         x = Matrix{Float64}(I, n, n)[:, 2:(k + 1)]

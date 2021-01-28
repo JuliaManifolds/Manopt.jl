@@ -7,7 +7,7 @@ Random.seed!(29)
     @testset "Euclidean" begin
         M = Euclidean(6)
         # From Wikipedia https://en.wikipedia.org/wiki/Rosenbrock_function
-        function Rosenbrock(x)
+        function Rosenbrock(::Euclidean, x)
             return sum([
                 100 * (x[2 * i - 1]^2 - x[2 * i])^2 + (x[2 * i - 1] - 1)^2 for
                 i in 1:div(length(x), 2)
@@ -27,7 +27,7 @@ Random.seed!(29)
         M = Rotations(3)
         A = randn(3, 3)
         A .= (A - A') ./ 2
-        f(x) = norm(A * x * x * A)
+        f(::Rotations, x) = norm(A * x * x * A)
         x0 = [random_point(M) for _ in 1:12]
         o = NelderMead(
             M,

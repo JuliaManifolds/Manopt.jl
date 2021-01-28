@@ -142,7 +142,7 @@ end
 # Solver functions
 #
 function initialize_solver!(p::CostProblem, o::ParticleSwarmOptions)
-    j = argmin([p.cost(y) for y in o.x])
+    j = argmin([get_cost(p, y) for y in o.x])
     return o.g = deepcopy(o.x[j])
 end
 function step_solver!(p::CostProblem, o::ParticleSwarmOptions, iter)
@@ -158,9 +158,9 @@ function step_solver!(p::CostProblem, o::ParticleSwarmOptions, iter)
         o.velocity[i] = vector_transport_to(
             p.M, xOld, o.velocity[i], o.x[i], o.vector_transport_method
         )
-        if p.cost(o.x[i]) < p.cost(o.p[i])
+        if get_cost(p, o.x[i]) < get_cost(p, o.p[i])
             o.p[i] = o.x[i]
-            if p.cost(o.p[i]) < p.cost(o.g)
+            if get_cost(p, o.p[i]) < get_cost(p, o.g)
                 o.g = o.p[i]
             end
         end

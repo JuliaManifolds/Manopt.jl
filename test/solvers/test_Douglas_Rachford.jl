@@ -11,7 +11,7 @@
     prox2 = (η, x) -> prox_distance(M, η, q, x)
     @test_throws ErrorException DouglasRachford(M, F, Array{Function,1}([prox1]), start) # we need more than one prox
     xHat = DouglasRachford(M, F, [prox1, prox2], start)
-    @test F(start) > F(xHat)
+    @test F(M, start) > F(M, xHat)
     @test distance(M, xHat, result) ≈ 0
     # but we can also compute the riemannian center of mass (locally) on Sn
     # though also this is not that useful, but easy to test that DR works

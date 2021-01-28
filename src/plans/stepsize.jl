@@ -122,7 +122,7 @@ function (a::ArmijoLinesearch)(
 )
     a.stepsizeOld = linesearch_backtrack(
         p.M,
-        p.cost,
+        x -> p.cost(p.M, x),
         o.x,
         get_gradient!(p, o.gradient, o.x),
         a.stepsizeOld,
@@ -337,7 +337,7 @@ function (a::NonmonotoneLinesearch)(
         old_x, old_gradient = get_storage.(Ref(a.storage), [:x, :gradient])
     end
     update_storage!(a.storage, o)
-    return a(p.M, o.x, p.cost, get_gradient(p, o.x), η, old_x, old_gradient, i)
+    return a(p.M, o.x, x -> get_cost(p, x), get_gradient(p, o.x), η, old_x, old_gradient, i)
 end
 function (a::NonmonotoneLinesearch)(
     M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int
@@ -451,9 +451,9 @@ function (a::WolfePowellLineseach)(
     s = 1.0
     s_plus = 1.0
     s_minus = 1.0
-    f0 = p.cost(o.x)
+    f0 = get_cost(p, o.x)
     xNew = retract(p.M, o.x, s * η, a.retraction_method)
-    fNew = p.cost(xNew)
+    fNew = get_cost(p, xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
     if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)
         while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)) &&
@@ -461,7 +461,7 @@ function (a::WolfePowellLineseach)(
             s_minus = s_minus * 0.5
             s = s_minus
             retract!(p.M, xNew, o.x, s * η, a.retraction_method)
-            fNew = p.cost(xNew)
+            fNew = get_cost(p, xNew)
         end
         s_plus = 2.0 * s_minus
     else
@@ -473,7 +473,7 @@ function (a::WolfePowellLineseach)(
                 s_plus = s_plus * 2.0
                 s = s_plus
                 retract!(p.M, xNew, o.x, s * η, a.retraction_method)
-                fNew = p.cost(xNew)
+                fNew = get_cost(p, xNew)
             end
             s_minus = s_plus / 2.0
         end
@@ -484,7 +484,7 @@ function (a::WolfePowellLineseach)(
           a.c_2 * inner(p.M, o.x, η, o.gradient)
         s = (s_minus + s_plus) / 2
         retract!(p.M, xNew, o.x, s * η, a.retraction_method)
-        fNew = p.cost(xNew)
+        fNew = get_cost(p, xNew)
         if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)
             s_minus = s
         else
@@ -559,9 +559,9 @@ function (a::WolfePowellBinaryLinesearch)(
     α = 0.0
     β = Inf
     t = 1.0
-    f0 = p.cost(o.x)
+    f0 = get_cost(p, o.x)
     xNew = retract(p.M, o.x, t * η, a.retraction_method)
-    fNew = p.cost(xNew)
+    fNew = get_cost(p, xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(p, xNew)
     nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.gradient)
@@ -572,7 +572,7 @@ function (a::WolfePowellBinaryLinesearch)(
         t = isinf(β) ? 2 * α : (α + β) / 2
         # Update trial point
         retract!(p.M, xNew, o.x, t * η, a.retraction_method)
-        fNew = p.cost(xNew)
+        fNew = get_cost(p, xNew)
         gradient_new = get_gradient(p, xNew)
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
         # Update conditions

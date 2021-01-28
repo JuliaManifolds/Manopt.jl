@@ -104,7 +104,7 @@ function DouglasRachford!(
     if parallel > 0
         M = PowerManifold(M, NestedPowerRepresentation(), parallel)
         x = [copy(x) for i in 1:parallel]
-        nF = x -> F(x[1])
+        nF = (M, x) -> F(M.manifold, x[1])
     else
         nF = F
     end

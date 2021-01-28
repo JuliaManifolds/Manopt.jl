@@ -15,7 +15,7 @@
 # In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](@ref)
 # `p` and [`Options`](@ref) `o`. While former contains __static__ data,
 # most prominently the manifold $\mathcal M$ (usually as `p.M`) and the cost
-# function $f$ (usually as `p.cost`), the latter contains __dynamic__
+# function $f$ (usually as `x->get_cost(p, x)`), the latter contains __dynamic__
 # data, i.e. things that usually change during the algorithm, are allowed to
 # change, or specify the details of the algorithm to use. Together they form a
 # `plan`. A `plan` uniquely determines the algorithm to use and provide all

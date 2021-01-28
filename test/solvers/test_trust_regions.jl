@@ -3,7 +3,7 @@ import Random: seed!
 
 A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
 
-function cost(X::ProductRepr)
+function cost(::ProductManifold, X::ProductRepr)
     return cost([submanifold_components(X)...])
 end
 function cost(X::Array{Matrix{Float64},1})
@@ -85,7 +85,7 @@ end
 
     XuR = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2), useRandom=true)
 
-    @test cost(XuR) + 142.5 ≈ 0 atol = 10.0^(-12)
+    @test cost(M, XuR) + 142.5 ≈ 0 atol = 10.0^(-12)
 
     XaH = trust_regions(
         M,
@@ -106,7 +106,7 @@ end
         ),
         Δ_bar=4 * sqrt(2 * 2),
     )
-    @test cost(XaH) + 142.5 ≈ 0 atol = 10.0^(-10)
+    @test cost(M, XaH) + 142.5 ≈ 0 atol = 10.0^(-10)
 
     ξ = random_tangent(M, x)
     @test_throws MethodError get_hessian(SubGradientProblem(M, cost, rgrad), x, ξ)
