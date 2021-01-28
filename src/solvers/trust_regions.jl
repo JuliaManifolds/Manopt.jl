@@ -111,7 +111,7 @@ function trust_regions!(
     p = HessianProblem(M, F, gradF, H, preconditioner)
     o = TrustRegionsOptions(
         x,
-        gradF(x),
+        gradF(M, x),
         stopping_criterion,
         Δ,
         Δ_bar,

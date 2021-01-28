@@ -53,19 +53,19 @@ memory for the result is allocated.
 get_gradient(p::AbstractGradientProblem, x)
 
 function get_gradient(p::AbstractGradientProblem{AllocatingEvaluation}, x)
-    return p.gradient!!(x)
+    return p.gradient!!(p.M, x)
 end
 function get_gradient(p::AbstractGradientProblem{MutatingEvaluation}, x)
     X = zero_tangent_vector(p.M, x)
-    return p.gradient!!(X, x)
+    return p.gradient!!(p.M, X, x)
 end
 
 function get_gradient!(p::AbstractGradientProblem{AllocatingEvaluation}, X, x)
-    return copyto!(X, p.gradient!!(x))
+    return copyto!(X, p.gradient!!(p.M, x))
 end
 
 function get_gradient!(p::AbstractGradientProblem{MutatingEvaluation}, X, x)
-    return p.gradient!!(X, x)
+    return p.gradient!!(p.M, X, x)
 end
 
 """

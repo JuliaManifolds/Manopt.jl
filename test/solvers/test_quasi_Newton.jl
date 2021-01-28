@@ -10,7 +10,7 @@ Random.seed!(42)
         ABC = [A, B, C]
         x_solution = mean(ABC)
         F(x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
-        gradF(x) = -A - B - C + 3 * x
+        gradF(::Euclidean, x) = -A - B - C + 3 * x
         M = Euclidean(4, 4)
         x = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
@@ -93,9 +93,9 @@ Random.seed!(42)
         rayleigh_atol = 1e-12
         A = randn(n, n)
         A = (A + A') / 2
-        F(X) = X' * A * X
-        gradF(X) = 2 * (A * X - X * (X' * A * X))
         M = Sphere(n - 1)
+        F(X) = X' * A * X
+        gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         x_solution = abs.(eigvecs(A)[:, 1])
 
         x = Matrix{Float64}(I, n, n)[n, :]
@@ -183,7 +183,7 @@ Random.seed!(42)
             A::Matrix{Float64}
             N::Diagonal{Float64,Vector{Float64}}
         end
-        function (gradF::GradF)(X::Array{Float64,2})
+        function (gradF::GradF)(::Stiefel, X::Array{Float64,2})
             AX = gradF.A * X
             XpAX = X' * AX
             return 2 .* AX * gradF.N .- X * XpAX * gradF.N .- X * gradF.N * XpAX

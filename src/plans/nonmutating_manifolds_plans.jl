@@ -3,7 +3,7 @@
 #
 const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers}
 function get_gradient!(p::GradientProblem{AllocatingEvaluation}, X::AbstractFloat, x)
-    X = p.gradient!!(x)
+    X = p.gradient!!(p.M, x)
     return X
 end
 function linesearch_backtrack(

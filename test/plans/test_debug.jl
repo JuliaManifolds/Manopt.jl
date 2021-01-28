@@ -6,8 +6,8 @@
     o = GradientDescentOptions(
         x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
     )
-    f = y -> distance(M, y, x) .^ 2
-    gradf = y -> -2 * log(M, y, x)
+    f(M, y) = distance(M, y, x) .^ 2
+    gradf(M,y) = -2 * log(M, y, x)
     p = GradientProblem(M, f, gradf)
     a1 = DebugDivider("|", io)
     @test Manopt.dispatch_options_decorator(DebugOptions(o, a1)) === Val{true}()

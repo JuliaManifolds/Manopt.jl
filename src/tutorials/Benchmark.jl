@@ -23,7 +23,7 @@ data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n];
 #
 # The variant from the previous tutorial defines a cost ``F(x)`` and its gradient ``gradF(x)``
 F(x) = sum(1 / (2 * n) * distance.(Ref(M), Ref(x), data) .^ 2)
-gradF(x) = sum(1 / n * grad_distance.(Ref(M), data, Ref(x)))
+gradF(M, x) = sum(1 / n * grad_distance.(Ref(M), data, Ref(x)))
 nothing #hide
 #
 # we further set the stopping criterion to be a little more strict, then we obtain
@@ -44,15 +44,14 @@ nothing #hide
 #
 # Here we store the data (as reference) and one temporary memory in order to avoid
 # reallication of memory per `grad_distance` computation. We have
-struct grad!{TM,TD,TTMP}
-    M::TM
+struct grad!{TD,TTMP}
     data::TD
     tmp::TTMP
 end
-function (gradf!::grad!)(X, x)
+function (gradf!::grad!)(M, X, x)
     fill!(X, 0)
     for di in gradf!.data
-        grad_distance!(gradf!.M, gradf!.tmp, di, x)
+        grad_distance!(M, gradf!.tmp, di, x)
         X .+= gradf!.tmp
     end
     X ./= length(gradf!.data)
@@ -62,7 +61,7 @@ end
 # Then we just have to initialize the gradient and perform our final benchmark.
 # Note that we also have to interpolate all variables passed to the benchmark with a `$`.
 #
-gradF2! = grad!(M, data, similar(data[1]))
+gradF2! = grad!(data, similar(data[1]))
 m2 = deepcopy(x0)
 gradient_descent!(M, F, gradF2!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc)
 

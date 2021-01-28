@@ -15,7 +15,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     fidelity(x) = 1 / 2 * distance(M, x, f)^2
     Λ(x) = ProductRepr(x, forward_logs(M, x))
     prior(x) = norm(norm.(Ref(pixelM), x, submanifold_component(N, Λ(x), 2)), 1)
-    cost(x) = (1 / α) * fidelity(x) + prior(x)
+    cost(M, x) = (1 / α) * fidelity(x) + prior(x)
     prox_F(M, m, λ, x) = prox_distance(M, λ / α, data, x, 2)
     function prox_G_dual(N, n, λ, ξ)
         return ProductRepr(

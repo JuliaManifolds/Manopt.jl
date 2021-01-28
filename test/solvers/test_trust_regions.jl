@@ -72,47 +72,30 @@ end
 
     x = random_point(M)
 
-    @test_throws ErrorException trust_regions(
-        M, cost, x -> rgrad(M, x), x, (q, X) -> rhess(M, q, X); ρ_prime=0.3
-    )
-    @test_throws ErrorException trust_regions(
-        M, cost, x -> rgrad(M, x), x, (q, X) -> rhess(M, q, X); Δ_bar=-0.1
-    )
-    @test_throws ErrorException trust_regions(M, cost, x -> rgrad(M, x), x, rhess; Δ=-0.1)
-    @test_throws ErrorException trust_regions(
-        M, cost, x -> rgrad(M, x), x, (q, X) -> rhess(M, q, X); Δ_bar=0.1, Δ=0.11
-    )
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; ρ_prime=0.3)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=-0.1)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ=-0.1)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=0.1, Δ=0.11)
 
-    X = trust_regions(
-        M, cost, x -> rgrad(M, x), x, (q, X) -> rhess(M, q, X); Δ_bar=4 * sqrt(2 * 2)
-    )
+    X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2))
     opt = trust_regions(
-        M,
-        cost,
-        x -> rgrad(M, x),
-        x,
-        (q, X) -> rhess(M, q, X);
-        Δ_bar=4 * sqrt(2 * 2),
-        return_options=true,
+        M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2), return_options=true
     )
     @test isapprox(M, X, get_solver_result(opt))
 
-    pfff(q, X) = rhess(M, q, X)
-    XuR = trust_regions(
-        M, cost, x -> rgrad(M, x), x, pfff; Δ_bar=4 * sqrt(2 * 2), useRandom=true
-    )
+    XuR = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=4 * sqrt(2 * 2), useRandom=true)
 
     @test cost(XuR) + 142.5 ≈ 0 atol = 10.0^(-12)
 
     XaH = trust_regions(
         M,
         cost,
-        x -> rgrad(M, x),
+        rgrad,
         x,
         ApproxHessianFiniteDifference(
             M,
             x,
-            x -> rgrad(M, x);
+            rgrad;
             steplength=2^(-9),
             vector_transport_method=ProductVectorTransport(
                 ProjectionTransport(), ProjectionTransport()
@@ -129,7 +112,7 @@ end
     @test_throws MethodError get_hessian(SubGradientProblem(M, cost, rgrad), x, ξ)
 
     # Test the random step trust region
-    p = HessianProblem(M, cost, x -> rgrad(M, x), (q, X) -> rhess(M, q, X), (M, x, ξ) -> ξ)
+    p = HessianProblem(M, cost, rgrad, rhess, (M, x, ξ) -> ξ)
     o = TrustRegionsOptions(
         x,
         rgrad(M, x),
@@ -143,11 +126,9 @@ end
     )
     @test step_solver!(p, o, 0) === nothing
 
-    η = truncated_conjugate_gradient_descent(
-        M, cost, x -> rgrad(M, x), x, ξ, (q, X) -> rhess(M, q, X), 0.5
-    )
+    η = truncated_conjugate_gradient_descent(M, cost, rgrad, x, ξ, rhess, 0.5)
     ηOpt = truncated_conjugate_gradient_descent(
-        M, cost, x -> rgrad(M, x), x, ξ, (q, X) -> rhess(M, q, X), 0.5; return_options=true
+        M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true
     )
     @test submanifold_components(get_solver_result(ηOpt)) == submanifold_components(η)
 end

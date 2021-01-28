@@ -103,8 +103,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    gradF(x) + (useRandom ? H(x, η) : zero_tangent_vector(M, x)),
-                    gradF(x) + (useRandom ? H(x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             θ,
@@ -114,8 +114,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    gradF(x) + (useRandom ? H(x, η) : zero_tangent_vector(M, x)),
-                    gradF(x) + (useRandom ? H(x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             κ,
@@ -204,9 +204,7 @@ function step_solver!(
         new_model_value =
             inner(p.M, o.x, o.η, get_gradient(p, o.x)) +
             0.5 * inner(p.M, o.x, o.η, get_hessian(p, o.x, o.η))
-        if new_model_value >= old_model_value
-            o.η = ηOld
-        end
+        (new_model_value >= old_model_value) && (o.η = ηOld)
     end
     # Update the residual.
     o.residual = o.residual - α * Hδ

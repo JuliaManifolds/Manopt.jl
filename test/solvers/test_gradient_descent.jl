@@ -9,7 +9,7 @@ using Manopt, Manifolds, LinearAlgebra
         r = [-π / 2, π / 4, 0.0, π / 4]
         f = r
         F(x) = 1 / 10 * sum(distance.(Ref(M), f, Ref(x)) .^ 2)
-        gradF(x) = 1 / 5 * sum(-log.(Ref(M), Ref(x), f))
+        gradF(M, x) = 1 / 5 * sum(-log.(Ref(M), Ref(x), f))
         o = gradient_descent!(
             M,
             F,
@@ -180,8 +180,8 @@ using Manopt, Manifolds, LinearAlgebra
         north = [0.0, 0.0, 1.0]
         pre_pts = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
         pts = exp.(Ref(M), Ref(north), pre_pts)
-        F(x) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(x)) .^ 2)
-        gradF(x) = 1 / 4 * sum(-log.(Ref(M), Ref(x), pts))
+        F(M, x) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(x)) .^ 2)
+        gradF(M, x) = 1 / 4 * sum(-log.(Ref(M), Ref(x), pts))
         n2 = gradient_descent(M, F, gradF, pts[1])
         @test !isapprox(M, pts[1], n2) # n2 is newly allocated and not pts[1]
         @test isapprox(M, north, n2)

@@ -1,9 +1,9 @@
 using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
 
 @testset "Conjugate Gradient coefficient rules" begin
-    F(x) = norm(x)^2
-    gradF(x) = 2 * x
     M = Euclidean(2)
+    F(x) = norm(x)^2
+    gradF(::Euclidean, x) = 2 * x
     P = GradientProblem(M, F, gradF)
     x0 = [0.0, 1.0]
     sC = StopAfterIteration(1)
@@ -95,8 +95,7 @@ end
     A = Diagonal([2.0, 1.1, 1.0])
     M = Sphere(size(A, 1) - 1)
     F(x) = x' * A * x
-    euclidean_gradF(x) = 2 * A * x
-    gradF(x) = project(M, x, euclidean_gradF(x))
+    gradF(M, x) = project(M, x, 2 * A * x) # project the Euclidean gradient
 
     x0 = [2.0, 0.0, 2.0] / sqrt(8.0)
     x_opt = conjugate_gradient_descent(

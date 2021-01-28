@@ -6,7 +6,7 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
     x0 = [5.0, 2.0]
     o = SubGradientMethodOptions(M, x0, StopAfterIteration(200), ConstantStepsize(1.0))
     o.∂ = [1.0, 0.0]
-    f = y -> distance(M, y, x)
+    f(M, y) = distance(M, y, x)
     ∂f = y -> if distance(M, x, y) == 0
         zero_tangent_vector(M, y)
     else
@@ -25,5 +25,5 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
     @test_throws MethodError get_proximal_map(p, 1.0, o.x, 1)
     o2 = subgradient_method(M, f, ∂f, copy(x0); return_options=true)
     xhat2 = get_solver_result(o2)
-    @test f(xhat2) <= f(x0)
+    @test f(M, xhat2) <= f(M, x0)
 end

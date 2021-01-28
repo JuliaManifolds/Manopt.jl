@@ -199,7 +199,11 @@ curve_samples = collect(range(0.0, 3.0; length=151)) #exactness of approximating
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
 F(pB) = cost_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
-gradF(pB) = grad_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
+function gradF(M, pB)
+    return grad_acceleration_bezier(
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples
+    )
+end
 x0 = pB
 pB_opt_ip = gradient_descent(
     N,
@@ -265,8 +269,10 @@ render_asymptote(export_folder * "/Bezier-IP-Min.asy"; render=2) #src
 λ = 3.0
 d = get_bezier_junctions(M, B)
 F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
-function gradF(pB)
-    return grad_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
+function gradF(M, pB)
+    return grad_L2_acceleration_bezier(
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
+    )
 end
 x0 = pB
 pB_opt_appr = gradient_descent(

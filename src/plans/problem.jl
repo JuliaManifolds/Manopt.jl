@@ -47,5 +47,5 @@ struct MutatingEvaluation <: AbstractEvaluationType end
 evaluate the cost function `F` stored within a [`Problem`](@ref) at the point `x`.
 """
 function get_cost(p::Problem, x)
-    return p.cost(x)
+    return p.cost(p.M, x)
 end

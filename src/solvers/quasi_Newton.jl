@@ -111,7 +111,7 @@ function quasi_Newton!(
     p = GradientProblem(M, F, gradF)
     o = QuasiNewtonOptions(
         x,
-        gradF(x),
+        gradF(M, x),
         local_dir_upd,
         stopping_criterion,
         step_size;
