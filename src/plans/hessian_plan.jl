@@ -62,7 +62,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `δ` : search direction
 * `Δ` : the trust-region radius
 * `residual` : the gradient
-* `useRand` : indicates if the trust-region solve and so the algorithm is to be
+* `randomize` : indicates if the trust-region solve and so the algorithm is to be
         initiated with a random tangent vector. If set to true, no
         preconditioner will be used. This option is set to true in some
         scenarios to escape saddle points, but is otherwise seldom activated.
@@ -84,7 +84,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real} <: AbstractHessian
     gradient::T
     Δ::R
     residual::T
-    useRand::Bool
+    randomize::Bool
     function TruncatedConjugateGradientOptions(
         x::P, stop::StoppingCriterion, η::T, δ::T, grad::T, Δ, residual::T, uR::Bool
     ) where {P,T}
@@ -105,7 +105,7 @@ a default value is given in brackets if a parameter can be left out in initializ
     indicator and a reason based on an iteration number and the gradient
 * `Δ` : the (initial) trust-region radius
 * `Δ_bar` : the maximum trust-region radius
-* `useRand` : indicates if the trust-region solve is to be initiated with a
+* `randomize` : indicates if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
@@ -136,7 +136,7 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    P, T, SC<:StoppingCriterion, RTR<:AbstractRetractionMethod, R<:Real
+    P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real
 } <: AbstractHessianOptions
     x::P
     gradient::T
@@ -148,6 +148,8 @@ mutable struct TrustRegionsOptions{
     ρ_prime::R
     ρ_regularization::R
 
+    tcg_options::TruncatedConjugateGradientOptions
+
     x_proposal::P
     f_proposal::R
 
@@ -158,16 +160,22 @@ mutable struct TrustRegionsOptions{
     η_Cauchy::T
     Hη_Cauchy::T
     τ::R
-    function TrustRegionsOptions{P,T,R}(
+    function TrustRegionsOptions{P,T,SC,RTR,R}(
         x::P,
-        Δ::R, Δ_bar::R, ρ_prime::R, ρ_regularization::R,
+        grad::T,
+        Δ::R,
+        Δ_bar::R,
+        ρ_prime::R,
+        ρ_regularization::R,
         randomize::Bool,
-        stopping_citerion::StoppingCriterion,
-        retraction_method::AbstractRetractionMethod
-    ) where {P,T,R<:Real}
-        o = new{P,T,typeof(stopping_citerion), typeof(retraction_method),R}()
+        stopping_citerion::SC,
+        retraction_method::RTR,
+    ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real}
+        o = new{P,T,SC,RTR,R}()
         o.x = x
+        o.gradient = grad
         o.stop = stopping_citerion
+        o.retraction_method = retraction_method
         o.Δ = Δ
         o.Δ_bar = Δ_bar::R
         o.ρ_prime = ρ_prime
@@ -178,13 +186,18 @@ mutable struct TrustRegionsOptions{
 end
 function TrustRegionsOptions(
     x::P,
-    Δ::R, Δ_bar::R, ρ_prime::R, ρ_regularization::R,
+    grad::T,
+    Δ::R,
+    Δ_bar::R,
+    ρ_prime::R,
+    ρ_regularization::R,
     randomize::Bool,
     stopping_citerion::SC;
-    retraction_method::RTR=ExponentialRetraction()
-) where {P, R<:Real, SC<:StoppingCriterion, RTR <: AbstractRetractionMethod}
-    return TrustRegionsOptions{P,T,R}(
+    retraction_method::RTR=ExponentialRetraction(),
+) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod}
+    return TrustRegionsOptions{P,T,SC,RTR,R}(
         x,
+        grad,
         Δ,
         Δ_bar,
         ρ_prime,
@@ -215,7 +228,7 @@ function get_hessian(p::HessianProblem{MutatingEvaluation}, q, X)
     return p.hessian!!(p.M, Y, q, X)
 end
 function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
-    return copyto!(p.M, Y, p.hessian!!(q, X))
+    return copyto!(Y, p.hessian!!(p.M, q, X))
 end
 function get_hessian!(p::HessianProblem{MutatingEvaluation}, Y, q, X)
     Y = zero_tangent_vector(p.M, q)
@@ -423,7 +436,10 @@ function (c::StopWhenTrustRegionIsExceeded)(
         δ = get_storage(c.storage, :δ)
         residual = get_storage(c.storage, :residual)
         a1 = inner(
-            p.M, o.x, o.useRand ? get_preconditioner(p, o.x, residual) : residual, residual
+            p.M,
+            o.x,
+            o.randomize ? get_preconditioner(p, o.x, residual) : residual,
+            residual,
         )
         a2 = inner(p.M, o.x, δ, get_hessian(p, o.x, δ))
         a3 = inner(p.M, o.x, η, get_preconditioner(p, o.x, δ))

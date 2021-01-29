@@ -111,13 +111,14 @@ function trust_regions!(
     p = HessianProblem(M, F, gradF, H, preconditioner)
     o = TrustRegionsOptions(
         x,
+        get_gradient(p, x),
         Δ,
         Δ_bar,
-        stopping_criterion,
-        retraction_method,
-        randomize,
         ρ_prime,
         ρ_regularization,
+        randomize,
+        stopping_criterion;
+        retraction_method=retraction_method,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -139,16 +140,26 @@ function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     o.Hη_Cauchy = zero_tangent_vector(p.M, o.x)
     o.τ = zero(o.Δ)
     o.Hgrad = zero_tangent_vector(p.M, o.x)
+    return o.tcg_options = TruncatedConjugateGradientOptions(
+        o.x,
+        o.stop,
+        o.η,
+        zero_tangent_vector(p.M, o.x),
+        zero_tangent_vector(p.M, o.x),
+        o.Δ,
+        zero_tangent_vector(p.M, o.x),
+        o.randomize,
+    )
 end
 
 function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # Determine eta0
-    if o.randomize == false
+    if o.randomize
         # Random vector in T_x M (this has to be very small)
         o.η = random_tangent(p.M, o.x, 10.0^(-6))
-        while norm(p.M, o.x, eta) > o.Δ
-            # Must be inside trust-region
-            o.η .*= sqrt(sqrt(eps(Float64)))
+        while norm(p.M, o.x, o.η) > o.Δ
+            # inside trust-region
+            o.η *= sqrt(sqrt(eps(Float64)))
         end
     else
         zero_tangent_vector!(p.M, o.η, o.x)
@@ -163,12 +174,13 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         p.hessian!!,
         o.Δ;
         preconditioner=p.precon,
-        randomize=o.useRand,
+        randomize=o.randomize,
         return_options=true,
     )
     option = get_options(opt) # remove decorators
     SR = get_active_stopping_criteria(option.stop)
-    get_hessia!n(p, o.Hη, o.x, o.η)
+    get_hessian!(p, o.Hη, o.x, o.η)
+    o.η = get_solver_result(option)
     # Initialize the cost function F und the gradient of the cost function
     # gradF at the point x
     get_gradient!(p, o.gradient, o.x)
@@ -181,23 +193,26 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         o.τ = inner(p.M, o.x, o.gradient, o.Hgrad)
         o.τ = (o.τ <= 0) ? one(o.τ) : o.τ = min(norm_grad^3 / (o.Δ * o.τ), 1)
         # compare to Cauchy point and store best
-        mdle = fx + inner(p.M, o.x, o.gradient, o.η) + 0.5 * inner(p.M, o.x, o.Hη, o.η)
-        mdle_Cauchy = fx
-            - o.τ * o.Δ * norm(p.M, o.x, o.gradient)
-            + 0.5 * o.τ^2 * o.Δ^2 / (norm_grad^2) * inner(p.M, o.x, o.Hgrad, o.gradient)
-        if mdle_Cauchy < mdle
+        model_value =
+            fx + inner(p.M, o.x, o.gradient, o.η) + 0.5 * inner(p.M, o.x, o.Hη, o.η)
+        modle_value_Cauchy = fx
+        -o.τ * o.Δ * norm(p.M, o.x, o.gradient)
+        +0.5 * o.τ^2 * o.Δ^2 / (norm_grad^2) * inner(p.M, o.x, o.Hgrad, o.gradient)
+        if modle_value_Cauchy < model_value
             copyto!(o.η, (-o.τ * o.Δ / norm_grad) * o.gradient)
             copyto!(o.Hη, (-o.τ * o.Δ / norm_grad) * o.Hgrad)
         end
     end
     # Compute the tentative next iterate (the proposal)
-    retract!(p.M, o.x_proposal, o.x, p-η, o.retraction_method)
-    # Compute the function value of the proposal
-    o.f_proposal = get_cost(p, o.x_proposal)
+    retract!(p.M, o.x_proposal, o.x, o.η, o.retraction_method)
     # Check the performance of the quadratic model against the actual cost.
     ρ_reg = max(1, abs(fx)) * eps(Float64) * o.ρ_regularization
-    ρ = (fx - fx_prop + ρ_reg) / (-inner(p.M, o.x, η, o.gradient) - 0.5 * inner(p.M, o.x, η, Hη) + ρ_reg)
-    model_decreased = (-inner(p.M, o.x, η, o.gradient) - 0.5 * inner(p.M, o.x, η, Hη) + ρ_reg) ≥ 0
+    ρnum = fx - get_cost(p, o.x_proposal)
+    ρden = -inner(p.M, o.x, o.η, o.gradient) - 0.5 * inner(p.M, o.x, o.η, o.Hη)
+    ρnum = ρnum + ρ_reg
+    ρden = ρden + ρ_reg
+    ρ = ρnum / ρden
+    model_decreased = ρden ≥ 0
     # Choose the new TR radius based on the model performance.
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.

@@ -35,7 +35,7 @@ see the reference:
     terminate early if the residual was reduced by a power of 1+theta.
 * `κ` – the linear convergence target rate: algorithm will terminate
     early if the residual was reduced by a factor of kappa.
-* `useRandom` – set to true if the trust-region solve is to be initiated with a
+* `randomize` – set to true if the trust-region solve is to be initiated with a
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
@@ -95,7 +95,7 @@ function truncated_conjugate_gradient_descent!(
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     θ::Float64=1.0,
     κ::Float64=0.1,
-    useRandom::Bool=false,
+    randomize::Bool=false,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
         StopIfResidualIsReducedByPower(
@@ -103,8 +103,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    gradF(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    gradF(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             θ,
@@ -114,8 +114,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    gradF(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    gradF(M, x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             κ,
@@ -135,7 +135,7 @@ function truncated_conjugate_gradient_descent!(
         zero_tangent_vector(M, x),
         Δ,
         zero_tangent_vector(M, x),
-        useRandom,
+        randomize,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -148,12 +148,12 @@ end
 function initialize_solver!(
     p::P, o::O
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    o.η = o.useRand ? o.η : zero_tangent_vector(p.M, o.x)
-    Hη = o.useRand ? get_hessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
+    o.η = o.randomize ? o.η : zero_tangent_vector(p.M, o.x)
+    Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
     o.residual = get_gradient(p, o.x) + Hη
     # Initial search direction (we maintain -delta in memory, called mdelta, to
     # avoid a change of sign of the tangent vector.)
-    return o.δ = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
+    return o.δ = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     # If the Hessian or a linear Hessian approximation is in use, it is
     # theoretically guaranteed that the model value decreases strictly
     # with each iteration of tCG. Hence, there is no need to monitor the model
@@ -162,14 +162,14 @@ function initialize_solver!(
     # increase. It is then important to terminate the tCG iterations and return
     # the previous (the best-so-far) iterate. The variable below will hold the
     # model value.
-    # o.model_value = o.useRand ? 0 : inner(p.M,o.x,o.η,get_gradient(p,o.x)) + 0.5 * inner(p.M,o.x,o.η,Hη)
+    # o.model_value = o.randomize ? 0 : inner(p.M,o.x,o.η,get_gradient(p,o.x)) + 0.5 * inner(p.M,o.x,o.η,Hη)
 end
 function step_solver!(
     p::P, o::O, ::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     ηOld = o.η
     δOld = o.δ
-    z = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
+    z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     # this is not correct, it needs to be the inverse of the preconditioner!
     zrOld = inner(p.M, o.x, z, o.residual)
     HηOld = get_hessian(p, o.x, ηOld)
@@ -181,9 +181,9 @@ function step_solver!(
     α = zrOld / δHδ
     # <neweta,neweta>_P =
     # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
-    e_Pd = -inner(p.M, o.x, ηOld, o.useRand ? δOld : get_preconditioner(p, o.x, δOld)) # It must be clarified if it's negative or not
-    d_Pd = inner(p.M, o.x, δOld, o.useRand ? δOld : get_preconditioner(p, o.x, δOld))
-    e_Pe = inner(p.M, o.x, ηOld, o.useRand ? ηOld : get_preconditioner(p, o.x, ηOld))
+    e_Pd = -inner(p.M, o.x, ηOld, o.randomize ? δOld : get_preconditioner(p, o.x, δOld)) # It must be clarified if it's negative or not
+    d_Pd = inner(p.M, o.x, δOld, o.randomize ? δOld : get_preconditioner(p, o.x, δOld))
+    e_Pe = inner(p.M, o.x, ηOld, o.randomize ? ηOld : get_preconditioner(p, o.x, ηOld))
     e_Pe_new = e_Pe + 2α * e_Pd + α^2 * d_Pd # vielleicht müssen doch die weiteren Optionen gespeichert werden
     # Check against negative curvature and trust-region radius violation.
     # If either condition triggers, we bail out.
@@ -210,7 +210,7 @@ function step_solver!(
     o.residual = o.residual - α * Hδ
     # Precondition the residual.
     # It's actually the inverse of the preconditioner in o.residual
-    z = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
+    z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     # this is not correct, it needs to be the inverse of the preconditioner!
     # Save the old z'*r.
     # Compute new z'*r.
