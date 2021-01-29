@@ -92,6 +92,7 @@ function truncated_conjugate_gradient_descent!(
     η,
     H::TH,
     Δ::Float64;
+    evaluation=AllocatingEvaluation(),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     θ::Float64=1.0,
     κ::Float64=0.1,
@@ -126,7 +127,7 @@ function truncated_conjugate_gradient_descent!(
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec}
-    p = HessianProblem(M, F, gradF, H, preconditioner)
+    p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
     o = TruncatedConjugateGradientOptions(
         x,
         stopping_criterion,

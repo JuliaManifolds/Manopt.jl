@@ -88,6 +88,7 @@ function trust_regions!(
     gradF::TdF,
     x,
     H::TH;
+    evaluation=AllocatingEvaluation(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     stopping_criterion::StoppingCriterion=StopWhenAny(
@@ -108,7 +109,7 @@ function trust_regions!(
     (Δ <= 0 || Δ > Δ_bar) && throw(
         ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."),
     )
-    p = HessianProblem(M, F, gradF, H, preconditioner)
+    p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
     o = TrustRegionsOptions(
         x,
         get_gradient(p, x),
@@ -165,6 +166,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         zero_tangent_vector!(p.M, o.η, o.x)
     end
     # Solve TR subproblem approximately
+
     opt = truncated_conjugate_gradient_descent!(
         p.M,
         p.cost,

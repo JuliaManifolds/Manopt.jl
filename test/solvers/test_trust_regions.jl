@@ -78,9 +78,12 @@ end
     @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=0.1, Δ=0.11)
 
     X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=8.0)
-    println("CX ", cost(M, X))
     opt = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=8.0, return_options=true)
     @test isapprox(M, X, get_solver_result(opt))
+
+    X2 = deepcopy(x)
+    trust_regions!(M, cost, rgrad, X2, rhess; Δ_bar=8.0)
+    @test isapprox(M, X, X2)
 
     XuR = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=8.0, randomize=true)
 
@@ -92,20 +95,28 @@ end
         rgrad,
         x,
         ApproxHessianFiniteDifference(
-            M,
-            x,
-            rgrad;
-            steplength=2^(-9),
-            vector_transport_method=ProductVectorTransport(
-                ProjectionTransport(), ProjectionTransport()
-            ),
+            M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
         );
         stopping_criterion=StopWhenAny(
-            StopAfterIteration(8000), StopWhenGradientNormLess(10^(-6))
+            StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
         ),
         Δ_bar=8.0,
     )
-
+    XaH2 = deepcopy(x)
+    XaH = trust_regions!(
+        M,
+        cost,
+        rgrad,
+        XaH2,
+        ApproxHessianFiniteDifference(
+            M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
+        );
+        stopping_criterion=StopWhenAny(
+            StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
+        ),
+        Δ_bar=8.0,
+    )
+    @test isapprox(M, XaH, XaH2)
     @test cost(M, XaH) ≈ cost(M, X)
 
     ξ = random_tangent(M, x)
