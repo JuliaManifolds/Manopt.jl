@@ -73,19 +73,29 @@ end
     x = random_point(M)
 
     @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; ρ_prime=0.3)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=-0.1)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ=-0.1)
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; Δ_bar=0.1, Δ=0.11)
+    @test_throws ErrorException trust_regions(
+        M, cost, rgrad, x, rhess; max_trust_region_radius=-0.1
+    )
+    @test_throws ErrorException trust_regions(
+        M, cost, rgrad, x, rhess; trust_region_radius=-0.1
+    )
+    @test_throws ErrorException trust_regions(
+        M, cost, rgrad, x, rhess; max_trust_region_radius=0.1, trust_region_radius=0.11
+    )
 
-    X = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=8.0)
-    opt = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=8.0, return_options=true)
+    X = trust_regions(M, cost, rgrad, x, rhess; max_trust_region_radius=8.0)
+    opt = trust_regions(
+        M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, return_options=true
+    )
     @test isapprox(M, X, get_solver_result(opt))
 
     X2 = deepcopy(x)
-    trust_regions!(M, cost, rgrad, X2, rhess; Δ_bar=8.0)
+    trust_regions!(M, cost, rgrad, X2, rhess; max_trust_region_radius=8.0)
     @test isapprox(M, X, X2)
 
-    XuR = trust_regions(M, cost, rgrad, x, rhess; Δ_bar=8.0, randomize=true)
+    XuR = trust_regions(
+        M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, randomize=true
+    )
 
     @test cost(M, XuR) ≈ cost(M, X)
 
@@ -100,7 +110,7 @@ end
         stopping_criterion=StopWhenAny(
             StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
         ),
-        Δ_bar=8.0,
+        max_trust_region_radius=8.0,
     )
     XaH2 = deepcopy(x)
     XaH = trust_regions!(
@@ -114,7 +124,7 @@ end
         stopping_criterion=StopWhenAny(
             StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
         ),
-        Δ_bar=8.0,
+        max_trust_region_radius=8.0,
     )
     @test isapprox(M, XaH, XaH2)
     @test cost(M, XaH) ≈ cost(M, X)

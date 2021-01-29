@@ -60,7 +60,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `η` : a tangent vector (called update vector), which solves the
     trust-region subproblem after successful calculation by the algorithm
 * `δ` : search direction
-* `Δ` : the trust-region radius
+* `trust_region_radius` : the trust-region radius
 * `residual` : the gradient
 * `randomize` : indicates if the trust-region solve and so the algorithm is to be
         initiated with a random tangent vector. If set to true, no
@@ -76,19 +76,35 @@ construct a truncated conjugate-gradient Option with the fields as above.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real} <: AbstractHessianOptions
+mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriterion} <:
+               AbstractHessianOptions
     x::P
-    stop::StoppingCriterion
+    stop::SC
     η::T
+    Hη::T
     δ::T
+    Hδ::T
+    δHδ::R
+    res_precon_res::R
     gradient::T
-    Δ::R
+    model_value::R
+    trust_region_radius::R
     residual::T
+    precon_residual::T
     randomize::Bool
     function TruncatedConjugateGradientOptions(
-        x::P, stop::StoppingCriterion, η::T, δ::T, grad::T, Δ, residual::T, uR::Bool
-    ) where {P,T}
-        return new{typeof(x),typeof(η),typeof(Δ)}(x, stop, η, δ, grad, Δ, residual, uR)
+        x::P, η::T, trust_region_radius::R, randomize::Bool, stop::StoppingCriterion
+    ) where {P,T,R<:Real}
+        o = new{typeof(x),typeof(η),typeof(trust_region_radius),typeof(stop)}()
+        o.x = x
+        o.stop = stop
+        o.η = η
+        o.trust_region_radius = trust_region_radius
+        o.randomize = randomize
+        o.res_precon_res = zero(trust_region_radius)
+        o.δHδ = zero(trust_region_radius)
+        o.model_value = zero(trust_region_radius)
+        return o
     end
 end
 
@@ -103,8 +119,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x` : a point as starting point
 * `stop` : a function s,r = @(o,iter) returning a stop
     indicator and a reason based on an iteration number and the gradient
-* `Δ` : the (initial) trust-region radius
-* `Δ_bar` : the maximum trust-region radius
+* `trust_region_radius` : the (initial) trust-region radius
+* `max_trust_region_radius` : the maximum trust-region radius
 * `randomize` : indicates if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
@@ -141,8 +157,8 @@ mutable struct TrustRegionsOptions{
     x::P
     gradient::T
     stop::SC
-    Δ::R
-    Δ_bar::R
+    trust_region_radius::R
+    max_trust_region_radius::R
     retraction_method::RTR
     randomize::Bool
     ρ_prime::R
@@ -163,8 +179,8 @@ mutable struct TrustRegionsOptions{
     function TrustRegionsOptions{P,T,SC,RTR,R}(
         x::P,
         grad::T,
-        Δ::R,
-        Δ_bar::R,
+        trust_region_radius::R,
+        max_trust_region_radius::R,
         ρ_prime::R,
         ρ_regularization::R,
         randomize::Bool,
@@ -176,8 +192,8 @@ mutable struct TrustRegionsOptions{
         o.gradient = grad
         o.stop = stopping_citerion
         o.retraction_method = retraction_method
-        o.Δ = Δ
-        o.Δ_bar = Δ_bar::R
+        o.trust_region_radius = trust_region_radius
+        o.max_trust_region_radius = max_trust_region_radius::R
         o.ρ_prime = ρ_prime
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
@@ -187,8 +203,8 @@ end
 function TrustRegionsOptions(
     x::P,
     grad::T,
-    Δ::R,
-    Δ_bar::R,
+    trust_region_radius::R,
+    max_trust_region_radius::R,
     ρ_prime::R,
     ρ_regularization::R,
     randomize::Bool,
@@ -198,8 +214,8 @@ function TrustRegionsOptions(
     return TrustRegionsOptions{P,T,SC,RTR,R}(
         x,
         grad,
-        Δ,
-        Δ_bar,
+        trust_region_radius,
+        max_trust_region_radius,
         ρ_prime,
         ρ_regularization,
         randomize,
@@ -397,7 +413,7 @@ end
 
 A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
 mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
-≧ Δ$. terminate the algorithm when the trust region has been left.
+≧ trust_region_radius$. terminate the algorithm when the trust region has been left.
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
@@ -445,8 +461,8 @@ function (c::StopWhenTrustRegionIsExceeded)(
         a3 = inner(p.M, o.x, η, get_preconditioner(p, o.x, δ))
         a4 = inner(p.M, o.x, δ, get_preconditioner(p, o.x, δ))
         norm = inner(p.M, o.x, η, η) - 2 * (a1 / a2) * a3 + (a1 / a2)^2 * a4
-        if norm >= o.Δ^2 && i >= 0
-            c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.Δ^2) = Δ²). \n"
+        if norm >= o.trust_region_radius^2 && i >= 0
+            c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
             c.storage(p, o, i)
             return true
         end

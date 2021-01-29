@@ -29,8 +29,8 @@ For a description of the algorithm and more details see
 * `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
-* `Δ_bar` – the maximum trust-region radius
-* `Δ` - the (initial) trust-region radius
+* `max_trust_region_radius` – the maximum trust-region radius
+* `trust_region_radius` - the initial trust-region radius
 * `randomize` – set to true if the trust-region solve is to be initiated with a
   random tangent vector. If set to true, no preconditioner will be
   used. This option is set to true in some scenarios to escape saddle
@@ -94,8 +94,8 @@ function trust_regions!(
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(1000), StopWhenGradientNormLess(10^(-6))
     ),
-    Δ_bar=sqrt(manifold_dimension(M)),
-    Δ=Δ_bar / 8,
+    max_trust_region_radius=sqrt(manifold_dimension(M)),
+    trust_region_radius=max_trust_region_radius / 8,
     randomize::Bool=false,
     ρ_prime::Float64=0.1,
     ρ_regularization=1000.0,
@@ -105,16 +105,22 @@ function trust_regions!(
     (ρ_prime >= 0.25) && throw(
         ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime.")
     )
-    (Δ_bar <= 0) && throw(ErrorException("Δ_bar must be positive but it is $Δ_bar."))
-    (Δ <= 0 || Δ > Δ_bar) && throw(
-        ErrorException("Δ must be positive and smaller than Δ_bar (=$Δ_bar) but it is $Δ."),
+    (max_trust_region_radius <= 0) && throw(
+        ErrorException(
+            "max_trust_region_radius must be positive but it is $max_trust_region_radius.",
+        ),
+    )
+    (trust_region_radius <= 0 || trust_region_radius > max_trust_region_radius) && throw(
+        ErrorException(
+            "trust_region_radius must be positive and smaller than max_trust_region_radius (=$max_trust_region_radius) but it is $trust_region_radius.",
+        ),
     )
     p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
     o = TrustRegionsOptions(
         x,
         get_gradient(p, x),
-        Δ,
-        Δ_bar,
+        trust_region_radius,
+        max_trust_region_radius,
         ρ_prime,
         ρ_regularization,
         randomize,
@@ -135,22 +141,16 @@ function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     o.η = zero_tangent_vector(p.M, o.x)
     o.Hη = zero_tangent_vector(p.M, o.x)
     o.x_proposal = deepcopy(o.x)
-    o.f_proposal = zero(o.Δ)
+    o.f_proposal = zero(o.trust_region_radius)
 
     o.η_Cauchy = zero_tangent_vector(p.M, o.x)
     o.Hη_Cauchy = zero_tangent_vector(p.M, o.x)
-    o.τ = zero(o.Δ)
+    o.τ = zero(o.trust_region_radius)
     o.Hgrad = zero_tangent_vector(p.M, o.x)
-    return o.tcg_options = TruncatedConjugateGradientOptions(
-        o.x,
-        o.stop,
-        o.η,
-        zero_tangent_vector(p.M, o.x),
-        zero_tangent_vector(p.M, o.x),
-        o.Δ,
-        zero_tangent_vector(p.M, o.x),
-        o.randomize,
+    o.tcg_options = TruncatedConjugateGradientOptions(
+        o.x, o.η, o.trust_region_radius, o.randomize, o.stop
     )
+    return o
 end
 
 function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
@@ -158,7 +158,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     if o.randomize
         # Random vector in T_x M (this has to be very small)
         o.η = random_tangent(p.M, o.x, 10.0^(-6))
-        while norm(p.M, o.x, o.η) > o.Δ
+        while norm(p.M, o.x, o.η) > o.trust_region_radius
             # inside trust-region
             o.η *= sqrt(sqrt(eps(Float64)))
         end
@@ -174,7 +174,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         o.x,
         o.η,
         p.hessian!!,
-        o.Δ;
+        o.trust_region_radius;
         preconditioner=p.precon,
         randomize=o.randomize,
         return_options=true,
@@ -193,16 +193,21 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         # Check the curvature,
         get_hessian!(p, o.Hgrad, o.x, o.gradient)
         o.τ = inner(p.M, o.x, o.gradient, o.Hgrad)
-        o.τ = (o.τ <= 0) ? one(o.τ) : o.τ = min(norm_grad^3 / (o.Δ * o.τ), 1)
+        o.τ = if (o.τ <= 0)
+            one(o.τ)
+        else
+            o.τ = min(norm_grad^3 / (o.trust_region_radius * o.τ), 1)
+        end
         # compare to Cauchy point and store best
         model_value =
             fx + inner(p.M, o.x, o.gradient, o.η) + 0.5 * inner(p.M, o.x, o.Hη, o.η)
         modle_value_Cauchy = fx
-        -o.τ * o.Δ * norm(p.M, o.x, o.gradient)
-        +0.5 * o.τ^2 * o.Δ^2 / (norm_grad^2) * inner(p.M, o.x, o.Hgrad, o.gradient)
+        -o.τ * o.trust_region_radius * norm(p.M, o.x, o.gradient)
+        +0.5 * o.τ^2 * o.trust_region_radius^2 / (norm_grad^2) *
+        inner(p.M, o.x, o.Hgrad, o.gradient)
         if modle_value_Cauchy < model_value
-            copyto!(o.η, (-o.τ * o.Δ / norm_grad) * o.gradient)
-            copyto!(o.Hη, (-o.τ * o.Δ / norm_grad) * o.Hgrad)
+            copyto!(o.η, (-o.τ * o.trust_region_radius / norm_grad) * o.gradient)
+            copyto!(o.Hη, (-o.τ * o.trust_region_radius / norm_grad) * o.Hgrad)
         end
     end
     # Compute the tentative next iterate (the proposal)
@@ -219,14 +224,12 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.
     if ρ < 1 / 4 || !model_decreased || isnan(ρ)
-        o.Δ = o.Δ / 4
+        o.trust_region_radius = o.trust_region_radius / 4
     elseif ρ > 3 / 4 && any([
         typeof(s) in [StopWhenTrustRegionIsExceeded, StopWhenCurvatureIsNegative] for
         s in SR
     ])
-        o.Δ = min(2 * o.Δ, o.Δ_bar)
-    else
-        o.Δ = o.Δ
+        o.trust_region_radius = min(2 * o.trust_region_radius, o.max_trust_region_radius)
     end
     # Choose to accept or reject the proposed step based on the model
     # performance. Note the strict inequality.
