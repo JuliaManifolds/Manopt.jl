@@ -85,6 +85,9 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     δ::T
     Hδ::T
     δHδ::R
+    inner_ηδ
+    precon_ηη
+    precon_δδ
     res_precon_res::R
     gradient::T
     model_value::R
