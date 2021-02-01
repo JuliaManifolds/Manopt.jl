@@ -337,7 +337,7 @@ In this case the algorithm reached linear convergence.
 # Fields
 * `κ` – the reduction factor
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $\eta$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
+    ``η`` of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
   reached, see [`get_reason`](@ref).
 

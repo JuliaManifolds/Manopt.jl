@@ -165,7 +165,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     else
         zero_tangent_vector!(p.M, o.η, o.x)
     end
-    # Solve TR subproblem
+    # Solve TR subproblem - update options
     o.tcg_options.x = o.x
     o.tcg_options.η = o.η
     o.tcg_options.trust_region_radius = o.trust_region_radius

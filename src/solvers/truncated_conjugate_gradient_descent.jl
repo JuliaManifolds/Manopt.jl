@@ -162,8 +162,6 @@ end
 function step_solver!(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    get_hessian!(p, o.Hδ, o.x, o.δ)
-    o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
     # Note that if d_Hd == 0, we will exit at the next "if" anyway.
     α = o.res_precon_res / o.δHδ
     # <neweta,neweta>_P =
@@ -176,14 +174,14 @@ function step_solver!(
     # If either condition triggers, we bail out.
     if o.δHδ <= 0 || e_Pe_new >= o.trust_region_radius^2
         τ = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.trust_region_radius^2 - e_Pe))) / d_Pd
-        o.η = o.η - τ * (o.δ)
+        o.η = o.η - τ * o.δ
     else
         # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
         new_model_value =
             inner(p.M, o.x, o.η - α * (o.δ), get_gradient(p, o.x)) +
             0.5 * inner(p.M, o.x, o.η - α * (o.δ), get_hessian(p, o.x, o.η - α * (o.δ)))
-        if new_model_value <= o.model_value
-            o.η = o.η - α * (o.δ)
+        if new_model_value < o.model_value
+            o.η = o.η - α * o.δ
             o.model_value = new_model_value
         end
     end
@@ -197,6 +195,8 @@ function step_solver!(
     β = zr / o.res_precon_res
     o.res_precon_res = zr
     o.δ = project!(p.M, o.δ, o.x, o.precon_residual + β * o.δ)
+    get_hessian!(p, o.Hδ, o.x, o.δ)
+    o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
     return o
 end
 get_solver_result(o::O) where {O<:TruncatedConjugateGradientOptions} = o.η
