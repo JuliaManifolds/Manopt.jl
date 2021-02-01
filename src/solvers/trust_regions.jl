@@ -165,39 +165,27 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     else
         zero_tangent_vector!(p.M, o.η, o.x)
     end
-    # Solve TR subproblem approximately
-
-    opt = truncated_conjugate_gradient_descent!(
-        p.M,
-        p.cost,
-        p.gradient!!,
-        o.x,
-        o.η,
-        p.hessian!!,
-        o.trust_region_radius;
-        preconditioner=p.precon,
-        randomize=o.randomize,
-        return_options=true,
-    )
-    option = get_options(opt) # remove decorators
-    SR = get_active_stopping_criteria(option.stop)
+    # Solve TR subproblem
+    o.tcg_options.x = o.x
+    o.tcg_options.η = o.η
+    o.tcg_options.trust_region_radius = o.trust_region_radius
+    o.tcg_options.stop = o.stop
+    solve(p, o.tcg_options)
+    SR = get_active_stopping_criteria(o.tcg_options.stop)
+    #
     get_hessian!(p, o.Hη, o.x, o.η)
-    o.η = get_solver_result(option)
+    o.η = o.tcg_options.η
     # Initialize the cost function F und the gradient of the cost function
     # gradF at the point x
     get_gradient!(p, o.gradient, o.x)
     fx = get_cost(p, o.x)
-    norm_grad = norm(p.M, o.x, o.gradient)
     # If using randomized approach, compare result with the Cauchy point.
     if o.randomize
+        norm_grad = norm(p.M, o.x, o.gradient)
         # Check the curvature,
         get_hessian!(p, o.Hgrad, o.x, o.gradient)
         o.τ = inner(p.M, o.x, o.gradient, o.Hgrad)
-        o.τ = if (o.τ <= 0)
-            one(o.τ)
-        else
-            o.τ = min(norm_grad^3 / (o.trust_region_radius * o.τ), 1)
-        end
+        o.τ = (o.τ <= 0) ? one(o.τ) : min(norm_grad^3 / (o.trust_region_radius * o.τ), 1)
         # compare to Cauchy point and store best
         model_value =
             fx + inner(p.M, o.x, o.gradient, o.η) + 0.5 * inner(p.M, o.x, o.Hη, o.η)

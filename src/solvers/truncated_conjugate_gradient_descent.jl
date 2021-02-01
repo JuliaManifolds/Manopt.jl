@@ -151,16 +151,16 @@ function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOpti
     o.precon_residual = zero_tangent_vector(p.M, o.x)
     o.δ = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     o.Hδ = zero_tangent_vector(p.M, o.x)
-    o.model_value = if o.randomize
-        0
+    if o.randomize
+        o.model_value = 0
     else
-        inner(p.M, o.x, o.η, get_gradient(p, o.x)) + 0.5 * inner(p.M, o.x, o.η, o.Hη)
+        o.model_value = inner(p.M, o.x, o.η, o.gradient) + 0.5 * inner(p.M, o.x, o.η, o.Hη)
     end
     o.res_precon_res = inner(p.M, o.x, o.precon_residual, o.residual)
     return o
 end
 function step_solver!(
-    p::P, o::O, ::Int
+    p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     get_hessian!(p, o.Hδ, o.x, o.δ)
     o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)

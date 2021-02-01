@@ -92,6 +92,8 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     residual::T
     precon_residual::T
     randomize::Bool
+
+    tcg_options::TruncatedConjugateGradientOptions
     function TruncatedConjugateGradientOptions(
         x::P, η::T, trust_region_radius::R, randomize::Bool, stop::StoppingCriterion
     ) where {P,T,R<:Real}
