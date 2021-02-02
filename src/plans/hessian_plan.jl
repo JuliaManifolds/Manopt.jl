@@ -80,35 +80,64 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
                AbstractHessianOptions
     x::P
     stop::SC
+    gradient::T
     η::T
     Hη::T
     δ::T
     Hδ::T
     δHδ::R
-    inner_ηδ
-    precon_ηη
-    precon_δδ
-    res_precon_res::R
-    gradient::T
-    model_value::R
-    trust_region_radius::R
+    ηPδ::R
+    δPδ::R
+    ηPη::R
+    z::T
+    z_r::R
     residual::T
-    precon_residual::T
+    trust_region_radius::R
+    model_value::R
+    new_model_value::R
+    κ::R
     randomize::Bool
-
-    tcg_options::TruncatedConjugateGradientOptions
     function TruncatedConjugateGradientOptions(
-        x::P, η::T, trust_region_radius::R, randomize::Bool, stop::StoppingCriterion
-    ) where {P,T,R<:Real}
+        p::HessianProblem,
+        x::P,
+        η::T,
+        trust_region_radius::R,
+        randomize::Bool;
+        θ::Float64=1.0,
+        κ::Float64=0.1,
+        stop::StoppingCriterion=StopWhenAny(
+            StopAfterIteration(manifold_dimension(p.M)),
+            StopIfResidualIsReducedByPower(
+                norm(
+                    p.M,
+                    x,
+                    get_gradient(p, x) +
+                    (randomize ? get_hessian(p, x, η) : zero_tangent_vector(p.M, x)),
+                ),
+                θ,
+            ),
+            StopIfResidualIsReducedByFactor(
+                norm(
+                    p.M,
+                    x,
+                    get_gradient(p, x) +
+                    (randomize ? get_hessian(p, x, η) : zero_tangent_vector(p.M, x)),
+                ),
+                κ,
+            ),
+            StopWhenTrustRegionIsExceeded(),
+            StopWhenCurvatureIsNegative(),
+            StopWhenModelIncreased(),
+        ),
+    ) where {H,G,P,T,R<:Real}
         o = new{typeof(x),typeof(η),typeof(trust_region_radius),typeof(stop)}()
         o.x = x
         o.stop = stop
         o.η = η
         o.trust_region_radius = trust_region_radius
         o.randomize = randomize
-        o.res_precon_res = zero(trust_region_radius)
-        o.δHδ = zero(trust_region_radius)
         o.model_value = zero(trust_region_radius)
+        o.κ = zero(trust_region_radius)
         return o
     end
 end
@@ -440,39 +469,17 @@ the norm of the next iterate is greater than the trust-region radius using the
 """
 mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
-    storage::StoreOptionsAction
-    function StopWhenTrustRegionIsExceeded(
-        a::StoreOptionsAction=StoreOptionsAction((:η, :δ, :residual))
-    )
-        return new("", a)
-    end
 end
+StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
 function (c::StopWhenTrustRegionIsExceeded)(
-    p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    if has_storage(c.storage, :δ) &&
-       has_storage(c.storage, :η) &&
-       has_storage(c.storage, :residual)
-        η = get_storage(c.storage, :η)
-        δ = get_storage(c.storage, :δ)
-        residual = get_storage(c.storage, :residual)
-        a1 = inner(
-            p.M,
-            o.x,
-            o.randomize ? get_preconditioner(p, o.x, residual) : residual,
-            residual,
-        )
-        a2 = inner(p.M, o.x, δ, get_hessian(p, o.x, δ))
-        a3 = inner(p.M, o.x, η, get_preconditioner(p, o.x, δ))
-        a4 = inner(p.M, o.x, δ, get_preconditioner(p, o.x, δ))
-        norm = inner(p.M, o.x, η, η) - 2 * (a1 / a2) * a3 + (a1 / a2)^2 * a4
-        if norm >= o.trust_region_radius^2 && i >= 0
-            c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
-            c.storage(p, o, i)
-            return true
-        end
+    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+)
+    α = o.z_r / o.δHδ
+    ηPη_new = o.ηPη + 2 * α * o.ηPδ + α^2 * o.δPδ
+    if ηPη_new >= o.trust_region_radius^2 && i >= 0
+        c.reason = "Trust-region radius violation (‖η‖² = $(ηPη_new)) >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
+        return true
     end
-    c.storage(p, o, i)
     return false
 end
 
@@ -487,39 +494,54 @@ does not give a reduction of the model.
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
-* `storage` – stores the necessary parameter `δ` to check the
-    criterion.
 
 # Constructor
 
-    StopWhenCurvatureIsNegative([a])
-
-initialize the StopWhenCurvatureIsNegative functor to indicate to stop after
-the inner product of the search direction and the hessian applied on the search
-dircetion is less than zero using the [`StoreOptionsAction`](@ref) `a`, which
-is initialized to just store `:δ` by default.
+    StopWhenCurvatureIsNegative()
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
-    storage::StoreOptionsAction
-    function StopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction((:δ,)))
-        return new("", a)
-    end
 end
+StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("")
 function (c::StopWhenCurvatureIsNegative)(
-    p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    if has_storage(c.storage, :δ)
-        δ = get_storage(c.storage, :δ)
-        if inner(p.M, o.x, δ, get_hessian(p, o.x, δ)) <= 0 && i > 0
-            c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(inner(p.M, o.x, δ, get_hessian(p, o.x, δ))) <= 0).\n"
-            c.storage(p, o, i)
-            return true
-        end
+    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+)
+    if o.δHδ <= 0 && i > 0
+        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(o.δHδ))) <= 0).\n"
+        return true
     end
-    c.storage(p, o, i)
+    return false
+end
+
+@doc raw"""
+    StopWhenModelIncreased <: StoppingCriterion
+
+A functor for testing if the curvature of the model value increased.
+
+# Fields
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`get_reason`](@ref).
+
+# Constructor
+
+    StopWhenModelIncreased()
+
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct StopWhenModelIncreased <: StoppingCriterion
+    reason::String
+end
+StopWhenModelIncreased() = StopWhenModelIncreased("")
+function (c::StopWhenModelIncreased)(
+    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+)
+    if i > 0 && (o.new_model_value > o.model_value)
+        c.reason = "Model value increased from $(o.model_value) to $(o.new_model_value).\n"
+        return true
+    end
     return false
 end

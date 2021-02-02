@@ -250,7 +250,8 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 export StopIfResidualIsReducedByFactor,
     StopIfResidualIsReducedByPower,
     StopWhenCurvatureIsNegative,
-    StopWhenTrustRegionIsExceeded
+    StopWhenTrustRegionIsExceeded,
+    StopWhenModelIncreased
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
 export StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason

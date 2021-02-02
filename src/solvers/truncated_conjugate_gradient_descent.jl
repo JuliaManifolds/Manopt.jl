@@ -127,13 +127,14 @@ function truncated_conjugate_gradient_descent!(
         ),
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),
+        StopWhenModelIncreased(),
     ),
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec}
     p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
     o = TruncatedConjugateGradientOptions(
-        x, η, trust_region_radius, randomize, stopping_criterion
+        p, x, η, trust_region_radius, randomize; θ=θ, κ=κ, stop=stopping_criterion
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -144,59 +145,60 @@ function truncated_conjugate_gradient_descent!(
     end
 end
 function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOptions)
+    (o.randomize) || zero_tangent_vector!(p.M, o.η, o.x)
     o.Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
     o.gradient = get_gradient(p, o.x)
     o.residual = o.randomize ? o.gradient + o.Hη : get_gradient(p, o.x)
-    o.precon_residual = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
-    o.δ = o.randomize ? -o.residual : -get_preconditioner(p, o.x, o.residual)
+    o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
+    o.δ = -deepcopy(o.z)
     o.Hδ = zero_tangent_vector(p.M, o.x)
     o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
-    o.inner_ηδ = o.randomize ? inner(p.M, o.x, o.η, o.δ) : zero(o.δHδ)
-    o.precon_δδ = inner(p.M, o.x, o.residual, o.precon_residual)
-    o.precon_ηη = o.randomize ? inner(p.M, o.x, o.η, o.η) : zero(o.δHδ)
+    o.ηPδ = o.randomize ? inner(p.M, o.x, o.η, o.δ) : zero(o.δHδ)
+    o.δPδ = inner(p.M, o.x, o.residual, o.z)
+    o.ηPη = o.randomize ? inner(p.M, o.x, o.η, o.η) : zero(o.δHδ)
     if o.randomize
         o.model_value = inner(p.M, o.x, o.η, o.gradient) + 0.5 * inner(p.M, o.x, o.η, o.Hη)
     else
         o.model_value = 0
     end
-    o.res_precon_res = inner(p.M, o.x, o.precon_residual, o.residual)
+    o.z_r = inner(p.M, o.x, o.z, o.residual)
     return o
 end
 function step_solver!(
     p::P, o::O, ::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     # Updates
-    α = o.res_precon_res / o.δHδ
-    precon_ηη_new = o.precon_ηη + 2*α*o.inner_ηδ + α^2*o.precon_δδ
-    # Check against negative curvature and trust-region radius violation.
-    if o.δHδ <= 0 || precon_ηη_new >= o.trust_region_radius^2
-        τ = (-o.inner_ηδ + sqrt(o.inner_ηδ^2 + o.precon_δδ * (o.trust_region_radius^2 - o.precon_ηη))) / o.precon_δδ
-        o.η = o.η + τ * o.δ
-    else
-        o.precon_ηη = precon_ηη_new
-        # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
-        new_model_value =
-            inner(p.M, o.x, o.η - α * o.δ, o.gradient) +
-            0.5 * inner(p.M, o.x, o.η - α * o.δ, get_hessian(p, o.x, o.η - α * (o.δ)))
-        if new_model_value < o.model_value
-            o.η = o.η + α * o.δ
-            o.model_value = new_model_value
-        end
-    end
-    # Updates
-    get_hessian!(p, o.Hη, o.x, o.η)
-    o.residual = o.residual + α * o.Hδ
-    # Precondition the residual.
-    o.precon_residual = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
-    zr = inner(p.M, o.x, o.precon_residual, o.residual)
-    # Compute new search direction.
-    β = zr / o.res_precon_res
-    o.res_precon_res = zr
-    o.δ = project!(p.M, o.δ, o.x, o.precon_residual - β * o.δ)
     get_hessian!(p, o.Hδ, o.x, o.δ)
     o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
-    o.inner_ηδ = β*(α*o.precon_δδ - o.inner_ηδ)
-    o.precon_δδ = o.res_precon_res + β^2*o.precon_δδ
+    α = o.z_r / o.δHδ
+    ηPη_new = o.ηPη + 2 * α * o.ηPδ + α^2 * o.δPδ
+    # Check against negative curvature and trust-region radius violation.
+    if o.δHδ <= 0 || ηPη_new >= o.trust_region_radius^2
+        τ = (-o.ηPδ + sqrt(o.ηPδ^2 + o.δPδ * (o.trust_region_radius^2 - o.ηPη))) / o.δPδ
+        o.η = o.η + τ * o.δ
+        o.Hη = o.Hη + τ * o.Hδ
+        return o
+    end
+    o.ηPη = ηPη_new
+    new_η = o.η + α * o.δ
+    new_Hη = get_hessian(p, o.x, new_η)
+    # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
+    o.new_model_value =
+        inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
+    (o.new_model_value > o.model_value) && return o
+    copyto!(o.η, new_η)
+    o.model_value = o.new_model_value
+    copyto!(o.Hη, new_Hη)
+    o.residual = o.residual + α * o.Hδ
+    # Precondition the residual.
+    o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
+    zr = inner(p.M, o.x, o.z, o.residual)
+    # Compute new search direction.
+    β = o.z_r / zr
+    o.z_r = zr
+    o.δ = -o.z + β * o.δ
+    o.ηPδ = β * (α * o.δPδ + o.ηPδ)
+    o.δPδ = o.z_r + β^2 * o.δPδ
     return o
 end
 get_solver_result(o::O) where {O<:TruncatedConjugateGradientOptions} = o.η

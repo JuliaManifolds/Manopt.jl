@@ -148,7 +148,7 @@ function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     o.τ = zero(o.trust_region_radius)
     o.Hgrad = zero_tangent_vector(p.M, o.x)
     o.tcg_options = TruncatedConjugateGradientOptions(
-        o.x, o.η, o.trust_region_radius, o.randomize, o.stop
+        p, o.x, o.η, o.trust_region_radius, o.randomize
     )
     return o
 end
@@ -169,7 +169,6 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.x = o.x
     o.tcg_options.η = o.η
     o.tcg_options.trust_region_radius = o.trust_region_radius
-    o.tcg_options.stop = o.stop
     solve(p, o.tcg_options)
     SR = get_active_stopping_criteria(o.tcg_options.stop)
     #

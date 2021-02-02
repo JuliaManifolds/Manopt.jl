@@ -92,7 +92,6 @@ end
     X2 = deepcopy(x)
     trust_regions!(M, cost, rgrad, X2, rhess; max_trust_region_radius=8.0)
     @test isapprox(M, X, X2)
-
     XuR = trust_regions(
         M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, randomize=true
     )
@@ -107,13 +106,13 @@ end
         ApproxHessianFiniteDifference(
             M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
         );
+        max_trust_region_radius=8.0,
         stopping_criterion=StopWhenAny(
             StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
         ),
-        max_trust_region_radius=8.0,
     )
     XaH2 = deepcopy(x)
-    XaH = trust_regions!(
+    trust_regions!(
         M,
         cost,
         rgrad,
