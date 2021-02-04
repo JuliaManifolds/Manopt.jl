@@ -300,7 +300,7 @@ get_preconditioner(p::HessianProblem, x, X) = p.precon(p.M, x, X)
 
 A functor to approximate the Hessian by a finite difference of gradient evaluations
 """
-struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
+mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
     x_dir::P
     gradient!!::G
     grad_tmp::T
@@ -335,11 +335,11 @@ function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
     X = zero_tangent_vector(M, x)
     norm_X = norm(M, x, X)
     (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(M, X, x)
-    c = f.stepsize / norm_X
-    f.grad_tmp = f.gradient!!(M, x)
-    f.x_dir = retract(M, x, c * X, f.retraction_method)
-    f.grad_tmp_dir = f.gradient!!(M, f.x_dir)
-    f.grad_tmp_dir = vector_transport_to(
+    c = f.steplength / norm_X
+    f.grad_tmp .= f.gradient!!(M, x)
+    f.x_dir .= retract(M, x, c * X, f.retraction_method)
+    f.grad_tmp_dir .= f.gradient!!(M, f.x_dir)
+    f.grad_tmp_dir .= vector_transport_to(
         M, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
     )
     return (1 / c) * (f.grad_tmp_dir - f.grad_tmp)
@@ -347,7 +347,7 @@ end
 function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, x, X)
     norm_X = norm(M, x, X)
     (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(M, X, x)
-    c = f.stepsize / norm_X
+    c = f.steplength / norm_X
     f.gradient!!(f.grad_tmp, x)
     retract!(M, f.x_dir, x, c * X, f.retraction_method)
     f.gradient!!(f.grad_tmp_dir, f.x_dir)
