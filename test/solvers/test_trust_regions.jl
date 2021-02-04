@@ -1,74 +1,14 @@
 using Manifolds, Manopt, LinearAlgebra, Test
 import Random: seed!
 
-A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
-
-function cost(::ProductManifold, X::ProductRepr)
-    return cost([submanifold_components(X)...])
-end
-function cost(X::Array{Matrix{Float64},1})
-    return -0.5 * norm(transpose(X[1]) * A * X[2])^2
-end
-
-function egrad(X::Array{Matrix{Float64},1})
-    U = X[1]
-    V = X[2]
-    AV = A * V
-    AtU = transpose(A) * U
-    return [-AV * (transpose(AV) * U), -AtU * (transpose(AtU) * V)]
-end
-
-function rgrad(M::ProductManifold, X::ProductRepr)
-    eG = egrad([submanifold_components(M, X)...])
-    x = [submanifold_components(M, X)...]
-    return Manifolds.ProductRepr(project.(M.manifolds, x, eG)...)
-end
-
-function e2rHess(
-    M::Grassmann, x, ξ, eGrad::Matrix{T}, Hess::Matrix{T}
-) where {T<:Union{U,Complex{U}}} where {U<:AbstractFloat}
-    pxHess = project(M, x, Hess)
-    xtGrad = x' * eGrad
-    ξxtGrad = ξ * xtGrad
-    return pxHess - ξxtGrad
-end
-
-function eHess(X::Array{Matrix{Float64},1}, H::Array{Matrix{Float64},1})
-    U = X[1]
-    V = X[2]
-    Udot = H[1]
-    Vdot = H[2]
-    AV = A * V
-    AtU = transpose(A) * U
-    AVdot = A * Vdot
-    AtUdot = transpose(A) * Udot
-    return [
-        -(
-            AVdot * transpose(AV) * U +
-            AV * transpose(AVdot) * U +
-            AV * transpose(AV) * Udot
-        ),
-        -(
-            AtUdot * transpose(AtU) * V +
-            AtU * transpose(AtUdot) * V +
-            AtU * transpose(AtU) * Vdot
-        ),
-    ]
-end
-
-function rhess(M::ProductManifold, X::ProductRepr, H::ProductRepr)
-    x = [submanifold_components(M, X)...]
-    h = [submanifold_components(M, H)...]
-    eG = egrad(x)
-    eH = eHess(x, h)
-    return Manifolds.ProductRepr(e2rHess.(M.manifolds, x, h, eG, eH)...)
-end
+include("trust_region_model.jl")
 
 @testset "Manopt Trust-Region" begin
-    seed!(42)
-
-    N = Grassmann(3, 2)
-    M = N × N
+    seed!(141)
+    n=size(A,1)
+    p=2
+    N = Grassmann(n,p)
+    M = PowerManifold(N, NestedPowerRepresentation(),2)
 
     x = random_point(M)
 
@@ -83,57 +23,73 @@ end
         M, cost, rgrad, x, rhess; max_trust_region_radius=0.1, trust_region_radius=0.11
     )
 
-    X = trust_regions(M, cost, rgrad, x, rhess; max_trust_region_radius=8.0)
-    opt = trust_regions(
-        M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, return_options=true
-    )
-    @test isapprox(M, X, get_solver_result(opt))
+    @testset "Allocating Variant" begin
+        X = trust_regions(M, cost, rgrad, x, rhess; max_trust_region_radius=8.0,debug=[:Stop])
+        opt = trust_regions(
+            M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, return_options=true
+        )
+        @test isapprox(M, X, get_solver_result(opt))
 
-    X2 = deepcopy(x)
-    trust_regions!(M, cost, rgrad, X2, rhess; max_trust_region_radius=8.0)
-    @test isapprox(M, X, X2)
-    XuR = trust_regions(
-        M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, randomize=true
-    )
+        X2 = deepcopy(x)
+        trust_regions!(M, cost, rgrad, X2, rhess; max_trust_region_radius=8.0)
+        @test isapprox(M, X, X2)
+        XuR = trust_regions(
+            M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, randomize=true
+        )
 
-    @test cost(M, XuR) ≈ cost(M, X)
+        @test cost(M, XuR) ≈ cost(M, X)
 
-    XaH = trust_regions(
-        M,
-        cost,
-        rgrad,
-        x,
-        ApproxHessianFiniteDifference(
-            M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
-        );
-        max_trust_region_radius=8.0,
-        stopping_criterion=StopWhenAny(
-            StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
-        ),
-    )
-    XaH2 = deepcopy(x)
-    trust_regions!(
-        M,
-        cost,
-        rgrad,
-        XaH2,
-        ApproxHessianFiniteDifference(
-            M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
-        );
-        stopping_criterion=StopWhenAny(
-            StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
-        ),
-        max_trust_region_radius=8.0,
-    )
-    @test isapprox(M, XaH, XaH2)
-    @test cost(M, XaH) ≈ cost(M, X)
+        XaH = trust_regions(
+            M,
+            cost,
+            rgrad,
+            x,
+            ApproxHessianFiniteDifference(
+                M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
+            );
+            max_trust_region_radius=8.0,
+            stopping_criterion=StopWhenAny(
+                StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
+            ),
+        )
+        XaH2 = deepcopy(x)
+        trust_regions!(
+            M,
+            cost,
+            rgrad,
+            XaH2,
+            ApproxHessianFiniteDifference(
+                M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
+            );
+            stopping_criterion=StopWhenAny(
+                StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
+            ),
+            max_trust_region_radius=8.0,
+        )
+        @test isapprox(M, XaH, XaH2)
+        @test cost(M, XaH) ≈ cost(M, X)
 
-    ξ = random_tangent(M, x)
-    @test_throws MethodError get_hessian(SubGradientProblem(M, cost, rgrad), x, ξ)
+        ξ = random_tangent(M, x)
+        @test_throws MethodError get_hessian(SubGradientProblem(M, cost, rgrad), x, ξ)
 
-    η = truncated_conjugate_gradient_descent(M, cost, rgrad, x, ξ, rhess, 0.5)
-    ηOpt = truncated_conjugate_gradient_descent(
-        M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true
-    )
-    @test submanifold_components(get_solver_result(ηOpt)) == submanifold_components(η)
+        η = truncated_conjugate_gradient_descent(M, cost, rgrad, x, ξ, rhess, 0.5)
+        ηOpt = truncated_conjugate_gradient_descent(
+            M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true
+        )
+        @test get_solver_result(ηOpt) == η
+    end
+    @testset "Mutating" begin
+        h = RHess(A,p)
+        g = RGrad(A,p)
+        x3 = deepcopy(x)
+        trust_regions!(M, cost, g, x3, h;
+                max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), debug=[:Stop],
+            )
+        x4 = deepcopy(x)
+        opt = trust_regions!(
+            M, cost, g, x4, h; max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), return_options=true
+        )
+        println(cost(x3))
+        @test isapprox(M, x3, x4)
+    end
 end
