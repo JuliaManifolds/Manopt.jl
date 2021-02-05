@@ -80,7 +80,7 @@ X = [0.0, 0.4, 0.5]
 # along~\(g(\cdot; p,q)\) is given
 #
 # ````math
-# J_{g,X}(t):=\frac{D}{\partial s}\Gamma_{g,X}(s,t)\Bigl\rvert_{s=0}$
+# J_{g,X}(t):=\frac{D}{\partial s}\Gamma_{g,X}(s,t)\Bigl\rvert_{s=0}
 # ````
 #
 # which is an ODE and we know the boundary conditions $J_{g,X}(0)=X$ and
