@@ -1,4 +1,4 @@
-A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
+const A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
 
 cost(::PowerManifold, p) = cost(p)
 cost(X::Array{Matrix{Float64},1}) = -0.5 * norm(transpose(X[1]) * A * X[2])^2

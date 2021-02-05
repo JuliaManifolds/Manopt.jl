@@ -198,7 +198,7 @@ mutable struct TrustRegionsOptions{
     ρ_prime::R
     ρ_regularization::R
 
-    tcg_options::TruncatedConjugateGradientOptions
+    tcg_options::TruncatedConjugateGradientOptions{P,T,R}
 
     x_proposal::P
     f_proposal::R
