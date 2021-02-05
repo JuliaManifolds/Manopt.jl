@@ -1,5 +1,5 @@
 @doc raw"""
-    trust_regions(M, F, gradF, x, H)
+    trust_regions(M, F, gradF, hessF, x)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds.
 It will attempt to minimize the cost function F on the Manifold M.
@@ -62,14 +62,14 @@ For a description of the algorithm and more details see
 [`truncated_conjugate_gradient_descent`](@ref)
 """
 function trust_regions(
-    M::Manifold, F::TF, gradF::TdF, x, H::TH; kwargs...
+    M::Manifold, F::TF, gradF::TdF, hessF::TH, x; kwargs...
 ) where {TF,TdF,TH}
     x_res = allocate(x)
     copyto!(x_res, x)
-    return trust_regions!(M, F, gradF, x_res, H; kwargs...)
+    return trust_regions!(M, F, gradF, hessF, x_res; kwargs...)
 end
 @doc raw"""
-    trust_regions!(M, F, gradF, x, H; kwargs...)
+    trust_regions!(M, F, gradF, hessF, x; kwargs...)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `x`.
 
@@ -86,8 +86,8 @@ function trust_regions!(
     M::Manifold,
     F::TF,
     gradF::TdF,
-    x,
-    H::TH;
+    hessF::TH,
+    x;
     evaluation=AllocatingEvaluation(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
@@ -115,7 +115,7 @@ function trust_regions!(
             "trust_region_radius must be positive and smaller than max_trust_region_radius (=$max_trust_region_radius) but it is $trust_region_radius.",
         ),
     )
-    p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
+    p = HessianProblem(M, F, gradF, hessF, preconditioner; evaluation=evaluation)
     o = TrustRegionsOptions(
         x,
         get_gradient(p, x),

@@ -12,29 +12,29 @@ include("trust_region_model.jl")
 
     x = random_point(M)
 
-    @test_throws ErrorException trust_regions(M, cost, rgrad, x, rhess; ρ_prime=0.3)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, rhess, x; ρ_prime=0.3)
     @test_throws ErrorException trust_regions(
-        M, cost, rgrad, x, rhess; max_trust_region_radius=-0.1
+        M, cost, rgrad, rhess, x; max_trust_region_radius=-0.1
     )
     @test_throws ErrorException trust_regions(
-        M, cost, rgrad, x, rhess; trust_region_radius=-0.1
+        M, cost, rgrad, rhess, x; trust_region_radius=-0.1
     )
     @test_throws ErrorException trust_regions(
-        M, cost, rgrad, x, rhess; max_trust_region_radius=0.1, trust_region_radius=0.11
+        M, cost, rgrad, rhess, x; max_trust_region_radius=0.1, trust_region_radius=0.11
     )
 
     @testset "Allocating Variant" begin
-        X = trust_regions(M, cost, rgrad, x, rhess; max_trust_region_radius=8.0,debug=[:Stop])
+        X = trust_regions(M, cost, rgrad, rhess, x; max_trust_region_radius=8.0,debug=[:Stop])
         opt = trust_regions(
-            M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, return_options=true
+            M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, return_options=true
         )
         @test isapprox(M, X, get_solver_result(opt))
 
         X2 = deepcopy(x)
-        trust_regions!(M, cost, rgrad, X2, rhess; max_trust_region_radius=8.0)
+        trust_regions!(M, cost, rgrad, rhess, X2; max_trust_region_radius=8.0)
         @test isapprox(M, X, X2)
         XuR = trust_regions(
-            M, cost, rgrad, x, rhess; max_trust_region_radius=8.0, randomize=true
+            M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, randomize=true
         )
 
         @test cost(M, XuR) ≈ cost(M, X)
@@ -43,10 +43,10 @@ include("trust_region_model.jl")
             M,
             cost,
             rgrad,
-            x,
             ApproxHessianFiniteDifference(
                 M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
-            );
+            ),
+            x;
             max_trust_region_radius=8.0,
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
@@ -57,10 +57,10 @@ include("trust_region_model.jl")
             M,
             cost,
             rgrad,
-            XaH2,
             ApproxHessianFiniteDifference(
                 M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
-            );
+            ),
+            XaH2;
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
             ),
@@ -82,12 +82,12 @@ include("trust_region_model.jl")
         h = RHess(A,p)
         g = RGrad(A,p)
         x3 = deepcopy(x)
-        trust_regions!(M, cost, g, x3, h;
+        trust_regions!(M, cost, g, h, x3;
                 max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), debug=[:Stop],
             )
         x4 = deepcopy(x)
         opt = trust_regions!(
-            M, cost, g, x4, h; max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), return_options=true
+            M, cost, g, h, x4; max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), return_options=true
         )
         println(cost(x3))
         @test isapprox(M, x3, x4)

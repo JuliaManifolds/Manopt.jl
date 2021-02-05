@@ -1,9 +1,7 @@
 A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
 
 cost(::PowerManifold, p) = cost(p)
-function cost(X::Array{Matrix{Float64},1})
-    return -0.5 * norm(transpose(X[1]) * A * X[2])^2
-end
+cost(X::Array{Matrix{Float64},1}) = -0.5 * norm(transpose(X[1]) * A * X[2])^2
 
 function egrad(X::Array{Matrix{Float64},1})
     U = X[1]
@@ -25,9 +23,8 @@ end
 rgrad(M::PowerManifold, p) = project(M, p, egrad(p))
 struct RGrad{T}
     egrad::EGrad{T}
-    Y::Array{Matrix{T},1}
 end
-RGrad(A::Matrix{T},p) where {T} = RGrad{T}(EGrad{T}(A), [zeros(T,size(A,1),p) for _ ∈ 1:2])
+RGrad(A::Matrix{T},p) where {T} = RGrad{T}(EGrad{T}(A))
 function (r::RGrad)(M::PowerManifold, X, p)
     return project!(M, X, p, r.egrad(X, p))
 end
@@ -70,6 +67,7 @@ EHess(A::Matrix{T}) where {T} = EHess{T}(A)
 function (e::EHess)(Y,X,H)
     Y[1] .= -e.A*H[2]*transpose(e.A*X[2])*X[1] - e.A*X[2] * transpose(e.A*H[2])*X[1] - e.A*X[2]*transpose(e.A*X[2])*H[1]
     Y[2] .= transpose(e.A)*H[1]*transpose(X[1])*e.A*X[2] + transpose(e.A)*X[1] * transpose(H[1])*e.A*X[2] + transpose(e.A)*X[1]*transpose(X[1])*e.A*H[2]
+    return Y
 end
 
 function rhess(M::PowerManifold, p, X)
@@ -78,8 +76,8 @@ function rhess(M::PowerManifold, p, X)
     return e2rHess.(Ref(M.manifold), p, X, eG, eH)
 end
 struct RHess{T}
-    e_grad::EGrad{T}
-    e_hess::EHess{T}
+    e_grad!::EGrad{T}
+    e_hess!::EHess{T}
     G::Array{Matrix{T},1}
     H::Array{Matrix{T},1}
 end
@@ -92,8 +90,8 @@ function RHess(A::Matrix{T},p) where {T}
     )
 end
 function (r::RHess)(M::PowerManifold, Y, p, X)
-    r.e_grad(r.G, p)
-    r.e_hess(r.H, p, X)
+    r.e_grad!(r.G, p)
+    r.e_hess!(r.H, p, X)
     e2rhess!.(Ref(M.manifold), Y, p, X, r.G, r.H)
     return Y
 end
