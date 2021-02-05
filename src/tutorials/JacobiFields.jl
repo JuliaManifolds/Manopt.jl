@@ -76,11 +76,11 @@ X = [0.0, 0.4, 0.5]
 # ````
 # Intuitively we make a small step $s$ into direction $\xi$ using the geodesic
 # $g(\cdot; p,X)$ and from $r=g(s; p,X)$ we follow (in $t$) the geodesic
-# $g(\cdot; r,q)$. The corresponding Jacobi field~\(J_{g,X}\)
-# along~\(g(\cdot; p,q)\) is given
+# $g(\cdot; r,q)$. The corresponding Jacobi field $J_{g,X}$
+# along $g(\cdot; p,q)$ is given by
 #
 # ````math
-# J_{g,X}(t):=\frac{D}{\partial s}\Gamma_{g,X}(s,t)\Bigl\rvert_{s=0}$
+# J_{g,X}(t):=\frac{D}{\partial s}\Gamma_{g,X}(s,t)\Bigl\rvert_{s=0}
 # ````
 #
 # which is an ODE and we know the boundary conditions $J_{g,X}(0)=X$ and
