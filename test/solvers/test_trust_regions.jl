@@ -78,8 +78,8 @@ include("trust_region_model.jl")
         @test get_solver_result(ηOpt) == η
     end
     @testset "Mutating" begin
-        h = RHess(A,p)
-        g = RGrad(A,p)
+        g = RGrad(M,A)
+        h = RHess(M,A,p)
         x3 = deepcopy(x)
         trust_regions!(M, cost, g, h, x3;
                 max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), debug=[:Stop],
@@ -88,7 +88,6 @@ include("trust_region_model.jl")
         opt = trust_regions!(
             M, cost, g, h, x4; max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), return_options=true
         )
-        println(cost(x3))
         @test isapprox(M, x3, x4)
     end
 end

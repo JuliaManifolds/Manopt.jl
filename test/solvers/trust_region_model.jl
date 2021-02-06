@@ -110,8 +110,8 @@ function RHess(M::Manifold, A::Matrix{T},p) where {T}
     return RHess{T,typeof(M)}(
         EGrad(M, A),
         EHess(M, A),
-        zeros(T, 3, 2, 2),
-        zeros(T, 3, 2, 2),
+        zeros(T, size(A,1), p, 2),
+        zeros(T, size(A,1), p, 2),
     )
 end
 function (r::RHess)(M::PowerManifold, Y, p, X)
