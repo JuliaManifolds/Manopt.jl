@@ -47,6 +47,8 @@ Order = [:type]
 as well as the functions
 
 ```@docs
+Base.:&(::StoppingCriterion, ::StoppingCriterion)
+Base.:|(::StoppingCriterion, ::StoppingCriterion)
 get_reason
 get_stopping_criteria
 get_active_stopping_criteria

@@ -46,3 +46,17 @@ end
     @test s(p, o, 2) == true
     @test_throws ErrorException StopAfter(Second(-1))
 end
+
+@testset "Stopping Criterion &/| operators" begin
+    a = StopAfterIteration(200)
+    b = StopWhenChangeLess(1e-6)
+    c = StopWhenGradientNormLess(1e-6)
+    d = StopWhenAll(a, b, c)
+    @test typeof(d) === typeof(a & b & c)
+    @test typeof(d) === typeof(a & (b & c))
+    @test typeof(d) === typeof((a & b) & c)
+    e = StopWhenAny(a, b, c)
+    @test typeof(e) === typeof(a | b | c)
+    @test typeof(e) === typeof(a | (b | c))
+    @test typeof(e) === typeof((a | b) | c)
+end
