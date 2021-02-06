@@ -211,6 +211,20 @@ function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     end
     return false
 end
+
+"""
+    are_these_stopping_critera_active(c::StoppingCriterion, cond)
+
+Return `true` if any criterion from the given set is both active and fulfills the given
+condition `cond` (`cond(c)` returns `true`).
+"""
+function are_these_stopping_critera_active(cond::TC, c::StoppingCriterionSet) where {TC}
+    return any(cc -> are_these_stopping_critera_active(cond, cc), get_stopping_criteria(c))
+end
+function are_these_stopping_critera_active(cond::TC, c::StoppingCriterion) where {TC}
+    return !isempty(c.reason) && cond(c)
+end
+
 @doc raw"""
     get_active_stopping_criteria(c)
 

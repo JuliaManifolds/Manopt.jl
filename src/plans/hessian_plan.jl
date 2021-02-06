@@ -281,7 +281,6 @@ function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
     return copyto!(Y, p.hessian!!(p.M, q, X))
 end
 function get_hessian!(p::HessianProblem{MutatingEvaluation}, Y, q, X)
-    Y = zero_tangent_vector(p.M, q)
     return p.hessian!!(p.M, Y, q, X)
 end
 
