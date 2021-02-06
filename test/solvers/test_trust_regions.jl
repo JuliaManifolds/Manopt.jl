@@ -8,8 +8,7 @@ include("trust_region_model.jl")
     n=size(A,1)
     p=2
     N = Grassmann(n,p)
-    M = PowerManifold(N, NestedPowerRepresentation(),2)
-
+    M = PowerManifold(N, ArrayPowerRepresentation(),2)
     x = random_point(M)
 
     @test_throws ErrorException trust_regions(M, cost, rgrad, rhess, x; ρ_prime=0.3)
