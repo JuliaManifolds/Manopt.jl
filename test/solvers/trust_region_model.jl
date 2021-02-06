@@ -17,8 +17,12 @@ struct EGrad{T,TM}
     A::Matrix{T}
 end
 function (e::EGrad)(Y::Array, X::Array)
-    view(Y, :, :, 1) .= - e.A * X[e.M, 2] * (transpose(e.A * X[e.M, 2]) * X[e.M, 1])
-    view(Y, :, :, 2) .= - transpose(e.A) * X[e.M, 1] * (transpose(X[e.M, 1]) * e.A * X[e.M, 2])
+    U = X[e.M, 1]
+    V = X[e.M, 2]
+    AV = A * V
+    AtU = transpose(A) * U
+    view(Y, :, :, 1) .= - AV * (transpose(AV) * U)
+    view(Y, :, :, 2) .= - AtU * (transpose(AtU) * V)
     return Y
 end
 
@@ -67,8 +71,17 @@ struct EHess{T, TM}
     A::Matrix{T}
 end
 function (e::EHess)(Y,X,H)
-    view(Y, :, :, 1) .= -e.A*H[e.M, 2]*transpose(e.A*X[e.M, 2])*X[e.M, 1] - e.A*X[e.M, 2] * transpose(e.A*H[e.M, 2])*X[e.M,1] - e.A*X[e.M,2]*transpose(e.A*X[e.M, 2])*H[e.M,1]
-    view(Y, :, :, 2) .= transpose(e.A)*H[e.M, 1]*transpose(X[e.M, 1])*e.A*X[e.M, 2] + transpose(e.A)*X[e.M, 1] * transpose(H[e.M, 1])*e.A*X[e.M, 2] + transpose(e.A)*X[e.M, 1]*transpose(X[e.M, 1])*e.A*H[e.M, 2]
+    U = X[e.M, 1]
+    V = X[e.M, 2]
+    Udot = H[e.M, 1]
+    Vdot = H[e.M, 2]
+    AV = e.A * V
+    AtU = transpose(e.A) * U
+    AVdot = e.A * Vdot
+    AtUdot = transpose(e.A) * Udot
+
+    view(Y, :, :, 1) .= -AVdot*transpose(AV)*U - AV * transpose(AVdot)*U - AV*transpose(AV)*Udot
+    view(Y, :, :, 2) .= AtUdot*transpose(AtU)*V + AtU * transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot
     return Y
 end
 

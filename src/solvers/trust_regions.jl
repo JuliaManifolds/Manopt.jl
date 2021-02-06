@@ -170,7 +170,6 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.η = o.η
     o.tcg_options.trust_region_radius = o.trust_region_radius
     solve(p, o.tcg_options)
-    SR = get_active_stopping_criteria(o.tcg_options.stop)
     #
     get_hessian!(p, o.Hη, o.x, o.η)
     o.η = o.tcg_options.η
@@ -211,11 +210,10 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.
     if ρ < 1 / 4 || !model_decreased || isnan(ρ)
-        o.trust_region_radius = o.trust_region_radius / 4
-    elseif ρ > 3 / 4 && any([
-        typeof(s) in [StopWhenTrustRegionIsExceeded, StopWhenCurvatureIsNegative] for
-        s in SR
-    ])
+        o.trust_region_radius /= 4
+    elseif ρ > 3 / 4 && are_these_stopping_critera_active(o.tcg_options.stop) do sc
+            return isa(sc, Union{StopWhenTrustRegionIsExceeded, StopWhenCurvatureIsNegative})
+        end
         o.trust_region_radius = min(2 * o.trust_region_radius, o.max_trust_region_radius)
     end
     # Choose to accept or reject the proposed step based on the model
