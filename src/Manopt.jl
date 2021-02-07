@@ -12,7 +12,7 @@ using Random: shuffle!
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
 import Random: rand, randperm
-import Base: copy, identity
+import Base: copy, identity, &, |
 import ManifoldsBase:
     ℝ,
     ℂ,
@@ -126,7 +126,7 @@ include("data/artificialDataFunctions.jl")
 
 include("random.jl")
 
-export ×, ^, ℝ, ℂ
+export ℝ, ℂ, &, |
 
 export Problem,
     ProximalProblem,
