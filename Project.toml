@@ -25,7 +25,7 @@ ColorTypes = "0.9.1, 0.10"
 Colors = "0.11.2, 0.12"
 DataStructures = "0.17, 0.18"
 Manifolds = "0.4.14"
-ManifoldsBase = "0.10.0"
+ManifoldsBase = "0.10.2"
 StaticArrays = "0.12, 1.0"
 julia = "1.4"
 
