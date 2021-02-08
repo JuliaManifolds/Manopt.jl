@@ -38,7 +38,7 @@ mutable struct StopAfterIteration <: StoppingCriterion
     reason::String
     StopAfterIteration(mIter::Int) = new(mIter, "")
 end
-function (c::StopAfterIteration)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopAfterIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
     if i > c.maxIter
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
@@ -124,6 +124,33 @@ function (c::StopWhenAll)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
 end
 get_stopping_criteria(c::StopWhenAll) = c.criteria
 
+"""
+    &(s1,s2)
+    s1 & s2
+
+Combine two [`StoppingCriterion`](@ref) within an [`StopWhenAll`](@ref).
+If either `s1` (or `s2`) is already an [`StopWhenAll`](@ref), then `s2` (or `s1`) is
+appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`).
+
+# Example
+    a = StopAfterIteration(200) & StopWhenChangeLess(1e-6)
+    b = a & StopWhenGradientNormLess(1e-6)
+
+Is the same as
+
+    a = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(1e-6))
+    b = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(1e-6), StopWhenGradientNormLess(1e-6))
+"""
+function Base.:&(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
+    return StopWhenAll(s1, s2)
+end
+function Base.:&(s1::S, s2::StopWhenAll) where {S<:StoppingCriterion}
+    return StopWhenAll(s1, s2.criteria...)
+end
+function Base.:&(s1::StopWhenAll, s2::T) where {T<:StoppingCriterion}
+    return StopWhenAll(s1.criteria..., s2)
+end
+
 @doc raw"""
     StopWhenAny <: StoppingCriterion
 
@@ -149,6 +176,34 @@ function (c::StopWhenAny)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return false
 end
 get_stopping_criteria(c::StopWhenAny) = c.criteria
+
+"""
+    |(s1,s2)
+    s1 | s2
+
+Combine two [`StoppingCriterion`](@ref) within an [`StopWhenAny`](@ref).
+If either `s1` (or `s2`) is already an [`StopWhenAny`](@ref), then `s2` (or `s1`) is
+appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`)
+
+# Example
+    a = StopAfterIteration(200) | StopWhenChangeLess(1e-6)
+    b = a | StopWhenGradientNormLess(1e-6)
+
+Is the same as
+
+    a = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(1e-6))
+    b = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(1e-6), StopWhenGradientNormLess(1e-6))
+"""
+function Base.:|(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
+    return StopWhenAny(s1, s2)
+end
+function Base.:|(s1::S, s2::StopWhenAny) where {S<:StoppingCriterion}
+    return StopWhenAny(s1, s2.criteria...)
+end
+function Base.:|(s1::StopWhenAny, s2::T) where {T<:StoppingCriterion}
+    return StopWhenAny(s1.criteria..., s2)
+end
+
 """
     StopWhenCostLess <: StoppingCriterion
 
