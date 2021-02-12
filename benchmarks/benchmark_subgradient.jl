@@ -11,7 +11,7 @@ function ∂f(M, y)
     return -2 * log(M, y, x) / max(10 * eps(Float64), distance(M, x, y))
 end
 x1 = subgradient_method(M, f, ∂f, x0)
-@btime subgradient_method(M, f, ∂f, x0)
+@btime subgradient_method($M, $f, $∂f, $x0)
 
 function ∂f!(M, X, y)
     d = distance(M, x, y)
@@ -24,6 +24,6 @@ function ∂f!(M, X, y)
 end
 x2 = copy(x0)
 subgradient_method!(M, f, ∂f!, x2; evaluation=MutatingEvaluation())
-@btime subgradient_method!(M, f, ∂f!, x3; evaluation=MutatingEvaluation())  setup = (x3 = deepcopy($x))
+@btime subgradient_method!($M, $f, $∂f!, x3; evaluation=$(MutatingEvaluation()))  setup = (x3 = deepcopy($x0))
 
 @test x1==x2
