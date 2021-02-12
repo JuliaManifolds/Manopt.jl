@@ -21,8 +21,8 @@ function (e::EGrad)(Y::Array, X::Array)
     V = X[e.M, 2]
     AV = A * V
     AtU = transpose(A) * U
-    view(Y, :, :, 1) .= - AV * (transpose(AV) * U)
-    view(Y, :, :, 2) .= - AtU * (transpose(AtU) * V)
+    view(Y, :, :, 1) .= -AV * (transpose(AV) * U)
+    view(Y, :, :, 2) .= -AtU * (transpose(AtU) * V)
     return Y
 end
 
@@ -30,7 +30,9 @@ rgrad(M::PowerManifold, p) = project(M, p, egrad(M, p))
 struct RGrad{T,TM}
     egrad::EGrad{T,TM}
 end
-RGrad(M::PowerManifold, A::Matrix{T}) where {T} = RGrad{T,typeof(M)}(EGrad{T,typeof(M)}(M, A))
+function RGrad(M::PowerManifold, A::Matrix{T}) where {T}
+    return RGrad{T,typeof(M)}(EGrad{T,typeof(M)}(M, A))
+end
 function (r::RGrad)(M::PowerManifold, X, p)
     return project!(M, X, p, r.egrad(X, p))
 end
@@ -54,23 +56,27 @@ function eHess(M::Manifold, X::Array{Float64,3}, H::Array{Float64,3})
     AVdot = A * Vdot
     AtUdot = transpose(A) * Udot
     R = similar(X)
-    view(R, :, :, 1) .= -(
-        AVdot * transpose(AV) * U +
-        AV * transpose(AVdot) * U +
-        AV * transpose(AV) * Udot
-    )
-    view(R, :, :, 2) .= -(
-        AtUdot * transpose(AtU) * V +
-        AtU * transpose(AtUdot) * V +
-        AtU * transpose(AtU) * Vdot
-    )
+    function view(R, :, :, 1)
+        return -(
+            AVdot * transpose(AV) * U +
+            AV * transpose(AVdot) * U +
+            AV * transpose(AV) * Udot
+        )
+    end
+    function view(R, :, :, 2)
+        return -(
+            AtUdot * transpose(AtU) * V +
+            AtU * transpose(AtUdot) * V +
+            AtU * transpose(AtU) * Vdot
+        )
+    end
     return R
 end
-struct EHess{T, TM}
+struct EHess{T,TM}
     M::TM
     A::Matrix{T}
 end
-function (e::EHess)(Y,X,H)
+function (e::EHess)(Y, X, H)
     U = X[e.M, 1]
     V = X[e.M, 2]
     Udot = H[e.M, 1]
@@ -80,8 +86,15 @@ function (e::EHess)(Y,X,H)
     AVdot = e.A * Vdot
     AtUdot = transpose(e.A) * Udot
 
-    view(Y, :, :, 1) .= -AVdot*transpose(AV)*U - AV * transpose(AVdot)*U - AV*transpose(AV)*Udot
-    view(Y, :, :, 2) .= AtUdot*transpose(AtU)*V + AtU * transpose(AtUdot)*V + AtU*transpose(AtU)*Vdot
+    function view(Y, :, :, 1)
+        return -AVdot * transpose(AV) * U - AV * transpose(AVdot) * U -
+               AV * transpose(AV) * Udot
+    end
+    function view(Y, :, :, 2)
+        return AtUdot * transpose(AtU) * V +
+               AtU * transpose(AtUdot) * V +
+               AtU * transpose(AtU) * Vdot
+    end
     return Y
 end
 
@@ -96,7 +109,8 @@ function rhess(M::PowerManifold, p, X)
             view(p, :, :, i),
             view(X, :, :, i),
             view(eG, :, :, i),
-            view(eH, :, :, i))
+            view(eH, :, :, i),
+        )
     end
     return Ha
 end
@@ -106,12 +120,9 @@ struct RHess{T,TM}
     G::Array{T,3}
     H::Array{T,3}
 end
-function RHess(M::Manifold, A::Matrix{T},p) where {T}
+function RHess(M::Manifold, A::Matrix{T}, p) where {T}
     return RHess{T,typeof(M)}(
-        EGrad(M, A),
-        EHess(M, A),
-        zeros(T, size(A,1), p, 2),
-        zeros(T, size(A,1), p, 2),
+        EGrad(M, A), EHess(M, A), zeros(T, size(A, 1), p, 2), zeros(T, size(A, 1), p, 2)
     )
 end
 function (r::RHess)(M::PowerManifold, Y, p, X)
@@ -124,7 +135,8 @@ function (r::RHess)(M::PowerManifold, Y, p, X)
             view(p, :, :, i),
             view(X, :, :, i),
             view(r.G, :, :, i),
-            view(r.H, :, :, i))
+            view(r.H, :, :, i),
+        )
     end
     return Y
 end

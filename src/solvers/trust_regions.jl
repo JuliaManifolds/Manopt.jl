@@ -212,8 +212,8 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     if ρ < 1 / 4 || !model_decreased || isnan(ρ)
         o.trust_region_radius /= 4
     elseif ρ > 3 / 4 && are_these_stopping_critera_active(o.tcg_options.stop) do sc
-            return isa(sc, Union{StopWhenTrustRegionIsExceeded, StopWhenCurvatureIsNegative})
-        end
+        return isa(sc, Union{StopWhenTrustRegionIsExceeded,StopWhenCurvatureIsNegative})
+    end
         o.trust_region_radius = min(2 * o.trust_region_radius, o.max_trust_region_radius)
     end
     # Choose to accept or reject the proposed step based on the model

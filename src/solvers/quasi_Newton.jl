@@ -277,13 +277,9 @@ function update_hessian!(
 
     φ = update_broyden_factor!(d, sk_c, yk_c, skyk_c, ykBkyk_c, d.update.update_rule)
     # computing the new matrix which represents the approximating operator in the next iteration
-    d.matrix =
-        d.matrix - (d.matrix * yk_c * yk_c' * d.matrix) / ykBkyk_c +
-        (sk_c * sk_c') / skyk_c +
-        φ *
-        ykBkyk_c *
-        (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c) *
-        (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c)'
+    b = (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c)
+    a = (d.matrix * yk_c * yk_c' * d.matrix) / ykBkyk_c
+    d.matrix = d.matrix - a + (sk_c * sk_c') / skyk_c + φ * ykBkyk_c * b * b'
     return d
 end
 
@@ -297,13 +293,9 @@ function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{Broyden}, p, o, x_o
 
     φ = update_broyden_factor!(d, sk_c, yk_c, skyk_c, skHksk_c, d.update.update_rule)
     # computing the new matrix which represents the approximating operator in the next iteration
-    d.matrix =
-        d.matrix - (d.matrix * sk_c * sk_c' * d.matrix) / skHksk_c +
-        (yk_c * yk_c') / skyk_c +
-        φ *
-        skHksk_c *
-        (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c) *
-        (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c)'
+    b = (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c)
+    a = (d.matrix * sk_c * sk_c' * d.matrix) / skHksk_c + (yk_c * yk_c') / skyk_c
+    d.matrix = d.matrix - a + φ * skHksk_c * b * b'
     return d
 end
 

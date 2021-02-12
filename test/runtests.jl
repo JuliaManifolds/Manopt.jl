@@ -8,7 +8,6 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
     include("plans/test_primal_dual_plan.jl")
     include("plans/test_record.jl")
     include("plans/test_stopping_criteria.jl")
-    include("plans/test_subgradient_plan.jl")
 end
 @testset "Function Tests     " begin
     include("functions/test_adjoint_differentials.jl")
@@ -34,4 +33,5 @@ end
     include("solvers/test_trust_regions.jl")
     include("solvers/test_particle_swarm.jl")
     include("solvers/test_stochastic_gradient_descent.jl")
+    include("solvers/test_subgradient_method.jl")
 end

@@ -7,14 +7,14 @@ using Manopt, Manifolds, LinearAlgebra
         # on S1, such that we can easily also verify exp and log
         M = Circle()
         r = [-π / 2, π / 4, 0.0, π / 4]
-        f = r
-        F(M, x) = 1 / 10 * sum(distance.(Ref(M), f, Ref(x)) .^ 2)
-        gradF(M, x) = 1 / 5 * sum(-log.(Ref(M), Ref(x), f))
+        p = r
+        F(M, x) = 1 / 10 * sum(distance.(Ref(M), p, Ref(x)) .^ 2)
+        gradF(M, x) = 1 / 5 * sum(-log.(Ref(M), Ref(x), p))
         o = gradient_descent!(
             M,
             F,
             gradF,
-            f[1];
+            p[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(200), StopWhenChangeLess(10^-16)
             ),
@@ -28,7 +28,7 @@ using Manopt, Manifolds, LinearAlgebra
             M,
             F,
             gradF,
-            f[1];
+            p[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(200), StopWhenChangeLess(10^-16)
             ),
@@ -39,7 +39,7 @@ using Manopt, Manifolds, LinearAlgebra
             M,
             F,
             gradF,
-            f[1];
+            p[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
             ),
@@ -61,7 +61,7 @@ using Manopt, Manifolds, LinearAlgebra
             M,
             F,
             gradF,
-            f[1];
+            p[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
             ),
@@ -83,7 +83,7 @@ using Manopt, Manifolds, LinearAlgebra
             M,
             F,
             gradF,
-            f[1];
+            p[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
             ),
@@ -105,11 +105,11 @@ using Manopt, Manifolds, LinearAlgebra
             M,
             F,
             gradF,
-            f[1];
+            p[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
             ),
-            direction=Nesterov(f[1]),
+            direction=Nesterov(p[1]),
             debug=[:Stop],
         )
         @test isapprox(x, x6; atol=1e-13)
@@ -170,7 +170,7 @@ using Manopt, Manifolds, LinearAlgebra
         # Test Fallbacks -> we can't do steps with the wrong combination
         p = SubGradientProblem(M, F, gradF)
         o = GradientDescentOptions(
-            f[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
+            p[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
         )
         @test_throws MethodError initialize_solver!(p, o)
         @test_throws MethodError step_solver!(p, o, 1)

@@ -5,10 +5,10 @@ include("trust_region_model.jl")
 
 @testset "Manopt Trust-Region" begin
     seed!(141)
-    n=size(A,1)
-    p=2
-    N = Grassmann(n,p)
-    M = PowerManifold(N, ArrayPowerRepresentation(),2)
+    n = size(A, 1)
+    p = 2
+    N = Grassmann(n, p)
+    M = PowerManifold(N, ArrayPowerRepresentation(), 2)
     x = random_point(M)
 
     @test_throws ErrorException trust_regions(M, cost, rgrad, rhess, x; ρ_prime=0.3)
@@ -23,7 +23,9 @@ include("trust_region_model.jl")
     )
 
     @testset "Allocating Variant" begin
-        X = trust_regions(M, cost, rgrad, rhess, x; max_trust_region_radius=8.0,debug=[:Stop])
+        X = trust_regions(
+            M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, debug=[:Stop]
+        )
         opt = trust_regions(
             M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, return_options=true
         )
@@ -43,7 +45,11 @@ include("trust_region_model.jl")
             cost,
             rgrad,
             ApproxHessianFiniteDifference(
-                M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
+                M,
+                x,
+                rgrad;
+                steplength=2^(-9),
+                vector_transport_method=ProjectionTransport(),
             ),
             x;
             max_trust_region_radius=8.0,
@@ -57,7 +63,11 @@ include("trust_region_model.jl")
             cost,
             rgrad,
             ApproxHessianFiniteDifference(
-                M, x, rgrad; steplength=2^(-9), vector_transport_method=ProjectionTransport()
+                M,
+                x,
+                rgrad;
+                steplength=2^(-9),
+                vector_transport_method=ProjectionTransport(),
             ),
             XaH2;
             stopping_criterion=StopWhenAny(
@@ -78,15 +88,29 @@ include("trust_region_model.jl")
         @test get_solver_result(ηOpt) == η
     end
     @testset "Mutating" begin
-        g = RGrad(M,A)
-        h = RHess(M,A,p)
+        g = RGrad(M, A)
+        h = RHess(M, A, p)
         x3 = deepcopy(x)
-        trust_regions!(M, cost, g, h, x3;
-                max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), debug=[:Stop],
-            )
+        trust_regions!(
+            M,
+            cost,
+            g,
+            h,
+            x3;
+            max_trust_region_radius=8.0,
+            evaluation=MutatingEvaluation(),
+            debug=[:Stop],
+        )
         x4 = deepcopy(x)
         opt = trust_regions!(
-            M, cost, g, h, x4; max_trust_region_radius=8.0, evaluation=MutatingEvaluation(), return_options=true
+            M,
+            cost,
+            g,
+            h,
+            x4;
+            max_trust_region_radius=8.0,
+            evaluation=MutatingEvaluation(),
+            return_options=true,
         )
         @test isapprox(M, x3, x4)
     end
