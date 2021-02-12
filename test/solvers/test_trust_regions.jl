@@ -3,7 +3,7 @@ import Random: seed!
 
 include("trust_region_model.jl")
 
-@testset "Manopt Trust-Region" begin
+@testset "Riemannian Trust-Region" begin
     seed!(141)
     n = size(A, 1)
     p = 2

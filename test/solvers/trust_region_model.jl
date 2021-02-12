@@ -56,20 +56,18 @@ function eHess(M::Manifold, X::Array{Float64,3}, H::Array{Float64,3})
     AVdot = A * Vdot
     AtUdot = transpose(A) * Udot
     R = similar(X)
-    function view(R, :, :, 1)
-        return -(
+    #! format: off
+    view(R, :, :, 1) .= -(
             AVdot * transpose(AV) * U +
             AV * transpose(AVdot) * U +
             AV * transpose(AV) * Udot
         )
-    end
-    function view(R, :, :, 2)
-        return -(
+    view(R, :, :, 2) .= -(
             AtUdot * transpose(AtU) * V +
             AtU * transpose(AtUdot) * V +
             AtU * transpose(AtU) * Vdot
         )
-    end
+    #! format: on
     return R
 end
 struct EHess{T,TM}
@@ -85,16 +83,10 @@ function (e::EHess)(Y, X, H)
     AtU = transpose(e.A) * U
     AVdot = e.A * Vdot
     AtUdot = transpose(e.A) * Udot
-
-    function view(Y, :, :, 1)
-        return -AVdot * transpose(AV) * U - AV * transpose(AVdot) * U -
-               AV * transpose(AV) * Udot
-    end
-    function view(Y, :, :, 2)
-        return AtUdot * transpose(AtU) * V +
-               AtU * transpose(AtUdot) * V +
-               AtU * transpose(AtU) * Vdot
-    end
+    #! format: off
+    view(Y, :, :, 1) .= -AVdot * transpose(AV) * U - AV * transpose(AVdot) * U - AV * transpose(AV) * Udot
+    view(Y, :, :, 2) .= AtUdot * transpose(AtU) * V + AtU * transpose(AtUdot) * V + AtU * transpose(AtU) * Vdot
+    #! format: on
     return Y
 end
 
