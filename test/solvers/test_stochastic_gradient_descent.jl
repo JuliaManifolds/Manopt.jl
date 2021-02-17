@@ -18,7 +18,7 @@ using Manopt, Manifolds, Test
         @test get_gradient(p1, 1, p) == zeros(3)
         @test get_gradient(p2, 1, p) == zeros(3)
         @test get_gradients(p1, p) == get_gradients(p2, p)
-        o = StochasticGradientDescentOptions(deepcopy(p))
+        o = StochasticGradientDescentOptions(deepcopy(p), StochasticGradient(deepcopy(p)))
         o.order = collect(1:5)
         o.order_type = :Linear
         initialize_solver!(p1, o)
@@ -29,15 +29,15 @@ using Manopt, Manifolds, Test
     @testset "Momentum and Average Processor Constructors" begin
         p1 = StochasticGradientProblem(M, sgradF1)
         p2 = GradientProblem(M, F, gradF)
-        m1 = MomentumGradient(M, p, StochasticGradient())
+        m1 = MomentumGradient(M, p, StochasticGradient(zero_tangent_vector(M, p)))
         m2 = MomentumGradient(p1, p)
-        @test m1.direction == m2.direction #both use StochasticGradient
+        @test typeof(m1.direction) == typeof(m2.direction) #both use StochasticGradient
         m3 = MomentumGradient(M, p)
         m4 = MomentumGradient(p2, p)
         @test m3.direction == m4.direction #both use Gradient
-        a1 = AverageGradient(M, p, 10, StochasticGradient())
+        a1 = AverageGradient(M, p, 10, StochasticGradient(zero_tangent_vector(M, p)))
         a2 = AverageGradient(p1, p, 10)
-        @test a1.direction == a2.direction #both use StochasticGradient
+        @test typeof(a1.direction) == typeof(a2.direction) #both use StochasticGradient
         a3 = AverageGradient(M, p, 10)
         a4 = AverageGradient(p2, p, 10)
         @test a3.direction == a4.direction #both use Gradient
@@ -59,7 +59,9 @@ using Manopt, Manifolds, Test
             sgradF1,
             p;
             order_type=:Random,
-            direction=AverageGradient(M, p, 10, StochasticGradient()),
+            direction=AverageGradient(
+                M, p, 10, StochasticGradient(zero_tangent_vector(M, p))
+            ),
         )
         @test norm(x4) ≈ 1
         x5 = stochastic_gradient_descent(
@@ -67,7 +69,7 @@ using Manopt, Manifolds, Test
             sgradF1,
             p;
             order_type=:Random,
-            direction=MomentumGradient(M, p, StochasticGradient()),
+            direction=MomentumGradient(M, p, StochasticGradient(zero_tangent_vector(M, p))),
         )
         @test norm(x5) ≈ 1
     end

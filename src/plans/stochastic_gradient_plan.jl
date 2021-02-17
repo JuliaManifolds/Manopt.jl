@@ -4,7 +4,8 @@
 A stochastic gradient problem consists of
 * a `Manifold M`
 * a(n optional) cost function ``f(x) = \displaystyle\sum_{i=1}^n f_i(x)
-* an array of gradients, i.e. a function that returns and array or an array of functions ``\{\operatorname{grad}f_i\}_{i=1}^n``.
+* an array of gradients, i.e. a function that returns and array or an array of functions ``\{\operatorname{grad}f_i\}_{i=1}^n``,
+where both variants can be given in the allocating variant and the array of function may also be providade as mutating functions `(X,x) -> X`.
 
 # Constructors
     StochasticGradientProblem(M::Manifold, gradF::Function; cost=Missing())
@@ -21,20 +22,20 @@ struct StochasticGradientProblem{T,MT<:Manifold,TCost,TGradient} <:
 end
 function StochasticGradientProblem(
     M::TM,
-    gradF::G;
+    gradF!!::G;
     cost::Union{Function,Missing}=Missing(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 ) where {TM<:Manifold,G}
-    return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),G}(M, cost, gradF)
+    return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),G}(M, cost, gradF!!)
 end
 function StochasticGradientProblem(
     M::TM,
-    gradF::AbstractVector{<:Function};
+    gradF!!::AbstractVector{<:Function};
     cost::Union{Function,Missing}=Missing(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 ) where {TM<:Manifold}
-    return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),typeof(gradF)}(
-        M, cost, gradF
+    return StochasticGradientProblem{typeof(evaluation),TM,typeof(cost),typeof(gradF!!)}(
+        M, cost, gradF!!
     )
 end
 
@@ -53,6 +54,45 @@ function get_gradients(
 ) where {TC}
     return [grad_i(x) for grad_i in P.gradient!!]
 end
+function get_gradients!(
+    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, x
+) where {TC}
+    copyto!(X, P.gradient!!(x))
+    return X
+end
+function get_gradients!(
+    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
+) where {TC}
+    copyto!(X, [grad_i(x) for grad_i in P.gradient!!])
+    return X
+end
+
+function get_gradients(
+    ::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, ::Any
+) where {TC}
+    return error(
+        "For a mutating function type stochastic gradient, the allocating variant is not possible.",
+    )
+end
+function get_gradients(
+    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
+) where {TC}
+    X = [zero_tangent_vector(M, x) for _ in 1:length(P.gradient!!)]
+    return get_gradients!(P, X, x)
+end
+function get_gradients!(
+    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, X, x
+) where {TC}
+    return P.gradient!!(X, x)
+end
+function get_gradients!(
+    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
+) where {TC}
+    for i in 1:length(P.gradient!!)
+        P.gradient!![i](X[i], x)
+    end
+    return X
+end
 
 @doc raw"""
     get_gradient(P::StochasticGradientProblem, k, x)
@@ -68,6 +108,42 @@ function get_gradient(
     P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, k, x
 ) where {TC}
     return P.gradient!![k](x)
+end
+function get_gradient!(
+    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
+) where {TC}
+    copyto!(X, P.gradient!!(x)[k])
+    return X
+end
+function get_gradient!(
+    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector},
+    X,
+    k,
+    x,
+) where {TC}
+    copyto!(X, P.gradient!![k](x))
+    return X
+end
+function get_gradient(
+    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC}, k, x
+) where {TC}
+    X = zero_tangent_vector(P.M, x)
+    return get_gradient!(P, X, k, x)
+end
+function get_gradient!(
+    ::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function},
+    ::Any,
+    ::Any,
+    ::Any,
+) where {TC}
+    return error(
+        "A mutating variant of the stochastic gradient as a single function is not implemented.",
+    )
+end
+function get_gradient!(
+    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, k, x
+) where {TC}
+    return P.gradient!![k](X, x)
 end
 
 """
@@ -118,8 +194,8 @@ mutable struct StochasticGradientDescentOptions{
     k::Int # current iterate
 end
 function StochasticGradientDescentOptions(
-    x;
-    direction::DirectionUpdateRule=StochasticGradient(),
+    x,
+    direction::DirectionUpdateRule;
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
@@ -143,7 +219,10 @@ end
 The default gradient processor, which just evaluates the (stochastic) gradient or a subset
 thereof.
 """
-struct StochasticGradient <: AbstractStochasticGradientProcessor end
+struct StochasticGradient{T} <: AbstractStochasticGradientProcessor
+    dir::T
+end
+
 function (s::StochasticGradient)(
     p::StochasticGradientProblem, o::StochasticGradientDescentOptions, iter
 )
@@ -151,12 +230,12 @@ function (s::StochasticGradient)(
     ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
     # i is the gradient to choose, either from the order or completely random
     j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[o.k]
-    return o.stepsize(p, o, iter), get_gradient(p, j, o.x)
+    return o.stepsize(p, o, iter), get_gradient!(p, s.dir, j, o.x)
 end
 function MomentumGradient(
     p::StochasticGradientProblem,
     x0::P,
-    s::DirectionUpdateRule=StochasticGradient();
+    s::DirectionUpdateRule=StochasticGradient(zero_tangent_vector(p.M, x0));
     gradient=zero_tangent_vector(p.M, x0),
     momentum=0.2,
     vector_transport_method::VTM=ParallelTransport(),
@@ -169,7 +248,7 @@ function AverageGradient(
     p::StochasticGradientProblem,
     x0::P,
     n::Int=10,
-    s::DirectionUpdateRule=StochasticGradient();
+    s::DirectionUpdateRule=StochasticGradient(zero_tangent_vector(p.M, x0));
     gradients=fill(zero_tangent_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM}
