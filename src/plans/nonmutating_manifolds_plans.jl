@@ -2,13 +2,13 @@
 # For the manifolds that are nonmutating only, we have to introduce a few special cases
 #
 const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers}
-function get_gradient!(p::GradientProblem{AllocatingEvaluation}, X::AbstractFloat, x)
+function get_gradient!(p::GradientProblem{AllocatingEvaluation}, ::AbstractFloat, x)
     X = p.gradient!!(p.M, x)
     return X
 end
-function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y::AbstractFloat, x, X)
-    Y = p.hessian!!(p.M, x)
-    return X
+function get_hessian!(p::HessianProblem{AllocatingEvaluation}, ::AbstractFloat, x, X)
+    Y = p.hessian!!(p.M, x, X)
+    return Y
 end
 function linesearch_backtrack(
     M::NONMUTATINGMANIFOLDS,

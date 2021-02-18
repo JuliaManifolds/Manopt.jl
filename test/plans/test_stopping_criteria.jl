@@ -60,3 +60,22 @@ end
     @test typeof(e) === typeof(a | (b | c))
     @test typeof(e) === typeof((a | b) | c)
 end
+
+@testset "TCG stopping criteria" begin
+    # create dummy criterion
+    p = HessianProblem(Euclidean(), x -> x, (M, x) -> x, (M, x) -> x, x -> x)
+    o = TruncatedConjugateGradientOptions(p, 1.0, 0.0, 2.0, false)
+    o.new_model_value = 2.0
+    o.model_value = 1.0
+    s = StopWhenModelIncreased()
+    @test !s(p, o, 0)
+    @test s.reason == ""
+    @test s(p, o, 1)
+    @test length(s.reason) > 0
+    s2 = StopWhenCurvatureIsNegative()
+    o.δHδ = -1.0
+    @test !s2(p, o, 0)
+    @test s2.reason == ""
+    @test s2(p, o, 1)
+    @test length(s2.reason) > 0
+end

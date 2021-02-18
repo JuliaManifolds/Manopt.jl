@@ -4,6 +4,7 @@ using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
     include("plans/test_options.jl")
     include("plans/test_debug.jl")
     include("plans/test_nelder_mead_plan.jl")
+    include("plans/test_nonmutating.jl")
     include("plans/test_gradient_plan.jl")
     include("plans/test_primal_dual_plan.jl")
     include("plans/test_record.jl")
