@@ -83,7 +83,7 @@ end
 function get_gradients!(
     p::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, X, x
 ) where {TC}
-    return P.gradient!!(p.M, X, x)
+    return p.gradient!!(p.M, X, x)
 end
 function get_gradients!(
     p::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
@@ -121,7 +121,7 @@ function get_gradient!(
     k,
     x,
 ) where {TC}
-    copyto!(X, P.gradient!![k](p.M, x))
+    copyto!(X, p.gradient!![k](p.M, x))
     return X
 end
 function get_gradient(

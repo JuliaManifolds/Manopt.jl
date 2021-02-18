@@ -11,6 +11,13 @@ using Manopt, Manifolds, Test
     F(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
     gradF(M, y) = sum([-log(M, y, x) for x in pts])
     sgradF1(M, y) = [-log(M, y, x) for x in pts]
+    function sgradF1!(M, X, y)
+        for i in 1:length(pts)
+            log!(M, X[i], y, pts[i])
+            X[i] .*= -1
+        end
+        return X
+    end
     sgradF2 = [((M, y) -> -log(M, y, x)) for x in pts]
     sgradF2! = [function f!(M, X, y)
         log!(M, X, y, x)
@@ -20,14 +27,16 @@ using Manopt, Manifolds, Test
 
     @testset "Constructors" begin
         p1 = StochasticGradientProblem(M, sgradF1)
-        p1e = StochasticGradientProblem(M, sgradF1; evaluation=MutatingEvaluation())
+        p1e = StochasticGradientProblem(M, sgradF1!; evaluation=MutatingEvaluation())
         p2 = StochasticGradientProblem(M, sgradF2)
         p2m = StochasticGradientProblem(M, sgradF2!; evaluation=MutatingEvaluation())
         @test get_gradient(p1, 1, p) == zeros(3)
         @test get_gradient(p2, 1, p) == zeros(3)
-        X = zero_tangent_vector(M, p)
-        get_gradient!(p2m, X, 1, p)
-        @test X == zeros(3)
+        for pr in [p1, p2, p2m]
+            X = zero_tangent_vector(M, p)
+            get_gradient!(pr, X, 1, p)
+            @test X == get_gradient(pr, 1, p)
+        end
         @test get_gradients(p1, p) == get_gradients(p2, p)
         @test get_gradients(p2m, p) == get_gradients(p2, p)
         Z = get_gradients(p2m, p)
@@ -40,6 +49,9 @@ using Manopt, Manifolds, Test
         Z4 = similar.(Z)
         get_gradients!(p2, Z4, p)
         @test Z == Z4
+        Z5 = similar.(Z)
+        get_gradients!(p1e, Z5, p)
+        @test Z == Z5
         @test_throws ErrorException get_gradients(p1e, p)
         @test_throws ErrorException get_gradient!(p1e, Z4, 1, p)
         o = StochasticGradientDescentOptions(deepcopy(p), StochasticGradient(deepcopy(p)))
