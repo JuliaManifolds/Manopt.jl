@@ -9,15 +9,39 @@ using Manopt, Manifolds, Test
         X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
     F(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
-    gradF(y) = sum([-log(M, y, x) for x in pts])
-    sgradF1(y) = [-log(M, y, x) for x in pts]
-    sgradF2 = [(y -> -log(M, y, x)) for x in pts]
+    gradF(M, y) = sum([-log(M, y, x) for x in pts])
+    sgradF1(M, y) = [-log(M, y, x) for x in pts]
+    sgradF2 = [((M, y) -> -log(M, y, x)) for x in pts]
+    sgradF2! = [function f!(M, X, y)
+        log!(M, X, y, x)
+        X .*= -1
+        return X
+    end for x in pts]
+
     @testset "Constructors" begin
         p1 = StochasticGradientProblem(M, sgradF1)
+        p1e = StochasticGradientProblem(M, sgradF1; evaluation=MutatingEvaluation())
         p2 = StochasticGradientProblem(M, sgradF2)
+        p2m = StochasticGradientProblem(M, sgradF2!; evaluation=MutatingEvaluation())
         @test get_gradient(p1, 1, p) == zeros(3)
         @test get_gradient(p2, 1, p) == zeros(3)
+        X = zero_tangent_vector(M, p)
+        get_gradient!(p2m, X, 1, p)
+        @test X == zeros(3)
         @test get_gradients(p1, p) == get_gradients(p2, p)
+        @test get_gradients(p2m, p) == get_gradients(p2, p)
+        Z = get_gradients(p2m, p)
+        Z2 = similar.(Z)
+        get_gradients!(p2m, Z2, p)
+        @test Z == Z2
+        Z3 = similar.(Z)
+        get_gradients!(p1, Z3, p)
+        @test Z == Z3
+        Z4 = similar.(Z)
+        get_gradients!(p2, Z4, p)
+        @test Z == Z4
+        @test_throws ErrorException get_gradients(p1e, p)
+        @test_throws ErrorException get_gradient!(p1e, Z4, 1, p)
         o = StochasticGradientDescentOptions(deepcopy(p), StochasticGradient(deepcopy(p)))
         o.order = collect(1:5)
         o.order_type = :Linear

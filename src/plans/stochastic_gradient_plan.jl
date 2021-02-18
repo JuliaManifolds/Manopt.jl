@@ -45,25 +45,25 @@ end
 Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `x`.
 """
 function get_gradients(
-    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, x
 ) where {TC}
-    return P.gradient!!(x)
+    return p.gradient!!(p.M, x)
 end
 function get_gradients(
-    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
 ) where {TC}
-    return [grad_i(x) for grad_i in P.gradient!!]
+    return [grad_i(p.M, x) for grad_i in p.gradient!!]
 end
 function get_gradients!(
-    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, x
 ) where {TC}
-    copyto!(X, P.gradient!!(x))
+    copyto!(X, p.gradient!!(p.M, x))
     return X
 end
 function get_gradients!(
-    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
 ) where {TC}
-    copyto!(X, [grad_i(x) for grad_i in P.gradient!!])
+    copyto!(X, [grad_i(p.M, x) for grad_i in p.gradient!!])
     return X
 end
 
@@ -75,21 +75,21 @@ function get_gradients(
     )
 end
 function get_gradients(
-    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
+    p::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
 ) where {TC}
-    X = [zero_tangent_vector(M, x) for _ in 1:length(P.gradient!!)]
-    return get_gradients!(P, X, x)
+    X = [zero_tangent_vector(p.M, x) for _ in 1:length(p.gradient!!)]
+    return get_gradients!(p, X, x)
 end
 function get_gradients!(
-    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, X, x
+    p::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, X, x
 ) where {TC}
-    return P.gradient!!(X, x)
+    return P.gradient!!(p.M, X, x)
 end
 function get_gradients!(
-    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
+    p::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
 ) where {TC}
-    for i in 1:length(P.gradient!!)
-        P.gradient!![i](X[i], x)
+    for i in 1:length(p.gradient!!)
+        p.gradient!![i](p.M, X[i], x)
     end
     return X
 end
@@ -100,35 +100,35 @@ end
 Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x`.
 """
 function get_gradient(
-    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, k, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, k, x
 ) where {TC}
-    return P.gradient!!(x)[k]
+    return p.gradient!!(p.M, x)[k]
 end
 function get_gradient(
-    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, k, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, k, x
 ) where {TC}
-    return P.gradient!![k](x)
+    return p.gradient!![k](p.M, x)
 end
 function get_gradient!(
-    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
 ) where {TC}
-    copyto!(X, P.gradient!!(x)[k])
+    copyto!(X, p.gradient!!(p.M, x)[k])
     return X
 end
 function get_gradient!(
-    P::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector},
+    p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector},
     X,
     k,
     x,
 ) where {TC}
-    copyto!(X, P.gradient!![k](x))
+    copyto!(X, P.gradient!![k](p.M, x))
     return X
 end
 function get_gradient(
-    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC}, k, x
+    p::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC}, k, x
 ) where {TC}
-    X = zero_tangent_vector(P.M, x)
-    return get_gradient!(P, X, k, x)
+    X = zero_tangent_vector(p.M, x)
+    return get_gradient!(p, X, k, x)
 end
 function get_gradient!(
     ::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function},
@@ -141,9 +141,9 @@ function get_gradient!(
     )
 end
 function get_gradient!(
-    P::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, k, x
+    p::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, k, x
 ) where {TC}
-    return P.gradient!![k](X, x)
+    return p.gradient!![k](p.M, X, x)
 end
 
 """

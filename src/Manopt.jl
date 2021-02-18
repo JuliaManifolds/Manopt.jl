@@ -170,7 +170,8 @@ export get_cost,
     get_proximal_map,
     get_options,
     get_initial_stepsize,
-    get_gradients
+    get_gradients,
+    get_gradients!
 export get_hessian, get_hessian!, approxHessianFD
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual

@@ -57,7 +57,7 @@ function stochastic_gradient_descent!(
     stoping_criterion::StoppingCriterion=StopAfterIteration(10000),
     stepsize::Stepsize=ConstantStepsize(1.0),
     order_type::Symbol=:Random,
-    order=collect(1:(gradF isa Function ? length(gradF(x)) : length(gradF))),
+    order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
     return_options=false,
