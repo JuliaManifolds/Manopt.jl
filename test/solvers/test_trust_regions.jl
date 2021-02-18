@@ -53,9 +53,7 @@ include("trust_region_model.jl")
             ),
             x;
             max_trust_region_radius=8.0,
-            stopping_criterion=StopWhenAny(
-                StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
-            ),
+            stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
         )
         XaH2 = deepcopy(x)
         trust_regions!(
@@ -70,12 +68,10 @@ include("trust_region_model.jl")
                 vector_transport_method=ProjectionTransport(),
             ),
             XaH2;
-            stopping_criterion=StopWhenAny(
-                StopAfterIteration(2000), StopWhenGradientNormLess(10^(-6))
-            ),
+            stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
             max_trust_region_radius=8.0,
         )
-        @test isapprox(M, XaH, XaH2)
+        @test isapprox(M, XaH, XaH2; atol=1e-6)
         @test cost(M, XaH) ≈ cost(M, X)
 
         ξ = random_tangent(M, x)
@@ -113,5 +109,24 @@ include("trust_region_model.jl")
             return_options=true,
         )
         @test isapprox(M, x3, x4)
+        XaH = deepcopy(x)
+        trust_regions!(
+            M,
+            cost,
+            g,
+            ApproxHessianFiniteDifference(
+                M,
+                deepcopy(x),
+                g;
+                steplength=2^(-9),
+                vector_transport_method=ProjectionTransport(),
+                evaluation=MutatingEvaluation(),
+            ),
+            XaH;
+            stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
+            max_trust_region_radius=8.0,
+            evaluation=MutatingEvaluation(),
+        )
+        @test cost(M, XaH) ≈ cost(M, x3)
     end
 end

@@ -189,7 +189,7 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
     MomentumGradient(
         p::StochasticGradientProblem
         x0
-        s::DirectionUpdateRule=StochasticGradient();
+        s::DirectionUpdateRule=IdentityUpdateRule();
         gradient=zero_tangent_vector(p.M, x0), momentum=0.2
        vector_transport_method=ParallelTransport(),
     )
@@ -272,7 +272,7 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
         p::StochasticGradientProblem
         x0
         n::Int=10
-        s::DirectionUpdateRule=StochasticGradient();
+        s::DirectionUpdateRule=IdentityUpdateRule();
         gradients = fill(zero_tangent_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
         vector_transport_method = ParallelTransport()

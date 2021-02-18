@@ -331,9 +331,8 @@ function ApproxHessianFiniteDifference(
     )
 end
 function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
-    X = zero_tangent_vector(M, x)
     norm_X = norm(M, x, X)
-    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(M, X, x)
+    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector(M, x)
     c = f.steplength / norm_X
     f.grad_tmp .= f.gradient!!(M, x)
     f.x_dir .= retract(M, x, c * X, f.retraction_method)
@@ -347,11 +346,11 @@ function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, x, X)
     norm_X = norm(M, x, X)
     (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(M, X, x)
     c = f.steplength / norm_X
-    f.gradient!!(f.grad_tmp, x)
+    f.gradient!!(M, f.grad_tmp, x)
     retract!(M, f.x_dir, x, c * X, f.retraction_method)
-    f.gradient!!(f.grad_tmp_dir, f.x_dir)
+    f.gradient!!(M, f.grad_tmp_dir, f.x_dir)
     vector_transport_to!(
-        M, f.grad_tmp_dir, f.x_dir, f.grad_tmp_dir, x, vector_transport_method
+        M, f.grad_tmp_dir, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
     )
     Y .= (1 / c) .* (f.grad_tmp_dir .- f.grad_tmp)
     return Y
