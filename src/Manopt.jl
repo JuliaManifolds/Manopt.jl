@@ -94,6 +94,8 @@ using Manifolds: # Wishlist for Base
     getindex,
     setindex!
 
+const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers}
+
 include("plans/plan.jl")
 # Functions
 include("functions/manifold.jl")
@@ -296,6 +298,7 @@ export cost_L2_acceleration_bezier, cost_acceleration_bezier
 # Gradients
 export grad_TV,
     grad_TV2,
+    grad_TV2!,
     grad_intrinsic_infimal_convolution_TV12,
     forward_logs,
     grad_distance,

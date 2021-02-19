@@ -1,7 +1,6 @@
 #
 # For the manifolds that are nonmutating only, we have to introduce a few special cases
 #
-const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers}
 function get_gradient!(p::GradientProblem{AllocatingEvaluation}, ::AbstractFloat, x)
     X = p.gradient!!(p.M, x)
     return X

@@ -198,11 +198,7 @@ function grad_distance(M, y, x, p::Int=2)
 end
 function grad_distance!(M, X, y, x, p::Int=2)
     log!(M, X, x, y)
-    if p == 2
-        X .*= -one(eltype(X))
-    else
-        X .*= -distance(M, x, y)(p - 2)
-    end
+    X .*= (p == 2) ? -one(eltype(X)) : -distance(M, x, y)(p - 2)
     return X
 end
 
@@ -368,38 +364,58 @@ the evaluation of an [`adjoint_Jacobi_field`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """
-function grad_TV2(M::MT, xT, p::Number=1) where {MT<:Manifold}
-    x = xT[1]
-    y = xT[2]
-    z = xT[3]
-    c = mid_point(M, x, z, y) # nearest mid point of x and z to y
-    d = distance(M, y, c)
-    innerLog = -log(M, c, y)
+function grad_TV2(M::Manifold, q, p::Number=1)
+    X = [zero_tangent_vector(M, x) for x in q]
+    return grad_TV2!(M, X, q, p)
+end
+function grad_TV2(M::NONMUTATINGMANIFOLDS, q, p::Number=1)
+    c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
+    d = distance(M, q[2], c)
+    innerLog = -log(M, c, q[2])
+    X = [zero_tangent_vector(M, q[i]) for i in 1:3]
     if p == 2
-        return (
-            adjoint_differential_geodesic_startpoint(M, x, z, 1 / 2, innerLog),
-            -log(M, y, c),
-            adjoint_differential_geodesic_endpoint(M, x, z, 1 / 2, innerLog),
-        )
+        X[1] = adjoint_differential_geodesic_startpoint(M, q[1], q[3], 1 / 2, innerLog)
+        X[2] = -log(M, q[2], c)
+        X[3] = adjoint_differential_geodesic_endpoint(M, q[1], q[3], 1 / 2, innerLog)
     else
-        if d == 0 # subdifferential containing zero
-            return (
-                zero_tangent_vector(M, x),
-                zero_tangent_vector(M, y),
-                zero_tangent_vector(M, z),
+        if d > 0 # gradient case (subdifferential contains zero, see above)
+            X[1] = adjoint_differential_geodesic_startpoint(
+                M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
             )
-        else
-            return (
-                adjoint_differential_geodesic_startpoint(
-                    M, x, z, 1 / 2, innerLog / (d^(2 - p))
-                ),
-                -log(M, y, c) / (d^(2 - p)),
-                adjoint_differential_geodesic_endpoint(
-                    M, x, z, 1 / 2, innerLog / (d^(2 - p))
-                ),
+            X[2] = -log(M, q[2], c) / (d^(2 - p))
+            X[3] = adjoint_differential_geodesic_endpoint(
+                M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
             )
         end
     end
+    return X
+end
+function grad_TV2!(M::Manifold, X, q, p::Number=1)
+    c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
+    d = distance(M, q[2], c)
+    innerLog = -log(M, c, q[2])
+    if p == 2
+        X[1] .= adjoint_differential_geodesic_startpoint(M, q[1], q[3], 1 / 2, innerLog)
+        log!(M, X[2], q[2], c)
+        X[2] .*= -1
+        X[3] .= adjoint_differential_geodesic_endpoint(M, q[1], q[3], 1 / 2, innerLog)
+    else
+        if d == 0 # subdifferential containing zero
+            for i in 1:3
+                zero_tangent_vector!(M, X[i], q[i])
+            end
+        else
+            X[1] .= adjoint_differential_geodesic_startpoint(
+                M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
+            )
+            log!(M, X[2], q[2], c)
+            X[2] .*= -1 / (d^(2 - p))
+            X[3] .= adjoint_differential_geodesic_endpoint(
+                M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
+            )
+        end
+    end
+    return X
 end
 @doc raw"""
     grad_TV2(M,q [,p=1])
@@ -409,12 +425,16 @@ with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
 point `x`, where `M` is the corresponding `PowerManifold`.
 """
 function grad_TV2(M::PowerManifold, q, p::Int=1)
+    X = zero_tangent_vector(M, q)
+    return grad_TV2!(M, X, q, p)
+end
+
+function grad_TV2!(M::PowerManifold, X, q, p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     minInd, maxInd = first(R), last(R)
-    X = zero_tangent_vector(M, q)
     c = costTV2(M, q, p, false)
     for i in R # iterate over all pixel
         di = 0.0
