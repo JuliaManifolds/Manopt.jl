@@ -61,6 +61,11 @@ using Manifolds, Manopt, Test, ManifoldsBase
             Z = -1 / sqrt(2) .* [[0.0, 1.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 0.0]]
             @test Y == X
             @test Y ≈ Z
+            Y2 = grad_TV2(M, s, 2)
+            Z2 = -1.110720734539 .* [[0.0, 1.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 0.0]]
+            @test Y2 ≈ Z2
+            s2 = [p, shortest_geodesic(M, p, q, 0.5), q]
+            @test grad_TV2(M, s2) == [zero_tangent_vector(M, se) for se in s2]
         end
     end
 end
