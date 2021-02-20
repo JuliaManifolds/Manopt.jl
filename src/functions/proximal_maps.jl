@@ -1,31 +1,29 @@
 @doc raw"""
-    y = prox_distance(M,λ,f,x [,p=2])
+    y = prox_distance(M,λ,f,x [, p=2])
+    prox_distance!(M, y, λ, f, x [, p=2])
 
-compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ with
-parameter λ of $\varphi(x) = \frac{1}{p}d_{\mathcal M}^p(f,x)$.
+compute the proximal map ``\operatorname{prox}_{\lambda\varphi}`` with
+parameter λ of ``φ(x) = \frac{1}{p}d_{\mathcal M}^p(f,x)``.
+For the mutating variant the computation is done in place of `y`.
 
 # Input
-* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathcal M$
+* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) ``\mathcal M``
 * `λ` – the prox parameter
-* `f` – a point $f ∈ \mathcal M$ (the data)
+* `f` – a point ``f ∈ \mathcal M`` (the data)
 * `x` – the argument of the proximal map
 
 # Optional argument
 * `p` – (`2`) exponent of the distance.
 
 # Ouput
-* `y` – the result of the proximal map of $\varphi$
+* `y` – the result of the proximal map of ``φ``
 """
 function prox_distance(M::Manifold, λ, f, x, p::Int=2)
     d = distance(M, f, x)
     if p == 2
         t = λ / (1 + λ)
     elseif p == 1
-        if λ < d
-            t = λ / d
-        else
-            t = 1.0
-        end
+        t = (λ < d) ? λ / d : 1.0
     else
         throw(
             ErrorException(
@@ -35,11 +33,28 @@ function prox_distance(M::Manifold, λ, f, x, p::Int=2)
     end
     return exp(M, x, log(M, x, f), t)
 end
-@doc raw"""
-    (y1,y2) = prox_TV(M,λ,(x1,x2) [,p=1])
+function prox_distance!(M::Manifold, y, λ, f, x, p::Int=2)
+    d = distance(M, f, x)
+    if p == 2
+        t = λ / (1 + λ)
+    elseif p == 1
+        t = (λ < d) ? λ / d : 1.0
+    else
+        throw(
+            ErrorException(
+                "Proximal Map of distance(M,f,x) not implemented for p=$(p) (requires p=1 or 2)",
+            ),
+        )
+    end
+    return exp!(M, y, x, log(M, x, f), t)
+end
 
-Compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ of
-$\varphi(x,y) = d_{\mathcal M}^p(x,y)$ with
+@doc raw"""
+    [y1,y2] = prox_TV(M, λ, [x1,x2] [,p=1])
+    prox_TV!(M, [y1,y2] λ, [x1,x2] [,p=1])
+
+Compute the proximal map ``\operatorname{prox}_{\lambda\varphi}`` of
+``φ(x,y) = d_{\mathcal M}^p(x,y)`` with
 parameter `λ`.
 
 # Input
@@ -53,12 +68,10 @@ parameter `λ`.
 
 # Ouput
 * `(y1,y2)` – resulting tuple of points of the
-  $\operatorname{prox}_{\lambda\varphi}($ `(x1,x2)` $)$
+  ``\operatorname{prox}_{λφ}(```(x1,x2)```)``
 """
-function prox_TV(M::mT, λ::Number, pointTuple::Tuple{T,T}, p::Int=1) where {mT<:Manifold,T}
-    x1 = pointTuple[1]
-    x2 = pointTuple[2]
-    d = distance(M, x1, x2)
+function prox_TV(M::Manifold, λ::Number, x::Tuple{T,T}, p::Int=1) where {T}
+    d = distance(M, x[1], x[2])
     if p == 1
         t = min(0.5, λ / d)
     elseif p == 2
@@ -70,7 +83,26 @@ function prox_TV(M::mT, λ::Number, pointTuple::Tuple{T,T}, p::Int=1) where {mT<
             ),
         )
     end
-    return (exp(M, x1, log(M, x1, x2), t), exp(M, x2, log(M, x2, x1), t))
+    return (exp(M, x[1], log(M, x[1], x[2]), t), exp(M, x[2], log(M, x[2], x[1]), t))
+end
+function prox_TV!(M::Manifold, y, λ::Number, x::Tuple{T,T}, p::Int=1) where {T}
+    d = distance(M, x[1], x[2])
+    if p == 1
+        t = min(0.5, λ / d)
+    elseif p == 2
+        t = λ / (1 + 2 * λ)
+    else
+        throw(
+            ErrorException(
+                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
+            ),
+        )
+    end
+    X1 = log(M, x[1], x[2])
+    X2 = log(M, x[2], x[1])
+    exp!(M, y[1], x[1], X1, t)
+    exp!(M, y[2], x[2], X2, t)
+    return y
 end
 @doc raw"""
     ξ = prox_TV(M,λ,x [,p=1])
@@ -94,12 +126,12 @@ The parameter `λ` is the prox parameter.
 * `y` – resulting  point containinf with all mentioned proximal
   points evaluated (in a cylic order).
 """
-function prox_TV(M::PowerManifold{𝔽,N,T}, λ, x, p::Int=1) where {𝔽,N<:Manifold,T}
+function prox_TV(M::PowerManifold, λ, x, p::Int=1)
+    y = deepcopy(x)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
     maxInd = last(R).I
-    y = copy(x)
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
         for l in 0:1
@@ -109,6 +141,28 @@ function prox_TV(M::PowerManifold{𝔽,N,T}, λ, x, p::Int=1) where {𝔽,N<:Man
                     if all(J .<= maxInd) # is this neighbor in range?
                         j = CartesianIndex(J...) # neigbbor index as Cartesian Index
                         (y[i], y[j]) = prox_TV(M.manifold, λ, (y[i], y[j]), p) # Compute TV on these
+                    end
+                end
+            end # i in R
+        end # even odd
+    end # directions
+    return y
+end
+function prox_TV!(M::PowerManifold, y, λ, x, p::Int=1)
+    copyto!(y,x)
+    power_size = power_dimensions(M)
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    maxInd = last(R).I
+    for k in 1:d # for all directions
+        ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
+        for l in 0:1
+            for i in R # iterate over all pixel
+                if (i[k] % 2) == l # even/odd splitting
+                    J = i.I .+ ek.I #i + e_k is j
+                    if all(J .<= maxInd) # is this neighbor in range?
+                        j = CartesianIndex(J...) # neigbbor index as Cartesian Index
+                        prox_TV!(M.manifold, (y[i], y[j]), λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
             end # i in R

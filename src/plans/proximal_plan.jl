@@ -65,11 +65,11 @@ evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M`
 """
 function get_proximal_map(p::ProximalProblem{AllocatingEvaluation}, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
-    return p.proximal_maps!![i](λ, x)
+    return p.proximal_maps!![i](p.M, λ, x)
 end
 function get_proximal_map!(p::ProximalProblem{AllocatingEvaluation}, y, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
-    return copyto!(y, p.proximal_maps!![i](λ, x))
+    return copyto!(y, p.proximal_maps!![i](p.M, λ, x))
 end
 function get_proximal_map(p::ProximalProblem{MutatingEvaluation}, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
@@ -78,7 +78,7 @@ function get_proximal_map(p::ProximalProblem{MutatingEvaluation}, λ, x, i)
 end
 function get_proximal_map!(p::ProximalProblem{MutatingEvaluation}, y, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
-    return p.proximal_maps!![i](λ, y, x)
+    return p.proximal_maps!![i](p.M, y, λ, x)
 end
 #
 #

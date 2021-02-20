@@ -2,7 +2,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
 
 @testset "Conjugate Gradient coefficient rules" begin
     M = Euclidean(2)
-    F(x) = norm(x)^2
+    F(M, x) = norm(x)^2
     gradF(::Euclidean, x) = 2 * x
     P = GradientProblem(M, F, gradF)
     x0 = [0.0, 1.0]
