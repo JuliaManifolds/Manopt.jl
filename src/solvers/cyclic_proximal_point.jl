@@ -55,6 +55,7 @@ function cyclic_proximal_point!(
     F::Function,
     proxes::Union{Tuple,AbstractVector},
     x0;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     evaluation_order::Symbol=:Linear,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)
@@ -63,7 +64,7 @@ function cyclic_proximal_point!(
     return_options=false,
     kwargs..., #decorator options
 )
-    p = ProximalProblem(M, F, proxes)
+    p = ProximalProblem(M, F, proxes; evaluation=evaluation)
     o = CyclicProximalPointOptions(x0, stopping_criterion, λ, evaluation_order)
 
     o = decorate_options(o; kwargs...)
@@ -75,16 +76,16 @@ function cyclic_proximal_point!(
     end
 end
 function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointOptions)
-    c = length(p.proxes)
+    c = length(p.proximal_maps!!)
     o.order = collect(1:c)
     (o.order_type == :FixedRandom) && shuffle!(o.order)
     return o
 end
 function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
-    c = length(p.proxes)
+    c = length(p.proximal_maps!!)
     λi = o.λ(iter)
     for k in o.order
-        o.x = get_proximal_map(p, λi, o.x, k)
+        get_proximal_map!(p, o.x, λi, o.x, k)
     end
     (o.order_type == :Random) && shuffle(o.order)
     return o

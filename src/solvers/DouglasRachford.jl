@@ -79,6 +79,7 @@ function DouglasRachford!(
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
     R::TR=reflect,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     parallel::Int=0,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(200), StopWhenChangeLess(10.0^-5)
@@ -108,7 +109,7 @@ function DouglasRachford!(
     else
         nF = F
     end
-    p = ProximalProblem(M, nF, (prox1, prox2))
+    p = ProximalProblem(M, nF, (prox1, prox2); evaluation=evaluation)
     o = DouglasRachfordOptions(x, λ, α, reflect, stopping_criterion, parallel > 0)
 
     o = decorate_options(o; kwargs...)
@@ -119,13 +120,14 @@ function DouglasRachford!(
         return get_solver_result(resultO)
     end
 end
-function initialize_solver!(p::ProximalProblem, o::DouglasRachfordOptions) end
+function initialize_solver!(::ProximalProblem, ::DouglasRachfordOptions) end
 function step_solver!(p::ProximalProblem, o::DouglasRachfordOptions, iter)
-    pP = get_proximal_map(p, o.λ(iter), o.s, 1)
-    snew = o.R(p.M, pP, o.s)
-    o.x = get_proximal_map(p, o.λ(iter), snew, 2)
-    snew = o.R(p.M, o.x, snew)
+    get_proximal_map!(p, o.xtmp, o.λ(iter), o.s, 1)
+    o.stmp = o.R(p.M, o.xtmp, o.s)
+    o.x = get_proximal_map(p, o.λ(iter), o.stmp, 2)
+    o.stmp = o.R(p.M, o.x, o.stmp)
     # relaxation
-    return o.s = shortest_geodesic(p.M, o.s, snew, o.α(iter))
+    o.s = shortest_geodesic(p.M, o.s, o.stmp, o.α(iter))
+    return o
 end
 get_solver_result(o::DouglasRachfordOptions) = o.parallel ? o.x[1] : o.x
