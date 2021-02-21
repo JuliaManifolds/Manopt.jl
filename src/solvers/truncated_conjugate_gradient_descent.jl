@@ -66,8 +66,7 @@ OR
 function truncated_conjugate_gradient_descent(
     M::Manifold, F::TF, gradF::TG, x, η, H::TH, trust_region_radius::Float64; kwargs...
 ) where {TF,TG,TH}
-    x_res = allocate(x)
-    copyto!(x_res, x)
+    x_res = deepcopy(x)
     return truncated_conjugate_gradient_descent!(
         M, F, gradF, x_res, η, H, trust_region_radius; kwargs...
     )

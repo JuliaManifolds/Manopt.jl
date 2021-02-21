@@ -35,7 +35,7 @@ using Manifolds, Manopt, Test, Dates
         @test_throws ErrorException ProximalProblem(N, F, proxes, [1, 2, 2])
     end
     @testset "Mutating" begin
-        n = 10
+        n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
         f = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
@@ -48,7 +48,7 @@ using Manifolds, Manopt, Test, Dates
             (N, λ, x) -> prox_distance(N, λ, f, x), (N, λ, x) -> prox_TV(N, 0.5 * λ, x)
         )
         s1 = cyclic_proximal_point(
-            N, F, proxes, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
+            N, F, proxes, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(1)
         )
         s2 = cyclic_proximal_point(
             N,
@@ -56,7 +56,7 @@ using Manifolds, Manopt, Test, Dates
             proxes!,
             f;
             λ=i -> π / (2 * i),
-            stopping_criterion=StopAfterIteration(100),
+            stopping_criterion=StopAfterIteration(1),
             evaluation=MutatingEvaluation(),
         )
         @test isapprox(N, s1, s2)

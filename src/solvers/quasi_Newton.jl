@@ -44,8 +44,7 @@ OR
 * `options` – the options returned by the solver (see `return_options`)
 """
 function quasi_Newton(M::Manifold, F::Function, gradF::G, x::P; kwargs...) where {P,G}
-    x_res = allocate(x)
-    copyto!(x_res, x)
+    x_res = deepcopy(x)
     return quasi_Newton!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""

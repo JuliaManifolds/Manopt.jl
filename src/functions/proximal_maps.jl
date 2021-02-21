@@ -149,10 +149,12 @@ function prox_TV(M::PowerManifold, λ, x, p::Int=1)
     return y
 end
 function prox_TV!(M::PowerManifold, y, λ, x, p::Int=1)
-    copyto!(y, x)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
+    for i in R # iterate over all pixel
+        copyto!(y[i], x[i])
+    end
     maxInd = last(R).I
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector

@@ -64,8 +64,7 @@ For a description of the algorithm and more details see
 function trust_regions(
     M::Manifold, F::TF, gradF::TdF, hessF::TH, x; kwargs...
 ) where {TF,TdF,TH}
-    x_res = allocate(x)
-    copyto!(x_res, x)
+    x_res = deepcopy(x)
     return trust_regions!(M, F, gradF, hessF, x_res; kwargs...)
 end
 @doc raw"""

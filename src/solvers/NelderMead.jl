@@ -39,8 +39,7 @@ function NelderMead(
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     kwargs...,
 ) where {TF}
-    res_population = allocate.(population)
-    copyto!.(res_population, population)
+    res_population = deepcopy(population)
     return NelderMead!(M, F, res_population; kwargs...)
 end
 @doc raw"""

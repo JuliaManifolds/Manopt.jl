@@ -46,8 +46,7 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function DouglasRachford(M::Manifold, F::TF, proxes::Vector{<:Any}, x; kwargs...) where {TF}
-    x_res = allocate(x)
-    copyto!(x_res, x)
+    x_res = deepcopy(x)
     return DouglasRachford!(M, F, proxes, x; kwargs...)
 end
 @doc raw"""

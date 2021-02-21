@@ -265,7 +265,9 @@ function grad_TV!(M::MT, X, q::Tuple{T,T}, p=1) where {MT<:Manifold,T}
     return X
 end
 @doc raw"""
-    ξ = grad_TV(M,λ,x,[p=1])
+    ξ = grad_TV(M, λ, x, [p=1])
+    grad_TV!(M, X, λ, x, [p=1])
+
 Compute the (sub)gradient $\partial F$ of all forward differences orrucirng,
 in the power manifold array, i.e. of the function
 
