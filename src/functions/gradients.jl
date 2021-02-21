@@ -234,22 +234,38 @@ end
 compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
 to both $x$ and $y$.
 """
-function grad_TV(M::MT, xT::Tuple{T,T}, p=1) where {MT<:Manifold,T}
-    x = xT[1]
-    y = xT[2]
+function grad_TV(M::MT, q::Tuple{T,T}, p=1) where {MT<:Manifold,T}
     if p == 2
-        return (-log(M, x, y), -log(M, y, x))
+        return (-log(M, q[1], q[2]), -log(M, q[2], q[1]))
     else
-        d = distance(M, x, y)
+        d = distance(M, q[1], q[2])
         if d == 0 # subdifferential containing zero
-            return (zero_tangent_vector(M, x), zero_tangent_vector(M, y))
+            return (zero_tangent_vector(M, q[1]), zero_tangent_vector(M, q[2]))
         else
-            return (-log(M, x, y) / (d^(2 - p)), -log(M, y, x) / (d^(2 - p)))
+            return (-log(M, q[1], q[2]) / (d^(2 - p)), -log(M, q[2], q[1]) / (d^(2 - p)))
         end
     end
 end
+function grad_TV!(M::MT, X, q::Tuple{T,T}, p=1) where {MT<:Manifold,T}
+    d = distance(M, q[1], q[2])
+    if d == 0 # subdifferential containing zero
+        zero_tangent_vector!(M, X[1], q[1])
+        zero_tangent_vector!(M, X[2], q[2])
+        return X
+    end
+    log!(M, X[1], q[1], q[2])
+    log!(M, X[2], q[2], q[1])
+    if p == 2
+        X[1] .*= -1
+        X[2] .*= -1
+    else
+        X[1] .*= -1 / (d^(2 - p))
+        X[2] .*= -1 / (d^(2 - p))
+    end
+    return X
+end
 @doc raw"""
-    ξ = grad_TV(M,λ,x,[p])
+    ξ = grad_TV(M,λ,x,[p=1])
 Compute the (sub)gradient $\partial F$ of all forward differences orrucirng,
 in the power manifold array, i.e. of the function
 
@@ -283,6 +299,35 @@ function grad_TV(M::PowerManifold, x, p::Int=1)
                     g = (c[i] == 0 ? 1 : 1 / c[i]) .* grad_TV(M.manifold, (x[i], x[j]), p) # Compute TV on these
                 else
                     g = grad_TV(M.manifold, (x[i], x[j]), p) # Compute TV on these
+                end
+                X[i] += g[1]
+                X[j] += g[2]
+            end
+        end # directions
+    end # i in R
+    return X
+end
+function grad_TV!(M::PowerManifold, X, x, p::Int=1)
+    power_size = power_dimensions(M)
+    rep_size = representation_size(M.manifold)
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    maxInd = last(R)
+    c = costTV(M, x, p, 0)
+    g = [
+        zero_tangent_vector(M.manifold, x[first(R)]),
+        zero_tangent_vector(M.manifold, x[first(R)]),
+    ]
+    for i in R # iterate over all pixel
+        di = 0.0
+        for k in 1:d # for all direction combinations
+            ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
+            j = i + ek # compute neighbor
+            if all(map(<=, j.I, maxInd.I)) # is this neighbor in range?
+                grad_TV!(M.manifold, g, (x[i], x[j]), p) # Compute TV on these
+                if p != 1
+                    (c[i] != 0) && (g[1] .*= 1 / c[i])
+                    (c[i] != 0) && (g[2] .*= 1 / c[i])
                 end
                 X[i] += g[1]
                 X[j] += g[2]

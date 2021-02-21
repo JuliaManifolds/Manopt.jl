@@ -10,7 +10,11 @@
         M, prox_distance(M, distance(M, p, q) / 2, p, q, 1), shortest_geodesic(M, p, q, 0.5)
     ) ≈ 0
     (r, s) = prox_TV(M, π / 4, (p, q))
+    X = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+    prox_TV!(M, X, π / 4, (p, q))
     @test norm(r - s) < eps(Float64)
+    @test norm(X[1] - s) < eps(Float64)
+    @test norm(X[2] - r) < eps(Float64)
     # i.e. they are moved together
     @test distance(M, r, s) < eps(Float64)
     (t, u) = prox_TV(M, π / 8, (p, q))

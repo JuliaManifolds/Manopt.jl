@@ -297,6 +297,7 @@ export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export cost_L2_acceleration_bezier, cost_acceleration_bezier
 # Gradients
 export grad_TV,
+    grad_TV!,
     grad_TV2,
     grad_TV2!,
     grad_intrinsic_infimal_convolution_TV12,
@@ -306,7 +307,8 @@ export grad_TV,
     grad_acceleration_bezier,
     grad_L2_acceleration_bezier
 # Proximal maps
-export prox_distance, prox_distance!, prox_TV, prox_TV!, prox_parallel_TV, prox_TV2, project_collaborative_TV
+export prox_distance,
+    prox_distance!, prox_TV, prox_TV!, prox_parallel_TV, prox_TV2, project_collaborative_TV
 # Error measures
 export meanSquaredError, meanAverageError
 #

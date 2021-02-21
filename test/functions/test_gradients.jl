@@ -52,6 +52,22 @@ using Manifolds, Manopt, Test, ManifoldsBase
             @test X == Y
             @test X == Z
         end
+        @testset "Gradient of total variation" begin
+            Y = grad_TV(M, (p, q))
+            Z = [[0.0, -1.0, 0.0], [0.0, 0.0, -1.0]]
+            X = similar.(Z)
+            grad_TV!(M, X, (p, q))
+            @test [y for y in Y] == X
+            @test [y for y in Y] ≈ Z
+            N = PowerManifold(M, NestedPowerRepresentation(), 3)
+            s = [p, q, r]
+            Y2 = grad_TV(N, s)
+            Z2 = [[0.0, -1.0, 0.0], [-1.0, 0.0, -1.0], [0.0, -1.0, 0.0]]
+            X2 = zero_tangent_vector(N, s)
+            grad_TV!(N, X2, s)
+            @test Y2 == Z2
+            @test X2 == Z2
+        end
         @testset "Grad of second order total variation" begin
             N = PowerManifold(M, NestedPowerRepresentation(), 3)
             s = [p, q, r]

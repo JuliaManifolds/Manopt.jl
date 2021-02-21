@@ -6,7 +6,9 @@ using Manifolds, Manopt, Test, Dates
         N = PowerManifold(Circle(), n)
         f = artificial_S1_signal(n)
         F(M, x) = costL2TV(M, f, 0.5, x)
-        proxes = ((N, λ, x) -> prox_distance(N, λ, f, x), (N, λ, x) -> prox_TV(N, 0.5 * λ, x))
+        proxes = (
+            (N, λ, x) -> prox_distance(N, λ, f, x), (N, λ, x) -> prox_TV(N, 0.5 * λ, x)
+        )
         o = cyclic_proximal_point(
             N,
             F,
@@ -49,8 +51,13 @@ using Manifolds, Manopt, Test, Dates
             N, F, proxes, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
         s2 = cyclic_proximal_point(
-            N, F, proxes!, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100),
-            evaluation=MutatingEvaluation()
+            N,
+            F,
+            proxes!,
+            f;
+            λ=i -> π / (2 * i),
+            stopping_criterion=StopAfterIteration(100),
+            evaluation=MutatingEvaluation(),
         )
         @test isapprox(N, s1, s2)
     end

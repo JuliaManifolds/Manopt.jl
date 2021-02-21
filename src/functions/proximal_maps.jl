@@ -149,7 +149,7 @@ function prox_TV(M::PowerManifold, λ, x, p::Int=1)
     return y
 end
 function prox_TV!(M::PowerManifold, y, λ, x, p::Int=1)
-    copyto!(y,x)
+    copyto!(y, x)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
