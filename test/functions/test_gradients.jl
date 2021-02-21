@@ -67,6 +67,19 @@ using Manifolds, Manopt, Test, ManifoldsBase
             grad_TV!(N, X2, s)
             @test Y2 == Z2
             @test X2 == Z2
+            Y2a = grad_TV(N, s, 2)
+            X2a = zero_tangent_vector(N, s)
+            grad_TV!(N, X2a, s, 2)
+            @test Y2a == X2a
+            N2 = PowerManifold(M, NestedPowerRepresentation(), 2)
+            Y3 = grad_TV(M, (p, q), 2)
+            X3 = zero_tangent_vector(N2, [p, q])
+            grad_TV!(M, X3, (p, q), 2)
+            @test [y for y in Y3] == X3
+            Y4 = grad_TV(M, (p, p))
+            X4 = zero_tangent_vector(N2, [p, q])
+            grad_TV!(M, X4, (p, p))
+            @test [y for y in Y4] == X4
         end
         @testset "Grad of second order total variation" begin
             N = PowerManifold(M, NestedPowerRepresentation(), 3)

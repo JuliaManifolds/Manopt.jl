@@ -48,7 +48,7 @@ using Manifolds, Manopt, Test, Dates
             (N, λ, x) -> prox_distance(N, λ, f, x), (N, λ, x) -> prox_TV(N, 0.5 * λ, x)
         )
         s1 = cyclic_proximal_point(
-            N, F, proxes, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(1)
+            N, F, proxes, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
         s2 = cyclic_proximal_point(
             N,
@@ -56,9 +56,33 @@ using Manifolds, Manopt, Test, Dates
             proxes!,
             f;
             λ=i -> π / (2 * i),
-            stopping_criterion=StopAfterIteration(1),
+            stopping_criterion=StopAfterIteration(100),
             evaluation=MutatingEvaluation(),
         )
         @test isapprox(N, s1, s2)
+    end
+    @testset "Problem access functions" begin
+        n = 3
+        M = Sphere(2)
+        N = PowerManifold(M, NestedPowerRepresentation(), n)
+        f = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
+        F(N, x) = costL2TV(N, f, 0.5, x)
+        proxes! = (
+            (N, y, λ, x) -> prox_distance!(N, y, λ, f, x),
+            (N, y, λ, x) -> prox_TV!(N, y, 0.5 * λ, x),
+        )
+        proxes = (
+            (N, λ, x) -> prox_distance(N, λ, f, x), (N, λ, x) -> prox_TV(N, 0.5 * λ, x)
+        )
+        for i in 1:2
+            p1 = ProximalProblem(N, F, proxes)
+            g = deepcopy(f)
+            get_proximal_map!(p1, g, 1.0, g, i)
+            @test isapprox(N, g, get_proximal_map(p1, 1.0, f, i))
+            p2 = ProximalProblem(N, F, proxes!; evaluation=MutatingEvaluation())
+            g = deepcopy(f)
+            get_proximal_map!(p2, g, 1.0, g, i)
+            @test isapprox(N, g, get_proximal_map(p2, 1.0, f, i))
+        end
     end
 end

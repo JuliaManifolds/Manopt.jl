@@ -1,3 +1,5 @@
+using Manifolds, Manopt, Test, Dates
+
 @testset "proximal maps" begin
     #
     # prox_TV
@@ -6,9 +8,13 @@
     M = Sphere(2)
     N = PowerManifold(M, NestedPowerRepresentation(), 2)
     @test_throws ErrorException prox_distance(M, 1.0, p, q, 3)
+    @test_throws ErrorException prox_distance!(M, p, 1.0, p, q, 3)
     @test distance(
         M, prox_distance(M, distance(M, p, q) / 2, p, q, 1), shortest_geodesic(M, p, q, 0.5)
     ) ≈ 0
+    t = similar(p)
+    prox_distance!(M, t, distance(M, p, q) / 2, p, q, 1)
+    @test t == prox_distance(M, distance(M, p, q) / 2, p, q, 1)
     (r, s) = prox_TV(M, π / 4, (p, q))
     X = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
     prox_TV!(M, X, π / 4, (p, q))
@@ -19,6 +25,7 @@
     @test distance(M, r, s) < eps(Float64)
     (t, u) = prox_TV(M, π / 8, (p, q))
     @test_throws ErrorException prox_TV(M, π, (p, q), 3)
+    @test_throws ErrorException prox_TV!(M, [p, q], π, (p, q), 3)
     # they cross correlate
     @test (
         abs(t[1] - u[2]) < eps(Float64) &&
@@ -31,6 +38,9 @@
     vC, wC = shortest_geodesic(M, p, q, [1 / 3, 2 / 3])
     @test distance(M, v, vC) ≈ 0
     @test distance(M, w, wC) ≈ 0
+    P = [similar(p), similar(q)]
+    prox_TV!(M, P, 1.0, (p, q), 2)
+    @test P == [v, w]
     # prox_TV on Power
     T = prox_TV(N, π / 8, [p, q])
     @test distance(N, T, [t, u]) ≈ 0
