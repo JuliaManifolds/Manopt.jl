@@ -8,16 +8,18 @@ using ColorTypes
 using Markdown
 using LinearAlgebra
 using Dates: Period, Nanosecond, value
+using Requires
 using Random: shuffle!
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
-import Random: rand, randperm
 import Base: copy, identity, &, |
 import ManifoldsBase:
     ℝ,
     ℂ,
     ×,
     ^,
+    _read,
+    _write,
     AbstractBasis,
     AbstractPowerManifold,
     AbstractVectorTransportMethod,
@@ -41,10 +43,19 @@ import ManifoldsBase:
     injectivity_radius,
     inner,
     geodesic,
+    get_basis,
+    get_component,
+    get_coordinates,
+    get_vector,
+    get_vectors,
+    get_iterator,
+    getindex,
     manifold_dimension,
     mid_point,
     mid_point!,
+    NestedPowerRepresentation,
     norm,
+    power_dimensions,
     project,
     project!,
     retract,
@@ -57,48 +68,13 @@ import ManifoldsBase:
     zero_tangent_vector,
     zero_tangent_vector!,
     DiagonalizingOrthonormalBasis,
-    get_basis,
-    get_coordinates,
-    get_vector,
-    get_vectors,
-    representation_size
-using Manifolds: #temporary for random
-    Circle,
-    Euclidean,
-    Grassmann,
-    Hyperbolic,
-    PositiveNumbers,
-    ProductManifold,
-    Rotations,
-    SymmetricPositiveDefinite,
-    Stiefel,
-    Sphere
-import Manifolds: mid_point, mid_point!
-using Manifolds: # Wishlist for Base
-    NestedPowerRepresentation,
-    ArrayPowerRepresentation,
-    mean,
-    median,
-    get_iterator,
-    _read,
-    _write,
-    power_dimensions,
-    ArrayReshaper,
-    prod_point,
-    ShapeSpecification,
-    ProductRepr,
-    submanifold_components,
-    submanifold_component,
-    get_component,
-    set_component!,
-    getindex,
-    setindex!
-
-const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers}
+    representation_size,
+    setindex!,
+    set_component!
 
 include("plans/plan.jl")
 # Functions
-include("functions/manifold.jl")
+include("functions/helper_functions.jl")
 include("functions/bezier_curves.jl")
 include("functions/adjoint_differentials.jl")
 include("functions/costs.jl")
@@ -127,11 +103,32 @@ include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
 
-include("random.jl")
-include("plans/nonmutating_manifolds_plans.jl")
+@require Manifolds="1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
+    using .Manifolds:
+        Circle,
+        Euclidean,
+        Grassmann,
+        Hyperbolic,
+        PositiveNumbers,
+        ProductManifold,
+        Rotations,
+        SymmetricPositiveDefinite,
+        Stiefel,
+        Sphere
+    import Random: rand, randperm
+        include("random.jl")
+        # adaptions for Nonmutating manifolds
+        const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
+        include("functions/manifold_functions.jl")
+        include("functions/nonmutating_manifolds_functions.jl")
+        include("plans/nonmutating_manifolds_plans.jl")
+        println("Hi")
+end
+export random_point, random_tangent, mid_point, mid_point!
 
 export ℝ, ℂ, &, |
-
+#
+# Problems
 export Problem,
     ProximalProblem,
     CostProblem,
@@ -143,7 +140,6 @@ export Problem,
     AbstractEvaluationType,
     AllocatingEvaluation,
     MutatingEvaluation
-
 #
 # Options
 export Options,
@@ -262,7 +258,7 @@ export StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 export StoppingCriterion, StoppingCriterionSet, Stepsize
 
-export random_point, random_tangent, mid_point, mid_point!, reflect, sym_rem
+export reflect
 #
 # Data functions
 export artificial_S1_signal, artificial_S1_slope_signal, artificialIn_SAR_image

@@ -276,43 +276,7 @@ function prox_TV2(
     subgradient_method!(PowM, F, ∂F, xR; stopping_criterion=stopping_criterion, kwargs...)
     return (xR...,)
 end
-function prox_TV2(::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
-    w = @SVector [1.0, -2.0, 1.0]
-    x = SVector(pointTuple)
-    if p == 1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
-        sr_dot_xw = sym_rem(sum(x .* w))
-        m = min(λ, abs(sr_dot_xw) / (dot(w, w)))
-        s = sign(sr_dot_xw)
-        return sym_rem.(x .- m .* s .* w)
-    elseif p == 2 # Theorem 3.6 ibd.
-        t = λ * sym_rem(sum(x .* w)) / (1 + λ * dot(w, w))
-        return sym_rem.(x - t .* w)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV2(Circle,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
-end
-function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
-    w = @SVector [1.0, -2.0, 1.0]
-    x = SVector(pointTuple)
-    if p == 1 # Example 3.2 in Bergmann, Laus, Steidl, Weinmann, 2014.
-        m = min.(Ref(λ), abs.(x .* w) / (dot(w, w)))
-        s = sign.(sum(x .* w))
-        return x .- m .* s .* w
-    elseif p == 2 # Theorem 3.6 ibd.
-        t = λ * sum(x .* w) / (1 + λ * dot(w, w))
-        return x .- t .* w
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV2(Euclidean,λ,pT,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
-end
+
 @doc raw"""
     ξ = prox_TV2(M,λ,x,[p])
 

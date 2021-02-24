@@ -415,28 +415,7 @@ function grad_TV2(M::Manifold, q, p::Number=1)
     X = [zero_tangent_vector(M, x) for x in q]
     return grad_TV2!(M, X, q, p)
 end
-function grad_TV2(M::NONMUTATINGMANIFOLDS, q, p::Number=1)
-    c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
-    d = distance(M, q[2], c)
-    innerLog = -log(M, c, q[2])
-    X = [zero_tangent_vector(M, q[i]) for i in 1:3]
-    if p == 2
-        X[1] = adjoint_differential_geodesic_startpoint(M, q[1], q[3], 1 / 2, innerLog)
-        X[2] = -log(M, q[2], c)
-        X[3] = adjoint_differential_geodesic_endpoint(M, q[1], q[3], 1 / 2, innerLog)
-    else
-        if d > 0 # gradient case (subdifferential contains zero, see above)
-            X[1] = adjoint_differential_geodesic_startpoint(
-                M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
-            )
-            X[2] = -log(M, q[2], c) / (d^(2 - p))
-            X[3] = adjoint_differential_geodesic_endpoint(
-                M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
-            )
-        end
-    end
-    return X
-end
+
 function grad_TV2!(M::Manifold, X, q, p::Number=1)
     c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
     d = distance(M, q[2], c)
