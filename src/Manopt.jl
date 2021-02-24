@@ -103,29 +103,33 @@ include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
 
-@require Manifolds="1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
-    using .Manifolds:
-        Circle,
-        Euclidean,
-        Grassmann,
-        Hyperbolic,
-        PositiveNumbers,
-        ProductManifold,
-        Rotations,
-        SymmetricPositiveDefinite,
-        Stiefel,
-        Sphere
-    import Random: rand, randperm
-        include("random.jl")
-        # adaptions for Nonmutating manifolds
-        const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
-        include("functions/manifold_functions.jl")
-        include("functions/nonmutating_manifolds_functions.jl")
-        include("plans/nonmutating_manifolds_plans.jl")
-        println("Hi")
+function __init__()
+    @require Manifolds="1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
+        using .Manifolds:
+            Circle,
+            Euclidean,
+            Grassmann,
+            Hyperbolic,
+            PositiveNumbers,
+            ProductManifold,
+            Rotations,
+            SymmetricPositiveDefinite,
+            Stiefel,
+            Sphere,
+            ArrayPowerRepresentation
+        import Random: rand, randperm
+            include("random.jl")
+            # adaptions for Nonmutating manifolds
+            const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
+            include("functions/manifold_functions.jl")
+            include("functions/nonmutating_manifolds_functions.jl")
+            include("plans/nonmutating_manifolds_plans.jl")
+        export random_point, random_tangent, mid_point, mid_point!
+    end
+    return nothing
 end
-export random_point, random_tangent, mid_point, mid_point!
-
+#
+# General
 export ℝ, ℂ, &, |
 #
 # Problems
