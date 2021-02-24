@@ -122,6 +122,7 @@ end
 
 @doc raw"""
     Y = adjoint_Jacobi_field(M, p, q, t, X, β)
+    adjoint_Jacobi_field!(M, Y, p, q, t, X, β)
 
 Compute the AdjointJacobiField $J$ along the geodesic $γ_{p,q}$ on the manifold
 $\mathcal M$ with initial conditions (depending on the application)
@@ -142,34 +143,40 @@ function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesi
     )
     return Y
 end
-function adjoint_Jacobi_field(
-    M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β=βdifferential_geodesic_startpoint
-)
+function adjoint_Jacobi_field!(M::Manifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)
     Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y = sum(
+    Y .= sum(
         (inner.(Ref(M), Ref(x), Ref(X), Θ)) .*
         (β.(B.data.eigenvalues, Ref(t), Ref(distance(M, p, q)))) .* V,
-    )[1]
+    )
     return Y
 end
 function adjoint_Jacobi_field(
     M::AbstractPowerManifold, p, q, t, X, β=βdifferential_geodesic_startpoint
 )
-    rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
-        #lY = adjoint_Jacobi_field(M.manifold, p[i], q[i], t, X[i], β)
         Y[M, i] = adjoint_Jacobi_field(M.manifold, p[M, i], q[M, i], t, X[M, i], β)
+    end
+    return Y
+end
+function adjoint_Jacobi_field!(
+    M::AbstractPowerManifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
+)
+    for i in get_iterator(M)
+        adjoint_Jacobi_field!(M.manifold, Y[M, i], p[M, i], q[M, i], t, X[M, i], β)
     end
     return Y
 end
 
 @doc raw"""
     Y = jacobi_field(M, p, q, t, X, β)
+    jacobi_field!(M, Y, p, q, t, X, β)
+
 compute the Jacobi jield $J$ along the geodesic $γ_{p,q}$ on the manifold $\mathcal M$ with
 initial conditions (depending on the application) $X ∈ T_p\mathcal M$ and weights $β$. The
 result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
@@ -179,11 +186,14 @@ result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
 [`adjoint_Jacobi_field`](@ref)
 """
 function jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
+    Y = zero_tangent_vector(M, p)
+    return jacobi_field!(M, Y, p, q, t, X, β)
+end
+function jacobi_field!(M::Manifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)
     Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
-    Y = zero_tangent_vector(M, p)
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
     Y .= sum(
         (inner.(Ref(M), Ref(p), Ref(X), V)) .*
@@ -192,27 +202,19 @@ function jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startp
     return Y
 end
 function jacobi_field(
-    M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β=βdifferential_geodesic_startpoint
-)
-    x = shortest_geodesic(M, p, q, t)
-    B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
-    V = get_vectors(M, p, B)
-    Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
-    Y = zero_tangent_vector(M, p)
-    # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y = sum(
-        (inner.(Ref(M), Ref(p), Ref(X), V)) .*
-        (β.(B.data.eigenvalues, Ref(t), Ref(distance(M, p, q)))) .* Θ,
-    )[1]
-    return Y
-end
-function jacobi_field(
     M::AbstractPowerManifold, p, q, t, X, β=βdifferential_geodesic_startpoint
 )
-    rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
         Y[M, i] = jacobi_field(M.manifold, p[M, i], q[M, i], t, X[M, i], β)
+    end
+    return Y
+end
+function jacobi_field!(
+    M::AbstractPowerManifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
+)
+    for i in get_iterator(M)
+        jacobi_field!(M.manifold, Y[M, i], p[M, i], q[M, i], t, X[M, i], β)
     end
     return Y
 end
