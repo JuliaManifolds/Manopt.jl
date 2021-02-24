@@ -1,5 +1,10 @@
 function adjoint_Jacobi_field(
-    M::NONMUTATINGMANIFOLDS, p::Real, q::Real, t::Real, X::Real, β=βdifferential_geodesic_startpoint
+    M::NONMUTATINGMANIFOLDS,
+    p::Real,
+    q::Real,
+    t::Real,
+    X::Real,
+    β=βdifferential_geodesic_startpoint,
 )
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
@@ -13,7 +18,12 @@ function adjoint_Jacobi_field(
     return Y
 end
 function jacobi_field(
-    M::NONMUTATINGMANIFOLDS, p::Real, q::Real, t::Real, X::Real, β=βdifferential_geodesic_startpoint
+    M::NONMUTATINGMANIFOLDS,
+    p::Real,
+    q::Real,
+    t::Real,
+    X::Real,
+    β=βdifferential_geodesic_startpoint,
 )
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))

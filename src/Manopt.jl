@@ -104,7 +104,7 @@ include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
 
 function __init__()
-    @require Manifolds="1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
+    @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
         using .Manifolds:
             Circle,
             Euclidean,
@@ -116,14 +116,18 @@ function __init__()
             SymmetricPositiveDefinite,
             Stiefel,
             Sphere,
-            ArrayPowerRepresentation
+            ArrayPowerRepresentation,
+            ProductRepr,
+            submanifold_components,
+            sym_rem,
+            mean
         import Random: rand, randperm
-            include("random.jl")
-            # adaptions for Nonmutating manifolds
-            const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
-            include("functions/manifold_functions.jl")
-            include("functions/nonmutating_manifolds_functions.jl")
-            include("plans/nonmutating_manifolds_plans.jl")
+        include("random.jl")
+        # adaptions for Nonmutating manifolds
+        const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
+        include("functions/manifold_functions.jl")
+        include("functions/nonmutating_manifolds_functions.jl")
+        include("plans/nonmutating_manifolds_plans.jl")
         export random_point, random_tangent, mid_point, mid_point!
     end
     return nothing
@@ -175,7 +179,7 @@ export get_cost,
     get_initial_stepsize,
     get_gradients,
     get_gradients!
-export get_hessian, get_hessian!, approxHessianFD
+export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
@@ -288,10 +292,14 @@ export adjoint_differential_log_basepoint, adjoint_differential_log_argument
 export adjoint_differential_forward_logs, adjoint_differential_bezier_control
 #
 # Differentials
-export differential_geodesic_startpoint, differential_geodesic_endpoint
-export differential_exp_basepoint, differential_exp_argument
-export differential_log_basepoint, differential_log_argument, differential_forward_logs
-export differential_bezier_control
+export differential_geodesic_startpoint, differential_geodesic_startpoint!
+export differential_geodesic_endpoint, differential_geodesic_endpoint!
+export differential_exp_basepoint, differential_exp_basepoint!
+export differential_exp_argument, differential_exp_argument!
+export differential_log_basepoint, differential_log_basepoint!
+export differential_log_argument, differential_log_argument!
+export differential_forward_logs, differential_forward_logs!
+export differential_bezier_control, differential_bezier_control!
 #
 # Functions
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12

@@ -14,7 +14,7 @@ trust-regions subproblem. This inner solve can be preconditioned by providing
 a preconditioner (symmetric and positive deﬁnite, an approximation of the
 inverse of the Hessian of $F$). If no Hessian of the cost function $F$ is
 provided, a standard approximation of the Hessian based on the gradient
-$\operatorname{grad}F$ with [`approxHessianFD`](@ref) will be computed.
+$\operatorname{grad}F$ with [``](@ref) will be computed.
 
 ## Initialization
 
@@ -141,5 +141,5 @@ TrustRegionsOptions
 ## Approximation of the Hessian
 
 ```@docs
-approxHessianFD
+ApproxHessianFiniteDifference
 ```

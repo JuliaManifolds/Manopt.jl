@@ -78,7 +78,7 @@ render_asymptote(export_folder * "/centerAndLargeData.asy"; render=2) #src
 # ```
 #
 # Which we define as
-F(x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
+F(M, x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
 gradF(x) = [grad_distance(M, p, x) for p in data]
 gradf = [x -> grad_distance(M, p, x) for p in data];
 # The calls are only slightly different, but notice that accessing the 2nd gradient element

@@ -143,7 +143,9 @@ function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesi
     )
     return Y
 end
-function adjoint_Jacobi_field!(M::Manifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint)
+function adjoint_Jacobi_field!(
+    M::Manifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
+)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)

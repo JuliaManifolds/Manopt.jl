@@ -198,7 +198,7 @@ render_asymptote(export_folder * "/Bezier-composite-curve-gradient.asy"; render=
 curve_samples = collect(range(0.0, 3.0; length=151)) #exactness of approximating d^2
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
-F(pB) = cost_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
+F(M, pB) = cost_acceleration_bezier(M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples)
 function gradF(M, pB)
     return grad_acceleration_bezier(
         M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples

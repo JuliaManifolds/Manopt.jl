@@ -1,5 +1,12 @@
 @doc raw"""
     differential_bezier(M::Manifold, b::BezierSegment, t::Float, X::BezierSegment)
+    differential_bezier!(
+        M::Manifold,
+        Y,
+        b::BezierSegment,
+        t::Number,
+        X::BezierSegment
+    )
 
 evaluate the differential of the Bézier curve with respect to its control points
 `b` and tangent vectors `X` given in the tangent spaces of the control points. The result
@@ -11,10 +18,17 @@ function differential_bezier_control(
     M::Manifold, b::BezierSegment, t::Float64, X::BezierSegment
 ) where {Q}
     # iterative, because recursively would be too many Casteljau evals
+    Y = similar(first(X.pts))
+    return differential_bezier_control!(M, Y, b, t, X)
+end
+function differential_bezier_control!(
+    M::Manifold, Y, b::BezierSegment, t::Float64, X::BezierSegment
+) where {Q}
+    # iterative, because recursively would be too many Casteljau evals
+    Z = similar(X.pts)
     c = deepcopy(b.pts)
-    Y = similar(X.pts)
     for l in length(c):-1:2
-        Y[1:(l - 1)] .=
+        Z[1:(l - 1)] .=
             differential_geodesic_startpoint.(
                 Ref(M), c[1:(l - 1)], c[2:l], Ref(t), X.pts[1:(l - 1)]
             ) .+
@@ -23,12 +37,12 @@ function differential_bezier_control(
             )
         c[1:(l - 1)] = shortest_geodesic.(Ref(M), c[1:(l - 1)], c[2:l], Ref(t))
     end
-    return Y[1]
+    return copyto!(Y, Z[1])
 end
 @doc raw"""
     differential_bezier_control(
         M::Manifold,
-        b::NTuple{N,P},
+        b::BezierSegment,
         T::Array{Float64,1},
         X::BezierSegment,
     )
@@ -40,13 +54,29 @@ is the “change” of the curve at the points `T`, elementwise in $\in[0,1]$.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
-    M::Manifold, b::BezierSegment, T::Array{Float64,1}, X::BezierSegment
+    M::Manifold, b::BezierSegment, T::AbstractVector{<:Number}, X::BezierSegment
 )
     return differential_bezier_control.(Ref(M), Ref(b), T, Ref(X))
+end
+function differential_bezier_control!(
+    M::Manifold,
+    Y::AbstractVector{AbstractVector{<:BezierSegment}},
+    b::BezierSegment,
+    T::AbstractVector{<:Number},
+    X::BezierSegment,
+)
+    return differential_bezier_control!.(Ref(M), Y, Ref(b), T, Ref(X))
 end
 @doc raw"""
     differential_bezier_control(
         M::Manifold,
+        B::AbstractVector{<:BezierSegment},
+        t::Float64,
+        X::AbstractVector{<:BezierSegment}
+    )
+    differential_bezier_control!(
+        M::Manifold,
+        Y::AbstractVector{<:BezierSegment}
         B::AbstractVector{<:BezierSegment},
         t::Float64,
         X::AbstractVector{<:BezierSegment}
@@ -81,19 +111,50 @@ function differential_bezier_control(
     end
     return Y
 end
+function differential_bezier_control!(
+    M::Manifold,
+    Y::BezierSegment,
+    B::AbstractVector{<:BezierSegment},
+    t::Float64,
+    X::AbstractVector{<:BezierSegment},
+)
+    if (0 > t) || (t > length(B))
+        return throw(
+            DomainError(
+                t,
+                "The parameter $(t) to evaluate the composite Bézier curve at is outside the interval [0,$(length(B))].",
+            ),
+        )
+    end
+    seg = max(ceil(Int, t), 1)
+    localT = ceil(Int, t) == 0 ? 0.0 : t - seg + 1
+    differential_bezier_control!(M, Y, B[seg], localT, X[seg])
+    if (Integer(t) == seg) && (seg < length(B)) # boundary case, -> seg-1 is also affecting the boundary differential
+        Y .+= differential_bezier_control(M, B[seg + 1], localT - 1, X[seg + 1])
+    end
+    return Y
+end
+
 @doc raw"""
     differential_bezier_control(
         M::Manifold,
         B::AbstractVector{<:BezierSegment},
         T::AbstractVector{Float}
-        X::AbstractVector{<:BezierSegment}
+        Ξ::AbstractVector{<:BezierSegment}
+    )
+    differential_bezier_control!(
+        M::Manifold,
+        Θ::AbstractVector{<:BezierSegment}
+        B::AbstractVector{<:BezierSegment},
+        T::AbstractVector{Float}
+        Ξ::AbstractVector{<:BezierSegment}
     )
 
 evaluate the differential of the composite Bézier curve with respect to its
-control points `B` and tangent vectors `X` in the tangent spaces of the control
-points. The result is the “change” of the curve at `pts`, which are elementwise
+control points `B` and tangent vectors `Ξ` in the tangent spaces of the control
+points. The result is the “change” of the curve at the points in `T`, which are elementwise
 in $[0,N]$, and each depending the corresponding segment(s). Here, $N$ is the
-length of `B`.
+length of `B`. For the mutating variant the result is returned in `Θ`.
 
 See [`de_casteljau`](@ref) for more details on the curve and [^BergmannGousenbourger2018].
 
@@ -107,38 +168,58 @@ See [`de_casteljau`](@ref) for more details on the curve and [^BergmannGousenbou
 function differential_bezier_control(
     M::Manifold,
     B::AbstractVector{<:BezierSegment},
-    T::Array{Float64,1},
+    T::AbstractVector{<:Number},
     Ξ::AbstractVector{<:BezierSegment},
 )
     return differential_bezier_control.(Ref(M), Ref(B), T, Ref(Ξ))
 end
+function differential_bezier_control!(
+    M::Manifold,
+    Θ::AbstractVector{AbstractVector{<:BezierSegment}},
+    B::AbstractVector{<:BezierSegment},
+    T::Array{Float64,1},
+    Ξ::AbstractVector{<:BezierSegment},
+)
+    return differential_bezier_control!.(Ref(M), Θ, Ref(Y), Ref(B), T, Ref(Ξ))
+end
 
 @doc raw"""
     differential_geodesic_startpoint(M, p, q, t, X)
-computes $D_p g(t;p,q)[\eta]$.
+    differential_geodesic_startpoint!(M, Y, p, q, t, X)
+
+computes $D_p g(t;p,q)[\eta]$ (in place of `Y`).
 
 # See also
  [`differential_geodesic_endpoint`](@ref), [`jacobi_field`](@ref)
 """
-function differential_geodesic_startpoint(M::mT, x, y, t, η) where {mT<:Manifold}
-    return jacobi_field(M, x, y, t, η, βdifferential_geodesic_startpoint)
+function differential_geodesic_startpoint(M::Manifold, p, q, t, X)
+    return jacobi_field(M, p, q, t, X, βdifferential_geodesic_startpoint)
+end
+function differential_geodesic_startpoint!(M::Manifold, Y, p, q, t, X)
+    return jacobi_field!(M, Y, p, q, t, X, βdifferential_geodesic_startpoint)
 end
 
 @doc raw"""
-    differential_geodesic_endpoint(M,x,y,t,η)
-computes $D_qg(t;p,q)[\eta]$.
+    differential_geodesic_endpoint(M, p, q, t, X)
+    differential_geodesic_endpoint!(M, Y, p, q, t, X)
+
+computes $D_qg(t;p,q)[X]$ (in place of `Y`).
 
 # See also
  [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
-function differential_geodesic_endpoint(M::mT, x, y, t, η) where {mT<:Manifold}
-    return jacobi_field(M, y, x, 1 - t, η, βdifferential_geodesic_startpoint)
+function differential_geodesic_endpoint(M::Manifold, p, q, t, X)
+    return jacobi_field(M, q, p, 1 - t, X, βdifferential_geodesic_startpoint)
+end
+function differential_geodesic_endpoint!(M::Manifold, Y, p, q, t, X)
+    return jacobi_field!(M, Y, q, p, 1 - t, X, βdifferential_geodesic_startpoint)
 end
 
 @doc raw"""
     differential_exp_basepoint(M, p, X, Y)
+    differential_exp_basepoint!(M, Z, p, X, Y)
 
-Compute $D_p\exp_p X[Y]$.
+Compute $D_p\exp_p X[Y]$ (in place of `Z`).
 
 # See also
 [`differential_exp_argument`](@ref), [`jacobi_field`](@ref)
@@ -146,10 +227,15 @@ Compute $D_p\exp_p X[Y]$.
 function differential_exp_basepoint(M::Manifold, p, X, Y)
     return jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_basepoint)
 end
+function differential_exp_basepoint!(M::Manifold, Z, p, X, Y)
+    return jacobi_field!(M, Z, p, exp(M, p, X), 1.0, Y, βdifferential_exp_basepoint)
+end
 
 @doc raw"""
     differential_exp_argument(M, p, X, Y)
-computes $D_X\exp_pX[Y]$.
+    differential_exp_argument!(M, Z, p, X, Y)
+
+computes $D_X\exp_pX[Y]$ (in place of `Z`).
 Note that $X ∈  T_X(T_p\mathcal M) = T_p\mathcal M$ is still a tangent vector.
 
 # See also
@@ -158,10 +244,15 @@ Note that $X ∈  T_X(T_p\mathcal M) = T_p\mathcal M$ is still a tangent vector.
 function differential_exp_argument(M::Manifold, p, X, Y)
     return jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_argument)
 end
+function differential_exp_argument!(M::Manifold, Z, p, X, Y)
+    return jacobi_field!(M, Z, p, exp(M, p, X), 1.0, Y, βdifferential_exp_argument)
+end
 
 @doc raw"""
     differential_log_basepoint(M, p, q, X)
-computes $D_p\log_pq[X]$.
+    differential_log_basepoint!(M, Y, p, q, X)
+
+computes $D_p\log_pq[X]$ (in place of `Y`).
 
 # See also
  [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
@@ -169,17 +260,26 @@ computes $D_p\log_pq[X]$.
 function differential_log_basepoint(M::Manifold, p, q, X)
     return jacobi_field(M, p, q, 0.0, X, βdifferential_log_basepoint)
 end
+function differential_log_basepoint!(M::Manifold, Y, p, q, X)
+    return jacobi_field!(M, Y, p, q, 0.0, X, βdifferential_log_basepoint)
+end
 
 @doc raw"""
-    differential_log_argument(M,p,q,X)
-computes $D_q\log_pq[X]$.
+    differential_log_argument(M, p, q, X)
+    differential_log_argument(M, Y, p, q, X)
+
+    computes $D_q\log_pq[X]$ (in place of `Y`).
 
 # See also
- [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
+ [`differential_log_basepoint`](@ref), [`jacobi_field`](@ref)
 """
 function differential_log_argument(M::Manifold, p, q, X)
     # order of p and q has to be reversed in this call, cf. Persch, 2018 Lemma 2.3
     return jacobi_field(M, q, p, 1.0, X, βdifferential_log_argument)
+end
+function differential_log_argument!(M::Manifold, Y, p, q, X)
+    # order of p and q has to be reversed in this call, cf. Persch, 2018 Lemma 2.3
+    return jacobi_field!(M, Y, q, p, 1.0, X, βdifferential_log_argument)
 end
 
 @doc raw"""
@@ -217,6 +317,13 @@ function differential_forward_logs(M::PowerManifold, p, X)
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...)
     end
     Y = zero_tangent_vector(N, repeat(p; inner=d2))
+    return differential_forward_logs!(M, Y, p, X)
+end
+function differential_forward_logs!(M::PowerManifold, Y, p, X)
+    power_size = power_dimensions(M)
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    maxInd = last(R).I
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations

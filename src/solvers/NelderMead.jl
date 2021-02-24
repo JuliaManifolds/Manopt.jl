@@ -28,6 +28,9 @@ and
 
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
+!!! note The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
+    load `Manifolds.jl` to use its statistics part.
+
 # Output
 * either `x` the last iterate or the complete options depending on the optional
   keyword `return_options`, which is false by default (hence then only `x` is
@@ -91,7 +94,7 @@ function initialize_solver!(p::CostProblem, o::NelderMeadOptions)
     o.costs = get_cost.(Ref(p), o.population)
     return o.x = o.population[argmin(o.costs)] # select min
 end
-function step_solver!(p::CostProblem, o::NelderMeadOptions, iter)
+function step_solver!(p::CostProblem, o::NelderMeadOptions, ::Any)
     m = mean(p.M, o.population)
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
     ξ = inverse_retract(p.M, m, o.population[last(ind)], o.inverse_retraction_method)
