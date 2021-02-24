@@ -74,7 +74,6 @@ import ManifoldsBase:
 
 include("plans/plan.jl")
 # Functions
-include("functions/helper_functions.jl")
 include("functions/bezier_curves.jl")
 include("functions/adjoint_differentials.jl")
 include("functions/costs.jl")
@@ -129,6 +128,7 @@ function __init__()
         include("functions/nonmutating_manifolds_functions.jl")
         include("plans/nonmutating_manifolds_plans.jl")
         export random_point, random_tangent, mid_point, mid_point!
+        export reflect, reflect!
     end
     return nothing
 end
@@ -264,9 +264,8 @@ export StopIfResidualIsReducedByFactor,
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
 export StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
+export are_these_stopping_critera_active
 export StoppingCriterion, StoppingCriterionSet, Stepsize
-
-export reflect
 #
 # Data functions
 export artificial_S1_signal, artificial_S1_slope_signal, artificialIn_SAR_image

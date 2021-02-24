@@ -1,4 +1,4 @@
-using Manopt, Documenter, Literate
+using Manopt, Manifolds, Documenter, Literate
 
 # generate examples using Literate
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")

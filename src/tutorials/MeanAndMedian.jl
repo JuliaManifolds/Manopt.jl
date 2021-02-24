@@ -102,7 +102,7 @@ render_asymptote(export_folder * "/startDataAndCenter.asy"; render=2) #src
 # following cost function. Its minimizer is called
 # [Riemannian Center of Mass](https://arxiv.org/abs/1407.2087).
 #
-F(y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)
+F(M, y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)
 gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 nothing #hide
 #
@@ -161,8 +161,8 @@ render_asymptote(export_folder * "/startDataCenterMean.asy"; render=2) #src
 # this problem is not differentiable, we employ the Cyclic Proximal Point (CPP)
 # algorithm, described in the same reference. We define
 #
-F2(y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data))
-proxes = Function[(λ, y) -> prox_distance(M, λ / n, di, y, 1) for di in data]
+F2(M, y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data))
+proxes = Function[(M, λ, y) -> prox_distance(M, λ / n, di, y, 1) for di in data]
 nothing #hide
 # where the `Function` is a helper for global scope to infer the correct type.
 #

@@ -4,15 +4,16 @@
 solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{η  ∈  T_{x}M}
+\operatorname*{arg\,min}_{η ∈ T_xM}
 m_x(η) \quad\text{where} 
 m_x(η) = F(x) + ⟨\operatorname{grad}F(x),η⟩_x + \frac{1}{2}⟨\operatorname{Hess}F(x)[η],η⟩_x,
 ```
+
 ```math
-\text{such that}\quad ⟨η,η⟩_x \leqq {\Delta}^2
+\text{such that}\quad ⟨η,η⟩_x ≤ Δ^2
 ```
 
-with the [truncated_conjugate_gradient_descent](@ref).
+with the [`truncated_conjugate_gradient_descent`](@ref).
 For a description of the algorithm and theorems offering convergence guarantees,
 see the reference:
 

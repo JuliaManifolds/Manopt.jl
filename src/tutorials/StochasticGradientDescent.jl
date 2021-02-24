@@ -79,8 +79,8 @@ render_asymptote(export_folder * "/centerAndLargeData.asy"; render=2) #src
 #
 # Which we define as
 F(M, x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
-gradF(x) = [grad_distance(M, p, x) for p in data]
-gradf = [x -> grad_distance(M, p, x) for p in data];
+gradF(M, x) = [grad_distance(M, p, x) for p in data]
+gradf = [(M, x) -> grad_distance(M, p, x) for p in data];
 # The calls are only slightly different, but notice that accessing the 2nd gradient element
 # requires evaluating all logs in the first function.
 # So while you can use both `gradF` and `gradf` in the following call, the second one is faster:
@@ -115,7 +115,9 @@ gradf = [x -> grad_distance(M, p, x) for p in data];
 #
 # For this small example you can of course also use a gradient descent with [`ArmijoLinesearch`](@ref),
 # but it will be a little slower usually
-@time x_opt5 = gradient_descent(M, F, x -> sum(gradF(x)), x; stepsize=ArmijoLinesearch());
+@time x_opt5 = gradient_descent(
+    M, F, (M, x) -> sum(gradF(M, x)), x; stepsize=ArmijoLinesearch()
+);
 # but it is for sure faster than the variant above that evaluates the full gradient on every iteration,
 # since stochastic gradient descent takes more iterations.
 #

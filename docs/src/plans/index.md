@@ -116,6 +116,7 @@ AbstractEvaluationType
 AllocatingEvaluation
 MutatingEvaluation
 ```
+
 ### Cost based problem
 
 ```@docs

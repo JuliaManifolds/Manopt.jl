@@ -4,7 +4,7 @@ This small section extends the functions available from [ManifoldsBase.jl](https
 
 ```@autodocs
 Modules = [Manopt]
-Pages   = ["manifold.jl"]
+Pages   = ["manifold_functions.jl"]
 ```
 
 ## Simplified random functions
