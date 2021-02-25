@@ -122,7 +122,8 @@ function adjoint_differential_bezier_control!(
     t::AbstractVector{Float64},
     X::AbstractVector{Q},
 ) where {Q}
-    Z = BezierSegment(similar.(Y))
+    Z = BezierSegment(similar.(Y.pts))
+    fill!.(Y.pts, zero(eltype(first(Y.pts))))
     for i in 1:length(t)
         adjoint_differential_bezier_control!(M, Z, b, t[i], X[i])
         Y.pts .+= Z.pts
@@ -206,7 +207,7 @@ function adjoint_differential_bezier_control!(
     B::AbstractVector{<:BezierSegment},
     T::AbstractVector{Float64},
     X::AbstractVector{Q},
-) where {P,Q}
+) where {Q}
     Z = [BezierSegment(similar.(y.pts)) for y in Y]
     for j in 1:length(T) # for all times
         adjoint_differential_bezier_control!(M, Z, B, T[j], X[j])

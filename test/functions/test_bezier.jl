@@ -139,21 +139,30 @@ using Manopt, Manifolds, Test
         )
         # a shortcut to evaluate the adjoint at several points is equal to seperate evals
         b = B[2]
+        Xi = [log(M, b.pts[1], b.pts[2]), -log(M, b.pts[4], b.pts[3])]
+        Xs = adjoint_differential_bezier_control(M, b, [0.0, 1.0], Xi)
         @test isapprox(
-            adjoint_differential_bezier_control(
-                M, b, [0.0, 1.0], [log(M, b.pts[1], b.pts[2]), -log(M, b.pts[4], b.pts[3])]
-            ).pts,
+            Xs.pts,
             adjoint_differential_bezier_control(M, b, 0.0, log(M, b.pts[1], b.pts[2])).pts +
             adjoint_differential_bezier_control(M, b, 1.0, -log(M, b.pts[4], b.pts[3])).pts,
         )
+        Ys = BezierSegment(similar.(Xs.pts))
+        adjoint_differential_bezier_control!(M, Ys, b, [0.0, 1.0], Xi)
+        @test isapprox(Xs.pts, Ys.pts)
         # differential
         X = BezierSegment([
             log(M, b.pts[1], b.pts[2]), [zero_tangent_vector(M, b.pts[i]) for i in 2:4]...
         ])
+        Ye = zero(X.pts[1])
         @test differential_bezier_control(M, b, 0.0, X) ≈ X.pts[1]
+        differential_bezier_control!(M, Ye, b, 0.0, X)
+        @test Ye ≈ X.pts[1]
         dT1 = differential_bezier_control.(Ref(M), Ref(b), [0.0, 1.0], Ref(X))
         dT2 = differential_bezier_control(M, b, [0.0, 1.0], X)
+        dT3 = similar.(dT2)
+        differential_bezier_control!(M, dT3, b, [0.0, 1.0], X)
         @test dT1 ≈ dT2
+        @test dT3 == dT3
         X2 = [
             BezierSegment([[0.0, 0.0, 0.0] for i in 1:4]),
             X,
@@ -161,10 +170,16 @@ using Manopt, Manifolds, Test
         ]
         @test_throws DomainError differential_bezier_control(M, B, 20.0, X2)
         dbT2a = differential_bezier_control(M, B, 1.0, X2)
+        dbT3a = similar(dbT2a)
+        differential_bezier_control!(M, dbT3a, B, 1.0, X2)
+        @test dbT2a == dbT3a
         @test dbT2a ≈ X.pts[1]
         dbT2 = differential_bezier_control(M, B, [1.0, 2.0], X2)
         dbT1 = differential_bezier_control.(Ref(M), Ref(B), [1.0, 2.0], Ref(X2))
         @test dT1 ≈ dbT1
         @test dbT2 ≈ dbT1
+        dbT3 = similar.(dbT2)
+        differential_bezier_control!(M, dbT3, B, [1.0, 2.0], X2)
+        @test dbT2 == dbT3
     end
 end

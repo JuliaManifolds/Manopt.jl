@@ -59,11 +59,7 @@ function differential_bezier_control(
     return differential_bezier_control.(Ref(M), Ref(b), T, Ref(X))
 end
 function differential_bezier_control!(
-    M::Manifold,
-    Y::AbstractVector{AbstractVector{<:BezierSegment}},
-    b::BezierSegment,
-    T::AbstractVector{<:Number},
-    X::BezierSegment,
+    M::Manifold, Y, b::BezierSegment, T::AbstractVector{<:Number}, X::BezierSegment
 )
     return differential_bezier_control!.(Ref(M), Y, Ref(b), T, Ref(X))
 end
@@ -113,7 +109,7 @@ function differential_bezier_control(
 end
 function differential_bezier_control!(
     M::Manifold,
-    Y::BezierSegment,
+    Y,
     B::AbstractVector{<:BezierSegment},
     t::Float64,
     X::AbstractVector{<:BezierSegment},
@@ -175,12 +171,12 @@ function differential_bezier_control(
 end
 function differential_bezier_control!(
     M::Manifold,
-    Θ::AbstractVector{AbstractVector{<:BezierSegment}},
+    Y,
     B::AbstractVector{<:BezierSegment},
     T::Array{Float64,1},
     Ξ::AbstractVector{<:BezierSegment},
 )
-    return differential_bezier_control!.(Ref(M), Θ, Ref(Y), Ref(B), T, Ref(Ξ))
+    return differential_bezier_control!.(Ref(M), Y, Ref(B), T, Ref(Ξ))
 end
 
 @doc raw"""
