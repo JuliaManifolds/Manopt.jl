@@ -5,20 +5,41 @@ using Manifolds, Manopt, Test, ManifoldsBase
     q = [0.0, 1.0, 0.0]
     M = Sphere(2)
     X = log(M, p, q)
+    Y = similar(X)
     @testset "Differentials on Sn(2)" begin
         @test differential_log_basepoint(M, p, p, X) == -X
+        differential_log_basepoint!(M, Y, p, p, X)
+        @test Y == -X
         @test differential_log_basepoint(M, p, q, X) == -X
+        differential_log_basepoint!(M, Y, p, q, X) == -X
+        @test Y == -X
         @test differential_log_argument(M, p, p, X) == X
+        differential_log_argument!(M, Y, p, p, X) == X
+        @test Y == X
         @test differential_log_argument(M, p, q, X) == zero_tangent_vector(M, q)
+        differential_log_argument!(M, Y, p, q, X)
+        @test Y == zero_tangent_vector(M, q)
         @test differential_exp_basepoint(M, p, zero_tangent_vector(M, p), X) == X
+        differential_exp_basepoint!(M, Y, p, zero_tangent_vector(M, p), X)
+        @test Y == X
         @test norm(M, q, differential_exp_basepoint(M, p, X, X) - [-π / 2, 0.0, 0.0]) ≈ 0 atol =
             6 * 10^(-16)
+        differential_exp_basepoint!(M, Y, p, X, X)
+        @test norm(M, q, Y - [-π / 2, 0.0, 0.0]) ≈ 0 atol = 6 * 10^(-16)
         @test differential_exp_argument(M, p, zero_tangent_vector(M, p), X) == X
+        differential_exp_argument!(M, Y, p, zero_tangent_vector(M, p), X) == X
+        @test Y == X
         @test norm(M, q, differential_exp_argument(M, p, X, zero_tangent_vector(M, p))) ≈ 0
+        differential_exp_argument!(M, Y, p, X, zero_tangent_vector(M, p))
+        @test norm(M, q, Y) ≈ 0
         for t in [0, 0.15, 0.33, 0.66, 0.9]
             @test differential_geodesic_startpoint(M, p, p, t, X) == (1 - t) * X
+            differential_geodesic_startpoint!(M, Y, p, p, t, X)
+            @test Y == (1 - t) * X
             @test norm(M, p, differential_geodesic_endpoint(M, p, p, t, X) - t * X) ≈ 0 atol =
                 10.0^(-16)
+            differential_geodesic_endpoint!(M, Y, p, p, t, X)
+            @test norm(M, p, Y - t * X) ≈ 0 atol = 10.0^(-16)
         end
     end
     @testset "Differentials on Power of Sn(2)" begin
@@ -26,13 +47,19 @@ using Manifolds, Manopt, Test, ManifoldsBase
         x = [p, q, p]
         y = [p, p, q]
         V = [X, zero_tangent_vector(M, p), -X]
+        W = similar.(V)
         @test norm(
             N,
             x,
             differential_forward_logs(N, x, V) -
             [-X, [π / 2, 0.0, 0.0], zero_tangent_vector(M, p)],
         ) ≈ 0 atol = 8 * 10.0^(-16)
+        differential_forward_logs!(N, W, x, V)
+        @test norm(N, x, W - [-X, [π / 2, 0.0, 0.0], zero_tangent_vector(M, p)]) ≈ 0 atol =
+            8 * 10.0^(-16)
         @test differential_log_argument(N, x, y, V) == [V[1], V[2], V[2]]
+        differential_log_argument!(N, W, x, y, V)
+        @test W == [V[1], V[2], V[2]]
     end
     @testset "Differentials on SPD(2)" begin
         #

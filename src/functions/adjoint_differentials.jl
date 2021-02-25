@@ -6,8 +6,8 @@
         η::Q)
 
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
-with respect to its control points `b` based on a point `t` $\in[0,1]$ on the
-curve and a tangent vector $\eta∈T_{\beta(t)}\mathcal M$.
+with respect to its control points `b` based on a point `t```∈[0,1]`` on the
+curve and a tangent vector ``\eta∈T_{\beta(t)}\mathcal M``.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -53,9 +53,9 @@ end
     )
 
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
-with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n that
-are pointwise in $ t_i\in[0,1]$ on the curve and given corresponding tangential
-vectors $X = (\eta_i)_{i=1}^n$, $\eta_i∈T_{\beta(t_i)}\mathcal M$
+with respect to its control points `b` based on a points `T```=(t_i)_{i=1}^n`` that
+are pointwise in `` t_i\in[0,1]`` on the curve and given corresponding tangential
+vectors ``X = (η_i)_{i=1}^n``, ``η_i∈T_{β(t_i)}\mathcal M``
 
 See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbourger2018].
 
@@ -82,9 +82,9 @@ end
     )
 
 evaluate the adjoint of the differential of a composite Bézier curve on the
-manifold `M` with respect to its control points `b` based on a points `T`$=(t_i)_{i=1}^n$
-that are pointwise in $t_i\in[0,1]$ on the curve and given corresponding tangential
-vectors $X = (\eta_i)_{i=1}^n$, $\eta_i∈T_{\beta(t_i)}\mathcal M$
+manifold `M` with respect to its control points `b` based on a points `T```=(t_i)_{i=1}^n``
+that are pointwise in ``t_i\in[0,1]`` on the curve and given corresponding tangential
+vectors ``X = (η_i)_{i=1}^n``, ``η_i∈T_{β(t_i)}\mathcal M``
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -131,61 +131,78 @@ end
 
 @doc raw"""
     adjoint_differential_geodesic_startpoint(M,p, q, t, X)
+    adjoint_differential_geodesic_startpoint!(M, Y, p, q, t, X)
 
-Compute the adjoint of $D_p γ(t; p, q)[X]$.
+Compute the adjoint of ``D_p γ(t; p, q)[X]`` (in place of `Y`).
 
 # See also
 
 [`differential_geodesic_startpoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_geodesic_startpoint(M::MT, p, q, t, X) where {MT<:Manifold}
+function adjoint_differential_geodesic_startpoint(M::Manifold, p, q, t, X)
     return adjoint_Jacobi_field(M, p, q, t, X, βdifferential_geodesic_startpoint)
+end
+function adjoint_differential_geodesic_startpoint!(M::Manifold, Y, p, q, t, X)
+    return adjoint_Jacobi_field!(M, Y, p, q, t, X, βdifferential_geodesic_startpoint)
 end
 
 @doc raw"""
     adjoint_differential_geodesic_endpoint(M, p, q, t, X)
+    adjoint_differential_geodesic_endpoint!(M, Y, p, q, t, X)
 
-Compute the adjoint of $D_q γ(t; p, q)[X]$.
+Compute the adjoint of ``D_q γ(t; p, q)[X]`` (in place of `Y`).
 
 # See also
 
 [`differential_geodesic_endpoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_geodesic_endpoint(M::MT, p, q, t, X) where {MT<:Manifold}
+function adjoint_differential_geodesic_endpoint(M::Manifold, p, q, t, X)
     return adjoint_Jacobi_field(M, q, p, 1 - t, X, βdifferential_geodesic_startpoint)
+end
+function adjoint_differential_geodesic_endpoint!(M::Manifold, Y, p, q, t, X)
+    return adjoint_Jacobi_field!(M, Y, q, p, 1 - t, X, βdifferential_geodesic_startpoint)
 end
 
 @doc raw"""
     adjoint_differential_exp_basepoint(M, p, X, Y)
+    adjoint_differential_exp_basepoint!(M, Z, p, X, Y)
 
-Computes the adjoint of $D_p \exp_p X[Y]$.
+Computes the adjoint of ``D_p \exp_p X[Y]`` (in place of `Z`).
 
 # See also
 
 [`differential_exp_basepoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_exp_basepoint(M::MT, p, X, Y) where {MT<:Manifold}
+function adjoint_differential_exp_basepoint(M::Manifold, p, X, Y)
     return adjoint_Jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_basepoint)
+end
+function adjoint_differential_exp_basepoint!(M::Manifold, Z, p, X, Y)
+    return adjoint_Jacobi_field!(M, Z, p, exp(M, p, X), 1.0, Y, βdifferential_exp_basepoint)
 end
 
 @doc raw"""
     adjoint_differential_exp_argument(M, p, X, Y)
+    adjoint_differential_exp_argument!(M, Z, p, X, Y)
 
-Compute the adjoint of $D_X\exp_p X[Y]$.
-Note that $X ∈  T_p(T_p\mathcal M) = T_p\mathcal M$ is still a tangent vector.
+Compute the adjoint of ``D_X\exp_p X[Y]`` (in place of `Z`).
+Note that ``X ∈  T_p(T_p\mathcal M) = T_p\mathcal M`` is still a tangent vector.
 
 # See also
 
 [`differential_exp_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_exp_argument(M::mT, p, X, Y) where {mT<:Manifold}
+function adjoint_differential_exp_argument(M::Manifold, p, X, Y)
     return adjoint_Jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_argument)
+end
+function adjoint_differential_exp_argument!(M::Manifold, Z, p, X, Y)
+    return adjoint_Jacobi_field!(M, Z, p, exp(M, p, X), 1.0, Y, βdifferential_exp_argument)
 end
 
 @doc raw"""
     adjoint_differential_log_basepoint(M, p, q, X)
+    adjoint_differential_log_basepoint!(M, Y, p, q, X)
 
-computes the adjoint of $D_p log_p q[X]$.
+computes the adjoint of ``D_p log_p q[X]`` (in place of `Y`).
 
 # See also
 [`differential_log_basepoint`](@ref), [`adjoint_Jacobi_field`](@ref)
@@ -193,11 +210,15 @@ computes the adjoint of $D_p log_p q[X]$.
 function adjoint_differential_log_basepoint(M::Manifold, p, q, X)
     return adjoint_Jacobi_field(M, p, q, 0.0, X, βdifferential_log_basepoint)
 end
+function adjoint_differential_log_basepoint!(M::Manifold, Y, p, q, X)
+    return adjoint_Jacobi_field!(M, Y, p, q, 0.0, X, βdifferential_log_basepoint)
+end
 
 @doc raw"""
     adjoint_differential_log_argument(M, p, q, X)
+    adjoint_differential_log_argument!(M, Y, p, q, X)
 
-Compute the adjoint of $D_q log_p q[X]$.
+Compute the adjoint of ``D_q log_p q[X]`` (in place of `Y`).
 
 # See also
 [`differential_log_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
@@ -206,19 +227,23 @@ function adjoint_differential_log_argument(M::Manifold, p, q, X)
     # order of p and q has to be reversed in this call, cf. Persch, 2018 Lemma 2.3
     return adjoint_Jacobi_field(M, q, p, 1.0, X, βdifferential_log_argument)
 end
+function adjoint_differential_log_argument!(M::Manifold, Y, p, q, X)
+    return adjoint_Jacobi_field!(M, Y, q, p, 1.0, X, βdifferential_log_argument)
+end
 
 @doc raw"""
     Y = adjoint_differential_forward_logs(M, p, X)
+    adjoint_differential_forward_logs!(M, Y, p, X)
 
-Compute the adjoint differential of [`forward_logs`](@ref) $F$ orrucirng,
+Compute the adjoint differential of [`forward_logs`](@ref) ``F`` orrucirng,
 in the power manifold array `p`, the differential of the function
 
-$F_i(p) = \sum_{j ∈ \mathcal I_i} \log_{p_i} p_j$
+``F_i(p) = \sum_{j ∈ \mathcal I_i} \log_{p_i} p_j``
 
-where $i$ runs over all indices of the `PowerManifold` manifold `M` and $\mathcal I_i$
-denotes the forward neighbors of $i$
-Let $n$ be the number dimensions of the `PowerManifold` manifold (i.e. `length(size(x)`)).
-Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
+where ``i`` runs over all indices of the `PowerManifold` manifold `M` and ``\mathcal I_i``
+denotes the forward neighbors of ``i``
+Let ``n`` be the number dimensions of the `PowerManifold` manifold (i.e. `length(size(x)`)).
+Then the input tangent vector lies on the manifold ``\mathcal M' = \mathcal M^n``.
 
 # Input
 
@@ -228,18 +253,23 @@ Then the input tangent vector lies on the manifold $\mathcal M' = \mathcal M^n$.
 
 # Ouput
 
-`Y` – resulting tangent vector in $T_p\mathcal M$ representing the adjoint
+`Y` – resulting tangent vector in ``T_p\mathcal M`` representing the adjoint
   differentials of the logs.
 """
 function adjoint_differential_forward_logs(
     M::PowerManifold{𝔽,TM,TSize,TPR}, p, X
 ) where {𝔽,TM,TSize,TPR}
-    power_size = power_dimensions(M)
-    R = CartesianIndices(Tuple(power_size))
-    d = length(power_size)
-    maxInd = last(R).I
-    N = PowerManifold(M.manifold, TPR(), power_size..., d)
     Y = zero_tangent_vector(M, p)
+    return adjoint_differential_forward_logs!(M, Y, p, X)
+end
+function adjoint_differential_forward_logs!(
+    M::PowerManifold{𝔽,TM,TSize,TPR}, Y, p, X
+) where {𝔽,TM,TSize,TPR}
+    power_size = power_dimensions(M)
+    d = length(power_size)
+    N = PowerManifold(M.manifold, TPR(), power_size..., d)
+    R = CartesianIndices(Tuple(power_size))
+    maxInd = last(R).I
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
             I = [i.I...] # array of index
