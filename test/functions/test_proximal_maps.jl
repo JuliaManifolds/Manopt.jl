@@ -50,6 +50,9 @@ using Manifolds, Manopt, Test, Dates
     s, t = prox_TV(M, π / 16, (r, q))
     u, v = prox_TV(M, π / 16, (p, r))
     y = prox_parallel_TV(N2, π / 16, [[p, r, q], [p, r, q]])
+    yM = [similar.(ye) for ye in y]
+    prox_parallel_TV!(N2, yM, π / 16, [[p, r, q], [p, r, q]])
+    @test y == yM
     @test distance(N2, y[1], [p, s, t]) ≈ 0 # even indices in first comp
     @test distance(N2, y[2], [u, v, q]) ≈ 0 # odd in second
     # dimensions of x have to fit, here they don't

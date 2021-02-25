@@ -164,7 +164,7 @@ function prox_TV!(M::PowerManifold, y, λ, x, p::Int=1)
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
                         j = CartesianIndex(J...) # neigbbor index as Cartesian Index
-                        prox_TV!(M.manifold, (y[i], y[j]), λ, (y[i], y[j]), p) # Compute TV on these
+                        prox_TV!(M.manifold, [y[i], y[j]], λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
             end # i in R
@@ -173,12 +173,13 @@ function prox_TV!(M::PowerManifold, y, λ, x, p::Int=1)
     return y
 end
 @doc raw"""
-    ξ = prox_parallel_TV(M,λ,x [,p=1])
+    y = prox_parallel_TV(M, λ, x [,p=1])
+    prox_parallel_TV!(M, y, λ, x [,p=1])
 
-compute the proximal maps $\operatorname{prox}_{\lambda\varphi}$ of
+compute the proximal maps ``\operatorname{prox}_{λφ}`` of
 all forward differences orrucirng in the power manifold array, i.e.
-$\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)$ with `xi` and `xj` are array
-elemets of `x` and `j = i+e_k`, where `e_k` is the $k$th unitvector.
+``φ(x_i,x_j) = d_{\mathcal M}^p(x_i,x_j)`` with `xi` and `xj` are array
+elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
 The parameter `λ` is the prox parameter.
 
 # Input
@@ -196,7 +197,7 @@ The parameter `λ` is the prox parameter.
 
 *See also* [`prox_TV`](@ref)
 """
-function prox_parallel_TV(M::PowerManifold, λ, x::Array{T,1}, p::Int=1) where {T}
+function prox_parallel_TV(M::PowerManifold, λ, x::AbstractVector, p::Int=1)
     R = CartesianIndices(x[1])
     d = ndims(x[1])
     if length(x) != 2 * d
@@ -208,8 +209,9 @@ function prox_parallel_TV(M::PowerManifold, λ, x::Array{T,1}, p::Int=1) where {
     end
     maxInd = Tuple(last(R))
     # create an array for even/odd splitted proxes along every dimension
-    y = reshape(deepcopy(x), d, 2)
-    x = reshape(x, d, 2)
+    y = deepcopy(x)
+    yV = reshape(y, d, 2)
+    xV = reshape(x, d, 2)
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
         for l in 0:1 # even odd
@@ -219,16 +221,61 @@ function prox_parallel_TV(M::PowerManifold, λ, x::Array{T,1}, p::Int=1) where {
                     if all(J .<= maxInd) # is this neighbor in range?
                         j = CartesianIndex(J...) # neigbbor index as Cartesian Index
                         # parallel means we apply each (direction even/odd) to a seperate copy of the data.
-                        (y[k, l + 1][i], y[k, l + 1][j]) = prox_TV(
-                            M.manifold, λ, (x[k, l + 1][i], x[k, l + 1][j]), p
+                        (yV[k, l + 1][i], yV[k, l + 1][j]) = prox_TV(
+                            M.manifold, λ, (xV[k, l + 1][i], xV[k, l + 1][j]), p
                         ) # Compute TV on these
                     end
                 end
             end # i in R
         end # even odd
     end # directions
-    return y[:] # return as onedimensional array
+    return y
 end
+function prox_parallel_TV!(
+    M::PowerManifold, y::AbstractVector, λ, x::AbstractVector, p::Int=1
+)
+    R = CartesianIndices(x[1])
+    d = ndims(x[1])
+    if length(x) != 2 * d
+        throw(
+            ErrorException(
+                "The number of inputs from the array ($(length(x))) has to be twice the data dimensions ($(d)).",
+            ),
+        )
+    end
+    maxInd = Tuple(last(R))
+    # init y
+    for i in 1:length(x)
+        for j in R
+            copyto!(y[i][j], x[i][j])
+        end
+    end
+    yV = reshape(y, d, 2)
+    xV = reshape(x, d, 2)
+    for k in 1:d # for all directions
+        ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
+        for l in 0:1 # even odd
+            for i in R # iterate over all pixel
+                if (i[k] % 2) == l
+                    J = i.I .+ ek.I #i + e_k is j
+                    if all(J .<= maxInd) # is this neighbor in range?
+                        j = CartesianIndex(J...) # neigbbor index as Cartesian Index
+                        # parallel means we apply each (direction even/odd) to a seperate copy of the data.
+                        prox_TV!(
+                            M.manifold,
+                            [yV[k, l + 1][i], yV[k, l + 1][j]],
+                            λ,
+                            (xV[k, l + 1][i], xV[k, l + 1][j]),
+                            p,
+                        ) # Compute TV on these inplace of y
+                    end
+                end
+            end # i in R
+        end # even odd
+    end # directions
+    return y
+end
+
 @doc raw"""
     (y1,y2,y3) = prox_TV2(M,λ,(x1,x2,x3),[p=1], kwargs...)
 

@@ -319,8 +319,11 @@ export grad_TV,
     grad_acceleration_bezier,
     grad_L2_acceleration_bezier
 # Proximal maps
-export prox_distance,
-    prox_distance!, prox_TV, prox_TV!, prox_parallel_TV, prox_TV2, project_collaborative_TV
+export prox_distance, prox_distance!
+export prox_TV, prox_TV!
+export prox_parallel_TV, prox_parallel_TV!
+export prox_TV2
+export project_collaborative_TV
 # Error measures
 export meanSquaredError, meanAverageError
 #
