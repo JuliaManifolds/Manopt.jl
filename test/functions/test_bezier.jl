@@ -171,6 +171,7 @@ using Manopt, Manifolds, Test
         @test_throws DomainError differential_bezier_control(M, B, 20.0, X2)
         dbT2a = differential_bezier_control(M, B, 1.0, X2)
         dbT3a = similar(dbT2a)
+        @test_throws DomainError differential_bezier_control!(M, dbT3a, B, 20.0, X2)
         differential_bezier_control!(M, dbT3a, B, 1.0, X2)
         @test dbT2a == dbT3a
         @test dbT2a ≈ X.pts[1]
