@@ -1,4 +1,4 @@
-using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
+using Manopt, ManifoldsBase, Manifolds, Test
 using Random
 @testset "Particle Swarm" begin
     # Test the particle swarm algorithm

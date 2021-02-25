@@ -3,7 +3,15 @@
         M::Manifold,
         b::BezierSegment,
         t::Float64,
-        η::Q)
+        η::Q
+    )
+    adjoint_differential_bezier_control!(
+        M::Manifold,
+        Y::BezierSegment,
+        b::BezierSegment,
+        t::Float64,
+        η::Q
+    )
 
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a point `t```∈[0,1]`` on the
@@ -20,30 +28,59 @@ function adjoint_differential_bezier_control(
             adjoint_differential_geodesic_startpoint(M, b.pts[1], b.pts[2], t, η),
             adjoint_differential_geodesic_endpoint(M, b.pts[1], b.pts[2], t, η),
         ])
-    else
-        c = [b.pts, [similar.(b.pts[1:l]) for l in (n - 1):-1:2]...]
-        for i in 2:(n - 1) # casteljau on the tree -> forward with interims storage
-            c[i] .=
-                shortest_geodesic.(Ref(M), c[i - 1][1:(end - 1)], c[i - 1][2:end], Ref(t))
-        end
-        Y = [η, [similar(η) for i in 1:(n - 1)]...]
-        for i in (n - 1):-1:1 # propagate adjoints -> backward without interims storage
-            Y[1:(n - i + 1)] .=
-                [ # take previous results and add start&end point effects
-                    adjoint_differential_geodesic_startpoint.(
-                        Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y[1:(n - i)]
-                    )...,
-                    zero_tangent_vector(M, c[i][end]),
-                ] .+ [
-                    zero_tangent_vector(M, c[i][1]),
-                    adjoint_differential_geodesic_endpoint.(
-                        Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y[1:(n - i)]
-                    )...,
-                ]
-        end
+    end
+    c = [b.pts, [similar.(b.pts[1:l]) for l in (n - 1):-1:2]...]
+    for i in 2:(n - 1) # casteljau on the tree -> forward with interims storage
+        c[i] .= shortest_geodesic.(Ref(M), c[i - 1][1:(end - 1)], c[i - 1][2:end], Ref(t))
+    end
+    Y = [η, [similar(η) for i in 1:(n - 1)]...]
+    for i in (n - 1):-1:1 # propagate adjoints -> backward without interims storage
+        Y[1:(n - i + 1)] .=
+            [ # take previous results and add start&end point effects
+                adjoint_differential_geodesic_startpoint.(
+                    Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y[1:(n - i)]
+                )...,
+                zero_tangent_vector(M, c[i][end]),
+            ] .+ [
+                zero_tangent_vector(M, c[i][1]),
+                adjoint_differential_geodesic_endpoint.(
+                    Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y[1:(n - i)]
+                )...,
+            ]
     end
     return BezierSegment(Y)
 end
+function adjoint_differential_bezier_control!(
+    M::Manifold, Y::BezierSegment, b::BezierSegment, t::Float64, η::Q
+) where {Q}
+    n = length(b.pts)
+    if n == 2
+        adjoint_differential_geodesic_startpoint!(M, Y.pts[1], b.pts[1], b.pts[2], t, η)
+        adjoint_differential_geodesic_endpoint!(M, Y.pts[2], b.pts[1], b.pts[2], t, η)
+        return Y
+    end
+    c = [b.pts, [similar.(b.pts[1:l]) for l in (n - 1):-1:2]...]
+    for i in 2:(n - 1) # casteljau on the tree -> forward with interims storage
+        c[i] .= shortest_geodesic.(Ref(M), c[i - 1][1:(end - 1)], c[i - 1][2:end], Ref(t))
+    end
+    Y.pts[1] = η
+    for i in (n - 1):-1:1 # propagate adjoints -> backward without interims storage
+        Y.pts[1:(n - i + 1)] .=
+            [ # take previous results and add start&end point effects
+                adjoint_differential_geodesic_startpoint.(
+                    Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y.pts[1:(n - i)]
+                )...,
+                zero_tangent_vector(M, c[i][end]),
+            ] .+ [
+                zero_tangent_vector(M, c[i][1]),
+                adjoint_differential_geodesic_endpoint.(
+                    Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y.pts[1:(n - i)]
+                )...,
+            ]
+    end
+    return Y
+end
+
 @doc raw"""
     adjoint_differential_bezier_control(
         M::Manifold,
@@ -51,7 +88,13 @@ end
         t::Array{Float64,1},
         X::Array{Q,1}
     )
-
+    adjoint_differential_bezier_control!(
+        M::Manifold,
+        Y::BezierSegment,
+        b::BezierSegment,
+        t::Array{Float64,1},
+        X::Array{Q,1}
+    )
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a points `T```=(t_i)_{i=1}^n`` that
 are pointwise in `` t_i\in[0,1]`` on the curve and given corresponding tangential
@@ -72,10 +115,31 @@ function adjoint_differential_bezier_control(
     effects = [bt.pts for bt in adjoint_differential_bezier_control.(Ref(M), Ref(b), t, X)]
     return BezierSegment(sum(effects))
 end
+function adjoint_differential_bezier_control!(
+    M::Manifold,
+    Y::BezierSegment,
+    b::BezierSegment,
+    t::AbstractVector{Float64},
+    X::AbstractVector{Q},
+) where {Q}
+    Z = BezierSegment(similar.(Y))
+    for i in 1:length(t)
+        adjoint_differential_bezier_control!(M, Z, b, t[i], X[i])
+        Y.pts .+= Z.pts
+    end
+    return Y
+end
 
 @doc raw"""
     adjoint_differential_bezier_control(
         M::MAnifold,
+        B::AbstractVector{<:BezierSegment},
+        t::Float64,
+        X
+    )
+    adjoint_differential_bezier_control!(
+        M::MAnifold,
+        Y::AbstractVector{<:BezierSegment},
         B::AbstractVector{<:BezierSegment},
         t::Float64,
         X
@@ -91,6 +155,16 @@ See [`de_casteljau`](@ref) for more details on the curve.
 function adjoint_differential_bezier_control(
     M::Manifold, B::AbstractVector{<:BezierSegment}, t::Float64, X::Q
 ) where {Q}
+    Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
+    return adjoint_differential_bezier_control!(M, Y, B, t, X)
+end
+function adjoint_differential_bezier_control!(
+    M::Manifold,
+    Y::AbstractVector{<:BezierSegment},
+    B::AbstractVector{<:BezierSegment},
+    t::Float64,
+    X::Q,
+) where {Q}
     # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
     if (0 > t) || (t > length(B))
         error(
@@ -101,15 +175,19 @@ function adjoint_differential_bezier_control(
             "].",
         )
     end
-    Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
+    for y in Y
+        fill!.(y.pts, zero(eltype(first(y.pts))))
+    end
     seg = max(ceil(Int, t), 1)
     localT = ceil(Int, t) == 0 ? 0.0 : t - seg + 1
-    Y[seg].pts .= adjoint_differential_bezier_control(M, B[seg], localT, X).pts
+    adjoint_differential_bezier_control!(M, Y[seg], B[seg], localT, X)
     return Y
 end
 @doc raw"""
-    adjoint_differential_bezier_control(M,B,t,η)
-evaluate the adjoint of the differential with respect to the controlpoints.
+    adjoint_differential_bezier_control(M, B, T, X)
+    adjoint_differential_bezier_control!(M, Y, B, T, X)
+
+Evaluate the adjoint of the differential with respect to the controlpoints.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -118,17 +196,26 @@ function adjoint_differential_bezier_control(
     B::AbstractVector{<:BezierSegment},
     T::AbstractVector{Float64},
     X::AbstractVector{Q},
-) where {P,Q}
-    BT = adjoint_differential_bezier_control.(Ref(M), Ref(B), T, X)
+) where {Q}
     Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
-    for Bn in BT # for all times
-        for i in 1:length(Bn)
-            Y[i].pts .+= Bn[i].pts
+    return adjoint_differential_bezier_control!(M, Y, B, T, X)
+end
+function adjoint_differential_bezier_control!(
+    M::Manifold,
+    Y::AbstractVector{<:BezierSegment},
+    B::AbstractVector{<:BezierSegment},
+    T::AbstractVector{Float64},
+    X::AbstractVector{Q},
+) where {P,Q}
+    Z = [BezierSegment(similar.(y.pts)) for y in Y]
+    for j in 1:length(T) # for all times
+        adjoint_differential_bezier_control!(M, Z, B, T[j], X[j])
+        for i in 1:length(Z)
+            Y[i].pts .+= Z[i].pts
         end
     end
     return Y
 end
-
 @doc raw"""
     adjoint_differential_geodesic_startpoint(M,p, q, t, X)
     adjoint_differential_geodesic_startpoint!(M, Y, p, q, t, X)

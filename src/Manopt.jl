@@ -6,7 +6,7 @@ using Colors
 using ColorSchemes
 using ColorTypes
 using Markdown
-using LinearAlgebra
+using LinearAlgebra: I, Diagonal
 using Dates: Period, Nanosecond, value
 using Requires
 using Random: shuffle!
@@ -121,14 +121,14 @@ function __init__()
             sym_rem,
             mean
         import Random: rand, randperm
+        using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
         include("random.jl")
         # adaptions for Nonmutating manifolds
         const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
         include("functions/manifold_functions.jl")
         include("functions/nonmutating_manifolds_functions.jl")
         include("plans/nonmutating_manifolds_plans.jl")
-        export random_point, random_tangent, mid_point, mid_point!
-        export reflect, reflect!
+        export random_point, random_tangent, mid_point, mid_point!, reflect, reflect!
     end
     return nothing
 end
@@ -292,7 +292,7 @@ export adjoint_differential_exp_argument, adjoint_differential_exp_argument!
 export adjoint_differential_log_basepoint, adjoint_differential_log_basepoint!
 export adjoint_differential_log_argument, adjoint_differential_log_argument!
 export adjoint_differential_forward_logs, adjoint_differential_forward_logs!
-export adjoint_differential_bezier_control
+export adjoint_differential_bezier_control, adjoint_differential_bezier_control!
 #
 # Differentials
 export differential_geodesic_startpoint, differential_geodesic_startpoint!

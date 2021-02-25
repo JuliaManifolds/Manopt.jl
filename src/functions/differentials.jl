@@ -1,6 +1,6 @@
 @doc raw"""
-    differential_bezier(M::Manifold, b::BezierSegment, t::Float, X::BezierSegment)
-    differential_bezier!(
+    differential_bezier_control(M::Manifold, b::BezierSegment, t::Float, X::BezierSegment)
+    differential_bezier_control!(
         M::Manifold,
         Y,
         b::BezierSegment,

@@ -21,6 +21,9 @@ using Manopt, Manifolds, Test
         @test sum(distance.(Ref(M), pts, pts2)) ≈ 0
         aX = log(M, pT, pC)
         aT1 = adjoint_differential_bezier_control(M, BezierSegment([pT, pC]), 0.5, aX).pts
+        aT1a = BezierSegment(similar.(aT1))
+        adjoint_differential_bezier_control!(M, aT1a, BezierSegment([pT, pC]), 0.5, aX)
+        @test aT1a.pts == aT1
         aT2 = [
             adjoint_differential_geodesic_startpoint(M, pT, pC, 0.5, aX),
             adjoint_differential_geodesic_endpoint(M, pT, pC, 0.5, aX),

@@ -1,4 +1,5 @@
-using Manopt, Manifolds, LinearAlgebra, Test, Random
+using Manopt, Manifolds, Test, Random
+using LinearAlgebra: I, eigvecs, tr
 Random.seed!(42)
 
 @testset "Riemannian quasi-Newton Methods" begin

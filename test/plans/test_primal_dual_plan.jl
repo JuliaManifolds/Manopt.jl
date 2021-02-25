@@ -1,4 +1,4 @@
-using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
+using Manopt, Manifolds, ManifoldsBase, Test
 
 @testset "Test primal dual plan" begin
     #

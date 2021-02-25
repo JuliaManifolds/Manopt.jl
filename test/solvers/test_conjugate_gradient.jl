@@ -1,4 +1,5 @@
-using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
+using Manopt, Manifolds, ManifoldsBase, Test
+using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
 @testset "Conjugate Gradient coefficient rules" begin
     M = Euclidean(2)

@@ -1,4 +1,4 @@
-using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
+using Manopt, ManifoldsBase, Manifolds, Test
 
 @testset "Subgradient Plan" begin
     M = Euclidean(2)

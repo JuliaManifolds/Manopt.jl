@@ -67,7 +67,7 @@ using Manifolds, Manopt, Test, Dates
     M2 = Circle()
     N2 = PowerManifold(M2, 3)
     pS, rS, qS = [-0.5, 0.1, 0.5]
-    d = dot([pS, rS, qS], [1.0, -2.0, 1.0])
+    d = sum([pS, rS, qS] .* [1.0, -2.0, 1.0])
     m = min(0.3, abs(Manopt.sym_rem(d) / 6))
     s = sign(Manopt.sym_rem(d))
     pSc, rSc, qSc = Manopt.sym_rem.([pS, rS, qS] .- m .* s .* [1.0, -2.0, 1.0])

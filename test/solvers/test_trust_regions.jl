@@ -1,4 +1,4 @@
-using Manifolds, Manopt, LinearAlgebra, Test
+using Manifolds, Manopt, Test
 import Random: seed!
 
 include("trust_region_model.jl")

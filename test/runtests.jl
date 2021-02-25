@@ -1,4 +1,4 @@
-using Manopt, ManifoldsBase, Manifolds, LinearAlgebra, Test
+using Manifolds, Manopt, ManifoldsBase, Test
 
 @testset "Plan Tests         " begin
     include("plans/test_options.jl")

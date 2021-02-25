@@ -29,8 +29,14 @@ Random.seed!(42)
         @test isapprox(M, r4, r5)
 
         @test isapprox(M, reflect(M, p, q), -q)
+        qA = similar(q)
+        reflect!(M, qA, p, q)
+        @test isapprox(M, qA, -q)
         f = x -> x
         @test reflect(M, f, q) == q
+        qA = similar(q)
+        reflect!(M, qA, f, q)
+        @test qA == q
 
         M2 = Euclidean(2)
         p2 = [1.0, 0.0]

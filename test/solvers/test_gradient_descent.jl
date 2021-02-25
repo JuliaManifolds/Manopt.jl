@@ -1,4 +1,4 @@
-using Manopt, Manifolds, LinearAlgebra
+using Manopt, Manifolds
 
 @testset "Gradient Descent" begin
     @testset "allocating Circle" begin
