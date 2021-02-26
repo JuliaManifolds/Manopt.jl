@@ -107,10 +107,10 @@ end
 @doc raw"""
     ξ = prox_TV(M,λ,x [,p=1])
 
-compute the proximal maps $\operatorname{prox}_{\lambda\varphi}$ of
+compute the proximal maps ``\operatorname{prox}_{\lambda\varphi}`` of
 all forward differences orrucirng in the power manifold array, i.e.
-$\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)$ with `xi` and `xj` are array
-elemets of `x` and `j = i+e_k`, where `e_k` is the $k$th unitvector.
+``\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)`` with `xi` and `xj` are array
+elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unitvector.
 The parameter `λ` is the prox parameter.
 
 # Input
@@ -278,11 +278,13 @@ end
 
 @doc raw"""
     (y1,y2,y3) = prox_TV2(M,λ,(x1,x2,x3),[p=1], kwargs...)
+    prox_TV2!(M, y, λ,(x1,x2,x3),[p=1], kwargs...)
 
-Compute the proximal map $\operatorname{prox}_{\lambda\varphi}$ of
-$\varphi(x_1,x_2,x_3) = d_{\mathcal M}^p(c(x_1,x_3),x_2)$ with
-parameter `λ`>0, where $c(x,z)$ denotes the mid point of a shortest
+Compute the proximal map ``\operatorname{prox}_{\lambda\varphi}`` of
+``\varphi(x_1,x_2,x_3) = d_{\mathcal M}^p(c(x_1,x_3),x_2)`` with
+parameter `λ`>0, where ``c(x,z)`` denotes the mid point of a shortest
 geodesic from `x1` to `x3` that is closest to `x2`.
+The result can be computed in place of `y`.
 
 # Input
 
@@ -303,19 +305,17 @@ geodesic from `x1` to `x3` that is closest to `x2`.
 function prox_TV2(
     M::Manifold,
     λ,
-    pointTuple::Tuple{T,T,T},
+    x::Tuple{T,T,T},
     p::Int=1;
     stopping_criterion::StoppingCriterion=StopAfterIteration(5),
     kwargs...,
 ) where {T}
-    if p != 1
-        throw(
-            ErrorException(
-                "Proximal Map of TV2(M,λ,pT,p) not implemented for p=$(p) (requires p=1) on general manifolds.",
-            ),
-        )
-    end
-    PowX = SVector(pointTuple)
+    (p != 1) && throw(
+        ErrorException(
+            "Proximal Map of TV2(M, λ, x, p) not implemented for p=$(p) (requires p=1) on general manifolds.",
+        ),
+    )
+    PowX = SVector(x)
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
     xR = PowX
     F(M, x) = 1 / 2 * distance(M, PowX, x)^2 + λ * costTV2(M, x)
@@ -323,13 +323,43 @@ function prox_TV2(
     subgradient_method!(PowM, F, ∂F, xR; stopping_criterion=stopping_criterion, kwargs...)
     return (xR...,)
 end
-
+function prox_TV2!(
+    M::Manifold,
+    y,
+    λ,
+    x::Tuple{T,T,T},
+    p::Int=1;
+    stopping_criterion::StoppingCriterion=StopAfterIteration(5),
+    kwargs...,
+) where {T}
+    (p != 1) && throw(
+        ErrorException(
+            "Proximal Map of TV2(M, λ, x, p) not implemented for p=$(p) (requires p=1) on general manifolds.",
+        ),
+    )
+    PowX = SVector(x)
+    PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
+    copyto!(y, deepcopy(PowX))
+    F(M, x) = 1 / 2 * distance(M, PowX, x)^2 + λ * costTV2(M, x)
+    ∂F!(M, y, x) = log!(M, y, x, PowX) + λ * grad_TV2!(M, y, x)
+    subgradient_method!(
+        PowM,
+        F,
+        ∂F!,
+        y;
+        stopping_criterion=stopping_criterion,
+        evaluation=MutatingEvaluation(),
+        kwargs...,
+    )
+    return y
+end
 @doc raw"""
-    ξ = prox_TV2(M,λ,x,[p])
+    y = prox_TV2(M, λ, x[, p=1])
+    prox_TV2!(M, y, λ, x[, p=1])
 
-compute the proximal maps $\operatorname{prox}_{\lambda\varphi}$ of
+compute the proximal maps ``\operatorname{prox}_{\lambda\varphi}`` of
 all centered second order differences orrucirng in the power manifold array, i.e.
-$\varphi(x_k,x_i,x_j) = d_2(x_k,x_i.x_j)$, where $k,j$ are backward and forward
+``\varphi(x_k,x_i,x_j) = d_2(x_k,x_i.x_j)``, where ``k,j`` are backward and forward
 neighbors (along any dimension in the array of `x`).
 The parameter `λ` is the prox parameter.
 
@@ -347,12 +377,18 @@ The parameter `λ` is the prox parameter.
   evaluated (in a cylic order).
 """
 function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
+    y = deepcopy(x)
+    return prox_TV2!(M, y, λ, x, p)
+end
+function prox_TV2!(M::PowerManifold{N,T}, y, λ, x, p::Int=1) where {N,T}
     power_size = power_dimensions(M)
     R = CartesianIndices(power_size)
     d = length(size(x))
     minInd = first(R).I
     maxInd = last(R).I
-    y = copy(x)
+    for i in R
+        copyto!(y[i], x[i])
+    end
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
         for l in 0:1
@@ -360,15 +396,15 @@ function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
                 if (i[k] % 3) == l
                     JForward = i.I .+ ek.I #i + e_k
                     JBackward = i.I .- ek.I # i - e_k
-                    if all(JForward .<= maxInd) && all(JBackward .>= minInd)
-                        (y[jBackward], y[i], y[jForward]) =
-                            prox_TV2(
-                                M.manifold,
-                                λ,
-                                (y[M, JBackward...], y[M, i.I...], y[M, JForward...]),
-                                p,
-                            ).data # Compute TV on these
-                    end
+                    all(JForward .<= maxInd) &&
+                        all(JBackward .>= minInd) &&
+                        prox_TV2!(
+                            M.manifold,
+                            [y[M, JBackward...], y[M, i.I...], y[M, JForward...]],
+                            λ,
+                            (y[M, JBackward...], y[M, i.I...], y[M, JForward...]),
+                            p,
+                        )
                 end # if mod 3
             end # i in R
         end # for mod 3
@@ -386,7 +422,7 @@ F^q(x) = \sum_{i\in\mathcal G}
     \sum_{k=1^d} \lVert X_{i,j}\rVert_x^p\Bigr)^\frac{q/p},
 ```
 
-where $\mathcal G$ is the set of indices for $x\in\mathcal M$ and $\mathcal I_i$
+where ``\mathcal G`` is the set of indices for ``x\in\mathcal M`` and ``\mathcal I_i``
 is the set of its forward neighbors.
 This is adopted from the paper by Duran, Möller, Sbert, Cremers:
 _Collaborative Total Variation: A General Framework for Vectorial TV Models_

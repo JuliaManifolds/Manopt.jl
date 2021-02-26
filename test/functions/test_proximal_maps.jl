@@ -59,6 +59,9 @@ using Manifolds, Manopt, Test, Dates
     @test_throws ErrorException prox_parallel_TV(N2, π / 16, [[p, r, q]])
     # prox_TV2
     p2, r2, q2 = prox_TV2(M, 1.0, (p, r, q))
+    y = [similar(p) for _ in 1:3]
+    prox_TV2!(M, y, 1.0, (p, r, q))
+    @test y ≈ [p2, r2, q2]
     sum(distance.(Ref(M), [p, r, q], [p2, r2, q2])) ≈ 0
     @test_throws ErrorException prox_TV2(M, 1.0, (p, r, q), 2) # since prox_TV is only defined for p=1
     distance(
