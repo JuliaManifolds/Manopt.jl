@@ -55,10 +55,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
             [-X, [π / 2, 0.0, 0.0], zero_tangent_vector(M, p)],
         ) ≈ 0 atol = 8 * 10.0^(-16)
         differential_forward_logs!(N, W, x, V)
-        print(W)
-        println("----\n\n")
-        println(differential_forward_logs(N, x, V))
-        @test_broken norm(N, x, W - [-X, [π / 2, 0.0, 0.0], zero_tangent_vector(M, p)]) ≈ 0 atol =
+        @test norm(N, x, W - [-X, [π / 2, 0.0, 0.0], zero_tangent_vector(M, p)]) ≈ 0 atol =
             8 * 10.0^(-16)
         @test differential_log_argument(N, x, y, V) == [V[1], V[2], V[2]]
         differential_log_argument!(N, W, x, y, V)

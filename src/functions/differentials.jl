@@ -321,6 +321,11 @@ function differential_forward_logs!(M::PowerManifold, Y, p, X)
     d = length(power_size)
     maxInd = last(R).I
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
+    if d > 1
+        N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size..., d)
+    else
+        N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...)
+    end
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
             I = i.I # array of index
@@ -328,12 +333,14 @@ function differential_forward_logs!(M::PowerManifold, Y, p, X)
             if all(J .<= maxInd)
                 # this is neighbor in range,
                 # collects two, namely in kth direction since xi appears as base and arg
-                Y[M, I..., k] =
-                    Y[M, I..., k] .+ differential_log_basepoint(
+                Y[N, I..., k] =
+                    differential_log_basepoint(
                         M.manifold, p[M, I...], p[M, J...], X[M, I...]
                     ) .+ differential_log_argument(
                         M.manifold, p[M, I...], p[M, J...], X[M, J...]
                     )
+            else
+                Y[N, I..., k] = zero_tangent_vector(M.manifold, p[M, I...])
             end
         end # directions
     end # i in R
