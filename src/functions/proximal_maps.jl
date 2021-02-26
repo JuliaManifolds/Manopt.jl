@@ -412,7 +412,8 @@ function prox_TV2!(M::PowerManifold{N,T}, y, λ, x, p::Int=1) where {N,T}
     return y
 end
 @doc raw"""
-    project_collaborative_TV(M,λ,x [,p=2,q=1])
+    project_collaborative_TV(M, λ, x, Ξ[, p=2,q=1])
+    project_collaborative_TV!(M, Θ, λ, x, Ξ[, p=2,q=1])
 
 compute the projection onto collaborative Norm unit (or α-) ball, i.e. of the function
 
@@ -452,7 +453,8 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=
         if p == 1
             normΞ = norm.(Ref(N.manifold), x, Ξ)
             return max.(normΞ .- λ, 0.0) ./ ((normΞ .== 0) .+ normΞ) .* Ξ
-        elseif p == 2 # Example 3 case 3
+        end
+        if p == 2 # Example 3 case 3
             norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
             if length(iRep) > 1
                 norms = repeat(norms; inner=iRep)
@@ -460,9 +462,8 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=
             # if the norm is zero add 1 to avoid division by zero, also then the
             # nominator is already (max(-λ,0) = 0) so it stays zero then
             return max.(norms .- λ, 0.0) ./ ((norms .== 0) .+ norms) .* Ξ
-        else
-            throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
         end
+        throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
     elseif q == Inf
         if p == 2
             norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
@@ -491,4 +492,66 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Float64, q::In
 end
 function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Int, α=1.0)
     return project_collaborative_TV(N, λ, x, Ξ, Float64(p), Float64(q), α)
+end
+
+function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p=2.0, q=1.0, α=1.0)
+    pdims = power_dimensions(N)
+    if length(pdims) == 1
+        d = 1
+        s = 1
+        iRep = (1,)
+    else
+        d = pdims[end]
+        s = length(pdims) - 1
+        if s != d
+            throw(
+                ErrorException(
+                    "the last dimension ($d) has to be equal to the number of the previous ones ($s) but its not.",
+                ),
+            )
+        end
+        iRep = (Integer.(ones(d))..., d)
+    end
+    if q == 1 # Example 3 case 2
+        if p == 1
+            normΞ = norm.(Ref(N.manifold), x, Ξ)
+            Θ .= max.(normΞ .- λ, 0.0) ./ ((normΞ .== 0) .+ normΞ) .* Ξ
+            return Θ
+        elseif p == 2 # Example 3 case 3
+            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
+            if length(iRep) > 1
+                norms = repeat(norms; inner=iRep)
+            end
+            # if the norm is zero add 1 to avoid division by zero, also then the
+            # nominator is already (max(-λ,0) = 0) so it stays zero then
+            Θ .= max.(norms .- λ, 0.0) ./ ((norms .== 0) .+ norms) .* Ξ
+            return Θ
+        else
+            throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
+        end
+    elseif q == Inf
+        if p == 2
+            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
+            (length(iRep) > 1) && (norms = repeat(norms; inner=iRep))
+        elseif p == 1
+            norms = sum(norm.(Ref(N.manifold), x, Ξ); dims=d + 1)
+            (length(iRep) > 1) && ( norms = repeat(norms; inner=iRep))
+        elseif p == Inf
+            norms = norm.(Ref(N.manifold), x, Ξ)
+        else
+            throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
+        end
+        Θ .= (α .* Ξ) ./ max.(Ref(α), norms)
+        return Θ
+    end # end q
+    return throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
+end
+function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Float64=1.0, α=1.0)
+    return project_collaborative_TV!(N, Θ,λ, x, Ξ, Float64(p), q, α)
+end
+function project_collaborative_TV!(N::PowerManifold, Θ,λ, x, Ξ, p::Float64, q::Int, α=1.0)
+    return project_collaborative_TV!(N, Θ,λ, x, Ξ, p, Float64(q), α)
+end
+function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Int, α=1.0)
+    return project_collaborative_TV!(N, Θ, λ, x, Ξ, Float64(p), Float64(q), α)
 end
