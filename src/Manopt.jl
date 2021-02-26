@@ -323,7 +323,7 @@ export prox_distance, prox_distance!
 export prox_TV, prox_TV!
 export prox_parallel_TV, prox_parallel_TV!
 export prox_TV2, prox_TV2!
-export project_collaborative_TV
+export project_collaborative_TV, project_collaborative_TV!
 # Error measures
 export meanSquaredError, meanAverageError
 #

@@ -117,18 +117,38 @@ using Manifolds, Manopt, Test, Dates
     N3 = PowerManifold(M3, 3)
     P = [pR rR qR]
     Ξ = [ξR ηR νR]
+    Θ = similar(Ξ)
     @test project_collaborative_TV(N3, 0.0, P, Ξ, 1, 1) == Ξ
+    project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 1, 1)
+    @test Θ == Ξ
     @test project_collaborative_TV(N3, 0.0, P, Ξ, 1.0, 1) == Ξ
+    project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 1.0, 1)
+    @test Θ == Ξ
     @test project_collaborative_TV(N3, 0.0, P, Ξ, 1, 1.0) == Ξ
+    project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 1, 1.0)
+    @test Θ == Ξ
     @test project_collaborative_TV(N3, 0.0, P, Ξ, 1.0, 1.0) == Ξ
+    project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 1.0, 1.0)
+    @test Θ == Ξ
 
     @test project_collaborative_TV(N3, 0.0, P, Ξ, 2, 1) == Ξ
+    project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 2, 1)
+    @test Θ == Ξ
     @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, 2, Inf)) ≈ norm(Ξ)
+    project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 2, Inf)
+    @test norm(N3, P, Θ) ≈ norm(Ξ)
     @test sum(abs.(project_collaborative_TV(N3, 0.0, P, Ξ, 1, Inf))) ≈ 1.0
+    project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 1, Inf)
+    @test sum(abs.(Θ)) ≈ 1.0
     @test norm(N3, P, project_collaborative_TV(N3, 0.0, P, Ξ, Inf, Inf)) ≈ norm(Ξ)
+    project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, Inf, Inf)
+    @test norm(N3, P, Θ) ≈ norm(Ξ)
     @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, 3)
+    @test_throws ErrorException project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 3, 3)
     @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, 1)
+    @test_throws ErrorException project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 3, 1)
     @test_throws ErrorException project_collaborative_TV(N3, 0.0, P, Ξ, 3, Inf)
+    @test_throws ErrorException project_collaborative_TV!(N3, Θ, 0.0, P, Ξ, 3, Inf)
 
     @testset "Multivariate project collaborative TV" begin
         S = Sphere(2)

@@ -535,7 +535,7 @@ function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p=2.0, q=1.0
             (length(iRep) > 1) && (norms = repeat(norms; inner=iRep))
         elseif p == 1
             norms = sum(norm.(Ref(N.manifold), x, Ξ); dims=d + 1)
-            (length(iRep) > 1) && ( norms = repeat(norms; inner=iRep))
+            (length(iRep) > 1) && (norms = repeat(norms; inner=iRep))
         elseif p == Inf
             norms = norm.(Ref(N.manifold), x, Ξ)
         else
@@ -546,11 +546,13 @@ function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p=2.0, q=1.0
     end # end q
     return throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
-function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Float64=1.0, α=1.0)
-    return project_collaborative_TV!(N, Θ,λ, x, Ξ, Float64(p), q, α)
+function project_collaborative_TV!(
+    N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Float64=1.0, α=1.0
+)
+    return project_collaborative_TV!(N, Θ, λ, x, Ξ, Float64(p), q, α)
 end
-function project_collaborative_TV!(N::PowerManifold, Θ,λ, x, Ξ, p::Float64, q::Int, α=1.0)
-    return project_collaborative_TV!(N, Θ,λ, x, Ξ, p, Float64(q), α)
+function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Float64, q::Int, α=1.0)
+    return project_collaborative_TV!(N, Θ, λ, x, Ξ, p, Float64(q), α)
 end
 function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Int, α=1.0)
     return project_collaborative_TV!(N, Θ, λ, x, Ξ, Float64(p), Float64(q), α)
