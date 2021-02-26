@@ -57,6 +57,7 @@ using Manifolds, Manopt, Test, Dates
     @test distance(N2, y[2], [u, v, q]) ≈ 0 # odd in second
     # dimensions of x have to fit, here they don't
     @test_throws ErrorException prox_parallel_TV(N2, π / 16, [[p, r, q]])
+    @test_throws ErrorException prox_parallel_TV!(N2, yM, π / 16, [[p, r, q]])
     # prox_TV2
     p2, r2, q2 = prox_TV2(M, 1.0, (p, r, q))
     y = [similar(p) for _ in 1:3]
@@ -161,9 +162,15 @@ using Manifolds, Manopt, Test, Dates
         p[:, :, 2] = deepcopy(p[:, :, 1])
         X = zero_tangent_vector(M, p)
         X[1, 1, 1] .= [0.0, 0.5, 0.5]
-        norm(project_collaborative_TV(M, 1, p, X, 2, 1)) ≈ 0
+        Y = zero_tangent_vector(M, p)
+        @test norm(project_collaborative_TV(M, 1, p, X, 2, 1)) ≈ 0
+        project_collaborative_TV!(M, Y, 1, p, X, 2, 1)
+        @test norm(Y) ≈ 0
         @test norm(project_collaborative_TV(M, 0.5, p, X, 2, 1)) ≈ (norm(X[1, 1, 1]) - 0.5)
+        project_collaborative_TV!(M, Y, 0.5, p, X, 2, 1)
+        @test norm(Y) ≈ (norm(X[1, 1, 1]) - 0.5)
         Nf = PowerManifold(S, NestedPowerRepresentation(), 2, 2, 1)
         @test_throws ErrorException project_collaborative_TV(Nf, 1, p, X, 2, 1)
+        @test_throws ErrorException project_collaborative_TV!(Nf, Y, 1, p, X, 2, 1)
     end
 end
