@@ -23,13 +23,13 @@ depenting on the parameter `T <: AbstractEvaluationType`.
     LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ=forward_operator)
 
 """
-mutable struct PrimalDualProblem{T, mT<:Manifold,nT<:Manifold} <: Problem{T}
+mutable struct PrimalDualProblem{T,mT<:Manifold,nT<:Manifold} <: Problem{T}
     M::mT
     N::nT
     cost::Function
     prox_F!!::Function
     prox_G_dual!!::Function
-    linearized_forward_operator!!::Union{Function, Missing}
+    linearized_forward_operator!!::Union{Function,Missing}
     adjoint_linearized_operator!!::Function
     Λ!!::Union{Function,Missing}
 end
@@ -39,13 +39,20 @@ function PrimalDualProblem(
     cost,
     prox_F,
     prox_G_dual,
-    adjoint_linearized_operator,
-    linearized_forward_operator=missing,
-    Λ=missing;
-    evalualtion::AbstractEvaluationType=MutatingEvaluation()
+    adjoint_linearized_operator;
+    linearized_forward_operator::Union{Function,Missing}=missing,
+    Λ::Union{Function,Missing}=missing,
+    evalualtion::AbstractEvaluationType=AllocatingEvaluation(),
 ) where {mT<:Manifold,nT<:Manifold}
     return PrimalDualProblem{typeof(evalualtion),mT,nT}(
-        M, N, cost, prox_F, prox_G_dual, linearized_forward_operator, adjoint_linearized_operator, Λ
+        M,
+        N,
+        cost,
+        prox_F,
+        prox_G_dual,
+        linearized_forward_operator,
+        adjoint_linearized_operator,
+        Λ,
     )
 end
 
@@ -78,45 +85,45 @@ function get_dual_prox!(p::PrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
 end
 
 function linearized_forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, m, X)
-    return p.linearized_forward_operator!!(m, X)
+    return p.linearized_forward_operator!!(p.M, m, X)
 end
 function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X)
     y = allocate_result(p.M, linearized_forward_operator, X)
-    return p.linearized_forward_operator!!(y, m, X)
+    return p.linearized_forward_operator!!(p.M, y, m, X)
 end
 function linearized_forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X)
-    return copyto!(Y, p.linearized_forward_operator!!(m, X))
+    return copyto!(Y, p.linearized_forward_operator!!(p.M, m, X))
 end
 function linearized_forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, Y, m, X)
-    return p.linearized_forward_operator!!(Y, m, X)
+    return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 
 function forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, x)
-    return p.Λ!!(x)
+    return p.Λ!!(p.M, x)
 end
 function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
     y = allocate_result(p.M, forward_operator, x)
-    return p.Λ!!(y, x)
+    return p.Λ!!(p.M, y, x)
 end
 function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)
-    return copyto!(y, p.Λ!!(x))
+    return copyto!(y, p.Λ!!(p.M, x))
 end
 function forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, y, x)
-    return p.Λ!!(y, x)
+    return p.Λ!!(p.M, y, x)
 end
 
 function adjoint_linearized_operator(p::PrimalDualProblem{AllocatingEvaluation}, n, Y)
-    return p.adjoint_linearized_operator!!(n, Y)
+    return p.adjoint_linearized_operator!!(p.N, n, Y)
 end
 function adjoint_linearized_operator(p::PrimalDualProblem{MutatingEvaluation}, n, Y)
     X = allocate_result(p.M, adjoint_linearized_operator, Y)
-    return p.adjoint_linearized_operator!!(X, n, Y)
+    return p.adjoint_linearized_operator!!(p.N, X, n, Y)
 end
 function adjoint_linearized_operator!(p::PrimalDualProblem{AllocatingEvaluation}, X, n, Y)
-    return copyto!(X, p.adjoint_linearized_operator!!(n, Y))
+    return copyto!(X, p.adjoint_linearized_operator!!(p.N, n, Y))
 end
 function adjoint_linearized_operator!(p::PrimalDualProblem{MutatingEvaluation}, X, n, Y)
-    return p.adjoint_linearized_operator!!(X, n, Y)
+    return p.adjoint_linearized_operator!!(p.N, X, n, Y)
 end
 
 @doc raw"""
@@ -270,7 +277,8 @@ function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, �
         vector_transport_to(
             p.M,
             o.m,
-            p.adjoint_linearized_operator(
+            adjoint_linearized_operator(
+                p,
                 o.m,
                 vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
                 o.ξ,
@@ -322,7 +330,8 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             o.n,
             1 / o.dual_stepsize *
             (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ) -
-            p.forward_operator(
+            linearized_forward_operator(
+                p,
                 o.m,
                 vector_transport_to(
                     p.M,
@@ -342,7 +351,8 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             inverse_retract(
                 p.N,
                 o.n,
-                p.Λ(
+                forward_operator(
+                    p,
                     retract(
                         p.M,
                         o.m,
@@ -351,7 +361,7 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
                             o.x,
                             inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
                             o.m,
-                            ParallelTransport(),
+                            o.vector_transport_method,
                         ),
                         o.retraction_method,
                     ),

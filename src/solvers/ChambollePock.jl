@@ -55,8 +55,9 @@ function ChambollePock(
     n::Q,
     prox_F::Function,
     prox_G_dual::Function,
-    forward_operator::Function,
     adjoint_linear_operator::Function;
+    Λ::Union{Function,Missing}=missing,
+    linearized_forward_operator::Union{Function,Missing}=missing,
     kwargs...,
 ) where {P,T,Q}
     x_res = allocate(x)
@@ -77,8 +78,9 @@ function ChambollePock(
         n_res,
         prox_F,
         prox_G_dual,
-        forward_operator,
         adjoint_linear_operator;
+        Λ=Λ,
+        linearized_forward_operator=linearized_forward_operator,
         kwargs...,
     )
 end
@@ -98,11 +100,11 @@ function ChambollePock!(
     n::Q,
     prox_F::Function,
     prox_G_dual::Function,
-    forward_operator::Function,
     adjoint_linear_operator::Function;
+    Λ::Union{Function,Missing}=missing,
+    linearized_forward_operator::Union{Function,Missing}=missing,
     acceleration=0.05,
     dual_stepsize=1 / sqrt(8),
-    Λ::Union{Function,Missing}=missing,
     primal_stepsize=1 / sqrt(8),
     relaxation=1.0,
     relax::Symbol=:primal,
@@ -124,7 +126,14 @@ function ChambollePock!(
     VTM<:AbstractVectorTransportMethod,
 }
     p = PrimalDualProblem(
-        M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linear_operator, Λ
+        M,
+        N,
+        cost,
+        prox_F,
+        prox_G_dual,
+        adjoint_linear_operator;
+        linearized_forward_operator=linearized_forward_operator,
+        Λ=Λ,
     )
     o = ChambollePockOptions(
         m,
@@ -161,8 +170,8 @@ function step_solver!(p::PrimalDualProblem, o::ChambollePockOptions, iter)
     if !ismissing(o.update_dual_base)
         n_old = deepcopy(o.n)
         o.n = o.update_dual_base(p, o, iter)
-        o.ξ = vector_transport_to(p.N, n_old, o.ξ, o.n, o.vector_transport_method)
-        o.ξbar = vector_transport_to(p.N, n_old, o.ξbar, o.n, o.vector_transport_method)
+        vector_transport_to!(p.N, o.ξ, n_old, o.ξ, o.n, o.vector_transport_method)
+        vector_transport_to!(p.N, o.ξbar, n_old, o.ξbar, o.n, o.vector_transport_method)
     end
     return o
 end
@@ -171,14 +180,17 @@ end
 #
 function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{:primal})
     dual_update!(p, o, o.xbar, Val(o.variant))
-    ptξn = if ismissing(p.Λ)
-        o.ξ
+    if ismissing(p.Λ!!)
+        ptξn = o.ξ
     else
-        vector_transport_to(p.N, o.n, o.ξ, p.Λ(o.m), o.vector_transport_method)
+        ptξn = vector_transport_to(
+            p.N, o.n, o.ξ, forward_operator(p, o.m), o.vector_transport_method
+        )
     end
     xOld = o.x
-    o.x = p.prox_F(
-        p.M,
+    o.x = get_primal_prox!(
+        p,
+        o.x,
         o.m,
         o.primal_stepsize,
         retract(
@@ -187,7 +199,7 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
             vector_transport_to(
                 p.M,
                 o.m,
-                -o.primal_stepsize * (p.adjoint_linearized_operator(o.m, ptξn)),
+                -o.primal_stepsize * (adjoint_linearized_operator(p, o.m, ptξn)),
                 o.x,
                 o.vector_transport_method,
             ),
@@ -195,8 +207,9 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
         ),
     )
     update_prox_parameters!(o)
-    o.xbar = retract(
+    retract!(
         p.M,
+        o.xbar,
         o.x,
         -o.relaxation * inverse_retract(p.M, o.x, xOld, o.inverse_retraction_method),
         o.retraction_method,
@@ -207,13 +220,16 @@ end
 # Variant 2: dual relax
 #
 function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{:dual})
-    ptξbar = if ismissing(p.Λ)
-        o.ξbar
+    if ismissing(p.Λ!!)
+        ptξbar = o.ξbar
     else
-        vector_transport_to(p.N, o.n, o.ξbar, p.Λ(o.m), o.vector_transport_method)
+        ptξbar = vector_transport_to(
+            p.N, o.n, o.ξbar, forward_operator(p, o.m), o.vector_transport_method
+        )
     end
-    o.x = p.prox_F(
-        p.M,
+    get_primal_prox!(
+        p,
+        o.x,
         o.m,
         o.primal_stepsize,
         retract(
@@ -222,7 +238,7 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
             vector_transport_to(
                 p.M,
                 o.m,
-                -o.primal_stepsize * (p.adjoint_linearized_operator(o.m, ptξbar)),
+                -o.primal_stepsize * (adjoint_linearized_operator(p, o.n, ptξbar)),
                 o.x,
                 o.vector_transport_method,
             ),
@@ -243,17 +259,20 @@ function dual_update!(
     p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:linearized}
 ) where {P}
     # (1) compute update direction
-    ξ_update = p.forward_operator(
-        o.m, inverse_retract(p.M, o.m, start, o.inverse_retraction_method)
+    ξ_update = linearized_forward_operator(
+        p, o.m, inverse_retract(p.M, o.m, start, o.inverse_retraction_method)
     )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
-    ξ_update = if ismissing(p.Λ)
-        ξ_update
-    else
-        vector_transport_to(p.N, p.Λ(o.m), ξ_update, o.n, o.vector_transport_method)
-    end
+    (!ismissing(p.Λ!!)) && vector_transport_to!(
+        p.N,
+        ξ_update,
+        forward_operator(p, o.m),
+        ξ_update,
+        o.n,
+        o.vector_transport_method,
+    )
     # (3) to the dual update
-    o.ξ = p.prox_G_dual(p.N, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
+    get_dual_prox!(p, o.ξ, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
     return o
 end
 #
@@ -264,10 +283,9 @@ function dual_update!(
     p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:exact}
 ) where {P}
     ξ_update = inverse_retract(
-        p.N, o.n, p.forward_operator(start), o.inverse_retraction_method
+        p.N, o.n, forward_operator(p, start), o.inverse_retraction_method
     )
-    t = p.prox_G_dual(p.N, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
-    o.ξ = t
+    get_dual_prox!(p, o.ξ, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
     return o
 end
 
@@ -275,9 +293,9 @@ end
     update_prox_parameters!(o)
 update the prox parameters as described in Algorithm 2 of Chambolle, Pock, 2010, i.e.
 
-1. ``\theta_{n} = \frac{1}{\sqrt{1+2\gamma\tau_n}}``
-2. ``\tau_{n+1} = \theta_n\tau_n``
-3. ``\sigma_{n+1} = \frac{\sigma_n}{\theta_n}``
+1. ``θ_{n} = \frac{1}{\sqrt{1+2γτ_n}}``
+2. ``τ_{n+1} = θ_nτ_n``
+3. ``σ_{n+1} = \frac{σ_n}{θ_n}``
 """
 function update_prox_parameters!(o::O) where {O<:PrimalDualOptions}
     if o.acceleration > 0

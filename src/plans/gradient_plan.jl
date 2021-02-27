@@ -325,7 +325,7 @@ function (a::AverageGradient)(p::Problem, o::AbstractGradientOptions, i)
             a.vector_transport_method,
         )
     end
-    a.gradients[1] = d
+    a.gradients[1] = deepcopy(d)
     a.last_iterate = deepcopy(o.x)
     return s, -1 / length(a.gradients) .* sum(a.gradients)
 end
