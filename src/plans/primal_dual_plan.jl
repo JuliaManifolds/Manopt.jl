@@ -1,17 +1,20 @@
 @doc raw"""
-    PrimalDualProblem {mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem
+    PrimalDualProblem {T, mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem{T}
 
 Describes a Problem for the linearized Chambolle-Pock algorithm.
 
 # Fields
 
+All fields with !! can either be mutating or nonmutating functions, which should be set
+depenting on the parameter `T <: AbstractEvaluationType`.
+
 * `M`, `N` – two manifolds $\mathcal M$, $\mathcal N$
 * `cost` $F + G(Λ(⋅))$ to evaluate interims cost function values
-* `forward_oprator` the operator for the forward operation in the algorthm, either $Λ$ (exact) or $DΛ$ (linearized).
-* `linearized_adjoint_operator` The adjoint differential $(DΛ)^* \colon \mathcal N → T\mathcal M$
-* `prox_F` the proximal map belonging to $f$
-* `prox_G_dual` the proximal map belonging to $g_n^*$
-* `Λ` – (`fordward_operator`) for the linearized variant, this has to be set to the exact forward operator.
+* `linearized_forward_oprator!!` linearized operator for the forward operation in the algorthm $DΛ$ (linearized).
+* `linearized_adjoint_operator!!` The adjoint differential $(DΛ)^* \colon \mathcal N → T\mathcal M$
+* `prox_F!!` the proximal map belonging to $f$
+* `prox_G_dual!!` the proximal map belonging to $g_n^*$
+* `Λ!!` – (`fordward_operator`) for the linearized variant, this has to be set to the exact forward operator.
   This operator is required in several variants of the linearized algorithm.
   Since the exact variant is the default, `Λ` is by default set to `forward_operator`.
 
@@ -20,15 +23,15 @@ Describes a Problem for the linearized Chambolle-Pock algorithm.
     LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ=forward_operator)
 
 """
-mutable struct PrimalDualProblem{mT<:Manifold,nT<:Manifold} <: Problem{AllocatingEvaluation}
+mutable struct PrimalDualProblem{T, mT<:Manifold,nT<:Manifold} <: Problem{T}
     M::mT
     N::nT
     cost::Function
-    prox_F::Function
-    prox_G_dual::Function
-    forward_operator::Function
-    adjoint_linearized_operator::Function
-    Λ::Union{Function,Missing}
+    prox_F!!::Function
+    prox_G_dual!!::Function
+    linearized_forward_operator!!::Union{Function, Missing}
+    adjoint_linearized_operator!!::Function
+    Λ!!::Union{Function,Missing}
 end
 function PrimalDualProblem(
     M::mT,
@@ -36,13 +39,84 @@ function PrimalDualProblem(
     cost,
     prox_F,
     prox_G_dual,
-    forward_operator,
     adjoint_linearized_operator,
-    Λ=forward_operator,
+    linearized_forward_operator=missing,
+    Λ=missing;
+    evalualtion::AbstractEvaluationType=MutatingEvaluation()
 ) where {mT<:Manifold,nT<:Manifold}
-    return PrimalDualProblem{mT,nT}(
-        M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator, Λ
+    return PrimalDualProblem{typeof(evalualtion),mT,nT}(
+        M, N, cost, prox_F, prox_G_dual, linearized_forward_operator, adjoint_linearized_operator, Λ
     )
+end
+
+function get_primal_prox(p::PrimalDualProblem{AllocatingEvaluation}, m, τ, x)
+    return p.prox_F!!(p.M, m, τ, x)
+end
+function get_primal_prox(p::PrimalDualProblem{MutatingEvaluation}, m, σ, x)
+    y = allocate_result(p.M, get_primal_prox, x)
+    return p.prox_F!!(p.M, y, m, σ, x)
+end
+function get_primal_prox!(p::PrimalDualProblem{AllocatingEvaluation}, y, m, σ, x)
+    return copyto!(y, p.prox_F!!(p.M, m, σ, x))
+end
+function get_primal_prox!(p::PrimalDualProblem{MutatingEvaluation}, y, m, σ, x)
+    return p.prox_F!!(p.M, y, m, σ, x)
+end
+
+function get_dual_prox(p::PrimalDualProblem{AllocatingEvaluation}, n, τ, ξ)
+    return p.prox_G_dual!!(p.N, n, τ, ξ)
+end
+function get_dual_prox(p::PrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
+    η = allocate_result(p.M, get_dual_prox, ξ)
+    return p.prox_G_dual!!(p.N, η, n, τ, ξ)
+end
+function get_dual_prox!(p::PrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
+    return copyto!(η, p.prox_G_dual!!(p.N, n, τ, ξ))
+end
+function get_dual_prox!(p::PrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
+    return p.prox_G_dual!!(p.N, η, n, τ, ξ)
+end
+
+function linearized_forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, m, X)
+    return p.linearized_forward_operator!!(m, X)
+end
+function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X)
+    y = allocate_result(p.M, linearized_forward_operator, X)
+    return p.linearized_forward_operator!!(y, m, X)
+end
+function linearized_forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X)
+    return copyto!(Y, p.linearized_forward_operator!!(m, X))
+end
+function linearized_forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, Y, m, X)
+    return p.linearized_forward_operator!!(Y, m, X)
+end
+
+function forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, x)
+    return p.Λ!!(x)
+end
+function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
+    y = allocate_result(p.M, forward_operator, x)
+    return p.Λ!!(y, x)
+end
+function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)
+    return copyto!(y, p.Λ!!(x))
+end
+function forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, y, x)
+    return p.Λ!!(y, x)
+end
+
+function adjoint_linearized_operator(p::PrimalDualProblem{AllocatingEvaluation}, n, Y)
+    return p.adjoint_linearized_operator!!(n, Y)
+end
+function adjoint_linearized_operator(p::PrimalDualProblem{MutatingEvaluation}, n, Y)
+    X = allocate_result(p.M, adjoint_linearized_operator, Y)
+    return p.adjoint_linearized_operator!!(X, n, Y)
+end
+function adjoint_linearized_operator!(p::PrimalDualProblem{AllocatingEvaluation}, X, n, Y)
+    return copyto!(X, p.adjoint_linearized_operator!!(n, Y))
+end
+function adjoint_linearized_operator!(p::PrimalDualProblem{MutatingEvaluation}, X, n, Y)
+    return p.adjoint_linearized_operator!!(X, n, Y)
 end
 
 @doc raw"""

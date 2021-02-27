@@ -314,7 +314,7 @@ end
 function (a::AverageGradient)(p::Problem, o::AbstractGradientOptions, i)
     pop!(a.gradients)
     s, d = a.direction(p, o, i) #get inner gradient and step
-    a.gradients = vcat([d], a.gradients)
+    a.gradients = vcat([deepcopy(d)], a.gradients)
     for i in 1:(length(a.gradients) - 1) #transport & shift inplace
         vector_transport_to!(
             p.M,
