@@ -129,6 +129,9 @@ using Manifolds, Manopt, Test, ManifoldsBase
         @test t1[2, 1, 2] ≈ log(S, p[2, 1], p[2, 2])
         @test t1[2, 2, 1] ≈ log(S, p[2, 2], p[2, 2])
         @test t1[2, 2, 2] ≈ log(S, p[2, 2], p[2, 2])
+        t1a = zero.(t1)
+        forward_logs!(M, t1a, p)
+        @test all(t1 .== t1a)
         X = zero_tangent_vector(M, p)
         X[1, 1] .= [0.0, 0.5, 0.5]
         t2 = differential_forward_logs(M, p, X)
