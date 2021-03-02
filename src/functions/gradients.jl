@@ -341,6 +341,7 @@ end
 
 @doc raw"""
     ξ = forward_logs(M,x)
+    forward_logs!(M, ξ, x)
 
 compute the forward logs $F$ (generalizing forward differences) orrucirng,
 in the power manifold array, the function
@@ -349,8 +350,8 @@ in the power manifold array, the function
 $F_i(x) = \sum_{j ∈ \mathcal I_i} \log_{x_i} x_j,\quad i  ∈  \mathcal G,
 ```
 
-where $\mathcal G$ is the set of indices of the `PowerManifold` manifold `M`
-and $\mathcal I_i$ denotes the forward neighbors of $i$.
+where $\mathcal G$ is the set of indices of the `PowerManifold` manifold `M` and
+$\mathcal I_i$ denotes the forward neighbors of $i$. This can also be done in place of `ξ`.
 
 # Input
 * `M` – a `PowerManifold` manifold
@@ -376,6 +377,33 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
     N = PowerManifold(M.manifold, TPR(), sN...)
     xT = repeat(p; inner=d2)
     X = zero_tangent_vector(N, xT)
+    e_k_vals = [1 * (1:d .== k) for k in 1:d]
+    for i in R # iterate over all pixel
+        for k in 1:d # for all direction combinations
+            I = i.I
+            J = I .+ 1 .* e_k_vals[k] #i + e_k is j
+            if all(J .<= maxInd) # is this neighbor in range?
+                j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+                X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
+            end
+        end # directions
+    end # i in R
+    return X
+end
+function forward_logs!(M::PowerManifold{𝔽,TM,TSize,TPR}, X, p) where {𝔽,TM,TSize,TPR}
+    power_size = power_dimensions(M)
+    R = CartesianIndices(Tuple(power_size))
+    d = length(power_size)
+    sX = size(p)
+    maxInd = last(R).I
+    if d > 1
+        d2 = fill(1, d + 1)
+        d2[d + 1] = d
+    else
+        d2 = 1
+    end
+    sN = d > 1 ? [power_size..., d] : [power_size...]
+    N = PowerManifold(M.manifold, TPR(), sN...)
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations

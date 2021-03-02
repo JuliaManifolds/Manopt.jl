@@ -10,7 +10,7 @@ depenting on the parameter `T <: AbstractEvaluationType`.
 
 * `M`, `N` – two manifolds $\mathcal M$, $\mathcal N$
 * `cost` $F + G(Λ(⋅))$ to evaluate interims cost function values
-* `linearized_forward_oprator!!` linearized operator for the forward operation in the algorthm $DΛ$ (linearized).
+* `linearized_forward_operator!!` linearized operator for the forward operation in the algorthm $DΛ$ (linearized).
 * `linearized_adjoint_operator!!` The adjoint differential $(DΛ)^* \colon \mathcal N → T\mathcal M$
 * `prox_F!!` the proximal map belonging to $f$
 * `prox_G_dual!!` the proximal map belonging to $g_n^*$
@@ -42,9 +42,9 @@ function PrimalDualProblem(
     adjoint_linearized_operator;
     linearized_forward_operator::Union{Function,Missing}=missing,
     Λ::Union{Function,Missing}=missing,
-    evalualtion::AbstractEvaluationType=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 ) where {mT<:Manifold,nT<:Manifold}
-    return PrimalDualProblem{typeof(evalualtion),mT,nT}(
+    return PrimalDualProblem{typeof(evaluation),mT,nT}(
         M,
         N,
         cost,
@@ -74,7 +74,7 @@ function get_dual_prox(p::PrimalDualProblem{AllocatingEvaluation}, n, τ, ξ)
     return p.prox_G_dual!!(p.N, n, τ, ξ)
 end
 function get_dual_prox(p::PrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
-    η = allocate_result(p.M, get_dual_prox, ξ)
+    η = allocate_result(p.N, get_dual_prox, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 function get_dual_prox!(p::PrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
@@ -88,8 +88,10 @@ function linearized_forward_operator(p::PrimalDualProblem{AllocatingEvaluation},
     return p.linearized_forward_operator!!(p.M, m, X)
 end
 function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X)
-    y = allocate_result(p.M, linearized_forward_operator, X)
-    return p.linearized_forward_operator!!(p.M, y, m, X)
+    y = random_point(p.N)
+    forward_operator!(p, y, m)
+    Y = zero_tangent_vector(p.N, y)
+    return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 function linearized_forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X)
     return copyto!(Y, p.linearized_forward_operator!!(p.M, m, X))
@@ -102,7 +104,7 @@ function forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, x)
     return p.Λ!!(p.M, x)
 end
 function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
-    y = allocate_result(p.M, forward_operator, x)
+    y = random_point(p.N)
     return p.Λ!!(p.M, y, x)
 end
 function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)

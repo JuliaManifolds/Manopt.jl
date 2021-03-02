@@ -426,7 +426,7 @@ end
 @doc raw"""
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemanian BFGS update, where the approximating  oprator is represented by ``m`` stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration.
+This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemanian BFGS update, where the approximating  operator is represented by ``m`` stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration.
 For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion is used (see [^HuangGallivanAbsil2015]), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``\operatorname{grad}f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator
 
 ```math

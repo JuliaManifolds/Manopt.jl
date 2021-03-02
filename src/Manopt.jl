@@ -178,7 +178,17 @@ export get_cost,
     get_options,
     get_initial_stepsize,
     get_gradients,
-    get_gradients!
+    get_gradients!,
+    get_primal_prox,
+    get_primal_prox!,
+    get_dual_prox,
+    get_dual_prox!,
+    linearized_forward_operator,
+    linearized_forward_operator!,
+    adjoint_linearized_operator,
+    adjoint_linearized_operator!,
+    forward_operator,
+    forward_operator!
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
@@ -314,6 +324,7 @@ export grad_TV,
     grad_TV2!,
     grad_intrinsic_infimal_convolution_TV12,
     forward_logs,
+    forward_logs!,
     grad_distance,
     grad_distance!,
     grad_acceleration_bezier,

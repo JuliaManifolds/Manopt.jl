@@ -14,22 +14,29 @@ using Manopt, Manifolds, ManifoldsBase, Test
     N = TangentBundle(M)
     fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
     Λ(M, x) = ProductRepr(x, forward_logs(M, x))
+    function Λ!(M, Y, x)
+        N = TangentBundle(M)
+        copyto!(Y[N, :point], x)
+        forward_logs!(M, Y[N, :vector], x)
+        return Y
+    end
     prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
     cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
     prox_F(M, m, λ, x) = prox_distance(M, λ / α, data, x, 2)
     function prox_G_dual(N, n, λ, ξ)
         return ProductRepr(
-            submanifold_component(N, ξ, 1),
+            ξ[N, :point],
             project_collaborative_TV(
-                base_manifold(N),
-                λ,
-                submanifold_component(N, n, 1),
-                submanifold_component(N, ξ, 2),
-                Inf,
-                Inf,
-                1.0,
+                base_manifold(N), λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
             ),
         )
+    end
+    function prox_G_dual!(N, η, n, λ, ξ)
+        copyto!(η[N, :point], ξ[N, :point])
+        project_collaborative_TV!(
+            base_manifold(N), η[N, :vector], λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
+        )
+        return η
     end
     DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
     function adjoint_DΛ(N, n, ξ)
