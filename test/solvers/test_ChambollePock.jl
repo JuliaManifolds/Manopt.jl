@@ -39,11 +39,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         return η
     end
     DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
-    function adjoint_DΛ(N, n, ξ)
-        return adjoint_differential_forward_logs(
-            N.manifold, m, submanifold_component(N, ξ, 2)
-        )
-    end
+    adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)

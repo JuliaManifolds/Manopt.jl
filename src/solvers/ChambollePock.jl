@@ -199,7 +199,7 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
             vector_transport_to(
                 p.M,
                 o.m,
-                -o.primal_stepsize * (adjoint_linearized_operator(p, o.m, ptξn)),
+                -o.primal_stepsize * (adjoint_linearized_operator(p, o.m, o.n, ptξn)),
                 o.x,
                 o.vector_transport_method,
             ),
@@ -238,7 +238,7 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
             vector_transport_to(
                 p.M,
                 o.m,
-                -o.primal_stepsize * (adjoint_linearized_operator(p, o.n, ptξbar)),
+                -o.primal_stepsize * (adjoint_linearized_operator(p, o.m, o.n, ptξbar)),
                 o.x,
                 o.vector_transport_method,
             ),

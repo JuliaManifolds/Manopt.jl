@@ -143,6 +143,18 @@ function random_point(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)
 end
 
 @doc raw"""
+    random_point(M::TangentBundle, options...)
+
+generate a random point on the tangent bundle by calling a [`random_point`](@ref) and a
+[`random_tangent`](@ref) with the given `options...`
+"""
+function random_point(M::TangentBundle, options...)
+    p = random_point(M.manifold, options...)
+    X = random_tangent(M.manifold, p, options...)
+    return ProductRepr(p, X)
+end
+
+@doc raw"""
     random_tangent(M, p, options...)
 
 generate a random tangent vector in the tangent space of `p` on `M`. By default

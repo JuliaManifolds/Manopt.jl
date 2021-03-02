@@ -115,6 +115,7 @@ function __init__()
             SymmetricPositiveDefinite,
             Stiefel,
             Sphere,
+            TangentBundle,
             ArrayPowerRepresentation,
             ProductRepr,
             submanifold_components,

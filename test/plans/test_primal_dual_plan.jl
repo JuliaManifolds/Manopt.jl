@@ -17,6 +17,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     function Λ!(M, Y, x)
         N = TangentBundle(M)
         copyto!(Y[N, :point], x)
+        zero_tangent_vector!(N.manifold, Y[N, :vector], Y[N, :point])
         forward_logs!(M, Y[N, :vector], x)
         return Y
     end
@@ -41,14 +42,15 @@ using Manopt, Manifolds, ManifoldsBase, Test
     end
     DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
     function DΛ!(M, Y, m, X)
-        zero_tangent_vector!(M, Y[1], m)
-        differential_forward_logs!(M, X[2], m, X)
+        N = TangentBundle(M)
+        zero_tangent_vector!(M, Y[N, :point], m)
+        differential_forward_logs!(M, Y[N, :vector], m, X)
         return Y
     end
-    function adjoint_DΛ(N, m, Y)
-        return adjoint_differential_forward_logs(M, m, Y[N, :vector])
+    function adjoint_DΛ(N, m, n, Y)
+        return adjoint_differential_forward_logs(N.manifold, m, Y[N, :vector])
     end
-    function adjoint_DΛ!(N, X, m, Y)
+    function adjoint_DΛ!(N, X, m, n, Y)
         return adjoint_differential_forward_logs!(N.manifold, X, m, Y[N, :vector])
     end
 
@@ -98,26 +100,34 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test ξ1[N, :point] == ξ2[N, :point]
         @test ξ1[N, :vector] == ξ2[N, :vector]
 
-#        y1 = forward_operator(p1, x0)
-#        y2 = forward_operator(p2, x0)
-#        @test y1 == y2
-#        forward_operator!(p1, y1, x0)
-#        forward_operator!(p2, y2, x0)
-#        @test y1 == y2
+        y1 = forward_operator(p1, x0)
+        y2 = forward_operator(p2, x0)
+        @test y1[N, :point][1] == y2[N, :point][1]
+        @test y1[N, :point][2] == y2[N, :point][2]
+        @test y1[N, :vector][1] == y2[N, :vector][1]
+        @test y1[N, :vector][2] == y2[N, :vector][2]
+        forward_operator!(p1, y1, x0)
+        forward_operator!(p2, y2, x0)
+        @test y1[N, :point][1] == y2[N, :point][1]
+        @test y1[N, :point][2] == y2[N, :point][2]
+        @test y1[N, :vector][1] == y2[N, :vector][1]
+        @test y1[N, :vector][2] == y2[N, :vector][2]
 
         X = log(M, m, x0)
         Y1 = linearized_forward_operator(p1, m, X)
         Y2 = linearized_forward_operator(p2, m, X)
-        @test Y1 == Y2
+        @test Y1[N, :point] == Y2[N, :point]
+        @test Y1[N, :vector] == Y2[N, :vector]
         linearized_forward_operator!(p1, Y1, m, X)
         linearized_forward_operator!(p2, Y2, m, X)
-        @test Y1 == Y2
+        @test Y1[N, :point] == Y2[N, :point]
+        @test Y1[N, :vector] == Y2[N, :vector]
 
-        Z1 = adjoint_linearized_operator(p1, n, ξ0)
-        Z2 = adjoint_linearized_operator(p2, n, ξ0)
+        Z1 = adjoint_linearized_operator(p1, m, n, ξ0)
+        Z2 = adjoint_linearized_operator(p2, m, n, ξ0)
         @test Z1 == Z2
-        forward_operator!(p1, Z1, ξ0)
-        forward_operator!(p2, Z2, ξ0)
+        adjoint_linearized_operator!(p1, Z1, m, n, ξ0)
+        adjoint_linearized_operator!(p2, Z2, m, n, ξ0)
         @test Z1 == Z2
     end
     @testset "Primal/Dual residual" begin
