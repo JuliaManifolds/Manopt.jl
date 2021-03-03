@@ -59,7 +59,7 @@ function grad_TV2(M::NONMUTATINGMANIFOLDS, q, p::Int=1)
     end
     return X
 end
-function prox_TV2(::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
+function prox_TV2(::NONMUTATINGMANIFOLDS, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
     w = @SVector [1.0, -2.0, 1.0]
     x = SVector(pointTuple)
     if p == 1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
@@ -77,4 +77,33 @@ function prox_TV2(::Circle, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
             ),
         )
     end
+end
+function prox_TV2(M::PowerManifold{𝔽,N}, λ, x, p::Int=1) where {𝔽,N<:NONMUTATINGMANIFOLDS}
+    power_size = power_dimensions(M)
+    R = CartesianIndices(power_size)
+    d = length(size(x))
+    minInd = first(R).I
+    maxInd = last(R).I
+    y = copy(x)
+    for k in 1:d # for all directions
+        ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
+        for l in 0:1
+            for i in R # iterate over all pixel
+                if (i[k] % 3) == l
+                    JForward = i.I .+ ek.I #i + e_k
+                    JBackward = i.I .- ek.I # i - e_k
+                    if all(JForward .<= maxInd) && all(JBackward .>= minInd)
+                        (y[jBackward], y[i], y[jForward]) =
+                            prox_TV2(
+                                M.manifold,
+                                λ,
+                                (y[M, JBackward...], y[M, i.I...], y[M, JForward...]),
+                                p,
+                            ).data # Compute TV on these
+                    end
+                end # if mod 3
+            end # i in R
+        end # for mod 3
+    end # directions
+    return y
 end
