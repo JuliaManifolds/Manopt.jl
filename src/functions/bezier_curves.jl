@@ -27,7 +27,7 @@ Base.show(io::IO, b::BezierSegment) = print(io, "BezierSegment($(b.pts))")
     de_casteljau(M::Manifold, b::BezierSegment NTuple{N,P}) -> Function
 
 return the [Bézier curve](https://en.wikipedia.org/wiki/Bézier_curve)
-``β(\cdot;b_0,…,b_n)\colon [0,1] → \mathcal M`` defined by the control points
+``β(⋅;b_0,…,b_n)\colon [0,1] → \mathcal M`` defined by the control points
 ``b_0,…,b_n\in\mathcal M``, ``n∈\mathbb N``, as a [`BezierSegment`](@ref).
 This function implements de Casteljau's algorithm[^Casteljau1959][^Casteljau1963] gneralized
 to manifolds[^PopielNoakes2007]: Let ``γ_{a,b}(t)`` denote the
@@ -39,6 +39,7 @@ shortest geodesic connecting ``a,b\in\mathcal M``. Then the curve is defined by 
     β(t;b_0,…,b_n) &= \gamma_{β(t;b_0,…,b_{n-1}), β(t;b_1,…,b_n)}(t),
 \end{aligned}
 ````
+
 and `P` is the type of a point on the `Manifold` `M`.
 
     de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment}) -> Function

@@ -4,7 +4,7 @@
         M::Manifold,
         Y,
         b::BezierSegment,
-        t::Number,
+        t,
         X::BezierSegment
     )
 
@@ -14,16 +14,12 @@ is the “change” of the curve at `t```∈[0,1]``. The comptation can be done 
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
-function differential_bezier_control(
-    M::Manifold, b::BezierSegment, t::Number, X::BezierSegment
-)
+function differential_bezier_control(M::Manifold, b::BezierSegment, t, X::BezierSegment)
     # iterative, because recursively would be too many Casteljau evals
     Y = similar(first(X.pts))
     return differential_bezier_control!(M, Y, b, t, X)
 end
-function differential_bezier_control!(
-    M::Manifold, Y, b::BezierSegment, t::Number, X::BezierSegment
-)
+function differential_bezier_control!(M::Manifold, Y, b::BezierSegment, t, X::BezierSegment)
     # iterative, because recursively would be too many Casteljau evals
     Z = similar(X.pts)
     c = deepcopy(b.pts)
@@ -43,14 +39,14 @@ end
     differential_bezier_control(
         M::Manifold,
         b::BezierSegment,
-        T::Array{Float64,1},
+        T::AbstractVector,
         X::BezierSegment,
     )
     differential_bezier_control!(
         M::Manifold,
         Y,
         b::BezierSegment,
-        T::Array{Float64,1},
+        T::AbstractVector,
         X::BezierSegment,
     )
 
@@ -62,12 +58,12 @@ The compuation can be done in place of `Y`.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
-    M::Manifold, b::BezierSegment, T::AbstractVector{<:Number}, X::BezierSegment
+    M::Manifold, b::BezierSegment, T::AbstractVector, X::BezierSegment
 )
     return differential_bezier_control.(Ref(M), Ref(b), T, Ref(X))
 end
 function differential_bezier_control!(
-    M::Manifold, Y, b::BezierSegment, T::AbstractVector{<:Number}, X::BezierSegment
+    M::Manifold, Y, b::BezierSegment, T::AbstractVector, X::BezierSegment
 )
     return differential_bezier_control!.(Ref(M), Y, Ref(b), T, Ref(X))
 end
@@ -75,14 +71,14 @@ end
     differential_bezier_control(
         M::Manifold,
         B::AbstractVector{<:BezierSegment},
-        t::Float64,
+        t,
         X::AbstractVector{<:BezierSegment}
     )
     differential_bezier_control!(
         M::Manifold,
         Y::AbstractVector{<:BezierSegment}
         B::AbstractVector{<:BezierSegment},
-        t::Float64,
+        t,
         X::AbstractVector{<:BezierSegment}
     )
 
@@ -95,10 +91,7 @@ The compuation can be done in place of `Y`.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
-    M::Manifold,
-    B::AbstractVector{<:BezierSegment},
-    t::Float64,
-    X::AbstractVector{<:BezierSegment},
+    M::Manifold, B::AbstractVector{<:BezierSegment}, t, X::AbstractVector{<:BezierSegment}
 )
     if (0 > t) || (t > length(B))
         return throw(
@@ -120,7 +113,7 @@ function differential_bezier_control!(
     M::Manifold,
     Y,
     B::AbstractVector{<:BezierSegment},
-    t::Float64,
+    t,
     X::AbstractVector{<:BezierSegment},
 )
     if (0 > t) || (t > length(B))
@@ -144,14 +137,14 @@ end
     differential_bezier_control(
         M::Manifold,
         B::AbstractVector{<:BezierSegment},
-        T::AbstractVector{Float}
+        T::AbstractVector
         Ξ::AbstractVector{<:BezierSegment}
     )
     differential_bezier_control!(
         M::Manifold,
         Θ::AbstractVector{<:BezierSegment}
         B::AbstractVector{<:BezierSegment},
-        T::AbstractVector{Float}
+        T::AbstractVector
         Ξ::AbstractVector{<:BezierSegment}
     )
 
@@ -173,7 +166,7 @@ See [`de_casteljau`](@ref) for more details on the curve and [^BergmannGousenbou
 function differential_bezier_control(
     M::Manifold,
     B::AbstractVector{<:BezierSegment},
-    T::AbstractVector{<:Number},
+    T::AbstractVector,
     Ξ::AbstractVector{<:BezierSegment},
 )
     return differential_bezier_control.(Ref(M), Ref(B), T, Ref(Ξ))
@@ -182,7 +175,7 @@ function differential_bezier_control!(
     M::Manifold,
     Y,
     B::AbstractVector{<:BezierSegment},
-    T::Array{Float64,1},
+    T::AbstractVector,
     Ξ::AbstractVector{<:BezierSegment},
 )
     return differential_bezier_control!.(Ref(M), Y, Ref(B), T, Ref(Ξ))

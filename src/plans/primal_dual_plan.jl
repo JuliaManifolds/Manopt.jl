@@ -270,7 +270,7 @@ Compute the primal residual at current iterate $k$ given the necessary values $x
 V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 \Bigr\rVert
 ```
-where $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref)
+where $V_{⋅\gets⋅}$ is the vector transport used in the [`ChambollePockOptions`](@ref)
 """
 function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
     return norm(
@@ -326,7 +326,7 @@ and for the `:exact` variant
 \Bigr\rVert
 ```
 
-where in both cases $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref).
+where in both cases $V_{⋅\gets⋅}$ is the vector transport used in the [`ChambollePockOptions`](@ref).
 """
 function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
     if o.variant === :linearized

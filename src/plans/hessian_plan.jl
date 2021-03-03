@@ -9,7 +9,7 @@ specify a problem for hessian based algorithms.
 * `cost` : a function $F\colon\mathcal M→ℝ$ to minimize
 * `gradient`     : the gradient $\operatorname{grad}F:\mathcal M
   → \mathcal T\mathcal M$ of the cost function $F$
-* `hessian`      : the hessian $\operatorname{Hess}F(x)[\cdot]: \mathcal T_{x} \mathcal M
+* `hessian`      : the hessian $\operatorname{Hess}F(x)[⋅]: \mathcal T_{x} \mathcal M
   → \mathcal T_{x} \mathcal M$ of the cost function $F$
 * `precon`       : the symmetric, positive deﬁnite
     preconditioner (approximation of the inverse of the Hessian of $F$)

@@ -119,7 +119,7 @@ direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^DaiYuan1999]
 
 adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
-where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
+where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
 
@@ -225,7 +225,7 @@ the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
 direction ``\delta=\delta_k``, where the last three ones are stored in the variables with
 prequel `Old` based on [^HagerZhang2005]
 adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
-where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
+where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 ````math
 β_k = \Bigl\langle\nu_k -
@@ -304,7 +304,7 @@ Then the update reads
 β_k = \frac{\langle ξ_{k+1}, \nu_k \rangle_{x_{k+1}} }
     { \langle P_{x_{k+1}\gets x_k} \delta_k, \nu_k\rangle_{x_{k+1}} },
 ````
-where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
+where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 # Constructor
     HeestenesStiefelCoefficient(
@@ -358,7 +358,7 @@ the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
 direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^LuiStorey1991]
 adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
-where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
+where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
 
@@ -418,7 +418,7 @@ direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^PolakRibiere1969][^Polyak1969]
 
 adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
-where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
+where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the update reads
 ````math

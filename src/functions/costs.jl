@@ -255,7 +255,7 @@ E(x) = \sum_{i ∈ \mathcal I,\ j_1 ∈  \mathcal I^+_i,\ j_2 ∈  \mathcal I^-_
 d^p_{\mathcal M}(c_i(x_{j_1},x_{j_2}), x_i),
 ```
 
-where ``c_i(\cdot,\cdot)`` denotes the mid point between its two arguments that is
+where ``c_i(⋅,⋅)`` denotes the mid point between its two arguments that is
 nearest to ``x_i``.
 
 # See also

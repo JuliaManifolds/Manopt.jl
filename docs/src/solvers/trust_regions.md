@@ -36,12 +36,12 @@ Repeat until a convergence criterion is reached
 2. Set $η^{* }$ as the solution of the trust-region subproblem, computed by
     the tcg-method with $η$ as initial vector.
 3. If using randomized approach compare $η^{* }$ with the Cauchy point
-    $η_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$ by the model function $m_{x_k}(\cdot)$. If the
+    $η_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$ by the model function $m_{x_k}(⋅)$. If the
     model decrease is larger by using the Cauchy point, set
     $η^{* } = η_{c}^{* }$.
 4. Set ${x}^{* } = \operatorname{Retr}_{x_k}(η^{* })$.
 5. Set $\rho = \frac{F(x_k)-F({x}^{* })}{m_{x_k}(η)-m_{x_k}(η^{* })}$, where
-    $m_{x_k}(\cdot)$ describes the quadratic model function.
+    $m_{x_k}(⋅)$ describes the quadratic model function.
 6. Update the trust-region radius:
     $\Delta = \begin{cases} \frac{1}{4} \Delta & \rho < \frac{1}{4} \,
     \text{or} \, m_{x_k}(η)-m_{x_k}(η^{* }) \leq 0 \, \text{or}  \,
@@ -112,7 +112,7 @@ $m_{x_k}(η^{* }) = F(x_k) + \langle η^{* },
 If $m_{x_k}(η_{c}^{* }) < m_{x_k}(η^{* })$ then is
 $m_{x_k}(η_{c}^{* })$ the better choice.
 
-To step number 4: $\operatorname{Retr}_{x_k}(\cdot)$ denotes the retraction, a
+To step number 4: $\operatorname{Retr}_{x_k}(⋅)$ denotes the retraction, a
 mapping $\operatorname{Retr}_{x_k}:T_{x_k}\mathcal{M} \rightarrow \mathcal{M}$
 wich approximates the exponential map. In some cases it is cheaper to use this
 instead of the exponential.

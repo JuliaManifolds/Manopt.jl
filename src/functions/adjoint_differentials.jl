@@ -1,16 +1,11 @@
 @doc raw"""
-    adjoint_differential_bezier_control(
-        M::Manifold,
-        b::BezierSegment,
-        t::Float64,
-        η::Q
-    )
+    adjoint_differential_bezier_control(M::Manifold, b::BezierSegment, t, η)
     adjoint_differential_bezier_control!(
         M::Manifold,
         Y::BezierSegment,
         b::BezierSegment,
-        t::Float64,
-        η::Q
+        t,
+        η,
     )
 
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
@@ -20,9 +15,7 @@ This can be computed in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
-function adjoint_differential_bezier_control(
-    M::Manifold, b::BezierSegment, t::Float64, η::Q
-) where {Q}
+function adjoint_differential_bezier_control(M::Manifold, b::BezierSegment, t, η)
     n = length(b.pts)
     if n == 2
         return BezierSegment([
@@ -52,8 +45,8 @@ function adjoint_differential_bezier_control(
     return BezierSegment(Y)
 end
 function adjoint_differential_bezier_control!(
-    M::Manifold, Y::BezierSegment, b::BezierSegment, t::Float64, η::Q
-) where {Q}
+    M::Manifold, Y::BezierSegment, b::BezierSegment, t, η
+)
     n = length(b.pts)
     if n == 2
         adjoint_differential_geodesic_startpoint!(M, Y.pts[1], b.pts[1], b.pts[2], t, η)
@@ -86,15 +79,15 @@ end
     adjoint_differential_bezier_control(
         M::Manifold,
         b::BezierSegment,
-        t::Array{Float64,1},
-        X::Array{Q,1}
+        t::AbstractVector,
+        X::AbstractVector,
     )
     adjoint_differential_bezier_control!(
         M::Manifold,
         Y::BezierSegment,
         b::BezierSegment,
-        t::Array{Float64,1},
-        X::Array{Q,1}
+        t::AbstractVector,
+        X::AbstractVector,
     )
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a points `T```=(t_i)_{i=1}^n`` that
@@ -112,18 +105,14 @@ See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbour
     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function adjoint_differential_bezier_control(
-    M::Manifold, b::BezierSegment, t::AbstractVector{Float64}, X::AbstractVector{Q}
-) where {Q}
+    M::Manifold, b::BezierSegment, t::AbstractVector, X::AbstractVector
+)
     effects = [bt.pts for bt in adjoint_differential_bezier_control.(Ref(M), Ref(b), t, X)]
     return BezierSegment(sum(effects))
 end
 function adjoint_differential_bezier_control!(
-    M::Manifold,
-    Y::BezierSegment,
-    b::BezierSegment,
-    t::AbstractVector{Float64},
-    X::AbstractVector{Q},
-) where {Q}
+    M::Manifold, Y::BezierSegment, b::BezierSegment, t::AbstractVector, X::AbstractVector
+)
     Z = BezierSegment(similar.(Y.pts))
     fill!.(Y.pts, zero(eltype(first(Y.pts))))
     for i in 1:length(t)
@@ -137,14 +126,14 @@ end
     adjoint_differential_bezier_control(
         M::MAnifold,
         B::AbstractVector{<:BezierSegment},
-        t::Float64,
+        t,
         X
     )
     adjoint_differential_bezier_control!(
         M::MAnifold,
         Y::AbstractVector{<:BezierSegment},
         B::AbstractVector{<:BezierSegment},
-        t::Float64,
+        t,
         X
     )
 
@@ -157,8 +146,8 @@ This can be computed in place of `Y`.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
-    M::Manifold, B::AbstractVector{<:BezierSegment}, t::Float64, X::Q
-) where {Q}
+    M::Manifold, B::AbstractVector{<:BezierSegment}, t, X
+)
     Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
     return adjoint_differential_bezier_control!(M, Y, B, t, X)
 end
@@ -166,9 +155,9 @@ function adjoint_differential_bezier_control!(
     M::Manifold,
     Y::AbstractVector{<:BezierSegment},
     B::AbstractVector{<:BezierSegment},
-    t::Float64,
-    X::Q,
-) where {Q}
+    t,
+    X,
+)
     # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
     if (0 > t) || (t > length(B))
         error(
@@ -190,14 +179,14 @@ end
 @doc raw"""
     adjoint_differential_bezier_control(
         M::MAnifold,
-        T::AbstractVector{<:Number},
-        X::AbstractVector{Q},
+        T::AbstractVector,
+        X::AbstractVector,
     )
     adjoint_differential_bezier_control!(
         M::MAnifold,
         Y::AbstractVector{<:BezierSegment},
-        T::AbstractVector{<:Number},
-        X::AbstractVector{Q},
+        T::AbstractVector,
+        X::AbstractVector,
     )
 
 Evaluate the adjoint of the differential with respect to the controlpoints at several times `T`.
@@ -206,11 +195,8 @@ This can be computed in place of `Y`.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
-    M::Manifold,
-    B::AbstractVector{<:BezierSegment},
-    T::AbstractVector{<:Number},
-    X::AbstractVector{Q},
-) where {Q}
+    M::Manifold, B::AbstractVector{<:BezierSegment}, T::AbstractVector, X::AbstractVector
+)
     Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
     return adjoint_differential_bezier_control!(M, Y, B, T, X)
 end
@@ -218,9 +204,9 @@ function adjoint_differential_bezier_control!(
     M::Manifold,
     Y::AbstractVector{<:BezierSegment},
     B::AbstractVector{<:BezierSegment},
-    T::AbstractVector{Float64},
-    X::AbstractVector{Q},
-) where {Q}
+    T::AbstractVector,
+    X::AbstractVector,
+)
     Z = [BezierSegment(similar.(y.pts)) for y in Y]
     for j in 1:length(T) # for all times
         adjoint_differential_bezier_control!(M, Z, B, T[j], X[j])

@@ -12,7 +12,8 @@ function meanSquaredError(M::PowerManifold, x, y)
 end
 @doc raw"""
     meanSquaredError(M,x,y)
-Computes the (mean) squared error between the two
+
+Compute the (mean) squared error between the two
 points `x` and `y` on the `PowerManifold` manifold `M`.
 """
 function meanAverageError(M::Manifold, x, y)

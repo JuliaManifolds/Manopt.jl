@@ -75,9 +75,9 @@ X = [0.0, 0.4, 0.5]
 # \Gamma_{g,X}(s,t):=\exp{\gamma_{p,X}(s)}[t\log_{g(s;p,X)}p],\qquad s∈(-\varepsilon,\varepsilon),\ t∈[0,1].
 # ````
 # Intuitively we make a small step $s$ into direction $ξ$ using the geodesic
-# $g(\cdot; p,X)$ and from $r=g(s; p,X)$ we follow (in $t$) the geodesic
-# $g(\cdot; r,q)$. The corresponding Jacobi field $J_{g,X}$
-# along $g(\cdot; p,q)$ is given by
+# $g(⋅; p,X)$ and from $r=g(s; p,X)$ we follow (in $t$) the geodesic
+# $g(⋅; r,q)$. The corresponding Jacobi field $J_{g,X}$
+# along $g(⋅; p,q)$ is given by
 #
 # ````math
 # J_{g,X}(t):=\frac{D}{\partial s}\Gamma_{g,X}(s,t)\Bigl\rvert_{s=0}
