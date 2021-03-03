@@ -22,7 +22,7 @@ function Λ(M, x)
 end
 function prior(M, x)
     # inner 2-norm over logs, 1-norm over the pixel
-    return norm(norm.(Ref(pixelM), x, submanifold_component(N, Λ(x), 2)), 1)
+    return norm(norm.(Ref(pixelM), x, (Λ(M,x))[N, :vector]), 1)
 end
 cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
 
@@ -33,16 +33,16 @@ function proxPriorDual(N, n, λ, ξ)
         project_collaborative_TV(
             base_manifold(N),
             λ,
-            submanifold_component(N, n, 1),
-            submanifold_component(N, ξ, 2),
+            n[N, :point],
+            ξ[N, :vector],
             Inf,
             Inf,
         ),
     )
 end
-function DΛ(m, ξm)
+function DΛ(M, m, ξm)
     return ProductRepr(
         repeat(ξm; inner=rep(length(size(m)))), differential_forward_logs(M, m, ξm)
     )
 end
-AdjDΛ(m, ξn) = adjoint_differential_forward_logs(M, m, submanifold_component(N, ξn, 2));
+AdjDΛ(N, m, n, ξ) = adjoint_differential_forward_logs(M, m, ξ[N, :vector])

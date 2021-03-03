@@ -100,8 +100,8 @@ for e in experiments
         get(e, :n, Λ(get(e, :m, m))),
         proxFidelity,
         proxPriorDual,
-        DΛ,
         AdjDΛ;
+        linearized_forward_operator=DΛ,
         primal_stepsize=get(e, :σ, σ),
         dual_stepsize=get(e, :τ, τ),
         relaxation=get(e, :θ, θ),

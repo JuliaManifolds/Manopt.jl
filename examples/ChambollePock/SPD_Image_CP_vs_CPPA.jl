@@ -58,7 +58,7 @@ pixelM = SymmetricPositiveDefinite(3)
 include("Image_TV_commons.jl")
 
 m = fill(Matrix{Float64}(I, 3, 3), size(f))
-n = Λ(m)
+n = Λ(M, m)
 x0 = f
 ξ0 = ProductRepr(zero_tangent_vector(M2, m2(m)), zero_tangent_vector(M2, m2(m)))
 
@@ -73,8 +73,8 @@ x0 = f
     n,
     proxFidelity,
     proxPriorDual,
-    DΛ,
     AdjDΛ;
+    linearized_forward_operator=DΛ,
     primal_stepsize=σ,
     dual_stepsize=τ,
     relaxation=θ,
