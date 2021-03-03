@@ -582,7 +582,13 @@ end
 Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
-DebugPrimalChange(opts...) = DebugChange(opts[1], "Primal Change: ", opts[2:end]...)
+function DebugPrimalChange(
+    a::StoreOptionsAction=StoreOptionsAction((:x,)),
+    prefix="Primal Change: ",
+    io::IO=stdout
+)
+    return DebugChange(a,prefix,io)
+end
 
 """
     DebugPrimalIterate(opts...)
