@@ -1,9 +1,9 @@
 @doc raw"""
     grad_acceleration_bezier(
         M::Manifold,
-        B::AbstractVector{P},
+        B::AbstractVector,
         degrees::AbstractVector{<:Integer}
-        T::AbstractVector{<:AbstractFloat}
+        T::AbstractVector
     )
 
 compute the gradient of the discretized acceleration of a (composite) Bézier curve ``c_B(t)``
@@ -29,10 +29,10 @@ See [`de_casteljau`](@ref) for more details on the curve.
 """
 function grad_acceleration_bezier(
     M::Manifold,
-    B::AbstractVector{P},
+    B::AbstractVector,
     degrees::AbstractVector{<:Integer},
-    T::AbstractVector{<:AbstractFloat},
-) where {P}
+    T::AbstractVector,
+)
     gradB = _grad_acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     for k in 1:length(Bt) # we interpolate so we do not move end points
@@ -43,7 +43,7 @@ function grad_acceleration_bezier(
     return get_bezier_points(M, gradB, :differentiable)
 end
 function grad_acceleration_bezier(
-    M::Manifold, b::BezierSegment, T::AbstractVector{<:AbstractFloat}
+    M::Manifold, b::BezierSegment, T::AbstractVector
 )
     gradb = _grad_acceleration_bezier(M, b.pts, [get_bezier_degree(M, b)], T)[1]
     zero_tangent_vector!(M, gradb.pts[1], b.pts[1])
@@ -56,8 +56,8 @@ end
         M::Manifold,
         B::AbstractVector{P},
         degrees::AbstractVector{<:Integer},
-        T::AbstractVector{<:AbstractFloat},
-        λ::Float64,
+        T::AbstractVector,
+        λ,
         d::AbstractVector{P}
     ) where {P}
 
@@ -84,8 +84,8 @@ function grad_L2_acceleration_bezier(
     M::Manifold,
     B::AbstractVector{P},
     degrees::AbstractVector{<:Integer},
-    T::AbstractVector{<:AbstractFloat},
-    λ::Float64,
+    T::AbstractVector,
+    λ,
     d::AbstractVector{P},
 ) where {P}
     gradB = _grad_acceleration_bezier(M, B, degrees, T)
@@ -105,10 +105,10 @@ end
 # common helper for the two acceleration grads
 function _grad_acceleration_bezier(
     M::Manifold,
-    B::AbstractVector{P},
-    degrees::AbstractVector{Int},
-    T::AbstractVector{Float64},
-) where {P}
+    B::AbstractVector,
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector,
+)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     n = length(T)
     m = length(Bt)
@@ -203,7 +203,7 @@ function grad_distance!(M, X, y, x, p::Int=2)
 end
 
 @doc raw"""
-    grad_u,⁠ grad_v = grad_intrinsic_infimal_convolution_TV12(M,f,u,v,α,β)
+    grad_u,⁠ grad_v = grad_intrinsic_infimal_convolution_TV12(M, f, u, v, α, β)
 
 compute (sub)gradient of the intrinsic infimal convolution model using the mid point
 model of second order differences, see [`costTV2`](@ref), i.e. for some ``f ∈ \mathcal M``
@@ -220,7 +220,7 @@ E(u,v) =
 where both total variations refer to the intrinsic ones, [`grad_TV`](@ref) and
 [`grad_TV2`](@ref), respectively.
 """
-function grad_intrinsic_infimal_convolution_TV12(M::mT, f, u, v, α, β) where {mT<:Manifold}
+function grad_intrinsic_infimal_convolution_TV12(M::Manifold, f, u, v, α, β)
     c = mid_point(M, u, v, f)
     iL = log(M, c, f)
     return adjoint_differential_geodesic_startpoint(M, u, v, 1 / 2, iL) +
@@ -229,13 +229,13 @@ function grad_intrinsic_infimal_convolution_TV12(M::mT, f, u, v, α, β) where {
     α * (1 - β) * grad_TV2(M, v)
 end
 @doc raw"""
-    grad_TV(M,(x,y),[p=1])
-    grad_TV!(M, X, (x,y),[p=1])
+    X = grad_TV(M, (x,y)[, p=1])
+    grad_TV!(M, X, (x,y)[, p=1])
 
 compute the (sub) gradient of ``\frac{1}{p}d^p_{\mathcal M}(x,y)`` with respect
 to both ``x`` and ``y`` (in place of `X` and `Y`).
 """
-function grad_TV(M::MT, q::Tuple{T,T}, p=1) where {MT<:Manifold,T}
+function grad_TV(M::Manifold, q::Tuple{T,T}, p=1) where {T}
     if p == 2
         return (-log(M, q[1], q[2]), -log(M, q[2], q[1]))
     else
@@ -247,7 +247,7 @@ function grad_TV(M::MT, q::Tuple{T,T}, p=1) where {MT<:Manifold,T}
         end
     end
 end
-function grad_TV!(M::MT, X, q::Tuple{T,T}, p=1) where {MT<:Manifold,T}
+function grad_TV!(M::Manifold, X, q::Tuple{T,T}, p=1) where {T}
     d = distance(M, q[1], q[2])
     if d == 0 # subdifferential containing zero
         zero_tangent_vector!(M, X[1], q[1])
@@ -266,8 +266,8 @@ function grad_TV!(M::MT, X, q::Tuple{T,T}, p=1) where {MT<:Manifold,T}
     return X
 end
 @doc raw"""
-    ξ = grad_TV(M, λ, x, [p=1])
-    grad_TV!(M, X, λ, x, [p=1])
+    X = grad_TV(M, λ, x[, p=1])
+    grad_TV!(M, X, λ, x[, p=1])
 
 Compute the (sub)gradient ``\partial F`` of all forward differences orrucirng,
 in the power manifold array, i.e. of the function
@@ -423,7 +423,7 @@ function forward_logs!(M::PowerManifold{𝔽,TM,TSize,TPR}, X, p) where {𝔽,TM
 end
 
 @doc raw"""
-    grad_TV2(M, q[, p=1])
+    Y = grad_TV2(M, q[, p=1])
     grad_TV2!(M, Y, q[, p=1])
 
 computes the (sub) gradient of ``\frac{1}{p}d_2^p(q_1, q_2, q_3)`` with respect
@@ -445,11 +445,11 @@ the evaluation of an [`adjoint_Jacobi_field`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
 """
-function grad_TV2(M::Manifold, q, p::Number=1)
+function grad_TV2(M::Manifold, q, p::Int=1)
     X = [zero_tangent_vector(M, x) for x in q]
     return grad_TV2!(M, X, q, p)
 end
-function grad_TV2!(M::Manifold, X, q, p::Number=1)
+function grad_TV2!(M::Manifold, X, q, p::Int=1)
     c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
     d = distance(M, q[2], c)
     innerLog = -log(M, c, q[2])
@@ -477,7 +477,7 @@ function grad_TV2!(M::Manifold, X, q, p::Number=1)
     return X
 end
 @doc raw"""
-    grad_TV2(M::PowerManifold, q [,p=1])
+    grad_TV2(M::PowerManifold, q[, p=1])
 
 computes the (sub) gradient of ``\frac{1}{p}d_2^p(q_1,q_2,q_3)``
 with respect to all ``q_1,q_2,q_3`` occuring along any array dimension in the

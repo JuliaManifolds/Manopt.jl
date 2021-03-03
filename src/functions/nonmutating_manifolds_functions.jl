@@ -37,7 +37,7 @@ function jacobi_field(
     )[1]
     return Y
 end
-function grad_TV2(M::NONMUTATINGMANIFOLDS, q, p::Number=1)
+function grad_TV2(M::NONMUTATINGMANIFOLDS, q, p::Int=1)
     c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
     d = distance(M, q[2], c)
     innerLog = -log(M, c, q[2])

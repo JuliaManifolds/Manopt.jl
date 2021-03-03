@@ -133,5 +133,11 @@ Random.seed!(42)
         ph = [0.0, 0.0, 1.0]
         Xh = random_tangent(Mh, ph)
         @test is_tangent_vector(Mh, ph, Xh, true)
+
+        MT = TangentBundle(Msp)
+        pT = random_point(MT)
+        @test is_manifold_point(MT, pT, true)
+        XT = random_tangent(MT, pT)
+        @test is_tangent_vector(MT, pT, XT, true; atol=10^(-15))
     end
 end

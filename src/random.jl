@@ -76,7 +76,7 @@ function random_point(M::ProductManifold, o...)
 end
 
 @doc raw"""
-   random_point(M::Rotations, :Gaussian [, σ=1.0])
+    random_point(M::Rotations, :Gaussian [, σ=1.0])
 
 return a random point `p` on the manifold `Rotations`
 by generating a (Gaussian) random orthogonal matrix with determinant $+1$. Let $QR = A$
@@ -286,4 +286,16 @@ function random_tangent(::SymmetricPositiveDefinite, p, ::Val{:Rician}, σ::Real
     C = cholesky(Hermitian(p))
     R = C.L + sqrt(σ) * triu(randn(size(p, 1), size(p, 2)), 0)
     return R * R'
+end
+
+@doc raw"""
+    random_tangent(M::TangentBundle, p, options...)
+
+generate a random tangent vector at `p` on the tangent bundle by calling
+[`random_tangent`](@ref) with the given `options...` twice.
+"""
+function random_tangent(M::TangentBundle, p, options...)
+    X = random_tangent(M.manifold, p[M, :point], options...)
+    Y = random_tangent(M.manifold, p[M, :point], options...)
+    return ProductRepr(X, Y)
 end
