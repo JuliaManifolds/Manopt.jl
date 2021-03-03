@@ -8,10 +8,13 @@ perform a stochastic gradient descent
 * `M` a manifold ``\mathcal M``
 * `gradF` – a gradient function, that either returns a vector of the subgradients
   or is a vector of gradients
-* `x` – an initial value $x ∈ \mathcal M$
+* `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
 * `cost` – (`missing`) you can provide a cost function for example to track the function value
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by
+   allocation (default) form `gradF(M, x)` or [`MutatingEvaluation`](@ref) in place, i.e.
+   is of the form `gradF!(M, X, x)` (elementwise).
 * `evaluation_order` – (`:Random`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle permuted sequence (`:Linear`) or the default `:Random` one.
@@ -36,7 +39,7 @@ end
 @doc raw"""
     stochastic_gradient_descent!(M, gradF, x)
 
-perform a stochastic gradient descent inplace of `x`.
+perform a stochastic gradient descent in place of `x`.
 
 # Input
 

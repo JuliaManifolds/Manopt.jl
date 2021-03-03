@@ -27,11 +27,11 @@ Base.show(io::IO, b::BezierSegment) = print(io, "BezierSegment($(b.pts))")
     de_casteljau(M::Manifold, b::BezierSegment NTuple{N,P}) -> Function
 
 return the [Bézier curve](https://en.wikipedia.org/wiki/Bézier_curve)
-``β(⋅;b_0,…,b_n)\colon [0,1] → \mathcal M`` defined by the control points
-``b_0,…,b_n\in\mathcal M``, ``n∈\mathbb N``, as a [`BezierSegment`](@ref).
+``β(⋅;b_0,…,b_n): [0,1] → \mathcal M`` defined by the control points
+``b_0,…,b_n∈\mathcal M``, ``n∈\mathbb N``, as a [`BezierSegment`](@ref).
 This function implements de Casteljau's algorithm[^Casteljau1959][^Casteljau1963] gneralized
 to manifolds[^PopielNoakes2007]: Let ``γ_{a,b}(t)`` denote the
-shortest geodesic connecting ``a,b\in\mathcal M``. Then the curve is defined by the recursion
+shortest geodesic connecting ``a,b∈\mathcal M``. Then the curve is defined by the recursion
 
 ````math
 \begin{aligned}
@@ -47,7 +47,7 @@ and `P` is the type of a point on the `Manifold` `M`.
 Given a vector of Bézier segments, i.e. a vector of control points
 ``B=\bigl( (b_{0,0},…,b_{n_0,0}),…,(b_{0,m},… b_{n_m,m}) \bigr)``,
 where the different segments might be of different degree(s) ``n_0,…,n_m``. The resulting
-composite Bézier curve ``c_B\colon[0,m] → \mathcal M`` consists of ``m`` segments which are
+composite Bézier curve ``c_B:[0,m] → \mathcal M`` consists of ``m`` segments which are
 Bézier curves.
 
 ````math
@@ -55,7 +55,7 @@ c_B(t) :=
     \begin{cases}
         β(t; b_{0,0},…,b_{n_0,0}) & \text{ if } t ∈[0,1]\\
         β(t-i; b_{0,i},…,b_{n_i,i}) & \text{ if }
-            t∈(i,i+1], \quad i\in\{1,…,m-1\}.
+            t∈(i,i+1], \quad i∈\{1,…,m-1\}.
     \end{cases}
 ````
 

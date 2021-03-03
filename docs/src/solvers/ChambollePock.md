@@ -3,7 +3,7 @@
 The Riemannian Chambolle–Pock is a generalization of the Chambolle–Pock algorithm[^ChambollePock2011].
 It is also known as primal dual hybrig gradient (PDHG) or primal dual proximal splitting (PDPS) algorithm.
 
-In order to minimize over $p\in\mathcal M§ the cost function consisting of
+In order to minimize over $p∈\mathcal M§ the cost function consisting of
 
 ```math
 F(p) + G(Λ(p)),
@@ -20,7 +20,7 @@ as well as with primal versus dual relaxation (see `relax`). For more details, s
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020].
 In the following we note the case of the exact, primal relaxed Riemannian Chambolle–Pock algorithm.
 
-Given base points $m\in\mathcal C$, $n=Λ(m)\in\mathcal D$,
+Given base points $m∈\mathcal C$, $n=Λ(m)∈\mathcal D$,
 initial primal and dual values $p^{(0)} ∈\mathcal C$, $ξ_n^{(0)} ∈T_n^*\mathcal N$,
 and primal and dual step sizes $\sigma_0$, $\tau_0$, relaxation $\theta_0$,
 as well as acceleration $\gamma$.

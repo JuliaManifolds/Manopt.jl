@@ -1,7 +1,7 @@
 # # [Illustration how to use mutating gradient functions](@id Mutations)
 #
 # When it comes to time critital operations, a main ingredient in Julia are
-# mutating functions, i.e. those that compute inplace without additional Memory
+# mutating functions, i.e. those that compute in place without additional Memory
 # allocations. In the following the illustrate how to do this with `Manopt.jl`.
 #
 # Let's start with the same function as in [Get Started: Optimize!](@ref Optimize)

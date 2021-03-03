@@ -22,7 +22,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     end
     prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
     cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
-    prox_F(M, m, λ, x) = prox_distance(M, λ / α, data, x, 2)
+    prox_F(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
     function prox_G_dual(N, n, λ, ξ)
         return ProductRepr(
             ξ[N, :point],

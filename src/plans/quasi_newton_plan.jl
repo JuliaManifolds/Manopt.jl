@@ -31,7 +31,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) ∈ T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -59,7 +59,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) ∈ T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -88,7 +88,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) ∈ T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -113,7 +113,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) ∈ T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -141,7 +141,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) ∈ T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -188,7 +188,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) ∈ T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively.
@@ -233,7 +233,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) ∈ T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
@@ -275,7 +275,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
-\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) \in T_{x_{k+1}} \mathcal{M},
+\operatorname{grad}f(x_{k+1}) - T^{S}_{x_k, α_k η_k}(\operatorname{grad}f(x_k)) ∈ T_{x_{k+1}} \mathcal{M},
 ```
 
 respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.

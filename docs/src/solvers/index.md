@@ -15,19 +15,17 @@ The following algorithms are currently available
 | Solver  | File   | Problem & Option  |
 ----------|--------|-------------------|
 [Cyclic Proximal Point](@ref CPPSolver) | `cyclic_proximal_point.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointOptions`](@ref)
-[Chambolle-Pock](@ref ChambollePockSolver) | `Chambolle-Pock` | [`PrimalDualProblem`](@ref), [`ChambollePockOptions`](@ref)
+[Chambolle-Pock](@ref ChambollePockSolver) | `Chambolle-Pock.jl` | [`PrimalDualProblem`](@ref), [`ChambollePockOptions`](@ref)
 [Douglas–Rachford](@ref DRSolver) | `DouglasRachford.jl` | [`ProximalProblem`](@ref), [`DouglasRachfordOptions`](@ref)
 [Gradient Descent](@ref GradientDescentSolver) | `gradient_descent.jl` |  [`GradientProblem`](@ref), [`GradientDescentOptions`](@ref)
 [Nelder-Mead](@ref NelderMeadSolver) | `NelderMead.jl` | [`CostProblem`](@ref), [`NelderMeadOptions`](@ref)
 [Particle Swarm](@ref ParticleSwarmSolver) | `particle_swarm.jl` | [`CostProblem`](@ref), [`ParticleSwarmOptions`](@ref)
+[Quasi-Newton Method](@ref quasiNewton) | `quasi_newton.jl`| [`GradientProblem`](@ref), [`QuasiNewtonOptions`](@ref)
 [Subgradient Method](@ref SubgradientSolver) | `subgradient_method.jl` | [`SubGradientProblem`](@ref), [`SubGradientMethodOptions`](@ref)
-[Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncated_conjugate_gradient_descent.jl` | [`HessianProblem`](@ref),
-[`TruncatedConjugateGradientOptions`](@ref)
-[The Riemannian Trust-Regions Solver](@ref trust_regions) | `trust_regions.jl` |
-[`HessianProblem`](@ref), [`TrustRegionsOptions`](@ref)
+[Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncated_conjugate_gradient_descent.jl` | [`HessianProblem`](@ref), [`TruncatedConjugateGradientOptions`](@ref)
+[The Riemannian Trust-Regions Solver](@ref trust_regions) | `trust_regions.jl` | [`HessianProblem`](@ref), [`TrustRegionsOptions`](@ref)
 
-Note that the [`Options`](@ref) can also be decorated to enhance your algorithm
-by general additional properties.
+Note that the solvers (or their [`Options`](@ref) to be precise) can also be decorated to enhance your algorithm by general additional properties, see [Decorated Solvers](@ref DecoratedSolvers).
 
 ## [StoppingCriteria](@id StoppingCriteria)
 

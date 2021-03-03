@@ -1,6 +1,6 @@
 # [Gradients](@id GradientFunctions)
 
-For a function $f\colon\mathcal M→ℝ$
+For a function $f:\mathcal M→ℝ$
 the Riemannian gradient $\operatorname{grad}f(x)$ at $x∈\mathcal M$
 is given by the unique tangent vector fulfilling
 

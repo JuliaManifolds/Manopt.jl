@@ -16,25 +16,27 @@ For a description of the algorithm and more details see
     MPS, 2000. doi: [10.1137/1.9780898719857](https://doi.org/10.1137/1.9780898719857)
 
 # Input
-* `M` – a manifold $\mathcal M``
-* `F` – a cost function $F \colon \mathcal M → ℝ$ to minimize
-* `gradF`- the gradient $\operatorname{grad}F \colon \mathcal M → T \mathcal M$ of $F$
-* `x` – an initial value $x  ∈  \mathcal M$
-* `H` – the hessian ``Hf(x)\colon T_x\mathcal M → T_x\mathcal M``, ``ξ ↦ Hf(x)[ξ] = ∇_ξ\operatorname{grad}f(x)``
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F : \mathcal M → ℝ`` to minimize
+* `gradF`- the gradient ``\operatorname{grad}F : \mathcal M → T \mathcal M`` of ``F``
+* `x` – an initial value ``x  ∈  \mathcal M``
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
 
 # Optional
-* `retraction` – approximation of the exponential map
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
+   allocation (default) or [`MutatingEvaluation`](@ref) in place
+* `max_trust_region_radius` – the maximum trust-region radius
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
-* `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
-  [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
-  from [`StoppingCriterion`](@ref) indicating when to stop.
-* `max_trust_region_radius` – the maximum trust-region radius
-* `trust_region_radius` - the initial trust-region radius
 * `randomize` – set to true if the trust-region solve is to be initiated with a
   random tangent vector. If set to true, no preconditioner will be
   used. This option is set to true in some scenarios to escape saddle
   points, but is otherwise seldom activated.
+* `retraction` – approximation of the exponential map
+* `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
+  [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
+  from [`StoppingCriterion`](@ref) indicating when to stop.
+* `trust_region_radius` - the initial trust-region radius
 * `ρ_prime` – Accept/reject threshold: if ρ (the performance ratio for the
   iterate) is at least ρ', the outer iteration is accepted.
   Otherwise, it is rejected. In case it is rejected, the trust-region
@@ -73,11 +75,11 @@ end
 evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `x`.
 
 # Input
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F: \mathcal M → ℝ$ to minimize
-* `gradF`- the gradient $\operatorname{grad}F: \mathcal M → T \mathcal M$ of $F$
-* `x` – an initial value $x  ∈  \mathcal M$
-* `H` – the hessian $H( \mathcal M, x, ξ)$ of $F$
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `gradF`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
+* `x` – an initial value ``x  ∈  \mathcal M``
+* `H` – the hessian ``H( \mathcal M, x, ξ)`` of ``F``
 
 for more details and all options, see [`trust_regions`](@ref)
 """

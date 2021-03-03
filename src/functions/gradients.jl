@@ -419,7 +419,7 @@ end
     grad_TV2!(M, Y, q[, p=1])
 
 computes the (sub) gradient of ``\frac{1}{p}d_2^p(q_1, q_2, q_3)`` with respect
-to all three components of ``q\in\mathcal M^3``, where ``d_2`` denotes the second order
+to all three components of ``q∈\mathcal M^3``, where ``d_2`` denotes the second order
 absolute difference using the mid point model, i.e. let
 
 ```math

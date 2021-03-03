@@ -9,7 +9,7 @@
 # For given points ``p_i ∈\mathcal M``, ``i=1,…,N`` this optimization problem reads
 #
 # ```math
-# \operatorname*{arg\,min}_{x\in\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
+# \operatorname*{arg\,min}_{x∈\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
 #   \operatorname{d}^2_{\mathcal M}(x,p_i),
 # ```
 # which of course can be (and is) solved by a gradient descent, see the [introductionary tutorial](@ref Optimize).

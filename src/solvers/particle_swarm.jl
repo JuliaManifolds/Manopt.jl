@@ -1,27 +1,27 @@
 @doc raw"""
     patricle_swarm(M, F)
 
-perform the particle swarm optimization algorithm (PSO), starting with the initial particle positions $x_0$[^Borckmans2010].
-The aim of PSO is to find the particle position $g$ on the `Manifold M` that solves
+perform the particle swarm optimization algorithm (PSO), starting with the initial particle positions ``x_0``[^Borckmans2010].
+The aim of PSO is to find the particle position ``g`` on the `Manifold M` that solves
 ```math
 \min_{x ∈\mathcal{M}} F(x).
 ```
 To this end, a swarm of particles is moved around the `Manifold M` in the following manner.
-For every particle $k$ we compute the new particle velocities $v_k^{(i)}$ in every step $i$ of the algorithm by
+For every particle ``k`` we compute the new particle velocities ``v_k^{(i)}`` in every step ``i`` of the algorithm by
 ```math
-v_k^{(i)} = \omega \, \operatorname{T}_{x_k^{(i)}\gets x_k^{(i-1)}}v_k^{(i-1)} + c \,  r_1  \operatorname{retr}_{x_k^{(i)}}^{-1}(p_k^{(i)}) + s \,  r_2 \operatorname{retr}_{x_k^{(i)}}^{-1}(g),
+v_k^{(i)} = ω \, \operatorname{T}_{x_k^{(i)}\gets x_k^{(i-1)}}v_k^{(i-1)} + c \,  r_1  \operatorname{retr}_{x_k^{(i)}}^{-1}(p_k^{(i)}) + s \,  r_2 \operatorname{retr}_{x_k^{(i)}}^{-1}(g),
 ```
-where $x_k^{(i)}$ is the current particle position, $\omega$ denotes the inertia,
-$c$ and $s$ are a cognitive and a social weight, respectively,
-$r_j$, $~j=1,2$ are random factors which are computed new for each particle and step,
-$\operatorname{retr}^{-1}$ denotes an inverse retraction on the `Manifold` `M`, and
-$\operatorname{T}$ is a vector transport.
+where ``x_k^{(i)}`` is the current particle position, ``ω`` denotes the inertia,
+``c`` and ``s`` are a cognitive and a social weight, respectively,
+``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step,
+``\operatorname{retr}^{-1}`` denotes an inverse retraction on the `Manifold` `M`, and
+``\operatorname{T}`` is a vector transport.
 
 Then the position of the particle is updated as
 ```math
 x_k^{(i+1)} = \operatorname{retr}_{x_k^{(i)}}(v_k^{(i)}),
 ```
-where $\operatorname{retr}$ denotes a retraction on the `Manifold` `M`. At the end of each step for every particle, we set
+where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`. At the end of each step for every particle, we set
 ```math
 p_k^{(i+1)} = \begin{cases}
 x_k^{(i+1)},  & \text{if } F(x_k^{(i+1)})<F(p_{k}^{(i)}),\\
@@ -35,7 +35,7 @@ p_k^{(i+1)},  & \text{if } F(p_k^{(i+1)})<F(g_{k}^{(i)}),\\
 g_{k}^{(i)}, & \text{else,}
 \end{cases}
 ```
-i.e. $p_k^{(i)}$ is the best known position for the particle $k$ and $g^{(i)}$ is the global best known position ever visited up to step $i$.
+i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i)}`` is the global best known position ever visited up to step ``i``.
 
 
 [^Borckmans2010]:
@@ -45,12 +45,12 @@ i.e. $p_k^{(i)}$ is the best known position for the particle $k$ and $g^{(i)}$ i
 
 
 # Input
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
 
 # Optional
 * `n` - (`100`) number of random initial positions of x0
-* `x0` – the initial positions of each particle in the swarm $x_k^{(0)} ∈ \mathcal M$ for $k = 1, \dots, n$, per default these are n [`random_point`](@ref)s
+* `x0` – the initial positions of each particle in the swarm ``x_k^{(0)} ∈ \mathcal M`` for ``k = 1, \dots, n``, per default these are n [`random_point`](@ref)s
 * `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a [`random_tangent`](@ref) per inital position
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
@@ -85,16 +85,16 @@ end
 @doc raw"""
     patricle_swarm!(M, F; n=100, x0::AbstractVector=[random_point(M) for i in 1:n], kwargs...)
 
-perform the particle swarm optimization algorithm (PSO), starting with the initial particle positions $x_0$[^Borckmans2010]
+perform the particle swarm optimization algorithm (PSO), starting with the initial particle positions ``x_0``[^Borckmans2010]
 in place of `x0`.
 
 # Input
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
 
 # Optional
 * `n` - (`100`) number of random initial positions of x0
-* `x0` – the initial positions of each particle in the swarm $x_k^{(0)} ∈ \mathcal M$ for $k = 1, \dots, n$, per default these are n [`random_point`](@ref)s
+* `x0` – the initial positions of each particle in the swarm ``x_k^{(0)} ∈ \mathcal M`` for ``k = 1, \dots, n``, per default these are n [`random_point`](@ref)s
 
 for more optional arguments, see [`particle_swarm`](@ref).
 """

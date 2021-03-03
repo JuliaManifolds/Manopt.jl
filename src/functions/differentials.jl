@@ -84,7 +84,7 @@ end
 
 evaluate the differential of the composite Bézier curve with respect to its
 control points `B` and tangent vectors `Ξ` in the tangent spaces of the control
-points. The result is the “change” of the curve at `t```\in[0,N]``, which depends
+points. The result is the “change” of the curve at `t```∈[0,N]``, which depends
 only on the corresponding segment. Here, ``N`` is the length of `B`.
 The compuation can be done in place of `Y`.
 

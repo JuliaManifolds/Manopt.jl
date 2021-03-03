@@ -91,7 +91,7 @@ end
     )
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a points `T```=(t_i)_{i=1}^n`` that
-are pointwise in `` t_i\in[0,1]`` on the curve and given corresponding tangential
+are pointwise in `` t_i∈[0,1]`` on the curve and given corresponding tangential
 vectors ``X = (η_i)_{i=1}^n``, ``η_i∈T_{β(t_i)}\mathcal M``
 This can be computed in place of `Y`.
 
@@ -139,7 +139,7 @@ end
 
 evaluate the adjoint of the differential of a composite Bézier curve on the
 manifold `M` with respect to its control points `b` based on a points `T```=(t_i)_{i=1}^n``
-that are pointwise in ``t_i\in[0,1]`` on the curve and given corresponding tangential
+that are pointwise in ``t_i∈[0,1]`` on the curve and given corresponding tangential
 vectors ``X = (η_i)_{i=1}^n``, ``η_i∈T_{β(t_i)}\mathcal M``
 This can be computed in place of `Y`.
 

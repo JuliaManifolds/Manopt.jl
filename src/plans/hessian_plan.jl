@@ -6,7 +6,7 @@ specify a problem for hessian based algorithms.
 
 # Fields
 * `M`            : a manifold $\mathcal M$
-* `cost` : a function $F\colon\mathcal M→ℝ$ to minimize
+* `cost` : a function $F:\mathcal M→ℝ$ to minimize
 * `gradient`     : the gradient $\operatorname{grad}F:\mathcal M
   → \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}F(x)[⋅]: \mathcal T_{x} \mathcal M

@@ -37,7 +37,7 @@ struct AllocatingEvaluation <: AbstractEvaluationType end
     MutatingEvaluation
 
 A parameter for a [`Problem`](@ref) indicating that the problem uses functions that
-do not allocate memory but work on their input, i.e. inplace.
+do not allocate memory but work on their input, i.e. in place.
 """
 struct MutatingEvaluation <: AbstractEvaluationType end
 

@@ -1,5 +1,5 @@
 @doc raw"""
-    truncated_conjugate_gradient_descent(M, F, gradF, x, η, H, trust_region_radius)
+    truncated_conjugate_gradient_descent(M, F, gradF, x, η, HessF, trust_region_radius)
 
 solve the trust-region subproblem
 
@@ -24,15 +24,19 @@ see the reference:
     MPS, 2000. doi: [10.1137/1.9780898719857](https://doi.org/10.1137/1.9780898719857)
 
 # Input
+
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
-* `HessF` – the hessian ``Hf(x)[X]`` given as `HessF(M,p,X)`
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
 * `η` – an update tangential vector ``η ∈ T_x\mathcal M``
 * `trust_region_radius` – a trust-region radius
 
 # Optional
+
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
+   allocation (default) or [`MutatingEvaluation`](@ref) in place
 * `preconditioner` – a preconditioner for the hessian H
 * `θ` – 1+θ is the superlinear convergence target rate. The algorithm will
     terminate early if the residual was reduced by a power of 1+theta.
@@ -56,8 +60,8 @@ see the reference:
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `η` – an approximate solution of the trust-region subproblem in
-    $\mathcal{T_{x}M}$.
+
+* `η` – an approximate solution of the trust-region subproblem in ``T_{x}\mathcal M``.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 
@@ -73,17 +77,18 @@ function truncated_conjugate_gradient_descent(
     )
 end
 @doc raw"""
-    truncated_conjugate_gradient_descent!(M, F, gradF, x, η, H, trust_region_radius; kwargs...)
+    truncated_conjugate_gradient_descent!(M, F, gradF, x, η, HessF, trust_region_radius; kwargs...)
 
 solve the trust-region subproblem in place of `x`.
 
 # Input
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F: \mathcal M→ℝ$ to minimize
-* `gradF` – the gradient $\operatorname{grad}F:\mathcal M → T\mathcal M$ of F
+# Input
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
-* `η` – an update tangential vector ``η ∈ \mathcal{T_{x}M}``
-* `H` – the hessian $H( \mathcal M, x, ξ)$ of F
+* `η` – an update tangential vector ``η ∈ T_x\mathcal M``
 * `trust_region_radius` – a trust-region radius
 
 For more details and all optional arguments, see [`truncated_conjugate_gradient_descent`](@ref).

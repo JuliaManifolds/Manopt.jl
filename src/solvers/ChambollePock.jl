@@ -1,20 +1,29 @@
 @doc raw"""
-    ChambollePock(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, forward_operator, adjoint_DΛ)
+    ChambollePock(
+        M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_linear_operator;
+        forward_operator=missing,
+        linearized_forward_operator=missing,
+        evaluation=AllocatingEvaluation()
+    )
 
 Perform the Riemannian Chambolle–Pock algorithm.
 
-Given a `cost` function $\mathcal E\colon\mathcal M → ℝ$ of the form
+Given a `cost` function $\mathcal E:\mathcal M → ℝ$ of the form
 ```math
 \mathcal E(x) = F(x) + G( Λ(x) ),
 ```
-where $F\colon\mathcal M → ℝ$, $G\colon\mathcal N → ℝ$,
-and $Λ\colon\mathcal M → \mathcal N$. The remaining input parameters are
+where $F:\mathcal M → ℝ$, $G:\mathcal N → ℝ$,
+and $Λ:\mathcal M → \mathcal N$. The remaining input parameters are
 
-* `x,ξ` primal and dual start points $x\in\mathcal M$ and $ξ∈T_n\mathcal N$
+* `x,ξ` primal and dual start points $x∈\mathcal M$ and $ξ∈T_n\mathcal N$
 * `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
-* `forward_operator` the operator $Λ(⋅)$ or its linearization $DΛ(⋅)[⋅]$, depending on whether `:exact` or `:linearized` is chosen.
-* `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m)\colon T_{m}\mathcal M → T_{Λ(m)}\mathcal N$
+* `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m): T_{m}\mathcal M → T_{Λ(m)}\mathcal N$
 * `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
+
+note that depenting on the [`AbstractEvaluationType`](@ref) `evaluation` the last three parameters
+as well as the fordward_operator `Λ` and the `linearized_forward_operator` can be given as
+allocating functions `(Manifolds, parameters) -> result`  or as mutating functions
+`(Manifold, result, parameters)` -> result` to spare allocations.
 
 By default, this performs the exact Riemannian Chambolle Pock algorithm, see the opional parameter
 `DΛ` for ther linearized variant.
@@ -25,8 +34,11 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 
 * `acceleration` – (`0.05`)
 * `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the primal prox
-* `Λ` (`missing`) the exact operator, that is required if the forward operator is linearized;
-  `missing` indicates, that the forward operator is exact.
+* `evaluation` ([`AllocatingEvaluation`](@ref)`()) specify whether the proximal maps and operators are
+  allocating functions `(Manifolds, parameters) -> result`  or given as mutating functions
+  `(Manifold, result, parameters)` -> result` to spare allocations.
+* `Λ` (`missing`) the (forward) operator $Λ(⋅)$ (required for the `:exact` variant)
+* `linearized_forward_operator` (`missing`) its linearization $DΛ(⋅)[⋅]$ (required for the `:linearized` variant)
 * `primal_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
 * `relaxation` – (`1.`)
 * `relax` – (`:primal`) whether to relax the primal or dual
@@ -42,8 +54,9 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
     > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
     > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
+    > Foundations of Computational Mathematics, 2021.
+    > doi: [10.1007/s10208-020-09486-5](http://dx.doi.org/10.1007/s10208-020-09486-5)
     > arXiv: [1908.02022](http://arxiv.org/abs/1908.02022)
-    > accepted for publication in Foundations of Computational Mathematics
 """
 function ChambollePock(
     M::Manifold,
@@ -85,7 +98,7 @@ function ChambollePock(
     )
 end
 @doc raw"""
-    ChambollePock(M, N, cost, x, ξ, m, n, prox_F, prox_G_dual, forward_operator, adjoint_DΛ)
+    ChambollePock(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_linear_operator)
 
 Perform the Riemannian Chambolle–Pock algorithm in place of `x`, `ξ`, and potenitally `m`,
 `n` if they are not fixed. See [`ChambollePock`](@ref) for details and optional parameters.
@@ -191,7 +204,6 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
     o.x = get_primal_prox!(
         p,
         o.x,
-        o.m,
         o.primal_stepsize,
         retract(
             p.M,
@@ -230,7 +242,6 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
     get_primal_prox!(
         p,
         o.x,
-        o.m,
         o.primal_stepsize,
         retract(
             p.M,

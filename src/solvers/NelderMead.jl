@@ -11,18 +11,18 @@ and
 
 # Input
 
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
-* `population` – (n+1 `random_point(M)`) an initial population of $n+1$ points, where $n$
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `population` – (n+1 `random_point(M)`) an initial population of ``n+1`` points, where ``n``
   is the dimension of the manifold `M`.
 
 # Optional
 
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
-* `α` – (`1.`) reflection parameter ($\alpha > 0$)
-* `γ` – (`2.`) expansion parameter ($\gamma$)
-* `ρ` – (`1/2`) contraction parameter, $0 < \rho \leq \frac{1}{2}$,
-* `σ` – (`1/2`) shrink coefficient, $0 < \sigma \leq 1$
+* `α` – (`1.`) reflection parameter (``α > 0``)
+* `γ` – (`2.`) expansion parameter (``γ``)
+* `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
+* `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
 * `retraction_method` – (`ExponentialRetraction`) the rectraction to use
 * `inverse_retraction_method` - (`LogarithmicInverseRetraction`) an inverse retraction to use.
 

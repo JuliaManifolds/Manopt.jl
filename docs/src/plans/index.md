@@ -162,6 +162,6 @@ PrimalDualProblem
 get_primal_prox
 get_dual_prox
 forward_operator
-linearized_operator
+linearized_forward_operator
 adjoint_linearized_operator
 ```

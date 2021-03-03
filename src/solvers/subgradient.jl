@@ -10,16 +10,17 @@ not necessarily determistic.
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F\colon\mathcal M→ℝ`` to minimize
-* `∂F!!`– the (sub)gradient ``\partial F\colon\mathcal M→ T\mathcal M`` of F
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `∂F`– the (sub)gradient ``\partial F: \mathcal M→ T\mathcal M`` of F
   restricted to always only returning one value/element from the subgradient.
   This function can be passed as an allocation function `(M, y) -> X` or
   a mutating function `(M, X, y) -> X`, see `evaluation`.
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by allocation (default) form `∂F(M, y)`
-  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `∂F!(M, X, x)`.
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
+   allocation (default) form `∂F(M, y)` or [`MutatingEvaluation`](@ref) in place, i.e. is
+   of the form `∂F!(M, X, x)`.
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
 * `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
@@ -46,8 +47,8 @@ perform a subgradient method ``x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))`` in p
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F\colon\mathcal M→ℝ`` to minimize
-* `∂F!!`- the (sub)gradient ``\partial F\colon\mathcal M→ T\mathcal M`` of F
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `∂F`- the (sub)gradient ``\partial F:\mathcal M→ T\mathcal M`` of F
   restricted to always only returning one value/element from the subgradient.
   This function can be passed as an allocation function `(M, y) -> X` or
   a mutating function `(M, X, y) -> X`, see `evaluation`.

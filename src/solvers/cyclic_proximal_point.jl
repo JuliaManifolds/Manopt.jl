@@ -6,12 +6,14 @@ perform a cyclic proximal point algorithm.
 # Input
 
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
-* `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of $F$
-* `x` – an initial value $x ∈ \mathcal M$
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of ``F``
+* `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
 the default values are given in brackets
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
+  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
 * `evaluation_order` – (`:Linear`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle permuted sequence (`Random`) or the default linear one.
@@ -43,9 +45,9 @@ perform a cyclic proximal point algorithm in place of `x`.
 # Input
 
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function $F\colon\mathcal M→ℝ$ to minimize
-* `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of $F$
-* `x` – an initial value $x ∈ \mathcal M$
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of ``F``
+* `x` – an initial value ``x ∈ \mathcal M``
 
 for all options, see [`cyclic_proximal_point`](@ref).
 """

@@ -60,7 +60,7 @@ end
     reflect!(M, q, f, x)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f\colon \mathcal M → \mathcal M``, i.e.,
+function ``f: \mathcal M → \mathcal M``, i.e.,
 
 ````math
     \operatorname{refl}_f(x) = \operatorname{refl}_{f(x)}(x),

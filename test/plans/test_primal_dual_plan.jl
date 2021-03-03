@@ -23,8 +23,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
     end
     prior(M, x) = norm(norm.(Ref(pixelM), x, (Λ(M, x))[N, :vector]), 1)
     cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
-    prox_F(M, m, λ, x) = prox_distance(M, λ / α, data, x, 2)
-    prox_F!(M, y, m, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
+    prox_F(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
+    prox_F!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
     function prox_G_dual(N, n, λ, ξ)
         return ProductRepr(
             ξ[N, :point],
@@ -84,11 +84,11 @@ using Manopt, Manifolds, ManifoldsBase, Test
             Λ=Λ!,
             evaluation=MutatingEvaluation(),
         )
-        x1 = get_primal_prox(p1, m, 1.0, x0)
-        x2 = get_primal_prox(p2, m, 1.0, x0)
+        x1 = get_primal_prox(p1, 1.0, x0)
+        x2 = get_primal_prox(p2, 1.0, x0)
         @test x1 == x2
-        get_primal_prox!(p1, x1, m, 0.8, x0)
-        get_primal_prox!(p2, x2, m, 0.8, x0)
+        get_primal_prox!(p1, x1, 0.8, x0)
+        get_primal_prox!(p2, x2, 0.8, x0)
         @test x1 == x2
 
         ξ1 = get_dual_prox(p1, n, 1.0, ξ0)

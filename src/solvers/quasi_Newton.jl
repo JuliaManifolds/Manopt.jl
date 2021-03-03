@@ -13,9 +13,9 @@ The ``k``th iteration consists of
 
 # Input
 * `M` – a manifold ``\mathcal{M}``.
-* `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
-* `gradF`– the gradient ``\operatorname{grad}F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
-* `x` – an initial value ``x \in \mathcal{M}``.
+* `F` – a cost function ``F : \mathcal{M} →ℝ`` to minimize.
+* `gradF`– the gradient ``\operatorname{grad}F : \mathcal{M} →T_x\mathcal M`` of ``F``.
+* `x` – an initial value ``x ∈ \mathcal{M}``.
 
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
@@ -24,18 +24,29 @@ The ``k``th iteration consists of
 
 
 # Optional
-* `basis`                   – (`DefaultOrthonormalBasis()`) basis within the tangent space(s) to represent the Hessian (inverse).
-* `cautious_update`         – (`false`) – whether or not to use a [`QuasiNewtonCautiousDirectionUpdate`](@ref)
-* `cautious_function`       – (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero at 0 and strictly increasing at 0 for the cautious update.
-* `direction_update`        – ([`InverseBFGS`](@ref)`()`) the update rule to use.
-* `initial_operator`        – (`Matrix{Float64}(I,n,n)`) initial matrix to use die the approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
-* `memory_size`             – (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative value to use a full memory representation
-* `retraction_method`       – (`ExponentialRetraction()`) a retraction method to use, by default the exponntial map.
-* `scale_initial_operator`  - (`true`) scale initial operator with ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
-* `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`) specify a [`Stepsize`](@ref).
-* `stopping_criterion`      - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`) specify a [`StoppingCriterion`](@ref)
-* `vector_transport_method` – (`ParallelTransport()`) a vector transport to use, by default the parallel transport.
-
+* `basis` – (`DefaultOrthonormalBasis()`) basis within the tangent space(s) to represent the
+  Hessian (inverse).
+* `cautious_update` – (`false`) – whether or not to use
+  a [`QuasiNewtonCautiousDirectionUpdate`](@ref)
+* `cautious_function` – (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero
+  at 0 and strictly increasing at 0 for the cautious update.
+* `direction_update` – ([`InverseBFGS`](@ref)`()`) the update rule to use.
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
+   allocation (default) form `gradF(M, x)` or [`MutatingEvaluation`](@ref) in place, i.e.
+   is of the form `gradF!(M, X, x)`.
+* `initial_operator` – (`Matrix{Float64}(I,n,n)`) initial matrix to use die the
+  approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
+* `memory_size` – (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
+  value to use a full memory representation
+* `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default
+  the exponntial map.
+* `scale_initial_operator` - (`true`) scale initial operator with
+  ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
+* `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`)
+  specify a [`Stepsize`](@ref).
+* `stopping_criterion` - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`)
+  specify a [`StoppingCriterion`](@ref)
+* `vector_transport_method` – (`ParallelTransport()`) a vector transport to use.
 * `return_options` – (`false`) – specify whether to return just the result `x` (default) or the complete [`Options`](@ref), e.g. to access recorded values. if activated, the extended result, i.e. the
 
 # Output
@@ -55,9 +66,9 @@ in the point `x` using a retraction ``R`` and a vector transport ``T``.
 
 # Input
 * `M` – a manifold ``\mathcal{M}``.
-* `F` – a cost function ``F \colon \mathcal{M} \to ℝ`` to minimize.
-* `gradF`– the gradient ``\operatorname{grad}F \colon \mathcal{M} \to T_x\mathcal M`` of ``F``.
-* `x` – an initial value ``x \in \mathcal{M}``.
+* `F` – a cost function ``F: \mathcal{M} →ℝ`` to minimize.
+* `gradF`– the gradient ``\operatorname{grad}F : \mathcal{M} → T_x\mathcal M`` of ``F``.
+* `x` – an initial value ``x ∈ \mathcal{M}``.
 
 For all optional parameters, see [`quasi_Newton`](@ref).
 """
@@ -66,12 +77,13 @@ function quasi_Newton!(
     F::Function,
     gradF::G,
     x::P;
+    cautious_update::Bool=false,
+    cautious_function::Function=x -> x * 10^(-4),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
     basis::AbstractBasis=DefaultOrthonormalBasis(),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
-    cautious_update::Bool=false,
-    cautious_function::Function=x -> x * 10^(-4),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     memory_size::Int=20,
     initial_operator::AbstractMatrix=Matrix{Float64}(
         I, manifold_dimension(M), manifold_dimension(M)
@@ -107,7 +119,7 @@ function quasi_Newton!(
         )
     end
 
-    p = GradientProblem(M, F, gradF)
+    p = GradientProblem(M, F, gradF; evaluation=evaluation)
     o = QuasiNewtonOptions(
         x,
         gradF(M, x),

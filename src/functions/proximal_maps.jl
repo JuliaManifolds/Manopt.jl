@@ -271,7 +271,7 @@ function prox_parallel_TV!(
                             λ,
                             (xV[k, l + 1][i], xV[k, l + 1][j]),
                             p,
-                        ) # Compute TV on these inplace of y
+                        ) # Compute TV on these in place of y
                     end
                 end
             end # i in R
@@ -423,12 +423,12 @@ end
 compute the projection onto collaborative Norm unit (or α-) ball, i.e. of the function
 
 ```math
-F^q(x) = \sum_{i\in\mathcal G}
-  \Bigl( \sum_{j\in\mathcal I_i}
+F^q(x) = \sum_{i∈\mathcal G}
+  \Bigl( \sum_{j∈\mathcal I_i}
     \sum_{k=1^d} \lVert X_{i,j}\rVert_x^p\Bigr)^\frac{q/p},
 ```
 
-where ``\mathcal G`` is the set of indices for ``x\in\mathcal M`` and ``\mathcal I_i``
+where ``\mathcal G`` is the set of indices for ``x∈\mathcal M`` and ``\mathcal I_i``
 is the set of its forward neighbors.
 The computation can also be done in place of `Θ`.
 

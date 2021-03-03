@@ -14,12 +14,12 @@ specify a problem for gradient based algorithms.
 # Fields
 * `M`        – a manifold ``\mathcal M``
 * `cost`     – a function ``F: \mathcal M → ℝ`` to minimize
-* `gradient!!` – the gradient ``\operatorname{grad}F\colon\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
+* `gradient!!` – the gradient ``\operatorname{grad}F:\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be provided
 
 * as a function `x -> X` that allocates memory for `X` itself for an [`AllocatingEvaluation`](@ref)
-* as a function `(X,x) -> X` that work inplace of `X` for an [`MutatingEvaluation`](@ref)
+* as a function `(X,x) -> X` that work in place of `X` for an [`MutatingEvaluation`](@ref)
 
 # Constructors
     GradientProblem(M, cost, gradient; evaluation=AllocatingEvaluation())
@@ -314,7 +314,7 @@ function (a::AverageGradient)(p::Problem, o::AbstractGradientOptions, i)
     pop!(a.gradients)
     s, d = a.direction(p, o, i) #get inner gradient and step
     a.gradients = vcat([deepcopy(d)], a.gradients)
-    for i in 1:(length(a.gradients) - 1) #transport & shift inplace
+    for i in 1:(length(a.gradients) - 1) #transport & shift in place
         vector_transport_to!(
             p.M,
             a.gradients[i],

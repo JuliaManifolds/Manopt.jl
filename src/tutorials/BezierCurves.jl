@@ -102,7 +102,7 @@ render_asymptote(export_folder * "/Casteljau-illustr.asy"; render=2) #src
 # For more details on these properties, see for example [^PopielNoakes2007].
 # ## [Composite Bézier curves](@id CompositeBezier)
 # With the properties of a single Bézier curve, also called Bézier segment, we can “stitch” curves together. Let $a_0,…,a_n$ and $b_0,…,b_m$ be two sets of controlpoints for the Bézier segments $c(t)$ and $d(t)$, respectively.
-# We define the composite Bézier curve by $B(t) = \begin{cases} c(t) & \text{ if } 0\leq t < 1, \\ d(t-1) & \text{ if } 1\leq t \leq 2,\end{cases}$ where $t\in[0,2]$.
+# We define the composite Bézier curve by $B(t) = \begin{cases} c(t) & \text{ if } 0\leq t < 1, \\ d(t-1) & \text{ if } 1\leq t \leq 2,\end{cases}$ where $t∈[0,2]$.
 # This can of course be generalised straight forward to more than two cases.
 # With the properties from the previous section we can now state that
 #
@@ -144,7 +144,7 @@ render_asymptote(export_folder * "/Bezier-composite-curve.asy"; render=2) #src
 # If we discretize the curve $B(t)$ with its control points denoted by $b_{i,j}$ for the $j$th note in the $i$th segment, the discretized model for equispaced $t_i$, $i=0,…,N$ in the domain of $B$ reads[^BergmannGousenbourger2018]
 #
 # ````math
-# A(b) \coloneqq\sum_{i=1}^{N-1}\frac{\mathrm{d}^2_2 \bigl[ B(t_{i-1}), B(t_{i}), B(t_{i+1}) \bigr]}{\Delta_t^3},
+# A(b) :eqq\sum_{i=1}^{N-1}\frac{\mathrm{d}^2_2 \bigl[ B(t_{i-1}), B(t_{i}), B(t_{i+1}) \bigr]}{\Delta_t^3},
 # ````
 #
 # where $\mathrm{d}_2$ denotes the second order finite difference using the mid point approach, see [`costTV2`](@ref)[^BacakBergmannSteidlWeinmann2016],

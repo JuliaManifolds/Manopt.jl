@@ -20,6 +20,8 @@ i.e. component wise in a vector.
 
 # Optional values
 the default parameter is given in brackets
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
+  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
 * `λ` – (`(iter) -> 1.0`) function to provide the value for the proximal parameter
   during the calls
 * `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.

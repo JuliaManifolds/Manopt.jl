@@ -10,7 +10,7 @@
 # $\operatorname*{argmin}_{x∈\mathcal M} f(x)$
 #
 # where $\mathcal M$ is a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and
-# $f\colon\mathcal M → ℝ$ is the cost function.
+# $f:\mathcal M → ℝ$ is the cost function.
 #
 # In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](@ref)
 # `p` and [`Options`](@ref) `o`. While former contains __static__ data,
