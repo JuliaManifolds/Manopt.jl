@@ -165,9 +165,9 @@ function linesearch_backtrack(
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
     while fNew < f0 + decrease * s * inner(M, x, η, gradFx) # increase
+        s = s / contract
         retract!(M, xNew, x, s * η, retr)
         fNew = F(xNew)
-        s = s / contract
     end
     s = s * contract # correct last
     while fNew > f0 + decrease * s * inner(M, x, η, gradFx) # decrease

@@ -26,9 +26,9 @@ TolVibrantOrange = RGBA{Float64}(colorant"#EE7733") # results
 TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE") # vectors
 TolVibrantTeal = RGBA{Float64}(colorant"#009988") # geo
 nothing #hide
-# Assume we have two points $x,y$ on the equator of the
-# [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathcal M = \mathbb S^2$
-# and a point $y$ near the north pole
+# Assume we have two points ``x,y`` on the equator of the
+# [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) ``\mathcal M = \mathbb S^2``
+# and a point ``y`` near the north pole
 M = Sphere(2)
 p = [1.0, 0.0, 0.0]
 q = [0.0, 1.0, 0.0]
@@ -38,14 +38,16 @@ r = shortest_geodesic(M, [0.0, 0.0, 1.0], c, 0.1)
 [c, r]
 # Now the second order absolute difference can be stated as (see [[Bačák, Bergmann, Steidl, Weinmann, 2016](#BacakBergmannSteidlWeinmann2016)])
 #
-# $d_2(x,y,z) := \min_{c ∈ \mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z∈\mathcal M,$
+# ```math
+# d_2(x,y,z) := \min_{c ∈ \mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z∈\mathcal M,
+# ```
 #
-# where $\mathcal C_{x,z}$ is the set of all mid points $g(\frac{1}{2};x,z)$, where $g$
-# is a (not necessarily minimizing) geodesic connecting $x$ and $z$.
+# where ``\mathcal C_{x,z}`` is the set of all mid points ``g(\frac{1}{2};x,z)``, where ``g``
+# is a (not necessarily minimizing) geodesic connecting ``x`` and ``z``.
 #
 # For illustration we further define the point opposite of
 c2 = -c
-# and draw the geodesic connecting $y$ and the nearest mid point $c$, namely
+# and draw the geodesic connecting ``y`` and the nearest mid point ``c``, namely
 T = [0:0.1:1.0...]
 geoPts_yc = shortest_geodesic(M, r, c, T)
 nothing #hide
@@ -72,13 +74,13 @@ render_asymptote(export_folder * "/SecondOrderData.asy"; render=2) #src
 #md # render_asymptote("SecondOrderData.asy"; render=2)
 #md # ```
 #
-#md # ![Three points $p,r,q$ and the midpoint $c=c(p,q)$ (blue)](../assets/images/tutorials/SecondOrderData.png)
+#md # ![Three points ``p,r,q`` and the midpoint ``c=c(p,q)`` (blue)](../assets/images/tutorials/SecondOrderData.png)
 #
-# Since we moved $r$ 10% along the geodesic from the north pole to $c$, the distance
-# to $c$ is $\frac{9\pi}{20}\approx 1.4137$, and this is also what
+# Since we moved ``r`` 10% along the geodesic from the north pole to ``c``, the distance
+# to ``c`` is ``\frac{9\pi}{20}\approx 1.4137``, and this is also what
 costTV2(M, (p, r, q))
 # returns, see [`costTV2`](@ref) for reference. But also its gradient can be
-# easily computed since it is just a distance with respect to $y$ and a
+# easily computed since it is just a distance with respect to ``y`` and a
 # concatenation of a geodesic, where the start or end point is the argument,
 # respectively, with a distance.
 # Hence the [adjoint differentials](@ref adjointDifferentialFunctions)
@@ -92,7 +94,7 @@ costTV2(M, (p, r, q))
 asymptote_export_S2_signals( #src
     export_folder * "/SecondOrderGradient.asy"; #src
     points=[[p, r, q], [c, c2]], #src
-    tangent_vectors=[Tuple.([[p, -Xp], [r, -Xr], [q, Xq]])], #src
+    tangent_vectors=[Tuple.([[p, -Xp], [r, -Xr], [q, -Xq]])], #src
     colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]), #src
     dot_size=3.5, #src
     line_width=0.75, #src
@@ -103,14 +105,14 @@ render_asymptote(export_folder * "/SecondOrderGradient.asy"; render=2) #src
 #md # ```julia
 #md # asymptote_export_S2_signals("SecondOrderGradient.asy";
 #md #    points = [ [x,y,z], [c,c2] ],
-#md #    tangent_vectors = [Tuple.([ [p, -Xp], [r, -Xr], [q, Xq]])], #src
+#md #    tangent_vectors = [Tuple.([ [p, -Xp], [r, -Xr], [q, -Xq]])], #src
 #md #    colors=Dict(:tvectors => [TolVibrantCyan], :points => [black, TolVibrantBlue]),
 #md #    dot_size = 3.5, line_width = 0.75, camera_position = (1.2,1.,.5)
 #md # )
 #md # render_asymptote("SecondOrderGradient.asy"; render=2)
 #md # ```
 #md #
-#md # ![Three points $x,y,z$ and the negative gradient of the second order absolute difference](../assets/images/tutorials/SecondOrderGradient.png)
+#md # ![Three points ``x,y,z`` and the negative gradient of the second order absolute difference](../assets/images/tutorials/SecondOrderGradient.png)
 #
 # If we now perform a gradient step, we obtain the three points
 pn, rn, qn = exp.(Ref(M), [p, r, q], [-Xp, -Xr, -Xq])
@@ -123,7 +125,7 @@ asymptote_export_S2_signals( #src
     export_folder * "/SecondOrderMin1.asy"; #src
     points=[[p, r, q], [c, c2, cn], [pn, rn, qn]], #src
     curves=[geoPts_yncn], #src
-    tangent_vectors=[Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
+    tangent_vectors=[Tuple.([[p, -Xp], [r, -Xr], [q, -Xq]])], #src
     colors=Dict( #src #src
         :tvectors => [TolVibrantCyan], #src
         :points => [black, TolVibrantBlue, TolVibrantOrange], #src
@@ -139,7 +141,7 @@ render_asymptote(export_folder * "/SecondOrderMin1.asy"; render=2) #src
 #md # asymptote_export_S2_signals("SecondOrderMin1.asy";
 #md #     points = [ [x,y,z], [c,c2,cn], [xn,yn,zn] ],
 #md #     curves = [ geoPts_yncn ] ,
-#md #     tangent_vectors = [Tuple.([ [p, -Xp], [r, Xr], [q, Xq] ])],
+#md #     tangent_vectors = [Tuple.([ [p, -Xp], [r, -Xr], [q, -Xq] ])],
 #md #     colors=Dict(:tvectors => [TolVibrantCyan],
 #md #         :points => [black, TolVibrantBlue, TolVibrantOrange],
 #md #         :curves => [TolVibrantTeal]
@@ -148,26 +150,18 @@ render_asymptote(export_folder * "/SecondOrderMin1.asy"; render=2) #src
 #md # )
 #md # render_asymptote("SecondOrderMin1.asy"; render=2)
 #md # ```
-#md
+#md #
 #md # ![A gradient Step](../assets/images/tutorials/SecondOrderMin1.png)
 #
-# One can see, that this step slightly “overshoots”, i.e. $r$ is now even below $c$.
+# One can see, that this step slightly “overshoots”, i.e. ``r`` is now even below ``c``.
 # and the cost function is still at
 costTV2(M, (pn, rn, qn))
 #
 # But we can also search for the best step size using [`linesearch_backtrack`](@ref)
-# on the `PowerManifold` manifold $\mathcal N = \mathcal M^3 = (\mathbb S^2)^3$
+# on the `PowerManifold` manifold ``\mathcal N = \mathcal M^3 = (\mathbb S^2)^3``
 x = [p, r, q]
 N = PowerManifold(M, NestedPowerRepresentation(), 3)
-s = linesearch_backtrack(
-    M,
-    x -> costTV2(M, Tuple(x)),
-    x,
-    [grad_TV2(M, (p, r, q))...],  # transform from tuple to PowTVector
-    1.0, # initial stepsize guess
-    0.999, # decrease
-    0.96,  #contract
-)
+s = linesearch_backtrack(N, x -> costTV2(N, x), x, grad_TV2(N, x), 1.0, 0.96, 0.999)
 # and for the new points
 pm, rm, qm = exp.(Ref(M), [p, r, q], s * [-Xp, -Xr, -Xq])
 cm = mid_point(M, pm, qm)
@@ -178,7 +172,7 @@ asymptote_export_S2_signals( #src
     export_folder * "/SecondOrderMin2.asy"; #src
     points=[[p, r, q], [c, c2, cm], [pm, rm, qm]], #src
     curves=[geoPts_xmzm], #src
-    tangent_vectors=[Tuple.([[p, -Xp], [r, Xr], [q, Xq]])], #src
+    tangent_vectors=[Tuple.([[p, -Xp], [r, -Xr], [q, -Xq]])], #src
     colors=Dict( #src
         :tvectors => [TolVibrantCyan], #src
         :points => [black, TolVibrantBlue, TolVibrantOrange], #src
@@ -208,7 +202,7 @@ render_asymptote(export_folder * "/SecondOrderMin2.asy"; render=2) #src
 #
 # Here, the cost function yields
 costTV2(M, (pm, rm, qm))
-# which is nearly zero, as one can also see, since the new center $c$ and $r$
+# which is nearly zero, as one can also see, since the new center ``c`` and ``r``
 # are quite close.
 #
 # ## Literature
