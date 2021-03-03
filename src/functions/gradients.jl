@@ -28,10 +28,7 @@ See [`de_casteljau`](@ref) for more details on the curve.
     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function grad_acceleration_bezier(
-    M::Manifold,
-    B::AbstractVector,
-    degrees::AbstractVector{<:Integer},
-    T::AbstractVector,
+    M::Manifold, B::AbstractVector, degrees::AbstractVector{<:Integer}, T::AbstractVector
 )
     gradB = _grad_acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
@@ -42,9 +39,7 @@ function grad_acceleration_bezier(
     zero_tangent_vector!(M, gradB[end].pts[end], Bt[end].pts[end])
     return get_bezier_points(M, gradB, :differentiable)
 end
-function grad_acceleration_bezier(
-    M::Manifold, b::BezierSegment, T::AbstractVector
-)
+function grad_acceleration_bezier(M::Manifold, b::BezierSegment, T::AbstractVector)
     gradb = _grad_acceleration_bezier(M, b.pts, [get_bezier_degree(M, b)], T)[1]
     zero_tangent_vector!(M, gradb.pts[1], b.pts[1])
     zero_tangent_vector!(M, gradb.pts[end], b.pts[end])
@@ -104,10 +99,7 @@ end
 
 # common helper for the two acceleration grads
 function _grad_acceleration_bezier(
-    M::Manifold,
-    B::AbstractVector,
-    degrees::AbstractVector{<:Integer},
-    T::AbstractVector,
+    M::Manifold, B::AbstractVector, degrees::AbstractVector{<:Integer}, T::AbstractVector
 )
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     n = length(T)

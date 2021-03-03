@@ -2,13 +2,18 @@
     CostProblem{T, Manifold, TCost} <: Problem{T}
 
 speficy a problem for solvers just based on cost functions, i.e.
-gradient free ones. While this Problem does not have any allocating functions,
-the type `T` can be set for consistency reasons with other problems.
-
+gradient free ones.
 # Fields
 
 * `M`            – a manifold ``\mathcal M``
 * `cost` – a function ``F: \mathcal M → ℝ`` to minimize
+
+# Constructors
+
+    CostProblem(M, cost; evaluation=AllocatingEvaluation())
+
+Generate a problem. While this Problem does not have any allocating functions,
+the type `T` can be set for consistency reasons with other problems.
 
 # See also
 [`NelderMead`](@ref)

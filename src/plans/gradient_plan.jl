@@ -1,7 +1,8 @@
 """
     AbstractGradientProblem{T} <: Problem{T}
 
-An abstract type for all functions that provide a (full) gradient.
+An abstract type for all functions that provide a (full) gradient, where
+`T` is a [`AbstractEvaluationType`](@ref) for the gradient function.
 """
 abstract type AbstractGradientProblem{T} <: Problem{T} end
 
@@ -13,20 +14,18 @@ specify a problem for gradient based algorithms.
 # Fields
 * `M`        – a manifold ``\mathcal M``
 * `cost`     – a function ``F: \mathcal M → ℝ`` to minimize
-* `gradient` – the gradient ``\operatorname{grad}F\colon\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
+* `gradient!!` – the gradient ``\operatorname{grad}F\colon\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
 
-Depending on the [`AbstractEvaluationType`](@ref) `E` the gradient has to be provided differently
-* for an [`AllocatingEvaluation`](@ref) as a function `x -> X` that allocates memory for `X`
-* for an [`MutatingEvaluation`](@ref) as a function `(X,x) -> X` that work inplace of `X`
+Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be provided
 
+* as a function `x -> X` that allocates memory for `X` itself for an [`AllocatingEvaluation`](@ref)
+* as a function `(X,x) -> X` that work inplace of `X` for an [`MutatingEvaluation`](@ref)
 
 # Constructors
     GradientProblem(M, cost, gradient; evaluation=AllocatingEvaluation())
 
 # See also
-[`gradient_descent`](@ref)
-[`GradientDescentOptions`](@ref)
-
+[`gradient_descent`](@ref), [`GradientDescentOptions`](@ref)
 """
 struct GradientProblem{T,mT<:Manifold,C,G} <: AbstractGradientProblem{T}
     M::mT
