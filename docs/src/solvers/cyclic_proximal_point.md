@@ -23,6 +23,8 @@ cyclic_proximal_point
 cyclic_proximal_point!
 ```
 
+## Options
+
 ```@docs
 CyclicProximalPointOptions
 ```

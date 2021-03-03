@@ -62,7 +62,6 @@ ChambollePock!
 ## Problem & Options
 
 ```@docs
-PrimalDualProblem
 PrimalDualOptions
 ChambollePockOptions
 ```
