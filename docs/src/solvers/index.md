@@ -52,6 +52,7 @@ Base.:|(::StoppingCriterion, ::StoppingCriterion)
 get_reason
 get_stopping_criteria
 get_active_stopping_criteria
+are_these_stopping_critera_active
 ```
 
 further stopping criteria might be available for individual Solvers.

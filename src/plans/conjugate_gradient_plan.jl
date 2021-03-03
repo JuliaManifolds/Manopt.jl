@@ -68,14 +68,14 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
 direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^Flethcer1987] adapted to manifolds:
 
 ```math
-\beta_k =
-\frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
-{\langle -\delta_k,\xi_k \rangle_{x_k}}.
+β_k =
+\frac{ \lVert ξ_{k+1} \rVert_{x_{k+1}}^2 }
+{\langle -\delta_k,ξ_k \rangle_{x_k}}.
 ```
 
 See also [`conjugate_gradient_descent`](@ref)
@@ -114,18 +114,18 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
 direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^DaiYuan1999]
 
-adapted to manifolds: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``,
+adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
 where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
 
 ````math
-\beta_k =
-\frac{ \lVert \xi_{k+1} \rVert_{x_{k+1}}^2 }
+β_k =
+\frac{ \lVert ξ_{k+1} \rVert_{x_{k+1}}^2 }
 {\langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}}}.
 ````
 
@@ -175,13 +175,13 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
 direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^FletcherReeves1964] adapted to manifolds:
 
 ````math
-\beta_k =
-\frac{\lVert \xi_{k+1}\rVert_{x_{k+1}}^2}{\lVert \xi_{k}\rVert_{x_{k}}^2}.
+β_k =
+\frac{\lVert ξ_{k+1}\rVert_{x_{k+1}}^2}{\lVert ξ_{k}\rVert_{x_{k}}^2}.
 ````
 
 See also [`conjugate_gradient_descent`](@ref)
@@ -221,17 +221,17 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
 direction ``\delta=\delta_k``, where the last three ones are stored in the variables with
 prequel `Old` based on [^HagerZhang2005]
-adapted to manifolds: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``,
+adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
 where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 ````math
-\beta_k = \Bigl\langle\nu_k -
+β_k = \Bigl\langle\nu_k -
 \frac{ 2\lVert \nu_k\rVert_{x_{k+1}}^2 }{ \langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}} }
 P_{x_{k+1}\gets x_k}\delta_k,
-\frac{\xi_{k+1}}{ \langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}} }
+\frac{ξ_{k+1}}{ \langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}} }
 \Bigr\rangle_{x_{k+1}}.
 ````
 
@@ -293,15 +293,15 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
 direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^HeestensStiefel1952]
 
-adapted to manifolds as follows: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``.
+adapted to manifolds as follows: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``.
 Then the update reads
 
 ````math
-\beta_k = \frac{\langle \xi_{k+1}, \nu_k \rangle_{x_{k+1}} }
+β_k = \frac{\langle ξ_{k+1}, \nu_k \rangle_{x_{k+1}} }
     { \langle P_{x_{k+1}\gets x_k} \delta_k, \nu_k\rangle_{x_{k+1}} },
 ````
 where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
@@ -354,18 +354,18 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
 direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^LuiStorey1991]
-adapted to manifolds: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``,
+adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
 where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
 
 ````math
-\beta_k = -
-\frac{ \langle \xi_{k+1},\nu_k \rangle_{x_{k+1}} }
-{\langle \delta_k,\xi_k \rangle_{x_k}}.
+β_k = -
+\frac{ \langle ξ_{k+1},\nu_k \rangle_{x_{k+1}} }
+{\langle \delta_k,ξ_k \rangle_{x_k}}.
 ````
 
 See also [`conjugate_gradient_descent`](@ref)
@@ -413,18 +413,18 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,\xi_k``, the current iterates ``x_{k+1},\xi_{k+1}`` and the last update
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
 direction ``\delta=\delta_k``, where the last three ones are stored in the
 variables with prequel `Old` based on [^PolakRibiere1969][^Polyak1969]
 
-adapted to manifolds: let ``\nu_k = \xi_{k+1} - P_{x_{k+1}\gets x_k}\xi_k``,
+adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
 where ``P_{a\gets b}(\cdot)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the update reads
 ````math
-\beta_k =
-\frac{ \langle \xi_{k+1}, \nu_k \rangle_{x_{k+1}} }
-{\lVert \xi_k \rVert_{x_k}^2 }.
+β_k =
+\frac{ \langle ξ_{k+1}, \nu_k \rangle_{x_{k+1}} }
+{\lVert ξ_k \rVert_{x_k}^2 }.
 ````
 
 # Constructor
@@ -478,7 +478,7 @@ end
     SteepestDirectionUpdateRule <: DirectionUpdateRule
 
 The simplest rule to update is to have no influence of the last direction and
-hence return an update ``\beta = 0`` for all [`ConjugateGradientDescentOptions`](@ref)` o`
+hence return an update ``β = 0`` for all [`ConjugateGradientDescentOptions`](@ref)` o`
 
 See also [`conjugate_gradient_descent`](@ref)
 """

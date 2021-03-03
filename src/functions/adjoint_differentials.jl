@@ -15,7 +15,8 @@
 
 evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a point `t```∈[0,1]`` on the
-curve and a tangent vector ``\eta∈T_{\beta(t)}\mathcal M``.
+curve and a tangent vector ``η∈T_{β(t)}\mathcal M``.
+This can be computed in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -99,6 +100,7 @@ evaluate the adjoint of the differential of a Bézier curve on the manifold `M`
 with respect to its control points `b` based on a points `T```=(t_i)_{i=1}^n`` that
 are pointwise in `` t_i\in[0,1]`` on the curve and given corresponding tangential
 vectors ``X = (η_i)_{i=1}^n``, ``η_i∈T_{β(t_i)}\mathcal M``
+This can be computed in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbourger2018].
 
@@ -150,6 +152,7 @@ evaluate the adjoint of the differential of a composite Bézier curve on the
 manifold `M` with respect to its control points `b` based on a points `T```=(t_i)_{i=1}^n``
 that are pointwise in ``t_i\in[0,1]`` on the curve and given corresponding tangential
 vectors ``X = (η_i)_{i=1}^n``, ``η_i∈T_{β(t_i)}\mathcal M``
+This can be computed in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -185,17 +188,27 @@ function adjoint_differential_bezier_control!(
     return Y
 end
 @doc raw"""
-    adjoint_differential_bezier_control(M, B, T, X)
-    adjoint_differential_bezier_control!(M, Y, B, T, X)
+    adjoint_differential_bezier_control(
+        M::MAnifold,
+        T::AbstractVector{<:Number},
+        X::AbstractVector{Q},
+    )
+    adjoint_differential_bezier_control!(
+        M::MAnifold,
+        Y::AbstractVector{<:BezierSegment},
+        T::AbstractVector{<:Number},
+        X::AbstractVector{Q},
+    )
 
-Evaluate the adjoint of the differential with respect to the controlpoints.
+Evaluate the adjoint of the differential with respect to the controlpoints at several times `T`.
+This can be computed in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
     M::Manifold,
     B::AbstractVector{<:BezierSegment},
-    T::AbstractVector{Float64},
+    T::AbstractVector{<:Number},
     X::AbstractVector{Q},
 ) where {Q}
     Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
@@ -332,6 +345,7 @@ where ``i`` runs over all indices of the `PowerManifold` manifold `M` and ``\mat
 denotes the forward neighbors of ``i``
 Let ``n`` be the number dimensions of the `PowerManifold` manifold (i.e. `length(size(x)`)).
 Then the input tangent vector lies on the manifold ``\mathcal M' = \mathcal M^n``.
+The adjoint differential can be computed in place of `Y`.
 
 # Input
 

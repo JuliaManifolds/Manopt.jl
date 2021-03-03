@@ -8,9 +8,9 @@ Given a `cost` function $\mathcal E\colon\mathcal M → ℝ$ of the form
 \mathcal E(x) = F(x) + G( Λ(x) ),
 ```
 where $F\colon\mathcal M → ℝ$, $G\colon\mathcal N → ℝ$,
-and $\Lambda\colon\mathcal M → \mathcal N$. The remaining input parameters are
+and $Λ\colon\mathcal M → \mathcal N$. The remaining input parameters are
 
-* `x,ξ` primal and dual start points $x\in\mathcal M$ and $\xi∈T_n\mathcal N$
+* `x,ξ` primal and dual start points $x\in\mathcal M$ and $ξ∈T_n\mathcal N$
 * `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
 * `forward_operator` the operator $Λ(⋅)$ or its linearization $DΛ(⋅)[⋅]$, depending on whether `:exact` or `:linearized` is chosen.
 * `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m)\colon T_{m}\mathcal M → T_{Λ(m)}\mathcal N$

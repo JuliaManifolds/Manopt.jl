@@ -31,25 +31,25 @@ $\rho' = 0.1$ on default. Set $k=0$.
 
 Repeat until a convergence criterion is reached
 
-1. Set $\eta$ as a random tangent vector if using randomized approach. Else
-    set $\eta$ as the zero vector in the tangential space $T_{x_k}\mathcal{M}$.
-2. Set $\eta^{* }$ as the solution of the trust-region subproblem, computed by
-    the tcg-method with $\eta$ as initial vector.
-3. If using randomized approach compare $\eta^{* }$ with the Cauchy point
-    $\eta_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$ by the model function $m_{x_k}(\cdot)$. If the
+1. Set $η$ as a random tangent vector if using randomized approach. Else
+    set $η$ as the zero vector in the tangential space $T_{x_k}\mathcal{M}$.
+2. Set $η^{* }$ as the solution of the trust-region subproblem, computed by
+    the tcg-method with $η$ as initial vector.
+3. If using randomized approach compare $η^{* }$ with the Cauchy point
+    $η_{c}^{* } = -\tau_{c} \frac{\Delta}{\operatorname{norm}(\operatorname{Grad}[f] (x_k))} \operatorname{Grad}[F] (x_k)$ by the model function $m_{x_k}(\cdot)$. If the
     model decrease is larger by using the Cauchy point, set
-    $\eta^{* } = \eta_{c}^{* }$.
-4. Set ${x}^{* } = \operatorname{Retr}_{x_k}(\eta^{* })$.
-5. Set $\rho = \frac{F(x_k)-F({x}^{* })}{m_{x_k}(\eta)-m_{x_k}(\eta^{* })}$, where
+    $η^{* } = η_{c}^{* }$.
+4. Set ${x}^{* } = \operatorname{Retr}_{x_k}(η^{* })$.
+5. Set $\rho = \frac{F(x_k)-F({x}^{* })}{m_{x_k}(η)-m_{x_k}(η^{* })}$, where
     $m_{x_k}(\cdot)$ describes the quadratic model function.
 6. Update the trust-region radius:
     $\Delta = \begin{cases} \frac{1}{4} \Delta & \rho < \frac{1}{4} \,
-    \text{or} \, m_{x_k}(\eta)-m_{x_k}(\eta^{* }) \leq 0 \, \text{or}  \,
+    \text{or} \, m_{x_k}(η)-m_{x_k}(η^{* }) \leq 0 \, \text{or}  \,
     \rho = \pm  ∈ fty , \\ \operatorname{min}(2 \Delta, \bar{\Delta}) &
     \rho > \frac{3}{4} \, \text{and the tcg-method stopped because of negative
     curvature or exceeding the trust-region}, \\ \Delta & \, \text{otherwise.}
     \end{cases}$
-7. If $m_{x_k}(\eta)-m_{x_k}(\eta^{* }) \geq 0$ and $\rho > \rho'$ set
+7. If $m_{x_k}(η)-m_{x_k}(η^{* }) \geq 0$ and $\rho > \rho'$ set
     $x_k = {x}^{* }$.
 8. Set $k = k+1$.
 
@@ -69,17 +69,17 @@ trust-region radius. This is achieved by multiplying
 its norm is greater than the current trust-region radius $\Delta$.
 For not using randomized approach, one can get the zero tangent vector.
 
-To step number 2: Obtain $\eta^{* }$ by (approximately) solving the
+To step number 2: Obtain $η^{* }$ by (approximately) solving the
 trust-regions subproblem
 
 ```math
-\operatorname*{arg\,min}_{\eta  ∈  T_{x_k}\mathcal{M}} m_{x_k}(\eta) = F(x_k) +
-\langle \operatorname{grad}F(x_k), \eta \rangle_{x_k} + \frac{1}{2} \langle
-\operatorname{Hess}[F](\eta)_ {x_k}, \eta \rangle_{x_k}
+\operatorname*{arg\,min}_{η  ∈  T_{x_k}\mathcal{M}} m_{x_k}(η) = F(x_k) +
+\langle \operatorname{grad}F(x_k), η \rangle_{x_k} + \frac{1}{2} \langle
+\operatorname{Hess}[F](η)_ {x_k}, η \rangle_{x_k}
 ```
 
 ```math
-\text{s.t.} \; \langle \eta, \eta \rangle_{x_k} \leq {\Delta}^2
+\text{s.t.} \; \langle η, η \rangle_{x_k} \leq {\Delta}^2
 ```
 
 with the Steihaug-Toint truncated conjugate-gradient (tcg) method. The problem
@@ -95,22 +95,22 @@ The parameter $\tau_{c}$ for the optimal length is defined by
 
 ```math
 \tau_{c} = \begin{cases} 1 & \langle \operatorname{Grad}[F] (x_k), \,
-\operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k} \leq 0 , \\
+\operatorname{Hess}[F] (η_k)_ {x_k}\rangle_{x_k} \leq 0 , \\
 \operatorname{min}(\frac{{\operatorname{norm}(\operatorname{Grad}[F] (x_k))}^3}
 {\Delta \langle \operatorname{Grad}[F] (x_k), \,
-\operatorname{Hess}[F] (\eta_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise.}
+\operatorname{Hess}[F] (η_k)_ {x_k}\rangle_{x_k}}, 1) & \, \text{otherwise.}
 \end{cases}
 ```
 
 To check the model decrease one compares
-$m_{x_k}(\eta_{c}^{* }) = F(x_k) + \langle \eta_{c}^{* },
-\operatorname{Grad}[F] (x_k)\rangle_{x_k} + \frac{1}{2}\langle \eta_{c}^{* },
-\operatorname{Hess}[F] (\eta_{c}^{* })_ {x_k}\rangle_{x_k}$ with
-$m_{x_k}(\eta^{* }) = F(x_k) + \langle \eta^{* },
-\operatorname{Grad}[F] (x_k)\rangle_{x_k} + \frac{1}{2}\langle \eta^{* },
-\operatorname{Hess}[F] (\eta^{* })_ {x_k}\rangle_{x_k}$.
-If $m_{x_k}(\eta_{c}^{* }) < m_{x_k}(\eta^{* })$ then is
-$m_{x_k}(\eta_{c}^{* })$ the better choice.
+$m_{x_k}(η_{c}^{* }) = F(x_k) + \langle η_{c}^{* },
+\operatorname{Grad}[F] (x_k)\rangle_{x_k} + \frac{1}{2}\langle η_{c}^{* },
+\operatorname{Hess}[F] (η_{c}^{* })_ {x_k}\rangle_{x_k}$ with
+$m_{x_k}(η^{* }) = F(x_k) + \langle η^{* },
+\operatorname{Grad}[F] (x_k)\rangle_{x_k} + \frac{1}{2}\langle η^{* },
+\operatorname{Hess}[F] (η^{* })_ {x_k}\rangle_{x_k}$.
+If $m_{x_k}(η_{c}^{* }) < m_{x_k}(η^{* })$ then is
+$m_{x_k}(η_{c}^{* })$ the better choice.
 
 To step number 4: $\operatorname{Retr}_{x_k}(\cdot)$ denotes the retraction, a
 mapping $\operatorname{Retr}_{x_k}:T_{x_k}\mathcal{M} \rightarrow \mathcal{M}$

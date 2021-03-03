@@ -101,7 +101,7 @@ render_asymptote(export_folder * "/Casteljau-illustr.asy"; render=2) #src
 #
 # For more details on these properties, see for example [^PopielNoakes2007].
 # ## [Composite Bézier curves](@id CompositeBezier)
-# With the properties of a single Bézier curve, also called Bézier segment, we can “stitch” curves together. Let $a_0,\ldots,a_n$ and $b_0,\ldots,b_m$ be two sets of controlpoints for the Bézier segments $c(t)$ and $d(t)$, respectively.
+# With the properties of a single Bézier curve, also called Bézier segment, we can “stitch” curves together. Let $a_0,…,a_n$ and $b_0,…,b_m$ be two sets of controlpoints for the Bézier segments $c(t)$ and $d(t)$, respectively.
 # We define the composite Bézier curve by $B(t) = \begin{cases} c(t) & \text{ if } 0\leq t < 1, \\ d(t-1) & \text{ if } 1\leq t \leq 2,\end{cases}$ where $t\in[0,2]$.
 # This can of course be generalised straight forward to more than two cases.
 # With the properties from the previous section we can now state that
@@ -141,7 +141,7 @@ render_asymptote(export_folder * "/Bezier-composite-curve.asy"; render=2) #src
 #
 # ## [Minimizing the acceleration of a composite Bézier curve](@id MinAccBezier)
 # The motivation to minimize the acceleration of the composite Bézier curve is, that the curve should get “straighter” or more geodesic like.
-# If we discretize the curve $B(t)$ with its control points denoted by $b_{i,j}$ for the $j$th note in the $i$th segment, the discretized model for equispaced $t_i$, $i=0,\ldots,N$ in the domain of $B$ reads[^BergmannGousenbourger2018]
+# If we discretize the curve $B(t)$ with its control points denoted by $b_{i,j}$ for the $j$th note in the $i$th segment, the discretized model for equispaced $t_i$, $i=0,…,N$ in the domain of $B$ reads[^BergmannGousenbourger2018]
 #
 # ````math
 # A(b) \coloneqq\sum_{i=1}^{N-1}\frac{\mathrm{d}^2_2 \bigl[ B(t_{i-1}), B(t_{i}), B(t_{i+1}) \bigr]}{\Delta_t^3},
@@ -265,7 +265,7 @@ render_asymptote(export_folder * "/Bezier-IP-Min.asy"; render=2) #src
 # and set $λ=3$ in
 #
 # ````math
-# \frac{\lambda}{2}\sum_{k=0}^3 d_{\mathcal M}(d_i,p_i)^2 + A(b),
+# \frac{λ}{2}\sum_{k=0}^3 d_{\mathcal M}(d_i,p_i)^2 + A(b),
 # ````
 #
 # then $λ$ models how important closeness to the data $d_i$ is.
@@ -335,11 +335,11 @@ render_asymptote(export_folder * "/Bezier-Appr-Min.asy"; render=2) #src
 #
 #md # ![Approximation min Acc](../assets/images/tutorials/Bezier-Appr-Min.png)
 #
-# The role of $\lambda$ can be interpreted as follows: for large values of $\lambda$, the
+# The role of $λ$ can be interpreted as follows: for large values of $λ$, the
 # minimizer, i.e. the resulting curve, is closer to the original Bézier junction points.
-# For small $\lambda$ the resting curve is closer to a geodesic and the control points are closer to the curve.
-# For $\lambda=0$ _any_ (not necessarily shortest) geodesic is a solution and the problem is ill-posed.
-# To illustrate the effect of $\lambda$, the following image contains 1000 runs for $\lambda=10$ in dark currant to $\lambda=0.01$ in bright yellow.
+# For small $λ$ the resting curve is closer to a geodesic and the control points are closer to the curve.
+# For $λ=0$ _any_ (not necessarily shortest) geodesic is a solution and the problem is ill-posed.
+# To illustrate the effect of $λ$, the following image contains 1000 runs for $λ=10$ in dark currant to $λ=0.01$ in bright yellow.
 #
 #md # ![Approximation min Acc](../assets/images/tutorials/Bezier_Approximation_video-Summary-result.png)
 #

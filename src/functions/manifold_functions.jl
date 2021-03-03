@@ -1,9 +1,10 @@
 """
     mid_point(M, p, q, x)
+    mid_point!(M, y, p, q, x)
 
-Compute the mid point between p and q. If there is more than one mid point
-of (not neccessarily minimizing) geodesics (i.e. on the sphere), the one nearest
-to x is returned.
+Compute the mid point between `p` and `q`. If there is more than one mid point
+of (not neccessarily minimizing) geodesics (e.g. on the sphere), the one nearest
+to `x` is returned (in place of `y`).
 """
 mid_point(M::Manifold, p, q, ::Any) = mid_point(M, p, q)
 mid_point!(M::Manifold, y, p, q, ::Any) = mid_point!(M, y, p, q)
@@ -59,11 +60,14 @@ end
     reflect!(M, q, f, x)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function $f\colon \mathcal M → \mathcal M$, i.e.,
+function ``f\colon \mathcal M → \mathcal M``, i.e.,
 
 ````math
     \operatorname{refl}_f(x) = \operatorname{refl}_{f(x)}(x),
 ````
+
+Compute the result in `q`.
+
 see also [`reflect`](@ref reflect(M::Manifold, p, x))`(M,p,x)`.
 """
 
@@ -78,8 +82,9 @@ reflect the point `x` from the manifold `M` at point `p`, i.e.
 ````math
     \operatorname{refl}_p(x) = \exp_p(-\log_p x).
 ````
+
 where exp and log denote the exponential and logarithmic map on `M`.
-This can also be done in place of `q` for the mutating variant.
+This can also be done in place of `q`.
 """
 reflect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
 reflect!(M::Manifold, q, p, x) = exp!(M, q, p, -log(M, p, x))

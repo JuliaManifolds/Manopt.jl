@@ -15,9 +15,9 @@ Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a
 [`HagerZhangCoefficient`](@ref), [`HeestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
 
-They all compute $\beta_k$ such that this algorithm updates the search direction as
+They all compute $β_k$ such that this algorithm updates the search direction as
 ````math
-\delta_k=\operatorname{grad}f(x_k) + \beta_k \delta_{k-1}
+\delta_k=\operatorname{grad}f(x_k) + β_k \delta_{k-1}
 ````
 
 # Input
@@ -28,7 +28,7 @@ They all compute $\beta_k$ such that this algorithm updates the search direction
 
 # Optional
 * `coefficient` : ([`SteepestDirectionUpdateRule`](@ref) `<:` [`DirectionUpdateRule`](@ref)
-  rule to compute the descent direction update coefficient $\beta_k$,
+  rule to compute the descent direction update coefficient $β_k$,
   as a functor, i.e. the resulting function maps `(p,o,i) -> β`, where
   `p` is the current [`GradientProblem`](@ref), `o` are the
   [`ConjugateGradientDescentOptions`](@ref) `o` and `i` is the current iterate.

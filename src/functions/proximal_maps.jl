@@ -2,7 +2,7 @@
     y = prox_distance(M,λ,f,x [, p=2])
     prox_distance!(M, y, λ, f, x [, p=2])
 
-compute the proximal map ``\operatorname{prox}_{\lambda\varphi}`` with
+compute the proximal map ``\operatorname{prox}_{λ\varphi}`` with
 parameter λ of ``φ(x) = \frac{1}{p}d_{\mathcal M}^p(f,x)``.
 For the mutating variant the computation is done in place of `y`.
 
@@ -53,22 +53,25 @@ end
     [y1,y2] = prox_TV(M, λ, [x1,x2] [,p=1])
     prox_TV!(M, [y1,y2] λ, [x1,x2] [,p=1])
 
-Compute the proximal map ``\operatorname{prox}_{\lambda\varphi}`` of
+Compute the proximal map ``\operatorname{prox}_{λ\varphi}`` of
 ``φ(x,y) = d_{\mathcal M}^p(x,y)`` with
 parameter `λ`.
 
 # Input
+
 * `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
 * `λ` – a real value, parameter of the proximal map
 * `(x1,x2)` – a tuple of two points,
 
 # Optional
+
 (default is given in brackets)
 * `p` – (1) exponent of the distance of the TV term
 
 # Ouput
-* `(y1,y2)` – resulting tuple of points of the
-  ``\operatorname{prox}_{λφ}(```(x1,x2)```)``
+
+* `(y1,y2)` – resulting tuple of points of the ``\operatorname{prox}_{λφ}(```(x1,x2)```)``.
+  The result can also be computed in place.
 """
 function prox_TV(M::Manifold, λ::Number, x::Tuple{T,T}, p::Int=1) where {T}
     d = distance(M, x[1], x[2])
@@ -107,7 +110,7 @@ end
 @doc raw"""
     ξ = prox_TV(M,λ,x [,p=1])
 
-compute the proximal maps ``\operatorname{prox}_{\lambda\varphi}`` of
+compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
 all forward differences orrucirng in the power manifold array, i.e.
 ``\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)`` with `xi` and `xj` are array
 elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unitvector.
@@ -124,7 +127,7 @@ The parameter `λ` is the prox parameter.
 
 # Ouput
 * `y` – resulting  point containinf with all mentioned proximal
-  points evaluated (in a cylic order).
+  points evaluated (in a cylic order). The computation can also be done in place
 """
 function prox_TV(M::PowerManifold, λ, x, p::Int=1)
     y = deepcopy(x)
@@ -194,6 +197,7 @@ The parameter `λ` is the prox parameter.
 # Ouput
 * `y`  – resulting Array of points with all mentioned proximal
   points evaluated (in a parallel within the arrays elements).
+  The computation can also be done in place.
 
 *See also* [`prox_TV`](@ref)
 """
@@ -280,7 +284,7 @@ end
     (y1,y2,y3) = prox_TV2(M,λ,(x1,x2,x3),[p=1], kwargs...)
     prox_TV2!(M, y, λ,(x1,x2,x3),[p=1], kwargs...)
 
-Compute the proximal map ``\operatorname{prox}_{\lambda\varphi}`` of
+Compute the proximal map ``\operatorname{prox}_{λ\varphi}`` of
 ``\varphi(x_1,x_2,x_3) = d_{\mathcal M}^p(c(x_1,x_3),x_2)`` with
 parameter `λ`>0, where ``c(x,z)`` denotes the mid point of a shortest
 geodesic from `x1` to `x3` that is closest to `x2`.
@@ -300,7 +304,8 @@ The result can be computed in place of `y`.
     is given)
 
 # Output
-* `(y1,y2,y3)` – resulting tuple of points of the proximal map
+* `(y1,y2,y3)` – resulting tuple of points of the proximal map.
+  The computation can also be done in place.
 """
 function prox_TV2(
     M::Manifold,
@@ -357,7 +362,7 @@ end
     y = prox_TV2(M, λ, x[, p=1])
     prox_TV2!(M, y, λ, x[, p=1])
 
-compute the proximal maps ``\operatorname{prox}_{\lambda\varphi}`` of
+compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
 all centered second order differences orrucirng in the power manifold array, i.e.
 ``\varphi(x_k,x_i,x_j) = d_2(x_k,x_i.x_j)``, where ``k,j`` are backward and forward
 neighbors (along any dimension in the array of `x`).
@@ -373,8 +378,8 @@ The parameter `λ` is the prox parameter.
 * `p` – (`1`) exponent of the distance of the TV term
 
 # Ouput
-* `y` – resulting point with all mentioned proximal points
-  evaluated (in a cylic order).
+* `y` – resulting point with all mentioned proximal points evaluated (in a cylic order).
+  The computation can also be done in place.
 """
 function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}
     y = deepcopy(x)
@@ -425,6 +430,8 @@ F^q(x) = \sum_{i\in\mathcal G}
 
 where ``\mathcal G`` is the set of indices for ``x\in\mathcal M`` and ``\mathcal I_i``
 is the set of its forward neighbors.
+The computation can also be done in place of `Θ`.
+
 This is adopted from the paper by Duran, Möller, Sbert, Cremers:
 _Collaborative Total Variation: A General Framework for Vectorial TV Models_
 (arxiv: [1508.01308](https://arxiv.org/abs/1508.01308)), where the most inner

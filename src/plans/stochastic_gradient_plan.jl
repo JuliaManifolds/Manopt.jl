@@ -4,12 +4,17 @@
 A stochastic gradient problem consists of
 * a `Manifold M`
 * a(n optional) cost function ``f(x) = \displaystyle\sum_{i=1}^n f_i(x)
-* an array of gradients, i.e. a function that returns and array or an array of functions ``\{\operatorname{grad}f_i\}_{i=1}^n``,
-where both variants can be given in the allocating variant and the array of function may also be providade as mutating functions `(X,x) -> X`.
+* an array of gradients, i.e. a function that returns and array or an array of functions
+``\{\operatorname{grad}f_i\}_{i=1}^n``, where both variants can be given in the allocating
+variant and the array of function may also be provided as mutating functions `(X,x) -> X`.
 
 # Constructors
-    StochasticGradientProblem(M::Manifold, gradF::Function; cost=Missing())
-    StochasticGradientProblem(M::Manifold, gradF::AbstractVector{<:Function}; cost=Missing())
+    StochasticGradientProblem(M::Manifold, gradF::Function;
+        cost=Missing(), evaluation=AllocatingEvaluation()
+    )
+    StochasticGradientProblem(M::Manifold, gradF::AbstractVector{<:Function};
+        cost=Missing(), evaluation=AllocatingEvaluation()
+    )
 
 Create a Stochastic gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
@@ -41,8 +46,12 @@ end
 
 @doc raw"""
     get_gradients(P::StochasticGradientProblem, x)
+    get_gradients!(P::StochasticGradientProblem, Y, x)
 
-Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `x`.
+Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `x` (in place of `Y`).
+
+Note that for the [`MutatingEvaluation`](@ref) based problem and a single function for the
+stochastic gradient, the allocating variant is not available.
 """
 function get_gradients(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, x
@@ -66,7 +75,6 @@ function get_gradients!(
     copyto!(X, [grad_i(p.M, x) for grad_i in p.gradient!!])
     return X
 end
-
 function get_gradients(
     ::StochasticGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, ::Any
 ) where {TC}
@@ -95,9 +103,13 @@ function get_gradients!(
 end
 
 @doc raw"""
-    get_gradient(P::StochasticGradientProblem, k, x)
+    get_gradient(p::StochasticGradientProblem, k, x)
+    get_gradient!(p::StochasticGradientProblem, Y, k, x)
 
-Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x`.
+Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
+
+Note that for the [`MutatingEvaluation`](@ref) based problem and a single function for the
+stochastic gradient mutating variant is not available, since it would require too many allocatins.
 """
 function get_gradient(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, k, x

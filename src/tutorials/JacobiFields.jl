@@ -74,7 +74,7 @@ X = [0.0, 0.4, 0.5]
 # ````math
 # \Gamma_{g,X}(s,t):=\exp{\gamma_{p,X}(s)}[t\log_{g(s;p,X)}p],\qquad s∈(-\varepsilon,\varepsilon),\ t∈[0,1].
 # ````
-# Intuitively we make a small step $s$ into direction $\xi$ using the geodesic
+# Intuitively we make a small step $s$ into direction $ξ$ using the geodesic
 # $g(\cdot; p,X)$ and from $r=g(s; p,X)$ we follow (in $t$) the geodesic
 # $g(\cdot; r,q)$. The corresponding Jacobi field $J_{g,X}$
 # along $g(\cdot; p,q)$ is given by
@@ -137,7 +137,7 @@ render_asymptote( #src
 #md # render_asymptote("jacobiGeodesicdifferential_geodesic_startpoint.asy"; render = 2)
 #md # ```
 #
-#md # ![A Jacobi field for $D_xg(t,x,y)[\eta]$](../assets/images/tutorials/jacobiGeodesicdifferential_geodesic_startpoint.png)
+#md # ![A Jacobi field for $D_xg(t,x,y)[η]$](../assets/images/tutorials/jacobiGeodesicdifferential_geodesic_startpoint.png)
 #
 # If we further move the end point, too, we can derive that Differential in direction
 Xq = [0.2, 0.0, -0.5]

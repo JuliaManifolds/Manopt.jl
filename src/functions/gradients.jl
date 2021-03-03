@@ -6,13 +6,13 @@
         T::AbstractVector{<:AbstractFloat}
     )
 
-compute the gradient of the discretized acceleration of a (composite) Bézier curve $c_B(t)$
+compute the gradient of the discretized acceleration of a (composite) Bézier curve ``c_B(t)``
 on the `Manifold` `M` with respect to its control points `B` given as a point on the
 `PowerManifold` assuming C1 conditions and known `degrees`. The curve is
-evaluated at the points given in `T` (elementwise in $[0,N]$, where $N$ is the
+evaluated at the points given in `T` (elementwise in ``[0,N]``, where ``N`` is the
 number of segments of the Bézier curve). The [`get_bezier_junctions`](@ref) are fixed for
 this gradient (interpolation constraint). For the unconstrained gradient,
-see [`grad_L2_acceleration_bezier`](@ref) and set $λ=0$ therein. This gradient is computed using
+see [`grad_L2_acceleration_bezier`](@ref) and set ``λ=0`` therein. This gradient is computed using
 [`adjoint_Jacobi_field`](@ref)s. For details, see [^BergmannGousenbourger2018].
 See [`de_casteljau`](@ref) for more details on the curve.
 
@@ -64,11 +64,11 @@ end
 compute the gradient of the discretized acceleration of a composite Bézier curve
 on the `Manifold` `M` with respect to its control points `B` together with a
 data term that relates the junction points `p_i` to the data `d` with a weigth
-$\lambda$ comapared to the acceleration. The curve is evaluated at the points
-given in `pts` (elementwise in $[0,N]$), where $N$ is the number of segments of
+``λ`` comapared to the acceleration. The curve is evaluated at the points
+given in `pts` (elementwise in ``[0,N]``), where ``N`` is the number of segments of
 the Bézier curve. The summands are [`grad_distance`](@ref) for the data term
 and [`grad_acceleration_bezier`](@ref) for the acceleration with interpolation constrains.
-Here the [`get_bezier_junctions`](@ref) are included in the optimization, i.e. setting $λ=0$
+Here the [`get_bezier_junctions`](@ref) are included in the optimization, i.e. setting ``λ=0``
 yields the unconstrained acceleration minimization. Note that this is ill-posed, since
 any Bézier curve identical to a geodesic is a minimizer.
 
@@ -184,8 +184,8 @@ integer. The gradient reads
   \operatorname{grad}f(x) = -d_{\mathcal M}^{p-2}(x,y)\log_xy
 ```
 
-for $p\neq 1$ or $x\neq  y$. Note that for the remaining case $p=1$,
-$x=y$ the function is not differentiable. In this case, the function returns the
+for ``p\neq 1`` or ``x\neq  y``. Note that for the remaining case ``p=1``,
+``x=y`` the function is not differentiable. In this case, the function returns the
 corresponding zero tangent vector, since this is an element of the subdifferential.
 
 # Optional
@@ -206,15 +206,15 @@ end
     grad_u,⁠ grad_v = grad_intrinsic_infimal_convolution_TV12(M,f,u,v,α,β)
 
 compute (sub)gradient of the intrinsic infimal convolution model using the mid point
-model of second order differences, see [`costTV2`](@ref), i.e. for some $f ∈ \mathcal M$
-on a `PowerManifold` manifold $\mathcal M$ this function computes the (sub)gradient of
+model of second order differences, see [`costTV2`](@ref), i.e. for some ``f ∈ \mathcal M``
+on a `PowerManifold` manifold ``\mathcal M`` this function computes the (sub)gradient of
 
 ```math
 E(u,v) =
 \frac{1}{2}\sum_{i ∈ \mathcal G} d_{\mathcal M}(g(\frac{1}{2},v_i,w_i),f_i)
 + \alpha
 \bigl(
-\beta\mathrm{TV}(v) + (1-\beta)\mathrm{TV}_2(w)
+β\mathrm{TV}(v) + (1-β)\mathrm{TV}_2(w)
 \bigr),
 ```
 where both total variations refer to the intrinsic ones, [`grad_TV`](@ref) and
@@ -230,9 +230,10 @@ function grad_intrinsic_infimal_convolution_TV12(M::mT, f, u, v, α, β) where {
 end
 @doc raw"""
     grad_TV(M,(x,y),[p=1])
+    grad_TV!(M, X, (x,y),[p=1])
 
-compute the (sub) gradient of $\frac{1}{p}d^p_{\mathcal M}(x,y)$ with respect
-to both $x$ and $y$.
+compute the (sub) gradient of ``\frac{1}{p}d^p_{\mathcal M}(x,y)`` with respect
+to both ``x`` and ``y`` (in place of `X` and `Y`).
 """
 function grad_TV(M::MT, q::Tuple{T,T}, p=1) where {MT<:Manifold,T}
     if p == 2
@@ -268,20 +269,22 @@ end
     ξ = grad_TV(M, λ, x, [p=1])
     grad_TV!(M, X, λ, x, [p=1])
 
-Compute the (sub)gradient $\partial F$ of all forward differences orrucirng,
+Compute the (sub)gradient ``\partial F`` of all forward differences orrucirng,
 in the power manifold array, i.e. of the function
 
-$F(x) = \sum_{i}\sum_{j ∈ \mathcal I_i} d^p(x_i,x_j)$
+```math
+F(x) = \sum_{i}\sum_{j ∈ \mathcal I_i} d^p(x_i,x_j)
+```
 
-where $i$ runs over all indices of the `PowerManifold` manifold `M`
-and $\mathcal I_i$ denotes the forward neighbors of $i$.
+where ``i`` runs over all indices of the `PowerManifold` manifold `M`
+and ``\mathcal I_i`` denotes the forward neighbors of ``i``.
 
 # Input
 * `M` – a `PowerManifold` manifold
 * `x` – a point.
 
 # Ouput
-* ξ – resulting tangent vector in $T_x\mathcal M$.
+* X – resulting tangent vector in ``T_x\mathcal M``. The computation can also be done in place.
 """
 function grad_TV(M::PowerManifold, x, p::Int=1)
     power_size = power_dimensions(M)
@@ -340,26 +343,27 @@ function grad_TV!(M::PowerManifold, X, x, p::Int=1)
 end
 
 @doc raw"""
-    ξ = forward_logs(M,x)
-    forward_logs!(M, ξ, x)
+    Y = forward_logs(M,x)
+    forward_logs!(M, Y, x)
 
-compute the forward logs $F$ (generalizing forward differences) orrucirng,
+compute the forward logs ``F`` (generalizing forward differences) orrucirng,
 in the power manifold array, the function
 
 ```math
-$F_i(x) = \sum_{j ∈ \mathcal I_i} \log_{x_i} x_j,\quad i  ∈  \mathcal G,
+F_i(x) = \sum_{j ∈ \mathcal I_i} \log_{x_i} x_j,\quad i  ∈  \mathcal G,
 ```
 
-where $\mathcal G$ is the set of indices of the `PowerManifold` manifold `M` and
-$\mathcal I_i$ denotes the forward neighbors of $i$. This can also be done in place of `ξ`.
+where ``\mathcal G`` is the set of indices of the `PowerManifold` manifold `M` and
+``\mathcal I_i`` denotes the forward neighbors of ``i``. This can also be done in place of `ξ`.
 
 # Input
 * `M` – a `PowerManifold` manifold
 * `x` – a point.
 
 # Ouput
-* `ξ` – resulting tangent vector in $T_x\mathcal M$ representing the logs, where
-  $\mathcal N$ is thw power manifold with the number of dimensions added to `size(x)`.
+* `Y` – resulting tangent vector in ``T_x\mathcal M`` representing the logs, where
+  ``\mathcal N`` is thw power manifold with the number of dimensions added to `size(x)`.
+  The computation can be done in place of `Y`.
 """
 function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSize,TPR}
     power_size = power_dimensions(M)
@@ -419,22 +423,24 @@ function forward_logs!(M::PowerManifold{𝔽,TM,TSize,TPR}, X, p) where {𝔽,TM
 end
 
 @doc raw"""
-    grad_TV2(M,(x,y,z),p)
+    grad_TV2(M, q[, p=1])
+    grad_TV2!(M, Y, q[, p=1])
 
-computes the (sub) gradient of $\frac{1}{p}d_2^p(x,y,z)$ with respect
-to $x$, $y$, and $z$, where $d_2$ denotes the second order absolute difference
-using the mid point model, i.e. let
+computes the (sub) gradient of ``\frac{1}{p}d_2^p(q_1, q_2, q_3)`` with respect
+to all three components of ``q\in\mathcal M^3``, where ``d_2`` denotes the second order
+absolute difference using the mid point model, i.e. let
+
 ```math
-  \mathcal C = \bigl\{ c ∈  \mathcal M \ |\ g(\tfrac{1}{2};x_1,x_3) \text{ for some geodesic }g\bigr\}
+\mathcal C = \bigl\{ c ∈ \mathcal M \ |\ g(\tfrac{1}{2};q_1,q_3) \text{ for some geodesic }g\bigr\}
 ```
-denote the mid points between $x$ and $z$ on the manifold $\mathcal M$.
+denote the mid points between ``q_1`` and ``q_3`` on the manifold ``\mathcal M``.
 Then the absolute second order difference is defined as
 
 ```math
-d_2(x,y,z) = \min_{c ∈ \mathcal C_{x,z}} d(c,y).
+d_2(q_1,q_2,q_3) = \min_{c ∈ \mathcal C_{q_1,q_3}} d(c, q_2).
 ```
 
-While the (sub)gradient with respect to $y$ is easy, the other two require
+While the (sub)gradient with respect to ``q_2`` is easy, the other two require
 the evaluation of an [`adjoint_Jacobi_field`](@ref).
 See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
 for its derivation.
@@ -443,7 +449,6 @@ function grad_TV2(M::Manifold, q, p::Number=1)
     X = [zero_tangent_vector(M, x) for x in q]
     return grad_TV2!(M, X, q, p)
 end
-
 function grad_TV2!(M::Manifold, X, q, p::Number=1)
     c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
     d = distance(M, q[2], c)
@@ -472,17 +477,16 @@ function grad_TV2!(M::Manifold, X, q, p::Number=1)
     return X
 end
 @doc raw"""
-    grad_TV2(M,q [,p=1])
+    grad_TV2(M::PowerManifold, q [,p=1])
 
-computes the (sub) gradient of $\frac{1}{p}d_2^p(x_1,x_2,x_3)$
-with respect to all $x_1,x_2,x_3$ occuring along any array dimension in the
-point `x`, where `M` is the corresponding `PowerManifold`.
+computes the (sub) gradient of ``\frac{1}{p}d_2^p(q_1,q_2,q_3)``
+with respect to all ``q_1,q_2,q_3`` occuring along any array dimension in the
+point `q`, where `M` is the corresponding `PowerManifold`.
 """
 function grad_TV2(M::PowerManifold, q, p::Int=1)
     X = zero_tangent_vector(M, q)
     return grad_TV2!(M, X, q, p)
 end
-
 function grad_TV2!(M::PowerManifold, X, q, p::Int=1)
     power_size = power_dimensions(M)
     rep_size = representation_size(M.manifold)

@@ -11,7 +11,7 @@ function tilde_x_old(p, o, x_old, ξbar_old)
         vector_transport_to(
             p.M,
             o.m,
-            -o.primal_stepsize * p.adjoint_linearized_operator(o.m, ξbar_old),
+            -o.primal_stepsize * adjoint_linearized_operator(p, o.m, o.n, ξbar_old),
             x_old,
         ),
     )

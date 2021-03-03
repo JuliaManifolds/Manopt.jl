@@ -361,7 +361,7 @@ end
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a factor compared to the norm of the initial residual, i.e.
-$\Vert r_k \Vert_x \leqq \kappa \Vert r_0 \Vert_x$.
+$\Vert r_k \Vert_x \leqq κ \Vert r_0 \Vert_x$.
 In this case the algorithm reached linear convergence.
 
 # Fields
@@ -409,7 +409,7 @@ algorithm reached superlinear convergence.
 # Fields
 * `θ` – part of the reduction power
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $\eta$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
+    $η$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
 

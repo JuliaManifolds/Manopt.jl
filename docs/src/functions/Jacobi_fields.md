@@ -11,12 +11,12 @@ Such Jacobi fields can be used to derive closed forms for the exponential map,
 the logarithmic map and the geodesic, all of them with respect to both arguments:
 Let $F\colon\mathcal N → \mathcal M$ be given (for the $\exp_x\cdot$
   we have $\mathcal N = T_x\mathcal M$, otherwise $\mathcal N=\mathcal M$) and denote by
-$\Xi_1,\ldots,\Xi_d$ an orthonormal frame along $g(\cdot;x,y)$ that diagonalizes
-the curvature tensor with corresponding eigenvalues $\kappa_1,\ldots,\kappa_d$.
+$ξ_1,…,ξ_d$ an orthonormal frame along $g(\cdot;x,y)$ that diagonalizes
+the curvature tensor with corresponding eigenvalues $κ_1,…,κ_d$.
 Note that on symmetric manifolds such a frame always exists.
 
-Then $DF(x)[\eta] = \sum_{k=1}^d \langle \eta,\Xi_k(0)\rangle_x\beta(\kappa_k)\Xi_k(T)$ holds,
-where $T$ also depends on the function $F$ as the weights $\beta$. The values
+Then $DF(x)[η] = \sum_{k=1}^d \langle η,ξ_k(0)\rangle_xβ(κ_k)ξ_k(T)$ holds,
+where $T$ also depends on the function $F$ as the weights $β$. The values
 stem from solving the corresponding system of (decoupled) ODEs.
 
 Note that in different references some factors might be a little different,

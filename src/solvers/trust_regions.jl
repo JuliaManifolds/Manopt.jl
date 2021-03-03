@@ -77,7 +77,7 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds in pl
 * `F` – a cost function $F: \mathcal M → ℝ$ to minimize
 * `gradF`- the gradient $\operatorname{grad}F: \mathcal M → T \mathcal M$ of $F$
 * `x` – an initial value $x  ∈  \mathcal M$
-* `H` – the hessian $H( \mathcal M, x, \xi)$ of $F$
+* `H` – the hessian $H( \mathcal M, x, ξ)$ of $F$
 
 for more details and all options, see [`trust_regions`](@ref)
 """

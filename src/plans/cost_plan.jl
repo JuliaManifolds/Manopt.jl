@@ -29,7 +29,7 @@ The naming of these parameters follows the [Wikipedia article](https://en.wikipe
 of the Euclidean case. The default is given in brackets, the required value range
 after the description
 
-* `population` – an `Array{`point`,1}` of $n+1$ points $x_i$, $i=1,\ldots,n+1$, where $n$ is the
+* `population` – an `Array{`point`,1}` of $n+1$ points $x_i$, $i=1,…,n+1$, where $n$ is the
   dimension of the manifold.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
 * `α` – (`1.`) reflection parameter ($\alpha > 0$)
