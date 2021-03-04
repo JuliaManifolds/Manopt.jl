@@ -51,8 +51,8 @@ if asy_export
 end
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
-F(pB) = cost_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
-gradF(pB) = grad_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
+F(M, pB) = cost_acceleration_bezier(M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples)
+gradF(M, pB) = grad_acceleration_bezier(M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples)
 x0 = pB
 pB_opt = gradient_descent(
     N,

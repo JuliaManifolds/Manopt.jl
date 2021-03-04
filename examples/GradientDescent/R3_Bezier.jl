@@ -26,7 +26,7 @@ bColor = RGBA{Float64}(colorant"#009988") # inner control points: Tol Vibrant te
 #
 # Data
 #
-M = Euclidean(3)
+M = Manifolds.Euclidean(3)
 p0 = [0.0, 0.0, 1.0]
 p1 = [0.0, -1.0, 0.0]
 p2 = [-1.0, 0.0, 0.0]
@@ -47,14 +47,14 @@ cPmat = hcat([[b...] for b in cP]...)
 dataP = get_bezier_junctions(M, B)
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
-function F(pB)
+function F(M, pB)
     return cost_L2_acceleration_bezier(
-        M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, dataP
     )
 end
-function gradF(pB)
+function gradF(M, pB)
     return grad_L2_acceleration_bezier(
-        M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, dataP
     )
 end
 x0 = pB

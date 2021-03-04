@@ -6,7 +6,7 @@ struct GradF
     A::Matrix{Float64}
     N::Diagonal{Float64,Vector{Float64}}
 end
-function (gradF::GradF)(X::Array{Float64,2})
+function (gradF::GradF)(::Stiefel, X::Array{Float64,2})
     AX = gradF.A * X
     XpAX = X' * AX
     return 2 .* AX * gradF.N .- X * XpAX * gradF.N .- X * gradF.N * XpAX
@@ -17,7 +17,7 @@ function run_brocket_experiment(n::Int, k::Int, m::Int; seed=42)
     M = Stiefel(n, k)
     A = randn(n, n)
     A = (A + A') / 2
-    F(X::Array{Float64,2}) = tr((X' * A * X) * Diagonal(k:-1:1))
+    F(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
     gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
     x = random_point(M)
     return quasi_Newton(

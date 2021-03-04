@@ -4,8 +4,8 @@ Random.seed!(42)
 function run_rayleigh_experiment(n::Int)
     A = randn(n, n)
     A = (A + A') / 2
-    F(X::Array{Float64,1}) = X' * A * X
-    gradF(X::Array{Float64,1}) = 2 * (A * X - X * X' * A * X)
+    F(::Sphere, X::Array{Float64,1}) = X' * A * X
+    gradF(::Sphere, X::Array{Float64,1}) = 2 * (A * X - X * X' * A * X)
     M = Sphere(n - 1)
     x = random_point(M)
     return quasi_Newton(

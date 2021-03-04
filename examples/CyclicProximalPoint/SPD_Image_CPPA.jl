@@ -46,8 +46,8 @@ d = length(size(f))
 rep(d) = (d > 1) ? [ones(Int, d)..., d] : d
 fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
 Λ(M, x) = forward_logs(M, x) # on T_xN
-prior(M, x) = norm(norm.(Ref(pixelM), repeat(x, rep(d)...), Λ(x)), 1)
-cost(M, x) = (1 / α) * fidelity(x) + prior(x)
+prior(M, x) = norm(norm.(Ref(M.manifold), repeat(x, rep(d)...), Λ(M, x)), 1)
+cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
 proxes = ((M, λ, x) -> prox_distance(M, λ, f, x, 2), (M, λ, x) -> prox_TV(M, α * λ, x, 1))
 
 x0 = f
