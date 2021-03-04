@@ -180,7 +180,7 @@ function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
 end
 
 @doc raw"""
-    random_tangent(M::Hyperpolic, p, :Gaussian [, σ=1.0])
+    random_tangent(M::Hyperbolic, p, :Gaussian [, σ=1.0])
 
 generate a random point on the Hyperbolic manifold by projecting a point from the embedding
 with respect to the Minkowsky metric.
