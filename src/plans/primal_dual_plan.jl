@@ -583,11 +583,9 @@ Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
 function DebugPrimalChange(
-    a::StoreOptionsAction=StoreOptionsAction((:x,)),
-    prefix="Primal Change: ",
-    io::IO=stdout
+    a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Primal Change: ", io::IO=stdout
 )
-    return DebugChange(a,prefix,io)
+    return DebugChange(a, prefix, io)
 end
 
 """

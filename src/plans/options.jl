@@ -159,7 +159,10 @@ end
 function (a::StoreOptionsAction)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
     #update values (maybe only once)
     if !a.once || a.last_stored != i
-        merge!(a.values, Dict{Symbol,Any}(key => deepcopy(getproperty(o, key)) for key in a.keys))
+        merge!(
+            a.values,
+            Dict{Symbol,Any}(key => deepcopy(getproperty(o, key)) for key in a.keys),
+        )
     end
     return a.last_stored = i
 end

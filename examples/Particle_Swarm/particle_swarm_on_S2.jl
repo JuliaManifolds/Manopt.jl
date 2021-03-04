@@ -90,6 +90,6 @@ N = length(path)
 filename = string(@__DIR__, "/record_video.mkv")
 record(scene, filename, 1:N; framerate=30) do i
     t[] = path[i]
-    return b[] = path[i][argmin([F(M,y) for y in path[i]])]
+    return b[] = path[i][argmin([F(M, y) for y in path[i]])]
 end
 best = get_solver_result(o)

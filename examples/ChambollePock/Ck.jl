@@ -31,8 +31,9 @@ function ζk(p, o, x_old, ξbar_old)
 end
 function Ck(p, o, x_old, ξ_bar_old)
     return 1 / o.primal_stepsize *
-           distance(p.M, x_old, tilde_x_old(p, o, x_old, ξ_bar_old))^2 +
-           inner(p.N, o.n, ξ_bar_old, linearized_forward_operator(p, o.m, ζk(p, o, x_old, ξ_bar_old)))
+           distance(p.M, x_old, tilde_x_old(p, o, x_old, ξ_bar_old))^2 + inner(
+        p.N, o.n, ξ_bar_old, linearized_forward_operator(p, o.m, ζk(p, o, x_old, ξ_bar_old))
+    )
 end
 
 struct DebugCk <: DebugAction
