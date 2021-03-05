@@ -32,7 +32,7 @@ orig_color = RGBA{Float64}(colorant"#33BBEE") # tangent vector: Tol Vibrant Teal
 #
 # Manifolds and Data
 M = Circle()
-N = PowerManifold(M, NestedPowerRepresentation(), n)
+N = PowerManifold(M, n)
 f = artificial_S1_signal(n)
 xCompare = f
 fn = exp.(Ref(M), f, random_tangent.(Ref(M), f, Val(:Gaussian), σ))
