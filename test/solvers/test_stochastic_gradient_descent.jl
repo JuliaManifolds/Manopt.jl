@@ -54,7 +54,9 @@ using Manopt, Manifolds, Test
         @test Z == Z5
         @test_throws ErrorException get_gradients(p1e, p)
         @test_throws ErrorException get_gradient!(p1e, Z4, 1, p)
-        o = StochasticGradientDescentOptions(deepcopy(p), StochasticGradient(deepcopy(p)))
+        o = StochasticGradientDescentOptions(
+            deepcopy(p), zero_tangent_vector(M, p), StochasticGradient(deepcopy(p))
+        )
         o.order = collect(1:5)
         o.order_type = :Linear
         initialize_solver!(p1, o)

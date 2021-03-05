@@ -108,8 +108,8 @@ end
         coefficient=FletcherReevesCoefficient(),
         stopping_criterion=StopAfterIteration(15),
     )
-    @test isapprox(F(M, x_opt), minimum(eigvals(A)); atol=2.0 * 10^-4)
-    @test isapprox(x_opt, eigvecs(A)[:, size(A, 1)]; atol=3.0 * 10^-2)
+    @test isapprox(F(M, x_opt), minimum(eigvals(A)); atol=2.0 * 1e-2)
+    @test isapprox(x_opt, eigvecs(A)[:, size(A, 1)]; atol=3.0 * 1e-1)
     x_opt2 = conjugate_gradient_descent(
         M,
         F,

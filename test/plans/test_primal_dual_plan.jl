@@ -174,7 +174,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         s = String(take!(io))
         @test startswith(s, "PD Residual: ")
 
-        d4 = DebugPrimalChange(a, io)
+        d4 = DebugPrimalChange(a, "Primal Change: ", io)
         d4(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Change: ")
