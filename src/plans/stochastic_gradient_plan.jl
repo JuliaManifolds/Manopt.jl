@@ -191,12 +191,14 @@ all other fields are optional keyword arguments.
 """
 mutable struct StochasticGradientDescentOptions{
     TX,
+    TV,
     D<:DirectionUpdateRule,
     TStop<:StoppingCriterion,
     TStep<:Stepsize,
     RM<:AbstractRetractionMethod,
 } <: AbstractGradientOptions
     x::TX
+    gradient::TV
     direction::D
     stop::TStop
     stepsize::TStep
@@ -207,6 +209,7 @@ mutable struct StochasticGradientDescentOptions{
 end
 function StochasticGradientDescentOptions(
     x,
+    X,
     direction::DirectionUpdateRule;
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
@@ -216,12 +219,13 @@ function StochasticGradientDescentOptions(
 )
     return StochasticGradientDescentOptions{
         typeof(x),
+        typeof(X),
         typeof(direction),
         typeof(stoping_criterion),
         typeof(stepsize),
         typeof(retraction_method),
     }(
-        x, direction, stoping_criterion, stepsize, order_type, order, retraction_method, 0
+        x, X, direction, stoping_criterion, stepsize, order_type, order, retraction_method, 0
     )
 end
 
