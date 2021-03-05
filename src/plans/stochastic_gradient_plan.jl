@@ -225,7 +225,15 @@ function StochasticGradientDescentOptions(
         typeof(stepsize),
         typeof(retraction_method),
     }(
-        x, X, direction, stoping_criterion, stepsize, order_type, order, retraction_method, 0
+        x,
+        X,
+        direction,
+        stoping_criterion,
+        stepsize,
+        order_type,
+        order,
+        retraction_method,
+        0,
     )
 end
 

@@ -57,7 +57,8 @@ function stochastic_gradient_descent!(
     cost::Union{Function,Missing}=Missing(),
     direction::DirectionUpdateRule=StochasticGradient(zero_tangent_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    stoping_criterion::StoppingCriterion=StopAfterIteration(10000)|StopWhenGradientNormLess(1e-9),
+    stoping_criterion::StoppingCriterion=StopAfterIteration(10000) |
+                                         StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=ConstantStepsize(1.0),
     order_type::Symbol=:Random,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
@@ -69,7 +70,7 @@ function stochastic_gradient_descent!(
     p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
     o = StochasticGradientDescentOptions(
         x,
-        zero_tangent_vector(M,x),
+        zero_tangent_vector(M, x),
         direction;
         stoping_criterion=stoping_criterion,
         stepsize=stepsize,
@@ -97,8 +98,6 @@ function step_solver!(
 )
     s, o.X = o.direction(p, o, iter)
     retract!(p.M, o.x, o.x, -s * o.X)
-    (iter%10000==1) && println(iter,"-",o.x)
-    (iter%10000==1) && println(iter,"-",o.X)
     o.k = ((o.k) % length(o.order)) + 1
     return o
 end
