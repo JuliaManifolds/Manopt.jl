@@ -93,7 +93,7 @@ function prox_TV2(M::PowerManifold{𝔽,N}, λ, x, p::Int=1) where {𝔽,N<:NONM
                     JForward = i.I .+ ek.I #i + e_k
                     JBackward = i.I .- ek.I # i - e_k
                     if all(JForward .<= maxInd) && all(JBackward .>= minInd)
-                        (y[M, jBackward...], y[M, i.I...], y[M, jForward...]) =
+                        (y[M, JBackward...], y[M, i.I...], y[M, JForward...]) =
                             prox_TV2(
                                 M.manifold,
                                 λ,
