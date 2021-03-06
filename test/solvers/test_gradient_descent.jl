@@ -185,5 +185,9 @@ using Manopt, Manifolds
         n2 = gradient_descent(M, F, gradF, pts[1])
         @test !isapprox(M, pts[1], n2) # n2 is newly allocated and not pts[1]
         @test isapprox(M, north, n2)
+        n3 = gradient_descent(M, F, gradF, pts[1]; direction=MomentumGradient(M, pts[1]))
+        @test isapprox(M, north, n3)
+        n4 = gradient_descent(M, F, gradF, pts[1]; direction=AverageGradient(M, pts[1], 5))
+        @test isapprox(M, north, n4; atol=1e-7)
     end
 end

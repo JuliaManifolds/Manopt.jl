@@ -226,7 +226,7 @@ function MomentumGradient(
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM<:AbstractVectorTransportMethod}
     return MomentumGradient{P,typeof(gradient),typeof(momentum),VTM}(
-        deepcopy(x0), gradient, momentum, s, vector_transport_method
+        gradient, deepcopy(x0), momentum, s, vector_transport_method
     )
 end
 function (m::MomentumGradient)(p::Problem, o::AbstractGradientOptions, i)
@@ -326,7 +326,7 @@ function (a::AverageGradient)(p::Problem, o::AbstractGradientOptions, i)
     end
     a.gradients[1] = deepcopy(d)
     a.last_iterate = deepcopy(o.x)
-    return s, -1 / length(a.gradients) .* sum(a.gradients)
+    return s, 1 / length(a.gradients) .* sum(a.gradients)
 end
 
 @doc raw"""

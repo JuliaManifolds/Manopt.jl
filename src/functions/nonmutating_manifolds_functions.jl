@@ -84,22 +84,21 @@ function prox_TV2(M::PowerManifold{𝔽,N}, λ, x, p::Int=1) where {𝔽,N<:NONM
     d = length(size(x))
     minInd = first(R).I
     maxInd = last(R).I
-    y = copy(x)
+    y = deepcopy(x)
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
-        for l in 0:1
+        for l in 0:2
             for i in R # iterate over all pixel
                 if (i[k] % 3) == l
                     JForward = i.I .+ ek.I #i + e_k
                     JBackward = i.I .- ek.I # i - e_k
                     if all(JForward .<= maxInd) && all(JBackward .>= minInd)
-                        (y[M, JBackward...], y[M, i.I...], y[M, JForward...]) =
-                            prox_TV2(
-                                M.manifold,
-                                λ,
-                                (y[M, JBackward...], y[M, i.I...], y[M, JForward...]),
-                                p,
-                            ).data # Compute TV on these
+                        (y[M, JBackward...], y[M, i.I...], y[M, JForward...]) = prox_TV2(
+                            M.manifold,
+                            λ,
+                            (y[M, JBackward...], y[M, i.I...], y[M, JForward...]),
+                            p,
+                        )
                     end
                 end # if mod 3
             end # i in R

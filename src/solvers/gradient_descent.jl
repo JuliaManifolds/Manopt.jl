@@ -59,9 +59,8 @@ function gradient_descent!(
     x;
     stepsize::Stepsize=ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(200), StopWhenGradientNormLess(10.0^-8)
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+                                          StopWhenGradientNormLess(10.0^-8),
     direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     return_options=false,

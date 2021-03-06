@@ -89,6 +89,7 @@ using Manifolds, Manopt, Test, Dates
             [pS, rS, qS] .- t .* [1.0, -2.0, 1.0],
         ),
     ) ≈ 0
+    @test prox_TV2(N2, 0.3, [pS, rS, qS]) == [pSr, rSr, qSr]
     # others fail
     @test_throws ErrorException prox_TV2(M2, 0.3, (pS, rS, qS), 3)
     # Rn
