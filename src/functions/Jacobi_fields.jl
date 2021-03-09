@@ -2,20 +2,20 @@
     βdifferential_geodesic_startpoint(κ,t,d)
 
 weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
-with respect to its start point $D_x g(t;p,q)[X]$.
+with respect to its start point ``D_x g(t;p,q)[X]``.
 They are
 
 ```math
-\beta(\kappa) = \begin{cases}
-\frac{\sinh(d(1-t)\sqrt{-\kappa})}{\sinh(d\sqrt{-\kappa})}
-&\text{ if }\kappa < 0,\\
-1-t & \text{ if } \kappa = 0,\\
-\frac{\sin((1-t)d\sqrt{\kappa})}{\sinh(d\sqrt{\kappa})}
-&\text{ if }\kappa > 0.
+β(κ) = \begin{cases}
+\frac{\sinh(d(1-t)\sqrt{-κ})}{\sinh(d\sqrt{-κ})}
+&\text{ if }κ < 0,\\
+1-t & \text{ if } κ = 0,\\
+\frac{\sin((1-t)d\sqrt{κ})}{\sinh(d\sqrt{κ})}
+&\text{ if }κ > 0.
 \end{cases}
 ```
 
-Due to a symmetry agrument, these are also used to compute $D_q g(t; p,q)[\eta]$
+Due to a symmetry agrument, these are also used to compute ``D_q g(t; p,q)[η]``
 
 # See also
 
@@ -31,13 +31,13 @@ end
     βdifferential_exp_basepoint(κ,t,d)
 
 weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
-with respect to its start point $D_p \exp_p X [Y]$. They are
+with respect to its start point ``D_p \exp_p X [Y]``. They are
 
 ```math
-\beta(\kappa) = \begin{cases}
-\cosh(\sqrt{-\kappa})&\text{ if }\kappa < 0,\\
-1 & \text{ if } \kappa = 0,\\
-\cos(\sqrt{\kappa}) &\text{ if }\kappa > 0.
+β(κ) = \begin{cases}
+\cosh(\sqrt{-κ})&\text{ if }κ < 0,\\
+1 & \text{ if } κ = 0,\\
+\cos(\sqrt{κ}) &\text{ if }κ > 0.
 \end{cases}
 ```
 
@@ -54,13 +54,13 @@ end
     βdifferential_exp_argument(κ,t,d)
 
 weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
-with respect to its start point $D_X \exp_p X[Y]$. They are
+with respect to its start point ``D_X \exp_p X[Y]``. They are
 
 ```math
-$\beta(\kappa) = \begin{cases}
-\frac{\sinh(d\sqrt{-\kappa})}{d\sqrt{-\kappa}}&\text{ if }\kappa < 0,\\
-1 & \text{ if } \kappa = 0,\\
-\frac{\sin(d\sqrt{\kappa})}{\sqrt{d\kappa}}&\text{ if }\kappa > 0.
+β(κ) = \begin{cases}
+\frac{\sinh(d\sqrt{-κ})}{d\sqrt{-κ}}&\text{ if }κ < 0,\\
+1 & \text{ if } κ = 0,\\
+\frac{\sin(d\sqrt{κ})}{\sqrt{dκ}}&\text{ if }κ > 0.
 \end{cases}
 ```
 
@@ -77,13 +77,13 @@ end
     βdifferential_log_basepoint(κ,t,d)
 
 weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
-with respect to its start point $D_p \log_p q[X]$. They are
+with respect to its start point ``D_p \log_p q[X]``. They are
 
 ```math
-\beta(\kappa) = \begin{cases}
--\sqrt{-\kappa}d\frac{\cosh(d\sqrt{-\kappa})}{\sinh(d\sqrt{-\kappa})}&\text{ if }\kappa < 0,\\
--1 & \text{ if } \kappa = 0,\\
--\sqrt{\kappa}d\frac{\cos(d\sqrt{\kappa})}{\sin(d\sqrt{\kappa})}&\text{ if }\kappa > 0.
+β(κ) = \begin{cases}
+-\sqrt{-κ}d\frac{\cosh(d\sqrt{-κ})}{\sinh(d\sqrt{-κ})}&\text{ if }κ < 0,\\
+-1 & \text{ if } κ = 0,\\
+-\sqrt{κ}d\frac{\cos(d\sqrt{κ})}{\sin(d\sqrt{κ})}&\text{ if }κ > 0.
 \end{cases}
 ```
 
@@ -100,13 +100,13 @@ end
     βdifferential_log_argument(κ,t,d)
 
 weights for the JacobiField corresponding to the differential of the logarithmic
-map with respect to its argument $D_q \log_p q[X]$. They are
+map with respect to its argument ``D_q \log_p q[X]``. They are
 
 ```math
-\beta(\kappa) = \begin{cases}
-\frac{ d\sqrt{-\kappa} }{\sinh(d\sqrt{-\kappa})}&\text{ if }\kappa < 0,\\
-1 & \text{ if } \kappa = 0,\\
-\frac{ d\sqrt{\kappa} }{\sin(d\sqrt{\kappa})}&\text{ if }\kappa > 0.
+β(κ) = \begin{cases}
+\frac{ d\sqrt{-κ} }{\sinh(d\sqrt{-κ})}&\text{ if }κ < 0,\\
+1 & \text{ if } κ = 0,\\
+\frac{ d\sqrt{κ} }{\sin(d\sqrt{κ})}&\text{ if }κ > 0.
 \end{cases}
 ```
 
@@ -122,57 +122,71 @@ end
 
 @doc raw"""
     Y = adjoint_Jacobi_field(M, p, q, t, X, β)
+    adjoint_Jacobi_field!(M, Y, p, q, t, X, β)
 
-Compute the AdjointJacobiField $J$ along the geodesic $γ_{p,q}$ on the manifold
-$\mathcal M$ with initial conditions (depending on the application)
-$X ∈ T_{γ_{p,q}(t)}\mathcal M$ and weights $β$. The result is a vector
-$Y ∈ T_p\mathcal M$. The main difference to [`jacobi_field`](@ref) is the,
+Compute the AdjointJacobiField ``J`` along the geodesic ``γ_{p,q}`` on the manifold
+``\mathcal M`` with initial conditions (depending on the application)
+``X ∈ T_{γ_{p,q}(t)}\mathcal M`` and weights ``β``. The result is a vector
+``Y ∈ T_p\mathcal M``. The main difference to [`jacobi_field`](@ref) is the,
 that the input `X` and the output `Y` switched tangent spaces.
+The computation can be done in place of `Y`.
+
 For detais see [`jacobi_field`](@ref)
 """
 function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
+    x = shortest_geodesic(M, p, q, t)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)
     Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y = sum(
+    return sum(
+        (inner.(Ref(M), Ref(x), Ref(X), Θ)) .*
+        (β.(B.data.eigenvalues, Ref(t), Ref(distance(M, p, q)))) .* V,
+    )
+end
+function adjoint_Jacobi_field!(
+    M::Manifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
+)
+    x = shortest_geodesic(M, p, q, t)
+    B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
+    V = get_vectors(M, p, B)
+    Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
+    # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
+    Y .= sum(
         (inner.(Ref(M), Ref(x), Ref(X), Θ)) .*
         (β.(B.data.eigenvalues, Ref(t), Ref(distance(M, p, q)))) .* V,
     )
     return Y
 end
 function adjoint_Jacobi_field(
-    M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β=βdifferential_geodesic_startpoint
-)
-    x = shortest_geodesic(M, p, q, t)
-    B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
-    V = get_vectors(M, p, B)
-    Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
-    # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y = sum(
-        (inner.(Ref(M), Ref(x), Ref(X), Θ)) .*
-        (β.(B.data.eigenvalues, Ref(t), Ref(distance(M, p, q)))) .* V,
-    )[1]
-    return Y
-end
-function adjoint_Jacobi_field(
     M::AbstractPowerManifold, p, q, t, X, β=βdifferential_geodesic_startpoint
 )
-    rep_size = representation_size(M.manifold)
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
-        #lY = adjoint_Jacobi_field(M.manifold, p[i], q[i], t, X[i], β)
         Y[M, i] = adjoint_Jacobi_field(M.manifold, p[M, i], q[M, i], t, X[M, i], β)
+    end
+    return Y
+end
+function adjoint_Jacobi_field!(
+    M::AbstractPowerManifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
+)
+    Z = deepcopy(first(Y))
+    for i in get_iterator(M)
+        adjoint_Jacobi_field!(M.manifold, Z, p[M, i], q[M, i], t, X[M, i], β)
+        Y[M, i] = Z
     end
     return Y
 end
 
 @doc raw"""
     Y = jacobi_field(M, p, q, t, X, β)
-compute the Jacobi jield $J$ along the geodesic $γ_{p,q}$ on the manifold $\mathcal M$ with
-initial conditions (depending on the application) $X ∈ T_p\mathcal M$ and weights $β$. The
-result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
+    jacobi_field!(M, Y, p, q, t, X, β)
+
+compute the Jacobi jield ``J`` along the geodesic ``γ_{p,q}`` on the manifold ``\mathcal M`` with
+initial conditions (depending on the application) ``X ∈ T_p\mathcal M`` and weights ``β``. The
+result is a tangent vector `Y` from ``T_{γ_{p,q}(t)}\mathcal M``.
+The computation can be done in place of `Y`.
 
 # See also
 
@@ -180,10 +194,14 @@ result is a tangent vector `Y` from $T_{γ_{p,q}(t)}\mathcal M$.
 """
 function jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t)
+    Y = zero_tangent_vector(M, x)
+    return jacobi_field!(M, Y, p, q, t, X, β)
+end
+function jacobi_field!(M::Manifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint)
+    x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)
     Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
-    Y = zero_tangent_vector(M, p)
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
     Y .= sum(
         (inner.(Ref(M), Ref(p), Ref(X), V)) .*
@@ -192,27 +210,21 @@ function jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startp
     return Y
 end
 function jacobi_field(
-    M::Circle{ℝ}, p::Real, q::Real, t::Real, X::Real, β=βdifferential_geodesic_startpoint
-)
-    x = shortest_geodesic(M, p, q, t)
-    B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
-    V = get_vectors(M, p, B)
-    Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
-    Y = zero_tangent_vector(M, p)
-    # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y = sum(
-        (inner.(Ref(M), Ref(p), Ref(X), V)) .*
-        (β.(B.data.eigenvalues, Ref(t), Ref(distance(M, p, q)))) .* Θ,
-    )[1]
-    return Y
-end
-function jacobi_field(
     M::AbstractPowerManifold, p, q, t, X, β=βdifferential_geodesic_startpoint
 )
-    rep_size = representation_size(M.manifold)
-    Y = allocate_result(M, adjoint_Jacobi_field, p, X)
+    Y = allocate_result(M, jacobi_field, p, X)
     for i in get_iterator(M)
         Y[M, i] = jacobi_field(M.manifold, p[M, i], q[M, i], t, X[M, i], β)
+    end
+    return Y
+end
+function jacobi_field!(
+    M::AbstractPowerManifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
+)
+    Z = deepcopy(first(Y))
+    for i in get_iterator(M)
+        jacobi_field!(M.manifold, Z, p[M, i], q[M, i], t, X[M, i], β)
+        Y[M, i] = Z
     end
     return Y
 end

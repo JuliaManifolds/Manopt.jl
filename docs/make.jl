@@ -1,4 +1,4 @@
-using Manopt, Documenter, Literate
+using Manopt, Manifolds, Documenter, Literate
 
 # generate examples using Literate
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
@@ -6,6 +6,7 @@ tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
     "MeanAndMedian",
+    "Benchmark",
     "StochasticGradientDescent",
     "BezierCurves",
     "GradientOfSecondOrderDifference",
@@ -13,9 +14,10 @@ tutorials = [
 ]
 menuEntries = [
     "get Started: Optimize!",
+    "speed up! using `gradF!`",
     "do stochastic gradient descent",
     "work with Bézier curves",
-    "see the gradient of \$d_2\$",
+    "see the gradient of ``d_2``",
     "use Jacobi Fields",
 ]
 TutorialMenu = Array{Pair{String,String},1}()
@@ -67,6 +69,7 @@ makedocs(;
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
         ],
+        "Notation" => "notation.md",
         "Function Index" => "list.md",
     ],
 )

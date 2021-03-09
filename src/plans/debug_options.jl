@@ -60,7 +60,7 @@ function DebugOptions(o::O, format::Array{<:Any,1}) where {O<:Options}
     return DebugOptions{O}(o, DebugFactory(format))
 end
 
-dispatch_options_decorator(o::DebugOptions) = Val(true)
+dispatch_options_decorator(::DebugOptions) = Val(true)
 
 #
 # Meta Debugs

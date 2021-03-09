@@ -1,16 +1,19 @@
 @doc raw"""
-    truncated_conjugate_gradient_descent(M, F, ∇F, x, η, H, Δ)
+    truncated_conjugate_gradient_descent(M, F, gradF, x, η, HessF, trust_region_radius)
 
 solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{\eta  ∈  T_{x}M} m_{x}(\eta) = F(x) + \langle \nabla F(x), \eta \rangle_{x} + \frac{1}{2} \langle \operatorname{Hess}[F](\eta)_ {x}, \eta \rangle_{x}
-```
-```math
-\text{s.t.} \; \langle \eta, \eta \rangle_{x} \leqq {\Delta}^2
+\operatorname*{arg\,min}_{η ∈ T_xM}
+m_x(η) \quad\text{where} 
+m_x(η) = F(x) + ⟨\operatorname{grad}F(x),η⟩_x + \frac{1}{2}⟨\operatorname{Hess}F(x)[η],η⟩_x,
 ```
 
-with the Steihaug-Toint truncated conjugate-gradient method.
+```math
+\text{such that}\quad ⟨η,η⟩_x ≤ Δ^2
+```
+
+with the [`truncated_conjugate_gradient_descent`](@ref).
 For a description of the algorithm and theorems offering convergence guarantees,
 see the reference:
 
@@ -21,21 +24,25 @@ see the reference:
     MPS, 2000. doi: [10.1137/1.9780898719857](https://doi.org/10.1137/1.9780898719857)
 
 # Input
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
-* `x` – a point on the manifold $x ∈ \mathcal M$
-* `η` – an update tangential vector $\eta ∈ \mathcal{T_{x}M}$
-* `H` – the hessian $H( \mathcal M, x, \xi)$ of F
-* `Δ` – a trust-region radius
+
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
+* `x` – a point on the manifold ``x ∈ \mathcal M``
+* `η` – an update tangential vector ``η ∈ T_x\mathcal M``
+* `trust_region_radius` – a trust-region radius
 
 # Optional
+
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
+   allocation (default) or [`MutatingEvaluation`](@ref) in place
 * `preconditioner` – a preconditioner for the hessian H
 * `θ` – 1+θ is the superlinear convergence target rate. The algorithm will
     terminate early if the residual was reduced by a power of 1+theta.
 * `κ` – the linear convergence target rate: algorithm will terminate
     early if the residual was reduced by a factor of kappa.
-* `useRandom` – set to true if the trust-region solve is to be initiated with a
+* `randomize` – set to true if the trust-region solve is to be initiated with a
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
@@ -53,8 +60,8 @@ see the reference:
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `η` – an approximate solution of the trust-region subproblem in
-    $\mathcal{T_{x}M}$.
+
+* `η` – an approximate solution of the trust-region subproblem in ``T_{x}\mathcal M``.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 
@@ -62,40 +69,43 @@ OR
 [`trust_regions`](@ref)
 """
 function truncated_conjugate_gradient_descent(
-    M::Manifold, F::TF, ∇F::TdF, x, η, H::Union{Function,Missing}, Δ::Float64; kwargs...
-) where {TF,TdF}
-    x_res = allocate(x)
-    copyto!(x_res, x)
-    return truncated_conjugate_gradient_descent!(M, F, ∇F, x_res, η, H, Δ; kwargs...)
+    M::Manifold, F::TF, gradF::TG, x, η, H::TH, trust_region_radius::Float64; kwargs...
+) where {TF,TG,TH}
+    x_res = deepcopy(x)
+    return truncated_conjugate_gradient_descent!(
+        M, F, gradF, x_res, η, H, trust_region_radius; kwargs...
+    )
 end
 @doc raw"""
-    truncated_conjugate_gradient_descent!(M, F, ∇F, x, η, H, Δ; kwargs...)
+    truncated_conjugate_gradient_descent!(M, F, gradF, x, η, HessF, trust_region_radius; kwargs...)
 
 solve the trust-region subproblem in place of `x`.
 
 # Input
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `∇F` – the gradient $\nabla F\colon\mathcal M\to T\mathcal M$ of F
-* `x` – a point on the manifold $x ∈ \mathcal M$
-* `η` – an update tangential vector $\eta ∈ \mathcal{T_{x}M}$
-* `H` – the hessian $H( \mathcal M, x, \xi)$ of F
-* `Δ` – a trust-region radius
+# Input
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
+* `x` – a point on the manifold ``x ∈ \mathcal M``
+* `η` – an update tangential vector ``η ∈ T_x\mathcal M``
+* `trust_region_radius` – a trust-region radius
 
 For more details and all optional arguments, see [`truncated_conjugate_gradient_descent`](@ref).
 """
 function truncated_conjugate_gradient_descent!(
     M::Manifold,
     F::TF,
-    ∇F::TdF,
+    gradF::TG,
     x,
     η,
-    H::Union{Function,Missing},
-    Δ::Float64;
+    H::TH,
+    trust_region_radius::Float64;
+    evaluation=AllocatingEvaluation(),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     θ::Float64=1.0,
     κ::Float64=0.1,
-    useRandom::Bool=false,
+    randomize::Bool=false,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
         StopIfResidualIsReducedByPower(
@@ -103,8 +113,8 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             θ,
@@ -114,27 +124,22 @@ function truncated_conjugate_gradient_descent!(
                 inner(
                     M,
                     x,
-                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    ∇F(x) + (useRandom ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
+                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
                 ),
             ),
             κ,
         ),
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),
+        StopWhenModelIncreased(),
     ),
     return_options=false,
     kwargs..., #collect rest
-) where {TF,TdF,Tprec}
-    p = HessianProblem(M, F, ∇F, H, preconditioner)
+) where {TF,TG,TH,Tprec}
+    p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
     o = TruncatedConjugateGradientOptions(
-        x,
-        stopping_criterion,
-        η,
-        zero_tangent_vector(M, x),
-        Δ,
-        zero_tangent_vector(M, x),
-        useRandom,
+        p, x, η, trust_region_radius, randomize; θ=θ, κ=κ, stop=stopping_criterion
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -144,80 +149,61 @@ function truncated_conjugate_gradient_descent!(
         return get_solver_result(resultO)
     end
 end
-function initialize_solver!(
-    p::P, o::O
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    o.η = o.useRand ? o.η : zero_tangent_vector(p.M, o.x)
-    Hη = o.useRand ? getHessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
-    o.residual = get_gradient(p, o.x) + Hη
-    # Initial search direction (we maintain -delta in memory, called mdelta, to
-    # avoid a change of sign of the tangent vector.)
-    return o.δ = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
-    # If the Hessian or a linear Hessian approximation is in use, it is
-    # theoretically guaranteed that the model value decreases strictly
-    # with each iteration of tCG. Hence, there is no need to monitor the model
-    # value. But, when a nonlinear Hessian approximation is used (such as the
-    # built-in finite-difference approximation for example), the model may
-    # increase. It is then important to terminate the tCG iterations and return
-    # the previous (the best-so-far) iterate. The variable below will hold the
-    # model value.
-    # o.model_value = o.useRand ? 0 : inner(p.M,o.x,o.η,get_gradient(p,o.x)) + 0.5 * inner(p.M,o.x,o.η,Hη)
+function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOptions)
+    (o.randomize) || zero_tangent_vector!(p.M, o.η, o.x)
+    o.Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
+    o.gradient = get_gradient(p, o.x)
+    o.residual = o.randomize ? o.gradient + o.Hη : get_gradient(p, o.x)
+    o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
+    o.δ = -deepcopy(o.z)
+    o.Hδ = zero_tangent_vector(p.M, o.x)
+    o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
+    o.ηPδ = o.randomize ? inner(p.M, o.x, o.η, o.δ) : zero(o.δHδ)
+    o.δPδ = inner(p.M, o.x, o.residual, o.z)
+    o.ηPη = o.randomize ? inner(p.M, o.x, o.η, o.η) : zero(o.δHδ)
+    if o.randomize
+        o.model_value = inner(p.M, o.x, o.η, o.gradient) + 0.5 * inner(p.M, o.x, o.η, o.Hη)
+    else
+        o.model_value = 0
+    end
+    o.z_r = inner(p.M, o.x, o.z, o.residual)
+    return o
 end
 function step_solver!(
-    p::P, o::O, iter
+    p::P, o::O, ::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    ηOld = o.η
-    δOld = o.δ
-    z = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
-    # this is not correct, it needs to be the inverse of the preconditioner!
-    zrOld = inner(p.M, o.x, z, o.residual)
-    HηOld = getHessian(p, o.x, ηOld)
-    # This call is the computationally expensive step.
-    Hδ = getHessian(p, o.x, δOld)
-    # Compute curvature (often called kappa).
-    δHδ = inner(p.M, o.x, δOld, Hδ)
-    # Note that if d_Hd == 0, we will exit at the next "if" anyway.
-    α = zrOld / δHδ
-    # <neweta,neweta>_P =
-    # <eta,eta>_P + 2*alpha*<eta,delta>_P + alpha*alpha*<delta,delta>_P
-    e_Pd = -inner(p.M, o.x, ηOld, o.useRand ? δOld : get_preconditioner(p, o.x, δOld)) # It must be clarified if it's negative or not
-    d_Pd = inner(p.M, o.x, δOld, o.useRand ? δOld : get_preconditioner(p, o.x, δOld))
-    e_Pe = inner(p.M, o.x, ηOld, o.useRand ? ηOld : get_preconditioner(p, o.x, ηOld))
-    e_Pe_new = e_Pe + 2α * e_Pd + α^2 * d_Pd # vielleicht müssen doch die weiteren Optionen gespeichert werden
+    # Updates
+    get_hessian!(p, o.Hδ, o.x, o.δ)
+    o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
+    α = o.z_r / o.δHδ
+    ηPη_new = o.ηPη + 2 * α * o.ηPδ + α^2 * o.δPδ
     # Check against negative curvature and trust-region radius violation.
-    # If either condition triggers, we bail out.
-    if δHδ <= 0 || e_Pe_new >= o.Δ^2
-        tau = (-e_Pd + sqrt(e_Pd^2 + d_Pd * (o.Δ^2 - e_Pe))) / d_Pd
-        o.η = ηOld - tau * (δOld)
-    else
-        # No negative curvature and eta_prop inside TR: accept it.
-        o.η = ηOld - α * (δOld)
-        # Verify that the model cost decreased in going from eta to new_eta. If
-        # it did not (which can only occur if the Hessian approximation is
-        # nonlinear or because of numerical errors), then we return the
-        # previous eta (which necessarily is the best reached so far, according
-        # to the model cost). Otherwise, we accept the new eta and go on.
-        # -> Stopping Criterion
-        old_model_value =
-            inner(p.M, o.x, ηOld, get_gradient(p, o.x)) + 0.5 * inner(p.M, o.x, ηOld, HηOld)
-        new_model_value =
-            inner(p.M, o.x, o.η, get_gradient(p, o.x)) +
-            0.5 * inner(p.M, o.x, o.η, getHessian(p, o.x, o.η))
-        if new_model_value >= old_model_value
-            o.η = ηOld
-        end
+    if o.δHδ <= 0 || ηPη_new >= o.trust_region_radius^2
+        τ = (-o.ηPδ + sqrt(o.ηPδ^2 + o.δPδ * (o.trust_region_radius^2 - o.ηPη))) / o.δPδ
+        o.η = o.η + τ * o.δ
+        o.Hη = o.Hη + τ * o.Hδ
+        return o
     end
-    # Update the residual.
-    o.residual = o.residual - α * Hδ
+    o.ηPη = ηPη_new
+    new_η = o.η + α * o.δ
+    new_Hη = get_hessian(p, o.x, new_η)
+    # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
+    o.new_model_value =
+        inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
+    (o.new_model_value > o.model_value) && return o
+    copyto!(o.η, new_η)
+    o.model_value = o.new_model_value
+    copyto!(o.Hη, new_Hη)
+    o.residual = o.residual + α * o.Hδ
     # Precondition the residual.
-    # It's actually the inverse of the preconditioner in o.residual
-    z = o.useRand ? o.residual : get_preconditioner(p, o.x, o.residual)
-    # this is not correct, it needs to be the inverse of the preconditioner!
-    # Save the old z'*r.
-    # Compute new z'*r.
-    zr = inner(p.M, o.x, z, o.residual)
+    o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
+    zr = inner(p.M, o.x, o.z, o.residual)
     # Compute new search direction.
-    β = zr / zrOld
-    return o.δ = project(p.M, o.x, z + β * o.δ)
+    β = o.z_r / zr
+    o.z_r = zr
+    o.δ = -o.z + β * o.δ
+    o.ηPδ = β * (α * o.δPδ + o.ηPδ)
+    o.δPδ = o.z_r + β^2 * o.δPδ
+    return o
 end
 get_solver_result(o::O) where {O<:TruncatedConjugateGradientOptions} = o.η

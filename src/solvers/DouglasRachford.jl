@@ -20,6 +20,8 @@ i.e. component wise in a vector.
 
 # Optional values
 the default parameter is given in brackets
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
+  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
 * `λ` – (`(iter) -> 1.0`) function to provide the value for the proximal parameter
   during the calls
 * `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.
@@ -46,8 +48,7 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function DouglasRachford(M::Manifold, F::TF, proxes::Vector{<:Any}, x; kwargs...) where {TF}
-    x_res = allocate(x)
-    copyto!(x_res, x)
+    x_res = deepcopy(x)
     return DouglasRachford!(M, F, proxes, x; kwargs...)
 end
 @doc raw"""
@@ -79,6 +80,7 @@ function DouglasRachford!(
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
     R::TR=reflect,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     parallel::Int=0,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(200), StopWhenChangeLess(10.0^-5)
@@ -98,17 +100,17 @@ function DouglasRachford!(
         parallel = 0
     else # more than 2 -> parallelDouglasRachford
         parallel = length(proxes)
-        prox1 = (λ, x) -> [proxes[i](λ, x[i]) for i in 1:parallel]
-        prox2 = (λ, x) -> fill(mean(M.manifold, x), parallel)
+        prox1 = (M, λ, x) -> [proxes[i](M, λ, x[i]) for i in 1:parallel]
+        prox2 = (M, λ, x) -> fill(mean(M.manifold, x), parallel)
     end
     if parallel > 0
         M = PowerManifold(M, NestedPowerRepresentation(), parallel)
         x = [copy(x) for i in 1:parallel]
-        nF = x -> F(x[1])
+        nF = (M, x) -> F(M.manifold, x[1])
     else
         nF = F
     end
-    p = ProximalProblem(M, nF, (prox1, prox2))
+    p = ProximalProblem(M, nF, (prox1, prox2); evaluation=evaluation)
     o = DouglasRachfordOptions(x, λ, α, reflect, stopping_criterion, parallel > 0)
 
     o = decorate_options(o; kwargs...)
@@ -119,13 +121,14 @@ function DouglasRachford!(
         return get_solver_result(resultO)
     end
 end
-function initialize_solver!(p::ProximalProblem, o::DouglasRachfordOptions) end
+function initialize_solver!(::ProximalProblem, ::DouglasRachfordOptions) end
 function step_solver!(p::ProximalProblem, o::DouglasRachfordOptions, iter)
-    pP = get_proximal_map(p, o.λ(iter), o.s, 1)
-    snew = o.R(p.M, pP, o.s)
-    o.x = get_proximal_map(p, o.λ(iter), snew, 2)
-    snew = o.R(p.M, o.x, snew)
+    get_proximal_map!(p, o.xtmp, o.λ(iter), o.s, 1)
+    o.stmp = o.R(p.M, o.xtmp, o.s)
+    o.x = get_proximal_map(p, o.λ(iter), o.stmp, 2)
+    o.stmp = o.R(p.M, o.x, o.stmp)
     # relaxation
-    return o.s = shortest_geodesic(p.M, o.s, snew, o.α(iter))
+    o.s = shortest_geodesic(p.M, o.s, o.stmp, o.α(iter))
+    return o
 end
 get_solver_result(o::DouglasRachfordOptions) = o.parallel ? o.x[1] : o.x

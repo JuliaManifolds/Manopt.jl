@@ -8,9 +8,9 @@ using Manifolds, Manopt, Test, ManifoldsBase
     o = GradientDescentOptions(
         x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
     )
-    f = y -> distance(M, y, x) .^ 2
-    ∇f = y -> -2 * log(M, y, x)
-    p = GradientProblem(M, f, ∇f)
+    f(M, y) = distance(M, y, x) .^ 2
+    gradf(M, y) = -2 * log(M, y, x)
+    p = GradientProblem(M, f, gradf)
     a = RecordIteration()
     # constructors
     rO = RecordOptions(o, a)
@@ -106,13 +106,13 @@ using Manifolds, Manopt, Test, ManifoldsBase
     g(p, o, 2)
     @test g.recorded_values == [0.0, 1.0]
     #RecordFactory
-    o.∇ = [0.0, 0.0]
-    rf = RecordFactory(o, [:Cost, :∇])
+    o.gradient = [0.0, 0.0]
+    rf = RecordFactory(o, [:Cost, :gradient])
     @test isa(rf[:All], RecordGroup)
     @test isa(rf[:All].group[1], RecordCost)
     @test isa(rf[:All].group[2], RecordEntry)
     @test isa(RecordFactory(o, [2])[:All], RecordEvery)
-    @test rf[:All].group[2].field == :∇
+    @test rf[:All].group[2].field == :gradient
     @test length(rf[:All].group) == 2
     @test all(
         isa.(

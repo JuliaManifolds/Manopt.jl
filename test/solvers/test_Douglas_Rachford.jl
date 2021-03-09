@@ -6,17 +6,19 @@
     r = [0.0, 0.0, 1.0]
     start = [0.0, 0.0, 1.0]
     result = result = geodesic(M, p, q, distance(M, p, q) / 2)
-    F(x) = distance(M, x, p)^2 + distance(M, x, q)^2
-    prox1 = (η, x) -> prox_distance(M, η, p, x)
-    prox2 = (η, x) -> prox_distance(M, η, q, x)
+    F(M, x) = distance(M, x, p)^2 + distance(M, x, q)^2
+    prox1 = (M, η, x) -> prox_distance(M, η, p, x)
+    prox2 = (M, η, x) -> prox_distance(M, η, q, x)
     @test_throws ErrorException DouglasRachford(M, F, Array{Function,1}([prox1]), start) # we need more than one prox
     xHat = DouglasRachford(M, F, [prox1, prox2], start)
-    @test F(start) > F(xHat)
+    @test F(M, start) > F(M, xHat)
     @test distance(M, xHat, result) ≈ 0
     # but we can also compute the riemannian center of mass (locally) on Sn
     # though also this is not that useful, but easy to test that DR works
-    F2(x) = distance(M, x, p)^2 + distance(M, x, q)^2 + distance(M, x, r)^2
-    prox3 = (η, x) -> prox_distance(M, η, r, x)
+    F2(M, x) = distance(M, x, p)^2 + distance(M, x, q)^2 + distance(M, x, r)^2
+    prox1 = (M, η, x) -> prox_distance(M.manifold, η, p, x)
+    prox2 = (M, η, x) -> prox_distance(M.manifold, η, q, x)
+    prox3 = (M, η, x) -> prox_distance(M.manifold, η, r, x)
     o = DouglasRachford(
         M,
         F2,

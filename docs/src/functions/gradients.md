@@ -1,13 +1,13 @@
 # [Gradients](@id GradientFunctions)
 
-For a function $f\colon\mathcal M\to\mathbb R$
-the Riemannian gradient $\nabla f(x)$ at $x∈\mathcal M$
+For a function $f:\mathcal M→ℝ$
+the Riemannian gradient $\operatorname{grad}f(x)$ at $x∈\mathcal M$
 is given by the unique tangent vector fulfilling
 
-$\langle \nabla f(x), \xi\rangle_x = D_xf[\xi],\quad
-\forall \xi ∈ T_x\mathcal M,$
-where $D_xf[\xi]$ denotes the differential of $f$ at $x$ with respect to
-the tangent direction (vector) $\xi$ or in other words the directional
+$\langle \operatorname{grad}f(x), ξ\rangle_x = D_xf[ξ],\quad
+\forall ξ ∈ T_x\mathcal M,$
+where $D_xf[ξ]$ denotes the differential of $f$ at $x$ with respect to
+the tangent direction (vector) $ξ$ or in other words the directional
 derivative.
 
 This page collects the available gradients.

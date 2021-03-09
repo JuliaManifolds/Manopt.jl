@@ -1,24 +1,31 @@
 @doc raw"""
-    gradient_descent(M, F, ∇F, x)
+    gradient_descent(M, F, gradF, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)`` with
-different choices of ``s_k`` available (see `stepsize` option below).
+perform a gradient descent
+
+```math
+x_{k+1} = \operatorname{retr}_{x_k}\bigl( s_k\operatorname{grad}f(x_k) \bigr)
+```
+
+with different choices of ``s_k`` available (see `stepsize` option below).
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F\colon\mathcal M\to\mathbb R`` to minimize
-* `∇F` – the gradient ``\nabla F\colon\mathcal M\to T\mathcal M`` of F
+* `F` – a cost function ``F: \mathcal M→ℝ`` to minimize
+* `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of F
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
-* `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
-  functor.
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
+  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
-  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) are returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` if returned
+* `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
+  functor.
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
@@ -27,21 +34,20 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function gradient_descent(M::Manifold, F::TF, ∇F::TDF, x; kwargs...) where {TF,TDF}
-    x_res = allocate(x)
-    copyto!(x_res, x)
-    return gradient_descent!(M, F, ∇F, x_res; kwargs...)
+function gradient_descent(M::Manifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
+    x_res = deepcopy(x)
+    return gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
-    gradient_descent!(M, F, ∇F, x)
+    gradient_descent!(M, F, gradF, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\nabla f(x_k)`` inplace of `x`
+perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\operatorname{grad}f(x_k)`` in place of `x`
 with different choices of ``s_k`` available.
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F\colon\mathcal M\to\mathbb R`` to minimize
-* `∇F` – the gradient ``\nabla F\colon\mathcal M\to T\mathcal M`` of F
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `gradF` – the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
 * `x` – an initial value ``x ∈ \mathcal M``
 
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
@@ -49,18 +55,18 @@ For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_des
 function gradient_descent!(
     M::Manifold,
     F::TF,
-    ∇F::TDF,
+    gradF::TDF,
     x;
     stepsize::Stepsize=ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(200), StopWhenGradientNormLess(10.0^-8)
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+                                          StopWhenGradientNormLess(10.0^-8),
     direction=IdentityUpdateRule(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TDF}
-    p = GradientProblem(M, F, ∇F)
+    p = GradientProblem(M, F, gradF; evaluation=evaluation)
     o = GradientDescentOptions(
         x;
         stopping_criterion=stopping_criterion,
@@ -79,13 +85,13 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(p::P, o::O) where {P<:GradientProblem,O<:GradientDescentOptions}
-    o.∇ = get_gradient(p, o.x)
+function initialize_solver!(p::GradientProblem, o::GradientDescentOptions)
+    o.gradient = get_gradient(p, o.x)
     return o
 end
-function step_solver!(p::P, o::O, iter) where {P<:GradientProblem,O<:GradientDescentOptions}
-    s, o.∇ = o.direction(p, o, iter)
-    o.x = retract(p.M, o.x, -s .* o.∇, o.retraction_method)
+function step_solver!(p::GradientProblem, o::GradientDescentOptions, iter)
+    s, o.gradient = o.direction(p, o, iter)
+    retract!(p.M, o.x, o.x, -s .* o.gradient, o.retraction_method)
     return o
 end
 get_solver_result(o::GradientDescentOptions) = o.x

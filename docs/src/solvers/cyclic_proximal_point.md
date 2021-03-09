@@ -8,11 +8,11 @@ It aims to minimize
 F(x) = \sum_{i=1}^c f_i(x)
 ```
 
-assuming that the [proximal maps](@ref proximalMapFunctions) $\operatorname{prox}_{\lambda f_i}(x)$
+assuming that the [proximal maps](@ref proximalMapFunctions) $\operatorname{prox}_{λ f_i}(x)$
 are given in closed form or can be computed efficiently (at least approximately).
 
 The algorithm then cycles through these proximal maps, where the type of cycle
-might differ and the proximal parameter $\lambda_k$ changes after each cycle $k$.
+might differ and the proximal parameter $λ_k$ changes after each cycle $k$.
 
 For a convergence result on
 [Hadamard manifolds](https://en.wikipedia.org/wiki/Hadamard_manifold)
@@ -22,6 +22,8 @@ see [[Bačák, 2014](#Bačák2014)].
 cyclic_proximal_point
 cyclic_proximal_point!
 ```
+
+## Options
 
 ```@docs
 CyclicProximalPointOptions

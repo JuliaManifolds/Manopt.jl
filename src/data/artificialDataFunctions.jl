@@ -3,8 +3,6 @@
 #
 #
 #
-import LinearAlgebra: I, Diagonal
-
 @doc raw"""
     artificialIn_SAR_image([pts=500])
 generate an artificial InSAR image, i.e. phase valued data, of size `pts` x

@@ -21,6 +21,9 @@ using Manopt, Manifolds, Test
         @test sum(distance.(Ref(M), pts, pts2)) ≈ 0
         aX = log(M, pT, pC)
         aT1 = adjoint_differential_bezier_control(M, BezierSegment([pT, pC]), 0.5, aX).pts
+        aT1a = BezierSegment(similar.(aT1))
+        adjoint_differential_bezier_control!(M, aT1a, BezierSegment([pT, pC]), 0.5, aX)
+        @test aT1a.pts == aT1
         aT2 = [
             adjoint_differential_geodesic_startpoint(M, pT, pC, 0.5, aX),
             adjoint_differential_geodesic_endpoint(M, pT, pC, 0.5, aX),
@@ -29,7 +32,9 @@ using Manopt, Manifolds, Test
         #
         @test sum(
             norm.(
-                ∇acceleration_bezier(M, B[1], collect(range(0.0, 1.0; length=20))).pts .-
+                grad_acceleration_bezier(
+                    M, B[1], collect(range(0.0, 1.0; length=20))
+                ).pts .-
                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
             ),
         ) ≈ 0 atol = 10^(-12)
@@ -41,8 +46,8 @@ using Manopt, Manifolds, Test
         Mp = PowerManifold(M, NestedPowerRepresentation(), length(Bvec))
         @test cost_acceleration_bezier(M, Bvec, degrees, T) ≈ 0 atol = 10^-10
         z = zero_tangent_vector(Mp, Bvec)
-        distance(Mp, ∇acceleration_bezier(M, Bvec, degrees, T), z)
-        @test norm(Mp, Bvec, ∇acceleration_bezier(M, Bvec, degrees, T) - z) ≈ 0 atol =
+        distance(Mp, grad_acceleration_bezier(M, Bvec, degrees, T), z)
+        @test norm(Mp, Bvec, grad_acceleration_bezier(M, Bvec, degrees, T) - z) ≈ 0 atol =
             10^(-12)
 
         d = [pT, exp(M, pC, [0.3, 0.0, 0.0]), pB]
@@ -55,16 +60,16 @@ using Manopt, Manifolds, Test
               λ / 2 * distance(M, d[2], pC) .^ 2
         # when the data are the junctions
         @test norm(
-            Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, λ, [pT, pC, pB]) - z
+            Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, λ, [pT, pC, pB]) - z
         ) ≈ 0 atol = 10^(-12)
         z[4][1] = -0.9
-        @test norm(Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, λ, d) - z) ≈ 0 atol =
+        @test norm(Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, λ, d) - z) ≈ 0 atol =
             10^(-12)
         # when the data is weighted with zero
         @test cost_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) ≈ 0 atol = 10^(-10)
         z[4][1] = 0.0
-        @test norm(Mp, Bvec, ∇L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈ 0 atol =
-            10^(-12)
+        @test norm(Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈
+              0 atol = 10^(-12)
     end
     @testset "de Casteljau variants" begin
         M = Sphere(2)
@@ -134,21 +139,30 @@ using Manopt, Manifolds, Test
         )
         # a shortcut to evaluate the adjoint at several points is equal to seperate evals
         b = B[2]
+        Xi = [log(M, b.pts[1], b.pts[2]), -log(M, b.pts[4], b.pts[3])]
+        Xs = adjoint_differential_bezier_control(M, b, [0.0, 1.0], Xi)
         @test isapprox(
-            adjoint_differential_bezier_control(
-                M, b, [0.0, 1.0], [log(M, b.pts[1], b.pts[2]), -log(M, b.pts[4], b.pts[3])]
-            ).pts,
+            Xs.pts,
             adjoint_differential_bezier_control(M, b, 0.0, log(M, b.pts[1], b.pts[2])).pts +
             adjoint_differential_bezier_control(M, b, 1.0, -log(M, b.pts[4], b.pts[3])).pts,
         )
+        Ys = BezierSegment(similar.(Xs.pts))
+        adjoint_differential_bezier_control!(M, Ys, b, [0.0, 1.0], Xi)
+        @test isapprox(Xs.pts, Ys.pts)
         # differential
         X = BezierSegment([
             log(M, b.pts[1], b.pts[2]), [zero_tangent_vector(M, b.pts[i]) for i in 2:4]...
         ])
+        Ye = zero(X.pts[1])
         @test differential_bezier_control(M, b, 0.0, X) ≈ X.pts[1]
+        differential_bezier_control!(M, Ye, b, 0.0, X)
+        @test Ye ≈ X.pts[1]
         dT1 = differential_bezier_control.(Ref(M), Ref(b), [0.0, 1.0], Ref(X))
         dT2 = differential_bezier_control(M, b, [0.0, 1.0], X)
+        dT3 = similar.(dT2)
+        differential_bezier_control!(M, dT3, b, [0.0, 1.0], X)
         @test dT1 ≈ dT2
+        @test dT3 == dT3
         X2 = [
             BezierSegment([[0.0, 0.0, 0.0] for i in 1:4]),
             X,
@@ -156,10 +170,17 @@ using Manopt, Manifolds, Test
         ]
         @test_throws DomainError differential_bezier_control(M, B, 20.0, X2)
         dbT2a = differential_bezier_control(M, B, 1.0, X2)
+        dbT3a = similar(dbT2a)
+        @test_throws DomainError differential_bezier_control!(M, dbT3a, B, 20.0, X2)
+        differential_bezier_control!(M, dbT3a, B, 1.0, X2)
+        @test dbT2a == dbT3a
         @test dbT2a ≈ X.pts[1]
         dbT2 = differential_bezier_control(M, B, [1.0, 2.0], X2)
         dbT1 = differential_bezier_control.(Ref(M), Ref(B), [1.0, 2.0], Ref(X2))
         @test dT1 ≈ dbT1
         @test dbT2 ≈ dbT1
+        dbT3 = similar.(dbT2)
+        differential_bezier_control!(M, dbT3, B, [1.0, 2.0], X2)
+        @test dbT2 == dbT3
     end
 end

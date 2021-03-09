@@ -1,22 +1,32 @@
 @doc raw"""
-    CostProblem <: Problem
+    CostProblem{T, Manifold, TCost} <: Problem{T}
 
 speficy a problem for solvers just based on cost functions, i.e.
 gradient free ones.
-
 # Fields
 
-* `M`            – a manifold $\mathcal M$
-* `cost` – a function $F\colon\mathcal M\to\mathbb R$ to minimize
+* `M`            – a manifold ``\mathcal M``
+* `cost` – a function ``F: \mathcal M → ℝ`` to minimize
+
+# Constructors
+
+    CostProblem(M, cost; evaluation=AllocatingEvaluation())
+
+Generate a problem. While this Problem does not have any allocating functions,
+the type `T` can be set for consistency reasons with other problems.
 
 # See also
 [`NelderMead`](@ref)
 """
-struct CostProblem{mT<:Manifold,Tcost} <: Problem
+struct CostProblem{T,mT<:Manifold,Tcost} <: Problem{T}
     M::mT
     cost::Tcost
 end
-
+function CostProblem(
+    M::mT, cost::T; evaluation::AbstractEvaluationType=AllocatingEvaluation()
+) where {mT<:Manifold,T}
+    return CostProblem{typeof(evaluation),mT,T}(M, cost)
+end
 @doc raw"""
     NelderMeadOptions <: Options
 
@@ -29,13 +39,13 @@ The naming of these parameters follows the [Wikipedia article](https://en.wikipe
 of the Euclidean case. The default is given in brackets, the required value range
 after the description
 
-* `population` – an `Array{`point`,1}` of $n+1$ points $x_i$, $i=1,\ldots,n+1$, where $n$ is the
+* `population` – an `Array{`point`,1}` of ``n+1`` points ``x_i``, ``i=1,…,n+1``, where ``n`` is the
   dimension of the manifold.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
-* `α` – (`1.`) reflection parameter ($\alpha > 0$)
-* `γ` – (`2.`) expansion parameter ($\gamma>0$)
-* `ρ` – (`1/2`) contraction parameter, $0 < \rho \leq \frac{1}{2}$,
-* `σ` – (`1/2`) shrink coefficient, $0 < \sigma \leq 1$
+* `α` – (`1.`) reflection parameter (``α > 0``)
+* `γ` – (`2.`) expansion parameter (``γ > 0``)
+* `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
+* `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
 * `x` – (`p[1]`) - a field to collect the current best value
 * `retraction_method` – `ExponentialRetraction()` the rectraction to use, defaults to
   the exponential map

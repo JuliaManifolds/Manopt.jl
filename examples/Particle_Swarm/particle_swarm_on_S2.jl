@@ -12,7 +12,7 @@ end
 
 bob(x, x0, r=1) = (norm(x - x0) <= r) ? 1 - norm(x - x0) / r : 0
 p1 = [0.0, 0.0, 1.0]
-function F(x)
+function F(::Manifolds.Sphere, x)
     s = euclidean_to_spherical(x[1], x[2], x[3])
     θ = s[1]
     φ = mod(s[2], 2π)
@@ -31,7 +31,7 @@ mesh_x = [spherical_to_euclidean(θ, φ)[1] for θ in lat, φ in lon]
 mesh_y = [spherical_to_euclidean(θ, φ)[2] for θ in lat, φ in lon]
 mesh_z = [spherical_to_euclidean(θ, φ)[3] for θ in lat, φ in lon]
 mesh_pts = [spherical_to_euclidean(θ, φ) for θ in lat, φ in lon]
-data = [F(spherical_to_euclidean(θ, φ)) for θ in lat, φ in lon]
+data = [F(M, spherical_to_euclidean(θ, φ)) for θ in lat, φ in lon]
 # Init contour plot
 scene = Scene()
 mesh!(
@@ -59,7 +59,7 @@ o = particle_swarm(
     social_weight=0.3,
     cognitive_weight=0.2,
     stopping_criterion=StopAfterIteration(800),
-    debug=[:Iteration, "\n", 100],
+    debug=[:Iteration, " ", 100],
     record=[:x, :p, :velocity],
     return_options=true,
 );
@@ -68,7 +68,7 @@ velocities = [v[1] for v in get_record(o, :velocity)] # x0
 
 # Animate / record
 t = Node(xPlot) # create a life signal
-b = Node(xPlot[argmin([F(y) for y in xPlot])])
+b = Node(xPlot[argmin([F(M, y) for y in xPlot])])
 
 scatter!(# plot population
     scene,
@@ -87,8 +87,9 @@ scatter!(#plot best
     color=:white,
 )
 N = length(path)
-record(scene, string(@__DIR__, "/record_video.mp4"), 1:N; framerate=30) do i
+filename = string(@__DIR__, "/record_video.mkv")
+record(scene, filename, 1:N; framerate=30) do i
     t[] = path[i]
-    return b[] = path[i][argmin([F(y) for y in path[i]])]
+    return b[] = path[i][argmin([F(M, y) for y in path[i]])]
 end
 best = get_solver_result(o)

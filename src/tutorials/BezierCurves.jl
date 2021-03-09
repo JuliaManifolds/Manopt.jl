@@ -49,12 +49,12 @@ B = artificial_S2_composite_bezier_curve();
 M = Sphere(2)
 b = B[2].pts
 # On Euclidean spaces Bézier curves of these $n=4$ so called control points like this segment yield polynomials of degree $3$.
-# The resulting curve $\gamma: [0,1] \to \mathbb R^m$ is called [Bezier curve](https://en.wikipedia.org/wiki/Bézier_curve) or Bézier spline and is named after [Piérre Bezier](https://en.wikipedia.org/wiki/Pierre_Bézier) (1910–1999).
+# The resulting curve $\gamma: [0,1] → ℝ^m$ is called [Bezier curve](https://en.wikipedia.org/wiki/Bézier_curve) or Bézier spline and is named after [Piérre Bezier](https://en.wikipedia.org/wiki/Pierre_Bézier) (1910–1999).
 # They can be evaluated by the de Casteljau algorithm by evaluating line segments between points.
 # While it is not easy to evaluate polynomials on a manifold, evaluating line segments generalizes to the evaluation of [`shortest_geodesic`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s
 #
 # We will illustrate this using these points $b=(b_1,b_2,b_3,b_4)$ on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html) $\mathbb S^2$.
-# Let's evaliuate this at the point $t=\frac{1}{4}\in [0,1]$. We first compute
+# Let's evaliuate this at the point $t=\frac{1}{4}∈[0,1]$. We first compute
 t = 0.66
 pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t))
 # We obtain 3 points on the geodesics connecting the control points. Repeating this again twice
@@ -101,8 +101,8 @@ render_asymptote(export_folder * "/Casteljau-illustr.asy"; render=2) #src
 #
 # For more details on these properties, see for example [^PopielNoakes2007].
 # ## [Composite Bézier curves](@id CompositeBezier)
-# With the properties of a single Bézier curve, also called Bézier segment, we can “stitch” curves together. Let $a_0,\ldots,a_n$ and $b_0,\ldots,b_m$ be two sets of controlpoints for the Bézier segments $c(t)$ and $d(t)$, respectively.
-# We define the composite Bézier curve by $B(t) = \begin{cases} c(t) & \text{ if } 0\leq t < 1, \\ d(t-1) & \text{ if } 1\leq t \leq 2,\end{cases}$ where $t\in[0,2]$.
+# With the properties of a single Bézier curve, also called Bézier segment, we can “stitch” curves together. Let $a_0,…,a_n$ and $b_0,…,b_m$ be two sets of controlpoints for the Bézier segments $c(t)$ and $d(t)$, respectively.
+# We define the composite Bézier curve by $B(t) = \begin{cases} c(t) & \text{ if } 0\leq t < 1, \\ d(t-1) & \text{ if } 1\leq t \leq 2,\end{cases}$ where $t∈[0,2]$.
 # This can of course be generalised straight forward to more than two cases.
 # With the properties from the previous section we can now state that
 #
@@ -141,10 +141,10 @@ render_asymptote(export_folder * "/Bezier-composite-curve.asy"; render=2) #src
 #
 # ## [Minimizing the acceleration of a composite Bézier curve](@id MinAccBezier)
 # The motivation to minimize the acceleration of the composite Bézier curve is, that the curve should get “straighter” or more geodesic like.
-# If we discretize the curve $B(t)$ with its control points denoted by $b_{i,j}$ for the $j$th note in the $i$th segment, the discretized model for equispaced $t_i$, $i=0,\ldots,N$ in the domain of $B$ reads[^BergmannGousenbourger2018]
+# If we discretize the curve $B(t)$ with its control points denoted by $b_{i,j}$ for the $j$th note in the $i$th segment, the discretized model for equispaced $t_i$, $i=0,…,N$ in the domain of $B$ reads[^BergmannGousenbourger2018]
 #
 # ````math
-# A(b) \coloneqq\sum_{i=1}^{N-1}\frac{\mathrm{d}^2_2 \bigl[ B(t_{i-1}), B(t_{i}), B(t_{i+1}) \bigr]}{\Delta_t^3},
+# A(b) :eqq\sum_{i=1}^{N-1}\frac{\mathrm{d}^2_2 \bigl[ B(t_{i-1}), B(t_{i}), B(t_{i+1}) \bigr]}{\Delta_t^3},
 # ````
 #
 # where $\mathrm{d}_2$ denotes the second order finite difference using the mid point approach, see [`costTV2`](@ref)[^BacakBergmannSteidlWeinmann2016],
@@ -157,7 +157,7 @@ render_asymptote(export_folder * "/Bezier-composite-curve.asy"; render=2) #src
 # An advantage of the model considered here is, that it only consist of the evaluation of geodesics.
 # This yields a gradient of $A(b)$ with respect to $b$ [`adjoint_Jacobi_field`](@ref)s. The following image shows the negative gradient (scaled)
 #
-gradFullB = Manopt._∇acceleration_bezier( #src
+gradFullB = Manopt._grad_acceleration_bezier( #src
     M, #src
     get_bezier_points(M, B, :differentiable), #src
     [3, 3, 3], #src
@@ -198,13 +198,21 @@ render_asymptote(export_folder * "/Bezier-composite-curve-gradient.asy"; render=
 curve_samples = collect(range(0.0, 3.0; length=151)) #exactness of approximating d^2
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
-F(pB) = cost_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
-∇F(pB) = ∇acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples)
+function F(M, pB)
+    return cost_acceleration_bezier(
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples
+    )
+end
+function gradF(M, pB)
+    return grad_acceleration_bezier(
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples
+    )
+end
 x0 = pB
 pB_opt_ip = gradient_descent(
     N,
     F,
-    ∇F,
+    gradF,
     x0;
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001),
     stopping_criterion=StopWhenChangeLess(5 * 10.0^(-7)),
@@ -257,7 +265,7 @@ render_asymptote(export_folder * "/Bezier-IP-Min.asy"; render=2) #src
 # and set $λ=3$ in
 #
 # ````math
-# \frac{\lambda}{2}\sum_{k=0}^3 d_{\mathcal M}(d_i,p_i)^2 + A(b),
+# \frac{λ}{2}\sum_{k=0}^3 d_{\mathcal M}(d_i,p_i)^2 + A(b),
 # ````
 #
 # then $λ$ models how important closeness to the data $d_i$ is.
@@ -265,12 +273,16 @@ render_asymptote(export_folder * "/Bezier-IP-Min.asy"; render=2) #src
 λ = 3.0
 d = get_bezier_junctions(M, B)
 F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
-∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
+function gradF(M, pB)
+    return grad_L2_acceleration_bezier(
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
+    )
+end
 x0 = pB
 pB_opt_appr = gradient_descent(
     N,
     F,
-    ∇F,
+    gradF,
     x0;
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
     stopping_criterion=StopWhenChangeLess(10.0^(-5)),
@@ -323,11 +335,11 @@ render_asymptote(export_folder * "/Bezier-Appr-Min.asy"; render=2) #src
 #
 #md # ![Approximation min Acc](../assets/images/tutorials/Bezier-Appr-Min.png)
 #
-# The role of $\lambda$ can be interpreted as follows: for large values of $\lambda$, the
+# The role of $λ$ can be interpreted as follows: for large values of $λ$, the
 # minimizer, i.e. the resulting curve, is closer to the original Bézier junction points.
-# For small $\lambda$ the resting curve is closer to a geodesic and the control points are closer to the curve.
-# For $\lambda=0$ _any_ (not necessarily shortest) geodesic is a solution and the problem is ill-posed.
-# To illustrate the effect of $\lambda$, the following image contains 1000 runs for $\lambda=10$ in dark currant to $\lambda=0.01$ in bright yellow.
+# For small $λ$ the resting curve is closer to a geodesic and the control points are closer to the curve.
+# For $λ=0$ _any_ (not necessarily shortest) geodesic is a solution and the problem is ill-posed.
+# To illustrate the effect of $λ$, the following image contains 1000 runs for $λ=10$ in dark currant to $λ=0.01$ in bright yellow.
 #
 #md # ![Approximation min Acc](../assets/images/tutorials/Bezier_Approximation_video-Summary-result.png)
 #

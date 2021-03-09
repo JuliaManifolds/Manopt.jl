@@ -54,17 +54,21 @@ if asy_export
 end
 pB = get_bezier_points(M, B, :differentiable)
 N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
-function F(pB)
+function F(M, pB)
     return cost_L2_acceleration_bezier(
-        M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, dataP
     )
 end
-∇F(pB) = ∇L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, dataP)
+function gradF(M, pB)
+    return grad_L2_acceleration_bezier(
+        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, dataP
+    )
+end
 x0 = pB
 pB_opt = gradient_descent(
     N,
     F,
-    ∇F,
+    gradF,
     x0;
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001), # use Armijo lineSearch
     stopping_criterion=StopWhenAny(

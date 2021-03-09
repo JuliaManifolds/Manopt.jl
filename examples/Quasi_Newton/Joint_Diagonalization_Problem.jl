@@ -16,8 +16,8 @@ for i in 1:m
 end
 
 M = Stiefel(n, k)
-F(X::Array{Float64,2}) = -sum([norm(diag(X' * A[:, :, i] * X))^2 for i in 1:m])
-function ∇F(X::Array{Float64,2})
+F(::Stiefel, X::Array{Float64,2}) = -sum([norm(diag(X' * A[:, :, i] * X))^2 for i in 1:m])
+function gradF(M, X::Array{Float64,2})
     return project(
         M, X, -4 * sum([A[:, :, i] * X * norm(diag(X' * A[:, :, i] * X)) for i in 1:m])
     )
@@ -26,11 +26,11 @@ x = random_point(M)
 @time quasi_Newton(
     M,
     F,
-    ∇F,
+    gradF,
     x;
     memory_size=32,
     cautious_update=true,
     vector_transport_method=IdentityTransport(),
-    stopping_criterion=StopWhenGradientNormLess(norm(M, x, ∇F(x)) * 10^(-6)),
+    stopping_criterion=StopWhenGradientNormLess(norm(M, x, gradF(M, x)) * 10^(-6)),
     debug=[:Iteration, " ", :Cost, "\n", 1, :Stop],
 )

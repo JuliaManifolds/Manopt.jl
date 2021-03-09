@@ -56,9 +56,9 @@ mutable struct StopWhenGradientNormLess <: StoppingCriterion
     reason::String
     StopWhenGradientNormLess(ε::Float64) = new(ε, "")
 end
-function (c::StopWhenGradientNormLess)(p::P, o::O, ::Int) where {P<:Problem,O<:Options}
-    if norm(p.M, o.x, get_gradient(p, o.x)) < c.threshold
-        c.reason = "The algorithm reached approximately critical point; the gradient norm ($(norm(p.M,o.x,get_gradient(p,o.x)))) is less than $(c.threshold).\n"
+function (c::StopWhenGradientNormLess)(p::Problem, o::AbstractGradientOptions, iter::Int)
+    if norm(p.M, o.x, o.gradient) < c.threshold
+        c.reason = "The algorithm reached approximately critical point after $iter iterations; the gradient norm ($(norm(p.M,o.x,o.gradient))) is less than $(c.threshold).\n"
         return true
     end
     return false
@@ -266,6 +266,20 @@ function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     end
     return false
 end
+
+"""
+    are_these_stopping_critera_active(c::StoppingCriterion, cond)
+
+Return `true` if any criterion from the given set is both active and fulfills the given
+condition `cond` (`cond(c)` returns `true`).
+"""
+function are_these_stopping_critera_active(cond::Function, c::StoppingCriterionSet)
+    return any(cc -> are_these_stopping_critera_active(cond, cc), get_stopping_criteria(c))
+end
+function are_these_stopping_critera_active(cond::Function, c::StoppingCriterion)
+    return !isempty(c.reason) && cond(c)
+end
+
 @doc raw"""
     get_active_stopping_criteria(c)
 

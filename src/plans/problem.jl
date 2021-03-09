@@ -4,45 +4,48 @@
 # ---
 
 """
-    Problem
-Specify properties (values) and related functions for computing
-a certain optimization problem.
+    Problem{T}
+
+Dexcribe the problem that should be optimized by stating all properties, that do not change
+during an optimization or that are dependent of a certain solver.
+
+The parameter `T` can be used to distinguish problems with different representations
+or implementations.
+The default parameter [`AllocatingEvaluation`](@ref), which might be slower but easier to use.
+The usually faster parameter value is [`MutatingEvaluation`](@ref)
+
+See [`Options`](@ref) for the changing and solver dependent properties.
 """
-abstract type Problem end
-#
-# 1) Function defaults / Fallbacks
-#
+abstract type Problem{T} end
+
 """
-    get_cost(p,x)
+    AbstractEvaluationType
+
+An abstract type to specify the kind of evaluation a [`Problem`](@ref) supports.
+"""
+abstract type AbstractEvaluationType end
+
+"""
+    AllocatingEvaluation <: AbstractEvaluationType
+
+A parameter for a [`Problem`](@ref) indicating that the problem uses functions that
+allocate memory for their result, i.e. they work out of place.
+"""
+struct AllocatingEvaluation <: AbstractEvaluationType end
+
+"""
+    MutatingEvaluation
+
+A parameter for a [`Problem`](@ref) indicating that the problem uses functions that
+do not allocate memory but work on their input, i.e. in place.
+"""
+struct MutatingEvaluation <: AbstractEvaluationType end
+
+"""
+    get_cost(p, x)
 
 evaluate the cost function `F` stored within a [`Problem`](@ref) at the point `x`.
 """
-function get_cost(p::P, x) where {P<:Problem}
-    return p.cost(x)
-end
-function get_gradient(p::Problem, x)
-    return throw(
-        ErrorException("no gradient found in $(typeof(p)) to evaluate for a $(typeof(x)).")
-    )
-end
-function get_proximal_map(p::Problem, λ, x, i)
-    return throw(
-        ErrorException(
-            "No proximal map No. $(i) found in $(typeof(p)) to evaluate for $(typeof(x)) with $(typeof(λ)).",
-        ),
-    )
-end
-function get_subgradient(p::Problem, x)
-    return throw(
-        ErrorException(
-            "no subgradient found in $(typeof(p)) to evaluate for a $(typeof(x))."
-        ),
-    )
-end
-function getHessian(p::Problem, x, ξ)
-    return throw(
-        ErrorException(
-            "no hessian found in $(typeof(p)) to evaluate at point $(typeof(x)) and tangent vector $(typeof(ξ)).",
-        ),
-    )
+function get_cost(p::Problem, x)
+    return p.cost(p.M, x)
 end

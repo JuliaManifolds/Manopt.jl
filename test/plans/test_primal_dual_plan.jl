@@ -1,4 +1,4 @@
-using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
+using Manopt, Manifolds, ManifoldsBase, Test
 
 @testset "Test primal dual plan" begin
     #
@@ -12,49 +12,128 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
     δ = min(α / distance(pixelM, data[1], data[2]), 0.5)
     x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = TangentBundle(M)
-    fidelity(x) = 1 / 2 * distance(M, x, f)^2
-    Λ(x) = ProductRepr(x, forward_logs(M, x))
-    prior(x) = norm(norm.(Ref(pixelM), x, submanifold_component(N, Λ(x), 2)), 1)
-    cost(x) = (1 / α) * fidelity(x) + prior(x)
-    prox_F(M, m, λ, x) = prox_distance(M, λ / α, data, x, 2)
+    fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
+    Λ(M, x) = ProductRepr(x, forward_logs(M, x))
+    function Λ!(M, Y, x)
+        N = TangentBundle(M)
+        copyto!(Y[N, :point], x)
+        zero_tangent_vector!(N.manifold, Y[N, :vector], Y[N, :point])
+        forward_logs!(M, Y[N, :vector], x)
+        return Y
+    end
+    prior(M, x) = norm(norm.(Ref(pixelM), x, (Λ(M, x))[N, :vector]), 1)
+    cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
+    prox_F(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
+    prox_F!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
     function prox_G_dual(N, n, λ, ξ)
         return ProductRepr(
-            submanifold_component(N, ξ, 1),
+            ξ[N, :point],
             project_collaborative_TV(
-                base_manifold(N),
-                λ,
-                submanifold_component(N, n, 1),
-                submanifold_component(N, ξ, 2),
-                Inf,
-                Inf,
-                1.0,
+                base_manifold(N), λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
             ),
         )
     end
-    DΛ(m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
-    function adjoint_DΛ(m, ξ)
-        return adjoint_differential_forward_logs(M, m, submanifold_component(N, ξ, 2))
+    function prox_G_dual!(N, η, n, λ, ξ)
+        η[N, :point] .= ξ[N, :point]
+        project_collaborative_TV!(
+            base_manifold(N), η[N, :vector], λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
+        )
+        return η
+    end
+    DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
+    function DΛ!(M, Y, m, X)
+        N = TangentBundle(M)
+        zero_tangent_vector!(M, Y[N, :point], m)
+        differential_forward_logs!(M, Y[N, :vector], m, X)
+        return Y
+    end
+    function adjoint_DΛ(N, m, n, Y)
+        return adjoint_differential_forward_logs(N.manifold, m, Y[N, :vector])
+    end
+    function adjoint_DΛ!(N, X, m, n, Y)
+        return adjoint_differential_forward_logs!(N.manifold, X, m, Y[N, :vector])
     end
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
-    n = Λ(m)
+    n = Λ(M, m)
     x0 = deepcopy(data)
     ξ0 = ProductRepr(zero_tangent_vector(M, m), zero_tangent_vector(M, m))
 
-    p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, Λ, adjoint_DΛ)
+    p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
     p_linearized = PrimalDualProblem(
-        M, N, cost, prox_F, prox_G_dual, DΛ, adjoint_DΛ, missing
+        M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
     )
     o_exact = ChambollePockOptions(m, n, x0, ξ0; variant=:exact)
     o_linearized = ChambollePockOptions(m, n, x0, ξ0; variant=:linearized)
-    n_old = ProductRepr(submanifold_component(N, n, 1), submanifold_component(N, n, 2))
+    n_old = ProductRepr(n[N, :point], n[N, :vector])
     x_old = copy(x0)
-    ξ_old = ProductRepr(submanifold_component(N, ξ0, 1), submanifold_component(N, ξ0, 2))
+    ξ_old = ProductRepr(ξ0[N, :point], ξ0[N, :vector])
 
+    @testset "test Mutating/Allocation Problem Variants" begin
+        p1 = PrimalDualProblem(
+            M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
+        )
+        p2 = PrimalDualProblem(
+            M,
+            N,
+            cost,
+            prox_F!,
+            prox_G_dual!,
+            adjoint_DΛ!;
+            linearized_forward_operator=DΛ!,
+            Λ=Λ!,
+            evaluation=MutatingEvaluation(),
+        )
+        x1 = get_primal_prox(p1, 1.0, x0)
+        x2 = get_primal_prox(p2, 1.0, x0)
+        @test x1 == x2
+        get_primal_prox!(p1, x1, 0.8, x0)
+        get_primal_prox!(p2, x2, 0.8, x0)
+        @test x1 == x2
+
+        ξ1 = get_dual_prox(p1, n, 1.0, ξ0)
+        ξ2 = get_dual_prox(p2, n, 1.0, ξ0)
+        @test ξ1[N, :point] == ξ2[N, :point]
+        @test ξ1[N, :vector] == ξ2[N, :vector]
+        get_dual_prox!(p1, ξ1, n, 1.0, ξ0)
+        get_dual_prox!(p2, ξ2, n, 1.0, ξ0)
+        @test ξ1[N, :point] == ξ2[N, :point]
+        @test ξ1[N, :vector] == ξ2[N, :vector]
+
+        y1 = forward_operator(p1, x0)
+        y2 = forward_operator(p2, x0)
+        @test y1[N, :point][1] == y2[N, :point][1]
+        @test y1[N, :point][2] == y2[N, :point][2]
+        @test y1[N, :vector][1] == y2[N, :vector][1]
+        @test y1[N, :vector][2] == y2[N, :vector][2]
+        forward_operator!(p1, y1, x0)
+        forward_operator!(p2, y2, x0)
+        @test y1[N, :point][1] == y2[N, :point][1]
+        @test y1[N, :point][2] == y2[N, :point][2]
+        @test y1[N, :vector][1] == y2[N, :vector][1]
+        @test y1[N, :vector][2] == y2[N, :vector][2]
+
+        X = log(M, m, x0)
+        Y1 = linearized_forward_operator(p1, m, X)
+        Y2 = linearized_forward_operator(p2, m, X)
+        @test Y1[N, :point] == Y2[N, :point]
+        @test Y1[N, :vector] == Y2[N, :vector]
+        linearized_forward_operator!(p1, Y1, m, X)
+        linearized_forward_operator!(p2, Y2, m, X)
+        @test Y1[N, :point] == Y2[N, :point]
+        @test Y1[N, :vector] == Y2[N, :vector]
+
+        Z1 = adjoint_linearized_operator(p1, m, n, ξ0)
+        Z2 = adjoint_linearized_operator(p2, m, n, ξ0)
+        @test Z1 == Z2
+        adjoint_linearized_operator!(p1, Z1, m, n, ξ0)
+        adjoint_linearized_operator!(p2, Z2, m, n, ξ0)
+        @test Z1 == Z2
+    end
     @testset "Primal/Dual residual" begin
-        p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, Λ, adjoint_DΛ)
+        p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
         p_linearized = PrimalDualProblem(
-            M, N, cost, prox_F, prox_G_dual, DΛ, adjoint_DΛ, missing
+            M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
         )
         o_exact = ChambollePockOptions(m, n, x0, ξ0; variant=:exact)
         o_linearized = ChambollePockOptions(m, n, x0, ξ0; variant=:linearized)
@@ -95,7 +174,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
         s = String(take!(io))
         @test startswith(s, "PD Residual: ")
 
-        d4 = DebugPrimalChange(a, io)
+        d4 = DebugPrimalChange(a, "Primal Change: ", io)
         d4(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Change: ")

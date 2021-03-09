@@ -6,10 +6,10 @@
 #
 # Computationally we look at a very simple but large scale problem,
 # the Riemannian Center of Mass or [Fréchet mean](https://en.wikipedia.org/wiki/Fréchet_mean):
-# For given points ``p_i \in \mathcal M``, ``i=1,\ldots,N`` this optimization problem reads
+# For given points ``p_i ∈\mathcal M``, ``i=1,…,N`` this optimization problem reads
 #
 # ```math
-# \operatorname*{arg\,min}_{x\in\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
+# \operatorname*{arg\,min}_{x∈\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
 #   \operatorname{d}^2_{\mathcal M}(x,p_i),
 # ```
 # which of course can be (and is) solved by a gradient descent, see the [introductionary tutorial](@ref Optimize).
@@ -74,19 +74,19 @@ render_asymptote(export_folder * "/centerAndLargeData.asy"; render=2) #src
 # For the mean we have as a gradient
 #
 # ```math
-#  ∇F(x) = \sum_{i=1}^N ∇f_i(x) \quad \text{where} ∇f_i(x) = -\log_x p_i
+#  gradF(x) = \sum_{i=1}^N \operatorname{grad}f_i(x) \quad \text{where} \operatorname{grad}f_i(x) = -\log_x p_i
 # ```
 #
 # Which we define as
-F(x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
-∇F(x) = [∇distance(M, p, x) for p in data]
-∇f = [x -> ∇distance(M, p, x) for p in data];
+F(M, x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
+gradF(M, x) = [grad_distance(M, p, x) for p in data]
+gradf = [(M, x) -> grad_distance(M, p, x) for p in data];
 # The calls are only slightly different, but notice that accessing the 2nd gradient element
 # requires evaluating all logs in the first function.
-# So while you can use both `∇F` and `∇f` in the following call, the second one is faster:
-@time x_opt1 = stochastic_gradient_descent(M, ∇F, x);
+# So while you can use both `gradF` and `gradf` in the following call, the second one is faster:
+@time x_opt1 = stochastic_gradient_descent(M, gradF, x);
 # versus
-@time x_opt2 = stochastic_gradient_descent(M, ∇f, x);
+@time x_opt2 = stochastic_gradient_descent(M, gradf, x);
 # This result is reasonably close. But we can improve it by using a [`DirectionUpdateRule`](@ref),
 # namely:
 # On the one hand [`MomentumGradient`](@ref), which requires both the manifold and the initial value,
@@ -94,22 +94,30 @@ F(x) = 1 / (2 * n) * sum(map(p -> distance(M, x, p)^2, data))
 #    you can also set a `vector_transport_method`, if `ParallelTransport()` is not
 #    available on your manifold. Here we simply do
 @time x_opt3 = stochastic_gradient_descent(
-    M, ∇f, x; direction=MomentumGradient(M, x, StochasticGradient())
+    M,
+    gradf,
+    x;
+    direction=MomentumGradient(M, x, StochasticGradient(zero_tangent_vector(M, x))),
 );
 # And on the other hand the [`AverageGradient`](@ref) computes an average of the last `n` gradients, i.e.
 @time x_opt4 = stochastic_gradient_descent(
-    M, ∇f, x; direction=AverageGradient(M, x, 10, StochasticGradient())
+    M,
+    gradf,
+    x;
+    direction=AverageGradient(M, x, 10, StochasticGradient(zero_tangent_vector(M, x))),
 );
 # note that the default [`StoppingCriterion`](@ref) is a fixed number of iterations.
 #
 # Note that since you can apply both also in case of [`gradient_descent`](@ref),
 # i.e. to use [`IdentityUpdateRule`](@ref) and evaluate the classical gradient,
 # both constructors have to know that internally the default evaluation of the Stochastic gradient
-# (choosing one gradient $∇f_k$ at random) has to be specified.
+# (choosing one gradient $\operatorname{grad}f_k$ at random) has to be specified.
 #
 # For this small example you can of course also use a gradient descent with [`ArmijoLinesearch`](@ref),
 # but it will be a little slower usually
-@time x_opt5 = gradient_descent(M, F, x -> sum(∇F(x)), x; stepsize=ArmijoLinesearch());
+@time x_opt5 = gradient_descent(
+    M, F, (M, x) -> sum(gradF(M, x)), x; stepsize=ArmijoLinesearch()
+);
 # but it is for sure faster than the variant above that evaluates the full gradient on every iteration,
 # since stochastic gradient descent takes more iterations.
 #

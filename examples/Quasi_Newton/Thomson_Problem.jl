@@ -7,7 +7,7 @@ n = 50
 m = 20
 M = Oblique(n, m)
 
-function F(X::Array{Float64,2})
+function F(::Oblique, X::Array{Float64,2})
     f = 0
     for i in 1:m
         for j in 1:m
@@ -19,7 +19,7 @@ function F(X::Array{Float64,2})
     return f
 end
 
-function ∇F(X::Array{Float64,2})
+function gradF(::Oblique, X::Array{Float64,2})
     g = zeros(n, m)
     Id = Matrix(I, n, n)
     for i in 1:m
@@ -39,10 +39,10 @@ x = random_point(M)
 @time quasi_Newton(
     M,
     F,
-    ∇F,
+    gradF,
     x;
     memory_size=100,
     vector_transport_method=PowerVectorTransport(ParallelTransport()),
-    stopping_criterion=StopWhenGradientNormLess(norm(M, x, ∇F(x)) * 10^(-6)),
+    stopping_criterion=StopWhenGradientNormLess(norm(M, x, gradF(M, x)) * 10^(-6)),
     debug=[:Iteration, " ", :Cost, "\n", 1, :Stop],
 )
