@@ -10,7 +10,7 @@ A functor that always returns a fixed step size.
 
     ConstantStepSize(s)
 
-initialize the stepsie to a constant `s`
+initialize the stepsize to a constant `s`
 """
 mutable struct ConstantStepsize <: Stepsize
     length::Float64
@@ -410,7 +410,7 @@ end
     WolfePowellLineseach <: Linesearch
 
 Do a backgtracking linesearch to find a step size ``α`` that fulfills the
-Wolfe conditions along a search direktion ``η`` starting ffrom ``x``, i.e.
+Wolfe conditions along a search direktion ``η`` starting from ``x``, i.e.
 
 ```math
 f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨\operatorname{grad}f(x), η⟩_x
