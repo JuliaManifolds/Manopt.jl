@@ -181,10 +181,23 @@ end
 @doc raw"""
     random_tangent(M::Grassmann, p[,type=:Gaussian, σ=1.0])
 
-return a (Gaussian) random vector from the tangent space $T_x\mathrm{Gr}(n,k)$ with mean
-zero and standard deviation `σ` by projecting a random Matrix onto the  `x`.
+return a (Gaussian) random vector from the tangent space $T_p\mathrm{Gr}(n,k)$ with mean
+zero and standard deviation `σ` by projecting a random Matrix onto the  `p`.
 """
 function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
+    Z = σ * randn(eltype(p), size(p))
+    X = project(M, p, Z)
+    X = X ./ norm(X)
+    return X
+end
+
+@doc raw"""
+    random_tangent(M::Stiefel, p[,type=:Gaussian, σ=1.0])
+
+return a (Gaussian) random vector from the tangent space $T_p\mathrm{St}(n,k)$ with mean
+zero and standard deviation `σ` by projecting a random Matrix onto the  `p`.
+"""
+function random_tangent(M::Stiefel, p, ::Val{:Gaussian}, σ::Float64=1.0)
     Z = σ * randn(eltype(p), size(p))
     X = project(M, p, Z)
     X = X ./ norm(X)
