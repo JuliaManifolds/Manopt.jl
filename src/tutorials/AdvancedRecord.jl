@@ -53,5 +53,7 @@ nothing #hide
 # Note that in order to access the record we have to change the return value of the gradient descent
 #
 F = MyCost(data)
-R = gradient_descent(M, F, gradF, data[1], record=[:Iteration, RecordCount(), :Cost], return_options=true)
+R = gradient_descent(
+    M, F, gradF, data[1]; record=[:Iteration, RecordCount(), :Cost], return_options=true
+)
 get_record(R)
