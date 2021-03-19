@@ -22,7 +22,7 @@ data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n];
 # ## Classical definition
 #
 # The variant from the previous tutorial defines a cost ``F(x)`` and its gradient ``gradF(x)``
-F(x) = sum(1 / (2 * n) * distance.(Ref(M), Ref(x), data) .^ 2)
+F(M, x) = sum(1 / (2 * n) * distance.(Ref(M), Ref(x), data) .^ 2)
 gradF(M, x) = sum(1 / n * grad_distance.(Ref(M), data, Ref(x)))
 nothing #hide
 #

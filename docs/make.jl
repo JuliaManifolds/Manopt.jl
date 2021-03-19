@@ -11,6 +11,7 @@ tutorials = [
     "BezierCurves",
     "GradientOfSecondOrderDifference",
     "JacobiFields",
+    "AdvancedRecord",
 ]
 menuEntries = [
     "get Started: Optimize!",
@@ -19,6 +20,7 @@ menuEntries = [
     "work with Bézier curves",
     "see the gradient of ``d_2``",
     "use Jacobi Fields",
+    "Write a `RecordAction`",
 ]
 TutorialMenu = Array{Pair{String,String},1}()
 for (i, tutorial) in enumerate(tutorials)
