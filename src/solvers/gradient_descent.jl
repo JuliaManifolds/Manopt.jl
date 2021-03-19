@@ -68,6 +68,7 @@ function gradient_descent!(
 ) where {TF,TDF}
     p = GradientProblem(M, F, gradF; evaluation=evaluation)
     o = GradientDescentOptions(
+        M,
         x;
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
@@ -91,7 +92,7 @@ function initialize_solver!(p::GradientProblem, o::GradientDescentOptions)
 end
 function step_solver!(p::GradientProblem, o::GradientDescentOptions, iter)
     s, o.gradient = o.direction(p, o, iter)
-    retract!(p.M, o.x, o.x, -s .* o.gradient, o.retraction_method)
+    retract!(p.M, o.x, o.x, -s * o.gradient, o.retraction_method)
     return o
 end
 get_solver_result(o::GradientDescentOptions) = o.x
