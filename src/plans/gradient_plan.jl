@@ -110,30 +110,37 @@ a default value is given in brackets if a parameter can be left out in initializ
 # Constructor
 
     GradientDescentOptions(x, stop, s [, retr=ExponentialRetraction()])
+    GradientDescentOptions(M, x, stop, s [, retr=ExponentialRetraction()])
+    GradientDescentOptions(x, X, stop, s [, retr=ExponentialRetraction()])
 
-construct a Gradient Descent Option with the fields and defaults as above
+construct a Gradient Descent Option with the fields and defaults as above,
+where the first can be used if points (`x`)  and tangent vectors (`gradient`) have the same type,
+for exxample when they are matrices.
+The second uses the `Manifold M` to set `gradient=zero_tangent_vector(M,x)`.
 
 # See also
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """
 mutable struct GradientDescentOptions{
-    P,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
+    P,T,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
 } <: AbstractGradientOptions
     x::P
     direction::DirectionUpdateRule
     stop::TStop
     stepsize::TStepsize
-    gradient::P
+    gradient::T
     retraction_method::TRTM
-    function GradientDescentOptions{P}(
+    function GradientDescentOptions{P,T}(
         initialX::P,
+        initial_gradient::T,
         s::StoppingCriterion=StopAfterIteration(100),
         stepsize::Stepsize=ConstantStepsize(1.0),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         direction::DirectionUpdateRule=IdentityUpdateRule(),
-    ) where {P}
-        o = new{P,typeof(s),typeof(stepsize),typeof(retraction_method)}()
+    ) where {P,T}
+        o = new{P,T,typeof(s),typeof(stepsize),typeof(retraction_method)}()
         o.x = initialX
+        o.gradient = initial_gradient
         o.stop = s
         o.retraction_method = retraction_method
         o.stepsize = stepsize
@@ -148,8 +155,38 @@ function GradientDescentOptions(
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P}
-    return GradientDescentOptions{P}(
-        x, stopping_criterion, stepsize, retraction_method, direction
+    return GradientDescentOptions{P,P}(
+        x, deepcopy(x), stopping_criterion, stepsize, retraction_method, direction
+    )
+end
+function GradientDescentOptions(
+    x::P,
+    X::T;
+    stopping_criterion::StoppingCriterion=StopAfterIteration(100),
+    stepsize::Stepsize=ConstantStepsize(1.0),
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    direction::DirectionUpdateRule=IdentityUpdateRule(),
+) where {P,T}
+    return GradientDescentOptions{P,T}(
+        x, X, stopping_criterion, stepsize, retraction_method, direction
+    )
+end
+function GradientDescentOptions(
+    M::Manifold,
+    x::P;
+    stopping_criterion::StoppingCriterion=StopAfterIteration(100),
+    stepsize::Stepsize=ConstantStepsize(1.0),
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    direction::DirectionUpdateRule=IdentityUpdateRule(),
+) where {P}
+    X = zero_tangent_vector(M, x)
+    return GradientDescentOptions(
+        x,
+        X;
+        stopping_criterion=stopping_criterion,
+        stepsize=stepsize,
+        retraction_method=retraction_method,
+        direction=direction,
     )
 end
 
