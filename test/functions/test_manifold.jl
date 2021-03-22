@@ -139,5 +139,11 @@ Random.seed!(42)
         @test is_manifold_point(MT, pT, true)
         XT = random_tangent(MT, pT)
         @test is_tangent_vector(MT, pT, XT, true; atol=10^(-15))
+
+        Mfr = FixedRankMatrices(4, 6, 2)
+        pfr = random_point(Mfr)
+        @test is_manifold_point(Mfr, pfr, true)
+        Xfr = random_tangent(Mfr, pfr)
+        @test is_tangent_vector(Mfr, pfr, Xfr, true; atol=10^(-15))
     end
 end
