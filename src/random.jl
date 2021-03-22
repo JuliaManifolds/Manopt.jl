@@ -161,9 +161,9 @@ return a random point on the FixedRankMatrices manifold.
 The orthogonal matrices are sampled from the Stiefel manifold
 and the singular values are sampled uniformly at random.
 """
-function random_point(M::FixedRankMatrices{m, n, k}, options...) where {m, n, k}
+function random_point(M::FixedRankMatrices{m,n,k}, options...) where {m,n,k}
     U = random_point(Stiefel(m, k), options...)
-    S = sort(rand(k), rev=true)
+    S = sort(rand(k); rev=true)
     V = random_point(Stiefel(n, k), options...)
     return SVDMPoint(U, S, V')
 end
@@ -333,7 +333,7 @@ end
 generate a random tangent vector in the tangent space of the point `p` on the
 `FixedRankMatrices` manifold `M`.
 """
-function random_tangent(M::FixedRankMatrices{m, n, k}, p, options...) where {m, n, k}
+function random_tangent(M::FixedRankMatrices{m,n,k}, p, options...) where {m,n,k}
     Up = randn(m, k, options...)
     Vp = randn(n, k, options...)
     A = randn(k, k, options...)
