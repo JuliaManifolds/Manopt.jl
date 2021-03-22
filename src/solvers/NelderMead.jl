@@ -1,6 +1,6 @@
 @doc raw"""
     NelderMead(M, F [, p])
-perform a nelder mead minimization problem for the cost funciton `F` on the
+perform a nelder mead minimization problem for the cost function `F` on the
 manifold `M`. If the initial population `p` is not given, a random set of
 points is chosen.
 
@@ -28,7 +28,8 @@ and
 
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
-!!! note The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
+!!! note 
+    The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
     load `Manifolds.jl` to use its statistics part.
 
 # Output
