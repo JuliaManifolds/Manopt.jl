@@ -29,9 +29,9 @@ xMean2 = NelderMead(M, F, data[(dim+2):(2*dim+1)])
 @test isapprox(xMean1, xMean2, atol = 1e-2)
 
 ## solve with random initialization
-xMean3 = NelderMead(M, F, data[1:(dim+1)])
-xMean4 = NelderMead(M, F, data[1:(dim+1)])
-xMean5 = NelderMead(M, F, data[1:(dim+1)])
+xMean3 = NelderMead(M, F)
+xMean4 = NelderMead(M, F)
+xMean5 = NelderMead(M, F)
 
 @test isapprox(xMean1, xMean3, atol = 1e-2)
 @test isapprox(xMean1, xMean4, atol = 1e-2)
