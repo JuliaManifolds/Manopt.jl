@@ -58,8 +58,8 @@ end
 
 compute the gradient of the discretized acceleration of a composite Bézier curve
 on the `Manifold` `M` with respect to its control points `B` together with a
-data term that relates the junction points `p_i` to the data `d` with a weigth
-``λ`` comapared to the acceleration. The curve is evaluated at the points
+data term that relates the junction points `p_i` to the data `d` with a weight
+``λ`` compared to the acceleration. The curve is evaluated at the points
 given in `pts` (elementwise in ``[0,N]``), where ``N`` is the number of segments of
 the Bézier curve. The summands are [`grad_distance`](@ref) for the data term
 and [`grad_acceleration_bezier`](@ref) for the acceleration with interpolation constrains.
@@ -68,7 +68,7 @@ yields the unconstrained acceleration minimization. Note that this is ill-posed,
 any Bézier curve identical to a geodesic is a minimizer.
 
 Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
-together with the `degrees` of the segments and assuming a differentiable curve, the segmenents
+together with the `degrees` of the segments and assuming a differentiable curve, the segments
 can internally be reconstructed.
 
 # See also
@@ -261,7 +261,7 @@ end
     X = grad_TV(M, λ, x[, p=1])
     grad_TV!(M, X, λ, x[, p=1])
 
-Compute the (sub)gradient ``\partial F`` of all forward differences orrucirng,
+Compute the (sub)gradient ``\partial F`` of all forward differences occurring,
 in the power manifold array, i.e. of the function
 
 ```math
@@ -338,7 +338,7 @@ end
     Y = forward_logs(M,x)
     forward_logs!(M, Y, x)
 
-compute the forward logs ``F`` (generalizing forward differences) orrucirng,
+compute the forward logs ``F`` (generalizing forward differences) occurring,
 in the power manifold array, the function
 
 ```math
@@ -472,7 +472,7 @@ end
     grad_TV2(M::PowerManifold, q[, p=1])
 
 computes the (sub) gradient of ``\frac{1}{p}d_2^p(q_1,q_2,q_3)``
-with respect to all ``q_1,q_2,q_3`` occuring along any array dimension in the
+with respect to all ``q_1,q_2,q_3`` occurring along any array dimension in the
 point `q`, where `M` is the corresponding `PowerManifold`.
 """
 function grad_TV2(M::PowerManifold, q, p::Int=1)

@@ -104,7 +104,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
 * `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
+* `retraction_method` – (`ExponentialRetraction()`) the retraction to use, defaults to
   the exponential map
 
 # Constructor
@@ -115,7 +115,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 construct a Gradient Descent Option with the fields and defaults as above,
 where the first can be used if points (`x`)  and tangent vectors (`gradient`) have the same type,
-for exxample when they are matrices.
+for example when they are matrices.
 The second uses the `Manifold M` to set `gradient=zero_tangent_vector(M,x)`.
 
 # See also

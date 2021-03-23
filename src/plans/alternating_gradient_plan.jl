@@ -17,7 +17,7 @@ An alternating gradient problem consists of
 
     The input of each of the (component) gradients is still the whole vector `x`,
     just that all other then the `i`th input component are assumed to be fixed and just
-    the `i`th components gradient is coputed / returned.
+    the `i`th components gradient is computed / returned.
 
 # Constructors
     AlternatingGradientProblem(M::ProductManifold, F, gradF::Function;

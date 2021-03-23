@@ -64,7 +64,7 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `stop` – a [`StoppingCriterion`](@ref)
 * `x` – (initial or current) value the algorithm is at
 * `x_optimal` – optimal value
-* `∂` the current element from the possivle subgradients at `x` that is used
+* `∂` the current element from the possible subgradients at `x` that is used
 """
 mutable struct SubGradientMethodOptions{TRetract<:AbstractRetractionMethod,TStepsize,P,T} <:
                Options where {P,T}

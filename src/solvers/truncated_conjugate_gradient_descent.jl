@@ -53,7 +53,7 @@ see the reference:
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
     .
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` is returned
 

@@ -10,7 +10,7 @@ depenting on the parameter `T <: AbstractEvaluationType`.
 
 * `M`, `N` – two manifolds ``\mathcal M``, ``\mathcal N``
 * `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
-* `linearized_forward_operator!!` linearized operator for the forward operation in the algorthm ``DΛ``
+* `linearized_forward_operator!!` linearized operator for the forward operation in the algorithm ``DΛ``
 * `linearized_adjoint_operator!!` The adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
 * `prox_F!!` the proximal map belonging to ``f``
 * `prox_G_dual!!` the proximal map belonging to ``g_n^*``
@@ -235,7 +235,7 @@ initialized automatically and values with a default may be left out.
 * `ξbar` - the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `Θ` – factor to damp the helping ``\tilde x``
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
-* `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
+* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `acceleration` – (`0.`) acceleration factor due to Chambolle & Pock
 * `relaxation` – (`1.`) relaxation in the primal relaxation step (to compute `xbar`)
 * `relax` – (`_primal`) which variable to relax (`:primal` or `:dual`)
@@ -243,7 +243,7 @@ initialized automatically and values with a default may be left out.
 * `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
+* `retraction_method` – (`ExponentialRetraction()`) the retraction to use
 * `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
 * `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
 
@@ -709,7 +709,7 @@ end
     RecordPrimalChange(a)
 
 Create an [`RecordAction`](@ref) that records the primal value change,
-i.e. [`RecordChange`](@ref), since we just redord the change of `o.x`.
+i.e. [`RecordChange`](@ref), since we just record the change of `o.x`.
 """
 RecordPrimalChange() = RecordChange()
 

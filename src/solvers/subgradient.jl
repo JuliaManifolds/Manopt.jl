@@ -6,7 +6,7 @@ perform a subgradient method ``x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))``,
 where ``\mathrm{retr}`` is a retraction, ``s_k`` can be specified as a function but is
 usually set to a constant value. Though the subgradient might be set valued,
 the argument `∂F` should always return _one_ element from the subgradient, but
-not necessarily determistic.
+not necessarily deterministic.
 
 # Input
 * `M` – a manifold ``\mathcal M``

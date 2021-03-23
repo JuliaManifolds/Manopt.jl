@@ -16,7 +16,7 @@ compute the value of the discrete Acceleration of the composite Bezier curve
 where for this formula the `pts` along the curve are equispaced and denoted by
 ``t_i``, ``i=1,…,N``, and ``d_2`` refers to the second order absolute difference [`costTV2`](@ref)
 (squared). Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
-together with the `degrees` of the segments and assuming a differentiable curve, the segmenents
+together with the `degrees` of the segments and assuming a differentiable curve, the segments
 can internally be reconstructed.
 
 This acceleration discretization was introduced in[^BergmannGousenbourger2018].
@@ -65,7 +65,7 @@ one data item in the manifold points given in `d`. For details on the accelerati
 approximation, see [`cost_acceleration_bezier`](@ref).
 Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
 together with the `degrees` of the segments and assuming a differentiable curve, the
-segmenents can internally be reconstructed.
+segments can internally be reconstructed.
 
 
 # See also
@@ -226,7 +226,7 @@ Compute the ``\operatorname{TV}_2^p`` functional for the 3-tuple of points
   \mathcal C = \bigl\{ c ∈  \mathcal M \ |\ g(\tfrac{1}{2};x_1,x_3) \text{ for some geodesic }g\bigr\}
 ```
 
-the set of mid points between ``x_1`` and ``x_3``. Then the functionr reads
+the set of mid points between ``x_1`` and ``x_3``. Then the function reads
 
 ```math
 d_2^p(x_1,x_2,x_3) = \min_{c ∈ \mathcal C} d_{\mathcal M}(c,x_2).

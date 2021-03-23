@@ -15,7 +15,7 @@ random_point(M::Manifold, s::Symbol, options...) = random_point(M, Val(s), optio
 @doc raw"""
     random_point(M::AbstractPowerManifold, options...)
 
-generate a random point on the `AbstractPowerManfold` `M` given `options` that are
+generate a random point on the `AbstractPowerManifold` `M` given `options` that are
 passed on.
 """
 function random_point(
@@ -134,7 +134,7 @@ end
 @doc raw"""
     random_point(M::SymmetricPositiveDefinite, :Gaussian[, σ=1.0])
 
-gerenate a random symmetric positive definite matrix on the
+generate a random symmetric positive definite matrix on the
 `SymmetricPositiveDefinite` manifold `M`.
 """
 function random_point(
@@ -159,7 +159,7 @@ end
 
 @doc raw"""
     random_point(M::Sphere, :Gaussian[, σ=1.0])
-return a random point on the Sphere by projecting a normal distirbuted vector
+return a random point on the Sphere by projecting a normal distributed vector
 from within the embedding to the sphere.
 """
 function random_point(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)
@@ -244,7 +244,7 @@ end
     random_tangent(M::Hyperbolic, p, :Gaussian [, σ=1.0])
 
 generate a random point on the Hyperbolic manifold by projecting a point from the embedding
-with respect to the Minkowsky metric.
+with respect to the Minkowski metric.
 """
 function random_tangent(M::Hyperbolic, p, ::Val{:Gaussian}, σ=1.0)
     Y = σ * randn(eltype(p), size(p))

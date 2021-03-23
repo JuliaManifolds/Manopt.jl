@@ -109,7 +109,7 @@ end
 Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 
 Note that for the [`MutatingEvaluation`](@ref) based problem and a single function for the
-stochastic gradient mutating variant is not available, since it would require too many allocatins.
+stochastic gradient mutating variant is not available, since it would require too many allocations.
 """
 function get_gradient(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, k, x

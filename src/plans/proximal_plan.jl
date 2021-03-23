@@ -13,7 +13,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
   minimize
 * `proxes` - proximal maps ``\operatorname{prox}_{λ\varphi}:\mathcal M→\mathcal M``
   as functions (λ,x) -> y, i.e. the prox parameter λ also belongs to the signature of the proximal map.
-* `number_of_proxes` - (length(proxes)) number of proxmal Maps,
+* `number_of_proxes` - (length(proxes)) number of proximal Maps,
   e.g. if one of the maps is a combined one such that the proximal Maps
   functions return more than one entry per function
 
@@ -130,7 +130,7 @@ Store all options required for the DouglasRachford algorithm,
 * `R` – ([`reflect`](@ref)) method employed in the iteration to perform the reflection of `x` at
   the prox `p`.
 * `stop` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
-* `parallel` – (`false`) inducate whether we are running a pallel Douglas-Rachford
+* `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
   or not.
 """
 mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR} <: Options
