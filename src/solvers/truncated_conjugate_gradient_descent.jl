@@ -149,6 +149,7 @@ function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOpti
         o.model_value = 0
     end
     o.z_r = inner(p.M, o.x, o.z, o.residual)
+    o.initialResidualNorm = sqrt(inner(p.M, o.x, o.residual, o.residual))
     return o
 end
 function step_solver!(
