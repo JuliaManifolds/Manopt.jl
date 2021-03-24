@@ -172,11 +172,12 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.trust_region_radius = o.trust_region_radius
     solve(p, o.tcg_options)
     #
-    get_hessian!(p, o.Hη, o.x, o.η)
     o.η = o.tcg_options.η
+    o.Hη = o.tcg_options.Hη
+
     # Initialize the cost function F und the gradient of the cost function
     # gradF at the point x
-    get_gradient!(p, o.gradient, o.x)
+    o.gradient = o.tcg_options.gradient
     fx = get_cost(p, o.x)
     # If using randomized approach, compare result with the Cauchy point.
     if o.randomize
