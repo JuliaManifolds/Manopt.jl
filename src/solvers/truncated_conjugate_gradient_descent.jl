@@ -108,27 +108,9 @@ function truncated_conjugate_gradient_descent!(
     randomize::Bool=false,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
-        StopIfResidualIsReducedByPower(
-            sqrt(
-                inner(
-                    M,
-                    x,
-                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
-                ),
-            ),
-            θ,
-        ),
-        StopIfResidualIsReducedByFactor(
-            sqrt(
-                inner(
-                    M,
-                    x,
-                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
-                ),
-            ),
-            κ,
+        StopWhenAll(
+            StopIfResidualIsReducedByPower(θ),
+            StopIfResidualIsReducedByFactor(κ)
         ),
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),

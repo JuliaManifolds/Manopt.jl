@@ -107,23 +107,9 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
             StopAfterIteration(manifold_dimension(p.M)),
-            StopIfResidualIsReducedByPower(
-                norm(
-                    p.M,
-                    x,
-                    get_gradient(p, x) +
-                    (randomize ? get_hessian(p, x, η) : zero_tangent_vector(p.M, x)),
-                ),
-                θ,
-            ),
-            StopIfResidualIsReducedByFactor(
-                norm(
-                    p.M,
-                    x,
-                    get_gradient(p, x) +
-                    (randomize ? get_hessian(p, x, η) : zero_tangent_vector(p.M, x)),
-                ),
-                κ,
+            StopWhenAll(
+                StopIfResidualIsReducedByPower(θ),
+                StopIfResidualIsReducedByFactor(κ)
             ),
             StopWhenTrustRegionIsExceeded(),
             StopWhenCurvatureIsNegative(),
