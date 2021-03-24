@@ -182,7 +182,7 @@ function step_solver!(
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     zr = inner(p.M, o.x, o.z, o.residual)
     # Compute new search direction.
-    β = o.z_r / zr
+    β = zr / o.z_r
     o.z_r = zr
     o.δ = -o.z + β * o.δ
     o.ηPδ = β * (α * o.δPδ + o.ηPδ)
