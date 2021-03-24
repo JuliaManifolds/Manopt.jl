@@ -457,10 +457,8 @@ StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
 function (c::StopWhenTrustRegionIsExceeded)(
     ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
 )
-    α = o.z_r / o.δHδ
-    ηPη_new = o.ηPη + 2 * α * o.ηPδ + α^2 * o.δPδ
-    if ηPη_new >= o.trust_region_radius^2 && i >= 0
-        c.reason = "Trust-region radius violation (‖η‖² = $(ηPη_new)) >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
+    if o.ηPη >= o.trust_region_radius^2 && i >= 0
+        c.reason = "Trust-region radius violation (‖η‖² = $(o.ηPη)) >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
         return true
     end
     return false

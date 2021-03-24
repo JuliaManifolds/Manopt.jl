@@ -165,6 +165,7 @@ function step_solver!(
         τ = (-o.ηPδ + sqrt(o.ηPδ^2 + o.δPδ * (o.trust_region_radius^2 - o.ηPη))) / o.δPδ
         o.η = o.η + τ * o.δ
         o.Hη = o.Hη + τ * o.Hδ
+        o.ηPη = ηPη_new
         return o
     end
     o.ηPη = ηPη_new
