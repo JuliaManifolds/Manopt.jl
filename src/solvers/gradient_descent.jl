@@ -35,7 +35,8 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function gradient_descent(M::Manifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
-    x_res = deepcopy(x)
+    x_res = allocate(x)
+    copyto!(x_res, x)
     return gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""

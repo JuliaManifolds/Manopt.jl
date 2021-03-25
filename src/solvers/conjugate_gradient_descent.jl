@@ -54,7 +54,8 @@ OR
 function conjugate_gradient_descent(
     M::Manifold, F::TF, gradF::TDF, x; kwargs...
 ) where {TF,TDF}
-    x_res = deepcopy(x)
+    x_res = allocate(x)
+    copyto!(x_res, x)
     return conjugate_gradient_descent!(M, F, gradF, x; kwargs...)
 end
 @doc raw"""

@@ -37,7 +37,8 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function subgradient_method(M::Manifold, F::TF, ∂F::TdF, x; kwargs...) where {TF,TdF}
-    x_res = deepcopy(x)
+    x_res = allocate(x)
+    copyto!(x_res, x)
     return subgradient_method!(M, F, ∂F, x_res; kwargs...)
 end
 @doc raw"""
