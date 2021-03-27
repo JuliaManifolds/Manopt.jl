@@ -101,6 +101,7 @@ include("solvers/record_solver.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
+include("helpers/initialize_data.jl")
 
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
@@ -123,7 +124,7 @@ function __init__()
             mean
         import Random: rand, randperm
         using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
-        include("random.jl")
+        include("helpers/random.jl")
         # adaptions for Nonmutating manifolds
         const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
         include("functions/manifold_functions.jl")
@@ -135,7 +136,7 @@ function __init__()
 end
 #
 # General
-export ℝ, ℂ, &, |
+export ℝ, ℂ, &, |, recursive_copyto!
 #
 # Problems
 export Problem,

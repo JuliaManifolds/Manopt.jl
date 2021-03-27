@@ -278,7 +278,7 @@ function get_hessian(p::HessianProblem{MutatingEvaluation}, q, X)
     return p.hessian!!(p.M, Y, q, X)
 end
 function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
-    return copyto!(Y, p.hessian!!(p.M, q, X))
+    return recursive_copyto!(Y, p.hessian!!(p.M, q, X))
 end
 function get_hessian!(p::HessianProblem{MutatingEvaluation}, Y, q, X)
     return p.hessian!!(p.M, Y, q, X)

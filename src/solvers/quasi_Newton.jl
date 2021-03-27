@@ -56,7 +56,7 @@ OR
 """
 function quasi_Newton(M::Manifold, F::Function, gradF::G, x::P; kwargs...) where {P,G}
     x_res = allocate(x)
-    copyto!(x_res, x)
+    recursive_copyto!(x_res, x)
     return quasi_Newton!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""

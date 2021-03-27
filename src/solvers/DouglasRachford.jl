@@ -49,7 +49,7 @@ OR
 """
 function DouglasRachford(M::Manifold, F::TF, proxes::Vector{<:Any}, x; kwargs...) where {TF}
     x_res = allocate(x)
-    copyto!(x_res, x)
+    recursive_copyto!(x_res, x)
     return DouglasRachford!(M, F, proxes, x; kwargs...)
 end
 @doc raw"""

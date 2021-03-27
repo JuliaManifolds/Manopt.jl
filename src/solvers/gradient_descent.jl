@@ -36,7 +36,7 @@ OR
 """
 function gradient_descent(M::Manifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
     x_res = allocate(x)
-    copyto!(x_res, x)
+    recursive_copyto!(x_res, x)
     return gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""

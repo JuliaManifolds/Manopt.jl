@@ -44,7 +44,7 @@ function NelderMead(
     kwargs...,
 ) where {TF}
     res_population = allocate.(population)
-    copyto!.(res_population, population)
+    recursive_copyto!.(res_population, population)
     return NelderMead!(M, F, res_population; kwargs...)
 end
 @doc raw"""

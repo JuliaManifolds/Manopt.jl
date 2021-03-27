@@ -69,7 +69,7 @@ function get_proximal_map(p::ProximalProblem{AllocatingEvaluation}, λ, x, i)
 end
 function get_proximal_map!(p::ProximalProblem{AllocatingEvaluation}, y, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
-    return copyto!(y, p.proximal_maps!![i](p.M, λ, x))
+    return recursive_copyto!(y, p.proximal_maps!![i](p.M, λ, x))
 end
 function get_proximal_map(p::ProximalProblem{MutatingEvaluation}, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
