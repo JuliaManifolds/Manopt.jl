@@ -74,13 +74,13 @@ function ChambollePock(
     kwargs...,
 ) where {P,T,Q}
     x_res = allocate(x)
-    copyto!(x_res, x)
+    recursive_copyto!(x_res, x)
     ξ_res = allocate(ξ)
-    copyto!(ξ_res, ξ)
+    recursive_copyto!(ξ_res, ξ)
     m_res = allocate(m)
-    copyto!(m_res, m)
+    recursive_copyto!(m_res, m)
     n_res = allocate(n)
-    copyto!(n_res, n)
+    recursive_copyto!(n_res, n)
     return ChambollePock!(
         M,
         N,

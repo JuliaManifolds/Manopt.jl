@@ -48,7 +48,7 @@ function get_subgradient(p::SubGradientProblem{MutatingEvaluation}, q)
     return p.subgradient!!(p.M, X, q)
 end
 function get_subgradient!(p::SubGradientProblem{AllocatingEvaluation}, X, q)
-    return copyto!(X, p.subgradient!!(p.M, q))
+    return recursive_copyto!(X, p.subgradient!!(p.M, q))
 end
 function get_subgradient!(p::SubGradientProblem{MutatingEvaluation}, X, q)
     return p.subgradient!!(p.M, X, q)

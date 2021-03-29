@@ -98,7 +98,7 @@ function get_primal_prox(p::PrimalDualProblem{MutatingEvaluation}, σ, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
 function get_primal_prox!(p::PrimalDualProblem{AllocatingEvaluation}, y, σ, x)
-    return copyto!(y, p.prox_F!!(p.M, σ, x))
+    return recursive_copyto!(y, p.prox_F!!(p.M, σ, x))
 end
 function get_primal_prox!(p::PrimalDualProblem{MutatingEvaluation}, y, σ, x)
     return p.prox_F!!(p.M, y, σ, x)
@@ -126,7 +126,7 @@ function get_dual_prox(p::PrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 function get_dual_prox!(p::PrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
-    return copyto!(η, p.prox_G_dual!!(p.N, n, τ, ξ))
+    return recursive_copyto!(η, p.prox_G_dual!!(p.N, n, τ, ξ))
 end
 function get_dual_prox!(p::PrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
@@ -150,7 +150,7 @@ function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 function linearized_forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X)
-    return copyto!(Y, p.linearized_forward_operator!!(p.M, m, X))
+    return recursive_copyto!(Y, p.linearized_forward_operator!!(p.M, m, X))
 end
 function linearized_forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, Y, m, X)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
@@ -173,7 +173,7 @@ function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
     return p.Λ!!(p.M, y, x)
 end
 function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)
-    return copyto!(y, p.Λ!!(p.M, x))
+    return recursive_copyto!(y, p.Λ!!(p.M, x))
 end
 function forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, y, x)
     return p.Λ!!(p.M, y, x)
@@ -200,7 +200,7 @@ end
 function adjoint_linearized_operator!(
     p::PrimalDualProblem{AllocatingEvaluation}, X, m, n, Y
 )
-    return copyto!(X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
+    return recursive_copyto!(X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
 end
 function adjoint_linearized_operator!(p::PrimalDualProblem{MutatingEvaluation}, X, m, n, Y)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)

@@ -33,7 +33,8 @@ OR
 function stochastic_gradient_descent(
     M::Manifold, gradF::Union{Function,AbstractVector{<:Function}}, x; kwargs...
 )
-    x_res = deepcopy(x)
+    x_res = allocate(x)
+    recursive_copyto!(x_res, x)
     return stochastic_gradient_descent!(M, gradF, x_res; kwargs...)
 end
 @doc raw"""

@@ -71,7 +71,8 @@ OR
 function truncated_conjugate_gradient_descent(
     M::Manifold, F::TF, gradF::TG, x, η, H::TH, trust_region_radius::Float64; kwargs...
 ) where {TF,TG,TH}
-    x_res = deepcopy(x)
+    x_res = allocate(x)
+    recursive_copyto!(x_res, x)
     return truncated_conjugate_gradient_descent!(
         M, F, gradF, x_res, η, H, trust_region_radius; kwargs...
     )
@@ -191,9 +192,9 @@ function step_solver!(
     o.new_model_value =
         inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
     (o.new_model_value > o.model_value) && return o
-    copyto!(o.η, new_η)
+    recursive_copyto!(o.η, new_η)
     o.model_value = o.new_model_value
-    copyto!(o.Hη, new_Hη)
+    recursive_copyto!(o.Hη, new_Hη)
     o.residual = o.residual + α * o.Hδ
     # Precondition the residual.
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
