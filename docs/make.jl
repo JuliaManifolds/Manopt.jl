@@ -7,6 +7,7 @@ tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
     "MeanAndMedian",
     "Benchmark",
+    "HowToRecord",
     "StochasticGradientDescent",
     "BezierCurves",
     "GradientOfSecondOrderDifference",
@@ -15,6 +16,7 @@ tutorials = [
 menuEntries = [
     "get Started: Optimize!",
     "speed up! using `gradF!`",
+    "Record values",
     "do stochastic gradient descent",
     "work with Bézier curves",
     "see the gradient of ``d_2``",

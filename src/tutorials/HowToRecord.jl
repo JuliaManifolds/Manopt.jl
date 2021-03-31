@@ -6,7 +6,7 @@
 # * record multiple values during the iterations and access them afterwards
 # * define an own [`RecordAction`](@ref) to perform individual recordings.
 #
-# Several predefined recordings exist, for example [`RecordCost`](@ref) or [`RecordGradient`]('ref), depending on the solver used.
+# Several predefined recordings exist, for example [`RecordCost`](@ref) or [`RecordGradient`](@ref), depending on the solver used.
 # For fields of the [`Options`](@ref) this can be directly done using the [`RecordEntry`](@ref).
 # For others, an own [`RecordAction`](@ref) can be defined.
 #
@@ -33,10 +33,10 @@ R = gradient_descent(M, F, gradF, data[1]; record=:Cost, return_options=true)
 #
 get_record(R)
 #
-# To record more than one value, you can pass a array of a mix of symbols and [`RecordActions`](@ref) which gets mapped to a [`RecordGroup`](@ref)
-R = gradient_descent(M, F, gradF, data[1]; record=[:Iteration,:Cost], return_options=true)
+# To record more than one value, you can pass a array of a mix of symbols and [`RecordAction`](@ref) which gets mapped to a [`RecordGroup`](@ref)
+R = gradient_descent(M, F, gradF, data[1]; record=[:Iteration, :Cost], return_options=true)
 #
-# Here, the Symbol `:Cost` is mapped to using the [`RecordCost`](@ref) action. The same holds for `:Iteration` and `:Iterate` and any member field of the current [`Opions`](@ref).
+# Here, the Symbol `:Cost` is mapped to using the [`RecordCost`](@ref) action. The same holds for `:Iteration` and `:Iterate` and any member field of the current [`Options`](@ref).
 # To access these you can first extract the group of records (of the `:Iteration` action) and then access the `:Cost`
 ra = get_record_action(R)[:Cost]
 #
@@ -59,20 +59,27 @@ get_record(R, :Iteration, (:Cost, :Iteration))
 p = GradientProblem(M, F, gradF)
 o = GradientDescentOptions(
     M,
-    copy(data[1]),
-    stopping_criterion = StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-9)
+    copy(data[1]);
+    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-9),
 )
 #
-# and now decorate these with [`RecordOptions`]()
+# and now decorate these with [`RecordOptions`](@ref)
 #
-rI = RecordEvery(RecordGroup([:Iteration => RecordIteration(), :Cost => RecordCost(), :Gradient => RecordEntry(similar(data[1]),:gradient)]),6)
+rI = RecordEvery(
+    RecordGroup([
+        :Iteration => RecordIteration(),
+        :Cost => RecordCost(),
+        :Gradient => RecordEntry(similar(data[1]), :gradient),
+    ]),
+    6,
+)
 sI = RecordIteration()
-r = RecordOptions(o, Dict(:Iteration=>rI, :Stop=>sI))
-r2 = solve(p,r)
+r = RecordOptions(o, Dict(:Iteration => rI, :Stop => sI))
+r2 = solve(p, r)
 #
 # and we see
 #
-get_record(r2,:Stop)
+get_record(r2, :Stop)
 #
 # as well as
 #
@@ -80,7 +87,7 @@ get_record(r2, :Iteration, (:Iteration, :Cost))
 #
 # Here it is interesting to see, that a meta-record like [`RecordEvery`](@ref) just passes the tuple further on, so we can again also do
 #
-get_record_action(r2,:Iteration)[:Gradient]
+get_record_action(r2, :Iteration)[:Gradient]
 #
 # ## Writing an own `RecordAction`
 #
@@ -118,6 +125,11 @@ nothing #hide
 #
 F2 = MyCost(data)
 R = gradient_descent(
-    M, F2, gradF, data[1]; record=[:Iteration, :Count => RecordCount(), :Cost], return_options=true
+    M,
+    F2,
+    gradF,
+    data[1];
+    record=[:Iteration, :Count => RecordCount(), :Cost],
+    return_options=true,
 )
 get_record(R)
