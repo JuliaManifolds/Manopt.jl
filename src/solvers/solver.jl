@@ -29,6 +29,7 @@ function decorate_options(
     }=missing,
     record::Union{
         Missing, # none
+        Symbol, # single action shortcut by symbol
         RecordAction, # single action
         Array{RecordAction,1}, # a group to be set in :All
         Dict{Symbol,RecordAction}, # a dictionary for precise settings

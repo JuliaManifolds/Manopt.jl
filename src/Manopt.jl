@@ -166,6 +166,7 @@ export Options,
     NelderMeadOptions,
     ParticleSwarmOptions,
     PrimalDualOptions,
+    RecordOptions,
     StochasticGradientDescentOptions,
     SubGradientMethodOptions,
     TruncatedConjugateGradientOptions,
@@ -365,7 +366,13 @@ export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter
 export DebugGradient, DebugGradientNorm, DebugStepsize
 #
-# Records
+# Records - and access functions
+export get_record, get_record_options, get_record_action, has_record
+export RecordAction
+export RecordActionFactory, RecordFactory
+export RecordGroup, RecordEvery
+export RecordChange, RecordCost, RecordIterate, RecordIteration
+export RecordEntry, RecordEntryChange
 export RecordGradient, RecordGradientNorm, RecordStepsize
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate

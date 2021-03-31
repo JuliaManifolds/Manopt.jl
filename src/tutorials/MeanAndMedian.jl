@@ -2,7 +2,12 @@
 #
 # This example illustrates how to set up and solve optimization problems and how
 # to further get data from the algorithm using [`DebugOptions`](@ref) and
-# [`RecordOptions`](@ref)
+# [`RecordOptions`](@ref). We will use the Riemannian mean and median as simple examples.
+#
+# !!! tip
+#
+#     There are more sophisticated methods tailored for the specific manifolds available in
+#     [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/) see [`mean`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.mean-Tuple{Manifold,AbstractArray{T,1}%20where%20T,AbstractArray{T,1}%20where%20T,ExtrinsicEstimation}) and [median](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.median-Tuple{Manifold,AbstractArray{T,1}%20where%20T,AbstractArray{T,1}%20where%20T,CyclicProximalPointEstimation}).
 #
 # To start from the quite general case: A __Solver__ is an algorithm that aims
 # to solve
@@ -11,6 +16,7 @@
 #
 # where $\mathcal M$ is a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and
 # $f:\mathcal M → ℝ$ is the cost function.
+#
 #
 # In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](@ref)
 # `p` and [`Options`](@ref) `o`. While former contains __static__ data,
