@@ -71,6 +71,11 @@ Order = [:type, :function]
 Private = false
 ```
 
+```@docs
+getindex(ro::RecordOptions, s::Symbol)
+getindex(::RecordGroup,::Any...)
+```
+
 see [RecordSolver](@ref RecordSolver) for details on the decorated solver.
 
 Further specific [`RecordAction`](@ref)s can be found at the specific Options.

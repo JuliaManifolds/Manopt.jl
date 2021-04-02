@@ -22,3 +22,4 @@ Pages   = ["random.jl"]
 ```@autodocs
 Modules = [Manopt]
 Pages   = ["initialize_data.jl"]
+```
