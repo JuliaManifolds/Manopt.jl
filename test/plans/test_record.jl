@@ -23,19 +23,17 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test get_stepsize(p, rO, 1) == 1.0
     @test get_last_stepsize(p, rO, 1) == 1.0
     #
-    @test rO.recordDictionary[:All] == a
-    @test RecordOptions(o, [a]).recordDictionary[:All].group[1] == a
+    @test rO.recordDictionary[:Iteration] == a
+    @test RecordOptions(o, [a]).recordDictionary[:Iteration] == a
     @test RecordOptions(o, Dict(:A => a)).recordDictionary[:A] == a
-    @test isa(
-        RecordOptions(o, [:Iteration]).recordDictionary[:All].group[1], RecordIteration
-    )
+    @test isa(RecordOptions(o, [:Iteration]).recordDictionary[:Iteration], RecordIteration)
     @test !has_record(o)
     @test_throws ErrorException get_record(o)
     @test get_options(o) == o
     @test !has_record(DebugOptions(o, []))
     @test has_record(rO)
     @test_throws ErrorException get_record(o)
-    @test length(get_record(rO, :All)) == 0
+    @test length(get_record(rO, :Iteration)) == 0
     @test length(get_record(rO)) == 0
     @test length(get_record(DebugOptions(rO, []))) == 0
     @test_throws ErrorException get_record(RecordOptions(o, Dict{Symbol,RecordAction}()))
@@ -57,8 +55,8 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test get_record(b) == [(1, 1), (2, 2)]
     #RecordEvery
     c = RecordEvery(a, 10, true)
-    @test c(p, o, 0) == nothing
-    @test c(p, o, 1) == nothing
+    @test c(p, o, 0) === nothing
+    @test c(p, o, 1) === nothing
     @test c(p, o, 10) == [10]
     @test c(p, o, 20) == [10, 20]
     @test c(p, o, -1) == []
@@ -108,15 +106,15 @@ using Manifolds, Manopt, Test, ManifoldsBase
     #RecordFactory
     o.gradient = [0.0, 0.0]
     rf = RecordFactory(o, [:Cost, :gradient])
-    @test isa(rf[:All], RecordGroup)
-    @test isa(rf[:All].group[1], RecordCost)
-    @test isa(rf[:All].group[2], RecordEntry)
-    @test isa(RecordFactory(o, [2])[:All], RecordEvery)
-    @test rf[:All].group[2].field == :gradient
-    @test length(rf[:All].group) == 2
+    @test isa(rf[:Iteration], RecordGroup)
+    @test isa(rf[:Iteration].group[1], RecordCost)
+    @test isa(rf[:Iteration].group[2], RecordEntry)
+    @test isa(RecordFactory(o, [2])[:Iteration], RecordEvery)
+    @test rf[:Iteration].group[2].field == :gradient
+    @test length(rf[:Iteration].group) == 2
     @test all(
         isa.(
-            RecordFactory(o, [:Cost, :Iteration, :Change, :Iterate])[:All].group,
+            RecordFactory(o, [:Cost, :Iteration, :Change, :Iterate])[:Iteration].group,
             [RecordCost, RecordIteration, RecordChange, RecordIterate],
         ),
     )

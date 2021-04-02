@@ -89,7 +89,7 @@ get_record(r2, :Iteration, (:Iteration, :Cost))
 #
 get_record_action(r2, :Iteration)[:Gradient]
 #
-# ## Writing an own `RecordAction`
+# ## Writing an own [`RecordAction`](@ref)s
 #
 # Let's investigate where we want to count the number of function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration.
 # We first define a cost, that counts it's own calls.

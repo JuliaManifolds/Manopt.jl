@@ -60,7 +60,7 @@ function get_gradient(p::AbstractGradientProblem{MutatingEvaluation}, x)
 end
 
 function get_gradient!(p::AbstractGradientProblem{AllocatingEvaluation}, X, x)
-    return copyto!(X, p.gradient!!(p.M, x))
+    return recursive_copyto!(X, p.gradient!!(p.M, x))
 end
 
 function get_gradient!(p::AbstractGradientProblem{MutatingEvaluation}, X, x)

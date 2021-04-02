@@ -81,7 +81,7 @@ has_record(::Options, ::Val{false}) = false
 return the [`RecordOptions`](@ref) among the decorators from the [`Options`](@ref) `o`
 """
 get_record_options(o::Options) = get_record_options(o, dispatch_options_decorator(o))
-get_record_options(o::Options, ::Val{true}) = get_record(o.options)
+get_record_options(o::Options, ::Val{true}) = get_record_options(o.options)
 get_record_options(::Options, ::Val{false}) = error("No Record decoration found")
 get_record_options(o::RecordOptions) = o
 
@@ -131,7 +131,7 @@ get_record(r::RecordAction) = r.recorded_values
 
 Get the recorded values for reording type `s`, see [`get_record`](@ref) for details.
 """
-getindex(ro::RecordOptions, s::Symbol...) = get_record(ro, s...)
+getindex(ro::RecordOptions, s::Symbol) = get_record(ro, s)
 
 """
     record_or_reset!(r,v,i)
@@ -181,13 +181,15 @@ mutable struct RecordGroup <: RecordAction
     function RecordGroup(
         g::Array{<:RecordAction,1}, symbols::Dict{Symbol,Int}=Dict{Symbol,Int}()
     )
-        if maximum(values(symbols)) > length(g)
-            error(
-                "Index $(maximum(values(symbols))) must not be larger than number of elements ($(length(g)) in this Record group.",
-            )
-        end
-        if minimum(values(symbols)) < 1
-            error("Index $(minimum(values(symbols))) nonpositive.")
+        if length(symbols) > 0
+            if maximum(values(symbols)) > length(g)
+                error(
+                    "Index $(maximum(values(symbols))) must not be larger than number of elements ($(length(g)) in this Record group.",
+                )
+            end
+            if minimum(values(symbols)) < 1
+                error("Index $(minimum(values(symbols))) nonpositive.")
+            end
         end
         return new(g, symbols)
     end
@@ -215,19 +217,19 @@ function (d::RecordGroup)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     end
 end
 @doc raw"""
-    get_record(r::RecordGradient)
+    get_record(r::RecordGroup)
 
 return an array of tuples, where each tuple is a recorded set, e.g. per iteration / record call.
 
-    get_record(r::RecordGradient, i::Int)
+    get_record(r::RecordGruop, i::Int)
 
 return an array of values corresponding to the `i`th entry in this record group
 
-    get_record(r::RecordGradient, s::Symbol)
+    get_record(r::RecordGruop, s::Symbol)
 
 return an array of recorded values with respect to the `s`, see [`RecordGroup`](@ref).
 
-    get_record(r::RecordGradient, s1::Symbol, s2::Symbol,...)
+    get_record(r::RecordGroup, s1::Symbol, s2::Symbol,...)
 
 return an array of tuples, where each tuple is a recorded set corresponding to the symbols `s1, s2,...` per iteration / record call.
 """
@@ -250,6 +252,7 @@ end
 return an array of recorded values with respect to the `s`, the symbols `s1, s2,...` or the index `i`.
 See [`get_record`](@ref get_record(r::RecordGroup)) for details.
 """
+getindex(::RecordGroup, ::Any...)
 getindex(r::RecordGroup, s::Symbol) = get_record(r, s)
 getindex(r::RecordGroup, s::Symbol...) = get_record(r, s...)
 getindex(r::RecordGroup, i) = get_record(r, i)
@@ -280,6 +283,7 @@ function (d::RecordEvery)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
         d.record(p, o, 0)
     end
 end
+get_record(r::RecordEvery) = get_record(r.record)
 get_record(r::RecordEvery, i) = get_record(r.record, i)
 getindex(r::RecordEvery, s::Symbol) = get_record(r.record, s)
 getindex(r::RecordEvery, s::Symbol...) = get_record(r.record, s...)
@@ -462,7 +466,7 @@ function RecordFactory(o::Options, a::Array{<:Any,1})
         end
     end
     if length(group) == 1
-        if group isa Pair{Symbol,RecordAction}
+        if group[1] isa Pair{Symbol,<:RecordAction}
             record = group[1].second
         else
             record = group[1]
