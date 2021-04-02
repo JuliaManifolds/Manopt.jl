@@ -48,6 +48,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test_throws ErrorException get_record(o)
     @test length(get_record(rO, :Iteration)) == 0
     @test length(rO[:Iteration]) == 0
+    @test length(rO[:Iteration,1]) == 0
     @test length(get_record(rO)) == 0
     @test length(get_record(DebugOptions(rO, []))) == 0
     @test length(get_record(RecordOptions(o, [:Iteration]), :Iteration, 1)) == 0

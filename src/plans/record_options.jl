@@ -291,7 +291,7 @@ function (d::RecordEvery)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
 end
 get_record(r::RecordEvery) = get_record(r.record)
 get_record(r::RecordEvery, i) = get_record(r.record, i)
-getindex(r::RecordEvery, i) = get_record(r.record, i)
+getindex(r::RecordEvery, i) = get_record(r, i)
 
 #
 # Special single ones
