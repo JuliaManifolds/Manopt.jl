@@ -48,7 +48,6 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test_throws ErrorException get_record(o)
     @test length(get_record(rO, :Iteration)) == 0
     @test length(rO[:Iteration]) == 0
-    @test length(rO[:Iteration,1]) == 0
     @test length(get_record(rO)) == 0
     @test length(get_record(DebugOptions(rO, []))) == 0
     @test length(get_record(RecordOptions(o, [:Iteration]), :Iteration, 1)) == 0
@@ -78,6 +77,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test b[:It1] == [1, 2]
     @test get_record(b, (:It1, :It2)) == [(1, 1), (2, 2)]
     @test b[(:It1, :It2)] == [(1, 1), (2, 2)]
+    @test RecordOptions(o, b)[:Iteration, 1] == [1, 2]
     #RecordEvery
     c = RecordEvery(a, 10, true)
     @test c(p, o, 0) === nothing
