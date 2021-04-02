@@ -130,8 +130,14 @@ get_record(r::RecordAction) = r.recorded_values
     ro[s]
 
 Get the recorded values for reording type `s`, see [`get_record`](@ref) for details.
+
+    get_index(ro::RecordOptions, s::Symbol, i...)
+    ro[s, i...]
+
+Acces the recording type of type `s` and call its [`RecordAction`](@ref) with `[i...]`.
 """
 getindex(ro::RecordOptions, s::Symbol) = get_record(ro, s)
+getindex(ro::RecordOptions, s::Symbol, i...) = get_record_action(ro, s)[i...]
 
 """
     record_or_reset!(r,v,i)
@@ -184,11 +190,11 @@ mutable struct RecordGroup <: RecordAction
         if length(symbols) > 0
             if maximum(values(symbols)) > length(g)
                 error(
-                    "Index $(maximum(values(symbols))) must not be larger than number of elements ($(length(g)) in this Record group.",
+                    "Index $(maximum(values(symbols))) must not be larger than number of elements ($(length(g))) in this RecordGroup.",
                 )
             end
             if minimum(values(symbols)) < 1
-                error("Index $(minimum(values(symbols))) nonpositive.")
+                error("Index $(minimum(values(symbols))) nonpositive not allowed.")
             end
         end
         return new(g, symbols)
@@ -244,17 +250,17 @@ end
 @doc raw"""
     getindex(r::RecordGroup, s::Symbol)
     r[s]
-    getindex(r::RecordGroup, s::Symbol...)
-    r[s...]
+    getindex(r::RecordGroup, sT::NTuple{N,Symbol})
+    r[sT]
     getindex(r::RecordGroup, i)
     r[i]
 
-return an array of recorded values with respect to the `s`, the symbols `s1, s2,...` or the index `i`.
+return an array of recorded values with respect to the `s`, the symbols from the tuple `sT` or the index `i`.
 See [`get_record`](@ref get_record(r::RecordGroup)) for details.
 """
 getindex(::RecordGroup, ::Any...)
 getindex(r::RecordGroup, s::Symbol) = get_record(r, s)
-getindex(r::RecordGroup, s::Symbol...) = get_record(r, s...)
+getindex(r::RecordGroup, s::NTuple{N,Symbol}) where {N} = get_record(r, s)
 getindex(r::RecordGroup, i) = get_record(r, i)
 
 @doc raw"""
@@ -285,8 +291,6 @@ function (d::RecordEvery)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
 end
 get_record(r::RecordEvery) = get_record(r.record)
 get_record(r::RecordEvery, i) = get_record(r.record, i)
-getindex(r::RecordEvery, s::Symbol) = get_record(r.record, s)
-getindex(r::RecordEvery, s::Symbol...) = get_record(r.record, s...)
 getindex(r::RecordEvery, i) = get_record(r.record, i)
 
 #
@@ -465,15 +469,7 @@ function RecordFactory(o::Options, a::Array{<:Any,1})
             push!(group, RecordActionFactory(o, s))
         end
     end
-    if length(group) == 1
-        if group[1] isa Pair{Symbol,<:RecordAction}
-            record = group[1].second
-        else
-            record = group[1]
-        end
-    else
-        record = RecordGroup(group)
-    end
+    record = RecordGroup(group)
     # filter ints
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0

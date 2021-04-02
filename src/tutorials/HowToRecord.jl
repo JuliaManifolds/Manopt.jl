@@ -132,4 +132,12 @@ R = gradient_descent(
     record=[:Iteration, :Count => RecordCount(), :Cost],
     return_options=true,
 )
+#
+# We can again access the whole sets of records
+#
 get_record(R)
+#
+# this is equivalent to calling `R[:Iteration`.
+# Note that since we introduced `:Count` we can also access a single recorded value using
+#
+R[:Iteration, :Count]
