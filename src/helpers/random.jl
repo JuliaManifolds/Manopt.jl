@@ -1,11 +1,11 @@
 @doc raw"
-    random_point(M::Manidold)
+    random_point(M::Manifold)
 
 generate a random point on a manifold. By default it uses `random_point(M,:Gaussian)`.
 "
 random_point(M::Manifold) = random_point(M, Val(:Gaussian))
 @doc raw"
-    random_point(M::Manidold, s::Symbol, options...)
+    random_point(M::Manifold, s::Symbol, options...)
 
 generate a random point using a noise model given by `s` with its additional `options`
 just passed on.

@@ -245,7 +245,7 @@ the manifold `M`, i.e. the number of points minus 1.
 get_bezier_degree(::Manifold, b::BezierSegment) = length(b.pts) - 1
 
 @doc raw"""
-    get_bezier_degrees(M::Manidold, B::AbstractVector{<:BezierSegment})
+    get_bezier_degrees(M::Manifold, B::AbstractVector{<:BezierSegment})
 
 return the degrees of the components of a composite Bézier curve represented by tuples
 in `B` containing points on the manifold `M`.
