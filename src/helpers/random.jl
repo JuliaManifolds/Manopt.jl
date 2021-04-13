@@ -13,6 +13,33 @@ just passed on.
 random_point(M::Manifold, s::Symbol, options...) = random_point(M, Val(s), options...)
 
 @doc raw"""
+    random_point(M::AbstractPowerManifold, options...)
+
+generate a random point on the `AbstractPowerManfold` `M` given `options` that are
+passed on.
+"""
+function random_point(
+    M::AbstractPowerManifold{𝔽,Mt,NestedPowerRepresentation}, options...
+) where {𝔽,Mt}
+    return [random_point(M.manifold, options...) for i in get_iterator(M)]
+end
+function random_point(
+    M::AbstractPowerManifold{𝔽,Mt,ArrayPowerRepresentation}, options...
+) where {𝔽,Mt}
+    return cat(
+        [random_point(M.manifold, options...) for i in get_iterator(M)]...;
+        dims=length(representation_size(M.manifold)) + 1,
+    )
+end
+
+@doc raw"""
+    random_point(M::AbstractGroupManifold, options...)
+
+On an abstract group manifold, the random point is taken from the internally stored `M.manifold`.
+"""
+random_point(M::AbstractGroupManifold, kwargs...) = random_point(M.manifold, kwargs...)
+
+@doc raw"""
     random_point(M::Circle, :Uniform)
 
 return a random point on the [`Circle`](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathbb S^1$ by
@@ -32,6 +59,20 @@ random_point(M::Euclidean) = randn(representation_size(M))
 random_point(M::Euclidean, ::Val{:Gaussian}, σ=1.0) = σ * randn(manifold_dimension(M))
 
 @doc raw"""
+    random_point(M::FixedRankMatrices, options...)
+
+return a random point on the FixedRankMatrices manifold.
+The orthogonal matrices are sampled from the Stiefel manifold
+and the singular values are sampled uniformly at random.
+"""
+function random_point(::FixedRankMatrices{m,n,k}, options...) where {m,n,k}
+    U = random_point(Stiefel(m, k), options...)
+    S = sort(rand(k); rev=true)
+    V = random_point(Stiefel(n, k), options...)
+    return SVDMPoint(U, S, V')
+end
+
+@doc raw"""
     random_point(M::Grassmannian, :Gaussian [, σ=1.0])
 
 return a random point `x` on `Grassmannian` manifold `M` by
@@ -42,26 +83,6 @@ function random_point(::Grassmann{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64=1.0) 
     V = σ * randn(𝔽 === ℝ ? Float64 : ComplexF64, (n, k))
     A = qr(V).Q[:, 1:k]
     return A
-end
-
-@doc raw"""
-    random_point(M::AbstractPowerManifold, options...)
-
-generate a random point on the `AbstractPowerManfold` `M` given `options` that are
-passed on.
-"""
-function random_point(
-    M::AbstractPowerManifold{𝔽,Mt,NestedPowerRepresentation}, options...
-) where {𝔽,Mt}
-    return [random_point(M.manifold, options...) for i in get_iterator(M)]
-end
-function random_point(
-    M::AbstractPowerManifold{𝔽,Mt,ArrayPowerRepresentation}, options...
-) where {𝔽,Mt}
-    return cat(
-        [random_point(M.manifold, options...) for i in get_iterator(M)]...;
-        dims=length(representation_size(M.manifold)) + 1,
-    )
 end
 
 @doc raw"""
@@ -155,18 +176,11 @@ function random_point(M::TangentBundle, options...)
 end
 
 @doc raw"""
-    random_point(M::FixedRankMatrices, options...)
+    random_tangent(M::AbstractGroupManifold, p, options...)
 
-return a random point on the FixedRankMatrices manifold.
-The orthogonal matrices are sampled from the Stiefel manifold
-and the singular values are sampled uniformly at random.
+On an abstract group manifold, the random tangent is taken from the internally stored `M.manifold`s tangent space at `p`.
 """
-function random_point(M::FixedRankMatrices{m,n,k}, options...) where {m,n,k}
-    U = random_point(Stiefel(m, k), options...)
-    S = sort(rand(k); rev=true)
-    V = random_point(Stiefel(n, k), options...)
-    return SVDMPoint(U, S, V')
-end
+random_tangent(M::AbstractGroupManifold, p, kwargs...) = random_tangent(M.manifold, kwargs...)
 
 @doc raw"""
     random_tangent(M, p, options...)
@@ -205,17 +219,18 @@ function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
     return X
 end
 
-@doc raw"""
-    random_tangent(M::Stiefel, p[,type=:Gaussian, σ=1.0])
 
-return a (Gaussian) random vector from the tangent space $T_p\mathrm{St}(n,k)$ with mean
-zero and standard deviation `σ` by projecting a random Matrix onto the  `p`.
+@doc raw"""
+    random_tangent(M::FixedRankMatrices, p, options...)
+
+generate a random tangent vector in the tangent space of the point `p` on the
+`FixedRankMatrices` manifold `M`.
 """
-function random_tangent(M::Stiefel, p, ::Val{:Gaussian}, σ::Float64=1.0)
-    Z = σ * randn(eltype(p), size(p))
-    X = project(M, p, Z)
-    X = X ./ norm(X)
-    return X
+function random_tangent(M::FixedRankMatrices{m,n,k}, p, options...) where {m,n,k}
+    Up = randn(m, k, options...)
+    Vp = randn(n, k, options...)
+    A = randn(k, k, options...)
+    return UMVTVector(Up - p.U * p.U' * Up, A, Vp' - Vp' * p.Vt' * p.Vt)
 end
 
 @doc raw"""
@@ -285,8 +300,22 @@ function random_tangent(M::Sphere, p, ::Val{:Gaussian}, σ::Float64=1.0)
     return project(M, p, n) #project to TpM (keeps Gaussianness)
 end
 
+
 @doc raw"""
-    random_tangent(M, p[, :Gaussian, σ = 1.0])
+    random_tangent(M::Stiefel, p[,type=:Gaussian, σ=1.0])
+
+return a (Gaussian) random vector from the tangent space $T_p\mathrm{St}(n,k)$ with mean
+zero and standard deviation `σ` by projecting a random Matrix onto the  `p`.
+"""
+function random_tangent(M::Stiefel, p, ::Val{:Gaussian}, σ::Float64=1.0)
+    Z = σ * randn(eltype(p), size(p))
+    X = project(M, p, Z)
+    X = X ./ norm(X)
+    return X
+end
+
+@doc raw"""
+    random_tangent(M::SymmetricPositiveDefinite, p[, :Gaussian, σ = 1.0])
 
 generate a random tangent vector in the tangent space of the point `p` on the
 `SymmetricPositiveDefinite` manifold `M` by using a Gaussian distribution
@@ -325,17 +354,4 @@ function random_tangent(M::TangentBundle, p, options...)
     X = random_tangent(M.manifold, p[M, :point], options...)
     Y = random_tangent(M.manifold, p[M, :point], options...)
     return ProductRepr(X, Y)
-end
-
-@doc raw"""
-    random_tangent(M::FixedRankMatrices, p, options...)
-
-generate a random tangent vector in the tangent space of the point `p` on the
-`FixedRankMatrices` manifold `M`.
-"""
-function random_tangent(M::FixedRankMatrices{m,n,k}, p, options...) where {m,n,k}
-    Up = randn(m, k, options...)
-    Vp = randn(n, k, options...)
-    A = randn(k, k, options...)
-    return UMVTVector(Up - p.U * p.U' * Up, A, Vp' - Vp' * p.Vt' * p.Vt)
 end
