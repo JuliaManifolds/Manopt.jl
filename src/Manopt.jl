@@ -106,6 +106,7 @@ include("helpers/initialize_data.jl")
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
         using .Manifolds:
+            AbstractGroupManifold,
             Circle,
             Euclidean,
             Grassmann,
