@@ -180,7 +180,9 @@ end
 
 On an abstract group manifold, the random tangent is taken from the internally stored `M.manifold`s tangent space at `p`.
 """
-random_tangent(M::AbstractGroupManifold, p, kwargs...) = random_tangent(M.manifold, kwargs...)
+function random_tangent(M::AbstractGroupManifold, p, kwargs...)
+    return random_tangent(M.manifold, kwargs...)
+end
 
 @doc raw"""
     random_tangent(M, p, options...)
@@ -218,7 +220,6 @@ function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
     X = X ./ norm(X)
     return X
 end
-
 
 @doc raw"""
     random_tangent(M::FixedRankMatrices, p, options...)
@@ -299,7 +300,6 @@ function random_tangent(M::Sphere, p, ::Val{:Gaussian}, σ::Float64=1.0)
     n = σ * randn(size(p)) # Gaussian in embedding
     return project(M, p, n) #project to TpM (keeps Gaussianness)
 end
-
 
 @doc raw"""
     random_tangent(M::Stiefel, p[,type=:Gaussian, σ=1.0])
