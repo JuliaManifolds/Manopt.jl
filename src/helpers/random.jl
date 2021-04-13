@@ -38,6 +38,9 @@ end
 On an abstract group manifold, the random point is taken from the internally stored `M.manifold`.
 """
 random_point(M::AbstractGroupManifold, kwargs...) = random_point(M.manifold, kwargs...)
+function random_point(M::AbstractGroupManifold, s::Symbol, options...)
+    return random_point(M, Val(s), options...)
+end
 
 @doc raw"""
     random_point(M::Circle, :Uniform)
@@ -181,7 +184,10 @@ end
 On an abstract group manifold, the random tangent is taken from the internally stored `M.manifold`s tangent space at `p`.
 """
 function random_tangent(M::AbstractGroupManifold, p, kwargs...)
-    return random_tangent(M.manifold, kwargs...)
+    return random_tangent(M.manifold, p, kwargs...)
+end
+function random_tangent(M::AbstractGroupManifold, p, s::Symbol, options...)
+    return random_tangent(M, p, Val(s), options...)
 end
 
 @doc raw"""
@@ -227,7 +233,7 @@ end
 generate a random tangent vector in the tangent space of the point `p` on the
 `FixedRankMatrices` manifold `M`.
 """
-function random_tangent(M::FixedRankMatrices{m,n,k}, p, options...) where {m,n,k}
+function random_tangent(::FixedRankMatrices{m,n,k}, p, options...) where {m,n,k}
     Up = randn(m, k, options...)
     Vp = randn(n, k, options...)
     A = randn(k, k, options...)
