@@ -1,4 +1,5 @@
 using Manifolds, Manopt, Test, ManifoldsBase
+using LinearAlgebra: I
 
 using Random
 Random.seed!(42)
@@ -164,4 +165,37 @@ Random.seed!(42)
         @test is_tangent_vector(Mse1, pse2.parts[1], Xse2.parts[1], true)
         @test is_tangent_vector(Mse2, pse2.parts[2], Xse2.parts[2], true)
     end
+    @testset "recursive_copyto!" begin
+        xs = [1.0, 0.0, 0.0]
+        ys = allocate(xs)
+        recursive_copyto!(ys,xs)
+        @test xs == ys
+
+        xFr = SVDMPoint([1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 1.0 0.0])
+        yFr = allocate(xFr)
+        recursive_copyto!(yFr,xFr)
+        @test xFr.U == yFr.U
+        @test xFr.S == yFr.S
+        @test xFr.Vt == yFr.Vt
+
+        X = UMVTVector(Matrix{Float64}(I,3,3),zeros(3,3),Matrix{Float64}(I,3,3))
+        Y = allocate(X)
+        recursive_copyto!(Y,X)
+        @test X.U == Y.U
+        @test X.M == Y.M
+        @test X.Vt == Y.Vt
+
+        xP = ProductRepr(xs,ys)
+        yP = allocate(xP)
+        recursive_copyto!(yP,xP)
+        @test yP.parts == xP.parts
+
+        for T in Manifolds._HyperbolicTypes
+            x = T([1.0,0.0,0.0])
+            y = allocate(x)
+            recursive_copyto!(y,x)
+            @test x.value == y.value
+        end
+    end
+
 end

@@ -55,11 +55,27 @@ function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
     end
 end
 
-function recursive_copyto!(x::ProductRepr, y::ProductRepr)
-    map(recursive_copyto!, submanifold_components(x), submanifold_components(y))
-    return x
+function recursive_copyto!(y::ProductRepr, x::ProductRepr)
+    map(recursive_copyto!, submanifold_components(y), submanifold_components(x))
+    return y
 end
-
+function recursive_copyto!(x::SVDMPoint, y::SVDMPoint)
+    copyto!(y.S,x.S)
+    copyto!(y.U,x.U)
+    copyto!(y.Vt,x.Vt)
+    return y
+end
+function recursive_copyto!(x::UMVTVector, y::UMVTVector)
+    copyto!(y.M,x.M)
+    copyto!(y.U,x.U)
+    copyto!(y.Vt,x.Vt)
+    return y
+end
+for T in Manifolds._HyperbolicTypes
+    @eval begin
+        recursive_copyto!(y::$T, x::$T) = copyto!(y.value, x.value)
+    end
+end
 @doc raw"""
     reflect(M, f, x)
     reflect!(M, q, f, x)
