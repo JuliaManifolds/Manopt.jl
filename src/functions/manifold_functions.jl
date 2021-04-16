@@ -59,13 +59,13 @@ function recursive_copyto!(y::ProductRepr, x::ProductRepr)
     map(recursive_copyto!, submanifold_components(y), submanifold_components(x))
     return y
 end
-function recursive_copyto!(x::SVDMPoint, y::SVDMPoint)
+function recursive_copyto!(y::SVDMPoint, x::SVDMPoint)
     copyto!(y.S, x.S)
     copyto!(y.U, x.U)
     copyto!(y.Vt, x.Vt)
     return y
 end
-function recursive_copyto!(x::UMVTVector, y::UMVTVector)
+function recursive_copyto!(y::UMVTVector, x::UMVTVector)
     copyto!(y.M, x.M)
     copyto!(y.U, x.U)
     copyto!(y.Vt, x.Vt)
