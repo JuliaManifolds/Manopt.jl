@@ -168,34 +168,33 @@ Random.seed!(42)
     @testset "recursive_copyto!" begin
         xs = [1.0, 0.0, 0.0]
         ys = allocate(xs)
-        recursive_copyto!(ys,xs)
+        recursive_copyto!(ys, xs)
         @test xs == ys
 
         xFr = SVDMPoint([1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 1.0 0.0])
         yFr = allocate(xFr)
-        recursive_copyto!(yFr,xFr)
+        recursive_copyto!(yFr, xFr)
         @test xFr.U == yFr.U
         @test xFr.S == yFr.S
         @test xFr.Vt == yFr.Vt
 
-        X = UMVTVector(Matrix{Float64}(I,3,3),zeros(3,3),Matrix{Float64}(I,3,3))
+        X = UMVTVector(Matrix{Float64}(I, 3, 3), zeros(3, 3), Matrix{Float64}(I, 3, 3))
         Y = allocate(X)
-        recursive_copyto!(Y,X)
+        recursive_copyto!(Y, X)
         @test X.U == Y.U
         @test X.M == Y.M
         @test X.Vt == Y.Vt
 
-        xP = ProductRepr(xs,ys)
+        xP = ProductRepr(xs, ys)
         yP = allocate(xP)
-        recursive_copyto!(yP,xP)
+        recursive_copyto!(yP, xP)
         @test yP.parts == xP.parts
 
         for T in Manifolds._HyperbolicTypes
-            x = T([1.0,0.0,0.0])
+            x = T([1.0, 0.0, 0.0])
             y = allocate(x)
-            recursive_copyto!(y,x)
+            recursive_copyto!(y, x)
             @test x.value == y.value
         end
     end
-
 end

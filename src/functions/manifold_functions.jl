@@ -60,15 +60,15 @@ function recursive_copyto!(y::ProductRepr, x::ProductRepr)
     return y
 end
 function recursive_copyto!(x::SVDMPoint, y::SVDMPoint)
-    copyto!(y.S,x.S)
-    copyto!(y.U,x.U)
-    copyto!(y.Vt,x.Vt)
+    copyto!(y.S, x.S)
+    copyto!(y.U, x.U)
+    copyto!(y.Vt, x.Vt)
     return y
 end
 function recursive_copyto!(x::UMVTVector, y::UMVTVector)
-    copyto!(y.M,x.M)
-    copyto!(y.U,x.U)
-    copyto!(y.Vt,x.Vt)
+    copyto!(y.M, x.M)
+    copyto!(y.U, x.U)
+    copyto!(y.Vt, x.Vt)
     return y
 end
 for T in Manifolds._HyperbolicTypes
