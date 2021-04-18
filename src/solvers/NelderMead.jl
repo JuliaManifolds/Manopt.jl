@@ -28,7 +28,7 @@ and
 
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
-!!! note 
+!!! note
     The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
     load `Manifolds.jl` to use its statistics part.
 
@@ -43,7 +43,8 @@ function NelderMead(
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     kwargs...,
 ) where {TF}
-    res_population = deepcopy(population)
+    res_population = allocate.(population)
+    recursive_copyto!.(res_population, population)
     return NelderMead!(M, F, res_population; kwargs...)
 end
 @doc raw"""

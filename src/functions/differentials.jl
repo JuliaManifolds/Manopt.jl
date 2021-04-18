@@ -33,7 +33,7 @@ function differential_bezier_control!(M::Manifold, Y, b::BezierSegment, t, X::Be
             )
         c[1:(l - 1)] = shortest_geodesic.(Ref(M), c[1:(l - 1)], c[2:l], Ref(t))
     end
-    return copyto!(Y, Z[1])
+    return recursive_copyto!(Y, Z[1])
 end
 @doc raw"""
     differential_bezier_control(

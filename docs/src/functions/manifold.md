@@ -16,3 +16,9 @@ the following functions provide default random points and vectors on manifolds.
 Modules = [Manopt]
 Pages   = ["random.jl"]
 ```
+
+## Initialize data
+
+```@autodocs
+Modules = [Manopt]
+Pages   = ["initialize_data.jl"]
