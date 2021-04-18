@@ -108,10 +108,7 @@ function truncated_conjugate_gradient_descent!(
     randomize::Bool=false,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
-        StopWhenAll(
-            StopIfResidualIsReducedByPower(θ),
-            StopIfResidualIsReducedByFactor(κ)
-        ),
+        StopWhenAll(StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)),
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),
@@ -174,7 +171,9 @@ function step_solver!(
     # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
     o.new_model_value =
         inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
-    (o.new_model_value > o.model_value) && return o
+    if o.new_model_value >= o.model_value
+        return o
+    end
     copyto!(o.η, new_η)
     o.model_value = o.new_model_value
     copyto!(o.Hη, new_Hη)

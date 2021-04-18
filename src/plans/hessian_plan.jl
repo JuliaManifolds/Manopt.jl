@@ -109,8 +109,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         stop::StoppingCriterion=StopWhenAny(
             StopAfterIteration(manifold_dimension(p.M)),
             StopWhenAll(
-                StopIfResidualIsReducedByPower(θ),
-                StopIfResidualIsReducedByFactor(κ)
+                StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
             ),
             StopWhenTrustRegionIsExceeded(),
             StopWhenCurvatureIsNegative(),
