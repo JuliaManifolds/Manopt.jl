@@ -7,6 +7,7 @@ tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
     "MeanAndMedian",
     "Benchmark",
+    "GeodesicRegression",
     "HowToRecord",
     "StochasticGradientDescent",
     "BezierCurves",
@@ -16,6 +17,7 @@ tutorials = [
 menuEntries = [
     "get Started: Optimize!",
     "speed up! using `gradF!`",
+    "Do Geodesic regression",
     "Record values",
     "do stochastic gradient descent",
     "work with Bézier curves",
