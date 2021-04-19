@@ -312,7 +312,7 @@ function prox_TV2(
     λ,
     x::Tuple{T,T,T},
     p::Int=1;
-    stopping_criterion::StoppingCriterion=StopAfterIteration(5),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(10),
     kwargs...,
 ) where {T}
     (p != 1) && throw(
@@ -334,7 +334,7 @@ function prox_TV2!(
     λ,
     x::Tuple{T,T,T},
     p::Int=1;
-    stopping_criterion::StoppingCriterion=StopAfterIteration(5),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(10),
     kwargs...,
 ) where {T}
     (p != 1) && throw(

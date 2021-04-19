@@ -75,11 +75,11 @@
     # StoppingCriterion
     DebugStoppingCriterion(io)(p, o, 1)
     @test String(take!(io)) == ""
+    o.stop(p, o, 19)
+    DebugStoppingCriterion(io)(p, o, 19)
+    @test String(take!(io)) == ""
     o.stop(p, o, 20)
     DebugStoppingCriterion(io)(p, o, 20)
-    @test String(take!(io)) == ""
-    o.stop(p, o, 21)
-    DebugStoppingCriterion(io)(p, o, 21)
     @test String(take!(io)) ==
           "The algorithm reached its maximal number of iterations (20).\n"
     df = DebugFactory([:Stop, "|"])

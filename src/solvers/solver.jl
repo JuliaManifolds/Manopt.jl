@@ -80,7 +80,7 @@ run the solver implemented for the [`Problem`](@ref)` p` and the
 as well as the [`stop_solver!`](@ref) of the solver.
 """
 function solve(p::Problem, o::Options)
-    iter::Integer = 1
+    iter::Integer = 0
     initialize_solver!(p, o)
     while !stop_solver!(p, o, iter)
         iter = iter + 1
