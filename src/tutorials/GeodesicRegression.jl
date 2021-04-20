@@ -30,19 +30,21 @@ Random.seed!(42)
 
 n = 7
 highlighted = 4
-(highlighted > n-1) && error("Please choose a highlighted point from {1,...,$(n-1)} (excluding the last data point) – you set it to $highlighted.")
+(highlighted > n - 1) && error(
+    "Please choose a highlighted point from {1,...,$(n-1)} (excluding the last data point) – you set it to $highlighted.",
+)
 σ = π / 8
 S = Sphere(2)
 base = 1 / sqrt(2) * [1.0, 0.0, 1.0]
 dir = [-0.75, 0.5, 0.75]
-data = [exp(S, base, dir, t) for t ∈ range(-0.5, 0.5, length=n)]
-data = map( x-> exp(S, x, random_tangent(S, x, :Gaussian, σ)), data)
+data = [exp(S, base, dir, t) for t in range(-0.5, 0.5; length=n)]
+data = map(x -> exp(S, x, random_tangent(S, x, :Gaussian, σ)), data)
 #
 # which looks as follows (using [`asymptote_export_S2_signals`](@ref))
 #
 asymptote_export_S2_signals( #src
     export_folder * "/regression_data.asy"; #src
-    points=[data,], #src
+    points=[data], #src
     colors=Dict(:points => [TolVibrantBlue]), #src
     dot_size=3.5, #src
     camera_position=(1.0, 0.5, 0.5), #src
@@ -58,7 +60,6 @@ render_asymptote(export_folder * "/regression_data.asy"; render=2) #src
 #md # ```
 #md #
 #md # ![The data of noisy versions of $x$](../assets/images/tutorials/regression_data.png)
-
 
 # ## [Time labeled data](@id time-labelled-data-regression)
 # if for each data item $d_i$ we are also given a time point $t_i\in\mathbb R$, which are pairwise different.
@@ -108,34 +109,34 @@ struct RegressionCost{T,S}
     data::T
     times::S
 end
-RegressionCost(data::T, times::S) where {T,S} = RegressionCost{T,S}(data,times)
+RegressionCost(data::T, times::S) where {T,S} = RegressionCost{T,S}(data, times)
 function (a::RegressionCost)(M, x)
-    pts = [ geodesic(M.manifold, x[M, :point], x[M, :vector], ti) for ti ∈ a.times ]
-    return 1/2 * sum( distance.( Ref(M.manifold), pts, a.data).^2 )
+    pts = [geodesic(M.manifold, x[M, :point], x[M, :vector], ti) for ti in a.times]
+    return 1 / 2 * sum(distance.(Ref(M.manifold), pts, a.data) .^ 2)
 end
 struct RegressionGradient!{T,S}
     data::T
     times::S
 end
-RegressionGradient(data::T, times::S) where {T,S} = RegressionGradient!{T,S}(data,times)
+RegressionGradient(data::T, times::S) where {T,S} = RegressionGradient!{T,S}(data, times)
 function (a::RegressionGradient!)(M, Y, x)
-    pts = [ geodesic(M.manifold, x[M, :point], x[M, :vector], ti) for ti ∈ a.times ]
+    pts = [geodesic(M.manifold, x[M, :point], x[M, :vector], ti) for ti in a.times]
     gradients = grad_distance.(Ref(M.manifold), a.data, pts)
     Y[M, :point] .= sum(
         adjoint_differential_exp_basepoint.(
             Ref(M.manifold),
             Ref(x[M, :point]),
-            [ti * x[M, :vector] for ti ∈ a.times],
+            [ti * x[M, :vector] for ti in a.times],
             gradients,
-        )
+        ),
     )
     Y[M, :vector] .= sum(
         adjoint_differential_exp_argument.(
             Ref(M.manifold),
             Ref(x[M, :point]),
-            [ti * x[M, :vector] for ti ∈ a.times],
+            [ti * x[M, :vector] for ti in a.times],
             gradients,
-        )
+        ),
     )
     return Y
 end
@@ -156,40 +157,46 @@ end
 # of the data and then do a PCA on the coordinate coefficients with respect to a basis.
 #
 m = mean(S, data)
-A = hcat(map( x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data)...)
-pca1 = get_vector(S, m, svd(A).U[:,1], DefaultOrthonormalBasis())
+A = hcat(map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data)...)
+pca1 = get_vector(S, m, svd(A).U[:, 1], DefaultOrthonormalBasis())
 x0 = ProductRepr(m, pca1)
 #
 # The optimal “time labels” are then just the projections ``t_i = ⟨d_i,X^*⟩``, ``i=1,\ldots,n``.
 #
-t = map( d -> inner(S, m, pca1, log(S, m, d)), data)
+t = map(d -> inner(S, m, pca1, log(S, m, d)), data)
 #
 # And we can call the gradient descent. Note that since `gradF!` works in place of `Y`, we have to set the
 # `evalutation` type accordingly.
 #
-y = gradient_descent(M, RegressionCost(data,t), RegressionGradient!(data,t), x0;
+y = gradient_descent(
+    M,
+    RegressionCost(data, t),
+    RegressionGradient!(data, t),
+    x0;
     evaluation=MutatingEvaluation(),
-    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.95, 0.1),
-    stopping_criterion = StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
-    debug=[:Iteration," | ",:Cost,"\n", :Stop, 50],
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.95, 0.1),
+    stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
+    debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
 )
-dense_t = range(-0.5,0.5,length=100)
+dense_t = range(-0.5, 0.5; length=100)
 geo = geodesic(S, y[M, :point], y[M, :vector], dense_t)
 init_geo = geodesic(S, x0[M, :point], x0[M, :vector], dense_t)
 geo_pts = geodesic(S, y[M, :point], y[M, :vector], t)
-geo_conn_highlighted = shortest_geodesic(S, data[highlighted], geo_pts[highlighted], 0.5 .+ dense_t)
+geo_conn_highlighted = shortest_geodesic(
+    S, data[highlighted], geo_pts[highlighted], 0.5 .+ dense_t
+)
 asymptote_export_S2_signals( #src
     export_folder * "/regression_result1.asy"; #src
-    points=[data, [y[M, :point],], geo_pts], #src
+    points=[data, [y[M, :point]], geo_pts], #src
     curves=[init_geo, geo, geo_conn_highlighted], #src
-    tangent_vectors = [ [Tuple([y[M, :point], y[M, :vector]]),],], #src
+    tangent_vectors=[[Tuple([y[M, :point], y[M, :vector]])]], #src
     colors=Dict( #src
-        :curves => [black,TolVibrantTeal, TolVibrantBlue], #src
+        :curves => [black, TolVibrantTeal, TolVibrantBlue], #src
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal], #src
         :tvectors => [TolVibrantOrange], #src
     ), #src
     dot_sizes=[3.5, 3.5, 2.5], #src
-    line_widths = [0.33, 0.66, 0.33, 1.0], #src
+    line_widths=[0.33, 0.66, 0.33, 1.0], #src
     camera_position=(1.0, 0.5, 0.5), #src
 ) #src
 render_asymptote(export_folder * "/regression_result1.asy"; render=2) #src
@@ -220,24 +227,33 @@ render_asymptote(export_folder * "/regression_result1.asy"; render=2) #src
 # Additionally, a thin blue line indicates the geodesic between a data point and its corresponding data point on the geodesic.
 # While this would be the closest point in Euclidean space and hence the two directions (along the geodesic vs. to the data point) orthogonal, here we have
 #
-inner(S, geo_pts[highlighted], log(S, geo_pts[highlighted], geo_pts[highlighted+1]), log(S, geo_pts[highlighted], data[highlighted]))
+inner(
+    S,
+    geo_pts[highlighted],
+    log(S, geo_pts[highlighted], geo_pts[highlighted + 1]),
+    log(S, geo_pts[highlighted], data[highlighted]),
+)
 #
 # But we also started with one of the best scenarios, i.e. equally spaced points on a geodesic obstructed by noise
 #
 # this gets worse if you start with less even distributed data
 #
-data2 = [exp(S, base, dir, t) for t ∈ [-0.5, -0.45, -0.4, 0.4, 0.45, 0.5]]
-data2 = map( x-> exp(S, x, random_tangent(S, x, :Gaussian, σ/2)), data2)
+data2 = [exp(S, base, dir, t) for t in [-0.5, -0.45, -0.4, 0.4, 0.45, 0.5]]
+data2 = map(x -> exp(S, x, random_tangent(S, x, :Gaussian, σ / 2)), data2)
 m2 = mean(S, data2)
-A = hcat(map( x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data2)...)
-pca2 = get_vector(S, m, svd(A).U[:,1], DefaultOrthonormalBasis())
+A = hcat(map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data2)...)
+pca2 = get_vector(S, m, svd(A).U[:, 1], DefaultOrthonormalBasis())
 x1 = ProductRepr(m, pca2)
-t2 = map( d -> inner(S, m2, pca2, log(S, m2, d)), data2)
-y2 = gradient_descent(M, RegressionCost(data2,t2), RegressionGradient!(data2,t2), x1;
+t2 = map(d -> inner(S, m2, pca2, log(S, m2, d)), data2)
+y2 = gradient_descent(
+    M,
+    RegressionCost(data2, t2),
+    RegressionGradient!(data2, t2),
+    x1;
     evaluation=MutatingEvaluation(),
-    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.95, 0.1),
-    stopping_criterion = StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
-    debug=[:Iteration," | ",:Cost,"\n", :Stop, 50],
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.95, 0.1),
+    stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
+    debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
 )
 geo2 = geodesic(S, y2[M, :point], y2[M, :vector], dense_t) #src
 init_geo2 = geodesic(S, x1[M, :point], x1[M, :vector], dense_t) #src
@@ -245,16 +261,16 @@ geo_pts2 = geodesic(S, y2[M, :point], y2[M, :vector], t) #src
 geo_conn_highlighted2 = shortest_geodesic(S, data2[4], geo_pts2[4], 0.5 .+ dense_t) #src
 asymptote_export_S2_signals( #src
     export_folder * "/regression_result2.asy"; #src
-    points=[data2, [y2[M, :point],], geo_pts2], #src
+    points=[data2, [y2[M, :point]], geo_pts2], #src
     curves=[init_geo2, geo2, geo_conn_highlighted2], #src
-    tangent_vectors = [ [Tuple([y2[M, :point], y2[M, :vector]]),],], #src
+    tangent_vectors=[[Tuple([y2[M, :point], y2[M, :vector]])]], #src
     colors=Dict( #src
-        :curves => [black,TolVibrantTeal, TolVibrantBlue], #src
+        :curves => [black, TolVibrantTeal, TolVibrantBlue], #src
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal], #src
         :tvectors => [TolVibrantOrange], #src
     ), #src
     dot_sizes=[3.5, 3.5, 2.5], #src
-    line_widths = [0.33, 0.66, 0.33, 1.0], #src
+    line_widths=[0.33, 0.66, 0.33, 1.0], #src
     camera_position=(1.0, 0.5, 0.5), #src
 ) #src
 render_asymptote(export_folder * "/regression_result2.asy"; render=2) #src
