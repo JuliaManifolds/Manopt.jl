@@ -8,8 +8,61 @@
 #
 # The meaning of “best explain” has still to be clarified. We distinguish two cases: time labeled data and unlabeled data
 #
-# ## [Time labeled data](@id time-labelled-regression)
+# ## [Setup](@id regression-setup)
+export_folder = joinpath( #src
+    @__DIR__, #src
+    "..", #src
+    "..", #src
+    "docs", #src
+    "src", #src
+    "assets", #src
+    "images", #src
+    "tutorials", #src
+) #src
+using Manopt, Manifolds, Colors, Random
+using LinearAlgebra: svd
+
+black = RGBA{Float64}(colorant"#000000")
+TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
+TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
+TolVibrantTeal = RGBA{Float64}(colorant"#009988")
+Random.seed!(42)
+
+n = 7
+highlighted = 4
+(highlighted > n-1) && error("Please choose a highlighted point from {1,...,$(n-1)} (excluding the last data point) – you set it to $highlighted.")
+σ = π / 8
+S = Sphere(2)
+base = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+dir = [-0.75, 0.5, 0.75]
+data = [exp(S, base, dir, t) for t ∈ range(-0.5, 0.5, length=n)]
+data = map( x-> exp(S, x, random_tangent(S, x, :Gaussian, σ)), data)
+#
+# which looks as follows (using [`asymptote_export_S2_signals`](@ref))
+#
+asymptote_export_S2_signals( #src
+    export_folder * "/regression_data.asy"; #src
+    points=[data,], #src
+    colors=Dict(:points => [TolVibrantBlue]), #src
+    dot_size=3.5, #src
+    camera_position=(1.0, 0.5, 0.5), #src
+) #src
+render_asymptote(export_folder * "/regression_data.asy"; render=2) #src
+#md # ```julia
+#md # asymptote_export_S2_signals("regression_data.asy";
+#md #     points = [ [x], data],
+#md #     colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
+#md #     dot_size = 3.5, camera_position = (1.,.5,.5)
+#md # )
+#md # render_asymptote("regression_data.asy"; render = 2)
+#md # ```
+#md #
+#md # ![The data of noisy versions of $x$](../assets/images/tutorials/regression_data.png)
+
+
+# ## [Time labeled data](@id time-labelled-data-regression)
 # if for each data item $d_i$ we are also given a time point $t_i\in\mathbb R$, which are pairwise different.
+#
 # Then we can use the least squares error to state the objetive function as [^Fletcher2013]
 #
 # ```math
@@ -38,7 +91,180 @@
 # \operatorname*{arg\,min}_{(p,X) \in \mathrm{T}\mathcal M} F(p,X)
 # ```
 #
-# ## [Unlabeled data](@id unlabeled-data)
+# Due to linearity, the gradient of ``F(p,X)`` is the sum of the single gradients of
+#
+# ```math
+#  \frac{1}{2}d_{\mathcal M}^2\bigl(γ_{p,X}(t_i),d_i\bigr)
+#  = \frac{1}{2}d_{\mathcal M}^2\bigl(\exp_p(t_iX),d_i\bigr)
+#  ,\quad i∈\{1,\ldots,n\}
+# ```
+#
+# which can be computed using a chain rule of the squared distance and the exponential map,
+# see for example [^BergmannGousenbourger2018] for details or Equations (7) and (8) of [^Fletcher2013]:
+
+M = TangentBundle(S)
+
+struct RegressionCost{T,S}
+    data::T
+    times::S
+end
+RegressionCost(data::T, times::S) where {T,S} = RegressionCost{T,S}(data,times)
+function (a::RegressionCost)(M, x)
+    pts = [ geodesic(M.manifold, x[M, :point], x[M, :vector], ti) for ti ∈ a.times ]
+    return 1/2 * sum( distance.( Ref(M.manifold), pts, a.data).^2 )
+end
+struct RegressionGradient!{T,S}
+    data::T
+    times::S
+end
+RegressionGradient(data::T, times::S) where {T,S} = RegressionGradient!{T,S}(data,times)
+function (a::RegressionGradient!)(M, Y, x)
+    pts = [ geodesic(M.manifold, x[M, :point], x[M, :vector], ti) for ti ∈ a.times ]
+    gradients = grad_distance.(Ref(M.manifold), a.data, pts)
+    Y[M, :point] .= sum(
+        adjoint_differential_exp_basepoint.(
+            Ref(M.manifold),
+            Ref(x[M, :point]),
+            [ti * x[M, :vector] for ti ∈ a.times],
+            gradients,
+        )
+    )
+    Y[M, :vector] .= sum(
+        adjoint_differential_exp_argument.(
+            Ref(M.manifold),
+            Ref(x[M, :point]),
+            [ti * x[M, :vector] for ti ∈ a.times],
+            gradients,
+        )
+    )
+    return Y
+end
+#
+# Now we need just a start point.
+#
+# For the Euclidean case, the result is given by the first principal component of a principal component analysis,
+# see [PCR](https://en.wikipedia.org/wiki/Principal_component_regression), i.e. with ``p^* = \frac{1}{n}\displaystyle\sum_{i=1}^n d_i``
+# the direction ``X^*`` is obtained by defining the zero mean data matrix
+#
+# ```math
+# D = \bigl(d_1-p^*, \ldots, d_n-p^*\bigr) \in \mathbb R^{m,n}
+# ```
+#
+# and taking ``X^*`` as an eigenvector to the larges eigenvalue of ``D^{\mathrm{T}}D``.
+#
+# We can do something similar, when considering the tangent space at the (Riemannian) mean
+# of the data and then do a PCA on the coordinate coefficients with respect to a basis.
+#
+m = mean(S, data)
+A = hcat(map( x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data)...)
+pca1 = get_vector(S, m, svd(A).U[:,1], DefaultOrthonormalBasis())
+x0 = ProductRepr(m, pca1)
+#
+# The optimal “time labels” are then just the projections ``t_i = ⟨d_i,X^*⟩``, ``i=1,\ldots,n``.
+#
+t = map( d -> inner(S, m, pca1, log(S, m, d)), data)
+#
+# And we can call the gradient descent. Note that since `gradF!` works in place of `Y`, we have to set the
+# `evalutation` type accordingly.
+#
+y = gradient_descent(M, RegressionCost(data,t), RegressionGradient!(data,t), x0;
+    evaluation=MutatingEvaluation(),
+    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.95, 0.1),
+    stopping_criterion = StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
+    debug=[:Iteration," | ",:Cost,"\n", :Stop, 50],
+)
+dense_t = range(-0.5,0.5,length=100)
+geo = geodesic(S, y[M, :point], y[M, :vector], dense_t)
+init_geo = geodesic(S, x0[M, :point], x0[M, :vector], dense_t)
+geo_pts = geodesic(S, y[M, :point], y[M, :vector], t)
+geo_conn_highlighted = shortest_geodesic(S, data[highlighted], geo_pts[highlighted], 0.5 .+ dense_t)
+asymptote_export_S2_signals( #src
+    export_folder * "/regression_result1.asy"; #src
+    points=[data, [y[M, :point],], geo_pts], #src
+    curves=[init_geo, geo, geo_conn_highlighted], #src
+    tangent_vectors = [ [Tuple([y[M, :point], y[M, :vector]]),],], #src
+    colors=Dict( #src
+        :curves => [black,TolVibrantTeal, TolVibrantBlue], #src
+        :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal], #src
+        :tvectors => [TolVibrantOrange], #src
+    ), #src
+    dot_sizes=[3.5, 3.5, 2.5], #src
+    line_widths = [0.33, 0.66, 0.33, 1.0], #src
+    camera_position=(1.0, 0.5, 0.5), #src
+) #src
+render_asymptote(export_folder * "/regression_result1.asy"; render=2) #src
+#md # ```julia
+#md # asymptote_export_S2_signals(
+#md # export_folder * "/regression_result1.asy";
+#md # points=[data, [y[M, :point],], geo_pts],
+#md # curves=[init_geo, geo],
+#md # tangent_vectors = [ [Tuple([y[M, :point], y[M, :vector]]),],],
+#md # colors=Dict(
+#md #     :curves => [black,TolVibrantTeal],
+#md #     :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal],
+#md #     :tvectors => [TolVibrantOrange],
+#md # ),
+#md # dot_sizes=[3.5, 3.5, 2],
+#md # line_widths = [0.33, 0.66, 1.0],
+#md # camera_position=(1.0, 0.5, 0.5),
+#md # )
+#md # render_asymptote("regression_result1.asy"; render = 2)
+#md # ```
+#md #
+#md # ![The result from doing a gradient descent on the tangent bundle](../assets/images/tutorials/regression_result1.png)
+#
+# In this image, together with the blue data points, you see the geodesic of the initialization in black
+# (evaluated on ``[-\frac{1}{2},\frac{1}{2}]``),
+# the final point on the tangent bundle in orange, as well as the resulting regression geodesic in teal,
+# (on the same interval as the start) as well as small teal points indicating the time points on the geodesic corresponding to the data.
+# Additionally, a thin blue line indicates the geodesic between a data point and its corresponding data point on the geodesic.
+# While this would be the closest point in Euclidean space and hence the two directions (along the geodesic vs. to the data point) orthogonal, here we have
+#
+inner(S, geo_pts[highlighted], log(S, geo_pts[highlighted], geo_pts[highlighted+1]), log(S, geo_pts[highlighted], data[highlighted]))
+#
+# But we also started with one of the best scenarios, i.e. equally spaced points on a geodesic obstructed by noise
+#
+# this gets worse if you start with less even distributed data
+#
+data2 = [exp(S, base, dir, t) for t ∈ [-0.5, -0.45, -0.4, 0.4, 0.45, 0.5]]
+data2 = map( x-> exp(S, x, random_tangent(S, x, :Gaussian, σ/2)), data2)
+m2 = mean(S, data2)
+A = hcat(map( x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data2)...)
+pca2 = get_vector(S, m, svd(A).U[:,1], DefaultOrthonormalBasis())
+x1 = ProductRepr(m, pca2)
+t2 = map( d -> inner(S, m2, pca2, log(S, m2, d)), data2)
+y2 = gradient_descent(M, RegressionCost(data2,t2), RegressionGradient!(data2,t2), x1;
+    evaluation=MutatingEvaluation(),
+    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.95, 0.1),
+    stopping_criterion = StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
+    debug=[:Iteration," | ",:Cost,"\n", :Stop, 50],
+)
+geo2 = geodesic(S, y2[M, :point], y2[M, :vector], dense_t) #src
+init_geo2 = geodesic(S, x1[M, :point], x1[M, :vector], dense_t) #src
+geo_pts2 = geodesic(S, y2[M, :point], y2[M, :vector], t) #src
+geo_conn_highlighted2 = shortest_geodesic(S, data2[4], geo_pts2[4], 0.5 .+ dense_t) #src
+asymptote_export_S2_signals( #src
+    export_folder * "/regression_result2.asy"; #src
+    points=[data2, [y2[M, :point],], geo_pts2], #src
+    curves=[init_geo2, geo2, geo_conn_highlighted2], #src
+    tangent_vectors = [ [Tuple([y2[M, :point], y2[M, :vector]]),],], #src
+    colors=Dict( #src
+        :curves => [black,TolVibrantTeal, TolVibrantBlue], #src
+        :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal], #src
+        :tvectors => [TolVibrantOrange], #src
+    ), #src
+    dot_sizes=[3.5, 3.5, 2.5], #src
+    line_widths = [0.33, 0.66, 0.33, 1.0], #src
+    camera_position=(1.0, 0.5, 0.5), #src
+) #src
+render_asymptote(export_folder * "/regression_result2.asy"; render=2) #src
+#md #
+#md # ![The result from doing a gradient descent on the tangent bundle, unevenspaced noisy data](../assets/images/tutorials/regression_result2.png)
+
+#
+#
+#
+# ## [Unlabeled data](@id unlabeled-data-regression)
 #
 # If we are not given time points $t_i$, then the optimization problem extends – informally speaking –
 # to also finding the “best fitting” (in the sense of smallest error).
@@ -51,17 +277,8 @@
 #
 # where ``t = (t_1,\ldots,t_n) \in \mathbb R^n`` is now an additional parameter of the objective function.
 #
-# For the Euclidean case, the result is given by the first principal component of a principal component analysis,
-# see [PCR](https://en.wikipedia.org/wiki/Principal_component_regression), i.e. with ``p^* = \frac{1}{n}\displaystyle\sum_{i=1}^n d_i``
-# the direction ``X^*`` is obtained by defining the zero mean data matrix
-#
-# ```math
-# D = \bigl(d_1-p^*, \ldots, d_n-p^*\bigr) \in \mathbb R^{m,n}
-# ```
-#
-# and taking ``X^*`` as an eigenvector to the larges eigenvalue of ``D^{\mathrm{T}}D``.
-# The optimal “time labels” are then just the projections ``t_i = ⟨d_i,X^*⟩``, ``i=1,\ldots,n``.
-# Hence the error ``d_i - (p^* + t^*_iX^*)`` has the smalles two norm (or the ``t_i^*`` is the best possible time point with respect to said error).
+# For the Euclidean case, there is no neccessity to optimize with respect to ``t``, as we saw
+# above for the initialisation of the fixed time points.
 #
 # On a Riemannian manifold this can be stated as a problem on the product manifold ``\mathcal N = \mathrm{T}\mathcal M \times \mathbb R^n``, i.e.
 #
@@ -72,7 +289,13 @@
 # In this tutorial we present an approach to solve this using an alternating gradient descent scheme.
 #
 #
+# [^BergmannGousenbourger2018]:
+#     > Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds
+#     > by minimizing the acceleration of a Bézier curve_.
+#     > Frontiers in Applied Mathematics and Statistics, 2018.
+#     > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
+#     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 # [^Fletcher2013]:
-# > Fletcher, P. T., _Geodesic regression and the theory of least squares on Riemannian manifolds_,
-# > International Journal of Computer Vision(105), 2, pp. 171–185, 2013.
-# > doi: [10.1007/s11263-012-0591-y](https://doi.org/10.1007/s11263-012-0591-y)
+#     > Fletcher, P. T., _Geodesic regression and the theory of least squares on Riemannian manifolds_,
+#     > International Journal of Computer Vision(105), 2, pp. 171–185, 2013.
+#     > doi: [10.1007/s11263-012-0591-y](https://doi.org/10.1007/s11263-012-0591-y)
