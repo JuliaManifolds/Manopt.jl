@@ -192,9 +192,9 @@ function step_solver!(
     o.new_model_value =
         inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
     (o.new_model_value > o.model_value) && return o
-    copyto!(P.M, o.η, o.x, new_η)
+    copyto!(p.M, o.η, o.x, new_η)
     o.model_value = o.new_model_value
-    copyto!(M, o.Hη, o.x, new_Hη)
+    copyto!(p.M, o.Hη, o.x, new_Hη)
     o.residual = o.residual + α * o.Hδ
     # Precondition the residual.
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)

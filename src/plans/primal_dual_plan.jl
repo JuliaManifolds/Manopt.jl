@@ -140,7 +140,9 @@ the [`PrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
 """
 linearized_forward_operator(::PrimalDualProblem, ::Any...)
 
-function linearized_forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, m, X, ::Any)
+function linearized_forward_operator(
+    p::PrimalDualProblem{AllocatingEvaluation}, m, X, ::Any
+)
     return p.linearized_forward_operator!!(p.M, m, X)
 end
 function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
@@ -149,10 +151,14 @@ function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m
     Y = zero_tangent_vector(p.N, y)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
-function linearized_forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X, n)
+function linearized_forward_operator!(
+    p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X, n
+)
     return copyto!(p.N, Y, n, p.linearized_forward_operator!!(p.M, m, X))
 end
-function linearized_forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, Y, m, X, ::Any)
+function linearized_forward_operator!(
+    p::PrimalDualProblem{MutatingEvaluation}, Y, m, X, ::Any
+)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 
