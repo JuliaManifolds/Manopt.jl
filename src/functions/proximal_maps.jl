@@ -155,9 +155,7 @@ function prox_TV!(M::PowerManifold, y, λ, x, p::Int=1)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    for i in R # iterate over all pixel
-        recursive_copyto!(y[i], x[i])
-    end
+    copyto!(M, y, x)
     maxInd = last(R).I
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
@@ -250,9 +248,7 @@ function prox_parallel_TV!(
     maxInd = Tuple(last(R))
     # init y
     for i in 1:length(x)
-        for j in R
-            recursive_copyto!(y[i][j], x[i][j])
-        end
+        copyto!(M, y[i], x[i])
     end
     yV = reshape(y, d, 2)
     xV = reshape(x, d, 2)
@@ -344,7 +340,7 @@ function prox_TV2!(
     )
     PowX = SVector(x)
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
-    recursive_copyto!(y, PowX)
+    copyto!(M, y, PowX)
     F(M, x) = 1 / 2 * distance(M, PowX, x)^2 + λ * costTV2(M, x)
     ∂F!(M, y, x) = log!(M, y, x, PowX) + λ * grad_TV2!(M, y, x)
     subgradient_method!(
@@ -391,9 +387,7 @@ function prox_TV2!(M::PowerManifold{N,T}, y, λ, x, p::Int=1) where {N,T}
     d = length(size(x))
     minInd = first(R).I
     maxInd = last(R).I
-    for i in R
-        recursive_copyto!(y[i], x[i])
-    end
+    copyto!(M, y, x)
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
         for l in 0:2

@@ -66,13 +66,13 @@ end
 function get_gradients!(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, x
 ) where {TC}
-    recursive_copyto!(X, p.gradient!!(p.M, x))
+    copyto!(p.M, X, p.gradient!!(p.M, x))
     return X
 end
 function get_gradients!(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
 ) where {TC}
-    recursive_copyto!(X, [grad_i(p.M, x) for grad_i in p.gradient!!])
+    copyto!(p.M, X, [grad_i(p.M, x) for grad_i in p.gradient!!])
     return X
 end
 function get_gradients(
@@ -124,7 +124,7 @@ end
 function get_gradient!(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
 ) where {TC}
-    recursive_copyto!(X, p.gradient!!(p.M, x)[k])
+    copyto!(p.M, X, p.gradient!!(p.M, x)[k])
     return X
 end
 function get_gradient!(
@@ -133,7 +133,7 @@ function get_gradient!(
     k,
     x,
 ) where {TC}
-    recursive_copyto!(X, p.gradient!![k](p.M, x))
+    copyto!(p.M, X, p.gradient!![k](p.M, x))
     return X
 end
 function get_gradient(

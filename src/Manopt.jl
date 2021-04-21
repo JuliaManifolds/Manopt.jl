@@ -35,6 +35,7 @@ import ManifoldsBase:
     allocate,
     allocate_result,
     allocate_result_type,
+    copyto!,
     distance,
     exp,
     exp!,
@@ -101,7 +102,6 @@ include("solvers/record_solver.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
-include("helpers/initialize_data.jl")
 
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
@@ -140,7 +140,7 @@ function __init__()
 end
 #
 # General
-export ℝ, ℂ, &, |, recursive_copyto!
+export ℝ, ℂ, &, |
 #
 # Problems
 export Problem,

@@ -80,7 +80,7 @@ function particle_swarm(
     kwargs...,
 ) where {TF}
     x_res = allocate.(x0)
-    recursive_copyto!.(x_res, x0)
+    copyto!.(Ref(M),x_res, x0)
     return particle_swarm!(M, F; n=n, x0=x_res, kwargs...)
 end
 @doc raw"""
