@@ -277,16 +277,52 @@ evaluate the symmetric, positive deﬁnite preconditioner (approximation of the
 inverse of the Hessian of the cost function `F`) of a
 [`HessianProblem`](@ref) `p` at the point `x`applied to a
 tangent vector `ξ`.
-"""
+"""
 get_preconditioner(p::HessianProblem, x, X) = p.precon(p.M, x, X)
 
 @doc raw"""
-    approxHessianFiniteDifference{T, mT, P, G}
+    approxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real}
 
-A functor to approximate the Hessian by a finite difference of gradient evaluations
+A functor to approximate the Hessian by a finite difference of gradient evaluation.
+
+Given a point `p` and a direction `X` and the gradient ``\operatorname{grad}F: \mathcal M \to T\mathcal M``
+of a function ``F`` the Hessian is approximated as follows:
+Let ``c`` be a stepsize, ``X∈ T_p\mathcal M`` a tangent vector and ``q = \operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)``
+be a step in direction ``X`` of length ``c`` following a retraction
+Then we approximate the Hessian by the finite difference of the gradients, where ``\mathcal T_{\cdot\gets\cdot}`` is a vector transport.
+
+```math
+\operatorname{Hess}F(p)[X]
+ ≈
+\frac{\lVert X \rVert_p}{c}\Bigl( \mathcal T_{p\gets q}\bigr(\operatorname{grad}F(q)\bigl) - \operatorname{grad}F(p)\Bigl)
+```
+
+ # Fields
+
+* `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter)
+* `step_length` a step length for the finite difference
+* `retraction_method` - a retraction to use
+* `vector_transport_method` a vector transport to use
+
+## Internal temporary fields
+
+* `grad_tmp` a temporary storage for the gradient at the current `p`
+* `grad_dir_tmp` a temporary storage for the gradient at the current `p_dir`
+* `p_dir::P` a temporary storage to the forward direction (i.e. ``q`` above)
+
+# Constructor
+
+    ApproximateFinniteDifference(M, p, gradF; kwargs...)
+
+## Keyword arguments
+
+* `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
+* `steplength` (``2^{-14}``) step length ``c`` to approximate the gradient evaluations
+* `retraction_method` (`ExponentialRetraction()`) retraction ``\operatorname{retr}_p`` to use
+* `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
 """
 mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
-    x_dir::P
+    p_dir::P
     gradient!!::G
     grad_tmp::T
     grad_tmp_dir::T
@@ -296,7 +332,7 @@ mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
 end
 function ApproxHessianFiniteDifference(
     M::mT,
-    x::P,
+    p::P,
     grad::G;
     steplength::R=2^-14,
     evaluation=AllocatingEvaluation(),
@@ -310,33 +346,33 @@ function ApproxHessianFiniteDifference(
     RTR<:AbstractRetractionMethod,
     VTR<:AbstractVectorTransportMethod,
 }
-    X = zero_tangent_vector(M, x)
-    Y = zero_tangent_vector(M, x)
+    X = zero_tangent_vector(M, p)
+    Y = zero_tangent_vector(M, p)
     return ApproxHessianFiniteDifference{typeof(evaluation),P,typeof(X),G,RTR,VTR,R}(
-        x, grad, X, Y, retraction_method, vector_transport_method, steplength
+        p, grad, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
-function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
-    norm_X = norm(M, x, X)
-    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector(M, x)
+function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, p, X)
+    norm_X = norm(M, p, X)
+    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector(M, p)
     c = f.steplength / norm_X
-    f.grad_tmp .= f.gradient!!(M, x)
-    f.x_dir .= retract(M, x, c * X, f.retraction_method)
-    f.grad_tmp_dir .= f.gradient!!(M, f.x_dir)
+    f.grad_tmp .= f.gradient!!(M, p)
+    f.x_dir .= retract(M, p, c * X, f.retraction_method)
+    f.grad_tmp_dir .= f.gradient!!(M, f.p_dir)
     f.grad_tmp_dir .= vector_transport_to(
-        M, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
+        M, f.p_dir, f.grad_tmp_dir, p, f.vector_transport_method
     )
     return (1 / c) * (f.grad_tmp_dir - f.grad_tmp)
 end
-function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, x, X)
-    norm_X = norm(M, x, X)
-    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(M, X, x)
+function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, p, X)
+    norm_X = norm(M, p, X)
+    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(M, X, p)
     c = f.steplength / norm_X
-    f.gradient!!(M, f.grad_tmp, x)
-    retract!(M, f.x_dir, x, c * X, f.retraction_method)
-    f.gradient!!(M, f.grad_tmp_dir, f.x_dir)
+    f.gradient!!(M, f.grad_tmp, p)
+    retract!(M, f.p_dir, p, c * X, f.retraction_method)
+    f.gradient!!(M, f.grad_tmp_dir, f.p_dir)
     vector_transport_to!(
-        M, f.grad_tmp_dir, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
+        M, f.grad_tmp_dir, f.p_dir, f.grad_tmp_dir, p, f.vector_transport_method
     )
     Y .= (1 / c) .* (f.grad_tmp_dir .- f.grad_tmp)
     return Y

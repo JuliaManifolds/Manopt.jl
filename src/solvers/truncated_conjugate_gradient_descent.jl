@@ -28,7 +28,7 @@ see the reference:
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_X\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
 * `η` – an update tangential vector ``η ∈ T_x\mathcal M``
 * `trust_region_radius` – a trust-region radius
@@ -87,7 +87,7 @@ solve the trust-region subproblem in place of `x`.
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_X\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
 * `η` – an update tangential vector ``η ∈ T_x\mathcal M``
 * `trust_region_radius` – a trust-region radius
