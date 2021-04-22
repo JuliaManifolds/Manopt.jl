@@ -54,12 +54,6 @@ function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
         )
     end
 end
-
-function recursive_copyto!(x::ProductRepr, y::ProductRepr)
-    map(recursive_copyto!, submanifold_components(x), submanifold_components(y))
-    return x
-end
-
 @doc raw"""
     reflect(M, f, x)
     reflect!(M, q, f, x)
