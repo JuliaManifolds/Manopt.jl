@@ -2,7 +2,7 @@
 #
 # This example illustrates how to set up and solve optimization problems and how
 # to further get data from the algorithm using [`DebugOptions`](@ref) and
-# [`RecordOptions`](@ref)
+# [`RecordOptions`](@ref). We will use the Riemannian mean and median as simple examples.
 #
 # To start from the quite general case: A __Solver__ is an algorithm that aims
 # to solve
@@ -102,6 +102,11 @@ render_asymptote(export_folder * "/startDataAndCenter.asy"; render=2) #src
 # following cost function. Its minimizer is called
 # [Riemannian Center of Mass](https://arxiv.org/abs/1407.2087).
 #
+# !!! note
+#
+#     There are more sophisticated methods tailored for the specific manifolds available in
+#     [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/) see [`mean`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.mean-Tuple{Manifold,AbstractArray{T,1}%20where%20T,AbstractArray{T,1}%20where%20T,ExtrinsicEstimation}).
+#
 F(M, y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)
 gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 nothing #hide
@@ -155,6 +160,11 @@ render_asymptote(export_folder * "/startDataCenterMean.asy"; render=2) #src
 #md # ![The resulting mean (orange)](../assets/images/tutorials/startDataCenterMean.png)
 #
 # ## Computing the Median
+#
+# !!! note
+#
+#     There are more sophisticated methods tailored for the specific manifolds available in
+#     [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/) see [`median`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.median-Tuple{Manifold,AbstractArray{T,1}%20where%20T,AbstractArray{T,1}%20where%20T,CyclicProximalPointEstimation}).
 #
 # Similar to the mean you can also define the median as the minimizer of the
 # distances, see for example [[Bačák, 2014](#Bačák2014)], but since
