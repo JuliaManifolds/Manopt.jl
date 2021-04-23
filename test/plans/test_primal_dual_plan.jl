@@ -16,7 +16,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     Λ(M, x) = ProductRepr(x, forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
-        recursive_copyto!(Y[N, :point], x)
+        copyto!(M, Y[N, :point], x)
         zero_tangent_vector!(N.manifold, Y[N, :vector], Y[N, :point])
         forward_logs!(M, Y[N, :vector], x)
         return Y
@@ -114,12 +114,12 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test y1[N, :vector][2] == y2[N, :vector][2]
 
         X = log(M, m, x0)
-        Y1 = linearized_forward_operator(p1, m, X)
-        Y2 = linearized_forward_operator(p2, m, X)
+        Y1 = linearized_forward_operator(p1, m, X, n)
+        Y2 = linearized_forward_operator(p2, m, X, n)
         @test Y1[N, :point] == Y2[N, :point]
         @test Y1[N, :vector] == Y2[N, :vector]
-        linearized_forward_operator!(p1, Y1, m, X)
-        linearized_forward_operator!(p2, Y2, m, X)
+        linearized_forward_operator!(p1, Y1, m, X, n)
+        linearized_forward_operator!(p2, Y2, m, X, n)
         @test Y1[N, :point] == Y2[N, :point]
         @test Y1[N, :vector] == Y2[N, :vector]
 

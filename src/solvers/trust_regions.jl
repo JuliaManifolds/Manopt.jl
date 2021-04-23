@@ -67,7 +67,7 @@ function trust_regions(
     M::Manifold, F::TF, gradF::TdF, hessF::TH, x; kwargs...
 ) where {TF,TdF,TH}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     return trust_regions!(M, F, gradF, hessF, x_res; kwargs...)
 end
 @doc raw"""
@@ -194,8 +194,8 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         +0.5 * o.τ^2 * o.trust_region_radius^2 / (norm_grad^2) *
         inner(p.M, o.x, o.Hgrad, o.gradient)
         if modle_value_Cauchy < model_value
-            recursive_copyto!(o.η, (-o.τ * o.trust_region_radius / norm_grad) * o.gradient)
-            recursive_copyto!(o.Hη, (-o.τ * o.trust_region_radius / norm_grad) * o.Hgrad)
+            copyto!(p.M, o.η, (-o.τ * o.trust_region_radius / norm_grad) * o.gradient)
+            copyto!(p.M, o.Hη, (-o.τ * o.trust_region_radius / norm_grad) * o.Hgrad)
         end
     end
     # Compute the tentative next iterate (the proposal)
@@ -221,7 +221,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # Choose to accept or reject the proposed step based on the model
     # performance. Note the strict inequality.
     if model_decreased && ρ > o.ρ_prime
-        recursive_copyto!(o.x, o.x_proposal)
+        copyto!(p.M, o.x, o.x_proposal)
     end
     return o
 end

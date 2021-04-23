@@ -74,13 +74,13 @@ function ChambollePock(
     kwargs...,
 ) where {P,T,Q}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     ξ_res = allocate(ξ)
-    recursive_copyto!(ξ_res, ξ)
+    copyto!(N, ξ_res, n, ξ)
     m_res = allocate(m)
-    recursive_copyto!(m_res, m)
+    copyto!(M, m_res, m)
     n_res = allocate(n)
-    recursive_copyto!(n_res, n)
+    copyto!(N, n_res, n)
     return ChambollePock!(
         M,
         N,
@@ -271,7 +271,7 @@ function dual_update!(
 ) where {P}
     # (1) compute update direction
     ξ_update = linearized_forward_operator(
-        p, o.m, inverse_retract(p.M, o.m, start, o.inverse_retraction_method)
+        p, o.m, inverse_retract(p.M, o.m, start, o.inverse_retraction_method), o.n
     )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     (!ismissing(p.Λ!!)) && vector_transport_to!(

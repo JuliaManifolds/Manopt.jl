@@ -1,4 +1,5 @@
 using Manifolds, Manopt, Test, ManifoldsBase
+using LinearAlgebra: I
 
 using Random
 Random.seed!(42)
