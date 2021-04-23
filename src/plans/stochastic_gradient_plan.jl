@@ -171,9 +171,8 @@ abstract type AbstractStochasticGradientProcessor <: DirectionUpdateRule end
 Store the following fields for a default stochastic gradient descent algorithm,
 see also [`StochasticGradientProblem`](@ref) and [`stochastic_gradient_descent`](@ref).
 
-# fields
-
 # Fields
+
 * `x` the current iterate
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
