@@ -255,10 +255,10 @@ function (s::AlternatingGradient)(
         # for each new epoche choose new order if we are at random order
         ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
         # i is the gradient to choose, either from the order or completely random
-        j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[o.k]
         zero_tangent_vector!(p.M, s.dir, o.x) # reset internal vector to zero
     end
+    j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[o.k]
     # update jth component inplace
-    get_gradient!(p, s.dir[p.M, j], j, o.x)
+    get_gradient!(p, s.dir, j, o.x)
     return o.stepsize(p, o, iter), s.dir # return jth component
 end
