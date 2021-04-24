@@ -59,7 +59,7 @@ function alternating_gradient_descent!(
     F,
     gradF::Union{TgF,AbstractVector{<:TgF}},
     x;
-    direction::DirectionUpdateRule=StochasticGradient(zero_tangent_vector(M, x)),
+    direction::DirectionUpdateRule=AlternatingGradient(zero_tangent_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inner_iterations::Int=5,
     stoping_criterion::StoppingCriterion=StopAfterIteration(100) |
@@ -75,7 +75,7 @@ function alternating_gradient_descent!(
     p = AlternatingGradientProblem(M, F, gradF; evaluation=evaluation)
     o = AlternatingGradientDescentOptions(
         x,
-        zero_tangent_vector(M, x),
+        get_gradient(p, x),
         direction;
         inner_iterations=inner_iterations,
         stoping_criterion=stoping_criterion,
@@ -93,7 +93,7 @@ function alternating_gradient_descent!(
     end
 end
 function initialize_solver!(
-    ::AlternatingGradientProblem, o::AlternatingGradientDescentOptions
+    p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions
 )
     o.k = 1
     o.i = 1
@@ -101,7 +101,7 @@ function initialize_solver!(
     return o
 end
 function step_solver!(
-    ::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
+    p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
 )
     s, o.gradient = o.direction(p, o, iter)
     retract!(p.M[k], o.x[M, k], o.x[M, k], -s * o.gradient)
@@ -110,6 +110,7 @@ function step_solver!(
         o.k = ((o.k) % length(o.order)) + 1
         i.o = 1
     end
+    println(get_gradient(p,o.x))
     return o
 end
 get_solver_result(o::AlternatingGradientDescentOptions) = o.x

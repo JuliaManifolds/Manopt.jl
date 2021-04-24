@@ -335,25 +335,25 @@ RegressionGradient2a!(data::T) where {T} = RegressionGradient2a!{T}(data)
 function (a::RegressionGradient2a!)(N, Y, x)
     TM = N[1]
     p = x[N, 1]
+    X = Y[N, 1]
     pts = [geodesic(TM.manifold, p[TM, :point], p[TM, :vector], ti) for ti in x[N, 2]]
     gradients = grad_distance.(Ref(TM.manifold), a.data, pts)
-    Y[N, 1][TM, :point] .= sum(
+    X[TM, :point] .= sum(
         adjoint_differential_exp_basepoint.(
             Ref(TM.manifold),
-            Ref(x[N, 1][TM, :point]),
-            [ti * x[N, 1][TM, :vector] for ti in x[N, 2]],
+            Ref(p[TM, :point]),
+            [ti * p[TM, :vector] for ti ∈ x[N, 2]],
             gradients,
         ),
     )
-    Y[N, 1][TM, :vector] .= sum(
+    X[TM, :vector] .= sum(
         adjoint_differential_exp_argument.(
             Ref(TM.manifold),
-            Ref(x[N, 1][TM, :point]),
-            [ti * x[N, 1][TM, :vector] for ti in x[N, 2]],
+            Ref(p[TM, :point]),
+            [ti * p[TM, :vector] for ti ∈ x[N, 2]],
             gradients,
         ),
     )
-    Y[N, 2] .= zero_tangent_vector(N[2], x[N, 2])
     return Y
 end
 #
@@ -375,7 +375,6 @@ function (a::RegressionGradient2b!)(N, Y, x)
     pts = [geodesic(TM.manifold, p[TM, :point], p[TM, :vector], ti) for ti in x[N, 2]]
     logs = log.(Ref(TM.manifold), pts, a.data)
     pt = map(d -> vector_transport_to(TM.manifold, p[TM, :point], p[TM, :vector], d), pts)
-    Y[N, 1] .= zero_tangent_vector(TM, x[N, 1])
     Y[N, 2] .= -inner.(Ref(TM.manifold), pts, logs, pt)
     return Y
 end
@@ -386,7 +385,9 @@ x2 = ProductRepr(x1, t2)
 F3 = RegressionCost2(data2)
 gradF3_vector = [RegressionGradient2a!(data2), RegressionGradient2b!(data2)]
 y3 = alternating_gradient_descent(
-    N, F3, gradF3_vector, x2; debug=[:Iteration, " | ", :Cost, "\n", :Stop, 1]
+    N, F3, gradF3_vector, x2;
+    evaluation = MutatingEvaluation(),
+    debug=[:Iteration, " | ", :Cost, "\n", :Stop, 1],
 )
 #
 # [^BergmannGousenbourger2018]:

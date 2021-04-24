@@ -64,7 +64,7 @@ end
 function get_gradient(
     p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
 ) where {TC}
-    Y = ProductRepr([gi(Mi, xi) for (Mi, gi, x) in zip(p.M.manifolds, p.gradient!!)]...)
+    Y = ProductRepr([gi(M, x) for gi ∈ p.gradient!!]...)
     return Y
 end
 function get_gradient!(
@@ -92,16 +92,16 @@ function get_gradient(
     get_gradient!(p, Y, x)
     return Y
 end
-function get_gradients!(
+function get_gradient!(
     p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, X, x
 ) where {TC}
     return p.gradient!!(p.M, X, x)
 end
-function get_gradients!(
+function get_gradient!(
     p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
 ) where {TC}
-    for (gi, Mi, Xi) in zip(p.gradient!!, p.M.manifolds, submanifold_components(p.M, X))
-        gi(Mi, Xi, x)
+    for gi ∈ p.gradient!!
+        gi(p.M, X, x)
     end
     return X
 end
@@ -159,7 +159,7 @@ function get_gradient!(
     k,
     x,
 ) where {TC}
-    return p.gradient!![k](p.M.manifolds[k], X, x)
+    return p.gradient!![k](p.M, X, x)
 end
 
 """
@@ -256,9 +256,9 @@ function (s::AlternatingGradient)(
         ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
         # i is the gradient to choose, either from the order or completely random
         j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[o.k]
-        zero_tangent_vector!(M, s.dir) # reset internal vector to zero
+        zero_tangent_vector!(p.M, s.dir, o.x) # reset internal vector to zero
     end
     # update jth component inplace
-    get_gradient!(p, s.dir[M, j], j, o.x)
-    return o.stepsize(p, o, iter), s.dir[M, j] # return jth component
+    get_gradient!(p, s.dir[p.M, j], j, o.x)
+    return o.stepsize(p, o, iter), s.dir # return jth component
 end
