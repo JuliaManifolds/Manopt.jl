@@ -387,8 +387,35 @@ gradF3_vector = [RegressionGradient2a!(data2), RegressionGradient2b!(data2)]
 y3 = alternating_gradient_descent(
     N, F3, gradF3_vector, x2;
     evaluation = MutatingEvaluation(),
-    debug=[:Iteration, " | ", :Cost, "\n", :Stop, 1],
+    debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
+    stepsize = ArmijoLinesearch(),
 )
+nothing #hide
+#
+#
+geo3 = geodesic(S, y3[N,1][M, :point], y3[N,1][M, :vector], dense_t) #src
+init_geo3 = geodesic(S, x1[M, :point], x1[M, :vector], dense_t) #src
+geo_pts3 = geodesic(S, y3[N,1][M, :point], y3[N,1][M, :vector], t) #src
+geo_conn_highlighted3 = shortest_geodesic(S, data2[4], geo_pts3[4], 0.5 .+ dense_t) #src
+asymptote_export_S2_signals( #src
+    export_folder * "/regression_result3.asy"; #src
+    points=[data2, [y3[N,1][M, :point]], geo_pts3], #src
+    curves=[init_geo3, geo3, geo_conn_highlighted3], #src
+    tangent_vectors=[[Tuple([y3[N,1][M, :point], y3[N,1][M, :vector]])]], #src
+    colors=Dict( #src
+        :curves => [black, TolVibrantTeal, TolVibrantBlue], #src
+        :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal], #src
+        :tvectors => [TolVibrantOrange], #src
+    ), #src
+    dot_sizes=[3.5, 3.5, 2.5], #src
+    line_widths=[0.33, 0.66, 0.33, 1.0], #src
+    camera_position=(1.0, 0.5, 0.5), #src
+) #src
+render_asymptote(export_folder * "/regression_result3.asy"; render=2) #src
+#md #
+#md # ![The result from doing a gradient descent on the tangent bundle, unevenspaced noisy data](../assets/images/tutorials/regression_result3.png)
+#
+#
 #
 # [^BergmannGousenbourger2018]:
 #     > Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds

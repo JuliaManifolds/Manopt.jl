@@ -115,6 +115,7 @@ Evaluate one of the component gradients ``\operatorname{grad}f_k``, ``k∈\{1,�
 function get_gradient(
     p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, k, x
 ) where {TC}
+    X = zero_tangent_vector(M, x)
     return p.gradient!!(p.M, x)[k]
 end
 function get_gradient(
@@ -125,7 +126,7 @@ end
 function get_gradient!(
     p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
 ) where {TC}
-    copyto!(M.manifolds[k], X, p.gradient!!(p.M, x)[k])
+    copyto!(M[k], X[M, k], p.gradient!!(p.M, x)[k])
     return X
 end
 function get_gradient!(
@@ -134,14 +135,15 @@ function get_gradient!(
     k,
     x,
 ) where {TC}
-    copyto!(X, p.gradient!![k](p.M, x))
+    copyto!(M[k], X[M, k], p.gradient!![k](p.M, x))
     return X
 end
 function get_gradient(
     p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC}, k, x
 ) where {TC}
     X = zero_tangent_vector(p.M, x)
-    return get_gradient!(p, X, k, x)
+    get_gradient!(p, X, k, x)
+    return X[p.M, k]
 end
 function get_gradient!(
     ::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function},
@@ -257,8 +259,26 @@ function (s::AlternatingGradient)(
         # i is the gradient to choose, either from the order or completely random
         zero_tangent_vector!(p.M, s.dir, o.x) # reset internal vector to zero
     end
-    j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[o.k]
     # update jth component inplace
-    get_gradient!(p, s.dir, j, o.x)
+    get_gradient!(p, s.dir, o.order[o.k], o.x)
     return o.stepsize(p, o, iter), s.dir # return jth component
+end
+
+function (a::ArmijoLinesearch)(
+    p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, ::Int, η=-get_gradient(p, o.x)
+)
+    X = zero_tangent_vector(p.M, o.x)
+    X[p.M, o.order[o.k]] .= get_gradient(p, o.order[o.k], o.x)
+    a.stepsizeOld = linesearch_backtrack(
+        p.M,
+        x -> p.cost(p.M, x),
+        o.x,
+        X,
+        a.stepsizeOld,
+        a.sufficientDecrease,
+        a.contractionFactor,
+        a.retraction_method,
+        η,
+    )
+    return a.stepsizeOld
 end
