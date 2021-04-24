@@ -6,18 +6,26 @@ An alternating gradient problem consists of
 * a cost function ``f(x)``
 * an array of gradients, i.e. a function that returns and array or an array of functions
   ``\{\operatorname{grad}f_i\}_{i=1}^n``, where both variants can be given in the allocating
-  variant and the array of function may also be provided as mutating functions `(M, X,x) -> X`.
+  variant and the array of function may also be provided as mutating functions `(M, X_i, x) -> X_i`.
   Each component of the array corresponds to a component of the product manifold.
 
+!!! Note
+    This Problem requires the `ProductManifold` to be loaded from `Manifolds`.
+
+!!! Note
+    The input of each of the (component) gradients is still the whole vector `x`, just that
+    up to the `i`th component all other values are assumed to be fixed.
+
+
 # Constructors
-    AlternatingGradientProblem(M::Manifold, F, gradF::Function;
+    AlternatingGradientProblem(M::ProductManifold, F, gradF::Function;
         evaluation=AllocatingEvaluation()
     )
-    AlternatingGradientProblem(M::Manifold, F, gradF::AbstractVector{<:Function};
+    AlternatingGradientProblem(M::ProductManifold, F, gradF::AbstractVector{<:Function};
         evaluation=AllocatingEvaluation()
     )
 
-Create a Stochastic gradient problem with an optional `cost` and the gradient either as one
+Create a alternating gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
 """
 struct AlternatingGradientProblem{T,MT<:ProductManifold,TCost,TGradient} <:
@@ -28,17 +36,17 @@ struct AlternatingGradientProblem{T,MT<:ProductManifold,TCost,TGradient} <:
 end
 function AlternatingGradientProblem(
     M::TM, F::TCost, gradF!!::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()
-) where {TM<:Manifold,G,TCost}
-    return AlternatingGradientProblem{typeof(evaluation),TM,TCost,G}(M, cost, gradF!!)
+) where {TM<:ProductManifold,G,TCost}
+    return AlternatingGradientProblem{typeof(evaluation),TM,TCost,G}(M, F, gradF!!)
 end
 function AlternatingGradientProblem(
     M::TM,
     F::TCost,
-    gradF!!::AbstractVector{<:Function};
+    gradF!!::AbstractVector{<:TG};
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {TM<:Manifold,F}
+) where {TM<:ProductManifold,TCost,TG}
     return AlternatingGradientProblem{typeof(evaluation),TM,TCost,typeof(gradF!!)}(
-        M, cost, gradF!!
+        M, F, gradF!!
     )
 end
 
@@ -56,12 +64,7 @@ end
 function get_gradient(
     p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
 ) where {TC}
-    Y = ProductRepr(
-        [
-            gi(Mi, xi) for
-            (Mi, gi, xi) in zip(p.M.manifolds, p.gradient!!, submanifold_components(M, x))
-        ]...,
-    )
+    Y = ProductRepr([gi(Mi, xi) for (Mi, gi, x) in zip(p.M.manifolds, p.gradient!!)]...)
     return Y
 end
 function get_gradient!(
@@ -97,13 +100,8 @@ end
 function get_gradients!(
     p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
 ) where {TC}
-    for (gi, Mi, Xi, xi) in zip(
-        p.gradient!!,
-        p.M.manifolds,
-        submanifold_components(p.M, X),
-        submanifold_components(M, x),
-    )
-        gi(Mi, Xi, xi)
+    for (gi, Mi, Xi) in zip(p.gradient!!, p.M.manifolds, submanifold_components(p.M, X))
+        gi(Mi, Xi, x)
     end
     return X
 end
@@ -122,7 +120,7 @@ end
 function get_gradient(
     p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, k, x
 ) where {TC}
-    return p.gradient!![k](p.M, submanifold_component(M, x, k))
+    return p.gradient!![k](p.M, x)
 end
 function get_gradient!(
     p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
@@ -184,10 +182,10 @@ see also [`AlternatingGradientProblem`](@ref) and [`alternating_gradient_descent
 # Constructor
     AlternatingGradientDescentOptions(x)
 
-Create a [`StochasticGradientDescentOptions`](@ref) with start point `x`.
+Create a [`AlternatingGradientDescentOptions`](@ref) with start point `x`.
 all other fields are optional keyword arguments.
 """
-mutable struct StochasticGradientDescentOptions{
+mutable struct AlternatingGradientDescentOptions{
     TX,
     TV,
     D<:DirectionUpdateRule,
@@ -207,7 +205,7 @@ mutable struct StochasticGradientDescentOptions{
     i::Int # inner iterate
     inner_iterations::Int
 end
-function StochasticGradientDescentOptions(
+function AlternatingGradientDescentOptions(
     x,
     X,
     direction::DirectionUpdateRule;
@@ -218,7 +216,7 @@ function StochasticGradientDescentOptions(
     stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
     stepsize::Stepsize=ConstantStepsize(1.0),
 )
-    return StochasticGradientDescentOptions{
+    return AlternatingGradientDescentOptions{
         typeof(x),
         typeof(X),
         typeof(direction),
@@ -250,8 +248,8 @@ struct AlternatingGradient{T} <: AbstractStochasticGradientProcessor
     dir::T
 end
 
-function (s::StochasticGradient)(
-    p::AlternatingGradientProblem, o::AlternatingGradient, iter
+function (s::AlternatingGradient)(
+    p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
 )
     if o.i == 1 # at begin of inner iterations.
         # for each new epoche choose new order if we are at random order

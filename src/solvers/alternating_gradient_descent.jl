@@ -1,11 +1,12 @@
 @doc raw"""
-    alternating_gradient_descent(M, gradF, x)
+    alternating_gradient_descent(M, F, gradF, x)
 
 perform an alternating gradient descent
 
 # Input
 
 * `M` a product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
+* `F` – the objective functioN (cost)
 * `gradF` – a gradient function, that either returns a `ProductRepr` of the component gradients
   or is a vector of gradient functions per component
 * `x` – an initial value ``x ∈ \mathcal M``
@@ -32,31 +33,32 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function alternating_gradient_descent(
-    M::ProductManifold, gradF::Union{Function,AbstractVector{<:Function}}, x; kwargs...
-)
+    M::ProductManifold, F, gradF::Union{TgF,AbstractVector{<:TgF}}, x; kwargs...
+) where {TgF}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
-    return stochastic_gradient_descent!(M, gradF, x_res; kwargs...)
+    copyto!(M, x_res, x)
+    return alternating_gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
-    stochastic_gradient_descent!(M, gradF, x)
+    alternating_gradient_descent!(M, F, gradF, x)
 
-perform a stochastic gradient descent in place of `x`.
+perform a alternating gradient descent in place of `x`.
 
 # Input
 
 * `M` a manifold ``\mathcal M``
+* `F` – the objective functioN (cost)
 * `gradF` – a gradient function, that either returns a vector of the subgradients
   or is a vector of gradients
 * `x` – an initial value ``x ∈ \mathcal M``
 
-for all optional parameters, see [`stochastic_gradient_descent`](@ref).
+for all optional parameters, see [`alternating_gradient_descent`](@ref).
 """
-function stochastic_gradient_descent!(
+function alternating_gradient_descent!(
     M::ProductManifold,
-    gradF::Union{Function,AbstractVector{<:Function}},
+    F,
+    gradF::Union{TgF,AbstractVector{<:TgF}},
     x;
-    cost::Union{Function,Missing}=Missing(),
     direction::DirectionUpdateRule=StochasticGradient(zero_tangent_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inner_iterations::Int=5,
@@ -69,9 +71,9 @@ function stochastic_gradient_descent!(
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
     return_options=false,
     kwargs...,
-)
-    p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
-    o = StochasticGradientDescentOptions(
+) where {TgF}
+    p = AlternatingGradientProblem(M, F, gradF; evaluation=evaluation)
+    o = AlternatingGradientDescentOptions(
         x,
         zero_tangent_vector(M, x),
         direction;
@@ -91,7 +93,7 @@ function stochastic_gradient_descent!(
     end
 end
 function initialize_solver!(
-    ::StochasticGradientProblem, o::StochasticGradientDescentOptions
+    ::AlternatingGradientProblem, o::AlternatingGradientDescentOptions
 )
     o.k = 1
     o.i = 1
@@ -99,10 +101,10 @@ function initialize_solver!(
     return o
 end
 function step_solver!(
-    p::StochasticGradientProblem, o::StochasticGradientDescentOptions, iter
+    ::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
 )
     s, o.gradient = o.direction(p, o, iter)
-    retract!(p.M.manifolds[k], o.x[M, k], o.x[M, k], -s * o.gradient)
+    retract!(p.M[k], o.x[M, k], o.x[M, k], -s * o.gradient)
     o.i += 1
     if o.i > o.inner_iterations
         o.k = ((o.k) % length(o.order)) + 1
@@ -110,4 +112,4 @@ function step_solver!(
     end
     return o
 end
-get_solver_result(o::StochasticGradientDescentOptions) = o.x
+get_solver_result(o::AlternatingGradientDescentOptions) = o.x

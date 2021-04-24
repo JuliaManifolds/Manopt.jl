@@ -31,7 +31,7 @@ Random.seed!(42)
 n = 7
 highlighted = 4
 (highlighted > n - 1) && error(
-    "Please choose a highlighted point from {1,...,$(n-1)} (excluding the last data point) – you set it to $highlighted.",
+    "Please choose a highlighted point from {1,...,$(n-1)} – you set it to $highlighted.",
 )
 σ = π / 8
 S = Sphere(2)
@@ -39,6 +39,7 @@ base = 1 / sqrt(2) * [1.0, 0.0, 1.0]
 dir = [-0.75, 0.5, 0.75]
 data = [exp(S, base, dir, t) for t in range(-0.5, 0.5; length=n)]
 data = map(x -> exp(S, x, random_tangent(S, x, :Gaussian, σ)), data)
+nothing #hide
 #
 # which looks as follows (using [`asymptote_export_S2_signals`](@ref))
 #
@@ -118,7 +119,7 @@ struct RegressionGradient!{T,S}
     data::T
     times::S
 end
-RegressionGradient(data::T, times::S) where {T,S} = RegressionGradient!{T,S}(data, times)
+RegressionGradient!(data::T, times::S) where {T,S} = RegressionGradient!{T,S}(data, times)
 function (a::RegressionGradient!)(M, Y, x)
     pts = [geodesic(M.manifold, x[M, :point], x[M, :vector], ti) for ti in a.times]
     gradients = grad_distance.(Ref(M.manifold), a.data, pts)
@@ -177,7 +178,10 @@ y = gradient_descent(
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.95, 0.1),
     stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-)
+);
+#
+# And plot the result
+#
 dense_t = range(-0.5, 0.5; length=100)
 geo = geodesic(S, y[M, :point], y[M, :vector], dense_t)
 init_geo = geodesic(S, x0[M, :point], x0[M, :vector], dense_t)
@@ -292,18 +296,98 @@ render_asymptote(export_folder * "/regression_result2.asy"; render=2) #src
 # ```
 #
 # where ``t = (t_1,\ldots,t_n) \in \mathbb R^n`` is now an additional parameter of the objective function.
+# We write ``F_1(p, X)`` to refer to the function on the tangent bundle for fixed values of ``t`` (as the one in the last part)
+# and ``F_2(t)`` for the function ``F(p, X, t)`` as a function in ``t`` with fixed values ``(p, X)``.
 #
 # For the Euclidean case, there is no neccessity to optimize with respect to ``t``, as we saw
 # above for the initialisation of the fixed time points.
 #
 # On a Riemannian manifold this can be stated as a problem on the product manifold ``\mathcal N = \mathrm{T}\mathcal M \times \mathbb R^n``, i.e.
 #
+N = M × Euclidean(length(t2))
+#
 # ```math
 #   \operatorname*{arg\,min}_{\bigl((p,X),t\bigr)\in\mathcal N} F(p, X, t).
 # ```
 #
 # In this tutorial we present an approach to solve this using an alternating gradient descent scheme.
+# To be precise, we define the cost funcion now on the product manifold
+struct RegressionCost2{T}
+    data::T
+end
+RegressionCost2(data::T) where {T} = RegressionCost2{T}(data)
+function (a::RegressionCost2)(N, x)
+    TM = N[1]
+    pts = [
+        geodesic(TM.manifold, x[N, 1][TM, :point], x[N, 1][TM, :vector], ti) for
+        ti in x[N, 2]
+    ]
+    return 1 / 2 * sum(distance.(Ref(TM.manifold), pts, a.data) .^ 2)
+end
 #
+# The gradient in two parts, namely (a) the same gradient as before w.r.t. ``(p,X) ∈ T\mathcal M``
+# just now with a fixed `t` in mind for the second component of the product manifold ``\mathcal N``
+#
+struct RegressionGradient2a!{T}
+    data::T
+end
+RegressionGradient2a!(data::T) where {T} = RegressionGradient2a!{T}(data)
+function (a::RegressionGradient2a!)(N, Y, x)
+    TM = N[1]
+    p = x[N, 1]
+    pts = [geodesic(TM.manifold, p[TM, :point], p[TM, :vector], ti) for ti in x[N, 2]]
+    gradients = grad_distance.(Ref(TM.manifold), a.data, pts)
+    Y[N, 1][TM, :point] .= sum(
+        adjoint_differential_exp_basepoint.(
+            Ref(TM.manifold),
+            Ref(x[N, 1][TM, :point]),
+            [ti * x[N, 1][TM, :vector] for ti in x[N, 2]],
+            gradients,
+        ),
+    )
+    Y[N, 1][TM, :vector] .= sum(
+        adjoint_differential_exp_argument.(
+            Ref(TM.manifold),
+            Ref(x[N, 1][TM, :point]),
+            [ti * x[N, 1][TM, :vector] for ti in x[N, 2]],
+            gradients,
+        ),
+    )
+    Y[N, 2] .= zero_tangent_vector(N[2], x[N, 2])
+    return Y
+end
+#
+# Finally we addionally look for a fixed point ``x=(p,X) ∈ \mathrm{T}\mathcal M`` at
+# the gradient with respect to ``t∈\mathbb R^n``, i.e. the second component, which is given by
+#
+# ```math
+#   (\operatorname{grad}F_2(t))_i
+#   = - ⟨\dot γ_{p,X}(t_i), \log_{γ_{p,X}(t_i)}d_i⟩_{γ_{p,X}(t_i)}, i = 1, \ldots, n.
+# ```
+#
+struct RegressionGradient2b!{T}
+    data::T
+end
+RegressionGradient2b!(data::T) where {T} = RegressionGradient2b!{T}(data)
+function (a::RegressionGradient2b!)(N, Y, x)
+    TM = N[1]
+    p = x[N, 1]
+    pts = [geodesic(TM.manifold, p[TM, :point], p[TM, :vector], ti) for ti in x[N, 2]]
+    logs = log.(Ref(TM.manifold), pts, a.data)
+    pt = map(d -> vector_transport_to(TM.manifold, p[TM, :point], p[TM, :vector], d), pts)
+    Y[N, 1] .= zero_tangent_vector(TM, x[N, 1])
+    Y[N, 2] .= -inner.(Ref(TM.manifold), pts, logs, pt)
+    return Y
+end
+#
+# We can reuse the computed initial values from before, just that now we are on a product manifold
+#
+x2 = ProductRepr(x1, t2)
+F3 = RegressionCost2(data2)
+gradF3_vector = [RegressionGradient2a!(data2), RegressionGradient2b!(data2)]
+y3 = alternating_gradient_descent(
+    N, F3, gradF3_vector, x2; debug=[:Iteration, " | ", :Cost, "\n", :Stop, 1]
+)
 #
 # [^BergmannGousenbourger2018]:
 #     > Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds
