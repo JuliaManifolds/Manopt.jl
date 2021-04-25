@@ -65,7 +65,7 @@ function alternating_gradient_descent!(
     stoping_criterion::StoppingCriterion=StopAfterIteration(100) |
                                          StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=ArmijoLinesearch(),
-    order_type::Symbol=:Linear,
+    order_type::Symbol=:Random,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
