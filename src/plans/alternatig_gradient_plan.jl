@@ -210,7 +210,7 @@ function AlternatingGradientDescentOptions(
     X,
     direction::DirectionUpdateRule;
     inner_iterations::Int=5,
-    order_type::Symbol=:RandomOrder,
+    order_type::Symbol=:Linear,
     order::Vector{<:Int}=Int[],
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
@@ -253,9 +253,11 @@ function (s::AlternatingGradient)(
 )
     if o.i == 1 # at begin of inner iterations.
         # for each new epoche choose new order if we are at random order
-        ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
+        ((o.k == 1) && (o.order_type == :FixedRandom)) && shuffle!(o.order)
         # i is the gradient to choose, either from the order or completely random
         zero_tangent_vector!(p.M, s.dir, o.x) # reset internal vector to zero
+    else
+        ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
     end
     # update order(k)th component inplace
     get_gradient!(p, s.dir[p.M, o.order[o.k]], o.order[o.k], o.x)

@@ -65,7 +65,7 @@ function alternating_gradient_descent!(
     stoping_criterion::StoppingCriterion=StopAfterIteration(100) |
                                          StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=ArmijoLinesearch(),
-    order_type::Symbol=:Random,
+    order_type::Symbol=:Linear,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
@@ -97,14 +97,15 @@ function initialize_solver!(
 )
     o.k = 1
     o.i = 1
-    (o.order_type == :FixedRandom) && (shuffle!(o.order))
+    (o.order_type == :FixedRandom || o.order_type==:Random) && (shuffle!(o.order))
     return o
 end
 function step_solver!(
     p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
 )
     s, o.gradient = o.direction(p, o, iter)
-    retract!(p.M[o.k], o.x[p.M, o.k], o.x[p.M, o.k], -s * o.gradient[p.M, o.k])
+    j = o.order[o.k]
+    retract!(p.M[j], o.x[p.M, j], o.x[p.M, j], -s * o.gradient[p.M, j])
     o.i += 1
     if o.i > o.inner_iterations
         o.k = ((o.k) % length(o.order)) + 1

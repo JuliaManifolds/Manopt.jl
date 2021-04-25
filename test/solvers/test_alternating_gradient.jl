@@ -49,13 +49,13 @@ using Manopt, Manifolds, Test
         y3 = allocate(x)
         copyto!(N, y3, x)
         y = alternating_gradient_descent(
-            N, F, [gradF1!, gradF2!], x; evaluation=MutatingEvaluation()
+            N, F, [gradF1!, gradF2!], x; order_type=:Linear, evaluation=MutatingEvaluation()
         )
         alternating_gradient_descent!(
-            N, F, [gradF1!, gradF2!], y2; evaluation=MutatingEvaluation()
+            N, F, [gradF1!, gradF2!], y2; order_type=:Linear, evaluation=MutatingEvaluation()
         )
-        @test isapprox(M, y[N, 1], data[1]; atol=10^-4)
-        @test isapprox(M, y[N, 2], data[2]; atol=10^-4)
+        @test isapprox(M, y[N, 1], data[1]; atol=10^-3)
+        @test isapprox(M, y[N, 2], data[2]; atol=10^-3)
         @test isapprox(N, y, y2)
         o = alternating_gradient_descent!(
             N,
@@ -63,8 +63,9 @@ using Manopt, Manifolds, Test
             [gradF1!, gradF2!],
             y3;
             evaluation=MutatingEvaluation(),
+            order_type=:Linear,
             return_options=true,
         )
-        @test isapprox(N, y, o.x)
+        @test isapprox(N, y, o.x; atol=10^-3)
     end
 end
