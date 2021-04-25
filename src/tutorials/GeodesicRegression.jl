@@ -428,7 +428,7 @@ geo_pts3 = geodesic(S, p3, X3, t3)
 inner.(
     Ref(S),
     geo_pts3,
-    map( p -> vector_transport_to(S, p3, X3, p), geo_pts3),
+    map(p -> vector_transport_to(S, p3, X3, p), geo_pts3),
     log.(Ref(S), geo_pts3, data2),
 )
 #
