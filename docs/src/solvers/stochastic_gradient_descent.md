@@ -1,4 +1,4 @@
-# [Gradient Descent](@id StochasticGradientDescentSolver)
+# [Stochastic Gradient Descent](@id StochasticGradientDescentSolver)
 
 ```@meta
 CurrentModule = Manopt
