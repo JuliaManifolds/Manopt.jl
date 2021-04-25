@@ -46,6 +46,8 @@ using Manopt, Manifolds, Test
     @testset "Test high level interface" begin
         y2 = allocate(x)
         copyto!(N, y2, x)
+        y3 = allocate(x)
+        copyto!(N, y3, x)
         y = alternating_gradient_descent(
             N, F, [gradF1!, gradF2!], x; evaluation=MutatingEvaluation()
         )
@@ -55,5 +57,14 @@ using Manopt, Manifolds, Test
         @test isapprox(M, y[N, 1], data[1]; atol=10^-4)
         @test isapprox(M, y[N, 2], data[2]; atol=10^-4)
         @test isapprox(N, y, y2)
+        o = alternating_gradient_descent!(
+            N,
+            F,
+            [gradF1!, gradF2!],
+            y3;
+            evaluation=MutatingEvaluation(),
+            return_options=true,
+        )
+        @test isapprox(N, y, o.x)
     end
 end
