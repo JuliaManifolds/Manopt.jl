@@ -21,7 +21,7 @@ perform an alternating gradient descent
   cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
-* `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
+* `stepsize` ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
 * `order_type` (`:RandomOder`) a type of ordering of gradient evaluations.
   values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
@@ -64,8 +64,8 @@ function alternating_gradient_descent!(
     inner_iterations::Int=5,
     stoping_criterion::StoppingCriterion=StopAfterIteration(100) |
                                          StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=ConstantStepsize(1.0),
-    order_type::Symbol=:Random,
+    stepsize::Stepsize=ArmijoLinesearch(),
+    order_type::Symbol=:Linear,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),

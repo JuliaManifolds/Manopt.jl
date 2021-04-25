@@ -139,7 +139,7 @@ function __init__()
         export random_point, random_tangent, mid_point, mid_point!, reflect, reflect!
         export AlternatingGradientDescentOptions, AlternatingGradientProblem
         export AlternatingGradient
-        export alternating_gradient_descent
+        export alternating_gradient_descent, alternating_gradient_descent!
     end
     return nothing
 end

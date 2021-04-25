@@ -10,12 +10,12 @@ An alternating gradient problem consists of
   Each component of the array corresponds to a component of the product manifold.
 
 !!! Note
-    This Problem requires the `ProductManifold` to be loaded from `Manifolds`.
+    This Problem requires the `ProductManifold` to be loaded from `Manifolds.jl`, so in general `Manifolds.jl` to be loaded.
 
 !!! Note
-    The input of each of the (component) gradients is still the whole vector `x`, just that
-    up to the `i`th component all other values are assumed to be fixed.
-
+    The input of each of the (component) gradients is still the whole vector `x`,
+    just that all other then the `i`th component are assumed to be fixed and just the `i`th
+    components gradient is coputed / returned.
 
 # Constructors
     AlternatingGradientProblem(M::ProductManifold, F, gradF::Function;

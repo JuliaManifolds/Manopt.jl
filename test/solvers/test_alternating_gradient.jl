@@ -18,7 +18,7 @@ using Manopt, Manifolds, Test
         log!(N[2], Y[N, 2], x[N, 2], data[2])
         return Y .*= -1
     end
-    x = ProductRepr([0.0, 0.0, 1.0], [1.0, 0.0, 1.0])
+    x = ProductRepr([0.0, 0.0, 1.0], [0.0, 0.0, 1.0])
 
     @testset "Test gradient access" begin
         Pf = AlternatingGradientProblem(N, F, gradF)
@@ -42,5 +42,18 @@ using Manopt, Manifolds, Test
             get_gradient!(P, Y[N, 2], 2, x)
             @test Y[N, 2] == gradF(N, x)[N, 2]
         end
+    end
+    @testset "Test high level interface" begin
+        y2 = allocate(x)
+        copyto!(N, y2, x)
+        y = alternating_gradient_descent(
+            N, F, [gradF1!, gradF2!], x; evaluation=MutatingEvaluation()
+        )
+        alternating_gradient_descent!(
+            N, F, [gradF1!, gradF2!], y2; evaluation=MutatingEvaluation()
+        )
+        @test isapprox(M, y[N, 1], data[1]; atol=10^-4)
+        @test isapprox(M, y[N, 2], data[2]; atol=10^-4)
+        @test isapprox(N, y, y2)
     end
 end
