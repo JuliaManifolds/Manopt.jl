@@ -64,7 +64,7 @@ end
 function get_gradient(
     p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
 ) where {TC}
-    Y = ProductRepr([gi(M, x) for gi ∈ p.gradient!!]...)
+    Y = ProductRepr([gi(M, x) for gi in p.gradient!!]...)
     return Y
 end
 function get_gradient!(
@@ -100,7 +100,7 @@ end
 function get_gradient!(
     p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
 ) where {TC}
-    for gi ∈ p.gradient!!
+    for gi in p.gradient!!
         gi(p.M, X, x)
     end
     return X
@@ -265,7 +265,10 @@ function (s::AlternatingGradient)(
 end
 
 function (a::ArmijoLinesearch)(
-    p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, ::Int, η=-get_gradient(p, o.x)
+    p::AlternatingGradientProblem,
+    o::AlternatingGradientDescentOptions,
+    ::Int,
+    η=-get_gradient(p, o.x),
 )
     X = zero_tangent_vector(p.M, o.x)
     X[p.M, o.order[o.k]] .= get_gradient(p, o.order[o.k], o.x)

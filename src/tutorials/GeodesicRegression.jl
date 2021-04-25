@@ -189,6 +189,7 @@ geo_pts = geodesic(S, y[M, :point], y[M, :vector], t)
 geo_conn_highlighted = shortest_geodesic(
     S, data[highlighted], geo_pts[highlighted], 0.5 .+ dense_t
 )
+nothing #hide
 asymptote_export_S2_signals( #src
     export_folder * "/regression_result1.asy"; #src
     points=[data, [y[M, :point]], geo_pts], #src
@@ -342,7 +343,7 @@ function (a::RegressionGradient2a!)(N, Y, x)
         adjoint_differential_exp_basepoint.(
             Ref(TM.manifold),
             Ref(p[TM, :point]),
-            [ti * p[TM, :vector] for ti ∈ x[N, 2]],
+            [ti * p[TM, :vector] for ti in x[N, 2]],
             gradients,
         ),
     )
@@ -350,7 +351,7 @@ function (a::RegressionGradient2a!)(N, Y, x)
         adjoint_differential_exp_argument.(
             Ref(TM.manifold),
             Ref(p[TM, :point]),
-            [ti * p[TM, :vector] for ti ∈ x[N, 2]],
+            [ti * p[TM, :vector] for ti in x[N, 2]],
             gradients,
         ),
     )
@@ -385,23 +386,27 @@ x2 = ProductRepr(x1, t2)
 F3 = RegressionCost2(data2)
 gradF3_vector = [RegressionGradient2a!(data2), RegressionGradient2b!(data2)]
 y3 = alternating_gradient_descent(
-    N, F3, gradF3_vector, x2;
-    evaluation = MutatingEvaluation(),
+    N,
+    F3,
+    gradF3_vector,
+    x2;
+    evaluation=MutatingEvaluation(),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-    stepsize = ArmijoLinesearch(),
+    stepsize=ArmijoLinesearch(),
+    inner_iterations=1,
 )
 nothing #hide
 #
 #
-geo3 = geodesic(S, y3[N,1][M, :point], y3[N,1][M, :vector], dense_t) #src
+geo3 = geodesic(S, y3[N, 1][M, :point], y3[N, 1][M, :vector], dense_t) #src
 init_geo3 = geodesic(S, x1[M, :point], x1[M, :vector], dense_t) #src
-geo_pts3 = geodesic(S, y3[N,1][M, :point], y3[N,1][M, :vector], t) #src
+geo_pts3 = geodesic(S, y3[N, 1][M, :point], y3[N, 1][M, :vector], y3[N, 2]) #src
 geo_conn_highlighted3 = shortest_geodesic(S, data2[4], geo_pts3[4], 0.5 .+ dense_t) #src
 asymptote_export_S2_signals( #src
     export_folder * "/regression_result3.asy"; #src
-    points=[data2, [y3[N,1][M, :point]], geo_pts3], #src
+    points=[data2, [y3[N, 1][M, :point]], geo_pts3], #src
     curves=[init_geo3, geo3, geo_conn_highlighted3], #src
-    tangent_vectors=[[Tuple([y3[N,1][M, :point], y3[N,1][M, :vector]])]], #src
+    tangent_vectors=[[Tuple([y3[N, 1][M, :point], y3[N, 1][M, :vector]])]], #src
     colors=Dict( #src
         :curves => [black, TolVibrantTeal, TolVibrantBlue], #src
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal], #src
@@ -415,7 +420,17 @@ render_asymptote(export_folder * "/regression_result3.asy"; render=2) #src
 #md #
 #md # ![The result from doing a gradient descent on the tangent bundle, unevenspaced noisy data](../assets/images/tutorials/regression_result3.png)
 #
-#
+# And now we indeed obtain looking at the points on the geodesic
+p3 = y3[N, 1][M, :point]
+X3 = y3[N, 1][M, :vector]
+t3 = y3[N, 2]
+geo_pts3 = geodesic(S, p3, X3, t3)
+inner.(
+    Ref(S),
+    geo_pts3,
+    map( p -> vector_transport_to(S, p3, X3, p), geo_pts3),
+    log.(Ref(S), geo_pts3, data2),
+)
 #
 # [^BergmannGousenbourger2018]:
 #     > Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds
