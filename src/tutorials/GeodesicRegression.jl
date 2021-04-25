@@ -336,10 +336,9 @@ RegressionGradient2a!(data::T) where {T} = RegressionGradient2a!{T}(data)
 function (a::RegressionGradient2a!)(N, Y, x)
     TM = N[1]
     p = x[N, 1]
-    X = Y[N, 1]
     pts = [geodesic(TM.manifold, p[TM, :point], p[TM, :vector], ti) for ti in x[N, 2]]
     gradients = grad_distance.(Ref(TM.manifold), a.data, pts)
-    X[TM, :point] .= sum(
+    Y[TM, :point] .= sum(
         adjoint_differential_exp_basepoint.(
             Ref(TM.manifold),
             Ref(p[TM, :point]),
@@ -347,7 +346,7 @@ function (a::RegressionGradient2a!)(N, Y, x)
             gradients,
         ),
     )
-    X[TM, :vector] .= sum(
+    Y[TM, :vector] .= sum(
         adjoint_differential_exp_argument.(
             Ref(TM.manifold),
             Ref(p[TM, :point]),
@@ -376,7 +375,7 @@ function (a::RegressionGradient2b!)(N, Y, x)
     pts = [geodesic(TM.manifold, p[TM, :point], p[TM, :vector], ti) for ti in x[N, 2]]
     logs = log.(Ref(TM.manifold), pts, a.data)
     pt = map(d -> vector_transport_to(TM.manifold, p[TM, :point], p[TM, :vector], d), pts)
-    Y[N, 2] .= -inner.(Ref(TM.manifold), pts, logs, pt)
+    Y .= -inner.(Ref(TM.manifold), pts, logs, pt)
     return Y
 end
 #
