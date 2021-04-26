@@ -2,20 +2,22 @@
     AlternatingGradientProblem <: Problem
 
 An alternating gradient problem consists of
-* a `ProductManifold M`
-* a cost function ``f(x)``
-* an array of gradients, i.e. a function that returns a full array (`ProductRepr`) an array of functions
-  ``\{\operatorname{grad}f_i\}_{i=1}^n``, where both variants can be given in the allocating
-  variant and the array of function may also be provided as mutating functions `(M, X_i, x) -> X_i`.
-  Each component of the array corresponds to a component of the product manifold.
+* a `ProductManifold M` ``=\mathcal M = \mathcal M_1 × ⋯ × M_n``
+* a cost function ``F(x)``
+* a gradient ``\operatorname{grad}F`` that is either
+  * given as one function ``\operatorname{grad}F`` returning a tangent vector `X` on `M` or
+  * an array of gradient functions ``\operatorname{grad}F_i``, `ì=1,…,n` s each returning a component of the gradient
+  which might be allocating or mutating variants, but not a mix of both.
 
-!!! Note
-    This Problem requires the `ProductManifold` to be loaded from `Manifolds.jl`, so in general `Manifolds.jl` to be loaded.
+!!! note
 
-!!! Note
+    This Problem requires the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
+
+!!! note
+
     The input of each of the (component) gradients is still the whole vector `x`,
-    just that all other then the `i`th component are assumed to be fixed and just the `i`th
-    components gradient is coputed / returned.
+    just that all other then the `i`th input component are assumed to be fixed and just
+    the `i`th components gradient is coputed / returned.
 
 # Constructors
     AlternatingGradientProblem(M::ProductManifold, F, gradF::Function;
@@ -173,9 +175,9 @@ see also [`AlternatingGradientProblem`](@ref) and [`alternating_gradient_descent
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
 * `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
-* `evaluation_order` – (`:Random`) – whether
+* `evaluation_order` – (`:Linear`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
-  cycle permuted sequence (`:Linear`) or the default `:Random` one.
+  cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `order` the current permutation
 * `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
 
@@ -251,24 +253,15 @@ end
 function (s::AlternatingGradient)(
     p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
 )
-    if o.i == 1 # at begin of inner iterations.
-        # for each new epoche choose new order if we are at random order
-        ((o.k == 1) && (o.order_type == :FixedRandom)) && shuffle!(o.order)
-        # i is the gradient to choose, either from the order or completely random
-        zero_tangent_vector!(p.M, s.dir, o.x) # reset internal vector to zero
-    else
-        ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
-    end
+    # at begin of inner iterations reset internal vector to zero
+    (o.i == 1) && zero_tangent_vector!(p.M, s.dir, o.x)
     # update order(k)th component inplace
     get_gradient!(p, s.dir[p.M, o.order[o.k]], o.order[o.k], o.x)
     return o.stepsize(p, o, iter), s.dir # return urrent full gradient
 end
 
 function (a::ArmijoLinesearch)(
-    p::AlternatingGradientProblem,
-    o::AlternatingGradientDescentOptions,
-    ::Int,
-    η=-get_gradient(p, o.x),
+    p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, ::Int
 )
     X = zero_tangent_vector(p.M, o.x)
     X[p.M, o.order[o.k]] .= get_gradient(p, o.order[o.k], o.x)
@@ -281,7 +274,6 @@ function (a::ArmijoLinesearch)(
         a.sufficientDecrease,
         a.contractionFactor,
         a.retraction_method,
-        η,
     )
     return a.stepsizeOld
 end

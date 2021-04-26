@@ -26,6 +26,8 @@ black = RGBA{Float64}(colorant"#000000")
 TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
 TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
 TolVibrantTeal = RGBA{Float64}(colorant"#009988")
+TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
+TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
 Random.seed!(42)
 
 n = 7
@@ -243,7 +245,7 @@ inner(
 #
 # this gets worse if you start with less even distributed data
 #
-data2 = [exp(S, base, dir, t) for t in [-0.5, -0.45, -0.4, 0.4, 0.45, 0.5]]
+data2 = [exp(S, base, dir, t) for t in [-0.5, -0.49, -0.48, 0.1, 0.48, 0.49, 0.5]]
 data2 = map(x -> exp(S, x, random_tangent(S, x, :Gaussian, σ / 2)), data2)
 m2 = mean(S, data2)
 A = hcat(map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data2)...)
@@ -270,7 +272,7 @@ asymptote_export_S2_signals( #src
     curves=[init_geo2, geo2, geo_conn_highlighted2], #src
     tangent_vectors=[[Tuple([y2[M, :point], y2[M, :vector]])]], #src
     colors=Dict( #src
-        :curves => [black, TolVibrantTeal, TolVibrantBlue], #src
+        :curves => [black, TolVibrantTeal, TolVibrantCyan], #src
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal], #src
         :tvectors => [TolVibrantOrange], #src
     ), #src
@@ -281,7 +283,6 @@ asymptote_export_S2_signals( #src
 render_asymptote(export_folder * "/regression_result2.asy"; render=2) #src
 #md #
 #md # ![The result from doing a gradient descent on the tangent bundle, unevenspaced noisy data](../assets/images/tutorials/regression_result2.png)
-
 #
 #
 #
@@ -400,36 +401,30 @@ nothing #hide
 geo3 = geodesic(S, y3[N, 1][M, :point], y3[N, 1][M, :vector], dense_t) #src
 init_geo3 = geodesic(S, x1[M, :point], x1[M, :vector], dense_t) #src
 geo_pts3 = geodesic(S, y3[N, 1][M, :point], y3[N, 1][M, :vector], y3[N, 2]) #src
-geo_conn_highlighted3 = shortest_geodesic(S, data2[4], geo_pts3[4], 0.5 .+ dense_t) #src
+t3 = y3[N, 2] #src
+geo_conns = shortest_geodesic.(Ref(S), data2, geo_pts3, Ref(0.5 .+ dense_t)) #src
 asymptote_export_S2_signals( #src
     export_folder * "/regression_result3.asy"; #src
     points=[data2, [y3[N, 1][M, :point]], geo_pts3], #src
-    curves=[init_geo3, geo3, geo_conn_highlighted3], #src
+    curves=[init_geo3, geo3, geo_conns...], #src
     tangent_vectors=[[Tuple([y3[N, 1][M, :point], y3[N, 1][M, :vector]])]], #src
     colors=Dict( #src
-        :curves => [black, TolVibrantTeal, TolVibrantBlue], #src
+        :curves => [black, TolVibrantTeal, repeat([TolVibrantCyan], length(geo_conns))...], #src
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal], #src
         :tvectors => [TolVibrantOrange], #src
     ), #src
     dot_sizes=[3.5, 3.5, 2.5], #src
-    line_widths=[0.33, 0.66, 0.33, 1.0], #src
+    line_widths=[0.33, 0.66, repeat([0.33], length(geo_conns))..., 1.0], #src
     camera_position=(1.0, 0.5, 0.5), #src
 ) #src
 render_asymptote(export_folder * "/regression_result3.asy"; render=2) #src
 #md #
 #md # ![The result from doing a gradient descent on the tangent bundle, unevenspaced noisy data](../assets/images/tutorials/regression_result3.png)
 #
-# And now we indeed obtain looking at the points on the geodesic
-p3 = y3[N, 1][M, :point]
-X3 = y3[N, 1][M, :vector]
-t3 = y3[N, 2]
-geo_pts3 = geodesic(S, p3, X3, t3)
-inner.(
-    Ref(S),
-    geo_pts3,
-    map(p -> vector_transport_to(S, p3, X3, p), geo_pts3),
-    log.(Ref(S), geo_pts3, data2),
-)
+# Note that the geodesics from the data to the regression geodesic meet at an nearly orthogonal angle.
+#
+# **Acknowledgement.** Parts of this tutorial are based on the bachelor thesis of
+# [Jeremias Arf](https://orcid.org/0000-0003-3765-0130).
 #
 # [^BergmannGousenbourger2018]:
 #     > Bergmann, R. and Gousenbourger, P.-Y.: _A variational model for data fitting on manifolds

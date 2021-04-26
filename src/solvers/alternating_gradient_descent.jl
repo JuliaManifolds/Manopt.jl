@@ -5,25 +5,23 @@ perform an alternating gradient descent
 
 # Input
 
-* `M` a product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
-* `F` – the objective functioN (cost)
-* `gradF` – a gradient function, that either returns a `ProductRepr` of the component gradients
-  or is a vector of gradient functions per component
+* `M` – the product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
+* `F` – the objective function (cost) defined on `M`.
+* `gradF` – a gradient, that can be of two cases
+  * is a single function returning a `ProductRepr` or
+  * is a vector functions each returning a component part of the whole gradient
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
-* `cost` – (`missing`) you can provide a cost function for example to track the function value
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by
    allocation (default) form `gradF(M, x)` or [`MutatingEvaluation`](@ref) in place, i.e.
    is of the form `gradF!(M, X, x)` (elementwise).
-* `evaluation_order` – (`:Random`) – whether
+* `evaluation_order` – (`:Linear`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
-  cycle permuted sequence (`:Linear`) or the default `:Random` one.
+  cycle permuted sequence (`:Random`) or the default `:Linear` one.
 * `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
-* `order_type` (`:RandomOder`) a type of ordering of gradient evaluations.
-  values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
 * `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
 
@@ -31,6 +29,17 @@ perform an alternating gradient descent
 * `x_opt` – the resulting (approximately critical) point of gradientDescent
 OR
 * `options` - the options returned by the solver (see `return_options`)
+
+!!! note
+
+    This Problem requires the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
+
+!!! note
+
+    The input of each of the (component) gradients is still the whole vector `x`,
+    just that all other then the `i`th input component are assumed to be fixed and just
+    the `i`th components gradient is coputed / returned.
+
 """
 function alternating_gradient_descent(
     M::ProductManifold, F, gradF::Union{TgF,AbstractVector{<:TgF}}, x; kwargs...
@@ -93,11 +102,11 @@ function alternating_gradient_descent!(
     end
 end
 function initialize_solver!(
-    p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions
+    ::AlternatingGradientProblem, o::AlternatingGradientDescentOptions
 )
     o.k = 1
     o.i = 1
-    (o.order_type == :FixedRandom || o.order_type==:Random) && (shuffle!(o.order))
+    (o.order_type == :FixedRandom || o.order_type == :Random) && (shuffle!(o.order))
     return o
 end
 function step_solver!(
@@ -109,6 +118,7 @@ function step_solver!(
     o.i += 1
     if o.i > o.inner_iterations
         o.k = ((o.k) % length(o.order)) + 1
+        (o.order_type == :Random) && (shuffle!(o.order))
         o.i = 1
     end
     return o

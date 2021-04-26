@@ -52,7 +52,12 @@ using Manopt, Manifolds, Test
             N, F, [gradF1!, gradF2!], x; order_type=:Linear, evaluation=MutatingEvaluation()
         )
         alternating_gradient_descent!(
-            N, F, [gradF1!, gradF2!], y2; order_type=:Linear, evaluation=MutatingEvaluation()
+            N,
+            F,
+            [gradF1!, gradF2!],
+            y2;
+            order_type=:Linear,
+            evaluation=MutatingEvaluation(),
         )
         @test isapprox(M, y[N, 1], data[1]; atol=10^-3)
         @test isapprox(M, y[N, 2], data[2]; atol=10^-3)
