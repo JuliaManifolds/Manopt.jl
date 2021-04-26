@@ -22,10 +22,10 @@ Due to a symmetry agrument, these are also used to compute ``D_q g(t; p,q)[η]``
 [`differential_geodesic_endpoint`](@ref), [`differential_geodesic_startpoint`](@ref), [`jacobi_field`](@ref)
 """
 function βdifferential_geodesic_startpoint(κ, t, d)
-    (κ == 0) && return 1.0 - t
     (d == 0) && return 1.0 - t
     (κ < 0) && return sinh(sqrt(-κ) * (1.0 - t) * d) / sinh(sqrt(-κ) * d)
-    return (κ > 0) && return sin(sqrt(κ) * (1.0 - t) * d) / sin(sqrt(κ) * d)
+    (κ > 0) && return sin(sqrt(κ) * (1.0 - t) * d) / sin(sqrt(κ) * d)
+    return 1.0 - t # curvature zero
 end
 @doc raw"""
     βdifferential_exp_basepoint(κ,t,d)
@@ -60,7 +60,7 @@ with respect to its start point ``D_X \exp_p X[Y]``. They are
 β(κ) = \begin{cases}
 \frac{\sinh(d\sqrt{-κ})}{d\sqrt{-κ}}&\text{ if }κ < 0,\\
 1 & \text{ if } κ = 0,\\
-\frac{\sin(d\sqrt{κ})}{\sqrt{dκ}}&\text{ if }κ > 0.
+\frac{\sin(d\sqrt{κ})}{d\sqrt{κ}}&\text{ if }κ > 0.
 \end{cases}
 ```
 
@@ -69,9 +69,10 @@ with respect to its start point ``D_X \exp_p X[Y]``. They are
 [`differential_exp_argument`](@ref), [`jacobi_field`](@ref)
 """
 function βdifferential_exp_argument(κ, ::Number, d)
-    ((κ == 0) || (d == 0)) && return 1.0
+    (d == 0) && return 1.0
     (κ < 0) && return sinh(sqrt(-κ) * d) / (d * sqrt((-κ)))
-    return (κ > 0) && return sin(sqrt(κ) * d) / (d * sqrt(κ))
+    (κ > 0) && return sin(sqrt(κ) * d) / (d * sqrt(κ))
+    return 1.0 # cuvature zero.
 end
 @doc raw"""
     βdifferential_log_basepoint(κ,t,d)
@@ -92,9 +93,10 @@ with respect to its start point ``D_p \log_p q[X]``. They are
 [`differential_log_argument`](@ref), [`differential_log_argument`](@ref), [`jacobi_field`](@ref)
 """
 function βdifferential_log_basepoint(κ, ::Number, d)
-    ((d == 0) || (κ == 0)) && return -1.0
+    (d == 0) && return -1.0
     (κ < 0) && return -sqrt(-κ) * d * cosh(sqrt(-κ) * d) / sinh(sqrt(-κ) * d)
-    return (κ > 0) && return -sqrt(κ) * d * cos(sqrt(κ) * d) / sin(sqrt(κ) * d)
+    (κ > 0) && return -sqrt(κ) * d * cos(sqrt(κ) * d) / sin(sqrt(κ) * d)
+    return -1.0 # cuvature zero.
 end
 @doc raw"""
     βdifferential_log_argument(κ,t,d)
@@ -115,9 +117,10 @@ map with respect to its argument ``D_q \log_p q[X]``. They are
 [`differential_log_basepoint`](@ref), [`jacobi_field`](@ref)
 """
 function βdifferential_log_argument(κ, ::Number, d)
-    ((d == 0) || (κ == 0)) && return 1.0
+    (d == 0) && return 1.0
     (κ < 0) && return sqrt(-κ) * d / sinh(sqrt(-κ) * d)
-    return sqrt(κ) * d / sin(sqrt(κ) * d)
+    (κ > 0) && return sqrt(κ) * d / sin(sqrt(κ) * d)
+    return 1.0 # curvature zero
 end
 
 @doc raw"""
@@ -134,7 +137,6 @@ The computation can be done in place of `Y`.
 For detais see [`jacobi_field`](@ref)
 """
 function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
-    x = shortest_geodesic(M, p, q, t)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)

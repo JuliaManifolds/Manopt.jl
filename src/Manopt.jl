@@ -134,7 +134,12 @@ function __init__()
         include("functions/manifold_functions.jl")
         include("functions/nonmutating_manifolds_functions.jl")
         include("plans/nonmutating_manifolds_plans.jl")
+        include("plans/alternating_gradient_plan.jl")
+        include("solvers/alternating_gradient_descent.jl")
         export random_point, random_tangent, mid_point, mid_point!, reflect, reflect!
+        export AlternatingGradientDescentOptions, AlternatingGradientProblem
+        export AlternatingGradient
+        export alternating_gradient_descent, alternating_gradient_descent!
     end
     return nothing
 end
