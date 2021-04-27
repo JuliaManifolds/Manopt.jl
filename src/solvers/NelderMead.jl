@@ -49,7 +49,7 @@ function NelderMead(
 end
 @doc raw"""
     NelderMead(M, F [, p])
-perform a nelder mead minimization problem for the cost funciton `F` on the
+perform a Nelder Mead minimization problem for the cost function `F` on the
 manifold `M`. If the initial population `p` is not given, a random set of
 points is chosen. If it is given, the computation is done in place of `p`.
 

@@ -15,7 +15,7 @@ They are
 \end{cases}
 ```
 
-Due to a symmetry agrument, these are also used to compute ``D_q g(t; p,q)[η]``
+Due to a symmetry argument, these are also used to compute ``D_q g(t; p,q)[η]``
 
 # See also
 
@@ -134,7 +134,7 @@ Compute the AdjointJacobiField ``J`` along the geodesic ``γ_{p,q}`` on the mani
 that the input `X` and the output `Y` switched tangent spaces.
 The computation can be done in place of `Y`.
 
-For detais see [`jacobi_field`](@ref)
+For details see [`jacobi_field`](@ref)
 """
 function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t)
@@ -185,7 +185,7 @@ end
     Y = jacobi_field(M, p, q, t, X, β)
     jacobi_field!(M, Y, p, q, t, X, β)
 
-compute the Jacobi jield ``J`` along the geodesic ``γ_{p,q}`` on the manifold ``\mathcal M`` with
+compute the Jacobi field ``J`` along the geodesic ``γ_{p,q}`` on the manifold ``\mathcal M`` with
 initial conditions (depending on the application) ``X ∈ T_p\mathcal M`` and weights ``β``. The
 result is a tangent vector `Y` from ``T_{γ_{p,q}(t)}\mathcal M``.
 The computation can be done in place of `Y`.

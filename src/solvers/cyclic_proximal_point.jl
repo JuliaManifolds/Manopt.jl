@@ -20,7 +20,7 @@ the default values are given in brackets
 * `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `x_opt` if returned
 and the ones that are passed to [`decorate_options`](@ref) for decorators.

@@ -111,7 +111,7 @@ end
     ξ = prox_TV(M,λ,x [,p=1])
 
 compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
-all forward differences orrucirng in the power manifold array, i.e.
+all forward differences occurring in the power manifold array, i.e.
 ``\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)`` with `xi` and `xj` are array
 elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unitvector.
 The parameter `λ` is the prox parameter.
@@ -126,8 +126,8 @@ The parameter `λ` is the prox parameter.
 * `p` – (1) exponent of the distance of the TV term
 
 # Ouput
-* `y` – resulting  point containinf with all mentioned proximal
-  points evaluated (in a cylic order). The computation can also be done in place
+* `y` – resulting  point containing with all mentioned proximal
+  points evaluated (in a cyclic order). The computation can also be done in place
 """
 function prox_TV(M::PowerManifold, λ, x, p::Int=1)
     y = deepcopy(x)
@@ -178,9 +178,9 @@ end
     prox_parallel_TV!(M, y, λ, x [,p=1])
 
 compute the proximal maps ``\operatorname{prox}_{λφ}`` of
-all forward differences orrucirng in the power manifold array, i.e.
+all forward differences occurring in the power manifold array, i.e.
 ``φ(x_i,x_j) = d_{\mathcal M}^p(x_i,x_j)`` with `xi` and `xj` are array
-elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
+elements of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
 The parameter `λ` is the prox parameter.
 
 # Input
@@ -359,7 +359,7 @@ end
     prox_TV2!(M, y, λ, x[, p=1])
 
 compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
-all centered second order differences orrucirng in the power manifold array, i.e.
+all centered second order differences occuring in the power manifold array, i.e.
 ``\varphi(x_k,x_i,x_j) = d_2(x_k,x_i.x_j)``, where ``k,j`` are backward and forward
 neighbors (along any dimension in the array of `x`).
 The parameter `λ` is the prox parameter.
@@ -373,7 +373,7 @@ The parameter `λ` is the prox parameter.
 (default is given in brackets)
 * `p` – (`1`) exponent of the distance of the TV term
 
-# Ouput
+# Output
 * `y` – resulting point with all mentioned proximal points evaluated (in a cylic order).
   The computation can also be done in place.
 """

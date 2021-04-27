@@ -53,7 +53,7 @@ For a description of the algorithm and more details see
   that the iterates produced are not monotonically improving the cost
   when very close to convergence. This is because the corrected cost
   improvement could change sign if it is negative but very small.
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `x_opt` is returned
 

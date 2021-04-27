@@ -102,7 +102,7 @@ end
     StopWhenAll <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
-when _all_ indicate to stop. The `reseason` is given by the concatenation of all
+when _all_ indicate to stop. The `reason` is given by the concatenation of all
 reasons.
 
 # Constructor
@@ -155,7 +155,7 @@ end
     StopWhenAny <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
-when _any_ single one indicates to stop. The `reseason` is given by the
+when _any_ single one indicates to stop. The `reason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
 
 # Constructor
@@ -270,7 +270,7 @@ end
 """
     are_these_stopping_critera_active(c::StoppingCriterion, cond)
 
-Return `true` if any criterion from the given set is both active and fulfills the given
+Return `true` if any criterion from the given set is both active and fulfils the given
 condition `cond` (`cond(c)` returns `true`).
 """
 function are_these_stopping_critera_active(cond::Function, c::StoppingCriterionSet)
@@ -287,7 +287,7 @@ returns all active stopping criteria, if any, that are within a
 [`StoppingCriterion`](@ref) `c`, and indicated a stop, i.e. their reason is
 nonempty.
 To be precise for a simple stopping criterion, this returns either an empty
-array if no stop is incated or the stopping criterion as the only element of
+array if no stop is indicated or the stopping criterion as the only element of
 an array. For a [`StoppingCriterionSet`](@ref) all internal (even nested)
 criteria that indicate to stop are returned.
 """
@@ -296,7 +296,7 @@ function get_active_stopping_criteria(c::sCS) where {sCS<:StoppingCriterionSet}
     return vcat(c...)
 end
 # for non-array containing stopping criteria, the recursion ends in either
-# returning nothing or an 1-element array contianing itself
+# returning nothing or an 1-element array containing itself
 function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
     if c.reason != ""
         return [c] # recursion top

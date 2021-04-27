@@ -6,7 +6,7 @@
 # > For given data points ``d_1,\ldots,d_n`` on a Riemannian manifold ``\mathcal M`` find
 # > the geodesic that “best explains” the data.
 #
-# The meaning of “best explain” has still to be clarified. We distinguish two cases: time labeled data and unlabeled data
+# The meaning of “best explain” has still to be clarified. We distinguish two cases: time labelled data and unlabelled data
 #
 # ## [Setup](@id regression-setup)
 export_folder = joinpath( #src

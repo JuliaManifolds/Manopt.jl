@@ -39,7 +39,7 @@ The ``k``th iteration consists of
 * `memory_size` – (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
   value to use a full memory representation
 * `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default
-  the exponntial map.
+  the exponential map.
 * `scale_initial_operator` - (`true`) scale initial operator with
   ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
 * `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`)
@@ -217,7 +217,7 @@ function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{BFGS}, p, o, x_old,
     return d
 end
 
-# Inverese DFP update
+# Inverse DFP update
 function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{InverseDFP}, p, o, x_old, iter)
     update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
     yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)

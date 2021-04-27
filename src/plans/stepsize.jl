@@ -68,7 +68,7 @@ functor.
 
 Compared to simple step sizes, the linesearch functors provide an interface of
 the form `(p,o,i,η) -> s` with an additional (but optional) fourth parameter to
-proviade a search direction; this should default to something reasonable, e.g.
+provide a search direction; this should default to something reasonable, e.g.
 the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
@@ -181,7 +181,7 @@ end
 @doc raw"""
     NonmonotoneLinesearch <: Linesearch
 
-A functor representing a nonmonotone line seach using the Barzilai-Borwein step size[^Iannazzo2018]. Together with a gradient descent algorithm
+A functor representing a nonmonotone line search using the Barzilai-Borwein step size[^Iannazzo2018]. Together with a gradient descent algorithm
 this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. We shifted the order of the algorithm steps from the paper
 by Iannazzo and Porcelli so that in each iteration we first find
 
@@ -409,8 +409,8 @@ end
 @doc raw"""
     WolfePowellLineseach <: Linesearch
 
-Do a backgtracking linesearch to find a step size ``α`` that fulfills the
-Wolfe conditions along a search direktion ``η`` starting from ``x``, i.e.
+Do a backtracking linesearch to find a step size ``α`` that fulfils the
+Wolfe conditions along a search direction ``η`` starting from ``x``, i.e.
 
 ```math
 f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨\operatorname{grad}f(x), η⟩_x

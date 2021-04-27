@@ -1,7 +1,7 @@
 @doc raw"""
     ConjugateGradientOptions <: AbstractGradientOptions
 
-specify options for a conjugate gradient descent algoritm, that solves a
+specify options for a conjugate gradient descent algorithm, that solves a
 [`GradientProblem`].
 
 # Fields
@@ -83,7 +83,7 @@ See also [`conjugate_gradient_descent`](@ref)
 # Constructor
     ConjugateDescentCoefficient(a::StoreOptionsAction=())
 
-Construct the conjugate descnt coefficient update rule, a new storage is created by default.
+Construct the conjugate descent coefficient update rule, a new storage is created by default.
 
 [^Flethcer1987]:
     > R. Fletcher, __Practical Methods of Optimization vol. 1: Unconstrained Optimization__
