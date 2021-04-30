@@ -39,7 +39,7 @@ mutable struct StopAfterIteration <: StoppingCriterion
     StopAfterIteration(mIter::Int) = new(mIter, "")
 end
 function (c::StopAfterIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
-    if i > c.maxIter
+    if i >= c.maxIter
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
     end

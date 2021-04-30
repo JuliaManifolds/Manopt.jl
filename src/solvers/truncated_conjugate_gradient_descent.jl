@@ -109,28 +109,7 @@ function truncated_conjugate_gradient_descent!(
     randomize::Bool=false,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(manifold_dimension(M)),
-        StopIfResidualIsReducedByPower(
-            sqrt(
-                inner(
-                    M,
-                    x,
-                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
-                ),
-            ),
-            θ,
-        ),
-        StopIfResidualIsReducedByFactor(
-            sqrt(
-                inner(
-                    M,
-                    x,
-                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
-                    gradF(M, x) + (randomize ? H(M, x, η) : zero_tangent_vector(M, x)),
-                ),
-            ),
-            κ,
-        ),
+        StopWhenAll(StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)),
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),
@@ -154,7 +133,7 @@ function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOpti
     (o.randomize) || zero_tangent_vector!(p.M, o.η, o.x)
     o.Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
     o.gradient = get_gradient(p, o.x)
-    o.residual = o.randomize ? o.gradient + o.Hη : get_gradient(p, o.x)
+    o.residual = o.randomize ? o.gradient + o.Hη : o.gradient
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     o.δ = -deepcopy(o.z)
     o.Hδ = zero_tangent_vector(p.M, o.x)
@@ -168,6 +147,7 @@ function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOpti
         o.model_value = 0
     end
     o.z_r = inner(p.M, o.x, o.z, o.residual)
+    o.initialResidualNorm = sqrt(inner(p.M, o.x, o.residual, o.residual))
     return o
 end
 function step_solver!(
@@ -183,15 +163,18 @@ function step_solver!(
         τ = (-o.ηPδ + sqrt(o.ηPδ^2 + o.δPδ * (o.trust_region_radius^2 - o.ηPη))) / o.δPδ
         o.η = o.η + τ * o.δ
         o.Hη = o.Hη + τ * o.Hδ
+        o.ηPη = ηPη_new
         return o
     end
     o.ηPη = ηPη_new
     new_η = o.η + α * o.δ
-    new_Hη = get_hessian(p, o.x, new_η)
+    new_Hη = o.Hη + α * o.Hδ
     # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
     o.new_model_value =
         inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
-    (o.new_model_value > o.model_value) && return o
+    if o.new_model_value >= o.model_value
+        return o
+    end
     copyto!(p.M, o.η, o.x, new_η)
     o.model_value = o.new_model_value
     copyto!(p.M, o.Hη, o.x, new_Hη)
@@ -200,7 +183,7 @@ function step_solver!(
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     zr = inner(p.M, o.x, o.z, o.residual)
     # Compute new search direction.
-    β = o.z_r / zr
+    β = zr / o.z_r
     o.z_r = zr
     o.δ = -o.z + β * o.δ
     o.ηPδ = β * (α * o.δPδ + o.ηPδ)

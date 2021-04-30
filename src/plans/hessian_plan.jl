@@ -97,6 +97,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     new_model_value::R
     κ::R
     randomize::Bool
+    initialResidualNorm::Float64
     function TruncatedConjugateGradientOptions(
         p::HessianProblem,
         x::P,
@@ -107,23 +108,8 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
             StopAfterIteration(manifold_dimension(p.M)),
-            StopIfResidualIsReducedByPower(
-                norm(
-                    p.M,
-                    x,
-                    get_gradient(p, x) +
-                    (randomize ? get_hessian(p, x, η) : zero_tangent_vector(p.M, x)),
-                ),
-                θ,
-            ),
-            StopIfResidualIsReducedByFactor(
-                norm(
-                    p.M,
-                    x,
-                    get_gradient(p, x) +
-                    (randomize ? get_hessian(p, x, η) : zero_tangent_vector(p.M, x)),
-                ),
-                κ,
+            StopWhenAll(
+                StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
             ),
             StopWhenTrustRegionIsExceeded(),
             StopWhenCurvatureIsNegative(),
@@ -384,14 +370,13 @@ iRN times κ.
 """
 mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
-    initialResidualNorm::Float64
     reason::String
-    StopIfResidualIsReducedByFactor(iRN::Float64, κ::Float64) = new(κ, iRN, "")
+    StopIfResidualIsReducedByFactor(κ::Float64) = new(κ, "")
 end
 function (c::StopIfResidualIsReducedByFactor)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm * c.κ && i > 0
+    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * c.κ && i > 0
         c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
         return true
     end
@@ -426,14 +411,13 @@ iRN to the power of 1+θ.
 """
 mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
-    initialResidualNorm::Float64
     reason::String
-    StopIfResidualIsReducedByPower(iRN::Float64, θ::Float64) = new(θ, iRN, "")
+    StopIfResidualIsReducedByPower(θ::Float64) = new(θ, "")
 end
 function (c::StopIfResidualIsReducedByPower)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1 + c.θ) && i > 0
+    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm^(1 + c.θ) && i > 0
         c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
         return true
     end
@@ -472,10 +456,8 @@ StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
 function (c::StopWhenTrustRegionIsExceeded)(
     ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
 )
-    α = o.z_r / o.δHδ
-    ηPη_new = o.ηPη + 2 * α * o.ηPδ + α^2 * o.δPδ
-    if ηPη_new >= o.trust_region_radius^2 && i >= 0
-        c.reason = "Trust-region radius violation (‖η‖² = $(ηPη_new)) >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
+    if o.ηPη >= o.trust_region_radius^2 && i >= 0
+        c.reason = "Trust-region radius violation (‖η‖² = $(o.ηPη)) >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
         return true
     end
     return false
