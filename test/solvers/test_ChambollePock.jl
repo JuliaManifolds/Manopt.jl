@@ -16,7 +16,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     Λ(M, x) = ProductRepr(x, forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
-        recursive_copyto!(Y[N, :point], x)
+        copyto!(M, Y[N, :point], x)
         forward_logs!(M, Y[N, :vector], x)
         return Y
     end
@@ -32,7 +32,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         )
     end
     function prox_G_dual!(N, η, n, λ, ξ)
-        recursive_copyto!(η[N, :point], ξ[N, :point])
+        copyto!(N, η[N, :point], ξ[N, :point])
         project_collaborative_TV!(
             base_manifold(N), η[N, :vector], λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
         )

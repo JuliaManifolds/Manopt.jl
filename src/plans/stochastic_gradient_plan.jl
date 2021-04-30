@@ -66,13 +66,13 @@ end
 function get_gradients!(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, x
 ) where {TC}
-    recursive_copyto!(X, p.gradient!!(p.M, x))
+    copyto!(p.M, X, p.gradient!!(p.M, x))
     return X
 end
 function get_gradients!(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
 ) where {TC}
-    recursive_copyto!(X, [grad_i(p.M, x) for grad_i in p.gradient!!])
+    copyto!(p.M, X, [grad_i(p.M, x) for grad_i in p.gradient!!])
     return X
 end
 function get_gradients(
@@ -109,7 +109,7 @@ end
 Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 
 Note that for the [`MutatingEvaluation`](@ref) based problem and a single function for the
-stochastic gradient mutating variant is not available, since it would require too many allocatins.
+stochastic gradient mutating variant is not available, since it would require too many allocations.
 """
 function get_gradient(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, k, x
@@ -124,7 +124,7 @@ end
 function get_gradient!(
     p::StochasticGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
 ) where {TC}
-    recursive_copyto!(X, p.gradient!!(p.M, x)[k])
+    copyto!(p.M, X, p.gradient!!(p.M, x)[k])
     return X
 end
 function get_gradient!(
@@ -133,7 +133,7 @@ function get_gradient!(
     k,
     x,
 ) where {TC}
-    recursive_copyto!(X, p.gradient!![k](p.M, x))
+    copyto!(p.M, X, p.gradient!![k](p.M, x))
     return X
 end
 function get_gradient(
@@ -171,9 +171,8 @@ abstract type AbstractStochasticGradientProcessor <: DirectionUpdateRule end
 Store the following fields for a default stochastic gradient descent algorithm,
 see also [`StochasticGradientProblem`](@ref) and [`stochastic_gradient_descent`](@ref).
 
-# fields
-
 # Fields
+
 * `x` the current iterate
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)

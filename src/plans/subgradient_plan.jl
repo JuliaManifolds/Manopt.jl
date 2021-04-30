@@ -48,7 +48,7 @@ function get_subgradient(p::SubGradientProblem{MutatingEvaluation}, q)
     return p.subgradient!!(p.M, X, q)
 end
 function get_subgradient!(p::SubGradientProblem{AllocatingEvaluation}, X, q)
-    return recursive_copyto!(X, p.subgradient!!(p.M, q))
+    return copyto!(p.M, X, p.subgradient!!(p.M, q))
 end
 function get_subgradient!(p::SubGradientProblem{MutatingEvaluation}, X, q)
     return p.subgradient!!(p.M, X, q)
@@ -64,7 +64,7 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `stop` – a [`StoppingCriterion`](@ref)
 * `x` – (initial or current) value the algorithm is at
 * `x_optimal` – optimal value
-* `∂` the current element from the possivle subgradients at `x` that is used
+* `∂` the current element from the possible subgradients at `x` that is used
 """
 mutable struct SubGradientMethodOptions{TRetract<:AbstractRetractionMethod,TStepsize,P,T} <:
                Options where {P,T}

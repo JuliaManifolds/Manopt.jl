@@ -53,7 +53,7 @@ see the reference:
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
     .
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` is returned
 
@@ -72,7 +72,7 @@ function truncated_conjugate_gradient_descent(
     M::Manifold, F::TF, gradF::TG, x, η, H::TH, trust_region_radius::Float64; kwargs...
 ) where {TF,TG,TH}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     return truncated_conjugate_gradient_descent!(
         M, F, gradF, x_res, η, H, trust_region_radius; kwargs...
     )
@@ -175,9 +175,9 @@ function step_solver!(
     if o.new_model_value >= o.model_value
         return o
     end
-    recursive_copyto!(o.η, new_η)
+    copyto!(p.M, o.η, o.x, new_η)
     o.model_value = o.new_model_value
-    recursive_copyto!(o.Hη, new_Hη)
+    copyto!(p.M, o.Hη, o.x, new_Hη)
     o.residual = o.residual + α * o.Hδ
     # Precondition the residual.
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)

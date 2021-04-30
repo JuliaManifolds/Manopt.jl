@@ -266,12 +266,12 @@ and ``d=(d_1,…,d_m)``, where ``m`` denotes the number of components the compos
 curve consists of. Then
 
 * `:default` – ``k = m + \sum_{i=1}^m d_i`` since each component requires one point more than
-  its degree. The points are then orderen in tuples, i.e.
+  its degree. The points are then ordered in tuples, i.e.
   ````math
   B = \bigl[ [c_1,…,c_{d_1+1}], (c_{d_1+2},…,c_{d_1+d_2+2}],…, [c_{k-m+1+d_m},…,c_{k}] \bigr]
   ````
 * `:continuous` – ``k = 1+ \sum_{i=1}{m} d_i``, since for a continuous curve start and end
-  point of sccessive components are the same, so the very first start point and the end
+  point of successive components are the same, so the very first start point and the end
   points are stored.
   ````math
   B = \bigl[ [c_1,…,c_{d_1+1}], [c_{d_1+1},…,c_{d_1+d_2+1}],…, [c_{k-1+d_m},…,b_{k}) \bigr]
@@ -311,7 +311,7 @@ function get_bezier_segments(
     M::Manifold, c::Array{P,1}, d, ::Val{:differentiable}
 ) where {P}
     length(c) != (sum(d .- 1) + 2) && error(
-        "The number of control points $(length(c)) does not match (for degrees $(d) expcted $(sum(d.-1)+2) points.",
+        "The number of control points $(length(c)) does not match (for degrees $(d) expected $(sum(d.-1)+2) points.",
     )
     nums = d .+ [(i == 1) ? 1 : -1 for i in 1:length(d)]
     endindices = cumsum(nums)

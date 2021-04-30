@@ -35,6 +35,7 @@ import ManifoldsBase:
     allocate,
     allocate_result,
     allocate_result_type,
+    copyto!,
     distance,
     exp,
     exp!,
@@ -101,7 +102,6 @@ include("solvers/record_solver.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
-include("helpers/initialize_data.jl")
 
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
@@ -134,13 +134,18 @@ function __init__()
         include("functions/manifold_functions.jl")
         include("functions/nonmutating_manifolds_functions.jl")
         include("plans/nonmutating_manifolds_plans.jl")
+        include("plans/alternating_gradient_plan.jl")
+        include("solvers/alternating_gradient_descent.jl")
         export random_point, random_tangent, mid_point, mid_point!, reflect, reflect!
+        export AlternatingGradientDescentOptions, AlternatingGradientProblem
+        export AlternatingGradient
+        export alternating_gradient_descent, alternating_gradient_descent!
     end
     return nothing
 end
 #
 # General
-export ℝ, ℂ, &, |, recursive_copyto!
+export ℝ, ℂ, &, |
 #
 # Problems
 export Problem,
@@ -167,6 +172,7 @@ export Options,
     NelderMeadOptions,
     ParticleSwarmOptions,
     PrimalDualOptions,
+    RecordOptions,
     StochasticGradientDescentOptions,
     SubGradientMethodOptions,
     TruncatedConjugateGradientOptions,
@@ -366,7 +372,13 @@ export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter
 export DebugGradient, DebugGradientNorm, DebugStepsize
 #
-# Records
+# Records - and access functions
+export get_record, get_record_options, get_record_action, has_record
+export RecordAction
+export RecordActionFactory, RecordFactory
+export RecordGroup, RecordEvery
+export RecordChange, RecordCost, RecordIterate, RecordIteration
+export RecordEntry, RecordEntryChange
 export RecordGradient, RecordGradientNorm, RecordStepsize
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate

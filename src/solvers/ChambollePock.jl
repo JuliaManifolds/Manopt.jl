@@ -20,26 +20,26 @@ and $Λ:\mathcal M → \mathcal N$. The remaining input parameters are
 * `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m): T_{m}\mathcal M → T_{Λ(m)}\mathcal N$
 * `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
 
-note that depenting on the [`AbstractEvaluationType`](@ref) `evaluation` the last three parameters
-as well as the fordward_operator `Λ` and the `linearized_forward_operator` can be given as
+note that depending on the [`AbstractEvaluationType`](@ref) `evaluation` the last three parameters
+as well as the forward_operator `Λ` and the `linearized_forward_operator` can be given as
 allocating functions `(Manifolds, parameters) -> result`  or as mutating functions
 `(Manifold, result, parameters)` -> result` to spare allocations.
 
-By default, this performs the exact Riemannian Chambolle Pock algorithm, see the opional parameter
-`DΛ` for ther linearized variant.
+By default, this performs the exact Riemannian Chambolle Pock algorithm, see the optional parameter
+`DΛ` for their linearized variant.
 
 For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020].
 
 # Optional Parameters
 
 * `acceleration` – (`0.05`)
-* `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the primal prox
+* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
 * `evaluation` ([`AllocatingEvaluation`](@ref)`()) specify whether the proximal maps and operators are
   allocating functions `(Manifolds, parameters) -> result`  or given as mutating functions
   `(Manifold, result, parameters)` -> result` to spare allocations.
 * `Λ` (`missing`) the (forward) operator $Λ(⋅)$ (required for the `:exact` variant)
 * `linearized_forward_operator` (`missing`) its linearization $DΛ(⋅)[⋅]$ (required for the `:linearized` variant)
-* `primal_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
+* `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `relaxation` – (`1.`)
 * `relax` – (`:primal`) whether to relax the primal or dual
 * `variant` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
@@ -74,13 +74,13 @@ function ChambollePock(
     kwargs...,
 ) where {P,T,Q}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     ξ_res = allocate(ξ)
-    recursive_copyto!(ξ_res, ξ)
+    copyto!(N, ξ_res, n, ξ)
     m_res = allocate(m)
-    recursive_copyto!(m_res, m)
+    copyto!(M, m_res, m)
     n_res = allocate(n)
-    recursive_copyto!(n_res, n)
+    copyto!(N, n_res, n)
     return ChambollePock!(
         M,
         N,
@@ -100,7 +100,7 @@ end
 @doc raw"""
     ChambollePock(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_linear_operator)
 
-Perform the Riemannian Chambolle–Pock algorithm in place of `x`, `ξ`, and potenitally `m`,
+Perform the Riemannian Chambolle–Pock algorithm in place of `x`, `ξ`, and potentially `m`,
 `n` if they are not fixed. See [`ChambollePock`](@ref) for details and optional parameters.
 """
 function ChambollePock!(
@@ -271,7 +271,7 @@ function dual_update!(
 ) where {P}
     # (1) compute update direction
     ξ_update = linearized_forward_operator(
-        p, o.m, inverse_retract(p.M, o.m, start, o.inverse_retraction_method)
+        p, o.m, inverse_retract(p.M, o.m, start, o.inverse_retraction_method), o.n
     )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     (!ismissing(p.Λ!!)) && vector_transport_to!(

@@ -2,9 +2,9 @@
 
 Optimization on Manifolds.
 
-
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://manoptjl.org/stable)
-[![Build Status](https://travis-ci.com/JuliaManifolds/Manopt.jl.svg?branch=master)](https://travis-ci.com/JuliaManifolds/Manopt.jl)
+[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+[![CI](https://github.com/JuliaManifolds/Manopt.jl/workflows/CI/badge.svg)](https://github.com/JuliaManifolds/Manopt.jl/actions?query=workflow%3ACI+branch%3Amaster)
 [![codecov](https://codecov.io/gh/JuliaManifolds/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaManifolds/Manopt.jl)
 [![DOI](https://zenodo.org/badge/74746729.svg)](https://zenodo.org/badge/latestdoi/74746729)
 
@@ -20,6 +20,7 @@ this toolbox aims to provide an easy access to optimization methods on manifolds
 for [Julia](https://julialang.org), including example data and visualization methods.
 
 ## Getting started
+
 In Julia you can get started by just typing
 
 ```julia
@@ -28,5 +29,4 @@ In Julia you can get started by just typing
 
 then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/MeanAndMedian.html) tutorial or the
 [examples](https://github.com/JuliaManifolds/Manopt.jl/tree/master/examples)
-in this repository, where you might want to adapt the `resultsFolder` string.
-You can also read the [documentation](https://www.manoptjl.org/stable).
+in this repository.

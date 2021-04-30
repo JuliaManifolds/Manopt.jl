@@ -35,7 +35,7 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
   [`ConjugateGradientDescentOptions`](@ref) `o` and `i` is the current iterate.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
-* `retraction_method` - (`ExponentialRetraction`) a retraction method to use, by default the exponntial map
+* `retraction_method` - (`ExponentialRetraction`) a retraction method to use, by default the exponential map
 * `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` if returned
@@ -55,7 +55,7 @@ function conjugate_gradient_descent(
     M::Manifold, F::TF, gradF::TDF, x; kwargs...
 ) where {TF,TDF}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     return conjugate_gradient_descent!(M, F, gradF, x; kwargs...)
 end
 @doc raw"""

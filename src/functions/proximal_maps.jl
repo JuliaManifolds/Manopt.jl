@@ -111,7 +111,7 @@ end
     ξ = prox_TV(M,λ,x [,p=1])
 
 compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
-all forward differences orrucirng in the power manifold array, i.e.
+all forward differences occurring in the power manifold array, i.e.
 ``\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)`` with `xi` and `xj` are array
 elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unitvector.
 The parameter `λ` is the prox parameter.
@@ -126,8 +126,8 @@ The parameter `λ` is the prox parameter.
 * `p` – (1) exponent of the distance of the TV term
 
 # Ouput
-* `y` – resulting  point containinf with all mentioned proximal
-  points evaluated (in a cylic order). The computation can also be done in place
+* `y` – resulting  point containing with all mentioned proximal
+  points evaluated (in a cyclic order). The computation can also be done in place
 """
 function prox_TV(M::PowerManifold, λ, x, p::Int=1)
     y = deepcopy(x)
@@ -155,9 +155,7 @@ function prox_TV!(M::PowerManifold, y, λ, x, p::Int=1)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    for i in R # iterate over all pixel
-        recursive_copyto!(y[i], x[i])
-    end
+    copyto!(M, y, x)
     maxInd = last(R).I
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
@@ -180,9 +178,9 @@ end
     prox_parallel_TV!(M, y, λ, x [,p=1])
 
 compute the proximal maps ``\operatorname{prox}_{λφ}`` of
-all forward differences orrucirng in the power manifold array, i.e.
+all forward differences occurring in the power manifold array, i.e.
 ``φ(x_i,x_j) = d_{\mathcal M}^p(x_i,x_j)`` with `xi` and `xj` are array
-elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
+elements of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
 The parameter `λ` is the prox parameter.
 
 # Input
@@ -250,9 +248,7 @@ function prox_parallel_TV!(
     maxInd = Tuple(last(R))
     # init y
     for i in 1:length(x)
-        for j in R
-            recursive_copyto!(y[i][j], x[i][j])
-        end
+        copyto!(M, y[i], x[i])
     end
     yV = reshape(y, d, 2)
     xV = reshape(x, d, 2)
@@ -344,7 +340,7 @@ function prox_TV2!(
     )
     PowX = SVector(x)
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
-    recursive_copyto!(y, PowX)
+    copyto!(M, y, PowX)
     F(M, x) = 1 / 2 * distance(M, PowX, x)^2 + λ * costTV2(M, x)
     ∂F!(M, y, x) = log!(M, y, x, PowX) + λ * grad_TV2!(M, y, x)
     subgradient_method!(
@@ -363,7 +359,7 @@ end
     prox_TV2!(M, y, λ, x[, p=1])
 
 compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
-all centered second order differences orrucirng in the power manifold array, i.e.
+all centered second order differences occuring in the power manifold array, i.e.
 ``\varphi(x_k,x_i,x_j) = d_2(x_k,x_i.x_j)``, where ``k,j`` are backward and forward
 neighbors (along any dimension in the array of `x`).
 The parameter `λ` is the prox parameter.
@@ -377,7 +373,7 @@ The parameter `λ` is the prox parameter.
 (default is given in brackets)
 * `p` – (`1`) exponent of the distance of the TV term
 
-# Ouput
+# Output
 * `y` – resulting point with all mentioned proximal points evaluated (in a cylic order).
   The computation can also be done in place.
 """
@@ -391,9 +387,7 @@ function prox_TV2!(M::PowerManifold{N,T}, y, λ, x, p::Int=1) where {N,T}
     d = length(size(x))
     minInd = first(R).I
     maxInd = last(R).I
-    for i in R
-        recursive_copyto!(y[i], x[i])
-    end
+    copyto!(M, y, x)
     for k in 1:d # for all directions
         ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
         for l in 0:2

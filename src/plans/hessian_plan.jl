@@ -11,7 +11,7 @@ specify a problem for hessian based algorithms.
   → \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}F(x)[⋅]: \mathcal T_{x} \mathcal M
   → \mathcal T_{x} \mathcal M$ of the cost function $F$
-* `precon`       : the symmetric, positive deﬁnite
+* `precon`       : the symmetric, positive definite
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
@@ -264,7 +264,7 @@ function get_hessian(p::HessianProblem{MutatingEvaluation}, q, X)
     return p.hessian!!(p.M, Y, q, X)
 end
 function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
-    return recursive_copyto!(Y, p.hessian!!(p.M, q, X))
+    return copyto!(p.M, Y, p.hessian!!(p.M, q, X))
 end
 function get_hessian!(p::HessianProblem{MutatingEvaluation}, Y, q, X)
     return p.hessian!!(p.M, Y, q, X)
@@ -273,7 +273,7 @@ end
 @doc raw"""
     get_preconditioner(p,x,ξ)
 
-evaluate the symmetric, positive deﬁnite preconditioner (approximation of the
+evaluate the symmetric, positive definite preconditioner (approximation of the
 inverse of the Hessian of the cost function `F`) of a
 [`HessianProblem`](@ref) `p` at the point `x`applied to a
 tangent vector `ξ`.

@@ -10,7 +10,7 @@
 
 evaluate the differential of the Bézier curve with respect to its control points
 `b` and tangent vectors `X` given in the tangent spaces of the control points. The result
-is the “change” of the curve at `t```∈[0,1]``. The comptation can be done in place of `Y`.
+is the “change” of the curve at `t```∈[0,1]``. The computation can be done in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -33,7 +33,7 @@ function differential_bezier_control!(M::Manifold, Y, b::BezierSegment, t, X::Be
             )
         c[1:(l - 1)] = shortest_geodesic.(Ref(M), c[1:(l - 1)], c[2:l], Ref(t))
     end
-    return recursive_copyto!(Y, Z[1])
+    return copyto!(M, Y, Z[1])
 end
 @doc raw"""
     differential_bezier_control(
@@ -53,7 +53,7 @@ end
 evaluate the differential of the Bézier curve with respect to its control points
 `b` and tangent vectors `X` in the tangent spaces of the control points. The result
 is the “change” of the curve at the points `T`, elementwise in ``t∈[0,1]``.
-The compuation can be done in place of `Y`.
+The computation can be done in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -86,7 +86,7 @@ evaluate the differential of the composite Bézier curve with respect to its
 control points `B` and tangent vectors `Ξ` in the tangent spaces of the control
 points. The result is the “change” of the curve at `t```∈[0,N]``, which depends
 only on the corresponding segment. Here, ``N`` is the length of `B`.
-The compuation can be done in place of `Y`.
+The computation can be done in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
@@ -284,7 +284,7 @@ end
     Y = differential_forward_logs(M, p, X)
     differential_forward_logs!(M, Y, p, X)
 
-compute the differenital of [`forward_logs`](@ref) ``F`` on the `PowerManifold` manifold
+compute the differential of [`forward_logs`](@ref) ``F`` on the `PowerManifold` manifold
 `M` at `p` and direction `X` , in the power manifold array, the differential of the function
 
 ```math
@@ -301,7 +301,7 @@ and ``\mathcal I_i`` denotes the forward neighbors of ``i``.
 
 # Ouput
 * `Y` – resulting tangent vector in ``T_x\mathcal N`` representing the differentials of the
-    logs, where ``\mathcal N`` is thw power manifold with the number of dimensions added
+    logs, where ``\mathcal N`` is the power manifold with the number of dimensions added
     to `size(x)`. The computation can also be done in place.
 """
 function differential_forward_logs(M::PowerManifold, p, X)
