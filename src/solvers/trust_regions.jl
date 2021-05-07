@@ -209,6 +209,8 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     ρden = ρden + ρ_reg
     ρ = ρnum / ρden
     model_decreased = ρden ≥ 0
+    # Update the Hessian approximation
+    update_hessian!(p.hessian!!, p.M, o.x, o.x_proposal, o.η)
     # Choose the new TR radius based on the model performance.
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.

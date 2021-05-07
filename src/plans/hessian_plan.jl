@@ -281,7 +281,7 @@ tangent vector `ξ`.
 get_preconditioner(p::HessianProblem, x, X) = p.precon(p.M, x, X)
 
 @doc raw"""
-    approxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real}
+    ApproxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real}
 
 A functor to approximate the Hessian by a finite difference of gradient evaluation.
 
@@ -357,7 +357,7 @@ function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, p, X)
     (norm_X ≈ zero(norm_X)) && return zero_tangent_vector(M, p)
     c = f.steplength / norm_X
     f.grad_tmp .= f.gradient!!(M, p)
-    f.x_dir .= retract(M, p, c * X, f.retraction_method)
+    f.p_dir .= retract(M, p, c * X, f.retraction_method)
     f.grad_tmp_dir .= f.gradient!!(M, f.p_dir)
     f.grad_tmp_dir .= vector_transport_to(
         M, f.p_dir, f.grad_tmp_dir, p, f.vector_transport_method
@@ -376,6 +376,108 @@ function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, p, X)
     )
     Y .= (1 / c) .* (f.grad_tmp_dir .- f.grad_tmp)
     return Y
+end
+
+@doc raw"""
+    ApproxHessianSymmetricRankOne{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real}
+
+A functor to approximate the Hessian by the symmetric rank one update.
+
+# Fields
+
+* `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
+* `ν` a small real number to ensure that the denominator in the update does not become too small and thus the method does not break down.
+* `vector_transport_method` a vector transport to use.
+
+## Internal temporary fields
+
+* `p_tmp` a temporary storage the current point `p`.
+* `grad_tmp` a temporary storage for the gradient at the current `p`.
+* `matrix` a temporary storage for the matrix representation of the approximating operator.
+* `basis` a temporary storage for an orthonormal basis at the current `p`.
+
+# Constructor
+
+    ApproxHessianSymmetricRankOne(M, p, gradF; kwargs...)
+
+## Keyword arguments
+
+* `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
+* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p. 
+* `nu` (`-1`) 
+* `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
+* `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
+"""
+mutable struct ApproxHessianSymmetricRankOne{E,P,G,T,B<:AbstractBasis{ℝ},VTR,R<:Real}
+    p_tmp::P
+    gradient!!::G
+    grad_tmp::T
+    matrix::Matrix
+    basis::B
+    vector_transport_method::VTR
+    ν::R
+end
+function ApproxHessianSymmetricRankOne(
+    M::mT,
+    p::P,
+    gradient::G;
+    initial_operator::AbstractMatrix=Matrix{Float64}(
+        I, manifold_dimension(M), manifold_dimension(M)
+    ),
+    basis::B=DefaultOrthonormalBasis(),
+    nu::R=-1.0,
+    evaluation=AllocatingEvaluation(),
+    vector_transport_method::VTR=ParallelTransport(),
+) where {mT<:Manifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTR<:AbstractVectorTransportMethod}
+    grad_tmp = gradient(M, p)
+    return ApproxHessianSymmetricRankOne{typeof(evaluation),P,G,typeof(grad_tmp),B,VTR,R}(
+        p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, nu
+    )
+end
+
+function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
+    # Update the basis
+    if distance(M, f.p_tmp, p) >= eps(Float64)
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        f.p_tmp = p
+        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    end
+    # Apply Hessian approximation on vector
+    return get_vector(
+        M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis
+    )
+end
+
+function (f::ApproxHessianSymmetricRankOne{MutatingEvaluation})(M, Y, p, X)
+    # Update the basis
+    if distance(M, f.p_tmp, p) <= eps(Float64)
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        f.p_tmp = p
+        f.gradient!!(M, f.grad_tmp, f.p_tmp)
+    end
+    # Apply Hessian approximation on vector
+    Y .= get_vector(M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis)
+
+    return Y
+end
+
+function update_hessian!(f::ApproxHessianSymmetricRankOne, M, p, p_proposal, X)
+    yk_c = get_coordinates(
+        M,
+        p,
+        vector_transport_to(
+            M, p_proposal, f.gradient!!(M, p_proposal), p, f.vector_transport_method
+        ) - f.grad_tmp,
+        f.basis,
+    )
+    sk_c = get_coordinates(M, p, X, f.basis)
+    srvec = yk_c - f.matrix * sk_c
+    if f.ν < 0 || abs(dot(srvec, sk_c)) >= f.ν * norm(srvec) * norm(sk_c)
+        f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
+    end
+end
+
+function update_hessian!(f, M, p, p_proposal, X) 
 end
 
 @doc raw"""

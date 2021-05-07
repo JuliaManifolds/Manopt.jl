@@ -196,7 +196,8 @@ export get_cost,
     adjoint_linearized_operator!,
     forward_operator,
     forward_operator!
-export get_hessian, get_hessian!, ApproxHessianFiniteDifference
+export get_hessian,
+    get_hessian!, ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
