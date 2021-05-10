@@ -196,8 +196,7 @@ export get_cost,
     adjoint_linearized_operator!,
     forward_operator,
     forward_operator!
-export get_hessian,
-    get_hessian!, ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne
+export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
@@ -266,7 +265,7 @@ export ChambollePock,
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve
-export ApproxHessianFiniteDifference
+export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 #
 # Stepsize
 export ConstantStepsize, DecreasingStepsize
