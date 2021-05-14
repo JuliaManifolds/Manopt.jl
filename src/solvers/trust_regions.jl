@@ -101,6 +101,8 @@ function trust_regions!(
     randomize::Bool=false,
     ρ_prime::Float64=0.1,
     ρ_regularization=1000.0,
+    θ::Float64=1.0,
+    κ::Float64=0.1,
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TdF,TH,Tprec}
@@ -128,6 +130,8 @@ function trust_regions!(
         randomize,
         stopping_criterion;
         retraction_method=retraction_method,
+        θ=θ,
+        κ=κ,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -171,6 +175,15 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.x = o.x
     o.tcg_options.η = o.η
     o.tcg_options.trust_region_radius = o.trust_region_radius
+    o.tcg_options.stop = StopWhenAny(
+            StopAfterIteration(manifold_dimension(p.M)),
+            StopWhenAll(
+                StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
+            ),
+            StopWhenTrustRegionIsExceeded(),
+            StopWhenCurvatureIsNegative(),
+            StopWhenModelIncreased(),
+        )
     solve(p, o.tcg_options)
     #
     o.η = o.tcg_options.η

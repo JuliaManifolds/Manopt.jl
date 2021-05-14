@@ -95,7 +95,6 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     trust_region_radius::R
     model_value::R
     new_model_value::R
-    κ::R
     randomize::Bool
     initialResidualNorm::Float64
     function TruncatedConjugateGradientOptions(
@@ -123,7 +122,6 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         o.trust_region_radius = trust_region_radius
         o.randomize = randomize
         o.model_value = zero(trust_region_radius)
-        o.κ = zero(trust_region_radius)
         return o
     end
 end
@@ -186,6 +184,9 @@ mutable struct TrustRegionsOptions{
 
     tcg_options::TruncatedConjugateGradientOptions{P,T,R}
 
+    θ::R
+    κ::R
+
     x_proposal::P
     f_proposal::R
 
@@ -206,6 +207,8 @@ mutable struct TrustRegionsOptions{
         randomize::Bool,
         stopping_citerion::SC,
         retraction_method::RTR,
+        θ::R,
+        κ::R,
     ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real}
         o = new{P,T,SC,RTR,R}()
         o.x = x
@@ -217,6 +220,8 @@ mutable struct TrustRegionsOptions{
         o.ρ_prime = ρ_prime
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
+        o.θ = θ
+        o.κ = κ
         return o
     end
 end
@@ -230,6 +235,8 @@ function TrustRegionsOptions(
     randomize::Bool,
     stopping_citerion::SC;
     retraction_method::RTR=ExponentialRetraction(),
+    θ::R=1.0,
+    κ::R=0.1,
 ) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod}
     return TrustRegionsOptions{P,T,SC,RTR,R}(
         x,
@@ -241,6 +248,8 @@ function TrustRegionsOptions(
         randomize,
         stopping_citerion,
         retraction_method,
+        θ,
+        κ,
     )
 end
 
