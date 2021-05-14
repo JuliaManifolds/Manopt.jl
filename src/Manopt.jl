@@ -265,7 +265,8 @@ export ChambollePock,
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve
-export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
+export ApproxHessianFiniteDifference,
+    ApproxHessianSymmetricRankOne, ApproxHessianBFGS, update_hessian_basis!
 #
 # Stepsize
 export ConstantStepsize, DecreasingStepsize

@@ -210,11 +210,11 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     ρ = ρnum / ρden
     model_decreased = ρden ≥ 0
     # Update the Hessian approximation
-    update_hessian!(p.hessian!!, p.M, o.x, o.x_proposal, o.η)
+    update_hessian!(p.M, p.hessian!!, o.x, o.x_proposal, o.η)
     # Choose the new TR radius based on the model performance.
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.
-    if ρ < 1 / 4 || !model_decreased || isnan(ρ)
+    if ρ < 0.1 || !model_decreased || isnan(ρ)
         o.trust_region_radius /= 4
     elseif ρ > 3 / 4 &&
            ((o.tcg_options.ηPη >= o.trust_region_radius^2) || (o.tcg_options.δHδ <= 0))
@@ -224,6 +224,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # performance. Note the strict inequality.
     if model_decreased && ρ > o.ρ_prime
         recursive_copyto!(o.x, o.x_proposal)
+        update_hessian_basis!(p.M, p.hessian!!, o.x)
     end
     return o
 end

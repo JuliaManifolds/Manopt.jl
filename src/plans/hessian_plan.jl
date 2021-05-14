@@ -436,12 +436,6 @@ function ApproxHessianSymmetricRankOne(
 end
 
 function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
-    # Update the basis
-    if distance(M, f.p_tmp, p) >= eps(Float64)
-        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        f.p_tmp = p
-        f.grad_tmp = f.gradient!!(M, f.p_tmp)
-    end
     # Apply Hessian approximation on vector
     return get_vector(
         M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis
@@ -449,19 +443,13 @@ function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
 end
 
 function (f::ApproxHessianSymmetricRankOne{MutatingEvaluation})(M, Y, p, X)
-    # Update the basis
-    if distance(M, f.p_tmp, p) <= eps(Float64)
-        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        f.p_tmp = p
-        f.gradient!!(M, f.grad_tmp, f.p_tmp)
-    end
     # Apply Hessian approximation on vector
     Y .= get_vector(M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis)
 
     return Y
 end
 
-function update_hessian!(f::ApproxHessianSymmetricRankOne, M, p, p_proposal, X)
+function update_hessian!(M, f::ApproxHessianSymmetricRankOne, p, p_proposal, X)
     yk_c = get_coordinates(
         M,
         p,
@@ -477,7 +465,15 @@ function update_hessian!(f::ApproxHessianSymmetricRankOne, M, p, p_proposal, X)
     end
 end
 
-function update_hessian!(f, M, p, p_proposal, X) end
+function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne, p)
+    update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+    recursive_copyto!(f.p_tmp, p)
+    return f.grad_tmp = f.gradient!!(M, f.p_tmp)
+end
+
+function update_hessian!(M, f, p, p_proposal, X) end
+
+function update_hessian_basis!(M, f, p) end
 
 @doc raw"""
     ApproxHessianBFGS{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real}
@@ -487,7 +483,7 @@ A functor to approximate the Hessian by the BFGS update.
 # Fields
 
 * `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
-* `ν` a small real number to ensure that the denominator in the update does not become too small and thus the method does not break down.
+* `scale` 
 * `vector_transport_method` a vector transport to use.
 
 ## Internal temporary fields
@@ -539,12 +535,6 @@ function ApproxHessianBFGS(
 end
 
 function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
-    # Update the basis
-    if distance(M, f.p_tmp, p) >= eps(Float64)
-        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        f.p_tmp = p
-        f.grad_tmp = f.gradient!!(M, f.p_tmp)
-    end
     # Apply Hessian approximation on vector
     return get_vector(
         M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis
@@ -552,19 +542,13 @@ function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
 end
 
 function (f::ApproxHessianBFGS{MutatingEvaluation})(M, Y, p, X)
-    # Update the basis
-    if distance(M, f.p_tmp, p) <= eps(Float64)
-        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        f.p_tmp = p
-        f.gradient!!(M, f.grad_tmp, f.p_tmp)
-    end
     # Apply Hessian approximation on vector
     Y .= get_vector(M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis)
 
     return Y
 end
 
-function update_hessian!(f::ApproxHessianBFGS, M, p, p_proposal, X)
+function update_hessian!(M, f::ApproxHessianBFGS, p, p_proposal, X)
     yk_c = get_coordinates(
         M,
         p,
@@ -578,6 +562,12 @@ function update_hessian!(f::ApproxHessianBFGS, M, p, p_proposal, X)
     return f.matrix =
         f.matrix + yk_c * yk_c' / skyk_c -
         f.matrix * sk_c * sk_c' * f.matrix / dot(sk_c, f.matrix * sk_c)
+end
+
+function update_hessian_basis!(M, f::ApproxHessianBFGS, p)
+    update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+    recursive_copyto!(f.p_tmp, p)
+    return f.grad_tmp = f.gradient!!(M, f.p_tmp)
 end
 
 @doc raw"""
