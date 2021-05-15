@@ -176,14 +176,14 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.η = o.η
     o.tcg_options.trust_region_radius = o.trust_region_radius
     o.tcg_options.stop = StopWhenAny(
-            StopAfterIteration(manifold_dimension(p.M)),
-            StopWhenAll(
-                StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
-            ),
-            StopWhenTrustRegionIsExceeded(),
-            StopWhenCurvatureIsNegative(),
-            StopWhenModelIncreased(),
-        )
+        StopAfterIteration(manifold_dimension(p.M)),
+        StopWhenAll(
+            StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
+        ),
+        StopWhenTrustRegionIsExceeded(),
+        StopWhenCurvatureIsNegative(),
+        StopWhenModelIncreased(),
+    )
     solve(p, o.tcg_options)
     #
     o.η = o.tcg_options.η

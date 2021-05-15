@@ -1,6 +1,5 @@
 using Manopt, Manifolds, ManifoldsBase, Random, LinearAlgebra, BenchmarkTools
 Random.seed!(42)
-import Manifolds: vector_transport_to!
 
 function run_rayleigh_minimization(n::Int)
     A = randn(n, n)

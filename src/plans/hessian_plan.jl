@@ -445,6 +445,13 @@ function ApproxHessianSymmetricRankOne(
 end
 
 function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
+    # Update Basis if necessary
+    if p != f.p_tmp
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        recursive_copyto!(f.p_tmp, p)
+        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    end
+
     # Apply Hessian approximation on vector
     return get_vector(
         M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis
@@ -452,6 +459,14 @@ function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
 end
 
 function (f::ApproxHessianSymmetricRankOne{MutatingEvaluation})(M, Y, p, X)
+    # Update Basis if necessary
+    # if distance(M, p, f.p_tmp) >= eps(Float64)
+    if p != f.p_tmp
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        recursive_copyto!(f.p_tmp, p)
+        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    end
+
     # Apply Hessian approximation on vector
     Y .= get_vector(M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis)
 
@@ -544,6 +559,13 @@ function ApproxHessianBFGS(
 end
 
 function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
+    # Update Basis if necessary
+    if p != f.p_tmp
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        recursive_copyto!(f.p_tmp, p)
+        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    end
+
     # Apply Hessian approximation on vector
     return get_vector(
         M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis
@@ -551,6 +573,13 @@ function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
 end
 
 function (f::ApproxHessianBFGS{MutatingEvaluation})(M, Y, p, X)
+    # Update Basis if necessary
+    if p != f.p_tmp
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        recursive_copyto!(f.p_tmp, p)
+        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    end
+
     # Apply Hessian approximation on vector
     Y .= get_vector(M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis)
 
