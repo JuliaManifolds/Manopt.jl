@@ -14,12 +14,16 @@ is the “change” of the curve at `t```∈[0,1]``. The computation can be done
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
-function differential_bezier_control(M::AbstractManifold, b::BezierSegment, t, X::BezierSegment)
+function differential_bezier_control(
+    M::AbstractManifold, b::BezierSegment, t, X::BezierSegment
+)
     # iterative, because recursively would be too many Casteljau evals
     Y = similar(first(X.pts))
     return differential_bezier_control!(M, Y, b, t, X)
 end
-function differential_bezier_control!(M::AbstractManifold, Y, b::BezierSegment, t, X::BezierSegment)
+function differential_bezier_control!(
+    M::AbstractManifold, Y, b::BezierSegment, t, X::BezierSegment
+)
     # iterative, because recursively would be too many Casteljau evals
     Z = similar(X.pts)
     c = deepcopy(b.pts)
@@ -91,7 +95,10 @@ The computation can be done in place of `Y`.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function differential_bezier_control(
-    M::AbstractManifold, B::AbstractVector{<:BezierSegment}, t, X::AbstractVector{<:BezierSegment}
+    M::AbstractManifold,
+    B::AbstractVector{<:BezierSegment},
+    t,
+    X::AbstractVector{<:BezierSegment},
 )
     if (0 > t) || (t > length(B))
         return throw(

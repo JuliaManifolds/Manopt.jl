@@ -59,18 +59,27 @@ function get_gradients(
     return p.gradient!!(p.M, x)
 end
 function get_gradients(
-    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, x
+    p::StochasticGradientProblem{
+        AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
+    },
+    x,
 ) where {TC}
     return [grad_i(p.M, x) for grad_i in p.gradient!!]
 end
 function get_gradients!(
-    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function}, X, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function},
+    X,
+    x,
 ) where {TC}
     copyto!(p.M, X, p.gradient!!(p.M, x))
     return X
 end
 function get_gradients!(
-    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, X, x
+    p::StochasticGradientProblem{
+        AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
+    },
+    X,
+    x,
 ) where {TC}
     copyto!(p.M, X, [grad_i(p.M, x) for grad_i in p.gradient!!])
     return X
@@ -83,7 +92,8 @@ function get_gradients(
     )
 end
 function get_gradients(
-    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, x
+    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
+    x,
 ) where {TC}
     X = [zero_vector(p.M, x) for _ in 1:length(p.gradient!!)]
     return get_gradients!(p, X, x)
@@ -94,7 +104,9 @@ function get_gradients!(
     return p.gradient!!(p.M, X, x)
 end
 function get_gradients!(
-    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, X, x
+    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
+    X,
+    x,
 ) where {TC}
     for i in 1:length(p.gradient!!)
         p.gradient!![i](p.M, X[i], x)
@@ -112,23 +124,34 @@ Note that for the [`MutatingEvaluation`](@ref) based problem and a single functi
 stochastic gradient mutating variant is not available, since it would require too many allocations.
 """
 function get_gradient(
-    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function}, k, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function},
+    k,
+    x,
 ) where {TC}
     return p.gradient!!(p.M, x)[k]
 end
 function get_gradient(
-    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, k, x
+    p::StochasticGradientProblem{
+        AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
+    },
+    k,
+    x,
 ) where {TC}
     return p.gradient!![k](p.M, x)
 end
 function get_gradient!(
-    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function}, X, k, x
+    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function},
+    X,
+    k,
+    x,
 ) where {TC}
     copyto!(p.M, X, p.gradient!!(p.M, x)[k])
     return X
 end
 function get_gradient!(
-    p::StochasticGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
+    p::StochasticGradientProblem{
+        AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
+    },
     X,
     k,
     x,
@@ -153,7 +176,10 @@ function get_gradient!(
     )
 end
 function get_gradient!(
-    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, X, k, x
+    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
+    X,
+    k,
+    x,
 ) where {TC}
     return p.gradient!![k](p.M, X, x)
 end

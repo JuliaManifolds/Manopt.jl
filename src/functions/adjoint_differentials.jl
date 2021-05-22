@@ -111,7 +111,11 @@ function adjoint_differential_bezier_control(
     return BezierSegment(sum(effects))
 end
 function adjoint_differential_bezier_control!(
-    M::AbstractManifold, Y::BezierSegment, b::BezierSegment, t::AbstractVector, X::AbstractVector
+    M::AbstractManifold,
+    Y::BezierSegment,
+    b::BezierSegment,
+    t::AbstractVector,
+    X::AbstractVector,
 )
     Z = BezierSegment(similar.(Y.pts))
     fill!.(Y.pts, zero(eltype(first(Y.pts))))
@@ -195,7 +199,10 @@ This can be computed in place of `Y`.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
-    M::AbstractManifold, B::AbstractVector{<:BezierSegment}, T::AbstractVector, X::AbstractVector
+    M::AbstractManifold,
+    B::AbstractVector{<:BezierSegment},
+    T::AbstractVector,
+    X::AbstractVector,
 )
     Y = broadcast(b -> BezierSegment(zero_vector.(Ref(M), b.pts)), B) # Double broadcast
     return adjoint_differential_bezier_control!(M, Y, B, T, X)

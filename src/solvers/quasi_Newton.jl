@@ -54,7 +54,9 @@ The ``k``th iteration consists of
 OR
 * `options` – the options returned by the solver (see `return_options`)
 """
-function quasi_Newton(M::AbstractManifold, F::Function, gradF::G, x::P; kwargs...) where {P,G}
+function quasi_Newton(
+    M::AbstractManifold, F::Function, gradF::G, x::P; kwargs...
+) where {P,G}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return quasi_Newton!(M, F, gradF, x_res; kwargs...)
@@ -292,9 +294,7 @@ function update_hessian!(
     d.matrix =
         d.matrix - (d.matrix * yk_c * yk_c' * d.matrix) / ykBkyk_c +
         (sk_c * sk_c') / skyk_c +
-        φ *
-        ykBkyk_c *
-        (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c) *
+        φ * ykBkyk_c * (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c) *
         (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c)'
     return d
 end
@@ -312,9 +312,7 @@ function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{Broyden}, p, o, x_o
     d.matrix =
         d.matrix - (d.matrix * sk_c * sk_c' * d.matrix) / skHksk_c +
         (yk_c * yk_c') / skyk_c +
-        φ *
-        skHksk_c *
-        (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c) *
+        φ * skHksk_c * (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c) *
         (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c)'
     return d
 end

@@ -97,9 +97,7 @@ using Manopt, Manifolds, Test
             sgradF1,
             p;
             order_type=:Random,
-            direction=AverageGradient(
-                M, p, 10, StochasticGradient(zero_vector(M, p))
-            ),
+            direction=AverageGradient(M, p, 10, StochasticGradient(zero_vector(M, p))),
         )
         @test norm(x4) ≈ 1
         x5 = stochastic_gradient_descent(

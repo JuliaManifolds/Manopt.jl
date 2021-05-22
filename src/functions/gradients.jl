@@ -28,7 +28,10 @@ See [`de_casteljau`](@ref) for more details on the curve.
     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function grad_acceleration_bezier(
-    M::AbstractManifold, B::AbstractVector, degrees::AbstractVector{<:Integer}, T::AbstractVector
+    M::AbstractManifold,
+    B::AbstractVector,
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector,
 )
     gradB = _grad_acceleration_bezier(M, B, degrees, T)
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
@@ -99,7 +102,10 @@ end
 
 # common helper for the two acceleration grads
 function _grad_acceleration_bezier(
-    M::AbstractManifold, B::AbstractVector, degrees::AbstractVector{<:Integer}, T::AbstractVector
+    M::AbstractManifold,
+    B::AbstractVector,
+    degrees::AbstractVector{<:Integer},
+    T::AbstractVector,
 )
     Bt = get_bezier_segments(M, B, degrees, :differentiable)
     n = length(T)
@@ -311,10 +317,7 @@ function grad_TV!(M::PowerManifold, X, x, p::Int=1)
     d = length(power_size)
     maxInd = last(R)
     c = costTV(M, x, p, 0)
-    g = [
-        zero_vector(M.manifold, x[first(R)]),
-        zero_vector(M.manifold, x[first(R)]),
-    ]
+    g = [zero_vector(M.manifold, x[first(R)]), zero_vector(M.manifold, x[first(R)])]
     for i in R # iterate over all pixel
         di = 0.0
         for k in 1:d # for all direction combinations

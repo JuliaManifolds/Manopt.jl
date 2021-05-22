@@ -7,8 +7,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         x = [0.1, 0.2, 0.3, 0.5]
         tvTestξ = [-1.0, 0.0, 0.0, 1.0]
         @test grad_TV(N, x) == tvTestξ
-        @test grad_TV(M, (x[1], x[1])) ==
-              (zero_vector(M, x[1]), zero_vector(M, x[1]))
+        @test grad_TV(M, (x[1], x[1])) == (zero_vector(M, x[1]), zero_vector(M, x[1]))
         @test norm(N, x, grad_TV(N, x, 2) - tvTestξ) ≈ 0
         tv2Testξ = [0.0, 0.5, -1.0, 0.5]
         @test grad_TV2(N, x) == tv2Testξ

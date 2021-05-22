@@ -51,8 +51,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         @test norm(
             N,
             x,
-            differential_forward_logs(N, x, V) -
-            [-X, [π / 2, 0.0, 0.0], zero_vector(M, p)],
+            differential_forward_logs(N, x, V) - [-X, [π / 2, 0.0, 0.0], zero_vector(M, p)],
         ) ≈ 0 atol = 8 * 10.0^(-16)
         differential_forward_logs!(N, W, x, V)
         @test norm(N, x, W - [-X, [π / 2, 0.0, 0.0], zero_vector(M, p)]) ≈ 0 atol =
@@ -71,9 +70,8 @@ using Manifolds, Manopt, Test, ManifoldsBase
         # Text differentials (1) Dx of Log_xy
         @test norm(M2, p2, differential_log_basepoint(M2, p2, p2, X2) + X2) ≈ 0 atol =
             4 * 10^(-16)
-        @test norm(
-            M2, q2, differential_log_argument(M2, p2, q2, zero_vector(M2, p2))
-        ) ≈ 0 atol = 4 * 10^(-16)
+        @test norm(M2, q2, differential_log_argument(M2, p2, q2, zero_vector(M2, p2))) ≈ 0 atol =
+            4 * 10^(-16)
         @test norm(
             M2, p2, differential_exp_basepoint(M2, p2, zero_vector(M2, p2), X2) - X2
         ) ≈ 0 atol = 4 * 10^(-16)
@@ -89,12 +87,10 @@ using Manifolds, Manopt, Test, ManifoldsBase
         end
         @test norm(M2, q2, differential_geodesic_startpoint(M2, p2, q2, 1.0, X2)) ≈ 0 atol =
             4 * 10.0^(-16)
-        @test norm(
-            M2, q2, differential_exp_basepoint(M2, p2, X2, zero_vector(M2, p2))
-        ) ≈ 0 atol = 4 * 10.0^(-16)
-        @test norm(
-            M2, q2, differential_exp_argument(M2, p2, X2, zero_vector(M2, p2))
-        ) ≈ 0 atol = 4 * 10.0^(-16)
+        @test norm(M2, q2, differential_exp_basepoint(M2, p2, X2, zero_vector(M2, p2))) ≈ 0 atol =
+            4 * 10.0^(-16)
+        @test norm(M2, q2, differential_exp_argument(M2, p2, X2, zero_vector(M2, p2))) ≈ 0 atol =
+            4 * 10.0^(-16)
         # test coeff of log_basepoint, since it is not always expicitly used.
         @test βdifferential_log_basepoint(-1.0, 1.0, 2.0) ≈ -2 * cosh(2.0) / sinh(2.0)
     end

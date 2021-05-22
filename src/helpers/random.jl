@@ -10,7 +10,9 @@ random_point(M::AbstractManifold) = random_point(M, Val(:Gaussian))
 generate a random point using a noise model given by `s` with its additional `options`
 just passed on.
 "
-random_point(M::AbstractManifold, s::Symbol, options...) = random_point(M, Val(s), options...)
+function random_point(M::AbstractManifold, s::Symbol, options...)
+    return random_point(M, Val(s), options...)
+end
 
 @doc raw"""
     random_point(M::AbstractPowerManifold, options...)
@@ -196,7 +198,9 @@ end
 generate a random tangent vector in the tangent space of `p` on `M`. By default
 this is a `:Gaussian` distribution.
 """
-random_tangent(M::AbstractManifold, p, options...) = random_tangent(M, p, :Gaussian, options...)
+function random_tangent(M::AbstractManifold, p, options...)
+    return random_tangent(M, p, :Gaussian, options...)
+end
 function random_tangent(M::AbstractManifold, p, s::Symbol, options...)
     return random_tangent(M, p, Val(s), options...)
 end

@@ -151,7 +151,9 @@ function get_bezier_junction_tangent_vectors(
         dims=1,
     )
 end
-function get_bezier_junction_tangent_vectors(M::AbstractManifold, b::BezierSegment) where {P,N}
+function get_bezier_junction_tangent_vectors(
+    M::AbstractManifold, b::BezierSegment
+) where {P,N}
     return get_bezier_junction_tangent_vectors(M, [b])
 end
 
@@ -219,7 +221,9 @@ function get_bezier_points(
 )
     return get_bezier_points(M, B, Val(reduce))
 end
-function get_bezier_points(::AbstractManifold, B::AbstractVector{<:BezierSegment}, ::Val{:default})
+function get_bezier_points(
+    ::AbstractManifold, B::AbstractVector{<:BezierSegment}, ::Val{:default}
+)
     return cat([[b.pts...] for b in B]...; dims=1)
 end
 function get_bezier_points(
@@ -283,16 +287,22 @@ curve consists of. Then
   in the next segment the junction is computed as
   ``b = \exp_{c_n}(-\log_{c_n} c_{n-1})`` such that the assumed differentiability holds
 """
-function get_bezier_segments(M::AbstractManifold, c::Array{P,1}, d, s::Symbol=:default) where {P}
+function get_bezier_segments(
+    M::AbstractManifold, c::Array{P,1}, d, s::Symbol=:default
+) where {P}
     ((length(c) == d[1]) && (length(d) == 1)) && return Tuple(c)
     return get_bezier_segments(M, c, d, Val(s))
 end
-function get_bezier_segments(::AbstractManifold, c::Array{P,1}, d, ::Val{:default}) where {P}
+function get_bezier_segments(
+    ::AbstractManifold, c::Array{P,1}, d, ::Val{:default}
+) where {P}
     endindices = cumsum(d .+ 1)
     startindices = endindices - d
     return [BezierSegment(c[si:ei]) for (si, ei) in zip(startindices, endindices)]
 end
-function get_bezier_segments(::AbstractManifold, c::Array{P,1}, d, ::Val{:continuous}) where {P}
+function get_bezier_segments(
+    ::AbstractManifold, c::Array{P,1}, d, ::Val{:continuous}
+) where {P}
     length(c) != (sum(d) + 1) && error(
         "The number of control points $(length(c)) does not match (for degrees $(d) expcted $(sum(d)+1) points.",
     )
