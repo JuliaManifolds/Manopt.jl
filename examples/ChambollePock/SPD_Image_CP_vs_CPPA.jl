@@ -60,7 +60,7 @@ include("Image_TV_commons.jl")
 m = fill(Matrix{Float64}(I, 3, 3), size(f))
 n = Λ(M, m)
 x0 = f
-ξ0 = ProductRepr(zero_tangent_vector(M2, m2(m)), zero_tangent_vector(M2, m2(m)))
+ξ0 = ProductRepr(zero_vector(M2, m2(m)), zero_vector(M2, m2(m)))
 
 @info "with parameters σ: $σ | τ: $τ | θ: $θ | γ: $γ."
 @time o = ChambollePock(

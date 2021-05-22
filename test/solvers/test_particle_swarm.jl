@@ -39,9 +39,9 @@ using Random
         step_solver!(p, o, 1)
         for i in 1:3
             # check that the new particle locations are on the manifold
-            @test is_manifold_point(M, o.x[i], true)
+            @test is_point(M, o.x[i], true)
             # check that the new velocities are tangent vectors of the original particle locations
-            @test is_tangent_vector(M, o.x[i], o.velocity[i], true; atol=5 * 10^(-16))
+            @test is_vector(M, o.x[i], o.velocity[i], true; atol=5 * 10^(-16))
         end
     end
 end

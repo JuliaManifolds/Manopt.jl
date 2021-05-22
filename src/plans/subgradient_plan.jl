@@ -16,7 +16,7 @@ Generate the [`Problem`] for a subgradient problem, i.e. a function `f` on the
 manifold `M` and a function `∂f` that returns an element from the subdifferential
 at a point.
 """
-struct SubGradientProblem{T,mT<:Manifold,C,S} <: Problem{T}
+struct SubGradientProblem{T,mT<:AbstractManifold,C,S} <: Problem{T}
     M::mT
     cost::C
     subgradient!!::S
@@ -25,7 +25,7 @@ struct SubGradientProblem{T,mT<:Manifold,C,S} <: Problem{T}
         cost::C,
         subgrad::S;
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:Manifold,C,S}
+    ) where {mT<:AbstractManifold,C,S}
         return new{typeof(evaluation),mT,C,S}(M, cost, subgrad)
     end
 end
@@ -44,7 +44,7 @@ function get_subgradient(p::SubGradientProblem{AllocatingEvaluation}, q)
     return p.subgradient!!(p.M, q)
 end
 function get_subgradient(p::SubGradientProblem{MutatingEvaluation}, q)
-    X = zero_tangent_vector(p.M, q)
+    X = zero_vector(p.M, q)
     return p.subgradient!!(p.M, X, q)
 end
 function get_subgradient!(p::SubGradientProblem{AllocatingEvaluation}, X, q)
@@ -80,8 +80,8 @@ mutable struct SubGradientMethodOptions{TRetract<:AbstractRetractionMethod,TStep
         sC::StoppingCriterion,
         s::Stepsize,
         retraction_method=ExponentialRetraction(),
-    ) where {TM<:Manifold,P}
-        return new{typeof(retraction_method),typeof(s),P,typeof(zero_tangent_vector(M, x))}(
+    ) where {TM<:AbstractManifold,P}
+        return new{typeof(retraction_method),typeof(s),P,typeof(zero_vector(M, x))}(
             retraction_method, s, sC, x, x
         )
     end

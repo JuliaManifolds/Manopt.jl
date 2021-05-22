@@ -38,7 +38,7 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
   returned).
 """
 function NelderMead(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     kwargs...,
@@ -56,7 +56,7 @@ points is chosen. If it is given, the computation is done in place of `p`.
 For more options see [`NelderMead`](@ref).
 """
 function NelderMead!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     stopping_criterion::StoppingCriterion=StopAfterIteration(200000),

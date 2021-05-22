@@ -43,7 +43,7 @@ the second.
     > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
     > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{T,mT<:Manifold,nT<:Manifold} <: Problem{T}
+mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <: Problem{T}
     M::mT
     N::nT
     cost::Function
@@ -63,7 +63,7 @@ function PrimalDualProblem(
     linearized_forward_operator::Union{Function,Missing}=missing,
     Λ::Union{Function,Missing}=missing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {mT<:Manifold,nT<:Manifold}
+) where {mT<:AbstractManifold,nT<:AbstractManifold}
     return PrimalDualProblem{typeof(evaluation),mT,nT}(
         M,
         N,
@@ -148,7 +148,7 @@ end
 function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
     y = random_point(p.N)
     forward_operator!(p, y, m)
-    Y = zero_tangent_vector(p.N, y)
+    Y = zero_vector(p.N, y)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 function linearized_forward_operator!(
@@ -200,7 +200,7 @@ function adjoint_linearized_operator(p::PrimalDualProblem{AllocatingEvaluation},
     return p.adjoint_linearized_operator!!(p.N, m, n, Y)
 end
 function adjoint_linearized_operator(p::PrimalDualProblem{MutatingEvaluation}, m, n, Y)
-    X = zero_tangent_vector(p.M, m)
+    X = zero_vector(p.M, m)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 function adjoint_linearized_operator!(

@@ -161,9 +161,9 @@ using Manifolds, Manopt, Test, Dates
         p[2, 1, 1] = 1 / sqrt(2) .* [1.0, 0.0, 1.0]
         p[2, 2, 1] = [0.0, 1.0, 0.0]
         p[:, :, 2] = deepcopy(p[:, :, 1])
-        X = zero_tangent_vector(M, p)
+        X = zero_vector(M, p)
         X[1, 1, 1] .= [0.0, 0.5, 0.5]
-        Y = zero_tangent_vector(M, p)
+        Y = zero_vector(M, p)
         @test norm(project_collaborative_TV(M, 1, p, X, 2, 1)) ≈ 0
         project_collaborative_TV!(M, Y, 1, p, X, 2, 1)
         @test norm(Y) ≈ 0

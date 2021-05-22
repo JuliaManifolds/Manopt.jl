@@ -16,7 +16,7 @@ using Manopt, ManifoldsBase, Test
     @test get_last_stepsize(p, o, 1) == 1.0
     # Check Fallbacks of Problen
     @test get_cost(p, o.x) == 0.0
-    @test get_gradient(p, o.x) == zero_tangent_vector(M, x)
+    @test get_gradient(p, o.x) == zero_vector(M, x)
     @test_throws MethodError get_proximal_map(p, 1.0, o.x, 1)
     @test_throws MethodError get_subgradient(p, o.x)
     # Additional Specific Debugs

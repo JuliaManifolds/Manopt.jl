@@ -15,11 +15,11 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test adjoint_differential_log_argument(M, p, p, X) == X
     adjoint_differential_log_argument!(M, Y, p, p, X)
     @test Y == X
-    @test adjoint_differential_exp_basepoint(M, p, zero_tangent_vector(M, p), X) == X
-    adjoint_differential_exp_basepoint!(M, Y, p, zero_tangent_vector(M, p), X)
+    @test adjoint_differential_exp_basepoint(M, p, zero_vector(M, p), X) == X
+    adjoint_differential_exp_basepoint!(M, Y, p, zero_vector(M, p), X)
     @test Y == X
-    @test adjoint_differential_exp_argument(M, p, zero_tangent_vector(M, p), X) == X
-    adjoint_differential_exp_argument!(M, Y, p, zero_tangent_vector(M, p), X)
+    @test adjoint_differential_exp_argument(M, p, zero_vector(M, p), X) == X
+    adjoint_differential_exp_argument!(M, Y, p, zero_vector(M, p), X)
     @test Y == X
     for t in [0, 0.15, 0.33, 0.66, 0.9]
         @test adjoint_differential_geodesic_startpoint(M, p, p, t, X) == (1 - t) * X
@@ -33,16 +33,16 @@ using Manifolds, Manopt, Test, ManifoldsBase
     Mp = PowerManifold(M, NestedPowerRepresentation(), 3)
     pP = [p, q, p]
     qP = [p, p, q]
-    XP = [X, zero_tangent_vector(M, p), -X]
+    XP = [X, zero_vector(M, p), -X]
     YP = similar.(XP)
     @test norm(
         Mp,
         pP,
         adjoint_differential_forward_logs(Mp, pP, XP) -
-        [-X, zero_tangent_vector(M, p), zero_tangent_vector(M, p)],
+        [-X, zero_vector(M, p), zero_vector(M, p)],
     ) ≈ 0 atol = 4 * 10.0^(-16)
     adjoint_differential_forward_logs!(Mp, YP, pP, XP)
-    @test norm(Mp, pP, YP - [-X, zero_tangent_vector(M, p), zero_tangent_vector(M, p)]) ≈ 0 atol =
+    @test norm(Mp, pP, YP - [-X, zero_vector(M, p), zero_vector(M, p)]) ≈ 0 atol =
         4 * 10.0^(-16)
     ZP = [[0.0, π / 2, 0.0], [0.0, 0.0, 0.0], [π / 2, 0.0, 0.0]]
     @test adjoint_differential_log_argument(Mp, pP, qP, XP) == ZP

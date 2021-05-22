@@ -49,7 +49,7 @@ mesh!(
 N = 50
 x0 = [random_point(M) for i in 1:200]
 xPlot = deepcopy(x0)
-v0 = [zero_tangent_vector(M, y) for y in x0]
+v0 = [zero_vector(M, y) for y in x0]
 o = particle_swarm(
     M,
     F;

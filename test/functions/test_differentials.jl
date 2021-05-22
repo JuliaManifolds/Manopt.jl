@@ -16,21 +16,21 @@ using Manifolds, Manopt, Test, ManifoldsBase
         @test differential_log_argument(M, p, p, X) == X
         differential_log_argument!(M, Y, p, p, X) == X
         @test Y == X
-        @test differential_log_argument(M, p, q, X) == zero_tangent_vector(M, q)
+        @test differential_log_argument(M, p, q, X) == zero_vector(M, q)
         differential_log_argument!(M, Y, p, q, X)
-        @test Y == zero_tangent_vector(M, q)
-        @test differential_exp_basepoint(M, p, zero_tangent_vector(M, p), X) == X
-        differential_exp_basepoint!(M, Y, p, zero_tangent_vector(M, p), X)
+        @test Y == zero_vector(M, q)
+        @test differential_exp_basepoint(M, p, zero_vector(M, p), X) == X
+        differential_exp_basepoint!(M, Y, p, zero_vector(M, p), X)
         @test Y == X
         @test norm(M, q, differential_exp_basepoint(M, p, X, X) - [-π / 2, 0.0, 0.0]) ≈ 0 atol =
             6 * 10^(-16)
         differential_exp_basepoint!(M, Y, p, X, X)
         @test norm(M, q, Y - [-π / 2, 0.0, 0.0]) ≈ 0 atol = 6 * 10^(-16)
-        @test differential_exp_argument(M, p, zero_tangent_vector(M, p), X) == X
-        differential_exp_argument!(M, Y, p, zero_tangent_vector(M, p), X) == X
+        @test differential_exp_argument(M, p, zero_vector(M, p), X) == X
+        differential_exp_argument!(M, Y, p, zero_vector(M, p), X) == X
         @test Y == X
-        @test norm(M, q, differential_exp_argument(M, p, X, zero_tangent_vector(M, p))) ≈ 0
-        differential_exp_argument!(M, Y, p, X, zero_tangent_vector(M, p))
+        @test norm(M, q, differential_exp_argument(M, p, X, zero_vector(M, p))) ≈ 0
+        differential_exp_argument!(M, Y, p, X, zero_vector(M, p))
         @test norm(M, q, Y) ≈ 0
         for t in [0, 0.15, 0.33, 0.66, 0.9]
             @test differential_geodesic_startpoint(M, p, p, t, X) == (1 - t) * X
@@ -46,16 +46,16 @@ using Manifolds, Manopt, Test, ManifoldsBase
         N = PowerManifold(M, NestedPowerRepresentation(), 3)
         x = [p, q, p]
         y = [p, p, q]
-        V = [X, zero_tangent_vector(M, p), -X]
+        V = [X, zero_vector(M, p), -X]
         W = similar.(V)
         @test norm(
             N,
             x,
             differential_forward_logs(N, x, V) -
-            [-X, [π / 2, 0.0, 0.0], zero_tangent_vector(M, p)],
+            [-X, [π / 2, 0.0, 0.0], zero_vector(M, p)],
         ) ≈ 0 atol = 8 * 10.0^(-16)
         differential_forward_logs!(N, W, x, V)
-        @test norm(N, x, W - [-X, [π / 2, 0.0, 0.0], zero_tangent_vector(M, p)]) ≈ 0 atol =
+        @test norm(N, x, W - [-X, [π / 2, 0.0, 0.0], zero_vector(M, p)]) ≈ 0 atol =
             8 * 10.0^(-16)
         @test differential_log_argument(N, x, y, V) == [V[1], V[2], V[2]]
         differential_log_argument!(N, W, x, y, V)
@@ -72,13 +72,13 @@ using Manifolds, Manopt, Test, ManifoldsBase
         @test norm(M2, p2, differential_log_basepoint(M2, p2, p2, X2) + X2) ≈ 0 atol =
             4 * 10^(-16)
         @test norm(
-            M2, q2, differential_log_argument(M2, p2, q2, zero_tangent_vector(M2, p2))
+            M2, q2, differential_log_argument(M2, p2, q2, zero_vector(M2, p2))
         ) ≈ 0 atol = 4 * 10^(-16)
         @test norm(
-            M2, p2, differential_exp_basepoint(M2, p2, zero_tangent_vector(M2, p2), X2) - X2
+            M2, p2, differential_exp_basepoint(M2, p2, zero_vector(M2, p2), X2) - X2
         ) ≈ 0 atol = 4 * 10^(-16)
         @test norm(
-            M2, p2, differential_exp_argument(M2, p2, zero_tangent_vector(M2, p2), X2) - X2
+            M2, p2, differential_exp_argument(M2, p2, zero_vector(M2, p2), X2) - X2
         ) ≈ 0 atol = 4 * 10^(-16)
         for t in [0, 0.15, 0.33, 0.66, 0.9]
             @test norm(
@@ -90,10 +90,10 @@ using Manifolds, Manopt, Test, ManifoldsBase
         @test norm(M2, q2, differential_geodesic_startpoint(M2, p2, q2, 1.0, X2)) ≈ 0 atol =
             4 * 10.0^(-16)
         @test norm(
-            M2, q2, differential_exp_basepoint(M2, p2, X2, zero_tangent_vector(M2, p2))
+            M2, q2, differential_exp_basepoint(M2, p2, X2, zero_vector(M2, p2))
         ) ≈ 0 atol = 4 * 10.0^(-16)
         @test norm(
-            M2, q2, differential_exp_argument(M2, p2, X2, zero_tangent_vector(M2, p2))
+            M2, q2, differential_exp_argument(M2, p2, X2, zero_vector(M2, p2))
         ) ≈ 0 atol = 4 * 10.0^(-16)
         # test coeff of log_basepoint, since it is not always expicitly used.
         @test βdifferential_log_basepoint(-1.0, 1.0, 2.0) ≈ -2 * cosh(2.0) / sinh(2.0)
@@ -132,22 +132,22 @@ using Manifolds, Manopt, Test, ManifoldsBase
         t1a = zero.(t1)
         forward_logs!(M, t1a, p)
         @test all(t1 .== t1a)
-        X = zero_tangent_vector(M, p)
+        X = zero_vector(M, p)
         X[1, 1] .= [0.0, 0.5, 0.5]
         t2 = differential_forward_logs(M, p, X)
         a =
             differential_log_basepoint(S, p[1, 1], p[2, 1], X[1, 1]) +
             differential_log_argument(S, p[1, 1], p[2, 1], X[2, 1])
         @test t2[1, 1, 1] ≈ a
-        @test t2[1, 2, 1] ≈ zero_tangent_vector(S, p[1, 2]) atol = 1e-17
-        @test t2[2, 1, 1] ≈ zero_tangent_vector(S, p[2, 1]) atol = 1e-17
-        @test t2[2, 2, 1] ≈ zero_tangent_vector(S, p[2, 2]) atol = 1e-17
+        @test t2[1, 2, 1] ≈ zero_vector(S, p[1, 2]) atol = 1e-17
+        @test t2[2, 1, 1] ≈ zero_vector(S, p[2, 1]) atol = 1e-17
+        @test t2[2, 2, 1] ≈ zero_vector(S, p[2, 2]) atol = 1e-17
         b =
             differential_log_basepoint(S, p[1, 1], p[1, 2], X[1, 1]) +
             differential_log_argument(S, p[1, 1], p[1, 2], X[1, 2])
         @test t2[1, 1, 2] ≈ b
-        @test t2[1, 2, 2] ≈ zero_tangent_vector(S, p[1, 2]) atol = 1e-17
-        @test t2[2, 1, 2] ≈ zero_tangent_vector(S, p[2, 1]) atol = 1e-17
-        @test t2[2, 2, 2] ≈ zero_tangent_vector(S, p[2, 2]) atol = 1e-17
+        @test t2[1, 2, 2] ≈ zero_vector(S, p[1, 2]) atol = 1e-17
+        @test t2[2, 1, 2] ≈ zero_vector(S, p[2, 1]) atol = 1e-17
+        @test t2[2, 2, 2] ≈ zero_vector(S, p[2, 2]) atol = 1e-17
     end
 end

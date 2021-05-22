@@ -97,14 +97,14 @@ gradf = [(M, x) -> grad_distance(M, p, x) for p in data];
     M,
     gradf,
     x;
-    direction=MomentumGradient(M, x, StochasticGradient(zero_tangent_vector(M, x))),
+    direction=MomentumGradient(M, x, StochasticGradient(zero_vector(M, x))),
 );
 # And on the other hand the [`AverageGradient`](@ref) computes an average of the last `n` gradients, i.e.
 @time x_opt4 = stochastic_gradient_descent(
     M,
     gradf,
     x;
-    direction=AverageGradient(M, x, 10, StochasticGradient(zero_tangent_vector(M, x))),
+    direction=AverageGradient(M, x, 10, StochasticGradient(zero_vector(M, x))),
 );
 # note that the default [`StoppingCriterion`](@ref) is a fixed number of iterations.
 #

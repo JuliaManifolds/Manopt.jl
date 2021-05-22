@@ -28,7 +28,7 @@ using Manopt, Manifolds, Test
             N, F, [gradF1!, gradF2!]; evaluation=MutatingEvaluation()
         )
         for P in [Pf, Pv, Pf!, Pv!]
-            Y = zero_tangent_vector(N, x)
+            Y = zero_vector(N, x)
             @test get_gradient(P, x)[N, 1] == gradF(N, x)[N, 1]
             @test get_gradient(P, x)[N, 2] == gradF(N, x)[N, 2]
             get_gradient!(P, Y, x)
@@ -36,7 +36,7 @@ using Manopt, Manifolds, Test
             @test Y[N, 2] == gradF(N, x)[N, 2]
             @test get_gradient(P, 1, x) == gradF(N, x)[N, 1]
             @test get_gradient(P, 2, x) == gradF(N, x)[N, 2]
-            Y = zero_tangent_vector(N, x)
+            Y = zero_vector(N, x)
             get_gradient!(P, Y[N, 1], 1, x)
             @test Y[N, 1] == gradF(N, x)[N, 1]
             get_gradient!(P, Y[N, 2], 2, x)

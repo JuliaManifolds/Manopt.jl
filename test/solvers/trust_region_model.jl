@@ -46,7 +46,7 @@ function e2rhess!(M::Grassmann, Y, p, X, e_grad, e_Hess)
     return project!(M, Y, p, Y)
 end
 
-function eHess(M::Manifold, X::Array{Float64,3}, H::Array{Float64,3})
+function eHess(M::AbstractManifold, X::Array{Float64,3}, H::Array{Float64,3})
     U = X[M, 1]
     V = X[M, 2]
     Udot = H[M, 1]
@@ -112,7 +112,7 @@ struct RHess{T,TM}
     G::Array{T,3}
     H::Array{T,3}
 end
-function RHess(M::Manifold, A::Matrix{T}, p) where {T}
+function RHess(M::AbstractManifold, A::Matrix{T}, p) where {T}
     return RHess{T,typeof(M)}(
         EGrad(M, A), EHess(M, A), zeros(T, size(A, 1), p, 2), zeros(T, size(A, 1), p, 2)
     )

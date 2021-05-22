@@ -95,7 +95,7 @@ for e in experiments
         N,
         cost,
         get(e, :x, x0),
-        get(e, :ξ, zero_tangent_vector(N, get(e, :n, Λ(get(e, :m, m))))),
+        get(e, :ξ, zero_vector(N, get(e, :n, Λ(get(e, :m, m))))),
         get(e, :m, m),
         get(e, :n, Λ(get(e, :m, m))),
         proxFidelity,

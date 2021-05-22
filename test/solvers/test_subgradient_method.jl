@@ -10,12 +10,12 @@ using Manopt, ManifoldsBase, Manifolds, Test
     @testset "Allocating Subgradient" begin
         function ∂f(M, y)
             if distance(M, x, y) == 0
-                return zero_tangent_vector(M, y)
+                return zero_vector(M, y)
             end
             return -2 * log(M, y, x) / max(10 * eps(Float64), distance(M, x, y))
         end
         p = SubGradientProblem(M, f, ∂f)
-        X = zero_tangent_vector(M, x)
+        X = zero_vector(M, x)
         Y = get_subgradient(p, x)
         get_subgradient!(p, X, x)
         @test isapprox(M, x, X, Y)
@@ -37,14 +37,14 @@ using Manopt, ManifoldsBase, Manifolds, Test
         function ∂f!(M, X, y)
             d = distance(M, x, y)
             if d == 0
-                return zero_tangent_vector!(M, X, y)
+                return zero_vector!(M, X, y)
             end
             log!(M, X, y, x)
             X .*= -2 / max(10 * eps(Float64), d)
             return X
         end
         p = SubGradientProblem(M, f, ∂f!; evaluation=MutatingEvaluation())
-        X = zero_tangent_vector(M, x)
+        X = zero_vector(M, x)
         Y = get_subgradient(p, x)
         get_subgradient!(p, X, x)
         @test isapprox(M, x, X, Y)

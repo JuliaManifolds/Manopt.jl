@@ -64,7 +64,7 @@ For a description of the algorithm and more details see
 [`truncated_conjugate_gradient_descent`](@ref)
 """
 function trust_regions(
-    M::Manifold, F::TF, gradF::TdF, hessF::TH, x; kwargs...
+    M::AbstractManifold, F::TF, gradF::TdF, hessF::TH, x; kwargs...
 ) where {TF,TdF,TH}
     x_res = allocate(x)
     copyto!(M, x_res, x)
@@ -85,7 +85,7 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds in pl
 for more details and all options, see [`trust_regions`](@ref)
 """
 function trust_regions!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     gradF::TdF,
     hessF::TH,
@@ -140,15 +140,15 @@ end
 
 function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     get_gradient!(p, o.gradient, o.x)
-    o.η = zero_tangent_vector(p.M, o.x)
-    o.Hη = zero_tangent_vector(p.M, o.x)
+    o.η = zero_vector(p.M, o.x)
+    o.Hη = zero_vector(p.M, o.x)
     o.x_proposal = deepcopy(o.x)
     o.f_proposal = zero(o.trust_region_radius)
 
-    o.η_Cauchy = zero_tangent_vector(p.M, o.x)
-    o.Hη_Cauchy = zero_tangent_vector(p.M, o.x)
+    o.η_Cauchy = zero_vector(p.M, o.x)
+    o.Hη_Cauchy = zero_vector(p.M, o.x)
     o.τ = zero(o.trust_region_radius)
-    o.Hgrad = zero_tangent_vector(p.M, o.x)
+    o.Hgrad = zero_vector(p.M, o.x)
     o.tcg_options = TruncatedConjugateGradientOptions(
         p, o.x, o.η, o.trust_region_radius, o.randomize
     )
@@ -165,7 +165,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
             o.η *= sqrt(sqrt(eps(Float64)))
         end
     else
-        zero_tangent_vector!(p.M, o.η, o.x)
+        zero_vector!(p.M, o.η, o.x)
     end
     # Solve TR subproblem - update options
     o.tcg_options.x = o.x

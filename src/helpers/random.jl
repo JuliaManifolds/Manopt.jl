@@ -1,16 +1,16 @@
 @doc raw"
-    random_point(M::Manifold)
+    random_point(M::AbstractManifold)
 
 generate a random point on a manifold. By default it uses `random_point(M,:Gaussian)`.
 "
-random_point(M::Manifold) = random_point(M, Val(:Gaussian))
+random_point(M::AbstractManifold) = random_point(M, Val(:Gaussian))
 @doc raw"
-    random_point(M::Manifold, s::Symbol, options...)
+    random_point(M::AbstractManifold, s::Symbol, options...)
 
 generate a random point using a noise model given by `s` with its additional `options`
 just passed on.
 "
-random_point(M::Manifold, s::Symbol, options...) = random_point(M, Val(s), options...)
+random_point(M::AbstractManifold, s::Symbol, options...) = random_point(M, Val(s), options...)
 
 @doc raw"""
     random_point(M::AbstractPowerManifold, options...)
@@ -196,8 +196,8 @@ end
 generate a random tangent vector in the tangent space of `p` on `M`. By default
 this is a `:Gaussian` distribution.
 """
-random_tangent(M::Manifold, p, options...) = random_tangent(M, p, :Gaussian, options...)
-function random_tangent(M::Manifold, p, s::Symbol, options...)
+random_tangent(M::AbstractManifold, p, options...) = random_tangent(M, p, :Gaussian, options...)
+function random_tangent(M::AbstractManifold, p, s::Symbol, options...)
     return random_tangent(M, p, Val(s), options...)
 end
 
@@ -254,7 +254,7 @@ end
 
 function random_tangent(M::PowerManifold, p, options...)
     rep_size = representation_size(M.manifold)
-    X = zero_tangent_vector(M, p)
+    X = zero_vector(M, p)
     for i in get_iterator(M)
         X[M, i] = random_tangent(M.manifold, p[M, i], options...)
     end

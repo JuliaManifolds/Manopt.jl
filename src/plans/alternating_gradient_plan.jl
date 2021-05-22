@@ -59,48 +59,48 @@ end
 Evaluate all summands gradients at a point `x` on the `ProductManifold M` (in place of `Y`)
 """
 function get_gradient(
-    p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, x
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function}, x
 ) where {TC}
     return p.gradient!!(p.M, x)
 end
 function get_gradient(
-    p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, x
 ) where {TC}
     Y = ProductRepr([gi(p.M, x) for gi in p.gradient!!]...)
     return Y
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, x
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function}, X, x
 ) where {TC}
     copyto!(p.M, X, x, get_gradient(p, x))
     return X
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, X, x
 ) where {TC}
     copyto!(p.M, X, x, get_gradient(p, x))
     return X
 end
 function get_gradient(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, x
+    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function}, x
 ) where {TC}
-    Y = zero_tangent_vector(p.M, x)
+    Y = zero_vector(p.M, x)
     return p.gradient!!(p.M, Y, x)
 end
 function get_gradient(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, x
+    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, x
 ) where {TC}
-    Y = zero_tangent_vector(p.M, x)
+    Y = zero_vector(p.M, x)
     get_gradient!(p, Y, x)
     return Y
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, X, x
+    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function}, X, x
 ) where {TC}
     return p.gradient!!(p.M, X, x)
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector}, X, x
+    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, X, x
 ) where {TC}
     for (gi, Xi) in zip(p.gradient!!, submanifold_components(p.M, X))
         gi(p.M, Xi, x)
@@ -115,23 +115,23 @@ end
 Evaluate one of the component gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 """
 function get_gradient(
-    p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, k, x
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function}, k, x
 ) where {TC}
     return get_gradient(p, x)[p.M, k]
 end
 function get_gradient(
-    p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector}, k, x
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector}, k, x
 ) where {TC}
     return p.gradient!![k](p.M, x)
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function}, X, k, x
 ) where {TC}
     copyto!(p.M[k], X, p.gradient!!(p.M, x)[p.M, k])
     return X
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{AllocatingEvaluation,<:Manifold,TC,<:AbstractVector},
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     X,
     k,
     x,
@@ -140,23 +140,23 @@ function get_gradient!(
     return X
 end
 function get_gradient(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC}, k, x
+    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC}, k, x
 ) where {TC}
-    X = zero_tangent_vector(p.M[k], x[p.M, k])
+    X = zero_vector(p.M[k], x[p.M, k])
     get_gradient!(p, X, k, x)
     return X
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:Function}, X, k, x
+    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function}, X, k, x
 ) where {TC}
     # this takes a lot more allocations than other methods, but the gradient can only be evaluated in full
-    Xf = zero_tangent_vector(p.M, x)
+    Xf = zero_vector(p.M, x)
     get_gradient!(p, Xf, x)
     copyto!(p.M[k], X, x[p.M, k], Xf[p.M, k])
     return X
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:Manifold,TC,<:AbstractVector},
+    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     X,
     k,
     x,
@@ -254,7 +254,7 @@ function (s::AlternatingGradient)(
     p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
 )
     # at begin of inner iterations reset internal vector to zero
-    (o.i == 1) && zero_tangent_vector!(p.M, s.dir, o.x)
+    (o.i == 1) && zero_vector!(p.M, s.dir, o.x)
     # update order(k)th component inplace
     get_gradient!(p, s.dir[p.M, o.order[o.k]], o.order[o.k], o.x)
     return o.stepsize(p, o, iter), s.dir # return urrent full gradient
@@ -263,7 +263,7 @@ end
 function (a::ArmijoLinesearch)(
     p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, ::Int
 )
-    X = zero_tangent_vector(p.M, o.x)
+    X = zero_vector(p.M, o.x)
     X[p.M, o.order[o.k]] .= get_gradient(p, o.order[o.k], o.x)
     a.stepsizeOld = linesearch_backtrack(
         p.M,

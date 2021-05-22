@@ -17,7 +17,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     function Λ!(M, Y, x)
         N = TangentBundle(M)
         copyto!(M, Y[N, :point], x)
-        zero_tangent_vector!(N.manifold, Y[N, :vector], Y[N, :point])
+        zero_vector!(N.manifold, Y[N, :vector], Y[N, :point])
         forward_logs!(M, Y[N, :vector], x)
         return Y
     end
@@ -40,10 +40,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
         )
         return η
     end
-    DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
+    DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
     function DΛ!(M, Y, m, X)
         N = TangentBundle(M)
-        zero_tangent_vector!(M, Y[N, :point], m)
+        zero_vector!(M, Y[N, :point], m)
         differential_forward_logs!(M, Y[N, :vector], m, X)
         return Y
     end
@@ -57,7 +57,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)
     x0 = deepcopy(data)
-    ξ0 = ProductRepr(zero_tangent_vector(M, m), zero_tangent_vector(M, m))
+    ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
     p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
     p_linearized = PrimalDualProblem(

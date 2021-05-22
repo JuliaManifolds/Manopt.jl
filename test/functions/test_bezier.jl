@@ -45,7 +45,7 @@ using Manopt, Manifolds, Test
         Bvec = get_bezier_points(M, B, :differentiable)
         Mp = PowerManifold(M, NestedPowerRepresentation(), length(Bvec))
         @test cost_acceleration_bezier(M, Bvec, degrees, T) ≈ 0 atol = 10^-10
-        z = zero_tangent_vector(Mp, Bvec)
+        z = zero_vector(Mp, Bvec)
         distance(Mp, grad_acceleration_bezier(M, Bvec, degrees, T), z)
         @test norm(Mp, Bvec, grad_acceleration_bezier(M, Bvec, degrees, T) - z) ≈ 0 atol =
             10^(-12)
@@ -135,7 +135,7 @@ using Manopt, Manifolds, Test
 
         # out of range
         @test_throws ErrorException adjoint_differential_bezier_control(
-            M, B, 7.0, zero_tangent_vector(M, B[1].pts[1])
+            M, B, 7.0, zero_vector(M, B[1].pts[1])
         )
         # a shortcut to evaluate the adjoint at several points is equal to seperate evals
         b = B[2]
@@ -151,7 +151,7 @@ using Manopt, Manifolds, Test
         @test isapprox(Xs.pts, Ys.pts)
         # differential
         X = BezierSegment([
-            log(M, b.pts[1], b.pts[2]), [zero_tangent_vector(M, b.pts[i]) for i in 2:4]...
+            log(M, b.pts[1], b.pts[2]), [zero_vector(M, b.pts[i]) for i in 2:4]...
         ])
         Ye = zero(X.pts[1])
         @test differential_bezier_control(M, b, 0.0, X) ≈ X.pts[1]

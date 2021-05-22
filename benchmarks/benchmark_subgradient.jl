@@ -6,7 +6,7 @@ x0 = [5.0, 2.0]
 f(M, y) = distance(M, y, x)
 function ∂f(M, y)
     if distance(M, x, y) == 0
-        return zero_tangent_vector(M, y)
+        return zero_vector(M, y)
     end
     return -2 * log(M, y, x) / max(10 * eps(Float64), distance(M, x, y))
 end
@@ -16,7 +16,7 @@ x1 = subgradient_method(M, f, ∂f, x0)
 function ∂f!(M, X, y)
     d = distance(M, x, y)
     if d == 0
-        return zero_tangent_vector!(M, X, y)
+        return zero_vector!(M, X, y)
     end
     log!(M, X, y, x)
     X .*= -2 / max(10 * eps(Float64), d)

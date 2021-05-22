@@ -52,7 +52,7 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function conjugate_gradient_descent(
-    M::Manifold, F::TF, gradF::TDF, x; kwargs...
+    M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
 ) where {TF,TDF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
@@ -77,7 +77,7 @@ for more details and options, especially the [`DirectionUpdateRule`](@ref)s,
  see [`conjugate_gradient_descent`](@ref).
 """
 function conjugate_gradient_descent!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     gradF::TDF,
     x;
