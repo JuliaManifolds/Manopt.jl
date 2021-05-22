@@ -18,33 +18,18 @@ function run_rayleigh_minimization(n::Int)
         ApproxHessianSymmetricRankOne(M, x, gradF; nu=eps(Float64)^2),
         x;
         stopping_criterion=StopWhenAny(
-            StopAfterIteration(100),
-            StopWhenGradientNormLess(norm(M, x, gradF(M, x)) * 10^(-6)),
+            StopAfterIteration(1000),
+            StopWhenGradientNormLess(10^(-6)),
         ),
-        max_trust_region_radius=8.0,
-        debug=[
-            :Iteration, " ", :Cost, " | ", DebugEntry(:trust_region_radius), "\n", 1, :Stop
-        ],
-    ),
-    trust_regions!(
-        M,
-        F,
-        gradF,
-        HessF,
-        x;
-        stopping_criterion=StopWhenAny(
-            StopAfterIteration(500),
-            StopWhenGradientNormLess(norm(M, x, gradF(M, x)) * 10^(-6)),
-        ),
-        max_trust_region_radius=8.0,
-        debug=[
-            :Iteration, " ", :Cost, " | ", DebugEntry(:trust_region_radius), "\n", 1, :Stop
-        ],
+        θ=0.1,
+        κ=0.9,
+        trust_region_radius=1.0,
+        retraction_method=ProjectionRetraction()
     )
 end
 io = IOBuffer()
 
-for n in [100]
+for n in [50, 100, 200]
     b = @benchmark run_rayleigh_minimization($n) samples = 30
     show(io, "text/plain", b)
     s = String(take!(io))
