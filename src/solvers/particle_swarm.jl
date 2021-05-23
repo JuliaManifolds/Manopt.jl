@@ -73,7 +73,7 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function particle_swarm(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF;
     n::Int=100,
     x0::AbstractVector=[random_point(M) for i in 1:n],
@@ -100,7 +100,7 @@ in place of `x0`.
 for more optional arguments, see [`particle_swarm`](@ref).
 """
 function particle_swarm!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF;
     n::Int=100,
     x0::AbstractVector=[random_point(M) for i in 1:n],

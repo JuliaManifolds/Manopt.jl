@@ -54,7 +54,9 @@ The ``k``th iteration consists of
 OR
 * `options` – the options returned by the solver (see `return_options`)
 """
-function quasi_Newton(M::Manifold, F::Function, gradF::G, x::P; kwargs...) where {P,G}
+function quasi_Newton(
+    M::AbstractManifold, F::Function, gradF::G, x::P; kwargs...
+) where {P,G}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return quasi_Newton!(M, F, gradF, x_res; kwargs...)
@@ -74,7 +76,7 @@ in the point `x` using a retraction ``R`` and a vector transport ``T``.
 For all optional parameters, see [`quasi_Newton`](@ref).
 """
 function quasi_Newton!(
-    M::Manifold,
+    M::AbstractManifold,
     F::Function,
     gradF::G,
     x::P;
@@ -100,7 +102,7 @@ function quasi_Newton!(
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             direction_update,
-            zero_tangent_vector(M, x),
+            zero_vector(M, x),
             memory_size;
             scale=scale_initial_operator,
             vector_transport_method=vector_transport_method,
@@ -169,7 +171,7 @@ function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
 end
 
 function locking_condition_scale(
-    M::Manifold, ::AbstractQuasiNewtonDirectionUpdate, x_old, v, x, vt
+    M::AbstractManifold, ::AbstractQuasiNewtonDirectionUpdate, x_old, v, x, vt
 )
     return norm(M, x_old, v) / norm(M, x, vector_transport_to(M, x_old, v, x, vt))
 end
@@ -292,9 +294,7 @@ function update_hessian!(
     d.matrix =
         d.matrix - (d.matrix * yk_c * yk_c' * d.matrix) / ykBkyk_c +
         (sk_c * sk_c') / skyk_c +
-        φ *
-        ykBkyk_c *
-        (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c) *
+        φ * ykBkyk_c * (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c) *
         (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c)'
     return d
 end
@@ -312,9 +312,7 @@ function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{Broyden}, p, o, x_o
     d.matrix =
         d.matrix - (d.matrix * sk_c * sk_c' * d.matrix) / skHksk_c +
         (yk_c * yk_c') / skyk_c +
-        φ *
-        skHksk_c *
-        (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c) *
+        φ * skHksk_c * (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c) *
         (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c)'
     return d
 end
@@ -350,13 +348,13 @@ function update_broyden_factor!(d, sk_c, ::Any, skyk_c, ykBkyk_c, ::Val{:Inverse
 end
 
 function update_basis!(
-    b::AbstractBasis, ::Manifold, ::P, ::P, ::AbstractVectorTransportMethod
+    b::AbstractBasis, ::AbstractManifold, ::P, ::P, ::AbstractVectorTransportMethod
 ) where {P}
     return b
 end
 
 function update_basis!(
-    b::CachedBasis, M::Manifold, x::P, y::P, m::AbstractVectorTransportMethod
+    b::CachedBasis, M::AbstractManifold, x::P, y::P, m::AbstractVectorTransportMethod
 ) where {P}
     # transport all basis tangent vectors in the tangent space of the next iterate
     for v in b.data

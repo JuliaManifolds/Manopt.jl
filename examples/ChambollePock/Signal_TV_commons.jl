@@ -23,5 +23,5 @@ function prox_G_dual(N, n, λ, ξ)
     )
 end
 
-DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
+DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
 adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])

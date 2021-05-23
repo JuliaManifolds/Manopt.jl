@@ -31,7 +31,7 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function cyclic_proximal_point(
-    M::Manifold, F::Function, proxes::Union{Tuple,AbstractVector}, x0; kwargs...
+    M::AbstractManifold, F::Function, proxes::Union{Tuple,AbstractVector}, x0; kwargs...
 )
     x_res = allocate(x0)
     copyto!(M, x_res, x0)
@@ -53,7 +53,7 @@ perform a cyclic proximal point algorithm in place of `x`.
 for all options, see [`cyclic_proximal_point`](@ref).
 """
 function cyclic_proximal_point!(
-    M::Manifold,
+    M::AbstractManifold,
     F::Function,
     proxes::Union{Tuple,AbstractVector},
     x0;

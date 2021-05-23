@@ -6,8 +6,8 @@ Compute the mid point between `p` and `q`. If there is more than one mid point
 of (not neccessarily minimizing) geodesics (e.g. on the sphere), the one nearest
 to `x` is returned (in place of `y`).
 """
-mid_point(M::Manifold, p, q, ::Any) = mid_point(M, p, q)
-mid_point!(M::Manifold, y, p, q, ::Any) = mid_point!(M, y, p, q)
+mid_point(M::AbstractManifold, p, q, ::Any) = mid_point(M, p, q)
+mid_point!(M::AbstractManifold, y, p, q, ::Any) = mid_point!(M, y, p, q)
 
 function mid_point(M::Circle, p, q, x)
     if distance(M, p, q) ≈ π
@@ -67,11 +67,11 @@ function ``f: \mathcal M → \mathcal M``, i.e.,
 
 Compute the result in `q`.
 
-see also [`reflect`](@ref reflect(M::Manifold, p, x))`(M,p,x)`.
+see also [`reflect`](@ref reflect(M::AbstractManifold, p, x))`(M,p,x)`.
 """
 
-reflect(M::Manifold, pr::Function, x) = reflect(M, pr(x), x)
-reflect!(M::Manifold, q, pr::Function, x) = reflect!(M, q, pr(x), x)
+reflect(M::AbstractManifold, pr::Function, x) = reflect(M, pr(x), x)
+reflect!(M::AbstractManifold, q, pr::Function, x) = reflect!(M, q, pr(x), x)
 
 @doc raw"""
     reflect(M, p, x)
@@ -85,5 +85,5 @@ reflect the point `x` from the manifold `M` at point `p`, i.e.
 where exp and log denote the exponential and logarithmic map on `M`.
 This can also be done in place of `q`.
 """
-reflect(M::Manifold, p, x) = exp(M, p, -log(M, p, x))
-reflect!(M::Manifold, q, p, x) = exp!(M, q, p, -log(M, p, x))
+reflect(M::AbstractManifold, p, x) = exp(M, p, -log(M, p, x))
+reflect!(M::AbstractManifold, q, p, x) = exp!(M, q, p, -log(M, p, x))

@@ -18,13 +18,13 @@ the type `T` can be set for consistency reasons with other problems.
 # See also
 [`NelderMead`](@ref)
 """
-struct CostProblem{T,mT<:Manifold,Tcost} <: Problem{T}
+struct CostProblem{T,mT<:AbstractManifold,Tcost} <: Problem{T}
     M::mT
     cost::Tcost
 end
 function CostProblem(
     M::mT, cost::T; evaluation::AbstractEvaluationType=AllocatingEvaluation()
-) where {mT<:Manifold,T}
+) where {mT<:AbstractManifold,T}
     return CostProblem{typeof(evaluation),mT,T}(M, cost)
 end
 @doc raw"""
@@ -89,7 +89,7 @@ mutable struct NelderMeadOptions{
         σ=1 / 2,
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
-    ) where {MT<:Manifold}
+    ) where {MT<:AbstractManifold}
         p = [random_point(M) for i in 1:(manifold_dimension(M) + 1)]
         return new{
             eltype(p),

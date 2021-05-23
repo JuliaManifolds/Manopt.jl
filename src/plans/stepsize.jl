@@ -151,7 +151,7 @@ perform a linesearch for
 * an offset, ``f_0 = F(x)``
 """
 function linesearch_backtrack(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     x,
     gradFx::T,
@@ -341,7 +341,7 @@ function (a::NonmonotoneLinesearch)(
 end
 function (a::NonmonotoneLinesearch)(
     M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int
-) where {mT<:Manifold,TF,T}
+) where {mT<:AbstractManifold,TF,T}
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space
     grad_diff =
         gradFx - vector_transport_to(M, old_x, old_gradient, x, a.vector_transport_method)
@@ -447,7 +447,7 @@ end
 
 function (a::WolfePowellLineseach)(
     p::P, o::O, ::Int, η=-get_gradient(p, o.x)
-) where {P<:GradientProblem{T,mT} where {T,mT<:Manifold},O<:Options}
+) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     s = 1.0
     s_plus = 1.0
     s_minus = 1.0
@@ -555,7 +555,7 @@ end
 
 function (a::WolfePowellBinaryLinesearch)(
     p::P, o::O, ::Int, η=-get_gradient(p, o.x)
-) where {P<:GradientProblem{T,mT} where {T,mT<:Manifold},O<:Options}
+) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     α = 0.0
     β = Inf
     t = 1.0

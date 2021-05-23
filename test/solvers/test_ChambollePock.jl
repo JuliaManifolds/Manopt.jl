@@ -38,13 +38,13 @@ using Manopt, Manifolds, ManifoldsBase, Test
         )
         return η
     end
-    DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
+    DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
     adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)
     x0 = deepcopy(data)
-    ξ0 = ProductRepr(zero_tangent_vector(M, m), zero_tangent_vector(M, m))
+    ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
     @testset "Test Variants" begin
         callargs_linearized = [M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_DΛ]
         o1 = ChambollePock(

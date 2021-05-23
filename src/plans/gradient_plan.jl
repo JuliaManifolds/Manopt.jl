@@ -27,14 +27,14 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be pro
 # See also
 [`gradient_descent`](@ref), [`GradientDescentOptions`](@ref)
 """
-struct GradientProblem{T,mT<:Manifold,C,G} <: AbstractGradientProblem{T}
+struct GradientProblem{T,mT<:AbstractManifold,C,G} <: AbstractGradientProblem{T}
     M::mT
     cost::C
     gradient!!::G
 end
 function GradientProblem(
     M::mT, cost::C, gradient::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()
-) where {mT<:Manifold,C,G}
+) where {mT<:AbstractManifold,C,G}
     return GradientProblem{typeof(evaluation),mT,C,G}(M, cost, gradient)
 end
 
@@ -55,7 +55,7 @@ function get_gradient(p::AbstractGradientProblem{AllocatingEvaluation}, x)
     return p.gradient!!(p.M, x)
 end
 function get_gradient(p::AbstractGradientProblem{MutatingEvaluation}, x)
-    X = zero_tangent_vector(p.M, x)
+    X = zero_vector(p.M, x)
     return p.gradient!!(p.M, X, x)
 end
 
@@ -116,7 +116,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 construct a Gradient Descent Option with the fields and defaults as above,
 where the first can be used if points (`x`)  and tangent vectors (`gradient`) have the same type,
 for example when they are matrices.
-The second uses the `Manifold M` to set `gradient=zero_tangent_vector(M,x)`.
+The second uses the `Manifold M` to set `gradient=zero_vector(M,x)`.
 
 # See also
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
@@ -172,14 +172,14 @@ function GradientDescentOptions(
     )
 end
 function GradientDescentOptions(
-    M::Manifold,
+    M::AbstractManifold,
     x::P;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P}
-    X = zero_tangent_vector(M, x)
+    X = zero_vector(M, x)
     return GradientDescentOptions(
         x,
         X;
@@ -203,7 +203,7 @@ where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector 
 last direction multiplied by momentum ``m``.
 
 # Fields
-* `gradient` – (`zero_tangent_vector(M,x0)`) the last gradient/direction update added as momentum
+* `gradient` – (`zero_vector(M,x0)`) the last gradient/direction update added as momentum
 * `last_iterate` - remember the last iterate for parallel transporting the last direction
 * `momentum` – (`0.2`) factor for momentum
 * `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
@@ -215,7 +215,7 @@ last direction multiplied by momentum ``m``.
         p::GradientProlem,
         x0,
         s::DirectionUpdateRule=Gradient();
-        gradient=zero_tangent_vector(p.M, o.x), momentum=0.2
+        gradient=zero_vector(p.M, o.x), momentum=0.2
        vector_transport_method=ParallelTransport(),
     )
 
@@ -226,7 +226,7 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
         p::StochasticGradientProblem
         x0
         s::DirectionUpdateRule=IdentityUpdateRule();
-        gradient=zero_tangent_vector(p.M, x0), momentum=0.2
+        gradient=zero_vector(p.M, x0), momentum=0.2
        vector_transport_method=ParallelTransport(),
     )
 
@@ -246,7 +246,7 @@ function MomentumGradient(
     s::DirectionUpdateRule=IdentityUpdateRule();
     last_iterate=x0,
     vector_transport_method::VTM=ParallelTransport(),
-    gradient=zero_tangent_vector(p.M, x0),
+    gradient=zero_vector(p.M, x0),
     momentum=0.2,
 ) where {P,VTM<:AbstractVectorTransportMethod}
     return MomentumGradient{P,typeof(gradient),typeof(momentum),VTM}(
@@ -254,10 +254,10 @@ function MomentumGradient(
     )
 end
 function MomentumGradient(
-    M::Manifold,
+    M::AbstractManifold,
     x0::P,
     s::DirectionUpdateRule=IdentityUpdateRule();
-    gradient=zero_tangent_vector(M, x0),
+    gradient=zero_vector(M, x0),
     last_iterate=x0,
     momentum=0.2,
     vector_transport_method::VTM=ParallelTransport(),
@@ -284,7 +284,7 @@ inner processor) and the last iterate are stored, average is taken after vector 
 them to the current iterates tangent space.
 
 # Fields
-* `gradients` – (fill(`zero_tangent_vector(M,x0),n)`) the last `n` gradient/direction updates
+* `gradients` – (fill(`zero_vector(M,x0),n)`) the last `n` gradient/direction updates
 * `last_iterate` – last iterate (needed to transport the gradients)
 * `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
   apply the averaging to
@@ -296,7 +296,7 @@ them to the current iterates tangent space.
         x0,
         n::Int=10
         s::DirectionUpdateRule=IdentityUpdateRule();
-        gradients = fill(zero_tangent_vector(p.M, o.x),n),
+        gradients = fill(zero_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
         vector_transport_method = ParallelTransport()
     )
@@ -309,7 +309,7 @@ Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`
         x0
         n::Int=10
         s::DirectionUpdateRule=IdentityUpdateRule();
-        gradients = fill(zero_tangent_vector(p.M, o.x),n),
+        gradients = fill(zero_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
         vector_transport_method = ParallelTransport()
     )
@@ -324,11 +324,11 @@ mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function AverageGradient(
-    M::Manifold,
+    M::AbstractManifold,
     x0::P,
     n::Int=10,
     s::DirectionUpdateRule=IdentityUpdateRule();
-    gradients=fill(zero_tangent_vector(M, x0), n),
+    gradients=fill(zero_vector(M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM<:AbstractVectorTransportMethod}
     return AverageGradient{P,eltype(gradients),VTM}(
@@ -340,7 +340,7 @@ function AverageGradient(
     x0::P,
     n::Int=10,
     s::DirectionUpdateRule=IdentityUpdateRule();
-    gradients=fill(zero_tangent_vector(p.M, x0), n),
+    gradients=fill(zero_vector(p.M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM}
     return AverageGradient{P,eltype(gradients),VTM}(

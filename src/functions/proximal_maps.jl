@@ -18,7 +18,7 @@ For the mutating variant the computation is done in place of `y`.
 # Ouput
 * `y` – the result of the proximal map of ``φ``
 """
-function prox_distance(M::Manifold, λ, f, x, p::Int=2)
+function prox_distance(M::AbstractManifold, λ, f, x, p::Int=2)
     d = distance(M, f, x)
     if p == 2
         t = λ / (1 + λ)
@@ -33,7 +33,7 @@ function prox_distance(M::Manifold, λ, f, x, p::Int=2)
     end
     return exp(M, x, log(M, x, f), t)
 end
-function prox_distance!(M::Manifold, y, λ, f, x, p::Int=2)
+function prox_distance!(M::AbstractManifold, y, λ, f, x, p::Int=2)
     d = distance(M, f, x)
     if p == 2
         t = λ / (1 + λ)
@@ -73,7 +73,7 @@ parameter `λ`.
 * `(y1,y2)` – resulting tuple of points of the ``\operatorname{prox}_{λφ}(```(x1,x2)```)``.
   The result can also be computed in place.
 """
-function prox_TV(M::Manifold, λ::Number, x::Tuple{T,T}, p::Int=1) where {T}
+function prox_TV(M::AbstractManifold, λ::Number, x::Tuple{T,T}, p::Int=1) where {T}
     d = distance(M, x[1], x[2])
     if p == 1
         t = min(0.5, λ / d)
@@ -88,7 +88,7 @@ function prox_TV(M::Manifold, λ::Number, x::Tuple{T,T}, p::Int=1) where {T}
     end
     return (exp(M, x[1], log(M, x[1], x[2]), t), exp(M, x[2], log(M, x[2], x[1]), t))
 end
-function prox_TV!(M::Manifold, y, λ::Number, x::Tuple{T,T}, p::Int=1) where {T}
+function prox_TV!(M::AbstractManifold, y, λ::Number, x::Tuple{T,T}, p::Int=1) where {T}
     d = distance(M, x[1], x[2])
     if p == 1
         t = min(0.5, λ / d)
@@ -304,7 +304,7 @@ The result can be computed in place of `y`.
   The computation can also be done in place.
 """
 function prox_TV2(
-    M::Manifold,
+    M::AbstractManifold,
     λ,
     x::Tuple{T,T,T},
     p::Int=1;
@@ -325,7 +325,7 @@ function prox_TV2(
     return (xR...,)
 end
 function prox_TV2!(
-    M::Manifold,
+    M::AbstractManifold,
     y,
     λ,
     x::Tuple{T,T,T},

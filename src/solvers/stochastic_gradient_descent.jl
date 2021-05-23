@@ -31,7 +31,7 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function stochastic_gradient_descent(
-    M::Manifold, gradF::Union{Function,AbstractVector{<:Function}}, x; kwargs...
+    M::AbstractManifold, gradF::Union{Function,AbstractVector{<:Function}}, x; kwargs...
 )
     x_res = allocate(x)
     copyto!(M, x_res, x)
@@ -52,11 +52,11 @@ perform a stochastic gradient descent in place of `x`.
 for all optional parameters, see [`stochastic_gradient_descent`](@ref).
 """
 function stochastic_gradient_descent!(
-    M::Manifold,
+    M::AbstractManifold,
     gradF::Union{Function,AbstractVector{<:Function}},
     x;
     cost::Union{Function,Missing}=Missing(),
-    direction::DirectionUpdateRule=StochasticGradient(zero_tangent_vector(M, x)),
+    direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stoping_criterion::StoppingCriterion=StopAfterIteration(10000) |
                                          StopWhenGradientNormLess(1e-9),
@@ -71,7 +71,7 @@ function stochastic_gradient_descent!(
     p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
     o = StochasticGradientDescentOptions(
         x,
-        zero_tangent_vector(M, x),
+        zero_vector(M, x),
         direction;
         stoping_criterion=stoping_criterion,
         stepsize=stepsize,

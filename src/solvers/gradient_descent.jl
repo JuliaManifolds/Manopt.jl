@@ -34,7 +34,9 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function gradient_descent(M::Manifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
+function gradient_descent(
+    M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
+) where {TF,TDF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return gradient_descent!(M, F, gradF, x_res; kwargs...)
@@ -54,7 +56,7 @@ with different choices of ``s_k`` available.
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
 """
 function gradient_descent!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     gradF::TDF,
     x;

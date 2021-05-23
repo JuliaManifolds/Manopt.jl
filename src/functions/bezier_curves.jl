@@ -24,7 +24,7 @@ end
 Base.show(io::IO, b::BezierSegment) = print(io, "BezierSegment($(b.pts))")
 
 @doc raw"""
-    de_casteljau(M::Manifold, b::BezierSegment NTuple{N,P}) -> Function
+    de_casteljau(M::AbstractManifold, b::BezierSegment NTuple{N,P}) -> Function
 
 return the [Bézier curve](https://en.wikipedia.org/wiki/Bézier_curve)
 ``β(⋅;b_0,…,b_n): [0,1] → \mathcal M`` defined by the control points
@@ -42,7 +42,7 @@ shortest geodesic connecting ``a,b∈\mathcal M``. Then the curve is defined by 
 
 and `P` is the type of a point on the `Manifold` `M`.
 
-    de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment}) -> Function
+    de_casteljau(M::AbstractManifold, B::AbstractVector{<:BezierSegment}) -> Function
 
 Given a vector of Bézier segments, i.e. a vector of control points
 ``B=\bigl( (b_{0,0},…,b_{n_0,0}),…,(b_{0,m},… b_{n_m,m}) \bigr)``,
@@ -60,11 +60,11 @@ c_B(t) :=
 ````
 
 ````julia
-de_casteljau(M::Manifold, b::BezierSegment, t::Real)
-de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment}, t::Real)
-de_casteljau(M::Manifold, b::BezierSegment, T::AbstractVector) -> AbstractVector
+de_casteljau(M::AbstractManifold, b::BezierSegment, t::Real)
+de_casteljau(M::AbstractManifold, B::AbstractVector{<:BezierSegment}, t::Real)
+de_casteljau(M::AbstractManifold, b::BezierSegment, T::AbstractVector) -> AbstractVector
 de_casteljau(
-    M::Manifold,
+    M::AbstractManifold,
     B::AbstractVector{<:BezierSegment},
     T::AbstractVector
 ) -> AbstractVector
@@ -83,8 +83,8 @@ Evaluate the Bézier curve at time `t` or at times `t` in `T`.
     > manifolds. Journal of Approximation Theory (2007), 148(2), pp. 111–127.-
     > doi: [10.1016/j.jat.2007.03.002](https://doi.org/10.1016/j.jat.2007.03.002).
 """
-de_casteljau(M::Manifold, ::Any...)
-function de_casteljau(M::Manifold, b::BezierSegment)
+de_casteljau(M::AbstractManifold, ::Any...)
+function de_casteljau(M::AbstractManifold, b::BezierSegment)
     if length(b.pts) == 2
         return t -> shortest_geodesic(M, b.pts[1], b.pts[2], t)
     else
@@ -96,7 +96,7 @@ function de_casteljau(M::Manifold, b::BezierSegment)
         )
     end
 end
-function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment})
+function de_casteljau(M::AbstractManifold, B::AbstractVector{<:BezierSegment})
     length(B) == 1 && return de_casteljau(M, B[1])
     return function (t)
         ((0 > t) || (t > length(B))) && throw(
@@ -110,7 +110,7 @@ function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment})
     end
 end
 # the direct evaluation can be done iteratively
-function de_casteljau(M::Manifold, b::BezierSegment, t::Real)
+function de_casteljau(M::AbstractManifold, b::BezierSegment, t::Real)
     if length(b.pts) == 2
         return shortest_geodesic(M, b.pts[1], b.pts[2], t)
     else
@@ -121,7 +121,7 @@ function de_casteljau(M::Manifold, b::BezierSegment, t::Real)
     end
     return c[1]
 end
-function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment}, t::Real)
+function de_casteljau(M::AbstractManifold, B::AbstractVector{<:BezierSegment}, t::Real)
     ((0 > t) || (t > length(B))) && throw(
         DomainError(
             "Parameter $(t) outside of domain of the composite Bézier curve [0,$(length(B))].",
@@ -131,11 +131,11 @@ function de_casteljau(M::Manifold, B::AbstractVector{<:BezierSegment}, t::Real)
         M, B[max(ceil(Int, t), 1)], ceil(Int, t) == 0 ? 0.0 : t - ceil(Int, t) + 1
     )
 end
-de_casteljau(M::Manifold, b, T::AbstractVector) = de_casteljau.(Ref(M), Ref(b), T)
+de_casteljau(M::AbstractManifold, b, T::AbstractVector) = de_casteljau.(Ref(M), Ref(b), T)
 
 @doc raw"""
-    get_bezier_junction_tangent_vectors(M::Manifold, B::AbstractVector{<:BezierSegment})
-    get_bezier_junction_tangent_vectors(M::Manifold, b::BezierSegment)
+    get_bezier_junction_tangent_vectors(M::AbstractManifold, B::AbstractVector{<:BezierSegment})
+    get_bezier_junction_tangent_vectors(M::AbstractManifold, b::BezierSegment)
 
 returns the tangent vectors at start and end points of the composite Bézier curve
 pointing from a junction point to the first and last
@@ -143,7 +143,7 @@ inner control points for each segment of the composite Bezier curve specified by
 the control points `B`, either a vector of segments of controlpoints.
 """
 function get_bezier_junction_tangent_vectors(
-    M::Manifold, B::AbstractVector{<:BezierSegment}
+    M::AbstractManifold, B::AbstractVector{<:BezierSegment}
 ) where {P}
     return cat(
         [[log(M, b.pts[1], b.pts[2]), log(M, b.pts[end], b.pts[end - 1])] for b in B]...,
@@ -151,20 +151,22 @@ function get_bezier_junction_tangent_vectors(
         dims=1,
     )
 end
-function get_bezier_junction_tangent_vectors(M::Manifold, b::BezierSegment) where {P,N}
+function get_bezier_junction_tangent_vectors(
+    M::AbstractManifold, b::BezierSegment
+) where {P,N}
     return get_bezier_junction_tangent_vectors(M, [b])
 end
 
 @doc raw"""
-    get_bezier_junctions(M::Manifold, B::AbstractVector{<:BezierSegment})
-    get_bezier_junctions(M::Manifold, b::BezierSegment)
+    get_bezier_junctions(M::AbstractManifold, B::AbstractVector{<:BezierSegment})
+    get_bezier_junctions(M::AbstractManifold, b::BezierSegment)
 
 returns the start and end point(s) of the segments of the composite Bézier curve
 specified by the control points `B`. For just one segment `b`, its start and end points
 are returned.
 """
 function get_bezier_junctions(
-    ::Manifold, B::AbstractVector{<:BezierSegment}, double_inner::Bool=false
+    ::AbstractManifold, B::AbstractVector{<:BezierSegment}, double_inner::Bool=false
 )
     return cat(
         [double_inner ? [b.pts[[1, end]]...] : [b.pts[1]] for b in B]...,
@@ -172,32 +174,32 @@ function get_bezier_junctions(
         dims=1,
     )
 end
-function get_bezier_junctions(::Manifold, b::BezierSegment, ::Bool=false)
+function get_bezier_junctions(::AbstractManifold, b::BezierSegment, ::Bool=false)
     return b.pts[[1, end]]
 end
 
 @doc raw"""
-    get_bezier_inner_points(M::Manifold, B::AbstractVector{<:BezierSegment} )
-    get_bezier_inner_points(M::Manifold, b::BezierSegment)
+    get_bezier_inner_points(M::AbstractManifold, B::AbstractVector{<:BezierSegment} )
+    get_bezier_inner_points(M::AbstractManifold, b::BezierSegment)
 
 returns the inner (i.e. despite start and end) points of the segments of the
 composite Bézier curve specified by the control points `B`. For a single segment `b`,
 its inner points are returned
 """
-function get_bezier_inner_points(M::Manifold, B::AbstractVector{<:BezierSegment})
+function get_bezier_inner_points(M::AbstractManifold, B::AbstractVector{<:BezierSegment})
     return cat([[get_bezier_inner_points(M, b)...] for b in B]...; dims=1)
 end
-function get_bezier_inner_points(::Manifold, b::BezierSegment)
+function get_bezier_inner_points(::AbstractManifold, b::BezierSegment)
     return b.pts[2:(end - 1)]
 end
 
 @doc raw"""
     get_bezier_points(
-        M::MAnifold,
+        M::AbstractManifold,
         B::AbstractVector{<:BezierSegment},
         reduce::Symbol=:default
     )
-    get_bezier_points(M::Manifold, b::BezierSegment, reduce::Symbol=:default)
+    get_bezier_points(M::AbstractManifold, b::BezierSegment, reduce::Symbol=:default)
 
 returns the control points of the segments of the composite Bézier curve
 specified by the control points `B`, either a vector of segments of
@@ -215,47 +217,49 @@ This method reduces the points depending on the optional `reduce` symbol
 If only one segment is given, all points of `b` – i.e. `b.pts` is returned.
 """
 function get_bezier_points(
-    M::Manifold, B::AbstractVector{<:BezierSegment}, reduce::Symbol=:default
+    M::AbstractManifold, B::AbstractVector{<:BezierSegment}, reduce::Symbol=:default
 )
     return get_bezier_points(M, B, Val(reduce))
 end
-function get_bezier_points(::Manifold, B::AbstractVector{<:BezierSegment}, ::Val{:default})
+function get_bezier_points(
+    ::AbstractManifold, B::AbstractVector{<:BezierSegment}, ::Val{:default}
+)
     return cat([[b.pts...] for b in B]...; dims=1)
 end
 function get_bezier_points(
-    ::Manifold, B::AbstractVector{<:BezierSegment}, ::Val{:continuous}
+    ::AbstractManifold, B::AbstractVector{<:BezierSegment}, ::Val{:continuous}
 )
     return cat([[b.pts[1:(end - 1)]...] for b in B]..., [last(last(B).pts)]; dims=1)
 end
 function get_bezier_points(
-    ::Manifold, B::AbstractVector{<:BezierSegment}, ::Val{:differentiable}
+    ::AbstractManifold, B::AbstractVector{<:BezierSegment}, ::Val{:differentiable}
 )
     return cat(
         [first(B).pts[1]], [first(B).pts[2]], [[b.pts[3:end]...] for b in B]..., ; dims=1
     )
 end
-get_bezier_points(::Manifold, b::BezierSegment, ::Symbol=:default) = b.pts
+get_bezier_points(::AbstractManifold, b::BezierSegment, ::Symbol=:default) = b.pts
 
 @doc raw"""
-    get_bezier_degree(M::Manifold, b::BezierSegment)
+    get_bezier_degree(M::AbstractManifold, b::BezierSegment)
 
 return the degree of the Bézier curve represented by the tuple `b` of control points on
 the manifold `M`, i.e. the number of points minus 1.
 """
-get_bezier_degree(::Manifold, b::BezierSegment) = length(b.pts) - 1
+get_bezier_degree(::AbstractManifold, b::BezierSegment) = length(b.pts) - 1
 
 @doc raw"""
-    get_bezier_degrees(M::Manifold, B::AbstractVector{<:BezierSegment})
+    get_bezier_degrees(M::AbstractManifold, B::AbstractVector{<:BezierSegment})
 
 return the degrees of the components of a composite Bézier curve represented by tuples
 in `B` containing points on the manifold `M`.
 """
-function get_bezier_degrees(M::Manifold, B::AbstractVector{<:BezierSegment})
+function get_bezier_degrees(M::AbstractManifold, B::AbstractVector{<:BezierSegment})
     return get_bezier_degree.(Ref(M), B)
 end
 
 @doc raw"""
-    get_bezier_segments(M::Manifold, c::AbstractArray{P}, d[, s::Symbol=:default])
+    get_bezier_segments(M::AbstractManifold, c::AbstractArray{P}, d[, s::Symbol=:default])
 
 returns the array of [`BezierSegment`](@ref)s `B` of a composite Bézier curve reconstructed
 from an array `c` of points on the manifold `M` and an array of degrees `d`.
@@ -283,16 +287,22 @@ curve consists of. Then
   in the next segment the junction is computed as
   ``b = \exp_{c_n}(-\log_{c_n} c_{n-1})`` such that the assumed differentiability holds
 """
-function get_bezier_segments(M::Manifold, c::Array{P,1}, d, s::Symbol=:default) where {P}
+function get_bezier_segments(
+    M::AbstractManifold, c::Array{P,1}, d, s::Symbol=:default
+) where {P}
     ((length(c) == d[1]) && (length(d) == 1)) && return Tuple(c)
     return get_bezier_segments(M, c, d, Val(s))
 end
-function get_bezier_segments(::Manifold, c::Array{P,1}, d, ::Val{:default}) where {P}
+function get_bezier_segments(
+    ::AbstractManifold, c::Array{P,1}, d, ::Val{:default}
+) where {P}
     endindices = cumsum(d .+ 1)
     startindices = endindices - d
     return [BezierSegment(c[si:ei]) for (si, ei) in zip(startindices, endindices)]
 end
-function get_bezier_segments(::Manifold, c::Array{P,1}, d, ::Val{:continuous}) where {P}
+function get_bezier_segments(
+    ::AbstractManifold, c::Array{P,1}, d, ::Val{:continuous}
+) where {P}
     length(c) != (sum(d) + 1) && error(
         "The number of control points $(length(c)) does not match (for degrees $(d) expcted $(sum(d)+1) points.",
     )
@@ -308,7 +318,7 @@ function get_bezier_segments(::Manifold, c::Array{P,1}, d, ::Val{:continuous}) w
     ]
 end
 function get_bezier_segments(
-    M::Manifold, c::Array{P,1}, d, ::Val{:differentiable}
+    M::AbstractManifold, c::Array{P,1}, d, ::Val{:differentiable}
 ) where {P}
     length(c) != (sum(d .- 1) + 2) && error(
         "The number of control points $(length(c)) does not match (for degrees $(d) expected $(sum(d.-1)+2) points.",

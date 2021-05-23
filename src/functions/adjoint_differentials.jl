@@ -1,7 +1,7 @@
 @doc raw"""
-    adjoint_differential_bezier_control(M::Manifold, b::BezierSegment, t, η)
+    adjoint_differential_bezier_control(M::AbstractManifold, b::BezierSegment, t, η)
     adjoint_differential_bezier_control!(
-        M::Manifold,
+        M::AbstractManifold,
         Y::BezierSegment,
         b::BezierSegment,
         t,
@@ -15,7 +15,7 @@ This can be computed in place of `Y`.
 
 See [`de_casteljau`](@ref) for more details on the curve.
 """
-function adjoint_differential_bezier_control(M::Manifold, b::BezierSegment, t, η)
+function adjoint_differential_bezier_control(M::AbstractManifold, b::BezierSegment, t, η)
     n = length(b.pts)
     if n == 2
         return BezierSegment([
@@ -34,9 +34,9 @@ function adjoint_differential_bezier_control(M::Manifold, b::BezierSegment, t, �
                 adjoint_differential_geodesic_startpoint.(
                     Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y[1:(n - i)]
                 )...,
-                zero_tangent_vector(M, c[i][end]),
+                zero_vector(M, c[i][end]),
             ] .+ [
-                zero_tangent_vector(M, c[i][1]),
+                zero_vector(M, c[i][1]),
                 adjoint_differential_geodesic_endpoint.(
                     Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y[1:(n - i)]
                 )...,
@@ -45,7 +45,7 @@ function adjoint_differential_bezier_control(M::Manifold, b::BezierSegment, t, �
     return BezierSegment(Y)
 end
 function adjoint_differential_bezier_control!(
-    M::Manifold, Y::BezierSegment, b::BezierSegment, t, η
+    M::AbstractManifold, Y::BezierSegment, b::BezierSegment, t, η
 )
     n = length(b.pts)
     if n == 2
@@ -64,9 +64,9 @@ function adjoint_differential_bezier_control!(
                 adjoint_differential_geodesic_startpoint.(
                     Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y.pts[1:(n - i)]
                 )...,
-                zero_tangent_vector(M, c[i][end]),
+                zero_vector(M, c[i][end]),
             ] .+ [
-                zero_tangent_vector(M, c[i][1]),
+                zero_vector(M, c[i][1]),
                 adjoint_differential_geodesic_endpoint.(
                     Ref(M), c[i][1:(end - 1)], c[i][2:end], Ref(t), Y.pts[1:(n - i)]
                 )...,
@@ -77,13 +77,13 @@ end
 
 @doc raw"""
     adjoint_differential_bezier_control(
-        M::Manifold,
+        M::AbstractManifold,
         b::BezierSegment,
         t::AbstractVector,
         X::AbstractVector,
     )
     adjoint_differential_bezier_control!(
-        M::Manifold,
+        M::AbstractManifold,
         Y::BezierSegment,
         b::BezierSegment,
         t::AbstractVector,
@@ -105,13 +105,17 @@ See [`de_casteljau`](@ref) for more details on the curve and[^BergmannGousenbour
     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function adjoint_differential_bezier_control(
-    M::Manifold, b::BezierSegment, t::AbstractVector, X::AbstractVector
+    M::AbstractManifold, b::BezierSegment, t::AbstractVector, X::AbstractVector
 )
     effects = [bt.pts for bt in adjoint_differential_bezier_control.(Ref(M), Ref(b), t, X)]
     return BezierSegment(sum(effects))
 end
 function adjoint_differential_bezier_control!(
-    M::Manifold, Y::BezierSegment, b::BezierSegment, t::AbstractVector, X::AbstractVector
+    M::AbstractManifold,
+    Y::BezierSegment,
+    b::BezierSegment,
+    t::AbstractVector,
+    X::AbstractVector,
 )
     Z = BezierSegment(similar.(Y.pts))
     fill!.(Y.pts, zero(eltype(first(Y.pts))))
@@ -124,13 +128,13 @@ end
 
 @doc raw"""
     adjoint_differential_bezier_control(
-        M::MAnifold,
+        M::AbstractManifold,
         B::AbstractVector{<:BezierSegment},
         t,
         X
     )
     adjoint_differential_bezier_control!(
-        M::MAnifold,
+        M::AbstractManifold,
         Y::AbstractVector{<:BezierSegment},
         B::AbstractVector{<:BezierSegment},
         t,
@@ -146,13 +150,13 @@ This can be computed in place of `Y`.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
-    M::Manifold, B::AbstractVector{<:BezierSegment}, t, X
+    M::AbstractManifold, B::AbstractVector{<:BezierSegment}, t, X
 )
-    Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
+    Y = broadcast(b -> BezierSegment(zero_vector.(Ref(M), b.pts)), B) # Double broadcast
     return adjoint_differential_bezier_control!(M, Y, B, t, X)
 end
 function adjoint_differential_bezier_control!(
-    M::Manifold,
+    M::AbstractManifold,
     Y::AbstractVector{<:BezierSegment},
     B::AbstractVector{<:BezierSegment},
     t,
@@ -178,12 +182,12 @@ function adjoint_differential_bezier_control!(
 end
 @doc raw"""
     adjoint_differential_bezier_control(
-        M::MAnifold,
+        M::AbstractManifold,
         T::AbstractVector,
         X::AbstractVector,
     )
     adjoint_differential_bezier_control!(
-        M::MAnifold,
+        M::AbstractManifold,
         Y::AbstractVector{<:BezierSegment},
         T::AbstractVector,
         X::AbstractVector,
@@ -195,13 +199,16 @@ This can be computed in place of `Y`.
 See [`de_casteljau`](@ref) for more details on the curve.
 """
 function adjoint_differential_bezier_control(
-    M::Manifold, B::AbstractVector{<:BezierSegment}, T::AbstractVector, X::AbstractVector
+    M::AbstractManifold,
+    B::AbstractVector{<:BezierSegment},
+    T::AbstractVector,
+    X::AbstractVector,
 )
-    Y = broadcast(b -> BezierSegment(zero_tangent_vector.(Ref(M), b.pts)), B) # Double broadcast
+    Y = broadcast(b -> BezierSegment(zero_vector.(Ref(M), b.pts)), B) # Double broadcast
     return adjoint_differential_bezier_control!(M, Y, B, T, X)
 end
 function adjoint_differential_bezier_control!(
-    M::Manifold,
+    M::AbstractManifold,
     Y::AbstractVector{<:BezierSegment},
     B::AbstractVector{<:BezierSegment},
     T::AbstractVector,
@@ -226,10 +233,10 @@ Compute the adjoint of ``D_p γ(t; p, q)[X]`` (in place of `Y`).
 
 [`differential_geodesic_startpoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_geodesic_startpoint(M::Manifold, p, q, t, X)
+function adjoint_differential_geodesic_startpoint(M::AbstractManifold, p, q, t, X)
     return adjoint_Jacobi_field(M, p, q, t, X, βdifferential_geodesic_startpoint)
 end
-function adjoint_differential_geodesic_startpoint!(M::Manifold, Y, p, q, t, X)
+function adjoint_differential_geodesic_startpoint!(M::AbstractManifold, Y, p, q, t, X)
     return adjoint_Jacobi_field!(M, Y, p, q, t, X, βdifferential_geodesic_startpoint)
 end
 
@@ -243,10 +250,10 @@ Compute the adjoint of ``D_q γ(t; p, q)[X]`` (in place of `Y`).
 
 [`differential_geodesic_endpoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_geodesic_endpoint(M::Manifold, p, q, t, X)
+function adjoint_differential_geodesic_endpoint(M::AbstractManifold, p, q, t, X)
     return adjoint_Jacobi_field(M, q, p, 1 - t, X, βdifferential_geodesic_startpoint)
 end
-function adjoint_differential_geodesic_endpoint!(M::Manifold, Y, p, q, t, X)
+function adjoint_differential_geodesic_endpoint!(M::AbstractManifold, Y, p, q, t, X)
     return adjoint_Jacobi_field!(M, Y, q, p, 1 - t, X, βdifferential_geodesic_startpoint)
 end
 
@@ -260,10 +267,10 @@ Computes the adjoint of ``D_p \exp_p X[Y]`` (in place of `Z`).
 
 [`differential_exp_basepoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_exp_basepoint(M::Manifold, p, X, Y)
+function adjoint_differential_exp_basepoint(M::AbstractManifold, p, X, Y)
     return adjoint_Jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_basepoint)
 end
-function adjoint_differential_exp_basepoint!(M::Manifold, Z, p, X, Y)
+function adjoint_differential_exp_basepoint!(M::AbstractManifold, Z, p, X, Y)
     return adjoint_Jacobi_field!(M, Z, p, exp(M, p, X), 1.0, Y, βdifferential_exp_basepoint)
 end
 
@@ -278,10 +285,10 @@ Note that ``X ∈  T_p(T_p\mathcal M) = T_p\mathcal M`` is still a tangent vecto
 
 [`differential_exp_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_exp_argument(M::Manifold, p, X, Y)
+function adjoint_differential_exp_argument(M::AbstractManifold, p, X, Y)
     return adjoint_Jacobi_field(M, p, exp(M, p, X), 1.0, Y, βdifferential_exp_argument)
 end
-function adjoint_differential_exp_argument!(M::Manifold, Z, p, X, Y)
+function adjoint_differential_exp_argument!(M::AbstractManifold, Z, p, X, Y)
     return adjoint_Jacobi_field!(M, Z, p, exp(M, p, X), 1.0, Y, βdifferential_exp_argument)
 end
 
@@ -294,10 +301,10 @@ computes the adjoint of ``D_p log_p q[X]`` (in place of `Y`).
 # See also
 [`differential_log_basepoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_log_basepoint(M::Manifold, p, q, X)
+function adjoint_differential_log_basepoint(M::AbstractManifold, p, q, X)
     return adjoint_Jacobi_field(M, p, q, 0.0, X, βdifferential_log_basepoint)
 end
-function adjoint_differential_log_basepoint!(M::Manifold, Y, p, q, X)
+function adjoint_differential_log_basepoint!(M::AbstractManifold, Y, p, q, X)
     return adjoint_Jacobi_field!(M, Y, p, q, 0.0, X, βdifferential_log_basepoint)
 end
 
@@ -310,11 +317,11 @@ Compute the adjoint of ``D_q log_p q[X]`` (in place of `Y`).
 # See also
 [`differential_log_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
-function adjoint_differential_log_argument(M::Manifold, p, q, X)
+function adjoint_differential_log_argument(M::AbstractManifold, p, q, X)
     # order of p and q has to be reversed in this call, cf. Persch, 2018 Lemma 2.3
     return adjoint_Jacobi_field(M, q, p, 1.0, X, βdifferential_log_argument)
 end
-function adjoint_differential_log_argument!(M::Manifold, Y, p, q, X)
+function adjoint_differential_log_argument!(M::AbstractManifold, Y, p, q, X)
     return adjoint_Jacobi_field!(M, Y, q, p, 1.0, X, βdifferential_log_argument)
 end
 
@@ -347,7 +354,7 @@ The adjoint differential can be computed in place of `Y`.
 function adjoint_differential_forward_logs(
     M::PowerManifold{𝔽,TM,TSize,TPR}, p, X
 ) where {𝔽,TM,TSize,TPR}
-    Y = zero_tangent_vector(M, p)
+    Y = zero_vector(M, p)
     return adjoint_differential_forward_logs!(M, Y, p, X)
 end
 function adjoint_differential_forward_logs!(

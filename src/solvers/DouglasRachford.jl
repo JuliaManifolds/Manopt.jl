@@ -47,7 +47,9 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function DouglasRachford(M::Manifold, F::TF, proxes::Vector{<:Any}, x; kwargs...) where {TF}
+function DouglasRachford(
+    M::AbstractManifold, F::TF, proxes::Vector{<:Any}, x; kwargs...
+) where {TF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return DouglasRachford!(M, F, proxes, x; kwargs...)
@@ -74,7 +76,7 @@ i.e. component wise in a vector.
 For more options, see [`DouglasRachford`](@ref).
 """
 function DouglasRachford!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     proxes::Vector{<:Any},
     x;

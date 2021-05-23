@@ -17,7 +17,7 @@ specify a problem for hessian based algorithms.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{T,mT<:Manifold,C,G,H,Pre} <: AbstractGradientProblem{T}
+struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProblem{T}
     M::mT
     cost::C
     gradient!!::G
@@ -30,7 +30,7 @@ struct HessianProblem{T,mT<:Manifold,C,G,H,Pre} <: AbstractGradientProblem{T}
         hess::H,
         pre::Pre;
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:Manifold,C,G,H,Pre}
+    ) where {mT<:AbstractManifold,C,G,H,Pre}
         return new{typeof(evaluation),mT,C,G,H,Pre}(M, cost, grad, hess, pre)
     end
 end
@@ -260,7 +260,7 @@ function get_hessian(p::HessianProblem{AllocatingEvaluation}, q, X)
     return p.hessian!!(p.M, q, X)
 end
 function get_hessian(p::HessianProblem{MutatingEvaluation}, q, X)
-    Y = zero_tangent_vector(p.M, q)
+    Y = zero_vector(p.M, q)
     return p.hessian!!(p.M, Y, q, X)
 end
 function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
@@ -303,22 +303,22 @@ function ApproxHessianFiniteDifference(
     retraction_method::RTR=ExponentialRetraction(),
     vector_transport_method::VTR=ParallelTransport(),
 ) where {
-    mT<:Manifold,
+    mT<:AbstractManifold,
     P,
     G,
     R<:Real,
     RTR<:AbstractRetractionMethod,
     VTR<:AbstractVectorTransportMethod,
 }
-    X = zero_tangent_vector(M, x)
-    Y = zero_tangent_vector(M, x)
+    X = zero_vector(M, x)
+    Y = zero_vector(M, x)
     return ApproxHessianFiniteDifference{typeof(evaluation),P,typeof(X),G,RTR,VTR,R}(
         x, grad, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
 function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
     norm_X = norm(M, x, X)
-    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector(M, x)
+    (norm_X ≈ zero(norm_X)) && return zero_vector(M, x)
     c = f.steplength / norm_X
     f.grad_tmp .= f.gradient!!(M, x)
     f.x_dir .= retract(M, x, c * X, f.retraction_method)
@@ -330,7 +330,7 @@ function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
 end
 function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, x, X)
     norm_X = norm(M, x, X)
-    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(M, X, x)
+    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, x)
     c = f.steplength / norm_X
     f.gradient!!(M, f.grad_tmp, x)
     retract!(M, f.x_dir, x, c * X, f.retraction_method)

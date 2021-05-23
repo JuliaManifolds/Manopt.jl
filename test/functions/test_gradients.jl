@@ -7,8 +7,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         x = [0.1, 0.2, 0.3, 0.5]
         tvTestξ = [-1.0, 0.0, 0.0, 1.0]
         @test grad_TV(N, x) == tvTestξ
-        @test grad_TV(M, (x[1], x[1])) ==
-              (zero_tangent_vector(M, x[1]), zero_tangent_vector(M, x[1]))
+        @test grad_TV(M, (x[1], x[1])) == (zero_vector(M, x[1]), zero_vector(M, x[1]))
         @test norm(N, x, grad_TV(N, x, 2) - tvTestξ) ≈ 0
         tv2Testξ = [0.0, 0.5, -1.0, 0.5]
         @test grad_TV2(N, x) == tv2Testξ
@@ -45,7 +44,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         q = [0.0, 1.0, 0.0]
         r = [1.0, 0.0, 0.0]
         @testset "Gradient of the distance function" begin
-            X = zero_tangent_vector(M, p)
+            X = zero_vector(M, p)
             grad_distance!(M, X, p, q)
             Y = grad_distance(M, p, q)
             Z = [0.0, 0.0, -π / 2] # known solution
@@ -63,28 +62,28 @@ using Manifolds, Manopt, Test, ManifoldsBase
             s = [p, q, r]
             Y2 = grad_TV(N, s)
             Z2 = [[0.0, -1.0, 0.0], [-1.0, 0.0, -1.0], [0.0, -1.0, 0.0]]
-            X2 = zero_tangent_vector(N, s)
+            X2 = zero_vector(N, s)
             grad_TV!(N, X2, s)
             @test Y2 == Z2
             @test X2 == Z2
             Y2a = grad_TV(N, s, 2)
-            X2a = zero_tangent_vector(N, s)
+            X2a = zero_vector(N, s)
             grad_TV!(N, X2a, s, 2)
             @test Y2a == X2a
             N2 = PowerManifold(M, NestedPowerRepresentation(), 2)
             Y3 = grad_TV(M, (p, q), 2)
-            X3 = zero_tangent_vector(N2, [p, q])
+            X3 = zero_vector(N2, [p, q])
             grad_TV!(M, X3, (p, q), 2)
             @test [y for y in Y3] == X3
             Y4 = grad_TV(M, (p, p))
-            X4 = zero_tangent_vector(N2, [p, q])
+            X4 = zero_vector(N2, [p, q])
             grad_TV!(M, X4, (p, p))
             @test [y for y in Y4] == X4
         end
         @testset "Grad of second order total variation" begin
             N = PowerManifold(M, NestedPowerRepresentation(), 3)
             s = [p, q, r]
-            X = zero_tangent_vector(N, s)
+            X = zero_vector(N, s)
             grad_TV2!(M, X, s)
             Y = grad_TV2(M, s)
             Z = -1 / sqrt(2) .* [[0.0, 1.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 0.0]]
@@ -94,7 +93,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
             Z2 = -1.110720734539 .* [[0.0, 1.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 0.0]]
             @test Y2 ≈ Z2
             s2 = [p, shortest_geodesic(M, p, q, 0.5), q]
-            @test grad_TV2(M, s2) == [zero_tangent_vector(M, se) for se in s2]
+            @test grad_TV2(M, s2) == [zero_vector(M, se) for se in s2]
         end
     end
 end

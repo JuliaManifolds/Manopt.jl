@@ -20,8 +20,9 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 # See also
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
 """
-mutable struct ProximalProblem{T,mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <:
-               Problem{T}
+mutable struct ProximalProblem{
+    T,mT<:AbstractManifold,TCost,TProxes<:Union{Tuple,AbstractVector}
+} <: Problem{T}
     M::mT
     cost::TCost
     proximal_maps!!::TProxes
@@ -31,7 +32,7 @@ mutable struct ProximalProblem{T,mT<:Manifold,TCost,TProxes<:Union{Tuple,Abstrac
         cF,
         proxMaps::Union{Tuple,AbstractVector};
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:Manifold}
+    ) where {mT<:AbstractManifold}
         return new{typeof(evaluation),mT,typeof(cF),typeof(proxMaps)}(
             M, cF, proxMaps, ones(length(proxMaps))
         )
@@ -42,7 +43,7 @@ mutable struct ProximalProblem{T,mT<:Manifold,TCost,TProxes<:Union{Tuple,Abstrac
         proxMaps::Union{Tuple,AbstractVector},
         nOP::Vector{Int};
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:Manifold}
+    ) where {mT<:AbstractManifold}
         return if length(nOP) != length(proxMaps)
             throw(
                 ErrorException(

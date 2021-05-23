@@ -136,7 +136,9 @@ The computation can be done in place of `Y`.
 
 For details see [`jacobi_field`](@ref)
 """
-function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
+function adjoint_Jacobi_field(
+    M::AbstractManifold, p, q, t, X, β=βdifferential_geodesic_startpoint
+)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)
@@ -148,7 +150,7 @@ function adjoint_Jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesi
     )
 end
 function adjoint_Jacobi_field!(
-    M::Manifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
+    M::AbstractManifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
 )
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
@@ -194,12 +196,14 @@ The computation can be done in place of `Y`.
 
 [`adjoint_Jacobi_field`](@ref)
 """
-function jacobi_field(M::Manifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
+function jacobi_field(M::AbstractManifold, p, q, t, X, β=βdifferential_geodesic_startpoint)
     x = shortest_geodesic(M, p, q, t)
-    Y = zero_tangent_vector(M, x)
+    Y = zero_vector(M, x)
     return jacobi_field!(M, Y, p, q, t, X, β)
 end
-function jacobi_field!(M::Manifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint)
+function jacobi_field!(
+    M::AbstractManifold, Y, p, q, t, X, β=βdifferential_geodesic_startpoint
+)
     x = shortest_geodesic(M, p, q, t)
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)

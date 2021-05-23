@@ -68,7 +68,7 @@ function alternating_gradient_descent!(
     F,
     gradF::Union{TgF,AbstractVector{<:TgF}},
     x;
-    direction::DirectionUpdateRule=AlternatingGradient(zero_tangent_vector(M, x)),
+    direction::DirectionUpdateRule=AlternatingGradient(zero_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inner_iterations::Int=5,
     stoping_criterion::StoppingCriterion=StopAfterIteration(100) |

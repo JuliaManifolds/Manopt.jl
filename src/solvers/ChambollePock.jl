@@ -59,8 +59,8 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
     > arXiv: [1908.02022](http://arxiv.org/abs/1908.02022)
 """
 function ChambollePock(
-    M::Manifold,
-    N::Manifold,
+    M::AbstractManifold,
+    N::AbstractManifold,
     cost::Function,
     x::P,
     ξ::T,
@@ -104,8 +104,8 @@ Perform the Riemannian Chambolle–Pock algorithm in place of `x`, `ξ`, and pot
 `n` if they are not fixed. See [`ChambollePock`](@ref) for details and optional parameters.
 """
 function ChambollePock!(
-    M::Manifold,
-    N::Manifold,
+    M::AbstractManifold,
+    N::AbstractManifold,
     cost::Function,
     x::P,
     ξ::T,
