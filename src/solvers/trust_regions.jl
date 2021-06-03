@@ -204,7 +204,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         model_value =
             fx + inner(p.M, o.x, o.gradient, o.η) + 0.5 * inner(p.M, o.x, o.Hη, o.η)
         modle_value_Cauchy = fx
-        -o.τ * o.trust_region_radius * norm(p.M, o.x, o.gradient)
+        -o.τ * o.trust_region_radius * norm_grad
         +0.5 * o.τ^2 * o.trust_region_radius^2 / (norm_grad^2) *
         inner(p.M, o.x, o.Hgrad, o.gradient)
         if modle_value_Cauchy < model_value
@@ -220,7 +220,8 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     ρden = -inner(p.M, o.x, o.η, o.gradient) - 0.5 * inner(p.M, o.x, o.η, o.Hη)
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
-    ρ = ρnum / ρden
+    ρ = (abs(ρnum / fx) < sqrt(eps(Float64))) ? 1 : ρnum / ρden # stability for small absolute relative model change
+
     model_decreased = ρden ≥ 0
     # Update the Hessian approximation
     update_hessian!(p.M, p.hessian!!, o.x, o.x_proposal, o.η)
@@ -235,7 +236,8 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     end
     # Choose to accept or reject the proposed step based on the model
     # performance. Note the strict inequality.
-    if model_decreased && ρ > o.ρ_prime
+    if model_decreased &&
+       (ρ > o.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
         recursive_copyto!(o.x, o.x_proposal)
         update_hessian_basis!(p.M, p.hessian!!, o.x)
     end
