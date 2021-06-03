@@ -38,25 +38,25 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
   returned).
 """
 function NelderMead(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     kwargs...,
 ) where {TF}
     res_population = allocate.(population)
-    recursive_copyto!.(res_population, population)
+    copyto!.(Ref(M), res_population, population)
     return NelderMead!(M, F, res_population; kwargs...)
 end
 @doc raw"""
     NelderMead(M, F [, p])
-perform a nelder mead minimization problem for the cost funciton `F` on the
+perform a Nelder Mead minimization problem for the cost function `F` on the
 manifold `M`. If the initial population `p` is not given, a random set of
 points is chosen. If it is given, the computation is done in place of `p`.
 
 For more options see [`NelderMead`](@ref).
 """
 function NelderMead!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     stopping_criterion::StoppingCriterion=StopAfterIteration(200000),

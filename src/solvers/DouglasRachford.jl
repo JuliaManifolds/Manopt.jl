@@ -36,7 +36,7 @@ the default parameter is given in brackets
   parallel Douglas–Rachford implicitly works on a `PowerManifold` manifold and
   its first argument is the result then (assuming all are equal after the second
   prox.
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` if returned
 ...
@@ -47,9 +47,11 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function DouglasRachford(M::Manifold, F::TF, proxes::Vector{<:Any}, x; kwargs...) where {TF}
+function DouglasRachford(
+    M::AbstractManifold, F::TF, proxes::Vector{<:Any}, x; kwargs...
+) where {TF}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     return DouglasRachford!(M, F, proxes, x; kwargs...)
 end
 @doc raw"""
@@ -61,7 +63,7 @@ For ``k>2`` proximal
 maps the problem is reformulated using the parallelDouglasRachford: a vectorial
 proximal map on the power manifold ``\mathcal M^k`` and the proximal map of the
 set that identifies all entries again, i.e. the Karcher mean. This hence also
-boils down to two proximal maps, though each evauates proximal maps in parallel,
+boils down to two proximal maps, though each evaluates proximal maps in parallel,
 i.e. component wise in a vector.
 
 # Input
@@ -74,7 +76,7 @@ i.e. component wise in a vector.
 For more options, see [`DouglasRachford`](@ref).
 """
 function DouglasRachford!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     proxes::Vector{<:Any},
     x;

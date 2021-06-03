@@ -1,7 +1,7 @@
 
 @doc raw"""
     cost_acceleration_bezier(
-        M::Manifold,
+        M::AbstractManifold,
         B::AbstractVector{P},
         degrees::AbstractVector{<:Integer},
         T::AbstractVector{<:AbstractFloat},
@@ -16,7 +16,7 @@ compute the value of the discrete Acceleration of the composite Bezier curve
 where for this formula the `pts` along the curve are equispaced and denoted by
 ``t_i``, ``i=1,…,N``, and ``d_2`` refers to the second order absolute difference [`costTV2`](@ref)
 (squared). Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
-together with the `degrees` of the segments and assuming a differentiable curve, the segmenents
+together with the `degrees` of the segments and assuming a differentiable curve, the segments
 can internally be reconstructed.
 
 This acceleration discretization was introduced in[^BergmannGousenbourger2018].
@@ -33,7 +33,7 @@ This acceleration discretization was introduced in[^BergmannGousenbourger2018].
     > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function cost_acceleration_bezier(
-    M::Manifold,
+    M::AbstractManifold,
     B::AbstractVector{P},
     degrees::AbstractVector{<:Integer},
     T::AbstractVector{<:AbstractFloat},
@@ -65,7 +65,7 @@ one data item in the manifold points given in `d`. For details on the accelerati
 approximation, see [`cost_acceleration_bezier`](@ref).
 Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
 together with the `degrees` of the segments and assuming a differentiable curve, the
-segmenents can internally be reconstructed.
+segments can internally be reconstructed.
 
 
 # See also
@@ -73,7 +73,7 @@ segmenents can internally be reconstructed.
 [`grad_L2_acceleration_bezier`](@ref), [`cost_acceleration_bezier`](@ref), [`grad_acceleration_bezier`](@ref)
 """
 function cost_L2_acceleration_bezier(
-    M::Manifold,
+    M::AbstractManifold,
     B::AbstractVector{P},
     degrees::AbstractVector{<:Integer},
     T::AbstractVector{<:AbstractFloat},
@@ -100,7 +100,7 @@ E(u,v) =
   +\alpha\bigl( β\mathrm{TV}(v) + (1-β)\mathrm{TV}_2(w) \bigr).
 ```
 """
-function costIntrICTV12(M::Manifold, f, u, v, α, β)
+function costIntrICTV12(M::AbstractManifold, f, u, v, α, β)
     IC = 1 / 2 * distance(M, shortest_geodesic(M, u, v, 0.5), f)^2
     TV12 = β * costTV(M, u) + (1 - β) * costTV2(M, v)
     return IC + α * TV12
@@ -172,7 +172,7 @@ E(x_1,x_2) = d_{\mathcal M}^p(x_1,x_2), \quad x_1,x_2 ∈ \mathcal M
 
 [`grad_TV`](@ref), [`prox_TV`](@ref)
 """
-function costTV(M::Manifold, x::Tuple{T,T}, p::Int=1) where {T}
+function costTV(M::AbstractManifold, x::Tuple{T,T}, p::Int=1) where {T}
     return distance(M, x[1], x[2])^p
 end
 @doc raw"""
@@ -226,7 +226,7 @@ Compute the ``\operatorname{TV}_2^p`` functional for the 3-tuple of points
   \mathcal C = \bigl\{ c ∈  \mathcal M \ |\ g(\tfrac{1}{2};x_1,x_3) \text{ for some geodesic }g\bigr\}
 ```
 
-the set of mid points between ``x_1`` and ``x_3``. Then the functionr reads
+the set of mid points between ``x_1`` and ``x_3``. Then the function reads
 
 ```math
 d_2^p(x_1,x_2,x_3) = \min_{c ∈ \mathcal C} d_{\mathcal M}(c,x_2).
@@ -235,7 +235,7 @@ d_2^p(x_1,x_2,x_3) = \min_{c ∈ \mathcal C} d_{\mathcal M}(c,x_2).
 # See also
 [`grad_TV2`](@ref), [`prox_TV2`](@ref)
 """
-function costTV2(M::MT, x::Tuple{T,T,T}, p=1) where {MT<:Manifold,T}
+function costTV2(M::MT, x::Tuple{T,T,T}, p=1) where {MT<:AbstractManifold,T}
     # note that here mid_point returns the closest to x2 from the e midpoints between x1 x3
     return 1 / p * distance(M, mid_point(M, x[1], x[3]), x[2])^p
 end

@@ -53,7 +53,7 @@ see the reference:
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
     .
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` is returned
 
@@ -69,10 +69,17 @@ OR
 [`trust_regions`](@ref)
 """
 function truncated_conjugate_gradient_descent(
-    M::Manifold, F::TF, gradF::TG, x, η, H::TH, trust_region_radius::Float64; kwargs...
+    M::AbstractManifold,
+    F::TF,
+    gradF::TG,
+    x,
+    η,
+    H::TH,
+    trust_region_radius::Float64;
+    kwargs...,
 ) where {TF,TG,TH}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     return truncated_conjugate_gradient_descent!(
         M, F, gradF, x_res, η, H, trust_region_radius; kwargs...
     )
@@ -95,7 +102,7 @@ solve the trust-region subproblem in place of `x`.
 For more details and all optional arguments, see [`truncated_conjugate_gradient_descent`](@ref).
 """
 function truncated_conjugate_gradient_descent!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     gradF::TG,
     x,
@@ -130,13 +137,13 @@ function truncated_conjugate_gradient_descent!(
     end
 end
 function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOptions)
-    (o.randomize) || zero_tangent_vector!(p.M, o.η, o.x)
-    o.Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_tangent_vector(p.M, o.x)
+    (o.randomize) || zero_vector!(p.M, o.η, o.x)
+    o.Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_vector(p.M, o.x)
     o.gradient = get_gradient(p, o.x)
     o.residual = o.randomize ? o.gradient + o.Hη : o.gradient
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     o.δ = -deepcopy(o.z)
-    o.Hδ = zero_tangent_vector(p.M, o.x)
+    o.Hδ = zero_vector(p.M, o.x)
     o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
     o.ηPδ = o.randomize ? inner(p.M, o.x, o.η, o.δ) : zero(o.δHδ)
     o.δPδ = inner(p.M, o.x, o.residual, o.z)
@@ -175,9 +182,9 @@ function step_solver!(
     if o.new_model_value >= o.model_value
         return o
     end
-    recursive_copyto!(o.η, new_η)
+    copyto!(p.M, o.η, o.x, new_η)
     o.model_value = o.new_model_value
-    recursive_copyto!(o.Hη, new_Hη)
+    copyto!(p.M, o.Hη, o.x, new_Hη)
     o.residual = o.residual + α * o.Hδ
 
     #=

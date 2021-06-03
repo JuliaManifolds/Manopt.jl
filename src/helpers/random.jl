@@ -1,21 +1,23 @@
 @doc raw"
-    random_point(M::Manifold)
+    random_point(M::AbstractManifold)
 
 generate a random point on a manifold. By default it uses `random_point(M,:Gaussian)`.
 "
-random_point(M::Manifold) = random_point(M, Val(:Gaussian))
+random_point(M::AbstractManifold) = random_point(M, Val(:Gaussian))
 @doc raw"
-    random_point(M::Manifold, s::Symbol, options...)
+    random_point(M::AbstractManifold, s::Symbol, options...)
 
 generate a random point using a noise model given by `s` with its additional `options`
 just passed on.
 "
-random_point(M::Manifold, s::Symbol, options...) = random_point(M, Val(s), options...)
+function random_point(M::AbstractManifold, s::Symbol, options...)
+    return random_point(M, Val(s), options...)
+end
 
 @doc raw"""
     random_point(M::AbstractPowerManifold, options...)
 
-generate a random point on the `AbstractPowerManfold` `M` given `options` that are
+generate a random point on the `AbstractPowerManifold` `M` given `options` that are
 passed on.
 """
 function random_point(
@@ -134,7 +136,7 @@ end
 @doc raw"""
     random_point(M::SymmetricPositiveDefinite, :Gaussian[, σ=1.0])
 
-gerenate a random symmetric positive definite matrix on the
+generate a random symmetric positive definite matrix on the
 `SymmetricPositiveDefinite` manifold `M`.
 """
 function random_point(
@@ -159,7 +161,7 @@ end
 
 @doc raw"""
     random_point(M::Sphere, :Gaussian[, σ=1.0])
-return a random point on the Sphere by projecting a normal distirbuted vector
+return a random point on the Sphere by projecting a normal distributed vector
 from within the embedding to the sphere.
 """
 function random_point(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)
@@ -196,8 +198,10 @@ end
 generate a random tangent vector in the tangent space of `p` on `M`. By default
 this is a `:Gaussian` distribution.
 """
-random_tangent(M::Manifold, p, options...) = random_tangent(M, p, :Gaussian, options...)
-function random_tangent(M::Manifold, p, s::Symbol, options...)
+function random_tangent(M::AbstractManifold, p, options...)
+    return random_tangent(M, p, :Gaussian, options...)
+end
+function random_tangent(M::AbstractManifold, p, s::Symbol, options...)
     return random_tangent(M, p, Val(s), options...)
 end
 
@@ -244,7 +248,7 @@ end
     random_tangent(M::Hyperbolic, p, :Gaussian [, σ=1.0])
 
 generate a random point on the Hyperbolic manifold by projecting a point from the embedding
-with respect to the Minkowsky metric.
+with respect to the Minkowski metric.
 """
 function random_tangent(M::Hyperbolic, p, ::Val{:Gaussian}, σ=1.0)
     Y = σ * randn(eltype(p), size(p))
@@ -254,7 +258,7 @@ end
 
 function random_tangent(M::PowerManifold, p, options...)
     rep_size = representation_size(M.manifold)
-    X = zero_tangent_vector(M, p)
+    X = zero_vector(M, p)
     for i in get_iterator(M)
         X[M, i] = random_tangent(M.manifold, p[M, i], options...)
     end

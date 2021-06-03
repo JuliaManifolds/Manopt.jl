@@ -1,7 +1,7 @@
 @doc raw"""
     AbstractQuasiNewtonDirectionUpdate
 
-An abstract represresenation of an Quasi Newton Update rule to determine the next direction
+An abstract representation of an Quasi Newton Update rule to determine the next direction
 given current [`QuasiNewtonOptions`](@ref).
 
 All subtypes should be functors, i.e. one should be able to call them as `H(M,x,d)` to compute a new direction update.

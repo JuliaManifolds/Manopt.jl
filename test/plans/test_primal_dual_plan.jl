@@ -16,8 +16,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
     Λ(M, x) = ProductRepr(x, forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
-        recursive_copyto!(Y[N, :point], x)
-        zero_tangent_vector!(N.manifold, Y[N, :vector], Y[N, :point])
+        copyto!(M, Y[N, :point], x)
+        zero_vector!(N.manifold, Y[N, :vector], Y[N, :point])
         forward_logs!(M, Y[N, :vector], x)
         return Y
     end
@@ -40,10 +40,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
         )
         return η
     end
-    DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
+    DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
     function DΛ!(M, Y, m, X)
         N = TangentBundle(M)
-        zero_tangent_vector!(M, Y[N, :point], m)
+        zero_vector!(M, Y[N, :point], m)
         differential_forward_logs!(M, Y[N, :vector], m, X)
         return Y
     end
@@ -57,7 +57,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)
     x0 = deepcopy(data)
-    ξ0 = ProductRepr(zero_tangent_vector(M, m), zero_tangent_vector(M, m))
+    ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
     p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
     p_linearized = PrimalDualProblem(
@@ -114,12 +114,12 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test y1[N, :vector][2] == y2[N, :vector][2]
 
         X = log(M, m, x0)
-        Y1 = linearized_forward_operator(p1, m, X)
-        Y2 = linearized_forward_operator(p2, m, X)
+        Y1 = linearized_forward_operator(p1, m, X, n)
+        Y2 = linearized_forward_operator(p2, m, X, n)
         @test Y1[N, :point] == Y2[N, :point]
         @test Y1[N, :vector] == Y2[N, :vector]
-        linearized_forward_operator!(p1, Y1, m, X)
-        linearized_forward_operator!(p2, Y2, m, X)
+        linearized_forward_operator!(p1, Y1, m, X, n)
+        linearized_forward_operator!(p2, Y2, m, X, n)
         @test Y1[N, :point] == Y2[N, :point]
         @test Y1[N, :vector] == Y2[N, :vector]
 

@@ -6,7 +6,7 @@ perform a subgradient method ``x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))``,
 where ``\mathrm{retr}`` is a retraction, ``s_k`` can be specified as a function but is
 usually set to a constant value. Though the subgradient might be set valued,
 the argument `∂F` should always return _one_ element from the subgradient, but
-not necessarily determistic.
+not necessarily deterministic.
 
 # Input
 * `M` – a manifold ``\mathcal M``
@@ -36,9 +36,11 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
-function subgradient_method(M::Manifold, F::TF, ∂F::TdF, x; kwargs...) where {TF,TdF}
+function subgradient_method(
+    M::AbstractManifold, F::TF, ∂F::TdF, x; kwargs...
+) where {TF,TdF}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     return subgradient_method!(M, F, ∂F, x_res; kwargs...)
 end
 @doc raw"""
@@ -58,7 +60,7 @@ perform a subgradient method ``x_{k+1} = \mathrm{retr}(x_k, s_k∂F(x_k))`` in p
 for more details and all optional parameters, see [`subgradient_method`](@ref).
 """
 function subgradient_method!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     ∂F!!::TdF,
     x;
@@ -81,7 +83,7 @@ function subgradient_method!(
 end
 function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.x_optimal = o.x
-    o.∂ = zero_tangent_vector(p.M, o.x)
+    o.∂ = zero_vector(p.M, o.x)
     return o
 end
 function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions, iter)

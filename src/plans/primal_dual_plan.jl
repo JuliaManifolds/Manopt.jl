@@ -10,7 +10,7 @@ depenting on the parameter `T <: AbstractEvaluationType`.
 
 * `M`, `N` – two manifolds ``\mathcal M``, ``\mathcal N``
 * `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
-* `linearized_forward_operator!!` linearized operator for the forward operation in the algorthm ``DΛ``
+* `linearized_forward_operator!!` linearized operator for the forward operation in the algorithm ``DΛ``
 * `linearized_adjoint_operator!!` The adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
 * `prox_F!!` the proximal map belonging to ``f``
 * `prox_G_dual!!` the proximal map belonging to ``g_n^*``
@@ -43,7 +43,7 @@ the second.
     > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
     > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{T,mT<:Manifold,nT<:Manifold} <: Problem{T}
+mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <: Problem{T}
     M::mT
     N::nT
     cost::Function
@@ -63,7 +63,7 @@ function PrimalDualProblem(
     linearized_forward_operator::Union{Function,Missing}=missing,
     Λ::Union{Function,Missing}=missing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {mT<:Manifold,nT<:Manifold}
+) where {mT<:AbstractManifold,nT<:AbstractManifold}
     return PrimalDualProblem{typeof(evaluation),mT,nT}(
         M,
         N,
@@ -98,7 +98,7 @@ function get_primal_prox(p::PrimalDualProblem{MutatingEvaluation}, σ, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
 function get_primal_prox!(p::PrimalDualProblem{AllocatingEvaluation}, y, σ, x)
-    return recursive_copyto!(y, p.prox_F!!(p.M, σ, x))
+    return copyto!(p.M, y, p.prox_F!!(p.M, σ, x))
 end
 function get_primal_prox!(p::PrimalDualProblem{MutatingEvaluation}, y, σ, x)
     return p.prox_F!!(p.M, y, σ, x)
@@ -126,33 +126,39 @@ function get_dual_prox(p::PrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 function get_dual_prox!(p::PrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
-    return recursive_copyto!(η, p.prox_G_dual!!(p.N, n, τ, ξ))
+    return copyto!(p.N, η, p.prox_G_dual!!(p.N, n, τ, ξ))
 end
 function get_dual_prox!(p::PrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 @doc raw"""
-    Y = linearized_forward_operator(p::PrimalDualProblem, m X)
-    linearized_forward_operator!(p::PrimalDualProblem, Y, m, X)
+    Y = linearized_forward_operator(p::PrimalDualProblem, m X, n)
+    linearized_forward_operator!(p::PrimalDualProblem, Y, m, X, n)
 
 Evaluate the linearized operator (differential) ``DΛ(m)[X]`` stored within
-the [`PrimalDualProblem`](@ref) (in place of `Y`).
+the [`PrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
 """
 linearized_forward_operator(::PrimalDualProblem, ::Any...)
 
-function linearized_forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, m, X)
+function linearized_forward_operator(
+    p::PrimalDualProblem{AllocatingEvaluation}, m, X, ::Any
+)
     return p.linearized_forward_operator!!(p.M, m, X)
 end
-function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X)
+function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
     y = random_point(p.N)
     forward_operator!(p, y, m)
-    Y = zero_tangent_vector(p.N, y)
+    Y = zero_vector(p.N, y)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
-function linearized_forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X)
-    return recursive_copyto!(Y, p.linearized_forward_operator!!(p.M, m, X))
+function linearized_forward_operator!(
+    p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X, n
+)
+    return copyto!(p.N, Y, n, p.linearized_forward_operator!!(p.M, m, X))
 end
-function linearized_forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, Y, m, X)
+function linearized_forward_operator!(
+    p::PrimalDualProblem{MutatingEvaluation}, Y, m, X, ::Any
+)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 
@@ -173,7 +179,7 @@ function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
     return p.Λ!!(p.M, y, x)
 end
 function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)
-    return recursive_copyto!(y, p.Λ!!(p.M, x))
+    return copyto!(p.N, y, p.Λ!!(p.M, x))
 end
 function forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, y, x)
     return p.Λ!!(p.M, y, x)
@@ -194,13 +200,13 @@ function adjoint_linearized_operator(p::PrimalDualProblem{AllocatingEvaluation},
     return p.adjoint_linearized_operator!!(p.N, m, n, Y)
 end
 function adjoint_linearized_operator(p::PrimalDualProblem{MutatingEvaluation}, m, n, Y)
-    X = zero_tangent_vector(p.M, m)
+    X = zero_vector(p.M, m)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 function adjoint_linearized_operator!(
     p::PrimalDualProblem{AllocatingEvaluation}, X, m, n, Y
 )
-    return recursive_copyto!(X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
+    return copyto!(p.M, X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
 end
 function adjoint_linearized_operator!(p::PrimalDualProblem{MutatingEvaluation}, X, m, n, Y)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
@@ -229,7 +235,7 @@ initialized automatically and values with a default may be left out.
 * `ξbar` - the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `Θ` – factor to damp the helping ``\tilde x``
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
-* `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
+* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `acceleration` – (`0.`) acceleration factor due to Chambolle & Pock
 * `relaxation` – (`1.`) relaxation in the primal relaxation step (to compute `xbar`)
 * `relax` – (`_primal`) which variable to relax (`:primal` or `:dual`)
@@ -237,7 +243,7 @@ initialized automatically and values with a default may be left out.
 * `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
+* `retraction_method` – (`ExponentialRetraction()`) the retraction to use
 * `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
 * `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
 
@@ -422,6 +428,7 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
                     o.m,
                     o.vector_transport_method,
                 ),
+                o.n,
             ),
         )
     elseif o.variant === :exact
@@ -702,7 +709,7 @@ end
     RecordPrimalChange(a)
 
 Create an [`RecordAction`](@ref) that records the primal value change,
-i.e. [`RecordChange`](@ref), since we just redord the change of `o.x`.
+i.e. [`RecordChange`](@ref), since we just record the change of `o.x`.
 """
 RecordPrimalChange() = RecordChange()
 

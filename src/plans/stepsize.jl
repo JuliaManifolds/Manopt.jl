@@ -68,7 +68,7 @@ functor.
 
 Compared to simple step sizes, the linesearch functors provide an interface of
 the form `(p,o,i,η) -> s` with an additional (but optional) fourth parameter to
-proviade a search direction; this should default to something reasonable, e.g.
+provide a search direction; this should default to something reasonable, e.g.
 the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
@@ -151,7 +151,7 @@ perform a linesearch for
 * an offset, ``f_0 = F(x)``
 """
 function linesearch_backtrack(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     x,
     gradFx::T,
@@ -181,7 +181,7 @@ end
 @doc raw"""
     NonmonotoneLinesearch <: Linesearch
 
-A functor representing a nonmonotone line seach using the Barzilai-Borwein step size[^Iannazzo2018]. Together with a gradient descent algorithm
+A functor representing a nonmonotone line search using the Barzilai-Borwein step size[^Iannazzo2018]. Together with a gradient descent algorithm
 this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. We shifted the order of the algorithm steps from the paper
 by Iannazzo and Porcelli so that in each iteration we first find
 
@@ -341,7 +341,7 @@ function (a::NonmonotoneLinesearch)(
 end
 function (a::NonmonotoneLinesearch)(
     M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int
-) where {mT<:Manifold,TF,T}
+) where {mT<:AbstractManifold,TF,T}
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space
     grad_diff =
         gradFx - vector_transport_to(M, old_x, old_gradient, x, a.vector_transport_method)
@@ -409,8 +409,8 @@ end
 @doc raw"""
     WolfePowellLineseach <: Linesearch
 
-Do a backgtracking linesearch to find a step size ``α`` that fulfills the
-Wolfe conditions along a search direktion ``η`` starting from ``x``, i.e.
+Do a backtracking linesearch to find a step size ``α`` that fulfils the
+Wolfe conditions along a search direction ``η`` starting from ``x``, i.e.
 
 ```math
 f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨\operatorname{grad}f(x), η⟩_x
@@ -447,7 +447,7 @@ end
 
 function (a::WolfePowellLineseach)(
     p::P, o::O, ::Int, η=-get_gradient(p, o.x)
-) where {P<:GradientProblem{T,mT} where {T,mT<:Manifold},O<:Options}
+) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     s = 1.0
     s_plus = 1.0
     s_minus = 1.0
@@ -555,7 +555,7 @@ end
 
 function (a::WolfePowellBinaryLinesearch)(
     p::P, o::O, ::Int, η=-get_gradient(p, o.x)
-) where {P<:GradientProblem{T,mT} where {T,mT<:Manifold},O<:Options}
+) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     α = 0.0
     β = Inf
     t = 1.0

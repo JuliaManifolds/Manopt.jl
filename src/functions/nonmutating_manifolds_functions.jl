@@ -29,7 +29,7 @@ function jacobi_field(
     B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
     V = get_vectors(M, p, B)
     Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
-    Y = zero_tangent_vector(M, p)
+    Y = zero_vector(M, p)
     # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
     Y = sum(
         (inner.(Ref(M), Ref(p), Ref(X), V)) .*
@@ -41,7 +41,7 @@ function grad_TV2(M::NONMUTATINGMANIFOLDS, q, p::Int=1)
     c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
     d = distance(M, q[2], c)
     innerLog = -log(M, c, q[2])
-    X = [zero_tangent_vector(M, q[i]) for i in 1:3]
+    X = [zero_vector(M, q[i]) for i in 1:3]
     if p == 2
         X[1] = adjoint_differential_geodesic_startpoint(M, q[1], q[3], 1 / 2, innerLog)
         X[2] = -log(M, q[2], c)

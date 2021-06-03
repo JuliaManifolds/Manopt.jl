@@ -73,14 +73,14 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function particle_swarm(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF;
     n::Int=100,
     x0::AbstractVector=[random_point(M) for i in 1:n],
     kwargs...,
 ) where {TF}
     x_res = allocate.(x0)
-    recursive_copyto!.(x_res, x0)
+    copyto!.(Ref(M), x_res, x0)
     return particle_swarm!(M, F; n=n, x0=x_res, kwargs...)
 end
 @doc raw"""
@@ -100,7 +100,7 @@ in place of `x0`.
 for more optional arguments, see [`particle_swarm`](@ref).
 """
 function particle_swarm!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF;
     n::Int=100,
     x0::AbstractVector=[random_point(M) for i in 1:n],

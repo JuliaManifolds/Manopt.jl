@@ -53,7 +53,7 @@ For a description of the algorithm and more details see
   that the iterates produced are not monotonically improving the cost
   when very close to convergence. This is because the corrected cost
   improvement could change sign if it is negative but very small.
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `x_opt` is returned
 
@@ -64,10 +64,10 @@ For a description of the algorithm and more details see
 [`truncated_conjugate_gradient_descent`](@ref)
 """
 function trust_regions(
-    M::Manifold, F::TF, gradF::TdF, hessF::TH, x; kwargs...
+    M::AbstractManifold, F::TF, gradF::TdF, hessF::TH, x; kwargs...
 ) where {TF,TdF,TH}
     x_res = allocate(x)
-    recursive_copyto!(x_res, x)
+    copyto!(M, x_res, x)
     return trust_regions!(M, F, gradF, hessF, x_res; kwargs...)
 end
 @doc raw"""
@@ -85,7 +85,7 @@ evaluate the Riemannian trust-regions solver for optimization on manifolds in pl
 for more details and all options, see [`trust_regions`](@ref)
 """
 function trust_regions!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     gradF::TdF,
     hessF::TH,
@@ -144,15 +144,15 @@ end
 
 function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     get_gradient!(p, o.gradient, o.x)
-    o.η = zero_tangent_vector(p.M, o.x)
-    o.Hη = zero_tangent_vector(p.M, o.x)
+    o.η = zero_vector(p.M, o.x)
+    o.Hη = zero_vector(p.M, o.x)
     o.x_proposal = deepcopy(o.x)
     o.f_proposal = zero(o.trust_region_radius)
 
-    o.η_Cauchy = zero_tangent_vector(p.M, o.x)
-    o.Hη_Cauchy = zero_tangent_vector(p.M, o.x)
+    o.η_Cauchy = zero_vector(p.M, o.x)
+    o.Hη_Cauchy = zero_vector(p.M, o.x)
     o.τ = zero(o.trust_region_radius)
-    o.Hgrad = zero_tangent_vector(p.M, o.x)
+    o.Hgrad = zero_vector(p.M, o.x)
     o.tcg_options = TruncatedConjugateGradientOptions(
         p, o.x, o.η, o.trust_region_radius, o.randomize
     )
@@ -169,7 +169,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
             o.η *= sqrt(sqrt(eps(Float64)))
         end
     else
-        zero_tangent_vector!(p.M, o.η, o.x)
+        zero_vector!(p.M, o.η, o.x)
     end
     # Solve TR subproblem - update options
     o.tcg_options.x = o.x
@@ -208,8 +208,8 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         +0.5 * o.τ^2 * o.trust_region_radius^2 / (norm_grad^2) *
         inner(p.M, o.x, o.Hgrad, o.gradient)
         if modle_value_Cauchy < model_value
-            recursive_copyto!(o.η, (-o.τ * o.trust_region_radius / norm_grad) * o.gradient)
-            recursive_copyto!(o.Hη, (-o.τ * o.trust_region_radius / norm_grad) * o.Hgrad)
+            copyto!(p.M, o.η, (-o.τ * o.trust_region_radius / norm_grad) * o.gradient)
+            copyto!(p.M, o.Hη, (-o.τ * o.trust_region_radius / norm_grad) * o.Hgrad)
         end
     end
     # Compute the tentative next iterate (the proposal)
@@ -238,7 +238,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # performance. Note the strict inequality.
     if model_decreased &&
        (ρ > o.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
-        recursive_copyto!(o.x, o.x_proposal)
+        copyto!(o.x, o.x_proposal)
         update_hessian_basis!(p.M, p.hessian!!, o.x)
     end
     return o

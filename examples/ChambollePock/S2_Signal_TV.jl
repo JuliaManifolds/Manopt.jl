@@ -65,7 +65,7 @@ end
 m = fill(base, size(f))
 n = Λ(M, m)
 x0 = deepcopy(f)
-ξ0 = ProductRepr(zero_tangent_vector(M, m), zero_tangent_vector(M, m))
+ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
 storage = StoreOptionsAction((:x, :n, :ξbar))
 

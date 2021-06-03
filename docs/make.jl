@@ -7,6 +7,7 @@ tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
     "MeanAndMedian",
     "Benchmark",
+    "GeodesicRegression",
     "HowToRecord",
     "StochasticGradientDescent",
     "BezierCurves",
@@ -16,6 +17,7 @@ tutorials = [
 menuEntries = [
     "get Started: Optimize!",
     "speed up! using `gradF!`",
+    "Do Geodesic regression",
     "Record values",
     "do stochastic gradient descent",
     "work with Bézier curves",
@@ -41,6 +43,7 @@ makedocs(;
         "Plans" => "plans/index.md",
         "Solvers" => [
             "Introduction" => "solvers/index.md",
+            "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",

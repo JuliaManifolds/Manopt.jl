@@ -43,7 +43,7 @@ nothing #hide
 # For more complicated cost functions it might also be worth considering to do the same.
 #
 # Here we store the data (as reference) and one temporary memory in order to avoid
-# reallication of memory per `grad_distance` computation. We have
+# reallocation of memory per `grad_distance` computation. We have
 struct grad!{TD,TTMP}
     data::TD
     tmp::TTMP

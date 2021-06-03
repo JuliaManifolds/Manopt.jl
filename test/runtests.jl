@@ -24,6 +24,7 @@ end
     include("helpers/test_data.jl")
 end
 @testset "Solver Tests       " begin
+    include("solvers/test_alternating_gradient.jl")
     include("solvers/test_ChambollePock.jl")
     include("solvers/test_conjugate_gradient.jl")
     include("solvers/test_Douglas_Rachford.jl")

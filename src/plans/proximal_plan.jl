@@ -13,15 +13,16 @@ specify a problem for solvers based on the evaluation of proximal map(s).
   minimize
 * `proxes` - proximal maps ``\operatorname{prox}_{λ\varphi}:\mathcal M→\mathcal M``
   as functions (λ,x) -> y, i.e. the prox parameter λ also belongs to the signature of the proximal map.
-* `number_of_proxes` - (length(proxes)) number of proxmal Maps,
+* `number_of_proxes` - (length(proxes)) number of proximal Maps,
   e.g. if one of the maps is a combined one such that the proximal Maps
   functions return more than one entry per function
 
 # See also
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
 """
-mutable struct ProximalProblem{T,mT<:Manifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <:
-               Problem{T}
+mutable struct ProximalProblem{
+    T,mT<:AbstractManifold,TCost,TProxes<:Union{Tuple,AbstractVector}
+} <: Problem{T}
     M::mT
     cost::TCost
     proximal_maps!!::TProxes
@@ -31,7 +32,7 @@ mutable struct ProximalProblem{T,mT<:Manifold,TCost,TProxes<:Union{Tuple,Abstrac
         cF,
         proxMaps::Union{Tuple,AbstractVector};
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:Manifold}
+    ) where {mT<:AbstractManifold}
         return new{typeof(evaluation),mT,typeof(cF),typeof(proxMaps)}(
             M, cF, proxMaps, ones(length(proxMaps))
         )
@@ -42,7 +43,7 @@ mutable struct ProximalProblem{T,mT<:Manifold,TCost,TProxes<:Union{Tuple,Abstrac
         proxMaps::Union{Tuple,AbstractVector},
         nOP::Vector{Int};
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:Manifold}
+    ) where {mT<:AbstractManifold}
         return if length(nOP) != length(proxMaps)
             throw(
                 ErrorException(
@@ -69,7 +70,7 @@ function get_proximal_map(p::ProximalProblem{AllocatingEvaluation}, λ, x, i)
 end
 function get_proximal_map!(p::ProximalProblem{AllocatingEvaluation}, y, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
-    return recursive_copyto!(y, p.proximal_maps!![i](p.M, λ, x))
+    return copyto!(p.M, y, p.proximal_maps!![i](p.M, λ, x))
 end
 function get_proximal_map(p::ProximalProblem{MutatingEvaluation}, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
@@ -130,7 +131,7 @@ Store all options required for the DouglasRachford algorithm,
 * `R` – ([`reflect`](@ref)) method employed in the iteration to perform the reflection of `x` at
   the prox `p`.
 * `stop` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
-* `parallel` – (`false`) inducate whether we are running a pallel Douglas-Rachford
+* `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
   or not.
 """
 mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR} <: Options

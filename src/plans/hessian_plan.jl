@@ -11,13 +11,13 @@ specify a problem for hessian based algorithms.
   → \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}F(x)[⋅]: \mathcal T_{x} \mathcal M
   → \mathcal T_{x} \mathcal M$ of the cost function $F$
-* `precon`       : the symmetric, positive deﬁnite
+* `precon`       : the symmetric, positive definite
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{T,mT<:Manifold,C,G,H,Pre} <: AbstractGradientProblem{T}
+struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProblem{T}
     M::mT
     cost::C
     gradient!!::G
@@ -30,7 +30,7 @@ struct HessianProblem{T,mT<:Manifold,C,G,H,Pre} <: AbstractGradientProblem{T}
         hess::H,
         pre::Pre;
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:Manifold,C,G,H,Pre}
+    ) where {mT<:AbstractManifold,C,G,H,Pre}
         return new{typeof(evaluation),mT,C,G,H,Pre}(M, cost, grad, hess, pre)
     end
 end
@@ -269,11 +269,11 @@ function get_hessian(p::HessianProblem{AllocatingEvaluation}, q, X)
     return p.hessian!!(p.M, q, X)
 end
 function get_hessian(p::HessianProblem{MutatingEvaluation}, q, X)
-    Y = zero_tangent_vector(p.M, q)
+    Y = zero_vector(p.M, q)
     return p.hessian!!(p.M, Y, q, X)
 end
 function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
-    return recursive_copyto!(Y, p.hessian!!(p.M, q, X))
+    return copyto!(p.M, Y, p.hessian!!(p.M, q, X))
 end
 function get_hessian!(p::HessianProblem{MutatingEvaluation}, Y, q, X)
     return p.hessian!!(p.M, Y, q, X)
@@ -282,7 +282,7 @@ end
 @doc raw"""
     get_preconditioner(p,x,ξ)
 
-evaluate the symmetric, positive deﬁnite preconditioner (approximation of the
+evaluate the symmetric, positive definite preconditioner (approximation of the
 inverse of the Hessian of the cost function `F`) of a
 [`HessianProblem`](@ref) `p` at the point `x`applied to a
 tangent vector `ξ`.
@@ -348,22 +348,23 @@ function ApproxHessianFiniteDifference(
     retraction_method::RTR=ExponentialRetraction(),
     vector_transport_method::VTR=ParallelTransport(),
 ) where {
-    mT<:Manifold,
+    mT<:AbstractManifold,
     P,
     G,
     R<:Real,
     RTR<:AbstractRetractionMethod,
     VTR<:AbstractVectorTransportMethod,
 }
-    X = zero_tangent_vector(M, p)
-    Y = zero_tangent_vector(M, p)
+    X = zero_vector(M, p)
+    Y = zero_vector(M, p)
     return ApproxHessianFiniteDifference{typeof(evaluation),P,typeof(X),G,RTR,VTR,R}(
         p, grad, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
+
 function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, p, X)
     norm_X = norm(M, p, X)
-    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector(M, p)
+    (norm_X ≈ zero(norm_X)) && return zero_vector(M, p)
     c = f.steplength / norm_X
     f.grad_tmp .= f.gradient!!(M, p)
     f.p_dir .= retract(M, p, c * X, f.retraction_method)
@@ -373,9 +374,10 @@ function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, p, X)
     )
     return (1 / c) * (f.grad_tmp_dir - f.grad_tmp)
 end
+
 function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, p, X)
     norm_X = norm(M, p, X)
-    (norm_X ≈ zero(norm_X)) && return zero_tangent_vector!(M, X, p)
+    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, p)
     c = f.steplength / norm_X
     f.gradient!!(M, f.grad_tmp, p)
     retract!(M, f.p_dir, p, c * X, f.retraction_method)

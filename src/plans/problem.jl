@@ -6,7 +6,7 @@
 """
     Problem{T}
 
-Dexcribe the problem that should be optimized by stating all properties, that do not change
+Describe the problem that should be optimized by stating all properties, that do not change
 during an optimization or that are dependent of a certain solver.
 
 The parameter `T` can be used to distinguish problems with different representations

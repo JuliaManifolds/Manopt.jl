@@ -16,7 +16,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     Λ(M, x) = ProductRepr(x, forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
-        recursive_copyto!(Y[N, :point], x)
+        copyto!(M, Y[N, :point], x)
         forward_logs!(M, Y[N, :vector], x)
         return Y
     end
@@ -32,19 +32,19 @@ using Manopt, Manifolds, ManifoldsBase, Test
         )
     end
     function prox_G_dual!(N, η, n, λ, ξ)
-        recursive_copyto!(η[N, :point], ξ[N, :point])
+        copyto!(N, η[N, :point], ξ[N, :point])
         project_collaborative_TV!(
             base_manifold(N), η[N, :vector], λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
         )
         return η
     end
-    DΛ(M, m, X) = ProductRepr(zero_tangent_vector(M, m), differential_forward_logs(M, m, X))
+    DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
     adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)
     x0 = deepcopy(data)
-    ξ0 = ProductRepr(zero_tangent_vector(M, m), zero_tangent_vector(M, m))
+    ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
     @testset "Test Variants" begin
         callargs_linearized = [M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_DΛ]
         o1 = ChambollePock(
