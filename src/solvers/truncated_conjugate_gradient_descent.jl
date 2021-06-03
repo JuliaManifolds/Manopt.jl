@@ -179,6 +179,17 @@ function step_solver!(
     o.model_value = o.new_model_value
     recursive_copyto!(o.Hη, new_Hη)
     o.residual = o.residual + α * o.Hδ
+
+    #=
+    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * min(o.initialResidualNorm^(0.1), 0.9)
+        if 0.9 < o.initialResidualNorm^(0.1)
+            print("Linear \n")
+        else
+            print("Superlinear \n")
+        end
+    end
+    =#
+
     # Precondition the residual.
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     zr = inner(p.M, o.x, o.z, o.residual)
