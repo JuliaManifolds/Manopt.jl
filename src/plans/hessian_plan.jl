@@ -450,7 +450,7 @@ function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        recursive_copyto!(f.p_tmp, p)
+        copyto!(f.p_tmp, p)
         f.grad_tmp = f.gradient!!(M, f.p_tmp)
     end
 
@@ -465,7 +465,7 @@ function (f::ApproxHessianSymmetricRankOne{MutatingEvaluation})(M, Y, p, X)
     # if distance(M, p, f.p_tmp) >= eps(Float64)
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        recursive_copyto!(f.p_tmp, p)
+        copyto!(f.p_tmp, p)
         f.grad_tmp = f.gradient!!(M, f.p_tmp)
     end
 
@@ -493,7 +493,7 @@ end
 
 function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-    recursive_copyto!(f.p_tmp, p)
+    copyto!(f.p_tmp, p)
     return f.grad_tmp = f.gradient!!(M, f.p_tmp)
 end
 
@@ -564,7 +564,7 @@ function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        recursive_copyto!(f.p_tmp, p)
+        copyto!(f.p_tmp, p)
         f.grad_tmp = f.gradient!!(M, f.p_tmp)
     end
 
@@ -578,7 +578,7 @@ function (f::ApproxHessianBFGS{MutatingEvaluation})(M, Y, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        recursive_copyto!(f.p_tmp, p)
+        copyto!(f.p_tmp, p)
         f.grad_tmp = f.gradient!!(M, f.p_tmp)
     end
 
@@ -606,7 +606,7 @@ end
 
 function update_hessian_basis!(M, f::ApproxHessianBFGS, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-    recursive_copyto!(f.p_tmp, p)
+    copyto!(f.p_tmp, p)
     return f.grad_tmp = f.gradient!!(M, f.p_tmp)
 end
 
