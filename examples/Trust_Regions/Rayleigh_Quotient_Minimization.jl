@@ -29,7 +29,7 @@ end
 io = IOBuffer()
 
 for n in [50, 100, 200]
-    b = @benchmark run_rayleigh_minimization($n) samples = 30
+    b = @benchmark run_rayleigh_minimization($n) samples = 30 evals = 10 seconds = 600
     show(io, "text/plain", b)
     s = String(take!(io))
     println("Benchmarking $(n):\n", s, "\n\n")
