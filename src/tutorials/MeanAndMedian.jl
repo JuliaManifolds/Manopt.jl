@@ -159,6 +159,19 @@ render_asymptote(export_folder * "/startDataCenterMean.asy"; render=2) #src
 #md #
 #md # ![The resulting mean (orange)](../assets/images/tutorials/startDataCenterMean.png)
 #
+# !!! note
+#
+#     Gradient descent `stepsize` might be constant and not guarenteed to converge in all cases, 
+#     but [can be changed](https://manoptjl.org/stable/solvers/index.html#StoppingCriteria-1) to fit a 
+#     particular case better.  [For example, see the Armijo step size rule](https://manoptjl.org/stable/plans/index.html#Stepsize-1):
+#     ```julia
+#     xMean = gradient_descent(M, F, gradF, x0; stepsize=ArmijoLinesearch(),  debug= [:Iteration, :Cost,"\n",10])
+#     ```
+#     The stopping criterion can also be controlled via keyword
+#     ```julia
+#     stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-12)
+#     ```
+#
 # ## Computing the Median
 #
 # !!! note
