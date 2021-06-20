@@ -140,7 +140,7 @@ xMean = gradient_descent(
 )
 nothing #hide
 #
-# A way to get better performance (and convergence) is to switch the default 
+# A way to get better performance and for convex and coercive costs a guaranteed convergence is to switch the default 
 # [`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for 
 # example the [`ArmijoLinesearch`](@ref)().
 # We can tweak the default values for the contractionFactor and the sufficientDecrease 
