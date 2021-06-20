@@ -140,6 +140,42 @@ xMean = gradient_descent(
 )
 nothing #hide
 #
+# A way to get better performance (and convergence) is to switch the default 
+# [`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for 
+# example the [`ArmijoLinesearch`](@ref)().
+# We can tweak the default values for the contractionFactor and the sufficientDecrease 
+# beyond constant step size which is already quite fast.  This gives
+xMean2 = gradient_descent(
+    M,
+    F,
+    gradF,
+    data[1];
+    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
+)
+# which finishes in 5 steaps, just slightly better than the previous computation.
+F(M, xMean) - F(M, xMean2)
+# Note, other optimization cases may vary where adjusting default stepsize 
+# can have a more significant impact on performance.
+#
+# To even have more precision, we can further require a smaller gradient norm. 
+# For this we can change the [`StoppingCriterion`](@ref) used, where several 
+# criteria can be combined using & and/or |.  If we want to decrease the final 
+# gradient (from less that 1e-8) norm but keep the maximal number of iterations 
+# to be 200, we can run
+xMean3 = gradient_descent(
+    M,
+    F,
+    gradF,
+    data[1];
+    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+    stopping_criterion = StopAfterIteration(200) | StopWhenGradientNormLess(1e-15),
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
+)
+#
+# which takes 10 iterations but gets a very small gradient, and not much is gained in the cost itself
+F(M,xMean2)-F(M,xMean3)
+#
 asymptote_export_S2_signals( #src
     export_folder * "/startDataCenterMean.asy"; #src
     points=[[x], data, [xMean]], #src
@@ -159,18 +195,6 @@ render_asymptote(export_folder * "/startDataCenterMean.asy"; render=2) #src
 #md #
 #md # ![The resulting mean (orange)](../assets/images/tutorials/startDataCenterMean.png)
 #
-# !!! note
-#
-#     Gradient descent `stepsize` might be constant and not guarenteed to converge in all cases, 
-#     but [can be changed](https://manoptjl.org/stable/solvers/index.html#StoppingCriteria-1) to fit a 
-#     particular case better.  [For example, see the Armijo step size rule](https://manoptjl.org/stable/plans/index.html#Stepsize-1):
-#     ```julia
-#     xMean = gradient_descent(M, F, gradF, x0; stepsize=ArmijoLinesearch(),  debug= [:Iteration, :Cost,"\n",10])
-#     ```
-#     The stopping criterion can also be controlled via keyword
-#     ```julia
-#     stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-12)
-#     ```
 #
 # ## Computing the Median
 #
