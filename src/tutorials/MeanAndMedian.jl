@@ -157,9 +157,9 @@ xMean2 = gradient_descent(
 F(M, xMean) - F(M, xMean2)
 # Note that other optimization tasks may have other speedup opportunities.
 #
-# To even have more precision, we can further require a smaller gradient norm. 
-# For this we can change the [`StoppingCriterion`](@ref) used, where several 
-# criteria can be combined using & and/or |.  If we want to decrease the final 
+# For even more precision, we can further require a smaller gradient norm. 
+# This is done by changing the [`StoppingCriterion`](@ref) used, where several 
+# criteria can be combined using `&` and/or `|`.  If we want to decrease the final 
 # gradient (from less that 1e-8) norm but keep the maximal number of iterations 
 # to be 200, we can run
 xMean3 = gradient_descent(
