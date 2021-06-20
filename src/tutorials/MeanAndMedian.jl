@@ -155,8 +155,7 @@ xMean2 = gradient_descent(
 )
 # which finishes in 5 steaps, just slightly better than the previous computation.
 F(M, xMean) - F(M, xMean2)
-# Note, other optimization cases may vary where adjusting default stepsize 
-# can have a more significant impact on performance.
+# Note that other optimization tasks may have other speedup opportunities.
 #
 # To even have more precision, we can further require a smaller gradient norm. 
 # For this we can change the [`StoppingCriterion`](@ref) used, where several 
