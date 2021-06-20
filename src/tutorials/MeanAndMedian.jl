@@ -174,7 +174,7 @@ xMean3 = gradient_descent(
 )
 #
 # which takes 10 iterations but gets a very small gradient, and not much is gained in the cost itself
-F(M,xMean2)-F(M,xMean3)
+F(M,xMean2) - F(M,xMean3)
 #
 asymptote_export_S2_signals( #src
     export_folder * "/startDataCenterMean.asy"; #src
