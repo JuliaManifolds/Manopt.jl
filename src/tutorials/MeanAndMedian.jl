@@ -150,7 +150,7 @@ xMean2 = gradient_descent(
     F,
     gradF,
     data[1];
-    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
     debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
 )
 # which finishes in 5 steaps, just slightly better than the previous computation.
@@ -168,8 +168,8 @@ xMean3 = gradient_descent(
     F,
     gradF,
     data[1];
-    stepsize = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
-    stopping_criterion = StopAfterIteration(200) | StopWhenGradientNormLess(1e-15),
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-15),
     debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
 )
 #
