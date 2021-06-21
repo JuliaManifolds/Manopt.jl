@@ -140,6 +140,41 @@ xMean = gradient_descent(
 )
 nothing #hide
 #
+# A way to get better performance and for convex and coercive costs a guaranteed convergence is to switch the default 
+# [`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for 
+# example the [`ArmijoLinesearch`](@ref)().
+# We can tweak the default values for the contractionFactor and the sufficientDecrease 
+# beyond constant step size which is already quite fast.  This gives
+xMean2 = gradient_descent(
+    M,
+    F,
+    gradF,
+    data[1];
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
+)
+# which finishes in 5 steaps, just slightly better than the previous computation.
+F(M, xMean) - F(M, xMean2)
+# Note that other optimization tasks may have other speedup opportunities.
+#
+# For even more precision, we can further require a smaller gradient norm. 
+# This is done by changing the [`StoppingCriterion`](@ref) used, where several 
+# criteria can be combined using `&` and/or `|`.  If we want to decrease the final 
+# gradient (from less that 1e-8) norm but keep the maximal number of iterations 
+# to be 200, we can run
+xMean3 = gradient_descent(
+    M,
+    F,
+    gradF,
+    data[1];
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-15),
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
+)
+#
+# which takes 10 iterations but gets a very small gradient, and not much is gained in the cost itself
+F(M, xMean2) - F(M, xMean3)
+#
 asymptote_export_S2_signals( #src
     export_folder * "/startDataCenterMean.asy"; #src
     points=[[x], data, [xMean]], #src
@@ -158,6 +193,7 @@ render_asymptote(export_folder * "/startDataCenterMean.asy"; render=2) #src
 #md # ```
 #md #
 #md # ![The resulting mean (orange)](../assets/images/tutorials/startDataCenterMean.png)
+#
 #
 # ## Computing the Median
 #
