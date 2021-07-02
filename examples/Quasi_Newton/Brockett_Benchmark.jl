@@ -1,6 +1,4 @@
 using Manifolds, Manopt, Random, LinearAlgebra, BenchmarkTools, Profile
-import Manifolds: vector_transport_to!
-vector_transport_to!(M::Stiefel, Y, p, X, q, ::ProjectionTransport) = project!(M, Y, q, X)
 
 struct GradF
     A::Matrix{Float64}
@@ -28,7 +26,7 @@ function run_brocket_experiment(n::Int, k::Int, m::Int; seed=42)
         memory_size=m,
         vector_transport_method=ProjectionTransport(),
         retraction_method=QRRetraction(),
-        stopping_criterion=StopWhenGradientNormLess(norm(M, x, gradF(x)) * 10^(-6)),
+        stopping_criterion=StopWhenGradientNormLess(norm(M, x, gradF(M, x)) * 10^(-6)),
         cautious_update=true,
         #        debug = [:Iteration," ", :Cost, " ", DebugGradientNorm(), "\n", 10],
     )
