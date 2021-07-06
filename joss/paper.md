@@ -10,7 +10,7 @@ authors:
     orcid: 0000-0003-0872-7098
     affiliation: 1
 affiliations:
- - name: Technische Universität Chemnitz, Faculty of Mathematics, 09107 Chemnitz, Germany
+ - name: Norwegian University of Science and Technology, Department of Mathematical Sciences, Trondheim, Norway
    index: 1
 date: 23 December 2020
 bibliography: bibliograpy.bib
@@ -94,6 +94,7 @@ While all three packages cover some algorithm, most are less flexible for exampl
 `Manopt.jl` uses GitHub Actions and a continuous integration testing with the most recent version of Julia all supported versions of Julia
  on macOS, Linux and Windows. The tests cover most of the library and can also be run locally in Julia REPL with `]test Manopt`
 Support and submission of contributions to the library are handled through the GitHub repository via issues or by pull requests
+
 # Requirements
 
 `Manopt.jl` is based on `ManifoldsBase.jl`.
