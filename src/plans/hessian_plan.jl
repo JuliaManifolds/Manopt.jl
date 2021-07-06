@@ -6,36 +6,45 @@ specify a problem for hessian based algorithms.
 
 # Fields
 * `M`            : a manifold $\mathcal M$
-* `cost` : a function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `gradient`     : the gradient $\nabla F\colon\mathcal M
-  \to \mathcal T\mathcal M$ of the cost function $F$
-* `hessian`      : the hessian $\operatorname{Hess}[F] (\cdot)_ {x} \colon \mathcal T_{x} \mathcal M
-  \to \mathcal T_{x} \mathcal M$ of the cost function $F$
-* `precon`       : the symmetric, positive deﬁnite
+* `cost` : a function $F:\mathcal M→ℝ$ to minimize
+* `gradient`     : the gradient $\operatorname{grad}F:\mathcal M
+  → \mathcal T\mathcal M$ of the cost function $F$
+* `hessian`      : the hessian $\operatorname{Hess}F(x)[⋅]: \mathcal T_{x} \mathcal M
+  → \mathcal T_{x} \mathcal M$ of the cost function $F$
+* `precon`       : the symmetric, positive definite
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{mT<:Manifold,TCost,TGradient,THessian,TPrecon} <: Problem
+struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProblem{T}
     M::mT
-    cost::TCost
-    gradient::TGradient
-    hessian::THessian
-    precon::TPrecon
-    function HessianProblem(M::mT, cost, grad, hess, pre) where {mT<:Manifold}
-        return new{mT,typeof(cost),typeof(grad),typeof(hess),typeof(pre)}(
-            M, cost, grad, hess, pre
-        )
+    cost::C
+    gradient!!::G
+    hessian!!::H
+    precon::Pre
+    function HessianProblem(
+        M::mT,
+        cost::C,
+        grad::G,
+        hess::H,
+        pre::Pre;
+        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    ) where {mT<:AbstractManifold,C,G,H,Pre}
+        return new{typeof(evaluation),mT,C,G,H,Pre}(M, cost, grad, hess, pre)
     end
 end
 
-abstract type HessianOptions <: Options end
-#
-# Options
-#
 @doc raw"""
-    TruncatedConjugateGradientOptions <: HessianOptions
+    AbstractHessianOptions <: Options
+
+An [`Options`](@ref) type to represent algorithms that employ the Hessian.
+These options are assumed to have a field (`gradient`) to store the current gradient ``\operatorname{grad}f(x)``
+"""
+abstract type AbstractHessianOptions <: AbstractGradientOptions end
+
+@doc raw"""
+    TruncatedConjugateGradientOptions <: AbstractHessianOptions
 
 describe the Steihaug-Toint truncated conjugate-gradient method, with
 
@@ -47,12 +56,13 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `stop` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
     indicator and a reason based on an iteration number, the gradient and the
     last and current iterates
+* `gradient` : the gradient at the current iterate
 * `η` : a tangent vector (called update vector), which solves the
     trust-region subproblem after successful calculation by the algorithm
 * `δ` : search direction
-* `Δ` : the trust-region radius
+* `trust_region_radius` : the trust-region radius
 * `residual` : the gradient
-* `useRand` : indicates if the trust-region solve and so the algorithm is to be
+* `randomize` : indicates if the trust-region solve and so the algorithm is to be
         initiated with a random tangent vector. If set to true, no
         preconditioner will be used. This option is set to true in some
         scenarios to escape saddle points, but is otherwise seldom activated.
@@ -66,23 +76,60 @@ construct a truncated conjugate-gradient Option with the fields as above.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct TruncatedConjugateGradientOptions{P,T} <: HessianOptions
+mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriterion} <:
+               AbstractHessianOptions
     x::P
-    stop::StoppingCriterion
+    stop::SC
+    gradient::T
     η::T
+    Hη::T
     δ::T
-    Δ::Any
+    Hδ::T
+    δHδ::R
+    ηPδ::R
+    δPδ::R
+    ηPη::R
+    z::T
+    z_r::R
     residual::T
-    useRand::Bool
+    trust_region_radius::R
+    model_value::R
+    new_model_value::R
+    κ::R
+    randomize::Bool
+    initialResidualNorm::Float64
     function TruncatedConjugateGradientOptions(
-        x::P, stop::StoppingCriterion, η::T, δ::T, Δ, residual::T, uR::Bool
-    ) where {P,T}
-        return new{typeof(x),typeof(η)}(x, stop, η, δ, Δ, residual, uR)
+        p::HessianProblem,
+        x::P,
+        η::T,
+        trust_region_radius::R,
+        randomize::Bool;
+        θ::Float64=1.0,
+        κ::Float64=0.1,
+        stop::StoppingCriterion=StopWhenAny(
+            StopAfterIteration(manifold_dimension(p.M)),
+            StopWhenAll(
+                StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
+            ),
+            StopWhenTrustRegionIsExceeded(),
+            StopWhenCurvatureIsNegative(),
+            StopWhenModelIncreased(),
+        ),
+    ) where {H,G,P,T,R<:Real}
+        o = new{typeof(x),typeof(η),typeof(trust_region_radius),typeof(stop)}()
+        o.x = x
+        o.stop = stop
+        o.η = η
+        o.trust_region_radius = trust_region_radius
+        o.randomize = randomize
+        o.model_value = zero(trust_region_radius)
+        o.κ = zero(trust_region_radius)
+        return o
     end
 end
 
 @doc raw"""
-    TrustRegionsOptions <: HessianOptions
+    TrustRegionsOptions <: AbstractHessianOptions
 
 describe the trust-regions solver, with
 
@@ -92,9 +139,9 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x` : a point as starting point
 * `stop` : a function s,r = @(o,iter) returning a stop
     indicator and a reason based on an iteration number and the gradient
-* `Δ` : the (initial) trust-region radius
-* `Δ_bar` : the maximum trust-region radius
-* `useRand` : indicates if the trust-region solve is to be initiated with a
+* `trust_region_radius` : the (initial) trust-region radius
+* `max_trust_region_radius` : the maximum trust-region radius
+* `randomize` : indicates if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
@@ -125,82 +172,174 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    TX,TStop<:StoppingCriterion,TΔ,TΔ_bar,TRetr<:AbstractRetractionMethod,Tρ_prime,Tρ_reg
-} <: HessianOptions
-    x::TX
-    stop::TStop
-    Δ::TΔ
-    Δ_bar::TΔ_bar
-    retraction_method::TRetr
-    useRand::Bool
-    ρ_prime::Tρ_prime
-    ρ_regularization::Tρ_reg
-end
+    P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real
+} <: AbstractHessianOptions
+    x::P
+    gradient::T
+    stop::SC
+    trust_region_radius::R
+    max_trust_region_radius::R
+    retraction_method::RTR
+    randomize::Bool
+    ρ_prime::R
+    ρ_regularization::R
 
-@doc raw"""
-    getHessian(p,x,ξ)
+    tcg_options::TruncatedConjugateGradientOptions{P,T,R}
 
-evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the point `x`
-applied to a tangent vector `ξ`.
-"""
-function getHessian(p::HessianProblem, x, ξ; stepsize=2 * 10^(-14))
-    if ismissing(p.hessian)
-        return approxHessianFD(p.M, x -> get_gradient(p.M, x), x, ξ; stepsize=stepsize)
-    else
-        return p.hessian(p.M, x, ξ)
+    x_proposal::P
+    f_proposal::R
+
+    # Random
+    Hgrad::T
+    η::T
+    Hη::T
+    η_Cauchy::T
+    Hη_Cauchy::T
+    τ::R
+    function TrustRegionsOptions{P,T,SC,RTR,R}(
+        x::P,
+        grad::T,
+        trust_region_radius::R,
+        max_trust_region_radius::R,
+        ρ_prime::R,
+        ρ_regularization::R,
+        randomize::Bool,
+        stopping_citerion::SC,
+        retraction_method::RTR,
+    ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real}
+        o = new{P,T,SC,RTR,R}()
+        o.x = x
+        o.gradient = grad
+        o.stop = stopping_citerion
+        o.retraction_method = retraction_method
+        o.trust_region_radius = trust_region_radius
+        o.max_trust_region_radius = max_trust_region_radius::R
+        o.ρ_prime = ρ_prime
+        o.ρ_regularization = ρ_regularization
+        o.randomize = randomize
+        return o
     end
 end
+function TrustRegionsOptions(
+    x::P,
+    grad::T,
+    trust_region_radius::R,
+    max_trust_region_radius::R,
+    ρ_prime::R,
+    ρ_regularization::R,
+    randomize::Bool,
+    stopping_citerion::SC;
+    retraction_method::RTR=ExponentialRetraction(),
+) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod}
+    return TrustRegionsOptions{P,T,SC,RTR,R}(
+        x,
+        grad,
+        trust_region_radius,
+        max_trust_region_radius,
+        ρ_prime,
+        ρ_regularization,
+        randomize,
+        stopping_citerion,
+        retraction_method,
+    )
+end
 
 @doc raw"""
-    get_gradient(p,x)
+    get_hessian(p::HessianProblem{T}, q, X)
+    get_hessian!(p::HessianProblem{T}, Y, q, X)
 
-evaluate the gradient of a [`HessianProblem`](@ref)`p` at the
-point `x`.
+evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the point `q`
+applied to a tangent vector `X`, i.e. ``\operatorname{Hess}f(q)[X]``.
+
+The evaluation is done in place of `Y` for the `!`-variant.
+The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
+When the non-mutating variant is called with a `T=`[`MutatingEvaluation`](@ref)
+memory for the result is allocated.
 """
-get_gradient(p::HessianProblem, x) = p.gradient(p.M, x)
+function get_hessian(p::HessianProblem{AllocatingEvaluation}, q, X)
+    return p.hessian!!(p.M, q, X)
+end
+function get_hessian(p::HessianProblem{MutatingEvaluation}, q, X)
+    Y = zero_vector(p.M, q)
+    return p.hessian!!(p.M, Y, q, X)
+end
+function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
+    return copyto!(p.M, Y, p.hessian!!(p.M, q, X))
+end
+function get_hessian!(p::HessianProblem{MutatingEvaluation}, Y, q, X)
+    return p.hessian!!(p.M, Y, q, X)
+end
+
 @doc raw"""
     get_preconditioner(p,x,ξ)
 
-evaluate the symmetric, positive deﬁnite preconditioner (approximation of the
+evaluate the symmetric, positive definite preconditioner (approximation of the
 inverse of the Hessian of the cost function `F`) of a
 [`HessianProblem`](@ref) `p` at the point `x`applied to a
 tangent vector `ξ`.
 """
-get_preconditioner(p::HessianProblem, x, ξ) = p.precon(p.M, x, ξ)
+get_preconditioner(p::HessianProblem, x, X) = p.precon(p.M, x, X)
 
 @doc raw"""
-    approxHessianFD(p,x,ξ,[stepsize=2.0^(-14)])
+    approxHessianFiniteDifference{T, mT, P, G}
 
-return an approximated solution of the Hessian of the cost function applied to
-a tangent vector `ξ` by using a generic finite difference approximation
-based on computations of the gradient.
-
-Input
-* `p` – a Manopt problem structure (already containing the manifold and enough
-        information to compute the cost gradient)
-* `x` – a point where the Hessian is ​​to be approximated
-* `ξ` – a tangent vector on which the approximated Hessian is ​​to be applied
-
-# Optional
-* `stepsize` – the length of the step with which the method should work
-
-# Output
-* a tangent vector generated by applying the approximated Hessian to the
-    tangent vector ξ
+A functor to approximate the Hessian by a finite difference of gradient evaluations
 """
-function approxHessianFD(
-    M::MT, x, gradFct, ξ; stepsize=2.0^(-14), vector_transport_method=ParallelTransport()
-) where {MT<:Manifold}
-    norm_xi = norm(M, x, ξ)
-    if norm_xi < eps(Float64)
-        return zero_tangent_vector(M, x)
-    end
-    c = stepsize / norm_xi
-    grad = gradFct(x)
-    x1 = exp(M, x, ξ, c)
-    grad1 = gradFct(x1)
-    grad1 = vector_transport_to(M, x1, grad1, x, vector_transport_method)
-    return (1 / c) * (grad1 - grad)
+mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
+    x_dir::P
+    gradient!!::G
+    grad_tmp::T
+    grad_tmp_dir::T
+    retraction_method::RTR
+    vector_transport_method::VTR
+    steplength::R
+end
+function ApproxHessianFiniteDifference(
+    M::mT,
+    x::P,
+    grad::G;
+    steplength::R=2^-14,
+    evaluation=AllocatingEvaluation(),
+    retraction_method::RTR=ExponentialRetraction(),
+    vector_transport_method::VTR=ParallelTransport(),
+) where {
+    mT<:AbstractManifold,
+    P,
+    G,
+    R<:Real,
+    RTR<:AbstractRetractionMethod,
+    VTR<:AbstractVectorTransportMethod,
+}
+    X = zero_vector(M, x)
+    Y = zero_vector(M, x)
+    return ApproxHessianFiniteDifference{typeof(evaluation),P,typeof(X),G,RTR,VTR,R}(
+        x, grad, X, Y, retraction_method, vector_transport_method, steplength
+    )
+end
+function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
+    norm_X = norm(M, x, X)
+    (norm_X ≈ zero(norm_X)) && return zero_vector(M, x)
+    c = f.steplength / norm_X
+    f.grad_tmp .= f.gradient!!(M, x)
+    f.x_dir .= retract(M, x, c * X, f.retraction_method)
+    f.grad_tmp_dir .= f.gradient!!(M, f.x_dir)
+    f.grad_tmp_dir .= vector_transport_to(
+        M, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
+    )
+    return (1 / c) * (f.grad_tmp_dir - f.grad_tmp)
+end
+function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, x, X)
+    norm_X = norm(M, x, X)
+    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, x)
+    c = f.steplength / norm_X
+    f.gradient!!(M, f.grad_tmp, x)
+    retract!(M, f.x_dir, x, c * X, f.retraction_method)
+    f.gradient!!(M, f.grad_tmp_dir, f.x_dir)
+    vector_transport_to!(
+        M, f.grad_tmp_dir, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
+    )
+    Y .= (1 / c) .* (f.grad_tmp_dir .- f.grad_tmp)
+    return Y
 end
 
 @doc raw"""
@@ -208,13 +347,13 @@ end
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a factor compared to the norm of the initial residual, i.e.
-$\Vert r_k \Vert_x \leqq \kappa \Vert r_0 \Vert_x$.
+$\Vert r_k \Vert_x \leqq κ \Vert r_0 \Vert_x$.
 In this case the algorithm reached linear convergence.
 
 # Fields
 * `κ` – the reduction factor
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $\eta$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
+    ``η`` of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
   reached, see [`get_reason`](@ref).
 
@@ -231,14 +370,13 @@ iRN times κ.
 """
 mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
-    initialResidualNorm::Float64
     reason::String
-    StopIfResidualIsReducedByFactor(iRN::Float64, κ::Float64) = new(κ, iRN, "")
+    StopIfResidualIsReducedByFactor(κ::Float64) = new(κ, "")
 end
 function (c::StopIfResidualIsReducedByFactor)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm * c.κ && i > 0
+    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * c.κ && i > 0
         c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
         return true
     end
@@ -256,7 +394,7 @@ algorithm reached superlinear convergence.
 # Fields
 * `θ` – part of the reduction power
 * `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $\eta$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
+    $η$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
 
@@ -273,14 +411,13 @@ iRN to the power of 1+θ.
 """
 mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
-    initialResidualNorm::Float64
     reason::String
-    StopIfResidualIsReducedByPower(iRN::Float64, θ::Float64) = new(θ, iRN, "")
+    StopIfResidualIsReducedByPower(θ::Float64) = new(θ, "")
 end
 function (c::StopIfResidualIsReducedByPower)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    if norm(p.M, o.x, o.residual) <= c.initialResidualNorm^(1 + c.θ) && i > 0
+    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm^(1 + c.θ) && i > 0
         c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
         return true
     end
@@ -292,7 +429,7 @@ end
 
 A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
 mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
-≧ Δ$. terminate the algorithm when the trust region has been left.
+≧ trust_region_radius$. terminate the algorithm when the trust region has been left.
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
@@ -314,36 +451,15 @@ the norm of the next iterate is greater than the trust-region radius using the
 """
 mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
-    storage::StoreOptionsAction
-    function StopWhenTrustRegionIsExceeded(
-        a::StoreOptionsAction=StoreOptionsAction((:η, :δ, :residual))
-    )
-        return new("", a)
-    end
 end
+StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
 function (c::StopWhenTrustRegionIsExceeded)(
-    p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    if has_storage(c.storage, :δ) &&
-       has_storage(c.storage, :η) &&
-       has_storage(c.storage, :residual)
-        η = get_storage(c.storage, :η)
-        δ = get_storage(c.storage, :δ)
-        residual = get_storage(c.storage, :residual)
-        a1 = inner(
-            p.M, o.x, o.useRand ? get_preconditioner(p, o.x, residual) : residual, residual
-        )
-        a2 = inner(p.M, o.x, δ, getHessian(p, o.x, δ))
-        a3 = inner(p.M, o.x, η, get_preconditioner(p, o.x, δ))
-        a4 = inner(p.M, o.x, δ, get_preconditioner(p, o.x, δ))
-        norm = inner(p.M, o.x, η, η) - 2 * (a1 / a2) * a3 + (a1 / a2)^2 * a4
-        if norm >= o.Δ^2 && i >= 0
-            c.reason = "Trust-region radius violation (‖η‖² = $norm >= $(o.Δ^2) = Δ²). \n"
-            c.storage(p, o, i)
-            return true
-        end
+    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+)
+    if o.ηPη >= o.trust_region_radius^2 && i >= 0
+        c.reason = "Trust-region radius violation (‖η‖² = $(o.ηPη)) >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
+        return true
     end
-    c.storage(p, o, i)
     return false
 end
 
@@ -358,39 +474,54 @@ does not give a reduction of the model.
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
-* `storage` – stores the necessary parameter `δ` to check the
-    criterion.
 
 # Constructor
 
-    StopWhenCurvatureIsNegative([a])
-
-initialize the StopWhenCurvatureIsNegative functor to indicate to stop after
-the inner product of the search direction and the hessian applied on the search
-dircetion is less than zero using the [`StoreOptionsAction`](@ref) `a`, which
-is initialized to just store `:δ` by default.
+    StopWhenCurvatureIsNegative()
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
-    storage::StoreOptionsAction
-    function StopWhenCurvatureIsNegative(a::StoreOptionsAction=StoreOptionsAction((:δ,)))
-        return new("", a)
-    end
 end
+StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("")
 function (c::StopWhenCurvatureIsNegative)(
-    p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
-    if has_storage(c.storage, :δ)
-        δ = get_storage(c.storage, :δ)
-        if inner(p.M, o.x, δ, getHessian(p, o.x, δ)) <= 0 && i > 0
-            c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(inner(p.M, o.x, δ, getHessian(p, o.x, δ))) <= 0).\n"
-            c.storage(p, o, i)
-            return true
-        end
+    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+)
+    if o.δHδ <= 0 && i > 0
+        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(o.δHδ))) <= 0).\n"
+        return true
     end
-    c.storage(p, o, i)
+    return false
+end
+
+@doc raw"""
+    StopWhenModelIncreased <: StoppingCriterion
+
+A functor for testing if the curvature of the model value increased.
+
+# Fields
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`get_reason`](@ref).
+
+# Constructor
+
+    StopWhenModelIncreased()
+
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct StopWhenModelIncreased <: StoppingCriterion
+    reason::String
+end
+StopWhenModelIncreased() = StopWhenModelIncreased("")
+function (c::StopWhenModelIncreased)(
+    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+)
+    if i > 0 && (o.new_model_value > o.model_value)
+        c.reason = "Model value increased from $(o.model_value) to $(o.new_model_value).\n"
+        return true
+    end
     return false
 end

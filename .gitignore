@@ -13,3 +13,5 @@ examples/**/*.mp4
 examples/**/*.jld2
 docs/src/tutorials/*.md
 .vscode
+Manifest.toml
+*.DS_Store

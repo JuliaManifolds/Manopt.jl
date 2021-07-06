@@ -2,6 +2,7 @@
 
 ```@docs
 subgradient_method
+subgradient_method!
 ```
 
 ## Options

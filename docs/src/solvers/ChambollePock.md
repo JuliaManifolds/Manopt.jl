@@ -3,37 +3,37 @@
 The Riemannian Chambolle–Pock is a generalization of the Chambolle–Pock algorithm[^ChambollePock2011].
 It is also known as primal dual hybrig gradient (PDHG) or primal dual proximal splitting (PDPS) algorithm.
 
-In order to minimize over $p\in\mathcal M§ the cost function consisting of
+In order to minimize over $p∈\mathcal M§ the cost function consisting of
 
 ```math
-F(p) + G(\Lambda(p)),
+F(p) + G(Λ(p)),
 ```
 
-where $F:\mathcal M \to \overline{\mathbb R}$, $G:\mathcal N \to \overline{\mathbb R}$, and
-$\Lambda:\mathcal M \to\mathcal N$.
+where $F:\mathcal M → \overline{ℝ}$, $G:\mathcal N → \overline{ℝ}$, and
+$Λ:\mathcal M →\mathcal N$.
 If the manifolds $\mathcal M$ or $\mathcal N$ are not Hadamard, it has to be considered locally,
 i.e. on geodesically convex sets $\mathcal C \subset \mathcal M$ and $\mathcal D \subset\mathcal N$
-such that $\Lambda(\mathcal C) \subset \mathcal D$.
+such that $Λ(\mathcal C) \subset \mathcal D$.
 
 The algorithm is available in four variants: exact versus linearized (see `variant`)
 as well as with primal versus dual relaxation (see `relax`). For more details, see
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020].
 In the following we note the case of the exact, primal relaxed Riemannian Chambolle–Pock algorithm.
 
-Given base points $m\in\mathcal C$, $n=\Lambda(m)\in\mathcal D$,
-initial primal and dual values $p^{(0)} \in \mathcal C$, $\xi_n^{(0)} \in T_n^*\mathcal N$,
+Given base points $m∈\mathcal C$, $n=Λ(m)∈\mathcal D$,
+initial primal and dual values $p^{(0)} ∈\mathcal C$, $ξ_n^{(0)} ∈T_n^*\mathcal N$,
 and primal and dual step sizes $\sigma_0$, $\tau_0$, relaxation $\theta_0$,
 as well as acceleration $\gamma$.
 
 As an initialization, perform $\bar p^{(0)} \gets p^{(0)}$.
 
-The algorithms performs the steps $k=1,\ldots,$ (until a [`StoppingCriterion`](@ref) is fulfilled with)
+The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref) is fulfilled with)
 
 1. ```math
-   \xi^{(k+1)}_n = \operatorname{prox}_{\tau_k G_n^*}\Bigl(\xi_n^{(k)} + \tau_k \bigl(\log_n \Lambda (\bar p^{(k)})\bigr)^\flat\Bigr)
+   ξ^{(k+1)}_n = \operatorname{prox}_{\tau_k G_n^*}\Bigl(ξ_n^{(k)} + \tau_k \bigl(\log_n Λ (\bar p^{(k)})\bigr)^\flat\Bigr)
    ```
 2. ```math
-   p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \operatorname{PT}_{p^{(k)}\gets m}\bigl(-\sigma_k D\Lambda(m)^*[\xi_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)
+   p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \operatorname{PT}_{p^{(k)}\gets m}\bigl(-\sigma_k DΛ(m)^*[ξ_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)
    ```
 3. Update
    * ``\theta_k = (1+2\gamma\sigma_k)^{-\frac{1}{2}}``
@@ -48,7 +48,7 @@ by a retraction, an in verse retraction and a vector transport.
 
 Finally you can also update the base points $m$ and $n$ during the iterations.
 This introduces a few additional vector transports. The same holds for the case that
-$\Lambda(m^{(k)})\neq n^{(k)}$ at some point. All these cases are covered in the algorithm.
+$Λ(m^{(k)})\neq n^{(k)}$ at some point. All these cases are covered in the algorithm.
 
 ```@meta
 CurrentModule = Manopt
@@ -56,12 +56,12 @@ CurrentModule = Manopt
 
 ```@docs
 ChambollePock
+ChambollePock!
 ```
 
 ## Problem & Options
 
 ```@docs
-PrimalDualProblem
 PrimalDualOptions
 ChambollePockOptions
 ```

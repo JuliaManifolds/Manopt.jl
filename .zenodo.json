@@ -7,11 +7,11 @@
         },
         {
             "name": "Dornig, Renée",
-            "type": "Project Member"
+            "type": "ProjectMember"
         },
         {
             "name": "Riemer, Tom-Christian",
-            "type": "Project Member"
+            "type": "ProjectMember"
         },
         {
             "name": "Schilly, Harald",
@@ -19,12 +19,16 @@
         },
         {
             "name": "Weiß, Manuel",
-            "type": "Project Member"
+            "type": "ProjectMember"
+        },
+        {
+            "name": "Rebjock, Quentin",
+            "type": "ProjectMember"
         }
     ],
     "creators": [
         {
-            "affiliation": "Technische Universität Chemnitz",
+            "affiliation": "NTNU Trondheim",
             "name": "Bergmann, Ronny",
             "orcid": "0000-0001-8342-7218"
         }

@@ -1,16 +1,3 @@
-export RecordOptions
-export RecordAction
-export RecordGroup, RecordEvery
-export RecordChange, RecordCost, RecordIterate, RecordIteration
-export RecordEntry, RecordEntryChange
-export get_record, has_record
-export RecordActionFactory, RecordFactory
-
-#
-#
-# record Options Decorator
-#
-#
 @doc raw"""
     RecordAction
 
@@ -33,10 +20,10 @@ abstract type RecordAction <: AbstractOptionsAction end
 
 append to any [`Options`](@ref) the decorator with record functionality,
 Internally a `Dict`ionary is kept that stores a [`RecordAction`](@ref) for
-several occasions using a `Symbol` as reference.
-The default occasion is `:All` and for example solvers join this field with
-`:Start`, `:Step` and `:Stop` at the beginning, every iteration or the
-end of the algorithm, respectively
+several concurrent modes using a `Symbol` as reference.
+The default mode is `:Iteration`, which is used to store information that is recorded during
+the iterations. RecordActions might be added to `:Start` or `:Stop` to record values at the
+beginning or for the stopping time point, respectively
 
 The original options can still be accessed using the [`get_options`](@ref) function.
 
@@ -50,7 +37,7 @@ The original options can still be accessed using the [`get_options`](@ref) funct
 
 construct record decorated [`Options`](@ref), where `dR` can be
 
-* a [`RecordAction`](@ref), then it is stored within the dictionary at `:All`
+* a [`RecordAction`](@ref), then it is stored within the dictionary at `:Iteration`
 * an `Array` of [`RecordAction`](@ref)s, then it is stored as a
   `recordDictionary`(@ref) within the dictionary at `:All`.
 * a `Dict{Symbol,RecordAction}`.
@@ -62,11 +49,8 @@ mutable struct RecordOptions{O<:Options,TRD<:NamedTuple} <: Options
         return new{O,typeof(values(kwargs))}(o, values(kwargs))
     end
 end
-function RecordOptions(o::O, dR::D) where {O<:Options,D<:RecordAction}
-    return RecordOptions{O}(o; All=dR)
-end
-function RecordOptions(o::O, dR::Array{<:RecordAction,1}) where {O<:Options}
-    return RecordOptions{O}(o; All=RecordGroup(dR))
+function RecordOptions(o::O, dR::RecordAction) where {O<:Options}
+    return RecordOptions{O}(o; Iteration=dR)
 end
 function RecordOptions(o::O, dR::Dict{Symbol,<:RecordAction}) where {O<:Options}
     return RecordOptions{O}(o; dR...)
@@ -74,47 +58,86 @@ end
 function RecordOptions(o::O, format::Vector{<:Any}) where {O<:Options}
     return RecordOptions{O}(o; RecordFactory(get_options(o), format)...)
 end
+function RecordOptions(o::O, s::Symbol) where {O<:Options}
+    return RecordOptions{O}(o; Iteration=RecordFactory(get_options(o), s))
+end
 
-dispatch_options_decorator(o::RecordOptions) = Val(true)
+dispatch_options_decorator(::RecordOptions) = Val(true)
 
-"""
-    has_record(o)
+@doc """
+    has_record(o::Options)
 
 check whether the [`Options`](@ref)` o` are decorated with
 [`RecordOptions`](@ref)
 """
-has_record(o::RecordOptions) = true
+has_record(::RecordOptions) = true
 has_record(o::Options) = has_record(o, dispatch_options_decorator(o))
 has_record(o::Options, ::Val{true}) = has_record(o.options)
-has_record(o::Options, ::Val{false}) = false
+has_record(::Options, ::Val{false}) = false
 
-# default - stored in the recorded_values field of the RecordAction
+@doc """
+    get_record_options(o::Options)
+
+return the [`RecordOptions`](@ref) among the decorators from the [`Options`](@ref) `o`
+"""
+get_record_options(o::Options) = get_record_options(o, dispatch_options_decorator(o))
+get_record_options(o::Options, ::Val{true}) = get_record_options(o.options)
+get_record_options(::Options, ::Val{false}) = error("No Record decoration found")
+get_record_options(o::RecordOptions) = o
+
 @doc raw"""
-    get_record(o[,s=:Step])
+    get_record_action(o::Options, s::Symbol)
+
+return the action contained in the (first) [`RecordOptions`](@ref) decorator within the [`Options`](@ref) `o`.
+
+"""
+function get_record_action(o::Options, s::Symbol=:Iteration)
+    if haskey(o.recordDictionary, s)
+        return o.recordDictionary[s]
+    else
+        error("No record known for key :$s found")
+    end
+end
+@doc raw"""
+    get_record(o::Options, [,s=:Iteration])
+    get_record(o::RecordOptions, [,s=:Iteration])
 
 return the recorded values from within the [`RecordOptions`](@ref) `o` that where
 recorded with respect to the `Symbol s` as an `Array`. The default refers to
-any recordings during an Iteration represented by the Symbol `:Step`
+any recordings during an `:Iteration`.
+
+When called with arbitrary [`Options`](@ref), this method looks for the
+[`RecordOptions`](@ref) decorator and calls `get_record` on the decorator.
 """
-function get_record(o::RecordOptions, s::Symbol=:Step)
-    if haskey(o.recordDictionary, s)
-        return get_record(o.recordDictionary[s])
-    elseif haskey(o.recordDictionary, :All)
-        return get_record(o.recordDictionary[:All])
-    else
-        error("No record known for key found, since neither :$s nor :All are present.")
-    end
+function get_record(o::RecordOptions, s::Symbol=:Iteration)
+    return get_record(get_record_action(o, s))
 end
-get_record(o::Options, s::Symbol=:Step) = get_record(o, s, dispatch_options_decorator(o))
-get_record(o::Options, s, ::Val{true}) = get_record(o.options, s)
-get_record(o::Options, s, ::Val{false}) = error("No Record decoration found")
+function get_record(o::RecordOptions, s::Symbol, i...)
+    return get_record(get_record_action(o, s), i...)
+end
+get_record(o::Options, s::Symbol=:Iteration) = get_record(get_record_options(o), s)
 
 @doc raw"""
-    get_record(r)
+    get_record(r::RecordAction)
 
 return the recorded values stored within a [`RecordAction`](@ref) `r`.
 """
-get_record(r::R) where {R<:RecordAction} = r.recorded_values
+get_record(r::RecordAction, i) = r.recorded_values
+get_record(r::RecordAction) = r.recorded_values
+
+"""
+    get_index(ro::RecordOptions, s::Symbol)
+    ro[s]
+
+Get the recorded values for reording type `s`, see [`get_record`](@ref) for details.
+
+    get_index(ro::RecordOptions, s::Symbol, i...)
+    ro[s, i...]
+
+Acces the recording type of type `s` and call its [`RecordAction`](@ref) with `[i...]`.
+"""
+getindex(ro::RecordOptions, s::Symbol) = get_record(ro, s)
+getindex(ro::RecordOptions, s::Symbol, i...) = get_record_action(ro, s)[i...]
 
 """
     record_or_reset!(r,v,i)
@@ -123,38 +146,122 @@ either record (`i>0` and not `Inf`) the value `v` within the [`RecordAction`](@r
 or reset (`i<0`) the internal storage, where `v` has to match the internal
 value type of the corresponding Recordaction.
 """
-function record_or_reset!(r::R, v, i::Int) where {R<:RecordAction}
+function record_or_reset!(r::RecordAction, v, i::Int)
     if i > 0
         push!(r.recorded_values, deepcopy(v))
-    elseif i < 0 && i > typemin(Int) # reset if negative but not stop indication
+    elseif i < 0 # reset if negative
         r.recorded_values = Array{typeof(v),1}()
     end
 end
+
 """
     RecordGroup <: RecordAction
 
-group a set of [`RecordAction`](@ref)s into one action, where the internal prints
-are removed by default and the resulting strings are concatenated
+group a set of [`RecordAction`](@ref)s into one action, where the internal [`RecordAction`](@ref)s
+act independently, but the results can be collected in a grouped fashion, i.e. tuples per calls of this group.
+The enries can be later addressed either by index or semantic Symbols
 
-# Constructor
-    RecordGroup(g)
+# Constructors
+    RecordGroup(g::Array{<:RecordAction, 1})
 
 construct a group consisting of an Array of [`RecordAction`](@ref)s `g`,
-that are recording `en bloque`; the method does not perform any record itself,
-but keeps an array of records. Accessing these yields a `Tuple` of the recorded
-values per iteration
+
+    RecordGroup(g, symbols)
+
+# Examples
+    r = RecordGroup([RecordIteration(), RecordCost()])
+
+A RecordGroup to record the current iteration and the cost. The cost can then be accessed using `get_record(r,2)` or `r[2]`.
+
+    r = RecordGroup([RecordIteration(), RecordCost()], Dict(:Cost => 2))
+
+A RecordGroup to record the current iteration and the cost, wich can then be accesed using `get_record(:Cost)` or `r[:Cost]`.
+
+    r = RecordGroup([RecordIteration(), :Cost => RecordCost()])
+
+A RecordGroup identical to the previous constructor, just a little easier to use.
 """
 mutable struct RecordGroup <: RecordAction
     group::Array{RecordAction,1}
-    RecordGroup(g::Array{<:RecordAction,1}) = new(g)
-    RecordGroup() = new(Array{RecordAction,1}())
+    indexSymbols::Dict{Symbol,Int}
+    function RecordGroup(
+        g::Array{<:RecordAction,1}, symbols::Dict{Symbol,Int}=Dict{Symbol,Int}()
+    )
+        if length(symbols) > 0
+            if maximum(values(symbols)) > length(g)
+                error(
+                    "Index $(maximum(values(symbols))) must not be larger than number of elements ($(length(g))) in this RecordGroup.",
+                )
+            end
+            if minimum(values(symbols)) < 1
+                error("Index $(minimum(values(symbols))) nonpositive not allowed.")
+            end
+        end
+        return new(g, symbols)
+    end
+    function RecordGroup(
+        records::Vector{<:Union{<:RecordAction,Pair{Symbol,<:RecordAction}}}
+    )
+        g = Array{RecordAction,1}()
+        si = Dict{Symbol,Int}()
+        for i in 1:length(records)
+            if records[i] isa RecordAction
+                push!(g, records[i])
+            else
+                push!(g, records[i].second)
+                push!(si, records[i].first => i)
+            end
+        end
+        return RecordGroup(g, si)
+    end
+    RecordGroup() = new(Array{RecordAction,1}(), Dict{Symbol,Int}())
 end
+
 function (d::RecordGroup)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     for ri in d.group
         ri(p, o, i)
     end
 end
+@doc raw"""
+    get_record(r::RecordGroup)
+
+return an array of tuples, where each tuple is a recorded set, e.g. per iteration / record call.
+
+    get_record(r::RecordGruop, i::Int)
+
+return an array of values corresponding to the `i`th entry in this record group
+
+    get_record(r::RecordGruop, s::Symbol)
+
+return an array of recorded values with respect to the `s`, see [`RecordGroup`](@ref).
+
+    get_record(r::RecordGroup, s1::Symbol, s2::Symbol,...)
+
+return an array of tuples, where each tuple is a recorded set corresponding to the symbols `s1, s2,...` per iteration / record call.
+"""
 get_record(r::RecordGroup) = [zip(get_record.(r.group)...)...]
+get_record(r::RecordGroup, i) = get_record(r.group[i])
+get_record(r::RecordGroup, s::Symbol) = get_record(r.group[r.indexSymbols[s]])
+function get_record(r::RecordGroup, s::NTuple{N,Symbol}) where {N}
+    inds = getindex.(Ref(r.indexSymbols), s)
+    return [zip(get_record.([r.group[i] for i in inds])...)...]
+end
+
+@doc raw"""
+    getindex(r::RecordGroup, s::Symbol)
+    r[s]
+    getindex(r::RecordGroup, sT::NTuple{N,Symbol})
+    r[sT]
+    getindex(r::RecordGroup, i)
+    r[i]
+
+return an array of recorded values with respect to the `s`, the symbols from the tuple `sT` or the index `i`.
+See [`get_record`](@ref get_record(r::RecordGroup)) for details.
+"""
+getindex(::RecordGroup, ::Any...)
+getindex(r::RecordGroup, s::Symbol) = get_record(r, s)
+getindex(r::RecordGroup, s::NTuple{N,Symbol}) where {N} = get_record(r, s)
+getindex(r::RecordGroup, i) = get_record(r, i)
 
 @doc raw"""
     RecordEvery <: RecordAction
@@ -183,6 +290,9 @@ function (d::RecordEvery)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     end
 end
 get_record(r::RecordEvery) = get_record(r.record)
+get_record(r::RecordEvery, i) = get_record(r.record, i)
+getindex(r::RecordEvery, i) = get_record(r, i)
+
 #
 # Special single ones
 #
@@ -232,9 +342,9 @@ mutable struct RecordEntry{T} <: RecordAction
     field::Symbol
     RecordEntry{T}(f::Symbol) where {T} = new(Array{T,1}(), f)
 end
-RecordEntry(e::T, f::Symbol) where {T} = RecordEntry{T}(f)
+RecordEntry(::T, f::Symbol) where {T} = RecordEntry{T}(f)
 RecordEntry(d::DataType, f::Symbol) = RecordEntry{d}(f)
-function (r::RecordEntry{T})(p::Pr, o::O, i::Int) where {T,Pr<:Problem,O<:Options}
+function (r::RecordEntry{T})(::Problem, o::Options, i) where {T}
     return record_or_reset!(r, getfield(o, r.field), i)
 end
 
@@ -297,7 +407,11 @@ mutable struct RecordIterate{T} <: RecordAction
 end
 RecordIterate(::T) where {T} = RecordIterate{T}()
 function RecordIterate()
-    return throw(ErrorException("The iterate's data type has to be provided, i.e. RecordIterate(x0)."))
+    return throw(
+        ErrorException(
+            "The iterate's data type has to be provided, i.e. RecordIterate(x0)."
+        ),
+    )
 end
 
 function (r::RecordIterate{T})(::Problem, o::Options, i) where {T}
@@ -331,7 +445,7 @@ function (r::RecordCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
 end
 
 @doc raw"""
-    RecordFactory(a)
+    RecordFactory(o::Options, a)
 
 given an array of `Symbol`s and [`RecordAction`](@ref)s and `Ints`
 
@@ -340,13 +454,20 @@ given an array of `Symbol`s and [`RecordAction`](@ref)s and `Ints`
 * The symbol `:Change` creates a [`RecordChange`](@ref)
 * any other symbol creates a [`RecordEntry`](@ref) of the corresponding field in [`Options`](@ref)
 * any [`RecordAction`](@ref) is directly included
+* an semantic pair `:symbol => RecordAction` is directly included
 * an Integer `k` introduces that record is only performed every `k`th iteration
 """
-function RecordFactory(o::O, a::Array{<:Any,1}) where {O<:Options}
+function RecordFactory(o::Options, a::Array{<:Any,1})
     # filter out every
-    group = Array{RecordAction,1}()
-    for s in filter(x -> !isa(x, Int), a) # filter ints and stop
-        push!(group, RecordActionFactory(o, s))
+    group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
+    for s in filter(x -> !isa(x, Int), a) # for all that are not integers or stopping criteria
+        if s isa Symbol
+            push!(group, s => RecordActionFactory(o, s))
+        elseif s isa Pair{<:Symbol,<:RecordAction}
+            push!(group, s)
+        else
+            push!(group, RecordActionFactory(o, s))
+        end
     end
     record = RecordGroup(group)
     # filter ints
@@ -354,8 +475,10 @@ function RecordFactory(o::O, a::Array{<:Any,1}) where {O<:Options}
     if length(e) > 0
         record = RecordEvery(record, last(e))
     end
-    return (; All=record)
+    return (; Iteration=record)
 end
+RecordFactory(o::Options, s::Symbol) = RecordActionFactory(o, s)
+
 @doc raw"""
     RecordActionFactory(s)
 
@@ -365,8 +488,9 @@ create a [`RecordAction`](@ref) where
 * a [`Symbol`] creates [`RecordEntry`](@ref) of that symbol, with the exceptions
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
 """
-RecordActionFactory(o::O, a::A) where {O<:Options,A<:RecordAction} = a
-function RecordActionFactory(o::O, s::Symbol) where {O<:Options}
+RecordActionFactory(::Options, a::RecordAction) = a
+RecordActionFactory(::Options, sa::Pair{Symbol,<:RecordAction}) = sa
+function RecordActionFactory(o::Options, s::Symbol)
     if (s == :Change)
         return RecordChange()
     elseif (s == :Iteration)

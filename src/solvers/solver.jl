@@ -13,7 +13,7 @@ one is used to activate certain decorators.
   [`DebugOptions`](@ref) decorator dictionary. Only excention is `:Stop` that is passed to `:Stop`.
 * `record` – (`Array{Union{Symbol,RecordAction,Int},1}()`) specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly. The integer can again
-  be used for only recording every $i$th iteration.
+  be used for only recording every ``i``th iteration.
 
 # See also
 [`DebugOptions`](@ref), [`RecordOptions`](@ref)
@@ -29,6 +29,7 @@ function decorate_options(
     }=missing,
     record::Union{
         Missing, # none
+        Symbol, # single action shortcut by symbol
         RecordAction, # single action
         Array{RecordAction,1}, # a group to be set in :All
         Dict{Symbol,RecordAction}, # a dictionary for precise settings

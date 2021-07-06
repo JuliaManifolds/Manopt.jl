@@ -60,7 +60,7 @@ function DebugOptions(o::O, format::Array{<:Any,1}) where {O<:Options}
     return DebugOptions{O}(o, DebugFactory(format))
 end
 
-dispatch_options_decorator(o::DebugOptions) = Val(true)
+dispatch_options_decorator(::DebugOptions) = Val(true)
 
 #
 # Meta Debugs
@@ -126,7 +126,7 @@ during the last iteration. See [`DebugEntryChange`](@ref)
 * `x0` – an initial value to already get a Change after the first iterate. Can be left out
 * `a` – (`StoreOptionsAction( (:x,) )`) – the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output
-* `print` – (`print`) default method to peform the print.
+* `print` – (`print`) default method to perform the print.
 """
 mutable struct DebugChange <: DebugAction
     io::IO
@@ -318,9 +318,11 @@ function (d::DebugEntryChange)(p::Problem, o::Options, i::Int)
     s = if (i > 0)
         (
             if has_storage(d.storage, d.field)
-                d.prefix * string(d.distance(
-                    p, o, getproperty(o, d.field), get_storage(d.storage, d.field)
-                ))
+                d.prefix * string(
+                    d.distance(
+                        p, o, getproperty(o, d.field), get_storage(d.storage, d.field)
+                    ),
+                )
             else
                 ""
             end
@@ -353,7 +355,7 @@ end
 
 given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
 
-* The symbol `:Stop` creates an entry of to display the stoping criterion at the end
+* The symbol `:Stop` creates an entry of to display the stopping criterion at the end
   (`:Stop => DebugStoppingCriterion()`)
 * The symbol `:Cost` creates a [`DebugCost`](@ref)
 * The symbol `:iteration` creates a [`DebugIteration`](@ref)

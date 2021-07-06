@@ -8,14 +8,14 @@ The aim is to minimize the sum
 $F(x) = f(x) + g(x)$
 
 on a manifold, where the two summands have proximal maps
-$\operatorname{prox}_{\lambda f}, \operatorname{prox}_{\lambda g}$ that are easy
+$\operatorname{prox}_{λ f}, \operatorname{prox}_{λ g}$ that are easy
 to evaluate (maybe in closed form or not too costly to approximate).
 Further define the Reflection operator at the proximal map as
 
-$\operatorname{refl}_{\lambda f}(x) = \exp_{\operatorname{prox}_{\lambda f}(x)} \bigl( -\log_{\operatorname{prox}_{\lambda f}(x)} x \bigr)$.
+$\operatorname{refl}_{λ f}(x) = \exp_{\operatorname{prox}_{λ f}(x)} \bigl( -\log_{\operatorname{prox}_{λ f}(x)} x \bigr)$.
 
 Let $\alpha_k ∈  [0,1]$ with $\sum_{k ∈ \mathbb N} \alpha_k(1-\alpha_k) =  ∈ fty$
-and $\lambda > 0$ which might depend on iteration $k$ as well) be given.
+and $λ > 0$ which might depend on iteration $k$ as well) be given.
 
 Then the (P)DRA algorithm for initial data $x_0 ∈ \mathcal H$ as
 
@@ -27,8 +27,8 @@ Initialize $t_0 = x_0$ and $k=0$
 
 Repeat  until a convergence criterion is reached
 
-1. Compute $s_k = \operatorname{refl}_{\lambda f}\operatorname{refl}_{\lambda g}(t_k)$
-2. within that operation store $x_{k+1} = \operatorname{prox}_{\lambda g}(t_k)$ which is the prox the inner reflection reflects at.
+1. Compute $s_k = \operatorname{refl}_{λ f}\operatorname{refl}_{λ g}(t_k)$
+2. within that operation store $x_{k+1} = \operatorname{prox}_{λ g}(t_k)$ which is the prox the inner reflection reflects at.
 3. Compute $t_{k+1} = g(\alpha_k; t_k, s_k)$
 4. Set $k = k+1$
 
@@ -46,6 +46,7 @@ leading to the second prox being the Riemannian mean.
 
 ```@docs
   DouglasRachford
+  DouglasRachford!
 ```
 
 ## Options

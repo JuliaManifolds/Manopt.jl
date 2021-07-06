@@ -8,7 +8,7 @@ CurrentModule = Manopt
 Manopt.Manopt
 ```
 
-For a function $f\colon\mathcal M \to \mathbb R$ defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) $\mathcal M$ we aim to solve
+For a function $f:\mathcal M → ℝ$ defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) $\mathcal M$ we aim to solve
 
 $\operatorname*{argmin}_{x ∈ \mathcal M} f(x),$
 
@@ -28,6 +28,21 @@ manifold as well as a manifold for your favorite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
 [record](@ref RecordOptions) certain data or
 [display information](@ref DebugOptions) throughout iterations.
+
+If you are using `Manopt.jl` in a publication, please refer to this  
+[![DOI](https://zenodo.org/badge/74746729.svg)](https://zenodo.org/badge/latestdoi/74746729)  
+or the one specific to the version you used, for example with the following [BibLaTeX](https://ctan.org/pkg/biblatex) entry to refer to the latest version
+
+```bibtex
+@software{Manoptjl,
+  doi = {10.5281/zenodo.4290905},
+  author = {Bergmann,  Ronny},
+  title = {Manopt.jl},
+  year = {2021},
+  howpublished={\url{https://manoptjl.org}},
+  version = {0.3.0}
+}
+```
 
 ## Main Features
 

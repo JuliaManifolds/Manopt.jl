@@ -40,7 +40,7 @@ is_options_decorator(o::Options) = _extract_val(dispatch_options_decorator(o))
 @doc raw"""
     StoppingCriterion
 
-An abstract type for the functors representing stoping criteria, i.e. they are
+An abstract type for the functors representing stopping criteria, i.e. they are
 callable structures. The naming Scheme follows functions, see for
 example [`StopAfterIteration`](@ref).
 
@@ -49,8 +49,8 @@ the interface `(p,o,i)` where a [`Problem`](@ref) as well as [`Options`](@ref)
 and the current number of iterations are the arguments and returns a Bool whether
 to stop or not.
 
-By default each `StoppingCriterion` should provide a fiels `reason` to provide
-details when a criteion is met (and that is empty otherwise).
+By default each `StoppingCriterion` should provide a fields `reason` to provide
+details when a criterion is met (and that is empty otherwise).
 """
 abstract type StoppingCriterion end
 
@@ -72,7 +72,7 @@ abstract type StoppingCriterionSet <: StoppingCriterion end
     Stepsize
 
 An abstract type for the functors representing step sizes, i.e. they are callable
-structurs. The naming scheme is `TypeOfStepSize`, e.g. `ConstantStepsize`.
+structures. The naming scheme is `TypeOfStepSize`, e.g. `ConstantStepsize`.
 
 Every Stepsize has to provide a constructor and its function has to have
 the interface `(p,o,i)` where a [`Problem`](@ref) as well as [`Options`](@ref)
@@ -159,7 +159,10 @@ end
 function (a::StoreOptionsAction)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
     #update values (maybe only once)
     if !a.once || a.last_stored != i
-        merge!(a.values, Dict{Symbol,Any}(key => getproperty(o, key) for key in a.keys))
+        merge!(
+            a.values,
+            Dict{Symbol,Any}(key => deepcopy(getproperty(o, key)) for key in a.keys),
+        )
     end
     return a.last_stored = i
 end

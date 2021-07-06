@@ -4,7 +4,7 @@ This small section extends the functions available from [ManifoldsBase.jl](https
 
 ```@autodocs
 Modules = [Manopt]
-Pages   = ["manifold.jl"]
+Pages   = ["manifold_functions.jl"]
 ```
 
 ## Simplified random functions
@@ -15,4 +15,11 @@ the following functions provide default random points and vectors on manifolds.
 ```@autodocs
 Modules = [Manopt]
 Pages   = ["random.jl"]
+```
+
+## Initialize data
+
+```@autodocs
+Modules = [Manopt]
+Pages   = ["initialize_data.jl"]
 ```
