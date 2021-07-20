@@ -32,6 +32,27 @@ for (i, tutorial) in enumerate(tutorials)
     Literate.markdown(sourceFile, tutorialsOutputPath; name=tutorial, credit=false)
     push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
 end
+
+generated_path = joinpath(@__DIR__, "src")
+base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
+isdir(generated_path) || mkdir(generated_path)
+
+open(joinpath(generated_path, "contributing.md"), "w") do io
+    # Point to source license file
+    println(
+        io,
+        """
+        ```@meta
+        EditURL = "$(base_url)CONTRIBUTING.md"
+        ```
+        """,
+    )
+    # Write the contents out below the meta block
+    for line in eachline(joinpath(dirname(@__DIR__), "CONTRIBUTING.md"))
+        println(io, line)
+    end
+end
+
 makedocs(;
     format=Documenter.HTML(; prettyurls=false),
     modules=[Manopt],
@@ -74,6 +95,7 @@ makedocs(;
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
         ],
+        "Contributing to Manopt.jl" => "contributing.md",
         "Notation" => "notation.md",
         "Function Index" => "list.md",
     ],
