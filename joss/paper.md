@@ -20,7 +20,7 @@ bibliography: bibliography.bib
 # Summary
 
 [`Manopt.jl`](https://manoptjl.org) provides a set of optimization algorithms for optimization problems given on a Riemannian manifold $\mathcal M$.
-Based on a generic optimization framework together with the interface `ManifoldsBase.jl` for Riemannian manifolds, classical and recently developed methods are provided in an efficient implementation. Algorithms include the least requiring Particle Swarm and Nelder Mead algorithms as well as a classical gradient or stochastic gradient descent. Furthermore, quasi Newton methods like a Riemannian L-BFGS [@HuangGallivanAbsil:2015:1] and nonsmooth optimization algorithms like a Cyclic Proximal Point Algorithm [@Bacak:2014:1], Douglas-Rachford [@BergmannPerschSteidl:2016:1] and Chambolle-Pock algorithm [@BergmannHerzogSilvaLouzeiroTenbrinckVidal-Nunez-2020] are provided together with several basic cost functions, gradients and proximal maps as well as debug and record capabilities.
+Based on a generic optimization framework together with the interface `ManifoldsBase.jl` for Riemannian manifolds, classical and recently developed methods are provided in an efficient implementation. Algorithms include the least requiring Particle Swarm and Nelder Mead algorithms as well as a classical gradient or stochastic gradient descent. Furthermore, quasi Newton methods like a Riemannian L-BFGS [@HuangGallivanAbsil:2015:1] and nonsmooth optimization algorithms like a Cyclic Proximal Point Algorithm [@Bacak:2014:1], Douglas-Rachford [@BergmannPerschSteidl:2016:1] and Chambolle-Pock algorithm [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] are provided together with several basic cost functions, gradients and proximal maps as well as debug and record capabilities.
 
 # Statement of Need
 
@@ -49,7 +49,23 @@ The `Problem` consists of all static information like the cost function and a po
 Similarly, tangent vectors at different points are identified by vector transport, which by default is the parallel transport.
 By providing always a default, the start for a user can start right away and modify these settings to improve speed or specify the retraction to their needs.
 
+The main methods to implement for an own solver are the `initialize_solver!(p,o)` which should fill the data in the options with initial state. The second method to implement is the `step_solver!(p,o,i)` performing the $i$th iteration.
+
 Using a decorator pattern, the `Options` can be encapsulated in `DebugOptions` or `RecordOptions` which either print or record arbitrary data stored within the `Options`. This enables to investigate how the optimization is performed in detail and use the algorithms from within this package also for numerical analysis.
+
+In the current version `Manopt.jl` version 0.3.11 the following algorithms are available
+
+* Alternating Gradient Descent
+* Chambolle-Pock
+* Conjugate Gradient Descent
+* (parallel) Douglas–Rachford
+* Gradient Descent, including direction update rules including Momentum, Average, and a Nestorv-type one
+* Nelder-Mead
+* Particle Swarm Optimization
+* Quasi-Newton, with the BFGS, DFP, Broyden and a symmetric rank 1 update, their inverse updates as well as a limited memory variant of (inverse) BFGS
+* Stochastic Gradient Descent
+* Subgradient Method
+* Trust Regions, with inner Steihaug-Toint TCG solver
 
 # Example
 
@@ -91,6 +107,6 @@ There are two projects that are most similar to `Manopt.jl` are [`Manopt`](https
 Similarly [`ROPTLIB`](https://www.math.fsu.edu/~whuang2/Indices/index_ROPTLIB.html) is a package for optimization on Manifolds in C++.
 While all three packages cover some algorithms, most are less flexible for example in stating the stopping criterion, which is fixed to mainly maximal number of iterations or a small gradient. Most prominently, `Manopt.jl` is the first package that also covers methods for high-performance and high-dimensional nonsmooth optimization on manifolds.
 
-The algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidal-Nunez-2020] was developed using Manopt.jl. Based on this theory and algorithm, a higher order algorithm was introuced in [@DiepeveenLellmann:2021:1]. Optimised examples from [@BergmannGousenbourger:2018:2] performing data interpolation and approximation with manifold-valued Bézier curves, are also included in `Manopt.jl`.
+The algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] was developed using Manopt.jl. Based on this theory and algorithm, a higher order algorithm was introuced in [@DiepeveenLellmann:2021:1]. Optimised examples from [@BergmannGousenbourger:2018:2] performing data interpolation and approximation with manifold-valued Bézier curves, are also included in `Manopt.jl`.
 
 # References
