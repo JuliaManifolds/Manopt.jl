@@ -56,16 +56,17 @@ Using a decorator pattern, the `Options` can be encapsulated in `DebugOptions` o
 In the current version `Manopt.jl` version 0.3.11 the following algorithms are available
 
 * Alternating Gradient Descent
-* Chambolle-Pock
-* Conjugate Gradient Descent
-* (parallel) Douglas–Rachford
+* Chambolle-Pock [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1]
+* Conjugate Gradient Descent, including eight update rules
+* Cyclic Proximal Point [@Bacak:2014:1]
+* (parallel) Douglas–Rachford [@BergmannPerschSteidl:2016:1]
 * Gradient Descent, including direction update rules including Momentum, Average, and a Nestorv-type one
 * Nelder-Mead
-* Particle Swarm Optimization
-* Quasi-Newton, with the BFGS, DFP, Broyden and a symmetric rank 1 update, their inverse updates as well as a limited memory variant of (inverse) BFGS
+* Particle Swarm Optimization [@BorckmansIshtevaAbsil2010]
+* Quasi-Newton, with the BFGS, DFP, Broyden and a symmetric rank 1 update, their inverse updates as well as a limited memory variant of (inverse) BFGS [@HuangGallivanAbsil:2015:1]
 * Stochastic Gradient Descent
 * Subgradient Method
-* Trust Regions, with inner Steihaug-Toint TCG solver
+* Trust Regions, with inner Steihaug-Toint TCG solver [@AbsilBakerGallivan2006]
 
 # Example
 
@@ -104,7 +105,7 @@ values = get_record(o)
 # Related research and software
 
 There are two projects that are most similar to `Manopt.jl` are [`Manopt`](https://manopt.org) [@manopt] in Matlab and [`pymanopt`](https://pymanopt.org) [@pymanopt] in Python.
-Similarly [`ROPTLIB`](https://www.math.fsu.edu/~whuang2/Indices/index_ROPTLIB.html) is a package for optimization on Manifolds in C++.
+Similarly [`ROPTLIB`](https://www.math.fsu.edu/~whuang2/Indices/index_ROPTLIB.html) [@HuangAbsilGallivanHand:2018:1] is a package for optimization on Manifolds in C++.
 While all three packages cover some algorithms, most are less flexible for example in stating the stopping criterion, which is fixed to mainly maximal number of iterations or a small gradient. Most prominently, `Manopt.jl` is the first package that also covers methods for high-performance and high-dimensional nonsmooth optimization on manifolds.
 
 The algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] was developed using Manopt.jl. Based on this theory and algorithm, a higher order algorithm was introuced in [@DiepeveenLellmann:2021:1]. Optimised examples from [@BergmannGousenbourger:2018:2] performing data interpolation and approximation with manifold-valued Bézier curves, are also included in `Manopt.jl`.
