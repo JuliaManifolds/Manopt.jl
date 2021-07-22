@@ -13,7 +13,7 @@ affiliations:
  - name: Norwegian University of Science and Technology, Department of Mathematical Sciences, Trondheim, Norway
    index: 1
 date: 23 December 2020
-bibliography: bibliograpy.bib
+bibliography: bibliography.bib
 
 ---
 
