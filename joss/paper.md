@@ -57,25 +57,27 @@ Using a decorator pattern, the `Options` can be encapsulated in `DebugOptions` o
 Given the `Sphere` from `Manifolds.jl` and a set of unit vectors $p_1,...,p_N\in\mathbb R^3$, where $N$ is the number of data points.
 we can compute the generalization of the mean, called the Riemannian Center of Mass, which is defined as the minimizer of the squared distances to the given data
 
-$$ \text{Minimize}_{x\in\mathcal M} \displaystyle\sum_{k=1}^Nd_{\mathcal M}(x, p_k)^2, $$
+```math
+\text{Minimize}_{x\in\mathcal M} \displaystyle\sum_{k=1}^Nd_{\mathcal M}(x, p_k)^2,
+```
 
 where $d_{\mathcal M}$ denotes the Riemannian distance. For the sphere this distance is given by the length of the shorter great arc connecting the two points.
 
 ```julia
 using Manopt, Manifolds, LinearAlgebra
 M = Sphere(2)
-pts = [ normalize(rand(3)) for _ ∈ 1:100 ]
+pts = [ normalize(rand(3)) for _ in 1:100 ]
 
 F(y) = sum(1/(2*n) * distance.(Ref(M), pts, Ref(y)).^2)
-∇F(y) = sum(1/n ∇distance.(Ref(M), pts, Ref(y)))
+gradF(y) = sum(1/n grad_distance.(Ref(M), pts, Ref(y)))
 
-xMean = gradient_descent(M, F, ∇F, pts[1])
+xMean = gradient_descent(M, F, gradF, pts[1])
 ```
 
 In order to print the iteration, the current iterate, change and cost every $50$th iteration as well as the stopping reason and record iteration number, change and cost, these can be specified as optional parameters. These can then be easily accessed using the `get_record` function.
 
 ```julia
-o = gradient_descent(M, F, ∇F, pts[1],
+o = gradient_descent(M, F, gradF, pts[1],
     debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", 50, :Stop],
     record=[:Iteration, :Change, :Cost],
 )
