@@ -26,11 +26,12 @@ Based on a generic optimization framework together with the interface `Manifolds
 
 In many applications and optimization tasks, nonlinear data appears naturally.
 For example when data on the sphere is measured, diffusion data can be captures as a signal or multivariate data of symmetric positive definite matrices or orientations like they appear for electron backscattered diffration (EBSD) data. Another example are fixed rank matrices, appearing in dictionary learning.
-Working on these data, for example denoising, inpainting, or performing matrix completion can be phrased as an optimization problem
+Working on these data, for example doing data interpolation, data approximation, denoising, inpainting, or performing matrix completion, can be phrased as an optimization problem
 
 $$ \text{Minimize}\quad f(x) \quad \text{where } x\in\mathcal M, $$
 
 where the optimization problem is phrased on a Riemannian manifold $\mathcal M$.
+
 Further examples can be found in [@AbsilMahonySepulchre:2008:1], [@Boumal:2020:1].
 
 Using the interface for manifolds, `ManifoldsBase.jl`, the algorithms are implemented in the optimization framework can therefore be used with any manifold from `Manifolds.jl` [@AxenBaranBergmannRzecki:2021:1], a library of efficiently implemented Riemannian manifolds.
@@ -86,22 +87,10 @@ values = get_record(o)
 
 # Related research and software
 
-There are two projects that are most similar to `Manopt.jl` are [`Manopt`](https://manopt.org) in Matlab and [`pymanopt`](https://pymanopt.org) in Python.
+There are two projects that are most similar to `Manopt.jl` are [`Manopt`](https://manopt.org) [@manopt] in Matlab and [`pymanopt`](https://pymanopt.org) [@pymanopt] in Python.
 Similarly [`ROPTLIB`](https://www.math.fsu.edu/~whuang2/Indices/index_ROPTLIB.html) is a package for optimization on Manifolds in C++.
 While all three packages cover some algorithms, most are less flexible for example in stating the stopping criterion, which is fixed to mainly maximal number of iterations or a small gradient. Most prominently, `Manopt.jl` is the first package that also covers methods for high-performance and high-dimensional nonsmooth optimization on manifolds.
 
-The algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidal-Nunez-2020] was developed using Manopt.jl. Based on this theory and algorithm, a higher order algorithm was introuced in [@DiepeveenLellmann:2021:1].
-
-# Quality control and contributions
-
-Manopt.jl` uses GitHub Actions and a continuous integration testing with the most recent version of Julia all supported versions of Julia
- on macOS, Linux and Windows. The tests cover most of the library and can also be run locally in Julia REPL with `]test Manopt`
-Support and submission of contributions to the library are handled through the GitHub repository via issues or by pull requests
-
-# Requirements
-
-`Manopt.jl` is based on `ManifoldsBase.jl`.
-This package is available in the general Julia registry.
-A user can hence use the interface to implement an own manifold or use a manifold from the library `Manifolds.jl` of manifold.
+The algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidal-Nunez-2020] was developed using Manopt.jl. Based on this theory and algorithm, a higher order algorithm was introuced in [@DiepeveenLellmann:2021:1]. Optimised examples from [@BergmannGousenbourger:2018:2] performing data interpolation and approximation with manifold-valued Bézier curves, are also included in `Manopt.jl`.
 
 # References

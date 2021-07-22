@@ -28,7 +28,7 @@
 }
 
 @article{BergmannPerschSteidl:2016:1,
-    AUTHOR       = {Bergmann, Ronny and Persch, Johannes and Steidl, Gabriele},
+    AUTHOR       = {Bergmann, R. and Persch, J. and Steidl, G.},
     DATE         = {2016},
     DOI          = {10.1137/15M1052858},
     EPRINT = {1512.02814},
@@ -42,14 +42,14 @@
 
 
 @booklet{Boumal:2020:1,
-    AUTHOR = {Boumal, Nicolas},
+    AUTHOR = {Boumal, N.},
     URL    = {http://www.nicolasboumal.net/book},
     DATE   = {2020-08},
     TITLE  = {An Introduction to Optimization on Smooth Manifolds}
 }
 
 @article{HuangGallivanAbsil:2015:1,
-    AUTHOR       = {Huang, Wen and Gallivan, K. A. and Absil, P.-A.},
+    AUTHOR       = {Huang, W. and Gallivan, K. A. and Absil, P.-A.},
     DATE         = {2015},
     DOI          = {10.1137/140955483},
     ISSN         = {1052-6234},
@@ -60,14 +60,14 @@
     VOLUME       = {25}
 }
 @online{AxenBaranBergmannRzecki:2021:1,
-    AUTHOR     = {Seth D. Axen and Mateusz Baran and Ronny Bergmann and Krzysztof Rzecki},
+    AUTHOR     = {Axen, S. D. and Baran, M. and Bergmann, R. and Rzecki, K.},
     TITLE      = {Manifolds.jl: An Extensible {J}ulia Framework for Data Analysis on Manifolds},
     YEAR       = {2021},
     EPRINT     = {2106.08777},
     EPRINTTYPE = {arXiv}
 }
 @article{BacakBergmannSteidlWeinmann:2016:1,
-    AUTHOR       = {Bačák, Miroslav and Bergmann, Ronny and Steidl, Gabriele and Weinmann, Andreas},
+    AUTHOR       = {Bačák, M. and Bergmann, R. and Steidl, G. and Weinmann, A.},
     DATE         = {2016},
     DOI          = {10.1137/15M101988X},
     JOURNALTITLE = {SIAM Journal on Scientific Computing},
@@ -78,9 +78,42 @@
 }
 
 @online{DiepeveenLellmann:2021:1,
-    AUTHOR     = {Willem Diepeveen and Jan Lellmann},
+    AUTHOR     = {Diepeveen, W. and Lellmann, J.},
     TITLE      = {Duality-based Higher-order Non-smooth Optimization on Manifolds},
     YEAR       = {2021},
     EPRINT     = {2102.10309},
     EPRINTTYPE = {arXiv}
+}
+@article{BergmannGousenbourger:2018:2,
+    ABSTRACT     = {We derive a variational model to fit a composite Bézier curve to a set of data points on a Riemannian manifold. The resulting curve is obtained in such a way that its mean squared acceleration is minimal in addition to remaining close the data points. We approximate the acceleration by discretizing the squared second order derivative along the curve. We derive a closed-form, numerically stable and efficient algorithm to compute the gradient of a Bézier curve on manifolds with respect to its control points, expressed as a concatenation of so-called adjoint Jacobi fields. Several examples illustrate the capabilites and validity of this approach both for interpolation and approximation. The examples also illustrate that the approach outperforms previous works tackling this problem.},
+    AUTHOR       = {Bergmann, R. and Gousenbourger, P.-Y.},
+    DATE         = {2018},
+    DOI          = {10.3389/fams.2018.00059},
+    EPRINT       = {1807.10090},
+    EPRINTTYPE   = {arXiv},
+    JOURNALTITLE = {Frontiers in Applied Mathematics and Statistics},
+    TITLE        = {A variational model for data fitting on manifolds by minimizing the acceleration of a Bézier curve},
+    VOLUME       = {4}
+}
+
+@article{@pymanopt,
+    AUTHOR  = {Townsend, T. and Koep, N. and Weichwald, S.},
+    TITLE   = {Pymanopt: A Python Toolbox for Optimization on Manifolds using Automatic Differentiation},
+    JOURNAL = {Journal of Machine Learning Research},
+    YEAR    = {2016},
+    VOLUME  = {17},
+    NUMBER  = {137},
+    PAGES   = {1-5},
+    URL     = {http://jmlr.org/papers/v17/16-177.html}
+}
+
+@article{manopt,
+    AUTHOR  = {Boumal, N. and Mishra, B. and Absil, P.-A. and Sepulchre, R.},
+    JOURNAL = {Journal of Machine Learning Research},
+    TITLE   = {{M}anopt, a {M}atlab Toolbox for Optimization on Manifolds},
+    YEAR    = {2014},
+    NUMBER  = {42},
+    PAGES   = {1455--1459},
+    VOLUME  = {15},
+    URL     = {https://www.manopt.org}
 }
