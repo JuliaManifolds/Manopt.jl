@@ -25,17 +25,23 @@ Based on a generic optimization framework together with the interface `Manifolds
 # Statement of Need
 
 In many applications and optimization tasks, nonlinear data appears naturally.
-For example when data on the sphere is measured, diffusion data can be captures as a signal or multivariate data of symmetric positive definite matrices or orientations like they appear for electron backscattered diffration (EBSD) data. Another example are fixed rank matrices, appearing in dictionary learning.
+For example when data on the sphere is measured, diffusion data can be captures as a signal or multivariate data of symmetric positive definite matrices or orientations like they appear for electron backscattered diffraction (EBSD) data. Another example are fixed rank matrices, appearing in dictionary learning.
 Working on these data, for example doing data interpolation, data approximation, denoising, inpainting, or performing matrix completion, can be phrased as an optimization problem
 
 $$ \text{Minimize}\quad f(x) \quad \text{where } x\in\mathcal M, $$
 
 where the optimization problem is phrased on a Riemannian manifold $\mathcal M$.
 
-Further examples can be found in [@AbsilMahonySepulchre:2008:1], [@Boumal:2020:1].
+A main challenge of these algorithms is that, compared to the (classical) Euclidean case, there is no addition available. For example on the unit sphere $\mathbb S^2$ of unit vectors in $\mathbb R^3$, adding two vectors of unit lengths yields a point that is not of unit norm.
+the resolution is to generalize the notion of a shortest path from the straight line to what is called a (shortest) geodesic, or acceleration free curves.
+In the same sense, other features and properties have to be rephrased and generalized, when performing optimization on a Riemannian manifold.
+Algorithms to perform the optimisation can still often be stated in the generic form, i.e. on an arbitrary Riemannian manifold $\mathcal M$.
+
+Further examples and a thorough introduction can be found in [@AbsilMahonySepulchre:2008:1], [@Boumal:2020:1].
+
+For a user facing an optimization problem on a manifold, there are two obstacles to the actual numerical optimisation: on the one hand, a suitable implementation of the manifold at hand is required, for example how to evaluate the above mentioned geodesics. On the other hand, an implementation of the optimisation algorithm that employs said methods from the manifold, such that the algorithm can be applied to the cost function $f$ a user already has.
 
 Using the interface for manifolds, `ManifoldsBase.jl`, the algorithms are implemented in the optimization framework can therefore be used with any manifold from `Manifolds.jl` [@AxenBaranBergmannRzecki:2021:1], a library of efficiently implemented Riemannian manifolds.
-
 `Manopt.jl` provides a low level entry to optimization on manifolds while also providing efficient implementations, that can easily be extended to cover own manifolds.
 
 # Functionality
@@ -108,6 +114,6 @@ There are two projects that are most similar to `Manopt.jl` are [`Manopt`](https
 Similarly [`ROPTLIB`](https://www.math.fsu.edu/~whuang2/Indices/index_ROPTLIB.html) [@HuangAbsilGallivanHand:2018:1] is a package for optimization on Manifolds in C++.
 While all three packages cover some algorithms, most are less flexible for example in stating the stopping criterion, which is fixed to mainly maximal number of iterations or a small gradient. Most prominently, `Manopt.jl` is the first package that also covers methods for high-performance and high-dimensional nonsmooth optimization on manifolds.
 
-The algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] was developed using Manopt.jl. Based on this theory and algorithm, a higher order algorithm was introuced in [@DiepeveenLellmann:2021:1]. Optimised examples from [@BergmannGousenbourger:2018:2] performing data interpolation and approximation with manifold-valued Bézier curves, are also included in `Manopt.jl`.
+The algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] was developed using Manopt.jl. Based on this theory and algorithm, a higher order algorithm was introduced in [@DiepeveenLellmann:2021:1]. Optimised examples from [@BergmannGousenbourger:2018:2] performing data interpolation and approximation with manifold-valued Bézier curves, are also included in `Manopt.jl`.
 
 # References
