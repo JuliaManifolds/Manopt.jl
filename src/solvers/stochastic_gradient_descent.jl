@@ -23,7 +23,7 @@ perform a stochastic gradient descent
 * `order_type` (`:RandomOder`) a type of ordering of gradient evaluations.
   values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 
 # Output
 * `x_opt` – the resulting (approximately critical) point of gradientDescent
@@ -63,8 +63,7 @@ function stochastic_gradient_descent!(
     stepsize::Stepsize=ConstantStepsize(1.0),
     order_type::Symbol=:Random,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     return_options=false,
     kwargs...,
 )
