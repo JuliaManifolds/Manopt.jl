@@ -48,7 +48,7 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
 * `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(N)`) an inverse retraction to use.
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 * `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
@@ -125,7 +125,7 @@ function ChambollePock!(
     update_primal_base::Union{Function,Missing}=missing,
     update_dual_base::Union{Function,Missing}=missing,
     retraction_method::RM=default_retraction_method(M),
-    inverse_retraction_method::IRM=default_inverse_retraction_method(N),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M),
     vector_transport_method::VTM=default_vector_transport_method(M),
     variant=ismissing(Λ) ? :exact : :linearized,
     return_options=false,
