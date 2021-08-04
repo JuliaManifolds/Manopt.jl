@@ -32,7 +32,7 @@ For a description of the algorithm and more details see
   random tangent vector. If set to true, no preconditioner will be
   used. This option is set to true in some scenarios to escape saddle
   points, but is otherwise seldom activated.
-* `retraction` – approximation of the exponential map
+* `retraction` – (`default_retraction_method(M)`) approximation of the exponential map
 * `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
@@ -91,7 +91,7 @@ function trust_regions!(
     hessF::TH,
     x;
     evaluation=AllocatingEvaluation(),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(1000), StopWhenGradientNormLess(10^(-6))
