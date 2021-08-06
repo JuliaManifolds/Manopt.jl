@@ -98,14 +98,8 @@ x_mean = gradient_descent(M, F, gradF, pts[1])
 ```
 
 Both the data `pts` and the resulting mean are shown in the following figure.
-<center>
-<figure>
-<img src="src/img/MeanIllustr.png" alt="Spherical Mean Illustration" style="width:50%">
-<figcaption align = "left">
-Fig. 1.  100 random points <code>pts</code> and the result from the gradient descent to compute the <code>x_mean</code> (orange).
-</figcaption>
-</figure>
-</center>
+
+![100 random points `pts` and the result from the gradient descent to compute the `x_mean` (orange).](src/img/MeanIllustr.png)
 
 In order to print the current iteration number, change and cost every iteration as well as the stopping reason, you can provide an `debug` keyword with the corresponding symbols interleaved with strings. The Symbol `:Stop` indicates the stopping reason should be printed in the end. The last integer in this array introduces that only every $i$th iteration a debug is printed.
 While `:x` could be used to also print the current iterate, this usually takes up too much space.
@@ -138,7 +132,8 @@ Initial |  | F(x): 0.26445609908711865
 # 5 | Last Change: 1.2341904187709075e-6 | F(x): 0.11618821112179054
 # 6 | Last Change: 5.575503985246929e-8 | F(x): 0.11618821112178938
 # 7 | Last Change: 2.9802322387695312e-8 | F(x): 0.11618821112178936
-The algorithm reached approximately critical point after 7 iterations; the gradient norm (1.9001130414808935e-9) is less than 1.0e-8.
+The algorithm reached approximately critical point after 7 iterations;
+    the gradient norm (1.9001130414808935e-9) is less than 1.0e-8.
 ```
 
 
