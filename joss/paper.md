@@ -80,7 +80,7 @@ In the current version `Manopt.jl` version 0.3.12 the following algorithms are a
 Given the `Sphere` from `Manifolds.jl` and a set of unit vectors $p_1,...,p_N\in\mathbb R^3$, where $N$ is the number of data points.
 we can compute the generalization of the mean, called the Riemannian Center of Mass [@Karcher:1977:1], which is defined as the minimizer of the squared distances to the given data
 
-$$ \text{Minimize}_{x\in\mathcal M} \displaystyle\sum_{k=1}^Nd_{\mathcal M}(x, p_k)^2, $$
+$$ \operatorname*{arg\,min}_{x\in\mathcal M}\quad \displaystyle\sum_{k=1}^Nd_{\mathcal M}(x, p_k)^2, $$
 
 where $d_{\mathcal M}$ denotes length of a shortest geodesic connecting the the two points in the arguments. It is called the Riemannian distance. For the sphere this distance is given by the length of the shorter great arc connecting the two points.
 
