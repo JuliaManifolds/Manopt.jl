@@ -108,6 +108,8 @@ include("solvers/DouglasRachford.jl")
 include("solvers/NelderMead.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/particle_swarm.jl")
+include("solvers/primal_dual_semismooth_Newton.jl")
+
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
 include("solvers/stochastic_gradient_descent.jl")
@@ -128,6 +130,7 @@ export Problem,
     SubGradientProblem,
     GradientProblem,
     HessianProblem,
+    PrimalDualSemismoothNewtonProblem,
     PrimalDualProblem,
     StochasticGradientProblem
 
@@ -143,6 +146,7 @@ export Options,
     HessianOptions,
     NelderMeadOptions,
     ParticleSwarmOptions,
+    PrimalDualSemismoothNewtonOptions,
     PrimalDualOptions,
     StochasticGradientDescentOptions,
     SubGradientMethodOptions,
@@ -189,6 +193,7 @@ export ChambollePock,
     cyclic_proximal_point,
     gradient_descent,
     NelderMead,
+    primal_dual_semismooth_Newton,
     particle_swarm,
     stochastic_gradient_descent,
     subgradient_method,
