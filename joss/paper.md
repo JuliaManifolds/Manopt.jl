@@ -117,9 +117,9 @@ o = gradient_descent(M, F, gradF, pts[1],
     record=[:x, :Change, :Cost],
     return_options=true
 )
-x_mean_2 = get_solver_result(o) #get solver result
-all_values = get_record(o) # get a tuple of recorded data per iteration
-iterates = get_record(o, :Iteration, :x) # get just iterates recorded per iteration
+x_mean_2 = get_solver_result(o) # the solver result
+all_values = get_record(o) # a tuple of recorded data per iteration
+iterates = get_record(o, :Iteration, :x) # iterates recorded per iteration
 ```
 
 The debug output of this example looks as follows:
