@@ -68,11 +68,14 @@ f(p) = f̃(p);
 # ╔═╡ 0818a62f-1bef-44f7-a33f-1ab0054e853c
 md"The gradient is now computed combining our gradient scheme with ReverseDiff."
 
+# ╔═╡ 89cd6b4b-f9ef-47ac-afd3-cf9aacf43256
+Manifolds.rgradient_backend!(Manifolds.RiemannianProjectionGradientBackend(???SomeMagic???)
+
 # ╔═╡ 7c8b681f-32ed-400f-a39f-70e995514ec5
 M = Sphere(n-1)
 
 # ╔═╡ 9cd489f1-0cfa-4ab8-bc1f-d5d4b4a4cb39
-gradf(M, p) = gradient(M, f, p, Manifolds.RiemannianProjectionGradientBackend())
+gradf(M, p) = gradient(M, f, p, ???SomeFurtherMagic???)
 
 # ╔═╡ 558dc14f-00f8-4aab-bc0f-6ce132068259
 p0 = zeros(n); p0[1] = 1.;
@@ -612,6 +615,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─786fce04-53ef-448d-9657-31208b35fb7e
 # ╠═c1341fef-adec-4574-a642-a1a8a9c1fee5
 # ╟─0818a62f-1bef-44f7-a33f-1ab0054e853c
+# ╠═89cd6b4b-f9ef-47ac-afd3-cf9aacf43256
 # ╠═7c8b681f-32ed-400f-a39f-70e995514ec5
 # ╠═9cd489f1-0cfa-4ab8-bc1f-d5d4b4a4cb39
 # ╠═558dc14f-00f8-4aab-bc0f-6ce132068259
