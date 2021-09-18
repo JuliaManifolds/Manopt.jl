@@ -22,7 +22,7 @@ not necessarily deterministic.
    allocation (default) form `∂F(M, y)` or [`MutatingEvaluation`](@ref) in place, i.e. is
    of the form `∂F!(M, X, x)`.
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
-* `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
+* `retraction` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
@@ -64,7 +64,7 @@ function subgradient_method!(
     F::TF,
     ∂F!!::TdF,
     x;
-    retraction::TRetr=ExponentialRetraction(),
+    retraction::TRetr=default_retraction_method(M),
     stepsize::Stepsize=ConstantStepsize(1.0),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     return_options=false,

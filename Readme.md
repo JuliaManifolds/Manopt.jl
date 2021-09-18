@@ -7,6 +7,7 @@ Optimization on Manifolds.
 [![CI](https://github.com/JuliaManifolds/Manopt.jl/workflows/CI/badge.svg)](https://github.com/JuliaManifolds/Manopt.jl/actions?query=workflow%3ACI+branch%3Amaster)
 [![codecov](https://codecov.io/gh/JuliaManifolds/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaManifolds/Manopt.jl)
 [![DOI](https://zenodo.org/badge/74746729.svg)](https://zenodo.org/badge/latestdoi/74746729)
+[![status](https://joss.theoj.org/papers/803fd5cc2034643ea1476d45f9df669b/status.svg)](https://joss.theoj.org/papers/803fd5cc2034643ea1476d45f9df669b)
 
 For a function f that maps from a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold)
 ℳ onto the real line, we aim to solve

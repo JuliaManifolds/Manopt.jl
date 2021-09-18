@@ -223,7 +223,7 @@ mutable struct StopWhenCostLess <: StoppingCriterion
 end
 function (c::StopWhenCostLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     if i > 0 && get_cost(p, o.x) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less then the threshold ($(c.threshold)).\n"
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less than the threshold ($(c.threshold)).\n"
         return true
     end
     return false

@@ -38,7 +38,7 @@ The ``k``th iteration consists of
   approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
 * `memory_size` – (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
   value to use a full memory representation
-* `retraction_method` – (`ExponentialRetraction()`) a retraction method to use, by default
+* `retraction_method` – (`default_retraction_method(M)`) a retraction method to use, by default
   the exponential map.
 * `scale_initial_operator` - (`true`) scale initial operator with
   ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
@@ -46,7 +46,7 @@ The ``k``th iteration consists of
   specify a [`Stepsize`](@ref).
 * `stopping_criterion` - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`)
   specify a [`StoppingCriterion`](@ref)
-* `vector_transport_method` – (`ParallelTransport()`) a vector transport to use.
+* `vector_transport_method` – (`default_vector_transport_method(M)`) a vector transport to use.
 * `return_options` – (`false`) – specify whether to return just the result `x` (default) or the complete [`Options`](@ref), e.g. to access recorded values. if activated, the extended result, i.e. the
 
 # Output
@@ -82,8 +82,10 @@ function quasi_Newton!(
     x::P;
     cautious_update::Bool=false,
     cautious_function::Function=x -> x * 10^(-4),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
+        M
+    ),
     basis::AbstractBasis=DefaultOrthonormalBasis(),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -125,7 +127,7 @@ function quasi_Newton!(
     p = GradientProblem(M, F, gradF; evaluation=evaluation)
     o = QuasiNewtonOptions(
         x,
-        gradF(M, x),
+        get_gradient(p, x),
         local_dir_upd,
         stopping_criterion,
         step_size;
@@ -294,7 +296,9 @@ function update_hessian!(
     d.matrix =
         d.matrix - (d.matrix * yk_c * yk_c' * d.matrix) / ykBkyk_c +
         (sk_c * sk_c') / skyk_c +
-        φ * ykBkyk_c * (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c) *
+        φ *
+        ykBkyk_c *
+        (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c) *
         (sk_c / skyk_c - (d.matrix * yk_c) / ykBkyk_c)'
     return d
 end
@@ -312,7 +316,9 @@ function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{Broyden}, p, o, x_o
     d.matrix =
         d.matrix - (d.matrix * sk_c * sk_c' * d.matrix) / skHksk_c +
         (yk_c * yk_c') / skyk_c +
-        φ * skHksk_c * (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c) *
+        φ *
+        skHksk_c *
+        (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c) *
         (yk_c / skyk_c - (d.matrix * sk_c) / skHksk_c)'
     return d
 end
