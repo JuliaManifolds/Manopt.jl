@@ -17,6 +17,49 @@ md"""
 Since Manifolds.jl 0.6.7 the support of automatic differentiation support has been extended. With [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/) or [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/) you can now use automatic differentiation on manifolds for embedded manifolds.
 """
 
+# ╔═╡ 35f02ab2-30d1-4c3c-8ba7-d07f391019e0
+md"""
+In general there is currenlty two ways to get the gradient of a function ``f\colon\mathcal M \to ℝ`` on a Riemannian manifold ``\mathcal M``.
+"""
+
+# ╔═╡ 18d7459f-eed6-489b-a096-ac77ccd781af
+md"""
+## Forward Differences
+
+A first idea is to generalise (multivariate) finite differences to Riemannian manifolds. Let ``X_1,\ldots,X_d ∈ T_p\mathcal M`` denote an orthonormal basis of the tangent space ``T_p\mathcal M`` at the point ``p∈\mathcal M`` on the Riemannian manifold.
+
+We can generalise the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M`` let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y`` and we obtain  
+
+```math
+	Df(p)[Y] = \frac{\mathrm{d}}{\mathrm{d}t} f(c(t)) = \lim_{h \to 0} \frac{1}{h}(f(\exp_p(hY)-f(p))
+```
+
+We can approximate ``Df(p)[X]`` by a finite difference scheme for an ``h>0`` as
+
+```math
+DF(p)[Y] ≈ G_h(Y) = \frac{1}{h}(f(\exp_p(hY)-f(p))
+```
+
+Furthermore the gradient ``\operatorname{grad}f`` is the Riesz representer of the differential, ie.
+
+```math
+	Df(p)[Y] = g_p(\operatorname{grad}f(p), Y),\qquad \text{ for all } Y ∈ T_p\mathcal M
+```
+
+and since it is a tangent vector, we can write it in terms of a basis as
+
+```math
+	\operatorname{grad}f(p) = \sum_{i=1}^{d} g_p(\operatorname{grad}f(p),X_i)X_i
+	= \sum_{i=1}^{d} Df(p)[X_i]X_i
+```
+
+and perform the approximation from above to obtain
+```math
+	\operatorname{grad}f(p) ≈ \sum_{i=1}^{d} G_h(X_i)X_i
+```
+for some suitable step size ``h``.This comes at the cost of ``d+1`` function evaluations and ``d`` exponential maps. 
+"""
+
 # ╔═╡ 77769eab-54dd-41dc-8125-0382e5ef0bf1
 md"""
 ## A Short Theory recap
@@ -605,6 +648,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╔═╡ Cell order:
 # ╟─0213d26a-18ac-11ec-03fd-ada5992bcea8
 # ╟─f3bc91ee-5871-4cba-ac89-190deb71ad0f
+# ╟─35f02ab2-30d1-4c3c-8ba7-d07f391019e0
+# ╟─18d7459f-eed6-489b-a096-ac77ccd781af
 # ╟─77769eab-54dd-41dc-8125-0382e5ef0bf1
 # ╟─57cda07f-e432-46af-b771-5e5a3067feac
 # ╠═af02696b-a17e-4ec6-a81e-82d0469f4b71
