@@ -4,7 +4,7 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ af02696b-a17e-4ec6-a81e-82d0469f4b71
+# ╔═╡ 41c204dd-6e4e-4a70-8f06-209a469e0680
 using ReverseDiff, Manifolds, Manopt, Test, Random, LinearAlgebra
 
 # ╔═╡ 0213d26a-18ac-11ec-03fd-ada5992bcea8
@@ -37,7 +37,7 @@ We can generalise the notion of a directional derivative, i.e. for the “direct
 We can approximate ``Df(p)[X]`` by a finite difference scheme for an ``h>0`` as
 
 ```math
-DF(p)[Y] ≈ G_h(Y) = \frac{1}{h}(f(\exp_p(hY)-f(p))
+DF(p)[Y] ≈ G_h(Y) := \frac{1}{h}(f(\exp_p(hY)-f(p))
 ```
 
 Furthermore the gradient ``\operatorname{grad}f`` is the Riesz representer of the differential, ie.
@@ -59,6 +59,14 @@ and perform the approximation from above to obtain
 ```
 for some suitable step size ``h``.This comes at the cost of ``d+1`` function evaluations and ``d`` exponential maps. 
 """
+
+# ╔═╡ a3df142e-94df-48d2-be08-d1f1f3854c76
+md"""
+This is the first variant we can use. An advantage is, that it is _intrinsic_ in the sense that it does not require any embedding of the manifold.
+"""
+
+# ╔═╡ 9a030ac6-1f44-4fa6-8bc9-1c0278e97fe2
+
 
 # ╔═╡ 77769eab-54dd-41dc-8125-0382e5ef0bf1
 md"""
@@ -246,9 +254,9 @@ version = "1.0.3"
 
 [[DiffRules]]
 deps = ["NaNMath", "Random", "SpecialFunctions"]
-git-tree-sha1 = "3ed8fa7178a10d1cd0f1ca524f249ba6937490c0"
+git-tree-sha1 = "7220bc21c33e990c14f4a9a319b1d242ebc5b269"
 uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
-version = "1.3.0"
+version = "1.3.1"
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -650,9 +658,11 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─f3bc91ee-5871-4cba-ac89-190deb71ad0f
 # ╟─35f02ab2-30d1-4c3c-8ba7-d07f391019e0
 # ╟─18d7459f-eed6-489b-a096-ac77ccd781af
+# ╟─a3df142e-94df-48d2-be08-d1f1f3854c76
+# ╠═9a030ac6-1f44-4fa6-8bc9-1c0278e97fe2
+# ╠═41c204dd-6e4e-4a70-8f06-209a469e0680
 # ╟─77769eab-54dd-41dc-8125-0382e5ef0bf1
 # ╟─57cda07f-e432-46af-b771-5e5a3067feac
-# ╠═af02696b-a17e-4ec6-a81e-82d0469f4b71
 # ╟─e3b955b1-c780-4302-a605-190c3d10cd6f
 # ╠═71b49425-8cb8-484e-869d-a4dc425a8193
 # ╠═1751071d-1e62-4157-907d-49498496ce65
