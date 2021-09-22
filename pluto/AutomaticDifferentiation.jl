@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.16.0
+# v0.16.1
 
 using Markdown
 using InteractiveUtils
@@ -22,9 +22,23 @@ md"""
 In general there is currenlty two ways to get the gradient of a function ``f\colon\mathcal M \to ℝ`` on a Riemannian manifold ``\mathcal M``.
 """
 
+# ╔═╡ d9be6c2f-65fd-4685-9005-da22bf985e28
+md"""
+In this Notebook we will take a look at a few possibilities to approximate or derive the gradient of a function ``f:\mathcal M \to ℝ`` on a Riemannian manifold, without computing it yourself. There is mainly two different philosophies:
+
+1. Working _instrinsically_, i.e. stay on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
+
+2. Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
+
+Let's first load all packages we need.
+"""
+
+# ╔═╡ f88b15de-cec6-4bc8-9b68-2a407b5aeded
+
+
 # ╔═╡ 18d7459f-eed6-489b-a096-ac77ccd781af
 md"""
-## Forward Differences
+## 1. (Intrinsic) Forward Differences
 
 A first idea is to generalise (multivariate) finite differences to Riemannian manifolds. Let ``X_1,\ldots,X_d ∈ T_p\mathcal M`` denote an orthonormal basis of the tangent space ``T_p\mathcal M`` at the point ``p∈\mathcal M`` on the Riemannian manifold.
 
@@ -66,11 +80,53 @@ This is the first variant we can use. An advantage is, that it is _intrinsic_ in
 """
 
 # ╔═╡ 9a030ac6-1f44-4fa6-8bc9-1c0278e97fe2
+md""" ### An Example: The Rayleigh Quotient
+
+The Rayleigh quotient is concerned with finding Eigenvalues (and Eigenvectors) of a symmetric matrix $A\in ℝ^{(n+1)×(n+1)}$. The optimisation problem reads
+
+```math
+F\colon ℝ^{n+1} \to ℝ,\quad F(\mathbf x) = \frac{\mathbf x^\mathrm{T}A\mathbf x}{\mathbf x^\mathrm{T}\mathbf x}
+```
+
+Minimizing this function yields the smallest eigenvalue ``\lambda_1`` as a value and the corresponding minimizer ``\mathbf x^*`` is a corresponding eigenvector.
+
+Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere ``𝕊^n`` of unit vectors in ``\mathbb R^{n+1}``, i.e.
+
+```math
+\operatorname*{arg\,min}_{p \in 𝕊^n} f(p) = \operatorname*{arg\,min}_{p \in 𝕊^n} p^\mathrm{T}Ap  
+```
+
+We can compute the Riemannian gradient exactly as
+
+```math
+\operatorname{grad} f(p) = 2(Ap - pp^\mathrm{T}Ap)
+```
+
+so we can compare it to the approximation by finite differences.
+"""
+
+# ╔═╡ 19747159-d383-4547-9315-0ed2494904a6
+begin
+	Random.seed!(42)
+	n = 20
+	A = randn(n+1,n+1)
+	A = Symmetric(A)
+	M = Sphere(n)
+	nothing
+end
+
+# ╔═╡ 2e33de5e-ffaa-422a-91d9-61f588ed1211
+
+
+# ╔═╡ bbd9a010-1981-45b3-bf7d-c04bcd2c2128
+
+
+# ╔═╡ 12327b62-7e79-4381-b6a7-f85b08a8251b
 
 
 # ╔═╡ 77769eab-54dd-41dc-8125-0382e5ef0bf1
 md"""
-## A Short Theory recap
+## 2. Conversion of an Euclidean Gradient in the Embedding to a Riemannian Gradient of an (not necessarily isometrically) embedded Manifold
 
 Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function un the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
 
@@ -101,12 +157,6 @@ As an example we use the Rayleigh quotient ``f(x) = \frac{x^{\mathrm{T}}Ax}{x^{\
 # ╔═╡ e3b955b1-c780-4302-a605-190c3d10cd6f
 Random.seed!(42)
 
-# ╔═╡ 71b49425-8cb8-484e-869d-a4dc425a8193
-n = 25
-
-# ╔═╡ 1751071d-1e62-4157-907d-49498496ce65
-A = Symmetric(randn(n,n));
-
 # ╔═╡ c3f3aeba-2849-4715-94e2-0c44613a2ce9
 f̃(x) = x'*A*x/(x'*x);
 
@@ -121,9 +171,6 @@ md"The gradient is now computed combining our gradient scheme with ReverseDiff."
 
 # ╔═╡ 89cd6b4b-f9ef-47ac-afd3-cf9aacf43256
 Manifolds.rgradient_backend!(Manifolds.RiemannianProjectionGradientBackend(???SomeMagic???)
-
-# ╔═╡ 7c8b681f-32ed-400f-a39f-70e995514ec5
-M = Sphere(n-1)
 
 # ╔═╡ 9cd489f1-0cfa-4ab8-bc1f-d5d4b4a4cb39
 gradf(M, p) = gradient(M, f, p, ???SomeFurtherMagic???)
@@ -376,7 +423,7 @@ uuid = "093fc24a-ae57-5d10-9952-331d41423f4d"
 version = "1.3.5"
 
 [[LinearAlgebra]]
-deps = ["Libdl"]
+deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[LogExpFunctions]]
@@ -445,6 +492,10 @@ version = "0.2.38"
 
 [[NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+
+[[OpenBLAS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
+uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 
 [[OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -644,6 +695,10 @@ git-tree-sha1 = "9e7a1e8ca60b742e508a315c17eef5211e7fbfd7"
 uuid = "700de1a5-db45-46bc-99cf-38207098b444"
 version = "0.2.1"
 
+[[libblastrampoline_jll]]
+deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
+uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+
 [[nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
@@ -657,21 +712,24 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─0213d26a-18ac-11ec-03fd-ada5992bcea8
 # ╟─f3bc91ee-5871-4cba-ac89-190deb71ad0f
 # ╟─35f02ab2-30d1-4c3c-8ba7-d07f391019e0
+# ╟─d9be6c2f-65fd-4685-9005-da22bf985e28
+# ╠═f88b15de-cec6-4bc8-9b68-2a407b5aeded
 # ╟─18d7459f-eed6-489b-a096-ac77ccd781af
 # ╟─a3df142e-94df-48d2-be08-d1f1f3854c76
-# ╠═9a030ac6-1f44-4fa6-8bc9-1c0278e97fe2
+# ╟─9a030ac6-1f44-4fa6-8bc9-1c0278e97fe2
+# ╠═19747159-d383-4547-9315-0ed2494904a6
 # ╠═41c204dd-6e4e-4a70-8f06-209a469e0680
-# ╟─77769eab-54dd-41dc-8125-0382e5ef0bf1
+# ╠═2e33de5e-ffaa-422a-91d9-61f588ed1211
+# ╠═bbd9a010-1981-45b3-bf7d-c04bcd2c2128
+# ╠═12327b62-7e79-4381-b6a7-f85b08a8251b
+# ╠═77769eab-54dd-41dc-8125-0382e5ef0bf1
 # ╟─57cda07f-e432-46af-b771-5e5a3067feac
 # ╟─e3b955b1-c780-4302-a605-190c3d10cd6f
-# ╠═71b49425-8cb8-484e-869d-a4dc425a8193
-# ╠═1751071d-1e62-4157-907d-49498496ce65
 # ╠═c3f3aeba-2849-4715-94e2-0c44613a2ce9
 # ╟─786fce04-53ef-448d-9657-31208b35fb7e
 # ╠═c1341fef-adec-4574-a642-a1a8a9c1fee5
 # ╟─0818a62f-1bef-44f7-a33f-1ab0054e853c
 # ╠═89cd6b4b-f9ef-47ac-afd3-cf9aacf43256
-# ╠═7c8b681f-32ed-400f-a39f-70e995514ec5
 # ╠═9cd489f1-0cfa-4ab8-bc1f-d5d4b4a4cb39
 # ╠═558dc14f-00f8-4aab-bc0f-6ce132068259
 # ╠═5dcab4ea-8ecc-46ae-ad98-1670ee795a4a
