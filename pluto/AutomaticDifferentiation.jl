@@ -125,7 +125,7 @@ end
 f1(p) = p'*A'p
 
 # ╔═╡ 2e33de5e-ffaa-422a-91d9-61f588ed1211
-gradf1(p) = 2*(A*p + p*p'*A*p) 
+gradf1(p) = 2*(A*p - p*p'*A*p) 
 
 # ╔═╡ bbd9a010-1981-45b3-bf7d-c04bcd2c2128
 md"""Manifolds provides a finite difference scheme"""
@@ -152,10 +152,10 @@ begin
 end
 
 # ╔═╡ 8e5f677d-dafa-49b9-b678-3f129be31dcf
-X1
+is_vector(M, p, X1)
 
 # ╔═╡ ab5faa5f-1394-40c2-8c81-0e0f5449cd72
-X2
+is_vector(M, p, X2)
 
 # ╔═╡ 77769eab-54dd-41dc-8125-0382e5ef0bf1
 md"""
