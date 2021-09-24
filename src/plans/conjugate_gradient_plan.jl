@@ -18,6 +18,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 [`conjugate_gradient_descent`](@ref), [`GradientProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
 mutable struct ConjugateGradientDescentOptions{
+    P,
     T,
     TCoeff<:DirectionUpdateRule,
     TStepsize<:Stepsize,
@@ -25,7 +26,7 @@ mutable struct ConjugateGradientDescentOptions{
     TRetr<:AbstractRetractionMethod,
     TVTM<:AbstractVectorTransportMethod,
 } <: AbstractGradientOptions
-    x::T
+    x::P
     gradient::T
     δ::T
     β::Float64
@@ -35,15 +36,27 @@ mutable struct ConjugateGradientDescentOptions{
     retraction_method::TRetr
     vector_transport_method::TVTM
     function ConjugateGradientDescentOptions{T}(
-        x0::T,
+        M::AbstractManifold,
+        x0::P,
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
-    ) where {T}
-        o = new{T,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
+        initial_gradient::T=zero_vector(M, p),
+    ) where {P,T}
+        o = new{
+            P,
+            typeof(initial_gradient),
+            typeof(dC),
+            typeof(s),
+            typeof(sC),
+            typeof(retr),
+            typeof(vtr),
+        }()
         o.x = x0
+        o.gradient = initial_gradient
+        o.δ = initial_gradient
         o.stop = sC
         o.retraction_method = retr
         o.stepsize = s
@@ -53,14 +66,16 @@ mutable struct ConjugateGradientDescentOptions{
     end
 end
 function ConjugateGradientDescentOptions(
+    M::AbstractManifold,
     x::T,
     sC::StoppingCriterion,
     s::Stepsize,
     dU::DirectionUpdateRule,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
     vtr::AbstractVectorTransportMethod=ParallelTransport(),
+    initial_gradient::T=zero_vector(M, x),
 ) where {T}
-    return ConjugateGradientDescentOptions{T}(x, sC, s, dU, retr, vtr)
+    return ConjugateGradientDescentOptions{T}(M, x, sC, s, dU, retr, vtr, initial_gradient)
 end
 
 @doc raw"""

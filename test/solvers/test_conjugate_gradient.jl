@@ -19,11 +19,11 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     diff = grad_2 - grad_1
 
     dU = SteepestDirectionUpdateRule()
-    O = ConjugateGradientDescentOptions(x0, sC, s, dU, retr, vtm)
+    O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
     @test O.coefficient(P, O, 1) == 0
 
     dU = ConjugateDescentCoefficient()
-    O = ConjugateGradientDescentOptions(x0, sC, s, dU, retr, vtm)
+    O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
     O.gradient = grad_1
     O.δ = δ1
     # for the first case we get zero
@@ -33,7 +33,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     @test O.coefficient(P, O, 2) == dot(grad_2, grad_2) / dot(-δ2, grad_1)
 
     dU = DaiYuanCoefficient()
-    O = ConjugateGradientDescentOptions(x0, sC, s, dU, retr, vtm)
+    O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm)
     O.gradient = grad_1
     O.δ = δ1
     # for the first case we get zero
@@ -43,7 +43,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     @test O.coefficient(P, O, 2) == dot(grad_2, grad_2) / dot(δ2, grad_2 - grad_1)
 
     dU = FletcherReevesCoefficient()
-    O = ConjugateGradientDescentOptions(x0, sC, s, dU, retr, vtm)
+    O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm)
     O.gradient = grad_1
     O.δ = δ1
     # for the first case we get zero
@@ -53,7 +53,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     @test O.coefficient(P, O, 2) == dot(grad_2, grad_2) / dot(grad_1, grad_1)
 
     dU = HagerZhangCoefficient()
-    O = ConjugateGradientDescentOptions(x0, sC, s, dU, retr, vtm)
+    O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm)
     O.gradient = grad_1
     O.δ = δ1
     # for the first case we get zero
@@ -66,7 +66,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
           dot(diff, grad_2) / denom - 2 * ndiffsq * dot(δ1, grad_2) / denom^2
 
     dU = HeestenesStiefelCoefficient()
-    O = ConjugateGradientDescentOptions(x0, sC, s, dU, retr, vtm)
+    O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm)
     O.gradient = grad_1
     O.δ = δ1
     @test O.coefficient(P, O, 1) == 0.0
@@ -75,7 +75,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     @test O.coefficient(P, O, 2) == dot(diff, grad_2) / dot(δ1, diff)
 
     dU = LiuStoreyCoefficient()
-    O = ConjugateGradientDescentOptions(x0, sC, s, dU, retr, vtm)
+    O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm)
     O.gradient = grad_1
     O.δ = δ1
     @test O.coefficient(P, O, 1) == 0.0
@@ -84,7 +84,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     @test O.coefficient(P, O, 2) == -dot(grad_2, diff) / dot(δ1, grad_1)
 
     dU = PolakRibiereCoefficient()
-    O = ConjugateGradientDescentOptions(x0, sC, s, dU, retr, vtm)
+    O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm)
     O.gradient = grad_1
     O.δ = δ1
     @test O.coefficient(P, O, 1) == 0.0
