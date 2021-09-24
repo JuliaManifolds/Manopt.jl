@@ -87,7 +87,7 @@ function conjugate_gradient_descent!(
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
-    transport_method=default_vector_transport_method(M),
+    vector_transport_method=default_vector_transport_method(M),
     return_options=false,
     kwargs...,
 ) where {TF,TDF}
@@ -100,7 +100,7 @@ function conjugate_gradient_descent!(
         stepsize,
         coefficient,
         retraction_method,
-        transport_method,
+        vector_transport_method,
         X,
     )
     o = decorate_options(o; kwargs...)

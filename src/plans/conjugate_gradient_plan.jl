@@ -35,7 +35,7 @@ mutable struct ConjugateGradientDescentOptions{
     stop::TStop
     retraction_method::TRetr
     vector_transport_method::TVTM
-    function ConjugateGradientDescentOptions{T}(
+    function ConjugateGradientDescentOptions{P,T}(
         M::AbstractManifold,
         x0::P,
         sC::StoppingCriterion,
@@ -45,15 +45,7 @@ mutable struct ConjugateGradientDescentOptions{
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
         initial_gradient::T=zero_vector(M, p),
     ) where {P,T}
-        o = new{
-            P,
-            typeof(initial_gradient),
-            typeof(dC),
-            typeof(s),
-            typeof(sC),
-            typeof(retr),
-            typeof(vtr),
-        }()
+        o = new{P,T,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         o.x = x0
         o.gradient = initial_gradient
         o.δ = initial_gradient
@@ -67,15 +59,17 @@ mutable struct ConjugateGradientDescentOptions{
 end
 function ConjugateGradientDescentOptions(
     M::AbstractManifold,
-    x::T,
+    x::P,
     sC::StoppingCriterion,
     s::Stepsize,
     dU::DirectionUpdateRule,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
     vtr::AbstractVectorTransportMethod=ParallelTransport(),
     initial_gradient::T=zero_vector(M, x),
-) where {T}
-    return ConjugateGradientDescentOptions{T}(M, x, sC, s, dU, retr, vtr, initial_gradient)
+) where {P,T}
+    return ConjugateGradientDescentOptions{P,T}(
+        M, x, sC, s, dU, retr, vtr, initial_gradient
+    )
 end
 
 @doc raw"""
