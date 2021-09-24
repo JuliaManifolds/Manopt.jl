@@ -92,8 +92,16 @@ function conjugate_gradient_descent!(
     kwargs...,
 ) where {TF,TDF}
     p = GradientProblem(M, F, gradF)
+    X = zero_vector(M, x)
     o = ConjugateGradientDescentOptions(
-        x, stopping_criterion, stepsize, coefficient, retraction_method, transport_method
+        M,
+        x,
+        stopping_criterion,
+        stepsize,
+        coefficient,
+        retraction_method,
+        transport_method,
+        X,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)

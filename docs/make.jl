@@ -75,8 +75,7 @@ makedocs(;
             "Quasi-Newton" => "solvers/quasi_Newton.md",
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
             "Subgradient method" => "solvers/subgradient.md",
-            "Steihaug-Toint TCG Method" =>
-                "solvers/truncated_conjugate_gradient_descent.md",
+            "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Trust-Regions Solver" => "solvers/trust_regions.md",
         ],
         "Functions" => [
