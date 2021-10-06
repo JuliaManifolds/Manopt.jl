@@ -1,6 +1,6 @@
 @doc raw"""
     NelderMead(M, F [, p])
-perform a nelder mead minimization problem for the cost funciton `F` on the
+perform a nelder mead minimization problem for the cost function `F` on the
 manifold `M`. If the initial population `p` is not given, a random set of
 points is chosen.
 
@@ -11,22 +11,26 @@ and
 
 # Input
 
-* `M` – a manifold $\mathcal M$
-* `F` – a cost function $F\colon\mathcal M\to\mathbb R$ to minimize
-* `population` – (n+1 `random_point(M)`) an initial population of $n+1$ points, where $n$
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `population` – (n+1 `random_point(M)`) an initial population of ``n+1`` points, where ``n``
   is the dimension of the manifold `M`.
 
 # Optional
 
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
-* `α` – (`1.`) reflection parameter ($\alpha > 0$)
-* `γ` – (`2.`) expansion parameter ($\gamma$)
-* `ρ` – (`1/2`) contraction parameter, $0 < \rho \leq \frac{1}{2}$,
-* `σ` – (`1/2`) shrink coefficient, $0 < \sigma \leq 1$
-* `retraction_method` – (`ExponentialRetraction`) the rectraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction`) an inverse retraction to use.
+* `α` – (`1.`) reflection parameter (``α > 0``)
+* `γ` – (`2.`) expansion parameter (``γ``)
+* `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
+* `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
+* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
+
+!!! note
+    The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
+    load `Manifolds.jl` to use its statistics part.
 
 # Output
 * either `x` the last iterate or the complete options depending on the optional
@@ -34,7 +38,25 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
   returned).
 """
 function NelderMead(
-    M::MT,
+    M::AbstractManifold,
+    F::TF,
+    population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
+    kwargs...,
+) where {TF}
+    res_population = allocate.(population)
+    copyto!.(Ref(M), res_population, population)
+    return NelderMead!(M, F, res_population; kwargs...)
+end
+@doc raw"""
+    NelderMead(M, F [, p])
+perform a Nelder Mead minimization problem for the cost function `F` on the
+manifold `M`. If the initial population `p` is not given, a random set of
+points is chosen. If it is given, the computation is done in place of `p`.
+
+For more options see [`NelderMead`](@ref).
+"""
+function NelderMead!(
+    M::AbstractManifold,
     F::TF,
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     stopping_criterion::StoppingCriterion=StopAfterIteration(200000),
@@ -42,11 +64,13 @@ function NelderMead(
     γ=2.0,
     ρ=1 / 2,
     σ=1 / 2,
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+        M
+    ),
     return_options=false,
     kwargs..., #collect rest
-) where {MT<:Manifold,TF}
+) where {TF}
     p = CostProblem(M, F)
     o = NelderMeadOptions(
         population,
@@ -74,7 +98,7 @@ function initialize_solver!(p::CostProblem, o::NelderMeadOptions)
     o.costs = get_cost.(Ref(p), o.population)
     return o.x = o.population[argmin(o.costs)] # select min
 end
-function step_solver!(p::CostProblem, o::NelderMeadOptions, iter)
+function step_solver!(p::CostProblem, o::NelderMeadOptions, ::Any)
     m = mean(p.M, o.population)
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
     ξ = inverse_retract(p.M, m, o.population[last(ind)], o.inverse_retraction_method)

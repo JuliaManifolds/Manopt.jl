@@ -2,7 +2,7 @@
 #
 # This example illustrates how to set up and solve optimization problems and how
 # to further get data from the algorithm using [`DebugOptions`](@ref) and
-# [`RecordOptions`](@ref)
+# [`RecordOptions`](@ref). We will use the Riemannian mean and median as simple examples.
 #
 # To start from the quite general case: A __Solver__ is an algorithm that aims
 # to solve
@@ -10,12 +10,12 @@
 # $\operatorname*{argmin}_{x∈\mathcal M} f(x)$
 #
 # where $\mathcal M$ is a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and
-# $f\colon\mathcal M \to \mathbb R$ is the cost function.
+# $f:\mathcal M → ℝ$ is the cost function.
 #
 # In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](@ref)
 # `p` and [`Options`](@ref) `o`. While former contains __static__ data,
 # most prominently the manifold $\mathcal M$ (usually as `p.M`) and the cost
-# function $f$ (usually as `p.cost`), the latter contains __dynamic__
+# function $f$ (usually as `x->get_cost(p, x)`), the latter contains __dynamic__
 # data, i.e. things that usually change during the algorithm, are allowed to
 # change, or specify the details of the algorithm to use. Together they form a
 # `plan`. A `plan` uniquely determines the algorithm to use and provide all
@@ -33,7 +33,7 @@
 # descent](https://en.wikipedia.org/wiki/Gradient_descent) algorithm. It requires
 # an initial value `o.x0`, a [`StoppingCriterion`](@ref) `o.stop`, a
 # [`Stepsize`](@ref) `o.stepsize` and a retraction `o.retraction` and it
-# internally stores the last evaluation of the gradient at `o.∇` for convenience.
+# internally stores the last evaluation of the gradient at `o.gradient` for convenience.
 # The only mandatory parameter is the initial value `x0`, though the defaults for
 # both the stopping criterion ([`StopAfterIteration`](@ref)`(100)`) as well as the
 # stepsize ([`ConstantStepsize`](@ref)`(1.)` are quite conservative, but are
@@ -102,17 +102,22 @@ render_asymptote(export_folder * "/startDataAndCenter.asy"; render=2) #src
 # following cost function. Its minimizer is called
 # [Riemannian Center of Mass](https://arxiv.org/abs/1407.2087).
 #
-F = y -> sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)
-∇F = y -> sum(1 / n * ∇distance.(Ref(M), data, Ref(y)))
+# !!! note
+#
+#     There are more sophisticated methods tailored for the specific manifolds available in
+#     [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/) see [`mean`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.mean-Tuple{Manifold,AbstractArray{T,1}%20where%20T,AbstractArray{T,1}%20where%20T,ExtrinsicEstimation}).
+#
+F(M, y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)
+gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 nothing #hide
 #
-# note that the [`∇distance`](@ref) defaults to the case `p=2`, i.e. the
+# note that the [`grad_distance`](@ref) defaults to the case `p=2`, i.e. the
 # gradient of the squared distance. For details on convergence of the gradient
 # descent for this problem, see [[Afsari, Tron, Vidal, 2013](#AfsariTronVidal2013)]
 #
 # The easiest way to call the gradient descent is now to call
 # [`gradient_descent`](@ref)
-xMean = gradient_descent(M, F, ∇F, data[1])
+xMean = gradient_descent(M, F, gradF, data[1])
 nothing; #hide
 # but in order to get more details, we further add the `debug=` options, which
 # act as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern)
@@ -129,11 +134,46 @@ nothing; #hide
 xMean = gradient_descent(
     M,
     F,
-    ∇F,
+    gradF,
     data[1];
     debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
 )
 nothing #hide
+#
+# A way to get better performance and for convex and coercive costs a guaranteed convergence is to switch the default 
+# [`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for 
+# example the [`ArmijoLinesearch`](@ref)().
+# We can tweak the default values for the contractionFactor and the sufficientDecrease 
+# beyond constant step size which is already quite fast.  This gives
+xMean2 = gradient_descent(
+    M,
+    F,
+    gradF,
+    data[1];
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
+)
+# which finishes in 5 steaps, just slightly better than the previous computation.
+F(M, xMean) - F(M, xMean2)
+# Note that other optimization tasks may have other speedup opportunities.
+#
+# For even more precision, we can further require a smaller gradient norm. 
+# This is done by changing the [`StoppingCriterion`](@ref) used, where several 
+# criteria can be combined using `&` and/or `|`.  If we want to decrease the final 
+# gradient (from less that 1e-8) norm but keep the maximal number of iterations 
+# to be 200, we can run
+xMean3 = gradient_descent(
+    M,
+    F,
+    gradF,
+    data[1];
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-15),
+    debug=[:Iteration, " | ", :x, " | ", :Change, " | ", :Cost, "\n", :Stop],
+)
+#
+# which takes 10 iterations but gets a very small gradient, and not much is gained in the cost itself
+F(M, xMean2) - F(M, xMean3)
 #
 asymptote_export_S2_signals( #src
     export_folder * "/startDataCenterMean.asy"; #src
@@ -154,15 +194,21 @@ render_asymptote(export_folder * "/startDataCenterMean.asy"; render=2) #src
 #md #
 #md # ![The resulting mean (orange)](../assets/images/tutorials/startDataCenterMean.png)
 #
+#
 # ## Computing the Median
+#
+# !!! note
+#
+#     There are more sophisticated methods tailored for the specific manifolds available in
+#     [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/) see [`median`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.median-Tuple{Manifold,AbstractArray{T,1}%20where%20T,AbstractArray{T,1}%20where%20T,CyclicProximalPointEstimation}).
 #
 # Similar to the mean you can also define the median as the minimizer of the
 # distances, see for example [[Bačák, 2014](#Bačák2014)], but since
 # this problem is not differentiable, we employ the Cyclic Proximal Point (CPP)
 # algorithm, described in the same reference. We define
 #
-F2 = y -> sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data))
-proxes = Function[(λ, y) -> prox_distance(M, λ / n, di, y, 1) for di in data]
+F2(M, y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data))
+proxes = Function[(M, λ, y) -> prox_distance(M, λ / n, di, y, 1) for di in data]
 nothing #hide
 # where the `Function` is a helper for global scope to infer the correct type.
 #

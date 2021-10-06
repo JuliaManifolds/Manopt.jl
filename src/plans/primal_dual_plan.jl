@@ -1,34 +1,57 @@
 @doc raw"""
-    PrimalDualProblem {mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem
+    PrimalDualProblem {T, mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem{T}
 
-Describes a Problem for the linearized Chambolle-Pock algorithm.
+Describes a Problem for the linearized or exact Chambolle-Pock algorithm.[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020][^ChambollePock2011]
 
 # Fields
 
-* `M`, `N` – two manifolds $\mathcal M$, $\mathcal N$
-* `cost` $F + G(Λ(⋅))$ to evaluate interims cost function values
-* `forward_oprator` the operator for the forward operation in the algorthm, either $Λ$ (exact) or $DΛ$ (linearized).
-* `linearized_adjoint_operator` The adjoint differential $(DΛ)^* \colon \mathcal N \to T\mathcal M$
-* `prox_F` the proximal map belonging to $f$
-* `prox_G_dual` the proximal map belonging to $g_n^*$
-* `Λ` – (`fordward_operator`) for the linearized variant, this has to be set to the exact forward operator.
-  This operator is required in several variants of the linearized algorithm.
-  Since the exact variant is the default, `Λ` is by default set to `forward_operator`.
+All fields with !! can either be mutating or nonmutating functions, which should be set
+depenting on the parameter `T <: AbstractEvaluationType`.
+
+* `M`, `N` – two manifolds ``\mathcal M``, ``\mathcal N``
+* `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
+* `linearized_forward_operator!!` linearized operator for the forward operation in the algorithm ``DΛ``
+* `linearized_adjoint_operator!!` The adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
+* `prox_F!!` the proximal map belonging to ``f``
+* `prox_G_dual!!` the proximal map belonging to ``g_n^*``
+* `Λ!!` – (`fordward_operator`) the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
+
+Either ``DΛ`` (for the linearized) or ``Λ`` are required usually.
 
 # Constructor
 
-    LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ=forward_operator)
+    LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_linearized_operator;
+        linearized_forward_operator::Union{Function,Missing}=missing,
+        Λ::Union{Function,Missing}=missing,
+        evaluation::AbstractEvaluationType=AllocatingEvaluation()
+    )
 
+The last optional argument can be used to provide the 4 or 5 functions as allocating or
+mutating (in place computation) ones.
+Note that the first argument is always the manifold under consideration, the mutated one is
+the second.
+
+[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
+    > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
+    > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
+    > Foundations of Computational Mathematics, 2021.
+    > doi: [10.1007/s10208-020-09486-5](http://dx.doi.org/10.1007/s10208-020-09486-5)
+    > arXiv: [1908.02022](http://arxiv.org/abs/1908.02022)
+[^ChambollePock2011]:
+    > A. Chambolle, T. Pock:
+    > _A first-order primal-dual algorithm for convex problems with applications to imaging_,
+    > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
+    > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{mT<:Manifold,nT<:Manifold} <: Problem
+mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <: Problem{T}
     M::mT
     N::nT
     cost::Function
-    prox_F::Function
-    prox_G_dual::Function
-    forward_operator::Function
-    adjoint_linearized_operator::Function
-    Λ::Union{Function,Missing}
+    prox_F!!::Function
+    prox_G_dual!!::Function
+    linearized_forward_operator!!::Union{Function,Missing}
+    adjoint_linearized_operator!!::Function
+    Λ!!::Union{Function,Missing}
 end
 function PrimalDualProblem(
     M::mT,
@@ -36,13 +59,157 @@ function PrimalDualProblem(
     cost,
     prox_F,
     prox_G_dual,
-    forward_operator,
-    adjoint_linearized_operator,
-    Λ=forward_operator,
-) where {mT<:Manifold,nT<:Manifold}
-    return PrimalDualProblem{mT,nT}(
-        M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator, Λ
+    adjoint_linearized_operator;
+    linearized_forward_operator::Union{Function,Missing}=missing,
+    Λ::Union{Function,Missing}=missing,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+) where {mT<:AbstractManifold,nT<:AbstractManifold}
+    return PrimalDualProblem{typeof(evaluation),mT,nT}(
+        M,
+        N,
+        cost,
+        prox_F,
+        prox_G_dual,
+        linearized_forward_operator,
+        adjoint_linearized_operator,
+        Λ,
     )
+end
+
+@doc raw"""
+    y = get_primal_prox(p::PrimalDualProblem, σ, x)
+    get_primal_prox!(p::PrimalDualProblem, y, σ, x)
+
+Evaluate the proximal map of ``F`` stored within [`PrimalDualProblem`](@ref)
+
+```math
+\operatorname{prox}_{σF}(x)
+```
+
+which can also be computed in place of `y`.
+"""
+get_primal_prox(::PrimalDualProblem, ::Any...)
+
+function get_primal_prox(p::PrimalDualProblem{AllocatingEvaluation}, σ, x)
+    return p.prox_F!!(p.M, σ, x)
+end
+function get_primal_prox(p::PrimalDualProblem{MutatingEvaluation}, σ, x)
+    y = allocate_result(p.M, get_primal_prox, x)
+    return p.prox_F!!(p.M, y, σ, x)
+end
+function get_primal_prox!(p::PrimalDualProblem{AllocatingEvaluation}, y, σ, x)
+    return copyto!(p.M, y, p.prox_F!!(p.M, σ, x))
+end
+function get_primal_prox!(p::PrimalDualProblem{MutatingEvaluation}, y, σ, x)
+    return p.prox_F!!(p.M, y, σ, x)
+end
+
+@doc raw"""
+    y = get_dual_prox(p::PrimalDualProblem, n, τ, ξ)
+    get_dual_prox!(p::PrimalDualProblem, y, n, τ, ξ)
+
+Evaluate the proximal map of ``G_n^*`` stored within [`PrimalDualProblem`](@ref)
+
+```math
+\operatorname{prox}_{τG_n^*}(ξ)
+```
+
+which can also be computed in place of `y`.
+"""
+get_dual_prox(::PrimalDualProblem, ::Any...)
+
+function get_dual_prox(p::PrimalDualProblem{AllocatingEvaluation}, n, τ, ξ)
+    return p.prox_G_dual!!(p.N, n, τ, ξ)
+end
+function get_dual_prox(p::PrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
+    η = allocate_result(p.N, get_dual_prox, ξ)
+    return p.prox_G_dual!!(p.N, η, n, τ, ξ)
+end
+function get_dual_prox!(p::PrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
+    return copyto!(p.N, η, p.prox_G_dual!!(p.N, n, τ, ξ))
+end
+function get_dual_prox!(p::PrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
+    return p.prox_G_dual!!(p.N, η, n, τ, ξ)
+end
+@doc raw"""
+    Y = linearized_forward_operator(p::PrimalDualProblem, m X, n)
+    linearized_forward_operator!(p::PrimalDualProblem, Y, m, X, n)
+
+Evaluate the linearized operator (differential) ``DΛ(m)[X]`` stored within
+the [`PrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
+"""
+linearized_forward_operator(::PrimalDualProblem, ::Any...)
+
+function linearized_forward_operator(
+    p::PrimalDualProblem{AllocatingEvaluation}, m, X, ::Any
+)
+    return p.linearized_forward_operator!!(p.M, m, X)
+end
+function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
+    y = random_point(p.N)
+    forward_operator!(p, y, m)
+    Y = zero_vector(p.N, y)
+    return p.linearized_forward_operator!!(p.M, Y, m, X)
+end
+function linearized_forward_operator!(
+    p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X, n
+)
+    return copyto!(p.N, Y, n, p.linearized_forward_operator!!(p.M, m, X))
+end
+function linearized_forward_operator!(
+    p::PrimalDualProblem{MutatingEvaluation}, Y, m, X, ::Any
+)
+    return p.linearized_forward_operator!!(p.M, Y, m, X)
+end
+
+@doc raw"""
+    y = forward_operator(p::PrimalDualProblem, x)
+    forward_operator!(p::PrimalDualProblem, y, x)
+
+Evaluate the forward operator of ``Λ(x)`` stored within the [`PrimalDualProblem`](@ref)
+(in place of `y`).
+"""
+forward_operator(::PrimalDualProblem{AllocatingEvaluation}, ::Any...)
+
+function forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, x)
+    return p.Λ!!(p.M, x)
+end
+function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
+    y = random_point(p.N)
+    return p.Λ!!(p.M, y, x)
+end
+function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)
+    return copyto!(p.N, y, p.Λ!!(p.M, x))
+end
+function forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, y, x)
+    return p.Λ!!(p.M, y, x)
+end
+
+@doc raw"""
+    X = adjoint_linearized_operator(p::PrimalDualProblem, m, n, Y)
+    adjoint_linearized_operator(p::PrimalDualProblem, X, m, n, Y)
+
+Evaluate the adjoint of the linearized forward operator of ``(DΛ(m))^*[Y]`` stored within
+the [`PrimalDualProblem`](@ref) (in place of `X`).
+Since ``Y∈T_n\mathcal N``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
+the forward operator ``Λ`` might be `missing` in `p`.
+"""
+adjoint_linearized_operator(::PrimalDualProblem{AllocatingEvaluation}, ::Any...)
+
+function adjoint_linearized_operator(p::PrimalDualProblem{AllocatingEvaluation}, m, n, Y)
+    return p.adjoint_linearized_operator!!(p.N, m, n, Y)
+end
+function adjoint_linearized_operator(p::PrimalDualProblem{MutatingEvaluation}, m, n, Y)
+    X = zero_vector(p.M, m)
+    return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
+end
+function adjoint_linearized_operator!(
+    p::PrimalDualProblem{AllocatingEvaluation}, X, m, n, Y
+)
+    return copyto!(p.M, X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
+end
+function adjoint_linearized_operator!(p::PrimalDualProblem{MutatingEvaluation}, X, m, n, Y)
+    return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 
 @doc raw"""
@@ -60,15 +227,15 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 The following list provides the order for the constructor, where the previous iterates are
 initialized automatically and values with a default may be left out.
 
-* `m` - base point on $ \mathcal M $
-* `n` - base point on $ \mathcal N $
-* `x` - an initial point on $x^{(0)} \in \mathcal M$ (and its previous iterate)
-* `ξ` - an initial tangent vector $\xi^{(0)}\in T^*\mathcal N$ (and its previous iterate)
+* `m` - base point on ``\mathcal M``
+* `n` - base point on ``\mathcal N``
+* `x` - an initial point on ``x^{(0)} ∈\mathcal M`` (and its previous iterate)
+* `ξ` - an initial tangent vector ``ξ^{(0)}∈T^*\mathcal N`` (and its previous iterate)
 * `xbar` - the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `ξbar` - the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
-* `Θ` – factor to damp the helping $\tilde x$
+* `Θ` – factor to damp the helping ``\tilde x``
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
-* `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
+* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `acceleration` – (`0.`) acceleration factor due to Chambolle & Pock
 * `relaxation` – (`1.`) relaxation in the primal relaxation step (to compute `xbar`)
 * `relax` – (`_primal`) which variable to relax (`:primal` or `:dual`)
@@ -76,7 +243,7 @@ initialized automatically and values with a default may be left out.
 * `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
+* `retraction_method` – (`ExponentialRetraction()`) the retraction to use
 * `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
 * `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
 
@@ -177,15 +344,16 @@ get_solver_result(o::ChambollePockOptions) = o.x
 @doc raw"""
     primal_residual(p, o, x_old, ξ_old, n_old)
 
-Compute the primal residual at current iterate $k$ given the necessary values $x_{k-1},
-ξ_{k-1}, and $n_{k-1}$ from the previous iterate.
+Compute the primal residual at current iterate ``k`` given the necessary values ``x_{k-1},
+ξ_{k-1}``, and ``n_{k-1}`` from the previous iterate.
+
 ```math
 \Bigl\lVert
 \frac{1}{σ}\operatorname{retr}^{-1}_{x_{k}}x_{k-1} -
 V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 \Bigr\rVert
 ```
-where $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref)
+where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref)
 """
 function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
     return norm(
@@ -196,8 +364,10 @@ function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, �
         vector_transport_to(
             p.M,
             o.m,
-            p.adjoint_linearized_operator(
+            adjoint_linearized_operator(
+                p,
                 o.m,
+                o.n,
                 vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
                 o.ξ,
             ),
@@ -209,8 +379,8 @@ end
 @doc raw"""
     dual_residual(p, o, x_old, ξ_old, n_old)
 
-Compute the dual residual at current iterate $k$ given the necessary values $x_{k-1},
-ξ_{k-1}, and $n_{k-1}$ from the previous iterate. The formula is slightly different depending
+Compute the dual residual at current iterate ``k`` given the necessary values ``x_{k-1},
+ξ_{k-1}``, and ``n_{k-1}`` from the previous iterate. The formula is slightly different depending
 on the `o.variant` used:
 
 For the `:lineaized` it reads
@@ -239,7 +409,7 @@ and for the `:exact` variant
 \Bigr\rVert
 ```
 
-where in both cases $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref).
+where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref).
 """
 function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
     if o.variant === :linearized
@@ -248,7 +418,8 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             o.n,
             1 / o.dual_stepsize *
             (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ) -
-            p.forward_operator(
+            linearized_forward_operator(
+                p,
                 o.m,
                 vector_transport_to(
                     p.M,
@@ -257,6 +428,7 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
                     o.m,
                     o.vector_transport_method,
                 ),
+                o.n,
             ),
         )
     elseif o.variant === :exact
@@ -268,7 +440,8 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
             inverse_retract(
                 p.N,
                 o.n,
-                p.Λ(
+                forward_operator(
+                    p,
                     retract(
                         p.M,
                         o.m,
@@ -277,7 +450,7 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
                             o.x,
                             inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
                             o.m,
-                            ParallelTransport(),
+                            o.vector_transport_method,
                         ),
                         o.retraction_method,
                     ),
@@ -416,7 +589,11 @@ end
 Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
-DebugPrimalChange(opts...) = DebugChange(opts[1], "Primal Change: ", opts[2:end]...)
+function DebugPrimalChange(
+    a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Primal Change: ", io::IO=stdout
+)
+    return DebugChange(a, prefix, io)
+end
 
 """
     DebugPrimalIterate(opts...)
@@ -532,7 +709,7 @@ end
     RecordPrimalChange(a)
 
 Create an [`RecordAction`](@ref) that records the primal value change,
-i.e. [`RecordChange`](@ref), since we just redord the change of `o.x`.
+i.e. [`RecordChange`](@ref), since we just record the change of `o.x`.
 """
 RecordPrimalChange() = RecordChange()
 

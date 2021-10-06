@@ -38,8 +38,8 @@ mutable struct StopAfterIteration <: StoppingCriterion
     reason::String
     StopAfterIteration(mIter::Int) = new(mIter, "")
 end
-function (c::StopAfterIteration)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    if i > c.maxIter
+function (c::StopAfterIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
+    if i >= c.maxIter
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
     end
@@ -56,9 +56,9 @@ mutable struct StopWhenGradientNormLess <: StoppingCriterion
     reason::String
     StopWhenGradientNormLess(ε::Float64) = new(ε, "")
 end
-function (c::StopWhenGradientNormLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    if norm(p.M, o.x, get_gradient(p, o.x)) < c.threshold
-        c.reason = "The algorithm reached approximately critical point; the gradient norm ($(norm(p.M,o.x,get_gradient(p,o.x)))) is less than $(c.threshold).\n"
+function (c::StopWhenGradientNormLess)(p::Problem, o::AbstractGradientOptions, iter::Int)
+    if norm(p.M, o.x, o.gradient) < c.threshold
+        c.reason = "The algorithm reached approximately critical point after $iter iterations; the gradient norm ($(norm(p.M,o.x,o.gradient))) is less than $(c.threshold).\n"
         return true
     end
     return false
@@ -102,7 +102,7 @@ end
     StopWhenAll <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
-when _all_ indicate to stop. The `reseason` is given by the concatenation of all
+when _all_ indicate to stop. The `reason` is given by the concatenation of all
 reasons.
 
 # Constructor
@@ -124,11 +124,38 @@ function (c::StopWhenAll)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
 end
 get_stopping_criteria(c::StopWhenAll) = c.criteria
 
+"""
+    &(s1,s2)
+    s1 & s2
+
+Combine two [`StoppingCriterion`](@ref) within an [`StopWhenAll`](@ref).
+If either `s1` (or `s2`) is already an [`StopWhenAll`](@ref), then `s2` (or `s1`) is
+appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`).
+
+# Example
+    a = StopAfterIteration(200) & StopWhenChangeLess(1e-6)
+    b = a & StopWhenGradientNormLess(1e-6)
+
+Is the same as
+
+    a = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(1e-6))
+    b = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(1e-6), StopWhenGradientNormLess(1e-6))
+"""
+function Base.:&(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
+    return StopWhenAll(s1, s2)
+end
+function Base.:&(s1::S, s2::StopWhenAll) where {S<:StoppingCriterion}
+    return StopWhenAll(s1, s2.criteria...)
+end
+function Base.:&(s1::StopWhenAll, s2::T) where {T<:StoppingCriterion}
+    return StopWhenAll(s1.criteria..., s2)
+end
+
 @doc raw"""
     StopWhenAny <: StoppingCriterion
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
-when _any_ single one indicates to stop. The `reseason` is given by the
+when _any_ single one indicates to stop. The `reason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
 
 # Constructor
@@ -149,6 +176,34 @@ function (c::StopWhenAny)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return false
 end
 get_stopping_criteria(c::StopWhenAny) = c.criteria
+
+"""
+    |(s1,s2)
+    s1 | s2
+
+Combine two [`StoppingCriterion`](@ref) within an [`StopWhenAny`](@ref).
+If either `s1` (or `s2`) is already an [`StopWhenAny`](@ref), then `s2` (or `s1`) is
+appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`)
+
+# Example
+    a = StopAfterIteration(200) | StopWhenChangeLess(1e-6)
+    b = a | StopWhenGradientNormLess(1e-6)
+
+Is the same as
+
+    a = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(1e-6))
+    b = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(1e-6), StopWhenGradientNormLess(1e-6))
+"""
+function Base.:|(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
+    return StopWhenAny(s1, s2)
+end
+function Base.:|(s1::S, s2::StopWhenAny) where {S<:StoppingCriterion}
+    return StopWhenAny(s1, s2.criteria...)
+end
+function Base.:|(s1::StopWhenAny, s2::T) where {T<:StoppingCriterion}
+    return StopWhenAny(s1.criteria..., s2)
+end
+
 """
     StopWhenCostLess <: StoppingCriterion
 
@@ -168,7 +223,7 @@ mutable struct StopWhenCostLess <: StoppingCriterion
 end
 function (c::StopWhenCostLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     if i > 0 && get_cost(p, o.x) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less then the threshold ($(c.threshold)).\n"
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less than the threshold ($(c.threshold)).\n"
         return true
     end
     return false
@@ -211,6 +266,20 @@ function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     end
     return false
 end
+
+"""
+    are_these_stopping_critera_active(c::StoppingCriterion, cond)
+
+Return `true` if any criterion from the given set is both active and fulfils the given
+condition `cond` (`cond(c)` returns `true`).
+"""
+function are_these_stopping_critera_active(cond::Function, c::StoppingCriterionSet)
+    return any(cc -> are_these_stopping_critera_active(cond, cc), get_stopping_criteria(c))
+end
+function are_these_stopping_critera_active(cond::Function, c::StoppingCriterion)
+    return !isempty(c.reason) && cond(c)
+end
+
 @doc raw"""
     get_active_stopping_criteria(c)
 
@@ -218,7 +287,7 @@ returns all active stopping criteria, if any, that are within a
 [`StoppingCriterion`](@ref) `c`, and indicated a stop, i.e. their reason is
 nonempty.
 To be precise for a simple stopping criterion, this returns either an empty
-array if no stop is incated or the stopping criterion as the only element of
+array if no stop is indicated or the stopping criterion as the only element of
 an array. For a [`StoppingCriterionSet`](@ref) all internal (even nested)
 criteria that indicate to stop are returned.
 """
@@ -227,7 +296,7 @@ function get_active_stopping_criteria(c::sCS) where {sCS<:StoppingCriterionSet}
     return vcat(c...)
 end
 # for non-array containing stopping criteria, the recursion ends in either
-# returning nothing or an 1-element array contianing itself
+# returning nothing or an 1-element array containing itself
 function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
     if c.reason != ""
         return [c] # recursion top

@@ -2,7 +2,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
 
 using Dates
 
-struct TestProblem <: Problem end
+struct TestProblem <: Problem{AllocatingEvaluation} end
 struct TestOptions <: Options end
 
 @testset "generic Options test" begin

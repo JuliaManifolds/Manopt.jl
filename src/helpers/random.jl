@@ -1,53 +1,23 @@
 @doc raw"
-    random_point(M::Manidold)
+    random_point(M::AbstractManifold)
 
 generate a random point on a manifold. By default it uses `random_point(M,:Gaussian)`.
 "
-random_point(M::Manifold) = random_point(M, Val(:Gaussian))
+random_point(M::AbstractManifold) = random_point(M, Val(:Gaussian))
 @doc raw"
-    random_point(M::Manidold, s::Symbol, options...)
+    random_point(M::AbstractManifold, s::Symbol, options...)
 
 generate a random point using a noise model given by `s` with its additional `options`
 just passed on.
 "
-random_point(M::Manifold, s::Symbol, options...) = random_point(M, Val(s), options...)
-
-@doc raw"""
-    random_point(M::Circle, :Uniform)
-
-return a random point on the [`Circle`](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathbb S^1$ by
-picking a random element from $[-\pi,\pi)$ uniformly.
-"""
-random_point(::Circle, ::Val{:Uniform}) = sym_rem(rand() * 2 * π)
-random_point(M::Circle) = random_point(M, Val(:Uniform)) # introduce different default
-
-@doc raw"""
-    random_point(M::Euclidean[,:Gaussian, σ::Float64=1.0])
-
-generate a random point on the `Euclidean` manifold `M`, where the
-optional parameter determines the type of the entries of the
-resulting point on the Euclidean space d.
-"""
-random_point(M::Euclidean) = randn(manifold_dimension(M))
-random_point(M::Euclidean, ::Val{:Gaussian}, σ=1.0) = σ * randn(manifold_dimension(M))
-
-@doc raw"""
-    random_point(M::Grassmannian, :Gaussian [, σ=1.0])
-
-return a random point `x` on `Grassmannian` manifold `M` by
-generating a random (Gaussian) matrix with standard deviation `σ` in matching
-size, which is orthonormal.
-"""
-function random_point(::Grassmann{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64=1.0) where {n,k,𝔽}
-    V = σ * randn(𝔽 === ℝ ? Float64 : ComplexF64, (n, k))
-    A = qr(V).Q[:, 1:k]
-    return A
+function random_point(M::AbstractManifold, s::Symbol, options...)
+    return random_point(M, Val(s), options...)
 end
 
 @doc raw"""
     random_point(M::AbstractPowerManifold, options...)
 
-generate a random point on the `AbstractPowerManfold` `M` given `options` that are
+generate a random point on the `AbstractPowerManifold` `M` given `options` that are
 passed on.
 """
 function random_point(
@@ -65,6 +35,62 @@ function random_point(
 end
 
 @doc raw"""
+    random_point(M::AbstractGroupManifold, options...)
+
+On an abstract group manifold, the random point is taken from the internally stored `M.manifold`.
+"""
+random_point(M::AbstractGroupManifold, kwargs...) = random_point(M.manifold, kwargs...)
+function random_point(M::AbstractGroupManifold, s::Symbol, options...)
+    return random_point(M, Val(s), options...)
+end
+
+@doc raw"""
+    random_point(M::Circle, :Uniform)
+
+return a random point on the [`Circle`](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathbb S^1$ by
+picking a random element from $[-\pi,\pi)$ uniformly.
+"""
+random_point(::Circle, ::Val{:Uniform}) = sym_rem(rand() * 2 * π)
+random_point(M::Circle) = random_point(M, Val(:Uniform)) # introduce different default
+
+@doc raw"""
+    random_point(M::Euclidean[,:Gaussian, σ::Float64=1.0])
+
+generate a random point on the `Euclidean` manifold `M`, where the
+optional parameter determines the type of the entries of the
+resulting point on the Euclidean space d.
+"""
+random_point(M::Euclidean) = randn(representation_size(M))
+random_point(M::Euclidean, ::Val{:Gaussian}, σ=1.0) = σ * randn(manifold_dimension(M))
+
+@doc raw"""
+    random_point(M::FixedRankMatrices, options...)
+
+return a random point on the FixedRankMatrices manifold.
+The orthogonal matrices are sampled from the Stiefel manifold
+and the singular values are sampled uniformly at random.
+"""
+function random_point(::FixedRankMatrices{m,n,k}, options...) where {m,n,k}
+    U = random_point(Stiefel(m, k), options...)
+    S = sort(rand(k); rev=true)
+    V = random_point(Stiefel(n, k), options...)
+    return SVDMPoint(U, S, V')
+end
+
+@doc raw"""
+    random_point(M::Grassmannian, :Gaussian [, σ=1.0])
+
+return a random point `x` on `Grassmannian` manifold `M` by
+generating a random (Gaussian) matrix with standard deviation `σ` in matching
+size, which is orthonormal.
+"""
+function random_point(::Grassmann{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64=1.0) where {n,k,𝔽}
+    V = σ * randn(𝔽 === ℝ ? Float64 : ComplexF64, (n, k))
+    A = qr(V).Q[:, 1:k]
+    return A
+end
+
+@doc raw"""
     random_point(M::ProductManifold, options...)
 
 return a random point `x` on `Grassmannian` manifold `M` by
@@ -76,7 +102,7 @@ function random_point(M::ProductManifold, o...)
 end
 
 @doc raw"""
-   random_point(M::Rotations, :Gaussian [, σ=1.0])
+    random_point(M::Rotations, :Gaussian [, σ=1.0])
 
 return a random point `p` on the manifold `Rotations`
 by generating a (Gaussian) random orthogonal matrix with determinant $+1$. Let $QR = A$
@@ -92,8 +118,8 @@ It can happen that the matrix gets -1 as a determinant. In this case, the first
 and second columns are swapped.
 """
 function random_point(M::Rotations, ::Val{:Gaussian}, σ::Real=1.0)
-    d = manifold_dimension(M)
-    if d == 0
+    d = Int(0.5 + sqrt(0.25 + 2 * manifold_dimension(M)))
+    if d == 1
         return ones(1, 1)
     else
         A = randn(Float64, d, d)
@@ -110,7 +136,7 @@ end
 @doc raw"""
     random_point(M::SymmetricPositiveDefinite, :Gaussian[, σ=1.0])
 
-gerenate a random symmetric positive definite matrix on the
+generate a random symmetric positive definite matrix on the
 `SymmetricPositiveDefinite` manifold `M`.
 """
 function random_point(
@@ -135,11 +161,35 @@ end
 
 @doc raw"""
     random_point(M::Sphere, :Gaussian[, σ=1.0])
-return a random point on the Sphere by projecting a normal distirbuted vector
+return a random point on the Sphere by projecting a normal distributed vector
 from within the embedding to the sphere.
 """
 function random_point(M::Sphere, ::Val{:Gaussian}, σ::Float64=1.0)
     return project(M, σ * randn(manifold_dimension(M) + 1))
+end
+
+@doc raw"""
+    random_point(M::TangentBundle, options...)
+
+generate a random point on the tangent bundle by calling a [`random_point`](@ref) and a
+[`random_tangent`](@ref) with the given `options...`
+"""
+function random_point(M::TangentBundle, options...)
+    p = random_point(M.manifold, options...)
+    X = random_tangent(M.manifold, p, options...)
+    return ProductRepr(p, X)
+end
+
+@doc raw"""
+    random_tangent(M::AbstractGroupManifold, p, options...)
+
+On an abstract group manifold, the random tangent is taken from the internally stored `M.manifold`s tangent space at `p`.
+"""
+function random_tangent(M::AbstractGroupManifold, p, kwargs...)
+    return random_tangent(M.manifold, p, kwargs...)
+end
+function random_tangent(M::AbstractGroupManifold, p, s::Symbol, options...)
+    return random_tangent(M, p, Val(s), options...)
 end
 
 @doc raw"""
@@ -148,8 +198,10 @@ end
 generate a random tangent vector in the tangent space of `p` on `M`. By default
 this is a `:Gaussian` distribution.
 """
-random_tangent(M::Manifold, p, options...) = random_tangent(M, p, :Gaussian, options...)
-function random_tangent(M::Manifold, p, s::Symbol, options...)
+function random_tangent(M::AbstractManifold, p, options...)
+    return random_tangent(M, p, :Gaussian, options...)
+end
+function random_tangent(M::AbstractManifold, p, s::Symbol, options...)
     return random_tangent(M, p, Val(s), options...)
 end
 
@@ -169,8 +221,8 @@ end
 @doc raw"""
     random_tangent(M::Grassmann, p[,type=:Gaussian, σ=1.0])
 
-return a (Gaussian) random vector from the tangent space $T_x\mathrm{Gr}(n,k)$ with mean
-zero and standard deviation `σ` by projecting a random Matrix onto the  `x`.
+return a (Gaussian) random vector from the tangent space $T_p\mathrm{Gr}(n,k)$ with mean
+zero and standard deviation `σ` by projecting a random Matrix onto the  `p`.
 """
 function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
     Z = σ * randn(eltype(p), size(p))
@@ -180,10 +232,23 @@ function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
 end
 
 @doc raw"""
-    random_tangent(M::Hyperpolic, p, :Gaussian [, σ=1.0])
+    random_tangent(M::FixedRankMatrices, p, options...)
+
+generate a random tangent vector in the tangent space of the point `p` on the
+`FixedRankMatrices` manifold `M`.
+"""
+function random_tangent(::FixedRankMatrices{m,n,k}, p, options...) where {m,n,k}
+    Up = randn(m, k, options...)
+    Vp = randn(n, k, options...)
+    A = randn(k, k, options...)
+    return UMVTVector(Up - p.U * p.U' * Up, A, Vp' - Vp' * p.Vt' * p.Vt)
+end
+
+@doc raw"""
+    random_tangent(M::Hyperbolic, p, :Gaussian [, σ=1.0])
 
 generate a random point on the Hyperbolic manifold by projecting a point from the embedding
-with respect to the Minkowsky metric.
+with respect to the Minkowski metric.
 """
 function random_tangent(M::Hyperbolic, p, ::Val{:Gaussian}, σ=1.0)
     Y = σ * randn(eltype(p), size(p))
@@ -193,7 +258,7 @@ end
 
 function random_tangent(M::PowerManifold, p, options...)
     rep_size = representation_size(M.manifold)
-    X = zero_tangent_vector(M, p)
+    X = zero_vector(M, p)
     for i in get_iterator(M)
         X[M, i] = random_tangent(M.manifold, p[M, i], options...)
     end
@@ -247,7 +312,20 @@ function random_tangent(M::Sphere, p, ::Val{:Gaussian}, σ::Float64=1.0)
 end
 
 @doc raw"""
-    random_tangent(M, p[, :Gaussian, σ = 1.0])
+    random_tangent(M::Stiefel, p[,type=:Gaussian, σ=1.0])
+
+return a (Gaussian) random vector from the tangent space $T_p\mathrm{St}(n,k)$ with mean
+zero and standard deviation `σ` by projecting a random Matrix onto the  `p`.
+"""
+function random_tangent(M::Stiefel, p, ::Val{:Gaussian}, σ::Float64=1.0)
+    Z = σ * randn(eltype(p), size(p))
+    X = project(M, p, Z)
+    X = X ./ norm(X)
+    return X
+end
+
+@doc raw"""
+    random_tangent(M::SymmetricPositiveDefinite, p[, :Gaussian, σ = 1.0])
 
 generate a random tangent vector in the tangent space of the point `p` on the
 `SymmetricPositiveDefinite` manifold `M` by using a Gaussian distribution
@@ -274,4 +352,16 @@ function random_tangent(::SymmetricPositiveDefinite, p, ::Val{:Rician}, σ::Real
     C = cholesky(Hermitian(p))
     R = C.L + sqrt(σ) * triu(randn(size(p, 1), size(p, 2)), 0)
     return R * R'
+end
+
+@doc raw"""
+    random_tangent(M::TangentBundle, p, options...)
+
+generate a random tangent vector at `p` on the tangent bundle by calling
+[`random_tangent`](@ref) with the given `options...` twice.
+"""
+function random_tangent(M::TangentBundle, p, options...)
+    X = random_tangent(M.manifold, p[M, :point], options...)
+    Y = random_tangent(M.manifold, p[M, :point], options...)
+    return ProductRepr(X, Y)
 end

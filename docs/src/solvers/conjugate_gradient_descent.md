@@ -7,6 +7,7 @@ CurrentModule = Manopt
 
 ```@docs
 conjugate_gradient_descent
+conjugate_gradient_descent!
 ```
 
 ## Options

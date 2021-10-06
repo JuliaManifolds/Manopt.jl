@@ -9,7 +9,7 @@
 # > doi: [10.3389/fams.2018.00059](https://dx.doi.org/10.3389/fams.2018.00059),
 # > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 #
-using Manopt, Manifolds, Colors, ColorSchemes
+
 #
 # Load Manopt and required packages
 #
@@ -47,12 +47,12 @@ N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
 x0 = pB
 for i in eachindex(λRange)
     λ = λRange[i]
-    F(pB) = cost_L2_acceleration_bezier(M, pB, degs, curve_samples, λ, d)
-    ∇F(pB) = ∇L2_acceleration_bezier(M, pB, degs, curve_samples, λ, d)
+    F(M, pB) = cost_L2_acceleration_bezier(M.manifold, pB, degs, curve_samples, λ, d)
+    gradF(M, pB) = grad_L2_acceleration_bezier(M.manifold, pB, degs, curve_samples, λ, d)
     results[i] = gradient_descent(
         N,
         F,
-        ∇F,
+        gradF,
         x0;
         stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
         stopping_criterion=StopWhenAny(

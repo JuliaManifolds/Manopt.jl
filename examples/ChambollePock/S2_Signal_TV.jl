@@ -63,9 +63,9 @@ end
 #
 # Initial values
 m = fill(base, size(f))
-n = Λ(m)
+n = Λ(M, m)
 x0 = deepcopy(f)
-ξ0 = ProductRepr(zero_tangent_vector(M, m), zero_tangent_vector(M, m))
+ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
 storage = StoreOptionsAction((:x, :n, :ξbar))
 
@@ -79,8 +79,8 @@ storage = StoreOptionsAction((:x, :n, :ξbar))
     n,
     prox_F,
     prox_G_dual,
-    DΛ,
     adjoint_DΛ;
+    linearized_forward_operator=DΛ,
     primal_stepsize=σ,
     dual_stepsize=τ,
     relaxation=θ,

@@ -1,6 +1,6 @@
 using Manifolds, Manopt, Test, ManifoldsBase, Dates
 
-struct TestProblem <: Problem end
+struct TestProblem <: Problem{AllocatingEvaluation} end
 struct TestOptions <: Options end
 
 @testset "StoppingCriteria" begin
@@ -12,7 +12,7 @@ struct TestOptions <: Options end
     @test get_stopping_criteria(s)[1].maxIter == get_stopping_criteria(s2)[1].maxIter
 
     s3 = StopWhenCostLess(0.1)
-    p = GradientProblem(Euclidean(1), x -> x^2, x -> 2x)
+    p = GradientProblem(Euclidean(1), (M, x) -> x^2, x -> 2x)
     o = GradientDescentOptions(1.0)
     @test !s3(p, o, 1)
     @test length(s3.reason) == 0
@@ -45,4 +45,37 @@ end
     sleep(1.02)
     @test s(p, o, 2) == true
     @test_throws ErrorException StopAfter(Second(-1))
+end
+
+@testset "Stopping Criterion &/| operators" begin
+    a = StopAfterIteration(200)
+    b = StopWhenChangeLess(1e-6)
+    c = StopWhenGradientNormLess(1e-6)
+    d = StopWhenAll(a, b, c)
+    @test typeof(d) === typeof(a & b & c)
+    @test typeof(d) === typeof(a & (b & c))
+    @test typeof(d) === typeof((a & b) & c)
+    e = StopWhenAny(a, b, c)
+    @test typeof(e) === typeof(a | b | c)
+    @test typeof(e) === typeof(a | (b | c))
+    @test typeof(e) === typeof((a | b) | c)
+end
+
+@testset "TCG stopping criteria" begin
+    # create dummy criterion
+    p = HessianProblem(Euclidean(), x -> x, (M, x) -> x, (M, x) -> x, x -> x)
+    o = TruncatedConjugateGradientOptions(p, 1.0, 0.0, 2.0, false)
+    o.new_model_value = 2.0
+    o.model_value = 1.0
+    s = StopWhenModelIncreased()
+    @test !s(p, o, 0)
+    @test s.reason == ""
+    @test s(p, o, 1)
+    @test length(s.reason) > 0
+    s2 = StopWhenCurvatureIsNegative()
+    o.δHδ = -1.0
+    @test !s2(p, o, 0)
+    @test s2.reason == ""
+    @test s2(p, o, 1)
+    @test length(s2.reason) > 0
 end

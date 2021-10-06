@@ -36,13 +36,13 @@ maxIterations = 4000
 M = PowerManifold(pixelM, NestedPowerRepresentation(), size(f)...)
 d = length(size(f))
 iRep = [Integer.(ones(d))..., d]
-fidelity(x) = 1 / 2 * distance(M, x, f)^2
-Λ(x) = forward_logs(M, x) # on T_xN
-prior(x) = norm(norm.(Ref(pixelM), repeat(x, iRep...), Λ(x)), 1)
+fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
+Λ(M, x) = forward_logs(M, x) # on T_xN
+prior(M, x) = norm(norm.(Ref(pixelM), repeat(x, iRep...), Λ(M, x)), 1)
 #
 # Setup and Optimize
-cost(x) = fidelity(x) + α * prior(x)
-proxes = ((λ, x) -> prox_distance(M, λ, f, x, 2), (λ, x) -> prox_TV(M, α * λ, x, 1))
+cost(M, x) = fidelity(M, x) + α * prior(M, x)
+proxes = ((M, λ, x) -> prox_distance(M, λ, f, x, 2), (M, λ, x) -> prox_TV(M, α * λ, x, 1))
 x0 = f
 @time o = cyclic_proximal_point(
     M,

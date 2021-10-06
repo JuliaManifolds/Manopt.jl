@@ -1,3 +1,5 @@
+using Manifolds, Manopt, Test, ManifoldsBase
+
 @testset "Test Costs" begin
     M = Sphere(2)
     N = PowerManifold(M, NestedPowerRepresentation(), 3, 3)

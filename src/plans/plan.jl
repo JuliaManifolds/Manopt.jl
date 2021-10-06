@@ -8,6 +8,8 @@ include("record_options.jl")
 
 include("cost_plan.jl")
 include("gradient_plan.jl")
+include("conjugate_gradient_plan.jl")
+include("quasi_newton_plan.jl")
 include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("subgradient_plan.jl")

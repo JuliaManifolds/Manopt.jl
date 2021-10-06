@@ -99,10 +99,12 @@ function truncated_svd(A::Array{Float64,2}=randn(42, 60), p::Int64=5)
         M,
         cost,
         rgrad,
-        x,
-        rhess;
-        Δ_bar=4 * sqrt(2 * p),
-        debug=[:Iteration, " ", :Cost, " | ", DebugEntry(:Δ), "\n", 1, :Stop],
+        rhess,
+        x;
+        max_trust_region_radius=4 * sqrt(2 * p),
+        debug=[
+            :Iteration, " ", :Cost, " | ", DebugEntry(:trust_region_radius), "\n", 1, :Stop
+        ],
     )
     U = X[M, 1]
     V = X[M, 2]
