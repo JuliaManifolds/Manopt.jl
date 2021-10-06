@@ -74,36 +74,45 @@ function primal_dual_semismooth_Newton(
     # variant=ismissing(Λ) ? :exact : :linearized,
     return_options=false,
     kwargs...,
-    ) where {
-    mT<:Manifold,
-    nT<:Manifold,
+) where {
+    mT<:AbstractManifold,
+    nT<:AbstractManifold,
     P,
     Q,
     T,
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
-    }
+}
     p = PrimalDualSemismoothNewtonProblem(
-    M, N, cost, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_operator, adjoint_linearized_operator, Λ
+        M,
+        N,
+        cost,
+        prox_F,
+        diff_prox_F,
+        prox_G_dual,
+        diff_prox_G_dual,
+        linearized_operator,
+        adjoint_linearized_operator,
+        Λ,
     )
-    o =  PrimalDualSemismoothNewtonOptions(
-    m,
-    n,
-    x,
-    ξ,
-    primal_stepsize,
-    dual_stepsize;
-    # acceleration=acceleration,
-    # relaxation=relaxation,
-    stopping_criterion=stopping_criterion,
-    # relax=relax,
-    update_primal_base=update_primal_base, # TODO ?
-    update_dual_base=update_dual_base, # TODO ?
-    # variant=variant,
-    retraction_method=retraction_method,
-    inverse_retraction_method=inverse_retraction_method,
-    vector_transport_method=vector_transport_method,
+    o = PrimalDualSemismoothNewtonOptions(
+        m,
+        n,
+        x,
+        ξ,
+        primal_stepsize,
+        dual_stepsize;
+        # acceleration=acceleration,
+        # relaxation=relaxation,
+        stopping_criterion=stopping_criterion,
+        # relax=relax,
+        update_primal_base=update_primal_base, # TODO ?
+        update_dual_base=update_dual_base, # TODO ?
+        # variant=variant,
+        retraction_method=retraction_method,
+        inverse_retraction_method=inverse_retraction_method,
+        vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -114,9 +123,13 @@ function primal_dual_semismooth_Newton(
     end
 end
 
-function initialize_solver!(::PrimalDualSemismoothNewtonProblem, ::PrimalDualSemismoothNewtonOptions) end
+function initialize_solver!(
+    ::PrimalDualSemismoothNewtonProblem, ::PrimalDualSemismoothNewtonOptions
+) end
 
-function step_solver!(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions, iter)
+function step_solver!(
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions, iter
+)
     # do step
     primal_dual_step!(p, o)
     o.m = ismissing(o.update_primal_base) ? o.m : o.update_primal_base(p, o, iter)
@@ -129,21 +142,22 @@ function step_solver!(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismo
     return o
 end
 
-
-function primal_dual_step!(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions)
+function primal_dual_step!(
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
+)
 
     # construct X
-    X = construct_vector(p,o)
+    X = construct_vector(p, o)
 
     # construct matrix
-    ∂X = construct_matrix(p,o)
+    ∂X = construct_matrix(p, o)
 
     # solve matrix -> find coordinates
-    d_coords = ∂X\-X
+    d_coords = ∂X \ -X
 
     dims = manifold_dimension(p.M)
     dx_coords = d_coords[1:dims]
-    dξ_coords = d_coords[dims+1:end]
+    dξ_coords = d_coords[(dims + 1):end]
 
     # compute step
     dx = get_vector(p.M, o.x, dx_coords, DefaultOrthonormalBasis())
@@ -151,40 +165,40 @@ function primal_dual_step!(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSe
 
     # do step
     o.x = retract(p.M, o.x, dx, o.retraction_method)
-    o.ξ = o.ξ + dξ
-
+    return o.ξ = o.ξ + dξ
 end
 
-
-function construct_vector(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions)
+function construct_vector(
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
+)
 
     # Compute primal vector
     x_update = p.prox_F(
-    p.M,
-    o.m,
-    o.primal_stepsize,
-    retract(
-    p.M,
-    o.x,
-    vector_transport_to(
-    p.M,
-    o.m,
-    -o.primal_stepsize * (p.adjoint_linearized_operator(o.m, o.ξ)),
-    o.x,
-    o.vector_transport_method,
-    ),
-    o.retraction_method,
-    ),
+        p.M,
+        o.m,
+        o.primal_stepsize,
+        retract(
+            p.M,
+            o.x,
+            vector_transport_to(
+                p.M,
+                o.m,
+                -o.primal_stepsize * (p.adjoint_linearized_operator(o.m, o.ξ)),
+                o.x,
+                o.vector_transport_method,
+            ),
+            o.retraction_method,
+        ),
     )
 
-    primal_vector = - inverse_retract(p.M, o.x, x_update, o.inverse_retraction_method)
+    primal_vector = -inverse_retract(p.M, o.x, x_update, o.inverse_retraction_method)
 
     X₁ = get_coordinates(p.M, o.x, primal_vector, DefaultOrthonormalBasis())
 
     # Compute dual vector
     # (1) compute update direction
     ξ_update = p.linearized_operator(
-    o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method)
+        o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method)
     )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     ξ_update = if ismissing(p.Λ)
@@ -200,13 +214,14 @@ function construct_vector(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSem
     X₂ = get_coordinates(p.N, o.m, dual_vector, DefaultOrthonormalBasis())
 
     # TODO check whether this is works
-    X = [X₁;X₂]
+    X = [X₁; X₂]
 
     return X
-
 end
 
-function construct_matrix(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions)
+function construct_matrix(
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
+)
 
     # construct bases
     Θ = get_basis(p.M, o.x, DefaultOrthonormalBasis())
@@ -216,10 +231,10 @@ function construct_matrix(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSem
     dualdims = manifold_dimension(p.N)
 
     # we assume here that a parallel transport is already in the next operator
-    qξ = - o.primal_stepsize * p.adjoint_linearized_operator(o.m, o.ξ)
-    qₚ = shortest_geodesic(p.M, o.m, o.x, 1/2)
+    qξ = -o.primal_stepsize * p.adjoint_linearized_operator(o.m, o.ξ)
+    qₚ = shortest_geodesic(p.M, o.m, o.x, 1 / 2)
     qb = retract(p.M, o.m, qξ, o.retraction_method)
-    q₅ = 2* inverse_retract(p.M, qb, qₚ, o.inverse_retraction_method)
+    q₅ = 2 * inverse_retract(p.M, qb, qₚ, o.inverse_retraction_method)
     q₄ = retract(p.M, qb, q₅, o.retraction_method)
     q₃ = -inverse_retract(p.M, o.x, q₄, o.inverse_retraction_method)
     q₂ = retract(p.M, o.x, q₃, o.retraction_method)
@@ -227,7 +242,7 @@ function construct_matrix(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSem
 
     # (1) compute update direction
     η₁ = p.linearized_operator(
-    o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method)
+        o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method)
     )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     η₁ = if ismissing(p.Λ)
@@ -238,67 +253,67 @@ function construct_matrix(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSem
     # (3) to the dual update
     η₁ = p.prox_G_dual(p.N, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * η₁)
 
-
     # construct ∂X₁₁ and ∂X₂₁
-    ∂X₁₁ = spzeros(dims,dims)
-    ∂X₂₁ = spzeros(dualdims,dims)
-    for (j,Θⱼ) ∈ enumerate(Θ)
-
-        Gⱼ = differential_geodesic_endpoint(p.M, o.m, o.x, 1/2, Θⱼ)
+    ∂X₁₁ = spzeros(dims, dims)
+    ∂X₂₁ = spzeros(dualdims, dims)
+    for (j, Θⱼ) in enumerate(Θ)
+        Gⱼ = differential_geodesic_endpoint(p.M, o.m, o.x, 1 / 2, Θⱼ)
         Fⱼ = 2 * differential_log_argument(p.M, qb, qₚ, Gⱼ)
         Eⱼ = differential_exp_argument(p.M, qb, q₅, Fⱼ)
-        D₂ⱼ = - differential_log_argument(p.M, o.x, q₄, Eⱼ)
-        D₁ⱼ = - differential_log_basepoint(p.M, o.x, q₄, Θⱼ)
+        D₂ⱼ = -differential_log_argument(p.M, o.x, q₄, Eⱼ)
+        D₁ⱼ = -differential_log_basepoint(p.M, o.x, q₄, Θⱼ)
         Dⱼ = D₁ⱼ + D₂ⱼ
         C₂ⱼ = differential_exp_argument(p.M, o.x, q₃, Dⱼ)
 
         C₁ⱼ = differential_exp_basepoint(p.M, o.x, q₃, Θⱼ)
         Cⱼ = C₁ⱼ + C₂ⱼ
         Bⱼ = Clarke_differential_prox_F(p.M, o.m, o.primal_stepsize, q₂, Cⱼ)
-        A₂ⱼ = - differential_log_argument(p.M, o.x, q₁, Bⱼ)
-        A₁ⱼ = - differential_log_basepoint(p.M, o.x, q₁, Θⱼ)
-        Aⱼ =  A₁ⱼ + A₂ⱼ
+        A₂ⱼ = -differential_log_argument(p.M, o.x, q₁, Bⱼ)
+        A₁ⱼ = -differential_log_basepoint(p.M, o.x, q₁, Θⱼ)
+        Aⱼ = A₁ⱼ + A₂ⱼ
 
         ∂X₁₁j = get_coordinates(p.M, o.x, Aⱼ, DefaultOrthonormalBasis())
         # TODO check whether we actually get one long vector here
         dropzeros!(∂X₁₁j)
-        ∂X₁₁[:,j] = ∂X₁₁j
-
+        ∂X₁₁[:, j] = ∂X₁₁j
 
         Mⱼ = differential_log_argument(p.M, o.m, o.x, Θⱼ)
         Kⱼ = if ismissing(p.Λ)
             o.dual_stepsize * p.linearized_operator(o.m, Mⱼ)
         else
-            o.dual_stepsize * vector_transport_to(p.N, p.Λ(o.m), p.linearized_operator(o.m, Mⱼ), o.n, o.vector_transport_method)
+            o.dual_stepsize * vector_transport_to(
+                p.N,
+                p.Λ(o.m),
+                p.linearized_operator(o.m, Mⱼ),
+                o.n,
+                o.vector_transport_method,
+            )
         end
         Jⱼ = Clarke_differential_prox_G_dual(p.N, o.n, o.dual_stepsize, η₁, Kⱼ)
 
-        ∂X₂₁j = get_coordinates(p.N, o.n, - Jⱼ, DefaultOrthonormalBasis())
+        ∂X₂₁j = get_coordinates(p.N, o.n, -Jⱼ, DefaultOrthonormalBasis())
 
         # TODO check whether we actually get one long vector here
         dropzeros!(∂X₂₁j)
-        ∂X₂₁[:,j] = ∂X₂₁j
-
+        ∂X₂₁[:, j] = ∂X₂₁j
     end
 
     # construct ∂X₁₂ and ∂X₂₂
     # TODO check whether we dont get anything different now that we used ladder approx here
-    ∂X₁₂= spzeros(dims,dualdims)
-    ∂X₂₂= spzeros(dualdims,dualdims)
+    ∂X₁₂ = spzeros(dims, dualdims)
+    ∂X₂₂ = spzeros(dualdims, dualdims)
 
-    for (j,Ξⱼ) ∈ enumerate(Ξ)
-
-        hⱼ = - o.primal_stepsize * p.adjoint_linearized_operator(o.m, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
+    for (j, Ξⱼ) in enumerate(Ξ)
+        hⱼ = -o.primal_stepsize * p.adjoint_linearized_operator(o.m, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
         Hⱼ = vector_transport_to(p.M, o.m, hⱼ, o.x)
         C₂ⱼ = differential_exp_argument(p.M, o.x, q₃, Hⱼ)
         Bⱼ = Clarke_differential_prox_F(p.M, o.m, o.primal_stepsize, q₂, C₂ⱼ)
-        A₂ⱼ = - differential_log_argument(p.M, o.x, q₁, Bⱼ)
+        A₂ⱼ = -differential_log_argument(p.M, o.x, q₁, Bⱼ)
 
         ∂X₁₂j = get_coordinates(p.N, o.n, A₂ⱼ, DefaultOrthonormalBasis())
 
         dropzeros!(∂X₁₂j)
-        ∂X₁₂[:,j] = ∂X₁₂j
-
+        ∂X₁₂[:, j] = ∂X₁₂j
 
         Jⱼ = Clarke_differential_prox_G_dual(p.N, o.n, o.dual_stepsize, η₁, Ξⱼ)
         Iⱼ = Ξⱼ - Jⱼ
@@ -306,10 +321,8 @@ function construct_matrix(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSem
         ∂X₂₂j = get_coordinates(p.N, o.n, Iⱼ, DefaultOrthonormalBasis())
 
         dropzeros!(∂X₂₂j)
-        ∂X₂₂[:,j] = ∂X₂₂j
-
+        ∂X₂₂[:, j] = ∂X₂₂j
     end
 
     return [∂X₁₁ ∂X₁₂; ∂X₂₁ ∂X₂₂]
-
 end

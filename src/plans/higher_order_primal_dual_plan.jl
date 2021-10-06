@@ -1,7 +1,7 @@
 # TODO: change documentation
 # DONE: addapted struct and functions
 @doc raw"""
-    PrimalDualProblem {mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem
+    PrimalDualProblem {mT <: AbstractManifold, nT <: AbstractManifold} <: PrimalDualProblem} <: Problem
 
 Describes a Problem for the linearized Chambolle-Pock algorithm.
 
@@ -22,17 +22,19 @@ Describes a Problem for the linearized Chambolle-Pock algorithm.
     LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ=forward_operator)
 
 """
-mutable struct PrimalDualSemismoothNewtonProblem{mT<:Manifold,nT<:Manifold} <: Problem
+mutable struct PrimalDualSemismoothNewtonProblem{
+    T,mT<:AbstractManifold,nT<:AbstractManifold
+} <: Problem{T}
     M::mT
     N::nT
     cost::Function
-    prox_F::Function
-    diff_prox_F::Function
-    prox_G_dual::Function
-    diff_prox_G_dual::Function
-    forward_operator::Function
-    adjoint_linearized_operator::Function
-    Λ::Union{Function,Missing}
+    prox_F!!::Function
+    diff_prox_F!!::Function
+    prox_G_dual!!::Function
+    diff_prox_G_dual!!::Function
+    forward_operator!!::Function
+    adjoint_linearized_operator!!::Function
+    Λ!!::Union{Function,Missing}
 end
 function PrimalDualSemismoothNewtonProblem(
     M::mT,
@@ -45,7 +47,7 @@ function PrimalDualSemismoothNewtonProblem(
     forward_operator,
     adjoint_linearized_operator,
     Λ=forward_operator,
-) where {mT<:Manifold,nT<:Manifold}
+) where {mT<:AbstractManifold,nT<:AbstractManifold}
     return PrimalDualSemismoothNewtonProblem{mT,nT}(
         M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator, Λ
     )
@@ -195,7 +197,13 @@ V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 ```
 where $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref)
 """
-function primal_residual(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions, x_old, ξ_old, n_old)
+function primal_residual(
+    p::PrimalDualSemismoothNewtonProblem,
+    o::PrimalDualSemismoothNewtonOptions,
+    x_old,
+    ξ_old,
+    n_old,
+)
     return norm(
         p.M,
         o.x,
@@ -249,7 +257,13 @@ and for the `:exact` variant
 
 where in both cases $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref).
 """
-function dual_residual(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions, x_old, ξ_old, n_old)
+function dual_residual(
+    p::PrimalDualSemismoothNewtonProblem,
+    o::PrimalDualSemismoothNewtonOptions,
+    x_old,
+    ξ_old,
+    n_old,
+)
     # if o.variant === :linearized (=> Always lineaized)
     return norm(
         p.N,
@@ -269,36 +283,11 @@ function dual_residual(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemism
     )
 end
 #
-# Special Debuggers
+# Special Debuggers - we just have to define how they act
 #
-# TODO: documentation
-# DONE: changed options where needed
-@doc raw"""
-    DebugDualResidual <: DebugAction
-
-A Debug action to print the dual residual.
-The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
-"""
-mutable struct DebugDualResidual <: DebugAction
-    io::IO
-    prefix::String
-    storage::StoreOptionsAction
-    function DebugDualResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
-    )
-        return new(io, "Dual Residual: ", a)
-    end
-    function DebugDualResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
-        io::IO=stdout,
-    ) where {P,T,Q}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "Dual Residual: ", a)
-    end
-end
-function (d::DebugDualResidual)(p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions, i::Int)
+function (d::DebugDualResidual)(
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
         print(d.io, d.prefix * string(dual_residual(p, o, xOld, ξOld, nOld)))
@@ -306,33 +295,6 @@ function (d::DebugDualResidual)(p::PrimalDualSemismoothNewtonProblem, o::PrimalD
     return d.storage(p, o, i)
 end
 
-# TODO: documentation
-# DONE: changed options where needed
-@doc raw"""
-    DebugPrimalResidual <: DebugAction
-
-A Debug action to print the primal residual.
-The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
-"""
-mutable struct DebugPrimalResidual <: DebugAction
-    io::IO
-    prefix::String
-    storage::StoreOptionsAction
-    function DebugPrimalResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
-    )
-        return new(io, "Primal Residual: ", a)
-    end
-    function DebugPrimalResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
-        io::IO=stdout,
-    ) where {P,T,Q}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "Primal Residual: ", a)
-    end
-end
 function (d::DebugPrimalResidual)(
     p::P, o::PrimalDualSemismoothNewtonOptions, i::Int
 ) where {P<:PrimalDualSemismoothNewtonProblem}
@@ -342,33 +304,7 @@ function (d::DebugPrimalResidual)(
     end
     return d.storage(p, o, i)
 end
-# TODO: documentation
-# DONE: changed options where needed
-@doc raw"""
-    DebugPrimalDualResidual <: DebugAction
 
-A Debug action to print the primaldual residual.
-The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
-"""
-mutable struct DebugPrimalDualResidual <: DebugAction
-    io::IO
-    prefix::String
-    storage::StoreOptionsAction
-    function DebugPrimalDualResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
-    )
-        return new(io, "PD Residual: ", a)
-    end
-    function DebugPrimalDualResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
-        io::IO=stdout,
-    ) where {P,Q,T}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "PD Residual: ", a)
-    end
-end
 function (d::DebugPrimalDualResidual)(
     p::P, o::PrimalDualSemismoothNewtonOptions, i::Int
 ) where {P<:PrimalDualSemismoothNewtonProblem}
@@ -385,64 +321,6 @@ function (d::DebugPrimalDualResidual)(
         )
     end
     return d.storage(p, o, i)
-end
-
-#
-# Debugs
-#
-# TODO: documentation
-# DONE: changed options where needed
-"""
-    DebugPrimalChange(opts...)
-
-Print the change of the primal variable by using [`DebugChange`](@ref),
-see their constructors for detail.
-"""
-DebugPrimalChange(opts...) = DebugChange(opts[1], "Primal Change: ", opts[2:end]...)
-
-"""
-    DebugPrimalIterate(opts...)
-
-Print the change of the primal variable by using [`DebugIterate`](@ref),
-see their constructors for detail.
-"""
-DebugPrimalIterate(opts...) = DebugIterate(opts...)
-
-"""
-    DebugDualIterate(e)
-
-Print the dual variable by using [`DebugEntry`](@ref),
-see their constructors for detail.
-This method is further set display `o.ξ`.
-"""
-DebugDualIterate(opts...) = DebugEntry(:ξ, "ξ:", opts...)
-
-"""
-    DebugDualChange(opts...)
-
-Print the change of the dual variable, similar to [`DebugChange`](@ref),
-see their constructors for detail, but with a different calculation of the change,
-since the dual variable lives in (possibly different) tangent spaces.
-"""
-# TODO: documentation
-# DONE: changed options where needed
-mutable struct DebugDualChange <: DebugAction
-    io::IO
-    prefix::String
-    storage::StoreOptionsAction
-    function DebugDualChange(
-        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)), io::IO=stdout
-    )
-        return new(io, "Dual Change: ", a)
-    end
-    function DebugDualChange(
-        values::Tuple{T,P},
-        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
-        io::IO=stdout,
-    ) where {P,T}
-        update_storage!(a, Dict{Symbol,Any}(k => v for (k, v) in zip((:ξ, :n), values)))
-        return new(io, "Dual Change: ", a)
-    end
 end
 function (d::DebugDualChange)(
     p::P, o::PrimalDualSemismoothNewtonOptions, i::Int
@@ -463,114 +341,3 @@ function (d::DebugDualChange)(
     end
     return d.storage(p, o, i)
 end
-
-"""
-    DebugDualBaseIterate(io::IO=stdout)
-
-Print the dual base variable by using [`DebugEntry`](@ref),
-see their constructors for detail.
-This method is further set display `o.n`.
-"""
-DebugDualBaseIterate(io::IO=stdout) = DebugEntry(:n, "n:", io)
-"""
-    DebugDualChange(a=StoreOptionsAction((:ξ)),io::IO=stdout)
-
-Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
-see their constructors for detail, on `o.n`.
-"""
-function DebugDualBaseChange(a::StoreOptionsAction=StoreOptionsAction((:n)), io::IO=stdout)
-    return DebugEntryChange(
-        :n, (p, o, x, y) -> distance(p.N, x, y), a, "Dual Base Change:", io
-    )
-end
-
-"""
-    DebugPrimalBaseIterate(io::IO=stdout)
-
-Print the primal base variable by using [`DebugEntry`](@ref),
-see their constructors for detail.
-This method is further set display `o.m`.
-"""
-DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:", io)
-
-"""
-    DebugPrimalBaseChange(a::StoreOptionsAction=StoreOptionsAction((:m)),io::IO=stdout)
-
-Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
-see their constructors for detail, on `o.n`.
-"""
-function DebugPrimalBaseChange(
-    a::StoreOptionsAction=StoreOptionsAction((:m)), io::IO=stdout
-)
-    return DebugEntryChange(
-        :m, (p, o, x, y) -> distance(p.M, x, y), a, "Primal Base Change:", io
-    )
-end
-
-#
-# Records
-#
-
-# Primals are just the entries
-"""
-    RecordPrimalChange(a)
-
-Create an [`RecordAction`](@ref) that records the primal value change,
-i.e. [`RecordChange`](@ref), since we just redord the change of `o.x`.
-"""
-RecordPrimalChange() = RecordChange()
-
-"""
-    RecordDualBaseIterate(x)
-
-Create an [`RecordAction`](@ref) that records the dual base point,
-i.e. [`RecordIterate`](@ref), i.e. `o.x`.
-"""
-RecordPrimalIterate(x) = RecordIterate(x)
-
-"""
-    RecordDualIterate(ξ)
-
-Create an [`RecordAction`](@ref) that records the dual base point,
-i.e. [`RecordEntry`](@ref) of `o.ξ`, so .
-"""
-RecordDualIterate(ξ) = RecordEntry(ξ, :ξ)
-
-"""
-    RecordDualChange()
-
-Create the action either with a given (shared) Storage, which can be set to the
-`values` Tuple, if that is provided).
-"""
-RecordDualChange() = RecordEntryChange(:ξ, (p, o, x, y) -> distance(p.N, x, y))
-
-"""
-    RecordDualBaseIterate(n)
-
-Create an [`RecordAction`](@ref) that records the dual base point,
-i.e. [`RecordEntry`](@ref) of `o.n`.
-"""
-RecordDualBaseIterate(n) = RecordEntry(n, :n)
-
-"""
-    RecordDualBaseChange(e)
-
-Create an [`RecordAction`](@ref) that records the dual base point change,
-i.e. [`RecordEntryChange`](@ref) of `o.n` with distance to the last value to store a value.
-"""
-RecordDualBaseChange() = RecordEntryChange(:n, (p, o, x, y) -> distance(p.N, x, y))
-
-"""
-    RecordPrimalBaseIterate(x)
-
-Create an [`RecordAction`](@ref) that records the primal base point,
-i.e. [`RecordEntry`](@ref) of `o.m`.
-"""
-RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
-"""
-    RecordPrimalBaseChange()
-
-Create an [`RecordAction`](@ref) that records the primal base point change,
-i.e. [`RecordEntryChange`](@ref) of `o.m` with distance to the last value to store a value.
-"""
-RecordPrimalBaseChange() = RecordEntryChange(:m, (p, o, x, y) -> distance(p.M, x, y))
