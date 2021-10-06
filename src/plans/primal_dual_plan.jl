@@ -1,3 +1,5 @@
+abstract type AbstractPrimalDualProblem{T} <: Problem{T} end
+
 @doc raw"""
     PrimalDualProblem {T, mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem{T}
 
@@ -43,7 +45,7 @@ the second.
     > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
     > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <: Problem{T}
+mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <: AbstractPrimalDualProblem{T}
     M::mT
     N::nT
     cost::Function
@@ -88,19 +90,19 @@ Evaluate the proximal map of ``F`` stored within [`PrimalDualProblem`](@ref)
 
 which can also be computed in place of `y`.
 """
-get_primal_prox(::PrimalDualProblem, ::Any...)
+get_primal_prox(::AbstractPrimalDualProblem, ::Any...)
 
-function get_primal_prox(p::PrimalDualProblem{AllocatingEvaluation}, σ, x)
+function get_primal_prox(p::AbstractPrimalDualProblem{AllocatingEvaluation}, σ, x)
     return p.prox_F!!(p.M, σ, x)
 end
-function get_primal_prox(p::PrimalDualProblem{MutatingEvaluation}, σ, x)
+function get_primal_prox(p::AbstractPrimalDualProblem{MutatingEvaluation}, σ, x)
     y = allocate_result(p.M, get_primal_prox, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
-function get_primal_prox!(p::PrimalDualProblem{AllocatingEvaluation}, y, σ, x)
+function get_primal_prox!(p::AbstractPrimalDualProblem{AllocatingEvaluation}, y, σ, x)
     return copyto!(p.M, y, p.prox_F!!(p.M, σ, x))
 end
-function get_primal_prox!(p::PrimalDualProblem{MutatingEvaluation}, y, σ, x)
+function get_primal_prox!(p::AbstractPrimalDualProblem{MutatingEvaluation}, y, σ, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
 
@@ -116,19 +118,19 @@ Evaluate the proximal map of ``G_n^*`` stored within [`PrimalDualProblem`](@ref)
 
 which can also be computed in place of `y`.
 """
-get_dual_prox(::PrimalDualProblem, ::Any...)
+get_dual_prox(::AbstractPrimalDualProblem, ::Any...)
 
-function get_dual_prox(p::PrimalDualProblem{AllocatingEvaluation}, n, τ, ξ)
+function get_dual_prox(p::AbstractPrimalDualProblem{AllocatingEvaluation}, n, τ, ξ)
     return p.prox_G_dual!!(p.N, n, τ, ξ)
 end
-function get_dual_prox(p::PrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
+function get_dual_prox(p::AbstractPrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
     η = allocate_result(p.N, get_dual_prox, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
-function get_dual_prox!(p::PrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
+function get_dual_prox!(p::AbstractPrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
     return copyto!(p.N, η, p.prox_G_dual!!(p.N, n, τ, ξ))
 end
-function get_dual_prox!(p::PrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
+function get_dual_prox!(p::AbstractPrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 @doc raw"""
@@ -145,19 +147,19 @@ function linearized_forward_operator(
 )
     return p.linearized_forward_operator!!(p.M, m, X)
 end
-function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
+function linearized_forward_operator(p::AbstractPrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
     y = random_point(p.N)
     forward_operator!(p, y, m)
     Y = zero_vector(p.N, y)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 function linearized_forward_operator!(
-    p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X, n
+    p::AbstractPrimalDualProblem{AllocatingEvaluation}, Y, m, X, n
 )
     return copyto!(p.N, Y, n, p.linearized_forward_operator!!(p.M, m, X))
 end
 function linearized_forward_operator!(
-    p::PrimalDualProblem{MutatingEvaluation}, Y, m, X, ::Any
+    p::AbstractPrimalDualProblem{MutatingEvaluation}, Y, m, X, ::Any
 )
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
@@ -169,19 +171,19 @@ end
 Evaluate the forward operator of ``Λ(x)`` stored within the [`PrimalDualProblem`](@ref)
 (in place of `y`).
 """
-forward_operator(::PrimalDualProblem{AllocatingEvaluation}, ::Any...)
+forward_operator(::AbstractPrimalDualProblem{AllocatingEvaluation}, ::Any...)
 
-function forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, x)
+function forward_operator(p::AbstractPrimalDualProblem{AllocatingEvaluation}, x)
     return p.Λ!!(p.M, x)
 end
-function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
+function forward_operator(p::AbstractPrimalDualProblem{MutatingEvaluation}, x)
     y = random_point(p.N)
     return p.Λ!!(p.M, y, x)
 end
-function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)
+function forward_operator!(p::AbstractPrimalDualProblem{AllocatingEvaluation}, y, x)
     return copyto!(p.N, y, p.Λ!!(p.M, x))
 end
-function forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, y, x)
+function forward_operator!(p::AbstractPrimalDualProblem{MutatingEvaluation}, y, x)
     return p.Λ!!(p.M, y, x)
 end
 
@@ -194,21 +196,21 @@ the [`PrimalDualProblem`](@ref) (in place of `X`).
 Since ``Y∈T_n\mathcal N``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
 the forward operator ``Λ`` might be `missing` in `p`.
 """
-adjoint_linearized_operator(::PrimalDualProblem{AllocatingEvaluation}, ::Any...)
+adjoint_linearized_operator(::AbstractPrimalDualProblem{AllocatingEvaluation}, ::Any...)
 
-function adjoint_linearized_operator(p::PrimalDualProblem{AllocatingEvaluation}, m, n, Y)
+function adjoint_linearized_operator(p::AbstractPrimalDualProblem{AllocatingEvaluation}, m, n, Y)
     return p.adjoint_linearized_operator!!(p.N, m, n, Y)
 end
-function adjoint_linearized_operator(p::PrimalDualProblem{MutatingEvaluation}, m, n, Y)
+function adjoint_linearized_operator(p::AbstractPrimalDualProblem{MutatingEvaluation}, m, n, Y)
     X = zero_vector(p.M, m)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 function adjoint_linearized_operator!(
-    p::PrimalDualProblem{AllocatingEvaluation}, X, m, n, Y
+    p::AbstractPrimalDualProblem{AllocatingEvaluation}, X, m, n, Y
 )
     return copyto!(p.M, X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
 end
-function adjoint_linearized_operator!(p::PrimalDualProblem{MutatingEvaluation}, X, m, n, Y)
+function adjoint_linearized_operator!(p::AbstractPrimalDualProblem{MutatingEvaluation}, X, m, n, Y)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 
@@ -340,7 +342,7 @@ mutable struct ChambollePockOptions{
         )
     end
 end
-get_solver_result(o::ChambollePockOptions) = o.x
+get_solver_result(o::PrimalDualOptions) = o.x
 @doc raw"""
     primal_residual(p, o, x_old, ξ_old, n_old)
 
@@ -355,7 +357,7 @@ V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 ```
 where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref)
 """
-function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
+function primal_residual(p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old)
     return norm(
         p.M,
         o.x,
@@ -411,7 +413,7 @@ and for the `:exact` variant
 
 where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref).
 """
-function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
+function dual_residual(p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old)
     if o.variant === :linearized
         return norm(
             p.N,
@@ -495,7 +497,7 @@ mutable struct DebugDualResidual <: DebugAction
         return new(io, "Dual Residual: ", a)
     end
 end
-function (d::DebugDualResidual)(p::PrimalDualProblem, o::ChambollePockOptions, i::Int)
+function (d::DebugDualResidual)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
         print(d.io, d.prefix * string(dual_residual(p, o, xOld, ξOld, nOld)))
@@ -529,8 +531,8 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
 end
 function (d::DebugPrimalResidual)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
         print(d.io, d.prefix * string(primal_residual(p, o, xOld, ξOld, nOld)))
@@ -563,9 +565,9 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
 end
 function (d::DebugPrimalDualResidual)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+)
+   if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
         print(
             d.io,
@@ -638,8 +640,8 @@ mutable struct DebugDualChange <: DebugAction
     end
 end
 function (d::DebugDualChange)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
         print(

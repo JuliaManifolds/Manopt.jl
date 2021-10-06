@@ -53,22 +53,8 @@ function PrimalDualSemismoothNewtonProblem(
     )
 end
 
-# TODO: adapt documentation
-# TODO: do we actually need this here as well? Also in ChambollePock
 @doc raw"""
-    PrimalDualOptions
-
-A general type for all primal dual based options to be used within primal dual
-based algorithms
-"""
-abstract type PrimalDualOptions <: Options end
-
-@doc raw"""
-    ChambollePockOptions <: PrimalDualOptions
-
-stores all options and variables within a linearized or exact Chambolle Pock.
-The following list provides the order for the constructor, where the previous iterates are
-initialized automatically and values with a default may be left out.
+    PrimalDualSemismoothNewtonOptions <: PrimalDualOptions
 
 * `m` - base point on $ \mathcal M $
 * `n` - base point on $ \mathcal N $
@@ -96,7 +82,7 @@ If you activate these to be different from the default identity, you have to pro
 `p.Λ` for the algorithm to work (which might be `missing` in the linearized case).
 
 # Constructor
-    ChambollePockOptions(m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
+    PrimalDualSemismoothNewtonOptions(m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
         acceleration::Float64 = 0.0,
         relaxation::Float64 = 1.0,
         relax::Symbol = :primal,
@@ -182,162 +168,4 @@ mutable struct PrimalDualSemismoothNewtonOptions{
             vector_transport_method,
         )
     end
-end
-get_solver_result(o::PrimalDualSemismoothNewtonOptions) = o.x
-@doc raw"""
-    primal_residual(p, o, x_old, ξ_old, n_old)
-
-Compute the primal residual at current iterate $k$ given the necessary values $x_{k-1},
-ξ_{k-1}, and $n_{k-1}$ from the previous iterate.
-```math
-\Bigl\lVert
-\frac{1}{σ}\operatorname{retr}^{-1}_{x_{k}}x_{k-1} -
-V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
-\Bigr\rVert
-```
-where $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref)
-"""
-function primal_residual(
-    p::PrimalDualSemismoothNewtonProblem,
-    o::PrimalDualSemismoothNewtonOptions,
-    x_old,
-    ξ_old,
-    n_old,
-)
-    return norm(
-        p.M,
-        o.x,
-        1 / o.primal_stepsize *
-        inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method) -
-        vector_transport_to(
-            p.M,
-            o.m,
-            p.adjoint_linearized_operator(
-                o.m,
-                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
-                o.ξ,
-            ),
-            o.x,
-            o.vector_transport_method,
-        ),
-    )
-end
-@doc raw"""
-    dual_residual(p, o, x_old, ξ_old, n_old)
-
-Compute the dual residual at current iterate $k$ given the necessary values $x_{k-1},
-ξ_{k-1}, and $n_{k-1}$ from the previous iterate. The formula is slightly different depending
-on the `o.variant` used:
-
-For the `:lineaized` it reads
-```math
-\Bigl\lVert
-\frac{1}{τ}\bigl(
-V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
-- ξ_k
-\bigr)
--
-DΛ(m_k)\bigl[
-V_{m_k\gets x_k}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}
-\bigr]
-\Bigr\rVert
-```
-
-and for the `:exact` variant
-
-```math
-\Bigl\lVert
-\frac{1}{τ} V_{n_{k}\gets n_{k-1}}(ξ_{k-1})
--
-\operatorname{retr}^{-1}_{n_{k}}\bigl(
-Λ(\operatorname{retr}_{m_{k}}(V_{m_k\gets x_k}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}))
-\bigr)
-\Bigr\rVert
-```
-
-where in both cases $V_{\cdot\gets\cdot}$ is the vector transport used in the [`ChambollePockOptions`](@ref).
-"""
-function dual_residual(
-    p::PrimalDualSemismoothNewtonProblem,
-    o::PrimalDualSemismoothNewtonOptions,
-    x_old,
-    ξ_old,
-    n_old,
-)
-    # if o.variant === :linearized (=> Always lineaized)
-    return norm(
-        p.N,
-        o.n,
-        1 / o.dual_stepsize *
-        (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ) -
-        p.forward_operator(
-            o.m,
-            vector_transport_to(
-                p.M,
-                o.x,
-                inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
-                o.m,
-                o.vector_transport_method,
-            ),
-        ),
-    )
-end
-#
-# Special Debuggers - we just have to define how they act
-#
-function (d::DebugDualResidual)(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions, i::Int
-)
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(d.io, d.prefix * string(dual_residual(p, o, xOld, ξOld, nOld)))
-    end
-    return d.storage(p, o, i)
-end
-
-function (d::DebugPrimalResidual)(
-    p::P, o::PrimalDualSemismoothNewtonOptions, i::Int
-) where {P<:PrimalDualSemismoothNewtonProblem}
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(d.io, d.prefix * string(primal_residual(p, o, xOld, ξOld, nOld)))
-    end
-    return d.storage(p, o, i)
-end
-
-function (d::DebugPrimalDualResidual)(
-    p::P, o::PrimalDualSemismoothNewtonOptions, i::Int
-) where {P<:PrimalDualSemismoothNewtonProblem}
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(
-            d.io,
-            d.prefix * string(
-                (
-                    primal_residual(p, o, xOld, ξOld, nOld) +
-                    dual_residual(p, o, xOld, ξOld, nOld)
-                ) / manifold_dimension(p.M),
-            ),
-        )
-    end
-    return d.storage(p, o, i)
-end
-function (d::DebugDualChange)(
-    p::P, o::PrimalDualSemismoothNewtonOptions, i::Int
-) where {P<:PrimalDualSemismoothNewtonProblem}
-    if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
-        ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
-        print(
-            d.io,
-            d.prefix * string(
-                norm(
-                    p.N,
-                    o.n,
-                    vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) -
-                    o.ξ,
-                ),
-            ),
-        )
-    end
-    return d.storage(p, o, i)
 end
