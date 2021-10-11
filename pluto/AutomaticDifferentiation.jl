@@ -234,7 +234,7 @@ q = rotM(π / 6) * [1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 3.0] * transpose(rotM(π /
 N = SymmetricPositiveDefinite(3)
 
 # ╔═╡ cb3fe7aa-1262-48f2-9ebc-3e959c72a33e
-is_point(N,q)
+is_point(N, q)
 
 # ╔═╡ 13712c64-48fd-4f2a-9ee4-1949e51d316f
 md"""We could first just compute the gradient using `FiniteDiff.jl`, but this yields the Euclidean gradient:"""
@@ -256,7 +256,7 @@ function grad_G_FD(N, q)
 end
 
 # ╔═╡ 7dd656ea-08de-4172-8a92-87ad2228ce69
-G1 = grad_G_FD(N,q)
+G1 = grad_G_FD(N, q)
 
 # ╔═╡ 219573d2-283f-456c-a5c3-fadd734fc157
 md"""
@@ -264,13 +264,13 @@ Again, we can compare this to the (known) solution of the gradient, namely the g
 """
 
 # ╔═╡ e28a2752-877c-4ab4-a253-8d26fa9a73c2
-G2 = -log(N,q,Matrix{Float64}(I,3,3))
+G2 = -log(N, q, Matrix{Float64}(I, 3, 3))
 
 # ╔═╡ 25c65878-1be6-4fec-b65e-9c1741320a41
 md"""Both terms agree up to ``1.2×10^{-10}``:"""
 
 # ╔═╡ 9a66d4f3-508d-4285-9a93-df1323575202
-norm(G1-G2)
+norm(G1 - G2)
 
 # ╔═╡ c07fb3d0-d12f-44d7-bcab-7a0d39e6af8d
 isapprox(M, q, G1, G2; atol=2 * 1e-10)
