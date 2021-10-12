@@ -44,13 +44,13 @@ A first idea is to generalise (multivariate) finite differences to Riemannian ma
 We can generalise the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M`` let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y`` and we obtain  
 
 ```math
-	Df(p)[Y] = \frac{\mathrm{d}}{\mathrm{d}t} f(c(t)) = \lim_{h \to 0} \frac{1}{h}(f(\exp_p(hY)-f(p))
+	Df(p)[Y] = \frac{\mathrm{d}}{\mathrm{d}t} f(c(t)) = \lim_{h \to 0} \frac{1}{h}(f(\exp_p(hY))-f(p))
 ```
 
 We can approximate ``Df(p)[X]`` by a finite difference scheme for an ``h>0`` as
 
 ```math
-DF(p)[Y] ≈ G_h(Y) := \frac{1}{h}(f(\exp_p(hY)-f(p))
+DF(p)[Y] ≈ G_h(Y) := \frac{1}{h}(f(\exp_p(hY))-f(p))
 ```
 
 Furthermore the gradient ``\operatorname{grad}f`` is the Riesz representer of the differential, ie.
@@ -145,7 +145,7 @@ md"We obtain quite a good approximation of the gradient."
 md"""
 ## 2. Conversion of an Euclidean Gradient in the Embedding to a Riemannian Gradient of an (not necessarily isometrically) embedded Manifold
 
-Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function un the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
+Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function in the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
 
 Since we can use the push forward of the embedding to also embed the tangent space ``T_p\mathcal M``, ``p\in \mathcal M``, we can similarly obtain the differential ``Df(p)\colon T_p\mathcal M \to \mathbb R`` by restricting the differential ``D\tilde f(p)`` to the tangent space.
 
@@ -210,7 +210,7 @@ The following function computes (half) the distance squared (with respect to the
 ```math
 	G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3) = \lVert \operatorname{Log}(q) \rVert_F^2,
 ```
-where $\operatorname{Log}$ denotes the matrix logarithm.
+where $\operatorname{Log}$ denotes the matrix logarithm and ``\lVert \cdot \rVert_F`` is the Frobenius norm.
 This can be computed for symmetric positive definite matrices by summing the squares of the ``\log``arithms of the eigenvalues of ``q`` and divide by two:
 """
 
@@ -219,7 +219,7 @@ G(q) = sum(log.(eigvals(Symmetric(q))) .^ 2) / 2
 
 # ╔═╡ e2bf6f55-7235-4d75-8bee-a325434e32ad
 md"""
-This we can also interprete as a function on the space of matrices and apply the Euvlidean finite differences machinery on; this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer (see again [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple{AbstractManifold,%20AbstractMetric,%20Any,%20Any})) after projecting onto the tangent space ``T_p\mathcal P(n)`` at ``p``.
+We can also interpret this as a function on the space of matrices and apply the Euclidean finite differences machinery; in this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer (see again [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple{AbstractManifold,%20AbstractMetric,%20Any,%20Any})) after projecting onto the tangent space ``T_p\mathcal P(n)`` at ``p``.
 
 Let's first define a point and the manifold ``N=\mathcal P(3)``.
 """
@@ -282,7 +282,7 @@ md""" In this case we can not use `ReverseDiff.jl`, since it can not handle the 
 md"""
 ## Summary
 
-This tutorial illustrats how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use _any_ differentiation framework within the embedding to derive a Riemannian gradient.
+This tutorial illustrates how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use _any_ differentiation framework within the embedding to derive a Riemannian gradient.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
