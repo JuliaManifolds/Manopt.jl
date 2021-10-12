@@ -17,7 +17,7 @@ md"""
 
 # ╔═╡ f3bc91ee-5871-4cba-ac89-190deb71ad0f
 md"""
-Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/) 0.6.9 the support of automatic differentiation support has been extended.
+Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7 the support of automatic differentiation support has been extended.
 
 This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function ``F\colon \mathcal M → ℝ``. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimisation algorithm in [Manopt.jl](https://manoptjl.org).
 
@@ -831,7 +831,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═7c5a8a17-6f63-4587-a94a-6936bdd3cec6
 # ╠═b3e7f57f-d87a-47c5-b8ad-48b6d205fa73
 # ╟─893db402-283f-4e3e-8bf7-c6f22e485efb
-# ╠═8494a0d6-dbf2-4eb0-a555-f00e446fbe38
+# ╟─8494a0d6-dbf2-4eb0-a555-f00e446fbe38
 # ╠═c93eb2da-89df-4751-b086-62be604d41e6
 # ╟─e2bf6f55-7235-4d75-8bee-a325434e32ad
 # ╠═153378ca-703d-4a84-bc63-22347399a160
@@ -843,7 +843,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─2be4f9e8-0331-44ac-839f-7bb71d9edef9
 # ╠═6f1d748f-27ce-496b-8561-f16972da50cc
 # ╠═7dd656ea-08de-4172-8a92-87ad2228ce69
-# ╠═219573d2-283f-456c-a5c3-fadd734fc157
+# ╟─219573d2-283f-456c-a5c3-fadd734fc157
 # ╠═e28a2752-877c-4ab4-a253-8d26fa9a73c2
 # ╟─25c65878-1be6-4fec-b65e-9c1741320a41
 # ╠═9a66d4f3-508d-4285-9a93-df1323575202
