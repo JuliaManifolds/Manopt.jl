@@ -44,13 +44,13 @@ A first idea is to generalise (multivariate) finite differences to Riemannian ma
 We can generalise the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M`` let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y`` and we obtain  
 
 ```math
-	Df(p)[Y] = \frac{\mathrm{d}}{\mathrm{d}t} f(c(t)) = \lim_{h \to 0} \frac{1}{h}(f(\exp_p(hY))-f(p))
+	Df(p)[Y] = \frac{\mathrm{d}}{\mathrm{d}t} f(c(t)) = \lim_{h \to 0} \frac{1}{h}(f(\exp_p(hY)-f(p))
 ```
 
 We can approximate ``Df(p)[X]`` by a finite difference scheme for an ``h>0`` as
 
 ```math
-DF(p)[Y] ≈ G_h(Y) := \frac{1}{h}(f(\exp_p(hY))-f(p))
+DF(p)[Y] ≈ G_h(Y) := \frac{1}{h}(f(\exp_p(hY)-f(p))
 ```
 
 Furthermore the gradient ``\operatorname{grad}f`` is the Riesz representer of the differential, ie.
@@ -145,7 +145,7 @@ md"We obtain quite a good approximation of the gradient."
 md"""
 ## 2. Conversion of an Euclidean Gradient in the Embedding to a Riemannian Gradient of an (not necessarily isometrically) embedded Manifold
 
-Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function in the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
+Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function un the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
 
 Since we can use the push forward of the embedding to also embed the tangent space ``T_p\mathcal M``, ``p\in \mathcal M``, we can similarly obtain the differential ``Df(p)\colon T_p\mathcal M \to \mathbb R`` by restricting the differential ``D\tilde f(p)`` to the tangent space.
 
@@ -210,7 +210,7 @@ The following function computes (half) the distance squared (with respect to the
 ```math
 	G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3) = \lVert \operatorname{Log}(q) \rVert_F^2,
 ```
-where $\operatorname{Log}$ denotes the matrix logarithm and ``\lVert \cdot \rVert_F`` is the Frobenius norm.
+where $\operatorname{Log}$ denotes the matrix logarithm.
 This can be computed for symmetric positive definite matrices by summing the squares of the ``\log``arithms of the eigenvalues of ``q`` and divide by two:
 """
 
@@ -219,7 +219,7 @@ G(q) = sum(log.(eigvals(Symmetric(q))) .^ 2) / 2
 
 # ╔═╡ e2bf6f55-7235-4d75-8bee-a325434e32ad
 md"""
-We can also interpret this as a function on the space of matrices and apply the Euclidean finite differences machinery; in this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer (see again [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple{AbstractManifold,%20AbstractMetric,%20Any,%20Any})) after projecting onto the tangent space ``T_p\mathcal P(n)`` at ``p``.
+This we can also interprete as a function on the space of matrices and apply the Euvlidean finite differences machinery on; this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer (see again [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple{AbstractManifold,%20AbstractMetric,%20Any,%20Any})) after projecting onto the tangent space ``T_p\mathcal P(n)`` at ``p``.
 
 Let's first define a point and the manifold ``N=\mathcal P(3)``.
 """
@@ -260,7 +260,7 @@ G1 = grad_G_FD(N, q)
 
 # ╔═╡ 219573d2-283f-456c-a5c3-fadd734fc157
 md"""
-Again, we can compare this to the (known) solution of the gradient, namely the gradient of (a half) the distance suqared is ``\operatorname{grad} (\tfrac{1}{2}d^2(\cdot, z)) = -\operatorname{log}_\cdot z``, where ``\operatorname{log}`` is the [logarithmic map](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple{SymmetricPositiveDefinite,%20Vararg{Any,%20N}%20where%20N}) on the manifold.
+Now, we can agaon compare this to the (known) solution of the gradient, namely the gradient of (a half) the distance suqared, i.e. ``G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3)`` is given by ``\operatorname{grad} G(q) = -\operatorname{log}_q I_3``, where ``\operatorname{log}`` is the [logarithmic map](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple{SymmetricPositiveDefinite,%20Vararg{Any,%20N}%20where%20N}) on the manifold.
 """
 
 # ╔═╡ e28a2752-877c-4ab4-a253-8d26fa9a73c2
@@ -282,7 +282,7 @@ md""" In this case we can not use `ReverseDiff.jl`, since it can not handle the 
 md"""
 ## Summary
 
-This tutorial illustrates how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use _any_ differentiation framework within the embedding to derive a Riemannian gradient.
+This tutorial illustrats how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use _any_ differentiation framework within the embedding to derive a Riemannian gradient.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -831,7 +831,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═7c5a8a17-6f63-4587-a94a-6936bdd3cec6
 # ╠═b3e7f57f-d87a-47c5-b8ad-48b6d205fa73
 # ╟─893db402-283f-4e3e-8bf7-c6f22e485efb
-# ╟─8494a0d6-dbf2-4eb0-a555-f00e446fbe38
+# ╠═8494a0d6-dbf2-4eb0-a555-f00e446fbe38
 # ╠═c93eb2da-89df-4751-b086-62be604d41e6
 # ╟─e2bf6f55-7235-4d75-8bee-a325434e32ad
 # ╠═153378ca-703d-4a84-bc63-22347399a160
@@ -843,7 +843,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─2be4f9e8-0331-44ac-839f-7bb71d9edef9
 # ╠═6f1d748f-27ce-496b-8561-f16972da50cc
 # ╠═7dd656ea-08de-4172-8a92-87ad2228ce69
-# ╟─219573d2-283f-456c-a5c3-fadd734fc157
+# ╠═219573d2-283f-456c-a5c3-fadd734fc157
 # ╠═e28a2752-877c-4ab4-a253-8d26fa9a73c2
 # ╟─25c65878-1be6-4fec-b65e-9c1741320a41
 # ╠═9a66d4f3-508d-4285-9a93-df1323575202
