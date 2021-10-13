@@ -45,23 +45,25 @@ mkpath(pluto_output_folder)
 #
 #
 # Please do not use the same name as for a(n old) literate Tutorial
-pluto_files = ["AutomaticDifferentiation",]
-pluto_titles = ["AD in Manopt",]
+pluto_files = ["AutomaticDifferentiation"]
+pluto_titles = ["AD in Manopt"]
 for (i, f) in enumerate(pluto_files)
-    pluto_file = pluto_src_folder*f*".jl"
-    s = Pluto.ServerSession();
+    pluto_file = pluto_src_folder * f * ".jl"
+    s = Pluto.ServerSession()
     nb = Pluto.SessionActions.open(s, pluto_file; run_async=false)
     html_contents = Pluto.generate_html(nb; binder_url_js="undefined")
-    open(pluto_output_folder*f*"_export.html","w") do io
-        println(io,html_contents)
+    open(pluto_output_folder * f * "_export.html", "w") do io
+        println(io, html_contents)
     end
-    open(pluto_output_folder*f*".md","w") do io
-        println(io,"""
-        ```@raw html
-        <iframe style="border:none; width:100%;" sandbox="allow-same-origin allow-scripts" frameborder="0" scrolling="no"
-        onload="this.style.height=(this.contentWindow.document.body.scrollHeight+20)+'px';" src="$(f)_export.html"></iframe>
-        ```
-        """
+    open(pluto_output_folder * f * ".md", "w") do io
+        println(
+            io,
+            """
+ ```@raw html
+ <iframe style="border:none; width:100%;" sandbox="allow-same-origin allow-scripts" frameborder="0" scrolling="no"
+ onload="this.style.height=(this.contentWindow.document.body.scrollHeight+20)+'px';" src="$(f)_export.html"></iframe>
+ ```
+ """,
         )
     end
     push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
