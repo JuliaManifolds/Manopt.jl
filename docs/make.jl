@@ -46,7 +46,7 @@ mkpath(pluto_output_folder)
 #
 # Please do not use the same name as for a(n old) literate Tutorial
 pluto_files = ["AutomaticDifferentiation"]
-pluto_heights = [370,] # for now, lazyness, in rem
+pluto_heights = [370] # for now, lazyness, in rem
 pluto_titles = ["AD in Manopt"]
 for (i, f) in enumerate(pluto_files)
     global TutorialMenu
@@ -55,12 +55,13 @@ for (i, f) in enumerate(pluto_files)
     s = Pluto.ServerSession()
     nb = Pluto.SessionActions.open(s, pluto_file; run_async=false)
     write(pluto_output_folder * f * "_pluto.html", Pluto.generate_html(nb))
-    write(pluto_output_folder * f * ".md",
-    """
-    ```@raw html
-    <iframe style="border:none; width:100%; height: $(pluto_heights[i])rem;" src="$(f)_pluto.html"></iframe>
-    ```
-    """,
+    write(
+        pluto_output_folder * f * ".md",
+        """
+        ```@raw html
+        <iframe style="border:none; width:100%; height: $(pluto_heights[i])rem;" src="$(f)_pluto.html"></iframe>
+        ```
+        """,
     )
     push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
 end
