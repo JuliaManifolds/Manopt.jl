@@ -10,9 +10,9 @@ begin
     Pkg.activate(mktempdir())
     Pkg.add([
         Pkg.PackageSpec(; name="Manifolds", version="0.7"),
-        Pkg.PackageSpec(; name="Manopt", version="0.3.13"),
-        Pkg.PackageSpec(; name="FiniteDiff", version="2.8.1"),
-        Pkg.PackageSpec(; name="ReverseDiff", version="1.9.0"),
+        Pkg.PackageSpec(; name="Manopt", version="0.3"),
+        Pkg.PackageSpec(; name="FiniteDiff", version="2.8"),
+        Pkg.PackageSpec(; name="ReverseDiff", version="1.9"),
         # Pkg.PackageSpec(; name="PlutoUI"),
     ])
 end
