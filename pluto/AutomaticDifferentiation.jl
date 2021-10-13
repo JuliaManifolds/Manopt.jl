@@ -6,15 +6,15 @@ using InteractiveUtils
 
 # ╔═╡ f88b15de-cec6-4bc8-9b68-2a407b5aeded
 begin
-	using Pkg: Pkg
+    using Pkg: Pkg
     Pkg.activate(mktempdir())
     Pkg.add([
         Pkg.PackageSpec(; name="Manifolds", version="0.7"),
         Pkg.PackageSpec(; name="Manopt", version="0.3.13"),
         Pkg.PackageSpec(; name="FiniteDiff", version="2.8.1"),
         Pkg.PackageSpec(; name="ReverseDiff", version="1.9.0"),
-#        Pkg.PackageSpec(; name="PlutoUI"),
-     ])
+        # Pkg.PackageSpec(; name="PlutoUI"),
+    ])
 end
 
 # ╔═╡ 856f336c-e232-4f1f-b1ac-759b4558acd1
@@ -54,7 +54,7 @@ md"""
 
 A first idea is to generalise (multivariate) finite differences to Riemannian manifolds. Let ``X_1,\ldots,X_d ∈ T_p\mathcal M`` denote an orthonormal basis of the tangent space ``T_p\mathcal M`` at the point ``p∈\mathcal M`` on the Riemannian manifold.
 
-We can generalise the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M`` let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y`` and we obtain  
+We can generalise the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M`` let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y`` and we obtain
 
 ```math
 	Df(p)[Y] = \frac{\mathrm{d}}{\mathrm{d}t} f(c(t)) = \lim_{h \to 0} \frac{1}{h}(f(\exp_p(hY))-f(p))
@@ -83,7 +83,7 @@ and perform the approximation from above to obtain
 ```math
 	\operatorname{grad}f(p) ≈ \sum_{i=1}^{d} G_h(X_i)X_i
 ```
-for some suitable step size ``h``.This comes at the cost of ``d+1`` function evaluations and ``d`` exponential maps. 
+for some suitable step size ``h``.This comes at the cost of ``d+1`` function evaluations and ``d`` exponential maps.
 """
 
 # ╔═╡ a3df142e-94df-48d2-be08-d1f1f3854c76
@@ -105,7 +105,7 @@ Minimizing this function yields the smallest eigenvalue ``\lambda_1`` as a value
 Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere ``𝕊^n`` of unit vectors in ``\mathbb R^{n+1}``, i.e.
 
 ```math
-\operatorname*{arg\,min}_{p \in 𝕊^n} f(p) = \operatorname*{arg\,min}_{p \in 𝕊^n} p^\mathrm{T}Ap  
+\operatorname*{arg\,min}_{p \in 𝕊^n} f(p) = \operatorname*{arg\,min}_{p \in 𝕊^n} p^\mathrm{T}Ap
 ```
 
 We can compute the Riemannian gradient exactly as
