@@ -5,9 +5,22 @@
 function Riemannian_augmented_Lagrangian_method(
     M::Manifold,
     F::TF,
-    x::random_point(M),
     n_ineq_constraint::Int,
     n_eq_constraint::Int;
+    x::random_point(M),
+    kwargs...,
+) where {TF}
+    x_res = allocate(x)
+    copyto!(Ref(M), x_res, x)
+    return particle_swarm!(M, F, n_ineq_constraint, n_eq_constraint; x=x_res, kwargs...)
+end
+
+function Riemannian_augmented_Lagrangian_method!(
+    M::Manifold,
+    F::TF,
+    n_ineq_constraint::Int,
+    n_eq_constraint::Int;
+    x::random_point(M),
     max_inner_iter::Int=200,
     num_outer_itertgn::Int=30,
     ϵ::Real=1e-3, #(starting)tolgradnorm
@@ -15,39 +28,31 @@ function Riemannian_augmented_Lagrangian_method(
     bound::Int=20, ###why not Real?
     λ::Vector=ones(n_ineq_constraint,1),
     γ::Vector=ones(n_eq_constraint,1),
-    ρ::Real=1.0, ###why int in Matlab?
+    ρ::Real=1.0, ###why int in Matlab code?
     τ::Real=0.8,
     θ_ρ::Real=0.3, 
     θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), ###this does not need to be a parameter, just defined somewhere
-    oldacc=Inf, ###this does not need to be a parameter, just defined somewhere
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300),
-) where {TF}
-    x_res = allocate(x)
-    copyto!(Ref(M), x_res, x)
-    return particle_swarm!(M, F; kwargs...)
-end
-
-function Riemannian_augmented_Lagrangian_method!(
-    M::Manifold,
-    F::TF,
-    x0::?;
-    #x0::?=random_point(M),
-    λ::Vector=ones(n_ineq_constraint,1),
-    γ::Vector=ones(n_eq_constraint,1),
-    ρ::Real=1.0,
-    θ_ρ::Real=0.3, #>1 im paper?
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300),
+    oldacc::Real=Inf, ###this does not need to be a parameter, just defined somewhere
+    min_stepsize::Real= ### find realistic value, put in stopping criterion alongside the ϵ condition
+    stopping_criterion::StoppingCriterion==StopWhenAny(StopAfterIteration(300), StopWhenAll()), #maxOuterIter
     kwargs...,
 ) where {TF}
-    p = CostProblem(M, F)
+    p = CostProblem(M, F, n_ineq_constraint, n_eq_constraint)
     o = RALMOptions(
-        #x0,
+        x,
+        max_inner_iter,
+        num_outer_itertgn,
+        ϵ,
+        ϵ_min,
+        bound,
         λ,
         γ,
         ρ,
+        τ,
         θ_ρ,
-        stopping_criterion
-        return particle_swarm!(M, F; kwargs...)
+        θ_ϵ,
+        oldacc,
+        stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -62,10 +67,11 @@ end
 # Solver functions
 #
 function initialize_solver!(p::CostProblem, o::RALMOptions)
-
+###
 end
 function step_solver!(p::CostProblem, o::RALMOptions, iter)
     # use subsolver(Riemannian limited memory BFGS) to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
+    ###o.x=
 
     # update multipliers
     newacc=0
@@ -87,7 +93,9 @@ function step_solver!(p::CostProblem, o::RALMOptions, iter)
     o.oldacc = newacc
 
     # update the tolerance ϵ
-    ϵ = max(o.ϵ_min, ϵ * o.θ_ϵ);
+    ϵ = max(o.ϵ_min, ϵ * o.θ_ϵ)
+
+
 
 end
 get_solver_result(o::RALMOptions) = o.x

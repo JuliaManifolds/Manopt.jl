@@ -73,6 +73,7 @@ makedocs(;
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Quasi-Newton" => "solvers/quasi_Newton.md",
+            "Riemannian augmented Lagrangian method" => "solvers/Riemannian_augmented_Lagrangian_method.md"
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
             "Subgradient method" => "solvers/subgradient.md",
             "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
