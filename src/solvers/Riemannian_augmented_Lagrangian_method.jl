@@ -1,4 +1,5 @@
 # Recreating Changshuo Liu's Matlab source code in Julia
+# original code by Changshuo Liu: https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints/blob/master/solvers/almbddmultiplier.m
 # uses Riemannian limited memory BFGS solver
 # get n_ineq_constraint, n_eq_constraint
 
@@ -71,6 +72,7 @@ function initialize_solver!(p::CostProblem, o::RALMOptions)
 end
 function step_solver!(p::CostProblem, o::RALMOptions, iter)
     # use subsolver(Riemannian limited memory BFGS) to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
+    
     ###o.x=
 
     # update multipliers
@@ -99,3 +101,7 @@ function step_solver!(p::CostProblem, o::RALMOptions, iter)
 
 end
 get_solver_result(o::RALMOptions) = o.x
+
+function cost_alm(p::CostProblem, o::RALMOptions)
+    val=get_cost(p, o.x)
+end
