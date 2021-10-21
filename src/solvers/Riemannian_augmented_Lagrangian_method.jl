@@ -104,4 +104,72 @@ get_solver_result(o::RALMOptions) = o.x
 
 function cost_alm(p::CostProblem, o::RALMOptions)
     val=get_cost(p, o.x)
+    
+end
+
+function constraints_detail(p::CostProblem)###put this in separate file, but where does it belong?
+    mutable struct condet 
+            has_ineq_cost::Bool
+            has_ineq_grad::Bool
+            has_eq_cost::Bool
+            has_eq_grad::Bool
+            n_ineq_constraint_cost::Int
+            n_ineq_constraint_grad::Int
+            n_eq_constraint_cost::Int
+            n_eq_constraint_grad::Int
+        end
+
+        # check if problem has conditions
+        fields = fieldnames(p)
+        if "ineq_constraint_cost" in fields
+            condet.has_ineq_cost=true
+        else
+            condet.has_ineq_cost=false
+        if "ineq_constraint_grad" in fields
+            condet.has_ineq_grad=true
+        else
+            condet.has_ineq_grad=false
+
+        if "eq_constraint_cost" in fields
+            condet.has_eq_cost=true
+        else
+            condet.has_eq_cost=false
+        if "eq_constraint_grad" in fields
+            condet.has_eq_grad=true
+        else
+            condet.has_eq_grad=false
+        
+        # in case problem does have conditions, count how many
+        if condet.has_ineq_cost
+            condet.n_ineq_constraint_cost  = length(problem.ineq_constraint_cost)
+        else
+            condet.n_ineq_constraint_cost = 0
+        end
+        if condet.has_ineq_grad
+            condet.n_ineq_constraint_grad  = length(problem.ineq_constraint_grad)
+        else
+            condet.n_ineq_constraint_grad  = 0
+        end
+        
+        if condet.has_eq_cost
+            condet.n_eq_constraint_cost  = length(problem.eq_constraint_cost)
+        else
+            condet.n_eq_constraint_cost = 0
+        end
+        if condet.has_eq_grad
+            condet.n_eq_constraint_grad  = length(problem.eq_constraint_grad)
+        else 
+            condet.n_eq_constraint_grad = 0
+        end
+
+        # give a warning if the number of cost and grad functions are not equal
+        if condet.n_ineq_constraint_cost != condet.n_ineq_constraint_grad
+            #throw a warning
+        end
+        
+        if condet.n_eq_constraint_cost != condet.n_eq_constraint_grad
+            #throw a warning
+        end
+
+    return condet
 end
