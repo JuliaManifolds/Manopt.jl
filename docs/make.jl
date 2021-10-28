@@ -1,4 +1,5 @@
-using Manopt, Manifolds, Documenter, Literate, Pluto
+using Manopt, Manifolds, Documenter, Literate, Pluto, PlutoHTML
+# Load an unregistered package (for now) to update exports of Pluto notebooks
 
 # generate examples using Literate
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
@@ -52,14 +53,19 @@ for (i, f) in enumerate(pluto_files)
     global TutorialMenu
     @info "Building Pluto Notebook $f.jl"
     pluto_file = pluto_src_folder * f * ".jl"
-    s = Pluto.ServerSession()
-    nb = Pluto.SessionActions.open(s, pluto_file; run_async=false)
-    write(pluto_output_folder * f * "_pluto.html", Pluto.generate_html(nb))
+    html = notebook2html(pluto_file)
     write(
         pluto_output_folder * f * ".md",
         """
         ```@raw html
-        <iframe style="border:none; width:100%; height: $(pluto_heights[i])rem;" src="$(f)_pluto.html"></iframe>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.16.4/frontend/treeview.css" type="text/css" />
+        <style>
+        div.markdown {
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+        }
+        </style>
+        $html
         ```
         """,
     )
