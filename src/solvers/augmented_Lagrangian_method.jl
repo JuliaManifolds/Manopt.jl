@@ -36,8 +36,7 @@ function augmented_Lagrangian_method!(
     θ_ρ::Real=0.3, 
     θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
     oldacc::Real=Inf, 
-    min_stepsize::Real=1e-6, ### put in stopping criterion alongside the ϵ condition
-    stopping_criterion::StoppingCriterion==StopWhenAny(StopAfterIteration(300), StopWhenAll()), #maxOuterIter
+    stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopIfSmallerOrEqual(ϵ, ϵ_min), StopWhenChangeLess(1e-6))), 
     kwargs...,
 ) where {TF}
     p = CostProblem(M, F, n_ineq_constraint, n_eq_constraint)
@@ -75,7 +74,9 @@ old_acc=Inf,
 end
 function step_solver!(p::CostProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
-    
+    cost = @get_Lagrangian_cost(p, o) ### how to not asign the return value of the function, but the function as a whole here?
+    grad = @get_Lagrangian_gradient(p, o)
+    ### put these in the subproblem
     ###o.x=
 
     # update multipliers

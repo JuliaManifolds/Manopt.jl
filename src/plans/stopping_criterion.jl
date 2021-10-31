@@ -267,6 +267,37 @@ function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return false
 end
 
+@doc raw"""
+    StopIfSmallerOrEqual <: StoppingCriterion
+
+A functor for an stopping criterion, where the algorithm if stopped when a variable is smaller than or equal to its minimum value.
+
+# Fields
+* `value` – stores the variable which has to fall under a threshold for the algorithm to stop
+* `minValue` – stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+  reached, see [`get_reason`](@ref).
+
+# Constructor
+
+    StopIfSmallerOrEqual(value, minValue)
+
+initialize the stopifsmallerorequal functor to indicate to stop after `value` is smaller than or equal to `minValue`.
+"""
+mutable struct StopIfSmallerOrEqual <: StoppingCriterion
+    value::Real
+    minValue::Real
+    reason::String
+    StopIfSmallerOrEqual(mValue::Real) = new(mValue, "")
+end
+function (c::StopIfSmallerOrEqual)(::P, ::O) where {P<:Problem,O<:Options}
+    if c.value <= c.minValue
+        c.reason = "The value of the variable ($(string(:c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
+        return true
+    end
+    return false
+end
+
 """
     are_these_stopping_critera_active(c::StoppingCriterion, cond)
 
