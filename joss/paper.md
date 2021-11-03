@@ -20,7 +20,7 @@ bibliography: bibliography.bib
 # Summary
 
 [`Manopt.jl`](https://manoptjl.org) provides a set of optimization algorithms for optimization problems given on a Riemannian manifold $\mathcal M$.
-Based on a generic optimization framework together with the interface `ManifoldsBase.jl` for Riemannian manifolds, classical and recently developed methods are provided in an efficient implementation. Algorithms include the derivative free Particle Swarm and Nelder Mead algorithms as well as a classical gradient, conjugate gradient and stochastic gradient descent. Furthermore, quasi Newton methods like a Riemannian L-BFGS [@HuangGallivanAbsil:2015:1] and nonsmooth optimization algorithms like a Cyclic Proximal Point Algorithm [@Bacak:2014:1], a (parallel) Douglas-Rachford algorithm [@BergmannPerschSteidl:2016:1] and a Chambolle-Pock algorithm [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] are provided together with several basic cost functions, gradients and proximal maps as well as debug and record capabilities.
+Based on a generic optimization framework together with the interface `ManifoldsBase.jl` for Riemannian manifolds, classical and recently developed methods are provided in an efficient implementation. Algorithms include the derivative free Particle Swarm and Nelder–Mead algorithms as well as a classical gradient, conjugate gradient and stochastic gradient descent. Furthermore, quasi-Newton methods like a Riemannian L-BFGS [@HuangGallivanAbsil:2015:1] and nonsmooth optimization algorithms like a Cyclic Proximal Point Algorithm [@Bacak:2014:1], a (parallel) Douglas-Rachford algorithm [@BergmannPerschSteidl:2016:1] and a Chambolle-Pock algorithm [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] are provided together with several basic cost functions, gradients and proximal maps as well as debug and record capabilities.
 
 # Statement of Need
 
@@ -41,7 +41,7 @@ Further examples and a thorough introduction can be found in [@AbsilMahonySepulc
 
 For a user facing an optimization problem on a manifold, there are two obstacles to the actual numerical optimization: on the one hand, a suitable implementation of the manifold at hand is required, for example how to evaluate the above mentioned geodesics. On the other hand, an implementation of the optimization algorithm that employs said methods from the manifold, such that the algorithm can be applied to the cost function $f$ a user already has.
 
-Using the interface for manifolds, `ManifoldsBase.jl`, the algorithms are implemented in the optimization framework can therefore be used with any manifold from `Manifolds.jl` [@AxenBaranBergmannRzecki:2021:1], a library of efficiently implemented Riemannian manifolds.
+Using the interface for manifolds, `ManifoldsBase.jl`, the algorithms are implemented in the optimization framework. They can therefore be used with any manifold from `Manifolds.jl` [@AxenBaranBergmannRzecki:2021:1], a library of efficiently implemented Riemannian manifolds.
 `Manopt.jl` provides a low level entry to optimization on manifolds while also providing efficient implementations, that can easily be extended to cover own manifolds.
 
 # Functionality
@@ -51,7 +51,9 @@ The framework includes a generic way to specify a step size and a stopping crite
 Each of the algorithms has a high level interface to make it easy to use the algorithms directly.
 
 An optimization task in `Manopt.jl` consists of a `Problem p` and `Options o`,
-The `Problem` consists of all static information like the cost function and a potential gradient of the optimization task. The `Options` specify the type of algorithm and the settings and data required to run the algorithm. For example by default most options specify that the exponential map, which generalizes the notion of addition to the manifold should be used and the algorithm steps are performed following an acceleration free curve on the manifold. This might not be known in closed form for some manifolds and hence also more generally arbitrary retractions can be specified for this instead. This yields approximate algorithms that are numerically more efficient.
+The `Problem` consists of all static information like the cost function and a potential gradient of the optimization task. The `Options` specify the type of algorithm and the settings and data required to run the algorithm. For example by default most options specify that the exponential map, which generalizes the notion of addition to the manifold, should be used and the algorithm steps are performed following an acceleration free curve on the manifold. This might not be known in closed form for some manifolds and hence also more general arbitrary retractions can be specified for this instead.
+Retractions are first order approximations for the exponential map. They provide an alternative to the acceleration free form, if no closed form solution is known. Otherwise, a retraction might also be chosen, when their evaluation is computationally cheaper than to use the exponential map, especially if their approximation error can be stated, see e.g. [@BendokatZimmermann:2021].
+
 Similarly, tangent vectors at different points are identified by a vector transport, which by default is the parallel transport.
 By providing always a default, a user can start right away without thinking about these details. They can then modify these settings to improve speed or accuracy by specifying other retractions or vector transport to their needs.
 
@@ -82,7 +84,7 @@ we can compute the generalization of the mean, called the Riemannian Center of M
 
 $$ \operatorname*{arg\,min}_{x\in\mathcal M}\quad \displaystyle\sum_{k=1}^Nd_{\mathcal M}(x, p_k)^2, $$
 
-where $d_{\mathcal M}$ denotes length of a shortest geodesic connecting the the two points in the arguments. It is called the Riemannian distance. For the sphere this distance is given by the length of the shorter great arc connecting the two points.
+where $d_{\mathcal M}$ denotes length of a shortest geodesic connecting the two points in the arguments. It is called the Riemannian distance. For the sphere this distance is given by the length of the shorter great arc connecting the two points.
 
 ```julia
 using Manopt, Manifolds, LinearAlgebra, Random
@@ -139,7 +141,7 @@ The algorithm reached approximately critical point after 7 iterations;
 
 # Related research and software
 
-There are two projects that are most similar to `Manopt.jl` are [`Manopt`](https://manopt.org) [@manopt] in Matlab and [`pymanopt`](https://pymanopt.org) [@pymanopt] in Python.
+The two projects that are most similar to `Manopt.jl` are [`Manopt`](https://manopt.org) [@manopt] in Matlab and [`pymanopt`](https://pymanopt.org) [@pymanopt] in Python.
 Similarly [`ROPTLIB`](https://www.math.fsu.edu/~whuang2/Indices/index_ROPTLIB.html) [@HuangAbsilGallivanHand:2018:1] is a package for optimization on Manifolds in C++.
 While all three packages cover some algorithms, most are less flexible for example in stating the stopping criterion, which is fixed to mainly maximal number of iterations or a small gradient. Most prominently, `Manopt.jl` is the first package that also covers methods for high-performance and high-dimensional nonsmooth optimization on manifolds.
 
