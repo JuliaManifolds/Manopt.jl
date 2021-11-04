@@ -2,13 +2,19 @@
 using Manopt, Manifolds, LinearAlgebra, Random
 Random.seed!(42)
 M = Sphere(2)
-n = 100
-pts = [ normalize(rand(3)) for _ in 1:n ]
+n = 40
+p = 1/sqrt(3) .* ones(3)
+B = DefaultOrthonormalBasis()
+pts = [ exp(M, p, get_vector(M, p, π/8*randn(2), B)) for _ in 1:n ]
 
 F(M, y) = sum(1/(2*n) * distance.(Ref(M), pts, Ref(y)).^2)
 gradF(M, y) = sum(1/n * grad_distance.(Ref(M), pts, Ref(y)))
 
 x_mean = gradient_descent(M, F, gradF, pts[1])
+
+euclidean_mean = mean(pts)
+print("Norm of Euclieadn mean:", norm(euclidean_mean),"\n\n")
+euclidean_mean_normed = euclidean_mean/norm(euclidean_mean)
 
 ## Second example block
 o = gradient_descent(M, F, gradF, pts[1],
@@ -16,17 +22,19 @@ o = gradient_descent(M, F, gradF, pts[1],
     record=[:x, :Change, :Cost],
     return_options=true
 )
-xMean3 = get_solver_result(o)
+x_mean2 = get_solver_result(o)
 values = get_record(o) # vector with a tuple per iteration
 iterates = get_record(o, :Iteration, :x) # from each iteration get the recorded iterate x.
 
-## Export
+## Export with Paul Tols colors https://personal.sron.nl/~pault/
 using Colors
 TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
 TolVibrantTeal = RGBA{Float64}(colorant"#009988")
+TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
 asymptote_export_S2_signals(joinpath( @__DIR__, "img/MeanIllustr.asy");
-    points=[[xMean,], pts],
-    colors=Dict(:points => [TolVibrantOrange, TolVibrantTeal]),
-    dot_size=3.5, camera_position=(1.0, 0.75, 0.5),
+    points=[[x_mean,], [euclidean_mean_normed,], pts],
+    colors=Dict(:points => [TolVibrantOrange, TolVibrantCyan, TolVibrantTeal]),
+    dot_sizes=[3.5, 2.5, 3.5],
+    camera_position=(.7, .7, 0.5),
 )
 render_asymptote(joinpath( @__DIR__, "img/MeanIllustr.asy"); render=4)  #src

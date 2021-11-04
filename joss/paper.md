@@ -80,19 +80,22 @@ In the current version `Manopt.jl` version 0.3.12 the following algorithms are a
 # Example
 
 `Manopt.jl` is registered in the general Julia registry and can hence be installed typing `]add Manopt` in Julia REPL.
-Given the `Sphere` from `Manifolds.jl` and a set of unit vectors $p_1,...,p_N\in\mathbb R^3$, where $N$ is the number of data points.
-we can compute the generalization of the mean, called the Riemannian Center of Mass [@Karcher:1977:1], which is defined as the minimizer of the squared distances to the given data
+Given the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/v0.7/manifolds/sphere.html) from `Manifolds.jl` and a set of unit vectors $p_1,...,p_N\in\mathbb R^3$, where $N$ is the number of data points.
+we can compute the generalization of the mean, called the Riemannian Center of Mass [@Karcher:1977:1], which is defined as the minimizer of the squared distances to the given datan – a property the mean in vector spaces fulfills –
 
 $$ \operatorname*{arg\,min}_{x\in\mathcal M}\quad \displaystyle\sum_{k=1}^Nd_{\mathcal M}(x, p_k)^2, $$
 
-where $d_{\mathcal M}$ denotes length of a shortest geodesic connecting the two points in the arguments. It is called the Riemannian distance. For the sphere this distance is given by the length of the shorter great arc connecting the two points.
+where $d_{\mathcal M}$ denotes length of a shortest geodesic connecting the two points in the arguments.
+It is called the Riemannian distance. For the sphere this [`distance`](https://juliamanifolds.github.io/Manifolds.jl/v0.7/manifolds/sphere.html#ManifoldsBase.distance-Tuple{AbstractSphere,%20Any,%20Any}) is given by the length of the shorter great arc connecting the two points.
 
 ```julia
 using Manopt, Manifolds, LinearAlgebra, Random
 Random.seed!(42)
 M = Sphere(2)
-n = 100
-pts = [ normalize(rand(3)) for _ in 1:n ]
+n = 40
+p = 1/sqrt(3) .* ones(3)
+B = DefaultOrthonormalBasis()
+pts = [ exp(M, p, get_vector(M, p, π/8*randn(2), B)) for _ in 1:n ]
 
 F(M, y) = sum(1/(2*n) * distance.(Ref(M), pts, Ref(y)).^2)
 gradF(M, y) = sum(1/n * grad_distance.(Ref(M), pts, Ref(y)))
@@ -100,9 +103,13 @@ gradF(M, y) = sum(1/n * grad_distance.(Ref(M), pts, Ref(y)))
 x_mean = gradient_descent(M, F, gradF, pts[1])
 ```
 
-Both the data `pts` and the resulting mean are shown in the following figure.
+The resulting `x_mean` minimizes the (Riemannian) distances squared but is especially a point of unit norm.
+Compared to `mean(pts)`, which computes the mean in the embedding of the sphere, the $\mathbb R^3$, yields a point “inside” the sphere,
+since its norm is approximately `0.858`. But even projecting this back onto the sphere, yields a point that does not fulfill the property of minimizing the squared distances.
 
-![100 random points `pts` and the result from the gradient descent to compute the `x_mean` (orange).](src/img/MeanIllustr.png)
+In the following figure the data `pts` (teal) and the resulting mean (orange) as well as the projected Euclidean mean (small, cyan) are shown.
+
+![40 random points `pts` and the result from the gradient descent to compute the `x_mean` (orange) compared to a projection of their (Eucliean) mean onto the sphere (cyan).](src/img/MeanIllustr.png)
 
 In order to print the current iteration number, change and cost every iteration as well as the stopping reason, you can provide an `debug` keyword with the corresponding symbols interleaved with strings. The Symbol `:Stop` indicates the stopping reason should be printed in the end. The last integer in this array introduces that only every $i$th iteration a debug is printed.
 While `:x` could be used to also print the current iterate, this usually takes up too much space.
@@ -126,19 +133,23 @@ iterates = get_record(o, :Iteration, :x) # iterates recorded per iteration
 ```
 
 The debug output of this example looks as follows:
-```
-Initial |  | F(x): 0.26445609908711865
-# 1 | Last Change: 0.5335127457059914 | F(x): 0.1164202416096971
-# 2 | Last Change: 0.021122280232099756 | F(x): 0.11618855750050769
-# 3 | Last Change: 0.0008160276261172897 | F(x): 0.11618821164343343
-# 4 | Last Change: 3.1665020130539125e-5 | F(x): 0.11618821112258158
-# 5 | Last Change: 1.2341904187709075e-6 | F(x): 0.11618821112179054
-# 6 | Last Change: 5.575503985246929e-8 | F(x): 0.11618821112178938
-# 7 | Last Change: 2.9802322387695312e-8 | F(x): 0.11618821112178936
-The algorithm reached approximately critical point after 7 iterations;
-    the gradient norm (1.9001130414808935e-9) is less than 1.0e-8.
+
+```julia-repl
+Initial |  | F(x): 0.17660669661896283
+# 1 | Last Change: 0.20617740074094507 | F(x): 0.15428987096503957
+# 2 | Last Change: 0.01172204420526484 | F(x): 0.15421595490561446
+# 3 | Last Change: 0.000916321286757487 | F(x): 0.1542155005195215
+# 4 | Last Change: 7.572016375123184e-5 | F(x): 0.15421549741437077
+# 5 | Last Change: 6.2990153630067366e-6 | F(x): 0.15421549739288035
+# 6 | Last Change: 5.247240323322776e-7 | F(x): 0.1542154973927315
+# 7 | Last Change: 4.712160915387242e-8 | F(x): 0.1542154973927305
+# 8 | Last Change: 2.580956827951785e-8 | F(x): 0.15421549739273052
+The algorithm reached approximately critical point after 8 iterations;
+    the gradient norm (3.6353284139116625e-9) is less than 1.0e-8.
 ```
 
+For more details on more algorithms to compute the mean and other statistical functions on manifolds like the median
+see [https://juliamanifolds.github.io/Manifolds.jl/v0.7/features/statistics.html](https://juliamanifolds.github.io/Manifolds.jl/v0.7/features/statistics.html).
 
 # Related research and software
 

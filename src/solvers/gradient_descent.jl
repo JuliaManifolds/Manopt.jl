@@ -16,6 +16,7 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
+* `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
