@@ -44,8 +44,13 @@ end
 @doc raw"""
     gradient_descent!(M, F, gradF, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\operatorname{grad}f(x_k)`` in place of `x`
-with different choices of ``s_k`` available.
+perform a gradient_descent
+
+```math
+x_{k+1} = \operatorname{retr}_{x_k}\bigl( s_k\operatorname{grad}f(x_k) \bigr)
+```
+
+in place of `x` with different choices of ``s_k`` available.
 
 # Input
 * `M` – a manifold ``\mathcal M``

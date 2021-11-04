@@ -63,18 +63,19 @@ Using a decorator pattern, the `Options` can be encapsulated in `DebugOptions` a
 
 In the current version `Manopt.jl` version 0.3.12 the following algorithms are available
 
-* Alternating Gradient Descent
-* Chambolle-Pock [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1]
-* Conjugate Gradient Descent, including eight update rules
-* Cyclic Proximal Point [@Bacak:2014:1]
-* (parallel) Douglas–Rachford [@BergmannPerschSteidl:2016:1]
-* Gradient Descent, including direction update rules including Momentum, Average, and a Nestorv-type one
-* Nelder-Mead
-* Particle Swarm Optimization [@BorckmansIshtevaAbsil2010]
-* Quasi-Newton, with the BFGS, DFP, Broyden and a symmetric rank 1 update, their inverse updates as well as a limited memory variant of (inverse) BFGS [@HuangGallivanAbsil:2015:1]
-* Stochastic Gradient Descent
-* Subgradient Method
-* Trust Regions, with inner Steihaug-Toint TCG solver [@AbsilBakerGallivan2006]
+* Alternating Gradient Descent ([`alternating_gradient_descent](https://manoptjl.org/v0.3/solvers/alternating_gradient_descent.html))
+* Chambolle-Pock ([`ChambollePock`](https://manoptjl.org/v0.3/solvers/ChambollePock.html)) [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1]
+* Conjugate Gradient Descent ([`conjugate_gradient_descent`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html)), which includes eight direction update rules using the `coefficient` keyword:
+  [`SteepestDirectionUpdateRule`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.SteepestDirectionUpdateRule),   [`ConjugateDescentCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.ConjugateDescentCoefficient). [`DaiYuanCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.DaiYuanCoefficient), [`FletcherReevesCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.FletcherReevesCoefficient), [`HagerZhangCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.HagerZhangCoefficient), [`HeestenesStiefelCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.HeestenesStiefelCoefficient), [`LiuStoreyCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.LiuStoreyCoefficient), and[`PolakRibiereCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.PolakRibiereCoefficient)
+* Cyclic Proximal Point ([`cyclic_proximal_point`](https://manoptjl.org/v0.3/solvers/cyclic_proximal_point.html)) [@Bacak:2014:1]
+* (parallel) Douglas–Rachford ([`DouglasRachford`](https://manoptjl.org/v0.3/solvers/DouglasRachford.html)) [@BergmannPerschSteidl:2016:1]
+* Gradient Descent ([`gradient_descent`](https://manoptjl.org/v0.3/solvers/gradient_descent.html)), including direction update rules ([`IdentityUpdateRule`](https://manoptjl.org/v0.3/solvers/gradient_descent.html#Manopt.IdentityUpdateRule) for the classical gradient descent) rules to perform [`MomentumGradient`](https://manoptjl.org/v0.3/solvers/gradient_descent.html#Manopt.MomentumGradient), [`AverageGradient`](https://manoptjl.org/v0.3/solvers/gradient_descent.html#Manopt.AverageGradient), and [`Nesterov`](https://manoptjl.org/v0.3/solvers/gradient_descent.html#Manopt.Nesterov) including Momentum, Average, and a Nestorv-type one
+* Nelder-Mead ([`NelderMead`](https://manoptjl.org/v0.3/solvers/NelderMead.html))
+* Particle Swarm Optimization ([`particle_swarm`](https://manoptjl.org/v0.3/solvers/particle_swarm.html)) [@BorckmansIshtevaAbsil2010]
+* Quasi-Newton ([`quasi_Newton`](https://manoptjl.org/v0.3/solvers/quasi_Newton.html)), with the [`BFGS`](https://manoptjl.org/v0.3/solvers/quasi_Newton.html#Manopt.BFGS), [`DFP`](https://manoptjl.org/v0.3/solvers/quasi_Newton.html#Manopt.DFP), [`Broyden`](https://manoptjl.org/v0.3/solvers/quasi_Newton.html#Manopt.Broyden) and a symmetric rank 1 ([`SR1`](https://manoptjl.org/v0.3/solvers/quasi_Newton.html#Manopt.SR1)) update, their inverse updates as well as a limited memory variant of (inverse) BFGS  (using the `memory` keyword) [@HuangGallivanAbsil:2015:1]
+* Stochastic Gradient Descent ([`stochastic_gradient_descent`](https://manoptjl.org/v0.3/solvers/stochastic_gradient_descent.html))
+* Subgradient Method ([`subgradient_method`](https://manoptjl.org/v0.3/solvers/subgradient.html))
+* Trust Regions ([`trust_regions`](https://manoptjl.org/v0.3/solvers/trust_regions.html)), with inner Steihaug-Toint ([`truncated_conjugate_gradient_descent`](https://manoptjl.org/v0.3/solvers/truncated_conjugate_gradient_descent.html)) solver [@AbsilBakerGallivan2006]
 
 # Example
 
