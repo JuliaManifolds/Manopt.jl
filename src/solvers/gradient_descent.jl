@@ -19,7 +19,7 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 * `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
-* `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
     complete [`Options`](@ref) are returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` if returned
@@ -67,7 +67,7 @@ function gradient_descent!(
     gradF::TDF,
     x;
     stepsize::Stepsize=ConstantStepsize(1.0),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(10.0^-8),
     direction=IdentityUpdateRule(),

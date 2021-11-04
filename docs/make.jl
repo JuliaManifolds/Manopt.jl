@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Documenter, Literate
+using Manopt, Manifolds, Documenter, Literate, Pluto
 
 # generate examples using Literate
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
@@ -33,10 +33,42 @@ for (i, tutorial) in enumerate(tutorials)
     push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
 end
 
+#
+#
+# Generate Pluto Tutorial HTMLs
+
+# First tutorial with AD
+pluto_src_folder = joinpath(@__DIR__, "..", "pluto/")
+pluto_output_folder = joinpath(@__DIR__, "src/", "pluto/")
+pluto_relative_path = "pluto/"
+mkpath(pluto_output_folder)
+#
+#
+# Please do not use the same name as for a(n old) literate Tutorial
+pluto_files = ["AutomaticDifferentiation"]
+pluto_heights = [370] # for now, lazyness, in rem
+pluto_titles = ["AD in Manopt"]
+for (i, f) in enumerate(pluto_files)
+    global TutorialMenu
+    @info "Building Pluto Notebook $f.jl"
+    pluto_file = pluto_src_folder * f * ".jl"
+    s = Pluto.ServerSession()
+    nb = Pluto.SessionActions.open(s, pluto_file; run_async=false)
+    write(pluto_output_folder * f * "_pluto.html", Pluto.generate_html(nb))
+    write(
+        pluto_output_folder * f * ".md",
+        """
+        ```@raw html
+        <iframe style="border:none; width:100%; height: $(pluto_heights[i])rem;" src="$(f)_pluto.html"></iframe>
+        ```
+        """,
+    )
+    push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
+end
+
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
-
 open(joinpath(generated_path, "contributing.md"), "w") do io
     # Point to source license file
     println(
@@ -75,8 +107,7 @@ makedocs(;
             "Quasi-Newton" => "solvers/quasi_Newton.md",
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
             "Subgradient method" => "solvers/subgradient.md",
-            "Steihaug-Toint TCG Method" =>
-                "solvers/truncated_conjugate_gradient_descent.md",
+            "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Trust-Regions Solver" => "solvers/trust_regions.md",
         ],
         "Functions" => [
