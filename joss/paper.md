@@ -95,7 +95,7 @@ M = Sphere(2)
 n = 40
 p = 1/sqrt(3) .* ones(3)
 B = DefaultOrthonormalBasis()
-pts = [ exp(M, p, get_vector(M, p, π/8*randn(2), B)) for _ in 1:n ]
+pts = [ exp(M, p, get_vector(M, p, 0.425*randn(2), B)) for _ in 1:n ]
 
 F(M, y) = sum(1/(2*n) * distance.(Ref(M), pts, Ref(y)).^2)
 gradF(M, y) = sum(1/n * grad_distance.(Ref(M), pts, Ref(y)))
@@ -135,17 +135,18 @@ iterates = get_record(o, :Iteration, :x) # iterates recorded per iteration
 The debug output of this example looks as follows:
 
 ```julia-repl
-Initial |  | F(x): 0.17660669661896283
-# 1 | Last Change: 0.20617740074094507 | F(x): 0.15428987096503957
-# 2 | Last Change: 0.01172204420526484 | F(x): 0.15421595490561446
-# 3 | Last Change: 0.000916321286757487 | F(x): 0.1542155005195215
-# 4 | Last Change: 7.572016375123184e-5 | F(x): 0.15421549741437077
-# 5 | Last Change: 6.2990153630067366e-6 | F(x): 0.15421549739288035
-# 6 | Last Change: 5.247240323322776e-7 | F(x): 0.1542154973927315
-# 7 | Last Change: 4.712160915387242e-8 | F(x): 0.1542154973927305
-# 8 | Last Change: 2.580956827951785e-8 | F(x): 0.15421549739273052
-The algorithm reached approximately critical point after 8 iterations;
-    the gradient norm (3.6353284139116625e-9) is less than 1.0e-8.
+Initial |  | F(x): 0.20638171781316278
+# 1 | Last Change: 0.22025631624261213 | F(x): 0.18071614247165613
+# 2 | Last Change: 0.014654955252636971 | F(x): 0.1805990319857418
+# 3 | Last Change: 0.0013696682667046617 | F(x): 0.18059800144857607
+# 4 | Last Change: 0.00013562945413135856 | F(x): 0.1805979913344784
+# 5 | Last Change: 1.3519139571830234e-5 | F(x): 0.1805979912339798
+# 6 | Last Change: 1.348534506171897e-6 | F(x): 0.18059799123297982
+# 7 | Last Change: 1.3493575361575816e-7 | F(x): 0.1805979912329699
+# 8 | Last Change: 2.580956827951785e-8 | F(x): 0.18059799123296988
+# 9 | Last Change: 2.9802322387695312e-8 | F(x): 0.18059799123296993
+The algorithm reached approximately critical point after 9 iterations;
+    the gradient norm (1.3387605239861564e-9) is less than 1.0e-8.
 ```
 
 For more details on more algorithms to compute the mean and other statistical functions on manifolds like the median

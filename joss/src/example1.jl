@@ -5,7 +5,7 @@ M = Sphere(2)
 n = 40
 p = 1/sqrt(3) .* ones(3)
 B = DefaultOrthonormalBasis()
-pts = [ exp(M, p, get_vector(M, p, π/8*randn(2), B)) for _ in 1:n ]
+pts = [ exp(M, p, get_vector(M, p, 0.425*randn(2), B)) for _ in 1:n ]
 
 F(M, y) = sum(1/(2*n) * distance.(Ref(M), pts, Ref(y)).^2)
 gradF(M, y) = sum(1/n * grad_distance.(Ref(M), pts, Ref(y)))
