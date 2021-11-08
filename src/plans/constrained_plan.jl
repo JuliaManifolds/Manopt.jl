@@ -36,23 +36,23 @@ It consists of
 Create a constrained problem with a `cost` function and its gradient, as well as inequality and equality contraints and their gradients either as one
 function (returning an array) or a vector of functions.
 """
-struct ConstrainedProblem{T, FunctionConstraint, MT<:Manifold, TCost, TG, TH} <: Problem{T}    # G(p) ∈ R^n, H(p) ∈ R^m
+struct ConstrainedProblem{T, FunctionConstraint, MT<:Manifold, TCost, TG, TH, GF, GG, GH} <: Problem{T}    # G(p) ∈ R^n, H(p) ∈ R^m
     M::MT
     cost::TCost
     G::TG
     H::TH
-    gradF::
-    gradG::
-    gradH::
+    gradF::GF
+    gradG::GG
+    gradH::GH
 end
-struct ConstrainedProblem{T, VectorConstraint, MT<:Manifold, TCost, TG, TH} <: Problem{T}      #g_i(p), i=1,...,n, h_j(p), j=1,...,m
+struct ConstrainedProblem{T, VectorConstraint, MT<:Manifold, TCost, TG, TH, GF, GG, GH} <: Problem{T}      #g_i(p), i=1,...,n, h_j(p), j=1,...,m
     M::MT
     cost::TCost
     G::AbstractVector{<:TG}
     H::AbstractVector{<:TH}
-    gradF::
-    gradG::AbstractVector{<:}
-    gradH::AbstractVector{<:}
+    gradF::GF
+    gradG::AbstractVector{<:GG}
+    gradH::AbstractVector{<:GH}
 end
 
 function get_constraints(p::ConstrainedProblem, x)
@@ -64,8 +64,36 @@ function get_inequality_constraints(p::ConstrainedProblem{T, FunctionConstraint}
 end
 
 function get_inequality_constraints(p::ConstrainedProblem{T, VectorConstraint}, x) where {T}
-    return [ gi(p.M, x) for gi ∈ p.G]
+    return [gi(p.M, x) for gi ∈ p.G]
 end
+
+function get_equality_constraints(p::ConstrainedProblem{T, FunctionConstraint}, x) where {T}
+    return p.H(p.M, x)
+end
+
+function get_equality_constraints(p::ConstrainedProblem{T, VectorConstraint}, x) where {T}
+    return [hj(p.M, x) for hj ∈ p.H]
+end
+
+function get_grad_ineq(p::ConstrainedProblem{T, FunctionConstraint}, x) where {T}
+    return p.gradG(p.M, x)
+end
+
+function get_grad_ineq(p::ConstrainedProblem{T, VectorConstraint}, x) where {T}
+    return [grad_gi(p.M, x) for grad_gi ∈ p.gradG]
+end
+
+function get_grad_eq(p::ConstrainedProblem{T, FunctionConstraint}, x) where {T}
+    return p.gradH(p.M, x)
+end
+
+function get_grad_eq(p::ConstrainedProblem{T, VectorConstraint}, x) where {T}
+    return [grad_hj(p.M, x) for grad_hj ∈ p.gradH]
+end
+
+# Are get_inequality_constraints = get_cost_ineq and get_equality_constraints = get_cost_eq?
+#get_grad_ineq -> Riemannscher Gradient
+#get_grad_eq
 
 function step_solver(p::Problem, o::ALMOptiopns) where {T}
     o.V = get_inequality_constraints(p, o.x)
