@@ -284,15 +284,15 @@ A functor for an stopping criterion, where the algorithm if stopped when a varia
 
 initialize the stopifsmallerorequal functor to indicate to stop after `value` is smaller than or equal to `minValue`.
 """
-mutable struct StopIfSmallerOrEqual <: StoppingCriterion
-    value::Real
+mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
+    value::Symbol
     minValue::Real
     reason::String
-    StopIfSmallerOrEqual(mValue::Real) = new(mValue, "")
+    StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "")
 end
-function (c::StopIfSmallerOrEqual)(::P, ::O) where {P<:Problem,O<:Options}
-    if c.value <= c.minValue
-        c.reason = "The value of the variable ($(string(:c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
+function (c::StopWhenSmallerOrEqual)(::P, o::O) where {P<:Problem,O<:Options}
+    if getfield(o, c.value) <= c.minValue
+        c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
         return true
     end
     return false
