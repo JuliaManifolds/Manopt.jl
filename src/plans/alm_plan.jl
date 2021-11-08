@@ -34,7 +34,6 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
     τ::Real
     θ_ρ::Real
     stop::TStopping
-    
     function ALMOptions(
         x0::P,
         n_ineq::Int,
@@ -50,7 +49,7 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         ρ::Real=1.0, 
         τ::Real=0.8,
         θ_ρ::Real=0.3, 
-        stopping_criterion::StoppingCriterion=StopAfterIteration(300), #maxOuterIter
+        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopIfSmallerOrEqual(ϵ, ϵ_min), StopWhenChangeLess(1e-6))),
     ) where {P, Pr <: Problem, Op <: Options} 
         θ_ϵ=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
         o = new{

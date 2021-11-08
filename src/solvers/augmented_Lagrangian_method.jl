@@ -8,7 +8,7 @@ function augmented_Lagrangian_method(
     F::TF,
     n_ineq_constraint::Int,
     n_eq_constraint::Int;
-    x::random_point(M),
+    x::random_point(M), ####does not exist on Manifold
     kwargs...,
 ) where {TF}
     x_res = allocate(x)
@@ -19,8 +19,8 @@ end
 function augmented_Lagrangian_method!(
     M::Manifold,
     F::TF,
-    sub_problem,
-    sub_options,
+    sub_problem::Problem,
+    sub_options::Options,
     n_ineq_constraint::Int,
     n_eq_constraint::Int;
     x::random_point(M),
@@ -36,7 +36,7 @@ function augmented_Lagrangian_method!(
     θ_ρ::Real=0.3, 
     θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
     oldacc::Real=Inf, 
-    stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopIfSmallerOrEqual(ϵ, ϵ_min), StopWhenChangeLess(1e-6))), 
+    stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))), 
     kwargs...,
 ) where {TF}
     p = CostProblem(M, F, n_ineq_constraint, n_eq_constraint)
@@ -70,14 +70,19 @@ end
 #
 function initialize_solver!(p::CostProblem, o::ALMOptions)
 ###x0
-old_acc=Inf, 
+old_acc=Inf
 end
 function step_solver!(p::CostProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
-    cost = @get_Lagrangian_cost(p, o) ### how to not asign the return value of the function, but the function as a whole here?
-    grad = @get_Lagrangian_gradient(p, o)
-    ### put these in the subproblem
-    ###o.x=
+    cost = get_Lagrangian_cost_function(p, o) 
+    grad = get_Lagrangian_gradient(p, o)
+    # # put these in the subproblem
+    # o.sub_problem.M = p.M
+    # o.sub_problem.cost = cost
+    # o.sub_problem.gradient = grad
+    ### how do you transfer the sub_problem and sub_options to the inner solver? Doesn't it built them itself? 
+    ### which starting point makes sense for the inner problem? warm-start at x.o?  
+    o.x = gradient_descent(p.M, cost, grad, o.x)
 
     # update multipliers
     cost_ineq = get_cost_ineq(p, o.x)
@@ -99,23 +104,34 @@ function step_solver!(p::CostProblem, o::ALMOptions, iter)
 end
 get_solver_result(o::ALMOptions) = o.x
 
-function get_Lagrangian_cost(p::CostProblem, o::ALMOptions) #als Funktion
-    cost = get_cost(p, o.x)
-    cost_ineq = sum(max.(zeros(o.n_ineq), o.λ ./ o.ρ .+ get_cost_ineq(p, o.x)))
-    cost_eq = sum((get_cost_eq(p, o.x) .+ o.γ./o.ρ)^2)
-    return cost + (o.ρ/2) * (cost_ineq + cost_eq)
+# function get_Lagrangian_cost_function(p::CostProblem, o::ALMOptions)
+#     cost = x -> get_cost(p, x)
+#     cost_ineq = x -> sum(max.(zeros(o.n_ineq), o.λ ./ o.ρ .+ get_cost_ineq(p, x)))
+#     cost_eq = x -> sum((get_cost_eq(p, x) .+ o.γ./o.ρ)^2)
+#     return x -> cost(x) + (o.ρ/2) * (cost_ineq(x) + cost_eq(x))
+# end
+
+# function get_Lagrangian_gradient_function(p::CostProblem, o::ALMOptions)
+#     grad = x -> get_gradient(p, x)
+#     grad_ineq = x -> sum(
+#         ((get_cost_ineq(p, x) .* o.ρ .+ o.λ) .* get_grad_ineq(p, x)).*(get_cost_ineq(p, x) .+ o.λ./o.ρ .>0)
+#         )
+#     grad_eq = x-> sum((get_cost_eq(p, x) .* o.ρ .+ o.γ) .* get_grad_eq(p, x))
+#     return x -> grad(x) + grad_ineq(x) + grad_eq(x)
+# end
+
+function get_Lagrangian_cost_function(p::CostProblem, o::ALMOptions)
+    cost = x -> get_cost(p, x)
+    cost_ineq = x -> sum(max.(zeros(o.n_ineq), o.λ ./ o.ρ .+ get_inequality_constraints(p, x)))
+    cost_eq = x -> sum((get_equality_constraints(p, x) .+ o.γ./o.ρ)^2)
+    return x -> cost(x) + (o.ρ/2) * (cost_ineq(x) + cost_eq(x))
 end
 
-function get_Lagrangian_gradient(p::CostProblem, o::ALMOptions) #als Funktion
-    grad = get_gradient(p, o.x)
-    cost_shifted_ineq = get_cost_ineq(p, o.x) + o.λ./o.ρ 
-    index = findall(x -> x > 0, cost_shifted_ineq) #gets the index of all elements greater 0
-    grad_ineq = get_grad_ineq(p, o.x)
-    ### transform with egrad2rgrad
-    grad_ineq = grad_ineq[index]
-      
-    cost_eq = get_cost_eq(p, o.x)
-    grad_eq = get_grad_eq(p, o.x)
-    ### transform with egrad2rgrad
-    return ### linear combination
+function get_Lagrangian_gradient_function(p::CostProblem, o::ALMOptions)
+    grad = x -> get_gradient(p, x)
+    grad_ineq = x -> sum(
+        ((get_inequality_constraints(p, x) .* o.ρ .+ o.λ) .* get_grad_ineq(p, x)).*(get_inequality_constraints(p, x) .+ o.λ./o.ρ .>0)
+        )
+    grad_eq = x-> sum((get_equality_constraints(p, x) .* o.ρ .+ o.γ) .* get_grad_eq(p, x))
+    return x -> grad(x) + grad_ineq(x) + grad_eq(x)
 end
