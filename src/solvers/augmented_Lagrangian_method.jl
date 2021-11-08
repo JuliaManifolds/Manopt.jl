@@ -4,11 +4,11 @@
 # get n_ineq_constraint, n_eq_constraint
 
 function augmented_Lagrangian_method(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     n_ineq_constraint::Int,
     n_eq_constraint::Int;
-    x::random_point(M), ####does not exist on Manifold
+    x,#::random_point(M), 
     kwargs...,
 ) where {TF}
     x_res = allocate(x)
@@ -17,13 +17,13 @@ function augmented_Lagrangian_method(
 end
 
 function augmented_Lagrangian_method!(
-    M::Manifold,
+    M::AbstractManifold,
     F::TF,
     sub_problem::Problem,
     sub_options::Options,
     n_ineq_constraint::Int,
     n_eq_constraint::Int;
-    x::random_point(M),
+    x,#::random_point(M),
     max_inner_iter::Int=200,
     num_outer_itertgn::Int=30,
     ϵ::Real=1e-3, #(starting)tolgradnorm
@@ -40,7 +40,7 @@ function augmented_Lagrangian_method!(
     kwargs...,
 ) where {TF}
     p = CostProblem(M, F, n_ineq_constraint, n_eq_constraint)
-    o = RALMOptions(
+    o = ALMOptions(
         x,
         max_inner_iter,
         num_outer_itertgn,
@@ -70,6 +70,7 @@ end
 #
 function initialize_solver!(p::CostProblem, o::ALMOptions)
 ###x0
+θ_ϵ=(o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
 old_acc=Inf
 end
 function step_solver!(p::CostProblem, o::ALMOptions, iter)

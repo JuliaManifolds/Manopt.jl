@@ -51,7 +51,7 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         θ_ρ::Real=0.3, 
         stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopIfSmallerOrEqual(ϵ, ϵ_min), StopWhenChangeLess(1e-6))),
     ) where {P, Pr <: Problem, Op <: Options} 
-        θ_ϵ=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
+        #θ_ϵ=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
         o = new{
             P,
             Pr,
