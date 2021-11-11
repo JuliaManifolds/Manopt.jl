@@ -1,13 +1,81 @@
-# Recreating Changshuo Liu's Matlab source code in Julia
-# original code by Changshuo Liu: https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints/blob/master/solvers/almbddmultiplier.m
-# uses Riemannian limited memory BFGS solver
-# get n_ineq_constraint, n_eq_constraint
+@doc raw"""
+    augmented_Lagrangian_method(M, F, sub_problem, sub_options, n_ineq_constraint, n_eq_constraint)
 
+perform the augmented Lagrangian method (ALM)[^Liu2020]. The aim of the ALM is to find the solution of the `ConstrainedProblem`
+```math
+\begin{aligned}
+\min_{x ∈\mathcal{M}} &f(x)\\
+\text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
+\quad &h_j(x)=0 \quad ∀ j=1,…,p,
+\end{aligned}
+```
+where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
+For that, in every step ``k`` of the algorithm, the augmented Lagrangian function
+```math
+\mathcal{L}_{ρ^{(k-1)}}(x, λ^{(k-1)}, γ^{(k-1)}) = f(x) + \frac{ρ^{(k-1)}}{2} (\sum_{j=1}^p (h_j(x)+\frac{γ_j^{(k-1)}}{ρ^{(k-1)}})^2 + \sum_{i=1}^m \max\left\{0,\frac{λ_i^{(k-1)}}{ρ^{(k-1)}}+ g_i(x)\right\}^2)
+```
+is minimized over all ``x ∈\mathcal{M}``, where ``λ^{(k-1)}`` and ``γ_j^{(k-1)}`` are the current iterations of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
+
+Then, the Lagrange multipliers are updated by 
+```math
+γ_j^{(k)} =\operatorname{clip}_{[γ_j^{\min},γ_j^{\max}]} (γ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p
+```
+and
+```math
+λ_i^{(k)} =\operatorname{clip}_{[0,λ_i^{\max}]} (λ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)}))
+```
+for all ``i=1,…,m``, where ``γ_j^{\min} \leq γ_j^{\max}`` and ``λ_i^{\max}`` are the multiplier boundaries. ###### check how they are implemented
+
+Next, we update the accuracy tolerance ``ϵ`` by setting
+```math
+ϵ^{(k)}=\max\{ϵ_{\min}, θ_ϵ ϵ^{(k-1)}\},
+
+```
+where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
+
+[^Liu2020]:
+    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
+    > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
+    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3)
+
+
+# Input
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `sub_problem` – problem for the subsolver
+* `sub_options` – options of the subproblem
+* `n_ineq_constraint` – the number of inequality constraints of the problem
+* `n_eq_constraint` – the number of equality constraints of the problem
+
+# Optional
+* `x` - initial point
+* `max_inner_iter` - (`200`) the maximum number of iterations the subsolver should perform in each iteration ##### 
+* `num_outer_itertgn` - (`30`)
+* `ϵ` - (`1e-3`) the accuracy tolerance
+* `ϵ_min` - (`1e-6`) the lower bound for the accuracy tolerance
+* `bound` - (`20`) 
+* `λ` - (`ones(n_ineq_constraint)`) the Lagrange multiplier with respect to the inequality constraints
+* `γ` - (`ones(n_eq_constraint)`) the Lagrange multiplier with respect to the equality constraints
+* `ρ` - (`1.0`) the penalty parameter
+* `τ` - (`0.8`) 
+* `θ_ρ` - (`0.3`) the scaling factor of the penalty parameter
+* `θ_ϵ` - (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
+* `oldacc` - (`Inf`) 
+* `stopping_criterion` - 
+
+
+# Output
+* `g` – the resulting point of ALM
+OR
+* `options` - the options returned by the solver (see `return_options`)
+"""
 function augmented_Lagrangian_method(
     M::AbstractManifold,
     F::TF,
+    sub_problem::Problem,
+    sub_options::Options,
     n_ineq_constraint::Int,
-    n_eq_constraint::Int;
+    n_eq_constraint::Int; # do I have to pass all the fields for the ConstrainedProblem here too?
     x,#::random_point(M), 
     kwargs...,
 ) where {TF}
@@ -70,8 +138,8 @@ end
 #
 function initialize_solver!(p::CostProblem, o::ALMOptions)
 ###x0
-θ_ϵ=(o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
-old_acc=Inf
+o.θ_ϵ=(o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
+o.old_acc=Inf
 end
 function step_solver!(p::CostProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
@@ -136,3 +204,6 @@ function get_Lagrangian_gradient_function(p::CostProblem, o::ALMOptions)
     grad_eq = x-> sum((get_equality_constraints(p, x) .* o.ρ .+ o.γ) .* get_grad_eq(p, x))
     return x -> grad(x) + grad_ineq(x) + grad_eq(x)
 end
+
+# Recreating Changshuo Liu's Matlab source code in Julia
+# original code by Changshuo Liu: https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints/blob/master/solvers/almbddmultiplier.m
