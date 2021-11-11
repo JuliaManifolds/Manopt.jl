@@ -268,7 +268,7 @@ function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
 end
 
 @doc raw"""
-    StopIfSmallerOrEqual <: StoppingCriterion
+    StopWhenSmallerOrEqual <: StoppingCriterion
 
 A functor for an stopping criterion, where the algorithm if stopped when a variable is smaller than or equal to its minimum value.
 
@@ -280,7 +280,7 @@ A functor for an stopping criterion, where the algorithm if stopped when a varia
 
 # Constructor
 
-    StopIfSmallerOrEqual(value, minValue)
+    StopWhenSmallerOrEqual(value, minValue)
 
 initialize the stopifsmallerorequal functor to indicate to stop after `value` is smaller than or equal to `minValue`.
 """
