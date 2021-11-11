@@ -10,8 +10,8 @@ Describes the constrained problem
 ```math
 \begin{aligned}
 \min_{x ∈\mathcal{M}} &F(x)\\
-\text{subject to } &G_i(x)<=0 ∀ i= 1, …, m,\\
-\quad &H_j(x)=0 ∀ j=1,…,p.
+\text{subject to } &G_i(x)\leq0 \quad ∀ i= 1, …, m,\\
+\quad &H_j(x)=0 \quad ∀ j=1,…,p.
 \end{aligned}
 ```
 It consists of 
@@ -36,7 +36,7 @@ It consists of
 Create a constrained problem with a `cost` function and its gradient, as well as inequality and equality contraints and their gradients either as one
 function (returning an array) or a vector of functions.
 """
-struct ConstrainedProblem{T, FunctionConstraint, MT<:Manifold, TCost, TG, TH, GF, GG, GH} <: Problem{T}    # G(p) ∈ R^n, H(p) ∈ R^m
+struct ConstrainedProblem{T, FunctionConstraint, MT<:AbstractManifold, TCost, TG, TH, GF, GG, GH} <: Problem{T}    # G(p) ∈ R^n, H(p) ∈ R^m
     M::MT
     cost::TCost
     G::TG
@@ -45,15 +45,16 @@ struct ConstrainedProblem{T, FunctionConstraint, MT<:Manifold, TCost, TG, TH, GF
     gradG::GG
     gradH::GH
 end
-struct ConstrainedProblem{T, VectorConstraint, MT<:Manifold, TCost, TG, TH, GF, GG, GH} <: Problem{T}      #g_i(p), i=1,...,n, h_j(p), j=1,...,m
-    M::MT
-    cost::TCost
-    G::AbstractVector{<:TG}
-    H::AbstractVector{<:TH}
-    gradF::GF
-    gradG::AbstractVector{<:GG}
-    gradH::AbstractVector{<:GH}
-end
+#### invalid redefinition of constant ConstrainedProblem
+# struct ConstrainedProblem{T, VectorConstraint, MT<:AbstractManifold, TCost, TG, TH, GF, GG, GH} <: Problem{T}      #g_i(p), i=1,...,n, h_j(p), j=1,...,m
+#     M::MT
+#     cost::TCost
+#     G::AbstractVector{<:TG}
+#     H::AbstractVector{<:TH}
+#     gradF::GF
+#     gradG::AbstractVector{<:GG}
+#     gradH::AbstractVector{<:GH}
+# end
 
 function get_constraints(p::ConstrainedProblem, x)
     return [get_inequality_constraints(p,x), get_equality_constraints(p,x)]
@@ -95,6 +96,6 @@ end
 #get_grad_ineq -> Riemannscher Gradient
 #get_grad_eq
 
-function step_solver(p::Problem, o::ALMOptiopns) where {T}
+function step_solver(p::Problem, o::ALMOptions) where {T}
     o.V = get_inequality_constraints(p, o.x)
 end
