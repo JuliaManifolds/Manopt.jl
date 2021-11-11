@@ -7,6 +7,7 @@ include("debug_options.jl")
 include("record_options.jl")
 
 include("alm_plan.jl")
+include("constrained_plan.jl")
 include("cost_plan.jl")
 include("gradient_plan.jl")
 include("conjugate_gradient_plan.jl")
