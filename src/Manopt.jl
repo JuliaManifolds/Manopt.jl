@@ -88,6 +88,7 @@ include("functions/proximal_maps.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
@@ -153,6 +154,7 @@ export ℝ, ℂ, &, |
 # Problems
 export Problem,
     ProximalProblem,
+    ConstrainedProblem,
     CostProblem,
     SubGradientProblem,
     GradientProblem,
@@ -166,6 +168,7 @@ export Problem,
 # Options
 export Options,
     AbstractGradientOptions,
+    ALMOptions,
     ChambollePockOptions,
     ConjugateGradientDescentOptions,
     CyclicProximalPointOptions,
@@ -219,7 +222,8 @@ export WolfePowellLineseach,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
 
-export ConjugateGradientDescentOptions,
+export ALMOptions,
+    ConjugateGradientDescentOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
     SubGradientMethodOptions,
@@ -245,7 +249,9 @@ export DirectionUpdateRule,
     HagerZhangCoefficient
 #
 # Solvers
-export ChambollePock,
+export  augmented_Lagrangian_method,
+    augmented_Lagrangian_method!,
+    ChambollePock,
     ChambollePock!,
     conjugate_gradient_descent,
     conjugate_gradient_descent!,
@@ -284,6 +290,7 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 export StopIfResidualIsReducedByFactor,
     StopIfResidualIsReducedByPower,
     StopWhenCurvatureIsNegative,
+    StopWhenSmallerOrEqual,
     StopWhenTrustRegionIsExceeded,
     StopWhenModelIncreased
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
