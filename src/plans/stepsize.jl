@@ -165,12 +165,18 @@ function linesearch_backtrack(
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
     search_dir_inner = inner(M, x, η, gradFx)
+    extended = false
     while fNew < f0 + decrease * s * search_dir_inner # increase
+        extended = true
         s = s / contract
         retract!(M, xNew, x, s * η, retr)
         fNew = F(xNew)
     end
-
+    if extended
+        s *= contract  # undo last increase
+        retract!(M, xNew, x, s * η, retr)
+        fNew = F(xNew)
+    end
     while fNew > f0 + decrease * s * search_dir_inner # decrease
         s = contract * s
         retract!(M, xNew, x, s * η, retr)
