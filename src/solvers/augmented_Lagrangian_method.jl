@@ -72,31 +72,37 @@ OR
 function augmented_Lagrangian_method(
     M::AbstractManifold,
     F::TF,
+    gradF::TGF,
     sub_problem::Problem,
     sub_options::Options,
-    n_ineq_constraint::Int,
-    n_eq_constraint::Int; # do I have to pass all the fields for the ConstrainedProblem here too?
-    x,#::random_point(M), 
+    G::Function=x->[], 
+    H::Function=x->[],
+    gradG::Function=x->[],
+    gradH::Function=x->[];
+    x=random_point(M), 
     kwargs...,
-) where {TF}
-    x_res = allocate(x)
+) where {TF, TGF}
+    x_res=allocate(x)
     copyto!(Ref(M), x_res, x)
-    return augmented_Lagrangian_method!(M, F, sub_problem, sub_options, n_ineq_constraint, n_eq_constraint; x=x_res, kwargs...)
+    return augmented_Lagrangian_method!(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH; x=x_res, kwargs...)
 end
 
 function augmented_Lagrangian_method!(
     M::AbstractManifold,
     F::TF,
+    gradF::TGF,
     sub_problem::Problem,
     sub_options::Options,
-    n_ineq_constraint::Int,
-    n_eq_constraint::Int;
-    x,#::random_point(M),
+    G::Function=x->[],
+    H::Function=x->[],
+    gradG::Function=x->[],
+    gradH::Function=x->[];
+    x=random_point(M),
     max_inner_iter::Int=200,
     num_outer_itertgn::Int=30,
     ϵ::Real=1e-3, #(starting)tolgradnorm
     ϵ_min::Real=1e-6, #endingtolgradnorm
-    bound::Int=20, 
+    bound::Real=20.0, 
     λ::Vector=ones(n_ineq_constraint),
     γ::Vector=ones(n_eq_constraint),
     ρ::Real=1.0, 
@@ -106,8 +112,8 @@ function augmented_Lagrangian_method!(
     oldacc::Real=Inf, 
     stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))), 
     kwargs...,
-) where {TF}
-    p = CostProblem(M, F, n_ineq_constraint, n_eq_constraint)
+) where {TF, TGF}
+    p = ConstrainedProblem(M, F, G, H, gradF, gradG, gradH)
     o = ALMOptions(
         x,
         max_inner_iter,
@@ -137,9 +143,9 @@ end
 # Solver functions
 #
 function initialize_solver!(p::CostProblem, o::ALMOptions)
-###x0
-o.θ_ϵ=(o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
-o.old_acc=Inf
+    o.θ_ϵ = (o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
+    o.old_acc = Inf
+    return o
 end
 function step_solver!(p::CostProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
@@ -149,14 +155,14 @@ function step_solver!(p::CostProblem, o::ALMOptions, iter)
     # o.sub_problem.M = p.M
     # o.sub_problem.cost = cost
     # o.sub_problem.gradient = grad
-    ### how do you transfer the sub_problem and sub_options to the inner solver? Doesn't it built them itself? 
-    ### which starting point makes sense for the inner problem? warm-start at x.o?  
-    o.x = gradient_descent(p.M, cost, grad, o.x)
+    o.x = gradient_descent(p.M, cost, grad, o.x, stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
 
     # update multipliers
     cost_ineq = get_cost_ineq(p, o.x)
+    n_ineq_constraint = len(cost_ineq)
     λ = min.(ones(n_ineq_constraint)* o.bound, max.(λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
     cost_eq = get_cost_eq(p, o.x)
+    n_eq_constraint = len(cost_eq)
     γ = min.(ones(n_eq_constraint)* o.bound, max.(ones(n_eq_constraint) * (-o.bound), γ + o.ρ .* cost_eq))
 
     # get new evaluation of penalty
@@ -172,22 +178,6 @@ function step_solver!(p::CostProblem, o::ALMOptions, iter)
     ϵ = max(o.ϵ_min, ϵ * o.θ_ϵ)
 end
 get_solver_result(o::ALMOptions) = o.x
-
-# function get_Lagrangian_cost_function(p::CostProblem, o::ALMOptions)
-#     cost = x -> get_cost(p, x)
-#     cost_ineq = x -> sum(max.(zeros(o.n_ineq), o.λ ./ o.ρ .+ get_cost_ineq(p, x)))
-#     cost_eq = x -> sum((get_cost_eq(p, x) .+ o.γ./o.ρ)^2)
-#     return x -> cost(x) + (o.ρ/2) * (cost_ineq(x) + cost_eq(x))
-# end
-
-# function get_Lagrangian_gradient_function(p::CostProblem, o::ALMOptions)
-#     grad = x -> get_gradient(p, x)
-#     grad_ineq = x -> sum(
-#         ((get_cost_ineq(p, x) .* o.ρ .+ o.λ) .* get_grad_ineq(p, x)).*(get_cost_ineq(p, x) .+ o.λ./o.ρ .>0)
-#         )
-#     grad_eq = x-> sum((get_cost_eq(p, x) .* o.ρ .+ o.γ) .* get_grad_eq(p, x))
-#     return x -> grad(x) + grad_ineq(x) + grad_eq(x)
-# end
 
 function get_Lagrangian_cost_function(p::CostProblem, o::ALMOptions)
     cost = x -> get_cost(p, x)

@@ -22,8 +22,9 @@ construct an augmented Lagrangian Option with the fields and defaults as above.
 """
 mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: StoppingCriterion} <: Options
     x::P
-    sub_problem::Pr
-    sub_options::Op
+    sub_problem::Pr ### non-optional parameter
+    sub_options::Op ### non-optional parameter
+    max_inner_iter::Int
     num_outer_itertgn::Int
     ϵ::Real #(starting)tolgradnorm
     ϵ_min::Real #endingtolgradnorm
@@ -33,13 +34,14 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
     ρ::Real
     τ::Real
     θ_ρ::Real
-    stop::TStopping
+    stop::TStopping ###θ_ϵ und old_acc nicht hier?
     function ALMOptions(
         x0::P,
-        n_ineq::Int,
-        n_eq::Int,
-        sub_problem::Pr,
-        sub_options::Op,
+        n_ineq::Int, ### remove 
+        n_eq::Int, ### remove
+        sub_problem::Pr, ###
+        sub_options::Op, ###
+        max_inner_iter::Int=200,
         num_outer_itertgn::Int=30,
         ϵ::Real=1e-3, #(starting)tolgradnorm
         ϵ_min::Real=1e-6, #endingtolgradnorm
@@ -51,7 +53,6 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         θ_ρ::Real=0.3, 
         stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopIfSmallerOrEqual(ϵ, ϵ_min), StopWhenChangeLess(1e-6))),
     ) where {P, Pr <: Problem, Op <: Options} 
-        #θ_ϵ=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
         o = new{
             P,
             Pr,
@@ -59,8 +60,9 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
             typeof(stopping_criterion),
         }()
         o.x = x0
-        o.sub_problem,
-        o.sub_options,
+        o.sub_problem = sub_problem
+        o.sub_options = sub_options
+        o.max_inner_iter = max_inner_iter
         o.num_outer_itertgn = num_outer_itertgn
         o.ϵ = ϵ
         o.ϵ_min = ϵ_min
