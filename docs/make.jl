@@ -70,14 +70,16 @@ for (i, f) in enumerate(pluto_files)
             padding-bottom: 2rem;
         }
         /* move output up to its input, remove border (see class add JS below) */
-        pre.pre-output {
+        body .content pre.pre-output {
             border: 0px;
-            margin-top: -1em;
+            margin-top: -1.1em;
+            padding: .4rem .5rem;
+            font-size: 80%;
         }
         </style>
         $html
         <script type="text/javascript">
-            \$(function() {
+            require({}, ['jquery'], function() {
                 \$('code.code-output').parent('pre').addClass('pre-output');
             });
         </script>
