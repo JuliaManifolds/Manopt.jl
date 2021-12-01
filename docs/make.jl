@@ -1,4 +1,6 @@
-using Manopt, Manifolds, Documenter, Literate, Pluto, PlutoStaticHTML
+
+using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
+using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
 # generate examples using Literate
@@ -70,21 +72,6 @@ for (i, f) in enumerate(pluto_files)
         }
         </style>
         $html
-        <script>
-        require(['jquery', 'katex', 'katex-auto-render'], function(\$, katex, renderMathInElement) {
-            \$(document).ready(function() {
-                renderMathInElement(document.body);
-                /* Apparently, Pluto wraps LaTeX inside a span class 'tex'. */
-                var equations = \$('p.tex');
-                for (var i = 0; i < equations.length; i++) {
-                    var text = equations[i].textContent;
-                    text = text.split('\$').join('');
-                    console.log(text);
-                    render(text, equations[i]);
-                }
-            })
-        })
-        </script>
         ```
         """,
     )
@@ -111,7 +98,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
 end
 
 makedocs(;
-    format=Documenter.HTML(; prettyurls=false),
+    format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
     sitename="Manopt.jl",
     pages=[

@@ -467,7 +467,7 @@ function (a::WolfePowellLineseach)(
     else
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
         if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-           a.c_2 * inner(p.M, o.x, η, o.gradient)
+            a.c_2 * inner(p.M, o.x, η, o.gradient)
             while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient) &&
                 (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
