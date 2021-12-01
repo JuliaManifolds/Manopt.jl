@@ -83,8 +83,8 @@ for (i, f) in enumerate(pluto_files)
   <script>
   const options = {
     delimiters: [
-      {left: "$$", right: "$$", display: true},
-      {left: "$", right: "$", display: false},
+      {left: "\$\$", right: "\$\$", display: true},
+      {left: "\$", right: "\$", display: false},
       {left: "\\begin{equation}", right: "\\end{equation}", display: true},
       {left: "\\begin{align}", right: "\\end{align}", display: true},
       {left: "\\begin{alignat}", right: "\\end{alignat}", display: true},
