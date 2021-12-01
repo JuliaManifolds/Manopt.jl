@@ -87,7 +87,7 @@ Random.seed!(42)
         pp = random_point(Mp)
         @test is_point(Mp, pp, true)
         Xp = random_tangent(Mp, pp)
-        @test is_vector(Mp, pp, Xp, true; atol=10^(-15))
+        @test is_vector(Mp, pp, Xp, true; atol=10^(-14))
 
         Mp2 = PowerManifold(Me, NestedPowerRepresentation(), 4)
         pp2 = random_point(Mp2)
