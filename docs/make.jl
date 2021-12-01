@@ -57,7 +57,8 @@ for (i, f) in enumerate(pluto_files)
     write(
         pluto_output_folder * f * ".md",
         """
-        ```math
+        ```@meta
+        EditURL = "$(pluto_src_folder)$(f).jl"
         ```
         ```@raw html
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.16.4/frontend/treeview.css" type="text/css" />
@@ -68,6 +69,21 @@ for (i, f) in enumerate(pluto_files)
         }
         </style>
         $html
+        <script>
+        require(['jquery', 'katex', 'katex-auto-render'], function(\$, katex, renderMathInElement) {
+            \$(document).ready(function() {
+                renderMathInElement(document.body);
+                /* Apparently, Pluto wraps LaTeX inside a span class 'tex'. */
+                var equations = \$('p.tex');
+                for (var i = 0; i < equations.length; i++) {
+                    var text = equations[i].textContent;
+                    text = text.split('\$').join('');
+                    console.log(text);
+                    render(text, equations[i]);
+                }
+            })
+        })
+        </script>
         ```
         """,
     )
