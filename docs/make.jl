@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Documenter, Literate, Pluto, PlutoHTML
+using Manopt, Manifolds, Documenter, Literate, Pluto, PlutoStaticHTML
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
 # generate examples using Literate
