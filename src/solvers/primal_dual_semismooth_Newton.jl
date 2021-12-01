@@ -1,7 +1,7 @@
 @doc raw"""
-ChambollePock(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, forward_operator, adjoint_DΛ)
+primal_dual_semismooth_Newton(M, N, cost, x0, ξ0, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_DΛ)
 
-Perform the Riemannian Chambolle–Pock algorithm.
+Perform the Primal-Dual Riemannian Semismooth Newton algorithm.
 
 Given a `cost` function $\mathcal E\colon\mathcal M \to ℝ$ of the form
 ```math
@@ -12,25 +12,19 @@ and $\Lambda\colon\mathcal M \to \mathcal N$. The remaining input parameters are
 
 * `x,ξ` primal and dual start points $x\in\mathcal M$ and $\xi\in T_n\mathcal N$
 * `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
-* `forward_operator` the operator $Λ(⋅)$ or its linearization $DΛ(⋅)[⋅]$, depending on whether `:exact` or `:linearized` is chosen.
+* `linearized_operator` the linearization $DΛ(⋅)[⋅]$ of the operator $Λ(⋅)$.
 * `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N$
 * `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
+* `diff_prox_F, diff_prox_dual_G` the (Clarke Generalized) differentials of the proximal maps of $F$ and $G^\ast_n$
 
-By default, this performs the exact Riemannian Chambolle Pock algorithm, see the opional parameter
-`DΛ` for ther linearized variant.
-
-For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020].
+For more details on the algorithm, see[^DiepeveenLellmann2021].
 
 # Optional Parameters
 
-* `acceleration` – (`0.05`)
-* `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the primal prox
-* `Λ` (`missing`) the exact operator, that is required if the forward operator is linearized;
+* `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
+# * `Λ` (`missing`) the exact operator, that is required if `Λ(m)=n` does not hold;
 `missing` indicates, that the forward operator is exact.
-* `primal_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
-* `relaxation` – (`1.`)
-* `relax` – (`:primal`) whether to relax the primal or dual
-* `variant` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
+* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 Note that this changes the arguments the `forward_operator` will be called.
 * `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
@@ -40,10 +34,10 @@ Note that this changes the arguments the `forward_operator` will be called.
 * `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
 
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
-> R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
-> _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
-> arXiv: [1908.02022](http://arxiv.org/abs/1908.02022)
-> accepted for publication in Foundations of Computational Mathematics
+> W. Diepeveen, J. Lellmann:
+> _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
+> SIAM Journal on Imaging Sciences, 2021.
+> doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
 function primal_dual_semismooth_Newton(
     M::mT,
@@ -59,12 +53,9 @@ function primal_dual_semismooth_Newton(
     diff_prox_G_dual::Function,
     linearized_operator::Function,
     adjoint_linearized_operator::Function;
-    # acceleration=0.05,
     dual_stepsize=1 / sqrt(8),
     Λ::Union{Function,Missing}=missing,
     primal_stepsize=1 / sqrt(8),
-    # relaxation=1.0,
-    # relax::Symbol=:primal,
     stopping_criterion::StoppingCriterion=StopAfterIteration(50),
     update_primal_base::Union{Function,Missing}=missing, # TODO: do we want this?
     update_dual_base::Union{Function,Missing}=missing, # TODO: do we want this?
@@ -103,13 +94,9 @@ function primal_dual_semismooth_Newton(
         ξ,
         primal_stepsize,
         dual_stepsize;
-        # acceleration=acceleration,
-        # relaxation=relaxation,
         stopping_criterion=stopping_criterion,
-        # relax=relax,
         update_primal_base=update_primal_base, # TODO ?
         update_dual_base=update_dual_base, # TODO ?
-        # variant=variant,
         retraction_method=retraction_method,
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
