@@ -45,7 +45,8 @@ the second.
     > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
     > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <: AbstractPrimalDualProblem{T}
+mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <:
+               AbstractPrimalDualProblem{T}
     M::mT
     N::nT
     cost::Function
@@ -147,7 +148,9 @@ function linearized_forward_operator(
 )
     return p.linearized_forward_operator!!(p.M, m, X)
 end
-function linearized_forward_operator(p::AbstractPrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
+function linearized_forward_operator(
+    p::AbstractPrimalDualProblem{MutatingEvaluation}, m, X, ::Any
+)
     y = random_point(p.N)
     forward_operator!(p, y, m)
     Y = zero_vector(p.N, y)
@@ -198,10 +201,14 @@ the forward operator ``Λ`` might be `missing` in `p`.
 """
 adjoint_linearized_operator(::AbstractPrimalDualProblem{AllocatingEvaluation}, ::Any...)
 
-function adjoint_linearized_operator(p::AbstractPrimalDualProblem{AllocatingEvaluation}, m, n, Y)
+function adjoint_linearized_operator(
+    p::AbstractPrimalDualProblem{AllocatingEvaluation}, m, n, Y
+)
     return p.adjoint_linearized_operator!!(p.N, m, n, Y)
 end
-function adjoint_linearized_operator(p::AbstractPrimalDualProblem{MutatingEvaluation}, m, n, Y)
+function adjoint_linearized_operator(
+    p::AbstractPrimalDualProblem{MutatingEvaluation}, m, n, Y
+)
     X = zero_vector(p.M, m)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
@@ -210,7 +217,9 @@ function adjoint_linearized_operator!(
 )
     return copyto!(p.M, X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
 end
-function adjoint_linearized_operator!(p::AbstractPrimalDualProblem{MutatingEvaluation}, X, m, n, Y)
+function adjoint_linearized_operator!(
+    p::AbstractPrimalDualProblem{MutatingEvaluation}, X, m, n, Y
+)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 
@@ -357,7 +366,9 @@ V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 ```
 where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref)
 """
-function primal_residual(p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old)
+function primal_residual(
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old
+)
     return norm(
         p.M,
         o.x,
@@ -413,7 +424,9 @@ and for the `:exact` variant
 
 where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref).
 """
-function dual_residual(p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old)
+function dual_residual(
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old
+)
     if o.variant === :linearized
         return norm(
             p.N,
@@ -567,7 +580,7 @@ end
 function (d::DebugPrimalDualResidual)(
     p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
 )
-   if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
         print(
             d.io,
@@ -639,9 +652,7 @@ mutable struct DebugDualChange <: DebugAction
         return new(io, "Dual Change: ", a)
     end
 end
-function (d::DebugDualChange)(
-    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
-)
+function (d::DebugDualChange)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
         print(

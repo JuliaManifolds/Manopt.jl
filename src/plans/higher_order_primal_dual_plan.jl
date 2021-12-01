@@ -49,7 +49,16 @@ function PrimalDualSemismoothNewtonProblem(
     Λ=forward_operator,
 ) where {mT<:AbstractManifold,nT<:AbstractManifold}
     return PrimalDualSemismoothNewtonProblem{mT,nT}(
-        M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator, Λ
+        M,
+        N,
+        cost,
+        prox_F,
+        diff_prox_F,
+        prox_G_dual,
+        diff_prox_G_dual,
+        forward_operator,
+        adjoint_linearized_operator,
+        Λ,
     )
 end
 

@@ -81,7 +81,7 @@
     o.stop(p, o, 20)
     DebugStoppingCriterion(io)(p, o, 20)
     @test String(take!(io)) ==
-          "The algorithm reached its maximal number of iterations (20).\n"
+        "The algorithm reached its maximal number of iterations (20).\n"
     df = DebugFactory([:Stop, "|"])
     @test isa(df[:Stop], DebugStoppingCriterion)
     @test isa(df[:All], DebugGroup)
