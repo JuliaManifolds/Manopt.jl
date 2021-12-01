@@ -1,4 +1,3 @@
-
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
 using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML
 # Load an unregistered package (for now) to update exports of Pluto notebooks
@@ -70,8 +69,18 @@ for (i, f) in enumerate(pluto_files)
             padding-top: 1rem;
             padding-bottom: 2rem;
         }
+        /* move output up to its input, remove border (see class add JS below) */
+        pre.pre-output {
+            border: 0px;
+            margin-top: -1em;
+        }
         </style>
         $html
+        <script type="text/javascript">
+            \$(function() {
+                \$('code.code-output').parent('pre').addClass('pre-output');
+            });
+        </script>
         ```
         """,
     )
