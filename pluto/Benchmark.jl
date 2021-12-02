@@ -24,14 +24,14 @@ From the just mentioned example, the implementation looks like
 
 # ╔═╡ 967e5caa-1d27-4c24-a882-6f7126053754
 begin
-	Random.seed!(42)
-	m = 30
-	M = Sphere(m)
-	n = 800
-	σ = π / 8
-	x = zeros(Float64, m + 1)
-	x[2] = 1.0
-	data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
+    Random.seed!(42)
+    m = 30
+    M = Sphere(m)
+    n = 800
+    σ = π / 8
+    x = zeros(Float64, m + 1)
+    x[2] = 1.0
+    data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
 end;
 
 # ╔═╡ 1436cdc7-1e84-4438-937d-2211856348de
@@ -54,11 +54,11 @@ we further set the stopping criterion to be a little more strict, then we obtain
 
 # ╔═╡ 5a2d6d9f-20dc-41a2-bfce-32509a1ef106
 begin
-	sc = StopWhenGradientNormLess(1e-10)
-	x0 = random_point(M)
-	m1 = gradient_descent(M, F, gradF, x0; stopping_criterion=sc)
+    sc = StopWhenGradientNormLess(1e-10)
+    x0 = random_point(M)
+    m1 = gradient_descent(M, F, gradF, x0; stopping_criterion=sc)
 
-	@benchmark gradient_descent($M, $F, $gradF, $x0; stopping_criterion=$sc)
+    @benchmark gradient_descent($M, $F, $gradF, $x0; stopping_criterion=$sc)
 end
 
 # ╔═╡ 306c7706-f399-4104-9159-c2e6b0bca189
@@ -76,19 +76,19 @@ reallocation of memory per `grad_distance` computation. We have
 
 # ╔═╡ 4e464076-d477-4e38-aac6-79639c1cb9b5
 begin
-	struct grad!{TD,TTMP}
-    	data::TD
-    	tmp::TTMP
-	end
-	function (gradf!::grad!)(M, X, x)
-    fill!(X, 0)
-    for di in gradf!.data
-        grad_distance!(M, gradf!.tmp, di, x)
-        X .+= gradf!.tmp
+    struct grad!{TD,TTMP}
+        data::TD
+        tmp::TTMP
     end
-    X ./= length(gradf!.data)
-    return X
-	end
+    function (gradf!::grad!)(M, X, x)
+        fill!(X, 0)
+        for di in gradf!.data
+            grad_distance!(M, gradf!.tmp, di, x)
+            X .+= gradf!.tmp
+        end
+        X ./= length(gradf!.data)
+        return X
+    end
 end
 
 # ╔═╡ 15d4c49c-7178-4be1-8e83-00900e384831
@@ -99,13 +99,15 @@ Note that we also have to interpolate all variables passed to the benchmark with
 
 # ╔═╡ 90f40202-69ec-4dba-b1d0-905c916a3642
 begin
-	gradF2! = grad!(data, similar(data[1]))
-	m2 = deepcopy(x0)
-	gradient_descent!(M, F, gradF2!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc)
+    gradF2! = grad!(data, similar(data[1]))
+    m2 = deepcopy(x0)
+    gradient_descent!(
+        M, F, gradF2!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc
+    )
 
-@benchmark gradient_descent!(
-    $M, $F, $gradF2!, m2; evaluation=$(MutatingEvaluation()), stopping_criterion=$sc
-) setup = (m2 = deepcopy($x0))
+    @benchmark gradient_descent!(
+        $M, $F, $gradF2!, m2; evaluation=$(MutatingEvaluation()), stopping_criterion=$sc
+    ) setup = (m2 = deepcopy($x0))
 end
 
 # ╔═╡ 3e01469b-670b-47a6-a379-199b70c59207
