@@ -69,8 +69,10 @@ Let's evaliuate this at the point ``t=\frac{1}{4}∈[0,1]``. We first compute
 """
 
 # ╔═╡ 157d13c8-7311-4832-a9ff-da22125b2bbf
-t = 0.66;
-pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t));
+begin
+	t = 0.66;
+	pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t));
+end
 
 # ╔═╡ 5af58241-50c7-464e-bfa3-53819e605793
 md"""
