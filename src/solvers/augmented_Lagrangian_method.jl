@@ -1,5 +1,5 @@
 @doc raw"""
-    augmented_Lagrangian_method(M, F, sub_problem, sub_options, n_ineq_constraint, n_eq_constraint)
+    augmented_Lagrangian_method(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
 
 perform the augmented Lagrangian method (ALM)[^Liu2020]. The aim of the ALM is to find the solution of the `ConstrainedProblem`
 ```math
@@ -22,16 +22,28 @@ Then, the Lagrange multipliers are updated by
 ```
 and
 ```math
-λ_i^{(k)} =\operatorname{clip}_{[0,λ_i^{\max}]} (λ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)}))
+λ_i^{(k)} =\operatorname{clip}_{[0,λ_i^{\max}]} (λ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{for all}  i=1,…,m,
 ```
-for all ``i=1,…,m``, where ``γ_j^{\min} \leq γ_j^{\max}`` and ``λ_i^{\max}`` are the multiplier boundaries. ###### check how they are implemented
+where ``γ_j^{\min} \leq γ_j^{\max}`` and ``λ_i^{\max}`` are the multiplier boundaries. 
 
 Next, we update the accuracy tolerance ``ϵ`` by setting
 ```math
 ϵ^{(k)}=\max\{ϵ_{\min}, θ_ϵ ϵ^{(k-1)}\},
-
 ```
 where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
+
+Last, we update the penalty parameter ``ρ``. For this, we define
+```math
+σ^{(k)}=\max_{j=1,…,p, i=1,…,m} \{\|h_j(x^{(k)})\|, \|\max_{i=1,…,m}\{g_i(x^{(k)}), -\frac{λ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
+```
+Then, we update `ρ` according to
+```math
+ρ^{(k)} = \begin{cases}
+ρ^{(k-1)}/θ_ρ,  & \text{if } σ^{(k)}\leq θ_ρ σ^{(k-1)} ,\\
+ρ^{(k-1)}, & \text{else,}
+\end{cases}
+```
+where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 
 [^Liu2020]:
     > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
@@ -42,30 +54,33 @@ where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ 
 # Input
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `gradF` – the gradient of the cost function
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
-* `n_ineq_constraint` – the number of inequality constraints of the problem
-* `n_eq_constraint` – the number of equality constraints of the problem
+* `G` – the inequality constraints
+* `H` – the equality constraints 
+* `gradG` – the gradient of the inequality constraints
+* `gradH` – the gradient of the equality constraints
 
 # Optional
 * `x` - initial point
-* `max_inner_iter` - (`200`) the maximum number of iterations the subsolver should perform in each iteration ##### 
+* `max_inner_iter` - (`200`) the maximum number of iterations the subsolver should perform in each iteration 
 * `num_outer_itertgn` - (`30`)
 * `ϵ` - (`1e-3`) the accuracy tolerance
 * `ϵ_min` - (`1e-6`) the lower bound for the accuracy tolerance
-* `bound` - (`20`) 
+* `bound` - (`20`) a bound for the Lagrange multiplier
 * `λ` - (`ones(n_ineq_constraint)`) the Lagrange multiplier with respect to the inequality constraints
 * `γ` - (`ones(n_eq_constraint)`) the Lagrange multiplier with respect to the equality constraints
 * `ρ` - (`1.0`) the penalty parameter
-* `τ` - (`0.8`) 
+* `τ` - (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ` - (`0.3`) the scaling factor of the penalty parameter
 * `θ_ϵ` - (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
-* `oldacc` - (`Inf`) 
-* `stopping_criterion` - 
+* `oldacc` - (`Inf`) evaluation of the penalty from the last iteration
+* `stopping_criterion` - ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 
 # Output
-* `g` – the resulting point of ALM
+* `x` – the resulting point of ALM
 OR
 * `options` - the options returned by the solver (see `return_options`)
 """
@@ -86,7 +101,32 @@ function augmented_Lagrangian_method(
     copyto!(Ref(M), x_res, x)
     return augmented_Lagrangian_method!(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH; x=x_res, kwargs...)
 end
+@doc raw"""
+    augmented_Lagrangian_method!(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
 
+perform the augmented Lagrangian method (ALM)[^Liu2020]. The aim of the ALM is to find the solution of the `ConstrainedProblem`
+```math
+\begin{aligned}
+\min_{x ∈\mathcal{M}} &f(x)\\
+\text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
+\quad &h_j(x)=0 \quad ∀ j=1,…,p,
+\end{aligned}
+```
+where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
+
+# Input
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `gradF` – the gradient of the cost function
+* `sub_problem` – problem for the subsolver
+* `sub_options` – options of the subproblem
+* `G` – the inequality constraints
+* `H` – the equality constraints 
+* `gradG` – the gradient of the inequality constraints
+* `gradH` – the gradient of the equality constraints
+
+For more options, especially [`x`](@ref) for the initial point and [`ρ`](@ref) for the penalty parameter, see [`augmented_Lagrangian_method`](@ref).
+"""
 function augmented_Lagrangian_method!(
     M::AbstractManifold,
     F::TF,
@@ -160,13 +200,13 @@ function step_solver!(p::CostProblem, o::ALMOptions, iter)
     # update multipliers
     cost_ineq = get_cost_ineq(p, o.x)
     n_ineq_constraint = len(cost_ineq)
-    λ = min.(ones(n_ineq_constraint)* o.bound, max.(λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
+    o.λ = min.(ones(n_ineq_constraint)* o.bound, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
     cost_eq = get_cost_eq(p, o.x)
     n_eq_constraint = len(cost_eq)
-    γ = min.(ones(n_eq_constraint)* o.bound, max.(ones(n_eq_constraint) * (-o.bound), γ + o.ρ .* cost_eq))
+    o.γ = min.(ones(n_eq_constraint)* o.bound, max.(ones(n_eq_constraint) * (-o.bound), o.γ + o.ρ .* cost_eq))
 
     # get new evaluation of penalty
-    new_acc = max(max(abs.(max.(-λ./ρ, Ref(cost_ineq)))), max(abs.(cost_eq)))
+    new_acc = max(max(abs.(max.(-o.λ./o.ρ, Ref(cost_ineq)))), max(abs.(cost_eq)))
 
     # update ρ if necessary
     if iter == 1 || new_acc > o.τ * o.old_acc 
@@ -175,7 +215,7 @@ function step_solver!(p::CostProblem, o::ALMOptions, iter)
     o.old_acc = new_acc
 
     # update the tolerance ϵ
-    ϵ = max(o.ϵ_min, ϵ * o.θ_ϵ)
+    o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
 end
 get_solver_result(o::ALMOptions) = o.x
 
