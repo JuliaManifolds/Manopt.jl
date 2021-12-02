@@ -272,17 +272,21 @@ render_asymptote(export_folder * "/Bezier-IP-Min.asy"; render=2) #src
 #
 λ = 3.0
 d = get_bezier_junctions(M, B)
-F(pB) = cost_L2_acceleration_bezier(M, pB, get_bezier_degrees(M, B), curve_samples, λ, d)
-function gradF(M, pB)
-    return grad_L2_acceleration_bezier(
-        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
-    )
-end
+	function F2(M, pB)
+    	return cost_L2_acceleration_bezier(
+        	M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
+    	)
+	end
+	function gradF2(M, pB)
+    	return grad_L2_acceleration_bezier(
+        	M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
+    	)
+	end
 x0 = pB
 pB_opt_appr = gradient_descent(
     N,
-    F,
-    gradF,
+    F2,
+    gradF2,
     x0;
     stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
     stopping_criterion=StopWhenChangeLess(10.0^(-5)),
