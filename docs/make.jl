@@ -8,7 +8,6 @@ tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
     "MeanAndMedian",
-    "Benchmark",
     "GeodesicRegression",
     "HowToRecord",
     "StochasticGradientDescent",
@@ -18,7 +17,6 @@ tutorials = [
 ]
 menuEntries = [
     "get Started: Optimize!",
-    "speed up! using `gradF!`",
     "Do Geodesic regression",
     "Record values",
     "do stochastic gradient descent",
@@ -47,9 +45,9 @@ mkpath(pluto_output_folder)
 #
 #
 # Please do not use the same name as for a(n old) literate Tutorial
-pluto_files = ["AutomaticDifferentiation"]
+pluto_files = ["Benchmark", "AutomaticDifferentiation"]
 pluto_heights = [370] # for now, lazyness, in rem
-pluto_titles = ["AD in Manopt"]
+pluto_titles = ["speed up! using `gradF!`", "AD in Manopt"]
 for (i, f) in enumerate(pluto_files)
     global TutorialMenu
     @info "Building Pluto Notebook $f.jl"
@@ -88,7 +86,6 @@ for (i, f) in enumerate(pluto_files)
     )
     push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
 end
-Pkg.activate(@__DIR__)
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
