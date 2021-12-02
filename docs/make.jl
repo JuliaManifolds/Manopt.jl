@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Documenter, Literate, Pluto, PlutoStaticHTML
+using Manopt, Manifolds, Documenter, Literate, Pluto, PlutoStaticHTML, Pkg
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
 # generate examples using Literate
@@ -90,7 +90,7 @@ for (i, f) in enumerate(pluto_files)
     )
     push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
 end
-
+Pkg.activate(@__DIR__)
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
