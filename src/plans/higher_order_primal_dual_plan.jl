@@ -47,9 +47,10 @@ function PrimalDualSemismoothNewtonProblem(
     diff_prox_G_dual,
     forward_operator,
     adjoint_linearized_operator,
-    Λ=forward_operator,
+    Λ::Union{Function,Missing}=missing,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),  # @Ronny: do we need this?
 ) where {mT<:AbstractManifold,nT<:AbstractManifold}
-    return PrimalDualSemismoothNewtonProblem{mT,nT}(
+    return PrimalDualSemismoothNewtonProblem{typeof(evaluation),mT,nT}(
         M,
         N,
         cost,

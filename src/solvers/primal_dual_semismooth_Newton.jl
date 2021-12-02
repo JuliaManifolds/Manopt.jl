@@ -62,7 +62,6 @@ function primal_dual_semismooth_Newton(
     retraction_method::RM=ExponentialRetraction(),
     inverse_retraction_method::IRM=LogarithmicInverseRetraction(),
     vector_transport_method::VTM=ParallelTransport(),
-    # variant=ismissing(Λ) ? :exact : :linearized,
     return_options=false,
     kwargs...,
 ) where {

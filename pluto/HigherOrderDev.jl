@@ -293,7 +293,7 @@ function DΛ(M, m, ξm)
 end
 
 # ╔═╡ 2ba7238b-a364-479b-8a16-74f2a5f8fb4b
-AdjDΛ(N, m, n, ξ) = adjoint_differential_forward_logs(M, m, ξ[N, :vector])
+AdjDΛ(N, m, n, ξ) = adjoint_differential_forward_logs(M, m, ξ)
 
 # ╔═╡ 5f6b0ebd-258a-48c6-b854-384f6eaf70b0
 x0 = deepcopy(f)
@@ -346,7 +346,7 @@ o = primal_dual_semismooth_Newton(
 # ╠═4a1dd24e-52c6-11ec-20a6-3d677b47806f
 # ╠═4522df74-6c30-4dde-bb3e-10d46be06c6c
 # ╟─7d3d39db-6791-4565-94c8-18a1959e16c6
-# ╠═830dff11-07d0-4ba3-9de1-f35413c98cc2
+# ╟─830dff11-07d0-4ba3-9de1-f35413c98cc2
 # ╟─44b78430-91d4-4157-8431-f6cb0ad7aae8
 # ╟─68f01f9d-e5c4-45f4-aa75-1560d1948b54
 # ╟─ee68439a-1ce8-4f74-b721-500859eca196
@@ -396,7 +396,7 @@ o = primal_dual_semismooth_Newton(
 # ╟─a2b8404a-b6ac-42f4-b75f-c5a58d28d314
 # ╟─059fa57a-36f0-4445-bb8b-ce6e0e0232a9
 # ╟─bc3b91db-5275-42ac-a275-2973ac051f8a
-# ╟─2ba7238b-a364-479b-8a16-74f2a5f8fb4b
+# ╠═2ba7238b-a364-479b-8a16-74f2a5f8fb4b
 # ╠═5f6b0ebd-258a-48c6-b854-384f6eaf70b0
 # ╠═7cbf60b3-10d7-423e-afce-60fed311b9b6
 # ╠═281dbac5-5ec7-4908-8f4c-fd2aed6b9f8e
