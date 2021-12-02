@@ -50,8 +50,10 @@ We finally load our data, see [`artificial_S2_composite_bezier_curve`](https://m
 """
 
 # ╔═╡ 2b485956-459d-40e7-9364-79ea77073804
-B = artificial_S2_composite_bezier_curve();
-b = B[2].pts;
+begin
+	B = artificial_S2_composite_bezier_curve();
+	b = B[2].pts;
+end
 
 # ╔═╡ 98c925ac-9ac8-42f3-9855-a01e5eaac350
 M = Sphere(2)
