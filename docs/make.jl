@@ -11,7 +11,6 @@ tutorials = [
     "GeodesicRegression",
     "HowToRecord",
     "StochasticGradientDescent",
-    "BezierCurves",
     "GradientOfSecondOrderDifference",
     "JacobiFields",
 ]
@@ -20,7 +19,6 @@ menuEntries = [
     "Do Geodesic regression",
     "Record values",
     "do stochastic gradient descent",
-    "work with Bézier curves",
     "see the gradient of ``d_2``",
     "use Jacobi Fields",
 ]
@@ -45,9 +43,9 @@ mkpath(pluto_output_folder)
 #
 #
 # Please do not use the same name as for a(n old) literate Tutorial
-pluto_files = ["Benchmark", "AutomaticDifferentiation"]
+pluto_files = ["Benchmark", "Bezier", "AutomaticDifferentiation"]
 pluto_heights = [370] # for now, lazyness, in rem
-pluto_titles = ["speed up! using `gradF!`", "AD in Manopt"]
+pluto_titles = ["speed up! using `gradF!`", "Use Bezier Curves", "AD in Manopt"]
 for (i, f) in enumerate(pluto_files)
     global TutorialMenu
     @info "Building Pluto Notebook $f.jl"

@@ -23,12 +23,12 @@ md"and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)"
 
 # ╔═╡ 85d8985b-f5ee-4cba-bcc5-528049798330
 begin
-	black = RGBA{Float64}(colorant"#000000")
-	TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
-	TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
-	TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
-	TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
-	TolVibrantTeal = RGBA{Float64}(colorant"#009988")
+    black = RGBA{Float64}(colorant"#000000")
+    TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
+    TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
+    TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
+    TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
+    TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 end;
 
 # ╔═╡ e62e36e9-19ce-4a7d-8bda-5634813c1ee9
@@ -36,12 +36,12 @@ md"Let's also set up a few parameters"
 
 # ╔═╡ 18d378dd-abc6-4fa6-a2c9-1cc09e4cec46
 begin
-	geo_pts = collect(range(0.0, 1.0; length=101))
-	bezier_pts = collect(range(0.0, 3.0; length=201))
-	camera_position = (-1.0, -0.7, 0.3)
-	#render asy yes/no. If not, images included w/ markdown are assumed to be prerendered
-	render_asy = true
-	image_prefix = render_asy ? "bezier/" : "../assets/images/"
+    geo_pts = collect(range(0.0, 1.0; length=101))
+    bezier_pts = collect(range(0.0, 3.0; length=201))
+    camera_position = (-1.0, -0.7, 0.3)
+    #render asy yes/no. If not, images included w/ markdown are assumed to be prerendered
+    render_asy = false
+    image_prefix = String(@__DIR__)*"/bezier"
 end;
 
 # ╔═╡ dee4eb65-145c-4b2b-98a7-ae3a7045f24b
@@ -50,7 +50,8 @@ We finally load our data, see [`artificial_S2_composite_bezier_curve`](https://m
 """
 
 # ╔═╡ 2b485956-459d-40e7-9364-79ea77073804
-B = artificial_S2_composite_bezier_curve(); b = B[2].pts
+B = artificial_S2_composite_bezier_curve();
+b = B[2].pts;
 
 # ╔═╡ 98c925ac-9ac8-42f3-9855-a01e5eaac350
 M = Sphere(2)
@@ -66,7 +67,8 @@ Let's evaliuate this at the point ``t=\frac{1}{4}∈[0,1]``. We first compute
 """
 
 # ╔═╡ 157d13c8-7311-4832-a9ff-da22125b2bbf
-t = 0.66; pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t))
+t = 0.66;
+pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t));
 
 # ╔═╡ 5af58241-50c7-464e-bfa3-53819e605793
 md"""
@@ -75,8 +77,8 @@ We obtain 3 points on the geodesics connecting the control points. Repeating thi
 
 # ╔═╡ b372fcfc-cad0-48bc-b759-54d15bd2e28b
 begin
-	pts2 = shortest_geodesic.(Ref(M), pts1[1:2], pts1[2:3], Ref(t))
-	p = shortest_geodesic(M, pts2[1], pts2[2], t)
+    pts2 = shortest_geodesic.(Ref(M), pts1[1:2], pts1[2:3], Ref(t))
+    p = shortest_geodesic(M, pts2[1], pts2[2], t)
 end
 
 # ╔═╡ 62115e3f-cdfe-464c-91a1-eb80e674a610
@@ -84,34 +86,35 @@ md"""we obtain the point on the Bézier curve ``c(t)``."""
 
 # ╔═╡ 8653ca13-21e9-4049-a81e-02b6047d2c66
 begin
-	curves1 = [shortest_geodesic(M, b[i], b[i + 1], geo_pts) for i in 1:3]
-	curves2 = [shortest_geodesic(M, pts1[i], pts1[i + 1], geo_pts) for i in 1:2]
-	bezier_curve = [shortest_geodesic(M, pts2[1], pts2[2], geo_pts)]
+    curves1 = [shortest_geodesic(M, b[i], b[i + 1], geo_pts) for i in 1:3]
+    curves2 = [shortest_geodesic(M, pts1[i], pts1[i + 1], geo_pts) for i in 1:2]
+    bezier_curve = [shortest_geodesic(M, pts2[1], pts2[2], geo_pts)]
 end;
 
 # ╔═╡ 05612a12-1080-4b79-b505-198e079a4b2a
 render_asy && begin
-asymptote_export_S2_signals(
-    image_prefix * "/Casteljau-illustr.asy";
-    points=[b, pts1, pts2, [p]],
-    curves=[curves1..., curves2..., bezier_curve..., de_casteljau(M, B[2], geo_pts)],
-    colors=Dict(
-        :points => [TolVibrantBlue, TolVibrantCyan, TolVibrantTeal, TolVibrantOrange],
-        :curves => [
-            TolVibrantBlue,
-            TolVibrantBlue,
-            TolVibrantBlue,
-            TolVibrantCyan,
-            TolVibrantCyan,
-			TolVibrantTeal,
-            black,
-        ],
-    ),
-    dot_size=3.5,
-    line_widths=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5],
-    camera_position=camera_position,
-)
-render_asymptote(image_prefix * "/Casteljau-illustr.asy"; render=2) #src
+    asymptote_export_S2_signals(
+        image_prefix * "/Casteljau-illustr.asy";
+        points=[b, pts1, pts2, [p]],
+        curves=[curves1..., curves2..., bezier_curve..., de_casteljau(M, B[2], geo_pts)],
+        colors=Dict(
+            :points =>
+                [TolVibrantBlue, TolVibrantCyan, TolVibrantTeal, TolVibrantOrange],
+            :curves => [
+                TolVibrantBlue,
+                TolVibrantBlue,
+                TolVibrantBlue,
+                TolVibrantCyan,
+                TolVibrantCyan,
+                TolVibrantTeal,
+                black,
+            ],
+        ),
+        dot_size=3.5,
+        line_widths=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5],
+        camera_position=camera_position,
+    )
+    render_asymptote(image_prefix * "/Casteljau-illustr.asy"; render=2) #src
 end
 
 # ╔═╡ bdb85fb8-0707-47d1-95ee-9bf2e56500f5
@@ -145,7 +148,7 @@ This can of course be generalised straight forward to more than two cases.
 With the properties from the previous section we can now state that
 
 * the curve ``B(t)`` is continuous if ``c(1)=d(0)`` or in other words ``a_n=b_0``
-* the curve ``B(t)`` is differentiable if additionally ``\dot c(1)=\dot d(0)`` or in 
+* the curve ``B(t)`` is differentiable if additionally ``\dot c(1)=\dot d(0)`` or in
 other words ``-\log_{a_n}a_{n-1} = \log_{b_0}b_1``. This is equivalent to ``a_n=b_0 = \gamma_{a_{n-1}b_1}(\tfrac{1}{2})``.
 
 One nice interpretation of the last characterization is, that the tangents ``\log_{a_n}a_{n-1}`` and ``\log_{b_0}b_1`` point into opposite directions.
@@ -158,27 +161,27 @@ For the three segment example from the beginning this looks as follows
 
 # ╔═╡ 3f1d0989-2f97-4945-82f8-22e9c7bda6d2
 render_asy && begin
-	asymptote_export_S2_signals(
-    	image_prefix * "/Bezier-composite-curve.asy";
-    	curves=[de_casteljau(M, B, bezier_pts)],
-    	points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)],
-    	tangent_vectors=[[
-        Tuple(a)
-        for
-        a in
-        zip(get_bezier_junctions(M, B, true), get_bezier_junction_tangent_vectors(M, B))
-    	]],
-    	colors=Dict(
-        	:curves => [black],
-        	:points => [TolVibrantBlue, TolVibrantTeal],
-        	:tvectors => [TolVibrantCyan],
-    	),
-    	camera_position=camera_position,
-    	arrow_head_size=10.0,
-    	line_widths=[1.5, 1.5],
-    	dot_size=4.0,
-	)
-	render_asymptote(image_prefix * "/Bezier-composite-curve.asy"; render=2)
+    asymptote_export_S2_signals(
+        image_prefix * "/Bezier-composite-curve.asy";
+        curves=[de_casteljau(M, B, bezier_pts)],
+        points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)],
+        tangent_vectors=[[
+            Tuple(a) for a in zip(
+                get_bezier_junctions(M, B, true),
+                get_bezier_junction_tangent_vectors(M, B),
+            )
+        ]],
+        colors=Dict(
+            :curves => [black],
+            :points => [TolVibrantBlue, TolVibrantTeal],
+            :tvectors => [TolVibrantCyan],
+        ),
+        camera_position=camera_position,
+        arrow_head_size=10.0,
+        line_widths=[1.5, 1.5],
+        dot_size=4.0,
+    )
+    render_asymptote(image_prefix * "/Bezier-composite-curve.asy"; render=2)
 end
 
 # ╔═╡ 41ba8ac2-5a81-46f5-9269-404cc6a1d287
@@ -207,36 +210,33 @@ This yields a gradient of ``A(b)`` with respect to ``b`` [`adjoint_Jacobi_field`
 
 # ╔═╡ 7b545a1e-b9c3-4c57-a5ee-3a629407b67a
 render_asy && begin
-	gradFullB = Manopt._grad_acceleration_bezier(
-	    M,
-	    get_bezier_points(M, B, :differentiable),
-	    [3, 3, 3],
-	    collect(range(0.0, 3.0; length=151)),
-	)
-	asymptote_export_S2_signals(
-	    image_prefix * "/Bezier-composite-curve-gradient.asy";
-	    curves=[de_casteljau(M, B, bezier_pts)],
-	    points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)],
-	    tangent_vectors=[[
-	        Tuple(a)
-	        for
-	        a in
-	        zip(
-	            get_bezier_points(M, B, :continuous),
-	            -0.05 .* get_bezier_points(M, gradFullB, :continuous),
-	        )
-	    ]],
-	    colors=Dict(
-	        :curves => [black],
-	        :points => [TolVibrantBlue, TolVibrantTeal],
-	        :tvectors => [TolVibrantOrange],
-	    ),
-	    camera_position=camera_position,
-	    arrow_head_size=10.0,
-	    line_widths=[1.5, 1.5],
-	    dot_size=4.0,
-	)
-	render_asymptote(image_prefix * "/Bezier-composite-curve-gradient.asy"; render=2)
+    gradFullB = Manopt._grad_acceleration_bezier(
+        M,
+        get_bezier_points(M, B, :differentiable),
+        [3, 3, 3],
+        collect(range(0.0, 3.0; length=151)),
+    )
+    asymptote_export_S2_signals(
+        image_prefix * "/Bezier-composite-curve-gradient.asy";
+        curves=[de_casteljau(M, B, bezier_pts)],
+        points=[get_bezier_junctions(M, B), get_bezier_inner_points(M, B)],
+        tangent_vectors=[[
+            Tuple(a) for a in zip(
+                get_bezier_points(M, B, :continuous),
+                -0.05 .* get_bezier_points(M, gradFullB, :continuous),
+            )
+        ]],
+        colors=Dict(
+            :curves => [black],
+            :points => [TolVibrantBlue, TolVibrantTeal],
+            :tvectors => [TolVibrantOrange],
+        ),
+        camera_position=camera_position,
+        arrow_head_size=10.0,
+        line_widths=[1.5, 1.5],
+        dot_size=4.0,
+    )
+    render_asymptote(image_prefix * "/Bezier-composite-curve-gradient.asy"; render=2)
 end
 
 # ╔═╡ 5157ac76-d359-4f18-883d-8afbe78d3b4d
@@ -258,29 +258,29 @@ After transferring to the already mentioned [`PowerManifold`](https://juliamanif
 
 # ╔═╡ 7db3e138-6ec1-4a0c-8f3b-279f7251b4c3
 begin
-	#number of sampling points refers to exactness of approximating d^2
-	curve_samples = collect(range(0.0, 3.0; length=151))
-	pB = get_bezier_points(M, B, :differentiable)
-	N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
-	function F(M, pB)
-	    return cost_acceleration_bezier(
-	        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples
-	    )
-	end
-	function gradF(M, pB)
-	    return grad_acceleration_bezier(
-	        M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples
-	    )
-	end
-	x0 = get_bezier_points(M, B, :differentiable)
-	pB_opt_ip = gradient_descent(
-	    N,
-	    F,
-	    gradF,
-	    x0;
-	    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001),
-	    stopping_criterion=StopWhenChangeLess(5 * 10.0^(-7)),
-	)
+    #number of sampling points refers to exactness of approximating d^2
+    curve_samples = collect(range(0.0, 3.0; length=151))
+    pB = get_bezier_points(M, B, :differentiable)
+    N = PowerManifold(M, NestedPowerRepresentation(), length(pB))
+    function F(M, pB)
+        return cost_acceleration_bezier(
+            M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples
+        )
+    end
+    function gradF(M, pB)
+        return grad_acceleration_bezier(
+            M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples
+        )
+    end
+    x0 = get_bezier_points(M, B, :differentiable)
+    pB_opt_ip = gradient_descent(
+        N,
+        F,
+        gradF,
+        x0;
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.0001),
+        stopping_criterion=StopWhenChangeLess(5 * 10.0^(-7)),
+    )
 end;
 
 # ╔═╡ 5e8e98f6-8896-462e-b610-4b379c727a72
@@ -288,30 +288,28 @@ md"and the resut looks like"
 
 # ╔═╡ 50854504-af68-4d7f-999e-f3054c088fb6
 render_asy && begin
-	B_opt_ip = get_bezier_segments(M, pB_opt_ip, get_bezier_degrees(M, B), :differentiable)
-	asymptote_export_S2_signals(
-	    image_prefix * "/Bezier-IP-Min.asy";
-	    curves=[de_casteljau(M, B_opt_ip, bezier_pts), de_casteljau(M, B, bezier_pts)],
-	    points=[get_bezier_junctions(M, B_opt_ip), get_bezier_inner_points(M, B_opt_ip)],
-	    tangent_vectors=[[
-	        Tuple(a)
-	        for
-	        a in zip(
-	            get_bezier_junctions(M, B_opt_ip, true),
-	            get_bezier_junction_tangent_vectors(M, B_opt_ip),
-	        )
-	    ]],
-	    colors=Dict(
-	        :curves => [TolVibrantBlue, black],
-	        :points => [TolVibrantBlue, TolVibrantTeal],
-	        :tvectors => [TolVibrantCyan],
-	    ),
-	    camera_position=camera_position,
-	    arrow_head_size=10.0,
-	    line_widths=[1.5, 0.75, 1.5],
-	    dot_size=4.0,
-	)
-	render_asymptote(image_prefix * "/Bezier-IP-Min.asy"; render=2)
+    B_opt_ip = get_bezier_segments(M, pB_opt_ip, get_bezier_degrees(M, B), :differentiable)
+    asymptote_export_S2_signals(
+        image_prefix * "/Bezier-IP-Min.asy";
+        curves=[de_casteljau(M, B_opt_ip, bezier_pts), de_casteljau(M, B, bezier_pts)],
+        points=[get_bezier_junctions(M, B_opt_ip), get_bezier_inner_points(M, B_opt_ip)],
+        tangent_vectors=[[
+            Tuple(a) for a in zip(
+                get_bezier_junctions(M, B_opt_ip, true),
+                get_bezier_junction_tangent_vectors(M, B_opt_ip),
+            )
+        ]],
+        colors=Dict(
+            :curves => [TolVibrantBlue, black],
+            :points => [TolVibrantBlue, TolVibrantTeal],
+            :tvectors => [TolVibrantCyan],
+        ),
+        camera_position=camera_position,
+        arrow_head_size=10.0,
+        line_widths=[1.5, 0.75, 1.5],
+        dot_size=4.0,
+    )
+    render_asymptote(image_prefix * "/Bezier-IP-Min.asy"; render=2)
 end
 
 # ╔═╡ 4f35b3e8-90ca-4d21-a377-007f93eb0efd
@@ -338,59 +336,57 @@ Then we obtain the folowing code to minimize the acceleration while approximatin
 
 # ╔═╡ 2f9ef252-5046-4af7-aa69-449a04bab26e
 begin
-	λ = 3.0
-	d = get_bezier_junctions(M, B)
-	function F2(M, pB)
-    	return cost_L2_acceleration_bezier(
-        	M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
-    	)
-	end
-	function gradF2(M, pB)
-    	return grad_L2_acceleration_bezier(
-        	M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
-    	)
-	end
-	x1 = get_bezier_points(M, B, :differentiable)
-	pB_opt_appr = gradient_descent(
-	    N,
-	    F2,
-	    gradF2,
-	    x1;
-	    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
-	    stopping_criterion=StopWhenChangeLess(10.0^(-5)),
-	)
+    λ = 3.0
+    d = get_bezier_junctions(M, B)
+    function F2(M, pB)
+        return cost_L2_acceleration_bezier(
+            M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
+        )
+    end
+    function gradF2(M, pB)
+        return grad_L2_acceleration_bezier(
+            M.manifold, pB, get_bezier_degrees(M.manifold, B), curve_samples, λ, d
+        )
+    end
+    x1 = get_bezier_points(M, B, :differentiable)
+    pB_opt_appr = gradient_descent(
+        N,
+        F2,
+        gradF2,
+        x1;
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.5, 0.001),
+        stopping_criterion=StopWhenChangeLess(10.0^(-5)),
+    )
 end
 
 # ╔═╡ 6cfb38a8-c29f-42a6-b642-31c047dd6cb8
 render_asy && begin
-	B_opt_appr = get_bezier_segments(M, pB_opt_appr, get_bezier_degrees(M, B), :differentiable)
-	asymptote_export_S2_signals(
-	    image_prefix * "/Bezier-Appr-Min.asy";
-	    curves=[de_casteljau(M, B_opt_appr, bezier_pts), de_casteljau(M, B, bezier_pts)],
-	    points=[
-	        d,
-	        get_bezier_junctions(M, B_opt_appr),
-	        get_bezier_inner_points(M, B_opt_appr),
-	    ],
-	    tangent_vectors=[[
-	        Tuple(a)
-	        for
-	        a in zip(
-	            get_bezier_junctions(M, B_opt_appr, true),
-	            get_bezier_junction_tangent_vectors(M, B_opt_appr),
-	        )
-	    ]],
-	    colors=Dict(
-	        :curves => [TolVibrantBlue, black],
-	        :points => [TolVibrantOrange, TolVibrantBlue, TolVibrantTeal],
-	        :tvectors => [TolVibrantCyan],
-	    ),
-	    camera_position=camera_position,
-	    arrow_head_size=10.0,
-	    line_widths=[1.5, 0.75, 1.5],
-	    dot_size=4.0,
-	)
-	render_asymptote(image_prefix * "/Bezier-Appr-Min.asy"; render=2)
+    B_opt_appr = get_bezier_segments(M, pB_opt_appr, get_bezier_degrees(M, B), :differentiable)
+    asymptote_export_S2_signals(
+        image_prefix * "/Bezier-Appr-Min.asy";
+        curves=[de_casteljau(M, B_opt_appr, bezier_pts), de_casteljau(M, B, bezier_pts)],
+        points=[
+            d,
+            get_bezier_junctions(M, B_opt_appr),
+            get_bezier_inner_points(M, B_opt_appr),
+        ],
+        tangent_vectors=[[
+            Tuple(a) for a in zip(
+                get_bezier_junctions(M, B_opt_appr, true),
+                get_bezier_junction_tangent_vectors(M, B_opt_appr),
+            )
+        ]],
+        colors=Dict(
+            :curves => [TolVibrantBlue, black],
+            :points => [TolVibrantOrange, TolVibrantBlue, TolVibrantTeal],
+            :tvectors => [TolVibrantCyan],
+        ),
+        camera_position=camera_position,
+        arrow_head_size=10.0,
+        line_widths=[1.5, 0.75, 1.5],
+        dot_size=4.0,
+    )
+    render_asymptote(image_prefix * "/Bezier-Appr-Min.asy"; render=2)
 end
 
 # ╔═╡ db8110e0-d271-424c-b920-817dc1aab0c9
