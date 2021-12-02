@@ -51,8 +51,8 @@ We finally load our data, see [`artificial_S2_composite_bezier_curve`](https://m
 
 # ╔═╡ 2b485956-459d-40e7-9364-79ea77073804
 begin
-	B = artificial_S2_composite_bezier_curve();
-	b = B[2].pts;
+    B = artificial_S2_composite_bezier_curve()
+    b = B[2].pts
 end
 
 # ╔═╡ 98c925ac-9ac8-42f3-9855-a01e5eaac350
@@ -70,8 +70,8 @@ Let's evaliuate this at the point ``t=\frac{1}{4}∈[0,1]``. We first compute
 
 # ╔═╡ 157d13c8-7311-4832-a9ff-da22125b2bbf
 begin
-	t = 0.66;
-	pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t));
+    t = 0.66
+    pts1 = shortest_geodesic.(Ref(M), b[1:3], b[2:4], Ref(t))
 end
 
 # ╔═╡ 5af58241-50c7-464e-bfa3-53819e605793
