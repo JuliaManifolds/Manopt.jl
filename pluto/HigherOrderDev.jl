@@ -315,7 +315,7 @@ o = primal_dual_semismooth_Newton(
     proxPriorDual,
 	diff_proxPriorDual,
 	DΛ,
-    AdjDΛ;
+    AdjDΛ,
     primal_stepsize=σ,
     dual_stepsize=τ,
     debug=if use_debug
