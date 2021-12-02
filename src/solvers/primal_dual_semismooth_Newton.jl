@@ -54,6 +54,7 @@ function primal_dual_semismooth_Newton(
     linearized_operator::Function,
     adjoint_linearized_operator::Function;
     dual_stepsize=1 / sqrt(8),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     Λ::Union{Function,Missing}=missing,
     primal_stepsize=1 / sqrt(8),
     stopping_criterion::StoppingCriterion=StopAfterIteration(50),
@@ -83,8 +84,9 @@ function primal_dual_semismooth_Newton(
         prox_G_dual,
         diff_prox_G_dual,
         linearized_operator,
-        adjoint_linearized_operator,
-        Λ,
+        adjoint_linearized_operator;
+        Λ=Λ,
+        evaluation=evaluation
     )
     o = PrimalDualSemismoothNewtonOptions(
         m,
