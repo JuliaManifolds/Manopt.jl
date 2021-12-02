@@ -1,7 +1,7 @@
 # TODO: change documentation
 # DONE: addapted struct and functions
 @doc raw"""
-    PrimalDualSemismoothNewtonProblem {mT <: AbstractManifold, nT <: AbstractManifold} <: PrimalDualProblem} <: Problem
+    PrimalDualSemismoothNewtonProblem {T,mT <: AbstractManifold, nT <: AbstractManifold} <: PrimalDualProblem} <: AbstractPrimalDualProblem{T}
 
 Describes a Problem for the linearized Chambolle-Pock algorithm.
 
@@ -25,7 +25,7 @@ Describes a Problem for the linearized Chambolle-Pock algorithm.
 """
 mutable struct PrimalDualSemismoothNewtonProblem{
     T,mT<:AbstractManifold,nT<:AbstractManifold
-} <: Problem{T}
+} <: AbstractPrimalDualProblem{T}
     M::mT
     N::nT
     cost::Function
@@ -152,4 +152,60 @@ mutable struct PrimalDualSemismoothNewtonOptions{
             vector_transport_method,
         )
     end
+end
+
+@doc raw"""
+    y = get_differential_primal_prox(p::PrimalDualSemismoothNewtonProblem, σ, x)
+    get_differential_primal_prox!(p::PrimalDualSemismoothNewtonProblem, y, σ, x)
+
+Evaluate the differential proximal map of ``F`` stored within [`PrimalDualSemismoothNewtonProblem`](@ref)
+
+```math
+D\operatorname{prox}_{σF}(x)[X]
+```
+
+which can also be computed in place of `y`.
+"""
+get_differential_primal_prox(::PrimalDualSemismoothNewtonProblem, ::Any...)
+
+function get_differential_primal_prox(p::PrimalDualSemismoothNewtonProblem{AllocatingEvaluation}, σ, x,X)
+    return p.diff_prox_F!!(p.M, σ, x,X)
+end
+function get_differential_primal_prox(p::PrimalDualSemismoothNewtonProblem{MutatingEvaluation}, σ, x,X)
+    y = allocate_result(p.M, get_differential_primal_prox, x,X)
+    return p.diff_prox_F!!(p.M, y, σ, x,X)
+end
+function get_differential_primal_prox!(p::PrimalDualSemismoothNewtonProblem{AllocatingEvaluation}, y, σ, x,X)
+    return copyto!(p.M, y, p.diff_prox_F!!(p.M, σ, x, X))
+end
+function get_differential_primal_prox!(p::PrimalDualSemismoothNewtonProblem{MutatingEvaluation}, y, σ, x, X)
+    return p.diff_prox_F!!(p.M, y, σ, x, X)
+end
+
+@doc raw"""
+    y = get_differential_dual_prox(p::PrimalDualSemismoothNewtonProblem, n, τ, ξ, Ξ)
+    get_differential_dual_prox!(p::PrimalDualSemismoothNewtonProblem, y, n, τ, ξ, Ξ)
+
+Evaluate the differential proximal map of ``G_n^*`` stored within [`PrimalDualSemismoothNewtonProblem`](@ref)
+
+```math
+D\operatorname{prox}_{τG_n^*}(ξ)[Ξ]
+```
+
+which can also be computed in place of `y`.
+"""
+get_differential_dual_prox(::PrimalDualSemismoothNewtonProblem, ::Any...)
+
+function get_differential_dual_prox(p::PrimalDualSemismoothNewtonProblem{<:AllocatingEvaluation}, n, τ, ξ, Ξ)
+    return p.diff_prox_G_dual!!(p.N, n, τ, ξ, Ξ)
+end
+function get_differential_dual_prox(p::PrimalDualSemismoothNewtonProblem{<:MutatingEvaluation}, n, τ, ξ, Ξ)
+    η = allocate_result(p.N, get_differential_dual_prox, ξ, Ξ)
+    return p.diff_prox_G_dual!!(p.N, η, n, τ, ξ, Ξ)
+end
+function get_differential_dual_prox!(p::PrimalDualSemismoothNewtonProblem{<:AllocatingEvaluation}, η, n, τ, ξ, Ξ)
+    return copyto!(p.N, η, p.diff_prox_G_dual!!(p.N, n, τ, ξ, Ξ))
+end
+function get_differential_dual_prox!(p::PrimalDualSemismoothNewtonProblem{<:MutatingEvaluation}, η, n, τ, ξ, Ξ)
+    return p.diff_prox_G_dual!!(p.N, η, n, τ, ξ, Ξ)
 end
