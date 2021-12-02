@@ -19,7 +19,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
             [-1.0, 0.0, 0.0, 1.0],
         ) ≈ 0
         @test norm(N, x, grad_intrinsic_infimal_convolution_TV12(N, x, x, x, 1.0, 1.0)[2]) ≈
-              0
+            0
         x2 = [0.1, 0.2, 0.3]
         N2 = PowerManifold(M, size(x2)...)
         @test grad_TV2(N2, x2) == zeros(3)

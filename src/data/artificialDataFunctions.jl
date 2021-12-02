@@ -37,7 +37,7 @@ function artificialIn_SAR_image(pts::Integer)
     cosS = cosd(aSteps)
     sinS = sind(aSteps)
     l = 0.075
-    midP = [-.475, -.0625]#.125, .55]
+    midP = [-0.475, -0.0625]#.125, .55]
     img = zeros(Float64, pts, pts)
     for j in eachindex(values), i in eachindex(values)
         # ellipse

@@ -1,4 +1,5 @@
-using Manopt, Manifolds, Documenter, Literate, Pluto, PlutoStaticHTML, Pkg
+using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
+using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML, Pkg
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
 # generate examples using Literate
@@ -68,22 +69,19 @@ for (i, f) in enumerate(pluto_files)
             padding-top: 1rem;
             padding-bottom: 2rem;
         }
+        /* move output up to its input, remove border (see class add JS below) */
+        body .content pre.pre-output {
+            border: 0px;
+            margin-top: -1.1em;
+            padding: .4rem .5rem;
+            font-size: 80%;
+        }
         </style>
         $html
-        <script>
-        require(['jquery', 'katex', 'katex-auto-render'], function(\$, katex, renderMathInElement) {
-            \$(document).ready(function() {
-                renderMathInElement(document.body);
-                /* Apparently, Pluto wraps LaTeX inside a span class 'tex'. */
-                var equations = \$('p.tex');
-                for (var i = 0; i < equations.length; i++) {
-                    var text = equations[i].textContent;
-                    text = text.split('\$').join('');
-                    console.log(text);
-                    render(text, equations[i]);
-                }
-            })
-        })
+        <script type="text/javascript">
+            require({}, ['jquery'], function() {
+                \$('code.code-output').parent('pre').addClass('pre-output');
+            });
         </script>
         ```
         """,
@@ -111,7 +109,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
 end
 
 makedocs(;
-    format=Documenter.HTML(; prettyurls=false),
+    format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
     sitename="Manopt.jl",
     pages=[

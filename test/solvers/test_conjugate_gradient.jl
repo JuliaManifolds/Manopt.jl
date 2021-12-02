@@ -63,7 +63,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     denom = dot(δ1, diff)
     ndiffsq = dot(diff, diff)
     @test O.coefficient(P, O, 2) ==
-          dot(diff, grad_2) / denom - 2 * ndiffsq * dot(δ1, grad_2) / denom^2
+        dot(diff, grad_2) / denom - 2 * ndiffsq * dot(δ1, grad_2) / denom^2
 
     dU = HeestenesStiefelCoefficient()
     O = ConjugateGradientDescentOptions(M, x0, sC, s, dU, retr, vtm)
