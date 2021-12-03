@@ -42,6 +42,7 @@ begin
     #render asy yes/no. If not, images included w/ markdown are assumed to be prerendered
     render_asy = false
     image_prefix = String(@__DIR__) * "/bezier"
+	@info image_prefix
 end;
 
 # ╔═╡ dee4eb65-145c-4b2b-98a7-ae3a7045f24b
