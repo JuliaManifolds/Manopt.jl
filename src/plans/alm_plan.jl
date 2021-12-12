@@ -22,32 +22,34 @@ construct an augmented Lagrangian Option with the fields and defaults as above.
 """
 mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: StoppingCriterion} <: Options
     x::P
-    sub_problem::Pr ### non-optional parameter
-    sub_options::Op ### non-optional parameter
+    sub_problem::Pr 
+    sub_options::Op 
     max_inner_iter::Int
     num_outer_itertgn::Int
     ϵ::Real #(starting)tolgradnorm
     ϵ_min::Real #endingtolgradnorm
     bound::Real
+    #### multiplier boundaries anpassen
     λ::Vector
     γ::Vector
     ρ::Real
     τ::Real
     θ_ρ::Real
-    stop::TStopping ###θ_ϵ und old_acc nicht hier?
+    stop::TStopping 
     function ALMOptions(
+        M::AbstractManifold,
+        p::ConstrainedProblem,
         x0::P,
-        n_ineq::Int, ### remove 
-        n_eq::Int, ### remove
-        sub_problem::Pr, ###
-        sub_options::Op, ###
+        sub_problem::Pr, 
+        sub_options::Op; 
         max_inner_iter::Int=200,
         num_outer_itertgn::Int=30,
         ϵ::Real=1e-3, #(starting)tolgradnorm
         ϵ_min::Real=1e-6, #endingtolgradnorm
         bound::Real=20.0,
-        λ::Vector=ones(n_ineq),
-        γ::Vector=ones(n_eq),
+        #### multiplier boundaries anpassen
+        λ::Vector=ones(len(get_inequality_constraints(p,x0))),
+        γ::Vector=ones(len(get_equality_constraints(p,x0))),
         ρ::Real=1.0, 
         τ::Real=0.8,
         θ_ρ::Real=0.3, 
@@ -67,13 +69,14 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         o.ϵ = ϵ
         o.ϵ_min = ϵ_min
         o.bound = bound
+        #### multiplier boundaries anpassen
         o.λ = λ
         o.γ = γ
         o.ρ = ρ
         o.τ = τ
         o.θ_ρ = θ_ρ
-        o.θ_ϵ = θ_ϵ
-        o.old_acc = old_acc
+        o.θ_ϵ = 0.0
+        o.old_acc = 0.0
         o.stop = stopping_criterion
         return o
     end

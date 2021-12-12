@@ -90,6 +90,6 @@ function get_grad_eq(p::ConstrainedProblem{T, VectorConstraint}, x) where {T}
     return [grad_hj(p.M, x) for grad_hj ∈ p.gradH]
 end
 
-function step_solver(p::Problem, o::ALMOptions) where {T} ####?
-    o.V = get_inequality_constraints(p, o.x)
-end
+# function step_solver(p::Problem, o::ALMOptions) where {T} ####?
+#     o.V = get_inequality_constraints(p, o.x)
+# end

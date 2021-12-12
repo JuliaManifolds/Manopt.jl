@@ -210,6 +210,11 @@ export get_cost,
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
+export get_constraints, 
+    get_inequality_constraints, 
+    get_equality_constraints, 
+    get_grad_ineq,
+    get_grad_eq
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,

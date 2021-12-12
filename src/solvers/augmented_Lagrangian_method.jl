@@ -1,7 +1,7 @@
 @doc raw"""
     augmented_Lagrangian_method(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
 
-perform the augmented Lagrangian method (ALM)[^Liu2020]. The aim of the ALM is to find the solution of the `ConstrainedProblem`
+perform the augmented Lagrangian method (ALM)[^LiuBoumal2020][^source_code]. The aim of the ALM is to find the solution of the [`ConstrainedProblem`](@ref)
 ```math
 \begin{aligned}
 \min_{x ∈\mathcal{M}} &f(x)\\
@@ -14,7 +14,7 @@ For that, in every step ``k`` of the algorithm, the augmented Lagrangian functio
 ```math
 \mathcal{L}_{ρ^{(k-1)}}(x, λ^{(k-1)}, γ^{(k-1)}) = f(x) + \frac{ρ^{(k-1)}}{2} (\sum_{j=1}^p (h_j(x)+\frac{γ_j^{(k-1)}}{ρ^{(k-1)}})^2 + \sum_{i=1}^m \max\left\{0,\frac{λ_i^{(k-1)}}{ρ^{(k-1)}}+ g_i(x)\right\}^2)
 ```
-is minimized over all ``x ∈\mathcal{M}``, where ``λ^{(k-1)}`` and ``γ_j^{(k-1)}`` are the current iterations of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
+is minimized over all ``x ∈\mathcal{M}``, where ``λ^{(k-1)}=[λ_1^{(k-1)}, …, λ_m^{(k-1)}]^T`` and ``γ^{(k-1)}=[γ_1^{(k-1)}, …, γ_p^{(k-1)}]^T`` are the current iterations of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
 
 Then, the Lagrange multipliers are updated by 
 ```math
@@ -45,10 +45,15 @@ Then, we update `ρ` according to
 ```
 where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 
-[^Liu2020]:
+[^LiuBoumal2020]:
     > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
     > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
     > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3)
+
+[^source_code]:
+    > original source code to the paper:
+    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
+    > src: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 
 
 # Input
@@ -68,9 +73,12 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `num_outer_itertgn` - (`30`)
 * `ϵ` - (`1e-3`) the accuracy tolerance
 * `ϵ_min` - (`1e-6`) the lower bound for the accuracy tolerance
-* `bound` - (`20`) a bound for the Lagrange multiplier
-* `λ` - (`ones(n_ineq_constraint)`) the Lagrange multiplier with respect to the inequality constraints
-* `γ` - (`ones(n_eq_constraint)`) the Lagrange multiplier with respect to the equality constraints
+#### * `bound` - (`20`) a bound for the Lagrange multiplier
+* `γ_max` - (`20`)
+* `γ_min` - (`- γ_max`)
+* `λ_max` - (`20`)
+* `λ` - (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
+* `γ` - (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
 * `ρ` - (`1.0`) the penalty parameter
 * `τ` - (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ` - (`0.3`) the scaling factor of the penalty parameter
@@ -97,14 +105,14 @@ function augmented_Lagrangian_method(
     x=random_point(M), 
     kwargs...,
 ) where {TF, TGF}
-    x_res=allocate(x)
-    copyto!(Ref(M), x_res, x)
+    x_res = allocate(x)
+    copyto!(M, x_res, x)
     return augmented_Lagrangian_method!(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH; x=x_res, kwargs...)
 end
 @doc raw"""
     augmented_Lagrangian_method!(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
 
-perform the augmented Lagrangian method (ALM)[^Liu2020]. The aim of the ALM is to find the solution of the `ConstrainedProblem`
+perform the augmented Lagrangian method (ALM)[^LiuBoumal2020][^source_code]. The aim of the ALM is to find the solution of the [`ConstrainedProblem`](@ref)
 ```math
 \begin{aligned}
 \min_{x ∈\mathcal{M}} &f(x)\\
@@ -125,7 +133,7 @@ where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}
 * `gradG` – the gradient of the inequality constraints
 * `gradH` – the gradient of the equality constraints
 
-For more options, especially [`x`](@ref) for the initial point and [`ρ`](@ref) for the penalty parameter, see [`augmented_Lagrangian_method`](@ref).
+For more options, especially `x` for the initial point and `ρ` for the penalty parameter, see [`augmented_Lagrangian_method`](@ref).
 """
 function augmented_Lagrangian_method!(
     M::AbstractManifold,
@@ -143,8 +151,9 @@ function augmented_Lagrangian_method!(
     ϵ::Real=1e-3, #(starting)tolgradnorm
     ϵ_min::Real=1e-6, #endingtolgradnorm
     bound::Real=20.0, 
-    λ::Vector=ones(n_ineq_constraint),
-    γ::Vector=ones(n_eq_constraint),
+    #### multiplier boundaries anpassen
+    λ::Vector=ones(length(G(M,x))),
+    γ::Vector=ones(length(H(M,x))),
     ρ::Real=1.0, 
     τ::Real=0.8,
     θ_ρ::Real=0.3, 
@@ -155,19 +164,22 @@ function augmented_Lagrangian_method!(
 ) where {TF, TGF}
     p = ConstrainedProblem(M, F, G, H, gradF, gradG, gradH)
     o = ALMOptions(
+        M,
+        p,
         x,
+        sub_problem,
+        sub_options,
         max_inner_iter,
         num_outer_itertgn,
         ϵ,
         ϵ_min,
         bound,
+        #### multiplier boundaries anpassen
         λ,
         γ,
         ρ,
         τ,
         θ_ρ,
-        θ_ϵ,
-        oldacc,
         stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
@@ -201,9 +213,12 @@ function step_solver!(p::CostProblem, o::ALMOptions, iter)
     cost_ineq = get_cost_ineq(p, o.x)
     n_ineq_constraint = len(cost_ineq)
     o.λ = min.(ones(n_ineq_constraint)* o.bound, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
+    #o.λ = min.(ones(n_ineq_constraint)* o.λ_max, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
     cost_eq = get_cost_eq(p, o.x)
     n_eq_constraint = len(cost_eq)
     o.γ = min.(ones(n_eq_constraint)* o.bound, max.(ones(n_eq_constraint) * (-o.bound), o.γ + o.ρ .* cost_eq))
+    #o.γ = min.(ones(n_eq_constraint)* o.γ_max , max.(ones(n_eq_constraint) * (-o.γ_min), o.γ + o.ρ .* cost_eq))
+
 
     # get new evaluation of penalty
     new_acc = max(max(abs.(max.(-o.λ./o.ρ, Ref(cost_ineq)))), max(abs.(cost_eq)))
@@ -234,6 +249,3 @@ function get_Lagrangian_gradient_function(p::CostProblem, o::ALMOptions)
     grad_eq = x-> sum((get_equality_constraints(p, x) .* o.ρ .+ o.γ) .* get_grad_eq(p, x))
     return x -> grad(x) + grad_ineq(x) + grad_eq(x)
 end
-
-# Recreating Changshuo Liu's Matlab source code in Julia
-# original code by Changshuo Liu: https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints/blob/master/solvers/almbddmultiplier.m
