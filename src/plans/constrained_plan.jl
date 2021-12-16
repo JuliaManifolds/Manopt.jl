@@ -90,6 +90,21 @@ function get_grad_eq(p::ConstrainedProblem{T, VectorConstraint}, x) where {T}
     return [grad_hj(p.M, x) for grad_hj ∈ p.gradH]
 end
 
+function get_gradient(p::ConstrainedProblem{AllocatingEvaluation}, x)
+    return p.gradF(p.M, x)
+end
+function get_gradient(p::ConstrainedProblem{MutatingEvaluation}, x)
+    X = zero_vector(p.M, x)
+    return p.gradF(p.M, X, x)
+end
+
+function get_gradient!(p::ConstrainedProblem{AllocatingEvaluation}, X, x)
+    return copyto!(p.M, X, x, p.gradient!!(p.M, x))
+end
+
+function get_gradient!(p::ConstrainedProblem{MutatingEvaluation}, X, x)
+    return p.gradF!(p.M, X, x)
+end
 # function step_solver(p::Problem, o::ALMOptions) where {T} ####?
 #     o.V = get_inequality_constraints(p, o.x)
 # end

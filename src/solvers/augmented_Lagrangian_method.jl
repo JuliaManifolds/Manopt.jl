@@ -18,13 +18,13 @@ is minimized over all ``x ∈\mathcal{M}``, where ``λ^{(k-1)}=[λ_1^{(k-1)}, �
 
 Then, the Lagrange multipliers are updated by 
 ```math
-γ_j^{(k)} =\operatorname{clip}_{[γ_j^{\min},γ_j^{\max}]} (γ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p
+γ_j^{(k)} =\operatorname{clip}_{[γ_{\min},γ_{\max}]} (γ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p,
 ```
 and
 ```math
-λ_i^{(k)} =\operatorname{clip}_{[0,λ_i^{\max}]} (λ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{for all}  i=1,…,m,
+λ_i^{(k)} =\operatorname{clip}_{[0,λ_{\max}]} (λ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{for all}  i=1,…,m,
 ```
-where ``γ_j^{\min} \leq γ_j^{\max}`` and ``λ_i^{\max}`` are the multiplier boundaries. 
+where ``γ_{\min} \leq γ_{\max}`` and ``λ_{\max}`` are the multiplier boundaries. 
 
 Next, we update the accuracy tolerance ``ϵ`` by setting
 ```math
@@ -73,10 +73,9 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `num_outer_itertgn` - (`30`)
 * `ϵ` - (`1e-3`) the accuracy tolerance
 * `ϵ_min` - (`1e-6`) the lower bound for the accuracy tolerance
-#### * `bound` - (`20`) a bound for the Lagrange multiplier
-* `γ_max` - (`20`)
-* `γ_min` - (`- γ_max`)
-* `λ_max` - (`20`)
+* `γ_max` - (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `γ_min` - (`- γ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_max` - (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `λ` - (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
 * `γ` - (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
 * `ρ` - (`1.0`) the penalty parameter
@@ -150,8 +149,9 @@ function augmented_Lagrangian_method!(
     num_outer_itertgn::Int=30,
     ϵ::Real=1e-3, #(starting)tolgradnorm
     ϵ_min::Real=1e-6, #endingtolgradnorm
-    bound::Real=20.0, 
-    #### multiplier boundaries anpassen
+    γ_max::Real=20.0,
+    γ_min::Real=-γ_max,
+    λ_max::Real=20.0,
     λ::Vector=ones(length(G(M,x))),
     γ::Vector=ones(length(H(M,x))),
     ρ::Real=1.0, 
@@ -168,19 +168,20 @@ function augmented_Lagrangian_method!(
         p,
         x,
         sub_problem,
-        sub_options,
-        max_inner_iter,
-        num_outer_itertgn,
-        ϵ,
-        ϵ_min,
-        bound,
-        #### multiplier boundaries anpassen
-        λ,
-        γ,
-        ρ,
-        τ,
-        θ_ρ,
-        stopping_criterion,
+        sub_options;
+        max_inner_iter = max_inner_iter,
+        num_outer_itertgn = num_outer_itertgn,
+        ϵ = ϵ,
+        ϵ_min = ϵ_min,
+        γ_max = γ_max,
+        γ_min = γ_min,
+        λ_max = λ_max,
+        λ = λ,
+        γ = γ,
+        ρ = ρ,
+        τ = τ,
+        θ_ρ = θ_ρ,
+        stopping_criterion = stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -194,15 +195,15 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(p::CostProblem, o::ALMOptions)
+function initialize_solver!(p::ConstrainedProblem, o::ALMOptions)
     o.θ_ϵ = (o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
     o.old_acc = Inf
     return o
 end
-function step_solver!(p::CostProblem, o::ALMOptions, iter)
+function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
     cost = get_Lagrangian_cost_function(p, o) 
-    grad = get_Lagrangian_gradient(p, o)
+    grad = get_Lagrangian_gradient_function(p, o)
     # # put these in the subproblem
     # o.sub_problem.M = p.M
     # o.sub_problem.cost = cost
@@ -212,12 +213,10 @@ function step_solver!(p::CostProblem, o::ALMOptions, iter)
     # update multipliers
     cost_ineq = get_cost_ineq(p, o.x)
     n_ineq_constraint = len(cost_ineq)
-    o.λ = min.(ones(n_ineq_constraint)* o.bound, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
-    #o.λ = min.(ones(n_ineq_constraint)* o.λ_max, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
+    o.λ = min.(ones(n_ineq_constraint)* o.λ_max, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
     cost_eq = get_cost_eq(p, o.x)
     n_eq_constraint = len(cost_eq)
-    o.γ = min.(ones(n_eq_constraint)* o.bound, max.(ones(n_eq_constraint) * (-o.bound), o.γ + o.ρ .* cost_eq))
-    #o.γ = min.(ones(n_eq_constraint)* o.γ_max , max.(ones(n_eq_constraint) * (-o.γ_min), o.γ + o.ρ .* cost_eq))
+    o.γ = min.(ones(n_eq_constraint)* o.γ_max , max.(ones(n_eq_constraint) * (-o.γ_min), o.γ + o.ρ .* cost_eq))
 
 
     # get new evaluation of penalty
@@ -234,18 +233,18 @@ function step_solver!(p::CostProblem, o::ALMOptions, iter)
 end
 get_solver_result(o::ALMOptions) = o.x
 
-function get_Lagrangian_cost_function(p::CostProblem, o::ALMOptions)
+function get_Lagrangian_cost_function(p::ConstrainedProblem, o::ALMOptions)
     cost = x -> get_cost(p, x)
     cost_ineq = x -> sum(max.(zeros(o.n_ineq), o.λ ./ o.ρ .+ get_inequality_constraints(p, x)))
     cost_eq = x -> sum((get_equality_constraints(p, x) .+ o.γ./o.ρ)^2)
-    return x -> cost(x) + (o.ρ/2) * (cost_ineq(x) + cost_eq(x))
+    return (M,x) -> cost(x) + (o.ρ/2) * (cost_ineq(x) + cost_eq(x))
 end
 
-function get_Lagrangian_gradient_function(p::CostProblem, o::ALMOptions)
+function get_Lagrangian_gradient_function(p::ConstrainedProblem, o::ALMOptions)
     grad = x -> get_gradient(p, x)
     grad_ineq = x -> sum(
         ((get_inequality_constraints(p, x) .* o.ρ .+ o.λ) .* get_grad_ineq(p, x)).*(get_inequality_constraints(p, x) .+ o.λ./o.ρ .>0)
         )
     grad_eq = x-> sum((get_equality_constraints(p, x) .* o.ρ .+ o.γ) .* get_grad_eq(p, x))
-    return x -> grad(x) + grad_ineq(x) + grad_eq(x)
+    return (M,x) -> grad(x) + grad_ineq(x) + grad_eq(x)
 end

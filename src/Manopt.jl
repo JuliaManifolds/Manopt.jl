@@ -214,7 +214,9 @@ export get_constraints,
     get_inequality_constraints, 
     get_equality_constraints, 
     get_grad_ineq,
-    get_grad_eq
+    get_grad_eq,
+    get_Lagrangian_cost_function,
+    get_Lagrangian_gradient_function
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,

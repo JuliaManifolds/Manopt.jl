@@ -290,7 +290,7 @@ mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
     reason::String
     StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "")
 end
-function (c::StopWhenSmallerOrEqual)(::P, o::O) where {P<:Problem,O<:Options}
+function (c::StopWhenSmallerOrEqual)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
     if getfield(o, c.value) <= c.minValue
         c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
         return true

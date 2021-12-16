@@ -28,13 +28,16 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
     num_outer_itertgn::Int
     ϵ::Real #(starting)tolgradnorm
     ϵ_min::Real #endingtolgradnorm
-    bound::Real
-    #### multiplier boundaries anpassen
+    γ_max::Real
+    γ_min::Real
+    λ_max::Real
     λ::Vector
     γ::Vector
     ρ::Real
     τ::Real
     θ_ρ::Real
+    θ_ϵ::Real
+    old_acc::Real
     stop::TStopping 
     function ALMOptions(
         M::AbstractManifold,
@@ -46,14 +49,15 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         num_outer_itertgn::Int=30,
         ϵ::Real=1e-3, #(starting)tolgradnorm
         ϵ_min::Real=1e-6, #endingtolgradnorm
-        bound::Real=20.0,
-        #### multiplier boundaries anpassen
-        λ::Vector=ones(len(get_inequality_constraints(p,x0))),
-        γ::Vector=ones(len(get_equality_constraints(p,x0))),
+        γ_max::Real=20.0,
+        γ_min::Real=-γ_max,
+        λ_max::Real=20.0,
+        λ::Vector=ones(length(get_inequality_constraints(p,x0))),
+        γ::Vector=ones(length(get_equality_constraints(p,x0))),
         ρ::Real=1.0, 
         τ::Real=0.8,
         θ_ρ::Real=0.3, 
-        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopIfSmallerOrEqual(ϵ, ϵ_min), StopWhenChangeLess(1e-6))),
+        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))),
     ) where {P, Pr <: Problem, Op <: Options} 
         o = new{
             P,
@@ -68,8 +72,9 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         o.num_outer_itertgn = num_outer_itertgn
         o.ϵ = ϵ
         o.ϵ_min = ϵ_min
-        o.bound = bound
-        #### multiplier boundaries anpassen
+        o.γ_max = γ_max
+        o.γ_min = γ_min
+        o.λ_max = λ_max
         o.λ = λ
         o.γ = γ
         o.ρ = ρ
