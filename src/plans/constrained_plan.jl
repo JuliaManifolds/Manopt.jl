@@ -36,22 +36,22 @@ It consists of
 Create a constrained problem with a `cost` function and its gradient, as well as inequality and equality contraints and their gradients either as one
 function (returning an array) or a vector of functions.
 """
-struct ConstrainedProblem{T, CT<:ConstraintType, MT<:AbstractManifold, TCost, TG, TH, GF, GG, GH} <: Problem{T}   
+struct ConstrainedProblem{T, CT<:ConstraintType, MT<:AbstractManifold, TCost, GF, TG, GG, TH, GH} <: Problem{T}   
     M::MT
     cost::TCost
-    G::TG
-    H::TH
     gradF::GF
+    G::TG
     gradG::GG
+    H::TH
     gradH::GH
 end
 
 function ConstrainedProblem(M::MT, F::TF, gradF::TGF, G::Function, gradG::Function, H::Function, gradH::Function) where {MT<:AbstractManifold, TF, TGF} # G(p) ∈ R^n, H(p) ∈ R^m
-    return ConstrainedProblem{AllocatingEvaluation, FunctionConstraint, MT, TF, typeof(G), typeof(H), TGF, typeof(gradG), typeof(gradH)}(M, F, G, H, gradF, gradG, gradH)
+    return ConstrainedProblem{AllocatingEvaluation, FunctionConstraint, MT, TF, TGF, typeof(G), typeof(gradG), typeof(H), typeof(gradH)}(M, F, gradF, G, gradG, H, gradH)
 end 
 
 function ConstrainedProblem(M::MT, F::TF, gradF::TGF, G::AbstractVector{<:Function}, gradG::AbstractVector{<:Function}, H::AbstractVector{<:Function}, gradH::AbstractVector{<:Function}) where {MT<:AbstractManifold, TF, TGF}#g_i(p), i=1,...,n, h_j(p), j=1,...,m
-    return ConstrainedProblem{AllocatingEvaluation, VectorConstraint, MT, TF, typeof(G), typeof(H), TGF, typeof(gradG), typeof(gradH)}(M, F, G, H, gradF, gradG, gradH)
+    return ConstrainedProblem{AllocatingEvaluation, VectorConstraint, MT, TF, TGF, typeof(G), typeof(gradG), typeof(H), typeof(gradH)}(M, F, gradF, G, gradG, H, gradH)
 end 
 
 function get_constraints(p::ConstrainedProblem, x)
