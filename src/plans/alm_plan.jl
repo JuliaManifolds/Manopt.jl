@@ -10,6 +10,24 @@ Describes the augmented Lagrangian method, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` – a set point on a manifold as starting point
+* `sub_problem` – problem for the subsolver
+* `sub_options` – options of the subproblem
+* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration 
+* `num_outer_itertgn` – (`30`)
+* `ϵ` – (`1e–3`) the accuracy tolerance
+* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
+* `γ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `γ_min` – (`- γ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `λ` – (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
+* `γ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
+* `ρ` – (`1.0`) the penalty parameter
+* `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
+* `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
+* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
+* `oldacc` – (`Inf`) evaluation of the penalty from the last iteration
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+
 
 # Constructor
 

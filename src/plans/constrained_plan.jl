@@ -105,6 +105,4 @@ end
 function get_gradient!(p::ConstrainedProblem{MutatingEvaluation}, X, x)
     return p.gradF!(p.M, X, x)
 end
-# function step_solver(p::Problem, o::ALMOptions) where {T} ####?
-#     o.V = get_inequality_constraints(p, o.x)
-# end
+

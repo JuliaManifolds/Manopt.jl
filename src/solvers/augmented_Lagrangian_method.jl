@@ -66,30 +66,30 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `H` – the equality constraints 
 * `gradG` – the gradient of the inequality constraints
 * `gradH` – the gradient of the equality constraints
-* `x` - initial point
+* `x` – initial point
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
-* `max_inner_iter` - (`200`) the maximum number of iterations the subsolver should perform in each iteration 
-* `num_outer_itertgn` - (`30`)
-* `ϵ` - (`1e-3`) the accuracy tolerance
-* `ϵ_min` - (`1e-6`) the lower bound for the accuracy tolerance
-* `γ_max` - (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `γ_min` - (`- γ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_max` - (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `λ` - (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
-* `γ` - (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
-* `ρ` - (`1.0`) the penalty parameter
-* `τ` - (`0.8`) factor for the improvement of the evaluation of the penalty parameter
-* `θ_ρ` - (`0.3`) the scaling factor of the penalty parameter
-* `θ_ϵ` - (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
-* `oldacc` - (`Inf`) evaluation of the penalty from the last iteration
-* `stopping_criterion` - ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-
+* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration 
+* `num_outer_itertgn` – (`30`)
+* `ϵ` – (`1e-3`) the accuracy tolerance
+* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
+* `γ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `γ_min` – (`- γ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `λ` – (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
+* `γ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
+* `ρ` – (`1.0`) the penalty parameter
+* `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
+* `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
+* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
+* `oldacc` – (`Inf`) evaluation of the penalty from the last iteration
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 
 # Output
 * `x` – the resulting point of ALM
 OR
-* `options` - the options returned by the solver (see `return_options`)
+* `options` – the options returned by the solver (see `return_options`)
 """
 function augmented_Lagrangian_method(
     M::AbstractManifold,
@@ -159,6 +159,7 @@ function augmented_Lagrangian_method!(
     θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
     oldacc::Real=Inf, 
     stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))), 
+    return_options=false,
     kwargs...,
 ) where {TF, TGF}
     p = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH)
@@ -200,10 +201,8 @@ function initialize_solver!(p::ConstrainedProblem, o::ALMOptions)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
-    println("start of step solver.")
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
     cost = get_Lagrangian_cost_function(p, o) 
-    println("call of get_Lagrangian_gradient_function in step solver:")
     grad = get_Lagrangian_gradient_function(p, o)
     o.x = gradient_descent(p.M, cost, grad, o.x, stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
 
@@ -214,12 +213,16 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     cost_eq = get_equality_constraints(p, o.x)
     n_eq_constraint = length(cost_eq)
     o.γ = min.(ones(n_eq_constraint)* o.γ_max , max.(ones(n_eq_constraint) * (-o.γ_min), o.γ + o.ρ .* cost_eq))
-    println("new num_inequality_constraints: ", n_ineq_constraint)
-    println("new num_equality_constraints: ", n_eq_constraint)
 
     # get new evaluation of penalty
-    new_acc = max(max(abs.(max.(-o.λ./o.ρ, cost_ineq))), max(abs.(cost_eq)))
-    #new_acc = max(max(abs.(max.(-o.λ./o.ρ, Ref(cost_ineq)))), max(abs.(cost_eq))) ###kann man das Ref einfach so weglassen?
+    if n_ineq_constraint == 0 # for Julia 1.6 and above simply use maximum(...,init=0) for the computation of new_acc instead
+        cost_ineq = 0
+    end
+    if n_eq_constraint == 0
+        cost_eq = 0
+    end
+    new_acc = max(maximum(abs.(max.(-o.λ./o.ρ, cost_ineq))), maximum(abs.(cost_eq)))
+    #new_acc = max(maximum(abs.(max.(-o.λ./o.ρ, Ref(cost_ineq)))), maximum(abs.(cost_eq))) ###kann man das Ref einfach so weglassen?
 
     # update ρ if necessary
     if iter == 1 || new_acc > o.τ * o.old_acc 
@@ -243,8 +246,6 @@ function get_Lagrangian_gradient_function(p::ConstrainedProblem, o::ALMOptions)
     grad = x -> get_gradient(p, x)
     num_inequality_constraints = length(get_inequality_constraints(p,o.x))
     num_equality_constraints = length(get_equality_constraints(p,o.x))
-    println("num_inequality_constraints: ",num_inequality_constraints)
-    println("num_equality_constraints: ",num_equality_constraints)
     if num_inequality_constraints != 0 
         grad_ineq = x -> sum(
             ((get_inequality_constraints(p, x) .* o.ρ .+ o.λ) .* get_grad_ineq(p, x)).*(get_inequality_constraints(p, x) .+ o.λ./o.ρ .>0)
