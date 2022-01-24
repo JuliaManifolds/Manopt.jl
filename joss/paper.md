@@ -7,7 +7,7 @@ tags:
   - numerical analysis
 authors:
   - name: Ronny Bergmann
-    orcid: orcid.org/0000-0001-8342-7218
+    orcid: 0000-0001-8342-7218
     affiliation: 1
 affiliations:
  - name: Norwegian University of Science and Technology, Department of Mathematical Sciences, Trondheim, Norway
