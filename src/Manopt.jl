@@ -59,6 +59,7 @@ import ManifoldsBase:
     mid_point!,
     NestedPowerRepresentation,
     norm,
+    number_eltype,
     power_dimensions,
     project,
     project!,

@@ -215,7 +215,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     if ρ < 1 / 4 || !model_decreased || isnan(ρ)
         o.trust_region_radius /= 4
     elseif ρ > 3 / 4 &&
-           ((o.tcg_options.ηPη >= o.trust_region_radius^2) || (o.tcg_options.δHδ <= 0))
+        ((o.tcg_options.ηPη >= o.trust_region_radius^2) || (o.tcg_options.δHδ <= 0))
         o.trust_region_radius = min(2 * o.trust_region_radius, o.max_trust_region_radius)
     end
     # Choose to accept or reject the proposed step based on the model
