@@ -46,6 +46,14 @@ see the reference:
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
+* `projection_to_tangent` - projection operation to be applied to each
+     iterate; if it is the projection onto the tangent space, it
+     ensures all iterates stay in the tangent space (otherwise, there
+     can be numerical instabilities which make them leave the tangent
+     space). Default is "do nothing".
+     Format : a function of three parameters `(M,p,X)`, where `M` is
+     the manifold, `p` a point on `M` and `X` the tangent vector; the
+     function must rewrite `X` in place and produce no output.
 * `stopping_criterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),
     [`StopIfResidualIsReducedByFactor`](@ref), [`StopIfResidualIsReducedByPower`](@ref),
     [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
@@ -121,12 +129,21 @@ function truncated_conjugate_gradient_descent!(
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),
     ),
+    projection_to_tangent = (M, p, X) -> (),
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec}
     p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
     o = TruncatedConjugateGradientOptions(
-        p, x, η, trust_region_radius, randomize; θ=θ, κ=κ, stop=stopping_criterion
+        p,
+        x,
+        η,
+        trust_region_radius,
+        randomize;
+        θ = θ,
+        κ = κ,
+        stop = stopping_criterion,
+        projection_to_tangent = projection_to_tangent,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -193,6 +210,7 @@ function step_solver!(
     β = zr / o.z_r
     o.z_r = zr
     o.δ = -o.z + β * o.δ
+    o.projection_to_tangent(p.M, o.x, o.δ)
     o.ηPδ = β * (α * o.δPδ + o.ηPδ)
     o.δPδ = o.z_r + β^2 * o.δPδ
     return o

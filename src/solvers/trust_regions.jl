@@ -32,6 +32,11 @@ For a description of the algorithm and more details see
   random tangent vector. If set to true, no preconditioner will be
   used. This option is set to true in some scenarios to escape saddle
   points, but is otherwise seldom activated.
+* `projection_to_tangent` - projection operation to be applied to each
+     iterate of the inner solver. Default is "do nothing". The other
+     sensitive choice is the projection onto the tangent `(M,p,X) ->
+     project!(M,X,p,X)`, which enforces numerical stability and
+     ensures iterates remain in the tangent space
 * `retraction` – (`default_retraction_method(M)`) approximation of the exponential map
 * `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
@@ -99,6 +104,7 @@ function trust_regions!(
     max_trust_region_radius=sqrt(manifold_dimension(M)),
     trust_region_radius=max_trust_region_radius / 8,
     randomize::Bool=false,
+    projection_to_tangent=(M,p,X) -> (),
     ρ_prime::Float64=0.1,
     ρ_regularization=1000.0,
     return_options=false,
@@ -128,6 +134,7 @@ function trust_regions!(
         randomize,
         stopping_criterion;
         retraction_method=retraction_method,
+        projection_to_tangent=projection_to_tangent,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -150,7 +157,12 @@ function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     o.τ = zero(o.trust_region_radius)
     o.Hgrad = zero_vector(p.M, o.x)
     o.tcg_options = TruncatedConjugateGradientOptions(
-        p, o.x, o.η, o.trust_region_radius, o.randomize
+        p,
+        o.x,
+        o.η,
+        o.trust_region_radius,
+        o.randomize;
+        projection_to_tangent = o.projection_to_tangent,
     )
     return o
 end

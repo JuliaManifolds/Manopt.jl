@@ -66,6 +66,14 @@ a default value is given in brackets if a parameter can be left out in initializ
         initiated with a random tangent vector. If set to true, no
         preconditioner will be used. This option is set to true in some
         scenarios to escape saddle points, but is otherwise seldom activated.
+* `projection_to_tangent` : projection operation to be applied to each
+     iterate; if it is the projection onto the tangent space, it
+     ensures all iterates stay in the tangent space (otherwise, there
+     can be numerical instabilities which make them leave the tangent
+     space). Default is "do nothing".
+     Format : a function of three parameters `(M,p,X)`, where `M` is
+     the manifold, `p` a point on `M` and `X` the tangent vector; the
+     function must rewrite `X` in place and produce no output.
 
 # Constructor
 
@@ -97,6 +105,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     new_model_value::R
     κ::R
     randomize::Bool
+    projection_to_tangent::Any
     initialResidualNorm::Float64
     function TruncatedConjugateGradientOptions(
         p::HessianProblem,
@@ -104,6 +113,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         η::T,
         trust_region_radius::R,
         randomize::Bool;
+        projection_to_tangent=(M,p,X) -> (),
         θ::Float64=1.0,
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
@@ -122,6 +132,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         o.η = η
         o.trust_region_radius = trust_region_radius
         o.randomize = randomize
+        o.projection_to_tangent = projection_to_tangent
         o.model_value = zero(trust_region_radius)
         o.κ = zero(trust_region_radius)
         return o
@@ -145,6 +156,11 @@ a default value is given in brackets if a parameter can be left out in initializ
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
+* `projection_to_tangent` : projection operation to be applied to each
+     iterate of the inner solver. Default is "do nothing". The other
+     sensitive choice is the projection onto the tangent `(M,p,X) ->
+     project!(M,X,p,X)`, which enforces numerical stability and
+     ensures iterates remain in the tangent space
 * `ρ_prime` : a lower bound of the performance ratio for the iterate that
         decides if the iteration will be accepted or not. If not, the
         trust-region radius will have been decreased. To ensure this,
@@ -181,6 +197,7 @@ mutable struct TrustRegionsOptions{
     max_trust_region_radius::R
     retraction_method::RTR
     randomize::Bool
+    projection_to_tangent
     ρ_prime::R
     ρ_regularization::R
 
@@ -205,7 +222,8 @@ mutable struct TrustRegionsOptions{
         ρ_regularization::R,
         randomize::Bool,
         stopping_citerion::SC,
-        retraction_method::RTR,
+        retraction_method::RTR;
+        projection_to_tangent = (M, p, X) -> (),
     ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real}
         o = new{P,T,SC,RTR,R}()
         o.x = x
@@ -217,6 +235,7 @@ mutable struct TrustRegionsOptions{
         o.ρ_prime = ρ_prime
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
+        o.projection_to_tangent = projection_to_tangent
         return o
     end
 end
@@ -230,6 +249,7 @@ function TrustRegionsOptions(
     randomize::Bool,
     stopping_citerion::SC;
     retraction_method::RTR=ExponentialRetraction(),
+    projection_to_tangent = ((M, p, X) -> ()),
 ) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod}
     return TrustRegionsOptions{P,T,SC,RTR,R}(
         x,
@@ -240,7 +260,8 @@ function TrustRegionsOptions(
         ρ_regularization,
         randomize,
         stopping_citerion,
-        retraction_method,
+        retraction_method;
+        projection_to_tangent = projection_to_tangent,
     )
 end
 
