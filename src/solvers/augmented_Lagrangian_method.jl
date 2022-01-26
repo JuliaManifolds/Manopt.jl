@@ -222,7 +222,6 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
         cost_eq = 0
     end
     new_acc = max(maximum(abs.(max.(-o.λ./o.ρ, cost_ineq))), maximum(abs.(cost_eq)))
-    #new_acc = max(maximum(abs.(max.(-o.λ./o.ρ, Ref(cost_ineq)))), maximum(abs.(cost_eq))) ###what was Ref used for?
 
     # update ρ if necessary
     if iter == 1 || new_acc > o.τ * o.old_acc 
@@ -240,7 +239,7 @@ function get_Lagrangian_cost_function(p::ConstrainedProblem, o::ALMOptions)
     num_inequality_constraints = length(get_inequality_constraints(p,o.x))
     num_equality_constraints = length(get_equality_constraints(p,o.x))
     if num_inequality_constraints != 0 
-        cost_ineq = x -> sum(max.(zeros(num_inequality_constraints), o.λ ./ o.ρ .+ get_inequality_constraints(p, x)))
+        cost_ineq = x -> sum(max.(zeros(num_inequality_constraints), o.λ ./ o.ρ .+ get_inequality_constraints(p, x)).^2)
     end
     if num_equality_constraints != 0
         cost_eq = x -> sum((get_equality_constraints(p, x) .+ o.γ./o.ρ).^2)
