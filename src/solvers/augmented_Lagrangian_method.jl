@@ -209,10 +209,10 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)
     n_ineq_constraint = length(cost_ineq)
-    o.λ = min.(ones(n_ineq_constraint)* o.λ_max, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
+    o.λ = min.(ones(n_ineq_constraint).* o.λ_max, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
     cost_eq = get_equality_constraints(p, o.x)
     n_eq_constraint = length(cost_eq)
-    o.γ = min.(ones(n_eq_constraint)* o.γ_max , max.(ones(n_eq_constraint) * (-o.γ_min), o.γ + o.ρ .* cost_eq))
+    o.γ = min.(ones(n_eq_constraint).* o.γ_max , max.(ones(n_eq_constraint) .* o.γ_min, o.γ + o.ρ .* cost_eq))
 
     # get new evaluation of penalty
     if n_ineq_constraint == 0 # for Julia 1.6 and above simply use maximum(...,init=0) for the computation of new_acc instead
