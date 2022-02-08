@@ -20,11 +20,11 @@ bibliography: bibliography.bib
 # Summary
 
 [`Manopt.jl`](https://manoptjl.org) provides a set of optimization algorithms for optimization problems given on a Riemannian manifold $\mathcal M$.
-Based on a generic optimization framework, together with the interface `ManifoldsBase.jl` for Riemannian manifolds, classical and recently developed methods are provided in an efficient implementation. Algorithms include the derivative-free Particle Swarm and Nelder–Mead algorithms, as well as classical gradient, conjugate gradient and stochastic gradient descent. Furthermore, quasi-Newton methods like a Riemannian L-BFGS [@HuangGallivanAbsil:2015:1] and nonsmooth optimization algorithms like a Cyclic Proximal Point Algorithm [@Bacak:2014:1], a (parallel) Douglas-Rachford algorithm [@BergmannPerschSteidl:2016:1] and a Chambolle-Pock algorithm [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] are provided, together with several basic cost functions, gradients and proximal maps as well as debug and record capabilities.
+Based on a generic optimization framework, together with the interface [`ManifoldsBase.jl`](https://github.com/JuliaManifolds/ManifoldsBase.jl) for Riemannian manifolds, classical and recently developed methods are provided in an efficient implementation. Algorithms include the derivative-free Particle Swarm and Nelder–Mead algorithms, as well as classical gradient, conjugate gradient and stochastic gradient descent. Furthermore, quasi-Newton methods like a Riemannian L-BFGS [@HuangGallivanAbsil:2015:1] and nonsmooth optimization algorithms like a Cyclic Proximal Point Algorithm [@Bacak:2014:1], a (parallel) Douglas-Rachford algorithm [@BergmannPerschSteidl:2016:1] and a Chambolle-Pock algorithm [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] are provided, together with several basic cost functions, gradients and proximal maps as well as debug and record capabilities.
 
 # Statement of Need
 
-In many applications and optimization tasks, nonlinear data appears naturally.
+In many applications and optimization tasks, non-linear data appears naturally.
 For example, when data on the sphere is measured [@GousenbourgerMassartMusolasAbsilJaquesHendrickxMarzouk:2017], diffusion data can be captured as a signal or even multivariate data of symmetric positive definite matrices [@ValkonenBrediesKnoll2013], and orientations like they appear for electron backscattered diffraction (EBSD) data [@BachmannHielscherSchaeben2011]. Another example are fixed rank matrices, appearing in matrix completion [@Vandereycken:2013:1].
 Working on these data, for example doing data interpolation and approximation [@BergmannGousenbourger:2018:2], denoising [@LellmannStrekalovskiyKoetterCremers:2013:1], [@BergmannFitschenPerschSteidl:2018], inpainting [@BergmannChanHielscherPerschSteidl:2016], or performing matrix completion [@GaoAbsil:2021], can usually be phrased as an optimization problem
 
@@ -34,14 +34,14 @@ where the optimization problem is phrased on a Riemannian manifold $\mathcal M$.
 
 A main challenge of these algorithms is that, compared to the (classical) Euclidean case, there is no addition available. For example, on the unit sphere $\mathbb S^2$ of unit vectors in $\mathbb R^3$, adding two vectors of unit length yields a vector that is not of unit norm.
 The solution is to generalize the notion of a shortest path from the straight line to what is called a (shortest) geodesic, or acceleration-free curve.
-Similary, other features and properties also have to be rephrased and generalized when performing optimization on a Riemannian manifold.
+Similarly, other features and properties also have to be rephrased and generalized when performing optimization on a Riemannian manifold.
 Algorithms to perform the optimization can still often be stated in a generic way, i.e. on an arbitrary Riemannian manifold $\mathcal M$.
-Further examples and a thorough introduction can be found in [@AbsilMahonySepulchre:2008:1], [@Boumal:2020:1].
+Further examples and a thorough introduction can be found in [@AbsilMahonySepulchre:2008:1; @Boumal:2020:1].
 
 For a user facing an optimization problem on a manifold, there are two obstacles to the actual numerical optimization: firstly, a suitable implementation of the manifold at hand is required, for example how to evaluate the above-mentioned geodesics; and secondly, an implementation of the optimization algorithm that employs said methods from the manifold, such that the algorithm can be applied to the cost function $f$ a user already has.
 
-Using the interface for manifolds from the `ManifoldsBase.jl` package, the algorithms are implemented in the optimization framework. They can then be used with any manifold from `Manifolds.jl` [@AxenBaranBergmannRzecki:2021:1], a library of efficiently-implemented Riemannian manifolds.
-`Manopt.jl` provides a low-bar entry to optimization on manifolds, while also providing efficient implementations, that can easily be extended to cover  manifolds speicified by the user.
+Using the interface for manifolds from the `ManifoldsBase.jl` package, the algorithms are implemented in the optimization framework. They can then be used with any manifold from [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/) [@AxenBaranBergmannRzecki:2021:1], a library of efficiently-implemented Riemannian manifolds.
+`Manopt.jl` provides a low-bar entry to optimization on manifolds, while also providing efficient implementations, that can easily be extended to cover  manifolds specified by the user.
 
 # Functionality
 
