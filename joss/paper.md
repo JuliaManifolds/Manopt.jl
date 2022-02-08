@@ -60,7 +60,7 @@ The main methods to implement for a user-defined solver are `initialize_solver!(
 
 Using a decorator pattern, `Options` can be encapsulated in `DebugOptions` and `RecordOptions`, which print and record arbitrary data stored within `Options`, respectively. This enables to investigate how the optimization is performed in detail and use the algorithms from within this package also for numerical analysis.
 
-In the current version 0.3.12 of `Manopt.jl` the following algorithms are available:
+In the current version 0.3.17 of `Manopt.jl` the following algorithms are available:
 
 * Alternating Gradient Descent ([`alternating_gradient_descent`](https://manoptjl.org/v0.3/solvers/alternating_gradient_descent.html))
 * Chambolle-Pock ([`ChambollePock`](https://manoptjl.org/v0.3/solvers/ChambollePock.html)) [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1]

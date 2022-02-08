@@ -47,8 +47,8 @@ end
 @doc raw"""
     random_point(M::Circle, :Uniform)
 
-return a random point on the [`Circle`](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathbb S^1$ by
-picking a random element from $[-\pi,\pi)$ uniformly.
+return a random point on the [`Circle`](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) ``\mathbb S^1`` by
+picking a random element from ``[-\pi,\pi)`` uniformly.
 """
 random_point(::Circle, ::Val{:Uniform}) = sym_rem(rand() * 2 * π)
 random_point(M::Circle) = random_point(M, Val(:Uniform)) # introduce different default
@@ -105,9 +105,9 @@ end
     random_point(M::Rotations, :Gaussian [, σ=1.0])
 
 return a random point `p` on the manifold `Rotations`
-by generating a (Gaussian) random orthogonal matrix with determinant $+1$. Let $QR = A$
-be the QR decomposition of a random matrix $A$, then the formula reads $p = QD$
-where $D$ is a diagonal matrix with the signs of the diagonal entries of $R$, i.e.
+by generating a (Gaussian) random orthogonal matrix with determinant ``+1``. Let ``QR = A``
+be the QR decomposition of a random matrix ``A``, then the formula reads ``p = QD``
+where ``D`` is a diagonal matrix with the signs of the diagonal entries of ``R``, i.e.
 ````math
 D_{ij}=\begin{cases}
 \operatorname{sgn}(R_{ij}) & \text{if} \; i=j \\
@@ -118,19 +118,16 @@ It can happen that the matrix gets -1 as a determinant. In this case, the first
 and second columns are swapped.
 """
 function random_point(M::Rotations, ::Val{:Gaussian}, σ::Real=1.0)
-    d = Int(0.5 + sqrt(0.25 + 2 * manifold_dimension(M)))
-    if d == 1
-        return ones(1, 1)
-    else
-        A = randn(Float64, d, d)
-        s = diag(sign.(qr(A).R))
-        D = Diagonal(s)
-        C = qr(A).Q * D
-        if det(C) < 0
-            C[:, [1, 2]] = C[:, [2, 1]]
-        end
-        return C
+    # Special case: Rotations(1) is just zero-dimensional
+    (manifold_dimension(M) == 0) && return ones(Float64, 1, 1)
+    A = randn(Float64, representation_size(M))
+    s = diag(sign.(qr(A).R))
+    D = Diagonal(s)
+    C = qr(A).Q * D
+    if det(C) < 0
+        C[:, [1, 2]] = C[:, [2, 1]]
     end
+    return C
 end
 
 @doc raw"""
@@ -152,7 +149,7 @@ end
 
 return a random (Gaussian) point `x` on the `Stiefel` manifold `M` by generating a (Gaussian)
 matrix with standard deviation `σ` and return the orthogonalized version, i.e. return ​​the Q
-component of the QR decomposition of the random matrix of size $n×k$.
+component of the QR decomposition of the random matrix of size ``n×k``.
 """
 function random_point(::Stiefel{n,k,𝔽}, ::Val{:Gaussian}, σ::Float64=1.0) where {n,k,𝔽}
     A = σ * randn(𝔽 === ℝ ? Float64 : ComplexF64, n, k)
@@ -209,7 +206,7 @@ end
     random_tangent(M::Circle, p [, :Gaussian, σ=1.0])
 
 return a random tangent vector from the tangent space of the point `p` on the
-[Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) $\mathbb S^1$ by using a normal distribution with
+[Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) ``\mathbb S^1`` by using a normal distribution with
 mean 0 and standard deviation 1.
 """
 random_tangent(::Circle, p, ::Val{:Gaussian}, σ::Real=1.0) = σ * randn()
@@ -221,7 +218,7 @@ end
 @doc raw"""
     random_tangent(M::Grassmann, p[,type=:Gaussian, σ=1.0])
 
-return a (Gaussian) random vector from the tangent space $T_p\mathrm{Gr}(n,k)$ with mean
+return a (Gaussian) random vector from the tangent space ``T_p\mathrm{Gr}(n,k)`` with mean
 zero and standard deviation `σ` by projecting a random Matrix onto the  `p`.
 """
 function random_tangent(M::Grassmann, p, ::Val{:Gaussian}, σ::Float64=1.0)
@@ -284,21 +281,19 @@ end
     random_tangent(M::Rotations, p[, type=:Gaussian, σ=1.0])
 
 return a random tangent vector in the tangent space
-$T_x\mathrm{SO}(n)$ of the point `x` on the `Rotations` manifold `M` by generating
+``T_x\mathrm{SO}(n)`` of the point `x` on the `Rotations` manifold `M` by generating
 a random skew-symmetric matrix. The function takes the real upper triangular matrix of a
-(Gaussian) random matrix $A$ with dimension $n\times n$ and subtracts its transposed matrix.
-Finally, the matrix is ​​normalized.
+(Gaussian) random matrix ``A`` with dimension ``n\times n`` and subtracts its transposed matrix.
+Finally, the matrix is normalized.
 """
 function random_tangent(M::Rotations, p, ::Val{:Gaussian}, σ::Real=1.0)
-    d = manifold_dimension(M)
-    if d == 0
-        return zeros(1, 1)
-    else
-        A = σ * randn(Float64, d, d)
-        A = triu(A, 1) - transpose(triu(A, 1))
-        A = (1 / norm(A)) * A
-        return A
-    end
+    T = number_eltype(p)
+    # Special case: Rotations(1) is just zero-dimensional
+    (manifold_dimension(M) == 0) && return zeros(T, 1, 1)
+    A = σ .* randn(T, representation_size(M))
+    A = triu(A, 1) - transpose(triu(A, 1))
+    A = (1 / norm(A)) * A
+    return A
 end
 
 @doc raw"""
@@ -314,7 +309,7 @@ end
 @doc raw"""
     random_tangent(M::Stiefel, p[,type=:Gaussian, σ=1.0])
 
-return a (Gaussian) random vector from the tangent space $T_p\mathrm{St}(n,k)$ with mean
+return a (Gaussian) random vector from the tangent space ``T_p\mathrm{St}(n,k)`` with mean
 zero and standard deviation `σ` by projecting a random Matrix onto the  `p`.
 """
 function random_tangent(M::Stiefel, p, ::Val{:Gaussian}, σ::Float64=1.0)
