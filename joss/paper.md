@@ -158,6 +158,6 @@ The two projects that are most similar to `Manopt.jl` are [`Manopt`](https://man
 Similarly [`ROPTLIB`](https://www.math.fsu.edu/~whuang2/Indices/index_ROPTLIB.html) [@HuangAbsilGallivanHand:2018:1] is a package for optimization on Manifolds in C++.
 While all three packages cover some algorithms, most are less flexible, for example in stating the stopping criterion, which is fixed to mainly the maximal number of iterations or a small gradient. Most prominently, `Manopt.jl` is the first package that also covers methods for high-performance and high-dimensional nonsmooth optimization on manifolds.
 
-The Riemannian Chambolle-Pock algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] was developed using Manopt.jl. Based on this theory and algorithm, a higher-order algorithm was introduced in [@DiepeveenLellmann:2021:1]. Optimized examples from [@BergmannGousenbourger:2018:2] performing data interpolation and approximation with manifold-valued Bézier curves are also included in `Manopt.jl`.
+The Riemannian Chambolle-Pock algorithm presented in [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1] was developed using `Manopt.jl`. Based on this theory and algorithm, a higher-order algorithm was introduced in [@DiepeveenLellmann:2021:1]. Optimized examples from [@BergmannGousenbourger:2018:2] performing data interpolation and approximation with manifold-valued Bézier curves are also included in `Manopt.jl`.
 
 # References
