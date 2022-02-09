@@ -12,7 +12,7 @@ the last direction ``δ_{k-1}`` and both gradients ``\operatorname{grad}f(x_k)``
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 
 Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
-[`ConjugateDescentCoefficient`](@ref), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
+[`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HeestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
 
@@ -28,7 +28,7 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 * `x` : an initial value ``x∈\mathcal M``
 
 # Optional
-* `coefficient` : ([`SteepestDirectionUpdateRule`](@ref) `<:` [`DirectionUpdateRule`](@ref)
+* `coefficient` : ([`ConjugateDescentCoefficient`](@ref) `<:` [`DirectionUpdateRule`](@ref))
   rule to compute the descent direction update coefficient ``β_k``,
   as a functor, i.e. the resulting function maps `(p,o,i) -> β`, where
   `p` is the current [`GradientProblem`](@ref), `o` are the
@@ -81,7 +81,7 @@ function conjugate_gradient_descent!(
     F::TF,
     gradF::TDF,
     x;
-    coefficient::DirectionUpdateRule=SteepestDirectionUpdateRule(),
+    coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     stepsize::Stepsize=ConstantStepsize(1.0),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopWhenAny(

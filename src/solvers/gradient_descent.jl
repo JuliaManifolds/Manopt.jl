@@ -16,6 +16,7 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
+* `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
@@ -44,8 +45,13 @@ end
 @doc raw"""
     gradient_descent!(M, F, gradF, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\operatorname{grad}f(x_k)`` in place of `x`
-with different choices of ``s_k`` available.
+perform a gradient_descent
+
+```math
+x_{k+1} = \operatorname{retr}_{x_k}\bigl( s_k\operatorname{grad}f(x_k) \bigr)
+```
+
+in place of `x` with different choices of ``s_k`` available.
 
 # Input
 * `M` – a manifold ``\mathcal M``
