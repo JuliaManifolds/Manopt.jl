@@ -92,7 +92,7 @@ Random.seed!(42)
     @testset "Rayleigh Quotient Minimzation" begin
         n = 4
         rayleigh_atol = 1e-12
-        A = randn(n, n)
+        A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
         M = Sphere(n - 1)
         F(::Sphere, X) = X' * A * X
@@ -190,11 +190,10 @@ Random.seed!(42)
             return 2 .* AX * gradF.N .- X * XpAX * gradF.N .- X * gradF.N * XpAX
         end
 
-        n = 1000
-        k = 5
+        n = 4
+        k = 2
         M = Stiefel(n, k)
-        A = randn(n, n)
-        A = (A + A') / 2
+        A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         F(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
         gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
 
