@@ -26,7 +26,7 @@ Based on a generic optimization framework, together with the interface [`Manifol
 
 In many applications and optimization tasks, non-linear data appears naturally.
 For example, when data on the sphere is measured [@GousenbourgerMassartMusolasAbsilJaquesHendrickxMarzouk:2017], diffusion data can be captured as a signal or even multivariate data of symmetric positive definite matrices [@ValkonenBrediesKnoll2013], and orientations like they appear for electron backscattered diffraction (EBSD) data [@BachmannHielscherSchaeben2011]. Another example are fixed rank matrices, appearing in matrix completion [@Vandereycken:2013:1].
-Working on these data, for example doing data interpolation and approximation [@BergmannGousenbourger:2018:2], denoising [@LellmannStrekalovskiyKoetterCremers:2013:1], [@BergmannFitschenPerschSteidl:2018], inpainting [@BergmannChanHielscherPerschSteidl:2016], or performing matrix completion [@GaoAbsil:2021], can usually be phrased as an optimization problem
+Working on these data, for example doing data interpolation and approximation [@BergmannGousenbourger:2018:2], denoising [@LellmannStrekalovskiyKoetterCremers:2013:1; @BergmannFitschenPerschSteidl:2018], inpainting [@BergmannChanHielscherPerschSteidl:2016], or performing matrix completion [@GaoAbsil:2021], can usually be phrased as an optimization problem
 
 $$ \text{Minimize}\quad f(x) \quad \text{where } x\in\mathcal M, $$
 
@@ -36,7 +36,7 @@ A main challenge of these algorithms is that, compared to the (classical) Euclid
 The solution is to generalize the notion of a shortest path from the straight line to what is called a (shortest) geodesic, or acceleration-free curve.
 Similarly, other features and properties also have to be rephrased and generalized when performing optimization on a Riemannian manifold.
 Algorithms to perform the optimization can still often be stated in a generic way, i.e. on an arbitrary Riemannian manifold $\mathcal M$.
-Further examples and a thorough introduction can be found in [@AbsilMahonySepulchre:2008:1; @Boumal:2020:1].
+Further examples and a thorough introduction can be found in @AbsilMahonySepulchre:2008:1; @Boumal:2020:1.
 
 For a user facing an optimization problem on a manifold, there are two obstacles to the actual numerical optimization: firstly, a suitable implementation of the manifold at hand is required, for example how to evaluate the above-mentioned geodesics; and secondly, an implementation of the optimization algorithm that employs said methods from the manifold, such that the algorithm can be applied to the cost function $f$ a user already has.
 
@@ -51,7 +51,7 @@ Each of the algorithms has a high-level interface to make it easy to use the alg
 
 An optimization task in `Manopt.jl` consists of a `Problem p` and `Options o`.
 The `Problem` consists of all static information, like the cost function and a potential gradient of the optimization task. The `Options` specify the type of algorithm and the settings and data required to run the algorithm. For example, by default most options specify that the exponential map, which generalizes the notion of addition to the manifold, should be used and the algorithm steps are performed following an acceleration-free curve on the manifold. This might not be known in closed form for some manifolds, e.g. the [`Spectrahedron`](https://juliamanifolds.github.io/Manifolds.jl/v0.7/) does not have -- to the best of the author's knowledge -- a closed-form expression for the exponential map; hence more general arbitrary *retractions* can be specified for this instead.
-Retractions are first-order approximations for the exponential map. They provide an alternative to the acceleration-free form, if no closed form solution is known. Otherwise, a retraction might also be chosen, when their evaluation is computationally cheaper than to use the exponential map, especially if their approximation error can be stated; see e.g. [@BendokatZimmermann:2021].
+Retractions are first-order approximations for the exponential map. They provide an alternative to the acceleration-free form, if no closed form solution is known. Otherwise, a retraction might also be chosen, when their evaluation is computationally cheaper than to use the exponential map, especially if their approximation error can be stated; see e.g. @BendokatZimmermann:2021.
 
 Similarly, tangent vectors at different points are identified by a vector transport, which by default is the parallel transport.
 By always providing a default, a user can start immediately, without thinking about these details. They can then modify these settings to improve speed or accuracy by specifying other retractions or vector transport to their needs.
