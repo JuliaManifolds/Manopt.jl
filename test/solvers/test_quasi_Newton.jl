@@ -91,7 +91,7 @@ Random.seed!(42)
     end
     @testset "Rayleigh Quotient Minimzation" begin
         n = 4
-        rayleigh_atol = 1e-9
+        rayleigh_atol = 1e-8
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
         M = Sphere(n - 1)
@@ -153,7 +153,6 @@ Random.seed!(42)
                 cautious_update=c,
                 memory_size=-1,
                 stopping_criterion=StopWhenGradientNormLess(5 * 1e-8),
-                debug=[:Iteration, :Cost, "|gradF| =", DebugGradientNorm(), "\n"],
             )
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
@@ -186,8 +185,7 @@ Random.seed!(42)
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
-            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-            debug=[:Iteration, :Cost, "|gradF| =", DebugGradientNorm(), "\n"],
+            stopping_criterion=StopWhenGradientNormLess(1e-6),
         )
 
         x_inverseBFGSHuang = quasi_Newton(
@@ -200,8 +198,7 @@ Random.seed!(42)
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
-            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-            debug=[:Iteration, :Cost, "|gradF| =", DebugGradientNorm(), "\n"],
+            stopping_criterion=StopWhenGradientNormLess(1e-6),
         )
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-5)
     end
