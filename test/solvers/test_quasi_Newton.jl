@@ -131,7 +131,18 @@ Random.seed!(42)
         )
         @test norm(abs.(x_cached_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
 
-        for T in [InverseBFGS(), BFGS()], c in [true, false]
+        for T in [
+                InverseDFP(),
+                DFP(),
+                Broyden(0.5),
+                InverseBroyden(0.5),
+                Broyden(0.5, :Davidon),
+                Broyden(0.5, :InverseDavidon),
+                InverseBFGS(),
+                BFGS(),
+            ],
+            c in [true, false]
+
             x = Matrix{Float64}(I, n, n)[n, :]
             x_direction = quasi_Newton(
                 M,
@@ -144,40 +155,6 @@ Random.seed!(42)
                 stopping_criterion=StopWhenGradientNormLess(10^(-12)),
             )
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
-        end
-
-        #=
-                for T in [
-                    InverseDFP(),
-                    DFP(),
-                    Broyden(0.5),
-                    InverseBroyden(0.5),
-                    Broyden(0.5, :Davidon),
-                    Broyden(0.5, :InverseDavidon),
-                ]
-                    x_direction = quasi_Newton(
-                        M,
-                        F,
-                        gradF,
-                        x;
-                        direction_update=T,
-                        memory_size=-1,
-                        stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-                    )
-                    @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
-                end
-        =#
-        for T in [SR1(), InverseSR1(), SR1(1e-9), InverseSR1(1e-9)]
-            x_direction = quasi_Newton(
-                M,
-                F,
-                gradF,
-                x;
-                direction_update=T,
-                memory_size=-1,
-                stopping_criterion=StopWhenGradientNormLess(1e-9),
-            )
-            @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = 1e-9
         end
     end
     @testset "Brockett" begin
