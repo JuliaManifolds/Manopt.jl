@@ -91,7 +91,7 @@ Random.seed!(42)
     end
     @testset "Rayleigh Quotient Minimzation" begin
         n = 4
-        rayleigh_atol = 1e-12
+        rayleigh_atol = 1e-9
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
         M = Sphere(n - 1)
@@ -107,7 +107,7 @@ Random.seed!(42)
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+            stopping_criterion=StopWhenGradientNormLess(1e-9),
         )
         @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
 
@@ -117,7 +117,7 @@ Random.seed!(42)
             gradF,
             x;
             cautious_update=true,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+            stopping_criterion=StopWhenGradientNormLess(1e-9),
         )
 
         x_cached_lrbfgs = quasi_Newton(
@@ -127,7 +127,7 @@ Random.seed!(42)
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+            stopping_criterion=StopWhenGradientNormLess(1e-9),
         )
         @test norm(abs.(x_cached_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
 
@@ -142,8 +142,6 @@ Random.seed!(42)
                 BFGS(),
             ],
             c in [true, false]
-
-            x = Matrix{Float64}(I, n, n)[n, :]
             x_direction = quasi_Newton(
                 M,
                 F,
