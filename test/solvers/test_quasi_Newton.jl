@@ -143,6 +143,7 @@ Random.seed!(42)
             ],
             c in [true, false]
 
+            println("\n\n --- $T - $c\n\n")
             x_direction = quasi_Newton(
                 M,
                 F,
@@ -152,6 +153,7 @@ Random.seed!(42)
                 cautious_update=c,
                 memory_size=-1,
                 stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+                debug=[:Iteration, :Cost, "|gradF| =", DebugGradientNorm(), "\n"],
             )
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
@@ -185,6 +187,7 @@ Random.seed!(42)
             retraction_method=QRRetraction(),
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+            debug=[:Iteration, :Cost, "|gradF| =", DebugGradientNorm(), "\n"],
         )
 
         x_inverseBFGSHuang = quasi_Newton(
@@ -198,6 +201,7 @@ Random.seed!(42)
             retraction_method=QRRetraction(),
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+            debug=[:Iteration, :Cost, "|gradF| =", DebugGradientNorm(), "\n"],
         )
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-5)
     end
