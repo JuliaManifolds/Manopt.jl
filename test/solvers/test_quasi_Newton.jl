@@ -143,7 +143,6 @@ Random.seed!(42)
             ],
             c in [true, false]
 
-            println("\n\n --- $T - $c\n\n")
             x_direction = quasi_Newton(
                 M,
                 F,

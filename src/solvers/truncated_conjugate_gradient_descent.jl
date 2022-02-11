@@ -179,9 +179,7 @@ function step_solver!(
     # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
     o.new_model_value =
         inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
-    if o.new_model_value >= o.model_value
-        return o
-    end
+    o.new_model_value >= o.model_value && return o
     copyto!(p.M, o.η, o.x, new_η)
     o.model_value = o.new_model_value
     copyto!(p.M, o.Hη, o.x, new_Hη)
