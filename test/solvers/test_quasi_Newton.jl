@@ -152,7 +152,7 @@ Random.seed!(42)
                 direction_update=T,
                 cautious_update=c,
                 memory_size=-1,
-                stopping_criterion=StopWhenGradientNormLess(1e-9),
+                stopping_criterion=StopWhenGradientNormLess(5 * 1e-8),
                 debug=[:Iteration, :Cost, "|gradF| =", DebugGradientNorm(), "\n"],
             )
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
