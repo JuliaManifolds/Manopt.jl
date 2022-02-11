@@ -142,6 +142,7 @@ Random.seed!(42)
                 BFGS(),
             ],
             c in [true, false]
+
             x_direction = quasi_Newton(
                 M,
                 F,
