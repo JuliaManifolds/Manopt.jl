@@ -32,17 +32,9 @@ For a description of the algorithm and more details see
   random tangent vector. If set to true, no preconditioner will be
   used. This option is set to true in some scenarios to escape saddle
   points, but is otherwise seldom activated.
-* `project_to_tangent!` : projection operation to be applied to each
-     iterate of the inner solver; if it is the projection onto the
-     tangent space, it ensures all iterates stay in the tangent space
-     (otherwise, there can be numerical instabilities which make them
-     leave the tangent space). Default is "do nothing".
-     Format : a function of four parameters `(M,X1,p,X2)`, where `M`
-     is the manifold, `p` a point on `M`, `X2` the inner solver
-     iterate and `X1` a vector to store the projected iterate. The
-     function must rewrite `X1` in place and not output anything (if
-     it does, the output will be ignored). It is recommended to use
-     either the default, or `project_to_tangent! = project!`.
+* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors within the TCG
+    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
+    per default, no projection is perfomed, set it to `project!` to activate projection.
 * `retraction` – (`default_retraction_method(M)`) approximation of the exponential map
 * `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
@@ -110,7 +102,7 @@ function trust_regions!(
     max_trust_region_radius=sqrt(manifold_dimension(M)),
     trust_region_radius=max_trust_region_radius / 8,
     randomize::Bool=false,
-    project_to_tangent!::Proj=copyto!,
+    project_vector!::Proj=copyto!,
     ρ_prime::Float64=0.1,
     ρ_regularization=1000.0,
     return_options=false,
@@ -140,7 +132,7 @@ function trust_regions!(
         randomize,
         stopping_criterion;
         retraction_method=retraction_method,
-        (project_to_tangent!)=project_to_tangent!,
+        (project_vector!)=project_vector!,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -163,12 +155,7 @@ function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     o.τ = zero(o.trust_region_radius)
     o.Hgrad = zero_vector(p.M, o.x)
     o.tcg_options = TruncatedConjugateGradientOptions(
-        p,
-        o.x,
-        o.η,
-        o.trust_region_radius,
-        o.randomize;
-        (project_to_tangent!)=o.project_to_tangent!,
+        p, o.x, o.η, o.trust_region_radius, o.randomize; (project_vector!)=o.project_vector!
     )
     return o
 end
