@@ -66,14 +66,17 @@ a default value is given in brackets if a parameter can be left out in initializ
         initiated with a random tangent vector. If set to true, no
         preconditioner will be used. This option is set to true in some
         scenarios to escape saddle points, but is otherwise seldom activated.
-* `projection_to_tangent` : projection operation to be applied to each
+* `project_to_tangent!` : projection operation to be applied to each
      iterate; if it is the projection onto the tangent space, it
      ensures all iterates stay in the tangent space (otherwise, there
      can be numerical instabilities which make them leave the tangent
      space). Default is "do nothing".
-     Format : a function of three parameters `(M,p,X)`, where `M` is
-     the manifold, `p` a point on `M` and `X` the tangent vector; the
-     function must rewrite `X` in place and produce no output.
+     Format : a function of four parameters `(M,X1,p,X2)`, where `M`
+     is the manifold, `p` a point on `M`, `X2` the iterate and
+     `X1` a vector to store the projected iterate. The function must
+     rewrite `X1` in place and not output anything (if it does, the
+     output will be ignored). It is recommended to use either the
+     default, or `project_to_tangent! = project!`.
 
 # Constructor
 
@@ -84,7 +87,7 @@ construct a truncated conjugate-gradient Option with the fields as above.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriterion} <:
+mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriterion,Proj} <:
                AbstractHessianOptions
     x::P
     stop::SC
@@ -105,7 +108,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     new_model_value::R
     κ::R
     randomize::Bool
-    projection_to_tangent::Any
+    project_to_tangent!::Proj
     initialResidualNorm::Float64
     function TruncatedConjugateGradientOptions(
         p::HessianProblem,
@@ -113,7 +116,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         η::T,
         trust_region_radius::R,
         randomize::Bool;
-        projection_to_tangent=(M,p,X) -> (),
+        project_to_tangent!::Proj=copyto!,
         θ::Float64=1.0,
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
@@ -125,14 +128,20 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
             StopWhenCurvatureIsNegative(),
             StopWhenModelIncreased(),
         ),
-    ) where {H,G,P,T,R<:Real}
-        o = new{typeof(x),typeof(η),typeof(trust_region_radius),typeof(stop)}()
+    ) where {H,G,P,T,R<:Real,Proj}
+        o = new{
+            typeof(x),
+            typeof(η),
+            typeof(trust_region_radius),
+            typeof(stop),
+            typeof(project_to_tangent!),
+        }()
         o.x = x
         o.stop = stop
         o.η = η
         o.trust_region_radius = trust_region_radius
         o.randomize = randomize
-        o.projection_to_tangent = projection_to_tangent
+        o.project_to_tangent! = project_to_tangent!
         o.model_value = zero(trust_region_radius)
         o.κ = zero(trust_region_radius)
         return o
@@ -156,11 +165,17 @@ a default value is given in brackets if a parameter can be left out in initializ
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
-* `projection_to_tangent` : projection operation to be applied to each
-     iterate of the inner solver. Default is "do nothing". The other
-     sensitive choice is the projection onto the tangent `(M,p,X) ->
-     project!(M,X,p,X)`, which enforces numerical stability and
-     ensures iterates remain in the tangent space
+* `project_to_tangent!` : projection operation to be applied to each
+     iterate of the inner solver; if it is the projection onto the
+     tangent space, it ensures all iterates stay in the tangent space
+     (otherwise, there can be numerical instabilities which make them
+     leave the tangent space). Default is "do nothing".
+     Format : a function of four parameters `(M,X1,p,X2)`, where `M`
+     is the manifold, `p` a point on `M`, `X2` the inner solver
+     iterate and `X1` a vector to store the projected iterate. The
+     function must rewrite `X1` in place and not output anything (if
+     it does, the output will be ignored). It is recommended to use
+     either the default, or `project_to_tangent! = project!`.
 * `ρ_prime` : a lower bound of the performance ratio for the iterate that
         decides if the iteration will be accepted or not. If not, the
         trust-region radius will have been decreased. To ensure this,
@@ -188,7 +203,7 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real
+    P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj
 } <: AbstractHessianOptions
     x::P
     gradient::T
@@ -197,7 +212,7 @@ mutable struct TrustRegionsOptions{
     max_trust_region_radius::R
     retraction_method::RTR
     randomize::Bool
-    projection_to_tangent
+    project_to_tangent!::Proj
     ρ_prime::R
     ρ_regularization::R
 
@@ -213,7 +228,7 @@ mutable struct TrustRegionsOptions{
     η_Cauchy::T
     Hη_Cauchy::T
     τ::R
-    function TrustRegionsOptions{P,T,SC,RTR,R}(
+    function TrustRegionsOptions{P,T,SC,RTR,R,Proj}(
         x::P,
         grad::T,
         trust_region_radius::R,
@@ -223,9 +238,9 @@ mutable struct TrustRegionsOptions{
         randomize::Bool,
         stopping_citerion::SC,
         retraction_method::RTR;
-        projection_to_tangent = (M, p, X) -> (),
-    ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real}
-        o = new{P,T,SC,RTR,R}()
+        project_to_tangent!::Proj=copyto!,
+    ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
+        o = new{P,T,SC,RTR,R,Proj}()
         o.x = x
         o.gradient = grad
         o.stop = stopping_citerion
@@ -235,7 +250,7 @@ mutable struct TrustRegionsOptions{
         o.ρ_prime = ρ_prime
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
-        o.projection_to_tangent = projection_to_tangent
+        o.project_to_tangent! = project_to_tangent!
         return o
     end
 end
@@ -249,9 +264,9 @@ function TrustRegionsOptions(
     randomize::Bool,
     stopping_citerion::SC;
     retraction_method::RTR=ExponentialRetraction(),
-    projection_to_tangent = ((M, p, X) -> ()),
-) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod}
-    return TrustRegionsOptions{P,T,SC,RTR,R}(
+    project_to_tangent!::Proj=copyto!,
+) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,Proj}
+    return TrustRegionsOptions{P,T,SC,RTR,R,Proj}(
         x,
         grad,
         trust_region_radius,
@@ -261,7 +276,7 @@ function TrustRegionsOptions(
         randomize,
         stopping_citerion,
         retraction_method;
-        projection_to_tangent = projection_to_tangent,
+        (project_to_tangent!)=project_to_tangent!,
     )
 end
 
