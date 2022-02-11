@@ -13,7 +13,7 @@ using Manopt, Manifolds, Test, Random
 
     p = zeros(2)
     X = ones(2)
-    @test get_hessian(P1, p, X) == get_hessian(P1, p, X)
+    @test get_hessian(P1, p, X) == get_hessian(P2, p, X)
     Y1 = similar(X)
     Y2 = similar(X)
     get_hessian!(P1, Y1, p, X)
