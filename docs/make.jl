@@ -49,9 +49,9 @@ pluto_titles = ["speed up! using `gradF!`", "Use Bezier Curves", "AD in Manopt"]
 for (i, f) in enumerate(pluto_files)
     global TutorialMenu
     rendered = parallel_build( #though not really parallel here
-        BuildOptions(pluto_src_folder, output_format=documenter_output, write_files=false),
-        [ "$(f).jl"]
-    );
+        BuildOptions(pluto_src_folder; output_format=documenter_output, write_files=false),
+        ["$(f).jl"],
+    )
     write(
         pluto_output_folder * f * ".md",
         """
