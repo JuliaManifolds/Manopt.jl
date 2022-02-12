@@ -8,7 +8,6 @@ tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
     "MeanAndMedian",
-    "GeodesicRegression",
     "HowToRecord",
     "StochasticGradientDescent",
     "GradientOfSecondOrderDifference",
@@ -43,13 +42,18 @@ mkpath(pluto_output_folder)
 #
 #
 # Please do not use the same name as for a(n old) literate Tutorial
-pluto_files = ["Benchmark", "Bezier", "AutomaticDifferentiation"]
-pluto_titles = ["speed up! using `gradF!`", "Use Bezier Curves", "AD in Manopt"]
+pluto_files = ["GeodesicRegression", "Benchmark", "Bezier", "AutomaticDifferentiation"]
+pluto_titles = [
+    "Do Geodesic regression",
+    "speed up! using `gradF!`",
+    "Use Bezier Curves",
+    "AD in Manopt",
+]
 # build menu and write files myself - tp set edit url correctly.
 for (i, f) in enumerate(pluto_files)
     global TutorialMenu
     rendered = parallel_build( #though not really parallel here
-        BuildOptions(pluto_src_folder; output_format=documenter_output, write_files=false),
+        BuildOptions(pluto_src_folder; output_format=documenter_output, write_files=false, use_distributed=false),
         ["$(f).jl"],
     )
     write(
