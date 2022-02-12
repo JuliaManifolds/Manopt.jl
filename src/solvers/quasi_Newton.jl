@@ -334,23 +334,19 @@ end
 function update_broyden_factor!(d, ::Any, yk_c, skyk_c, skHksk_c, ::Val{:Davidon})
     yk_c_c = d.matrix \ yk_c
     ykyk_c_c = yk_c' * yk_c_c
-    if skyk_c <= 2 * (skHksk_c * ykyk_c_c) / (skHksk_c + ykyk_c_c)
-        return d.update.φ =
-            (skyk_c * (ykyk_c_c - skyk_c)) / (skHksk_c * ykyk_c_c - skyk_c^2)
-    else
-        return d.update.φ = skyk_c / (skyk_c - skHksk_c)
-    end
+    u = skyk_c <= 2 * (skHksk_c * ykyk_c_c) / (skHksk_c + ykyk_c_c)
+    u && (d.update.φ = (skyk_c * (ykyk_c_c - skyk_c)) / (skHksk_c * ykyk_c_c - skyk_c^2))
+    (!u) && (d.update.φ = skyk_c / (skyk_c - skHksk_c))
+    return d.update.φ
 end
 
 function update_broyden_factor!(d, sk_c, ::Any, skyk_c, ykBkyk_c, ::Val{:InverseDavidon})
     sk_c_c = d.matrix \ sk_c
     sksk_c_c = sk_c' * sk_c_c
-    if skyk_c <= 2 * (ykBkyk_c * sksk_c_c) / (ykBkyk_c + sksk_c_c)
-        return d.update.φ =
-            (skyk_c * (sksk_c_c - skyk_c)) / (ykBkyk_c * sksk_c_c - skyk_c^2)
-    else
-        return d.update.φ = skyk_c / (skyk_c - ykBkyk_c)
-    end
+    u = skyk_c <= 2 * (ykBkyk_c * sksk_c_c) / (ykBkyk_c + sksk_c_c)
+    u && (d.update.φ = (skyk_c * (sksk_c_c - skyk_c)) / (ykBkyk_c * sksk_c_c - skyk_c^2))
+    (!u) && (d.update.φ = skyk_c / (skyk_c - ykBkyk_c))
+    return d.update.φ
 end
 
 function update_basis!(

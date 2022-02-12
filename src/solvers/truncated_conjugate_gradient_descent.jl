@@ -46,6 +46,9 @@ see the reference:
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
+* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors
+    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
+    per default, no projection is perfomed, set it to `project!` to activate projection.
 * `stopping_criterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),
     [`StopIfResidualIsReducedByFactor`](@ref), [`StopIfResidualIsReducedByPower`](@ref),
     [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
@@ -121,12 +124,21 @@ function truncated_conjugate_gradient_descent!(
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),
     ),
+    project_vector!::Proj=copyto!,
     return_options=false,
     kwargs..., #collect rest
-) where {TF,TG,TH,Tprec}
+) where {TF,TG,TH,Tprec,Proj}
     p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
     o = TruncatedConjugateGradientOptions(
-        p, x, η, trust_region_radius, randomize; θ=θ, κ=κ, stop=stopping_criterion
+        p,
+        x,
+        η,
+        trust_region_radius,
+        randomize;
+        θ=θ,
+        κ=κ,
+        stop=stopping_criterion,
+        (project_vector!)=project_vector!,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -179,9 +191,7 @@ function step_solver!(
     # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
     o.new_model_value =
         inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
-    if o.new_model_value >= o.model_value
-        return o
-    end
+    o.new_model_value >= o.model_value && return o
     copyto!(p.M, o.η, o.x, new_η)
     o.model_value = o.new_model_value
     copyto!(p.M, o.Hη, o.x, new_Hη)
@@ -193,6 +203,7 @@ function step_solver!(
     β = zr / o.z_r
     o.z_r = zr
     o.δ = -o.z + β * o.δ
+    o.project_vector!(p.M, o.δ, o.x, o.δ)
     o.ηPδ = β * (α * o.δPδ + o.ηPδ)
     o.δPδ = o.z_r + β^2 * o.δPδ
     return o
