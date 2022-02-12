@@ -53,7 +53,12 @@ pluto_titles = [
 for (i, f) in enumerate(pluto_files)
     global TutorialMenu
     rendered = parallel_build( #though not really parallel here
-        BuildOptions(pluto_src_folder; output_format=documenter_output, write_files=false, use_distributed=false),
+        BuildOptions(
+            pluto_src_folder;
+            output_format=documenter_output,
+            write_files=false,
+            use_distributed=false,
+        ),
         ["$(f).jl"],
     )
     write(

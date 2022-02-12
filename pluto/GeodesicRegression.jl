@@ -513,7 +513,8 @@ render_asy && asymptote_export_S2_signals(
     curves=[init_geo3, geo3, geo_conns...],
     tangent_vectors=[[Tuple([y3[N, 1][M, :point], y3[N, 1][M, :vector]])]],
     colors=Dict(
-        :curves => [black, TolVibrantTeal, repeat([TolVibrantCyan], length(geo_conns))...],
+        :curves =>
+            [black, TolVibrantTeal, repeat([TolVibrantCyan], length(geo_conns))...],
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal],
         :tvectors => [TolVibrantOrange],
     ),
