@@ -117,34 +117,35 @@ end
 # Special single ones
 #
 @doc raw"""
-    DebugChange(a,prefix,print)
+    DebugChange()
 
 debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
-during the last iteration. See [`DebugEntryChange`](@ref)
+during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
-# Parameters
-* `x0` – an initial value to already get a Change after the first iterate. Can be left out
-* `a` – (`StoreOptionsAction( (:x,) )`) – the storage of the previous action
-* `prefix` – (`"Last Change:"`) prefix of the debug output
-* `print` – (`print`) default method to perform the print.
+# Keyword Parameters
+* `storage` – (`StoreOptionsAction( (:x,) )`) – (eventually shared) the storage of the previous action
+* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io` – (`stdout`) default steream to print the debug to.
+* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
 """
 mutable struct DebugChange <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugChange(
-        a::StoreOptionsAction=StoreOptionsAction((:x,)),
-        prefix="Last Change: ",
+    function DebugChange(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x,)),
         io::IO=stdout,
+        prefix::String="Last Change: ",
+        format::String="$(prefix)%f",
     )
-        return new(io, prefix, a)
+        return new(io, format, storage)
     end
 end
 function (d::DebugChange)(p::Problem, o::Options, i::Int)
     s = if (i > 0)
         (
             if has_storage(d.storage, :x)
-                d.prefix * string(distance(p.M, o.x, get_storage(d.storage, :x)))
+                format(Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x)))
             else
                 ""
             end
@@ -162,15 +163,17 @@ end
 debug for the current iterate (stored in `o.x`).
 
 # Constructor
-    DebugIterate(io=stdout, long::Bool=false)
+    DebugIterate()
 
 # Parameters
+
+* `io` – (`stdout`) default steream to print the debug to.
 * `long::Bool` whether to print `x:` or `current iterate`
 """
 mutable struct DebugIterate <: DebugAction
     io::IO
     prefix::String
-    function DebugIterate(io::IO=stdout, long::Bool=false)
+    function DebugIterate(; io::IO=stdout, long::Bool=false)
         return new(io, long ? "current Iterate:" : "x:")
     end
 end
@@ -182,14 +185,25 @@ end
 @doc raw"""
     DebugIteration <: DebugAction
 
-debug for the current iteration (prefixed with `#`)
+* Constructor
+
+    DebugIteration()
+
+# Keyword parameters
+
+* `format` - (`"# %-6d"`) format to print the output using an sprintf format.
+* `io` – (`stdout`) default steream to print the debug to.
+
+debug for the current iteration (prefixed with `#` by )
 """
 mutable struct DebugIteration <: DebugAction
     io::IO
-    DebugIteration(io::IO=stdout) = new(io)
+    format::String
+
+    DebugIteration(; io::IO=stdout, format="# %-6d") = new(io, format)
 end
 function (d::DebugIteration)(::Problem, ::Options, i::Int)
-    print(d.io, (i > 0) ? "# $(i)" : ((i == 0) ? "Initial" : ""))
+    print(d.io, (i > 0) ? format(Format(d.format), i) : ((i == 0) ? "Initial" : ""))
     return nothing
 end
 
@@ -199,24 +213,25 @@ end
 print the current cost function value, see [`get_cost`](@ref).
 
 # Constructors
-    DebugCost(long,print)
+    DebugCost()
 
-where `long` indicated whether to print `F(x):` (default) or `cost: `
+# Parameters
 
-    DebugCost(prefix,print)
-
-set a prefix manually.
+* `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
+* `io` – (`stdout`) default steream to print the debug to.
+* `long` - (`false`) short form to set the format to `F(x):` (default) or `current cost: ` and the cost
 """
 mutable struct DebugCost <: DebugAction
     io::IO
-    prefix::String
-    function DebugCost(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Cost Function: " : "F(x): ")
+    format::String
+    function DebugCost(;
+        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "F(x): %f"
+    )
+        return new(io, format)
     end
-    DebugCost(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugCost)(p::Problem, o::Options, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * string(get_cost(p, o.x)) : "")
+    print(d.io, (i >= 0) ? format(Format(d.format), get_cost(p, o.x)) : "")
     return nothing
 end
 

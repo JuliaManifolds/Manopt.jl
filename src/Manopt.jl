@@ -12,6 +12,7 @@ using Requires
 using Random: shuffle!
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
+using Printf: format, Format
 import Base: copy, identity, &, |
 import ManifoldsBase:
     ℝ,
