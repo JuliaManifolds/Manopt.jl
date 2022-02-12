@@ -91,8 +91,8 @@ Random.seed!(42)
     end
     @testset "Rayleigh Quotient Minimzation" begin
         n = 4
-        rayleigh_atol = 1e-12
-        A = randn(n, n)
+        rayleigh_atol = 1e-8
+        A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
         M = Sphere(n - 1)
         F(::Sphere, X) = X' * A * X
@@ -107,7 +107,7 @@ Random.seed!(42)
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+            stopping_criterion=StopWhenGradientNormLess(1e-9),
         )
         @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
 
@@ -117,7 +117,7 @@ Random.seed!(42)
             gradF,
             x;
             cautious_update=true,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+            stopping_criterion=StopWhenGradientNormLess(1e-9),
         )
 
         x_cached_lrbfgs = quasi_Newton(
@@ -127,12 +127,22 @@ Random.seed!(42)
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+            stopping_criterion=StopWhenGradientNormLess(1e-9),
         )
         @test norm(abs.(x_cached_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
 
-        for T in [InverseBFGS(), BFGS()], c in [true, false]
-            x = Matrix{Float64}(I, n, n)[n, :]
+        for T in [
+                InverseDFP(),
+                DFP(),
+                Broyden(0.5),
+                InverseBroyden(0.5),
+                Broyden(0.5, :Davidon),
+                Broyden(0.5, :InverseDavidon),
+                InverseBFGS(),
+                BFGS(),
+            ],
+            c in [true, false]
+
             x_direction = quasi_Newton(
                 M,
                 F,
@@ -141,42 +151,9 @@ Random.seed!(42)
                 direction_update=T,
                 cautious_update=c,
                 memory_size=-1,
-                stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+                stopping_criterion=StopWhenGradientNormLess(5 * 1e-8),
             )
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
-        end
-
-        for T in [
-            InverseDFP(),
-            DFP(),
-            Broyden(0.5),
-            InverseBroyden(0.5),
-            Broyden(0.5, :Davidon),
-            Broyden(0.5, :InverseDavidon),
-        ]
-            x_direction = quasi_Newton(
-                M,
-                F,
-                gradF,
-                x;
-                direction_update=T,
-                memory_size=-1,
-                stopping_criterion=StopWhenGradientNormLess(10^(-12)),
-            )
-            @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
-        end
-
-        for T in [SR1(), InverseSR1(), SR1(1e-9), InverseSR1(1e-9)]
-            x_direction = quasi_Newton(
-                M,
-                F,
-                gradF,
-                x;
-                direction_update=T,
-                memory_size=-1,
-                stopping_criterion=StopWhenGradientNormLess(1e-9),
-            )
-            @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = 1e-9
         end
     end
     @testset "Brockett" begin
@@ -190,11 +167,10 @@ Random.seed!(42)
             return 2 .* AX * gradF.N .- X * XpAX * gradF.N .- X * gradF.N * XpAX
         end
 
-        n = 1000
-        k = 5
+        n = 4
+        k = 2
         M = Stiefel(n, k)
-        A = randn(n, n)
-        A = (A + A') / 2
+        A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         F(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
         gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
 
@@ -208,7 +184,7 @@ Random.seed!(42)
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
-            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+            stopping_criterion=StopWhenGradientNormLess(1e-6),
         )
 
         x_inverseBFGSHuang = quasi_Newton(
@@ -221,7 +197,7 @@ Random.seed!(42)
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
-            stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+            stopping_criterion=StopWhenGradientNormLess(1e-6),
         )
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-5)
     end

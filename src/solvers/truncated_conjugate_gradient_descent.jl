@@ -46,17 +46,9 @@ see the reference:
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
-* `project_to_tangent!` : projection operation to be applied to each
-     iterate; if it is the projection onto the tangent space, it
-     ensures all iterates stay in the tangent space (otherwise, there
-     can be numerical instabilities which make them leave the tangent
-     space). Default is "do nothing".
-     Format : a function of four parameters `(M,X1,p,X2)`, where `M`
-     is the manifold, `p` a point on `M`, `X2` the iterate and
-     `X1` a vector to store the projected iterate. The function must
-     rewrite `X1` in place and not output anything (if it does, the
-     output will be ignored). It is recommended to use either the
-     default, or `project_to_tangent! = project!`.
+* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors
+    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
+    per default, no projection is perfomed, set it to `project!` to activate projection.
 * `stopping_criterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),
     [`StopIfResidualIsReducedByFactor`](@ref), [`StopIfResidualIsReducedByPower`](@ref),
     [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
@@ -132,7 +124,7 @@ function truncated_conjugate_gradient_descent!(
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),
     ),
-    project_to_tangent!::Proj=copyto!,
+    project_vector!::Proj=copyto!,
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec,Proj}
@@ -143,10 +135,10 @@ function truncated_conjugate_gradient_descent!(
         η,
         trust_region_radius,
         randomize;
-        θ = θ,
-        κ = κ,
-        stop = stopping_criterion,
-        (project_to_tangent!)=project_to_tangent!,
+        θ=θ,
+        κ=κ,
+        stop=stopping_criterion,
+        (project_vector!)=project_vector!,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -199,9 +191,7 @@ function step_solver!(
     # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
     o.new_model_value =
         inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
-    if o.new_model_value >= o.model_value
-        return o
-    end
+    o.new_model_value >= o.model_value && return o
     copyto!(p.M, o.η, o.x, new_η)
     o.model_value = o.new_model_value
     copyto!(p.M, o.Hη, o.x, new_Hη)
@@ -213,7 +203,7 @@ function step_solver!(
     β = zr / o.z_r
     o.z_r = zr
     o.δ = -o.z + β * o.δ
-    o.project_to_tangent!(p.M, o.δ, o.x, o.δ)
+    o.project_vector!(p.M, o.δ, o.x, o.δ)
     o.ηPδ = β * (α * o.δPδ + o.ηPδ)
     o.δPδ = o.z_r + β^2 * o.δPδ
     return o
