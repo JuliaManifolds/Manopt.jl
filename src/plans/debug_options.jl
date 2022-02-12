@@ -141,6 +141,9 @@ mutable struct DebugChange <: DebugAction
         return new(io, format, storage)
     end
 end
+@deprecate DebugChange(a::StoreOptionsAction, pre::String="Last Change: ", io::IO=stdout) DebugChange(;
+    storage=a, prefix=pre, io=io
+)
 function (d::DebugChange)(p::Problem, o::Options, i::Int)
     s = if (i > 0)
         (
@@ -177,6 +180,7 @@ mutable struct DebugIterate <: DebugAction
         return new(io, long ? "current Iterate:" : "x:")
     end
 end
+@deprecate DebugIterate(io::IO, long::Bool=false) DebugIterate(; io=io, long=long)
 function (d::DebugIterate)(::Problem, o::Options, i::Int)
     print(d.io, (i >= 0) ? d.prefix * "$(o.x)" : "")
     return nothing
@@ -199,9 +203,9 @@ debug for the current iteration (prefixed with `#` by )
 mutable struct DebugIteration <: DebugAction
     io::IO
     format::String
-
     DebugIteration(; io::IO=stdout, format="# %-6d") = new(io, format)
 end
+@deprecate DebugIteration(io::IO) DebugIteration(; io=io)
 function (d::DebugIteration)(::Problem, ::Options, i::Int)
     print(d.io, (i > 0) ? format(Format(d.format), i) : ((i == 0) ? "Initial" : ""))
     return nothing
@@ -230,6 +234,9 @@ mutable struct DebugCost <: DebugAction
         return new(io, format)
     end
 end
+@deprecate DebugCost(pre::String) DebugCost(; format="$pre %f")
+@deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
+@deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
 function (d::DebugCost)(p::Problem, o::Options, i::Int)
     print(d.io, (i >= 0) ? format(Format(d.format), get_cost(p, o.x)) : "")
     return nothing

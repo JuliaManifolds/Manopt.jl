@@ -592,7 +592,7 @@ see their constructors for detail.
 function DebugPrimalChange(
     a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Primal Change: ", io::IO=stdout
 )
-    return DebugChange(a, prefix, io)
+    return DebugChange(; storage=a, prefix=prefix, io=io)
 end
 
 """

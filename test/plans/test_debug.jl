@@ -28,10 +28,10 @@
     @test String(take!(io)) == "|"
     @test DebugEvery(a1, 10, true)(p, o, -1) == nothing
     # Debug Cost
-    @test DebugCost("A").prefix == "A"
-    DebugCost(false, io)(p, o, 0)
-    @test String(take!(io)) == "F(x): 0.0"
-    DebugCost(false, io)(p, o, -1)
+    @test DebugCost(; format="A %f").format == "A %f"
+    DebugCost(; long=false, io=io)(p, o, 0)
+    @test String(take!(io)) == "F(x): 0.000000"
+    DebugCost(; long=false, io=io)(p, o, -1)
     @test String(take!(io)) == ""
     # entry
     DebugEntry(:x, "x:", io)(p, o, 0)
@@ -39,21 +39,21 @@
     DebugEntry(:x, "x:", io)(p, o, -1)
     @test String(take!(io)) == ""
     # Change
-    a2 = DebugChange(StoreOptionsAction((:x,)), "Last: ", io)
+    a2 = DebugChange(; storage=StoreOptionsAction((:x,)), prefix="Last: ", io=io)
     a2(p, o, 0) # init
     o.x = [3.0, 2.0]
     a2(p, o, 1)
-    @test String(take!(io)) == "Last: 1.0"
+    @test String(take!(io)) == "Last: 1.000000"
     # Iterate
-    DebugIterate(io)(p, o, 0)
+    DebugIterate(; io=io)(p, o, 0)
     @test String(take!(io)) == "x:$(o.x)"
-    DebugIterate(io)(p, o, 1)
+    DebugIterate(; io=io)(p, o, 1)
     @test String(take!(io)) == "x:$(o.x)"
     # Iteration
-    DebugIteration(io)(p, o, 0)
+    DebugIteration(; io=io)(p, o, 0)
     @test String(take!(io)) == "Initial"
-    DebugIteration(io)(p, o, 23)
-    @test String(take!(io)) == "# 23"
+    DebugIteration(; io=io)(p, o, 23)
+    @test String(take!(io)) == "# 23    "
     # DEbugEntryChange - reset
     o.x = x
     a3 = DebugEntryChange(
