@@ -425,3 +425,15 @@ function DebugActionFactory(s::Symbol)
     end
     return DebugEntry(s)
 end
+function DebugActionFactory(t::Tuple{Symbol,String})
+    if (t[1] == :Change)
+        return DebugChange(; format=t[2])
+    elseif (t[1] == :Iteration)
+        return DebugIteration()
+    elseif (t[1] == :Iterate)
+        return DebugIterate(; format=t[2])
+    elseif (t[1] == :Cost)
+        return DebugCost(; format=t[2])
+    end
+    return DebugEntry(s)
+end
