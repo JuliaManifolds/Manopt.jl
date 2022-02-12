@@ -44,13 +44,14 @@ mkpath(pluto_output_folder)
 #
 # Please do not use the same name as for a(n old) literate Tutorial
 pluto_files = ["Benchmark", "Bezier", "AutomaticDifferentiation"]
-pluto_heights = [370] # for now, lazyness, in rem
 pluto_titles = ["speed up! using `gradF!`", "Use Bezier Curves", "AD in Manopt"]
+# build menu and write files myself - tp set edit url correctly.
 for (i, f) in enumerate(pluto_files)
     global TutorialMenu
-    @info "Building Pluto Notebook $f.jl"
-    pluto_file = pluto_src_folder * f * ".jl"
-    html = notebook2html(pluto_file)
+    rendered = parallel_build( #though not really parallel here
+        BuildOptions(pluto_src_folder, output_format=documenter_output, write_files=false),
+        [ "$(f).jl"]
+    );
     write(
         pluto_output_folder * f * ".md",
         """
@@ -58,28 +59,7 @@ for (i, f) in enumerate(pluto_files)
         EditURL = "$(pluto_src_folder)$(f).jl"
         ```
 
-        ```@raw html
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonsp/Pluto.jl@0.16.4/frontend/treeview.css" type="text/css" />
-        <style>
-        div.markdown {
-            padding-top: 1rem;
-            padding-bottom: 2rem;
-        }
-        /* move output up to its input, remove border (see class add JS below) */
-        body .content pre.pre-output {
-            border: 0px;
-            margin-top: -1.1em;
-            padding: .4rem .5rem;
-            font-size: 80%;
-        }
-        </style>
-        $html
-        <script type="text/javascript">
-            require({}, ['jquery'], function() {
-                \$('code.code-output').parent('pre').addClass('pre-output');
-            });
-        </script>
-        ```
+        $(rendered[1])
         """,
     )
     push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))

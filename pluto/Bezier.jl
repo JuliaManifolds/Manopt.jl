@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.17.3
+# v0.18.0
 
 using Markdown
 using InteractiveUtils
@@ -121,7 +121,7 @@ render_asy && begin
         camera_position=camera_position,
     )
     render_asymptote(image_prefix * "/Casteljau-illustr.asy"; render=2) #src
-end
+end;
 
 # ╔═╡ bdb85fb8-0707-47d1-95ee-9bf2e56500f5
 md"""This image summarizes Casteljaus algorithm:"""
@@ -188,7 +188,7 @@ render_asy && begin
         dot_size=4.0,
     )
     render_asymptote(image_prefix * "/Bezier-composite-curve.asy"; render=2)
-end
+end;
 
 # ╔═╡ 41ba8ac2-5a81-46f5-9269-404cc6a1d287
 PlutoUI.LocalResource(image_prefix * "/Bezier-composite-curve.png")
@@ -243,7 +243,7 @@ render_asy && begin
         dot_size=4.0,
     )
     render_asymptote(image_prefix * "/Bezier-composite-curve-gradient.asy"; render=2)
-end
+end;
 
 # ╔═╡ 5157ac76-d359-4f18-883d-8afbe78d3b4d
 PlutoUI.LocalResource(image_prefix * "/Bezier-composite-curve-gradient.png")
@@ -316,7 +316,7 @@ render_asy && begin
         dot_size=4.0,
     )
     render_asymptote(image_prefix * "/Bezier-IP-Min.asy"; render=2)
-end
+end;
 
 # ╔═╡ 4f35b3e8-90ca-4d21-a377-007f93eb0efd
 PlutoUI.LocalResource(image_prefix * "/Bezier-IP-Min.png")
@@ -393,7 +393,7 @@ render_asy && begin
         dot_size=4.0,
     )
     render_asymptote(image_prefix * "/Bezier-Appr-Min.asy"; render=2)
-end
+end;
 
 # ╔═╡ db8110e0-d271-424c-b920-817dc1aab0c9
 PlutoUI.LocalResource(image_prefix * "/Bezier-Appr-Min.png")
@@ -468,7 +468,7 @@ PlutoUI = "~0.7.22"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.0"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractFFTs]]
