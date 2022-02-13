@@ -145,16 +145,9 @@ end
     storage=a, prefix=pre, io=io
 )
 function (d::DebugChange)(p::Problem, o::Options, i::Int)
-    s = if (i > 0)
-        (
-            if has_storage(d.storage, :x)
-                format(Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x)))
-            else
-                ""
-            end
-        )
-    else
-        ""
+    s = ""
+    if (i > 0)
+        s = format(Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x)))
     end
     d.storage(p, o, i)
     print(d.io, s)
