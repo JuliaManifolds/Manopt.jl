@@ -145,12 +145,10 @@ end
     storage=a, prefix=pre, io=io
 )
 function (d::DebugChange)(p::Problem, o::Options, i::Int)
-    s = ""
-    if (i > 0)
-        s = format(Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x)))
-    end
+    (i > 0) && Printf.format(
+        d.io, Printf.Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x))
+    )
     d.storage(p, o, i)
-    print(d.io, s)
     return nothing
 end
 @doc raw"""
@@ -200,7 +198,8 @@ mutable struct DebugIteration <: DebugAction
 end
 @deprecate DebugIteration(io::IO) DebugIteration(; io=io)
 function (d::DebugIteration)(::Problem, ::Options, i::Int)
-    print(d.io, (i > 0) ? format(Format(d.format), i) : ((i == 0) ? "Initial" : ""))
+    (i == 0) && print(d.io, "Initial")
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
     return nothing
 end
 
@@ -231,7 +230,7 @@ end
 @deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
 @deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
 function (d::DebugCost)(p::Problem, o::Options, i::Int)
-    print(d.io, (i >= 0) ? format(Format(d.format), get_cost(p, o.x)) : "")
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, o.x))
     return nothing
 end
 
