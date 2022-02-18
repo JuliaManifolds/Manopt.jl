@@ -248,7 +248,7 @@ mutable struct DebugDivider <: DebugAction
     divider::String
     DebugDivider(divider=" | ", io::IO=stdout) = new(io, divider)
 end
-function (d::DebugDivider)(::Problem, ::Options, i::Int) where {P<:Problem,O<:Options}
+function (d::DebugDivider)(::Problem, ::Options, i::Int)
     print(d.io, (i >= 0) ? d.divider : "")
     return nothing
 end
@@ -270,7 +270,7 @@ mutable struct DebugEntry <: DebugAction
     io::IO
     prefix::String
     field::Symbol
-    DebugEntry(f::Symbol, prefix="$f:", io::IO=stdout) = new(io, prefix, f)
+    DebugEntry(f::Symbol; prefix="$f:", io::IO=stdout) = new(io, prefix, f)
 end
 function (d::DebugEntry)(::Problem, o::Options, i::Int)
     print(d.io, (i >= 0) ? d.prefix * " " * string(getfield(o, d.field)) : "")
@@ -291,61 +291,61 @@ print a certain entries change during iterates
 
 # Constructors
 
-    DebugEntryChange(f,d[, a, prefix, io])
+    DebugEntryChange(f,d)
 
-initialize the Debug to a field `f` and a `distance` `d`.
+# Keyword arguments
 
+- `io` (`stdout`) an `IOStream`
+- `prefix` (`"Change of $f"`)
+- `storage` (`StoreOptionsAction((f,))`) a [`StoreOptionsAction`](@ref)
+- `initial_value` an initial value for the change of `o.field`.
 
-    DebugEntryChange(v,f,d[, a, prefix="Change of $f:", io])
-
-initialize the Debug to a field `f` and a `distance` `d` with initial value `v`
-for the history of `o.field`.
 """
 mutable struct DebugEntryChange <: DebugAction
-    io::IO
-    prefix::String
-    field::Symbol
     distance::Any
+    field::Symbol
+    format::String
+    io::IO
     storage::StoreOptionsAction
     function DebugEntryChange(
         f::Symbol,
-        d,
-        a::StoreOptionsAction=StoreOptionsAction((f,)),
+        d;
+        storage::StoreOptionsAction=StoreOptionsAction((f,)),
         prefix="Change of $f:",
         io::IO=stdout,
+        initial_value::T where {T}=NaN,
     )
-        return new(io, prefix, f, d, a)
-    end
-    function DebugEntryChange(
-        v::T where {T},
-        f::Symbol,
-        d,
-        a::StoreOptionsAction=StoreOptionsAction((f,)),
-        prefix="Change of $f:",
-        io::IO=stdout,
-    )
-        update_storage!(a, Dict(f => v))
-        return new(io, prefix, f, d, a)
+        update_storage!(a, Dict(f => isnan(initial_value) ? 0.0 : initial_value))
+        return new(io, prefix, f, d, storage)
     end
 end
+@deprecate DebugEntryChange(v, f::Symbol, d, a::StoreOptionsAction) DebugEntryChange(
+    f, d; initial_value=v, storage=a
+)
+@deprecate DebugEntryChange(v, f::Symbol, d, a::StoreOptionsAction, prefix::String) DebugEntryChange(
+    f, d; initial_value=v, storage=a, prefix=prefix
+)
+@deprecate DebugEntryChange(
+    v, f::Symbol, d, a::StoreOptionsAction, prefix::String, io::IOStream
+) DebugDebugEntryChangeCost(f, d; initial_value=v, storage=a, prefix=prefix, io=io)
+@deprecate DebugEntryChange(f::Symbol, d, a::StoreOptionsAction) DebugEntryChange(;
+    storage=a
+)
+@deprecate DebugEntryChange(f::Symbol, d, a::StoreOptionsAction, prefix::String) DebugEntryChange(
+    f, d; storage=a, prefix=prefix
+)
+@deprecate DebugEntryChange(
+    f::Symbol, d, a::StoreOptionsAction, prefix::String, io::IOStream
+) DebugEntryChange(f, d; storage=a, prefix=prefix, io=io)
+@deprecate DebugEntryChange(pre::String, io::IO) DebugEntryChange(; format="$pre %f", io=op)
+@deprecate DebugEntryChange(long::Bool, io::IO) DebugEntryChange(; long=long, io=io)
+# (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, o.x))
 function (d::DebugEntryChange)(p::Problem, o::Options, i::Int)
-    s = if (i > 0)
-        (
-            if has_storage(d.storage, d.field)
-                d.prefix * string(
-                    d.distance(
-                        p, o, getproperty(o, d.field), get_storage(d.storage, d.field)
-                    ),
-                )
-            else
-                ""
-            end
-        )
-    else
-        ""
-    end
+    (i == 0) && return nothing
+    (!has_storage(d.storage, d.field)) && return nothing
+    v = d.distance(p, o, getproperty(o, d.field), get_storage(d.storage, d.field))
+    Printf.format(d.io, Printf.Format(d.format), v)
     d.storage(p, o, i)
-    print(d.io, s)
     return nothing
 end
 
