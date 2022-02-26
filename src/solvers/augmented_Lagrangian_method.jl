@@ -204,8 +204,8 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
     cost = get_Lagrangian_cost_function(p, o) 
     grad = get_Lagrangian_gradient_function(p, o)
-    o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=NonmonotoneLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
-
+    o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
+    
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)
     n_ineq_constraint = length(cost_ineq)
