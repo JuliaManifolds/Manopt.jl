@@ -32,7 +32,7 @@ function exact_penalty_method!(
     num_outer_itertgn::Int=30,
     tolgradnorm::Real=1e-3, 
     ending_tolgradnorm::Real=1e-6,
-    ϵ::Real=1e-1, 
+    ϵ::Real=1e-1,           # smoothing parameter u
     ϵ_min::Real=1e-6,
     ρ::Real=1.0, 
     θ_ρ::Real=0.3, 
@@ -102,37 +102,84 @@ function get_exact_penalty_cost_function(p::ConstrainedProblem, o::EPMOptions)
     num_inequality_constraints = length(get_inequality_constraints(p,o.x))
     num_equality_constraints = length(get_equality_constraints(p,o.x))
     
+    # compute the cost functions of the constraints for the chosen smoothing technique
     if o.smoothing_technique == log_sum_exp
         if num_inequality_constraints != 0 
-            s = max(0, get_inequality_constraints(p, x))
-            cost_ineq = x -> 
-        end
+            s = (p, x) -> max.(0, get_inequality_constraints(p, x))
+            cost_ineq = x -> sum(s(p, x) .+ o.ϵ .* log.( exp.((get_inequality_constraints(p, x) .- s(p, x))./o.ϵ) + exp.(-s(p, x)./o.ϵ)))
+        end ### why is s used like that?
         if num_equality_constraints != 0
-            cost_eq = x -> 
-        end
-        if num_inequality_constraints != 0
-            if num_equality_constraints != 0
-                return (M,x) -> cost(x) + (o.ρ) * (cost_ineq(x) + cost_eq(x))
-            else
-                return (M,x) -> cost(x) + (o.ρ) * cost_ineq(x)
-            end
-        else
-            if num_equality_constraints != 0
-                return (M,x) -> cost(x) + (o.ρ) * cost_eq(x)
-            else
-                return (M,x) -> cost(x) 
-            end
-        end
+            s = (p, x) -> max.(-get_equality_constraints(p, x), get_equality_constraints(p, x))
+            cost_eq = x -> sum(s(p, x) .+ o.ϵ .* log.( exp.((get_equality_constraints(p, x) .- s(p, x))./o.ϵ) .+ exp.((-get_equality_constraints(p, x) .- s(p, x))./o.ϵ)))
+        end ### why is s used like that?
     elseif o.smoothing_technique == linear_quadratic_loss
-        ...
+        if num_inequality_constraints != 0 
+            cost_eq_greater_ϵ = x -> sum((get_inequality_constraints(p, x) .- o.ϵ/2) .* (get_inequality_constraints(p, x) .> o.ϵ))
+            cost_eq_pos_smaller_ϵ = x -> sum( (get_inequality_constraints(p, x).^2 ./(2*o.ϵ)) .* ((get_inequality_constraints(p, x) .> 0) && (get_inequality_constraints(p, x) .<= o.ϵ)))
+            cost_ineq = x -> cost_eq_greater_ϵ(x) + cost_eq_pos_smaller_ϵ(x)
+        end ### can I write that this way?
+        if num_equality_constraints != 0
+            cost_eq = x -> sum(sqrt.(get_equality_constraints(p, x).^2 .+ o.ϵ^2))
+        end 
+    end
+
+    # add up to the smoothed penalized objective
+    if num_inequality_constraints != 0
+        if num_equality_constraints != 0
+            return (M,x) -> cost(x) + (o.ρ) * (cost_ineq(x) + cost_eq(x))
+        else
+            return (M,x) -> cost(x) + (o.ρ) * cost_ineq(x)
+        end
+    else
+        if num_equality_constraints != 0
+            return (M,x) -> cost(x) + (o.ρ) * cost_eq(x)
+        else
+            return (M,x) -> cost(x) 
+        end
     end
 end
 
 function get_exact_penalty_gradient_function(p::ConstrainedProblem, o::EPMOptions)
+    grad = x -> get_gradient(p, x)
+    num_inequality_constraints = length(get_inequality_constraints(p,o.x))
+    num_equality_constraints = length(get_equality_constraints(p,o.x))
+
+    # compute the gradient functions of the constraints for the chosen smoothing technique
     if o.smoothing_technique == log_sum_exp
-        ...
+        if num_inequality_constraints != 0 
+            s = (p, x) -> max.(0, get_inequality_constraints(p, x))
+            coef = (p, x) -> o.ρ .* exp.((get_inequality_constraints(p, x).-s(p, x))./o.ϵ) ./ (exp.((get_inequality_constraints(p, x).-s(p, x))./o.ϵ) .+ exp.(-s(p, x) ./ o.ϵ))
+            grad_ineq = x -> sum(get_grad_ineq(p, x) .* coef(p, x)) ### check dimensions
+        end
+        if num_equality_constraints != 0
+            s = (p, x) -> max.(-get_equality_constraints(p, x), get_equality_constraints(p, x))
+            coef = (p, x) -> o.ρ .* (exp.((get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ) .- exp.((-get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ)) ./ (exp.((get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ) .+ exp.((-get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ))
+            grad_eq = x-> sum(get_grad_eq(p, x) .* coef(p, x)) ### check dimensions
+        end
     elseif o.smoothing_technique == linear_quadratic_loss
-        ...
+        if num_inequality_constraints != 0
+            grad_ineq_cost_greater_ϵ = x -> sum(get_grad_ineq(p, x) .* (get_inequality_constraints(p, x) .>= o.ϵ) .* o.ρ)
+            grad_ineq_cost_smaller_ϵ = x -> sum(get_grad_ineq(p, x) .* (get_inequality_constraints(p, x)./o.ϵ .* (get_inequality_constraints(p, x) .< o.ϵ)) .* o.ρ)
+            grad_ineq = x -> grad_ineq_cost_greater_ϵ(x) + grad_ineq_cost_smaller_ϵ(x) ### check dimensions
+        end
+        if num_equality_constraints != 0
+            grad_eq = x-> sum(get_grad_eq(p, x) .* (get_inequality_constraints(p, x)./sqrt.(get_inequality_constraints(p, x).^2 .+ o.ϵ^2)) .* o.ρ) ### check dimensions
+        end
+    end
+
+    # add up to the gradient of the smoothed penalized objective
+    if num_inequality_constraints != 0
+        if num_equality_constraints != 0
+            return (M,x) -> grad(x) + grad_ineq(x) + grad_eq(x)
+        else
+            return (M,x) -> grad(x) + grad_ineq(x)
+        end
+    else
+        if num_equality_constraints != 0
+            return (M,x) -> grad(x) + grad_eq(x)
+        else
+            return (M,x) -> grad(x) 
+        end
     end
 end
 
