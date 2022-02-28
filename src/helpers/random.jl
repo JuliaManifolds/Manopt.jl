@@ -187,7 +187,6 @@ function random_point(M::TangentSpaceAtPoint, options...)
     return random_tangent(M.fiber.manifold, M.point, options...)
 end
 
-
 @doc raw"""
     random_tangent(M::AbstractGroupManifold, p, options...)
 
