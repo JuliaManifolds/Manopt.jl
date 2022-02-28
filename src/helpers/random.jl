@@ -61,7 +61,7 @@ optional parameter determines the type of the entries of the
 resulting point on the Euclidean space d.
 """
 random_point(M::Euclidean) = randn(representation_size(M))
-random_point(M::Euclidean, ::Val{:Gaussian}, σ=1.0) = σ * randn(manifold_dimension(M))
+random_point(M::Euclidean, ::Val{:Gaussian}, σ=1.0) = σ * randn(representation_size(M))
 
 @doc raw"""
     random_point(M::FixedRankMatrices, options...)
@@ -212,7 +212,7 @@ mean 0 and standard deviation 1.
 random_tangent(::Circle, p, ::Val{:Gaussian}, σ::Real=1.0) = σ * randn()
 
 function random_tangent(M::Euclidean, p, ::Val{:Gaussian}, σ::Float64=1.0)
-    return σ * randn(manifold_dimension(M))
+    return σ * randn(representation_size(M))
 end
 
 @doc raw"""
