@@ -7,10 +7,12 @@ using ColorSchemes
 using ColorTypes
 using Markdown
 using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
+using Statistics: std, cor, mean
 using Dates: Period, Nanosecond, value
 using Requires
 using Random: shuffle!
 using DataStructures: CircularBuffer, capacity, length, size, push!
+using DataFrames
 using StaticArrays
 import Base: copy, identity, &, |
 import ManifoldsBase:
@@ -105,6 +107,7 @@ include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
+include("helpers/check_diff.jl")
 include("data/artificialDataFunctions.jl")
 
 function __init__()
@@ -129,7 +132,9 @@ function __init__()
             ProductRepr,
             submanifold_components,
             sym_rem,
-            mean
+            mean,
+            check_point,
+            check_vector
         import Random: rand, randperm
         using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
         include("helpers/random.jl")
@@ -365,6 +370,8 @@ export BezierSegment,
     get_bezier_points,
     get_bezier_segments
 #
+# check functions
+export check_diff
 # Debugs
 export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
 export DebugChange, DebugIterate, DebugIteration, DebugDivider
