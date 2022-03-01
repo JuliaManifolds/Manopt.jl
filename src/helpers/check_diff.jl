@@ -80,6 +80,7 @@ function check_diff(
     diff_fnc;
     p=random_point(M),
     X=random_tangent(M, p),
+    log_space_range=range(-8, 0; length=101),
     plot=false,
 )
     check_point(M, p)
@@ -87,7 +88,6 @@ function check_diff(
     f0 = cost_fnc(M, p)
     df0 = diff_fnc(M, p, X)
 
-    log_space_range = range(-8, 0; length=51)
     log_space = 10 .^ log_space_range
 
     # Based on the Taylor approximation of development of the cost function around point x:
@@ -97,7 +97,7 @@ function check_diff(
     err = abs.(rhs - lhs)
 
     df = linearize_function(log10.(log_space), log10.(err))
-    total_quadratic_length = sum(df[1.95 .< df[:, :b], :length])
+    total_quadratic_length = sum(df[1.8 .< df[:, :b], :length])
     mostly_quadratic =
         total_quadratic_length >
         0.75 * (maximum(log_space_range) - minimum(log_space_range))
@@ -122,7 +122,7 @@ function check_diff(
                 plt,
                 xs,
                 df[i, :a] .+ xs .* df[i, :b];
-                color=df[i, :b] > 1.95 ? "green" : "red",
+                color=df[i, :b] > 1.8 ? "green" : "red",
             )
         end
         return plt
