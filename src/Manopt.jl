@@ -13,6 +13,7 @@ using Requires
 using Random: shuffle!
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using DataFrames
+using Plots
 using StaticArrays
 import Base: copy, identity, &, |
 import ManifoldsBase:

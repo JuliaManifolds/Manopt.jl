@@ -7,7 +7,8 @@ function solve_simple_lm(x, y)
     correlation = cor(x, y)
     beta = std(y) / std(x) * correlation
     alpha = mean(y) - beta * mean(x)
-    return (alpha, beta, correlation^2)
+    r2 = size(x, 1) <= 2 ? 1 : correlation^2
+    return (alpha, beta, r2)
 end
 
 
@@ -79,21 +80,24 @@ function check_diff(M::AbstractManifold, cost_fnc, diff_fnc;
     err = abs.(rhs - lhs)
 
     df = linearize_function(log10.(log_space), log10.(err))
+    total_quadratic_length = sum(df[1.95 .< df[:, :b], :length])
+    mostly_quadratic = total_quadratic_length > 0.75 * (maximum(log_space_range) - minimum(log_space_range))
     if plot
-        plt = scatter(log10.(log_space), log10.(err), legend = false);
-        Plots.abline!(plt, 1, 0); Plots.abline!(plt, 2, 0)
-    end
-
-    df = df[1.95 .< df[:, :b], :]
-    total_part_linear = sum(df[:, :length])
-    if total_part_linear < 0.75 * (maximum(log_space_range) - minimum(log_space_range))
-        return ErrorException("Less than 75% of the range has a slope of roughly two.")
+        plt = Plots.scatter(log10.(log_space), log10.(err), legend = false,
+                            title = mostly_quadratic ? "The differential seems correct" : "The differential seems incorrect",
+                            xlabel = "log10 distance to p", ylabel = "log10 approximation error of differential")
+        Plots.abline!(plt, 1, 0, color = "red"); Plots.abline!(plt, 2, 0, color = "green")
+        for i in 1:size(df, 1)
+            xs = [df[i, :left], df[i, :right]]
+            Plots.plot!(plt, xs, df[i, :a] .+ xs .* df[i, :b],
+                        color = df[i, :b] > 1.95 ? "green" : "red")
+        end
+        return plt
     else
-        return nothing
+        if ! mostly_quadratic
+            return ErrorException("Less than 75% of the range has a slope of roughly two.")
+        else
+            return nothing
+        end
     end
-end
-
-function asdfasdfasdf()
-    println("hellow")
-    return 9 * 8
 end
