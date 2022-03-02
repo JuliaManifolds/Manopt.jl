@@ -93,6 +93,7 @@ include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
+include("solvers/exact_penalty_method.jl")
 include("solvers/NelderMead.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/particle_swarm.jl")
@@ -173,6 +174,7 @@ export Options,
     ConjugateGradientDescentOptions,
     CyclicProximalPointOptions,
     DouglasRachfordOptions,
+    EPMOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
     NelderMeadOptions,
@@ -216,7 +218,9 @@ export get_constraints,
     get_grad_ineq,
     get_grad_eq,
     get_Lagrangian_cost_function,
-    get_Lagrangian_gradient_function
+    get_Lagrangian_gradient_function,
+    get_exact_penalty_cost_function,
+    get_exact_penalty_gradient_function
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,
@@ -231,6 +235,7 @@ export WolfePowellLineseach,
 
 export ALMOptions,
     ConjugateGradientDescentOptions,
+    EPMOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
     SubGradientMethodOptions,
@@ -266,6 +271,8 @@ export  augmented_Lagrangian_method,
     cyclic_proximal_point!,
     DouglasRachford,
     DouglasRachford!,
+    exact_penalty_method,
+    exact_penalty_method!,
     gradient_descent,
     gradient_descent!,
     NelderMead,
