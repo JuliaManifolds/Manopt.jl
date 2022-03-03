@@ -55,8 +55,8 @@ OR
 * `options` – the options returned by the solver (see `return_options`)
 """
 function quasi_Newton(
-    M::AbstractManifold, F::Function, gradF::G, x::P; kwargs...
-) where {P,G}
+    M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
+) where {TF, TDF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return quasi_Newton!(M, F, gradF, x_res; kwargs...)
@@ -77,9 +77,9 @@ For all optional parameters, see [`quasi_Newton`](@ref).
 """
 function quasi_Newton!(
     M::AbstractManifold,
-    F::Function,
-    gradF::G,
-    x::P;
+    F::TF,
+    gradF::TDF,
+    x;
     cautious_update::Bool=false,
     cautious_function::Function=x -> x * 10^(-4),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -100,7 +100,7 @@ function quasi_Newton!(
     ),
     return_options=false,
     kwargs...,
-) where {P,G}
+) where {TF, TDF}
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             direction_update,
