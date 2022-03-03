@@ -32,11 +32,13 @@ OR
 """
 function stochastic_gradient_descent(
     M::AbstractManifold, gradF::TDF, x; kwargs...
-)
+) where {TDF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return stochastic_gradient_descent!(M, gradF, x_res; kwargs...)
-end where {TDF}
+end
+
+
 @doc raw"""
     stochastic_gradient_descent!(M, gradF, x)
 
