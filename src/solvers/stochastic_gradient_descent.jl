@@ -31,12 +31,12 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function stochastic_gradient_descent(
-    M::AbstractManifold, gradF::Union{Function,AbstractVector{<:Function}}, x; kwargs...
+    M::AbstractManifold, gradF::TDF, x; kwargs...
 )
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return stochastic_gradient_descent!(M, gradF, x_res; kwargs...)
-end
+end where {TDF}
 @doc raw"""
     stochastic_gradient_descent!(M, gradF, x)
 
@@ -53,9 +53,9 @@ for all optional parameters, see [`stochastic_gradient_descent`](@ref).
 """
 function stochastic_gradient_descent!(
     M::AbstractManifold,
-    gradF::Union{Function,AbstractVector{<:Function}},
+    gradF::TDF,
     x;
-    cost::Union{Function,Missing}=Missing(),
+    cost::TF=Missing(),
     direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stoping_criterion::StoppingCriterion=StopAfterIteration(10000) |
@@ -66,7 +66,7 @@ function stochastic_gradient_descent!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     return_options=false,
     kwargs...,
-)
+) where {TDF, TF}
     p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
     o = StochasticGradientDescentOptions(
         x,
