@@ -14,7 +14,7 @@ function exact_penalty_method(
 ) where {TF, TGF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
-    return augmented_Lagrangian_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, smoothing_technique=smoothing_technique, sub_problem=sub_problem, sub_options=sub_options,kwargs...)
+    return exact_penalty_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, smoothing_technique=smoothing_technique, sub_problem=sub_problem, sub_options=sub_options,kwargs...)
 end
 
 function exact_penalty_method!(
@@ -128,7 +128,7 @@ function get_exact_penalty_cost_function(p::ConstrainedProblem, o::EPMOptions)
             cost_eq_greater_ϵ = x -> sum((get_inequality_constraints(p, x) .- o.ϵ/2) .* (get_inequality_constraints(p, x) .> o.ϵ))
             cost_eq_pos_smaller_ϵ = x -> sum( (get_inequality_constraints(p, x).^2 ./(2*o.ϵ)) .* ((get_inequality_constraints(p, x) .> 0) .& (get_inequality_constraints(p, x) .<= o.ϵ)))
             cost_ineq = x -> cost_eq_greater_ϵ(x) + cost_eq_pos_smaller_ϵ(x)
-        end ### can I write that this way?
+        end 
         if num_equality_constraints != 0
             cost_eq = x -> sum(sqrt.(get_equality_constraints(p, x).^2 .+ o.ϵ^2))
         end 
@@ -160,21 +160,21 @@ function get_exact_penalty_gradient_function(p::ConstrainedProblem, o::EPMOption
         if num_inequality_constraints != 0 
             s = (p, x) -> max.(0, get_inequality_constraints(p, x))
             coef = (p, x) -> o.ρ .* exp.((get_inequality_constraints(p, x).-s(p, x))./o.ϵ) ./ (exp.((get_inequality_constraints(p, x).-s(p, x))./o.ϵ) .+ exp.(-s(p, x) ./ o.ϵ))
-            grad_ineq = x -> sum(get_grad_ineq(p, x) .* coef(p, x)) ### check dimensions
+            grad_ineq = x -> sum(get_grad_ineq(p, x) .* coef(p, x)) 
         end
         if num_equality_constraints != 0
             s = (p, x) -> max.(-get_equality_constraints(p, x), get_equality_constraints(p, x))
             coef = (p, x) -> o.ρ .* (exp.((get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ) .- exp.((-get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ)) ./ (exp.((get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ) .+ exp.((-get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ))
-            grad_eq = x-> sum(get_grad_eq(p, x) .* coef(p, x)) ### check dimensions
+            grad_eq = x-> sum(get_grad_eq(p, x) .* coef(p, x))
         end
     elseif o.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0
-            grad_ineq_cost_greater_ϵ = x -> sum(get_grad_ineq(p, x) .* (get_inequality_constraints(p, x) .>= o.ϵ) .* o.ρ)
-            grad_ineq_cost_smaller_ϵ = x -> sum(get_grad_ineq(p, x) .* (get_inequality_constraints(p, x)./o.ϵ .* (get_inequality_constraints(p, x) .< o.ϵ)) .* o.ρ)
-            grad_ineq = x -> grad_ineq_cost_greater_ϵ(x) + grad_ineq_cost_smaller_ϵ(x) ### check dimensions
+            grad_ineq_cost_greater_ϵ = x -> sum(get_grad_ineq(p, x) .* ((get_inequality_constraints(p, x) .>= 0) .& (get_inequality_constraints(p, x) .>= o.ϵ)) .* o.ρ)
+            grad_ineq_cost_smaller_ϵ = x -> sum(get_grad_ineq(p, x) .* (get_inequality_constraints(p, x)./o.ϵ .* ((get_inequality_constraints(p, x) .>= 0) .& (get_inequality_constraints(p, x) .< o.ϵ))) .* o.ρ)
+            grad_ineq = x -> grad_ineq_cost_greater_ϵ(x) + grad_ineq_cost_smaller_ϵ(x) 
         end
         if num_equality_constraints != 0
-            grad_eq = x-> sum(get_grad_eq(p, x) .* (get_inequality_constraints(p, x)./sqrt.(get_inequality_constraints(p, x).^2 .+ o.ϵ^2)) .* o.ρ) ### check dimensions
+            grad_eq = x-> sum(get_grad_eq(p, x) .* (get_inequality_constraints(p, x)./sqrt.(get_inequality_constraints(p, x).^2 .+ o.ϵ^2)) .* o.ρ) 
         end
     end
 
