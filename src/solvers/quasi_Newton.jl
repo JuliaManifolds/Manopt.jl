@@ -42,7 +42,7 @@ The ``k``th iteration consists of
   the exponential map.
 * `scale_initial_operator` - (`true`) scale initial operator with
   ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
-* `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`)
+* `stepsize` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`)
   specify a [`Stepsize`](@ref).
 * `stopping_criterion` - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`)
   specify a [`StoppingCriterion`](@ref)
@@ -94,7 +94,7 @@ function quasi_Newton!(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
     scale_initial_operator::Bool=true,
-    step_size::Stepsize=WolfePowellLineseach(retraction_method, vector_transport_method),
+    stepsize::Stepsize=WolfePowellLineseach(retraction_method, vector_transport_method),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
     ),
@@ -130,7 +130,7 @@ function quasi_Newton!(
         get_gradient(p, x),
         local_dir_upd,
         stopping_criterion,
-        step_size;
+        stepsize;
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
