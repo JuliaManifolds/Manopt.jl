@@ -72,7 +72,7 @@ function ChambollePock(
     Λ::Union{Function,Missing}=missing,
     linearized_forward_operator::Union{Function,Missing}=missing,
     kwargs...,
-) where {TF, P,T,Q}
+) where {TF,P,T,Q}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     ξ_res = allocate(ξ)

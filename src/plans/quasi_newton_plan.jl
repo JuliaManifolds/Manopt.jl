@@ -527,7 +527,9 @@ If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the 
 """
 mutable struct QuasiNewtonCautiousDirectionUpdate{U} <:
                AbstractQuasiNewtonDirectionUpdate where {
-    U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}}
+    U<:Union{
+        QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}
+    },
 } where {T<:AbstractQuasiNewtonUpdateRule}
     update::U
     θ::Function
@@ -535,7 +537,9 @@ end
 function QuasiNewtonCautiousDirectionUpdate(
     update::U; θ::Function=x -> x
 ) where {
-    U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}}
+    U<:Union{
+        QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}
+    },
 } where {T<:AbstractQuasiNewtonUpdateRule}
     return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
 end

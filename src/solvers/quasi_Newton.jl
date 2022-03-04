@@ -54,9 +54,7 @@ The ``k``th iteration consists of
 OR
 * `options` – the options returned by the solver (see `return_options`)
 """
-function quasi_Newton(
-    M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
-) where {TF, TDF}
+function quasi_Newton(M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return quasi_Newton!(M, F, gradF, x_res; kwargs...)
@@ -100,7 +98,7 @@ function quasi_Newton!(
     ),
     return_options=false,
     kwargs...,
-) where {TF, TDF}
+) where {TF,TDF}
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             direction_update,

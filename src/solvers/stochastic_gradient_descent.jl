@@ -38,7 +38,6 @@ function stochastic_gradient_descent(
     return stochastic_gradient_descent!(M, gradF, x_res; kwargs...)
 end
 
-
 @doc raw"""
     stochastic_gradient_descent!(M, gradF, x)
 
@@ -68,7 +67,7 @@ function stochastic_gradient_descent!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     return_options=false,
     kwargs...,
-) where {TDF, TF}
+) where {TDF,TF}
     p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
     o = StochasticGradientDescentOptions(
         x,
