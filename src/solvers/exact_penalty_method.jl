@@ -16,7 +16,31 @@ function exact_penalty_method(
     copyto!(M, x_res, x)
     return exact_penalty_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, smoothing_technique=smoothing_technique, sub_problem=sub_problem, sub_options=sub_options,kwargs...)
 end
+@doc raw"""
+    exact_penalty_method!(M, F, gradF; G, H, gradG, gradH)
 
+perform the exact penalty method (EPM)[^LiuBoumal2020][^source_code]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
+```math
+\begin{aligned}
+\min_{x ∈\mathcal{M}} &f(x)\\
+\text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
+\quad &h_j(x)=0 \quad ∀ j=1,…,p,
+\end{aligned}
+```
+where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
+
+# Input
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `gradF` – the gradient of the cost function
+## Optional 
+* `G` – the inequality constraints
+* `H` – the equality constraints 
+* `gradG` – the gradient of the inequality constraints
+* `gradH` – the gradient of the equality constraints
+
+For more options, especially `x` for the initial point and `smoothing_technique` for the smoothing technique, see [`exact_penalty_method`](@ref).
+"""
 function exact_penalty_method!(
     M::AbstractManifold,
     F::TF,

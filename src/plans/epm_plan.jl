@@ -10,16 +10,19 @@ Describes the exact penalty method, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` – a set point on a manifold as starting point
-* `smoothing_technique` – a smoothing technique with which the penalized objective can be smoothed
+* `smoothing_technique` – smoothing technique with which the penalized objective is smoothed (either `"log_sum_exp"` or `"linear_quadratic_huber"`)
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
 * `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration 
 * `num_outer_itertgn` – (`30`)
-* `ϵ` – (`1e–3`) the accuracy tolerance
-* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
+* `tolgradnorm` – (`1e–3`) the accuracy tolerance
+* `ending_tolgradnorm` – (`1e-6`) the lower bound for the accuracy tolerance
+* `ϵ` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
+* `ϵ_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
+* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the smoothing parameter and threshold for violation of the constraints
+* `θ_tolgradnorm` – (`(ending_tolgradnorm/tolgradnorm)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(tolgradnorm, ending_tolgradnorm), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 
