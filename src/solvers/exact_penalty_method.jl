@@ -1,3 +1,64 @@
+@doc raw"""
+    exact_penalty_method(M, F, gradF; G, H, gradG, gradH)
+
+perform the exact penalty method (EPM)[^LiuBoumal2020][^source_code]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
+```math
+\begin{aligned}
+\min_{x ∈\mathcal{M}} &f(x)\\
+\text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
+\quad &h_j(x)=0 \quad ∀ j=1,…,p,
+\end{aligned}
+```
+where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
+For that a weighted ``L_1``-penalty term for the violation of the constraints is added to the objective
+```math
+f(x) + ρ (\sum_{i=1}^m \max\left\{0, g_i(x)\right\} + \sum_{j=1}^p \vert h_j(x)\vert)
+```
+
+
+[^LiuBoumal2020]:
+    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
+    > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
+    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3)
+
+[^source_code]:
+    > original source code to the paper:
+    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
+    > src: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
+
+
+# Input
+* `M` – a manifold ``\mathcal M``
+* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `gradF` – the gradient of the cost function
+
+# Optional
+* `G` – the inequality constraints
+* `H` – the equality constraints 
+* `gradG` – the gradient of the inequality constraints
+* `gradH` – the gradient of the equality constraints
+* `x` – initial point
+* `smoothing_technique` – (`"log_sum_exp"`) smoothing technique with which the penalized objective is smoothed (either `"log_sum_exp"` or `"linear_quadratic_huber"`)
+* `sub_problem` – (`GradientProblem(M,F,gradF)`) problem for the subsolver
+* `sub_options` – (`GradientDescentOptions(M,x)`) options of the subproblem
+* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration 
+* `num_outer_itertgn` – (`30`)
+* `tolgradnorm` – (`1e–3`) the accuracy tolerance
+* `ending_tolgradnorm` – (`1e-6`) the lower bound for the accuracy tolerance
+* `ϵ` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
+* `ϵ_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ρ` – (`1.0`) the penalty parameter
+* `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
+* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the smoothing parameter and threshold for violation of the constraints
+* `θ_tolgradnorm` – (`(ending_tolgradnorm/tolgradnorm)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(tolgradnorm, ending_tolgradnorm), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
+
+# Output
+* `x` – the resulting point of EPM
+OR
+* `options` – the options returned by the solver (see `return_options`)
+"""
 function exact_penalty_method(
     M::AbstractManifold,
     F::TF,
