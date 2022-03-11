@@ -54,13 +54,13 @@ end
     βdifferential_exp_argument(κ,t,d)
 
 weights for the [`jacobi_field`](@ref) corresponding to the differential of the geodesic
-with respect to its start point ``D_X \exp_p X[Y]``. They are
+with respect to its start point ``D_X \exp_p tX[Y]``. They are
 
 ```math
 β(κ) = \begin{cases}
-\frac{\sinh(d\sqrt{-κ})}{d\sqrt{-κ}}&\text{ if }κ < 0,\\
+\frac{\sinh( t d \sqrt{-κ})}{t d \sqrt{-κ}}& \text{ if } κ < 0,\\
 1 & \text{ if } κ = 0,\\
-\frac{\sin(d\sqrt{κ})}{d\sqrt{κ}}&\text{ if }κ > 0.
+\frac{\sin(t d \sqrt{κ})}{t d \sqrt{κ}}& \text{ if } κ > 0.
 \end{cases}
 ```
 
@@ -68,10 +68,10 @@ with respect to its start point ``D_X \exp_p X[Y]``. They are
 
 [`differential_exp_argument`](@ref), [`jacobi_field`](@ref)
 """
-function βdifferential_exp_argument(κ, ::Number, d)
-    (d == 0) && return 1.0
-    (κ < 0) && return sinh(sqrt(-κ) * d) / (d * sqrt((-κ)))
-    (κ > 0) && return sin(sqrt(κ) * d) / (d * sqrt(κ))
+function βdifferential_exp_argument(κ, t, d)
+    (d == 0 || t == 0) && return 1.0
+    (κ < 0) && return sinh(sqrt(-κ) * t * d) / (t * d * sqrt((-κ)))
+    (κ > 0) && return sin(sqrt(κ) * t * d) / (t * d * sqrt(κ))
     return 1.0 # cuvature zero.
 end
 @doc raw"""
