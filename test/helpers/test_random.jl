@@ -54,4 +54,13 @@
     @test size(p[M, :vector]) == (3, 3)
     @test size(v[M, :point]) == (3, 3)
     @test size(v[M, :vector]) == (3, 3)
+
+    R = Rotations(4)
+    p = random_point(R)
+    M = TangentSpace(R, p)
+    tp = random_point(M)
+    tv = random_tangent(M, tp)
+    @test size(tp) == (4, 4)
+    @test size(tv) == (4, 4)
+    @test is_point(M, tp) && is_point(M, tv)
 end

@@ -178,6 +178,16 @@ function random_point(M::TangentBundle, options...)
 end
 
 @doc raw"""
+    random_point(M::TangentSpaceAtPoint, options...)
+
+generate a random point in the the tangent space of `M.point` with the
+given `options...`.
+"""
+function random_point(M::TangentSpaceAtPoint, options...)
+    return random_tangent(M.fiber.manifold, M.point, options...)
+end
+
+@doc raw"""
     random_tangent(M::AbstractGroupManifold, p, options...)
 
 On an abstract group manifold, the random tangent is taken from the internally stored `M.manifold`s tangent space at `p`.
@@ -359,4 +369,15 @@ function random_tangent(M::TangentBundle, p, options...)
     X = random_tangent(M.manifold, p[M, :point], options...)
     Y = random_tangent(M.manifold, p[M, :point], options...)
     return ProductRepr(X, Y)
+end
+
+@doc raw"""
+    random_tangent(M::TangentSpaceAtPoint, _, options...)
+
+generate a random tangent vector from the tangent space of `M.point`
+with the given `options...`, which is the same as generating a
+point in the tangent space at `M.point`.
+"""
+function random_tangent(M::TangentSpaceAtPoint, _, options...)
+    return random_tangent(M.fiber.manifold, M.point, options...)
 end

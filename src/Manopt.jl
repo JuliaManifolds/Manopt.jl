@@ -122,6 +122,7 @@ function __init__()
             Stiefel,
             Sphere,
             TangentBundle,
+            TangentSpaceAtPoint,
             FixedRankMatrices,
             SVDMPoint,
             UMVTVector,

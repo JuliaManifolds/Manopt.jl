@@ -23,6 +23,7 @@ end
 @testset "Helper & Data Tests" begin
     include("helpers/test_error_measures.jl")
     include("helpers/test_data.jl")
+    include("helpers/test_random.jl")
 end
 @testset "Solver Tests       " begin
     include("solvers/test_alternating_gradient.jl")
