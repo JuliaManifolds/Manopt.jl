@@ -66,7 +66,7 @@ Random.seed!(42)
             gradF,
             x;
             memory_size=-1,
-            step_size=WolfePowellBinaryLinesearch(
+            stepsize=WolfePowellBinaryLinesearch(
                 ExponentialRetraction(), ParallelTransport()
             ),
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -193,7 +193,7 @@ Random.seed!(42)
             gradF,
             x;
             memory_size=8,
-            step_size=WolfePowellBinaryLinesearch(QRRetraction(), ProjectionTransport()),
+            stepsize=WolfePowellBinaryLinesearch(QRRetraction(), ProjectionTransport()),
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
