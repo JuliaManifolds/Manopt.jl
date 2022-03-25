@@ -172,19 +172,26 @@ print the current iterates proximal point algorithm parameter given by
 """
 mutable struct DebugProximalParameter <: DebugAction
     io::IO
-    prefix::String
-    function DebugProximalParameter(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Proximal Map Parameter λ(i):" : "λ:")
+    format::String
+    function DebugProximalParameter(;
+        long::Bool=false,
+        prefix=long ? "Proximal Map Parameter λ(i):" : "λ:",
+        format="$prefix%s",
+        io::IO=stdout,
+    )
+        return new(io, format)
     end
 end
 function (d::DebugProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
-    print(d.io, (i > 0) ? d.prefix * string(o.λ(i)) : "")
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), o.λ(i))
     return nothing
 end
 function (d::DebugProximalParameter)(
     ::ProximalProblem, o::CyclicProximalPointOptions, i::Int
 )
-    print(d.io, (i > 0) ? d.prefix * string(o.λ(i)) : "")
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), o.λ(i))
     return nothing
 end
 

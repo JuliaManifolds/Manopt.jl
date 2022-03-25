@@ -486,7 +486,7 @@ mutable struct DebugDualResidual <: DebugAction
     )
         return new(io, "Dual Residual: ", storage)
     end
-    function DebugDualResidual(
+    function DebugDualResidual(;
         values::Tuple{P,T,Q},
         a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
@@ -514,7 +514,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     io::IO
     prefix::String
     storage::StoreOptionsAction
-    function DebugPrimalResidual(
+    function DebugPrimalResidual(;
         a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
     )
         return new(io, "Primal Residual: ", a)
@@ -548,7 +548,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     io::IO
     prefix::String
     storage::StoreOptionsAction
-    function DebugPrimalDualResidual(
+    function DebugPrimalDualResidual(;
         a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
     )
         return new(io, "PD Residual: ", a)
@@ -589,7 +589,7 @@ end
 Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
-function DebugPrimalChange(
+function DebugPrimalChange(;
     a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Primal Change: ", io::IO=stdout
 )
     return DebugChange(; storage=a, prefix=prefix, io=io)
@@ -610,7 +610,7 @@ Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.ξ`.
 """
-DebugDualIterate(opts...; kwargs...) = DebugEntry(:ξ, "ξ:", opts...; kwargs...)
+DebugDualIterate(opts...; kwargs...) = DebugEntry(:ξ, opts...; kwargs...)
 
 """
     DebugDualChange(opts...)
@@ -623,7 +623,7 @@ mutable struct DebugDualChange <: DebugAction
     io::IO
     prefix::String
     storage::StoreOptionsAction
-    function DebugDualChange(
+    function DebugDualChange(;
         a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)), io::IO=stdout
     )
         return new(io, "Dual Change: ", a)
@@ -664,7 +664,7 @@ Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.n`.
 """
-DebugDualBaseIterate(; io::IO=stdout) = DebugEntry(:n; prefix="n:", io=io)
+DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
 """
     DebugDualChange(a=StoreOptionsAction((:ξ)),io::IO=stdout)
 
@@ -698,7 +698,7 @@ DebugPrimalBaseIterate(; io::IO=stdout) = DebugEntry(:m; prefix="m:", io=io)
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugPrimalBaseChange(
+function DebugPrimalBaseChange(;
     a::StoreOptionsAction=StoreOptionsAction((:m)), io::IO=stdout
 )
     return DebugEntryChange(
