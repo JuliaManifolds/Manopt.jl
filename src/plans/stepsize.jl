@@ -66,10 +66,8 @@ mutable struct DecreasingStepsize <: Stepsize
         return new(l, f, a, e, s)
     end
 end
-function DecreasingStepSize(;
-    length=1.0, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0
-)
-    return DecreasingStepSize(length, multiplier, subtrahend, exponent, shift)
+function DecreasingStepsize(; length=1.0, factor=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+    return DecreasingStepsize(length, factor, subtrahend, exponent, shift)
 end
 function (s::DecreasingStepsize)(
     ::P, ::O, i::Int, args...; kwargs...
