@@ -601,7 +601,7 @@ end
 Print the change of the primal variable by using [`DebugIterate`](@ref),
 see their constructors for detail.
 """
-DebugPrimalIterate(opts...;kwargs...) = DebugIterate(opts...;kwargs...)
+DebugPrimalIterate(opts...; kwargs...) = DebugIterate(opts...; kwargs...)
 
 """
     DebugDualIterate(e)
@@ -610,7 +610,7 @@ Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.ξ`.
 """
-DebugDualIterate(opts...) = DebugEntry(:ξ, "ξ:", opts...)
+DebugDualIterate(opts...; kwargs...) = DebugEntry(:ξ, "ξ:", opts...; kwargs...)
 
 """
     DebugDualChange(opts...)
@@ -664,16 +664,22 @@ Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.n`.
 """
-DebugDualBaseIterate(io::IO=stdout) = DebugEntry(:n, "n:", io)
+DebugDualBaseIterate(; io::IO=stdout) = DebugEntry(:n; prefix="n:", io=io)
 """
     DebugDualChange(a=StoreOptionsAction((:ξ)),io::IO=stdout)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugDualBaseChange(a::StoreOptionsAction=StoreOptionsAction((:n)), io::IO=stdout)
+function DebugDualBaseChange(;
+    storage=a::StoreOptionsAction = StoreOptionsAction((:n)), io::IO=stdout
+)
     return DebugEntryChange(
-        :n, (p, o, x, y) -> distance(p.N, x, y), a, "Dual Base Change:", io
+        :n,
+        (p, o, x, y) -> distance(p.N, x, y);
+        storage=storage,
+        prefix="Dual Base Change:",
+        io=io,
     )
 end
 
@@ -684,7 +690,7 @@ Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.m`.
 """
-DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:", io)
+DebugPrimalBaseIterate(; io::IO=stdout) = DebugEntry(:m; prefix="m:", io=io)
 
 """
     DebugPrimalBaseChange(a::StoreOptionsAction=StoreOptionsAction((:m)),io::IO=stdout)

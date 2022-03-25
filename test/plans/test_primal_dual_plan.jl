@@ -159,27 +159,27 @@ using Manopt, Manifolds, ManifoldsBase, Test
         update_storage!(a, Dict(:x => x_old, :ξ => ξ_old, :n => n_old, :m => copy(m)))
         io = IOBuffer()
 
-        d1 = DebugDualResidual(a, io)
+        d1 = DebugDualResidual(; storage=a, io=io)
         d1(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Residual:")
 
-        d2 = DebugPrimalResidual(a, io)
+        d2 = DebugPrimalResidual(; storage=a, io=io)
         d2(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Residual: ")
 
-        d3 = DebugPrimalDualResidual(a, io)
+        d3 = DebugPrimalDualResidual(; storage=a, io=io)
         d3(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "PD Residual: ")
 
-        d4 = DebugPrimalChange(a, "Primal Change: ", io)
+        d4 = DebugPrimalChange(; storage=a, prefix="Primal Change: ", io=io)
         d4(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Change: ")
 
-        d5 = DebugPrimalIterate(;io=io)
+        d5 = DebugPrimalIterate(; io=io)
         d5(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "x:")
@@ -199,12 +199,12 @@ using Manopt, Manifolds, ManifoldsBase, Test
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
 
-        d8 = DebugDualBaseIterate(io)
+        d8 = DebugDualBaseIterate(; io=io)
         d8(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "n:")
 
-        d9 = DebugDualBaseChange(a, io)
+        d9 = DebugDualBaseChange(; storage=a, io=io)
         d9(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Base Change:")
