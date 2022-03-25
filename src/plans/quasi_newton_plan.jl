@@ -395,16 +395,14 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     vector_transport_method::VT
 end
 function QuasiNewtonMatrixDirectionUpdate(
-    update::AbstractQuasiNewtonUpdateRule,
+    update::U,
     basis::B,
     m::M,
     ;
     scale::Bool=true,
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-) where {M<:AbstractMatrix,B<:AbstractBasis}
-    return QuasiNewtonMatrixDirectionUpdate{
-        typeof(update),B,typeof(vector_transport_method),M
-    }(
+    vector_transport_method::V=ParallelTransport(),
+) where {U<: AbstractQuasiNewtonUpdateRule, M<:AbstractMatrix,B<:AbstractBasis, V <:AbstractVectorTransportMethod}
+    return QuasiNewtonMatrixDirectionUpdate{U,B,V,M}(
         basis, m, scale, update, vector_transport_method
     )
 end
@@ -464,6 +462,7 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     ξ::Vector{Float64}
     ρ::Vector{Float64}
     scale::Float64
+    project::Bool
     vector_transport_method::VT
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
@@ -471,15 +470,17 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     ::T,
     memory_size::Int;
     scale::Bool=true,
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-) where {NT<:AbstractQuasiNewtonUpdateRule,T}
-    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,typeof(vector_transport_method)}(
+    project=true,
+    vector_transport_method::V=ParallelTransport(),
+) where {NT<:AbstractQuasiNewtonUpdateRule,T, V<:AbstractVectorTransportMethod}
+    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,V}(
         method,
         CircularBuffer{T}(memory_size),
         CircularBuffer{T}(memory_size),
         zeros(memory_size),
         zeros(memory_size),
         scale,
+        project,
         vector_transport_method,
     )
 end
@@ -496,7 +497,8 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(p, o)
     for i in 1:m
         r .= r .+ (d.ξ[i] - d.ρ[i] * inner(p.M, o.x, d.memory_y[i], r)) .* d.memory_s[i]
     end
-    return -project(p.M, o.x, r)
+    d.project && project!(p.M, r, o.x, r)
+    return -r
 end
 
 @doc raw"""

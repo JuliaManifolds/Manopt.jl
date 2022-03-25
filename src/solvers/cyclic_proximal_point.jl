@@ -33,8 +33,7 @@ OR
 function cyclic_proximal_point(
     M::AbstractManifold, F::TF, proxes::Union{Tuple,AbstractVector}, x0; kwargs...
 ) where {TF}
-    x_res = allocate(x0)
-    copyto!(M, x_res, x0)
+    x_res = copy(M, x0)
     return cyclic_proximal_point!(M, F, proxes, x_res; kwargs...)
 end
 

@@ -73,14 +73,10 @@ function ChambollePock(
     linearized_forward_operator::Union{Function,Missing}=missing,
     kwargs...,
 ) where {TF,P,T,Q}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    ξ_res = allocate(ξ)
-    copyto!(N, ξ_res, n, ξ)
-    m_res = allocate(m)
-    copyto!(M, m_res, m)
-    n_res = allocate(n)
-    copyto!(N, n_res, n)
+    x_res = copy(M, x)
+    ξ_res = copy(N, n, ξ)
+    m_res = copy(M, m)
+    n_res = copy(N, n)
     return ChambollePock!(
         M,
         N,
