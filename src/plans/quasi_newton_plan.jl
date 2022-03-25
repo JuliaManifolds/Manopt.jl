@@ -401,7 +401,12 @@ function QuasiNewtonMatrixDirectionUpdate(
     ;
     scale::Bool=true,
     vector_transport_method::V=ParallelTransport(),
-) where {U<: AbstractQuasiNewtonUpdateRule, M<:AbstractMatrix,B<:AbstractBasis, V <:AbstractVectorTransportMethod}
+) where {
+    U<:AbstractQuasiNewtonUpdateRule,
+    M<:AbstractMatrix,
+    B<:AbstractBasis,
+    V<:AbstractVectorTransportMethod,
+}
     return QuasiNewtonMatrixDirectionUpdate{U,B,V,M}(
         basis, m, scale, update, vector_transport_method
     )
@@ -472,7 +477,7 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     scale::Bool=true,
     project=true,
     vector_transport_method::V=ParallelTransport(),
-) where {NT<:AbstractQuasiNewtonUpdateRule,T, V<:AbstractVectorTransportMethod}
+) where {NT<:AbstractQuasiNewtonUpdateRule,T,V<:AbstractVectorTransportMethod}
     return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,V}(
         method,
         CircularBuffer{T}(memory_size),

@@ -89,7 +89,7 @@ function quasi_Newton!(
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     memory_size::Int=20,
-    stabilize = true,
+    stabilize=true,
     initial_operator::AbstractMatrix=Matrix{Float64}(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
