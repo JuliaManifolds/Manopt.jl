@@ -116,9 +116,11 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
         r::AbstractRetractionMethod=ExponentialRetraction(),
         contractionFactor::Float64=0.95,
         sufficientDecrease::Float64=0.1,
-        linesearch_stopsize::Float64 = 0.0,
+        linesearch_stopsize::Float64=0.0,
     )
-        return new{typeof(r)}(s, r, contractionFactor, sufficientDecrease, s, linesearch_stopsize)
+        return new{typeof(r)}(
+            s, r, contractionFactor, sufficientDecrease, s, linesearch_stopsize
+        )
     end
 end
 function (a::ArmijoLinesearch)(
@@ -134,14 +136,14 @@ function (a::ArmijoLinesearch)(
         a.contractionFactor,
         a.retraction_method,
         η;
-        stop = a.linesearch_stopsize,
+        stop_step=a.linesearch_stopsize,
     )
     return a.stepsizeOld
 end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 
 @doc raw"""
-    linesearch_backtrack(M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x); stop=0.)
+    linesearch_backtrack(M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x); stop_step=0.)
 
 perform a linesearch for
 * a manifold `M`
@@ -154,7 +156,7 @@ perform a linesearch for
 * a `retr`action, which defaults to the `ExponentialRetraction()`
 * a search direction ``η = -\operatorname{grad}F(x)``
 * an offset, ``f_0 = F(x)``
-* a keyword `stop` as a minimal step size when to stop
+* a keyword `stop_step` as a minimal step size when to stop
 """
 function linesearch_backtrack(
     M::AbstractManifold,
@@ -167,7 +169,7 @@ function linesearch_backtrack(
     retr::AbstractRetractionMethod=ExponentialRetraction(),
     η::T=-gradFx,
     f0=F(x);
-    min_step=0.0
+    stop_step=0.0,
 ) where {TF,T}
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
@@ -181,7 +183,7 @@ function linesearch_backtrack(
         s = contract * s
         retract!(M, xNew, x, s * η, retr)
         fNew = F(xNew)
-        (s < min_step) && break
+        (s < stop_step) && break
     end
     return s
 end
@@ -415,7 +417,7 @@ function (a::NonmonotoneLinesearch)(
         a.retraction_method,
         η,
         maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]);
-        stop = a.linesearch_stopsize
+        stop_step=a.linesearch_stopsize,
     )
     return a.initial_stepsize
 end

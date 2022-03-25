@@ -99,7 +99,6 @@ function (c::StopWhenChangeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Option
     return false
 end
 
-
 """
     StopWhenStepsizeLess <: StoppingCriterion
 
