@@ -334,21 +334,6 @@ mutable struct DebugEntryChange <: DebugAction
         return new(d, f, format, io, storage)
     end
 end
-@deprecate DebugEntryChange(
-    f::Symbol,
-    d,
-    a::StoreOptionsAction=StoreOptionsAction((f,)),
-    prefix="Change of $f:",
-    io::IO=stdout,
-) DebugEntryChange(f, d; storage=a, prefix=prefix, io=io)
-@deprecate DebugEntryChange(
-    v,
-    f::Symbol,
-    d,
-    a::StoreOptionsAction=StoreOptionsAction((f,)),
-    prefix::String="Change of $f:",
-    io::IO=stdout,
-) DebugEntryChange(f, d; initial_value=v, storage=a, prefix=prefix, io=io)
 
 function (d::DebugEntryChange)(p::Problem, o::Options, i::Int)
     if i == 0

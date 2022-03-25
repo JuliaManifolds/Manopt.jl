@@ -481,10 +481,10 @@ mutable struct DebugDualResidual <: DebugAction
     io::IO
     prefix::String
     storage::StoreOptionsAction
-    function DebugDualResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
+    function DebugDualResidual(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
     )
-        return new(io, "Dual Residual: ", a)
+        return new(io, "Dual Residual: ", storage)
     end
     function DebugDualResidual(
         values::Tuple{P,T,Q},
