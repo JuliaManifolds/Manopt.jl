@@ -543,7 +543,7 @@ Then with
 
 ```math
 A(t) = f(x_+) ≤ c_1 t ⟨\operatorname{grad}f(x), η⟩_{x}
-\quad\text{and}\quad 
+\quad\text{and}\quad
 W(t) = ⟨\operatorname{grad}f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 ⟨η, \operatorname{grad}f(x)⟩_x,
 ```
 
