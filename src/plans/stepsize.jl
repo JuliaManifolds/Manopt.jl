@@ -16,7 +16,11 @@ mutable struct ConstantStepsize <: Stepsize
     length::Float64
     ConstantStepsize(s::Real) = new(s)
 end
-(s::ConstantStepsize)(p::P, o::O, i::Int, vars...) where {P<:Problem,O<:Options} = s.length
+function (s::ConstantStepsize)(
+    p::P, o::O, i::Int, args...; kwargs...
+) where {P<:Problem,O<:Options}
+    return s.length
+end
 get_initial_stepsize(s::ConstantStepsize) = s.length
 
 @doc raw"""
@@ -30,18 +34,23 @@ A functor that represents several decreasing step sizes
 * `subtrahend` – (`0`) a value ``a`` that is subtracted every iteration
 * `exponent` – (`1`) a value ``e`` the current iteration numbers ``e``th exponential
   is taken of
+* `shift` – (`0`) shift the denominator iterator ``i`` by ``s```.
 
 In total the complete formulae reads for the ``i``th iterate as
 
 ````math
-s_i = \frac{(l - i a)f^i}{i^e}
+s_i = \frac{(l - i a)f^i}{(i-s)^e}
 ````
 
 and hence the default simplifies to just ``s_i = \frac{l}{i}``
 
 # Constructor
 
-    ConstantStepSize(l,f,a,e)
+    DecreasingStepsize(l=1,f=1,a=0,e=1,s=0)
+
+Alternatively one can also use the following keyword Alternatively
+
+   DecreasingStepSize(;length=1.0, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
 
 initialiszes all fields above, where none of them is mandatory.
 """
@@ -50,12 +59,20 @@ mutable struct DecreasingStepsize <: Stepsize
     factor::Float64
     subtrahend::Float64
     exponent::Float64
-    function DecreasingStepsize(l::Real=1.0, f::Real=1.0, a::Real=0.0, e::Real=1.0)
-        return new(l, f, a, e)
+    shift::Int
+    function DecreasingStepsize(
+        l::Real=1.0, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0
+    )
+        return new(l, f, a, e, s)
     end
 end
-function (s::DecreasingStepsize)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    return (s.length - i * s.subtrahend) * (s.factor^i) / (i^(s.exponent))
+function DecreasingStepsize(; length=1.0, factor=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+    return DecreasingStepsize(length, factor, subtrahend, exponent, shift)
+end
+function (s::DecreasingStepsize)(
+    ::P, ::O, i::Int, args...; kwargs...
+) where {P<:Problem,O<:Options}
+    return (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
 
@@ -124,7 +141,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     end
 end
 function (a::ArmijoLinesearch)(
-    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x)
+    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x); kwargs...
 )
     a.stepsizeOld = linesearch_backtrack(
         p.M,
@@ -343,7 +360,7 @@ mutable struct NonmonotoneLinesearch{
     end
 end
 function (a::NonmonotoneLinesearch)(
-    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x)
+    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x); kwargs...
 )
     if !all(has_storage.(Ref(a.storage), [:x, :gradient]))
         old_x = o.x
@@ -355,7 +372,7 @@ function (a::NonmonotoneLinesearch)(
     return a(p.M, o.x, x -> get_cost(p, x), get_gradient(p, o.x), η, old_x, old_gradient, i)
 end
 function (a::NonmonotoneLinesearch)(
-    M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int
+    M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int; kwargs...
 ) where {mT<:AbstractManifold,TF,T}
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space
     grad_diff =
@@ -462,7 +479,7 @@ mutable struct WolfePowellLineseach <: Linesearch
 end
 
 function (a::WolfePowellLineseach)(
-    p::P, o::O, ::Int, η=-get_gradient(p, o.x)
+    p::P, o::O, ::Int, η=-get_gradient(p, o.x); kwargs...
 ) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     s = 1.0
     s_plus = 1.0
@@ -570,7 +587,7 @@ mutable struct WolfePowellBinaryLinesearch <: Linesearch
 end
 
 function (a::WolfePowellBinaryLinesearch)(
-    p::P, o::O, ::Int, η=-get_gradient(p, o.x)
+    p::P, o::O, ::Int, η=-get_gradient(p, o.x); kwargs...
 ) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     α = 0.0
     β = Inf
@@ -606,17 +623,19 @@ return the stepsize stored within [`Options`](@ref) `o` when solving [`Problem`]
 This method also works for decorated options and the [`Stepsize`](@ref) function within
 the options, by default stored in `o.stepsize`.
 """
-function get_stepsize(p::Problem, o::Options, vars...)
-    return get_stepsize(p, o, dispatch_options_decorator(o), vars...)
+function get_stepsize(p::Problem, o::Options, vars...; kwargs...)
+    return get_stepsize(p, o, dispatch_options_decorator(o), vars...; kwargs...)
 end
-function get_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
-    return get_stepsize(p, o.options, vars...)
+function get_stepsize(p::Problem, o::Options, ::Val{true}, vars...; kwargs...)
+    return get_stepsize(p, o.options, vars...; kwargs...)
 end
-get_stepsize(p::Problem, o::Options, ::Val{false}, vars...) = o.stepsize(p, o, vars...)
+function get_stepsize(p::Problem, o::Options, ::Val{false}, vars...; kwargs...)
+    return o.stepsize(p, o, vars...; kwargs...)
+end
 
-function get_initial_stepsize(p::Problem, o::Options, vars...)
+function get_initial_stepsize(p::Problem, o::Options, vars...; kwargs...)
     return get_initial_stepsize(
-        p::Problem, o::Options, dispatch_options_decorator(o), vars...
+        p::Problem, o::Options, dispatch_options_decorator(o), vars...; kwargs...
     )
 end
 function get_initial_stepsize(p::Problem, o::Options, ::Val{true}, vars...)

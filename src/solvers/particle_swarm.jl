@@ -37,12 +37,10 @@ g_{k}^{(i)}, & \text{else,}
 ```
 i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i)}`` is the global best known position ever visited up to step ``i``.
 
-
 [^Borckmans2010]:
     > P. B. Borckmans, M. Ishteva, P.-A. Absil, __A Modified Particle Swarm Optimization Algorithm for the Best Low Multilinear Rank Approximation of Higher-Order Tensors__,
     > In: Dorigo M. et al. (eds) Swarm Intelligence. ANTS 2010. Lecture Notes in Computer Science, vol 6234. Springer, Berlin, Heidelberg,
     > doi [10.1007/978-3-642-15461-4_2](https://doi.org/10.1007/978-3-642-15461-4_2)
-
 
 # Input
 * `M` – a manifold ``\mathcal M``
@@ -79,8 +77,7 @@ function particle_swarm(
     x0::AbstractVector=[random_point(M) for i in 1:n],
     kwargs...,
 ) where {TF}
-    x_res = allocate.(x0)
-    copyto!.(Ref(M), x_res, x0)
+    x_res = copy.(Ref(M), x0)
     return particle_swarm!(M, F; n=n, x0=x_res, kwargs...)
 end
 @doc raw"""
