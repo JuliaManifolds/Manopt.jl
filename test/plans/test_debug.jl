@@ -34,9 +34,9 @@
     DebugCost(; long=false, io=io)(p, o, -1)
     @test String(take!(io)) == ""
     # entry
-    DebugEntry(:x, "x:", io)(p, o, 0)
+    DebugEntry(:x; prefix="x:", io=io)(p, o, 0)
     @test String(take!(io)) == "x: $x"
-    DebugEntry(:x, "x:", io)(p, o, -1)
+    DebugEntry(:x; prefix="x:", io=io)(p, o, -1)
     @test String(take!(io)) == ""
     # Change
     a2 = DebugChange(; storage=StoreOptionsAction((:x,)), prefix="Last: ", io=io)
@@ -46,9 +46,9 @@
     @test String(take!(io)) == "Last: 1.000000"
     # Iterate
     DebugIterate(; io=io)(p, o, 0)
-    @test String(take!(io)) == "x:$(o.x)"
+    @test String(take!(io)) == ""
     DebugIterate(; io=io)(p, o, 1)
-    @test String(take!(io)) == "x:$(o.x)"
+    @test String(take!(io)) == "x: $(o.x)"
     # Iteration
     DebugIteration(; io=io)(p, o, 0)
     @test String(take!(io)) == "Initial"
@@ -56,11 +56,9 @@
     @test String(take!(io)) == "# 23    "
     # DEbugEntryChange - reset
     o.x = x
-    a3 = DebugEntryChange(
-        :x, (p, o, x, y) -> distance(p.M, x, y), StoreOptionsAction((:x,)), "Last: ", io
-    )
+    a3 = DebugEntryChange(:x, (p, o, x, y) -> distance(p.M, x, y); prefix="Last: ", io)
     a4 = DebugEntryChange(
-        x, :x, (p, o, x, y) -> distance(p.M, x, y), StoreOptionsAction((:x,)), "Last: ", io
+        :x, (p, o, x, y) -> distance(p.M, x, y); initial_value=x, format="Last: %1.1f", io
     )
     a3(p, o, 0) # init
     @test String(take!(io)) == ""

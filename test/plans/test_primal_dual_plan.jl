@@ -179,7 +179,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         s = String(take!(io))
         @test startswith(s, "Primal Change: ")
 
-        d5 = DebugPrimalIterate(io)
+        d5 = DebugPrimalIterate(;io=io)
         d5(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "x:")

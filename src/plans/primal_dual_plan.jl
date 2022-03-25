@@ -596,12 +596,12 @@ function DebugPrimalChange(
 end
 
 """
-    DebugPrimalIterate(opts...)
+    DebugPrimalIterate(opts...;kwargs...)
 
 Print the change of the primal variable by using [`DebugIterate`](@ref),
 see their constructors for detail.
 """
-DebugPrimalIterate(opts...) = DebugIterate(opts...)
+DebugPrimalIterate(opts...;kwargs...) = DebugIterate(opts...;kwargs...)
 
 """
     DebugDualIterate(e)
