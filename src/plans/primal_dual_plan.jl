@@ -486,19 +486,19 @@ mutable struct DebugDualResidual <: DebugAction
     )
         return new(io, "Dual Residual: ", storage)
     end
-    function DebugDualResidual(;
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+    function DebugDualResidual(
+        initial_values::Tuple{P,T,Q};
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
     ) where {P,T,Q}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "Dual Residual: ", a)
+        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), initial_values)))
+        return new(io, "Dual Residual: ", storage)
     end
 end
 function (d::DebugDualResidual)(p::PrimalDualProblem, o::ChambollePockOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(d.io, d.prefix * string(dual_residual(p, o, xOld, ξOld, nOld)))
+        print(d.io, "todo" * d.prefix * string(dual_residual(p, o, xOld, ξOld, nOld)))
     end
     return d.storage(p, o, i)
 end
@@ -590,9 +590,11 @@ Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
 function DebugPrimalChange(;
-    a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Primal Change: ", io::IO=stdout
+    storage::StoreOptionsAction=StoreOptionsAction((:x,)),
+    prefix="Primal Change: ",
+    kwargs...,
 )
-    return DebugChange(; storage=a, prefix=prefix, io=io)
+    return DebugChange(; storage=storage, prefix=prefix, kwargs...)
 end
 
 """
@@ -624,9 +626,9 @@ mutable struct DebugDualChange <: DebugAction
     prefix::String
     storage::StoreOptionsAction
     function DebugDualChange(;
-        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)), io::IO=stdout
+        storage::StoreOptionsAction=StoreOptionsAction((:ξ, :n)), io::IO=stdout
     )
-        return new(io, "Dual Change: ", a)
+        return new(io, "Dual Change: ", storage)
     end
     function DebugDualChange(
         values::Tuple{T,P},
@@ -664,33 +666,34 @@ Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.n`.
 """
-DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
+DebugDualBaseIterate(oprts...; kwargs...) = DebugEntry(:n, opts...; kwargs...)
+
 """
-    DebugDualChange(a=StoreOptionsAction((:ξ)),io::IO=stdout)
+    DebugDualChange(; storage=StoreOptionsAction((:ξ)), io::IO=stdout)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
 function DebugDualBaseChange(;
-    storage=a::StoreOptionsAction = StoreOptionsAction((:n)), io::IO=stdout
+    storage::StoreOptionsAction=StoreOptionsAction((:n)), kwargs...
 )
     return DebugEntryChange(
         :n,
         (p, o, x, y) -> distance(p.N, x, y);
         storage=storage,
         prefix="Dual Base Change:",
-        io=io,
+        kwargs...,
     )
 end
 
 """
-    DebugPrimalBaseIterate(io::IO=stdout)
+    DebugPrimalBaseIterate()
 
 Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.m`.
 """
-DebugPrimalBaseIterate(; io::IO=stdout) = DebugEntry(:m; prefix="m:", io=io)
+DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
 
 """
     DebugPrimalBaseChange(a::StoreOptionsAction=StoreOptionsAction((:m)),io::IO=stdout)
@@ -698,11 +701,9 @@ DebugPrimalBaseIterate(; io::IO=stdout) = DebugEntry(:m; prefix="m:", io=io)
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugPrimalBaseChange(;
-    a::StoreOptionsAction=StoreOptionsAction((:m)), io::IO=stdout
-)
+function DebugPrimalBaseChange(opts...; prefix="Primal Base Change:", kwargs...)
     return DebugEntryChange(
-        :m, (p, o, x, y) -> distance(p.M, x, y), a, "Primal Base Change:", io
+        :m, (p, o, x, y) -> distance(p.M, x, y), opts...; prefix=prefix, kwargs...
     )
 end
 
