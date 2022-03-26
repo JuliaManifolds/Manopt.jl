@@ -15,7 +15,9 @@ mkpath(pluto_output_folder)
 #
 #
 # Please do not use the same name as for a(n old) literate Tutorial
-pluto_files = ["Optimize!", "GeodesicRegression", "Benchmark", "Bezier", "AutomaticDifferentiation"]
+pluto_files = [
+    "Optimize!", "GeodesicRegression", "Benchmark", "Bezier", "AutomaticDifferentiation"
+]
 pluto_titles = [
     "Get started: Optimize!",
     "Do Geodesic regression",
@@ -71,7 +73,6 @@ for (i, tutorial) in enumerate(tutorials)
     Literate.markdown(sourceFile, tutorialsOutputPath; name=tutorial, credit=false)
     push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
 end
-
 
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"

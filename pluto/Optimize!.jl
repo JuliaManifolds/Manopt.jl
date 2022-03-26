@@ -82,11 +82,11 @@ Let‘s load a few colors from [Paul Tol](https://personal.sron.nl/~pault/)
 
 # ╔═╡ 0b405c42-19a5-480d-b1dc-0fb8811a48fa
 begin
-	black = RGBA{Float64}(colorant"#000000")
-	TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
-	TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
-	TolVibrantTeal = RGBA{Float64}(colorant"#009988")
-	TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
+    black = RGBA{Float64}(colorant"#000000")
+    TolVibrantOrange = RGBA{Float64}(colorant"#EE7733")
+    TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
+    TolVibrantTeal = RGBA{Float64}(colorant"#009988")
+    TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
 end;
 
 # ╔═╡ 803fc640-bbed-4700-8a1e-f414c6446eea
@@ -101,12 +101,12 @@ We take a look at a srandom set of points.
 
 # ╔═╡ 7e0301fb-7465-410c-b47c-04686bf44ab1
 begin
-	n = 100
-	σ = π / 8
-	M = Sphere(2)
-	x = 1 / sqrt(2) * [1.0, 0.0, 1.0]
-	Random.seed!(42)
-	data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
+    n = 100
+    σ = π / 8
+    M = Sphere(2)
+    x = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+    Random.seed!(42)
+    data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
 end
 
 # ╔═╡ 9b130a57-293d-429d-88b5-78bfacbf836f
@@ -175,13 +175,15 @@ Note that here we use `PlutoUI` to see the output also here in the notebook
 
 # ╔═╡ 51daafb5-84a0-47fd-ac40-4d53888cd914
 with_terminal() do
-	global xMean = gradient_descent(
-    	M,
-   		F,
-    	gradF,
-    	data[1];
-    	debug=[:Iteration, (:Change, "change: %1.9f | "), :Cost, (:x, " | %s"), "\n", :Stop],
-	)
+    global xMean = gradient_descent(
+        M,
+        F,
+        gradF,
+        data[1];
+        debug=[
+            :Iteration, (:Change, "change: %1.9f | "), :Cost, (:x, " | %s"), "\n", :Stop
+        ],
+    )
 end
 
 # ╔═╡ 863bf8b8-272c-40d6-985f-0a7cf9454756
@@ -194,14 +196,16 @@ We can tweak the default values for the `contractionFactor` and the `sufficientD
 
 # ╔═╡ 38df2fb3-f742-4652-857c-baa403985ff8
 with_terminal() do
-	global xMean2 = gradient_descent(
-    	M,
-    	F,
-    	gradF,
-    	data[1];
-    	stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
-    	debug=[:Iteration, (:Change, "change: %1.9f | "), :Cost, (:x, " | %s"), "\n", :Stop],
-	)
+    global xMean2 = gradient_descent(
+        M,
+        F,
+        gradF,
+        data[1];
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+        debug=[
+            :Iteration, (:Change, "change: %1.9f | "), :Cost, (:x, " | %s"), "\n", :Stop
+        ],
+    )
 end
 
 # ╔═╡ 244eb6ea-0bdb-4443-8dc1-40419966198a
@@ -225,15 +229,22 @@ to be 200, we can run
 
 # ╔═╡ a99a5603-6ef5-43e8-a082-54dd20226956
 with_terminal() do
-	global xMean3 = gradient_descent(
-    M,
-    F,
-    gradF,
-    data[1];
-    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
-    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-15),
- 	debug=[:Iteration, (:Change, "change: %1.9f | "), (:Cost, "F(x): %1.9f"), (:x, " | %s"), "\n", :Stop],
-)
+    global xMean3 = gradient_descent(
+        M,
+        F,
+        gradF,
+        data[1];
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
+        stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-15),
+        debug=[
+            :Iteration,
+            (:Change, "change: %1.9f | "),
+            (:Cost, "F(x): %1.9f"),
+            (:x, " | %s"),
+            "\n",
+            :Stop,
+        ],
+    )
 end
 
 # ╔═╡ 98028747-31dd-4bf8-b4b5-0959d5afb75c
@@ -283,15 +294,26 @@ So we call the cyclic proximal point algorithm this time with a recording and ac
 
 # ╔═╡ d2a8250e-7796-454b-a0bf-9970b1b9a2aa
 with_terminal() do
-global o = cyclic_proximal_point(
-	    M,
-    	F2,
-    	proxes,
-    	data[1];
-    	debug=[:Iteration, " | ", :Change, " | ", (:Cost, "F(x): %1.12f")," | ", :x, "\n", 50, :Stop],
-    	record=[:Iteration, :Change, :Cost, :x],
-    	return_options=true,
-	)
+    global o = cyclic_proximal_point(
+        M,
+        F2,
+        proxes,
+        data[1];
+        debug=[
+            :Iteration,
+            " | ",
+            :Change,
+            " | ",
+            (:Cost, "F(x): %1.12f"),
+            " | ",
+            :x,
+            "\n",
+            50,
+            :Stop,
+        ],
+        record=[:Iteration, :Change, :Cost, :x],
+        return_options=true,
+    )
 end
 
 # ╔═╡ 90414c9b-b164-490c-b939-2472d8284887
@@ -321,7 +343,7 @@ asymptote_export_S2_signals(
     image_prefix * "/startDataCenterMedianAndMean.asy";
     points=[[x], data, [xMean], [xMedian]],
     colors=Dict(
-        :points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta],
+        :points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]
     ),
     dot_size=3.5,
     camera_position=(1.0, 0.5, 0.5),
