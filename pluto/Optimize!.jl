@@ -46,7 +46,7 @@ begin
     localpath = join(splitpath(@__FILE__)[1:(end - 1)], "/") # files folder
     image_prefix = localpath * "/optimize"
     @info image_prefix
-    render_asy = true # on CI or when you do not have asymptote, this should be false
+    render_asy = false # on CI or when you do not have asymptote, this should be false
 end;
 
 # ╔═╡ 65489070-9066-46bb-b5b1-52732dbe9bc7
