@@ -85,7 +85,7 @@ end
     o = GradientDescentOptions(1.0)
     s1 = StopWhenStepSizeLess(0.5)
     @test !s1(p, o, 1)
-    @test sr.reason == ""
+    @test s1.reason == ""
     o.stepsize = ConstantStepsize(0.25)
     @test s1(p, o, 2)
     @test length(s1.reason) > 0
