@@ -440,24 +440,26 @@ end
 debug for the gradient evaluated at the current iterate
 
 # Constructors
-    DebugGradient([long=false,p=print])
+    DebugGradient(; long=false, prefix= , format= "$prefix%s", io=stdout)
 
-display the short (`false`) or long (`true`) default text for the gradient.
-
-    DebugGradient(prefix[, p=print])
-
-display the a `prefix` in front of the gradient.
+display the short (`false`) or long (`true`) default text for the gradient,
+or set the `prefix` manually. Alternatively the complete format can be set.
 """
 mutable struct DebugGradient <: DebugAction
     io::IO
-    prefix::String
-    function DebugGradient(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Gradient: " : "gradF(x):")
+    format::String
+    function DebugGradient(;
+        long::Bool=false,
+        prefix=long ? "Gradient: " : "gradF(x):",
+        format="$prefix%s",
+        io::IO=stdout,
+    )
+        return new(io, format)
     end
-    DebugGradient(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugGradient)(::GradientProblem, o::GradientDescentOptions, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * "" * string(o.gradient) : "")
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), o.gradient)
     return nothing
 end
 
@@ -477,14 +479,19 @@ display the a `prefix` in front of the gradientnorm.
 """
 mutable struct DebugGradientNorm <: DebugAction
     io::IO
-    prefix::String
-    function DebugGradientNorm(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Norm of the Gradient: " : "|gradF(x)|:")
+    format::String
+    function DebugGradientNorm(;
+        long::Bool=false,
+        prefix=long ? "Norm of the Gradient: " : "|gradF(x)|:",
+        format="$prefix%s",
+        io::IO=stdout,
+    )
+        return new(io, format)
     end
-    DebugGradientNorm(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugGradientNorm)(p::GradientProblem, o::Options, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * "$(norm(p.M,o.x,o.gradient))" : "")
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), norm(p.M, o.x, o.gradient))
     return nothing
 end
 
@@ -494,24 +501,25 @@ end
 debug for the current step size.
 
 # Constructors
-    DebugStepsize([long=false,p=print])
-
-display the short (`false`) or long (`true`) default text for the step size.
-
-    DebugStepsize(prefix[, p=print])
+    DebugStepsize(;long=false,prefix="step size:", format="$prefix%s", io=stdout)
 
 display the a `prefix` in front of the step size.
 """
 mutable struct DebugStepsize <: DebugAction
     io::IO
-    prefix::String
-    function DebugStepsize(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "step size:" : "s:")
+    format::String
+    function DebugStepsize(;
+        long::Bool=false,
+        io::IO=stdout,
+        prefix=long ? "step size:" : "s:",
+        format="$prefix%s",
+    )
+        return new(io, format)
     end
-    DebugStepsize(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugStepsize)(p::GradientProblem, o::GradientDescentOptions, i::Int)
-    print(d.io, (i > 0) ? d.prefix * "$(get_last_stepsize(p,o,i))" : "")
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, o, i))
     return nothing
 end
 

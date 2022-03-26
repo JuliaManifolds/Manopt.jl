@@ -83,7 +83,7 @@ mutable struct DebugGroup <: DebugAction
     group::Array{DebugAction,1}
     DebugGroup(g::Array{<:DebugAction,1}) = new(g)
 end
-function (d::DebugGroup)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (d::DebugGroup)(p::Problem, o::Options, i)
     for di in d.group
         di(p, o, i)
     end
@@ -105,7 +105,7 @@ mutable struct DebugEvery <: DebugAction
         return new(d, every, alwaysUpdate)
     end
 end
-function (d::DebugEvery)(p::Problem, o::Options, i::Int)
+function (d::DebugEvery)(p::Problem, o::Options, i)
     if (rem(i, d.every) == 0)
         d.debug(p, o, i)
     elseif d.alwaysUpdate
@@ -117,43 +117,38 @@ end
 # Special single ones
 #
 @doc raw"""
-    DebugChange(a,prefix,print)
+    DebugChange()
 
 debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
-during the last iteration. See [`DebugEntryChange`](@ref)
+during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
-# Parameters
-* `x0` – an initial value to already get a Change after the first iterate. Can be left out
-* `a` – (`StoreOptionsAction( (:x,) )`) – the storage of the previous action
-* `prefix` – (`"Last Change:"`) prefix of the debug output
-* `print` – (`print`) default method to perform the print.
+# Keyword Parameters
+* `storage` – (`StoreOptionsAction( (:x,) )`) – (eventually shared) the storage of the previous action
+* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io` – (`stdout`) default steream to print the debug to.
+* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
 """
 mutable struct DebugChange <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugChange(
-        a::StoreOptionsAction=StoreOptionsAction((:x,)),
-        prefix="Last Change: ",
+    function DebugChange(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x,)),
         io::IO=stdout,
+        prefix::String="Last Change: ",
+        format::String="$(prefix)%f",
     )
-        return new(io, prefix, a)
+        return new(io, format, storage)
     end
 end
-function (d::DebugChange)(p::Problem, o::Options, i::Int)
-    s = if (i > 0)
-        (
-            if has_storage(d.storage, :x)
-                d.prefix * string(distance(p.M, o.x, get_storage(d.storage, :x)))
-            else
-                ""
-            end
-        )
-    else
-        ""
-    end
+@deprecate DebugChange(a::StoreOptionsAction, pre::String="Last Change: ", io::IO=stdout) DebugChange(;
+    storage=a, prefix=pre, io=io
+)
+function (d::DebugChange)(p::Problem, o::Options, i)
+    (i > 0) && Printf.format(
+        d.io, Printf.Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x))
+    )
     d.storage(p, o, i)
-    print(d.io, s)
     return nothing
 end
 @doc raw"""
@@ -162,34 +157,54 @@ end
 debug for the current iterate (stored in `o.x`).
 
 # Constructor
-    DebugIterate(io=stdout, long::Bool=false)
+    DebugIterate()
 
 # Parameters
+
+* `io` – (`stdout`) default steream to print the debug to.
 * `long::Bool` whether to print `x:` or `current iterate`
 """
 mutable struct DebugIterate <: DebugAction
     io::IO
-    prefix::String
-    function DebugIterate(io::IO=stdout, long::Bool=false)
-        return new(io, long ? "current Iterate:" : "x:")
+    format::String
+    function DebugIterate(;
+        io::IO=stdout,
+        long::Bool=false,
+        prefix=long ? "current iterate:" : "x:",
+        format="$prefix %s",
+    )
+        return new(io, format)
     end
 end
+@deprecate DebugIterate(io::IO, long::Bool=false) DebugIterate(; io=io, long=long)
 function (d::DebugIterate)(::Problem, o::Options, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * "$(o.x)" : "")
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.x)
     return nothing
 end
 
 @doc raw"""
     DebugIteration <: DebugAction
 
-debug for the current iteration (prefixed with `#`)
+* Constructor
+
+    DebugIteration()
+
+# Keyword parameters
+
+* `format` - (`"# %-6d"`) format to print the output using an sprintf format.
+* `io` – (`stdout`) default steream to print the debug to.
+
+debug for the current iteration (prefixed with `#` by )
 """
 mutable struct DebugIteration <: DebugAction
     io::IO
-    DebugIteration(io::IO=stdout) = new(io)
+    format::String
+    DebugIteration(; io::IO=stdout, format="# %-6d") = new(io, format)
 end
+@deprecate DebugIteration(io::IO) DebugIteration(; io=io)
 function (d::DebugIteration)(::Problem, ::Options, i::Int)
-    print(d.io, (i > 0) ? "# $(i)" : ((i == 0) ? "Initial" : ""))
+    (i == 0) && print(d.io, "Initial")
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
     return nothing
 end
 
@@ -199,24 +214,28 @@ end
 print the current cost function value, see [`get_cost`](@ref).
 
 # Constructors
-    DebugCost(long,print)
+    DebugCost()
 
-where `long` indicated whether to print `F(x):` (default) or `cost: `
+# Parameters
 
-    DebugCost(prefix,print)
-
-set a prefix manually.
+* `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
+* `io` – (`stdout`) default steream to print the debug to.
+* `long` - (`false`) short form to set the format to `F(x):` (default) or `current cost: ` and the cost
 """
 mutable struct DebugCost <: DebugAction
     io::IO
-    prefix::String
-    function DebugCost(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Cost Function: " : "F(x): ")
+    format::String
+    function DebugCost(;
+        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "F(x): %f"
+    )
+        return new(io, format)
     end
-    DebugCost(prefix::String, io::IO=stdout) = new(io, prefix)
 end
+@deprecate DebugCost(pre::String) DebugCost(; format="$pre %f")
+@deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
+@deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
 function (d::DebugCost)(p::Problem, o::Options, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * string(get_cost(p, o.x)) : "")
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, o.x))
     return nothing
 end
 
@@ -234,7 +253,7 @@ mutable struct DebugDivider <: DebugAction
     divider::String
     DebugDivider(divider=" | ", io::IO=stdout) = new(io, divider)
 end
-function (d::DebugDivider)(::Problem, ::Options, i::Int) where {P<:Problem,O<:Options}
+function (d::DebugDivider)(::Problem, ::Options, i::Int)
     print(d.io, (i >= 0) ? d.divider : "")
     return nothing
 end
@@ -242,24 +261,29 @@ end
 @doc raw"""
     DebugEntry <: RecordAction
 
-print a certain fields entry of type {T} during the iterates
+print a certain fields entry of type {T} during the iterates, where a `format` can be
+specified how to print the entry.
 
 # Addidtional Fields
 * `field` – Symbol the entry can be accessed with within [`Options`](@ref)
 
 # Constructor
 
-    DebugEntry(f[, prefix="$f:", io=stdout])
+    DebugEntry(f[, prefix="$f:", format = "$prefix %s", io=stdout])
 
 """
 mutable struct DebugEntry <: DebugAction
     io::IO
-    prefix::String
+    format::String
     field::Symbol
-    DebugEntry(f::Symbol, prefix="$f:", io::IO=stdout) = new(io, prefix, f)
+    function DebugEntry(f::Symbol; prefix="$f:", format="$prefix %s", io::IO=stdout)
+        return new(io, format, f)
+    end
 end
-function (d::DebugEntry)(::Problem, o::Options, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * " " * string(getfield(o, d.field)) : "")
+@deprecate DebugEntry(f, prefix="$f:", io=stdout) DebugEntry(f; prefix=prefix, io=io)
+
+function (d::DebugEntry)(::Problem, o::Options, i)
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(o, d.field))
     return nothing
 end
 
@@ -271,67 +295,56 @@ print a certain entries change during iterates
 # Additional Fields
 * `print` – (`print`) function to print the result
 * `prefix` – (`"Change of :x"`) prefix to the print out
+* `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
 * `storage` – a [`StoreOptionsAction`](@ref) to store the previous value of `:f`
 
 # Constructors
 
-    DebugEntryChange(f,d[, a, prefix, io])
+    DebugEntryChange(f,d)
 
-initialize the Debug to a field `f` and a `distance` `d`.
+# Keyword arguments
 
+- `io` (`stdout`) an `IOStream`
+- `prefix` (`"Change of $f"`)
+- `storage` (`StoreOptionsAction((f,))`) a [`StoreOptionsAction`](@ref)
+- `initial_value` an initial value for the change of `o.field`.
+- `format` – (`"$prefix %e"`) format to print the change
 
-    DebugEntryChange(v,f,d[, a, prefix="Change of $f:", io])
-
-initialize the Debug to a field `f` and a `distance` `d` with initial value `v`
-for the history of `o.field`.
 """
 mutable struct DebugEntryChange <: DebugAction
-    io::IO
-    prefix::String
-    field::Symbol
     distance::Any
+    field::Symbol
+    format::String
+    io::IO
     storage::StoreOptionsAction
     function DebugEntryChange(
         f::Symbol,
-        d,
-        a::StoreOptionsAction=StoreOptionsAction((f,)),
-        prefix="Change of $f:",
+        d;
+        storage::StoreOptionsAction=StoreOptionsAction((f,)),
+        prefix::String="Change of $f:",
+        format::String="$prefix%s",
         io::IO=stdout,
+        initial_value::T where {T}=NaN,
     )
-        return new(io, prefix, f, d, a)
-    end
-    function DebugEntryChange(
-        v::T where {T},
-        f::Symbol,
-        d,
-        a::StoreOptionsAction=StoreOptionsAction((f,)),
-        prefix="Change of $f:",
-        io::IO=stdout,
-    )
-        update_storage!(a, Dict(f => v))
-        return new(io, prefix, f, d, a)
+        if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
+            update_storage!(storage, Dict(f => initial_value))
+        end
+        return new(d, f, format, io, storage)
     end
 end
+
 function (d::DebugEntryChange)(p::Problem, o::Options, i::Int)
-    s = if (i > 0)
-        (
-            if has_storage(d.storage, d.field)
-                d.prefix * string(
-                    d.distance(
-                        p, o, getproperty(o, d.field), get_storage(d.storage, d.field)
-                    ),
-                )
-            else
-                ""
-            end
-        )
-    else
-        ""
+    if i == 0
+        # on init if field not present -> generate
+        !has_storage(d.storage, d.field) && d.storage(p, o, i)
+        return nothing
     end
+    x = get_storage(d.storage, d.field)
+    v = d.distance(p, o, getproperty(o, d.field), x)
+    Printf.format(d.io, Printf.Format(d.format), v)
     d.storage(p, o, i)
-    print(d.io, s)
     return nothing
 end
 
@@ -395,6 +408,7 @@ create a [`DebugAction`](@ref) where
 * a [`DebugAction`](@ref) is passed through
 * a [`Symbol`] creates [`DebugEntry`](@ref) of that symbol, with the exceptions
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
+* a `Tuple{Symbol,String}` creates a [`DebugEntry`](@ref) of that symbol where the String specifies the format.
 """
 DebugActionFactory(s::String) = DebugDivider(s)
 DebugActionFactory(a::A) where {A<:DebugAction} = a
@@ -409,4 +423,16 @@ function DebugActionFactory(s::Symbol)
         return DebugCost()
     end
     return DebugEntry(s)
+end
+function DebugActionFactory(t::Tuple{Symbol,String})
+    if (t[1] == :Change)
+        return DebugChange(; format=t[2])
+    elseif (t[1] == :Iteration)
+        return DebugIteration()
+    elseif (t[1] == :Iterate)
+        return DebugIterate(; format=t[2])
+    elseif (t[1] == :Cost)
+        return DebugCost(; format=t[2])
+    end
+    return DebugEntry(t[1]; format=t[2])
 end
