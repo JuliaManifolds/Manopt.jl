@@ -9,7 +9,7 @@ using Manopt, Manifolds, Random, Colors, PlutoUI
 
 # ╔═╡ 6bf76330-ad0e-11ec-0c00-894872624127
 md"""
-# [Get started: Optimize!](@id Optimize)
+# Get started: Optimize!
 
 This example illustrates how to set up and solve optimization problems and how
 to further get data from the algorithm using debug output and record data.
@@ -43,7 +43,7 @@ Let‘s first set up a few variables
 
 # ╔═╡ 4235a1ba-3cf2-49dc-9a26-32fafc7a7008
 begin
-	localpath = join(splitpath(@__FILE__)[1:(end - 1)], "/") # files folder
+    localpath = join(splitpath(@__FILE__)[1:(end - 1)], "/") # files folder
     image_prefix = localpath * "/optimize"
     @info image_prefix
     render_asy = true # on CI or when you do not have asymptote, this should be false
@@ -164,7 +164,7 @@ act as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern).
 The following debug prints
 
 ```juliaREPL
-# i | Last Change: | F(x): | x: 
+# i | Last Change: | F(x): | x:
 ```
 as well as the reason why the algorithm stopped at the end.
 
@@ -186,14 +186,14 @@ end
 
 # ╔═╡ 863bf8b8-272c-40d6-985f-0a7cf9454756
 md"""
-A way to get better performance and for convex and coercive costs a guaranteed convergence is to switch the default 
-[`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for 
+A way to get better performance and for convex and coercive costs a guaranteed convergence is to switch the default
+[`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for
 example the [`ArmijoLinesearch`](https://manoptjl.org/stable/plans/index.html#Manopt.ArmijoLinesearch).
 We can tweak the default values for the `contractionFactor` and the `sufficientDecrease`  beyond constant step size which is already quite fast. We get
 """
 
 # ╔═╡ 38df2fb3-f742-4652-857c-baa403985ff8
-with_terminal() do 
+with_terminal() do
 	global xMean2 = gradient_descent(
     	M,
     	F,
@@ -216,15 +216,15 @@ F(M, xMean) - F(M, xMean2)
 md"""
 Note that other optimization tasks may have other speedup opportunities.
 
-For even more precision, we can further require a smaller gradient norm. 
-This is done by changing the `StoppingCriterion` used, where several 
-criteria can be combined using `&` and/or `|`.  If we want to decrease the final 
-gradient (from less that 1e-8) norm but keep the maximal number of iterations 
+For even more precision, we can further require a smaller gradient norm.
+This is done by changing the `StoppingCriterion` used, where several
+criteria can be combined using `&` and/or `|`.  If we want to decrease the final
+gradient (from less that 1e-8) norm but keep the maximal number of iterations
 to be 200, we can run
 """
 
 # ╔═╡ a99a5603-6ef5-43e8-a082-54dd20226956
-with_terminal() do 
+with_terminal() do
 	global xMean3 = gradient_descent(
     M,
     F,
@@ -342,7 +342,7 @@ PlutoUI.LocalResource(image_prefix * "/startDataCenterMedianAndMean.png")
 md"""
 ## Literature
 
-[^Bačák2014]: 
+[^Bačák2014]:
 	> Bačák, M: __Computing Medians and Means in Hadamard Spaces.__
     > SIAM Journal on Optimization, Volume 24, Number 3, pp. 1542–1566,
     > doi: [10.1137/140953393](https://doi.org/10.1137/140953393),

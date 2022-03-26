@@ -2,33 +2,8 @@ using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
 using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML, Pkg
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
-# generate examples using Literate
-tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
-tutorialsRelativePath = "tutorials/"
-tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
-tutorials = [
-    "HowToRecord",
-    "StochasticGradientDescent",
-    "GradientOfSecondOrderDifference",
-    "JacobiFields",
-]
-menuEntries = [
-    "Do Geodesic regression",
-    "Record values",
-    "do stochastic gradient descent",
-    "see the gradient of ``d_2``",
-    "use Jacobi Fields",
-]
 TutorialMenu = Array{Pair{String,String},1}()
-for (i, tutorial) in enumerate(tutorials)
-    global TutorialMenu
-    sourceFile = joinpath(tutorialsInputPath, tutorial * ".jl")
-    targetFile = joinpath(tutorialsOutputPath, tutorial * "md")
-    Literate.markdown(sourceFile, tutorialsOutputPath; name=tutorial, credit=false)
-    push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
-end
 
-#
 #
 # Generate Pluto Tutorial HTMLs
 
@@ -72,6 +47,32 @@ for (i, f) in enumerate(pluto_files)
     )
     push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
 end
+
+# generate examples using Literate
+tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
+tutorialsRelativePath = "tutorials/"
+tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
+tutorials = [
+    "HowToRecord",
+    "StochasticGradientDescent",
+    "GradientOfSecondOrderDifference",
+    "JacobiFields",
+]
+menuEntries = [
+    "Record values",
+    "do stochastic gradient descent",
+    "see the gradient of ``d_2``",
+    "use Jacobi Fields",
+]
+for (i, tutorial) in enumerate(tutorials)
+    global TutorialMenu
+    sourceFile = joinpath(tutorialsInputPath, tutorial * ".jl")
+    targetFile = joinpath(tutorialsOutputPath, tutorial * "md")
+    Literate.markdown(sourceFile, tutorialsOutputPath; name=tutorial, credit=false)
+    push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
+end
+
+
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
