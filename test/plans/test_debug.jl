@@ -93,5 +93,15 @@
             [DebugChange, DebugIteration, DebugIterate, DebugCost, DebugEntry],
         ),
     )
+    @test all(
+        isa.(
+            DebugFactory([
+                (:Change, "A"), (:Iteration, "A"), (:Iterate, "A"), (:Cost, "A"), (:x, "A")
+            ])[:All].group,
+            [DebugChange, DebugIteration, DebugIterate, DebugCost, DebugEntry],
+        ),
+    )
     @test DebugActionFactory(a3) == a3
+    @test DebugFactory([(:x, "A")])[:All].group[1].format == "A"
+    @test DebugActionFactory((:x, "A")).format == "A"
 end

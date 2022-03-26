@@ -434,5 +434,5 @@ function DebugActionFactory(t::Tuple{Symbol,String})
     elseif (t[1] == :Cost)
         return DebugCost(; format=t[2])
     end
-    return DebugEntry(s)
+    return DebugEntry(t[1]; format=t[2])
 end
