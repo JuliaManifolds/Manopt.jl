@@ -115,11 +115,11 @@ mutable struct StopWhenStepSizeLess <: StoppingCriterion
     threshold::Float64
     reason::String
     function StopWhenStepSizeLess(ε::Float64)
-        return new(ε)
+        return new(ε, "")
     end
 end
 function (c::StopWhenStepSizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    s = get_last_stepsize(p, o)
+    s = get_last_stepsize(p, o, i)
     if s < c.threshold && i > 0
         c.reason = "The algorithm computed a step size ($s) less than $(c.threshold).\n"
         return true

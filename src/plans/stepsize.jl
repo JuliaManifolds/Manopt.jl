@@ -60,9 +60,7 @@ mutable struct DecreasingStepsize <: Stepsize
     subtrahend::Float64
     exponent::Float64
     shift::Int
-    function DecreasingStepsize(
-        l::Real=1.0, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0
-    )
+    function DecreasingStepsize(l::Real, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0)
         return new(l, f, a, e, s)
     end
 end
