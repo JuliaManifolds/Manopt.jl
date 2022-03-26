@@ -262,7 +262,7 @@ asymptote_export_S2_signals(
 )
 
 # ╔═╡ 5e1e6db2-39da-4857-8745-eda6ae510fa8
-render_asymptote(image_prefix * "/startDataCenterMean.asy"; render=2)
+render_asy && render_asymptote(image_prefix * "/startDataCenterMean.asy"; render=2)
 
 # ╔═╡ c9e09455-1af2-40aa-aa05-7fa329b5eec7
 PlutoUI.LocalResource(image_prefix * "/startDataCenterMean.png")
