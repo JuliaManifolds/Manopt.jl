@@ -98,6 +98,35 @@ function (c::StopWhenChangeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Option
     c.storage(p, o, i)
     return false
 end
+
+"""
+    StopWhenStepsizeLess <: StoppingCriterion
+
+stores a threshold when to stop looking at the last step size determined or found
+during the last iteration from within a [`Options`](@ref).
+
+# Constructor
+
+    StopWhenStepsizeLess(ε)
+
+initialize the stopping criterion to a threshold `ε`.
+"""
+mutable struct StopWhenStepSizeLess <: StoppingCriterion
+    threshold::Float64
+    reason::String
+    function StopWhenStepSizeLess(ε::Float64)
+        return new(ε, "")
+    end
+end
+function (c::StopWhenStepSizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    s = get_last_stepsize(p, o, i)
+    if s < c.threshold && i > 0
+        c.reason = "The algorithm computed a step size ($s) less than $(c.threshold).\n"
+        return true
+    end
+    return false
+end
+
 @doc raw"""
     StopWhenAll <: StoppingCriterion
 

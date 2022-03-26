@@ -290,7 +290,7 @@ export StopIfResidualIsReducedByFactor,
     StopWhenTrustRegionIsExceeded,
     StopWhenModelIncreased
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
-export StopAfter, StopWhenAll, StopWhenAny
+export StopWhenStepSizeLess, StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 export are_these_stopping_critera_active
 export StoppingCriterion, StoppingCriterionSet, Stepsize
