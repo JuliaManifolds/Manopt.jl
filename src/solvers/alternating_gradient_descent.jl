@@ -44,8 +44,7 @@ OR
 function alternating_gradient_descent(
     M::ProductManifold, F, gradF::Union{TgF,AbstractVector{<:TgF}}, x; kwargs...
 ) where {TgF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
+    x_res = copy(M, x)
     return alternating_gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""

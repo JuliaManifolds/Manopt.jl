@@ -172,7 +172,7 @@ end
 compute the (sub)gradient of the distance (squared), in place of `X`.
 
 ```math
-f(x) = \frac{1}{2} d^p_{\mathcal M}(x,y)
+f(x) = \frac{1}{p} d^p_{\mathcal M}(x,y)
 ```
 
 to a fixed point `y` on the manifold `M` and `p` is an

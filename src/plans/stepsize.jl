@@ -16,7 +16,11 @@ mutable struct ConstantStepsize <: Stepsize
     length::Float64
     ConstantStepsize(s::Real) = new(s)
 end
-(s::ConstantStepsize)(p::P, o::O, i::Int, vars...) where {P<:Problem,O<:Options} = s.length
+function (s::ConstantStepsize)(
+    p::P, o::O, i::Int, args...; kwargs...
+) where {P<:Problem,O<:Options}
+    return s.length
+end
 get_initial_stepsize(s::ConstantStepsize) = s.length
 
 @doc raw"""
@@ -30,18 +34,23 @@ A functor that represents several decreasing step sizes
 * `subtrahend` – (`0`) a value ``a`` that is subtracted every iteration
 * `exponent` – (`1`) a value ``e`` the current iteration numbers ``e``th exponential
   is taken of
+* `shift` – (`0`) shift the denominator iterator ``i`` by ``s```.
 
 In total the complete formulae reads for the ``i``th iterate as
 
 ````math
-s_i = \frac{(l - i a)f^i}{i^e}
+s_i = \frac{(l - i a)f^i}{(i-s)^e}
 ````
 
 and hence the default simplifies to just ``s_i = \frac{l}{i}``
 
 # Constructor
 
-    ConstantStepSize(l,f,a,e)
+    DecreasingStepsize(l=1,f=1,a=0,e=1,s=0)
+
+Alternatively one can also use the following keyword Alternatively
+
+   DecreasingStepSize(;length=1.0, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
 
 initialiszes all fields above, where none of them is mandatory.
 """
@@ -50,12 +59,18 @@ mutable struct DecreasingStepsize <: Stepsize
     factor::Float64
     subtrahend::Float64
     exponent::Float64
-    function DecreasingStepsize(l::Real=1.0, f::Real=1.0, a::Real=0.0, e::Real=1.0)
-        return new(l, f, a, e)
+    shift::Int
+    function DecreasingStepsize(l::Real, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0)
+        return new(l, f, a, e, s)
     end
 end
-function (s::DecreasingStepsize)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    return (s.length - i * s.subtrahend) * (s.factor^i) / (i^(s.exponent))
+function DecreasingStepsize(; length=1.0, factor=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+    return DecreasingStepsize(length, factor, subtrahend, exponent, shift)
+end
+function (s::DecreasingStepsize)(
+    ::P, ::O, i::Int, args...; kwargs...
+) where {P<:Problem,O<:Options}
+    return (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
 
@@ -86,6 +101,8 @@ last step size.
 * `contractionFactor` – (`0.95`) exponent for line search reduction
 * `sufficientDecrease` – (`0.1`) gain within Armijo's rule
 * `lastStepSize` – (`initialstepsize`) the last step size we start the search with
+* `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
+    before the step is numerically zero. This should be combined with [`StopWhenStepSizeLess`](@ref)
 
 # Constructor
 
@@ -108,17 +125,21 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     contractionFactor::Float64
     sufficientDecrease::Float64
     stepsizeOld::Float64
+    linesearch_stopsize::Float64
     function ArmijoLinesearch(
         s::Float64=1.0,
         r::AbstractRetractionMethod=ExponentialRetraction(),
         contractionFactor::Float64=0.95,
         sufficientDecrease::Float64=0.1,
+        linesearch_stopsize::Float64=0.0,
     )
-        return new{typeof(r)}(s, r, contractionFactor, sufficientDecrease, s)
+        return new{typeof(r)}(
+            s, r, contractionFactor, sufficientDecrease, s, linesearch_stopsize
+        )
     end
 end
 function (a::ArmijoLinesearch)(
-    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x)
+    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x); kwargs...
 )
     a.stepsizeOld = linesearch_backtrack(
         p.M,
@@ -129,14 +150,15 @@ function (a::ArmijoLinesearch)(
         a.sufficientDecrease,
         a.contractionFactor,
         a.retraction_method,
-        η,
+        η;
+        stop_step=a.linesearch_stopsize,
     )
     return a.stepsizeOld
 end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 
 @doc raw"""
-    linesearch_backtrack(M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x))
+    linesearch_backtrack(M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x); stop_step=0.)
 
 perform a linesearch for
 * a manifold `M`
@@ -149,6 +171,7 @@ perform a linesearch for
 * a `retr`action, which defaults to the `ExponentialRetraction()`
 * a search direction ``η = -\operatorname{grad}F(x)``
 * an offset, ``f_0 = F(x)``
+* a keyword `stop_step` as a minimal step size when to stop
 """
 function linesearch_backtrack(
     M::AbstractManifold,
@@ -160,7 +183,8 @@ function linesearch_backtrack(
     contract,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
     η::T=-gradFx,
-    f0=F(x),
+    f0=F(x);
+    stop_step=0.0,
 ) where {TF,T}
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
@@ -174,6 +198,7 @@ function linesearch_backtrack(
         s = contract * s
         retract!(M, xNew, x, s * η, retr)
         fNew = F(xNew)
+        (s < stop_step) && break
     end
     return s
 end
@@ -241,15 +266,17 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 
 # Fields
 * `initial_stepsize` – (`1.0`) the step size we start the search with
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
-* `vector_transport_method` – (`ParallelTransport()`) the vector transport method to use
-* `stepsize_reduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
-* `sufficient_decrease` – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
+* `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
+    before the step is numerically zero. This should be combined with [`StopWhenStepSizeLess`](@ref)
 * `memory_size` – (`10`) number of iterations after which the cost value needs to be lower than the current one
 * `min_stepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
 * `max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
+* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
 * `strategy` – (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
 * `storage` – (`x`, `gradient`) a [`StoreOptionsAction`](@ref) to store `old_x` and `old_gradient`, the x-value and corresponding gradient of the previous iteration
+* `stepsize_reduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
+* `sufficient_decrease` – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
+* `vector_transport_method` – (`ParallelTransport()`) the vector transport method to use
 
 # Constructor
 
@@ -272,6 +299,7 @@ mutable struct NonmonotoneLinesearch{
     old_costs::T
     strategy::Symbol
     storage::StoreOptionsAction
+    linesearch_stopsize::Float64
     function NonmonotoneLinesearch(
         initial_stepsize::Float64=1.0,
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
@@ -283,6 +311,7 @@ mutable struct NonmonotoneLinesearch{
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
         storage::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
+        linesearch_stopsize::Float64=0.0,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
@@ -324,11 +353,12 @@ mutable struct NonmonotoneLinesearch{
             zeros(memory_size),
             strategy,
             storage,
+            linesearch_stopsize,
         )
     end
 end
 function (a::NonmonotoneLinesearch)(
-    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x)
+    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x); kwargs...
 )
     if !all(has_storage.(Ref(a.storage), [:x, :gradient]))
         old_x = o.x
@@ -340,7 +370,7 @@ function (a::NonmonotoneLinesearch)(
     return a(p.M, o.x, x -> get_cost(p, x), get_gradient(p, o.x), η, old_x, old_gradient, i)
 end
 function (a::NonmonotoneLinesearch)(
-    M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int
+    M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int; kwargs...
 ) where {mT<:AbstractManifold,TF,T}
     #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space
     grad_diff =
@@ -401,7 +431,8 @@ function (a::NonmonotoneLinesearch)(
         a.stepsize_reduction,
         a.retraction_method,
         η,
-        maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]),
+        maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]);
+        stop_step=a.linesearch_stopsize,
     )
     return a.initial_stepsize
 end
@@ -446,7 +477,7 @@ mutable struct WolfePowellLineseach <: Linesearch
 end
 
 function (a::WolfePowellLineseach)(
-    p::P, o::O, ::Int, η=-get_gradient(p, o.x)
+    p::P, o::O, ::Int, η=-get_gradient(p, o.x); kwargs...
 ) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     s = 1.0
     s_plus = 1.0
@@ -510,7 +541,7 @@ Then with
 
 ```math
 A(t) = f(x_+) ≤ c_1 t ⟨\operatorname{grad}f(x), η⟩_{x}
-\quad\text{and}\quad 
+\quad\text{and}\quad
 W(t) = ⟨\operatorname{grad}f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 ⟨η, \operatorname{grad}f(x)⟩_x,
 ```
 
@@ -554,7 +585,7 @@ mutable struct WolfePowellBinaryLinesearch <: Linesearch
 end
 
 function (a::WolfePowellBinaryLinesearch)(
-    p::P, o::O, ::Int, η=-get_gradient(p, o.x)
+    p::P, o::O, ::Int, η=-get_gradient(p, o.x); kwargs...
 ) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     α = 0.0
     β = Inf
@@ -590,17 +621,19 @@ return the stepsize stored within [`Options`](@ref) `o` when solving [`Problem`]
 This method also works for decorated options and the [`Stepsize`](@ref) function within
 the options, by default stored in `o.stepsize`.
 """
-function get_stepsize(p::Problem, o::Options, vars...)
-    return get_stepsize(p, o, dispatch_options_decorator(o), vars...)
+function get_stepsize(p::Problem, o::Options, vars...; kwargs...)
+    return get_stepsize(p, o, dispatch_options_decorator(o), vars...; kwargs...)
 end
-function get_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
-    return get_stepsize(p, o.options, vars...)
+function get_stepsize(p::Problem, o::Options, ::Val{true}, vars...; kwargs...)
+    return get_stepsize(p, o.options, vars...; kwargs...)
 end
-get_stepsize(p::Problem, o::Options, ::Val{false}, vars...) = o.stepsize(p, o, vars...)
+function get_stepsize(p::Problem, o::Options, ::Val{false}, vars...; kwargs...)
+    return o.stepsize(p, o, vars...; kwargs...)
+end
 
-function get_initial_stepsize(p::Problem, o::Options, vars...)
+function get_initial_stepsize(p::Problem, o::Options, vars...; kwargs...)
     return get_initial_stepsize(
-        p::Problem, o::Options, dispatch_options_decorator(o), vars...
+        p::Problem, o::Options, dispatch_options_decorator(o), vars...; kwargs...
     )
 end
 function get_initial_stepsize(p::Problem, o::Options, ::Val{true}, vars...)

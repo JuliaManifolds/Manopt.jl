@@ -31,10 +31,9 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function cyclic_proximal_point(
-    M::AbstractManifold, F::Function, proxes::Union{Tuple,AbstractVector}, x0; kwargs...
-)
-    x_res = allocate(x0)
-    copyto!(M, x_res, x0)
+    M::AbstractManifold, F::TF, proxes::Union{Tuple,AbstractVector}, x0; kwargs...
+) where {TF}
+    x_res = copy(M, x0)
     return cyclic_proximal_point!(M, F, proxes, x_res; kwargs...)
 end
 
@@ -54,7 +53,7 @@ for all options, see [`cyclic_proximal_point`](@ref).
 """
 function cyclic_proximal_point!(
     M::AbstractManifold,
-    F::Function,
+    F::TF,
     proxes::Union{Tuple,AbstractVector},
     x0;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -65,7 +64,7 @@ function cyclic_proximal_point!(
     λ=i -> 1 / i,
     return_options=false,
     kwargs..., #decorator options
-)
+) where {TF}
     p = ProximalProblem(M, F, proxes; evaluation=evaluation)
     o = CyclicProximalPointOptions(x0, stopping_criterion, λ, evaluation_order)
 

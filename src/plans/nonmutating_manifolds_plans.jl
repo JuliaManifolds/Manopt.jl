@@ -19,7 +19,8 @@ function linesearch_backtrack(
     contract,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
     η::T=-gradF,
-    f0=F(x),
+    f0=F(x);
+    stop_step=0.0,
 ) where {TF,T}
     x_new = retract(M, x, s * η, retr)
     fNew = F(x_new)
@@ -33,6 +34,7 @@ function linesearch_backtrack(
         s = contract * s
         x_new = retract(M, x, s * η, retr)
         fNew = F(x_new)
+        (s < stop_step) && break
     end
     return s
 end
