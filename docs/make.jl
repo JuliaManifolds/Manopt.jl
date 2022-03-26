@@ -7,14 +7,12 @@ tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
 tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
-    "MeanAndMedian",
     "HowToRecord",
     "StochasticGradientDescent",
     "GradientOfSecondOrderDifference",
     "JacobiFields",
 ]
 menuEntries = [
-    "get Started: Optimize!",
     "Do Geodesic regression",
     "Record values",
     "do stochastic gradient descent",
@@ -42,8 +40,9 @@ mkpath(pluto_output_folder)
 #
 #
 # Please do not use the same name as for a(n old) literate Tutorial
-pluto_files = ["GeodesicRegression", "Benchmark", "Bezier", "AutomaticDifferentiation"]
+pluto_files = ["Optimize!", "GeodesicRegression", "Benchmark", "Bezier", "AutomaticDifferentiation"]
 pluto_titles = [
+    "Get started: Optimize!",
     "Do Geodesic regression",
     "speed up! using `gradF!`",
     "Use Bezier Curves",
@@ -52,7 +51,7 @@ pluto_titles = [
 # build menu and write files myself - tp set edit url correctly.
 for (i, f) in enumerate(pluto_files)
     global TutorialMenu
-    rendered = parallel_build( #though not really parallel here
+    rendered = build_notebooks( #though not really parallel here
         BuildOptions(
             pluto_src_folder;
             output_format=documenter_output,
