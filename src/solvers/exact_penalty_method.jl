@@ -168,6 +168,7 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     grad = get_exact_penalty_gradient_function(p, o)
     o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm)))
     ######add minstepsize to stopping criteria of subsolver in both methods 
+    ######we can't use StopWhenChangeLess generally, because the distance is not defined on all manifolds (e.g. Stiefel) -> new stopping criterion StopWhenCostChangeLess?
     
     # get new evaluation of penalty
     cost_ineq = get_inequality_constraints(p, o.x)
@@ -186,6 +187,10 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     if max_violation > o.ϵ 
         o.ρ = o.ρ/o.θ_ρ 
     end
+    # # update ρ if necessary
+    # if max_violation >  1e-6
+    #     o.ρ = o.ρ/o.θ_ρ 
+    # end
     
    # update ϵ and tolgradnorm
     o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
@@ -203,11 +208,11 @@ function get_exact_penalty_cost_function(p::ConstrainedProblem, o::EPMOptions)
         if num_inequality_constraints != 0 
             s = (p, x) -> max.(0, get_inequality_constraints(p, x))
             cost_ineq = x -> sum(s(p, x) .+ o.ϵ .* log.( exp.((get_inequality_constraints(p, x) .- s(p, x))./o.ϵ) + exp.(-s(p, x)./o.ϵ)))
-        end ### why is s used like that?
+        end 
         if num_equality_constraints != 0
             s = (p, x) -> max.(-get_equality_constraints(p, x), get_equality_constraints(p, x))
             cost_eq = x -> sum(s(p, x) .+ o.ϵ .* log.( exp.((get_equality_constraints(p, x) .- s(p, x))./o.ϵ) .+ exp.((-get_equality_constraints(p, x) .- s(p, x))./o.ϵ)))
-        end ### why is s used like that?
+        end
     elseif o.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0 
             cost_eq_greater_ϵ = x -> sum((get_inequality_constraints(p, x) .- o.ϵ/2) .* (get_inequality_constraints(p, x) .> o.ϵ))
