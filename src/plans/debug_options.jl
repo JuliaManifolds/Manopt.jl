@@ -323,8 +323,8 @@ mutable struct DebugEntryChange <: DebugAction
         f::Symbol,
         d;
         storage::StoreOptionsAction=StoreOptionsAction((f,)),
-        prefix="Change of $f:",
-        format="$prefix%s",
+        prefix::String="Change of $f:",
+        format::String="$prefix%s",
         io::IO=stdout,
         initial_value::T where {T}=NaN,
     )

@@ -184,17 +184,17 @@ using Manopt, Manifolds, ManifoldsBase, Test
         s = String(take!(io))
         @test startswith(s, "x:")
 
-        d6 = DebugDualIterate(io)
+        d6 = DebugDualIterate(; io=io)
         d6(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "ξ:")
 
-        d7 = DebugDualChange(a, io)
+        d7 = DebugDualChange(; storage=a, io=io)
         d7(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
 
-        d7a = DebugDualChange((ξ0, n), a, io)
+        d7a = DebugDualChange((ξ0, n); storage=a, io=io)
         d7a(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
@@ -209,27 +209,27 @@ using Manopt, Manifolds, ManifoldsBase, Test
         s = String(take!(io))
         @test startswith(s, "Dual Base Change:")
 
-        d10 = DebugPrimalBaseIterate(io)
+        d10 = DebugPrimalBaseIterate(; io=io)
         d10(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "m:")
 
-        d11 = DebugPrimalBaseChange(a, io)
+        d11 = DebugPrimalBaseChange(; storage=a, io=io)
         d11(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Base Change:")
 
-        d12 = DebugDualResidual((x0, ξ0, n), a, io)
+        d12 = DebugDualResidual((x0, ξ0, n); storage=a, io=io)
         d12(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Residual:")
 
-        d13 = DebugPrimalDualResidual((x0, ξ0, n), a, io)
+        d13 = DebugPrimalDualResidual((x0, ξ0, n); storage=a, io=io)
         d13(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "PD Residual:")
 
-        d14 = DebugPrimalResidual((x0, ξ0, n), a, io)
+        d14 = DebugPrimalResidual((x0, ξ0, n); storage=a, io=io)
         d14(p_exact, o_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Residual:")
