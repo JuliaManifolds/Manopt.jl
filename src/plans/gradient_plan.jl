@@ -488,7 +488,6 @@ mutable struct DebugGradientNorm <: DebugAction
     )
         return new(io, format)
     end
-    DebugGradientNorm(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugGradientNorm)(p::GradientProblem, o::Options, i::Int)
     (i < 1) && return nothing
@@ -502,11 +501,7 @@ end
 debug for the current step size.
 
 # Constructors
-    DebugStepsize([long=false,p=print])
-
-display the short (`false`) or long (`true`) default text for the step size.
-
-    DebugStepsize(prefix[, p=print])
+    DebugStepsize(;long=false,prefix="step size:", format="$prefix%s", io=stdout)
 
 display the a `prefix` in front of the step size.
 """
@@ -521,7 +516,6 @@ mutable struct DebugStepsize <: DebugAction
     )
         return new(io, format)
     end
-    DebugStepsize(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugStepsize)(p::GradientProblem, o::GradientDescentOptions, i::Int)
     (i < 1) && return nothing

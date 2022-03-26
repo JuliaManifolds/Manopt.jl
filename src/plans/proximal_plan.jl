@@ -183,15 +183,13 @@ mutable struct DebugProximalParameter <: DebugAction
     end
 end
 function (d::DebugProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
-    (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), o.λ(i))
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.λ(i))
     return nothing
 end
 function (d::DebugProximalParameter)(
     ::ProximalProblem, o::CyclicProximalPointOptions, i::Int
 )
-    (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), o.λ(i))
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.λ(i))
     return nothing
 end
 
