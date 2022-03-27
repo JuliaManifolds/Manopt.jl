@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -225,7 +225,7 @@ with_terminal() do
         RegressionGradient!(data, t),
         x0;
         evaluation=MutatingEvaluation(),
-        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.95, 0.1),
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
         stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
         debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
     )
@@ -493,7 +493,6 @@ with_terminal() do
         evaluation=MutatingEvaluation(),
         debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
         stepsize=ArmijoLinesearch(),
-        stopping_criterion=StopAfterIteration(8000) | StopWhenGradientNormLess(1e-8),
         inner_iterations=1,
     )
 end
