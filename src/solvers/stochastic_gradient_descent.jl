@@ -59,8 +59,8 @@ function stochastic_gradient_descent!(
     cost::TF=Missing(),
     direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    stoping_criterion::StoppingCriterion=StopAfterIteration(10000) |
-                                         StopWhenGradientNormLess(1e-9),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
+                                          StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=ConstantStepsize(1.0),
     order_type::Symbol=:Random,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
@@ -73,7 +73,7 @@ function stochastic_gradient_descent!(
         x,
         zero_vector(M, x),
         direction;
-        stoping_criterion=stoping_criterion,
+        stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         order_type=order_type,
         order=order,
