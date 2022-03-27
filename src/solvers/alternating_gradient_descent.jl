@@ -70,8 +70,8 @@ function alternating_gradient_descent!(
     direction::DirectionUpdateRule=AlternatingGradient(zero_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inner_iterations::Int=5,
-    stoping_criterion::StoppingCriterion=StopAfterIteration(100) |
-                                         StopWhenGradientNormLess(1e-9),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(100) |
+                                          StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=ArmijoLinesearch(),
     order_type::Symbol=:Linear,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
@@ -85,7 +85,7 @@ function alternating_gradient_descent!(
         get_gradient(p, x),
         direction;
         inner_iterations=inner_iterations,
-        stoping_criterion=stoping_criterion,
+        stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         order_type=order_type,
         order=order,
