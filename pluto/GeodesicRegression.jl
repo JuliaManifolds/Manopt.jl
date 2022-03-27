@@ -493,6 +493,7 @@ with_terminal() do
         evaluation=MutatingEvaluation(),
         debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
         stepsize=ArmijoLinesearch(),
+        stopping_criterion=StopAfterIteration(8000) | StopWhenGradientNormLess(1e-8),
         inner_iterations=1,
     )
 end
