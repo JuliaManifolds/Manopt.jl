@@ -16,10 +16,16 @@ mkpath(pluto_output_folder)
 #
 # Please do not use the same name as for a(n old) literate Tutorial
 pluto_files = [
-    "Optimize!", "GeodesicRegression", "Benchmark", "Bezier", "AutomaticDifferentiation"
+    "Optimize!",
+    "HowToRecord",
+    "GeodesicRegression",
+    "Benchmark",
+    "Bezier",
+    "AutomaticDifferentiation",
 ]
 pluto_titles = [
     "Get started: Optimize!",
+    "How to record values",
     "Do Geodesic regression",
     "speed up! using `gradF!`",
     "Use Bezier Curves",
@@ -54,17 +60,9 @@ end
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
 tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
-tutorials = [
-    "HowToRecord",
-    "StochasticGradientDescent",
-    "GradientOfSecondOrderDifference",
-    "JacobiFields",
-]
+tutorials = ["StochasticGradientDescent", "GradientOfSecondOrderDifference", "JacobiFields"]
 menuEntries = [
-    "Record values",
-    "do stochastic gradient descent",
-    "see the gradient of ``d_2``",
-    "use Jacobi Fields",
+    "do stochastic gradient descent", "see the gradient of ``d_2``", "use Jacobi Fields"
 ]
 for (i, tutorial) in enumerate(tutorials)
     global TutorialMenu
