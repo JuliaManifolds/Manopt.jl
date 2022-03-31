@@ -143,7 +143,7 @@ function augmented_Lagrangian_method!(
     gradH::Function=x->[],
     x=random_point(M),
     sub_problem::Problem = GradientProblem(M,F,gradF),
-    sub_options::Options = GradientDescentOptions(M,x),
+    sub_options::Options = GradientDescentOptions(M,x), #stopping_criterion
     max_inner_iter::Int=200,
     num_outer_itertgn::Int=30,
     ϵ::Real=1e-3, #(starting)tolgradnorm
@@ -158,7 +158,7 @@ function augmented_Lagrangian_method!(
     θ_ρ::Real=0.3, 
     θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
     oldacc::Real=Inf, 
-    stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))), 
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-6)), 
     return_options=false,
     kwargs...,
 ) where {TF, TGF}
@@ -205,13 +205,13 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     cost = get_Lagrangian_cost_function(p, o) 
     grad = get_Lagrangian_gradient_function(p, o)
     o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
-    
+
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)
-    n_ineq_constraint = length(cost_ineq)
+    n_ineq_constraint = size(cost_ineq,1)
     o.λ = min.(ones(n_ineq_constraint).* o.λ_max, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)))
     cost_eq = get_equality_constraints(p, o.x)
-    n_eq_constraint = length(cost_eq)
+    n_eq_constraint = size(cost_eq,1)
     o.γ = min.(ones(n_eq_constraint).* o.γ_max , max.(ones(n_eq_constraint) .* o.γ_min, o.γ + o.ρ .* cost_eq))
 
     # get new evaluation of penalty
@@ -236,8 +236,8 @@ get_solver_result(o::ALMOptions) = o.x
 
 function get_Lagrangian_cost_function(p::ConstrainedProblem, o::ALMOptions)
     cost = x -> get_cost(p, x)
-    num_inequality_constraints = length(get_inequality_constraints(p,o.x))
-    num_equality_constraints = length(get_equality_constraints(p,o.x))
+    num_inequality_constraints = size(get_inequality_constraints(p,o.x),1)
+    num_equality_constraints = size(get_equality_constraints(p,o.x),1)
     if num_inequality_constraints != 0 
         cost_ineq = x -> sum(max.(zeros(num_inequality_constraints), o.λ ./ o.ρ .+ get_inequality_constraints(p, x)).^2)
     end
@@ -261,8 +261,8 @@ end
 
 function get_Lagrangian_gradient_function(p::ConstrainedProblem, o::ALMOptions)
     grad = x -> get_gradient(p, x)
-    num_inequality_constraints = length(get_inequality_constraints(p,o.x))
-    num_equality_constraints = length(get_equality_constraints(p,o.x))
+    num_inequality_constraints = size(get_inequality_constraints(p,o.x),1)
+    num_equality_constraints = size(get_equality_constraints(p,o.x),1)
     if num_inequality_constraints != 0 
         grad_ineq = x -> sum(
             ((get_inequality_constraints(p, x) .* o.ρ .+ o.λ) .* get_grad_ineq(p, x)).*(get_inequality_constraints(p, x) .+ o.λ./o.ρ .>0)
@@ -285,4 +285,3 @@ function get_Lagrangian_gradient_function(p::ConstrainedProblem, o::ALMOptions)
         end
     end
 end
-
