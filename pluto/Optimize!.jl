@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -181,7 +181,11 @@ with_terminal() do
         gradF,
         data[1];
         debug=[
-            :Iteration, (:Change, "change: %1.9f | "), :Cost, (:x, " | %s"), "\n", :Stop
+            :Iteration,
+            (:Change, "change: %1.9f | "),
+            (:Cost, " F(x): %1.11f | "),
+            "\n",
+            :Stop,
         ],
     )
 end
