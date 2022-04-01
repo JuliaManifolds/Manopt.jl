@@ -50,7 +50,7 @@ and hence the default simplifies to just ``s_i = \frac{l}{i}``
 
 Alternatively one can also use the following keyword Alternatively
 
-   DecreasingStepSize(;length=1.0, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+    DecreasingStepSize(;length=1.0, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
 
 initialiszes all fields above, where none of them is mandatory.
 """

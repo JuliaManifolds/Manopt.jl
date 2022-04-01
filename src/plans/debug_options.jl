@@ -185,7 +185,7 @@ end
 @doc raw"""
     DebugIteration <: DebugAction
 
-* Constructor
+# Constructor
 
     DebugIteration()
 

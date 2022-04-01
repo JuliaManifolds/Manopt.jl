@@ -23,7 +23,7 @@ perform an alternating gradient descent
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use.
 
 # Output
 * `x_opt` – the resulting (approximately critical) point of gradientDescent
