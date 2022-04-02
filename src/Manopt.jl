@@ -147,6 +147,10 @@ function __init__()
         export AlternatingGradient
         export alternating_gradient_descent, alternating_gradient_descent!
     end
+    @require PLots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
+        using .Plots
+        include("helpers/check_plots.jl")
+    end
     return nothing
 end
 #
