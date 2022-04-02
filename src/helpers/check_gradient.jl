@@ -28,7 +28,7 @@ function check_gradient(
     plot=false,
     error=false,
     io::Union{IO,Nothing}=nothing,
-    limits = (-8.0, 1.0),
+    limits=(-8.0, 1.0),
     N=101,
     log_range=range(limits[1], limits[2]; length=N),
     retraction_method=default_retraction_method(M),
@@ -39,20 +39,18 @@ function check_gradient(
     # function for the directional derivative
     df(M, p, Y) = inner(M, p, gradient, Y)
     #
-    T = 10 .^(log_range)
+    T = 10 .^ (log_range)
     # points p_i to evaluate our error function at
     points = map(t -> retract(M, p, X, t, retraction_method), T)
     # F(p_i)
     costs = [F(M, pi) for pi in points]
     # linearized
-    linearized = map(t-> F(M, p) - t * df(M, p, Xn), T)
+    linearized = map(t -> F(M, p) - t * df(M, p, Xn), T)
     lin_error = abs.(costs .- linearized)
     max_error = maximum(lin_error)
     plot && plot_slope(T, lin_error, 2.0, costs[1])
     if io !== nothing
-        println(
-            io, "The maximal error in the gradient check is $max_error."
-        )
+        println(io, "The maximal error in the gradient check is $max_error.")
     end
     # estmate (global) slope
 
