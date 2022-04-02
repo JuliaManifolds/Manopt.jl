@@ -364,6 +364,56 @@ function (d::DebugStoppingCriterion)(::Problem, o::Options, i::Int)
 end
 
 @doc raw"""
+    DebugWarnIfCostIncreases <: DebugAction
+
+print a warning if the cost increases.
+
+Note that this provides an additional warning for gradient descent
+with its default constant step size.
+
+# Constructor
+    DebugWarnIfCostIncreases(warn=:Always; tol=1e-13)
+
+Initialize the warning to warn `:Always` and introduce a tolerance for the test of `1e-13`.
+
+This can be set to `:Once` to only warn the first time the cost increases.
+It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+All other symbols are handled as if they were `:Always:`
+"""
+mutable struct DebugWarnIfCostIncreases <: DebugAction
+    # store if we need to warn – :Once, :Always, :No, where all others are handled
+    # the same as :Always
+    status::Symbol
+    old_cost::Float64
+    tol::Float64
+    DebugWarnIfCostIncreases(warn::Symbol=:Always; tol=1e-13) = new(warn, Float64(Inf), tol)
+end
+function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
+    if d.status !== :No
+        cost = get_cost(p, o.x)
+        if cost > d.old_cost + d.tol
+            # Default case in Gradient Descent, include a tipp
+            @warn """The cost increased.
+            At iteration #$i the cost increased from $(d.old_cost) to $(cost).
+            You should check your gradient, step size function or iteration in general."""
+            if o isa GradientDescentOptions && o.stepsize isa ConstantStepsize
+                @warn """You seem to be running a `gradient_decent` with the default `ConstantStepsize`.
+                For ease of use, this is set as the default, but might not converge.
+                Maybe consider to use `ArmijoLinesearch` (if applicable) or use
+                `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,o,i))."""
+            end
+            if d.status === :Once
+                @warn "Further warnings will be supressed, use DebugWarnIfCostIncreases(:Always) to get all warnings"
+                d.status = :No
+            end
+        else
+            d.old_cost = min(d.old_cost,cost)
+        end
+    end
+    return nothing
+end
+
+@doc raw"""
     DebugFactory(a)
 
 given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`

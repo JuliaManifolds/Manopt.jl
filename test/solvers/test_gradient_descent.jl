@@ -1,4 +1,4 @@
-using Manopt, Manifolds
+using Manopt, Manifolds, Test
 
 @testset "Gradient Descent" begin
     @testset "allocating Circle" begin
@@ -185,9 +185,22 @@ using Manopt, Manifolds
         n2 = gradient_descent(M, F, gradF, pts[1])
         @test !isapprox(M, pts[1], n2) # n2 is newly allocated and not pts[1]
         @test isapprox(M, north, n2)
-        n3 = gradient_descent(M, F, gradF, pts[1]; direction=MomentumGradient(M, pts[1]))
+        n3 = gradient_descent(
+            M, F, gradF, pts[1]; direction=MomentumGradient(M, pts[1]), debug=[]
+        )
         @test isapprox(M, north, n3)
         n4 = gradient_descent(M, F, gradF, pts[1]; direction=AverageGradient(M, pts[1], 5))
         @test isapprox(M, north, n4; atol=1e-7)
+    end
+    @testset "Warning when cost increases" begin
+        M = Sphere(2)
+        q = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
+        F(M, p) = distance(M, p, q) .^ 2
+        # chosse a wrong gradient such that ConstantStepsize yields an increase
+        gradF(M, p) = -grad_distance(M, q, p)
+        # issues three warnings
+        @test_logs (:warn,) (:warn,) gradient_descent(
+            M, F, gradF, 1 / sqrt(2) .* [1.0, -1.0, 0.0]
+        )
     end
 end
