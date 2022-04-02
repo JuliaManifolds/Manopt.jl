@@ -202,5 +202,12 @@ using Manopt, Manifolds, Test
         @test_logs (:warn,) (:warn,) gradient_descent(
             M, F, gradF, 1 / sqrt(2) .* [1.0, -1.0, 0.0]
         )
+        @test_logs (:warn,) (:warn,) (warn,) gradient_descent(
+            M,
+            F,
+            gradF,
+            1 / sqrt(2) .* [1.0, -1.0, 0.0];
+            debug=[DebugWarnIfCostIncreases(:Once)],
+        )
     end
 end

@@ -407,7 +407,7 @@ function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
                 d.status = :No
             end
         else
-            d.old_cost = min(d.old_cost,cost)
+            d.old_cost = min(d.old_cost, cost)
         end
     end
     return nothing
