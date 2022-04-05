@@ -39,7 +39,7 @@ A functor that represents several decreasing step sizes
 In total the complete formulae reads for the ``i``th iterate as
 
 ````math
-s_i = \frac{(l - i a)f^i}{(i-s)^e}
+s_i = \frac{(l - i a)f^i}{(i+s)^e}
 ````
 
 and hence the default simplifies to just ``s_i = \frac{l}{i}``
