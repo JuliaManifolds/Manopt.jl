@@ -39,8 +39,7 @@ OR
 function subgradient_method(
     M::AbstractManifold, F::TF, ∂F::TdF, x; kwargs...
 ) where {TF,TdF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
+    x_res = copy(M, x)
     return subgradient_method!(M, F, ∂F, x_res; kwargs...)
 end
 @doc raw"""

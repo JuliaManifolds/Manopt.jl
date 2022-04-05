@@ -83,7 +83,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
                 M2, p2, differential_geodesic_startpoint(M2, p2, p2, t, X2) - (1 - t) * X2
             ) ≈ 0 atol = 4 * 10^(-16)
             @test norm(M2, p2, differential_geodesic_endpoint(M2, p2, p2, t, X2) - t * X2) ≈
-                  0 atol = 4 * 10.0^(-16)
+                0 atol = 4 * 10.0^(-16)
         end
         @test norm(M2, q2, differential_geodesic_startpoint(M2, p2, q2, 1.0, X2)) ≈ 0 atol =
             4 * 10.0^(-16)

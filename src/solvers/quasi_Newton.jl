@@ -42,7 +42,9 @@ The ``k``th iteration consists of
   the exponential map.
 * `scale_initial_operator` - (`true`) scale initial operator with
   ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
-* `step_size` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`)
+* `stabilize` – (`true`) stabilize the method numerically by projecting computed (Newton-)
+  directions to the tangent space to reduce numerical errors
+* `stepsize` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`)
   specify a [`Stepsize`](@ref).
 * `stopping_criterion` - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`)
   specify a [`StoppingCriterion`](@ref)
@@ -54,11 +56,8 @@ The ``k``th iteration consists of
 OR
 * `options` – the options returned by the solver (see `return_options`)
 """
-function quasi_Newton(
-    M::AbstractManifold, F::Function, gradF::G, x::P; kwargs...
-) where {P,G}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
+function quasi_Newton(M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
+    x_res = copy(M, x)
     return quasi_Newton!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
@@ -77,9 +76,9 @@ For all optional parameters, see [`quasi_Newton`](@ref).
 """
 function quasi_Newton!(
     M::AbstractManifold,
-    F::Function,
-    gradF::G,
-    x::P;
+    F::TF,
+    gradF::TDF,
+    x;
     cautious_update::Bool=false,
     cautious_function::Function=x -> x * 10^(-4),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -90,23 +89,25 @@ function quasi_Newton!(
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     memory_size::Int=20,
+    stabilize=true,
     initial_operator::AbstractMatrix=Matrix{Float64}(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
     scale_initial_operator::Bool=true,
-    step_size::Stepsize=WolfePowellLineseach(retraction_method, vector_transport_method),
+    stepsize::Stepsize=WolfePowellLineseach(retraction_method, vector_transport_method),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
     ),
     return_options=false,
     kwargs...,
-) where {P,G}
+) where {TF,TDF}
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             direction_update,
             zero_vector(M, x),
             memory_size;
             scale=scale_initial_operator,
+            project=stabilize,
             vector_transport_method=vector_transport_method,
         )
     else
@@ -118,7 +119,7 @@ function quasi_Newton!(
             vector_transport_method=vector_transport_method,
         )
     end
-    if cautious_update == true
+    if cautious_update
         local_dir_upd = QuasiNewtonCautiousDirectionUpdate(
             local_dir_upd; θ=cautious_function
         )
@@ -130,7 +131,7 @@ function quasi_Newton!(
         get_gradient(p, x),
         local_dir_upd,
         stopping_criterion,
-        step_size;
+        stepsize;
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
@@ -334,23 +335,19 @@ end
 function update_broyden_factor!(d, ::Any, yk_c, skyk_c, skHksk_c, ::Val{:Davidon})
     yk_c_c = d.matrix \ yk_c
     ykyk_c_c = yk_c' * yk_c_c
-    if skyk_c <= 2 * (skHksk_c * ykyk_c_c) / (skHksk_c + ykyk_c_c)
-        return d.update.φ =
-            (skyk_c * (ykyk_c_c - skyk_c)) / (skHksk_c * ykyk_c_c - skyk_c^2)
-    else
-        return d.update.φ = skyk_c / (skyk_c - skHksk_c)
-    end
+    u = skyk_c <= 2 * (skHksk_c * ykyk_c_c) / (skHksk_c + ykyk_c_c)
+    u && (d.update.φ = (skyk_c * (ykyk_c_c - skyk_c)) / (skHksk_c * ykyk_c_c - skyk_c^2))
+    (!u) && (d.update.φ = skyk_c / (skyk_c - skHksk_c))
+    return d.update.φ
 end
 
 function update_broyden_factor!(d, sk_c, ::Any, skyk_c, ykBkyk_c, ::Val{:InverseDavidon})
     sk_c_c = d.matrix \ sk_c
     sksk_c_c = sk_c' * sk_c_c
-    if skyk_c <= 2 * (ykBkyk_c * sksk_c_c) / (ykBkyk_c + sksk_c_c)
-        return d.update.φ =
-            (skyk_c * (sksk_c_c - skyk_c)) / (ykBkyk_c * sksk_c_c - skyk_c^2)
-    else
-        return d.update.φ = skyk_c / (skyk_c - ykBkyk_c)
-    end
+    u = skyk_c <= 2 * (ykBkyk_c * sksk_c_c) / (ykBkyk_c + sksk_c_c)
+    u && (d.update.φ = (skyk_c * (sksk_c_c - skyk_c)) / (ykBkyk_c * sksk_c_c - skyk_c^2))
+    (!u) && (d.update.φ = skyk_c / (skyk_c - ykBkyk_c))
+    return d.update.φ
 end
 
 function update_basis!(

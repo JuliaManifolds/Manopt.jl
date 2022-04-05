@@ -66,6 +66,9 @@ a default value is given in brackets if a parameter can be left out in initializ
         initiated with a random tangent vector. If set to true, no
         preconditioner will be used. This option is set to true in some
         scenarios to escape saddle points, but is otherwise seldom activated.
+* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors
+    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
+    per default, no projection is perfomed, set it to `project!` to activate projection.
 
 # Constructor
 
@@ -76,7 +79,7 @@ construct a truncated conjugate-gradient Option with the fields as above.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriterion} <:
+mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriterion,Proj} <:
                AbstractHessianOptions
     x::P
     stop::SC
@@ -97,6 +100,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     new_model_value::R
     κ::R
     randomize::Bool
+    project_vector!::Proj
     initialResidualNorm::Float64
     function TruncatedConjugateGradientOptions(
         p::HessianProblem,
@@ -104,6 +108,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         η::T,
         trust_region_radius::R,
         randomize::Bool;
+        project_vector!::Proj=copyto!,
         θ::Float64=1.0,
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
@@ -115,13 +120,20 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
             StopWhenCurvatureIsNegative(),
             StopWhenModelIncreased(),
         ),
-    ) where {H,G,P,T,R<:Real}
-        o = new{typeof(x),typeof(η),typeof(trust_region_radius),typeof(stop)}()
+    ) where {H,G,P,T,R<:Real,Proj}
+        o = new{
+            typeof(x),
+            typeof(η),
+            typeof(trust_region_radius),
+            typeof(stop),
+            typeof(project_vector!),
+        }()
         o.x = x
         o.stop = stop
         o.η = η
         o.trust_region_radius = trust_region_radius
         o.randomize = randomize
+        o.project_vector! = project_vector!
         o.model_value = zero(trust_region_radius)
         o.κ = zero(trust_region_radius)
         return o
@@ -145,6 +157,9 @@ a default value is given in brackets if a parameter can be left out in initializ
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
+* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors
+    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
+    per default, no projection is perfomed, set it to `project!` to activate projection.
 * `ρ_prime` : a lower bound of the performance ratio for the iterate that
         decides if the iteration will be accepted or not. If not, the
         trust-region radius will have been decreased. To ensure this,
@@ -172,7 +187,7 @@ construct a trust-regions Option with the fields as above.
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsOptions{
-    P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real
+    P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj
 } <: AbstractHessianOptions
     x::P
     gradient::T
@@ -181,6 +196,7 @@ mutable struct TrustRegionsOptions{
     max_trust_region_radius::R
     retraction_method::RTR
     randomize::Bool
+    project_vector!::Proj
     ρ_prime::R
     ρ_regularization::R
 
@@ -196,7 +212,7 @@ mutable struct TrustRegionsOptions{
     η_Cauchy::T
     Hη_Cauchy::T
     τ::R
-    function TrustRegionsOptions{P,T,SC,RTR,R}(
+    function TrustRegionsOptions{P,T,SC,RTR,R,Proj}(
         x::P,
         grad::T,
         trust_region_radius::R,
@@ -205,9 +221,10 @@ mutable struct TrustRegionsOptions{
         ρ_regularization::R,
         randomize::Bool,
         stopping_citerion::SC,
-        retraction_method::RTR,
-    ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real}
-        o = new{P,T,SC,RTR,R}()
+        retraction_method::RTR;
+        project_vector!::Proj=copyto!,
+    ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
+        o = new{P,T,SC,RTR,R,Proj}()
         o.x = x
         o.gradient = grad
         o.stop = stopping_citerion
@@ -217,6 +234,7 @@ mutable struct TrustRegionsOptions{
         o.ρ_prime = ρ_prime
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
+        o.project_vector! = project_vector!
         return o
     end
 end
@@ -230,8 +248,9 @@ function TrustRegionsOptions(
     randomize::Bool,
     stopping_citerion::SC;
     retraction_method::RTR=ExponentialRetraction(),
-) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod}
-    return TrustRegionsOptions{P,T,SC,RTR,R}(
+    project_vector!::Proj=copyto!,
+) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,Proj}
+    return TrustRegionsOptions{P,T,SC,RTR,R,Proj}(
         x,
         grad,
         trust_region_radius,
@@ -240,7 +259,8 @@ function TrustRegionsOptions(
         ρ_regularization,
         randomize,
         stopping_citerion,
-        retraction_method,
+        retraction_method;
+        (project_vector!)=project_vector!,
     )
 end
 

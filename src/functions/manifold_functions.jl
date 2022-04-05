@@ -69,7 +69,6 @@ Compute the result in `q`.
 
 see also [`reflect`](@ref reflect(M::AbstractManifold, p, x))`(M,p,x)`.
 """
-
 reflect(M::AbstractManifold, pr::Function, x) = reflect(M, pr(x), x)
 reflect!(M::AbstractManifold, q, pr::Function, x) = reflect!(M, q, pr(x), x)
 
