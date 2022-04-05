@@ -35,12 +35,15 @@ function random_point(
 end
 
 @doc raw"""
-    random_point(M::AbstractGroupManifold, options...)
+    random_point(M::GroupManifold, options...)
 
 On an abstract group manifold, the random point is taken from the internally stored `M.manifold`.
 """
-random_point(M::AbstractGroupManifold, kwargs...) = random_point(M.manifold, kwargs...)
-function random_point(M::AbstractGroupManifold, s::Symbol, options...)
+random_point(M::GroupManifold, kwargs...) = random_point(M.manifold, kwargs...)
+function random_point(M::GroupManifold, s::Symbol, options...)
+    return random_point(M.manifold, Val(s), options...)
+end
+function random_point(M::AbstractManifold, s::Symbol, options...)
     return random_point(M, Val(s), options...)
 end
 
@@ -188,14 +191,17 @@ function random_point(M::TangentSpaceAtPoint, options...)
 end
 
 @doc raw"""
-    random_tangent(M::AbstractGroupManifold, p, options...)
+    random_tangent(M::GroupManifold, p, options...)
 
 On an abstract group manifold, the random tangent is taken from the internally stored `M.manifold`s tangent space at `p`.
 """
-function random_tangent(M::AbstractGroupManifold, p, kwargs...)
+function random_tangent(M::GroupManifold, p, kwargs...)
     return random_tangent(M.manifold, p, kwargs...)
 end
-function random_tangent(M::AbstractGroupManifold, p, s::Symbol, options...)
+function random_tangent(M::GroupManifold, p, s::Symbol, options...)
+    return random_tangent(M.manifold, p, Val(s), options...)
+end
+function random_tangent(M::AbstractManifold, p, s::Symbol, options...)
     return random_tangent(M, p, Val(s), options...)
 end
 
