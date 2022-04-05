@@ -89,7 +89,7 @@ the negative gradient.
 abstract type Linesearch <: Stepsize end
 
 @doc raw"""
-    ArmijoLineseach <: Linesearch
+    ArmijoLinesearch <: Linesearch
 
 A functor representing Armijo line seach including the last runs state, i.e. a
 last step size.
