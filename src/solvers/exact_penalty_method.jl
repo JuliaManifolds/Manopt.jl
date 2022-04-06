@@ -175,13 +175,7 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     n_ineq_constraint = length(cost_ineq)
     cost_eq = get_equality_constraints(p, o.x)
     n_eq_constraint = length(cost_eq)
-    if n_ineq_constraint == 0
-        cost_ineq = 0
-    end
-    if n_eq_constraint == 0
-        cost_eq = 0
-    end
-    max_violation = max(max(maximum(cost_ineq),0),maximum(abs.(cost_eq)))
+    max_violation = max(max(maximum(cost_ineq,init=0),0),maximum(abs.(cost_eq),init=0))
 
     # update ρ if necessary
     if max_violation > o.ϵ 

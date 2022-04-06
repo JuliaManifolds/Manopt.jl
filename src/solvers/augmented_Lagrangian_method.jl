@@ -215,13 +215,7 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     o.γ = min.(ones(n_eq_constraint).* o.γ_max , max.(ones(n_eq_constraint) .* o.γ_min, o.γ + o.ρ .* cost_eq))
 
     # get new evaluation of penalty
-    if n_ineq_constraint == 0 # for Julia 1.6 and above simply use maximum(...,init=0) for the computation of new_acc instead
-        cost_ineq = 0
-    end
-    if n_eq_constraint == 0
-        cost_eq = 0
-    end
-    new_acc = max(maximum(abs.(max.(-o.λ./o.ρ, cost_ineq))), maximum(abs.(cost_eq)))
+    new_acc = max(maximum(abs.(max.(-o.λ./o.ρ, cost_ineq)),init=0), maximum(abs.(cost_eq),init=0))
 
     # update ρ if necessary
     if iter == 1 || new_acc > o.τ * o.old_acc 
