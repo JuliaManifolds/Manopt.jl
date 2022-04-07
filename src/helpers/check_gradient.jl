@@ -33,8 +33,8 @@ function check_gradient(
     N=101,
     log_range=range(limits[1], limits[2]; length=N),
     retraction_method=default_retraction_method(M),
-    slope_tol = 0.1,
-    window=nothing
+    slope_tol=0.1,
+    window=nothing,
 )
     gradient = gradF(M, p)
     Xn = X ./ norm(M, p, X) # normalize tangent direction
@@ -60,7 +60,7 @@ function check_gradient(
     y = log10.(lin_error)
     b = std(y) / std(x) * cor(x, y)
     a = mean(y) - b * mean(x)
-    if isapprox(b,2.0; atol=slope_tol)
+    if isapprox(b, 2.0; atol=slope_tol)
         plot && plot_slope(T, lin_error; line_base=costs[1], a=a, b=b, i=1, j=n)
         return true
     end
@@ -71,28 +71,32 @@ function check_gradient(
     min_err = Inf
     i_best = 0
     j_best = 0
-    for w = ( window===nothing ? (2:(n-1)) : [window...])
-        for j=1:(n-w)
-            x = log_range[j:(j+w)]
-            y = log10.(lin_error[j:j+w])
+    for w in (window === nothing ? (2:(n - 1)) : [window...])
+        for j in 1:(n - w)
+            x = log_range[j:(j + w)]
+            y = log10.(lin_error[j:(j + w)])
             # fit a line a + bx
-            c = cor(x,y)
+            c = cor(x, y)
             b = std(y) / std(x) * c
             a = mean(y) - b * mean(x)
             # look for the best error relative to log scale interval
-            r = (maximum(x)-minimum(x))
-            if c^2/r < min_err
+            r = (maximum(x) - minimum(x))
+            if c^2 / r < min_err
                 a_best = a
                 b_best = b
-                min_err = c^2/r
+                min_err = c^2 / r
                 i_best = j
-                j_best = j+w
+                j_best = j + w
             end
         end
     end
-    plot && plot_slope(T, lin_error; line_base=costs[1], a=a_best, b=b_best, i=i_best, j=j_best)
+    plot &&
+        plot_slope(T, lin_error; line_base=costs[1], a=a_best, b=b_best, i=i_best, j=j_best)
     if io !== nothing
-        print(io, "You gradient fits best on [$(T[i_best]),$(T[j_best])] with slope $(b_best), but globally your slope $b is outside of the tolerance 2 ± $(slope_tol).\n")
+        print(
+            io,
+            "You gradient fits best on [$(T[i_best]),$(T[j_best])] with slope $(b_best), but globally your slope $b is outside of the tolerance 2 ± $(slope_tol).\n",
+        )
     end
     return false
 end
