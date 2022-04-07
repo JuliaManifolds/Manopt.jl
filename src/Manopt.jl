@@ -10,6 +10,7 @@ using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
 using Dates: Period, Nanosecond, value
 using Requires
 using Random: shuffle!
+using Statistics: std, cov, mean, cor
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
 using Printf
@@ -217,7 +218,6 @@ export get_cost,
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
-export check_gradient
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,
@@ -398,4 +398,7 @@ export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
+#
+# Helpers
+export check_gradient
 end
