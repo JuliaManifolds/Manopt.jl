@@ -114,10 +114,10 @@ include("data/artificialDataFunctions.jl")
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
         using .Manifolds:
-            AbstractGroupManifold,
             Circle,
             Euclidean,
             Grassmann,
+            GroupManifold,
             Hyperbolic,
             PositiveNumbers,
             ProductManifold,
@@ -383,7 +383,7 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate
 export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIterate
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
-export DebugProximalParameter
+export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 #
 # Records - and access functions
