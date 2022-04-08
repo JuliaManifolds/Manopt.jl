@@ -45,11 +45,11 @@ function check_gradient(
     T = exp10.(log_range)
     n = length(T)
     # points p_i to evaluate our error function at
-    points = map(t -> retract(M, p, X, t, retraction_method), T)
+    points = map(t -> retract(M, p, Xn, t, retraction_method), T)
     # F(p_i)
     costs = [F(M, pi) for pi in points]
     # linearized
-    linearized = map(t -> F(M, p) - t * df(M, p, Xn), T)
+    linearized = map(t -> F(M, p) + t * df(M, p, Xn), T)
     lin_error = abs.(costs .- linearized)
     max_error = maximum(lin_error)
     if io !== nothing
