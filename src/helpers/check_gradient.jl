@@ -114,7 +114,7 @@ function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
             a = mean(y) - b * mean(x)
             # look for the largest interval where b is within slope tol
             r = (maximum(x) - minimum(x))
-            if (r > r_best) && abs(b-slope) < slope_tol #longer interval within slope_tol.
+            if (r > r_best) && abs(b - slope) < slope_tol #longer interval within slope_tol.
                 r_best = r
                 a_best = a
                 b_best = b
