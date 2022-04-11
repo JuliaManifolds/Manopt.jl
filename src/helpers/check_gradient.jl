@@ -119,7 +119,7 @@ function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
                 a_best = a
                 b_best = b
                 i_best = j
-                j_best = j + w
+                j_best = j + w - 1 #last index (see x and y above)
             end
             # not best interval - maybe best slope if we have not yet found an r?
             if r_best == 0 && abs(b - slope) < abs(b_best - slope)
@@ -127,7 +127,7 @@ function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
                 a_best = a
                 b_best = b
                 i_best = j
-                j_best = j + w
+                j_best = j + w - 1 #last index (see x and y above)
             end
         end
     end
