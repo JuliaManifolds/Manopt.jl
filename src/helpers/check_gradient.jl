@@ -12,7 +12,7 @@ This implements the method described in Section 4.8 [^Boumal2022].
 * `io` – (`nothing`) provide an `IO` to print the check result to
 * `limits` (`(10e-8,1)`) specify the limits in the `log_range`
 * `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
-* `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded)
+* `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale.
 * `retraction_method` - (`default_retraction_method(M)`) retraction method to use for the check
 * `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
 
@@ -55,8 +55,7 @@ function check_gradient(
     y = log10.(L[L .> 0])
     (a, b) = find_best_slope_window(x, y, length(x))[1:2]
     if isapprox(b, 2.0; atol=slope_tol)
-        plot &&
-            plot_slope(T[L .> 0], L[L .> 0]; line_base=costs[1], a=a, b=b, i=1, j=length(y))
+        plot && plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=a, b=b, i=1, j=length(y))
         (io !== nothing) && print(
             io,
             "You gradients slope is globally $(@sprintf("%.4f", b)), so within 2 ± $(slope_tol).\n",
@@ -65,8 +64,8 @@ function check_gradient(
     end
     # otherwise
     # find best contiguous window of length w
-    (ab, bb, ib, jb) = find_best_slope_window(log_range, log10.(L), window)
-    plot && plot_slope(T[L .> 0], L[L .> 0]; line_base=costs[1], a=ab, b=bb, i=ib, j=jb)
+    (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
+    plot && plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
     (io !== nothing) && print(
         io,
         "You gradient fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 2 ± $(slope_tol).\n",
@@ -75,9 +74,11 @@ function check_gradient(
 end
 
 """
-    (a,b,i,j) = find_best_slope_window(X,Y,window=nothing; slope=2.0)
+    (a,b,i,j) = find_best_slope_window(X,Y,window=nothing; slope=2.0, slope_tol=0.1)
 
-Check data X,Y for the best contiguous interval with a regression line closest to `slope`.
+Check data X,Y for the largest contiguous interval (window) with a regression line fitting “best”.
+Among all intervals with a slope within `slope_tol` to `slope` the longest one is taken.
+If no such interval exists, the one with the slope closest to `slope` is taken.
 
 If the window is set to `nothing` (default), all window sizes `2,...,length(X)` are checked.
 You can also specify a window size or an array of window sizes.
@@ -91,12 +92,18 @@ From the best line the following data is returned
 * `a`, b` specifying the regression line `a + tb`
 * `i`, `j` determining the window, i.e the regression line stems from data `X[i], ..., X[j]`
 """
-function find_best_slope_window(X, Y, window=nothing; slope=2.0)
+function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
     n = length(X)
+    if window !== nothing && (any(window .> n))
+        error(
+            "One of the window sizes in $(window) is larger than the length of the signal."
+        )
+    end
     a_best = 0
-    b_best = 0
+    b_best = -Inf
     i_best = 0
     j_best = 0
+    r_best = 0 # longest interval
     for w in (window === nothing ? (2:n) : [window...])
         for j in 1:(n - w + 1)
             x = X[j:(j + w - 1)]
@@ -105,9 +112,18 @@ function find_best_slope_window(X, Y, window=nothing; slope=2.0)
             c = cor(x, y)
             b = std(y) / std(x) * c
             a = mean(y) - b * mean(x)
-            # look for the best error relative to log scale interval
+            # look for the largest interval where b is within slope tol
             r = (maximum(x) - minimum(x))
-            if abs(b - slope) < abs(b_best - slope)
+            if (r > r_best) && abs(b-slope) < slope_tol #longer interval within slope_tol.
+                r_best = r
+                a_best = a
+                b_best = b
+                i_best = j
+                j_best = j + w
+            end
+            # not best interval - maybe best slope if we have not yet found an r?
+            if r_best == 0 && abs(b - slope) < abs(b_best - slope)
+                # but do not upate `r` since this indicates we only get the best r
                 a_best = a
                 b_best = b
                 i_best = j
