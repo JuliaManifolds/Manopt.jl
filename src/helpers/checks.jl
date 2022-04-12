@@ -17,8 +17,8 @@ This implements the method described in Section 4.8 [^Boumal2022].
 * `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
 
 [^Boumal2022]:
-    > Boumal, N.: _An Introduction to Optimization on Smooth Manifolds_, book in preparation,
-    > 2022. url: [http://www.nicolasboumal.net/book](http://www.nicolasboumal.net/book).
+    > Boumal, N.: _An Introduction to Optimization on Smooth Manifolds_, book in preparation, 2022.
+    > url: [http://www.nicolasboumal.net/book](http://www.nicolasboumal.net/book).
 """
 function check_differential(
     M::AbstractManifold,
