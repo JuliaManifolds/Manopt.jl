@@ -18,4 +18,8 @@ using Manifolds, Manopt, Plots, Test
     @test !check_gradient(M, F, gradF2, p, r)
 
     check_gradient(M, F, gradF, p, r; plot=true)
+
+    #test windowsize error
+    @test_throws ErrorException Manopt.find_best_slope_window(zeros(2), zeros(2), 20)
+    @test_throws ErrorException Manopt.find_best_slope_window(zeros(2), zeros(2), [2, 20])
 end

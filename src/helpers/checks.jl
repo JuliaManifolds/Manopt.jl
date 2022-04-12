@@ -111,7 +111,7 @@ function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
     n = length(X)
     if window !== nothing && (any(window .> n))
         error(
-            "One of the window sizes in $(window) is larger than the length of the signal."
+            "One of the window sizes ($(window)) is larger than the length of the signal (n=$n).",
         )
     end
     a_best = 0
