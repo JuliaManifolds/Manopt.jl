@@ -107,7 +107,7 @@ include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
-include("helpers/check_gradient.jl")
+include("helpers/checks.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
@@ -400,5 +400,5 @@ export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDual
 export RecordProximalParameter
 #
 # Helpers
-export check_gradient
+export check_gradient, check_differential
 end

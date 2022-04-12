@@ -1,7 +1,7 @@
 @doc raw"""
-    check_gradient(M, F, gradF, p=random_point(M), X=random_tangent(M,p))
+    check_differential(M, F, dF, p=random_point(M), X=random_tangent(M,p))
 
-Check numerivcally whether the gradient `gradF` of `F` is correct.
+Check numerivcally whether the differential `dF` of `F` is correct.
 
 This implements the method described in Section 4.8 [^Boumal2022].
 
@@ -20,10 +20,10 @@ This implements the method described in Section 4.8 [^Boumal2022].
     > Boumal, N.: _An Introduction to Optimization on Smooth Manifolds_, book in preparation,
     > 2022. url: [http://www.nicolasboumal.net/book](http://www.nicolasboumal.net/book).
 """
-function check_gradient(
+function check_differential(
     M::AbstractManifold,
     F,
-    gradF,
+    dF,
     p=random_point(M),
     X=random_tangent(M, p);
     plot=false,
@@ -36,11 +36,8 @@ function check_gradient(
     slope_tol=0.1,
     window=nothing,
 )
-    gradient = gradF(M, p)
     Xn = X ./ norm(M, p, X) # normalize tangent direction
-    is_vector(M, p, gradient, error)
     # function for the directional derivative
-    df(M, p, Y) = inner(M, p, gradient, Y)
     #
     T = exp10.(log_range)
     # points p_i to evaluate our error function at
@@ -48,7 +45,7 @@ function check_gradient(
     # F(p_i)
     costs = [F(M, pi) for pi in points]
     # linearized
-    linearized = map(t -> F(M, p) + t * df(M, p, Xn), T)
+    linearized = map(t -> F(M, p) + t * dF(M, p, Xn), T)
     L = abs.(costs .- linearized)
     # global fit a + bx
     x = log_range[L .> 0]
@@ -66,11 +63,29 @@ function check_gradient(
     # find best contiguous window of length w
     (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
     plot && plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
-    (io !== nothing) && print(
-        io,
-        "You gradient fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 2 ± $(slope_tol).\n",
-    )
+    msg = "You gradient fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 2 ± $(slope_tol).\n"
+    (io !== nothing) && print(io, msg)
+    error && throw(ErrorException(msg))
     return false
+end
+
+@doc raw"""
+    check_gradient(M, F, gradF, p=random_point(M), X=random_tangent(M,p))
+
+Check numerivcally whether the gradient `gradF` of `F` is correct.
+
+This implements the method described in Section 4.8 [^Boumal2022].
+
+Its keyword arguments are the same as for the [`check_differential`](@ref).
+"""
+function check_gradient(
+    M::AbstractManifold, F, gradF, p=random_point(M), X=random_tangent(M, p); kwargs...
+)
+    gradient = gradF(M, p)
+    is_vector(M, p, gradient, error)
+    # function for the directional derivative
+    df(M, p, Y) = inner(M, p, gradient, Y)
+    return check_differential(M, F, df, p, X; kwargs...)
 end
 
 """
