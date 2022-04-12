@@ -10,7 +10,7 @@ This implements the method described in Section 4.8 [^Boumal2022].
 * `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
 * `error` - (`false`) throw an error message if the gradient is wrong
 * `io` – (`nothing`) provide an `IO` to print the check result to
-* `limits` (`(10e-8,1)`) specify the limits in the `log_range`
+* `limits` (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
 * `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale.
 * `retraction_method` - (`default_retraction_method(M)`) retraction method to use for the check
