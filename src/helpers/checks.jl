@@ -1,7 +1,7 @@
 @doc raw"""
     check_differential(M, F, dF, p=random_point(M), X=random_tangent(M,p))
 
-Check numerivcally whether the differential `dF` of `F` is correct.
+Check numerivcally whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 
 This implements the method described in Section 4.8 [^Boumal2022].
 
@@ -72,7 +72,7 @@ end
 @doc raw"""
     check_gradient(M, F, gradF, p=random_point(M), X=random_tangent(M,p))
 
-Check numerivcally whether the gradient `gradF` of `F` is correct.
+Check numerivcally whether the gradient `gradF(M,p)` of `F(M,p)` is correct.
 
 This implements the method described in Section 4.8 [^Boumal2022].
 
