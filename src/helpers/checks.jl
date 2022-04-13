@@ -104,7 +104,7 @@ and the best line is computed.
 
 From the best line the following data is returned
 
-* `a`, b` specifying the regression line `a + tb`
+* `a`, `b` specifying the regression line `a + t*b`
 * `i`, `j` determining the window, i.e the regression line stems from data `X[i], ..., X[j]`
 """
 function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
