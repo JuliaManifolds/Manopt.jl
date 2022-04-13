@@ -6,7 +6,7 @@ tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
 tutorials = [
     "MeanAndMedian",
-    "Benchmark",
+    #    "Benchmark",
     "GeodesicRegression",
     "HowToRecord",
     "StochasticGradientDescent",
@@ -16,7 +16,7 @@ tutorials = [
 ]
 menuEntries = [
     "get Started: Optimize!",
-    "speed up! using `gradF!`",
+    #   "speed up! using `gradF!`",
     "Do Geodesic regression",
     "Record values",
     "do stochastic gradient descent",
@@ -122,6 +122,7 @@ makedocs(;
             "Specific Manifold Functions" => "functions/manifold.md",
         ],
         "Helpers" => [
+            "Checks" => "helpers/checks.md",
             "Data" => "helpers/data.md",
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
