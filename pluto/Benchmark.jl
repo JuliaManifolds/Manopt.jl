@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.17.2
+# v0.19.0
 
 using Markdown
 using InteractiveUtils
@@ -57,7 +57,6 @@ begin
     sc = StopWhenGradientNormLess(1e-10)
     x0 = random_point(M)
     m1 = gradient_descent(M, F, gradF, x0; stopping_criterion=sc)
-
     @benchmark gradient_descent($M, $F, $gradF, $x0; stopping_criterion=$sc)
 end
 
@@ -104,7 +103,6 @@ begin
     gradient_descent!(
         M, F, gradF2!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc
     )
-
     @benchmark gradient_descent!(
         $M, $F, $gradF2!, m2; evaluation=$(MutatingEvaluation()), stopping_criterion=$sc
     ) setup = (m2 = deepcopy($x0))
@@ -134,7 +132,7 @@ Manopt = "~0.3.14"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.0"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractFFTs]]

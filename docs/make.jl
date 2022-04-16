@@ -19,6 +19,7 @@ pluto_files = [
     "Optimize!",
     "HowToRecord",
     "GeodesicRegression",
+    "SecondOrderDifference",
     "Benchmark",
     "Bezier",
     "AutomaticDifferentiation",
@@ -27,6 +28,7 @@ pluto_titles = [
     "Get started: Optimize!",
     "How to record values",
     "Do Geodesic regression",
+    "Compute a second order difference",
     "speed up! using `gradF!`",
     "Use Bezier Curves",
     "AD in Manopt",
@@ -60,10 +62,8 @@ end
 tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
 tutorialsRelativePath = "tutorials/"
 tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
-tutorials = ["StochasticGradientDescent", "GradientOfSecondOrderDifference", "JacobiFields"]
-menuEntries = [
-    "do stochastic gradient descent", "see the gradient of ``d_2``", "use Jacobi Fields"
-]
+tutorials = ["StochasticGradientDescent", "JacobiFields"]
+menuEntries = ["do stochastic gradient descent", "use Jacobi Fields"]
 for (i, tutorial) in enumerate(tutorials)
     global TutorialMenu
     sourceFile = joinpath(tutorialsInputPath, tutorial * ".jl")

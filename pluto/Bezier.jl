@@ -120,7 +120,7 @@ render_asy && begin
         line_widths=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5],
         camera_position=camera_position,
     )
-    render_asymptote(image_prefix * "/Casteljau-illustr.asy"; render=2) #src
+    render_asymptote(image_prefix * "/Casteljau-illustr.asy"; render=2)
 end;
 
 # ╔═╡ bdb85fb8-0707-47d1-95ee-9bf2e56500f5
