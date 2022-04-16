@@ -128,6 +128,7 @@ makedocs(;
             "Specific Manifold Functions" => "functions/manifold.md",
         ],
         "Helpers" => [
+            "Checks" => "helpers/checks.md",
             "Data" => "helpers/data.md",
             "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",

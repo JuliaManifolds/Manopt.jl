@@ -39,7 +39,7 @@ A functor that represents several decreasing step sizes
 In total the complete formulae reads for the ``i``th iterate as
 
 ````math
-s_i = \frac{(l - i a)f^i}{(i-s)^e}
+s_i = \frac{(l - i a)f^i}{(i+s)^e}
 ````
 
 and hence the default simplifies to just ``s_i = \frac{l}{i}``
@@ -50,7 +50,7 @@ and hence the default simplifies to just ``s_i = \frac{l}{i}``
 
 Alternatively one can also use the following keyword Alternatively
 
-   DecreasingStepSize(;length=1.0, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+    DecreasingStepSize(;length=1.0, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
 
 initialiszes all fields above, where none of them is mandatory.
 """
@@ -89,7 +89,7 @@ the negative gradient.
 abstract type Linesearch <: Stepsize end
 
 @doc raw"""
-    ArmijoLineseach <: Linesearch
+    ArmijoLinesearch <: Linesearch
 
 A functor representing Armijo line seach including the last runs state, i.e. a
 last step size.
@@ -188,13 +188,20 @@ function linesearch_backtrack(
 ) where {TF,T}
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
-    while fNew < f0 + decrease * s * inner(M, x, η, gradFx) # increase
+    search_dir_inner = inner(M, x, η, gradFx)
+    extended = false
+    while fNew < f0 + decrease * s * search_dir_inner # increase
+        extended = true
         s = s / contract
         retract!(M, xNew, x, s * η, retr)
         fNew = F(xNew)
     end
-    s = s * contract # correct last
-    while fNew > f0 + decrease * s * inner(M, x, η, gradFx) # decrease
+    if extended
+        s *= contract  # undo last increase
+        retract!(M, xNew, x, s * η, retr)
+        fNew = F(xNew)
+    end
+    while fNew > f0 + decrease * s * search_dir_inner # decrease
         s = contract * s
         retract!(M, xNew, x, s * η, retr)
         fNew = F(xNew)

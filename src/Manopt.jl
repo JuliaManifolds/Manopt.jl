@@ -10,6 +10,7 @@ using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
 using Dates: Period, Nanosecond, value
 using Requires
 using Random: shuffle!
+using Statistics: std, cov, mean, cor
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
 using Printf
@@ -68,6 +69,8 @@ import ManifoldsBase:
     retract!,
     inverse_retract,
     inverse_retract!,
+    is_point,
+    is_vector,
     shortest_geodesic,
     vector_transport_to,
     vector_transport_to!,
@@ -104,6 +107,7 @@ include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
+include("helpers/checks.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
@@ -111,10 +115,10 @@ include("data/artificialDataFunctions.jl")
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
         using .Manifolds:
-            AbstractGroupManifold,
             Circle,
             Euclidean,
             Grassmann,
+            GroupManifold,
             Hyperbolic,
             PositiveNumbers,
             ProductManifold,
@@ -146,6 +150,10 @@ function __init__()
         export AlternatingGradientDescentOptions, AlternatingGradientProblem
         export AlternatingGradient
         export alternating_gradient_descent, alternating_gradient_descent!
+    end
+    @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
+        using .Plots
+        include("helpers/check_plots.jl")
     end
     return nothing
 end
@@ -375,7 +383,7 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate
 export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIterate
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
-export DebugProximalParameter
+export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 #
 # Records - and access functions
@@ -390,4 +398,7 @@ export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
+#
+# Helpers
+export check_gradient, check_differential
 end

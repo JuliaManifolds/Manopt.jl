@@ -69,6 +69,7 @@ function gradient_descent!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(10.0^-8),
+    debug=[DebugWarnIfCostIncreases()],
     direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     return_options=false,
@@ -83,7 +84,7 @@ function gradient_descent!(
         direction=direction,
         retraction_method=retraction_method,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_options(o; debug=debug, kwargs...)
     resultO = solve(p, o)
     if return_options
         return resultO
