@@ -158,7 +158,7 @@ function augmented_Lagrangian_method!(
     θ_ρ::Real=0.3, 
     θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
     oldacc::Real=Inf, 
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-6)), 
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)),
     return_options=false,
     kwargs...,
 ) where {TF, TGF}
@@ -204,7 +204,10 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
     cost = get_Lagrangian_cost_function(p, o) 
     grad = get_Lagrangian_gradient_function(p, o)
-    o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
+    # println(cost(p.M,o.x))
+    # o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
+    # o.x = quasi_Newton(p.M, cost, grad, o.x, stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
+    o.x = quasi_Newton(p.M, cost, grad, o.x, vector_transport_method=ProjectionTransport(), step_size=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
 
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)
