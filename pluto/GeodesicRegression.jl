@@ -218,16 +218,18 @@ And we can call the gradient descent. Note that since `gradF!` works in place of
 """
 
 # ╔═╡ bada1b3c-6a62-4896-aa4a-7f1f52694682
-y = gradient_descent(
-    M,
-    RegressionCost(data, t),
-    RegressionGradient!(data, t),
-    x0;
-    evaluation=MutatingEvaluation(),
-    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
-    stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
-    debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-)
+with_terminal() do
+    global y = gradient_descent(
+        M,
+        RegressionCost(data, t),
+        RegressionGradient!(data, t),
+        x0;
+        evaluation=MutatingEvaluation(),
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
+        stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
+        debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
+    )
+end
 
 # ╔═╡ 72f5ffef-6133-440b-842a-566c0eb09377
 md"The result looks like"
@@ -304,16 +306,18 @@ begin
 end
 
 # ╔═╡ 3f584132-46c7-42dd-9e2c-0bf2bbf38eb4
-y2 = gradient_descent(
-    M,
-    RegressionCost(data2, t2),
-    RegressionGradient!(data2, t2),
-    x1;
-    evaluation=MutatingEvaluation(),
-    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.066),
-    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
-    debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-)
+with_terminal() do
+    global y2 = gradient_descent(
+        M,
+        RegressionCost(data2, t2),
+        RegressionGradient!(data2, t2),
+        x1;
+        evaluation=MutatingEvaluation(),
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.066),
+        stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
+        debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
+    )
+end
 
 # ╔═╡ c8badbb1-b999-4398-9967-6966a81bcbc1
 begin
@@ -480,16 +484,18 @@ begin
 end;
 
 # ╔═╡ 27548918-eb14-404c-97a6-d39a1fc87929
-y3 = alternating_gradient_descent(
-    N,
-    F3,
-    gradF3_vector,
-    x2;
-    evaluation=MutatingEvaluation(),
-    debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.066),
-    inner_iterations=1,
-)
+with_terminal() do
+    global y3 = alternating_gradient_descent(
+        N,
+        F3,
+        gradF3_vector,
+        x2;
+        evaluation=MutatingEvaluation(),
+        debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.066),
+        inner_iterations=1,
+    )
+end
 
 # ╔═╡ 1099f1b0-6304-491b-84c9-6f39e08968a9
 begin
