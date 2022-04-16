@@ -51,7 +51,7 @@
     @test String(take!(io)) == "x: $(o.x)"
     # Iteration
     DebugIteration(; io=io)(p, o, 0)
-    @test String(take!(io)) == "Initial"
+    @test String(take!(io)) == "Initial "
     DebugIteration(; io=io)(p, o, 23)
     @test String(take!(io)) == "# 23    "
     # DEbugEntryChange - reset
