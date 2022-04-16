@@ -42,7 +42,7 @@ The variant from the previous tutorial defines a cost ``F(x)`` and its gradient 
 """
 
 # ╔═╡ 6f1b04cf-2a76-4660-916c-3b8b8472d3c0
-F(x) = sum(1 / (2 * n) * distance.(Ref(M), Ref(x), data) .^ 2)
+F(M, x) = sum(1 / (2 * n) * distance.(Ref(M), Ref(x), data) .^ 2)
 
 # ╔═╡ e487f38c-334e-4819-b775-a9a44632d7ff
 gradF(M, x) = sum(1 / n * grad_distance.(Ref(M), data, Ref(x)))
