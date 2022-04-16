@@ -30,6 +30,7 @@ import ManifoldsBase:
     ExponentialRetraction,
     LogarithmicInverseRetraction,
     ParallelTransport,
+    ProjectionTransport,
     PowerManifold,
     AbstractManifold,
     allocate,
