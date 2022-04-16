@@ -310,7 +310,7 @@ y2 = gradient_descent(
     RegressionGradient!(data2, t2),
     x1;
     evaluation=MutatingEvaluation(),
-    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.066),
     stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
 )
@@ -487,7 +487,7 @@ y3 = alternating_gradient_descent(
     x2;
     evaluation=MutatingEvaluation(),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-    stepsize=ArmijoLinesearch(),
+    stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.066),
     inner_iterations=1,
 )
 
