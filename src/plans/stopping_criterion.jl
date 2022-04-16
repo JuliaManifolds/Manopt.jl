@@ -122,16 +122,16 @@ mutable struct StopWhenEuclideanChangeLess <: StoppingCriterion
         return new(ε, "", a)
     end
 end
-function (c::StopWhenEuclideanChangeLess)(o::O, i::Int) where {O<:Options}
+function (c::StopWhenEuclideanChangeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     if has_storage(c.storage, :x)
         xOld = get_storage(c.storage, :x)
         if norm(xOld - o.x) < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a euclidean change ($(norm(xOld - o.x))) less than $(c.threshold).\n"
-            c.storage(o, i)
+            c.storage(p, o, i)
             return true
         end
     end
-    c.storage(o, i)
+    c.storage(p, o, i)
     return false
 end
 @doc raw"""
