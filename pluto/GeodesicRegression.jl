@@ -313,7 +313,7 @@ with_terminal() do
         RegressionGradient!(data2, t2),
         x1;
         evaluation=MutatingEvaluation(),
-        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.066),
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.05),
         stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
         debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
     )
