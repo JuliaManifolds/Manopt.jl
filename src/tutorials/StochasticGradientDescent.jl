@@ -12,7 +12,7 @@
 # \operatorname*{arg\,min}_{x∈\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
 #   \operatorname{d}^2_{\mathcal M}(x,p_i),
 # ```
-# which of course can be (and is) solved by a gradient descent, see the [introductionary tutorial](Optimize!.md).
+# which of course can be (and is) solved by a gradient descent, see the introductionary tutorial.
 # If ``N`` is very large it might be quite expensive to evaluate the complete gradient.
 # A remedy is, to evaluate only one of the terms at a time and choose a random order for these.
 #
