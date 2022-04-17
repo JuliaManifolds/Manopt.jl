@@ -27,7 +27,7 @@ where ``\mathcal M`` is a [Manifold](https://juliamanifolds.github.io/Manifolds.
 In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](https://manoptjl.org/stable/plans/index.html#Manopt.Problem)
 `p` and [`Options`](https://manoptjl.org/stable/plans/index.html#Manopt.Options) `o`. While former contains __static__ data,
 most prominently the manifold ``\mathcal M`` (usually as `p.M`) and the cost
-function $``f``(usually as `x->get_cost(p, x)`), the latter contains __dynamic__
+function ``f`` (usually as `x->get_cost(p, x)`), the latter contains __dynamic__
 data, i.e. things that usually change during the algorithm, are allowed to
 change, or specify the details of the algorithm to use. Together they form a
 __plan__. A __plan__ uniquely determines the algorithm to use and provide all
