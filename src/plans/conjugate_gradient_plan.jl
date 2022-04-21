@@ -12,7 +12,8 @@ specify options for a conjugate gradient descent algorithm, that solves a
 * `coefficient` – a [`DirectionUpdateRule`](@ref) function to determine the new `β`
 * `stepsize` – a [`Stepsize`](@ref) function
 * `stop` – a [`StoppingCriterion`](@ref)
-* `retraction_method` – (`ExponentialRetraction()`) a type of retraction
+* `retraction_method` – (`default_retraction_method(M)`) a type of retraction
+
 
 # See also
 [`conjugate_gradient_descent`](@ref), [`GradientProblem`](@ref), [`ArmijoLinesearch`](@ref)
