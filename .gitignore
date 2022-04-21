@@ -16,3 +16,4 @@ docs/src/tutorials/*.md
 Manifest.toml
 *.DS_Store
 docs/src/contributing.md
+docs/src/pluto

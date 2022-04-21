@@ -23,7 +23,7 @@ perform an alternating gradient descent
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use.
 
 # Output
 * `x_opt` – the resulting (approximately critical) point of gradientDescent
@@ -44,8 +44,7 @@ OR
 function alternating_gradient_descent(
     M::ProductManifold, F, gradF::Union{TgF,AbstractVector{<:TgF}}, x; kwargs...
 ) where {TgF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
+    x_res = copy(M, x)
     return alternating_gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
@@ -71,8 +70,8 @@ function alternating_gradient_descent!(
     direction::DirectionUpdateRule=AlternatingGradient(zero_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inner_iterations::Int=5,
-    stoping_criterion::StoppingCriterion=StopAfterIteration(100) |
-                                         StopWhenGradientNormLess(1e-9),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(100) |
+                                          StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=ArmijoLinesearch(),
     order_type::Symbol=:Linear,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
@@ -86,7 +85,7 @@ function alternating_gradient_descent!(
         get_gradient(p, x),
         direction;
         inner_iterations=inner_iterations,
-        stoping_criterion=stoping_criterion,
+        stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         order_type=order_type,
         order=order,

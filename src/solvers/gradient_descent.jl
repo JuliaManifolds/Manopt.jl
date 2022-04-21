@@ -16,6 +16,7 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
+* `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
@@ -37,15 +38,19 @@ OR
 function gradient_descent(
     M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
 ) where {TF,TDF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
+    x_res = copy(M, x)
     return gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
     gradient_descent!(M, F, gradF, x)
 
-perform a gradient_descent ``x_{k+1} = \mathrm{retr}_{x_k} s_k\operatorname{grad}f(x_k)`` in place of `x`
-with different choices of ``s_k`` available.
+perform a gradient_descent
+
+```math
+x_{k+1} = \operatorname{retr}_{x_k}\bigl( s_k\operatorname{grad}f(x_k) \bigr)
+```
+
+in place of `x` with different choices of ``s_k`` available.
 
 # Input
 * `M` – a manifold ``\mathcal M``
@@ -64,6 +69,7 @@ function gradient_descent!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(10.0^-8),
+    debug=[DebugWarnIfCostIncreases()],
     direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     return_options=false,
@@ -78,7 +84,7 @@ function gradient_descent!(
         direction=direction,
         retraction_method=retraction_method,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_options(o; debug=debug, kwargs...)
     resultO = solve(p, o)
     if return_options
         return resultO

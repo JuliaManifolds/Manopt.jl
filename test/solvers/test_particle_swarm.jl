@@ -41,7 +41,7 @@ using Random
             # check that the new particle locations are on the manifold
             @test is_point(M, o.x[i], true)
             # check that the new velocities are tangent vectors of the original particle locations
-            @test is_vector(M, o.x[i], o.velocity[i], true; atol=5 * 10^(-16))
+            @test is_vector(M, o.x[i], o.velocity[i], true; atol=2e-15)
         end
     end
 end

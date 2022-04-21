@@ -61,7 +61,7 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 function ChambollePock(
     M::AbstractManifold,
     N::AbstractManifold,
-    cost::Function,
+    cost::TF,
     x::P,
     ξ::T,
     m::P,
@@ -72,15 +72,11 @@ function ChambollePock(
     Λ::Union{Function,Missing}=missing,
     linearized_forward_operator::Union{Function,Missing}=missing,
     kwargs...,
-) where {P,T,Q}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    ξ_res = allocate(ξ)
-    copyto!(N, ξ_res, n, ξ)
-    m_res = allocate(m)
-    copyto!(M, m_res, m)
-    n_res = allocate(n)
-    copyto!(N, n_res, n)
+) where {TF,P,T,Q}
+    x_res = copy(M, x)
+    ξ_res = copy(N, n, ξ)
+    m_res = copy(M, m)
+    n_res = copy(N, n)
     return ChambollePock!(
         M,
         N,
@@ -106,7 +102,7 @@ Perform the Riemannian Chambolle–Pock algorithm in place of `x`, `ξ`, and pot
 function ChambollePock!(
     M::AbstractManifold,
     N::AbstractManifold,
-    cost::Function,
+    cost::TF,
     x::P,
     ξ::T,
     m::P,
@@ -131,6 +127,7 @@ function ChambollePock!(
     return_options=false,
     kwargs...,
 ) where {
+    TF,
     P,
     Q,
     T,

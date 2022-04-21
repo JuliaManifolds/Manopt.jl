@@ -50,9 +50,8 @@ OR
 function DouglasRachford(
     M::AbstractManifold, F::TF, proxes::Vector{<:Any}, x; kwargs...
 ) where {TF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    return DouglasRachford!(M, F, proxes, x; kwargs...)
+    x_res = copy(M, x)
+    return DouglasRachford!(M, F, proxes, x_res; kwargs...)
 end
 @doc raw"""
      DouglasRachford(M, F, proxMaps, x)
