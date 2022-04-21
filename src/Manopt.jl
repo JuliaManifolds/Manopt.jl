@@ -29,6 +29,7 @@ import ManifoldsBase:
     DefaultOrthonormalBasis,
     ExponentialRetraction,
     LogarithmicInverseRetraction,
+    QRRetraction,
     ParallelTransport,
     ProjectionTransport,
     PowerManifold,
