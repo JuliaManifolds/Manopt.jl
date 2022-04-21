@@ -522,6 +522,7 @@ In this case the retraction and the vector transport are also keyword arguments 
 The other constructor is kept for backward compatibility.
 Note that the `linesearch_stopsize` to stop for too small stepsizes is only available in the
 new signature including `M`.
+For the old (deprecated) signature the `linesearch_stopsize` is set to the old hard-coded default of  `1e-12`
 
     WolfePowellLinesearch(
         retr::AbstractRetractionMethod=ExponentialRetraction(),
@@ -553,7 +554,7 @@ mutable struct WolfePowellLinesearch <: Linesearch
         c_1::Float64=10^(-4),
         c_2::Float64=0.999,
     )
-        return new(retr, vtr, c_1, c_2, 0.0, 0.0)
+        return new(retr, vtr, c_1, c_2, 0.0, 1e-12)
     end
     function WolfePowellLinesearch(
         M::AbstractManifold,
