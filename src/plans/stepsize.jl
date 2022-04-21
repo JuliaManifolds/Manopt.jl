@@ -711,8 +711,8 @@ mutable struct WolfePowellBinaryLinesearch <: Linesearch
 end
 
 function (a::WolfePowellBinaryLinesearch)(
-    p::P, o::O, ::Int, η=-get_gradient(p, o.x); kwargs...
-) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
+    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x); kwargs...
+)
     α = 0.0
     β = Inf
     t = 1.0
