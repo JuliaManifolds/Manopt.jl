@@ -482,6 +482,9 @@ function (a::WolfePowellLineseach)(
     vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
     while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
           a.c_2 * inner(p.M, o.x, η, o.gradient)
+        ##
+        println(a.c_2 * inner(p.M, o.x, η, o.gradient)-inner(p.M, xNew, get_gradient(p, xNew), η_xNew))
+        ##
         s = (s_minus + s_plus) / 2
         retract!(p.M, xNew, o.x, s * η, a.retraction_method)
         fNew = get_cost(p, xNew)
