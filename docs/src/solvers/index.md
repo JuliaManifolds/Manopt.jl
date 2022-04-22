@@ -1,5 +1,5 @@
 
-# Solvers
+# [Solvers](@id solvers)
 
 ```@meta
 CurrentModule = Manopt

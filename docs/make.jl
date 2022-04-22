@@ -93,7 +93,12 @@ makedocs(;
         "Home" => "index.md",
         "About" => "about.md",
         "How to..." => TutorialMenu,
-        "Plans" => "plans/index.md",
+        "Plans" => [
+            "Specify a Solver" => "plans/index.md",
+            "Problem" => "plans/problem.md",
+            "Options" => "plans/options.md",
+            "Stepsize" => "plans/stepsize.md",
+        ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
