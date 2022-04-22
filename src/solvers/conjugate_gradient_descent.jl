@@ -81,7 +81,7 @@ function conjugate_gradient_descent!(
     gradF::TDF,
     x;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(M),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))

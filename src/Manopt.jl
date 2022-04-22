@@ -28,6 +28,7 @@ import ManifoldsBase:
     AbstractRetractionMethod,
     AbstractInverseRetractionMethod,
     CachedBasis,
+    DefaultManifold,
     DefaultOrthonormalBasis,
     ExponentialRetraction,
     LogarithmicInverseRetraction,

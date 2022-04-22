@@ -6,15 +6,26 @@ A functor that always returns a fixed step size.
 # Fields
 * `length` – constant value for the step size.
 
-# Constructor
+# Constructors
 
-    ConstantStepSize(s)
+    ConstantStepsize(s)
 
-initialize the stepsize to a constant `s`
+initialize the stepsize to a constant `s` (deprecated)
+
+    ConstantStepsize(M::AbstractManifold=DefaultManifold(2); stepsize=injectivity_radius(M)/2)
+
+initialize the stepsize to a constant `stepsize`, which by default is half the injectivity
+radius, unless the radius is infinity, then the default step size is `1`.
 """
-mutable struct ConstantStepsize <: Stepsize
-    length::Float64
-    ConstantStepsize(s::Real) = new(s)
+mutable struct ConstantStepsize{T} <: Stepsize
+    length::T
+end
+@deprecate ConstantStepsize(s::Real) ConstantStepsize(; stepsize=s)
+function ConstantStepsize(
+    M::AbstractManifold=DefaultManifold(2);
+    stepsize=isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 2,
+)
+    return ConstantStepsize{typeof(stepsize)}(stepsize)
 end
 function (s::ConstantStepsize)(
     p::P, o::O, i::Int, args...; kwargs...
@@ -48,11 +59,14 @@ and hence the default simplifies to just ``s_i = \frac{l}{i}``
 
     DecreasingStepsize(l=1,f=1,a=0,e=1,s=0)
 
-Alternatively one can also use the following keyword Alternatively
+Alternatively one can also use the following keyword.
 
-    DecreasingStepSize(;length=1.0, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+    DecreasingStepsize(
+        M::AbstractManifold=DefaultManifold(3);
+        length=injectivity_radius(M)/2, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
 
-initialiszes all fields above, where none of them is mandatory.
+initialiszes all fields above, where none of them is mandatory and the length is set to
+half and to $1$ if the injectivity radius is infinite.
 """
 mutable struct DecreasingStepsize <: Stepsize
     length::Float64
@@ -64,7 +78,14 @@ mutable struct DecreasingStepsize <: Stepsize
         return new(l, f, a, e, s)
     end
 end
-function DecreasingStepsize(; length=1.0, factor=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+function DecreasingStepsize(
+    M::AbstractManifold=DefaultManifold(3);
+    length=isinf(manifold_dimension(M)) ? 1.0 : manifold_dimension(M) / 2,
+    factor=1.0,
+    subtrahend=0.0,
+    exponent=1.0,
+    shift=0,
+)
     return DecreasingStepsize(length, factor, subtrahend, exponent, shift)
 end
 function (s::DecreasingStepsize)(
@@ -100,7 +121,7 @@ last step size.
   the exponential map
 * `contractionFactor` – (`0.95`) exponent for line search reduction
 * `sufficientDecrease` – (`0.1`) gain within Armijo's rule
-* `lastStepSize` – (`initialstepsize`) the last step size we start the search with
+* `last_stepsize` – (`initialstepsize`) the last step size we start the search with
 * `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
     before the step is numerically zero. This should be combined with [`StopWhenStepSizeLess`](@ref)
 
@@ -118,7 +139,7 @@ The constructors return the functor to perform Armijo line search, where two int
 faces are available:
 * based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
   and a current iterate `i`.
-* with `(M, x, F, gradFx[,η=-gradFx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`, a current
+* with `(M, x, F, gradFx[,η=-gradFx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#Manifold) `M`, a current
   point `x` a function `F`, that maps from the manifold to the reals,
   its gradient (a tangent vector) `gradFx```=\operatorname{grad}F(x)`` at  `x` and an optional
   search direction tangent vector `η=-gradFx` are the arguments.
@@ -128,19 +149,22 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     retraction_method::TRM
     contractionFactor::Float64
     sufficientDecrease::Float64
-    stepsizeOld::Float64
+    last_stepsize::Float64
     linesearch_stopsize::Float64
-    function ArmijoLinesearch(
+    @deprecate ArmijoLinesearch(
         s::Float64=1.0,
         r::AbstractRetractionMethod=ExponentialRetraction(),
         contractionFactor::Float64=0.95,
         sufficientDecrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
+    ) ArmijoLinesearch(
+        DefaultManifold(2);
+        initial_stepsize=s,
+        retraction_method=r,
+        contractionFactor=contractionFactor,
+        sufficientDecrease=sufficientDecrease,
+        linesearch_stopsize=linesearch_stopsize,
     )
-        return new{typeof(r)}(
-            s, r, contractionFactor, sufficientDecrease, s, linesearch_stopsize
-        )
-    end
     function ArmijoLinesearch(
         M;
         initial_stepsize::Float64=1.0,
@@ -162,19 +186,19 @@ end
 function (a::ArmijoLinesearch)(
     p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x); kwargs...
 )
-    a.stepsizeOld = linesearch_backtrack(
+    a.last_stepsize = linesearch_backtrack(
         p.M,
         x -> p.cost(p.M, x),
         o.x,
         get_gradient!(p, o.gradient, o.x),
-        a.stepsizeOld,
+        a.last_stepsize,
         a.sufficientDecrease,
         a.contractionFactor,
         a.retraction_method,
         η;
         stop_step=a.linesearch_stopsize,
     )
-    return a.stepsizeOld
+    return a.last_stepsize
 end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
 
@@ -334,39 +358,12 @@ mutable struct NonmonotoneLinesearch{
     storage::StoreOptionsAction
     linesearch_stopsize::Float64
     function NonmonotoneLinesearch(
-        M::AbstractManifold;
+        M::AbstractManifold=DefaultManifold(2);
         initial_stepsize::Float64=1.0,
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
             M
         ),
-        stepsize_reduction::Float64=0.5,
-        sufficient_decrease::Float64=1e-4,
-        memory_size::Int=10,
-        min_stepsize::Float64=1e-3,
-        max_stepsize::Float64=1e3,
-        strategy::Symbol=:direct,
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
-        linesearch_stopsize::Float64=0.0,
-    )
-        return NonmonotoneLinesearch(
-            initial_stepsize,
-            retraction_method,
-            vector_transport_method,
-            stepsize_reduction,
-            sufficient_decrease,
-            memory_size,
-            min_stepsize,
-            max_stepsize,
-            strategy,
-            storage,
-            linesearch_stopsize,
-        )
-    end
-    function NonmonotoneLinesearch(
-        initial_stepsize::Float64=1.0,
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
         stepsize_reduction::Float64=0.5,
         sufficient_decrease::Float64=1e-4,
         memory_size::Int=10,
@@ -419,6 +416,32 @@ mutable struct NonmonotoneLinesearch{
             linesearch_stopsize,
         )
     end
+    @deprecate NonmonotoneLinesearch(
+        initial_stepsize::Float64,
+        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+        vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+        stepsize_reduction::Float64=0.5,
+        sufficient_decrease::Float64=1e-4,
+        memory_size::Int=10,
+        min_stepsize::Float64=1e-3,
+        max_stepsize::Float64=1e3,
+        strategy::Symbol=:direct,
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
+        linesearch_stopsize::Float64=0.0,
+    ) NonmonotoneLinesearch(
+        DefaultManifold(3);
+        initial_stepsize=initial_stepsize,
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+        stepsize_reduction=stepsize_reduction,
+        sufficient_decrease=sufficient_decrease,
+        memory_size=memory_size,
+        min_stepsize=min_stepsize,
+        max_stepsize=max_stepsize,
+        strategy=strategy,
+        storage=storage,
+        linesearch_stopsize=linesearch_stopsize,
+    )
 end
 function (a::NonmonotoneLinesearch)(
     p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x); kwargs...
@@ -527,14 +550,14 @@ For the old (deprecated) signature the `linesearch_stopsize` is set to the old h
     WolfePowellLinesearch(
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999
+        c1::Float64=10^(-4),
+        c2::Float64=0.999
     )
 
     WolfePowellLinesearch(
         M,
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999;
+        c1::Float64=10^(-4),
+        c2::Float64=0.999;
         retraction_method = default_retraction_method(M),
         vector_transport_method = default_vector_transport(M),
         linesearch_stopsize = 0.0
@@ -543,23 +566,28 @@ For the old (deprecated) signature the `linesearch_stopsize` is set to the old h
 mutable struct WolfePowellLinesearch <: Linesearch
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
-    c_1::Float64
-    c_2::Float64
+    c1::Float64
+    c2::Float64
     last_stepsize::Float64
     linesearch_stopsize::Float64
 
-    function WolfePowellLinesearch(
+    @deprecate WolfePowellLinesearch(
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999,
+        c1::Float64=10^(-4),
+        c2::Float64=0.999,
+    ) WolfePowellLinesearch(
+        DefaultManifold(3),
+        c1,
+        c2,
+        retraction_method=retr,
+        vector_transport_method=vtr,
+        linesearch_stopsize=1e-12,
     )
-        return new(retr, vtr, c_1, c_2, 0.0, 1e-12)
-    end
     function WolfePowellLinesearch(
         M::AbstractManifold,
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999;
+        c1::Float64=10^(-4),
+        c2::Float64=0.999;
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
             M
@@ -567,7 +595,7 @@ mutable struct WolfePowellLinesearch <: Linesearch
         linesearch_stopsize::Float64=0.0,
     )
         return new(
-            retraction_method, vector_transport_method, c_1, c_2, 0.0, linesearch_stopsize
+            retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
         )
     end
 end
@@ -582,9 +610,8 @@ function (a::WolfePowellLinesearch)(
     xNew = retract(p.M, o.x, s * η, a.retraction_method)
     fNew = get_cost(p, xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
-    if fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)
-        while (fNew > f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)) &&
-            (s_minus > 10^(-9)) # decrease
+    if fNew > f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)
+        while (fNew > f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             s = s_minus
             retract!(p.M, xNew, o.x, s * η, a.retraction_method)
@@ -594,8 +621,8 @@ function (a::WolfePowellLinesearch)(
     else
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
         if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-            a.c_2 * inner(p.M, o.x, η, o.gradient)
-            while fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient) &&
+            a.c2 * inner(p.M, o.x, η, o.gradient)
+            while fNew <= f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient) &&
                 (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
                 s = s_plus
@@ -608,11 +635,11 @@ function (a::WolfePowellLinesearch)(
     retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
     vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
     while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-          a.c_2 * inner(p.M, o.x, η, o.gradient)
+          a.c2 * inner(p.M, o.x, η, o.gradient)
         s = (s_minus + s_plus) / 2
         retract!(p.M, xNew, o.x, s * η, a.retraction_method)
         fNew = get_cost(p, xNew)
-        if fNew <= f0 + a.c_1 * s * inner(p.M, o.x, η, o.gradient)
+        if fNew <= f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)
             s_minus = s
         else
             s_plus = s
@@ -631,11 +658,11 @@ end
 
 A [`Linesearch`](@ref) method that determines a step size `t` fulfilling the Wolfe conditions
 
-based on a binary chop. Let ``η`` be a search direction and ``c_1,c_2>0`` be two constants.
+based on a binary chop. Let ``η`` be a search direction and ``c1,c_2>0`` be two constants.
 Then with
 
 ```math
-A(t) = f(x_+) ≤ c_1 t ⟨\operatorname{grad}f(x), η⟩_{x}
+A(t) = f(x_+) ≤ c1 t ⟨\operatorname{grad}f(x), η⟩_{x}
 \quad\text{and}\quad
 W(t) = ⟨\operatorname{grad}f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 ⟨η, \operatorname{grad}f(x)⟩_x,
 ```
@@ -660,14 +687,14 @@ new signature including `M`, for the first it is set to the old default of `1e-9
     WolfePowellBinaryLinesearch(
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999
+        c1::Float64=10^(-4),
+        c2::Float64=0.999
     )
 
     WolfePowellLinesearch(
         M,
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999;
+        c1::Float64=10^(-4),
+        c2::Float64=0.999;
         retraction_method = default_retraction_method(M),
         vector_transport_method = default_vector_transport(M),
         linesearch_stopsize = 0.0
@@ -681,24 +708,28 @@ new signature including `M`, for the first it is set to the old default of `1e-9
 mutable struct WolfePowellBinaryLinesearch <: Linesearch
     retraction_method::AbstractRetractionMethod
     vector_transport_method::AbstractVectorTransportMethod
-    c_1::Float64
-    c_2::Float64
+    c1::Float64
+    c2::Float64
     last_stepsize::Float64
     linesearch_stopsize::Float64
 
-    function WolfePowellBinaryLinesearch(
+    @deprecate WolfePowellBinaryLinesearch(
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999,
+        c1::Float64=10^(-4),
+        c2::Float64=0.999,
+    ) WolfePowellBinaryLinesearch(
+        DefaultManifold(3),
+        c1,
+        c2,
+        retraction_method=retr,
+        vector_transport_method=vtr,
+        linesearch_stopsize=1e-9,
     )
-        return new(retr, vtr, c_1, c_2, 0.0, 1e-9)
-    end
-
     function WolfePowellBinaryLinesearch(
         M::AbstractManifold,
-        c_1::Float64=10^(-4),
-        c_2::Float64=0.999;
+        c1::Float64=10^(-4),
+        c2::Float64=0.999;
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
             M
@@ -706,7 +737,7 @@ mutable struct WolfePowellBinaryLinesearch <: Linesearch
         linesearch_stopsize::Float64=0.0,
     )
         return new(
-            retraction_method, vector_transport_method, c_1, c_2, 0.0, linesearch_stopsize
+            retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
         )
     end
 end
@@ -722,8 +753,8 @@ function (a::WolfePowellBinaryLinesearch)(
     fNew = get_cost(p, xNew)
     η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(p, xNew)
-    nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.gradient)
-    nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
+    nAt = fNew > f0 + a.c1 * t * inner(p.M, o.x, η, o.gradient)
+    nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c2 * inner(p.M, o.x, η, o.gradient)
     while (nAt || nWt) &&
               (t > a.linesearch_stopsize) &&
               ((α + β) / 2 - 1 > a.linesearch_stopsize)
@@ -736,9 +767,8 @@ function (a::WolfePowellBinaryLinesearch)(
         gradient_new = get_gradient(p, xNew)
         vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
         # Update conditions
-        nAt = fNew > f0 + a.c_1 * t * inner(p.M, o.x, η, o.gradient)
-        nWt =
-            inner(p.M, xNew, gradient_new, η_xNew) < a.c_2 * inner(p.M, o.x, η, o.gradient)
+        nAt = fNew > f0 + a.c1 * t * inner(p.M, o.x, η, o.gradient)
+        nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c2 * inner(p.M, o.x, η, o.gradient)
     end
     a.last_stepsize = t
     return t
@@ -785,7 +815,7 @@ end
 #
 # dispatch on stepsize
 get_last_stepsize(p::Problem, o::Options, s::Stepsize, vars...) = s(p, o, vars...)
-get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, ::Any...) = s.stepsizeOld
+get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, ::Any...) = s.last_stepsize
 function get_last_stepsize(::Problem, ::Options, s::WolfePowellLinesearch, ::Any...)
     return s.last_stepsize
 end

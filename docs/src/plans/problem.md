@@ -1,4 +1,4 @@
-## Problems
+# [Problems](@id ProblemSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -22,13 +22,13 @@ AllocatingEvaluation
 MutatingEvaluation
 ```
 
-### Cost based problem
+## Cost based problem
 
 ```@docs
 CostProblem
 ```
 
-### Gradient based problem
+## Gradient based problem
 
 ```@docs
 AbstractGradientProblem
@@ -38,21 +38,21 @@ get_gradient
 get_gradients
 ```
 
-### Subgradient based problem
+## Subgradient based problem
 
 ```@docs
 SubGradientProblem
 get_subgradient
 ```
 
-### [Proximal Map(s) based problem](@id ProximalProblem)
+## [Proximal Map(s) based problem](@id ProximalProblem)
 
 ```@docs
 ProximalProblem
 get_proximal_map
 ```
 
-### [Hessian based problem](@id HessianProblem)
+## [Hessian based problem](@id HessianProblem)
 
 ```@docs
 HessianProblem
@@ -60,7 +60,7 @@ get_hessian
 get_preconditioner
 ```
 
-### [Primal dual based problem](@id PrimalDualProblem)
+## [Primal dual based problem](@id PrimalDualProblem)
 
 ```@docs
 PrimalDualProblem

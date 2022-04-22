@@ -1,4 +1,4 @@
-## Options
+# [Options](@id OptionsSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -13,12 +13,12 @@ Options
 get_options
 ```
 
-Since the `Options` directly relate to a solver, they are documented with the
-corresponding [Solvers](@ref).
+Since the [`Options`](@ref) directly relate to a solver, they are documented with the
+corresponding [solvers](@ref SolversSection).
 You can always access the options (since they
 might be decorated) by calling [`get_options`](@ref).
 
-### Decorators for Options
+## Decorators for Options
 
 Options can be decorated using the following trait and function to initialize
 
@@ -43,7 +43,7 @@ has_storage
 update_storage!
 ```
 
-#### [Debug Options](@id DebugOptions)
+## [Debug Options](@id DebugOptions)
 
 ```@autodocs
 Modules = [Manopt]
@@ -55,7 +55,7 @@ see [DebugSolver](@ref DebugSolver) for details on the decorated solver.
 
 Further specific [`DebugAction`](@ref)s can be found at the specific Options.
 
-#### [Record Options](@id RecordOptions)
+## [Record Options](@id RecordOptions)
 
 ```@autodocs
 Modules = [Manopt]

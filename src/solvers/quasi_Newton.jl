@@ -94,7 +94,12 @@ function quasi_Newton!(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
     scale_initial_operator::Bool=true,
-    stepsize::Stepsize=WolfePowellLinesearch(retraction_method, vector_transport_method),
+    stepsize::Stepsize=WolfePowellLinesearch(
+        M;
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+        linesearch_stopsize=1e-12,
+    ),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
     ),

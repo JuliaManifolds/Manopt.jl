@@ -69,7 +69,7 @@ Several functions are available, implemented on an arbitrary manifold, [cost fun
 
 ### Optimization Algorithms (Solvers)
 
-For every optimization algorithm, a [solver](@ref Solvers) is implemented based on a [`Problem`](@ref) that describes the problem to solve and its [`Options`](@ref) that set up the solver, store interims values. Together they
+For every optimization algorithm, a [solver](@ref SolversSection) is implemented based on a [`Problem`](@ref) that describes the problem to solve and its [`Options`](@ref) that set up the solver, store interims values. Together they
 form a [plan](@ref planSection).
 
 ### Visualization
