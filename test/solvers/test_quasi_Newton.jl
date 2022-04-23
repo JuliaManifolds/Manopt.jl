@@ -27,9 +27,8 @@ Random.seed!(42)
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_options=true,
         )
-        @test get_last_stepsize(
-            GradientProblem(M, F, gradF), lrbfgs_o, lrbfgs_o.stepsize
-        ) > 0
+        @test get_last_stepsize(GradientProblem(M, F, gradF), lrbfgs_o, lrbfgs_o.stepsize) >
+            0
         @test lrbfgs_o.x == x_lrbfgs
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
