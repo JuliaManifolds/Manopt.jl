@@ -386,7 +386,7 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
     status::Symbol
     old_cost::Float64
     tol::Float64
-    DebugWarnIfCostIncreases(warn::Symbol=:Always; tol=1e-13) = new(warn, Float64(Inf), tol)
+    DebugWarnIfCostIncreases(warn::Symbol=:Once; tol=1e-13) = new(warn, Float64(Inf), tol)
 end
 function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
     if d.status !== :No

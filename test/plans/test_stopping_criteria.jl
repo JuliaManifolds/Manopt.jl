@@ -86,7 +86,7 @@ end
     s1 = StopWhenStepSizeLess(0.5)
     @test !s1(p, o, 1)
     @test s1.reason == ""
-    o.stepsize = ConstantStepsize(0.25)
+    o.stepsize = ConstantStepsize(; stepsize=0.25)
     @test s1(p, o, 2)
     @test length(s1.reason) > 0
 end

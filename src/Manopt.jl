@@ -28,6 +28,7 @@ import ManifoldsBase:
     AbstractRetractionMethod,
     AbstractInverseRetractionMethod,
     CachedBasis,
+    DefaultManifold,
     DefaultOrthonormalBasis,
     ExponentialRetraction,
     LogarithmicInverseRetraction,
@@ -224,8 +225,8 @@ export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
-export WolfePowellLineseach,
-    StrongWolfePowellLineseach,
+export WolfePowellLinesearch,
+    StrongWolfePowellLinesearch,
     operator_to_matrix,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
