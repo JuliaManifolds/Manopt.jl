@@ -82,7 +82,6 @@ function alternating_gradient_descent!(
     p = AlternatingGradientProblem(M, F, gradF; evaluation=evaluation)
     o = AlternatingGradientDescentOptions(
         x,
-        get_gradient(p, x),
         direction;
         inner_iterations=inner_iterations,
         stopping_criterion=stopping_criterion,
