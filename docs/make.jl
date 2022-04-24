@@ -38,7 +38,7 @@ pluto_titles = [
     "Illustrate Jacobi Fields",
 ]
 # build menu and write files myself - tp set edit url correctly.
-for (i, f) in enumerate(pluto_files)
+for (title, file) in zip(pluto_titles,pluto_files)
     global TutorialMenu
     rendered = build_notebooks( #though not really parallel here
         BuildOptions(
@@ -47,19 +47,41 @@ for (i, f) in enumerate(pluto_files)
             write_files=false,
             use_distributed=false,
         ),
-        ["$(f).jl"],
+        ["$(file).jl"],
     )
     write(
-        pluto_output_folder * f * ".md",
+        pluto_output_folder * file * ".md",
         """
         ```@meta
-        EditURL = "$(pluto_src_folder)$(f).jl"
+        EditURL = "$(pluto_src_folder)$(file).jl"
+        ```
+
+        ```@raw html
+        <style>
+          div.markdown {
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+          }
+          /* move output up to its input, remove border (see class add JS below) */
+          pre.pre-output {
+            border: 0px;
+            margin-top: -1em;
+          }
+        </style>
         ```
 
         $(rendered[1])
+
+        ```@raw html
+        <script type="text/javascript">
+          \$(function() {
+            \$('pre.code-output').addClass('pre-output');
+          });
+        </script>
+        ```
         """,
     )
-    push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
+    push!(TutorialMenu, title => joinpath(pluto_relative_path, file * ".md"))
 end
 
 generated_path = joinpath(@__DIR__, "src")
