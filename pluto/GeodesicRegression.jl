@@ -492,7 +492,7 @@ with_terminal() do
         x2;
         evaluation=MutatingEvaluation(),
         debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.990, 0.066),
+        stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.999, 0.066),
         inner_iterations=1,
     )
 end
