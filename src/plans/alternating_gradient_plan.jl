@@ -273,16 +273,17 @@ function AlternatingGradientDescentOptions(
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
     stepsize::Stepsize=ConstantStepsize(M),
 )
+    X = zero_vector(M, x)
     return AlternatingGradientDescentOptions{
         typeof(x),
-        typeof(X),
+        X,
         AlternatingGradient,
         typeof(stopping_criterion),
         typeof(stepsize),
         typeof(retraction_method),
     }(
         x,
-        zero_vector(M, x),
+        X,
         AlternatingGradient(zero_vector(M, x)),
         stopping_criterion,
         stepsize,
