@@ -1,8 +1,3 @@
-#
-# Define a global problem and ist constructors
-#
-# ---
-
 """
     Problem{T}
 
@@ -44,8 +39,20 @@ struct MutatingEvaluation <: AbstractEvaluationType end
 """
     get_cost(p, x)
 
-evaluate the cost function `F` stored within a [`Problem`](@ref) at the point `x`.
+Evaluate the cost function stored within a [`Problem`](@ref) at the point `x`.
 """
 function get_cost(p::Problem, x)
     return p.cost(p.M, x)
+end
+
+"""
+    update_cost!(p::Problem, f)
+
+Update the cost function in a [`Problem`](@ref) `p` to a new function `f = (M, x) -> ...`.
+
+By default the cost function is assumed to be stored `p.cost`.
+"""
+function update_cost!(p::Problem, f)
+    p.cost = f
+    return p
 end

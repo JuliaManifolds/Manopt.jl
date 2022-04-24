@@ -1,6 +1,5 @@
-
 @doc raw"""
-    HessianProblem <: Problem
+    HessianProblem{T} <: Problem{T}
 
 specify a problem for hessian based algorithms.
 
@@ -15,9 +14,10 @@ specify a problem for hessian based algorithms.
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
+
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProblem{T}
+mutable struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProblem{T}
     M::mT
     cost::C
     gradient!!::G
@@ -33,6 +33,24 @@ struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProbl
     ) where {mT<:AbstractManifold,C,G,H,Pre}
         return new{typeof(evaluation),mT,C,G,H,Pre}(M, cost, grad, hess, pre)
     end
+end
+
+
+"""
+    update_hessian!(p::HessianProblem, h)
+
+Update the gradient in an [`AbstractGradientProblem`](@ref) to a function `g`.
+
+This function should be of the signature
+
+  * `h = (M, x X) -> ... ` for the [`AllocatingEvaluation`](@ref)
+  * `h = (M, Y, x, X) -> ...` for the [`MutatingEvaluation`](@ref)
+
+By default the gradient is assumed to be stored in `p.hessian!!`.
+"""
+function update_hessian!(p::HessianProblem, g)
+    p.hessian!! = g
+    return p
 end
 
 @doc raw"""

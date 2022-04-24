@@ -217,6 +217,7 @@ export get_cost,
     forward_operator,
     forward_operator!
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
+export update_cost!, update_gradient!, update_hessian!
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 

@@ -27,7 +27,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be pro
 # See also
 [`gradient_descent`](@ref), [`GradientDescentOptions`](@ref)
 """
-struct GradientProblem{T,mT<:AbstractManifold,C,G} <: AbstractGradientProblem{T}
+mutable struct GradientProblem{T,mT<:AbstractManifold,C,G} <: AbstractGradientProblem{T}
     M::mT
     cost::C
     gradient!!::G
@@ -65,6 +65,23 @@ end
 
 function get_gradient!(p::AbstractGradientProblem{MutatingEvaluation}, X, x)
     return p.gradient!!(p.M, X, x)
+end
+
+"""
+    update_gradient!(p::AbstractGradientProblem, g)
+
+Update the gradient in an [`AbstractGradientProblem`](@ref) to a function `g`.
+
+This function should be of the signature
+
+  * `g = (M, x) -> ... ` for the [`AllocatingEvaluation`](@ref)
+  * `g = (M, x, X) -> ...` for the [`MutatingEvaluation`](@ref)
+
+By default the gradient is assumed to be stored in `p.gradient!!`.
+"""
+function update_gradient!(p::AbstractGradientProblem, g)
+    p.gradient!! = g
+    return p
 end
 
 """
