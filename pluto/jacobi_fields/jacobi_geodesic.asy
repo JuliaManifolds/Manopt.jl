@@ -5,7 +5,7 @@ import solids;unitsize(4cm);
 currentprojection=perspective( camera = (1.0, 1.0, 0.5), target = (0.0, 0.0, 0.0) );
 currentlight=nolight;
 
-revolution S=sphere(O,1);
+revolution S=sphere(O,0.995);
 pen SpherePen = rgb(0.85,0.85,0.85)+opacity(0.6);
 pen SphereLinePen = rgb(0.75,0.75,0.75)+opacity(0.6)+linewidth(0.5pt);
 draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);

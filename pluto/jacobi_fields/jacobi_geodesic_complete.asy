@@ -5,7 +5,7 @@ import solids;unitsize(4cm);
 currentprojection=perspective( camera = (1.0, 1.0, 0.0), target = (0.0, 0.0, 0.0) );
 currentlight=nolight;
 
-revolution S=sphere(O,1);
+revolution S=sphere(O,0.995);
 pen SpherePen = rgb(0.85,0.85,0.85)+opacity(0.6);
 pen SphereLinePen = rgb(0.75,0.75,0.75)+opacity(0.6)+linewidth(0.5pt);
 draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);
@@ -16,9 +16,9 @@ draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);
 pen curveStyle1 = rgb(0.0,0.0,0.0)+linewidth(0.75pt)+opacity(1.0);
 pen pointStyle1 = rgb(0.9333333333333333,0.4666666666666667,0.2)+linewidth(3.5pt)+opacity(1.0);
 pen pointStyle2 = rgb(0.2,0.7333333333333333,0.9333333333333333)+linewidth(2.0pt)+opacity(1.0);
-pen tVectorStyle1 = rgb(0.2,0.7333333333333333,0.9333333333333333)+linewidth(0.75pt)+linewidth(0.75pt)+opacity(1.0);
-pen tVectorStyle2 = rgb(0.2,0.7333333333333333,0.9333333333333333)+linewidth(0.75pt)+linewidth(0.75pt)+opacity(1.0);
-pen tVectorStyle3 = rgb(0.0,0.6,0.5333333333333333)+linewidth(0.75pt)+linewidth(0.75pt)+opacity(1.0);
+pen tVectorStyle1 = rgb(0.2,0.7333333333333333,0.9333333333333333)+linewidth(0.75pt)+opacity(1.0);
+pen tVectorStyle2 = rgb(0.9333333333333333,0.2,0.4666666666666667)+linewidth(0.75pt)+opacity(1.0);
+pen tVectorStyle3 = rgb(0.0,0.6,0.5333333333333333)+linewidth(0.75pt)+opacity(1.0);
 
 /*
   Exported Points
@@ -75,7 +75,7 @@ draw( (0.8910065241883679,0.45399049973954675,0.0)--(0.7911286142456676,0.650011
 draw( (0.8090169943749475,0.5877852522924731,0.0)--(0.7149713540081518,0.7172279713924647,0.11061587104123716), tVectorStyle3,Arrow3(6.0));
 draw( (0.7071067811865476,0.7071067811865475,0.0)--(0.6363961030678928,0.7778174593052023,0.0), tVectorStyle3,Arrow3(6.0));
 draw( (0.5877852522924731,0.8090169943749475,0.0)--(0.5554245725174752,0.8325284044666464,-0.11061587104123716), tVectorStyle3,Arrow3(6.0));
-draw( (0.45399049973954686,0.8910065241883678,0.0)--(0.4718106302233142,0.8819267141935769,-0.2185080122244105), tVectorStyle3,Arrow3(6.0));
+draw( (0.45399049973954686,0.8910065241883678,0.0)--(0.47181063022331415,0.8819267141935768,-0.2185080122244105), tVectorStyle3,Arrow3(6.0));
 draw( (0.30901699437494745,0.9510565162951536,0.0)--(0.38510151567855977,0.9263351567451579,-0.3210197609601031), tVectorStyle3,Arrow3(6.0));
 draw( (0.15643446504023092,0.9876883405951378,0.0)--(0.29471083272355025,0.9657875154895055,-0.41562693777745346), tVectorStyle3,Arrow3(6.0));
 draw( (6.123233995736766e-17,1.0,0.0)--(0.20000000000000007,1.0,-0.5), tVectorStyle3,Arrow3(6.0));

@@ -17,21 +17,25 @@ mkpath(pluto_output_folder)
 # Please do not use the same name as for a(n old) literate Tutorial
 pluto_files = [
     "Optimize!",
+    "AutomaticDifferentiation",
     "HowToRecord",
     "GeodesicRegression",
-    "SecondOrderDifference",
-    "Benchmark",
     "Bezier",
-    "AutomaticDifferentiation",
+    "SecondOrderDifference",
+    "StochasticGradientDescent",
+    "Benchmark",
+    "JacobiFields",
 ]
 pluto_titles = [
     "Get started: Optimize!",
+    "Use AD in Manopt",
     "How to record values",
     "Do Geodesic regression",
-    "Compute a second order difference",
-    "speed up! using `gradF!`",
     "Use Bezier Curves",
-    "AD in Manopt",
+    "Compute a second order difference",
+    "Do stochastic gradient descent",
+    "speed up! using `gradF!`",
+    "Illustrate Jacobi Fields",
 ]
 # build menu and write files myself - tp set edit url correctly.
 for (i, f) in enumerate(pluto_files)
@@ -56,20 +60,6 @@ for (i, f) in enumerate(pluto_files)
         """,
     )
     push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
-end
-
-# generate examples using Literate
-tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
-tutorialsRelativePath = "tutorials/"
-tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
-tutorials = ["StochasticGradientDescent", "JacobiFields"]
-menuEntries = ["do stochastic gradient descent", "use Jacobi Fields"]
-for (i, tutorial) in enumerate(tutorials)
-    global TutorialMenu
-    sourceFile = joinpath(tutorialsInputPath, tutorial * ".jl")
-    targetFile = joinpath(tutorialsOutputPath, tutorial * "md")
-    Literate.markdown(sourceFile, tutorialsOutputPath; name=tutorial, credit=false)
-    push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
 end
 
 generated_path = joinpath(@__DIR__, "src")

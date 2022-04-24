@@ -5,7 +5,7 @@ import solids;unitsize(4cm);
 currentprojection=perspective( camera = (1.0, 1.0, 0.5), target = (0.0, 0.0, 0.0) );
 currentlight=nolight;
 
-revolution S=sphere(O,1);
+revolution S=sphere(O,0.995);
 pen SpherePen = rgb(0.85,0.85,0.85)+opacity(0.6);
 pen SphereLinePen = rgb(0.75,0.75,0.75)+opacity(0.6)+linewidth(0.5pt);
 draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);
@@ -16,7 +16,7 @@ draw(surface(S), surfacepen=SpherePen, meshpen=SphereLinePen);
 pen curveStyle1 = rgb(0.0,0.0,0.0)+linewidth(0.75pt)+opacity(1.0);
 pen pointStyle1 = rgb(0.9333333333333333,0.4666666666666667,0.2)+linewidth(3.5pt)+opacity(1.0);
 pen pointStyle2 = rgb(0.2,0.7333333333333333,0.9333333333333333)+linewidth(2.0pt)+opacity(1.0);
-pen tVectorStyle1 = rgb(0.2,0.7333333333333333,0.9333333333333333)+linewidth(0.75pt)+linewidth(0.75pt)+opacity(1.0);
+pen tVectorStyle1 = rgb(0.2,0.7333333333333333,0.9333333333333333)+linewidth(0.75pt)+opacity(1.0);
 
 /*
   Exported Points
