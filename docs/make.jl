@@ -1,39 +1,9 @@
-using Manopt, Manifolds, Documenter, Literate, Pluto
+using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
+using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML, Pkg
+# Load an unregistered package (for now) to update exports of Pluto notebooks
 
-# generate examples using Literate
-tutorialsInputPath = joinpath(@__DIR__, "..", "src/tutorials")
-tutorialsRelativePath = "tutorials/"
-tutorialsOutputPath = joinpath(@__DIR__, "src/" * tutorialsRelativePath)
-tutorials = [
-    "MeanAndMedian",
-    #    "Benchmark",
-    "GeodesicRegression",
-    "HowToRecord",
-    "StochasticGradientDescent",
-    "BezierCurves",
-    "GradientOfSecondOrderDifference",
-    "JacobiFields",
-]
-menuEntries = [
-    "get Started: Optimize!",
-    #   "speed up! using `gradF!`",
-    "Do Geodesic regression",
-    "Record values",
-    "do stochastic gradient descent",
-    "work with Bézier curves",
-    "see the gradient of ``d_2``",
-    "use Jacobi Fields",
-]
 TutorialMenu = Array{Pair{String,String},1}()
-for (i, tutorial) in enumerate(tutorials)
-    global TutorialMenu
-    sourceFile = joinpath(tutorialsInputPath, tutorial * ".jl")
-    targetFile = joinpath(tutorialsOutputPath, tutorial * "md")
-    Literate.markdown(sourceFile, tutorialsOutputPath; name=tutorial, credit=false)
-    push!(TutorialMenu, menuEntries[i] => joinpath(tutorialsRelativePath, tutorial * ".md"))
-end
 
-#
 #
 # Generate Pluto Tutorial HTMLs
 
@@ -45,25 +15,51 @@ mkpath(pluto_output_folder)
 #
 #
 # Please do not use the same name as for a(n old) literate Tutorial
-pluto_files = ["AutomaticDifferentiation"]
-pluto_heights = [370] # for now, lazyness, in rem
-pluto_titles = ["AD in Manopt"]
-for (i, f) in enumerate(pluto_files)
+pluto_files = [
+    "Optimize!",
+    "AutomaticDifferentiation",
+    "HowToRecord",
+    "GeodesicRegression",
+    "Bezier",
+    "SecondOrderDifference",
+    "StochasticGradientDescent",
+    "Benchmark",
+    "JacobiFields",
+]
+pluto_titles = [
+    "Get started: Optimize!",
+    "Use AD in Manopt",
+    "How to record values",
+    "Do Geodesic regression",
+    "Use Bezier Curves",
+    "Compute a second order difference",
+    "Do stochastic gradient descent",
+    "speed up! using `gradF!`",
+    "Illustrate Jacobi Fields",
+]
+# build menu and write files myself - tp set edit url correctly.
+for (title, file) in zip(pluto_titles, pluto_files)
     global TutorialMenu
-    @info "Building Pluto Notebook $f.jl"
-    pluto_file = pluto_src_folder * f * ".jl"
-    s = Pluto.ServerSession()
-    nb = Pluto.SessionActions.open(s, pluto_file; run_async=false)
-    write(pluto_output_folder * f * "_pluto.html", Pluto.generate_html(nb))
+    rendered = build_notebooks( #though not really parallel here
+        BuildOptions(
+            pluto_src_folder;
+            output_format=documenter_output,
+            write_files=false,
+            use_distributed=false,
+        ),
+        ["$(file).jl"],
+    )
     write(
-        pluto_output_folder * f * ".md",
+        pluto_output_folder * file * ".md",
         """
-        ```@raw html
-        <iframe style="border:none; width:100%; height: $(pluto_heights[i])rem;" src="$(f)_pluto.html"></iframe>
+        ```@meta
+        EditURL = "$(pluto_src_folder)$(file).jl"
         ```
+
+        $(rendered[1])
         """,
     )
-    push!(TutorialMenu, pluto_titles[i] => joinpath(pluto_relative_path, f * ".md"))
+    push!(TutorialMenu, title => joinpath(pluto_relative_path, file * ".md"))
 end
 
 generated_path = joinpath(@__DIR__, "src")
@@ -86,7 +82,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
 end
 
 makedocs(;
-    format=Documenter.HTML(; prettyurls=false),
+    format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
     sitename="Manopt.jl",
     pages=[
