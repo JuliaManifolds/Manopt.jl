@@ -31,7 +31,7 @@ Create a alternating gradient problem with an optional `cost` and the gradient e
 function (returning an array) or a vector of functions.
 """
 mutable struct AlternatingGradientProblem{T,MT<:ProductManifold,TCost,TGradient} <:
-       AbstractGradientProblem{T}
+               AbstractGradientProblem{T}
     M::MT
     cost::TCost
     gradient!!::TGradient

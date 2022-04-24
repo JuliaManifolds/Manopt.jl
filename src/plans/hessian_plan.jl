@@ -17,7 +17,8 @@ specify a problem for hessian based algorithms.
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProblem{T}
+mutable struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <:
+               AbstractGradientProblem{T}
     M::mT
     cost::C
     gradient!!::G
@@ -34,7 +35,6 @@ mutable struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradi
         return new{typeof(evaluation),mT,C,G,H,Pre}(M, cost, grad, hess, pre)
     end
 end
-
 
 """
     update_hessian!(p::HessianProblem, h)

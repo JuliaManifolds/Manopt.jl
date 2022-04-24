@@ -9,16 +9,16 @@ using Manopt, ManifoldsBase, Test
         f(M, p) = 1
         f2(M, p) = 2
 
-        P1 = CostProblem(M,f)
+        P1 = CostProblem(M, f)
         @test get_cost(P1, p) == 1
         update_cost!(P1, f2)
         @test get_cost(P1, p) == 2
 
-        g(M, p) = 3*ones(p)
-        g!(M, X, p) = (X.=3)
+        g(M, p) = 3 * ones(p)
+        g!(M, X, p) = (X .= 3)
 
-        g2(M, p) = 4*ones(p)
-        g2!(M, X, p) = (X.=4)
+        g2(M, p) = 4 * ones(p)
+        g2!(M, X, p) = (X .= 4)
 
         P2a = GradientProblem(M, f, g)
         @test get_gradient(P2a, p) == 3 .* ones(p)
@@ -31,10 +31,10 @@ using Manopt, ManifoldsBase, Test
         @test get_gradient(P2b, p) == 4 .* ones(p)
 
         h(M, p, X) = 5 .* ones(p)
-        h!(M, Y, p, X) = (Y.=5)
+        h!(M, Y, p, X) = (Y .= 5)
 
         h2(M, p) = 6 .* ones(p)
-        h2!(M, X, p) = (Y.=6)
+        h2!(M, X, p) = (Y .= 6)
 
         P3a = HessianProblem(M, f, g, h)
         @test get_hessian(P3a, p, X) == 5 .* ones(p)
