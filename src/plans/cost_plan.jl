@@ -65,6 +65,7 @@ In both constructors all fields (besides the population) are keyword arguments.
 """
 mutable struct NelderMeadOptions{
     T,
+    S<:StoppingCriterion,
     Tα<:Real,
     Tγ<:Real,
     Tρ<:Real,
@@ -73,7 +74,7 @@ mutable struct NelderMeadOptions{
     TI<:AbstractInverseRetractionMethod,
 } <: Options
     population::Vector{T}
-    stop::StoppingCriterion
+    stop::S
     α::Tα
     γ::Tγ
     ρ::Tρ
@@ -85,7 +86,7 @@ mutable struct NelderMeadOptions{
     function NelderMeadOptions(
         M::AbstractManifold,
         population::Vector{T};
-        stop::StoppingCriterion=StopAfterIteration(2000),
+        stopping_criterion::StoppingCriterion=StopAfterIteration(2000),
         α=1.0,
         γ=2.0,
         ρ=1 / 2,
@@ -97,6 +98,7 @@ mutable struct NelderMeadOptions{
     ) where {T}
         return new{
             T,
+            typeof(stopping_criterion),
             typeof(α),
             typeof(γ),
             typeof(ρ),
@@ -105,7 +107,7 @@ mutable struct NelderMeadOptions{
             typeof(inverse_retraction_method),
         }(
             population,
-            stop,
+            stopping_criterion,
             α,
             γ,
             ρ,

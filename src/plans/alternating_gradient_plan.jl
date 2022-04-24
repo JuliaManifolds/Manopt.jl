@@ -276,7 +276,7 @@ function AlternatingGradientDescentOptions(
     X = zero_vector(M, x)
     return AlternatingGradientDescentOptions{
         typeof(x),
-        X,
+        typeof(X),
         AlternatingGradient,
         typeof(stopping_criterion),
         typeof(stepsize),
