@@ -104,19 +104,23 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`ConstantStepsize`](@ref)`()`) a [`Stepsize`](@ref)
 * `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
-* `retraction_method` – (`ExponentialRetraction()`) the retraction to use, defaults to
-  the exponential map
+* `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
+  the default set for your manifold.
 
 # Constructor
 
-    GradientDescentOptions(x, stop, s [, retr=ExponentialRetraction()])
-    GradientDescentOptions(M, x, stop, s [, retr=ExponentialRetraction()])
-    GradientDescentOptions(x, X, stop, s [, retr=ExponentialRetraction()])
+    GradientDescentOptions(M, x; initial_vector=zero_vector(M, x), kwargs...)
 
-construct a Gradient Descent Option with the fields and defaults as above,
-where the first can be used if points (`x`)  and tangent vectors (`gradient`) have the same type,
-for example when they are matrices.
-The second uses the `Manifold M` to set `gradient=zero_vector(M,x)`.
+Generate gradient descent options, where `initial_vector` can be used to set the tangent vector to store the gradient to a certain type.
+All following fields are keyword arguments.
+
+Deprecated variants are
+
+    GradientDescentOptions(x; kwargs...)
+    GradientDescentOptions(x, X; kwargs...)
+
+Setting the tangent vector to the same type as `x` or `X`, respectively but the retraction method
+is just set to `ExponentialRetraction`.
 
 # See also
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
@@ -148,45 +152,48 @@ mutable struct GradientDescentOptions{
         return o
     end
 end
-function GradientDescentOptions(
-    x::P;
+@deprecate GradientDescentOptions(
+    x;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
-) where {P}
-    return GradientDescentOptions{P,P}(
-        x, deepcopy(x), stopping_criterion, stepsize, retraction_method, direction
-    )
-end
-function GradientDescentOptions(
-    x::P,
-    X::T;
+) GradientDescentOptions(
+    DefaultManifold(2),
+    x;
+    initial_vector=deepcopy(x),
+    stopping_criterion=stopping_criterion,
+    stepsize=stepsize,
+    retraction_method=retraction_method,
+    direction=direction,
+)
+@deprecate GradientDescentOptions(
+    x,
+    X;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
-) where {P,T}
-    return GradientDescentOptions{P,T}(
-        x, X, stopping_criterion, stepsize, retraction_method, direction
-    )
-end
+) GradientDescentOptions(
+    DefaultManifold(2),
+    x;
+    initial_vector=X,
+    stopping_criterion=stopping_criterion,
+    stepsize=stepsize,
+    retraction_method=retraction_method,
+    direction=direction,
+)
 function GradientDescentOptions(
     M::AbstractManifold,
     x::P;
+    initial_vector=zero_vector(M, x),
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P}
-    X = zero_vector(M, x)
-    return GradientDescentOptions(
-        x,
-        X;
-        stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
-        retraction_method=retraction_method,
-        direction=direction,
+    return GradientDescentOptions{P,typeof(initial_vector)}(
+        x, initial_vector, stopping_criterion, stepsize, retraction_method, direction
     )
 end
 
