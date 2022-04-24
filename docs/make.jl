@@ -38,7 +38,7 @@ pluto_titles = [
     "Illustrate Jacobi Fields",
 ]
 # build menu and write files myself - tp set edit url correctly.
-for (title, file) in zip(pluto_titles,pluto_files)
+for (title, file) in zip(pluto_titles, pluto_files)
     global TutorialMenu
     rendered = build_notebooks( #though not really parallel here
         BuildOptions(
