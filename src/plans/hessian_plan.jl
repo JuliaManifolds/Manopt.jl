@@ -53,14 +53,12 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 * `x` : a point, where the trust-region subproblem needs
     to be solved
-* `stop` : a function s,r = @(o,iter,ξ,x,xnew) returning a stop
-    indicator and a reason based on an iteration number, the gradient and the
-    last and current iterates
-* `gradient` : the gradient at the current iterate
 * `η` : a tangent vector (called update vector), which solves the
     trust-region subproblem after successful calculation by the algorithm
+* `stop` : a [`StoppingCriterion`](@ref).
+* `gradient` : the gradient at the current iterate
 * `δ` : search direction
-* `trust_region_radius` : the trust-region radius
+* `trust_region_radius` : (`injectivity_radius(M)/4`) the trust-region radius
 * `residual` : the gradient
 * `randomize` : indicates if the trust-region solve and so the algorithm is to be
         initiated with a random tangent vector. If set to true, no
@@ -72,9 +70,15 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    TruncatedConjugateGradientOptions(x, stop, eta, delta, Delta, res, uR)
+    TruncatedConjugateGradientOptions(M, p, x, η;
+        trust_region_radius=injectivity_radius(M)/4,
+        randomize=false,
+        θ=1.0,
+        κ=0.1,
+        project_vector! = copyto!,
+    )
 
-construct a truncated conjugate-gradient Option with the fields as above.
+    and a slightly involved `stopping_criterion`
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
@@ -100,7 +104,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     new_model_value::R
     κ::R
     randomize::Bool
-    project_vector!::Proj
+    project!::Proj
     initialResidualNorm::Float64
     function TruncatedConjugateGradientOptions(
         p::HessianProblem,
@@ -120,20 +124,44 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
             StopWhenCurvatureIsNegative(),
             StopWhenModelIncreased(),
         ),
-    ) where {H,G,P,T,R<:Real,Proj}
-        o = new{
-            typeof(x),
-            typeof(η),
-            typeof(trust_region_radius),
-            typeof(stop),
-            typeof(project_vector!),
-        }()
+    ) where {P,T,R<:Real,Proj}
+        return TruncatedConjugateGradientOptions(
+            p.M,
+            x,
+            η;
+            trust_region_radius=trust_region_radius,
+            (project!)=project_vector!,
+            randomize=randomize,
+            θ=θ,
+            κ=κ,
+            stopping_criterion=stop,
+        )
+    end
+    function TruncatedConjugateGradientOptions(
+        M::AbstractManifold,
+        x::P,
+        η::T;
+        trust_region_radius::R=injectivity_radius(M) / 4.0,
+        randomize::Bool=false,
+        project!::F=copyto!,
+        θ::Float64=1.0,
+        κ::Float64=0.1,
+        stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
+                                              (
+                                                  StopIfResidualIsReducedByPower(θ) &
+                                                  StopIfResidualIsReducedByFactor(κ)
+                                              ) |
+                                              StopWhenTrustRegionIsExceeded() |
+                                              StopWhenCurvatureIsNegative() |
+                                              StopWhenModelIncreased(),
+    ) where {P,T,R<:Real,F}
+        o = new{P,T,R,typeof(stopping_criterion),F}()
         o.x = x
-        o.stop = stop
+        o.stop = stopping_criterion
         o.η = η
         o.trust_region_radius = trust_region_radius
         o.randomize = randomize
-        o.project_vector! = project_vector!
+        o.project! = project!
         o.model_value = zero(trust_region_radius)
         o.κ = zero(trust_region_radius)
         return o

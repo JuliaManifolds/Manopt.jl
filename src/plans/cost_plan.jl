@@ -57,11 +57,7 @@ after the description
 
 construct a Nelder-Mead Option with a default popultion (if not provided) of set of `dimension(M)+1` random points.
 
-    NelderMead(p; kwargs...)
-
-construct a Nelder-Mead Option with a set `p` of points (deprecated)
-
-In both constructors all fields (besides the population) are keyword arguments.
+In the constructor all fields (besides the population) are keyword arguments.
 """
 mutable struct NelderMeadOptions{
     T,

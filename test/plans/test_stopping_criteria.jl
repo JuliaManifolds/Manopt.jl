@@ -12,8 +12,8 @@ struct TestOptions <: Options end
     @test get_stopping_criteria(s)[1].maxIter == get_stopping_criteria(s2)[1].maxIter
 
     s3 = StopWhenCostLess(0.1)
-    p = GradientProblem(Euclidean(1), (M, x) -> x^2, x -> 2x)
-    o = GradientDescentOptions(1.0)
+    p = GradientProblem(Euclidean(), (M, x) -> x^2, x -> 2x)
+    o = GradientDescentOptions(Euclidean(), 1.0)
     @test !s3(p, o, 1)
     @test length(s3.reason) == 0
     o.x = 0.3
@@ -64,7 +64,9 @@ end
 @testset "TCG stopping criteria" begin
     # create dummy criterion
     p = HessianProblem(Euclidean(), x -> x, (M, x) -> x, (M, x) -> x, x -> x)
-    o = TruncatedConjugateGradientOptions(p, 1.0, 0.0, 2.0, false)
+    o = TruncatedConjugateGradientOptions(
+        Euclidean(), 1.0, 0.0; trust_region_radius=2.0, randomize=false
+    )
     o.new_model_value = 2.0
     o.model_value = 1.0
     s = StopWhenModelIncreased()
@@ -81,8 +83,8 @@ end
 end
 
 @testset "Stop with step size" begin
-    p = GradientProblem(Euclidean(1), (M, x) -> x^2, x -> 2x)
-    o = GradientDescentOptions(1.0)
+    p = GradientProblem(Euclidean(), (M, x) -> x^2, x -> 2x)
+    o = GradientDescentOptions(Euclidean(), 1.0)
     s1 = StopWhenStepSizeLess(0.5)
     @test !s1(p, o, 1)
     @test s1.reason == ""

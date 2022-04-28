@@ -114,14 +114,6 @@ a default value is given in brackets if a parameter can be left out in initializ
 Generate gradient descent options, where `initial_vector` can be used to set the tangent vector to store the gradient to a certain type.
 All following fields are keyword arguments.
 
-Deprecated variants are
-
-    GradientDescentOptions(x; kwargs...)
-    GradientDescentOptions(x, X; kwargs...)
-
-Setting the tangent vector to the same type as `x` or `X`, respectively but the retraction method
-is just set to `ExponentialRetraction`.
-
 # See also
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """

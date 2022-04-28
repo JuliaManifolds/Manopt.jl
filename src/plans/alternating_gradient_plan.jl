@@ -217,12 +217,6 @@ see also [`AlternatingGradientProblem`](@ref) and [`alternating_gradient_descent
 
 # Constructors
 
-    AlternatingGradientDescentOptions(x, X, direction; kwargs...)
-
-Generate the options for points `x` and tangent vectors `X` (to store the gradient) and a
-[`DirectionUpdateRule`](@ref) you have to specify the [`AlternatingGradient`](@ref) update rule
-(deprecated).
-
     AlternatingGradientDescentOptions(M, x; kwargs...)
 
 Generate the options for point `x` and and where the keyword arguments

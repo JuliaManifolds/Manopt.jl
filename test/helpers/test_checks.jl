@@ -1,4 +1,6 @@
 using Manifolds, Manopt, Plots, Test
+# don't show plots actually
+default(; show=false, reuse=true)
 
 @testset "Test Gradient checks" begin
     M = Sphere(10)
