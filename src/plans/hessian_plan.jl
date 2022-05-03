@@ -301,9 +301,24 @@ tangent vector `ξ`.
 get_preconditioner(p::HessianProblem, x, X) = p.precon(p.M, x, X)
 
 @doc raw"""
-    approxHessianFiniteDifference{T, mT, P, G}
+    ApproxHessianFiniteDifference{T, mT, P, G}
 
 A functor to approximate the Hessian by a finite difference of gradient evaluations
+
+# Constructor
+
+    ApproxHessianFiniteDifference(M, x, gradF)
+
+Initialize the approximate hessian to combute ``\operatorname{Hess}F`` based on the gradient
+`gradF` of a function ``F`` on ``\mathcal M``.
+The value `x` is used to initialize a few internal fields.
+
+## Optional Keyword arguments
+
+* `steplength` - (`2^-14`) default step size for the approximation
+* `evaluation` - ([`AllocatingEvaluation`](@ref)`()`) specify whether the gradient is allocating or mutating.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use in the approximation.
+* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 """
 mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
     x_dir::P
@@ -320,8 +335,8 @@ function ApproxHessianFiniteDifference(
     grad::G;
     steplength::R=2^-14,
     evaluation=AllocatingEvaluation(),
-    retraction_method::RTR=ExponentialRetraction(),
-    vector_transport_method::VTR=ParallelTransport(),
+    retraction_method::RTR=default_retraction_method(M),
+    vector_transport_method::VTR=default_vector_transport_method(M),
 ) where {
     mT<:AbstractManifold,
     P,

@@ -205,7 +205,7 @@ see also [`AlternatingGradientProblem`](@ref) and [`alternating_gradient_descent
 # Fields
 * `x` the current iterate
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
-* `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
+* `stepsize` ([`ConstantStepsize`](@ref)`(DefaultManifoold(2))`) a [`Stepsize`](@ref)
 * `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
 * `evaluation_order` – (`:Linear`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
@@ -247,21 +247,21 @@ function AlternatingGradientDescentOptions(
     order_type::Symbol=:Linear,
     order::Vector{<:Int}=Int[],
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    stoping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
+    stepsize::Stepsize=ConstantStepsize(DefaultManifold(2)),
 )
     return AlternatingGradientDescentOptions{
         typeof(x),
         typeof(X),
         typeof(direction),
-        typeof(stoping_criterion),
+        typeof(stopping_criterion),
         typeof(stepsize),
         typeof(retraction_method),
     }(
         x,
         X,
         direction,
-        stoping_criterion,
+        stopping_criterion,
         stepsize,
         order_type,
         order,
@@ -297,15 +297,15 @@ function (a::ArmijoLinesearch)(
 )
     X = zero_vector(p.M, o.x)
     X[p.M, o.order[o.k]] .= get_gradient(p, o.order[o.k], o.x)
-    a.stepsizeOld = linesearch_backtrack(
+    a.last_stepsize = linesearch_backtrack(
         p.M,
         x -> p.cost(p.M, x),
         o.x,
         X,
-        a.stepsizeOld,
+        a.last_stepsize,
         a.sufficientDecrease,
         a.contractionFactor,
         a.retraction_method,
     )
-    return a.stepsizeOld
+    return a.last_stepsize
 end

@@ -27,6 +27,8 @@ Random.seed!(42)
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_options=true,
         )
+        @test get_last_stepsize(GradientProblem(M, F, gradF), lrbfgs_o, lrbfgs_o.stepsize) >
+            0
         @test lrbfgs_o.x == x_lrbfgs
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
@@ -66,7 +68,7 @@ Random.seed!(42)
             gradF,
             x;
             memory_size=-1,
-            step_size=WolfePowellBinaryLinesearch(
+            stepsize=WolfePowellBinaryLinesearch(
                 ExponentialRetraction(), ParallelTransport()
             ),
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -193,12 +195,12 @@ Random.seed!(42)
             gradF,
             x;
             memory_size=8,
-            step_size=WolfePowellBinaryLinesearch(QRRetraction(), ProjectionTransport()),
+            stepsize=WolfePowellBinaryLinesearch(QRRetraction(), ProjectionTransport()),
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(1e-6),
         )
-        @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-5)
+        @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-4)
     end
 end

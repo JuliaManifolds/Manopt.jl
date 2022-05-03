@@ -38,8 +38,7 @@ OR
 function gradient_descent(
     M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
 ) where {TF,TDF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
+    x_res = copy(M, x)
     return gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
@@ -66,10 +65,11 @@ function gradient_descent!(
     F::TF,
     gradF::TDF,
     x;
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(M),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(10.0^-8),
+    debug=[DebugWarnIfCostIncreases()],
     direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     return_options=false,
@@ -84,7 +84,7 @@ function gradient_descent!(
         direction=direction,
         retraction_method=retraction_method,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_options(o; debug=debug, kwargs...)
     resultO = solve(p, o)
     if return_options
         return resultO
