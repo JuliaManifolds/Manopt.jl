@@ -101,6 +101,7 @@ function initialize_solver!(p::GradientProblem, o::GradientDescentOptions)
 end
 function step_solver!(p::GradientProblem, o::GradientDescentOptions, iter)
     s, o.gradient = o.direction(p, o, iter)
+    println("iter RGD")
     retract!(p.M, o.x, o.x, -s * o.gradient, o.retraction_method)
     return o
 end
