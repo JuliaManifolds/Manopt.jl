@@ -204,14 +204,19 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
     cost = get_Lagrangian_cost_function(p, o) 
     grad = get_Lagrangian_gradient_function(p, o)
-    o.sub_problem = GradientProblem(M,cost,grad) #set_problem
+    #println("cost lagrangian: ", cost(p.M,o.x))
+    #o.sub_problem = GradientProblem(p.M,cost,grad) #set_problem
+    # o.sub_problem.cost = cost
+    # o.sub_problem.gradient = grad
 
-    #o.sub_options.x = copy(o.x) #set_x0
-    #o.x = solve(o.sub_problem,o.sub_options) 
-    # o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
-    o.x = quasi_Newton(p.M, cost, grad, o.x, stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
+    # o.sub_options.x = copy(o.x) #set_x0
+    # o.x = solve(o.sub_problem,o.sub_options) 
+
+    o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
+    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(1.0,ExponentialRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
     # o.x = quasi_Newton(p.M, cost, grad, o.x, vector_transport_method=ProjectionTransport(), step_size=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
     # o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), step_size=WolfePowellLineseach(QRRetraction(),ProjectionTransport()), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
+    # o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=ArmijoLinesearch(1.0,QRRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
 
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)
