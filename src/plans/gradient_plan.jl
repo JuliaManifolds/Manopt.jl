@@ -102,7 +102,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x0` – an a point (of type `P`) on a manifold as starting point
 * `gradient` – the current gradient ``\operatorname{grad}f(x)``
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
+* `stepsize` – ([`ConstantStepsize`](@ref)`()`) a [`Stepsize`](@ref)
 * `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
 * `retraction_method` – (`ExponentialRetraction()`) the retraction to use, defaults to
   the exponential map
@@ -134,7 +134,7 @@ mutable struct GradientDescentOptions{
         initialX::P,
         initial_gradient::T,
         s::StoppingCriterion=StopAfterIteration(100),
-        stepsize::Stepsize=ConstantStepsize(1.0),
+        stepsize::Stepsize=ConstantStepsize(),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         direction::DirectionUpdateRule=IdentityUpdateRule(),
     ) where {P,T}
@@ -151,7 +151,7 @@ end
 function GradientDescentOptions(
     x::P;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P}
@@ -163,7 +163,7 @@ function GradientDescentOptions(
     x::P,
     X::T;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P,T}
@@ -175,7 +175,7 @@ function GradientDescentOptions(
     M::AbstractManifold,
     x::P;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P}

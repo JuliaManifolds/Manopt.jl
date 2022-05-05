@@ -21,10 +21,10 @@ this toolbox provide an easy access to optimization methods on manifolds
 for [Julia](https://julialang.org), including example data and visualization methods.
 
 If you want to delve right into `Manopt.jl` check out the
-[Get started: Optimize!](@ref Optimize) tutorial.
+[Get started: Optimize!](pluto/Optimize!.md) tutorial.
 
-`Manopt.jl` makes it easy to use an algorithm for your favorite
-manifold as well as a manifold for your favorite algorithm. It already provides
+`Manopt.jl` makes it easy to use an algorithm for your favourite
+manifold as well as a manifold for your favourite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
 [record](@ref RecordOptions) certain data or
 [display information](@ref DebugOptions) throughout iterations.
@@ -69,13 +69,13 @@ Several functions are available, implemented on an arbitrary manifold, [cost fun
 
 ### Optimization Algorithms (Solvers)
 
-For every optimization algorithm, a [solver](@ref Solvers) is implemented based on a [`Problem`](@ref) that describes the problem to solve and its [`Options`](@ref) that set up the solver, store interims values. Together they
+For every optimization algorithm, a [solver](@ref SolversSection) is implemented based on a [`Problem`](@ref) that describes the problem to solve and its [`Options`](@ref) that set up the solver, store interims values. Together they
 form a [plan](@ref planSection).
 
 ### Visualization
 
 To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugOptions) during the iterations of an algorithms as well as [record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the [Get started: Optimize!](@ref Optimize) tutorial how to easily activate this.
+[`RecordIterate`](@ref). Take a look at the [Get started: Optimize!](pluto/Optimize!.md) tutorial how to easily activate this.
 
 ## Manifolds
 

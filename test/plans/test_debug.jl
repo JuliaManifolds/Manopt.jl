@@ -4,7 +4,7 @@
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.0, 2.0]
     o = GradientDescentOptions(
-        x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
+        x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
     )
     f(M, y) = distance(M, y, x) .^ 2
     gradf(M, y) = -2 * log(M, y, x)
@@ -51,7 +51,7 @@
     @test String(take!(io)) == "x: $(o.x)"
     # Iteration
     DebugIteration(; io=io)(p, o, 0)
-    @test String(take!(io)) == "Initial"
+    @test String(take!(io)) == "Initial "
     DebugIteration(; io=io)(p, o, 23)
     @test String(take!(io)) == "# 23    "
     # DEbugEntryChange - reset

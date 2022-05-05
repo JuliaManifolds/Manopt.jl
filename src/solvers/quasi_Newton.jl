@@ -6,7 +6,7 @@ in the point `x` using a retraction ``R`` and a vector transport ``T``
 
 The ``k``th iteration consists of
 1. Compute the search direction ``η_k = -\mathcal{B}_k [\operatorname{grad}f (x_k)]`` or solve ``\mathcal{H}_k [η_k] = -\operatorname{grad}f (x_k)]``.
-2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{x_k}(α η_k)`` e.g. by using [`WolfePowellLineseach`](@ref).
+2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{x_k}(α η_k)`` e.g. by using [`WolfePowellLinesearch`](@ref).
 3. Compute ``x_{k+1} = R_{x_k}(α_k η_k)``.
 4. Define ``s_k = T_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \operatorname{grad}f(x_{k+1}) - T_{x_k, α_k η_k}(\operatorname{grad}f(x_k))``.
 5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_k``.
@@ -44,7 +44,7 @@ The ``k``th iteration consists of
   ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
 * `stabilize` – (`true`) stabilize the method numerically by projecting computed (Newton-)
   directions to the tangent space to reduce numerical errors
-* `stepsize` – ([`WolfePowellLineseach`](@ref)`(retraction_method, vector_transport_method)`)
+* `stepsize` – ([`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`)
   specify a [`Stepsize`](@ref).
 * `stopping_criterion` - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`)
   specify a [`StoppingCriterion`](@ref)
@@ -94,7 +94,12 @@ function quasi_Newton!(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
     scale_initial_operator::Bool=true,
-    stepsize::Stepsize=WolfePowellLineseach(retraction_method, vector_transport_method),
+    stepsize::Stepsize=WolfePowellLinesearch(
+        M;
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+        linesearch_stopsize=1e-12,
+    ),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
     ),

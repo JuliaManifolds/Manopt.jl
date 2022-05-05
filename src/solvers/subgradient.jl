@@ -64,7 +64,7 @@ function subgradient_method!(
     ∂F!!::TdF,
     x;
     retraction::TRetr=default_retraction_method(M),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     return_options=false,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),

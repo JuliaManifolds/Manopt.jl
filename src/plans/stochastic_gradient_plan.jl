@@ -240,7 +240,7 @@ function StochasticGradientDescentOptions(
     order::Vector{<:Int}=Int[],
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(DefaultManifold(2)),
 )
     return StochasticGradientDescentOptions{
         typeof(x),
