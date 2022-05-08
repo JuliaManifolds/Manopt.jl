@@ -164,13 +164,12 @@ function initialize_solver!(p::ConstrainedProblem, o::EPMOptions)
 end
 function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     # use subsolver to minimize the smoothed penalized function within a tolerance ϵ and with max_inner_iter
-    cost = get_exact_penalty_cost_function(p, o) 
-    grad = get_exact_penalty_gradient_function(p, o)
-    o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm)))
-    ######add minstepsize to stopping criteria of subsolver in both methods 
-    ######we can't use StopWhenChangeLess generally, because the distance is not defined on all manifolds (e.g. Stiefel) -> new stopping criterion StopWhenCostChangeLess?
+    cost = ExactPenaltyCost(p.cost, p.G, p.H, o.smoothing_technique, o.ρ, o.ϵ)
+    grad = ExactPenaltyGrad(p.cost, p.gradF, p.G, p.gradG, p.H, p.gradH, o.smoothing_technique, o.ρ, o.ϵ)
+
+    # o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm)))
     # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(1.0,ExponentialRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=ArmijoLinesearch(1.0,QRRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
+    o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport(), linesearch_stopsize=1e-10), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
 
     # get new evaluation of penalty
     cost_ineq = get_inequality_constraints(p, o.x)
@@ -194,93 +193,116 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
 end
 get_solver_result(o::EPMOptions) = o.x
 
-function get_exact_penalty_cost_function(p::ConstrainedProblem, o::EPMOptions)
-    cost = x -> get_cost(p, x)
-    num_inequality_constraints = size(get_inequality_constraints(p,o.x),1)
-    num_equality_constraints = size(get_equality_constraints(p,o.x),1)
+mutable struct ExactPenaltyCost{F,G,H,T,R}
+    f::F
+    g::G
+    h::H
+    smoothing_technique::T
+    ρ::R
+    ϵ::R
+end
+function ExactPenaltyCost(f::F,g::G,h::H,smoothing_technique::T,ρ::R,ϵ::R) where {F,G,H,T,R}
+    return ExactPenaltyCost{F,G,H,T,R}(f,g,h,smoothing_technique,ρ,ϵ)
+end 
+function (L::ExactPenaltyCost)(M::AbstractManifold,x::P) where {P}
+    inequality_constraints = L.g(M,x)
+    equality_constraints = L.h(M,x)
+    num_inequality_constraints = size(inequality_constraints,1)
+    num_equality_constraints = size(equality_constraints,1)
     
     # compute the cost functions of the constraints for the chosen smoothing technique
-    if o.smoothing_technique == "log_sum_exp"
+    if L.smoothing_technique == "log_sum_exp"
         if num_inequality_constraints != 0 
-            s = (p, x) -> max.(0, get_inequality_constraints(p, x))
-            cost_ineq = x -> sum(s(p, x) .+ o.ϵ .* log.( exp.((get_inequality_constraints(p, x) .- s(p, x))./o.ϵ) + exp.(-s(p, x)./o.ϵ)))
+            s = max.(0, inequality_constraints)
+            cost_ineq = sum(s .+ L.ϵ .* log.( exp.((inequality_constraints .- s)./L.ϵ) + exp.(-s./L.ϵ)))
         end 
         if num_equality_constraints != 0
-            s = (p, x) -> max.(-get_equality_constraints(p, x), get_equality_constraints(p, x))
-            cost_eq = x -> sum(s(p, x) .+ o.ϵ .* log.( exp.((get_equality_constraints(p, x) .- s(p, x))./o.ϵ) .+ exp.((-get_equality_constraints(p, x) .- s(p, x))./o.ϵ)))
+            s = max.(-equality_constraints, equality_constraints)
+            cost_eq = sum(s .+ L.ϵ .* log.( exp.((equality_constraints .- s)./L.ϵ) .+ exp.((-equality_constraints .- s)./L.ϵ)))
         end
-    elseif o.smoothing_technique == "linear_quadratic_huber"
+    elseif L.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0 
-            cost_eq_greater_ϵ = x -> sum((get_inequality_constraints(p, x) .- o.ϵ/2) .* (get_inequality_constraints(p, x) .> o.ϵ))
-            cost_eq_pos_smaller_ϵ = x -> sum( (get_inequality_constraints(p, x).^2 ./(2*o.ϵ)) .* ((get_inequality_constraints(p, x) .> 0) .& (get_inequality_constraints(p, x) .<= o.ϵ)))
-            cost_ineq = x -> cost_eq_greater_ϵ(x) + cost_eq_pos_smaller_ϵ(x)
+            cost_eq_greater_ϵ = sum((inequality_constraints .- L.ϵ/2) .* (inequality_constraints .> L.ϵ))
+            cost_eq_pos_smaller_ϵ = sum((inequality_constraints.^2 ./(2*L.ϵ)) .* ((inequality_constraints .> 0) .& (inequality_constraints .<= L.ϵ)))
+            cost_ineq = cost_eq_greater_ϵ + cost_eq_pos_smaller_ϵ
         end 
         if num_equality_constraints != 0
-            cost_eq = x -> sum(sqrt.(get_equality_constraints(p, x).^2 .+ o.ϵ^2))
+            cost_eq = sum(sqrt.(equality_constraints.^2 .+ L.ϵ^2))
         end 
     end
 
     # add up to the smoothed penalized objective
     if num_inequality_constraints != 0
         if num_equality_constraints != 0
-            return (M,x) -> cost(x) + (o.ρ) * (cost_ineq(x) + cost_eq(x))
+            return L.f(M,x) + (L.ρ) * (cost_ineq + cost_eq)
         else
-            return (M,x) -> cost(x) + (o.ρ) * cost_ineq(x)
+            return L.f(M,x) + (L.ρ) * cost_ineq
         end
     else
         if num_equality_constraints != 0
-            return (M,x) -> cost(x) + (o.ρ) * cost_eq(x)
+            return L.f(M,x) + (L.ρ) * cost_eq
         else
-            return (M,x) -> cost(x) 
+            return L.f(M,x) 
         end
     end
 end
 
-function get_exact_penalty_gradient_function(p::ConstrainedProblem, o::EPMOptions)
-    grad = x -> get_gradient(p, x)
-    num_inequality_constraints = size(get_inequality_constraints(p,o.x),1)
-    num_equality_constraints = size(get_equality_constraints(p,o.x),1)
-
+mutable struct ExactPenaltyGrad{F,GF,G,GG,H,GH,T,R}
+    f::F
+    gradF::GF
+    g::G
+    gradG::GG
+    h::H
+    gradH::GH
+    smoothing_technique::T
+    ρ::R
+    ϵ::R
+end
+function ExactPenaltyGrad(f::F,gradF::GF,g::G,gradG::GG,h::H,gradH::GH,smoothing_technique::T,ρ::R,ϵ::R) where {F,GF,G,GG,H,GH,T,R}
+    return ExactPenaltyGrad{F,GF,G,GG,H,GH,T,R}(f,gradF,g,gradG,h,gradH,smoothing_technique,ρ,ϵ)
+end 
+function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
+    inequality_constraints = LG.g(M,x)
+    equality_constraints = LG.h(M,x)
+    num_inequality_constraints = size(inequality_constraints,1)
+    num_equality_constraints = size(equality_constraints,1)
+    
     # compute the gradient functions of the constraints for the chosen smoothing technique
-    if o.smoothing_technique == "log_sum_exp"
+    if LG.smoothing_technique == "log_sum_exp"
         if num_inequality_constraints != 0 
-            s = (p, x) -> max.(0, get_inequality_constraints(p, x))
-            println("dim s: ",size(s(p,o.x)))
-            coef = (p, x) -> o.ρ .* exp.((get_inequality_constraints(p, x).-s(p, x))./o.ϵ) ./ (exp.((get_inequality_constraints(p, x).-s(p, x))./o.ϵ) .+ exp.(-s(p, x) ./ o.ϵ))
-            println("dim coef: ",size(coef(p,o.x)))
-            println("dim grad_ineq: ",size(get_grad_ineq(p,o.x)))
-            println(size(sum(get_grad_ineq(p, o.x) .* coef(p, o.x), dims =1)))
-            grad_ineq = x -> sum(get_grad_ineq(p, x) .* coef(p, x)) 
+            s = max.(0, inequality_constraints)
+            coef = LG.ρ .* exp.((inequality_constraints.-s)./LG.ϵ) ./ (exp.((inequality_constraints.-s)./LG.ϵ) .+ exp.(-s ./ LG.ϵ))
+            grad_ineq = sum(LG.gradG(M, x) .* coef) 
         end
         if num_equality_constraints != 0
-            s = (p, x) -> max.(-get_equality_constraints(p, x), get_equality_constraints(p, x))
-            coef = (p, x) -> o.ρ .* (exp.((get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ) .- exp.((-get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ)) ./ (exp.((get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ) .+ exp.((-get_equality_constraints(p, x) .- s(p, x)) ./o.ϵ))
-            grad_eq = x-> sum(get_grad_eq(p, x) .* coef(p, x))
+            s = max.(-equality_constraints, equality_constraints)
+            coef = LG.ρ .* (exp.((equality_constraints .- s) ./LG.ϵ) .- exp.((-equality_constraints .- s) ./LG.ϵ)) ./ (exp.((equality_constraints .- s) ./LG.ϵ) .+ exp.((-equality_constraints .- s) ./LG.ϵ))
+            grad_eq = sum(LG.gradH(M, x) .* coef)
         end
-    elseif o.smoothing_technique == "linear_quadratic_huber"
+    elseif LG.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0
-            grad_ineq_cost_greater_ϵ = x -> sum(get_grad_ineq(p, x) .* ((get_inequality_constraints(p, x) .>= 0) .& (get_inequality_constraints(p, x) .>= o.ϵ)) .* o.ρ)
-            grad_ineq_cost_smaller_ϵ = x -> sum(get_grad_ineq(p, x) .* (get_inequality_constraints(p, x)./o.ϵ .* ((get_inequality_constraints(p, x) .>= 0) .& (get_inequality_constraints(p, x) .< o.ϵ))) .* o.ρ)
-            grad_ineq = x -> grad_ineq_cost_greater_ϵ(x) + grad_ineq_cost_smaller_ϵ(x) 
+            grad_equality_constraints = LG.gradG(M, x)
+            grad_ineq_cost_greater_ϵ = sum(grad_equality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.ϵ)) .* LG.ρ)
+            grad_ineq_cost_smaller_ϵ = sum(grad_equality_constraints .* (inequality_constraints./LG.ϵ .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.ϵ))) .* LG.ρ)
+            grad_ineq = grad_ineq_cost_greater_ϵ + grad_ineq_cost_smaller_ϵ
         end
         if num_equality_constraints != 0
-            grad_eq = x-> sum(get_grad_eq(p, x) .* (get_equality_constraints(p, x)./sqrt.(get_equality_constraints(p, x).^2 .+ o.ϵ^2)) .* o.ρ) 
+            grad_eq = sum(LG.gradH(M, x) .* (equality_constraints./sqrt.(equality_constraints.^2 .+ LG.ϵ^2)) .* LG.ρ) 
         end
     end
 
     # add up to the gradient of the smoothed penalized objective
     if num_inequality_constraints != 0
         if num_equality_constraints != 0
-            return (M,x) -> grad(x) + grad_ineq(x) + grad_eq(x)
+            return LG.gradF(M,x) + grad_ineq + grad_eq
         else
-            return (M,x) -> grad(x) + grad_ineq(x)
+            return LG.gradF(M,x) + grad_ineq
         end
     else
         if num_equality_constraints != 0
-            return (M,x) -> grad(x) + grad_eq(x)
+            return LG.gradF(M,x) + grad_eq
         else
-            return (M,x) -> grad(x) 
+            return LG.gradF(M,x) 
         end
     end
 end
-
