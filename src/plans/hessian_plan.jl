@@ -173,29 +173,29 @@ end
 
 describe the trust-regions solver, with
 
+
 # Fields
-a default value is given in brackets if a parameter can be left out in initialization.
+where all but `x` are keyword arguments in the constructor
 
 * `x` : a point as starting point
-* `stop` : a function s,r = @(o,iter) returning a stop
-    indicator and a reason based on an iteration number and the gradient
+* `stop` : (`StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6))
 * `trust_region_radius` : the (initial) trust-region radius
-* `max_trust_region_radius` : the maximum trust-region radius
-* `randomize` : indicates if the trust-region solve is to be initiated with a
+* `max_trust_region_radius` : (`sqrt(manifold_dimension(M))`) the maximum trust-region radius
+* `randomize` : (`false`) indicates if the trust-region solve is to be initiated with a
         random tangent vector. If set to true, no preconditioner will be
         used. This option is set to true in some scenarios to escape saddle
         points, but is otherwise seldom activated.
-* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors
+* `project!` : (`copyto!`) specify a projection operation for tangent vectors
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
-* `ρ_prime` : a lower bound of the performance ratio for the iterate that
+* `ρ_prime` : (`0.1`) a lower bound of the performance ratio for the iterate that
         decides if the iteration will be accepted or not. If not, the
         trust-region radius will have been decreased. To ensure this,
         ρ'>= 0 must be strictly smaller than 1/4. If ρ' is negative,
         the algorithm is not guaranteed to produce monotonically decreasing
         cost values. It is strongly recommended to set ρ' > 0, to aid
         convergence.
-* `ρ_regularization` : Close to convergence, evaluating the performance ratio ρ
+* `ρ_regularization` : (`10000.0`) Close to convergence, evaluating the performance ratio ρ
         is numerically challenging. Meanwhile, close to convergence, the
         quadratic model should be a good fit and the steps should be
         accepted. Regularization lets ρ go to 1 as the model decrease and
@@ -207,9 +207,10 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    TrustRegionsOptions(x, stop, delta, delta_bar, uR, rho_prime, rho_reg)
+    TrustRegionsOptions(M, x)
 
-construct a trust-regions Option with the fields as above.
+construct a trust-regions Option with all other fields from above being
+keyword arguments
 
 # See also
 [`trust_regions`](@ref)
@@ -224,7 +225,7 @@ mutable struct TrustRegionsOptions{
     max_trust_region_radius::R
     retraction_method::RTR
     randomize::Bool
-    project_vector!::Proj
+    project!::Proj
     ρ_prime::R
     ρ_regularization::R
 
@@ -249,8 +250,8 @@ mutable struct TrustRegionsOptions{
         ρ_regularization::R,
         randomize::Bool,
         stopping_citerion::SC,
-        retraction_method::RTR;
-        project_vector!::Proj=copyto!,
+        retraction_method::RTR,
+        project!::Proj=copyto!,
     ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
         o = new{P,T,SC,RTR,R,Proj}()
         o.x = x
@@ -262,33 +263,64 @@ mutable struct TrustRegionsOptions{
         o.ρ_prime = ρ_prime
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
-        o.project_vector! = project_vector!
+        o.project! = project!
         return o
     end
 end
+@deprecate TrustRegionsOptions(
+    x,
+    grad,
+    trust_region_radius,
+    max_trust_region_radius,
+    ρ_prime,
+    ρ_regularization,
+    randomize,
+    stopping_criterion;
+    retraction_method=ExponentialRetraction(),
+    (project_vector!)=copyto!,
+) TrustRegionsOptions(
+    ManifoldsBase.DefaultManifold(2),
+    x;
+    gradient=grad,
+    ρ_prime=ρ_prime,
+    ρ_regularization=ρ_regularization,
+    randomize=randomize,
+    stopping_criterion=stopping_criterion,
+    retraction_method=retraction_method,
+    (project!)=project_vector!,
+)
 function TrustRegionsOptions(
-    x::P,
-    grad::T,
-    trust_region_radius::R,
-    max_trust_region_radius::R,
-    ρ_prime::R,
-    ρ_regularization::R,
-    randomize::Bool,
-    stopping_citerion::SC;
-    retraction_method::RTR=ExponentialRetraction(),
-    project_vector!::Proj=copyto!,
-) where {P,T,R<:Real,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,Proj}
+    M::TM,
+    x::P;
+    gradient::T=zero_vector(M, x),
+    ρ_prime::R=0.1,
+    ρ_regularization::R=1000.0,
+    randomize::Bool=false,
+    stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
+    max_trust_region_radius::R=sqrt(manifold_dimension(M)),
+    trust_region_radius::R=max_trust_region_radius / 8,
+    retraction_method::RTR=default_retraction_method(M),
+    project!::Proj=copyto!,
+) where {
+    TM<:AbstractManifold,
+    P,
+    T,
+    R<:Real,
+    SC<:StoppingCriterion,
+    RTR<:AbstractRetractionMethod,
+    Proj,
+}
     return TrustRegionsOptions{P,T,SC,RTR,R,Proj}(
         x,
-        grad,
+        gradient,
         trust_region_radius,
         max_trust_region_radius,
         ρ_prime,
         ρ_regularization,
         randomize,
-        stopping_citerion,
-        retraction_method;
-        (project_vector!)=project_vector!,
+        stopping_criterion,
+        retraction_method,
+        project!,
     )
 end
 
