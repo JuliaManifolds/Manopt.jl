@@ -279,7 +279,7 @@ end
     retraction_method=ExponentialRetraction(),
     (project_vector!)=copyto!,
 ) TrustRegionsOptions(
-    ManifoldsBase.DefaultManifold(2),
+    DefaultManifold(2),
     x;
     gradient=grad,
     ρ_prime=ρ_prime,

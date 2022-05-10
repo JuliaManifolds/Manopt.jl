@@ -250,12 +250,7 @@ end
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     kwargs...,
 ) AlternatingGradientDescentOptions(
-    ManifoldsBase.DefaultManifold(2),
-    x,
-    X,
-    direction;
-    retraction_method=retraction_method,
-    kwargs...,
+    DefaultManifold(2), x, X, direction; retraction_method=retraction_method, kwargs...
 )
 function AlternatingGradientDescentOptions(
     M::AbstractManifold,
