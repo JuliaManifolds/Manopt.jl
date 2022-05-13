@@ -555,3 +555,10 @@ end
 function get_update_vector_transport(u::QuasiNewtonCautiousDirectionUpdate)
     return get_update_vector_transport(u.update)
 end
+
+
+function (r::RecordGradientNorm)(
+    p::P, o::O, i::Int
+) where {P<:GradientProblem,O<:QuasiNewtonOptions}
+    return record_or_reset!(r, norm(p.M, o.x, o.gradient), i)
+end
