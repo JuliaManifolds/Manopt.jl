@@ -560,3 +560,10 @@ function (c::StopWhenModelIncreased)(
     end
     return false
 end
+
+
+function (d::DebugGradientNorm)(p::HessianProblem, o::TrustRegionsOptions, i::Int)
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), norm(p.M, o.x, o.gradient))
+    return nothing
+end
