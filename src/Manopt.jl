@@ -230,11 +230,11 @@ export get_constraints,
     get_inequality_constraints, 
     get_equality_constraints, 
     get_grad_ineq,
-    get_grad_eq,
-    get_Lagrangian_cost_function,
-    get_Lagrangian_gradient_function,
-    get_exact_penalty_cost_function,
-    get_exact_penalty_gradient_function
+    get_grad_eq
+export LagrangeCost,
+    LagrangeGrad,
+    ExactPenaltyCost,
+    ExactPenaltyGrad
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,

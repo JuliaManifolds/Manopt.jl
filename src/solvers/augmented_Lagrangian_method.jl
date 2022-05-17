@@ -158,6 +158,7 @@ function augmented_Lagrangian_method!(
     θ_ρ::Real=0.3, 
     θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
     oldacc::Real=Inf, 
+    min_stepsize = 1e-10,
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-6)), 
     return_options=false,
     kwargs...,
@@ -181,6 +182,7 @@ function augmented_Lagrangian_method!(
         ρ = ρ,
         τ = τ,
         θ_ρ = θ_ρ,
+        min_stepsize = min_stepsize,
         stopping_criterion = stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
@@ -202,10 +204,19 @@ function initialize_solver!(p::ConstrainedProblem, o::ALMOptions)
 end
 function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
-    #cost = get_Lagrangian_cost_function(p, o) 
-    #cost = (M,x) -> get_Lagrangian_cost_function(x, p, o)
-    cost = LagrangeCost(p.cost, p.G, p.H, o.ρ, o.λ, o.γ)
-    grad = LagrangeGrad(p.cost, p.gradF, p.G, p.gradG, p.H, p.gradH, o.ρ, o.λ, o.γ)
+    o.sub_problem.cost.ρ = o.ρ
+    o.sub_problem.cost.λ = o.λ
+    o.sub_problem.cost.γ = o.γ
+    o.sub_problem.gradient!!.ρ = o.ρ
+    o.sub_problem.gradient!!.λ = o.λ
+    o.sub_problem.gradient!!.γ = o.γ
+    o.sub_options.x = copy(o.x) 
+    o.sub_options.gradient = o.sub_problem.gradient!!(p.M,o.x)
+    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.ϵ) | StopWhenStepSizeLess(o.min_stepsize) #### check if StopWhenStepsizeLess is okay or if StopWhenEuclideanChangeLess should and can be used
+    o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
+
+    # cost = LagrangeCost(p.cost, p.G, p.H, o.ρ, o.λ, o.γ)
+    # grad = LagrangeGrad(p.cost, p.gradF, p.G, p.gradG, p.H, p.gradH, o.ρ, o.λ, o.γ)
     
     # o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
     
@@ -213,16 +224,14 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     ## ArmijoLinesearch
     # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(1.0,ExponentialRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
     ## WolfePowellLinesearch
-    o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport(), linesearch_stopsize=1e-10), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
+    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport(), linesearch_stopsize=1e-10), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
     
     ### Stiefel 
     ## ArmijoLinesearch
     #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=ArmijoLinesearch(1.0,QRRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
     ## WolfePowellLinesearch
     #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(QRRetraction(),ProjectionTransport(),10^(-4),0.999), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-    # o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=QRRetraction(),vector_transport_method=ProjectionTransport(),linesearch_stopsize=1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-
-
+    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=QRRetraction(),vector_transport_method=ProjectionTransport(),linesearch_stopsize=1e-8), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
     
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)

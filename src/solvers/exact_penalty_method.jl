@@ -122,6 +122,7 @@ function exact_penalty_method!(
     ϵ_min::Real=1e-6,
     ρ::Real=1.0, 
     θ_ρ::Real=0.3, 
+    min_stepsize = 1e-10,
     stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:tolgradnorm, ending_tolgradnorm), StopWhenChangeLess(1e-6))), 
     #### look into minstepsize again
     return_options=false,
@@ -143,6 +144,7 @@ function exact_penalty_method!(
         ϵ_min = ϵ_min,
         ρ = ρ,
         θ_ρ = θ_ρ,
+        min_stepsize = min_stepsize,
         stopping_criterion = stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
@@ -164,18 +166,36 @@ function initialize_solver!(p::ConstrainedProblem, o::EPMOptions)
 end
 function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     # use subsolver to minimize the smoothed penalized function within a tolerance ϵ and with max_inner_iter
-    cost = ExactPenaltyCost(p.cost, p.G, p.H, o.smoothing_technique, o.ρ, o.ϵ)
-    grad = ExactPenaltyGrad(p.cost, p.gradF, p.G, p.gradG, p.H, p.gradH, o.smoothing_technique, o.ρ, o.ϵ)
+    o.sub_problem.cost.ρ = o.ρ
+    o.sub_problem.cost.ϵ = o.ϵ
+    o.sub_problem.gradient!!.ρ = o.ρ
+    o.sub_problem.gradient!!.ϵ = o.ϵ
+    o.sub_options.x = copy(o.x) 
+    o.sub_options.gradient = o.sub_problem.gradient!!(p.M,o.x)
+    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.tolgradnorm) | StopWhenStepSizeLess(o.min_stepsize)
+    o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
+    
+    # cost = ExactPenaltyCost(p.cost, p.G, p.H, o.smoothing_technique, o.ρ, o.ϵ)
+    # grad = ExactPenaltyGrad(p.cost, p.gradF, p.G, p.gradG, p.H, p.gradH, o.smoothing_technique, o.ρ, o.ϵ)
 
     # o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm)))
-    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(1.0,ExponentialRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-    o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport(), linesearch_stopsize=1e-10), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
+     
+    ### Sphere
+    ## ArmijoLinesearch
+    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(1.0,ExponentialRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
+    ## WolfePowellLinesearch
+    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport(), linesearch_stopsize=1e-10), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
+    
+    ### Stiefel 
+    ## ArmijoLinesearch
+    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=ArmijoLinesearch(1.0,QRRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
+    ## WolfePowellLinesearch
+    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(QRRetraction(),ProjectionTransport(),10^(-4),0.999), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
+    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=QRRetraction(),vector_transport_method=ProjectionTransport(),linesearch_stopsize=1e-7), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
 
     # get new evaluation of penalty
     cost_ineq = get_inequality_constraints(p, o.x)
-    n_ineq_constraint = length(cost_ineq)
     cost_eq = get_equality_constraints(p, o.x)
-    n_eq_constraint = length(cost_eq)
     max_violation = max(max(maximum(cost_ineq,init=0),0),maximum(abs.(cost_eq),init=0))
 
     # update ρ if necessary

@@ -56,6 +56,7 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
     θ_ρ::Real
     θ_ϵ::Real
     old_acc::Real
+    min_stepsize::Real
     stop::TStopping 
     function ALMOptions(
         M::AbstractManifold,
@@ -75,6 +76,7 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         ρ::Real=1.0, 
         τ::Real=0.8,
         θ_ρ::Real=0.3, 
+        min_stepsize::Real=1e-10,
         stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))),
     ) where {P, Pr <: Problem, Op <: Options} 
         o = new{
@@ -100,6 +102,7 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         o.θ_ρ = θ_ρ
         o.θ_ϵ = 0.0
         o.old_acc = 0.0
+        o.min_stepsize = min_stepsize
         o.stop = stopping_criterion
         return o
     end
