@@ -133,7 +133,7 @@ with the Fields above in their order as optional arguments (deprecated).
 
     ArmijoLineSearch(M)
 
-with the Fields above as keyword arguments and the retraction is set to the default retraciton on `M`.
+with the Fields above as keyword arguments and the retraction is set to the default retraction on `M`.
 
 The constructors return the functor to perform Armijo line search, where two inter
 faces are available:
