@@ -8,12 +8,12 @@ struct TestOptions <: Options end
 @testset "generic Options test" begin
     p = TestProblem()
     o = TestOptions()
-    a = ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1)
+    a = ArmijoLinesearch(Euclidean(3); initial_stepsize=1.0)
     @test get_last_stepsize(p, o, a) == 1.0
     @test get_initial_stepsize(a) == 1.0
 end
 @testset "Decresaing Stepsize" begin
-    ds = DecreasingStepsize(10.0, 1.0, 0.0, 1.0)
+    ds = DecreasingStepsize(; length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0)
     @test get_initial_stepsize(ds) == 10.0
     @test ds(TestProblem(), TestOptions(), 1) == 10.0
     @test ds(TestProblem(), TestOptions(), 2) == 5.0

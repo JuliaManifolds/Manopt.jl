@@ -8,7 +8,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     P = GradientProblem(M, F, gradF)
     x0 = [0.0, 1.0]
     sC = StopAfterIteration(1)
-    s = ConstantStepsize(1.0)
+    s = ConstantStepsize(M)
     retr = ExponentialRetraction()
     vtm = ParallelTransport()
 

@@ -491,56 +491,86 @@ end
 A Debug action to print the dual residual.
 The constructor accepts a printing function and some (shared) storage, which
 should at least record `:x`, `:ξ` and `:n`.
+
+# Constructor
+DebugDualResidual()
+
+with the keywords
+* `io` (`stdout`) - stream to perform the debug to
+* format (`"$prefix%s"`) format to print the dual residual, using the
+* `prefix` (`"Dual Residual: "`) short form to just set the prefix
+* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugDualResidual <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugDualResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
+    function DebugDualResidual(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        io::IO=stdout,
+        prefix="Dual Residual: ",
+        format="$prefix%s",
     )
-        return new(io, "Dual Residual: ", a)
+        return new(io, format, storage)
     end
     function DebugDualResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        initial_values::Tuple{P,T,Q};
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
+        prefix="Dual Residual: ",
+        format="$prefix%s",
     ) where {P,T,Q}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "Dual Residual: ", a)
+        update_storage!(
+            storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), initial_values))
+        )
+        return new(io, format, storage)
     end
 end
 function (d::DebugDualResidual)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(d.io, d.prefix * string(dual_residual(p, o, xOld, ξOld, nOld)))
+        Printf.format(d.io, Printf.Format(d.format), dual_residual(p, o, xOld, ξOld, nOld))
     end
     return d.storage(p, o, i)
 end
-
 @doc raw"""
     DebugPrimalResidual <: DebugAction
 
 A Debug action to print the primal residual.
 The constructor accepts a printing function and some (shared) storage, which
 should at least record `:x`, `:ξ` and `:n`.
+
+# Constructor
+
+    DebugPrimalResidual()
+
+with the keywords
+* `io` (`stdout`) - stream to perform the debug to
+* format (`"$prefix%s"`) format to print the dual residual, using the
+* `prefix` (`"Primal Residual: "`) short form to just set the prefix
+* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalResidual <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugPrimalResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
+    function DebugPrimalResidual(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        io::IO=stdout,
+        prefix="Primal Residual: ",
+        format="$prefix%s",
     )
-        return new(io, "Primal Residual: ", a)
+        return new(io, format, storage)
     end
     function DebugPrimalResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        values::Tuple{P,T,Q};
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
+        prefix="Primal Residual: ",
+        format="$prefix%s",
     ) where {P,T,Q}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "Primal Residual: ", a)
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        return new(io, format, storage)
     end
 end
 function (d::DebugPrimalResidual)(
@@ -548,7 +578,9 @@ function (d::DebugPrimalResidual)(
 )
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(d.io, d.prefix * string(primal_residual(p, o, xOld, ξOld, nOld)))
+        Printf.format(
+            d.io, Printf.Format(d.format), primal_residual(p, o, xOld, ξOld, nOld)
+        )
     end
     return d.storage(p, o, i)
 end
@@ -558,23 +590,38 @@ end
 A Debug action to print the primaldual residual.
 The constructor accepts a printing function and some (shared) storage, which
 should at least record `:x`, `:ξ` and `:n`.
+
+# Constructor
+
+    DebugPrimalDualResidual()
+
+with the keywords
+* `io` (`stdout`) - stream to perform the debug to
+* format (`"$prefix%s"`) format to print the dual residual, using the
+* `prefix` (`"Primal Residual: "`) short form to just set the prefix
+* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalDualResidual <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugPrimalDualResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
+    function DebugPrimalDualResidual(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        io::IO=stdout,
+        prefix="PD Residual: ",
+        format="$prefix%s",
     )
-        return new(io, "PD Residual: ", a)
+        return new(io, format, storage)
     end
     function DebugPrimalDualResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        values::Tuple{P,T,Q};
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
+        prefix="PD Residual: ",
+        format="$prefix%s",
     ) where {P,Q,T}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "PD Residual: ", a)
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        return new(io, format, storage)
     end
 end
 function (d::DebugPrimalDualResidual)(
@@ -582,15 +629,8 @@ function (d::DebugPrimalDualResidual)(
 )
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(
-            d.io,
-            d.prefix * string(
-                (
-                    primal_residual(p, o, xOld, ξOld, nOld) +
-                    dual_residual(p, o, xOld, ξOld, nOld)
-                ) / manifold_dimension(p.M),
-            ),
-        )
+        v = primal_residual(p, o, xOld, ξOld, nOld) + dual_residual(p, o, xOld, ξOld, nOld)
+        Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(p.M))
     end
     return d.storage(p, o, i)
 end
@@ -604,19 +644,21 @@ end
 Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
-function DebugPrimalChange(
-    a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Primal Change: ", io::IO=stdout
+function DebugPrimalChange(;
+    storage::StoreOptionsAction=StoreOptionsAction((:x,)),
+    prefix="Primal Change: ",
+    kwargs...,
 )
-    return DebugChange(a, prefix, io)
+    return DebugChange(; storage=storage, prefix=prefix, kwargs...)
 end
 
 """
-    DebugPrimalIterate(opts...)
+    DebugPrimalIterate(opts...;kwargs...)
 
 Print the change of the primal variable by using [`DebugIterate`](@ref),
 see their constructors for detail.
 """
-DebugPrimalIterate(opts...) = DebugIterate(opts...)
+DebugPrimalIterate(opts...; kwargs...) = DebugIterate(opts...; kwargs...)
 
 """
     DebugDualIterate(e)
@@ -625,7 +667,7 @@ Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.ξ`.
 """
-DebugDualIterate(opts...) = DebugEntry(:ξ, "ξ:", opts...)
+DebugDualIterate(opts...; kwargs...) = DebugEntry(:ξ, opts...; kwargs...)
 
 """
     DebugDualChange(opts...)
@@ -636,36 +678,38 @@ since the dual variable lives in (possibly different) tangent spaces.
 """
 mutable struct DebugDualChange <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugDualChange(
-        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)), io::IO=stdout
+    function DebugDualChange(;
+        storage::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
+        io::IO=stdout,
+        prefix="Dual Change: ",
+        format="$prefix%s",
     )
-        return new(io, "Dual Change: ", a)
+        return new(io, format, storage)
     end
     function DebugDualChange(
-        values::Tuple{T,P},
-        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
+        values::Tuple{T,P};
+        storage::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
         io::IO=stdout,
+        prefix="Dual Change: ",
+        format="$prefix%s",
     ) where {P,T}
-        update_storage!(a, Dict{Symbol,Any}(k => v for (k, v) in zip((:ξ, :n), values)))
-        return new(io, "Dual Change: ", a)
+        update_storage!(
+            storage, Dict{Symbol,Any}(k => v for (k, v) in zip((:ξ, :n), values))
+        )
+        return new(io, format, storage)
     end
 end
 function (d::DebugDualChange)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
-        print(
-            d.io,
-            d.prefix * string(
-                norm(
-                    p.N,
-                    o.n,
-                    vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) -
-                    o.ξ,
-                ),
-            ),
+        v = norm(
+            p.N,
+            o.n,
+            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) - o.ξ,
         )
+        Printf.format(d.io, Printf.Format(d.format), v)
     end
     return d.storage(p, o, i)
 end
@@ -677,27 +721,32 @@ Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.n`.
 """
-DebugDualBaseIterate(io::IO=stdout) = DebugEntry(:n, "n:", io)
+DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
+
 """
-    DebugDualChange(a=StoreOptionsAction((:ξ)),io::IO=stdout)
+    DebugDualChange(; storage=StoreOptionsAction((:ξ)), io::IO=stdout)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugDualBaseChange(a::StoreOptionsAction=StoreOptionsAction((:n)), io::IO=stdout)
+function DebugDualBaseChange(;
+    storage::StoreOptionsAction=StoreOptionsAction((:n)),
+    prefix="Dual Base Change:",
+    kwargs...,
+)
     return DebugEntryChange(
-        :n, (p, o, x, y) -> distance(p.N, x, y), a, "Dual Base Change:", io
+        :n, (p, o, x, y) -> distance(p.N, x, y); storage=storage, prefix=prefix, kwargs...
     )
 end
 
 """
-    DebugPrimalBaseIterate(io::IO=stdout)
+    DebugPrimalBaseIterate()
 
 Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.m`.
 """
-DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:", io)
+DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
 
 """
     DebugPrimalBaseChange(a::StoreOptionsAction=StoreOptionsAction((:m)),io::IO=stdout)
@@ -705,11 +754,9 @@ DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:", io)
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugPrimalBaseChange(
-    a::StoreOptionsAction=StoreOptionsAction((:m)), io::IO=stdout
-)
+function DebugPrimalBaseChange(opts...; prefix="Primal Base Change:", kwargs...)
     return DebugEntryChange(
-        :m, (p, o, x, y) -> distance(p.M, x, y), a, "Primal Base Change:", io
+        :m, (p, o, x, y) -> distance(p.M, x, y), opts...; prefix=prefix, kwargs...
     )
 end
 

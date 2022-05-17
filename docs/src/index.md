@@ -21,28 +21,45 @@ this toolbox provide an easy access to optimization methods on manifolds
 for [Julia](https://julialang.org), including example data and visualization methods.
 
 If you want to delve right into `Manopt.jl` check out the
-[Get started: Optimize!](@ref Optimize) tutorial.
+[Get started: Optimize!](pluto/Optimize!.md) tutorial.
 
-`Manopt.jl` makes it easy to use an algorithm for your favorite
-manifold as well as a manifold for your favorite algorithm. It already provides
+`Manopt.jl` makes it easy to use an algorithm for your favourite
+manifold as well as a manifold for your favourite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
 [record](@ref RecordOptions) certain data or
 [display information](@ref DebugOptions) throughout iterations.
 
-If you are using `Manopt.jl` in a publication, please refer to this  
-[![DOI](https://zenodo.org/badge/74746729.svg)](https://zenodo.org/badge/latestdoi/74746729)  
-or the one specific to the version you used, for example with the following [BibLaTeX](https://ctan.org/pkg/biblatex) entry to refer to the latest version
+If you use `Manopt.jl`in your work, please cite the following
 
-```bibtex
-@software{Manoptjl,
-  doi = {10.5281/zenodo.4290905},
-  author = {Bergmann,  Ronny},
-  title = {Manopt.jl},
-  year = {2021},
-  howpublished={\url{https://manoptjl.org}},
-  version = {0.3.0}
+```biblatex
+@article{Bergmann2022,
+    Author    = {Ronny Bergmann},
+    Doi       = {10.21105/joss.03866},
+    Journal   = {Journal of Open Source Software},
+    Number    = {70},
+    Pages     = {3866},
+    Publisher = {The Open Journal},
+    Title     = {Manopt.jl: Optimization on Manifolds in {J}ulia},
+    Volume    = {7},
+    Year      = {2022},
 }
 ```
+
+To refer to a certain version or the source code in general we recommend to cite for example
+
+```biblatex
+@software{manoptjl-zenodo-mostrecent,
+    Author = {Ronny Bergmann},
+    Copyright = {MIT License},
+    Doi = {10.5281/zenodo.4290905},
+    Publisher = {Zenodo},
+    Title = {Manopt.jl},
+    Year = {2022},
+}
+```
+
+for the most recent version or a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
+Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
 
 ## Main Features
 
@@ -52,13 +69,13 @@ Several functions are available, implemented on an arbitrary manifold, [cost fun
 
 ### Optimization Algorithms (Solvers)
 
-For every optimization algorithm, a [solver](@ref Solvers) is implemented based on a [`Problem`](@ref) that describes the problem to solve and its [`Options`](@ref) that set up the solver, store interims values. Together they
+For every optimization algorithm, a [solver](@ref SolversSection) is implemented based on a [`Problem`](@ref) that describes the problem to solve and its [`Options`](@ref) that set up the solver, store interims values. Together they
 form a [plan](@ref planSection).
 
 ### Visualization
 
 To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugOptions) during the iterations of an algorithms as well as [record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the [Get started: Optimize!](@ref Optimize) tutorial how to easily activate this.
+[`RecordIterate`](@ref). Take a look at the [Get started: Optimize!](pluto/Optimize!.md) tutorial how to easily activate this.
 
 ## Manifolds
 
