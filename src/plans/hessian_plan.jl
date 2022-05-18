@@ -204,7 +204,7 @@ mutable struct TrustRegionsOptions{
 
     x_proposal::P
     f_proposal::R
-
+    timer::Float64
     # Random
     Hgrad::T
     η::T
@@ -235,6 +235,7 @@ mutable struct TrustRegionsOptions{
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
         o.project_vector! = project_vector!
+        o.timer = 0.0
         return o
     end
 end
