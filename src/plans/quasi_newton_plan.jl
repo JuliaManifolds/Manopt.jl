@@ -326,6 +326,7 @@ mutable struct QuasiNewtonOptions{
     stepsize::S
     stop::SC
     vector_transport_method::VT
+    timer::Float64
 end
 function QuasiNewtonOptions(
     x::P,
@@ -348,6 +349,7 @@ function QuasiNewtonOptions(
         stepsize,
         stop,
         vector_transport_method,
+        0.0,
     )
 end
 
