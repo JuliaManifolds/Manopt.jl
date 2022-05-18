@@ -393,7 +393,7 @@ export RecordAction
 export RecordActionFactory, RecordFactory
 export RecordGroup, RecordEvery
 export RecordChange, RecordCost, RecordIterate, RecordIteration
-export RecordEntry, RecordEntryChange
+export RecordEntry, RecordEntryChange, RecordTime
 export RecordGradient, RecordGradientNorm, RecordStepsize
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate

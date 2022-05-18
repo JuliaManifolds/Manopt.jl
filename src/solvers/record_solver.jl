@@ -16,7 +16,12 @@ Do one iteration step (the `iter`th) for [`Problem`](@ref)` p` by modifying
 the values in the [`Options`](@ref)` o.options` and record the result(s).
 """
 function step_solver!(p::Problem, o::RecordOptions, i)
-    step_solver!(p, o.options, i)
+    # if(haskey(o.recordDictionary, "DebugTime")) # something like that...
+    time_spent = @elapsed step_solver!(p, o.options, i)
+    o.options.options.timer = o.options.options.timer + time_spent
+    # else
+    # step_solver!(p, o.options, i)
+    # end
     get(o.recordDictionary, :Iteration, RecordGroup())(p, get_options(o), i)
     return o
 end
@@ -39,6 +44,7 @@ determine whether the solver for [`Problem`](@ref) `p` and the
 If so, do a (final) record to `:All` and `:Stop`.
 """
 function stop_solver!(p::Problem, o::RecordOptions, i::Int)
+    # In the function stop_solver!, I can add a check for time_spent
     s = stop_solver!(p, o.options, i)
     s && get(o.recordDictionary, :Stop, RecordGroup())(p, get_options(o), i)
     return s

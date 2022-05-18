@@ -444,6 +444,20 @@ function (r::RecordCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return record_or_reset!(r, get_cost(p, o.x), i)
 end
 
+
+@doc raw"""
+    RecordTime <: RecordAction
+
+record the time elapsed during the current iteration, see [`get_cost`](@ref).
+"""
+mutable struct RecordTime <: RecordAction
+    recorded_values::Array{Float64,1}
+    RecordTime() = new(Array{Float64,1}())
+end
+function (r::RecordTime)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+        return record_or_reset!(r, o.timer, i) # this seems to work
+end
+
 @doc raw"""
     RecordFactory(o::Options, a)
 
