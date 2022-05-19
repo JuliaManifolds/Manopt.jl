@@ -37,7 +37,6 @@ construct an exact penalty Option with the fields and defaults as above.
 """
 mutable struct EPMOptions{P, Pr <: Problem, Op <: Options, TStopping <: StoppingCriterion} <: Options
     x::P
-    smoothing_technique::String
     sub_problem::Pr 
     sub_options::Op 
     max_inner_iter::Int
@@ -56,7 +55,6 @@ mutable struct EPMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         M::AbstractManifold,
         p::ConstrainedProblem,
         x0::P,
-        smoothing_technique::String,
         sub_problem::Pr, 
         sub_options::Op; 
         max_inner_iter::Int=200,
@@ -68,7 +66,7 @@ mutable struct EPMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         ρ::Real=1.0, 
         θ_ρ::Real=0.3,
         min_stepsize::Real=1e-10, 
-        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:tolgradnorm, ending_tolgradnorm), StopWhenChangeLess(1e-6))),
+        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:tolgradnorm, ending_tolgradnorm), StopWhenChangeLess(min_stepsize))),
     ) where {P, Pr <: Problem, Op <: Options} 
         o = new{
             P,
@@ -77,7 +75,6 @@ mutable struct EPMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
             typeof(stopping_criterion),
         }()
         o.x = x0
-        o.smoothing_technique = smoothing_technique
         o.sub_problem = sub_problem
         o.sub_options = sub_options
         o.max_inner_iter = max_inner_iter

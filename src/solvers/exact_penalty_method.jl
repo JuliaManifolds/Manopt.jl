@@ -68,14 +68,13 @@ function exact_penalty_method(
     gradG::Function=x->[],
     gradH::Function=x->[],
     x=random_point(M), 
-    smoothing_technique::String = "log_sum_exp",
     sub_problem::Problem = GradientProblem(M,F,gradF),
     sub_options::Options = GradientDescentOptions(M,x),
     kwargs...,
 ) where {TF, TGF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
-    return exact_penalty_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, smoothing_technique=smoothing_technique, sub_problem=sub_problem, sub_options=sub_options,kwargs...)
+    return exact_penalty_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, sub_problem=sub_problem, sub_options=sub_options,kwargs...)
 end
 @doc raw"""
     exact_penalty_method!(M, F, gradF; G, H, gradG, gradH)
@@ -111,7 +110,6 @@ function exact_penalty_method!(
     gradG::Function=x->[],
     gradH::Function=x->[],
     x=random_point(M),
-    smoothing_technique = "log_sum_exp",
     sub_problem::Problem = GradientProblem(M,F,gradF),
     sub_options::Options = GradientDescentOptions(M,x),
     max_inner_iter::Int=200,
@@ -133,7 +131,6 @@ function exact_penalty_method!(
         M,
         p,
         x,
-        smoothing_technique,
         sub_problem,
         sub_options;
         max_inner_iter = max_inner_iter,
@@ -165,34 +162,16 @@ function initialize_solver!(p::ConstrainedProblem, o::EPMOptions)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
-    # use subsolver to minimize the smoothed penalized function within a tolerance ϵ and with max_inner_iter
+    # use subsolver to minimize the smoothed penalized function within a tolerance ϵ and with max_inner_iter and with minimal stepsize min_stepsize
     o.sub_problem.cost.ρ = o.ρ
     o.sub_problem.cost.ϵ = o.ϵ
     o.sub_problem.gradient!!.ρ = o.ρ
     o.sub_problem.gradient!!.ϵ = o.ϵ
     o.sub_options.x = copy(o.x) 
-    o.sub_options.gradient = o.sub_problem.gradient!!(p.M,o.x)
     o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.tolgradnorm) | StopWhenStepSizeLess(o.min_stepsize)
+   
     o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
     
-    # cost = ExactPenaltyCost(p.cost, p.G, p.H, o.smoothing_technique, o.ρ, o.ϵ)
-    # grad = ExactPenaltyGrad(p.cost, p.gradF, p.G, p.gradG, p.H, p.gradH, o.smoothing_technique, o.ρ, o.ϵ)
-
-    # o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm)))
-     
-    ### Sphere
-    ## ArmijoLinesearch
-    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(1.0,ExponentialRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
-    ## WolfePowellLinesearch
-    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport(), linesearch_stopsize=1e-10), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
-    
-    ### Stiefel 
-    ## ArmijoLinesearch
-    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=ArmijoLinesearch(1.0,QRRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
-    ## WolfePowellLinesearch
-    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(QRRetraction(),ProjectionTransport(),10^(-4),0.999), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
-    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=QRRetraction(),vector_transport_method=ProjectionTransport(),linesearch_stopsize=1e-7), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.tolgradnorm),StopWhenStepSizeLess(1e-16)))
-
     # get new evaluation of penalty
     cost_ineq = get_inequality_constraints(p, o.x)
     cost_eq = get_equality_constraints(p, o.x)
@@ -221,9 +200,6 @@ mutable struct ExactPenaltyCost{F,G,H,T,R}
     ρ::R
     ϵ::R
 end
-function ExactPenaltyCost(f::F,g::G,h::H,smoothing_technique::T,ρ::R,ϵ::R) where {F,G,H,T,R}
-    return ExactPenaltyCost{F,G,H,T,R}(f,g,h,smoothing_technique,ρ,ϵ)
-end 
 function (L::ExactPenaltyCost)(M::AbstractManifold,x::P) where {P}
     inequality_constraints = L.g(M,x)
     equality_constraints = L.h(M,x)
@@ -278,9 +254,6 @@ mutable struct ExactPenaltyGrad{F,GF,G,GG,H,GH,T,R}
     ρ::R
     ϵ::R
 end
-function ExactPenaltyGrad(f::F,gradF::GF,g::G,gradG::GG,h::H,gradH::GH,smoothing_technique::T,ρ::R,ϵ::R) where {F,GF,G,GG,H,GH,T,R}
-    return ExactPenaltyGrad{F,GF,G,GG,H,GH,T,R}(f,gradF,g,gradG,h,gradH,smoothing_technique,ρ,ϵ)
-end 
 function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
     inequality_constraints = LG.g(M,x)
     equality_constraints = LG.h(M,x)

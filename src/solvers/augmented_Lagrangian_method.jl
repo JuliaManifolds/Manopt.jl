@@ -203,7 +203,7 @@ function initialize_solver!(p::ConstrainedProblem, o::ALMOptions)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
-    # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter
+    # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter and with minimal stepsize min_stepsize
     o.sub_problem.cost.ρ = o.ρ
     o.sub_problem.cost.λ = o.λ
     o.sub_problem.cost.γ = o.γ
@@ -211,28 +211,10 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     o.sub_problem.gradient!!.λ = o.λ
     o.sub_problem.gradient!!.γ = o.γ
     o.sub_options.x = copy(o.x) 
-    o.sub_options.gradient = o.sub_problem.gradient!!(p.M,o.x)
-    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.ϵ) | StopWhenStepSizeLess(o.min_stepsize) #### check if StopWhenStepsizeLess is okay or if StopWhenEuclideanChangeLess should and can be used
+    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.ϵ) | StopWhenStepSizeLess(o.min_stepsize) 
+    
     o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
 
-    # cost = LagrangeCost(p.cost, p.G, p.H, o.ρ, o.λ, o.γ)
-    # grad = LagrangeGrad(p.cost, p.gradF, p.G, p.gradG, p.H, p.gradH, o.ρ, o.λ, o.γ)
-    
-    # o.x = gradient_descent(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ)))
-    
-    ### Sphere
-    ## ArmijoLinesearch
-    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=ArmijoLinesearch(1.0,ExponentialRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-    ## WolfePowellLinesearch
-    # o.x = quasi_Newton(p.M, cost, grad, o.x, stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport(), linesearch_stopsize=1e-10), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-    
-    ### Stiefel 
-    ## ArmijoLinesearch
-    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=ArmijoLinesearch(1.0,QRRetraction(), 0.95, 0.1, 1e-20), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-    ## WolfePowellLinesearch
-    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(QRRetraction(),ProjectionTransport(),10^(-4),0.999), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-    #o.x = quasi_Newton(p.M, cost, grad, o.x, retraction_method=QRRetraction(), vector_transport_method=ProjectionTransport(), stepsize=WolfePowellLinesearch(p.M,10^(-4),0.999,retraction_method=QRRetraction(),vector_transport_method=ProjectionTransport(),linesearch_stopsize=1e-8), stopping_criterion=StopWhenAny(StopAfterIteration(o.max_inner_iter),StopWhenGradientNormLess(o.ϵ),StopWhenStepSizeLess(1e-16)))
-    
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)
     n_ineq_constraint = size(cost_ineq,1)
@@ -262,9 +244,6 @@ mutable struct LagrangeCost{F,G,H,R,T}
     ρ::R
     λ::T
     γ::T
-end
-function LagrangeCost(f::F,g::G,h::H,ρ::R,λ::T,γ::T) where {F,G,H,R,T}
-    return LagrangeCost{F,G,H,R,T}(f,g,h,ρ,λ,γ)
 end 
 function (L::LagrangeCost)(M::AbstractManifold,x::P) where {P}
     inequality_constraints = L.g(M,x)
@@ -303,9 +282,6 @@ mutable struct LagrangeGrad{F,GF,G,GG,H,GH,R,T}
     λ::T
     γ::T
 end
-function LagrangeGrad(f::F,gradF::GF,g::G,gradG::GG,h::H,gradH::GH,ρ::R,λ::T,γ::T) where {F,GF,G,GG,H,GH,R,T}
-    return LagrangeGrad{F,GF,G,GG,H,GH,R,T}(f,gradF,g,gradG,h,gradH,ρ,λ,γ)
-end 
 function (LG::LagrangeGrad)(M::AbstractManifold,x::P) where {P}
     inequality_constraints = LG.g(M,x)
     equality_constraints = LG.h(M,x)
