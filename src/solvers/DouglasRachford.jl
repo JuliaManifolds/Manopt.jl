@@ -113,7 +113,15 @@ function DouglasRachford!(
         nF = F
     end
     p = ProximalProblem(M, nF, (prox1, prox2); evaluation=evaluation)
-    o = DouglasRachfordOptions(x, λ, α, reflect, stopping_criterion, parallel > 0)
+    o = DouglasRachfordOptions(
+        M,
+        x;
+        λ=λ,
+        α=α,
+        R=reflect,
+        stopping_criterion=stopping_criterion,
+        parallel=parallel > 0,
+    )
 
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)

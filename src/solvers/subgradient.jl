@@ -63,7 +63,7 @@ function subgradient_method!(
     F::TF,
     ∂F!!::TdF,
     x;
-    retraction::TRetr=default_retraction_method(M),
+    retraction_method::TRetr=default_retraction_method(M),
     stepsize::Stepsize=ConstantStepsize(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     return_options=false,
@@ -71,7 +71,13 @@ function subgradient_method!(
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr}
     p = SubGradientProblem(M, F, ∂F!!; evaluation=evaluation)
-    o = SubGradientMethodOptions(M, x, stopping_criterion, stepsize, retraction)
+    o = SubGradientMethodOptions(
+        M,
+        x;
+        stopping_criterion=stopping_criterion,
+        stepsize=stepsize,
+        retraction_method=retraction_method,
+    )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
     if return_options

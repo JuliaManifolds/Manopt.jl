@@ -66,23 +66,35 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `x_optimal` – optimal value
 * `∂` the current element from the possible subgradients at `x` that is used
 """
-mutable struct SubGradientMethodOptions{TRetract<:AbstractRetractionMethod,TStepsize,P,T} <:
-               Options where {P,T}
-    retraction_method::TRetract
-    stepsize::TStepsize
-    stop::StoppingCriterion
+mutable struct SubGradientMethodOptions{
+    TR<:AbstractRetractionMethod,TS<:Stepsize,TSC<:StoppingCriterion,P,T
+} <: Options where {P,T}
+    retraction_method::TR
+    stepsize::TS
+    stop::TSC
     x::P
     x_optimal::P
     ∂::T
     function SubGradientMethodOptions(
         M::TM,
-        x::P,
-        sC::StoppingCriterion,
-        s::Stepsize,
-        retraction_method=ExponentialRetraction(),
-    ) where {TM<:AbstractManifold,P}
-        return new{typeof(retraction_method),typeof(s),P,typeof(zero_vector(M, x))}(
-            retraction_method, s, sC, x, x
+        x::P;
+        stopping_criterion::SC=StopAfterIteration(5000),
+        stepsize::S=ConstantStepsize(M),
+        subgrad::T=zero_vector(M, x),
+        retraction_method::TR=default_retraction_method(M),
+    ) where {
+        TM<:AbstractManifold,
+        P,
+        T,
+        SC<:StoppingCriterion,
+        S<:Stepsize,
+        TR<:AbstractRetractionMethod,
+    }
+        return new{TR,S,SC,P,T}(
+            retraction_method, stepsize, stopping_criterion, x, deepcopy(x), subgrad
         )
     end
+    @deprecate SubGradientMethodOptions(M, x, S, s, r=ExponentialRetraction()) SubGradientMethodOptions(
+        M, x; stopping_criterion=S, stepsize=s, retraction_method=r
+    )
 end

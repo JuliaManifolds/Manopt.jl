@@ -86,7 +86,7 @@ end
 # Proximal based Options
 #
 #
-"""
+@doc raw"""
     CyclicProximalPointOptions <: Options
 
 stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
@@ -95,9 +95,18 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 * `x` – the current iterate
 * `stopping_criterion` – a [`StoppingCriterion`](@ref)
 * `λ` – (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
-* `evaluation_order` – (`:LinearOrder`) – whether
+* `oder_type` – (`:LinearOrder`) – whether
   to use a randomly permuted sequence (`:FixedRandomOrder`), a per
   cycle permuted sequence (`RandomOrder`) or the default linear one.
+
+# Constructor
+    CyclicProximalPointOptions(M, p)
+
+Generate the options with the following keyword arguments
+
+* `stopping_criterion` (`StopAfterIteration(2000)`) – a [`StoppingCriterion`](@ref).
+* `λ` ( `(iter) -> 1.0 / iter`) a function to compute the ``λ_k, k ∈ \mathbb N``,
+* `evaluation_order`(`:LinearOrder`) a Symbol indicating the order the proxes are applied.
 
 # See also
 [`cyclic_proximal_point`](@ref)
@@ -109,10 +118,20 @@ mutable struct CyclicProximalPointOptions{TX,TStop<:StoppingCriterion,Tλ} <: Op
     order_type::Symbol
     order::AbstractVector{Int}
 end
-function CyclicProximalPointOptions(
+@deprecate CyclicProximalPointOptions(
     x, s::StoppingCriterion, λ=(iter) -> 1.0 / iter, o::Symbol=:LinearOrder
+) CyclicProximalPointOptions(
+    DefaultManifold(2), x; stopping_criterion=s, λ=λ, evaluation_order=o
 )
-    return CyclicProximalPointOptions{typeof(x),typeof(s),typeof(λ)}(x, s, λ, o, [])
+
+function CyclicProximalPointOptions(
+    M::AbstractManifold,
+    x::P;
+    stopping_criterion::S=StopAfterIteration(2000),
+    λ::F=(iter) -> 1.0 / iter,
+    evaluation_order::Symbol=:LinearOrder,
+) where {P,S,F}
+    return CyclicProximalPointOptions{P,S,F}(x, stopping_criterion, λ, evaluation_order, [])
 end
 @doc raw"""
     DouglasRachfordOptions <: Options
@@ -123,6 +142,20 @@ Store all options required for the DouglasRachford algorithm,
 * `x` - the current iterate (result) For the parallel Douglas-Rachford, this is
   not a value from the `PowerManifold` manifold but the mean.
 * `s` – the last result of the double reflection at the proxes relaxed by `α`.
+* `λ` – function to provide the value for the proximal parameter during the calls
+* `α` – relaxation of the step from old to new iterate, i.e.
+  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
+  of the double reflection involved in the DR algorithm
+* `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
+* `stop` – a [`StoppingCriterion`](@ref)
+* `parallel` – indicate whether we are running a parallel Douglas-Rachford or not.
+
+# Constructor
+
+    DouglasRachfordOptions(M, p; kwargs...)
+
+Generate the options for a Manifold `M` and an initial point `p`, where the following keyword arguments can be used
+
 * `λ` – (`(iter)->1.0`) function to provide the value for the proximal parameter
   during the calls
 * `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
@@ -130,11 +163,11 @@ Store all options required for the DouglasRachford algorithm,
   of the double reflection involved in the DR algorithm
 * `R` – ([`reflect`](@ref)) method employed in the iteration to perform the reflection of `x` at
   the prox `p`.
-* `stop` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
 * `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
   or not.
 """
-mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR} <: Options
+mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR,S} <: Options
     x::TX
     xtmp::TX
     s::TX
@@ -142,20 +175,31 @@ mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR} <: Options
     λ::Tλ
     α::Tα
     R::TR
-    stop::StoppingCriterion
+    stop::S
     parallel::Bool
     function DouglasRachfordOptions(
+        M::AbstractManifold,
+        x::P;
+        λ::Fλ=(iter) -> 1.0,
+        α::Fα=(iter) -> 0.9,
+        R::FR=reflect,
+        stopping_criterion::S=StopAfterIteration(300),
+        parallel=false,
+    ) where {P,Fλ,Fα,FR,S<:StoppingCriterion}
+        return new{P,Fλ,Fα,FR,S}(
+            x, deepcopy(x), deepcopy(x), deepcopy(x), λ, α, R, stopping_criterion, parallel
+        )
+    end
+    @deprecate DouglasRachfordOptions(
         x,
         λ=(iter) -> 1.0,
         α=(iter) -> 0.9,
         R=reflect,
         stop::StoppingCriterion=StopAfterIteration(300),
         parallel=false,
+    ) DouglasRachfordOptions(
+        DefaultManifold(2), x; λ=λ, α=α, R=R, stopping_criterion=stop, parallel=parallel
     )
-        return new{typeof(x),typeof(λ),typeof(α),typeof(R)}(
-            x, deepcopy(x), deepcopy(x), deepcopy(x), λ, α, R, stop, parallel
-        )
-    end
 end
 #
 # Debug
