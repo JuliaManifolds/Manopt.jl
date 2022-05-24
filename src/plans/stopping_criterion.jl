@@ -32,6 +32,7 @@ function (c::StopAfterIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
     end
     return false
 end
+
 """
     update_stopping_criterion!(c::StopAfterIteration, :;MaxIteration, v::Int)
 
@@ -41,6 +42,7 @@ function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration},
     c.maxIter = v
     return c
 end
+
 """
     StopWhenGradientNormLess <: StoppingCriterion
 
@@ -59,6 +61,7 @@ function (c::StopWhenGradientNormLess)(p::Problem, o::AbstractGradientOptions, i
     end
     return false
 end
+
 """
     update_stopping_criterion!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
 
@@ -106,12 +109,13 @@ function (c::StopWhenChangeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Option
     c.storage(p, o, i)
     return false
 end
+
 """
-    update_stopping_criterion!(c::StopWhenChangeLess, :MinIterationChange, v::Int)
+    update_stopping_criterion!(c::StopWhenChangeLess, :MinIterateChange, v::Int)
 
 Update the minimal change blow which an algorithm shall stop.
 """
-function update_stopping_criterion!(c::StopWhenChangeLess, ::Val{:MinIterationChange}, v)
+function update_stopping_criterion!(c::StopWhenChangeLess, ::Val{:MinIterateChange}, v)
     c.threshold = v
     return c
 end
@@ -143,6 +147,7 @@ function (c::StopWhenStepSizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Opti
     end
     return false
 end
+
 """
     update_stopping_criterion!(c::StopWhenStepSizeLess, :MinStepsize, v)
 
@@ -177,6 +182,7 @@ function (c::StopWhenCostLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     end
     return false
 end
+
 """
     update_stopping_criterion!(c::StopWhenCostLess, :MinCost, v)
 
@@ -224,13 +230,14 @@ function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     end
     return false
 end
+
 """
     update_stopping_criterion!(c::StopAfter, :MaxTime, v::Period)
 
 Update the time period after which an algorithm shall stop.
 """
-function update_stopping_criterion!(c::StopWhenCostLess, ::Val{:MaxTime}, v::Period)
-    (value(t) < 0) && error("You must provide a positive time period")
+function update_stopping_criterion!(c::StopAfter, ::Val{:MaxTime}, v::Period)
+    (value(v) < 0) && error("You must provide a positive time period")
     c.threshold = v
     return c
 end
@@ -393,6 +400,15 @@ This reason is empty if the criterion has never been met.
 get_reason(c::sC) where {sC<:StoppingCriterion} = c.reason
 
 @doc raw"""
+    get_reason(o)
+
+return the current reason stored within the [`StoppingCriterion`](@ref) from
+within the [`Options`](@ref) This reason is empty if the criterion has never
+been met.
+"""
+get_reason(o::Options) = get_reason(get_options(o).stop)
+
+@doc raw"""
     get_stopping_criteria(c)
 
 return the array of internally stored [`StoppingCriterion`](@ref)s for a
@@ -417,7 +433,8 @@ For the second signature, the stopping criterion within the [`Options`](@ref) `o
 To see which symbol updates which value, see the specific stopping criteria. They should
 use dispatch per symbol value (the third signature).
 """
-update_stopping_criterion(Any...)
+update_stopping_criterion!(c, s, v)
+
 function update_stopping_criterion!(o::Options, s::Symbol, v)
     update_stopping_criterion!(o.stop, s, v)
     return o
@@ -435,11 +452,10 @@ function update_stopping_criterion!(c::StopWhenAny, s::Symbol, v)
     return c
 end
 function update_stopping_criterion!(c::StoppingCriterion, s::Symbol, v::Any)
-    update!(c, Val(s), v)
+    update_stopping_criterion!(c, Val(s), v)
     return c
 end
 # fallback: do nothing
-function update_stopping_criterion!(c::StoppingCriterion, s::Val{<:Symbol}, v::Any)
-    update!(c, Val(s), v)
+function update_stopping_criterion!(c::StoppingCriterion, ::Val, v)
     return c
 end

@@ -116,4 +116,5 @@ StopIfResidualIsReducedByFactor
 StopWhenTrustRegionIsExceeded
 StopWhenCurvatureIsNegative
 StopWhenModelIncreased
+update_stopping_criterion!(::StopIfResidualIsReducedByPower, ::Val{:ResidualPower}, ::Any)
 ```
