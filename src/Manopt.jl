@@ -221,6 +221,7 @@ export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden

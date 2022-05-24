@@ -81,7 +81,7 @@ function DouglasRachford!(
     x;
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
-    R::TR=reflect,
+    R::TR=Manopt.reflect,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     parallel::Int=0,
     stopping_criterion::StoppingCriterion=StopWhenAny(
@@ -118,7 +118,7 @@ function DouglasRachford!(
         x;
         λ=λ,
         α=α,
-        R=reflect,
+        R=Manopt.reflect,
         stopping_criterion=stopping_criterion,
         parallel=parallel > 0,
     )

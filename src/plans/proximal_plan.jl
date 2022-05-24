@@ -178,11 +178,11 @@ mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR,S} <: Options
     stop::S
     parallel::Bool
     function DouglasRachfordOptions(
-        M::AbstractManifold,
+        ::AbstractManifold,
         x::P;
         λ::Fλ=(iter) -> 1.0,
         α::Fα=(iter) -> 0.9,
-        R::FR=reflect,
+        R::FR=Manopt.reflect,
         stopping_criterion::S=StopAfterIteration(300),
         parallel=false,
     ) where {P,Fλ,Fα,FR,S<:StoppingCriterion}
@@ -194,7 +194,7 @@ mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR,S} <: Options
         x,
         λ=(iter) -> 1.0,
         α=(iter) -> 0.9,
-        R=reflect,
+        R=Manopt.reflect,
         stop::StoppingCriterion=StopAfterIteration(300),
         parallel=false,
     ) DouglasRachfordOptions(
