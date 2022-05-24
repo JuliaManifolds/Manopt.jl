@@ -12,10 +12,9 @@ cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
 prox_F(M, λ, x) = prox_distance(M, λ / α, f, x, 2)
 prox_G_dual(N, n, λ, ξ) = project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0) # non-isotropic
 
-# TODO Dprox_F
 Dprox_F(M,λ,x,η) = differential_geodesic_startpoint(M,x,f,λ/(α+λ),η)
 
-function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, p=2.0, q=1.0, α=1.0)
+function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, p=2.0, q=1.0)
 	pdims = power_dimensions(N)
     if length(pdims) == 1
         d = 1
@@ -44,9 +43,14 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
     throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
 
-# TODO Dprox_G_dual
-Dprox_G_dual(N, n, λ, ξ, η) = differential_project_collaborative_TV(N, λ, n, ξ, η, Inf, Inf, 1.0)
+# TODO potentially nice to compare results with those from old code
+Dprox_G_dual(N, n, λ, ξ, η) = differential_project_collaborative_TV(N, λ, n, ξ, η, Inf, Inf)
 # Dprox_G_dual(N, n, λ, ξ, η; γ=0,isotropic=false) = differential_project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0)
+
+DΛ(M, m, X) = differential_forward_logs(M, m, X)
+# DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
+adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N, m, ξ)
+# adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])
 
 # function
 	# M2 = base_manifold(N)
@@ -107,8 +111,3 @@ Dprox_G_dual(N, n, λ, ξ, η) = differential_project_collaborative_TV(N, λ, n,
 	#
     # return J
 # end
-
-DΛ(M, m, X) = differential_forward_logs(M, m, X)
-# DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
-adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N, m, ξ)
-# adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])

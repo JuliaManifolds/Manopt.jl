@@ -33,7 +33,7 @@ mutable struct PrimalDualSemismoothNewtonProblem{
     diff_prox_F!!::Function
     prox_G_dual!!::Function
     diff_prox_G_dual!!::Function
-    forward_operator!!::Function
+    linearized_forward_operator!!::Function
     adjoint_linearized_operator!!::Function
     Λ!!::Union{Function,Missing}
 end
@@ -45,7 +45,7 @@ function PrimalDualSemismoothNewtonProblem(
     diff_prox_F,
     prox_G_dual,
     diff_prox_G_dual,
-    forward_operator,
+    linearized_forward_operator,
     adjoint_linearized_operator;
     Λ::Union{Function,Missing}=missing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -58,7 +58,7 @@ function PrimalDualSemismoothNewtonProblem(
         diff_prox_F,
         prox_G_dual,
         diff_prox_G_dual,
-        forward_operator,
+        linearized_forward_operator,
         adjoint_linearized_operator,
         Λ,
     )
