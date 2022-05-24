@@ -64,9 +64,7 @@ combine stopping criteria.
 """
 abstract type StoppingCriterionSet <: StoppingCriterion end
 #
-#
 # StepsizeOptions
-#
 #
 """
     Stepsize

@@ -458,7 +458,17 @@ function (c::StopIfResidualIsReducedByPower)(
     end
     return false
 end
+@doc raw"""
+    update_stopping_criterion!(c::StopIfResidualIsReducedByPower, :ResidualPower, v::Period)
 
+Update the residual Power ``θ`` time period after which an algorithm shall stop.
+"""
+function update_stopping_criterion!(
+    c::StopIfResidualIsReducedByPower, ::Val{:residualPower}, v
+)
+    c.θ = v
+    return c
+end
 @doc raw"""
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
