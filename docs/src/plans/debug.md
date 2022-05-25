@@ -8,6 +8,7 @@ On the high level interfaces, like [`gradient_descent`](@ref), you can just use 
 Modules = [Manopt]
 Pages = ["plans/debug_options.jl"]
 Order = [:type, :function]
+Private = true
 ```
 
 ## Technical Details: The Debug Solver

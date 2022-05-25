@@ -427,7 +427,7 @@ mutable struct RecordIteration <: RecordAction
     recorded_values::Array{Int,1}
     RecordIteration() = new(Array{Int,1}())
 end
-function (r::RecordIteration)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (r::RecordIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
     return record_or_reset!(r, i, i)
 end
 

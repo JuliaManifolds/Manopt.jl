@@ -1,9 +1,9 @@
 
 ### [Record values](@id RecordSection)
 
-The decorator to record certain values during the iterations can be activated by
-decorating the [`Options`](@ref) with [`RecordOptions`](@ref) and implementing
-your own [`RecordAction`](@ref)s.
+To record values during the iterations of a solver run, there are in general two possibilities.
+On the one hand, the high-level interfaces provide a `record=` keyword, that accepts several different inputs. For more details see [How to record](@ref pluto/HowToRecord.md)
+
 For example recording the gradient from the [`GradientDescentOptions`](@ref) is
 automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
@@ -13,7 +13,7 @@ automatically available, as explained in the [`gradient_descent`](@ref) solver.
 Modules = [Manopt]
 Pages = ["plans/record_options.jl"]
 Order = [:type, :function]
-Private = false
+Private = true
 ```
 
 ```@docs
