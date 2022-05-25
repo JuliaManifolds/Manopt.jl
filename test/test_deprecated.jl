@@ -15,4 +15,5 @@ using Manopt, ManifoldsBase, Test
     SubGradientMethodOptions(M, p, s, ConstantStepsize(1.0))
     d = QuasiNewtonMatrixDirectionUpdate(M, SR1(), DefaultBasis(), zeros(2, 2))
     QuasiNewtonOptions(p, X, d, s, ConstantStepsize(1.0))
+    TruncatedConjugateGradientOptions(HessianProblem(M, x -> x, x-> x, x-> x, :s),p,X,1.0,true)
 end
