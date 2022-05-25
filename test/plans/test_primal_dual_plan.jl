@@ -63,8 +63,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
     p_linearized = PrimalDualProblem(
         M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
     )
-    o_exact = ChambollePockOptions(m, n, x0, ξ0; variant=:exact)
-    o_linearized = ChambollePockOptions(m, n, x0, ξ0; variant=:linearized)
+    o_exact = ChambollePockOptions(M, m, n, x0, ξ0; variant=:exact)
+    o_linearized = ChambollePockOptions(M, m, n, x0, ξ0; variant=:linearized)
     n_old = ProductRepr(n[N, :point], n[N, :vector])
     x_old = copy(x0)
     ξ_old = ProductRepr(ξ0[N, :point], ξ0[N, :vector])
@@ -135,8 +135,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
         p_linearized = PrimalDualProblem(
             M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
         )
-        o_exact = ChambollePockOptions(m, n, x0, ξ0; variant=:exact)
-        o_linearized = ChambollePockOptions(m, n, x0, ξ0; variant=:linearized)
+        o_exact = ChambollePockOptions(M, m, n, x0, ξ0; variant=:exact)
+        o_linearized = ChambollePockOptions(M, m, n, x0, ξ0; variant=:linearized)
         @test primal_residual(p_exact, o_exact, x_old, ξ_old, n_old) ≈ 0 atol = 1e-16
         @test primal_residual(p_linearized, o_linearized, x_old, ξ_old, n_old) ≈ 0 atol =
             1e-16
@@ -151,7 +151,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test dual_residual(p_exact, o_exact, x_old, ξ_old, n_old) > 4.0
         @test dual_residual(p_linearized, o_linearized, x_old, ξ_old, n_old) > 0
 
-        o_err = ChambollePockOptions(m, n, x0, ξ0; variant=:err)
+        o_err = ChambollePockOptions(M, m, n, x0, ξ0; variant=:err)
         @test_throws DomainError dual_residual(p_exact, o_err, x_old, ξ_old, n_old)
     end
     @testset "Debug prints" begin

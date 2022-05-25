@@ -40,3 +40,4 @@ end
     include("solvers/test_stochastic_gradient_descent.jl")
     include("solvers/test_subgradient_method.jl")
 end
+include("test_deprecated.jl")

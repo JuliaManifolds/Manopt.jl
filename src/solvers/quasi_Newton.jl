@@ -100,16 +100,16 @@ function quasi_Newton!(
         vector_transport_method=vector_transport_method,
         linesearch_stopsize=1e-12,
     ),
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
+                                          StopWhenGradientNormLess(1e-6),
     return_options=false,
     kwargs...,
 ) where {TF,TDF}
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
+            M,
+            x,
             direction_update,
-            zero_vector(M, x),
             memory_size;
             scale=scale_initial_operator,
             project=stabilize,
@@ -117,6 +117,7 @@ function quasi_Newton!(
         )
     else
         local_dir_upd = QuasiNewtonMatrixDirectionUpdate(
+            M,
             direction_update,
             basis,
             initial_operator;

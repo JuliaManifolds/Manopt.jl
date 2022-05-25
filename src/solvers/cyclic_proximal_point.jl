@@ -16,7 +16,7 @@ the default values are given in brackets
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
 * `evaluation_order` – (`:Linear`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
-  cycle permuted sequence (`Random`) or the default linear one.
+  cycle permuted sequence (`:Random`) or the default linear one.
 * `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
@@ -66,7 +66,9 @@ function cyclic_proximal_point!(
     kwargs..., #decorator options
 ) where {TF}
     p = ProximalProblem(M, F, proxes; evaluation=evaluation)
-    o = CyclicProximalPointOptions(x0, stopping_criterion, λ, evaluation_order)
+    o = CyclicProximalPointOptions(
+        M, x0; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
+    )
 
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)

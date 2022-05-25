@@ -132,14 +132,14 @@ during the last iteration from within a [`Options`](@ref).
 
 initialize the stopping criterion to a threshold `ε`.
 """
-mutable struct StopWhenStepSizeLess <: StoppingCriterion
+mutable struct StopWhenStepsizeLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    function StopWhenStepSizeLess(ε::Float64)
+    function StopWhenStepsizeLess(ε::Float64)
         return new(ε, "")
     end
 end
-function (c::StopWhenStepSizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenStepsizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     s = get_last_stepsize(p, o, i)
     if s < c.threshold && i > 0
         c.reason = "The algorithm computed a step size ($s) less than $(c.threshold).\n"
@@ -149,11 +149,11 @@ function (c::StopWhenStepSizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Opti
 end
 
 """
-    update_stopping_criterion!(c::StopWhenStepSizeLess, :MinStepsize, v)
+    update_stopping_criterion!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
 Update the minimal step size below which the slgorithm shall stop
 """
-function update_stopping_criterion!(c::StopWhenStepSizeLess, ::Val{:MinStepsize}, v)
+function update_stopping_criterion!(c::StopWhenStepsizeLess, ::Val{:MinStepsize}, v)
     c.threshold = v
     return c
 end

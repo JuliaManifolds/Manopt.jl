@@ -195,7 +195,7 @@ md"""
 A way to get better performance and for convex and coercive costs a guaranteed convergence is to switch the default
 [`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for
 example the [`ArmijoLinesearch`](https://manoptjl.org/stable/plans/index.html#Manopt.ArmijoLinesearch).
-We can tweak the default values for the `contractionFactor` and the `sufficientDecrease`  beyond constant step size which is already quite fast. We get
+We can tweak the default values for the `contraction_factor` and the `sufficient_decrease`  beyond constant step size which is already quite fast. We get
 """
 
 # ╔═╡ 38df2fb3-f742-4652-857c-baa403985ff8

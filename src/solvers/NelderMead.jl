@@ -72,8 +72,9 @@ function NelderMead!(
 ) where {TF}
     p = CostProblem(M, F)
     o = NelderMeadOptions(
-        population,
-        stopping_criterion;
+        M,
+        population;
+        stopping_criterion=stopping_criterion,
         α=α,
         γ=γ,
         ρ=ρ,

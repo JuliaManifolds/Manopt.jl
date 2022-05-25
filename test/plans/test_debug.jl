@@ -4,7 +4,7 @@
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.0, 2.0]
     o = GradientDescentOptions(
-        x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
     )
     f(M, y) = distance(M, y, x) .^ 2
     gradf(M, y) = -2 * log(M, y, x)
@@ -89,16 +89,35 @@
     @test isa(df[:All], DebugEvery)
     @test all(
         isa.(
-            DebugFactory([:Change, :Iteration, :Iterate, :Cost, :x])[:All].group,
-            [DebugChange, DebugIteration, DebugIterate, DebugCost, DebugEntry],
+            DebugFactory([:Change, :Iteration, :Iterate, :Cost, :Stepsize, :x])[:All].group,
+            [
+                DebugChange,
+                DebugIteration,
+                DebugIterate,
+                DebugCost,
+                DebugStepsize,
+                DebugEntry,
+            ],
         ),
     )
     @test all(
         isa.(
             DebugFactory([
-                (:Change, "A"), (:Iteration, "A"), (:Iterate, "A"), (:Cost, "A"), (:x, "A")
+                (:Change, "A"),
+                (:Iteration, "A"),
+                (:Iterate, "A"),
+                (:Cost, "A"),
+                (:Stepsize, "A"),
+                (:x, "A"),
             ])[:All].group,
-            [DebugChange, DebugIteration, DebugIterate, DebugCost, DebugEntry],
+            [
+                DebugChange,
+                DebugIteration,
+                DebugIterate,
+                DebugCost,
+                DebugStepsize,
+                DebugEntry,
+            ],
         ),
     )
     @test DebugActionFactory(a3) == a3
