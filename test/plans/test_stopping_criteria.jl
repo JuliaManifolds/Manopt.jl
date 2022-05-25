@@ -34,6 +34,8 @@ struct TestOptions <: Options end
     an = sm.reason
     m = match(r"^((.*)\n)+", an)
     @test length(m.captures) == 2 # both have to be active
+    update_stopping_criterion!(s3, :MinCost, 1e-2)
+    @test s3.threshold == 1e-2
 end
 
 @testset "Test StopAfter" begin
@@ -45,6 +47,9 @@ end
     sleep(1.02)
     @test s(p, o, 2) == true
     @test_throws ErrorException StopAfter(Second(-1))
+    @test_throws ErrorException update_stopping_criterion!(s, :MaxTime, Second(-1))
+    update_stopping_criterion!(s, :MaxTime, Second(2))
+    @test s.threshold == Second(2)
 end
 
 @testset "Stopping Criterion &/| operators" begin
@@ -55,10 +60,14 @@ end
     @test typeof(d) === typeof(a & b & c)
     @test typeof(d) === typeof(a & (b & c))
     @test typeof(d) === typeof((a & b) & c)
+    update_stopping_criterion!(d, :MinIterateChange, 1e-8)
+    @test d.criteria[2].threshold == 1e-8
     e = StopWhenAny(a, b, c)
     @test typeof(e) === typeof(a | b | c)
     @test typeof(e) === typeof(a | (b | c))
     @test typeof(e) === typeof((a | b) | c)
+    update_stopping_criterion!(e, :MinGradNorm, 1e-9)
+    @test d.criteria[3].threshold == 1e-9
 end
 
 @testset "TCG stopping criteria" begin
@@ -78,6 +87,9 @@ end
     @test s2.reason == ""
     @test s2(p, o, 1)
     @test length(s2.reason) > 0
+    s3 = StopIfResidualIsReducedByPower(1.0)
+    update_stopping_criterion!(s3, :ResidualPower, 0.5)
+    @test s3.θ == 0.5
 end
 
 @testset "Stop with step size" begin
@@ -89,4 +101,8 @@ end
     o.stepsize = ConstantStepsize(; stepsize=0.25)
     @test s1(p, o, 2)
     @test length(s1.reason) > 0
+    update_stopping_criterion!(o, :MaxIteration, 200)
+    @test o.stop.maxIter == 200
+    update_stopping_criterion!(s1, :MinStepsize, 1e-1)
+    @test s1.threshold == 1e-1
 end
