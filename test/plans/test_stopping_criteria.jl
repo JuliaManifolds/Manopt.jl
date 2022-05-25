@@ -97,7 +97,7 @@ end
 @testset "Stop with step size" begin
     p = GradientProblem(Euclidean(), (M, x) -> x^2, x -> 2x)
     o = GradientDescentOptions(Euclidean(), 1.0)
-    s1 = StopWhenStepSizeLess(0.5)
+    s1 = StopWhenStepsizeLess(0.5)
     @test !s1(p, o, 1)
     @test s1.reason == ""
     o.stepsize = ConstantStepsize(; stepsize=0.25)

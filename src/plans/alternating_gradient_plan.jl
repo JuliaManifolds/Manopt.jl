@@ -316,8 +316,8 @@ function (a::ArmijoLinesearch)(
         o.x,
         X,
         a.last_stepsize,
-        a.sufficientDecrease,
-        a.contractionFactor,
+        a.sufficient_decrease,
+        a.contraction_factor,
         a.retraction_method,
     )
     return a.last_stepsize
