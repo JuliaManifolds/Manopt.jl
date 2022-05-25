@@ -437,8 +437,6 @@ d_2(q_1,q_2,q_3) = \min_{c ∈ \mathcal C_{q_1,q_3}} d(c, q_2).
 
 While the (sub)gradient with respect to ``q_2`` is easy, the other two require
 the evaluation of an [`adjoint_Jacobi_field`](@ref).
-See [Illustration of the Gradient of a Second Order Difference](@ref secondOrderDifferenceGrad)
-for its derivation.
 """
 function grad_TV2(M::AbstractManifold, q, p::Int=1)
     X = [zero_vector(M, x) for x in q]

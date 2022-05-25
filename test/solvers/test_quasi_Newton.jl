@@ -201,6 +201,6 @@ Random.seed!(42)
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(1e-6),
         )
-        @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-5)
+        @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-4)
     end
 end
