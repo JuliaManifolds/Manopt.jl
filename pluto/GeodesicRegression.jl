@@ -225,8 +225,16 @@ with_terminal() do
         RegressionGradient!(data, t),
         x0;
         evaluation=MutatingEvaluation(),
-        stepsize=ArmijoLinesearch(M; initial_stepsize=1.0,  contraction_factor=.990, sufficient_decrease=0.05, linesearch_stopsize=1e-9),
-        stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8) | StopWhenStepsizeLess(1e-9),
+        stepsize=ArmijoLinesearch(
+            M;
+            initial_stepsize=1.0,
+            contraction_factor=0.990,
+            sufficient_decrease=0.05,
+            linesearch_stopsize=1e-9,
+        ),
+        stopping_criterion=StopAfterIteration(200) |
+                           StopWhenGradientNormLess(1e-8) |
+                           StopWhenStepsizeLess(1e-9),
         debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
     )
 end
@@ -313,8 +321,16 @@ with_terminal() do
         RegressionGradient!(data2, t2),
         x1;
         evaluation=MutatingEvaluation(),
-        stepsize=ArmijoLinesearch(M; initial_stepsize=1.0,  contraction_factor=.990, sufficient_decrease=0.05, linesearch_stopsize=1e-9),
-        stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8) | StopWhenStepsizeLess(1e-9),
+        stepsize=ArmijoLinesearch(
+            M;
+            initial_stepsize=1.0,
+            contraction_factor=0.990,
+            sufficient_decrease=0.05,
+            linesearch_stopsize=1e-9,
+        ),
+        stopping_criterion=StopAfterIteration(200) |
+                           StopWhenGradientNormLess(1e-8) |
+                           StopWhenStepsizeLess(1e-9),
         debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
     )
 end
