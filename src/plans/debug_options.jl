@@ -419,14 +419,31 @@ end
 given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
 
 * The symbol `:Stop` creates an entry of to display the stopping criterion at the end
-  (`:Stop => DebugStoppingCriterion()`)
-* The symbol `:Cost` creates a [`DebugCost`](@ref)
-* The symbol `:iteration` creates a [`DebugIteration`](@ref)
-* The symbol `:Change` creates a [`DebugChange`](@ref)
-* any other symbol creates debug output of the corresponding field in [`Options`](@ref)
+  (`:Stop => DebugStoppingCriterion()`), for further symbols see [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
+* Tuples of a symbol and a string can be used to also specify a format, see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
 * any string creates a [`DebugDivider`](@ref)
 * any [`DebugAction`](@ref) is directly included
 * an Integer `k`introduces that debug is only printed every `k`th iteration
+
+# Return value
+
+This function returns a dictionary with an entry `:All` containing one general [`DebugAction`](@ref),
+possibly a [`DebugGroup`](@ref) of entries.
+It might contain an entry `:Start`, `:Step`, `:Stop` with an action (each) to specify what to do
+at the start, after a step or at the end of an Algorithm, respectively. On all three occastions the `:All` action is exectued.
+Note that only the `:Stop` entry is actually filled when specifying the `:Stop` symbol.
+
+# Example
+
+The array
+
+```
+[:Iterate, " | ", :Cost, :Stop, 10]
+```
+
+Adds a group to `:All` of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref) with `" | "` to display, [`DebugCost`](@ref))
+as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
+It also adds the [`DebugStoppingCriterion`](@ref) to the `:Stop` entry of the dictionary.
 """
 function DebugFactory(a::Array{<:Any,1})
     # filter out every
@@ -462,27 +479,51 @@ create a [`DebugAction`](@ref) where
 """
 DebugActionFactory(s::String) = DebugDivider(s)
 DebugActionFactory(a::A) where {A<:DebugAction} = a
+"""
+    DebugActionFactory(s::Symbol)
+
+Convert certain Symbols in the `debug=[ ... ]` vector to [`DebugAction`](@ref)s
+Currently the following ones are done.
+Note that the Shortcut symbols should all start with a capital letter.
+
+* `:Cost` creates a [`DebugCost`](@ref)
+* `:Change` creates a [`DebugChange`](@ref)
+* `:Iterate` creates a [`DebugIterate`](@ref)
+* `:Iteration` creates a [`DebugIteration`](@ref)
+* `:Stepsize` creates a [`DebugStepsize`](@ref)
+
+any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
+"""
 function DebugActionFactory(s::Symbol)
-    if (s == :Change)
-        return DebugChange()
-    elseif (s == :Iteration)
-        return DebugIteration()
-    elseif (s == :Iterate)
-        return DebugIterate()
-    elseif (s == :Cost)
-        return DebugCost()
-    end
+    (s == :Cost) && return DebugCost()
+    (s == :Change) && return DebugChange()
+    (s == :Iterate) && return DebugIterate()
+    (s == :Iteration) && return DebugIteration()
+    (s == :Stepsize) && return DebugStepsize()
     return DebugEntry(s)
 end
+"""
+    DebugActionFactory(t::Tuple{Symbol,String)
+
+Convert certain Symbols in the `debug=[ ... ]` vector to [`DebugAction`](@ref)s
+Currently the following ones are done, where the string in `t[2]` is passed as the
+`format` the corresponding debug.
+Note that the Shortcut symbols `t[1]` should all start with a capital letter.
+
+* `:Cost` creates a [`DebugCost`](@ref)
+* `:Change` creates a [`DebugChange`](@ref)
+* `:Iterate` creates a [`DebugIterate`](@ref)
+* `:Iteration` creates a [`DebugIteration`](@ref)
+* `:Stepsize` creates a [`DebugStepsize`](@ref)
+
+any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
+"""
 function DebugActionFactory(t::Tuple{Symbol,String})
-    if (t[1] == :Change)
-        return DebugChange(; format=t[2])
-    elseif (t[1] == :Iteration)
-        return DebugIteration()
-    elseif (t[1] == :Iterate)
-        return DebugIterate(; format=t[2])
-    elseif (t[1] == :Cost)
-        return DebugCost(; format=t[2])
-    end
+    print(t[1], " - ", typeof(t[1]), "--\n")
+    (t[1] == :Change) && return DebugChange(; format=t[2])
+    (t[1] == :Iteration) && return DebugIteration(; format=t[2])
+    (t[1] == :Iterate) && return DebugIterate(; format=t[2])
+    (t[1] == :Cost) && return DebugCost(; format=t[2])
+    (t[1] == :Stepsize) && return DebugStepsize(; format=t[2])
     return DebugEntry(t[1]; format=t[2])
 end
