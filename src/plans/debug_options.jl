@@ -519,7 +519,6 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
 function DebugActionFactory(t::Tuple{Symbol,String})
-    print(t[1], " - ", typeof(t[1]), "--\n")
     (t[1] == :Change) && return DebugChange(; format=t[2])
     (t[1] == :Iteration) && return DebugIteration(; format=t[2])
     (t[1] == :Iterate) && return DebugIterate(; format=t[2])
