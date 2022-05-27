@@ -122,7 +122,6 @@ function exact_penalty_method!(
     θ_ρ::Real=0.3, 
     min_stepsize = 1e-10,
     stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:tolgradnorm, ending_tolgradnorm), StopWhenChangeLess(1e-6))), 
-    #### look into minstepsize again
     return_options=false,
     kwargs...,
 ) where {TF, TGF}
@@ -168,7 +167,7 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     o.sub_problem.gradient!!.ρ = o.ρ
     o.sub_problem.gradient!!.ϵ = o.ϵ
     o.sub_options.x = copy(o.x) 
-    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.tolgradnorm) | StopWhenStepSizeLess(o.min_stepsize)
+    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.tolgradnorm) | StopWhenStepsizeLess(o.min_stepsize)
    
     o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
     

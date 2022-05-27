@@ -211,7 +211,7 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     o.sub_problem.gradient!!.λ = o.λ
     o.sub_problem.gradient!!.γ = o.γ
     o.sub_options.x = copy(o.x) 
-    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.ϵ) | StopWhenStepSizeLess(o.min_stepsize) 
+    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.ϵ) | StopWhenStepsizeLess(o.min_stepsize) 
     
     o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
 
