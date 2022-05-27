@@ -200,19 +200,20 @@ see also [`StochasticGradientProblem`](@ref) and [`stochastic_gradient_descent`]
 # Fields
 
 * `x` the current iterate
+* `direction` ([`StochasticGradient`](@ref)) a direction update to use
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
 * `evaluation_order` – (`:Random`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `order` the current permutation
-* `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 
 # Constructor
-    StochasticGradientDescentOptions(x)
+    StochasticGradientDescentOptions(M, x)
 
 Create a [`StochasticGradientDescentOptions`](@ref) with start point `x`.
-all other fields are optional keyword arguments.
+all other fields are optional keyword arguments, and the defaults are taken from `M`.
 """
 mutable struct StochasticGradientDescentOptions{
     TX,
@@ -232,24 +233,26 @@ mutable struct StochasticGradientDescentOptions{
     retraction_method::RM
     k::Int # current iterate
 end
+
 function StochasticGradientDescentOptions(
-    x,
-    X,
-    direction::DirectionUpdateRule;
+    M::AbstractManifold,
+    x::P,
+    X::Q;
+    direction::D=StochasticGradient(zero_vector(M, x)),
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(DefaultManifold(2)),
-)
-    return StochasticGradientDescentOptions{
-        typeof(x),
-        typeof(X),
-        typeof(direction),
-        typeof(stopping_criterion),
-        typeof(stepsize),
-        typeof(retraction_method),
-    }(
+    retraction_method::RM=default_retraction_method(M),
+    stopping_criterion::SC=StopAfterIteration(1000),
+    stepsize::S=ConstantStepsize(M),
+) where {
+    P,
+    Q,
+    D<:DirectionUpdateRule,
+    RM<:AbstractRetractionMethod,
+    SC<:StoppingCriterion,
+    S<:Stepsize,
+}
+    return StochasticGradientDescentOptions{P,Q,D,SC,S,RM}(
         x,
         X,
         direction,
@@ -261,6 +264,9 @@ function StochasticGradientDescentOptions(
         0,
     )
 end
+@deprecate StochasticGradientDescentOptions(x, X, d; kwargs...) StochasticGradientDescentOptions(
+    DefaultManifold(2), x, X; direction=d, kwargs...
+)
 
 """
     StochasticGradient <: DirectionUpdateRule

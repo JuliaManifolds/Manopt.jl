@@ -32,7 +32,7 @@ For a description of the algorithm and more details see
   random tangent vector. If set to true, no preconditioner will be
   used. This option is set to true in some scenarios to escape saddle
   points, but is otherwise seldom activated.
-* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors within the TCG
+* `project!` : (`copyto!`) specify a projection operation for tangent vectors within the TCG
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
 * `retraction` – (`default_retraction_method(M)`) approximation of the exponential map
@@ -95,13 +95,12 @@ function trust_regions!(
     evaluation=AllocatingEvaluation(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(1000), StopWhenGradientNormLess(10^(-6))
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
+                                          StopWhenGradientNormLess(1e-6),
     max_trust_region_radius=sqrt(manifold_dimension(M)),
     trust_region_radius=max_trust_region_radius / 8,
     randomize::Bool=false,
-    project_vector!::Proj=copyto!,
+    project!::Proj=copyto!,
     ρ_prime::Float64=0.1,
     ρ_regularization=1000.0,
     return_options=false,
@@ -122,16 +121,17 @@ function trust_regions!(
     )
     p = HessianProblem(M, F, gradF, hessF, preconditioner; evaluation=evaluation)
     o = TrustRegionsOptions(
-        x,
-        get_gradient(p, x),
-        trust_region_radius,
-        max_trust_region_radius,
-        ρ_prime,
-        ρ_regularization,
-        randomize,
-        stopping_criterion;
+        M,
+        x;
+        gradient=get_gradient(p, x),
+        trust_region_radius=trust_region_radius,
+        max_trust_region_radius=max_trust_region_radius,
+        ρ_prime=ρ_prime,
+        ρ_regularization=ρ_regularization,
+        randomize=randomize,
+        stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
-        (project_vector!)=project_vector!,
+        (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -154,7 +154,12 @@ function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     o.τ = zero(o.trust_region_radius)
     o.Hgrad = zero_vector(p.M, o.x)
     o.tcg_options = TruncatedConjugateGradientOptions(
-        p, o.x, o.η, o.trust_region_radius, o.randomize; (project_vector!)=o.project_vector!
+        p.M,
+        o.x,
+        o.η;
+        trust_region_radius=o.trust_region_radius,
+        randomize=o.randomize,
+        (project!)=o.project!,
     )
     return o
 end

@@ -146,6 +146,7 @@ function ChambollePock!(
         Λ=Λ,
     )
     o = ChambollePockOptions(
+        M,
         m,
         n,
         x,

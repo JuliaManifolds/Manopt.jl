@@ -70,9 +70,10 @@ function stochastic_gradient_descent!(
 ) where {TDF,TF}
     p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
     o = StochasticGradientDescentOptions(
+        M,
         x,
-        zero_vector(M, x),
-        direction;
+        zero_vector(M, x);
+        direction=direction,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         order_type=order_type,

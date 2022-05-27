@@ -29,7 +29,9 @@ using Manifolds, Manopt, Test, Dates
         @test fR == fR2
         rec = get_record(o)
         @test F(N, f) > F(N, fR)
-        o = CyclicProximalPointOptions(f, StopAfterIteration(1), i -> π / (2 * i))
+        o = CyclicProximalPointOptions(
+            N, f; stopping_criterion=StopAfterIteration(1), λ=i -> π / (2 * i)
+        )
         p = ProximalProblem(N, F, proxes, [1, 2])
         @test_throws ErrorException get_proximal_map(p, 1.0, f, 3)
         @test_throws ErrorException ProximalProblem(N, F, proxes, [1, 2, 2])

@@ -94,6 +94,9 @@ makedocs(;
             "Problem" => "plans/problem.md",
             "Options" => "plans/options.md",
             "Stepsize" => "plans/stepsize.md",
+            "Stopping Criteria" => "plans/stopping_criteria.md",
+            "Debug Output" => "plans/debug.md",
+            "Recording values" => "plans/record.md",
         ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",

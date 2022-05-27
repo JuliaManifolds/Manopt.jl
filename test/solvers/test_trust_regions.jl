@@ -77,9 +77,11 @@ include("trust_region_model.jl")
         ξ = random_tangent(M, x)
         @test_throws MethodError get_hessian(SubGradientProblem(M, cost, rgrad), x, ξ)
 
-        η = truncated_conjugate_gradient_descent(M, cost, rgrad, x, ξ, rhess, 0.5)
+        η = truncated_conjugate_gradient_descent(
+            M, cost, rgrad, x, ξ, rhess; trust_region_radius=0.5
+        )
         ηOpt = truncated_conjugate_gradient_descent(
-            M, cost, rgrad, x, ξ, rhess, 0.5; return_options=true
+            M, cost, rgrad, x, ξ, rhess; trust_region_radius=0.5, return_options=true
         )
         @test get_solver_result(ηOpt) == η
     end

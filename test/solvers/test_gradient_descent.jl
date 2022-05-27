@@ -132,7 +132,7 @@ using Manopt, Manifolds, Test
         # Test Fallbacks -> we can't do steps with the wrong combination
         p = SubGradientProblem(M, F, gradF)
         o = GradientDescentOptions(
-            s[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+            M, s[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         @test_throws MethodError initialize_solver!(p, o)
         @test_throws MethodError step_solver!(p, o, 1)

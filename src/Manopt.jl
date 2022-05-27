@@ -237,6 +237,7 @@ export LagrangeCost,
     ExactPenaltyGrad
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
@@ -322,9 +323,9 @@ export StopIfResidualIsReducedByFactor,
     StopWhenTrustRegionIsExceeded,
     StopWhenModelIncreased
 export StopAfterIteration, StopWhenChangeLess, StopWhenEuclideanChangeLess, StopWhenGradientNormLess, StopWhenCostLess
-export StopWhenStepSizeLess, StopAfter, StopWhenAll, StopWhenAny
+export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
-export are_these_stopping_critera_active
+export are_these_stopping_critera_active, update_stopping_criterion!
 export StoppingCriterion, StoppingCriterionSet, Stepsize
 #
 # Data functions

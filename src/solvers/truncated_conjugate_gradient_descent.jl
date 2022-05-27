@@ -5,7 +5,7 @@ solve the trust-region subproblem
 
 ```math
 \operatorname*{arg\,min}_{η ∈ T_xM}
-m_x(η) \quad\text{where} 
+m_x(η) \quad\text{where}
 m_x(η) = F(x) + ⟨\operatorname{grad}F(x),η⟩_x + \frac{1}{2}⟨\operatorname{Hess}F(x)[η],η⟩_x,
 ```
 
@@ -28,24 +28,24 @@ see the reference:
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
 * `η` – an update tangential vector ``η ∈ T_x\mathcal M``
-* `trust_region_radius` – a trust-region radius
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
 
 # Optional
 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
    allocation (default) or [`MutatingEvaluation`](@ref) in place
 * `preconditioner` – a preconditioner for the hessian H
-* `θ` – 1+θ is the superlinear convergence target rate. The algorithm will
+* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate. The algorithm will
     terminate early if the residual was reduced by a power of 1+theta.
-* `κ` – the linear convergence target rate: algorithm will terminate
+* `κ` – (`0.1`) the linear convergence target rate: algorithm will terminate
     early if the residual was reduced by a factor of kappa.
 * `randomize` – set to true if the trust-region solve is to be initiated with a
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
+* `trust_region_radius` – (`injectivity_radius(M)/4`) a trust-region radius
 * `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
@@ -72,20 +72,14 @@ OR
 [`trust_regions`](@ref)
 """
 function truncated_conjugate_gradient_descent(
-    M::AbstractManifold,
-    F::TF,
-    gradF::TG,
-    x,
-    η,
-    H::TH,
-    trust_region_radius::Float64;
-    kwargs...,
+    M::AbstractManifold, F::TF, gradF::TG, x, η, H::TH; kwargs...
 ) where {TF,TG,TH}
     x_res = copy(M, x)
-    return truncated_conjugate_gradient_descent!(
-        M, F, gradF, x_res, η, H, trust_region_radius; kwargs...
-    )
+    return truncated_conjugate_gradient_descent!(M, F, gradF, x_res, η, H; kwargs...)
 end
+@deprecate truncated_conjugate_gradient_descent(M, F, gradF, x, η, H, r; kwargs...) truncated_conjugate_gradient_descent(
+    M, F, gradF, x, η, H; trust_region_radius=r, kwargs...
+)
 @doc raw"""
     truncated_conjugate_gradient_descent!(M, F, gradF, x, η, HessF, trust_region_radius; kwargs...)
 
@@ -99,7 +93,6 @@ solve the trust-region subproblem in place of `x`.
 * `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
 * `η` – an update tangential vector ``η ∈ T_x\mathcal M``
-* `trust_region_radius` – a trust-region radius
 
 For more details and all optional arguments, see [`truncated_conjugate_gradient_descent`](@ref).
 """
@@ -109,8 +102,8 @@ function truncated_conjugate_gradient_descent!(
     gradF::TG,
     x,
     η,
-    H::TH,
-    trust_region_radius::Float64;
+    H::TH;
+    trust_region_radius::Float64=injectivity_radius(M) / 4,
     evaluation=AllocatingEvaluation(),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     θ::Float64=1.0,
@@ -123,21 +116,21 @@ function truncated_conjugate_gradient_descent!(
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),
     ),
-    project_vector!::Proj=copyto!,
+    project!::Proj=copyto!,
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec,Proj}
     p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
     o = TruncatedConjugateGradientOptions(
-        p,
+        M,
         x,
-        η,
-        trust_region_radius,
-        randomize;
+        η;
+        trust_region_radius=trust_region_radius,
+        randomize=randomize,
         θ=θ,
         κ=κ,
-        stop=stopping_criterion,
-        (project_vector!)=project_vector!,
+        stopping_criterion=stopping_criterion,
+        (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -147,6 +140,10 @@ function truncated_conjugate_gradient_descent!(
         return get_solver_result(resultO)
     end
 end
+@deprecate truncated_conjugate_gradient_descent!(M, F, gradF, x, η, H, r; kwargs...) truncated_conjugate_gradient_descent!(
+    M, F, gradF, x, η, H; trust_region_radius=r, kwargs...
+)
+
 function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOptions)
     (o.randomize) || zero_vector!(p.M, o.η, o.x)
     o.Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_vector(p.M, o.x)
@@ -202,7 +199,7 @@ function step_solver!(
     β = zr / o.z_r
     o.z_r = zr
     o.δ = -o.z + β * o.δ
-    o.project_vector!(p.M, o.δ, o.x, o.δ)
+    o.project!(p.M, o.δ, o.x, o.δ)
     o.ηPδ = β * (α * o.δPδ + o.ηPδ)
     o.δPδ = o.z_r + β^2 * o.δPδ
     return o

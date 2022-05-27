@@ -105,9 +105,8 @@ function particle_swarm!(
     inertia::Real=0.65,
     social_weight::Real=1.4,
     cognitive_weight::Real=1.4,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(200), StopWhenChangeLess(10.0^-4)
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
+                                          StopWhenChangeLess(1e-4),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
         M
@@ -120,15 +119,16 @@ function particle_swarm!(
 ) where {TF}
     p = CostProblem(M, F)
     o = ParticleSwarmOptions(
+        M,
         x0,
-        velocity,
-        inertia,
-        social_weight,
-        cognitive_weight,
-        stopping_criterion,
-        retraction_method,
-        inverse_retraction_method,
-        vector_transport_method,
+        velocity;
+        inertia=inertia,
+        social_weight=social_weight,
+        cognitive_weight=cognitive_weight,
+        stopping_criterion=stopping_criterion,
+        retraction_method=retraction_method,
+        inverse_retraction_method=inverse_retraction_method,
+        vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
