@@ -200,6 +200,8 @@ end
 function initialize_solver!(p::ConstrainedProblem, o::ALMOptions)
     o.θ_ϵ = (o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
     o.old_acc = Inf
+    update_stopping_criterion!(o,:MaxIteration,o.max_inner_iter)
+    update_stopping_criterion!(o,:MinStepsize, o.min_stepsize)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
@@ -211,7 +213,7 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     o.sub_problem.gradient!!.λ = o.λ
     o.sub_problem.gradient!!.γ = o.γ
     o.sub_options.x = copy(o.x) 
-    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.ϵ) | StopWhenStepsizeLess(o.min_stepsize) 
+    update_stopping_criterion!(o,:MinIterateChange, o.ϵ)
     
     o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
 

@@ -158,6 +158,8 @@ end
 function initialize_solver!(p::ConstrainedProblem, o::EPMOptions)
     o.θ_ϵ = (o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
     o.θ_tolgradnorm = (o.ending_tolgradnorm/o.tolgradnorm)^(1/o.num_outer_itertgn)
+    update_stopping_criterion!(o,:MaxIteration,o.max_inner_iter)
+    update_stopping_criterion!(o,:MinStepsize, o.min_stepsize)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
@@ -167,8 +169,8 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     o.sub_problem.gradient!!.ρ = o.ρ
     o.sub_problem.gradient!!.ϵ = o.ϵ
     o.sub_options.x = copy(o.x) 
-    o.sub_options.stop = StopAfterIteration(o.max_inner_iter) | StopWhenGradientNormLess(o.tolgradnorm) | StopWhenStepsizeLess(o.min_stepsize)
-   
+    update_stopping_criterion!(o,:MinIterateChange, o.tolgradnorm)
+    
     o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
     
     # get new evaluation of penalty
