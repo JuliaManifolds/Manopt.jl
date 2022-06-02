@@ -16,7 +16,8 @@ Do one iteration step (the `iter`th) for [`Problem`](@ref)` p` by modifying
 the values in the [`Options`](@ref)` o.options` and record the result(s).
 """
 function step_solver!(p::Problem, o::RecordOptions, i)
-    # if(haskey(o.recordDictionary, "DebugTime")) # something like that...
+    # might be better to add something like the following:
+    # if( "RecordTime() is part of RecordOptions"))
     time_spent = @elapsed step_solver!(p, o.options, i)
     o.options.options.timer = o.options.options.timer + time_spent
     # else
