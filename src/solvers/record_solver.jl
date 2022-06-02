@@ -17,7 +17,7 @@ the values in the [`Options`](@ref)` o.options` and record the result(s).
 """
 function step_solver!(p::Problem, o::RecordOptions, i)
     # might be better to add something like the following:
-    # if( "RecordTime() is part of RecordOptions"))
+    # if( "RecordTime() is part of RecordOptions or StopWhenTimeElapsed() is used"))
     time_spent = @elapsed step_solver!(p, o.options, i)
     o.options.options.timer = o.options.options.timer + time_spent
     # else
