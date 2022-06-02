@@ -448,14 +448,14 @@ end
 @doc raw"""
     RecordTime <: RecordAction
 
-record the time elapsed during the current iteration, see [`get_cost`](@ref).
+record the time elapsed during the current iteration.
 """
 mutable struct RecordTime <: RecordAction
     recorded_values::Array{Float64,1}
     RecordTime() = new(Array{Float64,1}())
 end
 function (r::RecordTime)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-        return record_or_reset!(r, o.timer, i) # this seems to work
+        return record_or_reset!(r, o.timer, i)
 end
 
 @doc raw"""
