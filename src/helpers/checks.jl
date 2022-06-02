@@ -8,7 +8,7 @@ This implements the method described in Section 4.8 [^Boumal2022].
 # Keyword arguments
 
 * `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
-* `error` - (`false`) throw an error message if the gradient is wrong
+* `throw_error` - (`false`) throw an error message if the gradient is wrong
 * `io` – (`nothing`) provide an `IO` to print the check result to
 * `limits` (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
@@ -27,7 +27,7 @@ function check_differential(
     p=random_point(M),
     X=random_tangent(M, p);
     plot=false,
-    error=false,
+    throw_error=false,
     io::Union{IO,Nothing}=nothing,
     limits=(-8.0, 0.0),
     N=101,
@@ -65,12 +65,12 @@ function check_differential(
     plot && plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
     msg = "You gradient fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 2 ± $(slope_tol).\n"
     (io !== nothing) && print(io, msg)
-    error && throw(ErrorException(msg))
+    throw_error && throw(ErrorException(msg))
     return false
 end
 
 @doc raw"""
-    check_gradient(M, F, gradF, p=random_point(M), X=random_tangent(M,p))
+    check_gradient(M, F, gradF, p=random_point(M), X=random_tangent(M,p); kwargs...)
 
 Check numerivcally whether the gradient `gradF(M,p)` of `F(M,p)` is correct.
 
@@ -79,13 +79,19 @@ This implements the method described in Section 4.8 [^Boumal2022].
 Its keyword arguments are the same as for the [`check_differential`](@ref).
 """
 function check_gradient(
-    M::AbstractManifold, F, gradF, p=random_point(M), X=random_tangent(M, p); kwargs...
+    M::AbstractManifold,
+    F,
+    gradF,
+    p=random_point(M),
+    X=random_tangent(M, p);
+    throw_error=false,
+    kwargs...,
 )
     gradient = gradF(M, p)
-    is_vector(M, p, gradient, error)
+    is_vector(M, p, gradient, throw_error)
     # function for the directional derivative
     df(M, p, Y) = inner(M, p, gradient, Y)
-    return check_differential(M, F, df, p, X; kwargs...)
+    return check_differential(M, F, df, p, X; throw_error=throw_error, kwargs...)
 end
 
 """

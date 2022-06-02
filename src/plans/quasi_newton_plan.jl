@@ -37,6 +37,7 @@ T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 respectively.
 """
 struct BFGS <: AbstractQuasiNewtonUpdateRule end
+
 @doc raw"""
     InverseBFGS <: AbstractQuasiNewtonUpdateRule
 
@@ -63,9 +64,9 @@ T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 ```
 
 respectively.
-
 """
 struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
+
 @doc raw"""
     DFP <: AbstractQuasiNewtonUpdateRule
 
@@ -92,9 +93,9 @@ T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 ```
 
 respectively.
-
 """
 struct DFP <: AbstractQuasiNewtonUpdateRule end
+
 @doc raw"""
     InverseDFP <: AbstractQuasiNewtonUpdateRule
 
@@ -117,9 +118,9 @@ T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 ```
 
 respectively.
-
 """
 struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
+
 @doc raw"""
     SR1 <: AbstractQuasiNewtonUpdateRule
 
@@ -146,7 +147,6 @@ T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 
 respectively.
 
-
 This method can be stabilized by only performing the update if denominator is larger than
 ``r\lVert s_k\rVert_{x_{k+1}}\lVert y_k - \widetilde{H}^\mathrm{SR1}_k s_k \rVert_{x_{k+1}}``
 for some ``r>0``. For more details, see Section 6.2 in [^NocedalWright2006]
@@ -159,7 +159,6 @@ for some ``r>0``. For more details, see Section 6.2 in [^NocedalWright2006]
     SR1(r::Float64=-1.0)
 
 Generate the `SR1` update, which by default does not include the check (since the default sets ``t<0```)
-
 """
 struct SR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
@@ -170,7 +169,6 @@ end
     InverseSR1 <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemanian SR1 update is used in the Riemannian quasi-Newton method.
-
 
 We denote by ``\widetilde{B}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
@@ -192,7 +190,6 @@ T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
 ```
 
 respectively.
-
 
 This method can be stabilized by only performing the update if denominator is larger than
 ``r\lVert y_k\rVert_{x_{k+1}}\lVert s_k - \widetilde{H}^\mathrm{SR1}_k y_k \rVert_{x_{k+1}}``
@@ -240,7 +237,6 @@ respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default
 
 # Constructor
     Broyden(φ, update_rule::Symbol = :constant)
-
 """
 mutable struct Broyden <: AbstractQuasiNewtonUpdateRule
     φ::Float64
@@ -282,7 +278,6 @@ respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default
 
 # Constructor
     InverseBroyden(φ, update_rule::Symbol = :constant)
-
 """
 mutable struct InverseBroyden <: AbstractQuasiNewtonUpdateRule
     φ::Float64
@@ -304,6 +299,19 @@ used with any update rule for the direction.
 * `direction_update` - an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
 * `retraction_method` – an `AbstractRetractionMethod`
 * `stop` – a [`StoppingCriterion`](@ref)
+
+# Constructor
+
+    QuasiNewtonOptions(
+        M::AbstractManifold,
+        x;
+        initial_vector=zero_vector(M,x),
+        direction_update=InverseBFGS(),
+        stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
+        retraction_method::RM=default_retraction_method(M),
+        vector_transport_method::VTM=default_vector_transport_method(M),
+        stepsize=WolfePowellLinesearch(M; retraction_method, vector_transport_method, linesearch_stopsize=1e-12,
+    )
 
 # See also
 [`GradientProblem`](@ref)
@@ -329,29 +337,59 @@ mutable struct QuasiNewtonOptions{
     timer::Float64
 end
 function QuasiNewtonOptions(
-    x::P,
-    gradient::T,
-    direction_update::U,
-    stop::SC,
-    stepsize::S;
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-) where {P,T,U<:AbstractQuasiNewtonDirectionUpdate,SC<:StoppingCriterion,S<:Stepsize}
-    return QuasiNewtonOptions{
-        P,T,U,SC,S,typeof(retraction_method),typeof(vector_transport_method)
-    }(
+    M::AbstractManifold,
+    x::P;
+    initial_vector::T=zero_vector(M, x),
+    direction_update::U=InverseBFGS(),
+    stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
+    retraction_method::RM=default_retraction_method(M),
+    vector_transport_method::VTM=default_vector_transport_method(M),
+    stepsize::S=WolfePowellLinesearch(
+        M;
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+        linesearch_stopsize=1e-12,
+    ),
+) where {
+    P,
+    T,
+    U<:AbstractQuasiNewtonDirectionUpdate,
+    SC<:StoppingCriterion,
+    S<:Stepsize,
+    RM<:AbstractRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+}
+    return QuasiNewtonOptions{P,T,U,SC,S,RM,VTM}(
         x,
-        gradient,
-        deepcopy(gradient),
-        deepcopy(gradient),
+        initial_vector,
+        copy(M, initial_vector),
+        copy(M, initial_vector),
         direction_update,
         retraction_method,
         stepsize,
-        stop,
+        stopping_criterion,
         vector_transport_method,
         0.0,
     )
 end
+@deprecate QuasiNewtonOptions(
+    x,
+    g,
+    d,
+    st,
+    s;
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+) QuasiNewtonOptions(
+    DefaultManifold(2),
+    x;
+    initial_vector=g,
+    direction_update=d,
+    stopping_criterion=st,
+    stepsize=s,
+    retraction_method=retraction_method,
+    vector_transport_method=vector_transport_method,
+)
 
 @doc raw"""
     QuasiNewtonMatrixDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
@@ -379,6 +417,12 @@ The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update 
 * `update` – a [`AbstractQuasiNewtonUpdateRule`](@ref).
 * `vector_transport_method` – an `AbstractVectorTransportMethod`
 
+# Constructor
+    QuasiNewtonMatrixDirectionUpdate(M::AbstractMatrix, update, basis, matrix;
+    scale=true, vector_transport_method=default_vector_transport_method(M))
+
+Generate the Update rule with defaults from a manifold and the names corresponding to the fields above.
+
 # See also
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 [`QuasiNewtonCautiousDirectionUpdate`](@ref)
@@ -397,19 +441,20 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     vector_transport_method::VT
 end
 function QuasiNewtonMatrixDirectionUpdate(
+    M::AbstractManifold,
     update::U,
     basis::B,
-    m::M,
+    m::MT,
     ;
     scale::Bool=true,
-    vector_transport_method::V=ParallelTransport(),
+    vector_transport_method::V=default_vector_transport_method(M),
 ) where {
     U<:AbstractQuasiNewtonUpdateRule,
-    M<:AbstractMatrix,
+    MT<:AbstractMatrix,
     B<:AbstractBasis,
     V<:AbstractVectorTransportMethod,
 }
-    return QuasiNewtonMatrixDirectionUpdate{U,B,V,M}(
+    return QuasiNewtonMatrixDirectionUpdate{U,B,V,MT}(
         basis, m, scale, update, vector_transport_method
     )
 end
@@ -442,13 +487,23 @@ are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@
 When updating there are two cases: if there is still free memory, i.e. ``k < m``, the previously stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` have to be transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``; if there is no free memory, the oldest pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` has to be discarded and then all the remaining vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m+1}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``. After that we calculate and store ``s_k = \widetilde{s}_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \widetilde{y}_k``. This process ensures that new information about the objective function is always included and the old, probably no longer relevant, information is discarded.
 
 # Fields
-* `method` – the maximum number of vector pairs stored.
 * `memory_s` – the set of the stored (and transported) search directions times step size ``\{ \widetilde{s}_i\}_{i=k-m}^{k-1}``.
 * `memory_y` – set of the stored gradient differences ``\{ \widetilde{y}_i\}_{i=k-m}^{k-1}``.
 * `ξ` – a variable used in the two-loop recursion.
 * `ρ` – a variable used in the two-loop recursion.
 * `scale` –
 * `vector_transport_method` – a `AbstractVectorTransportMethod`
+
+# Constructor
+    QuasiNewtonLimitedMemoryDirectionUpdate(
+        M::AbstractManifold,
+        x,
+        update::AbstractQuasiNewtonUpdateRule,
+        memory_size;
+        initial_vector=zero_vector(M,x),
+        scale=1.0
+        project=true
+        )
 
 # See also
 [`InverseBFGS`](@ref)
@@ -463,7 +518,6 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
 mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod
 } <: AbstractQuasiNewtonDirectionUpdate
-    method::NT
     memory_s::CircularBuffer{T}
     memory_y::CircularBuffer{T}
     ξ::Vector{Float64}
@@ -473,15 +527,16 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     vector_transport_method::VT
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
-    method::NT,
-    ::T,
+    M::AbstractManifold,
+    x,
+    ::NT,
     memory_size::Int;
-    scale::Bool=true,
+    initial_vector::T=zero_vector(M, x),
+    scale=1.0,
     project=true,
-    vector_transport_method::V=ParallelTransport(),
+    vector_transport_method::V=default_vector_transport_method(M),
 ) where {NT<:AbstractQuasiNewtonUpdateRule,T,V<:AbstractVectorTransportMethod}
     return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,V}(
-        method,
         CircularBuffer{T}(memory_size),
         CircularBuffer{T}(memory_size),
         zeros(memory_size),

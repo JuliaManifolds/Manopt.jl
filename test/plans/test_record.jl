@@ -6,7 +6,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.0, 2.0]
     o = GradientDescentOptions(
-        x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
     )
     f(M, y) = distance(M, y, x) .^ 2
     gradf(M, y) = -2 * log(M, y, x)

@@ -42,39 +42,3 @@ get_storage
 has_storage
 update_storage!
 ```
-
-## [Debug Options](@id DebugOptions)
-
-```@autodocs
-Modules = [Manopt]
-Pages = ["plans/debug_options.jl"]
-Order = [:type, :function]
-```
-
-see [DebugSolver](@ref DebugSolver) for details on the decorated solver.
-
-Further specific [`DebugAction`](@ref)s can be found at the specific Options.
-
-## [Record Options](@id RecordOptions)
-
-```@autodocs
-Modules = [Manopt]
-Pages = ["plans/record_options.jl"]
-Order = [:type, :function]
-Private = false
-```
-
-```@docs
-getindex(ro::RecordOptions, s::Symbol)
-getindex(::RecordGroup,::Any...)
-```
-
-see [RecordSolver](@ref RecordSolver) for details on the decorated solver.
-
-Further specific [`RecordAction`](@ref)s can be found at the specific Options.
-
-there's one internal helper that might be useful for you own actions, namely
-
-```@docs
-record_or_reset!
-```

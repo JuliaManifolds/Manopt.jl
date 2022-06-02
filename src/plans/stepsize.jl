@@ -116,20 +116,16 @@ A functor representing Armijo line search including the last runs state, i.e. a
 last step size.
 
 # Fields
-* `initialStepsize` – (`1.0`) and initial step size
+* `initial_stepsize` – (`1.0`) and initial step size
 * `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
   the exponential map
-* `contractionFactor` – (`0.95`) exponent for line search reduction
-* `sufficientDecrease` – (`0.1`) gain within Armijo's rule
+* `contraction_factor` – (`0.95`) exponent for line search reduction
+* `sufficient_decrease` – (`0.1`) gain within Armijo's rule
 * `last_stepsize` – (`initialstepsize`) the last step size we start the search with
 * `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
-    before the step is numerically zero. This should be combined with [`StopWhenStepSizeLess`](@ref)
+    before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
 
 # Constructor
-
-    ArmijoLineSearch()
-
-with the Fields above in their order as optional arguments (deprecated).
 
     ArmijoLineSearch(M)
 
@@ -145,39 +141,39 @@ faces are available:
   search direction tangent vector `η=-gradFx` are the arguments.
 """
 mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
-    initialStepsize::Float64
+    initial_stepsize::Float64
     retraction_method::TRM
-    contractionFactor::Float64
-    sufficientDecrease::Float64
+    contraction_factor::Float64
+    sufficient_decrease::Float64
     last_stepsize::Float64
     linesearch_stopsize::Float64
     @deprecate ArmijoLinesearch(
         s::Float64=1.0,
         r::AbstractRetractionMethod=ExponentialRetraction(),
-        contractionFactor::Float64=0.95,
-        sufficientDecrease::Float64=0.1,
+        contraction_factor::Float64=0.95,
+        sufficient_decrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
     ) ArmijoLinesearch(
         DefaultManifold(2);
         initial_stepsize=s,
         retraction_method=r,
-        contractionFactor=contractionFactor,
-        sufficientDecrease=sufficientDecrease,
+        contraction_factor=contraction_factor,
+        sufficient_decrease=sufficient_decrease,
         linesearch_stopsize=linesearch_stopsize,
     )
     function ArmijoLinesearch(
         M;
         initial_stepsize::Float64=1.0,
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-        contractionFactor::Float64=0.95,
-        sufficientDecrease::Float64=0.1,
+        contraction_factor::Float64=0.95,
+        sufficient_decrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
     )
         return new{typeof(retraction_method)}(
             initial_stepsize,
             retraction_method,
-            contractionFactor,
-            sufficientDecrease,
+            contraction_factor,
+            sufficient_decrease,
             initial_stepsize,
             linesearch_stopsize,
         )
@@ -192,15 +188,15 @@ function (a::ArmijoLinesearch)(
         o.x,
         get_gradient!(p, o.gradient, o.x),
         a.last_stepsize,
-        a.sufficientDecrease,
-        a.contractionFactor,
+        a.sufficient_decrease,
+        a.contraction_factor,
         a.retraction_method,
         η;
         stop_step=a.linesearch_stopsize,
     )
     return a.last_stepsize
 end
-get_initial_stepsize(a::ArmijoLinesearch) = a.initialStepsize
+get_initial_stepsize(a::ArmijoLinesearch) = a.initial_stepsize
 
 @doc raw"""
     linesearch_backtrack(M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x); stop_step=0.)
@@ -319,7 +315,7 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 # Fields
 * `initial_stepsize` – (`1.0`) the step size we start the search with
 * `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
-    before the step is numerically zero. This should be combined with [`StopWhenStepSizeLess`](@ref)
+    before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
 * `memory_size` – (`10`) number of iterations after which the cost value needs to be lower than the current one
 * `min_stepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
 * `max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize

@@ -203,21 +203,25 @@ Store the fields for an alternating gradient descent algorithm,
 see also [`AlternatingGradientProblem`](@ref) and [`alternating_gradient_descent`](@ref).
 
 # Fields
-* `x` the current iterate
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
-* `stepsize` ([`ConstantStepsize`](@ref)`(DefaultManifoold(2))`) a [`Stepsize`](@ref)
-* `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
+* `direction` (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)
 * `evaluation_order` – (`:Linear`) – whether
+* `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `order` the current permutation
-* `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `stepsize` ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
+* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
+* `x` the current iterate
+* `k`, ì` internal counters for the outer and inner iterations, respectively.
 
-# Constructor
-    AlternatingGradientDescentOptions(x)
+# Constructors
 
-Create a [`AlternatingGradientDescentOptions`](@ref) with start point `x`.
-all other fields are optional keyword arguments.
+    AlternatingGradientDescentOptions(M, x; kwargs...)
+
+Generate the options for point `x` and and where the keyword arguments
+`inner_iterations`, `order_type`, `order`, `retraction_method`, `stopping_criterion`, and `stepsize``
+are keyword arguments
 """
 mutable struct AlternatingGradientDescentOptions{
     TX,
@@ -239,28 +243,37 @@ mutable struct AlternatingGradientDescentOptions{
     i::Int # inner iterate
     inner_iterations::Int
 end
-function AlternatingGradientDescentOptions(
+@deprecate AlternatingGradientDescentOptions(
     x,
     X,
     direction::DirectionUpdateRule;
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    kwargs...,
+) AlternatingGradientDescentOptions(
+    DefaultManifold(2), x, X, direction; retraction_method=retraction_method, kwargs...
+)
+function AlternatingGradientDescentOptions(
+    M::AbstractManifold,
+    x;
     inner_iterations::Int=5,
     order_type::Symbol=:Linear,
     order::Vector{<:Int}=Int[],
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(DefaultManifold(2)),
+    stepsize::Stepsize=ConstantStepsize(M),
 )
+    X = zero_vector(M, x)
     return AlternatingGradientDescentOptions{
         typeof(x),
         typeof(X),
-        typeof(direction),
+        AlternatingGradient,
         typeof(stopping_criterion),
         typeof(stepsize),
         typeof(retraction_method),
     }(
         x,
         X,
-        direction,
+        AlternatingGradient(zero_vector(M, x)),
         stopping_criterion,
         stepsize,
         order_type,
@@ -271,7 +284,6 @@ function AlternatingGradientDescentOptions(
         inner_iterations,
     )
 end
-
 """
     AlternatingGradient <: DirectionUpdateRule
 
@@ -292,6 +304,7 @@ function (s::AlternatingGradient)(
     return o.stepsize(p, o, iter), s.dir # return urrent full gradient
 end
 
+# update Armijo to work on the kth gradient only.
 function (a::ArmijoLinesearch)(
     p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, ::Int
 )
@@ -303,8 +316,8 @@ function (a::ArmijoLinesearch)(
         o.x,
         X,
         a.last_stepsize,
-        a.sufficientDecrease,
-        a.contractionFactor,
+        a.sufficient_decrease,
+        a.contraction_factor,
         a.retraction_method,
     )
     return a.last_stepsize

@@ -1,4 +1,6 @@
 using Manifolds, Manopt, Plots, Test
+# don't show plots actually
+default(; show=false, reuse=true)
 
 @testset "Test Gradient checks" begin
     M = Sphere(10)
@@ -14,7 +16,7 @@ using Manifolds, Manopt, Plots, Test
     @test check_gradient(M, F, gradF, p, r)
 
     gradF2(M, p) = -0.5 * log(M, p, q)
-    @test_throws ErrorException check_gradient(M, F, gradF2, p, r; error=true)
+    @test_throws ErrorException check_gradient(M, F, gradF2, p, r; throw_error=true)
     @test !check_gradient(M, F, gradF2, p, r)
 
     check_gradient(M, F, gradF, p, r; plot=true)
