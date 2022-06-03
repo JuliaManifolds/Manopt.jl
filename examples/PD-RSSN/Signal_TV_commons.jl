@@ -1,7 +1,17 @@
 #
 # Prepare cost, proximal maps and differentials
-M = PowerManifold(pixelM, NestedPowerRepresentation(), size(f)...)
-N = base_manifold(TangentBundle(M)) # TODO does this actually work in nD?
+rep(d) = (d > 1) ? [ones(Int, d)..., d] : d
+res(s::Int) = res([s])
+res(s) = (length(s) > 1) ? [s..., length(s)] : s
+d = length(size(f))
+s = size(f)
+M = PowerManifold(pixelM, NestedPowerRepresentation(), s...)
+M2 = PowerManifold(pixelM, NestedPowerRepresentation(), res(s)...)
+N = base_manifold(TangentBundle(M2))
+m2(m) = repeat(m; inner=rep(length(size(m))))
+
+# M = PowerManifold(pixelM, NestedPowerRepresentation(), size(f)...)
+# N = base_manifold(TangentBundle(M)) # TODO does this actually work in nD?
 fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
 Λ(M, x) = forward_logs(M, x)
 # Λ(M, x) = ProductRepr(x, forward_logs(M, x))
@@ -14,7 +24,74 @@ prox_G_dual(N, n, λ, ξ) = project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0
 
 Dprox_F(M,λ,x,η) = differential_geodesic_startpoint(M,x,f,λ/(α+λ),η)
 
-function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, p=2.0, q=1.0)
+function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, p=2.0, q=1.0, γ=0.)
+	Y = zero_vector(N, x)
+	# print("Ξ = $(Ξ)")
+
+	pdims = power_dimensions(N)
+    if length(pdims) == 1
+        d = 1
+        s = 1
+        R = CartesianIndices(Tuple(pdims))
+    else
+        d = pdims[end]
+        s = length(pdims) - 1
+        if s != d
+            throw(
+                ErrorException(
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                ),
+            )
+        end
+        R = CartesianIndices(Tuple(pdims[1:end-1]))
+    end
+
+    # R = CartesianIndices(Tuple(power_size))
+	maxInd = last(R).I
+	e_k_vals = [1 * (1:d .== k) for k in 1:d]
+
+    if q == Inf
+        if p == Inf || d == 1 # TODO or that we have just one dimension
+            norms = norm.(Ref(N.manifold), x, Ξ)
+
+			for i in R # iterate over all pixel
+				for k in 1:d # for all direction combinations
+		            I = i.I # array of index
+		            J = I .+ e_k_vals[k] #i + e_k is j
+		            if all(J .<= maxInd)
+		                # this is neighbor in range,
+						if d > 1
+							Y[N, I...,k] += if norms[I...,k] <= (1 + λ * γ)
+		                        Η[N, I...,k] ./ (1 + λ * γ)
+		                    else
+		                        1/norms[I...,k] * (Η[N, i...,k] .- 1/norms[I...,k]^2 .* inner(N.manifold,x[N,I...,k],Η[N, I...,k],Ξ[N, I...,k]).*Ξ[N, I...,k])
+		                    end
+						else
+							# print("norms[I...,k] = $(norms[I...,k])\n")
+			                Y[N, I...,k] += if norms[I...,k] <=1 * (1 + λ * γ)
+		                        Η[N, I...,k] ./ (1 + λ * γ)
+		                    else
+		                        1/norms[I...,k] .* (Η[N, I...,k] .- 1/norms[I...,k]^2 .* inner(N.manifold,x[N,I...,k],Η[N, I...,k],Ξ[N, I...,k]).*Ξ[N, I...,k])
+		                    end
+						end
+		            else
+						if d > 1
+							Y[N, I...,k] = zero_vector(N.manifold, x[N, I...])
+						else
+			                Y[N, I...] = zero_vector(N.manifold, x[N, I...])
+						end
+		            end
+				end # directions
+		    end # i in R
+		    return Y
+        else
+            throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
+        end
+    end # end q
+    throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
+end
+
+function old_differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, p=2.0, q=1.0)
 	pdims = power_dimensions(N)
     if length(pdims) == 1
         d = 1
@@ -38,76 +115,16 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
         else
             throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
         end
-        return convert(typeof(norms),(norms .<= 1)) .* Η + convert(typeof(norms),(norms .<= 1)) .* (Η - 1 ./(norms .+ 1e-16) .* inner.(Ref(N.manifold), n, Ξ, Η) .* Η)
+        return convert(typeof(norms),(norms .<= 1)) .* Η + convert(typeof(norms),(norms .>= 1)) .* 1 ./(norms .+ 1e-16) .* (Η - 1 ./(norms.^2 .+ 1e-16) .* inner.(Ref(N.manifold), n, Ξ, Η) .* Ξ)
     end # end q
     throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
 
 # TODO potentially nice to compare results with those from old code
-Dprox_G_dual(N, n, λ, ξ, η) = differential_project_collaborative_TV(N, λ, n, ξ, η, Inf, Inf)
+Dprox_G_dual(N, n, λ, ξ, η) = differential_project_collaborative_TV(N, λ, n, ξ, η, Inf, Inf, 1e-2)
 # Dprox_G_dual(N, n, λ, ξ, η; γ=0,isotropic=false) = differential_project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0)
 
 DΛ(M, m, X) = differential_forward_logs(M, m, X)
 # DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
-adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N, m, ξ)
+adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(M, m, ξ)
 # adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])
-
-# function
-	# M2 = base_manifold(N)
-    # m2 = n
-    # power_size = power_dimensions(M2)
-    # R = CartesianIndices(Tuple(power_size))
-    # d = length(power_size)
-    # maxInd = last(R).I
-	#
-    # J = zero_vector(N, n)
-	#
-	# if !isotropic || d==1
-	# 	for j in R
-	# 		for k in 1:d
-	# 			mⱼ = m2[M2, j, k]
-	# 			ηⱼ = η[N, j, k]
-	# 			g = norm(M2.manifold,mⱼ,ηⱼ)
-	# 			if !(j[k]==maxInd[k])
-	# 				ξⱼ = ξ[N, j, k]
-	# 				if g/(1+λ*γ) <=1
-	# 					J[N, j..., k] +=  ξⱼ/(1+λ*γ)
-	# 				else
-	# 					J[N, j..., k] +=  1/g * (ξⱼ - 1/g^2 * inner(M2.manifold,mⱼ,ξⱼ,ηⱼ)*ηⱼ)
-	# 				end
-	# 			else
-	# 				# Taking care of the boundary equations
-	# 				# J[N, j... ,k] = zero_vector(M2.manifold,mⱼ)
-	# 			end
-	# 		end
-	# 	end
-	# else
-	# 	for j in R
-	# 		g = norm(M2.manifold, m2[M2, j..., 1], η[N, j..., :])
-	# 		for k in 1:d
-	# 			mⱼ = m2[M2, j..., k]
-	# 			ηⱼ = η[N, j..., k]
-	# 			if !(j[k]==maxInd[k])
-	#
-	# 				ξⱼ = ξ[N, j..., k]
-	# 				if g/(1+λ* γ) <=1
-	# 					J[N, j..., k] +=  ξⱼ/(1+λ* γ)
-	# 				else
-	# 					for κ in 1:d
-	# 						if κ != k
-	# 							J[N, j..., κ] += - 1/g^3 * inner(M2.manifold,mⱼ,ξⱼ,ηⱼ)*η[j,κ]
-	# 						else
-	# 							J[N, j..., k] += 1/g * (ξⱼ - 1/g^2 * inner(M2.manifold,mⱼ,ξⱼ,ηⱼ)*ηⱼ)
-	# 						end
-	# 					end
-	# 				end
-	# 			else
-	# 				# Taking care of the boundary equations
-	# 				# J[N, j... ,k] = zero_vector(M2.manifold,mⱼ)
-	# 			end
-	# 		end
-	# 	end
-	# end
-	#
-    # return J
-# end

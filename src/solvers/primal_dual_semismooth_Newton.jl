@@ -138,12 +138,16 @@ function primal_dual_step!(
 
     # construct X
     X = construct_vector(p, o)
+    # print("Construct X\n")
+    # print(X)
+    # print("\n")
 
     # construct matrix
     ∂X = construct_matrix(p, o)
 
     # solve matrix -> find coordinates
     d_coords = ∂X \ -X
+    # print("d_coords = $(d_coords)")
 
     dims = manifold_dimension(p.M)
     dx_coords = d_coords[1:dims]
@@ -156,6 +160,8 @@ function primal_dual_step!(
     # do step
     o.x = retract(p.M, o.x, dx, o.retraction_method)
     o.ξ = o.ξ + dξ
+    # print("o.x = $(o.x)\n")
+    # print("o.ξ = $(o.ξ)\n")
 end
 
 function construct_vector(
@@ -199,9 +205,8 @@ function construct_vector(
 
     dual_vector = o.ξ - ξ_update
 
-    X₂ = get_coordinates(p.N, o.m, dual_vector, DefaultOrthonormalBasis())
+    X₂ = get_coordinates(p.N, o.n, dual_vector, DefaultOrthonormalBasis())
 
-    # TODO check whether this is works
     X = [X₁; X₂]
 
     return X
@@ -239,34 +244,80 @@ function construct_matrix(
         vector_transport_to(p.N, forward_operator(p,o.m), η₁, o.n, o.vector_transport_method)
     end
     # (3) to the dual update
-    η₁ = get_dual_prox(p, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * η₁)
+    # print("η₂ = $(η₁)\n")
+    η₁ = o.ξ + o.dual_stepsize * η₁
+    # η₁ = get_dual_prox(p, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * η₁)
+    # print("η₁ = $(η₁)\n")
 
     # construct ∂X₁₁ and ∂X₂₁
     ∂X₁₁ = spzeros(dims, dims)
     ∂X₂₁ = spzeros(dualdims, dims)
-    for (j, Θⱼ) in enumerate(get_vectors(p.M, o.x, DefaultOrthonormalBasis()))
+
+    Mdims = prod(manifold_dimension(p.M))
+    debug11=false
+    debug21=true
+    for j in 1:Mdims
+        eⱼ = zeros(Mdims)
+        eⱼ[j] = 1
+        Θⱼ = get_vector(p.M,o.m,eⱼ,Θ)
+        # if j==1 && debug11
+        #     print("Θⱼ = $(Θⱼ)\n")
+        # end
         # for (j, Θⱼ) in enumerate(Θ)
         Gⱼ = differential_geodesic_endpoint(p.M, o.m, o.x, 1 / 2, Θⱼ)
+        # if j==1 && debug11
+        #     print("Gⱼ = $(Gⱼ)\n")
+        # end
         Fⱼ = 2 * differential_log_argument(p.M, qb, qₚ, Gⱼ)
+        # if j==1 && debug11
+        #     print("Fⱼ = $(Fⱼ)\n")
+        # end
         Eⱼ = differential_exp_argument(p.M, qb, q₅, Fⱼ)
+        # if j==1 && debug11
+        #     print("Eⱼ = $(Eⱼ)\n")
+        # end
         D₂ⱼ = -differential_log_argument(p.M, o.x, q₄, Eⱼ)
+        # if j==1 && debug11
+        #     print("D₂ⱼ = $(D₂ⱼ)\n")
+        # end
         D₁ⱼ = -differential_log_basepoint(p.M, o.x, q₄, Θⱼ)
+        # if j==1 && debug11
+        #     print("D₁ⱼ = $(D₁ⱼ)\n")
+        #     print("o.x = $(o.x)\n")
+        #     print("q₄ = $(q₄)\n")
+        # end
         Dⱼ = D₁ⱼ + D₂ⱼ
+        # if j==1 && debug11
+        #     print("Dⱼ = $(Dⱼ)\n")
+        # end
         C₂ⱼ = differential_exp_argument(p.M, o.x, q₃, Dⱼ)
 
         C₁ⱼ = differential_exp_basepoint(p.M, o.x, q₃, Θⱼ)
         Cⱼ = C₁ⱼ + C₂ⱼ
+        # if j==1 && debug11
+        #     print("Cⱼ = $(Cⱼ)\n")
+        # end
         Bⱼ = get_differential_primal_prox(p, o.primal_stepsize, q₂, Cⱼ)
+        # if j==1 && debug11
+        #     print("Bⱼ = $(Bⱼ)\n")
+        # end
         A₂ⱼ = -differential_log_argument(p.M, o.x, q₁, Bⱼ)
         A₁ⱼ = -differential_log_basepoint(p.M, o.x, q₁, Θⱼ)
         Aⱼ = A₁ⱼ + A₂ⱼ
+        # if j==1 && debug11
+        #     print("Aⱼ = $(Aⱼ)\n")
+        # end
 
         ∂X₁₁j = get_coordinates(p.M, o.x, Aⱼ, DefaultOrthonormalBasis())
         # TODO check whether we actually get one long vector here
-        dropzeros!(∂X₁₁j)
-        ∂X₁₁[:, j] = ∂X₁₁j
+        sp_∂X₁₁j = sparsevec(∂X₁₁j)
+        dropzeros!(sp_∂X₁₁j)
+        ∂X₁₁[:, j] = sp_∂X₁₁j
 
         Mⱼ = differential_log_argument(p.M, o.m, o.x, Θⱼ)
+        # if j==1 && debug21
+        #     print("Mⱼ = $(Mⱼ)\n")
+        # end
         Kⱼ = if ismissing(p.Λ!!)
             o.dual_stepsize * linearized_forward_operator(p, o.m, Mⱼ, o.n)
         else
@@ -278,40 +329,85 @@ function construct_matrix(
                 o.vector_transport_method,
             )
         end
-        Jⱼ = get_differential_dual_prox(p.N, o.n, o.dual_stepsize, η₁, Kⱼ)
-
+        # if j==1 && debug21
+        #     print("dual_stepsize = $(o.dual_stepsize)\n")
+        #     print("Kⱼ = $(Kⱼ)\n")
+        # end
+        Jⱼ = get_differential_dual_prox(p, o.n, o.dual_stepsize, η₁, Kⱼ)
+        # if j==1 && debug21
+        #     print("Jⱼ = $(Jⱼ)\n")
+        # end
         ∂X₂₁j = get_coordinates(p.N, o.n, -Jⱼ, DefaultOrthonormalBasis())
 
         # TODO check whether we actually get one long vector here
-        dropzeros!(∂X₂₁j)
-        ∂X₂₁[:, j] = ∂X₂₁j
+        sp_∂X₂₁j = sparsevec(∂X₂₁j)
+        dropzeros!(sp_∂X₂₁j)
+        ∂X₂₁[:, j] = sp_∂X₂₁j
     end
+    # arr_∂X₁₁ = Array(∂X₁₁)
+    # print("Construct ∂X₁₁\n")
+    # for j in 1:Mdims
+    #     print(arr_∂X₁₁[j,:])
+    #     print("\n")
+    # end
+    #
+    # arr_∂X₂₁ = Array(∂X₂₁)
+    # print("Construct ∂X₂₁\n")
+    # for j in 1:Mdims
+    #     print(arr_∂X₂₁[j,:])
+    #     print("\n")
+    # end
+
+    # print("Construct ∂X₂₁\n")
+    # print(Array(∂X₂₁))
+    # print("\n")
 
     # construct ∂X₁₂ and ∂X₂₂
     # TODO check whether we dont get anything different now that we used ladder approx here
     ∂X₁₂ = spzeros(dims, dualdims)
     ∂X₂₂ = spzeros(dualdims, dualdims)
 
-    for (j, Ξⱼ) in enumerate(Ξ)
-        hⱼ = -o.primal_stepsize * p.adjoint_linearized_operator(o.m, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
+    Ndims = prod(manifold_dimension(p.N))
+    for j in 1:Ndims
+    # for (j, Ξⱼ) in enumerate(Ξ)
+        eⱼ = zeros(Mdims)
+        eⱼ[j] = 1
+        Ξⱼ = get_vector(p.N,o.n,eⱼ,Ξ)
+        hⱼ = -o.primal_stepsize * adjoint_linearized_operator(p, o.m, o.n, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
         Hⱼ = vector_transport_to(p.M, o.m, hⱼ, o.x)
         C₂ⱼ = differential_exp_argument(p.M, o.x, q₃, Hⱼ)
-        Bⱼ = Clarke_differential_prox_F(p.M, o.m, o.primal_stepsize, q₂, C₂ⱼ)
+        Bⱼ = get_differential_primal_prox(p, o.primal_stepsize, q₂, C₂ⱼ)
         A₂ⱼ = -differential_log_argument(p.M, o.x, q₁, Bⱼ)
 
         ∂X₁₂j = get_coordinates(p.N, o.n, A₂ⱼ, DefaultOrthonormalBasis())
 
-        dropzeros!(∂X₁₂j)
-        ∂X₁₂[:, j] = ∂X₁₂j
+        sp_∂X₁₂j = sparsevec(∂X₁₂j)
+        dropzeros!(sp_∂X₁₂j)
+        ∂X₁₂[:, j] = sp_∂X₁₂j
 
-        Jⱼ = Clarke_differential_prox_G_dual(p.N, o.n, o.dual_stepsize, η₁, Ξⱼ)
+        Jⱼ =get_differential_dual_prox(p, o.n, o.dual_stepsize, η₁, Ξⱼ)
         Iⱼ = Ξⱼ - Jⱼ
 
         ∂X₂₂j = get_coordinates(p.N, o.n, Iⱼ, DefaultOrthonormalBasis())
 
-        dropzeros!(∂X₂₂j)
-        ∂X₂₂[:, j] = ∂X₂₂j
+        sp_∂X₂₂j = sparsevec(∂X₂₂j)
+        dropzeros!(sp_∂X₂₂j)
+        ∂X₂₂[:, j] = sp_∂X₂₂j
     end
+
+    # arr_∂X₁₂ = Array(∂X₁₂)
+    # print("Construct ∂X₁₂\n")
+    # for j in 1:Ndims
+    #     print(arr_∂X₁₂[j,:])
+    #     print("\n")
+    # end
+    #
+    # arr_∂X₂₂ = Array(∂X₂₂)
+    # print("Construct ∂X₂₂\n")
+    # for j in 1:Mdims
+    #     print(arr_∂X₂₂[j,:])
+    #     print("\n")
+    # end
 
     return [∂X₁₁ ∂X₁₂; ∂X₂₁ ∂X₂₂]
 end

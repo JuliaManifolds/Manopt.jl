@@ -1,5 +1,5 @@
 #
-# Minimize total variation of a signal of S2 data.
+# Minimize total variation of a signal of R3 data.
 #
 # This example is part of Example 6.1 in the publication
 #
@@ -11,10 +11,10 @@ using Manopt, Manifolds, LinearAlgebra
 
 #
 # Script Settings
-experiment_name = "S2_Signal_TV_CP"
+experiment_name = "R3_Signal_TV_CP"
 export_orig = true
 export_primal = true
-export_table = false
+export_table = true
 use_debug = true
 #
 # Automatic Script Settings
@@ -36,12 +36,12 @@ max_iterations = 500
 noise_level = 0.0
 noise_type = :Gaussian
 
-pixelM = Sphere(2);
-base = [1.0, 0.0, 0.0]
+pixelM = Euclidean(1)
+base = [0.0]
 X = π / 4 * [0.0, 1.0, 0.0]
-# Generate a signal with two sections
-p1 = exp(pixelM, base, X)
-p2 = exp(pixelM, base, -X)
+# Generate a signal with two sections - same signal as in S2_Signal_TV
+p1 = [1.]
+p2 = [-1.]
 f = vcat(fill(p1, signal_section_size), fill(p2, signal_section_size))
 #
 # Compute exact minimizer
@@ -55,21 +55,21 @@ x_hat = shortest_geodesic(M, f, reverse(f), δ)
 if noise_level > 0
     f = [exp(pixelM, p, random_tangent(pixelM, p, noise_type, noise_level)) for p in f]
 end
-if export_orig
-    orig_file = joinpath(results_folder, experiment_name * "-original.asy")
-    asymptote_export_S2_data(orig_file; data=f)
-    render_asymptote(orig_file)
-end
+# if export_orig
+#     orig_file = joinpath(results_folder, experiment_name * "-original.asy")
+#     asymptote_export_S2_data(orig_file; data=f)
+#     render_asymptote(orig_file)
+# end
 #
 # Initial values
 m = fill(base, size(f))
-n = m
+n = Λ(M, m)
 x0 = deepcopy(f)
 ξ0 = zero_vector(M, m)
+# ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
 storage = StoreOptionsAction((:x, :n, :ξbar))
 
-# print(m)
 @time o = ChambollePock(
     M,
     N,
@@ -88,16 +88,24 @@ storage = StoreOptionsAction((:x, :n, :ξbar))
     acceleration=γ,
     relax=:dual,
     variant=:linearized,
-    debug=[
-        :Iteration,
-        " | ",
-        :Cost,
-        "\n",
-        100,
-        :Stop,
-    ],
+    # debug=if use_debug
+    #     [
+    #         :Iteration,
+    #         " ",
+    #         DebugPrimalChange(),
+    #         " | ",
+    #         DebugCk(storage),
+    #         " | ",
+    #         :Cost,
+    #         "\n",
+    #         100,
+    #         :Stop,
+    #     ]
+    # else
+    #     missing
+    # end,
     record=if export_table
-        [:Iteration, RecordPrimalChange(x0), RecordDualChange((ξ0, n)), :Cost]
+        [:Iteration, RecordPrimalChange(), RecordDualChange(), :Cost]
     else
         missing
     end,
@@ -111,14 +119,12 @@ y = get_solver_result(o)
 #     println("The Ck Estimate lies between $(minimum(Ck_values)) and $(maximum(Ck_values))")
 # end
 println("Distance from result to minimizer: ", distance(M, x_hat, y), "\n")
-
-if export_primal
-    orig_file = joinpath(results_folder, experiment_name * "-result.asy")
-    asymptote_export_S2_data(orig_file; data=y)
-    render_asymptote(orig_file)
-end
-
-
+print("y = $(y)\n")
+# if export_primal
+#     orig_file = joinpath(results_folder, experiment_name * "-result.asy")
+#     asymptote_export_S2_data(orig_file; data=y)
+#     render_asymptote(orig_file)
+# end
 @time o_pdrssn = primal_dual_semismooth_Newton(
     M,
     N,
@@ -135,17 +141,12 @@ end
     adjoint_DΛ;
     primal_stepsize=σ,
     dual_stepsize=τ,
-    debug=[
-        :Iteration,
-        " | ",
-        DebugPrimalChange(),
-        " | ",
-        :Cost,
-        "\n",
-        :Stop,
-    ],
-    record= [:Iteration, :Cost, :Iterate],
-    stopping_criterion=StopAfterIteration(10),
+    record=if export_table
+        [:Iteration, RecordPrimalChange(), RecordDualChange(), :Cost]
+    else
+        missing
+    end,
+    stopping_criterion=StopAfterIteration(3),
     # stopping_criterion=StopAfterIteration(max_iterations),
     return_options=true,
 )
@@ -157,8 +158,9 @@ y_pdrssn = get_solver_result(o_pdrssn)
 #     println("The Ck Estimate lies between $(minimum(Ck_values)) and $(maximum(Ck_values))")
 # end
 println("Distance from result to minimizer: ", distance(M, x_hat, y_pdrssn), "\n")
-if export_primal
-    orig_file = joinpath(results_folder, experiment_name * "-result-pdrssn.asy")
-    asymptote_export_S2_data(orig_file; data=y_pdrssn)
-    render_asymptote(orig_file)
-end
+print("y_pdrssn = $(y_pdrssn)\n")
+# if export_primal
+#     orig_file = joinpath(results_folder, experiment_name * "-result-pdrssn.asy")
+#     asymptote_export_S2_data(orig_file; data=y_pdrssn)
+#     render_asymptote(orig_file)
+# end
