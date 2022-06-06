@@ -273,7 +273,7 @@ function random_tangent(M::PowerManifold, p, options...)
     rep_size = representation_size(M.manifold)
     X = zero_vector(M, p)
     for i in get_iterator(M)
-        X[M, i] = random_tangent(M.manifold, p[M, i], options...)
+        X[M, i...] = random_tangent(M.manifold, p[M, i...], options...)
     end
     return X
 end
