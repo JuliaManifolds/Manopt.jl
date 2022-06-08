@@ -1,5 +1,3 @@
-
-export StoppingCriterion
 include("problem.jl")
 include("options.jl")
 

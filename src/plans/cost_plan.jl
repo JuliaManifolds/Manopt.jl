@@ -53,16 +53,15 @@ after the description
 
 # Constructors
 
-    NelderMead(M,stop, retr; α=1. , γ=2., ρ=1/2, σ=1/2)
+    NelderMead(M[, population]; kwargs)
 
-construct a Nelder-Mead Option with a set of `dimension(M)+1` random points.
+construct a Nelder-Mead Option with a default popultion (if not provided) of set of `dimension(M)+1` random points.
 
-    NelderMead(p, stop retr; α=1. , γ=2., ρ=1/2, σ=1/2)
-
-construct a Nelder-Mead Option with a set `p` of points
+In the constructor all fields (besides the population) are keyword arguments.
 """
 mutable struct NelderMeadOptions{
     T,
+    S<:StoppingCriterion,
     Tα<:Real,
     Tγ<:Real,
     Tρ<:Real,
@@ -71,7 +70,7 @@ mutable struct NelderMeadOptions{
     TI<:AbstractInverseRetractionMethod,
 } <: Options
     population::Vector{T}
-    stop::StoppingCriterion
+    stop::S
     α::Tα
     γ::Tγ
     ρ::Tρ
@@ -81,40 +80,21 @@ mutable struct NelderMeadOptions{
     retraction_method::TR
     inverse_retraction_method::TI
     function NelderMeadOptions(
-        M::MT;
-        stop::StoppingCriterion=StopAfterIteration(2000),
+        M::AbstractManifold,
+        population::Vector{T};
+        stopping_criterion::StoppingCriterion=StopAfterIteration(2000),
         α=1.0,
         γ=2.0,
         ρ=1 / 2,
         σ=1 / 2,
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
-    ) where {MT<:AbstractManifold}
-        p = [random_point(M) for i in 1:(manifold_dimension(M) + 1)]
-        return new{
-            eltype(p),
-            typeof(α),
-            typeof(γ),
-            typeof(ρ),
-            typeof(σ),
-            typeof(retraction_method),
-            typeof(inverse_retraction_method),
-        }(
-            p, stop, α, γ, ρ, σ, p[1], [], retraction_method, inverse_retraction_method
-        )
-    end
-    function NelderMeadOptions(
-        population::Vector{T},
-        stop::StoppingCriterion=StopAfterIteration(2000);
-        α=1.0,
-        γ=2.0,
-        ρ=1 / 2,
-        σ=1 / 2,
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            M
+        ),
     ) where {T}
         return new{
             T,
+            typeof(stopping_criterion),
             typeof(α),
             typeof(γ),
             typeof(ρ),
@@ -123,7 +103,7 @@ mutable struct NelderMeadOptions{
             typeof(inverse_retraction_method),
         }(
             population,
-            stop,
+            stopping_criterion,
             α,
             γ,
             ρ,
@@ -135,4 +115,20 @@ mutable struct NelderMeadOptions{
         )
     end
 end
+function NelderMeadOptions(M::AbstractManifold; kwargs...)
+    p = [random_point(M) for i in 1:(manifold_dimension(M) + 1)]
+    return NelderMeadOptions(M, p; kwargs...)
+end
+@deprecate NelderMeadOptions(
+    population,
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+    kwargs...,
+) NelderMeadOptions(
+    DefaultManifold(2),
+    population,
+    retraction_method=retraction_method,
+    inverse_retraction_method=inverse_retraction_method,
+    kwargs...,
+)
 get_solver_result(o::NelderMeadOptions) = o.x

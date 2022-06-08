@@ -64,8 +64,8 @@ function ConjugateGradientDescentOptions(
     sC::StoppingCriterion,
     s::Stepsize,
     dU::DirectionUpdateRule,
-    retr::AbstractRetractionMethod=ExponentialRetraction(),
-    vtr::AbstractVectorTransportMethod=ParallelTransport(),
+    retr::AbstractRetractionMethod=default_retraction_method(M),
+    vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
     initial_gradient::T=zero_vector(M, x),
 ) where {P,T}
     return ConjugateGradientDescentOptions{P,T}(

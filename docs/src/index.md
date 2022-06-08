@@ -26,8 +26,8 @@ If you want to delve right into `Manopt.jl` check out the
 `Manopt.jl` makes it easy to use an algorithm for your favourite
 manifold as well as a manifold for your favourite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
-[record](@ref RecordOptions) certain data or
-[display information](@ref DebugOptions) throughout iterations.
+[record](@ref RecordSection) certain data or
+[debout outpuy](@ref DebugSection) throughout iterations.
 
 If you use `Manopt.jl`in your work, please cite the following
 
@@ -74,7 +74,7 @@ form a [plan](@ref planSection).
 
 ### Visualization
 
-To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugOptions) during the iterations of an algorithms as well as [record](@ref RecordOptions) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugSection) during the iterations of an algorithms as well as [record](@ref RecordSection) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [Get started: Optimize!](pluto/Optimize!.md) tutorial how to easily activate this.
 
 ## Manifolds

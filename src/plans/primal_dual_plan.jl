@@ -264,7 +264,8 @@ If you activate these to be different from the default identity, you have to pro
 `p.Λ` for the algorithm to work (which might be `missing` in the linearized case).
 
 # Constructor
-    ChambollePockOptions(m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
+    ChambollePockOptions(M::AbstractManifold,
+        m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
         acceleration::Float64 = 0.0,
         relaxation::Float64 = 1.0,
         relax::Symbol = :primal,
@@ -272,9 +273,9 @@ If you activate these to be different from the default identity, you have to pro
         variant::Symbol = :exact,
         update_primal_base::Union{Function,Missing} = missing,
         update_dual_base::Union{Function,Missing} = missing,
-        retraction_method = ExponentialRetraction(),
-        inverse_retraction_method = LogarithmicInverseRetraction(),
-        vector_transport_method = ParallelTransport(),
+        retraction_method = default_retraction_method(M),
+        inverse_retraction_method = default_inverse_retraction_method(M),
+        vector_transport_method = default_vector_transport_method(M),
     )
 """
 mutable struct ChambollePockOptions{
@@ -304,7 +305,33 @@ mutable struct ChambollePockOptions{
     inverse_retraction_method::IRM
     vector_transport_method::VTM
 
+    @deprecate ChambollePockOptions(
+        m,
+        n,
+        x,
+        ξ,
+        primal_stepsize::Float64=1 / sqrt(8),
+        dual_stepsize::Float64=1 / sqrt(8);
+        retraction_method=ExponentialRetraction(),
+        inverse_retraction_method=LogarithmicInverseRetraction(),
+        vector_transport_method=ParallelTransport(),
+        kwargs...,
+    ) ChambollePockOptions(
+        DefaultManifold(2),
+        m,
+        n,
+        x,
+        ξ,
+        primal_stepsize,
+        dual_stepsize;
+        retraction_method=retraction_method,
+        inverse_retraction_method=inverse_retraction_method,
+        vector_transport_method=vector_transport_method,
+        kwargs...,
+    )
+
     function ChambollePockOptions(
+        M::AbstractManifold,
         m::P,
         n::Q,
         x::P,
@@ -318,9 +345,9 @@ mutable struct ChambollePockOptions{
         variant::Symbol=:exact,
         update_primal_base::Union{Function,Missing}=missing,
         update_dual_base::Union{Function,Missing}=missing,
-        retraction_method::RM=ExponentialRetraction(),
-        inverse_retraction_method::IRM=LogarithmicInverseRetraction(),
-        vector_transport_method::VTM=ParallelTransport(),
+        retraction_method::RM=default_retraction_method(M),
+        inverse_retraction_method::IRM=default_inverse_retraction_method(M),
+        vector_transport_method::VTM=default_vector_transport_method(M),
     ) where {
         P,
         Q,
