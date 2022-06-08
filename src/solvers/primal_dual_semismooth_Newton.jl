@@ -370,7 +370,7 @@ function construct_matrix(
     Ndims = prod(manifold_dimension(p.N))
     for j in 1:Ndims
     # for (j, Ξⱼ) in enumerate(Ξ)
-        eⱼ = zeros(Mdims)
+        eⱼ = zeros(Ndims)
         eⱼ[j] = 1
         Ξⱼ = get_vector(p.N,o.n,eⱼ,Ξ)
         hⱼ = -o.primal_stepsize * adjoint_linearized_operator(p, o.m, o.n, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
@@ -379,7 +379,7 @@ function construct_matrix(
         Bⱼ = get_differential_primal_prox(p, o.primal_stepsize, q₂, C₂ⱼ)
         A₂ⱼ = -differential_log_argument(p.M, o.x, q₁, Bⱼ)
 
-        ∂X₁₂j = get_coordinates(p.N, o.n, A₂ⱼ, DefaultOrthonormalBasis())
+        ∂X₁₂j = get_coordinates(p.M, o.m, A₂ⱼ, DefaultOrthonormalBasis())
 
         sp_∂X₁₂j = sparsevec(∂X₁₂j)
         dropzeros!(sp_∂X₁₂j)

@@ -60,26 +60,32 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
 		            J = I .+ e_k_vals[k] #i + e_k is j
 		            if all(J .<= maxInd)
 		                # this is neighbor in range,
-						if d > 1
-							Y[N, I...,k] += if norms[I...,k] <= (1 + λ * γ)
-		                        Η[N, I...,k] ./ (1 + λ * γ)
-		                    else
-		                        1/norms[I...,k] * (Η[N, i...,k] .- 1/norms[I...,k]^2 .* inner(N.manifold,x[N,I...,k],Η[N, I...,k],Ξ[N, I...,k]).*Ξ[N, I...,k])
-		                    end
+						Y[N, I...,k] += if norms[I...,k] <= (1 + λ * γ)
+							Η[N, I...,k] ./ (1 + λ * γ)
 						else
-							# print("norms[I...,k] = $(norms[I...,k])\n")
-			                Y[N, I...,k] += if norms[I...,k] <=1 * (1 + λ * γ)
-		                        Η[N, I...,k] ./ (1 + λ * γ)
-		                    else
-		                        1/norms[I...,k] .* (Η[N, I...,k] .- 1/norms[I...,k]^2 .* inner(N.manifold,x[N,I...,k],Η[N, I...,k],Ξ[N, I...,k]).*Ξ[N, I...,k])
-		                    end
+							1/norms[I...,k] * (Η[N, I...,k] .- 1/norms[I...,k]^2 .* inner(N.manifold,x[N,I...,k],Η[N, I...,k],Ξ[N, I...,k]).*Ξ[N, I...,k])
 						end
+						# if d > 1
+						# 	Y[N, I...,k] += if norms[I...,k] <= (1 + λ * γ)
+		                #         Η[N, I...,k] ./ (1 + λ * γ)
+		                #     else
+		                #         1/norms[I...,k] * (Η[N, i...,k] .- 1/norms[I...,k]^2 .* inner(N.manifold,x[N,I...,k],Η[N, I...,k],Ξ[N, I...,k]).*Ξ[N, I...,k])
+		                #     end
+						# else
+						# 	# print("norms[I...,k] = $(norms[I...,k])\n")
+			            #     Y[N, I...,k] += if norms[I...,k] <=1 * (1 + λ * γ)
+		                #         Η[N, I...,k] ./ (1 + λ * γ)
+		                #     else
+		                #         1/norms[I...,k] .* (Η[N, I...,k] .- 1/norms[I...,k]^2 .* inner(N.manifold,x[N,I...,k],Η[N, I...,k],Ξ[N, I...,k]).*Ξ[N, I...,k])
+		                #     end
+						# end
 		            else
-						if d > 1
-							Y[N, I...,k] = zero_vector(N.manifold, x[N, I...])
-						else
-			                Y[N, I...] = zero_vector(N.manifold, x[N, I...])
-						end
+						Y[N, I...,k] = zero_vector(N.manifold, x[N, I...,k])
+						# if d > 1
+						# 	Y[N, I...,k] = zero_vector(N.manifold, x[N, I...,k])
+						# else
+			            #     Y[N, I...,k] = zero_vector(N.manifold, x[N, I...,k])
+						# end
 		            end
 				end # directions
 		    end # i in R
