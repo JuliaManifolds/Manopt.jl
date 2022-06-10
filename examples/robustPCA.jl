@@ -75,6 +75,8 @@ To do this, we first need to define the problem structure.
 
 # ╔═╡ 3732470d-1d2a-4305-843f-6d4d5105031a
 p, n = size(X);
+
+# ╔═╡ bfdea1dd-030e-4ec4-b2d5-b02ec2497595
 M = Grassmann(p, d);
 
 # ╔═╡ 002b05d8-4753-43a2-8861-718a93f7a84e
@@ -97,6 +99,15 @@ begin
     iterations = 6
     reduction = 0.5
 end;
+
+# ╔═╡ 108811db-a70a-40f2-b163-a88273fa461c
+U, S, V = svd(X);
+
+# ╔═╡ 1923e51d-75a7-4c81-a91a-199e4fcd7b4c
+U0 = U[:, 1:d];
+
+# ╔═╡ 845b5bcc-cbcb-4175-b80e-7dab7b1de67a
+U0
 
 # ╔═╡ 25f181f8-d47a-48e8-b92e-64d51dea8fd4
 function grad_pca_cost(M, U, ϵ)
@@ -122,13 +133,6 @@ function robustpca_cost(M, U, ϵ)
     vals = sqrt.(sqnrms + ϵ^2 * ones(dim)) - ϵ * ones(dim)
     return mean(vals)
 end
-
-# ╔═╡ ca7f5c90-61ae-4a7d-a6e3-825dc4ae2ea5
-U0, S, V = svd(X);
-U0 = U0[:, 1:d];
-
-# ╔═╡ 845b5bcc-cbcb-4175-b80e-7dab7b1de67a
-U0
 
 # ╔═╡ f4ce755f-36a0-40c0-a5db-a9e319c051c3
 robustpca_cost(M, U0, 0.0)
@@ -182,11 +186,11 @@ plot!(
 
 # ╔═╡ 7e3b7ab3-2ac2-4387-9f7f-cb84cfbc106b
 plot!(
-    fig;
+    fig,
+    U0[1] * [-1, 1] * 100,
+    U0[2] * [-1, 1] * 100;
     xlims=1.1 * [minimum(X[1, :]), maximum(X[1, :])],
     ylims=1.1 * [minimum(X[2, :]), maximum(X[2, :])],
-    U0[1] * [-1, 1] * 100,
-    U0[2] * [-1, 1] * 100,
     linewidth=2,
     linecolor=:black,
     label="Standard SVD",
@@ -1356,14 +1360,16 @@ version = "0.9.1+5"
 # ╟─f0d6149c-cadf-434a-818b-a9b249430dcf
 # ╠═b991faec-2a45-4c11-b836-e6309593fc96
 # ╠═3732470d-1d2a-4305-843f-6d4d5105031a
+# ╠═bfdea1dd-030e-4ec4-b2d5-b02ec2497595
 # ╟─002b05d8-4753-43a2-8861-718a93f7a84e
 # ╠═809e21f0-ddfa-4005-8397-76571f28baa5
 # ╠═f0712c0c-c18a-4cee-8752-ac01f1110d55
+# ╠═108811db-a70a-40f2-b163-a88273fa461c
+# ╠═1923e51d-75a7-4c81-a91a-199e4fcd7b4c
 # ╠═845b5bcc-cbcb-4175-b80e-7dab7b1de67a
 # ╠═f4ce755f-36a0-40c0-a5db-a9e319c051c3
 # ╠═25f181f8-d47a-48e8-b92e-64d51dea8fd4
 # ╠═6cd93bc1-d726-41d6-a9c4-a8cfc61e565b
-# ╠═ca7f5c90-61ae-4a7d-a6e3-825dc4ae2ea5
 # ╠═a860463a-abf0-4836-9159-3030f207aa1b
 # ╠═bee7232b-da09-49b4-a650-f634792585ee
 # ╠═0cf0f20e-d08a-441f-998a-a460ad6549f2

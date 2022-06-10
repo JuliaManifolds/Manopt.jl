@@ -52,11 +52,17 @@ md"""
 First, for illustration purposes, we create a random matrix $A$ whose smallest eigenvalue is then computed.
 """
 
-# ╔═╡ e33afccc-60eb-4ecc-9822-a485f3a57a97
+# ╔═╡ b2599b1c-7509-42d3-99d4-9cab27ba39b1
 Random.seed!(42);
+
+# ╔═╡ 69996501-83ed-4987-a3c1-9c329609eedc
 n = 10;
-A = randn(n, n);
-A = A * A';
+
+# ╔═╡ e01d15a3-e45e-44bd-9b30-2637e6990905
+a = randn(n, n);
+
+# ╔═╡ dc14dfda-5be3-414b-919c-b6fbfe6e0712
+A = a * a';
 
 # ╔═╡ f38dbe03-1734-410e-a54a-31c431487b67
 md"""
@@ -774,7 +780,10 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─d88d4b2a-e2e8-40fe-ac58-1a56e3118723
 # ╟─5a920ad4-c7e3-428f-8c68-ec0c70f7791c
 # ╠═0428c69f-e4c9-4764-9c63-021e2e8e6324
-# ╠═e33afccc-60eb-4ecc-9822-a485f3a57a97
+# ╠═b2599b1c-7509-42d3-99d4-9cab27ba39b1
+# ╠═69996501-83ed-4987-a3c1-9c329609eedc
+# ╠═e01d15a3-e45e-44bd-9b30-2637e6990905
+# ╠═dc14dfda-5be3-414b-919c-b6fbfe6e0712
 # ╟─f38dbe03-1734-410e-a54a-31c431487b67
 # ╠═ee3a2eed-929f-4584-8e53-464b06d163d3
 # ╠═c9a1391f-9baf-4a36-9bf4-d055aaabd3ed
