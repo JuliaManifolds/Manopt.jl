@@ -53,6 +53,7 @@ example_menu = Array{Pair{String,String},1}()
 examples_src_folder = joinpath(@__DIR__, "..", "examples/")
 examples_output_folder = joinpath(@__DIR__, "src/", "examples/")
 examples_relative_path = "examples/"
+mkpath(examples_output_folder)
 examples = [
     Dict(:file => "robustPCA", :title => "Robust PCA"),
     Dict(:file => "smallestEigenvalue", :title => "Rayleigh quotient"),
