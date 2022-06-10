@@ -53,7 +53,10 @@ First, for illustration purposes, we create a random matrix $A$ whose smallest e
 """
 
 # ╔═╡ e33afccc-60eb-4ecc-9822-a485f3a57a97
-Random.seed!(42); n = 10; A = randn(n,n); A = A*A';
+Random.seed!(42);
+n = 10;
+A = randn(n, n);
+A = A * A';
 
 # ╔═╡ f38dbe03-1734-410e-a54a-31c431487b67
 md"""
@@ -66,13 +69,13 @@ We also implement the cost function `f` and its Riemannian gradient `gradf` usin
 x0 = ones(n) ./ sqrt(n)
 
 # ╔═╡ bb2336d5-ca29-43be-9965-f0c8429d9a5a
-f(M,x) = x' * A * x
+f(M, x) = x' * A * x
 
 # ╔═╡ 5853a195-c210-4428-9390-84c10996cfd6
-gradf(M,x) = 2.0 * (I(n) - x*x') * A * x
+gradf(M, x) = 2.0 * (I(n) - x * x') * A * x
 
 # ╔═╡ 1405af28-56ca-49be-933d-b930bb1c66d7
-M = Sphere(n-1)
+M = Sphere(n - 1)
 
 # ╔═╡ 36658e60-e7ba-4b28-a78c-2ceba41b0e95
 md"""
@@ -86,10 +89,14 @@ For optimization we use a gradient descent method with Armijo linesearch. The se
 
 # ╔═╡ ad543102-b3f8-11ec-38bb-81fe45c59c6b
 with_terminal() do
-    global xopt = gradient_descent(M, f, gradf, x0;
-		stepsize=ArmijoLinesearch(M; contraction_factor=0.99, sufficient_decrease=0.6),
-		debug=[:Iteration, :Cost, ", ",DebugGradientNorm(), 50, :Stop,"\n"]
-	)
+    global xopt = gradient_descent(
+        M,
+        f,
+        gradf,
+        x0;
+        stepsize=ArmijoLinesearch(M; contraction_factor=0.99, sufficient_decrease=0.6),
+        debug=[:Iteration, :Cost, ", ", DebugGradientNorm(), 50, :Stop, "\n"],
+    )
 end
 
 # ╔═╡ ddd29f37-dda3-405c-8c62-c994bae90904
@@ -108,19 +115,19 @@ t = minimum(eigvals(A))
 md"""Compared to the cost at `xopt`, i.e."""
 
 # ╔═╡ d43fbc2f-f9d5-40a2-9fe0-b3d8779b43c3
-v = f(M,xopt)
+v = f(M, xopt)
 
 # ╔═╡ 2315c9e0-208d-41fc-a3f8-3f15202d2e46
 md"""which is a good approximation of the original eigenvalue:"""
 
 # ╔═╡ 699e8818-f698-407b-9c47-ffad9f94c7d0
-v-t
+v - t
 
 # ╔═╡ 3022a58b-d06f-4a70-bbc3-ded1f7c59229
 md"""And we can also check whether `xopt` is a point on the sphere:"""
 
 # ╔═╡ 67baad25-f394-4a0a-8eae-862c5455215d
-is_point(M,xopt)
+is_point(M, xopt)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """

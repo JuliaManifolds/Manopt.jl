@@ -45,7 +45,7 @@ for t in tutorials
         $(rendered[1])
         """,
     )
-    push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path,t[:file] * ".md"))
+    push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path, t[:file] * ".md"))
 end
 
 example_menu = Array{Pair{String,String},1}()
@@ -79,7 +79,7 @@ for e in examples
         $(rendered[1])
         """,
     )
-    push!(example_menu, e[:title] => joinpath(examples_relative_path,e[:file] * ".md"))
+    push!(example_menu, e[:title] => joinpath(examples_relative_path, e[:file] * ".md"))
 end
 
 generated_path = joinpath(@__DIR__, "src")
@@ -125,7 +125,7 @@ makedocs(;
             "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Trust-Regions Solver" => "solvers/trust_regions.md",
         ],
-        "Examples" =>  example_menu,
+        "Examples" => example_menu,
         "Plans" => [
             "Specify a Solver" => "plans/index.md",
             "Problem" => "plans/problem.md",

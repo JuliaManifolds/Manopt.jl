@@ -56,14 +56,14 @@ First, we generate random data for illustration purposes:
 
 # ╔═╡ 2052b127-fcc2-4275-b1d8-68c881a72899
 begin
-	samples = 40
-	outliers = 15
-	Random.seed!(42)
-	X = randn(2,1)*[1:samples;]' + 0.05 * randn(2,samples).*[1:samples 1:samples]'
-	# Outliers:
-	P = shuffle(1:size(X,2))'
-	X[:, P[1:outliers]] = 30 * randn(2,outliers)
-	d = 1
+    samples = 40
+    outliers = 15
+    Random.seed!(42)
+    X = randn(2, 1) * [1:samples;]' + 0.05 * randn(2, samples) .* [1:samples 1:samples]'
+    # Outliers:
+    P = shuffle(1:size(X, 2))'
+    X[:, P[1:outliers]] = 30 * randn(2, outliers)
+    d = 1
 end;
 
 # ╔═╡ f0d6149c-cadf-434a-818b-a9b249430dcf
@@ -74,7 +74,8 @@ To do this, we first need to define the problem structure.
 """
 
 # ╔═╡ 3732470d-1d2a-4305-843f-6d4d5105031a
-p,n = size(X); M = Grassmann(p,d)
+p, n = size(X);
+M = Grassmann(p, d);
 
 # ╔═╡ 002b05d8-4753-43a2-8861-718a93f7a84e
 md"""
@@ -92,73 +93,74 @@ We run the procedure several times, where the smoothing parameter $ϵ$ is reduce
 
 # ╔═╡ f0712c0c-c18a-4cee-8752-ac01f1110d55
 begin
-	ϵ = 1.0
-	iterations = 6
-	reduction = 0.5
+    ϵ = 1.0
+    iterations = 6
+    reduction = 0.5
 end;
 
 # ╔═╡ 25f181f8-d47a-48e8-b92e-64d51dea8fd4
 function grad_pca_cost(M, U, ϵ)
-	UtX = U' * X
-	vecs = U * UtX - X
-	sqnrms = sum(vecs.^2, dims=1)
+    UtX = U' * X
+    vecs = U * UtX - X
+    sqnrms = sum(vecs .^ 2; dims=1)
 
-	# Compute the Euclidean gradient
-	G = zeros(p, d)
-	for i=1:n
-		G = G + (1/(sqrt(sqnrms[i] + ϵ^2))) * vecs[:,i] * UtX[:,i]'
-	end
-	G = 1/n * G
-	# Convert to Riemannian gradient
-	return (I-U*U') * G
+    # Compute the Euclidean gradient
+    G = zeros(p, d)
+    for i in 1:n
+        G = G + (1 / (sqrt(sqnrms[i] + ϵ^2))) * vecs[:, i] * UtX[:, i]'
+    end
+    G = 1 / n * G
+    # Convert to Riemannian gradient
+    return (I - U * U') * G
 end
 
 # ╔═╡ 6cd93bc1-d726-41d6-a9c4-a8cfc61e565b
 function robustpca_cost(M, U, ϵ)
-	vecs = U * U' * X - X
-	sqnrms = sum(vecs.^2, dims=1)
-	dim = size(sqnrms)
-	vals = sqrt.(sqnrms + ϵ^2*ones(dim)) - ϵ*ones(dim)
-	return mean(vals)
+    vecs = U * U' * X - X
+    sqnrms = sum(vecs .^ 2; dims=1)
+    dim = size(sqnrms)
+    vals = sqrt.(sqnrms + ϵ^2 * ones(dim)) - ϵ * ones(dim)
+    return mean(vals)
 end
 
 # ╔═╡ ca7f5c90-61ae-4a7d-a6e3-825dc4ae2ea5
-U0, S, V = svd(X); U0 = U0[:,1:d]
+U0, S, V = svd(X);
+U0 = U0[:, 1:d];
 
 # ╔═╡ 845b5bcc-cbcb-4175-b80e-7dab7b1de67a
 U0
 
 # ╔═╡ f4ce755f-36a0-40c0-a5db-a9e319c051c3
-robustpca_cost(M, U0, 0.)
+robustpca_cost(M, U0, 0.0)
 
 # ╔═╡ a860463a-abf0-4836-9159-3030f207aa1b
 begin
-	Ui = copy(M,U0)
-	ϵi	= ϵ
-	for i=1:iterations
-		global Ui = trust_regions(
-			M,
-			(M,p) -> robustpca_cost(M, p,ϵi),
-			(M,p) -> grad_pca_cost(M, p, ϵi),
-			ApproxHessianFiniteDifference(
-				M,
-				Ui,
-				(M,p) -> grad_pca_cost(M, p, ϵi);
-				vector_transport_method=ProjectionTransport(),
-				retraction_method=PolarRetraction()
-			),
-			Ui;
-			(project!)=project!,
-		)
-  	    global ϵi = ϵi * reduction
-	end
+    Ui = copy(M, U0)
+    ϵi = ϵ
+    for i in 1:iterations
+        global Ui = trust_regions(
+            M,
+            (M, p) -> robustpca_cost(M, p, ϵi),
+            (M, p) -> grad_pca_cost(M, p, ϵi),
+            ApproxHessianFiniteDifference(
+                M,
+                Ui,
+                (M, p) -> grad_pca_cost(M, p, ϵi);
+                vector_transport_method=ProjectionTransport(),
+                retraction_method=PolarRetraction(),
+            ),
+            Ui;
+            (project!)=project!,
+        )
+        global ϵi = ϵi * reduction
+    end
 end;
 
 # ╔═╡ bee7232b-da09-49b4-a650-f634792585ee
 Ui
 
 # ╔═╡ 0cf0f20e-d08a-441f-998a-a460ad6549f2
-robustpca_cost(M, Ui, 0.)
+robustpca_cost(M, Ui, 0.0)
 
 # ╔═╡ 5a793fd2-f4db-4f91-a0cf-a9cb99043d1a
 md"""
@@ -166,18 +168,28 @@ Finally, the results are presented graphically. The data points are visualized i
 """
 
 # ╔═╡ d0ef08a8-3a0d-48df-8afa-f5396d1a44b5
-fig = plot(X[1,:], X[2,:], seriestype = :scatter, label="Data points");
+fig = plot(X[1, :], X[2, :]; seriestype=:scatter, label="Data points");
 
 # ╔═╡ bd703a02-e6b1-4173-821b-661f0a6b9b7a
-plot!(fig,Ui[1]*[-1,1]*100, Ui[2]*[-1,1]*100, linecolor=:red, linewidth=2, label="Robust PCA");
+plot!(
+    fig,
+    Ui[1] * [-1, 1] * 100,
+    Ui[2] * [-1, 1] * 100;
+    linecolor=:red,
+    linewidth=2,
+    label="Robust PCA",
+);
 
 # ╔═╡ 7e3b7ab3-2ac2-4387-9f7f-cb84cfbc106b
 plot!(
-	fig,
-	xlims = 1.1*[minimum(X[1,:]), maximum(X[1,:])],
-	ylims = 1.1*[minimum(X[2,:]), maximum(X[2,:])],
-	U0[1]*[-1,1]*100, U0[2]*[-1,1]*100,
-	linewidth=2, linecolor=:black, label="Standard SVD"
+    fig;
+    xlims=1.1 * [minimum(X[1, :]), maximum(X[1, :])],
+    ylims=1.1 * [minimum(X[2, :]), maximum(X[2, :])],
+    U0[1] * [-1, 1] * 100,
+    U0[2] * [-1, 1] * 100,
+    linewidth=2,
+    linecolor=:black,
+    label="Standard SVD",
 )
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
