@@ -18,9 +18,6 @@ md"""
 # Computing the smallest eigenvalue of a symmetric matrix
 """
 
-# ╔═╡ 6586c5f3-2275-4d56-b0fd-0d496a821951
-md"""_written by Laura Weigl, University of Bayreuth._"""
-
 # ╔═╡ d88d4b2a-e2e8-40fe-ac58-1a56e3118723
 md"""
 In this example we compute the smallest eigenvalue of a symmetric matrix ``A \in ℝ^{n×n}``. Let ``λ_1 ≥ ... ≥ λ_n`` be the eigenvalues of ``A``. Then the smallest eigenvalue ``λ_n`` can be computed by solving the following optimization problem:
@@ -776,7 +773,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 
 # ╔═╡ Cell order:
 # ╟─c005c5a8-df86-4f75-80c4-5c4d76e2b026
-# ╟─6586c5f3-2275-4d56-b0fd-0d496a821951
 # ╟─d88d4b2a-e2e8-40fe-ac58-1a56e3118723
 # ╟─5a920ad4-c7e3-428f-8c68-ec0c70f7791c
 # ╠═0428c69f-e4c9-4764-9c63-021e2e8e6324

@@ -21,9 +21,6 @@ md"""
 # Computing a Robust PCA
 """
 
-# ╔═╡ bf83c972-ba1e-4b6c-b8ad-48fd9f0a8a54
-md"""_written by Laura Weigl, University of Bayreuth._"""
-
 # ╔═╡ c7106d07-a454-41e8-8da6-d93eb90e2adf
 md"""
 For a given matrix ``X ∈ ℝ^{p×n}`` whose columns represent points in ``ℝ^p``, a matrix ``U ∈ ℝ^{p×d}`` is computed for a given dimension ``d < n``:
@@ -1352,7 +1349,6 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─959f19f5-a86d-4938-96da-e555020319be
-# ╟─bf83c972-ba1e-4b6c-b8ad-48fd9f0a8a54
 # ╟─c7106d07-a454-41e8-8da6-d93eb90e2adf
 # ╟─ff8074f0-28dc-4a38-9d80-70d6306f22dd
 # ╠═cdb0b885-0d7f-4bfe-a979-e0a0fde304f4
