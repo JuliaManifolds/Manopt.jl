@@ -54,7 +54,7 @@ examples_src_folder = joinpath(@__DIR__, "..", "examples/")
 examples_output_folder = joinpath(@__DIR__, "src/", "examples/")
 examples_relative_path = "examples/"
 examples = [
-    Dict(:file => "RobustPCA", :title => "Robust PCA"),
+    Dict(:file => "robustPCA", :title => "Robust PCA"),
     Dict(:file => "smallestEigenvalue", :title => "Rayleigh quotient"),
 ]
 # build menu and write files myself - tp set edit url correctly.
