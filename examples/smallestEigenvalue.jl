@@ -5,10 +5,10 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 0428c69f-e4c9-4764-9c63-021e2e8e6324
-	using Random, LinearAlgebra
+using Random, LinearAlgebra, PlutoUI
 
 # ╔═╡ ee3a2eed-929f-4584-8e53-464b06d163d3
-	using Manifolds
+using Manifolds
 
 # ╔═╡ a4e1879f-8b6b-4bb5-b55a-f3e05748b6b9
 using Manopt
@@ -18,27 +18,30 @@ md"""
 # Computing the smallest eigenvalue of a symmetric matrix
 """
 
+# ╔═╡ 6586c5f3-2275-4d56-b0fd-0d496a821951
+md"""_written by Laura Weigl, University of Bayreuth._"""
+
 # ╔═╡ d88d4b2a-e2e8-40fe-ac58-1a56e3118723
 md"""
-In this example we compute the smallest eigenvalue of a symmetric matrix ``A \in ℝ^{n×n}``. Let ``λ_1 ≥ ... ≥ λ_n`` be the eigenvalues of ``A``. Then the smallest eigenvalue ``λ_n`` can be computed by solving the following optimization problem:  
+In this example we compute the smallest eigenvalue of a symmetric matrix ``A \in ℝ^{n×n}``. Let ``λ_1 ≥ ... ≥ λ_n`` be the eigenvalues of ``A``. Then the smallest eigenvalue ``λ_n`` can be computed by solving the following optimization problem:
 
 ```math
     \operatorname*{arg\,min}_{x∈ℝ^n, x ≠ 0} \frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}.
 ```
 
 This problem can be reformulated as
- 
+
 ```math
 \operatorname*{arg\,min}_{x∈ℝ^n, \lVert x\rVert_2^2 = 1} x^{\mathrm{T}}Ax
 ```
- 
+
 and thus becomes an optimization problem on the sphere ``𝕊^{n-1} = \{ x∈ℝ^n : \lVert x\rVert _2^2 = x^{\mathrm{T}}x = 1 \}.``
- 
+
 The cost function and its gradient in $ℝ^n$ can be written as:
 ``f(x) = x^{\mathrm{T}}Ax`` and ``\nabla f(x) = 2Ax``.
- 
+
 For the optimization on the manifold ``𝕊^{n-1}`` we also need the Riemannian gradient of $f$. It can be calculated by applying the orthogonal projection onto the tangent space of ``x`` ``\operatorname{proj}_x u = (I-xx^{\mathrm{T}})u`` to ``∇f(x)``:
- 
+
 ```math
    \operatorname{grad}f(x) = \operatorname{proj}_x(∇f(x)) = 2 (I-xx^{\mathrm{T}}) Ax.
 ```
@@ -50,7 +53,7 @@ First, for illustration purposes, we create a random matrix $A$ whose smallest e
 """
 
 # ╔═╡ e33afccc-60eb-4ecc-9822-a485f3a57a97
-n = 10; A = randn(n,n); A = A*A';
+Random.seed!(42); n = 10; A = randn(n,n); A = A*A';
 
 # ╔═╡ f38dbe03-1734-410e-a54a-31c431487b67
 md"""
@@ -82,10 +85,12 @@ For optimization we use a gradient descent method with Armijo linesearch. The se
 """
 
 # ╔═╡ ad543102-b3f8-11ec-38bb-81fe45c59c6b
-xopt = gradient_descent(M, f, gradf, x0;
-	stepsize=ArmijoLinesearch(M; contraction_factor=0.99, sufficient_decrease=0.5),
-	debug=[:Iteration, :Cost, 100, :Stop,"\n"]
-)
+with_terminal() do
+    global xopt = gradient_descent(M, f, gradf, x0;
+		stepsize=ArmijoLinesearch(M; contraction_factor=0.99, sufficient_decrease=0.6),
+		debug=[:Iteration, :Cost, ", ",DebugGradientNorm(), 50, :Stop,"\n"]
+	)
+end
 
 # ╔═╡ ddd29f37-dda3-405c-8c62-c994bae90904
 md"""
@@ -93,11 +98,29 @@ Now we check whether the result of the optimization is reasonable. For this purp
 
 Furthermore, the Euclidean norm of the optimizer is calculated to check whether the point lies on the sphere.
 
-We first compute the `minimum(eigvals(A))` as the “ground truth”: $(minimum(eigvals(A))).
-Compared to the cost at `xopt`, i.e. `f(M,xopt)`, which is $(f(M, xopt)).
-
-And we can also check whether `xopt` is a point on the sphere: running `is_point(M,xopt)` yields $(is_point(M,xopt))
+We first compute  as the “ground truth”
 """
+
+# ╔═╡ 989460e3-14da-4d56-a08e-de04e8208612
+t = minimum(eigvals(A))
+
+# ╔═╡ d5a06c6a-a142-45f3-8328-748ba0f6d33b
+md"""Compared to the cost at `xopt`, i.e."""
+
+# ╔═╡ d43fbc2f-f9d5-40a2-9fe0-b3d8779b43c3
+v = f(M,xopt)
+
+# ╔═╡ 2315c9e0-208d-41fc-a3f8-3f15202d2e46
+md"""which is a good approximation of the original eigenvalue:"""
+
+# ╔═╡ 699e8818-f698-407b-9c47-ffad9f94c7d0
+v-t
+
+# ╔═╡ 3022a58b-d06f-4a70-bbc3-ded1f7c59229
+md"""And we can also check whether `xopt` is a point on the sphere:"""
+
+# ╔═╡ 67baad25-f394-4a0a-8eae-862c5455215d
+is_point(M,xopt)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -105,11 +128,13 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 Manifolds = "~0.8.10"
 Manopt = "~0.3.28"
+PlutoUI = "~0.7.39"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -124,6 +149,12 @@ deps = ["ChainRulesCore", "LinearAlgebra"]
 git-tree-sha1 = "6f1d9bc1c08f9f4a8fa92e3ea3cb50153a1b40d4"
 uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
 version = "1.1.0"
+
+[[deps.AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.4"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra"]
@@ -320,6 +351,24 @@ git-tree-sha1 = "cb7099a0109939f16a4d3b572ba8396b1f6c7c31"
 uuid = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 version = "0.3.10"
 
+[[deps.Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
+[[deps.HypertextLiteral]]
+deps = ["Tricks"]
+git-tree-sha1 = "c47c5fa4c5308f27ccaac35504858d8914e102f9"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.4"
+
+[[deps.IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
+
 [[deps.IfElse]]
 git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
 uuid = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
@@ -350,6 +399,12 @@ deps = ["Preferences"]
 git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
 version = "1.4.1"
+
+[[deps.JSON]]
+deps = ["Dates", "Mmap", "Parsers", "Unicode"]
+git-tree-sha1 = "3c837543ddb02250ef42f4738347454f95079d4e"
+uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+version = "0.21.3"
 
 [[deps.Kronecker]]
 deps = ["LinearAlgebra", "NamedDims", "SparseArrays", "StatsBase"]
@@ -500,9 +555,21 @@ git-tree-sha1 = "3e32c8dbbbe1159a5057c80b8a463369a78dd8d8"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
 version = "0.11.12"
 
+[[deps.Parsers]]
+deps = ["Dates"]
+git-tree-sha1 = "1285416549ccfcdf0c50d4997a94331e88d68413"
+uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
+version = "2.3.1"
+
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+
+[[deps.PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "8d1f54886b9037091edf146b517989fc4a09efec"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.39"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -659,6 +726,11 @@ version = "0.1.1"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[[deps.Tricks]]
+git-tree-sha1 = "6bac775f2d42a611cdfcd1fb217ee719630c4175"
+uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
+version = "0.1.6"
+
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
@@ -691,6 +763,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 
 # ╔═╡ Cell order:
 # ╟─c005c5a8-df86-4f75-80c4-5c4d76e2b026
+# ╟─6586c5f3-2275-4d56-b0fd-0d496a821951
 # ╟─d88d4b2a-e2e8-40fe-ac58-1a56e3118723
 # ╟─5a920ad4-c7e3-428f-8c68-ec0c70f7791c
 # ╠═0428c69f-e4c9-4764-9c63-021e2e8e6324
@@ -698,13 +771,20 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─f38dbe03-1734-410e-a54a-31c431487b67
 # ╠═ee3a2eed-929f-4584-8e53-464b06d163d3
 # ╠═c9a1391f-9baf-4a36-9bf4-d055aaabd3ed
-# ╠═36658e60-e7ba-4b28-a78c-2ceba41b0e95
+# ╟─36658e60-e7ba-4b28-a78c-2ceba41b0e95
 # ╠═bb2336d5-ca29-43be-9965-f0c8429d9a5a
 # ╠═5853a195-c210-4428-9390-84c10996cfd6
 # ╠═1405af28-56ca-49be-933d-b930bb1c66d7
 # ╟─0bc4400e-822d-4ad0-8f2b-8b18bad4e0a6
 # ╠═a4e1879f-8b6b-4bb5-b55a-f3e05748b6b9
 # ╠═ad543102-b3f8-11ec-38bb-81fe45c59c6b
-# ╠═ddd29f37-dda3-405c-8c62-c994bae90904
+# ╟─ddd29f37-dda3-405c-8c62-c994bae90904
+# ╠═989460e3-14da-4d56-a08e-de04e8208612
+# ╟─d5a06c6a-a142-45f3-8328-748ba0f6d33b
+# ╠═d43fbc2f-f9d5-40a2-9fe0-b3d8779b43c3
+# ╟─2315c9e0-208d-41fc-a3f8-3f15202d2e46
+# ╠═699e8818-f698-407b-9c47-ffad9f94c7d0
+# ╟─3022a58b-d06f-4a70-bbc3-ded1f7c59229
+# ╠═67baad25-f394-4a0a-8eae-862c5455215d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
