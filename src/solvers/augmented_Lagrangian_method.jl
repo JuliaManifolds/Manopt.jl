@@ -214,9 +214,9 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     o.sub_problem.gradient!!.γ = o.γ
     o.sub_options.x = copy(o.x) 
     update_stopping_criterion!(o,:MinIterateChange, o.ϵ)
-    
-    o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
 
+    o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
+    
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)
     n_ineq_constraint = size(cost_ineq,1)

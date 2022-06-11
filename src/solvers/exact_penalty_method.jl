@@ -210,12 +210,10 @@ function (L::ExactPenaltyCost)(M::AbstractManifold,x::P) where {P}
     # compute the cost functions of the constraints for the chosen smoothing technique
     if L.smoothing_technique == "log_sum_exp"
         if num_inequality_constraints != 0 
-            s = max.(0, inequality_constraints)
-            cost_ineq = sum(s .+ L.ϵ .* log.( exp.((inequality_constraints .- s)./L.ϵ) + exp.(-s./L.ϵ)))
+            cost_ineq = sum(L.ϵ .* log.( 1 .+ exp.(inequality_constraints./L.ϵ)))
         end 
         if num_equality_constraints != 0
-            s = max.(-equality_constraints, equality_constraints)
-            cost_eq = sum(s .+ L.ϵ .* log.( exp.((equality_constraints .- s)./L.ϵ) .+ exp.((-equality_constraints .- s)./L.ϵ)))
+            cost_eq = sum(L.ϵ .* log.( exp.(equality_constraints./L.ϵ) .+ exp.(-equality_constraints./L.ϵ)))
         end
     elseif L.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0 
@@ -264,13 +262,11 @@ function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
     # compute the gradient functions of the constraints for the chosen smoothing technique
     if LG.smoothing_technique == "log_sum_exp"
         if num_inequality_constraints != 0 
-            s = max.(0, inequality_constraints)
-            coef = LG.ρ .* exp.((inequality_constraints.-s)./LG.ϵ) ./ (exp.((inequality_constraints.-s)./LG.ϵ) .+ exp.(-s ./ LG.ϵ))
+            coef = LG.ρ .* exp.(inequality_constraints./LG.ϵ) ./ ( 1 .+ exp.(inequality_constraints ./ LG.ϵ))
             grad_ineq = sum(LG.gradG(M, x) .* coef) 
         end
         if num_equality_constraints != 0
-            s = max.(-equality_constraints, equality_constraints)
-            coef = LG.ρ .* (exp.((equality_constraints .- s) ./LG.ϵ) .- exp.((-equality_constraints .- s) ./LG.ϵ)) ./ (exp.((equality_constraints .- s) ./LG.ϵ) .+ exp.((-equality_constraints .- s) ./LG.ϵ))
+            coef = LG.ρ .* (exp.(equality_constraints ./LG.ϵ) .- exp.(-equality_constraints ./LG.ϵ)) ./ (exp.(equality_constraints ./LG.ϵ) .+ exp.(-equality_constraints ./LG.ϵ))
             grad_eq = sum(LG.gradH(M, x) .* coef)
         end
     elseif LG.smoothing_technique == "linear_quadratic_huber"
