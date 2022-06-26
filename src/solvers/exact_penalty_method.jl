@@ -43,15 +43,15 @@ f(x) + ρ (\sum_{i=1}^m \max\left\{0, g_i(x)\right\} + \sum_{j=1}^p \vert h_j(x)
 * `sub_options` – (`GradientDescentOptions(M,x)`) options of the subproblem
 * `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration 
 * `num_outer_itertgn` – (`30`)
-* `tolgradnorm` – (`1e–3`) the accuracy tolerance
-* `ending_tolgradnorm` – (`1e-6`) the lower bound for the accuracy tolerance
-* `ϵ` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `ϵ_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ϵ` – (`1e–3`) the accuracy tolerance
+* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
+* `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
+* `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the smoothing parameter and threshold for violation of the constraints
-* `θ_tolgradnorm` – (`(ending_tolgradnorm/tolgradnorm)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(tolgradnorm, ending_tolgradnorm), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `θ_u` – (`(u_min/u)^(1/num_outer_itertgn)`) the scaling factor of the smoothing parameter and threshold for violation of the constraints
+* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 
 # Output
@@ -114,14 +114,14 @@ function exact_penalty_method!(
     sub_options::Options = GradientDescentOptions(M,x),
     max_inner_iter::Int=200,
     num_outer_itertgn::Int=30,
-    tolgradnorm::Real=1e-3, 
-    ending_tolgradnorm::Real=1e-6,
-    ϵ::Real=1e-1,           # smoothing parameter u and threshold τ
+    ϵ::Real=1e-3, 
     ϵ_min::Real=1e-6,
+    u::Real=1e-1,
+    u_min::Real=1e-6,
     ρ::Real=1.0, 
     θ_ρ::Real=0.3, 
     min_stepsize = 1e-10,
-    stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:tolgradnorm, ending_tolgradnorm), StopWhenChangeLess(1e-6))), 
+    stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))), 
     return_options=false,
     kwargs...,
 ) where {TF, TGF}
@@ -134,10 +134,10 @@ function exact_penalty_method!(
         sub_options;
         max_inner_iter = max_inner_iter,
         num_outer_itertgn = num_outer_itertgn,
-        tolgradnorm = tolgradnorm, 
-        ending_tolgradnorm = ending_tolgradnorm,
-        ϵ = ϵ,
+        ϵ = ϵ, 
         ϵ_min = ϵ_min,
+        u = u,
+        u_min = u_min,
         ρ = ρ,
         θ_ρ = θ_ρ,
         min_stepsize = min_stepsize,
@@ -156,20 +156,20 @@ end
 # Solver functions
 #
 function initialize_solver!(p::ConstrainedProblem, o::EPMOptions)
+    o.θ_u = (o.u_min/o.u)^(1/o.num_outer_itertgn)
     o.θ_ϵ = (o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
-    o.θ_tolgradnorm = (o.ending_tolgradnorm/o.tolgradnorm)^(1/o.num_outer_itertgn)
     update_stopping_criterion!(o,:MaxIteration,o.max_inner_iter)
     update_stopping_criterion!(o,:MinStepsize, o.min_stepsize)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
-    # use subsolver to minimize the smoothed penalized function within a tolerance ϵ and with max_inner_iter and with minimal stepsize min_stepsize
+    # use subsolver to minimize the smoothed penalized function
     o.sub_problem.cost.ρ = o.ρ
-    o.sub_problem.cost.ϵ = o.ϵ
+    o.sub_problem.cost.u = o.u
     o.sub_problem.gradient!!.ρ = o.ρ
-    o.sub_problem.gradient!!.ϵ = o.ϵ
+    o.sub_problem.gradient!!.u = o.u
     o.sub_options.x = copy(o.x) 
-    update_stopping_criterion!(o,:MinIterateChange, o.tolgradnorm)
+    update_stopping_criterion!(o,:MinIterateChange, o.ϵ)
     
     o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
     
@@ -179,17 +179,13 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     max_violation = max(max(maximum(cost_ineq,init=0),0),maximum(abs.(cost_eq),init=0))
 
     # update ρ if necessary
-    if max_violation > o.ϵ 
+    if max_violation > o.u 
         o.ρ = o.ρ/o.θ_ρ 
     end
-    # # update ρ if necessary
-    # if max_violation >  1e-6
-    #     o.ρ = o.ρ/o.θ_ρ 
-    # end
     
-   # update ϵ and tolgradnorm
-    o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
-    o.tolgradnorm = max(o.ending_tolgradnorm, o.tolgradnorm * o.θ_tolgradnorm);
+   # update u and ϵ
+    o.u = max(o.u_min, o.u * o.θ_u)
+    o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ);
 end
 get_solver_result(o::EPMOptions) = o.x
 
@@ -199,7 +195,7 @@ mutable struct ExactPenaltyCost{F,G,H,T,R}
     h::H
     smoothing_technique::T
     ρ::R
-    ϵ::R
+    u::R
 end
 function (L::ExactPenaltyCost)(M::AbstractManifold,x::P) where {P}
     inequality_constraints = L.g(M,x)
@@ -210,19 +206,19 @@ function (L::ExactPenaltyCost)(M::AbstractManifold,x::P) where {P}
     # compute the cost functions of the constraints for the chosen smoothing technique
     if L.smoothing_technique == "log_sum_exp"
         if num_inequality_constraints != 0 
-            cost_ineq = sum(L.ϵ .* log.( 1 .+ exp.(inequality_constraints./L.ϵ)))
+            cost_ineq = sum(L.u .* log.( 1 .+ exp.(inequality_constraints./L.u)))
         end 
         if num_equality_constraints != 0
-            cost_eq = sum(L.ϵ .* log.( exp.(equality_constraints./L.ϵ) .+ exp.(-equality_constraints./L.ϵ)))
+            cost_eq = sum(L.u .* log.( exp.(equality_constraints./L.u) .+ exp.(-equality_constraints./L.u)))
         end
     elseif L.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0 
-            cost_eq_greater_ϵ = sum((inequality_constraints .- L.ϵ/2) .* (inequality_constraints .> L.ϵ))
-            cost_eq_pos_smaller_ϵ = sum((inequality_constraints.^2 ./(2*L.ϵ)) .* ((inequality_constraints .> 0) .& (inequality_constraints .<= L.ϵ)))
-            cost_ineq = cost_eq_greater_ϵ + cost_eq_pos_smaller_ϵ
+            cost_eq_greater_u = sum((inequality_constraints .- L.u/2) .* (inequality_constraints .> L.u))
+            cost_eq_pos_smaller_u = sum((inequality_constraints.^2 ./(2*L.u)) .* ((inequality_constraints .> 0) .& (inequality_constraints .<= L.u)))
+            cost_ineq = cost_eq_greater_u + cost_eq_pos_smaller_u
         end 
         if num_equality_constraints != 0
-            cost_eq = sum(sqrt.(equality_constraints.^2 .+ L.ϵ^2))
+            cost_eq = sum(sqrt.(equality_constraints.^2 .+ L.u^2))
         end 
     end
 
@@ -251,7 +247,7 @@ mutable struct ExactPenaltyGrad{F,GF,G,GG,H,GH,T,R}
     gradH::GH
     smoothing_technique::T
     ρ::R
-    ϵ::R
+    u::R
 end
 function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
     inequality_constraints = LG.g(M,x)
@@ -262,22 +258,22 @@ function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
     # compute the gradient functions of the constraints for the chosen smoothing technique
     if LG.smoothing_technique == "log_sum_exp"
         if num_inequality_constraints != 0 
-            coef = LG.ρ .* exp.(inequality_constraints./LG.ϵ) ./ ( 1 .+ exp.(inequality_constraints ./ LG.ϵ))
+            coef = LG.ρ .* exp.(inequality_constraints./LG.u) ./ ( 1 .+ exp.(inequality_constraints ./ LG.u))
             grad_ineq = sum(LG.gradG(M, x) .* coef) 
         end
         if num_equality_constraints != 0
-            coef = LG.ρ .* (exp.(equality_constraints ./LG.ϵ) .- exp.(-equality_constraints ./LG.ϵ)) ./ (exp.(equality_constraints ./LG.ϵ) .+ exp.(-equality_constraints ./LG.ϵ))
+            coef = LG.ρ .* (exp.(equality_constraints ./LG.u) .- exp.(-equality_constraints ./LG.u)) ./ (exp.(equality_constraints ./LG.u) .+ exp.(-equality_constraints ./LG.u))
             grad_eq = sum(LG.gradH(M, x) .* coef)
         end
     elseif LG.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0
             grad_equality_constraints = LG.gradG(M, x)
-            grad_ineq_cost_greater_ϵ = sum(grad_equality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.ϵ)) .* LG.ρ)
-            grad_ineq_cost_smaller_ϵ = sum(grad_equality_constraints .* (inequality_constraints./LG.ϵ .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.ϵ))) .* LG.ρ)
-            grad_ineq = grad_ineq_cost_greater_ϵ + grad_ineq_cost_smaller_ϵ
+            grad_ineq_cost_greater_u = sum(grad_equality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.u)) .* LG.ρ)
+            grad_ineq_cost_smaller_u = sum(grad_equality_constraints .* (inequality_constraints./LG.u .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.u))) .* LG.ρ)
+            grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
         end
         if num_equality_constraints != 0
-            grad_eq = sum(LG.gradH(M, x) .* (equality_constraints./sqrt.(equality_constraints.^2 .+ LG.ϵ^2)) .* LG.ρ) 
+            grad_eq = sum(LG.gradH(M, x) .* (equality_constraints./sqrt.(equality_constraints.^2 .+ LG.u^2)) .* LG.ρ) 
         end
     end
 

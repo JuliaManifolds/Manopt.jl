@@ -12,19 +12,19 @@ perform the augmented Lagrangian method (ALM)[^LiuBoumal2020][^source_code]. The
 where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
 For that, in every step ``k`` of the algorithm, the augmented Lagrangian function
 ```math
-\mathcal{L}_{ρ^{(k-1)}}(x, λ^{(k-1)}, γ^{(k-1)}) = f(x) + \frac{ρ^{(k-1)}}{2} (\sum_{j=1}^p (h_j(x)+\frac{γ_j^{(k-1)}}{ρ^{(k-1)}})^2 + \sum_{i=1}^m \max\left\{0,\frac{λ_i^{(k-1)}}{ρ^{(k-1)}}+ g_i(x)\right\}^2)
+\mathcal{L}_{ρ^{(k-1)}}(x, μ^{(k-1)}, λ^{(k-1)}) = f(x) + \frac{ρ^{(k-1)}}{2} (\sum_{j=1}^p (h_j(x)+\frac{λ_j^{(k-1)}}{ρ^{(k-1)}})^2 + \sum_{i=1}^m \max\left\{0,\frac{μ_i^{(k-1)}}{ρ^{(k-1)}}+ g_i(x)\right\}^2)
 ```
-is minimized over all ``x ∈\mathcal{M}``, where ``λ^{(k-1)}=[λ_1^{(k-1)}, …, λ_m^{(k-1)}]^T`` and ``γ^{(k-1)}=[γ_1^{(k-1)}, …, γ_p^{(k-1)}]^T`` are the current iterations of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
+is minimized over all ``x ∈\mathcal{M}``, where ``μ^{(k-1)}=[μ_1^{(k-1)}, …, μ_m^{(k-1)}]^T`` and ``λ^{(k-1)}=[λ_1^{(k-1)}, …, λ_p^{(k-1)}]^T`` are the current iterations of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
 
 Then, the Lagrange multipliers are updated by 
 ```math
-γ_j^{(k)} =\operatorname{clip}_{[γ_{\min},γ_{\max}]} (γ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p,
+λ_j^{(k)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p,
 ```
 and
 ```math
-λ_i^{(k)} =\operatorname{clip}_{[0,λ_{\max}]} (λ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{for all}  i=1,…,m,
+μ_i^{(k)} =\operatorname{clip}_{[0,μ_{\max}]} (μ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{for all}  i=1,…,m,
 ```
-where ``γ_{\min} \leq γ_{\max}`` and ``λ_{\max}`` are the multiplier boundaries. 
+where ``λ_{\min} \leq λ_{\max}`` and ``μ_{\max}`` are the multiplier boundaries. 
 
 Next, we update the accuracy tolerance ``ϵ`` by setting
 ```math
@@ -34,7 +34,7 @@ where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ 
 
 Last, we update the penalty parameter ``ρ``. For this, we define
 ```math
-σ^{(k)}=\max_{j=1,…,p, i=1,…,m} \{\|h_j(x^{(k)})\|, \|\max_{i=1,…,m}\{g_i(x^{(k)}), -\frac{λ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
+σ^{(k)}=\max_{j=1,…,p, i=1,…,m} \{\|h_j(x^{(k)})\|, \|\max_{i=1,…,m}\{g_i(x^{(k)}), -\frac{μ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
 ```
 Then, we update `ρ` according to
 ```math
@@ -73,11 +73,11 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `num_outer_itertgn` – (`30`)
 * `ϵ` – (`1e-3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
-* `γ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `γ_min` – (`- γ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `λ` – (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
-* `γ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
+* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `μ` – (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
+* `λ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
@@ -142,24 +142,24 @@ function augmented_Lagrangian_method!(
     gradG::Function=x->[],
     gradH::Function=x->[],
     x=random_point(M),
-    sub_problem::Problem = GradientProblem(M,F,gradF),
-    sub_options::Options = GradientDescentOptions(M,x),
+    sub_problem::Problem = GradientProblem(M,LagrangeCost(F, G, H, 1.0, ones(size(G(M,x),1)), ones(size(H(M,x),1))),LagrangeGrad(F, gradF, G, gradG, H, gradH, 1.0, ones(size(G(M,x),1)), ones(size(H(M,x),1)))),
+    sub_options::Options = QuasiNewtonOptions(copy(x), zero_vector(M,x), QuasiNewtonLimitedMemoryDirectionUpdate(M, copy(M,x), InverseBFGS(),30), StopAfterIteration(200) | StopWhenGradientNormLess(1e-3) | StopWhenStepsizeLess(1e-10), WolfePowellLinesearch(M,10^(-4),0.999)),
     max_inner_iter::Int=200,
     num_outer_itertgn::Int=30,
-    ϵ::Real=1e-3, #(starting)tolgradnorm
-    ϵ_min::Real=1e-6, #endingtolgradnorm
-    γ_max::Real=20.0,
-    γ_min::Real=-γ_max,
+    ϵ::Real=1e-3, 
+    ϵ_min::Real=1e-6,
     λ_max::Real=20.0,
-    λ::Vector=ones(length(G(M,x))),
-    γ::Vector=ones(length(H(M,x))),
+    λ_min::Real=-λ_max,
+    μ_max::Real=20.0,
+    μ::Vector=ones(size(G(M,x),1)),
+    λ::Vector=ones(size(H(M,x),1)),
     ρ::Real=1.0, 
     τ::Real=0.8,
     θ_ρ::Real=0.3, 
-    θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
-    oldacc::Real=Inf, 
+    # θ_ϵ::Real=(ϵ_min/ϵ)^(1/num_outer_itertgn), 
+    # oldacc::Real=Inf, 
     min_stepsize = 1e-10,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-6)), 
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenEuclideanChangeLess(min_stepsize)), 
     return_options=false,
     kwargs...,
 ) where {TF, TGF}
@@ -174,11 +174,11 @@ function augmented_Lagrangian_method!(
         num_outer_itertgn = num_outer_itertgn,
         ϵ = ϵ,
         ϵ_min = ϵ_min,
-        γ_max = γ_max,
-        γ_min = γ_min,
         λ_max = λ_max,
+        λ_min = λ_min,
+        μ_max = μ_max,
+        μ = μ,
         λ = λ,
-        γ = γ,
         ρ = ρ,
         τ = τ,
         θ_ρ = θ_ρ,
@@ -205,13 +205,13 @@ function initialize_solver!(p::ConstrainedProblem, o::ALMOptions)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
-    # use subsolver to minimize the augmented Lagrangian within a tolerance ϵ and with max_inner_iter and with minimal stepsize min_stepsize
+    # use subsolver to minimize the augmented Lagrangian
     o.sub_problem.cost.ρ = o.ρ
+    o.sub_problem.cost.μ = o.μ
     o.sub_problem.cost.λ = o.λ
-    o.sub_problem.cost.γ = o.γ
     o.sub_problem.gradient!!.ρ = o.ρ
+    o.sub_problem.gradient!!.μ = o.μ
     o.sub_problem.gradient!!.λ = o.λ
-    o.sub_problem.gradient!!.γ = o.γ
     o.sub_options.x = copy(o.x) 
     update_stopping_criterion!(o,:MinIterateChange, o.ϵ)
 
@@ -220,13 +220,13 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)
     n_ineq_constraint = size(cost_ineq,1)
-    o.λ = convert(Vector{Float64},min.(ones(n_ineq_constraint).* o.λ_max, max.(o.λ + o.ρ .* cost_ineq, zeros(n_ineq_constraint))))
+    o.μ = convert(Vector{Float64},min.(ones(n_ineq_constraint).* o.μ_max, max.(o.μ + o.ρ .* cost_ineq, zeros(n_ineq_constraint))))
     cost_eq = get_equality_constraints(p, o.x)
     n_eq_constraint = size(cost_eq,1)
-    o.γ = convert(Vector{Float64},min.(ones(n_eq_constraint).* o.γ_max , max.(ones(n_eq_constraint) .* o.γ_min, o.γ + o.ρ .* cost_eq)))
+    o.λ = convert(Vector{Float64},min.(ones(n_eq_constraint).* o.λ_max , max.(ones(n_eq_constraint) .* o.λ_min, o.λ + o.ρ .* cost_eq)))
 
     # get new evaluation of penalty
-    new_acc = max(maximum(abs.(max.(-o.λ./o.ρ, cost_ineq)),init=0), maximum(abs.(cost_eq),init=0))
+    new_acc = max(maximum(abs.(max.(-o.μ./o.ρ, cost_ineq)),init=0), maximum(abs.(cost_eq),init=0))
 
     # update ρ if necessary
     if iter == 1 || new_acc > o.τ * o.old_acc 
@@ -244,8 +244,8 @@ mutable struct LagrangeCost{F,G,H,R,T}
     g::G
     h::H
     ρ::R
+    μ::T
     λ::T
-    γ::T
 end 
 function (L::LagrangeCost)(M::AbstractManifold,x::P) where {P}
     inequality_constraints = L.g(M,x)
@@ -253,10 +253,10 @@ function (L::LagrangeCost)(M::AbstractManifold,x::P) where {P}
     num_inequality_constraints = size(inequality_constraints,1)
     num_equality_constraints = size(equality_constraints,1)
     if num_inequality_constraints != 0 
-        cost_ineq = sum(max.(zeros(num_inequality_constraints), L.λ ./ L.ρ .+ inequality_constraints).^2)
+        cost_ineq = sum(max.(zeros(num_inequality_constraints), L.μ ./ L.ρ .+ inequality_constraints).^2)
     end
     if num_equality_constraints != 0
-        cost_eq = sum((equality_constraints .+ L.γ./L.ρ).^2)
+        cost_eq = sum((equality_constraints .+ L.λ./L.ρ).^2)
     end
     if num_inequality_constraints != 0
         if num_equality_constraints != 0
@@ -281,8 +281,8 @@ mutable struct LagrangeGrad{F,GF,G,GG,H,GH,R,T}
     h::H
     gradH::GH
     ρ::R
+    μ::T
     λ::T
-    γ::T
 end
 function (LG::LagrangeGrad)(M::AbstractManifold,x::P) where {P}
     inequality_constraints = LG.g(M,x)
@@ -291,11 +291,11 @@ function (LG::LagrangeGrad)(M::AbstractManifold,x::P) where {P}
     num_equality_constraints = size(equality_constraints,1)
     if num_inequality_constraints != 0 
         grad_ineq = sum(
-            ((inequality_constraints .* LG.ρ .+ LG.λ) .* LG.gradG(M,x)).*(inequality_constraints .+ LG.λ./LG.ρ .>0)
+            ((inequality_constraints .* LG.ρ .+ LG.μ) .* LG.gradG(M,x)).*(inequality_constraints .+ LG.μ./LG.ρ .>0)
             )
     end
     if num_equality_constraints != 0
-        grad_eq = sum((equality_constraints .* LG.ρ .+ LG.γ) .* LG.gradH(M,x))
+        grad_eq = sum((equality_constraints .* LG.ρ .+ LG.λ) .* LG.gradH(M,x))
     end
     if num_inequality_constraints != 0
         if num_equality_constraints != 0

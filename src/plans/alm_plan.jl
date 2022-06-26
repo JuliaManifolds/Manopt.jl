@@ -16,11 +16,11 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `num_outer_itertgn` – (`30`)
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
-* `γ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `γ_min` – (`- γ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `λ` – (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
-* `γ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
+* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `μ` – (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
+* `λ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
@@ -44,13 +44,13 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
     sub_options::Op 
     max_inner_iter::Int
     num_outer_itertgn::Int
-    ϵ::Real #(starting)tolgradnorm
-    ϵ_min::Real #endingtolgradnorm
-    γ_max::Real
-    γ_min::Real
+    ϵ::Real
+    ϵ_min::Real 
     λ_max::Real
+    λ_min::Real
+    μ_max::Real
+    μ::Vector
     λ::Vector
-    γ::Vector
     ρ::Real
     τ::Real
     θ_ρ::Real
@@ -66,13 +66,13 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         sub_options::Op; 
         max_inner_iter::Int=200,
         num_outer_itertgn::Int=30,
-        ϵ::Real=1e-3, #(starting)tolgradnorm
-        ϵ_min::Real=1e-6, #endingtolgradnorm
-        γ_max::Real=20.0,
-        γ_min::Real=-γ_max,
+        ϵ::Real=1e-3, 
+        ϵ_min::Real=1e-6, 
         λ_max::Real=20.0,
-        λ::Vector=ones(length(get_inequality_constraints(p,x0))),
-        γ::Vector=ones(length(get_equality_constraints(p,x0))),
+        λ_min::Real=-λ_max,
+        μ_max::Real=20.0,
+        μ::Vector=ones(length(get_inequality_constraints(p,x0))),
+        λ::Vector=ones(length(get_equality_constraints(p,x0))),
         ρ::Real=1.0, 
         τ::Real=0.8,
         θ_ρ::Real=0.3, 
@@ -92,11 +92,11 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         o.num_outer_itertgn = num_outer_itertgn
         o.ϵ = ϵ
         o.ϵ_min = ϵ_min
-        o.γ_max = γ_max
-        o.γ_min = γ_min
         o.λ_max = λ_max
+        o.λ_min = λ_min
+        o.μ_max = μ_max
+        o.μ = μ
         o.λ = λ
-        o.γ = γ
         o.ρ = ρ
         o.τ = τ
         o.θ_ρ = θ_ρ
