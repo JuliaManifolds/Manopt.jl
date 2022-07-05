@@ -1,5 +1,3 @@
-# TODO: change documentation
-# DONE: addapted struct and functions
 @doc raw"""
     PrimalDualSemismoothNewtonProblem {T,mT <: AbstractManifold, nT <: AbstractManifold} <: PrimalDualProblem} <: AbstractPrimalDualProblem{T}
 

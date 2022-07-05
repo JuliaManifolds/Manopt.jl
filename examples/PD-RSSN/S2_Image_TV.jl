@@ -27,7 +27,7 @@ video_folder = joinpath(results_folder, "video")
 (export_primal_video && !isdir(video_folder)) && mkdir(video_folder)
 #
 # Experiment Parameters
-signal_section_size = 2
+signal_section_size = 4
 σ = 0.25
 τ = 0.25
 γ = 0.2
@@ -80,7 +80,7 @@ experiments = [
 x0 = deepcopy(f)
 m = deepcopy(fill(base, size(f)))
 ξ0 = zero_vector(M2, m2(m))
-records = Array{Array{Tuple{Int,Float64,Array},1},1}()
+records = Array{Array{Tuple{Int,Float64,Array,Array},1},1}()
 for e in experiments
     name = e[:name]
     print("\n --- Running Experiment $name ---")
@@ -122,7 +122,7 @@ for e in experiments
             10,
             :Stop,
         ],
-        record=[:Iteration, :Cost, :Iterate, :DualIterate =>RecordDualIterate(:ξ)],
+        record=[:Iteration, :Cost, :Iterate, :ξ],
         stopping_criterion=StopAfterIteration(get(e, :maxIter, 100)),
         variant=:linearized,
         return_options=true,
@@ -139,15 +139,13 @@ for e in experiments
         # run(`ffmpeg -framerate 15 -pattern_type glob -i $(source) -c:v libx264 -vf pad=ceil\(iw/2\)*2:ceil\(ih/2\)*2 -pix_fmt yuv420p $(dest)`)
     end
 
-    print(get_record(o)[1])
-
 # TODO get dual
     @time o_pdrssn = primal_dual_semismooth_Newton(
         M,
         M2,
         cost,
         get(e, :x, x0),
-        get(e, :ξ, ξ0),
+        get(e, :ξ, get_record(o)[1][4]),
         get(e, :m, m),
         get(e, :n, m2(get(e, :m, m))),
         prox_F,
@@ -168,7 +166,7 @@ for e in experiments
             :Stop,
         ],
         record=[:Iteration, :Cost, :Iterate],
-        stopping_criterion=StopAfterIteration(get(e, :maxIter, 20)),
+        stopping_criterion=StopAfterIteration(get(e, :maxIter, 10)),
         # variant=:linearized,
         return_options=true,
     )
