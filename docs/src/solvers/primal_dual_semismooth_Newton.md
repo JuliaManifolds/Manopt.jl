@@ -26,7 +26,7 @@ X\left(p, \xi_{n}\right):=\left(\begin{array}{c}
 and solve for $X(p,ξ)=0$.
 
 Given base points $m∈\mathcal C$, $n=Λ(m)∈\mathcal D$,
-initial primal and dual values $p^{(0)} ∈\mathcal C$, $ξ_n^{(0)} ∈T_n^*\mathcal N$,
+initial primal and dual values $p^{(0)} ∈\mathcal C$, $ξ_{n}^{(0)} ∈ \mathcal T_{n}^{*}\mathcal N$,
 and primal and dual step sizes $\sigma$, $\tau$.
 
 The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref) is fulfilled with)
