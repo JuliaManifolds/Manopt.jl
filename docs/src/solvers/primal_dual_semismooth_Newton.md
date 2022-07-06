@@ -31,13 +31,14 @@ and primal and dual step sizes $\sigma$, $\tau$.
 
 The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref) is reached)
 
-1.  Choose any
+1.  Choose any element
    ```math
-   V(p^{(k)},ξ_n^{(k)}) ∈ ∂_C X(p^{(k)},ξ_n^{(k)})
+   V^{(k)} ∈ ∂_C X(p^{(k)},ξ_n^{(k)})
    ```
+   of the Clarke generalized covariant derivative
 2. Solve
    ```math
-   V(p^{(k)},ξ_n^{(k)}) [(d_p^{(k)}, d_n^{(k)})] = - X(p^{(k)},ξ_n^{(k)})
+   V^{(k)} [(d_p^{(k)}, d_n^{(k)})] = - X(p^{(k)},ξ_n^{(k)})
    ```
    in the vector space $\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 3. Update

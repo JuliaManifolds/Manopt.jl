@@ -73,7 +73,6 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
 		    return Y
 		elseif p == 2
 			norms = norm.(Ref(N.manifold), x, Ξ)
-			# TODO  along d dimension
 			norms_ = sqrt.(sum(norms.^2, dims=length(pdims))) # TODO check size
 
 			for i in R # iterate over all pixel
@@ -106,37 +105,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
     throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
 
-# function old_differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, p=2.0, q=1.0)
-# 	pdims = power_dimensions(N)
-#     if length(pdims) == 1
-#         d = 1
-#         s = 1
-#         iRep = (1,)
-#     else
-#         d = pdims[end]
-#         s = length(pdims) - 1
-#         if s != d
-#             throw(
-#                 ErrorException(
-#                     "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
-#                 ),
-#             )
-#         end
-#         iRep = (Integer.(ones(d))..., d)
-#     end
-#     if q == Inf
-#         if p == Inf
-#             norms = norm.(Ref(N.manifold), x, Ξ)
-#         else
-#             throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
-#         end
-#         return convert(typeof(norms),(norms .<= 1)) .* Η + convert(typeof(norms),(norms .>= 1)) .* 1 ./(norms .+ 1e-16) .* (Η - 1 ./(norms.^2 .+ 1e-16) .* inner.(Ref(N.manifold), n, Ξ, Η) .* Ξ)
-#     end # end q
-#     throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
-# end
-
-# TODO potentially nice to compare results with those from old code
-Dprox_G_dual(N, n, λ, ξ, η) = differential_project_collaborative_TV(N, λ, n, ξ, η, 2.0, Inf, 1e-2)
+Dprox_G_dual(N, n, λ, ξ, η) = differential_project_collaborative_TV(N, λ, n, ξ, η, 2.0, Inf)
 # Dprox_G_dual(N, n, λ, ξ, η; γ=0,isotropic=false) = differential_project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0)
 
 DΛ(M, m, X) = differential_forward_logs(M, m, X)

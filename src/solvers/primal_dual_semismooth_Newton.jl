@@ -1,7 +1,7 @@
 using SparseArrays
 
 @doc raw"""
-    primal_dual_semismooth_Newton(M, N, cost, x0, ξ0, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_DΛ)
+    primal_dual_semismooth_Newton(M, N, cost, x0, ξ0, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_linearized_operator)
 
 Perform the Primal-Dual Riemannian Semismooth Newton algorithm.
 
@@ -27,6 +27,7 @@ For more details on the algorithm, see[^DiepeveenLellmann2021].
 * `Λ` (`missing`) the exact operator, that is required if `Λ(m)=n` does not hold;
 `missing` indicates, that the forward operator is exact.
 * `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
+* `reg_param` – (`1e-5`) regularisation parameter for the Newton matrix
 Note that this changes the arguments the `forward_operator` will be called.
 * `stopping_criterion` – (`stopAtIteration(50)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
@@ -36,12 +37,57 @@ Note that this changes the arguments the `forward_operator` will be called.
 * `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
 
 [^DiepeveenLellmann2021]:
-> W. Diepeveen, J. Lellmann:
-> _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
-> SIAM Journal on Imaging Sciences, 2021.
-> doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
+    > W. Diepeveen, J. Lellmann:
+    > _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
+    > SIAM Journal on Imaging Sciences, 2021.
+    > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
 function primal_dual_semismooth_Newton(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    cost::TF,
+    x::P,
+    ξ::T,
+    m::P,
+    n::Q,
+    prox_F::Function,
+    diff_prox_F::Function,
+    prox_G_dual::Function,
+    diff_prox_G_dual::Function,
+    linearized_forward_operator::Function,
+    adjoint_linearized_operator::Function;
+    Λ::Union{Function,Missing}=missing,
+    kwargs...,
+) where {TF,P,T,Q}
+    x_res = copy(M, x)
+    ξ_res = copy(N, n, ξ)
+    m_res = copy(M, m)
+    n_res = copy(N, n)
+    return primal_dual_semismooth_Newton!(
+        M,
+        N,
+        cost,
+        x_res,
+        ξ_res,
+        m_res,
+        n_res,
+        prox_F,
+        diff_prox_F,
+        prox_G_dual,
+        diff_prox_G_dual,
+        linearized_forward_operator,
+        adjoint_linearized_operator;
+        Λ=Λ,
+        kwargs...,
+    )
+end
+@doc raw"""
+    primal_dual_semismooth_Newton(M, N, cost, x0, ξ0, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator)
+
+Perform the Riemannian Primal-dual Riemannian semismooth Newton algorithm in place of `x`, `ξ`, and potentially `m`,
+`n` if they are not fixed. See [`primal_dual_semismooth_Newton`](@ref) for details and optional parameters.
+"""
+function primal_dual_semismooth_Newton!(
     M::mT,
     N::nT,
     cost::Function,
@@ -59,6 +105,7 @@ function primal_dual_semismooth_Newton(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     Λ::Union{Function,Missing}=missing,
     primal_stepsize=1 / sqrt(8),
+    reg_param=1e-5,
     stopping_criterion::StoppingCriterion=StopAfterIteration(50),
     update_primal_base::Union{Function,Missing}=missing,
     update_dual_base::Union{Function,Missing}=missing,
@@ -96,10 +143,11 @@ function primal_dual_semismooth_Newton(
         x,
         ξ,
         primal_stepsize,
-        dual_stepsize;
+        dual_stepsize,
+        reg_param;
         stopping_criterion=stopping_criterion,
-        update_primal_base=update_primal_base, # TODO ?
-        update_dual_base=update_dual_base, # TODO ?
+        update_primal_base=update_primal_base,
+        update_dual_base=update_dual_base,
         retraction_method=retraction_method,
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
@@ -141,6 +189,7 @@ function primal_dual_step!(
 
     # construct matrix
     ∂X = construct_matrix(p, o)
+    ∂X += o.reg_param * sparse(I,size(∂X))  # prevent singular matrix at solution
 
     # solve matrix -> find coordinates
     d_coords = ∂X \ -X

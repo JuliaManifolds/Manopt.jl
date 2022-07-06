@@ -1,7 +1,7 @@
 @doc raw"""
     PrimalDualSemismoothNewtonProblem {T,mT <: AbstractManifold, nT <: AbstractManifold} <: PrimalDualProblem} <: AbstractPrimalDualProblem{T}
 
-Describes a Problem for the linearized Chambolle-Pock algorithm.
+Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [^DiepeveenLellmann2021]
 
 # Fields
 
@@ -20,6 +20,11 @@ Describes a Problem for the linearized Chambolle-Pock algorithm.
 
     PrimalDualSemismoothNewtonProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ)
 
+[^DiepeveenLellmann2021]:
+    > W. Diepeveen, J. Lellmann:
+    > _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
+    > SIAM Journal on Imaging Sciences, 2021.
+    > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
 mutable struct PrimalDualSemismoothNewtonProblem{
     T,mT<:AbstractManifold,nT<:AbstractManifold
@@ -68,9 +73,10 @@ end
 * `m` - base point on $ \mathcal M $
 * `n` - base point on $ \mathcal N $
 * `x` - an initial point on $x^{(0)} \in \mathcal M$ (and its previous iterate)
-* `ξ` - an initial tangent vector $\xi^{(0)}\in T^*\mathcal N$ (and its previous iterate)
+* `ξ` - an initial tangent vector $\xi^{(0)}\in T_{n}^*\mathcal N$ (and its previous iterate)
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
-* `dual_stepsize` – (`1/sqrt(8)`) proximnal parameter of the dual prox
+* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
+* `reg_param` – (`1e-5`) regularisation parameter for the Newton matrix
 * `stop` - a [`StoppingCriterion`](@ref)
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
@@ -84,7 +90,7 @@ If you activate these to be different from the default identity, you have to pro
 `p.Λ` for the algorithm to work (which might be `missing`).
 
 # Constructor
-    PrimalDualSemismoothNewtonOptions(m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
+    PrimalDualSemismoothNewtonOptions(m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64, reg_param::Float64;
         stopping_criterion::StoppingCriterion = StopAfterIteration(50),
         update_primal_base::Union{Function,Missing} = missing,
         update_dual_base::Union{Function,Missing} = missing,
@@ -107,6 +113,7 @@ mutable struct PrimalDualSemismoothNewtonOptions{
     ξ::T
     primal_stepsize::Float64
     dual_stepsize::Float64
+    reg_param::Float64
     stop::StoppingCriterion
     update_primal_base::Union{Function,Missing}
     update_dual_base::Union{Function,Missing}
@@ -120,7 +127,8 @@ mutable struct PrimalDualSemismoothNewtonOptions{
         x::P,
         ξ::T,
         primal_stepsize::Float64=1 / sqrt(8),
-        dual_stepsize::Float64=1 / sqrt(8);
+        dual_stepsize::Float64=1 / sqrt(8),
+        reg_param::Float64=1e-5;
         stopping_criterion::StoppingCriterion=StopAfterIteration(50),
         update_primal_base::Union{Function,Missing}=missing,
         update_dual_base::Union{Function,Missing}=missing,
@@ -142,6 +150,7 @@ mutable struct PrimalDualSemismoothNewtonOptions{
             ξ,
             primal_stepsize,
             dual_stepsize,
+            reg_param,
             stopping_criterion,
             update_primal_base,
             update_dual_base,
