@@ -78,14 +78,14 @@ end
 * `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
 * `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
 
-where for the last two the functions a [`Problem`](@ref)` p`,
-[`Options`](@ref)` o` and the current iterate `i` are the arguments.
+where for the last two the functions a [`Problem`](@ref) `p`,
+[`Options`](@ref) `o` and the current iterate `i` are the arguments.
 If you activate these to be different from the default identity, you have to provide
 `p.Λ` for the algorithm to work (which might be `missing`).
 
 # Constructor
     PrimalDualSemismoothNewtonOptions(m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
-        stopping_criterion::StoppingCriterion = StopAfterIteration(300),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(50),
         update_primal_base::Union{Function,Missing} = missing,
         update_dual_base::Union{Function,Missing} = missing,
         retraction_method = ExponentialRetraction(),

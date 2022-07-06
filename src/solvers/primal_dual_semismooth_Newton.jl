@@ -5,11 +5,11 @@ using SparseArrays
 
 Perform the Primal-Dual Riemannian Semismooth Newton algorithm.
 
-Given a `cost` function $\mathcal E\colon\mathcal M \to ℝ$ of the form
+Given a `cost` function $\mathcal E\colon\mathcal M \to \overline{ℝ}$ of the form
 ```math
 \mathcal E(x) = F(x) + G( Λ(x) ),
 ```
-where $F\colon\mathcal M \to ℝ$, $G\colon\mathcal N \to ℝ$,
+where $F\colon\mathcal M \to \overline{ℝ}$, $G\colon\mathcal N \to \overline{ℝ}$,
 and $\Lambda\colon\mathcal M \to \mathcal N$. The remaining input parameters are
 
 * `x,ξ` primal and dual start points $x\in\mathcal M$ and $\xi\in T_n\mathcal N$
@@ -24,7 +24,7 @@ For more details on the algorithm, see[^DiepeveenLellmann2021].
 # Optional Parameters
 
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
-# * `Λ` (`missing`) the exact operator, that is required if `Λ(m)=n` does not hold;
+* `Λ` (`missing`) the exact operator, that is required if `Λ(m)=n` does not hold;
 `missing` indicates, that the forward operator is exact.
 * `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 Note that this changes the arguments the `forward_operator` will be called.

@@ -19,27 +19,34 @@ The algorithm comes down to applying the Riemannian semismooth Newton method to 
 ```math
 X\left(p, \xi_{n}\right):=\left(\begin{array}{c}
 -\log _{p} \operatorname{prox}_{\sigma F}\left(\exp _{p}\left(\mathcal{P}_{p \leftarrow m}\left(-\sigma\left(D_{m} \Lambda\right)^{*}\left[\mathcal{P}_{\Lambda(m) \leftarrow n} \xi_{n}\right]\right)^{\sharp}\right)\right) \\
-\xi_{n}-\operatorname{prox}_{\tau G_{n}^{*}}\left(\xi_{n}+\tau\left(\mathcal{P}_{n \leftarrow \Lambda(m)} D_{m} \Lambda\left[\log _{m} p\right]\right)^{b}\right)
+\xi_{n}-\operatorname{prox}_{\tau G_{n}^{*}}\left(\xi_{n}+\tau\left(\mathcal{P}_{n \leftarrow \Lambda(m)} D_{m} \Lambda\left[\log _{m} p\right]\right)^{\flat}\right)
 \end{array}\right)
 ```
 
-and solve for $X(p,ξ)=0$.
+and solve for $X(p,ξ_{n})=0$.
 
 Given base points $m∈\mathcal C$, $n=Λ(m)∈\mathcal D$,
 initial primal and dual values $p^{(0)} ∈\mathcal C$, $ξ_{n}^{(0)} ∈ \mathcal T_{n}^{*}\mathcal N$,
 and primal and dual step sizes $\sigma$, $\tau$.
 
-The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref) is fulfilled with)
+The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref) is reached)
 
-1. ```math
-   \text{Choose any } V(p^{(k)},ξ_n^{(k)}) ∈ ∂_C X(p^{(k)},ξ_n^{(k)})
+1.  Choose any
+   ```math
+   V(p^{(k)},ξ_n^{(k)}) ∈ ∂_C X(p^{(k)},ξ_n^{(k)})
    ```
-2. ```math
-   \text{Solve } V(p^{(k)},ξ_n^{(k)}) (d_p^{(k)}, d_n^{(k)}) = - X(p^{(k)},ξ_n^{(k)}) \text{ in the vector space } \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}
+2. Solve
+   ```math
+   V(p^{(k)},ξ_n^{(k)}) [(d_p^{(k)}, d_n^{(k)})] = - X(p^{(k)},ξ_n^{(k)})
    ```
-3. ```math
-   p^{(k+1)} = \exp_{(k)}(d_p^{(k)})
-   ξ_n^{(k+1)} = ξ_n^{(k)} + d_n^{(k)}
+   in the vector space $\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
+3. Update
+   ```math
+   p^{(k+1)} := \exp_{p^{(k)}}(d_p^{(k)})
+   ```
+   and
+   ```math
+   ξ_n^{(k+1)} := ξ_n^{(k)} + d_n^{(k)}
    ```
 
 Furthermore you can exchange the exponential map, the logarithmic map, and the parallel transport
