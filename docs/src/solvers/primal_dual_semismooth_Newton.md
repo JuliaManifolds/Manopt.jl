@@ -1,6 +1,6 @@
 # [The Primal-dual Riemannian semismooth Newton Algorithm](@id PDRSSNSolver)
 
-The Primal-dual Riemannian semismooth Newton Algorithm is a second-order method derived from the [`ChambollePockSolver`](@ref).
+The Primal-dual Riemannian semismooth Newton Algorithm is a second-order method derived from the [`ChambollePock`](@ref).
 
 The aim is to solve an optimization problem on a manifold with a cost function of the form
 
@@ -66,45 +66,8 @@ primal_dual_semismooth_Newton
 primal_dual_semismooth_Newton!
 ```
 
-## Problem & Options
+## Options
 
 ```@docs
-PrimalDualOptions
 PrimalDualSemismoothNewtonOptions
-```
-
-## Useful Terms
-
-```@docs
-primal_residual
-dual_residual
-```
-
-## Debug
-
-```@docs
-DebugDualBaseIterate
-DebugDualBaseChange
-DebugPrimalBaseIterate
-DebugPrimalBaseChange
-DebugDualChange
-DebugDualIterate
-DebugDualResidual
-DebugPrimalChange
-DebugPrimalIterate
-DebugPrimalResidual
-DebugPrimalDualResidual
-```
-
-## Record
-
-```@docs
-RecordDualBaseIterate
-RecordDualBaseChange
-RecordDualChange
-RecordDualIterate
-RecordPrimalBaseIterate
-RecordPrimalBaseChange
-RecordPrimalChange
-RecordPrimalIterate
 ```
