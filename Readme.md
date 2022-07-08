@@ -28,7 +28,7 @@ In Julia you can get started by just typing
 ] add Manopt
 ```
 
-then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/pluto/Optimize!.html) tutorial or the
+then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial or the
 [examples](https://github.com/JuliaManifolds/Manopt.jl/tree/master/examples)
 in this repository.
 
