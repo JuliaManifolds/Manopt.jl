@@ -41,7 +41,6 @@ for t in tutorials
         ```@meta
         EditURL = "$(tutorial_src_folder)$(t[:file]).jl"
         ```
-
         $(rendered[1])
         """,
     )
@@ -76,7 +75,6 @@ for e in examples
         ```@meta
         EditURL = "$(examples_src_folder)$(e[:file]).jl"
         ```
-
         $(rendered[1])
         """,
     )
