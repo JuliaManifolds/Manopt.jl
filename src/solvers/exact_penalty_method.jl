@@ -68,13 +68,11 @@ function exact_penalty_method(
     gradG::Function=x->[],
     gradH::Function=x->[],
     x=random_point(M), 
-    sub_problem::Problem = GradientProblem(M,F,gradF),
-    sub_options::Options = GradientDescentOptions(M,x),
     kwargs...,
 ) where {TF, TGF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
-    return exact_penalty_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, sub_problem=sub_problem, sub_options=sub_options,kwargs...)
+    return exact_penalty_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, kwargs...)
 end
 @doc raw"""
     exact_penalty_method!(M, F, gradF; G, H, gradG, gradH)
@@ -110,18 +108,18 @@ function exact_penalty_method!(
     gradG::Function=x->[],
     gradH::Function=x->[],
     x=random_point(M),
-    sub_problem::Problem = GradientProblem(M,F,gradF),
-    sub_options::Options = GradientDescentOptions(M,x),
     max_inner_iter::Int=200,
-    num_outer_itertgn::Int=30,
     ϵ::Real=1e-3, 
     ϵ_min::Real=1e-6,
     u::Real=1e-1,
     u_min::Real=1e-6,
     ρ::Real=1.0, 
-    θ_ρ::Real=0.3, 
     min_stepsize = 1e-10,
-    stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))), 
+    sub_problem::Problem = GradientProblem(M,ExactPenaltyCost(F, G, H, "linear_quadratic_huber", ρ, u),ExactPenaltyGrad(F, gradF, G, gradG, H, gradH, "linear_quadratic_huber", ρ, u)),
+    sub_options::Options = QuasiNewtonOptions(copy(x), zero_vector(M,x), QuasiNewtonLimitedMemoryDirectionUpdate(M, copy(M,x), InverseBFGS(),30), StopAfterIteration(max_inner_iter) | StopWhenGradientNormLess(ϵ) | StopWhenStepsizeLess(min_stepsize), WolfePowellLinesearch(M,10^(-4),0.999)),
+    num_outer_itertgn::Int=30,
+    θ_ρ::Real=0.3, 
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenEuclideanChangeLess(min_stepsize)), 
     return_options=false,
     kwargs...,
 ) where {TF, TGF}
@@ -267,10 +265,22 @@ function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
         end
     elseif LG.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0
-            grad_equality_constraints = LG.gradG(M, x)
-            grad_ineq_cost_greater_u = sum(grad_equality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.u)) .* LG.ρ)
-            grad_ineq_cost_smaller_u = sum(grad_equality_constraints .* (inequality_constraints./LG.u .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.u))) .* LG.ρ)
-            grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
+            # grad_inequality_constraints = LG.gradG(M, x)
+            # grad_ineq_cost_greater_u = sum(grad_inequality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.u)) .* LG.ρ)
+            # grad_ineq_cost_smaller_u = sum(grad_inequality_constraints .* (inequality_constraints./LG.u .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.u))) .* LG.ρ)
+            # grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
+            grad_ineq = zeros(size(LG.gradG(M,x)[1]))
+            for i ∈ 1:num_inequality_constraints
+                coef = 0
+                if inequality_constraints[i] >= 0
+                    if inequality_constraints[i] >= LG.u
+                        coef = 1
+                    else
+                        coef = inequality_constraints[i]/LG.u
+                    end
+                    grad_ineq .+= (LG.ρ * coef) .* LG.gradG(M, x)[i]
+                end
+            end
         end
         if num_equality_constraints != 0
             grad_eq = sum(LG.gradH(M, x) .* (equality_constraints./sqrt.(equality_constraints.^2 .+ LG.u^2)) .* LG.ρ) 

@@ -100,13 +100,11 @@ function augmented_Lagrangian_method(
     gradG::Function=x->[],
     gradH::Function=x->[],
     x=random_point(M), 
-    sub_problem::Problem = GradientProblem(M,F,gradF),
-    sub_options::Options = GradientDescentOptions(M,x),
     kwargs...,
 ) where {TF, TGF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
-    return augmented_Lagrangian_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, sub_problem=sub_problem, sub_options=sub_options,kwargs...)
+    return augmented_Lagrangian_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res,kwargs...)
 end
 @doc raw"""
     augmented_Lagrangian_method!(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
@@ -288,9 +286,15 @@ function (LG::LagrangeGrad)(M::AbstractManifold,x::P) where {P}
     num_inequality_constraints = size(inequality_constraints,1)
     num_equality_constraints = size(equality_constraints,1)
     if num_inequality_constraints != 0 
-        grad_ineq = sum(
-            ((inequality_constraints .* LG.ρ .+ LG.μ) .* LG.gradG(M,x)).*(inequality_constraints .+ LG.μ./LG.ρ .>0)
-            )
+        # grad_ineq = sum(
+        #     ((inequality_constraints .* LG.ρ .+ LG.μ) .* LG.gradG(M,x)).*(inequality_constraints .+ LG.μ./LG.ρ .>0)
+        #     )
+        grad_ineq = zeros(size(LG.gradG(M,x)[1]))
+        for i ∈ 1:num_inequality_constraints
+            if inequality_constraints[i] + LG.μ[i]/LG.ρ > 0
+                grad_ineq .+= (inequality_constraints[i] * LG.ρ + LG.μ[i]) .* LG.gradG(M,x)[i]
+            end
+        end
     end
     if num_equality_constraints != 0
         grad_eq = sum((equality_constraints .* LG.ρ .+ LG.λ) .* LG.gradH(M,x))
