@@ -1,5 +1,3 @@
-using SparseArrays
-
 @doc raw"""
     primal_dual_semismooth_Newton(M, N, cost, x0, ξ0, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_linearized_operator)
 
@@ -185,10 +183,10 @@ function primal_dual_step!(
 )
 
     # construct X
-    X = construct_vector(p, o)
+    X = construct_primal_dual_residual_vector(p, o)
 
     # construct matrix
-    ∂X = construct_matrix(p, o)
+    ∂X = construct_primal_dual_residual_covariant_derivative_matrix(p, o)
     ∂X += o.reg_param * sparse(I, size(∂X))  # prevent singular matrix at solution
 
     # solve matrix -> find coordinates
@@ -207,7 +205,12 @@ function primal_dual_step!(
     return o.ξ = o.ξ + dξ
 end
 
-function construct_vector(
+raw"""
+    construct_primal_dual_residual_vector(p, o)
+
+Constructs the vector representation of $X(p^{(k)}, ξ_{n}^{(k)}) \in \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$ 
+"""
+function construct_primal_dual_residual_vector(
     p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
 )
 
@@ -259,7 +262,12 @@ function construct_vector(
     return X
 end
 
-function construct_matrix(
+raw"""
+onstruct_primal_dual_residual_covariant_derivative_matrix(p, o)
+
+Constructs the matrix representation of $V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$ 
+"""
+function construct_primal_dual_residual_covariant_derivative_matrix(
     p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
 )
 

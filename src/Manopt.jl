@@ -13,6 +13,7 @@ using Random: shuffle!
 using Statistics: std, cov, mean, cor
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
+using SparseArrays
 using Printf
 import Base: copy, identity, &, |
 import ManifoldsBase:
