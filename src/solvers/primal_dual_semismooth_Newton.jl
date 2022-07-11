@@ -135,7 +135,7 @@ function primal_dual_semismooth_Newton!(
         linearized_forward_operator,
         adjoint_linearized_operator;
         Λ=Λ,
-        evaluation=evaluation
+        evaluation=evaluation,
     )
     o = PrimalDualSemismoothNewtonOptions(
         m,
@@ -189,7 +189,7 @@ function primal_dual_step!(
 
     # construct matrix
     ∂X = construct_matrix(p, o)
-    ∂X += o.reg_param * sparse(I,size(∂X))  # prevent singular matrix at solution
+    ∂X += o.reg_param * sparse(I, size(∂X))  # prevent singular matrix at solution
 
     # solve matrix -> find coordinates
     d_coords = ∂X \ -X
@@ -204,7 +204,7 @@ function primal_dual_step!(
 
     # do step
     o.x = retract(p.M, o.x, dx, o.retraction_method)
-    o.ξ = o.ξ + dξ
+    return o.ξ = o.ξ + dξ
 end
 
 function construct_vector(
@@ -236,12 +236,16 @@ function construct_vector(
 
     # Compute dual vector
     # (1) compute update direction
-    ξ_update = linearized_forward_operator(p, o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method),o.n)
+    ξ_update = linearized_forward_operator(
+        p, o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method), o.n
+    )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     ξ_update = if ismissing(p.Λ!!)
         ξ_update
     else
-        vector_transport_to(p.N, forward_operator(p,o.m), ξ_update, o.n, o.vector_transport_method)
+        vector_transport_to(
+            p.N, forward_operator(p, o.m), ξ_update, o.n, o.vector_transport_method
+        )
     end
     # (3) to the dual update
     ξ_update = get_dual_prox(p, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
@@ -277,14 +281,14 @@ function construct_matrix(
     q₁ = get_primal_prox(p, o.primal_stepsize, q₂)  # TODO hier gebleven met debuggen
 
     # (1) compute update direction
-    η₁ = linearized_forward_operator(p,
-        o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method), o.n
+    η₁ = linearized_forward_operator(
+        p, o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method), o.n
     )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     η₁ = if ismissing(p.Λ!!)
         η₁
     else
-        vector_transport_to(p.N, forward_operator(p,o.m), η₁, o.n, o.vector_transport_method)
+        vector_transport_to(p.N, forward_operator(p, o.m), η₁, o.n, o.vector_transport_method)
     end
     # (3) to the dual update
     η₁ = o.ξ + o.dual_stepsize * η₁
@@ -293,12 +297,12 @@ function construct_matrix(
     ∂X₂₁ = spzeros(dualdims, dims)
 
     Mdims = prod(manifold_dimension(p.M))
-    debug11=false
-    debug21=true
+    debug11 = false
+    debug21 = true
     for j in 1:Mdims
         eⱼ = zeros(Mdims)
         eⱼ[j] = 1
-        Θⱼ = get_vector(p.M,o.m,eⱼ,Θ)
+        Θⱼ = get_vector(p.M, o.m, eⱼ, Θ)
         Gⱼ = differential_geodesic_endpoint(p.M, o.m, o.x, 1 / 2, Θⱼ)
         Fⱼ = 2 * differential_log_argument(p.M, qb, qₚ, Gⱼ)
         Eⱼ = differential_exp_argument(p.M, qb, q₅, Fⱼ)
@@ -325,8 +329,8 @@ function construct_matrix(
         else
             o.dual_stepsize * vector_transport_to(
                 p.N,
-                forward_operator(p,o.m),
-                linearized_forward_operator(p,o.m, Mⱼ, o.n),
+                forward_operator(p, o.m),
+                linearized_forward_operator(p, o.m, Mⱼ, o.n),
                 o.n,
                 o.vector_transport_method,
             )
@@ -347,7 +351,7 @@ function construct_matrix(
     for j in 1:Ndims
         eⱼ = zeros(Ndims)
         eⱼ[j] = 1
-        Ξⱼ = get_vector(p.N,o.n,eⱼ,Ξ)
+        Ξⱼ = get_vector(p.N, o.n, eⱼ, Ξ)
         hⱼ = -o.primal_stepsize * adjoint_linearized_operator(p, o.m, o.n, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
         Hⱼ = vector_transport_to(p.M, o.m, hⱼ, o.x)
         C₂ⱼ = differential_exp_argument(p.M, o.x, q₃, Hⱼ)
@@ -360,7 +364,7 @@ function construct_matrix(
         dropzeros!(sp_∂X₁₂j)
         ∂X₁₂[:, j] = sp_∂X₁₂j
 
-        Jⱼ =get_differential_dual_prox(p, o.n, o.dual_stepsize, η₁, Ξⱼ)
+        Jⱼ = get_differential_dual_prox(p, o.n, o.dual_stepsize, η₁, Ξⱼ)
         Iⱼ = Ξⱼ - Jⱼ
 
         ∂X₂₂j = get_coordinates(p.N, o.n, Iⱼ, DefaultOrthonormalBasis())

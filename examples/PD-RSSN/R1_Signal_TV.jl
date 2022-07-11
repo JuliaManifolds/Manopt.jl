@@ -40,8 +40,8 @@ pixelM = Euclidean(1)
 base = [0.0]
 X = π / 4 * [0.0, 1.0, 0.0]
 # Generate a signal with two sections - same signal as in S2_Signal_TV
-p1 = [1.]
-p2 = [-1.]
+p1 = [1.0]
+p2 = [-1.0]
 f = vcat(fill(p1, signal_section_size), fill(p2, signal_section_size))
 #
 # Compute exact minimizer

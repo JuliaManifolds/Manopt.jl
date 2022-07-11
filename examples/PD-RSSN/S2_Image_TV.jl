@@ -41,8 +41,10 @@ X = π / 4 * [0.0, 1.0, 0.0]
 # Generate a signal with two sections
 p1 = exp(pixelM, base, X)
 p2 = exp(pixelM, base, -X)
-f = vcat(fill(p1, (signal_section_size, 2* signal_section_size)),
-    fill(p2, (signal_section_size, 2* signal_section_size)))
+f = vcat(
+    fill(p1, (signal_section_size, 2 * signal_section_size)),
+    fill(p2, (signal_section_size, 2 * signal_section_size)),
+)
 #
 # load TV model
 #
@@ -139,7 +141,7 @@ for e in experiments
         # run(`ffmpeg -framerate 15 -pattern_type glob -i $(source) -c:v libx264 -vf pad=ceil\(iw/2\)*2:ceil\(ih/2\)*2 -pix_fmt yuv420p $(dest)`)
     end
 
-# TODO get dual
+    # TODO get dual
     @time o_pdrssn = primal_dual_semismooth_Newton(
         M,
         M2,

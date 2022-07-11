@@ -64,7 +64,7 @@ if export_orig
 end
 #
 # Initial values
-m = fill(mid_point(pixelM, p1, p2), 2*signal_section_size)
+m = fill(mid_point(pixelM, p1, p2), 2 * signal_section_size)
 # m = fill(base, size(f))
 n = m
 x0 = deepcopy(f)
@@ -91,14 +91,7 @@ storage = StoreOptionsAction((:x, :n, :ξbar))
     acceleration=γ,
     relax=:dual,
     variant=:linearized,
-    debug=[
-        :Iteration,
-        " | ",
-        :Cost,
-        "\n",
-        100,
-        :Stop,
-    ],
+    debug=[:Iteration, " | ", :Cost, "\n", 100, :Stop],
     record=if export_table
         [:Iteration, RecordPrimalChange(x0), RecordDualChange((ξ0, n)), :Cost]
     else
@@ -121,7 +114,6 @@ if export_primal
     render_asymptote(orig_file)
 end
 
-
 @time o_pdrssn = primal_dual_semismooth_Newton(
     M,
     N,
@@ -138,16 +130,8 @@ end
     adjoint_DΛ;
     primal_stepsize=σ,
     dual_stepsize=τ,
-    debug=[
-        :Iteration,
-        " | ",
-        DebugPrimalChange(),
-        " | ",
-        :Cost,
-        "\n",
-        :Stop,
-    ],
-    record= [:Iteration, :Cost, :Iterate],
+    debug=[:Iteration, " | ", DebugPrimalChange(), " | ", :Cost, "\n", :Stop],
+    record=[:Iteration, :Cost, :Iterate],
     stopping_criterion=StopAfterIteration(20),
     # stopping_criterion=StopAfterIteration(max_iterations),
     return_options=true,
