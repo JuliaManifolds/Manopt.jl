@@ -32,9 +32,9 @@ Note that this changes the arguments the `forward_operator` will be called.
 * `stopping_criterion` – (`stopAtIteration(50)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
-* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
+* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 
 [^DiepeveenLellmann2021]:
     > W. Diepeveen, J. Lellmann:
@@ -109,9 +109,9 @@ function primal_dual_semismooth_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(50),
     update_primal_base::Union{Function,Missing}=missing,
     update_dual_base::Union{Function,Missing}=missing,
-    retraction_method::RM=ExponentialRetraction(),
-    inverse_retraction_method::IRM=LogarithmicInverseRetraction(),
-    vector_transport_method::VTM=ParallelTransport(),
+    retraction_method::RM=default_retraction_method(M),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M),
+    vector_transport_method::VTM=default_vector_transport_method(M),
     return_options=false,
     kwargs...,
 ) where {
