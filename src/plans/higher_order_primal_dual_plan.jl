@@ -1,5 +1,5 @@
 @doc raw"""
-    PrimalDualSemismoothNewtonProblem {T,mT <: AbstractManifold, nT <: AbstractManifold} <: PrimalDualProblem} <: AbstractPrimalDualProblem{T}
+    PrimalDualSemismoothNewtonProblem {T,mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem{T}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [^DiepeveenLellmann2021]
 

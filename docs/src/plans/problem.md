@@ -63,6 +63,7 @@ get_preconditioner
 ## [Primal dual based problem](@id PrimalDualProblem)
 
 ```@docs
+AbstractPrimalDualProblem
 PrimalDualProblem
 PrimalDualSemismoothNewtonProblem
 get_primal_prox

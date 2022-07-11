@@ -1,7 +1,10 @@
+@doc raw"""
+An abstract type for primal-dual-based problems.
+"""
 abstract type AbstractPrimalDualProblem{T} <: Problem{T} end
 
 @doc raw"""
-    PrimalDualProblem {T, mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem{T}
+    PrimalDualProblem {T, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem
 
 Describes a Problem for the linearized or exact Chambolle-Pock algorithm.[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020][^ChambollePock2011]
 
@@ -83,7 +86,7 @@ end
     y = get_primal_prox(p::AbstractPrimalDualProblem, σ, x)
     get_primal_prox!(p::AbstractPrimalDualProblem, y, σ, x)
 
-Evaluate the proximal map of ``F`` stored within [`PrimalDualProblem`](@ref)
+Evaluate the proximal map of ``F`` stored within [`AbstractPrimalDualProblem`](@ref)
 
 ```math
 \operatorname{prox}_{σF}(x)
@@ -111,7 +114,7 @@ end
     y = get_dual_prox(p::AbstractPrimalDualProblem, n, τ, ξ)
     get_dual_prox!(p::AbstractPrimalDualProblem, y, n, τ, ξ)
 
-Evaluate the proximal map of ``G_n^*`` stored within [`PrimalDualProblem`](@ref)
+Evaluate the proximal map of ``G_n^*`` stored within [`AbstractPrimalDualProblem`](@ref)
 
 ```math
 \operatorname{prox}_{τG_n^*}(ξ)
@@ -135,11 +138,11 @@ function get_dual_prox!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, η, 
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 @doc raw"""
-    Y = linearized_forward_operator(p::PrimalDualProblem, m X, n)
-    linearized_forward_operator!(p::PrimalDualProblem, Y, m, X, n)
+    Y = linearized_forward_operator(p::AbstractPrimalDualProblem, m X, n)
+    linearized_forward_operator!(p::AbstractPrimalDualProblem, Y, m, X, n)
 
 Evaluate the linearized operator (differential) ``DΛ(m)[X]`` stored within
-the [`PrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
+the [`AbstractPrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
 """
 linearized_forward_operator(::AbstractPrimalDualProblem, ::Any...)
 
@@ -168,10 +171,10 @@ function linearized_forward_operator!(
 end
 
 @doc raw"""
-    y = forward_operator(p::PrimalDualProblem, x)
-    forward_operator!(p::PrimalDualProblem, y, x)
+    y = forward_operator(p::AbstractPrimalDualProblem, x)
+    forward_operator!(p::AbstractPrimalDualProblem, y, x)
 
-Evaluate the forward operator of ``Λ(x)`` stored within the [`PrimalDualProblem`](@ref)
+Evaluate the forward operator of ``Λ(x)`` stored within the [`AbstractPrimalDualProblem`](@ref)
 (in place of `y`).
 """
 forward_operator(::AbstractPrimalDualProblem{<:AllocatingEvaluation}, ::Any...)
@@ -191,11 +194,11 @@ function forward_operator!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, y
 end
 
 @doc raw"""
-    X = adjoint_linearized_operator(p::PrimalDualProblem, m, n, Y)
-    adjoint_linearized_operator(p::PrimalDualProblem, X, m, n, Y)
+    X = adjoint_linearized_operator(p::AbstractPrimalDualProblem, m, n, Y)
+    adjoint_linearized_operator(p::AbstractPrimalDualProblem, X, m, n, Y)
 
 Evaluate the adjoint of the linearized forward operator of ``(DΛ(m))^*[Y]`` stored within
-the [`PrimalDualProblem`](@ref) (in place of `X`).
+the [`AbstractPrimalDualProblem`](@ref) (in place of `X`).
 Since ``Y∈T_n\mathcal N``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
 the forward operator ``Λ`` might be `missing` in `p`.
 """
