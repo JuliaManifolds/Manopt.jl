@@ -80,9 +80,9 @@ end
 * `stop` - a [`StoppingCriterion`](@ref)
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
-* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
+* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 
 where for the last two the functions a [`Problem`](@ref) `p`,
 [`Options`](@ref) `o` and the current iterate `i` are the arguments.
@@ -90,13 +90,14 @@ If you activate these to be different from the default identity, you have to pro
 `p.Λ` for the algorithm to work (which might be `missing`).
 
 # Constructor
-    PrimalDualSemismoothNewtonOptions(m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64, reg_param::Float64;
+    PrimalDualSemismoothNewtonOptions(M::AbstractManifold,
+        m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64, reg_param::Float64;
         stopping_criterion::StoppingCriterion = StopAfterIteration(50),
         update_primal_base::Union{Function,Missing} = missing,
         update_dual_base::Union{Function,Missing} = missing,
-        retraction_method = ExponentialRetraction(),
-        inverse_retraction_method = LogarithmicInverseRetraction(),
-        vector_transport_method = ParallelTransport(),
+        retraction_method = default_retraction_method(M),
+        inverse_retraction_method = default_inverse_retraction_method(M),
+        vector_transport_method = default_vector_transport_method(M),
     )
 """
 mutable struct PrimalDualSemismoothNewtonOptions{
@@ -122,6 +123,7 @@ mutable struct PrimalDualSemismoothNewtonOptions{
     vector_transport_method::VTM
 
     function PrimalDualSemismoothNewtonOptions(
+        M::AbstractManifold,
         m::P,
         n::Q,
         x::P,
@@ -132,9 +134,9 @@ mutable struct PrimalDualSemismoothNewtonOptions{
         stopping_criterion::StoppingCriterion=StopAfterIteration(50),
         update_primal_base::Union{Function,Missing}=missing,
         update_dual_base::Union{Function,Missing}=missing,
-        retraction_method::RM=ExponentialRetraction(),
-        inverse_retraction_method::IRM=LogarithmicInverseRetraction(),
-        vector_transport_method::VTM=ParallelTransport(),
+        retraction_method::RM=default_retraction_method(M),
+        inverse_retraction_method::IRM=default_inverse_retraction_method(M),
+        vector_transport_method::VTM=default_vector_transport_method(M),
     ) where {
         P,
         Q,

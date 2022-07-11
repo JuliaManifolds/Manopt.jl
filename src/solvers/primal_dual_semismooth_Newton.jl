@@ -136,6 +136,7 @@ function primal_dual_semismooth_Newton!(
         evaluation=evaluation,
     )
     o = PrimalDualSemismoothNewtonOptions(
+        M,
         m,
         n,
         x,
