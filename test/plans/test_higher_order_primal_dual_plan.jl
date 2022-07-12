@@ -148,7 +148,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     x0 = deepcopy(data)
     ξ0 = zero_vector(M, m)
     X = log(M, x0, m)# TODO construct tangent vector
-    Ξ = X 
+    Ξ = X
 
     @testset "test Mutating/Allocation Problem Variants" begin
         p1 = PrimalDualSemismoothNewtonProblem(
