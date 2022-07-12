@@ -133,7 +133,9 @@ using Manopt, Manifolds, ManifoldsBase, Test
     end
 
     Dprox_F(M, λ, x, η) = differential_geodesic_startpoint(M, x, data, λ / (α + λ), η)
-    Dprox_F!(M, Y, λ, x, η) = differential_geodesic_startpoint!(M, Y, x, data, λ / (α + λ), η)
+    function Dprox_F!(M, Y, λ, x, η)
+        return differential_geodesic_startpoint!(M, Y, x, data, λ / (α + λ), η)
+    end
     function Dprox_G_dual(N, n, λ, ξ, η)
         return differential_project_collaborative_TV(N, n, ξ, η, Inf, Inf)
     end
