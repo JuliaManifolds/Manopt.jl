@@ -522,7 +522,6 @@ function (d::DebugWarnIfCostNotFinite)(p::Problem, o::Options, i::Int)
     return nothing
 end
 
-
 @doc raw"""
     DebugFactory(a)
 
