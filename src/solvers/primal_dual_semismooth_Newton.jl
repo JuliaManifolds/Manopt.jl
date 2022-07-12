@@ -174,7 +174,6 @@ function step_solver!(
         n_old = deepcopy(o.n)
         o.n = o.update_dual_base(p, o, iter)
         o.ξ = vector_transport_to(p.N, n_old, o.ξ, o.n, o.vector_transport_method)
-        o.ξbar = vector_transport_to(p.N, n_old, o.ξbar, o.n, o.vector_transport_method)
     end
     return o
 end
