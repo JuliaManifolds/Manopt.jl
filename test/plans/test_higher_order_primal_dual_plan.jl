@@ -66,7 +66,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
                         J = I .+ e_k_vals[k] #i + e_k is j
                         if all(J .<= maxInd)
                             # this is neighbor in range,
-                            Y[N, I..., k] += if norms[I..., k] <= 1 
+                            Y[N, I..., k] += if norms[I..., k] <= 1
                                 Η[N, I..., k]
                             else
                                 1 / norms[I..., k] * (
