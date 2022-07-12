@@ -8,6 +8,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     include("plans/test_gradient_plan.jl")
     include("plans/test_hessian_plan.jl")
     include("plans/test_primal_dual_plan.jl")
+    include("plans/test_higher_order_primal_dual_plan.jl")
     include("plans/test_record.jl")
     include("plans/test_stopping_criteria.jl")
 end
