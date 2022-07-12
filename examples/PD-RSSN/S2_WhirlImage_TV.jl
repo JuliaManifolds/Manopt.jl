@@ -1,13 +1,14 @@
 #
-# Denoise an S2 valued image demonstrating the effect of using different base points m
+# Denoise an S2 valued image demonstrating the effect of improper initialisation of dual iterate ξ
 #
-# L2-TV functional with anisotropic TV
+# L2-TV functional with isotropic TV
 #
 # This example is used in Section 6.2 of
 #
-# > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez:
-# > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
-# > arXiv: [1908.02022](https://arxiv.org/abs/1908.02022)
+# > W. Diepeveen, J. Lellmann:
+# > _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
+# > SIAM Journal on Imaging Sciences, 2021.
+# > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 #
 using CSV, DataFrames, LinearAlgebra, Manopt, Manifolds
 #
@@ -165,6 +166,7 @@ for e in experiments
         return_options=true,
     )
 end
+print("Method fails without proper initialisation of dual variable ξ")
 #
 # Finalize - export costs
 # if export_table

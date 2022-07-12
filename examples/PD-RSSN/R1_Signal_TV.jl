@@ -3,15 +3,16 @@
 #
 # This example is part of Example 6.1 in the publication
 #
-# > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez,
-# > Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds,
-# > arXiv: [1908.02022](https://arxiv.org/abs/1908.02022)
+# > W. Diepeveen, J. Lellmann:
+# > _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
+# > SIAM Journal on Imaging Sciences, 2021.
+# > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 #
 using Manopt, Manifolds, LinearAlgebra
 
 #
 # Script Settings
-experiment_name = "R3_Signal_TV_CP"
+experiment_name = "R1_Signal_TV_CP"
 export_orig = true
 export_primal = true
 export_table = true

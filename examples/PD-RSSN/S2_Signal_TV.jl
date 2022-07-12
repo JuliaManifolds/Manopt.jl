@@ -3,9 +3,10 @@
 #
 # This example is part of Example 6.1 in the publication
 #
-# > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal Núñez,
-# > Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds,
-# > arXiv: [1908.02022](https://arxiv.org/abs/1908.02022)
+# > W. Diepeveen, J. Lellmann:
+# > _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
+# > SIAM Journal on Imaging Sciences, 2021.
+# > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 #
 using Manopt, Manifolds, LinearAlgebra
 
@@ -138,11 +139,6 @@ end
 )
 
 y_pdrssn = get_solver_result(o_pdrssn)
-# if has_record(o)
-#     r = get_record(o)
-#     Ck_values = [s[5] for s in r]
-#     println("The Ck Estimate lies between $(minimum(Ck_values)) and $(maximum(Ck_values))")
-# end
 println("x_hat = $(x_hat)")
 println("sol = $(y_pdrssn)")
 println("Distance from result to minimizer: ", distance(M, x_hat, y_pdrssn), "\n")
