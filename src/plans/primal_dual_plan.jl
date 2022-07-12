@@ -1,4 +1,6 @@
 @doc raw"""
+    AbstractPrimalDualProblem{T} <: Problem{T}
+
 An abstract type for primal-dual-based problems.
 """
 abstract type AbstractPrimalDualProblem{T} <: Problem{T} end
