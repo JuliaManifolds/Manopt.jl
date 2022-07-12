@@ -372,12 +372,13 @@ Note that this provides an additional warning for gradient descent
 with its default constant step size.
 
 # Constructor
-    DebugWarnIfCostIncreases(warn=:Always; tol=1e-13)
+    DebugWarnIfCostIncreases(warn=:Once; tol=1e-13)
 
-Initialize the warning to warn `:Always` and introduce a tolerance for the test of `1e-13`.
+Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e-13`.
 
-This can be set to `:Once` to only warn the first time the cost increases.
-It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
 mutable struct DebugWarnIfCostIncreases <: DebugAction
@@ -394,8 +395,7 @@ function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
         if cost > d.old_cost + d.tol
             # Default case in Gradient Descent, include a tipp
             @warn """The cost increased.
-            At iteration #$i the cost increased from $(d.old_cost) to $(cost).
-            You should check your gradient, step size function or iteration in general."""
+            At iteration #$i the cost increased from $(d.old_cost) to $(cost)."""
             if o isa GradientDescentOptions && o.stepsize isa ConstantStepsize
                 @warn """You seem to be running a `gradient_decent` with the default `ConstantStepsize`.
                 For ease of use, this is set as the default, but might not converge.
@@ -412,6 +412,116 @@ function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
     end
     return nothing
 end
+
+@doc raw"""
+    DebugWarnIfCostNotFinite <: DebugAction
+
+A debug to see when a field (value or array within the Options is or contains values
+that are not finite, for example `Inf` or `Nan`.
+
+# Constructor
+    DebugWarnIfCostNotFinite(field::Symbol, warn=:Once)
+
+Initialize the warning to warn `:Once`.
+
+This can be set to `:Once` to only warn the first time the cost is Nan.
+It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+All other symbols are handled as if they were `:Always:`
+"""
+mutable struct DebugWarnIfCostNotFinite <: DebugAction
+    status::Symbol
+    DebugWarnIfCostNotFinite(warn::Symbol=:Once;) = new(warn, Float64(Inf), tol)
+end
+function (d::DebugWarnIfCostNotFinite)(p::Problem, o::Options, i::Int)
+    if d.status !== :No
+        cost = get_cost(p, o.x)
+        if !isfinite(cost)
+            @warn """The cost is not finite.
+            At iteration #$i the cost evaluated to $(cost)."""
+            if d.status === :Once
+                @warn "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings"
+                d.status = :No
+            end
+        end
+    end
+    return nothing
+end
+
+@doc raw"""
+    DebugWarnIfFieldNotFinite <: DebugAction
+
+A debug to see when a field from the options is not finite, for example `Inf` or `Nan`
+
+# Constructor
+    DebugWarnIfFieldNotFinite(field::Symbol, warn=:Once)
+
+Initialize the warning to warn `:Once`.
+
+This can be set to `:Once` to only warn the first time the cost is Nan.
+It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+All other symbols are handled as if they were `:Always:`
+
+# Example
+    DebugWaranIfFieldNotFinite(:gradient)
+
+Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
+"""
+mutable struct DebugWaranIfFieldNotFinite <: DebugAction
+    status::Symbol
+    field::Symbol
+    DebugWarnIfCostNotFinite(warn::Symbol=:Once;) = new(warn, Float64(Inf), tol)
+end
+function (d::DebugWarnIfCostNotFinite)(::Problem, o::Options, i::Int)
+    if d.status !== :No
+        v = getproperty(o, d.field)
+        if !all(isfinite.(v))
+            @warn """The field o.$(d.field) is or contains values that are not finite.
+            At iteration #$i it evaluated to $(v)."""
+            if d.status === :Once
+                @warn "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings"
+                d.status = :No
+            end
+        end
+    end
+    return nothing
+end
+
+@doc raw"""
+    DebugWarnIfCostNotFinite <: DebugAction
+
+A debug to see when a cost is not finite, for example `Inf` or `Nan`
+
+# Constructor
+    DebugWarnIfCostNotFinite
+
+Initialize the warning to warn `:Always`.
+
+This can be set to `:Once` to only warn the first time the cost is Nan.
+It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+All other symbols are handled as if they were `:Always:`
+"""
+mutable struct DebugWarnIfCostNotFinite <: DebugAction
+    # store if we need to warn – :Once, :Always, :No, where all others are handled
+    # the same as :Always
+    status::Symbol
+    DebugWarnIfCostNotFinite(warn::Symbol=:Once;) = new(warn, Float64(Inf), tol)
+end
+function (d::DebugWarnIfCostNotFinite)(p::Problem, o::Options, i::Int)
+    if d.status !== :No
+        cost = get_cost(p, o.x)
+        if !isfinite(cost)
+            @warn """The cost is not finite.
+            At iteration #$i the cost evaluated to $(cost).
+            You should check your gradient, step size function or iteration in general."""
+            if d.status === :Once
+                @warn "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings"
+                d.status = :No
+            end
+        end
+    end
+    return nothing
+end
+
 
 @doc raw"""
     DebugFactory(a)
@@ -491,6 +601,8 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
+* `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
+* `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `:gradient`.
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
@@ -500,6 +612,8 @@ function DebugActionFactory(s::Symbol)
     (s == :Iterate) && return DebugIterate()
     (s == :Iteration) && return DebugIteration()
     (s == :Stepsize) && return DebugStepsize()
+    (s == :WarnCost) && return DebugWarnIfCostNotFinite()
+    (s == :WarnGradient) && return DebugWaranIfFieldNotFinite(:gradient)
     return DebugEntry(s)
 end
 """
