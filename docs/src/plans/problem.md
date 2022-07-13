@@ -63,10 +63,14 @@ get_preconditioner
 ## [Primal dual based problem](@id PrimalDualProblem)
 
 ```@docs
+AbstractPrimalDualProblem
 PrimalDualProblem
+PrimalDualSemismoothNewtonProblem
 get_primal_prox
 get_dual_prox
 forward_operator
 linearized_forward_operator
 adjoint_linearized_operator
+get_differential_primal_prox
+get_differential_dual_prox
 ```
