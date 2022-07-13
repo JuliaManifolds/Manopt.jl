@@ -24,6 +24,7 @@ import ManifoldsBase:
     _read,
     _write,
     AbstractBasis,
+    AbstractDecoratorManifold,
     AbstractPowerManifold,
     AbstractVectorTransportMethod,
     AbstractRetractionMethod,
@@ -396,6 +397,7 @@ export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIter
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
+export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
 #
 # Records - and access functions
 export get_record, get_record_options, get_record_action, has_record
