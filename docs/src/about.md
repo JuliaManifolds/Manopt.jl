@@ -9,6 +9,7 @@ The following people contributed
 * [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) Riemer implemented the [trust regions](@ref trust_regions) and [quasi Newton](solvers/quasi_Newton.md) solvers.
 * [Manuel Weiss](https://scoop.iwr.uni-heidelberg.de/author/manuel-weiß/) implemented most of the [conjugate gradient update rules](@ref cg-coeffs)
 * Laura Weigl provided the [robust PCA](examples/robustPCA.md) and [smallest Eigenvalue](examples/smallestEigenvalue.md) example notebooks.
+* [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](@ref PDRSSNSolver) solver.
 
 ...as well as various [contributors](https://github.com/JuliaManifolds/Manopt.jl/graphs/contributors) providing small extensions, finding small bugs and mistakes and fixing them by opening [PR](https://github.com/JuliaManifolds/Manopt.jl/pulls)s.
 

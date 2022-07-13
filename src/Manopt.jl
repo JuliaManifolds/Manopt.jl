@@ -13,6 +13,7 @@ using Random: shuffle!
 using Statistics: std, cov, mean, cor
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
+using SparseArrays
 using Printf
 import Base: copy, identity, &, |
 import ManifoldsBase:
@@ -101,6 +102,7 @@ include("solvers/DouglasRachford.jl")
 include("solvers/NelderMead.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/particle_swarm.jl")
+include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/quasi_Newton.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
@@ -169,6 +171,7 @@ export Problem,
     SubGradientProblem,
     GradientProblem,
     HessianProblem,
+    PrimalDualSemismoothNewtonProblem,
     PrimalDualProblem,
     StochasticGradientProblem,
     AbstractEvaluationType,
@@ -186,6 +189,7 @@ export Options,
     AbstractHessianOptions,
     NelderMeadOptions,
     ParticleSwarmOptions,
+    PrimalDualSemismoothNewtonOptions,
     PrimalDualOptions,
     RecordOptions,
     StochasticGradientDescentOptions,
@@ -208,8 +212,12 @@ export get_cost,
     get_gradients!,
     get_primal_prox,
     get_primal_prox!,
+    get_differential_primal_prox,
+    get_differential_primal_prox!,
     get_dual_prox,
     get_dual_prox!,
+    get_differential_dual_prox,
+    get_differential_dual_prox!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -272,6 +280,7 @@ export ChambollePock,
     NelderMead!,
     particle_swarm,
     particle_swarm!,
+    primal_dual_semismooth_Newton,
     quasi_Newton,
     quasi_Newton!,
     stochastic_gradient_descent,
