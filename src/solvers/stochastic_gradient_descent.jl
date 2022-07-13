@@ -23,7 +23,7 @@ perform a stochastic gradient descent
 * `order_type` (`:RandomOder`) a type of ordering of gradient evaluations.
   values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 
 # Output
 * `x_opt` – the resulting (approximately critical) point of gradientDescent
@@ -31,12 +31,13 @@ OR
 * `options` - the options returned by the solver (see `return_options`)
 """
 function stochastic_gradient_descent(
-    M::AbstractManifold, gradF::Union{Function,AbstractVector{<:Function}}, x; kwargs...
-)
+    M::AbstractManifold, gradF::TDF, x; kwargs...
+) where {TDF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
     return stochastic_gradient_descent!(M, gradF, x_res; kwargs...)
 end
+
 @doc raw"""
     stochastic_gradient_descent!(M, gradF, x)
 
@@ -53,27 +54,27 @@ for all optional parameters, see [`stochastic_gradient_descent`](@ref).
 """
 function stochastic_gradient_descent!(
     M::AbstractManifold,
-    gradF::Union{Function,AbstractVector{<:Function}},
+    gradF::TDF,
     x;
-    cost::Union{Function,Missing}=Missing(),
+    cost::TF=Missing(),
     direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, x)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    stoping_criterion::StoppingCriterion=StopAfterIteration(10000) |
-                                         StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
+                                          StopWhenGradientNormLess(1e-9),
+    stepsize::Stepsize=ConstantStepsize(M),
     order_type::Symbol=:Random,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     return_options=false,
     kwargs...,
-)
+) where {TDF,TF}
     p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
     o = StochasticGradientDescentOptions(
+        M,
         x,
-        zero_vector(M, x),
-        direction;
-        stoping_criterion=stoping_criterion,
+        zero_vector(M, x);
+        direction=direction,
+        stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         order_type=order_type,
         order=order,

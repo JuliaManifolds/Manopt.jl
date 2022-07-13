@@ -22,7 +22,7 @@ not necessarily deterministic.
    allocation (default) form `∂F(M, y)` or [`MutatingEvaluation`](@ref) in place, i.e. is
    of the form `∂F!(M, X, x)`.
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
-* `retraction` – (`exp`) a `retraction(M,x,ξ)` to use.
+* `retraction` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
@@ -39,8 +39,7 @@ OR
 function subgradient_method(
     M::AbstractManifold, F::TF, ∂F::TdF, x; kwargs...
 ) where {TF,TdF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
+    x_res = copy(M, x)
     return subgradient_method!(M, F, ∂F, x_res; kwargs...)
 end
 @doc raw"""
@@ -64,15 +63,21 @@ function subgradient_method!(
     F::TF,
     ∂F!!::TdF,
     x;
-    retraction::TRetr=ExponentialRetraction(),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    retraction_method::TRetr=default_retraction_method(M),
+    stepsize::Stepsize=ConstantStepsize(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     return_options=false,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr}
     p = SubGradientProblem(M, F, ∂F!!; evaluation=evaluation)
-    o = SubGradientMethodOptions(M, x, stopping_criterion, stepsize, retraction)
+    o = SubGradientMethodOptions(
+        M,
+        x;
+        stopping_criterion=stopping_criterion,
+        stepsize=stepsize,
+        retraction_method=retraction_method,
+    )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
     if return_options

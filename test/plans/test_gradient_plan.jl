@@ -5,7 +5,7 @@ using Manopt, ManifoldsBase, Test
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.0, 2.0]
     o = GradientDescentOptions(
-        x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
+        M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
     )
     o.gradient = [1.0, 0.0]
     f(M, y) = distance(M, y, x) .^ 2
@@ -20,22 +20,22 @@ using Manopt, ManifoldsBase, Test
     @test_throws MethodError get_proximal_map(p, 1.0, o.x, 1)
     @test_throws MethodError get_subgradient(p, o.x)
     # Additional Specific Debugs
-    a1 = DebugGradient(false, io)
+    a1 = DebugGradient(; long=false, io=io)
     a1(p, o, 1)
     @test String(take!(io)) == "gradF(x):[1.0, 0.0]"
-    a1a = DebugGradient("s:", io)
+    a1a = DebugGradient(; prefix="s:", io=io)
     a1a(p, o, 1)
     @test String(take!(io)) == "s:[1.0, 0.0]"
-    a2 = DebugGradientNorm(false, io)
+    a2 = DebugGradientNorm(; long=false, io=io)
     a2(p, o, 1)
     @test String(take!(io)) == "|gradF(x)|:1.0"
-    a2a = DebugGradientNorm("s:", io)
+    a2a = DebugGradientNorm(; prefix="s:", io=io)
     a2a(p, o, 1)
     @test String(take!(io)) == "s:1.0"
-    a3 = DebugStepsize(false, io)
+    a3 = DebugStepsize(; long=false, io=io)
     a3(p, o, 1)
     @test String(take!(io)) == "s:1.0"
-    a3a = DebugStepsize("S:", io)
+    a3a = DebugStepsize(; prefix="S:", io=io)
     a3a(p, o, 1)
     @test String(take!(io)) == "S:1.0"
     # Additional Specific Records

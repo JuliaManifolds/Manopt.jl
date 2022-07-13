@@ -12,7 +12,7 @@ the last direction ``δ_{k-1}`` and both gradients ``\operatorname{grad}f(x_k)``
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 
 Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
-[`ConjugateDescentCoefficient`](@ref), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
+[`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HeestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
 
@@ -28,14 +28,14 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 * `x` : an initial value ``x∈\mathcal M``
 
 # Optional
-* `coefficient` : ([`SteepestDirectionUpdateRule`](@ref) `<:` [`DirectionUpdateRule`](@ref)
+* `coefficient` : ([`ConjugateDescentCoefficient`](@ref) `<:` [`DirectionUpdateRule`](@ref))
   rule to compute the descent direction update coefficient ``β_k``,
   as a functor, i.e. the resulting function maps `(p,o,i) -> β`, where
   `p` is the current [`GradientProblem`](@ref), `o` are the
   [`ConjugateGradientDescentOptions`](@ref) `o` and `i` is the current iterate.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
-* `retraction_method` - (`ExponentialRetraction`) a retraction method to use, by default the exponential map
+* `retraction_method` - (`default_retraction_method(M`) a retraction method to use.
 * `return_options` – (`false`) – if actiavated, the extended result, i.e. the
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` if returned
@@ -43,7 +43,7 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
   search direction. The default is a constant step size 1.
 * `stopping_criterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
   a function indicating when to stop.
-* `vector_transport_method` – (`ParallelTransport()`) vector transport method to transport
+* `vector_transport_method` – (`default_vector_transport_method(M)`) vector transport method to transport
   the old descent direction when computing the new descent direction.
 
 # Output
@@ -54,9 +54,8 @@ OR
 function conjugate_gradient_descent(
     M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
 ) where {TF,TDF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    return conjugate_gradient_descent!(M, F, gradF, x; kwargs...)
+    x_res = copy(M, x)
+    return conjugate_gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
     conjugate_gradient_descent!(M, F, gradF, x)
@@ -81,19 +80,27 @@ function conjugate_gradient_descent!(
     F::TF,
     gradF::TDF,
     x;
-    coefficient::DirectionUpdateRule=SteepestDirectionUpdateRule(),
-    stepsize::Stepsize=ConstantStepsize(1.0),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
+    stepsize::Stepsize=ConstantStepsize(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
-    transport_method=ParallelTransport(),
+    vector_transport_method=default_vector_transport_method(M),
     return_options=false,
     kwargs...,
 ) where {TF,TDF}
     p = GradientProblem(M, F, gradF)
+    X = zero_vector(M, x)
     o = ConjugateGradientDescentOptions(
-        x, stopping_criterion, stepsize, coefficient, retraction_method, transport_method
+        M,
+        x,
+        stopping_criterion,
+        stepsize,
+        coefficient,
+        retraction_method,
+        vector_transport_method,
+        X,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)

@@ -50,9 +50,8 @@ OR
 function DouglasRachford(
     M::AbstractManifold, F::TF, proxes::Vector{<:Any}, x; kwargs...
 ) where {TF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    return DouglasRachford!(M, F, proxes, x; kwargs...)
+    x_res = copy(M, x)
+    return DouglasRachford!(M, F, proxes, x_res; kwargs...)
 end
 @doc raw"""
      DouglasRachford(M, F, proxMaps, x)
@@ -82,7 +81,7 @@ function DouglasRachford!(
     x;
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
-    R::TR=reflect,
+    R::TR=Manopt.reflect,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     parallel::Int=0,
     stopping_criterion::StoppingCriterion=StopWhenAny(
@@ -114,7 +113,15 @@ function DouglasRachford!(
         nF = F
     end
     p = ProximalProblem(M, nF, (prox1, prox2); evaluation=evaluation)
-    o = DouglasRachfordOptions(x, λ, α, reflect, stopping_criterion, parallel > 0)
+    o = DouglasRachfordOptions(
+        M,
+        x;
+        λ=λ,
+        α=α,
+        R=Manopt.reflect,
+        stopping_criterion=stopping_criterion,
+        parallel=parallel > 0,
+    )
 
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)

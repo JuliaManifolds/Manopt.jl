@@ -1,5 +1,12 @@
 @doc raw"""
-    PrimalDualProblem {T, mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem{T}
+    AbstractPrimalDualProblem{T} <: Problem{T}
+
+An abstract type for primal-dual-based problems.
+"""
+abstract type AbstractPrimalDualProblem{T} <: Problem{T} end
+
+@doc raw"""
+    PrimalDualProblem {T, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem
 
 Describes a Problem for the linearized or exact Chambolle-Pock algorithm.[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020][^ChambollePock2011]
 
@@ -43,7 +50,8 @@ the second.
     > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
     > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <: Problem{T}
+mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <:
+               AbstractPrimalDualProblem{T}
     M::mT
     N::nT
     cost::Function
@@ -77,10 +85,10 @@ function PrimalDualProblem(
 end
 
 @doc raw"""
-    y = get_primal_prox(p::PrimalDualProblem, σ, x)
-    get_primal_prox!(p::PrimalDualProblem, y, σ, x)
+    y = get_primal_prox(p::AbstractPrimalDualProblem, σ, x)
+    get_primal_prox!(p::AbstractPrimalDualProblem, y, σ, x)
 
-Evaluate the proximal map of ``F`` stored within [`PrimalDualProblem`](@ref)
+Evaluate the proximal map of ``F`` stored within [`AbstractPrimalDualProblem`](@ref)
 
 ```math
 \operatorname{prox}_{σF}(x)
@@ -88,27 +96,27 @@ Evaluate the proximal map of ``F`` stored within [`PrimalDualProblem`](@ref)
 
 which can also be computed in place of `y`.
 """
-get_primal_prox(::PrimalDualProblem, ::Any...)
+get_primal_prox(::AbstractPrimalDualProblem, ::Any...)
 
-function get_primal_prox(p::PrimalDualProblem{AllocatingEvaluation}, σ, x)
+function get_primal_prox(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, σ, x)
     return p.prox_F!!(p.M, σ, x)
 end
-function get_primal_prox(p::PrimalDualProblem{MutatingEvaluation}, σ, x)
+function get_primal_prox(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, σ, x)
     y = allocate_result(p.M, get_primal_prox, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
-function get_primal_prox!(p::PrimalDualProblem{AllocatingEvaluation}, y, σ, x)
+function get_primal_prox!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, y, σ, x)
     return copyto!(p.M, y, p.prox_F!!(p.M, σ, x))
 end
-function get_primal_prox!(p::PrimalDualProblem{MutatingEvaluation}, y, σ, x)
+function get_primal_prox!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, y, σ, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
 
 @doc raw"""
-    y = get_dual_prox(p::PrimalDualProblem, n, τ, ξ)
-    get_dual_prox!(p::PrimalDualProblem, y, n, τ, ξ)
+    y = get_dual_prox(p::AbstractPrimalDualProblem, n, τ, ξ)
+    get_dual_prox!(p::AbstractPrimalDualProblem, y, n, τ, ξ)
 
-Evaluate the proximal map of ``G_n^*`` stored within [`PrimalDualProblem`](@ref)
+Evaluate the proximal map of ``G_n^*`` stored within [`AbstractPrimalDualProblem`](@ref)
 
 ```math
 \operatorname{prox}_{τG_n^*}(ξ)
@@ -116,99 +124,107 @@ Evaluate the proximal map of ``G_n^*`` stored within [`PrimalDualProblem`](@ref)
 
 which can also be computed in place of `y`.
 """
-get_dual_prox(::PrimalDualProblem, ::Any...)
+get_dual_prox(::AbstractPrimalDualProblem, ::Any...)
 
-function get_dual_prox(p::PrimalDualProblem{AllocatingEvaluation}, n, τ, ξ)
+function get_dual_prox(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, n, τ, ξ)
     return p.prox_G_dual!!(p.N, n, τ, ξ)
 end
-function get_dual_prox(p::PrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
+function get_dual_prox(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, n, τ, ξ)
     η = allocate_result(p.N, get_dual_prox, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
-function get_dual_prox!(p::PrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
+function get_dual_prox!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, η, n, τ, ξ)
     return copyto!(p.N, η, p.prox_G_dual!!(p.N, n, τ, ξ))
 end
-function get_dual_prox!(p::PrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
+function get_dual_prox!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, η, n, τ, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 @doc raw"""
-    Y = linearized_forward_operator(p::PrimalDualProblem, m X, n)
-    linearized_forward_operator!(p::PrimalDualProblem, Y, m, X, n)
+    Y = linearized_forward_operator(p::AbstractPrimalDualProblem, m X, n)
+    linearized_forward_operator!(p::AbstractPrimalDualProblem, Y, m, X, n)
 
 Evaluate the linearized operator (differential) ``DΛ(m)[X]`` stored within
-the [`PrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
+the [`AbstractPrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
 """
-linearized_forward_operator(::PrimalDualProblem, ::Any...)
+linearized_forward_operator(::AbstractPrimalDualProblem, ::Any...)
 
 function linearized_forward_operator(
-    p::PrimalDualProblem{AllocatingEvaluation}, m, X, ::Any
+    p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, m, X, ::Any
 )
     return p.linearized_forward_operator!!(p.M, m, X)
 end
-function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
+function linearized_forward_operator(
+    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, m, X, ::Any
+)
     y = random_point(p.N)
     forward_operator!(p, y, m)
     Y = zero_vector(p.N, y)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 function linearized_forward_operator!(
-    p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X, n
+    p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, Y, m, X, n
 )
     return copyto!(p.N, Y, n, p.linearized_forward_operator!!(p.M, m, X))
 end
 function linearized_forward_operator!(
-    p::PrimalDualProblem{MutatingEvaluation}, Y, m, X, ::Any
+    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, Y, m, X, ::Any
 )
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 
 @doc raw"""
-    y = forward_operator(p::PrimalDualProblem, x)
-    forward_operator!(p::PrimalDualProblem, y, x)
+    y = forward_operator(p::AbstractPrimalDualProblem, x)
+    forward_operator!(p::AbstractPrimalDualProblem, y, x)
 
-Evaluate the forward operator of ``Λ(x)`` stored within the [`PrimalDualProblem`](@ref)
+Evaluate the forward operator of ``Λ(x)`` stored within the [`AbstractPrimalDualProblem`](@ref)
 (in place of `y`).
 """
-forward_operator(::PrimalDualProblem{AllocatingEvaluation}, ::Any...)
+forward_operator(::AbstractPrimalDualProblem{<:AllocatingEvaluation}, ::Any...)
 
-function forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, x)
+function forward_operator(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, x)
     return p.Λ!!(p.M, x)
 end
-function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
+function forward_operator(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, x)
     y = random_point(p.N)
     return p.Λ!!(p.M, y, x)
 end
-function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)
+function forward_operator!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, y, x)
     return copyto!(p.N, y, p.Λ!!(p.M, x))
 end
-function forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, y, x)
+function forward_operator!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, y, x)
     return p.Λ!!(p.M, y, x)
 end
 
 @doc raw"""
-    X = adjoint_linearized_operator(p::PrimalDualProblem, m, n, Y)
-    adjoint_linearized_operator(p::PrimalDualProblem, X, m, n, Y)
+    X = adjoint_linearized_operator(p::AbstractPrimalDualProblem, m, n, Y)
+    adjoint_linearized_operator(p::AbstractPrimalDualProblem, X, m, n, Y)
 
 Evaluate the adjoint of the linearized forward operator of ``(DΛ(m))^*[Y]`` stored within
-the [`PrimalDualProblem`](@ref) (in place of `X`).
+the [`AbstractPrimalDualProblem`](@ref) (in place of `X`).
 Since ``Y∈T_n\mathcal N``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
 the forward operator ``Λ`` might be `missing` in `p`.
 """
-adjoint_linearized_operator(::PrimalDualProblem{AllocatingEvaluation}, ::Any...)
+adjoint_linearized_operator(::AbstractPrimalDualProblem{<:AllocatingEvaluation}, ::Any...)
 
-function adjoint_linearized_operator(p::PrimalDualProblem{AllocatingEvaluation}, m, n, Y)
+function adjoint_linearized_operator(
+    p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, m, n, Y
+)
     return p.adjoint_linearized_operator!!(p.N, m, n, Y)
 end
-function adjoint_linearized_operator(p::PrimalDualProblem{MutatingEvaluation}, m, n, Y)
+function adjoint_linearized_operator(
+    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, m, n, Y
+)
     X = zero_vector(p.M, m)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 function adjoint_linearized_operator!(
-    p::PrimalDualProblem{AllocatingEvaluation}, X, m, n, Y
+    p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, X, m, n, Y
 )
     return copyto!(p.M, X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
 end
-function adjoint_linearized_operator!(p::PrimalDualProblem{MutatingEvaluation}, X, m, n, Y)
+function adjoint_linearized_operator!(
+    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, X, m, n, Y
+)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 
@@ -253,7 +269,8 @@ If you activate these to be different from the default identity, you have to pro
 `p.Λ` for the algorithm to work (which might be `missing` in the linearized case).
 
 # Constructor
-    ChambollePockOptions(m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
+    ChambollePockOptions(M::AbstractManifold,
+        m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
         acceleration::Float64 = 0.0,
         relaxation::Float64 = 1.0,
         relax::Symbol = :primal,
@@ -261,9 +278,9 @@ If you activate these to be different from the default identity, you have to pro
         variant::Symbol = :exact,
         update_primal_base::Union{Function,Missing} = missing,
         update_dual_base::Union{Function,Missing} = missing,
-        retraction_method = ExponentialRetraction(),
-        inverse_retraction_method = LogarithmicInverseRetraction(),
-        vector_transport_method = ParallelTransport(),
+        retraction_method = default_retraction_method(M),
+        inverse_retraction_method = default_inverse_retraction_method(M),
+        vector_transport_method = default_vector_transport_method(M),
     )
 """
 mutable struct ChambollePockOptions{
@@ -293,7 +310,33 @@ mutable struct ChambollePockOptions{
     inverse_retraction_method::IRM
     vector_transport_method::VTM
 
+    @deprecate ChambollePockOptions(
+        m,
+        n,
+        x,
+        ξ,
+        primal_stepsize::Float64=1 / sqrt(8),
+        dual_stepsize::Float64=1 / sqrt(8);
+        retraction_method=ExponentialRetraction(),
+        inverse_retraction_method=LogarithmicInverseRetraction(),
+        vector_transport_method=ParallelTransport(),
+        kwargs...,
+    ) ChambollePockOptions(
+        DefaultManifold(2),
+        m,
+        n,
+        x,
+        ξ,
+        primal_stepsize,
+        dual_stepsize;
+        retraction_method=retraction_method,
+        inverse_retraction_method=inverse_retraction_method,
+        vector_transport_method=vector_transport_method,
+        kwargs...,
+    )
+
     function ChambollePockOptions(
+        M::AbstractManifold,
         m::P,
         n::Q,
         x::P,
@@ -307,9 +350,9 @@ mutable struct ChambollePockOptions{
         variant::Symbol=:exact,
         update_primal_base::Union{Function,Missing}=missing,
         update_dual_base::Union{Function,Missing}=missing,
-        retraction_method::RM=ExponentialRetraction(),
-        inverse_retraction_method::IRM=LogarithmicInverseRetraction(),
-        vector_transport_method::VTM=ParallelTransport(),
+        retraction_method::RM=default_retraction_method(M),
+        inverse_retraction_method::IRM=default_inverse_retraction_method(M),
+        vector_transport_method::VTM=default_vector_transport_method(M),
     ) where {
         P,
         Q,
@@ -340,7 +383,7 @@ mutable struct ChambollePockOptions{
         )
     end
 end
-get_solver_result(o::ChambollePockOptions) = o.x
+get_solver_result(o::PrimalDualOptions) = o.x
 @doc raw"""
     primal_residual(p, o, x_old, ξ_old, n_old)
 
@@ -355,7 +398,9 @@ V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 ```
 where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref)
 """
-function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
+function primal_residual(
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old
+)
     return norm(
         p.M,
         o.x,
@@ -411,7 +456,9 @@ and for the `:exact` variant
 
 where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref).
 """
-function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
+function dual_residual(
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old
+)
     if o.variant === :linearized
         return norm(
             p.N,
@@ -476,64 +523,96 @@ end
 A Debug action to print the dual residual.
 The constructor accepts a printing function and some (shared) storage, which
 should at least record `:x`, `:ξ` and `:n`.
+
+# Constructor
+DebugDualResidual()
+
+with the keywords
+* `io` (`stdout`) - stream to perform the debug to
+* format (`"$prefix%s"`) format to print the dual residual, using the
+* `prefix` (`"Dual Residual: "`) short form to just set the prefix
+* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugDualResidual <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugDualResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
+    function DebugDualResidual(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        io::IO=stdout,
+        prefix="Dual Residual: ",
+        format="$prefix%s",
     )
-        return new(io, "Dual Residual: ", a)
+        return new(io, format, storage)
     end
     function DebugDualResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        initial_values::Tuple{P,T,Q};
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
+        prefix="Dual Residual: ",
+        format="$prefix%s",
     ) where {P,T,Q}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "Dual Residual: ", a)
+        update_storage!(
+            storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), initial_values))
+        )
+        return new(io, format, storage)
     end
 end
-function (d::DebugDualResidual)(p::PrimalDualProblem, o::ChambollePockOptions, i::Int)
+function (d::DebugDualResidual)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(d.io, d.prefix * string(dual_residual(p, o, xOld, ξOld, nOld)))
+        Printf.format(d.io, Printf.Format(d.format), dual_residual(p, o, xOld, ξOld, nOld))
     end
     return d.storage(p, o, i)
 end
-
 @doc raw"""
     DebugPrimalResidual <: DebugAction
 
 A Debug action to print the primal residual.
 The constructor accepts a printing function and some (shared) storage, which
 should at least record `:x`, `:ξ` and `:n`.
+
+# Constructor
+
+    DebugPrimalResidual()
+
+with the keywords
+* `io` (`stdout`) - stream to perform the debug to
+* format (`"$prefix%s"`) format to print the dual residual, using the
+* `prefix` (`"Primal Residual: "`) short form to just set the prefix
+* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalResidual <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugPrimalResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
+    function DebugPrimalResidual(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        io::IO=stdout,
+        prefix="Primal Residual: ",
+        format="$prefix%s",
     )
-        return new(io, "Primal Residual: ", a)
+        return new(io, format, storage)
     end
     function DebugPrimalResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        values::Tuple{P,T,Q};
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
+        prefix="Primal Residual: ",
+        format="$prefix%s",
     ) where {P,T,Q}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "Primal Residual: ", a)
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        return new(io, format, storage)
     end
 end
 function (d::DebugPrimalResidual)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(d.io, d.prefix * string(primal_residual(p, o, xOld, ξOld, nOld)))
+        Printf.format(
+            d.io, Printf.Format(d.format), primal_residual(p, o, xOld, ξOld, nOld)
+        )
     end
     return d.storage(p, o, i)
 end
@@ -543,39 +622,47 @@ end
 A Debug action to print the primaldual residual.
 The constructor accepts a printing function and some (shared) storage, which
 should at least record `:x`, `:ξ` and `:n`.
+
+# Constructor
+
+    DebugPrimalDualResidual()
+
+with the keywords
+* `io` (`stdout`) - stream to perform the debug to
+* format (`"$prefix%s"`) format to print the dual residual, using the
+* `prefix` (`"Primal Residual: "`) short form to just set the prefix
+* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalDualResidual <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugPrimalDualResidual(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)), io::IO=stdout
+    function DebugPrimalDualResidual(;
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        io::IO=stdout,
+        prefix="PD Residual: ",
+        format="$prefix%s",
     )
-        return new(io, "PD Residual: ", a)
+        return new(io, format, storage)
     end
     function DebugPrimalDualResidual(
-        values::Tuple{P,T,Q},
-        a::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        values::Tuple{P,T,Q};
+        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
         io::IO=stdout,
+        prefix="PD Residual: ",
+        format="$prefix%s",
     ) where {P,Q,T}
-        update_storage!(a, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
-        return new(io, "PD Residual: ", a)
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        return new(io, format, storage)
     end
 end
 function (d::DebugPrimalDualResidual)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
-        print(
-            d.io,
-            d.prefix * string(
-                (
-                    primal_residual(p, o, xOld, ξOld, nOld) +
-                    dual_residual(p, o, xOld, ξOld, nOld)
-                ) / manifold_dimension(p.M),
-            ),
-        )
+        v = primal_residual(p, o, xOld, ξOld, nOld) + dual_residual(p, o, xOld, ξOld, nOld)
+        Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(p.M))
     end
     return d.storage(p, o, i)
 end
@@ -589,19 +676,21 @@ end
 Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
-function DebugPrimalChange(
-    a::StoreOptionsAction=StoreOptionsAction((:x,)), prefix="Primal Change: ", io::IO=stdout
+function DebugPrimalChange(;
+    storage::StoreOptionsAction=StoreOptionsAction((:x,)),
+    prefix="Primal Change: ",
+    kwargs...,
 )
-    return DebugChange(a, prefix, io)
+    return DebugChange(; storage=storage, prefix=prefix, kwargs...)
 end
 
 """
-    DebugPrimalIterate(opts...)
+    DebugPrimalIterate(opts...;kwargs...)
 
 Print the change of the primal variable by using [`DebugIterate`](@ref),
 see their constructors for detail.
 """
-DebugPrimalIterate(opts...) = DebugIterate(opts...)
+DebugPrimalIterate(opts...; kwargs...) = DebugIterate(opts...; kwargs...)
 
 """
     DebugDualIterate(e)
@@ -610,7 +699,7 @@ Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.ξ`.
 """
-DebugDualIterate(opts...) = DebugEntry(:ξ, "ξ:", opts...)
+DebugDualIterate(opts...; kwargs...) = DebugEntry(:ξ, opts...; kwargs...)
 
 """
     DebugDualChange(opts...)
@@ -621,38 +710,38 @@ since the dual variable lives in (possibly different) tangent spaces.
 """
 mutable struct DebugDualChange <: DebugAction
     io::IO
-    prefix::String
+    format::String
     storage::StoreOptionsAction
-    function DebugDualChange(
-        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)), io::IO=stdout
+    function DebugDualChange(;
+        storage::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
+        io::IO=stdout,
+        prefix="Dual Change: ",
+        format="$prefix%s",
     )
-        return new(io, "Dual Change: ", a)
+        return new(io, format, storage)
     end
     function DebugDualChange(
-        values::Tuple{T,P},
-        a::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
+        values::Tuple{T,P};
+        storage::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
         io::IO=stdout,
+        prefix="Dual Change: ",
+        format="$prefix%s",
     ) where {P,T}
-        update_storage!(a, Dict{Symbol,Any}(k => v for (k, v) in zip((:ξ, :n), values)))
-        return new(io, "Dual Change: ", a)
+        update_storage!(
+            storage, Dict{Symbol,Any}(k => v for (k, v) in zip((:ξ, :n), values))
+        )
+        return new(io, format, storage)
     end
 end
-function (d::DebugDualChange)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
+function (d::DebugDualChange)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
-        print(
-            d.io,
-            d.prefix * string(
-                norm(
-                    p.N,
-                    o.n,
-                    vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) -
-                    o.ξ,
-                ),
-            ),
+        v = norm(
+            p.N,
+            o.n,
+            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) - o.ξ,
         )
+        Printf.format(d.io, Printf.Format(d.format), v)
     end
     return d.storage(p, o, i)
 end
@@ -664,27 +753,32 @@ Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.n`.
 """
-DebugDualBaseIterate(io::IO=stdout) = DebugEntry(:n, "n:", io)
+DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
+
 """
-    DebugDualChange(a=StoreOptionsAction((:ξ)),io::IO=stdout)
+    DebugDualChange(; storage=StoreOptionsAction((:ξ)), io::IO=stdout)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugDualBaseChange(a::StoreOptionsAction=StoreOptionsAction((:n)), io::IO=stdout)
+function DebugDualBaseChange(;
+    storage::StoreOptionsAction=StoreOptionsAction((:n)),
+    prefix="Dual Base Change:",
+    kwargs...,
+)
     return DebugEntryChange(
-        :n, (p, o, x, y) -> distance(p.N, x, y), a, "Dual Base Change:", io
+        :n, (p, o, x, y) -> distance(p.N, x, y); storage=storage, prefix=prefix, kwargs...
     )
 end
 
 """
-    DebugPrimalBaseIterate(io::IO=stdout)
+    DebugPrimalBaseIterate()
 
 Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set display `o.m`.
 """
-DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:", io)
+DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
 
 """
     DebugPrimalBaseChange(a::StoreOptionsAction=StoreOptionsAction((:m)),io::IO=stdout)
@@ -692,11 +786,9 @@ DebugPrimalBaseIterate(io::IO=stdout) = DebugEntry(:m, "m:", io)
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
-function DebugPrimalBaseChange(
-    a::StoreOptionsAction=StoreOptionsAction((:m)), io::IO=stdout
-)
+function DebugPrimalBaseChange(opts...; prefix="Primal Base Change:", kwargs...)
     return DebugEntryChange(
-        :m, (p, o, x, y) -> distance(p.M, x, y), a, "Primal Base Change:", io
+        :m, (p, o, x, y) -> distance(p.M, x, y), opts...; prefix=prefix, kwargs...
     )
 end
 

@@ -1,4 +1,4 @@
-using Manopt, Manifolds
+using Manopt, Manifolds, Test
 
 @testset "Gradient Descent" begin
     @testset "allocating Circle" begin
@@ -119,50 +119,12 @@ using Manopt, Manifolds
             string(
                 "The strategy 'indirect' is not defined. The 'direct' strategy is used instead.",
             ),
-        ) NonmonotoneLinesearch(
-            1.0,
-            ExponentialRetraction(),
-            ParallelTransport(),
-            0.99,
-            0.1,
-            2,
-            1e-7,
-            π / 2,
-            :indirect,
-        )
+        ) NonmonotoneLinesearch(M; strategy=:indirect)
+        @test_throws DomainError NonmonotoneLinesearch(M; min_stepsize=0.0)
         @test_throws DomainError NonmonotoneLinesearch(
-            1.0,
-            ExponentialRetraction(),
-            ParallelTransport(),
-            0.99,
-            0.1,
-            2,
-            0.0,
-            π / 2,
-            :direct,
+            M; min_stepsize=π / 2, max_stepsize=π / 4
         )
-        @test_throws DomainError NonmonotoneLinesearch(
-            1.0,
-            ExponentialRetraction(),
-            ParallelTransport(),
-            0.99,
-            0.1,
-            2,
-            π / 2,
-            π / 4,
-            :direct,
-        )
-        @test_throws DomainError NonmonotoneLinesearch(
-            1.0,
-            ExponentialRetraction(),
-            ParallelTransport(),
-            0.99,
-            0.1,
-            0,
-            π / 4,
-            π / 2,
-            :direct,
-        )
+        @test_throws DomainError NonmonotoneLinesearch(M; memory_size=0)
 
         rec = get_record(o)
         # after one step for local enough data -> equal to real valued data
@@ -170,7 +132,7 @@ using Manopt, Manifolds
         # Test Fallbacks -> we can't do steps with the wrong combination
         p = SubGradientProblem(M, F, gradF)
         o = GradientDescentOptions(
-            s[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(1.0)
+            M, s[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         @test_throws MethodError initialize_solver!(p, o)
         @test_throws MethodError step_solver!(p, o, 1)
@@ -185,9 +147,26 @@ using Manopt, Manifolds
         n2 = gradient_descent(M, F, gradF, pts[1])
         @test !isapprox(M, pts[1], n2) # n2 is newly allocated and not pts[1]
         @test isapprox(M, north, n2)
-        n3 = gradient_descent(M, F, gradF, pts[1]; direction=MomentumGradient(M, pts[1]))
+        n3 = gradient_descent(
+            M, F, gradF, pts[1]; direction=MomentumGradient(M, pts[1]), debug=[]
+        )
         @test isapprox(M, north, n3)
         n4 = gradient_descent(M, F, gradF, pts[1]; direction=AverageGradient(M, pts[1], 5))
         @test isapprox(M, north, n4; atol=1e-7)
+    end
+    @testset "Warning when cost increases" begin
+        M = Sphere(2)
+        q = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
+        F(M, p) = distance(M, p, q) .^ 2
+        # chosse a wrong gradient such that ConstantStepsize yields an increase
+        gradF(M, p) = -grad_distance(M, q, p)
+        # issues three warnings
+        @test_logs (:warn,) (:warn,) (:warn,) gradient_descent(
+            M,
+            F,
+            gradF,
+            1 / sqrt(2) .* [1.0, -1.0, 0.0];
+            debug=[DebugWarnIfCostIncreases(:Once)],
+        )
     end
 end

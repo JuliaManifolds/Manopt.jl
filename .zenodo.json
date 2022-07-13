@@ -6,6 +6,12 @@
             "orcid": "0000-0002-6284-3033"
         },
         {
+            "affiliation": "EMBL Heidelberg",
+            "name": "Ahlmann-Eltze, Constantin",
+            "type": "Other",
+            "orcid": "0000-0002-3762-068X"
+        },
+        {
             "name": "Dornig, Renée",
             "type": "ProjectMember"
         },
@@ -24,11 +30,22 @@
         {
             "name": "Rebjock, Quentin",
             "type": "ProjectMember"
+        },
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Kolstø, Johannes Voll",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "University of Cambridge",
+            "name": "Diepeveen, Willem",
+            "type": "ProjectMember",
+            "orcid": "0000-0002-4690-9258"
         }
     ],
     "creators": [
         {
-            "affiliation": "Technische Universität Chemnitz",
+            "affiliation": "NTNU Trondheim",
             "name": "Bergmann, Ronny",
             "orcid": "0000-0001-8342-7218"
         }

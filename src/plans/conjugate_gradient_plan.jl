@@ -12,12 +12,14 @@ specify options for a conjugate gradient descent algorithm, that solves a
 * `coefficient` – a [`DirectionUpdateRule`](@ref) function to determine the new `β`
 * `stepsize` – a [`Stepsize`](@ref) function
 * `stop` – a [`StoppingCriterion`](@ref)
-* `retraction_method` – (`ExponentialRetraction()`) a type of retraction
+* `retraction_method` – (`default_retraction_method(M)`) a type of retraction
+
 
 # See also
 [`conjugate_gradient_descent`](@ref), [`GradientProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
 mutable struct ConjugateGradientDescentOptions{
+    P,
     T,
     TCoeff<:DirectionUpdateRule,
     TStepsize<:Stepsize,
@@ -25,7 +27,7 @@ mutable struct ConjugateGradientDescentOptions{
     TRetr<:AbstractRetractionMethod,
     TVTM<:AbstractVectorTransportMethod,
 } <: AbstractGradientOptions
-    x::T
+    x::P
     gradient::T
     δ::T
     β::Float64
@@ -34,16 +36,20 @@ mutable struct ConjugateGradientDescentOptions{
     stop::TStop
     retraction_method::TRetr
     vector_transport_method::TVTM
-    function ConjugateGradientDescentOptions{T}(
-        x0::T,
+    function ConjugateGradientDescentOptions{P,T}(
+        M::AbstractManifold,
+        x0::P,
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
-    ) where {T}
-        o = new{T,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
+        initial_gradient::T=zero_vector(M, p),
+    ) where {P,T}
+        o = new{P,T,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         o.x = x0
+        o.gradient = initial_gradient
+        o.δ = initial_gradient
         o.stop = sC
         o.retraction_method = retr
         o.stepsize = s
@@ -53,14 +59,18 @@ mutable struct ConjugateGradientDescentOptions{
     end
 end
 function ConjugateGradientDescentOptions(
-    x::T,
+    M::AbstractManifold,
+    x::P,
     sC::StoppingCriterion,
     s::Stepsize,
     dU::DirectionUpdateRule,
-    retr::AbstractRetractionMethod=ExponentialRetraction(),
-    vtr::AbstractVectorTransportMethod=ParallelTransport(),
-) where {T}
-    return ConjugateGradientDescentOptions{T}(x, sC, s, dU, retr, vtr)
+    retr::AbstractRetractionMethod=default_retraction_method(M),
+    vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    initial_gradient::T=zero_vector(M, x),
+) where {P,T}
+    return ConjugateGradientDescentOptions{P,T}(
+        M, x, sC, s, dU, retr, vtr, initial_gradient
+    )
 end
 
 @doc raw"""

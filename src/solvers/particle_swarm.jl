@@ -37,12 +37,10 @@ g_{k}^{(i)}, & \text{else,}
 ```
 i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i)}`` is the global best known position ever visited up to step ``i``.
 
-
 [^Borckmans2010]:
     > P. B. Borckmans, M. Ishteva, P.-A. Absil, __A Modified Particle Swarm Optimization Algorithm for the Best Low Multilinear Rank Approximation of Higher-Order Tensors__,
     > In: Dorigo M. et al. (eds) Swarm Intelligence. ANTS 2010. Lecture Notes in Computer Science, vol 6234. Springer, Berlin, Heidelberg,
     > doi [10.1007/978-3-642-15461-4_2](https://doi.org/10.1007/978-3-642-15461-4_2)
-
 
 # Input
 * `M` – a manifold ``\mathcal M``
@@ -55,9 +53,9 @@ i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
-* `retraction_method` – (`ExponentialRetraction()`) a `retraction(M,x,ξ)` to use.
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an `inverse_retraction(M,x,y)` to use.
-* `vector_transport_mthod` - (`ParallelTransport()`) a vector transport method to use.
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an `inverse_retraction(M,x,y)` to use.
+* `vector_transport_mthod` - (`default_vector_transport_method(M)`) a vector transport method to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
@@ -79,8 +77,7 @@ function particle_swarm(
     x0::AbstractVector=[random_point(M) for i in 1:n],
     kwargs...,
 ) where {TF}
-    x_res = allocate.(x0)
-    copyto!.(Ref(M), x_res, x0)
+    x_res = copy.(Ref(M), x0)
     return particle_swarm!(M, F; n=n, x0=x_res, kwargs...)
 end
 @doc raw"""
@@ -108,26 +105,30 @@ function particle_swarm!(
     inertia::Real=0.65,
     social_weight::Real=1.4,
     cognitive_weight::Real=1.4,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(200), StopWhenChangeLess(10.0^-4)
+    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
+                                          StopWhenChangeLess(1e-4),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+        M
     ),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
+        M
+    ),
     return_options=false,
     kwargs..., #collect rest
 ) where {TF}
     p = CostProblem(M, F)
     o = ParticleSwarmOptions(
+        M,
         x0,
-        velocity,
-        inertia,
-        social_weight,
-        cognitive_weight,
-        stopping_criterion,
-        retraction_method,
-        inverse_retraction_method,
-        vector_transport_method,
+        velocity;
+        inertia=inertia,
+        social_weight=social_weight,
+        cognitive_weight=cognitive_weight,
+        stopping_criterion=stopping_criterion,
+        retraction_method=retraction_method,
+        inverse_retraction_method=inverse_retraction_method,
+        vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)

@@ -23,8 +23,8 @@ and
 * `γ` – (`2.`) expansion parameter (``γ``)
 * `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
 * `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
-* `retraction_method` – (`ExponentialRetraction`) the rectraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction`) an inverse retraction to use.
+* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
@@ -43,8 +43,7 @@ function NelderMead(
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     kwargs...,
 ) where {TF}
-    res_population = allocate.(population)
-    copyto!.(Ref(M), res_population, population)
+    res_population = copy.(Ref(M), population)
     return NelderMead!(M, F, res_population; kwargs...)
 end
 @doc raw"""
@@ -64,15 +63,18 @@ function NelderMead!(
     γ=2.0,
     ρ=1 / 2,
     σ=1 / 2,
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+        M
+    ),
     return_options=false,
     kwargs..., #collect rest
 ) where {TF}
     p = CostProblem(M, F)
     o = NelderMeadOptions(
-        population,
-        stopping_criterion;
+        M,
+        population;
+        stopping_criterion=stopping_criterion,
         α=α,
         γ=γ,
         ρ=ρ,

@@ -102,21 +102,17 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x0` – an a point (of type `P`) on a manifold as starting point
 * `gradient` – the current gradient ``\operatorname{grad}f(x)``
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`)a [`Stepsize`](@ref)
+* `stepsize` – ([`ConstantStepsize`](@ref)`()`) a [`Stepsize`](@ref)
 * `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
-* `retraction_method` – (`ExponentialRetraction()`) the retraction to use, defaults to
-  the exponential map
+* `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
+  the default set for your manifold.
 
 # Constructor
 
-    GradientDescentOptions(x, stop, s [, retr=ExponentialRetraction()])
-    GradientDescentOptions(M, x, stop, s [, retr=ExponentialRetraction()])
-    GradientDescentOptions(x, X, stop, s [, retr=ExponentialRetraction()])
+    GradientDescentOptions(M, x; initial_vector=zero_vector(M, x), kwargs...)
 
-construct a Gradient Descent Option with the fields and defaults as above,
-where the first can be used if points (`x`)  and tangent vectors (`gradient`) have the same type,
-for example when they are matrices.
-The second uses the `Manifold M` to set `gradient=zero_vector(M,x)`.
+Generate gradient descent options, where `initial_vector` can be used to set the tangent vector to store the gradient to a certain type.
+All following fields are keyword arguments.
 
 # See also
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
@@ -134,7 +130,7 @@ mutable struct GradientDescentOptions{
         initialX::P,
         initial_gradient::T,
         s::StoppingCriterion=StopAfterIteration(100),
-        stepsize::Stepsize=ConstantStepsize(1.0),
+        stepsize::Stepsize=ConstantStepsize(),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         direction::DirectionUpdateRule=IdentityUpdateRule(),
     ) where {P,T}
@@ -148,45 +144,48 @@ mutable struct GradientDescentOptions{
         return o
     end
 end
-function GradientDescentOptions(
-    x::P;
+@deprecate GradientDescentOptions(
+    x;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
-) where {P}
-    return GradientDescentOptions{P,P}(
-        x, deepcopy(x), stopping_criterion, stepsize, retraction_method, direction
-    )
-end
-function GradientDescentOptions(
-    x::P,
-    X::T;
+) GradientDescentOptions(
+    DefaultManifold(2),
+    x;
+    initial_vector=deepcopy(x),
+    stopping_criterion=stopping_criterion,
+    stepsize=stepsize,
+    retraction_method=retraction_method,
+    direction=direction,
+)
+@deprecate GradientDescentOptions(
+    x,
+    X;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(1.0),
+    stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
-) where {P,T}
-    return GradientDescentOptions{P,T}(
-        x, X, stopping_criterion, stepsize, retraction_method, direction
-    )
-end
+) GradientDescentOptions(
+    DefaultManifold(2),
+    x;
+    initial_vector=X,
+    stopping_criterion=stopping_criterion,
+    stepsize=stepsize,
+    retraction_method=retraction_method,
+    direction=direction,
+)
 function GradientDescentOptions(
     M::AbstractManifold,
     x::P;
+    initial_vector=zero_vector(M, x),
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(1.0),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    stepsize::Stepsize=ConstantStepsize(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P}
-    X = zero_vector(M, x)
-    return GradientDescentOptions(
-        x,
-        X;
-        stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
-        retraction_method=retraction_method,
-        direction=direction,
+    return GradientDescentOptions{P,typeof(initial_vector)}(
+        x, initial_vector, stopping_criterion, stepsize, retraction_method, direction
     )
 end
 
@@ -440,24 +439,26 @@ end
 debug for the gradient evaluated at the current iterate
 
 # Constructors
-    DebugGradient([long=false,p=print])
+    DebugGradient(; long=false, prefix= , format= "$prefix%s", io=stdout)
 
-display the short (`false`) or long (`true`) default text for the gradient.
-
-    DebugGradient(prefix[, p=print])
-
-display the a `prefix` in front of the gradient.
+display the short (`false`) or long (`true`) default text for the gradient,
+or set the `prefix` manually. Alternatively the complete format can be set.
 """
 mutable struct DebugGradient <: DebugAction
     io::IO
-    prefix::String
-    function DebugGradient(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Gradient: " : "gradF(x):")
+    format::String
+    function DebugGradient(;
+        long::Bool=false,
+        prefix=long ? "Gradient: " : "gradF(x):",
+        format="$prefix%s",
+        io::IO=stdout,
+    )
+        return new(io, format)
     end
-    DebugGradient(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugGradient)(::GradientProblem, o::GradientDescentOptions, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * "" * string(o.gradient) : "")
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), o.gradient)
     return nothing
 end
 
@@ -477,14 +478,19 @@ display the a `prefix` in front of the gradientnorm.
 """
 mutable struct DebugGradientNorm <: DebugAction
     io::IO
-    prefix::String
-    function DebugGradientNorm(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "Norm of the Gradient: " : "|gradF(x)|:")
+    format::String
+    function DebugGradientNorm(;
+        long::Bool=false,
+        prefix=long ? "Norm of the Gradient: " : "|gradF(x)|:",
+        format="$prefix%s",
+        io::IO=stdout,
+    )
+        return new(io, format)
     end
-    DebugGradientNorm(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugGradientNorm)(p::GradientProblem, o::Options, i::Int)
-    print(d.io, (i >= 0) ? d.prefix * "$(norm(p.M,o.x,o.gradient))" : "")
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), norm(p.M, o.x, o.gradient))
     return nothing
 end
 
@@ -494,24 +500,25 @@ end
 debug for the current step size.
 
 # Constructors
-    DebugStepsize([long=false,p=print])
-
-display the short (`false`) or long (`true`) default text for the step size.
-
-    DebugStepsize(prefix[, p=print])
+    DebugStepsize(;long=false,prefix="step size:", format="$prefix%s", io=stdout)
 
 display the a `prefix` in front of the step size.
 """
 mutable struct DebugStepsize <: DebugAction
     io::IO
-    prefix::String
-    function DebugStepsize(long::Bool=false, io::IO=stdout)
-        return new(io, long ? "step size:" : "s:")
+    format::String
+    function DebugStepsize(;
+        long::Bool=false,
+        io::IO=stdout,
+        prefix=long ? "step size:" : "s:",
+        format="$prefix%s",
+    )
+        return new(io, format)
     end
-    DebugStepsize(prefix::String, io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugStepsize)(p::GradientProblem, o::GradientDescentOptions, i::Int)
-    print(d.io, (i > 0) ? d.prefix * "$(get_last_stepsize(p,o,i))" : "")
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, o, i))
     return nothing
 end
 

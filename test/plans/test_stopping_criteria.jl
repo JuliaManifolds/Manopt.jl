@@ -12,8 +12,8 @@ struct TestOptions <: Options end
     @test get_stopping_criteria(s)[1].maxIter == get_stopping_criteria(s2)[1].maxIter
 
     s3 = StopWhenCostLess(0.1)
-    p = GradientProblem(Euclidean(1), (M, x) -> x^2, x -> 2x)
-    o = GradientDescentOptions(1.0)
+    p = GradientProblem(Euclidean(), (M, x) -> x^2, x -> 2x)
+    o = GradientDescentOptions(Euclidean(), 1.0)
     @test !s3(p, o, 1)
     @test length(s3.reason) == 0
     o.x = 0.3
@@ -34,6 +34,8 @@ struct TestOptions <: Options end
     an = sm.reason
     m = match(r"^((.*)\n)+", an)
     @test length(m.captures) == 2 # both have to be active
+    update_stopping_criterion!(s3, :MinCost, 1e-2)
+    @test s3.threshold == 1e-2
 end
 
 @testset "Test StopAfter" begin
@@ -45,6 +47,9 @@ end
     sleep(1.02)
     @test s(p, o, 2) == true
     @test_throws ErrorException StopAfter(Second(-1))
+    @test_throws ErrorException update_stopping_criterion!(s, :MaxTime, Second(-1))
+    update_stopping_criterion!(s, :MaxTime, Second(2))
+    @test s.threshold == Second(2)
 end
 
 @testset "Stopping Criterion &/| operators" begin
@@ -55,16 +60,22 @@ end
     @test typeof(d) === typeof(a & b & c)
     @test typeof(d) === typeof(a & (b & c))
     @test typeof(d) === typeof((a & b) & c)
+    update_stopping_criterion!(d, :MinIterateChange, 1e-8)
+    @test d.criteria[2].threshold == 1e-8
     e = StopWhenAny(a, b, c)
     @test typeof(e) === typeof(a | b | c)
     @test typeof(e) === typeof(a | (b | c))
     @test typeof(e) === typeof((a | b) | c)
+    update_stopping_criterion!(e, :MinGradNorm, 1e-9)
+    @test d.criteria[3].threshold == 1e-9
 end
 
 @testset "TCG stopping criteria" begin
     # create dummy criterion
     p = HessianProblem(Euclidean(), x -> x, (M, x) -> x, (M, x) -> x, x -> x)
-    o = TruncatedConjugateGradientOptions(p, 1.0, 0.0, 2.0, false)
+    o = TruncatedConjugateGradientOptions(
+        Euclidean(), 1.0, 0.0; trust_region_radius=2.0, randomize=false
+    )
     o.new_model_value = 2.0
     o.model_value = 1.0
     s = StopWhenModelIncreased()
@@ -78,4 +89,22 @@ end
     @test s2.reason == ""
     @test s2(p, o, 1)
     @test length(s2.reason) > 0
+    s3 = StopIfResidualIsReducedByPower(1.0)
+    update_stopping_criterion!(s3, :ResidualPower, 0.5)
+    @test s3.θ == 0.5
+end
+
+@testset "Stop with step size" begin
+    p = GradientProblem(Euclidean(), (M, x) -> x^2, x -> 2x)
+    o = GradientDescentOptions(Euclidean(), 1.0)
+    s1 = StopWhenStepsizeLess(0.5)
+    @test !s1(p, o, 1)
+    @test s1.reason == ""
+    o.stepsize = ConstantStepsize(; stepsize=0.25)
+    @test s1(p, o, 2)
+    @test length(s1.reason) > 0
+    update_stopping_criterion!(o, :MaxIteration, 200)
+    @test o.stop.maxIter == 200
+    update_stopping_criterion!(s1, :MinStepsize, 1e-1)
+    @test s1.threshold == 1e-1
 end

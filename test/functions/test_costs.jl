@@ -18,7 +18,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test costL2TV(N, x, 1.0, x) ≈ 3 * π / 2
     @test costL2TVTV2(N, f, 0.0, 1.0, x) ≈ 1 / 2 * distance(N, x, f)^2 + costTV2(N, x)
     @test costL2TVTV2(N, f, 1.0, 1.0, x) ≈
-          1 / 2 * distance(N, x, f)^2 + costTV(N, x) + costTV2(N, x)
+        1 / 2 * distance(N, x, f)^2 + costTV(N, x) + costTV2(N, x)
 
     @test costTV2(M, Tuple(x[1:3, 1])) ≈ π / 2
     @test costTV(N, x, 1, 2) ≈ sqrt(5 / 4) * π

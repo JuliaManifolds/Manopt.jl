@@ -6,7 +6,9 @@ using Manifolds, Manopt, ManifoldsBase, Test
     include("plans/test_nelder_mead_plan.jl")
     include("plans/test_nonmutating.jl")
     include("plans/test_gradient_plan.jl")
+    include("plans/test_hessian_plan.jl")
     include("plans/test_primal_dual_plan.jl")
+    include("plans/test_higher_order_primal_dual_plan.jl")
     include("plans/test_record.jl")
     include("plans/test_stopping_criteria.jl")
 end
@@ -22,6 +24,8 @@ end
 @testset "Helper & Data Tests" begin
     include("helpers/test_error_measures.jl")
     include("helpers/test_data.jl")
+    include("helpers/test_random.jl")
+    include("helpers/test_checks.jl")
 end
 @testset "Solver Tests       " begin
     include("solvers/test_alternating_gradient.jl")
@@ -34,6 +38,8 @@ end
     include("solvers/test_quasi_Newton.jl")
     include("solvers/test_trust_regions.jl")
     include("solvers/test_particle_swarm.jl")
+    include("solvers/test_primal_dual_semismooth_Newton.jl")
     include("solvers/test_stochastic_gradient_descent.jl")
     include("solvers/test_subgradient_method.jl")
 end
+include("test_deprecated.jl")

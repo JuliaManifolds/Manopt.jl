@@ -168,7 +168,9 @@ function adjoint_Jacobi_field(
 )
     Y = allocate_result(M, adjoint_Jacobi_field, p, X)
     for i in get_iterator(M)
-        Y[M, i] = adjoint_Jacobi_field(M.manifold, p[M, i], q[M, i], t, X[M, i], β)
+        Y[M, i...] = adjoint_Jacobi_field(
+            M.manifold, p[M, i...], q[M, i...], t, X[M, i...], β
+        )
     end
     return Y
 end
@@ -177,8 +179,8 @@ function adjoint_Jacobi_field!(
 )
     Z = deepcopy(first(Y))
     for i in get_iterator(M)
-        adjoint_Jacobi_field!(M.manifold, Z, p[M, i], q[M, i], t, X[M, i], β)
-        Y[M, i] = Z
+        adjoint_Jacobi_field!(M.manifold, Z, p[M, i...], q[M, i...], t, X[M, i...], β)
+        Y[M, i...] = Z
     end
     return Y
 end
@@ -220,7 +222,7 @@ function jacobi_field(
 )
     Y = allocate_result(M, jacobi_field, p, X)
     for i in get_iterator(M)
-        Y[M, i] = jacobi_field(M.manifold, p[M, i], q[M, i], t, X[M, i], β)
+        Y[M, i...] = jacobi_field(M.manifold, p[M, i...], q[M, i...], t, X[M, i...], β)
     end
     return Y
 end
@@ -229,8 +231,8 @@ function jacobi_field!(
 )
     Z = deepcopy(first(Y))
     for i in get_iterator(M)
-        jacobi_field!(M.manifold, Z, p[M, i], q[M, i], t, X[M, i], β)
-        Y[M, i] = Z
+        jacobi_field!(M.manifold, Z, p[M, i...], q[M, i...], t, X[M, i...], β)
+        Y[M, i...] = Z
     end
     return Y
 end

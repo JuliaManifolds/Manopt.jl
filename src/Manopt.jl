@@ -10,8 +10,11 @@ using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
 using Dates: Period, Nanosecond, value
 using Requires
 using Random: shuffle!
+using Statistics: std, cov, mean, cor
 using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
+using SparseArrays
+using Printf
 import Base: copy, identity, &, |
 import ManifoldsBase:
     ℝ,
@@ -26,6 +29,7 @@ import ManifoldsBase:
     AbstractRetractionMethod,
     AbstractInverseRetractionMethod,
     CachedBasis,
+    DefaultManifold,
     DefaultOrthonormalBasis,
     ExponentialRetraction,
     LogarithmicInverseRetraction,
@@ -36,6 +40,9 @@ import ManifoldsBase:
     allocate_result,
     allocate_result_type,
     copyto!,
+    default_inverse_retraction_method,
+    default_retraction_method,
+    default_vector_transport_method,
     distance,
     exp,
     exp!,
@@ -56,6 +63,7 @@ import ManifoldsBase:
     mid_point!,
     NestedPowerRepresentation,
     norm,
+    number_eltype,
     power_dimensions,
     project,
     project!,
@@ -63,6 +71,8 @@ import ManifoldsBase:
     retract!,
     inverse_retract,
     inverse_retract!,
+    is_point,
+    is_vector,
     shortest_geodesic,
     vector_transport_to,
     vector_transport_to!,
@@ -92,6 +102,7 @@ include("solvers/DouglasRachford.jl")
 include("solvers/NelderMead.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/particle_swarm.jl")
+include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/quasi_Newton.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
@@ -99,6 +110,7 @@ include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
+include("helpers/checks.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
@@ -106,10 +118,10 @@ include("data/artificialDataFunctions.jl")
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
         using .Manifolds:
-            AbstractGroupManifold,
             Circle,
             Euclidean,
             Grassmann,
+            GroupManifold,
             Hyperbolic,
             PositiveNumbers,
             ProductManifold,
@@ -118,6 +130,7 @@ function __init__()
             Stiefel,
             Sphere,
             TangentBundle,
+            TangentSpaceAtPoint,
             FixedRankMatrices,
             SVDMPoint,
             UMVTVector,
@@ -141,6 +154,10 @@ function __init__()
         export AlternatingGradient
         export alternating_gradient_descent, alternating_gradient_descent!
     end
+    @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
+        using .Plots
+        include("helpers/check_plots.jl")
+    end
     return nothing
 end
 #
@@ -154,6 +171,7 @@ export Problem,
     SubGradientProblem,
     GradientProblem,
     HessianProblem,
+    PrimalDualSemismoothNewtonProblem,
     PrimalDualProblem,
     StochasticGradientProblem,
     AbstractEvaluationType,
@@ -171,6 +189,7 @@ export Options,
     AbstractHessianOptions,
     NelderMeadOptions,
     ParticleSwarmOptions,
+    PrimalDualSemismoothNewtonOptions,
     PrimalDualOptions,
     RecordOptions,
     StochasticGradientDescentOptions,
@@ -193,8 +212,12 @@ export get_cost,
     get_gradients!,
     get_primal_prox,
     get_primal_prox!,
+    get_differential_primal_prox,
+    get_differential_primal_prox!,
     get_dual_prox,
     get_dual_prox!,
+    get_differential_dual_prox,
+    get_differential_dual_prox!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -206,12 +229,13 @@ export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
-export WolfePowellLineseach,
-    StrongWolfePowellLineseach,
+export WolfePowellLinesearch,
+    StrongWolfePowellLinesearch,
     operator_to_matrix,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
@@ -256,6 +280,7 @@ export ChambollePock,
     NelderMead!,
     particle_swarm,
     particle_swarm!,
+    primal_dual_semismooth_Newton,
     quasi_Newton,
     quasi_Newton!,
     stochastic_gradient_descent,
@@ -285,9 +310,9 @@ export StopIfResidualIsReducedByFactor,
     StopWhenTrustRegionIsExceeded,
     StopWhenModelIncreased
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
-export StopAfter, StopWhenAll, StopWhenAny
+export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
-export are_these_stopping_critera_active
+export are_these_stopping_critera_active, update_stopping_criterion!
 export StoppingCriterion, StoppingCriterionSet, Stepsize
 #
 # Data functions
@@ -370,7 +395,7 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate
 export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIterate
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
-export DebugProximalParameter
+export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 #
 # Records - and access functions
@@ -385,4 +410,7 @@ export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
+#
+# Helpers
+export check_gradient, check_differential
 end

@@ -47,9 +47,9 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
-* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
+* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
     > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
@@ -61,7 +61,7 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 function ChambollePock(
     M::AbstractManifold,
     N::AbstractManifold,
-    cost::Function,
+    cost::TF,
     x::P,
     ξ::T,
     m::P,
@@ -72,15 +72,11 @@ function ChambollePock(
     Λ::Union{Function,Missing}=missing,
     linearized_forward_operator::Union{Function,Missing}=missing,
     kwargs...,
-) where {P,T,Q}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    ξ_res = allocate(ξ)
-    copyto!(N, ξ_res, n, ξ)
-    m_res = allocate(m)
-    copyto!(M, m_res, m)
-    n_res = allocate(n)
-    copyto!(N, n_res, n)
+) where {TF,P,T,Q}
+    x_res = copy(M, x)
+    ξ_res = copy(N, n, ξ)
+    m_res = copy(M, m)
+    n_res = copy(N, n)
     return ChambollePock!(
         M,
         N,
@@ -106,7 +102,7 @@ Perform the Riemannian Chambolle–Pock algorithm in place of `x`, `ξ`, and pot
 function ChambollePock!(
     M::AbstractManifold,
     N::AbstractManifold,
-    cost::Function,
+    cost::TF,
     x::P,
     ξ::T,
     m::P,
@@ -124,13 +120,14 @@ function ChambollePock!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(200),
     update_primal_base::Union{Function,Missing}=missing,
     update_dual_base::Union{Function,Missing}=missing,
-    retraction_method::RM=ExponentialRetraction(),
-    inverse_retraction_method::IRM=LogarithmicInverseRetraction(),
-    vector_transport_method::VTM=ParallelTransport(),
+    retraction_method::RM=default_retraction_method(M),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M),
+    vector_transport_method::VTM=default_vector_transport_method(M),
     variant=ismissing(Λ) ? :exact : :linearized,
     return_options=false,
     kwargs...,
 ) where {
+    TF,
     P,
     Q,
     T,
@@ -149,6 +146,7 @@ function ChambollePock!(
         Λ=Λ,
     )
     o = ChambollePockOptions(
+        M,
         m,
         n,
         x,
