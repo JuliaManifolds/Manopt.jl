@@ -61,7 +61,11 @@ using Manopt, Test, ManifoldsBase
         o.x = x
         a3 = DebugEntryChange(:x, (p, o, x, y) -> distance(p.M, x, y); prefix="Last: ", io)
         a4 = DebugEntryChange(
-            :x, (p, o, x, y) -> distance(p.M, x, y); initial_value=x, format="Last: %1.1f", io
+            :x,
+            (p, o, x, y) -> distance(p.M, x, y);
+            initial_value=x,
+            format="Last: %1.1f",
+            io,
         )
         a3(p, o, 0) # init
         @test String(take!(io)) == ""
@@ -139,15 +143,26 @@ using Manopt, Test, ManifoldsBase
         p = GradientProblem(M, f, gradf)
 
         w1 = DebugWarnIfCostNotFinite()
-        @test_logs (:warn,) (:warn, "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.") w1(p,o,0)
+        @test_logs (:warn,) (
+            :warn,
+            "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.",
+        ) w1(p, o, 0)
         w2 = DebugWarnIfCostNotFinite(:Always)
-        @test_logs (:warn, "The cost is not finite.\nAt iteration #0 the cost evaluated to Inf.") w2(p,o,0)
+        @test_logs (
+            :warn, "The cost is not finite.\nAt iteration #0 the cost evaluated to Inf."
+        ) w2(p, o, 0)
 
-        o.gradient = gradf(M,x)
+        o.gradient = gradf(M, x)
         w3 = DebugWarnIfFieldNotFinite(:gradient)
-        @test_logs (:warn,) (:warn, "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:gradient, :Always) to get all warnings.") w3(p,o,0)
+        @test_logs (:warn,) (
+            :warn,
+            "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:gradient, :Always) to get all warnings.",
+        ) w3(p, o, 0)
         w4 = DebugWarnIfFieldNotFinite(:gradient, :Always)
-        @test_logs (:warn, "The field o.gradient is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].") w4(p,o,1)
+        @test_logs (
+            :warn,
+            "The field o.gradient is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
+        ) w4(p, o, 1)
 
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)
