@@ -60,21 +60,11 @@ OR
 * `options` – the options returned by the solver (see `return_options`)
 """
 function exact_penalty_method(
-    M::AbstractManifold,
-    F::TF,
-    gradF::TGF;
-    G::Function=(M, x) -> [],
-    H::Function=(M, x) -> [],
-    gradG::Function=(M, x) -> [],
-    gradH::Function=(M, x) -> [],
-    x=random_point(M),
-    kwargs...,
+    M::AbstractManifold, F::TF, gradF::TGF; x=random_point(M), kwargs...
 ) where {TF,TGF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
-    return exact_penalty_method!(
-        M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, kwargs...
-    )
+    return exact_penalty_method!(M, F, gradF; x=x_res, kwargs...)
 end
 @doc raw"""
     exact_penalty_method!(M, F, gradF; G, H, gradG, gradH)
@@ -105,10 +95,11 @@ function exact_penalty_method!(
     M::AbstractManifold,
     F::TF,
     gradF::TGF;
-    G::Function=x -> [],
-    H::Function=x -> [],
-    gradG::Function=x -> [],
-    gradH::Function=x -> [],
+    G::Function=(M, x) -> [],
+    H::Function=(M, x) -> [],
+    gradG::Function=(M, x) -> [],
+    gradH::Function=(M, x) -> [],
+    evaluation=AllocatingEvaluation(),
     x=random_point(M),
     max_inner_iter::Int=200,
     ϵ::Real=1e-3,
@@ -119,8 +110,18 @@ function exact_penalty_method!(
     min_stepsize=1e-10,
     sub_problem::Problem=GradientProblem(
         M,
-        ExactPenaltyCost(F, G, H, "linear_quadratic_huber", ρ, u),
-        ExactPenaltyGrad(F, gradF, G, gradG, H, gradH, "linear_quadratic_huber", ρ, u),
+        ExactPenaltyCost(
+            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
+            "linear_quadratic_huber",
+            ρ,
+            u,
+        ),
+        ExactPenaltyGrad(
+            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
+            "linear_quadratic_huber",
+            ρ,
+            u,
+        ),
     ),
     sub_options::Options=QuasiNewtonOptions(
         copy(x),
@@ -139,7 +140,7 @@ function exact_penalty_method!(
     return_options=false,
     kwargs...,
 ) where {TF,TGF}
-    p = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH)
+    p = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation)
     o = EPMOptions(
         M,
         p,

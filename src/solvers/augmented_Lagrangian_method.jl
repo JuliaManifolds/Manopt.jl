@@ -92,21 +92,11 @@ OR
 * `options` – the options returned by the solver (see `return_options`)
 """
 function augmented_Lagrangian_method(
-    M::AbstractManifold,
-    F::TF,
-    gradF::TGF;
-    G::Function=(M, x) -> [],
-    H::Function=(M, x) -> [],
-    gradG::Function=(M, x) -> [],
-    gradH::Function=(M, x) -> [],
-    x=random_point(M),
-    kwargs...,
+    M::AbstractManifold, F::TF, gradF::TGF; x=random_point(M), kwargs...
 ) where {TF,TGF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
-    return augmented_Lagrangian_method!(
-        M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, kwargs...
-    )
+    return augmented_Lagrangian_method!(M, F, gradF; x=x_res, kwargs...)
 end
 @doc raw"""
     augmented_Lagrangian_method!(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
@@ -141,6 +131,7 @@ function augmented_Lagrangian_method!(
     H::Function=(M, x) -> [],
     gradG::Function=(M, x) -> [],
     gradH::Function=(M, x) -> [],
+    evaluation=AllocatingEvaluation(),
     x=random_point(M),
     max_inner_iter::Int=200,
     ϵ::Real=1e-3,
@@ -151,8 +142,18 @@ function augmented_Lagrangian_method!(
     min_stepsize=1e-10,
     sub_problem::Problem=GradientProblem(
         M,
-        LagrangeCost(ConstrainedProblem(M, F, gradF, F, gradG, H, gradH), ρ, μ, λ),
-        LagrangeGrad(ConstrainedProblem(M, F, gradF, F, gradG, H, gradH), ρ, μ, λ),
+        LagrangeCost(
+            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
+            ρ,
+            μ,
+            λ,
+        ),
+        LagrangeGrad(
+            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
+            ρ,
+            μ,
+            λ,
+        ),
     ),
     sub_options::Options=QuasiNewtonOptions(
         copy(x),
@@ -175,7 +176,7 @@ function augmented_Lagrangian_method!(
     return_options=false,
     kwargs...,
 ) where {TF,TGF}
-    p = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH)
+    p = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation)
     o = ALMOptions(
         M,
         p,

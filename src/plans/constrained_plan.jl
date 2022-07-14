@@ -87,9 +87,10 @@ function ConstrainedProblem(
     gradG::AbstractVector{<:Function},
     H::AbstractVector{<:Function},
     gradH::AbstractVector{<:Function},
+    evaluation::AbstractEvaluationType=AllocatingEvaluation();
 ) where {MT<:AbstractManifold,TF,TGF}#g_i(p), i=1,...,n, h_j(p), j=1,...,m
     return ConstrainedProblem{
-        AllocatingEvaluation,
+        typeof(evaluation),
         VectorConstraint,
         MT,
         TF,
