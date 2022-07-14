@@ -107,7 +107,7 @@ function get_constraints(p::ConstrainedProblem, x)
     return [get_inequality_constraints(p, x), get_equality_constraints(p, x)]
 end
 
-"""
+@doc raw"""
     get_equality_constraints(p::ConstrainedProblem, x)
 
 evaluate all equality constraints ``h(x)`` of ``\bigl(h_1(x), h_2(x),\ldots,h_p(x)\bigr)``
@@ -121,7 +121,7 @@ function get_equality_constraints(p::ConstrainedProblem{T,VectorConstraint}, x) 
     return [hj(p.M, x) for hj in p.H]
 end
 
-"""
+@doc raw"""
     get_equality_constraint(p::ConstrainedProblem, x, i)
 
 evaluate one equality constraint ``(h(x))_i`` or ``h_i(x)``.
@@ -157,14 +157,14 @@ function get_inequality_constraints(p::ConstrainedProblem{T,VectorConstraint}, x
 end
 
 @doc raw"""
-    get_equality_constraint(p::ConstrainedProblem, x, i)
+    get_inequality_constraint(p::ConstrainedProblem, x, i)
 
 evaluate one equality constraint ``(g(x))_i`` or ``g_i(x)``.
 
 !!! note
   For the [`FunctionConstraint`](@ref) representation this still evaluates all constraints.
 """
-get_equality_constraint(p::ConstrainedProblem, x, i)
+get_inequality_constraint(p::ConstrainedProblem, x, i)
 function get_inequality_constraints(
     p::ConstrainedProblem{T,FunctionConstraint}, x, i
 ) where {T}
@@ -248,7 +248,7 @@ function get_grad_inequality_constraints!(
     return X
 end
 
-@dor raw"""
+@doc raw"""
     get_grad_inequality_constraint(p, x, i)
 
 eevaluate the gradient of the `i`th inequality constraints ``(\operatorname{grad} g(x))_i`` or ``\operatorname{grad} g_i(x)``.@
@@ -285,7 +285,7 @@ function get_grad_inequality_constraints(
     return X
 end
 
-@dor raw"""
+@doc raw"""
     get_grad_inequality_constraint!(p, X, x, i)
 
 eevaluate the gradient of the `i`th inequality constraints ``(\operatorname{grad} g(x))_i`` or ``\operatorname{grad} g_i(x)`` in place of ``X``
@@ -317,8 +317,8 @@ function get_grad_inequality_constraint!(
     copyto!(M, X, x, Y[i])
     return X
 end
-function get_grad_inequality_constraints!(
-    p::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, X, x
+function get_grad_inequality_constraint!(
+    p::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, X, x, i
 )
     p.gradG!![i](p.M, X, x)
     return X

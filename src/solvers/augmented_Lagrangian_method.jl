@@ -95,10 +95,10 @@ function augmented_Lagrangian_method(
     M::AbstractManifold,
     F::TF,
     gradF::TGF;
-    G::Function=x -> [],
-    H::Function=x -> [],
-    gradG::Function=x -> [],
-    gradH::Function=x -> [],
+    G::Function=(M, x) -> [],
+    H::Function=(M, x) -> [],
+    gradG::Function=(M, x) -> [],
+    gradH::Function=(M, x) -> [],
     x=random_point(M),
     kwargs...,
 ) where {TF,TGF}
@@ -137,10 +137,10 @@ function augmented_Lagrangian_method!(
     M::AbstractManifold,
     F::TF,
     gradF::TGF;
-    G::Function=x -> [],
-    H::Function=x -> [],
-    gradG::Function=x -> [],
-    gradH::Function=x -> [],
+    G::Function=(M, x) -> [],
+    H::Function=(M, x) -> [],
+    gradG::Function=(M, x) -> [],
+    gradH::Function=(M, x) -> [],
     x=random_point(M),
     max_inner_iter::Int=200,
     ϵ::Real=1e-3,
@@ -151,8 +151,8 @@ function augmented_Lagrangian_method!(
     min_stepsize=1e-10,
     sub_problem::Problem=GradientProblem(
         M,
-        LagrangeCost(F, G, H, ρ, μ, λ),
-        LagrangeGrad(F, gradF, G, gradG, H, gradH, ρ, μ, λ),
+        LagrangeCost(ConstrainedProblem(M, F, gradF, F, gradG, H, gradH), ρ, μ, λ),
+        LagrangeGrad(ConstrainedProblem(M, F, gradF, F, gradG, H, gradH), ρ, μ, λ),
     ),
     sub_options::Options=QuasiNewtonOptions(
         copy(x),
@@ -265,59 +265,42 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
 end
 get_solver_result(o::ALMOptions) = o.x
 
-mutable struct LagrangeCost{F,G,H,R,T}
-    f::F
-    g::G
-    h::H
+mutable struct LagrangeCost{P,R,T}
+    contrained_problem::P
     ρ::R
     μ::T
     λ::T
 end
-function (L::LagrangeCost)(M::AbstractManifold, x::P) where {P}
-    inequality_constraints = L.g(M, x)
-    equality_constraints = L.h(M, x)
-    num_inequality_constraints = size(inequality_constraints, 1)
-    num_equality_constraints = size(equality_constraints, 1)
+function (L::LagrangeCost)(::AbstractManifold, x)
+    inequality_constraints = get_inequality_constraints(L.contrained_problem, x)
+    equality_constraints = get_equality_constraints(L.constrained_problem, x)
+    num_inequality_constraints = length(inequality_constraints)
+    num_equality_constraints = length(equality_constraints)
+    c = get_cost(L.contrained_problem, x)
+    d = 0.0
     if num_inequality_constraints != 0
-        cost_ineq = sum(
+        d += sum(
             max.(zeros(num_inequality_constraints), L.μ ./ L.ρ .+ inequality_constraints) .^
             2,
         )
     end
     if num_equality_constraints != 0
-        cost_eq = sum((equality_constraints .+ L.λ ./ L.ρ) .^ 2)
+        d += sum((equality_constraints .+ L.λ ./ L.ρ) .^ 2)
     end
-    if num_inequality_constraints != 0
-        if num_equality_constraints != 0
-            return L.f(M, x) + (L.ρ / 2) * (cost_ineq + cost_eq)
-        else
-            return L.f(M, x) + (L.ρ / 2) * cost_ineq
-        end
-    else
-        if num_equality_constraints != 0
-            return L.f(M, x) + (L.ρ / 2) * cost_eq
-        else
-            return L.f(M, x)
-        end
-    end
+    return c + (L.ρ / 2) * d
 end
 
-mutable struct LagrangeGrad{F,GF,G,GG,H,GH,R,T}
-    f::F
-    gradF::GF
-    g::G
-    gradG::GG
-    h::H
-    gradH::GH
+mutable struct LagrangeGrad{P,R,T}
+    constrained_problem::P
     ρ::R
     μ::T
     λ::T
 end
 function (LG::LagrangeGrad)(M::AbstractManifold, x::P) where {P}
-    inequality_constraints = LG.g(M, x)
-    equality_constraints = LG.h(M, x)
-    num_inequality_constraints = size(inequality_constraints, 1)
-    num_equality_constraints = size(equality_constraints, 1)
+    inequality_constraints = get_inequality_constraints(LG.constrained_problem, x)
+    equality_constraints = get_inequality_constraints(LG.constrained_problem, x)
+    num_inequality_constraints = length(inequality_constraints)
+    num_equality_constraints = length(equality_constraints)
     if num_inequality_constraints != 0
         # grad_ineq = sum(
         #     ((inequality_constraints .* LG.ρ .+ LG.μ) .* LG.gradG(M,x)).*(inequality_constraints .+ LG.μ./LG.ρ .>0)
@@ -326,12 +309,16 @@ function (LG::LagrangeGrad)(M::AbstractManifold, x::P) where {P}
         for i in 1:num_inequality_constraints
             if inequality_constraints[i] + LG.μ[i] / LG.ρ > 0
                 grad_ineq .+=
-                    (inequality_constraints[i] * LG.ρ + LG.μ[i]) .* LG.gradG(M, x)[i]
+                    (inequality_constraints[i] * LG.ρ + LG.μ[i]) .*
+                    get_grad_inequality_constraint(LG.constrained_problem, x, i)
             end
         end
     end
     if num_equality_constraints != 0
-        grad_eq = sum((equality_constraints .* LG.ρ .+ LG.λ) .* LG.gradH(M, x))
+        grad_eq = sum(
+            (equality_constraints .* LG.ρ .+ LG.λ) .*
+            get_grad_eqality_constraint(LG.constrained_problem, x),
+        )
     end
     if num_inequality_constraints != 0
         if num_equality_constraints != 0
