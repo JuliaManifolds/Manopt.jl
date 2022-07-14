@@ -63,16 +63,18 @@ function exact_penalty_method(
     M::AbstractManifold,
     F::TF,
     gradF::TGF;
-    G::Function=x->[], 
-    H::Function=x->[],
-    gradG::Function=x->[],
-    gradH::Function=x->[],
-    x=random_point(M), 
+    G::Function=x -> [],
+    H::Function=x -> [],
+    gradG::Function=x -> [],
+    gradH::Function=x -> [],
+    x=random_point(M),
     kwargs...,
-) where {TF, TGF}
+) where {TF,TGF}
     x_res = allocate(x)
     copyto!(M, x_res, x)
-    return exact_penalty_method!(M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, kwargs...)
+    return exact_penalty_method!(
+        M, F, gradF; G=G, H=H, gradG=gradG, gradH=gradH, x=x_res, kwargs...
+    )
 end
 @doc raw"""
     exact_penalty_method!(M, F, gradF; G, H, gradG, gradH)
@@ -103,26 +105,40 @@ function exact_penalty_method!(
     M::AbstractManifold,
     F::TF,
     gradF::TGF;
-    G::Function=x->[],
-    H::Function=x->[],
-    gradG::Function=x->[],
-    gradH::Function=x->[],
+    G::Function=x -> [],
+    H::Function=x -> [],
+    gradG::Function=x -> [],
+    gradH::Function=x -> [],
     x=random_point(M),
     max_inner_iter::Int=200,
-    ϵ::Real=1e-3, 
+    ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
     u::Real=1e-1,
     u_min::Real=1e-6,
-    ρ::Real=1.0, 
-    min_stepsize = 1e-10,
-    sub_problem::Problem = GradientProblem(M,ExactPenaltyCost(F, G, H, "linear_quadratic_huber", ρ, u),ExactPenaltyGrad(F, gradF, G, gradG, H, gradH, "linear_quadratic_huber", ρ, u)),
-    sub_options::Options = QuasiNewtonOptions(copy(x), zero_vector(M,x), QuasiNewtonLimitedMemoryDirectionUpdate(M, copy(M,x), InverseBFGS(),30), StopAfterIteration(max_inner_iter) | StopWhenGradientNormLess(ϵ) | StopWhenStepsizeLess(min_stepsize), WolfePowellLinesearch(M,10^(-4),0.999)),
+    ρ::Real=1.0,
+    min_stepsize=1e-10,
+    sub_problem::Problem=GradientProblem(
+        M,
+        ExactPenaltyCost(F, G, H, "linear_quadratic_huber", ρ, u),
+        ExactPenaltyGrad(F, gradF, G, gradG, H, gradH, "linear_quadratic_huber", ρ, u),
+    ),
+    sub_options::Options=QuasiNewtonOptions(
+        copy(x),
+        zero_vector(M, x),
+        QuasiNewtonLimitedMemoryDirectionUpdate(M, copy(M, x), InverseBFGS(), 30),
+        StopAfterIteration(max_inner_iter) |
+        StopWhenGradientNormLess(ϵ) |
+        StopWhenStepsizeLess(min_stepsize),
+        WolfePowellLinesearch(M, 10^(-4), 0.999),
+    ),
     num_outer_itertgn::Int=30,
-    θ_ρ::Real=0.3, 
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenEuclideanChangeLess(min_stepsize)), 
+    θ_ρ::Real=0.3,
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenEuclideanChangeLess(min_stepsize)
+    ),
     return_options=false,
     kwargs...,
-) where {TF, TGF}
+) where {TF,TGF}
     p = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH)
     o = EPMOptions(
         M,
@@ -130,16 +146,16 @@ function exact_penalty_method!(
         x,
         sub_problem,
         sub_options;
-        max_inner_iter = max_inner_iter,
-        num_outer_itertgn = num_outer_itertgn,
-        ϵ = ϵ, 
-        ϵ_min = ϵ_min,
-        u = u,
-        u_min = u_min,
-        ρ = ρ,
-        θ_ρ = θ_ρ,
-        min_stepsize = min_stepsize,
-        stopping_criterion = stopping_criterion,
+        max_inner_iter=max_inner_iter,
+        num_outer_itertgn=num_outer_itertgn,
+        ϵ=ϵ,
+        ϵ_min=ϵ_min,
+        u=u,
+        u_min=u_min,
+        ρ=ρ,
+        θ_ρ=θ_ρ,
+        min_stepsize=min_stepsize,
+        stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
@@ -154,10 +170,10 @@ end
 # Solver functions
 #
 function initialize_solver!(p::ConstrainedProblem, o::EPMOptions)
-    o.θ_u = (o.u_min/o.u)^(1/o.num_outer_itertgn)
-    o.θ_ϵ = (o.ϵ_min/o.ϵ)^(1/o.num_outer_itertgn)
-    update_stopping_criterion!(o,:MaxIteration,o.max_inner_iter)
-    update_stopping_criterion!(o,:MinStepsize, o.min_stepsize)
+    o.θ_u = (o.u_min / o.u)^(1 / o.num_outer_itertgn)
+    o.θ_ϵ = (o.ϵ_min / o.ϵ)^(1 / o.num_outer_itertgn)
+    update_stopping_criterion!(o, :MaxIteration, o.max_inner_iter)
+    update_stopping_criterion!(o, :MinStepsize, o.min_stepsize)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
@@ -166,24 +182,24 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     o.sub_problem.cost.u = o.u
     o.sub_problem.gradient!!.ρ = o.ρ
     o.sub_problem.gradient!!.u = o.u
-    o.sub_options.x = copy(o.x) 
-    update_stopping_criterion!(o,:MinIterateChange, o.ϵ)
-    
-    o.x = get_solver_result(solve(o.sub_problem,o.sub_options))
-    
+    o.sub_options.x = copy(o.x)
+    update_stopping_criterion!(o, :MinIterateChange, o.ϵ)
+
+    o.x = get_solver_result(solve(o.sub_problem, o.sub_options))
+
     # get new evaluation of penalty
     cost_ineq = get_inequality_constraints(p, o.x)
     cost_eq = get_equality_constraints(p, o.x)
-    max_violation = max(max(maximum(cost_ineq,init=0),0),maximum(abs.(cost_eq),init=0))
+    max_violation = max(max(maximum(cost_ineq; init=0), 0), maximum(abs.(cost_eq); init=0))
 
     # update ρ if necessary
-    if max_violation > o.u 
-        o.ρ = o.ρ/o.θ_ρ 
+    if max_violation > o.u
+        o.ρ = o.ρ / o.θ_ρ
     end
-    
-   # update u and ϵ
+
+    # update u and ϵ
     o.u = max(o.u_min, o.u * o.θ_u)
-    o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ);
+    return o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
 end
 get_solver_result(o::EPMOptions) = o.x
 
@@ -195,43 +211,53 @@ mutable struct ExactPenaltyCost{F,G,H,T,R}
     ρ::R
     u::R
 end
-function (L::ExactPenaltyCost)(M::AbstractManifold,x::P) where {P}
-    inequality_constraints = L.g(M,x)
-    equality_constraints = L.h(M,x)
-    num_inequality_constraints = size(inequality_constraints,1)
-    num_equality_constraints = size(equality_constraints,1)
-    
+function (L::ExactPenaltyCost)(M::AbstractManifold, x::P) where {P}
+    inequality_constraints = L.g(M, x)
+    equality_constraints = L.h(M, x)
+    num_inequality_constraints = size(inequality_constraints, 1)
+    num_equality_constraints = size(equality_constraints, 1)
+
     # compute the cost functions of the constraints for the chosen smoothing technique
     if L.smoothing_technique == "log_sum_exp"
-        if num_inequality_constraints != 0 
-            cost_ineq = sum(L.u .* log.( 1 .+ exp.(inequality_constraints./L.u)))
-        end 
+        if num_inequality_constraints != 0
+            cost_ineq = sum(L.u .* log.(1 .+ exp.(inequality_constraints ./ L.u)))
+        end
         if num_equality_constraints != 0
-            cost_eq = sum(L.u .* log.( exp.(equality_constraints./L.u) .+ exp.(-equality_constraints./L.u)))
+            cost_eq = sum(
+                L.u .*
+                log.(
+                    exp.(equality_constraints ./ L.u) .+ exp.(-equality_constraints ./ L.u)
+                ),
+            )
         end
     elseif L.smoothing_technique == "linear_quadratic_huber"
-        if num_inequality_constraints != 0 
-            cost_eq_greater_u = sum((inequality_constraints .- L.u/2) .* (inequality_constraints .> L.u))
-            cost_eq_pos_smaller_u = sum((inequality_constraints.^2 ./(2*L.u)) .* ((inequality_constraints .> 0) .& (inequality_constraints .<= L.u)))
+        if num_inequality_constraints != 0
+            cost_eq_greater_u = sum(
+                (inequality_constraints .- L.u / 2) .* (inequality_constraints .> L.u)
+            )
+            cost_eq_pos_smaller_u = sum(
+                (inequality_constraints .^ 2 ./ (2 * L.u)) .*
+                ((inequality_constraints .> 0) .& (inequality_constraints .<= L.u)),
+            )
             cost_ineq = cost_eq_greater_u + cost_eq_pos_smaller_u
-        end 
+        end
         if num_equality_constraints != 0
-            cost_eq = sum(sqrt.(equality_constraints.^2 .+ L.u^2))
-        end 
+            cost_eq = sum(sqrt.(equality_constraints .^ 2 .+ L.u^2))
+        end
     end
 
     # add up to the smoothed penalized objective
     if num_inequality_constraints != 0
         if num_equality_constraints != 0
-            return L.f(M,x) + (L.ρ) * (cost_ineq + cost_eq)
+            return L.f(M, x) + (L.ρ) * (cost_ineq + cost_eq)
         else
-            return L.f(M,x) + (L.ρ) * cost_ineq
+            return L.f(M, x) + (L.ρ) * cost_ineq
         end
     else
         if num_equality_constraints != 0
-            return L.f(M,x) + (L.ρ) * cost_eq
+            return L.f(M, x) + (L.ρ) * cost_eq
         else
-            return L.f(M,x) 
+            return L.f(M, x)
         end
     end
 end
@@ -247,20 +273,27 @@ mutable struct ExactPenaltyGrad{F,GF,G,GG,H,GH,T,R}
     ρ::R
     u::R
 end
-function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
-    inequality_constraints = LG.g(M,x)
-    equality_constraints = LG.h(M,x)
-    num_inequality_constraints = size(inequality_constraints,1)
-    num_equality_constraints = size(equality_constraints,1)
-    
+function (LG::ExactPenaltyGrad)(M::AbstractManifold, x::P) where {P}
+    inequality_constraints = LG.g(M, x)
+    equality_constraints = LG.h(M, x)
+    num_inequality_constraints = size(inequality_constraints, 1)
+    num_equality_constraints = size(equality_constraints, 1)
+
     # compute the gradient functions of the constraints for the chosen smoothing technique
     if LG.smoothing_technique == "log_sum_exp"
-        if num_inequality_constraints != 0 
-            coef = LG.ρ .* exp.(inequality_constraints./LG.u) ./ ( 1 .+ exp.(inequality_constraints ./ LG.u))
-            grad_ineq = sum(LG.gradG(M, x) .* coef) 
+        if num_inequality_constraints != 0
+            coef =
+                LG.ρ .* exp.(inequality_constraints ./ LG.u) ./
+                (1 .+ exp.(inequality_constraints ./ LG.u))
+            grad_ineq = sum(LG.gradG(M, x) .* coef)
         end
         if num_equality_constraints != 0
-            coef = LG.ρ .* (exp.(equality_constraints ./LG.u) .- exp.(-equality_constraints ./LG.u)) ./ (exp.(equality_constraints ./LG.u) .+ exp.(-equality_constraints ./LG.u))
+            coef =
+                LG.ρ .* (
+                    exp.(equality_constraints ./ LG.u) .-
+                    exp.(-equality_constraints ./ LG.u)
+                ) ./
+                (exp.(equality_constraints ./ LG.u) .+ exp.(-equality_constraints ./ LG.u))
             grad_eq = sum(LG.gradH(M, x) .* coef)
         end
     elseif LG.smoothing_technique == "linear_quadratic_huber"
@@ -269,36 +302,40 @@ function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
             # grad_ineq_cost_greater_u = sum(grad_inequality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.u)) .* LG.ρ)
             # grad_ineq_cost_smaller_u = sum(grad_inequality_constraints .* (inequality_constraints./LG.u .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.u))) .* LG.ρ)
             # grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
-            grad_ineq = zeros(size(LG.gradG(M,x)[1]))
-            for i ∈ 1:num_inequality_constraints
+            grad_ineq = zeros(size(LG.gradG(M, x)[1]))
+            for i in 1:num_inequality_constraints
                 coef = 0
                 if inequality_constraints[i] >= 0
                     if inequality_constraints[i] >= LG.u
                         coef = 1
                     else
-                        coef = inequality_constraints[i]/LG.u
+                        coef = inequality_constraints[i] / LG.u
                     end
                     grad_ineq .+= (LG.ρ * coef) .* LG.gradG(M, x)[i]
                 end
             end
         end
         if num_equality_constraints != 0
-            grad_eq = sum(LG.gradH(M, x) .* (equality_constraints./sqrt.(equality_constraints.^2 .+ LG.u^2)) .* LG.ρ) 
+            grad_eq = sum(
+                LG.gradH(M, x) .*
+                (equality_constraints ./ sqrt.(equality_constraints .^ 2 .+ LG.u^2)) .*
+                LG.ρ,
+            )
         end
     end
 
     # add up to the gradient of the smoothed penalized objective
     if num_inequality_constraints != 0
         if num_equality_constraints != 0
-            return LG.gradF(M,x) + grad_ineq + grad_eq
+            return LG.gradF(M, x) + grad_ineq + grad_eq
         else
-            return LG.gradF(M,x) + grad_ineq
+            return LG.gradF(M, x) + grad_ineq
         end
     else
         if num_equality_constraints != 0
-            return LG.gradF(M,x) + grad_eq
+            return LG.gradF(M, x) + grad_eq
         else
-            return LG.gradF(M,x) 
+            return LG.gradF(M, x)
         end
     end
 end

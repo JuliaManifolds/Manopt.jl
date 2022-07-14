@@ -38,14 +38,14 @@ construct an augmented Lagrangian Option with the fields and defaults as above.
 # See also
 [`augmented_Lagrangian_method`](@ref)
 """
-mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: StoppingCriterion} <: Options
+mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion} <: Options
     x::P
-    sub_problem::Pr 
-    sub_options::Op 
+    sub_problem::Pr
+    sub_options::Op
     max_inner_iter::Int
     num_outer_itertgn::Int
     ϵ::Real
-    ϵ_min::Real 
+    ϵ_min::Real
     λ_max::Real
     λ_min::Real
     μ_max::Real
@@ -57,34 +57,32 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
     θ_ϵ::Real
     old_acc::Real
     min_stepsize::Real
-    stop::TStopping 
+    stop::TStopping
     function ALMOptions(
         M::AbstractManifold,
         p::ConstrainedProblem,
         x0::P,
-        sub_problem::Pr, 
-        sub_options::Op; 
+        sub_problem::Pr,
+        sub_options::Op;
         max_inner_iter::Int=200,
         num_outer_itertgn::Int=30,
-        ϵ::Real=1e-3, 
-        ϵ_min::Real=1e-6, 
+        ϵ::Real=1e-3,
+        ϵ_min::Real=1e-6,
         λ_max::Real=20.0,
         λ_min::Real=-λ_max,
         μ_max::Real=20.0,
-        μ::Vector=ones(length(get_inequality_constraints(p,x0))),
-        λ::Vector=ones(length(get_equality_constraints(p,x0))),
-        ρ::Real=1.0, 
+        μ::Vector=ones(length(get_inequality_constraints(p, x0))),
+        λ::Vector=ones(length(get_equality_constraints(p, x0))),
+        ρ::Real=1.0,
         τ::Real=0.8,
-        θ_ρ::Real=0.3, 
+        θ_ρ::Real=0.3,
         min_stepsize::Real=1e-10,
-        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))),
-    ) where {P, Pr <: Problem, Op <: Options} 
-        o = new{
-            P,
-            Pr,
-            Op,
-            typeof(stopping_criterion),
-        }()
+        stopping_criterion::StoppingCriterion=StopWhenAny(
+            StopAfterIteration(300),
+            StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6)),
+        ),
+    ) where {P,Pr<:Problem,Op<:Options}
+        o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
         o.sub_problem = sub_problem
         o.sub_options = sub_options

@@ -152,10 +152,10 @@ function quasi_Newton!(
     end
 end
 
-function initialize_solver!(p::GradientProblem, o::QuasiNewtonOptions) 
+function initialize_solver!(p::GradientProblem, o::QuasiNewtonOptions)
     o.gradient = get_gradient(p, o.x)
     o.sk = deepcopy(o.gradient)
-    o.yk = deepcopy(o.gradient)
+    return o.yk = deepcopy(o.gradient)
 end
 
 function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)

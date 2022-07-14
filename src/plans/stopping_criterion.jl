@@ -140,7 +140,9 @@ mutable struct StopWhenEuclideanChangeLess <: StoppingCriterion
     threshold::Float64
     reason::String
     storage::StoreOptionsAction
-    function StopWhenEuclideanChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:x,)))
+    function StopWhenEuclideanChangeLess(
+        ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:x,))
+    )
         return new(ε, "", a)
     end
 end

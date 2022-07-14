@@ -226,15 +226,12 @@ export get_cost,
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
-export get_constraints, 
-    get_inequality_constraints, 
-    get_equality_constraints, 
-    get_grad_ineq,
-    get_grad_eq
-export LagrangeCost,
-    LagrangeGrad,
-    ExactPenaltyCost,
-    ExactPenaltyGrad
+export get_constraints,
+    get_inequality_constraints,
+    get_equality_constraints,
+    get_grad_inequality_constraints,
+    get_grad_equality_constraints
+export LagrangeCost, LagrangeGrad, ExactPenaltyCost, ExactPenaltyGrad
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -276,7 +273,7 @@ export DirectionUpdateRule,
     HagerZhangCoefficient
 #
 # Solvers
-export  augmented_Lagrangian_method,
+export augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
     ChambollePock,
     ChambollePock!,
@@ -322,7 +319,11 @@ export StopIfResidualIsReducedByFactor,
     StopWhenSmallerOrEqual,
     StopWhenTrustRegionIsExceeded,
     StopWhenModelIncreased
-export StopAfterIteration, StopWhenChangeLess, StopWhenEuclideanChangeLess, StopWhenGradientNormLess, StopWhenCostLess
+export StopAfterIteration,
+    StopWhenChangeLess,
+    StopWhenEuclideanChangeLess,
+    StopWhenGradientNormLess,
+    StopWhenCostLess
 export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 export are_these_stopping_critera_active, update_stopping_criterion!

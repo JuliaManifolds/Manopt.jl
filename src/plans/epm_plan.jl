@@ -35,45 +35,45 @@ construct an exact penalty Option with the fields and defaults as above.
 # See also
 [`exact_penalty_method`](@ref)
 """
-mutable struct EPMOptions{P, Pr <: Problem, Op <: Options, TStopping <: StoppingCriterion} <: Options
+mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion} <: Options
     x::P
-    sub_problem::Pr 
-    sub_options::Op 
+    sub_problem::Pr
+    sub_options::Op
     max_inner_iter::Int
     num_outer_itertgn::Int
-    ϵ::Real 
+    ϵ::Real
     ϵ_min::Real
     u::Real
-    u_min::Real 
+    u_min::Real
     ρ::Real
     θ_ρ::Real
     θ_u::Real
     θ_ϵ::Real
     min_stepsize::Real
-    stop::TStopping 
+    stop::TStopping
     function EPMOptions(
         M::AbstractManifold,
         p::ConstrainedProblem,
         x0::P,
-        sub_problem::Pr, 
-        sub_options::Op; 
+        sub_problem::Pr,
+        sub_options::Op;
         max_inner_iter::Int=200,
         num_outer_itertgn::Int=30,
         ϵ::Real=1e-3,
         ϵ_min::Real=1e-6,
         u::Real=1e-1,
-        u_min::Real=1e-6, 
-        ρ::Real=1.0, 
+        u_min::Real=1e-6,
+        ρ::Real=1.0,
         θ_ρ::Real=0.3,
-        min_stepsize::Real=1e-10, 
-        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(min_stepsize))),
-    ) where {P, Pr <: Problem, Op <: Options} 
-        o = new{
-            P,
-            Pr,
-            Op,
-            typeof(stopping_criterion),
-        }()
+        min_stepsize::Real=1e-10,
+        stopping_criterion::StoppingCriterion=StopWhenAny(
+            StopAfterIteration(300),
+            StopWhenAll(
+                StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(min_stepsize)
+            ),
+        ),
+    ) where {P,Pr<:Problem,Op<:Options}
+        o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
         o.sub_problem = sub_problem
         o.sub_options = sub_options
