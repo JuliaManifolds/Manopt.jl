@@ -62,7 +62,7 @@ function Frank_Wolfe_algorithm!(
     stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
     return_options=false,
     kwargs..., #collect rest
-)
+) where {TStop <: StoppingCriterion, TStep <: Stepsize}
     P = GradientProblem(M, F, grad_F; evaluation=evaluation)
     O = FrankWolfeOptions(
         M,
@@ -71,6 +71,7 @@ function Frank_Wolfe_algorithm!(
         initial_vector=initial_vector,
         stepsize=stepsize,
         stopping_criterion=stopping_criterion,
+        evaluation=evaluation,
     )
     O = decorate_options(o; kwargs...)
     resultO = solve(P, O)
@@ -85,7 +86,7 @@ function initialize_solver!(P::GradientProblem, O::FrankWolfeOptions)
     return O
 end
 function step_solver!(
-    P::GradientProblem, O::Frank_Wolfe_algorithm{<:Tuple{<:Problem,<:Options}}, i
+    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{<:Problem,<:Options}}, i
 )
     # update gradient
     get_gradient!(P, O.X, O.p) # evaluate ∂g(p), store the result in O.X
@@ -106,9 +107,9 @@ end
 #
 # Variant II: subtask is a mutating function providing a closed form soltuion
 #
-function step_solver!(P::GradientProblem, O::FrankWolfeOptions, iter)
+function step_solver!(P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:MutatingEvaluation}}, i) where {S}
     get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
-    q = copz(P.M, O.p)
+    q = copy(P.M, O.p)
     O.subtask(M, q, O.p, O.X) # evaluate the closed form solution and store the result in O.p
     s = o.stepsize(P, O, i)
     # step along the geodesic
@@ -121,5 +122,22 @@ function step_solver!(P::GradientProblem, O::FrankWolfeOptions, iter)
     )
     return O
 end
+#
+# Variant II: subtask is an allocating function providing a closed form soltuion
+#
+function step_solver!(P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:AllocatingEvaluation}}, i) where {S}
+    get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
+    q = O.subtask(M, O.p, O.X) # evaluate the closed form solution and store the result in O.p
+    s = o.stepsize(P, O, i)
+    # step along the geodesic
+    retract!(
+        P.M,
+        O.p,
+        O.p,
+        s .* inverse_retract(p.M, O.p, q, O.inverse_retraction_method),
+        O.retraction_method,
+    )
+    return O
+end
 
-get_solver_result(O::DifferenceOfConvexOptions) = O.p
+get_solver_result(O::FrankWolfeOptions) = O.p

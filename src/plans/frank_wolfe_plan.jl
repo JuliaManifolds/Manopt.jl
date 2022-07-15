@@ -13,7 +13,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 * `stop` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a [`StoppingCriterion`]
 * `stepsize` _ ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2))
 For the subtask, we need a method to solve
-
+* `evalulation` [`AllocatingEvaluation`](@ref) specify the oracle type if it is a function.
 ```math
     \operatorname*{argmin}_{q∈\mathcal M} ⟨X, \log_p q⟩,\qquad where X=\operatorname{grad} f(p)
 ```
@@ -40,26 +40,35 @@ mutable struct FrankWolfeOptions{
 }
     p::P
     X::T
-    subtask::Sub
+    subtask::S
     stop::TStop
     stepsize::TStep
-    retraction_method::TM,
-    inverse_retraction_method::ITM,
+    retraction_method::TM
+    inverse_retraction_method::ITM
     function FrankWolfeOptions(
         M::AbstractManifold,
         p::P,
         subtask::S;
+        evaluation = AllocatingEvaluation(),
         initial_vector::T=zero_vector(M, p),
         stopping_criterion::TStop=StopAfterIteration(200) |
                                   StopWhenGradientNormLess(1.0e-6),
         stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
         retraction_method::TM=default_retraction_method(M),
         inverse_retraction_method::ITM=default_inverse_retraction_method(M),
-    ) where {P,S,T,TStop<:StoppingCriterion,TStep<:Stepsize}
-        return new{S,T,P,TStep,TStop,TM,ITM}(
+    ) where {
+        P,
+        S,
+        T,
+        TStop<:StoppingCriterion,
+        TStep<:Stepsize,
+        TM<:AbstractRetractionMethod,
+        ITM<:AbstractInverseRetractionMethod,
+    }
+        return new{Tuple{S,typeof(evaluation)},T,P,TStep,TStop,TM,ITM}(
             p,
             initial_vector,
-            subtask,
+            (subtask,evaluation),
             stopping_criterion,
             stepsize,
             retraction_method,
