@@ -101,6 +101,7 @@ include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/NelderMead.jl")
+include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
@@ -275,6 +276,8 @@ export ChambollePock,
     cyclic_proximal_point!,
     DouglasRachford,
     DouglasRachford!,
+    Frank_Wolfe_algorithm,
+    Frank_Wolfe_algorithm!,
     gradient_descent,
     gradient_descent!,
     NelderMead,
