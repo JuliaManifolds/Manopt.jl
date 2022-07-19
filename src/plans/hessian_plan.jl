@@ -252,6 +252,8 @@ mutable struct TrustRegionsOptions{
         randomize::Bool,
         stopping_citerion::SC,
         retraction_method::RTR,
+        θ::R,
+        κ::R,
         project!::Proj=copyto!,
     ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
         o = new{P,T,SC,RTR,R,Proj}()
@@ -264,6 +266,8 @@ mutable struct TrustRegionsOptions{
         o.ρ_prime = ρ_prime
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
+        o.θ = θ
+        o.κ = κ
         o.project! = project!
         return o
     end
@@ -278,6 +282,8 @@ end
     randomize,
     stopping_criterion;
     retraction_method=ExponentialRetraction(),
+    θ,
+    κ,
     (project_vector!)=copyto!,
 ) TrustRegionsOptions(
     DefaultManifold(2),
@@ -288,6 +294,8 @@ end
     randomize=randomize,
     stopping_criterion=stopping_criterion,
     retraction_method=retraction_method,
+    θ=θ,
+    κ=κ,
     (project!)=project_vector!,
 )
 function TrustRegionsOptions(
@@ -301,6 +309,8 @@ function TrustRegionsOptions(
     max_trust_region_radius::R=sqrt(manifold_dimension(M)),
     trust_region_radius::R=max_trust_region_radius / 8,
     retraction_method::RTR=default_retraction_method(M),
+    θ::R=1.0,
+    κ::R=0.1,
     project!::Proj=copyto!,
 ) where {
     TM<:AbstractManifold,
@@ -321,6 +331,8 @@ function TrustRegionsOptions(
         randomize,
         stopping_criterion,
         retraction_method,
+        θ,
+        κ,
         project!,
     )
 end

@@ -144,4 +144,6 @@ TrustRegionsOptions
 
 ```@docs
 ApproxHessianFiniteDifference
+ApproxHessianSymmetricRankOne
+ApproxHessianBFGS
 ```

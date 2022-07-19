@@ -133,6 +133,8 @@ function trust_regions!(
         randomize=randomize,
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
+        θ=θ, 
+        κ=κ,
         (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
