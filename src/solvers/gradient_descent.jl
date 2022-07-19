@@ -104,4 +104,3 @@ function step_solver!(p::GradientProblem, o::GradientDescentOptions, iter)
     retract!(p.M, o.x, o.x, -s * o.gradient, o.retraction_method)
     return o
 end
-get_solver_result(o::GradientDescentOptions) = o.x

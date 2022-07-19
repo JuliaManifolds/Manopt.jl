@@ -38,7 +38,7 @@ all further keywords are passed down to [`decorate_options`](@ref), e.g. `debug`
 """
 function Frank_Wolfe_algorithm(M::AbstractManifold, F, grad_F, p; kwargs...)
     q = copy(M, p)
-    difference_ofFrank_Wolfe_algorithm!(M, F, grad_F, q; kwargs...)
+    Frank_Wolfe_algorithm!(M, F, grad_F, q; kwargs...)
     return q
 end
 
@@ -62,7 +62,7 @@ function Frank_Wolfe_algorithm!(
     stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
     return_options=false,
     kwargs..., #collect rest
-) where {TStop <: StoppingCriterion, TStep <: Stepsize}
+) where {TStop<:StoppingCriterion,TStep<:Stepsize}
     P = GradientProblem(M, F, grad_F; evaluation=evaluation)
     O = FrankWolfeOptions(
         M,
@@ -73,7 +73,7 @@ function Frank_Wolfe_algorithm!(
         stopping_criterion=stopping_criterion,
         evaluation=evaluation,
     )
-    O = decorate_options(o; kwargs...)
+    O = decorate_options(O; kwargs...)
     resultO = solve(P, O)
     if return_options
         return resultO
@@ -107,7 +107,9 @@ end
 #
 # Variant II: subtask is a mutating function providing a closed form soltuion
 #
-function step_solver!(P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:MutatingEvaluation}}, i) where {S}
+function step_solver!(
+    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:MutatingEvaluation}}, i
+) where {S}
     get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
     q = copy(P.M, O.p)
     O.subtask(M, q, O.p, O.X) # evaluate the closed form solution and store the result in O.p
@@ -125,9 +127,11 @@ end
 #
 # Variant II: subtask is an allocating function providing a closed form soltuion
 #
-function step_solver!(P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:AllocatingEvaluation}}, i) where {S}
+function step_solver!(
+    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:AllocatingEvaluation}}, i
+) where {S}
     get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
-    q = O.subtask(M, O.p, O.X) # evaluate the closed form solution and store the result in O.p
+    q = O.subtask[1](P.M, O.p, O.X) # evaluate the closed form solution and store the result in O.p
     s = o.stepsize(P, O, i)
     # step along the geodesic
     retract!(
@@ -140,4 +144,5 @@ function step_solver!(P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:Alloc
     return O
 end
 
-get_solver_result(O::FrankWolfeOptions) = O.p
+get_iterate(O::FrankWolfeOptions) = O.p
+get_gradient(O::FrankWolfeOptions) = O.X

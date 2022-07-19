@@ -60,7 +60,7 @@ function step_solver! end
     get_solver_result(o)
 
 Return the final result after all iterations that is stored within the
-(modified during the iterations) [`Options`](@ref) `o`.
+(modified during the iterations) [`Options`](@ref) `o`. By default it uses[`get_iterate`](@ref)
 """
 function get_solver_result end
 

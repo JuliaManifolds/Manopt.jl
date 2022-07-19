@@ -91,6 +91,8 @@ A generic [`Options`](@ref) type for gradient based options data.
 """
 abstract type AbstractGradientOptions <: Options end
 
+get_gradient(o::AbstractGradientOptions) = o.gradient
+
 @doc raw"""
     GradientDescentOptions{P,T} <: AbstractGradientOptions
 
@@ -456,9 +458,9 @@ mutable struct DebugGradient <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugGradient)(::GradientProblem, o::GradientDescentOptions, i::Int)
+function (d::DebugGradient)(::GradientProblem, o::Options, i::Int)
     (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), o.gradient)
+    Printf.format(d.io, Printf.Format(d.format), get_gradient(o))
     return nothing
 end
 
@@ -488,9 +490,9 @@ mutable struct DebugGradientNorm <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugGradientNorm)(p::GradientProblem, o::Options, i::Int)
+function (d::DebugGradientNorm)(p::Problem, o::Options, i::Int)
     (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), norm(p.M, o.x, o.gradient))
+    Printf.format(d.io, Printf.Format(d.format), norm(p.M, get_iterate(o), get_gradient(o)))
     return nothing
 end
 
@@ -540,10 +542,8 @@ mutable struct RecordGradient{T} <: RecordAction
     RecordGradient{T}() where {T} = new(Array{T,1}())
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
-function (r::RecordGradient{T})(
-    ::GradientProblem, o::GradientDescentOptions, i::Int
-) where {T}
-    return record_or_reset!(r, o.gradient, i)
+function (r::RecordGradient{T})(::GradientProblem, o::Options, i::Int) where {T}
+    return record_or_reset!(r, get_gradient(o), i)
 end
 
 @doc raw"""
@@ -556,9 +556,9 @@ mutable struct RecordGradientNorm <: RecordAction
     RecordGradientNorm() = new(Array{Float64,1}())
 end
 function (r::RecordGradientNorm)(
-    p::P, o::O, i::Int
-) where {P<:GradientProblem,O<:GradientDescentOptions}
-    return record_or_reset!(r, norm(p.M, o.x, o.gradient), i)
+    p::Problem, o::Options, i::Int
+) where {P<:GradientProblem,O<:Options}
+    return record_or_reset!(r, norm(p.M, get_iterate(o), get_gradient(o)), i)
 end
 
 @doc raw"""

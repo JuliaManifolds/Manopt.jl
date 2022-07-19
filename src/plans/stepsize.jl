@@ -180,13 +180,13 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
     end
 end
 function (a::ArmijoLinesearch)(
-    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x); kwargs...
+    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 )
     a.last_stepsize = linesearch_backtrack(
         p.M,
         x -> p.cost(p.M, x),
-        o.x,
-        get_gradient!(p, o.gradient, o.x),
+        get_iterate(o),
+        get_gradient!(p, o.gradient, get_iterate(o)),
         a.last_stepsize,
         a.sufficient_decrease,
         a.contraction_factor,
@@ -440,16 +440,25 @@ mutable struct NonmonotoneLinesearch{
     )
 end
 function (a::NonmonotoneLinesearch)(
-    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x); kwargs...
+    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 )
     if !all(has_storage.(Ref(a.storage), [:x, :gradient]))
-        old_x = o.x
-        old_gradient = get_gradient(p, o.x)
+        old_x = get_iterate(o)
+        old_gradient = get_gradient(p, get_iterate(o))
     else
         old_x, old_gradient = get_storage.(Ref(a.storage), [:x, :gradient])
     end
     update_storage!(a.storage, o)
-    return a(p.M, o.x, x -> get_cost(p, x), get_gradient(p, o.x), η, old_x, old_gradient, i)
+    return a(
+        p.M,
+        get_iterate(o),
+        x -> get_cost(p, x),
+        get_gradient(p, get_iterate(o)),
+        η,
+        old_x,
+        old_gradient,
+        i,
+    )
 end
 function (a::NonmonotoneLinesearch)(
     M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int; kwargs...
@@ -597,52 +606,57 @@ mutable struct WolfePowellLinesearch <: Linesearch
 end
 
 function (a::WolfePowellLinesearch)(
-    p::P, o::O, ::Int, η=-get_gradient(p, o.x); kwargs...
+    p::P, o::O, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 ) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     s = 1.0
     s_plus = 1.0
     s_minus = 1.0
-    f0 = get_cost(p, o.x)
-    xNew = retract(p.M, o.x, s * η, a.retraction_method)
+    f0 = get_cost(p, get_iterate(o))
+    xNew = retract(p.M, get_iterate(o), s * η, a.retraction_method)
     fNew = get_cost(p, xNew)
-    η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
-    if fNew > f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)
-        while (fNew > f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)) && (s_minus > 10^(-9)) # decrease
+    η_xNew = vector_transport_to(p.M, get_iterate(o), η, xNew, a.vector_transport_method)
+    if fNew > f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))
+        while (fNew > f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))) &&
+            (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             s = s_minus
-            retract!(p.M, xNew, o.x, s * η, a.retraction_method)
+            retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
             fNew = get_cost(p, xNew)
         end
         s_plus = 2.0 * s_minus
     else
-        vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+        vector_transport_to!(
+            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+        )
         if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-            a.c2 * inner(p.M, o.x, η, o.gradient)
-            while fNew <= f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient) &&
+            a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
+            while fNew <= f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o)) &&
                 (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
                 s = s_plus
-                retract!(p.M, xNew, o.x, s * η, a.retraction_method)
+                retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
                 fNew = get_cost(p, xNew)
             end
             s_minus = s_plus / 2.0
         end
     end
-    retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
-    vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+    retract!(p.M, xNew, get_iterate(o), s_minus * η, a.retraction_method)
+    vector_transport_to!(p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method)
     while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-          a.c2 * inner(p.M, o.x, η, o.gradient)
+          a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
         s = (s_minus + s_plus) / 2
-        retract!(p.M, xNew, o.x, s * η, a.retraction_method)
+        retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
         fNew = get_cost(p, xNew)
-        if fNew <= f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)
+        if fNew <= f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))
             s_minus = s
         else
             s_plus = s
         end
         abs(s_plus - s_minus) <= a.linesearch_stopsize && break
-        retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
-        vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+        retract!(p.M, xNew, get_iterate(o), s_minus * η, a.retraction_method)
+        vector_transport_to!(
+            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+        )
     end
     s = s_minus
     a.last_stepsize = s
@@ -739,18 +753,20 @@ mutable struct WolfePowellBinaryLinesearch <: Linesearch
 end
 
 function (a::WolfePowellBinaryLinesearch)(
-    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x); kwargs...
+    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 )
     α = 0.0
     β = Inf
     t = 1.0
-    f0 = get_cost(p, o.x)
-    xNew = retract(p.M, o.x, t * η, a.retraction_method)
+    f0 = get_cost(p, get_iterate(o))
+    xNew = retract(p.M, get_iterate(o), t * η, a.retraction_method)
     fNew = get_cost(p, xNew)
-    η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
+    η_xNew = vector_transport_to(p.M, get_iterate(o), η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(p, xNew)
-    nAt = fNew > f0 + a.c1 * t * inner(p.M, o.x, η, o.gradient)
-    nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c2 * inner(p.M, o.x, η, o.gradient)
+    nAt = fNew > f0 + a.c1 * t * inner(p.M, get_iterate(o), η, get_gradient(o))
+    nWt =
+        inner(p.M, xNew, gradient_new, η_xNew) <
+        a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
     while (nAt || nWt) &&
               (t > a.linesearch_stopsize) &&
               ((α + β) / 2 - 1 > a.linesearch_stopsize)
@@ -758,13 +774,17 @@ function (a::WolfePowellBinaryLinesearch)(
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t = isinf(β) ? 2 * α : (α + β) / 2
         # Update trial point
-        retract!(p.M, xNew, o.x, t * η, a.retraction_method)
+        retract!(p.M, xNew, get_iterate(o), t * η, a.retraction_method)
         fNew = get_cost(p, xNew)
         gradient_new = get_gradient(p, xNew)
-        vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+        vector_transport_to!(
+            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+        )
         # Update conditions
-        nAt = fNew > f0 + a.c1 * t * inner(p.M, o.x, η, o.gradient)
-        nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c2 * inner(p.M, o.x, η, o.gradient)
+        nAt = fNew > f0 + a.c1 * t * inner(p.M, get_iterate(o), η, get_gradient(o))
+        nWt =
+            inner(p.M, xNew, gradient_new, η_xNew) <
+            a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
     end
     a.last_stepsize = t
     return t

@@ -94,6 +94,35 @@ get_options(o::Options) = get_options(o, dispatch_options_decorator(o))
 get_options(o::Options, ::Val{false}) = o
 get_options(o::Options, ::Val{true}) = get_options(o.options)
 
+"""
+    get_gradient(O::Options)
+
+return the (last stored) gradient within [`Options`](@ref)``O`. By default also undecorates the options beforehand
+"""
+get_gradient(o::Options) = get_gradient(o, dispatch_options_decorator(o))
+function get_gradient(o::Options, ::Val{false})
+    return error("It seems the Options $o do not provide access to a gradient")
+end
+get_gradient(o::Options, ::Val{true}) = get_gradient(o.options)
+
+"""
+    get_iterate(O::Options)
+
+return the (last stored) iterate within [`Options`](@ref)``O`. By default also undecorates the options beforehand
+"""
+get_iterate(o::Options) = get_iterate(o, dispatch_options_decorator(o))
+get_iterate(o::Options, ::Val{false}) = o.x
+get_iterate(o::Options, ::Val{true}) = get_iterate(o.options)
+
+"""
+    get_solver_result(O::Options)
+
+return the (last stored) iterate within [`Options`](@ref)``O`. By default also undecorates the options beforehand
+"""
+get_solver_result(o::Options) = get_solver_result(o, dispatch_options_decorator(o))
+get_solver_result(o::Options, ::Val{false}) = get_iterate(o)
+get_solver_result(o::Options, ::Val{true}) = get_solver_result(o.options)
+
 #
 # Common Actions for decorated Options
 #
@@ -148,10 +177,17 @@ end
 function (a::StoreOptionsAction)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
     #update values (maybe only once)
     if !a.once || a.last_stored != i
-        merge!(
-            a.values,
-            Dict{Symbol,Any}(key => deepcopy(getproperty(o, key)) for key in a.keys),
-        )
+        for key in a.keys
+            if hasproperty(o, key)
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(getproperty(o, key))))
+            elseif key == :Iterate
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_iterate(o))))
+            elseif key == :Gradient
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_gradient(o))))
+            else
+                warn("$key is not a field of $o, no storage updated.")
+            end
+        end
     end
     return a.last_stored = i
 end

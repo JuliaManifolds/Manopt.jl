@@ -123,4 +123,3 @@ function step_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
     o.δ .= -o.gradient .+ o.β * o.δ
     return o.δ
 end
-get_solver_result(o::ConjugateGradientDescentOptions) = o.x

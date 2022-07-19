@@ -54,9 +54,9 @@ mutable struct StopWhenGradientNormLess <: StoppingCriterion
     reason::String
     StopWhenGradientNormLess(ε::Float64) = new(ε, "")
 end
-function (c::StopWhenGradientNormLess)(p::Problem, o::AbstractGradientOptions, iter::Int)
-    if norm(p.M, o.x, o.gradient) < c.threshold
-        c.reason = "The algorithm reached approximately critical point after $iter iterations; the gradient norm ($(norm(p.M,o.x,o.gradient))) is less than $(c.threshold).\n"
+function (c::StopWhenGradientNormLess)(p::Problem, o::Options, iter::Int)
+    if norm(p.M, get_iterate(o), get_gradient(o)) < c.threshold
+        c.reason = "The algorithm reached approximately critical point after $iter iterations; the gradient norm ($(norm(p.M,get_iterate(o),get_gradient(o)))) is less than $(c.threshold).\n"
         return true
     end
     return false
@@ -78,7 +78,7 @@ end
     StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
-optimization variable from within a [`Options`](@ref), i.e `o.x`.
+optimization variable from within a [`Options`](@ref), i.e `get_iterate(o)`.
 For the storage a [`StoreOptionsAction`](@ref) is used
 
 # Constructor
@@ -93,15 +93,17 @@ mutable struct StopWhenChangeLess <: StoppingCriterion
     threshold::Float64
     reason::String
     storage::StoreOptionsAction
-    function StopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:x,)))
+    function StopWhenChangeLess(
+        ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:Iterate,))
+    )
         return new(ε, "", a)
     end
 end
 function (c::StopWhenChangeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    if has_storage(c.storage, :x)
-        xOld = get_storage(c.storage, :x)
-        if distance(p.M, o.x, xOld) < c.threshold && i > 0
-            c.reason = "The algorithm performed a step with a change ($(distance(p.M, o.x, xOld))) less than $(c.threshold).\n"
+    if has_storage(c.storage, :Iterate)
+        xOld = get_storage(c.storage, :Iterate)
+        if distance(p.M, get_iterate(o), xOld) < c.threshold && i > 0
+            c.reason = "The algorithm performed a step with a change ($(distance(p.M, get_iterate(o), xOld))) less than $(c.threshold).\n"
             c.storage(p, o, i)
             return true
         end
@@ -162,7 +164,7 @@ end
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,o.x)`.
+optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,get_iterate(o))`.
 
 # Constructor
 
@@ -176,8 +178,8 @@ mutable struct StopWhenCostLess <: StoppingCriterion
     StopWhenCostLess(ε::Float64) = new(ε, "")
 end
 function (c::StopWhenCostLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    if i > 0 && get_cost(p, o.x) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less than the threshold ($(c.threshold)).\n"
+    if i > 0 && get_cost(p, get_iterate(o)) < c.threshold
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(o)))) less than the threshold ($(c.threshold)).\n"
         return true
     end
     return false

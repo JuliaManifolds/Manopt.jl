@@ -119,7 +119,7 @@ end
 @doc raw"""
     DebugChange()
 
-debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
+debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`Options`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
@@ -146,7 +146,9 @@ end
 )
 function (d::DebugChange)(p::Problem, o::Options, i)
     (i > 0) && Printf.format(
-        d.io, Printf.Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x))
+        d.io,
+        Printf.Format(d.format),
+        distance(p.M, get_iterate(o), get_storage(d.storage, :x)),
     )
     d.storage(p, o, i)
     return nothing
@@ -154,7 +156,7 @@ end
 @doc raw"""
     DebugIterate <: DebugAction
 
-debug for the current iterate (stored in `o.x`).
+debug for the current iterate (stored in `get_iterate(o)`).
 
 # Constructor
     DebugIterate()
@@ -178,7 +180,7 @@ mutable struct DebugIterate <: DebugAction
 end
 @deprecate DebugIterate(io::IO, long::Bool=false) DebugIterate(; io=io, long=long)
 function (d::DebugIterate)(::Problem, o::Options, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.x)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(o))
     return nothing
 end
 
@@ -235,7 +237,7 @@ end
 @deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
 @deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
 function (d::DebugCost)(p::Problem, o::Options, i::Int)
-    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, o.x))
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(o)))
     return nothing
 end
 
@@ -391,7 +393,7 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
 end
 function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
     if d.status !== :No
-        cost = get_cost(p, o.x)
+        cost = get_cost(p, get_iterate(o))
         if cost > d.old_cost + d.tol
             # Default case in Gradient Descent, include a tipp
             @warn """The cost increased.
@@ -434,7 +436,7 @@ mutable struct DebugWarnIfCostNotFinite <: DebugAction
 end
 function (d::DebugWarnIfCostNotFinite)(p::Problem, o::Options, i::Int)
     if d.status !== :No
-        cost = get_cost(p, o.x)
+        cost = get_cost(p, get_iterate(o))
         if !isfinite(cost)
             @warn """The cost is not finite.
             At iteration #$i the cost evaluated to $(cost)."""

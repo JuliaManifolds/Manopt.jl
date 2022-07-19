@@ -37,7 +37,7 @@ mutable struct FrankWolfeOptions{
     TStop<:StoppingCriterion,
     TM<:AbstractRetractionMethod,
     ITM<:AbstractInverseRetractionMethod,
-}
+} <: AbstractGradientOptions
     p::P
     X::T
     subtask::S
@@ -49,7 +49,7 @@ mutable struct FrankWolfeOptions{
         M::AbstractManifold,
         p::P,
         subtask::S;
-        evaluation = AllocatingEvaluation(),
+        evaluation=AllocatingEvaluation(),
         initial_vector::T=zero_vector(M, p),
         stopping_criterion::TStop=StopAfterIteration(200) |
                                   StopWhenGradientNormLess(1.0e-6),
@@ -68,7 +68,7 @@ mutable struct FrankWolfeOptions{
         return new{Tuple{S,typeof(evaluation)},T,P,TStep,TStop,TM,ITM}(
             p,
             initial_vector,
-            (subtask,evaluation),
+            (subtask, evaluation),
             stopping_criterion,
             stepsize,
             retraction_method,
@@ -76,6 +76,8 @@ mutable struct FrankWolfeOptions{
         )
     end
 end
+get_iterate(O::FrankWolfeOptions) = O.p
+get_gradient(O::FrankWolfeOptions) = O.X
 
 mutable struct FrankWolfeOracleCost{P,T}
     p::P
