@@ -185,7 +185,7 @@ function (a::StoreOptionsAction)(::P, o::O, i::Int) where {P<:Problem,O<:Options
             elseif key == :Gradient
                 merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_gradient(o))))
             else
-                warn("$key is not a field of $o, no storage updated.")
+                @warn "$key is not a field of $o, no storage updated."
             end
         end
     end

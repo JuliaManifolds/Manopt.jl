@@ -58,7 +58,7 @@ function Frank_Wolfe_algorithm!(
         GradientDescentOptions(M, copy(M, p)),
     ),
     evaluation=AllocatingEvaluation(),
-    stopping_criterion::TStop=StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-6),
+    stopping_criterion::TStop=StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-8) | StopWhenChangeLess(1.0e-8),
     stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
     return_options=false,
     kwargs..., #collect rest
@@ -93,13 +93,13 @@ function step_solver!(
     # solve subtask
     solve(O.subtask[1], O.subtask[2]) # call the subsolver
     q = get_solver_result(O.subtask[2])
-    s = o.stepsize(P, O, i)
+    s = O.stepsize(P, O, i)
     # step along the geodesic
     retract!(
         P.M,
         O.p,
         O.p,
-        s .* inverse_retract(p.M, O.p, q, O.inverse_retraction_method),
+        s .* inverse_retract(P.M, O.p, q, O.inverse_retraction_method),
         O.retraction_method,
     )
     return O
@@ -112,14 +112,14 @@ function step_solver!(
 ) where {S}
     get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
     q = copy(P.M, O.p)
-    O.subtask(M, q, O.p, O.X) # evaluate the closed form solution and store the result in O.p
-    s = o.stepsize(P, O, i)
+    O.subtask[1](P.M, q, O.p, O.X) # evaluate the closed form solution and store the result in q
+    s = O.stepsize(P, O, i)
     # step along the geodesic
     retract!(
         P.M,
         O.p,
         O.p,
-        s .* inverse_retract(p.M, O.p, q, O.inverse_retraction_method),
+        s .* inverse_retract(P.M, O.p, q, O.inverse_retraction_method),
         O.retraction_method,
     )
     return O
@@ -132,17 +132,14 @@ function step_solver!(
 ) where {S}
     get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
     q = O.subtask[1](P.M, O.p, O.X) # evaluate the closed form solution and store the result in O.p
-    s = o.stepsize(P, O, i)
+    s = O.stepsize(P, O, i)
     # step along the geodesic
     retract!(
         P.M,
         O.p,
         O.p,
-        s .* inverse_retract(p.M, O.p, q, O.inverse_retraction_method),
+        s .* inverse_retract(P.M, O.p, q, O.inverse_retraction_method),
         O.retraction_method,
     )
     return O
 end
-
-get_iterate(O::FrankWolfeOptions) = O.p
-get_gradient(O::FrankWolfeOptions) = O.X

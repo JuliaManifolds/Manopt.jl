@@ -133,7 +133,7 @@ mutable struct DebugChange <: DebugAction
     format::String
     storage::StoreOptionsAction
     function DebugChange(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x,)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
@@ -148,7 +148,7 @@ function (d::DebugChange)(p::Problem, o::Options, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(p.M, get_iterate(o), get_storage(d.storage, :x)),
+        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate)),
     )
     d.storage(p, o, i)
     return nothing
