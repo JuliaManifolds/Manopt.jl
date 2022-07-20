@@ -6,9 +6,9 @@ using InteractiveUtils
 
 # ╔═╡ e2dd0dd2-0444-11ed-1e55-5b3126a23f62
 begin
-	using Pkg
-	Pkg.activate()#use branch in dev mode for now
-	using Manopt, Manifolds, LinearAlgebra
+    using Pkg
+    Pkg.activate()#use branch in dev mode for now
+    using Manopt, Manifolds, LinearAlgebra
 end
 
 # ╔═╡ 285f33c1-e8ed-45d4-ba33-9e5eb17ce422
@@ -30,10 +30,10 @@ We first define some variables.
 
 # ╔═╡ 397f4aa4-bd8b-4f98-9c5a-c3514e50ef37
 begin
-	# dimension of the SPD matrices
-	n = 50
-	# number of data points
-	N = 100	
+    # dimension of the SPD matrices
+    n = 50
+    # number of data points
+    N = 100
 end
 
 # ╔═╡ 8e59bb69-e073-40cc-a304-d1256463dcbb
@@ -51,8 +51,8 @@ for `N` points `pts` on the SPD matrices, this computes the weighted harmonic me
 	\biggl( \sum_{i=1}^N w_i p_i^{-1} \biggr)^{-1}
 ```
 """
-function harmonic_mean(pts, w=1/length(pts) .* ones(length(pts)))
-	return inv(sum( [wi*inv(pi) for (wi,pi) in zip(w,pts)]  ))
+function harmonic_mean(pts, w=1 / length(pts) .* ones(length(pts)))
+    return inv(sum([wi * inv(pi) for (wi, pi) in zip(w, pts)]))
 end
 
 # ╔═╡ a56c69d9-768b-4ce5-99d7-986820b8b53c
@@ -65,8 +65,8 @@ for `N` points `pts` on the SPD matrices, this computes the weighted arithmetic 
 	\sum_{i=1}^N w_i p_i
 ```
 """
-function arithmetic_mean(pts, w=1/length(pts) .* ones(length(pts)))
-	return sum( [wi*pi for (wi,pi) in zip(w,pts)]  )
+function arithmetic_mean(pts, w=1 / length(pts) .* ones(length(pts)))
+    return sum([wi * pi for (wi, pi) in zip(w, pts)])
 end
 
 # ╔═╡ 58594aa5-1dc8-4193-914f-98ab4bfcdc03
@@ -74,30 +74,30 @@ M = SymmetricPositiveDefinite(n)
 
 # ╔═╡ 09e304f8-b153-4076-81d7-a3a01644d65a
 begin
-	data = [random_point(M) for _ ∈ 1:N]
-	weights = rand(N)
-	weights ./= sum(weights)
+    data = [random_point(M) for _ in 1:N]
+    weights = rand(N)
+    weights ./= sum(weights)
 end
 
 # ╔═╡ b2fdb060-31c6-4d2c-9e04-e5fa0caab5d0
 function weighted_mean_cost(M, p)
-	return sum([ wi*distance(M,p,di)^2 for (wi,di) in zip(weights,data) ] )
+    return sum([wi * distance(M, p, di)^2 for (wi, di) in zip(weights, data)])
 end
 
 # ╔═╡ e5fc5216-5aab-4638-9444-02dd9b1cb4e3
 function grad_weighted_mean(M, p)
-	return sum([ wi*grad_distance(M,p,di) for (wi,di) in zip(weights,data) ] )
+    return sum([wi * grad_distance(M, p, di) for (wi, di) in zip(weights, data)])
 end
 
 # ╔═╡ 6c9c3984-2de8-4f4e-b8e9-e747059043cf
 function grad_weighted_mean!(M, X, p)
-	zero_vector!(M, X, p)
-	Y = copy(M, p, X)
-	for (wi, di) in zip(weights, data)
-		grad_distance!(M, Y, p, di)
-		X .+= wi.*Y
-	end
-	return X
+    zero_vector!(M, X, p)
+    Y = copy(M, p, X)
+    for (wi, di) in zip(weights, data)
+        grad_distance!(M, Y, p, di)
+        X .+= wi .* Y
+    end
+    return X
 end
 
 # ╔═╡ 701ace87-ef6e-42a6-9e81-563c3abc55b4
@@ -115,7 +115,7 @@ which has a closed form solution, cf. (38) in Weber & Sra computed in place of `
 
 """
 function FW_oracle!(M::SymmetricPositiveDefinite, q, L, U, p, X)
-	e = eigen(Symmetric(p))
+    e = eigen(Symmetric(p))
     V = e.vectors
     Vd = max.(e.values, floatmin(eltype(e.values)))
     Dsqrt = Diagonal(sqrt.(Vd))
@@ -123,16 +123,16 @@ function FW_oracle!(M::SymmetricPositiveDefinite, q, L, U, p, X)
     pSqrt = Symmetric(V * Dsqrt * transpose(V))
     pSqrtInv = Symmetric(V * DsqrtInv * transpose(V))
 
-	e2 = eigen(pSqrt*X*pSqrt)
-	D = Diagonal(1.0 .* (e2.values .< 0))
-	Q = e2.vectors
-	
-	Uprime = Q'*pSqrtInv*U*pSqrtInv*Q
-	Lprime = Q'*pSqrtInv*L*pSqrtInv*Q
-	P = cholesky(Hermitian(Uprime - Lprime))
-	z =  P.U'*D*P.U+Lprime
-	copyto!(M, q, pSqrt*Q*z*Q'*pSqrt)
-	return q
+    e2 = eigen(pSqrt * X * pSqrt)
+    D = Diagonal(1.0 .* (e2.values .< 0))
+    Q = e2.vectors
+
+    Uprime = Q' * pSqrtInv * U * pSqrtInv * Q
+    Lprime = Q' * pSqrtInv * L * pSqrtInv * Q
+    P = cholesky(Hermitian(Uprime - Lprime))
+    z = P.U' * D * P.U + Lprime
+    copyto!(M, q, pSqrt * Q * z * Q' * pSqrt)
+    return q
 end
 
 # ╔═╡ 41ad71e7-708f-42e9-a92b-902c6324215f
@@ -149,19 +149,56 @@ special_oracle!(M, q, p, X) = FW_oracle!(M, q, H, A, p, X)
 @time qT = mean(M, data, weights)
 
 # ╔═╡ e6d19915-c495-4693-bdda-f83dc6d5ddfc
-cT = weighted_mean_cost(M,qT)
+cT = weighted_mean_cost(M, qT)
 
 # ╔═╡ 3d369862-dc1c-4e06-acde-9eb1baa1a425
-Frank_Wolfe_algorithm(M, weighted_mean_cost, grad_weighted_mean!, data[1]; subtask=special_oracle!, debug = [:Iteration, :Cost, (:Change, " | Change: %1.5e | "), DebugGradientNorm(format=" | grad F |: %1.5e |"), "\n",50], evaluation=MutatingEvaluation())
+Frank_Wolfe_algorithm(
+    M,
+    weighted_mean_cost,
+    grad_weighted_mean!,
+    data[1];
+    subtask=special_oracle!,
+    debug=[
+        :Iteration,
+        :Cost,
+        (:Change, " | Change: %1.5e | "),
+        DebugGradientNorm(; format=" | grad F |: %1.5e |"),
+        "\n",
+        50,
+    ],
+    evaluation=MutatingEvaluation(),
+)
 
 # ╔═╡ c34152c0-c12c-4a8e-838e-5f867647cd19
-@time q1 = Frank_Wolfe_algorithm(M, weighted_mean_cost, grad_weighted_mean!, data[1]; subtask=special_oracle!, evaluation=MutatingEvaluation());
+@time q1 = Frank_Wolfe_algorithm(
+    M,
+    weighted_mean_cost,
+    grad_weighted_mean!,
+    data[1];
+    subtask=special_oracle!,
+    evaluation=MutatingEvaluation(),
+);
 
 # ╔═╡ 1a14a0de-89a3-4099-9f7b-e438df5c47bc
-c1 = weighted_mean_cost(M,q1)
+c1 = weighted_mean_cost(M, q1)
 
 # ╔═╡ 9d0f4fc6-3f54-404a-ab26-050a5e52c458
-q2 = quasi_Newton(M, weighted_mean_cost, grad_weighted_mean!, data[1]; debug = [:Iteration, :Cost, (:Change, " | Change: %1.5e | "), DebugGradientNorm(format=" | grad F |: %1.5e |"), "\n",50], evaluation=MutatingEvaluation(), stepsize=WolfePowellLinesearch(M,0.01,0.999))
+q2 = quasi_Newton(
+    M,
+    weighted_mean_cost,
+    grad_weighted_mean!,
+    data[1];
+    debug=[
+        :Iteration,
+        :Cost,
+        (:Change, " | Change: %1.5e | "),
+        DebugGradientNorm(; format=" | grad F |: %1.5e |"),
+        "\n",
+        50,
+    ],
+    evaluation=MutatingEvaluation(),
+    stepsize=WolfePowellLinesearch(M, 0.01, 0.999),
+)
 
 # ╔═╡ 95f34a6e-4932-44bd-9caa-2fcded798d05
 md"""
