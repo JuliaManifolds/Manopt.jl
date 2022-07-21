@@ -58,7 +58,7 @@ mutable struct FrankWolfeOptions{
         inverse_retraction_method::ITM=default_inverse_retraction_method(M),
     ) where {
         P,
-        S,
+        S<:Function,
         T,
         TStop<:StoppingCriterion,
         TStep<:Stepsize,
@@ -66,6 +66,36 @@ mutable struct FrankWolfeOptions{
         ITM<:AbstractInverseRetractionMethod,
     }
         return new{Tuple{S,typeof(evaluation)},T,P,TStep,TStop,TM,ITM}(
+            p,
+            initial_vector,
+            (subtask, evaluation),
+            stopping_criterion,
+            stepsize,
+            retraction_method,
+            inverse_retraction_method,
+        )
+    end
+    function FrankWolfeOptions(
+        M::AbstractManifold,
+        p::P,
+        subtask::S;
+        evaluation=AllocatingEvaluation(),
+        initial_vector::T=zero_vector(M, p),
+        stopping_criterion::TStop=StopAfterIteration(200) |
+                                  StopWhenGradientNormLess(1.0e-6),
+        stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
+        retraction_method::TM=default_retraction_method(M),
+        inverse_retraction_method::ITM=default_inverse_retraction_method(M),
+    ) where {
+        P,
+        S,
+        T,
+        TStop<:StoppingCriterion,
+        TStep<:Stepsize,
+        TM<:AbstractRetractionMethod,
+        ITM<:AbstractInverseRetractionMethod,
+    }
+        return new{S,T,P,TStep,TStop,TM,ITM}(
             p,
             initial_vector,
             (subtask, evaluation),
