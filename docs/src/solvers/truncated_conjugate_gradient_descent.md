@@ -27,12 +27,11 @@ Initialize ``η_0 = η`` if using randomized approach and
 
 Repeat until a convergence criterion is reached
 
-1. Set ``κ = ⟨δ_k, \operatorname{Hess}F(x)[δ_k]⟩_x``,
-    ``α =\frac{⟨r_k, z_k⟩_x}{κ}`` and
+1. Set ``α =\frac{⟨r_k, z_k⟩_x}{⟨δ_k, \operatorname{Hess}F(x)[δ_k]⟩_x}`` and
     ``⟨η_k, η_k⟩_{x}^* = ⟨η_k, \operatorname{P}(η_k)⟩_x +
     2α ⟨η_k, \operatorname{P}(δ_k)⟩_{x} +  {α}^2
     ⟨δ_k, \operatorname{P}(δ_k)⟩_{x}``.
-2. If ``κ ≤ 0`` or ``⟨η_k, η_k⟩_x^* ≥ Δ^2``
+2. If ``⟨δ_k, \operatorname{Hess}F(x)[δ_k]⟩_x ≤ 0`` or ``⟨η_k, η_k⟩_x^* ≥ Δ^2``
     return ``η_{k+1} = η_k + τ δ_k`` and stop.
 3. Set ``η_{k}^*= η_k + α δ_k``, if
     ``⟨η_k, η_k⟩_{x} + \frac{1}{2} ⟨η_k,

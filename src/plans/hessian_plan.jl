@@ -523,7 +523,9 @@ function ApproxHessianSymmetricRankOne(
     nu::R=-1.0,
     evaluation=AllocatingEvaluation(),
     vector_transport_method::VTR=ParallelTransport(),
-) where {mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTR<:AbstractVectorTransportMethod}
+) where {
+    mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTR<:AbstractVectorTransportMethod
+}
     grad_tmp = gradient(M, p)
     return ApproxHessianSymmetricRankOne{typeof(evaluation),P,G,typeof(grad_tmp),B,VTR,R}(
         p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, nu

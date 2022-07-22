@@ -20,7 +20,7 @@ For a description of the algorithm and more details see
 * `F` – a cost function ``F : \mathcal M → ℝ`` to minimize
 * `gradF`- the gradient ``\operatorname{grad}F : \mathcal M → T \mathcal M`` of ``F``
 * `x` – an initial value ``x  ∈  \mathcal M``
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatoname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
@@ -133,7 +133,7 @@ function trust_regions!(
         randomize=randomize,
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
-        θ=θ, 
+        θ=θ,
         κ=κ,
         (project!)=project!,
     )
@@ -246,7 +246,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # Choose to accept or reject the proposed step based on the model
     # performance. Note the strict inequality.
     if model_decreased &&
-       (ρ > o.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
+        (ρ > o.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
         copyto!(o.x, o.x_proposal)
         update_hessian_basis!(p.M, p.hessian!!, o.x)
     end

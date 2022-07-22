@@ -35,7 +35,7 @@ Random.seed!(1)
 #     println("Benchmarking $(n):\n", s, "\n\n")
 # end
 
-n = 34
+n = 100
 
 A = randn(n, n)
 A = (A + A') / 2
@@ -50,15 +50,17 @@ x = trust_regions!(
     M,
     F,
     gradF,
-    HessF,
+    ApproxHessianBFGS(M, x, gradF),
     x;
     stopping_criterion=StopWhenAny(
         StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
     ),
     trust_region_radius=1.0,
+    θ=0.2,
+    κ=0.8,
     retraction_method=ProjectionRetraction(),
 )
 
-ev = eigvecs(A)[:,1]
+ev = eigvecs(A)[:, 1]
 
-return norm(x - ev)
+return norm(abs.(x) - abs.(ev))
