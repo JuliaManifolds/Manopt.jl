@@ -260,8 +260,10 @@ initialized automatically and values with a default may be left out.
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
 * `retraction_method` – (`ExponentialRetraction()`) the retraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
-* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
+* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use on the manifold `m`.
+* `inverse_retraction_method_tb` - (`LogarithmicInverseRetraction()`) an inverse retraction to use on the tangent bundle.
+* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use on the manifold `m`
+* `vector_transport_method_tb` - (`ParallelTransport()`) a vector transport to use on the tangent bundle.
 
 where for the last two the functions a [`Problem`](@ref)` p`,
 [`Options`](@ref)` o` and the current iterate `i` are the arguments.
@@ -280,7 +282,9 @@ If you activate these to be different from the default identity, you have to pro
         update_dual_base::Union{Function,Missing} = missing,
         retraction_method = default_retraction_method(M),
         inverse_retraction_method = default_inverse_retraction_method(M),
+        inverse_retraction_method_tb = default_inverse_retraction_method(TangentBundle(M)),
         vector_transport_method = default_vector_transport_method(M),
+        vector_transport_method_tb = default_vector_transport_method(TangentBundle(M)),
     )
 """
 mutable struct ChambollePockOptions{
