@@ -289,7 +289,9 @@ mutable struct ChambollePockOptions{
     T,
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
+    IRM_TB<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
+    VTM_TB<:AbstractVectorTransportMethod,
 } <: PrimalDualOptions
     m::P
     n::Q
@@ -308,7 +310,9 @@ mutable struct ChambollePockOptions{
     update_dual_base::Union{Function,Missing}
     retraction_method::RM
     inverse_retraction_method::IRM
+    inverse_retraction_method_tb::IRM_TB
     vector_transport_method::VTM
+    vector_transport_method_tb::VTM_TB
 
     @deprecate ChambollePockOptions(
         m,
@@ -352,16 +356,24 @@ mutable struct ChambollePockOptions{
         update_dual_base::Union{Function,Missing}=missing,
         retraction_method::RM=default_retraction_method(M),
         inverse_retraction_method::IRM=default_inverse_retraction_method(M),
+        inverse_retraction_method_tb::IRM_TB=default_inverse_retraction_method(
+            TangentBundle(M)
+        ),
         vector_transport_method::VTM=default_vector_transport_method(M),
+        vector_transport_method_tb::VTM_TB=default_vector_transport_method(
+            TangentBundle(M)
+        ),
     ) where {
         P,
         Q,
         T,
         RM<:AbstractRetractionMethod,
         IRM<:AbstractInverseRetractionMethod,
+        IRM_TB<:AbstractInverseRetractionMethod,
         VTM<:AbstractVectorTransportMethod,
+        VTM_TB<:AbstractVectorTransportMethod,
     }
-        return new{P,Q,T,RM,IRM,VTM}(
+        return new{P,Q,T,RM,IRM,IRM_TB,VTM,VTM_TB}(
             m,
             n,
             x,
@@ -379,7 +391,9 @@ mutable struct ChambollePockOptions{
             update_dual_base,
             retraction_method,
             inverse_retraction_method,
+            inverse_retraction_method_tb,
             vector_transport_method,
+            vector_transport_method_tb,
         )
     end
 end
@@ -413,7 +427,7 @@ function primal_residual(
                 p,
                 o.m,
                 o.n,
-                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
+                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method_tb) -
                 o.ξ,
             ),
             o.x,
@@ -463,9 +477,10 @@ function dual_residual(
         return norm(
             p.N,
             o.n,
-            1 / o.dual_stepsize *
-            (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ) -
-            linearized_forward_operator(
+            1 / o.dual_stepsize * (
+                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method_tb) -
+                o.ξ
+            ) - linearized_forward_operator(
                 p,
                 o.m,
                 vector_transport_to(
@@ -482,9 +497,10 @@ function dual_residual(
         return norm(
             p.N,
             o.n,
-            1 / o.dual_stepsize *
-            (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.n) -
-            inverse_retract(
+            1 / o.dual_stepsize * (
+                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method_tb) -
+                o.n
+            ) - inverse_retract(
                 p.N,
                 o.n,
                 forward_operator(
@@ -502,7 +518,7 @@ function dual_residual(
                         o.retraction_method,
                     ),
                 ),
-                o.inverse_retraction_method,
+                o.inverse_retraction_method_tb,
             ),
         )
     else
@@ -739,7 +755,7 @@ function (d::DebugDualChange)(p::AbstractPrimalDualProblem, o::PrimalDualOptions
         v = norm(
             p.N,
             o.n,
-            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) - o.ξ,
+            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method_tb) - o.ξ,
         )
         Printf.format(d.io, Printf.Format(d.format), v)
     end

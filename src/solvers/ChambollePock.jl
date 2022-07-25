@@ -195,7 +195,7 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
         ptξn = o.ξ
     else
         ptξn = vector_transport_to(
-            p.N, o.n, o.ξ, forward_operator(p, o.m), o.vector_transport_method
+            p.N, o.n, o.ξ, forward_operator(p, o.m), o.vector_transport_method_tb
         )
     end
     xOld = o.x
@@ -292,7 +292,7 @@ function dual_update!(
     p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:exact}
 ) where {P}
     ξ_update = inverse_retract(
-        p.N, o.n, forward_operator(p, start), o.inverse_retraction_method
+        p.N, o.n, forward_operator(p, start), o.inverse_retraction_method_tb
     )
     get_dual_prox!(p, o.ξ, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
     return o
