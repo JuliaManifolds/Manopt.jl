@@ -783,7 +783,11 @@ function DebugDualBaseChange(;
     kwargs...,
 )
     return DebugEntryChange(
-        :n, (p, o, x, y) -> distance(p.N, x, y); storage=storage, prefix=prefix, kwargs...
+        :n,
+        (p, o, x, y) -> distance(p.N, x, y, o.inverse_retraction_method_tb);
+        storage=storage,
+        prefix=prefix,
+        kwargs...,
     )
 end
 
