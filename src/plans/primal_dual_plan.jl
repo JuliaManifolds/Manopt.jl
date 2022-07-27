@@ -259,11 +259,15 @@ initialized automatically and values with a default may be left out.
 * `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`ExponentialRetraction()`) the retraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use on the manifold `m`.
-* `inverse_retraction_method_tb` - (`LogarithmicInverseRetraction()`) an inverse retraction to use on the tangent bundle.
-* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use on the manifold `m`
-* `vector_transport_method_tb` - (`ParallelTransport()`) a vector transport to use on the tangent bundle.
+* `retraction_method` – (`default_retraction_method(M)`) the retraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse
+  retraction to use on the manifold ``\mathcal M``.
+* `inverse_retraction_method_dual` - (`default_inverse_retraction_method(TangentBundle(M))`)
+  an inverse retraction to use on manifold ``\mathcal N``.
+* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to
+  use on the manifold ``\mathcal M``.
+* `vector_transport_method_dual` - (`default_vector_transport_method(TangentBundle(M))`) a
+  vector transport to use on manifold ``\mathcal N``.
 
 where for the last two the functions a [`Problem`](@ref)` p`,
 [`Options`](@ref)` o` and the current iterate `i` are the arguments.
@@ -282,9 +286,9 @@ If you activate these to be different from the default identity, you have to pro
         update_dual_base::Union{Function,Missing} = missing,
         retraction_method = default_retraction_method(M),
         inverse_retraction_method = default_inverse_retraction_method(M),
-        inverse_retraction_method_tb = default_inverse_retraction_method(TangentBundle(M)),
+        inverse_retraction_method_dual = default_inverse_retraction_method(TangentBundle(M)),
         vector_transport_method = default_vector_transport_method(M),
-        vector_transport_method_tb = default_vector_transport_method(TangentBundle(M)),
+        vector_transport_method_dual = default_vector_transport_method(TangentBundle(M)),
     )
 """
 mutable struct ChambollePockOptions{
@@ -293,9 +297,9 @@ mutable struct ChambollePockOptions{
     T,
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
-    IRM_TB<:AbstractInverseRetractionMethod,
+    IRM_Dual<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
-    VTM_TB<:AbstractVectorTransportMethod,
+    VTM_Dual<:AbstractVectorTransportMethod,
 } <: PrimalDualOptions
     m::P
     n::Q
@@ -314,9 +318,9 @@ mutable struct ChambollePockOptions{
     update_dual_base::Union{Function,Missing}
     retraction_method::RM
     inverse_retraction_method::IRM
-    inverse_retraction_method_tb::IRM_TB
+    inverse_retraction_method_tb::IRM_Dual
     vector_transport_method::VTM
-    vector_transport_method_tb::VTM_TB
+    vector_transport_method_tb::VTM_Dual
 
     @deprecate ChambollePockOptions(
         m,
@@ -360,11 +364,11 @@ mutable struct ChambollePockOptions{
         update_dual_base::Union{Function,Missing}=missing,
         retraction_method::RM=default_retraction_method(M),
         inverse_retraction_method::IRM=default_inverse_retraction_method(M),
-        inverse_retraction_method_tb::IRM_TB=default_inverse_retraction_method(
+        inverse_retraction_method_tb::IRM_Dual=default_inverse_retraction_method(
             TangentBundle(M)
         ),
         vector_transport_method::VTM=default_vector_transport_method(M),
-        vector_transport_method_tb::VTM_TB=default_vector_transport_method(
+        vector_transport_method_tb::VTM_Dual=default_vector_transport_method(
             TangentBundle(M)
         ),
     ) where {
@@ -373,11 +377,11 @@ mutable struct ChambollePockOptions{
         T,
         RM<:AbstractRetractionMethod,
         IRM<:AbstractInverseRetractionMethod,
-        IRM_TB<:AbstractInverseRetractionMethod,
+        IRM_Dual<:AbstractInverseRetractionMethod,
         VTM<:AbstractVectorTransportMethod,
-        VTM_TB<:AbstractVectorTransportMethod,
+        VTM_Dual<:AbstractVectorTransportMethod,
     }
-        return new{P,Q,T,RM,IRM,IRM_TB,VTM,VTM_TB}(
+        return new{P,Q,T,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
             m,
             n,
             x,
