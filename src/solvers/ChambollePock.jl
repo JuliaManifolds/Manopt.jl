@@ -181,8 +181,10 @@ function step_solver!(p::PrimalDualProblem, o::ChambollePockOptions, iter)
     if !ismissing(o.update_dual_base)
         n_old = deepcopy(o.n)
         o.n = o.update_dual_base(p, o, iter)
-        vector_transport_to!(p.N, o.ξ, n_old, o.ξ, o.n, o.vector_transport_method)
-        vector_transport_to!(p.N, o.ξbar, n_old, o.ξbar, o.n, o.vector_transport_method)
+        vector_transport_to!(p.N, o.ξ, n_old, o.ξ, o.n, o.vector_transport_method_dual)
+        vector_transport_to!(
+            p.N, o.ξbar, n_old, o.ξbar, o.n, o.vector_transport_method_dual
+        )
     end
     return o
 end
@@ -278,7 +280,7 @@ function dual_update!(
         forward_operator(p, o.m),
         ξ_update,
         o.n,
-        o.vector_transport_method,
+        o.vector_transport_method_dual,
     )
     # (3) to the dual update
     get_dual_prox!(p, o.ξ, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
