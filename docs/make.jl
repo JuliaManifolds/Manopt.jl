@@ -12,6 +12,7 @@ tutorial_relative_path = "tutorials/"
 mkpath(tutorial_output_folder)
 #
 # Tutorials
+@info " \n      Rendering Tutorials\n "
 tutorials = [
     Dict(:file => "Optimize!", :title => "Get started: Optimize!"),
     Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
@@ -57,6 +58,7 @@ examples = [
     Dict(:file => "robustPCA", :title => "Robust PCA"),
     Dict(:file => "smallestEigenvalue", :title => "Rayleigh quotient"),
 ]
+@info " \n      Rendering Examples\n "
 # build menu and write files myself - tp set edit url correctly.
 for e in examples
     global example_menu
@@ -115,6 +117,7 @@ makedocs(;
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
+            "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",

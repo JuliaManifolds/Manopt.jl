@@ -566,7 +566,7 @@ end
 
 These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,
 which are based on the idea of a so-called cautious update. The search direction is calculated
-as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`](@ref),
+as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref),
 butut the update  then is only executed if
 
 ```math
@@ -578,7 +578,7 @@ and ``\theta`` is strictly increasing at ``0``. If this is not the case, the cor
 update will be skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 the matrix ``H_k`` or ``B_k`` is not updated.
 The basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent
-space ``T_{x_{k+1}} \mathcal{M}``, and for [`LimitedMemoryQuasiNewctionDirectionUpdate`](@ref)
+space ``T_{x_{k+1}} \mathcal{M}``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 neither the oldest vector pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` is
 discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}`` is added
 into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``

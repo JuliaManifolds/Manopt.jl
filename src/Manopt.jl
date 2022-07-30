@@ -187,6 +187,7 @@ export Options,
     ConjugateGradientDescentOptions,
     CyclicProximalPointOptions,
     DouglasRachfordOptions,
+    FrankWolfeOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
     NelderMeadOptions,
@@ -198,6 +199,7 @@ export Options,
     SubGradientMethodOptions,
     TruncatedConjugateGradientOptions,
     TrustRegionsOptions
+export FrankWolfeOracleCost, FrankWolfeOracleGradient
 #
 # Accessors and helpers for Options
 export linesearch_backtrack
