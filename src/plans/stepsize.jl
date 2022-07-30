@@ -568,9 +568,11 @@ For the old (deprecated) signature the `linesearch_stopsize` is set to the old h
         linesearch_stopsize = 0.0
     )
 """
-mutable struct WolfePowellLinesearch <: Linesearch
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
+mutable struct WolfePowellLinesearch{
+    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod
+} <: Linesearch
+    retraction_method::TRM
+    vector_transport_method::VTM
     c1::Float64
     c2::Float64
     last_stepsize::Float64
@@ -599,7 +601,7 @@ mutable struct WolfePowellLinesearch <: Linesearch
         ),
         linesearch_stopsize::Float64=0.0,
     )
-        return new(
+        return new{typeof(retraction_method),typeof(vector_transport_method)}(
             retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
         )
     end
@@ -715,9 +717,11 @@ new signature including `M`, for the first it is set to the old default of `1e-9
     > Dissertation, Flordia State University, 2014.
     > [pdf](https://www.math.fsu.edu/~whuang2/pdf/Huang_W_Dissertation_2013.pdf)
 """
-mutable struct WolfePowellBinaryLinesearch <: Linesearch
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
+mutable struct WolfePowellBinaryLinesearch{
+    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod
+} <: Linesearch
+    retraction_method::TRM
+    vector_transport_method::VTM
     c1::Float64
     c2::Float64
     last_stepsize::Float64
@@ -746,7 +750,7 @@ mutable struct WolfePowellBinaryLinesearch <: Linesearch
         ),
         linesearch_stopsize::Float64=0.0,
     )
-        return new(
+        return new{typeof(retraction_method),typeof(vector_transport_method)}(
             retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
         )
     end
