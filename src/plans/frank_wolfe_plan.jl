@@ -109,6 +109,11 @@ end
 get_iterate(O::FrankWolfeOptions) = O.p
 get_gradient(O::FrankWolfeOptions) = O.X
 
+@doc raw"""
+    FrankWolfeOracleCost{P,T}
+
+A structure to represent the oracle sub problem in the [`Frank_Wolfe_algorithm`](@ref).
+"""
 mutable struct FrankWolfeOracleCost{P,T}
     p::P
     X::T
@@ -117,6 +122,11 @@ function (FWO::FrankWolfeOracleCost)(M, q)
     return inner(M, FWO.p, FWO.X, log(M, FWO.p, q))
 end
 
+@doc raw"""
+    FrankWolfeOracleCost{P,T}
+
+A structure to represent the gradeint of the oracle sub problem in the [`Frank_Wolfe_algorithm`](@ref).
+"""
 mutable struct FrankWolfeOracleGradient{P,T}
     p::P
     X::T

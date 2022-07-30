@@ -102,6 +102,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
     end
 end
 
+@info " \n      Rendering Documentation\n "
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],

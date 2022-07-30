@@ -22,7 +22,6 @@ For easier access, and to abstract where these are actually stored, there exist
 
 ```@docs
 get_iterate
-get_gradient
 ```
 
 ## Decorators for Options
