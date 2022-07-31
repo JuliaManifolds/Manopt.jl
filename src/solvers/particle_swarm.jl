@@ -184,7 +184,7 @@ function (c::StopWhenChangeLess)(P::CostProblem, O::ParticleSwarmOptions, i)
     if has_storage(c.storage, :x)
         x_old = get_storage(c.storage, :x)
         n = length(O.x)
-        d = distance(P.M^n, O.x, x_old)
+        d = distance(PowerManifold(P.M, NestedPowerRepresentation(), n), O.x, x_old)
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d in the population) less than $(c.threshold).\n"
             c.storage(P, O, i)
