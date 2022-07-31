@@ -39,7 +39,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test norm(Mp, pP, ZP - [-X, zero_vector(M, p), zero_vector(M, p)]) ≈ 0 atol =
         4 * 10.0^(-16)
     adjoint_differential_forward_logs!(Mp, YP, pP, XP)
-    @test isapprox(Mp, pP, YP, ZP; atol=4 * 10.0^(-16))
+    @test isapprox(Mp, pP, YP, ZP)
     ZP = [[0.0, π / 2, 0.0], [0.0, 0.0, 0.0], [π / 2, 0.0, 0.0]]
     @test adjoint_differential_log_argument(Mp, pP, qP, XP) == ZP
     adjoint_differential_log_argument!(Mp, YP, pP, qP, XP)
