@@ -181,8 +181,10 @@ function step_solver!(p::PrimalDualProblem, o::ChambollePockOptions, iter)
     if !ismissing(o.update_dual_base)
         n_old = deepcopy(o.n)
         o.n = o.update_dual_base(p, o, iter)
-        vector_transport_to!(p.N, o.ξ, n_old, o.ξ, o.n, o.vector_transport_method)
-        vector_transport_to!(p.N, o.ξbar, n_old, o.ξbar, o.n, o.vector_transport_method)
+        vector_transport_to!(p.N, o.ξ, n_old, o.ξ, o.n, o.vector_transport_method_dual)
+        vector_transport_to!(
+            p.N, o.ξbar, n_old, o.ξbar, o.n, o.vector_transport_method_dual
+        )
     end
     return o
 end
@@ -195,7 +197,7 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
         ptξn = o.ξ
     else
         ptξn = vector_transport_to(
-            p.N, o.n, o.ξ, forward_operator(p, o.m), o.vector_transport_method
+            p.N, o.n, o.ξ, forward_operator(p, o.m), o.vector_transport_method_dual
         )
     end
     xOld = o.x
@@ -234,7 +236,7 @@ function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{
         ptξbar = o.ξbar
     else
         ptξbar = vector_transport_to(
-            p.N, o.n, o.ξbar, forward_operator(p, o.m), o.vector_transport_method
+            p.N, o.n, o.ξbar, forward_operator(p, o.m), o.vector_transport_method_dual
         )
     end
     get_primal_prox!(
@@ -278,7 +280,7 @@ function dual_update!(
         forward_operator(p, o.m),
         ξ_update,
         o.n,
-        o.vector_transport_method,
+        o.vector_transport_method_dual,
     )
     # (3) to the dual update
     get_dual_prox!(p, o.ξ, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
@@ -292,7 +294,7 @@ function dual_update!(
     p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:exact}
 ) where {P}
     ξ_update = inverse_retract(
-        p.N, o.n, forward_operator(p, start), o.inverse_retraction_method
+        p.N, o.n, forward_operator(p, start), o.inverse_retraction_method_dual
     )
     get_dual_prox!(p, o.ξ, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
     return o
