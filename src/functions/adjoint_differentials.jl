@@ -365,6 +365,8 @@ function adjoint_differential_forward_logs!(
     N = PowerManifold(M.manifold, TPR(), power_size..., d)
     R = CartesianIndices(Tuple(power_size))
     maxInd = last(R).I
+    # since we add things in Y, make sure we start at zero.
+    zero_vector!(M, Y, p)
     for i in R # iterate over all pixel
         for k in 1:d # for all direction combinations
             I = [i.I...] # array of index
