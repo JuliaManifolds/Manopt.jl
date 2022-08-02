@@ -86,15 +86,17 @@ end
 
 # ╔═╡ e5fc5216-5aab-4638-9444-02dd9b1cb4e3
 function grad_weighted_mean(M, p)
-    return sum([wi * grad_distance(M, p, di) for (wi, di) in zip(weights, data)])
+	q = SPDPoint(p)
+    return sum([wi * grad_distance(M, q, di) for (wi, di) in zip(weights, data)])
 end
 
 # ╔═╡ 6c9c3984-2de8-4f4e-b8e9-e747059043cf
 function grad_weighted_mean!(M, X, p)
+	q = SPDPoint(p)
     zero_vector!(M, X, p)
     Y = copy(M, p, X)
     for (wi, di) in zip(weights, data)
-        grad_distance!(M, Y, p, di)
+        grad_distance!(M, Y, q, di)
         X .+= wi .* Y
     end
     return X
@@ -115,23 +117,41 @@ which has a closed form solution, cf. (38) in Weber & Sra computed in place of `
 
 """
 function FW_oracle!(M::SymmetricPositiveDefinite, q, L, U, p, X)
-    e = eigen(Symmetric(p))
-    V = e.vectors
-    Vd = max.(e.values, floatmin(eltype(e.values)))
-    Dsqrt = Diagonal(sqrt.(Vd))
-    DsqrtInv = Diagonal(1 ./ sqrt.(Vd))
-    pSqrt = Symmetric(V * Dsqrt * transpose(V))
-    pSqrtInv = Symmetric(V * DsqrtInv * transpose(V))
+	(p_sqrt, p_sqrt_inv) = Manifolds.get_p_sqrt_and_sqrt_inv(p)
 
-    e2 = eigen(pSqrt * X * pSqrt)
+    e2 = eigen(p_sqrt * X * p_sqrt)
     D = Diagonal(1.0 .* (e2.values .< 0))
     Q = e2.vectors
 
-    Uprime = Q' * pSqrtInv * U * pSqrtInv * Q
-    Lprime = Q' * pSqrtInv * L * pSqrtInv * Q
+    Uprime = Q' * p_sqrt_inv * U * p_sqrt_inv * Q
+    Lprime = Q' * p_sqrt_inv * L * p_sqrt_inv * Q
     P = cholesky(Hermitian(Uprime - Lprime))
     z = P.U' * D * P.U + Lprime
-    copyto!(M, q, pSqrt * Q * z * Q' * pSqrt)
+    copyto!(M, q, p_sqrt * Q * z * Q' * p_sqrt)
+    return q
+end
+
+# ╔═╡ 11130019-505c-4557-933a-ab034d6b5b7b
+function FW_oracle!(M::SymmetricPositiveDefinite, q::SPDPoint, L, U, p, X)
+	(p_sqrt, p_sqrt_inv) = Manifolds.get_p_sqrt_and_sqrt_inv(p)
+
+    e2 = eigen(p_sqrt * X * p_sqrt)
+    D = Diagonal(1.0 .* (e2.values .< 0))
+    Q = e2.vectors
+
+    Uprime = Q' * p_sqrt_inv * U * p_sqrt_inv * Q
+    Lprime = Q' * p_sqrt_inv * L * p_sqrt_inv * Q
+    P = cholesky(Hermitian(Uprime - Lprime))
+    z = P.U' * D * P.U + Lprime
+    Q = p_sqrt * Q * z * Q' * p_sqrt
+    !ismissing(q.p) && copyto!(q.p, Q)
+    q.eigen .= eigen(Q)
+    if !is_missing(q.sqrt) && !ismissing(q.sqrt_inv)
+        copyto!.([q.sqrt, q.sqrt_inv], get_p_sqrt_and_sqrt_inv(Q))
+    else
+        !ismissing(q.sqrt) && copyto!(q.sqrt, get_p_sqrt(Q))
+        !ismissing(q.sqrt_inv) && copyto!(q.sqrt_inv, get_p_sqrt_inv(Q))
+    end
     return q
 end
 
@@ -164,17 +184,18 @@ Frank_Wolfe_algorithm(
         (:Change, " | Change: %1.5e | "),
         DebugGradientNorm(; format=" | grad F |: %1.5e |"),
         "\n",
+		:Stop,
         50,
     ],
     evaluation=MutatingEvaluation(),
 )
 
 # ╔═╡ c34152c0-c12c-4a8e-838e-5f867647cd19
-@time q1 = Frank_Wolfe_algorithm(
+@time q1 = Frank_Wolfe_algorithm!(
     M,
     weighted_mean_cost,
     grad_weighted_mean!,
-    data[1];
+    Manifolds.SPDPoint(data[1]);
     subtask=special_oracle!,
     evaluation=MutatingEvaluation(),
 );
@@ -183,6 +204,7 @@ Frank_Wolfe_algorithm(
 c1 = weighted_mean_cost(M, q1)
 
 # ╔═╡ 9d0f4fc6-3f54-404a-ab26-050a5e52c458
+#=
 q2 = quasi_Newton(
     M,
     weighted_mean_cost,
@@ -194,11 +216,13 @@ q2 = quasi_Newton(
         (:Change, " | Change: %1.5e | "),
         DebugGradientNorm(; format=" | grad F |: %1.5e |"),
         "\n",
+		:Stop,
         50,
     ],
     evaluation=MutatingEvaluation(),
     stepsize=WolfePowellLinesearch(M, 0.01, 0.999),
 )
+=#
 
 # ╔═╡ 95f34a6e-4932-44bd-9caa-2fcded798d05
 md"""
@@ -221,6 +245,7 @@ For the Frank Wolfe we have the cost $c1
 # ╠═6c9c3984-2de8-4f4e-b8e9-e747059043cf
 # ╠═58594aa5-1dc8-4193-914f-98ab4bfcdc03
 # ╠═701ace87-ef6e-42a6-9e81-563c3abc55b4
+# ╠═11130019-505c-4557-933a-ab034d6b5b7b
 # ╠═41ad71e7-708f-42e9-a92b-902c6324215f
 # ╠═d77613d4-ede8-44c7-bc3f-46ab4c828b90
 # ╠═17ec6a97-d7af-4b35-b388-523537e88a0f
