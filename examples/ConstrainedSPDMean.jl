@@ -81,13 +81,13 @@ end
 
 # ╔═╡ b2fdb060-31c6-4d2c-9e04-e5fa0caab5d0
 function weighted_mean_cost(M, p)
-    return sum([wi * distance(M, p, di)^2 for (wi, di) in zip(weights, data)])
+    return sum([wi * distance(M, di, p)^2 for (wi, di) in zip(weights, data)])
 end
 
 # ╔═╡ e5fc5216-5aab-4638-9444-02dd9b1cb4e3
 function grad_weighted_mean(M, p)
 	q = SPDPoint(p)
-    return sum([wi * grad_distance(M, q, di) for (wi, di) in zip(weights, data)])
+    return sum([wi * grad_distance(M, di, q) for (wi, di) in zip(weights, data)])
 end
 
 # ╔═╡ 6c9c3984-2de8-4f4e-b8e9-e747059043cf
@@ -96,7 +96,7 @@ function grad_weighted_mean!(M, X, p)
     zero_vector!(M, X, p)
     Y = copy(M, p, X)
     for (wi, di) in zip(weights, data)
-        grad_distance!(M, Y, q, di)
+        grad_distance!(M, Y, di, q)
         X .+= wi .* Y
     end
     return X
@@ -195,7 +195,7 @@ Frank_Wolfe_algorithm(
     M,
     weighted_mean_cost,
     grad_weighted_mean!,
-    Manifolds.SPDPoint(data[1]);
+    SPDPoint(data[1]);
     subtask=special_oracle!,
     evaluation=MutatingEvaluation(),
 );
