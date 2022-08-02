@@ -65,7 +65,7 @@ mutable struct FrankWolfeOptions{
         TM<:AbstractRetractionMethod,
         ITM<:AbstractInverseRetractionMethod,
     }
-        return new{Tuple{S,typeof(evaluation)},T,P,TStep,TStop,TM,ITM}(
+        return new{Tuple{S,typeof(evaluation)},P,T,TStep,TStop,TM,ITM}(
             p,
             initial_vector,
             (subtask, evaluation),
@@ -95,7 +95,7 @@ mutable struct FrankWolfeOptions{
         TM<:AbstractRetractionMethod,
         ITM<:AbstractInverseRetractionMethod,
     }
-        return new{S,T,P,TStep,TStop,TM,ITM}(
+        return new{S,P,T,TStep,TStop,TM,ITM}(
             p,
             initial_vector,
             (subtask, evaluation),

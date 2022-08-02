@@ -86,13 +86,13 @@ end
 
 # ╔═╡ e5fc5216-5aab-4638-9444-02dd9b1cb4e3
 function grad_weighted_mean(M, p)
-	q = SPDPoint(p)
+    q = SPDPoint(p)
     return sum([wi * grad_distance(M, di, q) for (wi, di) in zip(weights, data)])
 end
 
 # ╔═╡ 6c9c3984-2de8-4f4e-b8e9-e747059043cf
 function grad_weighted_mean!(M, X, p)
-	q = SPDPoint(p)
+    q = SPDPoint(p)
     zero_vector!(M, X, p)
     Y = copy(M, p, X)
     for (wi, di) in zip(weights, data)
@@ -117,7 +117,7 @@ which has a closed form solution, cf. (38) in Weber & Sra computed in place of `
 
 """
 function FW_oracle!(M::SymmetricPositiveDefinite, q, L, U, p, X)
-	(p_sqrt, p_sqrt_inv) = Manifolds.get_p_sqrt_and_sqrt_inv(p)
+    (p_sqrt, p_sqrt_inv) = Manifolds.get_p_sqrt_and_sqrt_inv(p)
 
     e2 = eigen(p_sqrt * X * p_sqrt)
     D = Diagonal(1.0 .* (e2.values .< 0))
@@ -133,7 +133,7 @@ end
 
 # ╔═╡ 11130019-505c-4557-933a-ab034d6b5b7b
 function FW_oracle!(M::SymmetricPositiveDefinite, q::SPDPoint, L, U, p, X)
-	(p_sqrt, p_sqrt_inv) = Manifolds.get_p_sqrt_and_sqrt_inv(p)
+    (p_sqrt, p_sqrt_inv) = Manifolds.get_p_sqrt_and_sqrt_inv(p)
 
     e2 = eigen(p_sqrt * X * p_sqrt)
     D = Diagonal(1.0 .* (e2.values .< 0))
@@ -184,7 +184,7 @@ Frank_Wolfe_algorithm(
         (:Change, " | Change: %1.5e | "),
         DebugGradientNorm(; format=" | grad F |: %1.5e |"),
         "\n",
-		:Stop,
+        :Stop,
         50,
     ],
     evaluation=MutatingEvaluation(),
@@ -198,6 +198,7 @@ Frank_Wolfe_algorithm(
     SPDPoint(data[1]);
     subtask=special_oracle!,
     evaluation=MutatingEvaluation(),
+    stopping_criterion=StopAfterIteration(20),
 );
 
 # ╔═╡ 1a14a0de-89a3-4099-9f7b-e438df5c47bc
