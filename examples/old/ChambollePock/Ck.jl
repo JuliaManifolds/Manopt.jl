@@ -43,7 +43,9 @@ struct DebugCk <: DebugAction
     io::IO
     prefix::String
     storage::StoreOptionsAction
-    function DebugCk(a::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξbar)), io::IO=stdout)
+    function DebugCk(
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξbar)), io::IO=stdout
+    )
         return new(io, "C(k): ", a)
     end
 end

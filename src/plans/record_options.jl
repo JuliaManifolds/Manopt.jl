@@ -320,7 +320,11 @@ end
 function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     record_or_reset!(
         r,
-        has_storage(r.storage, :Iterate) ? distance(p.M, o.x, get_storage(r.storage, :Iterate)) : 0.0,
+        if has_storage(r.storage, :Iterate)
+            distance(p.M, o.x, get_storage(r.storage, :Iterate))
+        else
+            0.0
+        end,
         i,
     )
     r.storage(p, o, i)

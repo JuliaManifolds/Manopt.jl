@@ -26,7 +26,7 @@ We first define some variables.
 
 # ╔═╡ 397f4aa4-bd8b-4f98-9c5a-c3514e50ef37
 begin
-	Random.seed!(42)
+    Random.seed!(42)
     # dimension of the SPD matrices
     n = 50
     # number of data points
@@ -182,9 +182,9 @@ statsF = @timed oF = Frank_Wolfe_algorithm(
         :Stop,
         50,
     ],
-	record = [:Iteration, :Iterate, :Cost],
+    record=[:Iteration, :Iterate, :Cost],
     evaluation=MutatingEvaluation(),
-	return_options=true,
+    return_options=true,
 );
 
 # ╔═╡ cd22d1df-260b-44a8-9a0a-d349f3f588e1
@@ -216,8 +216,8 @@ oG = gradient_descent(
     weighted_mean_cost,
     grad_weighted_mean!,
     data[1];
-	record = [:Iteration, :Iterate, :Cost],
-	    debug=[
+    record=[:Iteration, :Iterate, :Cost],
+    debug=[
         :Iteration,
         :Cost,
         (:Change, " | Change: %1.5e | "),
@@ -227,8 +227,8 @@ oG = gradient_descent(
         1,
     ],
     evaluation=MutatingEvaluation(),
-	stopping_criterion = StopAfterIteration(200) | StopWhenGradientNormLess(1e-12),
-	return_options=true,
+    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-12),
+    return_options=true,
 );
 
 # ╔═╡ 63f5166e-4755-4892-a7f5-f7be48f2fc52
@@ -241,7 +241,7 @@ statsG = @timed gradient_descent!(
     grad_weighted_mean!,
     q2;
     evaluation=MutatingEvaluation(),
-	stopping_criterion = StopAfterIteration(200) | StopWhenGradientNormLess(1e-12)
+    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-12),
 );
 
 # ╔═╡ 460a7a9d-e652-44f0-b731-a4cd03d901ea
@@ -262,15 +262,17 @@ And since we recorded the values in the first runs, that were not timed, we can 
 
 # ╔═╡ b76baa92-1f47-4e69-a2f7-29f539300cbb
 begin
-	fig = plot(
-		[0, get_record(oF,:Iteration, :Iteration)[1:8]...],
-		[weighted_mean_cost(M,data[1]), get_record(oF,:Iteration, :Cost)[1:8]...],
-		label= "Frank Wolfe",
-	)
-	plot!(fig, [0,get_record(oG, :Iteration, :Iteration)...],
-		[weighted_mean_cost(M,data[1]), get_record(oG,:Iteration, :Cost)...],
-		label="Gradient Descent",
-	)
+    fig = plot(
+        [0, get_record(oF, :Iteration, :Iteration)[1:8]...],
+        [weighted_mean_cost(M, data[1]), get_record(oF, :Iteration, :Cost)[1:8]...];
+        label="Frank Wolfe",
+    )
+    plot!(
+        fig,
+        [0, get_record(oG, :Iteration, :Iteration)...],
+        [weighted_mean_cost(M, data[1]), get_record(oG, :Iteration, :Cost)...];
+        label="Gradient Descent",
+    )
 end
 
 # ╔═╡ 9aa04bf2-3265-4317-8bf8-db05feb338f9

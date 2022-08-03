@@ -106,17 +106,17 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test e.recorded_values == [1.0] # no x0 -> assume x0 is the first iterate
     # RecordEntry
     o.x = x
-    f = RecordEntry(x, :Iterate)
+    f = RecordEntry(x, :x)
     f(p, o, 1)
     @test f.recorded_values == [x]
-    f2 = RecordEntry(typeof(x), :Iterate)
+    f2 = RecordEntry(typeof(x), :x)
     f2(p, o, 1)
     @test f2.recorded_values == [x]
     # RecordEntryChange
     o.x = x
-    e = RecordEntryChange(:Iterate, (p, o, x, y) -> distance(p.M, x, y))
-    @test update_storage!(e.storage, o) == (:Iterate,)
-    e2 = RecordEntryChange(x, :Iterate, (p, o, x, y) -> distance(p.M, x, y))
+    e = RecordEntryChange(:x, (p, o, x, y) -> distance(p.M, x, y))
+    @test update_storage!(e.storage, o) == (:x,)
+    e2 = RecordEntryChange(x, :x, (p, o, x, y) -> distance(p.M, x, y))
     @test e.field == e2.field
     e(p, o, 1)
     @test e.recorded_values == [0.0]

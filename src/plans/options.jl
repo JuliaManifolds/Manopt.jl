@@ -215,7 +215,12 @@ update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given on
 the [`Options`](@ref) `o`.
 """
 function update_storage!(a::StoreOptionsAction, o::O) where {O<:Options}
-    return update_storage!(a, Dict(key => getproperty(o, key) for key in a.keys))
+    return update_storage!(
+        a,
+        Dict(
+            key => key == :Iterate ? get_iterate(o) : getproperty(o, key) for key in a.keys
+        ),
+    )
 end
 
 """

@@ -37,9 +37,9 @@ using Manopt, Test, ManifoldsBase
         DebugCost(; long=false, io=io)(p, o, -1)
         @test String(take!(io)) == ""
         # entry
-        DebugEntry(:Iterate; prefix="x:", io=io)(p, o, 0)
+        DebugEntry(:x; prefix="x:", io=io)(p, o, 0)
         @test String(take!(io)) == "x: $x"
-        DebugEntry(:Iterate; prefix="x:", io=io)(p, o, -1)
+        DebugEntry(:x; prefix="x:", io=io)(p, o, -1)
         @test String(take!(io)) == ""
         # Change
         a2 = DebugChange(; storage=StoreOptionsAction((:Iterate,)), prefix="Last: ", io=io)
@@ -59,9 +59,9 @@ using Manopt, Test, ManifoldsBase
         @test String(take!(io)) == "# 23    "
         # DEbugEntryChange - reset
         o.x = x
-        a3 = DebugEntryChange(:Iterate, (p, o, x, y) -> distance(p.M, x, y); prefix="Last: ", io)
+        a3 = DebugEntryChange(:x, (p, o, x, y) -> distance(p.M, x, y); prefix="Last: ", io)
         a4 = DebugEntryChange(
-            :Iterate,
+            :x,
             (p, o, x, y) -> distance(p.M, x, y);
             initial_value=x,
             format="Last: %1.1f",
@@ -96,14 +96,16 @@ using Manopt, Test, ManifoldsBase
         @test isa(df[:All], DebugEvery)
         @test all(
             isa.(
-                DebugFactory([:Change, :Iteration, :Iterate, :Cost, :Stepsize, :Iterate])[:All].group,
+                DebugFactory([
+                    :Change, :Iteration, :Iterate, :Cost, :Stepsize, :Iterate
+                ])[:All].group,
                 [
                     DebugChange,
                     DebugIteration,
                     DebugIterate,
                     DebugCost,
                     DebugStepsize,
-                    DebugEntry,
+                    DebugIterate,
                 ],
             ),
         )
@@ -123,7 +125,7 @@ using Manopt, Test, ManifoldsBase
                     DebugIterate,
                     DebugCost,
                     DebugStepsize,
-                    DebugEntry,
+                    DebugIterate,
                 ],
             ),
         )
