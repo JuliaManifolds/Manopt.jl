@@ -99,16 +99,17 @@ mutable struct StopWhenChangeLess <: StoppingCriterion
         return new(ε, "", a)
     end
 end
-function (c::StopWhenChangeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenChangeLess)(P::Problem, O::Options, i)
     if has_storage(c.storage, :Iterate)
-        xOld = get_storage(c.storage, :Iterate)
-        if distance(p.M, get_iterate(o), xOld) < c.threshold && i > 0
-            c.reason = "The algorithm performed a step with a change ($(distance(p.M, get_iterate(o), xOld))) less than $(c.threshold).\n"
-            c.storage(p, o, i)
+        x_old = get_storage(c.storage, :Iterate)
+        d = distance(P.M, get_iterate(O), x_old)
+        if d < c.threshold && i > 0
+            c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
+            c.storage(P, O, i)
             return true
         end
     end
-    c.storage(p, o, i)
+    c.storage(P, O, i)
     return false
 end
 
