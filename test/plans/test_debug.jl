@@ -37,12 +37,12 @@ using Manopt, Test, ManifoldsBase
         DebugCost(; long=false, io=io)(p, o, -1)
         @test String(take!(io)) == ""
         # entry
-        DebugEntry(:x; prefix="x:", io=io)(p, o, 0)
+        DebugEntry(:Iterate; prefix="x:", io=io)(p, o, 0)
         @test String(take!(io)) == "x: $x"
-        DebugEntry(:x; prefix="x:", io=io)(p, o, -1)
+        DebugEntry(:Iterate; prefix="x:", io=io)(p, o, -1)
         @test String(take!(io)) == ""
         # Change
-        a2 = DebugChange(; storage=StoreOptionsAction((:x,)), prefix="Last: ", io=io)
+        a2 = DebugChange(; storage=StoreOptionsAction((:Iterate,)), prefix="Last: ", io=io)
         a2(p, o, 0) # init
         o.x = [3.0, 2.0]
         a2(p, o, 1)
@@ -59,9 +59,9 @@ using Manopt, Test, ManifoldsBase
         @test String(take!(io)) == "# 23    "
         # DEbugEntryChange - reset
         o.x = x
-        a3 = DebugEntryChange(:x, (p, o, x, y) -> distance(p.M, x, y); prefix="Last: ", io)
+        a3 = DebugEntryChange(:Iterate, (p, o, x, y) -> distance(p.M, x, y); prefix="Last: ", io)
         a4 = DebugEntryChange(
-            :x,
+            :Iterate,
             (p, o, x, y) -> distance(p.M, x, y);
             initial_value=x,
             format="Last: %1.1f",
@@ -96,7 +96,7 @@ using Manopt, Test, ManifoldsBase
         @test isa(df[:All], DebugEvery)
         @test all(
             isa.(
-                DebugFactory([:Change, :Iteration, :Iterate, :Cost, :Stepsize, :x])[:All].group,
+                DebugFactory([:Change, :Iteration, :Iterate, :Cost, :Stepsize, :Iterate])[:All].group,
                 [
                     DebugChange,
                     DebugIteration,
@@ -115,7 +115,7 @@ using Manopt, Test, ManifoldsBase
                     (:Iterate, "A"),
                     (:Cost, "A"),
                     (:Stepsize, "A"),
-                    (:x, "A"),
+                    (:Iterate, "A"),
                 ])[:All].group,
                 [
                     DebugChange,
@@ -128,8 +128,8 @@ using Manopt, Test, ManifoldsBase
             ),
         )
         @test DebugActionFactory(a3) == a3
-        @test DebugFactory([(:x, "A")])[:All].group[1].format == "A"
-        @test DebugActionFactory((:x, "A")).format == "A"
+        @test DebugFactory([(:Iterate, "A")])[:All].group[1].format == "A"
+        @test DebugActionFactory((:Iterate, "A")).format == "A"
     end
 
     @testset "Debug Warnings" begin

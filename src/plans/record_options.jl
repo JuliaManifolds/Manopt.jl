@@ -309,18 +309,18 @@ during the last iteration.
 mutable struct RecordChange <: RecordAction
     recorded_values::Array{Float64,1}
     storage::StoreOptionsAction
-    function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:x,)))
+    function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:Iterate,)))
         return new(Array{Float64,1}(), a)
     end
-    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:x,)))
-        update_storage!(a, Dict(:x => x0))
+    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:Iterate,)))
+        update_storage!(a, Dict(:Iterate => x0))
         return new(Array{Float64,1}(), a)
     end
 end
 function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     record_or_reset!(
         r,
-        has_storage(r.storage, :x) ? distance(p.M, o.x, get_storage(r.storage, :x)) : 0.0,
+        has_storage(r.storage, :Iterate) ? distance(p.M, o.x, get_storage(r.storage, :Iterate)) : 0.0,
         i,
     )
     r.storage(p, o, i)

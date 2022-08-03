@@ -86,7 +86,7 @@ For the storage a [`StoreOptionsAction`](@ref) is used
     StopWhenChangeLess(ε[, a])
 
 initialize the stopping criterion to a threshold `ε` using the
-[`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:x` by
+[`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:Iterate` by
 default.
 """
 mutable struct StopWhenChangeLess <: StoppingCriterion

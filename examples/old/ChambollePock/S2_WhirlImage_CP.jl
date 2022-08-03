@@ -94,7 +94,7 @@ for e in experiments
         M,
         N,
         cost,
-        get(e, :x, x0),
+        get(e, :Iterate, x0),
         get(e, :ξ, zero_vector(N, get(e, :n, Λ(get(e, :m, m))))),
         get(e, :m, m),
         get(e, :n, Λ(get(e, :m, m))),

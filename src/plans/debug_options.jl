@@ -123,7 +123,7 @@ debug for the amount of change of the iterate (stored in `get_iterate(o)` of the
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreOptionsAction( (:x,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreOptionsAction( (:Iterate,) )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
@@ -296,7 +296,7 @@ print a certain entries change during iterates
 
 # Additional Fields
 * `print` – (`print`) function to print the result
-* `prefix` – (`"Change of :x"`) prefix to the print out
+* `prefix` – (`"Change of :Iterate"`) prefix to the print out
 * `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry

@@ -366,7 +366,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient)),
         linesearch_stopsize::Float64=0.0,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
@@ -422,7 +422,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient)),
         linesearch_stopsize::Float64=0.0,
     ) NonmonotoneLinesearch(
         DefaultManifold(3);
@@ -442,11 +442,11 @@ end
 function (a::NonmonotoneLinesearch)(
     p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 )
-    if !all(has_storage.(Ref(a.storage), [:x, :gradient]))
+    if !all(has_storage.(Ref(a.storage), [:Iterate, :gradient]))
         old_x = get_iterate(o)
         old_gradient = get_gradient(p, get_iterate(o))
     else
-        old_x, old_gradient = get_storage.(Ref(a.storage), [:x, :gradient])
+        old_x, old_gradient = get_storage.(Ref(a.storage), [:Iterate, :gradient])
     end
     update_storage!(a.storage, o)
     return a(

@@ -549,7 +549,7 @@ end
 
 A Debug action to print the dual residual.
 The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
+should at least record `:Iterate`, `:ξ` and `:n`.
 
 # Constructor
 DebugDualResidual()
@@ -565,7 +565,7 @@ mutable struct DebugDualResidual <: DebugAction
     format::String
     storage::StoreOptionsAction
     function DebugDualResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
@@ -574,20 +574,20 @@ mutable struct DebugDualResidual <: DebugAction
     end
     function DebugDualResidual(
         initial_values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
     ) where {P,T,Q}
         update_storage!(
-            storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), initial_values))
+            storage, Dict(k => v for (k, v) in zip((:Iterate, :ξ, :n), initial_values))
         )
         return new(io, format, storage)
     end
 end
 function (d::DebugDualResidual)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
+    if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
+        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
         Printf.format(d.io, Printf.Format(d.format), dual_residual(p, o, xOld, ξOld, nOld))
     end
     return d.storage(p, o, i)
@@ -597,7 +597,7 @@ end
 
 A Debug action to print the primal residual.
 The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
+should at least record `:Iterate`, `:ξ` and `:n`.
 
 # Constructor
 
@@ -614,7 +614,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     format::String
     storage::StoreOptionsAction
     function DebugPrimalResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
@@ -623,20 +623,20 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
     function DebugPrimalResidual(
         values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
     ) where {P,T,Q}
-        update_storage!(storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :ξ, :n), values)))
         return new(io, format, storage)
     end
 end
 function (d::DebugPrimalResidual)(
     p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
 )
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
+    if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
+        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
         Printf.format(
             d.io, Printf.Format(d.format), primal_residual(p, o, xOld, ξOld, nOld)
         )
@@ -648,7 +648,7 @@ end
 
 A Debug action to print the primaldual residual.
 The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
+should at least record `:Iterate`, `:ξ` and `:n`.
 
 # Constructor
 
@@ -665,7 +665,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     format::String
     storage::StoreOptionsAction
     function DebugPrimalDualResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
@@ -674,20 +674,20 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
     function DebugPrimalDualResidual(
         values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
     ) where {P,Q,T}
-        update_storage!(storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :ξ, :n), values)))
         return new(io, format, storage)
     end
 end
 function (d::DebugPrimalDualResidual)(
     p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
 )
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
+    if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
+        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
         v = primal_residual(p, o, xOld, ξOld, nOld) + dual_residual(p, o, xOld, ξOld, nOld)
         Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(p.M))
     end
@@ -704,7 +704,7 @@ Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
 function DebugPrimalChange(;
-    storage::StoreOptionsAction=StoreOptionsAction((:x,)),
+    storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
     prefix="Primal Change: ",
     kwargs...,
 )
