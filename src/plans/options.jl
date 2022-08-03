@@ -111,7 +111,9 @@ get_gradient(o::Options, ::Val{true}) = get_gradient(o.options)
 return the (last stored) iterate within [`Options`](@ref)``O`. By default also undecorates the options beforehand
 """
 get_iterate(o::Options) = get_iterate(o, dispatch_options_decorator(o))
-get_iterate(o::Options, ::Val{false}) = o.x
+function get_iterate(o::Options, ::Val{false})
+    return error("It seems the Options $o do not provide access to an iterate")
+end
 get_iterate(o::Options, ::Val{true}) = get_iterate(o.options)
 
 """

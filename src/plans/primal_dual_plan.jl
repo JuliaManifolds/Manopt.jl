@@ -405,7 +405,9 @@ mutable struct ChambollePockOptions{
         )
     end
 end
-get_solver_result(o::PrimalDualOptions) = o.x
+get_solver_result(o::PrimalDualOptions) = get_iterate(o)
+get_iterate(O::ChambollePockOptions) = O.x
+
 @doc raw"""
     primal_residual(p, o, x_old, ξ_old, n_old)
 

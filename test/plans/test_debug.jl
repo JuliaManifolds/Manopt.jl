@@ -41,11 +41,19 @@ using Manopt, Test, ManifoldsBase
         @test String(take!(io)) == "x: $x"
         DebugEntry(:x; prefix="x:", io=io)(p, o, -1)
         @test String(take!(io)) == ""
-        # Change
+        # Change of Iterate
         a2 = DebugChange(; storage=StoreOptionsAction((:Iterate,)), prefix="Last: ", io=io)
         a2(p, o, 0) # init
         o.x = [3.0, 2.0]
         a2(p, o, 1)
+        @test String(take!(io)) == "Last: 1.000000"
+        # Change of Gradient
+        a3 = DebugGradientChange(;
+            storage=StoreOptionsAction((:Gradient,)), prefix="Last: ", io=io
+        )
+        a3(p, o, 0) # init
+        o.gradient = [1.0, 0.0]
+        a3(p, o, 1)
         @test String(take!(io)) == "Last: 1.000000"
         # Iterate
         DebugIterate(; io=io)(p, o, 0)
@@ -97,10 +105,17 @@ using Manopt, Test, ManifoldsBase
         @test all(
             isa.(
                 DebugFactory([
-                    :Change, :Iteration, :Iterate, :Cost, :Stepsize, :Iterate
+                    :Change,
+                    :GradientChange,
+                    :Iteration,
+                    :Iterate,
+                    :Cost,
+                    :Stepsize,
+                    :Iterate,
                 ])[:All].group,
                 [
                     DebugChange,
+                    DebugGradientChange,
                     DebugIteration,
                     DebugIterate,
                     DebugCost,
@@ -113,6 +128,7 @@ using Manopt, Test, ManifoldsBase
             isa.(
                 DebugFactory([
                     (:Change, "A"),
+                    (:GradientChange, "A"),
                     (:Iteration, "A"),
                     (:Iterate, "A"),
                     (:Cost, "A"),
@@ -121,6 +137,7 @@ using Manopt, Test, ManifoldsBase
                 ])[:All].group,
                 [
                     DebugChange,
+                    DebugGradientChange,
                     DebugIteration,
                     DebugIterate,
                     DebugCost,

@@ -92,6 +92,7 @@ A generic [`Options`](@ref) type for gradient based options data.
 abstract type AbstractGradientOptions <: Options end
 
 get_gradient(o::AbstractGradientOptions) = o.gradient
+get_iterate(o::AbstractGradientOptions) = o.x
 
 @doc raw"""
     GradientDescentOptions{P,T} <: AbstractGradientOptions

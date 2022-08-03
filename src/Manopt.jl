@@ -213,6 +213,7 @@ export get_cost,
     get_proximal_map!,
     get_options,
     get_initial_stepsize,
+    get_iterate,
     get_gradients,
     get_gradients!,
     get_primal_prox,
@@ -395,7 +396,7 @@ export BezierSegment,
 #
 # Debugs
 export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange, DebugIterate, DebugIteration, DebugDivider
+export DebugChange, DebugGradientChange, DebugIterate, DebugIteration, DebugDivider
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate

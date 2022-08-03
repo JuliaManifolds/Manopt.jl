@@ -131,3 +131,4 @@ end
     inverse_retraction_method=inverse_retraction_method,
     kwargs...,
 )
+get_iterate(O::NelderMeadOptions) = O.x

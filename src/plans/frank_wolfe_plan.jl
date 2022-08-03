@@ -8,7 +8,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 # Fields
 
 * `p` – the current iterate, i.e. a point on the manifold
-* `X` – the current gradient ``\operatorname{grad} f(p)``, i.e. a tangent vector to `p`.
+* `X` – the current gradient ``\operatorname{grad} F(p)``, i.e. a tangent vector to `p`.
 * `evalulation` [`AllocatingEvaluation`](@ref) specify the oracle type if it is a function.
 * `inverse_retraction_method` – (`default_inverse_retraction_method(M)`) an inverse retraction method to use within Frank Wolfe.
 * `subtask` – a type representing the subtask (see below).
@@ -19,7 +19,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 For the subtask, we need a method to solve
 
 ```math
-    \operatorname*{argmin}_{q∈\mathcal M} ⟨X, \log_p q⟩,\qquad where X=\operatorname{grad} f(p)
+    \operatorname*{argmin}_{q∈\mathcal M} ⟨X, \log_p q⟩,\qquad \text{ where }X=\operatorname{grad} f(p)
 ```
 
 where currently two variants are supported
