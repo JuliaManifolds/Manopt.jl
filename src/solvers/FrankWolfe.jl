@@ -38,8 +38,7 @@ all further keywords are passed down to [`decorate_options`](@ref), e.g. `debug`
 """
 function Frank_Wolfe_algorithm(M::AbstractManifold, F, grad_F, p; kwargs...)
     q = copy(M, p)
-    Frank_Wolfe_algorithm!(M, F, grad_F, q; kwargs...)
-    return q
+    return Frank_Wolfe_algorithm!(M, F, grad_F, q; kwargs...)
 end
 
 @doc raw"""
@@ -58,7 +57,7 @@ function Frank_Wolfe_algorithm!(
         GradientDescentOptions(M, copy(M, p)),
     ),
     evaluation=AllocatingEvaluation(),
-    stopping_criterion::TStop=StopAfterIteration(1000) |
+    stopping_criterion::TStop=StopAfterIteration(500) |
                               StopWhenGradientNormLess(1.0e-8) |
                               StopWhenChangeLess(1.0e-8),
     stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
