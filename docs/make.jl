@@ -57,9 +57,9 @@ mkpath(examples_output_folder)
 examples = [
     Dict(:file => "robustPCA", :title => "Robust PCA"),
     Dict(:file => "smallestEigenvalue", :title => "Rayleigh quotient"),
-    Dict(
-        :file => "FrankWolfeSPDMean", :title => "Frank Wolfe for Riemannian Center of Mass"
-    ),
+#    Dict(
+#        :file => "FrankWolfeSPDMean", :title => "Frank Wolfe for Riemannian Center of Mass"
+#    ),
 ]
 @info " \n      Rendering Examples\n "
 # build menu and write files myself - tp set edit url correctly.
