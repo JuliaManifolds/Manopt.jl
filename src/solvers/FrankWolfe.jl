@@ -27,12 +27,13 @@ use a retraction and its inverse.
     complete [`Options`](@ref) re returned. This can be used to access recorded values.
     If set to false (default) just the optimal value `x_opt` if returned
     stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2)return_options = false,
-* `stopping_criterion` – [`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)
-* `subtask` specify the oracle, can either be a closed form solution (in place function `oracle(M, q, p, X)``
+* `stopping_criterion` – [`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`
+* `subtask` specify the oracle, can either be a closed form solution (in place function `oracle(M, q, p, X)`
   or a subsolver, e.g. (by default) a [`GradientProblem`](@ref) with [`GradientDescentOptions`](@ref)
   using the [`FrankWolfeOracleCost`](@ref) and [`FrankWolfeOracleGradient`](@ref).
-* `stepsize` ([`DecreasingStepsize`](@ref)`(; length2.0, shift=2)::TStep=DecreasingStepsize(; length=2.0, shift=2)`
-  a [`Stepsize`](@ref) to use; but it has to be always less than 1. The default is the one proposed by Frank & Wolfe.
+* `stepsize` ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`
+  a [`Stepsize`](@ref) to use; but it has to be always less than 1. The default is the one proposed by Frank & Wolfe:
+  ``s_k = \frac{2}{k+2}``.
 
 all further keywords are passed down to [`decorate_options`](@ref), e.g. `debug`.
 """
@@ -90,7 +91,7 @@ function step_solver!(
     P::GradientProblem, O::FrankWolfeOptions{<:Tuple{<:Problem,<:Options}}, i
 )
     # update gradient
-    get_gradient!(P, O.X, O.p) # evaluate ∂g(p), store the result in O.X
+    get_gradient!(P, O.X, O.p) # evaluate grad F(p), store the result in O.X
     # solve subtask
     solve(O.subtask[1], O.subtask[2]) # call the subsolver
     q = get_solver_result(O.subtask[2])

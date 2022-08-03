@@ -9,25 +9,33 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 * `p` – the current iterate, i.e. a point on the manifold
 * `X` – the current gradient ``\operatorname{grad} f(p)``, i.e. a tangent vector to `p`.
-* `subtask` – a type representing the subtask.
-* `stop` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a [`StoppingCriterion`]
-* `stepsize` _ ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2))
-For the subtask, we need a method to solve
 * `evalulation` [`AllocatingEvaluation`](@ref) specify the oracle type if it is a function.
+* `inverse_retraction_method` – (`default_inverse_retraction_method(M)`) an inverse retraction method to use within Frank Wolfe.
+* `subtask` – a type representing the subtask (see below).
+* `stop` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a [`StoppingCriterion`](@ref)
+* `stepsize` - ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`) ``s_k`` which by default is set to ``s_k = \frac{2}{k+2}``.
+* `retraction_method` – (`default_retraction_method(M)`) a retraction to use within Frank-Wolfe
+
+For the subtask, we need a method to solve
+
 ```math
     \operatorname*{argmin}_{q∈\mathcal M} ⟨X, \log_p q⟩,\qquad where X=\operatorname{grad} f(p)
 ```
 
 where currently two variants are supported
 1. `subtask(M, q, X, p)` is a mutating function, i.e. we have a closed form solution of the
-  optimization problem given `M`, `X` and `p` which is computed in place of `q`, which even
-  works correctly, if we pass the same memory to `p` and `q`.
-2. `subtask::Tuple{<:Problem,<:Options}` specifies a plan to solve the sub task with a subsolver,
-  i.e. the cost within `subtask[1]` is a [`FrankWolfeOracleCost``](@ref) using `p`and `X`
-  internally, i.e. the cost is updated as soon as they are updated.
-  Similarly for gradient based functions using the [`FrankWolfeOracleGradient`](@ref).
+   optimization problem given `M`, `X` and `p` which is computed in place of `q`, which even
+   works correctly, if we pass the same memory to `p` and `q`.
+2. `subtask::Tuple{<:Problem,<:Options}` specifies a plan to solve the subtask with a subsolver,
+   i.e. the cost within `subtask[1]` is a [`FrankWolfeOracleCost`](@ref) using references to `p`and `X`,
+   that is to the current iterate and gradient internally.
+   Similarly for gradient based functions using the [`FrankWolfeOracleGradient`](@ref).
 
 # Constructor
+
+    FrankWolfeOptions(M, p, X, subtask)
+
+where the remaining fields from above are keyword arguments with their defaults already given in brackets.
 """
 mutable struct FrankWolfeOptions{
     S,
@@ -113,6 +121,14 @@ get_gradient(O::FrankWolfeOptions) = O.X
     FrankWolfeOracleCost{P,T}
 
 A structure to represent the oracle sub problem in the [`Frank_Wolfe_algorithm`](@ref).
+The cost function reads
+
+```math
+F(q) = ⟨X, \log_p q⟩
+```
+
+The values `p`and `X` are stored within this functor and hsould be references to the
+iterate and gradient from within [`FrankWolfeOptions`](@ref).
 """
 mutable struct FrankWolfeOracleCost{P,T}
     p::P
@@ -123,9 +139,19 @@ function (FWO::FrankWolfeOracleCost)(M, q)
 end
 
 @doc raw"""
-    FrankWolfeOracleCost{P,T}
+    FrankWolfeOracleGradient{P,T}
 
-A structure to represent the gradeint of the oracle sub problem in the [`Frank_Wolfe_algorithm`](@ref).
+A structure to represent the gradeint of the oracle sub problem in the [`Frank_Wolfe_algorithm`](@ref),
+that is for a given point `p` and a tangent vector `X` we have
+
+```math
+F(q) = ⟨X, \log_p q⟩
+```
+
+Its gradient can be computed easily using [`adjoint_differential_log_argument`](@ref).
+
+The values `p`and `X` are stored within this functor and hsould be references to the
+iterate and gradient from within [`FrankWolfeOptions`](@ref).
 """
 mutable struct FrankWolfeOracleGradient{P,T}
     p::P
