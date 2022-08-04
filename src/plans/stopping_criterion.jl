@@ -100,7 +100,7 @@ end
 function (c::StopWhenChangeLess)(P::Problem, O::Options, i)
     if has_storage(c.storage, :x)
         x_old = get_storage(c.storage, :x)
-        d = distance(P.M, O.x, x_old)
+        d = distance(P.M, O.x, x_old, default_inverse_retraction_method(P.M))
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
             c.storage(P, O, i)
