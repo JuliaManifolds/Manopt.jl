@@ -1,5 +1,5 @@
 @doc raw"""
-    FrankWolfeOptions{Type} <: Options
+    FrankWolfeOptions <: Options
 
 A struct to store the current state of the [`Frank_Wolfe_algorithm`](@ref)
 
