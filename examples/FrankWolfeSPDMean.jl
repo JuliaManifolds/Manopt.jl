@@ -143,10 +143,10 @@ function FW_oracle!(M::SymmetricPositiveDefinite, q::SPDPoint, L, U, p, X)
     !ismissing(q.p) && copyto!(q.p, Q)
     q.eigen .= eigen(Q)
     if !is_missing(q.sqrt) && !ismissing(q.sqrt_inv)
-        copyto!.([q.sqrt, q.sqrt_inv], _sqrt_and_sqrt_inv(Q))
+        copyto!.([q.sqrt, q.sqrt_inv], eigvals_sqrt_and_sqrt_inv(Q))
     else
-        !ismissing(q.sqrt) && copyto!(q.sqrt, _sqrt(Q))
-        !ismissing(q.sqrt_inv) && copyto!(q.sqrt_inv, _sqrt_inv(Q))
+        !ismissing(q.sqrt) && copyto!(q.sqrt, eigvals_sqrt(Q))
+        !ismissing(q.sqrt_inv) && copyto!(q.sqrt_inv, eigvals_sqrt_inv(Q))
     end
     return q
 end
