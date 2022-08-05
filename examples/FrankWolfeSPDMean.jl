@@ -113,7 +113,7 @@ this oracle solves the subproblem related to the constraint problem
 which has a closed form solution, cf. (38) in [^WeberSra2022] computed in place of `q`
 """
 function FW_oracle!(M::SymmetricPositiveDefinite, q, L, U, p, X)
-    (p_sqrt, p_sqrt_inv) = Manifolds.get_p_sqrt_and_sqrt_inv(p)
+    (p_sqrt, p_sqrt_inv) = Manifolds._sqrt_and_sqrt_inv(p)
 
     e2 = eigen(p_sqrt * X * p_sqrt)
     D = Diagonal(1.0 .* (e2.values .< 0))
@@ -129,7 +129,7 @@ end
 
 # ╔═╡ 11130019-505c-4557-933a-ab034d6b5b7b
 function FW_oracle!(M::SymmetricPositiveDefinite, q::SPDPoint, L, U, p, X)
-    (p_sqrt, p_sqrt_inv) = Manifolds.get_p_sqrt_and_sqrt_inv(p)
+    (p_sqrt, p_sqrt_inv) = Manifolds._sqrt_and_sqrt_inv(p)
 
     e2 = eigen(p_sqrt * X * p_sqrt)
     D = Diagonal(1.0 .* (e2.values .< 0))
@@ -143,10 +143,10 @@ function FW_oracle!(M::SymmetricPositiveDefinite, q::SPDPoint, L, U, p, X)
     !ismissing(q.p) && copyto!(q.p, Q)
     q.eigen .= eigen(Q)
     if !is_missing(q.sqrt) && !ismissing(q.sqrt_inv)
-        copyto!.([q.sqrt, q.sqrt_inv], get_p_sqrt_and_sqrt_inv(Q))
+        copyto!.([q.sqrt, q.sqrt_inv], _sqrt_and_sqrt_inv(Q))
     else
-        !ismissing(q.sqrt) && copyto!(q.sqrt, get_p_sqrt(Q))
-        !ismissing(q.sqrt_inv) && copyto!(q.sqrt_inv, get_p_sqrt_inv(Q))
+        !ismissing(q.sqrt) && copyto!(q.sqrt, _sqrt(Q))
+        !ismissing(q.sqrt_inv) && copyto!(q.sqrt_inv, _sqrt_inv(Q))
     end
     return q
 end
