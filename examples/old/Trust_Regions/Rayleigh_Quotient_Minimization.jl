@@ -11,20 +11,20 @@ Random.seed!(1)
 #     end
 #     M = Sphere(n - 1)
 #     x = random_point(M)
-#     return trust_regions!(
-#         M,
-#         F,
-#         gradF,
-#         ApproxHessianSymmetricRankOne(M, x, gradF; nu=eps(Float64)^2),
-#         x;
-#         stopping_criterion=StopWhenAny(
-#             StopAfterIteration(1000), StopWhenGradientNormLess(10^(-6))
-#         ),
-#         θ=0.1,
-#         κ=0.9,
-#         trust_region_radius=1.0,
-#         retraction_method=ProjectionRetraction(),
-#     )
+# return trust_regions!(
+#     M,
+#     F,
+#     gradF,
+#     ApproxHessianSymmetricRankOne(M, x, gradF; nu=eps(Float64)^2),
+#     x;
+#     stopping_criterion=StopWhenAny(
+#         StopAfterIteration(1000), StopWhenGradientNormLess(10^(-6))
+#     ),
+#     θ=0.1,
+#     κ=0.9,
+#     trust_region_radius=1.0,
+#     retraction_method=ProjectionRetraction(),
+# )
 # end
 # io = IOBuffer()
 
@@ -56,8 +56,8 @@ x = trust_regions!(
         StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
     ),
     trust_region_radius=1.0,
-    θ=0.2,
-    κ=0.8,
+    θ=0.1,
+    κ=0.9,
     retraction_method=ProjectionRetraction(),
 )
 

@@ -94,6 +94,27 @@ stands, as subsequent iterates will move further outside the trust-region
 boundary. A sensible strategy, just as in the case considered above, is to
 move to the trust-region boundary by ﬁnding ``τ``.
 
+In order to achieve superlinear (or at least linear) convergence in the underlying 
+trust-region method, a typical stopping criterion is to stop as soon as an iteration ``k``
+is reached for which
+
+```math
+  \Vert r_k \Vert_x \leqq \Vert r_0 \Vert_x \min \left( \Vert r_0 \Vert^{θ}_x, κ \right, 
+```
+
+where ``0 < κ < 1`` and ``θ > 0`` are chosen in advance, see 
+[[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)]. In the method 
+implemented here, this is ensured when the stopping criteria 
+[`StopIfResidualIsReducedByFactor`](@ref) and [`StopIfResidualIsReducedByPower`](@ref) 
+are fulfilled at the same iteration ``k``, where [`StopIfResidualIsReducedByFactor`](@ref) 
+requires whether linear convergence has been achieved by checking whether 
+the norm of the residual ``r_k`` at the iteration ``k`` has decreased by 
+the factor ``κ`` with respect to the norm of the initial residual ``r_0``, and 
+[`StopIfResidualIsReducedByPower`](@ref) requires whether superlinear convergence 
+has been achieved by checking whether the norm of the residual ``r_k`` at 
+the iteration ``k`` has decreased by the power ``θ`` with respect to the norm 
+of the initial residual ``r_0``. 
+
 ## Interface
 
 ```@docs
@@ -116,4 +137,17 @@ StopWhenTrustRegionIsExceeded
 StopWhenCurvatureIsNegative
 StopWhenModelIncreased
 update_stopping_criterion!(::StopIfResidualIsReducedByPower, ::Val{:ResidualPower}, ::Any)
+```
+
+## Literature 
+
+```@raw html
+<ul>
+<li id="AbsilMahonySepulchre2008">[<a>Absil, Mahony, Sepulchre, 2008</a>]
+  Absil, Pierre-Antoine and Mahony, Robert and Sepulchre, Rodolphe: 
+  <emph> Optimization Algorithms on Matrix Manifolds </emph>
+  Mathematics of Computation - Math. Comput., Volume 78.
+  doi: <a href="https://doi.org/10.1515/9781400830244">10.1515/9781400830244</a>,
+</li>
+</ul>
 ```

@@ -232,6 +232,9 @@ mutable struct TrustRegionsOptions{
     θ::R
     κ::R
 
+    η_1::R
+    η_2::R
+
     x_proposal::P
     f_proposal::R
 
@@ -254,6 +257,8 @@ mutable struct TrustRegionsOptions{
         retraction_method::RTR,
         θ::R,
         κ::R,
+        η_1::R,
+        η_2::R,
         project!::Proj=copyto!,
     ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
         o = new{P,T,SC,RTR,R,Proj}()
@@ -268,6 +273,8 @@ mutable struct TrustRegionsOptions{
         o.randomize = randomize
         o.θ = θ
         o.κ = κ
+        o.η_1 = η_1
+        o.η_2 = η_2
         o.project! = project!
         return o
     end
@@ -284,6 +291,8 @@ end
     retraction_method=ExponentialRetraction(),
     θ,
     κ,
+    η_1,
+    η_2,
     (project_vector!)=copyto!,
 ) TrustRegionsOptions(
     DefaultManifold(2),
@@ -296,6 +305,8 @@ end
     retraction_method=retraction_method,
     θ=θ,
     κ=κ,
+    η_1=η_1,
+    η_2=η_2,
     (project!)=project_vector!,
 )
 function TrustRegionsOptions(
@@ -311,6 +322,8 @@ function TrustRegionsOptions(
     retraction_method::RTR=default_retraction_method(M),
     θ::R=1.0,
     κ::R=0.1,
+    η_1::R=0.1,
+    η_2::R=0.75,
     project!::Proj=copyto!,
 ) where {
     TM<:AbstractManifold,
@@ -332,7 +345,9 @@ function TrustRegionsOptions(
         stopping_criterion,
         retraction_method,
         θ,
-        κ,
+        κ;
+        η_1,
+        η_2,
         project!,
     )
 end
@@ -702,7 +717,6 @@ end
 A functor for testing if the norm of residual at the current iterate is reduced
 by a factor compared to the norm of the initial residual, i.e.
 $\Vert r_k \Vert_x \leqq κ \Vert r_0 \Vert_x$.
-In this case the algorithm reached linear convergence.
 
 # Fields
 * `κ` – the reduction factor
@@ -731,7 +745,7 @@ function (c::StopIfResidualIsReducedByFactor)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * c.κ && i > 0
-        c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
+        c.reason = "The norm of the residual is less than or equal to κ=$(c.κ) times the norm of the initial residual. \n"
         return true
     end
     return false
@@ -742,8 +756,7 @@ end
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a power of 1+θ compared to the norm of the initial residual, i.e.
-$\Vert r_k \Vert_x \leqq  \Vert r_0 \Vert_{x}^{1+\theta}$. In this case the
-algorithm reached superlinear convergence.
+$\Vert r_k \Vert_x \leqq  \Vert r_0 \Vert_{x}^{1+\theta}$. 
 
 # Fields
 * `θ` – part of the reduction power
@@ -772,11 +785,12 @@ function (c::StopIfResidualIsReducedByPower)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= o.initialResidualNorm^(1 + c.θ) && i > 0
-        c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
+        c.reason = "The norm of the residual is less than or equal to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
         return true
     end
     return false
 end
+
 @doc raw"""
     update_stopping_criterion!(c::StopIfResidualIsReducedByPower, :ResidualPower, v)
 
@@ -788,6 +802,51 @@ function update_stopping_criterion!(
     c.θ = v
     return c
 end
+
+@doc raw"""
+    StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
+
+A functor for testing if the norm of residual at the current iterate is reduced
+either by a power of 1+θ or by a factor κ compared to the norm of the initial 
+residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \ 
+\min \left( \kappa, \Vert r_0 \Vert_{x}^{\theta} \right)$. 
+
+# Fields
+* `κ` – the reduction factor
+* `θ` – part of the reduction power
+* `initialResidualNorm` - stores the norm of the residual at the initial vector
+    $η$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`get_reason`](@ref).
+
+# Constructor
+
+    StopIfResidualIsReducedByPower(iRN, θ)
+
+initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
+the norm of the current residual is lesser than the norm of the initial residual
+iRN to the power of 1+θ.
+
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
+    κ::Float64
+    θ::Float64
+    reason::String
+    StopIfResidualIsReducedByFactorOrPower(κ::Float64, θ::Float64) = new(κ, θ, "")
+end
+function (c::StopIfResidualIsReducedByFactorOrPower)(
+    p::P, o::O, i::Int
+) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
+    if norm(p.M, o.x, o.residual) <=
+       o.initialResidualNorm * min(κ, o.initialResidualNorm^(c.θ)) && i > 0
+        c.reason = "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
+        return true
+    end
+    return false
+end
+
 @doc raw"""
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 

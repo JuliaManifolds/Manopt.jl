@@ -78,7 +78,10 @@ trust-regions subproblem
 
 with the Steihaug-Toint truncated conjugate-gradient (tcg) method. The problem
 as well as the solution method is described in the
-[`truncated_conjugate_gradient_descent`](@ref).
+[`truncated_conjugate_gradient_descent`](@ref). In this inner solver, the 
+stopping criteria  [`StopIfResidualIsReducedByFactor`](@ref) and
+[`StopIfResidualIsReducedByPower`](@ref) are used so that superlinear or at 
+least linear convergence in the trust-region method can be achieved. 
 
 To step number 3: If using a random tangent vector as an initial vector, compare
 the result of the tcg-method with the Cauchy point. Convergence proofs assume
@@ -125,6 +128,8 @@ these reasons when the stopping criteria [`StopWhenCurvatureIsNegative`](@ref),
 
 To step number 7: The last step is to decide if the new point ``{x}^*`` is
 accepted.
+
+
 
 ## Interface
 

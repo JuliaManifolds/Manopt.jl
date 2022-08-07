@@ -105,6 +105,8 @@ function trust_regions!(
     ρ_regularization=1000.0,
     θ::Float64=1.0,
     κ::Float64=0.1,
+    η_1::Float64=0.1,
+    η_2::Float64=0.75,
     return_options=false,
     kwargs..., #collect rest
 ) where {TF,TdF,TH,Tprec,Proj}
@@ -135,6 +137,8 @@ function trust_regions!(
         retraction_method=retraction_method,
         θ=θ,
         κ=κ,
+        η_1=η_1,
+        η_2=η_2,
         (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
@@ -186,9 +190,10 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.trust_region_radius = o.trust_region_radius
     o.tcg_options.stop = StopWhenAny(
         StopAfterIteration(manifold_dimension(p.M)),
-        StopWhenAll(
-            StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
-        ),
+        StopIfResidualIsReducedByFactorOrPower(o.κ, o.θ)
+        # StopWhenAll(
+        #     StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
+        # ),
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),
@@ -237,9 +242,9 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     # Choose the new TR radius based on the model performance.
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.
-    if ρ < 0.1 || !model_decreased || isnan(ρ)
+    if ρ < o.η_1 || !model_decreased || isnan(ρ)
         o.trust_region_radius /= 4
-    elseif ρ > 3 / 4 &&
+    elseif ρ > o.η_2 &&
         ((o.tcg_options.ηPη >= o.trust_region_radius^2) || (o.tcg_options.δHδ <= 0))
         o.trust_region_radius = min(2 * o.trust_region_radius, o.max_trust_region_radius)
     end
