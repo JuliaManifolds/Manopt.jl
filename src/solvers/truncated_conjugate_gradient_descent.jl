@@ -194,7 +194,6 @@ function step_solver!(
     copyto!(p.M, o.Hη, o.x, new_Hη)
     o.residual = o.residual + α * o.Hδ
 
-
     # Precondition the residual.
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     zr = inner(p.M, o.x, o.z, o.residual)

@@ -190,7 +190,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.trust_region_radius = o.trust_region_radius
     o.tcg_options.stop = StopWhenAny(
         StopAfterIteration(manifold_dimension(p.M)),
-        StopIfResidualIsReducedByFactorOrPower(o.κ, o.θ)
+        StopIfResidualIsReducedByFactorOrPower(o.κ, o.θ),
         # StopWhenAll(
         #     StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
         # ),
