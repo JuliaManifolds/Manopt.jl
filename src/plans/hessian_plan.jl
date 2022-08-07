@@ -345,7 +345,7 @@ function TrustRegionsOptions(
         stopping_criterion,
         retraction_method,
         θ,
-        κ;
+        κ,
         η_1,
         η_2,
         project!,
