@@ -454,13 +454,13 @@ The default is `:cumulative`, and any non-listed symbol default to using this mo
 
 # Constructor
 
-    RecordTime(mode::Symbol=:cumulative)
+    RecordTime(; mode::Symbol=:cumulative)
 """
 mutable struct RecordTime <: RecordAction
     recorded_values::Array{Float64,1}
     start::Nanosecond
     mode::Symbol
-    function RecordTime(mode::Symbol=:cumulative)
+    function RecordTime(; mode::Symbol=:cumulative)
         return new(Array{Float64,1}(), Nanosecond(time_ns()), mode)
     end
 end

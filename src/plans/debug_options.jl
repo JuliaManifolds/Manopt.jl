@@ -637,6 +637,8 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `:gradient`.
+* `:Time` creates a [`DebugTime`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
@@ -648,6 +650,8 @@ function DebugActionFactory(s::Symbol)
     (s == :Stepsize) && return DebugStepsize()
     (s == :WarnCost) && return DebugWarnIfCostNotFinite()
     (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:gradient)
+    (s == :Time) && return DebugTime()
+    (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
     return DebugEntry(s)
 end
 """
@@ -663,6 +667,8 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
+* `:Time` creates a [`DebugTime`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
@@ -672,5 +678,7 @@ function DebugActionFactory(t::Tuple{Symbol,String})
     (t[1] == :Iterate) && return DebugIterate(; format=t[2])
     (t[1] == :Cost) && return DebugCost(; format=t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format=t[2])
+    (t[1] == :Time) && return DebugTime(; format=t[2])
+    (t[1] == :IterativeTime) && return DebugTime(; mode=:Iterative, format=t[2])
     return DebugEntry(t[1]; format=t[2])
 end
