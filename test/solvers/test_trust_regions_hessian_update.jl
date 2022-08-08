@@ -78,7 +78,7 @@ import Random: seed!
             retraction_method=ProjectionRetraction(),
         )
 
-        @test norm(abs.(XaHBFGS) - abs.(ev)) ≈ 0 atol = 1e-7
+        @test norm(abs.(XaHBFGS) - abs.(ev)) ≈ 0 atol = 1e-6
         @test cost(M, XaHBFGS) ≈ cost(M, X)
 
         XaHBFGS_2 = deepcopy(x)
@@ -98,7 +98,7 @@ import Random: seed!
             retraction_method=ProjectionRetraction(),
         )
 
-        @test norm(abs.(XaHBFGS_2) - abs.(ev)) ≈ 0 atol = 1e-7
+        @test norm(abs.(XaHBFGS_2) - abs.(ev)) ≈ 0 atol = 1e-6
         @test cost(M, XaHBFGS_2) ≈ cost(M, X)
         @test isapprox(M, XaHBFGS, XaHBFGS_2; atol=1e-6)
     end

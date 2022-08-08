@@ -722,18 +722,16 @@ $\Vert r_k \Vert_x \leqq κ \Vert r_0 \Vert_x$.
 
 # Fields
 * `κ` – the reduction factor
-* `initialResidualNorm` - stores the norm of the residual at the initial vector
-    ``η`` of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
   reached, see [`get_reason`](@ref).
 
 # Constructor
 
-    StopIfResidualIsReducedByFactor(iRN, κ)
+    StopIfResidualIsReducedByFactor(κ)
 
 initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
-iRN times κ.
+times κ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
@@ -762,18 +760,16 @@ $\Vert r_k \Vert_x \leqq  \Vert r_0 \Vert_{x}^{1+\theta}$.
 
 # Fields
 * `θ` – part of the reduction power
-* `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $η$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
 
 # Constructor
 
-    StopIfResidualIsReducedByPower(iRN, θ)
+    StopIfResidualIsReducedByPower(θ)
 
 initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
-iRN to the power of 1+θ.
+to the power of 1+θ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
@@ -816,18 +812,16 @@ residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \
 # Fields
 * `κ` – the reduction factor
 * `θ` – part of the reduction power
-* `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $η$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
 
 # Constructor
 
-    StopIfResidualIsReducedByPower(iRN, θ)
+    StopIfResidualIsReducedByFactorOrPower(κ, θ)
 
-initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
-the norm of the current residual is lesser than the norm of the initial residual
-iRN to the power of 1+θ.
+initialize the StopIfResidualIsReducedByFactorOrPower functor to indicate to stop after
+the norm of the current residual is lesser than either the norm of the initial residual
+to the power of 1+θ or the norm of the initial residual times κ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
@@ -853,8 +847,7 @@ end
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
 A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
-mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
-≧ trust_region_radius$. terminate the algorithm when the trust region has been left.
+method is larger than the trust-region radius, i.e. $\lVert η_{k}^{*} \rVert_x \geq Δ$ terminate the algorithm when the trust region has been left.
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
@@ -924,7 +917,7 @@ end
 @doc raw"""
     StopWhenModelIncreased <: StoppingCriterion
 
-A functor for testing if the curvature of the model value increased.
+A functor for testing if model value increased.
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
