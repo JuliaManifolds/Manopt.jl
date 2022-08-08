@@ -116,9 +116,10 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
             StopAfterIteration(manifold_dimension(p.M)),
-            StopWhenAll(
-                StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
-            ),
+            StopIfResidualIsReducedByFactorOrPower(κ, θ),
+            # StopWhenAll(
+            #     StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
+            # ),
             StopWhenTrustRegionIsExceeded(),
             StopWhenCurvatureIsNegative(),
             StopWhenModelIncreased(),
@@ -146,10 +147,11 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         θ::Float64=1.0,
         κ::Float64=0.1,
         stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
-                                              (
-                                                  StopIfResidualIsReducedByPower(θ) &
-                                                  StopIfResidualIsReducedByFactor(κ)
-                                              ) |
+                                              StopIfResidualIsReducedByFactorOrPower(κ, θ) |
+                                              #   (
+                                              #       StopIfResidualIsReducedByPower(θ) &
+                                              #       StopIfResidualIsReducedByFactor(κ)
+                                              #   ) |
                                               StopWhenTrustRegionIsExceeded() |
                                               StopWhenCurvatureIsNegative() |
                                               StopWhenModelIncreased(),
@@ -840,7 +842,7 @@ function (c::StopIfResidualIsReducedByFactorOrPower)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <=
-       o.initialResidualNorm * min(κ, o.initialResidualNorm^(c.θ)) && i > 0
+       o.initialResidualNorm * min(c.κ, o.initialResidualNorm^(c.θ)) && i > 0
         c.reason = "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
         return true
     end
