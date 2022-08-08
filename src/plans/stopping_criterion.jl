@@ -44,24 +44,6 @@ function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration},
 end
 
 """
-    StopWhenTimeElapsed <: StoppingCriterion
-
-stores a threshold indicating when to stop after some elapsed time  [`GradientProblem`](@ref).
-"""
-mutable struct StopWhenTimeElapsed <: StoppingCriterion
-    threshold::Float64
-    reason::String
-    StopWhenTimeElapsed(T::Float64) = new(T, "")
-end
-function (c::StopWhenTimeElapsed)(p::P, o::O, iter::Int) where {P<:Problem,O<:Options}
-    if o.timer > c.threshold # let's see if o.timer works, perhaps will have to do another one for RTR too
-        c.reason = "The algorithm reached maximum time allowed after $iter iterations; time elapsed ($(o.timer)) is more than $(c.threshold).\n"
-        return true
-    end
-    return false
-end
-
-"""
     StopWhenGradientNormLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the gradient from within

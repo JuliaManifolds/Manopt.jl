@@ -126,7 +126,6 @@ mutable struct GradientDescentOptions{
     stepsize::TStepsize
     gradient::T
     retraction_method::TRTM
-    timer::Float64
     function GradientDescentOptions{P,T}(
         initialX::P,
         initial_gradient::T,
@@ -142,7 +141,6 @@ mutable struct GradientDescentOptions{
         o.retraction_method = retraction_method
         o.stepsize = stepsize
         o.direction = direction
-        o.timer = 0.0
         return o
     end
 end

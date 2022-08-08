@@ -364,6 +364,77 @@ function (d::DebugStoppingCriterion)(::Problem, o::Options, i::Int)
 end
 
 @doc raw"""
+    DebugTime()
+
+Measure time and print the intervals. Using `start=true` you can start the timer on construction,
+for example to measure the runtime of an algorithm overall (adding)
+
+The measured time is rounded using the given `time_accuracy` and printed after [canonicalization]().
+
+# Keyword Parameters
+
+* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io` – (`stdout`) default steream to print the debug to.
+* `format` - ( `"$prefix %s"`) format to print the output using an sprintf format, where `%s` is the canonicalized time`.
+* `mode` – (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
+* `start` – (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on firsr call.
+* `time_accuracy` – (`Millisecond(1)`) round the time to this period before printing the canonicalized time
+"""
+mutable struct DebugTime <: DebugAction
+    io::IO
+    format::String
+    last_time::Nanosecond
+    time_accuracy::Period
+    mode::Symbol
+    function DebugTime(;
+        start=false,
+        io::IO=stdout,
+        prefix::String="time spent:",
+        format::String="$(prefix) %s",
+        mode::Symbol=:cumulative,
+        time_accuracy::Period=Dates.Millisecond(1),
+    )
+        return new(io, format, Nanosecond(start ? time_ns() : 0), time_accuracy, mode)
+    end
+end
+function (d::DebugTime)(::Problem, ::Options, i)
+    if i == 0 || d.last_time == 0 # init
+        d.last_time = Nanosecond(time_ns())
+    else
+        t = time_ns()
+        p = Nanosecond(t) - d.last_time
+        d.last_time = Nanosecond(t)
+        Printf.format(
+            d.io, Printf.Format(d.format), canonicalize(round(p, d.time_accuracy))
+        )
+    end
+    if mode == :iterative
+        d.last_time = Nanosecond(time_ns())
+    end
+    return nothing
+end
+
+"""
+    reset!(d::DebugTime)
+
+reset the internal time of a [`DebugTime`](@ref), that is start from now again.
+"""
+function reset!(d::DebugTime)
+    d.last_time = Nanosecond(time_ns())
+    return d
+end
+
+"""
+    stop!(d::DebugTime)
+
+stop the reset the internal time of a [`DebugTime`](@ref), that is set the time to 0 (undefined)
+"""
+function stop!(d::DebugTime)
+    d.last_time = Nanosecond(0)
+    return d
+end
+
+@doc raw"""
     DebugWarnIfCostIncreases <: DebugAction
 
 print a warning if the cost increases.

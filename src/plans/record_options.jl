@@ -375,16 +375,12 @@ mutable struct RecordEntryChange <: RecordAction
     end
 end
 function (r::RecordEntryChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    record_or_reset!(
-        r,
-        if has_storage(r.storage, r.field)
-            r.distance(p, o, getfield(o, r.field), get_storage(r.storage, r.field))
-        else
-            0.0
-        end,
-        i,
-    )
-    return r.storage(p, o, i)
+    value = 0.0
+    if has_storage(r.storage, r.field)
+        value = r.distance(p, o, getfield(o, r.field), get_storage(r.storage, r.field))
+    end
+    r.storage(p, o, i)
+    return record_or_reset!(r, value, i)
 end
 
 @doc raw"""
@@ -444,18 +440,41 @@ function (r::RecordCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     return record_or_reset!(r, get_cost(p, o.x), i)
 end
 
-
 @doc raw"""
     RecordTime <: RecordAction
 
 record the time elapsed during the current iteration.
+
+The three possible modes are
+* `:cumulative` record times without resetting the timer
+* `:iterative` record times with resetting the timer
+* `:total` record a time only at the end of an algorithm (see [`stop_solver!`](@ref))
+
+The default is `:cumulative`, and any non-listed symbol default to using this mode.
+
+# Constructor
+
+    RecordTime(mode::Symbol=:cumulative)
 """
 mutable struct RecordTime <: RecordAction
     recorded_values::Array{Float64,1}
-    RecordTime() = new(Array{Float64,1}())
+    start::Nanosecond
+    mode::Symbol
+    function RecordTime(mode::Symbol=:cumulative)
+        return new(Array{Float64,1}(), Nanosecond(time_ns()), mode)
+    end
 end
 function (r::RecordTime)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-        return record_or_reset!(r, o.timer, i)
+    # At iteartion zero also reset start
+    (i == 0) && (r.start = Nanosecond(time_ns()))
+    t = Nanosecond(time_ns() - r.start)
+    (mode == :iterative) && (r.start = Nanosecond(time_ns()))
+    if mode == :total
+        # only record at end (if stop_solver returns true)
+        return record_or_reset(r, t, (i > 0 && stop_solver!(p, o, i)) ? i : 0)
+    else
+        return record_or_reset!(r, t, i)
+    end
 end
 
 @doc raw"""
@@ -500,7 +519,13 @@ create a [`RecordAction`](@ref) where
 
 * a [`RecordAction`](@ref) is passed through
 * a [`Symbol`] creates [`RecordEntry`](@ref) of that symbol, with the exceptions
-  of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
+  of
+  * `:Change` - to recorde the change of the iterates in `o.x``
+  * `:Iterate` - to record the iterate
+  * `:Iteration` - to record the current iteration numner
+  * `:Cost` - to record the current cost function value
+  * `:Time` - to record the total time taken after every iteration
+  * `:IterativeTime` – to record the times taken for each iteration.
 """
 RecordActionFactory(::Options, a::RecordAction) = a
 RecordActionFactory(::Options, sa::Pair{Symbol,<:RecordAction}) = sa
@@ -513,6 +538,10 @@ function RecordActionFactory(o::Options, s::Symbol)
         return RecordIterate(o.x)
     elseif (s == :Cost)
         return RecordCost()
+    elseif (s == :Time)
+        return RecordTime(:cumulative)
+    elseif (s == :IterativeTime)
+        return RecordTime(:iterative)
     end
     return RecordEntry(getfield(o, s), s)
 end

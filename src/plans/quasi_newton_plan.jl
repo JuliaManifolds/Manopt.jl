@@ -334,7 +334,6 @@ mutable struct QuasiNewtonOptions{
     stepsize::S
     stop::SC
     vector_transport_method::VT
-    timer::Float64
 end
 function QuasiNewtonOptions(
     M::AbstractManifold,
@@ -369,7 +368,6 @@ function QuasiNewtonOptions(
         stepsize,
         stopping_criterion,
         vector_transport_method,
-        0.0,
     )
 end
 @deprecate QuasiNewtonOptions(
@@ -633,7 +631,6 @@ end
 function get_update_vector_transport(u::QuasiNewtonCautiousDirectionUpdate)
     return get_update_vector_transport(u.update)
 end
-
 
 function (r::RecordGradientNorm)(
     p::P, o::O, i::Int
