@@ -18,10 +18,10 @@ import Random: seed!
 
     @testset "Allocating Variant" begin
         X = trust_regions(M, cost, grad, hess, x)
-        @test norm(abs.(X) - abs.(ev)) ≈ 0 atol = 1e-14
+        @test norm(abs.(X) - abs.(ev)) ≈ 0 atol = 1e-12
         X2 = deepcopy(x)
         trust_regions!(M, cost, grad, hess, X2)
-        @test norm(abs.(X2) - abs.(ev)) ≈ 0 atol = 1e-14
+        @test norm(abs.(X2) - abs.(ev)) ≈ 0 atol = 1e-12
         @test isapprox(M, X, X2)
 
         XaHSR1 = trust_regions(
