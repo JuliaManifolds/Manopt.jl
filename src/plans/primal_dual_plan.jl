@@ -1,5 +1,12 @@
 @doc raw"""
-    PrimalDualProblem {T, mT <: Manifold, nT <: Manifold} <: PrimalDualProblem} <: Problem{T}
+    AbstractPrimalDualProblem{T} <: Problem{T}
+
+An abstract type for primal-dual-based problems.
+"""
+abstract type AbstractPrimalDualProblem{T} <: Problem{T} end
+
+@doc raw"""
+    PrimalDualProblem {T, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem
 
 Describes a Problem for the linearized or exact Chambolle-Pock algorithm.[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020][^ChambollePock2011]
 
@@ -43,7 +50,8 @@ the second.
     > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
     > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <: Problem{T}
+mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <:
+               AbstractPrimalDualProblem{T}
     M::mT
     N::nT
     cost::Function
@@ -77,10 +85,10 @@ function PrimalDualProblem(
 end
 
 @doc raw"""
-    y = get_primal_prox(p::PrimalDualProblem, σ, x)
-    get_primal_prox!(p::PrimalDualProblem, y, σ, x)
+    y = get_primal_prox(p::AbstractPrimalDualProblem, σ, x)
+    get_primal_prox!(p::AbstractPrimalDualProblem, y, σ, x)
 
-Evaluate the proximal map of ``F`` stored within [`PrimalDualProblem`](@ref)
+Evaluate the proximal map of ``F`` stored within [`AbstractPrimalDualProblem`](@ref)
 
 ```math
 \operatorname{prox}_{σF}(x)
@@ -88,27 +96,27 @@ Evaluate the proximal map of ``F`` stored within [`PrimalDualProblem`](@ref)
 
 which can also be computed in place of `y`.
 """
-get_primal_prox(::PrimalDualProblem, ::Any...)
+get_primal_prox(::AbstractPrimalDualProblem, ::Any...)
 
-function get_primal_prox(p::PrimalDualProblem{AllocatingEvaluation}, σ, x)
+function get_primal_prox(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, σ, x)
     return p.prox_F!!(p.M, σ, x)
 end
-function get_primal_prox(p::PrimalDualProblem{MutatingEvaluation}, σ, x)
+function get_primal_prox(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, σ, x)
     y = allocate_result(p.M, get_primal_prox, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
-function get_primal_prox!(p::PrimalDualProblem{AllocatingEvaluation}, y, σ, x)
+function get_primal_prox!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, y, σ, x)
     return copyto!(p.M, y, p.prox_F!!(p.M, σ, x))
 end
-function get_primal_prox!(p::PrimalDualProblem{MutatingEvaluation}, y, σ, x)
+function get_primal_prox!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, y, σ, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
 
 @doc raw"""
-    y = get_dual_prox(p::PrimalDualProblem, n, τ, ξ)
-    get_dual_prox!(p::PrimalDualProblem, y, n, τ, ξ)
+    y = get_dual_prox(p::AbstractPrimalDualProblem, n, τ, ξ)
+    get_dual_prox!(p::AbstractPrimalDualProblem, y, n, τ, ξ)
 
-Evaluate the proximal map of ``G_n^*`` stored within [`PrimalDualProblem`](@ref)
+Evaluate the proximal map of ``G_n^*`` stored within [`AbstractPrimalDualProblem`](@ref)
 
 ```math
 \operatorname{prox}_{τG_n^*}(ξ)
@@ -116,99 +124,107 @@ Evaluate the proximal map of ``G_n^*`` stored within [`PrimalDualProblem`](@ref)
 
 which can also be computed in place of `y`.
 """
-get_dual_prox(::PrimalDualProblem, ::Any...)
+get_dual_prox(::AbstractPrimalDualProblem, ::Any...)
 
-function get_dual_prox(p::PrimalDualProblem{AllocatingEvaluation}, n, τ, ξ)
+function get_dual_prox(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, n, τ, ξ)
     return p.prox_G_dual!!(p.N, n, τ, ξ)
 end
-function get_dual_prox(p::PrimalDualProblem{MutatingEvaluation}, n, τ, ξ)
+function get_dual_prox(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, n, τ, ξ)
     η = allocate_result(p.N, get_dual_prox, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
-function get_dual_prox!(p::PrimalDualProblem{AllocatingEvaluation}, η, n, τ, ξ)
+function get_dual_prox!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, η, n, τ, ξ)
     return copyto!(p.N, η, p.prox_G_dual!!(p.N, n, τ, ξ))
 end
-function get_dual_prox!(p::PrimalDualProblem{MutatingEvaluation}, η, n, τ, ξ)
+function get_dual_prox!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, η, n, τ, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 @doc raw"""
-    Y = linearized_forward_operator(p::PrimalDualProblem, m X, n)
-    linearized_forward_operator!(p::PrimalDualProblem, Y, m, X, n)
+    Y = linearized_forward_operator(p::AbstractPrimalDualProblem, m X, n)
+    linearized_forward_operator!(p::AbstractPrimalDualProblem, Y, m, X, n)
 
 Evaluate the linearized operator (differential) ``DΛ(m)[X]`` stored within
-the [`PrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
+the [`AbstractPrimalDualProblem`](@ref) (in place of `Y`), where `n = Λ(m)`.
 """
-linearized_forward_operator(::PrimalDualProblem, ::Any...)
+linearized_forward_operator(::AbstractPrimalDualProblem, ::Any...)
 
 function linearized_forward_operator(
-    p::PrimalDualProblem{AllocatingEvaluation}, m, X, ::Any
+    p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, m, X, ::Any
 )
     return p.linearized_forward_operator!!(p.M, m, X)
 end
-function linearized_forward_operator(p::PrimalDualProblem{MutatingEvaluation}, m, X, ::Any)
+function linearized_forward_operator(
+    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, m, X, ::Any
+)
     y = random_point(p.N)
     forward_operator!(p, y, m)
     Y = zero_vector(p.N, y)
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 function linearized_forward_operator!(
-    p::PrimalDualProblem{AllocatingEvaluation}, Y, m, X, n
+    p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, Y, m, X, n
 )
     return copyto!(p.N, Y, n, p.linearized_forward_operator!!(p.M, m, X))
 end
 function linearized_forward_operator!(
-    p::PrimalDualProblem{MutatingEvaluation}, Y, m, X, ::Any
+    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, Y, m, X, ::Any
 )
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
 
 @doc raw"""
-    y = forward_operator(p::PrimalDualProblem, x)
-    forward_operator!(p::PrimalDualProblem, y, x)
+    y = forward_operator(p::AbstractPrimalDualProblem, x)
+    forward_operator!(p::AbstractPrimalDualProblem, y, x)
 
-Evaluate the forward operator of ``Λ(x)`` stored within the [`PrimalDualProblem`](@ref)
+Evaluate the forward operator of ``Λ(x)`` stored within the [`AbstractPrimalDualProblem`](@ref)
 (in place of `y`).
 """
-forward_operator(::PrimalDualProblem{AllocatingEvaluation}, ::Any...)
+forward_operator(::AbstractPrimalDualProblem{<:AllocatingEvaluation}, ::Any...)
 
-function forward_operator(p::PrimalDualProblem{AllocatingEvaluation}, x)
+function forward_operator(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, x)
     return p.Λ!!(p.M, x)
 end
-function forward_operator(p::PrimalDualProblem{MutatingEvaluation}, x)
+function forward_operator(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, x)
     y = random_point(p.N)
     return p.Λ!!(p.M, y, x)
 end
-function forward_operator!(p::PrimalDualProblem{AllocatingEvaluation}, y, x)
+function forward_operator!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, y, x)
     return copyto!(p.N, y, p.Λ!!(p.M, x))
 end
-function forward_operator!(p::PrimalDualProblem{MutatingEvaluation}, y, x)
+function forward_operator!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, y, x)
     return p.Λ!!(p.M, y, x)
 end
 
 @doc raw"""
-    X = adjoint_linearized_operator(p::PrimalDualProblem, m, n, Y)
-    adjoint_linearized_operator(p::PrimalDualProblem, X, m, n, Y)
+    X = adjoint_linearized_operator(p::AbstractPrimalDualProblem, m, n, Y)
+    adjoint_linearized_operator(p::AbstractPrimalDualProblem, X, m, n, Y)
 
 Evaluate the adjoint of the linearized forward operator of ``(DΛ(m))^*[Y]`` stored within
-the [`PrimalDualProblem`](@ref) (in place of `X`).
+the [`AbstractPrimalDualProblem`](@ref) (in place of `X`).
 Since ``Y∈T_n\mathcal N``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
 the forward operator ``Λ`` might be `missing` in `p`.
 """
-adjoint_linearized_operator(::PrimalDualProblem{AllocatingEvaluation}, ::Any...)
+adjoint_linearized_operator(::AbstractPrimalDualProblem{<:AllocatingEvaluation}, ::Any...)
 
-function adjoint_linearized_operator(p::PrimalDualProblem{AllocatingEvaluation}, m, n, Y)
+function adjoint_linearized_operator(
+    p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, m, n, Y
+)
     return p.adjoint_linearized_operator!!(p.N, m, n, Y)
 end
-function adjoint_linearized_operator(p::PrimalDualProblem{MutatingEvaluation}, m, n, Y)
+function adjoint_linearized_operator(
+    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, m, n, Y
+)
     X = zero_vector(p.M, m)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 function adjoint_linearized_operator!(
-    p::PrimalDualProblem{AllocatingEvaluation}, X, m, n, Y
+    p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, X, m, n, Y
 )
     return copyto!(p.M, X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
 end
-function adjoint_linearized_operator!(p::PrimalDualProblem{MutatingEvaluation}, X, m, n, Y)
+function adjoint_linearized_operator!(
+    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, X, m, n, Y
+)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end
 
@@ -243,9 +259,15 @@ initialized automatically and values with a default may be left out.
 * `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`ExponentialRetraction()`) the retraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
-* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M)`) the retraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse
+  retraction to use on the manifold ``\mathcal M``.
+* `inverse_retraction_method_dual` - (`default_inverse_retraction_method(TangentBundle(M))`)
+  an inverse retraction to use on manifold ``\mathcal N``.
+* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to
+  use on the manifold ``\mathcal M``.
+* `vector_transport_method_dual` - (`default_vector_transport_method(TangentBundle(M))`) a
+  vector transport to use on manifold ``\mathcal N``.
 
 where for the last two the functions a [`Problem`](@ref)` p`,
 [`Options`](@ref)` o` and the current iterate `i` are the arguments.
@@ -264,7 +286,9 @@ If you activate these to be different from the default identity, you have to pro
         update_dual_base::Union{Function,Missing} = missing,
         retraction_method = default_retraction_method(M),
         inverse_retraction_method = default_inverse_retraction_method(M),
+        inverse_retraction_method_dual = default_inverse_retraction_method(TangentBundle(M)),
         vector_transport_method = default_vector_transport_method(M),
+        vector_transport_method_dual = default_vector_transport_method(TangentBundle(M)),
     )
 """
 mutable struct ChambollePockOptions{
@@ -273,7 +297,9 @@ mutable struct ChambollePockOptions{
     T,
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
+    IRM_Dual<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
+    VTM_Dual<:AbstractVectorTransportMethod,
 } <: PrimalDualOptions
     m::P
     n::Q
@@ -292,7 +318,9 @@ mutable struct ChambollePockOptions{
     update_dual_base::Union{Function,Missing}
     retraction_method::RM
     inverse_retraction_method::IRM
+    inverse_retraction_method_dual::IRM_Dual
     vector_transport_method::VTM
+    vector_transport_method_dual::VTM_Dual
 
     @deprecate ChambollePockOptions(
         m,
@@ -336,16 +364,24 @@ mutable struct ChambollePockOptions{
         update_dual_base::Union{Function,Missing}=missing,
         retraction_method::RM=default_retraction_method(M),
         inverse_retraction_method::IRM=default_inverse_retraction_method(M),
+        inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(
+            TangentBundle(M)
+        ),
         vector_transport_method::VTM=default_vector_transport_method(M),
+        vector_transport_method_dual::VTM_Dual=default_vector_transport_method(
+            TangentBundle(M)
+        ),
     ) where {
         P,
         Q,
         T,
         RM<:AbstractRetractionMethod,
         IRM<:AbstractInverseRetractionMethod,
+        IRM_Dual<:AbstractInverseRetractionMethod,
         VTM<:AbstractVectorTransportMethod,
+        VTM_Dual<:AbstractVectorTransportMethod,
     }
-        return new{P,Q,T,RM,IRM,VTM}(
+        return new{P,Q,T,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
             m,
             n,
             x,
@@ -363,11 +399,13 @@ mutable struct ChambollePockOptions{
             update_dual_base,
             retraction_method,
             inverse_retraction_method,
+            inverse_retraction_method_dual,
             vector_transport_method,
+            vector_transport_method_dual,
         )
     end
 end
-get_solver_result(o::ChambollePockOptions) = o.x
+get_solver_result(o::PrimalDualOptions) = o.x
 @doc raw"""
     primal_residual(p, o, x_old, ξ_old, n_old)
 
@@ -382,7 +420,9 @@ V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 ```
 where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref)
 """
-function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
+function primal_residual(
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old
+)
     return norm(
         p.M,
         o.x,
@@ -395,8 +435,9 @@ function primal_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, �
                 p,
                 o.m,
                 o.n,
-                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
-                o.ξ,
+                vector_transport_to(
+                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
+                ) - o.ξ,
             ),
             o.x,
             o.vector_transport_method,
@@ -438,14 +479,18 @@ and for the `:exact` variant
 
 where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref).
 """
-function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_old, n_old)
+function dual_residual(
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old
+)
     if o.variant === :linearized
         return norm(
             p.N,
             o.n,
-            1 / o.dual_stepsize *
-            (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ) -
-            linearized_forward_operator(
+            1 / o.dual_stepsize * (
+                vector_transport_to(
+                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
+                ) - o.ξ
+            ) - linearized_forward_operator(
                 p,
                 o.m,
                 vector_transport_to(
@@ -462,9 +507,11 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
         return norm(
             p.N,
             o.n,
-            1 / o.dual_stepsize *
-            (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.n) -
-            inverse_retract(
+            1 / o.dual_stepsize * (
+                vector_transport_to(
+                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
+                ) - o.n
+            ) - inverse_retract(
                 p.N,
                 o.n,
                 forward_operator(
@@ -482,7 +529,7 @@ function dual_residual(p::PrimalDualProblem, o::ChambollePockOptions, x_old, ξ_
                         o.retraction_method,
                     ),
                 ),
-                o.inverse_retraction_method,
+                o.inverse_retraction_method_dual,
             ),
         )
     else
@@ -538,7 +585,7 @@ mutable struct DebugDualResidual <: DebugAction
         return new(io, format, storage)
     end
 end
-function (d::DebugDualResidual)(p::PrimalDualProblem, o::ChambollePockOptions, i::Int)
+function (d::DebugDualResidual)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
         Printf.format(d.io, Printf.Format(d.format), dual_residual(p, o, xOld, ξOld, nOld))
@@ -586,8 +633,8 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
 end
 function (d::DebugPrimalResidual)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
         Printf.format(
@@ -637,8 +684,8 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
 end
 function (d::DebugPrimalDualResidual)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
+    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
         v = primal_residual(p, o, xOld, ξOld, nOld) + dual_residual(p, o, xOld, ξOld, nOld)
@@ -713,15 +760,13 @@ mutable struct DebugDualChange <: DebugAction
         return new(io, format, storage)
     end
 end
-function (d::DebugDualChange)(
-    p::P, o::ChambollePockOptions, i::Int
-) where {P<:PrimalDualProblem}
+function (d::DebugDualChange)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
     if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
         v = norm(
             p.N,
             o.n,
-            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) - o.ξ,
+            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method_dual) - o.ξ,
         )
         Printf.format(d.io, Printf.Format(d.format), v)
     end
@@ -749,7 +794,11 @@ function DebugDualBaseChange(;
     kwargs...,
 )
     return DebugEntryChange(
-        :n, (p, o, x, y) -> distance(p.N, x, y); storage=storage, prefix=prefix, kwargs...
+        :n,
+        (p, o, x, y) -> distance(p.N, x, y, o.inverse_retraction_method_dual);
+        storage=storage,
+        prefix=prefix,
+        kwargs...,
     )
 end
 
