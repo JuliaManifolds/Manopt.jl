@@ -629,15 +629,3 @@ function (c::StopWhenModelIncreased)(
     end
     return false
 end
-
-function (d::DebugGradientNorm)(p::HessianProblem, o::TrustRegionsOptions, i::Int)
-    (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), norm(p.M, o.x, o.gradient))
-    return nothing
-end
-
-function (r::RecordGradientNorm)(
-    p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TrustRegionsOptions}
-    return record_or_reset!(r, norm(p.M, o.x, o.gradient), i)
-end
