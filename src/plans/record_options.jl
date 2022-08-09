@@ -471,7 +471,7 @@ function (r::RecordTime)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     (r.mode == :iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :total
         # only record at end (if stop_solver returns true)
-        return record_or_reset(r, t, (i > 0 && stop_solver!(p, o, i)) ? i : 0)
+        return record_or_reset!(r, t, (i > 0 && stop_solver!(p, o, i)) ? i : 0)
     else
         return record_or_reset!(r, t, i)
     end

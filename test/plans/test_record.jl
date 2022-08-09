@@ -172,4 +172,12 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     sleep(0.002)
     h2(p, o, 1)
     @test h2.start != t
+    h3 = RecordTime(; mode=:total)
+    h3(p, o, 1)
+    h3(p, o, 10)
+    h3(p, o, 19)
+    @test length(h3.recorded_values) == 0
+    # stop after 20 so 21 hits
+    h3(p, o, 20)
+    @test length(h3.recorded_values) == 1
 end
