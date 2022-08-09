@@ -7,7 +7,7 @@ using ColorSchemes
 using ColorTypes
 using Markdown
 using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
-using Dates: Period, Nanosecond, value
+using Dates: Period, Nanosecond, value, Millisecond, canonicalize
 using Requires
 using Random: shuffle!
 using Statistics: std, cov, mean, cor
@@ -390,7 +390,7 @@ export BezierSegment,
 #
 # Debugs
 export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange, DebugIterate, DebugIteration, DebugDivider
+export DebugChange, DebugIterate, DebugIteration, DebugDivider, DebugTime
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate

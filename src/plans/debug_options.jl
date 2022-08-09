@@ -392,23 +392,22 @@ mutable struct DebugTime <: DebugAction
         prefix::String="time spent:",
         format::String="$(prefix) %s",
         mode::Symbol=:cumulative,
-        time_accuracy::Period=Dates.Millisecond(1),
+        time_accuracy::Period=Millisecond(1),
     )
         return new(io, format, Nanosecond(start ? time_ns() : 0), time_accuracy, mode)
     end
 end
 function (d::DebugTime)(::Problem, ::Options, i)
-    if i == 0 || d.last_time == 0 # init
+    if i == 0 || d.last_time == Nanosecond(0) # init
         d.last_time = Nanosecond(time_ns())
     else
         t = time_ns()
         p = Nanosecond(t) - d.last_time
-        d.last_time = Nanosecond(t)
         Printf.format(
             d.io, Printf.Format(d.format), canonicalize(round(p, d.time_accuracy))
         )
     end
-    if mode == :iterative
+    if d.mode == :iterative
         d.last_time = Nanosecond(time_ns())
     end
     return nothing
