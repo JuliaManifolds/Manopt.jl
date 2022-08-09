@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, ManifoldsBase
+using Manifolds, Manopt, Test, ManifoldsBase, Dates
 
 @testset "Record Options" begin
     # helper to get debug as string
@@ -145,11 +145,31 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test isa(RecordFactory(o, [2])[:Iteration], RecordEvery)
     @test rf[:Iteration].group[2].field == :gradient
     @test length(rf[:Iteration].group) == 2
+    s = [:Cost, :Iteration, :Change, :Iterate, :Time, :IterativeTime]
     @test all(
         isa.(
-            RecordFactory(o, [:Cost, :Iteration, :Change, :Iterate])[:Iteration].group,
-            [RecordCost, RecordIteration, RecordChange, RecordIterate],
+            RecordFactory(o, s)[:Iteration].group,
+            [
+                RecordCost,
+                RecordIteration,
+                RecordChange,
+                RecordIterate,
+                RecordTime,
+                RecordTime,
+            ],
         ),
     )
     @test RecordActionFactory(o, g) == g
+
+    h1 = RecordTime(; mode=:cumulative)
+    t = h1.start
+    @test t isa Nanosecond
+    h1(p, o, 1)
+    @test h1.start == t
+    h2 = RecordTime(; mode=:iterative)
+    t = h2.start
+    @test t isa Nanosecond
+    sleep(0.002)
+    h2(p, o, 1)
+    @test h2.start != t
 end

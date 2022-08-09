@@ -457,19 +457,19 @@ The default is `:cumulative`, and any non-listed symbol default to using this mo
     RecordTime(; mode::Symbol=:cumulative)
 """
 mutable struct RecordTime <: RecordAction
-    recorded_values::Array{Float64,1}
+    recorded_values::Array{Nanosecond,1}
     start::Nanosecond
     mode::Symbol
     function RecordTime(; mode::Symbol=:cumulative)
-        return new(Array{Float64,1}(), Nanosecond(time_ns()), mode)
+        return new(Array{Nanosecond,1}(), Nanosecond(time_ns()), mode)
     end
 end
 function (r::RecordTime)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     # At iteartion zero also reset start
     (i == 0) && (r.start = Nanosecond(time_ns()))
-    t = Nanosecond(time_ns() - r.start)
-    (mode == :iterative) && (r.start = Nanosecond(time_ns()))
-    if mode == :total
+    t = Nanosecond(time_ns()) - r.start
+    (r.mode == :iterative) && (r.start = Nanosecond(time_ns()))
+    if r.mode == :total
         # only record at end (if stop_solver returns true)
         return record_or_reset(r, t, (i > 0 && stop_solver!(p, o, i)) ? i : 0)
     else
@@ -539,9 +539,9 @@ function RecordActionFactory(o::Options, s::Symbol)
     elseif (s == :Cost)
         return RecordCost()
     elseif (s == :Time)
-        return RecordTime(:cumulative)
+        return RecordTime(; mode=:cumulative)
     elseif (s == :IterativeTime)
-        return RecordTime(:iterative)
+        return RecordTime(; mode=:iterative)
     end
     return RecordEntry(getfield(o, s), s)
 end
