@@ -194,5 +194,11 @@ using Manopt, Test, ManifoldsBase, Dates
         t = d3.last_time
         d3(p, o, 2)
         @test t != d3.last_time # and later as well
+        t = d3.last_time
+        sleep(0.002)
+        Manopt.reset!(d3)
+        @test t != d3.last_time
+        Manopt.stop!(d3)
+        @test d3.last_time == Nanosecond(0)
     end
 end
