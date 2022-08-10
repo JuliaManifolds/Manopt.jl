@@ -28,6 +28,10 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
         X = ones(3)
         FC = FrankWolfeCost(p, X)
         @test FC(M, p) == 0
+        FG = FrankWolfeGradient(p, X)
+        Y = similar(X)
+        FG(M, Y, p)
+        @test FG(M, p) == Y
     end
     @testset "Two small Test runs" begin
         @testset "Testing with an Oracle" begin
