@@ -9,7 +9,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 * `p` – the current iterate, i.e. a point on the manifold
 * `X` – the current gradient ``\operatorname{grad} F(p)``, i.e. a tangent vector to `p`.
-* `evalulation` [`AllocatingEvaluation`](@ref) specify the oracle type if it is a function.
+* `evalulation` [`AllocatingEvaluation`](@ref) specify the  type if it is a function.
 * `inverse_retraction_method` – (`default_inverse_retraction_method(M)`) an inverse retraction method to use within Frank Wolfe.
 * `subtask` – a type representing the subtask (see below).
 * `stop` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a [`StoppingCriterion`](@ref)
@@ -27,9 +27,9 @@ where currently two variants are supported
    optimization problem given `M`, `X` and `p` which is computed in place of `q`, which even
    works correctly, if we pass the same memory to `p` and `q`.
 2. `subtask::Tuple{<:Problem,<:Options}` specifies a plan to solve the subtask with a subsolver,
-   i.e. the cost within `subtask[1]` is a [`FrankWolfeOracleCost`](@ref) using references to `p`and `X`,
+   i.e. the cost within `subtask[1]` is a [`FrankWolfeCost`](@ref) using references to `p`and `X`,
    that is to the current iterate and gradient internally.
-   Similarly for gradient based functions using the [`FrankWolfeOracleGradient`](@ref).
+   Similarly for gradient based functions using the [`FrankWolfeGradient`](@ref).
 
 # Constructor
 
@@ -96,7 +96,7 @@ mutable struct FrankWolfeOptions{
         inverse_retraction_method::ITM=default_inverse_retraction_method(M),
     ) where {
         P,
-        S,
+        S<:Tuple{<:Problem,<:Options},
         T,
         TStop<:StoppingCriterion,
         TStep<:Stepsize,
@@ -106,7 +106,7 @@ mutable struct FrankWolfeOptions{
         return new{S,P,T,TStep,TStop,TM,ITM}(
             p,
             initial_vector,
-            (subtask, evaluation),
+            subtask,
             stopping_criterion,
             stepsize,
             retraction_method,
@@ -118,7 +118,7 @@ get_iterate(O::FrankWolfeOptions) = O.p
 get_gradient(O::FrankWolfeOptions) = O.X
 
 @doc raw"""
-    FrankWolfeOracleCost{P,T}
+    FrankWolfeCost{P,T}
 
 A structure to represent the oracle sub problem in the [`Frank_Wolfe_method`](@ref).
 The cost function reads
@@ -130,16 +130,16 @@ F(q) = ⟨X, \log_p q⟩
 The values `p`and `X` are stored within this functor and hsould be references to the
 iterate and gradient from within [`FrankWolfeOptions`](@ref).
 """
-mutable struct FrankWolfeOracleCost{P,T}
+mutable struct FrankWolfeCost{P,T}
     p::P
     X::T
 end
-function (FWO::FrankWolfeOracleCost)(M, q)
+function (FWO::FrankWolfeCost)(M, q)
     return inner(M, FWO.p, FWO.X, log(M, FWO.p, q))
 end
 
 @doc raw"""
-    FrankWolfeOracleGradient{P,T}
+    FrankWolfeGradient{P,T}
 
 A structure to represent the gradeint of the oracle sub problem in the [`Frank_Wolfe_method`](@ref),
 that is for a given point `p` and a tangent vector `X` we have
@@ -153,13 +153,13 @@ Its gradient can be computed easily using [`adjoint_differential_log_argument`](
 The values `p`and `X` are stored within this functor and hsould be references to the
 iterate and gradient from within [`FrankWolfeOptions`](@ref).
 """
-mutable struct FrankWolfeOracleGradient{P,T}
+mutable struct FrankWolfeGradient{P,T}
     p::P
     X::T
 end
-function (FWG::FrankWolfeOracleGradient)(M, Y, q)
+function (FWG::FrankWolfeGradient)(M, Y, q)
     return adjoint_differential_log_argument!(M, Y, FWG.p, q, FWG.X)
 end
-function (FWG::FrankWolfeOracleGradient)(M, q)
+function (FWG::FrankWolfeGradient)(M, q)
     return adjoint_differential_log_argument(M, FWG.p, q, FWG.X)
 end

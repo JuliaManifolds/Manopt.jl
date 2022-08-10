@@ -200,7 +200,7 @@ export Options,
     SubGradientMethodOptions,
     TruncatedConjugateGradientOptions,
     TrustRegionsOptions
-export FrankWolfeOracleCost, FrankWolfeOracleGradient
+export FrankWolfeCost, FrankWolfeGradient
 #
 # Accessors and helpers for Options
 export linesearch_backtrack

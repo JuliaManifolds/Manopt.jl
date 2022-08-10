@@ -20,6 +20,6 @@ FrankWolfeOptions
 For the inner sub problem you can easily create the corresponding cost and gradient using
 
 ```@docs
-FrankWolfeOracleCost
-FrankWolfeOracleGradient
+FrankWolfeCost
+FrankWolfeGradient
 ```

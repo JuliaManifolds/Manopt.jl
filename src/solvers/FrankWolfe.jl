@@ -30,7 +30,7 @@ use a retraction and its inverse.
 * `stopping_criterion` – [`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`
 * `subtask` specify the oracle, can either be a closed form solution (in place function `oracle(M, q, p, X)`
   or a subsolver, e.g. (by default) a [`GradientProblem`](@ref) with [`GradientDescentOptions`](@ref)
-  using the [`FrankWolfeOracleCost`](@ref) and [`FrankWolfeOracleGradient`](@ref).
+  using the [`FrankWolfeCost`](@ref) and [`FrankWolfeGradient`](@ref).
 * `stepsize` ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`
   a [`Stepsize`](@ref) to use; but it has to be always less than 1. The default is the one proposed by Frank & Wolfe:
   ``s_k = \frac{2}{k+2}``.
