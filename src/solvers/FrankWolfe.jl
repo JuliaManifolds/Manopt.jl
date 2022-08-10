@@ -58,7 +58,7 @@ function Frank_Wolfe_method!(
         GradientDescentOptions(M, copy(M, p)),
     ),
     evaluation=AllocatingEvaluation(),
-    stopping_criterion::TStop=StopAfterIteration(500) |
+    stopping_criterion::TStop=StopAfterIteration(200) |
                               StopWhenGradientNormLess(1.0e-8) |
                               StopWhenChangeLess(1.0e-8),
     stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
