@@ -32,6 +32,9 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
             @test f(M, p2a) < f(M, p)
             p2b = Frank_Wolfe_method(M, f, grad_f, p; subtask=oracle)
             @test f(M, p2b) ≈ f(M, p2a)
+            o2 = Frank_Wolfe_method(M, f, grad_f, p; subtask=oracle, return_options=true)
+            p2c = get_solver_result(o2)
+            @test f(M, p2c) ≈ f(M, p2a)
         end
         @testset "Testing with an Subsolver" begin
             # This is not a useful run since the subproblem is not constraint
