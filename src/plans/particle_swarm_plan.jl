@@ -115,3 +115,4 @@ mutable struct ParticleSwarmOptions{
         return o
     end
 end
+get_iterate(O::ParticleSwarmOptions) = O.x

@@ -309,18 +309,22 @@ during the last iteration.
 mutable struct RecordChange <: RecordAction
     recorded_values::Array{Float64,1}
     storage::StoreOptionsAction
-    function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:x,)))
+    function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:Iterate,)))
         return new(Array{Float64,1}(), a)
     end
-    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:x,)))
-        update_storage!(a, Dict(:x => x0))
+    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:Iterate,)))
+        update_storage!(a, Dict(:Iterate => x0))
         return new(Array{Float64,1}(), a)
     end
 end
 function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     record_or_reset!(
         r,
-        has_storage(r.storage, :x) ? distance(p.M, o.x, get_storage(r.storage, :x)) : 0.0,
+        if has_storage(r.storage, :Iterate)
+            distance(p.M, o.x, get_storage(r.storage, :Iterate))
+        else
+            0.0
+        end,
         i,
     )
     r.storage(p, o, i)
@@ -415,7 +419,7 @@ function RecordIterate()
 end
 
 function (r::RecordIterate{T})(::Problem, o::Options, i) where {T}
-    return record_or_reset!(r, o.x, i)
+    return record_or_reset!(r, get_iterate(o), i)
 end
 
 @doc raw"""
@@ -427,7 +431,7 @@ mutable struct RecordIteration <: RecordAction
     recorded_values::Array{Int,1}
     RecordIteration() = new(Array{Int,1}())
 end
-function (r::RecordIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
+function (r::RecordIteration)(::Problem, ::Options, i::Int)
     return record_or_reset!(r, i, i)
 end
 
@@ -441,7 +445,7 @@ mutable struct RecordCost <: RecordAction
     RecordCost() = new(Array{Float64,1}())
 end
 function (r::RecordCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    return record_or_reset!(r, get_cost(p, o.x), i)
+    return record_or_reset!(r, get_cost(p, get_iterate(o)), i)
 end
 
 @doc raw"""
@@ -496,7 +500,7 @@ function RecordActionFactory(o::Options, s::Symbol)
     elseif (s == :Iteration)
         return RecordIteration()
     elseif (s == :Iterate)
-        return RecordIterate(o.x)
+        return RecordIterate(get_iterate(o))
     elseif (s == :Cost)
         return RecordCost()
     end

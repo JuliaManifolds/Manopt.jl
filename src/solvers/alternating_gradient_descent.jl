@@ -108,7 +108,7 @@ end
 function step_solver!(
     p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
 )
-    s, o.gradient = o.direction(p, o, iter)
+    s, get_gradient(o) = o.direction(p, o, iter)
     j = o.order[o.k]
     retract!(p.M[j], o.x[p.M, j], o.x[p.M, j], -s * o.gradient[p.M, j])
     o.i += 1
@@ -119,4 +119,3 @@ function step_solver!(
     end
     return o
 end
-get_solver_result(o::AlternatingGradientDescentOptions) = o.x

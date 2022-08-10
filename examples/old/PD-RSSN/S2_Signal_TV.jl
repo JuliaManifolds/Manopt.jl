@@ -1,5 +1,5 @@
 #
-# Minimize total variation of a signal of R3 data.
+# Minimize total variation of a signal of S2 data.
 #
 # This example is part of Example 6.1 in the publication
 #
@@ -12,10 +12,10 @@ using Manopt, Manifolds, LinearAlgebra
 
 #
 # Script Settings
-experiment_name = "R1_Signal_TV_CP"
+experiment_name = "S2_Signal_TV_CP"
 export_orig = true
 export_primal = true
-export_table = true
+export_table = false
 use_debug = true
 #
 # Automatic Script Settings
@@ -27,8 +27,8 @@ results_folder = joinpath(current_folder, "Signal_TV")
 
 #
 # Example Settings
-signal_section_size = 2
-α = 0.5
+signal_section_size = 1
+α = 1.0
 σ = 0.5
 τ = 0.5
 θ = 1.0
@@ -37,12 +37,14 @@ max_iterations = 500
 noise_level = 0.0
 noise_type = :Gaussian
 
-pixelM = Euclidean(1)
-base = [0.0]
+pixelM = Sphere(2);
+base = [1.0, 0.0, 0.0]
 X = π / 4 * [0.0, 1.0, 0.0]
-# Generate a signal with two sections - same signal as in S2_Signal_TV
-p1 = [1.0]
-p2 = [-1.0]
+# Generate a signal with two sections
+# p1 = [1.0, 0.0, 0.0]  #
+p1 = exp(pixelM, base, X)
+# p2 = 1 / sqrt(2) .* [1.0, 1.0, 0.0]  #
+p2 = exp(pixelM, base, -X)
 f = vcat(fill(p1, signal_section_size), fill(p2, signal_section_size))
 #
 # Compute exact minimizer
@@ -56,21 +58,22 @@ x_hat = shortest_geodesic(M, f, reverse(f), δ)
 if noise_level > 0
     f = [exp(pixelM, p, random_tangent(pixelM, p, noise_type, noise_level)) for p in f]
 end
-# if export_orig
-#     orig_file = joinpath(results_folder, experiment_name * "-original.asy")
-#     asymptote_export_S2_data(orig_file; data=f)
-#     render_asymptote(orig_file)
-# end
+if export_orig
+    orig_file = joinpath(results_folder, experiment_name * "-original.asy")
+    asymptote_export_S2_data(orig_file; data=f)
+    render_asymptote(orig_file)
+end
 #
 # Initial values
-m = fill(base, size(f))
-n = Λ(M, m)
+m = fill(mid_point(pixelM, p1, p2), 2 * signal_section_size)
+# m = fill(base, size(f))
+n = m
 x0 = deepcopy(f)
 ξ0 = zero_vector(M, m)
-# ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
-storage = StoreOptionsAction((:x, :n, :ξbar))
+storage = StoreOptionsAction((:Iterate, :n, :ξbar))
 
+# print(m)
 @time o = ChambollePock(
     M,
     N,
@@ -89,24 +92,9 @@ storage = StoreOptionsAction((:x, :n, :ξbar))
     acceleration=γ,
     relax=:dual,
     variant=:linearized,
-    # debug=if use_debug
-    #     [
-    #         :Iteration,
-    #         " ",
-    #         DebugPrimalChange(),
-    #         " | ",
-    #         DebugCk(storage),
-    #         " | ",
-    #         :Cost,
-    #         "\n",
-    #         100,
-    #         :Stop,
-    #     ]
-    # else
-    #     missing
-    # end,
+    debug=[:Iteration, " | ", :Cost, "\n", 100, :Stop],
     record=if export_table
-        [:Iteration, RecordPrimalChange(), RecordDualChange(), :Cost]
+        [:Iteration, RecordPrimalChange(x0), RecordDualChange((ξ0, n)), :Cost]
     else
         missing
     end,
@@ -120,12 +108,13 @@ y = get_solver_result(o)
 #     println("The Ck Estimate lies between $(minimum(Ck_values)) and $(maximum(Ck_values))")
 # end
 println("Distance from result to minimizer: ", distance(M, x_hat, y), "\n")
-print("y = $(y)\n")
-# if export_primal
-#     orig_file = joinpath(results_folder, experiment_name * "-result.asy")
-#     asymptote_export_S2_data(orig_file; data=y)
-#     render_asymptote(orig_file)
-# end
+
+if export_primal
+    orig_file = joinpath(results_folder, experiment_name * "-result.asy")
+    asymptote_export_S2_data(orig_file; data=y)
+    render_asymptote(orig_file)
+end
+
 @time o_pdrssn = primal_dual_semismooth_Newton(
     M,
     N,
@@ -142,26 +131,19 @@ print("y = $(y)\n")
     adjoint_DΛ;
     primal_stepsize=σ,
     dual_stepsize=τ,
-    record=if export_table
-        [:Iteration, RecordPrimalChange(), RecordDualChange(), :Cost]
-    else
-        missing
-    end,
-    stopping_criterion=StopAfterIteration(3),
+    debug=[:Iteration, " | ", DebugPrimalChange(), " | ", :Cost, "\n", :Stop],
+    record=[:Iteration, :Cost, :Iterate],
+    stopping_criterion=StopAfterIteration(20),
     # stopping_criterion=StopAfterIteration(max_iterations),
     return_options=true,
 )
 
 y_pdrssn = get_solver_result(o_pdrssn)
-# if has_record(o)
-#     r = get_record(o)
-#     Ck_values = [s[5] for s in r]
-#     println("The Ck Estimate lies between $(minimum(Ck_values)) and $(maximum(Ck_values))")
-# end
+println("x_hat = $(x_hat)")
+println("sol = $(y_pdrssn)")
 println("Distance from result to minimizer: ", distance(M, x_hat, y_pdrssn), "\n")
-print("y_pdrssn = $(y_pdrssn)\n")
-# if export_primal
-#     orig_file = joinpath(results_folder, experiment_name * "-result-pdrssn.asy")
-#     asymptote_export_S2_data(orig_file; data=y_pdrssn)
-#     render_asymptote(orig_file)
-# end
+if export_primal
+    orig_file = joinpath(results_folder, experiment_name * "-result-pdrssn.asy")
+    asymptote_export_S2_data(orig_file; data=y_pdrssn)
+    render_asymptote(orig_file)
+end

@@ -41,11 +41,19 @@ using Manopt, Test, ManifoldsBase
         @test String(take!(io)) == "x: $x"
         DebugEntry(:x; prefix="x:", io=io)(p, o, -1)
         @test String(take!(io)) == ""
-        # Change
-        a2 = DebugChange(; storage=StoreOptionsAction((:x,)), prefix="Last: ", io=io)
+        # Change of Iterate
+        a2 = DebugChange(; storage=StoreOptionsAction((:Iterate,)), prefix="Last: ", io=io)
         a2(p, o, 0) # init
         o.x = [3.0, 2.0]
         a2(p, o, 1)
+        @test String(take!(io)) == "Last: 1.000000"
+        # Change of Gradient
+        a3 = DebugGradientChange(;
+            storage=StoreOptionsAction((:Gradient,)), prefix="Last: ", io=io
+        )
+        a3(p, o, 0) # init
+        o.gradient = [1.0, 0.0]
+        a3(p, o, 1)
         @test String(take!(io)) == "Last: 1.000000"
         # Iterate
         DebugIterate(; io=io)(p, o, 0)
@@ -96,14 +104,23 @@ using Manopt, Test, ManifoldsBase
         @test isa(df[:All], DebugEvery)
         @test all(
             isa.(
-                DebugFactory([:Change, :Iteration, :Iterate, :Cost, :Stepsize, :x])[:All].group,
+                DebugFactory([
+                    :Change,
+                    :GradientChange,
+                    :Iteration,
+                    :Iterate,
+                    :Cost,
+                    :Stepsize,
+                    :Iterate,
+                ])[:All].group,
                 [
                     DebugChange,
+                    DebugGradientChange,
                     DebugIteration,
                     DebugIterate,
                     DebugCost,
                     DebugStepsize,
-                    DebugEntry,
+                    DebugIterate,
                 ],
             ),
         )
@@ -111,25 +128,27 @@ using Manopt, Test, ManifoldsBase
             isa.(
                 DebugFactory([
                     (:Change, "A"),
+                    (:GradientChange, "A"),
                     (:Iteration, "A"),
                     (:Iterate, "A"),
                     (:Cost, "A"),
                     (:Stepsize, "A"),
-                    (:x, "A"),
+                    (:Iterate, "A"),
                 ])[:All].group,
                 [
                     DebugChange,
+                    DebugGradientChange,
                     DebugIteration,
                     DebugIterate,
                     DebugCost,
                     DebugStepsize,
-                    DebugEntry,
+                    DebugIterate,
                 ],
             ),
         )
         @test DebugActionFactory(a3) == a3
-        @test DebugFactory([(:x, "A")])[:All].group[1].format == "A"
-        @test DebugActionFactory((:x, "A")).format == "A"
+        @test DebugFactory([(:Iterate, "A")])[:All].group[1].format == "A"
+        @test DebugActionFactory((:Iterate, "A")).format == "A"
     end
 
     @testset "Debug Warnings" begin

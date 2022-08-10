@@ -25,16 +25,6 @@ function step_solver!(p::Problem, o::DebugOptions, i)
 end
 
 """
-    get_solver_result(o::DebugOptions)
-
-Return the final result after all iterations that is stored within the
-(modified during the iterations) [`Options`](@ref) `o`.
-"""
-function get_solver_result(o::DebugOptions)
-    return get_solver_result(o.options)
-end
-
-"""
     stop_solver!(p,o,i)
 
 determine whether the solver for [`Problem`](@ref) `p` and the [`DebugOptions`](@ref) `o`

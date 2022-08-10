@@ -441,5 +441,3 @@ function update_hessian!(
     end
     return d
 end
-
-get_solver_result(o::QuasiNewtonOptions) = o.x

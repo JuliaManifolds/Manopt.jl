@@ -93,4 +93,3 @@ function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
     (o.order_type == :Random) && shuffle(o.order)
     return o
 end
-get_solver_result(o::CyclicProximalPointOptions) = o.x
