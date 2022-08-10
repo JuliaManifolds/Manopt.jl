@@ -167,7 +167,7 @@ statsM = @timed qT = mean(M, data, weights);
 cT = weighted_mean_cost(M, qT)
 
 # ╔═╡ 3d369862-dc1c-4e06-acde-9eb1baa1a425
-statsF = @timed oF = Frank_Wolfe_algorithm(
+statsF = @timed oF = Frank_Wolfe_method(
     M,
     weighted_mean_cost,
     grad_weighted_mean!,
@@ -197,7 +197,7 @@ cF = weighted_mean_cost(M, qF)
 q1 = copy(M, data[1]);
 
 # ╔═╡ c34152c0-c12c-4a8e-838e-5f867647cd19
-statsF20 = @timed Frank_Wolfe_algorithm!(
+statsF20 = @timed Frank_Wolfe_method!(
     M,
     weighted_mean_cost,
     grad_weighted_mean!,

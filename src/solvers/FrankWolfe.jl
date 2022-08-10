@@ -1,5 +1,5 @@
 @doc raw"""
-    Frank_Wolfe_algorithm(M, F, grad_F, p)
+    Frank_Wolfe_method(M, F, grad_F, p)
 
 Perform the Frank-Wolfe algorithm to compute for ``\mathcal C \subset \mathcal M``
 
@@ -37,15 +37,15 @@ use a retraction and its inverse.
 
 all further keywords are passed down to [`decorate_options`](@ref), e.g. `debug`.
 """
-function Frank_Wolfe_algorithm(M::AbstractManifold, F, grad_F, p; kwargs...)
+function Frank_Wolfe_method(M::AbstractManifold, F, grad_F, p; kwargs...)
     q = copy(M, p)
-    return Frank_Wolfe_algorithm!(M, F, grad_F, q; kwargs...)
+    return Frank_Wolfe_method!(M, F, grad_F, q; kwargs...)
 end
 
 @doc raw"""
-    Frank_Wolfe_algorithm!(M, F, grad_F, q; kwargs...)
+    Frank_Wolfe_method!(M, F, grad_F, q; kwargs...)
 """
-function Frank_Wolfe_algorithm!(
+function Frank_Wolfe_method!(
     M::AbstractManifold,
     F,
     grad_F,

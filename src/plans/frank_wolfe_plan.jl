@@ -1,7 +1,7 @@
 @doc raw"""
     FrankWolfeOptions <: Options
 
-A struct to store the current state of the [`Frank_Wolfe_algorithm`](@ref)
+A struct to store the current state of the [`Frank_Wolfe_method`](@ref)
 
 It comes in two forms, depending on the realisation of the `subproblem`.
 
@@ -120,7 +120,7 @@ get_gradient(O::FrankWolfeOptions) = O.X
 @doc raw"""
     FrankWolfeOracleCost{P,T}
 
-A structure to represent the oracle sub problem in the [`Frank_Wolfe_algorithm`](@ref).
+A structure to represent the oracle sub problem in the [`Frank_Wolfe_method`](@ref).
 The cost function reads
 
 ```math
@@ -141,7 +141,7 @@ end
 @doc raw"""
     FrankWolfeOracleGradient{P,T}
 
-A structure to represent the gradeint of the oracle sub problem in the [`Frank_Wolfe_algorithm`](@ref),
+A structure to represent the gradeint of the oracle sub problem in the [`Frank_Wolfe_method`](@ref),
 that is for a given point `p` and a tangent vector `X` we have
 
 ```math

@@ -5,8 +5,8 @@ CurrentModule = Manopt
 ```
 
 ```@docs
-Frank_Wolfe_algorithm
-Frank_Wolfe_algorithm!
+Frank_Wolfe_method
+Frank_Wolfe_method!
 ```
 
 ## Options
