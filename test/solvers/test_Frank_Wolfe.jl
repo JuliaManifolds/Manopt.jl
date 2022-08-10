@@ -23,7 +23,12 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
         return q
     end
     p = ones(3)
-    @testset "Basics and access functions" begin end
+    @testset "Basics and access functions" begin
+        p = ones(3)
+        X = ones(3)
+        FC = FrankWolfeCost(p, X)
+        @test FC(M, p) == 0
+    end
     @testset "Two small Test runs" begin
         @testset "Testing with an Oracle" begin
             p2a = Frank_Wolfe_method(
@@ -46,8 +51,17 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
                 evaluation=MutatingEvaluation(),
                 stopping_criterion=StopAfterIteration(1),
             )
-            #so we can just test that the subproblem is delivering a point.
             @test is_point(M, p3)
+            p3b = Frank_Wolfe_method(
+                M,
+                f,
+                grad_f,
+                p;
+                evaluation=AllocatingEvaluation(),
+                stopping_criterion=StopAfterIteration(1),
+            )
+            #so we can just test that the subproblem is delivering a point.
+            @test is_point(M, p3b)
         end
     end
 end
