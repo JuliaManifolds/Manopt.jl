@@ -543,7 +543,13 @@ function ApproxHessianSymmetricRankOne(
 ) where {
     mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTR<:AbstractVectorTransportMethod
 }
-    grad_tmp = gradient(M, p)
+    if evaluation == AllocatingEvaluation()
+        grad_tmp = gradient(M, p)
+    elseif evaluation == MutatingEvaluation()
+        grad_tmp = zero_vector(M, p)
+        gradient(M, grad_tmp, p)
+    end
+
     return ApproxHessianSymmetricRankOne{typeof(evaluation),P,G,typeof(grad_tmp),B,VTR,R}(
         p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, nu
     )
@@ -569,7 +575,7 @@ function (f::ApproxHessianSymmetricRankOne{MutatingEvaluation})(M, Y, p, X)
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
         copyto!(f.p_tmp, p)
-        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+        f.gradient!!(M, f.grad_tmp, f.p_tmp)
     end
 
     # Apply Hessian approximation on vector
@@ -578,7 +584,9 @@ function (f::ApproxHessianSymmetricRankOne{MutatingEvaluation})(M, Y, p, X)
     return Y
 end
 
-function update_hessian!(M, f::ApproxHessianSymmetricRankOne, p, p_proposal, X)
+function update_hessian!(
+    M, f::ApproxHessianSymmetricRankOne{AllocatingEvaluation}, p, p_proposal, X
+)
     yk_c = get_coordinates(
         M,
         p,
@@ -594,10 +602,35 @@ function update_hessian!(M, f::ApproxHessianSymmetricRankOne, p, p_proposal, X)
     end
 end
 
-function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne, p)
+function update_hessian!(
+    M, f::ApproxHessianSymmetricRankOne{MutatingEvaluation}, p, p_proposal, X
+)
+    grad_proposal = zero_vector(M, p_proposal)
+    f.gradient!!(M, grad_proposal, p_proposal)
+    yk_c = get_coordinates(
+        M,
+        p,
+        vector_transport_to(M, p_proposal, grad_proposal, p, f.vector_transport_method) -
+        f.grad_tmp,
+        f.basis,
+    )
+    sk_c = get_coordinates(M, p, X, f.basis)
+    srvec = yk_c - f.matrix * sk_c
+    if f.ν < 0 || abs(dot(srvec, sk_c)) >= f.ν * norm(srvec) * norm(sk_c)
+        f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
+    end
+end
+
+function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{AllocatingEvaluation}, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
     copyto!(f.p_tmp, p)
     return f.grad_tmp = f.gradient!!(M, f.p_tmp)
+end
+
+function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{MutatingEvaluation}, p)
+    update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+    copyto!(f.p_tmp, p)
+    return f.gradient!!(M, f.grad_tmp, f.p_tmp)
 end
 
 function update_hessian!(M, f, p, p_proposal, X) end
@@ -657,7 +690,12 @@ function ApproxHessianBFGS(
     evaluation=AllocatingEvaluation(),
     vector_transport_method::VTR=ParallelTransport(),
 ) where {mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},VTR<:AbstractVectorTransportMethod}
-    grad_tmp = gradient(M, p)
+    if evaluation == AllocatingEvaluation()
+        grad_tmp = gradient(M, p)
+    elseif evaluation == MutatingEvaluation()
+        grad_tmp = zero_vector(M, p)
+        gradient(M, grad_tmp, p)
+    end
     return ApproxHessianBFGS{typeof(evaluation),P,G,typeof(grad_tmp),B,VTR}(
         p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, scale
     )
@@ -682,7 +720,7 @@ function (f::ApproxHessianBFGS{MutatingEvaluation})(M, Y, p, X)
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
         copyto!(f.p_tmp, p)
-        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+        f.gradient!!(M, f.grad_tmp, f.p_tmp)
     end
 
     # Apply Hessian approximation on vector
@@ -691,7 +729,7 @@ function (f::ApproxHessianBFGS{MutatingEvaluation})(M, Y, p, X)
     return Y
 end
 
-function update_hessian!(M, f::ApproxHessianBFGS, p, p_proposal, X)
+function update_hessian!(M, f::ApproxHessianBFGS{AllocatingEvaluation}, p, p_proposal, X)
     yk_c = get_coordinates(
         M,
         p,
@@ -707,10 +745,33 @@ function update_hessian!(M, f::ApproxHessianBFGS, p, p_proposal, X)
         f.matrix * sk_c * sk_c' * f.matrix / dot(sk_c, f.matrix * sk_c)
 end
 
-function update_hessian_basis!(M, f::ApproxHessianBFGS, p)
+function update_hessian!(M, f::ApproxHessianBFGS{MutatingEvaluation}, p, p_proposal, X)
+    grad_proposal = zero_vector(M, p_proposal)
+    f.gradient!!(M, grad_proposal, p_proposal)
+    yk_c = get_coordinates(
+        M,
+        p,
+        vector_transport_to(M, p_proposal, grad_proposal, p, f.vector_transport_method) -
+        f.grad_tmp,
+        f.basis,
+    )
+    sk_c = get_coordinates(M, p, X, f.basis)
+    skyk_c = dot(sk_c, yk_c)
+    return f.matrix =
+        f.matrix + yk_c * yk_c' / skyk_c -
+        f.matrix * sk_c * sk_c' * f.matrix / dot(sk_c, f.matrix * sk_c)
+end
+
+function update_hessian_basis!(M, f::ApproxHessianBFGS{AllocatingEvaluation}, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
     copyto!(f.p_tmp, p)
     return f.grad_tmp = f.gradient!!(M, f.p_tmp)
+end
+
+function update_hessian_basis!(M, f::ApproxHessianBFGS{MutatingEvaluation}, p)
+    update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+    copyto!(f.p_tmp, p)
+    return f.gradient!!(M, f.grad_tmp, f.p_tmp)
 end
 
 @doc raw"""

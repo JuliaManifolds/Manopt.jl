@@ -4,6 +4,14 @@
 using Markdown
 using InteractiveUtils
 
+# ╔═╡ d3df4e1c-bd58-4e13-99cf-7758b83c689e
+begin
+    using Pkg
+    Pkg.activate()
+
+    using Manifolds, Manopt
+end
+
 # ╔═╡ b24e567a-3ea3-441f-bbbd-acf0c12e9c20
 md"""
 # Riemannian Trust-Region Symmetric Rank-One Method
@@ -498,8 +506,6 @@ in the use of a Riemannian Trust-Region method.
 
 
 """
-
-# ╔═╡ d3df4e1c-bd58-4e13-99cf-7758b83c689e
 
 # ╔═╡ Cell order:
 # ╟─b24e567a-3ea3-441f-bbbd-acf0c12e9c20

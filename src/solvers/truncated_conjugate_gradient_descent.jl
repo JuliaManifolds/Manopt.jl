@@ -111,13 +111,13 @@ function truncated_conjugate_gradient_descent!(
     θ::Float64=1.0,
     κ::Float64=0.1,
     randomize::Bool=false,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(manifold_dimension(M)),
-        StopIfResidualIsReducedByFactorOrPower(κ, θ),
+    stopping_criterion::StoppingCriterion=(
+        StopAfterIteration(manifold_dimension(M)) |
+        StopIfResidualIsReducedByFactorOrPower(κ, θ) |
         # StopWhenAll(StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)),
-        StopWhenTrustRegionIsExceeded(),
-        StopWhenCurvatureIsNegative(),
-        StopWhenModelIncreased(),
+        StopWhenTrustRegionIsExceeded() |
+        StopWhenCurvatureIsNegative() |
+        StopWhenModelIncreased()
     ),
     project!::Proj=copyto!,
     return_options=false,
