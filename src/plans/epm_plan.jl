@@ -10,7 +10,6 @@ Describes the exact penalty method, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` – a set point on a manifold as starting point
-* `smoothing_technique` – smoothing technique with which the penalized objective is smoothed (either `"log_sum_exp"` or `"linear_quadratic_huber"`)
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
 * `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration 
@@ -21,9 +20,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `θ_u` – (`(u_min/u)^(1/num_outer_itertgn)`) the scaling factor of the smoothing parameter and threshold for violation of the constraints
-* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `min_stepsize` – (`1e-10`) minimal step size
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(min_stepsize)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 
 # Constructor

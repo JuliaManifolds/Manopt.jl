@@ -12,8 +12,46 @@ perform the exact penalty method (EPM)[^LiuBoumal2020][^source_code]. The aim of
 where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
 For that a weighted ``L_1``-penalty term for the violation of the constraints is added to the objective
 ```math
-f(x) + ρ (\sum_{i=1}^m \max\left\{0, g_i(x)\right\} + \sum_{j=1}^p \vert h_j(x)\vert)
+f(x) + ρ (\sum_{i=1}^m \max\left\{0, g_i(x)\right\} + \sum_{j=1}^p \vert h_j(x)\vert),
 ```
+where ``ρ>0`` is the penalty parameter. Then, the absolute value and maximum functions in the objective are smoothed, e.\,g. with the log-sum-exp function 
+to get
+```math
+Q^{\text{lse}}(x,\rho,u)=f(x) + \rho \Bigg ( \sum_{j \in \mathcal{E}} u \log(e^{\frac{h_j(x)}{u}}+e^{-\frac{h_j(x)}{u}}) + \sum_{i \in \mathcal{I}}u \log(1 + e^{\frac{g_i(x)}{u}}) \Bigg ),
+```
+or with the linear-quadratic and pseudo-Huber loss to get
+```math
+Q^{\text{lqh}}(x,\rho,u)=f(x) + \rho \left( \sum_{j \in \mathcal{E}} \sqrt{h_j(x)^2 + u^2} + \sum_{i \in \mathcal{I}} \mathcal{P}(g_i(x),u) \right),
+```
+where 
+```math
+\mathcal{P}(x,u) = \begin{cases}
+0, \quad &\text{if } x \leq 0,\\
+\frac{x^2}{2u}, \quad &\text{if } 0 \leq x \leq u,\\
+x- \frac{u}{2}, \quad &\text{if } x\geq u,
+\end{cases}
+```
+and ``u>0`` is a smoothing parameter. 
+
+In every step ``k`` of the exact penalty method, the smoothed objective is then minimized over all 
+``x ∈\mathcal{M}``. Then, the accuracy tolerance ``ϵ`` and the smoothing parameter ``u`` are updated by setting
+```math
+ϵ^{(k)}=\max\{ϵ_{\min}, θ_ϵ ϵ^{(k-1)}\},
+```
+where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor, and
+```math
+u^{(k)} = \max \{u_{\min}, \theta_u u^{(k-1)} \},
+```
+where ``u_{\min}`` is the lowest value ``u`` is allowed to become and ``θ_u ∈ (0,1)`` is constant scaling factor.
+
+Last, we update the penalty parameter ``ρ`` according to
+```math
+ρ^{(k)} = \begin{cases}
+ρ^{(k-1)}/θ_ρ,  & \text{if } \displaystyle \max_{j \in \mathcal{E},i \in \mathcal{I}} \Bigl\{ \vert h_j(x^{(k)}) \vert, g_i(x^{(k)})\Bigr\} \geq u^{(k-1)} \Bigr) ,\\
+ρ^{(k-1)}, & \text{else,}
+\end{cases}
+```
+where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 
 
 [^LiuBoumal2020]:
@@ -38,19 +76,17 @@ f(x) + ρ (\sum_{i=1}^m \max\left\{0, g_i(x)\right\} + \sum_{j=1}^p \vert h_j(x)
 * `gradG` – the gradient of the inequality constraints
 * `gradH` – the gradient of the equality constraints
 * `x` – initial point
-* `smoothing_technique` – (`"log_sum_exp"`) smoothing technique with which the penalized objective is smoothed (either `"log_sum_exp"` or `"linear_quadratic_huber"`)
-* `sub_problem` – (`GradientProblem(M,F,gradF)`) problem for the subsolver
-* `sub_options` – (`GradientDescentOptions(M,x)`) options of the subproblem
 * `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration 
-* `num_outer_itertgn` – (`30`)
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
 * `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
+* `min_stepsize` – (`1e-10`) the minimal step size
+* `sub_problem` – ([`GradientProblem`](@ref)`(M,`[`ExactPenaltyCost`](@ref)`(F, G, H, "linear_quadratic_huber", ρ, u),`[`ExactPenaltyGrad`](@ref)`(F, gradF, G, gradG, H, gradH, "linear_quadratic_huber", ρ, u))`) problem for the subsolver
+* `sub_options` – ([`QuasiNewtonOptions`](@ref)`(copy(x), zero_vector(M,x), `[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, copy(M,x), `[`InverseBFGS`](@ref)`(),30), `[`StopAfterIteration`](@ref)`(max_inner_iter) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(min_stepsize), `[`WolfePowellLinesearch`](@ref)`(M,10^(-4),0.999))`) options of the subproblem
+* `num_outer_itertgn` – (`30`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `θ_u` – (`(u_min/u)^(1/num_outer_itertgn)`) the scaling factor of the smoothing parameter and threshold for violation of the constraints
-* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 

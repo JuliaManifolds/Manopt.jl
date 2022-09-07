@@ -26,7 +26,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
 * `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
 * `oldacc` – (`Inf`) evaluation of the penalty from the last iteration
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `min_stepsize` – (`1e-10`) minimal step size
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(min_stepsize)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 
 # Constructor
@@ -77,7 +78,7 @@ mutable struct ALMOptions{P, Pr <: Problem, Op <: Options, TStopping <: Stopping
         τ::Real=0.8,
         θ_ρ::Real=0.3, 
         min_stepsize::Real=1e-10,
-        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-6))),
+        stopping_criterion::StoppingCriterion=StopWhenAny(StopAfterIteration(300), StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(min_stepsize))),
     ) where {P, Pr <: Problem, Op <: Options} 
         o = new{
             P,
