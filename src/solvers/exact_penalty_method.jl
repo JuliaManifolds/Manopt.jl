@@ -265,22 +265,10 @@ function (LG::ExactPenaltyGrad)(M::AbstractManifold,x::P) where {P}
         end
     elseif LG.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0
-            # grad_inequality_constraints = LG.gradG(M, x)
-            # grad_ineq_cost_greater_u = sum(grad_inequality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.u)) .* LG.ρ)
-            # grad_ineq_cost_smaller_u = sum(grad_inequality_constraints .* (inequality_constraints./LG.u .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.u))) .* LG.ρ)
-            # grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
-            grad_ineq = zeros(size(LG.gradG(M,x)[1]))
-            for i ∈ 1:num_inequality_constraints
-                coef = 0
-                if inequality_constraints[i] >= 0
-                    if inequality_constraints[i] >= LG.u
-                        coef = 1
-                    else
-                        coef = inequality_constraints[i]/LG.u
-                    end
-                    grad_ineq .+= (LG.ρ * coef) .* LG.gradG(M, x)[i]
-                end
-            end
+            grad_inequality_constraints = LG.gradG(M, x)
+            grad_ineq_cost_greater_u = sum(grad_inequality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.u)) .* LG.ρ)
+            grad_ineq_cost_smaller_u = sum(grad_inequality_constraints .* (inequality_constraints./LG.u .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.u))) .* LG.ρ)
+            grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
         end
         if num_equality_constraints != 0
             grad_eq = sum(LG.gradH(M, x) .* (equality_constraints./sqrt.(equality_constraints.^2 .+ LG.u^2)) .* LG.ρ) 

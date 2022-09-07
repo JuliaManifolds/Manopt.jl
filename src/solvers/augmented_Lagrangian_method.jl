@@ -286,15 +286,9 @@ function (LG::LagrangeGrad)(M::AbstractManifold,x::P) where {P}
     num_inequality_constraints = size(inequality_constraints,1)
     num_equality_constraints = size(equality_constraints,1)
     if num_inequality_constraints != 0 
-        # grad_ineq = sum(
-        #     ((inequality_constraints .* LG.ρ .+ LG.μ) .* LG.gradG(M,x)).*(inequality_constraints .+ LG.μ./LG.ρ .>0)
-        #     )
-        grad_ineq = zeros(size(LG.gradG(M,x)[1]))
-        for i ∈ 1:num_inequality_constraints
-            if inequality_constraints[i] + LG.μ[i]/LG.ρ > 0
-                grad_ineq .+= (inequality_constraints[i] * LG.ρ + LG.μ[i]) .* LG.gradG(M,x)[i]
-            end
-        end
+        grad_ineq = sum(
+            ((inequality_constraints .* LG.ρ .+ LG.μ) .* LG.gradG(M,x)).*(inequality_constraints .+ LG.μ./LG.ρ .>0)
+            )
     end
     if num_equality_constraints != 0
         grad_eq = sum((equality_constraints .* LG.ρ .+ LG.λ) .* LG.gradH(M,x))
