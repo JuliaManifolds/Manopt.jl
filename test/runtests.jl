@@ -33,6 +33,7 @@ end
     include("solvers/test_conjugate_gradient.jl")
     include("solvers/test_Douglas_Rachford.jl")
     include("solvers/test_cyclic_proximal_point.jl")
+    include("solvers/test_Frank_Wolfe.jl")
     include("solvers/test_gradient_descent.jl")
     include("solvers/test_Nelder_Mead.jl")
     include("solvers/test_quasi_Newton.jl")

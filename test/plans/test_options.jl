@@ -48,4 +48,9 @@ end
 
     @test Manopt._extract_val(Val(true))
     @test !Manopt._extract_val(Val(false))
+
+    @test_throws ErrorException get_gradient(o)
+    @test_throws ErrorException get_gradient(r)
+    @test_throws ErrorException get_iterate(o)
+    @test_throws ErrorException get_iterate(r)
 end

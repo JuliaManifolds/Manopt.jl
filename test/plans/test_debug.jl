@@ -41,11 +41,19 @@ using Manopt, Test, ManifoldsBase, Dates
         @test String(take!(io)) == "x: $x"
         DebugEntry(:x; prefix="x:", io=io)(p, o, -1)
         @test String(take!(io)) == ""
-        # Change
-        a2 = DebugChange(; storage=StoreOptionsAction((:x,)), prefix="Last: ", io=io)
+        # Change of Iterate
+        a2 = DebugChange(; storage=StoreOptionsAction((:Iterate,)), prefix="Last: ", io=io)
         a2(p, o, 0) # init
         o.x = [3.0, 2.0]
         a2(p, o, 1)
+        @test String(take!(io)) == "Last: 1.000000"
+        # Change of Gradient
+        a3 = DebugGradientChange(;
+            storage=StoreOptionsAction((:Gradient,)), prefix="Last: ", io=io
+        )
+        a3(p, o, 0) # init
+        o.gradient = [1.0, 0.0]
+        a3(p, o, 1)
         @test String(take!(io)) == "Last: 1.000000"
         # Iterate
         DebugIterate(; io=io)(p, o, 0)
@@ -94,12 +102,23 @@ using Manopt, Test, ManifoldsBase, Dates
         @test length(df[:All].group) == 1
         df = DebugFactory([:Stop, "|", 20])
         @test isa(df[:All], DebugEvery)
-        s = [:Change, :Iteration, :Iterate, :Cost, :Stepsize, :x, :Time, :IterativeTime]
+        s = [
+            :Change,
+            :GradientChange,
+            :Iteration,
+            :Iterate,
+            :Cost,
+            :Stepsize,
+            :x,
+            :Time,
+            :IterativeTime,
+        ]
         @test all(
             isa.(
                 DebugFactory(s)[:All].group,
                 [
                     DebugChange,
+                    DebugGradientChange,
                     DebugIteration,
                     DebugIterate,
                     DebugCost,
@@ -116,6 +135,7 @@ using Manopt, Test, ManifoldsBase, Dates
                 DebugFactory([(t, "A") for t in s])[:All].group,
                 [
                     DebugChange,
+                    DebugGradientChange,
                     DebugIteration,
                     DebugIterate,
                     DebugCost,
@@ -127,8 +147,8 @@ using Manopt, Test, ManifoldsBase, Dates
             ),
         )
         @test DebugActionFactory(a3) == a3
-        @test DebugFactory([(:x, "A")])[:All].group[1].format == "A"
-        @test DebugActionFactory((:x, "A")).format == "A"
+        @test DebugFactory([(:Iterate, "A")])[:All].group[1].format == "A"
+        @test DebugActionFactory((:Iterate, "A")).format == "A"
     end
 
     @testset "Debug Warnings" begin

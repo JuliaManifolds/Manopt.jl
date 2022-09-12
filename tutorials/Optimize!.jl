@@ -207,7 +207,12 @@ with_terminal() do
         data[1];
         stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
         debug=[
-            :Iteration, (:Change, "change: %1.9f | "), :Cost, (:x, " | %s"), "\n", :Stop
+            :Iteration,
+            (:Change, "change: %1.9f | "),
+            :Cost,
+            (:Iterate, " | %s"),
+            "\n",
+            :Stop,
         ],
     )
 end
@@ -244,7 +249,7 @@ with_terminal() do
             :Iteration,
             (:Change, "change: %1.9f | "),
             (:Cost, "F(x): %1.9f"),
-            (:x, " | %s"),
+            (:Iterate, " | %s"),
             "\n",
             :Stop,
         ],
@@ -310,12 +315,12 @@ with_terminal() do
             " | ",
             (:Cost, "F(x): %1.12f"),
             " | ",
-            :x,
+            :Iterate,
             "\n",
             50,
             :Stop,
         ],
-        record=[:Iteration, :Change, :Cost, :x],
+        record=[:Iteration, :Change, :Cost, :Iterate],
         return_options=true,
     )
 end

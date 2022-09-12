@@ -181,8 +181,8 @@ get_solver_result(o::ParticleSwarmOptions) = o.g
 # but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
 #
 function (c::StopWhenChangeLess)(P::CostProblem, O::ParticleSwarmOptions, i)
-    if has_storage(c.storage, :x)
-        x_old = get_storage(c.storage, :x)
+    if has_storage(c.storage, :Iterate)
+        x_old = get_storage(c.storage, :Iterate)
         n = length(O.x)
         d = distance(PowerManifold(P.M, NestedPowerRepresentation(), n), O.x, x_old)
         if d < c.threshold && i > 0

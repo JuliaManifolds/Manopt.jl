@@ -162,6 +162,7 @@ mutable struct PrimalDualSemismoothNewtonOptions{
         )
     end
 end
+get_iterate(O::PrimalDualSemismoothNewtonOptions) = O.x
 
 @doc raw"""
     y = get_differential_primal_prox(p::PrimalDualSemismoothNewtonProblem, σ, x)

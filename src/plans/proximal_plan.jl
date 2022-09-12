@@ -125,7 +125,7 @@ end
 )
 
 function CyclicProximalPointOptions(
-    M::AbstractManifold,
+    ::AbstractManifold,
     x::P;
     stopping_criterion::S=StopAfterIteration(2000),
     λ::F=(iter) -> 1.0 / iter,
@@ -133,6 +133,8 @@ function CyclicProximalPointOptions(
 ) where {P,S,F}
     return CyclicProximalPointOptions{P,S,F}(x, stopping_criterion, λ, evaluation_order, [])
 end
+get_iterate(O::CyclicProximalPointOptions) = O.x
+
 @doc raw"""
     DouglasRachfordOptions <: Options
 
@@ -201,6 +203,7 @@ mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR,S} <: Options
         DefaultManifold(2), x; λ=λ, α=α, R=R, stopping_criterion=stop, parallel=parallel
     )
 end
+get_iterate(O::DouglasRachfordOptions) = O.x
 #
 # Debug
 #

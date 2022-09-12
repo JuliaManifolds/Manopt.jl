@@ -102,6 +102,7 @@ include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/NelderMead.jl")
+include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
@@ -187,6 +188,7 @@ export Options,
     ConjugateGradientDescentOptions,
     CyclicProximalPointOptions,
     DouglasRachfordOptions,
+    FrankWolfeOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
     NelderMeadOptions,
@@ -198,6 +200,7 @@ export Options,
     SubGradientMethodOptions,
     TruncatedConjugateGradientOptions,
     TrustRegionsOptions
+export FrankWolfeCost, FrankWolfeGradient
 #
 # Accessors and helpers for Options
 export linesearch_backtrack
@@ -210,6 +213,7 @@ export get_cost,
     get_proximal_map!,
     get_options,
     get_initial_stepsize,
+    get_iterate,
     get_gradients,
     get_gradients!,
     get_primal_prox,
@@ -276,6 +280,8 @@ export ChambollePock,
     cyclic_proximal_point!,
     DouglasRachford,
     DouglasRachford!,
+    Frank_Wolfe_method,
+    Frank_Wolfe_method!,
     gradient_descent,
     gradient_descent!,
     NelderMead,
@@ -390,7 +396,8 @@ export BezierSegment,
 #
 # Debugs
 export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange, DebugIterate, DebugIteration, DebugDivider, DebugTime
+export DebugChange,
+    DebugGradientChange, DebugIterate, DebugIteration, DebugDivider, DebugTime
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate

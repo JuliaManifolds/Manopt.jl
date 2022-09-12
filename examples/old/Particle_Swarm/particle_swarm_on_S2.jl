@@ -60,10 +60,10 @@ o = particle_swarm(
     cognitive_weight=0.2,
     stopping_criterion=StopAfterIteration(800),
     debug=[:Iteration, " ", 100],
-    record=[:x, :p, :velocity],
+    record=[:Iterate, :p, :velocity],
     return_options=true,
 );
-path = [x[1] for x in get_record(o, :x)] # x0
+path = [x[1] for x in get_record(o, :Iterate)] # x0
 velocities = [v[1] for v in get_record(o, :velocity)] # x0
 
 # Animate / record

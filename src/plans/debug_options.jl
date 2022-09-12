@@ -119,11 +119,11 @@ end
 @doc raw"""
     DebugChange()
 
-debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
+debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`Options`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreOptionsAction( (:x,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreOptionsAction( (:Iterate,) )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
@@ -133,7 +133,7 @@ mutable struct DebugChange <: DebugAction
     format::String
     storage::StoreOptionsAction
     function DebugChange(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x,)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
@@ -146,7 +146,43 @@ end
 )
 function (d::DebugChange)(p::Problem, o::Options, i)
     (i > 0) && Printf.format(
-        d.io, Printf.Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x))
+        d.io,
+        Printf.Format(d.format),
+        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate)),
+    )
+    d.storage(p, o, i)
+    return nothing
+end
+@doc raw"""
+    DebugGradientChange()
+
+debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`Options`](@ref) `o`)
+during the last iteration. See [`DebugEntryChange`](@ref) for the general case
+
+# Keyword Parameters
+* `storage` – (`StoreOptionsAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
+* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io` – (`stdout`) default steream to print the debug to.
+* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+"""
+mutable struct DebugGradientChange <: DebugAction
+    io::IO
+    format::String
+    storage::StoreOptionsAction
+    function DebugGradientChange(;
+        storage::StoreOptionsAction=StoreOptionsAction((:Gradient,)),
+        io::IO=stdout,
+        prefix::String="Last Change: ",
+        format::String="$(prefix)%f",
+    )
+        return new(io, format, storage)
+    end
+end
+function (d::DebugGradientChange)(p::Problem, o::Options, i)
+    (i > 0) && Printf.format(
+        d.io,
+        Printf.Format(d.format),
+        distance(p.M, get_gradient(o), get_storage(d.storage, :Gradient)),
     )
     d.storage(p, o, i)
     return nothing
@@ -154,7 +190,7 @@ end
 @doc raw"""
     DebugIterate <: DebugAction
 
-debug for the current iterate (stored in `o.x`).
+debug for the current iterate (stored in `get_iterate(o)`).
 
 # Constructor
     DebugIterate()
@@ -178,7 +214,7 @@ mutable struct DebugIterate <: DebugAction
 end
 @deprecate DebugIterate(io::IO, long::Bool=false) DebugIterate(; io=io, long=long)
 function (d::DebugIterate)(::Problem, o::Options, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.x)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(o))
     return nothing
 end
 
@@ -235,7 +271,7 @@ end
 @deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
 @deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
 function (d::DebugCost)(p::Problem, o::Options, i::Int)
-    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, o.x))
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(o)))
     return nothing
 end
 
@@ -294,7 +330,7 @@ print a certain entries change during iterates
 
 # Additional Fields
 * `print` – (`print`) function to print the result
-* `prefix` – (`"Change of :x"`) prefix to the print out
+* `prefix` – (`"Change of :Iterate"`) prefix to the print out
 * `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
@@ -461,7 +497,7 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
 end
 function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
     if d.status !== :No
-        cost = get_cost(p, o.x)
+        cost = get_cost(p, get_iterate(o))
         if cost > d.old_cost + d.tol
             # Default case in Gradient Descent, include a tipp
             @warn """The cost increased.
@@ -504,7 +540,7 @@ mutable struct DebugWarnIfCostNotFinite <: DebugAction
 end
 function (d::DebugWarnIfCostNotFinite)(p::Problem, o::Options, i::Int)
     if d.status !== :No
-        cost = get_cost(p, o.x)
+        cost = get_cost(p, get_iterate(o))
         if !isfinite(cost)
             @warn """The cost is not finite.
             At iteration #$i the cost evaluated to $(cost)."""
@@ -631,6 +667,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 
 * `:Cost` creates a [`DebugCost`](@ref)
 * `:Change` creates a [`DebugChange`](@ref)
+* `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
@@ -644,6 +681,7 @@ any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the op
 function DebugActionFactory(s::Symbol)
     (s == :Cost) && return DebugCost()
     (s == :Change) && return DebugChange()
+    (s == :GradientChange) && return DebugGradientChange()
     (s == :Iterate) && return DebugIterate()
     (s == :Iteration) && return DebugIteration()
     (s == :Stepsize) && return DebugStepsize()
@@ -663,6 +701,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 
 * `:Cost` creates a [`DebugCost`](@ref)
 * `:Change` creates a [`DebugChange`](@ref)
+* `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
@@ -673,6 +712,7 @@ any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the op
 """
 function DebugActionFactory(t::Tuple{Symbol,String})
     (t[1] == :Change) && return DebugChange(; format=t[2])
+    (t[1] == :GradientChange) && return DebugGradientChange(; format=t[2])
     (t[1] == :Iteration) && return DebugIteration(; format=t[2])
     (t[1] == :Iterate) && return DebugIterate(; format=t[2])
     (t[1] == :Cost) && return DebugCost(; format=t[2])
