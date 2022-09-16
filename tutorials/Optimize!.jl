@@ -38,7 +38,7 @@ necessary information to run the algorithm.
 md"""
 # Setup
 
-Let‘s first set up a few variables
+Let's first set up a few variables
 """
 
 # ╔═╡ 4235a1ba-3cf2-49dc-9a26-32fafc7a7008
