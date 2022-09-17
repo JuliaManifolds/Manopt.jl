@@ -32,6 +32,10 @@ data, i.e. things that usually change during the algorithm, are allowed to
 change, or specify the details of the algorithm to use. Together they form a
 __plan__. A __plan__ uniquely determines the algorithm to use and provides all
 necessary information to run it.
+
+You can either follow the code here and look at the preprinted output, or, if you want to experiment
+things for yourself, you can directly access the Pluto notebooks related to the tutorials by going 
+to "/your`_Julia_`installation_folder/packages/Manopt/tutorials/".
 """
 
 # ╔═╡ 94dee66e-2f37-4cc0-8451-c0bbb5eae2c9
