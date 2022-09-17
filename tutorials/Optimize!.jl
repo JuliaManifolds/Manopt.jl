@@ -15,7 +15,7 @@ This example illustrates how to set up and solve optimization problems and how
 to further get data from the algorithm using debug output and record data.
 We will use the Riemannian mean and median as simple examples.
 
-To start from the quite general case: A __Solver__ is an algorithm that aims
+To start from the quite general case: a __Solver__ is an algorithm that aims
 to solve
 
 ```math
@@ -25,13 +25,13 @@ to solve
 where ``\mathcal M`` is a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and ``f:\mathcal M → ℝ`` is the cost function.
 
 In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](https://manoptjl.org/stable/plans/index.html#Manopt.Problem)
-`p` and [`Options`](https://manoptjl.org/stable/plans/index.html#Manopt.Options) `o`. While former contains __static__ data,
+`p` and [`Options`](https://manoptjl.org/stable/plans/index.html#Manopt.Options) `o`. While the former contains __static__ data,
 most prominently the manifold ``\mathcal M`` (usually as `p.M`) and the cost
 function ``f`` (usually as `x->get_cost(p, x)`), the latter contains __dynamic__
 data, i.e. things that usually change during the algorithm, are allowed to
 change, or specify the details of the algorithm to use. Together they form a
-__plan__. A __plan__ uniquely determines the algorithm to use and provide all
-necessary information to run the algorithm.
+__plan__. A __plan__ uniquely determines the algorithm to use and provides all
+necessary information to run it.
 """
 
 # ╔═╡ 94dee66e-2f37-4cc0-8451-c0bbb5eae2c9
@@ -63,21 +63,21 @@ the `GradientProblem` is the [gradient
 descent](https://en.wikipedia.org/wiki/Gradient_descent) algorithm.
 It requires an initial value `o.x0`, a `StoppingCriterion` `o.stop`, a
 `Stepsize` `o.stepsize` and a retraction `o.retraction`.
-Internally is stores the last evaluation of the gradient at `o.gradient` for convenience.
+Internally, is stores the last evaluation of the gradient at `o.gradient` for convenience.
 The only mandatory parameter is the initial value `x0`, though the defaults for
 both the stopping criterion ([`StopAfterIteration`](@ref)`(100)`) as well as the
-stepsize ([`ConstantStepsize`](@ref)`(1.)` are quite conservative, but are
+stepsize ([`ConstantStepsize`](@ref)`(1.)`) are quite conservative, but are
 chosen to be as simple as possible.
 
 With these two at hand, running the algorithm just requires to call `x_opt = solve(p,o)`.
 
 In the following two examples we will see, how to use a higher level interface
-that allows to more easily activate for example a debug output or record values during the iterations.
+that allows to more easily activate, for example, a debug output or record values during the iterations.
 """
 
 # ╔═╡ 177cc292-94d3-4344-857e-30483f592a55
 md"""
-Let‘s load a few colors from [Paul Tol](https://personal.sron.nl/~pault/)
+Let's load a few colors from [Paul Tol](https://personal.sron.nl/~pault/).
 """
 
 # ╔═╡ 0b405c42-19a5-480d-b1dc-0fb8811a48fa
@@ -128,7 +128,7 @@ PlutoUI.LocalResource(image_prefix * "/startDataAndCenter.png")
 md"""
 ## Computing the Mean
 
-To compute the mean on the manifold we use the characterization, that the
+To compute the mean on the manifold we use the characterization that the
 Euclidean mean minimizes the sum of squared distances, and end up with the
 following cost function. Its minimizer is called
 [Riemannian Center of Mass](https://arxiv.org/abs/1407.2087).
@@ -147,7 +147,7 @@ gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 md"""
 Note that the [grad_distance](https://manoptjl.org/stable/functions/gradients.html#Manopt.grad_distance) defaults to the case `p=2`, i.e. the
 gradient of the squared distance. For details on convergence of the gradient
-descent for this problem, see [^AfsariTronVidal2013]
+descent for this problem, see [^AfsariTronVidal2013].
 
 The easiest way to call the gradient descent is now to call
 [gradient_descent](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.gradient_descent).
@@ -192,7 +192,7 @@ end
 
 # ╔═╡ 863bf8b8-272c-40d6-985f-0a7cf9454756
 md"""
-A way to get better performance and for convex and coercive costs a guaranteed convergence is to switch the default
+A way to get better performance, and for convex and coercive costs a guaranteed convergence, is to switch the default
 [`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for
 example the [`ArmijoLinesearch`](https://manoptjl.org/stable/plans/index.html#Manopt.ArmijoLinesearch).
 We can tweak the default values for the `contraction_factor` and the `sufficient_decrease`  beyond constant step size which is already quite fast. We get
@@ -258,7 +258,7 @@ end
 
 # ╔═╡ 98028747-31dd-4bf8-b4b5-0959d5afb75c
 md"""
-Let‘s add this point to out data image
+Let's add this point to our data image
 """
 
 # ╔═╡ fb07943f-54b4-4cb3-b1fd-f3ab06b4d033
@@ -284,7 +284,7 @@ md"""
 > There are more sophisticated methods tailored for the specific manifolds available in
 > [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/) see [`median`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.median-Tuple{Manifold,AbstractArray{T,1}%20where%20T,AbstractArray{T,1}%20where%20T,CyclicProximalPointEstimation}).
 
-Similar to the mean you can also define the median as the minimizer of the
+Similarly to the mean, you can also define the median as the minimizer of the
 distances, see for example [^Bačák2014], but since
 this problem is not differentiable, we employ the Cyclic Proximal Point (CPP)
 algorithm, described in the same reference. We define
@@ -298,7 +298,7 @@ proxes = Function[(M, λ, y) -> prox_distance(M, λ / n, di, y, 1) for di in dat
 
 # ╔═╡ dc236508-283c-4047-a216-c570e35bc791
 md"""
-So we call the cyclic proximal point algorithm this time with a recording and activate the return of the complete options to access the recorded values. We further increase the display of the cost function to more digits.
+So we call the cyclic proximal point algorithm, this time with a recording, and activate the return of the complete options to access the recorded values. We further increase the display of the cost function to more digits.
 """
 
 # ╔═╡ d2a8250e-7796-454b-a0bf-9970b1b9a2aa
@@ -333,15 +333,15 @@ md"""
 where the differences to `gradient_descent` are as follows
 
 * the third parameter is now an Array of proximal maps
-* debug is reduces to only every 50th iteration
+* debug is reduced to only every 50th iteration
 * we further activated a `RecordAction` using the `record=` optional
-  parameter. These work very similar to those in debug, but they
+  parameter. These work very similarly to those in debug, but they
   collect their data in an array. The high level interface then returns two
   variables; the `values` do contain an array of recorded
-  datum per iteration. Here a Tuple containing the iteration, last change and
+  datum per iteration. Here a tuple containing the iteration, last change and
   cost respectively; see [RedordOptions](https://manoptjl.org/stable/plans/index.html#RecordOptions-1) for details.
 
-We can access the recorded values using `get_record` and contains of a tuple per iteration and contains the iteration number, the change and the cost.
+We can access the recorded values using `get_record`, that consists of a tuple per iteration and contains the iteration number, the change and the cost.
 """
 
 # ╔═╡ c835b5ec-085e-4c9d-b777-76036515bcd1
