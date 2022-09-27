@@ -321,7 +321,12 @@ function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     record_or_reset!(
         r,
         if has_storage(r.storage, :Iterate)
-            distance(p.M, o.x, get_storage(r.storage, :Iterate))
+            distance(
+                p.M,
+                o.x,
+                get_storage(r.storage, :Iterate),
+                default_inverse_retraction_method(p.M),
+            )
         else
             0.0
         end,

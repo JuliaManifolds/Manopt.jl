@@ -148,7 +148,12 @@ function (d::DebugChange)(p::Problem, o::Options, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate)),
+        distance(
+            p.M,
+            get_iterate(o),
+            get_storage(d.storage, :Iterate),
+            default_inverse_retraction_method(p.M),
+        ),
     )
     d.storage(p, o, i)
     return nothing
