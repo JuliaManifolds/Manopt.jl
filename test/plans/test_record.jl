@@ -105,9 +105,11 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     e(p, o, 1)
     @test e.recorded_values == [1.0] # no x0 -> assume x0 is the first iterate
 
-    dinvretr = RecordChange(; invretr=LogarithmicInverseRetraction())
-    @test d.invretr === nothing
-    @test dinvretr.invretr === LogarithmicInverseRetraction()
+    dinvretr = RecordChange(; invretr=PolarInverseRetraction())
+    dmani = RecordChange(; manifold=Symplectic(2))
+    @test dinvretr.invretr === PolarInverseRetraction()
+    @test dmani.invretr === CayleyInverseRetraction()
+    @test d.invretr === LogarithmicInverseRetraction()
     # RecordEntry
     o.x = x
     f = RecordEntry(x, :x)
