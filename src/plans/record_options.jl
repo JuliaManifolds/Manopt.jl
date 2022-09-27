@@ -304,29 +304,36 @@ during the last iteration.
 
 # Additional Fields
 * `storage` a [`StoreOptionsAction`](@ref) to store (at least) `o.x` to use this
-  as the last value (to compute the change)
+  as the last value (to compute the change
+* `invretr` - (`nothing`) if not nothing, use the specify inverse retraction to be used
+  for appximating distance.
 """
-mutable struct RecordChange <: RecordAction
-    recorded_values::Array{Float64,1}
+mutable struct RecordChange{TInvRetr<:Union{Nothing,AbstractInverseRetractionMethod}} <:
+               RecordAction
+    recorded_values::Vector{Float64}
     storage::StoreOptionsAction
-    function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:Iterate,)))
-        return new(Array{Float64,1}(), a)
+    invretr::TInvRetr
+    function RecordChange(
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate,));
+        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
+    )
+        return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
-    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:Iterate,)))
+    function RecordChange(
+        x0,
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate,));
+        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
+    )
         update_storage!(a, Dict(:Iterate => x0))
-        return new(Array{Float64,1}(), a)
+        return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
 end
 function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    invretr = r.invretr === nothing ? default_inverse_retraction_method(p.M) : r.invretr
     record_or_reset!(
         r,
         if has_storage(r.storage, :Iterate)
-            distance(
-                p.M,
-                o.x,
-                get_storage(r.storage, :Iterate),
-                default_inverse_retraction_method(p.M),
-            )
+            distance(p.M, o.x, get_storage(r.storage, :Iterate), invretr)
         else
             0.0
         end,

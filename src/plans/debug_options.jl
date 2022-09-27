@@ -127,33 +127,34 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+* `invretr` - (`nothing`) if not nothing, use the specify inverse retraction to be used
+    for appximating distance.
 """
-mutable struct DebugChange <: DebugAction
+mutable struct DebugChange{TInvRetr<:Union{Nothing,AbstractInverseRetractionMethod}} <:
+               DebugAction
     io::IO
     format::String
     storage::StoreOptionsAction
+    invretr::TInvRetr
     function DebugChange(;
         storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
+        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
     )
-        return new(io, format, storage)
+        return new{typeof(invretr)}(io, format, storage, invretr)
     end
 end
 @deprecate DebugChange(a::StoreOptionsAction, pre::String="Last Change: ", io::IO=stdout) DebugChange(;
     storage=a, prefix=pre, io=io
 )
 function (d::DebugChange)(p::Problem, o::Options, i)
+    invretr = d.invretr === nothing ? default_inverse_retraction_method(p.M) : d.invretr
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(
-            p.M,
-            get_iterate(o),
-            get_storage(d.storage, :Iterate),
-            default_inverse_retraction_method(p.M),
-        ),
+        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate), invretr),
     )
     d.storage(p, o, i)
     return nothing

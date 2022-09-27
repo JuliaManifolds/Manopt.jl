@@ -46,6 +46,13 @@ using Manopt, Test, ManifoldsBase, Dates
         a2(p, o, 0) # init
         o.x = [3.0, 2.0]
         a2(p, o, 1)
+        a2inv = DebugChange(;
+            storage=StoreOptionsAction((:Iterate,)),
+            prefix="Last: ",
+            io=io,
+            invretr=LogarithmicInverseRetraction(),
+        )
+        @test a2inv.invretr === LogarithmicInverseRetraction()
         @test String(take!(io)) == "Last: 1.000000"
         # Change of Gradient
         a3 = DebugGradientChange(;

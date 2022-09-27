@@ -104,6 +104,10 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     e = RecordChange([4.0, 2.0])
     e(p, o, 1)
     @test e.recorded_values == [1.0] # no x0 -> assume x0 is the first iterate
+
+    dinvretr = RecordChange(; invretr=LogarithmicInverseRetraction())
+    @test d.invretr === nothing
+    @test dinvretr.invretr === LogarithmicInverseRetraction()
     # RecordEntry
     o.x = x
     f = RecordEntry(x, :x)
