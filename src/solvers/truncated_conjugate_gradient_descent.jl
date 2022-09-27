@@ -46,7 +46,7 @@ see the reference:
     used. This option is set to true in some scenarios to escape saddle
     points, but is otherwise seldom activated.
 * `trust_region_radius` – (`injectivity_radius(M)/4`) a trust-region radius
-* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors
+* `project!` : (`copyto!`) specify a projection operation for tangent vectors
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
 * `stopping_criterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),

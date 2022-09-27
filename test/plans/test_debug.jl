@@ -1,4 +1,4 @@
-using Manopt, Test, ManifoldsBase
+using Manopt, Test, ManifoldsBase, Dates
 
 @testset "Debug Options" begin
     # helper to get debug as string
@@ -102,17 +102,20 @@ using Manopt, Test, ManifoldsBase
         @test length(df[:All].group) == 1
         df = DebugFactory([:Stop, "|", 20])
         @test isa(df[:All], DebugEvery)
+        s = [
+            :Change,
+            :GradientChange,
+            :Iteration,
+            :Iterate,
+            :Cost,
+            :Stepsize,
+            :x,
+            :Time,
+            :IterativeTime,
+        ]
         @test all(
             isa.(
-                DebugFactory([
-                    :Change,
-                    :GradientChange,
-                    :Iteration,
-                    :Iterate,
-                    :Cost,
-                    :Stepsize,
-                    :Iterate,
-                ])[:All].group,
+                DebugFactory(s)[:All].group,
                 [
                     DebugChange,
                     DebugGradientChange,
@@ -120,21 +123,16 @@ using Manopt, Test, ManifoldsBase
                     DebugIterate,
                     DebugCost,
                     DebugStepsize,
-                    DebugIterate,
+                    DebugEntry,
+                    DebugTime,
+                    DebugTime,
                 ],
             ),
         )
+        @test DebugActionFactory((:IterativeTime)).mode == :Iterative
         @test all(
             isa.(
-                DebugFactory([
-                    (:Change, "A"),
-                    (:GradientChange, "A"),
-                    (:Iteration, "A"),
-                    (:Iterate, "A"),
-                    (:Cost, "A"),
-                    (:Stepsize, "A"),
-                    (:Iterate, "A"),
-                ])[:All].group,
+                DebugFactory([(t, "A") for t in s])[:All].group,
                 [
                     DebugChange,
                     DebugGradientChange,
@@ -142,7 +140,9 @@ using Manopt, Test, ManifoldsBase
                     DebugIterate,
                     DebugCost,
                     DebugStepsize,
-                    DebugIterate,
+                    DebugEntry,
+                    DebugTime,
+                    DebugTime,
                 ],
             ),
         )
@@ -187,5 +187,38 @@ using Manopt, Test, ManifoldsBase
         @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)
         df2 = DebugFactory([:WarnGradient])
         @test isa(df2[:All].group[1], DebugWarnIfFieldNotFinite)
+    end
+    @testset "Debug Time" begin
+        io = IOBuffer()
+        M = ManifoldsBase.DefaultManifold(2)
+        x = [4.0, 2.0]
+        o = GradientDescentOptions(
+            M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        )
+        f(M, y) = distance(M, y, x) .^ 2
+        gradf(M, y) = -2 * log(M, y, x)
+        p = GradientProblem(M, f, gradf)
+        d1 = DebugTime(; start=true, io=io)
+        @test d1.last_time != Nanosecond(0)
+        d2 = DebugTime(; io=io)
+        @test d2.last_time == Nanosecond(0)
+        d2(p, o, 1)
+        @test d2.last_time != Nanosecond(0) # changes on first call
+        t = d2.last_time
+        sleep(0.002)
+        d2(p, o, 2)
+        @test t == d2.last_time # but not afterwards
+        @test endswith(String(take!(io)), "seconds")
+        d3 = DebugTime(; start=true, mode=:iterative, io=io)
+        @test d3.last_time != Nanosecond(0) # changes on first call
+        t = d3.last_time
+        d3(p, o, 2)
+        @test t != d3.last_time # and later as well
+        t = d3.last_time
+        sleep(0.002)
+        Manopt.reset!(d3)
+        @test t != d3.last_time
+        Manopt.stop!(d3)
+        @test d3.last_time == Nanosecond(0)
     end
 end
