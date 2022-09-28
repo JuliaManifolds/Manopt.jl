@@ -304,24 +304,44 @@ during the last iteration.
 
 # Additional Fields
 * `storage` a [`StoreOptionsAction`](@ref) to store (at least) `o.x` to use this
-  as the last value (to compute the change)
+  as the last value (to compute the change
+* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+  used for approximating distance.
+
+# Additional constructor keyword parameters
+* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
+for approximating the distance.
 """
-mutable struct RecordChange <: RecordAction
-    recorded_values::Array{Float64,1}
+mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: RecordAction
+    recorded_values::Vector{Float64}
     storage::StoreOptionsAction
-    function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:Iterate,)))
-        return new(Array{Float64,1}(), a)
+    invretr::TInvRetr
+    function RecordChange(
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate,));
+        manifold::AbstractManifold=DefaultManifold(1),
+        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            manifold
+        ),
+    )
+        return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
-    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:Iterate,)))
+    function RecordChange(
+        x0,
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate,));
+        manifold::AbstractManifold=DefaultManifold(1),
+        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            manifold
+        ),
+    )
         update_storage!(a, Dict(:Iterate => x0))
-        return new(Array{Float64,1}(), a)
+        return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
 end
 function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     record_or_reset!(
         r,
         if has_storage(r.storage, :Iterate)
-            distance(p.M, o.x, get_storage(r.storage, :Iterate))
+            distance(p.M, o.x, get_storage(r.storage, :Iterate), r.invretr)
         else
             0.0
         end,

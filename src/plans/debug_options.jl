@@ -127,18 +127,27 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
+  for approximating the distance.
+* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+  used for approximating distance.
 """
-mutable struct DebugChange <: DebugAction
+mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreOptionsAction
+    invretr::TInvRetr
     function DebugChange(;
         storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
+        manifold::AbstractManifold=DefaultManifold(1),
+        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            manifold
+        ),
     )
-        return new(io, format, storage)
+        return new{typeof(invretr)}(io, format, storage, invretr)
     end
 end
 @deprecate DebugChange(a::StoreOptionsAction, pre::String="Last Change: ", io::IO=stdout) DebugChange(;
@@ -148,7 +157,7 @@ function (d::DebugChange)(p::Problem, o::Options, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate)),
+        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate), d.invretr),
     )
     d.storage(p, o, i)
     return nothing

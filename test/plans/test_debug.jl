@@ -1,5 +1,11 @@
 using Manopt, Test, ManifoldsBase, Dates
 
+struct TestPolarManifold <: AbstractManifold{ℝ} end
+
+function ManifoldsBase.default_inverse_retraction_method(::TestPolarManifold)
+    return PolarInverseRetraction()
+end
+
 @testset "Debug Options" begin
     # helper to get debug as string
     @testset "Basic Debug Output" begin
@@ -46,6 +52,21 @@ using Manopt, Test, ManifoldsBase, Dates
         a2(p, o, 0) # init
         o.x = [3.0, 2.0]
         a2(p, o, 1)
+        a2inv = DebugChange(;
+            storage=StoreOptionsAction((:Iterate,)),
+            prefix="Last: ",
+            io=io,
+            invretr=PolarInverseRetraction(),
+        )
+        a2mani = DebugChange(;
+            storage=StoreOptionsAction((:Iterate,)),
+            prefix="Last: ",
+            io=io,
+            manifold=TestPolarManifold(),
+        )
+        @test a2inv.invretr === PolarInverseRetraction()
+        @test a2mani.invretr === PolarInverseRetraction()
+        @test a2.invretr === LogarithmicInverseRetraction()
         @test String(take!(io)) == "Last: 1.000000"
         # Change of Gradient
         a3 = DebugGradientChange(;
