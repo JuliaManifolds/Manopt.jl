@@ -140,7 +140,7 @@ The constructors return the functor to perform Armijo line search, where two int
   its gradient (a tangent vector) `gradFx```=\operatorname{grad}F(x)`` at  `x` and an optional
   search direction tangent vector `η=-gradFx` are the arguments.
 """
-mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod, F} <: Linesearch
+mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     initial_stepsize::Float64
     retraction_method::TRM
     contraction_factor::Float64
@@ -169,9 +169,9 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod, F} <: Linesearch
         contraction_factor::Float64=0.95,
         sufficient_decrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
-        initial_guess = (p,o,i,l) -> l,
+        initial_guess=(p, o, i, l) -> l,
     )
-        return new{typeof(retraction_method), typeof(initial_guess)}(
+        return new{typeof(retraction_method),typeof(initial_guess)}(
             initial_stepsize,
             retraction_method,
             contraction_factor,
