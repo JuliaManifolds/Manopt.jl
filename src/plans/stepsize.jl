@@ -124,7 +124,8 @@ last step size.
 * `last_stepsize` – (`initialstepsize`) the last step size we start the search with
 * `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
     before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
-
+* `initial_guess` (`(p,o,i,l) -> l`)  based on a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
+  and a current iterate `i` and a last step size `l`, this returns an initial guess. The default uses the last obtained stepsize
 # Constructor
 
     ArmijoLineSearch(M)
@@ -140,13 +141,14 @@ faces are available:
   its gradient (a tangent vector) `gradFx```=\operatorname{grad}F(x)`` at  `x` and an optional
   search direction tangent vector `η=-gradFx` are the arguments.
 """
-mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
+mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod, F} <: Linesearch
     initial_stepsize::Float64
     retraction_method::TRM
     contraction_factor::Float64
     sufficient_decrease::Float64
     last_stepsize::Float64
     linesearch_stopsize::Float64
+    initial_guess::F
     @deprecate ArmijoLinesearch(
         s::Float64=1.0,
         r::AbstractRetractionMethod=ExponentialRetraction(),
@@ -168,26 +170,28 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
         contraction_factor::Float64=0.95,
         sufficient_decrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
+        initial_guess = (p,o,i,l) -> l,
     )
-        return new{typeof(retraction_method)}(
+        return new{typeof(retraction_method), typeof(initial_guess)}(
             initial_stepsize,
             retraction_method,
             contraction_factor,
             sufficient_decrease,
             initial_stepsize,
             linesearch_stopsize,
+            initial_guess,
         )
     end
 end
 function (a::ArmijoLinesearch)(
-    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
+    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 )
     a.last_stepsize = linesearch_backtrack(
         p.M,
         x -> p.cost(p.M, x),
         get_iterate(o),
         get_gradient!(p, o.gradient, get_iterate(o)),
-        a.last_stepsize,
+        a.initial_guess(p, o, i, a.last_stepsize),
         a.sufficient_decrease,
         a.contraction_factor,
         a.retraction_method,

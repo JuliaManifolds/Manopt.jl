@@ -23,8 +23,8 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 
 # Input
 * `M` : a manifold ``\mathcal M``
-* `F` : a cost function ``F:\mathcal M→ℝ`` to minimize
-* `gradF`: the gradient ``\operatorname{grad}F:\mathcal M → T\mathcal M`` of ``F``
+* `F` : a cost function ``F:\mathcal M→ℝ`` to minimize implemented as a function `(M,p) -> v`
+* `gradF`: the gradient ``\operatorname{grad}F:\mathcal M → T\mathcal M`` of ``F`` implemented also as `(M,x) -> X`
 * `x` : an initial value ``x∈\mathcal M``
 
 # Optional
