@@ -132,8 +132,7 @@ last step size.
 
 with the Fields above as keyword arguments and the retraction is set to the default retraction on `M`.
 
-The constructors return the functor to perform Armijo line search, where two inter
-faces are available:
+The constructors return the functor to perform Armijo line search, where two interfaces are available:
 * based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
   and a current iterate `i`.
 * with `(M, x, F, gradFx[,η=-gradFx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#Manifold) `M`, a current
