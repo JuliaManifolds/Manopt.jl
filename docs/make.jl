@@ -80,7 +80,7 @@ for e in examples
         ```@meta
         EditURL = "$(examples_src_folder)$(e[:file]).jl"
         ```
-        $(rendered["$(t[:file]).jl"][1])
+        $(rendered["$(e[:file]).jl"][1])
         """,
     )
     push!(example_menu, e[:title] => joinpath(examples_relative_path, e[:file] * ".md"))
