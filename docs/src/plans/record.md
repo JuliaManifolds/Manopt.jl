@@ -2,7 +2,7 @@
 ### [Record values](@id RecordSection)
 
 To record values during the iterations of a solver run, there are in general two possibilities.
-On the one hand, the high-level interfaces provide a `record=` keyword, that accepts several different inputs. For more details see [How to record](pluto/HowToRecord.md)
+On the one hand, the high-level interfaces provide a `record=` keyword, that accepts several different inputs. For more details see [How to record](../tutorials/HowToRecord.md).
 
 For example recording the gradient from the [`GradientDescentOptions`](@ref) is
 automatically available, as explained in the [`gradient_descent`](@ref) solver.

@@ -10,12 +10,16 @@ include("constrained_plan.jl")
 include("alm_plan.jl")
 include("conjugate_gradient_plan.jl")
 include("epm_plan.jl")
+include("frank_wolfe_plan.jl")
 include("quasi_newton_plan.jl")
 include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("subgradient_plan.jl")
 include("particle_swarm_plan.jl")
+
 include("primal_dual_plan.jl")
+include("higher_order_primal_dual_plan.jl")
+
 include("stochastic_gradient_plan.jl")
 
 include("stopping_criterion.jl")

@@ -8,6 +8,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     include("plans/test_gradient_plan.jl")
     include("plans/test_hessian_plan.jl")
     include("plans/test_primal_dual_plan.jl")
+    include("plans/test_higher_order_primal_dual_plan.jl")
     include("plans/test_record.jl")
     include("plans/test_stopping_criteria.jl")
 end
@@ -32,11 +33,13 @@ end
     include("solvers/test_conjugate_gradient.jl")
     include("solvers/test_Douglas_Rachford.jl")
     include("solvers/test_cyclic_proximal_point.jl")
+    include("solvers/test_Frank_Wolfe.jl")
     include("solvers/test_gradient_descent.jl")
     include("solvers/test_Nelder_Mead.jl")
     include("solvers/test_quasi_Newton.jl")
     include("solvers/test_trust_regions.jl")
     include("solvers/test_particle_swarm.jl")
+    include("solvers/test_primal_dual_semismooth_Newton.jl")
     include("solvers/test_stochastic_gradient_descent.jl")
     include("solvers/test_subgradient_method.jl")
 end

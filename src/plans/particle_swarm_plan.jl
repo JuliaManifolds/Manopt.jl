@@ -8,7 +8,7 @@ Describes a particle swarm optimizing algorithm, with
 
 # Fields
 
-* `x0` – a set of points (of type `AbstractVector{P}`) on a manifold as initial particle positions
+* `x` – a set of points (of type `AbstractVector{P}`) on a manifold as initial particle positions
 * `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
@@ -23,7 +23,7 @@ Describes a particle swarm optimizing algorithm, with
 
     ParticleSwarmOptions(M, x0, velocity; kawrgs...)
 
-construct a particle swarm Option for the manifold `M` starting at point `x0` with velocities `x0`,
+construct a particle swarm Option for the manifold `M` starting at initial population `x0` with velocities `x0`,
 where the manifold is used within the defaults of the other fields mentioned above,
 which are keyword arguments here.
 
@@ -115,3 +115,4 @@ mutable struct ParticleSwarmOptions{
         return o
     end
 end
+get_iterate(O::ParticleSwarmOptions) = O.x

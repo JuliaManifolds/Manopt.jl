@@ -103,4 +103,3 @@ function step_solver!(
     o.k = ((o.k) % length(o.order)) + 1
     return o
 end
-get_solver_result(o::StochasticGradientDescentOptions) = o.x

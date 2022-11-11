@@ -119,26 +119,35 @@ end
 @doc raw"""
     DebugChange()
 
-debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
+debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`Options`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreOptionsAction( (:x,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreOptionsAction( (:Iterate,) )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
+  for approximating the distance.
+* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+  used for approximating distance.
 """
-mutable struct DebugChange <: DebugAction
+mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreOptionsAction
+    invretr::TInvRetr
     function DebugChange(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x,)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
+        manifold::AbstractManifold=DefaultManifold(1),
+        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            manifold
+        ),
     )
-        return new(io, format, storage)
+        return new{typeof(invretr)}(io, format, storage, invretr)
     end
 end
 @deprecate DebugChange(a::StoreOptionsAction, pre::String="Last Change: ", io::IO=stdout) DebugChange(;
@@ -146,7 +155,43 @@ end
 )
 function (d::DebugChange)(p::Problem, o::Options, i)
     (i > 0) && Printf.format(
-        d.io, Printf.Format(d.format), distance(p.M, o.x, get_storage(d.storage, :x))
+        d.io,
+        Printf.Format(d.format),
+        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate), d.invretr),
+    )
+    d.storage(p, o, i)
+    return nothing
+end
+@doc raw"""
+    DebugGradientChange()
+
+debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`Options`](@ref) `o`)
+during the last iteration. See [`DebugEntryChange`](@ref) for the general case
+
+# Keyword Parameters
+* `storage` – (`StoreOptionsAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
+* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io` – (`stdout`) default steream to print the debug to.
+* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+"""
+mutable struct DebugGradientChange <: DebugAction
+    io::IO
+    format::String
+    storage::StoreOptionsAction
+    function DebugGradientChange(;
+        storage::StoreOptionsAction=StoreOptionsAction((:Gradient,)),
+        io::IO=stdout,
+        prefix::String="Last Change: ",
+        format::String="$(prefix)%f",
+    )
+        return new(io, format, storage)
+    end
+end
+function (d::DebugGradientChange)(p::Problem, o::Options, i)
+    (i > 0) && Printf.format(
+        d.io,
+        Printf.Format(d.format),
+        distance(p.M, get_gradient(o), get_storage(d.storage, :Gradient)),
     )
     d.storage(p, o, i)
     return nothing
@@ -154,7 +199,7 @@ end
 @doc raw"""
     DebugIterate <: DebugAction
 
-debug for the current iterate (stored in `o.x`).
+debug for the current iterate (stored in `get_iterate(o)`).
 
 # Constructor
     DebugIterate()
@@ -178,7 +223,7 @@ mutable struct DebugIterate <: DebugAction
 end
 @deprecate DebugIterate(io::IO, long::Bool=false) DebugIterate(; io=io, long=long)
 function (d::DebugIterate)(::Problem, o::Options, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.x)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(o))
     return nothing
 end
 
@@ -235,7 +280,7 @@ end
 @deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
 @deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
 function (d::DebugCost)(p::Problem, o::Options, i::Int)
-    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, o.x))
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(o)))
     return nothing
 end
 
@@ -294,7 +339,7 @@ print a certain entries change during iterates
 
 # Additional Fields
 * `print` – (`print`) function to print the result
-* `prefix` – (`"Change of :x"`) prefix to the print out
+* `prefix` – (`"Change of :Iterate"`) prefix to the print out
 * `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
 * `field` – Symbol the field can be accessed with within [`Options`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
@@ -364,6 +409,76 @@ function (d::DebugStoppingCriterion)(::Problem, o::Options, i::Int)
 end
 
 @doc raw"""
+    DebugTime()
+
+Measure time and print the intervals. Using `start=true` you can start the timer on construction,
+for example to measure the runtime of an algorithm overall (adding)
+
+The measured time is rounded using the given `time_accuracy` and printed after [canonicalization]().
+
+# Keyword Parameters
+
+* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io` – (`stdout`) default steream to print the debug to.
+* `format` - ( `"$prefix %s"`) format to print the output using an sprintf format, where `%s` is the canonicalized time`.
+* `mode` – (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
+* `start` – (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on firsr call.
+* `time_accuracy` – (`Millisecond(1)`) round the time to this period before printing the canonicalized time
+"""
+mutable struct DebugTime <: DebugAction
+    io::IO
+    format::String
+    last_time::Nanosecond
+    time_accuracy::Period
+    mode::Symbol
+    function DebugTime(;
+        start=false,
+        io::IO=stdout,
+        prefix::String="time spent:",
+        format::String="$(prefix) %s",
+        mode::Symbol=:cumulative,
+        time_accuracy::Period=Millisecond(1),
+    )
+        return new(io, format, Nanosecond(start ? time_ns() : 0), time_accuracy, mode)
+    end
+end
+function (d::DebugTime)(::Problem, ::Options, i)
+    if i == 0 || d.last_time == Nanosecond(0) # init
+        d.last_time = Nanosecond(time_ns())
+    else
+        t = time_ns()
+        p = Nanosecond(t) - d.last_time
+        Printf.format(
+            d.io, Printf.Format(d.format), canonicalize(round(p, d.time_accuracy))
+        )
+    end
+    if d.mode == :iterative
+        d.last_time = Nanosecond(time_ns())
+    end
+    return nothing
+end
+
+"""
+    reset!(d::DebugTime)
+
+reset the internal time of a [`DebugTime`](@ref), that is start from now again.
+"""
+function reset!(d::DebugTime)
+    d.last_time = Nanosecond(time_ns())
+    return d
+end
+
+"""
+    stop!(d::DebugTime)
+
+stop the reset the internal time of a [`DebugTime`](@ref), that is set the time to 0 (undefined)
+"""
+function stop!(d::DebugTime)
+    d.last_time = Nanosecond(0)
+    return d
+end
+
+@doc raw"""
     DebugWarnIfCostIncreases <: DebugAction
 
 print a warning if the cost increases.
@@ -372,12 +487,13 @@ Note that this provides an additional warning for gradient descent
 with its default constant step size.
 
 # Constructor
-    DebugWarnIfCostIncreases(warn=:Always; tol=1e-13)
+    DebugWarnIfCostIncreases(warn=:Once; tol=1e-13)
 
-Initialize the warning to warn `:Always` and introduce a tolerance for the test of `1e-13`.
+Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e-13`.
 
-This can be set to `:Once` to only warn the first time the cost increases.
-It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
 mutable struct DebugWarnIfCostIncreases <: DebugAction
@@ -390,12 +506,11 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
 end
 function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
     if d.status !== :No
-        cost = get_cost(p, o.x)
+        cost = get_cost(p, get_iterate(o))
         if cost > d.old_cost + d.tol
             # Default case in Gradient Descent, include a tipp
             @warn """The cost increased.
-            At iteration #$i the cost increased from $(d.old_cost) to $(cost).
-            You should check your gradient, step size function or iteration in general."""
+            At iteration #$i the cost increased from $(d.old_cost) to $(cost)."""
             if o isa GradientDescentOptions && o.stepsize isa ConstantStepsize
                 @warn """You seem to be running a `gradient_decent` with the default `ConstantStepsize`.
                 For ease of use, this is set as the default, but might not converge.
@@ -403,11 +518,84 @@ function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
                 `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,o,i))."""
             end
             if d.status === :Once
-                @warn "Further warnings will be supressed, use DebugWarnIfCostIncreases(:Always) to get all warnings"
+                @warn "Further warnings will be supressed, use DebugWarnIfCostIncreases(:Always) to get all warnings."
                 d.status = :No
             end
         else
             d.old_cost = min(d.old_cost, cost)
+        end
+    end
+    return nothing
+end
+
+@doc raw"""
+    DebugWarnIfCostNotFinite <: DebugAction
+
+A debug to see when a field (value or array within the Options is or contains values
+that are not finite, for example `Inf` or `Nan`.
+
+# Constructor
+    DebugWarnIfCostNotFinite(field::Symbol, warn=:Once)
+
+Initialize the warning to warn `:Once`.
+
+This can be set to `:Once` to only warn the first time the cost is Nan.
+It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+All other symbols are handled as if they were `:Always:`
+"""
+mutable struct DebugWarnIfCostNotFinite <: DebugAction
+    status::Symbol
+    DebugWarnIfCostNotFinite(warn::Symbol=:Once) = new(warn)
+end
+function (d::DebugWarnIfCostNotFinite)(p::Problem, o::Options, i::Int)
+    if d.status !== :No
+        cost = get_cost(p, get_iterate(o))
+        if !isfinite(cost)
+            @warn """The cost is not finite.
+            At iteration #$i the cost evaluated to $(cost)."""
+            if d.status === :Once
+                @warn "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings."
+                d.status = :No
+            end
+        end
+    end
+    return nothing
+end
+
+@doc raw"""
+    DebugWarnIfFieldNotFinite <: DebugAction
+
+A debug to see when a field from the options is not finite, for example `Inf` or `Nan`
+
+# Constructor
+    DebugWarnIfFieldNotFinite(field::Symbol, warn=:Once)
+
+Initialize the warning to warn `:Once`.
+
+This can be set to `:Once` to only warn the first time the cost is Nan.
+It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+All other symbols are handled as if they were `:Always:`
+
+# Example
+    DebugWaranIfFieldNotFinite(:gradient)
+
+Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
+"""
+mutable struct DebugWarnIfFieldNotFinite <: DebugAction
+    status::Symbol
+    field::Symbol
+    DebugWarnIfFieldNotFinite(field::Symbol, warn::Symbol=:Once) = new(warn, field)
+end
+function (d::DebugWarnIfFieldNotFinite)(::Problem, o::Options, i::Int)
+    if d.status !== :No
+        v = getproperty(o, d.field)
+        if !all(isfinite.(v))
+            @warn """The field o.$(d.field) is or contains values that are not finite.
+            At iteration #$i it evaluated to $(v)."""
+            if d.status === :Once
+                @warn "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
+                d.status = :No
+            end
         end
     end
     return nothing
@@ -488,18 +676,28 @@ Note that the Shortcut symbols should all start with a capital letter.
 
 * `:Cost` creates a [`DebugCost`](@ref)
 * `:Change` creates a [`DebugChange`](@ref)
+* `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
+* `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
+* `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `:gradient`.
+* `:Time` creates a [`DebugTime`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
 function DebugActionFactory(s::Symbol)
     (s == :Cost) && return DebugCost()
     (s == :Change) && return DebugChange()
+    (s == :GradientChange) && return DebugGradientChange()
     (s == :Iterate) && return DebugIterate()
     (s == :Iteration) && return DebugIteration()
     (s == :Stepsize) && return DebugStepsize()
+    (s == :WarnCost) && return DebugWarnIfCostNotFinite()
+    (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:gradient)
+    (s == :Time) && return DebugTime()
+    (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
     return DebugEntry(s)
 end
 """
@@ -512,17 +710,23 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 
 * `:Cost` creates a [`DebugCost`](@ref)
 * `:Change` creates a [`DebugChange`](@ref)
+* `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
+* `:Time` creates a [`DebugTime`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
 function DebugActionFactory(t::Tuple{Symbol,String})
     (t[1] == :Change) && return DebugChange(; format=t[2])
+    (t[1] == :GradientChange) && return DebugGradientChange(; format=t[2])
     (t[1] == :Iteration) && return DebugIteration(; format=t[2])
     (t[1] == :Iterate) && return DebugIterate(; format=t[2])
     (t[1] == :Cost) && return DebugCost(; format=t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format=t[2])
+    (t[1] == :Time) && return DebugTime(; format=t[2])
+    (t[1] == :IterativeTime) && return DebugTime(; mode=:Iterative, format=t[2])
     return DebugEntry(t[1]; format=t[2])
 end

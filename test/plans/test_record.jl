@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, ManifoldsBase
+using Manifolds, Manopt, Test, ManifoldsBase, Dates
 
 @testset "Record Options" begin
     # helper to get debug as string
@@ -104,6 +104,12 @@ using Manifolds, Manopt, Test, ManifoldsBase
     e = RecordChange([4.0, 2.0])
     e(p, o, 1)
     @test e.recorded_values == [1.0] # no x0 -> assume x0 is the first iterate
+
+    dinvretr = RecordChange(; invretr=PolarInverseRetraction())
+    dmani = RecordChange(; manifold=Symplectic(2))
+    @test dinvretr.invretr === PolarInverseRetraction()
+    @test dmani.invretr === CayleyInverseRetraction()
+    @test d.invretr === LogarithmicInverseRetraction()
     # RecordEntry
     o.x = x
     f = RecordEntry(x, :x)
@@ -145,11 +151,39 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @test isa(RecordFactory(o, [2])[:Iteration], RecordEvery)
     @test rf[:Iteration].group[2].field == :gradient
     @test length(rf[:Iteration].group) == 2
+    s = [:Cost, :Iteration, :Change, :Iterate, :Time, :IterativeTime]
     @test all(
         isa.(
-            RecordFactory(o, [:Cost, :Iteration, :Change, :Iterate])[:Iteration].group,
-            [RecordCost, RecordIteration, RecordChange, RecordIterate],
+            RecordFactory(o, s)[:Iteration].group,
+            [
+                RecordCost,
+                RecordIteration,
+                RecordChange,
+                RecordIterate,
+                RecordTime,
+                RecordTime,
+            ],
         ),
     )
     @test RecordActionFactory(o, g) == g
+
+    h1 = RecordTime(; mode=:cumulative)
+    t = h1.start
+    @test t isa Nanosecond
+    h1(p, o, 1)
+    @test h1.start == t
+    h2 = RecordTime(; mode=:iterative)
+    t = h2.start
+    @test t isa Nanosecond
+    sleep(0.002)
+    h2(p, o, 1)
+    @test h2.start != t
+    h3 = RecordTime(; mode=:total)
+    h3(p, o, 1)
+    h3(p, o, 10)
+    h3(p, o, 19)
+    @test length(h3.recorded_values) == 0
+    # stop after 20 so 21 hits
+    h3(p, o, 20)
+    @test length(h3.recorded_values) == 1
 end

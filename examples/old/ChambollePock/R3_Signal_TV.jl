@@ -1,5 +1,5 @@
 #
-# Minimize total variation of a signal of S2 data.
+# Minimize total variation of a signal of R3 data.
 #
 # This example is part of Example 6.1 in the publication
 #
@@ -11,10 +11,10 @@ using Manopt, Manifolds, LinearAlgebra
 
 #
 # Script Settings
-experiment_name = "S2_Signal_TV_CP"
+experiment_name = "R3_Signal_TV_CP"
 export_orig = true
-export_primal = false
-export_table = false
+export_primal = true
+export_table = true
 use_debug = true
 #
 # Automatic Script Settings
@@ -36,12 +36,12 @@ max_iterations = 500
 noise_level = 0.0
 noise_type = :Gaussian
 
-pixelM = Sphere(2);
+pixelM = Euclidean(3)
 base = [1.0, 0.0, 0.0]
 X = π / 4 * [0.0, 1.0, 0.0]
-# Generate a signal with two sections
-p1 = exp(pixelM, base, X)
-p2 = exp(pixelM, base, -X)
+# Generate a signal with two sections - same signal as in S2_Signal_TV
+p1 = exp(Sphere(2), base, X)
+p2 = exp(Sphere(2), base, -X)
 f = vcat(fill(p1, signal_section_size), fill(p2, signal_section_size))
 #
 # Compute exact minimizer
@@ -67,7 +67,7 @@ n = Λ(M, m)
 x0 = deepcopy(f)
 ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
-storage = StoreOptionsAction((:x, :n, :ξbar))
+storage = StoreOptionsAction((:Iterate, :n, :ξbar))
 
 @time o = ChambollePock(
     M,
@@ -104,7 +104,7 @@ storage = StoreOptionsAction((:x, :n, :ξbar))
         missing
     end,
     record=if export_table
-        [:Iteration, RecordPrimalChange(x0), RecordDualChange((ξ0, n)), :Cost, RecordCk()]
+        [:Iteration, RecordPrimalChange(), RecordDualChange(), :Cost, RecordCk()]
     else
         missing
     end,

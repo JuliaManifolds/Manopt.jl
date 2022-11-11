@@ -155,8 +155,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test_throws DomainError dual_residual(p_exact, o_err, x_old, ξ_old, n_old)
     end
     @testset "Debug prints" begin
-        a = StoreOptionsAction((:x, :ξ, :n, :m))
-        update_storage!(a, Dict(:x => x_old, :ξ => ξ_old, :n => n_old, :m => copy(m)))
+        a = StoreOptionsAction((:Iterate, :ξ, :n, :m))
+        update_storage!(a, Dict(:Iterate => x_old, :ξ => ξ_old, :n => n_old, :m => copy(m)))
         io = IOBuffer()
 
         d1 = DebugDualResidual(; storage=a, io=io)
@@ -235,8 +235,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test startswith(s, "Primal Residual:")
     end
     @testset "Records" begin
-        a = StoreOptionsAction((:x, :ξ, :n, :m))
-        update_storage!(a, Dict(:x => x_old, :ξ => ξ_old, :n => n_old, :m => copy(m)))
+        a = StoreOptionsAction((:Iterate, :ξ, :n, :m))
+        update_storage!(a, Dict(:Iterate => x_old, :ξ => ξ_old, :n => n_old, :m => copy(m)))
         io = IOBuffer()
 
         for r in [

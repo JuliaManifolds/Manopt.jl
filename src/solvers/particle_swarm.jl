@@ -8,9 +8,11 @@ The aim of PSO is to find the particle position ``g`` on the `Manifold M` that s
 ```
 To this end, a swarm of particles is moved around the `Manifold M` in the following manner.
 For every particle ``k`` we compute the new particle velocities ``v_k^{(i)}`` in every step ``i`` of the algorithm by
+
 ```math
 v_k^{(i)} = ω \, \operatorname{T}_{x_k^{(i)}\gets x_k^{(i-1)}}v_k^{(i-1)} + c \,  r_1  \operatorname{retr}_{x_k^{(i)}}^{-1}(p_k^{(i)}) + s \,  r_2 \operatorname{retr}_{x_k^{(i)}}^{-1}(g),
 ```
+
 where ``x_k^{(i)}`` is the current particle position, ``ω`` denotes the inertia,
 ``c`` and ``s`` are a cognitive and a social weight, respectively,
 ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step,
@@ -18,15 +20,19 @@ where ``x_k^{(i)}`` is the current particle position, ``ω`` denotes the inertia
 ``\operatorname{T}`` is a vector transport.
 
 Then the position of the particle is updated as
+
 ```math
 x_k^{(i+1)} = \operatorname{retr}_{x_k^{(i)}}(v_k^{(i)}),
 ```
+
 where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`. At the end of each step for every particle, we set
+
 ```math
 p_k^{(i+1)} = \begin{cases}
 x_k^{(i+1)},  & \text{if } F(x_k^{(i+1)})<F(p_{k}^{(i)}),\\
 p_{k}^{(i)}, & \text{else,}
 \end{cases}
+
 ```
 and
 ```math
@@ -80,6 +86,7 @@ function particle_swarm(
     x_res = copy.(Ref(M), x0)
     return particle_swarm!(M, F; n=n, x0=x_res, kwargs...)
 end
+
 @doc raw"""
     patricle_swarm!(M, F; n=100, x0::AbstractVector=[random_point(M) for i in 1:n], kwargs...)
 
@@ -168,3 +175,22 @@ function step_solver!(p::CostProblem, o::ParticleSwarmOptions, iter)
     end
 end
 get_solver_result(o::ParticleSwarmOptions) = o.g
+
+#
+# Change not only refers to different iterates (x=the whole population)
+# but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
+#
+function (c::StopWhenChangeLess)(P::CostProblem, O::ParticleSwarmOptions, i)
+    if has_storage(c.storage, :Iterate)
+        x_old = get_storage(c.storage, :Iterate)
+        n = length(O.x)
+        d = distance(PowerManifold(P.M, NestedPowerRepresentation(), n), O.x, x_old)
+        if d < c.threshold && i > 0
+            c.reason = "The algorithm performed a step with a change ($d in the population) less than $(c.threshold).\n"
+            c.storage(P, O, i)
+            return true
+        end
+    end
+    c.storage(P, O, i)
+    return false
+end

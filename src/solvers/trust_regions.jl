@@ -234,4 +234,3 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     end
     return o
 end
-get_solver_result(o::TrustRegionsOptions) = o.x

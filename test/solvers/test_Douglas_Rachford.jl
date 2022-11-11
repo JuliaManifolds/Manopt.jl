@@ -1,3 +1,4 @@
+using Manifolds, Manopt, Test
 @testset "DouglasRachford" begin
     # Though this seems a strange way, it is a way to compute the mid point
     M = Sphere(2)

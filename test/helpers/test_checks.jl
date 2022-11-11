@@ -16,7 +16,7 @@ default(; show=false, reuse=true)
     @test check_gradient(M, F, gradF, p, r)
 
     gradF2(M, p) = -0.5 * log(M, p, q)
-    @test_throws ErrorException check_gradient(M, F, gradF2, p, r; error=true)
+    @test_throws ErrorException check_gradient(M, F, gradF2, p, r; throw_error=true)
     @test !check_gradient(M, F, gradF2, p, r)
 
     check_gradient(M, F, gradF, p, r; plot=true)

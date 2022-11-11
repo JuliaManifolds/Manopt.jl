@@ -6,7 +6,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Fields
 * `x` – the current iterate, a point on a manifold
-* `gradient` – the current gradient
+* `gradient` – the current gradient, also denoted as ``ξ`` or ``ξ_k`` for the gradient in the ``k``th step.
 * `δ` – the current descent direction, i.e. also tangent vector
 * `β` – the current update coefficient rule, see .
 * `coefficient` – a [`DirectionUpdateRule`](@ref) function to determine the new `β`
@@ -78,9 +78,8 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
-direction ``\delta=\delta_k``, where the last three ones are stored in the
-variables with prequel `Old` based on [^Flethcer1987] adapted to manifolds:
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+and the last update direction ``\delta=\delta_k``,  based on [^Flethcer1987] adapted to manifolds:
 
 ```math
 β_k =
@@ -102,7 +101,7 @@ Construct the conjugate descent coefficient update rule, a new storage is create
 mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
     function ConjugateDescentCoefficient(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient))
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient))
     )
         return new(a)
     end
@@ -110,11 +109,11 @@ end
 function (u::ConjugateDescentCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :gradient]))
+    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, gradientOld = get_storage.(Ref(u.storage), [:x, :gradient])
+    xOld, gradientOld = get_storage.(Ref(u.storage), [:Iterate, :gradient])
     update_storage!(u.storage, o)
     return inner(p.M, o.x, o.gradient, o.gradient) / inner(p.M, xOld, -o.δ, gradientOld)
 end
@@ -124,11 +123,10 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
-direction ``\delta=\delta_k``, where the last three ones are stored in the
-variables with prequel `Old` based on [^DaiYuan1999]
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+and the last update direction ``\delta=\delta_k``, based on [^DaiYuan1999] adapted to manifolds:
 
-adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
+Let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
@@ -161,17 +159,17 @@ mutable struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreOptionsAction
     function DaiYuanCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient, :δ)),
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
 end
 function (u::DaiYuanCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
-    if !all(has_storage.(Ref(u.storage), [:x, :gradient, :δ]))
+    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:x, :gradient, :δ])
+    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
     update_storage!(u.storage, o)
 
     gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
@@ -185,9 +183,8 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
-direction ``\delta=\delta_k``, where the last three ones are stored in the
-variables with prequel `Old` based on [^FletcherReeves1964] adapted to manifolds:
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+and the last update direction ``\delta=\delta_k``,  based on [^FletcherReeves1964] adapted to manifolds:
 
 ````math
 β_k =
@@ -209,7 +206,7 @@ Construct the Fletcher Reeves coefficient update rule, a new storage is created 
 mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
     storage::StoreOptionsAction
     function FletcherReevesCoefficient(
-        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient))
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient))
     )
         return new(a)
     end
@@ -217,10 +214,10 @@ end
 function (u::FletcherReevesCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :gradient]))
+    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, gradientOld = get_storage.(Ref(u.storage), [:x, :gradient])
+    xOld, gradientOld = get_storage.(Ref(u.storage), [:Iterate, :gradient])
     update_storage!(u.storage, o)
     return inner(p.M, o.x, o.gradient, o.gradient) /
            inner(p.M, xOld, gradientOld, gradientOld)
@@ -231,9 +228,8 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
-direction ``\delta=\delta_k``, where the last three ones are stored in the variables with
-prequel `Old` based on [^HagerZhang2005]
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+and the last update direction ``\delta=\delta_k``, based on [^HagerZhang2005]
 adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
@@ -269,7 +265,7 @@ mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreOptionsAction
     function HagerZhangCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient, :δ)),
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -277,11 +273,11 @@ end
 function (u::HagerZhangCoefficient)(
     p::P, o::O, i
 ) where {P<:GradientProblem,O<:ConjugateGradientDescentOptions}
-    if !all(has_storage.(Ref(u.storage), [:x, :gradient, :δ]))
+    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:x, :gradient, :δ])
+    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
     update_storage!(u.storage, o)
 
     gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
@@ -303,17 +299,18 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
-direction ``\delta=\delta_k``, where the last three ones are stored in the
-variables with prequel `Old` based on [^HeestensStiefel1952]
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+and the last update direction ``\delta=\delta_k``,  based on [^HeestensStiefel1952]
+adapted to manifolds as follows:
 
-adapted to manifolds as follows: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``.
+Let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``.
 Then the update reads
 
 ````math
 β_k = \frac{\langle ξ_{k+1}, \nu_k \rangle_{x_{k+1}} }
     { \langle P_{x_{k+1}\gets x_k} \delta_k, \nu_k\rangle_{x_{k+1}} },
 ````
+
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 # Constructor
@@ -338,7 +335,7 @@ mutable struct HeestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} 
     storage::StoreOptionsAction
     function HeestenesStiefelCoefficient(
         transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-        storage_action::StoreOptionsAction=StoreOptionsAction((:x, :gradient, :δ)),
+        storage_action::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(transport_method)}(transport_method, storage_action)
     end
@@ -346,11 +343,11 @@ end
 function (u::HeestenesStiefelCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :gradient, :δ]))
+    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
     end
-    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:x, :gradient, :δ])
+    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
     update_storage!(u.storage, o)
     gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
     δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
@@ -364,10 +361,11 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
-direction ``\delta=\delta_k``, where the last three ones are stored in the
-variables with prequel `Old` based on [^LuiStorey1991]
-adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+and the last update direction ``\delta=\delta_k``,  based on [^LuiStorey1991]
+adapted to manifolds:
+
+Let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
@@ -400,7 +398,7 @@ mutable struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreOptionsAction
     function LiuStoreyCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient, :δ)),
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -408,10 +406,10 @@ end
 function (u::LiuStoreyCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :gradient, :δ]))
+    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:x, :gradient, :δ])
+    xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
     update_storage!(u.storage, o)
     gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
     ν = o.gradient - gradienttr # notation y from [HZ06]
@@ -423,14 +421,15 @@ end
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` and the last update
-direction ``\delta=\delta_k``, where the last three ones are stored in the
-variables with prequel `Old` based on [^PolakRibiere1969][^Polyak1969]
+``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+and the last update direction ``\delta=\delta_k``,  based on [^PolakRibiere1969][^Polyak1969]
+adapted to manifolds:
 
-adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
+Let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the update reads
+
 ````math
 β_k =
 \frac{ \langle ξ_{k+1}, \nu_k \rangle_{x_{k+1}} }
@@ -464,7 +463,7 @@ mutable struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreOptionsAction
     function PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -472,10 +471,10 @@ end
 function (u::PolakRibiereCoefficient)(
     p::GradientProblem, o::ConjugateGradientDescentOptions, i
 )
-    if !all(has_storage.(Ref(u.storage), [:x, :gradient]))
+    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
     end
-    xOld, gradientOld = get_storage.(Ref(u.storage), [:x, :gradient])
+    xOld, gradientOld = get_storage.(Ref(u.storage), [:Iterate, :gradient])
     update_storage!(u.storage, o)
 
     gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)

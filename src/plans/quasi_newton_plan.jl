@@ -564,19 +564,40 @@ end
 @doc raw"""
     QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, which are based on the idea of a so-called cautious update. The search direction is calculated as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`]. But the update given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`] is only executed if
+These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,
+which are based on the idea of a so-called cautious update. The search direction is calculated
+as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref),
+butut the update  then is only executed if
 
 ```math
 \frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} \geq \theta(\lVert \operatorname{grad}f(x_k) \rVert_{x_k}),
 ```
 
-is satisfied, where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0`` and ``\theta`` is strictly increasing at ``0``. If this is not the case, the corresponding update will be skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref) the matrix ``H_k`` or ``B_k`` is not updated, but the basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``, and for [`LimitedMemoryQuasiNewctionDirectionUpdate`] neither the oldest vector pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` is discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}`` is added into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
-If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting method follows the method of [^HuangAbsilGallivan2018], taking into account that the corresponding step size is chosen.
-
+is satisfied, where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0``
+and ``\theta`` is strictly increasing at ``0``. If this is not the case, the corresponding
+update will be skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
+the matrix ``H_k`` or ``B_k`` is not updated.
+The basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent
+space ``T_{x_{k+1}} \mathcal{M}``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
+neither the oldest vector pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` is
+discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}`` is added
+into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``
+are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
+If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
+method follows the method of [^HuangAbsilGallivan2018], taking into account that
+the corresponding step size is chosen.
 
 # Fields
+
 * `update` – an [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 * `θ` – a monotone increasing function satisfying ``θ(0) = 0`` and ``θ`` is strictly increasing at ``0``.
+
+# Constructor
+
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; θ = x -> x)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; θ = x -> x)
+
+Generate a cautious update for either a matrix based or a limited memorz based update rule.
 
 # See also
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)

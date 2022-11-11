@@ -17,5 +17,4 @@ Manifest.toml
 *.DS_Store
 docs/src/contributing.md
 docs/src/pluto
-src/solvers/augmented_Lagrangian_method_old.jl
-src/solvers/exact_penalty_method_old.jl
+docs/src/examples/*.md

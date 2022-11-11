@@ -17,12 +17,6 @@ The ``k``th iteration consists of
 * `gradF`– the gradient ``\operatorname{grad}F : \mathcal{M} →T_x\mathcal M`` of ``F``.
 * `x` – an initial value ``x ∈ \mathcal{M}``.
 
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))
-    ),
-    return_options=false,
-
-
 # Optional
 * `basis` – (`DefaultOrthonormalBasis()`) basis within the tangent space(s) to represent the
   Hessian (inverse).
@@ -451,5 +445,3 @@ function update_hessian!(
     end
     return d
 end
-
-get_solver_result(o::QuasiNewtonOptions) = o.x

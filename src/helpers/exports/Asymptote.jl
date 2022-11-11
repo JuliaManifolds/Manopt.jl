@@ -262,7 +262,7 @@ end
 @doc raw"""
     asymptote_export_SPD(filename)
 
-export given `data` as a point on a `Power{SPDPoint}` manifold, i.e. one-, two-
+export given `data` as a point on a `Power(SymmetricPOsitiveDefinnite(3))}` manifold, i.e. one-, two-
 or three-dimensional data with points on the manifold of symmetric positive
 definite matrices.
 
@@ -270,7 +270,7 @@ definite matrices.
 * `filename` – a file to store the Asymptote code in.
 
 # Optional Arguments (Data)
-* `data` – a point representing the 1-,2-, or 3-D array of `SPDPoints`
+* `data` – a point representing the 1-,2-, or 3-D array of SPD matrices
 * `color_scheme` - A `ColorScheme` for Geometric Anisotropy Index
 * `scale_axes` - (`(1/3,1/3,1/3)`) move symmetric positive definite matrices
   closer to each other by a factor per direction compared to the distance

@@ -1,5 +1,5 @@
 #
-# Minimize total variation of a signal of SPD data.
+# Minimize total variation of a signal of S2 data.
 #
 # This example is part of Example 6.1 in the publication
 #
@@ -11,17 +11,19 @@ using Manopt, Manifolds, LinearAlgebra
 
 #
 # Script Settings
-experiment_name = "SPD_Signal_TV_CP"
+experiment_name = "S2_Signal_TV_CP"
 export_orig = true
-export_primal = true
+export_primal = false
 export_table = false
-use_debug = false
+use_debug = true
 #
 # Automatic Script Settings
-results_folder = joinpath(@__DIR__, "Signal_TV")
+current_folder = @__DIR__
 export_any = export_orig || export_primal || export_table
+results_folder = joinpath(current_folder, "Signal_TV")
 # Create folder if we have an export
 (export_any && !isdir(results_folder)) && mkdir(results_folder)
+
 #
 # Example Settings
 signal_section_size = 15
@@ -32,15 +34,14 @@ signal_section_size = 15
 γ = 0.0
 max_iterations = 500
 noise_level = 0.0
-noise_type = :Rician
-pixelM = SymmetricPositiveDefinite(3);
-base = Matrix{Float64}(I, 3, 3)
-ξ = [0.5 1.0 1.0; 1.0 1.0 0.0; 1.0 0.0 3.0]
-ξn = norm(pixelM, base, ξ)
-ξ = 2 * ξ / ξn
+noise_type = :Gaussian
+
+pixelM = Sphere(2);
+base = [1.0, 0.0, 0.0]
+X = π / 4 * [0.0, 1.0, 0.0]
 # Generate a signal with two sections
-p1 = exp(pixelM, base, ξ)
-p2 = exp(pixelM, base, -ξ)
+p1 = exp(pixelM, base, X)
+p2 = exp(pixelM, base, -X)
 f = vcat(fill(p1, signal_section_size), fill(p2, signal_section_size))
 #
 # Compute exact minimizer
@@ -50,13 +51,13 @@ jump_height = distance(pixelM, f[signal_section_size], f[signal_section_size + 1
 x_hat = shortest_geodesic(M, f, reverse(f), δ)
 include("Ck.jl")
 
+# add noise
 if noise_level > 0
     f = [exp(pixelM, p, random_tangent(pixelM, p, noise_type, noise_level)) for p in f]
 end
-
 if export_orig
     orig_file = joinpath(results_folder, experiment_name * "-original.asy")
-    asymptote_export_SPD(orig_file; data=f)
+    asymptote_export_S2_data(orig_file; data=f)
     render_asymptote(orig_file)
 end
 #
@@ -66,7 +67,7 @@ n = Λ(M, m)
 x0 = deepcopy(f)
 ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
-storage = StoreOptionsAction((:x, :n, :ξbar))
+storage = StoreOptionsAction((:Iterate, :n, :ξbar))
 
 @time o = ChambollePock(
     M,
@@ -117,8 +118,9 @@ if has_record(o)
     println("The Ck Estimate lies between $(minimum(Ck_values)) and $(maximum(Ck_values))")
 end
 println("Distance from result to minimizer: ", distance(M, x_hat, y), "\n")
+
 if export_primal
     orig_file = joinpath(results_folder, experiment_name * "-result.asy")
-    asymptote_export_SPD(orig_file; data=y)
+    asymptote_export_S2_data(orig_file; data=y)
     render_asymptote(orig_file)
 end

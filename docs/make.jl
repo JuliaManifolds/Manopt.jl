@@ -2,64 +2,88 @@ using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
 using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML, Pkg
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
-TutorialMenu = Array{Pair{String,String},1}()
+tutorial_menu = Array{Pair{String,String},1}()
 
 #
 # Generate Pluto Tutorial HTMLs
-
-# First tutorial with AD
-pluto_src_folder = joinpath(@__DIR__, "..", "pluto/")
-pluto_output_folder = joinpath(@__DIR__, "src/", "pluto/")
-pluto_relative_path = "pluto/"
-mkpath(pluto_output_folder)
+tutorial_src_folder = joinpath(@__DIR__, "..", "tutorials/")
+tutorial_output_folder = joinpath(@__DIR__, "src/", "tutorials/")
+tutorial_relative_path = "tutorials/"
+mkpath(tutorial_output_folder)
 #
-#
-# Please do not use the same name as for a(n old) literate Tutorial
-pluto_files = [
-    "Optimize!",
-    "AutomaticDifferentiation",
-    "HowToRecord",
-    "GeodesicRegression",
-    "Bezier",
-    "SecondOrderDifference",
-    "StochasticGradientDescent",
-    "Benchmark",
-    "JacobiFields",
-]
-pluto_titles = [
-    "Get started: Optimize!",
-    "Use AD in Manopt",
-    "How to record values",
-    "Do Geodesic regression",
-    "Use Bezier Curves",
-    "Compute a second order difference",
-    "Do stochastic gradient descent",
-    "speed up! using `gradF!`",
-    "Illustrate Jacobi Fields",
+# Tutorials
+@info " \n      Rendering Tutorials\n "
+tutorials = [
+    Dict(:file => "Optimize!", :title => "Get started: Optimize!"),
+    Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
+    Dict(:file => "HowToRecord", :title => "Record values"),
+    Dict(:file => "GeodesicRegression", :title => "Do Geodesic regression"),
+    Dict(:file => "Bezier", :title => "Use Bezier Curves"),
+    Dict(:file => "SecondOrderDifference", :title => "Compute a second order difference"),
+    Dict(:file => "StochasticGradientDescent", :title => "Do stochastic gradient descent"),
+    Dict(:file => "Benchmark", :title => "speed up! using `gradF!`"),
+    Dict(:file => "JacobiFields", :title => "Illustrate Jacobi Fields"),
 ]
 # build menu and write files myself - tp set edit url correctly.
-for (title, file) in zip(pluto_titles, pluto_files)
-    global TutorialMenu
+for t in tutorials
+    global tutorial_menu
     rendered = build_notebooks( #though not really parallel here
         BuildOptions(
-            pluto_src_folder;
+            tutorial_src_folder;
             output_format=documenter_output,
             write_files=false,
-            use_distributed=false,
+            use_distributed=true,
         ),
-        ["$(file).jl"],
+        ["$(t[:file]).jl"],
     )
     write(
-        pluto_output_folder * file * ".md",
+        tutorial_output_folder * t[:file] * ".md",
         """
         ```@meta
-        EditURL = "$(pluto_src_folder)$(file).jl"
+        EditURL = "$(tutorial_src_folder)$(t[:file]).jl"
         ```
-
-        $(rendered[1])
+        $(rendered["$(t[:file]).jl"][1])
         """,
     )
-    push!(TutorialMenu, title => joinpath(pluto_relative_path, file * ".md"))
+    push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path, t[:file] * ".md"))
+end
+
+example_menu = Array{Pair{String,String},1}()
+
+examples_src_folder = joinpath(@__DIR__, "..", "examples/")
+examples_output_folder = joinpath(@__DIR__, "src/", "examples/")
+examples_relative_path = "examples/"
+mkpath(examples_output_folder)
+examples = [
+    Dict(:file => "robustPCA", :title => "Robust PCA"),
+    Dict(:file => "smallestEigenvalue", :title => "Rayleigh quotient"),
+    Dict(
+        :file => "FrankWolfeSPDMean", :title => "Frank Wolfe for Riemannian Center of Mass"
+    ),
+]
+@info " \n      Rendering Examples\n "
+# build menu and write files myself - tp set edit url correctly.
+for e in examples
+    global example_menu
+    rendered = build_notebooks( #though not really parallel here
+        BuildOptions(
+            examples_src_folder;
+            output_format=documenter_output,
+            write_files=false,
+            use_distributed=true,
+        ),
+        ["$(e[:file]).jl"],
+    )
+    write(
+        examples_output_folder * e[:file] * ".md",
+        """
+        ```@meta
+        EditURL = "$(examples_src_folder)$(e[:file]).jl"
+        ```
+        $(rendered["$(e[:file]).jl"][1])
+        """,
+    )
+    push!(example_menu, e[:title] => joinpath(examples_relative_path, e[:file] * ".md"))
 end
 
 generated_path = joinpath(@__DIR__, "src")
@@ -81,6 +105,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
     end
 end
 
+@info " \n      Rendering Documentation\n "
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
@@ -88,16 +113,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "About" => "about.md",
-        "How to..." => TutorialMenu,
-        "Plans" => [
-            "Specify a Solver" => "plans/index.md",
-            "Problem" => "plans/problem.md",
-            "Options" => "plans/options.md",
-            "Stepsize" => "plans/stepsize.md",
-            "Stopping Criteria" => "plans/stopping_criteria.md",
-            "Debug Output" => "plans/debug.md",
-            "Recording values" => "plans/record.md",
-        ],
+        "How to..." => tutorial_menu,
         "Solvers" => [
             "Introduction" => "solvers/index.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
@@ -107,14 +123,26 @@ makedocs(;
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
+            "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
+            "Primal-dual Riemannian semismooth Newton" => "solvers/primal_dual_semismooth_Newton.md",
             "Quasi-Newton" => "solvers/quasi_Newton.md",
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
             "Subgradient method" => "solvers/subgradient.md",
             "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Trust-Regions Solver" => "solvers/trust_regions.md",
+        ],
+        "Examples" => example_menu,
+        "Plans" => [
+            "Specify a Solver" => "plans/index.md",
+            "Problem" => "plans/problem.md",
+            "Options" => "plans/options.md",
+            "Stepsize" => "plans/stepsize.md",
+            "Stopping Criteria" => "plans/stopping_criteria.md",
+            "Debug Output" => "plans/debug.md",
+            "Recording values" => "plans/record.md",
         ],
         "Functions" => [
             "Introduction" => "functions/index.md",

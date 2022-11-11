@@ -10,7 +10,8 @@ of the correpsonding internally stored options
 function initialize_solver!(p::Problem, o::DebugOptions)
     initialize_solver!(p, o.options)
     get(o.debugDictionary, :Start, DebugDivider(""))(p, get_options(o), 0)
-    return get(o.debugDictionary, :All, DebugDivider(""))(p, get_options(o), 0)
+    get(o.debugDictionary, :All, DebugDivider(""))(p, get_options(o), 0)
+    return o
 end
 """
     step_solver!(p::Problem, o::DebugOptions, i)
@@ -21,17 +22,8 @@ the values in the [`Options`](@ref)` o.options` and print the debug specified
 function step_solver!(p::Problem, o::DebugOptions, i)
     step_solver!(p, o.options, i)
     get(o.debugDictionary, :Step, DebugDivider(""))(p, get_options(o), i)
-    return get(o.debugDictionary, :All, DebugDivider(""))(p, get_options(o), i)
-end
-
-"""
-    get_solver_result(o::DebugOptions)
-
-Return the final result after all iterations that is stored within the
-(modified during the iterations) [`Options`](@ref) `o`.
-"""
-function get_solver_result(o::DebugOptions)
-    return get_solver_result(o.options)
+    get(o.debugDictionary, :All, DebugDivider(""))(p, get_options(o), i)
+    return o
 end
 
 """
