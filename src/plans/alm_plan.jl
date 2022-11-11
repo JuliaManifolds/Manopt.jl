@@ -80,7 +80,9 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         min_stepsize::Real=1e-10,
         stopping_criterion::StoppingCriterion=StopWhenAny(
             StopAfterIteration(300),
-            StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(min_stepsize)),
+            StopWhenAll(
+                StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(min_stepsize)
+            ),
         ),
     ) where {P,Pr<:Problem,Op<:Options}
         o = new{P,Pr,Op,typeof(stopping_criterion)}()

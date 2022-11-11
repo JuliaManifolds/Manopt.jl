@@ -338,8 +338,17 @@ function (LG::ExactPenaltyGrad)(M::AbstractManifold, x::P) where {P}
     elseif LG.smoothing_technique == "linear_quadratic_huber"
         if num_inequality_constraints != 0
             grad_inequality_constraints = LG.gradG(M, x)
-            grad_ineq_cost_greater_u = sum(grad_inequality_constraints .* ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.u)) .* LG.ρ)
-            grad_ineq_cost_smaller_u = sum(grad_inequality_constraints .* (inequality_constraints./LG.u .* ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.u))) .* LG.ρ)
+            grad_ineq_cost_greater_u = sum(
+                grad_inequality_constraints .*
+                ((inequality_constraints .>= 0) .& (inequality_constraints .>= LG.u)) .*
+                LG.ρ,
+            )
+            grad_ineq_cost_smaller_u = sum(
+                grad_inequality_constraints .* (
+                    inequality_constraints ./ LG.u .*
+                    ((inequality_constraints .>= 0) .& (inequality_constraints .< LG.u))
+                ) .* LG.ρ,
+            )
             grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
         end
         if num_equality_constraints != 0

@@ -299,15 +299,16 @@ mutable struct LagrangeGrad{P,R,T}
     μ::T
     λ::T
 end
-function (LG::LagrangeGrad)(M::AbstractManifold,x::P) where {P}
-    inequality_constraints = LG.g(M,x)
-    equality_constraints = LG.h(M,x)
-    num_inequality_constraints = size(inequality_constraints,1)
-    num_equality_constraints = size(equality_constraints,1)
+function (LG::LagrangeGrad)(M::AbstractManifold, x::P) where {P}
+    inequality_constraints = LG.g(M, x)
+    equality_constraints = LG.h(M, x)
+    num_inequality_constraints = size(inequality_constraints, 1)
+    num_equality_constraints = size(equality_constraints, 1)
     if num_inequality_constraints != 0
         grad_ineq = sum(
-            ((inequality_constraints .* LG.ρ .+ LG.μ) .* LG.gradG(M,x)).*(inequality_constraints .+ LG.μ./LG.ρ .>0)
-            )
+            ((inequality_constraints .* LG.ρ .+ LG.μ) .* LG.gradG(M, x)) .*
+            (inequality_constraints .+ LG.μ ./ LG.ρ .> 0),
+        )
     end
     if num_equality_constraints != 0
         grad_eq = sum(
