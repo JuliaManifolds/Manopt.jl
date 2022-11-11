@@ -5,7 +5,7 @@ This Julia package was started and is currently maintained by [Ronny Bergmann](h
 
 The following people contributed
 * [Constantin Ahlmann-Eltze](https://const-ae.name) implemented the [gradient and differential check functions](helpers/checks.md)
-* Renée Dornig implemented the [particle swarm](@ref ParticleSwarmSolver) and the [`NonmonotoneLinesearch`](@ref)
+* Renée Dornig implemented the [particle swarm](@ref ParticleSwarmSolver), the [Riemannian Augmented Lagrangian Method](@ref AugmentedLagrangianSolver), the [Exact Penalty Method](@ref ExactPenaltySolver), as well as the [`NonmonotoneLinesearch`](@ref)
 * [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](@ref PDRSSNSolver) solver.
 * Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](@ref FrankWolfe)
 * [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) Riemer implemented the [trust regions](@ref trust_regions) and [quasi Newton](solvers/quasi_Newton.md) solvers.
