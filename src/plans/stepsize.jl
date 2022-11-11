@@ -117,8 +117,7 @@ last step size.
 
 # Fields
 * `initial_stepsize` – (`1.0`) and initial step size
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
-  the exponential map
+* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
 * `contraction_factor` – (`0.95`) exponent for line search reduction
 * `sufficient_decrease` – (`0.1`) gain within Armijo's rule
 * `last_stepsize` – (`initialstepsize`) the last step size we start the search with
