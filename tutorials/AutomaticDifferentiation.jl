@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.11
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -17,7 +17,7 @@ md"""
 
 # ╔═╡ f3bc91ee-5871-4cba-ac89-190deb71ad0f
 md"""
-Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7 the support of automatic differentiation support has been extended.
+Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7, the support of automatic differentiation support has been extended.
 
 This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function ``f\colon \mathcal M → ℝ``. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](https://manoptjl.org).
 
@@ -28,7 +28,7 @@ While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDiffe
 md"""
 In this Notebook we will take a look at a few possibilities to approximate or derive the gradient of a function ``f:\mathcal M \to ℝ`` on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
 
-1. Working _instrinsically_, i.e. stay on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
+1. Working _instrinsically_, i.e. staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
 
 2. Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
 
@@ -41,10 +41,10 @@ md"""
 
 A first idea is to generalize (multivariate) finite differences to Riemannian manifolds. Let ``X_1,\ldots,X_d ∈ T_p\mathcal M`` denote an orthonormal basis of the tangent space ``T_p\mathcal M`` at the point ``p∈\mathcal M`` on the Riemannian manifold.
 
-We can generalize the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M``. Let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y`` and we obtain
+We can generalize the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M``. Let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y``, e.g. ``c(t)= \exp_p(tY)``. We obtain
 
 ```math
-	Df(p)[Y] = \frac{\mathrm{d}}{\mathrm{d}t} f(c(t)) = \lim_{h \to 0} \frac{1}{h}(f(\exp_p(hY))-f(p))
+	Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t \to 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
 ```
 
 We can approximate ``Df(p)[X]`` by a finite difference scheme for an ``h>0`` as
@@ -143,9 +143,9 @@ md"We obtain quite a good approximation of the gradient."
 
 # ╔═╡ 77769eab-54dd-41dc-8125-0382e5ef0bf1
 md"""
-## 2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of an (not necessarily isometrically) embedded Manifold
+## 2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold
 
-Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function in the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and let ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
+Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function on the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and let ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
 
 Since we can use the pushforward of the embedding to also embed the tangent space ``T_p\mathcal M``, ``p\in \mathcal M``, we can similarly obtain the differential ``Df(p)\colon T_p\mathcal M \to \mathbb R`` by restricting the differential ``D\tilde f(p)`` to the tangent space.
 
@@ -167,7 +167,7 @@ or in words: we have to change the Riesz representer of the (restricted/projecte
 
 # ╔═╡ 57cda07f-e432-46af-b771-5e5a3067feac
 md"""
-### A continued Example
+### A Continued Example
 We continue with the Rayleigh Quotient from before, now just starting with the defintion of the Euclidean case in the embedding, the function ``F``.
 """
 
@@ -198,7 +198,7 @@ norm(M, p, X1 - X3)
 
 # ╔═╡ 893db402-283f-4e3e-8bf7-c6f22e485efb
 md"""
-### An Example for a nonisometrically embedded Manifold
+### An Example for a Nonisometrically Embedded Manifold
 
 on the manifold ``\mathcal P(3)`` of symmetric positive definite matrices.
 """
@@ -211,7 +211,7 @@ The following function computes (half) the distance squared (with respect to the
 	G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3) = \lVert \operatorname{Log}(q) \rVert_F^2,
 ```
 where $\operatorname{Log}$ denotes the matrix logarithm and ``\lVert \cdot \rVert_F`` is the Frobenius norm.
-This can be computed for symmetric positive definite matrices by summing the squares of the ``\log``arithms of the eigenvalues of ``q`` and dividing by two:
+This can be computed for symmetric positive definite matrices by summing the squares of the logarithms of the eigenvalues of ``q`` and dividing by two:
 """
 
 # ╔═╡ c93eb2da-89df-4751-b086-62be604d41e6

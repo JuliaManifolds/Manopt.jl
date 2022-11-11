@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.11
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -84,7 +84,7 @@ PlutoUI.LocalResource(image_prefix * "/regression_data.png")
 
 # ╔═╡ dd4a7653-edad-4400-9e29-59b9cca72679
 md"""
-## Time labeled data
+## Time Labeled Data
 If for each data item $d_i$ we are also given a time point $t_i\in\mathbb R$, which are pairwise different,
 then we can use the least squares error to state the objetive function as [^Fletcher2013]
 
@@ -296,7 +296,7 @@ inner(
 md"""
 But we also started with one of the best scenarios, i.e. equally spaced points on a geodesic obstructed by noise.
 
-This gets worse if you start with less even distributed data
+This gets worse if you start with less evenly distributed data
 """
 
 # ╔═╡ 0bf7e944-1d9f-490f-8a86-d9dffc564256
@@ -368,7 +368,7 @@ PlutoUI.LocalResource(image_prefix * "/regression_result2.png")
 
 # ╔═╡ 4bb8db61-2f35-4c41-af1d-4b053536b291
 md"""
-## Unlabeled data
+## Unlabeled Data
 
 If we are not given time points $t_i$, then the optimization problem extends – informally speaking –
 to also finding the “best fitting” (in the sense of smallest error).
@@ -421,7 +421,7 @@ end
 
 # ╔═╡ 498dde67-324c-431e-970d-b200f9835f83
 md"""
-The gradient in two parts, namely (a) the same gradient as before w.r.t. ``(p,X) ∈ T\mathcal M``
+The gradient in two parts, namely (a) the same gradient as before w.r.t. ``(p,X) ∈ T\mathcal M``,
 just now with a fixed `t` in mind for the second component of the product manifold ``\mathcal N``
 """
 

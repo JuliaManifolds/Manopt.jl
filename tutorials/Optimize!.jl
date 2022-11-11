@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.11
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -9,13 +9,13 @@ using Manopt, Manifolds, Random, Colors, PlutoUI
 
 # ╔═╡ 6bf76330-ad0e-11ec-0c00-894872624127
 md"""
-# Get started: Optimize!
+# Get Started: Optimize!
 
 This example illustrates how to set up and solve optimization problems and how
 to further get data from the algorithm using debug output and record data.
 We will use the Riemannian mean and median as simple examples.
 
-To start from the quite general case: a __Solver__ is an algorithm that aims
+To start from the quite general case: a __solver__ is an algorithm that aims
 to solve
 
 ```math
@@ -24,7 +24,7 @@ to solve
 
 where ``\mathcal M`` is a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and ``f:\mathcal M → ℝ`` is the cost function.
 
-In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](https://manoptjl.org/stable/plans/index.html#Manopt.Problem)
+In `Manopt.jl` a __solver__ is an algorithm that requires a [`Problem`](https://manoptjl.org/stable/plans/index.html#Manopt.Problem)
 `p` and [`Options`](https://manoptjl.org/stable/plans/index.html#Manopt.Options) `o`. While the former contains __static__ data,
 most prominently the manifold ``\mathcal M`` (usually as `p.M`) and the cost
 function ``f`` (usually as `x->get_cost(p, x)`), the latter contains __dynamic__

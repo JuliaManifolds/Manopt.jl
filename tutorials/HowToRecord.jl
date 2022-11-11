@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.11
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -9,7 +9,7 @@ using Manopt, Manifolds, Random
 
 # ╔═╡ 65e3c376-ad9f-11ec-003e-7f033e6865d8
 md"""
-# How to Record Data during the Iterations
+# How to Record Data During the Iterations
 
 The recording and debugging features make it possible to record nearly any data during the iterations.
 This tutorial illustrates how to:
@@ -45,11 +45,11 @@ gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 
 # ╔═╡ c822fe70-becd-4b0a-b66f-34366f98dfad
 md"""
-## Plain examples
+## Plain Examples
 
 For the high level interfaces of the solvers, like [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html) we have to set `return_options` to `true` to obtain the whole options structure and not only the resulting minimizer.
 
-Then we can easily use the `record=` option to add recorded values. This keyword accepts `RecordAction`s as well as several Symbols as shortcuts, for example `:Cost` to record the cost, or if your options have a field `f`, `:f` would record that entry.
+Then we can easily use the `record=` option to add recorded values. This keyword accepts `RecordAction`s as well as several symbols as shortcuts, for example `:Cost` to record the cost, or if your options have a field `f`, `:f` would record that entry.
 """
 
 # ╔═╡ fbc02960-7f7e-4500-92ac-30df7d058fa9
@@ -77,7 +77,7 @@ R2 = gradient_descent(M, F, gradF, data[1]; record=[:Iteration, :Cost], return_o
 
 # ╔═╡ 4943d34f-0aff-4879-94a6-337ce42b2e36
 md"""
-Here, the Symbol `:Cost` is mapped to using the `RecordCost` action. The same holds for `:Iteration` and `:Iterate` and any member field of the current `Options`.
+Here, the symbol `:Cost` is mapped to using the `RecordCost` action. The same holds for `:Iteration` and `:Iterate` and any member field of the current `Options`.
 To access these you can first extract the group of records (that is where the `:Iteration`s are recorded – note the plural) and then access the `:Cost`
 """
 
@@ -109,11 +109,11 @@ get_record(R2, :Iteration, (:Iteration, :Cost))
 
 # ╔═╡ de36da12-d1bb-4b91-8d5f-7a2b64f70dd1
 md"""
-## A more complex example
+## A more Complex Example
 
-To illustrate a complicated example let's record
-* the iteration number, cost and gradient field, but only every sixth iteration
-* the iteration at which we stop
+To illustrate a complicated example let's record:
+* the iteration number, cost and gradient field, but only every sixth iteration;
+* the iteration at which we stop.
 
 We first generate the problem and the options, to also illustrate the low-level works when not using `gradient_descent`.
 """
@@ -223,7 +223,7 @@ end
 # ╔═╡ 8eba9b9b-836b-48f3-b4fe-067bab605b87
 md"""
 Now we can initialize the new cost and call the gradient descent.
-Note that this illustrates also the last use case – you can pass symbol-Action pairs into the `record=`array.
+Note that this illustrates also the last use case – you can pass symbol-action pairs into the `record=`array.
 """
 
 # ╔═╡ 26cac0ff-3339-45f9-8021-04adb4d061fa
@@ -258,7 +258,7 @@ R3[:Iteration, :Count]
 
 # ╔═╡ 6456503a-6614-43f9-89c1-448e191c7769
 md"""
-And we see that the cost function is called once per iteration.
+and we see that the cost function is called once per iteration.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
