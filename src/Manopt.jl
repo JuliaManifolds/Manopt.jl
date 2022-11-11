@@ -241,11 +241,16 @@ export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
 export get_constraints,
+    get_inequality_constraint,
     get_inequality_constraints,
+    get_equality_constraint,
     get_equality_constraints,
+    get_grad_inequality_constraint,
     get_grad_inequality_constraints,
+    get_grad_equality_constraint,
     get_grad_equality_constraints
-export LagrangeCost, LagrangeGrad, ExactPenaltyCost, ExactPenaltyGrad
+export ConstraintType, FunctionConstraint, VectorConstraint
+export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -323,6 +328,7 @@ export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve
 export ApproxHessianFiniteDifference
+export ExactPenaltyCost, ExactPenaltyGrad, AugemtedLagrangianCost, AugmentedLagrangianGrad
 #
 # Stepsize
 export ConstantStepsize, DecreasingStepsize

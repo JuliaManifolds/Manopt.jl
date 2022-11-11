@@ -77,7 +77,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `λ` – (`ones(size(H(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `min_stepsize` – (`1e-10`) the minimal step size
-* `sub_problem` – ([`GradientProblem`](@ref)`(M,`[`LagrangeCost`](@ref)`(F, G, H, ρ, μ, λ),`[`LagrangeGrad`](@ref)`(F, gradF, G, gradG, H, gradH, ρ, μ, λ))`) problem for the subsolver
+* `sub_problem` – ([`GradientProblem`](@ref)`(M,`[`AugmentedLagrangianCost`](@ref)`(F, G, H, ρ, μ, λ),`[`AugmentedLagrangianGrad`](@ref)`(F, gradF, G, gradG, H, gradH, ρ, μ, λ))`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)`(copy(x), zero_vector(M,x), `[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, copy(M,x), `[`InverseBFGS`](@ref)`(),30), `[`StopAfterIteration`](@ref)`(max_inner_iter) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(min_stepsize), `[`WolfePowellLinesearch`](@ref)`(M,10^(-4),0.999))`) options of the subproblem
 * `num_outer_itertgn` – (`30`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
@@ -144,13 +144,13 @@ function augmented_Lagrangian_method!(
     min_stepsize=1e-10,
     sub_problem::Problem=GradientProblem(
         M,
-        LagrangeCost(
+        AugmentedLagrangianCost(
             ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
             ρ,
             μ,
             λ,
         ),
-        LagrangeGrad(
+        AugmentedLagrangianGrad(
             ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
             ρ,
             μ,
@@ -268,13 +268,13 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
 end
 get_solver_result(o::ALMOptions) = o.x
 
-mutable struct LagrangeCost{P,R,T}
+mutable struct AugmentedLagrangianCost{P,R,T}
     contrained_problem::P
     ρ::R
     μ::T
     λ::T
 end
-function (L::LagrangeCost)(::AbstractManifold, x)
+function (L::AugmentedLagrangianCost)(::AbstractManifold, x)
     inequality_constraints = get_inequality_constraints(L.contrained_problem, x)
     equality_constraints = get_equality_constraints(L.constrained_problem, x)
     num_inequality_constraints = length(inequality_constraints)
@@ -293,13 +293,13 @@ function (L::LagrangeCost)(::AbstractManifold, x)
     return c + (L.ρ / 2) * d
 end
 
-mutable struct LagrangeGrad{P,R,T}
+mutable struct AugmentedLagrangianGrad{P,R,T}
     constrained_problem::P
     ρ::R
     μ::T
     λ::T
 end
-function (LG::LagrangeGrad)(M::AbstractManifold, x::P) where {P}
+function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, x::P) where {P}
     inequality_constraints = LG.g(M, x)
     equality_constraints = LG.h(M, x)
     num_inequality_constraints = size(inequality_constraints, 1)

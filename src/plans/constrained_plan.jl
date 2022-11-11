@@ -24,28 +24,35 @@ struct VectorConstraint <: ConstraintType end
 
 Describes the constrained problem
 ```math
- \begin{aligned}
-  \min_{x ∈\mathcal{M}} &F(x)\\
-  \text{subject to } &G_i(x)\leq0 \quad ∀ i= 1, …, m,\\
-  \quad &H_j(x)=0 \quad ∀ j=1,…,p.
- \end{aligned}
+\begin{aligned}
+ \\operatorname{arg\,min}_{p ∈\mathcal{M}} & F(p)\\
+ \text{subject to } &G_i(p)\leq0 \quad \text{ for all } i=1,…,m,\\
+ \quad &H_j(x)=0 \quad \text{ for all } j=1,…,n.
+\end{aligned}
 ```
 It consists of
-* a `Manifold M`
-* an cost function ``F(x)``
-* the gradient of ``F(x)``, ``\operatorname{grad}F(x)`` (whose handling is inherited from the [`AbstractGradientProblem`](@ref))
-* an (optional) array of inequality constraints ``G(x)``, i.e. a function that returns an array or an array of functions ``G(x) = \{G_i(x)\}_{i=1}^m``
-* an (optional) array of equality constraints ``H(x)``, i.e. a function that returns an array or an array of functions ``H(x) = \{H_j\}_{j=1}^p``
+* an `AbstractManifold M`
+* an cost function ``F(p)``
+* the gradient of ``F``, ``\operatorname{grad}F(p)`` (cf. [`AbstractGradientProblem`](@ref))
+* an (optional) array of inequality constraints ``G(p)``, i.e. a function that returns an array or an array of functions ``G(x) = \{G_i(x)\}_{i=1}^m``
+* an (optional) array of equality constraints ``H(p)``, i.e. a function that returns an array or an array of functions ``H(x) = \{H_j\}_{j=1}^n``
 * an array of gradients for G(x), i.e. a function that returns an array or an array of functions
 ``\{\operatorname{grad}G_i\}_{i=1}^m``
 * an array of gradients for H(x), i.e. a function that returns an array or an array of functions
-``\{\operatorname{grad}H_j\}_{j=1}^p``
+``\{\operatorname{grad}H_j\}_{j=1}^n``
 
 # Constructors
     ConstrainedProblem(M::Manifold, cost::Function, G::Function, H::Function, gradF::Function, gradG::Function, gradH::Function;
         evaluation=AllocatingEvaluation()
     )
-    ConstrainedProblem(M::Manifold, cost::Function, G::AbstractVector{<:Function}, H::AbstractVector{<:Function}, gradF::Function, gradG::AbstractVector{<:Function}, gradH::AbstractVector{<:Function};
+    ConstrainedProblem(
+        M::Manifold,
+        cost::Function,
+        G::AbstractVector{<:Function},
+        H::AbstractVector{<:Function},
+        gradF::Function,
+        gradG::AbstractVector{<:Function},
+        gradH::AbstractVector{<:Function};
         evaluation=AllocatingEvaluation()
     )
 
@@ -103,9 +110,14 @@ function ConstrainedProblem(
         M, F, gradF, G, gradG, H, gradH
     )
 end
+"""
+    get_constraints(P::ConstrainedProblem, p)
 
-function get_constraints(p::ConstrainedProblem, x)
-    return [get_inequality_constraints(p, x), get_equality_constraints(p, x)]
+Return the vector ``(G_1(p),...G_m(p),H_1(p),...,H_n(p))`` from the [`ConstrainedProblem`](@ref) `P`
+containing the values of all constraints at `p`.
+"""
+function get_constraints(P::ConstrainedProblem, p)
+    return [get_inequality_constraints(P, p), get_equality_constraints(P, p)]
 end
 
 @doc raw"""

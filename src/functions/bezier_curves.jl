@@ -151,9 +151,7 @@ function get_bezier_junction_tangent_vectors(
         dims=1,
     )
 end
-function get_bezier_junction_tangent_vectors(
-    M::AbstractManifold, b::BezierSegment
-)
+function get_bezier_junction_tangent_vectors(M::AbstractManifold, b::BezierSegment)
     return get_bezier_junction_tangent_vectors(M, [b])
 end
 
