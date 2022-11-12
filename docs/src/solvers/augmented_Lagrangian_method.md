@@ -15,4 +15,11 @@ CurrentModule = Manopt
 ALMOptions
 ```
 
+## Helping Functions
+
+```
+AugmentedLagrangianCost
+AugmentedLagrangianGrad
+```
+
 ## Literature

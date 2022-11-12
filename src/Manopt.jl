@@ -15,7 +15,8 @@ using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
 using SparseArrays
 using Printf
-import Base: copy, identity, &, |
+import LinearAlgebra: reflect!
+import Base: &, |, copy, identity, show
 import ManifoldsBase:
     ℝ,
     ℂ,
@@ -246,9 +247,13 @@ export get_constraints,
     get_equality_constraint,
     get_equality_constraints,
     get_grad_inequality_constraint,
+    get_grad_inequality_constraint!,
     get_grad_inequality_constraints,
+    get_grad_inequality_constraints!,
     get_grad_equality_constraint,
-    get_grad_equality_constraints
+    get_grad_equality_constraint!,
+    get_grad_equality_constraints,
+    get_grad_equality_constraints!
 export ConstraintType, FunctionConstraint, VectorConstraint
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 

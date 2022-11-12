@@ -15,4 +15,11 @@ CurrentModule = Manopt
 EPMOptions
 ```
 
+## Helping Functions
+
+```
+ExactPenaltyCost
+ExactPenaltyGrad
+```
+
 ## Literature

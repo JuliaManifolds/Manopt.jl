@@ -53,18 +53,18 @@ FunctionConstraint
 VectorConstraint
 ConstraintType
 get_constraints
-get_equality_constraints
 get_equality_constraint
+get_equality_constraints
 get_grad_equality_constraint
 get_grad_equality_constraint!
 get_grad_equality_constraints
 get_grad_equality_constraints!
+get_inequality_constraint
+get_inequality_constraints
 get_grad_inequality_constraint
 get_grad_inequality_constraint!
 get_grad_inequality_constraints
 get_grad_inequality_constraints!
-get_inequality_constraints
-get_inequality_constraint
 ```
 
 ## [Proximal Map(s) based problem](@id ProximalProblem)
