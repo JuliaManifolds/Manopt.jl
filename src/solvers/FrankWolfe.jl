@@ -7,13 +7,14 @@ Perform the Frank-Wolfe algorithm to compute for ``\mathcal C \subset \mathcal M
     \operatorname*{arg\,min}_{p∈\mathcal C} f(p)
 ```
 
-Where the constraint optimisation is hitten within the sub problem (Oracle)
+Where the main step is a constrained optimisation is within the algorithm,
+that is the sub problem (Oracle)
 
 ```math
-    q_k = \operatorname{arg\,min}_{q \in C} ⟨\operatorname{grad} F(p_k), \log_{p_k}q⟩
+    q_k = \operatorname{arg\,min}_{q \in C} ⟨\operatorname{grad} F(p_k), \log_{p_k}q⟩.
 ```
 
-for every iterate ``p_k`` together with a stepsize ``s_k≤1``, by default ``s_k = \frac{2}{k+2}``
+for every iterate ``p_k`` together with a stepsize ``s_k≤1``, by default ``s_k = \frac{2}{k+2}``.
 
 The next iterate is then given by ``p_{k+1} = γ_{p_k,q_k}(s_k)``,
 where by default ``γ`` is the shortest geodesic between the two points but can also be changed to

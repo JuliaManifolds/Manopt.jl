@@ -1,6 +1,3 @@
-#
-# Options
-#
 @doc raw"""
     EPMOptions{P,T} <: Options
 
@@ -12,7 +9,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x` – a set point on a manifold as starting point
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
-* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration 
+* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
 * `num_outer_itertgn` – (`30`)
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
@@ -89,4 +86,155 @@ mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         o.stop = stopping_criterion
         return o
     end
+end
+"""
+    abstract type SmoothingTechnique
+
+    Specify a smoothing technique, e.g. for the [`ExactPenaltyCost`](@ref) and [`ExactPenaltyGrad`](@ref).
+"""
+abstract type SmoothingTechnique end
+
+@doc raw"""
+    LogarithmicSumOfExponentials <: SmoothingTechnique
+
+Spefiy a smoothing based on ``\max\{a,b\} ≈ u \log(\mathrm{e}^{\frac{a}{u}}+\mathrm{e}^{\frac{b}{u}})``
+for some ``u``.
+"""
+struct LogarithmicSumOfExponentials{R} <: SmoothingTechnique end
+
+@doc raw"""
+    LinearQuadraticHuber <: SmoothingTechnique
+
+Specify a smoothing based on ``\max\{0,x\} ≈ \mathcal P(x,u)`` for some ``u``, where
+
+```math
+\mathcal P(x, u) = \begin{cases}
+0 & \text{ if } x \leq 0,\\
+\frac{x^2}{2u} & \text{ if } 0 \leq x \leq u,\\
+x-\frac{u}{2} & \text{ if } x \geq u.
+```
+"""
+struct LinearQuadraticHuber <: SmoothingTechnique end
+
+@doc raw"""
+    ExactPenaltyCost{S, Pr, R}
+
+Represent the cost of the exact penalty method based on a [`ConstrainedProblem`](@ref) `P`
+and a parameter ``ρ`` given by
+
+```math
+f(p) + ρ\Bigl(
+    \sum_{i=0}^m \max\{0,g_i(p)} + \sum_{j=0}^n \lvert h_j(p)\rvert
+\Bigr),
+```
+where we use an additional parameter ``u`` and a smoothing technique, e.g.
+[`LogarithmicSumOfExponentials`](@ref) or [`LinearQuadraticHuber`](@ref)
+to obtain a smooth cost function.
+
+## Fields
+
+* `P`, `ρ`, `u` as mentioned above.
+
+## Constructor
+
+    ExactPenaltyCost(P::ConstrainedProblem, ρ, u; smoothing=LinearQuadraticHuber())
+"""
+mutable struct ExactPenaltyCost{S,Pr,R}
+    P::Pr
+    ρ::R
+    u::R
+end
+function ExactPenaltyCost(
+    P::Pr, ρ::R, μ::R; smoothing=LinearQuadraticHuber()
+) where {Pr<:ConstrainedProblem,R}
+    return ExactPenaltyCost{typeof(smoothing),Pr,R}(P, ρ, u)
+end
+function (L::ExactPenaltyCost{<:LogarithmicSumOfExponentials})(::AbstractManifold, p)
+    gp = get_inequality_constraints(L.P, p)
+    hp = get_equality_constraints(L.P, p)
+    m = length(gp)
+    n = length(hp)
+    cost_ineq = (m > 0) ? sum(L.u .* log.(1 .+ exp.(gp ./ L.u))) : 0.0
+    cost_eq = (n > 0) ? sum(L.u .* log.(exp.(hp ./ L.u) .+ exp.(-hp ./ L.u))) : 0.0
+    return get_cost(L.contrained_problem, p) + (L.ρ) * (cost_ineq + cost_eq)
+end
+
+function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(::AbstractManifold, p)
+    gp = get_inequality_constraints(L.contrained_problem, p)
+    hp = get_equality_constraints(L.constrained_problem, p)
+    m = length(gp)
+    n = length(hp)
+    cost_eq_greater_u = (m > 0) ? sum((gp .- L.u / 2) .* (gp .> L.u)) : 0.0
+    cost_eq_pos_smaller_u =
+        (m > 0) ? sum((gp .^ 2 ./ (2 * L.u)) .* ((gp .> 0) .& (gp .<= L.u))) : 0.0
+    cost_ineq = cost_eq_greater_u + cost_eq_pos_smaller_u
+    cost_eq = (n > 0) ? sum(sqrt.(hp .^ 2 .+ L.u^2)) : 0.0
+    return get_cost(L.contrained_problem, p) + (L.ρ) * (cost_ineq + cost_eq)
+end
+
+@doc raw"""
+    ExactPenaltyGrad{S<:SmoothingTechnique, Pr<:ConstrainedProblem, R}
+
+Represent the gradient of the [`ExactPenaltyCost`](@ref) based on a [`ConstrainedProblem`](@ref) `P`
+and a parameter ``ρ`` and a smoothing parameyterwhere we use an additional parameter ``u``.
+
+## Fields
+
+* `P`, `ρ`, `u` as mentioned above.
+
+## Constructor
+
+    ExactPenaltyGradient(P::ConstrainedProblem, ρ, u; smoothing=LinearQuadraticHuber())
+"""
+mutable struct ExactPenaltyGrad{S,Pr,R}
+    P::Pr
+    ρ::R
+    u::R
+end
+function ExactPenaltyGrad(
+    P::Pr, ρ::R, μ::R; smoothing=LinearQuadraticHuber()
+) where {Pr<:ConstrainedProblem,R}
+    return ExactPenaltyGrad{typeof(smoothing),Pr,R}(P, ρ, u)
+end
+function (L::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManifold, p)
+    gp = get_inequality_constraints(L.P, p)
+    hp = get_equality_constraints(L.P, p)
+    m = length(gp)
+    n = length(hp)
+    grad_ineq = zero_vector(M, p)
+    if m > 0
+        coef = (m > 0) ? LG.ρ .* exp.(gp ./ LG.u) ./ (1 .+ exp.(gp ./ LG.u)) : 0.0
+        grad_ineq = sum(get_grad_equality_constraints(LG.P, p) .* coef)
+    end
+    grad_eq = zero_vector(M, p)
+    if n > 0
+        coef =
+            LG.ρ .* (exp.(hp ./ LG.u) .- exp.(-hp ./ LG.u)) ./
+            (exp.(hp ./ LG.u) .+ exp.(-hp ./ LG.u))
+        grad_eq = sum(get_grad_inequality_constraints(LG.constrained_problem, p) .* coef)
+    end
+    return get_gradient(LG.constrained_problem, p) + grad_ineq + grad_eq
+end
+
+function (L::ExactPenaltyGrad{<:LinearQuadraticHuber})(M::AbstractManifold, p::P) where {P}
+    gp = get_inequality_constraints(L.P, p)
+    hp = get_equality_constraints(L.P, p)
+    m = length(gp)
+    n = length(hp)
+
+    grad_ineq = zero_vector(M, p)
+    if m > 0
+        gradgp = get_grad_inequality_constraints(L.P, p)
+        grad_ineq_cost_greater_u = sum(gradgp .* ((gp .>= 0) .& (gp .>= LG.u)) .* LG.ρ)
+        grad_ineq_cost_smaller_u = sum(
+            gradgp .* (gp ./ LG.u .* ((gp .>= 0) .& (gp .< LG.u))) .* LG.ρ
+        )
+        grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
+    end
+    grad_eq = zero_vector(M, p)
+    if n > 0
+        gradhp = get_grad_inequality_constraints(LG.P, p)
+        grad_eq = sum(gradhp .* (hp ./ sqrt.(hp .^ 2 .+ LG.u^2)) .* LG.ρ)
+    end
+    return get_gradient(LG.constrained_problem, x) + grad_ineq + grad_eq
 end

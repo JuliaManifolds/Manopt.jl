@@ -17,7 +17,7 @@ ALMOptions
 
 ## Helping Functions
 
-```
+```@docs
 AugmentedLagrangianCost
 AugmentedLagrangianGrad
 ```

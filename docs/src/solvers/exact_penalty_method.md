@@ -17,7 +17,7 @@ EPMOptions
 
 ## Helping Functions
 
-```
+```@docs
 ExactPenaltyCost
 ExactPenaltyGrad
 ```

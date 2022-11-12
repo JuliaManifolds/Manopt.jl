@@ -90,4 +90,5 @@ using Manopt, ManifoldsBase, Test
             @test X == gf
         end
     end
+    @testset "Augmented Lagrangian Cost & Grad" begin end
 end

@@ -17,7 +17,7 @@ struct FunctionConstraint <: ConstraintType end
     VectorConstraint <: ConstraintType
 
 A type to indicate that constraints are implemented a  vector of functions,
-e.g. ``g_i(x) ∈ \mathbb R, i=1,…,m``.
+e.g. ``g_i(p) ∈ \mathbb R, i=1,…,m``.
 """
 struct VectorConstraint <: ConstraintType end
 
@@ -29,7 +29,7 @@ Describes the constrained problem
 \begin{aligned}
  \operatorname*{arg\,min}_{p ∈\mathcal{M}} & f(p)\\
  \text{subject to } &g_i(p)\leq0 \quad \text{ for all } i=1,…,m,\\
- \quad &h_j(x)=0 \quad \text{ for all } j=1,…,n.
+ \quad &h_j(p)=0 \quad \text{ for all } j=1,…,n.
 \end{aligned}
 ```
 
@@ -44,7 +44,7 @@ It consists of
 
 There are two ways to specify the constraints ``g`` and ``h``.
 
-1. as one `Function`` returning a vector in ``R^m`` and ``\mathbb R^n`` respecively.
+1. as one `Function` returning a vector in ``\mathbb R^m`` and ``\mathbb R^n`` respecively.
    This might be easier to implement but requires evaluating _all_ constraints even if only one is needed.
 2. as a `AbstractVector{<:Function}` where each function returns a real number.
    This requires each constrant to be implemented as a single function, but it is possible to evaluate also only a single constraint.
@@ -124,7 +124,7 @@ end
 """
     get_constraints(P::ConstrainedProblem, p)
 
-Return the vector ``(G_1(p),...G_m(p),H_1(p),...,H_n(p))`` from the [`ConstrainedProblem`](@ref) `P`
+Return the vector ``(g_1(p),...g_m(p),h_1(p),...,h_n(p))`` from the [`ConstrainedProblem`](@ref) `P`
 containing the values of all constraints at `p`.
 """
 function get_constraints(P::ConstrainedProblem, p)
