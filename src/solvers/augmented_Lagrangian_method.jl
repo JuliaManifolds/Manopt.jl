@@ -1,22 +1,20 @@
 @doc raw"""
     augmented_Lagrangian_method(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
 
-perform the augmented Lagrangian method (ALM)[^LiuBoumal2020][^source_code]. The aim of the ALM is to find the solution of the [`ConstrainedProblem`](@ref)
+perform the augmented Lagrangian method (ALM)[^LiuBoumal2020]. The aim of the ALM is to find the solution of the [`ConstrainedProblem`](@ref)
 ```math
 \begin{aligned}
 \min_{x ∈\mathcal{M}} &f(x)\\
 \text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
-\quad &h_j(x)=0 \quad ∀ j=1,…,p,
+\quad &h_j(x)=0 \quad ∀ j=1,…,n,
 \end{aligned}
 ```
 where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
-For that, in every step ``k`` of the algorithm, the augmented Lagrangian function
-```math
-\mathcal{L}_{ρ^{(k-1)}}(x, μ^{(k-1)}, λ^{(k-1)}) = f(x) + \frac{ρ^{(k-1)}}{2} (\sum_{j=1}^p (h_j(x)+\frac{λ_j^{(k-1)}}{ρ^{(k-1)}})^2 + \sum_{i=1}^m \max\left\{0,\frac{μ_i^{(k-1)}}{ρ^{(k-1)}}+ g_i(x)\right\}^2)
-```
-is minimized over all ``x ∈\mathcal{M}``, where ``μ^{(k-1)}=[μ_1^{(k-1)}, …, μ_m^{(k-1)}]^T`` and ``λ^{(k-1)}=[λ_1^{(k-1)}, …, λ_p^{(k-1)}]^T`` are the current iterations of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
+For that, in every step ``k`` of the algorithm, the [`AugemtedLagrangianCost`](@ref)
+``\mathcal{L}_{ρ^{(k-1)}}(x, μ^{(k-1)}, λ^{(k-1)})`` is minimized on ``\mathcal{M}``,
+where ``μ^{(k-1)} \in \mathbb R^n`` and ``λ^{(k-1)} \in \mathbb R^m` are the current iterates of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
 
-Then, the Lagrange multipliers are updated by
+The Lagrange multipliers are then updated by
 ```math
 λ_j^{(k)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p,
 ```
@@ -45,17 +43,6 @@ Then, we update `ρ` according to
 ```
 where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 
-[^LiuBoumal2020]:
-    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
-    > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
-    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3)
-
-[^source_code]:
-    > original source code to the paper:
-    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
-    > src: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
-
-
 # Input
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
@@ -70,7 +57,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
 * `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
-* `num_outer_itertgn` – (`30`)
+* `num_outer_itertgn` – (`30`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `ϵ` – (`1e-3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `μ` – (`ones(size(G(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
@@ -79,7 +66,6 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `min_stepsize` – (`1e-10`) the minimal step size
 * `sub_problem` – ([`GradientProblem`](@ref)`(M,`[`AugmentedLagrangianCost`](@ref)`(F, G, H, ρ, μ, λ),`[`AugmentedLagrangianGrad`](@ref)`(F, gradF, G, gradG, H, gradH, ρ, μ, λ))`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)`(copy(x), zero_vector(M,x), `[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, copy(M,x), `[`InverseBFGS`](@ref)`(),30), `[`StopAfterIteration`](@ref)`(max_inner_iter) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(min_stepsize), `[`WolfePowellLinesearch`](@ref)`(M,10^(-4),0.999))`) options of the subproblem
-* `num_outer_itertgn` – (`30`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
 * `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
@@ -92,6 +78,12 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `x` – the resulting point of ALM
 OR
 * `options` – the options returned by the solver (see `return_options`)
+
+[^LiuBoumal2020]:
+    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
+    > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
+    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3),
+    > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 """
 function augmented_Lagrangian_method(
     M::AbstractManifold, F::TF, gradF::TGF; x=random_point(M), kwargs...
@@ -101,29 +93,11 @@ function augmented_Lagrangian_method(
     return augmented_Lagrangian_method!(M, F, gradF; x=x_res, kwargs...)
 end
 @doc raw"""
-    augmented_Lagrangian_method!(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
+    augmented_Lagrangian_method!(M, F, gradF; x=random_point(M))
 
-perform the augmented Lagrangian method (ALM)[^LiuBoumal2020][^source_code]. The aim of the ALM is to find the solution of the [`ConstrainedProblem`](@ref)
-```math
-\begin{aligned}
-\min_{x ∈\mathcal{M}} &f(x)\\
-\text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
-\quad &h_j(x)=0 \quad ∀ j=1,…,p,
-\end{aligned}
-```
-where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
+perform the augmented Lagrangian method (ALM) in-place of `x`.
 
-# Input
-* `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `gradF` – the gradient of the cost function
-## Optional
-* `G` – the inequality constraints
-* `H` – the equality constraints
-* `gradG` – the gradient of the inequality constraints
-* `gradH` – the gradient of the equality constraints
-
-For more options, especially `x` for the initial point and `ρ` for the penalty parameter, see [`augmented_Lagrangian_method`](@ref).
+For all options, see [`augmented_Lagrangian_method`](@ref).
 """
 function augmented_Lagrangian_method!(
     M::AbstractManifold,

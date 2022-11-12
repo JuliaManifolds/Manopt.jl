@@ -1,7 +1,7 @@
 @doc raw"""
     exact_penalty_method(M, F, gradF; G, H, gradG, gradH)
 
-perform the exact penalty method (EPM)[^LiuBoumal2020][^source_code]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
+perform the exact penalty method (EPM)[^LiuBoumal2020]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
 ```math
 \begin{aligned}
 \min_{x ∈\mathcal{M}} &f(x)\\
@@ -14,27 +14,13 @@ For that a weighted ``L_1``-penalty term for the violation of the constraints is
 ```math
 f(x) + ρ (\sum_{i=1}^m \max\left\{0, g_i(x)\right\} + \sum_{j=1}^p \vert h_j(x)\vert),
 ```
-where ``ρ>0`` is the penalty parameter. Then, the absolute value and maximum functions in the objective are smoothed, e.\,g. with the log-sum-exp function
-to get
-```math
-Q^{\text{lse}}(x,\rho,u)=f(x) + \rho \Bigg ( \sum_{j \in \mathcal{E}} u \log(e^{\frac{h_j(x)}{u}}+e^{-\frac{h_j(x)}{u}}) + \sum_{i \in \mathcal{I}}u \log(1 + e^{\frac{g_i(x)}{u}}) \Bigg ),
-```
-or with the linear-quadratic and pseudo-Huber loss to get
-```math
-Q^{\text{lqh}}(x,\rho,u)=f(x) + \rho \left( \sum_{j \in \mathcal{E}} \sqrt{h_j(x)^2 + u^2} + \sum_{i \in \mathcal{I}} \mathcal{P}(g_i(x),u) \right),
-```
-where
-```math
-\mathcal{P}(x,u) = \begin{cases}
-0, \quad &\text{if } x \leq 0,\\
-\frac{x^2}{2u}, \quad &\text{if } 0 \leq x \leq u,\\
-x- \frac{u}{2}, \quad &\text{if } x\geq u,
-\end{cases}
-```
-and ``u>0`` is a smoothing parameter.
+where ``ρ>0`` is the penalty parameter.
+Since this is non-smooth, a [`SmoothingTechnique`](@ref) with parameter `u` is applied,
+see the [`ExactPenaltyCost`](@ref).
 
 In every step ``k`` of the exact penalty method, the smoothed objective is then minimized over all
-``x ∈\mathcal{M}``. Then, the accuracy tolerance ``ϵ`` and the smoothing parameter ``u`` are updated by setting
+``x ∈\mathcal{M}``.
+Then, the accuracy tolerance ``ϵ`` and the smoothing parameter ``u`` are updated by setting
 ```math
 ϵ^{(k)}=\max\{ϵ_{\min}, θ_ϵ ϵ^{(k-1)}\},
 ```
@@ -57,13 +43,8 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 [^LiuBoumal2020]:
     > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
     > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
-    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3)
-
-[^source_code]:
-    > original source code to the paper:
-    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
-    > src: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
-
+    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3),
+    > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 
 # Input
 * `M` – a manifold ``\mathcal M``
@@ -80,8 +61,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_problem` – (`GradientProblem(M,F,gradF)`) problem for the subsolver
 * `sub_options` – (`GradientDescentOptions(M,x)`) options of the subproblem
 * `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
-* `num_outer_itertgn` – (`30`)
->>>>>>> 60ab494d54d6ccc5e41093aa2f9d980e2aaed89d
+* `num_outer_itertgn` – (`30`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
@@ -90,14 +70,13 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `min_stepsize` – (`1e-10`) the minimal step size
 * `sub_problem` – ([`GradientProblem`](@ref)`(M,`[`ExactPenaltyCost`](@ref)`(F, G, H, "linear_quadratic_huber", ρ, u),`[`ExactPenaltyGrad`](@ref)`(F, gradF, G, gradG, H, gradH, "linear_quadratic_huber", ρ, u))`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)`(copy(x), zero_vector(M,x), `[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, copy(M,x), `[`InverseBFGS`](@ref)`(),30), `[`StopAfterIteration`](@ref)`(max_inner_iter) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(min_stepsize), `[`WolfePowellLinesearch`](@ref)`(M,10^(-4),0.999))`) options of the subproblem
-* `num_outer_itertgn` – (`30`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 
 # Output
 * `x` – the resulting point of EPM
-OR
+or
 * `options` – the options returned by the solver (see `return_options`)
 """
 function exact_penalty_method(
@@ -108,29 +87,11 @@ function exact_penalty_method(
     return exact_penalty_method!(M, F, gradF; x=x_res, kwargs...)
 end
 @doc raw"""
-    exact_penalty_method!(M, F, gradF; G, H, gradG, gradH)
+    exact_penalty_method!(M, F, gradF; G, H, gradG, gradH; x=random_point(M))
 
-perform the exact penalty method (EPM)[^LiuBoumal2020][^source_code]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
-```math
-\begin{aligned}
-\min_{x ∈\mathcal{M}} &f(x)\\
-\text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
-\quad &h_j(x)=0 \quad ∀ j=1,…,p,
-\end{aligned}
-```
-where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
+perform the exact penalty method (EPM)[^LiuBoumal2020] in place of `x`.
 
-# Input
-* `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `gradF` – the gradient of the cost function
-## Optional
-* `G` – the inequality constraints
-* `H` – the equality constraints
-* `gradG` – the gradient of the inequality constraints
-* `gradH` – the gradient of the equality constraints
-
-For more options, especially `x` for the initial point and `smoothing_technique` for the smoothing technique, see [`exact_penalty_method`](@ref).
+For all options, especially `x` for the initial point and `smoothing_technique` for the smoothing technique, see [`exact_penalty_method`](@ref).
 """
 function exact_penalty_method!(
     M::AbstractManifold,
@@ -153,13 +114,11 @@ function exact_penalty_method!(
         M,
         ExactPenaltyCost(
             ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
-            "linear_quadratic_huber",
             ρ,
             u,
         ),
         ExactPenaltyGrad(
             ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
-            "linear_quadratic_huber",
             ρ,
             u,
         ),
