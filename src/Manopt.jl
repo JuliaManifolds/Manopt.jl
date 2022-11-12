@@ -398,6 +398,7 @@ export differential_bezier_control, differential_bezier_control!
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export cost_L2_acceleration_bezier, cost_acceleration_bezie
 export ExactPenaltyCost, ExactPenaltyGrad
+export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 # Gradients
 export grad_TV,
     grad_TV!,

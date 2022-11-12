@@ -20,6 +20,9 @@ EPMOptions
 ```@docs
 ExactPenaltyCost
 ExactPenaltyGrad
+SmoothingTechnique
+LinearQuadraticHuber
+LogarithmicSumOfExponentials
 ```
 
 ## Literature
