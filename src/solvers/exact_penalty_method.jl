@@ -113,14 +113,10 @@ function exact_penalty_method!(
     sub_problem::Problem=GradientProblem(
         M,
         ExactPenaltyCost(
-            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
-            ρ,
-            u,
+            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation), ρ, u
         ),
         ExactPenaltyGrad(
-            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
-            ρ,
-            u,
+            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation), ρ, u
         ),
     ),
     sub_options::Options=QuasiNewtonOptions(
