@@ -9,8 +9,8 @@ $F(x) = f(x) + g(x)$
 
 on a manifold, where the two summands have proximal maps
 $\operatorname{prox}_{λ f}, \operatorname{prox}_{λ g}$ that are easy
-to evaluate (maybe in closed form or not too costly to approximate).
-Further define the Reflection operator at the proximal map as
+to evaluate (maybe in closed form, or not too costly to approximate).
+Further, define the reflection operator at the proximal map as
 
 $\operatorname{refl}_{λ f}(x) = \exp_{\operatorname{prox}_{λ f}(x)} \bigl( -\log_{\operatorname{prox}_{λ f}(x)} x \bigr)$.
 
@@ -25,10 +25,10 @@ Initialize $t_0 = x_0$ and $k=0$
 
 ## Iteration
 
-Repeat  until a convergence criterion is reached
+Repeat until a convergence criterion is reached
 
 1. Compute $s_k = \operatorname{refl}_{λ f}\operatorname{refl}_{λ g}(t_k)$
-2. within that operation store $x_{k+1} = \operatorname{prox}_{λ g}(t_k)$ which is the prox the inner reflection reflects at.
+2. Within that operation, store $x_{k+1} = \operatorname{prox}_{λ g}(t_k)$ which is the prox the inner reflection reflects at.
 3. Compute $t_{k+1} = g(\alpha_k; t_k, s_k)$
 4. Set $k = k+1$
 
@@ -36,7 +36,7 @@ Repeat  until a convergence criterion is reached
 
 The result is given by the last computed $x_K$.
 
-For the parallel version, the first proximal map is a vectorial version, where
+For the parallel version, the first proximal map is a vectorial version where
 in each component one prox is applied to the corresponding copy of $t_k$ and
 the second proximal map corresponds to the indicator function of the set,
 where all copies are equal (in $\mathcal H^n$, where $n$ is the number of copies),

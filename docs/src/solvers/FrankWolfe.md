@@ -17,7 +17,7 @@ FrankWolfeOptions
 
 ## Helpers
 
-For the inner sub problem you can easily create the corresponding cost and gradient using
+For the inner sub-problem you can easily create the corresponding cost and gradient using
 
 ```@docs
 FrankWolfeCost
