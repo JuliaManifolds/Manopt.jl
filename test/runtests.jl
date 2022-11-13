@@ -30,10 +30,12 @@ end
 end
 @testset "Solver Tests       " begin
     include("solvers/test_alternating_gradient.jl")
+    include("solvers/test_augmented_lagrangian.jl")
     include("solvers/test_ChambollePock.jl")
     include("solvers/test_conjugate_gradient.jl")
     include("solvers/test_Douglas_Rachford.jl")
     include("solvers/test_cyclic_proximal_point.jl")
+    include("solvers/test_exact_penalty.jl")
     include("solvers/test_Frank_Wolfe.jl")
     include("solvers/test_gradient_descent.jl")
     include("solvers/test_Nelder_Mead.jl")

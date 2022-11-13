@@ -57,7 +57,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `gradG` – the gradient of the inequality constraints
 * `gradH` – the gradient of the equality constraints
 * `x` – initial point
-* `smoothing_technique` – (`"log_sum_exp"`) smoothing technique with which the penalized objective is smoothed (either `"log_sum_exp"` or `"linear_quadratic_huber"`)
+* `smoothing` – ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
 * `sub_problem` – (`GradientProblem(M,F,gradF)`) problem for the subsolver
 * `sub_options` – (`GradientDescentOptions(M,x)`) options of the subproblem
 * `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
@@ -110,14 +110,12 @@ function exact_penalty_method!(
     u_min::Real=1e-6,
     ρ::Real=1.0,
     min_stepsize=1e-10,
+    smoothing=LogarithmicSumOfExponentials(),
+    problem=ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
     sub_problem::Problem=GradientProblem(
         M,
-        ExactPenaltyCost(
-            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation), ρ, u
-        ),
-        ExactPenaltyGrad(
-            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation), ρ, u
-        ),
+        ExactPenaltyCost(problem, ρ, u; smoothing=smoothing),
+        ExactPenaltyGrad(problem, ρ, u; smoothing=smoothing),
     ),
     sub_options::Options=QuasiNewtonOptions(
         copy(x),
@@ -131,15 +129,13 @@ function exact_penalty_method!(
     num_outer_itertgn::Int=30,
     θ_ρ::Real=0.3,
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenEuclideanChangeLess(min_stepsize)
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(min_stepsize)
     ),
     return_options=false,
     kwargs...,
 ) where {TF,TGF}
-    p = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation)
     o = EPMOptions(
         M,
-        p,
         x,
         sub_problem,
         sub_options;
@@ -155,7 +151,7 @@ function exact_penalty_method!(
         stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
+    resultO = solve(problem, o)
     if return_options
         return resultO
     else

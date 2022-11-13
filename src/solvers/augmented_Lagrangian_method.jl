@@ -57,7 +57,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
 * `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
-* `num_outer_itertgn` – (`30`) number of iterations until maximal accuracy is needed to end algorithm naturally
+* `num_outer_itertgn` – (`100`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `ϵ` – (`1e-3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `μ` – (`ones(size(G(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
@@ -71,7 +71,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | [`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenEuclideanChangeLess`](@ref)`(min_stepsize)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | [`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(min_stepsize)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 
 # Output
@@ -140,14 +140,14 @@ function augmented_Lagrangian_method!(
         StopWhenStepsizeLess(min_stepsize),
         WolfePowellLinesearch(M, 10^(-4), 0.999),
     ),
-    num_outer_itertgn::Int=30,
+    num_outer_itertgn::Int=100,
     λ_max::Real=20.0,
     λ_min::Real=-λ_max,
     μ_max::Real=20.0,
     τ::Real=0.8,
     θ_ρ::Real=0.3,
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenEuclideanChangeLess(min_stepsize)
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(min_stepsize)
     ),
     return_options=false,
     kwargs...,

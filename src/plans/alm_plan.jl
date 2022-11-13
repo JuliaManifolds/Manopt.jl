@@ -108,6 +108,7 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         return o
     end
 end
+get_iterate(o::ALMOptions) = o.x
 
 @doc raw"""
     AugmentedLagrangianCost{Pr,R,T}
@@ -171,8 +172,8 @@ mutable struct AugmentedLagrangianGrad{Pr,R,T}
     λ::T
 end
 function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
-    gp = LG.g(M, p)
-    hp = LG.h(M, p)
+    gp = get_inequality_constraints(LG.P, p)
+    hp = get_equality_constraints(LG.P, p)
     m = length(gp)
     n = length(hp)
     if m > 0

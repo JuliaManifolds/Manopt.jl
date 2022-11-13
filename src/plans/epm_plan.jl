@@ -48,7 +48,6 @@ mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
     stop::TStopping
     function EPMOptions(
         M::AbstractManifold,
-        p::ConstrainedProblem,
         x0::P,
         sub_problem::Pr,
         sub_options::Op;
@@ -87,6 +86,8 @@ mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         return o
     end
 end
+get_iterate(O::EPMOptions) = O.x
+
 """
     abstract type SmoothingTechnique
 
@@ -100,7 +101,7 @@ abstract type SmoothingTechnique end
 Spefiy a smoothing based on ``\max\{a,b\} ≈ u \log(\mathrm{e}^{\frac{a}{u}}+\mathrm{e}^{\frac{b}{u}})``
 for some ``u``.
 """
-struct LogarithmicSumOfExponentials{R} <: SmoothingTechnique end
+struct LogarithmicSumOfExponentials <: SmoothingTechnique end
 
 @doc raw"""
     LinearQuadraticHuber <: SmoothingTechnique
@@ -145,7 +146,7 @@ mutable struct ExactPenaltyCost{S,Pr,R}
     u::R
 end
 function ExactPenaltyCost(
-    P::Pr, ρ::R, μ::R; smoothing=LinearQuadraticHuber()
+    P::Pr, ρ::R, u::R; smoothing=LinearQuadraticHuber()
 ) where {Pr<:ConstrainedProblem,R}
     return ExactPenaltyCost{typeof(smoothing),Pr,R}(P, ρ, u)
 end
@@ -156,12 +157,12 @@ function (L::ExactPenaltyCost{<:LogarithmicSumOfExponentials})(::AbstractManifol
     n = length(hp)
     cost_ineq = (m > 0) ? sum(L.u .* log.(1 .+ exp.(gp ./ L.u))) : 0.0
     cost_eq = (n > 0) ? sum(L.u .* log.(exp.(hp ./ L.u) .+ exp.(-hp ./ L.u))) : 0.0
-    return get_cost(L.contrained_problem, p) + (L.ρ) * (cost_ineq + cost_eq)
+    return get_cost(L.P, p) + (L.ρ) * (cost_ineq + cost_eq)
 end
 
 function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(::AbstractManifold, p)
-    gp = get_inequality_constraints(L.contrained_problem, p)
-    hp = get_equality_constraints(L.constrained_problem, p)
+    gp = get_inequality_constraints(L.P, p)
+    hp = get_equality_constraints(L.P, p)
     m = length(gp)
     n = length(hp)
     cost_eq_greater_u = (m > 0) ? sum((gp .- L.u / 2) .* (gp .> L.u)) : 0.0
@@ -169,7 +170,7 @@ function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(::AbstractManifold, p)
         (m > 0) ? sum((gp .^ 2 ./ (2 * L.u)) .* ((gp .> 0) .& (gp .<= L.u))) : 0.0
     cost_ineq = cost_eq_greater_u + cost_eq_pos_smaller_u
     cost_eq = (n > 0) ? sum(sqrt.(hp .^ 2 .+ L.u^2)) : 0.0
-    return get_cost(L.contrained_problem, p) + (L.ρ) * (cost_ineq + cost_eq)
+    return get_cost(L.P, p) + (L.ρ) * (cost_ineq + cost_eq)
 end
 
 @doc raw"""
@@ -192,49 +193,49 @@ mutable struct ExactPenaltyGrad{S,Pr,R}
     u::R
 end
 function ExactPenaltyGrad(
-    P::Pr, ρ::R, μ::R; smoothing=LinearQuadraticHuber()
+    P::Pr, ρ::R, u::R; smoothing=LinearQuadraticHuber()
 ) where {Pr<:ConstrainedProblem,R}
     return ExactPenaltyGrad{typeof(smoothing),Pr,R}(P, ρ, u)
 end
-function (L::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManifold, p)
-    gp = get_inequality_constraints(L.P, p)
-    hp = get_equality_constraints(L.P, p)
+function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManifold, p)
+    gp = get_inequality_constraints(EG.P, p)
+    hp = get_equality_constraints(EG.P, p)
     m = length(gp)
     n = length(hp)
     grad_ineq = zero_vector(M, p)
     if m > 0
-        coef = (m > 0) ? LG.ρ .* exp.(gp ./ LG.u) ./ (1 .+ exp.(gp ./ LG.u)) : 0.0
-        grad_ineq = sum(get_grad_equality_constraints(LG.P, p) .* coef)
+        coef = EG.ρ .* exp.(gp ./ EG.u) ./ (1 .+ exp.(gp ./ EG.u))
+        grad_ineq = sum(get_grad_inequality_constraints(EG.P, p) .* coef)
     end
     grad_eq = zero_vector(M, p)
     if n > 0
         coef =
-            LG.ρ .* (exp.(hp ./ LG.u) .- exp.(-hp ./ LG.u)) ./
-            (exp.(hp ./ LG.u) .+ exp.(-hp ./ LG.u))
-        grad_eq = sum(get_grad_inequality_constraints(LG.constrained_problem, p) .* coef)
+            EG.ρ .* (exp.(hp ./ EG.u) .- exp.(-hp ./ EG.u)) ./
+            (exp.(hp ./ EG.u) .+ exp.(-hp ./ EG.u))
+        grad_eq = sum(get_grad_equality_constraints(EG.P, p) .* coef)
     end
-    return get_gradient(LG.constrained_problem, p) + grad_ineq + grad_eq
+    return get_gradient(EG.P, p) .+ grad_ineq .+ grad_eq
 end
 
-function (L::ExactPenaltyGrad{<:LinearQuadraticHuber})(M::AbstractManifold, p::P) where {P}
-    gp = get_inequality_constraints(L.P, p)
-    hp = get_equality_constraints(L.P, p)
+function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(M::AbstractManifold, p::P) where {P}
+    gp = get_inequality_constraints(EG.P, p)
+    hp = get_equality_constraints(EG.P, p)
     m = length(gp)
     n = length(hp)
 
     grad_ineq = zero_vector(M, p)
     if m > 0
-        gradgp = get_grad_inequality_constraints(L.P, p)
-        grad_ineq_cost_greater_u = sum(gradgp .* ((gp .>= 0) .& (gp .>= LG.u)) .* LG.ρ)
+        gradgp = get_grad_inequality_constraints(EG.P, p)
+        grad_ineq_cost_greater_u = sum(gradgp .* ((gp .>= 0) .& (gp .>= EG.u)) .* EG.ρ)
         grad_ineq_cost_smaller_u = sum(
-            gradgp .* (gp ./ LG.u .* ((gp .>= 0) .& (gp .< LG.u))) .* LG.ρ
+            gradgp .* (gp ./ EG.u .* ((gp .>= 0) .& (gp .< EG.u))) .* EG.ρ
         )
         grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
     end
     grad_eq = zero_vector(M, p)
     if n > 0
-        gradhp = get_grad_inequality_constraints(LG.P, p)
-        grad_eq = sum(gradhp .* (hp ./ sqrt.(hp .^ 2 .+ LG.u^2)) .* LG.ρ)
+        gradhp = get_grad_inequality_constraints(EG.P, p)
+        grad_eq = sum(gradhp .* (hp ./ sqrt.(hp .^ 2 .+ EG.u^2)) .* EG.ρ)
     end
-    return get_gradient(LG.constrained_problem, x) + grad_ineq + grad_eq
+    return get_gradient(EG.P, p) + grad_ineq + grad_eq
 end

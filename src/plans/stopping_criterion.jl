@@ -124,45 +124,6 @@ function update_stopping_criterion!(c::StopWhenChangeLess, ::Val{:MinIterateChan
 end
 
 """
-    StopWhenEuclideanChangeLess <: StoppingCriterion
-
-stores a threshold when to stop looking at the norm of the change of the
-optimization variable from within a [`Options`](@ref), i.e `o.x`. Unlike in [`StopWhenChangeLess`](@ref), the change is not computed with the distance here, but with the difference.
-Therefore, this stopping criterion can be utilized to set a minimum step size on manifolds on which no distance function is defined. 
-For the storage a [`StoreOptionsAction`](@ref) is used
-
-# Constructor
-
-    StopWhenEuclideanChangeLess(ε[, a])
-
-initialize the stopping criterion to a threshold `ε` using the
-[`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:x` by
-default.
-"""
-mutable struct StopWhenEuclideanChangeLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
-    storage::StoreOptionsAction
-    function StopWhenEuclideanChangeLess(
-        ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:x,))
-    )
-        return new(ε, "", a)
-    end
-end
-function (c::StopWhenEuclideanChangeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    if has_storage(c.storage, :x)
-        xOld = get_storage(c.storage, :x)
-        if norm(xOld - o.x) < c.threshold && i > 0
-            c.reason = "The algorithm performed a step with a euclidean change ($(norm(xOld - o.x))) less than $(c.threshold).\n"
-            c.storage(p, o, i)
-            return true
-        end
-    end
-    c.storage(p, o, i)
-    return false
-end
-
-"""
     StopWhenStepsizeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the last step size determined or found
