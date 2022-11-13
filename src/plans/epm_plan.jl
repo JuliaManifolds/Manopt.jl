@@ -232,9 +232,10 @@ function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(M::AbstractManifold, p::
         grad_ineq = grad_ineq_cost_greater_u + grad_ineq_cost_smaller_u
     end
     grad_eq = zero_vector(M, p)
-    if n > 0
-        gradhp = get_grad_inequality_constraints(EG.P, p)
-        grad_eq = sum(gradhp .* (hp ./ sqrt.(hp .^ 2 .+ EG.u^2)) .* EG.ρ)
-    end
+    (n > 0) && (
+        grad_eq = sum(
+            get_grad_inequality_constraints(EG.P, p) .* (hp ./ sqrt.(hp .^ 2 .+ EG.u^2)) .* EG.ρ,
+        )
+    )
     return get_gradient(EG.P, p) + grad_ineq + grad_eq
 end
