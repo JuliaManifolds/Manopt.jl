@@ -14,5 +14,5 @@ using LinearAlgebra: I, tr
     gradG(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
     x0 = project(M, ones(d))
     sol = augmented_Lagrangian_method(M, F, gradF; G=G, gradG=gradG, x=x0)
-    @test distance(M, sol, v0) < 8*1e-4
+    @test distance(M, sol, v0) < 8 * 1e-4
 end
