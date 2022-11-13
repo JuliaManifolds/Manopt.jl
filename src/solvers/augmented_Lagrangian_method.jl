@@ -176,11 +176,8 @@ function augmented_Lagrangian_method!(
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return_options && return resultO
+    return get_solver_result(resultO)
 end
 
 #
@@ -232,12 +229,11 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     )
 
     # update ρ if necessary
-    if iter == 1 || new_acc > o.τ * o.old_acc
-        o.ρ = o.ρ / o.θ_ρ
-    end
+    (iter == 1 || new_acc > o.τ * o.old_acc) && (o.ρ = o.ρ / o.θ_ρ)
     o.old_acc = new_acc
 
     # update the tolerance ϵ
-    return o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
+    o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
+    return o
 end
 get_solver_result(o::ALMOptions) = o.x

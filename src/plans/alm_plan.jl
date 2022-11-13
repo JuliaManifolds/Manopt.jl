@@ -177,11 +177,13 @@ function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
     m = length(gp)
     n = length(hp)
     grad_ineq = zero_vector(M, p)
-    (m > 0) && grad_ineq = sum(
-        ((gp .* LG.ρ .+ LG.μ) .* get_grad_inequality_constraints(LG.P, p)) .*
-        ((gp .+ LG.μ ./ LG.ρ) .> 0),
+    (m > 0) && (
+        grad_ineq = sum(
+            ((gp .* LG.ρ .+ LG.μ) .* get_grad_inequality_constraints(LG.P, p)) .*
+            ((gp .+ LG.μ ./ LG.ρ) .> 0),
+        )
     )
     grad_eq = zero_vector(M, p)
-    (n > 0) && grad_eq = sum((hp .* LG.ρ .+ LG.λ) .* get_grad_eqality_constraint(LG.P, p))
+    (n > 0) && (grad_eq = sum((hp .* LG.ρ .+ LG.λ) .* get_grad_eqality_constraint(LG.P, p)))
     return get_gradient(LG.P, p) + grad_ineq + grad_eq
 end

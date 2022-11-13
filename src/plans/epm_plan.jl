@@ -204,13 +204,15 @@ function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManif
     n = length(hp)
     grad_ineq = zero_vector(M, p)
     c = 0
-    (m > 0) && c = EG.ρ .* exp.(gp ./ EG.u) ./ (1 .+ exp.(gp ./ EG.u))
-    (m > 0) && grad_ineq = sum(get_grad_inequality_constraints(EG.P, p) .* c)
+    (m > 0) && (c = EG.ρ .* exp.(gp ./ EG.u) ./ (1 .+ exp.(gp ./ EG.u)))
+    (m > 0) && (grad_ineq = sum(get_grad_inequality_constraints(EG.P, p) .* c))
     grad_eq = zero_vector(M, p)
-    (n > 0) && c =
-        EG.ρ .* (exp.(hp ./ EG.u) .- exp.(-hp ./ EG.u)) ./
-        (exp.(hp ./ EG.u) .+ exp.(-hp ./ EG.u))
-    (n > 0) && grad_eq = sum(get_grad_equality_constraints(EG.P, p) .* c)
+    (n > 0) && (
+        c =
+            EG.ρ .* (exp.(hp ./ EG.u) .- exp.(-hp ./ EG.u)) ./
+            (exp.(hp ./ EG.u) .+ exp.(-hp ./ EG.u))
+    )
+    (n > 0) && (grad_eq = sum(get_grad_equality_constraints(EG.P, p) .* c))
     return get_gradient(EG.P, p) .+ grad_ineq .+ grad_eq
 end
 

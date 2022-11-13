@@ -152,11 +152,8 @@ function exact_penalty_method!(
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(problem, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return_options && return resultO
+    return get_solver_result(resultO)
 end
 
 #
@@ -184,14 +181,11 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     cost_ineq = get_inequality_constraints(p, o.x)
     cost_eq = get_equality_constraints(p, o.x)
     max_violation = max(max(maximum(cost_ineq; init=0), 0), maximum(abs.(cost_eq); init=0))
-
     # update ρ if necessary
-    if max_violation > o.u
-        o.ρ = o.ρ / o.θ_ρ
-    end
-
+    (max_violation > o.u) && (o.ρ = o.ρ / o.θ_ρ)
     # update u and ϵ
     o.u = max(o.u_min, o.u * o.θ_u)
-    return o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
+    o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
+    return o
 end
 get_solver_result(o::EPMOptions) = o.x
