@@ -111,7 +111,7 @@ function exact_penalty_method!(
     ρ::Real=1.0,
     min_stepsize=1e-10,
     smoothing=LogarithmicSumOfExponentials(),
-    problem=ConstrainedProblem(M, F, gradF, F, G, gradG, H, gradH; evaluation=evaluation),
+    problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
     sub_problem::Problem=GradientProblem(
         M,
         ExactPenaltyCost(problem, ρ, u; smoothing=smoothing),

@@ -116,20 +116,11 @@ function augmented_Lagrangian_method!(
     λ::Vector=ones(size(H(M, x), 1)),
     ρ::Real=1.0,
     min_stepsize=1e-10,
+    problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
     sub_problem::Problem=GradientProblem(
         M,
-        AugmentedLagrangianCost(
-            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
-            ρ,
-            μ,
-            λ,
-        ),
-        AugmentedLagrangianGrad(
-            ConstrainedProblem(M, F, gradF, F, gradG, H, gradH; evaluation=evaluation),
-            ρ,
-            μ,
-            λ,
-        ),
+        AugmentedLagrangianCost(problem, ρ, μ, λ),
+        AugmentedLagrangianGrad(problem, ρ, μ, λ),
     ),
     sub_options::Options=QuasiNewtonOptions(
         copy(x),
@@ -152,10 +143,9 @@ function augmented_Lagrangian_method!(
     return_options=false,
     kwargs...,
 ) where {TF,TGF}
-    p = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation)
     o = ALMOptions(
         M,
-        p,
+        problem,
         x,
         sub_problem,
         sub_options;
@@ -175,7 +165,7 @@ function augmented_Lagrangian_method!(
         stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
+    resultO = solve(problem, o)
     return_options && return resultO
     return get_solver_result(resultO)
 end
