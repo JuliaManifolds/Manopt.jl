@@ -9,15 +9,12 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x` – a set point on a manifold as starting point
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
-* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
-* `num_outer_itertgn` – (`30`)
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
 * `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `min_stepsize` – (`1e-10`) minimal step size
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(min_stepsize)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 
@@ -34,8 +31,6 @@ mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
     x::P
     sub_problem::Pr
     sub_options::Op
-    max_inner_iter::Int
-    num_outer_itertgn::Int
     ϵ::Real
     ϵ_min::Real
     u::Real
@@ -44,10 +39,9 @@ mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
     θ_ρ::Real
     θ_u::Real
     θ_ϵ::Real
-    min_stepsize::Real
     stop::TStopping
     function EPMOptions(
-        M::AbstractManifold,
+        ::AbstractManifold,
         x0::P,
         sub_problem::Pr,
         sub_options::Op;
@@ -55,33 +49,32 @@ mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         num_outer_itertgn::Int=30,
         ϵ::Real=1e-3,
         ϵ_min::Real=1e-6,
+        ϵ_exponent=1 / 100,
+        θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
         u::Real=1e-1,
         u_min::Real=1e-6,
+        u_exponent=1 / 100,
+        θ_u=(u_min / u)^(u_exponent),
         ρ::Real=1.0,
         θ_ρ::Real=0.3,
         min_stepsize::Real=1e-10,
         stopping_criterion::StoppingCriterion=StopWhenAny(
             StopAfterIteration(300),
-            StopWhenAll(
-                StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(min_stepsize)
-            ),
+            StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),
         ),
     ) where {P,Pr<:Problem,Op<:Options}
         o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
         o.sub_problem = sub_problem
         o.sub_options = sub_options
-        o.max_inner_iter = max_inner_iter
-        o.num_outer_itertgn = num_outer_itertgn
         o.ϵ = ϵ
         o.ϵ_min = ϵ_min
         o.u = u
         o.u_min = u_min
         o.ρ = ρ
         o.θ_ρ = θ_ρ
-        o.θ_u = 0.0
-        o.θ_ϵ = 0.0
-        o.min_stepsize = min_stepsize
+        o.θ_u = θ_u
+        o.θ_ϵ = θ_ϵ
         o.stop = stopping_criterion
         return o
     end

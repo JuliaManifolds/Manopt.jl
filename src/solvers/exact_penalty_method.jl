@@ -58,20 +58,21 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `gradH` – the gradient of the equality constraints
 * `x` – initial point
 * `smoothing` – ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
-* `sub_problem` – (`GradientProblem(M,F,gradF)`) problem for the subsolver
-* `sub_options` – (`GradientDescentOptions(M,x)`) options of the subproblem
-* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
-* `num_outer_itertgn` – (`30`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `ϵ` – (`1e–3`) the accuracy tolerance
+* `u_exponent` – (`1/100`) exponent of the ϵ update factor;
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
+* `u_exponent` – (`1/100`) exponent of the ϵ update factor;
 * `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `min_stepsize` – (`1e-10`) the minimal step size
-* `sub_problem` – ([`GradientProblem`](@ref)`(M,`[`ExactPenaltyCost`](@ref)`(F, G, H, "linear_quadratic_huber", ρ, u),`[`ExactPenaltyGrad`](@ref)`(F, gradF, G, gradG, H, gradH, "linear_quadratic_huber", ρ, u))`) problem for the subsolver
-* `sub_options` – ([`QuasiNewtonOptions`](@ref)`(copy(x), zero_vector(M,x), `[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, copy(M,x), `[`InverseBFGS`](@ref)`(),30), `[`StopAfterIteration`](@ref)`(max_inner_iter) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(min_stepsize), `[`WolfePowellLinesearch`](@ref)`(M,10^(-4),0.999))`) options of the subproblem
-* `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(1e-6)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `sub_cost` – ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penality cost, expecially with the same numbers `ρ,u` as in the options for the sub problem
+* `sub_grad` – ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penality gradient, expecially with the same numbers `ρ,u` as in the options for the sub problem
+* `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
+* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | [`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
+* `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad)`) problem for the subsolver
+* `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | [`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 
 # Output
@@ -103,33 +104,40 @@ function exact_penalty_method!(
     gradH::Function=(M, x) -> [],
     evaluation=AllocatingEvaluation(),
     x=random_point(M),
-    max_inner_iter::Int=200,
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
+    ϵ_exponent=1 / 100,
+    θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
     u::Real=1e-1,
     u_min::Real=1e-6,
+    u_exponent=1 / 100,
+    θ_u=(u_min / u)^(u_exponent),
     ρ::Real=1.0,
-    min_stepsize=1e-10,
+    θ_ρ::Real=0.3,
     smoothing=LogarithmicSumOfExponentials(),
     problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
-    sub_problem::Problem=GradientProblem(
-        M,
-        ExactPenaltyCost(problem, ρ, u; smoothing=smoothing),
-        ExactPenaltyGrad(problem, ρ, u; smoothing=smoothing),
+    sub_cost=ExactPenaltyCost(problem, ρ, u; smoothing=smoothing),
+    sub_grad=ExactPenaltyGrad(problem, ρ, u; smoothing=smoothing),
+    sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad),
+    sub_kwargs=[],
+    sub_stopping_criterion=StopAfterIteration(200) |
+                           StopWhenGradientNormLess(ϵ) |
+                           StopWhenStepsizeLess(1e-10),
+    sub_options::Options=decorate_options(
+        QuasiNewtonOptions(
+            M,
+            copy(x);
+            initial_vector=zero_vector(M, x),
+            direction_update=QuasiNewtonLimitedMemoryDirectionUpdate(
+                M, copy(M, x), InverseBFGS(), 30
+            ),
+            stopping_criterion=sub_stopping_criterion,
+            stepsize=WolfePowellLinesearch(M, 1e-4, 0.999),
+        ),
+        sub_kwargs...,
     ),
-    sub_options::Options=QuasiNewtonOptions(
-        copy(x),
-        zero_vector(M, x),
-        QuasiNewtonLimitedMemoryDirectionUpdate(M, copy(M, x), InverseBFGS(), 30),
-        StopAfterIteration(max_inner_iter) |
-        StopWhenGradientNormLess(ϵ) |
-        StopWhenStepsizeLess(min_stepsize),
-        WolfePowellLinesearch(M, 10^(-4), 0.999),
-    ),
-    num_outer_itertgn::Int=30,
-    θ_ρ::Real=0.3,
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(min_stepsize)
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     return_options=false,
     kwargs...,
@@ -139,16 +147,14 @@ function exact_penalty_method!(
         x,
         sub_problem,
         sub_options;
-        max_inner_iter=max_inner_iter,
-        num_outer_itertgn=num_outer_itertgn,
         ϵ=ϵ,
         ϵ_min=ϵ_min,
         u=u,
         u_min=u_min,
         ρ=ρ,
         θ_ρ=θ_ρ,
-        min_stepsize=min_stepsize,
-        stopping_criterion=stopping_criterion,
+        θ_ϵ=θ_ϵ,
+        θ_u=θ_u,
     )
     o = decorate_options(o; kwargs...)
     resultO = solve(problem, o)
@@ -160,10 +166,6 @@ end
 # Solver functions
 #
 function initialize_solver!(::ConstrainedProblem, o::EPMOptions)
-    o.θ_u = (o.u_min / o.u)^(1 / o.num_outer_itertgn)
-    o.θ_ϵ = (o.ϵ_min / o.ϵ)^(1 / o.num_outer_itertgn)
-    update_stopping_criterion!(o, :MaxIteration, o.max_inner_iter)
-    update_stopping_criterion!(o, :MinStepsize, o.min_stepsize)
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)

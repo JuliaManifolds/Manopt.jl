@@ -68,11 +68,11 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `ρ` – (`1.0`) the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `sub_cost` – (`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian, expecially with the same numbers `ρ,μ` as in the options for the sub problem
-* `sub_grad` – (`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian gradient, expecially with the same numbers `ρ,μ` as in the options for the sub problem
+* `sub_cost` – ([`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian, expecially with the same numbers `ρ,μ` as in the options for the sub problem
+* `sub_grad` – ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian gradient, expecially with the same numbers `ρ,μ` as in the options for the sub problem
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
 * `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | [`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
-* `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad, λ))`) problem for the subsolver
+* `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad)`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | [`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
@@ -111,7 +111,6 @@ function augmented_Lagrangian_method!(
     gradG::Function=(M, x) -> [],
     gradH::Function=(M, x) -> [],
     evaluation=AllocatingEvaluation(),
-    maximum_iteration=300,
     x=random_point(M),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
@@ -146,7 +145,7 @@ function augmented_Lagrangian_method!(
         sub_kwargs...,
     ),
     sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(maximum_iteration) | (
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     return_options=false,
