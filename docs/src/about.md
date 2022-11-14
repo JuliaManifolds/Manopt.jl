@@ -1,6 +1,6 @@
 # About
 
-Manopt.jl inherited its name from [Manopt](https://manopt.org), a Matlab toolbox for optimisation on manifolds.
+Manopt.jl inherited its name from [Manopt](https://manopt.org), a Matlab toolbox for optimization on manifolds.
 This Julia package was started and is currently maintained by [Ronny Bergmann](https://ronnybergmann.net/about.html).
 
 The following people contributed

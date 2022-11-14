@@ -18,7 +18,7 @@ corresponding [solvers](@ref SolversSection).
 You can always access the options (since they
 might be decorated) by calling [`get_options`](@ref).
 
-For easier access, and to abstract where these are actually stored, there exist
+For easier access, and to abstract where these are actually stored, there exists
 
 ```@docs
 get_iterate

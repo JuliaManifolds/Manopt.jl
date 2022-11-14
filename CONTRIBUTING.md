@@ -31,7 +31,7 @@ If you found a bug or want to propose a feature, we track our issues within the 
 
 ### Add a missing method
 
-There is still a lot of methods for within the optimisation framework of  `Manopt.jl`, may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
+There is still a lot of methods for within the optimization framework of  `Manopt.jl`, may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
 If you notice a method missing and can contribute an implementation, please do so!
 Even providing a single new method is a good contribution.
 
@@ -39,9 +39,9 @@ Even providing a single new method is a good contribution.
 
 A main contribution you can provide is another algorithm that is not yet included in the
 package.
-An alorithm is always based on a is a concrete type of a [`Problem`](https://manoptjl.org/stable/plans/index.html#Problems-1) storing the main information of the task and a concrete type of an [`Option`](https://manoptjl.org/stable/plans/index.html#Options-1from) storing all information that needs to be known to the solver in general. The actual algorithm is split into an initialization phase, see [`initialize_solver!`](https://manoptjl.org/stable/solvers/index.html#Manopt.initialize_solver!), and the implementation of the `i`th step of the sovler itself, see  before the iterative procedure, see [`step_solver!`](https://manoptjl.org/stable/solvers/index.html#Manopt.step_solver!).
-For these two functions it would be great if a new algorithm uses functions from the [`ManifoldsBase.jl`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html) interface as generic as possible. For example, if possible use [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract!-Tuple{AbstractManifold,Any,Any,Any}) in favour of [`exp!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.exp!-Tuple{AbstractManifold,Any,Any,Any}) to perform a step starting in `p` in direction `X` (in place of `q`), since the exponential map might be too expensive to evaluate or might not be available on a certain manifold. See [Retractions and inverse retractions](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#Retractions-and-inverse-Retractions) for more details.
-Further, if possible, prefer [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract!-Tuple{AbstractManifold,Any,Any,Any}) in favour of [`retract(M,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract-Tuple{AbstractManifold,Any,Any}), since a computation in place of a suitable variable `q` reduces memory allocations.
+An algorithm is always based on a concrete type of a [`Problem`](https://manoptjl.org/stable/plans/index.html#Problems-1) storing the main information of the task and a concrete type of an [`Option`](https://manoptjl.org/stable/plans/index.html#Options-1from) storing all information that needs to be known to the solver in general. The actual algorithm is split into an initialization phase, see [`initialize_solver!`](https://manoptjl.org/stable/solvers/index.html#Manopt.initialize_solver!), and the implementation of the `i`th step of the solver itself, see  before the iterative procedure, see [`step_solver!`](https://manoptjl.org/stable/solvers/index.html#Manopt.step_solver!).
+For these two functions, it would be great if a new algorithm uses functions from the [`ManifoldsBase.jl`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html) interface as generically as possible. For example, if possible use [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract!-Tuple{AbstractManifold,Any,Any,Any}) in favor of [`exp!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.exp!-Tuple{AbstractManifold,Any,Any,Any}) to perform a step starting in `p` in direction `X` (in place of `q`), since the exponential map might be too expensive to evaluate or might not be available on a certain manifold. See [Retractions and inverse retractions](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#Retractions-and-inverse-Retractions) for more details.
+Further, if possible, prefer [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract!-Tuple{AbstractManifold,Any,Any,Any}) in favor of [`retract(M,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract-Tuple{AbstractManifold,Any,Any}), since a computation in place of a suitable variable `q` reduces memory allocations.
 
 Usually, the methods implemented in `Manopt.jl` also have a high-level interface, that is easier to call, creates the necessary problem and options structure and calls the solver.
 
@@ -49,7 +49,7 @@ The two technical functions `initialize_solver!` and `step_solver!` should be do
 
 ### Provide a new example
 
-The `examples/` folder features several examples covering all solvers. Still, if you have a new example that you implemented yourself for fun or for a paper, feel free to add it to the repository as well. Also if you have a [Pluto](https://github.com/fonsp/Pluto.jl) notebook of your example, feel free to contribute that.
+The `examples/` folder features several examples covering all solvers. Still, if you have a new example that you implemented yourself for fun or for a paper, feel free to add it to the repository as well. Also, if you have a [Pluto](https://github.com/fonsp/Pluto.jl) notebook of your example, feel free to contribute that.
 
 ### Code style
 
@@ -58,11 +58,11 @@ We run [`JuliaFormatter.jl`](https://github.com/domluna/JuliaFormatter.jl) on th
 
 We also follow a few internal conventions:
 
-- It is preferred that the `Problem`'s struct contains information about the general structure of the problem
+- It is preferred that the `Problem`'s struct contains information about the general structure of the problem.
 - Any implemented function should be accompanied by its mathematical formulae if a closed form exists.
-- Problem and option structures are stored within the `plan/` folder and sorted by properties of the problem and/or solver at hand
-- Within the source code of one algorithm, the high level interface should be first, then the initialisation, then the step.
-- Otherwise an alphabetical order is preferrable.
+- Problem and option structures are stored within the `plan/` folder and sorted by properties of the problem and/or solver at hand.
+- Within the source code of one algorithm, the high level interface should be first, then the initialization, then the step.
+- Otherwise an alphabetical order is preferable.
 - The above implies that the mutating variant of a function follows the non-mutating variant.
 - There should be no dangling `=` signs.
 - Always add a newline between things of different types (struct/method/const).

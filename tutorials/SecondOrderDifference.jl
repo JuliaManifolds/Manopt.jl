@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.0
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -12,7 +12,7 @@ md"""
 # Illustration of the Gradient of a Second Order Difference
 
 This example explains how to compute the gradient of the second order
-difference mid point model using `adjoint_Jacobi_field`
+difference midpoint model using `adjoint_Jacobi_field`.
 
 This example also illustrates the `PowerManifold` manifold as well as `ArmijoLinesearch`.
 """
@@ -64,17 +64,17 @@ Now the second order absolute difference can be stated as [^BacakBergmannSteidlW
 d_2(p_1,p:2,p_3) := \min_{c ∈ \mathcal C_{p_1,p_3}} d_{\mathcal M}(c,p_2),\qquad p_1,p_2,p_3∈\mathcal M,
 ```
 
-where ``\mathcal C_{p,q}`` is the set of all mid points ``g(\frac{1}{2};p,q)``, between `p`and `q`, i.e. where ``g``
+where ``\mathcal C_{p,q}`` is the set of all midpoints ``g(\frac{1}{2};p,q)``, between `p`and `q`, i.e. where ``g``
 is a (not necessarily minimizing) geodesic connecting both.
 
-For illustration we further define the point opposite of the mid point `c` defined above
+For illustration we further define the point opposite of the midpoint `c` defined above
 """
 
 # ╔═╡ a9596c67-1cfb-4d94-a7c8-71bf36fe06bb
 c2 = -c;
 
 # ╔═╡ 2dfaebe0-e706-4eb6-b661-aed9d8ae19c1
-md"To illustrate the second order difference let‘s look at the geodesic connecting ``r`` and the mid point ``c``"
+md"To illustrate the second order difference let's look at the geodesic connecting ``r`` and the midpoint ``c``"
 
 # ╔═╡ 1c484736-bb94-4f64-bcfd-ad7ed52ade39
 geoPts_rc = shortest_geodesic(M, r, c, T);
@@ -97,12 +97,12 @@ end;
 PlutoUI.LocalResource(image_prefix * "/SecondOrderData.png")
 
 # ╔═╡ dcf6bbeb-5b09-4689-8bb9-e35f089cff45
-md" **Figure.** _The three poins ``p, q``, and ``r`` (neart north pole, all black), which is connected by a geodesic (teal) to the mid point of the first two, ``c``, (blue). The length of this geodesic is the cost of the second order total variation._"
+md" **Figure.** _The three (black) points ``p, q``, and ``r`` (near the north pole), which is connected by a geodesic (teal) to the midpoint of the first two, ``c`` (blue). The length of this geodesic is the cost of the second order total variation._"
 
 # ╔═╡ 07a44b4c-876c-4fff-ad72-2baedc06d090
 md"""
 Since we moved ``r`` 10% along the geodesic from the north pole to ``c``, the distance
-to ``c`` is ``\frac{9\pi}{20}\approx 1.4137``, and this is also what the second order total variation cost, see [`costTV2`](https://manoptjl.org/stable/functions/costs.html#Manopt.costTV2), yields.
+to ``c`` is ``\frac{9\pi}{20}\approx 1.4137``, and this is also what the second order total variation cost, see [`costTV2`](https://manoptjl.org/stable/functions/costs.html#Manopt.costTV2), yields:
 """
 
 # ╔═╡ ebab946c-ba27-422d-a191-56294e57177b
@@ -117,7 +117,7 @@ respectively, with a distance.
 Hence the adjoint differentials
 [`adjoint_differential_geodesic_startpoint`](https://manoptjl.org/stable/functions/adjointdifferentials.html#Manopt.adjoint_differential_geodesic_startpoint-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}) and [`adjoint_differential_geodesic_endpoint`](https://manoptjl.org/stable/functions/adjointdifferentials.html#Manopt.adjoint_differential_geodesic_endpoint-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}) can be employed.
 The gradient is also directly implemented, see [`grad_TV2`](https://manoptjl.org/stable/functions/gradients.html#Manopt.grad_TV2).
-we obtain
+We obtain
 """
 
 # ╔═╡ b685cd13-8b06-4d6d-a001-576f68951bd9
@@ -152,13 +152,13 @@ md"If we now perform a gradient step with constant step size 1, we obtain the th
 pn, rn, qn = exp.(Ref(M), [p, r, q], [-Xp, -Xr, -Xq])
 
 # ╔═╡ 6b50fb13-45db-4cbb-a1e0-d62187c0b2d3
-md"as well we the new mid point"
+md"as well we the new midpoint"
 
 # ╔═╡ 0bbd56ce-9041-4974-8525-a0b5bd03e9fe
 cn = mid_point(M, pn, qn)
 
 # ╔═╡ 2eee7e24-20aa-4ae4-a336-b2eec90ce24c
-md"Let‘s also again consider the geodesic connecting the new point ``r_n`` and the new mid point ``c_n`` as well as the gradient"
+md"Let's also again consider the geodesic connecting the new point ``r_n`` and the new midpoint ``c_n``, as well as the gradient"
 
 # ╔═╡ ce758b03-0177-45c2-b895-e64d133ca4af
 begin
@@ -196,12 +196,12 @@ PlutoUI.LocalResource(image_prefix * "/SecondOrderMin1.png")
 
 # ╔═╡ a959be34-c0fb-4dc3-b46d-1702f616a8bb
 md"""
-**Figure.** *The new situation of ``p_n, q_n``, and ``r_n`` (orange) and the miod point of the first two, ``c_n`` (blue), which is again connected by a geodesic to ``r_n``. Note that this geodesic is shorter, but also that ``c`` and ``r`` switched places*. The new gradient (magenta) is only slightly reduced in magnitude.* 
+**Figure.** *The new situation of ``p_n, q_n``, and ``r_n`` (orange) and the midpoint of the first two, ``c_n`` (blue), which is again connected by a geodesic to ``r_n``. Note that this geodesic is shorter, but also that ``c`` and ``r`` switched places*. The new gradient (magenta) is only slightly reduced in magnitude.
 """
 
 # ╔═╡ 5b4aa1ae-7ab1-4efc-a796-1fa4e771e2b2
 md"""
-One can see, that this step slightly “overshoots”, i.e. ``r`` is now even below ``c``.
+One can see that this step slightly “overshoots”, i.e. ``r`` is now even below ``c``,
 and the cost function is still at
 """
 
@@ -301,8 +301,9 @@ PlutoUI = "~0.7.38"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.8.0"
 manifest_format = "2.0"
+project_hash = "43bf8cb61864d97458ff17f46246f46275c82093"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -324,6 +325,7 @@ version = "3.3.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
+version = "1.1.1"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -382,6 +384,7 @@ version = "3.43.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -431,14 +434,18 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+version = "1.6.0"
 
 [[deps.Einsum]]
 deps = ["Compat"]
 git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
 uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
 version = "0.4.1"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -527,10 +534,12 @@ version = "0.5.1"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
+version = "0.6.3"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.84.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -539,6 +548,7 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -587,6 +597,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.28.0+0"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -599,6 +610,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+version = "2022.2.1"
 
 [[deps.NamedDims]]
 deps = ["AbstractFFTs", "ChainRulesCore", "CovarianceEstimation", "LinearAlgebra", "Pkg", "Requires", "Statistics"]
@@ -608,14 +620,17 @@ version = "0.2.47"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+version = "1.2.0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+version = "0.8.1+0"
 
 [[deps.OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -643,6 +658,7 @@ version = "2.2.4"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+version = "1.8.0"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
@@ -710,6 +726,7 @@ version = "0.3.0+0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -790,10 +807,12 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+version = "1.10.0"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -809,6 +828,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.12+3"
 
 [[deps.ZygoteRules]]
 deps = ["MacroTools"]
@@ -819,14 +839,17 @@ version = "0.2.2"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.48.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:

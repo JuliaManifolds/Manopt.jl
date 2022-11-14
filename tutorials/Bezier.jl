@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.0
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -9,17 +9,17 @@ using Colors, PlutoUI, Manopt, Manifolds
 
 # ╔═╡ e701b513-4ad9-474c-9d79-60a24f545ebd
 md"""
-# Bezier curves and their acceleration
+# Bézier Curves and Their Acceleration
 
 This tutorial illustrates how Bézier curves are generalized to manifolds and how to
-minimize their acceleration, i.e. how to get a curve that is as straight or as geodesic
-while fulfilling constraints
+minimize their acceleration, i.e. how to get a curve that is as straight or as geodesic as possible
+while fulfilling constraints.
 
 This example also illustrates how to apply the minimization on the corresponding [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html) manifold using a [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html) with [`ArmijoLinesearch`](https://manoptjl.org/stable/plans/index.html#Manopt.ArmijoLinesearch).
 """
 
 # ╔═╡ 087fb979-d68d-4ee7-9be5-fad992fdb792
-md"and we define some colors from [Paul Tol](https://personal.sron.nl/~pault/)"
+md"We define some colors from [Paul Tol](https://personal.sron.nl/~pault/)"
 
 # ╔═╡ 85d8985b-f5ee-4cba-bcc5-528049798330
 begin
@@ -48,7 +48,7 @@ end;
 
 # ╔═╡ dee4eb65-145c-4b2b-98a7-ae3a7045f24b
 md"""
-We finally load our data, see [`artificial_S2_composite_bezier_curve`](https://manoptjl.org/stable/helpers/data.html#Manopt.artificial_S2_composite_bezier_curve-Tuple{}), a composite Bezier curve consisting of 3 segments on the Sphere. The middle segment consists of the control points
+We finally load our data, see [`artificial_S2_composite_bezier_curve`](https://manoptjl.org/stable/helpers/data.html#Manopt.artificial_S2_composite_bezier_curve-Tuple{}), a composite Bézier curve consisting of 3 segments on the Sphere. The middle segment consists of the control points
 """
 
 # ╔═╡ 2b485956-459d-40e7-9364-79ea77073804
@@ -62,12 +62,12 @@ M = Sphere(2)
 
 # ╔═╡ d22e825e-d8ff-44fe-8b06-b14c09765180
 md"""
-On Euclidean spaces Bézier curves of these ``n=4`` so called control points like this segment yield polynomials of degree``3``.
-The resulting curve ``γ: [0,1] → ℝ^m`` is called [Bezier curve](https://en.wikipedia.org/wiki/Bézier_curve) or Bézier spline and is named after [Piérre Bezier](https://en.wikipedia.org/wiki/Pierre_Bézier) (1910–1999).
+On Euclidean spaces, Bézier curves of these ``n=4`` so-called control points like this segment yield polynomials of degree ``3``.
+The resulting curve ``γ: [0,1] → ℝ^m`` is called [Bézier curve](https://en.wikipedia.org/wiki/Bézier_curve) or Bézier spline and is named after [Pierre Bézier](https://en.wikipedia.org/wiki/Pierre_Bézier) (1910–1999).
 They can be evaluated by the de Casteljau algorithm by evaluating line segments between points.
 While it is not easy to evaluate polynomials on a manifold, evaluating line segments generalizes to the evaluation of [`shortest_geodesic`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s.
 We will illustrate this using these points ``b=(b_1,b_2,b_3,b_4)`` on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html) ``\mathbb S^2``.
-Let's evaliuate this at the point ``t=\frac{1}{4}∈[0,1]``. We first compute
+Let's evaluate this at the point ``t=\frac{1}{4}∈[0,1]``. We first compute
 """
 
 # ╔═╡ 157d13c8-7311-4832-a9ff-da22125b2bbf
@@ -131,38 +131,37 @@ PlutoUI.LocalResource(image_prefix * "/Casteljau-illustr.png")
 
 # ╔═╡ d6759a8e-a705-4d95-a8da-e172ada644d8
 md"""
-From the control points (blue) and their geodesics, ont evaluation per geodesic yields three interims points (cyan), their two successive geodeics another two points (teal) and at its geodesic at ``t=0.66`` we obtain the point on the curve.
+From the control points (blue) and their geodesics, one evaluation per geodesic yields three interim points (cyan), their two successive geodesics yield two other points (teal), and on the geodesic that connects these two at ``t=0.66`` we obtain the point on the curve.
 
 In Manopt.jl, to evaluate a Bézier curve knowing its [`BezierSegment`](https://manoptjl.org/stable/functions/bezier.html#Manopt.BezierSegment), use [`de_casteljau`](https://manoptjl.org/stable/functions/bezier.html#Manopt.de_casteljau-Tuple{AbstractManifold,%20Vararg{Any,%20N}%20where%20N}).
 
-There are a few nice observations to make, that hold also for these Bézier curves on manifolds:
-* The curve starts in the first controlpoint ``b_0`` and ends in the last controlpoint ``b_3``
+There are a few nice observations to make, that also hold for these Bézier curves on manifolds:
+* The curve starts in the first controlpoint ``b_0`` and ends in the last controlpoint ``b_3``.
 * The tangent vector to the curve at the start ``\dot c(0)`` is equal to ``\frac{1}{3}\log_{b_0}b_1 = \dot γ_{b_0,b_1}(0)``, where ``γ_{a,b}`` denotes the shortest geodesic between ``a`` and ``b``.
 * The tangent vector to the curve at the end ``\dot c(1)`` is equal to ``-\frac{1}{3}\log_{b_3}b_2 = -γ_{b_3,b_2}(0) = \dot γ_{b_2,b_3}(1)``.
-* the curve is differentiable.
+* The curve is differentiable.
 
 For more details on these properties, see for example [^PopielNoakes2007].
 """
 
 # ╔═╡ 7c6947a0-7d0b-4459-b999-58ea4f2b0169
 md"""
-## Composite Bézier curves
+## Composite Bézier Curves
 
 With the properties of a single Bézier curve, also called Bézier segment, we can “stitch” curves together. Let ``a_0,…,a_n`` and ``b_0,…,b_m`` be two sets of controlpoints for the Bézier segments ``c(t)`` and ``d(t)``, respectively.
 We define the composite Bézier curve by ``B(t) = \begin{cases} c(t) & \text{ if } 0\leq t < 1, \\ d(t-1) & \text{ if } 1\leq t \leq 2,\end{cases}`` where ``t∈[0,2]``.
-This can of course be generalised straight forward to more than two cases.
+This can of course be generalized straightforwardly to more than two cases.
 With the properties from the previous section we can now state that
 
 * the curve ``B(t)`` is continuous if ``c(1)=d(0)`` or in other words ``a_n=b_0``
-* the curve ``B(t)`` is differentiable if additionally ``\dot c(1)=\dot d(0)`` or in
-other words ``-\log_{a_n}a_{n-1} = \log_{b_0}b_1``. This is equivalent to ``a_n=b_0 = \gamma_{a_{n-1}b_1}(\tfrac{1}{2})``.
+* the curve ``B(t)`` is differentiable if additionally ``\dot c(1)=\dot d(0)``, or in other words, ``-\log_{a_n}a_{n-1} = \log_{b_0}b_1``. This is equivalent to ``a_n=b_0 = \gamma_{a_{n-1}b_1}(\tfrac{1}{2})``.
 
-One nice interpretation of the last characterization is, that the tangents ``\log_{a_n}a_{n-1}`` and ``\log_{b_0}b_1`` point into opposite directions.
-For a continuous curve, the first point of every segment (except for the first segment) can be ommitted, for a differentiable curve the first two points (except for the first segment) can be ommitted.
-You can reduce storage by calling [`get_bezier_points`](https://manoptjl.org/stable/functions/bezier.html#Manopt.get_bezier_points), though for econstruciton with [`get_bezier_segments`](https://manoptjl.org/stable/functions/bezier.html#Manopt.get_bezier_segments-Union{Tuple{P},%20Tuple{AbstractManifold,%20Vector{P},%20Any},%20Tuple{AbstractManifold,%20Vector{P},%20Any,%20Symbol}}%20where%20P) you also need [`get_bezier_degrees`](https://manoptjl.org/stable/functions/bezier.html#Manopt.get_bezier_degrees-Tuple{AbstractManifold,%20AbstractVector{var%22#s56%22}%20where%20var%22#s56%22%3C:BezierSegment}).
+One nice interpretation of the last characterization is that the tangents ``\log_{a_n}a_{n-1}`` and ``\log_{b_0}b_1`` point towards opposite directions.
+For a continuous curve, the first point of every segment (except for the first segment) can be ommitted. For a differentiable curve the first two points (except for the first segment) can be ommitted.
+You can reduce storage by calling [`get_bezier_points`](https://manoptjl.org/stable/functions/bezier.html#Manopt.get_bezier_points), though for a construction with [`get_bezier_segments`](https://manoptjl.org/stable/functions/bezier.html#Manopt.get_bezier_segments-Union{Tuple{P},%20Tuple{AbstractManifold,%20Vector{P},%20Any},%20Tuple{AbstractManifold,%20Vector{P},%20Any,%20Symbol}}%20where%20P) you also need [`get_bezier_degrees`](https://manoptjl.org/stable/functions/bezier.html#Manopt.get_bezier_degrees-Tuple{AbstractManifold,%20AbstractVector{var%22#s56%22}%20where%20var%22#s56%22%3C:BezierSegment}).
 The reduced storage is represented as an array of points, i.e. an element of the corresponding [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html).
 
-For the three segment example from the beginning this looks as follows
+For the three-segment example from the beginning this looks as follows
 """
 
 # ╔═╡ 3f1d0989-2f97-4945-82f8-22e9c7bda6d2
@@ -195,8 +194,8 @@ PlutoUI.LocalResource(image_prefix * "/Bezier-composite-curve.png")
 
 # ╔═╡ e7fc05b3-a198-4a64-b62a-43cdf8f56238
 md"""
-## Minimizing the acceleration of a composite Bézier curve
-The motivation to minimize the acceleration of the composite Bézier curve is, that the curve should get “straighter” or more geodesic like.
+## Minimizing the Acceleration of a Composite Bézier Curve
+The motivation to minimize the acceleration of a composite Bézier curve is that the curve should get “straighter” or more geodesic-like.
 If we discretize the curve ``B(t)`` with its control points denoted by ``b_{i,j}`` for the ``j``th note in the ``i``th segment, the discretized model for equispaced ``t_i``, ``i=0,…,N`` in the domain of ``B`` reads[^BergmannGousenbourger2018]
 
 ```math
@@ -210,7 +209,7 @@ d_2(x,y,z) := \min_{c ∈ \mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z∈\
 ```
 
 Another model is based on logarithmic maps, see [^BoumalAbsil2011], but that is not considered here.
-An advantage of the model considered here is, that it only consist of the evaluation of geodesics.
+An advantage of the model considered here is that it only consist of the evaluation of geodesics.
 This yields a gradient of ``A(b)`` with respect to ``b`` [`adjoint_Jacobi_field`](https://manoptjl.org/stable/functions/Jacobi_fields.html#Manopt.adjoint_Jacobi_field)s. The following image shows the negative gradient (scaled)
 """
 
@@ -250,8 +249,8 @@ PlutoUI.LocalResource(image_prefix * "/Bezier-composite-curve-gradient.png")
 
 # ╔═╡ 7640628b-e232-4ba3-94aa-d8a00218ff6a
 md"""
-In the following we consider two cases: Interpolation, which fixes the junction and end points of ``B(t)``
-and approximation, where a weight and a dataterm are additionally introduced.
+In the following we consider two cases: interpolation, which fixes the junction and end points of ``B(t)``,
+and approximation, where a weight and a data term are additionally introduced.
 """
 
 # ╔═╡ da970042-8326-4d17-b440-ab1960f10283
@@ -259,7 +258,7 @@ md"""
 ### Interpolation
 
 For interpolation, the junction points are fixed and their gradient entries are hence set to zero.
-After transferring to the already mentioned [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html), we can then perform a  [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html)  as follows
+After transferring to the aforementioned [`PowerManifold`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/power.html), we can then perform a  [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html)  as follows
 """
 
 # ╔═╡ 7db3e138-6ec1-4a0c-8f3b-279f7251b4c3
@@ -290,7 +289,7 @@ begin
 end;
 
 # ╔═╡ 5e8e98f6-8896-462e-b610-4b379c727a72
-md"and the resut looks like"
+md"and the result looks like"
 
 # ╔═╡ 50854504-af68-4d7f-999e-f3054c088fb6
 render_asy && begin
@@ -323,13 +322,13 @@ PlutoUI.LocalResource(image_prefix * "/Bezier-IP-Min.png")
 
 # ╔═╡ 203a0538-d608-4d3e-b57d-edec20756300
 md"""
-Where the original courve is shown in black and the interpolating curve with minimized (discretized) acceleration is shown in blue including its junction points (also blue), tangent vectors (light blue) and control points (teal).
+Where the original curve is shown in black and the interpolating curve with minimized (discretized) acceleration is shown in blue including its junction points (also blue), tangent vectors (light blue) and control points (teal).
 """
 
 # ╔═╡ 3e43f3fe-5c9a-4fb5-9033-db4a34bac5a5
 md"""
 ### Approximation
-Similarly if we introduce the junction points as data fixed given ``d_i`` and set (for simplicity) ``p_i=b_{i,0}`` and ``p_{n+1}=b_{n,4}`` and ``λ=3`` in
+Similarly, if we introduce the junction points as fixed data given ``d_i`` and set (for simplicity) ``p_i=b_{i,0}`` and ``p_{n+1}=b_{n,4}`` and ``λ=3`` in
 
 ```math
 \frac{λ}{2}\sum_{k=0}^3 d_{\mathcal M}(d_i,p_i)^2 + A(b),
@@ -337,7 +336,7 @@ Similarly if we introduce the junction points as data fixed given ``d_i`` and se
 
 then ``λ`` models how important closeness to the data ``d_i`` is.
 
-Then we obtain the folowing code to minimize the acceleration while approximating the original curve
+Then we obtain the following code to minimize the acceleration while approximating the original curve
 """
 
 # ╔═╡ 2f9ef252-5046-4af7-aa69-449a04bab26e
@@ -399,13 +398,13 @@ end;
 PlutoUI.LocalResource(image_prefix * "/Bezier-Appr-Min.png")
 
 # ╔═╡ 0855f66e-f9af-4c63-b041-424c9f3fd655
-md"""Additionally to the last image, the data points ``d_i`` (junction points of the original curve) are shown in orange, the distance between these and the blue junction points is part of the cost function here."""
+md"""Additionally to the last image, the data points ``d_i`` (junction points of the original curve) are shown in orange. The distance between these and the blue junction points is part of the cost function here."""
 
 # ╔═╡ 67e8e794-a16a-4d39-804a-6bfb350f8247
 md"""
 The role of ``λ`` can be interpreted as follows: for large values of $λ$, the
 minimizer, i.e. the resulting curve, is closer to the original Bézier junction points.
-For small ``λ`` the resting curve is closer to a geodesic and the control points are closer to the curve.
+For small ``λ`` the resulting curve is closer to a geodesic and the control points are closer to the curve.
 For ``λ=0`` _any_ (not necessarily shortest) geodesic is a solution and the problem is ill-posed.
 To illustrate the effect of ``λ``, the following image contains 1000 runs for ``λ=10`` in dark currant to ``λ=0.01`` in bright yellow.
 
@@ -468,8 +467,9 @@ PlutoUI = "~0.7.22"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.8.0"
 manifest_format = "2.0"
+project_hash = "7e37e10c8226d8b710193f5fde84acba0f25a824"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -485,6 +485,7 @@ version = "1.1.2"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
+version = "1.1.1"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -543,6 +544,7 @@ version = "3.40.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -592,14 +594,18 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+version = "1.6.0"
 
 [[deps.Einsum]]
 deps = ["Compat"]
 git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
 uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
 version = "0.4.1"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -688,10 +694,12 @@ version = "0.5.1"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
+version = "0.6.3"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.84.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -700,6 +708,7 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -748,6 +757,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.28.0+0"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -760,6 +770,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+version = "2022.2.1"
 
 [[deps.NamedDims]]
 deps = ["AbstractFFTs", "ChainRulesCore", "CovarianceEstimation", "LinearAlgebra", "Pkg", "Requires", "Statistics"]
@@ -769,14 +780,17 @@ version = "0.2.42"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+version = "1.2.0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+version = "0.8.1+0"
 
 [[deps.OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -804,6 +818,7 @@ version = "2.1.2"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+version = "1.8.0"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
@@ -871,6 +886,7 @@ version = "0.3.0+0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -950,10 +966,12 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+version = "1.10.0"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -969,6 +987,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.12+3"
 
 [[deps.ZygoteRules]]
 deps = ["MacroTools"]
@@ -979,14 +998,17 @@ version = "0.2.2"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.48.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:

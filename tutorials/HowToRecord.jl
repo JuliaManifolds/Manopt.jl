@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.4
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -9,17 +9,17 @@ using Manopt, Manifolds, Random
 
 # ╔═╡ 65e3c376-ad9f-11ec-003e-7f033e6865d8
 md"""
-# How to Record Data during the Iterations
+# How to Record Data During the Iterations
 
-The recording and debug possiblities make it possible to record nearly any data during the iterations.
-This tutorial illustrates how to
+The recording and debugging features make it possible to record nearly any data during the iterations.
+This tutorial illustrates how to:
 
-* record one value during the iterations
-* record multiple values during the iterations and access them afterwards
+* record one value during the iterations;
+* record multiple values during the iterations and access them afterwards;
 * define an own `RecordAction` to perform individual recordings.
 
 Several predefined recordings exist, for example `RecordCost()` or `RecordGradient()`, depending on the solver used.
-For fields of the `Options` this can be directly done using the [`RecordEntry(:field)
+For fields of the `Options` this can be directly done using the [`RecordEntry(:field)`].
 For other recordings, for example more advanced computations before storing a value, an own `RecordAction` can be defined.
 
 We illustrate these using the gradient descent from the mean computation tutorial.
@@ -45,11 +45,11 @@ gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 
 # ╔═╡ c822fe70-becd-4b0a-b66f-34366f98dfad
 md"""
-## Plain examples
+## Plain Examples
 
 For the high level interfaces of the solvers, like [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html) we have to set `return_options` to `true` to obtain the whole options structure and not only the resulting minimizer.
 
-Then we can easily use the `record=` option to add recorded values. This kesword accepts `RecordAction`s as well as several Symbols as shortcuts, for example `:Cost` to record the cost or if your options have a field `f` `:f` would record that entry.
+Then we can easily use the `record=` option to add recorded values. This keyword accepts `RecordAction`s as well as several symbols as shortcuts, for example `:Cost` to record the cost, or if your options have a field `f`, `:f` would record that entry.
 """
 
 # ╔═╡ fbc02960-7f7e-4500-92ac-30df7d058fa9
@@ -69,7 +69,7 @@ get_record(R)
 
 # ╔═╡ 0545973a-d77b-4cce-b834-38a9e08f9a17
 md"""
-To record more than one value, you can pass a array of a mix of symbols and `RecordAction` which formally introduces `RecordGroup`. Such a Group records a tuple of values in every iteration.
+To record more than one value, you can pass an array of a mix of symbols and `RecordAction` which formally introduces `RecordGroup`. Such a group records a tuple of values in every iteration.
 """
 
 # ╔═╡ 68cb3e06-866d-4650-863a-61f965e3320f
@@ -77,8 +77,8 @@ R2 = gradient_descent(M, F, gradF, data[1]; record=[:Iteration, :Cost], return_o
 
 # ╔═╡ 4943d34f-0aff-4879-94a6-337ce42b2e36
 md"""
-Here, the Symbol `:Cost` is mapped to using the `RecordCost` action. The same holds for `:Iteration` and `:Iterate` and any member field of the current `Options`.
-To access these you can first extract the group of records (that is where the `:Iteration`s are recorded – note the Pluraö) and then access the `:Cost`
+Here, the symbol `:Cost` is mapped to using the `RecordCost` action. The same holds for `:Iteration` and `:Iterate` and any member field of the current `Options`.
+To access these you can first extract the group of records (that is where the `:Iteration`s are recorded – note the plural) and then access the `:Cost`
 """
 
 # ╔═╡ 9d17df05-ca92-4a98-b101-c68ba8d3f7b9
@@ -101,7 +101,7 @@ get_record(R2, :Iteration, :Cost)
 # ╔═╡ 44091233-12c7-4e2b-81c4-2b2d0aa488fa
 md"""
 Note that the first symbol again refers to the point where we record (not to the thing we record).
-We can also pass a Tuple as second argument to have our own order (not that now the second `:Iteration` refers to the recorded iteratons)
+We can also pass a tuple as second argument to have our own order (not that now the second `:Iteration` refers to the recorded iterations).
 """
 
 # ╔═╡ 98baba1a-d64d-4852-8f80-85f7248ece98
@@ -109,11 +109,11 @@ get_record(R2, :Iteration, (:Iteration, :Cost))
 
 # ╔═╡ de36da12-d1bb-4b91-8d5f-7a2b64f70dd1
 md"""
-## A more complex example
+## A more Complex Example
 
-To illustrate a complicated example let's record
-* the iteration number, cost and gradient field, but only every sixth iteration
-* the iteration at which we stop
+To illustrate a complicated example let's record:
+* the iteration number, cost and gradient field, but only every sixth iteration;
+* the iteration at which we stop.
 
 We first generate the problem and the options, to also illustrate the low-level works when not using `gradient_descent`.
 """
@@ -151,7 +151,7 @@ sI = RecordIteration()
 
 # ╔═╡ 995c264c-793e-4c23-9dfd-3eb7bc640e30
 md"""
-We now combine both into the `RecordOptions` decorator. It acts completely the same as an `Option` but records something in every iteration additionslly. This is stored in a dictionary of `RecordActions`, where `:Iteration` is the action (here the only every 6th iteration group) and the `sI` which is executed at stop.
+We now combine both into the `RecordOptions` decorator. It acts completely the same as an `Option` but records something in every iteration additionally. This is stored in a dictionary of `RecordActions`, where `:Iteration` is the action (here the only every 6th iteration group) and the `sI` which is executed at stop.
 
 Note that the keyword `record=` (in the high level interface `gradient_descent` only would fill the `:Iteration` symbol).
 """
@@ -184,7 +184,7 @@ md"""
 ## Writing an own `RecordAction`s
 
 Let's investigate where we want to count the number of function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration.
-We first define a cost, that counts it's own calls.
+We first define a cost, that counts its own calls.
 """
 
 # ╔═╡ b3a8e43c-6c82-483f-9449-680ee21a0650
@@ -202,7 +202,7 @@ end
 
 # ╔═╡ 05284884-e05c-4714-bf53-2da071c664f7
 md"""
-and we define the following RecordAction, which is a Functor, i.e. a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration: 
+and we define the following RecordAction, which is a functor, i.e. a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration: 
 """
 
 # ╔═╡ e0fe662d-edc5-4d1f-9fd6-987f37098cc4
@@ -223,7 +223,7 @@ end
 # ╔═╡ 8eba9b9b-836b-48f3-b4fe-067bab605b87
 md"""
 Now we can initialize the new cost and call the gradient descent.
-Note that this illustrates also the last use case – you can pass symbol-Action pairs into the `record=`array.
+Note that this illustrates also the last use case – you can pass symbol-action pairs into the `record=`array.
 """
 
 # ╔═╡ 26cac0ff-3339-45f9-8021-04adb4d061fa
@@ -258,7 +258,7 @@ R3[:Iteration, :Count]
 
 # ╔═╡ 6456503a-6614-43f9-89c1-448e191c7769
 md"""
-And we see that the cost function is called once per iteration.
+and we see that the cost function is called once per iteration.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -277,8 +277,9 @@ Manopt = "~0.3.20"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.8.0"
 manifest_format = "2.0"
+project_hash = "4c337795fc1e0348ce3f84b5839a734d86a51b9d"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -294,6 +295,7 @@ version = "3.3.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
+version = "1.1.1"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -358,6 +360,7 @@ version = "3.42.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -407,8 +410,9 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+version = "1.6.0"
 
 [[deps.DualNumbers]]
 deps = ["Calculus", "NaNMath", "SpecialFunctions"]
@@ -421,6 +425,9 @@ deps = ["Compat"]
 git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
 uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
 version = "0.4.1"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -492,10 +499,12 @@ version = "0.5.1"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
+version = "0.6.3"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.84.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -504,6 +513,7 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -552,6 +562,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.28.0+0"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -564,6 +575,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+version = "2022.2.1"
 
 [[deps.NaNMath]]
 git-tree-sha1 = "737a5957f387b17e74d4ad2f440eb330b39a62c5"
@@ -578,14 +590,17 @@ version = "0.2.47"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+version = "1.2.0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+version = "0.8.1+0"
 
 [[deps.OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -607,6 +622,7 @@ version = "0.11.7"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+version = "1.8.0"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -668,6 +684,7 @@ version = "0.3.0+0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -748,10 +765,12 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+version = "1.10.0"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -767,6 +786,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.12+3"
 
 [[deps.ZygoteRules]]
 deps = ["MacroTools"]
@@ -777,14 +797,17 @@ version = "0.2.2"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.48.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:

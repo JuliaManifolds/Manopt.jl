@@ -6,7 +6,7 @@ Stopping criteria are implemented as a `functor`, i.e. inherit from the base typ
 StoppingCriterion
 ```
 
-They can also be grouped, which is summarize in the type of a set of criteria
+They can also be grouped, which is summarized in the type of a set of criteria
 
 ```@docs
 StoppingCriterionSet
@@ -20,10 +20,10 @@ One field all criteria should have is the `s.reason`, a string giving the reason
 
 ## Stopping Criteria
 
-The following generic stopping criteria are available. Some require, that for example
+The following generic stopping criteria are available. Some require that, for example,
 the corresponding [`Options`](@ref) have a field `gradient` when the criterion should check that.
 
-Further stopping criteria might be available for individual Solvers.
+Further stopping criteria might be available for individual solvers.
 
 ```@autodocs
 Modules = [Manopt]

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.0
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -15,18 +15,18 @@ This tutorial illustrates how to use the [`stochastic_gradient_descent`](https:/
 solver and different [`DirectionUpdateRule`](https://manoptjl.org/stable/solvers/gradient_descent.html#Direction-Update-Rules-1)s in order to introduce
 the average or momentum variant, see [Stochastic Gradient Descent](https://en.wikipedia.org/wiki/Stochastic_gradient_descent).
 
-Computationally we look at a very simple but large scale problem,
+Computationally, we look at a very simple but large scale problem,
 the Riemannian Center of Mass or [Fréchet mean](https://en.wikipedia.org/wiki/Fréchet_mean):
-For given points ``p_i ∈\mathcal M``, ``i=1,…,N`` this optimization problem reads
+for given points ``p_i ∈\mathcal M``, ``i=1,…,N`` this optimization problem reads
 
 ```math
 \operatorname*{arg\,min}_{x∈\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
   \operatorname{d}^2_{\mathcal M}(x,p_i),
 ```
 
-which of course can be (and is) solved by a gradient descent, see the introductionary tutorial or the [Statistics in Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html).
-If ``N`` is very large it might be quite expensive to evaluate the complete gradient.
-A remedy is, to evaluate only one of the terms at a time and choose a random order for these.
+which of course can be (and is) solved by a gradient descent, see the introductionary tutorial or [Statistics in Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html).
+If ``N`` is very large, evaluating the complete gradient might be quite expensive.
+A remedy is to evaluate only one of the terms at a time and choose a random order for these.
 
 We first initialize the packages 
 """
@@ -80,18 +80,18 @@ Note that due to the construction of the points as zero mean tangent vectors, th
 be very close to our initial point `x`.
 
 In order to use the stochastic gradient, we now need a function that returns the vector of gradients.
-There are two ways to define it in `Manopt.jl`: as one function, that returns a vector or a vector of funtions.
+There are two ways to define it in `Manopt.jl`: either as a single function that returns a vector, or as a vector of functions.
 
 The first variant is of course easier to define, but the second is more efficient when only evaluating one of the gradients.
 
-For the mean we have as a gradient
+For the mean, the gradient is
 
 ```math
  gradF(x) = \sum_{i=1}^N \operatorname{grad}f_i(x) \quad \text{where} \operatorname{grad}f_i(x) = -\log_x p_i
 ```
 
-Which we define in `Manopt.jl` in two different ways:
-Either as one function returning all gradients as a vector (see `gradF`) or – maybe more fitting for a large scale problem, as a vector of small gradient functions (see `gradf`)
+which we define in `Manopt.jl` in two different ways:
+either as one function returning all gradients as a vector (see `gradF`), or – maybe more fitting for a large scale problem, as a vector of small gradient functions (see `gradf`)
 """
 
 # ╔═╡ 12a60ec6-cd18-4eea-a0af-0cabd43686b8
@@ -130,7 +130,7 @@ md"""This result is reasonably close. But we can improve it by using a `Directio
 
 On the one hand [`MomentumGradient`](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.MomentumGradient), which requires both the manifold and the initial value,  in order to keep track of the iterate and parallel transport the last direction to the current iterate.
 You can also set a `vector_transport_method`, if `ParallelTransport()` is not
-available on your manifold. Here we simply do
+available on your manifold. Here, we simply do
 """
 
 # ╔═╡ 22c66c8a-3db1-4584-8cb1-93fbbeb34d4e
@@ -164,7 +164,7 @@ AG = AverageGradient(M, x, 10, StochasticGradient(zero_vector(M, x)));
 md"""
 Note that the default `StoppingCriterion` is a fixed number of iterations which helps the comparison here.
 
-For both update rules we have to internally specify that we are still in the Stochastic setting (since both rules can also be used with the `IdentityUpdateRule` within [`gradient_descent`](file:///Users/ronny/Repositories/Julia/Manopt.jl/docs/build/solvers/gradient_descent.html),
+For both update rules we have to internally specify that we are still in the stochastic setting (since both rules can also be used with the `IdentityUpdateRule` within [`gradient_descent`](file:///Users/ronny/Repositories/Julia/Manopt.jl/docs/build/solvers/gradient_descent.html).
 
 For this not-that-large-scale example we can of course also use a gradient descent with `ArmijoLinesearch`, but it will be a little slower usually
 """
@@ -203,8 +203,9 @@ PlutoUI = "~0.7.38"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.8.0"
 manifest_format = "2.0"
+project_hash = "9241760fb1a4c59f8a6206a3d8d66853b28424bd"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -226,6 +227,7 @@ version = "3.3.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
+version = "1.1.1"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -290,6 +292,7 @@ version = "3.43.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -339,14 +342,18 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+version = "1.6.0"
 
 [[deps.Einsum]]
 deps = ["Compat"]
 git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
 uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
 version = "0.4.1"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -435,10 +442,12 @@ version = "0.5.1"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
+version = "0.6.3"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.84.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -447,6 +456,7 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -495,6 +505,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.28.0+0"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -507,6 +518,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+version = "2022.2.1"
 
 [[deps.NamedDims]]
 deps = ["AbstractFFTs", "ChainRulesCore", "CovarianceEstimation", "LinearAlgebra", "Pkg", "Requires", "Statistics"]
@@ -516,14 +528,17 @@ version = "0.2.47"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+version = "1.2.0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+version = "0.8.1+0"
 
 [[deps.OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -551,6 +566,7 @@ version = "2.3.0"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+version = "1.8.0"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
@@ -622,6 +638,7 @@ version = "0.3.0+0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -702,10 +719,12 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+version = "1.10.0"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -721,6 +740,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.12+3"
 
 [[deps.ZygoteRules]]
 deps = ["MacroTools"]
@@ -731,14 +751,17 @@ version = "0.2.2"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.48.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:

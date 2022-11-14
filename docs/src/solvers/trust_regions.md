@@ -10,7 +10,7 @@ by using the Riemannian trust-regions solver. It is number one choice for smooth
 optimization. This trust-region method uses the Steihaug-Toint truncated
 conjugate-gradient method [`truncated_conjugate_gradient_descent`](@ref)
 to solve the inner minimization problem called the
-trust-regions subproblem. This inner solve can be preconditioned by providing
+trust-regions subproblem. This inner solver can be preconditioned by providing
 a preconditioner (symmetric and positive deﬁnite, an approximation of the
 inverse of the Hessian of ``F``). If no Hessian of the cost function ``F`` is
 provided, a standard approximation of the Hessian based on the gradient
@@ -22,8 +22,8 @@ Initialize ``x_0 = x`` with an initial point ``x`` on the manifold. It can be
 given by the caller or set randomly. Set the initial trust-region radius
 ``\Delta =\frac{1}{8} \bar{\Delta}`` where ``\bar{\Delta}`` is the maximum radius
 the trust-region can have. Usually one uses
-the root of the manifold dimension ``\operatorname{dim}(\mathcal{M})``.
-For accepting the next iterate and evaluating the new trust-region radius one
+the root of the manifold's dimension ``\operatorname{dim}(\mathcal{M})``.
+For accepting the next iterate and evaluating the new trust-region radius, one
 needs an accept/reject threshold ``\rho'  ∈  [0,\frac{1}{4})``, which is
 ``\rho' = 0.1`` on default. Set ``k=0``.
 
@@ -35,7 +35,7 @@ Repeat until a convergence criterion is reached
     set ``η`` as the zero vector in the tangential space ``T_{x_k}\mathcal{M}``.
 2. Set ``η^*`` as the solution of the trust-region subproblem, computed by
     the tcg-method with ``η`` as initial vector.
-3. If using randomized approach compare ``η^*`` with the Cauchy point
+3. If using randomized approach, compare ``η^*`` with the Cauchy point
     ``η_{c}^* = -\tau_{c} \frac{\Delta}{\lVert \operatorname{Grad}[F] (x_k) \rVert_{x_k}} \operatorname{Grad}[F] (x_k)`` by the model function ``m_{x_k}(⋅)``. If the
     model decrease is larger by using the Cauchy point, set
     ``η^* = η_{c}^*``.
@@ -53,17 +53,17 @@ The result is given by the last computed ``x_k``.
 
 ## Remarks
 
-To the Initialization: A random point on the manifold.
+To the initialization: a random point on the manifold.
 
-To step number 1: Using randomized approach means using a random tangent
-vector as initial vector for the approximal solve of the trust-regions
+To step number 1: using a randomized approach means using a random tangent
+vector as initial vector for the approximate solve of the trust-regions
 subproblem. If this is the case, keep in mind that the vector must be in the
 trust-region radius. This is achieved by multiplying
 `η` by `sqrt(4,eps(Float64))` as long as
 its norm is greater than the current trust-region radius ``\Delta``.
 For not using randomized approach, one can get the zero tangent vector.
 
-To step number 2: Obtain ``η^*`` by (approximately) solving the
+To step number 2: obtain ``η^*`` by (approximately) solving the
 trust-regions subproblem
 
 ```math
@@ -80,7 +80,7 @@ with the Steihaug-Toint truncated conjugate-gradient (tcg) method. The problem
 as well as the solution method is described in the
 [`truncated_conjugate_gradient_descent`](@ref).
 
-To step number 3: If using a random tangent vector as an initial vector, compare
+To step number 3: if using a random tangent vector as an initial vector, compare
 the result of the tcg-method with the Cauchy point. Convergence proofs assume
 that one achieves at least (a fraction of) the reduction of the Cauchy point.
 The idea is to go in the direction of the gradient to an optimal point. This
@@ -116,14 +116,14 @@ If ``m_{x_k}(η_{c}^*) < m_{x_k}(η^*)`` then ``m_{x_k}(η_{c}^*)`` is the bette
 
 To step number 4: ``\operatorname{retr}_{x_k}(⋅)`` denotes the retraction, a
 mapping ``\operatorname{retr}_{x_k}:T_{x_k}\mathcal{M} \rightarrow \mathcal{M}``
-wich approximates the exponential map. In some cases it is cheaper to use this
+which approximates the exponential map. In some cases it is cheaper to use this
 instead of the exponential.
 
-To step number 6: One knows that the [`truncated_conjugate_gradient_descent`](@ref) algorithm stopped for
+To step number 6: one knows that the [`truncated_conjugate_gradient_descent`](@ref) algorithm stopped for
 these reasons when the stopping criteria [`StopWhenCurvatureIsNegative`](@ref),
 [`StopWhenTrustRegionIsExceeded`](@ref) are activated.
 
-To step number 7: The last step is to decide if the new point ``{x}^*`` is
+To step number 7: the last step is to decide if the new point ``{x}^*`` is
 accepted.
 
 ## Interface
