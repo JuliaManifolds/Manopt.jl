@@ -519,7 +519,9 @@ mutable struct DebugStepsize <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugStepsize)(p::GradientProblem, o::GradientDescentOptions, i::Int)
+function (d::DebugStepsize)(
+    p::P, o::O, i::Int
+) where {P<:AbstractGradientProblem,O<:AbstractGradientOptions}
     (i < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, o, i))
     return nothing
@@ -556,9 +558,7 @@ mutable struct RecordGradientNorm <: RecordAction
     recorded_values::Array{Float64,1}
     RecordGradientNorm() = new(Array{Float64,1}())
 end
-function (r::RecordGradientNorm)(
-    p::Problem, o::Options, i::Int
-) where {P<:GradientProblem,O<:Options}
+function (r::RecordGradientNorm)(p::Problem, o::Options, i::Int)
     return record_or_reset!(r, norm(p.M, get_iterate(o), get_gradient(o)), i)
 end
 
@@ -573,6 +573,6 @@ mutable struct RecordStepsize <: RecordAction
 end
 function (r::RecordStepsize)(
     p::P, o::O, i::Int
-) where {P<:GradientProblem,O<:GradientDescentOptions}
+) where {P<:AbstractGradientProblem,O<:AbstractGradientOptions}
     return record_or_reset!(r, get_last_stepsize(p, o, i), i)
 end

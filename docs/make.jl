@@ -32,7 +32,7 @@ for t in tutorials
             tutorial_src_folder;
             output_format=documenter_output,
             write_files=false,
-            use_distributed=false,
+            use_distributed=true,
         ),
         ["$(t[:file]).jl"],
     )
@@ -42,7 +42,7 @@ for t in tutorials
         ```@meta
         EditURL = "$(tutorial_src_folder)$(t[:file]).jl"
         ```
-        $(rendered[1])
+        $(rendered["$(t[:file]).jl"][1])
         """,
     )
     push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path, t[:file] * ".md"))
@@ -70,7 +70,7 @@ for e in examples
             examples_src_folder;
             output_format=documenter_output,
             write_files=false,
-            use_distributed=false,
+            use_distributed=true,
         ),
         ["$(e[:file]).jl"],
     )
@@ -80,7 +80,7 @@ for e in examples
         ```@meta
         EditURL = "$(examples_src_folder)$(e[:file]).jl"
         ```
-        $(rendered[1])
+        $(rendered["$(e[:file]).jl"][1])
         """,
     )
     push!(example_menu, e[:title] => joinpath(examples_relative_path, e[:file] * ".md"))
