@@ -86,7 +86,7 @@ get_iterate(O::ExactPenaltyMethodOptions) = O.x
 """
     abstract type SmoothingTechnique
 
-    Specify a smoothing technique, e.g. for the [`ExactPenaltyCost`](@ref) and [`ExactPenaltyGrad`](@ref).
+Specify a smoothing technique, e.g. for the [`ExactPenaltyCost`](@ref) and [`ExactPenaltyGrad`](@ref).
 """
 abstract type SmoothingTechnique end
 
