@@ -12,7 +12,7 @@ perform the augmented Lagrangian method (ALM)[^LiuBoumal2020]. The aim of the AL
 where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
 For that, in every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
 ``\mathcal{L}_{ρ^{(k-1)}}(x, μ^{(k-1)}, λ^{(k-1)})`` is minimized on ``\mathcal{M}``,
-where ``μ^{(k-1)} \in \mathbb R^n`` and ``λ^{(k-1)} \in \mathbb R^m` are the current iterates of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
+where ``μ^{(k-1)} \in \mathbb R^n`` and ``λ^{(k-1)} \in \mathbb R^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
 
 The Lagrange multipliers are then updated by
 ```math
