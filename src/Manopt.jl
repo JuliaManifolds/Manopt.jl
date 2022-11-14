@@ -7,7 +7,7 @@ using ColorSchemes
 using ColorTypes
 using Markdown
 using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
-using Dates: Period, Nanosecond, value
+using Dates: Period, Nanosecond, value, Millisecond, canonicalize
 using Requires
 using Random: shuffle!
 using Statistics: std, cov, mean, cor
@@ -317,7 +317,7 @@ export StopIfResidualIsReducedByFactor,
     StopWhenTrustRegionIsExceeded,
     StopWhenModelIncreased
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
-export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny
+export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny, StopWhenTimeElapsed
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 export are_these_stopping_critera_active, update_stopping_criterion!
 export StoppingCriterion, StoppingCriterionSet, Stepsize
@@ -396,7 +396,8 @@ export BezierSegment,
 #
 # Debugs
 export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange, DebugGradientChange, DebugIterate, DebugIteration, DebugDivider
+export DebugChange,
+    DebugGradientChange, DebugIterate, DebugIteration, DebugDivider, DebugTime
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate
@@ -412,7 +413,7 @@ export RecordAction
 export RecordActionFactory, RecordFactory
 export RecordGroup, RecordEvery
 export RecordChange, RecordCost, RecordIterate, RecordIteration
-export RecordEntry, RecordEntryChange
+export RecordEntry, RecordEntryChange, RecordTime
 export RecordGradient, RecordGradientNorm, RecordStepsize
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate

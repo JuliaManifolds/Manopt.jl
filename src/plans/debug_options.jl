@@ -127,18 +127,27 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
+  for approximating the distance.
+* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+  used for approximating distance.
 """
-mutable struct DebugChange <: DebugAction
+mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreOptionsAction
+    invretr::TInvRetr
     function DebugChange(;
         storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
+        manifold::AbstractManifold=DefaultManifold(1),
+        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            manifold
+        ),
     )
-        return new(io, format, storage)
+        return new{typeof(invretr)}(io, format, storage, invretr)
     end
 end
 @deprecate DebugChange(a::StoreOptionsAction, pre::String="Last Change: ", io::IO=stdout) DebugChange(;
@@ -148,7 +157,7 @@ function (d::DebugChange)(p::Problem, o::Options, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate)),
+        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate), d.invretr),
     )
     d.storage(p, o, i)
     return nothing
@@ -400,6 +409,76 @@ function (d::DebugStoppingCriterion)(::Problem, o::Options, i::Int)
 end
 
 @doc raw"""
+    DebugTime()
+
+Measure time and print the intervals. Using `start=true` you can start the timer on construction,
+for example to measure the runtime of an algorithm overall (adding)
+
+The measured time is rounded using the given `time_accuracy` and printed after [canonicalization]().
+
+# Keyword Parameters
+
+* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io` – (`stdout`) default steream to print the debug to.
+* `format` - ( `"$prefix %s"`) format to print the output using an sprintf format, where `%s` is the canonicalized time`.
+* `mode` – (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
+* `start` – (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on firsr call.
+* `time_accuracy` – (`Millisecond(1)`) round the time to this period before printing the canonicalized time
+"""
+mutable struct DebugTime <: DebugAction
+    io::IO
+    format::String
+    last_time::Nanosecond
+    time_accuracy::Period
+    mode::Symbol
+    function DebugTime(;
+        start=false,
+        io::IO=stdout,
+        prefix::String="time spent:",
+        format::String="$(prefix) %s",
+        mode::Symbol=:cumulative,
+        time_accuracy::Period=Millisecond(1),
+    )
+        return new(io, format, Nanosecond(start ? time_ns() : 0), time_accuracy, mode)
+    end
+end
+function (d::DebugTime)(::Problem, ::Options, i)
+    if i == 0 || d.last_time == Nanosecond(0) # init
+        d.last_time = Nanosecond(time_ns())
+    else
+        t = time_ns()
+        p = Nanosecond(t) - d.last_time
+        Printf.format(
+            d.io, Printf.Format(d.format), canonicalize(round(p, d.time_accuracy))
+        )
+    end
+    if d.mode == :iterative
+        d.last_time = Nanosecond(time_ns())
+    end
+    return nothing
+end
+
+"""
+    reset!(d::DebugTime)
+
+reset the internal time of a [`DebugTime`](@ref), that is start from now again.
+"""
+function reset!(d::DebugTime)
+    d.last_time = Nanosecond(time_ns())
+    return d
+end
+
+"""
+    stop!(d::DebugTime)
+
+stop the reset the internal time of a [`DebugTime`](@ref), that is set the time to 0 (undefined)
+"""
+function stop!(d::DebugTime)
+    d.last_time = Nanosecond(0)
+    return d
+end
+
+@doc raw"""
     DebugWarnIfCostIncreases <: DebugAction
 
 print a warning if the cost increases.
@@ -603,6 +682,8 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `:gradient`.
+* `:Time` creates a [`DebugTime`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
@@ -615,6 +696,8 @@ function DebugActionFactory(s::Symbol)
     (s == :Stepsize) && return DebugStepsize()
     (s == :WarnCost) && return DebugWarnIfCostNotFinite()
     (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:gradient)
+    (s == :Time) && return DebugTime()
+    (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
     return DebugEntry(s)
 end
 """
@@ -631,6 +714,8 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
+* `:Time` creates a [`DebugTime`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
@@ -641,5 +726,7 @@ function DebugActionFactory(t::Tuple{Symbol,String})
     (t[1] == :Iterate) && return DebugIterate(; format=t[2])
     (t[1] == :Cost) && return DebugCost(; format=t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format=t[2])
+    (t[1] == :Time) && return DebugTime(; format=t[2])
+    (t[1] == :IterativeTime) && return DebugTime(; mode=:Iterative, format=t[2])
     return DebugEntry(t[1]; format=t[2])
 end
