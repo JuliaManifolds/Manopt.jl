@@ -1,5 +1,5 @@
 @doc raw"""
-    EPMOptions{P,T} <: Options
+    ExactPenaltyMethodOptions{P,T} <: Options
 
 Describes the exact penalty method, with
 
@@ -20,14 +20,16 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    EPMOptions(x)
+    ExactPenaltyMethodOptions(x)
 
 construct an exact penalty Option with the fields and defaults as above.
 
 # See also
 [`exact_penalty_method`](@ref)
 """
-mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion} <: Options
+mutable struct ExactPenaltyMethodOptions{
+    P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
+} <: Options
     x::P
     sub_problem::Pr
     sub_options::Op
@@ -40,7 +42,7 @@ mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
     θ_u::Real
     θ_ϵ::Real
     stop::TStopping
-    function EPMOptions(
+    function ExactPenaltyMethodOptions(
         ::AbstractManifold,
         x0::P,
         sub_problem::Pr,
@@ -79,7 +81,7 @@ mutable struct EPMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         return o
     end
 end
-get_iterate(O::EPMOptions) = O.x
+get_iterate(O::ExactPenaltyMethodOptions) = O.x
 
 """
     abstract type SmoothingTechnique

@@ -12,7 +12,7 @@ CurrentModule = Manopt
 ## Options
 
 ```@docs
-EPMOptions
+ExactPenaltyMethodOptions
 ```
 
 ## Helping Functions

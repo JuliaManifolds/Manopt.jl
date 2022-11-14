@@ -46,9 +46,8 @@ The ``k``th iteration consists of
 * `return_options` – (`false`) – specify whether to return just the result `x` (default) or the complete [`Options`](@ref), e.g. to access recorded values. if activated, the extended result, i.e. the
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of the quasi–Newton method
-OR
-* `options` – the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function quasi_Newton(M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
     x_res = copy(M, x)
@@ -63,7 +62,7 @@ in the point `x` using a retraction ``R`` and a vector transport ``T``.
 # Input
 * `M` – a manifold ``\mathcal{M}``.
 * `F` – a cost function ``F: \mathcal{M} →ℝ`` to minimize.
-* `gradF`– the gradient ``\operatorname{grad}F : \mathcal{M} → T_x\mathcal M`` of ``F``.
+* `gradF`– the gradient ``\operatorname{grad}F : \mathcal{M} → T_x\mathcal M`` of ``F`` implemented as `gradF(M,p)`.
 * `x` – an initial value ``x ∈ \mathcal{M}``.
 
 For all optional parameters, see [`quasi_Newton`](@ref).
@@ -96,7 +95,6 @@ function quasi_Newton!(
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
                                           StopWhenGradientNormLess(1e-6),
-    return_options=false,
     kwargs...,
 ) where {TF,TDF}
     if memory_size >= 0
@@ -135,15 +133,8 @@ function quasi_Newton!(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
-
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 
 function initialize_solver!(p::GradientProblem, o::QuasiNewtonOptions)

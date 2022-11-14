@@ -48,3 +48,11 @@ get_storage
 has_storage
 update_storage!
 ```
+
+A simple example is the
+
+```@docs
+ReturnOptions
+```
+
+as well as [`DebugOptions`](@ref) and [`RecordOptions`](@ref).

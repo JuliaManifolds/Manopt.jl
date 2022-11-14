@@ -26,9 +26,8 @@ perform a stochastic gradient descent
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of gradientDescent
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function stochastic_gradient_descent(
     M::AbstractManifold, gradF::TDF, x; kwargs...
@@ -65,7 +64,6 @@ function stochastic_gradient_descent!(
     order_type::Symbol=:Random,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    return_options=false,
     kwargs...,
 ) where {TDF,TF}
     p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
@@ -81,12 +79,7 @@ function stochastic_gradient_descent!(
         retraction_method=retraction_method,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 function initialize_solver!(
     ::StochasticGradientProblem, o::StochasticGradientDescentOptions

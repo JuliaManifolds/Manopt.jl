@@ -31,9 +31,8 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of gradientDescent
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function gradient_descent(
     M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
@@ -72,7 +71,6 @@ function gradient_descent!(
     debug=[DebugWarnIfCostIncreases()],
     direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    return_options=false,
     kwargs..., #collect rest
 ) where {TF,TDF}
     p = GradientProblem(M, F, gradF; evaluation=evaluation)
@@ -85,12 +83,7 @@ function gradient_descent!(
         retraction_method=retraction_method,
     )
     o = decorate_options(o; debug=debug, kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 #
 # Solver functions

@@ -10,7 +10,7 @@ perform the augmented Lagrangian method (ALM)[^LiuBoumal2020]. The aim of the AL
 \end{aligned}
 ```
 where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
-For that, in every step ``k`` of the algorithm, the [`AugemtedLagrangianCost`](@ref)
+For that, in every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
 ``\mathcal{L}_{ρ^{(k-1)}}(x, μ^{(k-1)}, λ^{(k-1)})`` is minimized on ``\mathcal{M}``,
 where ``μ^{(k-1)} \in \mathbb R^n`` and ``λ^{(k-1)} \in \mathbb R^m` are the current iterates of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
 
@@ -78,9 +78,8 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 
 # Output
-* `x` – the resulting point of ALM
-OR
-* `options` – the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 
 [^LiuBoumal2020]:
     > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
@@ -148,10 +147,9 @@ function augmented_Lagrangian_method!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
-    return_options=false,
     kwargs...,
 ) where {TF,TGF}
-    o = ALMOptions(
+    o = AugmentedLagrangianMethodOptions(
         M,
         problem,
         x,
@@ -171,19 +169,17 @@ function augmented_Lagrangian_method!(
         stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(problem, o)
-    return_options && return resultO
-    return get_solver_result(resultO)
+    return get_solver_return(solve(problem, o))
 end
 
 #
 # Solver functions
 #
-function initialize_solver!(::ConstrainedProblem, o::ALMOptions)
+function initialize_solver!(::ConstrainedProblem, o::AugmentedLagrangianMethodOptions)
     o.penalty = Inf
     return o
 end
-function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
+function step_solver!(p::ConstrainedProblem, o::AugmentedLagrangianMethodOptions, iter)
     # use subsolver to minimize the augmented Lagrangian
     o.sub_problem.cost.ρ = o.ρ
     o.sub_problem.cost.μ = o.μ
@@ -225,4 +221,4 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
     o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
     return o
 end
-get_solver_result(o::ALMOptions) = o.x
+get_solver_result(o::AugmentedLagrangianMethodOptions) = o.x

@@ -2,7 +2,7 @@
 # Options
 #
 @doc raw"""
-    ALMOptions{P,T} <: Options
+    AugmentedLagrangianMethodOptions{P,T} <: Options
 
 Describes the augmented Lagrangian method, with
 
@@ -32,14 +32,16 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    ALMOptions(x)
+    AugmentedLagrangianMethodOptions(x)
 
 construct an augmented Lagrangian Option with the fields and defaults as above.
 
 # See also
 [`augmented_Lagrangian_method`](@ref)
 """
-mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion} <: Options
+mutable struct AugmentedLagrangianMethodOptions{
+    P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
+} <: Options
     x::P
     sub_problem::Pr
     sub_options::Op
@@ -56,7 +58,7 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
     θ_ϵ::Real
     penalty::Real
     stop::TStopping
-    function ALMOptions(
+    function AugmentedLagrangianMethodOptions(
         M::AbstractManifold,
         p::ConstrainedProblem,
         x0::P,
@@ -100,7 +102,7 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         return o
     end
 end
-get_iterate(o::ALMOptions) = o.x
+get_iterate(o::AugmentedLagrangianMethodOptions) = o.x
 
 @doc raw"""
     AugmentedLagrangianCost{Pr,R,T}
@@ -123,11 +125,6 @@ based on the internal [`ConstrainedProblem`](@ref) we can compute
 ## Fields
 
 * `P::Pr`, `ρ::R`, `μ::T`, `λ::T` as mentioned above
-
-[^LiuBoumal2020]:
-    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
-    > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
-    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3)
 """
 mutable struct AugmentedLagrangianCost{Pr,R,T}
     P::Pr

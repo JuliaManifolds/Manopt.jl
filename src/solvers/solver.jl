@@ -35,9 +35,11 @@ function decorate_options(
         Dict{Symbol,RecordAction}, # a dictionary for precise settings
         Array{<:Any,1}, # a formated string with symbols orAbstractOptionsActions
     }=missing,
+    return_options=false,
 ) where {O<:Options}
     o = ismissing(debug) ? o : DebugOptions(o, debug)
     o = ismissing(record) ? o : RecordOptions(o, record)
+    o = (return_options) ? ReturnOptions(o) : o
     return o
 end
 """
@@ -89,3 +91,7 @@ function solve(p::Problem, o::Options)
     end
     return o
 end
+
+initialize_solver!(p::Problem, o::ReturnOptions) = initialize_solver!(p, o.options)
+step_solver!(p::Problem, o::ReturnOptions, i) = step_solver!(p, o.options, i)
+stop_solver!(p::Problem, o::ReturnOptions, i::Int) = stop_solver!(p, o.options, i)

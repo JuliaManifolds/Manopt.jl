@@ -34,6 +34,37 @@ Indicate, whether [`Options`](@ref) `o` are of decorator type.
 """
 is_options_decorator(o::Options) = _extract_val(dispatch_options_decorator(o))
 
+@doc raw"""
+    ReturnOptions{O<:Options} <: Options
+
+This internal type is used to indicate that the contained [`Options`](@ref) `options`
+should be returned at the end of a solver instead of the usual minimizer.
+
+# See also
+[`get_solver_result`](@ref)
+"""
+struct ReturnOptions{O<:Options} <: Options
+    options::O
+end
+dispatch_options_decorator(::ReturnOptions) = Val(true)
+
+"""
+    get_solver_return(O::Options)
+
+determine the result value of a call to a solver. By default this returns the same as [`get_solver_result`](@ref),
+i.e. the last iterate or (approximate) minimizer.
+
+    get_solver_return(O::ReturnOptions)
+
+return the internally stored options of the [`ReturnOptions`](@ref) instead of the minimizer.
+This means that when the options are decorated like this, the user still has to call [`get_solver_result`](@ref)
+on the internal options separately.
+"""
+get_solver_return(O::Options) = get_solver_return(O, dispatch_options_decorator(O))
+get_solver_return(O::Options, ::Val{false}) = get_solver_result(O)
+get_solver_return(O::Options, ::Val{true}) = get_solver_return(O.options)
+get_solver_return(O::ReturnOptions) = O.options
+
 #
 # StoppingCriterion meta
 #

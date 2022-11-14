@@ -37,6 +37,10 @@ use a retraction and its inverse.
   ``s_k = \frac{2}{k+2}``.
 
 all further keywords are passed down to [`decorate_options`](@ref), e.g. `debug`.
+
+# Output
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function Frank_Wolfe_method(M::AbstractManifold, F, grad_F, p; kwargs...)
     q = copy(M, p)
@@ -63,7 +67,6 @@ function Frank_Wolfe_method!(
                               StopWhenGradientNormLess(1.0e-8) |
                               StopWhenChangeLess(1.0e-8),
     stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
-    return_options=false,
     kwargs..., #collect rest
 ) where {TStop<:StoppingCriterion,TStep<:Stepsize}
     P = GradientProblem(M, F, grad_F; evaluation=evaluation)
@@ -77,12 +80,7 @@ function Frank_Wolfe_method!(
         evaluation=evaluation,
     )
     O = decorate_options(O; kwargs...)
-    resultO = solve(P, O)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(P, O))
 end
 function initialize_solver!(P::GradientProblem, O::FrankWolfeOptions)
     get_gradient!(P, O.X, O.p)

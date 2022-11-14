@@ -76,9 +76,8 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 
 # Output
-* `x` – the resulting point of EPM
-or
-* `options` – the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function exact_penalty_method(
     M::AbstractManifold, F::TF, gradF::TGF; x=random_point(M), kwargs...
@@ -139,10 +138,9 @@ function exact_penalty_method!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
-    return_options=false,
     kwargs...,
 ) where {TF,TGF}
-    o = EPMOptions(
+    o = ExactPenaltyMethodOptions(
         M,
         x,
         sub_problem,
@@ -157,18 +155,15 @@ function exact_penalty_method!(
         θ_u=θ_u,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(problem, o)
-    return_options && return resultO
-    return get_solver_result(resultO)
+    return get_solver_return(solve(problem, o))
 end
-
 #
 # Solver functions
 #
-function initialize_solver!(::ConstrainedProblem, o::EPMOptions)
+function initialize_solver!(::ConstrainedProblem, o::ExactPenaltyMethodOptions)
     return o
 end
-function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
+function step_solver!(p::ConstrainedProblem, o::ExactPenaltyMethodOptions, iter)
     # use subsolver to minimize the smoothed penalized function
     o.sub_problem.cost.ρ = o.ρ
     o.sub_problem.cost.u = o.u
@@ -190,4 +185,4 @@ function step_solver!(p::ConstrainedProblem, o::EPMOptions, iter)
     o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
     return o
 end
-get_solver_result(o::EPMOptions) = o.x
+get_solver_result(o::ExactPenaltyMethodOptions) = o.x

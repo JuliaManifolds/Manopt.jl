@@ -26,9 +26,8 @@ the default values are given in brackets
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of gradientDescent
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function cyclic_proximal_point(
     M::AbstractManifold, F::TF, proxes::Union{Tuple,AbstractVector}, x0; kwargs...
@@ -62,21 +61,14 @@ function cyclic_proximal_point!(
         StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)
     ),
     λ=i -> 1 / i,
-    return_options=false,
     kwargs..., #decorator options
 ) where {TF}
     p = ProximalProblem(M, F, proxes; evaluation=evaluation)
     o = CyclicProximalPointOptions(
         M, x0; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
     )
-
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointOptions)
     c = length(p.proximal_maps!!)

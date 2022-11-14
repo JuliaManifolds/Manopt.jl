@@ -33,9 +33,8 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
     load `Manifolds.jl` to use its statistics part.
 
 # Output
-* either `x` the last iterate or the complete options depending on the optional
-  keyword `return_options`, which is false by default (hence then only `x` is
-  returned).
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function NelderMead(
     M::AbstractManifold,
@@ -67,7 +66,6 @@ function NelderMead!(
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
         M
     ),
-    return_options=false,
     kwargs..., #collect rest
 ) where {TF}
     p = CostProblem(M, F)
@@ -83,12 +81,7 @@ function NelderMead!(
         inverse_retraction_method=inverse_retraction_method,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 #
 # Solver functions

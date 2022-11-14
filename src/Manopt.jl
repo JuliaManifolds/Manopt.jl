@@ -190,12 +190,12 @@ export Problem,
 # Options
 export Options,
     AbstractGradientOptions,
-    ALMOptions,
+    AugmentedLagrangianMethodOptions,
     ChambollePockOptions,
     ConjugateGradientDescentOptions,
     CyclicProximalPointOptions,
     DouglasRachfordOptions,
-    EPMOptions,
+    ExactPenaltyMethodOptions,
     FrankWolfeOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
@@ -269,9 +269,9 @@ export WolfePowellLinesearch,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
 
-export ALMOptions,
+export AugmentedLagrangianMethodOptions,
     ConjugateGradientDescentOptions,
-    EPMOptions,
+    ExactPenaltyMethodOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
     SubGradientMethodOptions,
@@ -330,10 +330,10 @@ export augmented_Lagrangian_method,
     trust_regions!
 # Solver helpers
 export decorate_options
-export initialize_solver!, step_solver!, get_solver_result, stop_solver!
+export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
 export solve
 export ApproxHessianFiniteDifference
-export ExactPenaltyCost, ExactPenaltyGrad, AugemtedLagrangianCost, AugmentedLagrangianGrad
+export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 #
 # Stepsize
 export ConstantStepsize, DecreasingStepsize

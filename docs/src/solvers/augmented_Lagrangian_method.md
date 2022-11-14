@@ -12,7 +12,7 @@ CurrentModule = Manopt
 ## Options
 
 ```@docs
-ALMOptions
+AugmentedLagrangianMethodOptions
 ```
 
 ## Helping Functions

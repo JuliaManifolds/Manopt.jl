@@ -51,6 +51,10 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 * `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 
+# Output
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
     > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
     > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
@@ -124,7 +128,6 @@ function ChambollePock!(
     inverse_retraction_method::IRM=default_inverse_retraction_method(M),
     vector_transport_method::VTM=default_vector_transport_method(M),
     variant=ismissing(Λ) ? :exact : :linearized,
-    return_options=false,
     kwargs...,
 ) where {
     TF,
@@ -165,12 +168,7 @@ function ChambollePock!(
         vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 
 function initialize_solver!(::PrimalDualProblem, ::ChambollePockOptions) end

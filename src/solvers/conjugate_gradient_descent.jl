@@ -47,9 +47,8 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
   the old descent direction when computing the new descent direction.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of gradientDescent
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function conjugate_gradient_descent(
     M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
@@ -87,7 +86,6 @@ function conjugate_gradient_descent!(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
     vector_transport_method=default_vector_transport_method(M),
-    return_options=false,
     kwargs...,
 ) where {TF,TDF}
     p = GradientProblem(M, F, gradF)
@@ -103,11 +101,7 @@ function conjugate_gradient_descent!(
         X,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    end
-    return get_solver_result(resultO)
+    return get_solver_return(solve(p, o))
 end
 function initialize_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions)
     o.gradient = get_gradient(p, o.x)
