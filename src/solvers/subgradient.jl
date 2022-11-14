@@ -25,9 +25,6 @@ not necessarily deterministic.
 * `retraction` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-  complete [`Options`](@ref) re returned. This can be used to access recorded values.
-  If set to false (default) just the optimal value `x_opt` if returned
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 

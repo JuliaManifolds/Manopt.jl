@@ -105,9 +105,10 @@ Specify a smoothing based on ``\max\{0,x\} ≈ \mathcal P(x,u)`` for some ``u``,
 
 ```math
 \mathcal P(x, u) = \begin{cases}
-0 & \text{ if } x \leq 0,\\
-\frac{x^2}{2u} & \text{ if } 0 \leq x \leq u,\\
-x-\frac{u}{2} & \text{ if } x \geq u.
+  0 & \text{ if } x \leq 0,\\
+  \frac{x^2}{2u} & \text{ if } 0 \leq x \leq u,\\
+  x-\frac{u}{2} & \text{ if } x \geq u.
+\end{cases}
 ```
 """
 struct LinearQuadraticHuber <: SmoothingTechnique end
@@ -120,12 +121,12 @@ and a parameter ``ρ`` given by
 
 ```math
 f(p) + ρ\Bigl(
-    \sum_{i=0}^m \max\{0,g_i(p)} + \sum_{j=0}^n \lvert h_j(p)\rvert
+    \sum_{i=0}^m \max\{0,g_i(p)\} + \sum_{j=0}^n \lvert h_j(p)\rvert
 \Bigr),
 ```
 where we use an additional parameter ``u`` and a smoothing technique, e.g.
 [`LogarithmicSumOfExponentials`](@ref) or [`LinearQuadraticHuber`](@ref)
-to obtain a smooth cost function.
+to obtain a smooth cost function. This struct is also a functor (M,p) -> v` of the cost ``v``.
 
 ## Fields
 
@@ -173,6 +174,8 @@ end
 
 Represent the gradient of the [`ExactPenaltyCost`](@ref) based on a [`ConstrainedProblem`](@ref) `P`
 and a parameter ``ρ`` and a smoothing parameyterwhere we use an additional parameter ``u``.
+
+This struct is also a functor `(M,p) -> X` to compute the gradient.
 
 ## Fields
 

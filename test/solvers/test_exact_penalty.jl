@@ -13,9 +13,9 @@ using LinearAlgebra: I, tr
     mI = -Matrix{Float64}(I, d, d)
     gradG(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
     x0 = project(M, ones(d))
-    sol_lse = exact_penalty_method(M, F, gradF; G=G, gradG=gradG, x=x0)
+    sol_lse = exact_penalty_method(M, F, gradF, x0; G=G, gradG=gradG)
     sol_lqh = exact_penalty_method(
-        M, F, gradF; G=G, gradG=gradG, x=x0, smoothing=LinearQuadraticHuber()
+        M, F, gradF, x0; G=G, gradG=gradG, smoothing=LinearQuadraticHuber()
     )
     @test distance(M, v0, sol_lse) < 8 * 1e-4
     @test distance(M, v0, sol_lqh) < 8 * 1e-4

@@ -1,12 +1,12 @@
 @doc raw"""
-    augmented_Lagrangian_method(M, F, gradF, sub_problem, sub_options, G, H, gradG, gradH)
+    augmented_Lagrangian_method(M, F, gradF, x=random_point(M); kwargs...)
 
 perform the augmented Lagrangian method (ALM)[^LiuBoumal2020]. The aim of the ALM is to find the solution of the [`ConstrainedProblem`](@ref)
 ```math
 \begin{aligned}
 \min_{x ∈\mathcal{M}} &f(x)\\
-\text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
-\quad &h_j(x)=0 \quad ∀ j=1,…,n,
+\text{subject to } &g_i(x)\leq 0 \quad \text{ for } i= 1, …, m,\\
+\quad &h_j(x)=0 \quad \text{ for } j=1,…,n,
 \end{aligned}
 ```
 where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
@@ -53,29 +53,26 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `H` – the equality constraints
 * `gradG` – the gradient of the inequality constraints
 * `gradH` – the gradient of the equality constraints
-* `x` – initial point
-* `sub_problem` – problem for the subsolver
-* `sub_options` – options of the subproblem
 * `ϵ` – (`1e-3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `ϵ_exponent` – (`1/100`) exponent of the ϵ update factor;
    also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
 * `θ_ϵ` – (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
 * `μ` – (`ones(size(G(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
-* `λ` – (`ones(size(H(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
-* `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
 * `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `λ` – (`ones(size(H(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
+* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `ρ` – (`1.0`) the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
 * `sub_cost` – ([`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian, expecially with the same numbers `ρ,μ` as in the options for the sub problem
 * `sub_grad` – ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian gradient, expecially with the same numbers `ρ,μ` as in the options for the sub problem
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
-* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | [`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
+* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
 * `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad)`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | [`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Output
 
@@ -88,14 +85,13 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
     > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 """
 function augmented_Lagrangian_method(
-    M::AbstractManifold, F::TF, gradF::TGF; x=random_point(M), kwargs...
+    M::AbstractManifold, F::TF, gradF::TGF, x=random_point(M); kwargs...
 ) where {TF,TGF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    return augmented_Lagrangian_method!(M, F, gradF; x=x_res, kwargs...)
+    x_res = copy(M, x)
+    return augmented_Lagrangian_method!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
-    augmented_Lagrangian_method!(M, F, gradF; x=random_point(M))
+    augmented_Lagrangian_method!(M, F, gradF x=random_point(M); kwargs...)
 
 perform the augmented Lagrangian method (ALM) in-place of `x`.
 
@@ -104,13 +100,13 @@ For all options, see [`augmented_Lagrangian_method`](@ref).
 function augmented_Lagrangian_method!(
     M::AbstractManifold,
     F::TF,
-    gradF::TGF;
+    gradF::TGF,
+    x=random_point(M);
     G::Function=(M, x) -> [],
     H::Function=(M, x) -> [],
     gradG::Function=(M, x) -> [],
     gradH::Function=(M, x) -> [],
     evaluation=AllocatingEvaluation(),
-    x=random_point(M),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
     ϵ_exponent=1 / 100,

@@ -43,7 +43,6 @@ The ``k``th iteration consists of
 * `stopping_criterion` - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`)
   specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method` – (`default_vector_transport_method(M)`) a vector transport to use.
-* `return_options` – (`false`) – specify whether to return just the result `x` (default) or the complete [`Options`](@ref), e.g. to access recorded values. if activated, the extended result, i.e. the
 
 # Output
 

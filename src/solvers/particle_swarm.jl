@@ -64,9 +64,6 @@ i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i
 * `vector_transport_mthod` - (`default_vector_transport_method(M)`) a vector transport method to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) are returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
 
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.

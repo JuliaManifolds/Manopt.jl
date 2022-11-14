@@ -12,22 +12,19 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x` – a set point on a manifold as starting point
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
-* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
-* `num_outer_itertgn` – (`30`)
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
+* `λ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
 * `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `μ` – (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
-* `λ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
+* `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
 * `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
-* `penalty` – (`Inf`) evaluation of the current penalty term
-* `min_stepsize` – (`1e-10`) minimal step size
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(min_stepsize)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `penalty` – evaluation of the current penalty term, initialized to `Inf`.
+* `stopping_criterion` – (`(`[`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 
 # Constructor
@@ -74,13 +71,11 @@ mutable struct AugmentedLagrangianMethodOptions{
         ρ::Real=1.0,
         τ::Real=0.8,
         θ_ρ::Real=0.3,
-        maximum_iteration=300,
         ϵ_exponent=1 / 100,
         θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-        stopping_criterion::StoppingCriterion=StopAfterIteration(maximum_iteration) | (
-            StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(min_stepsize)
+        stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
+            StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
         ),
-        min_stepsize::Real=1e-10,
     ) where {P,Pr<:Problem,Op<:Options}
         o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
@@ -107,10 +102,10 @@ get_iterate(o::AugmentedLagrangianMethodOptions) = o.x
 @doc raw"""
     AugmentedLagrangianCost{Pr,R,T}
 
-Store the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
+Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
 of the augmented Lagrangian associated to the [`ConstrainedProblem`](@ref) `P`.
 
-This struct is also a functor that can be used as a cost function within a solver,
+This struct is also a functor `(M,p) -> v` that can be used as a cost function within a solver,
 based on the internal [`ConstrainedProblem`](@ref) we can compute
 
 ```math
@@ -147,10 +142,10 @@ end
 @doc raw"""
     AugmentedLagrangianGrad{Pr,R,T}
 
-Store the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
+Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
 of the augmented Lagrangian associated to the [`ConstrainedProblem`](@ref) `P`.
 
-This struct is also a functor that can be used as a cost function within a solver,
+This struct is also a functor `(M,p) -> X` that can be used as a cost function within a solver,
 based on the internal [`ConstrainedProblem`](@ref) and computes the gradient
 ``\operatorname{grad} \mathcal L_{ρ}(q, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
 """

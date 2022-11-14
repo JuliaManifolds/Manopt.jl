@@ -36,9 +36,6 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` - (`default_retraction_method(M`) a retraction method to use.
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
 * `stepsize` - (`Constant(1.)`) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
 * `stopping_criterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)

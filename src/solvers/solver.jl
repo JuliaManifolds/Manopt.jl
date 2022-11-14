@@ -14,9 +14,11 @@ one is used to activate certain decorators.
 * `record` – (`Array{Union{Symbol,RecordAction,Int},1}()`) specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly. The integer can again
   be used for only recording every ``i``th iteration.
+* `return_options` - (`false`) indicate whether to wrap the options in a [`ReturnOptions`](@ref),
+  indicating that the solver should return options and not (only) the minimizer.
 
 # See also
-[`DebugOptions`](@ref), [`RecordOptions`](@ref)
+[`DebugOptions`](@ref), [`RecordOptions`](@ref), [`ReturnOptions`](@ref)
 """
 function decorate_options(
     o::O;

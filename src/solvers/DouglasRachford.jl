@@ -36,10 +36,7 @@ the default parameter is given in brackets
   parallel Douglas–Rachford implicitly works on a `PowerManifold` manifold and
   its first argument is the result then (assuming all are equal after the second
   prox.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
-...
+
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output

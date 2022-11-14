@@ -1,12 +1,12 @@
 @doc raw"""
-    exact_penalty_method(M, F, gradF; G, H, gradG, gradH)
+    exact_penalty_method(M, F, gradF, x=random_point(M); kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
 ```math
 \begin{aligned}
 \min_{x ∈\mathcal{M}} &f(x)\\
-\text{subject to } &g_i(x)\leq 0 \quad ∀ i= 1, …, m,\\
-\quad &h_j(x)=0 \quad ∀ j=1,…,p,
+\text{subject to } &g_i(x)\leq 0 \quad \text{ for } i= 1, …, m,\\
+\quad &h_j(x)=0 \quad  \text{ for } j=1,…,p,
 \end{aligned}
 ```
 where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
@@ -69,25 +69,23 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_cost` – ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penality cost, expecially with the same numbers `ρ,u` as in the options for the sub problem
 * `sub_grad` – ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penality gradient, expecially with the same numbers `ρ,u` as in the options for the sub problem
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
-* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | [`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
+* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
 * `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad)`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | [`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Output
 
 the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function exact_penalty_method(
-    M::AbstractManifold, F::TF, gradF::TGF; x=random_point(M), kwargs...
+    M::AbstractManifold, F::TF, gradF::TGF, x=random_point(M); kwargs...
 ) where {TF,TGF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    return exact_penalty_method!(M, F, gradF; x=x_res, kwargs...)
+    x_res = copy(M, x)
+    return exact_penalty_method!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
-    exact_penalty_method!(M, F, gradF; G, H, gradG, gradH; x=random_point(M))
+    exact_penalty_method!(M, F, gradF, x=random_point(M); kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020] in place of `x`.
 
@@ -96,13 +94,13 @@ For all options, especially `x` for the initial point and `smoothing_technique` 
 function exact_penalty_method!(
     M::AbstractManifold,
     F::TF,
-    gradF::TGF;
+    gradF::TGF,
+    x=random_point(M);
     G::Function=(M, x) -> [],
     H::Function=(M, x) -> [],
     gradG::Function=(M, x) -> [],
     gradH::Function=(M, x) -> [],
     evaluation=AllocatingEvaluation(),
-    x=random_point(M),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
     ϵ_exponent=1 / 100,

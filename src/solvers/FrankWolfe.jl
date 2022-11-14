@@ -24,10 +24,6 @@ use a retraction and its inverse.
 
 * `evaluation` ([`AllocatingEvaluation`](@ref)) whether `grad_F` is an inplace or allocating (default) funtion
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
-    stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2)return_options = false,
 * `stopping_criterion` – [`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`
 * `subtask` specify the oracle, can either be a closed form solution (in place function `oracle(M, q, p, X)`
   or a subsolver, e.g. (by default) a [`GradientProblem`](@ref) with [`GradientDescentOptions`](@ref)
