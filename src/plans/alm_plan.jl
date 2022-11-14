@@ -25,7 +25,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
 * `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
-* `oldacc` – (`Inf`) evaluation of the penalty from the last iteration
+* `penalty` – (`Inf`) evaluation of the current penalty term
 * `min_stepsize` – (`1e-10`) minimal step size
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(min_stepsize)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
@@ -43,8 +43,6 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
     x::P
     sub_problem::Pr
     sub_options::Op
-    max_inner_iter::Int
-    num_outer_itertgn::Int
     ϵ::Real
     ϵ_min::Real
     λ_max::Real
@@ -56,8 +54,7 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
     τ::Real
     θ_ρ::Real
     θ_ϵ::Real
-    old_acc::Real
-    min_stepsize::Real
+    penalty::Real
     stop::TStopping
     function ALMOptions(
         M::AbstractManifold,
@@ -65,8 +62,6 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         x0::P,
         sub_problem::Pr,
         sub_options::Op;
-        max_inner_iter::Int=200,
-        num_outer_itertgn::Int=30,
         ϵ::Real=1e-3,
         ϵ_min::Real=1e-6,
         λ_max::Real=20.0,
@@ -77,20 +72,18 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         ρ::Real=1.0,
         τ::Real=0.8,
         θ_ρ::Real=0.3,
-        min_stepsize::Real=1e-10,
-        stopping_criterion::StoppingCriterion=StopWhenAny(
-            StopAfterIteration(300),
-            StopWhenAll(
-                StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(min_stepsize)
-            ),
+        maximum_iteration=300,
+        ϵ_exponent=1 / 100,
+        θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
+        stopping_criterion::StoppingCriterion=StopAfterIteration(maximum_iteration) | (
+            StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(min_stepsize)
         ),
+        min_stepsize::Real=1e-10,
     ) where {P,Pr<:Problem,Op<:Options}
         o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
         o.sub_problem = sub_problem
         o.sub_options = sub_options
-        o.max_inner_iter = max_inner_iter
-        o.num_outer_itertgn = num_outer_itertgn
         o.ϵ = ϵ
         o.ϵ_min = ϵ_min
         o.λ_max = λ_max
@@ -101,9 +94,8 @@ mutable struct ALMOptions{P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
         o.ρ = ρ
         o.τ = τ
         o.θ_ρ = θ_ρ
-        o.θ_ϵ = 0.0
-        o.old_acc = 0.0
-        o.min_stepsize = min_stepsize
+        o.θ_ϵ = θ_ϵ
+        o.penalty = Inf
         o.stop = stopping_criterion
         return o
     end

@@ -56,22 +56,25 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `x` – initial point
 * `sub_problem` – problem for the subsolver
 * `sub_options` – options of the subproblem
-* `max_inner_iter` – (`200`) the maximum number of iterations the subsolver should perform in each iteration
-* `num_outer_itertgn` – (`100`) number of iterations until maximal accuracy is needed to end algorithm naturally
 * `ϵ` – (`1e-3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
+* `ϵ_exponent` – (`1/100`) exponent of the ϵ update factor;
+   also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
+* `θ_ϵ` – (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
 * `μ` – (`ones(size(G(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
 * `λ` – (`ones(size(H(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
-* `ρ` – (`1.0`) the penalty parameter
-* `min_stepsize` – (`1e-10`) the minimal step size
-* `sub_problem` – ([`GradientProblem`](@ref)`(M,`[`AugmentedLagrangianCost`](@ref)`(F, G, H, ρ, μ, λ),`[`AugmentedLagrangianGrad`](@ref)`(F, gradF, G, gradG, H, gradH, ρ, μ, λ))`) problem for the subsolver
-* `sub_options` – ([`QuasiNewtonOptions`](@ref)`(copy(x), zero_vector(M,x), `[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, copy(M,x), `[`InverseBFGS`](@ref)`(),30), `[`StopAfterIteration`](@ref)`(max_inner_iter) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(min_stepsize), `[`WolfePowellLinesearch`](@ref)`(M,10^(-4),0.999))`) options of the subproblem
-* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
 * `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
+* `ρ` – (`1.0`) the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | [`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(min_stepsize)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `sub_cost` – (`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian, expecially with the same numbers `ρ,μ` as in the options for the sub problem
+* `sub_grad` – (`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian gradient, expecially with the same numbers `ρ,μ` as in the options for the sub problem
+* `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
+* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | [`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
+* `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad, λ))`) problem for the subsolver
+* `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | [`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the complete [`Options`](@ref) are returned. This can be used to access recorded values. If set to false (default) just the optimal value `x` is returned.
 
 # Output
@@ -108,37 +111,43 @@ function augmented_Lagrangian_method!(
     gradG::Function=(M, x) -> [],
     gradH::Function=(M, x) -> [],
     evaluation=AllocatingEvaluation(),
+    maximum_iteration=300,
     x=random_point(M),
-    max_inner_iter::Int=200,
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
+    ϵ_exponent=1 / 100,
+    θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
     μ::Vector=ones(size(G(M, x), 1)),
+    μ_max::Real=20.0,
     λ::Vector=ones(size(H(M, x), 1)),
-    ρ::Real=1.0,
-    min_stepsize=1e-10,
-    problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
-    sub_problem::Problem=GradientProblem(
-        M,
-        AugmentedLagrangianCost(problem, ρ, μ, λ),
-        AugmentedLagrangianGrad(problem, ρ, μ, λ),
-    ),
-    sub_options::Options=QuasiNewtonOptions(
-        copy(x),
-        zero_vector(M, x),
-        QuasiNewtonLimitedMemoryDirectionUpdate(M, copy(M, x), InverseBFGS(), 30),
-        StopAfterIteration(max_inner_iter) |
-        StopWhenGradientNormLess(ϵ) |
-        StopWhenStepsizeLess(min_stepsize),
-        WolfePowellLinesearch(M, 10^(-4), 0.999),
-    ),
-    num_outer_itertgn::Int=100,
     λ_max::Real=20.0,
     λ_min::Real=-λ_max,
-    μ_max::Real=20.0,
     τ::Real=0.8,
+    ρ::Real=1.0,
     θ_ρ::Real=0.3,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(min_stepsize)
+    problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
+    sub_cost=AugmentedLagrangianCost(problem, ρ, μ, λ),
+    sub_grad=AugmentedLagrangianGrad(problem, ρ, μ, λ),
+    sub_kwargs=[],
+    sub_stopping_criterion=StopAfterIteration(200) |
+                           StopWhenGradientNormLess(ϵ) |
+                           StopWhenStepsizeLess(1e-10),
+    sub_options::Options=decorate_options(
+        QuasiNewtonOptions(
+            M,
+            copy(x);
+            initial_vector=zero_vector(M, x),
+            direction_update=QuasiNewtonLimitedMemoryDirectionUpdate(
+                M, copy(M, x), InverseBFGS(), 30
+            ),
+            stopping_criterion=sub_stopping_criterion,
+            stepsize=WolfePowellLinesearch(M, 1e-4, 0.999),
+        );
+        sub_kwargs...,
+    ),
+    sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(maximum_iteration) | (
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     return_options=false,
     kwargs...,
@@ -149,8 +158,6 @@ function augmented_Lagrangian_method!(
         x,
         sub_problem,
         sub_options;
-        max_inner_iter=max_inner_iter,
-        num_outer_itertgn=num_outer_itertgn,
         ϵ=ϵ,
         ϵ_min=ϵ_min,
         λ_max=λ_max,
@@ -161,7 +168,7 @@ function augmented_Lagrangian_method!(
         ρ=ρ,
         τ=τ,
         θ_ρ=θ_ρ,
-        min_stepsize=min_stepsize,
+        θ_ϵ=θ_ϵ,
         stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
@@ -174,10 +181,7 @@ end
 # Solver functions
 #
 function initialize_solver!(::ConstrainedProblem, o::ALMOptions)
-    o.θ_ϵ = (o.ϵ_min / o.ϵ)^(1 / o.num_outer_itertgn)
-    o.old_acc = Inf
-    update_stopping_criterion!(o, :MaxIteration, o.max_inner_iter)
-    update_stopping_criterion!(o, :MinStepsize, o.min_stepsize)
+    o.penalty = Inf
     return o
 end
 function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
@@ -212,15 +216,11 @@ function step_solver!(p::ConstrainedProblem, o::ALMOptions, iter)
             max.(ones(n_eq_constraint) .* o.λ_min, o.λ + o.ρ .* cost_eq),
         ),
     )
-
     # get new evaluation of penalty
-    new_acc = max(
-        maximum(abs.(max.(-o.μ ./ o.ρ, cost_ineq)); init=0), maximum(abs.(cost_eq); init=0)
-    )
-
+    penalty = maximum([abs.(max.(-o.μ ./ o.ρ, cost_ineq))..., abs.(cost_eq)...]; init=0)
     # update ρ if necessary
-    (iter == 1 || new_acc > o.τ * o.old_acc) && (o.ρ = o.ρ / o.θ_ρ)
-    o.old_acc = new_acc
+    (penalty > o.τ * o.penalty) && (o.ρ = o.ρ / o.θ_ρ)
+    o.penalty = penalty
 
     # update the tolerance ϵ
     o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
