@@ -17,6 +17,6 @@ using LinearAlgebra: I, tr
     sol_lqh = exact_penalty_method(
         M, F, gradF, x0; G=G, gradG=gradG, smoothing=LinearQuadraticHuber()
     )
-    @test distance(M, v0, sol_lse) < 8 * 1e-4
-    @test distance(M, v0, sol_lqh) < 8 * 1e-4
+    @test distance(M, v0, sol_lse) < 1e-3
+    @test distance(M, v0, sol_lqh) < 1e-3
 end
