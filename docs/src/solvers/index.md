@@ -28,7 +28,7 @@ The following algorithms are currently available
 [`TruncatedConjugateGradientOptions`](@ref)
 [The Riemannian Trust-Regions Solver](@ref trust_regions) | `trust_regions.jl` | [`HessianProblem`](@ref), [`TrustRegionsOptions`](@ref)
 
-Note that the solvers (or their [`Options`](@ref) to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection).
+Note that the solvers (or their [`Options`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection).
 
 ## Technical Details
 
@@ -38,7 +38,7 @@ Note that the solvers (or their [`Options`](@ref) to be precise) can also be dec
 solve(p::Problem, o::Options)
 ```
 
-which is a framework, that you in general should not change or redefine.
+which is a framework that you in general should not change or redefine.
 It uses the following methods, which also need to be implemented on your own
 algorithm, if you want to provide one.
 

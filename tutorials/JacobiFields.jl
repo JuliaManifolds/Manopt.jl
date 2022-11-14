@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.0
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -13,8 +13,8 @@ md"""
 
 This tutorial illustrates the usage of Jacobi Fields within
 `Manopt.jl`.
-For this tutorial you should be familiar with the basic terminology on a
-manifold like the exponential and logarithmic map as well as
+For this tutorial, you should be familiar with the basic terminology on a
+manifold like the exponential and logarithmic maps, as well as the
 [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any})s.
 
 We first initialize the packages we need
@@ -33,7 +33,7 @@ begin
 end;
 
 # ╔═╡ 2028d1ab-3dcb-4f17-a02f-f9ef8c2dfacb
-md"And setup our graphics paths"
+md"and setup our graphics paths"
 
 # ╔═╡ 4e1fc0af-2837-40cc-b6ff-3d8d6d641b6b
 begin
@@ -56,14 +56,14 @@ p, q = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
 
 # ╔═╡ ee9a8c21-431e-4448-b758-01e552b1df8c
 md"""
-their connecting [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) (sampled at `100` points)
+Their connecting [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) (sampled at `100` points)
 """
 
 # ╔═╡ 8a0d1039-5cfe-4e4d-9a97-89c3b5705b36
 geodesic_curve = shortest_geodesic(M, p, q, [0:0.1:1.0...]);
 
 # ╔═╡ 5e0d7686-7129-41f6-87d7-7298ddb131a5
-md"Is just a curve along the equator"
+md"is just a curve along the equator"
 
 # ╔═╡ b75c32b0-e322-42e5-a8fa-f74893655e18
 render_asy && asymptote_export_S2_signals(
@@ -85,7 +85,7 @@ PlutoUI.LocalResource(image_prefix * "/jacobi_geodesic.png")
 # ╔═╡ f0118459-5343-45dd-aa62-494795019044
 md"""
 where ``p`` is on the left and ``q`` on the right.
-We know solve the following task:
+We now solve the following task.
 
 Given a direction $X ∈ T_p\mathcal M$, for example
 """
@@ -95,22 +95,22 @@ X = [0.0, 0.4, 0.5]
 
 # ╔═╡ f338d7d0-eef5-4264-af90-33e5bc6ecc62
 md"""
-we move the start point ``x`` into, how does any point on the geodesic move?
+in which we move the starting point ``x``, how does any point on the geodesic move?
 
-Or mathematically: Compute ``D_p g(t; p,q)`` for some fixed ``t∈[0,1]``
+Or mathematically: compute ``D_p g(t; p,q)`` for some fixed ``t∈[0,1]``
 and a given direction ``X_p``.
-Of course two cases are quite easy: For ``t=0`` we are in ``x`` and how ``x`` “moves”
+Of course two cases are quite easy: for ``t=0`` we are in ``x`` and how ``x`` “moves”
 is already known, so ``D_x g(0;p,q) = X``. On the other side, for ``t=1``,
 ``g(1; p,q) = q`` which is fixed, so ``D_p g(1; p,q)`` is the zero tangent vector
 (in ``T_q\mathcal M``).
 
 For all other cases we employ a [`jacobi_field`](https://manoptjl.org/stable/functions/Jacobi_fields.html), which is a (tangent)
-vector field along the [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) given as follows: The _geodesic variation_
+vector field along the [shortest geodesic](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) given as follows: the _geodesic variation_
 ``\Gamma_{g,X}(s,t)`` is defined for some ``\varepsilon > 0`` as
 ````math
-\Gamma_{g,X}(s,t):=\exp{\gamma_{p,X}(s)}[t\log_{g(s;p,X)}p],\qquad s∈(-\varepsilon,\varepsilon),\ t∈[0,1].
+\Gamma_{g,X}(s,t):=\exp_{\gamma_{p,X}(s)}[t\log_{g(s;p,X)}p],\qquad s∈(-\varepsilon,\varepsilon),\ t∈[0,1].
 ````
-Intuitively we make a small step ``s`` into direction ``ξ`` using the geodesic
+Intuitively, we make a small step ``s`` into the direction of ``ξ`` using the geodesic
 ``g(⋅; p,X)`` and from ``r=g(s; p,X)`` we follow (in ``t``) the geodesic
 ``g(⋅; r,q)``. The corresponding Jacobi field ``J_{g,X}``
 along ``g(⋅; p,q)`` is given by
@@ -122,10 +122,9 @@ J_{g,X}(t):=\frac{D}{\partial s}\Gamma_{g,X}(s,t)\Bigl\rvert_{s=0}
 which is an ODE and we know the boundary conditions ``J_{g,X}(0)=X`` and
 ``J_{g,X}(t) = 0``. In symmetric spaces we can compute the solution, since the
 system of ODEs decouples, see for example [^doCarmo1992],
-Chapter 4.2. Within `Manopt.jl` this is implemented as
-`jacobi_field(M,p,q,t,X[,β])`, where the optional parameter (function)
-``β`` specifies, which Jacobi field we want to evaluate and the one used here is
-the default.
+Chapter 4.2. Within `Manopt.jl` this is implemented as `jacobi_field(M,p,q,t,X[,β])`, 
+where the optional parameter (function) ``β`` specifies which Jacobi field we want to 
+evaluate and the one used here is the default.
 
 We can hence evaluate that on the points on the geodesic at
 """
@@ -148,7 +147,7 @@ W = jacobi_field.(Ref(M), Ref(p), Ref(q), T, Ref(X));
 # ╔═╡ fab5b16b-e05e-4a8a-b001-236422d9e245
 md"""Which can also be called using `differential_geodesic_startpoint`.
 We can add to the image above by creating extended tangent vectors
-the include their base points"""
+that include their base points"""
 
 # ╔═╡ 0713167c-80c6-4907-b1e3-e104d598a804
 V = [Tuple([a, b]) for (a, b) in zip(r, W)];
@@ -180,7 +179,7 @@ PlutoUI.LocalResource(image_prefix * "/jacobi_geodesic_diff_start.png")
 
 # ╔═╡ b2ac06aa-4b9f-4869-8b4c-c6f30661b8fe
 md"""
-The interpretation is as follows: If an infinitesimal change of the start point in direction ``X`` would happen, the infinitesimal change of a point along the line would change as indicated.
+The interpretation is as follows: if an infinitesimal change of the starting point in the direction of ``X`` happened, the infinitesimal change of a point along the line would change as indicated.
 
 Note that each new vector is a tangent vector to its point (up to a small numerical tolerance), so the blue vectors are not just “shifted and scaled versions” of ``X``.
 """
@@ -189,7 +188,7 @@ Note that each new vector is a tangent vector to its point (up to a small numeri
 all([is_vector(M, a[1], a[2]; atol=1e-15) for a in V])
 
 # ╔═╡ 99526567-14aa-4526-9a8d-48e2a3ba15a6
-md"If we further move the end point, too, we can derive that Differential in direction"
+md"If we further move the end point, too, we can derive that differential in direction"
 
 # ╔═╡ 84090442-ea5f-4a1e-9c66-b0e828463853
 begin
@@ -228,7 +227,8 @@ PlutoUI.LocalResource(image_prefix * "/jacobi_geodesic_complete.png")
 
 # ╔═╡ ee803867-bc00-43b3-85c5-c4471370b6a8
 md"""
-Here the first vector field is still in blue, the second is in magenta, and their combined effect is in teal. Sure as a differential this does not make much sense, maybe as an infinitesimal movement of both start and end point cmobined.
+Here, the first vector field is still in blue, the second is in magenta, and their combined effect is in teal. 
+Sure, as a differential this does not make much sense; maybe as an infinitesimal movement of both starting point and endpoint combined.
 """
 
 # ╔═╡ 83d85bac-85c7-462b-bf1c-097e27a3ca9a
@@ -258,8 +258,9 @@ PlutoUI = "~0.7.38"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.8.0"
 manifest_format = "2.0"
+project_hash = "43bf8cb61864d97458ff17f46246f46275c82093"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -281,6 +282,7 @@ version = "3.3.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
+version = "1.1.1"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -339,6 +341,7 @@ version = "3.43.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -388,14 +391,18 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+version = "1.6.0"
 
 [[deps.Einsum]]
 deps = ["Compat"]
 git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
 uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
 version = "0.4.1"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -484,10 +491,12 @@ version = "0.5.1"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
+version = "0.6.3"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.84.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -496,6 +505,7 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -544,6 +554,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.28.0+0"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -556,6 +567,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+version = "2022.2.1"
 
 [[deps.NamedDims]]
 deps = ["AbstractFFTs", "ChainRulesCore", "CovarianceEstimation", "LinearAlgebra", "Pkg", "Requires", "Statistics"]
@@ -565,14 +577,17 @@ version = "0.2.47"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+version = "1.2.0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+version = "0.8.1+0"
 
 [[deps.OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -600,6 +615,7 @@ version = "2.3.0"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+version = "1.8.0"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
@@ -667,6 +683,7 @@ version = "0.3.0+0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -747,10 +764,12 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+version = "1.10.0"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -766,6 +785,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.12+3"
 
 [[deps.ZygoteRules]]
 deps = ["MacroTools"]
@@ -776,14 +796,17 @@ version = "0.2.2"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.48.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:

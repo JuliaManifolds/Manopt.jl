@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-A problem usually contains its cost function and provides and
+A problem usually contains its cost function and provides an
 implementation to access the cost
 
 ```@docs
@@ -13,7 +13,7 @@ get_cost
 ```
 
 A problem can be of different type, more specifically, whether its containing functions,
-for example to compute the gradient work with allocation or without. To be precise, an
+for example to compute the gradient, work with allocation or without it. To be precise, an
 allocation function `X = gradF(x)` allocates memory for its result `X`, while `gradF!(X,x)` does not.
 
 ```@docs

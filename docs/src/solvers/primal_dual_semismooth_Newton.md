@@ -51,7 +51,7 @@ The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref
    ```
 
 Furthermore you can exchange the exponential map, the logarithmic map, and the parallel transport
-by a retraction, an in verse retraction and a vector transport.
+by a retraction, an inverse retraction and a vector transport.
 
 Finally you can also update the base points $m$ and $n$ during the iterations.
 This introduces a few additional vector transports. The same holds for the case that

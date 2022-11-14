@@ -14,14 +14,14 @@ mkpath(tutorial_output_folder)
 # Tutorials
 @info " \n      Rendering Tutorials\n "
 tutorials = [
-    Dict(:file => "Optimize!", :title => "Get started: Optimize!"),
+    Dict(:file => "Optimize!", :title => "Get Started: Optimize!"),
     Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
-    Dict(:file => "HowToRecord", :title => "Record values"),
-    Dict(:file => "GeodesicRegression", :title => "Do Geodesic regression"),
-    Dict(:file => "Bezier", :title => "Use Bezier Curves"),
-    Dict(:file => "SecondOrderDifference", :title => "Compute a second order difference"),
-    Dict(:file => "StochasticGradientDescent", :title => "Do stochastic gradient descent"),
-    Dict(:file => "Benchmark", :title => "speed up! using `gradF!`"),
+    Dict(:file => "HowToRecord", :title => "Record Values"),
+    Dict(:file => "GeodesicRegression", :title => "Do Geodesic Regression"),
+    Dict(:file => "Bezier", :title => "Use Bézier Curves"),
+    Dict(:file => "SecondOrderDifference", :title => "Compute a Second Order Difference"),
+    Dict(:file => "StochasticGradientDescent", :title => "Do Stochastic Gradient Descent"),
+    Dict(:file => "Benchmark", :title => "Speed up! Using `gradF!`"),
     Dict(:file => "JacobiFields", :title => "Illustrate Jacobi Fields"),
 ]
 # build menu and write files myself - tp set edit url correctly.
