@@ -1,6 +1,11 @@
 {
     "contributors": [
         {
+            "affiliation": "NTNU Trondheim",
+            "name": "Jasa, Hajg",
+            "type": "Other"
+        },
+        {
             "name": "Mathieu Besançon",
             "type": "Other",
             "orcid": "0000-0002-6284-3033"
