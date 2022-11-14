@@ -20,9 +20,11 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    ExactPenaltyMethodOptions(x)
+    ExactPenaltyMethodOptions(M::AbstractManifold, P::ConstrainedProblem, x; kwargs...)
 
-construct an exact penalty Option with the fields and defaults as above.
+construct an exact penalty options with the fields and defaults as above, where the
+manifold `M` and the [`ConstrainedProblem`](@ref) `P` are used for defaults in the keyword
+arguments.
 
 # See also
 [`exact_penalty_method`](@ref)

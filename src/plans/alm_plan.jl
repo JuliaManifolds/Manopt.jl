@@ -29,9 +29,11 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    AugmentedLagrangianMethodOptions(x)
+    AugmentedLagrangianMethodOptions(M::AbstractManifold, P::ConstrainedProblem, x; kwargs...)
 
-construct an augmented Lagrangian Option with the fields and defaults as above.
+construct an augmented Lagrangian method options with the fields and defaults as above,
+where the manifold `M` and the [`ConstrainedProblem`](@ref) `P` are used for defaults
+in the keyword arguments.
 
 # See also
 [`augmented_Lagrangian_method`](@ref)
