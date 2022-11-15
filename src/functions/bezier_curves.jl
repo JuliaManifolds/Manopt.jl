@@ -144,16 +144,14 @@ the control points `B`, either a vector of segments of controlpoints.
 """
 function get_bezier_junction_tangent_vectors(
     M::AbstractManifold, B::AbstractVector{<:BezierSegment}
-) where {P}
+)
     return cat(
         [[log(M, b.pts[1], b.pts[2]), log(M, b.pts[end], b.pts[end - 1])] for b in B]...,
         ;
         dims=1,
     )
 end
-function get_bezier_junction_tangent_vectors(
-    M::AbstractManifold, b::BezierSegment
-) where {P,N}
+function get_bezier_junction_tangent_vectors(M::AbstractManifold, b::BezierSegment)
     return get_bezier_junction_tangent_vectors(M, [b])
 end
 

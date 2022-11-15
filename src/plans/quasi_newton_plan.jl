@@ -306,7 +306,9 @@ used with any update rule for the direction.
         M::AbstractManifold,
         x;
         initial_vector=zero_vector(M,x),
-        direction_update=InverseBFGS(),
+        direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(M, x, InverseBFGS(), 20;
+            vector_transport_method=vector_transport_method,
+        )
         stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
         retraction_method::RM=default_retraction_method(M),
         vector_transport_method::VTM=default_vector_transport_method(M),
@@ -339,10 +341,12 @@ function QuasiNewtonOptions(
     M::AbstractManifold,
     x::P;
     initial_vector::T=zero_vector(M, x),
-    direction_update::U=InverseBFGS(),
+    vector_transport_method::VTM=default_vector_transport_method(M),
+    direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
+        M, x, InverseBFGS, 20; vector_transport_method=vector_transport_method
+    ),
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
     retraction_method::RM=default_retraction_method(M),
-    vector_transport_method::VTM=default_vector_transport_method(M),
     stepsize::S=WolfePowellLinesearch(
         M;
         retraction_method=retraction_method,
@@ -352,13 +356,13 @@ function QuasiNewtonOptions(
 ) where {
     P,
     T,
-    U<:AbstractQuasiNewtonDirectionUpdate,
+    D<:AbstractQuasiNewtonDirectionUpdate,
     SC<:StoppingCriterion,
     S<:Stepsize,
     RM<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    return QuasiNewtonOptions{P,T,U,SC,S,RM,VTM}(
+    return QuasiNewtonOptions{P,T,D,SC,S,RM,VTM}(
         x,
         initial_vector,
         copy(M, initial_vector),
