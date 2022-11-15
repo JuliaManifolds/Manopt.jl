@@ -117,10 +117,12 @@ makedocs(;
         "Solvers" => [
             "Introduction" => "solvers/index.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
+            "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
+            "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",

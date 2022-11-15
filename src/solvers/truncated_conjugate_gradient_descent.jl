@@ -55,18 +55,14 @@ see the reference:
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
-    .
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` is returned
 
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
 
-* `η` – an approximate solution of the trust-region subproblem in ``T_{x}\mathcal M``.
-OR
-* `options` - the options returned by the solver (see `return_options`)
+# Output
+
+the obtained (approximate) minimizer ``\eta^*``, see [`get_solver_return`](@ref) for details
 
 # see also
 [`trust_regions`](@ref)
@@ -117,7 +113,6 @@ function truncated_conjugate_gradient_descent!(
         StopWhenModelIncreased(),
     ),
     project!::Proj=copyto!,
-    return_options=false,
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec,Proj}
     p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
@@ -133,12 +128,7 @@ function truncated_conjugate_gradient_descent!(
         (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 @deprecate truncated_conjugate_gradient_descent!(M, F, gradF, x, η, H, r; kwargs...) truncated_conjugate_gradient_descent!(
     M, F, gradF, x, η, H; trust_region_radius=r, kwargs...

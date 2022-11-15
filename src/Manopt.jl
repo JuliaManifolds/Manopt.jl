@@ -15,7 +15,8 @@ using DataStructures: CircularBuffer, capacity, length, size, push!
 using StaticArrays
 using SparseArrays
 using Printf
-import Base: copy, identity, &, |
+import LinearAlgebra: reflect!
+import Base: &, |, copy, identity, show
 import ManifoldsBase:
     ℝ,
     ℂ,
@@ -25,10 +26,11 @@ import ManifoldsBase:
     _write,
     AbstractBasis,
     AbstractDecoratorManifold,
-    AbstractPowerManifold,
-    AbstractVectorTransportMethod,
-    AbstractRetractionMethod,
     AbstractInverseRetractionMethod,
+    AbstractManifold,
+    AbstractPowerManifold,
+    AbstractRetractionMethod,
+    AbstractVectorTransportMethod,
     CachedBasis,
     DefaultManifold,
     DefaultOrthonormalBasis,
@@ -36,8 +38,9 @@ import ManifoldsBase:
     LogarithmicInverseRetraction,
     NestedPowerRepresentation,
     ParallelTransport,
+    ProjectionTransport,
     PowerManifold,
-    AbstractManifold,
+    QRRetraction,
     allocate,
     allocate_result,
     allocate_result_type,
@@ -97,10 +100,12 @@ include("functions/proximal_maps.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
+include("solvers/exact_penalty_method.jl")
 include("solvers/NelderMead.jl")
 include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
@@ -170,6 +175,7 @@ export ℝ, ℂ, &, |
 # Problems
 export Problem,
     ProximalProblem,
+    ConstrainedProblem,
     CostProblem,
     SubGradientProblem,
     GradientProblem,
@@ -184,10 +190,12 @@ export Problem,
 # Options
 export Options,
     AbstractGradientOptions,
+    AugmentedLagrangianMethodOptions,
     ChambollePockOptions,
     ConjugateGradientDescentOptions,
     CyclicProximalPointOptions,
     DouglasRachfordOptions,
+    ExactPenaltyMethodOptions,
     FrankWolfeOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
@@ -233,6 +241,21 @@ export get_cost,
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_options_decorator, dispatch_options_decorator
 export primal_residual, dual_residual
+export get_constraints,
+    get_inequality_constraint,
+    get_inequality_constraints,
+    get_equality_constraint,
+    get_equality_constraints,
+    get_grad_inequality_constraint,
+    get_grad_inequality_constraint!,
+    get_grad_inequality_constraints,
+    get_grad_inequality_constraints!,
+    get_grad_equality_constraint,
+    get_grad_equality_constraint!,
+    get_grad_equality_constraints,
+    get_grad_equality_constraints!
+export ConstraintType, FunctionConstraint, VectorConstraint
+export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 
 export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -246,7 +269,9 @@ export WolfePowellLinesearch,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
 
-export ConjugateGradientDescentOptions,
+export AugmentedLagrangianMethodOptions,
+    ConjugateGradientDescentOptions,
+    ExactPenaltyMethodOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
     SubGradientMethodOptions,
@@ -272,7 +297,9 @@ export DirectionUpdateRule,
     HagerZhangCoefficient
 #
 # Solvers
-export ChambollePock,
+export augmented_Lagrangian_method,
+    augmented_Lagrangian_method!,
+    ChambollePock,
     ChambollePock!,
     conjugate_gradient_descent,
     conjugate_gradient_descent!,
@@ -280,6 +307,8 @@ export ChambollePock,
     cyclic_proximal_point!,
     DouglasRachford,
     DouglasRachford!,
+    exact_penalty_method,
+    exact_penalty_method!,
     Frank_Wolfe_method,
     Frank_Wolfe_method!,
     gradient_descent,
@@ -301,9 +330,10 @@ export ChambollePock,
     trust_regions!
 # Solver helpers
 export decorate_options
-export initialize_solver!, step_solver!, get_solver_result, stop_solver!
+export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
 export solve
 export ApproxHessianFiniteDifference
+export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 #
 # Stepsize
 export ConstantStepsize, DecreasingStepsize
@@ -314,10 +344,11 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 export StopIfResidualIsReducedByFactor,
     StopIfResidualIsReducedByPower,
     StopWhenCurvatureIsNegative,
+    StopWhenSmallerOrEqual,
     StopWhenTrustRegionIsExceeded,
     StopWhenModelIncreased
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
-export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny, StopWhenTimeElapsed
+export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 export are_these_stopping_critera_active, update_stopping_criterion!
 export StoppingCriterion, StoppingCriterionSet, Stepsize
@@ -362,6 +393,8 @@ export differential_bezier_control, differential_bezier_control!
 # Functions
 export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
 export cost_L2_acceleration_bezier, cost_acceleration_bezier
+export ExactPenaltyCost, ExactPenaltyGrad
+export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 # Gradients
 export grad_TV,
     grad_TV!,

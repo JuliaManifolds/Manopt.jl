@@ -414,7 +414,7 @@ end
 Measure time and print the intervals. Using `start=true` you can start the timer on construction,
 for example to measure the runtime of an algorithm overall (adding)
 
-The measured time is rounded using the given `time_accuracy` and printed after [canonicalization]().
+The measured time is rounded using the given `time_accuracy` and printed after [canonicalization](https://docs.julialang.org/en/v1/stdlib/Dates/#Dates.canonicalize).
 
 # Keyword Parameters
 

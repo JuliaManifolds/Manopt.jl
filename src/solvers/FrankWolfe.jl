@@ -7,13 +7,14 @@ Perform the Frank-Wolfe algorithm to compute for ``\mathcal C \subset \mathcal M
     \operatorname*{arg\,min}_{p∈\mathcal C} f(p)
 ```
 
-Where the constraint optimisation is hitten within the sub problem (Oracle)
+Where the main step is a constrained optimisation is within the algorithm,
+that is the sub problem (Oracle)
 
 ```math
-    q_k = \operatorname{arg\,min}_{q \in C} ⟨\operatorname{grad} F(p_k), \log_{p_k}q⟩
+    q_k = \operatorname{arg\,min}_{q \in C} ⟨\operatorname{grad} F(p_k), \log_{p_k}q⟩.
 ```
 
-for every iterate ``p_k`` together with a stepsize ``s_k≤1``, by default ``s_k = \frac{2}{k+2}``
+for every iterate ``p_k`` together with a stepsize ``s_k≤1``, by default ``s_k = \frac{2}{k+2}``.
 
 The next iterate is then given by ``p_{k+1} = γ_{p_k,q_k}(s_k)``,
 where by default ``γ`` is the shortest geodesic between the two points but can also be changed to
@@ -23,10 +24,6 @@ use a retraction and its inverse.
 
 * `evaluation` ([`AllocatingEvaluation`](@ref)) whether `grad_F` is an inplace or allocating (default) funtion
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
-    stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2)return_options = false,
 * `stopping_criterion` – [`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`
 * `subtask` specify the oracle, can either be a closed form solution (in place function `oracle(M, q, p, X)`
   or a subsolver, e.g. (by default) a [`GradientProblem`](@ref) with [`GradientDescentOptions`](@ref)
@@ -36,6 +33,10 @@ use a retraction and its inverse.
   ``s_k = \frac{2}{k+2}``.
 
 all further keywords are passed down to [`decorate_options`](@ref), e.g. `debug`.
+
+# Output
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function Frank_Wolfe_method(M::AbstractManifold, F, grad_F, p; kwargs...)
     q = copy(M, p)
@@ -62,7 +63,6 @@ function Frank_Wolfe_method!(
                               StopWhenGradientNormLess(1.0e-8) |
                               StopWhenChangeLess(1.0e-8),
     stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
-    return_options=false,
     kwargs..., #collect rest
 ) where {TStop<:StoppingCriterion,TStep<:Stepsize}
     P = GradientProblem(M, F, grad_F; evaluation=evaluation)
@@ -76,12 +76,7 @@ function Frank_Wolfe_method!(
         evaluation=evaluation,
     )
     O = decorate_options(O; kwargs...)
-    resultO = solve(P, O)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(P, O))
 end
 function initialize_solver!(P::GradientProblem, O::FrankWolfeOptions)
     get_gradient!(P, O.X, O.p)

@@ -34,6 +34,10 @@ Note that this changes the arguments the `forward_operator` will be called.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 * `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 
+# Output
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+
 [^DiepeveenLellmann2021]:
     > W. Diepeveen, J. Lellmann:
     > _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
@@ -110,7 +114,6 @@ function primal_dual_semismooth_Newton!(
     retraction_method::RM=default_retraction_method(M),
     inverse_retraction_method::IRM=default_inverse_retraction_method(M),
     vector_transport_method::VTM=default_vector_transport_method(M),
-    return_options=false,
     kwargs...,
 ) where {
     mT<:AbstractManifold,
@@ -152,12 +155,7 @@ function primal_dual_semismooth_Newton!(
         vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 
 function initialize_solver!(
@@ -208,7 +206,7 @@ end
 raw"""
     construct_primal_dual_residual_vector(p, o)
 
-Constructs the vector representation of $X(p^{(k)}, ξ_{n}^{(k)}) \in \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$ 
+Constructs the vector representation of $X(p^{(k)}, ξ_{n}^{(k)}) \in \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 """
 function construct_primal_dual_residual_vector(
     p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
@@ -265,7 +263,7 @@ end
 raw"""
 onstruct_primal_dual_residual_covariant_derivative_matrix(p, o)
 
-Constructs the matrix representation of $V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$ 
+Constructs the matrix representation of $V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 """
 function construct_primal_dual_residual_covariant_derivative_matrix(
     p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions

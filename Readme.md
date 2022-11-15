@@ -34,7 +34,7 @@ in this repository.
 
 ## Citation
 
-If you use `Manopt.jl`in your work, please cite the following
+If you use `Manopt.jl` in your work, please cite the following
 
 ```biblatex
 @article{Bergmann2022,

@@ -64,17 +64,13 @@ i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i
 * `vector_transport_mthod` - (`default_vector_transport_method(M)`) a vector transport method to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) are returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
 
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `g` – the resulting point of PSO
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``g``, see [`get_solver_return`](@ref) for details
 """
 function particle_swarm(
     M::AbstractManifold,
@@ -121,7 +117,6 @@ function particle_swarm!(
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M
     ),
-    return_options=false,
     kwargs..., #collect rest
 ) where {TF}
     p = CostProblem(M, F)
@@ -138,12 +133,7 @@ function particle_swarm!(
         vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 
 #
