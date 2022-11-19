@@ -18,12 +18,9 @@ The implementation follows [^Adachi2022].
 * `x` – an initial value ``x ∈ \mathcal M``
 
 # Optional
-* `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
-* `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
-  functor.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 ...
@@ -64,7 +61,6 @@ specify a problem for gradient based algorithms.
 # Fields
 * `M`        – a manifold ``\mathcal M``
 * `F`        – a function ``F: \mathcal M → ℝ^d`` to minimize
-* `d`        – dimension of codomain of `F`
 * `jacF!!`   – Jacobian of the function ``F``
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be provided
@@ -81,8 +77,16 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be pro
 struct NonlinearLeastSquaresProblem{T,mT<:AbstractManifold,TF,TJ} <: Problem{T}
     M::mT
     F::TF
-    d::Int
     jacobian!!::TJ
+end
+function NonlinearLeastSquaresProblem(
+    M::mT, F::TF, jacF::TJ; evaluation::AbstractEvaluationType=AllocatingEvaluation()
+) where {mT<:AbstractManifold,TF,TJ}
+    return NonlinearLeastSquaresProblem{typeof(evaluation),mT,TF,TJ}(M, F, jacF)
+end
+
+function get_cost(P::NonlinearLeastSquaresProblem, p)
+    return norm(P.F(P.M, p))^2
 end
 
 @doc raw"""
@@ -96,7 +100,6 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `x` – a point (of type `P`) on a manifold as starting point
 * `jacF` – the current Jacobian of ``F``
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
 * `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
   the default set for your manifold.
 
@@ -111,24 +114,33 @@ All following fields are keyword arguments.
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """
 mutable struct LevenbergMarquardtOptions{
-    P,TStop<:StoppingCriterion,TRTM<:AbstractRetractionMethod,Tparams<:Real
+    P,
+    TM<:AbstractManifold,
+    TStop<:StoppingCriterion,
+    TRTM<:AbstractRetractionMethod,
+    TJac,
+    Tparams<:Real,
 } <: AbstractGradientOptions
+    M::TM
     x::P
     stop::TStop
     retraction_method::TRTM
+    jacF::TJac
     η::Tparams
-    μmin::Tparams
+    μ::Tparams
     β::Tparams
     flagnz::Bool
     function LevenbergMarquardtOptions{P}(
+        M::AbstractManifold,
         initialX::P,
+        initial_jacF::TJac,
+        s::StoppingCriterion=StopAfterIteration(100),
+        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         η::Real=0.2,
         μmin::Real=0.1,
         β::Real=5.0,
-        s::StoppingCriterion=StopAfterIteration(100),
         flagnz::Bool=false,
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    ) where {P}
+    ) where {P,TJac}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end
@@ -139,10 +151,26 @@ mutable struct LevenbergMarquardtOptions{
             throw(ArgumentError("Value of β must be strictly above 1, received $β"))
         end
         Tparams = promote_type(typeof(η), typeof(μmin), typeof(β))
-        return new{P,typeof(s),typeof(retraction_method),Tparams}(
-            initialX, s, retraction_method, η, μmin, β, flagnz
+        return new{P,typeof(M),typeof(s),typeof(retraction_method),TJac,Tparams}(
+            M, initialX, s, retraction_method, initial_jacF, η, μmin, β, flagnz
         )
     end
+end
+
+function LevenbergMarquardtOptions(
+    M::AbstractManifold,
+    x::P,
+    initial_jacF::TJac;
+    stopping_criterion::StoppingCriterion=StopAfterIteration(100),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+) where {P,TJac}
+    return LevenbergMarquardtOptions{P}(
+        M, x, initial_jacF, stopping_criterion, retraction_method
+    )
+end
+
+function get_gradient(o::LevenbergMarquardtOptions)
+    return get_vector(o.M, o.x, 2 * sum(o.jacF; dims=1), DefaultOrthonormalBasis())
 end
 
 @doc raw"""
@@ -160,16 +188,15 @@ function LevenbergMarquardt!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(10.0^-8),
     debug=[DebugWarnIfCostIncreases()],
-    direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #collect rest
 ) where {TF,TDF}
     p = NonlinearLeastSquaresProblem(M, F, jacF; evaluation=evaluation)
     o = LevenbergMarquardtOptions(
         M,
-        x;
+        x,
+        jacF(M, x); # TODO: rethink this?
         stopping_criterion=stopping_criterion,
-        direction=direction,
         retraction_method=retraction_method,
     )
     o = decorate_options(o; debug=debug, kwargs...)
@@ -183,18 +210,20 @@ function initialize_solver!(::NonlinearLeastSquaresProblem, o::LevenbergMarquard
 end
 function step_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOptions, iter)
     Fk = p.F(p.M, o.x)
-    Jk = p.jacobian!!(p.M, o.x)
-    λk = o.μ * norm(Jk)
+    o.jacF = p.jacobian!!(p.M, o.x)
+    λk = o.μ * norm(o.jacF)
 
-    JJ = transpose(J) * J + λk * I
+    JJ = transpose(o.jacF) * o.jacF + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    sk = -(transpose(Jk) * Fk) / cholesky(JJ)
+    sk = -(transpose(o.jacF) * o.jacF) / cholesky(JJ)
     # TODO: how to specify basis?
     temp_x = retract(
         p.M, o.x, get_vector(p.M, o.x, sk, DefaultOrthonormalBasis()), o.retraction_method
     )
-    ρk = 2 * (Fk - p.F(p.M, temp_x)) / (norm(Fk)^2 - norm(Fk + Jk * sk)^2 - λk * norm(sk))
+    ρk =
+        2 * (Fk - p.F(p.M, temp_x)) /
+        (norm(Fk)^2 - norm(Fk + o.jacF * sk)^2 - λk * norm(sk))
     if ρk >= o.η
         copyto!(p.M, o.x, temp_x)
         if !o.flagnz
