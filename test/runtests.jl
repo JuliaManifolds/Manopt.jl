@@ -38,6 +38,7 @@ end
     include("solvers/test_exact_penalty.jl")
     include("solvers/test_Frank_Wolfe.jl")
     include("solvers/test_gradient_descent.jl")
+    include("solvers/test_Levenberg_Marquardt.jl")
     include("solvers/test_Nelder_Mead.jl")
     include("solvers/test_quasi_Newton.jl")
     include("solvers/test_trust_regions.jl")

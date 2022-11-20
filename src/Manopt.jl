@@ -88,6 +88,8 @@ import ManifoldsBase:
     setindex!,
     set_component!
 
+using ManifoldsBase: get_vector!, get_coordinates!
+
 include("plans/plan.jl")
 # Functions
 include("functions/bezier_curves.jl")

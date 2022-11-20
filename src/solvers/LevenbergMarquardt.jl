@@ -85,8 +85,37 @@ function NonlinearLeastSquaresProblem(
     return NonlinearLeastSquaresProblem{typeof(evaluation),mT,TF,TJ}(M, F, jacF)
 end
 
+function (d::DebugGradient)(::NonlinearLeastSquaresProblem, o::Options, i::Int)
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_gradient(o))
+    return nothing
+end
+
 function get_cost(P::NonlinearLeastSquaresProblem, p)
     return norm(P.F(P.M, p))^2
+end
+
+function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
+    Jval = p.jacobian!!(p.M, x)
+    Fval = p.F(p.M, x)
+    return get_vector(p.M, x, transpose(Jval) * Fval, DefaultOrthonormalBasis())
+end
+function get_gradient(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, x)
+    Jval = zeros(todo)
+    p.jacobian!!(p.M, Jval, x)
+    Fval = p.F(p.M, x)
+    return get_vector(p.M, x, transpose(Jval) * Fval, DefaultOrthonormalBasis())
+end
+
+function get_gradient!(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, X, x)
+    return copyto!(p.M, X, x, p.gradient!!(p.M, x))
+end
+
+function get_gradient!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, X, x)
+    Jval = zeros(todo)
+    p.jacobian!!(p.M, Jval, x)
+    Fval = p.F(p.M, x)
+    return get_vector!(p.M, X, x, transpose(Jval) * Fval, DefaultOrthonormalBasis())
 end
 
 @doc raw"""
@@ -119,6 +148,7 @@ mutable struct LevenbergMarquardtOptions{
     TStop<:StoppingCriterion,
     TRTM<:AbstractRetractionMethod,
     TJac,
+    TGrad,
     Tparams<:Real,
 } <: AbstractGradientOptions
     M::TM
@@ -126,6 +156,7 @@ mutable struct LevenbergMarquardtOptions{
     stop::TStop
     retraction_method::TRTM
     jacF::TJac
+    gradient::TGrad
     η::Tparams
     μ::Tparams
     β::Tparams
@@ -134,13 +165,14 @@ mutable struct LevenbergMarquardtOptions{
         M::AbstractManifold,
         initialX::P,
         initial_jacF::TJac,
+        initial_gradient::TGrad,
         s::StoppingCriterion=StopAfterIteration(100),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         η::Real=0.2,
         μmin::Real=0.1,
         β::Real=5.0,
         flagnz::Bool=false,
-    ) where {P,TJac}
+    ) where {P,TJac,TGrad}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end
@@ -151,8 +183,17 @@ mutable struct LevenbergMarquardtOptions{
             throw(ArgumentError("Value of β must be strictly above 1, received $β"))
         end
         Tparams = promote_type(typeof(η), typeof(μmin), typeof(β))
-        return new{P,typeof(M),typeof(s),typeof(retraction_method),TJac,Tparams}(
-            M, initialX, s, retraction_method, initial_jacF, η, μmin, β, flagnz
+        return new{P,typeof(M),typeof(s),typeof(retraction_method),TJac,TGrad,Tparams}(
+            M,
+            initialX,
+            s,
+            retraction_method,
+            initial_jacF,
+            initial_gradient,
+            η,
+            μmin,
+            β,
+            flagnz,
         )
     end
 end
@@ -160,17 +201,14 @@ end
 function LevenbergMarquardtOptions(
     M::AbstractManifold,
     x::P,
-    initial_jacF::TJac;
+    initial_jacF::TJac,
+    initial_gradient=zero_vector(M, x);
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
 ) where {P,TJac}
     return LevenbergMarquardtOptions{P}(
-        M, x, initial_jacF, stopping_criterion, retraction_method
+        M, x, initial_jacF, initial_gradient, stopping_criterion, retraction_method
     )
-end
-
-function get_gradient(o::LevenbergMarquardtOptions)
-    return get_vector(o.M, o.x, 2 * sum(o.jacF; dims=1), DefaultOrthonormalBasis())
 end
 
 @doc raw"""
@@ -205,25 +243,30 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOptions)
+function initialize_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOptions)
+    o.gradient = get_gradient(p, o.x)
     return o
 end
 function step_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOptions, iter)
     Fk = p.F(p.M, o.x)
     o.jacF = p.jacobian!!(p.M, o.x)
-    λk = o.μ * norm(o.jacF)
+    λk = o.μ * norm(Fk)
 
     JJ = transpose(o.jacF) * o.jacF + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    sk = -(transpose(o.jacF) * o.jacF) / cholesky(JJ)
+    grad_f_c = transpose(o.jacF) * Fk
+    sk = cholesky(JJ) \ -grad_f_c
+    # TODO: we may or may not need to fill o.gradient?
+    get_vector!(p.M, o.gradient, o.x, grad_f_c, DefaultOrthonormalBasis())
     # TODO: how to specify basis?
     temp_x = retract(
         p.M, o.x, get_vector(p.M, o.x, sk, DefaultOrthonormalBasis()), o.retraction_method
     )
+    normFk2 = norm(Fk)^2
     ρk =
-        2 * (Fk - p.F(p.M, temp_x)) /
-        (norm(Fk)^2 - norm(Fk + o.jacF * sk)^2 - λk * norm(sk))
+        2 * (normFk2 - norm(p.F(p.M, temp_x))^2) /
+        (normFk2 - norm(Fk + o.jacF * sk)^2 - λk * norm(sk))
     if ρk >= o.η
         copyto!(p.M, o.x, temp_x)
         if !o.flagnz
