@@ -105,8 +105,8 @@ function augmented_Lagrangian_method!(
     x=random_point(M);
     G::Function=(M, x) -> [],
     H::Function=(M, x) -> [],
-    gradG::Function=(M, x) -> [],
-    gradH::Function=(M, x) -> [],
+    gradG::Union{AbstractVector{<:Function},Function}=(M, x) -> [],
+    gradH::Union{AbstractVector{<:Function},Function}=(M, x) -> [],
     evaluation=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
@@ -124,9 +124,9 @@ function augmented_Lagrangian_method!(
     sub_cost=AugmentedLagrangianCost(problem, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(problem, ρ, μ, λ),
     sub_kwargs=[],
-    sub_stopping_criterion=StopAfterIteration(200) |
+    sub_stopping_criterion=StopAfterIteration(100) |
                            StopWhenGradientNormLess(ϵ) |
-                           StopWhenStepsizeLess(1e-10),
+                           StopWhenStepsizeLess(1e-7),
     sub_options::Options=decorate_options(
         QuasiNewtonOptions(
             M,

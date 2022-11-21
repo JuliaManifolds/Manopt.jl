@@ -5,8 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 39dcf482-5b7c-437d-b000-b0766a1e3fc7
-using Pkg;
-Pkg.activate();
+using Pkg; Pkg.activate();
 
 # ╔═╡ ff6edcbd-b70d-4c5f-a5da-d3a221c7d595
 using Distributions, LinearAlgebra, Manifolds, Manopt, Random
@@ -61,14 +60,13 @@ where ``\sigma`` is a signal-to-noise ratio and ``N`` is a matrix with random en
 """
 
 # ╔═╡ cd9f3e01-bd76-4972-a04e-028758baa9a3
-d = 100 # dimension of v0
+d = 17 # dimension of v0
 
 # ╔═╡ bd27b323-3571-4cb8-91a1-67fae56ef43b
 σ = 0.1 # SNR
 
 # ╔═╡ d463b59a-69b3-4b7f-883b-c65ffe46efe9
-δ = 0.1;
-s = Int(floor(δ * d)); # Sparsity
+δ = 0.1; s = Int(floor(δ * d)); # Sparsity
 
 # ╔═╡ 7eaab1cc-9238-44cf-b57f-4321a486cdaa
 S = sample(1:d, s; replace=false)
@@ -77,8 +75,7 @@ S = sample(1:d, s; replace=false)
 v0 = [i ∈ S ? 1 / sqrt(s) : 0.0 for i in 1:d];
 
 # ╔═╡ e906df2b-5db9-4540-9200-5e3e0671e269
-N = rand(Normal(0, 1 / d), (d, d));
-N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d);
+N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d);
 
 # ╔═╡ 155a1401-79aa-4305-81f7-505e43c73094
 Z = sqrt(σ) * v0 * transpose(v0) + N;
@@ -96,9 +93,6 @@ In order to recover ``v_0`` we consider the constrained optimisation problem on 
 
 or in the previous notation ``f(p) = -p^{\mathrm{T}}Zp^{\mathrm{T}}`` and ``g(p) = -p``.
 """
-
-# ╔═╡ 255abcc1-f7d9-4bdd-aa09-ffaad91c7da7
-transpose(v0) * Z * v0
 
 # ╔═╡ 54756d9f-1807-45fc-aa72-40bec10d022d
 M = Sphere(d - 1)
@@ -130,23 +124,64 @@ For the constraints this is a little more involved, since each function ``g_i = 
 """
 
 # ╔═╡ 9e7028c9-0f15-4245-a089-2670c26b3b40
-grad_g(M, p) = project.(Ref(M), Ref(p), [[i == j ? 1.0 : 0.0 for j in 1:d] for i in 1:d])
-
-# ╔═╡ ee36dfa0-4b89-466c-aadb-cf2a82834083
+grad_g(M, p) = project.(
+	Ref(M),
+	Ref(p),
+	[[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
 
 # ╔═╡ 72e99369-165b-494e-9acc-7719a12d9d8d
 x0 = random_point(M);
 
 # ╔═╡ 24dadb9b-c9fc-4417-aeff-d43fdda62069
-augmented_Lagrangian_method(
+@time v1 = augmented_Lagrangian_method(
     M,
     f,
     grad_f,
     x0;
     G=g,
     gradG=grad_g,
-    debug=[:Iteration, :Cost, :Stop, 50, "\n"],
-    sub_kwargs=[:debug => ["   ", :Iteration, :Stop, 50]],
+    debug=[:Iteration, :Cost, :Stop, :Change, 10, "\n"],
+    sub_kwargs=[:debug => ["   ", :Iteration, :Cost, " | ",DebugStepsize(), :Change, :Stop, 50, "\n"]],
+)
+
+# ╔═╡ 39a4c15b-f991-4188-b41f-7f8283c9ea76
+distance(M, v1, v0)
+
+# ╔═╡ c72709e1-7bae-4345-b29b-4ef1e791292b
+md"""
+Now this is a little slow, so we can modify two things, that we will directly do both – but one could also just change one of these – :
+
+1. Gradients should be evaluated in place, so for example 
+"""
+
+# ╔═╡ 717bd019-2978-4e55-a586-ed876cefa65d
+grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p / 2 - Z * p / 2)
+
+# ╔═╡ db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
+md"""
+2. The constraints are currently always evaluated all together, since the function `grad_g` always returns a vector of gradients.
+We change this _both_ into a vector of gradient functions `\operatorname{grad} g_i` _as well as_ gradients that are computed in place.
+"""
+
+# ╔═╡ fb86f597-f8af-4c98-b5b1-4db0dfc06199
+g2 = [ (M, p) -> -p[i] for i in 1:d ]
+
+# ╔═╡ 1d427174-57da-41d6-8577-d97d643a2142
+grad_g! = [
+	(M, X, p) -> project!(M, X, p, [i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
+];
+
+# ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
+@time v2 = augmented_Lagrangian_method(
+    M,
+    f,
+    grad_f!,
+    x0;
+	evaluation=MutatingEvaluation(),
+    G=g2,
+    gradG=grad_g!,
+    debug=[:Iteration, :Cost, :Stop, 10, "\n"],
+    sub_kwargs=[:debug => ["   ", :Iteration, :Cost, " | ",DebugStepsize(), :Change, :Stop, 50, "\n"]],
 )
 
 # ╔═╡ 78d055e8-d5c8-4cdf-a706-3089368397bd
@@ -180,17 +215,22 @@ md"""
 # ╠═5654d627-25bc-4d6c-a562-49dad43799da
 # ╠═e906df2b-5db9-4540-9200-5e3e0671e269
 # ╠═155a1401-79aa-4305-81f7-505e43c73094
-# ╠═dd078404-8c89-4655-b8ac-e9c816318361
-# ╠═255abcc1-f7d9-4bdd-aa09-ffaad91c7da7
+# ╟─dd078404-8c89-4655-b8ac-e9c816318361
 # ╠═54756d9f-1807-45fc-aa72-40bec10d022d
 # ╠═0ee60004-e7e5-4c9a-8f1d-e493217f11be
 # ╠═8be00c3b-4385-449b-b58f-3d3ef972c3c3
 # ╠═950dab06-b89e-41c7-9d81-3e9f3fb51b4d
 # ╠═6218866b-18b5-47f7-98a6-6e1192cb1c24
 # ╠═92ee76b4-e132-44c7-9ab3-ef4227969fa2
-# ╠═0f71531d-b292-477d-b108-f45dc4e680ad
+# ╟─0f71531d-b292-477d-b108-f45dc4e680ad
 # ╠═9e7028c9-0f15-4245-a089-2670c26b3b40
-# ╠═ee36dfa0-4b89-466c-aadb-cf2a82834083
 # ╠═72e99369-165b-494e-9acc-7719a12d9d8d
 # ╠═24dadb9b-c9fc-4417-aeff-d43fdda62069
+# ╠═39a4c15b-f991-4188-b41f-7f8283c9ea76
+# ╟─c72709e1-7bae-4345-b29b-4ef1e791292b
+# ╠═717bd019-2978-4e55-a586-ed876cefa65d
+# ╟─db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
+# ╠═fb86f597-f8af-4c98-b5b1-4db0dfc06199
+# ╠═1d427174-57da-41d6-8577-d97d643a2142
+# ╠═ce8f1156-a350-4fde-bd39-b08a16b2821d
 # ╟─78d055e8-d5c8-4cdf-a706-3089368397bd
