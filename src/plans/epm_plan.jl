@@ -248,26 +248,25 @@ function (
 )(
     M::AbstractManifold, p::P
 ) where {P}
-    gp = get_inequality_constraints(EG.P, p)
-    hp = get_equality_constraints(EG.P, p)
-    m = length(gp)
-    n = length(hp)
-
+    m = length(LG.P.G)
+    n = length(LG.P.H)
     grad_L = zero_vector(M, p)
     for i in 1:m
-        if (gp[i] >= 0) # the cases where we have to evaluate the gradient
-            if (gp .>= EG.u) # we can just add the gradient scaled by ρ
+        gpi = get_inequality_constraint(LG.P, p, i)
+        if (gpi >= 0) # the cases where we have to evaluate the gradient
+            if (gpi .>= EG.u) # we can just add the gradient scaled by ρ
                 grad_L .+= get_grad_inequality_constraint(EG.P, p, i) .* EG.ρ
             end
-            if (gp[i] > 0) && (gp[i] < EG.u)
-                c = ((gp[i] / EG.u) * EG.ρ)
+            if (gpi > 0) && (gpi < EG.u)
+                c = ((gpi / EG.u) * EG.ρ)
                 grad_L .+= get_grad_inequality_constraint(EG.P, p, i) .* c
             end
         end
     end
     for j in 1:n
-        if hp[j] > 0
-            c = hp[j] / sqrt(hp[j]^2 + EG.u^2)
+        hpj = get_equality_constraint(LG.P, p, j)
+        if hpj > 0
+            c = hpj / sqrt(hpj^2 + EG.u^2)
             grad_L .+= get_grad_inequality_constraint(EG.P, p, i) .* (c * EG.ρ)
         end
     end
@@ -282,30 +281,30 @@ function (
 )(
     M::AbstractManifold, p::P
 ) where {P}
-    gp = get_inequality_constraints(EG.P, p)
-    hp = get_equality_constraints(EG.P, p)
-    m = length(gp)
-    n = length(hp)
+    m = length(LG.P.G)
+    n = length(LG.P.H)
 
     grad_L = zero_vector(M, p)
     X = zero_vector(M, p)
     for i in 1:m
-        if (gp[i] >= 0) # the cases where we have to evaluate the gradient
-            if (gp .>= EG.u) # we can just add the gradient scaled by ρ
+        gpi = get_inequality_constraint(LG.P, p, i)
+        if (gpi >= 0) # the cases where we have to evaluate the gradient
+            if (gpi >= EG.u) # we can just add the gradient scaled by ρ
                 get_grad_inequality_constraint!(EG.P, X, p, i)
                 grad_L += EG.ρ .* X
             end
-            if (gp[i] > 0) && (gp[i] < EG.u)
+            if (gpi > 0) && (gpi < EG.u)
                 # we have to use a different factor, but can exclude the case g = 0 as well
                 get_grad_inequality_constraint!(EG.P, X, p, i)
-                grad_L .+= ((gp[i] / EG.u) * EG.ρ) .* X
+                grad_L .+= ((gpi / EG.u) * EG.ρ) .* X
             end
         end
     end
     for j in 1:n
-        if hp[j] > 0
+        hpj = get_equality_constraint(LG.P, p, j)
+        if hpj > 0
             get_grad_inequality_constraint!(EG.P, X, p, i)
-            grad_L .+= ((hp[j] / sqrt(hp[j]^2 + EG.u^2)) * eG.ρ) .* X
+            grad_L .+= ((hpj / sqrt(hpj^2 + EG.u^2)) * eG.ρ) .* X
         end
     end
     get_gradient!(EG.P, X, p)
