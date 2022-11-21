@@ -4,7 +4,7 @@
 Solve an optimization problem of the form
 
 ```math
-\operatorname{minimize}_{x ∈ \mathcal M} \lVert F(x) \rVert^2,
+\operatorname{minimize}_{x ∈ \mathcal M} \frac{1}{2} \lVert F(x) \rVert^2,
 ```
 
 where ``F: \mathcal M \to ℝ^d`` is a continuously differentiable function,
@@ -92,7 +92,7 @@ function (d::DebugGradient)(::NonlinearLeastSquaresProblem, o::Options, i::Int)
 end
 
 function get_cost(P::NonlinearLeastSquaresProblem, p)
-    return norm(P.F(P.M, p))^2
+    return 1//2 * norm(P.F(P.M, p))^2
 end
 
 function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
@@ -131,6 +131,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
   the default set for your manifold.
+* `flagnz` -- if false, the algorithm expects that the value of residual at mimimum is equal
+  to 0.
 
 # Constructor
 
@@ -159,6 +161,7 @@ mutable struct LevenbergMarquardtOptions{
     gradient::TGrad
     η::Tparams
     μ::Tparams
+    μ_min::Tparams
     β::Tparams
     flagnz::Bool
     function LevenbergMarquardtOptions{P}(
@@ -171,7 +174,7 @@ mutable struct LevenbergMarquardtOptions{
         η::Real=0.2,
         μmin::Real=0.1,
         β::Real=5.0,
-        flagnz::Bool=false,
+        flagnz::Bool=true,
     ) where {P,TJac,TGrad}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
@@ -191,6 +194,7 @@ mutable struct LevenbergMarquardtOptions{
             initial_jacF,
             initial_gradient,
             η,
+            μmin,
             μmin,
             β,
             flagnz,
@@ -257,20 +261,19 @@ function step_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOpti
     # problem because JJ is symmetric positive definite
     grad_f_c = transpose(o.jacF) * Fk
     sk = cholesky(JJ) \ -grad_f_c
-    # TODO: we may or may not need to fill o.gradient?
     get_vector!(p.M, o.gradient, o.x, grad_f_c, DefaultOrthonormalBasis())
     # TODO: how to specify basis?
-    temp_x = retract(
-        p.M, o.x, get_vector(p.M, o.x, sk, DefaultOrthonormalBasis()), o.retraction_method
-    )
+    X_sk = get_vector(p.M, o.x, sk, DefaultOrthonormalBasis())
+    temp_x = retract(p.M, o.x, X_sk, o.retraction_method)
+
     normFk2 = norm(Fk)^2
     ρk =
         2 * (normFk2 - norm(p.F(p.M, temp_x))^2) /
-        (normFk2 - norm(Fk + o.jacF * sk)^2 - λk * norm(sk))
+        (-2 * inner(o.M, o.x, o.gradient, X_sk) - norm(o.jacF * sk)^2 - λk * norm(sk))
     if ρk >= o.η
         copyto!(p.M, o.x, temp_x)
         if !o.flagnz
-            o.μ /= o.β
+            o.μ = max(o.μ_min, o.μ / o.β)
         end
     else
         o.μ *= o.β
