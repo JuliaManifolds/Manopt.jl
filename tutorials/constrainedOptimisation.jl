@@ -164,11 +164,11 @@ We change this _both_ into a vector of gradient functions `\operatorname{grad} g
 """
 
 # ╔═╡ fb86f597-f8af-4c98-b5b1-4db0dfc06199
-g2 = [ (M, p) -> -p[i] for i in 1:d ]
+g2 = [ (M, p) -> -p[i] for i in 1:d ];
 
 # ╔═╡ 1d427174-57da-41d6-8577-d97d643a2142
-grad_g! = [
-	(M, X, p) -> project!(M, X, p, [i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
+grad_g2! = [
+	(M, X, p) -> project!(M, X, p, -[i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
 ];
 
 # ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
@@ -179,7 +179,7 @@ grad_g! = [
     x0;
 	evaluation=MutatingEvaluation(),
     G=g2,
-    gradG=grad_g!,
+    gradG=grad_g2!,
     debug=[:Iteration, :Cost, :Stop, 10, "\n"],
     sub_kwargs=[:debug => ["   ", :Iteration, :Cost, " | ",DebugStepsize(), :Change, :Stop, 50, "\n"]],
 )
