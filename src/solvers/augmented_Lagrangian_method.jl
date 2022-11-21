@@ -16,11 +16,11 @@ where ``μ^{(k-1)} \in \mathbb R^n`` and ``λ^{(k-1)} \in \mathbb R^m`` are the 
 
 The Lagrange multipliers are then updated by
 ```math
-λ_j^{(k)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p,
+λ_j^{(k)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p,
 ```
 and
 ```math
-μ_i^{(k)} =\operatorname{clip}_{[0,μ_{\max}]} (μ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{for all}  i=1,…,m,
+μ_i^{(k)} =\operatorname{clip}_{[0,μ_{\max}]} (μ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{ for all } i=1,…,m,
 ```
 where ``λ_{\min} \leq λ_{\max}`` and ``μ_{\max}`` are the multiplier boundaries.
 
@@ -82,6 +82,7 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
     > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
     > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
     > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3),
+    > arXiv: [1901.10000](https://arxiv.org/abs/1901.10000)
     > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 """
 function augmented_Lagrangian_method(

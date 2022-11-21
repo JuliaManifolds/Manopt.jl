@@ -44,6 +44,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
     > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
     > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
     > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3),
+    > arXiv: [1901.10000](https://arxiv.org/abs/1901.10000).
     > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 
 # Input

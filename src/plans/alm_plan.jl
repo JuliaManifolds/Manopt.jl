@@ -157,19 +157,74 @@ mutable struct AugmentedLagrangianGrad{Pr,R,T}
     μ::T
     λ::T
 end
+# default, that is especially when the grad_g and grad_h are functions.
 function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
+    println("flmps1")
     gp = get_inequality_constraints(LG.P, p)
     hp = get_equality_constraints(LG.P, p)
     m = length(gp)
     n = length(hp)
-    grad_ineq = zero_vector(M, p)
+    grad_L = zero_vector(M, p)
     (m > 0) && (
-        grad_ineq = sum(
+        grad_L += sum(
             ((gp .* LG.ρ .+ LG.μ) .* get_grad_inequality_constraints(LG.P, p)) .*
             ((gp .+ LG.μ ./ LG.ρ) .> 0),
         )
     )
-    grad_eq = zero_vector(M, p)
-    (n > 0) && (grad_eq = sum((hp .* LG.ρ .+ LG.λ) .* get_grad_eqality_constraint(LG.P, p)))
-    return get_gradient(LG.P, p) + grad_ineq + grad_eq
+    (n > 0) && (grad_L += sum((hp .* LG.ρ .+ LG.λ) .* get_grad_eqality_constraint(LG.P, p)))
+    return get_gradient(LG.P, p) + grad_L
+end
+# Allocating vector -> we can omit a few of the ineq gradients.
+function (
+    LG::AugmentedLagrangianGrad{
+        <:ConstrainedProblem{<:AllocatingEvaluation,<:FunctionConstraint}
+    }
+)(
+    M::AbstractManifold, p
+)
+    gp = get_inequality_constraints(LG.P, p)
+    hp = get_equality_constraints(LG.P, p)
+    m = length(gp)
+    n = length(hp)
+    grad_L = zero_vector(M, p)
+    for i in 1:m
+        if (gp[i] + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
+            grad_L .+=
+                (gp[i] * LG.ρ + LG.μ[i]) .* get_grad_inequality_constraint(LG.P, p, i)
+        end
+    end
+    for j in 1:n
+        grad_L .+= (hp[j] * LG.ρ + LG.λ[j]) .* get_grad_eqality_constraint(LG.P, p, i)
+    end
+    return get_gradient(LG.P, p) + grad_L
+end
+# mutating vector -> we can omit a few of the ineq gradients and allocations.
+function (
+    LG::AugmentedLagrangianGrad{
+        <:ConstrainedProblem{<:MutatingEvaluation,<:FunctionConstraint}
+    }
+)(
+    M::AbstractManifold, p
+)
+    println("flmps3")
+    gp = get_inequality_constraints(LG.P, p)
+    hp = get_equality_constraints(LG.P, p)
+    m = length(gp)
+    n = length(hp)
+    grad_L = zero_vector(M, p)
+    X = zero_vector(M, p)
+    for i in 1:m
+        if (gp[i] + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
+            # evaluate in place
+            get_grad_inequality_constraint!(LG.P, X, p, i)
+            grad_L .+= (gp[i] * LG.ρ + LG.μ[i]) .* X
+        end
+    end
+    for j in 1:n
+        # evaluate in place
+        get_grad_equality_constraint!(LG.P, X, p, i)
+        grad_L .+= (hp[i] * LG.ρ + LG.λ[j]) * X
+    end
+    get_gradient!(LG.P, X, p)
+    return X + grad_L
 end
