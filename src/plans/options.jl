@@ -141,11 +141,22 @@ get_gradient(o::Options, ::Val{true}) = get_gradient(o.options)
 
 return the (last stored) iterate within [`Options`](@ref)``O`. By default also undecorates the options beforehand
 """
-get_iterate(o::Options) = get_iterate(o, dispatch_options_decorator(o))
-function get_iterate(o::Options, ::Val{false})
-    return error("It seems the Options $o do not provide access to an iterate")
+get_iterate(O::Options) = get_iterate(O, dispatch_options_decorator(O))
+function get_iterate(O::Options, ::Val{false})
+    return error("It seems the Options $O do not provide access to an iterate")
 end
-get_iterate(o::Options, ::Val{true}) = get_iterate(o.options)
+get_iterate(O::Options, ::Val{true}) = get_iterate(O.options)
+
+"""
+    set_iterate!(O::Options, p)
+
+set the iterate to some (start) value `p`.
+"""
+set_iterate!(O::Options, p) = set_iterate!(O, p, dispatch_options_decorator(O))
+function set_iterate!(O::Options, p, ::Val{false})
+    return error("It seems the Options $O do not provide (write) access to an iterate")
+end
+set_iterate!(O::Options, p, ::Val{true}) = set_iterate!(O.options, p)
 
 """
     get_solver_result(O::Options)

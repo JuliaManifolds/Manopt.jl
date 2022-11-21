@@ -116,3 +116,7 @@ mutable struct ParticleSwarmOptions{
     end
 end
 get_iterate(O::ParticleSwarmOptions) = O.x
+function set_iterate!(O::ParticleSwarmOptions, p)
+    O.x = p
+    return O
+end

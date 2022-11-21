@@ -84,7 +84,10 @@ mutable struct ExactPenaltyMethodOptions{
     end
 end
 get_iterate(O::ExactPenaltyMethodOptions) = O.x
-
+function set_iterate!(O::ExactPenaltyMethodOptions, p)
+    O.x = p
+    return O
+end
 """
     abstract type SmoothingTechnique
 

@@ -184,7 +184,8 @@ function step_solver!(p::ConstrainedProblem, o::AugmentedLagrangianMethodOptions
     o.sub_problem.gradient!!.ρ = o.ρ
     o.sub_problem.gradient!!.μ = o.μ
     o.sub_problem.gradient!!.λ = o.λ
-    o.sub_options.x = copy(o.x)
+    set_iterate!(o.sub_options, copy(o.x))
+
     update_stopping_criterion!(o, :MinIterateChange, o.ϵ)
 
     o.x = get_solver_result(solve(o.sub_problem, o.sub_options))

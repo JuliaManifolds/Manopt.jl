@@ -93,7 +93,10 @@ abstract type AbstractGradientOptions <: Options end
 
 get_gradient(o::AbstractGradientOptions) = o.gradient
 get_iterate(o::AbstractGradientOptions) = o.x
-
+function set_iterate!(O::AbstractGradientOptions, p)
+    O.x = p
+    return O
+end
 @doc raw"""
     GradientDescentOptions{P,T} <: AbstractGradientOptions
 
