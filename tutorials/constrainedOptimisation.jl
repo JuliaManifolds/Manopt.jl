@@ -8,7 +8,7 @@ using InteractiveUtils
 using Pkg; Pkg.activate();
 
 # ╔═╡ ff6edcbd-b70d-4c5f-a5da-d3a221c7d595
-using Distributions, LinearAlgebra, Manifolds, Manopt, Random
+using Distributions, LinearAlgebra, Manifolds, Manopt, Random, Plots
 
 # ╔═╡ 23c48862-6984-11ed-0a6d-9f6c98ae7134
 md"""
@@ -38,6 +38,9 @@ This can be seen as a balance between moving constraints into the geometry of a 
 
 # ╔═╡ 7c0b460e-34e4-4d7b-be51-71f4a38f28e3
 md"Let's first again load the necessary packages"
+
+# ╔═╡ 2aea4a84-bd85-4eb4-9537-c19a4910637b
+pyplot()
 
 # ╔═╡ 8b0eae06-2218-4a22-a7ae-fc2344ab09f1
 Random.seed!(42);
@@ -129,6 +132,30 @@ grad_g(M, p) = project.(Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for 
 # ╔═╡ 72e99369-165b-494e-9acc-7719a12d9d8d
 x0 = random_point(M);
 
+# ╔═╡ f602acaf-8100-449d-bc57-6bd4ac6531de
+CP = ConstrainedProblem(M, f, grad_f, g, grad_g)
+
+# ╔═╡ 55fb3017-5e1d-4206-b725-c0cfaf25ed49
+ALC = AugmentedLagrangianCost(CP, 1.0, ones(d), ones(0))
+
+# ╔═╡ 03dd6b28-8c2c-4694-a246-16ab0f1e98fd
+gradALC = AugmentedLagrangianGrad(CP, 1.0, ones(d), ones(0))
+
+# ╔═╡ 70c928fa-855d-423a-baeb-eac170ae7e43
+check_gradient(M, ALC, gradALC,x0, plot=true, check_vector=false, throw_error=true)
+
+# ╔═╡ eba57714-59f0-4a36-b9e5-929fe11a9e59
+@time v1 = augmented_Lagrangian_method(
+    M,
+    f,
+    grad_f,
+    x0;
+    G=g,
+    gradG=grad_g,
+    debug=[:Iteration, :Cost, :Stop, :Change, 10, "\n"],
+    sub_kwargs=[:debug => ["   ", :Iteration, :Cost, " | ",DebugStepsize(), :Change, :Stop, 50, "\n"]],
+)
+
 # ╔═╡ c72709e1-7bae-4345-b29b-4ef1e791292b
 md"""
 Now this is a little slow, so we can modify two things, that we will directly do both – but one could also just change one of these – :
@@ -190,6 +217,7 @@ md"""
 # ╟─7c0b460e-34e4-4d7b-be51-71f4a38f28e3
 # ╠═39dcf482-5b7c-437d-b000-b0766a1e3fc7
 # ╠═ff6edcbd-b70d-4c5f-a5da-d3a221c7d595
+# ╠═2aea4a84-bd85-4eb4-9537-c19a4910637b
 # ╠═8b0eae06-2218-4a22-a7ae-fc2344ab09f1
 # ╟─6db180cf-ccf9-4a9e-b69f-1b39db6703d3
 # ╟─4045214f-dada-4211-afe7-056f78492d8c
@@ -210,6 +238,11 @@ md"""
 # ╟─0f71531d-b292-477d-b108-f45dc4e680ad
 # ╠═9e7028c9-0f15-4245-a089-2670c26b3b40
 # ╠═72e99369-165b-494e-9acc-7719a12d9d8d
+# ╠═f602acaf-8100-449d-bc57-6bd4ac6531de
+# ╠═55fb3017-5e1d-4206-b725-c0cfaf25ed49
+# ╠═03dd6b28-8c2c-4694-a246-16ab0f1e98fd
+# ╠═70c928fa-855d-423a-baeb-eac170ae7e43
+# ╠═eba57714-59f0-4a36-b9e5-929fe11a9e59
 # ╟─c72709e1-7bae-4345-b29b-4ef1e791292b
 # ╠═717bd019-2978-4e55-a586-ed876cefa65d
 # ╟─db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
