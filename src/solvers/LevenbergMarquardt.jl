@@ -159,6 +159,7 @@ mutable struct LevenbergMarquardtOptions{
     retraction_method::TRTM
     jacF::TJac
     gradient::TGrad
+    step_vector::TGrad
     η::Tparams
     μ::Tparams
     μ_min::Tparams
@@ -193,6 +194,7 @@ mutable struct LevenbergMarquardtOptions{
             retraction_method,
             initial_jacF,
             initial_gradient,
+            allocate(M, initial_gradient),
             η,
             μmin,
             μmin,
@@ -263,13 +265,15 @@ function step_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOpti
     sk = cholesky(JJ) \ -grad_f_c
     get_vector!(p.M, o.gradient, o.x, grad_f_c, DefaultOrthonormalBasis())
     # TODO: how to specify basis?
-    X_sk = get_vector(p.M, o.x, sk, DefaultOrthonormalBasis())
-    temp_x = retract(p.M, o.x, X_sk, o.retraction_method)
+    get_vector!(p.M, o.step_vector, o.x, sk, DefaultOrthonormalBasis())
+    temp_x = retract(p.M, o.x, o.step_vector, o.retraction_method)
 
     normFk2 = norm(Fk)^2
     ρk =
-        2 * (normFk2 - norm(p.F(p.M, temp_x))^2) /
-        (-2 * inner(o.M, o.x, o.gradient, X_sk) - norm(o.jacF * sk)^2 - λk * norm(sk))
+        2 * (normFk2 - norm(p.F(p.M, temp_x))^2) / (
+            -2 * inner(o.M, o.x, o.gradient, o.step_vector) - norm(o.jacF * sk)^2 -
+            λk * norm(sk)
+        )
     if ρk >= o.η
         copyto!(p.M, o.x, temp_x)
         if !o.flagnz

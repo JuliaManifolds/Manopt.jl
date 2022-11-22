@@ -293,13 +293,15 @@ print a small `div`ider (default `" | "`).
     DebugDivider(div,print)
 
 """
-mutable struct DebugDivider <: DebugAction
-    io::IO
+mutable struct DebugDivider{TIO<:IO} <: DebugAction
+    io::TIO
     divider::String
-    DebugDivider(divider=" | ", io::IO=stdout) = new(io, divider)
+    DebugDivider(divider=" | ", io::IO=stdout) = new{typeof(io)}(io, divider)
 end
 function (d::DebugDivider)(::Problem, ::Options, i::Int)
-    print(d.io, (i >= 0) ? d.divider : "")
+    if i >= 0 && !isempty(d.divider)
+        print(d.io, d.divider)
+    end
     return nothing
 end
 
