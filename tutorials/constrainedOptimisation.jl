@@ -124,28 +124,10 @@ For the constraints this is a little more involved, since each function ``g_i = 
 """
 
 # ╔═╡ 9e7028c9-0f15-4245-a089-2670c26b3b40
-grad_g(M, p) = project.(
-	Ref(M),
-	Ref(p),
-	[[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
+grad_g(M, p) = project.(Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
 
 # ╔═╡ 72e99369-165b-494e-9acc-7719a12d9d8d
 x0 = random_point(M);
-
-# ╔═╡ 24dadb9b-c9fc-4417-aeff-d43fdda62069
-@time v1 = augmented_Lagrangian_method(
-    M,
-    f,
-    grad_f,
-    x0;
-    G=g,
-    gradG=grad_g,
-    debug=[:Iteration, :Cost, :Stop, :Change, 10, "\n"],
-    sub_kwargs=[:debug => ["   ", :Iteration, :Cost, " | ",DebugStepsize(), :Change, :Stop, 50, "\n"]],
-)
-
-# ╔═╡ 39a4c15b-f991-4188-b41f-7f8283c9ea76
-distance(M, v1, v0)
 
 # ╔═╡ c72709e1-7bae-4345-b29b-4ef1e791292b
 md"""
@@ -164,11 +146,11 @@ We change this _both_ into a vector of gradient functions `\operatorname{grad} g
 """
 
 # ╔═╡ fb86f597-f8af-4c98-b5b1-4db0dfc06199
-g2 = [ (M, p) -> -p[i] for i in 1:d ];
+g2 = [(M, p) -> -p[i] for i in 1:d];
 
 # ╔═╡ 1d427174-57da-41d6-8577-d97d643a2142
 grad_g2! = [
-	(M, X, p) -> project!(M, X, p, -[i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
+    (M, X, p) -> project!(M, X, p, -[i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
 ];
 
 # ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
@@ -177,11 +159,14 @@ grad_g2! = [
     f,
     grad_f!,
     x0;
-	evaluation=MutatingEvaluation(),
+    evaluation=MutatingEvaluation(),
     G=g2,
     gradG=grad_g2!,
     debug=[:Iteration, :Cost, :Stop, 10, "\n"],
-    sub_kwargs=[:debug => ["   ", :Iteration, :Cost, " | ",DebugStepsize(), :Change, :Stop, 50, "\n"]],
+    sub_kwargs=[
+        :debug =>
+            ["   ", :Iteration, :Cost, " | ", DebugStepsize(), :Change, :Stop, 50, "\n"],
+    ],
 )
 
 # ╔═╡ 78d055e8-d5c8-4cdf-a706-3089368397bd
@@ -225,8 +210,6 @@ md"""
 # ╟─0f71531d-b292-477d-b108-f45dc4e680ad
 # ╠═9e7028c9-0f15-4245-a089-2670c26b3b40
 # ╠═72e99369-165b-494e-9acc-7719a12d9d8d
-# ╠═24dadb9b-c9fc-4417-aeff-d43fdda62069
-# ╠═39a4c15b-f991-4188-b41f-7f8283c9ea76
 # ╟─c72709e1-7bae-4345-b29b-4ef1e791292b
 # ╠═717bd019-2978-4e55-a586-ed876cefa65d
 # ╟─db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
