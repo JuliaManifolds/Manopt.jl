@@ -188,8 +188,7 @@ function (
     for i in 1:m
         gpi = get_inequality_constraint(LG.P, p, i)
         if (gpi + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
-            grad_L .+=
-                (gpi * LG.ρ + LG.μ[i]) .* get_grad_inequality_constraint(LG.P, p, i)
+            grad_L .+= (gpi * LG.ρ + LG.μ[i]) .* get_grad_inequality_constraint(LG.P, p, i)
         end
     end
     for j in 1:n

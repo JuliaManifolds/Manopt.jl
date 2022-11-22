@@ -103,26 +103,28 @@ function augmented_Lagrangian_method!(
     F::TF,
     gradF::TGF,
     x=random_point(M);
-    G::Union{AbstractVector{<:Function},Function}=(M, x) -> [],
-    H::Union{AbstractVector{<:Function},Function}=(M, x) -> [],
-    gradG::Union{AbstractVector{<:Function},Function}=(M, x) -> [],
-    gradH::Union{AbstractVector{<:Function},Function}=(M, x) -> [],
+    G=nothing,
+    H=nothing,
+    gradG=nothing,
+    gradH=nothing,
     evaluation=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
     ϵ_exponent=1 / 100,
     θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-    μ::Vector= G isa Function ? ones(size(G(M, x))) : ones(length(G)),
+    _m=isnothing(G) ? 0 : (G isa Function ? size(G(M, x)) : length(G)),
+    μ::Vector=ones(_m),
     μ_max::Real=20.0,
-    λ::Vector= H isa Function ? ones(size(H(M, x))) : ones(length(H)),
+    _n=isnothing(H) ? 0 : (H isa Function ? size(H(M, x)) : length(H)),
+    λ::Vector=ones(_n),
     λ_max::Real=20.0,
     λ_min::Real=-λ_max,
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
-    problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
-    sub_cost=AugmentedLagrangianCost(problem, ρ, μ, λ),
-    sub_grad=AugmentedLagrangianGrad(problem, ρ, μ, λ),
+    _problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
+    sub_cost=AugmentedLagrangianCost(_problem, ρ, μ, λ),
+    sub_grad=AugmentedLagrangianGrad(_problem, ρ, μ, λ),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(200) |
                            StopWhenGradientNormLess(ϵ) |
@@ -148,7 +150,7 @@ function augmented_Lagrangian_method!(
 ) where {TF,TGF}
     o = AugmentedLagrangianMethodOptions(
         M,
-        problem,
+        _problem,
         x,
         sub_problem,
         sub_options;
@@ -166,7 +168,7 @@ function augmented_Lagrangian_method!(
         stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(problem, o))
+    return get_solver_return(solve(_problem, o))
 end
 
 #
