@@ -76,7 +76,9 @@ Check numerivcally whether the gradient `gradF(M,p)` of `F(M,p)` is correct.
 
 This implements the method described in Section 4.8 [^Boumal2022].
 
-Its keyword arguments are the same as for the [`check_differential`](@ref).
+Its keyword arguments are the same as for the [`check_differential`](@ref) and Additionally
+
+* `check_vector` _ (`true`) whether or not to check that the gradient is a tangent vector.
 """
 function check_gradient(
     M::AbstractManifold,
@@ -84,11 +86,13 @@ function check_gradient(
     gradF,
     p=random_point(M),
     X=random_tangent(M, p);
+    check_vector=true,
     throw_error=false,
     kwargs...,
 )
     gradient = gradF(M, p)
-    is_vector(M, p, gradient, throw_error)
+    check_vector && is_vector(M, p, gradient, throw_error;
+    )
     # function for the directional derivative
     df(M, p, Y) = inner(M, p, gradient, Y)
     return check_differential(M, F, df, p, X; throw_error=throw_error, kwargs...)
