@@ -56,12 +56,22 @@ This difference is indicated by the `evaluation` keyword.
 
 # Constructors
 
-    ConstrainedProblem(M::AbstractManifold, F, G, H, gradF, gradG, gradH;
+    ConstrainedProblem(M::AbstractManifold, F, gradF, G, gradG, H, gradH;
         evaluation=AllocatingEvaluation()
     )
 
 Where `F, G, H` describe the cost, inequality and equality constraints as described above
 and `gradF, gradG, gradH` are the corresponding gradient functions in one of the 4 formats.
+If the problem does not have inequality constraints, you can set `G` and `gradG` no `nothing`.
+If the problem does not have equality constraints, you can set `H` and `gradH` no `nothing` or leave them out.
+
+    ConstrainedProblem(M::AbstractManifold, F, gradF;
+        G=nothing, gradG=nothing, H=nothing, gradH=nothing;
+        evaluation=AllocatingEvaluation()
+    )
+
+A keyword argument variant of the constructor above, where you can leave out either
+`G` and `gradG` _or_ `H` and `gradH` but not both.
 """
 struct ConstrainedProblem{T,CT<:ConstraintType,MT<:AbstractManifold,TCost,GF,TG,GG,TH,GH} <:
        AbstractGradientProblem{T}
@@ -73,6 +83,9 @@ struct ConstrainedProblem{T,CT<:ConstraintType,MT<:AbstractManifold,TCost,GF,TG,
     H::TH
     gradH!!::GH
 end
+#
+# Functions
+#
 function ConstrainedProblem(
     M::MT,
     F::TF,
@@ -97,6 +110,63 @@ function ConstrainedProblem(
         M, F, gradF, G, gradG, H, gradH
     )
 end
+# Function without inequality constraints
+function ConstrainedProblem(
+    M::MT,
+    F::TF,
+    gradF::TGF,
+    ::Nothing,
+    ::Nothing,
+    H::Function,
+    gradH::Function;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+) where {MT<:AbstractManifold,TF,TGF}
+    lG = (M, p) -> []
+    lgradG = evaluation === AllocatingEvaluation() ? (M, p) -> [] : (M, X, p) -> []
+    return ConstrainedProblem{
+        typeof(evaluation),
+        FunctionConstraint,
+        MT,
+        TF,
+        TGF,
+        typeof(lG),
+        typeof(lgradG),
+        typeof(H),
+        typeof(gradH),
+    }(
+        M, F, gradF, lG, lgradG, H, gradH
+    )
+end
+# No equality constraints
+function ConstrainedProblem(
+    M::MT,
+    F::TF,
+    gradF::TGF,
+    G::Function,
+    gradG::Function,
+    ::Nothing=nothing,
+    ::Nothing=nothing;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+) where {MT<:AbstractManifold,TF,TGF}
+    lH = (M, p) -> []
+    lgradH = evaluation === AllocatingEvaluation() ? (M, p) -> [] : (M, X, p) -> []
+    return ConstrainedProblem{
+        typeof(evaluation),
+        FunctionConstraint,
+        MT,
+        TF,
+        TGF,
+        typeof(G),
+        typeof(gradG),
+        typeof(lH),
+        typeof(lgradH),
+    }(
+        M, F, gradF, G, gradG, lH, lgradH
+    )
+end
+#
+# Vectors
+#
 function ConstrainedProblem(
     M::MT,
     F::TF,
@@ -120,6 +190,92 @@ function ConstrainedProblem(
     }(
         M, F, gradF, G, gradG, H, gradH
     )
+end
+# equality not provided
+function ConstrainedProblem(
+    M::MT,
+    F::TF,
+    gradF::TGF,
+    ::Nothing,
+    ::Nothing,
+    H::AbstractVector{<:Function},
+    gradH::AbstractVector{<:Function};
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+) where {MT<:AbstractManifold,TF,TGF}
+    lG = Vector{Function}()
+    lgradG = Vector{Function}()
+    return ConstrainedProblem{
+        typeof(evaluation),
+        VectorConstraint,
+        MT,
+        TF,
+        TGF,
+        typeof(lG),
+        typeof(lgradG),
+        typeof(H),
+        typeof(gradH),
+    }(
+        M, F, gradF, lG, lgradG, H, gradH
+    )
+end
+# No eqality constraints provided
+function ConstrainedProblem(
+    M::MT,
+    F::TF,
+    gradF::TGF,
+    G::AbstractVector{<:Function},
+    gradG::AbstractVector{<:Function},
+    ::Nothing,
+    ::Nothing;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+) where {MT<:AbstractManifold,TF,TGF}
+    lH = Vector{Function}()
+    lgradH = Vector{Function}()
+    return ConstrainedProblem{
+        typeof(evaluation),
+        VectorConstraint,
+        MT,
+        TF,
+        TGF,
+        typeof(G),
+        typeof(gradG),
+        typeof(lH),
+        typeof(lgradH),
+    }(
+        M, F, gradF, G, gradG, lH, lgradH
+    )
+end
+#
+# Neither equality nor inequality yields an error
+#
+function ConstrainedProblem(
+    ::MT,
+    ::TF,
+    ::TGF,
+    ::Nothing,
+    ::Nothing,
+    ::Nothing,
+    ::Nothing;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+) where {MT<:AbstractManifold,TF,TGF}
+    return error(
+        """
+  Neither inequality constraints `G`, `gradG` nor equality constraints `H` `gradH` provided.
+  If you have an unconstraint problem, maybe consider using a `GradientProblem` instead.
+  """
+    )
+end
+function ConstrainedProblem(
+    M::MT,
+    F::TF,
+    gradF::TGF;
+    G=nothing,
+    gradG=nothing,
+    H=nothing,
+    gradH=nothing,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+) where {MT<:AbstractManifold,TF,TGF}
+    return ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation)
 end
 """
     get_constraints(P::ConstrainedProblem, p)
