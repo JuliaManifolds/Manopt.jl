@@ -126,7 +126,7 @@ function augmented_Lagrangian_method!(
     sub_cost=AugmentedLagrangianCost(_problem, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(_problem, ρ, μ, λ),
     sub_kwargs=[],
-    sub_stopping_criterion=StopAfterIteration(200) |
+    sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-10),
     sub_options::Options=decorate_options(
