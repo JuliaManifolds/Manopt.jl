@@ -3,7 +3,7 @@ using Manopt, ManifoldsBase, Test
 @testset "Constrained Plan" begin
     M = ManifoldsBase.DefaultManifold(3)
     # Cost
-    F(M, p) = norm(M, p)^2
+    F(::ManifoldsBase.DefaultManifold, p) = norm(p)^2
     gradF(M, p) = 2 * p
     gradF!(M, X, p) = (X .= 2 * p)
     # Inequality constraints
@@ -90,5 +90,26 @@ using Manopt, ManifoldsBase, Test
             @test X == gf
         end
     end
-    @testset "Augmented Lagrangian Cost & Grad" begin end
+    @testset "Augmented Lagrangian Cost & Grad" begin
+        μ = [1.0, 1.0]
+        λ = [1.0]
+        ρ = 0.1
+        cg = sum(max.([0.0, 0.0], c[1] .+ μ ./ ρ) .^ 2)
+        ch = sum((c[2] .+ λ ./ ρ) .^ 2)
+        ac = F(M, p) + ρ / 2 * (cg + ch)
+        agg = sum((c[1] .* ρ .+ μ) .* gg .* (c[1] .+ μ ./ ρ .> 0))
+        agh = sum((c[2] .* ρ .+ λ) .* gh)
+        ag = gf + agg + agh
+        X = zero_vector(M, p)
+        for P in [Pfa, Pfm, Pva, Pvm]
+            @testset "$P" begin
+                ALC = AugmentedLagrangianCost(P, ρ, μ, λ)
+                @test ALC(M, p) ≈ ac
+                gALC = AugmentedLagrangianGrad(P, ρ, μ, λ)
+                @test gALC(M, p) ≈ ag
+                gALC(M, X, p)
+                @test gALC(M, X, p) ≈ ag
+            end
+        end
+    end
 end
