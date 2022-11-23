@@ -153,26 +153,32 @@ x0
 # ╔═╡ c2f0008d-c65a-4daa-b411-b7be0d25e0e1
 vgg = grad_g(M,x0)
 
-# ╔═╡ 55caf567-73fb-4c9a-b717-554823de0f65
-ALC.λ
-
 # ╔═╡ c420d478-a35a-4e9c-93ce-5f965b353233
 ALC(M,x0)
 
 # ╔═╡ 2ca8e2cf-b2ef-4fb2-bf7a-d80e474ad89a
 f(M, x0)
 
-# ╔═╡ a4e03c15-06c8-4435-af70-688c80fe9170
-L=ALC
-
-# ╔═╡ 35ccb5af-eea0-458e-ab68-80c77263266a
-p = x0
-
 # ╔═╡ 04894517-317d-4da4-ad8e-469f010aaf9f
 f(M, x0) + 1/2 * sum( (ALC.μ ./ ALC.ρ .+ g(M,x0)).^2 )
 
+# ╔═╡ f6763dda-0c62-435e-a935-19caa1944bb5
+ALC(M, x0)
+
+# ╔═╡ 3391de6d-869a-43aa-92d4-06b361cb75ae
+pos = (ALC.μ ./ ALC.ρ .+ g(M,x0)) .> 0
+
+# ╔═╡ 6fd21f2e-bb47-49ae-8401-e4405e75656c
+get_grad_inequality_constraints(gradALC.P, x0)
+
+# ╔═╡ c5fe44a5-2186-4541-ac0d-5a8faa5d6445
+vgradf = grad_f(M, x0)
+
 # ╔═╡ 6ac6dad8-40f6-4cf5-9348-b1d589718ee0
-max.(zeros(3), ALC.μ ./ ALC.ρ)
+vgradf .+ sum((ALC.μ + ALC.ρ .* g(M,x0)) .* vgg)
+
+# ╔═╡ f65ad16d-ffe5-4e4a-8047-4642a0324589
+gradALC(M, x0)
 
 # ╔═╡ 74574bc7-db5e-4250-96f7-8766e20ca0c8
 # All numbers above indicate that both g and grad g are correct but the gradient check fails – I have no clue why – and the (deactivated) minimisation hence also fails, because if the gradient is not correct then why should it work.
@@ -295,13 +301,15 @@ md"""
 # ╠═bd1044a4-0cdc-43f9-acaf-848c139c5e5c
 # ╠═6866d0f4-6f23-4e3b-94d0-826d6ce1976e
 # ╠═c2f0008d-c65a-4daa-b411-b7be0d25e0e1
-# ╠═55caf567-73fb-4c9a-b717-554823de0f65
 # ╠═c420d478-a35a-4e9c-93ce-5f965b353233
 # ╠═2ca8e2cf-b2ef-4fb2-bf7a-d80e474ad89a
-# ╠═a4e03c15-06c8-4435-af70-688c80fe9170
-# ╠═35ccb5af-eea0-458e-ab68-80c77263266a
 # ╠═04894517-317d-4da4-ad8e-469f010aaf9f
+# ╠═f6763dda-0c62-435e-a935-19caa1944bb5
+# ╠═3391de6d-869a-43aa-92d4-06b361cb75ae
+# ╠═6fd21f2e-bb47-49ae-8401-e4405e75656c
+# ╠═c5fe44a5-2186-4541-ac0d-5a8faa5d6445
 # ╠═6ac6dad8-40f6-4cf5-9348-b1d589718ee0
+# ╠═f65ad16d-ffe5-4e4a-8047-4642a0324589
 # ╠═74574bc7-db5e-4250-96f7-8766e20ca0c8
 # ╠═70c928fa-855d-423a-baeb-eac170ae7e43
 # ╠═eba57714-59f0-4a36-b9e5-929fe11a9e59
