@@ -28,7 +28,7 @@ A constraint optimisation problem is given by
 \begin{align*}
 \operatorname*{arg\,min}_{p\in\mathcal M} & f(p)\\
 \text{such that} &\quad g(p) \leq 0\\
-&\quad h(p) = 0,\\ 
+&\quad h(p) = 0,\\
 \end{align*}
 ```
 where ``f\colon \mathcal M → ℝ`` is a cost function, and ``g\colon \mathcal M → ℝ^m`` and ``h\colon \mathcal M → ℝ^n`` are the inequality and equality constraints, respectively. The ``\leq`` and ``=`` in (P) are meant elementwise.
@@ -63,25 +63,25 @@ where ``\sigma`` is a signal-to-noise ratio and ``N`` is a matrix with random en
 """
 
 # ╔═╡ cd9f3e01-bd76-4972-a04e-028758baa9a3
-d = 17 # dimension of v0
+d = 3 # dimension of v0
 
 # ╔═╡ bd27b323-3571-4cb8-91a1-67fae56ef43b
-σ = 0.1 # SNR
+σ = 0.1^2# SNR
 
 # ╔═╡ d463b59a-69b3-4b7f-883b-c65ffe46efe9
-δ = 0.1; s = Int(floor(δ * d)); # Sparsity
+δ = 0.1; s = 1; #Int(floor(δ * d)); # Sparsity
 
 # ╔═╡ 7eaab1cc-9238-44cf-b57f-4321a486cdaa
-S = sample(1:d, s; replace=false)
+S = [1,] # sample(1:d, s; replace=false)
 
 # ╔═╡ 5654d627-25bc-4d6c-a562-49dad43799da
-v0 = [i ∈ S ? 1 / sqrt(s) : 0.0 for i in 1:d];
+v0 =  [i ∈ S ? 1 / sqrt(s) : 0.0 for i in 1:d]
 
 # ╔═╡ e906df2b-5db9-4540-9200-5e3e0671e269
-N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d);
+N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d); N .= 0
 
 # ╔═╡ 155a1401-79aa-4305-81f7-505e43c73094
-Z = sqrt(σ) * v0 * transpose(v0) + N;
+ Z = Z = sqrt(σ) * v0 * transpose(v0) + N
 
 # ╔═╡ dd078404-8c89-4655-b8ac-e9c816318361
 md"""
@@ -130,7 +130,7 @@ For the constraints this is a little more involved, since each function ``g_i = 
 grad_g(M, p) = project.(Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
 
 # ╔═╡ 72e99369-165b-494e-9acc-7719a12d9d8d
-x0 = random_point(M);
+x0 = [1/sqrt(2), 1/sqrt(2), 0.0]
 
 # ╔═╡ f602acaf-8100-449d-bc57-6bd4ac6531de
 CP = ConstrainedProblem(M, f, grad_f, g, grad_g)
@@ -138,13 +138,48 @@ CP = ConstrainedProblem(M, f, grad_f, g, grad_g)
 # ╔═╡ 55fb3017-5e1d-4206-b725-c0cfaf25ed49
 ALC = AugmentedLagrangianCost(CP, 1.0, ones(d), ones(0))
 
+# ╔═╡ f201e3a3-75e7-447d-90ad-5e6590cf6013
+
+
 # ╔═╡ 03dd6b28-8c2c-4694-a246-16ab0f1e98fd
 gradALC = AugmentedLagrangianGrad(CP, 1.0, ones(d), ones(0))
 
+# ╔═╡ bd1044a4-0cdc-43f9-acaf-848c139c5e5c
+vg = g(M,x0)
+
+# ╔═╡ 6866d0f4-6f23-4e3b-94d0-826d6ce1976e
+x0
+
+# ╔═╡ c2f0008d-c65a-4daa-b411-b7be0d25e0e1
+vgg = grad_g(M,x0)
+
+# ╔═╡ 55caf567-73fb-4c9a-b717-554823de0f65
+ALC.λ
+
+# ╔═╡ c420d478-a35a-4e9c-93ce-5f965b353233
+ALC(M,x0)
+
+# ╔═╡ 2ca8e2cf-b2ef-4fb2-bf7a-d80e474ad89a
+f(M, x0)
+
+# ╔═╡ a4e03c15-06c8-4435-af70-688c80fe9170
+L=ALC
+
+# ╔═╡ 35ccb5af-eea0-458e-ab68-80c77263266a
+p = x0
+
+# ╔═╡ 04894517-317d-4da4-ad8e-469f010aaf9f
+f(M, x0) + 1/2 * sum( (ALC.μ ./ ALC.ρ .+ g(M,x0)).^2 )
+
+# ╔═╡ 6ac6dad8-40f6-4cf5-9348-b1d589718ee0
+max.(zeros(3), ALC.μ ./ ALC.ρ)
+
 # ╔═╡ 70c928fa-855d-423a-baeb-eac170ae7e43
-check_gradient(M, ALC, gradALC,x0, plot=true, check_vector=false, throw_error=true)
+check_gradient(M, ALC, gradALC, copy(x0), plot=true, check_vector=false,throw_error=true)
 
 # ╔═╡ eba57714-59f0-4a36-b9e5-929fe11a9e59
+# ╠═╡ disabled = true
+#=╠═╡
 @time v1 = augmented_Lagrangian_method(
     M,
     f,
@@ -155,12 +190,13 @@ check_gradient(M, ALC, gradALC,x0, plot=true, check_vector=false, throw_error=tr
     debug=[:Iteration, :Cost, :Stop, :Change, 10, "\n"],
     sub_kwargs=[:debug => ["   ", :Iteration, :Cost, " | ",DebugStepsize(), :Change, :Stop, 50, "\n"]],
 )
+  ╠═╡ =#
 
 # ╔═╡ c72709e1-7bae-4345-b29b-4ef1e791292b
 md"""
 Now this is a little slow, so we can modify two things, that we will directly do both – but one could also just change one of these – :
 
-1. Gradients should be evaluated in place, so for example 
+1. Gradients should be evaluated in place, so for example
 """
 
 # ╔═╡ 717bd019-2978-4e55-a586-ed876cefa65d
@@ -175,12 +211,22 @@ We change this _both_ into a vector of gradient functions `\operatorname{grad} g
 # ╔═╡ fb86f597-f8af-4c98-b5b1-4db0dfc06199
 g2 = [(M, p) -> -p[i] for i in 1:d];
 
-# ╔═╡ 1d427174-57da-41d6-8577-d97d643a2142
-grad_g2! = [
-    (M, X, p) -> project!(M, X, p, -[i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
+# ╔═╡ 998acdb1-f0b8-4350-b632-a538767c8aec
+grad_g2 = [
+    (M, p) -> project!(M, p, [i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
 ];
 
+# ╔═╡ 1d427174-57da-41d6-8577-d97d643a2142
+grad_g2! = [
+    (M, X, p) -> project!(M, X, p, [i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
+];
+
+# ╔═╡ 922d8f2e-f17e-4ba8-a6b0-c12c8dc49fe4
+check_gradient(M, g2[2], grad_g2[2], copy(x0), check_vector=false, throw_error=true)
+
 # ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
+# ╠═╡ disabled = true
+#=╠═╡
 @time v2 = augmented_Lagrangian_method(
     M,
     f,
@@ -195,6 +241,7 @@ grad_g2! = [
             ["   ", :Iteration, :Cost, " | ", DebugStepsize(), :Change, :Stop, 50, "\n"],
     ],
 )
+  ╠═╡ =#
 
 # ╔═╡ 78d055e8-d5c8-4cdf-a706-3089368397bd
 md"""
@@ -233,20 +280,33 @@ md"""
 # ╠═0ee60004-e7e5-4c9a-8f1d-e493217f11be
 # ╠═8be00c3b-4385-449b-b58f-3d3ef972c3c3
 # ╠═950dab06-b89e-41c7-9d81-3e9f3fb51b4d
-# ╠═6218866b-18b5-47f7-98a6-6e1192cb1c24
+# ╟─6218866b-18b5-47f7-98a6-6e1192cb1c24
 # ╠═92ee76b4-e132-44c7-9ab3-ef4227969fa2
 # ╟─0f71531d-b292-477d-b108-f45dc4e680ad
 # ╠═9e7028c9-0f15-4245-a089-2670c26b3b40
 # ╠═72e99369-165b-494e-9acc-7719a12d9d8d
 # ╠═f602acaf-8100-449d-bc57-6bd4ac6531de
 # ╠═55fb3017-5e1d-4206-b725-c0cfaf25ed49
+# ╠═f201e3a3-75e7-447d-90ad-5e6590cf6013
 # ╠═03dd6b28-8c2c-4694-a246-16ab0f1e98fd
+# ╠═bd1044a4-0cdc-43f9-acaf-848c139c5e5c
+# ╠═6866d0f4-6f23-4e3b-94d0-826d6ce1976e
+# ╠═c2f0008d-c65a-4daa-b411-b7be0d25e0e1
+# ╠═55caf567-73fb-4c9a-b717-554823de0f65
+# ╠═c420d478-a35a-4e9c-93ce-5f965b353233
+# ╠═2ca8e2cf-b2ef-4fb2-bf7a-d80e474ad89a
+# ╠═a4e03c15-06c8-4435-af70-688c80fe9170
+# ╠═35ccb5af-eea0-458e-ab68-80c77263266a
+# ╠═04894517-317d-4da4-ad8e-469f010aaf9f
+# ╠═6ac6dad8-40f6-4cf5-9348-b1d589718ee0
 # ╠═70c928fa-855d-423a-baeb-eac170ae7e43
 # ╠═eba57714-59f0-4a36-b9e5-929fe11a9e59
 # ╟─c72709e1-7bae-4345-b29b-4ef1e791292b
 # ╠═717bd019-2978-4e55-a586-ed876cefa65d
 # ╟─db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
 # ╠═fb86f597-f8af-4c98-b5b1-4db0dfc06199
+# ╠═998acdb1-f0b8-4350-b632-a538767c8aec
 # ╠═1d427174-57da-41d6-8577-d97d643a2142
+# ╠═922d8f2e-f17e-4ba8-a6b0-c12c8dc49fe4
 # ╠═ce8f1156-a350-4fde-bd39-b08a16b2821d
 # ╟─78d055e8-d5c8-4cdf-a706-3089368397bd
