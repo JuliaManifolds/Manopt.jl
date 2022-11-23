@@ -91,8 +91,7 @@ function check_gradient(
     kwargs...,
 )
     gradient = gradF(M, p)
-    check_vector && is_vector(M, p, gradient, throw_error;
-    )
+    check_vector && is_vector(M, p, gradient, throw_error;)
     # function for the directional derivative
     df(M, p, Y) = inner(M, p, gradient, Y)
     return check_differential(M, F, df, p, X; throw_error=throw_error, kwargs...)
