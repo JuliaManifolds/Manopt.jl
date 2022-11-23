@@ -69,7 +69,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_cost` – ([`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian, expecially with the same numbers `ρ,μ` as in the options for the sub problem
 * `sub_grad` – ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian gradient, expecially with the same numbers `ρ,μ` as in the options for the sub problem
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
-* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
+* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
 * `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad)`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
@@ -128,7 +128,7 @@ function augmented_Lagrangian_method!(
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
-                           StopWhenStepsizeLess(1e-10),
+                           StopWhenStepsizeLess(1e-8),
     sub_options::Options=decorate_options(
         QuasiNewtonOptions(
             M,
@@ -138,13 +138,13 @@ function augmented_Lagrangian_method!(
                 M, copy(M, x), InverseBFGS(), 30
             ),
             stopping_criterion=sub_stopping_criterion,
-            stepsize=WolfePowellLinesearch(M, 1e-4, 0.999),
+            stepsize=WolfePowellLinesearch(M, 1e-3, 0.999, linesearch_stopsize=1e-8),
         );
         sub_kwargs...,
     ),
     sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-6)
     ),
     kwargs...,
 ) where {TF,TGF}
