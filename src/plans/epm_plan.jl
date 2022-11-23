@@ -219,7 +219,7 @@ function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(::AbstractManifo
             (exp.(hp ./ EG.u) .+ exp.(-hp ./ EG.u))
     )
     (n > 0) && (X .+= sum(get_grad_equality_constraints(EG.P, p) .* c))
-    return returnX
+    return X
 end
 
 # Default (e.g. functions constraints) - we have to evaluate all gradients
