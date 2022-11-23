@@ -174,6 +174,9 @@ f(M, x0) + 1/2 * sum( (ALC.μ ./ ALC.ρ .+ g(M,x0)).^2 )
 # ╔═╡ 6ac6dad8-40f6-4cf5-9348-b1d589718ee0
 max.(zeros(3), ALC.μ ./ ALC.ρ)
 
+# ╔═╡ 74574bc7-db5e-4250-96f7-8766e20ca0c8
+# All numbers above indicate that both g and grad g are correct but the gradient check fails – I have no clue why – and the (deactivated) minimisation hence also fails, because if the gradient is not correct then why should it work.
+
 # ╔═╡ 70c928fa-855d-423a-baeb-eac170ae7e43
 check_gradient(M, ALC, gradALC, copy(x0), plot=true, check_vector=false,throw_error=true)
 
@@ -299,6 +302,7 @@ md"""
 # ╠═35ccb5af-eea0-458e-ab68-80c77263266a
 # ╠═04894517-317d-4da4-ad8e-469f010aaf9f
 # ╠═6ac6dad8-40f6-4cf5-9348-b1d589718ee0
+# ╠═74574bc7-db5e-4250-96f7-8766e20ca0c8
 # ╠═70c928fa-855d-423a-baeb-eac170ae7e43
 # ╠═eba57714-59f0-4a36-b9e5-929fe11a9e59
 # ╟─c72709e1-7bae-4345-b29b-4ef1e791292b
