@@ -281,13 +281,13 @@ function (
 )(
     M::AbstractManifold, p::P
 ) where {P}
-    m = length(LG.P.G)
-    n = length(LG.P.H)
+    m = length(EG.P.G)
+    n = length(EG.P.H)
 
     grad_L = zero_vector(M, p)
     X = zero_vector(M, p)
     for i in 1:m
-        gpi = get_inequality_constraint(LG.P, p, i)
+        gpi = get_inequality_constraint(EG.P, p, i)
         if (gpi >= 0) # the cases where we have to evaluate the gradient
             if (gpi >= EG.u) # we can just add the gradient scaled by ρ
                 get_grad_inequality_constraint!(EG.P, X, p, i)
