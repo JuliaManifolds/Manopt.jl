@@ -128,7 +128,7 @@ function augmented_Lagrangian_method!(
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
-                           StopWhenStepsizeLess(1e-8),
+                           StopWhenStepsizeLess(1e-9),
     sub_options::Options=decorate_options(
         QuasiNewtonOptions(
             M,
@@ -138,13 +138,13 @@ function augmented_Lagrangian_method!(
                 M, copy(M, x), InverseBFGS(), 30
             ),
             stopping_criterion=sub_stopping_criterion,
-            stepsize=WolfePowellLinesearch(M, 1e-3, 0.999, linesearch_stopsize=1e-8),
+            stepsize=WolfePowellLinesearch(M, 1e-3, 0.999, linesearch_stopsize=1e-9),
         );
         sub_kwargs...,
     ),
     sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-6)
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-8)
     ),
     kwargs...,
 ) where {TF,TGF}

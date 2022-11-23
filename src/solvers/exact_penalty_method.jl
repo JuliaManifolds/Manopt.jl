@@ -97,10 +97,10 @@ function exact_penalty_method!(
     F::TF,
     gradF::TGF,
     x=random_point(M);
-    G::Function=(M, x) -> [],
-    H::Function=(M, x) -> [],
-    gradG::Function=(M, x) -> [],
-    gradH::Function=(M, x) -> [],
+    G=nothing,
+    H=nothing,
+    gradG=nothing,
+    gradH=nothing,
     evaluation=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
@@ -152,6 +152,7 @@ function exact_penalty_method!(
         θ_ρ=θ_ρ,
         θ_ϵ=θ_ϵ,
         θ_u=θ_u,
+        stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
     return get_solver_return(solve(problem, o))
