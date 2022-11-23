@@ -159,7 +159,6 @@ mutable struct AugmentedLagrangianGrad{Pr,R,T}
 end
 # default, that is especially when the grad_g and grad_h are functions.
 function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
-    println("flmps1")
     gp = get_inequality_constraints(LG.P, p)
     hp = get_equality_constraints(LG.P, p)
     m = length(gp)
@@ -205,7 +204,6 @@ function (
 )(
     M::AbstractManifold, p
 )
-    println("flmps3")
     m = length(LG.P.G)
     n = length(LG.P.H)
     grad_L = zero_vector(M, p)
