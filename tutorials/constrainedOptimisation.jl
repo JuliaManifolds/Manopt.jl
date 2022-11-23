@@ -63,25 +63,25 @@ where ``\sigma`` is a signal-to-noise ratio and ``N`` is a matrix with random en
 """
 
 # ╔═╡ cd9f3e01-bd76-4972-a04e-028758baa9a3
-d = 3 # dimension of v0
+d = 100 # dimension of v0
 
 # ╔═╡ bd27b323-3571-4cb8-91a1-67fae56ef43b
 σ = 0.1^2# SNR
 
 # ╔═╡ d463b59a-69b3-4b7f-883b-c65ffe46efe9
-δ = 0.1; s = 1; #Int(floor(δ * d)); # Sparsity
+δ = 0.1; s = Int(floor(δ * d)); # Sparsity
 
 # ╔═╡ 7eaab1cc-9238-44cf-b57f-4321a486cdaa
-S = [1,] # sample(1:d, s; replace=false)
+S = sample(1:d, s; replace=false)
 
 # ╔═╡ 5654d627-25bc-4d6c-a562-49dad43799da
-v0 =  [i ∈ S ? 1 / sqrt(s) : 0.0 for i in 1:d]
+v0 =  [i ∈ S ? 1 / sqrt(s) : 0.0 for i in 1:d];
 
 # ╔═╡ e906df2b-5db9-4540-9200-5e3e0671e269
-N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d); N .= 0
+N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d);
 
 # ╔═╡ 155a1401-79aa-4305-81f7-505e43c73094
- Z = Z = sqrt(σ) * v0 * transpose(v0) + N
+ Z = Z = sqrt(σ) * v0 * transpose(v0) + N;
 
 # ╔═╡ dd078404-8c89-4655-b8ac-e9c816318361
 md"""
@@ -102,7 +102,7 @@ M = Sphere(d - 1)
 
 # ╔═╡ 0ee60004-e7e5-4c9a-8f1d-e493217f11be
 md"""
-## a first test run
+## A first Augmented Lagrangian Run
 
 We first defined ``f``  and ``g`` as usual functions
 """
@@ -119,7 +119,7 @@ since ``f`` is a functions defined in the embedding ``ℝ^d`` as well, we obtain
 """
 
 # ╔═╡ 92ee76b4-e132-44c7-9ab3-ef4227969fa2
-grad_f(M, p) = project(M, p, -transpose(Z) * p / 2 - Z * p / 2)
+grad_f(M, p) = project(M, p, -transpose(Z) * p - Z * p)
 
 # ╔═╡ 0f71531d-b292-477d-b108-f45dc4e680ad
 md"""
@@ -130,65 +130,21 @@ For the constraints this is a little more involved, since each function ``g_i = 
 grad_g(M, p) = project.(Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
 
 # ╔═╡ 72e99369-165b-494e-9acc-7719a12d9d8d
-x0 = [1/sqrt(2), 1/sqrt(2), 0.0]
+x0 = random_point(M);
 
-# ╔═╡ f602acaf-8100-449d-bc57-6bd4ac6531de
-CP = ConstrainedProblem(M, f, grad_f, g, grad_g)
+# ╔═╡ aedd3604-7df6-46c5-a393-213da785b84f
+md" Let's check a few things for the initial point"
 
-# ╔═╡ 55fb3017-5e1d-4206-b725-c0cfaf25ed49
-ALC = AugmentedLagrangianCost(CP, 1.0, ones(d), ones(0))
-
-# ╔═╡ f201e3a3-75e7-447d-90ad-5e6590cf6013
-
-
-# ╔═╡ 03dd6b28-8c2c-4694-a246-16ab0f1e98fd
-gradALC = AugmentedLagrangianGrad(CP, 1.0, ones(d), ones(0))
-
-# ╔═╡ bd1044a4-0cdc-43f9-acaf-848c139c5e5c
-vg = g(M,x0)
-
-# ╔═╡ 6866d0f4-6f23-4e3b-94d0-826d6ce1976e
-x0
-
-# ╔═╡ c2f0008d-c65a-4daa-b411-b7be0d25e0e1
-vgg = grad_g(M,x0)
-
-# ╔═╡ c420d478-a35a-4e9c-93ce-5f965b353233
-ALC(M,x0)
-
-# ╔═╡ 2ca8e2cf-b2ef-4fb2-bf7a-d80e474ad89a
+# ╔═╡ 317403e3-8816-4761-b229-798710f3ed43
 f(M, x0)
 
-# ╔═╡ 04894517-317d-4da4-ad8e-469f010aaf9f
-f(M, x0) + 1/2 * sum( (ALC.μ ./ ALC.ρ .+ g(M,x0)).^2 )
+# ╔═╡ 00d8dd65-e57c-4810-80a3-28878a1938ea
+md" How much the function g is positive"
 
-# ╔═╡ f6763dda-0c62-435e-a935-19caa1944bb5
-ALC(M, x0)
-
-# ╔═╡ 3391de6d-869a-43aa-92d4-06b361cb75ae
-pos = (ALC.μ ./ ALC.ρ .+ g(M,x0)) .> 0
-
-# ╔═╡ 6fd21f2e-bb47-49ae-8401-e4405e75656c
-get_grad_inequality_constraints(gradALC.P, x0)
-
-# ╔═╡ c5fe44a5-2186-4541-ac0d-5a8faa5d6445
-vgradf = grad_f(M, x0)
-
-# ╔═╡ 6ac6dad8-40f6-4cf5-9348-b1d589718ee0
-vgradf .+ sum((ALC.μ + ALC.ρ .* g(M,x0)) .* vgg)
-
-# ╔═╡ f65ad16d-ffe5-4e4a-8047-4642a0324589
-gradALC(M, x0)
-
-# ╔═╡ 74574bc7-db5e-4250-96f7-8766e20ca0c8
-# All numbers above indicate that both g and grad g are correct but the gradient check fails – I have no clue why – and the (deactivated) minimisation hence also fails, because if the gradient is not correct then why should it work.
-
-# ╔═╡ 70c928fa-855d-423a-baeb-eac170ae7e43
-check_gradient(M, ALC, gradALC, copy(x0), plot=true, check_vector=false,throw_error=true)
+# ╔═╡ eaad9d23-403c-4050-9b4f-097d28329591
+maximum(g(M, x0))
 
 # ╔═╡ eba57714-59f0-4a36-b9e5-929fe11a9e59
-# ╠═╡ disabled = true
-#=╠═╡
 @time v1 = augmented_Lagrangian_method(
     M,
     f,
@@ -196,10 +152,20 @@ check_gradient(M, ALC, gradALC, copy(x0), plot=true, check_vector=false,throw_er
     x0;
     G=g,
     gradG=grad_g,
-    debug=[:Iteration, :Cost, :Stop, :Change, 10, "\n"],
-    sub_kwargs=[:debug => ["   ", :Iteration, :Cost, " | ",DebugStepsize(), :Change, :Stop, 50, "\n"]],
-)
-  ╠═╡ =#
+    debug=[:Iteration, :Cost, :Stop, " ", :Change, 50, "\n"],
+);
+
+# ╔═╡ 70cb2bda-43f9-44b3-a48a-41a3b71023e3
+md"Now we have both a lower function value and the point is nearly within the constraints, ... up to numerical inaccuracies"
+
+# ╔═╡ 52e26eae-1a78-4ee5-8ad2-d7f3e85d2204
+f(M, v1)
+
+# ╔═╡ dd38b344-d168-4519-9837-69a90943c3dc
+maximum( g(M, v1) )
+
+# ╔═╡ 25ae1129-916b-4b3e-a317-74ecf41995dd
+md" ## A faster Augmented Lagrangian Run "
 
 # ╔═╡ c72709e1-7bae-4345-b29b-4ef1e791292b
 md"""
@@ -209,7 +175,7 @@ Now this is a little slow, so we can modify two things, that we will directly do
 """
 
 # ╔═╡ 717bd019-2978-4e55-a586-ed876cefa65d
-grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p / 2 - Z * p / 2)
+grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p - Z * p)
 
 # ╔═╡ db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
 md"""
@@ -220,22 +186,12 @@ We change this _both_ into a vector of gradient functions `\operatorname{grad} g
 # ╔═╡ fb86f597-f8af-4c98-b5b1-4db0dfc06199
 g2 = [(M, p) -> -p[i] for i in 1:d];
 
-# ╔═╡ 998acdb1-f0b8-4350-b632-a538767c8aec
-grad_g2 = [
-    (M, p) -> project!(M, p, [i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
-];
-
 # ╔═╡ 1d427174-57da-41d6-8577-d97d643a2142
 grad_g2! = [
     (M, X, p) -> project!(M, X, p, [i == j ? -1.0 : 0.0 for j in 1:d]) for i in 1:d
 ];
 
-# ╔═╡ 922d8f2e-f17e-4ba8-a6b0-c12c8dc49fe4
-check_gradient(M, g2[2], grad_g2[2], copy(x0), check_vector=false, throw_error=true)
-
 # ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
-# ╠═╡ disabled = true
-#=╠═╡
 @time v2 = augmented_Lagrangian_method(
     M,
     f,
@@ -244,13 +200,78 @@ check_gradient(M, g2[2], grad_g2[2], copy(x0), check_vector=false, throw_error=t
     evaluation=MutatingEvaluation(),
     G=g2,
     gradG=grad_g2!,
-    debug=[:Iteration, :Cost, :Stop, 10, "\n"],
-    sub_kwargs=[
-        :debug =>
-            ["   ", :Iteration, :Cost, " | ", DebugStepsize(), :Change, :Stop, 50, "\n"],
-    ],
-)
-  ╠═╡ =#
+    debug=[:Iteration, :Cost, :Stop, " ", :Change, 50, "\n"],
+);
+
+# ╔═╡ f4b3f8c4-8cf8-493e-a6ac-ea9673609a9c
+f(M, v2)
+
+# ╔═╡ 2cbaf932-d7e8-42df-b0b4-0974a98818ca
+maximum(g(M, v2))
+
+# ╔═╡ ff01ff09-d0da-4159-8597-de2853944bcf
+md" These are the same values as before, but we were faster and had less allocations here."
+
+# ╔═╡ c918e591-3806-475e-8f0b-d50896d243ee
+md"## Exact Penalty Method"
+
+# ╔═╡ e9847e43-d4ef-4a90-a51d-ce527787d467
+@time v3 = exact_penalty_method(
+    M,
+    f,
+    grad_f!,
+    x0;
+    evaluation=MutatingEvaluation(),
+    G=g2,
+    gradG=grad_g2!,
+    debug=[:Iteration, :Cost, :Stop, " ", :Change, 50, "\n"],
+);
+
+# ╔═╡ 2812f7bb-ad5b-4e1d-8dbd-239129a3facd
+f(M, v3)
+
+# ╔═╡ 5e48f24d-94e3-4ad1-ae78-cf65fe2d9caf
+maximum(g(M, v3))
+
+# ╔═╡ fac5894c-250e-447d-aab8-1bfab7aae78c
+@time v4 = exact_penalty_method(
+    M,
+    f,
+    grad_f!,
+    x0;
+    evaluation=MutatingEvaluation(),
+    G=g2,
+    gradG=grad_g2!,
+	smoothing=LinearQuadraticHuber(),
+    debug=[:Iteration, :Cost, :Stop, " ", :Change, 50, "\n"],
+);
+
+# ╔═╡ bd276d17-2df0-4732-ae94-340f1e4a54f9
+f(M, v4)
+
+# ╔═╡ 8a3ed988-89c7-49d7-ac9f-301ff5f246ef
+maximum(g(M, v4))
+
+# ╔═╡ 51c4ac18-d829-4297-b7c9-3058fdd10555
+md"""
+## Comparing to the unconstraint solver
+
+We can compare this to the _global_ optimum on the sphere, which is the unconstraint optimisation problem; we can just use Quasi Newton.
+
+Note that this is much faster, since every iteration of the algorithms above does a quasi-Newton call as well.
+"""
+
+# ╔═╡ 70fd7a56-ebce-43b9-b75e-f47c7a277a07
+@time w1 = quasi_Newton(M, f, grad_f!, x0; evaluation=MutatingEvaluation());
+
+# ╔═╡ 7062ba30-6f7e-42f0-9396-ab2821a22f52
+f(M, w1)
+
+# ╔═╡ 4c82e8b7-4fb8-4e4d-8a95-64b42471dc13
+md" But for sure here the constraints here are not fulfilled and we have veru positive entries in ``g(w_1)``"
+
+# ╔═╡ e56fc1dc-4146-42a2-89e3-0566eb0d16f5
+maximum(g(M, w1))
 
 # ╔═╡ 78d055e8-d5c8-4cdf-a706-3089368397bd
 md"""
@@ -286,7 +307,7 @@ md"""
 # ╠═155a1401-79aa-4305-81f7-505e43c73094
 # ╟─dd078404-8c89-4655-b8ac-e9c816318361
 # ╠═54756d9f-1807-45fc-aa72-40bec10d022d
-# ╠═0ee60004-e7e5-4c9a-8f1d-e493217f11be
+# ╟─0ee60004-e7e5-4c9a-8f1d-e493217f11be
 # ╠═8be00c3b-4385-449b-b58f-3d3ef972c3c3
 # ╠═950dab06-b89e-41c7-9d81-3e9f3fb51b4d
 # ╟─6218866b-18b5-47f7-98a6-6e1192cb1c24
@@ -294,31 +315,34 @@ md"""
 # ╟─0f71531d-b292-477d-b108-f45dc4e680ad
 # ╠═9e7028c9-0f15-4245-a089-2670c26b3b40
 # ╠═72e99369-165b-494e-9acc-7719a12d9d8d
-# ╠═f602acaf-8100-449d-bc57-6bd4ac6531de
-# ╠═55fb3017-5e1d-4206-b725-c0cfaf25ed49
-# ╠═f201e3a3-75e7-447d-90ad-5e6590cf6013
-# ╠═03dd6b28-8c2c-4694-a246-16ab0f1e98fd
-# ╠═bd1044a4-0cdc-43f9-acaf-848c139c5e5c
-# ╠═6866d0f4-6f23-4e3b-94d0-826d6ce1976e
-# ╠═c2f0008d-c65a-4daa-b411-b7be0d25e0e1
-# ╠═c420d478-a35a-4e9c-93ce-5f965b353233
-# ╠═2ca8e2cf-b2ef-4fb2-bf7a-d80e474ad89a
-# ╠═04894517-317d-4da4-ad8e-469f010aaf9f
-# ╠═f6763dda-0c62-435e-a935-19caa1944bb5
-# ╠═3391de6d-869a-43aa-92d4-06b361cb75ae
-# ╠═6fd21f2e-bb47-49ae-8401-e4405e75656c
-# ╠═c5fe44a5-2186-4541-ac0d-5a8faa5d6445
-# ╠═6ac6dad8-40f6-4cf5-9348-b1d589718ee0
-# ╠═f65ad16d-ffe5-4e4a-8047-4642a0324589
-# ╠═74574bc7-db5e-4250-96f7-8766e20ca0c8
-# ╠═70c928fa-855d-423a-baeb-eac170ae7e43
+# ╟─aedd3604-7df6-46c5-a393-213da785b84f
+# ╠═317403e3-8816-4761-b229-798710f3ed43
+# ╟─00d8dd65-e57c-4810-80a3-28878a1938ea
+# ╠═eaad9d23-403c-4050-9b4f-097d28329591
 # ╠═eba57714-59f0-4a36-b9e5-929fe11a9e59
+# ╟─70cb2bda-43f9-44b3-a48a-41a3b71023e3
+# ╠═52e26eae-1a78-4ee5-8ad2-d7f3e85d2204
+# ╠═dd38b344-d168-4519-9837-69a90943c3dc
+# ╟─25ae1129-916b-4b3e-a317-74ecf41995dd
 # ╟─c72709e1-7bae-4345-b29b-4ef1e791292b
 # ╠═717bd019-2978-4e55-a586-ed876cefa65d
 # ╟─db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
 # ╠═fb86f597-f8af-4c98-b5b1-4db0dfc06199
-# ╠═998acdb1-f0b8-4350-b632-a538767c8aec
 # ╠═1d427174-57da-41d6-8577-d97d643a2142
-# ╠═922d8f2e-f17e-4ba8-a6b0-c12c8dc49fe4
 # ╠═ce8f1156-a350-4fde-bd39-b08a16b2821d
+# ╠═f4b3f8c4-8cf8-493e-a6ac-ea9673609a9c
+# ╠═2cbaf932-d7e8-42df-b0b4-0974a98818ca
+# ╟─ff01ff09-d0da-4159-8597-de2853944bcf
+# ╟─c918e591-3806-475e-8f0b-d50896d243ee
+# ╠═e9847e43-d4ef-4a90-a51d-ce527787d467
+# ╠═2812f7bb-ad5b-4e1d-8dbd-239129a3facd
+# ╠═5e48f24d-94e3-4ad1-ae78-cf65fe2d9caf
+# ╠═fac5894c-250e-447d-aab8-1bfab7aae78c
+# ╠═bd276d17-2df0-4732-ae94-340f1e4a54f9
+# ╠═8a3ed988-89c7-49d7-ac9f-301ff5f246ef
+# ╟─51c4ac18-d829-4297-b7c9-3058fdd10555
+# ╠═70fd7a56-ebce-43b9-b75e-f47c7a277a07
+# ╠═7062ba30-6f7e-42f0-9396-ab2821a22f52
+# ╠═4c82e8b7-4fb8-4e4d-8a95-64b42471dc13
+# ╠═e56fc1dc-4146-42a2-89e3-0566eb0d16f5
 # ╟─78d055e8-d5c8-4cdf-a706-3089368397bd
