@@ -118,9 +118,9 @@ function exact_penalty_method!(
     sub_grad=ExactPenaltyGrad(problem, ρ, u; smoothing=smoothing),
     sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad),
     sub_kwargs=[],
-    sub_stopping_criterion=StopAfterIteration(200) |
+    sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
-                           StopWhenStepsizeLess(1e-10),
+                           StopWhenStepsizeLess(1e-8),
     sub_options::Options=decorate_options(
         QuasiNewtonOptions(
             M,
@@ -130,7 +130,7 @@ function exact_penalty_method!(
                 M, copy(M, x), InverseBFGS(), 30
             ),
             stopping_criterion=sub_stopping_criterion,
-            stepsize=WolfePowellLinesearch(M, 1e-4, 0.999),
+            stepsize=WolfePowellLinesearch(M, 1e-4, 0.999, linesearch_stopsize=1e-8),
         ),
         sub_kwargs...,
     ),
