@@ -147,7 +147,10 @@ end
 Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
 of the augmented Lagrangian associated to the [`ConstrainedProblem`](@ref) `P`.
 
-This struct is also a functor `(M,p) -> X` that can be used as a cost function within a solver,
+This struct is also a functor in both formats
+* `(M, p) -> X` to compute the gradient in allocating fashion.
+* `(M, X, p)` to compute the gradient in in-place fashion.
+
 based on the internal [`ConstrainedProblem`](@ref) and computes the gradient
 ``\operatorname{grad} \mathcal L_{ρ}(q, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
 """

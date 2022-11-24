@@ -71,7 +71,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_grad` – ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penality gradient, expecially with the same numbers `ρ,u` as in the options for the sub problem
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
 * `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
-* `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad)`) problem for the subsolver
+* `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad; evaluation=evaluation)`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
@@ -116,7 +116,7 @@ function exact_penalty_method!(
     problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
     sub_cost=ExactPenaltyCost(problem, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(problem, ρ, u; smoothing=smoothing),
-    sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad),
+    sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad; evaluation=evaluation),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |

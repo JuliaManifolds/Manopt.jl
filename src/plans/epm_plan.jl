@@ -174,7 +174,9 @@ end
 Represent the gradient of the [`ExactPenaltyCost`](@ref) based on a [`ConstrainedProblem`](@ref) `P`
 and a parameter ``ρ`` and a smoothing parameyterwhere we use an additional parameter ``u``.
 
-This struct is also a functor `(M,p) -> X` to compute the gradient.
+This struct is also a functor in both formats
+* `(M, p) -> X` to compute the gradient in allocating fashion.
+* `(M, X, p)` to compute the gradient in in-place fashion.
 
 ## Fields
 
