@@ -169,7 +169,7 @@ function step_solver!(p::ConstrainedProblem, o::ExactPenaltyMethodOptions, iter)
     o.sub_problem.cost.u = o.u
     o.sub_problem.gradient!!.ρ = o.ρ
     o.sub_problem.gradient!!.u = o.u
-    set_iterate!(o.sub_options, copy(o.x))
+    set_iterate!(o.sub_options, copy(p.M, o.x))
     update_stopping_criterion!(o, :MinIterateChange, o.ϵ)
 
     o.x = get_solver_result(solve(o.sub_problem, o.sub_options))

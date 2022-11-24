@@ -63,11 +63,18 @@ using Manopt, Manifolds, ManifoldsBase, Test
     p_linearized = PrimalDualProblem(
         M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
     )
-    o_exact = ChambollePockOptions(M, m, n, x0, ξ0; variant=:exact)
+    o_exact = ChambollePockOptions(M, m, n, zero.(x0), ξ0; variant=:exact)
     o_linearized = ChambollePockOptions(M, m, n, x0, ξ0; variant=:linearized)
     n_old = ProductRepr(n[N, :point], n[N, :vector])
     x_old = copy(x0)
     ξ_old = ProductRepr(ξ0[N, :point], ξ0[N, :vector])
+
+    set_iterate!(o_exact, x0)
+    @test all(get_iterate(o_exact) .== x0)
+
+    osm = PrimalDualSemismoothNewtonOptions(M, m, n, zero.(x0), ξ0, 0.0, 0.0, 0.0)
+    set_iterate!(osm, x0)
+    @test all(get_iterate(osm) .== x0)
 
     @testset "test Mutating/Allocation Problem Variants" begin
         p1 = PrimalDualProblem(

@@ -15,4 +15,10 @@ using LinearAlgebra: I, tr
     x0 = project(M, ones(d))
     sol = augmented_Lagrangian_method(M, F, gradF, x0; G=G, gradG=gradG)
     @test distance(M, sol, v0) < 8 * 1e-4
+
+    P = ConstrainedProblem(M, F, gradF; G=G, gradG=gradG)
+    # dummy ALM problem
+    O = AugmentedLagrangianMethodOptions(M, P, x0, CostProblem(M, F), NelderMeadOptions(M))
+    set_iterate!(O, 2 .* x0)
+    @test get_iterate(O) == 2 .* x0
 end

@@ -49,8 +49,6 @@ mutable struct ExactPenaltyMethodOptions{
         x0::P,
         sub_problem::Pr,
         sub_options::Op;
-        max_inner_iter::Int=200,
-        num_outer_itertgn::Int=30,
         ϵ::Real=1e-3,
         ϵ_min::Real=1e-6,
         ϵ_exponent=1 / 100,
@@ -61,7 +59,6 @@ mutable struct ExactPenaltyMethodOptions{
         θ_u=(u_min / u)^(u_exponent),
         ρ::Real=1.0,
         θ_ρ::Real=0.3,
-        min_stepsize::Real=1e-10,
         stopping_criterion::StoppingCriterion=StopWhenAny(
             StopAfterIteration(300),
             StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),

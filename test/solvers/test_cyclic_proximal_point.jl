@@ -87,4 +87,11 @@ using Manifolds, Manopt, Test, Dates
             @test isapprox(N, g, get_proximal_map(p2, 1.0, f, i))
         end
     end
+    @testset "Option accsess functions" begin
+        M = Euclidean(3)
+        p = ones(3)
+        O = CyclicProximalPointOptions(M, zeros(3))
+        set_iterate!(O, p)
+        @test get_iterate(O) == p
+    end
 end

@@ -5,8 +5,10 @@ using Manopt, ManifoldsBase, Test
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.0, 2.0]
     o = GradientDescentOptions(
-        M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        M, zero(x); stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
     )
+    set_iterate!(o, x)
+    @test get_iterate(o) == x
     o.gradient = [1.0, 0.0]
     f(M, y) = distance(M, y, x) .^ 2
     gradf(M, y) = -2 * log(M, y, x)
