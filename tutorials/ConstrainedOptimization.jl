@@ -8,19 +8,18 @@ using InteractiveUtils
 using Pkg; Pkg.activate();
 
 # ╔═╡ ff6edcbd-b70d-4c5f-a5da-d3a221c7d595
-using Distributions, LinearAlgebra, Manifolds, Manopt, Random, Plots
+using Distributions, LinearAlgebra, Manifolds, Manopt, Random, PlutoUI
 
 # ╔═╡ 23c48862-6984-11ed-0a6d-9f6c98ae7134
 md"""
-# Constraint Optimisation in Manopt.jl
+# Constraint Optimization in Manopt.jl
 
 This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](https://manoptjl.org).
 """
 
 # ╔═╡ d7bbeb6b-709a-451b-9eb2-2eb7245dbe03
 md"""
-## Constrained Optimisation on Riemannian manifolds
-
+## Introduction
 A constraint optimisation problem is given by
 
 ```math
@@ -38,9 +37,6 @@ This can be seen as a balance between moving constraints into the geometry of a 
 
 # ╔═╡ 7c0b460e-34e4-4d7b-be51-71f4a38f28e3
 md"Let's first again load the necessary packages"
-
-# ╔═╡ 2aea4a84-bd85-4eb4-9537-c19a4910637b
-pyplot()
 
 # ╔═╡ 8b0eae06-2218-4a22-a7ae-fc2344ab09f1
 Random.seed!(42);
@@ -63,10 +59,10 @@ where ``\sigma`` is a signal-to-noise ratio and ``N`` is a matrix with random en
 """
 
 # ╔═╡ cd9f3e01-bd76-4972-a04e-028758baa9a3
-d = 200 # dimension of v0
+d = 200; # dimension of v0
 
 # ╔═╡ bd27b323-3571-4cb8-91a1-67fae56ef43b
-σ = 0.1^2# SNR
+σ = 0.1^2; # SNR
 
 # ╔═╡ d463b59a-69b3-4b7f-883b-c65ffe46efe9
 δ = 0.1; s = Int(floor(δ * d)); # Sparsity
@@ -94,7 +90,7 @@ In order to recover ``v_0`` we consider the constrained optimisation problem on 
 \end{align*}
 ```
 
-or in the previous notation ``f(p) = -p^{\mathrm{T}}Zp^{\mathrm{T}}`` and ``g(p) = -p``.
+or in the previous notation ``f(p) = -p^{\mathrm{T}}Zp^{\mathrm{T}}`` and ``g(p) = -p``. We first initialize the manifold under consideration
 """
 
 # ╔═╡ 54756d9f-1807-45fc-aa72-40bec10d022d
@@ -108,10 +104,10 @@ We first defined ``f``  and ``g`` as usual functions
 """
 
 # ╔═╡ 8be00c3b-4385-449b-b58f-3d3ef972c3c3
-f(M, p) = -transpose(p) * Z * p
+f(M, p) = -transpose(p) * Z * p;
 
 # ╔═╡ 950dab06-b89e-41c7-9d81-3e9f3fb51b4d
-g(M, p) = -p
+g(M, p) = -p;
 
 # ╔═╡ 6218866b-18b5-47f7-98a6-6e1192cb1c24
 md"""
@@ -119,7 +115,7 @@ since ``f`` is a functions defined in the embedding ``ℝ^d`` as well, we obtain
 """
 
 # ╔═╡ 92ee76b4-e132-44c7-9ab3-ef4227969fa2
-grad_f(M, p) = project(M, p, -transpose(Z) * p - Z * p)
+grad_f(M, p) = project(M, p, -transpose(Z) * p - Z * p);
 
 # ╔═╡ 0f71531d-b292-477d-b108-f45dc4e680ad
 md"""
@@ -127,7 +123,12 @@ For the constraints this is a little more involved, since each function ``g_i = 
 """
 
 # ╔═╡ 9e7028c9-0f15-4245-a089-2670c26b3b40
-grad_g(M, p) = project.(Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
+grad_g(M, p) = project.(
+	Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d]
+)
+
+# ╔═╡ cd7ab9a5-1db8-4819-952a-6322f22a0654
+md"We further start in a random point:"
 
 # ╔═╡ 72e99369-165b-494e-9acc-7719a12d9d8d
 x0 = random_point(M);
@@ -150,10 +151,12 @@ Now as a first method we can just call the [Augmented Gradient Method](https://m
 """
 
 # ╔═╡ eba57714-59f0-4a36-b9e5-929fe11a9e59
-@time v1 = augmented_Lagrangian_method(
-    M, f, grad_f, x0; G=g, gradG=grad_g,
-    debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
-);
+with_terminal() do
+	@time global v1 = augmented_Lagrangian_method(
+    	M, f, grad_f, x0; G=g, gradG=grad_g,
+    	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
+	);
+end
 
 # ╔═╡ 70cb2bda-43f9-44b3-a48a-41a3b71023e3
 md"Now we have both a lower function value and the point is nearly within the constraints, ... up to numerical inaccuracies"
@@ -175,7 +178,7 @@ Now this is a little slow, so we can modify two things, that we will directly do
 """
 
 # ╔═╡ 717bd019-2978-4e55-a586-ed876cefa65d
-grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p - Z * p)
+grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p - Z * p);
 
 # ╔═╡ db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
 md"""
@@ -192,10 +195,12 @@ grad_g2! = [
 ];
 
 # ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
-@time v2 = augmented_Lagrangian_method(
-    M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(), 
-    debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
-);
+with_terminal() do
+	@time global v2 = augmented_Lagrangian_method(
+    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(),
+    	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
+	);
+end
 
 # ╔═╡ f6617b0f-3688-4429-974b-990e0279cb38
 md"""
@@ -222,10 +227,12 @@ and [`LinearQuadraticHuber`](https://manoptjl.org/stable/solvers/exact_penalty_m
 """
 
 # ╔═╡ e9847e43-d4ef-4a90-a51d-ce527787d467
-@time v3 = exact_penalty_method(
-    M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(), 
-    debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
-);
+with_terminal() do
+	@time global v3 = exact_penalty_method(
+    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(),
+    	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
+	);
+end
 
 # ╔═╡ 5a4b79ff-6cac-4978-9a82-f561484846a8
 md"We obtain a similar cost value as for the Augmented Lagrangian Solver above, but here the constraint is actually fulfilled and not just numerically “on the boundary”."
@@ -242,11 +249,13 @@ The second smoothing technique is often beneficial, when we have a lot of constr
 """
 
 # ╔═╡ fac5894c-250e-447d-aab8-1bfab7aae78c
-@time v4 = exact_penalty_method(
-    M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(),
-	smoothing=LinearQuadraticHuber(),
-    debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
-);
+with_terminal() do
+	@time global v4 = exact_penalty_method(
+    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(),
+		smoothing=LinearQuadraticHuber(),
+    	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
+	);
+end
 
 # ╔═╡ f0356469-5bdf-49b4-b7a9-83cc987cb368
 md"""
@@ -269,7 +278,11 @@ Note that this is much faster, since every iteration of the algorithms above doe
 """
 
 # ╔═╡ 70fd7a56-ebce-43b9-b75e-f47c7a277a07
-@time w1 = quasi_Newton(M, f, grad_f!, x0; evaluation=MutatingEvaluation());
+with_terminal() do
+	@time global w1 = quasi_Newton(
+		M, f, grad_f!, x0; evaluation=MutatingEvaluation()
+	);
+end
 
 # ╔═╡ 7062ba30-6f7e-42f0-9396-ab2821a22f52
 f(M, w1)
@@ -301,7 +314,6 @@ md"""
 # ╟─7c0b460e-34e4-4d7b-be51-71f4a38f28e3
 # ╠═39dcf482-5b7c-437d-b000-b0766a1e3fc7
 # ╠═ff6edcbd-b70d-4c5f-a5da-d3a221c7d595
-# ╠═2aea4a84-bd85-4eb4-9537-c19a4910637b
 # ╠═8b0eae06-2218-4a22-a7ae-fc2344ab09f1
 # ╟─6db180cf-ccf9-4a9e-b69f-1b39db6703d3
 # ╟─4045214f-dada-4211-afe7-056f78492d8c
@@ -321,6 +333,7 @@ md"""
 # ╠═92ee76b4-e132-44c7-9ab3-ef4227969fa2
 # ╟─0f71531d-b292-477d-b108-f45dc4e680ad
 # ╠═9e7028c9-0f15-4245-a089-2670c26b3b40
+# ╟─cd7ab9a5-1db8-4819-952a-6322f22a0654
 # ╠═72e99369-165b-494e-9acc-7719a12d9d8d
 # ╟─aedd3604-7df6-46c5-a393-213da785b84f
 # ╠═317403e3-8816-4761-b229-798710f3ed43
