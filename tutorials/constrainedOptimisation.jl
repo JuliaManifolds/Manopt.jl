@@ -63,7 +63,7 @@ where ``\sigma`` is a signal-to-noise ratio and ``N`` is a matrix with random en
 """
 
 # ╔═╡ cd9f3e01-bd76-4972-a04e-028758baa9a3
-d = 100 # dimension of v0
+d = 200 # dimension of v0
 
 # ╔═╡ bd27b323-3571-4cb8-91a1-67fae56ef43b
 σ = 0.1^2# SNR
@@ -72,7 +72,7 @@ d = 100 # dimension of v0
 δ = 0.1; s = Int(floor(δ * d)); # Sparsity
 
 # ╔═╡ 7eaab1cc-9238-44cf-b57f-4321a486cdaa
-S = sample(1:d, s; replace=false)
+S = sample(1:d, s; replace=false);
 
 # ╔═╡ 5654d627-25bc-4d6c-a562-49dad43799da
 v0 =  [i ∈ S ? 1 / sqrt(s) : 0.0 for i in 1:d];
@@ -144,15 +144,15 @@ md" How much the function g is positive"
 # ╔═╡ eaad9d23-403c-4050-9b4f-097d28329591
 maximum(g(M, x0))
 
+# ╔═╡ 08468240-a353-4097-b26e-5fe14be039e3
+md"""
+Now as a first method we can just call the [Augmented Gradient Method](https://manoptjl.org/stable/solvers/augmented_Lagrangian_method/) with a simple call:
+"""
+
 # ╔═╡ eba57714-59f0-4a36-b9e5-929fe11a9e59
 @time v1 = augmented_Lagrangian_method(
-    M,
-    f,
-    grad_f,
-    x0;
-    G=g,
-    gradG=grad_g,
-    debug=[:Iteration, :Cost, :Stop, " ", :Change, 50, "\n"],
+    M, f, grad_f, x0; G=g, gradG=grad_g,
+    debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 );
 
 # ╔═╡ 70cb2bda-43f9-44b3-a48a-41a3b71023e3
@@ -180,7 +180,7 @@ grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p - Z * p)
 # ╔═╡ db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
 md"""
 2. The constraints are currently always evaluated all together, since the function `grad_g` always returns a vector of gradients.
-We change this _both_ into a vector of gradient functions `\operatorname{grad} g_i` _as well as_ gradients that are computed in place.
+We change this _both_ into a vector of gradient functions ``\operatorname{grad} g_i, i=1,\ldots,d``, _as well as_ gradients that are computed in place.
 """
 
 # ╔═╡ fb86f597-f8af-4c98-b5b1-4db0dfc06199
@@ -193,15 +193,14 @@ grad_g2! = [
 
 # ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
 @time v2 = augmented_Lagrangian_method(
-    M,
-    f,
-    grad_f!,
-    x0;
-    evaluation=MutatingEvaluation(),
-    G=g2,
-    gradG=grad_g2!,
-    debug=[:Iteration, :Cost, :Stop, " ", :Change, 50, "\n"],
+    M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(), 
+    debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 );
+
+# ╔═╡ f6617b0f-3688-4429-974b-990e0279cb38
+md"""
+As a technical remark: Note that (by default) the change to [`MutatingEvaluation`](https://manoptjl.org/stable/plans/problem/#Manopt.MutatingEvaluation)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
+"""
 
 # ╔═╡ f4b3f8c4-8cf8-493e-a6ac-ea9673609a9c
 f(M, v2)
@@ -215,17 +214,21 @@ md" These are the same values as before, but we were faster and had less allocat
 # ╔═╡ c918e591-3806-475e-8f0b-d50896d243ee
 md"## Exact Penalty Method"
 
+# ╔═╡ 6dc2aa06-7239-41c5-b296-4aa5a048444c
+md"""
+As a second solver, we have the [Exact Penalty Method](https://manoptjl.org/stable/solvers/exact_penalty_method/), which currenlty is available with two smoothing variants, which make an inner solver for smooth optimisationm, that is by default again [quasi Newton] possible:
+[`LogarithmicSumOfExponentials`](https://manoptjl.org/stable/solvers/exact_penalty_method/#Manopt.LogarithmicSumOfExponentials)
+and [`LinearQuadraticHuber`](https://manoptjl.org/stable/solvers/exact_penalty_method/#Manopt.LinearQuadraticHuber). We compare both here as well. The first smoothing technique is the default, so we can just call
+"""
+
 # ╔═╡ e9847e43-d4ef-4a90-a51d-ce527787d467
 @time v3 = exact_penalty_method(
-    M,
-    f,
-    grad_f!,
-    x0;
-    evaluation=MutatingEvaluation(),
-    G=g2,
-    gradG=grad_g2!,
-    debug=[:Iteration, :Cost, :Stop, " ", :Change, 50, "\n"],
+    M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(), 
+    debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 );
+
+# ╔═╡ 5a4b79ff-6cac-4978-9a82-f561484846a8
+md"We obtain a similar cost value as for the Augmented Lagrangian Solver above, but here the constraint is actually fulfilled and not just numerically “on the boundary”."
 
 # ╔═╡ 2812f7bb-ad5b-4e1d-8dbd-239129a3facd
 f(M, v3)
@@ -233,18 +236,22 @@ f(M, v3)
 # ╔═╡ 5e48f24d-94e3-4ad1-ae78-cf65fe2d9caf
 maximum(g(M, v3))
 
+# ╔═╡ 6c5c8ed9-da01-4565-8b97-d8465b7f7e9f
+md"""
+The second smoothing technique is often beneficial, when we have a lot of constraints (in the above mentioned vectorial manner), since we can avoid several gradient evaluations for the constraint functions here. This leads to a faster iteration time.
+"""
+
 # ╔═╡ fac5894c-250e-447d-aab8-1bfab7aae78c
 @time v4 = exact_penalty_method(
-    M,
-    f,
-    grad_f!,
-    x0;
-    evaluation=MutatingEvaluation(),
-    G=g2,
-    gradG=grad_g2!,
+    M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(),
 	smoothing=LinearQuadraticHuber(),
-    debug=[:Iteration, :Cost, :Stop, " ", :Change, 50, "\n"],
+    debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 );
+
+# ╔═╡ f0356469-5bdf-49b4-b7a9-83cc987cb368
+md"""
+For the result we see the same behaviour as for the other smoothing.
+"""
 
 # ╔═╡ bd276d17-2df0-4732-ae94-340f1e4a54f9
 f(M, v4)
@@ -319,6 +326,7 @@ md"""
 # ╠═317403e3-8816-4761-b229-798710f3ed43
 # ╟─00d8dd65-e57c-4810-80a3-28878a1938ea
 # ╠═eaad9d23-403c-4050-9b4f-097d28329591
+# ╟─08468240-a353-4097-b26e-5fe14be039e3
 # ╠═eba57714-59f0-4a36-b9e5-929fe11a9e59
 # ╟─70cb2bda-43f9-44b3-a48a-41a3b71023e3
 # ╠═52e26eae-1a78-4ee5-8ad2-d7f3e85d2204
@@ -330,19 +338,24 @@ md"""
 # ╠═fb86f597-f8af-4c98-b5b1-4db0dfc06199
 # ╠═1d427174-57da-41d6-8577-d97d643a2142
 # ╠═ce8f1156-a350-4fde-bd39-b08a16b2821d
+# ╟─f6617b0f-3688-4429-974b-990e0279cb38
 # ╠═f4b3f8c4-8cf8-493e-a6ac-ea9673609a9c
 # ╠═2cbaf932-d7e8-42df-b0b4-0974a98818ca
 # ╟─ff01ff09-d0da-4159-8597-de2853944bcf
 # ╟─c918e591-3806-475e-8f0b-d50896d243ee
+# ╟─6dc2aa06-7239-41c5-b296-4aa5a048444c
 # ╠═e9847e43-d4ef-4a90-a51d-ce527787d467
+# ╟─5a4b79ff-6cac-4978-9a82-f561484846a8
 # ╠═2812f7bb-ad5b-4e1d-8dbd-239129a3facd
 # ╠═5e48f24d-94e3-4ad1-ae78-cf65fe2d9caf
+# ╟─6c5c8ed9-da01-4565-8b97-d8465b7f7e9f
 # ╠═fac5894c-250e-447d-aab8-1bfab7aae78c
+# ╟─f0356469-5bdf-49b4-b7a9-83cc987cb368
 # ╠═bd276d17-2df0-4732-ae94-340f1e4a54f9
 # ╠═8a3ed988-89c7-49d7-ac9f-301ff5f246ef
 # ╟─51c4ac18-d829-4297-b7c9-3058fdd10555
 # ╠═70fd7a56-ebce-43b9-b75e-f47c7a277a07
 # ╠═7062ba30-6f7e-42f0-9396-ab2821a22f52
-# ╠═4c82e8b7-4fb8-4e4d-8a95-64b42471dc13
+# ╟─4c82e8b7-4fb8-4e4d-8a95-64b42471dc13
 # ╠═e56fc1dc-4146-42a2-89e3-0566eb0d16f5
 # ╟─78d055e8-d5c8-4cdf-a706-3089368397bd
