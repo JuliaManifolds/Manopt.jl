@@ -249,14 +249,7 @@ end
 # Neither equality nor inequality yields an error
 #
 function ConstrainedProblem(
-    ::MT,
-    ::TF,
-    ::TGF,
-    ::Nothing,
-    ::Nothing,
-    ::Nothing,
-    ::Nothing;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    ::MT, ::TF, ::TGF, ::Nothing, ::Nothing, ::Nothing, ::Nothing; kwargs...
 ) where {MT<:AbstractManifold,TF,TGF}
     return error(
         """

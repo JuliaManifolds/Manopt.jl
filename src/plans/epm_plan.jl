@@ -163,8 +163,7 @@ function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(::AbstractManifold, p)
     m = length(gp)
     n = length(hp)
     cost_eq_greater_u = (m > 0) ? sum((gp .- L.u / 2) .* (gp .> L.u)) : 0.0
-    cost_eq_pos_smaller_u =
-        (m > 0) ? sum((gp .^ 2 ./ (2 * L.u)) .* ((gp .> 0) .& (gp .<= L.u))) : 0.0
+    cost_eq_pos_smaller_u = (m > 0) ? sum((gp .^ 2 ./ (2 * L.u)) .* (0 .< gp .<= L.u)) : 0.0
     cost_ineq = cost_eq_greater_u + cost_eq_pos_smaller_u
     cost_eq = (n > 0) ? sum(sqrt.(hp .^ 2 .+ L.u^2)) : 0.0
     return get_cost(L.P, p) + (L.ρ) * (cost_ineq + cost_eq)
@@ -233,14 +232,13 @@ function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(
     get_gradient!(EG.P, X, p)
     if m > 0
         gradgp = get_grad_inequality_constraints(EG.P, p)
-        X .+= sum(gradgp .* ((gp .>= 0) .& (gp .>= EG.u)) .* EG.ρ) # add the ones >= u
-        X .+= sum(gradgp .* (gp ./ EG.u .* ((gp .>= 0) .& (gp .< EG.u))) .* EG.ρ) # add < u
+        X .+= sum(gradgp .* (gp .>= EG.u) .* EG.ρ) # add the ones >= u
+        X .+= sum(gradgp .* (gp ./ EG.u .* (0 .<= gp .< EG.u)) .* EG.ρ) # add < u
     end
-    (n > 0) && (
-        X .+= sum(
-            get_grad_inequality_constraints(EG.P, p) .* (hp ./ sqrt.(hp .^ 2 .+ EG.u^2)) .* EG.ρ,
-        )
-    )
+    if n > 0
+        c = (hp ./ sqrt.(hp .^ 2 .+ EG.u^2)) .* EG.ρ
+        X .+= sum(get_grad_equality_constraints(EG.P, p) .* c)
+    end
     return X
 end
 # Variant 2: Vectors of allocating gradients - we can spare a few gradient evaluations
@@ -250,13 +248,13 @@ function (
         <:ConstrainedProblem{<:AllocatingEvaluation,<:VectorConstraint},
     }
 )(
-    M::AbstractManifold, X, p::P
+    ::AbstractManifold, X, p::P
 ) where {P}
-    m = length(LG.P.G)
-    n = length(LG.P.H)
+    m = length(EG.P.G)
+    n = length(EG.P.H)
     get_gradient!(EG.P, X, p)
     for i in 1:m
-        gpi = get_inequality_constraint(LG.P, p, i)
+        gpi = get_inequality_constraint(EG.P, p, i)
         if (gpi >= 0) # the cases where we have to evaluate the gradient
             if (gpi .>= EG.u) # we can just add the gradient scaled by ρ
                 X .+= get_grad_inequality_constraint(EG.P, p, i) .* EG.ρ
@@ -268,10 +266,10 @@ function (
         end
     end
     for j in 1:n
-        hpj = get_equality_constraint(LG.P, p, j)
+        hpj = get_equality_constraint(EG.P, p, j)
         if hpj > 0
             c = hpj / sqrt(hpj^2 + EG.u^2)
-            X .+= get_grad_inequality_constraint(EG.P, p, i) .* (c * EG.ρ)
+            X .+= get_grad_equality_constraint(EG.P, p, j) .* (c * EG.ρ)
         end
     end
     return X
@@ -304,10 +302,10 @@ function (
         end
     end
     for j in 1:n
-        hpj = get_equality_constraint(LG.P, p, j)
+        hpj = get_equality_constraint(EG.P, p, j)
         if hpj > 0
-            get_grad_inequality_constraint!(EG.P, Y, p, i)
-            X .+= ((hpj / sqrt(hpj^2 + EG.u^2)) * eG.ρ) .* Y
+            get_grad_equality_constraint!(EG.P, Y, p, j)
+            X .+= ((hpj / sqrt(hpj^2 + EG.u^2)) * EG.ρ) .* Y
         end
     end
     return X
