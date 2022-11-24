@@ -77,6 +77,7 @@ function conjugate_gradient_descent!(
     gradF::TDF,
     x;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stepsize::Stepsize=ConstantStepsize(M),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopWhenAny(
@@ -85,7 +86,7 @@ function conjugate_gradient_descent!(
     vector_transport_method=default_vector_transport_method(M),
     kwargs...,
 ) where {TF,TDF}
-    p = GradientProblem(M, F, gradF)
+    p = GradientProblem(M, F, gradF; evaluation=evaluation)
     X = zero_vector(M, x)
     o = ConjugateGradientDescentOptions(
         M,
