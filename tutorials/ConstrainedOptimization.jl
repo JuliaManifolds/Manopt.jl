@@ -12,7 +12,7 @@ using Distributions, LinearAlgebra, Manifolds, Manopt, Random, PlutoUI
 
 # ╔═╡ 23c48862-6984-11ed-0a6d-9f6c98ae7134
 md"""
-# Constraint Optimization in Manopt.jl
+# Constrained Optimization in Manopt.jl
 
 This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](https://manoptjl.org).
 """
@@ -59,7 +59,7 @@ where ``\sigma`` is a signal-to-noise ratio and ``N`` is a matrix with random en
 """
 
 # ╔═╡ cd9f3e01-bd76-4972-a04e-028758baa9a3
-d = 200; # dimension of v0
+d = 150; # dimension of v0
 
 # ╔═╡ bd27b323-3571-4cb8-91a1-67fae56ef43b
 σ = 0.1^2; # SNR
@@ -125,7 +125,7 @@ For the constraints this is a little more involved, since each function ``g_i = 
 # ╔═╡ 9e7028c9-0f15-4245-a089-2670c26b3b40
 grad_g(M, p) = project.(
 	Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d]
-)
+);
 
 # ╔═╡ cd7ab9a5-1db8-4819-952a-6322f22a0654
 md"We further start in a random point:"
@@ -147,7 +147,7 @@ maximum(g(M, x0))
 
 # ╔═╡ 08468240-a353-4097-b26e-5fe14be039e3
 md"""
-Now as a first method we can just call the [Augmented Gradient Method](https://manoptjl.org/stable/solvers/augmented_Lagrangian_method/) with a simple call:
+Now as a first method we can just call the [Augmented Lagrangian Method](https://manoptjl.org/stable/solvers/augmented_Lagrangian_method/) with a simple call:
 """
 
 # ╔═╡ eba57714-59f0-4a36-b9e5-929fe11a9e59
@@ -183,7 +183,8 @@ grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p - Z * p);
 # ╔═╡ db35ae71-c96e-4432-a7d5-3df9f6c0f9fb
 md"""
 2. The constraints are currently always evaluated all together, since the function `grad_g` always returns a vector of gradients.
-We change this _both_ into a vector of gradient functions ``\operatorname{grad} g_i, i=1,\ldots,d``, _as well as_ gradients that are computed in place.
+We first change the constraints function into a vector of functions.
+We further change the gradient _both_ into a vector of gradient functions ``\operatorname{grad} g_i, i=1,\ldots,d``, _as well as_ gradients that are computed in place.
 """
 
 # ╔═╡ fb86f597-f8af-4c98-b5b1-4db0dfc06199
@@ -214,7 +215,7 @@ f(M, v2)
 maximum(g(M, v2))
 
 # ╔═╡ ff01ff09-d0da-4159-8597-de2853944bcf
-md" These are the same values as before, but we were faster and had less allocations here."
+md" These are the very similar to the previous values but the solver took much less time and less memory allocations."
 
 # ╔═╡ c918e591-3806-475e-8f0b-d50896d243ee
 md"## Exact Penalty Method"
