@@ -258,13 +258,9 @@ function (
     for i in 1:m
         gpi = get_inequality_constraint(EG.P, p, i)
         if (gpi >= 0) # the cases where we have to evaluate the gradient
-            if (gpi .>= EG.u) # we can just add the gradient scaled by ρ
-                X .+= get_grad_inequality_constraint(EG.P, p, i) .* EG.ρ
-            end
-            if (gpi > 0) && (gpi < EG.u)
-                c = ((gpi / EG.u) * EG.ρ)
-                X .+= get_grad_inequality_constraint(EG.P, p, i) .* c
-            end
+            # we can just add the gradient scaled by ρ
+            (gpi .>= EG.u) && (X .+= gpi .* EG.ρ)
+            (0 < gpi < EG.u) && (X .+= gpi .* (gpi / EG.u) * EG.ρ)
         end
     end
     for j in 1:n
@@ -292,15 +288,12 @@ function (
     for i in 1:m
         gpi = get_inequality_constraint(EG.P, p, i)
         if (gpi >= 0) # the cases where we have to evaluate the gradient
-            if (gpi >= EG.u) # we can just add the gradient scaled by ρ
-                get_grad_inequality_constraint!(EG.P, Y, p, i)
-                X .+= EG.ρ .* Y
-            end
-            if (gpi > 0) && (gpi < EG.u)
-                # we have to use a different factor, but can exclude the case g = 0 as well
-                get_grad_inequality_constraint!(EG.P, Y, p, i)
-                X .+= ((gpi / EG.u) * EG.ρ) .* Y
-            end
+            # we only have to evaluate the gradient if gpi > 0
+            get_grad_inequality_constraint!(EG.P, Y, p, i)
+            # we can just add the gradient scaled by ρ
+            (gpi >= EG.u) && (X .+= EG.ρ .* Y)
+            # we have to use a different factor, but can exclude the case g = 0 as well
+            (0 < gpi < EG.u) && (X .+= ((gpi / EG.u) * EG.ρ) .* Y)
         end
     end
     for j in 1:n
