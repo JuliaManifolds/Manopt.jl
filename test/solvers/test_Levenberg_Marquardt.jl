@@ -26,35 +26,59 @@ function F_RLM(::AbstractManifold, p)
     return vec(pts_LM - p * ref_points)
 end
 
-function jacF_RLM(M::AbstractManifold, p)
+function jacF_RLM(M::AbstractManifold, p; B_dom::AbstractBasis=DefaultOrthogonalBasis())
     X0 = zeros(manifold_dimension(M))
-    B = DefaultOrthonormalBasis()
-    J = ForwardDiff.jacobian(x -> F_RLM(M, exp(M, p, get_vector(M, p, x, B))), X0)
+    J = ForwardDiff.jacobian(x -> F_RLM(M, exp(M, p, get_vector(M, p, x, B_dom))), X0)
 
     return J
 end
 
-function F_qN(M::AbstractManifold, p)
-    if !all(isfinite.(p))
-        println(p)
-        error()
-    end
-    return 1//2 * norm(F_RLM(M, p))^2
+# regression in R^2
+
+const ts_r2 = [1.0, 2.0, 2.4, 3.1, 4.3, 5.1, 5.7, 6.2]
+const xs_r2 = [
+    1.7926888218350978,
+    4.080701652578803,
+    4.510454784478316,
+    6.44163899446108,
+    8.779266091173081,
+    9.99046003643165,
+    11.383567405022262,
+    12.661526739028028,
+]
+const ys_r2 = [
+    -2.89981608417956,
+    -6.062187792164395,
+    -7.217187782362094,
+    -9.204644225025552,
+    -13.026122239508274,
+    -15.15659923171402,
+    -17.076511907478242,
+    -18.475183785109927,
+]
+
+function F_reg_r2(::AbstractManifold, p)
+    return vcat(ts_r2 .* p[1] .- xs_r2, ts_r2 .* p[2] .- ys_r2)
 end
 
-function grad_F_qN(M::AbstractManifold, p)
-    X0 = zeros(manifold_dimension(M))
-    B = DefaultOrthonormalBasis()
-    return get_vector(
-        M, p, ForwardDiff.gradient(x -> F_qN(M, exp(M, p, get_vector(M, p, x, B))), X0), B
-    )
+function jacF_reg_r2(::AbstractManifold, p; B_dom::AbstractBasis=DefaultOrthogonalBasis())
+    return [ts_r2 zero(ts_r2); zero(ts_r2) ts_r2]
 end
 
 @testset "LevenbergMarquardt" begin
+    # testing on rotations
     M = Rotations(3)
     x0 = exp(M, ref_R, get_vector(M, ref_R, randn(3) * 0.00001, DefaultOrthonormalBasis()))
+
     o = Manopt.LevenbergMarquardt(M, F_RLM, jacF_RLM, x0; return_options=true)
     x_opt = get_options(o).x
-    @test norm(M, x_opt, get_gradient(o)) < 1e-3
+    @test norm(M, x_opt, get_gradient(o)) < 2e-3
     @test distance(M, ref_R, x_opt) < 1e-2
+
+    # plain R2 regression
+    M = Euclidean(2)
+    x0 = [0.0, 0.0]
+    o = Manopt.LevenbergMarquardt(M, F_reg_r2, jacF_reg_r2, x0; return_options=true)
+    @test isapprox(o.options.x[1], 2, atol=0.01)
+    @test isapprox(o.options.x[2], -3, atol=0.01)
 end
