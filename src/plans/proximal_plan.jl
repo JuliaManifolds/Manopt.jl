@@ -134,7 +134,10 @@ function CyclicProximalPointOptions(
     return CyclicProximalPointOptions{P,S,F}(x, stopping_criterion, λ, evaluation_order, [])
 end
 get_iterate(O::CyclicProximalPointOptions) = O.x
-
+function set_iterate!(O::CyclicProximalPointOptions, p)
+    O.x = p
+    return O
+end
 @doc raw"""
     DouglasRachfordOptions <: Options
 
@@ -204,6 +207,10 @@ mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR,S} <: Options
     )
 end
 get_iterate(O::DouglasRachfordOptions) = O.x
+function set_iterate!(O::DouglasRachfordOptions, p)
+    O.x = p
+    return O
+end
 #
 # Debug
 #

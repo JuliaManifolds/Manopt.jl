@@ -53,4 +53,6 @@ end
     @test_throws ErrorException get_gradient(r)
     @test_throws ErrorException get_iterate(o)
     @test_throws ErrorException get_iterate(r)
+    @test_throws ErrorException set_iterate!(o, 0)
+    @test_throws ErrorException set_iterate!(r, 0)
 end

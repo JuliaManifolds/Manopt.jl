@@ -22,6 +22,7 @@ For easier access, and to abstract where these are actually stored, there exists
 
 ```@docs
 get_iterate
+set_iterate!
 ```
 
 ## Decorators for Options

@@ -132,3 +132,7 @@ end
     kwargs...,
 )
 get_iterate(O::NelderMeadOptions) = O.x
+function set_iterate!(O::NelderMeadOptions, p)
+    O.x = p
+    return O
+end

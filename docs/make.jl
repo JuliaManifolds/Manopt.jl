@@ -17,6 +17,7 @@ tutorials = [
     Dict(:file => "Optimize!", :title => "Get Started: Optimize!"),
     Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
     Dict(:file => "HowToRecord", :title => "Record Values"),
+    Dict(:file => "ConstrainedOptimization", :title => "Do constrained Optimization"),
     Dict(:file => "GeodesicRegression", :title => "Do Geodesic Regression"),
     Dict(:file => "Bezier", :title => "Use Bézier Curves"),
     Dict(:file => "SecondOrderDifference", :title => "Compute a Second Order Difference"),

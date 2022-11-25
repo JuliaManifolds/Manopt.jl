@@ -100,7 +100,10 @@ mutable struct AugmentedLagrangianMethodOptions{
     end
 end
 get_iterate(o::AugmentedLagrangianMethodOptions) = o.x
-
+function set_iterate!(O::AugmentedLagrangianMethodOptions, p)
+    O.x = p
+    return O
+end
 @doc raw"""
     AugmentedLagrangianCost{Pr,R,T}
 
