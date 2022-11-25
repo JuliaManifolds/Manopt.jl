@@ -16,11 +16,11 @@ where ``μ^{(k-1)} \in \mathbb R^n`` and ``λ^{(k-1)} \in \mathbb R^m`` are the 
 
 The Lagrange multipliers are then updated by
 ```math
-λ_j^{(k)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p,
+λ_j^{(k)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k-1)} + ρ^{(k-1)} h_j(x^{(k)})) \text{for all} j=1,…,p,
 ```
 and
 ```math
-μ_i^{(k)} =\operatorname{clip}_{[0,μ_{\max}]} (μ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{for all}  i=1,…,m,
+μ_i^{(k)} =\operatorname{clip}_{[0,μ_{\max}]} (μ_i^{(k-1)} + ρ^{(k-1)} g_i(x^{(k)})) \text{ for all } i=1,…,m,
 ```
 where ``λ_{\min} \leq λ_{\max}`` and ``μ_{\max}`` are the multiplier boundaries.
 
@@ -69,8 +69,8 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_cost` – ([`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian, expecially with the same numbers `ρ,μ` as in the options for the sub problem
 * `sub_grad` – ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian gradient, expecially with the same numbers `ρ,μ` as in the options for the sub problem
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
-* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
-* `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad)`) problem for the subsolver
+* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
+* `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad; evaluation=evaluation)`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
@@ -82,6 +82,7 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
     > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
     > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
     > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3),
+    > arXiv: [1901.10000](https://arxiv.org/abs/1901.10000)
     > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 """
 function augmented_Lagrangian_method(
@@ -102,30 +103,32 @@ function augmented_Lagrangian_method!(
     F::TF,
     gradF::TGF,
     x=random_point(M);
-    G::Function=(M, x) -> [],
-    H::Function=(M, x) -> [],
-    gradG::Function=(M, x) -> [],
-    gradH::Function=(M, x) -> [],
+    G=nothing,
+    H=nothing,
+    gradG=nothing,
+    gradH=nothing,
     evaluation=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
     ϵ_exponent=1 / 100,
     θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-    μ::Vector=ones(size(G(M, x), 1)),
+    _m=isnothing(G) ? 0 : (G isa Function ? size(G(M, x)) : length(G)),
+    μ::Vector=ones(_m),
     μ_max::Real=20.0,
-    λ::Vector=ones(size(H(M, x), 1)),
+    _n=isnothing(H) ? 0 : (H isa Function ? size(H(M, x)) : length(H)),
+    λ::Vector=ones(_n),
     λ_max::Real=20.0,
     λ_min::Real=-λ_max,
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
-    problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
-    sub_cost=AugmentedLagrangianCost(problem, ρ, μ, λ),
-    sub_grad=AugmentedLagrangianGrad(problem, ρ, μ, λ),
+    _problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
+    sub_cost=AugmentedLagrangianCost(_problem, ρ, μ, λ),
+    sub_grad=AugmentedLagrangianGrad(_problem, ρ, μ, λ),
     sub_kwargs=[],
-    sub_stopping_criterion=StopAfterIteration(200) |
+    sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
-                           StopWhenStepsizeLess(1e-10),
+                           StopWhenStepsizeLess(1e-8),
     sub_options::Options=decorate_options(
         QuasiNewtonOptions(
             M,
@@ -135,11 +138,11 @@ function augmented_Lagrangian_method!(
                 M, copy(M, x), InverseBFGS(), 30
             ),
             stopping_criterion=sub_stopping_criterion,
-            stepsize=WolfePowellLinesearch(M, 1e-4, 0.999),
+            stepsize=WolfePowellLinesearch(M, 1e-3, 0.999; linesearch_stopsize=1e-8),
         );
         sub_kwargs...,
     ),
-    sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad),
+    sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad; evaluation=evaluation),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
@@ -147,7 +150,7 @@ function augmented_Lagrangian_method!(
 ) where {TF,TGF}
     o = AugmentedLagrangianMethodOptions(
         M,
-        problem,
+        _problem,
         x,
         sub_problem,
         sub_options;
@@ -165,7 +168,7 @@ function augmented_Lagrangian_method!(
         stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(problem, o))
+    return get_solver_return(solve(_problem, o))
 end
 
 #
@@ -183,7 +186,8 @@ function step_solver!(p::ConstrainedProblem, o::AugmentedLagrangianMethodOptions
     o.sub_problem.gradient!!.ρ = o.ρ
     o.sub_problem.gradient!!.μ = o.μ
     o.sub_problem.gradient!!.λ = o.λ
-    o.sub_options.x = copy(o.x)
+    set_iterate!(o.sub_options, copy(p.M, o.x))
+
     update_stopping_criterion!(o, :MinIterateChange, o.ϵ)
 
     o.x = get_solver_result(solve(o.sub_problem, o.sub_options))

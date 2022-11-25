@@ -115,6 +115,10 @@ mutable struct FrankWolfeOptions{
     end
 end
 get_iterate(O::FrankWolfeOptions) = O.p
+function set_iterate!(O::FrankWolfeOptions, p)
+    O.p = p
+    return O
+end
 get_gradient(O::FrankWolfeOptions) = O.X
 
 @doc raw"""

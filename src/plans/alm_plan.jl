@@ -100,7 +100,10 @@ mutable struct AugmentedLagrangianMethodOptions{
     end
 end
 get_iterate(o::AugmentedLagrangianMethodOptions) = o.x
-
+function set_iterate!(O::AugmentedLagrangianMethodOptions, p)
+    O.x = p
+    return O
+end
 @doc raw"""
     AugmentedLagrangianCost{Pr,R,T}
 
@@ -147,7 +150,10 @@ end
 Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
 of the augmented Lagrangian associated to the [`ConstrainedProblem`](@ref) `P`.
 
-This struct is also a functor `(M,p) -> X` that can be used as a cost function within a solver,
+This struct is also a functor in both formats
+* `(M, p) -> X` to compute the gradient in allocating fashion.
+* `(M, X, p)` to compute the gradient in in-place fashion.
+
 based on the internal [`ConstrainedProblem`](@ref) and computes the gradient
 ``\operatorname{grad} \mathcal L_{ρ}(q, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
 """
@@ -158,18 +164,74 @@ mutable struct AugmentedLagrangianGrad{Pr,R,T}
     λ::T
 end
 function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
+    X = zero_vector(M, p)
+    return LG(M, X, p)
+end
+# default, that is especially when the grad_g and grad_h are functions.
+function (LG::AugmentedLagrangianGrad)(::AbstractManifold, X, p)
     gp = get_inequality_constraints(LG.P, p)
     hp = get_equality_constraints(LG.P, p)
     m = length(gp)
     n = length(hp)
-    grad_ineq = zero_vector(M, p)
+    get_gradient!(LG.P, X, p)
     (m > 0) && (
-        grad_ineq = sum(
+        X += sum(
             ((gp .* LG.ρ .+ LG.μ) .* get_grad_inequality_constraints(LG.P, p)) .*
             ((gp .+ LG.μ ./ LG.ρ) .> 0),
         )
     )
-    grad_eq = zero_vector(M, p)
-    (n > 0) && (grad_eq = sum((hp .* LG.ρ .+ LG.λ) .* get_grad_eqality_constraint(LG.P, p)))
-    return get_gradient(LG.P, p) + grad_ineq + grad_eq
+    (n > 0) && (X += sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(LG.P, p)))
+    return X
+end
+# Allocating vector -> we can omit a few of the ineq gradients.
+function (
+    LG::AugmentedLagrangianGrad{
+        <:ConstrainedProblem{<:AllocatingEvaluation,<:VectorConstraint}
+    }
+)(
+    ::AbstractManifold, X, p
+)
+    m = length(LG.P.G)
+    n = length(LG.P.H)
+    get_gradient!(LG.P, X, p)
+    for i in 1:m
+        gpi = get_inequality_constraint(LG.P, p, i)
+        if (gpi + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
+            X .+= (gpi * LG.ρ + LG.μ[i]) .* get_grad_inequality_constraint(LG.P, p, i)
+        end
+    end
+    for j in 1:n
+        hpj = get_equality_constraint(LG.P, p, j)
+        X .+= (hpj * LG.ρ + LG.λ[j]) .* get_grad_equality_constraint(LG.P, p, j)
+    end
+    return X
+end
+# mutating vector -> we can omit a few of the ineq gradients and allocations.
+function (
+    LG::AugmentedLagrangianGrad{
+        <:ConstrainedProblem{<:MutatingEvaluation,<:VectorConstraint}
+    }
+)(
+    M::AbstractManifold, X, p
+)
+    m = length(LG.P.G)
+    n = length(LG.P.H)
+    get_gradient!(LG.P, X, p)
+    Y = zero_vector(M, p)
+    for i in 1:m
+        gpi = get_inequality_constraint(LG.P, p, i)
+        if (gpi + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
+            # evaluate in place
+            get_grad_inequality_constraint!(LG.P, Y, p, i)
+            X .+= (gpi * LG.ρ + LG.μ[i]) .* Y
+        end
+    end
+    for j in 1:n
+        # evaluate in place
+        hpj = get_equality_constraint(LG.P, p, j)
+        get_grad_equality_constraint!(LG.P, Y, p, j)
+        X .+= (hpj * LG.ρ + LG.λ[j]) * Y
+    end
+    get_gradient!(LG.P, Y, p)
+    return X
 end
