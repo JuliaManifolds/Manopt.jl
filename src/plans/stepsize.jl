@@ -825,22 +825,38 @@ function get_initial_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
     return get_initial_stepsize(o.stepsize)
 end
 
-function get_last_stepsize(p::Problem, o::Options, vars...)
+function get_last_stepsize(p::Problem, o::Options, vars::Union{Integer,Options}...)
     return get_last_stepsize(p, o, dispatch_options_decorator(o), vars...)
 end
-function get_last_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
+function get_last_stepsize(
+    p::Problem, o::Options, ::Val{true}, vars::Union{Integer,Options}...
+)
     return get_last_stepsize(p, o.options, vars...)
 end
-function get_last_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
+function get_last_stepsize(
+    p::Problem, o::Options, ::Val{false}, vars::Union{Integer,Options}...
+)
     return get_last_stepsize(p, o, o.stepsize, vars...)
 end
 #
 # dispatch on stepsize
-get_last_stepsize(p::Problem, o::Options, s::Stepsize, vars...) = s(p, o, vars...)
-get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, ::Any...) = s.last_stepsize
-function get_last_stepsize(::Problem, ::Options, s::WolfePowellLinesearch, ::Any...)
+function get_last_stepsize(
+    p::Problem, o::Options, s::Stepsize, vars::Union{Integer,Options}...
+)
+    return s(p, o, vars...)
+end
+function get_last_stepsize(
+    ::Problem, ::Options, s::ArmijoLinesearch, ::Union{Integer,Options}...
+)
     return s.last_stepsize
 end
-function get_last_stepsize(::Problem, ::Options, s::WolfePowellBinaryLinesearch, ::Any...)
+function get_last_stepsize(
+    ::Problem, ::Options, s::WolfePowellLinesearch, ::Union{Integer,Options}...
+)
+    return s.last_stepsize
+end
+function get_last_stepsize(
+    ::Problem, ::Options, s::WolfePowellBinaryLinesearch, ::Union{Integer,Options}...
+)
     return s.last_stepsize
 end

@@ -160,7 +160,7 @@ mutable struct LevenbergMarquardtOptions{
     jacF::TJac
     gradient::TGrad
     step_vector::TGrad
-    stepsize::Tparams
+    last_stepsize::Tparams
     η::Tparams
     damping_term::Tparams
     damping_term_min::Tparams
@@ -172,7 +172,8 @@ mutable struct LevenbergMarquardtOptions{
         initial_jacF::TJac,
         initial_gradient::TGrad;
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                              StopWhenGradientNormLess(1e-12),
+                                              StopWhenGradientNormLess(1e-12) |
+                                              StopWhenStepsizeLess(1e-12),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         η::Real=0.2,
         damping_term_min::Real=0.1,
@@ -218,7 +219,8 @@ function LevenbergMarquardtOptions(
     initial_jacF::TJac,
     initial_gradient=zero_vector(M, x);
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenGradientNormLess(1e-12),
+                                          StopWhenGradientNormLess(1e-12) |
+                                          StopWhenStepsizeLess(1e-12),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
 ) where {P,TJac}
     return LevenbergMarquardtOptions{P}(
@@ -239,7 +241,8 @@ function LevenbergMarquardt!(
     x;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenGradientNormLess(1e-12),
+                                          StopWhenGradientNormLess(1e-12) |
+                                          StopWhenStepsizeLess(1e-12),
     debug=[DebugWarnIfCostIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #collect rest
@@ -262,7 +265,9 @@ function initialize_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquar
     o.gradient = get_gradient(p, o.x)
     return o
 end
-function step_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOptions, iter)
+function step_solver!(
+    p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOptions, iter::Integer
+)
     Fk = p.F(p.M, o.x)
     o.jacF = p.jacobian!!(p.M, o.x)
     λk = o.damping_term * norm(Fk)
@@ -275,7 +280,7 @@ function step_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOpti
     get_vector!(p.M, o.gradient, o.x, grad_f_c, p.jacB)
     # TODO: how to specify basis?
     get_vector!(p.M, o.step_vector, o.x, sk, p.jacB)
-    o.stepsize = norm(p.M, o.x, o.step_vector)
+    o.last_stepsize = norm(p.M, o.x, o.step_vector)
     temp_x = retract(p.M, o.x, o.step_vector, o.retraction_method)
 
     normFk2 = norm(Fk)^2
@@ -293,4 +298,10 @@ function step_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOpti
         o.damping_term *= o.β
     end
     return o
+end
+
+function get_last_stepsize(
+    ::Problem, o::LevenbergMarquardtOptions, ::Val{false}, vars::Union{Integer,Options}...
+)
+    return o.last_stepsize
 end
