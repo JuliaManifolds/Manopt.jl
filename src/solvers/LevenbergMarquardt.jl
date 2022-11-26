@@ -16,6 +16,7 @@ The implementation follows [^Adachi2022].
 * `F` – a cost function ``F: \mathcal M→ℝ^d``
 * `jacF` – the Jacobian of ``F``
 * `x` – an initial value ``x ∈ \mathcal M``
+* `num_components` -- length of the vector returned by the cost function (`d`).
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
@@ -43,10 +44,10 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
     > link: [https://econpapers.repec.org/paper/vuawpaper/1993-11.htm](https://econpapers.repec.org/paper/vuawpaper/1993-11.htm).
 """
 function LevenbergMarquardt(
-    M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
+    M::AbstractManifold, F::TF, gradF::TDF, x, num_components::Int; kwargs...
 ) where {TF,TDF}
     x_res = copy(M, x)
-    return LevenbergMarquardt!(M, F, gradF, x_res; kwargs...)
+    return LevenbergMarquardt!(M, F, gradF, x_res, num_components; kwargs...)
 end
 
 @doc raw"""
@@ -63,6 +64,7 @@ specify a problem for gradient based algorithms.
 * `F`        – a function ``F: \mathcal M → ℝ^d`` to minimize
 * `jacF!!`   – Jacobian of the function ``F``
 * `jacB`     – the basis of tangent space used for computing the Jacobian.
+* `num_components` – number of values returned by `F` (equal to `d`).
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be provided
 
@@ -81,15 +83,19 @@ struct NonlinearLeastSquaresProblem{T,mT<:AbstractManifold,TF,TJ,TB<:AbstractBas
     F::TF
     jacobian!!::TJ
     jacB::TB
+    num_components::Int
 end
 function NonlinearLeastSquaresProblem(
     M::mT,
     F::TF,
-    jacF::TJ;
+    jacF::TJ,
+    num_components::Int;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     jacB::TB=DefaultOrthonormalBasis(),
 ) where {mT<:AbstractManifold,TF,TJ,TB<:AbstractBasis}
-    return NonlinearLeastSquaresProblem{typeof(evaluation),mT,TF,TJ,TB}(M, F, jacF, jacB)
+    return NonlinearLeastSquaresProblem{typeof(evaluation),mT,TF,TJ,TB}(
+        M, F, jacF, jacB, num_components
+    )
 end
 
 function (d::DebugGradient)(::NonlinearLeastSquaresProblem, o::Options, i::Int)
@@ -98,8 +104,13 @@ function (d::DebugGradient)(::NonlinearLeastSquaresProblem, o::Options, i::Int)
     return nothing
 end
 
-function get_cost(P::NonlinearLeastSquaresProblem, p)
+function get_cost(P::NonlinearLeastSquaresProblem{AllocatingEvaluation}, p)
     return 1//2 * norm(P.F(P.M, p))^2
+end
+function get_cost(P::NonlinearLeastSquaresProblem{MutatingEvaluation}, p)
+    Fval = zeros(P.num_components)
+    P.F(P.M, Fval, p)
+    return 1//2 * norm(Fval)^2
 end
 
 function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
@@ -108,20 +119,24 @@ function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
     return get_vector(p.M, x, transpose(Jval) * Fval, p.jacB)
 end
 function get_gradient(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, x)
-    Jval = zeros(todo)
+    Jval = zeros(p.num_components, manifold_dimension(p.M))
     p.jacobian!!(p.M, Jval, x)
-    Fval = p.F(p.M, x)
+    Fval = zeros(p.num_components)
+    p.F(p.M, Fval, x)
     return get_vector(p.M, x, transpose(Jval) * Fval, p.jacB)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, X, x)
-    return copyto!(p.M, X, x, p.gradient!!(p.M, x))
+    Jval = p.jacobian!!(p.M, x)
+    Fval = p.F(p.M, x)
+    return get_vector!(p.M, X, x, transpose(Jval) * Fval, p.jacB)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, X, x)
-    Jval = zeros(todo)
+    Jval = zeros(p.num_components, manifold_dimension(p.M))
     p.jacobian!!(p.M, Jval, x)
-    Fval = p.F(p.M, x)
+    Fval = zeros(p.num_components)
+    p.F(p.M, Fval, x)
     return get_vector!(p.M, X, x, transpose(Jval) * Fval, p.jacB)
 end
 
@@ -238,7 +253,8 @@ function LevenbergMarquardt!(
     M::AbstractManifold,
     F::TF,
     jacF::TDF,
-    x;
+    x,
+    num_components::Int;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(1e-12) |
@@ -247,11 +263,11 @@ function LevenbergMarquardt!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #collect rest
 ) where {TF,TDF}
-    p = NonlinearLeastSquaresProblem(M, F, jacF; evaluation=evaluation)
+    p = NonlinearLeastSquaresProblem(M, F, jacF, num_components; evaluation=evaluation)
     o = LevenbergMarquardtOptions(
         M,
         x,
-        jacF(M, x); # TODO: rethink this?
+        similar(x, num_components, manifold_dimension(M)); # TODO: rethink this?
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
     )
@@ -300,8 +316,6 @@ function step_solver!(
     return o
 end
 
-function get_last_stepsize(
-    ::Problem, o::LevenbergMarquardtOptions, ::Val{false}, vars::Union{Integer,Options}...
-)
+function _get_last_stepsize(::Problem, o::LevenbergMarquardtOptions, ::Val{false}, vars...)
     return o.last_stepsize
 end

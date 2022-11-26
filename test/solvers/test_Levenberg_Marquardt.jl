@@ -65,20 +65,65 @@ function jacF_reg_r2(::AbstractManifold, p; B_dom::AbstractBasis=DefaultOrthogon
     return [ts_r2 zero(ts_r2); zero(ts_r2) ts_r2]
 end
 
+function F_reg_r2!(::AbstractManifold, x, p)
+    midpoint = div(length(x), 2)
+    view(x, 1:midpoint) .= ts_r2 .* p[1] .- xs_r2
+    view(x, (midpoint + 1):length(x)) .= ts_r2 .* p[2] .- ys_r2
+    return x
+end
+
+function jacF_reg_r2!(
+    ::AbstractManifold, J, p; B_dom::AbstractBasis=DefaultOrthogonalBasis()
+)
+    midpoint = div(size(J, 1), 2)
+    view(J, 1:midpoint, 1) .= ts_r2
+    view(J, 1:midpoint, 2) .= 0
+    view(J, (midpoint + 1):size(J, 1), 1) .= 0
+    view(J, (midpoint + 1):size(J, 1), 2) .= ts_r2
+    return J
+end
+
 @testset "LevenbergMarquardt" begin
     # testing on rotations
     M = Rotations(3)
     x0 = exp(M, ref_R, get_vector(M, ref_R, randn(3) * 0.00001, DefaultOrthonormalBasis()))
 
-    o = Manopt.LevenbergMarquardt(M, F_RLM, jacF_RLM, x0; return_options=true)
+    o = Manopt.LevenbergMarquardt(
+        M, F_RLM, jacF_RLM, x0, length(pts_LM); return_options=true
+    )
     x_opt = get_options(o).x
     @test norm(M, x_opt, get_gradient(o)) < 2e-3
     @test distance(M, ref_R, x_opt) < 1e-2
 
-    # plain R2 regression
+    # allocating R2 regression
     M = Euclidean(2)
     x0 = [0.0, 0.0]
-    o = Manopt.LevenbergMarquardt(M, F_reg_r2, jacF_reg_r2, x0; return_options=true)
+    o = Manopt.LevenbergMarquardt(
+        M, F_reg_r2, jacF_reg_r2, x0, length(ts_r2) * 2; return_options=true
+    )
     @test isapprox(o.options.x[1], 2, atol=0.01)
     @test isapprox(o.options.x[2], -3, atol=0.01)
+
+    # mutating R2 regression
+    # x0 = [0.0, 0.0]
+    # o_mut = Manopt.LevenbergMarquardt(M, F_reg_r2!, jacF_reg_r2!, x0, length(ts_r2)*2; return_options=true, evaluation=MutatingEvaluation())
+    # @test isapprox(o_mut.options.x[1], 2, atol=0.01)
+    # @test isapprox(o_mut.options.x[2], -3, atol=0.01)
+
+    x0 = [4.0, 2.0]
+    o_r2 = LevenbergMarquardtOptions(
+        M, x0, similar(x0, 2 * length(ts_r2), 2); stopping_criterion=StopAfterIteration(20)
+    )
+    p_r2 = NonlinearLeastSquaresProblem(M, F_reg_r2, jacF_reg_r2, length(ts_r2))
+
+    X_r2 = similar(x0)
+    get_gradient!(p_r2, X_r2, x0)
+    @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
+    @testset "debug options" begin
+        io = IOBuffer()
+        # Additional Specific Debugs
+        a1 = DebugGradient(; long=false, io=io)
+        a1(p_r2, o_r2, 1)
+        @test String(take!(io)) == "gradF(x):[0.0, 0.0]"
+    end
 end
