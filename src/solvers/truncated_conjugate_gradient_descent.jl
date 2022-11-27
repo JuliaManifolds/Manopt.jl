@@ -114,7 +114,6 @@ function truncated_conjugate_gradient_descent!(
     stopping_criterion::StoppingCriterion=(
         StopAfterIteration(manifold_dimension(M)) |
         StopIfResidualIsReducedByFactorOrPower(κ, θ) |
-        # StopWhenAll(StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)),
         StopWhenTrustRegionIsExceeded() |
         StopWhenCurvatureIsNegative() |
         StopWhenModelIncreased()

@@ -117,9 +117,6 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         stop::StoppingCriterion=StopWhenAny(
             StopAfterIteration(manifold_dimension(p.M)),
             StopIfResidualIsReducedByFactorOrPower(κ, θ),
-            # StopWhenAll(
-            #     StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
-            # ),
             StopWhenTrustRegionIsExceeded(),
             StopWhenCurvatureIsNegative(),
             StopWhenModelIncreased(),
@@ -148,10 +145,6 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         κ::Float64=0.1,
         stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
                                               StopIfResidualIsReducedByFactorOrPower(κ, θ) |
-                                              #   (
-                                              #       StopIfResidualIsReducedByPower(θ) &
-                                              #       StopIfResidualIsReducedByFactor(κ)
-                                              #   ) |
                                               StopWhenTrustRegionIsExceeded() |
                                               StopWhenCurvatureIsNegative() |
                                               StopWhenModelIncreased(),
@@ -387,7 +380,7 @@ evaluate the symmetric, positive definite preconditioner (approximation of the
 inverse of the Hessian of the cost function `F`) of a
 [`HessianProblem`](@ref) `p` at the point `x`applied to a
 tangent vector `ξ`.
-"""
+"""
 get_preconditioner(p::HessianProblem, x, X) = p.precon(p.M, x, X)
 
 @doc raw"""

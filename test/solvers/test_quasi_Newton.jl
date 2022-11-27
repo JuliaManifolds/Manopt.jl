@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test, Random
-using LinearAlgebra: I, eigvecs, tr
+using LinearAlgebra: I, eigvecs, tr, Diagonal
 Random.seed!(42)
 
 @testset "Riemannian quasi-Newton Methods" begin
@@ -202,5 +202,75 @@ Random.seed!(42)
             stopping_criterion=StopWhenGradientNormLess(1e-6),
         )
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-4)
+    end
+
+    @testset "update rules" begin
+        n = 4
+        A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
+        A = (A + A') / 2
+        M = Sphere(n - 1)
+        F(::Sphere, X) = X' * A * X
+        gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        gradF!(::Sphere, X, p) = (X .= 2 * (A * X - X * (X' * A * X)))
+
+        p_1 = random_point(M)
+
+        SR1_allocating = ApproxHessianSymmetricRankOne(
+            M, p_1, gradF; evaluation=AllocatingEvaluation()
+        )
+
+        SR1_mutating = ApproxHessianSymmetricRankOne(
+            M, p_1, gradF!; evaluation=MutatingEvaluation()
+        )
+
+        BFGS_allocating = ApproxHessianBFGS(
+            M, p_1, gradF; evaluation=AllocatingEvaluation()
+        )
+
+        BFGS_mutating = ApproxHessianBFGS(M, p_1, gradF!; evaluation=MutatingEvaluation())
+
+        Y = random_tangent(M, p_1)
+
+        X_1 = SR1_allocating(M, p_1, Y)
+
+        p_2 = random_point(M)
+
+        SR1_allocating.p_tmp = p_2
+
+        X_2 = SR1_allocating(M, p_1, Y)
+
+        @test isapprox(M, p_1, X_1, X_2; atol=1e-10)
+
+        X_3 = random_tangent(M, p_1)
+        X_4 = random_tangent(M, p_1)
+
+        SR1_mutating(M, X_3, p_1, Y)
+
+        SR1_mutating.p_tmp = p_2
+
+        SR1_mutating(M, X_4, p_1, Y)
+
+        @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
+
+        X_5 = BFGS_allocating(M, p_1, Y)
+
+        p_2 = random_point(M)
+
+        BFGS_allocating.p_tmp = p_2
+
+        X_6 = BFGS_allocating(M, p_1, Y)
+
+        @test isapprox(M, p_1, X_5, X_6; atol=1e-10)
+
+        X_7 = random_tangent(M, p_1)
+        X_8 = random_tangent(M, p_1)
+
+        BFGS_mutating(M, X_7, p_1, Y)
+
+        BFGS_mutating.p_tmp = p_2
+
+        BFGS_mutating(M, X_8, p_1, Y)
+
+        @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
     end
 end

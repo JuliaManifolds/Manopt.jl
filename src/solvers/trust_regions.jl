@@ -204,9 +204,6 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.stop = StopWhenAny(
         StopAfterIteration(manifold_dimension(p.M)),
         StopIfResidualIsReducedByFactorOrPower(o.κ, o.θ),
-        # StopWhenAll(
-        #     StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
-        # ),
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),

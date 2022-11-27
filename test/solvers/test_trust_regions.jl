@@ -131,4 +131,48 @@ include("trust_region_model.jl")
         )
         @test cost(M, XaH) ≈ cost(M, x3)
     end
+
+    @testset "Stopping criteria" begin
+        x5 = deepcopy(x)
+        o = TrustRegionsOptions(M, x5; max_trust_region_radius=8.0)
+
+        precon = (M, x, ξ) -> ξ
+        p = HessianProblem(M, cost, rgrad, rhess, precon)
+
+        initialize_solver!(p, o)
+
+        # o.tcg_options.stop = StopWhenAny(
+        #     StopAfterIteration(manifold_dimension(M)),
+        #     StopWhenAll(
+        #         StopIfResidualIsReducedByPower(1.0), StopIfResidualIsReducedByFactor(0.1)
+        #     ),
+        #     StopWhenTrustRegionIsExceeded(),
+        #     StopWhenCurvatureIsNegative(),
+        #     StopWhenModelIncreased(),
+        # )
+
+        o.tcg_options = TruncatedConjugateGradientOptions(
+            p.M,
+            o.x,
+            o.η;
+            trust_region_radius=o.trust_region_radius,
+            randomize=o.randomize,
+            (project!)=o.project!,
+            stopping_criterion=StopAfterIteration(manifold_dimension(M)) |
+                               (
+                                   StopIfResidualIsReducedByPower(1.0) &
+                                   StopIfResidualIsReducedByFactor(0.1)
+                               ) |
+                               StopWhenTrustRegionIsExceeded() |
+                               StopWhenCurvatureIsNegative() |
+                               StopWhenModelIncreased(),
+        )
+
+        result = solve(p, o)
+        x_result = get_solver_result(result)
+
+        x_sol = trust_regions(M, cost, rgrad, rhess, x; max_trust_region_radius=8.0)
+
+        @test cost(M, x_result) ≈ cost(M, x_sol)
+    end
 end
