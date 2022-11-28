@@ -60,10 +60,10 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `x` – initial point
 * `smoothing` – ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
 * `ϵ` – (`1e–3`) the accuracy tolerance
-* `u_exponent` – (`1/100`) exponent of the ϵ update factor;
+* `ϵ_exponent` – (`1/100`) exponent of the ϵ update factor;
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `u_exponent` – (`1/100`) exponent of the ϵ update factor;
+* `u_exponent` – (`1/100`) exponent of the u update factor;
 * `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `min_stepsize` – (`1e-10`) the minimal step size

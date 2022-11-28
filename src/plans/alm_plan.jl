@@ -22,7 +22,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `ρ` – (`1.0`) the penalty parameter
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `θ_ϵ` – (`(ϵ_min/ϵ)^(1/num_outer_itertgn)`) the scaling factor of the accuracy tolerance
+* `θ_ϵ` – (`(ϵ_min/ϵ)^(ϵ_exponent)`) the scaling factor of the accuracy tolerance
 * `penalty` – evaluation of the current penalty term, initialized to `Inf`.
 * `stopping_criterion` – (`(`[`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
@@ -155,7 +155,7 @@ This struct is also a functor in both formats
 * `(M, X, p)` to compute the gradient in in-place fashion.
 
 based on the internal [`ConstrainedProblem`](@ref) and computes the gradient
-``\operatorname{grad} \mathcal L_{ρ}(q, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
+``\operatorname{grad} \mathcal L_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
 """
 mutable struct AugmentedLagrangianGrad{Pr,R,T}
     P::Pr

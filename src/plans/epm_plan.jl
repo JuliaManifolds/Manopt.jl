@@ -95,7 +95,7 @@ abstract type SmoothingTechnique end
 @doc raw"""
     LogarithmicSumOfExponentials <: SmoothingTechnique
 
-Spefiy a smoothing based on ``\max\{a,b\} ≈ u \log(\mathrm{e}^{\frac{a}{u}}+\mathrm{e}^{\frac{b}{u}})``
+Specify a smoothing based on ``\max\{a,b\} ≈ u \log(\mathrm{e}^{\frac{a}{u}}+\mathrm{e}^{\frac{b}{u}})``
 for some ``u``.
 """
 struct LogarithmicSumOfExponentials <: SmoothingTechnique end
@@ -128,7 +128,7 @@ f(p) + ρ\Bigl(
 ```
 where we use an additional parameter ``u`` and a smoothing technique, e.g.
 [`LogarithmicSumOfExponentials`](@ref) or [`LinearQuadraticHuber`](@ref)
-to obtain a smooth cost function. This struct is also a functor (M,p) -> v` of the cost ``v``.
+to obtain a smooth cost function. This struct is also a functor `(M,p) -> v` of the cost ``v``.
 
 ## Fields
 
@@ -172,7 +172,7 @@ end
     ExactPenaltyGrad{S<:SmoothingTechnique, Pr<:ConstrainedProblem, R}
 
 Represent the gradient of the [`ExactPenaltyCost`](@ref) based on a [`ConstrainedProblem`](@ref) `P`
-and a parameter ``ρ`` and a smoothing parameyterwhere we use an additional parameter ``u``.
+and a parameter ``ρ`` and a smoothing technique, which uses an additional parameter ``u``.
 
 This struct is also a functor in both formats
 * `(M, p) -> X` to compute the gradient in allocating fashion.
