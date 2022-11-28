@@ -114,27 +114,27 @@ function get_cost(P::NonlinearLeastSquaresProblem{MutatingEvaluation}, p)
 end
 
 function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
-    Jval = p.jacobian!!(p.M, x)
+    Jval = p.jacobian!!(p.M, x; B_dom=p.jacB)
     Fval = p.F(p.M, x)
     return get_vector(p.M, x, transpose(Jval) * Fval, p.jacB)
 end
 function get_gradient(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, x)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
-    p.jacobian!!(p.M, Jval, x)
+    p.jacobian!!(p.M, Jval, x; B_dom=p.jacB)
     Fval = zeros(p.num_components)
     p.F(p.M, Fval, x)
     return get_vector(p.M, x, transpose(Jval) * Fval, p.jacB)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, X, x)
-    Jval = p.jacobian!!(p.M, x)
+    Jval = p.jacobian!!(p.M, x; B_dom=p.jacB)
     Fval = p.F(p.M, x)
     return get_vector!(p.M, X, x, transpose(Jval) * Fval, p.jacB)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, X, x)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
-    p.jacobian!!(p.M, Jval, x)
+    p.jacobian!!(p.M, Jval, x; B_dom=p.jacB)
     Fval = zeros(p.num_components)
     p.F(p.M, Fval, x)
     return get_vector!(p.M, X, x, transpose(Jval) * Fval, p.jacB)
@@ -149,6 +149,8 @@ Describes a Gradient based descent algorithm, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` – a point (of type `P`) on a manifold as starting point
+* `Fval` -- value of ``F`` calculated in the solver setup or the previous iteration
+* `Fval_temp` -- value of ``F`` for the current proposal point
 * `jacF` – the current Jacobian of ``F``
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(200)`) a [`StoppingCriterion`](@ref)
 * `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
@@ -167,11 +169,13 @@ All following fields are keyword arguments.
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """
 mutable struct LevenbergMarquardtOptions{
-    P,TStop<:StoppingCriterion,TRTM<:AbstractRetractionMethod,TJac,TGrad,Tparams<:Real
+    P,TStop<:StoppingCriterion,TRTM<:AbstractRetractionMethod,TFval,TJac,TGrad,Tparams<:Real
 } <: AbstractGradientOptions
     x::P
     stop::TStop
     retraction_method::TRTM
+    Fval::TFval
+    Fval_temp::TFval
     jacF::TJac
     gradient::TGrad
     step_vector::TGrad
@@ -184,6 +188,7 @@ mutable struct LevenbergMarquardtOptions{
     function LevenbergMarquardtOptions{P}(
         M::AbstractManifold,
         initialX::P,
+        initial_Fval::TFval,
         initial_jacF::TJac,
         initial_gradient::TGrad;
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
@@ -194,7 +199,7 @@ mutable struct LevenbergMarquardtOptions{
         damping_term_min::Real=0.1,
         β::Real=5.0,
         flagnz::Bool=true,
-    ) where {P,TJac,TGrad}
+    ) where {P,TFval,TJac,TGrad}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end
@@ -210,11 +215,13 @@ mutable struct LevenbergMarquardtOptions{
         end
         Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β))
         return new{
-            P,typeof(stopping_criterion),typeof(retraction_method),TJac,TGrad,Tparams
+            P,typeof(stopping_criterion),typeof(retraction_method),TFval,TJac,TGrad,Tparams
         }(
             initialX,
             stopping_criterion,
             retraction_method,
+            initial_Fval,
+            copy(initial_Fval),
             initial_jacF,
             initial_gradient,
             allocate(M, initial_gradient),
@@ -231,15 +238,22 @@ end
 function LevenbergMarquardtOptions(
     M::AbstractManifold,
     x::P,
-    initial_jacF::TJac,
+    initial_Fval,
+    initial_jacF,
     initial_gradient=zero_vector(M, x);
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(1e-12) |
                                           StopWhenStepsizeLess(1e-12),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-) where {P,TJac}
+) where {P}
     return LevenbergMarquardtOptions{P}(
-        M, x, initial_jacF, initial_gradient; stopping_criterion, retraction_method
+        M,
+        x,
+        initial_Fval,
+        initial_jacF,
+        initial_gradient;
+        stopping_criterion,
+        retraction_method,
     )
 end
 
@@ -267,6 +281,7 @@ function LevenbergMarquardt!(
     o = LevenbergMarquardtOptions(
         M,
         x,
+        similar(x, num_components), # TODO: rethink this?
         similar(x, num_components, manifold_dimension(M)); # TODO: rethink this?
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
@@ -277,36 +292,57 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOptions)
+function initialize_solver!(
+    p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, o::LevenbergMarquardtOptions
+)
+    o.Fval = p.F(p.M, o.x)
+    o.gradient = get_gradient(p, o.x)
+    return o
+end
+function initialize_solver!(
+    p::NonlinearLeastSquaresProblem{MutatingEvaluation}, o::LevenbergMarquardtOptions
+)
+    p.F(p.M, o.Fval, o.x)
     o.gradient = get_gradient(p, o.x)
     return o
 end
 function step_solver!(
-    p::NonlinearLeastSquaresProblem, o::LevenbergMarquardtOptions, iter::Integer
-)
-    Fk = p.F(p.M, o.x)
-    o.jacF = p.jacobian!!(p.M, o.x)
-    λk = o.damping_term * norm(Fk)
+    p::NonlinearLeastSquaresProblem{Teval}, o::LevenbergMarquardtOptions, iter::Integer
+) where {Teval<:AbstractEvaluationType}
+    # o.Fval is either initialized by initialize_solver! or taken from the previous iteraion
+    if Teval === AllocatingEvaluation
+        o.jacF = p.jacobian!!(p.M, o.x; B_dom=p.jacB)
+    else
+        p.jacobian!!(p.M, o.jacF, o.x; B_dom=p.jacB)
+    end
+    λk = o.damping_term * norm(o.Fval)
 
     JJ = transpose(o.jacF) * o.jacF + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    grad_f_c = transpose(o.jacF) * Fk
+    grad_f_c = transpose(o.jacF) * o.Fval
     sk = cholesky(JJ) \ -grad_f_c
     get_vector!(p.M, o.gradient, o.x, grad_f_c, p.jacB)
-    # TODO: how to specify basis?
+
     get_vector!(p.M, o.step_vector, o.x, sk, p.jacB)
     o.last_stepsize = norm(p.M, o.x, o.step_vector)
     temp_x = retract(p.M, o.x, o.step_vector, o.retraction_method)
 
-    normFk2 = norm(Fk)^2
+    normFk2 = norm(o.Fval)^2
+    if Teval === AllocatingEvaluation
+        o.Fval_temp = p.F(p.M, temp_x)
+    else
+        p.F(p.M, o.Fval_temp, temp_x)
+    end
+
     ρk =
-        2 * (normFk2 - norm(p.F(p.M, temp_x))^2) / (
+        2 * (normFk2 - norm(o.Fval_temp)^2) / (
             -2 * inner(p.M, o.x, o.gradient, o.step_vector) - norm(o.jacF * sk)^2 -
             λk * norm(sk)
         )
     if ρk >= o.η
         copyto!(p.M, o.x, temp_x)
+        copyto!(o.Fval, o.Fval_temp)
         if !o.flagnz
             o.damping_term = max(o.damping_term_min, o.damping_term / o.β)
         end

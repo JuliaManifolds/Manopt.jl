@@ -105,14 +105,26 @@ end
     @test isapprox(o.options.x[2], -3, atol=0.01)
 
     # mutating R2 regression
-    # x0 = [0.0, 0.0]
-    # o_mut = Manopt.LevenbergMarquardt(M, F_reg_r2!, jacF_reg_r2!, x0, length(ts_r2)*2; return_options=true, evaluation=MutatingEvaluation())
-    # @test isapprox(o_mut.options.x[1], 2, atol=0.01)
-    # @test isapprox(o_mut.options.x[2], -3, atol=0.01)
+    x0 = [0.0, 0.0]
+    o_mut = Manopt.LevenbergMarquardt(
+        M,
+        F_reg_r2!,
+        jacF_reg_r2!,
+        x0,
+        length(ts_r2) * 2;
+        return_options=true,
+        evaluation=MutatingEvaluation(),
+    )
+    @test isapprox(o_mut.options.x[1], 2, atol=0.01)
+    @test isapprox(o_mut.options.x[2], -3, atol=0.01)
 
     x0 = [4.0, 2.0]
     o_r2 = LevenbergMarquardtOptions(
-        M, x0, similar(x0, 2 * length(ts_r2), 2); stopping_criterion=StopAfterIteration(20)
+        M,
+        x0,
+        similar(x0, length(ts_r2)),
+        similar(x0, 2 * length(ts_r2), 2);
+        stopping_criterion=StopAfterIteration(20),
     )
     p_r2 = NonlinearLeastSquaresProblem(M, F_reg_r2, jacF_reg_r2, length(ts_r2))
 
