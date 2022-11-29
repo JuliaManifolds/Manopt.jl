@@ -1,12 +1,11 @@
 
 @doc raw"""
-    NonlinearLeastSquaresProblem{T} <: Problem{T}
+    NonlinearLeastSquaresProblem{T<:AbstractEvaluationType} <: Problem{T}
 
 A type for nonlinear least squares problems.
-`T` is a [`AbstractEvaluationType`](@ref) for the gradient function.
+`T` is a [`AbstractEvaluationType`](@ref) for the `F` and Jacobian functions.
 
-
-specify a problem for gradient based algorithms.
+Specify a nonlinear least squares problem
 
 # Fields
 * `M`        – a manifold ``\mathcal M``
@@ -15,19 +14,31 @@ specify a problem for gradient based algorithms.
 * `jacB`     – the basis of tangent space used for computing the Jacobian.
 * `num_components` – number of values returned by `F` (equal to `d`).
 
-Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be provided
+Depending on the [`AbstractEvaluationType`](@ref) `T` the function ``F`` has to be provided:
 
-* as a function `x -> X` that allocates memory for `X` itself for an [`AllocatingEvaluation`](@ref)
-* as a function `(X,x) -> X` that work in place of `X` for an [`MutatingEvaluation`](@ref)
+* as a functions `(M::AbstractManifold, p) -> v` that allocates memory for `v` itself for
+  an [`AllocatingEvaluation`](@ref),
+* as a function `(M::AbstractManifold, v, p) -> v` that works in place of `v` for a
+  [`MutatingEvaluation`](@ref).
+
+Also the Jacobian ``jacF!!`` is required:
+
+* as a functions `(M::AbstractManifold, p; B_dom::AbstractBasis) -> v` that allocates memory
+  for `v` itself for an [`AllocatingEvaluation`](@ref),
+* as a function `(M::AbstractManifold, v, p; B_dom::AbstractBasis) -> v` that works in place
+  of `v` for an [`MutatingEvaluation`](@ref).
 
 # Constructors
-    GradientProblem(M, cost, gradient; evaluation=AllocatingEvaluation(), jacB=DefaultOrthonormalBasis())
+
+    NonlinearLeastSquaresProblem(M, F, jacF, num_components; evaluation=AllocatingEvaluation(), jacB=DefaultOrthonormalBasis())
 
 # See also
-[`LevenbergMarquardt`](@ref), [`GradientDescentOptions`](@ref)
+
+[`LevenbergMarquardt`](@ref), [`LevenbergMarquardtOptions`](@ref)
 """
-struct NonlinearLeastSquaresProblem{T,mT<:AbstractManifold,TF,TJ,TB<:AbstractBasis} <:
-       Problem{T}
+struct NonlinearLeastSquaresProblem{
+    T<:AbstractEvaluationType,mT<:AbstractManifold,TF,TJ,TB<:AbstractBasis
+} <: Problem{T}
     M::mT
     F::TF
     jacobian!!::TJ
@@ -63,30 +74,34 @@ function get_cost(P::NonlinearLeastSquaresProblem{MutatingEvaluation}, p)
 end
 
 function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
-    Jval = p.jacobian!!(p.M, x; B_dom=p.jacB)
+    basis_x = _maybe_get_basis(p.M, x, p.jacB)
+    Jval = p.jacobian!!(p.M, x; B_dom=basis_x)
     Fval = p.F(p.M, x)
-    return get_vector(p.M, x, transpose(Jval) * Fval, p.jacB)
+    return get_vector(p.M, x, transpose(Jval) * Fval, basis_x)
 end
 function get_gradient(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, x)
+    basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
-    p.jacobian!!(p.M, Jval, x; B_dom=p.jacB)
+    p.jacobian!!(p.M, Jval, x; B_dom=basis_x)
     Fval = zeros(p.num_components)
     p.F(p.M, Fval, x)
-    return get_vector(p.M, x, transpose(Jval) * Fval, p.jacB)
+    return get_vector(p.M, x, transpose(Jval) * Fval, basis_x)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, X, x)
-    Jval = p.jacobian!!(p.M, x; B_dom=p.jacB)
+    basis_x = _maybe_get_basis(p.M, x, p.jacB)
+    Jval = p.jacobian!!(p.M, x; B_dom=basis_x)
     Fval = p.F(p.M, x)
-    return get_vector!(p.M, X, x, transpose(Jval) * Fval, p.jacB)
+    return get_vector!(p.M, X, x, transpose(Jval) * Fval, basis_x)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, X, x)
+    basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
-    p.jacobian!!(p.M, Jval, x; B_dom=p.jacB)
+    p.jacobian!!(p.M, Jval, x; B_dom=basis_x)
     Fval = zeros(p.num_components)
     p.F(p.M, Fval, x)
-    return get_vector!(p.M, X, x, transpose(Jval) * Fval, p.jacB)
+    return get_vector!(p.M, X, x, transpose(Jval) * Fval, basis_x)
 end
 
 @doc raw"""
@@ -95,24 +110,33 @@ end
 Describes a Gradient based descent algorithm, with
 
 # Fields
-a default value is given in brackets if a parameter can be left out in initialization.
+
+A default value is given in brackets if a parameter can be left out in initialization.
 
 * `x` – a point (of type `P`) on a manifold as starting point
-* `Fval` -- value of ``F`` calculated in the solver setup or the previous iteration
-* `Fval_temp` -- value of ``F`` for the current proposal point
-* `jacF` – the current Jacobian of ``F``
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(200)`) a [`StoppingCriterion`](@ref)
+* `stop` – (`StopAfterIteration(200) | StopWhenGradientNormLess(1e-12) | StopWhenStepsizeLess(1e-12)`)
+  a [`StoppingCriterion`](@ref)
 * `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
   the default set for your manifold.
-* `flagnz` -- if false, the algorithm expects that the value of residual at mimimum is equal
-  to 0.
+* `Fval` – value of ``F`` calculated in the solver setup or the previous iteration
+* `Fval_temp` – value of ``F`` for the current proposal point
+* `jacF` – the current Jacobian of ``F``
+* `gradient` – the current gradient of ``F``
+* `step_vector` – the tangent vector at `x` that is used to move to the next point
+* `last_stepsize` – length of `step_vector`
+* `η` – parameter of the algorithm, the higher it is the more likely the algorithm will be
+  to reject new proposal points
+* `damping_term` – current value of the damping term
+* `damping_term_min` – initial (and also minimal) value of the damping term
+* `β` – parameter by which the damping term is multiplied when the current new point is rejected
+* `flagnz` – (`true`) if false, the algorithm expects that the value of residual at mimimum
+  is equal to 0.
 
 # Constructor
 
-    LevenbergMarquardtOptions(M, x; initial_vector=zero_vector(M, x), kwargs...)
+    LevenbergMarquardtOptions(M, initialX, initial_Fval, initial_jacF; initial_vector), kwargs...)
 
-Generate gradient descent options, where `initial_vector` can be used to set the tangent vector to store the gradient to a certain type.
-All following fields are keyword arguments.
+Generate Levenberg-Marquardt options.
 
 # See also
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
@@ -134,16 +158,16 @@ mutable struct LevenbergMarquardtOptions{
     damping_term_min::Tparams
     β::Tparams
     flagnz::Bool
-    function LevenbergMarquardtOptions{P}(
+    function LevenbergMarquardtOptions(
         M::AbstractManifold,
         initialX::P,
         initial_Fval::TFval,
         initial_jacF::TJac,
-        initial_gradient::TGrad;
+        initial_gradient::TGrad=zero_vector(M, initialX);
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-12) |
                                               StopWhenStepsizeLess(1e-12),
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         η::Real=0.2,
         damping_term_min::Real=0.1,
         β::Real=5.0,
@@ -182,28 +206,4 @@ mutable struct LevenbergMarquardtOptions{
             flagnz,
         )
     end
-end
-
-function LevenbergMarquardtOptions(
-    M::AbstractManifold,
-    x::P,
-    initial_Fval,
-    initial_jacF,
-    initial_gradient=zero_vector(M, x);
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenGradientNormLess(1e-12) |
-                                          StopWhenStepsizeLess(1e-12),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    kwargs...,
-) where {P}
-    return LevenbergMarquardtOptions{P}(
-        M,
-        x,
-        initial_Fval,
-        initial_jacF,
-        initial_gradient;
-        stopping_criterion,
-        retraction_method,
-        kwargs...,
-    )
 end

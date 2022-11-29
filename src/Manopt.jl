@@ -88,7 +88,7 @@ import ManifoldsBase:
     setindex!,
     set_component!
 
-using ManifoldsBase: get_vector!, get_coordinates!
+using ManifoldsBase: get_vector!, get_coordinates!, requires_caching
 
 include("plans/plan.jl")
 # Functions

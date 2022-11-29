@@ -123,6 +123,21 @@ end
     @test isapprox(o.options.x[1], 2, atol=0.01)
     @test isapprox(o.options.x[2], -3, atol=0.01)
 
+    # testing with a basis that requires cacheing
+    M = Euclidean(2)
+    x0 = [0.0, 0.0]
+    o = Manopt.LevenbergMarquardt(
+        M,
+        F_reg_r2(ts_r2, xs_r2, ys_r2),
+        jacF_reg_r2(ts_r2, xs_r2, ys_r2),
+        x0,
+        length(ts_r2) * 2;
+        return_options=true,
+        jacB=ProjectedOrthonormalBasis(:svd),
+    )
+    @test isapprox(o.options.x[1], 2, atol=0.01)
+    @test isapprox(o.options.x[2], -3, atol=0.01)
+
     # allocating R2 regression, zero residual
     M = Euclidean(2)
     x0 = [0.0, 0.0]

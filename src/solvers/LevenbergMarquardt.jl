@@ -69,14 +69,17 @@ function LevenbergMarquardt!(
     debug=[DebugWarnIfCostIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     flagnz::Bool=true,
+    jacB::AbstractBasis=DefaultOrthonormalBasis(),
     kwargs..., #collect rest
 ) where {TF,TDF}
-    p = NonlinearLeastSquaresProblem(M, F, jacF, num_components; evaluation=evaluation)
+    p = NonlinearLeastSquaresProblem(
+        M, F, jacF, num_components; evaluation=evaluation, jacB=jacB
+    )
     o = LevenbergMarquardtOptions(
         M,
         x,
-        similar(x, num_components), # TODO: rethink this?
-        similar(x, num_components, manifold_dimension(M)); # TODO: rethink this?
+        similar(x, num_components),
+        similar(x, num_components, manifold_dimension(M));
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         flagnz=flagnz,
@@ -101,14 +104,25 @@ function initialize_solver!(
     o.gradient = get_gradient(p, o.x)
     return o
 end
+
+function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
+    if requires_caching(B)
+        return get_basis(M, p, B)
+    else
+        return B
+    end
+end
+
 function step_solver!(
     p::NonlinearLeastSquaresProblem{Teval}, o::LevenbergMarquardtOptions, iter::Integer
 ) where {Teval<:AbstractEvaluationType}
     # o.Fval is either initialized by initialize_solver! or taken from the previous iteraion
+
+    basis_ox = _maybe_get_basis(p.M, o.x, p.jacB)
     if Teval === AllocatingEvaluation
-        o.jacF = p.jacobian!!(p.M, o.x; B_dom=p.jacB)
+        o.jacF = p.jacobian!!(p.M, o.x; B_dom=basis_ox)
     else
-        p.jacobian!!(p.M, o.jacF, o.x; B_dom=p.jacB)
+        p.jacobian!!(p.M, o.jacF, o.x; B_dom=basis_ox)
     end
     λk = o.damping_term * norm(o.Fval)
 
@@ -117,9 +131,9 @@ function step_solver!(
     # problem because JJ is symmetric positive definite
     grad_f_c = transpose(o.jacF) * o.Fval
     sk = cholesky(JJ) \ -grad_f_c
-    get_vector!(p.M, o.gradient, o.x, grad_f_c, p.jacB)
+    get_vector!(p.M, o.gradient, o.x, grad_f_c, basis_ox)
 
-    get_vector!(p.M, o.step_vector, o.x, sk, p.jacB)
+    get_vector!(p.M, o.step_vector, o.x, sk, basis_ox)
     o.last_stepsize = norm(p.M, o.x, o.step_vector)
     temp_x = retract(p.M, o.x, o.step_vector, o.retraction_method)
 
