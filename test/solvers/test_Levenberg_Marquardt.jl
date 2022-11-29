@@ -57,12 +57,26 @@ const ys_r2 = [
     -18.475183785109927,
 ]
 
-function F_reg_r2(::AbstractManifold, p)
-    return vcat(ts_r2 .* p[1] .- xs_r2, ts_r2 .* p[2] .- ys_r2)
+struct F_reg_r2
+    ts_r2::Vector{Float64}
+    xs_r2::Vector{Float64}
+    ys_r2::Vector{Float64}
 end
 
-function jacF_reg_r2(::AbstractManifold, p; B_dom::AbstractBasis=DefaultOrthogonalBasis())
-    return [ts_r2 zero(ts_r2); zero(ts_r2) ts_r2]
+function (f::F_reg_r2)(::AbstractManifold, p)
+    return vcat(f.ts_r2 .* p[1] .- f.xs_r2, f.ts_r2 .* p[2] .- f.ys_r2)
+end
+
+struct jacF_reg_r2
+    ts_r2::Vector{Float64}
+    xs_r2::Vector{Float64}
+    ys_r2::Vector{Float64}
+end
+
+function (f::jacF_reg_r2)(
+    ::AbstractManifold, p; B_dom::AbstractBasis=DefaultOrthogonalBasis()
+)
+    return [f.ts_r2 zero(f.ts_r2); zero(f.ts_r2) f.ts_r2]
 end
 
 function F_reg_r2!(::AbstractManifold, x, p)
@@ -95,11 +109,31 @@ end
     @test norm(M, x_opt, get_gradient(o)) < 2e-3
     @test distance(M, ref_R, x_opt) < 1e-2
 
-    # allocating R2 regression
+    # allocating R2 regression, nonzero residual
     M = Euclidean(2)
     x0 = [0.0, 0.0]
     o = Manopt.LevenbergMarquardt(
-        M, F_reg_r2, jacF_reg_r2, x0, length(ts_r2) * 2; return_options=true
+        M,
+        F_reg_r2(ts_r2, xs_r2, ys_r2),
+        jacF_reg_r2(ts_r2, xs_r2, ys_r2),
+        x0,
+        length(ts_r2) * 2;
+        return_options=true,
+    )
+    @test isapprox(o.options.x[1], 2, atol=0.01)
+    @test isapprox(o.options.x[2], -3, atol=0.01)
+
+    # allocating R2 regression, zero residual
+    M = Euclidean(2)
+    x0 = [0.0, 0.0]
+    o = Manopt.LevenbergMarquardt(
+        M,
+        F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
+        jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
+        x0,
+        length(ts_r2) * 2;
+        return_options=true,
+        flagnz=false,
     )
     @test isapprox(o.options.x[1], 2, atol=0.01)
     @test isapprox(o.options.x[2], -3, atol=0.01)
@@ -126,16 +160,59 @@ end
         similar(x0, 2 * length(ts_r2), 2);
         stopping_criterion=StopAfterIteration(20),
     )
-    p_r2 = NonlinearLeastSquaresProblem(M, F_reg_r2, jacF_reg_r2, length(ts_r2))
+    p_r2 = NonlinearLeastSquaresProblem(
+        M,
+        F_reg_r2(ts_r2, xs_r2, ys_r2),
+        jacF_reg_r2(ts_r2, xs_r2, ys_r2),
+        length(ts_r2) * 2,
+    )
 
     X_r2 = similar(x0)
     get_gradient!(p_r2, X_r2, x0)
     @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
+
+    p_r2_mut = NonlinearLeastSquaresProblem(
+        M, F_reg_r2!, jacF_reg_r2!, length(ts_r2) * 2; evaluation=MutatingEvaluation()
+    )
+
+    X_r2 = similar(x0)
+    get_gradient!(p_r2_mut, X_r2, x0)
+    @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
+
     @testset "debug options" begin
         io = IOBuffer()
         # Additional Specific Debugs
         a1 = DebugGradient(; long=false, io=io)
         a1(p_r2, o_r2, 1)
         @test String(take!(io)) == "gradF(x):[0.0, 0.0]"
+    end
+
+    @testset "errors" begin
+        @test_throws ArgumentError LevenbergMarquardtOptions(
+            M,
+            x0,
+            similar(x0, length(ts_r2)),
+            similar(x0, 2 * length(ts_r2), 2);
+            stopping_criterion=StopAfterIteration(20),
+            η=2,
+        )
+
+        @test_throws ArgumentError LevenbergMarquardtOptions(
+            M,
+            x0,
+            similar(x0, length(ts_r2)),
+            similar(x0, 2 * length(ts_r2), 2);
+            stopping_criterion=StopAfterIteration(20),
+            damping_term_min=-1,
+        )
+
+        @test_throws ArgumentError LevenbergMarquardtOptions(
+            M,
+            x0,
+            similar(x0, length(ts_r2)),
+            similar(x0, 2 * length(ts_r2), 2);
+            stopping_criterion=StopAfterIteration(20),
+            β=0.5,
+        )
     end
 end
