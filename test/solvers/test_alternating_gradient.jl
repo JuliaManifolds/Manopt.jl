@@ -23,9 +23,9 @@ using Manopt, Manifolds, Test
     @testset "Test gradient access" begin
         Pf = AlternatingGradientProblem(N, F, gradF)
         Pv = AlternatingGradientProblem(N, F, [gradF1, gradF2])
-        Pf! = AlternatingGradientProblem(N, F, gradF!; evaluation=MutatingEvaluation())
+        Pf! = AlternatingGradientProblem(N, F, gradF!; evaluation=InplaceEvaluation())
         Pv! = AlternatingGradientProblem(
-            N, F, [gradF1!, gradF2!]; evaluation=MutatingEvaluation()
+            N, F, [gradF1!, gradF2!]; evaluation=InplaceEvaluation()
         )
         for P in [Pf, Pv, Pf!, Pv!]
             Y = zero_vector(N, x)
@@ -49,15 +49,10 @@ using Manopt, Manifolds, Test
         y3 = allocate(x)
         copyto!(N, y3, x)
         y = alternating_gradient_descent(
-            N, F, [gradF1!, gradF2!], x; order_type=:Linear, evaluation=MutatingEvaluation()
+            N, F, [gradF1!, gradF2!], x; order_type=:Linear, evaluation=InplaceEvaluation()
         )
         alternating_gradient_descent!(
-            N,
-            F,
-            [gradF1!, gradF2!],
-            y2;
-            order_type=:Linear,
-            evaluation=MutatingEvaluation(),
+            N, F, [gradF1!, gradF2!], y2; order_type=:Linear, evaluation=InplaceEvaluation()
         )
         @test isapprox(N, y, y2)
         o = alternating_gradient_descent!(
@@ -65,7 +60,7 @@ using Manopt, Manifolds, Test
             F,
             [gradF1!, gradF2!],
             y3;
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
             order_type=:Linear,
             return_options=true,
         )

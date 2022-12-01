@@ -34,7 +34,7 @@ __plan__. A __plan__ uniquely determines the algorithm to use and provides all
 necessary information to run it.
 
 You can either follow the code here and look at the preprinted output, or, if you want to experiment
-things for yourself, you can directly access the Pluto notebooks related to the tutorials by going 
+things for yourself, you can directly access the Pluto notebooks related to the tutorials by going
 to "/your`_Julia_`installation_folder/packages/Manopt/tutorials/".
 """
 
@@ -73,7 +73,7 @@ both the stopping criterion ([`StopAfterIteration`](@ref)`(100)`) as well as the
 stepsize ([`ConstantStepsize`](@ref)`(1.)`) are quite conservative, but are
 chosen to be as simple as possible.
 
-With these two at hand, running the algorithm just requires to call `x_opt = solve(p,o)`.
+With these two at hand, running the algorithm just requires to call `x_opt = solve!(p,o)`.
 
 In the following two examples we will see, how to use a higher level interface
 that allows to more easily activate, for example, a debug output or record values during the iterations.

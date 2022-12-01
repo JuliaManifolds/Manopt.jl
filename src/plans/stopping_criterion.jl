@@ -25,7 +25,9 @@ mutable struct StopAfterIteration <: StoppingCriterion
     reason::String
     StopAfterIteration(mIter::Int) = new(mIter, "")
 end
-function (c::StopAfterIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopAfterIteration)(
+    ::P, ::O, i::Int
+) where {P<:AbstractManoptProblem,O<:Options}
     (i == 0) && (c.reason = "") # reset on init
     if i >= c.maxIter
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
@@ -55,7 +57,7 @@ mutable struct StopWhenGradientNormLess <: StoppingCriterion
     reason::String
     StopWhenGradientNormLess(ε::Float64) = new(ε, "")
 end
-function (c::StopWhenGradientNormLess)(p::Problem, o::Options, i::Int)
+function (c::StopWhenGradientNormLess)(p::AbstractManoptProblem, o::Options, i::Int)
     (i == 0) && (c.reason = "") # reset on init
     if norm(p.M, get_iterate(o), get_gradient(o)) < c.threshold
         c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(p.M,get_iterate(o),get_gradient(o)))) is less than $(c.threshold).\n"
@@ -101,7 +103,7 @@ mutable struct StopWhenChangeLess <: StoppingCriterion
         return new(ε, "", a)
     end
 end
-function (c::StopWhenChangeLess)(P::Problem, O::Options, i)
+function (c::StopWhenChangeLess)(P::AbstractManoptProblem, O::Options, i)
     (i == 0) && (c.reason = "") # reset on init
     if has_storage(c.storage, :Iterate)
         x_old = get_storage(c.storage, :Iterate)
@@ -145,7 +147,9 @@ mutable struct StopWhenStepsizeLess <: StoppingCriterion
         return new(ε, "")
     end
 end
-function (c::StopWhenStepsizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenStepsizeLess)(
+    p::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:Options}
     (i == 0) && (c.reason = "") # reset on init
     s = get_last_stepsize(p, o, i)
     if s < c.threshold && i > 0
@@ -182,7 +186,9 @@ mutable struct StopWhenCostLess <: StoppingCriterion
     reason::String
     StopWhenCostLess(ε::Float64) = new(ε, "")
 end
-function (c::StopWhenCostLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenCostLess)(
+    p::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:Options}
     (i == 0) && (c.reason = "") # reset on init
     if i > 0 && get_cost(p, get_iterate(o)) < c.threshold
         c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(o)))) less than the threshold ($(c.threshold)).\n"
@@ -224,7 +230,9 @@ mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
     reason::String
     StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "")
 end
-function (c::StopWhenSmallerOrEqual)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenSmallerOrEqual)(
+    ::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:Options}
     (i == 0) && (c.reason = "") # reset on init
     if getfield(o, c.value) <= c.minValue
         c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
@@ -258,7 +266,7 @@ mutable struct StopAfter <: StoppingCriterion
         end
     end
 end
-function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopAfter)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
     if value(c.start) == 0 || i <= 0 # (re)start timer
         c.reason = ""
         c.start = Nanosecond(time_ns())
@@ -304,7 +312,7 @@ mutable struct StopWhenAll{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAll(c...) = new{typeof(c)}(c, "")
 end
-function (c::StopWhenAll)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenAll)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
     (i == 0) && (c.reason = "") # reset on init
     if all(subC -> subC(p, o, i), c.criteria)
         c.reason = string([get_reason(subC) for subC in c.criteria]...)
@@ -357,7 +365,7 @@ mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAny(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c)
 end
-function (c::StopWhenAny)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenAny)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
     (i == 0) && (c.reason = "") # reset on init
     if any(subC -> subC(p, o, i), c.criteria)
         c.reason = string([get_reason(subC) for subC in c.criteria]...)

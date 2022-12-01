@@ -1,6 +1,6 @@
 
 @doc raw"""
-    HessianProblem <: Problem
+    HessianProblem <:AbstractManoptProblem
 
 specify a problem for hessian based algorithms.
 
@@ -332,20 +332,20 @@ applied to a tangent vector `X`, i.e. ``\operatorname{Hess}f(q)[X]``.
 
 The evaluation is done in place of `Y` for the `!`-variant.
 The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
-When the non-mutating variant is called with a `T=`[`MutatingEvaluation`](@ref)
+When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
 memory for the result is allocated.
 """
 function get_hessian(p::HessianProblem{AllocatingEvaluation}, q, X)
     return p.hessian!!(p.M, q, X)
 end
-function get_hessian(p::HessianProblem{MutatingEvaluation}, q, X)
+function get_hessian(p::HessianProblem{InplaceEvaluation}, q, X)
     Y = zero_vector(p.M, q)
     return p.hessian!!(p.M, Y, q, X)
 end
 function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
     return copyto!(p.M, Y, p.hessian!!(p.M, q, X))
 end
-function get_hessian!(p::HessianProblem{MutatingEvaluation}, Y, q, X)
+function get_hessian!(p::HessianProblem{InplaceEvaluation}, Y, q, X)
     return p.hessian!!(p.M, Y, q, X)
 end
 
@@ -422,7 +422,7 @@ function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
     )
     return (1 / c) * (f.grad_tmp_dir - f.grad_tmp)
 end
-function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, x, X)
+function (f::ApproxHessianFiniteDifference{InplaceEvaluation})(M, Y, x, X)
     norm_X = norm(M, x, X)
     (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, x)
     c = f.steplength / norm_X

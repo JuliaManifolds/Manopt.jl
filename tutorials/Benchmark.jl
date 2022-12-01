@@ -101,10 +101,10 @@ begin
     gradF2! = grad!(data, similar(data[1]))
     m2 = deepcopy(x0)
     gradient_descent!(
-        M, F, gradF2!, m2; evaluation=MutatingEvaluation(), stopping_criterion=sc
+        M, F, gradF2!, m2; evaluation=InplaceEvaluation(), stopping_criterion=sc
     )
     @benchmark gradient_descent!(
-        $M, $F, $gradF2!, m2; evaluation=$(MutatingEvaluation()), stopping_criterion=$sc
+        $M, $F, $gradF2!, m2; evaluation=$(InplaceEvaluation()), stopping_criterion=$sc
     ) setup = (m2 = deepcopy($x0))
 end
 

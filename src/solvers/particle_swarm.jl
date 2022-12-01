@@ -133,32 +133,37 @@ function particle_swarm!(
         vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 
 #
 # Solver functions
 #
-function initialize_solver!(p::CostProblem, o::ParticleSwarmOptions)
-    j = argmin([get_cost(p, y) for y in o.x])
+function initialize_solver!(
+    mp::DefaultManoptProblem{TM,<:ManifoldCostObjective}, o::ParticleSwarmOptions
+) where {TM}
+    j = argmin([get_cost(mp, p) for p in o.x])
     return o.g = deepcopy(o.x[j])
 end
-function step_solver!(p::CostProblem, o::ParticleSwarmOptions, iter)
+function step_solver!(
+    mp::DefaultManoptProblem{TM,<:ManifoldCostObjective}, o::ParticleSwarmOptions, ::Any
+) where {TM}
+    M = get_manifold(mp)
     for i in 1:length(o.x)
         o.velocity[i] =
             o.inertia .* o.velocity[i] +
             o.cognitive_weight * rand(1) .*
-            inverse_retract(p.M, o.x[i], o.p[i], o.inverse_retraction_method) +
+            inverse_retract(M, o.x[i], o.p[i], o.inverse_retraction_method) +
             o.social_weight * rand(1) .*
-            inverse_retract(p.M, o.x[i], o.g, o.inverse_retraction_method)
+            inverse_retract(M, o.x[i], o.g, o.inverse_retraction_method)
         xOld = o.x[i]
-        o.x[i] = retract(p.M, o.x[i], o.velocity[i], o.retraction_method)
+        o.x[i] = retract(M, o.x[i], o.velocity[i], o.retraction_method)
         o.velocity[i] = vector_transport_to(
-            p.M, xOld, o.velocity[i], o.x[i], o.vector_transport_method
+            M, xOld, o.velocity[i], o.x[i], o.vector_transport_method
         )
-        if get_cost(p, o.x[i]) < get_cost(p, o.p[i])
+        if get_cost(mp, o.x[i]) < get_cost(mp, o.p[i])
             o.p[i] = o.x[i]
-            if get_cost(p, o.p[i]) < get_cost(p, o.g)
+            if get_cost(mp, o.p[i]) < get_cost(mp, o.g)
                 o.g = o.p[i]
             end
         end
@@ -170,7 +175,7 @@ get_solver_result(o::ParticleSwarmOptions) = o.g
 # Change not only refers to different iterates (x=the whole population)
 # but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
 #
-function (c::StopWhenChangeLess)(P::CostProblem, O::ParticleSwarmOptions, i)
+function (c::StopWhenChangeLess)(P::AbstractManoptProblem, O::ParticleSwarmOptions, i)
     if has_storage(c.storage, :Iterate)
         x_old = get_storage(c.storage, :Iterate)
         n = length(O.x)

@@ -19,7 +19,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
         Y = get_subgradient(p, x)
         get_subgradient!(p, X, x)
         @test isapprox(M, x, X, Y)
-        oR = solve(p, o)
+        oR = solve!(p, o)
         xHat = get_solver_result(oR)
         @test get_initial_stepsize(p, o) == 1.0
         @test get_stepsize(p, o, 1) == 1.0
@@ -43,12 +43,12 @@ using Manopt, ManifoldsBase, Manifolds, Test
             X .*= -2 / max(10 * eps(Float64), d)
             return X
         end
-        p = SubGradientProblem(M, f, ∂f!; evaluation=MutatingEvaluation())
+        p = SubGradientProblem(M, f, ∂f!; evaluation=InplaceEvaluation())
         X = zero_vector(M, x)
         Y = get_subgradient(p, x)
         get_subgradient!(p, X, x)
         @test isapprox(M, x, X, Y)
-        oR = solve(p, o)
+        oR = solve!(p, o)
         xHat = get_solver_result(oR)
         # Check Fallbacks of Problen
         @test get_cost(p, x) == 0.0
@@ -56,7 +56,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
         @test_throws MethodError get_gradient(p, o.x)
         @test_throws MethodError get_proximal_map(p, 1.0, o.x, 1)
         o2 = subgradient_method(
-            M, f, ∂f!, copy(x0); evaluation=MutatingEvaluation(), return_options=true
+            M, f, ∂f!, copy(x0); evaluation=InplaceEvaluation(), return_options=true
         )
         xhat2 = get_solver_result(o2)
         @test f(M, xhat2) <= f(M, x0)

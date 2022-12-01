@@ -1,6 +1,6 @@
 using Manifolds, Manopt, Test, ManifoldsBase, Dates
 
-struct TestProblem <: Problem{AllocatingEvaluation} end
+struct TestProblem <: AbstractManoptProblem{AllocatingEvaluation} end
 struct TestOptions <: Options end
 
 @testset "StoppingCriteria" begin

@@ -30,7 +30,7 @@ arguments.
 [`exact_penalty_method`](@ref)
 """
 mutable struct ExactPenaltyMethodOptions{
-    P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
+    P,Pr<:AbstractManoptProblem,Op<:Options,TStopping<:StoppingCriterion
 } <: Options
     x::P
     sub_problem::Pr
@@ -63,7 +63,7 @@ mutable struct ExactPenaltyMethodOptions{
             StopAfterIteration(300),
             StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),
         ),
-    ) where {P,Pr<:Problem,Op<:Options}
+    ) where {P,Pr<:AbstractManoptProblem,Op<:Options}
         o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
         o.sub_problem = sub_problem
@@ -276,7 +276,7 @@ end
 # Variant 3: Vectors of mutating gradients - we can spare a few gradient evaluations and allocations
 function (
     EG::ExactPenaltyGrad{
-        <:LinearQuadraticHuber,<:ConstrainedProblem{<:MutatingEvaluation,<:VectorConstraint}
+        <:LinearQuadraticHuber,<:ConstrainedProblem{<:InplaceEvaluation,<:VectorConstraint}
     }
 )(
     M::AbstractManifold, X, p::P

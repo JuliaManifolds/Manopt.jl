@@ -59,7 +59,7 @@ using Manifolds, Manopt, Test, Dates
             f;
             λ=i -> π / (2 * i),
             stopping_criterion=StopAfterIteration(100),
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
         @test isapprox(N, s1, s2)
     end
@@ -81,7 +81,7 @@ using Manifolds, Manopt, Test, Dates
             g = deepcopy(f)
             get_proximal_map!(p1, g, 1.0, g, i)
             @test isapprox(N, g, get_proximal_map(p1, 1.0, f, i))
-            p2 = ProximalProblem(N, F, proxes!; evaluation=MutatingEvaluation())
+            p2 = ProximalProblem(N, F, proxes!; evaluation=InplaceEvaluation())
             g = deepcopy(f)
             get_proximal_map!(p2, g, 1.0, g, i)
             @test isapprox(N, g, get_proximal_map(p2, 1.0, f, i))

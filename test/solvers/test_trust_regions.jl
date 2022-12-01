@@ -96,7 +96,7 @@ include("trust_region_model.jl")
             h,
             x3;
             max_trust_region_radius=8.0,
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
             debug=[:Stop],
         )
         x4 = deepcopy(x)
@@ -107,7 +107,7 @@ include("trust_region_model.jl")
             h,
             x4;
             max_trust_region_radius=8.0,
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
             return_options=true,
         )
         @test isapprox(M, x3, x4)
@@ -122,12 +122,12 @@ include("trust_region_model.jl")
                 g;
                 steplength=2^(-9),
                 vector_transport_method=ProjectionTransport(),
-                evaluation=MutatingEvaluation(),
+                evaluation=InplaceEvaluation(),
             ),
             XaH;
             stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
             max_trust_region_radius=8.0,
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
         @test cost(M, XaH) ≈ cost(M, x3)
     end

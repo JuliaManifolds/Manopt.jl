@@ -116,7 +116,9 @@ function exact_penalty_method!(
     problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
     sub_cost=ExactPenaltyCost(problem, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(problem, ρ, u; smoothing=smoothing),
-    sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad; evaluation=evaluation),
+    sub_problem::AbstractManoptProblem=GradientProblem(
+        M, sub_cost, sub_grad; evaluation=evaluation
+    ),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
@@ -155,7 +157,7 @@ function exact_penalty_method!(
         stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(problem, o))
+    return get_solver_return(solve!(problem, o))
 end
 #
 # Solver functions
@@ -172,7 +174,7 @@ function step_solver!(p::ConstrainedProblem, o::ExactPenaltyMethodOptions, iter)
     set_iterate!(o.sub_options, copy(p.M, o.x))
     update_stopping_criterion!(o, :MinIterateChange, o.ϵ)
 
-    o.x = get_solver_result(solve(o.sub_problem, o.sub_options))
+    o.x = get_solver_result(solve!(o.sub_problem, o.sub_options))
 
     # get new evaluation of penalty
     cost_ineq = get_inequality_constraints(p, o.x)

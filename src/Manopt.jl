@@ -185,7 +185,7 @@ export Problem,
     StochasticGradientProblem,
     AbstractEvaluationType,
     AllocatingEvaluation,
-    MutatingEvaluation
+    InplaceEvaluation
 #
 # Options
 export Options,

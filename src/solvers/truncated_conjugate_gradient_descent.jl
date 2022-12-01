@@ -35,7 +35,7 @@ see the reference:
 # Optional
 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
-   allocation (default) or [`MutatingEvaluation`](@ref) in place
+   allocation (default) or [`InplaceEvaluation`](@ref) in place
 * `preconditioner` – a preconditioner for the hessian H
 * `θ` – (`1.0`) 1+θ is the superlinear convergence target rate. The algorithm will
     terminate early if the residual was reduced by a power of 1+theta.
@@ -128,7 +128,7 @@ function truncated_conjugate_gradient_descent!(
         (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 @deprecate truncated_conjugate_gradient_descent!(M, F, gradF, x, η, H, r; kwargs...) truncated_conjugate_gradient_descent!(
     M, F, gradF, x, η, H; trust_region_radius=r, kwargs...

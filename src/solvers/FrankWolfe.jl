@@ -76,19 +76,19 @@ function Frank_Wolfe_method!(
         evaluation=evaluation,
     )
     O = decorate_options(O; kwargs...)
-    return get_solver_return(solve(P, O))
+    return get_solver_return(solve!(P, O))
 end
 function initialize_solver!(P::GradientProblem, O::FrankWolfeOptions)
     get_gradient!(P, O.X, O.p)
     return O
 end
 function step_solver!(
-    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{<:Problem,<:Options}}, i
+    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{<:AbstractManoptProblem,<:Options}}, i
 )
     # update gradient
     get_gradient!(P, O.X, O.p) # evaluate grad F(p), store the result in O.X
     # solve subtask
-    solve(O.subtask[1], O.subtask[2]) # call the subsolver
+    solve!(O.subtask[1], O.subtask[2]) # call the subsolver
     q = get_solver_result(O.subtask[2])
     s = O.stepsize(P, O, i)
     # step along the geodesic
@@ -105,7 +105,7 @@ end
 # Variant II: subtask is a mutating function providing a closed form soltuion
 #
 function step_solver!(
-    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:MutatingEvaluation}}, i
+    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:InplaceEvaluation}}, i
 ) where {S}
     get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
     q = copy(P.M, O.p)

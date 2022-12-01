@@ -1,5 +1,5 @@
 @doc raw"""
-    StochasticGradientProblem <: Problem
+    StochasticGradientProblem <:AbstractManoptProblem
 
 A stochastic gradient problem consists of
 * a `Manifold M`
@@ -50,7 +50,7 @@ end
 
 Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `x` (in place of `Y`).
 
-Note that for the [`MutatingEvaluation`](@ref) based problem and a single function for the
+Note that for the [`InplaceEvaluation`](@ref) based problem and a single function for the
 stochastic gradient, the allocating variant is not available.
 """
 function get_gradients(
@@ -85,26 +85,26 @@ function get_gradients!(
     return X
 end
 function get_gradients(
-    ::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function}, ::Any
+    ::StochasticGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function}, ::Any
 ) where {TC}
     return error(
         "For a mutating function type stochastic gradient, the allocating variant is not possible.",
     )
 end
 function get_gradients(
-    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
+    p::StochasticGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     x,
 ) where {TC}
     X = [zero_vector(p.M, x) for _ in 1:length(p.gradient!!)]
     return get_gradients!(p, X, x)
 end
 function get_gradients!(
-    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function}, X, x
+    p::StochasticGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function}, X, x
 ) where {TC}
     return p.gradient!!(p.M, X, x)
 end
 function get_gradients!(
-    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
+    p::StochasticGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     X,
     x,
 ) where {TC}
@@ -120,7 +120,7 @@ end
 
 Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 
-Note that for the [`MutatingEvaluation`](@ref) based problem and a single function for the
+Note that for the [`InplaceEvaluation`](@ref) based problem and a single function for the
 stochastic gradient mutating variant is not available, since it would require too many allocations.
 """
 function get_gradient(
@@ -160,13 +160,13 @@ function get_gradient!(
     return X
 end
 function get_gradient(
-    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC}, k, x
+    p::StochasticGradientProblem{InplaceEvaluation,<:AbstractManifold,TC}, k, x
 ) where {TC}
     X = zero_vector(p.M, x)
     return get_gradient!(p, X, k, x)
 end
 function get_gradient!(
-    ::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function},
+    ::StochasticGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function},
     ::Any,
     ::Any,
     ::Any,
@@ -176,7 +176,7 @@ function get_gradient!(
     )
 end
 function get_gradient!(
-    p::StochasticGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector},
+    p::StochasticGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     X,
     k,
     x,

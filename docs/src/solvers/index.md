@@ -5,7 +5,7 @@
 CurrentModule = Manopt
 ```
 
-Solvers can be applied to [`Problem`](@ref)s with solver
+Solvers can be applied to [`AbstractManoptProblem`](@ref)s with solver
 specific [`Options`](@ref).
 
 # List of Algorithms
@@ -40,7 +40,7 @@ Note that the solvers (or their [`Options`](@ref), to be precise) can also be de
  The main function a solver calls is
 
 ```@docs
-solve(p::Problem, o::Options)
+solve!(p::AbstractManoptProblem, o::Options)
 ```
 
 which is a framework that you in general should not change or redefine.
@@ -52,5 +52,5 @@ initialize_solver!
 step_solver!
 get_solver_result
 get_solver_return
-stop_solver!(p::Problem, o::Options, i::Int)
+stop_solver!(p::AbstractManoptProblem, o::Options, i::Int)
 ```

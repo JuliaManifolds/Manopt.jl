@@ -223,7 +223,7 @@ with_terminal() do
         RegressionCost(data, t),
         RegressionGradient!(data, t),
         x0;
-        evaluation=MutatingEvaluation(),
+        evaluation=InplaceEvaluation(),
         stepsize=ArmijoLinesearch(
             M;
             initial_stepsize=1.0,
@@ -319,7 +319,7 @@ with_terminal() do
         RegressionCost(data2, t2),
         RegressionGradient!(data2, t2),
         x1;
-        evaluation=MutatingEvaluation(),
+        evaluation=InplaceEvaluation(),
         stepsize=ArmijoLinesearch(
             M;
             initial_stepsize=1.0,
@@ -505,7 +505,7 @@ with_terminal() do
         F3,
         gradF3_vector,
         x2;
-        evaluation=MutatingEvaluation(),
+        evaluation=InplaceEvaluation(),
         debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
         stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.999, 0.066, 1e-11),
         inner_iterations=1,

@@ -34,7 +34,7 @@ using Manopt, ManifoldsBase, Test
     gradH1!(M, X, p) = (X .= [0.0, 0.0, 2.0])
     Pfa = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH)
     Pfm = ConstrainedProblem(
-        M, F, gradF!, G, gradG!, H, gradH!; evaluation=MutatingEvaluation()
+        M, F, gradF!, G, gradG!, H, gradH!; evaluation=InplaceEvaluation()
     )
     Pva = ConstrainedProblem(M, F, gradF, [G1, G2], [gradG1, gradG2], [H1], [gradH1])
     Pvm = ConstrainedProblem(
@@ -45,12 +45,12 @@ using Manopt, ManifoldsBase, Test
         [gradG1!, gradG2!],
         [H1],
         [gradH1!];
-        evaluation=MutatingEvaluation(),
+        evaluation=InplaceEvaluation(),
     )
     @test repr(Pfa) === "ConstrainedProblem{AllocatingEvaluation,FunctionConstraint}."
-    @test repr(Pfm) === "ConstrainedProblem{MutatingEvaluation,FunctionConstraint}."
+    @test repr(Pfm) === "ConstrainedProblem{InplaceEvaluation,FunctionConstraint}."
     @test repr(Pva) === "ConstrainedProblem{AllocatingEvaluation,VectorConstraint}."
-    @test repr(Pvm) === "ConstrainedProblem{MutatingEvaluation,VectorConstraint}."
+    @test repr(Pvm) === "ConstrainedProblem{InplaceEvaluation,VectorConstraint}."
 
     p = [1.0, 2.0, 3.0]
     c = [[0.0, -3.0], [5.0]]
@@ -62,7 +62,7 @@ using Manopt, ManifoldsBase, Test
         # At least one constraint necessary
         @test_throws ErrorException ConstrainedProblem(M, F, gradF)
         @test_throws ErrorException ConstrainedProblem(
-            M, F, gradF!; evaluation=MutatingEvaluation()
+            M, F, gradF!; evaluation=InplaceEvaluation()
         )
         p1f = ConstrainedProblem(M, F, gradF!; G=G, gradG=gradG)
         @test get_constraints(p1f, p) == [c[1], []]

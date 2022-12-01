@@ -75,16 +75,16 @@ depending on the current [`Problem`](@ref) `p`, the current state of the solver
 stored in [`Options`](@ref) `o` and the current iterate `i` this function determines
 whether to stop the solver by calling the [`StoppingCriterion`](@ref).
 """
-stop_solver!(p::Problem, o::Options, i::Int) = o.stop(p, o, i)
+stop_solver!(p::AbstractManoptProblem, o::Options, i::Int) = o.stop(p, o, i)
 
 """
-    solve(p,o)
+    solve!(p,o)
 
 run the solver implemented for the [`Problem`](@ref)` p` and the
 [`Options`](@ref)` o` employing [`initialize_solver!`](@ref), [`step_solver!`](@ref),
 as well as the [`stop_solver!`](@ref) of the solver.
 """
-function solve(p::Problem, o::Options)
+function solve!(p::AbstractManoptProblem, o::Options)
     iter::Integer = 0
     initialize_solver!(p, o)
     while !stop_solver!(p, o, iter)
@@ -94,6 +94,10 @@ function solve(p::Problem, o::Options)
     return o
 end
 
-initialize_solver!(p::Problem, o::ReturnOptions) = initialize_solver!(p, o.options)
-step_solver!(p::Problem, o::ReturnOptions, i) = step_solver!(p, o.options, i)
-stop_solver!(p::Problem, o::ReturnOptions, i::Int) = stop_solver!(p, o.options, i)
+function initialize_solver!(p::AbstractManoptProblem, o::ReturnOptions)
+    return initialize_solver!(p, o.options)
+end
+step_solver!(p::AbstractManoptProblem, o::ReturnOptions, i) = step_solver!(p, o.options, i)
+function stop_solver!(p::AbstractManoptProblem, o::ReturnOptions, i::Int)
+    return stop_solver!(p, o.options, i)
+end

@@ -1,5 +1,5 @@
 @doc raw"""
-    AlternatingGradientProblem <: Problem
+    AlternatingGradientProblem <:AbstractManoptProblem
 
 An alternating gradient problem consists of
 * a `ProductManifold M` ``=\mathcal M = \mathcal M_1 × ⋯ × M_n``
@@ -91,15 +91,13 @@ function get_gradient!(
     return X
 end
 function get_gradient(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function}, x
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function}, x
 ) where {TC}
     Y = zero_vector(p.M, x)
     return p.gradient!!(p.M, Y, x)
 end
 function get_gradient(
-    p::AlternatingGradientProblem{
-        MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
-    },
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     x,
 ) where {TC}
     Y = zero_vector(p.M, x)
@@ -107,14 +105,12 @@ function get_gradient(
     return Y
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function}, X, x
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function}, X, x
 ) where {TC}
     return p.gradient!!(p.M, X, x)
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{
-        MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
-    },
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     X,
     x,
 ) where {TC}
@@ -167,14 +163,14 @@ function get_gradient!(
     return X
 end
 function get_gradient(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC}, k, x
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC}, k, x
 ) where {TC}
     X = zero_vector(p.M[k], x[p.M, k])
     get_gradient!(p, X, k, x)
     return X
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{MutatingEvaluation,<:AbstractManifold,TC,<:Function},
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function},
     X,
     k,
     x,
@@ -186,9 +182,7 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-    p::AlternatingGradientProblem{
-        MutatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
-    },
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     X,
     k,
     x,

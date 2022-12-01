@@ -29,7 +29,7 @@ function ConstantStepsize(
 end
 function (s::ConstantStepsize)(
     p::P, o::O, i::Int, args...; kwargs...
-) where {P<:Problem,O<:Options}
+) where {P<:AbstractManoptProblem,O<:Options}
     return s.length
 end
 get_initial_stepsize(s::ConstantStepsize) = s.length
@@ -90,7 +90,7 @@ function DecreasingStepsize(
 end
 function (s::DecreasingStepsize)(
     ::P, ::O, i::Int, args...; kwargs...
-) where {P<:Problem,O<:Options}
+) where {P<:AbstractManoptProblem,O<:Options}
     return (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
@@ -797,50 +797,66 @@ function (a::WolfePowellBinaryLinesearch)(
 end
 
 @doc raw"""
-    get_stepsize(p::Problem, o::Options, vars...)
+    get_stepsize(p::AbstractManoptProblem, o::Options, vars...)
 
 return the stepsize stored within [`Options`](@ref) `o` when solving [`Problem`](@ref) `p`.
 This method also works for decorated options and the [`Stepsize`](@ref) function within
 the options, by default stored in `o.stepsize`.
 """
-function get_stepsize(p::Problem, o::Options, vars...; kwargs...)
+function get_stepsize(p::AbstractManoptProblem, o::Options, vars...; kwargs...)
     return get_stepsize(p, o, dispatch_options_decorator(o), vars...; kwargs...)
 end
-function get_stepsize(p::Problem, o::Options, ::Val{true}, vars...; kwargs...)
+function get_stepsize(p::AbstractManoptProblem, o::Options, ::Val{true}, vars...; kwargs...)
     return get_stepsize(p, o.options, vars...; kwargs...)
 end
-function get_stepsize(p::Problem, o::Options, ::Val{false}, vars...; kwargs...)
+function get_stepsize(
+    p::AbstractManoptProblem, o::Options, ::Val{false}, vars...; kwargs...
+)
     return o.stepsize(p, o, vars...; kwargs...)
 end
 
-function get_initial_stepsize(p::Problem, o::Options, vars...; kwargs...)
+function get_initial_stepsize(p::AbstractManoptProblem, o::Options, vars...; kwargs...)
     return get_initial_stepsize(
-        p::Problem, o::Options, dispatch_options_decorator(o), vars...; kwargs...
+        p::AbstractManoptProblem,
+        o::Options,
+        dispatch_options_decorator(o),
+        vars...;
+        kwargs...,
     )
 end
-function get_initial_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
+function get_initial_stepsize(p::AbstractManoptProblem, o::Options, ::Val{true}, vars...)
     return get_initial_stepsize(p, o.options)
 end
-function get_initial_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
+function get_initial_stepsize(p::AbstractManoptProblem, o::Options, ::Val{false}, vars...)
     return get_initial_stepsize(o.stepsize)
 end
 
-function get_last_stepsize(p::Problem, o::Options, vars...)
+function get_last_stepsize(p::AbstractManoptProblem, o::Options, vars...)
     return get_last_stepsize(p, o, dispatch_options_decorator(o), vars...)
 end
-function get_last_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
+function get_last_stepsize(p::AbstractManoptProblem, o::Options, ::Val{true}, vars...)
     return get_last_stepsize(p, o.options, vars...)
 end
-function get_last_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
+function get_last_stepsize(p::AbstractManoptProblem, o::Options, ::Val{false}, vars...)
     return get_last_stepsize(p, o, o.stepsize, vars...)
 end
 #
 # dispatch on stepsize
-get_last_stepsize(p::Problem, o::Options, s::Stepsize, vars...) = s(p, o, vars...)
-get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, ::Any...) = s.last_stepsize
-function get_last_stepsize(::Problem, ::Options, s::WolfePowellLinesearch, ::Any...)
+function get_last_stepsize(p::AbstractManoptProblem, o::Options, s::Stepsize, vars...)
+    return s(p, o, vars...)
+end
+function get_last_stepsize(
+    ::AbstractManoptProblem, ::Options, s::ArmijoLinesearch, ::Any...
+)
     return s.last_stepsize
 end
-function get_last_stepsize(::Problem, ::Options, s::WolfePowellBinaryLinesearch, ::Any...)
+function get_last_stepsize(
+    ::AbstractManoptProblem, ::Options, s::WolfePowellLinesearch, ::Any...
+)
+    return s.last_stepsize
+end
+function get_last_stepsize(
+    ::AbstractManoptProblem, ::Options, s::WolfePowellBinaryLinesearch, ::Any...
+)
     return s.last_stepsize
 end

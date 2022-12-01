@@ -19,7 +19,7 @@ not necessarily deterministic.
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
-   allocation (default) form `∂F(M, y)` or [`MutatingEvaluation`](@ref) in place, i.e. is
+   allocation (default) form `∂F(M, y)` or [`InplaceEvaluation`](@ref) in place, i.e. is
    of the form `∂F!(M, X, x)`.
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
 * `retraction` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
@@ -74,7 +74,7 @@ function subgradient_method!(
         retraction_method=retraction_method,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.x_optimal = o.x

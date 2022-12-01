@@ -164,7 +164,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             Dprox_G_dual!,
             DΛ!,
             adjoint_DΛ!;
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
         x1 = get_differential_primal_prox(p1, 1.0, x0, X)
         x2 = get_differential_primal_prox(p2, 1.0, x0, X)

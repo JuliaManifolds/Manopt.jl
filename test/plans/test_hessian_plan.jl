@@ -9,7 +9,7 @@ using Manopt, Manifolds, Test, Random
     HessF!(M, Y, p, X) = copyto!(M, Y, p, X)
     precon = (M, p, X) -> X
     P1 = HessianProblem(M, F, gradF, HessF, precon)
-    P2 = HessianProblem(M, F, gradF!, HessF!, precon; evaluation=MutatingEvaluation())
+    P2 = HessianProblem(M, F, gradF!, HessF!, precon; evaluation=InplaceEvaluation())
 
     p = zeros(2)
     X = ones(2)

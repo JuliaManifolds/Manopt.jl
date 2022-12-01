@@ -1,10 +1,10 @@
 """
-    AbstractGradientProblem{T} <: Problem{T}
+    AbstractGradientProblem{T} <: AbstractManoptProblem
 
 An abstract type for all functions that provide a (full) gradient, where
 `T` is a [`AbstractEvaluationType`](@ref) for the gradient function.
 """
-abstract type AbstractGradientProblem{T} <: Problem{T} end
+abstract type AbstractGradientProblem{T} <: AbstractManoptProblem end
 
 @doc raw"""
     GradientProblem{T} <: AbstractGradientProblem{T}
@@ -19,7 +19,7 @@ specify a problem for gradient based algorithms.
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be provided
 
 * as a function `x -> X` that allocates memory for `X` itself for an [`AllocatingEvaluation`](@ref)
-* as a function `(X,x) -> X` that work in place of `X` for an [`MutatingEvaluation`](@ref)
+* as a function `(X,x) -> X` that work in place of `X` for an [`InplaceEvaluation`](@ref)
 
 # Constructors
     GradientProblem(M, cost, gradient; evaluation=AllocatingEvaluation())
@@ -46,7 +46,7 @@ evaluate the gradient of a [`AbstractGradientProblem{T}`](@ref)`p` at the point 
 
 The evaluation is done in place of `X` for the `!`-variant.
 The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
-When the non-mutating variant is called with a `T=`[`MutatingEvaluation`](@ref)
+When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
 memory for the result is allocated.
 """
 get_gradient(p::AbstractGradientProblem, x)
@@ -54,7 +54,7 @@ get_gradient(p::AbstractGradientProblem, x)
 function get_gradient(p::AbstractGradientProblem{AllocatingEvaluation}, x)
     return p.gradient!!(p.M, x)
 end
-function get_gradient(p::AbstractGradientProblem{MutatingEvaluation}, x)
+function get_gradient(p::AbstractGradientProblem{InplaceEvaluation}, x)
     X = zero_vector(p.M, x)
     return p.gradient!!(p.M, X, x)
 end
@@ -63,7 +63,7 @@ function get_gradient!(p::AbstractGradientProblem{AllocatingEvaluation}, X, x)
     return copyto!(p.M, X, x, p.gradient!!(p.M, x))
 end
 
-function get_gradient!(p::AbstractGradientProblem{MutatingEvaluation}, X, x)
+function get_gradient!(p::AbstractGradientProblem{InplaceEvaluation}, X, x)
     return p.gradient!!(p.M, X, x)
 end
 
@@ -271,7 +271,7 @@ function MomentumGradient(
         gradient, deepcopy(x0), momentum, s, vector_transport_method
     )
 end
-function (m::MomentumGradient)(p::Problem, o::AbstractGradientOptions, i)
+function (m::MomentumGradient)(p::AbstractManoptProblem, o::AbstractGradientOptions, i)
     s, d = m.direction(p, o, i) #get inner direction and step size
     old_d =
         m.momentum *
@@ -352,7 +352,7 @@ function AverageGradient(
         gradients, deepcopy(x0), s, vector_transport_method
     )
 end
-function (a::AverageGradient)(p::Problem, o::AbstractGradientOptions, i)
+function (a::AverageGradient)(p::AbstractManoptProblem, o::AbstractGradientOptions, i)
     pop!(a.gradients)
     s, d = a.direction(p, o, i) #get inner gradient and step
     a.gradients = vcat([deepcopy(d)], a.gradients)
@@ -494,7 +494,7 @@ mutable struct DebugGradientNorm <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugGradientNorm)(p::Problem, o::Options, i::Int)
+function (d::DebugGradientNorm)(p::AbstractManoptProblem, o::Options, i::Int)
     (i < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), norm(p.M, get_iterate(o), get_gradient(o)))
     return nothing
@@ -561,7 +561,7 @@ mutable struct RecordGradientNorm <: RecordAction
     recorded_values::Array{Float64,1}
     RecordGradientNorm() = new(Array{Float64,1}())
 end
-function (r::RecordGradientNorm)(p::Problem, o::Options, i::Int)
+function (r::RecordGradientNorm)(p::AbstractManoptProblem, o::Options, i::Int)
     return record_or_reset!(r, norm(p.M, get_iterate(o), get_gradient(o)), i)
 end
 

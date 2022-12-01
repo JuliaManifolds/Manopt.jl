@@ -13,7 +13,7 @@ perform a cyclic proximal point algorithm.
 # Optional
 the default values are given in brackets
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
-  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
+  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
 * `evaluation_order` – (`:Linear`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle permuted sequence (`:Random`) or the default linear one.
@@ -66,7 +66,7 @@ function cyclic_proximal_point!(
         M, x0; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointOptions)
     c = length(p.proximal_maps!!)

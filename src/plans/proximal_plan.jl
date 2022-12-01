@@ -4,7 +4,7 @@
 #
 #
 @doc raw"""
-    ProximalProblem <: Problem
+    ProximalProblem <:AbstractManoptProblem
 specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
@@ -22,7 +22,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 """
 mutable struct ProximalProblem{
     T,mT<:AbstractManifold,TCost,TProxes<:Union{Tuple,AbstractVector}
-} <: Problem{T}
+} <: AbstractManoptProblem
     M::mT
     cost::TCost
     proximal_maps!!::TProxes
@@ -72,12 +72,12 @@ function get_proximal_map!(p::ProximalProblem{AllocatingEvaluation}, y, λ, x, i
     check_prox_number(length(p.proximal_maps!!), i)
     return copyto!(p.M, y, p.proximal_maps!![i](p.M, λ, x))
 end
-function get_proximal_map(p::ProximalProblem{MutatingEvaluation}, λ, x, i)
+function get_proximal_map(p::ProximalProblem{InplaceEvaluation}, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
     y = allocate_result(p.M, get_proximal_map, x)
     return p.proximal_maps!![i](p.M, y, λ, x)
 end
-function get_proximal_map!(p::ProximalProblem{MutatingEvaluation}, y, λ, x, i)
+function get_proximal_map!(p::ProximalProblem{InplaceEvaluation}, y, λ, x, i)
     check_prox_number(length(p.proximal_maps!!), i)
     return p.proximal_maps!![i](p.M, y, λ, x)
 end

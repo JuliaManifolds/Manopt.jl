@@ -1,4 +1,4 @@
-# [Problems](@id ProblemSection)
+# [AbstractManoptProblems](@id ProblemSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -19,7 +19,7 @@ allocation function `X = gradF(x)` allocates memory for its result `X`, while `g
 ```@docs
 AbstractEvaluationType
 AllocatingEvaluation
-MutatingEvaluation
+InplaceEvaluation
 ```
 
 ## Cost based problem

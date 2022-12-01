@@ -27,9 +27,9 @@ using Manopt, Manifolds, Test
 
     @testset "Constructors" begin
         p1 = StochasticGradientProblem(M, sgradF1)
-        p1e = StochasticGradientProblem(M, sgradF1!; evaluation=MutatingEvaluation())
+        p1e = StochasticGradientProblem(M, sgradF1!; evaluation=InplaceEvaluation())
         p2 = StochasticGradientProblem(M, sgradF2)
-        p2m = StochasticGradientProblem(M, sgradF2!; evaluation=MutatingEvaluation())
+        p2m = StochasticGradientProblem(M, sgradF2!; evaluation=InplaceEvaluation())
         @test get_gradient(p1, 1, p) == zeros(3)
         @test get_gradient(p2, 1, p) == zeros(3)
         for pr in [p1, p2, p2m]

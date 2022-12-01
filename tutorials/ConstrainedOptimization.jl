@@ -195,14 +195,14 @@ grad_g2! = [
 # ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
 with_terminal() do
 	@time global v2 = augmented_Lagrangian_method(
-    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(),
+    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=InplaceEvaluation(),
     	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 	);
 end
 
 # ╔═╡ f6617b0f-3688-4429-974b-990e0279cb38
 md"""
-As a technical remark: Note that (by default) the change to [`MutatingEvaluation`](https://manoptjl.org/stable/plans/problem/#Manopt.MutatingEvaluation)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
+As a technical remark: Note that (by default) the change to [`InplaceEvaluation`](https://manoptjl.org/stable/plans/problem/#Manopt.InplaceEvaluation)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
 """
 
 # ╔═╡ f4b3f8c4-8cf8-493e-a6ac-ea9673609a9c
@@ -227,7 +227,7 @@ and [`LinearQuadraticHuber`](https://manoptjl.org/stable/solvers/exact_penalty_m
 # ╔═╡ e9847e43-d4ef-4a90-a51d-ce527787d467
 with_terminal() do
 	@time global v3 = exact_penalty_method(
-    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(),
+    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=InplaceEvaluation(),
     	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 	);
 end
@@ -249,7 +249,7 @@ The second smoothing technique is often beneficial, when we have a lot of constr
 # ╔═╡ fac5894c-250e-447d-aab8-1bfab7aae78c
 with_terminal() do
 	@time global v4 = exact_penalty_method(
-    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=MutatingEvaluation(),
+    	M, f, grad_f!, x0; G=g2, gradG=grad_g2!, evaluation=InplaceEvaluation(),
 		smoothing=LinearQuadraticHuber(),
     	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 	);
@@ -278,7 +278,7 @@ Note that this is much faster, since every iteration of the algorithms above doe
 # ╔═╡ 70fd7a56-ebce-43b9-b75e-f47c7a277a07
 with_terminal() do
 	@time global w1 = quasi_Newton(
-		M, f, grad_f!, x0; evaluation=MutatingEvaluation()
+		M, f, grad_f!, x0; evaluation=InplaceEvaluation()
 	);
 end
 

@@ -1,9 +1,9 @@
 @doc raw"""
-    AbstractPrimalDualProblem{T} <: Problem{T}
+    AbstractPrimalDualProblem{T} <: AbstractManoptProblem
 
 An abstract type for primal-dual-based problems.
 """
-abstract type AbstractPrimalDualProblem{T} <: Problem{T} end
+abstract type AbstractPrimalDualProblem{T} <: AbstractManoptProblem end
 
 @doc raw"""
     PrimalDualProblem {T, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem
@@ -101,14 +101,14 @@ get_primal_prox(::AbstractPrimalDualProblem, ::Any...)
 function get_primal_prox(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, σ, x)
     return p.prox_F!!(p.M, σ, x)
 end
-function get_primal_prox(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, σ, x)
+function get_primal_prox(p::AbstractPrimalDualProblem{<:InplaceEvaluation}, σ, x)
     y = allocate_result(p.M, get_primal_prox, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
 function get_primal_prox!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, y, σ, x)
     return copyto!(p.M, y, p.prox_F!!(p.M, σ, x))
 end
-function get_primal_prox!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, y, σ, x)
+function get_primal_prox!(p::AbstractPrimalDualProblem{<:InplaceEvaluation}, y, σ, x)
     return p.prox_F!!(p.M, y, σ, x)
 end
 
@@ -129,14 +129,14 @@ get_dual_prox(::AbstractPrimalDualProblem, ::Any...)
 function get_dual_prox(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, n, τ, ξ)
     return p.prox_G_dual!!(p.N, n, τ, ξ)
 end
-function get_dual_prox(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, n, τ, ξ)
+function get_dual_prox(p::AbstractPrimalDualProblem{<:InplaceEvaluation}, n, τ, ξ)
     η = allocate_result(p.N, get_dual_prox, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 function get_dual_prox!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, η, n, τ, ξ)
     return copyto!(p.N, η, p.prox_G_dual!!(p.N, n, τ, ξ))
 end
-function get_dual_prox!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, η, n, τ, ξ)
+function get_dual_prox!(p::AbstractPrimalDualProblem{<:InplaceEvaluation}, η, n, τ, ξ)
     return p.prox_G_dual!!(p.N, η, n, τ, ξ)
 end
 @doc raw"""
@@ -154,7 +154,7 @@ function linearized_forward_operator(
     return p.linearized_forward_operator!!(p.M, m, X)
 end
 function linearized_forward_operator(
-    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, m, X, ::Any
+    p::AbstractPrimalDualProblem{<:InplaceEvaluation}, m, X, ::Any
 )
     y = random_point(p.N)
     forward_operator!(p, y, m)
@@ -167,7 +167,7 @@ function linearized_forward_operator!(
     return copyto!(p.N, Y, n, p.linearized_forward_operator!!(p.M, m, X))
 end
 function linearized_forward_operator!(
-    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, Y, m, X, ::Any
+    p::AbstractPrimalDualProblem{<:InplaceEvaluation}, Y, m, X, ::Any
 )
     return p.linearized_forward_operator!!(p.M, Y, m, X)
 end
@@ -184,14 +184,14 @@ forward_operator(::AbstractPrimalDualProblem{<:AllocatingEvaluation}, ::Any...)
 function forward_operator(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, x)
     return p.Λ!!(p.M, x)
 end
-function forward_operator(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, x)
+function forward_operator(p::AbstractPrimalDualProblem{<:InplaceEvaluation}, x)
     y = random_point(p.N)
     return p.Λ!!(p.M, y, x)
 end
 function forward_operator!(p::AbstractPrimalDualProblem{<:AllocatingEvaluation}, y, x)
     return copyto!(p.N, y, p.Λ!!(p.M, x))
 end
-function forward_operator!(p::AbstractPrimalDualProblem{<:MutatingEvaluation}, y, x)
+function forward_operator!(p::AbstractPrimalDualProblem{<:InplaceEvaluation}, y, x)
     return p.Λ!!(p.M, y, x)
 end
 
@@ -212,7 +212,7 @@ function adjoint_linearized_operator(
     return p.adjoint_linearized_operator!!(p.N, m, n, Y)
 end
 function adjoint_linearized_operator(
-    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, m, n, Y
+    p::AbstractPrimalDualProblem{<:InplaceEvaluation}, m, n, Y
 )
     X = zero_vector(p.M, m)
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
@@ -223,7 +223,7 @@ function adjoint_linearized_operator!(
     return copyto!(p.M, X, p.adjoint_linearized_operator!!(p.N, m, n, Y))
 end
 function adjoint_linearized_operator!(
-    p::AbstractPrimalDualProblem{<:MutatingEvaluation}, X, m, n, Y
+    p::AbstractPrimalDualProblem{<:InplaceEvaluation}, X, m, n, Y
 )
     return p.adjoint_linearized_operator!!(p.N, X, m, n, Y)
 end

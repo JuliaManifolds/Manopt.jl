@@ -217,7 +217,7 @@ mutable struct RecordGroup <: RecordAction
     RecordGroup() = new(Array{RecordAction,1}(), Dict{Symbol,Int}())
 end
 
-function (d::RecordGroup)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (d::RecordGroup)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
     for ri in d.group
         ri(p, o, i)
     end
@@ -280,7 +280,7 @@ mutable struct RecordEvery <: RecordAction
         return new(r, every, alwaysUpdate)
     end
 end
-function (d::RecordEvery)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (d::RecordEvery)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
     if i <= 0
         d.record(p, o, i)
     elseif (rem(i, d.every) == 0)
@@ -337,7 +337,7 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
         return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
 end
-function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (r::RecordChange)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
     record_or_reset!(
         r,
         if has_storage(r.storage, :Iterate)
@@ -368,7 +368,7 @@ mutable struct RecordEntry{T} <: RecordAction
 end
 RecordEntry(::T, f::Symbol) where {T} = RecordEntry{T}(f)
 RecordEntry(d::DataType, f::Symbol) = RecordEntry{d}(f)
-function (r::RecordEntry{T})(::Problem, o::Options, i) where {T}
+function (r::RecordEntry{T})(::AbstractManoptProblem, o::Options, i) where {T}
     return record_or_reset!(r, getfield(o, r.field), i)
 end
 
@@ -398,7 +398,9 @@ mutable struct RecordEntryChange <: RecordAction
         return new(Float64[], f, d, a)
     end
 end
-function (r::RecordEntryChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (r::RecordEntryChange)(
+    p::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:Options}
     value = 0.0
     if has_storage(r.storage, r.field)
         value = r.distance(p, o, getfield(o, r.field), get_storage(r.storage, r.field))
@@ -434,7 +436,7 @@ function RecordIterate()
     )
 end
 
-function (r::RecordIterate{T})(::Problem, o::Options, i) where {T}
+function (r::RecordIterate{T})(::AbstractManoptProblem, o::Options, i) where {T}
     return record_or_reset!(r, get_iterate(o), i)
 end
 
@@ -447,7 +449,7 @@ mutable struct RecordIteration <: RecordAction
     recorded_values::Array{Int,1}
     RecordIteration() = new(Array{Int,1}())
 end
-function (r::RecordIteration)(::Problem, ::Options, i::Int)
+function (r::RecordIteration)(::AbstractManoptProblem, ::Options, i::Int)
     return record_or_reset!(r, i, i)
 end
 
@@ -460,7 +462,7 @@ mutable struct RecordCost <: RecordAction
     recorded_values::Array{Float64,1}
     RecordCost() = new(Array{Float64,1}())
 end
-function (r::RecordCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (r::RecordCost)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
     return record_or_reset!(r, get_cost(p, get_iterate(o)), i)
 end
 
@@ -488,7 +490,7 @@ mutable struct RecordTime <: RecordAction
         return new(Array{Nanosecond,1}(), Nanosecond(time_ns()), mode)
     end
 end
-function (r::RecordTime)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (r::RecordTime)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
     # At iteartion zero also reset start
     (i == 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start

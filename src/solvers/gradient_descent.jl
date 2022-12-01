@@ -18,7 +18,7 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 # Optional
 * `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
-  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
+  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
   functor.
@@ -80,7 +80,7 @@ function gradient_descent!(
         retraction_method=retraction_method,
     )
     o = decorate_options(o; debug=debug, kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 #
 # Solver functions

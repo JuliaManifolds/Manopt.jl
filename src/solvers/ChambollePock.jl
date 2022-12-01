@@ -168,7 +168,7 @@ function ChambollePock!(
         vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 
 function initialize_solver!(::PrimalDualProblem, ::ChambollePockOptions) end

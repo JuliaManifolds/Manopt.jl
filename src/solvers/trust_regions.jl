@@ -24,7 +24,7 @@ For a description of the algorithm and more details see
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
-   allocation (default) or [`MutatingEvaluation`](@ref) in place
+   allocation (default) or [`InplaceEvaluation`](@ref) in place
 * `max_trust_region_radius` – the maximum trust-region radius
 * `preconditioner` – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
@@ -131,7 +131,7 @@ function trust_regions!(
         (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 
 function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
@@ -172,7 +172,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.x = o.x
     o.tcg_options.η = o.η
     o.tcg_options.trust_region_radius = o.trust_region_radius
-    solve(p, o.tcg_options)
+    solve!(p, o.tcg_options)
     #
     o.η = o.tcg_options.η
     o.Hη = o.tcg_options.Hη

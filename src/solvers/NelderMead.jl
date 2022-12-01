@@ -1,6 +1,6 @@
 @doc raw"""
-    NelderMead(M, F [, p])
-perform a nelder mead minimization problem for the cost function `F` on the
+    NelderMead(M, f [, population])
+perform a Nelder-Mead minimization problem for the cost function ``f\colon \mathcal M`` on the
 manifold `M`. If the initial population `p` is not given, a random set of
 points is chosen.
 
@@ -12,8 +12,8 @@ and
 # Input
 
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `population` – (n+1 `random_point(M)`) an initial population of ``n+1`` points, where ``n``
+* `f` – a cost function to minimize
+* `population` – (n+1 `random_point(M)`s) an initial population of ``n+1`` points, where ``n``
   is the dimension of the manifold `M`.
 
 # Optional
@@ -38,18 +38,18 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
 """
 function NelderMead(
     M::AbstractManifold,
-    F::TF,
+    f::TF,
     population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
     kwargs...,
 ) where {TF}
     res_population = copy.(Ref(M), population)
-    return NelderMead!(M, F, res_population; kwargs...)
+    return NelderMead!(M, f, res_population; kwargs...)
 end
 @doc raw"""
-    NelderMead(M, F [, p])
-perform a Nelder Mead minimization problem for the cost function `F` on the
-manifold `M`. If the initial population `p` is not given, a random set of
-points is chosen. If it is given, the computation is done in place of `p`.
+    NelderMead(M, F [, population])
+perform a Nelder Mead minimization problem for the cost function `f` on the
+manifold `M`. If the initial population `population` is not given, a random set of
+points is chosen. If it is given, the computation is done in place of `population`.
 
 For more options see [`NelderMead`](@ref).
 """
@@ -68,7 +68,7 @@ function NelderMead!(
     ),
     kwargs..., #collect rest
 ) where {TF}
-    p = CostProblem(M, F)
+    mp = DefaultManoptProblem(M, ManifoldCostObjective(f))
     o = NelderMeadOptions(
         M,
         population;
@@ -81,22 +81,27 @@ function NelderMead!(
         inverse_retraction_method=inverse_retraction_method,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(mp, o))
 end
 #
 # Solver functions
 #
-function initialize_solver!(p::CostProblem, o::NelderMeadOptions)
+function initialize_solver!(
+    mp::DefaultManoptProblem{TM,<:ManifoldCostObjective}, o::NelderMeadOptions
+) where {TM}
     # init cost and x
-    o.costs = get_cost.(Ref(p), o.population)
+    o.costs = get_cost.(Ref(mp), o.population)
     return o.x = o.population[argmin(o.costs)] # select min
 end
-function step_solver!(p::CostProblem, o::NelderMeadOptions, ::Any)
-    m = mean(p.M, o.population)
+function step_solver!(
+    mp::DefaultManoptProblem{TM,<:ManifoldCostObjective}, o::NelderMeadOptions, ::Any
+) where {TM}
+    M = get_manifold(mp)
+    m = mean(M, o.population)
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
-    ξ = inverse_retract(p.M, m, o.population[last(ind)], o.inverse_retraction_method)
+    ξ = inverse_retract(M, m, o.population[last(ind)], o.inverse_retraction_method)
     # reflect last
-    xr = retract(p.M, m, -o.α * ξ, o.retraction_method)
+    xr = retract(M, m, -o.α * ξ, o.retraction_method)
     Costr = get_cost(p, xr)
     # is it better than the worst but not better than the best?
     if Costr >= o.costs[first(ind)] && Costr < o.costs[last(ind)]
@@ -106,7 +111,7 @@ function step_solver!(p::CostProblem, o::NelderMeadOptions, ::Any)
     end
     # --- Expansion ---
     if Costr < o.costs[first(ind)] # reflected is better than fist -> expand
-        xe = retract(p.M, m, -o.γ * o.α * ξ, o.retraction_method)
+        xe = retract(M, m, -o.γ * o.α * ξ, o.retraction_method)
         Coste = get_cost(p, xe)
         # successful? use the expanded, otherwise still use xr
         o.population[last(ind)] .= Coste < Costr ? xe : xr
@@ -115,7 +120,7 @@ function step_solver!(p::CostProblem, o::NelderMeadOptions, ::Any)
     # --- Contraction ---
     if Costr > o.costs[ind[end - 1]] # even worse than second worst
         s = (Costr < o.costs[last(ind)] ? -o.ρ : o.ρ)
-        xc = retract(p.M, m, s * ξ, o.retraction_method)
+        xc = retract(M, m, s * ξ, o.retraction_method)
         Costc = get_cost(p, xc)
         if Costc < o.costs[last(ind)] # better than last ? -> store
             o.population[last(ind)] = xc
@@ -128,7 +133,7 @@ function step_solver!(p::CostProblem, o::NelderMeadOptions, ::Any)
             p.M,
             o.population[ind[1]],
             inverse_retract(
-                p.M, o.population[ind[1]], o.population[ind[i]], o.inverse_retraction_method
+                M, o.population[ind[1]], o.population[ind[i]], o.inverse_retraction_method
             ),
             o.σ,
             o.retraction_method,

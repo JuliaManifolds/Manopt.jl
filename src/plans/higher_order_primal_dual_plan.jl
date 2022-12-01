@@ -187,7 +187,7 @@ function get_differential_primal_prox(
     return p.diff_prox_F!!(p.M, σ, x, X)
 end
 function get_differential_primal_prox(
-    p::PrimalDualSemismoothNewtonProblem{MutatingEvaluation}, σ, x, X
+    p::PrimalDualSemismoothNewtonProblem{InplaceEvaluation}, σ, x, X
 )
     y = allocate_result(p.M, get_differential_primal_prox, x, X)
     return p.diff_prox_F!!(p.M, y, σ, x, X)
@@ -198,7 +198,7 @@ function get_differential_primal_prox!(
     return copyto!(p.M, y, p.diff_prox_F!!(p.M, σ, x, X))
 end
 function get_differential_primal_prox!(
-    p::PrimalDualSemismoothNewtonProblem{MutatingEvaluation}, y, σ, x, X
+    p::PrimalDualSemismoothNewtonProblem{InplaceEvaluation}, y, σ, x, X
 )
     return p.diff_prox_F!!(p.M, y, σ, x, X)
 end
@@ -223,7 +223,7 @@ function get_differential_dual_prox(
     return p.diff_prox_G_dual!!(p.N, n, τ, ξ, Ξ)
 end
 function get_differential_dual_prox(
-    p::PrimalDualSemismoothNewtonProblem{<:MutatingEvaluation}, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{<:InplaceEvaluation}, n, τ, ξ, Ξ
 )
     η = allocate_result(p.N, get_differential_dual_prox, ξ, Ξ)
     return p.diff_prox_G_dual!!(p.N, η, n, τ, ξ, Ξ)
@@ -234,7 +234,7 @@ function get_differential_dual_prox!(
     return copyto!(p.N, η, p.diff_prox_G_dual!!(p.N, n, τ, ξ, Ξ))
 end
 function get_differential_dual_prox!(
-    p::PrimalDualSemismoothNewtonProblem{<:MutatingEvaluation}, η, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{<:InplaceEvaluation}, η, n, τ, ξ, Ξ
 )
     return p.diff_prox_G_dual!!(p.N, η, n, τ, ξ, Ξ)
 end

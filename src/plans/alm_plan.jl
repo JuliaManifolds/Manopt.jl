@@ -39,7 +39,7 @@ in the keyword arguments.
 [`augmented_Lagrangian_method`](@ref)
 """
 mutable struct AugmentedLagrangianMethodOptions{
-    P,Pr<:Problem,Op<:Options,TStopping<:StoppingCriterion
+    P,Pr<:AbstractManoptProblem,Op<:Options,TStopping<:StoppingCriterion
 } <: Options
     x::P
     sub_problem::Pr
@@ -78,7 +78,7 @@ mutable struct AugmentedLagrangianMethodOptions{
         stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
         ),
-    ) where {P,Pr<:Problem,Op<:Options}
+    ) where {P,Pr<:AbstractManoptProblem,Op<:Options}
         o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
         o.sub_problem = sub_problem
@@ -209,7 +209,7 @@ end
 # mutating vector -> we can omit a few of the ineq gradients and allocations.
 function (
     LG::AugmentedLagrangianGrad{
-        <:ConstrainedProblem{<:MutatingEvaluation,<:VectorConstraint}
+        <:ConstrainedProblem{<:InplaceEvaluation,<:VectorConstraint}
     }
 )(
     M::AbstractManifold, X, p

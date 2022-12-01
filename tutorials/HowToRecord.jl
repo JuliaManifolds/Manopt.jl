@@ -57,7 +57,7 @@ R = gradient_descent(M, F, gradF, data[1]; record=:Cost, return_options=true)
 
 # ╔═╡ 7552c7ba-6d45-4ed9-856c-b00be28a84a0
 md"""
-From the returned options, we see that the `Options` are encapsulated (decorated) with 
+From the returned options, we see that the `Options` are encapsulated (decorated) with
 `RecordOptions`.
 
 You can attach different recorders to some operations (`:Start`. `:Stop`, `:Iteration` at time of
@@ -163,7 +163,7 @@ r = RecordOptions(o, Dict(:Iteration => rI, :Stop => sI))
 md"""We now call the solver"""
 
 # ╔═╡ 45ee91a6-0377-46e8-bdac-faea18b120e0
-res = solve(p, r)
+res = solve!(p, r)
 
 # ╔═╡ 1c2c65f0-ccbd-4566-a8b3-d1449b683707
 md"""
@@ -202,7 +202,7 @@ end
 
 # ╔═╡ 05284884-e05c-4714-bf53-2da071c664f7
 md"""
-and we define the following RecordAction, which is a functor, i.e. a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration: 
+and we define the following RecordAction, which is a functor, i.e. a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration:
 """
 
 # ╔═╡ e0fe662d-edc5-4d1f-9fd6-987f37098cc4
@@ -211,7 +211,7 @@ begin
         recorded_values::Vector{Int}
         RecordCount() = new(Vector{Int}())
     end
-    function (r::RecordCount)(p::Problem, ::Options, i)
+    function (r::RecordCount)(p::AbstractManoptProblem, ::Options, i)
         if i > 0
             push!(r.recorded_values, p.cost.count)
         elseif i < 0 # reset if negative

@@ -14,7 +14,7 @@ perform an alternating gradient descent
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by
-   allocation (default) form `gradF(M, x)` or [`MutatingEvaluation`](@ref) in place, i.e.
+   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place, i.e.
    is of the form `gradF!(M, X, x)` (elementwise).
 * `evaluation_order` – (`:Linear`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
@@ -88,7 +88,7 @@ function alternating_gradient_descent!(
         retraction_method=retraction_method,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(
     ::AlternatingGradientProblem, o::AlternatingGradientDescentOptions

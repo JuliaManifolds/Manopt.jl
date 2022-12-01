@@ -39,7 +39,7 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
     @testset "Two small Test runs" begin
         @testset "Testing with an Oracle" begin
             p2a = Frank_Wolfe_method(
-                M, f, grad_f!, p; subtask=oracle!, evaluation=MutatingEvaluation()
+                M, f, grad_f!, p; subtask=oracle!, evaluation=InplaceEvaluation()
             )
             @test f(M, p2a) < f(M, p)
             p2b = Frank_Wolfe_method(M, f, grad_f, p; subtask=oracle)
@@ -55,7 +55,7 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
                 f,
                 grad_f!,
                 p;
-                evaluation=MutatingEvaluation(),
+                evaluation=InplaceEvaluation(),
                 stopping_criterion=StopAfterIteration(1),
             )
             @test is_point(M, p3)

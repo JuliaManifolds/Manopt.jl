@@ -180,7 +180,7 @@ PlutoUI.with_terminal() do
             50,
         ],
         record=[:Iteration, :Iterate, :Cost],
-        evaluation=MutatingEvaluation(),
+        evaluation=InplaceEvaluation(),
         return_options=true,
     )
 end
@@ -201,7 +201,7 @@ statsF20 = @timed Frank_Wolfe_method!(
     grad_weighted_mean!,
     q1;
     subtask=special_oracle!,
-    evaluation=MutatingEvaluation(),
+    evaluation=InplaceEvaluation(),
     stopping_criterion=StopAfterIteration(20),
 );
 
@@ -225,7 +225,7 @@ PlutoUI.with_terminal() do
             :Stop,
             1,
         ],
-        evaluation=MutatingEvaluation(),
+        evaluation=InplaceEvaluation(),
         stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-12),
         return_options=true,
     )
@@ -240,7 +240,7 @@ statsG = @timed gradient_descent!(
     weighted_mean_cost,
     grad_weighted_mean!,
     q2;
-    evaluation=MutatingEvaluation(),
+    evaluation=InplaceEvaluation(),
     stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-12),
 );
 

@@ -26,7 +26,7 @@ where currently two variants are supported
 1. `subtask(M, q, X, p)` is a mutating function, i.e. we have a closed form solution of the
    optimization problem given `M`, `X` and `p` which is computed in place of `q`, which even
    works correctly, if we pass the same memory to `p` and `q`.
-2. `subtask::Tuple{<:Problem,<:Options}` specifies a plan to solve the subtask with a subsolver,
+2. `subtask::Tuple{<:AbstractManoptProblem,<:Options}` specifies a plan to solve the subtask with a subsolver,
    i.e. the cost within `subtask[1]` is a [`FrankWolfeCost`](@ref) using references to `p`and `X`,
    that is to the current iterate and gradient internally.
    Similarly for gradient based functions using the [`FrankWolfeGradient`](@ref).
@@ -96,7 +96,7 @@ mutable struct FrankWolfeOptions{
         inverse_retraction_method::ITM=default_inverse_retraction_method(M),
     ) where {
         P,
-        S<:Tuple{<:Problem,<:Options},
+        S<:Tuple{<:AbstractManoptProblem,<:Options},
         T,
         TStop<:StoppingCriterion,
         TStep<:Stepsize,

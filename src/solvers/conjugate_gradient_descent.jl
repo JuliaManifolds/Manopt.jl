@@ -34,7 +34,7 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
   `p` is the current [`GradientProblem`](@ref), `o` are the
   [`ConjugateGradientDescentOptions`](@ref) `o` and `i` is the current iterate.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
-  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
+  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` - (`default_retraction_method(M`) a retraction method to use.
 * `stepsize` - (`Constant(1.)`) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
@@ -99,7 +99,7 @@ function conjugate_gradient_descent!(
         X,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions)
     o.gradient = get_gradient(p, o.x)

@@ -142,7 +142,9 @@ function augmented_Lagrangian_method!(
         );
         sub_kwargs...,
     ),
-    sub_problem::Problem=GradientProblem(M, sub_cost, sub_grad; evaluation=evaluation),
+    sub_problem::AbstractManoptProblem=GradientProblem(
+        M, sub_cost, sub_grad; evaluation=evaluation
+    ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
@@ -168,7 +170,7 @@ function augmented_Lagrangian_method!(
         stopping_criterion=stopping_criterion,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(_problem, o))
+    return get_solver_return(solve!(_problem, o))
 end
 
 #
@@ -190,7 +192,7 @@ function step_solver!(p::ConstrainedProblem, o::AugmentedLagrangianMethodOptions
 
     update_stopping_criterion!(o, :MinIterateChange, o.ϵ)
 
-    o.x = get_solver_result(solve(o.sub_problem, o.sub_options))
+    o.x = get_solver_result(solve!(o.sub_problem, o.sub_options))
 
     # update multipliers
     cost_ineq = get_inequality_constraints(p, o.x)

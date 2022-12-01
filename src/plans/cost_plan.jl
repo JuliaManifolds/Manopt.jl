@@ -1,16 +1,15 @@
 @doc raw"""
-    CostProblem{T, Manifold, TCost} <: Problem{T}
+    ManifoldCostObjective{T,Tcost} <: AbstractManifoldObjective
 
-speficy a problem for solvers just based on cost functions, i.e.
-gradient free ones.
-# Fields
+speficy an [`AbstractManifoldObjective`](@ref) that does only have information about
+the cost function ``f\colon \mathbb M → ℝ`` implemented as a function `(M, p) -> c`
+to compute the cost value `c` at `p` on the manifold `M`.
 
-* `M`            – a manifold ``\mathcal M``
-* `cost` – a function ``F: \mathcal M → ℝ`` to minimize
+* `cost` – a function ``f: \mathcal M → ℝ`` to minimize
 
 # Constructors
 
-    CostProblem(M, cost; evaluation=AllocatingEvaluation())
+    ManifoldCostObjective(f)
 
 Generate a problem. While this Problem does not have any allocating functions,
 the type `T` can be set for consistency reasons with other problems.
@@ -18,14 +17,11 @@ the type `T` can be set for consistency reasons with other problems.
 # See also
 [`NelderMead`](@ref)
 """
-struct CostProblem{T,mT<:AbstractManifold,Tcost} <: Problem{T}
-    M::mT
+struct ManifoldCostObjective{T,Tcost} <: AbstractManifoldObjective{T}
     cost::Tcost
 end
-function CostProblem(
-    M::mT, cost::T; evaluation::AbstractEvaluationType=AllocatingEvaluation()
-) where {mT<:AbstractManifold,T}
-    return CostProblem{typeof(evaluation),mT,T}(M, cost)
+function CostProblem(cost::Tcost) where {Tcost}
+    return CostProblem{AllocatingEvaluation,Tcost}(cost)
 end
 @doc raw"""
     NelderMeadOptions <: Options

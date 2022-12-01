@@ -218,7 +218,9 @@ mutable struct StoreOptionsAction <: AbstractOptionsAction
         return new(Dict{Symbol,Any}(), keys, once, -1)
     end
 end
-function (a::StoreOptionsAction)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (a::StoreOptionsAction)(
+    ::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:Options}
     #update values (maybe only once)
     if !a.once || a.last_stored != i
         for key in a.keys

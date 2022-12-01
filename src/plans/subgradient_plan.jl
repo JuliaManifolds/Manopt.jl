@@ -1,5 +1,5 @@
 @doc raw"""
-    SubGradientProblem <: Problem
+    SubGradientProblem <:AbstractManoptProblem
 
 A structure to store information about a subgradient based optimization problem
 
@@ -16,7 +16,7 @@ Generate the [`Problem`] for a subgradient problem, i.e. a function `f` on the
 manifold `M` and a function `∂f` that returns an element from the subdifferential
 at a point.
 """
-struct SubGradientProblem{T,mT<:AbstractManifold,C,S} <: Problem{T}
+struct SubGradientProblem{T,mT<:AbstractManifold,C,S} <: AbstractManoptProblem
     M::mT
     cost::C
     subgradient!!::S
@@ -37,20 +37,20 @@ Evaluate the (sub)gradient of a [`SubGradientProblem`](@ref)` p` at the point `q
 
 The evaluation is done in place of `X` for the `!`-variant.
 The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
-When the non-mutating variant is called with a `T=`[`MutatingEvaluation`](@ref)
+When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
 memory for the result is allocated.
 """
 function get_subgradient(p::SubGradientProblem{AllocatingEvaluation}, q)
     return p.subgradient!!(p.M, q)
 end
-function get_subgradient(p::SubGradientProblem{MutatingEvaluation}, q)
+function get_subgradient(p::SubGradientProblem{InplaceEvaluation}, q)
     X = zero_vector(p.M, q)
     return p.subgradient!!(p.M, X, q)
 end
 function get_subgradient!(p::SubGradientProblem{AllocatingEvaluation}, X, q)
     return copyto!(p.M, X, p.subgradient!!(p.M, q))
 end
-function get_subgradient!(p::SubGradientProblem{MutatingEvaluation}, X, q)
+function get_subgradient!(p::SubGradientProblem{InplaceEvaluation}, X, q)
     return p.subgradient!!(p.M, X, q)
 end
 

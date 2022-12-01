@@ -89,7 +89,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             adjoint_DΛ!;
             linearized_forward_operator=DΛ!,
             Λ=Λ!,
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
         x1 = get_primal_prox(p1, 1.0, x0)
         x2 = get_primal_prox(p2, 1.0, x0)

@@ -356,7 +356,7 @@ evaluate the gradient of the `j` th equality constraint ``(\operatorname{grad} h
 
 !!! note
     For the [`FunctionConstraint`](@ref) variant of the problem, this function still evaluates the full gradient.
-    For the [`MutatingEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_equality_constraints`](@ref),
+    For the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_equality_constraints`](@ref),
     since this is the only way to determine the number of cconstraints. It also allocates a full tangent vector.
 """
 get_grad_equality_constraint(P::ConstrainedProblem, p, j)
@@ -371,14 +371,14 @@ function get_grad_equality_constraint(
     return P.gradH!![j](P.M, p)
 end
 function get_grad_equality_constraint(
-    P::ConstrainedProblem{MutatingEvaluation,FunctionConstraint}, p, j
+    P::ConstrainedProblem{InplaceEvaluation,FunctionConstraint}, p, j
 )
     X = [zero_vector(P.M, p) for _ in 1:length(P.H(P.M, p))]
     P.gradH!!(P.M, X, p)
     return X[j]
 end
 function get_grad_equality_constraint(
-    P::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, p, j
+    P::ConstrainedProblem{InplaceEvaluation,VectorConstraint}, p, j
 )
     X = zero_vector(P.M, p)
     P.gradH!![j](P.M, X, p)
@@ -392,7 +392,7 @@ Evaluate the gradient of the `j`th equality constraint ``(\operatorname{grad} h(
 
 !!! note
     For the [`FunctionConstraint`](@ref) variant of the problem, this function still evaluates the full gradient.
-    For the [`MutatingEvaluation`](@ref) of the [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
+    For the [`InplaceEvaluation`](@ref) of the [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
     since this is the only way to determine the number of cconstraints and allocates a full vector of tangent vectors
 """
 get_grad_equality_constraint!(P::ConstrainedProblem, p, j)
@@ -409,7 +409,7 @@ function get_grad_equality_constraint!(
     return X
 end
 function get_grad_equality_constraint!(
-    P::ConstrainedProblem{MutatingEvaluation,FunctionConstraint}, X, p, j
+    P::ConstrainedProblem{InplaceEvaluation,FunctionConstraint}, X, p, j
 )
     Y = [zero_vector(P.M, p) for _ in 1:length(P.H(P.M, p))]
     P.gradH!!(P.M, Y, p)
@@ -417,7 +417,7 @@ function get_grad_equality_constraint!(
     return X
 end
 function get_grad_equality_constraint!(
-    P::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, X, p, j
+    P::ConstrainedProblem{InplaceEvaluation,VectorConstraint}, X, p, j
 )
     P.gradH!![j](P.M, X, p)
     return X
@@ -431,7 +431,7 @@ eevaluate all gradients of the equality constraints ``\operatorname{grad} h(x)``
 of the [`ConstrainedProblem`](@ref) `P` at `p`.
 
 !!! note
-   for the [`MutatingEvaluation`](@ref) and [`FunctionConstraint`](@ref) variant of the problem,
+   for the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) variant of the problem,
    this function currently also calls [`get_equality_constraints`](@ref),
    since this is the only way to determine the number of cconstraints.
 """
@@ -447,14 +447,14 @@ function get_grad_equality_constraints(
     return [grad_hi(P.M, p) for grad_hi in P.gradH!!]
 end
 function get_grad_equality_constraints(
-    P::ConstrainedProblem{MutatingEvaluation,FunctionConstraint}, p
+    P::ConstrainedProblem{InplaceEvaluation,FunctionConstraint}, p
 )
     X = [zero_vector(P.M, p) for _ in 1:length(P.H(P.M, p))]
     P.gradH!!(P.M, X, p)
     return X
 end
 function get_grad_equality_constraints(
-    P::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, p
+    P::ConstrainedProblem{InplaceEvaluation,VectorConstraint}, p
 )
     X = [zero_vector(P.M, p) for _ in 1:length(P.H)]
     [grad_hi(P.M, Xj, p) for (Xj, grad_hi) in zip(X, P.gradH!!)]
@@ -482,13 +482,13 @@ function get_grad_equality_constraints!(
     return X
 end
 function get_grad_equality_constraints!(
-    P::ConstrainedProblem{MutatingEvaluation,FunctionConstraint}, X, p
+    P::ConstrainedProblem{InplaceEvaluation,FunctionConstraint}, X, p
 )
     P.gradH!!(P.M, X, p)
     return X
 end
 function get_grad_equality_constraints!(
-    P::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, X, p
+    P::ConstrainedProblem{InplaceEvaluation,VectorConstraint}, X, p
 )
     for (Xj, grad_hj) in zip(X, P.gradH!!)
         grad_hj(P.M, Xj, p)
@@ -503,7 +503,7 @@ Evaluate the gradient of the `i` th inequality constraints ``(\operatorname{grad
 
 !!! note
     For the [`FunctionConstraint`](@ref) variant of the problem, this function still evaluates the full gradient.
-    For the [`MutatingEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
+    For the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
     since this is the only way to determine the number of cconstraints.
 """
 get_grad_inequality_constraint(P::ConstrainedProblem, p, i)
@@ -518,14 +518,14 @@ function get_grad_inequality_constraint(
     return P.gradG!![i](P.M, p)
 end
 function get_grad_inequality_constraint(
-    P::ConstrainedProblem{MutatingEvaluation,FunctionConstraint}, p, i
+    P::ConstrainedProblem{InplaceEvaluation,FunctionConstraint}, p, i
 )
     X = [zero_vector(P.M, p) for _ in 1:length(P.G(P.M, p))]
     P.gradG!!(P.M, X, p)
     return X[i]
 end
 function get_grad_inequality_constraint(
-    P::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, p, i
+    P::ConstrainedProblem{InplaceEvaluation,VectorConstraint}, p, i
 )
     X = zero_vector(P.M, p)
     P.gradG!![i](P.M, X, p)
@@ -540,7 +540,7 @@ of the [`ConstrainedProblem`](@ref) `P` in place of ``X``
 
 !!! note
     For the [`FunctionConstraint`](@ref) variant of the problem, this function still evaluates the full gradient.
-    For the [`MutatingEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
+    For the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
   since this is the only way to determine the number of cconstraints.
 evaluate all gradients of the inequality constraints ``\operatorname{grad} h(x)`` or ``\bigl(g_1(x), g_2(x),\ldots,g_m(x)\bigr)``
 of the [`ConstrainedProblem`](@ref) ``p`` at ``x`` in place of `X``, which is a vector of ``m`` tangent vectors .
@@ -558,7 +558,7 @@ function get_grad_inequality_constraint!(
     return X
 end
 function get_grad_inequality_constraint!(
-    P::ConstrainedProblem{MutatingEvaluation,FunctionConstraint}, X, p, i
+    P::ConstrainedProblem{InplaceEvaluation,FunctionConstraint}, X, p, i
 )
     Y = [zero_vector(P.M, p) for _ in 1:length(P.G(P.M, p))]
     P.gradG!!(P.M, Y, p)
@@ -566,7 +566,7 @@ function get_grad_inequality_constraint!(
     return X
 end
 function get_grad_inequality_constraint!(
-    P::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, X, p, i
+    P::ConstrainedProblem{InplaceEvaluation,VectorConstraint}, X, p, i
 )
     P.gradG!![i](P.M, X, p)
     return X
@@ -579,7 +579,7 @@ evaluate all gradients of the inequality constraints ``\operatorname{grad} g(p)`
 of the [`ConstrainedProblem`](@ref) ``P`` at ``p``.
 
 !!! note
-   for the [`MutatingEvaluation`](@ref) and [`FunctionConstraint`](@ref) variant of the problem,
+   for the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) variant of the problem,
    this function currently also calls [`get_equality_constraints`](@ref),
    since this is the only way to determine the number of cconstraints.
 """
@@ -595,14 +595,14 @@ function get_grad_inequality_constraints(
     return [grad_gi(P.M, p) for grad_gi in P.gradG!!]
 end
 function get_grad_inequality_constraints(
-    P::ConstrainedProblem{MutatingEvaluation,FunctionConstraint}, p
+    P::ConstrainedProblem{InplaceEvaluation,FunctionConstraint}, p
 )
     X = [zero_vector(P.M, p) for _ in 1:length(P.G(P.M, p))]
     P.gradG!!(P.M, X, p)
     return X
 end
 function get_grad_inequality_constraints(
-    P::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, p
+    P::ConstrainedProblem{InplaceEvaluation,VectorConstraint}, p
 )
     X = [zero_vector(P.M, p) for _ in 1:length(P.G)]
     [grad_gi(P.M, Xi, p) for (Xi, grad_gi) in zip(X, P.gradG!!)]
@@ -630,13 +630,13 @@ function get_grad_inequality_constraints!(
     return X
 end
 function get_grad_inequality_constraints!(
-    P::ConstrainedProblem{MutatingEvaluation,FunctionConstraint}, X, p
+    P::ConstrainedProblem{InplaceEvaluation,FunctionConstraint}, X, p
 )
     P.gradG!!(P.M, X, p)
     return X
 end
 function get_grad_inequality_constraints!(
-    P::ConstrainedProblem{MutatingEvaluation,VectorConstraint}, X, p
+    P::ConstrainedProblem{InplaceEvaluation,VectorConstraint}, X, p
 )
     for (Xi, grad_gi!) in zip(X, P.gradG!!)
         grad_gi!(P.M, Xi, p)

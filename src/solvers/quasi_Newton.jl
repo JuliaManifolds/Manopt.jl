@@ -26,7 +26,7 @@ The ``k``th iteration consists of
   at 0 and strictly increasing at 0 for the cautious update.
 * `direction_update` – ([`InverseBFGS`](@ref)`()`) the update rule to use.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
-   allocation (default) form `gradF(M, x)` or [`MutatingEvaluation`](@ref) in place, i.e.
+   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place, i.e.
    is of the form `gradF!(M, X, x)`.
 * `initial_operator` – (`Matrix{Float64}(I,n,n)`) initial matrix to use die the
   approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
@@ -134,7 +134,7 @@ function quasi_Newton!(
         vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    return get_solver_return(solve!(p, o))
 end
 
 function initialize_solver!(p::GradientProblem, o::QuasiNewtonOptions)

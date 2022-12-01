@@ -83,7 +83,7 @@ mutable struct DebugGroup <: DebugAction
     group::Array{DebugAction,1}
     DebugGroup(g::Array{<:DebugAction,1}) = new(g)
 end
-function (d::DebugGroup)(p::Problem, o::Options, i)
+function (d::DebugGroup)(p::AbstractManoptProblem, o::Options, i)
     for di in d.group
         di(p, o, i)
     end
@@ -105,7 +105,7 @@ mutable struct DebugEvery <: DebugAction
         return new(d, every, alwaysUpdate)
     end
 end
-function (d::DebugEvery)(p::Problem, o::Options, i)
+function (d::DebugEvery)(p::AbstractManoptProblem, o::Options, i)
     if (rem(i, d.every) == 0)
         d.debug(p, o, i)
     elseif d.alwaysUpdate
@@ -153,7 +153,7 @@ end
 @deprecate DebugChange(a::StoreOptionsAction, pre::String="Last Change: ", io::IO=stdout) DebugChange(;
     storage=a, prefix=pre, io=io
 )
-function (d::DebugChange)(p::Problem, o::Options, i)
+function (d::DebugChange)(p::AbstractManoptProblem, o::Options, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
@@ -187,7 +187,7 @@ mutable struct DebugGradientChange <: DebugAction
         return new(io, format, storage)
     end
 end
-function (d::DebugGradientChange)(p::Problem, o::Options, i)
+function (d::DebugGradientChange)(p::AbstractManoptProblem, o::Options, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
@@ -222,7 +222,7 @@ mutable struct DebugIterate <: DebugAction
     end
 end
 @deprecate DebugIterate(io::IO, long::Bool=false) DebugIterate(; io=io, long=long)
-function (d::DebugIterate)(::Problem, o::Options, i::Int)
+function (d::DebugIterate)(::AbstractManoptProblem, o::Options, i::Int)
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(o))
     return nothing
 end
@@ -247,7 +247,7 @@ mutable struct DebugIteration <: DebugAction
     DebugIteration(; io::IO=stdout, format="# %-6d") = new(io, format)
 end
 @deprecate DebugIteration(io::IO) DebugIteration(; io=io)
-function (d::DebugIteration)(::Problem, ::Options, i::Int)
+function (d::DebugIteration)(::AbstractManoptProblem, ::Options, i::Int)
     (i == 0) && print(d.io, "Initial ")
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
     return nothing
@@ -279,7 +279,7 @@ end
 @deprecate DebugCost(pre::String) DebugCost(; format="$pre %f")
 @deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
 @deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
-function (d::DebugCost)(p::Problem, o::Options, i::Int)
+function (d::DebugCost)(p::AbstractManoptProblem, o::Options, i::Int)
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(o)))
     return nothing
 end
@@ -298,7 +298,7 @@ mutable struct DebugDivider <: DebugAction
     divider::String
     DebugDivider(divider=" | ", io::IO=stdout) = new(io, divider)
 end
-function (d::DebugDivider)(::Problem, ::Options, i::Int)
+function (d::DebugDivider)(::AbstractManoptProblem, ::Options, i::Int)
     print(d.io, (i >= 0) ? d.divider : "")
     return nothing
 end
@@ -327,7 +327,7 @@ mutable struct DebugEntry <: DebugAction
 end
 @deprecate DebugEntry(f, prefix="$f:", io=stdout) DebugEntry(f; prefix=prefix, io=io)
 
-function (d::DebugEntry)(::Problem, o::Options, i)
+function (d::DebugEntry)(::AbstractManoptProblem, o::Options, i)
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(o, d.field))
     return nothing
 end
@@ -380,7 +380,7 @@ mutable struct DebugEntryChange <: DebugAction
     end
 end
 
-function (d::DebugEntryChange)(p::Problem, o::Options, i::Int)
+function (d::DebugEntryChange)(p::AbstractManoptProblem, o::Options, i::Int)
     if i == 0
         # on init if field not present -> generate
         !has_storage(d.storage, d.field) && d.storage(p, o, i)
@@ -403,7 +403,7 @@ mutable struct DebugStoppingCriterion <: DebugAction
     io::IO
     DebugStoppingCriterion(io::IO=stdout) = new(io)
 end
-function (d::DebugStoppingCriterion)(::Problem, o::Options, i::Int)
+function (d::DebugStoppingCriterion)(::AbstractManoptProblem, o::Options, i::Int)
     print(d.io, (i >= 0 || i == typemin(Int)) ? get_reason(o) : "")
     return nothing
 end
@@ -442,7 +442,7 @@ mutable struct DebugTime <: DebugAction
         return new(io, format, Nanosecond(start ? time_ns() : 0), time_accuracy, mode)
     end
 end
-function (d::DebugTime)(::Problem, ::Options, i)
+function (d::DebugTime)(::AbstractManoptProblem, ::Options, i)
     if i == 0 || d.last_time == Nanosecond(0) # init
         d.last_time = Nanosecond(time_ns())
     else
@@ -504,7 +504,7 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
     tol::Float64
     DebugWarnIfCostIncreases(warn::Symbol=:Once; tol=1e-13) = new(warn, Float64(Inf), tol)
 end
-function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
+function (d::DebugWarnIfCostIncreases)(p::AbstractManoptProblem, o::Options, i::Int)
     if d.status !== :No
         cost = get_cost(p, get_iterate(o))
         if cost > d.old_cost + d.tol
@@ -547,7 +547,7 @@ mutable struct DebugWarnIfCostNotFinite <: DebugAction
     status::Symbol
     DebugWarnIfCostNotFinite(warn::Symbol=:Once) = new(warn)
 end
-function (d::DebugWarnIfCostNotFinite)(p::Problem, o::Options, i::Int)
+function (d::DebugWarnIfCostNotFinite)(p::AbstractManoptProblem, o::Options, i::Int)
     if d.status !== :No
         cost = get_cost(p, get_iterate(o))
         if !isfinite(cost)
@@ -586,7 +586,7 @@ mutable struct DebugWarnIfFieldNotFinite <: DebugAction
     field::Symbol
     DebugWarnIfFieldNotFinite(field::Symbol, warn::Symbol=:Once) = new(warn, field)
 end
-function (d::DebugWarnIfFieldNotFinite)(::Problem, o::Options, i::Int)
+function (d::DebugWarnIfFieldNotFinite)(::AbstractManoptProblem, o::Options, i::Int)
     if d.status !== :No
         v = getproperty(o, d.field)
         if !all(isfinite.(v))
