@@ -82,7 +82,7 @@ macro access_field(ex)
     @assert ex.head === :.
     obj = ex.args[1]
     fieldname = ex.args[2]
-    return esc(:(_access_field($obj, $fieldname, Teval())))
+    return esc(:(Manopt._access_field($obj, $fieldname, Teval())))
 end
 
 """
