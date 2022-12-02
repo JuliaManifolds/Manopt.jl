@@ -9,7 +9,7 @@ Solve an optimization problem of the form
 
 where ``F\colon\mathcal M \to ℝ^d`` is a continuously differentiable function,
 using the Riemannian Levenberg-Marquardt algorithm [^Peeters1993].
-The implementation follows [^Adachi2022].
+The implementation follows Algorithm 1[^Adachi2022].
 
 # Input
 * `M` – a manifold ``\mathcal M``
@@ -41,7 +41,7 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
 [^Adachi2022]:
     > S. Adachi, T. Okuno, and A. Takeda, “Riemannian Levenberg-Marquardt Method with Global
     > and Local Convergence Properties.” arXiv, Oct. 01, 2022.
-    > doi: [10.48550/arXiv.2210.00253](https://doi.org/10.48550/arXiv.2210.00253).
+    > arXiv: [2210.00253](https://doi.org/10.48550/arXiv.2210.00253).
 [^Peeters1993]:
     > R. L. M. Peeters, “On a Riemannian version of the Levenberg-Marquardt algorithm,”
     > VU University Amsterdam, Faculty of Economics, Business Administration and Econometrics,
