@@ -23,10 +23,10 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the function ``F`` has to 
 
 Also the Jacobian ``jacF!!`` is required:
 
-* as a functions `(M::AbstractManifold, p; B_dom::AbstractBasis) -> v` that allocates memory
-  for `v` itself for an [`AllocatingEvaluation`](@ref),
-* as a function `(M::AbstractManifold, v, p; B_dom::AbstractBasis) -> v` that works in place
-  of `v` for an [`MutatingEvaluation`](@ref).
+* as a functions `(M::AbstractManifold, p; basis_domain::AbstractBasis) -> v` that allocates
+  memory for `v` itself for an [`AllocatingEvaluation`](@ref),
+* as a function `(M::AbstractManifold, v, p; basis_domain::AbstractBasis) -> v` that works
+  in place of `v` for an [`MutatingEvaluation`](@ref).
 
 # Constructors
 
@@ -75,14 +75,14 @@ end
 
 function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
-    Jval = p.jacobian!!(p.M, x; B_dom=basis_x)
+    Jval = p.jacobian!!(p.M, x; basis_domain=basis_x)
     cost_values = p.F(p.M, x)
     return get_vector(p.M, x, transpose(Jval) * cost_values, basis_x)
 end
 function get_gradient(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
-    p.jacobian!!(p.M, Jval, x; B_dom=basis_x)
+    p.jacobian!!(p.M, Jval, x; basis_domain=basis_x)
     cost_values = zeros(p.num_components)
     p.F(p.M, cost_values, x)
     return get_vector(p.M, x, transpose(Jval) * cost_values, basis_x)
@@ -90,7 +90,7 @@ end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, X, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
-    Jval = p.jacobian!!(p.M, x; B_dom=basis_x)
+    Jval = p.jacobian!!(p.M, x; basis_domain=basis_x)
     cost_values = p.F(p.M, x)
     return get_vector!(p.M, X, x, transpose(Jval) * cost_values, basis_x)
 end
@@ -98,7 +98,7 @@ end
 function get_gradient!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, X, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
-    p.jacobian!!(p.M, Jval, x; B_dom=basis_x)
+    p.jacobian!!(p.M, Jval, x; basis_domain=basis_x)
     cost_values = zeros(p.num_components)
     p.F(p.M, cost_values, x)
     return get_vector!(p.M, X, x, transpose(Jval) * cost_values, basis_x)

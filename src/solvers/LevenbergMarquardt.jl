@@ -15,8 +15,8 @@ The implementation follows [^Adachi2022].
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F: \mathcal M→ℝ^d``
 * `jacF` – the Jacobian of ``F``. `jacF` is supposed to accept a keyword argument
-  `B_dom` which specifies basis of the tangent space at a given point in which the Jacobian
-  is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
+  `basis_domain` which specifies basis of the tangent space at a given point in which the
+  Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
 * `x` – an initial value ``x ∈ \mathcal M``
 * `num_components` -- length of the vector returned by the cost function (`d`).
   By default its value is -1 which means that it will be determined automatically by
@@ -135,9 +135,9 @@ function step_solver!(
 
     basis_ox = _maybe_get_basis(p.M, o.x, p.jacB)
     if Teval === AllocatingEvaluation
-        o.jacF = p.jacobian!!(p.M, o.x; B_dom=basis_ox)
+        o.jacF = p.jacobian!!(p.M, o.x; basis_domain=basis_ox)
     else
-        p.jacobian!!(p.M, o.jacF, o.x; B_dom=basis_ox)
+        p.jacobian!!(p.M, o.jacF, o.x; basis_domain=basis_ox)
     end
     λk = o.damping_term * norm(o.cost_values)
 

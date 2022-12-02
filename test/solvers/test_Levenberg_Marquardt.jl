@@ -26,9 +26,13 @@ function F_RLM(::AbstractManifold, p)
     return vec(pts_LM - p * ref_points)
 end
 
-function jacF_RLM(M::AbstractManifold, p; B_dom::AbstractBasis=DefaultOrthogonalBasis())
+function jacF_RLM(
+    M::AbstractManifold, p; basis_domain::AbstractBasis=DefaultOrthogonalBasis()
+)
     X0 = zeros(manifold_dimension(M))
-    J = ForwardDiff.jacobian(x -> F_RLM(M, exp(M, p, get_vector(M, p, x, B_dom))), X0)
+    J = ForwardDiff.jacobian(
+        x -> F_RLM(M, exp(M, p, get_vector(M, p, x, basis_domain))), X0
+    )
 
     return J
 end
@@ -74,7 +78,7 @@ struct jacF_reg_r2
 end
 
 function (f::jacF_reg_r2)(
-    ::AbstractManifold, p; B_dom::AbstractBasis=DefaultOrthogonalBasis()
+    ::AbstractManifold, p; basis_domain::AbstractBasis=DefaultOrthogonalBasis()
 )
     return [f.ts_r2 zero(f.ts_r2); zero(f.ts_r2) f.ts_r2]
 end
@@ -87,7 +91,7 @@ function F_reg_r2!(::AbstractManifold, x, p)
 end
 
 function jacF_reg_r2!(
-    ::AbstractManifold, J, p; B_dom::AbstractBasis=DefaultOrthogonalBasis()
+    ::AbstractManifold, J, p; basis_domain::AbstractBasis=DefaultOrthogonalBasis()
 )
     midpoint = div(size(J, 1), 2)
     view(J, 1:midpoint, 1) .= ts_r2
