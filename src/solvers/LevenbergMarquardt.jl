@@ -4,10 +4,10 @@
 Solve an optimization problem of the form
 
 ```math
-\operatorname{minimize}_{x ∈ \mathcal M} \frac{1}{2} \lVert F(x) \rVert^2,
+\operatorname{arg\,min}_{p ∈ \mathcal M} \frac{1}{2} \lVert F(p) \rVert^2,
 ```
 
-where ``F: \mathcal M \to ℝ^d`` is a continuously differentiable function,
+where ``F\colon\mathcal M \to ℝ^d`` is a continuously differentiable function,
 using the Riemannian Levenberg-Marquardt algorithm [^Peeters1993].
 The implementation follows [^Adachi2022].
 
@@ -51,7 +51,7 @@ function LevenbergMarquardt(
 end
 
 @doc raw"""
-    LevenbergMarquardt!(M, F, jacF, x)
+    LevenbergMarquardt!(M, F, jacF, x, num_components; kwargs...)
 
 
 For more options see [`LevenbergMarquardt`](@ref).
