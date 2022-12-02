@@ -68,40 +68,40 @@ function get_cost(P::NonlinearLeastSquaresProblem{AllocatingEvaluation}, p)
     return 1//2 * norm(P.F(P.M, p))^2
 end
 function get_cost(P::NonlinearLeastSquaresProblem{MutatingEvaluation}, p)
-    Fval = zeros(P.num_components)
-    P.F(P.M, Fval, p)
-    return 1//2 * norm(Fval)^2
+    cost_values = zeros(P.num_components)
+    P.F(P.M, cost_values, p)
+    return 1//2 * norm(cost_values)^2
 end
 
 function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = p.jacobian!!(p.M, x; B_dom=basis_x)
-    Fval = p.F(p.M, x)
-    return get_vector(p.M, x, transpose(Jval) * Fval, basis_x)
+    cost_values = p.F(p.M, x)
+    return get_vector(p.M, x, transpose(Jval) * cost_values, basis_x)
 end
 function get_gradient(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
     p.jacobian!!(p.M, Jval, x; B_dom=basis_x)
-    Fval = zeros(p.num_components)
-    p.F(p.M, Fval, x)
-    return get_vector(p.M, x, transpose(Jval) * Fval, basis_x)
+    cost_values = zeros(p.num_components)
+    p.F(p.M, cost_values, x)
+    return get_vector(p.M, x, transpose(Jval) * cost_values, basis_x)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, X, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = p.jacobian!!(p.M, x; B_dom=basis_x)
-    Fval = p.F(p.M, x)
-    return get_vector!(p.M, X, x, transpose(Jval) * Fval, basis_x)
+    cost_values = p.F(p.M, x)
+    return get_vector!(p.M, X, x, transpose(Jval) * cost_values, basis_x)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, X, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
     p.jacobian!!(p.M, Jval, x; B_dom=basis_x)
-    Fval = zeros(p.num_components)
-    p.F(p.M, Fval, x)
-    return get_vector!(p.M, X, x, transpose(Jval) * Fval, basis_x)
+    cost_values = zeros(p.num_components)
+    p.F(p.M, cost_values, x)
+    return get_vector!(p.M, X, x, transpose(Jval) * cost_values, basis_x)
 end
 
 @doc raw"""
@@ -118,8 +118,8 @@ A default value is given in brackets if a parameter can be left out in initializ
   a [`StoppingCriterion`](@ref)
 * `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
   the default set for your manifold.
-* `Fval` – value of ``F`` calculated in the solver setup or the previous iteration
-* `Fval_temp` – value of ``F`` for the current proposal point
+* `cost_values` – value of ``F`` calculated in the solver setup or the previous iteration
+* `cost_values_temp` – value of ``F`` for the current proposal point
 * `jacF` – the current Jacobian of ``F``
 * `gradient` – the current gradient of ``F``
 * `step_vector` – the tangent vector at `x` that is used to move to the next point
@@ -129,12 +129,12 @@ A default value is given in brackets if a parameter can be left out in initializ
 * `damping_term` – current value of the damping term
 * `damping_term_min` – initial (and also minimal) value of the damping term
 * `β` – parameter by which the damping term is multiplied when the current new point is rejected
-* `flagnz` – (`true`) if false, the algorithm expects that the value of residual at mimimum
-  is equal to 0.
+* `expect_zero_residual` – (`false`) if true, the algorithm expects that the value of
+  residual (objective) at mimimum is equal to 0.
 
 # Constructor
 
-    LevenbergMarquardtOptions(M, initialX, initial_Fval, initial_jacF; initial_vector), kwargs...)
+    LevenbergMarquardtOptions(M, initialX, initial_cost_values, initial_jacF; initial_vector), kwargs...)
 
 Generate Levenberg-Marquardt options.
 
@@ -142,13 +142,19 @@ Generate Levenberg-Marquardt options.
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """
 mutable struct LevenbergMarquardtOptions{
-    P,TStop<:StoppingCriterion,TRTM<:AbstractRetractionMethod,TFval,TJac,TGrad,Tparams<:Real
+    P,
+    TStop<:StoppingCriterion,
+    TRTM<:AbstractRetractionMethod,
+    Tcost_values,
+    TJac,
+    TGrad,
+    Tparams<:Real,
 } <: AbstractGradientOptions
     x::P
     stop::TStop
     retraction_method::TRTM
-    Fval::TFval
-    Fval_temp::TFval
+    cost_values::Tcost_values
+    candidate_cost_values::Tcost_values
     jacF::TJac
     gradient::TGrad
     step_vector::TGrad
@@ -157,11 +163,11 @@ mutable struct LevenbergMarquardtOptions{
     damping_term::Tparams
     damping_term_min::Tparams
     β::Tparams
-    flagnz::Bool
+    expect_zero_residual::Bool
     function LevenbergMarquardtOptions(
         M::AbstractManifold,
         initialX::P,
-        initial_Fval::TFval,
+        initial_cost_values::Tcost_values,
         initial_jacF::TJac,
         initial_gradient::TGrad=zero_vector(M, initialX);
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
@@ -171,8 +177,8 @@ mutable struct LevenbergMarquardtOptions{
         η::Real=0.2,
         damping_term_min::Real=0.1,
         β::Real=5.0,
-        flagnz::Bool=true,
-    ) where {P,TFval,TJac,TGrad}
+        expect_zero_residual::Bool=false,
+    ) where {P,Tcost_values,TJac,TGrad}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end
@@ -188,13 +194,19 @@ mutable struct LevenbergMarquardtOptions{
         end
         Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β))
         return new{
-            P,typeof(stopping_criterion),typeof(retraction_method),TFval,TJac,TGrad,Tparams
+            P,
+            typeof(stopping_criterion),
+            typeof(retraction_method),
+            Tcost_values,
+            TJac,
+            TGrad,
+            Tparams,
         }(
             initialX,
             stopping_criterion,
             retraction_method,
-            initial_Fval,
-            copy(initial_Fval),
+            initial_cost_values,
+            copy(initial_cost_values),
             initial_jacF,
             initial_gradient,
             allocate(M, initial_gradient),
@@ -203,7 +215,7 @@ mutable struct LevenbergMarquardtOptions{
             damping_term_min,
             damping_term_min,
             β,
-            flagnz,
+            expect_zero_residual,
         )
     end
 end

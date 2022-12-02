@@ -1,5 +1,5 @@
 @doc raw"""
-    LevenbergMarquardt(M, F, jacF, x)
+    LevenbergMarquardt(M, F, jacF, x, num_components=-1)
 
 Solve an optimization problem of the form
 
@@ -14,9 +14,14 @@ The implementation follows [^Adachi2022].
 # Input
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F: \mathcal M→ℝ^d``
-* `jacF` – the Jacobian of ``F``
+* `jacF` – the Jacobian of ``F``. `jacF` is supposed to accept a keyword argument
+  `B_dom` which specifies basis of the tangent space at a given point in which the Jacobian
+  is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
 * `x` – an initial value ``x ∈ \mathcal M``
 * `num_components` -- length of the vector returned by the cost function (`d`).
+  By default its value is -1 which means that it will be determined automatically by
+  calling `F` one additional time. Only possible when `evaluation` is `AllocatingEvaluation`,
+  for mutating evaluation this must be explicitly specified.
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
@@ -44,7 +49,7 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
     > link: [https://econpapers.repec.org/paper/vuawpaper/1993-11.htm](https://econpapers.repec.org/paper/vuawpaper/1993-11.htm).
 """
 function LevenbergMarquardt(
-    M::AbstractManifold, F::TF, gradF::TDF, x, num_components::Int; kwargs...
+    M::AbstractManifold, F::TF, gradF::TDF, x, num_components::Int=-1; kwargs...
 ) where {TF,TDF}
     x_res = copy(M, x)
     return LevenbergMarquardt!(M, F, gradF, x_res, num_components; kwargs...)
@@ -53,7 +58,6 @@ end
 @doc raw"""
     LevenbergMarquardt!(M, F, jacF, x, num_components; kwargs...)
 
-
 For more options see [`LevenbergMarquardt`](@ref).
 """
 function LevenbergMarquardt!(
@@ -61,17 +65,28 @@ function LevenbergMarquardt!(
     F::TF,
     jacF::TDF,
     x,
-    num_components::Int;
+    num_components::Int=-1;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(1e-12) |
                                           StopWhenStepsizeLess(1e-12),
     debug=[DebugWarnIfCostIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    flagnz::Bool=true,
+    expect_zero_residual::Bool=false,
     jacB::AbstractBasis=DefaultOrthonormalBasis(),
     kwargs..., #collect rest
 ) where {TF,TDF}
+    if num_components == -1
+        if evaluation === AllocatingEvaluation()
+            num_components = length(F(M, x))
+        else
+            throw(
+                ArgumentError(
+                    "For mutating evaluation num_components needs to be explicitly specified",
+                ),
+            )
+        end
+    end
     p = NonlinearLeastSquaresProblem(
         M, F, jacF, num_components; evaluation=evaluation, jacB=jacB
     )
@@ -82,7 +97,7 @@ function LevenbergMarquardt!(
         similar(x, num_components, manifold_dimension(M));
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
-        flagnz=flagnz,
+        expect_zero_residual=expect_zero_residual,
     )
     o = decorate_options(o; debug=debug, kwargs...)
     return get_solver_return(solve(p, o))
@@ -93,14 +108,14 @@ end
 function initialize_solver!(
     p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, o::LevenbergMarquardtOptions
 )
-    o.Fval = p.F(p.M, o.x)
+    o.cost_values = p.F(p.M, o.x)
     o.gradient = get_gradient(p, o.x)
     return o
 end
 function initialize_solver!(
     p::NonlinearLeastSquaresProblem{MutatingEvaluation}, o::LevenbergMarquardtOptions
 )
-    p.F(p.M, o.Fval, o.x)
+    p.F(p.M, o.cost_values, o.x)
     o.gradient = get_gradient(p, o.x)
     return o
 end
@@ -116,7 +131,7 @@ end
 function step_solver!(
     p::NonlinearLeastSquaresProblem{Teval}, o::LevenbergMarquardtOptions, iter::Integer
 ) where {Teval<:AbstractEvaluationType}
-    # o.Fval is either initialized by initialize_solver! or taken from the previous iteraion
+    # o.cost_values is either initialized by initialize_solver! or taken from the previous iteraion
 
     basis_ox = _maybe_get_basis(p.M, o.x, p.jacB)
     if Teval === AllocatingEvaluation
@@ -124,12 +139,12 @@ function step_solver!(
     else
         p.jacobian!!(p.M, o.jacF, o.x; B_dom=basis_ox)
     end
-    λk = o.damping_term * norm(o.Fval)
+    λk = o.damping_term * norm(o.cost_values)
 
     JJ = transpose(o.jacF) * o.jacF + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    grad_f_c = transpose(o.jacF) * o.Fval
+    grad_f_c = transpose(o.jacF) * o.cost_values
     sk = cholesky(JJ) \ -grad_f_c
     get_vector!(p.M, o.gradient, o.x, grad_f_c, basis_ox)
 
@@ -137,22 +152,22 @@ function step_solver!(
     o.last_stepsize = norm(p.M, o.x, o.step_vector)
     temp_x = retract(p.M, o.x, o.step_vector, o.retraction_method)
 
-    normFk2 = norm(o.Fval)^2
+    normFk2 = norm(o.cost_values)^2
     if Teval === AllocatingEvaluation
-        o.Fval_temp = p.F(p.M, temp_x)
+        o.candidate_cost_values = p.F(p.M, temp_x)
     else
-        p.F(p.M, o.Fval_temp, temp_x)
+        p.F(p.M, o.candidate_cost_values, temp_x)
     end
 
     ρk =
-        2 * (normFk2 - norm(o.Fval_temp)^2) / (
+        2 * (normFk2 - norm(o.candidate_cost_values)^2) / (
             -2 * inner(p.M, o.x, o.gradient, o.step_vector) - norm(o.jacF * sk)^2 -
             λk * norm(sk)
         )
     if ρk >= o.η
         copyto!(p.M, o.x, temp_x)
-        copyto!(o.Fval, o.Fval_temp)
-        if !o.flagnz
+        copyto!(o.cost_values, o.candidate_cost_values)
+        if o.expect_zero_residual
             o.damping_term = max(o.damping_term_min, o.damping_term / o.β)
         end
     else

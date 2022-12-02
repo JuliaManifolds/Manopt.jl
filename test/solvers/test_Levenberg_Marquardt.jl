@@ -102,9 +102,7 @@ end
     M = Rotations(3)
     x0 = exp(M, ref_R, get_vector(M, ref_R, randn(3) * 0.00001, DefaultOrthonormalBasis()))
 
-    o = Manopt.LevenbergMarquardt(
-        M, F_RLM, jacF_RLM, x0, length(pts_LM); return_options=true
-    )
+    o = LevenbergMarquardt(M, F_RLM, jacF_RLM, x0, length(pts_LM); return_options=true)
     x_opt = get_options(o).x
     @test norm(M, x_opt, get_gradient(o)) < 2e-3
     @test distance(M, ref_R, x_opt) < 1e-2
@@ -112,7 +110,7 @@ end
     # allocating R2 regression, nonzero residual
     M = Euclidean(2)
     x0 = [0.0, 0.0]
-    o = Manopt.LevenbergMarquardt(
+    o = LevenbergMarquardt(
         M,
         F_reg_r2(ts_r2, xs_r2, ys_r2),
         jacF_reg_r2(ts_r2, xs_r2, ys_r2),
@@ -123,10 +121,10 @@ end
     @test isapprox(o.options.x[1], 2, atol=0.01)
     @test isapprox(o.options.x[2], -3, atol=0.01)
 
-    # testing with a basis that requires cacheing
+    # testing with a basis that requires caching
     M = Euclidean(2)
     x0 = [0.0, 0.0]
-    o = Manopt.LevenbergMarquardt(
+    o = LevenbergMarquardt(
         M,
         F_reg_r2(ts_r2, xs_r2, ys_r2),
         jacF_reg_r2(ts_r2, xs_r2, ys_r2),
@@ -141,21 +139,20 @@ end
     # allocating R2 regression, zero residual
     M = Euclidean(2)
     x0 = [0.0, 0.0]
-    o = Manopt.LevenbergMarquardt(
+    o = LevenbergMarquardt(
         M,
         F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
         jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
-        x0,
-        length(ts_r2) * 2;
+        x0;
         return_options=true,
-        flagnz=false,
+        expect_zero_residual=false,
     )
     @test isapprox(o.options.x[1], 2, atol=0.01)
     @test isapprox(o.options.x[2], -3, atol=0.01)
 
     # mutating R2 regression
     x0 = [0.0, 0.0]
-    o_mut = Manopt.LevenbergMarquardt(
+    o_mut = LevenbergMarquardt(
         M,
         F_reg_r2!,
         jacF_reg_r2!,
@@ -228,6 +225,15 @@ end
             similar(x0, 2 * length(ts_r2), 2);
             stopping_criterion=StopAfterIteration(20),
             β=0.5,
+        )
+
+        @test_throws ArgumentError LevenbergMarquardt(
+            M,
+            F_reg_r2!,
+            jacF_reg_r2!,
+            x0;
+            return_options=true,
+            evaluation=MutatingEvaluation(),
         )
     end
 end
