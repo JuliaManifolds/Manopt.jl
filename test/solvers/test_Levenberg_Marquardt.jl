@@ -145,7 +145,7 @@ end
         jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
         x0;
         return_options=true,
-        expect_zero_residual=false,
+        expect_zero_residual=true,
     )
     @test isapprox(o.options.x[1], 2, atol=0.01)
     @test isapprox(o.options.x[2], -3, atol=0.01)
