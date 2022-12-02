@@ -38,9 +38,7 @@ Random.seed!(29)
             x0;
             record=[RecordCost()],
             return_options=true,
-            retraction_method=QRRetraction(),
-            inverse_retraction_method=QRInverseRetraction(),
-            stopping_criterion=StopAfterIteration(500),
+            stopping_criterion=StopAfterIteration(400),
         )
         x = get_solver_result(o)
         rec = get_record(o)

@@ -173,6 +173,12 @@ end
 export ℝ, ℂ, &, |
 #
 # Problems
+export AbstractManoptProblem, DefaultManoptProblem
+#
+# Objectives
+export AbstractManifoldObjective, ManifoldCostObjective
+#
+# Problems - old
 export Problem,
     ProximalProblem,
     ConstrainedProblem,

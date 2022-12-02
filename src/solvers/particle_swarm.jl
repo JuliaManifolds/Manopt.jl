@@ -101,7 +101,7 @@ for more optional arguments, see [`particle_swarm`](@ref).
 """
 function particle_swarm!(
     M::AbstractManifold,
-    F::TF;
+    f::TF;
     n::Int=100,
     x0::AbstractVector=[random_point(M) for i in 1:n],
     velocity::AbstractVector=[random_tangent(M, y) for y in x0],
@@ -119,7 +119,7 @@ function particle_swarm!(
     ),
     kwargs..., #collect rest
 ) where {TF}
-    p = CostProblem(M, F)
+    mp = DefaultManoptProblem(M, ManifoldCostObjective(f))
     o = ParticleSwarmOptions(
         M,
         x0,
@@ -133,21 +133,17 @@ function particle_swarm!(
         vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
-    return get_solver_return(solve!(p, o))
+    return get_solver_return(solve!(mp, o))
 end
 
 #
 # Solver functions
 #
-function initialize_solver!(
-    mp::DefaultManoptProblem{TM,<:ManifoldCostObjective}, o::ParticleSwarmOptions
-) where {TM}
+function initialize_solver!(mp::AbstractManoptProblem, o::ParticleSwarmOptions)
     j = argmin([get_cost(mp, p) for p in o.x])
     return o.g = deepcopy(o.x[j])
 end
-function step_solver!(
-    mp::DefaultManoptProblem{TM,<:ManifoldCostObjective}, o::ParticleSwarmOptions, ::Any
-) where {TM}
+function step_solver!(mp::AbstractManoptProblem, o::ParticleSwarmOptions, ::Any)
     M = get_manifold(mp)
     for i in 1:length(o.x)
         o.velocity[i] =
@@ -175,17 +171,19 @@ get_solver_result(o::ParticleSwarmOptions) = o.g
 # Change not only refers to different iterates (x=the whole population)
 # but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
 #
-function (c::StopWhenChangeLess)(P::AbstractManoptProblem, O::ParticleSwarmOptions, i)
+function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, O::ParticleSwarmOptions, i)
     if has_storage(c.storage, :Iterate)
         x_old = get_storage(c.storage, :Iterate)
         n = length(O.x)
-        d = distance(PowerManifold(P.M, NestedPowerRepresentation(), n), O.x, x_old)
+        d = distance(
+            PowerManifold(get_manifold(mp), NestedPowerRepresentation(), n), O.x, x_old
+        )
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d in the population) less than $(c.threshold).\n"
-            c.storage(P, O, i)
+            c.storage(mp, O, i)
             return true
         end
     end
-    c.storage(P, O, i)
+    c.storage(mp, O, i)
     return false
 end

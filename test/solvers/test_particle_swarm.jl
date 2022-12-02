@@ -5,46 +5,46 @@ using Random
     A = [1.0 3.0 4.0; 3.0 -2.0 -6.0; 4.0 -6.0 5.0]
     @testset "Eucliedean Particle Swarm" begin
         M = Euclidean(3)
-        F(::Euclidean, x) = (x' * A * x) / (x' * x)
-        x_start = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]
-        x_start2 = deepcopy(x_start)
+        f(::Euclidean, p) = (p' * A * p) / (p' * p)
+        p1 = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]
+        p2 = deepcopy(p1)
 
         Random.seed!(35)
-        o = particle_swarm(M, F; x0=x_start, return_options=true)
+        o = particle_swarm(M, f; x0=p1, return_options=true)
         g = get_solver_result(o)
 
         Random.seed!(35)
-        g2 = particle_swarm(M, F; x0=x_start2, return_options=false)
+        g2 = particle_swarm(M, f; x0=p2, return_options=false)
         @test isequal(g, g2)
 
         # the cost of g and the p[i]'s are not greater after one step
-        j = argmin([F(M, y) for y in x_start])
-        g0 = deepcopy(x_start[j])
-        @test F(M, g) <= F(M, g0)
-        for i in 1:3
-            @test F(M, o.p[i]) <= F(M, x_start[i])
+        j = argmin([f(M, y) for y in p1])
+        g0 = deepcopy(p1[j])
+        @test f(M, g) <= f(M, g0)
+        for (p, q) in zip(o.p, p1)
+            @test f(M, p) <= f(M, q) # nonincreased
             # the cost of g is not greater than the cost of any p[i]
-            @test F(M, g) <= F(M, o.p[i])
+            @test f(M, g) <= f(M, p)
         end
     end
     @testset "Spherical Particle Swarm" begin
         Random.seed!(42)
         M = Sphere(2)
-        F(::Sphere, x) = transpose(x) * A * x
-        x_start = [random_point(M) for i in 1:3]
-        v_start = [random_tangent(M, y) for y in x_start]
-        p = CostProblem(M, F)
-        o = ParticleSwarmOptions(zero.(x_start), v_start)
+        f(::Sphere, p) = transpose(p) * A * p
+        p_start = [random_point(M) for i in 1:3]
+        X_start = [random_tangent(M, y) for y in p_start]
+        p = DefaultManoptProblem(M, ManifoldCostObjective(f))
+        o = ParticleSwarmOptions(zero.(p_start), X_start)
         # test set_iterate
-        set_iterate!(o, x_start)
-        @test sum(norm.(get_iterate(o) .- x_start)) == 0
+        set_iterate!(o, p_start)
+        @test sum(norm.(get_iterate(o) .- p_start)) == 0
         initialize_solver!(p, o)
         step_solver!(p, o, 1)
-        for i in 1:3
+        for (p, v) in zip(o.x, o.velocity)
             # check that the new particle locations are on the manifold
-            @test is_point(M, o.x[i], true)
+            @test is_point(M, p, true)
             # check that the new velocities are tangent vectors of the original particle locations
-            @test is_vector(M, o.x[i], o.velocity[i], true; atol=2e-15)
+            @test is_vector(M, p, v, true; atol=2e-15)
         end
     end
 end

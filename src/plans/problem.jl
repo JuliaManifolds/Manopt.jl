@@ -63,9 +63,10 @@ struct InplaceEvaluation <: AbstractEvaluationType end
 Model a default manifold problem, that (just) consists of the domain of optimisatio,
 that is an `AbstractManifold` and a [`AbstractManifoldObjective`](@ref)
 """
-struct DefaultManoptProblem{TM<:AbstractManifold,Objective<:AbstractManifoldObjective}
+struct DefaultManoptProblem{TM<:AbstractManifold,Objective<:AbstractManifoldObjective} <:
+       AbstractManoptProblem
     manifold::TM
-    objetive::Objective
+    objective::Objective
 end
 
 @doc raw"""
