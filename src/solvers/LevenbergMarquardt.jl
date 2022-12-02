@@ -128,17 +128,46 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
     end
 end
 
+struct FieldAccessor{fieldname,TObj}
+    obj::TObj
+end
+
+@inline FieldAccessor(obj, fieldname::Symbol) = FieldAccessor{fieldname,typeof(obj)}(obj)
+
+@inline function Base.getindex(fa::FieldAccessor{fieldname}) where {fieldname}
+    return getfield(fa.obj, fieldname)
+end
+@inline function Base.setindex!(fa::FieldAccessor{fieldname}, v) where {fieldname}
+    return setfield!(fa.obj, fieldname, v)
+end
+
+@inline access_field(obj, fieldname, ::AllocatingEvaluation) = FieldAccessor(obj, fieldname)
+@inline access_field(obj, fieldname, ::MutatingEvaluation) = getfield(obj, fieldname)
+
+function get_jacobian!(
+    p::NonlinearLeastSquaresProblem{AllocatingEvaluation},
+    jacF::FieldAccessor,
+    x,
+    basis_domain::AbstractBasis,
+)
+    return jacF[] = p.jacobian!!(p.M, x; basis_domain=basis_domain)
+end
+function get_jacobian!(
+    p::NonlinearLeastSquaresProblem{MutatingEvaluation},
+    jacF,
+    x,
+    basis_domain::AbstractBasis,
+)
+    return p.jacobian!!(p.M, jacF, x; basis_domain=basis_domain)
+end
+
 function step_solver!(
     p::NonlinearLeastSquaresProblem{Teval}, o::LevenbergMarquardtOptions, iter::Integer
 ) where {Teval<:AbstractEvaluationType}
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
 
     basis_ox = _maybe_get_basis(p.M, o.x, p.jacB)
-    if Teval === AllocatingEvaluation
-        o.jacF = p.jacobian!!(p.M, o.x; basis_domain=basis_ox)
-    else
-        p.jacobian!!(p.M, o.jacF, o.x; basis_domain=basis_ox)
-    end
+    get_jacobian!(p, access_field(o, :jacF, Teval()), o.x, basis_ox)
     λk = o.damping_term * norm(o.residual_values)
 
     JJ = transpose(o.jacF) * o.jacF + λk * I
