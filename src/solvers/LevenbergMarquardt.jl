@@ -128,25 +128,9 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
     end
 end
 
-struct FieldAccessor{fieldname,TObj}
-    obj::TObj
-end
-
-@inline FieldAccessor(obj, fieldname::Symbol) = FieldAccessor{fieldname,typeof(obj)}(obj)
-
-@inline function Base.getindex(fa::FieldAccessor{fieldname}) where {fieldname}
-    return getfield(fa.obj, fieldname)
-end
-@inline function Base.setindex!(fa::FieldAccessor{fieldname}, v) where {fieldname}
-    return setfield!(fa.obj, fieldname, v)
-end
-
-@inline access_field(obj, fieldname, ::AllocatingEvaluation) = FieldAccessor(obj, fieldname)
-@inline access_field(obj, fieldname, ::MutatingEvaluation) = getfield(obj, fieldname)
-
 function get_jacobian!(
     p::NonlinearLeastSquaresProblem{AllocatingEvaluation},
-    jacF::FieldAccessor,
+    jacF::FieldReference,
     x,
     basis_domain::AbstractBasis,
 )
@@ -161,13 +145,22 @@ function get_jacobian!(
     return p.jacobian!!(p.M, jacF, x; basis_domain=basis_domain)
 end
 
+function get_residuals!(
+    p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, residuals::FieldReference, x
+)
+    return residuals[] = p.F(p.M, x)
+end
+function get_residuals!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, residuals, x)
+    return p.F(p.M, residuals, x)
+end
+
 function step_solver!(
     p::NonlinearLeastSquaresProblem{Teval}, o::LevenbergMarquardtOptions, iter::Integer
 ) where {Teval<:AbstractEvaluationType}
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
 
     basis_ox = _maybe_get_basis(p.M, o.x, p.jacB)
-    get_jacobian!(p, access_field(o, :jacF, Teval()), o.x, basis_ox)
+    get_jacobian!(p, (@access_field o.jacF), o.x, basis_ox)
     λk = o.damping_term * norm(o.residual_values)
 
     JJ = transpose(o.jacF) * o.jacF + λk * I
@@ -182,11 +175,7 @@ function step_solver!(
     temp_x = retract(p.M, o.x, o.step_vector, o.retraction_method)
 
     normFk2 = norm(o.residual_values)^2
-    if Teval === AllocatingEvaluation
-        o.candidate_residual_values = p.F(p.M, temp_x)
-    else
-        p.F(p.M, o.candidate_residual_values, temp_x)
-    end
+    get_residuals!(p, (@access_field o.candidate_residual_values), temp_x)
 
     ρk =
         2 * (normFk2 - norm(o.candidate_residual_values)^2) / (
