@@ -108,14 +108,14 @@ end
 function initialize_solver!(
     p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, o::LevenbergMarquardtOptions
 )
-    o.cost_values = p.F(p.M, o.x)
+    o.residual_values = p.F(p.M, o.x)
     o.gradient = get_gradient(p, o.x)
     return o
 end
 function initialize_solver!(
     p::NonlinearLeastSquaresProblem{MutatingEvaluation}, o::LevenbergMarquardtOptions
 )
-    p.F(p.M, o.cost_values, o.x)
+    p.F(p.M, o.residual_values, o.x)
     o.gradient = get_gradient(p, o.x)
     return o
 end
@@ -131,7 +131,7 @@ end
 function step_solver!(
     p::NonlinearLeastSquaresProblem{Teval}, o::LevenbergMarquardtOptions, iter::Integer
 ) where {Teval<:AbstractEvaluationType}
-    # o.cost_values is either initialized by initialize_solver! or taken from the previous iteraion
+    # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
 
     basis_ox = _maybe_get_basis(p.M, o.x, p.jacB)
     if Teval === AllocatingEvaluation
@@ -139,12 +139,12 @@ function step_solver!(
     else
         p.jacobian!!(p.M, o.jacF, o.x; basis_domain=basis_ox)
     end
-    λk = o.damping_term * norm(o.cost_values)
+    λk = o.damping_term * norm(o.residual_values)
 
     JJ = transpose(o.jacF) * o.jacF + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    grad_f_c = transpose(o.jacF) * o.cost_values
+    grad_f_c = transpose(o.jacF) * o.residual_values
     sk = cholesky(JJ) \ -grad_f_c
     get_vector!(p.M, o.gradient, o.x, grad_f_c, basis_ox)
 
@@ -152,21 +152,21 @@ function step_solver!(
     o.last_stepsize = norm(p.M, o.x, o.step_vector)
     temp_x = retract(p.M, o.x, o.step_vector, o.retraction_method)
 
-    normFk2 = norm(o.cost_values)^2
+    normFk2 = norm(o.residual_values)^2
     if Teval === AllocatingEvaluation
-        o.candidate_cost_values = p.F(p.M, temp_x)
+        o.candidate_residual_values = p.F(p.M, temp_x)
     else
-        p.F(p.M, o.candidate_cost_values, temp_x)
+        p.F(p.M, o.candidate_residual_values, temp_x)
     end
 
     ρk =
-        2 * (normFk2 - norm(o.candidate_cost_values)^2) / (
+        2 * (normFk2 - norm(o.candidate_residual_values)^2) / (
             -2 * inner(p.M, o.x, o.gradient, o.step_vector) - norm(o.jacF * sk)^2 -
             λk * norm(sk)
         )
     if ρk >= o.η
         copyto!(p.M, o.x, temp_x)
-        copyto!(o.cost_values, o.candidate_cost_values)
+        copyto!(o.residual_values, o.candidate_residual_values)
         if o.expect_zero_residual
             o.damping_term = max(o.damping_term_min, o.damping_term / o.β)
         end

@@ -68,40 +68,40 @@ function get_cost(P::NonlinearLeastSquaresProblem{AllocatingEvaluation}, p)
     return 1//2 * norm(P.F(P.M, p))^2
 end
 function get_cost(P::NonlinearLeastSquaresProblem{MutatingEvaluation}, p)
-    cost_values = zeros(P.num_components)
-    P.F(P.M, cost_values, p)
-    return 1//2 * norm(cost_values)^2
+    residual_values = zeros(P.num_components)
+    P.F(P.M, residual_values, p)
+    return 1//2 * norm(residual_values)^2
 end
 
 function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = p.jacobian!!(p.M, x; basis_domain=basis_x)
-    cost_values = p.F(p.M, x)
-    return get_vector(p.M, x, transpose(Jval) * cost_values, basis_x)
+    residual_values = p.F(p.M, x)
+    return get_vector(p.M, x, transpose(Jval) * residual_values, basis_x)
 end
 function get_gradient(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
     p.jacobian!!(p.M, Jval, x; basis_domain=basis_x)
-    cost_values = zeros(p.num_components)
-    p.F(p.M, cost_values, x)
-    return get_vector(p.M, x, transpose(Jval) * cost_values, basis_x)
+    residual_values = zeros(p.num_components)
+    p.F(p.M, residual_values, x)
+    return get_vector(p.M, x, transpose(Jval) * residual_values, basis_x)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, X, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = p.jacobian!!(p.M, x; basis_domain=basis_x)
-    cost_values = p.F(p.M, x)
-    return get_vector!(p.M, X, x, transpose(Jval) * cost_values, basis_x)
+    residual_values = p.F(p.M, x)
+    return get_vector!(p.M, X, x, transpose(Jval) * residual_values, basis_x)
 end
 
 function get_gradient!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, X, x)
     basis_x = _maybe_get_basis(p.M, x, p.jacB)
     Jval = zeros(p.num_components, manifold_dimension(p.M))
     p.jacobian!!(p.M, Jval, x; basis_domain=basis_x)
-    cost_values = zeros(p.num_components)
-    p.F(p.M, cost_values, x)
-    return get_vector!(p.M, X, x, transpose(Jval) * cost_values, basis_x)
+    residual_values = zeros(p.num_components)
+    p.F(p.M, residual_values, x)
+    return get_vector!(p.M, X, x, transpose(Jval) * residual_values, basis_x)
 end
 
 @doc raw"""
@@ -118,8 +118,8 @@ A default value is given in brackets if a parameter can be left out in initializ
   a [`StoppingCriterion`](@ref)
 * `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
   the default set for your manifold.
-* `cost_values` – value of ``F`` calculated in the solver setup or the previous iteration
-* `cost_values_temp` – value of ``F`` for the current proposal point
+* `residual_values` – value of ``F`` calculated in the solver setup or the previous iteration
+* `residual_values_temp` – value of ``F`` for the current proposal point
 * `jacF` – the current Jacobian of ``F``
 * `gradient` – the current gradient of ``F``
 * `step_vector` – the tangent vector at `x` that is used to move to the next point
@@ -134,7 +134,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    LevenbergMarquardtOptions(M, initialX, initial_cost_values, initial_jacF; initial_vector), kwargs...)
+    LevenbergMarquardtOptions(M, initialX, initial_residual_values, initial_jacF; initial_vector), kwargs...)
 
 Generate Levenberg-Marquardt options.
 
@@ -145,7 +145,7 @@ mutable struct LevenbergMarquardtOptions{
     P,
     TStop<:StoppingCriterion,
     TRTM<:AbstractRetractionMethod,
-    Tcost_values,
+    Tresidual_values,
     TJac,
     TGrad,
     Tparams<:Real,
@@ -153,8 +153,8 @@ mutable struct LevenbergMarquardtOptions{
     x::P
     stop::TStop
     retraction_method::TRTM
-    cost_values::Tcost_values
-    candidate_cost_values::Tcost_values
+    residual_values::Tresidual_values
+    candidate_residual_values::Tresidual_values
     jacF::TJac
     gradient::TGrad
     step_vector::TGrad
@@ -167,7 +167,7 @@ mutable struct LevenbergMarquardtOptions{
     function LevenbergMarquardtOptions(
         M::AbstractManifold,
         initialX::P,
-        initial_cost_values::Tcost_values,
+        initial_residual_values::Tresidual_values,
         initial_jacF::TJac,
         initial_gradient::TGrad=zero_vector(M, initialX);
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
@@ -178,7 +178,7 @@ mutable struct LevenbergMarquardtOptions{
         damping_term_min::Real=0.1,
         β::Real=5.0,
         expect_zero_residual::Bool=false,
-    ) where {P,Tcost_values,TJac,TGrad}
+    ) where {P,Tresidual_values,TJac,TGrad}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end
@@ -197,7 +197,7 @@ mutable struct LevenbergMarquardtOptions{
             P,
             typeof(stopping_criterion),
             typeof(retraction_method),
-            Tcost_values,
+            Tresidual_values,
             TJac,
             TGrad,
             Tparams,
@@ -205,8 +205,8 @@ mutable struct LevenbergMarquardtOptions{
             initialX,
             stopping_criterion,
             retraction_method,
-            initial_cost_values,
-            copy(initial_cost_values),
+            initial_residual_values,
+            copy(initial_residual_values),
             initial_jacF,
             initial_gradient,
             allocate(M, initial_gradient),
