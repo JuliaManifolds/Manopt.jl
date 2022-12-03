@@ -2,28 +2,28 @@ using Manifolds, Manopt, Test, ManifoldsBase
 
 using Dates
 
-struct TestProblem{Teval<:AbstractEvaluationType} <: Problem{Teval} end
-mutable struct TestOptions <: Options
+struct TestProblem1{Teval<:AbstractEvaluationType} <: Problem{Teval} end
+mutable struct TestOptions1 <: Options
     storage::Vector{Float64}
 end
 
 @testset "generic Options test" begin
-    p = TestProblem{MutatingEvaluation}()
-    o = TestOptions([1.0, 2.0])
+    p = TestProblem1{MutatingEvaluation}()
+    o = TestOptions1([1.0, 2.0])
     a = ArmijoLinesearch(Euclidean(3); initial_stepsize=1.0)
     @test get_last_stepsize(p, o, a) == 1.0
     @test get_initial_stepsize(a) == 1.0
 end
 @testset "Decresaing Stepsize" begin
-    p = TestProblem{MutatingEvaluation}()
+    p = TestProblem1{MutatingEvaluation}()
     ds = DecreasingStepsize(; length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0)
     @test get_initial_stepsize(ds) == 10.0
-    @test ds(p, TestOptions([1.0]), 1) == 10.0
-    @test ds(p, TestOptions([1.0]), 2) == 5.0
+    @test ds(p, TestOptions1([1.0]), 1) == 10.0
+    @test ds(p, TestOptions1([1.0]), 2) == 5.0
 end
 
 @testset "Decorator Options test" begin
-    o = TestOptions([1.0, 2.0])
+    o = TestOptions1([1.0, 2.0])
     r = RecordOptions(o, RecordIteration())
     d = DebugOptions(o, DebugIteration())
     dr = DebugOptions(r, DebugIteration())
@@ -61,10 +61,10 @@ end
 end
 
 @testset "FieldReference" begin
-    p_mutating = TestProblem{MutatingEvaluation}()
-    p_allocating = TestProblem{AllocatingEvaluation}()
+    p_mutating = TestProblem1{MutatingEvaluation}()
+    p_allocating = TestProblem1{AllocatingEvaluation}()
     X = [10.0, 12.0]
-    o = TestOptions([1.0, 2.0])
+    o = TestOptions1([1.0, 2.0])
     Teval = MutatingEvaluation
     fa = Manopt.@access_field o.storage
     @test fa === o.storage
