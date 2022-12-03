@@ -18,7 +18,7 @@ Random.seed!(42)
             M, F, gradF, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
         )
         @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
-        # with Options
+        # with State
         lrbfgs_o = quasi_Newton(
             M,
             F,

@@ -66,7 +66,7 @@ function subgradient_method!(
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr}
     p = SubGradientProblem(M, F, ∂F!!; evaluation=evaluation)
-    o = SubGradientMethodOptions(
+    o = SubGradientMethodState(
         M,
         x;
         stopping_criterion=stopping_criterion,
@@ -76,16 +76,16 @@ function subgradient_method!(
     o = decorate_options(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
+function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodState)
     o.x_optimal = o.x
     o.∂ = zero_vector(p.M, o.x)
     return o
 end
-function step_solver!(p::SubGradientProblem, o::SubGradientMethodOptions, iter)
+function step_solver!(p::SubGradientProblem, o::SubGradientMethodState, iter)
     get_subgradient!(p, o.∂, o.x)
     s = get_stepsize(p, o, iter)
     retract!(p.M, o.x, o.x, -s * o.∂, o.retraction_method)
     (get_cost(p, o.x) < get_cost(p, o.x_optimal)) && (o.x_optimal = o.x)
     return o
 end
-get_solver_result(o::SubGradientMethodOptions) = o.x_optimal
+get_solver_result(o::SubGradientMethodState) = o.x_optimal

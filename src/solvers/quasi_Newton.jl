@@ -123,7 +123,7 @@ function quasi_Newton!(
     end
 
     p = GradientProblem(M, F, gradF; evaluation=evaluation)
-    o = QuasiNewtonOptions(
+    o = QuasiNewtonState(
         M,
         x;
         initial_vector=get_gradient(p, x),
@@ -137,13 +137,13 @@ function quasi_Newton!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(p::GradientProblem, o::QuasiNewtonOptions)
+function initialize_solver!(p::AbstractManoptProblem, o::QuasiNewtonState)
     o.gradient = get_gradient(p, o.x)
     o.sk = deepcopy(o.gradient)
     return o.yk = deepcopy(o.gradient)
 end
 
-function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
+function step_solver!(p::AbstractManoptProblem, o::QuasiNewtonState, iter)
     o.gradient = get_gradient(p, o.x)
     η = o.direction_update(p, o)
     α = o.stepsize(p, o, iter, η)
@@ -177,7 +177,7 @@ end
 @doc raw"""
     update_hessian!(d, p, o, x_old, iter)
 
-update the hessian wihtin the [`QuasiNewtonOptions`](@ref) `o` given a [`Problem`](@ref) `p`
+update the hessian wihtin the [`QuasiNewtonState`](@ref) `o` given a [`Problem`](@ref) `p`
 as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `x_old`.
 Note that the current (`iter`th) iterate is already stored in `o.x`.
 

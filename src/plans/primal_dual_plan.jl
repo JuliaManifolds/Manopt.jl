@@ -229,15 +229,15 @@ function adjoint_linearized_operator!(
 end
 
 @doc raw"""
-    PrimalDualOptions
+    AbstractPrimalDualSolverState
 
 A general type for all primal dual based options to be used within primal dual
 based algorithms
 """
-abstract type PrimalDualOptions <: Options end
+abstract type AbstractPrimalDualSolverState <: AbstractManoptSolverState end
 
 @doc raw"""
-    ChambollePockOptions <: PrimalDualOptions
+    ChambollePockState <: AbstractPrimalDualSolverState
 
 stores all options and variables within a linearized or exact Chambolle Pock.
 The following list provides the order for the constructor, where the previous iterates are
@@ -270,12 +270,12 @@ initialized automatically and values with a default may be left out.
   vector transport to use on manifold ``\mathcal N``.
 
 where for the last two the functions a [`Problem`](@ref)` p`,
-[`Options`](@ref)` o` and the current iterate `i` are the arguments.
+[`AbstractManoptSolverState`](@ref)` o` and the current iterate `i` are the arguments.
 If you activate these to be different from the default identity, you have to provide
 `p.Λ` for the algorithm to work (which might be `missing` in the linearized case).
 
 # Constructor
-    ChambollePockOptions(M::AbstractManifold,
+    ChambollePockState(M::AbstractManifold,
         m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64;
         acceleration::Float64 = 0.0,
         relaxation::Float64 = 1.0,
@@ -291,7 +291,7 @@ If you activate these to be different from the default identity, you have to pro
         vector_transport_method_dual = default_vector_transport_method(TangentBundle(M)),
     )
 """
-mutable struct ChambollePockOptions{
+mutable struct ChambollePockState{
     P,
     Q,
     T,
@@ -300,7 +300,7 @@ mutable struct ChambollePockOptions{
     IRM_Dual<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
     VTM_Dual<:AbstractVectorTransportMethod,
-} <: PrimalDualOptions
+} <: AbstractPrimalDualSolverState
     m::P
     n::Q
     x::P
@@ -322,7 +322,7 @@ mutable struct ChambollePockOptions{
     vector_transport_method::VTM
     vector_transport_method_dual::VTM_Dual
 
-    @deprecate ChambollePockOptions(
+    @deprecate ChambollePockState(
         m,
         n,
         x,
@@ -333,7 +333,7 @@ mutable struct ChambollePockOptions{
         inverse_retraction_method=LogarithmicInverseRetraction(),
         vector_transport_method=ParallelTransport(),
         kwargs...,
-    ) ChambollePockOptions(
+    ) ChambollePockState(
         DefaultManifold(2),
         m,
         n,
@@ -347,7 +347,7 @@ mutable struct ChambollePockOptions{
         kwargs...,
     )
 
-    function ChambollePockOptions(
+    function ChambollePockState(
         M::AbstractManifold,
         m::P,
         n::Q,
@@ -405,9 +405,9 @@ mutable struct ChambollePockOptions{
         )
     end
 end
-get_solver_result(o::PrimalDualOptions) = get_iterate(o)
-get_iterate(O::ChambollePockOptions) = O.x
-function set_iterate!(O::ChambollePockOptions, p)
+get_solver_result(o::AbstractPrimalDualSolverState) = get_iterate(o)
+get_iterate(O::ChambollePockState) = O.x
+function set_iterate!(O::ChambollePockState, p)
     O.x = p
     return O
 end
@@ -423,10 +423,10 @@ Compute the primal residual at current iterate ``k`` given the necessary values 
 V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 \Bigr\rVert
 ```
-where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref)
+where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockState`](@ref)
 """
 function primal_residual(
-    p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old
+    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, x_old, ξ_old, n_old
 )
     return norm(
         p.M,
@@ -482,10 +482,10 @@ and for the `:exact` variant
 \Bigr\rVert
 ```
 
-where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockOptions`](@ref).
+where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
 """
 function dual_residual(
-    p::AbstractPrimalDualProblem, o::PrimalDualOptions, x_old, ξ_old, n_old
+    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, x_old, ξ_old, n_old
 )
     if o.variant === :linearized
         return norm(
@@ -563,14 +563,14 @@ with the keywords
 * `io` (`stdout`) - stream to perform the debug to
 * format (`"$prefix%s"`) format to print the dual residual, using the
 * `prefix` (`"Dual Residual: "`) short form to just set the prefix
-* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
+* `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugDualResidual <: DebugAction
     io::IO
     format::String
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function DebugDualResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
@@ -579,7 +579,7 @@ mutable struct DebugDualResidual <: DebugAction
     end
     function DebugDualResidual(
         initial_values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
@@ -590,7 +590,9 @@ mutable struct DebugDualResidual <: DebugAction
         return new(io, format, storage)
     end
 end
-function (d::DebugDualResidual)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
+function (d::DebugDualResidual)(
+    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
         Printf.format(d.io, Printf.Format(d.format), dual_residual(p, o, xOld, ξOld, nOld))
@@ -612,14 +614,14 @@ with the keywords
 * `io` (`stdout`) - stream to perform the debug to
 * format (`"$prefix%s"`) format to print the dual residual, using the
 * `prefix` (`"Primal Residual: "`) short form to just set the prefix
-* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
+* `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalResidual <: DebugAction
     io::IO
     format::String
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function DebugPrimalResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
@@ -628,7 +630,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
     function DebugPrimalResidual(
         values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
@@ -638,7 +640,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
 end
 function (d::DebugPrimalResidual)(
-    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, i::Int
 )
     if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
@@ -663,14 +665,14 @@ with the keywords
 * `io` (`stdout`) - stream to perform the debug to
 * format (`"$prefix%s"`) format to print the dual residual, using the
 * `prefix` (`"Primal Residual: "`) short form to just set the prefix
-* `storage` (a new [`StoreOptionsAction`](@ref)) to store values for the debug.
+* `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalDualResidual <: DebugAction
     io::IO
     format::String
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function DebugPrimalDualResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
@@ -679,7 +681,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
     function DebugPrimalDualResidual(
         values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
@@ -689,7 +691,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
 end
 function (d::DebugPrimalDualResidual)(
-    p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
+    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, i::Int
 )
     if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
@@ -709,7 +711,7 @@ Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
 function DebugPrimalChange(;
-    storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
+    storage::StoreStateAction=StoreStateAction((:Iterate,)),
     prefix="Primal Change: ",
     kwargs...,
 )
@@ -743,9 +745,9 @@ since the dual variable lives in (possibly different) tangent spaces.
 mutable struct DebugDualChange <: DebugAction
     io::IO
     format::String
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function DebugDualChange(;
-        storage::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
+        storage::StoreStateAction=StoreStateAction((:ξ, :n)),
         io::IO=stdout,
         prefix="Dual Change: ",
         format="$prefix%s",
@@ -754,7 +756,7 @@ mutable struct DebugDualChange <: DebugAction
     end
     function DebugDualChange(
         values::Tuple{T,P};
-        storage::StoreOptionsAction=StoreOptionsAction((:ξ, :n)),
+        storage::StoreStateAction=StoreStateAction((:ξ, :n)),
         io::IO=stdout,
         prefix="Dual Change: ",
         format="$prefix%s",
@@ -765,7 +767,9 @@ mutable struct DebugDualChange <: DebugAction
         return new(io, format, storage)
     end
 end
-function (d::DebugDualChange)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
+function (d::DebugDualChange)(
+    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, i::Int
+)
     if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
         v = norm(
@@ -788,15 +792,13 @@ This method is further set display `o.n`.
 DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
 
 """
-    DebugDualChange(; storage=StoreOptionsAction((:ξ)), io::IO=stdout)
+    DebugDualChange(; storage=StoreStateAction((:ξ)), io::IO=stdout)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
 function DebugDualBaseChange(;
-    storage::StoreOptionsAction=StoreOptionsAction((:n)),
-    prefix="Dual Base Change:",
-    kwargs...,
+    storage::StoreStateAction=StoreStateAction((:n)), prefix="Dual Base Change:", kwargs...
 )
     return DebugEntryChange(
         :n,
@@ -817,7 +819,7 @@ This method is further set display `o.m`.
 DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
 
 """
-    DebugPrimalBaseChange(a::StoreOptionsAction=StoreOptionsAction((:m)),io::IO=stdout)
+    DebugPrimalBaseChange(a::StoreStateAction=StoreStateAction((:m)),io::IO=stdout)
 
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.

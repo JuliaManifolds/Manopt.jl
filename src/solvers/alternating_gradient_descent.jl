@@ -77,7 +77,7 @@ function alternating_gradient_descent!(
     kwargs...,
 ) where {TgF}
     p = AlternatingGradientProblem(M, F, gradF; evaluation=evaluation)
-    o = AlternatingGradientDescentOptions(
+    o = AlternatingGradientDescentState(
         M,
         x;
         inner_iterations=inner_iterations,
@@ -91,7 +91,7 @@ function alternating_gradient_descent!(
     return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(
-    ::AlternatingGradientProblem, o::AlternatingGradientDescentOptions
+    ::AlternatingGradientProblem, o::AlternatingGradientDescentState
 )
     o.k = 1
     o.i = 1
@@ -99,7 +99,7 @@ function initialize_solver!(
     return o
 end
 function step_solver!(
-    p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
+    p::AlternatingGradientProblem, o::AlternatingGradientDescentState, iter
 )
     s, get_gradient(o) = o.direction(p, o, iter)
     j = o.order[o.k]

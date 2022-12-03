@@ -3,7 +3,7 @@
 
 A `RecordAction` is a small functor to record values.
 The usual call is given by `(p,o,i) -> s` that performs the record based on
-a [`Problem`](@ref) `p`, [`Options`](@ref) `o` and the current iterate `i`.
+a [`Problem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o` and the current iterate `i`.
 
 By convention `i<=0` is interpreted as "For Initialization only", i.e. only
 initialize internal values, but not trigger any record, the same holds for
@@ -13,19 +13,19 @@ called from within [`stop_solver!`](@ref) which returns true afterwards.
 # Fields (assumed by subtypes to exist)
 * `recorded_values` an `Array` of the recorded values.
 """
-abstract type RecordAction <: AbstractOptionsAction end
+abstract type RecordAction <: AbstractStateAction end
 
 @doc raw"""
-    RecordOptions <: Options
+    RecordSolverState <: AbstractManoptSolverState
 
-append to any [`Options`](@ref) the decorator with record functionality,
+append to any [`AbstractManoptSolverState`](@ref) the decorator with record functionality,
 Internally a `Dict`ionary is kept that stores a [`RecordAction`](@ref) for
 several concurrent modes using a `Symbol` as reference.
 The default mode is `:Iteration`, which is used to store information that is recorded during
 the iterations. RecordActions might be added to `:Start` or `:Stop` to record values at the
 beginning or for the stopping time point, respectively
 
-The original options can still be accessed using the [`get_options`](@ref) function.
+The original options can still be accessed using the [`get_state`](@ref) function.
 
 # Fields
 * `options` – the options that are extended by debug information
@@ -33,65 +33,74 @@ The original options can still be accessed using the [`get_options`](@ref) funct
   different recorded values
 
 # Constructors
-    RecordOptions(o,dR)
+    RecordSolverState(o,dR)
 
-construct record decorated [`Options`](@ref), where `dR` can be
+construct record decorated [`AbstractManoptSolverState`](@ref), where `dR` can be
 
 * a [`RecordAction`](@ref), then it is stored within the dictionary at `:Iteration`
 * an `Array` of [`RecordAction`](@ref)s, then it is stored as a
   `recordDictionary`(@ref) within the dictionary at `:All`.
 * a `Dict{Symbol,RecordAction}`.
 """
-mutable struct RecordOptions{O<:Options,TRD<:NamedTuple} <: Options
+mutable struct RecordSolverState{O<:AbstractManoptSolverState,TRD<:NamedTuple} <:
+               AbstractManoptSolverState
     options::O
     recordDictionary::TRD
-    function RecordOptions{O}(o::O; kwargs...) where {O<:Options}
+    function RecordSolverState{O}(o::O; kwargs...) where {O<:AbstractManoptSolverState}
         return new{O,typeof(values(kwargs))}(o, values(kwargs))
     end
 end
-function RecordOptions(o::O, dR::RecordAction) where {O<:Options}
-    return RecordOptions{O}(o; Iteration=dR)
+function RecordSolverState(o::O, dR::RecordAction) where {O<:AbstractManoptSolverState}
+    return RecordSolverState{O}(o; Iteration=dR)
 end
-function RecordOptions(o::O, dR::Dict{Symbol,<:RecordAction}) where {O<:Options}
-    return RecordOptions{O}(o; dR...)
+function RecordSolverState(
+    o::O, dR::Dict{Symbol,<:RecordAction}
+) where {O<:AbstractManoptSolverState}
+    return RecordSolverState{O}(o; dR...)
 end
-function RecordOptions(o::O, format::Vector{<:Any}) where {O<:Options}
-    return RecordOptions{O}(o; RecordFactory(get_options(o), format)...)
+function RecordSolverState(o::O, format::Vector{<:Any}) where {O<:AbstractManoptSolverState}
+    return RecordSolverState{O}(o; RecordFactory(get_state(o), format)...)
 end
-function RecordOptions(o::O, s::Symbol) where {O<:Options}
-    return RecordOptions{O}(o; Iteration=RecordFactory(get_options(o), s))
+function RecordSolverState(o::O, s::Symbol) where {O<:AbstractManoptSolverState}
+    return RecordSolverState{O}(o; Iteration=RecordFactory(get_state(o), s))
 end
 
-dispatch_options_decorator(::RecordOptions) = Val(true)
+dispatch_options_decorator(::RecordSolverState) = Val(true)
 
 @doc """
-    has_record(o::Options)
+    has_record(o::AbstractManoptSolverState)
 
-check whether the [`Options`](@ref)` o` are decorated with
-[`RecordOptions`](@ref)
+check whether the [`AbstractManoptSolverState`](@ref)` o` are decorated with
+[`RecordSolverState`](@ref)
 """
-has_record(::RecordOptions) = true
-has_record(o::Options) = has_record(o, dispatch_options_decorator(o))
-has_record(o::Options, ::Val{true}) = has_record(o.options)
-has_record(::Options, ::Val{false}) = false
+has_record(::RecordSolverState) = true
+has_record(o::AbstractManoptSolverState) = has_record(o, dispatch_options_decorator(o))
+has_record(o::AbstractManoptSolverState, ::Val{true}) = has_record(o.options)
+has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
 @doc """
-    get_record_options(o::Options)
+    get_record_options(o::AbstractManoptSolverState)
 
-return the [`RecordOptions`](@ref) among the decorators from the [`Options`](@ref) `o`
+return the [`RecordSolverState`](@ref) among the decorators from the [`AbstractManoptSolverState`](@ref) `o`
 """
-get_record_options(o::Options) = get_record_options(o, dispatch_options_decorator(o))
-get_record_options(o::Options, ::Val{true}) = get_record_options(o.options)
-get_record_options(::Options, ::Val{false}) = error("No Record decoration found")
-get_record_options(o::RecordOptions) = o
+function get_record_options(o::AbstractManoptSolverState)
+    return get_record_options(o, dispatch_options_decorator(o))
+end
+function get_record_options(o::AbstractManoptSolverState, ::Val{true})
+    return get_record_options(o.options)
+end
+function get_record_options(::AbstractManoptSolverState, ::Val{false})
+    return error("No Record decoration found")
+end
+get_record_options(o::RecordSolverState) = o
 
 @doc raw"""
-    get_record_action(o::Options, s::Symbol)
+    get_record_action(o::AbstractManoptSolverState, s::Symbol)
 
-return the action contained in the (first) [`RecordOptions`](@ref) decorator within the [`Options`](@ref) `o`.
+return the action contained in the (first) [`RecordSolverState`](@ref) decorator within the [`AbstractManoptSolverState`](@ref) `o`.
 
 """
-function get_record_action(o::Options, s::Symbol=:Iteration)
+function get_record_action(o::AbstractManoptSolverState, s::Symbol=:Iteration)
     if haskey(o.recordDictionary, s)
         return o.recordDictionary[s]
     else
@@ -99,23 +108,25 @@ function get_record_action(o::Options, s::Symbol=:Iteration)
     end
 end
 @doc raw"""
-    get_record(o::Options, [,s=:Iteration])
-    get_record(o::RecordOptions, [,s=:Iteration])
+    get_record(o::AbstractManoptSolverState, [,s=:Iteration])
+    get_record(o::RecordSolverState, [,s=:Iteration])
 
-return the recorded values from within the [`RecordOptions`](@ref) `o` that where
+return the recorded values from within the [`RecordSolverState`](@ref) `o` that where
 recorded with respect to the `Symbol s` as an `Array`. The default refers to
 any recordings during an `:Iteration`.
 
-When called with arbitrary [`Options`](@ref), this method looks for the
-[`RecordOptions`](@ref) decorator and calls `get_record` on the decorator.
+When called with arbitrary [`AbstractManoptSolverState`](@ref), this method looks for the
+[`RecordSolverState`](@ref) decorator and calls `get_record` on the decorator.
 """
-function get_record(o::RecordOptions, s::Symbol=:Iteration)
+function get_record(o::RecordSolverState, s::Symbol=:Iteration)
     return get_record(get_record_action(o, s))
 end
-function get_record(o::RecordOptions, s::Symbol, i...)
+function get_record(o::RecordSolverState, s::Symbol, i...)
     return get_record(get_record_action(o, s), i...)
 end
-get_record(o::Options, s::Symbol=:Iteration) = get_record(get_record_options(o), s)
+function get_record(o::AbstractManoptSolverState, s::Symbol=:Iteration)
+    return get_record(get_record_options(o), s)
+end
 
 @doc raw"""
     get_record(r::RecordAction)
@@ -126,18 +137,18 @@ get_record(r::RecordAction, i) = r.recorded_values
 get_record(r::RecordAction) = r.recorded_values
 
 """
-    get_index(ro::RecordOptions, s::Symbol)
+    get_index(ro::RecordSolverState, s::Symbol)
     ro[s]
 
 Get the recorded values for reording type `s`, see [`get_record`](@ref) for details.
 
-    get_index(ro::RecordOptions, s::Symbol, i...)
+    get_index(ro::RecordSolverState, s::Symbol, i...)
     ro[s, i...]
 
 Acces the recording type of type `s` and call its [`RecordAction`](@ref) with `[i...]`.
 """
-getindex(ro::RecordOptions, s::Symbol) = get_record(ro, s)
-getindex(ro::RecordOptions, s::Symbol, i...) = get_record_action(ro, s)[i...]
+getindex(ro::RecordSolverState, s::Symbol) = get_record(ro, s)
+getindex(ro::RecordSolverState, s::Symbol, i...) = get_record_action(ro, s)[i...]
 
 """
     record_or_reset!(r,v,i)
@@ -217,7 +228,9 @@ mutable struct RecordGroup <: RecordAction
     RecordGroup() = new(Array{RecordAction,1}(), Dict{Symbol,Int}())
 end
 
-function (d::RecordGroup)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
+function (d::RecordGroup)(
+    p::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     for ri in d.group
         ri(p, o, i)
     end
@@ -280,7 +293,9 @@ mutable struct RecordEvery <: RecordAction
         return new(r, every, alwaysUpdate)
     end
 end
-function (d::RecordEvery)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
+function (d::RecordEvery)(
+    p::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     if i <= 0
         d.record(p, o, i)
     elseif (rem(i, d.every) == 0)
@@ -299,11 +314,11 @@ getindex(r::RecordEvery, i) = get_record(r, i)
 @doc raw"""
     RecordChange <: RecordAction
 
-debug for the amount of change of the iterate (stored in `o.x` of the [`Options`](@ref))
+debug for the amount of change of the iterate (stored in `o.x` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration.
 
 # Additional Fields
-* `storage` a [`StoreOptionsAction`](@ref) to store (at least) `o.x` to use this
+* `storage` a [`StoreStateAction`](@ref) to store (at least) `o.x` to use this
   as the last value (to compute the change
 * `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
   used for approximating distance.
@@ -314,10 +329,10 @@ for approximating the distance.
 """
 mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: RecordAction
     recorded_values::Vector{Float64}
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     invretr::TInvRetr
     function RecordChange(
-        a::StoreOptionsAction=StoreOptionsAction((:Iterate,));
+        a::StoreStateAction=StoreStateAction((:Iterate,));
         manifold::AbstractManifold=DefaultManifold(1),
         invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             manifold
@@ -327,7 +342,7 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
     end
     function RecordChange(
         x0,
-        a::StoreOptionsAction=StoreOptionsAction((:Iterate,));
+        a::StoreStateAction=StoreStateAction((:Iterate,));
         manifold::AbstractManifold=DefaultManifold(1),
         invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             manifold
@@ -337,7 +352,9 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
         return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
 end
-function (r::RecordChange)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
+function (r::RecordChange)(
+    p::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     record_or_reset!(
         r,
         if has_storage(r.storage, :Iterate)
@@ -358,7 +375,7 @@ record a certain fields entry of type {T} during the iterates
 
 # Fields
 * `recorded_values` – the recorded Iterates
-* `field` – Symbol the entry can be accessed with within [`Options`](@ref)
+* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
 """
 mutable struct RecordEntry{T} <: RecordAction
@@ -368,7 +385,9 @@ mutable struct RecordEntry{T} <: RecordAction
 end
 RecordEntry(::T, f::Symbol) where {T} = RecordEntry{T}(f)
 RecordEntry(d::DataType, f::Symbol) = RecordEntry{d}(f)
-function (r::RecordEntry{T})(::AbstractManoptProblem, o::Options, i) where {T}
+function (r::RecordEntry{T})(
+    ::AbstractManoptProblem, o::AbstractManoptSolverState, i
+) where {T}
     return record_or_reset!(r, getfield(o, r.field), i)
 end
 
@@ -379,20 +398,20 @@ record a certain entries change during iterates
 
 # Additional Fields
 * `recorded_values` – the recorded Iterates
-* `field` – Symbol the field can be accessed with within [`Options`](@ref)
+* `field` – Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage` – a [`StoreOptionsAction`](@ref) to store (at least) `getproperty(o, d.field)`
+* `storage` – a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
 mutable struct RecordEntryChange <: RecordAction
     recorded_values::Vector{Float64}
     field::Symbol
     distance::Any
-    storage::StoreOptionsAction
-    function RecordEntryChange(f::Symbol, d, a::StoreOptionsAction=StoreOptionsAction((f,)))
+    storage::StoreStateAction
+    function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction((f,)))
         return new(Float64[], f, d, a)
     end
     function RecordEntryChange(
-        v::T where {T}, f::Symbol, d, a::StoreOptionsAction=StoreOptionsAction((f,))
+        v::T where {T}, f::Symbol, d, a::StoreStateAction=StoreStateAction((f,))
     )
         update_storage!(a, Dict(f => v))
         return new(Float64[], f, d, a)
@@ -400,7 +419,7 @@ mutable struct RecordEntryChange <: RecordAction
 end
 function (r::RecordEntryChange)(
     p::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:Options}
+) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     value = 0.0
     if has_storage(r.storage, r.field)
         value = r.distance(p, o, getfield(o, r.field), get_storage(r.storage, r.field))
@@ -436,7 +455,9 @@ function RecordIterate()
     )
 end
 
-function (r::RecordIterate{T})(::AbstractManoptProblem, o::Options, i) where {T}
+function (r::RecordIterate{T})(
+    ::AbstractManoptProblem, o::AbstractManoptSolverState, i
+) where {T}
     return record_or_reset!(r, get_iterate(o), i)
 end
 
@@ -449,7 +470,7 @@ mutable struct RecordIteration <: RecordAction
     recorded_values::Array{Int,1}
     RecordIteration() = new(Array{Int,1}())
 end
-function (r::RecordIteration)(::AbstractManoptProblem, ::Options, i::Int)
+function (r::RecordIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     return record_or_reset!(r, i, i)
 end
 
@@ -462,7 +483,9 @@ mutable struct RecordCost <: RecordAction
     recorded_values::Array{Float64,1}
     RecordCost() = new(Array{Float64,1}())
 end
-function (r::RecordCost)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
+function (r::RecordCost)(
+    p::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     return record_or_reset!(r, get_cost(p, get_iterate(o)), i)
 end
 
@@ -490,7 +513,9 @@ mutable struct RecordTime <: RecordAction
         return new(Array{Nanosecond,1}(), Nanosecond(time_ns()), mode)
     end
 end
-function (r::RecordTime)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:Options}
+function (r::RecordTime)(
+    p::P, o::O, i::Int
+) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     # At iteartion zero also reset start
     (i == 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
@@ -504,19 +529,19 @@ function (r::RecordTime)(p::P, o::O, i::Int) where {P<:AbstractManoptProblem,O<:
 end
 
 @doc raw"""
-    RecordFactory(o::Options, a)
+    RecordFactory(o::AbstractManoptSolverState, a)
 
 given an array of `Symbol`s and [`RecordAction`](@ref)s and `Ints`
 
 * The symbol `:Cost` creates a [`RecordCost`](@ref)
 * The symbol `:iteration` creates a [`RecordIteration`](@ref)
 * The symbol `:Change` creates a [`RecordChange`](@ref)
-* any other symbol creates a [`RecordEntry`](@ref) of the corresponding field in [`Options`](@ref)
+* any other symbol creates a [`RecordEntry`](@ref) of the corresponding field in [`AbstractManoptSolverState`](@ref)
 * any [`RecordAction`](@ref) is directly included
 * an semantic pair `:symbol => RecordAction` is directly included
 * an Integer `k` introduces that record is only performed every `k`th iteration
 """
-function RecordFactory(o::Options, a::Array{<:Any,1})
+function RecordFactory(o::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
     group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
     for s in filter(x -> !isa(x, Int), a) # for all that are not integers or stopping criteria
@@ -536,7 +561,7 @@ function RecordFactory(o::Options, a::Array{<:Any,1})
     end
     return (; Iteration=record)
 end
-RecordFactory(o::Options, s::Symbol) = RecordActionFactory(o, s)
+RecordFactory(o::AbstractManoptSolverState, s::Symbol) = RecordActionFactory(o, s)
 
 @doc raw"""
     RecordActionFactory(s)
@@ -553,9 +578,9 @@ create a [`RecordAction`](@ref) where
   * `:Time` - to record the total time taken after every iteration
   * `:IterativeTime` – to record the times taken for each iteration.
 """
-RecordActionFactory(::Options, a::RecordAction) = a
-RecordActionFactory(::Options, sa::Pair{Symbol,<:RecordAction}) = sa
-function RecordActionFactory(o::Options, s::Symbol)
+RecordActionFactory(::AbstractManoptSolverState, a::RecordAction) = a
+RecordActionFactory(::AbstractManoptSolverState, sa::Pair{Symbol,<:RecordAction}) = sa
+function RecordActionFactory(o::AbstractManoptSolverState, s::Symbol)
     if (s == :Change)
         return RecordChange()
     elseif (s == :Iteration)

@@ -9,8 +9,8 @@ CurrentModule = Manopt
     NelderMead!
 ```
 
-## Options
+## State
 
 ```@docs
-    NelderMeadOptions
+    NelderMeadState
 ```

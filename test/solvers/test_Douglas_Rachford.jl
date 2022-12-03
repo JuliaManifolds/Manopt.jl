@@ -35,7 +35,7 @@ using Manifolds, Manopt, Test
     # since the default does not run that long -> rough estimate
     @test distance(M, xHat2, result2) ≈ 0
     #test getter/set
-    O = DouglasRachfordOptions(M, p)
+    O = DouglasRachfordState(M, p)
     set_iterate!(O, q)
     @test get_iterate(O) == q
 end

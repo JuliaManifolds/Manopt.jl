@@ -12,13 +12,13 @@ alternating_gradient_descent!
 ## Problem
 
 ```@docs
-AlternatingGradientProblem
+AlternatingDefaultManoptProblem
 ```
 
-## Options
+## State
 
 ```@docs
-AlternatingGradientDescentOptions
+AlternatingGradientDescentState
 ```
 
 Additionally, the options share a [`DirectionUpdateRule`](@ref),

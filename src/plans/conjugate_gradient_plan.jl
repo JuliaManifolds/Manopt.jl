@@ -1,8 +1,8 @@
 @doc raw"""
-    ConjugateGradientOptions <: AbstractGradientOptions
+    ConjugateGradientState <: AbstractGradientSolverState
 
 specify options for a conjugate gradient descent algorithm, that solves a
-[`GradientProblem`].
+[`DefaultManoptProblem`].
 
 # Fields
 * `x` – the current iterate, a point on a manifold
@@ -16,9 +16,9 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 
 # See also
-[`conjugate_gradient_descent`](@ref), [`GradientProblem`](@ref), [`ArmijoLinesearch`](@ref)
+[`conjugate_gradient_descent`](@ref), [`DefaultManoptProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
-mutable struct ConjugateGradientDescentOptions{
+mutable struct ConjugateGradientDescentState{
     P,
     T,
     TCoeff<:DirectionUpdateRule,
@@ -26,7 +26,7 @@ mutable struct ConjugateGradientDescentOptions{
     TStop<:StoppingCriterion,
     TRetr<:AbstractRetractionMethod,
     TVTM<:AbstractVectorTransportMethod,
-} <: AbstractGradientOptions
+} <: AbstractGradientSolverState
     x::P
     gradient::T
     δ::T
@@ -36,7 +36,7 @@ mutable struct ConjugateGradientDescentOptions{
     stop::TStop
     retraction_method::TRetr
     vector_transport_method::TVTM
-    function ConjugateGradientDescentOptions{P,T}(
+    function ConjugateGradientDescentState{P,T}(
         M::AbstractManifold,
         x0::P,
         sC::StoppingCriterion,
@@ -58,7 +58,7 @@ mutable struct ConjugateGradientDescentOptions{
         return o
     end
 end
-function ConjugateGradientDescentOptions(
+function ConjugateGradientDescentState(
     M::AbstractManifold,
     x::P,
     sC::StoppingCriterion,
@@ -68,16 +68,14 @@ function ConjugateGradientDescentOptions(
     vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
     initial_gradient::T=zero_vector(M, x),
 ) where {P,T}
-    return ConjugateGradientDescentOptions{P,T}(
-        M, x, sC, s, dU, retr, vtr, initial_gradient
-    )
+    return ConjugateGradientDescentState{P,T}(M, x, sC, s, dU, retr, vtr, initial_gradient)
 end
 
 @doc raw"""
     ConjugateDescentCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
+the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
 ``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^Flethcer1987] adapted to manifolds:
 
@@ -90,7 +88,7 @@ and the last update direction ``\delta=\delta_k``,  based on [^Flethcer1987] ada
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    ConjugateDescentCoefficient(a::StoreOptionsAction=())
+    ConjugateDescentCoefficient(a::StoreStateAction=())
 
 Construct the conjugate descent coefficient update rule, a new storage is created by default.
 
@@ -99,15 +97,15 @@ Construct the conjugate descent coefficient update rule, a new storage is create
     > John Wiley & Sons, New York, 1987. doi [10.1137/1024028](https://doi.org/10.1137/1024028)
 """
 mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function ConjugateDescentCoefficient(
-        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient))
+        a::StoreStateAction=StoreStateAction((:Iterate, :gradient))
     )
         return new(a)
     end
 end
 function (u::ConjugateDescentCoefficient)(
-    p::GradientProblem, o::ConjugateGradientDescentOptions, i
+    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
@@ -122,7 +120,7 @@ end
     DaiYuanCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
+the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
 ``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``, based on [^DaiYuan1999] adapted to manifolds:
 
@@ -142,7 +140,7 @@ See also [`conjugate_gradient_descent`](@ref)
 # Constructor
     DaiYuanCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=(),
+        a::StoreStateAction=(),
     )
 
 Construct the Dai Yuan coefficient update rule, where the parallel transport is the
@@ -156,15 +154,17 @@ default vector transport and a new storage is created by default.
 mutable struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     transport_method::TVTM
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function DaiYuanCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient, :δ)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
 end
-function (u::DaiYuanCoefficient)(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
+function (u::DaiYuanCoefficient)(
+    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
+)
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
@@ -182,7 +182,7 @@ end
     FletcherReevesCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
+the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
 ``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^FletcherReeves1964] adapted to manifolds:
 
@@ -194,7 +194,7 @@ and the last update direction ``\delta=\delta_k``,  based on [^FletcherReeves196
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    FletcherReevesCoefficient(a::StoreOptionsAction=())
+    FletcherReevesCoefficient(a::StoreStateAction=())
 
 Construct the Fletcher Reeves coefficient update rule, a new storage is created by default.
 
@@ -204,15 +204,15 @@ Construct the Fletcher Reeves coefficient update rule, a new storage is created 
     > doi: [10.1093/comjnl/7.2.149](http://dx.doi.org/10.1093/comjnl/7.2.149)
 """
 mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function FletcherReevesCoefficient(
-        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient))
+        a::StoreStateAction=StoreStateAction((:Iterate, :gradient))
     )
         return new(a)
     end
 end
 function (u::FletcherReevesCoefficient)(
-    p::GradientProblem, o::ConjugateGradientDescentOptions, i
+    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
@@ -227,7 +227,7 @@ end
     HagerZhangCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
+the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
 ``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``, based on [^HagerZhang2005]
 adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
@@ -248,7 +248,7 @@ See also [`conjugate_gradient_descent`](@ref)
 # Constructor
     HagerZhangCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=(),
+        a::StoreStateAction=(),
     )
 
 Construct the Hager Zhang coefficient update rule, where the parallel transport is the
@@ -262,17 +262,17 @@ default vector transport and a new storage is created by default.
 mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     transport_method::TVTM
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function HagerZhangCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient, :δ)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
 end
 function (u::HagerZhangCoefficient)(
     p::P, o::O, i
-) where {P<:GradientProblem,O<:ConjugateGradientDescentOptions}
+) where {P<:DefaultManoptProblem,O<:ConjugateGradientDescentState}
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
         return 0.0
@@ -298,7 +298,7 @@ end
     HeestenesStiefelCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
+the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
 ``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^HeestensStiefel1952]
 adapted to manifolds as follows:
@@ -316,7 +316,7 @@ where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at
 # Constructor
     HeestenesStiefelCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=()
+        a::StoreStateAction=()
     )
 
 Construct the Heestens Stiefel coefficient update rule, where the parallel transport is the
@@ -332,16 +332,16 @@ See also [`conjugate_gradient_descent`](@ref)
 mutable struct HeestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     transport_method::TVTM
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function HeestenesStiefelCoefficient(
         transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-        storage_action::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient, :δ)),
+        storage_action::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(transport_method)}(transport_method, storage_action)
     end
 end
 function (u::HeestenesStiefelCoefficient)(
-    p::GradientProblem, o::ConjugateGradientDescentOptions, i
+    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
@@ -360,7 +360,7 @@ end
     LiuStoreyCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
+the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
 ``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^LuiStorey1991]
 adapted to manifolds:
@@ -381,7 +381,7 @@ See also [`conjugate_gradient_descent`](@ref)
 # Constructor
     LiuStoreyCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=()
+        a::StoreStateAction=()
     )
 
 Construct the Lui Storey coefficient update rule, where the parallel transport is the
@@ -395,16 +395,16 @@ default vector transport and a new storage is created by default.
 mutable struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     transport_method::TVTM
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function LiuStoreyCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient, :δ)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
 end
 function (u::LiuStoreyCoefficient)(
-    p::GradientProblem, o::ConjugateGradientDescentOptions, i
+    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, o) # if not given store current as old
@@ -420,7 +420,7 @@ end
     PolakRibiereCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentOptions`](@ref)` o` include the last iterates
+the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
 ``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^PolakRibiere1969][^Polyak1969]
 adapted to manifolds:
@@ -439,7 +439,7 @@ Then the update reads
 # Constructor
     PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=()
+        a::StoreStateAction=()
     )
 
 Construct the PolakRibiere coefficient update rule, where the parallel transport is the
@@ -460,16 +460,16 @@ See also [`conjugate_gradient_descent`](@ref)
 mutable struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     transport_method::TVTM
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :gradient)),
     )
         return new{typeof(t)}(t, a)
     end
 end
 function (u::PolakRibiereCoefficient)(
-    p::GradientProblem, o::ConjugateGradientDescentOptions, i
+    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
         update_storage!(u.storage, o) # if not given store current as old
@@ -487,13 +487,13 @@ end
     SteepestDirectionUpdateRule <: DirectionUpdateRule
 
 The simplest rule to update is to have no influence of the last direction and
-hence return an update ``β = 0`` for all [`ConjugateGradientDescentOptions`](@ref)` o`
+hence return an update ``β = 0`` for all [`ConjugateGradientDescentState`](@ref)` o`
 
 See also [`conjugate_gradient_descent`](@ref)
 """
 struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
 function (u::SteepestDirectionUpdateRule)(
-    ::GradientProblem, ::ConjugateGradientDescentOptions, i
+    ::DefaultManoptProblem, ::ConjugateGradientDescentState, i
 )
     return 0.0
 end

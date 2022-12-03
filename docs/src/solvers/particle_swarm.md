@@ -9,10 +9,10 @@ CurrentModule = Manopt
   particle_swarm!
 ```
 
-## Options
+## State
 
 ```@docs
-ParticleSwarmOptions
+ParticleSwarmState
 ```
 
 ## Literature

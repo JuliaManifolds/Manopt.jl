@@ -3,11 +3,11 @@ using Manifolds, Manopt, Test, ManifoldsBase
 using Dates
 
 struct TestProblem <: AbstractManoptProblem{AllocatingEvaluation} end
-struct TestOptions <: Options end
+struct TestState <: AbstractManoptSolverState end
 
-@testset "generic Options test" begin
+@testset "generic State test" begin
     p = TestProblem()
-    o = TestOptions()
+    o = TestState()
     a = ArmijoLinesearch(Euclidean(3); initial_stepsize=1.0)
     @test get_last_stepsize(p, o, a) == 1.0
     @test get_initial_stepsize(a) == 1.0
@@ -15,15 +15,15 @@ end
 @testset "Decresaing Stepsize" begin
     ds = DecreasingStepsize(; length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0)
     @test get_initial_stepsize(ds) == 10.0
-    @test ds(TestProblem(), TestOptions(), 1) == 10.0
-    @test ds(TestProblem(), TestOptions(), 2) == 5.0
+    @test ds(TestProblem(), TestState(), 1) == 10.0
+    @test ds(TestProblem(), TestState(), 2) == 5.0
 end
 
-@testset "Decorator Options test" begin
-    o = TestOptions()
-    r = RecordOptions(o, RecordIteration())
-    d = DebugOptions(o, DebugIteration())
-    dr = DebugOptions(r, DebugIteration())
+@testset "Decorator State test" begin
+    o = TestState()
+    r = RecordSolverState(o, RecordIteration())
+    d = DebugSolverState(o, DebugIteration())
+    dr = DebugSolverState(r, DebugIteration())
 
     @test has_record(o) == has_record(d)
     @test !has_record(o)
@@ -40,11 +40,11 @@ end
     @test dispatch_options_decorator(d) === Val(true)
     @test dispatch_options_decorator(o) === Val(false)
 
-    @test get_options(r) == o
-    @test get_options(dr) == o
-    @test get_options(d) == o
-    @test get_options(o) == o
-    @test get_options(o, Val(false)) == o
+    @test get_state(r) == o
+    @test get_state(dr) == o
+    @test get_state(d) == o
+    @test get_state(o) == o
+    @test get_state(o, Val(false)) == o
 
     @test Manopt._extract_val(Val(true))
     @test !Manopt._extract_val(Val(false))

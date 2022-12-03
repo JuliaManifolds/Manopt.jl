@@ -31,9 +31,9 @@ CostProblem
 ## Gradient based problem
 
 ```@docs
-AbstractGradientProblem
-GradientProblem
-StochasticGradientProblem
+AbstractManoptProblem
+DefaultManoptProblem
+StochasticDefaultManoptProblem
 get_gradient
 get_gradients
 ```
@@ -41,7 +41,7 @@ get_gradients
 ## Subgradient based problem
 
 ```@docs
-SubGradientProblem
+SubDefaultManoptProblem
 get_subgradient
 ```
 

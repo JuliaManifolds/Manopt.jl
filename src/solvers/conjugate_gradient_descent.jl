@@ -32,7 +32,7 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
   rule to compute the descent direction update coefficient ``β_k``,
   as a functor, i.e. the resulting function maps `(p,o,i) -> β`, where
   `p` is the current [`GradientProblem`](@ref), `o` are the
-  [`ConjugateGradientDescentOptions`](@ref) `o` and `i` is the current iterate.
+  [`ConjugateGradientDescentState`](@ref) `o` and `i` is the current iterate.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` - (`default_retraction_method(M`) a retraction method to use.
@@ -88,7 +88,7 @@ function conjugate_gradient_descent!(
 ) where {TF,TDF}
     p = GradientProblem(M, F, gradF; evaluation=evaluation)
     X = zero_vector(M, x)
-    o = ConjugateGradientDescentOptions(
+    o = ConjugateGradientDescentState(
         M,
         x,
         stopping_criterion,
@@ -101,12 +101,12 @@ function conjugate_gradient_descent!(
     o = decorate_options(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-function initialize_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions)
+function initialize_solver!(p::AbstractManoptProblem, o::ConjugateGradientDescentState)
     o.gradient = get_gradient(p, o.x)
     o.δ = -o.gradient
     return o.β = 0.0
 end
-function step_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
+function step_solver!(p::AbstractManoptProblem, o::ConjugateGradientDescentState, i)
     xOld = o.x
     retract!(p.M, o.x, o.x, get_stepsize(p, o, i, o.δ) * o.δ, o.retraction_method)
     get_gradient!(p, o.gradient, o.x)

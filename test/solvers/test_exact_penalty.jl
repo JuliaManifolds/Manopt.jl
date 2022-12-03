@@ -20,7 +20,7 @@ using LinearAlgebra: I, tr
     @test distance(M, v0, sol_lse) < 1e-3
     @test distance(M, v0, sol_lqh) < 1e-3
     # Dummy options
-    O = ExactPenaltyMethodOptions(M, x0, CostProblem(M, F), NelderMeadOptions(M))
+    O = ExactPenaltyMethodState(M, x0, CostProblem(M, F), NelderMeadState(M))
     set_iterate!(O, 2 .* x0)
     @test get_iterate(O) == 2 .* x0
 end

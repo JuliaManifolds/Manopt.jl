@@ -18,7 +18,7 @@ using LinearAlgebra: I, tr
 
     P = ConstrainedProblem(M, F, gradF; G=G, gradG=gradG)
     # dummy ALM problem
-    O = AugmentedLagrangianMethodOptions(M, P, x0, CostProblem(M, F), NelderMeadOptions(M))
+    O = AugmentedLagrangianMethodState(M, P, x0, CostProblem(M, F), NelderMeadState(M))
     set_iterate!(O, 2 .* x0)
     @test get_iterate(O) == 2 .* x0
 end

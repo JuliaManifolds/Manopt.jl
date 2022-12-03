@@ -32,7 +32,7 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
         Y = similar(X)
         FG(M, Y, p)
         @test FG(M, p) == Y
-        O = FrankWolfeOptions(M, p, oracle!)
+        O = FrankWolfeState(M, p, oracle!)
         set_iterate!(O, 2 .* p)
         @test get_iterate(O) == 2 .* p
     end

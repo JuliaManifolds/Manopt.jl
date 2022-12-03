@@ -58,7 +58,7 @@ R = gradient_descent(M, F, gradF, data[1]; record=:Cost, return_options=true)
 # ╔═╡ 7552c7ba-6d45-4ed9-856c-b00be28a84a0
 md"""
 From the returned options, we see that the `Options` are encapsulated (decorated) with
-`RecordOptions`.
+`RecordSolverState`.
 
 You can attach different recorders to some operations (`:Start`. `:Stop`, `:Iteration` at time of
  writing), where `:Iteration` is the default, so the following is the same as `get_record(R, :Iteation)`. We get
@@ -151,13 +151,13 @@ sI = RecordIteration()
 
 # ╔═╡ 995c264c-793e-4c23-9dfd-3eb7bc640e30
 md"""
-We now combine both into the `RecordOptions` decorator. It acts completely the same as an `Option` but records something in every iteration additionally. This is stored in a dictionary of `RecordActions`, where `:Iteration` is the action (here the only every 6th iteration group) and the `sI` which is executed at stop.
+We now combine both into the `RecordSolverState` decorator. It acts completely the same as an `Option` but records something in every iteration additionally. This is stored in a dictionary of `RecordActions`, where `:Iteration` is the action (here the only every 6th iteration group) and the `sI` which is executed at stop.
 
 Note that the keyword `record=` (in the high level interface `gradient_descent` only would fill the `:Iteration` symbol).
 """
 
 # ╔═╡ 36965fe9-679d-49b8-8f0d-1cb4877cb5ab
-r = RecordOptions(o, Dict(:Iteration => rI, :Stop => sI))
+r = RecordSolverState(o, Dict(:Iteration => rI, :Stop => sI))
 
 # ╔═╡ abc01e8a-9ae5-483c-9cda-87a196d88918
 md"""We now call the solver"""

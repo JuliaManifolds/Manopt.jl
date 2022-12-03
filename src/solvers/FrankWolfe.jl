@@ -26,7 +26,7 @@ use a retraction and its inverse.
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
 * `stopping_criterion` – [`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`
 * `subtask` specify the oracle, can either be a closed form solution (in place function `oracle(M, q, p, X)`
-  or a subsolver, e.g. (by default) a [`GradientProblem`](@ref) with [`GradientDescentOptions`](@ref)
+  or a subsolver, e.g. (by default) a [`GradientProblem`](@ref) with [`GradientDescentState`](@ref)
   using the [`FrankWolfeCost`](@ref) and [`FrankWolfeGradient`](@ref).
 * `stepsize` ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`
   a [`Stepsize`](@ref) to use; but it has to be always less than 1. The default is the one proposed by Frank & Wolfe:
@@ -56,7 +56,7 @@ function Frank_Wolfe_method!(
         GradientProblem(
             M, FrankWolfeCost(p, initial_vector), FrankWolfeGradient(p, initial_vector)
         ),
-        GradientDescentOptions(M, copy(M, p)),
+        GradientDescentState(M, copy(M, p)),
     ),
     evaluation=AllocatingEvaluation(),
     stopping_criterion::TStop=StopAfterIteration(200) |
@@ -66,7 +66,7 @@ function Frank_Wolfe_method!(
     kwargs..., #collect rest
 ) where {TStop<:StoppingCriterion,TStep<:Stepsize}
     P = GradientProblem(M, F, grad_F; evaluation=evaluation)
-    O = FrankWolfeOptions(
+    O = FrankWolfeState(
         M,
         p,
         subtask;
@@ -78,12 +78,14 @@ function Frank_Wolfe_method!(
     O = decorate_options(O; kwargs...)
     return get_solver_return(solve!(P, O))
 end
-function initialize_solver!(P::GradientProblem, O::FrankWolfeOptions)
+function initialize_solver!(P::AbstractManoptProblem, O::FrankWolfeState)
     get_gradient!(P, O.X, O.p)
     return O
 end
 function step_solver!(
-    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{<:AbstractManoptProblem,<:Options}}, i
+    P::AbstractManoptProblem,
+    O::FrankWolfeState{<:Tuple{<:AbstractManoptProblem,<:AbstractManoptSolverState}},
+    i,
 )
     # update gradient
     get_gradient!(P, O.X, O.p) # evaluate grad F(p), store the result in O.X
@@ -105,7 +107,7 @@ end
 # Variant II: subtask is a mutating function providing a closed form soltuion
 #
 function step_solver!(
-    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:InplaceEvaluation}}, i
+    P::AbstractManoptProblem, O::FrankWolfeState{<:Tuple{S,<:InplaceEvaluation}}, i
 ) where {S}
     get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
     q = copy(P.M, O.p)
@@ -125,7 +127,7 @@ end
 # Variant II: subtask is an allocating function providing a closed form soltuion
 #
 function step_solver!(
-    P::GradientProblem, O::FrankWolfeOptions{<:Tuple{S,<:AllocatingEvaluation}}, i
+    P::AbstractManoptProblem, O::FrankWolfeState{<:Tuple{S,<:AllocatingEvaluation}}, i
 ) where {S}
     get_gradient!(P, O.X, O.p) # evaluate grad F in place for O.X
     q = O.subtask[1](P.M, O.p, O.X) # evaluate the closed form solution and store the result in O.p

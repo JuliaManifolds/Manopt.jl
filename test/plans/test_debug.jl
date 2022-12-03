@@ -6,26 +6,27 @@ function ManifoldsBase.default_inverse_retraction_method(::TestPolarManifold)
     return PolarInverseRetraction()
 end
 
-@testset "Debug Options" begin
+@testset "Debug State" begin
     # helper to get debug as string
     @testset "Basic Debug Output" begin
         io = IOBuffer()
         M = ManifoldsBase.DefaultManifold(2)
         x = [4.0, 2.0]
-        o = GradientDescentOptions(
+        o = GradientDescentState(
             M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, y) = distance(M, y, x) .^ 2
         gradf(M, y) = -2 * log(M, y, x)
         p = GradientProblem(M, f, gradf)
         a1 = DebugDivider("|", io)
-        @test Manopt.dispatch_options_decorator(DebugOptions(o, a1)) === Val{true}()
+        @test Manopt.dispatch_options_decorator(DebugSolverState(o, a1)) === Val{true}()
         # constructors
-        @test DebugOptions(o, a1).debugDictionary[:All] == a1
-        @test DebugOptions(o, [a1]).debugDictionary[:All].group[1] == a1
-        @test DebugOptions(o, Dict(:A => a1)).debugDictionary[:A] == a1
-        @test DebugOptions(o, ["|"]).debugDictionary[:All].group[1].divider == a1.divider
-        # single AbstractOptionsActions
+        @test DebugSolverState(o, a1).debugDictionary[:All] == a1
+        @test DebugSolverState(o, [a1]).debugDictionary[:All].group[1] == a1
+        @test DebugSolverState(o, Dict(:A => a1)).debugDictionary[:A] == a1
+        @test DebugSolverState(o, ["|"]).debugDictionary[:All].group[1].divider ==
+            a1.divider
+        # single AbstractStateActions
         # DebugDivider
         a1(p, o, 0)
         s = @test String(take!(io)) == "|"
@@ -48,18 +49,18 @@ end
         DebugEntry(:x; prefix="x:", io=io)(p, o, -1)
         @test String(take!(io)) == ""
         # Change of Iterate
-        a2 = DebugChange(; storage=StoreOptionsAction((:Iterate,)), prefix="Last: ", io=io)
+        a2 = DebugChange(; storage=StoreStateAction((:Iterate,)), prefix="Last: ", io=io)
         a2(p, o, 0) # init
         o.x = [3.0, 2.0]
         a2(p, o, 1)
         a2inv = DebugChange(;
-            storage=StoreOptionsAction((:Iterate,)),
+            storage=StoreStateAction((:Iterate,)),
             prefix="Last: ",
             io=io,
             invretr=PolarInverseRetraction(),
         )
         a2mani = DebugChange(;
-            storage=StoreOptionsAction((:Iterate,)),
+            storage=StoreStateAction((:Iterate,)),
             prefix="Last: ",
             io=io,
             manifold=TestPolarManifold(),
@@ -70,7 +71,7 @@ end
         @test String(take!(io)) == "Last: 1.000000"
         # Change of Gradient
         a3 = DebugGradientChange(;
-            storage=StoreOptionsAction((:Gradient,)), prefix="Last: ", io=io
+            storage=StoreStateAction((:Gradient,)), prefix="Last: ", io=io
         )
         a3(p, o, 0) # init
         o.gradient = [1.0, 0.0]
@@ -175,7 +176,7 @@ end
     @testset "Debug Warnings" begin
         M = ManifoldsBase.DefaultManifold(2)
         x = [4.0, 2.0]
-        o = GradientDescentOptions(
+        o = GradientDescentState(
             M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, y) = Inf
@@ -213,7 +214,7 @@ end
         io = IOBuffer()
         M = ManifoldsBase.DefaultManifold(2)
         x = [4.0, 2.0]
-        o = GradientDescentOptions(
+        o = GradientDescentState(
             M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, y) = distance(M, y, x) .^ 2

@@ -49,10 +49,10 @@ leading to the second prox being the Riemannian mean.
   DouglasRachford!
 ```
 
-## Options
+## State
 
 ```@docs
-DouglasRachfordOptions
+DouglasRachfordState
 ```
 
 For specific [`DebugAction`](@ref)s and [`RecordAction`](@ref)s see also

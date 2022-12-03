@@ -71,7 +71,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
 * `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
 * `sub_problem` – ([`GradientProblem`](@ref)`(M, subcost, subgrad; evaluation=evaluation)`) problem for the subsolver
-* `sub_options` – ([`QuasiNewtonOptions`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `sub_options` – ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Output
@@ -129,8 +129,8 @@ function augmented_Lagrangian_method!(
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
-    sub_options::Options=decorate_options(
-        QuasiNewtonOptions(
+    sub_options::AbstractManoptSolverState=decorate_options(
+        QuasiNewtonState(
             M,
             copy(x);
             initial_vector=zero_vector(M, x),
@@ -150,7 +150,7 @@ function augmented_Lagrangian_method!(
     ),
     kwargs...,
 ) where {TF,TGF}
-    o = AugmentedLagrangianMethodOptions(
+    o = AugmentedLagrangianMethodState(
         M,
         _problem,
         x,
@@ -176,11 +176,11 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(::ConstrainedProblem, o::AugmentedLagrangianMethodOptions)
+function initialize_solver!(::ConstrainedProblem, o::AugmentedLagrangianMethodState)
     o.penalty = Inf
     return o
 end
-function step_solver!(p::ConstrainedProblem, o::AugmentedLagrangianMethodOptions, iter)
+function step_solver!(p::ConstrainedProblem, o::AugmentedLagrangianMethodState, iter)
     # use subsolver to minimize the augmented Lagrangian
     o.sub_problem.cost.ρ = o.ρ
     o.sub_problem.cost.μ = o.μ
@@ -223,4 +223,4 @@ function step_solver!(p::ConstrainedProblem, o::AugmentedLagrangianMethodOptions
     o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
     return o
 end
-get_solver_result(o::AugmentedLagrangianMethodOptions) = o.x
+get_solver_result(o::AugmentedLagrangianMethodState) = o.x

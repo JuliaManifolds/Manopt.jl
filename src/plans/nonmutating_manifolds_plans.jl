@@ -1,7 +1,7 @@
 #
 # For the manifolds that are nonmutating only, we have to introduce a few special cases
 #
-function get_gradient!(p::GradientProblem{AllocatingEvaluation}, ::AbstractFloat, x)
+function get_gradient!(p::AbstractManoptProblem{AllocatingEvaluation}, ::AbstractFloat, x)
     X = p.gradient!!(p.M, x)
     return X
 end
@@ -40,7 +40,7 @@ function linesearch_backtrack(
 end
 # modify gradient descent step_solver
 function step_solver!(
-    p::GradientProblem{T,<:NONMUTATINGMANIFOLDS}, o::GradientDescentOptions, iter
+    p::AbstractManoptProblem{T,<:NONMUTATINGMANIFOLDS}, o::GradientDescentState, iter
 ) where {T}
     s, o.gradient = o.direction(p, o, iter)
     o.x = retract(p.M, o.x, -s .* o.gradient, o.retraction_method)

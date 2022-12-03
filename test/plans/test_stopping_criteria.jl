@@ -1,7 +1,7 @@
 using Manifolds, Manopt, Test, ManifoldsBase, Dates
 
 struct TestProblem <: AbstractManoptProblem{AllocatingEvaluation} end
-struct TestOptions <: Options end
+struct TestState <: AbstractManoptSolverState end
 
 @testset "StoppingCriteria" begin
     struct myStoppingCriteriaSet <: StoppingCriterionSet end
@@ -13,7 +13,7 @@ struct TestOptions <: Options end
 
     s3 = StopWhenCostLess(0.1)
     p = GradientProblem(Euclidean(), (M, x) -> x^2, x -> 2x)
-    o = GradientDescentOptions(Euclidean(), 1.0)
+    o = GradientDescentState(Euclidean(), 1.0)
     @test !s3(p, o, 1)
     @test length(s3.reason) == 0
     o.x = 0.3
@@ -40,7 +40,7 @@ end
 
 @testset "Test StopAfter" begin
     p = TestProblem()
-    o = TestOptions()
+    o = TestState()
     s = StopAfter(Second(1))
     s(p, o, 0) # Start
     @test s(p, o, 1) == false
@@ -73,7 +73,7 @@ end
 @testset "TCG stopping criteria" begin
     # create dummy criterion
     p = HessianProblem(Euclidean(), x -> x, (M, x) -> x, (M, x) -> x, x -> x)
-    o = TruncatedConjugateGradientOptions(
+    o = TruncatedConjugateGradientState(
         Euclidean(), 1.0, 0.0; trust_region_radius=2.0, randomize=false
     )
     o.new_model_value = 2.0
@@ -96,7 +96,7 @@ end
 
 @testset "Stop with step size" begin
     p = GradientProblem(Euclidean(), (M, x) -> x^2, x -> 2x)
-    o = GradientDescentOptions(Euclidean(), 1.0)
+    o = GradientDescentState(Euclidean(), 1.0)
     s1 = StopWhenStepsizeLess(0.5)
     @test !s1(p, o, 1)
     @test s1.reason == ""

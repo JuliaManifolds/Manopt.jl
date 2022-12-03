@@ -1,5 +1,5 @@
 @doc raw"""
-    FrankWolfeOptions <: Options
+    FrankWolfeState <: AbstractManoptSolverState
 
 A struct to store the current state of the [`Frank_Wolfe_method`](@ref)
 
@@ -26,18 +26,18 @@ where currently two variants are supported
 1. `subtask(M, q, X, p)` is a mutating function, i.e. we have a closed form solution of the
    optimization problem given `M`, `X` and `p` which is computed in place of `q`, which even
    works correctly, if we pass the same memory to `p` and `q`.
-2. `subtask::Tuple{<:AbstractManoptProblem,<:Options}` specifies a plan to solve the subtask with a subsolver,
+2. `subtask::Tuple{<:AbstractManoptProblem,<:AbstractManoptSolverState}` specifies a plan to solve the subtask with a subsolver,
    i.e. the cost within `subtask[1]` is a [`FrankWolfeCost`](@ref) using references to `p`and `X`,
    that is to the current iterate and gradient internally.
    Similarly for gradient based functions using the [`FrankWolfeGradient`](@ref).
 
 # Constructor
 
-    FrankWolfeOptions(M, p, X, subtask)
+    FrankWolfeState(M, p, X, subtask)
 
 where the remaining fields from above are keyword arguments with their defaults already given in brackets.
 """
-mutable struct FrankWolfeOptions{
+mutable struct FrankWolfeState{
     S,
     P,
     T,
@@ -45,7 +45,7 @@ mutable struct FrankWolfeOptions{
     TStop<:StoppingCriterion,
     TM<:AbstractRetractionMethod,
     ITM<:AbstractInverseRetractionMethod,
-} <: AbstractGradientOptions
+} <: AbstractGradientSolverState
     p::P
     X::T
     subtask::S
@@ -53,7 +53,7 @@ mutable struct FrankWolfeOptions{
     stepsize::TStep
     retraction_method::TM
     inverse_retraction_method::ITM
-    function FrankWolfeOptions(
+    function FrankWolfeState(
         M::AbstractManifold,
         p::P,
         subtask::S;
@@ -83,7 +83,7 @@ mutable struct FrankWolfeOptions{
             inverse_retraction_method,
         )
     end
-    function FrankWolfeOptions(
+    function FrankWolfeState(
         M::AbstractManifold,
         p::P,
         subtask::S;
@@ -96,7 +96,7 @@ mutable struct FrankWolfeOptions{
         inverse_retraction_method::ITM=default_inverse_retraction_method(M),
     ) where {
         P,
-        S<:Tuple{<:AbstractManoptProblem,<:Options},
+        S<:Tuple{<:AbstractManoptProblem,<:AbstractManoptSolverState},
         T,
         TStop<:StoppingCriterion,
         TStep<:Stepsize,
@@ -114,12 +114,12 @@ mutable struct FrankWolfeOptions{
         )
     end
 end
-get_iterate(O::FrankWolfeOptions) = O.p
-function set_iterate!(O::FrankWolfeOptions, p)
+get_iterate(O::FrankWolfeState) = O.p
+function set_iterate!(O::FrankWolfeState, p)
     O.p = p
     return O
 end
-get_gradient(O::FrankWolfeOptions) = O.X
+get_gradient(O::FrankWolfeState) = O.X
 
 @doc raw"""
     FrankWolfeCost{P,T}
@@ -132,7 +132,7 @@ F(q) = ⟨X, \log_p q⟩
 ```
 
 The values `p`and `X` are stored within this functor and hsould be references to the
-iterate and gradient from within [`FrankWolfeOptions`](@ref).
+iterate and gradient from within [`FrankWolfeState`](@ref).
 """
 mutable struct FrankWolfeCost{P,T}
     p::P
@@ -155,7 +155,7 @@ F(q) = ⟨X, \log_p q⟩
 Its gradient can be computed easily using [`adjoint_differential_log_argument`](@ref).
 
 The values `p`and `X` are stored within this functor and hsould be references to the
-iterate and gradient from within [`FrankWolfeOptions`](@ref).
+iterate and gradient from within [`FrankWolfeState`](@ref).
 """
 mutable struct FrankWolfeGradient{P,T}
     p::P

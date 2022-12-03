@@ -1,4 +1,4 @@
-# [Options](@id OptionsSection)
+# [AbstractManoptSolverState](@id AbstractManoptSolverStateSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -9,14 +9,14 @@ generated beforehand of the function with keywords can be used.
 Generally the type
 
 ```@docs
-Options
-get_options
+AbstractManoptSolverState
+get_state
 ```
 
-Since the [`Options`](@ref) directly relate to a solver, they are documented with the
+Since the [`AbstractManoptSolverState`](@ref) directly relate to a solver, they are documented with the
 corresponding [solvers](@ref SolversSection).
 You can always access the options (since they
-might be decorated) by calling [`get_options`](@ref).
+might be decorated) by calling [`get_state`](@ref).
 
 For easier access, and to abstract where these are actually stored, there exists
 
@@ -25,9 +25,9 @@ get_iterate
 set_iterate!
 ```
 
-## Decorators for Options
+## Decorators for AbstractManoptSolverState
 
-Options can be decorated using the following trait and function to initialize
+A solver state can be decorated using the following trait and function to initialize
 
 ```@docs
 dispatch_options_decorator
@@ -38,13 +38,13 @@ decorate_options
 In general decorators often perform actions so we introduce
 
 ```@docs
-AbstractOptionsAction
+AbstractSolverStateAction
 ```
 
 as well as a helper for storing values using keys, i.e.
 
 ```@docs
-StoreOptionsAction
+StoreSolverStateAction
 get_storage
 has_storage
 update_storage!
@@ -53,7 +53,7 @@ update_storage!
 A simple example is the
 
 ```@docs
-ReturnOptions
+ReturnSolverState
 ```
 
-as well as [`DebugOptions`](@ref) and [`RecordOptions`](@ref).
+as well as [`DebugSolverState`](@ref) and [`RecordSolverState`](@ref).

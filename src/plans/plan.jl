@@ -1,8 +1,9 @@
+include("objective.jl")
 include("problem.jl")
-include("options.jl")
+include("solver_state.jl")
 
-include("debug_options.jl")
-include("record_options.jl")
+include("debug.jl")
+include("record.jl")
 
 include("cost_plan.jl")
 include("gradient_plan.jl")

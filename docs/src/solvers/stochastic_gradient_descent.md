@@ -9,10 +9,10 @@ stochastic_gradient_descent
 stochastic_gradient_descent!
 ```
 
-## Options
+## State
 
 ```@docs
-StochasticGradientDescentOptions
+StochasticGradientDescentState
 ```
 
 Additionally, the options share a [`DirectionUpdateRule`](@ref),

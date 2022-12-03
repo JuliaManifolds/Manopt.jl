@@ -108,7 +108,7 @@ function DouglasRachford!(
         nF = F
     end
     p = ProximalProblem(M, nF, (prox1, prox2); evaluation=evaluation)
-    o = DouglasRachfordOptions(
+    o = DouglasRachfordState(
         M,
         x;
         λ=λ,
@@ -120,8 +120,8 @@ function DouglasRachford!(
     o = decorate_options(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-function initialize_solver!(::ProximalProblem, ::DouglasRachfordOptions) end
-function step_solver!(p::ProximalProblem, o::DouglasRachfordOptions, iter)
+function initialize_solver!(::ProximalProblem, ::DouglasRachfordState) end
+function step_solver!(p::ProximalProblem, o::DouglasRachfordState, iter)
     get_proximal_map!(p, o.xtmp, o.λ(iter), o.s, 1)
     o.stmp = o.R(p.M, o.xtmp, o.s)
     o.x = get_proximal_map(p, o.λ(iter), o.stmp, 2)
@@ -130,4 +130,4 @@ function step_solver!(p::ProximalProblem, o::DouglasRachfordOptions, iter)
     o.s = shortest_geodesic(p.M, o.s, o.stmp, o.α(iter))
     return o
 end
-get_solver_result(o::DouglasRachfordOptions) = o.parallel ? o.x[1] : o.x
+get_solver_result(o::DouglasRachfordState) = o.parallel ? o.x[1] : o.x

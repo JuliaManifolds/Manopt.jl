@@ -62,19 +62,19 @@ function cyclic_proximal_point!(
     kwargs..., #decorator options
 ) where {TF}
     p = ProximalProblem(M, F, proxes; evaluation=evaluation)
-    o = CyclicProximalPointOptions(
+    o = CyclicProximalPointState(
         M, x0; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
     )
     o = decorate_options(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointOptions)
+function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointState)
     c = length(p.proximal_maps!!)
     o.order = collect(1:c)
     (o.order_type == :FixedRandom) && shuffle!(o.order)
     return o
 end
-function step_solver!(p::ProximalProblem, o::CyclicProximalPointOptions, iter)
+function step_solver!(p::ProximalProblem, o::CyclicProximalPointState, iter)
     c = length(p.proximal_maps!!)
     λi = o.λ(iter)
     for k in o.order

@@ -158,7 +158,7 @@ function __init__()
         include("plans/alternating_gradient_plan.jl")
         include("solvers/alternating_gradient_descent.jl")
         export random_point, random_tangent, mid_point, mid_point!, reflect, reflect!
-        export AlternatingGradientDescentOptions, AlternatingGradientProblem
+        export AlternatingGradientDescentState, AlternatingDefaultManoptProblem
         export AlternatingGradient
         export alternating_gradient_descent, alternating_gradient_descent!
     end
@@ -183,40 +183,40 @@ export Problem,
     ProximalProblem,
     ConstrainedProblem,
     CostProblem,
-    SubGradientProblem,
-    GradientProblem,
+    SubDefaultManoptProblem,
+    DefaultManoptProblem,
     HessianProblem,
     PrimalDualSemismoothNewtonProblem,
     PrimalDualProblem,
-    StochasticGradientProblem,
+    StochasticDefaultManoptProblem,
     AbstractEvaluationType,
     AllocatingEvaluation,
     InplaceEvaluation
 #
-# Options
-export Options,
-    AbstractGradientOptions,
-    AugmentedLagrangianMethodOptions,
-    ChambollePockOptions,
-    ConjugateGradientDescentOptions,
-    CyclicProximalPointOptions,
-    DouglasRachfordOptions,
-    ExactPenaltyMethodOptions,
-    FrankWolfeOptions,
-    GradientDescentOptions,
-    AbstractHessianOptions,
-    NelderMeadOptions,
-    ParticleSwarmOptions,
-    PrimalDualSemismoothNewtonOptions,
-    PrimalDualOptions,
-    RecordOptions,
-    StochasticGradientDescentOptions,
-    SubGradientMethodOptions,
-    TruncatedConjugateGradientOptions,
-    TrustRegionsOptions
+# AbstractManoptSolverState
+export AbstractManoptSolverState,
+    AbstractGradientState,
+    AugmentedLagrangianMethodState,
+    ChambollePockState,
+    ConjugateGradientDescentState,
+    CyclicProximalPointState,
+    DouglasRachfordState,
+    ExactPenaltyMethodState,
+    FrankWolfeState,
+    GradientDescentState,
+    AbstractHessianState,
+    NelderMeadState,
+    ParticleSwarmState,
+    PrimalDualSemismoothNewtonState,
+    PrimalDualState,
+    RecordSolverState,
+    StochasticGradientDescentState,
+    SubGradientMethodState,
+    TruncatedConjugateGradientState,
+    TrustRegionsState
 export FrankWolfeCost, FrankWolfeGradient
 #
-# Accessors and helpers for Options
+# Accessors and helpers for AbstractManoptSolverState
 export linesearch_backtrack
 export get_cost,
     get_gradient,
@@ -225,7 +225,7 @@ export get_cost,
     get_subgradient!,
     get_proximal_map,
     get_proximal_map!,
-    get_options,
+    get_state,
     get_initial_stepsize,
     get_iterate,
     get_gradients,
@@ -264,7 +264,7 @@ export get_constraints,
 export ConstraintType, FunctionConstraint, VectorConstraint
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 
-export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
@@ -276,17 +276,17 @@ export WolfePowellLinesearch,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
 
-export AugmentedLagrangianMethodOptions,
-    ConjugateGradientDescentOptions,
-    ExactPenaltyMethodOptions,
-    GradientDescentOptions,
-    AbstractHessianOptions,
-    SubGradientMethodOptions,
-    NelderMeadOptions,
-    TruncatedConjugateGradientOptions,
-    TrustRegionsOptions,
-    ParticleSwarmOptions
-export AbstractOptionsAction, StoreOptionsAction
+export AugmentedLagrangianMethodState,
+    ConjugateGradientDescentState,
+    ExactPenaltyMethodState,
+    GradientDescentState,
+    AbstractHessianSolverState,
+    SubGradientMethodState,
+    NelderMeadState,
+    TruncatedConjugateGradientState,
+    TrustRegionsState,
+    ParticleSwarmState
+export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 
 #
@@ -435,7 +435,7 @@ export BezierSegment,
     get_bezier_segments
 #
 # Debugs
-export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
+export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
 export DebugChange,
     DebugGradientChange, DebugIterate, DebugIteration, DebugDivider, DebugTime
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory

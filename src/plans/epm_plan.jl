@@ -1,5 +1,5 @@
 @doc raw"""
-    ExactPenaltyMethodOptions{P,T} <: Options
+    ExactPenaltyMethodState{P,T} <: AbstractManoptSolverState
 
 Describes the exact penalty method, with
 
@@ -20,7 +20,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    ExactPenaltyMethodOptions(M::AbstractManifold, P::ConstrainedProblem, x; kwargs...)
+    ExactPenaltyMethodState(M::AbstractManifold, P::ConstrainedProblem, x; kwargs...)
 
 construct an exact penalty options with the fields and defaults as above, where the
 manifold `M` and the [`ConstrainedProblem`](@ref) `P` are used for defaults in the keyword
@@ -29,9 +29,9 @@ arguments.
 # See also
 [`exact_penalty_method`](@ref)
 """
-mutable struct ExactPenaltyMethodOptions{
-    P,Pr<:AbstractManoptProblem,Op<:Options,TStopping<:StoppingCriterion
-} <: Options
+mutable struct ExactPenaltyMethodState{
+    P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState,TStopping<:StoppingCriterion
+} <: AbstractManoptSolverState
     x::P
     sub_problem::Pr
     sub_options::Op
@@ -44,7 +44,7 @@ mutable struct ExactPenaltyMethodOptions{
     θ_u::Real
     θ_ϵ::Real
     stop::TStopping
-    function ExactPenaltyMethodOptions(
+    function ExactPenaltyMethodState(
         ::AbstractManifold,
         x0::P,
         sub_problem::Pr,
@@ -63,7 +63,7 @@ mutable struct ExactPenaltyMethodOptions{
             StopAfterIteration(300),
             StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),
         ),
-    ) where {P,Pr<:AbstractManoptProblem,Op<:Options}
+    ) where {P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState}
         o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
         o.sub_problem = sub_problem
@@ -80,8 +80,8 @@ mutable struct ExactPenaltyMethodOptions{
         return o
     end
 end
-get_iterate(O::ExactPenaltyMethodOptions) = O.x
-function set_iterate!(O::ExactPenaltyMethodOptions, p)
+get_iterate(O::ExactPenaltyMethodState) = O.x
+function set_iterate!(O::ExactPenaltyMethodState, p)
     O.x = p
     return O
 end

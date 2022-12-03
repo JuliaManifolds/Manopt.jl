@@ -55,7 +55,7 @@ function get_subgradient!(p::SubGradientProblem{InplaceEvaluation}, X, q)
 end
 
 """
-    SubGradientMethodOptions <: Options
+    SubGradientMethodState <: AbstractManoptSolverState
 stories option values for a [`subgradient_method`](@ref) solver
 
 # Fields
@@ -66,16 +66,16 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `x_optimal` – optimal value
 * `∂` the current element from the possible subgradients at `x` that is used
 """
-mutable struct SubGradientMethodOptions{
+mutable struct SubGradientMethodState{
     TR<:AbstractRetractionMethod,TS<:Stepsize,TSC<:StoppingCriterion,P,T
-} <: Options where {P,T}
+} <: AbstractManoptSolverState where {P,T}
     retraction_method::TR
     stepsize::TS
     stop::TSC
     x::P
     x_optimal::P
     ∂::T
-    function SubGradientMethodOptions(
+    function SubGradientMethodState(
         M::TM,
         x::P;
         stopping_criterion::SC=StopAfterIteration(5000),
@@ -94,7 +94,4 @@ mutable struct SubGradientMethodOptions{
             retraction_method, stepsize, stopping_criterion, x, deepcopy(x), subgrad
         )
     end
-    @deprecate SubGradientMethodOptions(M, x, S, s, r=ExponentialRetraction()) SubGradientMethodOptions(
-        M, x; stopping_criterion=S, stepsize=s, retraction_method=r
-    )
 end

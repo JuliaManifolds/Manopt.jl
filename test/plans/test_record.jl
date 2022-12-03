@@ -1,11 +1,11 @@
 using Manifolds, Manopt, Test, ManifoldsBase, Dates
 
-@testset "Record Options" begin
+@testset "Record State" begin
     # helper to get debug as string
     io = IOBuffer()
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.0, 2.0]
-    o = GradientDescentOptions(
+    o = GradientDescentState(
         M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
     )
     f(M, y) = distance(M, y, x) .^ 2
@@ -13,28 +13,30 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     p = GradientProblem(M, f, gradf)
     a = RecordIteration()
     # constructors
-    rO = RecordOptions(o, a)
+    rO = RecordSolverState(o, a)
     @test Manopt.dispatch_options_decorator(rO) === Val{true}()
-    @test get_options(o) == o
-    @test get_options(rO) == o
-    @test_throws MethodError get_options(p)
+    @test get_state(o) == o
+    @test get_state(rO) == o
+    @test_throws MethodError get_state(p)
     #
     @test get_initial_stepsize(p, rO) == 1.0
     @test get_stepsize(p, rO, 1) == 1.0
     @test get_last_stepsize(p, rO, 1) == 1.0
     #
     @test rO.recordDictionary[:Iteration] == a
-    @test RecordOptions(o, [a]).recordDictionary[:Iteration].group[1] == a
-    @test RecordOptions(o, a).recordDictionary[:Iteration] == a
-    @test RecordOptions(o, Dict(:A => a)).recordDictionary[:A] == a
-    @test isa(RecordOptions(o, :Iteration).recordDictionary[:Iteration], RecordIteration)
-    @test isa(RecordOptions(o, [:Iteration]).recordDictionary[:Iteration], RecordGroup)
+    @test RecordSolverState(o, [a]).recordDictionary[:Iteration].group[1] == a
+    @test RecordSolverState(o, a).recordDictionary[:Iteration] == a
+    @test RecordSolverState(o, Dict(:A => a)).recordDictionary[:A] == a
     @test isa(
-        RecordOptions(o, [:Iteration]).recordDictionary[:Iteration].group[1],
+        RecordSolverState(o, :Iteration).recordDictionary[:Iteration], RecordIteration
+    )
+    @test isa(RecordSolverState(o, [:Iteration]).recordDictionary[:Iteration], RecordGroup)
+    @test isa(
+        RecordSolverState(o, [:Iteration]).recordDictionary[:Iteration].group[1],
         RecordIteration,
     )
     @test isa(
-        RecordOptions(o, [:It => RecordIteration()]).recordDictionary[:Iteration].group[1],
+        RecordSolverState(o, [:It => RecordIteration()]).recordDictionary[:Iteration].group[1],
         RecordIteration,
     )
     @test isa(RecordFactory(o, :Iteration), RecordIteration)
@@ -42,17 +44,19 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test RecordActionFactory(o, sa) === sa
     @test !has_record(o)
     @test_throws ErrorException get_record(o)
-    @test get_options(o) == o
-    @test !has_record(DebugOptions(o, []))
+    @test get_state(o) == o
+    @test !has_record(DebugSolverState(o, []))
     @test has_record(rO)
     @test_throws ErrorException get_record(o)
     @test length(get_record(rO, :Iteration)) == 0
     @test length(rO[:Iteration]) == 0
     @test length(get_record(rO)) == 0
-    @test length(get_record(DebugOptions(rO, []))) == 0
-    @test length(get_record(RecordOptions(o, [:Iteration]), :Iteration, 1)) == 0
+    @test length(get_record(DebugSolverState(rO, []))) == 0
+    @test length(get_record(RecordSolverState(o, [:Iteration]), :Iteration, 1)) == 0
     @test length(get_record(RecordIteration(), 1)) == 0
-    @test_throws ErrorException get_record(RecordOptions(o, Dict{Symbol,RecordAction}()))
+    @test_throws ErrorException get_record(
+        RecordSolverState(o, Dict{Symbol,RecordAction}())
+    )
     @test_throws ErrorException get_record(o)
     @test get_record(rO) == Array{Int64,1}()
     # RecordIteration
@@ -77,7 +81,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test b[:It1] == [1, 2]
     @test get_record(b, (:It1, :It2)) == [(1, 1), (2, 2)]
     @test b[(:It1, :It2)] == [(1, 1), (2, 2)]
-    @test RecordOptions(o, b)[:Iteration, 1] == [1, 2]
+    @test RecordSolverState(o, b)[:Iteration, 1] == [1, 2]
     #RecordEvery
     c = RecordEvery(a, 10, true)
     @test c(p, o, 0) === nothing

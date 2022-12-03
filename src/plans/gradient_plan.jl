@@ -1,69 +1,87 @@
-"""
-    AbstractGradientProblem{T} <: AbstractManoptProblem
+@doc raw"""
+    AbstractManifoldGradientObjective{T} <: AbstractManifoldObjective{T}
 
 An abstract type for all functions that provide a (full) gradient, where
 `T` is a [`AbstractEvaluationType`](@ref) for the gradient function.
 """
-abstract type AbstractGradientProblem{T} <: AbstractManoptProblem end
+abstract type AbstractManifoldGradientObjective{T} <: AbstractManifoldObjective{T} end
 
 @doc raw"""
-    GradientProblem{T} <: AbstractGradientProblem{T}
+    ManifoldGradientObjective{T} <: AbstractManifoldObjective{T}
 
-specify a problem for gradient based algorithms.
+specify an objetive containing a cost and its gradient
 
 # Fields
-* `M`        – a manifold ``\mathcal M``
-* `cost`     – a function ``F: \mathcal M → ℝ`` to minimize
-* `gradient!!` – the gradient ``\operatorname{grad}F:\mathcal M → \mathcal T\mathcal M`` of the cost function ``F``.
 
-Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be provided
+* `cost`       – a function ``f\colon\mathcal M → ℝ``
+* `gradient!!` – the gradient ``\operatorname{grad}f\colon\mathcal M → \mathcal T\mathcal M``
+  of the cost function ``f``.
 
-* as a function `x -> X` that allocates memory for `X` itself for an [`AllocatingEvaluation`](@ref)
-* as a function `(X,x) -> X` that work in place of `X` for an [`InplaceEvaluation`](@ref)
+Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
+
+* as a function `p -> X` that allocates memory for `X`, i.e. an [`AllocatingEvaluation`](@ref)
+* as a function `(X, p) -> X` that work in place of `X`, i.e. an [`InplaceEvaluation`](@ref)
 
 # Constructors
-    GradientProblem(M, cost, gradient; evaluation=AllocatingEvaluation())
+    ManifoldGradientObjective(cost, gradient; evaluation=AllocatingEvaluation())
 
-# See also
-[`gradient_descent`](@ref), [`GradientDescentOptions`](@ref)
+# Used with
+[`gradient_decent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
-struct GradientProblem{T,mT<:AbstractManifold,C,G} <: AbstractGradientProblem{T}
-    M::mT
+struct ManifoldGradientObjective{T,C,G} <: AbstractManifoldGradientObjective{T}
     cost::C
     gradient!!::G
 end
-function GradientProblem(
+function ManifoldGradientObjective(
     M::mT, cost::C, gradient::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()
 ) where {mT<:AbstractManifold,C,G}
-    return GradientProblem{typeof(evaluation),mT,C,G}(M, cost, gradient)
+    return ManifoldGradientObjective{typeof(evaluation),C,G}(cost, gradient)
+end
+
+@doc raw"""
+    get_gradient(mp::AbstractManoptProblem, p)
+    get_gradient!(X, mp::AbstractManoptProblem, p)
+
+evaluate the gradient of an [`AbstractManoptProblem`](@ref) `mp` at `p`.
+
+The evaluation is done in place of `X` for the `!`-variant.
+"""
+function get_gradient(mp::AbstractManoptProblem, p)
+    return get_gradient(get_manifold(mp), get_objective(mp), p)
+end
+function get_gradient!(X, mp::AbstractManoptProblem, p)
+    return get_gradient!(get_manifold(mp), X, get_objective(mp), p)
 end
 
 """
-    get_gradient(p::AbstractGradientProblem{T},x)
-    get_gradient!(p::AbstractGradientProblem{T}, X, x)
+    get_gradient(M::AbstractManifold, mgo::AbstractManifoldGradientObjective{T}, p)
+    get_gradient!(M::AbstractManifold, X, mgo::AbstractManifoldGradientObjective{T}, p)
 
-evaluate the gradient of a [`AbstractGradientProblem{T}`](@ref)`p` at the point `x`.
+evaluate the gradient of a [`AbstractManifoldGradientObjective{T}`](@ref) `mgo` at `p`.
 
 The evaluation is done in place of `X` for the `!`-variant.
 The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
 When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
 memory for the result is allocated.
-"""
-get_gradient(p::AbstractGradientProblem, x)
 
-function get_gradient(p::AbstractGradientProblem{AllocatingEvaluation}, x)
+Note that the order of parameters follows the philisophy of `Manifolds.jl`, namely that
+even for the mutating variant, the manifold is the first parameter and the (inplace) tangent
+vector `X` comes second.
+"""
+get_gradient(p::AbstractManifoldGradientObjective, p)
+
+function get_gradient(p::AbstractManifoldGradientObjective{AllocatingEvaluation}, x)
     return p.gradient!!(p.M, x)
 end
-function get_gradient(p::AbstractGradientProblem{InplaceEvaluation}, x)
+function get_gradient(p::AbstractManifoldGradientObjective{InplaceEvaluation}, x)
     X = zero_vector(p.M, x)
     return p.gradient!!(p.M, X, x)
 end
 
-function get_gradient!(p::AbstractGradientProblem{AllocatingEvaluation}, X, x)
+function get_gradient!(p::AbstractManifoldGradientObjective{AllocatingEvaluation}, X, x)
     return copyto!(p.M, X, x, p.gradient!!(p.M, x))
 end
-
-function get_gradient!(p::AbstractGradientProblem{InplaceEvaluation}, X, x)
+function get_gradient!(p::AbstractManifoldGradientObjective{InplaceEvaluation}, X, x)
     return p.gradient!!(p.M, X, x)
 end
 
@@ -71,7 +89,7 @@ end
     DirectionUpdateRule
 
 A general functor, that handles direction update rules. It's field(s) is usually
-only a [`StoreOptionsAction`](@ref) by default initialized to the fields required
+only a [`StoreStateAction`](@ref) by default initialized to the fields required
 for the specific coefficient, but can also be replaced by a (common, global)
 individual one that provides these values.
 """
@@ -85,20 +103,27 @@ The default gradient direction update is the identity, i.e. it just evaluates th
 struct IdentityUpdateRule <: DirectionUpdateRule end
 
 """
-    AbstractGradientOptions <: Options
+    AbstractGradientSolverState <: AbstractManoptSolverState
 
-A generic [`Options`](@ref) type for gradient based options data.
+A generic [`AbstractManoptSolverState`](@ref) type for gradient based options data.
 """
-abstract type AbstractGradientOptions <: Options end
+abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
 
-get_gradient(o::AbstractGradientOptions) = o.gradient
-get_iterate(o::AbstractGradientOptions) = o.x
-function set_iterate!(O::AbstractGradientOptions, p)
+@doc raw"""
+    get_gradient(o::AbstractGradientSolverState) = o.gradient
+
+return the gradient stored within gradient options.
+"""
+get_gradient(o::AbstractGradientSolverState) = o.gradient
+
+get_iterate(o::AbstractGradientSolverState) = o.x
+function set_iterate!(O::AbstractGradientSolverState, p)
     O.x = p
     return O
 end
+
 @doc raw"""
-    GradientDescentOptions{P,T} <: AbstractGradientOptions
+    GradientDescentState{P,T} <: AbstractGradientSolverState
 
 Describes a Gradient based descent algorithm, with
 
@@ -115,7 +140,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    GradientDescentOptions(M, x; initial_vector=zero_vector(M, x), kwargs...)
+    GradientDescentState(M, x; initial_vector=zero_vector(M, x), kwargs...)
 
 Generate gradient descent options, where `initial_vector` can be used to set the tangent vector to store the gradient to a certain type.
 All following fields are keyword arguments.
@@ -123,16 +148,16 @@ All following fields are keyword arguments.
 # See also
 [`gradient_descent`](@ref), [`GradientProblem`](@ref)
 """
-mutable struct GradientDescentOptions{
+mutable struct GradientDescentState{
     P,T,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
-} <: AbstractGradientOptions
+} <: AbstractGradientSolverState
     x::P
     direction::DirectionUpdateRule
     stop::TStop
     stepsize::TStepsize
     gradient::T
     retraction_method::TRTM
-    function GradientDescentOptions{P,T}(
+    function GradientDescentState{P,T}(
         initialX::P,
         initial_gradient::T,
         s::StoppingCriterion=StopAfterIteration(100),
@@ -150,13 +175,13 @@ mutable struct GradientDescentOptions{
         return o
     end
 end
-@deprecate GradientDescentOptions(
+@deprecate GradientDescentState(
     x;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
-) GradientDescentOptions(
+) GradientDescentState(
     DefaultManifold(2),
     x;
     initial_vector=deepcopy(x),
@@ -165,14 +190,14 @@ end
     retraction_method=retraction_method,
     direction=direction,
 )
-@deprecate GradientDescentOptions(
+@deprecate GradientDescentState(
     x,
     X;
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
-) GradientDescentOptions(
+) GradientDescentState(
     DefaultManifold(2),
     x;
     initial_vector=X,
@@ -181,7 +206,7 @@ end
     retraction_method=retraction_method,
     direction=direction,
 )
-function GradientDescentOptions(
+function GradientDescentState(
     M::AbstractManifold,
     x::P;
     initial_vector=zero_vector(M, x),
@@ -190,12 +215,12 @@ function GradientDescentOptions(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P}
-    return GradientDescentOptions{P,typeof(initial_vector)}(
+    return GradientDescentState{P,typeof(initial_vector)}(
         x, initial_vector, stopping_criterion, stepsize, retraction_method, direction
     )
 end
 
-function (s::IdentityUpdateRule)(p::GradientProblem, o::GradientDescentOptions, i)
+function (s::IdentityUpdateRule)(p::DefaultManoptProblem, o::GradientDescentState, i)
     return get_stepsize(p, o, i), get_gradient!(p, o.gradient, o.x)
 end
 
@@ -225,10 +250,10 @@ last direction multiplied by momentum ``m``.
     )
 
 Add momentum to a gradient problem, where by default just a gradient evaluation is used
-Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`](@ref) `p`.
+Equivalently you can also use a `Manifold` `M` instead of the [`AbstractManoptProblem`](@ref) `p`.
 
     MomentumGradient(
-        p::StochasticGradientProblem
+        p::AbstractManoptProblem
         x0
         s::DirectionUpdateRule=IdentityUpdateRule();
         gradient=zero_vector(p.M, x0), momentum=0.2
@@ -246,32 +271,19 @@ mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} 
     vector_transport_method::VTM
 end
 function MomentumGradient(
-    p::GradientProblem,
-    x0::P,
-    s::DirectionUpdateRule=IdentityUpdateRule();
-    last_iterate=x0,
-    vector_transport_method::VTM=ParallelTransport(),
-    gradient=zero_vector(p.M, x0),
-    momentum=0.2,
-) where {P,VTM<:AbstractVectorTransportMethod}
-    return MomentumGradient{P,typeof(gradient),typeof(momentum),VTM}(
-        deepcopy(x0), gradient, momentum, s, vector_transport_method
-    )
-end
-function MomentumGradient(
     M::AbstractManifold,
     x0::P,
     s::DirectionUpdateRule=IdentityUpdateRule();
-    gradient=zero_vector(M, x0),
-    last_iterate=x0,
-    momentum=0.2,
+    last_iterate=copy(M, x0),
     vector_transport_method::VTM=ParallelTransport(),
+    gradient=zero_vector(M, x0),
+    momentum=0.2,
 ) where {P,VTM<:AbstractVectorTransportMethod}
     return MomentumGradient{P,typeof(gradient),typeof(momentum),VTM}(
-        gradient, deepcopy(x0), momentum, s, vector_transport_method
+        last_iterate, gradient, momentum, s, vector_transport_method
     )
 end
-function (m::MomentumGradient)(p::AbstractManoptProblem, o::AbstractGradientOptions, i)
+function (m::MomentumGradient)(p::AbstractManoptProblem, o::AbstractGradientSolverState, i)
     s, d = m.direction(p, o, i) #get inner direction and step size
     old_d =
         m.momentum *
@@ -335,24 +347,12 @@ function AverageGradient(
     s::DirectionUpdateRule=IdentityUpdateRule();
     gradients=fill(zero_vector(M, x0), n),
     vector_transport_method::VTM=ParallelTransport(),
-) where {P,VTM<:AbstractVectorTransportMethod}
-    return AverageGradient{P,eltype(gradients),VTM}(
-        gradients, x0, s, vector_transport_method
-    )
-end
-function AverageGradient(
-    p::GradientProblem,
-    x0::P,
-    n::Int=10,
-    s::DirectionUpdateRule=IdentityUpdateRule();
-    gradients=fill(zero_vector(p.M, x0), n),
-    vector_transport_method::VTM=ParallelTransport(),
 ) where {P,VTM}
     return AverageGradient{P,eltype(gradients),VTM}(
         gradients, deepcopy(x0), s, vector_transport_method
     )
 end
-function (a::AverageGradient)(p::AbstractManoptProblem, o::AbstractGradientOptions, i)
+function (a::AverageGradient)(p::AbstractManoptProblem, o::AbstractGradientSolverState, i)
     pop!(a.gradients)
     s, d = a.direction(p, o, i) #get inner gradient and step
     a.gradients = vcat([deepcopy(d)], a.gradients)
@@ -382,7 +382,7 @@ end
 
 Let's assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex.
 Given
-* a step size ``h_k<\frac{1}{L}`` (from the [`GradientDescentOptions`](@ref)
+* a step size ``h_k<\frac{1}{L}`` (from the [`GradientDescentState`](@ref)
 * a `shrinkage` parameter ``β_k``
 * and a current iterate ``x_k``
 * as well as the interims values ``γ_k`` and ``v_k`` from the previous iterate.
@@ -424,7 +424,7 @@ function Nesterov(
 ) where {P,T}
     return Nesterov{P,T}(γ, μ, deepcopy(x0), shrinkage, inverse_retraction_method)
 end
-function (s::Nesterov)(p::GradientProblem, o::AbstractGradientOptions, i)
+function (s::Nesterov)(p::AbstractManoptProblem, o::AbstractGradientSolverState, i)
     h = get_stepsize(p, o, i)
     α = (h * (s.γ - s.μ) + sqrt(h^2 * (s.γ - s.μ)^2 + 4 * h * s.γ)) / 2
     γbar = (1 - α) * s.γ + α * s.μ
@@ -462,7 +462,7 @@ mutable struct DebugGradient <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugGradient)(::GradientProblem, o::Options, i::Int)
+function (d::DebugGradient)(::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int)
     (i < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_gradient(o))
     return nothing
@@ -494,7 +494,9 @@ mutable struct DebugGradientNorm <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugGradientNorm)(p::AbstractManoptProblem, o::Options, i::Int)
+function (d::DebugGradientNorm)(
+    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+)
     (i < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), norm(p.M, get_iterate(o), get_gradient(o)))
     return nothing
@@ -524,7 +526,7 @@ mutable struct DebugStepsize <: DebugAction
 end
 function (d::DebugStepsize)(
     p::P, o::O, i::Int
-) where {P<:AbstractGradientProblem,O<:AbstractGradientOptions}
+) where {P<:AbstractManoptProblem,O<:AbstractGradientSolverState}
     (i < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, o, i))
     return nothing
@@ -548,7 +550,9 @@ mutable struct RecordGradient{T} <: RecordAction
     RecordGradient{T}() where {T} = new(Array{T,1}())
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
-function (r::RecordGradient{T})(::GradientProblem, o::Options, i::Int) where {T}
+function (r::RecordGradient{T})(
+    ::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+) where {T}
     return record_or_reset!(r, get_gradient(o), i)
 end
 
@@ -561,7 +565,9 @@ mutable struct RecordGradientNorm <: RecordAction
     recorded_values::Array{Float64,1}
     RecordGradientNorm() = new(Array{Float64,1}())
 end
-function (r::RecordGradientNorm)(p::AbstractManoptProblem, o::Options, i::Int)
+function (r::RecordGradientNorm)(
+    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+)
     return record_or_reset!(r, norm(p.M, get_iterate(o), get_gradient(o)), i)
 end
 
@@ -576,6 +582,6 @@ mutable struct RecordStepsize <: RecordAction
 end
 function (r::RecordStepsize)(
     p::P, o::O, i::Int
-) where {P<:AbstractGradientProblem,O<:AbstractGradientOptions}
+) where {P<:AbstractManoptProblem,O<:AbstractGradientSolverState}
     return record_or_reset!(r, get_last_stepsize(p, o, i), i)
 end

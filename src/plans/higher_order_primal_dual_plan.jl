@@ -68,7 +68,7 @@ function PrimalDualSemismoothNewtonProblem(
 end
 
 @doc raw"""
-    PrimalDualSemismoothNewtonOptions <: PrimalDualOptions
+    PrimalDualSemismoothNewtonState <: AbstractPrimalDualSolverState
 
 * `m` - base point on $ \mathcal M $
 * `n` - base point on $ \mathcal N $
@@ -85,12 +85,12 @@ end
 * `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 
 where for the last two the functions a [`Problem`](@ref) `p`,
-[`Options`](@ref) `o` and the current iterate `i` are the arguments.
+[`AbstractManoptSolverState`](@ref) `o` and the current iterate `i` are the arguments.
 If you activate these to be different from the default identity, you have to provide
 `p.Λ` for the algorithm to work (which might be `missing`).
 
 # Constructor
-    PrimalDualSemismoothNewtonOptions(M::AbstractManifold,
+    PrimalDualSemismoothNewtonState(M::AbstractManifold,
         m::P, n::Q, x::P, ξ::T, primal_stepsize::Float64, dual_stepsize::Float64, reg_param::Float64;
         stopping_criterion::StoppingCriterion = StopAfterIteration(50),
         update_primal_base::Union{Function,Missing} = missing,
@@ -100,14 +100,14 @@ If you activate these to be different from the default identity, you have to pro
         vector_transport_method = default_vector_transport_method(M),
     )
 """
-mutable struct PrimalDualSemismoothNewtonOptions{
+mutable struct PrimalDualSemismoothNewtonState{
     P,
     Q,
     T,
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
-} <: PrimalDualOptions
+} <: AbstractPrimalDualSolverState
     m::P
     n::Q
     x::P
@@ -122,7 +122,7 @@ mutable struct PrimalDualSemismoothNewtonOptions{
     inverse_retraction_method::IRM
     vector_transport_method::VTM
 
-    function PrimalDualSemismoothNewtonOptions(
+    function PrimalDualSemismoothNewtonState(
         M::AbstractManifold,
         m::P,
         n::Q,
@@ -162,8 +162,8 @@ mutable struct PrimalDualSemismoothNewtonOptions{
         )
     end
 end
-get_iterate(O::PrimalDualSemismoothNewtonOptions) = O.x
-function set_iterate!(O::PrimalDualSemismoothNewtonOptions, p)
+get_iterate(O::PrimalDualSemismoothNewtonState) = O.x
+function set_iterate!(O::PrimalDualSemismoothNewtonState, p)
     O.x = p
     return O
 end

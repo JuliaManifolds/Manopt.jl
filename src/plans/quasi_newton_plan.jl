@@ -2,7 +2,7 @@
     AbstractQuasiNewtonDirectionUpdate
 
 An abstract representation of an Quasi Newton Update rule to determine the next direction
-given current [`QuasiNewtonOptions`](@ref).
+given current [`QuasiNewtonState`](@ref).
 
 All subtypes should be functors, i.e. one should be able to call them as `H(M,x,d)` to compute a new direction update.
 """
@@ -27,7 +27,7 @@ Then the update formula reads
 H^\mathrm{BFGS}_{k+1} = \widetilde{H}^\mathrm{BFGS}_k  + \frac{y_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{BFGS}_k s_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k }{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k s_k}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -56,7 +56,7 @@ B^\mathrm{BFGS}_{k+1}  = \Bigl(
 \Bigr) + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -85,7 +85,7 @@ H^\mathrm{DFP}_{k+1} = \Bigl(
 \Bigr) + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -110,7 +110,7 @@ B^\mathrm{DFP}_{k+1} = \widetilde{B}^\mathrm{DFP}_k
 - \frac{\widetilde{B}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k y_k}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -138,7 +138,7 @@ H^\mathrm{SR1}_{k+1} = \widetilde{H}^\mathrm{SR1}_k
 }
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -182,7 +182,7 @@ B^\mathrm{SR1}_{k+1} = \widetilde{B}^\mathrm{SR1}_k
 }
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -226,7 +226,7 @@ H^\mathrm{Br}_{k+1} = \widetilde{H}^\mathrm{Br}_k
   \Bigr)^{\mathrm{T}}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -267,7 +267,7 @@ B^\mathrm{Br}_{k+1} = \widetilde{B}^\mathrm{Br}_k
  \Bigr)^{\mathrm{T}}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -286,9 +286,9 @@ end
 InverseBroyden(φ::Float64) = InverseBroyden(φ, :constant)
 
 @doc raw"""
-    QuasiNewtonOptions <: Options
+    QuasiNewtonState <: AbstractManoptSolverState
 
-These Quasi Newton [`Options`](@ref) represent any quasi-Newton based method and can be
+These Quasi Newton [`AbstractManoptSolverState`](@ref) represent any quasi-Newton based method and can be
 used with any update rule for the direction.
 
 # Fields
@@ -302,7 +302,7 @@ used with any update rule for the direction.
 
 # Constructor
 
-    QuasiNewtonOptions(
+    QuasiNewtonState(
         M::AbstractManifold,
         x;
         initial_vector=zero_vector(M,x),
@@ -318,7 +318,7 @@ used with any update rule for the direction.
 # See also
 [`GradientProblem`](@ref)
 """
-mutable struct QuasiNewtonOptions{
+mutable struct QuasiNewtonState{
     P,
     T,
     D<:AbstractQuasiNewtonDirectionUpdate,
@@ -326,7 +326,7 @@ mutable struct QuasiNewtonOptions{
     S<:Stepsize,
     RTR<:AbstractRetractionMethod,
     VT<:AbstractVectorTransportMethod,
-} <: AbstractGradientOptions
+} <: AbstractGradientSolverState
     x::P
     gradient::T
     sk::T
@@ -337,7 +337,7 @@ mutable struct QuasiNewtonOptions{
     stop::SC
     vector_transport_method::VT
 end
-function QuasiNewtonOptions(
+function QuasiNewtonState(
     M::AbstractManifold,
     x::P;
     initial_vector::T=zero_vector(M, x),
@@ -363,7 +363,7 @@ function QuasiNewtonOptions(
     VTM<:AbstractVectorTransportMethod,
 }
     sk_init = zero_vector(M, x)
-    return QuasiNewtonOptions{P,typeof(sk_init),D,SC,S,RM,VTM}(
+    return QuasiNewtonState{P,typeof(sk_init),D,SC,S,RM,VTM}(
         x,
         initial_vector,
         sk_init,
@@ -375,7 +375,7 @@ function QuasiNewtonOptions(
         vector_transport_method,
     )
 end
-@deprecate QuasiNewtonOptions(
+@deprecate QuasiNewtonState(
     x,
     g,
     d,
@@ -383,7 +383,7 @@ end
     s;
     retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
     vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-) QuasiNewtonOptions(
+) QuasiNewtonState(
     DefaultManifold(2),
     x;
     initial_vector=g,

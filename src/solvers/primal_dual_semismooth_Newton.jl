@@ -138,7 +138,7 @@ function primal_dual_semismooth_Newton!(
         Λ=Λ,
         evaluation=evaluation,
     )
-    o = PrimalDualSemismoothNewtonOptions(
+    o = PrimalDualSemismoothNewtonState(
         M,
         m,
         n,
@@ -159,11 +159,11 @@ function primal_dual_semismooth_Newton!(
 end
 
 function initialize_solver!(
-    ::PrimalDualSemismoothNewtonProblem, ::PrimalDualSemismoothNewtonOptions
+    ::PrimalDualSemismoothNewtonProblem, ::PrimalDualSemismoothNewtonState
 ) end
 
 function step_solver!(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions, iter
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonState, iter
 )
     # do step
     primal_dual_step!(p, o)
@@ -177,7 +177,7 @@ function step_solver!(
 end
 
 function primal_dual_step!(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonState
 )
 
     # construct X
@@ -209,7 +209,7 @@ raw"""
 Constructs the vector representation of $X(p^{(k)}, ξ_{n}^{(k)}) \in \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 """
 function construct_primal_dual_residual_vector(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonState
 )
 
     # Compute primal vector
@@ -266,7 +266,7 @@ onstruct_primal_dual_residual_covariant_derivative_matrix(p, o)
 Constructs the matrix representation of $V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 """
 function construct_primal_dual_residual_covariant_derivative_matrix(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonOptions
+    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonState
 )
 
     # construct bases

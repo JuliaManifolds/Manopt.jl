@@ -2,7 +2,7 @@
 # State
 #
 @doc raw"""
-    ParticleSwarmOptions{P,T} <: Options
+    ParticleSwarmState{P,T} <: AbstractManoptSolverState
 
 Describes a particle swarm optimizing algorithm, with
 
@@ -21,7 +21,7 @@ Describes a particle swarm optimizing algorithm, with
 
 # Constructor
 
-    ParticleSwarmOptions(M, x0, velocity; kawrgs...)
+    ParticleSwarmState(M, x0, velocity; kawrgs...)
 
 construct a particle swarm Option for the manifold `M` starting at initial population `x0` with velocities `x0`,
 where the manifold is used within the defaults of the other fields mentioned above,
@@ -30,7 +30,7 @@ which are keyword arguments here.
 # See also
 [`particle_swarm`](@ref)
 """
-mutable struct ParticleSwarmOptions{
+mutable struct ParticleSwarmState{
     TX<:AbstractVector,
     TG,
     TVelocity<:AbstractVector,
@@ -39,7 +39,7 @@ mutable struct ParticleSwarmOptions{
     TRetraction<:AbstractRetractionMethod,
     TInvRetraction<:AbstractInverseRetractionMethod,
     TVTM<:AbstractVectorTransportMethod,
-} <: Options
+} <: AbstractManoptSolverState
     x::TX
     p::TX
     g::TG
@@ -51,7 +51,7 @@ mutable struct ParticleSwarmOptions{
     retraction_method::TRetraction
     inverse_retraction_method::TInvRetraction
     vector_transport_method::TVTM
-    @deprecate ParticleSwarmOptions(
+    @deprecate ParticleSwarmState(
         x0::AbstractVector,
         velocity::AbstractVector,
         inertia=0.65,
@@ -63,7 +63,7 @@ mutable struct ParticleSwarmOptions{
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
         vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-    ) ParticleSwarmOptions(
+    ) ParticleSwarmState(
         DefaultManifold(2),
         x0,
         velocity;
@@ -75,7 +75,7 @@ mutable struct ParticleSwarmOptions{
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    function ParticleSwarmOptions(
+    function ParticleSwarmState(
         M::AbstractManifold,
         x0::AbstractVector,
         velocity::AbstractVector;
@@ -118,8 +118,8 @@ end
 #
 # Accessors
 #
-get_iterate(O::ParticleSwarmOptions) = O.x
-function set_iterate!(O::ParticleSwarmOptions, p)
+get_iterate(O::ParticleSwarmState) = O.x
+function set_iterate!(O::ParticleSwarmState, p)
     O.x = p
     return O
 end
@@ -248,7 +248,7 @@ function particle_swarm!(
     kwargs..., #collect rest
 ) where {TF}
     mp = DefaultManoptProblem(M, ManifoldCostObjective(f))
-    o = ParticleSwarmOptions(
+    o = ParticleSwarmState(
         M,
         x0,
         velocity;
@@ -267,11 +267,11 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(mp::AbstractManoptProblem, o::ParticleSwarmOptions)
+function initialize_solver!(mp::AbstractManoptProblem, o::ParticleSwarmState)
     j = argmin([get_cost(mp, p) for p in o.x])
     return o.g = deepcopy(o.x[j])
 end
-function step_solver!(mp::AbstractManoptProblem, o::ParticleSwarmOptions, ::Any)
+function step_solver!(mp::AbstractManoptProblem, o::ParticleSwarmState, ::Any)
     M = get_manifold(mp)
     for i in 1:length(o.x)
         o.velocity[i] =
@@ -293,12 +293,12 @@ function step_solver!(mp::AbstractManoptProblem, o::ParticleSwarmOptions, ::Any)
         end
     end
 end
-get_solver_result(o::ParticleSwarmOptions) = o.g
+get_solver_result(o::ParticleSwarmState) = o.g
 #
 # Change not only refers to different iterates (x=the whole population)
 # but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
 #
-function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, O::ParticleSwarmOptions, i)
+function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, O::ParticleSwarmState, i)
     if has_storage(c.storage, :Iterate)
         x_old = get_storage(c.storage, :Iterate)
         n = length(O.x)

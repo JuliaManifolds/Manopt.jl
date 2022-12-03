@@ -1,8 +1,8 @@
 #
-# Options
+# State
 #
 @doc raw"""
-    AugmentedLagrangianMethodOptions{P,T} <: Options
+    AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
 Describes the augmented Lagrangian method, with
 
@@ -29,7 +29,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    AugmentedLagrangianMethodOptions(M::AbstractManifold, P::ConstrainedProblem, x; kwargs...)
+    AugmentedLagrangianMethodState(M::AbstractManifold, P::ConstrainedProblem, x; kwargs...)
 
 construct an augmented Lagrangian method options with the fields and defaults as above,
 where the manifold `M` and the [`ConstrainedProblem`](@ref) `P` are used for defaults
@@ -38,9 +38,9 @@ in the keyword arguments.
 # See also
 [`augmented_Lagrangian_method`](@ref)
 """
-mutable struct AugmentedLagrangianMethodOptions{
-    P,Pr<:AbstractManoptProblem,Op<:Options,TStopping<:StoppingCriterion
-} <: Options
+mutable struct AugmentedLagrangianMethodState{
+    P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState,TStopping<:StoppingCriterion
+} <: AbstractManoptSolverState
     x::P
     sub_problem::Pr
     sub_options::Op
@@ -57,7 +57,7 @@ mutable struct AugmentedLagrangianMethodOptions{
     θ_ϵ::Real
     penalty::Real
     stop::TStopping
-    function AugmentedLagrangianMethodOptions(
+    function AugmentedLagrangianMethodState(
         M::AbstractManifold,
         p::ConstrainedProblem,
         x0::P,
@@ -78,7 +78,7 @@ mutable struct AugmentedLagrangianMethodOptions{
         stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
         ),
-    ) where {P,Pr<:AbstractManoptProblem,Op<:Options}
+    ) where {P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState}
         o = new{P,Pr,Op,typeof(stopping_criterion)}()
         o.x = x0
         o.sub_problem = sub_problem
@@ -99,8 +99,8 @@ mutable struct AugmentedLagrangianMethodOptions{
         return o
     end
 end
-get_iterate(o::AugmentedLagrangianMethodOptions) = o.x
-function set_iterate!(O::AugmentedLagrangianMethodOptions, p)
+get_iterate(o::AugmentedLagrangianMethodState) = o.x
+function set_iterate!(O::AugmentedLagrangianMethodState, p)
     O.x = p
     return O
 end

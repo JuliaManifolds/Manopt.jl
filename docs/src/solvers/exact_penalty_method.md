@@ -9,10 +9,10 @@ CurrentModule = Manopt
   exact_penalty_method!
 ```
 
-## Options
+## State
 
 ```@docs
-ExactPenaltyMethodOptions
+ExactPenaltyMethodState
 ```
 
 ## Helping Functions

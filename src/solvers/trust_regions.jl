@@ -117,7 +117,7 @@ function trust_regions!(
         ),
     )
     p = HessianProblem(M, F, gradF, hessF, preconditioner; evaluation=evaluation)
-    o = TrustRegionsOptions(
+    o = TrustRegionsState(
         M,
         x;
         gradient=get_gradient(p, x),
@@ -134,7 +134,7 @@ function trust_regions!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
+function initialize_solver!(p::HessianProblem, o::TrustRegionsState)
     get_gradient!(p, o.gradient, o.x)
     o.η = zero_vector(p.M, o.x)
     o.Hη = zero_vector(p.M, o.x)
@@ -145,7 +145,7 @@ function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     o.Hη_Cauchy = zero_vector(p.M, o.x)
     o.τ = zero(o.trust_region_radius)
     o.Hgrad = zero_vector(p.M, o.x)
-    o.tcg_options = TruncatedConjugateGradientOptions(
+    o.tcg_options = TruncatedConjugateGradientState(
         p.M,
         o.x,
         o.η;
@@ -156,7 +156,7 @@ function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
     return o
 end
 
-function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
+function step_solver!(p::HessianProblem, o::TrustRegionsState, iter)
     # Determine eta0
     if o.randomize
         # Random vector in T_x M (this has to be very small)

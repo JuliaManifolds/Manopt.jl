@@ -59,11 +59,11 @@ ChambollePock
 ChambollePock!
 ```
 
-## Problem & Options
+## Problem & State
 
 ```@docs
-PrimalDualOptions
-ChambollePockOptions
+PrimalDualState
+ChambollePockState
 ```
 
 ## Useful Terms

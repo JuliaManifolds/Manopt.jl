@@ -133,11 +133,11 @@ trust_regions
 trust_regions!
 ```
 
-## Options
+## State
 
 ```@docs
-AbstractHessianOptions
-TrustRegionsOptions
+AbstractHessianSolverState
+TrustRegions
 ```
 
 ## Approximation of the Hessian

@@ -66,7 +66,7 @@ n = Λ(M, m)
 x0 = deepcopy(f)
 ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
-storage = StoreOptionsAction((:Iterate, :n, :ξbar))
+storage = StoreStateAction((:Iterate, :n, :ξbar))
 
 @time o = ChambollePock(
     M,

@@ -9,11 +9,11 @@ CurrentModule = Manopt
   gradient_descent!
 ```
 
-## Options
+## State
 
 ```@docs
-AbstractGradientOptions
-GradientDescentOptions
+AbstractGradientState
+GradientDescentState
 ```
 
 ## Direction Update Rules

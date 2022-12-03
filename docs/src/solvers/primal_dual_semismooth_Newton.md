@@ -66,8 +66,8 @@ primal_dual_semismooth_Newton
 primal_dual_semismooth_Newton!
 ```
 
-## Options
+## State
 
 ```@docs
-PrimalDualSemismoothNewtonOptions
+PrimalDualSemismoothNewtonState
 ```

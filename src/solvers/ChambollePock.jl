@@ -148,7 +148,7 @@ function ChambollePock!(
         linearized_forward_operator=linearized_forward_operator,
         Λ=Λ,
     )
-    o = ChambollePockOptions(
+    o = ChambollePockState(
         M,
         m,
         n,
@@ -171,9 +171,9 @@ function ChambollePock!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(::PrimalDualProblem, ::ChambollePockOptions) end
+function initialize_solver!(::PrimalDualProblem, ::ChambollePockState) end
 
-function step_solver!(p::PrimalDualProblem, o::ChambollePockOptions, iter)
+function step_solver!(p::PrimalDualProblem, o::ChambollePockState, iter)
     primal_dual_step!(p, o, Val(o.relax))
     o.m = ismissing(o.update_primal_base) ? o.m : o.update_primal_base(p, o, iter)
     if !ismissing(o.update_dual_base)
@@ -189,7 +189,7 @@ end
 #
 # Variant 1: primal relax
 #
-function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{:primal})
+function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockState, ::Val{:primal})
     dual_update!(p, o, o.xbar, Val(o.variant))
     if ismissing(p.Λ!!)
         ptξn = o.ξ
@@ -229,7 +229,7 @@ end
 #
 # Variant 2: dual relax
 #
-function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockOptions, ::Val{:dual})
+function primal_dual_step!(p::PrimalDualProblem, o::ChambollePockState, ::Val{:dual})
     if ismissing(p.Λ!!)
         ptξbar = o.ξbar
     else
@@ -265,7 +265,7 @@ end
 # depending on whether its primal relaxed or dual relaxed we start from start=o.x or start=o.xbar here
 #
 function dual_update!(
-    p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:linearized}
+    p::PrimalDualProblem, o::ChambollePockState, start::P, ::Val{:linearized}
 ) where {P}
     # (1) compute update direction
     ξ_update = linearized_forward_operator(
@@ -289,7 +289,7 @@ end
 # depending on whether its primal relaxed or dual relaxed we start from start=o.x or start=o.xbar here
 #
 function dual_update!(
-    p::PrimalDualProblem, o::ChambollePockOptions, start::P, ::Val{:exact}
+    p::PrimalDualProblem, o::ChambollePockState, start::P, ::Val{:exact}
 ) where {P}
     ξ_update = inverse_retract(
         p.N, o.n, forward_operator(p, start), o.inverse_retraction_method_dual
@@ -306,7 +306,7 @@ update the prox parameters as described in Algorithm 2 of Chambolle, Pock, 2010,
 2. ``τ_{n+1} = θ_nτ_n``
 3. ``σ_{n+1} = \frac{σ_n}{θ_n}``
 """
-function update_prox_parameters!(o::O) where {O<:PrimalDualOptions}
+function update_prox_parameters!(o::O) where {O<:AbstractPrimalDualSolverState}
     if o.acceleration > 0
         o.relaxation = 1 / sqrt(1 + 2 * o.acceleration * o.primal_stepsize)
         o.primal_stepsize = o.primal_stepsize * o.relaxation

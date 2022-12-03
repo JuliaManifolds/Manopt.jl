@@ -34,7 +34,7 @@ using Random
         p_start = [random_point(M) for i in 1:3]
         X_start = [random_tangent(M, y) for y in p_start]
         p = DefaultManoptProblem(M, ManifoldCostObjective(f))
-        o = ParticleSwarmOptions(zero.(p_start), X_start)
+        o = ParticleSwarmState(zero.(p_start), X_start)
         # test set_iterate
         set_iterate!(o, p_start)
         @test sum(norm.(get_iterate(o) .- p_start)) == 0

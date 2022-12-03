@@ -104,12 +104,12 @@ InverseBroyden
 InverseSR1
 ```
 
-## Options
+## State
 
-The quasi Newton algorithm is based on a [`GradientProblem`](@ref).
+The quasi Newton algorithm is based on a [`DefaultManoptProblem`](@ref).
 
 ```@docs
-QuasiNewtonOptions
+QuasiNewtonState
 ```
 
 ## Literature

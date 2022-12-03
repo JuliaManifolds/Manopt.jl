@@ -343,7 +343,7 @@ where the differences to `gradient_descent` are as follows
   collect their data in an array. The high level interface then returns two
   variables; the `values` do contain an array of recorded
   datum per iteration. Here a tuple containing the iteration, last change and
-  cost respectively; see [RedordOptions](https://manoptjl.org/stable/plans/index.html#RecordOptions-1) for details.
+  cost respectively; see [RedordOptions](https://manoptjl.org/stable/plans/index.html#RecordSolverState-1) for details.
 
 We can access the recorded values using `get_record`, that consists of a tuple per iteration and contains the iteration number, the change and the cost.
 """

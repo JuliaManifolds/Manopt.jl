@@ -20,7 +20,7 @@ Create a Stochastic gradient problem with an optional `cost` and the gradient ei
 function (returning an array) or a vector of functions.
 """
 struct StochasticGradientProblem{T,MT<:AbstractManifold,TCost,TGradient} <:
-       AbstractGradientProblem{T}
+       AbstractManoptProblem
     M::MT
     cost::TCost
     gradient!!::TGradient
@@ -185,14 +185,14 @@ function get_gradient!(
 end
 
 """
-    AbstractStochasticGradientDescentOptions <: Options
+    AbstractStochasticGradientDescentSolverState <: AbstractManoptSolverState
 
 A generic type for all options related to stochastic gradient descent methods
 """
 abstract type AbstractStochasticGradientProcessor <: DirectionUpdateRule end
 
 """
-    StochasticGradientDescentOptions <: AbstractStochasticGradientDescentOptions
+    StochasticGradientDescentState <: AbstractGradientDescentSolverState
 
 Store the following fields for a default stochastic gradient descent algorithm,
 see also [`StochasticGradientProblem`](@ref) and [`stochastic_gradient_descent`](@ref).
@@ -210,19 +210,19 @@ see also [`StochasticGradientProblem`](@ref) and [`stochastic_gradient_descent`]
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 
 # Constructor
-    StochasticGradientDescentOptions(M, x)
+    StochasticGradientDescentState(M, x)
 
-Create a [`StochasticGradientDescentOptions`](@ref) with start point `x`.
+Create a `StochasticGradientDescentState` with start point `x`.
 all other fields are optional keyword arguments, and the defaults are taken from `M`.
 """
-mutable struct StochasticGradientDescentOptions{
+mutable struct StochasticGradientDescentState{
     TX,
     TV,
     D<:DirectionUpdateRule,
     TStop<:StoppingCriterion,
     TStep<:Stepsize,
     RM<:AbstractRetractionMethod,
-} <: AbstractGradientOptions
+} <: AbstractGradientSolverState
     x::TX
     gradient::TV
     direction::D
@@ -234,7 +234,7 @@ mutable struct StochasticGradientDescentOptions{
     k::Int # current iterate
 end
 
-function StochasticGradientDescentOptions(
+function StochasticGradientDescentState(
     M::AbstractManifold,
     x::P,
     X::Q;
@@ -252,7 +252,7 @@ function StochasticGradientDescentOptions(
     SC<:StoppingCriterion,
     S<:Stepsize,
 }
-    return StochasticGradientDescentOptions{P,Q,D,SC,S,RM}(
+    return StochasticGradientDescentState{P,Q,D,SC,S,RM}(
         x,
         X,
         direction,
@@ -264,9 +264,6 @@ function StochasticGradientDescentOptions(
         0,
     )
 end
-@deprecate StochasticGradientDescentOptions(x, X, d; kwargs...) StochasticGradientDescentOptions(
-    DefaultManifold(2), x, X; direction=d, kwargs...
-)
 
 """
     StochasticGradient <: DirectionUpdateRule
@@ -279,7 +276,7 @@ struct StochasticGradient{T} <: AbstractStochasticGradientProcessor
 end
 
 function (s::StochasticGradient)(
-    p::StochasticGradientProblem, o::StochasticGradientDescentOptions, iter
+    p::StochasticGradientProblem, o::StochasticGradientDescentState, iter
 )
     # for each new epoche choose new order if we are at random order
     ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)

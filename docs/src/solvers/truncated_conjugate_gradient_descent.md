@@ -82,10 +82,10 @@ line ``η_k + α δ_k``. If our aim is to minimize the model within
 the trust-region, it makes far more sense to reduce ``m_x(⋅)`` along
 ``η_k + α δ_k`` as much as we can while staying within the
 trust-region, and this means moving to the trust-region boundary along this
-line. Thus, when ``κ ≤ 0`` at iteration k, we replace 
+line. Thus, when ``κ ≤ 0`` at iteration k, we replace
 ``α = \frac{⟨r_k, z_k⟩_{x}}{κ}`` with ``τ`` described as above.
 The other possibility is that ``η_{k+1}`` would lie outside the trust-region at
-iteration k (i.e. ``⟨η_k, η_k⟩_{x}^{* } ≥ {Δ}^2`` 
+iteration k (i.e. ``⟨η_k, η_k⟩_{x}^{* } ≥ {Δ}^2``
 that can be identified with the norm of ``η_{k+1}``). In
 particular, when ``\operatorname{Hess}[F] (⋅)_{x}`` is positive deﬁnite
 and ``η_{k+1}`` lies outside the trust region, the solution to the
@@ -102,10 +102,10 @@ move to the trust-region boundary by finding ``τ``.
   truncated_conjugate_gradient_descent!
 ```
 
-## Options
+## State
 
 ```@docs
-TruncatedConjugateGradientOptions
+TruncatedConjugateGradientState
 ```
 
 ## Additional Stopping Criteria

@@ -4,7 +4,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
     M = Euclidean(2)
     x = [4.0, 2.0]
     x0 = [5.0, 2.0]
-    o = SubGradientMethodOptions(M, x0, StopAfterIteration(200), ConstantStepsize(M))
+    o = SubGradientMethodState(M, x0, StopAfterIteration(200), ConstantStepsize(M))
     o.∂ = [1.0, 0.0]
     f(M, y) = distance(M, y, x)
     @testset "Allocating Subgradient" begin

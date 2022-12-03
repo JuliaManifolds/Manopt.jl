@@ -1,6 +1,6 @@
 #
 #
-# Proximal Point Problem and Options
+# Proximal Point Problem and State
 #
 #
 @doc raw"""
@@ -83,11 +83,11 @@ function get_proximal_map!(p::ProximalProblem{InplaceEvaluation}, y, λ, x, i)
 end
 #
 #
-# Proximal based Options
+# Proximal based State
 #
 #
 @doc raw"""
-    CyclicProximalPointOptions <: Options
+    CyclicProximalPointState <: AbstractManoptSolverState
 
 stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
@@ -100,7 +100,7 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
   cycle permuted sequence (`RandomOrder`) or the default linear one.
 
 # Constructor
-    CyclicProximalPointOptions(M, p)
+    CyclicProximalPointState(M, p)
 
 Generate the options with the following keyword arguments
 
@@ -111,35 +111,36 @@ Generate the options with the following keyword arguments
 # See also
 [`cyclic_proximal_point`](@ref)
 """
-mutable struct CyclicProximalPointOptions{TX,TStop<:StoppingCriterion,Tλ} <: Options
+mutable struct CyclicProximalPointState{TX,TStop<:StoppingCriterion,Tλ} <:
+               AbstractManoptSolverState
     x::TX
     stop::TStop
     λ::Tλ
     order_type::Symbol
     order::AbstractVector{Int}
 end
-@deprecate CyclicProximalPointOptions(
+@deprecate CyclicProximalPointState(
     x, s::StoppingCriterion, λ=(iter) -> 1.0 / iter, o::Symbol=:LinearOrder
-) CyclicProximalPointOptions(
+) CyclicProximalPointState(
     DefaultManifold(2), x; stopping_criterion=s, λ=λ, evaluation_order=o
 )
 
-function CyclicProximalPointOptions(
+function CyclicProximalPointState(
     ::AbstractManifold,
     x::P;
     stopping_criterion::S=StopAfterIteration(2000),
     λ::F=(iter) -> 1.0 / iter,
     evaluation_order::Symbol=:LinearOrder,
 ) where {P,S,F}
-    return CyclicProximalPointOptions{P,S,F}(x, stopping_criterion, λ, evaluation_order, [])
+    return CyclicProximalPointState{P,S,F}(x, stopping_criterion, λ, evaluation_order, [])
 end
-get_iterate(O::CyclicProximalPointOptions) = O.x
-function set_iterate!(O::CyclicProximalPointOptions, p)
+get_iterate(O::CyclicProximalPointState) = O.x
+function set_iterate!(O::CyclicProximalPointState, p)
     O.x = p
     return O
 end
 @doc raw"""
-    DouglasRachfordOptions <: Options
+    DouglasRachfordState <: AbstractManoptSolverState
 
 Store all options required for the DouglasRachford algorithm,
 
@@ -157,7 +158,7 @@ Store all options required for the DouglasRachford algorithm,
 
 # Constructor
 
-    DouglasRachfordOptions(M, p; kwargs...)
+    DouglasRachfordState(M, p; kwargs...)
 
 Generate the options for a Manifold `M` and an initial point `p`, where the following keyword arguments can be used
 
@@ -172,7 +173,7 @@ Generate the options for a Manifold `M` and an initial point `p`, where the foll
 * `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
   or not.
 """
-mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR,S} <: Options
+mutable struct DouglasRachfordState{TX,Tλ,Tα,TR,S} <: AbstractManoptSolverState
     x::TX
     xtmp::TX
     s::TX
@@ -182,7 +183,7 @@ mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR,S} <: Options
     R::TR
     stop::S
     parallel::Bool
-    function DouglasRachfordOptions(
+    function DouglasRachfordState(
         ::AbstractManifold,
         x::P;
         λ::Fλ=(iter) -> 1.0,
@@ -195,19 +196,19 @@ mutable struct DouglasRachfordOptions{TX,Tλ,Tα,TR,S} <: Options
             x, deepcopy(x), deepcopy(x), deepcopy(x), λ, α, R, stopping_criterion, parallel
         )
     end
-    @deprecate DouglasRachfordOptions(
+    @deprecate DouglasRachfordState(
         x,
         λ=(iter) -> 1.0,
         α=(iter) -> 0.9,
         R=Manopt.reflect,
         stop::StoppingCriterion=StopAfterIteration(300),
         parallel=false,
-    ) DouglasRachfordOptions(
+    ) DouglasRachfordState(
         DefaultManifold(2), x; λ=λ, α=α, R=R, stopping_criterion=stop, parallel=parallel
     )
 end
-get_iterate(O::DouglasRachfordOptions) = O.x
-function set_iterate!(O::DouglasRachfordOptions, p)
+get_iterate(O::DouglasRachfordState) = O.x
+function set_iterate!(O::DouglasRachfordState, p)
     O.x = p
     return O
 end
@@ -222,7 +223,7 @@ end
     DebugProximalParameter <: DebugAction
 
 print the current iterates proximal point algorithm parameter given by
-[`Options`](@ref)s `o.λ`.
+[`AbstractManoptSolverState`](@ref)s `o.λ`.
 """
 mutable struct DebugProximalParameter <: DebugAction
     io::IO
@@ -236,13 +237,11 @@ mutable struct DebugProximalParameter <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
+function (d::DebugProximalParameter)(::ProximalProblem, o::DouglasRachfordState, i::Int)
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.λ(i))
     return nothing
 end
-function (d::DebugProximalParameter)(
-    ::ProximalProblem, o::CyclicProximalPointOptions, i::Int
-)
+function (d::DebugProximalParameter)(::ProximalProblem, o::CyclicProximalPointState, i::Int)
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.λ(i))
     return nothing
 end
@@ -253,17 +252,17 @@ end
     RecordProximalParameter <: RecordAction
 
 recoed the current iterates proximal point algorithm parameter given by in
-[`Options`](@ref)s `o.λ`.
+[`AbstractManoptSolverState`](@ref)s `o.λ`.
 """
 mutable struct RecordProximalParameter <: RecordAction
     recorded_values::Array{Float64,1}
     RecordProximalParameter() = new(Array{Float64,1}())
 end
 function (r::RecordProximalParameter)(
-    ::ProximalProblem, o::CyclicProximalPointOptions, i::Int
+    ::ProximalProblem, o::CyclicProximalPointState, i::Int
 )
     return record_or_reset!(r, o.λ(i), i)
 end
-function (r::RecordProximalParameter)(::ProximalProblem, o::DouglasRachfordOptions, i::Int)
+function (r::RecordProximalParameter)(::ProximalProblem, o::DouglasRachfordState, i::Int)
     return record_or_reset!(r, o.λ(i), i)
 end

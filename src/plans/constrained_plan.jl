@@ -22,7 +22,7 @@ e.g. ``g_i(p) ∈ \mathbb R, i=1,…,m``.
 struct VectorConstraint <: ConstraintType end
 
 @doc raw"""
-    ConstrainedProblem{T, Manifold} <: AbstractGradientProblem{T}
+    ConstrainedProblem{T, Manifold} <: AbstractManoptProblem
 
 Describes the constrained problem
 ```math
@@ -36,7 +36,7 @@ Describes the constrained problem
 It consists of
 * an `AbstractManifold M`
 * an cost function ``f(p)``
-* the gradient of ``f``, ``\operatorname{grad}f(p)`` (cf. [`AbstractGradientProblem`](@ref))
+* the gradient of ``f``, ``\operatorname{grad}f(p)`` (cf. [`AbstractManoptProblem`](@ref))
 * inequality constraints ``g(p)``, either a function `g` returning a vector or a vector `[g1, g2,...,gm]` of functions.
 * equality constraints ``h(p)``, either a function `h` returning a vector or a vector `[h1, h2,...,hn]` of functions.
 * gradient(s) of the inequality constraints ``\operatorname{grad}g(p) ∈ (T_p\mathcal M)^m``, either a function or a vector of functions.
@@ -74,7 +74,7 @@ A keyword argument variant of the constructor above, where you can leave out eit
 `G` and `gradG` _or_ `H` and `gradH` but not both.
 """
 struct ConstrainedProblem{T,CT<:ConstraintType,MT<:AbstractManifold,TCost,GF,TG,GG,TH,GH} <:
-       AbstractGradientProblem{T}
+       AbstractManoptProblem
     M::MT
     cost::TCost
     gradient!!::GF
@@ -254,8 +254,8 @@ function ConstrainedProblem(
     return error(
         """
   Neither inequality constraints `G`, `gradG` nor equality constraints `H` `gradH` provided.
-  If you have an unconstraint problem, maybe consider using a `GradientProblem` instead.
-  """
+  If you have an unconstraint problem, maybe consider using a `DefaultManoptProblem` instead.
+  """,
     )
 end
 function ConstrainedProblem(

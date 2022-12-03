@@ -29,7 +29,7 @@ using Manifolds, Manopt, Test, Dates
         @test fR == fR2
         rec = get_record(o)
         @test F(N, f) > F(N, fR)
-        o = CyclicProximalPointOptions(
+        o = CyclicProximalPointState(
             N, f; stopping_criterion=StopAfterIteration(1), λ=i -> π / (2 * i)
         )
         p = ProximalProblem(N, F, proxes, [1, 2])
@@ -90,7 +90,7 @@ using Manifolds, Manopt, Test, Dates
     @testset "Option accsess functions" begin
         M = Euclidean(3)
         p = ones(3)
-        O = CyclicProximalPointOptions(M, zeros(3))
+        O = CyclicProximalPointState(M, zeros(3))
         set_iterate!(O, p)
         @test get_iterate(O) == p
     end

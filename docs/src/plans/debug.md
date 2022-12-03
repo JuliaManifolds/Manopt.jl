@@ -14,9 +14,9 @@ Private = true
 ## Technical Details: The Debug Solver
 
 The decorator to print debug during the iterations can be activated by
-decorating the [`Options`](@ref) with [`DebugOptions`](@ref) and implementing
+decorating the [`AbstractManoptSolverState`](@ref) with [`DebugSolverState`](@ref) and implementing
 your own [`DebugAction`](@ref)s.
-For example printing a gradient from the [`GradientDescentOptions`](@ref) is
+For example printing a gradient from the [`GradientDescentSolverState`](@ref) is
 automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
 ```@autodocs

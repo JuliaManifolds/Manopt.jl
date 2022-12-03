@@ -4,7 +4,7 @@ using Manopt, ManifoldsBase, Test
     io = IOBuffer()
     M = ManifoldsBase.DefaultManifold(2)
     x = [4.0, 2.0]
-    o = GradientDescentOptions(
+    o = GradientDescentState(
         M, zero(x); stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
     )
     set_iterate!(o, x)

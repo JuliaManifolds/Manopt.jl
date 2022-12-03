@@ -1,5 +1,5 @@
 @doc raw"""
-    NelderMeadOptions <: Options
+    NelderMeadState <: AbstractManoptSolverState
 
 Describes all parameters and the state of a Nealer-Mead heuristic based
 optimization algorithm.
@@ -29,7 +29,7 @@ construct a Nelder-Mead Option with a default popultion (if not provided) of set
 
 In the constructor all fields (besides the population) are keyword arguments.
 """
-mutable struct NelderMeadOptions{
+mutable struct NelderMeadState{
     T,
     S<:StoppingCriterion,
     Tα<:Real,
@@ -38,7 +38,7 @@ mutable struct NelderMeadOptions{
     Tσ<:Real,
     TR<:AbstractRetractionMethod,
     TI<:AbstractInverseRetractionMethod,
-} <: Options
+} <: AbstractManoptSolverState
     population::Vector{T}
     stop::S
     α::Tα
@@ -49,7 +49,7 @@ mutable struct NelderMeadOptions{
     costs::Vector{Float64}
     retraction_method::TR
     inverse_retraction_method::TI
-    function NelderMeadOptions(
+    function NelderMeadState(
         M::AbstractManifold,
         population::Vector{T};
         stopping_criterion::StoppingCriterion=StopAfterIteration(2000),
@@ -86,12 +86,12 @@ mutable struct NelderMeadOptions{
         )
     end
 end
-function NelderMeadOptions(M::AbstractManifold; kwargs...)
+function NelderMeadState(M::AbstractManifold; kwargs...)
     population = [random_point(M) for i in 1:(manifold_dimension(M) + 1)]
-    return NelderMeadOptions(M, population; kwargs...)
+    return NelderMeadState(M, population; kwargs...)
 end
-get_iterate(O::NelderMeadOptions) = O.p
-function set_iterate!(O::NelderMeadOptions, p)
+get_iterate(O::NelderMeadState) = O.p
+function set_iterate!(O::NelderMeadState, p)
     O.p = p
     return O
 end
@@ -167,7 +167,7 @@ function NelderMead!(
     kwargs..., #collect rest
 ) where {TF}
     mp = DefaultManoptProblem(M, ManifoldCostObjective(f))
-    o = NelderMeadOptions(
+    o = NelderMeadState(
         M,
         population;
         stopping_criterion=stopping_criterion,
@@ -185,12 +185,12 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(mp::AbstractManoptProblem, o::NelderMeadOptions)
+function initialize_solver!(mp::AbstractManoptProblem, o::NelderMeadState)
     # init cost and x
     o.costs = get_cost.(Ref(mp), o.population)
     return o.x = o.population[argmin(o.costs)] # select min
 end
-function step_solver!(mp::AbstractManoptProblem, o::NelderMeadOptions, ::Any)
+function step_solver!(mp::AbstractManoptProblem, o::NelderMeadState, ::Any)
     M = get_manifold(mp)
     m = mean(M, o.population)
     ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]

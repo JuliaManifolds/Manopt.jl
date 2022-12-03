@@ -116,7 +116,7 @@ function truncated_conjugate_gradient_descent!(
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec,Proj}
     p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
-    o = TruncatedConjugateGradientOptions(
+    o = TruncatedConjugateGradientState(
         M,
         x,
         η;
@@ -134,7 +134,7 @@ end
     M, F, gradF, x, η, H; trust_region_radius=r, kwargs...
 )
 
-function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOptions)
+function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientState)
     (o.randomize) || zero_vector!(p.M, o.η, o.x)
     o.Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_vector(p.M, o.x)
     o.gradient = get_gradient(p, o.x)
@@ -157,7 +157,7 @@ function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientOpti
 end
 function step_solver!(
     p::P, o::O, ::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
+) where {P<:HessianProblem,O<:TruncatedConjugateGradientState}
     # Updates
     get_hessian!(p, o.Hδ, o.x, o.δ)
     o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
@@ -194,4 +194,4 @@ function step_solver!(
     o.δPδ = o.z_r + β^2 * o.δPδ
     return o
 end
-get_solver_result(o::O) where {O<:TruncatedConjugateGradientOptions} = o.η
+get_solver_result(o::O) where {O<:TruncatedConjugateGradientState} = o.η

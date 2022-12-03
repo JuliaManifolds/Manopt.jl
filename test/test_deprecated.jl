@@ -8,14 +8,14 @@ using Manopt, ManifoldsBase, Test
     p = zeros(2)
     X = zeros(2)
     s = StopAfterIteration(10)
-    ChambollePockOptions(p, p, p, X)
-    CyclicProximalPointOptions(p, s)
-    DouglasRachfordOptions(p)
-    StochasticGradientDescentOptions(p, X, StochasticGradient(X))
-    SubGradientMethodOptions(M, p, s, ConstantStepsize(1.0))
+    ChambollePockState(p, p, p, X)
+    CyclicProximalPointState(p, s)
+    DouglasRachfordState(p)
+    StochasticGradientDescentState(p, X, StochasticGradient(X))
+    SubGradientMethodState(M, p, s, ConstantStepsize(1.0))
     d = QuasiNewtonMatrixDirectionUpdate(M, SR1(), DefaultBasis(), zeros(2, 2))
-    QuasiNewtonOptions(p, X, d, s, ConstantStepsize(1.0))
-    TruncatedConjugateGradientOptions(
+    QuasiNewtonState(p, X, d, s, ConstantStepsize(1.0))
+    TruncatedConjugateGradientState(
         HessianProblem(M, x -> x, x -> x, x -> x, :s), p, X, 1.0, true
     )
 end

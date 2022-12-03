@@ -3,7 +3,7 @@
 
 A `DebugAction` is a small functor to print/issue debug output.
 The usual call is given by `(p,o,i) -> s` that performs the debug based on
-a [`Problem`](@ref) `p`, [`Options`](@ref) `o` and the current iterate `i`.
+a [`Problem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o` and the current iterate `i`.
 
 By convention `i=0` is interpreted as "For Initialization only", i.e. only debug
 info that prints initialization reacts, `i<0` triggers updates of variables
@@ -14,10 +14,10 @@ to indicate a call from [`stop_solver!`](@ref) that returns true afterwards.
 * `print` method to perform the actual print. Can for example be set to a file export,
 or to @info. The default is the `print` function on the default `Base.stdout`.
 """
-abstract type DebugAction <: AbstractOptionsAction end
+abstract type DebugAction <: AbstractStateAction end
 
 @doc raw"""
-    DebugOptions <: Options
+    DebugSolverState <: AbstractManoptSolverState
 
 The debug options append to any options a debug functionality, i.e. they act as
 a decorator pattern. Internally a `Dict`ionary is kept that stores a
@@ -26,14 +26,14 @@ The default occasion is `:All` and for example solvers join this field with
 `:Start`, `:Step` and `:Stop` at the beginning, every iteration or the
 end of the algorithm, respectively
 
-The original options can still be accessed using the [`get_options`](@ref) function.
+The original options can still be accessed using the [`get_state`](@ref) function.
 
 # Fields (defaults in brackets)
 * `options` – the options that are extended by debug information
 * `debugDictionary` – a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
 
 # Constructors
-    DebugOptions(o,dA)
+    DebugSolverState(o,dA)
 
 construct debug decorated options, where `dD` can be
 * a [`DebugAction`](@ref), then it is stored within the dictionary at `:All`
@@ -42,25 +42,33 @@ construct debug decorated options, where `dD` can be
 * a `Dict{Symbol,DebugAction}`.
 * an Array of Symbols, String and an Int for the [`DebugFactory`](@ref)
 """
-mutable struct DebugOptions{O<:Options} <: Options
+mutable struct DebugSolverState{O<:AbstractManoptSolverState} <: AbstractManoptSolverState
     options::O
     debugDictionary::Dict{Symbol,<:DebugAction}
-    DebugOptions{O}(o::O, dA::Dict{Symbol,<:DebugAction}) where {O<:Options} = new(o, dA)
+    function DebugSolverState{O}(
+        o::O, dA::Dict{Symbol,<:DebugAction}
+    ) where {O<:AbstractManoptSolverState}
+        return new(o, dA)
+    end
 end
-function DebugOptions(o::O, dD::D) where {O<:Options,D<:DebugAction}
-    return DebugOptions{O}(o, Dict(:All => dD))
+function DebugSolverState(o::O, dD::D) where {O<:AbstractManoptSolverState,D<:DebugAction}
+    return DebugSolverState{O}(o, Dict(:All => dD))
 end
-function DebugOptions(o::O, dD::Array{<:DebugAction,1}) where {O<:Options}
-    return DebugOptions{O}(o, Dict(:All => DebugGroup(dD)))
+function DebugSolverState(
+    o::O, dD::Array{<:DebugAction,1}
+) where {O<:AbstractManoptSolverState}
+    return DebugSolverState{O}(o, Dict(:All => DebugGroup(dD)))
 end
-function DebugOptions(o::O, dD::Dict{Symbol,<:DebugAction}) where {O<:Options}
-    return DebugOptions{O}(o, dD)
+function DebugSolverState(
+    o::O, dD::Dict{Symbol,<:DebugAction}
+) where {O<:AbstractManoptSolverState}
+    return DebugSolverState{O}(o, dD)
 end
-function DebugOptions(o::O, format::Array{<:Any,1}) where {O<:Options}
-    return DebugOptions{O}(o, DebugFactory(format))
+function DebugSolverState(o::O, format::Array{<:Any,1}) where {O<:AbstractManoptSolverState}
+    return DebugSolverState{O}(o, DebugFactory(format))
 end
 
-dispatch_options_decorator(::DebugOptions) = Val(true)
+dispatch_options_decorator(::DebugSolverState) = Val(true)
 
 #
 # Meta Debugs
@@ -83,7 +91,7 @@ mutable struct DebugGroup <: DebugAction
     group::Array{DebugAction,1}
     DebugGroup(g::Array{<:DebugAction,1}) = new(g)
 end
-function (d::DebugGroup)(p::AbstractManoptProblem, o::Options, i)
+function (d::DebugGroup)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i)
     for di in d.group
         di(p, o, i)
     end
@@ -105,7 +113,7 @@ mutable struct DebugEvery <: DebugAction
         return new(d, every, alwaysUpdate)
     end
 end
-function (d::DebugEvery)(p::AbstractManoptProblem, o::Options, i)
+function (d::DebugEvery)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i)
     if (rem(i, d.every) == 0)
         d.debug(p, o, i)
     elseif d.alwaysUpdate
@@ -119,11 +127,11 @@ end
 @doc raw"""
     DebugChange()
 
-debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`Options`](@ref))
+debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreOptionsAction( (:Iterate,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreStateAction( (:Iterate,) )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
@@ -135,10 +143,10 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     invretr::TInvRetr
     function DebugChange(;
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
+        storage::StoreStateAction=StoreStateAction((:Iterate,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
@@ -150,10 +158,7 @@ mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAc
         return new{typeof(invretr)}(io, format, storage, invretr)
     end
 end
-@deprecate DebugChange(a::StoreOptionsAction, pre::String="Last Change: ", io::IO=stdout) DebugChange(;
-    storage=a, prefix=pre, io=io
-)
-function (d::DebugChange)(p::AbstractManoptProblem, o::Options, i)
+function (d::DebugChange)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
@@ -165,11 +170,11 @@ end
 @doc raw"""
     DebugGradientChange()
 
-debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`Options`](@ref) `o`)
+debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`AbstractManoptSolverState`](@ref) `o`)
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreOptionsAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreStateAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
@@ -177,9 +182,9 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 mutable struct DebugGradientChange <: DebugAction
     io::IO
     format::String
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function DebugGradientChange(;
-        storage::StoreOptionsAction=StoreOptionsAction((:Gradient,)),
+        storage::StoreStateAction=StoreStateAction((:Gradient,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
@@ -187,7 +192,7 @@ mutable struct DebugGradientChange <: DebugAction
         return new(io, format, storage)
     end
 end
-function (d::DebugGradientChange)(p::AbstractManoptProblem, o::Options, i)
+function (d::DebugGradientChange)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
@@ -221,8 +226,7 @@ mutable struct DebugIterate <: DebugAction
         return new(io, format)
     end
 end
-@deprecate DebugIterate(io::IO, long::Bool=false) DebugIterate(; io=io, long=long)
-function (d::DebugIterate)(::AbstractManoptProblem, o::Options, i::Int)
+function (d::DebugIterate)(::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int)
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(o))
     return nothing
 end
@@ -246,8 +250,7 @@ mutable struct DebugIteration <: DebugAction
     format::String
     DebugIteration(; io::IO=stdout, format="# %-6d") = new(io, format)
 end
-@deprecate DebugIteration(io::IO) DebugIteration(; io=io)
-function (d::DebugIteration)(::AbstractManoptProblem, ::Options, i::Int)
+function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     (i == 0) && print(d.io, "Initial ")
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
     return nothing
@@ -279,7 +282,7 @@ end
 @deprecate DebugCost(pre::String) DebugCost(; format="$pre %f")
 @deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
 @deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
-function (d::DebugCost)(p::AbstractManoptProblem, o::Options, i::Int)
+function (d::DebugCost)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int)
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(o)))
     return nothing
 end
@@ -298,7 +301,7 @@ mutable struct DebugDivider <: DebugAction
     divider::String
     DebugDivider(divider=" | ", io::IO=stdout) = new(io, divider)
 end
-function (d::DebugDivider)(::AbstractManoptProblem, ::Options, i::Int)
+function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     print(d.io, (i >= 0) ? d.divider : "")
     return nothing
 end
@@ -310,7 +313,7 @@ print a certain fields entry of type {T} during the iterates, where a `format` c
 specified how to print the entry.
 
 # Addidtional Fields
-* `field` – Symbol the entry can be accessed with within [`Options`](@ref)
+* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
 # Constructor
 
@@ -327,7 +330,7 @@ mutable struct DebugEntry <: DebugAction
 end
 @deprecate DebugEntry(f, prefix="$f:", io=stdout) DebugEntry(f; prefix=prefix, io=io)
 
-function (d::DebugEntry)(::AbstractManoptProblem, o::Options, i)
+function (d::DebugEntry)(::AbstractManoptProblem, o::AbstractManoptSolverState, i)
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(o, d.field))
     return nothing
 end
@@ -341,9 +344,9 @@ print a certain entries change during iterates
 * `print` – (`print`) function to print the result
 * `prefix` – (`"Change of :Iterate"`) prefix to the print out
 * `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
-* `field` – Symbol the field can be accessed with within [`Options`](@ref)
+* `field` – Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage` – a [`StoreOptionsAction`](@ref) to store the previous value of `:f`
+* `storage` – a [`StoreStateAction`](@ref) to store the previous value of `:f`
 
 # Constructors
 
@@ -353,7 +356,7 @@ print a certain entries change during iterates
 
 - `io` (`stdout`) an `IOStream`
 - `prefix` (`"Change of $f"`)
-- `storage` (`StoreOptionsAction((f,))`) a [`StoreOptionsAction`](@ref)
+- `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
 - `initial_value` an initial value for the change of `o.field`.
 - `format` – (`"$prefix %e"`) format to print the change
 
@@ -363,11 +366,11 @@ mutable struct DebugEntryChange <: DebugAction
     field::Symbol
     format::String
     io::IO
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     function DebugEntryChange(
         f::Symbol,
         d;
-        storage::StoreOptionsAction=StoreOptionsAction((f,)),
+        storage::StoreStateAction=StoreStateAction((f,)),
         prefix::String="Change of $f:",
         format::String="$prefix%s",
         io::IO=stdout,
@@ -380,7 +383,9 @@ mutable struct DebugEntryChange <: DebugAction
     end
 end
 
-function (d::DebugEntryChange)(p::AbstractManoptProblem, o::Options, i::Int)
+function (d::DebugEntryChange)(
+    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+)
     if i == 0
         # on init if field not present -> generate
         !has_storage(d.storage, d.field) && d.storage(p, o, i)
@@ -403,7 +408,9 @@ mutable struct DebugStoppingCriterion <: DebugAction
     io::IO
     DebugStoppingCriterion(io::IO=stdout) = new(io)
 end
-function (d::DebugStoppingCriterion)(::AbstractManoptProblem, o::Options, i::Int)
+function (d::DebugStoppingCriterion)(
+    ::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+)
     print(d.io, (i >= 0 || i == typemin(Int)) ? get_reason(o) : "")
     return nothing
 end
@@ -442,7 +449,7 @@ mutable struct DebugTime <: DebugAction
         return new(io, format, Nanosecond(start ? time_ns() : 0), time_accuracy, mode)
     end
 end
-function (d::DebugTime)(::AbstractManoptProblem, ::Options, i)
+function (d::DebugTime)(::AbstractManoptProblem, ::AbstractManoptSolverState, i)
     if i == 0 || d.last_time == Nanosecond(0) # init
         d.last_time = Nanosecond(time_ns())
     else
@@ -504,14 +511,17 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
     tol::Float64
     DebugWarnIfCostIncreases(warn::Symbol=:Once; tol=1e-13) = new(warn, Float64(Inf), tol)
 end
-function (d::DebugWarnIfCostIncreases)(p::AbstractManoptProblem, o::Options, i::Int)
+function (d::DebugWarnIfCostIncreases)(
+    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+)
     if d.status !== :No
         cost = get_cost(p, get_iterate(o))
         if cost > d.old_cost + d.tol
             # Default case in Gradient Descent, include a tipp
             @warn """The cost increased.
             At iteration #$i the cost increased from $(d.old_cost) to $(cost)."""
-            if o isa GradientDescentOptions && o.stepsize isa ConstantStepsize
+            if o isa GradientDescentAbstractManoptSolverState &&
+                o.stepsize isa ConstantStepsize
                 @warn """You seem to be running a `gradient_decent` with the default `ConstantStepsize`.
                 For ease of use, this is set as the default, but might not converge.
                 Maybe consider to use `ArmijoLinesearch` (if applicable) or use
@@ -531,7 +541,7 @@ end
 @doc raw"""
     DebugWarnIfCostNotFinite <: DebugAction
 
-A debug to see when a field (value or array within the Options is or contains values
+A debug to see when a field (value or array within the AbstractManoptSolverState is or contains values
 that are not finite, for example `Inf` or `Nan`.
 
 # Constructor
@@ -547,7 +557,9 @@ mutable struct DebugWarnIfCostNotFinite <: DebugAction
     status::Symbol
     DebugWarnIfCostNotFinite(warn::Symbol=:Once) = new(warn)
 end
-function (d::DebugWarnIfCostNotFinite)(p::AbstractManoptProblem, o::Options, i::Int)
+function (d::DebugWarnIfCostNotFinite)(
+    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+)
     if d.status !== :No
         cost = get_cost(p, get_iterate(o))
         if !isfinite(cost)
@@ -586,7 +598,9 @@ mutable struct DebugWarnIfFieldNotFinite <: DebugAction
     field::Symbol
     DebugWarnIfFieldNotFinite(field::Symbol, warn::Symbol=:Once) = new(warn, field)
 end
-function (d::DebugWarnIfFieldNotFinite)(::AbstractManoptProblem, o::Options, i::Int)
+function (d::DebugWarnIfFieldNotFinite)(
+    ::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+)
     if d.status !== :No
         v = getproperty(o, d.field)
         if !all(isfinite.(v))

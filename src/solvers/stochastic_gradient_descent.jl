@@ -67,7 +67,7 @@ function stochastic_gradient_descent!(
     kwargs...,
 ) where {TDF,TF}
     p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
-    o = StochasticGradientDescentOptions(
+    o = StochasticGradientDescentState(
         M,
         x,
         zero_vector(M, x);
@@ -81,16 +81,12 @@ function stochastic_gradient_descent!(
     o = decorate_options(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-function initialize_solver!(
-    ::StochasticGradientProblem, o::StochasticGradientDescentOptions
-)
+function initialize_solver!(::StochasticGradientProblem, o::StochasticGradientDescentState)
     o.k = 1
     (o.order_type == :FixedRandom) && (shuffle!(o.order))
     return o
 end
-function step_solver!(
-    p::StochasticGradientProblem, o::StochasticGradientDescentOptions, iter
-)
+function step_solver!(p::StochasticGradientProblem, o::StochasticGradientDescentState, iter)
     s, o.gradient = o.direction(p, o, iter)
     retract!(p.M, o.x, o.x, -s * o.gradient)
     o.k = ((o.k) % length(o.order)) + 1

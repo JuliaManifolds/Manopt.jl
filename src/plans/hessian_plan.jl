@@ -17,7 +17,7 @@ specify a problem for hessian based algorithms.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProblem{T}
+struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractManoptProblem
     M::mT
     cost::C
     gradient!!::G
@@ -36,15 +36,15 @@ struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractGradientProbl
 end
 
 @doc raw"""
-    AbstractHessianOptions <: Options
+    AbstractHessianOSolverptions <: AbstractManoptSolverState
 
-An [`Options`](@ref) type to represent algorithms that employ the Hessian.
+An [`AbstractManoptSolverState`](@ref) type to represent algorithms that employ the Hessian.
 These options are assumed to have a field (`gradient`) to store the current gradient ``\operatorname{grad}f(x)``
 """
-abstract type AbstractHessianOptions <: AbstractGradientOptions end
+abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 
 @doc raw"""
-    TruncatedConjugateGradientOptions <: AbstractHessianOptions
+    TruncatedConjugateGradientState <: AbstractHessianSolverState
 
 describe the Steihaug-Toint truncated conjugate-gradient method, with
 
@@ -70,7 +70,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    TruncatedConjugateGradientOptions(M, p, x, η;
+    TruncatedConjugateGradientState(M, p, x, η;
         trust_region_radius=injectivity_radius(M)/4,
         randomize=false,
         θ=1.0,
@@ -83,8 +83,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriterion,Proj} <:
-               AbstractHessianOptions
+mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion,Proj} <:
+               AbstractHessianSolverState
     x::P
     stop::SC
     gradient::T
@@ -106,7 +106,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     randomize::Bool
     project!::Proj
     initialResidualNorm::Float64
-    function TruncatedConjugateGradientOptions(
+    function TruncatedConjugateGradientState(
         p::HessianProblem,
         x::P,
         η::T,
@@ -125,7 +125,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
             StopWhenModelIncreased(),
         ),
     ) where {P,T,R<:Real,Proj}
-        return TruncatedConjugateGradientOptions(
+        return TruncatedConjugateGradientState(
             p.M,
             x,
             η;
@@ -137,7 +137,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
             stopping_criterion=stop,
         )
     end
-    function TruncatedConjugateGradientOptions(
+    function TruncatedConjugateGradientState(
         M::AbstractManifold,
         x::P,
         η::T;
@@ -169,7 +169,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
 end
 
 @doc raw"""
-    TrustRegionsOptions <: AbstractHessianOptions
+    TrustRegionsState <: AbstractHessianSolverState
 
 describe the trust-regions solver, with
 
@@ -207,7 +207,7 @@ where all but `x` are keyword arguments in the constructor
 
 # Constructor
 
-    TrustRegionsOptions(M, x)
+    TrustRegionsState(M, x)
 
 construct a trust-regions Option with all other fields from above being
 keyword arguments
@@ -215,9 +215,9 @@ keyword arguments
 # See also
 [`trust_regions`](@ref)
 """
-mutable struct TrustRegionsOptions{
+mutable struct TrustRegionsState{
     P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj
-} <: AbstractHessianOptions
+} <: AbstractHessianSolverState
     x::P
     gradient::T
     stop::SC
@@ -229,7 +229,7 @@ mutable struct TrustRegionsOptions{
     ρ_prime::R
     ρ_regularization::R
 
-    tcg_options::TruncatedConjugateGradientOptions{P,T,R}
+    tcg_options::TruncatedConjugateGradientState{P,T,R}
 
     x_proposal::P
     f_proposal::R
@@ -240,7 +240,7 @@ mutable struct TrustRegionsOptions{
     η_Cauchy::T
     Hη_Cauchy::T
     τ::R
-    function TrustRegionsOptions{P,T,SC,RTR,R,Proj}(
+    function TrustRegionsState{P,T,SC,RTR,R,Proj}(
         x::P,
         grad::T,
         trust_region_radius::R,
@@ -266,29 +266,7 @@ mutable struct TrustRegionsOptions{
         return o
     end
 end
-@deprecate TrustRegionsOptions(
-    x,
-    grad,
-    trust_region_radius,
-    max_trust_region_radius,
-    ρ_prime,
-    ρ_regularization,
-    randomize,
-    stopping_criterion;
-    retraction_method=ExponentialRetraction(),
-    (project!)=copyto!,
-) TrustRegionsOptions(
-    DefaultManifold(2),
-    x;
-    gradient=grad,
-    ρ_prime=ρ_prime,
-    ρ_regularization=ρ_regularization,
-    randomize=randomize,
-    stopping_criterion=stopping_criterion,
-    retraction_method=retraction_method,
-    (project!)=project!,
-)
-function TrustRegionsOptions(
+function TrustRegionsState(
     M::TM,
     x::P;
     gradient::T=zero_vector(M, x),
@@ -309,7 +287,7 @@ function TrustRegionsOptions(
     RTR<:AbstractRetractionMethod,
     Proj,
 }
-    return TrustRegionsOptions{P,T,SC,RTR,R,Proj}(
+    return TrustRegionsState{P,T,SC,RTR,R,Proj}(
         x,
         gradient,
         trust_region_radius,
@@ -469,7 +447,7 @@ mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
 end
 function (c::StopIfResidualIsReducedByFactor)(
     p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
+) where {P<:HessianProblem,O<:TruncatedConjugateGradientState}
     if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * c.κ && i > 0
         c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
         return true
@@ -510,7 +488,7 @@ mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
 end
 function (c::StopIfResidualIsReducedByPower)(
     p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
+) where {P<:HessianProblem,O<:TruncatedConjugateGradientState}
     if norm(p.M, o.x, o.residual) <= o.initialResidualNorm^(1 + c.θ) && i > 0
         c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
         return true
@@ -547,7 +525,7 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 
 initialize the StopWhenTrustRegionIsExceeded functor to indicate to stop after
 the norm of the next iterate is greater than the trust-region radius using the
-[`StoreOptionsAction`](@ref) `a`, which is initialized to store
+[`StoreStateAction`](@ref) `a`, which is initialized to store
 `:η, :δ, :residual` by default.
 
 # See also
@@ -558,7 +536,7 @@ mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
 end
 StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
 function (c::StopWhenTrustRegionIsExceeded)(
-    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+    ::HessianProblem, o::TruncatedConjugateGradientState, i::Int
 )
     if o.ηPη >= o.trust_region_radius^2 && i >= 0
         c.reason = "Trust-region radius violation (‖η‖² = $(o.ηPη)) >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
@@ -591,7 +569,7 @@ mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
 end
 StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("")
 function (c::StopWhenCurvatureIsNegative)(
-    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+    ::HessianProblem, o::TruncatedConjugateGradientState, i::Int
 )
     if o.δHδ <= 0 && i > 0
         c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(o.δHδ))) <= 0).\n"
@@ -621,7 +599,7 @@ mutable struct StopWhenModelIncreased <: StoppingCriterion
 end
 StopWhenModelIncreased() = StopWhenModelIncreased("")
 function (c::StopWhenModelIncreased)(
-    ::HessianProblem, o::TruncatedConjugateGradientOptions, i::Int
+    ::HessianProblem, o::TruncatedConjugateGradientState, i::Int
 )
     if i > 0 && (o.new_model_value > o.model_value)
         c.reason = "Model value increased from $(o.model_value) to $(o.new_model_value).\n"
