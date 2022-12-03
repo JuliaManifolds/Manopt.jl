@@ -322,31 +322,6 @@ mutable struct ChambollePockState{
     vector_transport_method::VTM
     vector_transport_method_dual::VTM_Dual
 
-    @deprecate ChambollePockState(
-        m,
-        n,
-        x,
-        ξ,
-        primal_stepsize::Float64=1 / sqrt(8),
-        dual_stepsize::Float64=1 / sqrt(8);
-        retraction_method=ExponentialRetraction(),
-        inverse_retraction_method=LogarithmicInverseRetraction(),
-        vector_transport_method=ParallelTransport(),
-        kwargs...,
-    ) ChambollePockState(
-        DefaultManifold(2),
-        m,
-        n,
-        x,
-        ξ,
-        primal_stepsize,
-        dual_stepsize;
-        retraction_method=retraction_method,
-        inverse_retraction_method=inverse_retraction_method,
-        vector_transport_method=vector_transport_method,
-        kwargs...,
-    )
-
     function ChambollePockState(
         M::AbstractManifold,
         m::P,

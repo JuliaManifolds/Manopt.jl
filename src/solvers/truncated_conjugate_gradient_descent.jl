@@ -73,9 +73,6 @@ function truncated_conjugate_gradient_descent(
     x_res = copy(M, x)
     return truncated_conjugate_gradient_descent!(M, F, gradF, x_res, η, H; kwargs...)
 end
-@deprecate truncated_conjugate_gradient_descent(M, F, gradF, x, η, H, r; kwargs...) truncated_conjugate_gradient_descent(
-    M, F, gradF, x, η, H; trust_region_radius=r, kwargs...
-)
 @doc raw"""
     truncated_conjugate_gradient_descent!(M, F, gradF, x, η, HessF, trust_region_radius; kwargs...)
 
@@ -130,9 +127,6 @@ function truncated_conjugate_gradient_descent!(
     o = decorate_options(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-@deprecate truncated_conjugate_gradient_descent!(M, F, gradF, x, η, H, r; kwargs...) truncated_conjugate_gradient_descent!(
-    M, F, gradF, x, η, H; trust_region_radius=r, kwargs...
-)
 
 function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientState)
     (o.randomize) || zero_vector!(p.M, o.η, o.x)

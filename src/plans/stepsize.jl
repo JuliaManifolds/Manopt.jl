@@ -20,7 +20,6 @@ radius, unless the radius is infinity, then the default step size is `1`.
 mutable struct ConstantStepsize{T} <: Stepsize
     length::T
 end
-@deprecate ConstantStepsize(s::Real) ConstantStepsize(; stepsize=s)
 function ConstantStepsize(
     M::AbstractManifold=DefaultManifold(2);
     stepsize=isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 2,
@@ -147,20 +146,6 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     last_stepsize::Float64
     linesearch_stopsize::Float64
     initial_guess::F
-    @deprecate ArmijoLinesearch(
-        s::Float64=1.0,
-        r::AbstractRetractionMethod=ExponentialRetraction(),
-        contraction_factor::Float64=0.95,
-        sufficient_decrease::Float64=0.1,
-        linesearch_stopsize::Float64=0.0,
-    ) ArmijoLinesearch(
-        DefaultManifold(2);
-        initial_stepsize=s,
-        retraction_method=r,
-        contraction_factor=contraction_factor,
-        sufficient_decrease=sufficient_decrease,
-        linesearch_stopsize=linesearch_stopsize,
-    )
     function ArmijoLinesearch(
         M;
         initial_stepsize::Float64=1.0,
@@ -418,32 +403,6 @@ mutable struct NonmonotoneLinesearch{
             linesearch_stopsize,
         )
     end
-    @deprecate NonmonotoneLinesearch(
-        initial_stepsize::Float64,
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-        stepsize_reduction::Float64=0.5,
-        sufficient_decrease::Float64=1e-4,
-        memory_size::Int=10,
-        min_stepsize::Float64=1e-3,
-        max_stepsize::Float64=1e3,
-        strategy::Symbol=:direct,
-        storage::StoreStateAction=StoreStateAction((:Iterate, :gradient)),
-        linesearch_stopsize::Float64=0.0,
-    ) NonmonotoneLinesearch(
-        DefaultManifold(3);
-        initial_stepsize=initial_stepsize,
-        retraction_method=retraction_method,
-        vector_transport_method=vector_transport_method,
-        stepsize_reduction=stepsize_reduction,
-        sufficient_decrease=sufficient_decrease,
-        memory_size=memory_size,
-        min_stepsize=min_stepsize,
-        max_stepsize=max_stepsize,
-        strategy=strategy,
-        storage=storage,
-        linesearch_stopsize=linesearch_stopsize,
-    )
 end
 function (a::NonmonotoneLinesearch)(
     p::AbstractManoptProblem,
@@ -588,19 +547,6 @@ mutable struct WolfePowellLinesearch{
     last_stepsize::Float64
     linesearch_stopsize::Float64
 
-    @deprecate WolfePowellLinesearch(
-        retr::AbstractRetractionMethod=ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999,
-    ) WolfePowellLinesearch(
-        DefaultManifold(3),
-        c1,
-        c2,
-        retraction_method=retr,
-        vector_transport_method=vtr,
-        linesearch_stopsize=1e-12,
-    )
     function WolfePowellLinesearch(
         M::AbstractManifold,
         c1::Float64=10^(-4),
@@ -737,19 +683,6 @@ mutable struct WolfePowellBinaryLinesearch{
     last_stepsize::Float64
     linesearch_stopsize::Float64
 
-    @deprecate WolfePowellBinaryLinesearch(
-        retr::AbstractRetractionMethod=ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999,
-    ) WolfePowellBinaryLinesearch(
-        DefaultManifold(3),
-        c1,
-        c2,
-        retraction_method=retr,
-        vector_transport_method=vtr,
-        linesearch_stopsize=1e-9,
-    )
     function WolfePowellBinaryLinesearch(
         M::AbstractManifold,
         c1::Float64=10^(-4),

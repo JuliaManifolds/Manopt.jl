@@ -175,37 +175,6 @@ mutable struct GradientDescentState{
         return o
     end
 end
-@deprecate GradientDescentState(
-    x;
-    stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    direction::DirectionUpdateRule=IdentityUpdateRule(),
-) GradientDescentState(
-    DefaultManifold(2),
-    x;
-    initial_vector=deepcopy(x),
-    stopping_criterion=stopping_criterion,
-    stepsize=stepsize,
-    retraction_method=retraction_method,
-    direction=direction,
-)
-@deprecate GradientDescentState(
-    x,
-    X;
-    stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(),
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    direction::DirectionUpdateRule=IdentityUpdateRule(),
-) GradientDescentState(
-    DefaultManifold(2),
-    x;
-    initial_vector=X,
-    stopping_criterion=stopping_criterion,
-    stepsize=stepsize,
-    retraction_method=retraction_method,
-    direction=direction,
-)
 function GradientDescentState(
     M::AbstractManifold,
     x::P;

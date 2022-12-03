@@ -375,24 +375,6 @@ function QuasiNewtonState(
         vector_transport_method,
     )
 end
-@deprecate QuasiNewtonState(
-    x,
-    g,
-    d,
-    st,
-    s;
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-) QuasiNewtonState(
-    DefaultManifold(2),
-    x;
-    initial_vector=g,
-    direction_update=d,
-    stopping_criterion=st,
-    stepsize=s,
-    retraction_method=retraction_method,
-    vector_transport_method=vector_transport_method,
-)
 
 @doc raw"""
     QuasiNewtonMatrixDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate

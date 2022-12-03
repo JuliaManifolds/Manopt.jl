@@ -279,9 +279,6 @@ mutable struct DebugCost <: DebugAction
         return new(io, format)
     end
 end
-@deprecate DebugCost(pre::String) DebugCost(; format="$pre %f")
-@deprecate DebugCost(pre::String, io::IO) DebugCost(; format="$pre %f", io=op)
-@deprecate DebugCost(long::Bool, io::IO) DebugCost(; long=long, io=io)
 function (d::DebugCost)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int)
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(o)))
     return nothing
@@ -328,8 +325,6 @@ mutable struct DebugEntry <: DebugAction
         return new(io, format, f)
     end
 end
-@deprecate DebugEntry(f, prefix="$f:", io=stdout) DebugEntry(f; prefix=prefix, io=io)
-
 function (d::DebugEntry)(::AbstractManoptProblem, o::AbstractManoptSolverState, i)
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(o, d.field))
     return nothing

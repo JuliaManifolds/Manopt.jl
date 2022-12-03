@@ -51,30 +51,7 @@ mutable struct ParticleSwarmState{
     retraction_method::TRetraction
     inverse_retraction_method::TInvRetraction
     vector_transport_method::TVTM
-    @deprecate ParticleSwarmState(
-        x0::AbstractVector,
-        velocity::AbstractVector,
-        inertia=0.65,
-        social_weight=1.4,
-        cognitive_weight=1.4,
-        stopping_criterion::StoppingCriterion=StopWhenAny(
-            StopAfterIteration(500), StopWhenChangeLess(10.0^(-4))
-        ),
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        inverse_retraction_method::AbstractInverseRetractionMethod=LogarithmicInverseRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-    ) ParticleSwarmState(
-        DefaultManifold(2),
-        x0,
-        velocity;
-        inertia=inertia,
-        social_weight=social_weight,
-        cognitive_weight=cognitive_weight,
-        stopping_criterion=stopping_criterion,
-        retraction_method=retraction_method,
-        inverse_retraction_method=inverse_retraction_method,
-        vector_transport_method=vector_transport_method,
-    )
+
     function ParticleSwarmState(
         M::AbstractManifold,
         x0::AbstractVector,

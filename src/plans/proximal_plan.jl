@@ -119,11 +119,6 @@ mutable struct CyclicProximalPointState{TX,TStop<:StoppingCriterion,Tλ} <:
     order_type::Symbol
     order::AbstractVector{Int}
 end
-@deprecate CyclicProximalPointState(
-    x, s::StoppingCriterion, λ=(iter) -> 1.0 / iter, o::Symbol=:LinearOrder
-) CyclicProximalPointState(
-    DefaultManifold(2), x; stopping_criterion=s, λ=λ, evaluation_order=o
-)
 
 function CyclicProximalPointState(
     ::AbstractManifold,
@@ -196,16 +191,6 @@ mutable struct DouglasRachfordState{TX,Tλ,Tα,TR,S} <: AbstractManoptSolverStat
             x, deepcopy(x), deepcopy(x), deepcopy(x), λ, α, R, stopping_criterion, parallel
         )
     end
-    @deprecate DouglasRachfordState(
-        x,
-        λ=(iter) -> 1.0,
-        α=(iter) -> 0.9,
-        R=Manopt.reflect,
-        stop::StoppingCriterion=StopAfterIteration(300),
-        parallel=false,
-    ) DouglasRachfordState(
-        DefaultManifold(2), x; λ=λ, α=α, R=R, stopping_criterion=stop, parallel=parallel
-    )
 end
 get_iterate(O::DouglasRachfordState) = O.x
 function set_iterate!(O::DouglasRachfordState, p)
