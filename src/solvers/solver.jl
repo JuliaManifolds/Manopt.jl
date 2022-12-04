@@ -21,7 +21,7 @@ one is used to activate certain decorators.
 [`DebugSolverState`](@ref), [`RecordSolverState`](@ref), [`ReturnSolverState`](@ref)
 """
 function decorate_state(
-    o::O;
+    s::O;
     debug::Union{
         Missing, # none
         DebugAction, # single one for :All
@@ -39,7 +39,7 @@ function decorate_state(
     }=missing,
     return_state=false,
 ) where {O<:AbstractManoptSolverState}
-    o = ismissing(debug) ? o : DebugSolverState(o, debug)
+    o = ismissing(debug) ? s : DebugSolverState(s, debug)
     o = ismissing(record) ? o : RecordSolverState(o, record)
     o = (return_state) ? ReturnSolverState(o) : o
     return o

@@ -176,51 +176,51 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(::ConstrainedProblem, o::AugmentedLagrangianMethodState)
-    o.penalty = Inf
-    return o
+function initialize_solver!(::ConstrainedProblem, s::AugmentedLagrangianMethodState)
+    s.penalty = Inf
+    return s
 end
-function step_solver!(p::ConstrainedProblem, o::AugmentedLagrangianMethodState, iter)
+function step_solver!(p::ConstrainedProblem, s::AugmentedLagrangianMethodState, iter)
     # use subsolver to minimize the augmented Lagrangian
-    o.sub_problem.cost.ρ = o.ρ
-    o.sub_problem.cost.μ = o.μ
-    o.sub_problem.cost.λ = o.λ
-    o.sub_problem.gradient!!.ρ = o.ρ
-    o.sub_problem.gradient!!.μ = o.μ
-    o.sub_problem.gradient!!.λ = o.λ
-    set_iterate!(o.sub_options, copy(p.M, o.x))
+    s.sub_problem.cost.ρ = s.ρ
+    s.sub_problem.cost.μ = s.μ
+    s.sub_problem.cost.λ = s.λ
+    s.sub_problem.gradient!!.ρ = s.ρ
+    s.sub_problem.gradient!!.μ = s.μ
+    s.sub_problem.gradient!!.λ = s.λ
+    set_iterate!(s.sub_options, copy(p.M, s.x))
 
-    update_stopping_criterion!(o, :MinIterateChange, o.ϵ)
+    update_stopping_criterion!(s, :MinIterateChange, s.ϵ)
 
-    o.x = get_solver_result(solve!(o.sub_problem, o.sub_options))
+    s.x = get_solver_result(solve!(s.sub_problem, s.sub_options))
 
     # update multipliers
-    cost_ineq = get_inequality_constraints(p, o.x)
+    cost_ineq = get_inequality_constraints(p, s.x)
     n_ineq_constraint = size(cost_ineq, 1)
-    o.μ = convert(
+    s.μ = convert(
         Vector{Float64},
         min.(
-            ones(n_ineq_constraint) .* o.μ_max,
-            max.(o.μ + o.ρ .* cost_ineq, zeros(n_ineq_constraint)),
+            ones(n_ineq_constraint) .* s.μ_max,
+            max.(s.μ + s.ρ .* cost_ineq, zeros(n_ineq_constraint)),
         ),
     )
-    cost_eq = get_equality_constraints(p, o.x)
+    cost_eq = get_equality_constraints(p, s.x)
     n_eq_constraint = size(cost_eq, 1)
-    o.λ = convert(
+    s.λ = convert(
         Vector{Float64},
         min.(
-            ones(n_eq_constraint) .* o.λ_max,
-            max.(ones(n_eq_constraint) .* o.λ_min, o.λ + o.ρ .* cost_eq),
+            ones(n_eq_constraint) .* s.λ_max,
+            max.(ones(n_eq_constraint) .* s.λ_min, s.λ + s.ρ .* cost_eq),
         ),
     )
     # get new evaluation of penalty
-    penalty = maximum([abs.(max.(-o.μ ./ o.ρ, cost_ineq))..., abs.(cost_eq)...]; init=0)
+    penalty = maximum([abs.(max.(-s.μ ./ s.ρ, cost_ineq))..., abs.(cost_eq)...]; init=0)
     # update ρ if necessary
-    (penalty > o.τ * o.penalty) && (o.ρ = o.ρ / o.θ_ρ)
-    o.penalty = penalty
+    (penalty > s.τ * s.penalty) && (s.ρ = s.ρ / s.θ_ρ)
+    s.penalty = penalty
 
     # update the tolerance ϵ
-    o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
-    return o
+    s.ϵ = max(s.ϵ_min, s.ϵ * s.θ_ϵ)
+    return s
 end
-get_solver_result(o::AugmentedLagrangianMethodState) = o.x
+get_solver_result(s::AugmentedLagrangianMethodState) = s.x

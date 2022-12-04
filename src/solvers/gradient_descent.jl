@@ -85,12 +85,12 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(p::AbstractManoptProblem, o::GradientDescentState)
-    o.gradient = get_gradient(p, o.x)
-    return o
+function initialize_solver!(p::AbstractManoptProblem, s::GradientDescentState)
+    s.gradient = get_gradient(p, s.x)
+    return s
 end
-function step_solver!(p::AbstractManoptProblem, o::GradientDescentState, iter)
-    s, o.gradient = o.direction(p, o, iter)
-    retract!(p.M, o.x, o.x, -s * o.gradient, o.retraction_method)
-    return o
+function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, iter)
+    step, s.gradient = s.direction(p, s, iter)
+    retract!(p.M, s.x, s.x, -step * s.gradient, s.retraction_method)
+    return s
 end

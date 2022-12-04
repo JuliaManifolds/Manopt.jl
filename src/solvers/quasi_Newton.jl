@@ -137,35 +137,35 @@ function quasi_Newton!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(p::AbstractManoptProblem, o::QuasiNewtonState)
-    o.gradient = get_gradient(p, o.x)
-    o.sk = deepcopy(o.gradient)
-    return o.yk = deepcopy(o.gradient)
+function initialize_solver!(p::AbstractManoptProblem, s::QuasiNewtonState)
+    s.gradient = get_gradient(p, s.x)
+    s.sk = deepcopy(s.gradient)
+    return s.yk = deepcopy(s.gradient)
 end
 
-function step_solver!(p::AbstractManoptProblem, o::QuasiNewtonState, iter)
-    o.gradient = get_gradient(p, o.x)
-    η = o.direction_update(p, o)
-    α = o.stepsize(p, o, iter, η)
-    x_old = deepcopy(o.x)
-    retract!(p.M, o.x, o.x, α * η, o.retraction_method)
+function step_solver!(p::AbstractManoptProblem, s::QuasiNewtonState, iter)
+    s.gradient = get_gradient(p, s.x)
+    η = s.direction_update(p, s)
+    α = s.stepsize(p, s, iter, η)
+    x_old = deepcopy(s.x)
+    retract!(p.M, s.x, s.x, α * η, s.retraction_method)
     β = locking_condition_scale(
-        p.M, o.direction_update, x_old, α * η, o.x, o.vector_transport_method
+        p.M, s.direction_update, x_old, α * η, s.x, s.vector_transport_method
     )
     vector_transport_to!(
-        p.M, o.sk, x_old, α * η, o.x, get_update_vector_transport(o.direction_update)
+        p.M, s.sk, x_old, α * η, s.x, get_update_vector_transport(s.direction_update)
     )
     vector_transport_to!(
         p.M,
-        o.gradient,
+        s.gradient,
         x_old,
-        o.gradient,
-        o.x,
-        get_update_vector_transport(o.direction_update),
+        s.gradient,
+        s.x,
+        get_update_vector_transport(s.direction_update),
     )
-    o.yk = get_gradient(p, o.x) / β - o.gradient
-    update_hessian!(o.direction_update, p, o, x_old, iter)
-    return o
+    s.yk = get_gradient(p, s.x) / β - s.gradient
+    update_hessian!(s.direction_update, p, s, x_old, iter)
+    return s
 end
 
 function locking_condition_scale(

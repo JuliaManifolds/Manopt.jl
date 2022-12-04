@@ -101,17 +101,17 @@ function conjugate_gradient_descent!(
     o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-function initialize_solver!(p::AbstractManoptProblem, o::ConjugateGradientDescentState)
-    o.gradient = get_gradient(p, o.x)
-    o.δ = -o.gradient
-    return o.β = 0.0
+function initialize_solver!(p::AbstractManoptProblem, s::ConjugateGradientDescentState)
+    s.gradient = get_gradient(p, s.x)
+    s.δ = -s.gradient
+    return s.β = 0.0
 end
-function step_solver!(p::AbstractManoptProblem, o::ConjugateGradientDescentState, i)
-    xOld = o.x
-    retract!(p.M, o.x, o.x, get_stepsize(p, o, i, o.δ) * o.δ, o.retraction_method)
-    get_gradient!(p, o.gradient, o.x)
-    o.β = o.coefficient(p, o, i)
-    vector_transport_to!(p.M, o.δ, xOld, o.δ, o.x, o.vector_transport_method)
-    o.δ .= -o.gradient .+ o.β * o.δ
-    return o.δ
+function step_solver!(p::AbstractManoptProblem, s::ConjugateGradientDescentState, i)
+    xOld = s.x
+    retract!(p.M, s.x, s.x, get_stepsize(p, s, i, s.δ) * s.δ, s.retraction_method)
+    get_gradient!(p, s.gradient, s.x)
+    s.β = s.coefficient(p, s, i)
+    vector_transport_to!(p.M, s.δ, xOld, s.δ, s.x, s.vector_transport_method)
+    s.δ .= -s.gradient .+ s.β * s.δ
+    return s.δ
 end

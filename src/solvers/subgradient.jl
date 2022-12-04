@@ -76,16 +76,16 @@ function subgradient_method!(
     o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodState)
-    o.x_optimal = o.x
-    o.∂ = zero_vector(p.M, o.x)
-    return o
+function initialize_solver!(p::SubGradientProblem, s::SubGradientMethodState)
+    s.x_optimal = s.x
+    s.∂ = zero_vector(p.M, s.x)
+    return s
 end
-function step_solver!(p::SubGradientProblem, o::SubGradientMethodState, iter)
-    get_subgradient!(p, o.∂, o.x)
-    s = get_stepsize(p, o, iter)
-    retract!(p.M, o.x, o.x, -s * o.∂, o.retraction_method)
-    (get_cost(p, o.x) < get_cost(p, o.x_optimal)) && (o.x_optimal = o.x)
-    return o
+function step_solver!(p::SubGradientProblem, s::SubGradientMethodState, iter)
+    get_subgradient!(p, s.∂, s.x)
+    step = get_stepsize(p, s, iter)
+    retract!(p.M, s.x, s.x, -step * s.∂, s.retraction_method)
+    (get_cost(p, s.x) < get_cost(p, s.x_optimal)) && (s.x_optimal = s.x)
+    return s
 end
-get_solver_result(o::SubGradientMethodState) = o.x_optimal
+get_solver_result(s::SubGradientMethodState) = s.x_optimal

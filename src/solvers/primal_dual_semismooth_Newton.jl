@@ -163,29 +163,29 @@ function initialize_solver!(
 ) end
 
 function step_solver!(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonState, iter
+    p::PrimalDualSemismoothNewtonProblem, s::PrimalDualSemismoothNewtonState, iter
 )
     # do step
-    primal_dual_step!(p, o)
-    o.m = ismissing(o.update_primal_base) ? o.m : o.update_primal_base(p, o, iter)
-    if !ismissing(o.update_dual_base)
-        n_old = deepcopy(o.n)
-        o.n = o.update_dual_base(p, o, iter)
-        o.ξ = vector_transport_to(p.N, n_old, o.ξ, o.n, o.vector_transport_method)
+    primal_dual_step!(p, s)
+    s.m = ismissing(s.update_primal_base) ? s.m : s.update_primal_base(p, s, iter)
+    if !ismissing(s.update_dual_base)
+        n_old = deepcopy(s.n)
+        s.n = s.update_dual_base(p, s, iter)
+        s.ξ = vector_transport_to(p.N, n_old, s.ξ, s.n, s.vector_transport_method)
     end
-    return o
+    return s
 end
 
 function primal_dual_step!(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonState
+    p::PrimalDualSemismoothNewtonProblem, s::PrimalDualSemismoothNewtonState
 )
 
     # construct X
-    X = construct_primal_dual_residual_vector(p, o)
+    X = construct_primal_dual_residual_vector(p, s)
 
     # construct matrix
-    ∂X = construct_primal_dual_residual_covariant_derivative_matrix(p, o)
-    ∂X += o.reg_param * sparse(I, size(∂X))  # prevent singular matrix at solution
+    ∂X = construct_primal_dual_residual_covariant_derivative_matrix(p, s)
+    ∂X += s.reg_param * sparse(I, size(∂X))  # prevent singular matrix at solution
 
     # solve matrix -> find coordinates
     d_coords = ∂X \ -X
@@ -195,12 +195,12 @@ function primal_dual_step!(
     dξ_coords = d_coords[(dims + 1):end]
 
     # compute step
-    dx = get_vector(p.M, o.x, dx_coords, DefaultOrthonormalBasis())
-    dξ = get_vector(p.N, o.n, dξ_coords, DefaultOrthonormalBasis())
+    dx = get_vector(p.M, s.x, dx_coords, DefaultOrthonormalBasis())
+    dξ = get_vector(p.N, s.n, dξ_coords, DefaultOrthonormalBasis())
 
     # do step
-    o.x = retract(p.M, o.x, dx, o.retraction_method)
-    return o.ξ = o.ξ + dξ
+    s.x = retract(p.M, s.x, dx, s.retraction_method)
+    return s.ξ = s.ξ + dξ
 end
 
 raw"""
@@ -209,51 +209,51 @@ raw"""
 Constructs the vector representation of $X(p^{(k)}, ξ_{n}^{(k)}) \in \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 """
 function construct_primal_dual_residual_vector(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonState
+    p::PrimalDualSemismoothNewtonProblem, s::PrimalDualSemismoothNewtonState
 )
 
     # Compute primal vector
     x_update = get_primal_prox(
         p,
         # o.x,
-        o.primal_stepsize,
+        s.primal_stepsize,
         retract(
             p.M,
-            o.x,
+            s.x,
             vector_transport_to(
                 p.M,
-                o.m,
-                -o.primal_stepsize * (adjoint_linearized_operator(p, o.m, o.n, o.ξ)),
-                o.x,
-                o.vector_transport_method,
+                s.m,
+                -s.primal_stepsize * (adjoint_linearized_operator(p, s.m, s.n, s.ξ)),
+                s.x,
+                s.vector_transport_method,
             ),
-            o.retraction_method,
+            s.retraction_method,
         ),
     )
 
-    primal_vector = -inverse_retract(p.M, o.x, x_update, o.inverse_retraction_method)
+    primal_vector = -inverse_retract(p.M, s.x, x_update, s.inverse_retraction_method)
 
-    X₁ = get_coordinates(p.M, o.x, primal_vector, DefaultOrthonormalBasis())
+    X₁ = get_coordinates(p.M, s.x, primal_vector, DefaultOrthonormalBasis())
 
     # Compute dual vector
     # (1) compute update direction
     ξ_update = linearized_forward_operator(
-        p, o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method), o.n
+        p, s.m, inverse_retract(p.M, s.m, s.x, s.inverse_retraction_method), s.n
     )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     ξ_update = if ismissing(p.Λ!!)
         ξ_update
     else
         vector_transport_to(
-            p.N, forward_operator(p, o.m), ξ_update, o.n, o.vector_transport_method
+            p.N, forward_operator(p, s.m), ξ_update, s.n, s.vector_transport_method
         )
     end
     # (3) to the dual update
-    ξ_update = get_dual_prox(p, o.n, o.dual_stepsize, o.ξ + o.dual_stepsize * ξ_update)
+    ξ_update = get_dual_prox(p, s.n, s.dual_stepsize, s.ξ + s.dual_stepsize * ξ_update)
 
-    dual_vector = o.ξ - ξ_update
+    dual_vector = s.ξ - ξ_update
 
-    X₂ = get_coordinates(p.N, o.n, dual_vector, DefaultOrthonormalBasis())
+    X₂ = get_coordinates(p.N, s.n, dual_vector, DefaultOrthonormalBasis())
 
     X = [X₁; X₂]
 
@@ -266,38 +266,38 @@ onstruct_primal_dual_residual_covariant_derivative_matrix(p, o)
 Constructs the matrix representation of $V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 """
 function construct_primal_dual_residual_covariant_derivative_matrix(
-    p::PrimalDualSemismoothNewtonProblem, o::PrimalDualSemismoothNewtonState
+    p::PrimalDualSemismoothNewtonProblem, s::PrimalDualSemismoothNewtonState
 )
 
     # construct bases
-    Θ = get_basis(p.M, o.x, DefaultOrthonormalBasis())
-    Ξ = get_basis(p.N, o.n, DefaultOrthonormalBasis())
+    Θ = get_basis(p.M, s.x, DefaultOrthonormalBasis())
+    Ξ = get_basis(p.N, s.n, DefaultOrthonormalBasis())
 
     dims = manifold_dimension(p.M)
     dualdims = manifold_dimension(p.N)
 
     # we assume here that a parallel transport is already in the next operator
-    qξ = -o.primal_stepsize * adjoint_linearized_operator(p, o.m, o.n, o.ξ)
-    qₚ = shortest_geodesic(p.M, o.m, o.x, 1 / 2)
-    qb = retract(p.M, o.m, qξ, o.retraction_method)
-    q₅ = 2 * inverse_retract(p.M, qb, qₚ, o.inverse_retraction_method)
-    q₄ = retract(p.M, qb, q₅, o.retraction_method)
-    q₃ = -inverse_retract(p.M, o.x, q₄, o.inverse_retraction_method)
-    q₂ = retract(p.M, o.x, q₃, o.retraction_method)
-    q₁ = get_primal_prox(p, o.primal_stepsize, q₂)  # TODO hier gebleven met debuggen
+    qξ = -s.primal_stepsize * adjoint_linearized_operator(p, s.m, s.n, s.ξ)
+    qₚ = shortest_geodesic(p.M, s.m, s.x, 1 / 2)
+    qb = retract(p.M, s.m, qξ, s.retraction_method)
+    q₅ = 2 * inverse_retract(p.M, qb, qₚ, s.inverse_retraction_method)
+    q₄ = retract(p.M, qb, q₅, s.retraction_method)
+    q₃ = -inverse_retract(p.M, s.x, q₄, s.inverse_retraction_method)
+    q₂ = retract(p.M, s.x, q₃, s.retraction_method)
+    q₁ = get_primal_prox(p, s.primal_stepsize, q₂)  # TODO hier gebleven met debuggen
 
     # (1) compute update direction
     η₁ = linearized_forward_operator(
-        p, o.m, inverse_retract(p.M, o.m, o.x, o.inverse_retraction_method), o.n
+        p, s.m, inverse_retract(p.M, s.m, s.x, s.inverse_retraction_method), s.n
     )
     # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
     η₁ = if ismissing(p.Λ!!)
         η₁
     else
-        vector_transport_to(p.N, forward_operator(p, o.m), η₁, o.n, o.vector_transport_method)
+        vector_transport_to(p.N, forward_operator(p, s.m), η₁, s.n, s.vector_transport_method)
     end
     # (3) to the dual update
-    η₁ = o.ξ + o.dual_stepsize * η₁
+    η₁ = s.ξ + s.dual_stepsize * η₁
     # construct ∂X₁₁ and ∂X₂₁
     ∂X₁₁ = spzeros(dims, dims)
     ∂X₂₁ = spzeros(dualdims, dims)
@@ -308,41 +308,41 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     for j in 1:Mdims
         eⱼ = zeros(Mdims)
         eⱼ[j] = 1
-        Θⱼ = get_vector(p.M, o.m, eⱼ, Θ)
-        Gⱼ = differential_geodesic_endpoint(p.M, o.m, o.x, 1 / 2, Θⱼ)
+        Θⱼ = get_vector(p.M, s.m, eⱼ, Θ)
+        Gⱼ = differential_geodesic_endpoint(p.M, s.m, s.x, 1 / 2, Θⱼ)
         Fⱼ = 2 * differential_log_argument(p.M, qb, qₚ, Gⱼ)
         Eⱼ = differential_exp_argument(p.M, qb, q₅, Fⱼ)
-        D₂ⱼ = -differential_log_argument(p.M, o.x, q₄, Eⱼ)
-        D₁ⱼ = -differential_log_basepoint(p.M, o.x, q₄, Θⱼ)
+        D₂ⱼ = -differential_log_argument(p.M, s.x, q₄, Eⱼ)
+        D₁ⱼ = -differential_log_basepoint(p.M, s.x, q₄, Θⱼ)
         Dⱼ = D₁ⱼ + D₂ⱼ
-        C₂ⱼ = differential_exp_argument(p.M, o.x, q₃, Dⱼ)
+        C₂ⱼ = differential_exp_argument(p.M, s.x, q₃, Dⱼ)
 
-        C₁ⱼ = differential_exp_basepoint(p.M, o.x, q₃, Θⱼ)
+        C₁ⱼ = differential_exp_basepoint(p.M, s.x, q₃, Θⱼ)
         Cⱼ = C₁ⱼ + C₂ⱼ
-        Bⱼ = get_differential_primal_prox(p, o.primal_stepsize, q₂, Cⱼ)
-        A₂ⱼ = -differential_log_argument(p.M, o.x, q₁, Bⱼ)
-        A₁ⱼ = -differential_log_basepoint(p.M, o.x, q₁, Θⱼ)
+        Bⱼ = get_differential_primal_prox(p, s.primal_stepsize, q₂, Cⱼ)
+        A₂ⱼ = -differential_log_argument(p.M, s.x, q₁, Bⱼ)
+        A₁ⱼ = -differential_log_basepoint(p.M, s.x, q₁, Θⱼ)
         Aⱼ = A₁ⱼ + A₂ⱼ
 
-        ∂X₁₁j = get_coordinates(p.M, o.x, Aⱼ, DefaultOrthonormalBasis())
+        ∂X₁₁j = get_coordinates(p.M, s.x, Aⱼ, DefaultOrthonormalBasis())
         sp_∂X₁₁j = sparsevec(∂X₁₁j)
         dropzeros!(sp_∂X₁₁j)
         ∂X₁₁[:, j] = sp_∂X₁₁j
 
-        Mⱼ = differential_log_argument(p.M, o.m, o.x, Θⱼ)
+        Mⱼ = differential_log_argument(p.M, s.m, s.x, Θⱼ)
         Kⱼ = if ismissing(p.Λ!!)
-            o.dual_stepsize * linearized_forward_operator(p, o.m, Mⱼ, o.n)
+            s.dual_stepsize * linearized_forward_operator(p, s.m, Mⱼ, s.n)
         else
-            o.dual_stepsize * vector_transport_to(
+            s.dual_stepsize * vector_transport_to(
                 p.N,
-                forward_operator(p, o.m),
-                linearized_forward_operator(p, o.m, Mⱼ, o.n),
-                o.n,
-                o.vector_transport_method,
+                forward_operator(p, s.m),
+                linearized_forward_operator(p, s.m, Mⱼ, s.n),
+                s.n,
+                s.vector_transport_method,
             )
         end
-        Jⱼ = get_differential_dual_prox(p, o.n, o.dual_stepsize, η₁, Kⱼ)
-        ∂X₂₁j = get_coordinates(p.N, o.n, -Jⱼ, DefaultOrthonormalBasis())
+        Jⱼ = get_differential_dual_prox(p, s.n, s.dual_stepsize, η₁, Kⱼ)
+        ∂X₂₁j = get_coordinates(p.N, s.n, -Jⱼ, DefaultOrthonormalBasis())
 
         sp_∂X₂₁j = sparsevec(∂X₂₁j)
         dropzeros!(sp_∂X₂₁j)
@@ -357,23 +357,23 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     for j in 1:Ndims
         eⱼ = zeros(Ndims)
         eⱼ[j] = 1
-        Ξⱼ = get_vector(p.N, o.n, eⱼ, Ξ)
-        hⱼ = -o.primal_stepsize * adjoint_linearized_operator(p, o.m, o.n, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
-        Hⱼ = vector_transport_to(p.M, o.m, hⱼ, o.x)
-        C₂ⱼ = differential_exp_argument(p.M, o.x, q₃, Hⱼ)
-        Bⱼ = get_differential_primal_prox(p, o.primal_stepsize, q₂, C₂ⱼ)
-        A₂ⱼ = -differential_log_argument(p.M, o.x, q₁, Bⱼ)
+        Ξⱼ = get_vector(p.N, s.n, eⱼ, Ξ)
+        hⱼ = -s.primal_stepsize * adjoint_linearized_operator(p, s.m, s.n, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
+        Hⱼ = vector_transport_to(p.M, s.m, hⱼ, s.x)
+        C₂ⱼ = differential_exp_argument(p.M, s.x, q₃, Hⱼ)
+        Bⱼ = get_differential_primal_prox(p, s.primal_stepsize, q₂, C₂ⱼ)
+        A₂ⱼ = -differential_log_argument(p.M, s.x, q₁, Bⱼ)
 
-        ∂X₁₂j = get_coordinates(p.M, o.m, A₂ⱼ, DefaultOrthonormalBasis())
+        ∂X₁₂j = get_coordinates(p.M, s.m, A₂ⱼ, DefaultOrthonormalBasis())
 
         sp_∂X₁₂j = sparsevec(∂X₁₂j)
         dropzeros!(sp_∂X₁₂j)
         ∂X₁₂[:, j] = sp_∂X₁₂j
 
-        Jⱼ = get_differential_dual_prox(p, o.n, o.dual_stepsize, η₁, Ξⱼ)
+        Jⱼ = get_differential_dual_prox(p, s.n, s.dual_stepsize, η₁, Ξⱼ)
         Iⱼ = Ξⱼ - Jⱼ
 
-        ∂X₂₂j = get_coordinates(p.N, o.n, Iⱼ, DefaultOrthonormalBasis())
+        ∂X₂₂j = get_coordinates(p.N, s.n, Iⱼ, DefaultOrthonormalBasis())
 
         sp_∂X₂₂j = sparsevec(∂X₂₂j)
         dropzeros!(sp_∂X₂₂j)

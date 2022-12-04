@@ -380,10 +380,10 @@ mutable struct ChambollePockState{
         )
     end
 end
-get_solver_result(o::AbstractPrimalDualSolverState) = get_iterate(o)
-get_iterate(O::ChambollePockState) = O.x
-function set_iterate!(O::ChambollePockState, p)
-    O.x = p
+get_solver_result(s::AbstractPrimalDualSolverState) = get_iterate(s)
+get_iterate(s::ChambollePockState) = s.x
+function set_iterate!(s::ChambollePockState, p)
+    s.x = p
     return O
 end
 @doc raw"""
@@ -401,26 +401,26 @@ V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}ξ_{k-1} - ξ_k \bigr]
 where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockState`](@ref)
 """
 function primal_residual(
-    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, x_old, ξ_old, n_old
+    p::AbstractPrimalDualProblem, s::AbstractPrimalDualSolverState, x_old, ξ_old, n_old
 )
     return norm(
         p.M,
-        o.x,
-        1 / o.primal_stepsize *
-        inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method) -
+        s.x,
+        1 / s.primal_stepsize *
+        inverse_retract(p.M, s.x, x_old, s.inverse_retraction_method) -
         vector_transport_to(
             p.M,
-            o.m,
+            s.m,
             adjoint_linearized_operator(
                 p,
-                o.m,
-                o.n,
+                s.m,
+                s.n,
                 vector_transport_to(
-                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
-                ) - o.ξ,
+                    p.N, n_old, ξ_old, s.n, s.vector_transport_method_dual
+                ) - s.ξ,
             ),
-            o.x,
-            o.vector_transport_method,
+            s.x,
+            s.vector_transport_method,
         ),
     )
 end
@@ -460,62 +460,62 @@ and for the `:exact` variant
 where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
 """
 function dual_residual(
-    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, x_old, ξ_old, n_old
+    p::AbstractPrimalDualProblem, s::AbstractPrimalDualSolverState, x_old, ξ_old, n_old
 )
-    if o.variant === :linearized
+    if s.variant === :linearized
         return norm(
             p.N,
-            o.n,
-            1 / o.dual_stepsize * (
+            s.n,
+            1 / s.dual_stepsize * (
                 vector_transport_to(
-                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
-                ) - o.ξ
+                    p.N, n_old, ξ_old, s.n, s.vector_transport_method_dual
+                ) - s.ξ
             ) - linearized_forward_operator(
                 p,
-                o.m,
+                s.m,
                 vector_transport_to(
                     p.M,
-                    o.x,
-                    inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
-                    o.m,
-                    o.vector_transport_method,
+                    s.x,
+                    inverse_retract(p.M, s.x, x_old, s.inverse_retraction_method),
+                    s.m,
+                    s.vector_transport_method,
                 ),
-                o.n,
+                s.n,
             ),
         )
-    elseif o.variant === :exact
+    elseif s.variant === :exact
         return norm(
             p.N,
-            o.n,
-            1 / o.dual_stepsize * (
+            s.n,
+            1 / s.dual_stepsize * (
                 vector_transport_to(
-                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
-                ) - o.n
+                    p.N, n_old, ξ_old, s.n, s.vector_transport_method_dual
+                ) - s.n
             ) - inverse_retract(
                 p.N,
-                o.n,
+                s.n,
                 forward_operator(
                     p,
                     retract(
                         p.M,
-                        o.m,
+                        s.m,
                         vector_transport_to(
                             p.M,
-                            o.x,
-                            inverse_retract(p.M, o.x, x_old, o.inverse_retraction_method),
-                            o.m,
-                            o.vector_transport_method,
+                            s.x,
+                            inverse_retract(p.M, s.x, x_old, s.inverse_retraction_method),
+                            s.m,
+                            s.vector_transport_method,
                         ),
-                        o.retraction_method,
+                        s.retraction_method,
                     ),
                 ),
-                o.inverse_retraction_method_dual,
+                s.inverse_retraction_method_dual,
             ),
         )
     else
         throw(
             DomainError(
-                o.variant,
+                s.variant,
                 "Unknown Chambolle–Pock variant, allowed are `:exact` or `:linearized`.",
             ),
         )
@@ -566,13 +566,13 @@ mutable struct DebugDualResidual <: DebugAction
     end
 end
 function (d::DebugDualResidual)(
-    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, i::Int
+    p::AbstractPrimalDualProblem, s::AbstractPrimalDualSolverState, i::Int
 )
     if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
-        Printf.format(d.io, Printf.Format(d.format), dual_residual(p, o, xOld, ξOld, nOld))
+        Printf.format(d.io, Printf.Format(d.format), dual_residual(p, s, xOld, ξOld, nOld))
     end
-    return d.storage(p, o, i)
+    return d.storage(p, s, i)
 end
 @doc raw"""
     DebugPrimalResidual <: DebugAction
@@ -615,15 +615,15 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
 end
 function (d::DebugPrimalResidual)(
-    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, i::Int
+    p::AbstractPrimalDualProblem, s::AbstractPrimalDualSolverState, i::Int
 )
     if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
         Printf.format(
-            d.io, Printf.Format(d.format), primal_residual(p, o, xOld, ξOld, nOld)
+            d.io, Printf.Format(d.format), primal_residual(p, s, xOld, ξOld, nOld)
         )
     end
-    return d.storage(p, o, i)
+    return d.storage(p, s, i)
 end
 @doc raw"""
     DebugPrimalDualResidual <: DebugAction
@@ -666,14 +666,14 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
 end
 function (d::DebugPrimalDualResidual)(
-    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, i::Int
+    p::AbstractPrimalDualProblem, s::AbstractPrimalDualSolverState, i::Int
 )
     if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
         xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
-        v = primal_residual(p, o, xOld, ξOld, nOld) + dual_residual(p, o, xOld, ξOld, nOld)
+        v = primal_residual(p, s, xOld, ξOld, nOld) + dual_residual(p, s, xOld, ξOld, nOld)
         Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(p.M))
     end
-    return d.storage(p, o, i)
+    return d.storage(p, s, i)
 end
 
 #
@@ -743,18 +743,18 @@ mutable struct DebugDualChange <: DebugAction
     end
 end
 function (d::DebugDualChange)(
-    p::AbstractPrimalDualProblem, o::AbstractPrimalDualSolverState, i::Int
+    p::AbstractPrimalDualProblem, s::AbstractPrimalDualSolverState, i::Int
 )
     if all(has_storage.(Ref(d.storage), [:ξ, :n])) && i > 0 # all values stored
         ξOld, nOld = get_storage.(Ref(d.storage), [:ξ, :n]) #fetch
         v = norm(
             p.N,
-            o.n,
-            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method_dual) - o.ξ,
+            s.n,
+            vector_transport_to(p.N, nOld, ξOld, s.n, s.vector_transport_method_dual) - s.ξ,
         )
         Printf.format(d.io, Printf.Format(d.format), v)
     end
-    return d.storage(p, o, i)
+    return d.storage(p, s, i)
 end
 
 """

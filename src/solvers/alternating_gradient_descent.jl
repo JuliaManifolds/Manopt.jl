@@ -91,24 +91,24 @@ function alternating_gradient_descent!(
     return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(
-    ::AlternatingGradientProblem, o::AlternatingGradientDescentState
+    ::AlternatingGradientProblem, s::AlternatingGradientDescentState
 )
-    o.k = 1
-    o.i = 1
-    (o.order_type == :FixedRandom || o.order_type == :Random) && (shuffle!(o.order))
-    return o
+    s.k = 1
+    s.i = 1
+    (s.order_type == :FixedRandom || s.order_type == :Random) && (shuffle!(s.order))
+    return s
 end
 function step_solver!(
-    p::AlternatingGradientProblem, o::AlternatingGradientDescentState, iter
+    p::AlternatingGradientProblem, s::AlternatingGradientDescentState, iter
 )
-    s, get_gradient(o) = o.direction(p, o, iter)
-    j = o.order[o.k]
-    retract!(p.M[j], o.x[p.M, j], o.x[p.M, j], -s * o.gradient[p.M, j])
-    o.i += 1
-    if o.i > o.inner_iterations
-        o.k = ((o.k) % length(o.order)) + 1
-        (o.order_type == :Random) && (shuffle!(o.order))
-        o.i = 1
+    step, get_gradient(s) = s.direction(p, s, iter)
+    j = s.order[s.k]
+    retract!(p.M[j], s.x[p.M, j], s.x[p.M, j], -step * s.gradient[p.M, j])
+    s.i += 1
+    if s.i > s.inner_iterations
+        s.k = ((s.k) % length(s.order)) + 1
+        (s.order_type == :Random) && (shuffle!(s.order))
+        s.i = 1
     end
-    return o
+    return s
 end

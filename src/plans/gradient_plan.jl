@@ -110,13 +110,14 @@ A generic [`AbstractManoptSolverState`](@ref) type for gradient based options da
 abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
 
 @doc raw"""
-    get_gradient(o::AbstractGradientSolverState) = o.gradient
+    get_gradient(s::AbstractGradientSolverState)
 
 return the gradient stored within gradient options.
+THe default resturns `s.gradient`.
 """
-get_gradient(o::AbstractGradientSolverState) = o.gradient
+get_gradient(s::AbstractGradientSolverState) = s.gradient
 
-get_iterate(o::AbstractGradientSolverState) = o.x
+get_iterate(s::AbstractGradientSolverState) = s.x
 function set_iterate!(O::AbstractGradientSolverState, p)
     O.x = p
     return O
@@ -189,8 +190,8 @@ function GradientDescentState(
     )
 end
 
-function (s::IdentityUpdateRule)(p::DefaultManoptProblem, o::GradientDescentState, i)
-    return get_stepsize(p, o, i), get_gradient!(p, o.gradient, o.x)
+function (r::IdentityUpdateRule)(p::DefaultManoptProblem, s::GradientDescentState, i)
+    return get_stepsize(p, s, i), get_gradient!(p, s.gradient, s.x)
 end
 
 """
@@ -252,13 +253,13 @@ function MomentumGradient(
         last_iterate, gradient, momentum, s, vector_transport_method
     )
 end
-function (m::MomentumGradient)(p::AbstractManoptProblem, o::AbstractGradientSolverState, i)
-    s, d = m.direction(p, o, i) #get inner direction and step size
+function (m::MomentumGradient)(p::AbstractManoptProblem, s::AbstractGradientSolverState, i)
+    s, d = m.direction(p, s, i) #get inner direction and step size
     old_d =
         m.momentum *
-        vector_transport_to(p.M, m.last_iterate, m.gradient, o.x, m.vector_transport_method)
+        vector_transport_to(p.M, m.last_iterate, m.gradient, s.x, m.vector_transport_method)
     m.gradient = old_d - s .* d
-    m.last_iterate = deepcopy(o.x)
+    m.last_iterate = deepcopy(s.x)
     return s, -m.gradient
 end
 
@@ -321,9 +322,9 @@ function AverageGradient(
         gradients, deepcopy(x0), s, vector_transport_method
     )
 end
-function (a::AverageGradient)(p::AbstractManoptProblem, o::AbstractGradientSolverState, i)
+function (a::AverageGradient)(p::AbstractManoptProblem, s::AbstractGradientSolverState, i)
     pop!(a.gradients)
-    s, d = a.direction(p, o, i) #get inner gradient and step
+    s, d = a.direction(p, s, i) #get inner gradient and step
     a.gradients = vcat([deepcopy(d)], a.gradients)
     for i in 1:(length(a.gradients) - 1) #transport & shift in place
         vector_transport_to!(
@@ -331,12 +332,12 @@ function (a::AverageGradient)(p::AbstractManoptProblem, o::AbstractGradientSolve
             a.gradients[i],
             a.last_iterate,
             a.gradients[i + 1],
-            o.x,
+            s.x,
             a.vector_transport_method,
         )
     end
     a.gradients[1] = deepcopy(d)
-    a.last_iterate = deepcopy(o.x)
+    a.last_iterate = deepcopy(s.x)
     return s, 1 / length(a.gradients) .* sum(a.gradients)
 end
 
@@ -431,9 +432,9 @@ mutable struct DebugGradient <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugGradient)(::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int)
+function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_gradient(o))
+    Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
 
@@ -464,10 +465,10 @@ mutable struct DebugGradientNorm <: DebugAction
     end
 end
 function (d::DebugGradientNorm)(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), norm(p.M, get_iterate(o), get_gradient(o)))
+    Printf.format(d.io, Printf.Format(d.format), norm(p.M, get_iterate(s), get_gradient(s)))
     return nothing
 end
 
@@ -494,10 +495,10 @@ mutable struct DebugStepsize <: DebugAction
     end
 end
 function (d::DebugStepsize)(
-    p::P, o::O, i::Int
+    p::P, s::O, i::Int
 ) where {P<:AbstractManoptProblem,O<:AbstractGradientSolverState}
     (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, o, i))
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, i))
     return nothing
 end
 
@@ -520,9 +521,9 @@ mutable struct RecordGradient{T} <: RecordAction
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
 function (r::RecordGradient{T})(
-    ::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 ) where {T}
-    return record_or_reset!(r, get_gradient(o), i)
+    return record_or_reset!(r, get_gradient(s), i)
 end
 
 @doc raw"""
@@ -535,9 +536,9 @@ mutable struct RecordGradientNorm <: RecordAction
     RecordGradientNorm() = new(Array{Float64,1}())
 end
 function (r::RecordGradientNorm)(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
-    return record_or_reset!(r, norm(p.M, get_iterate(o), get_gradient(o)), i)
+    return record_or_reset!(r, norm(p.M, get_iterate(s), get_gradient(s)), i)
 end
 
 @doc raw"""
@@ -549,8 +550,6 @@ mutable struct RecordStepsize <: RecordAction
     recorded_values::Array{Float64,1}
     RecordStepsize() = new(Array{Float64,1}())
 end
-function (r::RecordStepsize)(
-    p::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractGradientSolverState}
-    return record_or_reset!(r, get_last_stepsize(p, o, i), i)
+function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractGradientSolverState, i)
+    return record_or_reset!(r, get_last_stepsize(p, s, i), i)
 end

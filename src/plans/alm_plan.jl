@@ -99,10 +99,10 @@ mutable struct AugmentedLagrangianMethodState{
         return o
     end
 end
-get_iterate(o::AugmentedLagrangianMethodState) = o.x
-function set_iterate!(O::AugmentedLagrangianMethodState, p)
-    O.x = p
-    return O
+get_iterate(s::AugmentedLagrangianMethodState) = s.x
+function set_iterate!(s::AugmentedLagrangianMethodState, p)
+    s.x = p
+    return s
 end
 @doc raw"""
     AugmentedLagrangianCost{Pr,R,T}

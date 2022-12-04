@@ -40,7 +40,7 @@ Note that the solvers (or their [`AbstractSolverState`](@ref), to be precise) ca
  The main function a solver calls is
 
 ```@docs
-solve!(p::AbstractManoptProblem, o::AbstractSolverState)
+solve!(p::AbstractManoptProblem, s::AbstractSolverState)
 ```
 
 which is a framework that you in general should not change or redefine.
@@ -52,5 +52,5 @@ initialize_solver!
 step_solver!
 get_solver_result
 get_solver_return
-stop_solver!(p::AbstractManoptProblem, o::AbstractSolverState, i::Int)
+stop_solver!(p::AbstractManoptProblem, s::AbstractSolverState, i::Int)
 ```

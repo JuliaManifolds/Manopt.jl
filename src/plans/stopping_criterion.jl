@@ -58,11 +58,11 @@ mutable struct StopWhenGradientNormLess <: StoppingCriterion
     StopWhenGradientNormLess(ε::Float64) = new(ε, "")
 end
 function (c::StopWhenGradientNormLess)(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     (i == 0) && (c.reason = "") # reset on init
-    if norm(p.M, get_iterate(o), get_gradient(o)) < c.threshold
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(p.M,get_iterate(o),get_gradient(o)))) is less than $(c.threshold).\n"
+    if norm(p.M, get_iterate(s), get_gradient(s)) < c.threshold
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(p.M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
         return true
     end
     return false
@@ -150,12 +150,12 @@ mutable struct StopWhenStepsizeLess <: StoppingCriterion
     end
 end
 function (c::StopWhenStepsizeLess)(
-    p::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
     (i == 0) && (c.reason = "") # reset on init
-    s = get_last_stepsize(p, o, i)
-    if s < c.threshold && i > 0
-        c.reason = "The algorithm computed a step size ($s) less than $(c.threshold).\n"
+    step = get_last_stepsize(p, s, i)
+    if step < c.threshold && i > 0
+        c.reason = "The algorithm computed a step size ($step) less than $(c.threshold).\n"
         return true
     end
     return false
@@ -189,11 +189,11 @@ mutable struct StopWhenCostLess <: StoppingCriterion
     StopWhenCostLess(ε::Float64) = new(ε, "")
 end
 function (c::StopWhenCostLess)(
-    p::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
     (i == 0) && (c.reason = "") # reset on init
-    if i > 0 && get_cost(p, get_iterate(o)) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(o)))) less than the threshold ($(c.threshold)).\n"
+    if i > 0 && get_cost(p, get_iterate(s)) < c.threshold
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)).\n"
         return true
     end
     return false
@@ -233,10 +233,10 @@ mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
     StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "")
 end
 function (c::StopWhenSmallerOrEqual)(
-    ::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
     (i == 0) && (c.reason = "") # reset on init
-    if getfield(o, c.value) <= c.minValue
+    if getfield(s, c.value) <= c.minValue
         c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
         return true
     end
@@ -268,9 +268,7 @@ mutable struct StopAfter <: StoppingCriterion
         end
     end
 end
-function (c::StopAfter)(
-    p::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
+function (c::StopAfter)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     if value(c.start) == 0 || i <= 0 # (re)start timer
         c.reason = ""
         c.start = Nanosecond(time_ns())
@@ -316,11 +314,9 @@ mutable struct StopWhenAll{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAll(c...) = new{typeof(c)}(c, "")
 end
-function (c::StopWhenAll)(
-    p::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
+function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.reason = "") # reset on init
-    if all(subC -> subC(p, o, i), c.criteria)
+    if all(subC -> subC(p, s, i), c.criteria)
         c.reason = string([get_reason(subC) for subC in c.criteria]...)
         return true
     end
@@ -371,11 +367,9 @@ mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAny(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c)
 end
-function (c::StopWhenAny)(
-    p::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
+function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.reason = "") # reset on init
-    if any(subC -> subC(p, o, i), c.criteria)
+    if any(subC -> subC(p, s, i), c.criteria)
         c.reason = string([get_reason(subC) for subC in c.criteria]...)
         return true
     end
@@ -465,7 +459,7 @@ return the current reason stored within the [`StoppingCriterion`](@ref) from
 within the [`AbstractManoptSolverState`](@ref) This reason is empty if the criterion has never
 been met.
 """
-get_reason(o::AbstractManoptSolverState) = get_reason(get_state(o).stop)
+get_reason(s::AbstractManoptSolverState) = get_reason(get_state(s).stop)
 
 @doc raw"""
     get_stopping_criteria(c)
@@ -481,7 +475,7 @@ get_stopping_criteria(c::StopWhenAny) = c.criteria
 
 @doc raw"""
     update_stopping_criterion!(c::Stoppingcriterion, s::Symbol, v::value)
-    update_stopping_criterion!(o::AbstractManoptSolverState, s::Symbol, v::value)
+    update_stopping_criterion!(s::AbstractManoptSolverState, symbol::Symbol, v::value)
     update_stopping_criterion!(c::Stoppingcriterion, ::Val{Symbol}, v::value)
 
 Update a value within a stopping criterion, specified by the symbol `s`, to `v`.
@@ -494,9 +488,9 @@ use dispatch per symbol value (the third signature).
 """
 update_stopping_criterion!(c, s, v)
 
-function update_stopping_criterion!(o::AbstractManoptSolverState, s::Symbol, v)
-    update_stopping_criterion!(o.stop, s, v)
-    return o
+function update_stopping_criterion!(s::AbstractManoptSolverState, symbol::Symbol, v)
+    update_stopping_criterion!(s.stop, symbol, v)
+    return s
 end
 function update_stopping_criterion!(c::StopWhenAll, s::Symbol, v)
     for d in c.criteria

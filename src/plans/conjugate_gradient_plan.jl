@@ -105,15 +105,15 @@ mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
     end
 end
 function (u::ConjugateDescentCoefficient)(
-    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
+    p::DefaultManoptProblem, s::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
-        update_storage!(u.storage, o) # if not given store current as old
+        update_storage!(u.storage, s) # if not given store current as old
         return 0.0
     end
     xOld, gradientOld = get_storage.(Ref(u.storage), [:Iterate, :gradient])
-    update_storage!(u.storage, o)
-    return inner(p.M, o.x, o.gradient, o.gradient) / inner(p.M, xOld, -o.δ, gradientOld)
+    update_storage!(u.storage, s)
+    return inner(p.M, s.x, s.gradient, s.gradient) / inner(p.M, xOld, -s.δ, gradientOld)
 end
 
 @doc raw"""
@@ -163,19 +163,19 @@ mutable struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     end
 end
 function (u::DaiYuanCoefficient)(
-    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
+    p::DefaultManoptProblem, s::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
-        update_storage!(u.storage, o) # if not given store current as old
+        update_storage!(u.storage, s) # if not given store current as old
         return 0.0
     end
     xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
-    update_storage!(u.storage, o)
+    update_storage!(u.storage, s)
 
-    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
-    ν = o.gradient - gradienttr #notation y from [HZ06]
-    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
-    return inner(p.M, o.x, o.gradient, o.gradient) / inner(p.M, xOld, δtr, ν)
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, s.x, u.transport_method)
+    ν = s.gradient - gradienttr #notation y from [HZ06]
+    δtr = vector_transport_to(p.M, xOld, δOld, s.x, u.transport_method)
+    return inner(p.M, s.x, s.gradient, s.gradient) / inner(p.M, xOld, δtr, ν)
 end
 
 @doc raw"""
@@ -212,14 +212,14 @@ mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
     end
 end
 function (u::FletcherReevesCoefficient)(
-    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
+    p::DefaultManoptProblem, s::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
-        update_storage!(u.storage, o) # if not given store current as old
+        update_storage!(u.storage, s) # if not given store current as old
     end
     xOld, gradientOld = get_storage.(Ref(u.storage), [:Iterate, :gradient])
-    update_storage!(u.storage, o)
-    return inner(p.M, o.x, o.gradient, o.gradient) /
+    update_storage!(u.storage, s)
+    return inner(p.M, s.x, s.gradient, s.gradient) /
            inner(p.M, xOld, gradientOld, gradientOld)
 end
 
@@ -271,25 +271,25 @@ mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     end
 end
 function (u::HagerZhangCoefficient)(
-    p::P, o::O, i
+    p::P, s::O, i
 ) where {P<:DefaultManoptProblem,O<:ConjugateGradientDescentState}
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
-        update_storage!(u.storage, o) # if not given store current as old
+        update_storage!(u.storage, s) # if not given store current as old
         return 0.0
     end
     xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
-    update_storage!(u.storage, o)
+    update_storage!(u.storage, s)
 
-    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
-    ν = o.gradient - gradienttr #notation y from [HZ06]
-    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
-    denom = inner(p.M, o.x, δtr, ν)
-    νknormsq = inner(p.M, o.x, ν, ν)
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, s.x, u.transport_method)
+    ν = s.gradient - gradienttr #notation y from [HZ06]
+    δtr = vector_transport_to(p.M, xOld, δOld, s.x, u.transport_method)
+    denom = inner(p.M, s.x, δtr, ν)
+    νknormsq = inner(p.M, s.x, ν, ν)
     β =
-        inner(p.M, o.x, ν, o.gradient) / denom -
-        2 * νknormsq * inner(p.M, o.x, δtr, o.gradient) / denom^2
+        inner(p.M, s.x, ν, s.gradient) / denom -
+        2 * νknormsq * inner(p.M, s.x, δtr, s.gradient) / denom^2
     # Numerical stability from Manopt / Hager-Zhang paper
-    ξn = norm(p.M, o.x, o.gradient)
+    ξn = norm(p.M, s.x, s.gradient)
     η = -1 / (ξn * min(0.01, norm(p.M, xOld, gradientOld)))
     return max(β, η)
 end
@@ -341,18 +341,18 @@ mutable struct HeestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} 
     end
 end
 function (u::HeestenesStiefelCoefficient)(
-    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
+    p::DefaultManoptProblem, s::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
-        update_storage!(u.storage, o) # if not given store current as old
+        update_storage!(u.storage, s) # if not given store current as old
         return 0.0
     end
     xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
-    update_storage!(u.storage, o)
-    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
-    δtr = vector_transport_to(p.M, xOld, δOld, o.x, u.transport_method)
-    ν = o.gradient - gradienttr #notation from [HZ06]
-    β = inner(p.M, o.x, o.gradient, ν) / inner(p.M, o.x, δtr, ν)
+    update_storage!(u.storage, s)
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, s.x, u.transport_method)
+    δtr = vector_transport_to(p.M, xOld, δOld, s.x, u.transport_method)
+    ν = s.gradient - gradienttr #notation from [HZ06]
+    β = inner(p.M, s.x, s.gradient, ν) / inner(p.M, s.x, δtr, ν)
     return max(0, β)
 end
 
@@ -404,16 +404,16 @@ mutable struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     end
 end
 function (u::LiuStoreyCoefficient)(
-    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
+    p::DefaultManoptProblem, s::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
-        update_storage!(u.storage, o) # if not given store current as old
+        update_storage!(u.storage, s) # if not given store current as old
     end
     xOld, gradientOld, δOld = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
-    update_storage!(u.storage, o)
-    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
-    ν = o.gradient - gradienttr # notation y from [HZ06]
-    return inner(p.M, o.x, o.gradient, ν) / inner(p.M, xOld, -δOld, gradientOld)
+    update_storage!(u.storage, s)
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, s.x, u.transport_method)
+    ν = s.gradient - gradienttr # notation y from [HZ06]
+    return inner(p.M, s.x, s.gradient, ν) / inner(p.M, xOld, -δOld, gradientOld)
 end
 
 @doc raw"""
@@ -469,17 +469,17 @@ mutable struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     end
 end
 function (u::PolakRibiereCoefficient)(
-    p::DefaultManoptProblem, o::ConjugateGradientDescentState, i
+    p::DefaultManoptProblem, s::ConjugateGradientDescentState, i
 )
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
-        update_storage!(u.storage, o) # if not given store current as old
+        update_storage!(u.storage, s) # if not given store current as old
     end
     xOld, gradientOld = get_storage.(Ref(u.storage), [:Iterate, :gradient])
-    update_storage!(u.storage, o)
+    update_storage!(u.storage, s)
 
-    gradienttr = vector_transport_to(p.M, xOld, gradientOld, o.x, u.transport_method)
-    ν = o.gradient - gradienttr
-    β = inner(p.M, o.x, o.gradient, ν) / inner(p.M, xOld, gradientOld, gradientOld)
+    gradienttr = vector_transport_to(p.M, xOld, gradientOld, s.x, u.transport_method)
+    ν = s.gradient - gradienttr
+    β = inner(p.M, s.x, s.gradient, ν) / inner(p.M, xOld, gradientOld, gradientOld)
     return max(0, β)
 end
 

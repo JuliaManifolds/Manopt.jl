@@ -222,12 +222,12 @@ mutable struct DebugProximalParameter <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugProximalParameter)(::ProximalProblem, o::DouglasRachfordState, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.λ(i))
+function (d::DebugProximalParameter)(::ProximalProblem, s::DouglasRachfordState, i::Int)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), s.λ(i))
     return nothing
 end
-function (d::DebugProximalParameter)(::ProximalProblem, o::CyclicProximalPointState, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), o.λ(i))
+function (d::DebugProximalParameter)(::ProximalProblem, s::CyclicProximalPointState, i::Int)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), s.λ(i))
     return nothing
 end
 
@@ -244,10 +244,10 @@ mutable struct RecordProximalParameter <: RecordAction
     RecordProximalParameter() = new(Array{Float64,1}())
 end
 function (r::RecordProximalParameter)(
-    ::ProximalProblem, o::CyclicProximalPointState, i::Int
+    ::ProximalProblem, s::CyclicProximalPointState, i::Int
 )
-    return record_or_reset!(r, o.λ(i), i)
+    return record_or_reset!(r, s.λ(i), i)
 end
-function (r::RecordProximalParameter)(::ProximalProblem, o::DouglasRachfordState, i::Int)
-    return record_or_reset!(r, o.λ(i), i)
+function (r::RecordProximalParameter)(::ProximalProblem, s::DouglasRachfordState, i::Int)
+    return record_or_reset!(r, s.λ(i), i)
 end

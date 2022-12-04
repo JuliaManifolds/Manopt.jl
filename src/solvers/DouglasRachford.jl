@@ -121,13 +121,13 @@ function DouglasRachford!(
     return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(::ProximalProblem, ::DouglasRachfordState) end
-function step_solver!(p::ProximalProblem, o::DouglasRachfordState, iter)
-    get_proximal_map!(p, o.xtmp, o.λ(iter), o.s, 1)
-    o.stmp = o.R(p.M, o.xtmp, o.s)
-    o.x = get_proximal_map(p, o.λ(iter), o.stmp, 2)
-    o.stmp = o.R(p.M, o.x, o.stmp)
+function step_solver!(p::ProximalProblem, s::DouglasRachfordState, iter)
+    get_proximal_map!(p, s.xtmp, s.λ(iter), s.s, 1)
+    s.stmp = s.R(p.M, s.xtmp, s.s)
+    s.x = get_proximal_map(p, s.λ(iter), s.stmp, 2)
+    s.stmp = s.R(p.M, s.x, s.stmp)
     # relaxation
-    o.s = shortest_geodesic(p.M, o.s, o.stmp, o.α(iter))
-    return o
+    s.s = shortest_geodesic(p.M, s.s, s.stmp, s.α(iter))
+    return s
 end
-get_solver_result(o::DouglasRachfordState) = o.parallel ? o.x[1] : o.x
+get_solver_result(s::DouglasRachfordState) = s.parallel ? s.x[1] : s.x

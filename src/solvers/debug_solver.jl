@@ -1,5 +1,5 @@
 """
-    initialize_solver!(p::AbstractManoptProblem, o::DebugSolverState)
+    initialize_solver!(p::AbstractManoptProblem, s::DebugSolverState)
 
 Initialize the solver to the optimization [`Problem`](@ref) by initializing all
 values in the [`DebugSolverState`](@ref)` o`.

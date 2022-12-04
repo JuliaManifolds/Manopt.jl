@@ -162,29 +162,29 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(::ConstrainedProblem, o::ExactPenaltyMethodState)
-    return o
+function initialize_solver!(::ConstrainedProblem, s::ExactPenaltyMethodState)
+    return s
 end
-function step_solver!(p::ConstrainedProblem, o::ExactPenaltyMethodState, iter)
+function step_solver!(p::ConstrainedProblem, s::ExactPenaltyMethodState, iter)
     # use subsolver to minimize the smoothed penalized function
-    o.sub_problem.cost.ρ = o.ρ
-    o.sub_problem.cost.u = o.u
-    o.sub_problem.gradient!!.ρ = o.ρ
-    o.sub_problem.gradient!!.u = o.u
-    set_iterate!(o.sub_options, copy(p.M, o.x))
-    update_stopping_criterion!(o, :MinIterateChange, o.ϵ)
+    s.sub_problem.cost.ρ = s.ρ
+    s.sub_problem.cost.u = s.u
+    s.sub_problem.gradient!!.ρ = s.ρ
+    s.sub_problem.gradient!!.u = s.u
+    set_iterate!(s.sub_options, copy(p.M, s.x))
+    update_stopping_criterion!(s, :MinIterateChange, s.ϵ)
 
-    o.x = get_solver_result(solve!(o.sub_problem, o.sub_options))
+    s.x = get_solver_result(solve!(s.sub_problem, s.sub_options))
 
     # get new evaluation of penalty
-    cost_ineq = get_inequality_constraints(p, o.x)
-    cost_eq = get_equality_constraints(p, o.x)
+    cost_ineq = get_inequality_constraints(p, s.x)
+    cost_eq = get_equality_constraints(p, s.x)
     max_violation = max(max(maximum(cost_ineq; init=0), 0), maximum(abs.(cost_eq); init=0))
     # update ρ if necessary
-    (max_violation > o.u) && (o.ρ = o.ρ / o.θ_ρ)
+    (max_violation > s.u) && (s.ρ = s.ρ / s.θ_ρ)
     # update u and ϵ
-    o.u = max(o.u_min, o.u * o.θ_u)
-    o.ϵ = max(o.ϵ_min, o.ϵ * o.θ_ϵ)
-    return o
+    s.u = max(s.u_min, s.u * s.θ_u)
+    s.ϵ = max(s.ϵ_min, s.ϵ * s.θ_ϵ)
+    return s
 end
-get_solver_result(o::ExactPenaltyMethodState) = o.x
+get_solver_result(s::ExactPenaltyMethodState) = s.x

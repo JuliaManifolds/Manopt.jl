@@ -280,25 +280,25 @@ struct AlternatingGradient{T} <: AbstractStochasticGradientProcessor
 end
 
 function (s::AlternatingGradient)(
-    p::AlternatingGradientProblem, o::AlternatingGradientDescentState, iter
+    p::AlternatingGradientProblem, s::AlternatingGradientDescentState, iter
 )
     # at begin of inner iterations reset internal vector to zero
-    (o.i == 1) && zero_vector!(p.M, s.dir, o.x)
+    (s.i == 1) && zero_vector!(p.M, s.dir, s.x)
     # update order(k)th component inplace
-    get_gradient!(p, s.dir[p.M, o.order[o.k]], o.order[o.k], o.x)
-    return o.stepsize(p, o, iter), s.dir # return urrent full gradient
+    get_gradient!(p, s.dir[p.M, s.order[s.k]], s.order[s.k], s.x)
+    return s.stepsize(p, s, iter), s.dir # return urrent full gradient
 end
 
 # update Armijo to work on the kth gradient only.
 function (a::ArmijoLinesearch)(
-    p::AlternatingGradientProblem, o::AlternatingGradientDescentState, ::Int
+    p::AlternatingGradientProblem, s::AlternatingGradientDescentState, ::Int
 )
-    X = zero_vector(p.M, o.x)
-    X[p.M, o.order[o.k]] .= get_gradient(p, o.order[o.k], o.x)
+    X = zero_vector(p.M, s.x)
+    X[p.M, s.order[s.k]] .= get_gradient(p, s.order[s.k], s.x)
     a.last_stepsize = linesearch_backtrack(
         p.M,
         x -> p.cost(p.M, x),
-        o.x,
+        s.x,
         X,
         a.last_stepsize,
         a.sufficient_decrease,

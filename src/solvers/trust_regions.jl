@@ -134,78 +134,78 @@ function trust_regions!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(p::HessianProblem, o::TrustRegionsState)
-    get_gradient!(p, o.gradient, o.x)
-    o.η = zero_vector(p.M, o.x)
-    o.Hη = zero_vector(p.M, o.x)
-    o.x_proposal = deepcopy(o.x)
-    o.f_proposal = zero(o.trust_region_radius)
+function initialize_solver!(p::HessianProblem, s::TrustRegionsState)
+    get_gradient!(p, s.gradient, s.x)
+    s.η = zero_vector(p.M, s.x)
+    s.Hη = zero_vector(p.M, s.x)
+    s.x_proposal = deepcopy(s.x)
+    s.f_proposal = zero(s.trust_region_radius)
 
-    o.η_Cauchy = zero_vector(p.M, o.x)
-    o.Hη_Cauchy = zero_vector(p.M, o.x)
-    o.τ = zero(o.trust_region_radius)
-    o.Hgrad = zero_vector(p.M, o.x)
-    o.tcg_options = TruncatedConjugateGradientState(
+    s.η_Cauchy = zero_vector(p.M, s.x)
+    s.Hη_Cauchy = zero_vector(p.M, s.x)
+    s.τ = zero(s.trust_region_radius)
+    s.Hgrad = zero_vector(p.M, s.x)
+    s.tcg_options = TruncatedConjugateGradientState(
         p.M,
-        o.x,
-        o.η;
-        trust_region_radius=o.trust_region_radius,
-        randomize=o.randomize,
-        (project!)=o.project!,
+        s.x,
+        s.η;
+        trust_region_radius=s.trust_region_radius,
+        randomize=s.randomize,
+        (project!)=s.project!,
     )
-    return o
+    return s
 end
 
-function step_solver!(p::HessianProblem, o::TrustRegionsState, iter)
+function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
     # Determine eta0
-    if o.randomize
+    if s.randomize
         # Random vector in T_x M (this has to be very small)
-        o.η = random_tangent(p.M, o.x, 10.0^(-6))
-        while norm(p.M, o.x, o.η) > o.trust_region_radius
+        s.η = random_tangent(p.M, s.x, 10.0^(-6))
+        while norm(p.M, s.x, s.η) > s.trust_region_radius
             # inside trust-region
-            o.η *= sqrt(sqrt(eps(Float64)))
+            s.η *= sqrt(sqrt(eps(Float64)))
         end
     else
-        zero_vector!(p.M, o.η, o.x)
+        zero_vector!(p.M, s.η, s.x)
     end
     # Solve TR subproblem - update options
-    o.tcg_options.x = o.x
-    o.tcg_options.η = o.η
-    o.tcg_options.trust_region_radius = o.trust_region_radius
-    solve!(p, o.tcg_options)
+    s.tcg_options.x = s.x
+    s.tcg_options.η = s.η
+    s.tcg_options.trust_region_radius = s.trust_region_radius
+    solve!(p, s.tcg_options)
     #
-    o.η = o.tcg_options.η
-    o.Hη = o.tcg_options.Hη
+    s.η = s.tcg_options.η
+    s.Hη = s.tcg_options.Hη
 
     # Initialize the cost function F und the gradient of the cost function
     # gradF at the point x
-    o.gradient = o.tcg_options.gradient
-    fx = get_cost(p, o.x)
+    s.gradient = s.tcg_options.gradient
+    fx = get_cost(p, s.x)
     # If using randomized approach, compare result with the Cauchy point.
-    if o.randomize
-        norm_grad = norm(p.M, o.x, o.gradient)
+    if s.randomize
+        norm_grad = norm(p.M, s.x, s.gradient)
         # Check the curvature,
-        get_hessian!(p, o.Hgrad, o.x, o.gradient)
-        o.τ = inner(p.M, o.x, o.gradient, o.Hgrad)
-        o.τ = (o.τ <= 0) ? one(o.τ) : min(norm_grad^3 / (o.trust_region_radius * o.τ), 1)
+        get_hessian!(p, s.Hgrad, s.x, s.gradient)
+        s.τ = inner(p.M, s.x, s.gradient, s.Hgrad)
+        s.τ = (s.τ <= 0) ? one(s.τ) : min(norm_grad^3 / (s.trust_region_radius * s.τ), 1)
         # compare to Cauchy point and store best
         model_value =
-            fx + inner(p.M, o.x, o.gradient, o.η) + 0.5 * inner(p.M, o.x, o.Hη, o.η)
+            fx + inner(p.M, s.x, s.gradient, s.η) + 0.5 * inner(p.M, s.x, s.Hη, s.η)
         modle_value_Cauchy = fx
-        -o.τ * o.trust_region_radius * norm(p.M, o.x, o.gradient)
-        +0.5 * o.τ^2 * o.trust_region_radius^2 / (norm_grad^2) *
-        inner(p.M, o.x, o.Hgrad, o.gradient)
+        -s.τ * s.trust_region_radius * norm(p.M, s.x, s.gradient)
+        +0.5 * s.τ^2 * s.trust_region_radius^2 / (norm_grad^2) *
+        inner(p.M, s.x, s.Hgrad, s.gradient)
         if modle_value_Cauchy < model_value
-            copyto!(p.M, o.η, (-o.τ * o.trust_region_radius / norm_grad) * o.gradient)
-            copyto!(p.M, o.Hη, (-o.τ * o.trust_region_radius / norm_grad) * o.Hgrad)
+            copyto!(p.M, s.η, (-s.τ * s.trust_region_radius / norm_grad) * s.gradient)
+            copyto!(p.M, s.Hη, (-s.τ * s.trust_region_radius / norm_grad) * s.Hgrad)
         end
     end
     # Compute the tentative next iterate (the proposal)
-    retract!(p.M, o.x_proposal, o.x, o.η, o.retraction_method)
+    retract!(p.M, s.x_proposal, s.x, s.η, s.retraction_method)
     # Check the performance of the quadratic model against the actual cost.
-    ρ_reg = max(1, abs(fx)) * eps(Float64) * o.ρ_regularization
-    ρnum = fx - get_cost(p, o.x_proposal)
-    ρden = -inner(p.M, o.x, o.η, o.gradient) - 0.5 * inner(p.M, o.x, o.η, o.Hη)
+    ρ_reg = max(1, abs(fx)) * eps(Float64) * s.ρ_regularization
+    ρnum = fx - get_cost(p, s.x_proposal)
+    ρden = -inner(p.M, s.x, s.η, s.gradient) - 0.5 * inner(p.M, s.x, s.η, s.Hη)
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
     ρ = ρnum / ρden
@@ -214,15 +214,15 @@ function step_solver!(p::HessianProblem, o::TrustRegionsState, iter)
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.
     if ρ < 1 / 4 || !model_decreased || isnan(ρ)
-        o.trust_region_radius /= 4
+        s.trust_region_radius /= 4
     elseif ρ > 3 / 4 &&
-        ((o.tcg_options.ηPη >= o.trust_region_radius^2) || (o.tcg_options.δHδ <= 0))
-        o.trust_region_radius = min(2 * o.trust_region_radius, o.max_trust_region_radius)
+        ((s.tcg_options.ηPη >= s.trust_region_radius^2) || (s.tcg_options.δHδ <= 0))
+        s.trust_region_radius = min(2 * s.trust_region_radius, s.max_trust_region_radius)
     end
     # Choose to accept or reject the proposed step based on the model
     # performance. Note the strict inequality.
-    if model_decreased && ρ > o.ρ_prime
-        copyto!(p.M, o.x, o.x_proposal)
+    if model_decreased && ρ > s.ρ_prime
+        copyto!(p.M, s.x, s.x_proposal)
     end
-    return o
+    return s
 end

@@ -128,30 +128,28 @@ function truncated_conjugate_gradient_descent!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(p::HessianProblem, o::TruncatedConjugateGradientState)
-    (o.randomize) || zero_vector!(p.M, o.η, o.x)
-    o.Hη = o.randomize ? get_hessian(p, o.x, o.η) : zero_vector(p.M, o.x)
-    o.gradient = get_gradient(p, o.x)
-    o.residual = o.randomize ? o.gradient + o.Hη : o.gradient
-    o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
-    o.δ = -deepcopy(o.z)
-    o.Hδ = zero_vector(p.M, o.x)
-    o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
-    o.ηPδ = o.randomize ? inner(p.M, o.x, o.η, o.δ) : zero(o.δHδ)
-    o.δPδ = inner(p.M, o.x, o.residual, o.z)
-    o.ηPη = o.randomize ? inner(p.M, o.x, o.η, o.η) : zero(o.δHδ)
-    if o.randomize
-        o.model_value = inner(p.M, o.x, o.η, o.gradient) + 0.5 * inner(p.M, o.x, o.η, o.Hη)
+function initialize_solver!(p::HessianProblem, s::TruncatedConjugateGradientState)
+    (s.randomize) || zero_vector!(p.M, s.η, s.x)
+    s.Hη = s.randomize ? get_hessian(p, s.x, s.η) : zero_vector(p.M, s.x)
+    s.gradient = get_gradient(p, s.x)
+    s.residual = s.randomize ? s.gradient + s.Hη : s.gradient
+    s.z = s.randomize ? s.residual : get_preconditioner(p, s.x, s.residual)
+    s.δ = -deepcopy(s.z)
+    s.Hδ = zero_vector(p.M, s.x)
+    s.δHδ = inner(p.M, s.x, s.δ, s.Hδ)
+    s.ηPδ = s.randomize ? inner(p.M, s.x, s.η, s.δ) : zero(s.δHδ)
+    s.δPδ = inner(p.M, s.x, s.residual, s.z)
+    s.ηPη = s.randomize ? inner(p.M, s.x, s.η, s.η) : zero(s.δHδ)
+    if s.randomize
+        s.model_value = inner(p.M, s.x, s.η, s.gradient) + 0.5 * inner(p.M, s.x, s.η, s.Hη)
     else
-        o.model_value = 0
+        s.model_value = 0
     end
-    o.z_r = inner(p.M, o.x, o.z, o.residual)
-    o.initialResidualNorm = sqrt(inner(p.M, o.x, o.residual, o.residual))
-    return o
+    s.z_r = inner(p.M, s.x, s.z, s.residual)
+    s.initialResidualNorm = sqrt(inner(p.M, s.x, s.residual, s.residual))
+    return s
 end
-function step_solver!(
-    p::P, o::O, ::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientState}
+function step_solver!(p::HessianProblem, s::TruncatedConjugateGradientState, ::Any)
     # Updates
     get_hessian!(p, o.Hδ, o.x, o.δ)
     o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
@@ -188,4 +186,4 @@ function step_solver!(
     o.δPδ = o.z_r + β^2 * o.δPδ
     return o
 end
-get_solver_result(o::O) where {O<:TruncatedConjugateGradientState} = o.η
+get_solver_result(s::TruncatedConjugateGradientState) = s.η

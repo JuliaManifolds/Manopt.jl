@@ -47,12 +47,12 @@ struct DebugCk <: DebugAction
         return new(io, "C(k): ", a)
     end
 end
-function (d::DebugCk)(p::P, o::ChambollePockState, i::Int) where {P<:PrimalDualProblem}
+function (d::DebugCk)(p::P, s::ChambollePockState, i::Int) where {P<:PrimalDualProblem}
     if all(has_storage.(Ref(d.storage), [:Iterate, :ξbar])) && i > 0 # all values stored
         x_old, ξ_bar_old = get_storage.(Ref(d.storage), [:Iterate, :ξbar]) #fetch
-        print(d.io, d.prefix * "$(Ck(p, o, x_old,ξ_bar_old))")
+        print(d.io, d.prefix * "$(Ck(p, s, x_old,ξ_bar_old))")
     end
-    return d.storage(p, o, i)
+    return d.storage(p, s, i)
 end
 
 struct RecordCk <: RecordAction
@@ -62,11 +62,11 @@ struct RecordCk <: RecordAction
         return new(Array{Float64,1}(), a)
     end
 end
-function (r::RecordCk)(p::P, o::ChambollePockState, i::Int) where {P<:PrimalDualProblem}
+function (r::RecordCk)(p::P, s::ChambollePockState, i::Int) where {P<:PrimalDualProblem}
     if all(has_storage.(Ref(r.storage), [:Iterate, :ξbar])) && i > 0 # all values stored
         x_old = get_storage(r.storage, :Iterate)
         ξ_bar_old = get_storage(r.storage, :ξbar)
-        Manopt.record_or_reset!(r, Ck(p, o, x_old, ξ_bar_old), i)
+        Manopt.record_or_reset!(r, Ck(p, s, x_old, ξ_bar_old), i)
     end
-    return r.storage(p, o, i)
+    return r.storage(p, s, i)
 end

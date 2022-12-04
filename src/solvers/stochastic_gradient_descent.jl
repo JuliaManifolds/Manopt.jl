@@ -81,14 +81,14 @@ function stochastic_gradient_descent!(
     o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
-function initialize_solver!(::StochasticGradientProblem, o::StochasticGradientDescentState)
-    o.k = 1
-    (o.order_type == :FixedRandom) && (shuffle!(o.order))
-    return o
+function initialize_solver!(::StochasticGradientProblem, s::StochasticGradientDescentState)
+    s.k = 1
+    (s.order_type == :FixedRandom) && (shuffle!(s.order))
+    return s
 end
-function step_solver!(p::StochasticGradientProblem, o::StochasticGradientDescentState, iter)
-    s, o.gradient = o.direction(p, o, iter)
-    retract!(p.M, o.x, o.x, -s * o.gradient)
-    o.k = ((o.k) % length(o.order)) + 1
-    return o
+function step_solver!(p::StochasticGradientProblem, s::StochasticGradientDescentState, iter)
+    step, s.gradient = s.direction(p, s, iter)
+    retract!(p.M, s.x, s.x, -step * s.gradient)
+    s.k = ((s.k) % length(s.order)) + 1
+    return s
 end

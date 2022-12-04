@@ -446,9 +446,9 @@ mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
     StopIfResidualIsReducedByFactor(κ::Float64) = new(κ, "")
 end
 function (c::StopIfResidualIsReducedByFactor)(
-    p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientState}
-    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * c.κ && i > 0
+    p::HessianProblem, s::TruncatedConjugateGradientState, i
+)
+    if norm(p.M, s.x, s.residual) <= s.initialResidualNorm * c.κ && i > 0
         c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
         return true
     end
@@ -487,8 +487,8 @@ mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
     StopIfResidualIsReducedByPower(θ::Float64) = new(θ, "")
 end
 function (c::StopIfResidualIsReducedByPower)(
-    p::P, o::O, i::Int
-) where {P<:HessianProblem,O<:TruncatedConjugateGradientState}
+    p::HessianProblem, s::TruncatedConjugateGradientState, i
+)
     if norm(p.M, o.x, o.residual) <= o.initialResidualNorm^(1 + c.θ) && i > 0
         c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
         return true
@@ -536,10 +536,10 @@ mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
 end
 StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
 function (c::StopWhenTrustRegionIsExceeded)(
-    ::HessianProblem, o::TruncatedConjugateGradientState, i::Int
+    ::HessianProblem, s::TruncatedConjugateGradientState, i::Int
 )
-    if o.ηPη >= o.trust_region_radius^2 && i >= 0
-        c.reason = "Trust-region radius violation (‖η‖² = $(o.ηPη)) >= $(o.trust_region_radius^2) = trust_region_radius²). \n"
+    if s.ηPη >= s.trust_region_radius^2 && i >= 0
+        c.reason = "Trust-region radius violation (‖η‖² = $(s.ηPη)) >= $(s.trust_region_radius^2) = trust_region_radius²). \n"
         return true
     end
     return false
@@ -569,10 +569,10 @@ mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
 end
 StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("")
 function (c::StopWhenCurvatureIsNegative)(
-    ::HessianProblem, o::TruncatedConjugateGradientState, i::Int
+    ::HessianProblem, s::TruncatedConjugateGradientState, i::Int
 )
-    if o.δHδ <= 0 && i > 0
-        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(o.δHδ))) <= 0).\n"
+    if s.δHδ <= 0 && i > 0
+        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(s.δHδ))) <= 0).\n"
         return true
     end
     return false
@@ -599,10 +599,10 @@ mutable struct StopWhenModelIncreased <: StoppingCriterion
 end
 StopWhenModelIncreased() = StopWhenModelIncreased("")
 function (c::StopWhenModelIncreased)(
-    ::HessianProblem, o::TruncatedConjugateGradientState, i::Int
+    ::HessianProblem, s::TruncatedConjugateGradientState, i::Int
 )
-    if i > 0 && (o.new_model_value > o.model_value)
-        c.reason = "Model value increased from $(o.model_value) to $(o.new_model_value).\n"
+    if i > 0 && (s.new_model_value > s.model_value)
+        c.reason = "Model value increased from $(s.model_value) to $(s.new_model_value).\n"
         return true
     end
     return false

@@ -91,9 +91,9 @@ mutable struct DebugGroup <: DebugAction
     group::Array{DebugAction,1}
     DebugGroup(g::Array{<:DebugAction,1}) = new(g)
 end
-function (d::DebugGroup)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i)
+function (d::DebugGroup)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     for di in d.group
-        di(p, o, i)
+        di(p, s, i)
     end
 end
 
@@ -113,11 +113,11 @@ mutable struct DebugEvery <: DebugAction
         return new(d, every, alwaysUpdate)
     end
 end
-function (d::DebugEvery)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i)
+function (d::DebugEvery)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     if (rem(i, d.every) == 0)
-        d.debug(p, o, i)
+        d.debug(p, s, i)
     elseif d.alwaysUpdate
-        d.debug(p, o, -1)
+        d.debug(p, s, -1)
     end
 end
 
@@ -158,13 +158,13 @@ mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAc
         return new{typeof(invretr)}(io, format, storage, invretr)
     end
 end
-function (d::DebugChange)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i)
+function (d::DebugChange)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(p.M, get_iterate(o), get_storage(d.storage, :Iterate), d.invretr),
+        distance(p.M, get_iterate(s), get_storage(d.storage, :Iterate), d.invretr),
     )
-    d.storage(p, o, i)
+    d.storage(p, s, i)
     return nothing
 end
 @doc raw"""
@@ -192,13 +192,13 @@ mutable struct DebugGradientChange <: DebugAction
         return new(io, format, storage)
     end
 end
-function (d::DebugGradientChange)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i)
+function (d::DebugGradientChange)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(p.M, get_gradient(o), get_storage(d.storage, :Gradient)),
+        distance(p.M, get_gradient(s), get_storage(d.storage, :Gradient)),
     )
-    d.storage(p, o, i)
+    d.storage(p, s, i)
     return nothing
 end
 @doc raw"""
@@ -226,8 +226,8 @@ mutable struct DebugIterate <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugIterate)(::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(o))
+function (d::DebugIterate)(::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(s))
     return nothing
 end
 
@@ -279,8 +279,8 @@ mutable struct DebugCost <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugCost)(p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int)
-    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(o)))
+function (d::DebugCost)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(s)))
     return nothing
 end
 
@@ -325,8 +325,8 @@ mutable struct DebugEntry <: DebugAction
         return new(io, format, f)
     end
 end
-function (d::DebugEntry)(::AbstractManoptProblem, o::AbstractManoptSolverState, i)
-    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(o, d.field))
+function (d::DebugEntry)(::AbstractManoptProblem, s::AbstractManoptSolverState, i)
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(s, d.field))
     return nothing
 end
 
@@ -379,17 +379,17 @@ mutable struct DebugEntryChange <: DebugAction
 end
 
 function (d::DebugEntryChange)(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if i == 0
         # on init if field not present -> generate
-        !has_storage(d.storage, d.field) && d.storage(p, o, i)
+        !has_storage(d.storage, d.field) && d.storage(p, s, i)
         return nothing
     end
     x = get_storage(d.storage, d.field)
-    v = d.distance(p, o, getproperty(o, d.field), x)
+    v = d.distance(p, s, getproperty(s, d.field), x)
     Printf.format(d.io, Printf.Format(d.format), v)
-    d.storage(p, o, i)
+    d.storage(p, s, i)
     return nothing
 end
 
@@ -404,9 +404,9 @@ mutable struct DebugStoppingCriterion <: DebugAction
     DebugStoppingCriterion(io::IO=stdout) = new(io)
 end
 function (d::DebugStoppingCriterion)(
-    ::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
-    print(d.io, (i >= 0 || i == typemin(Int)) ? get_reason(o) : "")
+    print(d.io, (i >= 0 || i == typemin(Int)) ? get_reason(s) : "")
     return nothing
 end
 
@@ -507,20 +507,20 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
     DebugWarnIfCostIncreases(warn::Symbol=:Once; tol=1e-13) = new(warn, Float64(Inf), tol)
 end
 function (d::DebugWarnIfCostIncreases)(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if d.status !== :No
-        cost = get_cost(p, get_iterate(o))
+        cost = get_cost(p, get_iterate(s))
         if cost > d.old_cost + d.tol
             # Default case in Gradient Descent, include a tipp
             @warn """The cost increased.
             At iteration #$i the cost increased from $(d.old_cost) to $(cost)."""
-            if o isa GradientDescentAbstractManoptSolverState &&
-                o.stepsize isa ConstantStepsize
+            if s isa GradientDescentAbstractManoptSolverState &&
+                s.stepsize isa ConstantStepsize
                 @warn """You seem to be running a `gradient_decent` with the default `ConstantStepsize`.
                 For ease of use, this is set as the default, but might not converge.
                 Maybe consider to use `ArmijoLinesearch` (if applicable) or use
-                `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,o,i))."""
+                `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,s,i))."""
             end
             if d.status === :Once
                 @warn "Further warnings will be supressed, use DebugWarnIfCostIncreases(:Always) to get all warnings."
@@ -553,10 +553,10 @@ mutable struct DebugWarnIfCostNotFinite <: DebugAction
     DebugWarnIfCostNotFinite(warn::Symbol=:Once) = new(warn)
 end
 function (d::DebugWarnIfCostNotFinite)(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if d.status !== :No
-        cost = get_cost(p, get_iterate(o))
+        cost = get_cost(p, get_iterate(s))
         if !isfinite(cost)
             @warn """The cost is not finite.
             At iteration #$i the cost evaluated to $(cost)."""
@@ -594,10 +594,10 @@ mutable struct DebugWarnIfFieldNotFinite <: DebugAction
     DebugWarnIfFieldNotFinite(field::Symbol, warn::Symbol=:Once) = new(warn, field)
 end
 function (d::DebugWarnIfFieldNotFinite)(
-    ::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int
+    ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if d.status !== :No
-        v = getproperty(o, d.field)
+        v = getproperty(s, d.field)
         if !all(isfinite.(v))
             @warn """The field o.$(d.field) is or contains values that are not finite.
             At iteration #$i it evaluated to $(v)."""

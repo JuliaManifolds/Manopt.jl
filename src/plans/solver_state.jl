@@ -17,7 +17,7 @@ provide the access functions accordingly
 abstract type AbstractManoptSolverState end
 
 """
-    dispatch_state_decorator(o::AbstractManoptSolverState)
+    dispatch_state_decorator(s::AbstractManoptSolverState)
 
 Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `s` to be of decorating type, i.e.
 it stores (encapsulates) state in itself, by default in the field `s.state`.
@@ -29,12 +29,12 @@ The default is `Val{false}`, i.e. by default an state is not decorated.
 dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 
 """
-    is_state_decorator(o::AbstractManoptSolverState)
+    is_state_decorator(s::AbstractManoptSolverState)
 
-Indicate, whether [`AbstractManoptSolverState`](@ref) `o` are of decorator type.
+Indicate, whether [`AbstractManoptSolverState`](@ref) `s` are of decorator type.
 """
-function is_state_decorator(o::AbstractManoptSolverState)
-    return _extract_val(dispatch_state_decorator(o))
+function is_state_decorator(s::AbstractManoptSolverState)
+    return _extract_val(dispatch_state_decorator(s))
 end
 
 @doc raw"""
@@ -136,12 +136,12 @@ _get_state(s::AbstractManoptSolverState, ::Val{true}) = get_state(s.state)
 return the (last stored) gradient within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the state beforehand
 """
 get_gradient(s::AbstractManoptSolverState) = _get_gradient(s, dispatch_state_decorator(s))
-function _get_gradient(o::AbstractManoptSolverState, ::Val{false})
+function _get_gradient(s::AbstractManoptSolverState, ::Val{false})
     return error(
-        "It seems the AbstractManoptSolverState $o do not provide access to a gradient"
+        "It seems the AbstractManoptSolverState $s do not provide access to a gradient"
     )
 end
-_get_gradient(o::AbstractManoptSolverState, ::Val{true}) = get_gradient(o.state)
+_get_gradient(s::AbstractManoptSolverState, ::Val{true}) = get_gradient(s.state)
 
 """
     get_iterate(O::AbstractManoptSolverState)
@@ -176,11 +176,11 @@ _set_iterate!(s::AbstractManoptSolverState, p, ::Val{true}) = set_iterate!(s.sta
 
 return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the state beforehand
 """
-function get_solver_result(o::AbstractManoptSolverState)
-    return get_solver_result(o, dispatch_state_decorator(o))
+function get_solver_result(s::AbstractManoptSolverState)
+    return get_solver_result(s, dispatch_state_decorator(s))
 end
-get_solver_result(o::AbstractManoptSolverState, ::Val{false}) = get_iterate(o)
-get_solver_result(o::AbstractManoptSolverState, ::Val{true}) = get_solver_result(o.state)
+get_solver_result(s::AbstractManoptSolverState, ::Val{false}) = get_iterate(s)
+get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result(s.state)
 
 #
 # Common Actions for decorated AbstractManoptSolverState
@@ -234,19 +234,19 @@ mutable struct StoreStateAction <: AbstractStateAction
     end
 end
 function (a::StoreStateAction)(
-    ::P, o::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
+    ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
     #update values (maybe only once)
     if !a.once || a.last_stored != i
         for key in a.keys
-            if hasproperty(o, key)
-                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(getproperty(o, key))))
+            if hasproperty(s, key)
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(getproperty(s, key))))
             elseif key == :Iterate
-                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_iterate(o))))
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_iterate(s))))
             elseif key == :Gradient
-                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_gradient(o))))
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_gradient(s))))
             else
-                @warn "$key is not a field of $o, no storage updated."
+                @warn "$key is not a field of $s, no storage updated."
             end
         end
     end
@@ -275,11 +275,11 @@ has_storage(a::AbstractStateAction, key) = haskey(a.values, key)
 update the [`AbstractStateAction`](@ref) `a` internal values to the ones given on
 the [`AbstractManoptSolverState`](@ref) `o`.
 """
-function update_storage!(a::AbstractStateAction, o::O) where {O<:AbstractManoptSolverState}
+function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
     return update_storage!(
         a,
         Dict(
-            key => key == :Iterate ? get_iterate(o) : getproperty(o, key) for key in a.keys
+            key => key == :Iterate ? get_iterate(s) : getproperty(s, key) for key in a.keys
         ),
     )
 end
