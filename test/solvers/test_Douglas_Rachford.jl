@@ -1,3 +1,4 @@
+using Manifolds, Manopt, Test
 @testset "DouglasRachford" begin
     # Though this seems a strange way, it is a way to compute the mid point
     M = Sphere(2)
@@ -33,4 +34,8 @@
     result2 = mean(M, [p, q, r])
     # since the default does not run that long -> rough estimate
     @test distance(M, xHat2, result2) ≈ 0
+    #test getter/set
+    O = DouglasRachfordOptions(M, p)
+    set_iterate!(O, q)
+    @test get_iterate(O) == q
 end

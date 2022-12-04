@@ -25,16 +25,12 @@ not necessarily deterministic.
 * `retraction` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-  complete [`Options`](@ref) re returned. This can be used to access recorded values.
-  If set to false (default) just the optimal value `x_opt` if returned
 ...
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of the subgradient method
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function subgradient_method(
     M::AbstractManifold, F::TF, ∂F::TdF, x; kwargs...
@@ -66,7 +62,6 @@ function subgradient_method!(
     retraction_method::TRetr=default_retraction_method(M),
     stepsize::Stepsize=ConstantStepsize(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
-    return_options=false,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr}
@@ -79,12 +74,7 @@ function subgradient_method!(
         retraction_method=retraction_method,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodOptions)
     o.x_optimal = o.x

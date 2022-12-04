@@ -36,16 +36,12 @@ the default parameter is given in brackets
   parallel Douglas–Rachford implicitly works on a `PowerManifold` manifold and
   its first argument is the result then (assuming all are equal after the second
   prox.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
-...
+
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of gradientDescent
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function DouglasRachford(
     M::AbstractManifold, F::TF, proxes::Vector{<:Any}, x; kwargs...
@@ -87,7 +83,6 @@ function DouglasRachford!(
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(200), StopWhenChangeLess(10.0^-5)
     ),
-    return_options=false,
     kwargs..., #especially may contain decorator options
 ) where {TF,Tλ,Tα,TR}
     if length(proxes) < 2
@@ -122,14 +117,8 @@ function DouglasRachford!(
         stopping_criterion=stopping_criterion,
         parallel=parallel > 0,
     )
-
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 function initialize_solver!(::ProximalProblem, ::DouglasRachfordOptions) end
 function step_solver!(p::ProximalProblem, o::DouglasRachfordOptions, iter)

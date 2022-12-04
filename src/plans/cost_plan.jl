@@ -131,4 +131,8 @@ end
     inverse_retraction_method=inverse_retraction_method,
     kwargs...,
 )
-get_solver_result(o::NelderMeadOptions) = o.x
+get_iterate(O::NelderMeadOptions) = O.x
+function set_iterate!(O::NelderMeadOptions, p)
+    O.x = p
+    return O
+end

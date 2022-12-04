@@ -259,9 +259,15 @@ initialized automatically and values with a default may be left out.
 * `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`ExponentialRetraction()`) the retraction to use
-* `inverse_retraction_method` - (`LogarithmicInverseRetraction()`) an inverse retraction to use.
-* `vector_transport_method` - (`ParallelTransport()`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M)`) the retraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse
+  retraction to use on the manifold ``\mathcal M``.
+* `inverse_retraction_method_dual` - (`default_inverse_retraction_method(TangentBundle(M))`)
+  an inverse retraction to use on manifold ``\mathcal N``.
+* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to
+  use on the manifold ``\mathcal M``.
+* `vector_transport_method_dual` - (`default_vector_transport_method(TangentBundle(M))`) a
+  vector transport to use on manifold ``\mathcal N``.
 
 where for the last two the functions a [`Problem`](@ref)` p`,
 [`Options`](@ref)` o` and the current iterate `i` are the arguments.
@@ -280,7 +286,9 @@ If you activate these to be different from the default identity, you have to pro
         update_dual_base::Union{Function,Missing} = missing,
         retraction_method = default_retraction_method(M),
         inverse_retraction_method = default_inverse_retraction_method(M),
+        inverse_retraction_method_dual = default_inverse_retraction_method(TangentBundle(M)),
         vector_transport_method = default_vector_transport_method(M),
+        vector_transport_method_dual = default_vector_transport_method(TangentBundle(M)),
     )
 """
 mutable struct ChambollePockOptions{
@@ -289,7 +297,9 @@ mutable struct ChambollePockOptions{
     T,
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
+    IRM_Dual<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
+    VTM_Dual<:AbstractVectorTransportMethod,
 } <: PrimalDualOptions
     m::P
     n::Q
@@ -308,7 +318,9 @@ mutable struct ChambollePockOptions{
     update_dual_base::Union{Function,Missing}
     retraction_method::RM
     inverse_retraction_method::IRM
+    inverse_retraction_method_dual::IRM_Dual
     vector_transport_method::VTM
+    vector_transport_method_dual::VTM_Dual
 
     @deprecate ChambollePockOptions(
         m,
@@ -352,16 +364,24 @@ mutable struct ChambollePockOptions{
         update_dual_base::Union{Function,Missing}=missing,
         retraction_method::RM=default_retraction_method(M),
         inverse_retraction_method::IRM=default_inverse_retraction_method(M),
+        inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(
+            TangentBundle(M)
+        ),
         vector_transport_method::VTM=default_vector_transport_method(M),
+        vector_transport_method_dual::VTM_Dual=default_vector_transport_method(
+            TangentBundle(M)
+        ),
     ) where {
         P,
         Q,
         T,
         RM<:AbstractRetractionMethod,
         IRM<:AbstractInverseRetractionMethod,
+        IRM_Dual<:AbstractInverseRetractionMethod,
         VTM<:AbstractVectorTransportMethod,
+        VTM_Dual<:AbstractVectorTransportMethod,
     }
-        return new{P,Q,T,RM,IRM,VTM}(
+        return new{P,Q,T,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
             m,
             n,
             x,
@@ -379,11 +399,18 @@ mutable struct ChambollePockOptions{
             update_dual_base,
             retraction_method,
             inverse_retraction_method,
+            inverse_retraction_method_dual,
             vector_transport_method,
+            vector_transport_method_dual,
         )
     end
 end
-get_solver_result(o::PrimalDualOptions) = o.x
+get_solver_result(o::PrimalDualOptions) = get_iterate(o)
+get_iterate(O::ChambollePockOptions) = O.x
+function set_iterate!(O::ChambollePockOptions, p)
+    O.x = p
+    return O
+end
 @doc raw"""
     primal_residual(p, o, x_old, ξ_old, n_old)
 
@@ -413,8 +440,9 @@ function primal_residual(
                 p,
                 o.m,
                 o.n,
-                vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) -
-                o.ξ,
+                vector_transport_to(
+                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
+                ) - o.ξ,
             ),
             o.x,
             o.vector_transport_method,
@@ -463,9 +491,11 @@ function dual_residual(
         return norm(
             p.N,
             o.n,
-            1 / o.dual_stepsize *
-            (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.ξ) -
-            linearized_forward_operator(
+            1 / o.dual_stepsize * (
+                vector_transport_to(
+                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
+                ) - o.ξ
+            ) - linearized_forward_operator(
                 p,
                 o.m,
                 vector_transport_to(
@@ -482,9 +512,11 @@ function dual_residual(
         return norm(
             p.N,
             o.n,
-            1 / o.dual_stepsize *
-            (vector_transport_to(p.N, n_old, ξ_old, o.n, o.vector_transport_method) - o.n) -
-            inverse_retract(
+            1 / o.dual_stepsize * (
+                vector_transport_to(
+                    p.N, n_old, ξ_old, o.n, o.vector_transport_method_dual
+                ) - o.n
+            ) - inverse_retract(
                 p.N,
                 o.n,
                 forward_operator(
@@ -502,7 +534,7 @@ function dual_residual(
                         o.retraction_method,
                     ),
                 ),
-                o.inverse_retraction_method,
+                o.inverse_retraction_method_dual,
             ),
         )
     else
@@ -522,7 +554,7 @@ end
 
 A Debug action to print the dual residual.
 The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
+should at least record `:Iterate`, `:ξ` and `:n`.
 
 # Constructor
 DebugDualResidual()
@@ -538,7 +570,7 @@ mutable struct DebugDualResidual <: DebugAction
     format::String
     storage::StoreOptionsAction
     function DebugDualResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
@@ -547,20 +579,20 @@ mutable struct DebugDualResidual <: DebugAction
     end
     function DebugDualResidual(
         initial_values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
     ) where {P,T,Q}
         update_storage!(
-            storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), initial_values))
+            storage, Dict(k => v for (k, v) in zip((:Iterate, :ξ, :n), initial_values))
         )
         return new(io, format, storage)
     end
 end
 function (d::DebugDualResidual)(p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int)
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
+    if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
+        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
         Printf.format(d.io, Printf.Format(d.format), dual_residual(p, o, xOld, ξOld, nOld))
     end
     return d.storage(p, o, i)
@@ -570,7 +602,7 @@ end
 
 A Debug action to print the primal residual.
 The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
+should at least record `:Iterate`, `:ξ` and `:n`.
 
 # Constructor
 
@@ -587,7 +619,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     format::String
     storage::StoreOptionsAction
     function DebugPrimalResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
@@ -596,20 +628,20 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
     function DebugPrimalResidual(
         values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
     ) where {P,T,Q}
-        update_storage!(storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :ξ, :n), values)))
         return new(io, format, storage)
     end
 end
 function (d::DebugPrimalResidual)(
     p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
 )
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
+    if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
+        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
         Printf.format(
             d.io, Printf.Format(d.format), primal_residual(p, o, xOld, ξOld, nOld)
         )
@@ -621,7 +653,7 @@ end
 
 A Debug action to print the primaldual residual.
 The constructor accepts a printing function and some (shared) storage, which
-should at least record `:x`, `:ξ` and `:n`.
+should at least record `:Iterate`, `:ξ` and `:n`.
 
 # Constructor
 
@@ -638,7 +670,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     format::String
     storage::StoreOptionsAction
     function DebugPrimalDualResidual(;
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
@@ -647,20 +679,20 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
     function DebugPrimalDualResidual(
         values::Tuple{P,T,Q};
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :ξ, :n)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :ξ, :n)),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
     ) where {P,Q,T}
-        update_storage!(storage, Dict(k => v for (k, v) in zip((:x, :ξ, :n), values)))
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :ξ, :n), values)))
         return new(io, format, storage)
     end
 end
 function (d::DebugPrimalDualResidual)(
     p::AbstractPrimalDualProblem, o::PrimalDualOptions, i::Int
 )
-    if all(has_storage.(Ref(d.storage), [:x, :ξ, :n])) && i > 0 # all values stored
-        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:x, :ξ, :n]) #fetch
+    if all(has_storage.(Ref(d.storage), [:Iterate, :ξ, :n])) && i > 0 # all values stored
+        xOld, ξOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :ξ, :n]) #fetch
         v = primal_residual(p, o, xOld, ξOld, nOld) + dual_residual(p, o, xOld, ξOld, nOld)
         Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(p.M))
     end
@@ -677,7 +709,7 @@ Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
 function DebugPrimalChange(;
-    storage::StoreOptionsAction=StoreOptionsAction((:x,)),
+    storage::StoreOptionsAction=StoreOptionsAction((:Iterate,)),
     prefix="Primal Change: ",
     kwargs...,
 )
@@ -739,7 +771,7 @@ function (d::DebugDualChange)(p::AbstractPrimalDualProblem, o::PrimalDualOptions
         v = norm(
             p.N,
             o.n,
-            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method) - o.ξ,
+            vector_transport_to(p.N, nOld, ξOld, o.n, o.vector_transport_method_dual) - o.ξ,
         )
         Printf.format(d.io, Printf.Format(d.format), v)
     end
@@ -767,7 +799,11 @@ function DebugDualBaseChange(;
     kwargs...,
 )
     return DebugEntryChange(
-        :n, (p, o, x, y) -> distance(p.N, x, y); storage=storage, prefix=prefix, kwargs...
+        :n,
+        (p, o, x, y) -> distance(p.N, x, y, o.inverse_retraction_method_dual);
+        storage=storage,
+        prefix=prefix,
+        kwargs...,
     )
 end
 

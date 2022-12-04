@@ -26,6 +26,7 @@ mutable struct StopAfterIteration <: StoppingCriterion
     StopAfterIteration(mIter::Int) = new(mIter, "")
 end
 function (c::StopAfterIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
+    (i == 0) && (c.reason = "") # reset on init
     if i >= c.maxIter
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
@@ -54,9 +55,10 @@ mutable struct StopWhenGradientNormLess <: StoppingCriterion
     reason::String
     StopWhenGradientNormLess(ε::Float64) = new(ε, "")
 end
-function (c::StopWhenGradientNormLess)(p::Problem, o::AbstractGradientOptions, iter::Int)
-    if norm(p.M, o.x, o.gradient) < c.threshold
-        c.reason = "The algorithm reached approximately critical point after $iter iterations; the gradient norm ($(norm(p.M,o.x,o.gradient))) is less than $(c.threshold).\n"
+function (c::StopWhenGradientNormLess)(p::Problem, o::Options, i::Int)
+    (i == 0) && (c.reason = "") # reset on init
+    if norm(p.M, get_iterate(o), get_gradient(o)) < c.threshold
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(p.M,get_iterate(o),get_gradient(o)))) is less than $(c.threshold).\n"
         return true
     end
     return false
@@ -78,7 +80,7 @@ end
     StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
-optimization variable from within a [`Options`](@ref), i.e `o.x`.
+optimization variable from within a [`Options`](@ref), i.e `get_iterate(o)`.
 For the storage a [`StoreOptionsAction`](@ref) is used
 
 # Constructor
@@ -86,27 +88,31 @@ For the storage a [`StoreOptionsAction`](@ref) is used
     StopWhenChangeLess(ε[, a])
 
 initialize the stopping criterion to a threshold `ε` using the
-[`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:x` by
+[`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:Iterate` by
 default.
 """
 mutable struct StopWhenChangeLess <: StoppingCriterion
     threshold::Float64
     reason::String
     storage::StoreOptionsAction
-    function StopWhenChangeLess(ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:x,)))
+    function StopWhenChangeLess(
+        ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:Iterate,))
+    )
         return new(ε, "", a)
     end
 end
-function (c::StopWhenChangeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    if has_storage(c.storage, :x)
-        xOld = get_storage(c.storage, :x)
-        if distance(p.M, o.x, xOld) < c.threshold && i > 0
-            c.reason = "The algorithm performed a step with a change ($(distance(p.M, o.x, xOld))) less than $(c.threshold).\n"
-            c.storage(p, o, i)
+function (c::StopWhenChangeLess)(P::Problem, O::Options, i)
+    (i == 0) && (c.reason = "") # reset on init
+    if has_storage(c.storage, :Iterate)
+        x_old = get_storage(c.storage, :Iterate)
+        d = distance(P.M, get_iterate(O), x_old, default_inverse_retraction_method(P.M))
+        if d < c.threshold && i > 0
+            c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
+            c.storage(P, O, i)
             return true
         end
     end
-    c.storage(p, o, i)
+    c.storage(P, O, i)
     return false
 end
 
@@ -140,6 +146,7 @@ mutable struct StopWhenStepsizeLess <: StoppingCriterion
     end
 end
 function (c::StopWhenStepsizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    (i == 0) && (c.reason = "") # reset on init
     s = get_last_stepsize(p, o, i)
     if s < c.threshold && i > 0
         c.reason = "The algorithm computed a step size ($s) less than $(c.threshold).\n"
@@ -162,7 +169,7 @@ end
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,o.x)`.
+optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,get_iterate(o))`.
 
 # Constructor
 
@@ -176,8 +183,9 @@ mutable struct StopWhenCostLess <: StoppingCriterion
     StopWhenCostLess(ε::Float64) = new(ε, "")
 end
 function (c::StopWhenCostLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    if i > 0 && get_cost(p, o.x) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,o.x))) less than the threshold ($(c.threshold)).\n"
+    (i == 0) && (c.reason = "") # reset on init
+    if i > 0 && get_cost(p, get_iterate(o)) < c.threshold
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(o)))) less than the threshold ($(c.threshold)).\n"
         return true
     end
     return false
@@ -191,6 +199,38 @@ Update the minimal cost below which the slgorithm shall stop
 function update_stopping_criterion!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     c.threshold = v
     return c
+end
+
+@doc raw"""
+    StopWhenSmallerOrEqual <: StoppingCriterion
+
+A functor for an stopping criterion, where the algorithm if stopped when a variable is smaller than or equal to its minimum value.
+
+# Fields
+* `value` – stores the variable which has to fall under a threshold for the algorithm to stop
+* `minValue` – stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+  reached, see [`get_reason`](@ref).
+
+# Constructor
+
+    StopWhenSmallerOrEqual(value, minValue)
+
+initialize the stopifsmallerorequal functor to indicate to stop after `value` is smaller than or equal to `minValue`.
+"""
+mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
+    value::Symbol
+    minValue::Real
+    reason::String
+    StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "")
+end
+function (c::StopWhenSmallerOrEqual)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    (i == 0) && (c.reason = "") # reset on init
+    if getfield(o, c.value) <= c.minValue
+        c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
+        return true
+    end
+    return false
 end
 
 """
@@ -220,6 +260,7 @@ mutable struct StopAfter <: StoppingCriterion
 end
 function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     if value(c.start) == 0 || i <= 0 # (re)start timer
+        c.reason = ""
         c.start = Nanosecond(time_ns())
     else
         cTime = Nanosecond(time_ns()) - c.start
@@ -264,6 +305,7 @@ mutable struct StopWhenAll{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAll(c...) = new{typeof(c)}(c, "")
 end
 function (c::StopWhenAll)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    (i == 0) && (c.reason = "") # reset on init
     if all(subC -> subC(p, o, i), c.criteria)
         c.reason = string([get_reason(subC) for subC in c.criteria]...)
         return true
@@ -316,6 +358,7 @@ mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c)
 end
 function (c::StopWhenAny)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    (i == 0) && (c.reason = "") # reset on init
     if any(subC -> subC(p, o, i), c.criteria)
         c.reason = string([get_reason(subC) for subC in c.criteria]...)
         return true

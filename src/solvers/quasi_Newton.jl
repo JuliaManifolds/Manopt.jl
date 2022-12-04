@@ -43,12 +43,10 @@ The ``k``th iteration consists of
 * `stopping_criterion` - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`)
   specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method` – (`default_vector_transport_method(M)`) a vector transport to use.
-* `return_options` – (`false`) – specify whether to return just the result `x` (default) or the complete [`Options`](@ref), e.g. to access recorded values. if activated, the extended result, i.e. the
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of the quasi–Newton method
-OR
-* `options` – the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function quasi_Newton(M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
     x_res = copy(M, x)
@@ -63,7 +61,7 @@ in the point `x` using a retraction ``R`` and a vector transport ``T``.
 # Input
 * `M` – a manifold ``\mathcal{M}``.
 * `F` – a cost function ``F: \mathcal{M} →ℝ`` to minimize.
-* `gradF`– the gradient ``\operatorname{grad}F : \mathcal{M} → T_x\mathcal M`` of ``F``.
+* `gradF`– the gradient ``\operatorname{grad}F : \mathcal{M} → T_x\mathcal M`` of ``F`` implemented as `gradF(M,p)`.
 * `x` – an initial value ``x ∈ \mathcal{M}``.
 
 For all optional parameters, see [`quasi_Newton`](@ref).
@@ -96,7 +94,6 @@ function quasi_Newton!(
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
                                           StopWhenGradientNormLess(1e-6),
-    return_options=false,
     kwargs...,
 ) where {TF,TDF}
     if memory_size >= 0
@@ -127,26 +124,24 @@ function quasi_Newton!(
 
     p = GradientProblem(M, F, gradF; evaluation=evaluation)
     o = QuasiNewtonOptions(
-        x,
-        get_gradient(p, x),
-        local_dir_upd,
-        stopping_criterion,
-        stepsize;
+        M,
+        x;
+        initial_vector=get_gradient(p, x),
+        direction_update=local_dir_upd,
+        stopping_criterion=stopping_criterion,
+        stepsize=stepsize,
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
-
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 
-function initialize_solver!(::GradientProblem, ::QuasiNewtonOptions) end
+function initialize_solver!(p::GradientProblem, o::QuasiNewtonOptions)
+    o.gradient = get_gradient(p, o.x)
+    o.sk = deepcopy(o.gradient)
+    return o.yk = deepcopy(o.gradient)
+end
 
 function step_solver!(p::GradientProblem, o::QuasiNewtonOptions, iter)
     o.gradient = get_gradient(p, o.x)
@@ -441,5 +436,3 @@ function update_hessian!(
     end
     return d
 end
-
-get_solver_result(o::QuasiNewtonOptions) = o.x

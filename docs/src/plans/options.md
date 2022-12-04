@@ -18,6 +18,13 @@ corresponding [solvers](@ref SolversSection).
 You can always access the options (since they
 might be decorated) by calling [`get_options`](@ref).
 
+For easier access, and to abstract where these are actually stored, there exists
+
+```@docs
+get_iterate
+set_iterate!
+```
+
 ## Decorators for Options
 
 Options can be decorated using the following trait and function to initialize
@@ -42,3 +49,11 @@ get_storage
 has_storage
 update_storage!
 ```
+
+A simple example is the
+
+```@docs
+ReturnOptions
+```
+
+as well as [`DebugOptions`](@ref) and [`RecordOptions`](@ref).

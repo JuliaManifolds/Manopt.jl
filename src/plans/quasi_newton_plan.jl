@@ -306,7 +306,9 @@ used with any update rule for the direction.
         M::AbstractManifold,
         x;
         initial_vector=zero_vector(M,x),
-        direction_update=InverseBFGS(),
+        direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(M, x, InverseBFGS(), 20;
+            vector_transport_method=vector_transport_method,
+        )
         stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
         retraction_method::RM=default_retraction_method(M),
         vector_transport_method::VTM=default_vector_transport_method(M),
@@ -319,7 +321,7 @@ used with any update rule for the direction.
 mutable struct QuasiNewtonOptions{
     P,
     T,
-    U<:AbstractQuasiNewtonDirectionUpdate,
+    D<:AbstractQuasiNewtonDirectionUpdate,
     SC<:StoppingCriterion,
     S<:Stepsize,
     RTR<:AbstractRetractionMethod,
@@ -329,7 +331,7 @@ mutable struct QuasiNewtonOptions{
     gradient::T
     sk::T
     yk::T
-    direction_update::U
+    direction_update::D
     retraction_method::RTR
     stepsize::S
     stop::SC
@@ -339,10 +341,12 @@ function QuasiNewtonOptions(
     M::AbstractManifold,
     x::P;
     initial_vector::T=zero_vector(M, x),
-    direction_update::U=InverseBFGS(),
+    vector_transport_method::VTM=default_vector_transport_method(M),
+    direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
+        M, x, InverseBFGS, 20; vector_transport_method=vector_transport_method
+    ),
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
     retraction_method::RM=default_retraction_method(M),
-    vector_transport_method::VTM=default_vector_transport_method(M),
     stepsize::S=WolfePowellLinesearch(
         M;
         retraction_method=retraction_method,
@@ -352,17 +356,18 @@ function QuasiNewtonOptions(
 ) where {
     P,
     T,
-    U<:AbstractQuasiNewtonDirectionUpdate,
+    D<:AbstractQuasiNewtonDirectionUpdate,
     SC<:StoppingCriterion,
     S<:Stepsize,
     RM<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    return QuasiNewtonOptions{P,T,U,SC,S,RM,VTM}(
+    sk_init = zero_vector(M, x)
+    return QuasiNewtonOptions{P,typeof(sk_init),D,SC,S,RM,VTM}(
         x,
         initial_vector,
-        copy(M, initial_vector),
-        copy(M, initial_vector),
+        sk_init,
+        copy(M, sk_init),
         direction_update,
         retraction_method,
         stepsize,
@@ -564,19 +569,40 @@ end
 @doc raw"""
     QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, which are based on the idea of a so-called cautious update. The search direction is calculated as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`]. But the update given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`LimitedMemoryQuasiNewctionDirectionUpdate`] is only executed if
+These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,
+which are based on the idea of a so-called cautious update. The search direction is calculated
+as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref),
+butut the update  then is only executed if
 
 ```math
 \frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} \geq \theta(\lVert \operatorname{grad}f(x_k) \rVert_{x_k}),
 ```
 
-is satisfied, where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0`` and ``\theta`` is strictly increasing at ``0``. If this is not the case, the corresponding update will be skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref) the matrix ``H_k`` or ``B_k`` is not updated, but the basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``, and for [`LimitedMemoryQuasiNewctionDirectionUpdate`] neither the oldest vector pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` is discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}`` is added into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
-If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting method follows the method of [^HuangAbsilGallivan2018], taking into account that the corresponding step size is chosen.
-
+is satisfied, where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0``
+and ``\theta`` is strictly increasing at ``0``. If this is not the case, the corresponding
+update will be skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
+the matrix ``H_k`` or ``B_k`` is not updated.
+The basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent
+space ``T_{x_{k+1}} \mathcal{M}``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
+neither the oldest vector pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` is
+discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}`` is added
+into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``
+are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
+If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
+method follows the method of [^HuangAbsilGallivan2018], taking into account that
+the corresponding step size is chosen.
 
 # Fields
+
 * `update` – an [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 * `θ` – a monotone increasing function satisfying ``θ(0) = 0`` and ``θ`` is strictly increasing at ``0``.
+
+# Constructor
+
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; θ = x -> x)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; θ = x -> x)
+
+Generate a cautious update for either a matrix based or a limited memorz based update rule.
 
 # See also
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)

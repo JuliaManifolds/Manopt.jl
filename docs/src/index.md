@@ -75,7 +75,7 @@ form a [plan](@ref planSection).
 ### Visualization
 
 To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugSection) during the iterations of an algorithms as well as [record](@ref RecordSection) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the [Get started: Optimize!](tutorials/Optimize!.md) tutorial how to easily activate this.
+[`RecordIterate`](@ref). Take a look at the [Get Started: Optimize!](tutorials/Optimize!.md) tutorial on how to easily activate this.
 
 ## Manifolds
 
@@ -86,7 +86,7 @@ The notation in the documentation aims to follow the same [notation](https://jul
 ## Literature
 
 If you want to get started with manifolds, one book is [[do Carmo, 1992](#doCarmo1992)],
-and if you want do directly dive into optimization on manifolds, my favourite reference is
+and if you want do directly dive into optimization on manifolds, my favorite reference is
 [[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)], which is also available
 online for free.
 

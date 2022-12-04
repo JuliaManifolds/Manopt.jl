@@ -34,7 +34,10 @@ using Random
         x_start = [random_point(M) for i in 1:3]
         v_start = [random_tangent(M, y) for y in x_start]
         p = CostProblem(M, F)
-        o = ParticleSwarmOptions(x_start, v_start)
+        o = ParticleSwarmOptions(zero.(x_start), v_start)
+        # test set_iterate
+        set_iterate!(o, x_start)
+        @test sum(norm.(get_iterate(o) .- x_start)) == 0
         initialize_solver!(p, o)
         step_solver!(p, o, 1)
         for i in 1:3

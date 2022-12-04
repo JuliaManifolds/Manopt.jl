@@ -6,6 +6,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     include("plans/test_nelder_mead_plan.jl")
     include("plans/test_nonmutating.jl")
     include("plans/test_gradient_plan.jl")
+    include("plans/test_constrained_plan.jl")
     include("plans/test_hessian_plan.jl")
     include("plans/test_primal_dual_plan.jl")
     include("plans/test_higher_order_primal_dual_plan.jl")
@@ -29,10 +30,13 @@ end
 end
 @testset "Solver Tests       " begin
     include("solvers/test_alternating_gradient.jl")
+    include("solvers/test_augmented_lagrangian.jl")
     include("solvers/test_ChambollePock.jl")
     include("solvers/test_conjugate_gradient.jl")
     include("solvers/test_Douglas_Rachford.jl")
     include("solvers/test_cyclic_proximal_point.jl")
+    include("solvers/test_exact_penalty.jl")
+    include("solvers/test_Frank_Wolfe.jl")
     include("solvers/test_gradient_descent.jl")
     include("solvers/test_Nelder_Mead.jl")
     include("solvers/test_quasi_Newton.jl")

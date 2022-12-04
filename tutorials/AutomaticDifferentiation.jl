@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.5
+# v0.19.14
 
 using Markdown
 using InteractiveUtils
@@ -17,34 +17,34 @@ md"""
 
 # ╔═╡ f3bc91ee-5871-4cba-ac89-190deb71ad0f
 md"""
-Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7 the support of automatic differentiation support has been extended.
+Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7, the support of automatic differentiation support has been extended.
 
-This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function ``F\colon \mathcal M → ℝ``. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimisation algorithm in [Manopt.jl](https://manoptjl.org).
+This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function ``f\colon \mathcal M → ℝ``. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](https://manoptjl.org).
 
 While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDifferences.jl/latest/), you can also use [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl), [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/), [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/), or  [Zygote.jl](https://fluxml.ai/Zygote.jl/).
 """
 
 # ╔═╡ d9be6c2f-65fd-4685-9005-da22bf985e28
 md"""
-In this Notebook we will take a look at a few possibilities to approximate or derive the gradient of a function ``f:\mathcal M \to ℝ`` on a Riemannian manifold, without computing it yourself. There is mainly two different philosophies:
+In this Notebook we will take a look at a few possibilities to approximate or derive the gradient of a function ``f:\mathcal M \to ℝ`` on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
 
-1. Working _instrinsically_, i.e. stay on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
+1. Working _instrinsically_, i.e. staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
 
 2. Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
 
-Let's first load all packages we need.
+Let's first load all the packages we need.
 """
 
 # ╔═╡ 18d7459f-eed6-489b-a096-ac77ccd781af
 md"""
 ## 1. (Intrinsic) Forward Differences
 
-A first idea is to generalise (multivariate) finite differences to Riemannian manifolds. Let ``X_1,\ldots,X_d ∈ T_p\mathcal M`` denote an orthonormal basis of the tangent space ``T_p\mathcal M`` at the point ``p∈\mathcal M`` on the Riemannian manifold.
+A first idea is to generalize (multivariate) finite differences to Riemannian manifolds. Let ``X_1,\ldots,X_d ∈ T_p\mathcal M`` denote an orthonormal basis of the tangent space ``T_p\mathcal M`` at the point ``p∈\mathcal M`` on the Riemannian manifold.
 
-We can generalise the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M`` let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y`` and we obtain
+We can generalize the notion of a directional derivative, i.e. for the “direction” ``Y∈T_p\mathcal M``. Let ``c\colon [-ε,ε]``, ``ε>0``, be a curve with ``c(0) = p``, ``\dot c(0) = Y``, e.g. ``c(t)= \exp_p(tY)``. We obtain
 
 ```math
-	Df(p)[Y] = \frac{\mathrm{d}}{\mathrm{d}t} f(c(t)) = \lim_{h \to 0} \frac{1}{h}(f(\exp_p(hY))-f(p))
+	Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t \to 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
 ```
 
 We can approximate ``Df(p)[X]`` by a finite difference scheme for an ``h>0`` as
@@ -70,18 +70,18 @@ and perform the approximation from above to obtain
 ```math
 	\operatorname{grad}f(p) ≈ \sum_{i=1}^{d} G_h(X_i)X_i
 ```
-for some suitable step size ``h``.This comes at the cost of ``d+1`` function evaluations and ``d`` exponential maps.
+for some suitable step size ``h``. This comes at the cost of ``d+1`` function evaluations and ``d`` exponential maps.
 """
 
 # ╔═╡ a3df142e-94df-48d2-be08-d1f1f3854c76
 md"""
-This is the first variant we can use. An advantage is, that it is _intrinsic_ in the sense that it does not require any embedding of the manifold.
+This is the first variant we can use. An advantage is that it is _intrinsic_ in the sense that it does not require any embedding of the manifold.
 """
 
 # ╔═╡ 9a030ac6-1f44-4fa6-8bc9-1c0278e97fe2
 md""" ### An Example: The Rayleigh Quotient
 
-The Rayleigh quotient is concerned with finding Eigenvalues (and Eigenvectors) of a symmetric matrix $A\in ℝ^{(n+1)×(n+1)}$. The optimisation problem reads
+The Rayleigh quotient is concerned with finding eigenvalues (and eigenvectors) of a symmetric matrix $A\in ℝ^{(n+1)×(n+1)}$. The optimization problem reads
 
 ```math
 F\colon ℝ^{n+1} \to ℝ,\quad F(\mathbf x) = \frac{\mathbf x^\mathrm{T}A\mathbf x}{\mathbf x^\mathrm{T}\mathbf x}
@@ -92,7 +92,7 @@ Minimizing this function yields the smallest eigenvalue ``\lambda_1`` as a value
 Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere ``𝕊^n`` of unit vectors in ``\mathbb R^{n+1}``, i.e.
 
 ```math
-\operatorname*{arg\,min}_{p \in 𝕊^n} f(p) = \operatorname*{arg\,min}_{p \in 𝕊^n} p^\mathrm{T}Ap
+\operatorname*{arg\,min}_{p \in 𝕊^n}\ f(p) = \operatorname*{arg\,min}_{\ p \in 𝕊^n} p^\mathrm{T}Ap
 ```
 
 We can compute the Riemannian gradient exactly as
@@ -121,7 +121,7 @@ f1(p) = p' * A'p
 gradf1(p) = 2 * (A * p - p * p' * A * p)
 
 # ╔═╡ bbd9a010-1981-45b3-bf7d-c04bcd2c2128
-md"""Manifolds provides a finite difference scheme in Tangent spaces, that you can introduce to use an existing framework (if the wrapper is implemented) form Euclidean space. Here we use `FiniteDiff.jl`."""
+md"""Manifolds provides a finite difference scheme in tangent spaces, that you can introduce to use an existing framework (if the wrapper is implemented) form Euclidean space. Here we use `FiniteDiff.jl`."""
 
 # ╔═╡ 08456b40-74ec-4319-93e7-130b5cf70ac3
 r_backend = Manifolds.TangentDiffBackend(Manifolds.FiniteDifferencesBackend())
@@ -143,13 +143,13 @@ md"We obtain quite a good approximation of the gradient."
 
 # ╔═╡ 77769eab-54dd-41dc-8125-0382e5ef0bf1
 md"""
-## 2. Conversion of an Euclidean Gradient in the Embedding to a Riemannian Gradient of an (not necessarily isometrically) embedded Manifold
+## 2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold
 
-Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function in the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
+Let ``\tilde f\colon\mathbb R^m \to \mathbb R`` be a function on the embedding of an ``n``-dimensional manifold ``\mathcal M \subset \mathbb R^m`` and let ``f\colon \mathcal M \to \mathbb R`` denote the restriction of ``\tilde f`` to the manifold ``\mathcal M``.
 
-Since we can use the push forward of the embedding to also embed the tangent space ``T_p\mathcal M``, ``p\in \mathcal M``, we can similarly obtain the differential ``Df(p)\colon T_p\mathcal M \to \mathbb R`` by restricting the differential ``D\tilde f(p)`` to the tangent space.
+Since we can use the pushforward of the embedding to also embed the tangent space ``T_p\mathcal M``, ``p\in \mathcal M``, we can similarly obtain the differential ``Df(p)\colon T_p\mathcal M \to \mathbb R`` by restricting the differential ``D\tilde f(p)`` to the tangent space.
 
-If both ``T_p\mathcal M`` and ``T_p\mathcal R^m`` have the same inner product, or in other words the manifold is isometrically embedded in ``R^m`` (like for example the sphere ``\mathbb S^n\subset\mathbb R^{m+1}`` then this restriction of the differential directly translates to a projection of the gradient, i.e.
+If both ``T_p\mathcal M`` and ``T_p\mathbb R^m`` have the same inner product, or in other words the manifold is isometrically embedded in ``\mathbb R^m`` (like for example the sphere ``\mathbb S^n\subset\mathbb R^{m+1}``), then this restriction of the differential directly translates to a projection of the gradient, i.e.
 
 ```math
 \operatorname{grad}f(p) = \operatorname{Proj}_{T_p\mathcal M}(\operatorname{grad} \tilde f(p))
@@ -167,7 +167,7 @@ or in words: we have to change the Riesz representer of the (restricted/projecte
 
 # ╔═╡ 57cda07f-e432-46af-b771-5e5a3067feac
 md"""
-### A continued Example
+### A Continued Example
 We continue with the Rayleigh Quotient from before, now just starting with the defintion of the Euclidean case in the embedding, the function ``F``.
 """
 
@@ -198,20 +198,20 @@ norm(M, p, X1 - X3)
 
 # ╔═╡ 893db402-283f-4e3e-8bf7-c6f22e485efb
 md"""
-### An Example for a nonisometrically embedded Manifold
+### An Example for a Nonisometrically Embedded Manifold
 
 on the manifold ``\mathcal P(3)`` of symmetric positive definite matrices.
 """
 
 # ╔═╡ 8494a0d6-dbf2-4eb0-a555-f00e446fbe38
 md"""
-The following function computes (half) the distance squared (with respect to the linear affine metric) on the manifold ``\mathcal P(3)`` to the identity, i.e. $I_3$. denoting the unit matrix we consider the function
+The following function computes (half) the distance squared (with respect to the linear affine metric) on the manifold ``\mathcal P(3)`` to the identity, i.e. $I_3$. Denoting the unit matrix we consider the function
 
 ```math
 	G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3) = \lVert \operatorname{Log}(q) \rVert_F^2,
 ```
 where $\operatorname{Log}$ denotes the matrix logarithm and ``\lVert \cdot \rVert_F`` is the Frobenius norm.
-This can be computed for symmetric positive definite matrices by summing the squares of the ``\log``arithms of the eigenvalues of ``q`` and divide by two:
+This can be computed for symmetric positive definite matrices by summing the squares of the logarithms of the eigenvalues of ``q`` and dividing by two:
 """
 
 # ╔═╡ c93eb2da-89df-4751-b086-62be604d41e6
@@ -245,7 +245,7 @@ FiniteDifferences.grad(central_fdm(5, 1), G, q)
 # ╔═╡ 2be4f9e8-0331-44ac-839f-7bb71d9edef9
 md"""Instead, we use the [`RiemannianProjectedBackend`](https://juliamanifolds.github.io/Manifolds.jl/latest/features/differentiation.html#Manifolds.RiemannianProjectionBackend) of `Manifolds.jl`, which in this case internally uses `FiniteDifferences.jl` to compute a Euclidean gradient but then uses the conversion explained above to derive the Riemannian gradient.
 
-We define this here again as a function `grad_G_FD` that could be used in the `Manopt.jl` framework within a gradient based optimisation.
+We define this here again as a function `grad_G_FD` that could be used in the `Manopt.jl` framework within a gradient based optimization.
 """
 
 # ╔═╡ 6f1d748f-27ce-496b-8561-f16972da50cc
@@ -260,7 +260,7 @@ G1 = grad_G_FD(N, q)
 
 # ╔═╡ 219573d2-283f-456c-a5c3-fadd734fc157
 md"""
-Now, we can agaon compare this to the (known) solution of the gradient, namely the gradient of (a half) the distance suqared, i.e. ``G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3)`` is given by ``\operatorname{grad} G(q) = -\operatorname{log}_q I_3``, where ``\operatorname{log}`` is the [logarithmic map](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple{SymmetricPositiveDefinite,%20Vararg{Any,%20N}%20where%20N}) on the manifold.
+Now, we can again compare this to the (known) solution of the gradient, namely the gradient of (half of) the distance squared, i.e. ``G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3)`` is given by ``\operatorname{grad} G(q) = -\operatorname{log}_q I_3``, where ``\operatorname{log}`` is the [logarithmic map](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple{SymmetricPositiveDefinite,%20Vararg{Any,%20N}%20where%20N}) on the manifold.
 """
 
 # ╔═╡ e28a2752-877c-4ab4-a253-8d26fa9a73c2
@@ -301,8 +301,9 @@ Manopt = "~0.3.24"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.8.0"
 manifest_format = "2.0"
+project_hash = "6a90003324ea7688936ec7aba9168485728088b9"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -318,6 +319,7 @@ version = "3.3.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
+version = "1.1.1"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -393,6 +395,7 @@ version = "3.43.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -442,8 +445,9 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+version = "1.6.0"
 
 [[deps.DualNumbers]]
 deps = ["Calculus", "NaNMath", "SpecialFunctions"]
@@ -456,6 +460,9 @@ deps = ["Compat"]
 git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
 uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
 version = "0.4.1"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -550,10 +557,12 @@ uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
+version = "0.6.3"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.84.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -562,6 +571,7 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -610,6 +620,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.28.0+0"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -622,6 +633,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+version = "2022.2.1"
 
 [[deps.NaNMath]]
 git-tree-sha1 = "737a5957f387b17e74d4ad2f440eb330b39a62c5"
@@ -636,14 +648,17 @@ version = "0.2.47"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+version = "1.2.0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+version = "0.8.1+0"
 
 [[deps.OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -665,6 +680,7 @@ version = "0.11.10"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+version = "1.8.0"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -732,6 +748,7 @@ version = "0.3.0+0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -806,10 +823,12 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+version = "1.10.0"
 
 [[deps.TensorCore]]
 deps = ["LinearAlgebra"]
@@ -831,6 +850,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.12+3"
 
 [[deps.ZygoteRules]]
 deps = ["MacroTools"]
@@ -841,14 +861,17 @@ version = "0.2.2"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.48.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:

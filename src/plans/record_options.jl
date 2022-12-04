@@ -304,23 +304,47 @@ during the last iteration.
 
 # Additional Fields
 * `storage` a [`StoreOptionsAction`](@ref) to store (at least) `o.x` to use this
-  as the last value (to compute the change)
+  as the last value (to compute the change
+* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+  used for approximating distance.
+
+# Additional constructor keyword parameters
+* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
+for approximating the distance.
 """
-mutable struct RecordChange <: RecordAction
-    recorded_values::Array{Float64,1}
+mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: RecordAction
+    recorded_values::Vector{Float64}
     storage::StoreOptionsAction
-    function RecordChange(a::StoreOptionsAction=StoreOptionsAction((:x,)))
-        return new(Array{Float64,1}(), a)
+    invretr::TInvRetr
+    function RecordChange(
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate,));
+        manifold::AbstractManifold=DefaultManifold(1),
+        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            manifold
+        ),
+    )
+        return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
-    function RecordChange(x0, a::StoreOptionsAction=StoreOptionsAction((:x,)))
-        update_storage!(a, Dict(:x => x0))
-        return new(Array{Float64,1}(), a)
+    function RecordChange(
+        x0,
+        a::StoreOptionsAction=StoreOptionsAction((:Iterate,));
+        manifold::AbstractManifold=DefaultManifold(1),
+        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            manifold
+        ),
+    )
+        update_storage!(a, Dict(:Iterate => x0))
+        return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
 end
 function (r::RecordChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
     record_or_reset!(
         r,
-        has_storage(r.storage, :x) ? distance(p.M, o.x, get_storage(r.storage, :x)) : 0.0,
+        if has_storage(r.storage, :Iterate)
+            distance(p.M, o.x, get_storage(r.storage, :Iterate), r.invretr)
+        else
+            0.0
+        end,
         i,
     )
     r.storage(p, o, i)
@@ -375,16 +399,12 @@ mutable struct RecordEntryChange <: RecordAction
     end
 end
 function (r::RecordEntryChange)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    record_or_reset!(
-        r,
-        if has_storage(r.storage, r.field)
-            r.distance(p, o, getfield(o, r.field), get_storage(r.storage, r.field))
-        else
-            0.0
-        end,
-        i,
-    )
-    return r.storage(p, o, i)
+    value = 0.0
+    if has_storage(r.storage, r.field)
+        value = r.distance(p, o, getfield(o, r.field), get_storage(r.storage, r.field))
+    end
+    r.storage(p, o, i)
+    return record_or_reset!(r, value, i)
 end
 
 @doc raw"""
@@ -415,7 +435,7 @@ function RecordIterate()
 end
 
 function (r::RecordIterate{T})(::Problem, o::Options, i) where {T}
-    return record_or_reset!(r, o.x, i)
+    return record_or_reset!(r, get_iterate(o), i)
 end
 
 @doc raw"""
@@ -427,7 +447,7 @@ mutable struct RecordIteration <: RecordAction
     recorded_values::Array{Int,1}
     RecordIteration() = new(Array{Int,1}())
 end
-function (r::RecordIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
+function (r::RecordIteration)(::Problem, ::Options, i::Int)
     return record_or_reset!(r, i, i)
 end
 
@@ -441,7 +461,44 @@ mutable struct RecordCost <: RecordAction
     RecordCost() = new(Array{Float64,1}())
 end
 function (r::RecordCost)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
-    return record_or_reset!(r, get_cost(p, o.x), i)
+    return record_or_reset!(r, get_cost(p, get_iterate(o)), i)
+end
+
+@doc raw"""
+    RecordTime <: RecordAction
+
+record the time elapsed during the current iteration.
+
+The three possible modes are
+* `:cumulative` record times without resetting the timer
+* `:iterative` record times with resetting the timer
+* `:total` record a time only at the end of an algorithm (see [`stop_solver!`](@ref))
+
+The default is `:cumulative`, and any non-listed symbol default to using this mode.
+
+# Constructor
+
+    RecordTime(; mode::Symbol=:cumulative)
+"""
+mutable struct RecordTime <: RecordAction
+    recorded_values::Array{Nanosecond,1}
+    start::Nanosecond
+    mode::Symbol
+    function RecordTime(; mode::Symbol=:cumulative)
+        return new(Array{Nanosecond,1}(), Nanosecond(time_ns()), mode)
+    end
+end
+function (r::RecordTime)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+    # At iteartion zero also reset start
+    (i == 0) && (r.start = Nanosecond(time_ns()))
+    t = Nanosecond(time_ns()) - r.start
+    (r.mode == :iterative) && (r.start = Nanosecond(time_ns()))
+    if r.mode == :total
+        # only record at end (if stop_solver returns true)
+        return record_or_reset!(r, t, (i > 0 && stop_solver!(p, o, i)) ? i : 0)
+    else
+        return record_or_reset!(r, t, i)
+    end
 end
 
 @doc raw"""
@@ -486,7 +543,13 @@ create a [`RecordAction`](@ref) where
 
 * a [`RecordAction`](@ref) is passed through
 * a [`Symbol`] creates [`RecordEntry`](@ref) of that symbol, with the exceptions
-  of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
+  of
+  * `:Change` - to recorde the change of the iterates in `o.x``
+  * `:Iterate` - to record the iterate
+  * `:Iteration` - to record the current iteration numner
+  * `:Cost` - to record the current cost function value
+  * `:Time` - to record the total time taken after every iteration
+  * `:IterativeTime` – to record the times taken for each iteration.
 """
 RecordActionFactory(::Options, a::RecordAction) = a
 RecordActionFactory(::Options, sa::Pair{Symbol,<:RecordAction}) = sa
@@ -496,9 +559,13 @@ function RecordActionFactory(o::Options, s::Symbol)
     elseif (s == :Iteration)
         return RecordIteration()
     elseif (s == :Iterate)
-        return RecordIterate(o.x)
+        return RecordIterate(get_iterate(o))
     elseif (s == :Cost)
         return RecordCost()
+    elseif (s == :Time)
+        return RecordTime(; mode=:cumulative)
+    elseif (s == :IterativeTime)
+        return RecordTime(; mode=:iterative)
     end
     return RecordEntry(getfield(o, s), s)
 end

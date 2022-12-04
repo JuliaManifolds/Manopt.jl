@@ -26,9 +26,8 @@ perform an alternating gradient descent
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of gradientDescent
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) for details
 
 !!! note
 
@@ -75,7 +74,6 @@ function alternating_gradient_descent!(
     order_type::Symbol=:Linear,
     order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    return_options=false,
     kwargs...,
 ) where {TgF}
     p = AlternatingGradientProblem(M, F, gradF; evaluation=evaluation)
@@ -90,12 +88,7 @@ function alternating_gradient_descent!(
         retraction_method=retraction_method,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 function initialize_solver!(
     ::AlternatingGradientProblem, o::AlternatingGradientDescentOptions
@@ -108,7 +101,7 @@ end
 function step_solver!(
     p::AlternatingGradientProblem, o::AlternatingGradientDescentOptions, iter
 )
-    s, o.gradient = o.direction(p, o, iter)
+    s, get_gradient(o) = o.direction(p, o, iter)
     j = o.order[o.k]
     retract!(p.M[j], o.x[p.M, j], o.x[p.M, j], -s * o.gradient[p.M, j])
     o.i += 1
@@ -119,4 +112,3 @@ function step_solver!(
     end
     return o
 end
-get_solver_result(o::AlternatingGradientDescentOptions) = o.x

@@ -6,4 +6,7 @@ using Manifolds, Manopt, Test
     @test o.x == o2.x
     @test o.population == o2.population
     @test get_options(o) == o
+    p = [1.0, 1.0]
+    set_iterate!(o, p)
+    @test get_iterate(o) == p
 end

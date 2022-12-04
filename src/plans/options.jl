@@ -34,6 +34,37 @@ Indicate, whether [`Options`](@ref) `o` are of decorator type.
 """
 is_options_decorator(o::Options) = _extract_val(dispatch_options_decorator(o))
 
+@doc raw"""
+    ReturnOptions{O<:Options} <: Options
+
+This internal type is used to indicate that the contained [`Options`](@ref) `options`
+should be returned at the end of a solver instead of the usual minimizer.
+
+# See also
+[`get_solver_result`](@ref)
+"""
+struct ReturnOptions{O<:Options} <: Options
+    options::O
+end
+dispatch_options_decorator(::ReturnOptions) = Val(true)
+
+"""
+    get_solver_return(O::Options)
+
+determine the result value of a call to a solver. By default this returns the same as [`get_solver_result`](@ref),
+i.e. the last iterate or (approximate) minimizer.
+
+    get_solver_return(O::ReturnOptions)
+
+return the internally stored options of the [`ReturnOptions`](@ref) instead of the minimizer.
+This means that when the options are decorated like this, the user still has to call [`get_solver_result`](@ref)
+on the internal options separately.
+"""
+get_solver_return(O::Options) = get_solver_return(O, dispatch_options_decorator(O))
+get_solver_return(O::Options, ::Val{false}) = get_solver_result(O)
+get_solver_return(O::Options, ::Val{true}) = get_solver_return(O.options)
+get_solver_return(O::ReturnOptions) = O.options
+
 #
 # StoppingCriterion meta
 #
@@ -94,6 +125,48 @@ get_options(o::Options) = get_options(o, dispatch_options_decorator(o))
 get_options(o::Options, ::Val{false}) = o
 get_options(o::Options, ::Val{true}) = get_options(o.options)
 
+"""
+    get_gradient(O::Options)
+
+return the (last stored) gradient within [`Options`](@ref)``O`. By default also undecorates the options beforehand
+"""
+get_gradient(o::Options) = get_gradient(o, dispatch_options_decorator(o))
+function get_gradient(o::Options, ::Val{false})
+    return error("It seems the Options $o do not provide access to a gradient")
+end
+get_gradient(o::Options, ::Val{true}) = get_gradient(o.options)
+
+"""
+    get_iterate(O::Options)
+
+return the (last stored) iterate within [`Options`](@ref)``O`. By default also undecorates the options beforehand
+"""
+get_iterate(O::Options) = get_iterate(O, dispatch_options_decorator(O))
+function get_iterate(O::Options, ::Val{false})
+    return error("It seems the Options $O do not provide access to an iterate")
+end
+get_iterate(O::Options, ::Val{true}) = get_iterate(O.options)
+
+"""
+    set_iterate!(O::Options, p)
+
+set the iterate to some (start) value `p`.
+"""
+set_iterate!(O::Options, p) = set_iterate!(O, p, dispatch_options_decorator(O))
+function set_iterate!(O::Options, p, ::Val{false})
+    return error("It seems the Options $O do not provide (write) access to an iterate")
+end
+set_iterate!(O::Options, p, ::Val{true}) = set_iterate!(O.options, p)
+
+"""
+    get_solver_result(O::Options)
+
+return the (last stored) iterate within [`Options`](@ref)``O`. By default also undecorates the options beforehand
+"""
+get_solver_result(o::Options) = get_solver_result(o, dispatch_options_decorator(o))
+get_solver_result(o::Options, ::Val{false}) = get_iterate(o)
+get_solver_result(o::Options, ::Val{true}) = get_solver_result(o.options)
+
 #
 # Common Actions for decorated Options
 #
@@ -148,10 +221,17 @@ end
 function (a::StoreOptionsAction)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
     #update values (maybe only once)
     if !a.once || a.last_stored != i
-        merge!(
-            a.values,
-            Dict{Symbol,Any}(key => deepcopy(getproperty(o, key)) for key in a.keys),
-        )
+        for key in a.keys
+            if hasproperty(o, key)
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(getproperty(o, key))))
+            elseif key == :Iterate
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_iterate(o))))
+            elseif key == :Gradient
+                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_gradient(o))))
+            else
+                @warn "$key is not a field of $o, no storage updated."
+            end
+        end
     end
     return a.last_stored = i
 end
@@ -179,7 +259,12 @@ update the [`StoreOptionsAction`](@ref) `a` internal values to the ones given on
 the [`Options`](@ref) `o`.
 """
 function update_storage!(a::StoreOptionsAction, o::O) where {O<:Options}
-    return update_storage!(a, Dict(key => getproperty(o, key) for key in a.keys))
+    return update_storage!(
+        a,
+        Dict(
+            key => key == :Iterate ? get_iterate(o) : getproperty(o, key) for key in a.keys
+        ),
+    )
 end
 
 """

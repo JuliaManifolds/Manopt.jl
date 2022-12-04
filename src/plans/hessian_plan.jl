@@ -64,7 +64,7 @@ a default value is given in brackets if a parameter can be left out in initializ
         initiated with a random tangent vector. If set to true, no
         preconditioner will be used. This option is set to true in some
         scenarios to escape saddle points, but is otherwise seldom activated.
-* `project_vector!` : (`copyto!`) specify a projection operation for tangent vectors
+* `project!` : (`copyto!`) specify a projection operation for tangent vectors
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
 
@@ -75,7 +75,7 @@ a default value is given in brackets if a parameter can be left out in initializ
         randomize=false,
         θ=1.0,
         κ=0.1,
-        project_vector! = copyto!,
+        project! = copyto!,
     )
 
     and a slightly involved `stopping_criterion`
@@ -111,7 +111,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         η::T,
         trust_region_radius::R,
         randomize::Bool;
-        project_vector!::Proj=copyto!,
+        project!::Proj=copyto!,
         θ::Float64=1.0,
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
@@ -127,7 +127,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
             x,
             η;
             trust_region_radius=trust_region_radius,
-            (project!)=project_vector!,
+            (project!)=project!,
             randomize=randomize,
             θ=θ,
             κ=κ,
@@ -232,7 +232,6 @@ mutable struct TrustRegionsOptions{
 
     x_proposal::P
     f_proposal::R
-
     # Random
     Hgrad::T
     η::T
@@ -288,7 +287,7 @@ end
     κ,
     η_1,
     η_2,
-    (project_vector!)=copyto!,
+    (project!)=copyto!,
 ) TrustRegionsOptions(
     DefaultManifold(2),
     x;
@@ -302,7 +301,7 @@ end
     κ=κ,
     η_1=η_1,
     η_2=η_2,
-    (project!)=project_vector!,
+    (project!)=project!,
 )
 function TrustRegionsOptions(
     M::TM,

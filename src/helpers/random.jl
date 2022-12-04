@@ -21,30 +21,21 @@ generate a random point on the `AbstractPowerManifold` `M` given `options` that 
 passed on.
 """
 function random_point(
-    M::AbstractPowerManifold{𝔽,Mt,NestedPowerRepresentation}, options...
+    M::AbstractPowerManifold{𝔽,Mt,NestedPowerRepresentation}, v::Val, options...
 ) where {𝔽,Mt}
-    return [random_point(M.manifold, options...) for i in get_iterator(M)]
+    return [random_point(M.manifold, v, options...) for i in get_iterator(M)]
 end
 function random_point(
-    M::AbstractPowerManifold{𝔽,Mt,ArrayPowerRepresentation}, options...
+    M::AbstractPowerManifold{𝔽,Mt,ArrayPowerRepresentation}, v::Val, options...
 ) where {𝔽,Mt}
     return cat(
-        [random_point(M.manifold, options...) for i in get_iterator(M)]...;
+        [random_point(M.manifold, v, options...) for i in get_iterator(M)]...;
         dims=length(representation_size(M.manifold)) + 1,
     )
 end
 
-@doc raw"""
-    random_point(M::GroupManifold, options...)
-
-On an abstract group manifold, the random point is taken from the internally stored `M.manifold`.
-"""
-random_point(M::GroupManifold, kwargs...) = random_point(M.manifold, kwargs...)
-function random_point(M::GroupManifold, s::Symbol, options...)
-    return random_point(M.manifold, Val(s), options...)
-end
-function random_point(M::AbstractManifold, s::Symbol, options...)
-    return random_point(M, Val(s), options...)
+function random_point(M::AbstractDecoratorManifold, v::Val, options...)
+    return random_point(M.manifold, v, options...)
 end
 
 @doc raw"""
@@ -100,8 +91,8 @@ return a random point `x` on `Grassmannian` manifold `M` by
 generating a random (Gaussian) matrix with standard deviation `σ` in matching
 size, which is orthonormal.
 """
-function random_point(M::ProductManifold, o...)
-    return ProductRepr([random_point(N, o...) for N in M.manifolds]...)
+function random_point(M::ProductManifold, v::Val, o...)
+    return ProductRepr([random_point(N, v, o...) for N in M.manifolds]...)
 end
 
 @doc raw"""
@@ -144,7 +135,7 @@ function random_point(
 ) where {N}
     D = Diagonal(1 .+ rand(N)) # random diagonal matrix
     s = qr(σ * randn(N, N)) # random q
-    return Matrix(Symmetric(s.Q * D * transpose(s.Q)))
+    return Matrix(Symmetric(s.Q * D * s.Q'))
 end
 
 @doc raw"""
@@ -190,19 +181,8 @@ function random_point(M::TangentSpaceAtPoint, options...)
     return random_tangent(M.fiber.manifold, M.point, options...)
 end
 
-@doc raw"""
-    random_tangent(M::GroupManifold, p, options...)
-
-On an abstract group manifold, the random tangent is taken from the internally stored `M.manifold`s tangent space at `p`.
-"""
-function random_tangent(M::GroupManifold, p, kwargs...)
-    return random_tangent(M.manifold, p, kwargs...)
-end
-function random_tangent(M::GroupManifold, p, s::Symbol, options...)
-    return random_tangent(M.manifold, p, Val(s), options...)
-end
-function random_tangent(M::AbstractManifold, p, s::Symbol, options...)
-    return random_tangent(M, p, Val(s), options...)
+function random_tangent(M::AbstractDecoratorManifold, p, v::Val, options...)
+    return random_tangent(M.manifold, p, v, options...)
 end
 
 @doc raw"""
@@ -284,9 +264,9 @@ end
 generate a random tangent vector in the tangent space of the point `p` on the
 `ProductManifold` `M`.
 """
-function random_tangent(M::ProductManifold, p, options...)
+function random_tangent(M::ProductManifold, p, v::Val, options...)
     X = map(
-        (m, p) -> random_tangent(m, p, options...),
+        (m, p) -> random_tangent(m, p, v, options...),
         M.manifolds,
         submanifold_components(M, p),
     )

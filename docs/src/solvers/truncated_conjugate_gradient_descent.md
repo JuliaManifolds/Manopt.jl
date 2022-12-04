@@ -54,14 +54,14 @@ The result is given by the last computed ``η_k``.
 
 The ``\operatorname{P}(⋅)`` denotes the symmetric, positive deﬁnite
 preconditioner. It is required if a randomized approach is used i.e. using
-a random tangent vector ``η_0`` as initial
+a random tangent vector ``η_0`` as the initial
 vector. The idea behind it is to avoid saddle points. Preconditioning is
-simply a rescaling of the variables and thus a redeﬁnition of the shape of
+simply a rescaling of the variables and thus a redefinition of the shape of
 the trust region. Ideally ``\operatorname{P}(⋅)`` is a cheap, positive
 approximation of the inverse of the Hessian of ``F`` at ``x``. On
 default, the preconditioner is just the identity.
 
-To step number 2: Obtain ``τ`` from the positive root of
+To step number 2: obtain ``τ`` from the positive root of
 ``\left\lVert η_k + τ δ_k \right\rVert_{\operatorname{P}, x} = Δ``
 what becomes after the conversion of the equation to
 
@@ -76,24 +76,24 @@ what becomes after the conversion of the equation to
 It can occur that ``⟨δ_k, \operatorname{Hess}[F] (δ_k)_{x}⟩_{x}
 = κ ≤ 0`` at iteration ``k``. In this case, the model is not strictly
 convex, and the stepsize ``α =\frac{⟨r_k, z_k⟩_{x}}
-{κ}`` computed in step 1. does not give a reduction in the modelfunction
+{κ}`` computed in step 1. does not give a reduction in the model function
 ``m_x(⋅)``. Indeed, ``m_x(⋅)`` is unbounded from below along the
 line ``η_k + α δ_k``. If our aim is to minimize the model within
 the trust-region, it makes far more sense to reduce ``m_x(⋅)`` along
 ``η_k + α δ_k`` as much as we can while staying within the
 trust-region, and this means moving to the trust-region boundary along this
-line. Thus when ``κ ≤ 0`` at iteration k, we replace ``α =
-\frac{⟨r_k, z_k⟩_{x}}{κ}`` with ``τ`` described as above.
+line. Thus, when ``κ ≤ 0`` at iteration k, we replace 
+``α = \frac{⟨r_k, z_k⟩_{x}}{κ}`` with ``τ`` described as above.
 The other possibility is that ``η_{k+1}`` would lie outside the trust-region at
-iteration k (i.e. ``⟨η_k, η_k⟩_{x}^{* }
-≥ {Δ}^2`` what can be identified with the norm of ``η_{k+1}``). In
+iteration k (i.e. ``⟨η_k, η_k⟩_{x}^{* } ≥ {Δ}^2`` 
+that can be identified with the norm of ``η_{k+1}``). In
 particular, when ``\operatorname{Hess}[F] (⋅)_{x}`` is positive deﬁnite
 and ``η_{k+1}`` lies outside the trust region, the solution to the
 trust-region problem must lie on the trust-region boundary. Thus, there
 is no reason to continue with the conjugate gradient iteration, as it
 stands, as subsequent iterates will move further outside the trust-region
 boundary. A sensible strategy, just as in the case considered above, is to
-move to the trust-region boundary by ﬁnding ``τ``.
+move to the trust-region boundary by finding ``τ``.
 
 
 Although it is virtually impossible in practice to know how many iterations are

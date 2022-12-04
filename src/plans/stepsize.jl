@@ -117,22 +117,21 @@ last step size.
 
 # Fields
 * `initial_stepsize` – (`1.0`) and initial step size
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use, defaults to
-  the exponential map
+* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
 * `contraction_factor` – (`0.95`) exponent for line search reduction
 * `sufficient_decrease` – (`0.1`) gain within Armijo's rule
 * `last_stepsize` – (`initialstepsize`) the last step size we start the search with
 * `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
     before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
-
+* `initial_guess` (`(p,o,i,l) -> l`)  based on a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
+  and a current iterate `i` and a last step size `l`, this returns an initial guess. The default uses the last obtained stepsize
 # Constructor
 
     ArmijoLineSearch(M)
 
-with the Fields above as keyword arguments and the retraction is set to the default retraciton on `M`.
+with the Fields above as keyword arguments and the retraction is set to the default retraction on `M`.
 
-The constructors return the functor to perform Armijo line search, where two inter
-faces are available:
+The constructors return the functor to perform Armijo line search, where two interfaces are available:
 * based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
   and a current iterate `i`.
 * with `(M, x, F, gradFx[,η=-gradFx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#Manifold) `M`, a current
@@ -140,13 +139,14 @@ faces are available:
   its gradient (a tangent vector) `gradFx```=\operatorname{grad}F(x)`` at  `x` and an optional
   search direction tangent vector `η=-gradFx` are the arguments.
 """
-mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
+mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     initial_stepsize::Float64
     retraction_method::TRM
     contraction_factor::Float64
     sufficient_decrease::Float64
     last_stepsize::Float64
     linesearch_stopsize::Float64
+    initial_guess::F
     @deprecate ArmijoLinesearch(
         s::Float64=1.0,
         r::AbstractRetractionMethod=ExponentialRetraction(),
@@ -168,26 +168,28 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod} <: Linesearch
         contraction_factor::Float64=0.95,
         sufficient_decrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
+        initial_guess=(p, o, i, l) -> l,
     )
-        return new{typeof(retraction_method)}(
+        return new{typeof(retraction_method),typeof(initial_guess)}(
             initial_stepsize,
             retraction_method,
             contraction_factor,
             sufficient_decrease,
             initial_stepsize,
             linesearch_stopsize,
+            initial_guess,
         )
     end
 end
 function (a::ArmijoLinesearch)(
-    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x); kwargs...
+    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 )
     a.last_stepsize = linesearch_backtrack(
         p.M,
         x -> p.cost(p.M, x),
-        o.x,
-        get_gradient!(p, o.gradient, o.x),
-        a.last_stepsize,
+        get_iterate(o),
+        get_gradient!(p, o.gradient, get_iterate(o)),
+        a.initial_guess(p, o, i, a.last_stepsize),
         a.sufficient_decrease,
         a.contraction_factor,
         a.retraction_method,
@@ -366,7 +368,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient)),
         linesearch_stopsize::Float64=0.0,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
@@ -422,7 +424,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreOptionsAction=StoreOptionsAction((:x, :gradient)),
+        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient)),
         linesearch_stopsize::Float64=0.0,
     ) NonmonotoneLinesearch(
         DefaultManifold(3);
@@ -440,16 +442,25 @@ mutable struct NonmonotoneLinesearch{
     )
 end
 function (a::NonmonotoneLinesearch)(
-    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, o.x); kwargs...
+    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 )
-    if !all(has_storage.(Ref(a.storage), [:x, :gradient]))
-        old_x = o.x
-        old_gradient = get_gradient(p, o.x)
+    if !all(has_storage.(Ref(a.storage), [:Iterate, :gradient]))
+        old_x = get_iterate(o)
+        old_gradient = get_gradient(p, get_iterate(o))
     else
-        old_x, old_gradient = get_storage.(Ref(a.storage), [:x, :gradient])
+        old_x, old_gradient = get_storage.(Ref(a.storage), [:Iterate, :gradient])
     end
     update_storage!(a.storage, o)
-    return a(p.M, o.x, x -> get_cost(p, x), get_gradient(p, o.x), η, old_x, old_gradient, i)
+    return a(
+        p.M,
+        get_iterate(o),
+        x -> get_cost(p, x),
+        get_gradient(p, get_iterate(o)),
+        η,
+        old_x,
+        old_gradient,
+        i,
+    )
 end
 function (a::NonmonotoneLinesearch)(
     M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int; kwargs...
@@ -559,9 +570,11 @@ For the old (deprecated) signature the `linesearch_stopsize` is set to the old h
         linesearch_stopsize = 0.0
     )
 """
-mutable struct WolfePowellLinesearch <: Linesearch
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
+mutable struct WolfePowellLinesearch{
+    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod
+} <: Linesearch
+    retraction_method::TRM
+    vector_transport_method::VTM
     c1::Float64
     c2::Float64
     last_stepsize::Float64
@@ -590,59 +603,64 @@ mutable struct WolfePowellLinesearch <: Linesearch
         ),
         linesearch_stopsize::Float64=0.0,
     )
-        return new(
+        return new{typeof(retraction_method),typeof(vector_transport_method)}(
             retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
         )
     end
 end
 
 function (a::WolfePowellLinesearch)(
-    p::P, o::O, ::Int, η=-get_gradient(p, o.x); kwargs...
+    p::P, o::O, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 ) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
     s = 1.0
     s_plus = 1.0
     s_minus = 1.0
-    f0 = get_cost(p, o.x)
-    xNew = retract(p.M, o.x, s * η, a.retraction_method)
+    f0 = get_cost(p, get_iterate(o))
+    xNew = retract(p.M, get_iterate(o), s * η, a.retraction_method)
     fNew = get_cost(p, xNew)
-    η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
-    if fNew > f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)
-        while (fNew > f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)) && (s_minus > 10^(-9)) # decrease
+    η_xNew = vector_transport_to(p.M, get_iterate(o), η, xNew, a.vector_transport_method)
+    if fNew > f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))
+        while (fNew > f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))) &&
+            (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             s = s_minus
-            retract!(p.M, xNew, o.x, s * η, a.retraction_method)
+            retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
             fNew = get_cost(p, xNew)
         end
         s_plus = 2.0 * s_minus
     else
-        vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+        vector_transport_to!(
+            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+        )
         if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-            a.c2 * inner(p.M, o.x, η, o.gradient)
-            while fNew <= f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient) &&
+            a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
+            while fNew <= f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o)) &&
                 (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
                 s = s_plus
-                retract!(p.M, xNew, o.x, s * η, a.retraction_method)
+                retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
                 fNew = get_cost(p, xNew)
             end
             s_minus = s_plus / 2.0
         end
     end
-    retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
-    vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+    retract!(p.M, xNew, get_iterate(o), s_minus * η, a.retraction_method)
+    vector_transport_to!(p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method)
     while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-          a.c2 * inner(p.M, o.x, η, o.gradient)
+          a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
         s = (s_minus + s_plus) / 2
-        retract!(p.M, xNew, o.x, s * η, a.retraction_method)
+        retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
         fNew = get_cost(p, xNew)
-        if fNew <= f0 + a.c1 * s * inner(p.M, o.x, η, o.gradient)
+        if fNew <= f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))
             s_minus = s
         else
             s_plus = s
         end
         abs(s_plus - s_minus) <= a.linesearch_stopsize && break
-        retract!(p.M, xNew, o.x, s_minus * η, a.retraction_method)
-        vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+        retract!(p.M, xNew, get_iterate(o), s_minus * η, a.retraction_method)
+        vector_transport_to!(
+            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+        )
     end
     s = s_minus
     a.last_stepsize = s
@@ -701,9 +719,11 @@ new signature including `M`, for the first it is set to the old default of `1e-9
     > Dissertation, Flordia State University, 2014.
     > [pdf](https://www.math.fsu.edu/~whuang2/pdf/Huang_W_Dissertation_2013.pdf)
 """
-mutable struct WolfePowellBinaryLinesearch <: Linesearch
-    retraction_method::AbstractRetractionMethod
-    vector_transport_method::AbstractVectorTransportMethod
+mutable struct WolfePowellBinaryLinesearch{
+    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod
+} <: Linesearch
+    retraction_method::TRM
+    vector_transport_method::VTM
     c1::Float64
     c2::Float64
     last_stepsize::Float64
@@ -732,25 +752,27 @@ mutable struct WolfePowellBinaryLinesearch <: Linesearch
         ),
         linesearch_stopsize::Float64=0.0,
     )
-        return new(
+        return new{typeof(retraction_method),typeof(vector_transport_method)}(
             retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
         )
     end
 end
 
 function (a::WolfePowellBinaryLinesearch)(
-    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, o.x); kwargs...
+    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
 )
     α = 0.0
     β = Inf
     t = 1.0
-    f0 = get_cost(p, o.x)
-    xNew = retract(p.M, o.x, t * η, a.retraction_method)
+    f0 = get_cost(p, get_iterate(o))
+    xNew = retract(p.M, get_iterate(o), t * η, a.retraction_method)
     fNew = get_cost(p, xNew)
-    η_xNew = vector_transport_to(p.M, o.x, η, xNew, a.vector_transport_method)
+    η_xNew = vector_transport_to(p.M, get_iterate(o), η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(p, xNew)
-    nAt = fNew > f0 + a.c1 * t * inner(p.M, o.x, η, o.gradient)
-    nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c2 * inner(p.M, o.x, η, o.gradient)
+    nAt = fNew > f0 + a.c1 * t * inner(p.M, get_iterate(o), η, get_gradient(o))
+    nWt =
+        inner(p.M, xNew, gradient_new, η_xNew) <
+        a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
     while (nAt || nWt) &&
               (t > a.linesearch_stopsize) &&
               ((α + β) / 2 - 1 > a.linesearch_stopsize)
@@ -758,13 +780,17 @@ function (a::WolfePowellBinaryLinesearch)(
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t = isinf(β) ? 2 * α : (α + β) / 2
         # Update trial point
-        retract!(p.M, xNew, o.x, t * η, a.retraction_method)
+        retract!(p.M, xNew, get_iterate(o), t * η, a.retraction_method)
         fNew = get_cost(p, xNew)
         gradient_new = get_gradient(p, xNew)
-        vector_transport_to!(p.M, η_xNew, o.x, η, xNew, a.vector_transport_method)
+        vector_transport_to!(
+            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+        )
         # Update conditions
-        nAt = fNew > f0 + a.c1 * t * inner(p.M, o.x, η, o.gradient)
-        nWt = inner(p.M, xNew, gradient_new, η_xNew) < a.c2 * inner(p.M, o.x, η, o.gradient)
+        nAt = fNew > f0 + a.c1 * t * inner(p.M, get_iterate(o), η, get_gradient(o))
+        nWt =
+            inner(p.M, xNew, gradient_new, η_xNew) <
+            a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
     end
     a.last_stepsize = t
     return t

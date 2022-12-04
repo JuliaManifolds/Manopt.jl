@@ -1,0 +1,24 @@
+using Manopt, ManifoldsBase, Manifolds, Test
+using LinearAlgebra: I, tr
+
+@testset "Test RALM with a nonneg. PCA" begin
+    d = 20
+    M = Sphere(d - 1)
+    S = [ones(4)..., zeros(d - 4)...]
+    v0 = project(M, S)
+    Z = v0 * v0'
+    F(M, p) = -tr(transpose(p) * Z * p) / 2
+    gradF(M, p) = project(M, p, -transpose.(Z) * p / 2 - Z * p / 2)
+    G(M, p) = -p # i.e. p ≥ 0
+    mI = -Matrix{Float64}(I, d, d)
+    gradG(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
+    x0 = project(M, ones(d))
+    sol = augmented_Lagrangian_method(M, F, gradF, x0; G=G, gradG=gradG)
+    @test distance(M, sol, v0) < 8 * 1e-4
+
+    P = ConstrainedProblem(M, F, gradF; G=G, gradG=gradG)
+    # dummy ALM problem
+    O = AugmentedLagrangianMethodOptions(M, P, x0, CostProblem(M, F), NelderMeadOptions(M))
+    set_iterate!(O, 2 .* x0)
+    @test get_iterate(O) == 2 .* x0
+end

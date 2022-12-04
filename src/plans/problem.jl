@@ -42,10 +42,10 @@ do not allocate memory but work on their input, i.e. in place.
 struct MutatingEvaluation <: AbstractEvaluationType end
 
 """
-    get_cost(p, x)
+    get_cost(P::Problem, p)
 
-evaluate the cost function `F` stored within a [`Problem`](@ref) at the point `x`.
+evaluate the cost function `F` stored within a [`Problem`](@ref) `P` at the point `p`.
 """
-function get_cost(p::Problem, x)
-    return p.cost(p.M, x)
+function get_cost(P::Problem, p)
+    return P.cost(P.M, p)
 end

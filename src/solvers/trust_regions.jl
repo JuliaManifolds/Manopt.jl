@@ -74,7 +74,8 @@ For a description of the algorithm and more details see
   If set to false (default) just the optimal value `x_opt` is returned
 
 # Output
-* `x` – the last reached point on the manifold
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 
 # see also
 [`truncated_conjugate_gradient_descent`](@ref)
@@ -120,7 +121,6 @@ function trust_regions!(
     κ::Float64=0.1,
     η_1::Float64=0.1,
     η_2::Float64=0.75,
-    return_options=false,
     kwargs..., #collect rest
 ) where {TF,TdF,TH,Tprec,Proj}
     (ρ_prime >= 0.25) && throw(
@@ -155,12 +155,7 @@ function trust_regions!(
         (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 
 function initialize_solver!(p::HessianProblem, o::TrustRegionsOptions)
@@ -267,4 +262,3 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     end
     return o
 end
-get_solver_result(o::TrustRegionsOptions) = o.x

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.5
+# v0.19.11
 
 using Markdown
 using InteractiveUtils
@@ -9,13 +9,13 @@ using Manopt, Manifolds, Random, Colors, PlutoUI
 
 # ╔═╡ 6bf76330-ad0e-11ec-0c00-894872624127
 md"""
-# Get started: Optimize!
+# Get Started: Optimize!
 
 This example illustrates how to set up and solve optimization problems and how
 to further get data from the algorithm using debug output and record data.
 We will use the Riemannian mean and median as simple examples.
 
-To start from the quite general case: A __Solver__ is an algorithm that aims
+To start from the quite general case: a __solver__ is an algorithm that aims
 to solve
 
 ```math
@@ -24,21 +24,25 @@ to solve
 
 where ``\mathcal M`` is a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and ``f:\mathcal M → ℝ`` is the cost function.
 
-In `Manopt.jl` a __Solver__ is an algorithm that requires a [`Problem`](https://manoptjl.org/stable/plans/index.html#Manopt.Problem)
-`p` and [`Options`](https://manoptjl.org/stable/plans/index.html#Manopt.Options) `o`. While former contains __static__ data,
+In `Manopt.jl` a __solver__ is an algorithm that requires a [`Problem`](https://manoptjl.org/stable/plans/index.html#Manopt.Problem)
+`p` and [`Options`](https://manoptjl.org/stable/plans/index.html#Manopt.Options) `o`. While the former contains __static__ data,
 most prominently the manifold ``\mathcal M`` (usually as `p.M`) and the cost
 function ``f`` (usually as `x->get_cost(p, x)`), the latter contains __dynamic__
 data, i.e. things that usually change during the algorithm, are allowed to
 change, or specify the details of the algorithm to use. Together they form a
-__plan__. A __plan__ uniquely determines the algorithm to use and provide all
-necessary information to run the algorithm.
+__plan__. A __plan__ uniquely determines the algorithm to use and provides all
+necessary information to run it.
+
+You can either follow the code here and look at the preprinted output, or, if you want to experiment
+things for yourself, you can directly access the Pluto notebooks related to the tutorials by going 
+to "/your`_Julia_`installation_folder/packages/Manopt/tutorials/".
 """
 
 # ╔═╡ 94dee66e-2f37-4cc0-8451-c0bbb5eae2c9
 md"""
 # Setup
 
-Let‘s first set up a few variables
+Let's first set up a few variables
 """
 
 # ╔═╡ 4235a1ba-3cf2-49dc-9a26-32fafc7a7008
@@ -63,21 +67,21 @@ the `GradientProblem` is the [gradient
 descent](https://en.wikipedia.org/wiki/Gradient_descent) algorithm.
 It requires an initial value `o.x0`, a `StoppingCriterion` `o.stop`, a
 `Stepsize` `o.stepsize` and a retraction `o.retraction`.
-Internally is stores the last evaluation of the gradient at `o.gradient` for convenience.
+Internally, is stores the last evaluation of the gradient at `o.gradient` for convenience.
 The only mandatory parameter is the initial value `x0`, though the defaults for
 both the stopping criterion ([`StopAfterIteration`](@ref)`(100)`) as well as the
-stepsize ([`ConstantStepsize`](@ref)`(1.)` are quite conservative, but are
+stepsize ([`ConstantStepsize`](@ref)`(1.)`) are quite conservative, but are
 chosen to be as simple as possible.
 
 With these two at hand, running the algorithm just requires to call `x_opt = solve(p,o)`.
 
 In the following two examples we will see, how to use a higher level interface
-that allows to more easily activate for example a debug output or record values during the iterations.
+that allows to more easily activate, for example, a debug output or record values during the iterations.
 """
 
 # ╔═╡ 177cc292-94d3-4344-857e-30483f592a55
 md"""
-Let‘s load a few colors from [Paul Tol](https://personal.sron.nl/~pault/)
+Let's load a few colors from [Paul Tol](https://personal.sron.nl/~pault/).
 """
 
 # ╔═╡ 0b405c42-19a5-480d-b1dc-0fb8811a48fa
@@ -128,7 +132,7 @@ PlutoUI.LocalResource(image_prefix * "/startDataAndCenter.png")
 md"""
 ## Computing the Mean
 
-To compute the mean on the manifold we use the characterization, that the
+To compute the mean on the manifold we use the characterization that the
 Euclidean mean minimizes the sum of squared distances, and end up with the
 following cost function. Its minimizer is called
 [Riemannian Center of Mass](https://arxiv.org/abs/1407.2087).
@@ -147,7 +151,7 @@ gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 md"""
 Note that the [grad_distance](https://manoptjl.org/stable/functions/gradients.html#Manopt.grad_distance) defaults to the case `p=2`, i.e. the
 gradient of the squared distance. For details on convergence of the gradient
-descent for this problem, see [^AfsariTronVidal2013]
+descent for this problem, see [^AfsariTronVidal2013].
 
 The easiest way to call the gradient descent is now to call
 [gradient_descent](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.gradient_descent).
@@ -192,7 +196,7 @@ end
 
 # ╔═╡ 863bf8b8-272c-40d6-985f-0a7cf9454756
 md"""
-A way to get better performance and for convex and coercive costs a guaranteed convergence is to switch the default
+A way to get better performance, and for convex and coercive costs a guaranteed convergence, is to switch the default
 [`ConstantStepsize`](@ref)(1.0) with a step size that performs better, for
 example the [`ArmijoLinesearch`](https://manoptjl.org/stable/plans/index.html#Manopt.ArmijoLinesearch).
 We can tweak the default values for the `contraction_factor` and the `sufficient_decrease`  beyond constant step size which is already quite fast. We get
@@ -207,7 +211,12 @@ with_terminal() do
         data[1];
         stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.5),
         debug=[
-            :Iteration, (:Change, "change: %1.9f | "), :Cost, (:x, " | %s"), "\n", :Stop
+            :Iteration,
+            (:Change, "change: %1.9f | "),
+            :Cost,
+            (:Iterate, " | %s"),
+            "\n",
+            :Stop,
         ],
     )
 end
@@ -244,7 +253,7 @@ with_terminal() do
             :Iteration,
             (:Change, "change: %1.9f | "),
             (:Cost, "F(x): %1.9f"),
-            (:x, " | %s"),
+            (:Iterate, " | %s"),
             "\n",
             :Stop,
         ],
@@ -253,7 +262,7 @@ end
 
 # ╔═╡ 98028747-31dd-4bf8-b4b5-0959d5afb75c
 md"""
-Let‘s add this point to out data image
+Let's add this point to our data image
 """
 
 # ╔═╡ fb07943f-54b4-4cb3-b1fd-f3ab06b4d033
@@ -279,7 +288,7 @@ md"""
 > There are more sophisticated methods tailored for the specific manifolds available in
 > [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/) see [`median`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.median-Tuple{Manifold,AbstractArray{T,1}%20where%20T,AbstractArray{T,1}%20where%20T,CyclicProximalPointEstimation}).
 
-Similar to the mean you can also define the median as the minimizer of the
+Similarly to the mean, you can also define the median as the minimizer of the
 distances, see for example [^Bačák2014], but since
 this problem is not differentiable, we employ the Cyclic Proximal Point (CPP)
 algorithm, described in the same reference. We define
@@ -293,7 +302,7 @@ proxes = Function[(M, λ, y) -> prox_distance(M, λ / n, di, y, 1) for di in dat
 
 # ╔═╡ dc236508-283c-4047-a216-c570e35bc791
 md"""
-So we call the cyclic proximal point algorithm this time with a recording and activate the return of the complete options to access the recorded values. We further increase the display of the cost function to more digits.
+So we call the cyclic proximal point algorithm, this time with a recording, and activate the return of the complete options to access the recorded values. We further increase the display of the cost function to more digits.
 """
 
 # ╔═╡ d2a8250e-7796-454b-a0bf-9970b1b9a2aa
@@ -310,12 +319,12 @@ with_terminal() do
             " | ",
             (:Cost, "F(x): %1.12f"),
             " | ",
-            :x,
+            :Iterate,
             "\n",
             50,
             :Stop,
         ],
-        record=[:Iteration, :Change, :Cost, :x],
+        record=[:Iteration, :Change, :Cost, :Iterate],
         return_options=true,
     )
 end
@@ -328,15 +337,15 @@ md"""
 where the differences to `gradient_descent` are as follows
 
 * the third parameter is now an Array of proximal maps
-* debug is reduces to only every 50th iteration
+* debug is reduced to only every 50th iteration
 * we further activated a `RecordAction` using the `record=` optional
-  parameter. These work very similar to those in debug, but they
+  parameter. These work very similarly to those in debug, but they
   collect their data in an array. The high level interface then returns two
   variables; the `values` do contain an array of recorded
-  datum per iteration. Here a Tuple containing the iteration, last change and
+  datum per iteration. Here a tuple containing the iteration, last change and
   cost respectively; see [RedordOptions](https://manoptjl.org/stable/plans/index.html#RecordOptions-1) for details.
 
-We can access the recorded values using `get_record` and contains of a tuple per iteration and contains the iteration number, the change and the cost.
+We can access the recorded values using `get_record`, that consists of a tuple per iteration and contains the iteration number, the change and the cost.
 """
 
 # ╔═╡ c835b5ec-085e-4c9d-b777-76036515bcd1
@@ -400,8 +409,9 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.8.1"
 manifest_format = "2.0"
+project_hash = "a823356639756777dff917301e21ce475100ab9e"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -423,6 +433,7 @@ version = "3.3.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
+version = "1.1.1"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -487,6 +498,7 @@ version = "3.42.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -536,8 +548,9 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+version = "1.6.0"
 
 [[deps.DualNumbers]]
 deps = ["Calculus", "NaNMath", "SpecialFunctions"]
@@ -550,6 +563,9 @@ deps = ["Compat"]
 git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
 uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
 version = "0.4.1"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -644,10 +660,12 @@ version = "0.5.1"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
+version = "0.6.3"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.84.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -656,6 +674,7 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -704,6 +723,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.28.0+0"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -716,6 +736,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+version = "2022.2.1"
 
 [[deps.NaNMath]]
 git-tree-sha1 = "737a5957f387b17e74d4ad2f440eb330b39a62c5"
@@ -730,14 +751,17 @@ version = "0.2.47"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+version = "1.2.0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+version = "0.8.1+0"
 
 [[deps.OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -765,6 +789,7 @@ version = "2.2.3"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+version = "1.8.0"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
@@ -832,6 +857,7 @@ version = "0.3.0+0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -912,10 +938,12 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
+version = "1.10.0"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -931,6 +959,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.12+3"
 
 [[deps.ZygoteRules]]
 deps = ["MacroTools"]
@@ -941,14 +970,17 @@ version = "0.2.2"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.48.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:

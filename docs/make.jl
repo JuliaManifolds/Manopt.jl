@@ -12,15 +12,17 @@ tutorial_relative_path = "tutorials/"
 mkpath(tutorial_output_folder)
 #
 # Tutorials
+@info " \n      Rendering Tutorials\n "
 tutorials = [
-    Dict(:file => "Optimize!", :title => "Get started: Optimize!"),
+    Dict(:file => "Optimize!", :title => "Get Started: Optimize!"),
     Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
-    Dict(:file => "HowToRecord", :title => "Record values"),
-    Dict(:file => "GeodesicRegression", :title => "Do Geodesic regression"),
-    Dict(:file => "Bezier", :title => "Use Bezier Curves"),
-    Dict(:file => "SecondOrderDifference", :title => "Compute a second order difference"),
-    Dict(:file => "StochasticGradientDescent", :title => "Do stochastic gradient descent"),
-    Dict(:file => "Benchmark", :title => "speed up! using `gradF!`"),
+    Dict(:file => "HowToRecord", :title => "Record Values"),
+    Dict(:file => "ConstrainedOptimization", :title => "Do constrained Optimization"),
+    Dict(:file => "GeodesicRegression", :title => "Do Geodesic Regression"),
+    Dict(:file => "Bezier", :title => "Use Bézier Curves"),
+    Dict(:file => "SecondOrderDifference", :title => "Compute a Second Order Difference"),
+    Dict(:file => "StochasticGradientDescent", :title => "Do Stochastic Gradient Descent"),
+    Dict(:file => "Benchmark", :title => "Speed up! Using `gradF!`"),
     Dict(:file => "JacobiFields", :title => "Illustrate Jacobi Fields"),
 ]
 # build menu and write files myself - tp set edit url correctly.
@@ -31,7 +33,7 @@ for t in tutorials
             tutorial_src_folder;
             output_format=documenter_output,
             write_files=false,
-            use_distributed=false,
+            use_distributed=true,
         ),
         ["$(t[:file]).jl"],
     )
@@ -41,7 +43,7 @@ for t in tutorials
         ```@meta
         EditURL = "$(tutorial_src_folder)$(t[:file]).jl"
         ```
-        $(rendered[1])
+        $(rendered["$(t[:file]).jl"][1])
         """,
     )
     push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path, t[:file] * ".md"))
@@ -56,7 +58,11 @@ mkpath(examples_output_folder)
 examples = [
     Dict(:file => "robustPCA", :title => "Robust PCA"),
     Dict(:file => "smallestEigenvalue", :title => "Rayleigh quotient"),
+    Dict(
+        :file => "FrankWolfeSPDMean", :title => "Frank Wolfe for Riemannian Center of Mass"
+    ),
 ]
+@info " \n      Rendering Examples\n "
 # build menu and write files myself - tp set edit url correctly.
 for e in examples
     global example_menu
@@ -65,7 +71,7 @@ for e in examples
             examples_src_folder;
             output_format=documenter_output,
             write_files=false,
-            use_distributed=false,
+            use_distributed=true,
         ),
         ["$(e[:file]).jl"],
     )
@@ -75,7 +81,7 @@ for e in examples
         ```@meta
         EditURL = "$(examples_src_folder)$(e[:file]).jl"
         ```
-        $(rendered[1])
+        $(rendered["$(e[:file]).jl"][1])
         """,
     )
     push!(example_menu, e[:title] => joinpath(examples_relative_path, e[:file] * ".md"))
@@ -100,6 +106,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
     end
 end
 
+@info " \n      Rendering Documentation\n "
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
@@ -111,10 +118,13 @@ makedocs(;
         "Solvers" => [
             "Introduction" => "solvers/index.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
+            "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
+            "Exact Penalty Method" => "solvers/exact_penalty_method.md",
+            "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",

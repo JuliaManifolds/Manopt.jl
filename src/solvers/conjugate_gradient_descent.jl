@@ -23,8 +23,8 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 
 # Input
 * `M` : a manifold ``\mathcal M``
-* `F` : a cost function ``F:\mathcal M→ℝ`` to minimize
-* `gradF`: the gradient ``\operatorname{grad}F:\mathcal M → T\mathcal M`` of ``F``
+* `F` : a cost function ``F:\mathcal M→ℝ`` to minimize implemented as a function `(M,p) -> v`
+* `gradF`: the gradient ``\operatorname{grad}F:\mathcal M → T\mathcal M`` of ``F`` implemented also as `(M,x) -> X`
 * `x` : an initial value ``x∈\mathcal M``
 
 # Optional
@@ -36,9 +36,6 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` - (`default_retraction_method(M`) a retraction method to use.
-* `return_options` – (`false`) – if actiavated, the extended result, i.e. the
-    complete [`Options`](@ref) re returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
 * `stepsize` - (`Constant(1.)`) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
 * `stopping_criterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
@@ -47,9 +44,8 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
   the old descent direction when computing the new descent direction.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of gradientDescent
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function conjugate_gradient_descent(
     M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
@@ -81,16 +77,16 @@ function conjugate_gradient_descent!(
     gradF::TDF,
     x;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stepsize::Stepsize=ConstantStepsize(M),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
     vector_transport_method=default_vector_transport_method(M),
-    return_options=false,
     kwargs...,
 ) where {TF,TDF}
-    p = GradientProblem(M, F, gradF)
+    p = GradientProblem(M, F, gradF; evaluation=evaluation)
     X = zero_vector(M, x)
     o = ConjugateGradientDescentOptions(
         M,
@@ -103,11 +99,7 @@ function conjugate_gradient_descent!(
         X,
     )
     o = decorate_options(o; kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    end
-    return get_solver_result(resultO)
+    return get_solver_return(solve(p, o))
 end
 function initialize_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions)
     o.gradient = get_gradient(p, o.x)
@@ -123,4 +115,3 @@ function step_solver!(p::GradientProblem, o::ConjugateGradientDescentOptions, i)
     o.δ .= -o.gradient .+ o.β * o.δ
     return o.δ
 end
-get_solver_result(o::ConjugateGradientDescentOptions) = o.x

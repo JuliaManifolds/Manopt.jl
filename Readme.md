@@ -9,8 +9,8 @@ Optimization on Manifolds.
 [![DOI](https://zenodo.org/badge/74746729.svg)](https://zenodo.org/badge/latestdoi/74746729)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.03866/status.svg)](https://doi.org/10.21105/joss.03866)
 
-For a function f that maps from a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold)
-ℳ onto the real line, we aim to solve
+For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold)
+ℳ to the real line, we aim to solve
 
 > Find the minimizer x on ℳ, i.e. the (or a) point where f attains its minimum.
 
@@ -28,13 +28,13 @@ In Julia you can get started by just typing
 ] add Manopt
 ```
 
-then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial or the
+then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial or the
 [examples](https://github.com/JuliaManifolds/Manopt.jl/tree/master/examples)
 in this repository.
 
 ## Citation
 
-If you use `Manopt.jl`in your work, please cite the following
+If you use `Manopt.jl` in your work, please cite the following
 
 ```biblatex
 @article{Bergmann2022,

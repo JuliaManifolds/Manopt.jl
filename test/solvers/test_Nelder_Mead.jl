@@ -22,6 +22,9 @@ Random.seed!(29)
 
         x2 = NelderMead(M, Rosenbrock, x0)
         @test x == x2
+
+        set_iterate!(o, ones(6))
+        @test get_iterate(o) == ones(6)
     end
     @testset "Rotations" begin
         M = Rotations(3)

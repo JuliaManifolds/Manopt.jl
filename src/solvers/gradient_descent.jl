@@ -20,9 +20,6 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-    complete [`Options`](@ref) are returned. This can be used to access recorded values.
-    If set to false (default) just the optimal value `x_opt` if returned
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
   functor.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
@@ -31,9 +28,8 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 # Output
-* `x_opt` – the resulting (approximately critical) point of gradientDescent
-OR
-* `options` - the options returned by the solver (see `return_options`)
+
+the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function gradient_descent(
     M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
@@ -72,7 +68,6 @@ function gradient_descent!(
     debug=[DebugWarnIfCostIncreases()],
     direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    return_options=false,
     kwargs..., #collect rest
 ) where {TF,TDF}
     p = GradientProblem(M, F, gradF; evaluation=evaluation)
@@ -85,12 +80,7 @@ function gradient_descent!(
         retraction_method=retraction_method,
     )
     o = decorate_options(o; debug=debug, kwargs...)
-    resultO = solve(p, o)
-    if return_options
-        return resultO
-    else
-        return get_solver_result(resultO)
-    end
+    return get_solver_return(solve(p, o))
 end
 #
 # Solver functions
@@ -104,4 +94,3 @@ function step_solver!(p::GradientProblem, o::GradientDescentOptions, iter)
     retract!(p.M, o.x, o.x, -s * o.gradient, o.retraction_method)
     return o
 end
-get_solver_result(o::GradientDescentOptions) = o.x
