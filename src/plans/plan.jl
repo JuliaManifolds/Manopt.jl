@@ -5,6 +5,8 @@ include("solver_state.jl")
 include("debug.jl")
 include("record.jl")
 
+include("cache.jl")
+
 include("cost_plan.jl")
 include("gradient_plan.jl")
 include("constrained_plan.jl")

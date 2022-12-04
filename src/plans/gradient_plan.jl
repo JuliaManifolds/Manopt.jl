@@ -33,9 +33,40 @@ struct ManifoldGradientObjective{T,C,G} <: AbstractManifoldGradientObjective{T}
     gradient!!::G
 end
 function ManifoldGradientObjective(
-    M::mT, cost::C, gradient::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()
-) where {mT<:AbstractManifold,C,G}
+    cost::C, gradient::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()
+) where {C,G}
     return ManifoldGradientObjective{typeof(evaluation),C,G}(cost, gradient)
+end
+
+@doc raw"""
+    ManifoldCostGradientObjective{T} <: AbstractManifoldObjective{T}
+
+specify an objetive containing one function to perform a combined computation of cost and its gradient
+
+# Fields
+
+* `costgrad!!` – a function that computes both the cost ``f\colon\mathcal M → ℝ``
+  and its gradient ``\operatorname{grad}f\colon\mathcal M → \mathcal T\mathcal M``
+
+Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
+
+* as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X`, i.e. an [`AllocatingEvaluation`](@ref)
+* as a function `(X, p) -> (c, X)` that work in place of `X`, i.e. an [`InplaceEvaluation`](@ref)
+
+# Constructors
+
+    ManifoldCostGradientObjective(costgrad; evaluation=AllocatingEvaluation())
+
+# Used with
+[`gradient_decent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
+"""
+struct ManifoldCostGradientObjective{T,CG} <: AbstractManifoldGradientObjective{T}
+    costgrad!!::CG
+end
+function ManifoldCostGradientObjective(
+    costgrad::CG; evaluation::AbstractEvaluationType=AllocatingEvaluation()
+) where {CG}
+    return ManifoldGradientObjective{typeof(evaluation),CG}(costgrad)
 end
 
 @doc raw"""
@@ -394,19 +425,19 @@ function Nesterov(
 ) where {P,T}
     return Nesterov{P,T}(γ, μ, deepcopy(x0), shrinkage, inverse_retraction_method)
 end
-function (s::Nesterov)(p::AbstractManoptProblem, o::AbstractGradientSolverState, i)
-    h = get_stepsize(p, o, i)
-    α = (h * (s.γ - s.μ) + sqrt(h^2 * (s.γ - s.μ)^2 + 4 * h * s.γ)) / 2
-    γbar = (1 - α) * s.γ + α * s.μ
-    y = retract(p.M, o.x, (α * s.γ) / (s.γ + α * s.μ) .* inverse_retract(p.M, o.x, s.v))
+function (n::Nesterov)(p::AbstractManoptProblem, s::AbstractGradientSolverState, i)
+    h = get_stepsize(p, s, i)
+    α = (h * (n.γ - n.μ) + sqrt(h^2 * (n.γ - n.μ)^2 + 4 * h * n.γ)) / 2
+    γbar = (1 - α) * n.γ + α * n.μ
+    y = retract(p.M, s.x, (α * n.γ) / (n.γ + α * n.μ) .* inverse_retract(p.M, s.x, n.v))
     gradf_yk = get_gradient(p, y)
     xn = retract(p.M, y, -h * gradf_yk)
     d =
-        ((1 - α) * s.γ) / γbar .*
-        inverse_retract(p.M, y, s.v, s.inverse_retraction_method) - α / γbar .* gradf_yk
-    s.v = retract(p.M, y, d, o.retraction_method)
-    s.γ = 1 / (1 + s.shrinkage(i)) * γbar
-    return h, -1 / h .* inverse_retract(p.M, o.x, xn) # outer update
+        ((1 - α) * n.γ) / γbar .*
+        inverse_retract(p.M, y, n.v, n.inverse_retraction_method) - α / γbar .* gradf_yk
+    n.v = retract(p.M, y, d, s.retraction_method)
+    n.γ = 1 / (1 + n.shrinkage(i)) * γbar
+    return h, -1 / h .* inverse_retract(p.M, s.x, xn) # outer update
 end
 
 @doc raw"""
