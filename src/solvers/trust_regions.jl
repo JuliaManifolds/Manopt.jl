@@ -130,7 +130,7 @@ function trust_regions!(
         retraction_method=retraction_method,
         (project!)=project!,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 

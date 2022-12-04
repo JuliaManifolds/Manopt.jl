@@ -1,12 +1,12 @@
 #
 # For the manifolds that are nonmutating only, we have to introduce a few special cases
 #
-function get_gradient!(p::AbstractManoptProblem{AllocatingEvaluation}, ::AbstractFloat, x)
-    X = p.gradient!!(p.M, x)
+function get_gradient!(p::AbstractManoptProblem, ::AbstractFloat, x)
+    X = get_objective(p).gradient!!(p.M, x)
     return X
 end
-function get_hessian!(p::HessianProblem{AllocatingEvaluation}, ::AbstractFloat, x, X)
-    Y = p.hessian!!(p.M, x, X)
+function get_hessian!(p::HessianProblem, ::AbstractFloat, x, X)
+    Y = get_objective(p).hessian!!(p.M, x, X)
     return Y
 end
 function linesearch_backtrack(
@@ -37,12 +37,4 @@ function linesearch_backtrack(
         (s < stop_step) && break
     end
     return s
-end
-# modify gradient descent step_solver
-function step_solver!(
-    p::AbstractManoptProblem{T,<:NONMUTATINGMANIFOLDS}, o::GradientDescentState, iter
-) where {T}
-    s, o.gradient = o.direction(p, o, iter)
-    o.x = retract(p.M, o.x, -s .* o.gradient, o.retraction_method)
-    return o
 end

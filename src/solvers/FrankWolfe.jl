@@ -32,7 +32,7 @@ use a retraction and its inverse.
   a [`Stepsize`](@ref) to use; but it has to be always less than 1. The default is the one proposed by Frank & Wolfe:
   ``s_k = \frac{2}{k+2}``.
 
-all further keywords are passed down to [`decorate_options`](@ref), e.g. `debug`.
+all further keywords are passed down to [`decorate_state`](@ref), e.g. `debug`.
 
 # Output
 
@@ -75,7 +75,7 @@ function Frank_Wolfe_method!(
         stopping_criterion=stopping_criterion,
         evaluation=evaluation,
     )
-    O = decorate_options(O; kwargs...)
+    O = decorate_state(O; kwargs...)
     return get_solver_return(solve!(P, O))
 end
 function initialize_solver!(P::AbstractManoptProblem, O::FrankWolfeState)

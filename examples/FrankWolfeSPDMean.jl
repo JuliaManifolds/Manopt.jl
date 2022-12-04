@@ -181,7 +181,7 @@ PlutoUI.with_terminal() do
         ],
         record=[:Iteration, :Iterate, :Cost],
         evaluation=InplaceEvaluation(),
-        return_options=true,
+        return_state=true,
     )
 end
 
@@ -227,7 +227,7 @@ PlutoUI.with_terminal() do
         ],
         evaluation=InplaceEvaluation(),
         stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-12),
-        return_options=true,
+        return_state=true,
     )
 end
 

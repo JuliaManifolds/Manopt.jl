@@ -56,7 +56,7 @@ see the reference:
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
 
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state`](@ref) for decorators.
 
 # Output
 
@@ -124,7 +124,7 @@ function truncated_conjugate_gradient_descent!(
         stopping_criterion=stopping_criterion,
         (project!)=project!,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 

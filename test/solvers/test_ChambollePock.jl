@@ -70,7 +70,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             linearized_forward_operator=DΛ,
             relax=:dual,
             variant=:linearized,
-            return_options=true,
+            return_state=true,
         )
         @test get_solver_result(o1a) == o1
         o2a = ChambollePock(

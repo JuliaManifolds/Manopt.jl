@@ -115,7 +115,7 @@ While `:x` could be used to also print the current iterate, this usually takes u
 
 It might be more reasonable to *record* these data instead.
 The `record` keyword can be used for this, for example to record the current iterate `:x`,  the `:Change` from one iterate to the next and the current function value or `:Cost`.
-To access the recorded values, set `return_options` to `true`, to obtain not only the resulting value as in the example before, but the whole `Options` structure.
+To access the recorded values, set `return_state` to `true`, to obtain not only the resulting value as in the example before, but the whole `Options` structure.
 Then the values can be accessed using the `get_record` function.
 Just calling `get_record` returns an array of tuples, where each tuple stores the values of one iteration.
 To obtain an array of values for one recorded value,
@@ -125,7 +125,7 @@ use the access per symbol, i.e. from the `Iteration`s we want to access the reco
 o = gradient_descent(M, F, gradF, pts[1],
     debug=[:Iteration, " | ", :Change, " | ", :Cost, "\n", :Stop],
     record=[:x, :Change, :Cost],
-    return_options=true
+    return_state=true
 )
 x_mean_2 = get_solver_result(o) # the solver result
 all_values = get_record(o) # a tuple of recorded data per iteration

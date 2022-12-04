@@ -26,7 +26,7 @@ not necessarily deterministic.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 ...
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state`](@ref) for decorators.
 
 # Output
 
@@ -73,7 +73,7 @@ function subgradient_method!(
         stepsize=stepsize,
         retraction_method=retraction_method,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(p::SubGradientProblem, o::SubGradientMethodState)

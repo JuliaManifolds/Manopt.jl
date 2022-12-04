@@ -42,30 +42,30 @@ construct record decorated [`AbstractManoptSolverState`](@ref), where `dR` can b
   `recordDictionary`(@ref) within the dictionary at `:All`.
 * a `Dict{Symbol,RecordAction}`.
 """
-mutable struct RecordSolverState{O<:AbstractManoptSolverState,TRD<:NamedTuple} <:
+mutable struct RecordSolverState{S<:AbstractManoptSolverState,TRD<:NamedTuple} <:
                AbstractManoptSolverState
-    options::O
+    state::S
     recordDictionary::TRD
-    function RecordSolverState{O}(o::O; kwargs...) where {O<:AbstractManoptSolverState}
-        return new{O,typeof(values(kwargs))}(o, values(kwargs))
+    function RecordSolverState{S}(s::S; kwargs...) where {S<:AbstractManoptSolverState}
+        return new{S,typeof(values(kwargs))}(s, values(kwargs))
     end
 end
-function RecordSolverState(o::O, dR::RecordAction) where {O<:AbstractManoptSolverState}
-    return RecordSolverState{O}(o; Iteration=dR)
+function RecordSolverState(s::S, dR::RecordAction) where {S<:AbstractManoptSolverState}
+    return RecordSolverState{S}(s; Iteration=dR)
 end
 function RecordSolverState(
-    o::O, dR::Dict{Symbol,<:RecordAction}
-) where {O<:AbstractManoptSolverState}
-    return RecordSolverState{O}(o; dR...)
+    s::S, dR::Dict{Symbol,<:RecordAction}
+) where {S<:AbstractManoptSolverState}
+    return RecordSolverState{S}(s; dR...)
 end
-function RecordSolverState(o::O, format::Vector{<:Any}) where {O<:AbstractManoptSolverState}
-    return RecordSolverState{O}(o; RecordFactory(get_state(o), format)...)
+function RecordSolverState(s::S, format::Vector{<:Any}) where {S<:AbstractManoptSolverState}
+    return RecordSolverState{S}(s; RecordFactory(get_state(s), format)...)
 end
-function RecordSolverState(o::O, s::Symbol) where {O<:AbstractManoptSolverState}
-    return RecordSolverState{O}(o; Iteration=RecordFactory(get_state(o), s))
+function RecordSolverState(s::S, symbol::Symbol) where {S<:AbstractManoptSolverState}
+    return RecordSolverState{O}(s; Iteration=RecordFactory(get_state(s), symbol))
 end
 
-dispatch_options_decorator(::RecordSolverState) = Val(true)
+dispatch_state_decorator(::RecordSolverState) = Val(true)
 
 @doc """
     has_record(o::AbstractManoptSolverState)
@@ -74,25 +74,25 @@ check whether the [`AbstractManoptSolverState`](@ref)` o` are decorated with
 [`RecordSolverState`](@ref)
 """
 has_record(::RecordSolverState) = true
-has_record(o::AbstractManoptSolverState) = has_record(o, dispatch_options_decorator(o))
-has_record(o::AbstractManoptSolverState, ::Val{true}) = has_record(o.options)
-has_record(::AbstractManoptSolverState, ::Val{false}) = false
+has_record(s::AbstractManoptSolverState) = has_record(s, dispatch_state_decorator(s))
+_has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
+_has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
 @doc """
-    get_record_options(o::AbstractManoptSolverState)
+    get_record_state(o::AbstractManoptSolverState)
 
 return the [`RecordSolverState`](@ref) among the decorators from the [`AbstractManoptSolverState`](@ref) `o`
 """
-function get_record_options(o::AbstractManoptSolverState)
-    return get_record_options(o, dispatch_options_decorator(o))
+function get_record_state(s::AbstractManoptSolverState)
+    return _get_record_state(s, dispatch_state_decorator(s))
 end
-function get_record_options(o::AbstractManoptSolverState, ::Val{true})
-    return get_record_options(o.options)
+function _get_record_state(s::AbstractManoptSolverState, ::Val{true})
+    return _get_record_state(s.state)
 end
-function get_record_options(::AbstractManoptSolverState, ::Val{false})
+function _get_record_state(::AbstractManoptSolverState, ::Val{false})
     return error("No Record decoration found")
 end
-get_record_options(o::RecordSolverState) = o
+get_record_state(s::RecordSolverState) = s
 
 @doc raw"""
     get_record_action(o::AbstractManoptSolverState, s::Symbol)
@@ -100,9 +100,9 @@ get_record_options(o::RecordSolverState) = o
 return the action contained in the (first) [`RecordSolverState`](@ref) decorator within the [`AbstractManoptSolverState`](@ref) `o`.
 
 """
-function get_record_action(o::AbstractManoptSolverState, s::Symbol=:Iteration)
-    if haskey(o.recordDictionary, s)
-        return o.recordDictionary[s]
+function get_record_action(s::AbstractManoptSolverState, symbol::Symbol=:Iteration)
+    if haskey(s.recordDictionary, symbol)
+        return s.recordDictionary[symbol]
     else
         error("No record known for key :$s found")
     end
@@ -118,14 +118,14 @@ any recordings during an `:Iteration`.
 When called with arbitrary [`AbstractManoptSolverState`](@ref), this method looks for the
 [`RecordSolverState`](@ref) decorator and calls `get_record` on the decorator.
 """
-function get_record(o::RecordSolverState, s::Symbol=:Iteration)
-    return get_record(get_record_action(o, s))
+function get_record(s::RecordSolverState, symbol::Symbol=:Iteration)
+    return get_record(get_record_action(s, symbol))
 end
-function get_record(o::RecordSolverState, s::Symbol, i...)
+function get_record(s::RecordSolverState, symbol::Symbol, i...)
     return get_record(get_record_action(o, s), i...)
 end
-function get_record(o::AbstractManoptSolverState, s::Symbol=:Iteration)
-    return get_record(get_record_options(o), s)
+function get_record(s::AbstractManoptSolverState, symbol::Symbol=:Iteration)
+    return get_record(get_record_state(s), symbol)
 end
 
 @doc raw"""
@@ -147,8 +147,8 @@ Get the recorded values for reording type `s`, see [`get_record`](@ref) for deta
 
 Acces the recording type of type `s` and call its [`RecordAction`](@ref) with `[i...]`.
 """
-getindex(ro::RecordSolverState, s::Symbol) = get_record(ro, s)
-getindex(ro::RecordSolverState, s::Symbol, i...) = get_record_action(ro, s)[i...]
+getindex(rs::RecordSolverState, s::Symbol) = get_record(rs, s)
+getindex(rs::RecordSolverState, s::Symbol, i...) = get_record_action(rs, s)[i...]
 
 """
     record_or_reset!(r,v,i)
@@ -484,9 +484,9 @@ mutable struct RecordCost <: RecordAction
     RecordCost() = new(Array{Float64,1}())
 end
 function (r::RecordCost)(
-    p::P, o::O, i::Int
+    p::P, s::O, i::Int
 ) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
-    return record_or_reset!(r, get_cost(p, get_iterate(o)), i)
+    return record_or_reset!(r, get_cost(p, get_iterate(s)), i)
 end
 
 @doc raw"""

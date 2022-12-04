@@ -325,7 +325,7 @@ with_terminal() do
             :Stop,
         ],
         record=[:Iteration, :Change, :Cost, :Iterate],
-        return_options=true,
+        return_state=true,
     )
 end
 

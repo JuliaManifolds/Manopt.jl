@@ -124,7 +124,7 @@ and
 * `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state`](@ref) for decorators.
 
 !!! note
     The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
@@ -167,7 +167,7 @@ function NelderMead!(
     kwargs..., #collect rest
 ) where {TF}
     mp = DefaultManoptProblem(M, ManifoldCostObjective(f))
-    o = NelderMeadState(
+    s = NelderMeadState(
         M,
         population;
         stopping_criterion=stopping_criterion,
@@ -178,65 +178,66 @@ function NelderMead!(
         retraction_method=retraction_method,
         inverse_retraction_method=inverse_retraction_method,
     )
-    o = decorate_options(o; kwargs...)
-    solve!(mp, o)
-    return get_solver_return(o)
+    s = decorate_state(s; kwargs...)
+    solve!(mp, s)
+    return get_solver_return(s)
 end
 #
 # Solver functions
 #
-function initialize_solver!(mp::AbstractManoptProblem, o::NelderMeadState)
-    # init cost and x
-    o.costs = get_cost.(Ref(mp), o.population)
-    return o.x = o.population[argmin(o.costs)] # select min
+function initialize_solver!(mp::AbstractManoptProblem, s::NelderMeadState)
+    # init cost and p
+    s.costs = get_cost.(Ref(mp), s.population)
+    return s.p = s.population[argmin(s.costs)] # select min
 end
-function step_solver!(mp::AbstractManoptProblem, o::NelderMeadState, ::Any)
+function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     M = get_manifold(mp)
-    m = mean(M, o.population)
-    ind = sortperm(o.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
-    ξ = inverse_retract(M, m, o.population[last(ind)], o.inverse_retraction_method)
+    m = mean(M, s.population)
+    ind = sortperm(s.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
+    ξ = inverse_retract(M, m, s.population[last(ind)], s.inverse_retraction_method)
     # reflect last
-    xr = retract(M, m, -o.α * ξ, o.retraction_method)
+    xr = retract(M, m, -s.α * ξ, s.retraction_method)
     Costr = get_cost(mp, xr)
     # is it better than the worst but not better than the best?
-    if Costr >= o.costs[first(ind)] && Costr < o.costs[last(ind)]
+    if Costr >= s.costs[first(ind)] && Costr < s.costs[last(ind)]
         # store as last
-        o.population[last(ind)] = xr
-        o.costs[last(ind)] = Costr
+        s.population[last(ind)] = xr
+        s.costs[last(ind)] = Costr
     end
     # --- Expansion ---
-    if Costr < o.costs[first(ind)] # reflected is better than fist -> expand
-        xe = retract(M, m, -o.γ * o.α * ξ, o.retraction_method)
+    if Costr < s.costs[first(ind)] # reflected is better than fist -> expand
+        xe = retract(M, m, -s.γ * s.α * ξ, s.retraction_method)
         Coste = get_cost(mp, xe)
         # successful? use the expanded, otherwise still use xr
-        o.population[last(ind)] .= Coste < Costr ? xe : xr
-        o.costs[last(ind)] = min(Coste, Costr)
+        s.population[last(ind)] .= Coste < Costr ? xe : xr
+        s.costs[last(ind)] = min(Coste, Costr)
     end
     # --- Contraction ---
-    if Costr > o.costs[ind[end - 1]] # even worse than second worst
-        s = (Costr < o.costs[last(ind)] ? -o.ρ : o.ρ)
-        xc = retract(M, m, s * ξ, o.retraction_method)
+    if Costr > s.costs[ind[end - 1]] # even worse than second worst
+        step = (Costr < s.costs[last(ind)] ? -s.ρ : s.ρ)
+        xc = retract(M, m, step * ξ, s.retraction_method)
         Costc = get_cost(mp, xc)
-        if Costc < o.costs[last(ind)] # better than last ? -> store
-            o.population[last(ind)] = xc
-            o.costs[last(ind)] = Costc
+        if Costc < s.costs[last(ind)] # better than last ? -> store
+            s.population[last(ind)] = xc
+            s.costs[last(ind)] = Costc
         end
     end
     # --- Shrink ---
     for i in 2:length(ind)
         retract!(
             M,
-            o.population[ind[i]],
-            o.population[ind[1]],
+            s.population[ind[i]],
+            s.population[ind[1]],
             inverse_retract(
-                M, o.population[ind[1]], o.population[ind[i]], o.inverse_retraction_method
+                M, s.population[ind[1]], s.population[ind[i]], s.inverse_retraction_method
             ),
-            o.σ,
-            o.retraction_method,
+            s.σ,
+            s.retraction_method,
         )
         # update cost
-        o.costs[ind[i]] = get_cost(mp, o.population[ind[i]])
+        s.costs[ind[i]] = get_cost(mp, s.population[ind[i]])
     end
     # store best
-    return o.x = o.population[argmin(o.costs)]
+    s.p = s.population[argmin(s.costs)]
+    return s
 end

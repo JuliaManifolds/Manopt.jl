@@ -1,5 +1,5 @@
 @doc raw"""
-    decorate_options(o)
+    decorate_state(o)
 
 decorate the [`AbstractManoptSolverState`](@ref)` o` with specific decorators.
 
@@ -14,13 +14,13 @@ one is used to activate certain decorators.
 * `record` – (`Array{Union{Symbol,RecordAction,Int},1}()`) specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly. The integer can again
   be used for only recording every ``i``th iteration.
-* `return_options` - (`false`) indicate whether to wrap the options in a [`ReturnSolverState`](@ref),
+* `return_state` - (`false`) indicate whether to wrap the options in a [`ReturnSolverState`](@ref),
   indicating that the solver should return options and not (only) the minimizer.
 
 # See also
 [`DebugSolverState`](@ref), [`RecordSolverState`](@ref), [`ReturnSolverState`](@ref)
 """
-function decorate_options(
+function decorate_state(
     o::O;
     debug::Union{
         Missing, # none
@@ -37,11 +37,11 @@ function decorate_options(
         Dict{Symbol,RecordAction}, # a dictionary for precise settings
         Array{<:Any,1}, # a formated string with symbols orAbstractStateActions
     }=missing,
-    return_options=false,
+    return_state=false,
 ) where {O<:AbstractManoptSolverState}
     o = ismissing(debug) ? o : DebugSolverState(o, debug)
     o = ismissing(record) ? o : RecordSolverState(o, record)
-    o = (return_options) ? ReturnSolverState(o) : o
+    o = (return_state) ? ReturnSolverState(o) : o
     return o
 end
 """
@@ -75,8 +75,8 @@ depending on the current [`Problem`](@ref) `p`, the current state of the solver
 stored in [`AbstractManoptSolverState`](@ref) `o` and the current iterate `i` this function determines
 whether to stop the solver by calling the [`StoppingCriterion`](@ref).
 """
-function stop_solver!(p::AbstractManoptProblem, o::AbstractManoptSolverState, i::Int)
-    return o.stop(p, o, i)
+function stop_solver!(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+    return s.stop(p, s, i)
 end
 
 """
@@ -86,22 +86,22 @@ run the solver implemented for the [`Problem`](@ref)` p` and the
 [`AbstractManoptSolverState`](@ref)` o` employing [`initialize_solver!`](@ref), [`step_solver!`](@ref),
 as well as the [`stop_solver!`](@ref) of the solver.
 """
-function solve!(p::AbstractManoptProblem, o::AbstractManoptSolverState)
+function solve!(p::AbstractManoptProblem, s::AbstractManoptSolverState)
     iter::Integer = 0
-    initialize_solver!(p, o)
-    while !stop_solver!(p, o, iter)
+    initialize_solver!(p, s)
+    while !stop_solver!(p, s, iter)
         iter = iter + 1
-        step_solver!(p, o, iter)
+        step_solver!(p, s, iter)
     end
-    return o
+    return s
 end
 
-function initialize_solver!(p::AbstractManoptProblem, o::ReturnSolverState)
-    return initialize_solver!(p, o.options)
+function initialize_solver!(p::AbstractManoptProblem, s::ReturnSolverState)
+    return initialize_solver!(p, s.state)
 end
-function step_solver!(p::AbstractManoptProblem, o::ReturnSolverState, i)
-    return step_solver!(p, o.options, i)
+function step_solver!(p::AbstractManoptProblem, s::ReturnSolverState, i)
+    return step_solver!(p, s.state, i)
 end
-function stop_solver!(p::AbstractManoptProblem, o::ReturnSolverState, i::Int)
-    return stop_solver!(p, o.options, i)
+function stop_solver!(p::AbstractManoptProblem, s::ReturnSolverState, i::Int)
+    return stop_solver!(p, s.state, i)
 end

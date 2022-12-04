@@ -118,7 +118,7 @@ end
         stepsize=ArmijoLinesearch(),
         coefficient=FletcherReevesCoefficient(),
         stopping_criterion=StopAfterIteration(15),
-        return_options=true,
+        return_state=true,
     )
     @test get_solver_result(x_opt2) == x_opt
 end

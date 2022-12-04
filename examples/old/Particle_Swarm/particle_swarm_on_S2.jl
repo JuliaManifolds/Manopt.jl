@@ -61,7 +61,7 @@ o = particle_swarm(
     stopping_criterion=StopAfterIteration(800),
     debug=[:Iteration, " ", 100],
     record=[:Iterate, :p, :velocity],
-    return_options=true,
+    return_state=true,
 );
 path = [x[1] for x in get_record(o, :Iterate)] # x0
 velocities = [v[1] for v in get_record(o, :velocity)] # x0

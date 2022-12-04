@@ -35,10 +35,10 @@ end
     @test is_options_decorator(d)
     @test !is_options_decorator(o)
 
-    @test dispatch_options_decorator(r) === Val(true)
-    @test dispatch_options_decorator(dr) === Val(true)
-    @test dispatch_options_decorator(d) === Val(true)
-    @test dispatch_options_decorator(o) === Val(false)
+    @test dispatch_state_decorator(r) === Val(true)
+    @test dispatch_state_decorator(dr) === Val(true)
+    @test dispatch_state_decorator(d) === Val(true)
+    @test dispatch_state_decorator(o) === Val(false)
 
     @test get_state(r) == o
     @test get_state(dr) == o

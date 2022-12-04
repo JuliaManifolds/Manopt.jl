@@ -21,7 +21,7 @@ using Manopt, Manifolds, Test
             stepsize=ArmijoLinesearch(1.0, ExponentialRetraction(), 0.99, 0.1),
             debug=[:Iteration, " ", :Cost, :Stop, 100, "\n"],
             record=[:Iteration, :Cost, 1],
-            return_options=true,
+            return_state=true,
         )
         x = get_solver_result(o)
         x2 = gradient_descent!(

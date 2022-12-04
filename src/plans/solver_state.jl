@@ -17,39 +17,39 @@ provide the access functions accordingly
 abstract type AbstractManoptSolverState end
 
 """
-    dispatch_options_decorator(o::AbstractManoptSolverState)
+    dispatch_state_decorator(o::AbstractManoptSolverState)
 
-Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `o` to be of decorating type, i.e.
-it stores (encapsulates) options in itself, by default in the field `o. options`.
+Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `s` to be of decorating type, i.e.
+it stores (encapsulates) state in itself, by default in the field `s.state`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
 
-The default is `Val{false}`, i.e. by default an options is not decorated.
+The default is `Val{false}`, i.e. by default an state is not decorated.
 """
-dispatch_options_decorator(::AbstractManoptSolverState) = Val(false)
+dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 
 """
-    is_options_decorator(o::AbstractManoptSolverState)
+    is_state_decorator(o::AbstractManoptSolverState)
 
 Indicate, whether [`AbstractManoptSolverState`](@ref) `o` are of decorator type.
 """
-function is_options_decorator(o::AbstractManoptSolverState)
-    return _extract_val(dispatch_options_decorator(o))
+function is_state_decorator(o::AbstractManoptSolverState)
+    return _extract_val(dispatch_state_decorator(o))
 end
 
 @doc raw"""
     ReturnSolverState{O<:AbstractManoptSolverState} <: AbstractManoptSolverState
 
-This internal type is used to indicate that the contained [`AbstractManoptSolverState`](@ref) `options`
+This internal type is used to indicate that the contained [`AbstractManoptSolverState`](@ref) `state`
 should be returned at the end of a solver instead of the usual minimizer.
 
 # See also
 [`get_solver_result`](@ref)
 """
-struct ReturnSolverState{O<:AbstractManoptSolverState} <: AbstractManoptSolverState
-    options::O
+struct ReturnSolverState{S<:AbstractManoptSolverState} <: AbstractManoptSolverState
+    state::S
 end
-dispatch_options_decorator(::ReturnSolverState) = Val(true)
+dispatch_state_decorator(::ReturnSolverState) = Val(true)
 
 """
     get_solver_return(O::AbstractManoptSolverState)
@@ -59,16 +59,16 @@ i.e. the last iterate or (approximate) minimizer.
 
     get_solver_return(O::ReturnSolverState)
 
-return the internally stored options of the [`ReturnSolverState`](@ref) instead of the minimizer.
-This means that when the options are decorated like this, the user still has to call [`get_solver_result`](@ref)
-on the internal options separately.
+return the internally stored state of the [`ReturnSolverState`](@ref) instead of the minimizer.
+This means that when the state are decorated like this, the user still has to call [`get_solver_result`](@ref)
+on the internal state separately.
 """
-function get_solver_return(O::AbstractManoptSolverState)
-    return get_solver_return(O, dispatch_options_decorator(O))
+function get_solver_return(s::AbstractManoptSolverState)
+    return _get_solver_return(s, dispatch_state_decorator(s))
 end
-get_solver_return(O::AbstractManoptSolverState, ::Val{false}) = get_solver_result(O)
-get_solver_return(O::AbstractManoptSolverState, ::Val{true}) = get_solver_return(O.options)
-get_solver_return(O::ReturnSolverState) = O.options
+_get_solver_return(s::AbstractManoptSolverState, ::Val{false}) = get_solver_result(s)
+_get_solver_return(s::AbstractManoptSolverState, ::Val{true}) = get_solver_return(s.state)
+get_solver_return(s::ReturnSolverState) = s.state
 
 #
 # StoppingCriterion meta
@@ -119,68 +119,68 @@ and returns a number, namely the stepsize to use.
 abstract type Stepsize end
 
 @doc raw"""
-    get_state(o::AbstractManoptSolverState)
+    get_state(s::AbstractManoptSolverState)
 
-return the undecorated [`AbstractManoptSolverState`](@ref) of the (possibly) decorated `o`.
-As long as your decorated options store the options within `o.options` and
-the [`dispatch_options_decorator`](@ref) is set to `Val{true}`,
-the internal options are extracted.
+return the undecorated [`AbstractManoptSolverState`](@ref) of the (possibly) decorated `s`.
+As long as your decorated state store the state within `s.state` and
+the [`dispatch_state_decorator`](@ref) is set to `Val{true}`,
+the internal state are extracted.
 """
-get_state(o::AbstractManoptSolverState) = get_state(o, dispatch_options_decorator(o))
-get_state(o::AbstractManoptSolverState, ::Val{false}) = o
-get_state(o::AbstractManoptSolverState, ::Val{true}) = get_state(o.options)
+get_state(s::AbstractManoptSolverState) = _get_state(s, dispatch_state_decorator(s))
+_get_state(s::AbstractManoptSolverState, ::Val{false}) = s
+_get_state(s::AbstractManoptSolverState, ::Val{true}) = get_state(s.state)
 
 """
     get_gradient(O::AbstractManoptSolverState)
 
-return the (last stored) gradient within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the options beforehand
+return the (last stored) gradient within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the state beforehand
 """
-get_gradient(o::AbstractManoptSolverState) = get_gradient(o, dispatch_options_decorator(o))
-function get_gradient(o::AbstractManoptSolverState, ::Val{false})
+get_gradient(s::AbstractManoptSolverState) = get_gradient(s, dispatch_state_decorator(s))
+function _get_gradient(o::AbstractManoptSolverState, ::Val{false})
     return error(
         "It seems the AbstractManoptSolverState $o do not provide access to a gradient"
     )
 end
-get_gradient(o::AbstractManoptSolverState, ::Val{true}) = get_gradient(o.options)
+_get_gradient(o::AbstractManoptSolverState, ::Val{true}) = get_gradient(o.state)
 
 """
     get_iterate(O::AbstractManoptSolverState)
 
-return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the options beforehand
+return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the state beforehand
 """
-get_iterate(O::AbstractManoptSolverState) = get_iterate(O, dispatch_options_decorator(O))
-function get_iterate(O::AbstractManoptSolverState, ::Val{false})
+get_iterate(s::AbstractManoptSolverState) = _get_iterate(s, dispatch_state_decorator(s))
+function _get_iterate(s::AbstractManoptSolverState, ::Val{false})
     return error(
-        "It seems the AbstractManoptSolverState $O do not provide access to an iterate"
+        "It seems the AbstractManoptSolverState $s do not provide access to an iterate"
     )
 end
-get_iterate(O::AbstractManoptSolverState, ::Val{true}) = get_iterate(O.options)
+_get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
 
 """
     set_iterate!(O::AbstractManoptSolverState, p)
 
 set the iterate to some (start) value `p`.
 """
-function set_iterate!(O::AbstractManoptSolverState, p)
-    return set_iterate!(O, p, dispatch_options_decorator(O))
+function set_iterate!(s::AbstractManoptSolverState, p)
+    return _set_iterate!(s, p, dispatch_state_decorator(s))
 end
-function set_iterate!(O::AbstractManoptSolverState, p, ::Val{false})
+function _set_iterate!(s::AbstractManoptSolverState, ::Any, ::Val{false})
     return error(
-        "It seems the AbstractManoptSolverState $O do not provide (write) access to an iterate",
+        "It seems the AbstractManoptSolverState $s do not provide (write) access to an iterate",
     )
 end
-set_iterate!(O::AbstractManoptSolverState, p, ::Val{true}) = set_iterate!(O.options, p)
+_set_iterate!(s::AbstractManoptSolverState, p, ::Val{true}) = set_iterate!(s.state, p)
 
 """
     get_solver_result(O::AbstractManoptSolverState)
 
-return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the options beforehand
+return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the state beforehand
 """
 function get_solver_result(o::AbstractManoptSolverState)
-    return get_solver_result(o, dispatch_options_decorator(o))
+    return get_solver_result(o, dispatch_state_decorator(o))
 end
 get_solver_result(o::AbstractManoptSolverState, ::Val{false}) = get_iterate(o)
-get_solver_result(o::AbstractManoptSolverState, ::Val{true}) = get_solver_result(o.options)
+get_solver_result(o::AbstractManoptSolverState, ::Val{true}) = get_solver_result(o.state)
 
 #
 # Common Actions for decorated AbstractManoptSolverState

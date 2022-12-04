@@ -98,7 +98,7 @@ function conjugate_gradient_descent!(
         vector_transport_method,
         X,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(p::AbstractManoptProblem, o::ConjugateGradientDescentState)

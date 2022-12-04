@@ -68,7 +68,7 @@ function DebugSolverState(o::O, format::Array{<:Any,1}) where {O<:AbstractManopt
     return DebugSolverState{O}(o, DebugFactory(format))
 end
 
-dispatch_options_decorator(::DebugSolverState) = Val(true)
+dispatch_state_decorator(::DebugSolverState) = Val(true)
 
 #
 # Meta Debugs

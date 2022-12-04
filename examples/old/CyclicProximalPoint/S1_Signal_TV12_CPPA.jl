@@ -91,7 +91,7 @@ o = cyclic_proximal_point(
         :Stop,
     ],
     record=[:Iteration, :Cost, :Change, :Iterate],
-    return_options=true,
+    return_state=true,
 )
 fR = get_solver_result(o)
 r = get_record(o)

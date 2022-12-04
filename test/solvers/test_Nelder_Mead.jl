@@ -14,7 +14,7 @@ Random.seed!(29)
             ])
         end
         x0 = [8 * randn(6) for i in 1:7]
-        o = NelderMead(M, Rosenbrock, x0; record=[RecordCost()], return_options=true)
+        o = NelderMead(M, Rosenbrock, x0; record=[RecordCost()], return_state=true)
         x = get_solver_result(o)
         rec = get_record(o)
         nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
@@ -37,7 +37,7 @@ Random.seed!(29)
             f,
             x0;
             record=[RecordCost()],
-            return_options=true,
+            return_state=true,
             stopping_criterion=StopAfterIteration(400),
         )
         x = get_solver_result(o)

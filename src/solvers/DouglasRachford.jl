@@ -37,7 +37,7 @@ the default parameter is given in brackets
   its first argument is the result then (assuming all are equal after the second
   prox.
 
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state`](@ref) for decorators.
 
 # Output
 
@@ -117,7 +117,7 @@ function DouglasRachford!(
         stopping_criterion=stopping_criterion,
         parallel=parallel > 0,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(::ProximalProblem, ::DouglasRachfordState) end

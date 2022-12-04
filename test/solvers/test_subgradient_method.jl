@@ -29,7 +29,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
         @test norm(M, x, get_subgradient(p, x)) == 0
         @test_throws MethodError get_gradient(p, o.x)
         @test_throws MethodError get_proximal_map(p, 1.0, o.x, 1)
-        o2 = subgradient_method(M, f, ∂f, x0; return_options=true)
+        o2 = subgradient_method(M, f, ∂f, x0; return_state=true)
         xhat2 = get_solver_result(o2)
         @test f(M, xhat2) <= f(M, x0)
     end
@@ -56,7 +56,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
         @test_throws MethodError get_gradient(p, o.x)
         @test_throws MethodError get_proximal_map(p, 1.0, o.x, 1)
         o2 = subgradient_method(
-            M, f, ∂f!, copy(x0); evaluation=InplaceEvaluation(), return_options=true
+            M, f, ∂f!, copy(x0); evaluation=InplaceEvaluation(), return_state=true
         )
         xhat2 = get_solver_result(o2)
         @test f(M, xhat2) <= f(M, x0)

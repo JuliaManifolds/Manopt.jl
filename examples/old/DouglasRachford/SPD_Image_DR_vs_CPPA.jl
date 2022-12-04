@@ -79,7 +79,7 @@ x0 = fill(f, 5)
     debug=use_debug ? [:Iteration, " | ", :Cost, "\n", 10, :Stop] : missing,
     record=export_table ? [:Iteration, :Cost] : missing,
     stopping_criterion=sC,
-    return_options=true,
+    return_state=true,
 )
 y = get_solver_result(o)[1]
 export_table && (r = get_record(o))

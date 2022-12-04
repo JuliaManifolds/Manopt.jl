@@ -12,7 +12,7 @@ alternating_gradient_descent!
 ## Problem
 
 ```@docs
-AlternatingDefaultManoptProblem
+AlternatingGradientProblem
 ```
 
 ## State

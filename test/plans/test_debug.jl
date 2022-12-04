@@ -19,7 +19,7 @@ end
         gradf(M, y) = -2 * log(M, y, x)
         p = GradientProblem(M, f, gradf)
         a1 = DebugDivider("|", io)
-        @test Manopt.dispatch_options_decorator(DebugSolverState(o, a1)) === Val{true}()
+        @test Manopt.dispatch_state_decorator(DebugSolverState(o, a1)) === Val{true}()
         # constructors
         @test DebugSolverState(o, a1).debugDictionary[:All] == a1
         @test DebugSolverState(o, [a1]).debugDictionary[:All].group[1] == a1

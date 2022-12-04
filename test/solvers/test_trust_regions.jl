@@ -27,7 +27,7 @@ include("trust_region_model.jl")
             M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, debug=[:Stop]
         )
         opt = trust_regions(
-            M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, return_options=true
+            M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, return_state=true
         )
         @test isapprox(M, X, get_solver_result(opt))
 
@@ -81,7 +81,7 @@ include("trust_region_model.jl")
             M, cost, rgrad, x, ξ, rhess; trust_region_radius=0.5
         )
         ηOpt = truncated_conjugate_gradient_descent(
-            M, cost, rgrad, x, ξ, rhess; trust_region_radius=0.5, return_options=true
+            M, cost, rgrad, x, ξ, rhess; trust_region_radius=0.5, return_state=true
         )
         @test get_solver_result(ηOpt) == η
     end
@@ -108,7 +108,7 @@ include("trust_region_model.jl")
             x4;
             max_trust_region_radius=8.0,
             evaluation=InplaceEvaluation(),
-            return_options=true,
+            return_state=true,
         )
         @test isapprox(M, x3, x4)
         XaH = deepcopy(x)

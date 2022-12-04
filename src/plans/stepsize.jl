@@ -749,78 +749,81 @@ This method also works for decorated options and the [`Stepsize`](@ref) function
 the options, by default stored in `o.stepsize`.
 """
 function get_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, vars...; kwargs...
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, vars...; kwargs...
 )
-    return get_stepsize(p, o, dispatch_options_decorator(o), vars...; kwargs...)
+    return _get_stepsize(p, s, dispatch_state_decorator(s), vars...; kwargs...)
 end
-function get_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, ::Val{true}, vars...; kwargs...
+function _get_stepsize(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{true}, vars...; kwargs...
 )
-    return get_stepsize(p, o.options, vars...; kwargs...)
+    return get_stepsize(p, s.state, vars...; kwargs...)
 end
-function get_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, ::Val{false}, vars...; kwargs...
+function _get_stepsize(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{false}, vars...; kwargs...
 )
     return o.stepsize(p, o, vars...; kwargs...)
 end
 
 function get_initial_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, vars...; kwargs...
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, vars...; kwargs...
 )
     return get_initial_stepsize(
         p::AbstractManoptProblem,
-        o::AbstractManoptSolverState,
-        dispatch_options_decorator(o),
+        s::AbstractManoptSolverState,
+        dispatch_state_decorator(s),
         vars...;
         kwargs...,
     )
 end
-function get_initial_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, ::Val{true}, vars...
+function _get_initial_stepsize(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{true}, vars...
 )
-    return get_initial_stepsize(p, o.options)
+    return get_initial_stepsize(p, s.state)
 end
-function get_initial_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, ::Val{false}, vars...
+function _get_initial_stepsize(
+    ::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{false}, vars...
 )
-    return get_initial_stepsize(o.stepsize)
+    return get_initial_stepsize(s.stepsize)
 end
 
-function get_last_stepsize(p::AbstractManoptProblem, o::AbstractManoptSolverState, vars...)
-    return get_last_stepsize(p, o, dispatch_options_decorator(o), vars...)
+function get_last_stepsize(p::AbstractManoptProblem, s::AbstractManoptSolverState, vars...)
+    return get_last_stepsize(p, o, dispatch_state_decorator(s), vars...)
 end
-function get_last_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, ::Val{true}, vars...
+function _get_last_stepsize(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{true}, vars...
 )
-    return get_last_stepsize(p, o.options, vars...)
+    return get_last_stepsize(p, s.state, vars...)
 end
-function get_last_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, ::Val{false}, vars...
+function _get_last_stepsize(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{false}, vars...
 )
-    return get_last_stepsize(p, o, o.stepsize, vars...)
+    return get_last_stepsize(p, s, s.state, vars...)
 end
 #
 # dispatch on stepsize
 function get_last_stepsize(
-    p::AbstractManoptProblem, o::AbstractManoptSolverState, s::Stepsize, vars...
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, step::Stepsize, vars...
 )
-    return s(p, o, vars...)
+    return step(p, s, vars...)
 end
 function get_last_stepsize(
-    ::AbstractManoptProblem, ::AbstractManoptSolverState, s::ArmijoLinesearch, ::Any...
+    ::AbstractManoptProblem, ::AbstractManoptSolverState, step::ArmijoLinesearch, ::Any...
 )
-    return s.last_stepsize
-end
-function get_last_stepsize(
-    ::AbstractManoptProblem, ::AbstractManoptSolverState, s::WolfePowellLinesearch, ::Any...
-)
-    return s.last_stepsize
+    return step.last_stepsize
 end
 function get_last_stepsize(
     ::AbstractManoptProblem,
     ::AbstractManoptSolverState,
-    s::WolfePowellBinaryLinesearch,
+    step::WolfePowellLinesearch,
     ::Any...,
 )
-    return s.last_stepsize
+    return step.last_stepsize
+end
+function get_last_stepsize(
+    ::AbstractManoptProblem,
+    ::AbstractManoptSolverState,
+    step::WolfePowellBinaryLinesearch,
+    ::Any...,
+)
+    return step.last_stepsize
 end

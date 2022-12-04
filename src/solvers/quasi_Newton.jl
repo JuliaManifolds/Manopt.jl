@@ -133,7 +133,7 @@ function quasi_Newton!(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 

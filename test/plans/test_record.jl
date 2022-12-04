@@ -14,7 +14,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     a = RecordIteration()
     # constructors
     rO = RecordSolverState(o, a)
-    @test Manopt.dispatch_options_decorator(rO) === Val{true}()
+    @test Manopt.dispatch_state_decorator(rO) === Val{true}()
     @test get_state(o) == o
     @test get_state(rO) == o
     @test_throws MethodError get_state(p)

@@ -84,7 +84,7 @@ x0 = f
     record=export_table ? [:Iteration, :Cost] : missing,
     stopping_criterion=sC,
     variant=:linearized,
-    return_options=true,
+    return_state=true,
 )
 y = get_solver_result(o)
 export_table && (r = get_record(o))

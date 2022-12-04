@@ -25,7 +25,7 @@ Random.seed!(42)
             gradF,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-            return_options=true,
+            return_state=true,
         )
         @test get_last_stepsize(GradientProblem(M, F, gradF), lrbfgs_o, lrbfgs_o.stepsize) >
             0

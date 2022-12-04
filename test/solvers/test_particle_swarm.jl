@@ -10,11 +10,11 @@ using Random
         p2 = deepcopy(p1)
 
         Random.seed!(35)
-        o = particle_swarm(M, f; x0=p1, return_options=true)
+        o = particle_swarm(M, f; x0=p1, return_state=true)
         g = get_solver_result(o)
 
         Random.seed!(35)
-        g2 = particle_swarm(M, f; x0=p2, return_options=false)
+        g2 = particle_swarm(M, f; x0=p2, return_state=false)
         @test isequal(g, g2)
 
         # the cost of g and the p[i]'s are not greater after one step
@@ -34,7 +34,7 @@ using Random
         p_start = [random_point(M) for i in 1:3]
         X_start = [random_tangent(M, y) for y in p_start]
         p = DefaultManoptProblem(M, ManifoldCostObjective(f))
-        o = ParticleSwarmState(zero.(p_start), X_start)
+        o = ParticleSwarmState(M, zero.(p_start), X_start)
         # test set_iterate
         set_iterate!(o, p_start)
         @test sum(norm.(get_iterate(o) .- p_start)) == 0

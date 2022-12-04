@@ -62,7 +62,7 @@ using Manopt, Manifolds, Test
             y3;
             evaluation=InplaceEvaluation(),
             order_type=:Linear,
-            return_options=true,
+            return_state=true,
         )
         @test isapprox(N, y, o.x; atol=10^-3)
     end

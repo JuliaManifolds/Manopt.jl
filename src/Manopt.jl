@@ -158,7 +158,7 @@ function __init__()
         include("plans/alternating_gradient_plan.jl")
         include("solvers/alternating_gradient_descent.jl")
         export random_point, random_tangent, mid_point, mid_point!, reflect, reflect!
-        export AlternatingGradientDescentState, AlternatingDefaultManoptProblem
+        export AlternatingGradientDescentState, AlternatingGradientProblem
         export AlternatingGradient
         export alternating_gradient_descent, alternating_gradient_descent!
     end
@@ -181,6 +181,7 @@ export AbstractManifoldObjective, ManifoldCostObjective
 # Problems - old
 export Problem,
     ProximalProblem,
+    AlternatingGradientProblem,
     ConstrainedProblem,
     CostProblem,
     SubDefaultManoptProblem,
@@ -246,7 +247,7 @@ export get_cost,
     forward_operator,
     forward_operator!
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
-export is_options_decorator, dispatch_options_decorator
+export is_options_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export get_constraints,
     get_inequality_constraint,
@@ -336,7 +337,7 @@ export augmented_Lagrangian_method,
     trust_regions,
     trust_regions!
 # Solver helpers
-export decorate_options
+export decorate_state
 export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
 export solve
 export ApproxHessianFiniteDifference
@@ -448,7 +449,7 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
 #
 # Records - and access functions
-export get_record, get_record_options, get_record_action, has_record
+export get_record, get_record_state, get_record_action, has_record
 export RecordAction
 export RecordActionFactory, RecordFactory
 export RecordGroup, RecordEvery

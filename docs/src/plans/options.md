@@ -30,9 +30,9 @@ set_iterate!
 A solver state can be decorated using the following trait and function to initialize
 
 ```@docs
-dispatch_options_decorator
+dispatch_state_decorator
 is_options_decorator
-decorate_options
+decorate_state
 ```
 
 In general decorators often perform actions so we introduce

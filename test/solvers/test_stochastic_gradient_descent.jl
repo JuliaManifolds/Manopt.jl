@@ -84,7 +84,7 @@ using Manopt, Manifolds, Test
         x1 = stochastic_gradient_descent(M, sgradF1, p; order_type=:Linear)
         @test norm(x1) ≈ 1
         o1 = stochastic_gradient_descent(
-            M, sgradF1, p; order_type=:Linear, return_options=true
+            M, sgradF1, p; order_type=:Linear, return_state=true
         )
         x1a = get_solver_result(o1)
         @test x1 == x1a

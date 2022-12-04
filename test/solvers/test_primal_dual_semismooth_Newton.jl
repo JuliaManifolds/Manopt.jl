@@ -156,7 +156,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         adjoint_DΛ;
         primal_stepsize=σ,
         dual_stepsize=τ,
-        return_options=true,
+        return_state=true,
     )
     y = get_solver_result(o)
     @test x_hat ≈ y atol = 2 * 1e-7
@@ -179,7 +179,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         primal_stepsize=σ,
         dual_stepsize=τ,
         update_dual_base=update_dual_base,
-        return_options=false,
+        return_state=false,
     )
     y2 = o2
     @test x_hat ≈ y2 atol = 2 * 1e-7

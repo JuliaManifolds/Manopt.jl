@@ -20,7 +20,7 @@ using Manifolds, Manopt, Test, Dates
                 DebugIterate(), " ", DebugCost(), " ", DebugProximalParameter(), "\n", 10000
             ],
             record=[RecordProximalParameter(), RecordIterate(f), RecordCost()],
-            return_options=true,
+            return_state=true,
         )
         fR = get_solver_result(o)
         fR2 = cyclic_proximal_point(

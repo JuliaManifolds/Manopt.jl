@@ -27,7 +27,7 @@ using Manifolds, Manopt, Test
         start;
         debug=[DebugCost(), DebugIterate(), DebugProximalParameter(), 100],
         record=[RecordCost(), RecordProximalParameter()],
-        return_options=true,
+        return_state=true,
     )
     xHat2 = get_solver_result(o)
     drec2 = get_record(o)

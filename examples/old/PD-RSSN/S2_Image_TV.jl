@@ -128,7 +128,7 @@ for e in experiments
         record=[:Iteration, :Cost, :Iterate, :ξ],
         stopping_criterion=StopAfterIteration(get(e, :maxIter, 100)),
         variant=:linearized,
-        return_options=true,
+        return_state=true,
     )
     push!(records, get_record(o))
     if export_primal
@@ -171,7 +171,7 @@ for e in experiments
         record=[:Iteration, :Cost, :Iterate],
         stopping_criterion=StopAfterIteration(get(e, :maxIter, 10)),
         # variant=:linearized,
-        return_options=true,
+        return_state=true,
     )
 end
 #

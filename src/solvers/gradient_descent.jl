@@ -25,7 +25,7 @@ with different choices of ``s_k`` available (see `stepsize` option below).
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 ...
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state`](@ref) for decorators.
 
 # Output
 
@@ -79,7 +79,7 @@ function gradient_descent!(
         direction=direction,
         retraction_method=retraction_method,
     )
-    o = decorate_options(o; debug=debug, kwargs...)
+    o = decorate_state(o; debug=debug, kwargs...)
     return get_solver_return(solve!(p, o))
 end
 #

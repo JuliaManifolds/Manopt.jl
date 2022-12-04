@@ -1,5 +1,5 @@
 @doc raw"""
-    AlternatingDefaultManoptProblem <:AbstractManoptProblem
+    AlternatingGradientProblem <:AbstractManoptProblem
 
 An alternating gradient problem consists of
 * a `ProductManifold M` ``=\mathcal M = \mathcal M_1 × ⋯ × M_n``
@@ -20,54 +20,51 @@ An alternating gradient problem consists of
     the `i`th components gradient is computed / returned.
 
 # Constructors
-    AlternatingDefaultManoptProblem(M::ProductManifold, F, gradF::Function;
+    AlternatingGradientProblem(M::ProductManifold, F, gradF::Function;
         evaluation=AllocatingEvaluation()
     )
-    AlternatingDefaultManoptProblem(M::ProductManifold, F, gradF::AbstractVector{<:Function};
+    AlternatingGradientProblem(M::ProductManifold, F, gradF::AbstractVector{<:Function};
         evaluation=AllocatingEvaluation()
     )
 
 Create a alternating gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
 """
-struct AlternatingDefaultManoptProblem{T,MT<:ProductManifold,TCost,TGradient} <:
+struct AlternatingGradientProblem{T,MT<:ProductManifold,TCost,TGradient} <:
        AbstractManoptProblem
     M::MT
     cost::TCost
     gradient!!::TGradient
 end
-function AlternatingDefaultManoptProblem(
+function AlternatingGradientProblem(
     M::TM, F::TCost, gradF!!::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()
 ) where {TM<:ProductManifold,G,TCost}
-    return AlternatingDefaultManoptProblem{typeof(evaluation),TM,TCost,G}(M, F, gradF!!)
+    return AlternatingGradientProblem{typeof(evaluation),TM,TCost,G}(M, F, gradF!!)
 end
-function AlternatingDefaultManoptProblem(
+function AlternatingGradientProblem(
     M::TM,
     F::TCost,
     gradF!!::AbstractVector{<:TG};
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 ) where {TM<:ProductManifold,TCost,TG}
-    return AlternatingDefaultManoptProblem{typeof(evaluation),TM,TCost,typeof(gradF!!)}(
+    return AlternatingGradientProblem{typeof(evaluation),TM,TCost,typeof(gradF!!)}(
         M, F, gradF!!
     )
 end
 
 @doc raw"""
-    get_gradient(P::AlternatingDefaultManoptProblem, x)
-    get_gradient!(P::AlternatingDefaultManoptProblem, Y, x)
+    get_gradient(P::AlternatingGradientProblem, x)
+    get_gradient!(P::AlternatingGradientProblem, Y, x)
 
 Evaluate all summands gradients at a point `x` on the `ProductManifold M` (in place of `Y`)
 """
 function get_gradient(
-    p::AlternatingDefaultManoptProblem{
-        AllocatingEvaluation,<:AbstractManifold,TC,<:Function
-    },
-    x,
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function}, x
 ) where {TC}
     return p.gradient!!(p.M, x)
 end
 function get_gradient(
-    p::AlternatingDefaultManoptProblem{
+    p::AlternatingGradientProblem{
         AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
     },
     x,
@@ -76,9 +73,7 @@ function get_gradient(
     return Y
 end
 function get_gradient!(
-    p::AlternatingDefaultManoptProblem{
-        AllocatingEvaluation,<:AbstractManifold,TC,<:Function
-    },
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function},
     X,
     x,
 ) where {TC}
@@ -86,7 +81,7 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-    p::AlternatingDefaultManoptProblem{
+    p::AlternatingGradientProblem{
         AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
     },
     X,
@@ -96,16 +91,13 @@ function get_gradient!(
     return X
 end
 function get_gradient(
-    p::AlternatingDefaultManoptProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function},
-    x,
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function}, x
 ) where {TC}
     Y = zero_vector(p.M, x)
     return p.gradient!!(p.M, Y, x)
 end
 function get_gradient(
-    p::AlternatingDefaultManoptProblem{
-        InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector
-    },
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     x,
 ) where {TC}
     Y = zero_vector(p.M, x)
@@ -113,16 +105,12 @@ function get_gradient(
     return Y
 end
 function get_gradient!(
-    p::AlternatingDefaultManoptProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function},
-    X,
-    x,
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function}, X, x
 ) where {TC}
     return p.gradient!!(p.M, X, x)
 end
 function get_gradient!(
-    p::AlternatingDefaultManoptProblem{
-        InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector
-    },
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     X,
     x,
 ) where {TC}
@@ -133,22 +121,20 @@ function get_gradient!(
 end
 
 @doc raw"""
-    get_gradient(p::AlternatingDefaultManoptProblem, k, x)
-    get_gradient!(p::AlternatingDefaultManoptProblem, Y, k, x)
+    get_gradient(p::AlternatingGradientProblem, k, x)
+    get_gradient!(p::AlternatingGradientProblem, Y, k, x)
 
 Evaluate one of the component gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 """
 function get_gradient(
-    p::AlternatingDefaultManoptProblem{
-        AllocatingEvaluation,<:AbstractManifold,TC,<:Function
-    },
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function},
     k,
     x,
 ) where {TC}
     return get_gradient(p, x)[p.M, k]
 end
 function get_gradient(
-    p::AlternatingDefaultManoptProblem{
+    p::AlternatingGradientProblem{
         AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
     },
     k,
@@ -157,9 +143,7 @@ function get_gradient(
     return p.gradient!![k](p.M, x)
 end
 function get_gradient!(
-    p::AlternatingDefaultManoptProblem{
-        AllocatingEvaluation,<:AbstractManifold,TC,<:Function
-    },
+    p::AlternatingGradientProblem{AllocatingEvaluation,<:AbstractManifold,TC,<:Function},
     X,
     k,
     x,
@@ -168,7 +152,7 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-    p::AlternatingDefaultManoptProblem{
+    p::AlternatingGradientProblem{
         AllocatingEvaluation,<:AbstractManifold,TC,<:AbstractVector
     },
     X,
@@ -179,14 +163,14 @@ function get_gradient!(
     return X
 end
 function get_gradient(
-    p::AlternatingDefaultManoptProblem{InplaceEvaluation,<:AbstractManifold,TC}, k, x
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC}, k, x
 ) where {TC}
     X = zero_vector(p.M[k], x[p.M, k])
     get_gradient!(p, X, k, x)
     return X
 end
 function get_gradient!(
-    p::AlternatingDefaultManoptProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function},
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:Function},
     X,
     k,
     x,
@@ -198,9 +182,7 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-    p::AlternatingDefaultManoptProblem{
-        InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector
-    },
+    p::AlternatingGradientProblem{InplaceEvaluation,<:AbstractManifold,TC,<:AbstractVector},
     X,
     k,
     x,
@@ -212,7 +194,7 @@ end
     AlternatingGradientDescentState <: AbstractGradientDescentSolverState
 
 Store the fields for an alternating gradient descent algorithm,
-see also [`AlternatingDefaultManoptProblem`](@ref) and [`alternating_gradient_descent`](@ref).
+see also [`AlternatingGradientProblem`](@ref) and [`alternating_gradient_descent`](@ref).
 
 # Fields
 * `direction` (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)
@@ -298,7 +280,7 @@ struct AlternatingGradient{T} <: AbstractStochasticGradientProcessor
 end
 
 function (s::AlternatingGradient)(
-    p::AlternatingDefaultManoptProblem, o::AlternatingGradientDescentState, iter
+    p::AlternatingGradientProblem, o::AlternatingGradientDescentState, iter
 )
     # at begin of inner iterations reset internal vector to zero
     (o.i == 1) && zero_vector!(p.M, s.dir, o.x)
@@ -309,7 +291,7 @@ end
 
 # update Armijo to work on the kth gradient only.
 function (a::ArmijoLinesearch)(
-    p::AlternatingDefaultManoptProblem, o::AlternatingGradientDescentState, ::Int
+    p::AlternatingGradientProblem, o::AlternatingGradientDescentState, ::Int
 )
     X = zero_vector(p.M, o.x)
     X[p.M, o.order[o.k]] .= get_gradient(p, o.order[o.k], o.x)

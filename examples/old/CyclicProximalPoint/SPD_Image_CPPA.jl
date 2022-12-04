@@ -71,7 +71,7 @@ x0 = f
         :Stop,
     ],
     record=[:Iteration, :Iterate, :Cost],
-    return_options=true,
+    return_state=true,
 )
 y = get_solver_result(o)
 yRec = get_record(o)

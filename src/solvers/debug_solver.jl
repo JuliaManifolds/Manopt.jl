@@ -7,22 +7,22 @@ values in the [`DebugSolverState`](@ref)` o`.
 Since debug acts as a decorator this also calls the `initialize_solver!`
 of the correpsonding internally stored options
 """
-function initialize_solver!(p::AbstractManoptProblem, o::DebugSolverState)
-    initialize_solver!(p, o.options)
-    get(o.debugDictionary, :Start, DebugDivider(""))(p, get_state(o), 0)
-    get(o.debugDictionary, :All, DebugDivider(""))(p, get_state(o), 0)
-    return o
+function initialize_solver!(p::AbstractManoptProblem, s::DebugSolverState)
+    initialize_solver!(p, s.state)
+    get(s.debugDictionary, :Start, DebugDivider(""))(p, get_state(s), 0)
+    get(s.debugDictionary, :All, DebugDivider(""))(p, get_state(s), 0)
+    return s
 end
 """
-    step_solver!(p::AbstractManoptProblem, o::DebugSolverState, i)
+    step_solver!(p::AbstractManoptProblem, s::DebugSolverState, i)
 
     Do one iteration step (the `i`th) for [`Problem`](@ref)` p` by modifying
-the values in the [`AbstractManoptSolverState`](@ref)` o.options` and print the debug specified
+the values in the [`AbstractManoptSolverState`](@ref)` s.state` and print the debug specified
 """
-function step_solver!(p::AbstractManoptProblem, o::DebugSolverState, i)
-    step_solver!(p, o.options, i)
-    get(o.debugDictionary, :Step, DebugDivider(""))(p, get_state(o), i)
-    get(o.debugDictionary, :All, DebugDivider(""))(p, get_state(o), i)
+function step_solver!(p::AbstractManoptProblem, s::DebugSolverState, i)
+    step_solver!(p, s.state, i)
+    get(s.debugDictionary, :Step, DebugDivider(""))(p, get_state(o), i)
+    get(s.debugDictionary, :All, DebugDivider(""))(p, get_state(o), i)
     return o
 end
 
@@ -33,11 +33,11 @@ determine whether the solver for [`Problem`](@ref) `p` and the [`DebugSolverStat
 should stop at iteration `i` by calling the function corresponding to the internally stored [`AbstractManoptSolverState`](@ref).
 If so, print debug from `:All` and `:Stop`.
 """
-function stop_solver!(p::AbstractManoptProblem, o::DebugSolverState, i::Int)
-    s = stop_solver!(p, o.options, i)
-    if s
-        get(o.debugDictionary, :Stop, DebugDivider(""))(p, get_state(o), typemin(Int))
-        get(o.debugDictionary, :All, DebugDivider(""))(p, get_state(o), typemin(Int))
+function stop_solver!(p::AbstractManoptProblem, s::DebugSolverState, i::Int)
+    stop = stop_solver!(p, s.state, i)
+    if stop
+        get(s.debugDictionary, :Stop, DebugDivider(""))(p, get_state(s), typemin(Int))
+        get(s.debugDictionary, :All, DebugDivider(""))(p, get_state(s), typemin(Int))
     end
-    return s
+    return stop
 end

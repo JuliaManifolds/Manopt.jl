@@ -171,7 +171,7 @@ i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 ...
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state`](@ref) for decorators.
 
 # Output
 
@@ -237,7 +237,7 @@ function particle_swarm!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(mp, o))
 end
 

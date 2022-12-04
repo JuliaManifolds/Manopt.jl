@@ -78,7 +78,7 @@ function stochastic_gradient_descent!(
         order=order,
         retraction_method=retraction_method,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(::StochasticGradientProblem, o::StochasticGradientDescentState)

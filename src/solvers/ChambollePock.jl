@@ -167,7 +167,7 @@ function ChambollePock!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 

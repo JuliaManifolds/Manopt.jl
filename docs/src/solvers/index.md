@@ -14,7 +14,7 @@ The following algorithms are currently available
 
 | Solver  | File   | Problem & Option  |
 ----------|--------|-------------------|
-[Alternating Gradient Descent](@ref AlternatingGradientDescentSolver) | `alterating_gradient_descent.jl` | [`AlternatingDefaultManoptProblem`](@ref), [`AlternatingGradientDescentState`](@ref)
+[Alternating Gradient Descent](@ref AlternatingGradientDescentSolver) | `alterating_gradient_descent.jl` | [`AlternatingGradientProblem`](@ref), [`AlternatingGradientDescentState`](@ref)
 [Chambolle-Pock](@ref ChambollePockSolver) | `Chambolle-Pock.jl` | [`PrimalDualProblem`](@ref), [`ChambollePockState`](@ref)
 [Conjugate Gradient Descent](@ref CGSolver) | `cyclic_proximal_point.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointState`](@ref)
 [Cyclic Proximal Point](@ref CPPSolver) | `conjugate_gradient_descent.jl` | [`DefaultManoptProblem`](@ref), [`ConjugateGradientDescentState`](@ref)

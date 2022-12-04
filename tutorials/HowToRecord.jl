@@ -47,13 +47,13 @@ gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))
 md"""
 ## Plain Examples
 
-For the high level interfaces of the solvers, like [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html) we have to set `return_options` to `true` to obtain the whole options structure and not only the resulting minimizer.
+For the high level interfaces of the solvers, like [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html) we have to set `return_state` to `true` to obtain the whole options structure and not only the resulting minimizer.
 
 Then we can easily use the `record=` option to add recorded values. This keyword accepts `RecordAction`s as well as several symbols as shortcuts, for example `:Cost` to record the cost, or if your options have a field `f`, `:f` would record that entry.
 """
 
 # ╔═╡ fbc02960-7f7e-4500-92ac-30df7d058fa9
-R = gradient_descent(M, F, gradF, data[1]; record=:Cost, return_options=true)
+R = gradient_descent(M, F, gradF, data[1]; record=:Cost, return_state=true)
 
 # ╔═╡ 7552c7ba-6d45-4ed9-856c-b00be28a84a0
 md"""
@@ -73,7 +73,7 @@ To record more than one value, you can pass an array of a mix of symbols and `Re
 """
 
 # ╔═╡ 68cb3e06-866d-4650-863a-61f965e3320f
-R2 = gradient_descent(M, F, gradF, data[1]; record=[:Iteration, :Cost], return_options=true)
+R2 = gradient_descent(M, F, gradF, data[1]; record=[:Iteration, :Cost], return_state=true)
 
 # ╔═╡ 4943d34f-0aff-4879-94a6-337ce42b2e36
 md"""
@@ -236,7 +236,7 @@ R3 = gradient_descent(
     gradF,
     data[1];
     record=[:Iteration, :Count => RecordCount(), :Cost],
-    return_options=true,
+    return_state=true,
 )
 
 # ╔═╡ c3b78022-1055-4164-aee6-79f0580d72bd

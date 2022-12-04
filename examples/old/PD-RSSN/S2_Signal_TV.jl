@@ -99,7 +99,7 @@ storage = StoreStateAction((:Iterate, :n, :ξbar))
         missing
     end,
     stopping_criterion=StopAfterIteration(max_iterations),
-    return_options=true,
+    return_state=true,
 )
 y = get_solver_result(o)
 # if has_record(o)
@@ -135,7 +135,7 @@ end
     record=[:Iteration, :Cost, :Iterate],
     stopping_criterion=StopAfterIteration(20),
     # stopping_criterion=StopAfterIteration(max_iterations),
-    return_options=true,
+    return_state=true,
 )
 
 y_pdrssn = get_solver_result(o_pdrssn)

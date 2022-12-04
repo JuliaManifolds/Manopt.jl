@@ -21,7 +21,7 @@ the default values are given in brackets
   summable) sequence of λi
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
 
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state`](@ref) for decorators.
 
 # Output
 
@@ -65,7 +65,7 @@ function cyclic_proximal_point!(
     o = CyclicProximalPointState(
         M, x0; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
     )
-    o = decorate_options(o; kwargs...)
+    o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
 end
 function initialize_solver!(p::ProximalProblem, o::CyclicProximalPointState)
