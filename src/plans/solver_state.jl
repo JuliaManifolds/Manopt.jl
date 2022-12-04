@@ -135,7 +135,7 @@ _get_state(s::AbstractManoptSolverState, ::Val{true}) = get_state(s.state)
 
 return the (last stored) gradient within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the state beforehand
 """
-get_gradient(s::AbstractManoptSolverState) = get_gradient(s, dispatch_state_decorator(s))
+get_gradient(s::AbstractManoptSolverState) = _get_gradient(s, dispatch_state_decorator(s))
 function _get_gradient(o::AbstractManoptSolverState, ::Val{false})
     return error(
         "It seems the AbstractManoptSolverState $o do not provide access to a gradient"

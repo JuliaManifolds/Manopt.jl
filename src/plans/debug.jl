@@ -42,30 +42,30 @@ construct debug decorated options, where `dD` can be
 * a `Dict{Symbol,DebugAction}`.
 * an Array of Symbols, String and an Int for the [`DebugFactory`](@ref)
 """
-mutable struct DebugSolverState{O<:AbstractManoptSolverState} <: AbstractManoptSolverState
-    options::O
+mutable struct DebugSolverState{S<:AbstractManoptSolverState} <: AbstractManoptSolverState
+    state::S
     debugDictionary::Dict{Symbol,<:DebugAction}
-    function DebugSolverState{O}(
-        o::O, dA::Dict{Symbol,<:DebugAction}
-    ) where {O<:AbstractManoptSolverState}
-        return new(o, dA)
+    function DebugSolverState{S}(
+        s::S, dA::Dict{Symbol,<:DebugAction}
+    ) where {S<:AbstractManoptSolverState}
+        return new(s, dA)
     end
 end
-function DebugSolverState(o::O, dD::D) where {O<:AbstractManoptSolverState,D<:DebugAction}
-    return DebugSolverState{O}(o, Dict(:All => dD))
+function DebugSolverState(s::S, dD::D) where {S<:AbstractManoptSolverState,D<:DebugAction}
+    return DebugSolverState{S}(s, Dict(:All => dD))
 end
 function DebugSolverState(
-    o::O, dD::Array{<:DebugAction,1}
-) where {O<:AbstractManoptSolverState}
-    return DebugSolverState{O}(o, Dict(:All => DebugGroup(dD)))
+    s::S, dD::Array{<:DebugAction,1}
+) where {S<:AbstractManoptSolverState}
+    return DebugSolverState{S}(s, Dict(:All => DebugGroup(dD)))
 end
 function DebugSolverState(
-    o::O, dD::Dict{Symbol,<:DebugAction}
-) where {O<:AbstractManoptSolverState}
-    return DebugSolverState{O}(o, dD)
+    s::S, dD::Dict{Symbol,<:DebugAction}
+) where {S<:AbstractManoptSolverState}
+    return DebugSolverState{S}(s, dD)
 end
-function DebugSolverState(o::O, format::Array{<:Any,1}) where {O<:AbstractManoptSolverState}
-    return DebugSolverState{O}(o, DebugFactory(format))
+function DebugSolverState(s::S, format::Array{<:Any,1}) where {S<:AbstractManoptSolverState}
+    return DebugSolverState{S}(s, DebugFactory(format))
 end
 
 dispatch_state_decorator(::DebugSolverState) = Val(true)

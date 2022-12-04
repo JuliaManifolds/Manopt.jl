@@ -74,7 +74,7 @@ check whether the [`AbstractManoptSolverState`](@ref)` o` are decorated with
 [`RecordSolverState`](@ref)
 """
 has_record(::RecordSolverState) = true
-has_record(s::AbstractManoptSolverState) = has_record(s, dispatch_state_decorator(s))
+has_record(s::AbstractManoptSolverState) = _has_record(s, dispatch_state_decorator(s))
 _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 

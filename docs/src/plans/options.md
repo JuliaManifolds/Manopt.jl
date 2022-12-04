@@ -31,7 +31,7 @@ A solver state can be decorated using the following trait and function to initia
 
 ```@docs
 dispatch_state_decorator
-is_options_decorator
+is_state_decorator
 decorate_state
 ```
 

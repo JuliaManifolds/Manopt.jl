@@ -1,7 +1,7 @@
 using Manifolds, Manopt, ManifoldsBase, Test
 
 @testset "Plan Tests         " begin
-    include("plans/test_options.jl")
+    include("plans/test_state.jl")
     include("plans/test_debug.jl")
     include("plans/test_nelder_mead_plan.jl")
     include("plans/test_nonmutating.jl")

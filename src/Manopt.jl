@@ -247,7 +247,7 @@ export get_cost,
     forward_operator,
     forward_operator!
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
-export is_options_decorator, dispatch_state_decorator
+export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export get_constraints,
     get_inequality_constraint,
