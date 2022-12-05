@@ -56,3 +56,21 @@ end
     @test_throws ErrorException set_iterate!(s, 0)
     @test_throws ErrorException set_iterate!(r, 0)
 end
+
+
+@testset "FieldReference" begin
+    p_mutating = TestProblem1{MutatingEvaluation}()
+    p_allocating = TestProblem1{AllocatingEvaluation}()
+    X = [10.0, 12.0]
+    o = TestOptions1([1.0, 2.0])
+    Teval = MutatingEvaluation
+    fa = Manopt.@access_field o.storage
+    @test fa === o.storage
+
+    Teval = AllocatingEvaluation
+    fa = Manopt.@access_field o.storage
+    @test fa isa Manopt.FieldReference
+    @test fa[] === o.storage
+    fa[] = X
+    @test fa[] === X
+end

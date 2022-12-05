@@ -96,3 +96,9 @@ adjoint_linearized_operator
 get_differential_primal_prox
 get_differential_dual_prox
 ```
+
+## Nonlinear least squares problem
+
+```@docs
+NonlinearLeastSquaresProblem
+```
