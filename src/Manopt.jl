@@ -88,6 +88,8 @@ import ManifoldsBase:
     setindex!,
     set_component!
 
+using ManifoldsBase: get_vector!, get_coordinates!, requires_caching
+
 include("plans/plan.jl")
 # Functions
 include("functions/bezier_curves.jl")
@@ -109,6 +111,7 @@ include("solvers/exact_penalty_method.jl")
 include("solvers/NelderMead.jl")
 include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
+include("solvers/LevenbergMarquardt.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/quasi_Newton.jl")
@@ -180,6 +183,7 @@ export Problem,
     SubGradientProblem,
     GradientProblem,
     HessianProblem,
+    NonlinearLeastSquaresProblem,
     PrimalDualSemismoothNewtonProblem,
     PrimalDualProblem,
     StochasticGradientProblem,
@@ -199,6 +203,7 @@ export Options,
     FrankWolfeOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
+    LevenbergMarquardtOptions,
     NelderMeadOptions,
     ParticleSwarmOptions,
     PrimalDualSemismoothNewtonOptions,
@@ -314,6 +319,8 @@ export augmented_Lagrangian_method,
     Frank_Wolfe_method!,
     gradient_descent,
     gradient_descent!,
+    LevenbergMarquardt,
+    LevenbergMarquardt!,
     NelderMead,
     NelderMead!,
     particle_swarm,
