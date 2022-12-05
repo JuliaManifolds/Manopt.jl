@@ -57,7 +57,6 @@ end
     @test_throws ErrorException set_iterate!(r, 0)
 end
 
-
 @testset "FieldReference" begin
     p_mutating = TestProblem1{MutatingEvaluation}()
     p_allocating = TestProblem1{AllocatingEvaluation}()

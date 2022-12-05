@@ -106,16 +106,17 @@ end
 # Solver functions
 #
 function initialize_solver!(
-    p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, o::LevenbergMarquardtState
-)
-    o.residual_values = p.F(p.M, o.x)
+    p::AbstractManoptProblem{mT, NonlinearLeastSquaresObjective{AllocatingEvaluation}}, o::LevenbergMarquardtState
+) where {mT}
+    M = get_manifold(p)
+    o.residual_values = get_objective(p).F(M, o.x)
     o.gradient = get_gradient(p, o.x)
     return o
 end
 function initialize_solver!(
-    p::NonlinearLeastSquaresProblem{MutatingEvaluation}, o::LevenbergMarquardtState
-)
-    p.F(p.M, o.residual_values, o.x)
+    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{MutatingEvaluation}}, o::LevenbergMarquardtState
+) where{mT}
+    get_objective(p).F(get_manifold(M), o.residual_values, o.x)
     o.gradient = get_gradient(p, o.x)
     return o
 end
@@ -129,15 +130,15 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
 end
 
 function get_jacobian!(
-    p::NonlinearLeastSquaresProblem{AllocatingEvaluation},
+    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     jacF::FieldReference,
     x,
     basis_domain::AbstractBasis,
 )
-    return jacF[] = p.jacobian!!(p.M, x; basis_domain=basis_domain)
+    return jacF[] = p.jacobian!!(get_manifold(p), x; basis_domain=basis_domain)
 end
 function get_jacobian!(
-    p::NonlinearLeastSquaresProblem{MutatingEvaluation},
+    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     jacF,
     x,
     basis_domain::AbstractBasis,
@@ -146,20 +147,21 @@ function get_jacobian!(
 end
 
 function get_residuals!(
-    p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, residuals::FieldReference, x
+    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{AllocatingEvaluation}}, residuals::FieldReference, x
 )
-    return residuals[] = p.F(p.M, x)
+    return residuals[] = get_objective(p).F(p.M, x)
 end
-function get_residuals!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, residuals, x)
-    return p.F(p.M, residuals, x)
+function get_residuals!(p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{AllocatingEvaluation}}, residuals, x)
+    return get_objective(p).F(p.M, residuals, x)
 end
 
 function step_solver!(
-    p::NonlinearLeastSquaresProblem{Teval}, o::LevenbergMarquardtState, iter::Integer
+    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{Teval}}, o::LevenbergMarquardtState, i::Integer
 ) where {Teval<:AbstractEvaluationType}
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
 
-    basis_ox = _maybe_get_basis(p.M, o.x, p.jacB)
+    M = get_manifold(p)
+    basis_ox = _maybe_get_basis(M, o.x, p.jacB)
     get_jacobian!(p, (@access_field o.jacF), o.x, basis_ox)
     λk = o.damping_term * norm(o.residual_values)
 
@@ -168,22 +170,22 @@ function step_solver!(
     # problem because JJ is symmetric positive definite
     grad_f_c = transpose(o.jacF) * o.residual_values
     sk = cholesky(JJ) \ -grad_f_c
-    get_vector!(p.M, o.gradient, o.x, grad_f_c, basis_ox)
+    get_vector!(M, o.gradient, o.x, grad_f_c, basis_ox)
 
-    get_vector!(p.M, o.step_vector, o.x, sk, basis_ox)
-    o.last_stepsize = norm(p.M, o.x, o.step_vector)
-    temp_x = retract(p.M, o.x, o.step_vector, o.retraction_method)
+    get_vector!(M, o.step_vector, o.x, sk, basis_ox)
+    o.last_stepsize = norm(M, o.x, o.step_vector)
+    temp_x = retract(M, o.x, o.step_vector, o.retraction_method)
 
     normFk2 = norm(o.residual_values)^2
     get_residuals!(p, (@access_field o.candidate_residual_values), temp_x)
 
     ρk =
         2 * (normFk2 - norm(o.candidate_residual_values)^2) / (
-            -2 * inner(p.M, o.x, o.gradient, o.step_vector) - norm(o.jacF * sk)^2 -
+            -2 * inner(M, o.x, o.gradient, o.step_vector) - norm(o.jacF * sk)^2 -
             λk * norm(sk)
         )
     if ρk >= o.η
-        copyto!(p.M, o.x, temp_x)
+        copyto!(M, o.x, temp_x)
         copyto!(o.residual_values, o.candidate_residual_values)
         if o.expect_zero_residual
             o.damping_term = max(o.damping_term_min, o.damping_term / o.β)
