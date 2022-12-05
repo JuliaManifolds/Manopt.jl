@@ -106,16 +106,18 @@ end
 # Solver functions
 #
 function initialize_solver!(
-    p::AbstractManoptProblem{mT, NonlinearLeastSquaresObjective{AllocatingEvaluation}}, o::LevenbergMarquardtState
+    p::AbstractManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    s::LevenbergMarquardtState,
 ) where {mT}
     M = get_manifold(p)
-    o.residual_values = get_objective(p).F(M, o.x)
-    o.gradient = get_gradient(p, o.x)
-    return o
+    s.residual_values = get_objective(p).F(M, s.x)
+    s.gradient = get_gradient(p, s.x)
+    return s
 end
 function initialize_solver!(
-    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{MutatingEvaluation}}, o::LevenbergMarquardtState
-) where{mT}
+    p::AbstractManoptProblem{mT,NonlinearLeastSquaresObjective{MutatingEvaluation}},
+    o::LevenbergMarquardtState,
+) where {mT}
     get_objective(p).F(get_manifold(M), o.residual_values, o.x)
     o.gradient = get_gradient(p, o.x)
     return o
@@ -130,7 +132,7 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
 end
 
 function get_jacobian!(
-    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     jacF::FieldReference,
     x,
     basis_domain::AbstractBasis,
@@ -138,7 +140,7 @@ function get_jacobian!(
     return jacF[] = p.jacobian!!(get_manifold(p), x; basis_domain=basis_domain)
 end
 function get_jacobian!(
-    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     jacF,
     x,
     basis_domain::AbstractBasis,
@@ -147,16 +149,24 @@ function get_jacobian!(
 end
 
 function get_residuals!(
-    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{AllocatingEvaluation}}, residuals::FieldReference, x
+    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    residuals::FieldReference,
+    x,
 )
     return residuals[] = get_objective(p).F(p.M, x)
 end
-function get_residuals!(p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{AllocatingEvaluation}}, residuals, x)
+function get_residuals!(
+    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    residuals,
+    x,
+)
     return get_objective(p).F(p.M, residuals, x)
 end
 
 function step_solver!(
-    p::AbstractManoptProblem{M, NonlinearLeastSquaresObjective{Teval}}, o::LevenbergMarquardtState, i::Integer
+    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{Teval}},
+    o::LevenbergMarquardtState,
+    i::Integer,
 ) where {Teval<:AbstractEvaluationType}
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
 

@@ -55,23 +55,30 @@ function NonlinearLeastSquaresObjective(
     )
 end
 
-
-function get_cost(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p)
+function get_cost(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
+)
     return 1//2 * norm(nlso.F(M, p))^2
 end
-function get_cost(M::AbstractManifold, P::NonlinearLeastSquaresObjective{InplaceEvaluation}, p)
+function get_cost(
+    M::AbstractManifold, P::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
+)
     residual_values = zeros(P.num_components)
     P.F(P.M, residual_values, p)
     return 1//2 * norm(residual_values)^2
 end
 
-function get_gradient(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, x)
+function get_gradient(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, x
+)
     basis_x = _maybe_get_basis(M, x, nlso.jacB)
     Jval = nlso.jacobian!!(M, x; basis_domain=basis_x)
     residual_values = nlso.F(M, x)
     return get_vector(M, x, transpose(Jval) * residual_values, basis_x)
 end
-function get_gradient(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, x)
+function get_gradient(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, x
+)
     basis_x = _maybe_get_basis(M, x, nlso.jacB)
     Jval = zeros(nlso.num_components, manifold_dimension(M))
     nlso.jacobian!!(M, Jval, x; basis_domain=basis_x)
@@ -80,14 +87,18 @@ function get_gradient(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{
     return get_vector(M, x, transpose(Jval) * residual_values, basis_x)
 end
 
-function get_gradient!(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, X, x)
+function get_gradient!(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, X, x
+)
     basis_x = _maybe_get_basis(M, x, nlso.jacB)
     Jval = nlso.jacobian!!(M, x; basis_domain=basis_x)
     residual_values = nlso.F(M, x)
     return get_vector!(M, X, x, transpose(Jval) * residual_values, basis_x)
 end
 
-function get_gradient!(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, X, x)
+function get_gradient!(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, X, x
+)
     basis_x = _maybe_get_basis(M, x, nlso.jacB)
     Jval = zeros(nlso.num_components, manifold_dimension(M))
     nlso.jacobian!!(M, Jval, x; basis_domain=basis_x)
