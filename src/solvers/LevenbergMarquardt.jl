@@ -25,7 +25,7 @@ The implementation follows Algorithm 1[^Adachi2022].
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
-  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
+  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(1e-12))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
@@ -106,7 +106,7 @@ end
 # Solver functions
 #
 function initialize_solver!(
-    p::AbstractManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     s::LevenbergMarquardtState,
 ) where {mT}
     M = get_manifold(p)
@@ -115,7 +115,7 @@ function initialize_solver!(
     return s
 end
 function initialize_solver!(
-    p::AbstractManoptProblem{mT,NonlinearLeastSquaresObjective{MutatingEvaluation}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
     o::LevenbergMarquardtState,
 ) where {mT}
     get_objective(p).F(get_manifold(M), o.residual_values, o.x)
@@ -132,42 +132,42 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
 end
 
 function get_jacobian!(
-    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     jacF::FieldReference,
     x,
     basis_domain::AbstractBasis,
-)
+) where {mT}
     return jacF[] = p.jacobian!!(get_manifold(p), x; basis_domain=basis_domain)
 end
 function get_jacobian!(
-    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     jacF,
     x,
     basis_domain::AbstractBasis,
-)
+) where {mT}
     return p.jacobian!!(p.M, jacF, x; basis_domain=basis_domain)
 end
 
 function get_residuals!(
-    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     residuals::FieldReference,
     x,
-)
+) where {mT}
     return residuals[] = get_objective(p).F(p.M, x)
 end
 function get_residuals!(
-    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     residuals,
     x,
-)
+) where {mT}
     return get_objective(p).F(p.M, residuals, x)
 end
 
 function step_solver!(
-    p::AbstractManoptProblem{M,NonlinearLeastSquaresObjective{Teval}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{Teval}},
     o::LevenbergMarquardtState,
     i::Integer,
-) where {Teval<:AbstractEvaluationType}
+) where {Teval<:AbstractEvaluationType,mT}
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
 
     M = get_manifold(p)
@@ -206,6 +206,8 @@ function step_solver!(
     return o
 end
 
-function _get_last_stepsize(::Problem, o::LevenbergMarquardtState, ::Val{false}, vars...)
+function _get_last_stepsize(
+    ::AbstractManoptProblem, o::LevenbergMarquardtState, ::Val{false}, vars...
+)
     return o.last_stepsize
 end
