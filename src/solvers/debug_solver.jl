@@ -21,9 +21,9 @@ the values in the [`AbstractManoptSolverState`](@ref)` s.state` and print the de
 """
 function step_solver!(p::AbstractManoptProblem, s::DebugSolverState, i)
     step_solver!(p, s.state, i)
-    get(s.debugDictionary, :Step, DebugDivider(""))(p, get_state(o), i)
-    get(s.debugDictionary, :All, DebugDivider(""))(p, get_state(o), i)
-    return o
+    get(s.debugDictionary, :Step, DebugDivider(""))(p, get_state(s), i)
+    get(s.debugDictionary, :All, DebugDivider(""))(p, get_state(s), i)
+    return s
 end
 
 """

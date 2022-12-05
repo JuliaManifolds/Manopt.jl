@@ -17,7 +17,7 @@ specify a problem for hessian based algorithms.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{T,mT<:AbstractManifold,C,G,H,Pre} <: AbstractManoptProblem
+struct HessianProblem{T,mT,C,G,H,Pre} <: AbstractManoptProblem{mT}
     M::mT
     cost::C
     gradient!!::G

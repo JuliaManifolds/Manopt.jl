@@ -167,18 +167,18 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     end
 end
 function (a::ArmijoLinesearch)(
-    p::AbstractManoptProblem,
+    mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     i::Int,
-    η=-get_gradient(p, get_iterate(s));
+    η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
     a.last_stepsize = linesearch_backtrack(
-        p.M,
-        x -> p.cost(p.M, x),
+        get_manifold(mp),
+        p -> get_cost_function(mp)(get_manifold(mp), p),
         get_iterate(s),
-        get_gradient!(p, s.gradient, get_iterate(s)),
-        a.initial_guess(p, s, i, a.last_stepsize),
+        get_gradient!(mp, get_gradient(s), get_iterate(s)),
+        a.initial_guess(mp, s, i, a.last_stepsize),
         a.sufficient_decrease,
         a.contraction_factor,
         a.retraction_method,
@@ -405,24 +405,24 @@ mutable struct NonmonotoneLinesearch{
     end
 end
 function (a::NonmonotoneLinesearch)(
-    p::AbstractManoptProblem,
+    mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     i::Int,
-    η=-get_gradient(p, get_iterate(s));
+    η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
     if !all(has_storage.(Ref(a.storage), [:Iterate, :gradient]))
         old_x = get_iterate(s)
-        old_gradient = get_gradient(p, get_iterate(s))
+        old_gradient = get_gradient(mp, get_iterate(s))
     else
         old_x, old_gradient = get_storage.(Ref(a.storage), [:Iterate, :gradient])
     end
     update_storage!(a.storage, s)
     return a(
-        p.M,
+        get_manifold(mp),
         get_iterate(s),
-        x -> get_cost(p, x),
-        get_gradient(p, get_iterate(s)),
+        x -> get_cost(mp, x),
+        get_gradient(mp, get_iterate(s)),
         η,
         old_x,
         old_gradient,
@@ -765,7 +765,7 @@ end
 function _get_stepsize(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{false}, vars...; kwargs...
 )
-    return o.stepsize(p, o, vars...; kwargs...)
+    return s.stepsize(p, s, vars...; kwargs...)
 end
 
 function get_initial_stepsize(
@@ -791,7 +791,7 @@ function _get_initial_stepsize(
 end
 
 function get_last_stepsize(p::AbstractManoptProblem, s::AbstractManoptSolverState, vars...)
-    return get_last_stepsize(p, o, dispatch_state_decorator(s), vars...)
+    return get_last_stepsize(p, s, dispatch_state_decorator(s), vars...)
 end
 function _get_last_stepsize(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{true}, vars...
@@ -801,7 +801,7 @@ end
 function _get_last_stepsize(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{false}, vars...
 )
-    return get_last_stepsize(p, s, s.state, vars...)
+    return get_last_stepsize(p, s, vars...)
 end
 #
 # dispatch on stepsize

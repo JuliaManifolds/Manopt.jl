@@ -60,9 +60,10 @@ end
 function (c::StopWhenGradientNormLess)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
+    M = get_manifold(p)
     (i == 0) && (c.reason = "") # reset on init
-    if norm(p.M, get_iterate(s), get_gradient(s)) < c.threshold
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(p.M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
+    if norm(p, get_iterate(s), get_gradient(s)) < c.threshold
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
         return true
     end
     return false
@@ -95,28 +96,34 @@ initialize the stopping criterion to a threshold `ε` using the
 [`StoreStateAction`](@ref) `a`, which is initialized to just store `:Iterate` by
 default.
 """
-mutable struct StopWhenChangeLess <: StoppingCriterion
+mutable struct StopWhenChangeLess{IRT} <: StoppingCriterion
     threshold::Float64
     reason::String
     storage::StoreStateAction
-    function StopWhenChangeLess(
-        ε::Float64, a::StoreStateAction=StoreStateAction((:Iterate,))
-    )
-        return new(ε, "", a)
-    end
+    inverse_retraction::IRT
 end
-function (c::StopWhenChangeLess)(P::AbstractManoptProblem, O::AbstractManoptSolverState, i)
+function StopWhenChangeLess(
+    ε::Float64;
+    storage::StoreStateAction=StoreStateAction((:Iterate,)),
+    manifold::AbstractManifold=DefaultManifold(3),
+    inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
+) where {IRT<:AbstractInverseRetractionMethod}
+    return StopWhenChangeLess{IRT}(ε, "", storage, inverse_retraction_method)
+end
+
+function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     (i == 0) && (c.reason = "") # reset on init
     if has_storage(c.storage, :Iterate)
+        M = get_manifold(mp)
         x_old = get_storage(c.storage, :Iterate)
-        d = distance(P.M, get_iterate(O), x_old, default_inverse_retraction_method(P.M))
+        d = distance(M, get_iterate(s), x_old, c.inverse_retraction)
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
-            c.storage(P, O, i)
+            c.storage(mp, s, i)
             return true
         end
     end
-    c.storage(P, O, i)
+    c.storage(mp, s, i)
     return false
 end
 

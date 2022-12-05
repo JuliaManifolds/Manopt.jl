@@ -1,5 +1,5 @@
 @doc raw"""
-    StochasticGradientProblem <:AbstractManoptProblem
+    StochasticGradientProblem{T,M} <:AbstractManoptProblem{M}
 
 A stochastic gradient problem consists of
 * a `Manifold M`
@@ -20,7 +20,7 @@ Create a Stochastic gradient problem with an optional `cost` and the gradient ei
 function (returning an array) or a vector of functions.
 """
 struct StochasticGradientProblem{T,MT<:AbstractManifold,TCost,TGradient} <:
-       AbstractManoptProblem
+       AbstractManoptProblem{MT}
     M::MT
     cost::TCost
     gradient!!::TGradient

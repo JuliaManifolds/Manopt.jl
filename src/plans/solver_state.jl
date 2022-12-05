@@ -298,7 +298,11 @@ function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
     return update_storage!(
         a,
         Dict(
-            key => key == :Iterate ? get_iterate(s) : getproperty(s, key) for key in a.keys
+            key => if key === :Iterate
+                get_iterate(s)
+            else
+                (key === :gradient ? get_gradient(s) : getproperty(s, key))
+            end for key in a.keys
         ),
     )
 end

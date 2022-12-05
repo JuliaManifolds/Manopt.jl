@@ -1,9 +1,9 @@
 @doc raw"""
-    AbstractPrimalDualProblem{T} <: AbstractManoptProblem
+    AbstractPrimalDualProblem{T,M} <: AbstractManoptProblem{M}
 
 An abstract type for primal-dual-based problems.
 """
-abstract type AbstractPrimalDualProblem{T} <: AbstractManoptProblem end
+abstract type AbstractPrimalDualProblem{T,M} <: AbstractManoptProblem{M} end
 
 @doc raw"""
     PrimalDualProblem {T, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem
@@ -50,8 +50,8 @@ the second.
     > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
     > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{T,mT<:AbstractManifold,nT<:AbstractManifold} <:
-               AbstractPrimalDualProblem{T}
+mutable struct PrimalDualProblem{T,mT,nT<:AbstractManifold} <:
+               AbstractPrimalDualProblem{T,mT}
     M::mT
     N::nT
     cost::Function

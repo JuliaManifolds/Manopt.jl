@@ -31,7 +31,7 @@ Create a alternating gradient problem with an optional `cost` and the gradient e
 function (returning an array) or a vector of functions.
 """
 struct AlternatingGradientProblem{T,MT<:ProductManifold,TCost,TGradient} <:
-       AbstractManoptProblem
+       AbstractManoptProblem{MT}
     M::MT
     cost::TCost
     gradient!!::TGradient
@@ -279,14 +279,14 @@ struct AlternatingGradient{T} <: AbstractStochasticGradientProcessor
     dir::T
 end
 
-function (s::AlternatingGradient)(
+function (ag::AlternatingGradient)(
     p::AlternatingGradientProblem, s::AlternatingGradientDescentState, iter
 )
     # at begin of inner iterations reset internal vector to zero
-    (s.i == 1) && zero_vector!(p.M, s.dir, s.x)
+    (ag.i == 1) && zero_vector!(p.M, ag.dir, s.x)
     # update order(k)th component inplace
-    get_gradient!(p, s.dir[p.M, s.order[s.k]], s.order[s.k], s.x)
-    return s.stepsize(p, s, iter), s.dir # return urrent full gradient
+    get_gradient!(p, ag.dir[p.M, s.order[s.k]], s.order[s.k], s.x)
+    return s.stepsize(p, s, iter), ag.dir # return urrent full gradient
 end
 
 # update Armijo to work on the kth gradient only.

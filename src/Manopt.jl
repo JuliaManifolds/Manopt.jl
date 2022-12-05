@@ -44,6 +44,7 @@ import ManifoldsBase:
     allocate,
     allocate_result,
     allocate_result_type,
+    copy,
     copyto!,
     default_inverse_retraction_method,
     default_retraction_method,

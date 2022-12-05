@@ -101,22 +101,28 @@ end
     DebugEvery <: DebugAction
 
 evaluate and print debug only every $i$th iteration. Otherwise no print is performed.
-Whether internal variables are updates is determined by `alwaysUpdate`.
+Whether internal variables are updates is determined by `always_update`.
 
 This method does not perform any print itself but relies on it's childrens print.
+
+# Constructor
+
+    DebugEvery(d::DebugAction, every=1, always_update=true)
+
+Initialise the DebugEvery.
 """
 mutable struct DebugEvery <: DebugAction
     debug::DebugAction
     every::Int
-    alwaysUpdate::Bool
-    function DebugEvery(d::DebugAction, every::Int=1, alwaysUpdate::Bool=true)
-        return new(d, every, alwaysUpdate)
+    always_update::Bool
+    function DebugEvery(d::DebugAction, every::Int=1, always_update::Bool=true)
+        return new(d, every, always_update)
     end
 end
 function (d::DebugEvery)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     if (rem(i, d.every) == 0)
         d.debug(p, s, i)
-    elseif d.alwaysUpdate
+    elseif d.always_update
         d.debug(p, s, -1)
     end
 end
@@ -296,7 +302,7 @@ print a small `div`ider (default `" | "`).
 mutable struct DebugDivider{TIO<:IO} <: DebugAction
     io::TIO
     divider::String
-    DebugDivider(divider=" | ", io::IO=stdout) = new{typeof(io)}(io, divider)
+    DebugDivider(divider=" | "; io::IO=stdout) = new{typeof(io)}(io, divider)
 end
 function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     if i >= 0 && !isempty(d.divider)
@@ -403,7 +409,7 @@ empty, unless the algorithm stops.
 """
 mutable struct DebugStoppingCriterion <: DebugAction
     io::IO
-    DebugStoppingCriterion(io::IO=stdout) = new(io)
+    DebugStoppingCriterion(; io::IO=stdout) = new(io)
 end
 function (d::DebugStoppingCriterion)(
     ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
@@ -517,8 +523,7 @@ function (d::DebugWarnIfCostIncreases)(
             # Default case in Gradient Descent, include a tipp
             @warn """The cost increased.
             At iteration #$i the cost increased from $(d.old_cost) to $(cost)."""
-            if s isa GradientDescentAbstractManoptSolverState &&
-                s.stepsize isa ConstantStepsize
+            if s isa GradientDescentState && s.stepsize isa ConstantStepsize
                 @warn """You seem to be running a `gradient_decent` with the default `ConstantStepsize`.
                 For ease of use, this is set as the default, but might not converge.
                 Maybe consider to use `ArmijoLinesearch` (if applicable) or use

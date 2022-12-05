@@ -536,13 +536,13 @@ given an array of `Symbol`s and [`RecordAction`](@ref)s and `Ints`
 function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
     group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
-    for s in filter(x -> !isa(x, Int), a) # for all that are not integers or stopping criteria
+    for symbol in filter(x -> !isa(x, Int), a) # for all that are not integers or stopping criteria
         if s isa Symbol
-            push!(group, s => RecordActionFactory(s, s))
+            push!(group, s => RecordActionFactory(s, symbol))
         elseif s isa Pair{<:Symbol,<:RecordAction}
             push!(group, s)
         else
-            push!(group, RecordActionFactory(s, s))
+            push!(group, RecordActionFactory(s, symbol))
         end
     end
     record = RecordGroup(group)

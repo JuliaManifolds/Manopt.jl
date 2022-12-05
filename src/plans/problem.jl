@@ -4,7 +4,7 @@
 # ---
 
 @doc raw"""
-    AbstractManoptProblem
+    AbstractManoptProblem{M<:AbstractManifold}
 
 Describe a Riemannian optimization problem with all static (not-changing) properties.
 
@@ -15,7 +15,7 @@ The most prominent features that should always be stated here are
 
 Usually the cost should be within an [`AbstractManifoldObjective`](@ref).
 """
-abstract type AbstractManoptProblem end
+abstract type AbstractManoptProblem{M<:AbstractManifold} end
 
 @doc raw"""
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
@@ -23,8 +23,8 @@ abstract type AbstractManoptProblem end
 Model a default manifold problem, that (just) consists of the domain of optimisatio,
 that is an `AbstractManifold` and a [`AbstractManifoldObjective`](@ref)
 """
-struct DefaultManoptProblem{TM<:AbstractManifold,Objective<:AbstractManifoldObjective} <:
-       AbstractManoptProblem
+struct DefaultManoptProblem{TM,Objective<:AbstractManifoldObjective} <:
+       AbstractManoptProblem{TM}
     manifold::TM
     objective::Objective
 end
@@ -63,3 +63,19 @@ end
 evaluate the cost function `f` defined on `M` stored within the [`AbstractManifoldObjective`](@ref) at the point `p`.
 """
 get_cost(::AbstractManifold, ::AbstractManifoldObjective, p)
+
+@doc raw"""
+    get_cost_function(p::AbstractManoptProblem)
+
+access the cost function from within the [`AbstractManoptProblem`](@ref).
+    By default this forwards to getting the const function from the internal [`AbstractManifoldObjective`](@ref).
+"""
+get_cost_function(p::AbstractManoptProblem) = get_cost_function(get_objective(p))
+
+@doc raw"""
+    get_cost_function(obj::AbstractManifoldObjective)
+
+access the cost function from within the [`AbstractManoptProblem`](@ref).
+By default this returns `obj.cost`.
+"""
+get_cost(obj::AbstractManifoldObjective) = obj.cost
