@@ -275,14 +275,14 @@ struct StochasticGradient{T} <: AbstractStochasticGradientProcessor
     dir::T
 end
 
-function (s::StochasticGradient)(
-    p::StochasticGradientProblem, o::StochasticGradientDescentState, iter
+function (sg::StochasticGradient)(
+    p::StochasticGradientProblem, s::StochasticGradientDescentState, iter
 )
     # for each new epoche choose new order if we are at random order
-    ((o.k == 1) && (o.order_type == :Random)) && shuffle!(o.order)
+    ((s.k == 1) && (s.order_type == :Random)) && shuffle!(s.order)
     # i is the gradient to choose, either from the order or completely random
-    j = o.order_type == :Random ? rand(1:length(o.order)) : o.order[o.k]
-    return o.stepsize(p, o, iter), get_gradient!(p, s.dir, j, o.x)
+    j = s.order_type == :Random ? rand(1:length(s.order)) : s.order[s.k]
+    return s.stepsize(p, s, iter), get_gradient!(p, sg.dir, j, s.x)
 end
 function MomentumGradient(
     p::StochasticGradientProblem,

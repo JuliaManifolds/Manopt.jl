@@ -131,9 +131,10 @@ _get_state(s::AbstractManoptSolverState, ::Val{false}) = s
 _get_state(s::AbstractManoptSolverState, ::Val{true}) = get_state(s.state)
 
 """
-    get_gradient(O::AbstractManoptSolverState)
+    get_gradient(s::AbstractManoptSolverState)
 
-return the (last stored) gradient within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the state beforehand
+return the (last stored) gradient within [`AbstractManoptSolverState`](@ref)` `s`.
+By default also undecorates the state beforehand
 """
 get_gradient(s::AbstractManoptSolverState) = _get_gradient(s, dispatch_state_decorator(s))
 function _get_gradient(s::AbstractManoptSolverState, ::Val{false})
@@ -144,9 +145,27 @@ end
 _get_gradient(s::AbstractManoptSolverState, ::Val{true}) = get_gradient(s.state)
 
 """
+    set_gradient!(s::AbstractManoptSolverState, M::AbstractManifold, p, X)
+
+set the iterate within an [`AbstractManoptSolverState`](@ref) to some (start) value `X` at `p`.
+"""
+function set_gradient!(s::AbstractManoptSolverState, M, X, p)
+    return _set_gradient!(s, M, X, p, dispatch_state_decorator(s))
+end
+function _set_gradient!(s::AbstractManoptSolverState, ::Any, ::Any, ::Any, ::Val{false})
+    return error(
+        "It seems the AbstractManoptSolverState $s do not provide (write) access to a gradient",
+    )
+end
+function _set_gradient!(s::AbstractManoptSolverState, M, p, X::Val{true})
+    return set_iterate!(s.state, M, p, X)
+end
+
+"""
     get_iterate(O::AbstractManoptSolverState)
 
-return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)``O`. By default also undecorates the state beforehand
+return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)` `s`.
+By default also undecorates the state beforehand.
 """
 get_iterate(s::AbstractManoptSolverState) = _get_iterate(s, dispatch_state_decorator(s))
 function _get_iterate(s::AbstractManoptSolverState, ::Val{false})
@@ -157,19 +176,19 @@ end
 _get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
 
 """
-    set_iterate!(O::AbstractManoptSolverState, p)
+    set_iterate!(s::AbstractManoptSolverState, M::AbstractManifold, p)
 
-set the iterate to some (start) value `p`.
+set the iterate within an [`AbstractManoptSolverState`](@ref) to some (start) value `p`.
 """
-function set_iterate!(s::AbstractManoptSolverState, p)
-    return _set_iterate!(s, p, dispatch_state_decorator(s))
+function set_iterate!(s::AbstractManoptSolverState, M, p)
+    return _set_iterate!(s, M, p, dispatch_state_decorator(s))
 end
-function _set_iterate!(s::AbstractManoptSolverState, ::Any, ::Val{false})
+function _set_iterate!(s::AbstractManoptSolverState, ::Any, ::Any, ::Val{false})
     return error(
         "It seems the AbstractManoptSolverState $s do not provide (write) access to an iterate",
     )
 end
-_set_iterate!(s::AbstractManoptSolverState, p, ::Val{true}) = set_iterate!(s.state, p)
+_set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.state, M, p)
 
 """
     get_solver_result(O::AbstractManoptSolverState)
