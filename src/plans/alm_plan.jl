@@ -186,7 +186,7 @@ end
 # Allocating vector -> we can omit a few of the ineq gradients.
 function (
     LG::AugmentedLagrangianGrad{
-        <:ConstrainedProblem{<:AllocatingEvaluation,<:VectorConstraint}
+        <:ConstrainedProblem{AllocatingEvaluation,<:VectorConstraint}
     }
 )(
     ::AbstractManifold, X, p
@@ -208,9 +208,7 @@ function (
 end
 # mutating vector -> we can omit a few of the ineq gradients and allocations.
 function (
-    LG::AugmentedLagrangianGrad{
-        <:ConstrainedProblem{<:MutatingEvaluation,<:VectorConstraint}
-    }
+    LG::AugmentedLagrangianGrad{<:ConstrainedProblem{MutatingEvaluation,<:VectorConstraint}}
 )(
     M::AbstractManifold, X, p
 )

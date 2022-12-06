@@ -611,7 +611,10 @@ end
 
 function (a::WolfePowellLinesearch)(
     p::P, o::O, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
-) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
+) where {
+    P<:GradientProblem{T,mT} where {T<:AbstractEvaluationType,mT<:AbstractManifold},
+    O<:Options,
+}
     s = 1.0
     s_plus = 1.0
     s_minus = 1.0

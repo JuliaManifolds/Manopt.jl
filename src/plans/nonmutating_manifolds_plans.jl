@@ -41,7 +41,7 @@ end
 # modify gradient descent step_solver
 function step_solver!(
     p::GradientProblem{T,<:NONMUTATINGMANIFOLDS}, o::GradientDescentOptions, iter
-) where {T}
+) where {T<:AbstractEvaluationType}
     s, o.gradient = o.direction(p, o, iter)
     o.x = retract(p.M, o.x, -s .* o.gradient, o.retraction_method)
     return o

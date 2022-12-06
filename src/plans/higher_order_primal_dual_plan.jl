@@ -1,5 +1,5 @@
 @doc raw"""
-    PrimalDualSemismoothNewtonProblem {T,mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem{T}
+    PrimalDualSemismoothNewtonProblem {T <: AbstractEvaluationType,mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem{T}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [^DiepeveenLellmann2021]
 
@@ -27,7 +27,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
     > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
 mutable struct PrimalDualSemismoothNewtonProblem{
-    T,mT<:AbstractManifold,nT<:AbstractManifold
+    T<:AbstractEvaluationType,mT<:AbstractManifold,nT<:AbstractManifold
 } <: AbstractPrimalDualProblem{T}
     M::mT
     N::nT
@@ -218,23 +218,23 @@ which can also be computed in place of `y`.
 get_differential_dual_prox(::PrimalDualSemismoothNewtonProblem, ::Any...)
 
 function get_differential_dual_prox(
-    p::PrimalDualSemismoothNewtonProblem{<:AllocatingEvaluation}, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{AllocatingEvaluation}, n, τ, ξ, Ξ
 )
     return p.diff_prox_G_dual!!(p.N, n, τ, ξ, Ξ)
 end
 function get_differential_dual_prox(
-    p::PrimalDualSemismoothNewtonProblem{<:MutatingEvaluation}, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{MutatingEvaluation}, n, τ, ξ, Ξ
 )
     η = allocate_result(p.N, get_differential_dual_prox, ξ, Ξ)
     return p.diff_prox_G_dual!!(p.N, η, n, τ, ξ, Ξ)
 end
 function get_differential_dual_prox!(
-    p::PrimalDualSemismoothNewtonProblem{<:AllocatingEvaluation}, η, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{AllocatingEvaluation}, η, n, τ, ξ, Ξ
 )
     return copyto!(p.N, η, p.diff_prox_G_dual!!(p.N, n, τ, ξ, Ξ))
 end
 function get_differential_dual_prox!(
-    p::PrimalDualSemismoothNewtonProblem{<:MutatingEvaluation}, η, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{MutatingEvaluation}, η, n, τ, ξ, Ξ
 )
     return p.diff_prox_G_dual!!(p.N, η, n, τ, ξ, Ξ)
 end

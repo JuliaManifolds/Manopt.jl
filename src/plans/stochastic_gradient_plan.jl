@@ -19,8 +19,9 @@ variant and the array of function may also be provided as mutating functions `(X
 Create a Stochastic gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
 """
-struct StochasticGradientProblem{T,MT<:AbstractManifold,TCost,TGradient} <:
-       AbstractGradientProblem{T}
+struct StochasticGradientProblem{
+    T<:AbstractEvaluationType,MT<:AbstractManifold,TCost,TGradient
+} <: AbstractGradientProblem{T}
     M::MT
     cost::TCost
     gradient!!::TGradient
