@@ -1,3 +1,9 @@
+@doc raw"""
+    AbstractEvaluationType
+
+An abstract type to specify the kind of evaluation a [`AbstractManifoldObjective`](@ref) supports.
+"""
+abstract type AbstractEvaluationType end
 
 @doc raw"""
     AbstractManifoldObjective{T}
@@ -14,14 +20,7 @@ All these elements should usually be implemented as functions
 
 the type `T` indicates the global [`AbstractEvaluationType`](@ref).
 """
-abstract type AbstractManifoldObjective{T} end
-
-@doc raw"""
-    AbstractEvaluationType
-
-An abstract type to specify the kind of evaluation a [`Problem`](@ref) supports.
-"""
-abstract type AbstractEvaluationType end
+abstract type AbstractManifoldObjective{T<:AbstractEvaluationType} end
 
 @doc raw"""
     AllocatingEvaluation <: AbstractEvaluationType

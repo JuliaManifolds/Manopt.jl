@@ -1,5 +1,5 @@
 @doc raw"""
-    PrimalDualSemismoothNewtonProblem {T,mT, nT <: AbstractManifold} <: AbstractPrimalDualProblem{T,mT}
+    PrimalDualSemismoothNewtonProblem {T <: AbstractEvaluationType, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem{T,mT}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [^DiepeveenLellmann2021]
 
@@ -26,7 +26,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
     > SIAM Journal on Imaging Sciences, 2021.
     > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
-mutable struct PrimalDualSemismoothNewtonProblem{T,mT,nT<:AbstractManifold} <:
+mutable struct PrimalDualSemismoothNewtonProblem{T<:AbstractEvaluationType,mT,nT<:AbstractManifold} <:
                AbstractPrimalDualProblem{T,mT}
     M::mT
     N::nT
@@ -217,23 +217,23 @@ which can also be computed in place of `y`.
 get_differential_dual_prox(::PrimalDualSemismoothNewtonProblem, ::Any...)
 
 function get_differential_dual_prox(
-    p::PrimalDualSemismoothNewtonProblem{<:AllocatingEvaluation}, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{AllocatingEvaluation}, n, τ, ξ, Ξ
 )
     return p.diff_prox_G_dual!!(p.N, n, τ, ξ, Ξ)
 end
 function get_differential_dual_prox(
-    p::PrimalDualSemismoothNewtonProblem{<:InplaceEvaluation}, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{InplaceEvaluation}, n, τ, ξ, Ξ
 )
     η = allocate_result(p.N, get_differential_dual_prox, ξ, Ξ)
     return p.diff_prox_G_dual!!(p.N, η, n, τ, ξ, Ξ)
 end
 function get_differential_dual_prox!(
-    p::PrimalDualSemismoothNewtonProblem{<:AllocatingEvaluation}, η, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{AllocatingEvaluation}, η, n, τ, ξ, Ξ
 )
     return copyto!(p.N, η, p.diff_prox_G_dual!!(p.N, n, τ, ξ, Ξ))
 end
 function get_differential_dual_prox!(
-    p::PrimalDualSemismoothNewtonProblem{<:InplaceEvaluation}, η, n, τ, ξ, Ξ
+    p::PrimalDualSemismoothNewtonProblem{InplaceEvaluation}, η, n, τ, ξ, Ξ
 )
     return p.diff_prox_G_dual!!(p.N, η, n, τ, ξ, Ξ)
 end

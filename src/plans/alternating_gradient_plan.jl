@@ -30,7 +30,7 @@ An alternating gradient problem consists of
 Create a alternating gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
 """
-struct AlternatingGradientProblem{T,MT<:ProductManifold,TCost,TGradient} <:
+struct AlternatingGradientProblem{T<:AbstractEvaluationType,MT<:ProductManifold,TCost,TGradient} <:
        AbstractManoptProblem{MT}
     M::MT
     cost::TCost

@@ -73,7 +73,7 @@ If the problem does not have equality constraints, you can set `H` and `gradH` n
 A keyword argument variant of the constructor above, where you can leave out either
 `G` and `gradG` _or_ `H` and `gradH` but not both.
 """
-struct ConstrainedProblem{T,CT<:ConstraintType,MT,TCost,GF,TG,GG,TH,GH} <:
+struct ConstrainedProblem{T<:AbstractEvaluationType,CT<:ConstraintType,MT,TCost,GF,TG,GG,TH,GH} <:
        AbstractManoptProblem{MT}
     M::MT
     cost::TCost
@@ -287,10 +287,14 @@ evaluate all equality constraints ``h(p)`` of ``\bigl(h_1(p), h_2(p),\ldots,h_p(
 of the [`ConstrainedProblem`](@ref) ``P`` at ``p``.
 """
 get_equality_constraints(P::ConstrainedProblem, p)
-function get_equality_constraints(P::ConstrainedProblem{T,FunctionConstraint}, p) where {T}
+function get_equality_constraints(
+    P::ConstrainedProblem{T,FunctionConstraint}, p
+) where {T<:AbstractEvaluationType}
     return P.H(P.M, p)
 end
-function get_equality_constraints(P::ConstrainedProblem{T,VectorConstraint}, p) where {T}
+function get_equality_constraints(
+    P::ConstrainedProblem{T,VectorConstraint}, p
+) where {T<:AbstractEvaluationType}
     return [hj(P.M, p) for hj in P.H]
 end
 
@@ -305,10 +309,12 @@ evaluate the `j`th equality constraint ``(h(p))_j`` or ``h_j(p)``.
 get_equality_constraint(P::ConstrainedProblem, p, j)
 function get_equality_constraint(
     P::ConstrainedProblem{T,FunctionConstraint}, p, j
-) where {T}
+) where {T<:AbstractEvaluationType}
     return P.H(P.M, p)[j]
 end
-function get_equality_constraint(P::ConstrainedProblem{T,VectorConstraint}, p, j) where {T}
+function get_equality_constraint(
+    P::ConstrainedProblem{T,VectorConstraint}, p, j
+) where {T<:AbstractEvaluationType}
     return P.H[j](P.M, p)
 end
 
@@ -322,10 +328,12 @@ get_inequality_constraints(P::ConstrainedProblem, p)
 
 function get_inequality_constraints(
     P::ConstrainedProblem{T,FunctionConstraint}, p
-) where {T}
+) where {T<:AbstractEvaluationType}
     return P.G(P.M, p)
 end
-function get_inequality_constraints(P::ConstrainedProblem{T,VectorConstraint}, p) where {T}
+function get_inequality_constraints(
+    P::ConstrainedProblem{T,VectorConstraint}, p
+) where {T<:AbstractEvaluationType}
     return [gi(P.M, p) for gi in P.G]
 end
 
@@ -340,12 +348,12 @@ evaluate one equality constraint ``(g(p))_i`` or ``g_i(p)``.
 get_inequality_constraint(P::ConstrainedProblem, p, i)
 function get_inequality_constraint(
     P::ConstrainedProblem{T,FunctionConstraint}, p, i
-) where {T}
+) where {T<:AbstractEvaluationType}
     return P.G(P.M, p)[i]
 end
 function get_inequality_constraint(
     P::ConstrainedProblem{T,VectorConstraint}, p, i
-) where {T}
+) where {T<:AbstractEvaluationType}
     return P.G[i](P.M, p)
 end
 
@@ -644,6 +652,6 @@ function get_grad_inequality_constraints!(
     return X
 end
 
-function Base.show(io::IO, ::ConstrainedProblem{E,V}) where {E,V}
+function Base.show(io::IO, ::ConstrainedProblem{E,V}) where {E<:AbstractEvaluationType,V}
     return print(io, "ConstrainedProblem{$E,$V}.")
 end

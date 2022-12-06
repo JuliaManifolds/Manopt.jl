@@ -1,13 +1,13 @@
 @doc raw"""
-    AbstractManifoldGradientObjective{T} <: AbstractManifoldCostObjective{T}
+    AbstractManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldCostObjective{T}
 
 An abstract type for all functions that provide a (full) gradient, where
 `T` is a [`AbstractEvaluationType`](@ref) for the gradient function.
 """
-abstract type AbstractManifoldGradientObjective{T} <: AbstractManifoldCostObjective{T} end
+abstract type AbstractManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldCostObjective{T} end
 
 @doc raw"""
-    ManifoldGradientObjective{T} <: AbstractManifoldObjective{T}
+    ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
 specify an objetive containing a cost and its gradient
 
@@ -28,7 +28,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to f
 # Used with
 [`gradient_decent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
-struct ManifoldGradientObjective{T,C,G} <: AbstractManifoldGradientObjective{T}
+struct ManifoldGradientObjective{T<:AbstractEvaluationType,C,G} <: AbstractManifoldGradientObjective{T}
     cost::C
     gradient!!::G
 end

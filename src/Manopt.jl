@@ -16,8 +16,8 @@ using StaticArrays
 using SparseArrays
 using Printf
 import LinearAlgebra: reflect!
-import Base: &, |, copy, identity, show
-import ManifoldsBase:
+import Base: &, |, copy, getindex, identity, setindex!, show
+using ManifoldsBase:
     ℝ,
     ℂ,
     ×,
@@ -63,10 +63,7 @@ import ManifoldsBase:
     get_vector,
     get_vectors,
     get_iterator,
-    getindex,
     manifold_dimension,
-    mid_point,
-    mid_point!,
     NestedPowerRepresentation,
     norm,
     number_eltype,
@@ -86,8 +83,9 @@ import ManifoldsBase:
     zero_vector!,
     DiagonalizingOrthonormalBasis,
     representation_size,
-    setindex!,
     set_component!
+
+import ManifoldsBase: mid_point, mid_point!
 
 using ManifoldsBase: get_vector!, get_coordinates!, requires_caching
 

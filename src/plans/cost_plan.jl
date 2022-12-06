@@ -23,7 +23,7 @@ the type `T` can be set for consistency reasons with other problems.
 # Used with
 [`NelderMead`](@ref), [`particle_swarm`](@ref)
 """
-struct ManifoldCostObjective{T,Tcost} <: AbstractManifoldCostObjective{T}
+struct ManifoldCostObjective{T<:AbstractEvaluationType,Tcost} <: AbstractManifoldCostObjective{T}
     cost::Tcost
 end
 function ManifoldCostObjective(cost::Tcost) where {Tcost}

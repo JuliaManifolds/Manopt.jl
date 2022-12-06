@@ -42,7 +42,7 @@ end
 # Specific solver steps
 #
 function initialize_solver!(
-    mp::AbstractManoptProblem{<:M}, s::GradientDescentState
+    mp::AbstractManoptProblem{M}, s::GradientDescentState
 ) where {M<:NONMUTATINGMANIFOLDS}
     s.X = get_gradient(mp, s.p)
     return s
@@ -55,4 +55,4 @@ function step_solver!(
     return s
 end
 #Hack for now?
-copy(M::NONMUTATINGMANIFOLDS, p) = p
+copy(::NONMUTATINGMANIFOLDS, p) = p

@@ -5,6 +5,7 @@
 #
 @doc raw"""
     ProximalProblem <:AbstractManoptProblem
+
 specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
@@ -20,7 +21,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 # See also
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
 """
-mutable struct ProximalProblem{T,mT,TCost,TProxes<:Union{Tuple,AbstractVector}} <:
+mutable struct ProximalProblem{T<:AbstractEvaluationType,mT<:AbstractManifold,TCost,TProxes<:Union{Tuple,AbstractVector}} <:
                AbstractManoptProblem{mT}
     M::mT
     cost::TCost
