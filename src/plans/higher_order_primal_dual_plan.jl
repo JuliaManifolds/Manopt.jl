@@ -26,8 +26,9 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
     > SIAM Journal on Imaging Sciences, 2021.
     > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
-mutable struct PrimalDualSemismoothNewtonProblem{T<:AbstractEvaluationType,mT,nT<:AbstractManifold} <:
-               AbstractPrimalDualProblem{T,mT}
+mutable struct PrimalDualSemismoothNewtonProblem{
+    T<:AbstractEvaluationType,mT,nT<:AbstractManifold
+} <: AbstractPrimalDualProblem{T,mT}
     M::mT
     N::nT
     cost::Function

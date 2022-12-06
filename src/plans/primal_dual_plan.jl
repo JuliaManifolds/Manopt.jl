@@ -3,7 +3,8 @@
 
 An abstract type for primal-dual-based problems.
 """
-abstract type AbstractPrimalDualProblem{T<:AbstractEvaluationType,M} <: AbstractManoptProblem{M} end
+abstract type AbstractPrimalDualProblem{T<:AbstractEvaluationType,M} <:
+              AbstractManoptProblem{M} end
 
 @doc raw"""
     PrimalDualProblem {T, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem

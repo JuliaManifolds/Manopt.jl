@@ -73,8 +73,9 @@ If the problem does not have equality constraints, you can set `H` and `gradH` n
 A keyword argument variant of the constructor above, where you can leave out either
 `G` and `gradG` _or_ `H` and `gradH` but not both.
 """
-struct ConstrainedProblem{T<:AbstractEvaluationType,CT<:ConstraintType,MT,TCost,GF,TG,GG,TH,GH} <:
-       AbstractManoptProblem{MT}
+struct ConstrainedProblem{
+    T<:AbstractEvaluationType,CT<:ConstraintType,MT,TCost,GF,TG,GG,TH,GH
+} <: AbstractManoptProblem{MT}
     M::MT
     cost::TCost
     gradient!!::GF
