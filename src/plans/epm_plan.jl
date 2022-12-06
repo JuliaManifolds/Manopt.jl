@@ -246,8 +246,7 @@ end
 # Variant 2: Vectors of allocating gradients - we can spare a few gradient evaluations
 function (
     EG::ExactPenaltyGrad{
-        <:LinearQuadraticHuber,
-        <:ConstrainedProblem{<:AllocatingEvaluation,<:VectorConstraint},
+        <:LinearQuadraticHuber,<:ConstrainedProblem{AllocatingEvaluation,<:VectorConstraint}
     }
 )(
     ::AbstractManifold, X, p::P
@@ -276,7 +275,7 @@ end
 # Variant 3: Vectors of mutating gradients - we can spare a few gradient evaluations and allocations
 function (
     EG::ExactPenaltyGrad{
-        <:LinearQuadraticHuber,<:ConstrainedProblem{<:MutatingEvaluation,<:VectorConstraint}
+        <:LinearQuadraticHuber,<:ConstrainedProblem{MutatingEvaluation,<:VectorConstraint}
     }
 )(
     M::AbstractManifold, X, p::P

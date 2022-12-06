@@ -4,7 +4,14 @@
 # ---
 
 """
-    Problem{T}
+    AbstractEvaluationType
+
+An abstract type to specify the kind of evaluation a [`Problem`](@ref) supports.
+"""
+abstract type AbstractEvaluationType end
+
+"""
+    Problem{T<:AbstractEvaluationType}
 
 Describe the problem that should be optimized by stating all properties, that do not change
 during an optimization or that are dependent of a certain solver.
@@ -16,14 +23,7 @@ The usually faster parameter value is [`MutatingEvaluation`](@ref)
 
 See [`Options`](@ref) for the changing and solver dependent properties.
 """
-abstract type Problem{T} end
-
-"""
-    AbstractEvaluationType
-
-An abstract type to specify the kind of evaluation a [`Problem`](@ref) supports.
-"""
-abstract type AbstractEvaluationType end
+abstract type Problem{T<:AbstractEvaluationType} end
 
 """
     AllocatingEvaluation <: AbstractEvaluationType
