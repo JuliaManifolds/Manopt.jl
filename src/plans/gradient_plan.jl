@@ -357,23 +357,24 @@ function AverageGradient(
         gradients, p, direction, vector_transport_method
     )
 end
-function (a::AverageGradient)(p::AbstractManoptProblem, s::AbstractGradientSolverState, i)
+function (a::AverageGradient)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, i)
     pop!(a.gradients)
-    s, d = a.direction(p, s, i) #get inner gradient and step
+    M = get_manifold(mp)
+    step, d = a.direction(mp, s, i) #get inner gradient and step
     a.gradients = vcat([deepcopy(d)], a.gradients)
     for i in 1:(length(a.gradients) - 1) #transport & shift in place
         vector_transport_to!(
-            p.M,
+            M,
             a.gradients[i],
             a.last_iterate,
             a.gradients[i + 1],
-            s.x,
+            get_iterate(s),
             a.vector_transport_method,
         )
     end
     a.gradients[1] = deepcopy(d)
-    a.last_iterate = deepcopy(s.x)
-    return s, 1 / length(a.gradients) .* sum(a.gradients)
+    copyto!(M, a.last_iterate, get_iterate(s))
+    return step, 1 / length(a.gradients) .* sum(a.gradients)
 end
 
 @doc raw"""

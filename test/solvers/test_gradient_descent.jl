@@ -128,7 +128,9 @@ using Manopt, Manifolds, Test
             M, F, gradF, pts[1]; direction=MomentumGradient(M; p=copy(M, pts[1])), debug=[]
         )
         @test isapprox(M, north, n3)
-        n4 = gradient_descent(M, F, gradF, pts[1]; direction=AverageGradient(M, pts[1], 5))
+        n4 = gradient_descent(
+            M, F, gradF, pts[1]; direction=AverageGradient(M; p=copy(M, pts[1]), n=5)
+        )
         @test isapprox(M, north, n4; atol=1e-7)
     end
     @testset "Warning when cost increases" begin
