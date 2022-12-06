@@ -1,6 +1,8 @@
 #
 # For the manifolds that are nonmutating only, we have to introduce a few special cases
 #
+import Base: copy
+
 function get_gradient!(mp::AbstractManoptProblem, ::AbstractFloat, p)
     X = get_objective(mp).gradient!!(get_manifold(mp), p)
     return X

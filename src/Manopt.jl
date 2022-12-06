@@ -178,7 +178,9 @@ export ℝ, ℂ, &, |
 export AbstractManoptProblem, DefaultManoptProblem
 #
 # Objectives
-export AbstractManifoldObjective, ManifoldCostObjective
+export AbstractManifoldObjective,
+    ManifoldCostObjective, ManifoldGradientObjective, ManifoldStochasticGradientObjective
+
 #
 # Problems - old
 export Problem,
@@ -186,13 +188,11 @@ export Problem,
     AlternatingGradientProblem,
     ConstrainedProblem,
     CostProblem,
-    SubDefaultManoptProblem,
     DefaultManoptProblem,
     HessianProblem,
     NonlinearLeastSquaresProblem,
     PrimalDualSemismoothNewtonProblem,
     PrimalDualProblem,
-    StochasticDefaultManoptProblem,
     AbstractEvaluationType,
     AllocatingEvaluation,
     InplaceEvaluation

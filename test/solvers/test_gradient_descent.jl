@@ -113,13 +113,6 @@ using Manopt, Manifolds, Test
         rec = get_record(s)
         # after one step for local enough data -> equal to real valued data
         @test distance(M, x, apprpstar) ≈ 0 atol = 5 * 10.0^(-14)
-        # Test Fallbacks -> we can't do steps with the wrong combination
-        p = SubGradientProblem(M, F, gradF)
-        o = GradientDescentState(
-            M, s[1]; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
-        )
-        @test_throws MethodError initialize_solver!(p, o)
-        @test_throws MethodError step_solver!(p, o, 1)
     end
     @testset "mutating Sphere" begin
         M = Sphere(2)
@@ -132,7 +125,7 @@ using Manopt, Manifolds, Test
         @test !isapprox(M, pts[1], n2) # n2 is newly allocated and not pts[1]
         @test isapprox(M, north, n2)
         n3 = gradient_descent(
-            M, F, gradF, pts[1]; direction=MomentumGradient(M, pts[1]), debug=[]
+            M, F, gradF, pts[1]; direction=MomentumGradient(M; p=copy(M, pts[1])), debug=[]
         )
         @test isapprox(M, north, n3)
         n4 = gradient_descent(M, F, gradF, pts[1]; direction=AverageGradient(M, pts[1], 5))

@@ -66,7 +66,8 @@ function stochastic_gradient_descent!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     kwargs...,
 ) where {TDF,TF}
-    p = StochasticGradientProblem(M, gradF; cost=cost, evaluation=evaluation)
+    p = ManifoldStochasticGradientObjective(M, gradF; cost=cost, evaluation=evaluation)
+    mp = DefaultManoptProblem(M, os)
     o = StochasticGradientDescentState(
         M,
         x,
@@ -79,16 +80,16 @@ function stochastic_gradient_descent!(
         retraction_method=retraction_method,
     )
     o = decorate_state(o; kwargs...)
-    return get_solver_return(solve!(p, o))
+    return get_solver_return(solve!(mp, o))
 end
-function initialize_solver!(::StochasticGradientProblem, s::StochasticGradientDescentState)
+function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescentState)
     s.k = 1
     (s.order_type == :FixedRandom) && (shuffle!(s.order))
     return s
 end
-function step_solver!(p::StochasticGradientProblem, s::StochasticGradientDescentState, iter)
-    step, s.gradient = s.direction(p, s, iter)
-    retract!(p.M, s.x, s.x, -step * s.gradient)
+function step_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentState, iter)
+    step, s.gradient = s.direction(mp, s, iter)
+    retract!(mp.M, s.x, s.x, -step * s.gradient)
     s.k = ((s.k) % length(s.order)) + 1
     return s
 end

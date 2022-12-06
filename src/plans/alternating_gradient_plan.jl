@@ -276,7 +276,7 @@ end
 The default gradient processor, which just evaluates the (alternating) gradient on one of
 the components
 """
-struct AlternatingGradient{T} <: AbstractStochasticGradientProcessor
+struct AlternatingGradient{T} <: AbstractGradientGroupProcessor
     dir::T
 end
 

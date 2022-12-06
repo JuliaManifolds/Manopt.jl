@@ -8,7 +8,7 @@ abstract type AbstractManifoldGradientObjective{T<:AbstractEvaluationType} <:
               AbstractManifoldCostObjective{T} end
 
 @doc raw"""
-    ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
+    ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldGradientObjective{T}
 
 specify an objetive containing a cost and its gradient
 
@@ -276,7 +276,7 @@ function MomentumGradient(
     X=zero_vector(M, p),
     momentum=0.2,
 ) where {P,VTM<:AbstractVectorTransportMethod}
-    return MomentumGradient{P,typeof(gradient),typeof(momentum),VTM}(
+    return MomentumGradient{P,typeof(X),typeof(momentum),VTM}(
         momentum, p, direction, vector_transport_method, X
     )
 end
@@ -289,13 +289,13 @@ function (mg::MomentumGradient)(
     copyto!(
         M,
         p,
-        m.X_old,
-        m.momentum *
-        vector_transport_to(M, m.p_old, m.X_old, p, m.vector_transport_method) -
+        mg.X_old,
+        mg.momentum *
+        vector_transport_to(M, mg.p_old, mg.X_old, p, mg.vector_transport_method) -
         step .* dir,
     )
-    copyto!(M, m.p_old, p)
-    return step, -m.X_old
+    copyto!(M, mg.p_old, p)
+    return step, -mg.X_old
 end
 
 """
@@ -346,15 +346,15 @@ mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function AverageGradient(
-    M::AbstractManifold,
-    x0::P,
+    M::AbstractManifold;
+    p::P=random_point(M),
     n::Int=10,
-    s::DirectionUpdateRule=IdentityUpdateRule();
-    gradients=fill(zero_vector(M, x0), n),
+    direction::DirectionUpdateRule=IdentityUpdateRule(),
+    gradients=[zero_vector(M, p) for _ in 1:n],
     vector_transport_method::VTM=default_vector_transport_method(M),
 ) where {P,VTM}
     return AverageGradient{P,eltype(gradients),VTM}(
-        gradients, deepcopy(x0), s, vector_transport_method
+        gradients, p, direction, vector_transport_method
     )
 end
 function (a::AverageGradient)(p::AbstractManoptProblem, s::AbstractGradientSolverState, i)

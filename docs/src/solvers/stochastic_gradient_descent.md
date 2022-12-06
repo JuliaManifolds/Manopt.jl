@@ -20,6 +20,6 @@ so you can also apply [`MomentumGradient`](@ref) and [`AverageGradient`](@ref) h
 The most inner one should always be.
 
 ```@docs
-AbstractStochasticGradientProcessor
+AbstractGradientGroupProcessor
 StochasticGradient
 ```
