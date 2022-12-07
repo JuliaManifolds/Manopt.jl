@@ -10,30 +10,30 @@ Random.seed!(42)
         C = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; -5.0 0.0 0.0 0.0]
         ABC = [A, B, C]
         x_solution = mean(ABC)
-        F(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
+        f(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
         gradF(::Euclidean, x) = -A - B - C + 3 * x
         M = Euclidean(4, 4)
         x = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
-            M, F, gradF, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
+            M, f, gradF, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
         )
         @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
         # with State
         lrbfgs_o = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
         )
-        @test get_last_stepsize(GradientProblem(M, F, gradF), lrbfgs_o, lrbfgs_o.stepsize) >
+        @test get_last_stepsize(GradientProblem(M, f, gradF), lrbfgs_o, lrbfgs_o.stepsize) >
             0
         @test lrbfgs_o.x == x_lrbfgs
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -43,7 +43,7 @@ Random.seed!(42)
 
         x_lrbfgs_cached_2 = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -54,7 +54,7 @@ Random.seed!(42)
 
         x_clrbfgs = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             cautious_update=true,
@@ -64,7 +64,7 @@ Random.seed!(42)
 
         x_rbfgs_Huang = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             memory_size=-1,
@@ -79,7 +79,7 @@ Random.seed!(42)
             for c in [true, false]
                 x_direction = quasi_Newton(
                     M,
-                    F,
+                    f,
                     gradF,
                     x;
                     direction_update=T,
@@ -97,14 +97,14 @@ Random.seed!(42)
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
         M = Sphere(n - 1)
-        F(::Sphere, X) = X' * A * X
+        f(::Sphere, X) = X' * A * X
         gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         x_solution = abs.(eigvecs(A)[:, 1])
 
         x = Matrix{Float64}(I, n, n)[n, :]
         x_lrbfgs = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
@@ -115,7 +115,7 @@ Random.seed!(42)
 
         x_clrbfgs = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             cautious_update=true,
@@ -124,7 +124,7 @@ Random.seed!(42)
 
         x_cached_lrbfgs = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
@@ -147,7 +147,7 @@ Random.seed!(42)
 
             x_direction = quasi_Newton(
                 M,
-                F,
+                f,
                 gradF,
                 x;
                 direction_update=T,
@@ -173,13 +173,13 @@ Random.seed!(42)
         k = 2
         M = Stiefel(n, k)
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
-        F(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
+        f(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
         gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
 
         x = Matrix{Float64}(I, n, n)[:, 2:(k + 1)]
         x_inverseBFGSCautious = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             memory_size=8,
@@ -191,7 +191,7 @@ Random.seed!(42)
 
         x_inverseBFGSHuang = quasi_Newton(
             M,
-            F,
+            f,
             gradF,
             x;
             memory_size=8,

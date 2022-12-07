@@ -3,7 +3,7 @@ using Manopt, ManifoldsBase, Test
 @testset "Constrained Plan" begin
     M = ManifoldsBase.DefaultManifold(3)
     # Cost
-    F(::ManifoldsBase.DefaultManifold, p) = norm(p)^2
+    f(::ManifoldsBase.DefaultManifold, p) = norm(p)^2
     gradF(M, p) = 2 * p
     gradF!(M, X, p) = (X .= 2 * p)
     # Inequality constraints
@@ -32,14 +32,14 @@ using Manopt, ManifoldsBase, Test
     end
     gradH1(M, p) = [0.0, 0.0, 2.0]
     gradH1!(M, X, p) = (X .= [0.0, 0.0, 2.0])
-    Pfa = ConstrainedProblem(M, F, gradF, G, gradG, H, gradH)
+    Pfa = ConstrainedProblem(M, f, gradF, G, gradG, H, gradH)
     Pfm = ConstrainedProblem(
-        M, F, gradF!, G, gradG!, H, gradH!; evaluation=InplaceEvaluation()
+        M, f, gradF!, G, gradG!, H, gradH!; evaluation=InplaceEvaluation()
     )
-    Pva = ConstrainedProblem(M, F, gradF, [G1, G2], [gradG1, gradG2], [H1], [gradH1])
+    Pva = ConstrainedProblem(M, f, gradF, [G1, G2], [gradG1, gradG2], [H1], [gradH1])
     Pvm = ConstrainedProblem(
         M,
-        F,
+        f,
         gradF!,
         [G1, G2],
         [gradG1!, gradG2!],
@@ -60,26 +60,26 @@ using Manopt, ManifoldsBase, Test
 
     @testset "Partial Constructors" begin
         # At least one constraint necessary
-        @test_throws ErrorException ConstrainedProblem(M, F, gradF)
+        @test_throws ErrorException ConstrainedProblem(M, f, gradF)
         @test_throws ErrorException ConstrainedProblem(
-            M, F, gradF!; evaluation=InplaceEvaluation()
+            M, f, gradF!; evaluation=InplaceEvaluation()
         )
-        p1f = ConstrainedProblem(M, F, gradF!; G=G, gradG=gradG)
+        p1f = ConstrainedProblem(M, f, gradF!; G=G, gradG=gradG)
         @test get_constraints(p1f, p) == [c[1], []]
         @test get_grad_equality_constraints(p1f, p) == []
         @test get_grad_inequality_constraints(p1f, p) == gg
 
-        p1v = ConstrainedProblem(M, F, gradF!; G=[G1, G2], gradG=[gradG1, gradG2])
+        p1v = ConstrainedProblem(M, f, gradF!; G=[G1, G2], gradG=[gradG1, gradG2])
         @test get_constraints(p1v, p) == [c[1], []]
         @test get_grad_equality_constraints(p1v, p) == []
         @test get_grad_inequality_constraints(p1v, p) == gg
 
-        p2f = ConstrainedProblem(M, F, gradF!; H=H, gradH=gradH)
+        p2f = ConstrainedProblem(M, f, gradF!; H=H, gradH=gradH)
         @test get_constraints(p2f, p) == [[], c[2]]
         @test get_grad_equality_constraints(p2f, p) == gh
         @test get_grad_inequality_constraints(p2f, p) == []
 
-        p2v = ConstrainedProblem(M, F, gradF!; H=[H1], gradH=[gradH1])
+        p2v = ConstrainedProblem(M, f, gradF!; H=[H1], gradH=[gradH1])
         @test get_constraints(p2v, p) == [[], c[2]]
         @test get_grad_equality_constraints(p2v, p) == gh
         @test get_grad_inequality_constraints(p2v, p) == []
@@ -125,7 +125,7 @@ using Manopt, ManifoldsBase, Test
         ρ = 0.1
         cg = sum(max.([0.0, 0.0], c[1] .+ μ ./ ρ) .^ 2)
         ch = sum((c[2] .+ λ ./ ρ) .^ 2)
-        ac = F(M, p) + ρ / 2 * (cg + ch)
+        ac = f(M, p) + ρ / 2 * (cg + ch)
         agg = sum((c[1] .* ρ .+ μ) .* gg .* (c[1] .+ μ ./ ρ .> 0))
         agh = sum((c[2] .* ρ .+ λ) .* gh)
         ag = gf + agg + agh
@@ -151,7 +151,7 @@ using Manopt, ManifoldsBase, Test
                 # LogExp Cost
                 v1 = sum(u .* log.(1 .+ exp.(c[1] ./ u))) # cost g
                 v2 = sum(u .* log.(exp.(c[2] ./ u) .+ exp.(-c[2] ./ u))) # cost h
-                @test EPCe(M, p) ≈ F(M, p) + ρ * (v1 + v2)
+                @test EPCe(M, p) ≈ f(M, p) + ρ * (v1 + v2)
                 # Log exp grad
                 vg1 = sum(gg .* (ρ .* exp.(c[1] ./ u) ./ (1 .+ exp.(c[1] ./ u))))
                 vg2f =
@@ -165,7 +165,7 @@ using Manopt, ManifoldsBase, Test
                 w1 = sum((c[1] .- u / 2) .* (c[1] .> u)) # g > u
                 w2 = sum((c[1] .^ 2 ./ (2 * u)) .* ((c[1] .> 0) .& (c[1] .<= u))) #
                 w3 = sum(sqrt.(c[2] .^ 2 .+ u^2))
-                @test EPCh(M, p) ≈ F(M, p) + ρ * (w1 + w2 + w3)
+                @test EPCh(M, p) ≈ f(M, p) + ρ * (w1 + w2 + w3)
                 wg1 = sum(gg .* (c[1] .>= u) .* ρ)
                 wg2 = sum(gg .* (c[1] ./ u .* (0 .<= c[1] .< u)) .* ρ)
                 wg3 = sum(gh .* (c[2] ./ sqrt.(c[2] .^ 2 .+ u^2)) .* ρ)

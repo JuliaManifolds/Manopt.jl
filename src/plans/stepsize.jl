@@ -791,7 +791,7 @@ function _get_initial_stepsize(
 end
 
 function get_last_stepsize(p::AbstractManoptProblem, s::AbstractManoptSolverState, vars...)
-    return get_last_stepsize(p, s, dispatch_state_decorator(s), vars...)
+    return _get_last_stepsize(p, s, dispatch_state_decorator(s), vars...)
 end
 function _get_last_stepsize(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{true}, vars...
@@ -801,7 +801,7 @@ end
 function _get_last_stepsize(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{false}, vars...
 )
-    return get_last_stepsize(p, s, vars...)
+    return get_last_stepsize(p, s, s.stepsize, vars...)
 end
 #
 # dispatch on stepsize

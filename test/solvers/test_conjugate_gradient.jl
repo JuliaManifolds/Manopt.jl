@@ -3,9 +3,9 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
 @testset "Conjugate Gradient coefficient rules" begin
     M = Euclidean(2)
-    F(M, x) = norm(x)^2
+    f(M, x) = norm(x)^2
     gradF(::Euclidean, x) = 2 * x
-    P = GradientProblem(M, F, gradF)
+    P = GradientProblem(M, f, gradF)
     x0 = [0.0, 1.0]
     sC = StopAfterIteration(1)
     s = ConstantStepsize(M)
@@ -95,24 +95,24 @@ end
 @testset "Conjugate Gradient runs – Low Rank matrix approx" begin
     A = Diagonal([2.0, 1.1, 1.0])
     M = Sphere(size(A, 1) - 1)
-    F(::Sphere, x) = x' * A * x
+    f(::Sphere, x) = x' * A * x
     gradF(M, x) = project(M, x, 2 * A * x) # project the Euclidean gradient
 
     x0 = [2.0, 0.0, 2.0] / sqrt(8.0)
     x_opt = conjugate_gradient_descent(
         M,
-        F,
+        f,
         gradF,
         x0;
         stepsize=ArmijoLinesearch(),
         coefficient=FletcherReevesCoefficient(),
         stopping_criterion=StopAfterIteration(15),
     )
-    @test isapprox(F(M, x_opt), minimum(eigvals(A)); atol=2.0 * 1e-2)
+    @test isapprox(f(M, x_opt), minimum(eigvals(A)); atol=2.0 * 1e-2)
     @test isapprox(x_opt, eigvecs(A)[:, size(A, 1)]; atol=3.0 * 1e-1)
     x_opt2 = conjugate_gradient_descent(
         M,
-        F,
+        f,
         gradF,
         x0;
         stepsize=ArmijoLinesearch(),

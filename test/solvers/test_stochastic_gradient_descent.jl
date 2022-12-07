@@ -8,7 +8,7 @@ using Manopt, Manifolds, Test
         exp(M, p, X) for
         X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
-    F(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
+    f(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
     gradF(M, y) = sum([-log(M, y, x) for x in pts])
     sgradF1(M, y) = [-log(M, y, x) for x in pts]
     function sgradF1!(M, X, y)
@@ -66,7 +66,7 @@ using Manopt, Manifolds, Test
     end
     @testset "Momentum and Average Processor Constructors" begin
         p1 = StochasticGradientProblem(M, sgradF1)
-        p2 = GradientProblem(M, F, gradF)
+        p2 = GradientProblem(M, f, gradF)
         m1 = MomentumGradient(M, p, StochasticGradient(zero_vector(M, p)))
         m2 = MomentumGradient(p1, p)
         @test typeof(m1.direction) == typeof(m2.direction) #both use StochasticGradient

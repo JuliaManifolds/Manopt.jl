@@ -286,14 +286,10 @@ function (mg::MomentumGradient)(
     M = get_manifold(mp)
     p = get_iterate(s)
     step, dir = mg.direction(mp, s, i) #get inner direction and step size
-    copyto!(
-        M,
-        p,
-        mg.X_old,
+    mg.X_old =
         mg.momentum *
         vector_transport_to(M, mg.p_old, mg.X_old, p, mg.vector_transport_method) -
-        step .* dir,
-    )
+        step .* dir
     copyto!(M, mg.p_old, p)
     return step, -mg.X_old
 end

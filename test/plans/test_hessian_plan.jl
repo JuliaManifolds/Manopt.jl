@@ -2,14 +2,14 @@ using Manopt, Manifolds, Test, Random
 
 @testset "Hessian access functions" begin
     M = Euclidean(2)
-    F(M, p) = 1
+    f(M, p) = 1
     gradF(M, p) = zero(2)
     gradF!(M, X, p) = copyto!(M, X, p, zeros(2))
     HessF(M, p, X) = X
     HessF!(M, Y, p, X) = copyto!(M, Y, p, X)
     precon = (M, p, X) -> X
-    P1 = HessianProblem(M, F, gradF, HessF, precon)
-    P2 = HessianProblem(M, F, gradF!, HessF!, precon; evaluation=InplaceEvaluation())
+    P1 = HessianProblem(M, f, gradF, HessF, precon)
+    P2 = HessianProblem(M, f, gradF!, HessF!, precon; evaluation=InplaceEvaluation())
 
     p = zeros(2)
     X = ones(2)

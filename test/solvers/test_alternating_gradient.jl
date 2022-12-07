@@ -4,7 +4,7 @@ using Manopt, Manifolds, Test
     M = Sphere(2)
     N = M × M
     data = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
-    function F(N, x)
+    function f(N, x)
         return 1 / 2 *
                (distance(N[1], x[N, 1], data[1])^2 + distance(N[2], x[N, 2], data[2])^2)
     end
@@ -21,11 +21,11 @@ using Manopt, Manifolds, Test
     x = ProductRepr([0.0, 0.0, 1.0], [0.0, 0.0, 1.0])
 
     @testset "Test gradient access" begin
-        Pf = AlternatingGradientProblem(N, F, gradF)
-        Pv = AlternatingGradientProblem(N, F, [gradF1, gradF2])
-        Pf! = AlternatingGradientProblem(N, F, gradF!; evaluation=InplaceEvaluation())
+        Pf = AlternatingGradientProblem(N, f, gradF)
+        Pv = AlternatingGradientProblem(N, f, [gradF1, gradF2])
+        Pf! = AlternatingGradientProblem(N, f, gradF!; evaluation=InplaceEvaluation())
         Pv! = AlternatingGradientProblem(
-            N, F, [gradF1!, gradF2!]; evaluation=InplaceEvaluation()
+            N, f, [gradF1!, gradF2!]; evaluation=InplaceEvaluation()
         )
         for P in [Pf, Pv, Pf!, Pv!]
             Y = zero_vector(N, x)
@@ -49,15 +49,15 @@ using Manopt, Manifolds, Test
         y3 = allocate(x)
         copyto!(N, y3, x)
         y = alternating_gradient_descent(
-            N, F, [gradF1!, gradF2!], x; order_type=:Linear, evaluation=InplaceEvaluation()
+            N, f, [gradF1!, gradF2!], x; order_type=:Linear, evaluation=InplaceEvaluation()
         )
         alternating_gradient_descent!(
-            N, F, [gradF1!, gradF2!], y2; order_type=:Linear, evaluation=InplaceEvaluation()
+            N, f, [gradF1!, gradF2!], y2; order_type=:Linear, evaluation=InplaceEvaluation()
         )
         @test isapprox(N, y, y2)
         o = alternating_gradient_descent!(
             N,
-            F,
+            f,
             [gradF1!, gradF2!],
             y3;
             evaluation=InplaceEvaluation(),

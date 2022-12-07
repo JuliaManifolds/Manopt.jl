@@ -140,7 +140,7 @@ function gradient_descent!(
     stepsize::Stepsize=ConstantStepsize(M),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenGradientNormLess(10.0^-8),
+                                          StopWhenGradientNormLess(1e-9),
     debug=[DebugWarnIfCostIncreases()],
     direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),

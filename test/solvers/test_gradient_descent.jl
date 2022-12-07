@@ -10,8 +10,8 @@ using Manopt, Manifolds, Test
         r = [-π / 2, π / 4, 0.0, π / 4]
         r2 = [-π / 2, π / 4, 0.0, π / 4]
         apprpstar = sum([-π / 2, π / 4, 0.0, π / 4]) / length(r)
-        F(M, p) = 1 / 10 * sum(distance.(Ref(M), r2, Ref(p)) .^ 2)
-        gradF(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), r2))
+        f(M, p) = 1 / 10 * sum(distance.(Ref(M), r2, Ref(p)) .^ 2)
+        grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), r2))
         my_io = IOBuffer()
         d = DebugEvery(
             DebugGroup([
@@ -25,8 +25,8 @@ using Manopt, Manifolds, Test
         )
         s = gradient_descent!(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             r2[1];
             stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(10^-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
@@ -39,8 +39,8 @@ using Manopt, Manifolds, Test
         @test res_debug === " F(x): 1.357071\n"
         x2 = gradient_descent!(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             r2[1];
             stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(10^-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
@@ -57,8 +57,8 @@ using Manopt, Manifolds, Test
         )
         x3 = gradient_descent!(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             r2[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(10^-16),
             stepsize=step,
@@ -67,8 +67,8 @@ using Manopt, Manifolds, Test
         step.strategy = :inverse
         x4 = gradient_descent!(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             r2[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(10^-16),
             stepsize=step,
@@ -77,8 +77,8 @@ using Manopt, Manifolds, Test
         step.strategy = :alternating
         x5 = gradient_descent!(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             r2[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
@@ -88,8 +88,8 @@ using Manopt, Manifolds, Test
         @test isapprox(M, x, x5; atol=1e-13)
         x6 = gradient_descent!(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             r2[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(10^-16)
@@ -119,31 +119,32 @@ using Manopt, Manifolds, Test
         north = [0.0, 0.0, 1.0]
         pre_pts = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
         pts = exp.(Ref(M), Ref(north), pre_pts)
-        F(M, x) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(x)) .^ 2)
-        gradF(M, x) = 1 / 4 * sum(-log.(Ref(M), Ref(x), pts))
-        n2 = gradient_descent(M, F, gradF, pts[1])
-        @test !isapprox(M, pts[1], n2) # n2 is newly allocated and not pts[1]
+        f(M, p) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(p)) .^ 2)
+        grad_f(M, p) = 1 / 4 * sum(-log.(Ref(M), Ref(p), pts))
+        n2 = gradient_descent(M, f, grad_f, pts[1])
+        # Since we called gradient_decent n2 is newly allocated
+        @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
         n3 = gradient_descent(
-            M, F, gradF, pts[1]; direction=MomentumGradient(M; p=copy(M, pts[1])), debug=[]
+            M, f, grad_f, pts[1]; direction=MomentumGradient(M; p=copy(M, pts[1])), debug=[]
         )
         @test isapprox(M, north, n3)
         n4 = gradient_descent(
-            M, F, gradF, pts[1]; direction=AverageGradient(M; p=copy(M, pts[1]), n=5)
+            M, f, grad_f, pts[1]; direction=AverageGradient(M; p=copy(M, pts[1]), n=5)
         )
         @test isapprox(M, north, n4; atol=1e-7)
     end
     @testset "Warning when cost increases" begin
         M = Sphere(2)
         q = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
-        F(M, p) = distance(M, p, q) .^ 2
+        f(M, p) = distance(M, p, q) .^ 2
         # chosse a wrong gradient such that ConstantStepsize yields an increase
-        gradF(M, p) = -grad_distance(M, q, p)
+        grad_f(M, p) = -grad_distance(M, q, p)
         # issues three warnings
         @test_logs (:warn,) (:warn,) (:warn,) gradient_descent(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             1 / sqrt(2) .* [1.0, -1.0, 0.0];
             debug=[DebugWarnIfCostIncreases(:Once)],
         )
