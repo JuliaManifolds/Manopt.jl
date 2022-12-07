@@ -28,7 +28,7 @@ using Manopt, Manifolds, Test
             f,
             grad_f,
             r2[1];
-            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(10^-16),
+            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
             debug=d,
             record=[:Iteration, :Cost, 1],
@@ -42,7 +42,7 @@ using Manopt, Manifolds, Test
             f,
             grad_f,
             r2[1];
-            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(10^-16),
+            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
         )
         @test x == x2
@@ -60,8 +60,9 @@ using Manopt, Manifolds, Test
             f,
             grad_f,
             r2[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(10^-16),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
             stepsize=step,
+            debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, x, x3; atol=1e-13)
         step.strategy = :inverse
@@ -70,8 +71,9 @@ using Manopt, Manifolds, Test
             f,
             grad_f,
             r2[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(10^-16),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
             stepsize=step,
+            debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, x, x4; atol=1e-13)
         step.strategy = :alternating
@@ -80,10 +82,9 @@ using Manopt, Manifolds, Test
             f,
             grad_f,
             r2[1];
-            stopping_criterion=StopWhenAny(
-                StopAfterIteration(1000), StopWhenChangeLess(10^-16)
-            ),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
             stepsize=step,
+            debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, x, x5; atol=1e-13)
         x6 = gradient_descent!(
@@ -92,7 +93,7 @@ using Manopt, Manifolds, Test
             grad_f,
             r2[1];
             stopping_criterion=StopWhenAny(
-                StopAfterIteration(1000), StopWhenChangeLess(10^-16)
+                StopAfterIteration(1000), StopWhenChangeLess(1e-16)
             ),
             direction=Nesterov(M, r2[1]),
         )
