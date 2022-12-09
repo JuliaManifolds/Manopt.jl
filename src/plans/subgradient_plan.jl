@@ -98,3 +98,4 @@ mutable struct SubGradientMethodOptions{
         M, x; stopping_criterion=S, stepsize=s, retraction_method=r
     )
 end
+get_iterate(o::SubGradientMethodOptions) = o.x
