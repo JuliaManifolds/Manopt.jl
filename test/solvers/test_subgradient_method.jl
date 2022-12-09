@@ -5,6 +5,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
     x = [4.0, 2.0]
     x0 = [5.0, 2.0]
     o = SubGradientMethodOptions(M, x0, StopAfterIteration(200), ConstantStepsize(M))
+    @test get_iterate(o) == x0
     o.∂ = [1.0, 0.0]
     f(M, y) = distance(M, y, x)
     @testset "Allocating Subgradient" begin
