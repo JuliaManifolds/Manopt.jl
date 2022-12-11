@@ -258,43 +258,59 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
 
         Y = [0.0; 1.0; 0.0; 0.0]
 
+        p_1 = [1.0; 0.0; 0.0; 0.0]
+
         X_1 = SR1_allocating(M, p_1, Y)
 
         p_2 = [0.0; 0.0; 1.0; 0.0]
 
         SR1_allocating.p_tmp = p_2
 
+        p_1 = [1.0; 0.0; 0.0; 0.0]
+
         X_2 = SR1_allocating(M, p_1, Y)
 
         @test isapprox(M, p_1, X_1, X_2; atol=1e-10)
+
+        p_1 = [1.0; 0.0; 0.0; 0.0]
 
         X_3 = zero_vector(M, p_1)
         X_4 = zero_vector(M, p_1)
 
         SR1_mutating(M, X_3, p_1, Y)
 
+        p_2 = [0.0; 0.0; 1.0; 0.0]
+
         SR1_mutating.p_tmp = p_2
+
+        p_1 = [1.0; 0.0; 0.0; 0.0]
 
         SR1_mutating(M, X_4, p_1, Y)
 
         @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
 
+        p_1 = [1.0; 0.0; 0.0; 0.0]
+
         X_5 = BFGS_allocating(M, p_1, Y)
 
-        BFGS_allocating.p_tmp = p_2
+        p_2 = [0.0; 0.0; 1.0; 0.0]
 
-        X_6 = BFGS_allocating(M, p_1, Y)
+        X_6 = BFGS_allocating(M, p_2, Y)
+
+        p_1 = [1.0; 0.0; 0.0; 0.0]
 
         @test isapprox(M, p_1, X_5, X_6; atol=1e-10)
 
         X_7 = zero_vector(M, p_1)
         X_8 = zero_vector(M, p_1)
 
+        p_1 = [1.0; 0.0; 0.0; 0.0]
+
         BFGS_mutating(M, X_7, p_1, Y)
 
-        BFGS_mutating.p_tmp = p_2
+        p_2 = [0.0; 0.0; 1.0; 0.0]
 
-        BFGS_mutating(M, X_8, p_1, Y)
+        BFGS_mutating(M, X_8, p_2, Y)
 
         @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
     end

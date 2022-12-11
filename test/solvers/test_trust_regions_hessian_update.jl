@@ -29,12 +29,14 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
         @test norm(abs.(X2) - abs.(ev)) ≈ 0 atol = 1e-12
         @test isapprox(M, X, X2)
 
+        XaHSR1 = deepcopy(x)
+
         XaHSR1 = trust_regions(
             M,
             cost,
             grad,
             ApproxHessianSymmetricRankOne(M, x, grad; nu=eps(Float64)^2),
-            x;
+            deepcopy(x);
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
             ),
@@ -73,7 +75,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             cost,
             grad,
             ApproxHessianBFGS(M, x, grad),
-            x;
+            deepcopy(x);
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
             ),
@@ -166,7 +168,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             cost,
             grad!,
             ApproxHessianBFGS(M, XaHBFGS, grad!; evaluation=MutatingEvaluation()),
-            XaHBFGS;
+            deepcopy(x);
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
             ),
