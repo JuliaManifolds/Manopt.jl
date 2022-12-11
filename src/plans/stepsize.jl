@@ -611,7 +611,10 @@ end
 
 function (a::WolfePowellLinesearch)(
     p::P, o::O, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
-) where {P<:GradientProblem{T,mT} where {T,mT<:AbstractManifold},O<:Options}
+) where {
+    P<:GradientProblem{T,mT} where {T<:AbstractEvaluationType,mT<:AbstractManifold},
+    O<:Options,
+}
     s = 1.0
     s_plus = 1.0
     s_minus = 1.0
@@ -826,21 +829,25 @@ function get_initial_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
 end
 
 function get_last_stepsize(p::Problem, o::Options, vars...)
-    return get_last_stepsize(p, o, dispatch_options_decorator(o), vars...)
+    return _get_last_stepsize(p, o, dispatch_options_decorator(o), vars...)
 end
-function get_last_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
+function _get_last_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
     return get_last_stepsize(p, o.options, vars...)
 end
-function get_last_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
+function _get_last_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
     return get_last_stepsize(p, o, o.stepsize, vars...)
 end
 #
 # dispatch on stepsize
-get_last_stepsize(p::Problem, o::Options, s::Stepsize, vars...) = s(p, o, vars...)
-get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, ::Any...) = s.last_stepsize
-function get_last_stepsize(::Problem, ::Options, s::WolfePowellLinesearch, ::Any...)
+function get_last_stepsize(p::Problem, o::Options, s::Stepsize, vars...)
+    return s(p, o, vars...)
+end
+function get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, vars...)
     return s.last_stepsize
 end
-function get_last_stepsize(::Problem, ::Options, s::WolfePowellBinaryLinesearch, ::Any...)
+function get_last_stepsize(::Problem, ::Options, s::WolfePowellLinesearch, vars...)
+    return s.last_stepsize
+end
+function get_last_stepsize(::Problem, ::Options, s::WolfePowellBinaryLinesearch, vars...)
     return s.last_stepsize
 end

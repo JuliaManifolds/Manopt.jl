@@ -30,8 +30,9 @@ The following algorithms are currently available
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncated_conjugate_gradient_descent.jl` | [`HessianProblem`](@ref)
 [Subgradient Method](@ref SubgradientSolver) | `subgradient_method.jl` | [`SubGradientProblem`](@ref), [`SubGradientMethodOptions`](@ref)
 [Stochastic Gradient Descent](@ref StochasticGradientDescentSolver) | `stochastic_gradient_descent.jl` | [`StochasticGradientProblem`](@ref), [`StochasticGradientDescentOptions`](@ref)
-[`TruncatedConjugateGradientOptions`](@ref)
 [The Riemannian Trust-Regions Solver](@ref trust_regions) | `trust_regions.jl` | [`HessianProblem`](@ref), [`TrustRegionsOptions`](@ref)
+[Levenberg-Marquardt](@ref) | `LevenbergMarquardt.jl` | [`LevenbergMarquardtOptions`](@ref)
+[`TruncatedConjugateGradientOptions`](@ref)
 
 Note that the solvers (or their [`Options`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection).
 

@@ -18,7 +18,7 @@ the type `T` can be set for consistency reasons with other problems.
 # See also
 [`NelderMead`](@ref)
 """
-struct CostProblem{T,mT<:AbstractManifold,Tcost} <: Problem{T}
+struct CostProblem{T<:AbstractEvaluationType,mT<:AbstractManifold,Tcost} <: Problem{T}
     M::mT
     cost::Tcost
 end

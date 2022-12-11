@@ -16,8 +16,8 @@ using StaticArrays
 using SparseArrays
 using Printf
 import LinearAlgebra: reflect!
-import Base: &, |, copy, identity, show
-import ManifoldsBase:
+import Base: &, |, copy, getindex, identity, setindex!, show
+using ManifoldsBase:
     ℝ,
     ℂ,
     ×,
@@ -62,10 +62,7 @@ import ManifoldsBase:
     get_vector,
     get_vectors,
     get_iterator,
-    getindex,
     manifold_dimension,
-    mid_point,
-    mid_point!,
     NestedPowerRepresentation,
     norm,
     number_eltype,
@@ -85,8 +82,11 @@ import ManifoldsBase:
     zero_vector!,
     DiagonalizingOrthonormalBasis,
     representation_size,
-    setindex!,
     set_component!
+
+import ManifoldsBase: mid_point, mid_point!
+
+using ManifoldsBase: get_vector!, get_coordinates!, requires_caching
 
 include("plans/plan.jl")
 # Functions
@@ -109,6 +109,7 @@ include("solvers/exact_penalty_method.jl")
 include("solvers/NelderMead.jl")
 include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
+include("solvers/LevenbergMarquardt.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/quasi_Newton.jl")
@@ -180,6 +181,7 @@ export Problem,
     SubGradientProblem,
     GradientProblem,
     HessianProblem,
+    NonlinearLeastSquaresProblem,
     PrimalDualSemismoothNewtonProblem,
     PrimalDualProblem,
     StochasticGradientProblem,
@@ -199,6 +201,7 @@ export Options,
     FrankWolfeOptions,
     GradientDescentOptions,
     AbstractHessianOptions,
+    LevenbergMarquardtOptions,
     NelderMeadOptions,
     ParticleSwarmOptions,
     PrimalDualSemismoothNewtonOptions,
@@ -314,6 +317,8 @@ export augmented_Lagrangian_method,
     Frank_Wolfe_method!,
     gradient_descent,
     gradient_descent!,
+    LevenbergMarquardt,
+    LevenbergMarquardt!,
     NelderMead,
     NelderMead!,
     particle_swarm,

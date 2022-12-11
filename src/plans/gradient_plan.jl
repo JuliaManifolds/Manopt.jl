@@ -1,13 +1,13 @@
 """
-    AbstractGradientProblem{T} <: Problem{T}
+    AbstractGradientProblem{T<:AbstractEvaluationType} <: Problem{T}
 
 An abstract type for all functions that provide a (full) gradient, where
 `T` is a [`AbstractEvaluationType`](@ref) for the gradient function.
 """
-abstract type AbstractGradientProblem{T} <: Problem{T} end
+abstract type AbstractGradientProblem{T<:AbstractEvaluationType} <: Problem{T} end
 
 @doc raw"""
-    GradientProblem{T} <: AbstractGradientProblem{T}
+    GradientProblem{T<:AbstractEvaluationType} <: AbstractGradientProblem{T}
 
 specify a problem for gradient based algorithms.
 
@@ -27,7 +27,8 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient has to be pro
 # See also
 [`gradient_descent`](@ref), [`GradientDescentOptions`](@ref)
 """
-struct GradientProblem{T,mT<:AbstractManifold,C,G} <: AbstractGradientProblem{T}
+struct GradientProblem{T<:AbstractEvaluationType,mT<:AbstractManifold,C,G} <:
+       AbstractGradientProblem{T}
     M::mT
     cost::C
     gradient!!::G
@@ -56,7 +57,9 @@ function get_gradient(p::AbstractGradientProblem{AllocatingEvaluation}, x)
 end
 function get_gradient(p::AbstractGradientProblem{MutatingEvaluation}, x)
     X = zero_vector(p.M, x)
-    return p.gradient!!(p.M, X, x)
+    # note: p.gradient!! is user-supplied so let's not force on users that they must return X
+    p.gradient!!(p.M, X, x)
+    return X
 end
 
 function get_gradient!(p::AbstractGradientProblem{AllocatingEvaluation}, X, x)
@@ -64,7 +67,9 @@ function get_gradient!(p::AbstractGradientProblem{AllocatingEvaluation}, X, x)
 end
 
 function get_gradient!(p::AbstractGradientProblem{MutatingEvaluation}, X, x)
-    return p.gradient!!(p.M, X, x)
+    # note: p.gradient!! is user-supplied so let's not force on users that they must return X
+    p.gradient!!(p.M, X, x)
+    return X
 end
 
 """

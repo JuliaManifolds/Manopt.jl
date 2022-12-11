@@ -16,7 +16,7 @@ Generate the [`Problem`] for a subgradient problem, i.e. a function `f` on the
 manifold `M` and a function `∂f` that returns an element from the subdifferential
 at a point.
 """
-struct SubGradientProblem{T,mT<:AbstractManifold,C,S} <: Problem{T}
+struct SubGradientProblem{T<:AbstractEvaluationType,mT<:AbstractManifold,C,S} <: Problem{T}
     M::mT
     cost::C
     subgradient!!::S
@@ -98,3 +98,4 @@ mutable struct SubGradientMethodOptions{
         M, x; stopping_criterion=S, stepsize=s, retraction_method=r
     )
 end
+get_iterate(o::SubGradientMethodOptions) = o.x
