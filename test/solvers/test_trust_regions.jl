@@ -141,16 +141,6 @@ include("trust_region_model.jl")
 
         initialize_solver!(p, o)
 
-        # o.tcg_options.stop = StopWhenAny(
-        #     StopAfterIteration(manifold_dimension(M)),
-        #     StopWhenAll(
-        #         StopIfResidualIsReducedByPower(1.0), StopIfResidualIsReducedByFactor(0.1)
-        #     ),
-        #     StopWhenTrustRegionIsExceeded(),
-        #     StopWhenCurvatureIsNegative(),
-        #     StopWhenModelIncreased(),
-        # )
-
         o.tcg_options = TruncatedConjugateGradientOptions(
             p.M,
             o.x,

@@ -1,8 +1,7 @@
 using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
-import Random: seed!
 
 @testset "Riemannian Trust-Region with Hessian update" begin
-    n = 100
+    n = 10
 
     A = randn(n, n)
     A = (A + A') / 2
@@ -17,7 +16,8 @@ import Random: seed!
         return X
     end
     M = Sphere(n - 1)
-    x = random_point(M)
+    x = zeros(n)
+    x[1] = 1.0
 
     ev = eigvecs(A)[:, 1]
 
@@ -108,7 +108,8 @@ import Random: seed!
         @test isapprox(M, XaHBFGS, XaHBFGS_2; atol=1e-6)
     end
     @testset "Mutating" begin
-        x = random_point(M)
+        x = zeros(n)
+        x[2] = 1.0
 
         X3 = deepcopy(x)
 

@@ -333,7 +333,8 @@ export augmented_Lagrangian_method,
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
 export solve
-export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS, update_hessian_basis!
+export ApproxHessianFiniteDifference,
+    ApproxHessianSymmetricRankOne, ApproxHessianBFGS, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 #
 # Stepsize

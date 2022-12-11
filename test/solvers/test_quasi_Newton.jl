@@ -1,6 +1,5 @@
-using Manopt, Manifolds, Test, Random
+using Manopt, Manifolds, Test
 using LinearAlgebra: I, eigvecs, tr, Diagonal
-Random.seed!(42)
 
 @testset "Riemannian quasi-Newton Methods" begin
     @testset "Mean of 3 Matrices" begin
@@ -204,6 +203,34 @@ Random.seed!(42)
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-4)
     end
 
+    @testset "Wolfe Powell linesearch" begin
+        n = 4
+        rayleigh_atol = 1e-8
+        A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
+        A = (A + A') / 2
+        M = Sphere(n - 1)
+        F(::Sphere, X) = X' * A * X
+        gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        x_solution = abs.(eigvecs(A)[:, 1])
+
+        x = [
+            0.7011245948687502
+            -0.1726003159556036
+            0.38798265967671103
+            -0.5728026616491424
+        ]
+        x_lrbfgs = quasi_Newton(
+            M,
+            F,
+            gradF,
+            x;
+            basis=get_basis(M, x, DefaultOrthonormalBasis()),
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(1e-9),
+        )
+        @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
+    end
+
     @testset "update rules" begin
         n = 4
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
@@ -213,7 +240,7 @@ Random.seed!(42)
         gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         gradF!(::Sphere, X, p) = (X .= 2 * (A * X - X * (X' * A * X)))
 
-        p_1 = random_point(M)
+        p_1 = [1.0; 0.0; 0.0; 0.0]
 
         SR1_allocating = ApproxHessianSymmetricRankOne(
             M, p_1, gradF; evaluation=AllocatingEvaluation()
@@ -229,11 +256,11 @@ Random.seed!(42)
 
         BFGS_mutating = ApproxHessianBFGS(M, p_1, gradF!; evaluation=MutatingEvaluation())
 
-        Y = random_tangent(M, p_1)
+        Y = [0.0; 1.0; 0.0; 0.0]
 
         X_1 = SR1_allocating(M, p_1, Y)
 
-        p_2 = random_point(M)
+        p_2 = [0.0; 0.0; 1.0; 0.0]
 
         SR1_allocating.p_tmp = p_2
 
@@ -241,8 +268,8 @@ Random.seed!(42)
 
         @test isapprox(M, p_1, X_1, X_2; atol=1e-10)
 
-        X_3 = random_tangent(M, p_1)
-        X_4 = random_tangent(M, p_1)
+        X_3 = zero_vector(M, p_1)
+        X_4 = zero_vector(M, p_1)
 
         SR1_mutating(M, X_3, p_1, Y)
 
@@ -254,16 +281,14 @@ Random.seed!(42)
 
         X_5 = BFGS_allocating(M, p_1, Y)
 
-        p_2 = random_point(M)
-
         BFGS_allocating.p_tmp = p_2
 
         X_6 = BFGS_allocating(M, p_1, Y)
 
         @test isapprox(M, p_1, X_5, X_6; atol=1e-10)
 
-        X_7 = random_tangent(M, p_1)
-        X_8 = random_tangent(M, p_1)
+        X_7 = zero_vector(M, p_1)
+        X_8 = zero_vector(M, p_1)
 
         BFGS_mutating(M, X_7, p_1, Y)
 
