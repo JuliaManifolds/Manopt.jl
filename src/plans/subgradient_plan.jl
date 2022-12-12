@@ -96,4 +96,4 @@ mutable struct SubGradientMethodState{
         )
     end
 end
-get_iterate(o::SubGradientMethodOptions) = o.x
+get_iterate(o::SubGradientMethodState) = o.x
