@@ -771,7 +771,7 @@ end
 function get_initial_stepsize(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, vars...; kwargs...
 )
-    return get_initial_stepsize(
+    return _get_initial_stepsize(
         p::AbstractManoptProblem,
         s::AbstractManoptSolverState,
         dispatch_state_decorator(s),

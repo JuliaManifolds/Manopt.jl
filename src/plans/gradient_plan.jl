@@ -190,41 +190,41 @@ It assumes that
 abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
 
 @doc raw"""
-    get_gradient(s::AbstractGradientSolverState)
+    get_gradient(agst::AbstractGradientSolverState)
 
 return the gradient stored within gradient options.
-THe default resturns `s.X`.
+THe default resturns `agst.X`.
 """
-get_gradient(s::AbstractGradientSolverState) = s.X
+get_gradient(agst::AbstractGradientSolverState) = agst.X
 
 @doc raw"""
-    set_gradient!(s::AbstractGradientSolverState, M, p, X)
+    set_gradient!(agst::AbstractGradientSolverState, M, p, X)
 
 set the (current) gradient stored within an [`AbstractGradientSolverState`](@ref) to `X`.
 The default function modifies `s.X`.
 """
-function set_gradient!(s::AbstractGradientSolverState, M, p, X)
-    copyto!(M, p, s.X, X)
-    return s
+function set_gradient!(agst::AbstractGradientSolverState, M, p, X)
+    copyto!(M, p, agst.X, X)
+    return agst
 end
 
 @doc raw"""
-    get_iterate(s::AbstractGradientSolverState)
+    get_iterate(agst::AbstractGradientSolverState)
 
 return the iterate stored within gradient options.
-THe default resturns `s.p`.
+THe default resturns `agst.p`.
 """
-get_iterate(s::AbstractGradientSolverState) = s.p
+get_iterate(agst::AbstractGradientSolverState) = agst.p
 
 @doc raw"""
-    set_iterate!(s::AbstractGradientSolverState, M, p)
+    set_iterate!(agst::AbstractGradientSolverState, M, p)
 
 set the (current) iterate stored within an [`AbstractGradientSolverState`](@ref) to `p`.
 The default function modifies `s.p`.
 """
-function set_iterate!(s::AbstractGradientSolverState, M, p)
-    copyto!(M, s.p, p)
-    return s
+function set_iterate!(agst::AbstractGradientSolverState, M, p)
+    copyto!(M, agst.p, p)
+    return agst
 end
 
 """
@@ -462,7 +462,7 @@ mutable struct DebugGradient <: DebugAction
     format::String
     function DebugGradient(;
         long::Bool=false,
-        prefix=long ? "Gradient: " : "gradF(x):",
+        prefix=long ? "Gradient: " : "grad f(p):",
         format="$prefix%s",
         io::IO=stdout,
     )
@@ -494,7 +494,7 @@ mutable struct DebugGradientNorm <: DebugAction
     format::String
     function DebugGradientNorm(;
         long::Bool=false,
-        prefix=long ? "Norm of the Gradient: " : "|gradF(x)|:",
+        prefix=long ? "Norm of the Gradient: " : "|grad f(p)|:",
         format="$prefix%s",
         io::IO=stdout,
     )
@@ -577,9 +577,10 @@ mutable struct RecordGradientNorm <: RecordAction
     RecordGradientNorm() = new(Array{Float64,1}())
 end
 function (r::RecordGradientNorm)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+    mp::AbstractManoptProblem, ast::AbstractManoptSolverState, i::Int
 )
-    return record_or_reset!(r, norm(p.M, get_iterate(s), get_gradient(s)), i)
+    M = get_manifold(mp)
+    return record_or_reset!(r, norm(M, get_iterate(ast), get_gradient(ast)), i)
 end
 
 @doc raw"""

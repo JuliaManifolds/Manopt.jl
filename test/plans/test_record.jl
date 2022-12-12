@@ -9,8 +9,8 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
         M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
     )
     f(M, y) = distance(M, y, x) .^ 2
-    gradf(M, y) = -2 * log(M, y, x)
-    p = GradientProblem(M, f, gradf)
+    grad_f(M, y) = -2 * log(M, y, x)
+    p = GradientProblem(M, f, grad_f)
     a = RecordIteration()
     # constructors
     rO = RecordSolverState(o, a)
