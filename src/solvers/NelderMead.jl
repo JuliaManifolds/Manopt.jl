@@ -91,7 +91,7 @@ function NelderMeadState(M::AbstractManifold; kwargs...)
     return NelderMeadState(M, population; kwargs...)
 end
 get_iterate(O::NelderMeadState) = O.p
-function set_iterate!(O::NelderMeadState, p)
+function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)
     O.p = p
     return O
 end

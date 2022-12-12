@@ -14,17 +14,17 @@ Random.seed!(29)
             ])
         end
         x0 = [8 * randn(6) for i in 1:7]
-        o = NelderMead(M, Rosenbrock, x0; record=[RecordCost()], return_state=true)
-        x = get_solver_result(o)
-        rec = get_record(o)
+        rst = NelderMead(M, Rosenbrock, x0; record=[RecordCost()], return_state=true)
+        x = get_solver_result(rst)
+        rec = get_record(rst)
         nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
         @test any(map(!, nonincreasing)) == false
 
         x2 = NelderMead(M, Rosenbrock, x0)
         @test x == x2
 
-        set_iterate!(o, ones(6))
-        @test get_iterate(o) == ones(6)
+        set_iterate!(rst, M, ones(6))
+        @test get_iterate(rst) == ones(6)
     end
     @testset "Rotations" begin
         M = Rotations(3)

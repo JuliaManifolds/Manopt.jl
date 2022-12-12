@@ -100,7 +100,7 @@ mutable struct AugmentedLagrangianMethodState{
     end
 end
 get_iterate(s::AugmentedLagrangianMethodState) = s.x
-function set_iterate!(s::AugmentedLagrangianMethodState, p)
+function set_iterate!(s::AugmentedLagrangianMethodState, M, p)
     s.x = p
     return s
 end

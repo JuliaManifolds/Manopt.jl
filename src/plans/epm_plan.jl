@@ -81,7 +81,7 @@ mutable struct ExactPenaltyMethodState{
     end
 end
 get_iterate(O::ExactPenaltyMethodState) = O.x
-function set_iterate!(O::ExactPenaltyMethodState, p)
+function set_iterate!(O::ExactPenaltyMethodState, M, p)
     O.x = p
     return O
 end
