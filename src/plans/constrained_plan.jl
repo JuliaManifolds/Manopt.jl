@@ -256,7 +256,7 @@ function ConstrainedProblem(
         """
   Neither inequality constraints `G`, `gradG` nor equality constraints `H` `gradH` provided.
   If you have an unconstraint problem, maybe consider using a `GradientProblem` instead.
-  """,
+  """
     )
 end
 function ConstrainedProblem(
