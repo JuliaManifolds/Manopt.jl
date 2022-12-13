@@ -179,10 +179,12 @@ export AbstractManoptProblem, DefaultManoptProblem
 #
 # Objectives
 export AbstractManifoldObjective,
-    ManifoldCostObjective, ManifoldGradientObjective, ManifoldStochasticGradientObjective
-
+    ManifoldCostObjective,
+    ManifoldGradientObjective,
+    ManifoldStochasticGradientObjective,
+    ManifoldSubgradientObjective
 #
-# Problems - old
+# Evaluation & Problems - old
 export Problem,
     ProximalProblem,
     AlternatingGradientProblem,
@@ -346,7 +348,7 @@ export augmented_Lagrangian_method,
 # Solver helpers
 export decorate_state
 export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
-export solve
+export solve!
 export ApproxHessianFiniteDifference
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 #

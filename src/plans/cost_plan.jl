@@ -4,6 +4,7 @@
 Representing objectives on manifolds with a cost function implemented.
 """
 abstract type AbstractManifoldCostObjective{T} <: AbstractManifoldObjective{T} end
+
 @doc raw"""
     ManifoldCostObjective{T,Tcost} <: AbstractManifoldCostObjective{T}
 
