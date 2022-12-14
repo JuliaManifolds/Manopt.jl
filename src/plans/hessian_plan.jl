@@ -508,8 +508,8 @@ A functor to approximate the Hessian by the symmetric rank one update.
 ## Keyword arguments
 
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
-* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p. 
-* `nu` (`-1`) 
+* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
+* `nu` (`-1`)
 * `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
 * `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
 """
@@ -638,7 +638,7 @@ A functor to approximate the Hessian by the BFGS update.
 # Fields
 
 * `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
-* `scale` 
+* `scale`
 * `vector_transport_method` a vector transport to use.
 
 ## Internal temporary fields
@@ -655,8 +655,8 @@ A functor to approximate the Hessian by the BFGS update.
 ## Keyword arguments
 
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
-* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p. 
-* `nu` (`-1`) 
+* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
+* `nu` (`-1`)
 * `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
 * `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
 """
@@ -793,7 +793,17 @@ times κ.
 mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
     reason::String
-    StopIfResidualIsReducedByFactor(κ::Float64) = new(κ, "")
+    function StopIfResidualIsReducedByFactor(κ::Float64)
+        Base.depwarn(
+            """
+            The `StopIfResidualIsReducedByFactor` stopping criterion will
+            is deprecated and will be removed in a future release.
+            Please use `StopIfResidualIsReducedByFactorOrPower` instead.
+            """,
+            :StopIfResidualIsReducedByFactor,
+        )
+        return new(κ, "")
+    end
 end
 function (c::StopIfResidualIsReducedByFactor)(
     p::P, o::O, i::Int
@@ -810,7 +820,7 @@ end
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a power of 1+θ compared to the norm of the initial residual, i.e.
-$\Vert r_k \Vert_x \leqq  \Vert r_0 \Vert_{x}^{1+\theta}$. 
+$\Vert r_k \Vert_x \leqq  \Vert r_0 \Vert_{x}^{1+\theta}$.
 
 # Fields
 * `θ` – part of the reduction power
@@ -831,7 +841,17 @@ to the power of 1+θ.
 mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
     reason::String
-    StopIfResidualIsReducedByPower(θ::Float64) = new(θ, "")
+    function StopIfResidualIsReducedByPower(θ::Float64)
+        Base.depwarn(
+            """
+            The `StopIfResidualIsReducedByPower` stopping criterion will
+            is deprecated and will be removed in a future release.
+            Please use `StopIfResidualIsReducedByFactorOrPower` instead.
+            """,
+            :StopIfResidualIsReducedByPower,
+        )
+        return new(θ, "")
+    end
 end
 function (c::StopIfResidualIsReducedByPower)(
     p::P, o::O, i::Int
@@ -859,9 +879,9 @@ end
     StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
 
 A functor for testing if the norm of residual at the current iterate is reduced
-either by a power of 1+θ or by a factor κ compared to the norm of the initial 
-residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \ 
-\min \left( \kappa, \Vert r_0 \Vert_{x}^{\theta} \right)$. 
+either by a power of 1+θ or by a factor κ compared to the norm of the initial
+residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \
+\min \left( \kappa, \Vert r_0 \Vert_{x}^{\theta} \right)$.
 
 # Fields
 * `κ` – the reduction factor
