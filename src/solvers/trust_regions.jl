@@ -56,19 +56,19 @@ For a description of the algorithm and more details see
   that the iterates produced are not monotonically improving the cost
   when very close to convergence. This is because the corrected cost
   improvement could change sign if it is negative but very small.
-* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method 
-    [`truncated_conjugate_gradient_descent`](@ref), which computes an 
-    approximate solution for the trust-region subproblem. The tCG-method aborts 
-    if the residual is less than or equal to the initial residual to the power of 1+θ. 
-* `κ` – (`0.1`) the linear convergence target rate of the tCG-method 
-    [`truncated_conjugate_gradient_descent`](@ref), which computes an 
-    approximate solution for the trust-region subproblem. The method aborts if the 
-    residual is less than or equal to κ times the initial residual. 
-* `η_1` – (`0.1`) Trust-region reduction threshold: if ρ (the performance ratio for 
-    the iterate) is less than η_1, the trust-region radius and thus the trust-regions 
-    decreases. 
-* `η_2` – (`0.75`) Trust-region augmentation threshold: if ρ (the performance ratio for 
-    the iterate) is greater than η_2 and further conditions apply, the trust-region radius and thus the trust-regions increases. 
+* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method
+    [`truncated_conjugate_gradient_descent`](@ref), which computes an
+    approximate solution for the trust-region subproblem. The tCG-method aborts
+    if the residual is less than or equal to the initial residual to the power of 1+θ.
+* `κ` – (`0.1`) the linear convergence target rate of the tCG-method
+    [`truncated_conjugate_gradient_descent`](@ref), which computes an
+    approximate solution for the trust-region subproblem. The method aborts if the
+    residual is less than or equal to κ times the initial residual.
+* `η_1` – (`0.1`) Trust-region reduction threshold: if ρ (the performance ratio for
+    the iterate) is less than η_1, the trust-region radius and thus the trust-regions
+    decreases.
+* `η_2` – (`0.75`) Trust-region augmentation threshold: if ρ (the performance ratio for
+    the iterate) is greater than η_2 and further conditions apply, the trust-region radius and thus the trust-regions increases.
 * `return_options` – (`false`) – if activated, the extended result, i.e. the
   complete [`Options`](@ref) are returned. This can be used to access recorded values.
   If set to false (default) just the optimal value `x_opt` is returned
@@ -198,7 +198,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.trust_region_radius = o.trust_region_radius
     o.tcg_options.stop = StopWhenAny(
         StopAfterIteration(manifold_dimension(p.M)),
-        StopIfResidualIsReducedByFactorOrPower(o.κ, o.θ),
+        StopIfResidualIsReducedByFactorOrPower(; κ=o.κ, θ=o.θ),
         StopWhenTrustRegionIsExceeded(),
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),

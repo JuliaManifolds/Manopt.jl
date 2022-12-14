@@ -117,7 +117,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
             StopAfterIteration(manifold_dimension(p.M)),
-            StopIfResidualIsReducedByFactorOrPower(κ, θ),
+            StopIfResidualIsReducedByFactorOrPower(; κ=κ, θ=θ),
             StopWhenTrustRegionIsExceeded(),
             StopWhenCurvatureIsNegative(),
             StopWhenModelIncreased(),
@@ -145,7 +145,9 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         θ::Float64=1.0,
         κ::Float64=0.1,
         stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
-                                              StopIfResidualIsReducedByFactorOrPower(κ, θ) |
+                                              StopIfResidualIsReducedByFactorOrPower(;
+                                                  κ=κ, θ=θ
+                                              ) |
                                               StopWhenTrustRegionIsExceeded() |
                                               StopWhenCurvatureIsNegative() |
                                               StopWhenModelIncreased(),
@@ -798,7 +800,7 @@ mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
             """
             The `StopIfResidualIsReducedByFactor` stopping criterion will
             is deprecated and will be removed in a future release.
-            Please use `StopIfResidualIsReducedByFactorOrPower` instead.
+            Please use `StopIfResidualIsReducedByFactorOrPower(; κ=$(κ))` instead.
             """,
             :StopIfResidualIsReducedByFactor,
         )
@@ -846,7 +848,7 @@ mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
             """
             The `StopIfResidualIsReducedByPower` stopping criterion will
             is deprecated and will be removed in a future release.
-            Please use `StopIfResidualIsReducedByFactorOrPower` instead.
+            Please use `StopIfResidualIsReducedByFactorOrPower(; θ=$(θ))` instead.
             """,
             :StopIfResidualIsReducedByPower,
         )
@@ -863,11 +865,6 @@ function (c::StopIfResidualIsReducedByPower)(
     return false
 end
 
-@doc raw"""
-    update_stopping_criterion!(c::StopIfResidualIsReducedByPower, :ResidualPower, v)
-
-Update the residual Power ``θ`` time period after which an algorithm shall stop.
-"""
 function update_stopping_criterion!(
     c::StopIfResidualIsReducedByPower, ::Val{:ResidualPower}, v
 )
@@ -891,7 +888,7 @@ residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \
 
 # Constructor
 
-    StopIfResidualIsReducedByFactorOrPower(κ, θ)
+    StopIfResidualIsReducedByFactorOrPower(; κ=0.1, θ=1.0)
 
 initialize the StopIfResidualIsReducedByFactorOrPower functor to indicate to stop after
 the norm of the current residual is lesser than either the norm of the initial residual
@@ -904,7 +901,7 @@ mutable struct StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
     κ::Float64
     θ::Float64
     reason::String
-    StopIfResidualIsReducedByFactorOrPower(κ::Float64, θ::Float64) = new(κ, θ, "")
+    StopIfResidualIsReducedByFactorOrPower(; κ::Float64=0.1, θ::Float64=1.0) = new(κ, θ, "")
 end
 function (c::StopIfResidualIsReducedByFactorOrPower)(
     p::P, o::O, i::Int
@@ -915,6 +912,29 @@ function (c::StopIfResidualIsReducedByFactorOrPower)(
         return true
     end
     return false
+end
+@doc raw"""
+    update_stopping_criterion!(c::StopIfResidualIsReducedByFactorOrPower, :ResidualPower, v)
+
+Update the residual Power `θ`  to `v`.
+"""
+function update_stopping_criterion!(
+    c::StopIfResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v
+)
+    c.θ = v
+    return c
+end
+
+@doc raw"""
+    update_stopping_criterion!(c::StopIfResidualIsReducedByFactorOrPower, :ResidualFactor, v)
+
+Update the residual Factor `κ` to `v`.
+"""
+function update_stopping_criterion!(
+    c::StopIfResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v
+)
+    c.κ = v
+    return c
 end
 
 @doc raw"""
