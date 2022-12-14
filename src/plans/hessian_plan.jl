@@ -17,7 +17,8 @@ specify a problem for hessian based algorithms.
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldGradientObjective{T}
+struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
+       AbstractManifoldGradientObjective{T}
     cost::C
     gradient!!::G
     hessian!!::H
@@ -34,40 +35,67 @@ struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: Abstract
 end
 
 @doc raw"""
-    get_hessian(p::HessianProblem{T}, q, X)
-    get_hessian!(p::HessianProblem{T}, Y, q, X)
+    Y = get_hessian(mp::AbstractManoptProblem{T}, p, X)
+    get_hessian!(mp::AbstractManoptProblem{T}, Y, p, X)
 
-evaluate the Hessian of a [`HessianProblem`](@ref) `p` at the point `q`
-applied to a tangent vector `X`, i.e. ``\operatorname{Hess}f(q)[X]``.
-
-The evaluation is done in place of `Y` for the `!`-variant.
-The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
-When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
-memory for the result is allocated.
+evaluate the Hessian of an [`AbstractManoptProblem`](@ref) `mp` at `p`
+applied to a tangent vector `X`, i.e. compute ``\operatorname{Hess}f(q)[X]``,
+which can also happen in-place of `Y`.
 """
-function get_hessian(p::HessianProblem{AllocatingEvaluation}, q, X)
-    return p.hessian!!(p.M, q, X)
+function get_hessian(mp::AbstractManoptProblem, p, X)
+    return get_hessian(get_manifold(mp), get_objective(mp), p, X)
 end
-function get_hessian(p::HessianProblem{InplaceEvaluation}, q, X)
-    Y = zero_vector(p.M, q)
-    return p.hessian!!(p.M, Y, q, X)
+function get_hessian!(mp::AbstractManoptProblem, Y, p, X)
+    return get_hessian!(get_manifold(mp), Y, get_objective(mp), p, X)
 end
-function get_hessian!(p::HessianProblem{AllocatingEvaluation}, Y, q, X)
-    return copyto!(p.M, Y, p.hessian!!(p.M, q, X))
+function get_hessian(
+    M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
+)
+    return mho.hessian!!(M, p, X)
 end
-function get_hessian!(p::HessianProblem{InplaceEvaluation}, Y, q, X)
-    return p.hessian!!(p.M, Y, q, X)
+function get_hessian(
+    M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
+)
+    Y = zero_vector(M, p)
+    mho.hessian!!(M, Y, p, X)
+    return Y
+end
+function get_hessian!(
+    M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
+)
+    copyto!(M, Y, mho.hessian!!(M, p, X))
+    return Y
+end
+function get_hessian!(
+    M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
+)
+    mho.hessian!!(M, Y, p, X)
+    return Y
 end
 
 @doc raw"""
-    get_preconditioner(p,x,ξ)
+    get_preconditioner(mp::AbstractManoptProblem, p, X)
+
+evaluate the symmetric, positive definite preconditioner (approximation of the
+inverse of the Hessian of the cost function `f`) of a
+[`HessianPrAbstractManoptProblemoblem`](@ref) `mp` at the point `p` applied to a
+tangent vector `X`.
+"""
+function get_preconditioner(mp::HessianProblem, p, X)
+    return get_preconditioner(get_manifold(mp), get_objective(mp), p, X)
+end
+
+@doc raw"""
+    get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
 
 evaluate the symmetric, positive definite preconditioner (approximation of the
 inverse of the Hessian of the cost function `F`) of a
-[`HessianProblem`](@ref) `p` at the point `x`applied to a
-tangent vector `ξ`.
+[`ManifoldHessianObjective`](@ref) `mho` at the point `p` applied to a
+tangent vector `X`.
 """
-get_preconditioner(p::HessianProblem, x, X) = p.precon(p.M, x, X)
+function get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
+    return mho.preconditioner(M, p, X)
+end
 
 @doc raw"""
     ApproxHessianFiniteDifference{T, mT, P, G}
@@ -76,15 +104,15 @@ A functor to approximate the Hessian by a finite difference of gradient evaluati
 
 # Constructor
 
-    ApproxHessianFiniteDifference(M, x, gradF)
+    ApproxHessianFiniteDifference(M, p, grad_f; kwargs...)
 
-Initialize the approximate hessian to combute ``\operatorname{Hess}F`` based on the gradient
-`gradF` of a function ``F`` on ``\mathcal M``.
-The value `x` is used to initialize a few internal fields.
+Initialize the approximate hessian to compute ``\operatorname{Hess}f`` based on the gradient
+gradient `grad_f(M, p)` of a function ``f`` on `M`.
 
 ## Optional Keyword arguments
 
-* `steplength` - (`2^-14`) default step size for the approximation
+* `tangent_vector` – (`zero_vector(M,p)`) specify the tangent vector type to be used indernally
+* `steplength` - (`2*1e-14`) default step size for the approximation
 * `evaluation` - ([`AllocatingEvaluation`](@ref)`()`) specify whether the gradient is allocating or mutating.
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use in the approximation.
 * `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
@@ -100,9 +128,9 @@ mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
 end
 function ApproxHessianFiniteDifference(
     M::mT,
-    x::P,
-    grad::G;
-    steplength::R=2^-14,
+    p::P,
+    grad_f::G;
+    tangent_vector=zero_vector(M, p)steplength::R = 4e-14,
     evaluation=AllocatingEvaluation(),
     retraction_method::RTR=default_retraction_method(M),
     vector_transport_method::VTR=default_vector_transport_method(M),
@@ -114,10 +142,10 @@ function ApproxHessianFiniteDifference(
     RTR<:AbstractRetractionMethod,
     VTR<:AbstractVectorTransportMethod,
 }
-    X = zero_vector(M, x)
-    Y = zero_vector(M, x)
+    X = copy(M, p, tangent_vector)
+    Y = copy(M, p, tangent_vector)
     return ApproxHessianFiniteDifference{typeof(evaluation),P,typeof(X),G,RTR,VTR,R}(
-        x, grad, X, Y, retraction_method, vector_transport_method, steplength
+        p, grad_f, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
 function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
@@ -227,9 +255,9 @@ mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
     StopIfResidualIsReducedByPower(θ::Float64) = new(θ, "")
 end
 function (c::StopIfResidualIsReducedByPower)(
-    p::HessianProblem, s::TruncatedConjugateGradientState, i
+    p::HessianProblem, tcgs::TruncatedConjugateGradientState, i
 )
-    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm^(1 + c.θ) && i > 0
+    if norm(p.M, tcgs.x, tcgs.residual) <= tcgs.initialResidualNorm^(1 + c.θ) && i > 0
         c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
         return true
     end
