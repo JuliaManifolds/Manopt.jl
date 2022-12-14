@@ -22,8 +22,10 @@ using Manopt, ManifoldsBase, Test
     tcgo.residual = zeros(2)
     sf = StopIfResidualIsReducedByFactor(1.0)
     @test !sf(hp, tcgo, 0)
+    @test sf(hp, tcgo, 1)
     sp = StopIfResidualIsReducedByPower(1.0)
     @test !sp(hp, tcgo, 0)
+    @test sp(hp, tcgo, 1)
     update_stopping_criterion!(sp, :ResidualPower, 0.5)
     @test sp.θ == 0.5
 end
