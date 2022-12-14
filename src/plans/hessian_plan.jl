@@ -1,304 +1,36 @@
 
 @doc raw"""
-    HessianProblem <:AbstractManoptProblem
+    ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldGradientObjective{T}
 
 specify a problem for hessian based algorithms.
 
 # Fields
-* `M`            : a manifold $\mathcal M$
+
 * `cost` : a function $F:\mathcal M→ℝ$ to minimize
 * `gradient`     : the gradient $\operatorname{grad}F:\mathcal M
   → \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}F(x)[⋅]: \mathcal T_{x} \mathcal M
   → \mathcal T_{x} \mathcal M$ of the cost function $F$
-* `precon`       : the symmetric, positive definite
+* `preconditioner`       : the symmetric, positive definite
     preconditioner (approximation of the inverse of the Hessian of $F$)
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct HessianProblem{T<:AbstractEvaluationType,mT,C,G,H,Pre} <: AbstractManoptProblem{mT}
-    M::mT
+struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldGradientObjective{T}
     cost::C
     gradient!!::G
     hessian!!::H
-    precon::Pre
-    function HessianProblem(
-        M::mT,
+    preconditioner::Pre
+    function ManifoldHessianObjective(
         cost::C,
         grad::G,
         hess::H,
         pre::Pre;
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:AbstractManifold,C,G,H,Pre}
-        return new{typeof(evaluation),mT,C,G,H,Pre}(M, cost, grad, hess, pre)
+    ) where {C,G,H,Pre}
+        return new{typeof(evaluation),C,G,H,Pre}(M, cost, grad, hess, pre)
     end
-end
-
-@doc raw"""
-    AbstractHessianOSolverptions <: AbstractManoptSolverState
-
-An [`AbstractManoptSolverState`](@ref) type to represent algorithms that employ the Hessian.
-These options are assumed to have a field (`gradient`) to store the current gradient ``\operatorname{grad}f(x)``
-"""
-abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
-
-@doc raw"""
-    TruncatedConjugateGradientState <: AbstractHessianSolverState
-
-describe the Steihaug-Toint truncated conjugate-gradient method, with
-
-# Fields
-a default value is given in brackets if a parameter can be left out in initialization.
-
-* `x` : a point, where the trust-region subproblem needs
-    to be solved
-* `η` : a tangent vector (called update vector), which solves the
-    trust-region subproblem after successful calculation by the algorithm
-* `stop` : a [`StoppingCriterion`](@ref).
-* `gradient` : the gradient at the current iterate
-* `δ` : search direction
-* `trust_region_radius` : (`injectivity_radius(M)/4`) the trust-region radius
-* `residual` : the gradient
-* `randomize` : indicates if the trust-region solve and so the algorithm is to be
-        initiated with a random tangent vector. If set to true, no
-        preconditioner will be used. This option is set to true in some
-        scenarios to escape saddle points, but is otherwise seldom activated.
-* `project!` : (`copyto!`) specify a projection operation for tangent vectors
-    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
-    per default, no projection is perfomed, set it to `project!` to activate projection.
-
-# Constructor
-
-    TruncatedConjugateGradientState(M, p, x, η;
-        trust_region_radius=injectivity_radius(M)/4,
-        randomize=false,
-        θ=1.0,
-        κ=0.1,
-        project! = copyto!,
-    )
-
-    and a slightly involved `stopping_criterion`
-
-# See also
-[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
-"""
-mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion,Proj} <:
-               AbstractHessianSolverState
-    x::P
-    stop::SC
-    gradient::T
-    η::T
-    Hη::T
-    δ::T
-    Hδ::T
-    δHδ::R
-    ηPδ::R
-    δPδ::R
-    ηPη::R
-    z::T
-    z_r::R
-    residual::T
-    trust_region_radius::R
-    model_value::R
-    new_model_value::R
-    κ::R
-    randomize::Bool
-    project!::Proj
-    initialResidualNorm::Float64
-    function TruncatedConjugateGradientState(
-        p::HessianProblem,
-        x::P,
-        η::T,
-        trust_region_radius::R,
-        randomize::Bool;
-        project!::Proj=copyto!,
-        θ::Float64=1.0,
-        κ::Float64=0.1,
-        stop::StoppingCriterion=StopWhenAny(
-            StopAfterIteration(manifold_dimension(p.M)),
-            StopWhenAll(
-                StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
-            ),
-            StopWhenTrustRegionIsExceeded(),
-            StopWhenCurvatureIsNegative(),
-            StopWhenModelIncreased(),
-        ),
-    ) where {P,T,R<:Real,Proj}
-        return TruncatedConjugateGradientState(
-            p.M,
-            x,
-            η;
-            trust_region_radius=trust_region_radius,
-            (project!)=project!,
-            randomize=randomize,
-            θ=θ,
-            κ=κ,
-            stopping_criterion=stop,
-        )
-    end
-    function TruncatedConjugateGradientState(
-        M::AbstractManifold,
-        x::P,
-        η::T;
-        trust_region_radius::R=injectivity_radius(M) / 4.0,
-        randomize::Bool=false,
-        project!::F=copyto!,
-        θ::Float64=1.0,
-        κ::Float64=0.1,
-        stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
-                                              (
-                                                  StopIfResidualIsReducedByPower(θ) &
-                                                  StopIfResidualIsReducedByFactor(κ)
-                                              ) |
-                                              StopWhenTrustRegionIsExceeded() |
-                                              StopWhenCurvatureIsNegative() |
-                                              StopWhenModelIncreased(),
-    ) where {P,T,R<:Real,F}
-        o = new{P,T,R,typeof(stopping_criterion),F}()
-        o.x = x
-        o.stop = stopping_criterion
-        o.η = η
-        o.trust_region_radius = trust_region_radius
-        o.randomize = randomize
-        o.project! = project!
-        o.model_value = zero(trust_region_radius)
-        o.κ = zero(trust_region_radius)
-        return o
-    end
-end
-
-@doc raw"""
-    TrustRegionsState <: AbstractHessianSolverState
-
-describe the trust-regions solver, with
-
-
-# Fields
-where all but `x` are keyword arguments in the constructor
-
-* `x` : a point as starting point
-* `stop` : (`StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6))
-* `trust_region_radius` : the (initial) trust-region radius
-* `max_trust_region_radius` : (`sqrt(manifold_dimension(M))`) the maximum trust-region radius
-* `randomize` : (`false`) indicates if the trust-region solve is to be initiated with a
-        random tangent vector. If set to true, no preconditioner will be
-        used. This option is set to true in some scenarios to escape saddle
-        points, but is otherwise seldom activated.
-* `project!` : (`copyto!`) specify a projection operation for tangent vectors
-    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
-    per default, no projection is perfomed, set it to `project!` to activate projection.
-* `ρ_prime` : (`0.1`) a lower bound of the performance ratio for the iterate that
-        decides if the iteration will be accepted or not. If not, the
-        trust-region radius will have been decreased. To ensure this,
-        ρ'>= 0 must be strictly smaller than 1/4. If ρ' is negative,
-        the algorithm is not guaranteed to produce monotonically decreasing
-        cost values. It is strongly recommended to set ρ' > 0, to aid
-        convergence.
-* `ρ_regularization` : (`10000.0`) Close to convergence, evaluating the performance ratio ρ
-        is numerically challenging. Meanwhile, close to convergence, the
-        quadratic model should be a good fit and the steps should be
-        accepted. Regularization lets ρ go to 1 as the model decrease and
-        the actual decrease go to zero. Set this option to zero to disable
-        regularization (not recommended). When this is not zero, it may happen
-        that the iterates produced are not monotonically improving the cost
-        when very close to convergence. This is because the corrected cost
-        improvement could change sign if it is negative but very small.
-
-# Constructor
-
-    TrustRegionsState(M, x)
-
-construct a trust-regions Option with all other fields from above being
-keyword arguments
-
-# See also
-[`trust_regions`](@ref)
-"""
-mutable struct TrustRegionsState{
-    P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj
-} <: AbstractHessianSolverState
-    x::P
-    gradient::T
-    stop::SC
-    trust_region_radius::R
-    max_trust_region_radius::R
-    retraction_method::RTR
-    randomize::Bool
-    project!::Proj
-    ρ_prime::R
-    ρ_regularization::R
-
-    tcg_options::TruncatedConjugateGradientState{P,T,R}
-
-    x_proposal::P
-    f_proposal::R
-    # Random
-    Hgrad::T
-    η::T
-    Hη::T
-    η_Cauchy::T
-    Hη_Cauchy::T
-    τ::R
-    function TrustRegionsState{P,T,SC,RTR,R,Proj}(
-        x::P,
-        grad::T,
-        trust_region_radius::R,
-        max_trust_region_radius::R,
-        ρ_prime::R,
-        ρ_regularization::R,
-        randomize::Bool,
-        stopping_citerion::SC,
-        retraction_method::RTR,
-        project!::Proj=copyto!,
-    ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
-        o = new{P,T,SC,RTR,R,Proj}()
-        o.x = x
-        o.gradient = grad
-        o.stop = stopping_citerion
-        o.retraction_method = retraction_method
-        o.trust_region_radius = trust_region_radius
-        o.max_trust_region_radius = max_trust_region_radius::R
-        o.ρ_prime = ρ_prime
-        o.ρ_regularization = ρ_regularization
-        o.randomize = randomize
-        o.project! = project!
-        return o
-    end
-end
-function TrustRegionsState(
-    M::TM,
-    x::P;
-    gradient::T=zero_vector(M, x),
-    ρ_prime::R=0.1,
-    ρ_regularization::R=1000.0,
-    randomize::Bool=false,
-    stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
-    max_trust_region_radius::R=sqrt(manifold_dimension(M)),
-    trust_region_radius::R=max_trust_region_radius / 8,
-    retraction_method::RTR=default_retraction_method(M),
-    project!::Proj=copyto!,
-) where {
-    TM<:AbstractManifold,
-    P,
-    T,
-    R<:Real,
-    SC<:StoppingCriterion,
-    RTR<:AbstractRetractionMethod,
-    Proj,
-}
-    return TrustRegionsState{P,T,SC,RTR,R,Proj}(
-        x,
-        gradient,
-        trust_region_radius,
-        max_trust_region_radius,
-        ρ_prime,
-        ρ_regularization,
-        randomize,
-        stopping_criterion,
-        retraction_method,
-        project!,
-    )
 end
 
 @doc raw"""
@@ -413,6 +145,14 @@ function (f::ApproxHessianFiniteDifference{InplaceEvaluation})(M, Y, x, X)
     Y .= (1 / c) .* (f.grad_tmp_dir .- f.grad_tmp)
     return Y
 end
+
+@doc raw"""
+    AbstractHessianOSolverptions <: AbstractManoptSolverState
+
+An [`AbstractManoptSolverState`](@ref) type to represent algorithms that employ the Hessian.
+These options are assumed to have a field (`gradient`) to store the current gradient ``\operatorname{grad}f(x)``
+"""
+abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 
 @doc raw"""
     StopIfResidualIsReducedByFactor <: StoppingCriterion

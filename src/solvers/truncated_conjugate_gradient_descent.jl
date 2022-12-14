@@ -1,3 +1,129 @@
+
+@doc raw"""
+    TruncatedConjugateGradientState <: AbstractHessianSolverState
+
+describe the Steihaug-Toint truncated conjugate-gradient method, with
+
+# Fields
+a default value is given in brackets if a parameter can be left out in initialization.
+
+* `x` : a point, where the trust-region subproblem needs
+    to be solved
+* `η` : a tangent vector (called update vector), which solves the
+    trust-region subproblem after successful calculation by the algorithm
+* `stop` : a [`StoppingCriterion`](@ref).
+* `gradient` : the gradient at the current iterate
+* `δ` : search direction
+* `trust_region_radius` : (`injectivity_radius(M)/4`) the trust-region radius
+* `residual` : the gradient
+* `randomize` : indicates if the trust-region solve and so the algorithm is to be
+        initiated with a random tangent vector. If set to true, no
+        preconditioner will be used. This option is set to true in some
+        scenarios to escape saddle points, but is otherwise seldom activated.
+* `project!` : (`copyto!`) specify a projection operation for tangent vectors
+    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
+    per default, no projection is perfomed, set it to `project!` to activate projection.
+
+# Constructor
+
+    TruncatedConjugateGradientState(M, p, x, η;
+        trust_region_radius=injectivity_radius(M)/4,
+        randomize=false,
+        θ=1.0,
+        κ=0.1,
+        project! = copyto!,
+    )
+
+    and a slightly involved `stopping_criterion`
+
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion,Proj} <:
+               AbstractHessianSolverState
+    x::P
+    stop::SC
+    gradient::T
+    η::T
+    Hη::T
+    δ::T
+    Hδ::T
+    δHδ::R
+    ηPδ::R
+    δPδ::R
+    ηPη::R
+    z::T
+    z_r::R
+    residual::T
+    trust_region_radius::R
+    model_value::R
+    new_model_value::R
+    κ::R
+    randomize::Bool
+    project!::Proj
+    initialResidualNorm::Float64
+    function TruncatedConjugateGradientState(
+        p::HessianProblem,
+        x::P,
+        η::T,
+        trust_region_radius::R,
+        randomize::Bool;
+        project!::Proj=copyto!,
+        θ::Float64=1.0,
+        κ::Float64=0.1,
+        stop::StoppingCriterion=StopWhenAny(
+            StopAfterIteration(manifold_dimension(p.M)),
+            StopWhenAll(
+                StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
+            ),
+            StopWhenTrustRegionIsExceeded(),
+            StopWhenCurvatureIsNegative(),
+            StopWhenModelIncreased(),
+        ),
+    ) where {P,T,R<:Real,Proj}
+        return TruncatedConjugateGradientState(
+            p.M,
+            x,
+            η;
+            trust_region_radius=trust_region_radius,
+            (project!)=project!,
+            randomize=randomize,
+            θ=θ,
+            κ=κ,
+            stopping_criterion=stop,
+        )
+    end
+    function TruncatedConjugateGradientState(
+        M::AbstractManifold,
+        x::P,
+        η::T;
+        trust_region_radius::R=injectivity_radius(M) / 4.0,
+        randomize::Bool=false,
+        project!::F=copyto!,
+        θ::Float64=1.0,
+        κ::Float64=0.1,
+        stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
+                                              (
+                                                  StopIfResidualIsReducedByPower(θ) &
+                                                  StopIfResidualIsReducedByFactor(κ)
+                                              ) |
+                                              StopWhenTrustRegionIsExceeded() |
+                                              StopWhenCurvatureIsNegative() |
+                                              StopWhenModelIncreased(),
+    ) where {P,T,R<:Real,F}
+        o = new{P,T,R,typeof(stopping_criterion),F}()
+        o.x = x
+        o.stop = stopping_criterion
+        o.η = η
+        o.trust_region_radius = trust_region_radius
+        o.randomize = randomize
+        o.project! = project!
+        o.model_value = zero(trust_region_radius)
+        o.κ = zero(trust_region_radius)
+        return o
+    end
+end
+
 @doc raw"""
     truncated_conjugate_gradient_descent(M, F, gradF, x, η, HessF, trust_region_radius)
 

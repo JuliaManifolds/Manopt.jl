@@ -1,20 +1,19 @@
 @doc raw"""
-    SubGradientProblem <:AbstractManoptProblem
+    ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:AbstractManifoldCostObjective{T}
 
-A structure to store information about a subgradient based optimization problem
+A structure to store information about a objective for a subgradient based optimization problem
 
 # Fields
-* `manifold` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
 * `cost` – the function $F$ to be minimized
 * `subgradient` – a function returning a subgradient $\partial F$ of $F$
 
 # Constructor
 
-    SubGradientProblem(M, f, ∂f)
+    ManifoldSubgradientObjective(f, ∂f)
 
-Generate the [`Problem`] for a subgradient problem, i.e. a function `f` on the
-manifold `M` and a function `∂f` that returns an element from the subdifferential
-at a point.
+Generate the [`ManifoldSubgradientObjective`](@ref) for a subgradient objective, i.e.
+a (cost) function `f(M, p)` and a function `∂f(M, p)` that returns a not necessarily deterministic
+element from the subdifferential at `p` on a manifold `M`.
 """
 struct ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:
        AbstractManifoldCostObjective{T}
