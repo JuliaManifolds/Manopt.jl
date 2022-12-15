@@ -101,6 +101,7 @@ include("functions/proximal_maps.jl")
 include("solvers/solver.jl")
 # specific solvers
 include("solvers/augmented_Lagrangian_method.jl")
+# include("solvers/bundle_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
@@ -303,6 +304,8 @@ export DirectionUpdateRule,
 # Solvers
 export augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
+    bundle_method,
+    bundle_method!,
     ChambollePock,
     ChambollePock!,
     conjugate_gradient_descent,

@@ -33,7 +33,7 @@ end
     get_subgradient(p, q)
     get_subgradient!(p, X, q)
 
-Evaluate the (sub)gradient of a [`SubGradientProblem`](@ref)` p` at the point `q`.
+Evaluate the (sub)gradient of a [`SubGradientProblem`](@ref) `p` at the point `q`.
 
 The evaluation is done in place of `X` for the `!`-variant.
 The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
@@ -56,7 +56,7 @@ end
 
 """
     SubGradientMethodOptions <: Options
-stories option values for a [`subgradient_method`](@ref) solver
+stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 * `retraction_method` – the retration to use within
