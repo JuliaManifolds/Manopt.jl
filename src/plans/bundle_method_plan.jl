@@ -60,7 +60,9 @@ stores option values for a [`bundle_method`](@ref) solver
 
 # Fields
 
-* `L` - the bundle that comprises each iterate `p`` with the computed subgradient `∂` at the iterate
+* `J` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
+* `bundle_points` - collects each iterate `p` with the computed subgradient `∂` at the iterate
+* `m` - the parameter to test the decrease of the cost
 * `p` - current iterate
 * `p_last_serious` - last serious iterate
 * `retraction_method` – the retration to use within
@@ -69,8 +71,17 @@ stores option values for a [`bundle_method`](@ref) solver
 * `∂` the current element from the possible subgradients at `p` that is used
 """
 mutable struct BundleMethodOptions{
-    P,TR<:AbstractRetractionMethod,TSC<:StoppingCriterion,VT<:AbstractVectorTransportMethod
+    IR<:AbstractInverseRetractionMethod,
+    P,
+    T,
+    TR<:AbstractRetractionMethod,
+    TSC<:StoppingCriterion,
+    S,
+    VT<:AbstractVectorTransportMethod,
 } <: Options where {P,T}
+    bundle_points::Array{P,T}
+    inverse_retraction_method::IR
+    m::Real
     p::P
     p_last_serious::P
     retraction_method::TR
@@ -80,17 +91,32 @@ mutable struct BundleMethodOptions{
     function BundleMethodOptions(
         M::TM,
         p::P;
+        bundle_points::Array{P,T},
+        m::Real=0.0125,
+        inverse_retraction_method::IR=default_inverse_retraction_method(M),
         retraction_method::TR=default_retraction_method(M),
         stopping_criterion::SC=StopAfterIteration(5000),
+        subgrad::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M),
-    ) where {TM<:AbstractManifold,P,TR<:AbstractRetractionMethod,SC<:StoppingCriterion,VT<:AbstractVectorTransportMethod}
-        return new{P,TR,SC,VT,T}(
+    ) where {
+        TM<:AbstractManifold,
+        P,
+        TR<:AbstractRetractionMethod,
+        S,
+        SC<:StoppingCriterion,
+        VT<:AbstractVectorTransportMethod,
+    }
+        return new{S,Array{P,T},P,TR,SC,VT,T}(
+            J,
+            bundle_points,
             p,
             deepcopy(p),
+            m,
+            inverse_retraction_method,
             retraction_method,
             stopping_criterion,
-            vector_transport_method,
             subgrad,
+            vector_transport_method,
         )
     end
 end

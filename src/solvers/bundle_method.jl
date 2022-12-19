@@ -74,18 +74,31 @@ function bundle_method!(
     return get_solver_return(solve(prb, o))
 end
 function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
-    o.p_last_serious = o.p
-    o.∂ = zero_vector(p.M, o.p)
+    o.p_last_serious = o.bundle_point[1,1]
+    o.∂ = zero_vector(prb.M, o.bundle_point[1,1])
+    o.J = Set(1) # initialize index set
+    o.bundle_point = [o.p, o.∂]
+    o.lin_errors = [0]
     return o
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     get_subgradient!(prb, o.∂, o.p)
-    # compute a solution λ of the minimization subproblem
-    # vector_transport_to!(prb.M, g, o.p, o.∂, o.p_last_serious, o.vector_transport_method)
-
-    retract!(prb.M, o.p, o.p, -o.∂, o.retraction_method)
-    (get_cost(prb, o.p) < get_cost(prb, o.p_last_serious)) &&
-        (o.p_last_serious = o.p)
+    o.bundle_point = hcat([o.bundle_point],[o.p, o.∂])
+    # compute a solution λ of the minimization subproblem with some other solver
+    g = sum(λ.* [vector_transport_to!(prb.M, o.bundle_point[1,j], o.bundle_point[2,j], o.p_last_serious, o.vector_transport_method) for j in o.J])
+    ε = sum(λ.* o.lin_errors)
+    δ = - norm(prb.M, o.p, o.∂)^2 - ε
+    if δ == 0
+        return o
+    end
+    (get_cost(prb, o.p) <= get_cost(prb, o.p_last_serious) + m*δ) && (o.p_last_serious = retract(M, o.p_last_serious, -g, o.retraction_method))
+    o.J_positive = intersect(o.J,Set(findall(j -> j > 0, λ)))
+    o.J = union(o.J_positive, iter+1)
+    o.lin_errors = []
+    for j in o.J
+        push!(o.lin_errors, get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_point[1,j]) - inner(TangentSpace(prb.M,o.bundle_point[1,j]), o.bundle_point[1,j], o.bundle_point[2,j], inverse_retract(prb.M, o.bundle_point[1,j], o.p_last_serious, o.inverse_retraction_method)))
+    end
+    o.bundle_point = hcat(o.bundle_point,[o.p_last_serious, o.∂])
     return o
 end
 get_solver_result(o::BundleMethodOptions) = o.p_last_serious
