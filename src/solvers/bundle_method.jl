@@ -87,16 +87,16 @@ function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
     # o.lin_errors = [0]
     return o
 end
-function convex_subsolver(J, lin_errs, X)
-    using Convex, SCS
-    λ = Variable(length(J))
-    problem = minimize(0.5 * sumsquares(λ .* X) + sum(λ .* lin_errs))
-    problem.constraints += [i >= 0 for i in λ]
-    problem.constraints += [sum(λ) == 1]
-    solve!(problem, SCS.Optimizer; silent_solver=true)
-    # Check the status of the problem
-    problem.status # :Optimal, :Infeasible, :Unbounded etc.
-    return evaluate(λ)
+using JuMP, COSMO, Ipopt
+function jump_subsolver(J, lin_errs, X)
+    vector_model = Model(COSMO.Optimizer)#, add_bridges = false) -- Removing bridges breaks this
+    set_optimizer_attribute(vector_model, "verbose", false)
+    @variable(vector_model, λ[1:length(J)])
+    @constraint(vector_model, λ .>= 0)
+    @constraint(vector_model, sum(λ) == 1)
+    @objective(vector_model, Min, 0.5 * (sum(λ .* X))^2 + sum(λ .* lin_errs))
+    optimize!(vector_model)
+    return value.(λ), objective_value(vector_model)
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     get_subgradient!(prb, o.∂, o.p)
@@ -108,10 +108,10 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
             o.bundle_points[2, j],
             o.p_last_serious,
             o.vector_transport_method,
-        ) for j in o.J
+        ) for j in 1:length(o.J)
     ]
     # compute a solution λ of the minimization subproblem with some other solver
-    λ = convex_subsolver(o.J, o.lin_errors, transported_subgrads)
+    λ = jump_subsolver(o.J, o.lin_errors, transported_subgrads)
     g = sum(λ .* transported_subgrads)
     ε = sum(λ .* o.lin_errors)
     δ = -norm(prb.M, o.p, o.∂)^2 - ε
@@ -130,7 +130,7 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     J_positive = intersect(o.J, Set(findall(j -> j > 0, λ)))
     o.J = union(J_positive, iter + 1)
     o.lin_errors = []
-    for j in o.J
+    for j in 1:length(o.J)
         push!(
             o.lin_errors,
             get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_points[1, j]) - inner(

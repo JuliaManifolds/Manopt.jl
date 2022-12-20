@@ -105,6 +105,7 @@ mutable struct BundleMethodOptions{
         tol::Real=1e-8,
         vector_transport_method::VT=default_vector_transport_method(M),
     ) where {
+        IR<:AbstractInverseRetractionMethod,
         TM<:AbstractManifold,
         P,
         TR<:AbstractRetractionMethod,
@@ -114,7 +115,7 @@ mutable struct BundleMethodOptions{
         bundle_points = [p, subgrad]
         J = Set(1)
         lin_errors = [0]
-        return new{typeof(J),typeof(bundle_points),typeof(lin_errors),P,TR,SC,VT,T}(
+        return new{typeof(J),typeof(bundle_points),typeof(lin_errors),P,IR,TR,SC,T,VT}(
             J,
             bundle_points,
             lin_errors,
