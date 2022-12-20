@@ -62,6 +62,7 @@ stores option values for a [`bundle_method`](@ref) solver
 
 * `J` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
 * `bundle_points` - collects each iterate `p` with the computed subgradient `∂` at the iterate
+* `lin_errors` - linearization errors at the last serious step
 * `m` - the parameter to test the decrease of the cost
 * `p` - current iterate
 * `p_last_serious` - last serious iterate
@@ -71,7 +72,9 @@ stores option values for a [`bundle_method`](@ref) solver
 * `∂` the current element from the possible subgradients at `p` that is used
 """
 mutable struct BundleMethodOptions{
+    A,
     IR<:AbstractInverseRetractionMethod,
+    L,
     P,
     T,
     TR<:AbstractRetractionMethod,
@@ -79,36 +82,42 @@ mutable struct BundleMethodOptions{
     S,
     VT<:AbstractVectorTransportMethod,
 } <: Options where {P,T}
-    bundle_points::Array{P,T}
+    bundle_points::A
     inverse_retraction_method::IR
+    J::S
+    lin_errors::L
     m::Real
     p::P
     p_last_serious::P
     retraction_method::TR
     stop::TSC
+    tol::Real
     vector_transport_method::VT
     ∂::T
     function BundleMethodOptions(
         M::TM,
         p::P;
-        bundle_points::Array{P,T},
         m::Real=0.0125,
         inverse_retraction_method::IR=default_inverse_retraction_method(M),
         retraction_method::TR=default_retraction_method(M),
         stopping_criterion::SC=StopAfterIteration(5000),
         subgrad::T=zero_vector(M, p),
+        tol::Real=1e-8,
         vector_transport_method::VT=default_vector_transport_method(M),
     ) where {
         TM<:AbstractManifold,
         P,
         TR<:AbstractRetractionMethod,
-        S,
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
     }
-        return new{S,Array{P,T},P,TR,SC,VT,T}(
+        bundle_points = [p, subgrad]
+        J = Set(1)
+        lin_errors = [0]
+        return new{typeof(J),typeof(bundle_points),typeof(lin_errors),P,TR,SC,VT,T}(
             J,
             bundle_points,
+            lin_errors,
             p,
             deepcopy(p),
             m,
@@ -116,6 +125,7 @@ mutable struct BundleMethodOptions{
             retraction_method,
             stopping_criterion,
             subgrad,
+            tol,
             vector_transport_method,
         )
     end

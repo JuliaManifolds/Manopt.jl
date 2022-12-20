@@ -56,8 +56,11 @@ function bundle_method!(
     F::TF,
     ∂F!!::TdF,
     p;
+    m::Real=0.0125,
+    inverse_retraction_method::IR=default_inverse_retraction_method(M),
     retraction_method::TRetr=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
+    tol::Real=1e-10,
     vector_transport_method::VTransp=default_vector_transport_method(M),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #especially may contain debug
@@ -66,63 +69,83 @@ function bundle_method!(
     o = BundleMethodOptions(
         M,
         p;
+        m=m,
+        inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
+        tol=tol,
         vector_transport_method=vector_transport_method,
     )
     o = decorate_options(o; kwargs...)
     return get_solver_return(solve(prb, o))
 end
 function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
-    o.p_last_serious = o.bundle_point[1, 1]
-    o.∂ = zero_vector(prb.M, o.bundle_point[1, 1])
-    o.J = Set(1) # initialize index set
-    o.bundle_point = [o.p, o.∂]
-    o.lin_errors = [0]
+    o.p_last_serious = o.bundle_points[1, 1]
+    o.∂ = zero_vector(prb.M, o.bundle_points[1, 1])
+    # o.J = Set(1) # initialize index set
+    # o.bundle_points = [o.p, o.∂]
+    # o.lin_errors = [0]
     return o
+end
+function convex_subsolver(J, lin_errs, X)
+    using Convex, SCS
+    λ = Variable(length(J))
+    problem = minimize(0.5 * sumsquares(λ .* X) + sum(λ .* lin_errs))
+    problem.constraints += [i >= 0 for i in λ]
+    problem.constraints += [sum(λ) == 1]
+    solve!(problem, SCS.Optimizer; silent_solver=true)
+    # Check the status of the problem
+    problem.status # :Optimal, :Infeasible, :Unbounded etc.
+    return evaluate(λ)
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     get_subgradient!(prb, o.∂, o.p)
-    o.bundle_point = hcat([o.bundle_point], [o.p, o.∂])
+    o.bundle_points = hcat([o.bundle_points], [o.p, o.∂])
+    transported_subgrads = [
+        vector_transport_to!(
+            prb.M,
+            o.bundle_points[1, j],
+            o.bundle_points[2, j],
+            o.p_last_serious,
+            o.vector_transport_method,
+        ) for j in o.J
+    ]
     # compute a solution λ of the minimization subproblem with some other solver
-    g = sum(
-        λ .* [
-            vector_transport_to!(
-                prb.M,
-                o.bundle_point[1, j],
-                o.bundle_point[2, j],
-                o.p_last_serious,
-                o.vector_transport_method,
-            ) for j in o.J
-        ],
-    )
+    λ = convex_subsolver(o.J, o.lin_errors, transported_subgrads)
+    g = sum(λ .* transported_subgrads)
     ε = sum(λ .* o.lin_errors)
     δ = -norm(prb.M, o.p, o.∂)^2 - ε
-    if δ == 0
+    if δ <= o.tol
         return o
+    else
+        q = retract(M, o.p_last_serious, -g, o.retraction_method)
+        ∂_q = get_subgradient(prb, o.∂, q) # not sure about this
+        if get_cost(prb, q) <= (get_cost(prb, o.p_last_serious) + o.m * δ)
+            o.p_last_serious = q
+            o.bundle_points = hcat(o.bundle_points, [o.p_last_serious, ∂_q])
+        else
+            o.bundle_points = hcat(o.bundle_points, [q, ∂_q])
+        end
     end
-    (get_cost(prb, o.p) <= get_cost(prb, o.p_last_serious) + m * δ) &&
-        (o.p_last_serious = retract(M, o.p_last_serious, -g, o.retraction_method))
-    o.J_positive = intersect(o.J, Set(findall(j -> j > 0, λ)))
-    o.J = union(o.J_positive, iter + 1)
+    J_positive = intersect(o.J, Set(findall(j -> j > 0, λ)))
+    o.J = union(J_positive, iter + 1)
     o.lin_errors = []
     for j in o.J
         push!(
             o.lin_errors,
-            get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_point[1, j]) - inner(
-                TangentSpace(prb.M, o.bundle_point[1, j]),
-                o.bundle_point[1, j],
-                o.bundle_point[2, j],
+            get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_points[1, j]) - inner(
+                prb.M,
+                o.bundle_points[1, j],
+                o.bundle_points[2, j],
                 inverse_retract(
                     prb.M,
-                    o.bundle_point[1, j],
+                    o.bundle_points[1, j],
                     o.p_last_serious,
                     o.inverse_retraction_method,
                 ),
             ),
         )
     end
-    o.bundle_point = hcat(o.bundle_point, [o.p_last_serious, o.∂])
     return o
 end
 get_solver_result(o::BundleMethodOptions) = o.p_last_serious
