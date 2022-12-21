@@ -5,6 +5,8 @@ module Manopt
 using Colors
 using ColorSchemes
 using ColorTypes
+using COSMO
+using JuMP
 using Markdown
 using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
 using Dates: Period, Nanosecond, value, Millisecond, canonicalize
@@ -101,7 +103,7 @@ include("functions/proximal_maps.jl")
 include("solvers/solver.jl")
 # specific solvers
 include("solvers/augmented_Lagrangian_method.jl")
-# include("solvers/bundle_method.jl")
+include("solvers/bundle_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
