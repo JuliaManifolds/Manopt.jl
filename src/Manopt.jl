@@ -338,7 +338,8 @@ export augmented_Lagrangian_method,
 export decorate_options
 export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
 export solve
-export ApproxHessianFiniteDifference
+export ApproxHessianFiniteDifference,
+    ApproxHessianSymmetricRankOne, ApproxHessianBFGS, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 #
 # Stepsize
@@ -349,6 +350,7 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 # Stopping Criteria
 export StopIfResidualIsReducedByFactor,
     StopIfResidualIsReducedByPower,
+    StopIfResidualIsReducedByFactorOrPower,
     StopWhenCurvatureIsNegative,
     StopWhenSmallerOrEqual,
     StopWhenTrustRegionIsExceeded,

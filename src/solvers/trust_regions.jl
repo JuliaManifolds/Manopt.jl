@@ -56,6 +56,22 @@ For a description of the algorithm and more details see
   that the iterates produced are not monotonically improving the cost
   when very close to convergence. This is because the corrected cost
   improvement could change sign if it is negative but very small.
+* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method
+    [`truncated_conjugate_gradient_descent`](@ref), which computes an
+    approximate solution for the trust-region subproblem. The tCG-method aborts
+    if the residual is less than or equal to the initial residual to the power of 1+θ.
+* `κ` – (`0.1`) the linear convergence target rate of the tCG-method
+    [`truncated_conjugate_gradient_descent`](@ref), which computes an
+    approximate solution for the trust-region subproblem. The method aborts if the
+    residual is less than or equal to κ times the initial residual.
+* `η_1` – (`0.1`) Trust-region reduction threshold: if ρ (the performance ratio for
+    the iterate) is less than η_1, the trust-region radius and thus the trust-regions
+    decreases.
+* `η_2` – (`0.75`) Trust-region augmentation threshold: if ρ (the performance ratio for
+    the iterate) is greater than η_2 and further conditions apply, the trust-region radius and thus the trust-regions increases.
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
+  complete [`Options`](@ref) are returned. This can be used to access recorded values.
+  If set to false (default) just the optimal value `x_opt` is returned
 
 # Output
 
@@ -101,6 +117,10 @@ function trust_regions!(
     project!::Proj=copyto!,
     ρ_prime::Float64=0.1,
     ρ_regularization=1000.0,
+    θ::Float64=1.0,
+    κ::Float64=0.1,
+    η_1::Float64=0.1,
+    η_2::Float64=0.75,
     kwargs..., #collect rest
 ) where {TF,TdF,TH,Tprec,Proj}
     (ρ_prime >= 0.25) && throw(
@@ -128,6 +148,10 @@ function trust_regions!(
         randomize=randomize,
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
+        θ=θ,
+        κ=κ,
+        η_1=η_1,
+        η_2=η_2,
         (project!)=project!,
     )
     o = decorate_options(o; kwargs...)
@@ -172,6 +196,13 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     o.tcg_options.x = o.x
     o.tcg_options.η = o.η
     o.tcg_options.trust_region_radius = o.trust_region_radius
+    o.tcg_options.stop = StopWhenAny(
+        StopAfterIteration(manifold_dimension(p.M)),
+        StopIfResidualIsReducedByFactorOrPower(; κ=o.κ, θ=o.θ),
+        StopWhenTrustRegionIsExceeded(),
+        StopWhenCurvatureIsNegative(),
+        StopWhenModelIncreased(),
+    )
     solve(p, o.tcg_options)
     #
     o.η = o.tcg_options.η
@@ -192,7 +223,7 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
         model_value =
             fx + inner(p.M, o.x, o.gradient, o.η) + 0.5 * inner(p.M, o.x, o.Hη, o.η)
         modle_value_Cauchy = fx
-        -o.τ * o.trust_region_radius * norm(p.M, o.x, o.gradient)
+        -o.τ * o.trust_region_radius * norm_grad
         +0.5 * o.τ^2 * o.trust_region_radius^2 / (norm_grad^2) *
         inner(p.M, o.x, o.Hgrad, o.gradient)
         if modle_value_Cauchy < model_value
@@ -208,21 +239,26 @@ function step_solver!(p::HessianProblem, o::TrustRegionsOptions, iter)
     ρden = -inner(p.M, o.x, o.η, o.gradient) - 0.5 * inner(p.M, o.x, o.η, o.Hη)
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
-    ρ = ρnum / ρden
+    ρ = (abs(ρnum / fx) < sqrt(eps(Float64))) ? 1 : ρnum / ρden # stability for small absolute relative model change
+
     model_decreased = ρden ≥ 0
+    # Update the Hessian approximation
+    update_hessian!(p.M, p.hessian!!, o.x, o.x_proposal, o.η)
     # Choose the new TR radius based on the model performance.
-    # If the actual decrease is smaller than 1/4 of the predicted decrease,
+    # If the actual decrease is smaller than η_1 of the predicted decrease,
     # then reduce the TR radius.
-    if ρ < 1 / 4 || !model_decreased || isnan(ρ)
+    if ρ < o.η_1 || !model_decreased || isnan(ρ)
         o.trust_region_radius /= 4
-    elseif ρ > 3 / 4 &&
+    elseif ρ > o.η_2 &&
         ((o.tcg_options.ηPη >= o.trust_region_radius^2) || (o.tcg_options.δHδ <= 0))
         o.trust_region_radius = min(2 * o.trust_region_radius, o.max_trust_region_radius)
     end
     # Choose to accept or reject the proposed step based on the model
     # performance. Note the strict inequality.
-    if model_decreased && ρ > o.ρ_prime
-        copyto!(p.M, o.x, o.x_proposal)
+    if model_decreased &&
+        (ρ > o.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
+        copyto!(o.x, o.x_proposal)
+        update_hessian_basis!(p.M, p.hessian!!, o.x)
     end
     return o
 end

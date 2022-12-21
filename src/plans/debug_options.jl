@@ -507,6 +507,7 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
     DebugWarnIfCostIncreases(warn::Symbol=:Once; tol=1e-13) = new(warn, Float64(Inf), tol)
 end
 function (d::DebugWarnIfCostIncreases)(p::Problem, o::Options, i::Int)
+    (i < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(o))
         if cost > d.old_cost + d.tol

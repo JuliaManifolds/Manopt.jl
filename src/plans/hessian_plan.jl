@@ -103,7 +103,6 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
     trust_region_radius::R
     model_value::R
     new_model_value::R
-    κ::R
     randomize::Bool
     project!::Proj
     initialResidualNorm::Float64
@@ -118,9 +117,7 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         κ::Float64=0.1,
         stop::StoppingCriterion=StopWhenAny(
             StopAfterIteration(manifold_dimension(p.M)),
-            StopWhenAll(
-                StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
-            ),
+            StopIfResidualIsReducedByFactorOrPower(; κ=κ, θ=θ),
             StopWhenTrustRegionIsExceeded(),
             StopWhenCurvatureIsNegative(),
             StopWhenModelIncreased(),
@@ -148,9 +145,8 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         θ::Float64=1.0,
         κ::Float64=0.1,
         stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
-                                              (
-                                                  StopIfResidualIsReducedByPower(θ) &
-                                                  StopIfResidualIsReducedByFactor(κ)
+                                              StopIfResidualIsReducedByFactorOrPower(;
+                                                  κ=κ, θ=θ
                                               ) |
                                               StopWhenTrustRegionIsExceeded() |
                                               StopWhenCurvatureIsNegative() |
@@ -164,7 +160,6 @@ mutable struct TruncatedConjugateGradientOptions{P,T,R<:Real,SC<:StoppingCriteri
         o.randomize = randomize
         o.project! = project!
         o.model_value = zero(trust_region_radius)
-        o.κ = zero(trust_region_radius)
         return o
     end
 end
@@ -232,6 +227,12 @@ mutable struct TrustRegionsOptions{
 
     tcg_options::TruncatedConjugateGradientOptions{P,T,R}
 
+    θ::R
+    κ::R
+
+    η_1::R
+    η_2::R
+
     x_proposal::P
     f_proposal::R
     # Random
@@ -251,6 +252,10 @@ mutable struct TrustRegionsOptions{
         randomize::Bool,
         stopping_citerion::SC,
         retraction_method::RTR,
+        θ::R,
+        κ::R,
+        η_1::R,
+        η_2::R,
         project!::Proj=copyto!,
     ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
         o = new{P,T,SC,RTR,R,Proj}()
@@ -263,6 +268,10 @@ mutable struct TrustRegionsOptions{
         o.ρ_prime = ρ_prime
         o.ρ_regularization = ρ_regularization
         o.randomize = randomize
+        o.θ = θ
+        o.κ = κ
+        o.η_1 = η_1
+        o.η_2 = η_2
         o.project! = project!
         return o
     end
@@ -277,6 +286,10 @@ end
     randomize,
     stopping_criterion;
     retraction_method=ExponentialRetraction(),
+    θ,
+    κ,
+    η_1,
+    η_2,
     (project!)=copyto!,
 ) TrustRegionsOptions(
     DefaultManifold(2),
@@ -287,6 +300,10 @@ end
     randomize=randomize,
     stopping_criterion=stopping_criterion,
     retraction_method=retraction_method,
+    θ=θ,
+    κ=κ,
+    η_1=η_1,
+    η_2=η_2,
     (project!)=project!,
 )
 function TrustRegionsOptions(
@@ -300,6 +317,10 @@ function TrustRegionsOptions(
     max_trust_region_radius::R=sqrt(manifold_dimension(M)),
     trust_region_radius::R=max_trust_region_radius / 8,
     retraction_method::RTR=default_retraction_method(M),
+    θ::R=1.0,
+    κ::R=0.1,
+    η_1::R=0.1,
+    η_2::R=0.75,
     project!::Proj=copyto!,
 ) where {
     TM<:AbstractManifold,
@@ -320,6 +341,10 @@ function TrustRegionsOptions(
         randomize,
         stopping_criterion,
         retraction_method,
+        θ,
+        κ,
+        η_1,
+        η_2,
         project!,
     )
 end
@@ -361,27 +386,48 @@ tangent vector `ξ`.
 get_preconditioner(p::HessianProblem, x, X) = p.precon(p.M, x, X)
 
 @doc raw"""
-    ApproxHessianFiniteDifference{T, mT, P, G}
+    ApproxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real}
 
-A functor to approximate the Hessian by a finite difference of gradient evaluations
+A functor to approximate the Hessian by a finite difference of gradient evaluation.
+
+Given a point `p` and a direction `X` and the gradient ``\operatorname{grad}F: \mathcal M \to T\mathcal M``
+of a function ``F`` the Hessian is approximated as follows:
+Let ``c`` be a stepsize, ``X∈ T_p\mathcal M`` a tangent vector and ``q = \operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)``
+be a step in direction ``X`` of length ``c`` following a retraction
+Then we approximate the Hessian by the finite difference of the gradients, where ``\mathcal T_{\cdot\gets\cdot}`` is a vector transport.
+
+```math
+\operatorname{Hess}F(p)[X]
+ ≈
+\frac{\lVert X \rVert_p}{c}\Bigl( \mathcal T_{p\gets q}\bigr(\operatorname{grad}F(q)\bigl) - \operatorname{grad}F(p)\Bigl)
+```
+
+ # Fields
+
+* `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter)
+* `step_length` a step length for the finite difference
+* `retraction_method` - a retraction to use
+* `vector_transport_method` a vector transport to use
+
+## Internal temporary fields
+
+* `grad_tmp` a temporary storage for the gradient at the current `p`
+* `grad_dir_tmp` a temporary storage for the gradient at the current `p_dir`
+* `p_dir::P` a temporary storage to the forward direction (i.e. ``q`` above)
 
 # Constructor
 
-    ApproxHessianFiniteDifference(M, x, gradF)
+    ApproximateFiniteDifference(M, p, gradF; kwargs...)
 
-Initialize the approximate hessian to combute ``\operatorname{Hess}F`` based on the gradient
-`gradF` of a function ``F`` on ``\mathcal M``.
-The value `x` is used to initialize a few internal fields.
+## Keyword arguments
 
-## Optional Keyword arguments
-
-* `steplength` - (`2^-14`) default step size for the approximation
-* `evaluation` - ([`AllocatingEvaluation`](@ref)`()`) specify whether the gradient is allocating or mutating.
+* `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
+* `steplength` (``2^{-14}``) step length ``c`` to approximate the gradient evaluations
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use in the approximation.
 * `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 """
 mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
-    x_dir::P
+    p_dir::P
     gradient!!::G
     grad_tmp::T
     grad_tmp_dir::T
@@ -391,7 +437,7 @@ mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
 end
 function ApproxHessianFiniteDifference(
     M::mT,
-    x::P,
+    p::P,
     grad::G;
     steplength::R=2^-14,
     evaluation=AllocatingEvaluation(),
@@ -405,36 +451,322 @@ function ApproxHessianFiniteDifference(
     RTR<:AbstractRetractionMethod,
     VTR<:AbstractVectorTransportMethod,
 }
-    X = zero_vector(M, x)
-    Y = zero_vector(M, x)
+    X = zero_vector(M, p)
+    Y = zero_vector(M, p)
     return ApproxHessianFiniteDifference{typeof(evaluation),P,typeof(X),G,RTR,VTR,R}(
-        x, grad, X, Y, retraction_method, vector_transport_method, steplength
+        p, grad, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
-function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, x, X)
-    norm_X = norm(M, x, X)
-    (norm_X ≈ zero(norm_X)) && return zero_vector(M, x)
+
+function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, p, X)
+    norm_X = norm(M, p, X)
+    (norm_X ≈ zero(norm_X)) && return zero_vector(M, p)
     c = f.steplength / norm_X
-    f.grad_tmp .= f.gradient!!(M, x)
-    f.x_dir .= retract(M, x, c * X, f.retraction_method)
-    f.grad_tmp_dir .= f.gradient!!(M, f.x_dir)
+    f.grad_tmp .= f.gradient!!(M, p)
+    f.p_dir .= retract(M, p, c * X, f.retraction_method)
+    f.grad_tmp_dir .= f.gradient!!(M, f.p_dir)
     f.grad_tmp_dir .= vector_transport_to(
-        M, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
+        M, f.p_dir, f.grad_tmp_dir, p, f.vector_transport_method
     )
     return (1 / c) * (f.grad_tmp_dir - f.grad_tmp)
 end
-function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, x, X)
-    norm_X = norm(M, x, X)
-    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, x)
+
+function (f::ApproxHessianFiniteDifference{MutatingEvaluation})(M, Y, p, X)
+    norm_X = norm(M, p, X)
+    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, p)
     c = f.steplength / norm_X
-    f.gradient!!(M, f.grad_tmp, x)
-    retract!(M, f.x_dir, x, c * X, f.retraction_method)
-    f.gradient!!(M, f.grad_tmp_dir, f.x_dir)
+    f.gradient!!(M, f.grad_tmp, p)
+    retract!(M, f.p_dir, p, c * X, f.retraction_method)
+    f.gradient!!(M, f.grad_tmp_dir, f.p_dir)
     vector_transport_to!(
-        M, f.grad_tmp_dir, f.x_dir, f.grad_tmp_dir, x, f.vector_transport_method
+        M, f.grad_tmp_dir, f.p_dir, f.grad_tmp_dir, p, f.vector_transport_method
     )
     Y .= (1 / c) .* (f.grad_tmp_dir .- f.grad_tmp)
     return Y
+end
+
+@doc raw"""
+    ApproxHessianSymmetricRankOne{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real}
+
+A functor to approximate the Hessian by the symmetric rank one update.
+
+# Fields
+
+* `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
+* `ν` a small real number to ensure that the denominator in the update does not become too small and thus the method does not break down.
+* `vector_transport_method` a vector transport to use.
+
+## Internal temporary fields
+
+* `p_tmp` a temporary storage the current point `p`.
+* `grad_tmp` a temporary storage for the gradient at the current `p`.
+* `matrix` a temporary storage for the matrix representation of the approximating operator.
+* `basis` a temporary storage for an orthonormal basis at the current `p`.
+
+# Constructor
+
+    ApproxHessianSymmetricRankOne(M, p, gradF; kwargs...)
+
+## Keyword arguments
+
+* `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
+* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
+* `nu` (`-1`)
+* `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
+* `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
+"""
+mutable struct ApproxHessianSymmetricRankOne{E,P,G,T,B<:AbstractBasis{ℝ},VTR,R<:Real}
+    p_tmp::P
+    gradient!!::G
+    grad_tmp::T
+    matrix::Matrix
+    basis::B
+    vector_transport_method::VTR
+    ν::R
+end
+function ApproxHessianSymmetricRankOne(
+    M::mT,
+    p::P,
+    gradient::G;
+    initial_operator::AbstractMatrix=Matrix{Float64}(
+        I, manifold_dimension(M), manifold_dimension(M)
+    ),
+    basis::B=DefaultOrthonormalBasis(),
+    nu::R=-1.0,
+    evaluation=AllocatingEvaluation(),
+    vector_transport_method::VTR=ParallelTransport(),
+) where {
+    mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTR<:AbstractVectorTransportMethod
+}
+    if evaluation == AllocatingEvaluation()
+        grad_tmp = gradient(M, p)
+    elseif evaluation == MutatingEvaluation()
+        grad_tmp = zero_vector(M, p)
+        gradient(M, grad_tmp, p)
+    end
+
+    return ApproxHessianSymmetricRankOne{typeof(evaluation),P,G,typeof(grad_tmp),B,VTR,R}(
+        p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, nu
+    )
+end
+
+function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
+    # Update Basis if necessary
+    if p != f.p_tmp
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        copyto!(f.p_tmp, p)
+        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    end
+
+    # Apply Hessian approximation on vector
+    return get_vector(
+        M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis
+    )
+end
+
+function (f::ApproxHessianSymmetricRankOne{MutatingEvaluation})(M, Y, p, X)
+    # Update Basis if necessary
+    # if distance(M, p, f.p_tmp) >= eps(Float64)
+    if p != f.p_tmp
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        copyto!(f.p_tmp, p)
+        f.gradient!!(M, f.grad_tmp, f.p_tmp)
+    end
+
+    # Apply Hessian approximation on vector
+    Y .= get_vector(M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis)
+
+    return Y
+end
+
+function update_hessian!(
+    M, f::ApproxHessianSymmetricRankOne{AllocatingEvaluation}, p, p_proposal, X
+)
+    yk_c = get_coordinates(
+        M,
+        p,
+        vector_transport_to(
+            M, p_proposal, f.gradient!!(M, p_proposal), p, f.vector_transport_method
+        ) - f.grad_tmp,
+        f.basis,
+    )
+    sk_c = get_coordinates(M, p, X, f.basis)
+    srvec = yk_c - f.matrix * sk_c
+    if f.ν < 0 || abs(dot(srvec, sk_c)) >= f.ν * norm(srvec) * norm(sk_c)
+        f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
+    end
+end
+
+function update_hessian!(
+    M, f::ApproxHessianSymmetricRankOne{MutatingEvaluation}, p, p_proposal, X
+)
+    grad_proposal = zero_vector(M, p_proposal)
+    f.gradient!!(M, grad_proposal, p_proposal)
+    yk_c = get_coordinates(
+        M,
+        p,
+        vector_transport_to(M, p_proposal, grad_proposal, p, f.vector_transport_method) -
+        f.grad_tmp,
+        f.basis,
+    )
+    sk_c = get_coordinates(M, p, X, f.basis)
+    srvec = yk_c - f.matrix * sk_c
+    if f.ν < 0 || abs(dot(srvec, sk_c)) >= f.ν * norm(srvec) * norm(sk_c)
+        f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
+    end
+end
+
+function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{AllocatingEvaluation}, p)
+    update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+    copyto!(f.p_tmp, p)
+    return f.grad_tmp = f.gradient!!(M, f.p_tmp)
+end
+
+function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{MutatingEvaluation}, p)
+    update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+    copyto!(f.p_tmp, p)
+    return f.gradient!!(M, f.grad_tmp, f.p_tmp)
+end
+
+function update_hessian!(M, f, p, p_proposal, X) end
+
+function update_hessian_basis!(M, f, p) end
+
+@doc raw"""
+    ApproxHessianBFGS{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real}
+
+A functor to approximate the Hessian by the BFGS update.
+
+# Fields
+
+* `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
+* `scale`
+* `vector_transport_method` a vector transport to use.
+
+## Internal temporary fields
+
+* `p_tmp` a temporary storage the current point `p`.
+* `grad_tmp` a temporary storage for the gradient at the current `p`.
+* `matrix` a temporary storage for the matrix representation of the approximating operator.
+* `basis` a temporary storage for an orthonormal basis at the current `p`.
+
+# Constructor
+
+    ApproxHessianBFGS(M, p, gradF; kwargs...)
+
+## Keyword arguments
+
+* `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
+* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
+* `nu` (`-1`)
+* `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
+* `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
+"""
+mutable struct ApproxHessianBFGS{
+    E,P,G,T,B<:AbstractBasis{ℝ},VTR<:AbstractVectorTransportMethod
+}
+    p_tmp::P
+    gradient!!::G
+    grad_tmp::T
+    matrix::Matrix
+    basis::B
+    vector_transport_method::VTR
+    scale::Bool
+end
+function ApproxHessianBFGS(
+    M::mT,
+    p::P,
+    gradient::G;
+    initial_operator::AbstractMatrix=Matrix{Float64}(
+        I, manifold_dimension(M), manifold_dimension(M)
+    ),
+    basis::B=DefaultOrthonormalBasis(),
+    scale::Bool=true,
+    evaluation=AllocatingEvaluation(),
+    vector_transport_method::VTR=ParallelTransport(),
+) where {mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},VTR<:AbstractVectorTransportMethod}
+    if evaluation == AllocatingEvaluation()
+        grad_tmp = gradient(M, p)
+    elseif evaluation == MutatingEvaluation()
+        grad_tmp = zero_vector(M, p)
+        gradient(M, grad_tmp, p)
+    end
+    return ApproxHessianBFGS{typeof(evaluation),P,G,typeof(grad_tmp),B,VTR}(
+        p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, scale
+    )
+end
+
+function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
+    # Update Basis if necessary
+    if p != f.p_tmp
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        copyto!(f.p_tmp, p)
+        f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    end
+
+    # Apply Hessian approximation on vector
+    return get_vector(
+        M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis
+    )
+end
+
+function (f::ApproxHessianBFGS{MutatingEvaluation})(M, Y, p, X)
+    # Update Basis if necessary
+    if p != f.p_tmp
+        update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+        copyto!(f.p_tmp, p)
+        f.gradient!!(M, f.grad_tmp, f.p_tmp)
+    end
+
+    # Apply Hessian approximation on vector
+    Y .= get_vector(M, f.p_tmp, f.matrix * get_coordinates(M, f.p_tmp, X, f.basis), f.basis)
+
+    return Y
+end
+
+function update_hessian!(M, f::ApproxHessianBFGS{AllocatingEvaluation}, p, p_proposal, X)
+    yk_c = get_coordinates(
+        M,
+        p,
+        vector_transport_to(
+            M, p_proposal, f.gradient!!(M, p_proposal), p, f.vector_transport_method
+        ) - f.grad_tmp,
+        f.basis,
+    )
+    sk_c = get_coordinates(M, p, X, f.basis)
+    skyk_c = dot(sk_c, yk_c)
+    return f.matrix =
+        f.matrix + yk_c * yk_c' / skyk_c -
+        f.matrix * sk_c * sk_c' * f.matrix / dot(sk_c, f.matrix * sk_c)
+end
+
+function update_hessian!(M, f::ApproxHessianBFGS{MutatingEvaluation}, p, p_proposal, X)
+    grad_proposal = zero_vector(M, p_proposal)
+    f.gradient!!(M, grad_proposal, p_proposal)
+    yk_c = get_coordinates(
+        M,
+        p,
+        vector_transport_to(M, p_proposal, grad_proposal, p, f.vector_transport_method) -
+        f.grad_tmp,
+        f.basis,
+    )
+    sk_c = get_coordinates(M, p, X, f.basis)
+    skyk_c = dot(sk_c, yk_c)
+    return f.matrix =
+        f.matrix + yk_c * yk_c' / skyk_c -
+        f.matrix * sk_c * sk_c' * f.matrix / dot(sk_c, f.matrix * sk_c)
+end
+
+function update_hessian_basis!(M, f::ApproxHessianBFGS{AllocatingEvaluation}, p)
+    update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+    copyto!(f.p_tmp, p)
+    return f.grad_tmp = f.gradient!!(M, f.p_tmp)
+end
+
+function update_hessian_basis!(M, f::ApproxHessianBFGS{MutatingEvaluation}, p)
+    update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
+    copyto!(f.p_tmp, p)
+    return f.gradient!!(M, f.grad_tmp, f.p_tmp)
 end
 
 @doc raw"""
@@ -443,22 +775,19 @@ end
 A functor for testing if the norm of residual at the current iterate is reduced
 by a factor compared to the norm of the initial residual, i.e.
 $\Vert r_k \Vert_x \leqq κ \Vert r_0 \Vert_x$.
-In this case the algorithm reached linear convergence.
 
 # Fields
 * `κ` – the reduction factor
-* `initialResidualNorm` - stores the norm of the residual at the initial vector
-    ``η`` of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
   reached, see [`get_reason`](@ref).
 
 # Constructor
 
-    StopIfResidualIsReducedByFactor(iRN, κ)
+    StopIfResidualIsReducedByFactor(κ)
 
 initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
-iRN times κ.
+times κ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
@@ -466,13 +795,23 @@ iRN times κ.
 mutable struct StopIfResidualIsReducedByFactor <: StoppingCriterion
     κ::Float64
     reason::String
-    StopIfResidualIsReducedByFactor(κ::Float64) = new(κ, "")
+    function StopIfResidualIsReducedByFactor(κ::Float64)
+        Base.depwarn(
+            """
+            The `StopIfResidualIsReducedByFactor` stopping criterion will
+            is deprecated and will be removed in a future release.
+            Please use `StopIfResidualIsReducedByFactorOrPower(; κ=$(κ))` instead.
+            """,
+            :StopIfResidualIsReducedByFactor,
+        )
+        return new(κ, "")
+    end
 end
 function (c::StopIfResidualIsReducedByFactor)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * c.κ && i > 0
-        c.reason = "The algorithm reached linear convergence (residual at least reduced by κ=$(c.κ)).\n"
+        c.reason = "The norm of the residual is less than or equal to κ=$(c.κ) times the norm of the initial residual. \n"
         return true
     end
     return false
@@ -483,23 +822,20 @@ end
 
 A functor for testing if the norm of residual at the current iterate is reduced
 by a power of 1+θ compared to the norm of the initial residual, i.e.
-$\Vert r_k \Vert_x \leqq  \Vert r_0 \Vert_{x}^{1+\theta}$. In this case the
-algorithm reached superlinear convergence.
+$\Vert r_k \Vert_x \leqq  \Vert r_0 \Vert_{x}^{1+\theta}$.
 
 # Fields
 * `θ` – part of the reduction power
-* `initialResidualNorm` - stores the norm of the residual at the initial vector
-    $η$ of the Steihaug-Toint tcg mehtod [`truncated_conjugate_gradient_descent`](@ref)
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
 
 # Constructor
 
-    StopIfResidualIsReducedByPower(iRN, θ)
+    StopIfResidualIsReducedByPower(θ)
 
 initialize the StopIfResidualIsReducedByFactor functor to indicate to stop after
 the norm of the current residual is lesser than the norm of the initial residual
-iRN to the power of 1+θ.
+to the power of 1+θ.
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
@@ -507,34 +843,105 @@ iRN to the power of 1+θ.
 mutable struct StopIfResidualIsReducedByPower <: StoppingCriterion
     θ::Float64
     reason::String
-    StopIfResidualIsReducedByPower(θ::Float64) = new(θ, "")
+    function StopIfResidualIsReducedByPower(θ::Float64)
+        Base.depwarn(
+            """
+            The `StopIfResidualIsReducedByPower` stopping criterion will
+            is deprecated and will be removed in a future release.
+            Please use `StopIfResidualIsReducedByFactorOrPower(; θ=$(θ))` instead.
+            """,
+            :StopIfResidualIsReducedByPower,
+        )
+        return new(θ, "")
+    end
 end
 function (c::StopIfResidualIsReducedByPower)(
     p::P, o::O, i::Int
 ) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
     if norm(p.M, o.x, o.residual) <= o.initialResidualNorm^(1 + c.θ) && i > 0
-        c.reason = "The algorithm reached superlinear convergence (residual at least reduced by power 1 + θ=$(1+(c.θ))).\n"
+        c.reason = "The norm of the residual is less than or equal to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
         return true
     end
     return false
 end
-@doc raw"""
-    update_stopping_criterion!(c::StopIfResidualIsReducedByPower, :ResidualPower, v)
 
-Update the residual Power ``θ`` time period after which an algorithm shall stop.
-"""
 function update_stopping_criterion!(
     c::StopIfResidualIsReducedByPower, ::Val{:ResidualPower}, v
 )
     c.θ = v
     return c
 end
+
+@doc raw"""
+    StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
+
+A functor for testing if the norm of residual at the current iterate is reduced
+either by a power of 1+θ or by a factor κ compared to the norm of the initial
+residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \
+\min \left( \kappa, \Vert r_0 \Vert_{x}^{\theta} \right)$.
+
+# Fields
+* `κ` – the reduction factor
+* `θ` – part of the reduction power
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`get_reason`](@ref).
+
+# Constructor
+
+    StopIfResidualIsReducedByFactorOrPower(; κ=0.1, θ=1.0)
+
+initialize the StopIfResidualIsReducedByFactorOrPower functor to indicate to stop after
+the norm of the current residual is lesser than either the norm of the initial residual
+to the power of 1+θ or the norm of the initial residual times κ.
+
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
+    κ::Float64
+    θ::Float64
+    reason::String
+    StopIfResidualIsReducedByFactorOrPower(; κ::Float64=0.1, θ::Float64=1.0) = new(κ, θ, "")
+end
+function (c::StopIfResidualIsReducedByFactorOrPower)(
+    p::P, o::O, i::Int
+) where {P<:HessianProblem,O<:TruncatedConjugateGradientOptions}
+    if norm(p.M, o.x, o.residual) <=
+       o.initialResidualNorm * min(c.κ, o.initialResidualNorm^(c.θ)) && i > 0
+        c.reason = "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
+        return true
+    end
+    return false
+end
+@doc raw"""
+    update_stopping_criterion!(c::StopIfResidualIsReducedByFactorOrPower, :ResidualPower, v)
+
+Update the residual Power `θ`  to `v`.
+"""
+function update_stopping_criterion!(
+    c::StopIfResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v
+)
+    c.θ = v
+    return c
+end
+
+@doc raw"""
+    update_stopping_criterion!(c::StopIfResidualIsReducedByFactorOrPower, :ResidualFactor, v)
+
+Update the residual Factor `κ` to `v`.
+"""
+function update_stopping_criterion!(
+    c::StopIfResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v
+)
+    c.κ = v
+    return c
+end
+
 @doc raw"""
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
 A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
-mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
-≧ trust_region_radius$. terminate the algorithm when the trust region has been left.
+method is larger than the trust-region radius, i.e. $\lVert η_{k}^{*} \rVert_x \geq Δ$ terminate the algorithm when the trust region has been left.
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
@@ -604,7 +1011,7 @@ end
 @doc raw"""
     StopWhenModelIncreased <: StoppingCriterion
 
-A functor for testing if the curvature of the model value increased.
+A functor for testing if model value increased.
 
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be

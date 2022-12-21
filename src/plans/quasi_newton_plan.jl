@@ -343,7 +343,7 @@ function QuasiNewtonOptions(
     initial_vector::T=zero_vector(M, x),
     vector_transport_method::VTM=default_vector_transport_method(M),
     direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
-        M, x, InverseBFGS, 20; vector_transport_method=vector_transport_method
+        M, x, InverseBFGS(), 20; vector_transport_method=vector_transport_method
     ),
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
     retraction_method::RM=default_retraction_method(M),
