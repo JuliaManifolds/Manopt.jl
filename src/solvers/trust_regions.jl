@@ -235,6 +235,9 @@ function trust_regions!(
     project!::Proj=copyto!,
     ρ_prime::Float64=0.1,
     ρ_regularization=1000.0,
+    θ::Float64=1.0,
+    κ::Float64=0.1,
+    return_options=false,
     kwargs..., #collect rest
 ) where {TF,TdF,TH,Tprec,Proj}
     (ρ_prime >= 0.25) && throw(
@@ -263,6 +266,8 @@ function trust_regions!(
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         (project!)=project!,
+        θ=θ,
+        κ=κ,
     )
     o = decorate_state(o; kwargs...)
     return get_solver_return(solve!(p, o))
@@ -306,6 +311,15 @@ function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
     s.tcg_options.x = s.x
     s.tcg_options.η = s.η
     s.tcg_options.trust_region_radius = s.trust_region_radius
+    s.tcg_options.stop = StopWhenAny(
+        StopAfterIteration(manifold_dimension(p.M)),
+        StopWhenAll(
+            StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
+        ),
+        StopWhenTrustRegionIsExceeded(),
+        StopWhenCurvatureIsNegative(),
+        StopWhenModelIncreased(),
+    )
     solve!(p, s.tcg_options)
     #
     s.η = s.tcg_options.η
@@ -326,7 +340,7 @@ function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
         model_value =
             fx + inner(p.M, s.x, s.gradient, s.η) + 0.5 * inner(p.M, s.x, s.Hη, s.η)
         modle_value_Cauchy = fx
-        -s.τ * s.trust_region_radius * norm(p.M, s.x, s.gradient)
+        -s.τ * s.trust_region_radius * norm_grad
         +0.5 * s.τ^2 * s.trust_region_radius^2 / (norm_grad^2) *
         inner(p.M, s.x, s.Hgrad, s.gradient)
         if modle_value_Cauchy < model_value
@@ -342,12 +356,15 @@ function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
     ρden = -inner(p.M, s.x, s.η, s.gradient) - 0.5 * inner(p.M, s.x, s.η, s.Hη)
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
-    ρ = ρnum / ρden
+    ρ = (abs(ρnum / fx) < sqrt(eps(Float64))) ? 1 : ρnum / ρden # stability for small absolute relative model change
+
     model_decreased = ρden ≥ 0
+    # Update the Hessian approximation
+    update_hessian!(p.M, p.hessian!!, o.x, o.x_proposal, o.η)
     # Choose the new TR radius based on the model performance.
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.
-    if ρ < 1 / 4 || !model_decreased || isnan(ρ)
+    if ρ < 0.1 || !model_decreased || isnan(ρ)
         s.trust_region_radius /= 4
     elseif ρ > 3 / 4 &&
         ((s.tcg_options.ηPη >= s.trust_region_radius^2) || (s.tcg_options.δHδ <= 0))
@@ -355,8 +372,10 @@ function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
     end
     # Choose to accept or reject the proposed step based on the model
     # performance. Note the strict inequality.
-    if model_decreased && ρ > s.ρ_prime
-        copyto!(p.M, s.x, s.x_proposal)
+    if model_decreased &&
+        (ρ > s.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
+        copyto!(s.x, s.x_proposal)
+        update_hessian_basis!(p.M, p.hessian!!, s.x)
     end
     return s
 end

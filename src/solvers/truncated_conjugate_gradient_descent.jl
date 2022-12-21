@@ -58,7 +58,6 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
     trust_region_radius::R
     model_value::R
     new_model_value::R
-    κ::R
     randomize::Bool
     project!::Proj
     initialResidualNorm::Float64
@@ -71,15 +70,11 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
         project!::Proj=copyto!,
         θ::Float64=1.0,
         κ::Float64=0.1,
-        stop::StoppingCriterion=StopWhenAny(
-            StopAfterIteration(manifold_dimension(p.M)),
-            StopWhenAll(
-                StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)
-            ),
-            StopWhenTrustRegionIsExceeded(),
-            StopWhenCurvatureIsNegative(),
-            StopWhenModelIncreased(),
-        ),
+        stop::StoppingCriterion=StopAfterIteration(manifold_dimension(p.M)) |
+                                StopIfResidualIsReducedByFactorOrPower(; κ=κ, θ=θ) |
+                                StopWhenTrustRegionIsExceeded() |
+                                StopWhenCurvatureIsNegative() |
+                                StopWhenModelIncreased(),
     ) where {P,T,R<:Real,Proj}
         return TruncatedConjugateGradientState(
             p.M,
@@ -88,8 +83,6 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
             trust_region_radius=trust_region_radius,
             (project!)=project!,
             randomize=randomize,
-            θ=θ,
-            κ=κ,
             stopping_criterion=stop,
         )
     end
@@ -102,10 +95,9 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
         project!::F=copyto!,
         θ::Float64=1.0,
         κ::Float64=0.1,
-        stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
-                                              (
-                                                  StopIfResidualIsReducedByPower(θ) &
-                                                  StopIfResidualIsReducedByFactor(κ)
+        stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(p.M)) |
+                                              StopIfResidualIsReducedByFactorOrPower(;
+                                                  κ=κ, θ=θ
                                               ) |
                                               StopWhenTrustRegionIsExceeded() |
                                               StopWhenCurvatureIsNegative() |
@@ -154,6 +146,7 @@ see the reference:
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_X\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
 * `η` – an update tangential vector ``η ∈ T_x\mathcal M``
 * `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
@@ -209,7 +202,7 @@ solve the trust-region subproblem in place of `x`.
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_X\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
 * `η` – an update tangential vector ``η ∈ T_x\mathcal M``
 
@@ -300,6 +293,17 @@ function step_solver!(p::HessianProblem, s::TruncatedConjugateGradientState, ::A
     o.model_value = o.new_model_value
     copyto!(p.M, o.Hη, o.x, new_Hη)
     o.residual = o.residual + α * o.Hδ
+
+    #=
+    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * min(o.initialResidualNorm^(0.1), 0.9)
+        if 0.9 < o.initialResidualNorm^(0.1)
+            print("Linear \n")
+        else
+            print("Superlinear \n")
+        end
+    end
+    =#
+
     # Precondition the residual.
     o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
     zr = inner(p.M, o.x, o.z, o.residual)
