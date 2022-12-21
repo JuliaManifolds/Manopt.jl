@@ -1,7 +1,7 @@
 @doc raw"""
-    bundle_method(M, F, ∂F, x)
+    bundle_method(M, F, gradF, x)
 
-perform a bundle method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂F(p_k))``,
+perform a bundle method ``p_{k+1} = \mathrm{retr}(p_k, gradF(p_k))``,
 
 where ``\mathrm{retr}`` is a retraction, ``s_k`` can be specified as a function but is
 usually set to a constant value. Though the subgradient might be set valued,
@@ -31,9 +31,9 @@ and the ones that are passed to [`decorate_options`](@ref) for decorators.
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
-function bundle_method(M::AbstractManifold, F::TF, ∂F::TdF, p; kwargs...) where {TF,TdF}
+function bundle_method(M::AbstractManifold, F::TF, gradF::TdF, p; kwargs...) where {TF,TdF}
     p_res = copy(M, p)
-    return bundle_method!(M, F, ∂F, p_res; kwargs...)
+    return bundle_method!(M, F, gradF, p_res; kwargs...)
 end
 @doc raw"""
     bundle_method!(M, F, ∂F, p)
@@ -54,7 +54,7 @@ for more details and all optional parameters, see [`bundle_method`](@ref).
 function bundle_method!(
     M::AbstractManifold,
     F::TF,
-    ∂F!!::TdF,
+    gradF!!::TdF,
     p;
     m::Real=0.0125,
     inverse_retraction_method::IR=default_inverse_retraction_method(M),
@@ -65,7 +65,7 @@ function bundle_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,VTransp}
-    prb = BundleProblem(M, F, ∂F!!; evaluation=evaluation)
+    prb = BundleProblem(M, F, gradF!!; evaluation=evaluation)
     o = BundleMethodOptions(
         M,
         p;
@@ -81,17 +81,17 @@ function bundle_method!(
 end
 function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
     o.p_last_serious = o.bundle_points[1, 1]
-    o.∂ = zero_vector(prb.M, o.bundle_points[1, 1])
-    # o.J = Set(1) # initialize index set
-    # o.bundle_points = [o.p, o.∂]
-    # o.lin_errors = [0]
+    o.X = zero_vector(prb.M, o.bundle_points[1, 1])
+    o.index_set = Set(1) # initialize index set
+    o.bundle_points = [o.p, o.X]
+    o.lin_errors = [0]
     return o
 end
 using JuMP, COSMO, Ipopt
-function jump_subsolver(J, lin_errs, X)
+function jump_subsolver(index_set, lin_errs, X)
     vector_model = Model(COSMO.Optimizer)#, add_bridges = false) -- Removing bridges breaks this
     set_optimizer_attribute(vector_model, "verbose", false)
-    @variable(vector_model, λ[1:length(J)])
+    @variable(vector_model, λ[1:length(index_set)])
     @constraint(vector_model, λ .>= 0)
     @constraint(vector_model, sum(λ) == 1)
     @objective(vector_model, Min, 0.5 * (sum(λ .* X))^2 + sum(λ .* lin_errs))
@@ -99,8 +99,8 @@ function jump_subsolver(J, lin_errs, X)
     return value.(λ), objective_value(vector_model)
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
-    get_subgradient!(prb, o.∂, o.p)
-    o.bundle_points = hcat([o.bundle_points], [o.p, o.∂])
+    get_subgradient!(prb, o.X, o.p)
+    o.bundle_points = hcat([o.bundle_points], [o.p, o.X])
     transported_subgrads = [
         vector_transport_to!(
             prb.M,
@@ -108,29 +108,29 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
             o.bundle_points[2, j],
             o.p_last_serious,
             o.vector_transport_method,
-        ) for j in 1:length(o.J)
+        ) for j in 1:length(o.index_set)
     ]
     # compute a solution λ of the minimization subproblem with some other solver
-    λ = jump_subsolver(o.J, o.lin_errors, transported_subgrads)
+    λ = jump_subsolver(o.index_set, o.lin_errors, transported_subgrads)
     g = sum(λ .* transported_subgrads)
     ε = sum(λ .* o.lin_errors)
-    δ = -norm(prb.M, o.p, o.∂)^2 - ε
+    δ = -norm(prb.M, o.p, o.X)^2 - ε
     if δ <= o.tol
         return o
     else
         q = retract(M, o.p_last_serious, -g, o.retraction_method)
-        ∂_q = get_subgradient(prb, o.∂, q) # not sure about this
+        X_q = get_subgradient(prb, o.X, q) # not sure about this
         if get_cost(prb, q) <= (get_cost(prb, o.p_last_serious) + o.m * δ)
             o.p_last_serious = q
-            o.bundle_points = hcat(o.bundle_points, [o.p_last_serious, ∂_q])
+            o.bundle_points = hcat(o.bundle_points, [o.p_last_serious, X_q])
         else
-            o.bundle_points = hcat(o.bundle_points, [q, ∂_q])
+            o.bundle_points = hcat(o.bundle_points, [q, X_q])
         end
     end
-    J_positive = intersect(o.J, Set(findall(j -> j > 0, λ)))
-    o.J = union(J_positive, iter + 1)
+    positive_indices = intersect(o.index_set, Set(findall(j -> j > 0, λ)))
+    o.index_set = union(positive_indices, iter + 1)
     o.lin_errors = []
-    for j in 1:length(o.J)
+    for j in 1:length(o.index_set)
         push!(
             o.lin_errors,
             get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_points[1, j]) - inner(

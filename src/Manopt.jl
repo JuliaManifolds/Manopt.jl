@@ -5,8 +5,6 @@ module Manopt
 using Colors
 using ColorSchemes
 using ColorTypes
-using COSMO
-using JuMP
 using Markdown
 using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
 using Dates: Period, Nanosecond, value, Millisecond, canonicalize

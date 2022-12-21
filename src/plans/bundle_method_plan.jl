@@ -60,7 +60,7 @@ stores option values for a [`bundle_method`](@ref) solver
 
 # Fields
 
-* `J` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
+* `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
 * `bundle_points` - collects each iterate `p` with the computed subgradient `∂` at the iterate
 * `lin_errors` - linearization errors at the last serious step
 * `m` - the parameter to test the decrease of the cost
@@ -69,22 +69,22 @@ stores option values for a [`bundle_method`](@ref) solver
 * `retraction_method` – the retration to use within
 * `stop` – a [`StoppingCriterion`](@ref)
 * `vector_transport_method` - the vector transport method to use within
-* `∂` the current element from the possible subgradients at `p` that is used
+* `X` the current element from the possible subgradients at `p` that is used
 """
 mutable struct BundleMethodOptions{
-    A,
+    A<:AbstractArray,
     IR<:AbstractInverseRetractionMethod,
-    L,
+    L<:AbstractArray,
     P,
     T,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
-    S,
+    S<:AbstractSet,
     VT<:AbstractVectorTransportMethod,
 } <: Options where {P,T}
-    bundle_points::A
+    bundle_points::A,
     inverse_retraction_method::IR
-    J::S
+    index_set::S
     lin_errors::L
     m::Real
     p::P
@@ -93,7 +93,7 @@ mutable struct BundleMethodOptions{
     stop::TSC
     tol::Real
     vector_transport_method::VT
-    ∂::T
+    X::T
     function BundleMethodOptions(
         M::TM,
         p::P;
@@ -108,15 +108,16 @@ mutable struct BundleMethodOptions{
         IR<:AbstractInverseRetractionMethod,
         TM<:AbstractManifold,
         P,
+        T,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
     }
-        bundle_points = [p, subgrad]
-        J = Set(1)
-        lin_errors = [0]
-        return new{typeof(J),typeof(bundle_points),typeof(lin_errors),P,IR,TR,SC,T,VT}(
-            J,
+        # bundle_points = [p, subgrad]
+        # J = Set(1)
+        # lin_errors = [0]
+        return new{S,A,L,P,IR,TR,SC,T,VT}(
+            index_set,
             bundle_points,
             lin_errors,
             p,
