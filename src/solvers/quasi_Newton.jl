@@ -82,8 +82,12 @@ function quasi_Newton!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     memory_size::Int=20,
     stabilize=true,
-    initial_operator::AbstractMatrix=Matrix{Float64}(
-        I, manifold_dimension(M), manifold_dimension(M)
+    initial_operator::AbstractMatrix=(
+        if memory_size >= 0
+            fill(1.0, 0, 0) # don't allocate initial_operator for limited memory operation
+        else
+            Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))
+        end
     ),
     scale_initial_operator::Bool=true,
     stepsize::Stepsize=WolfePowellLinesearch(
