@@ -76,13 +76,15 @@ mutable struct BundleMethodOptions{
     IR<:AbstractInverseRetractionMethod,
     L<:AbstractArray,
     P,
+    Pr<:Problem,
+    Op<:Options,
     T,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     S<:AbstractSet,
     VT<:AbstractVectorTransportMethod,
 } <: Options where {P,T}
-    bundle_points::A,
+    bundle_points::A
     inverse_retraction_method::IR
     index_set::S
     lin_errors::L
@@ -91,6 +93,8 @@ mutable struct BundleMethodOptions{
     p_last_serious::P
     retraction_method::TR
     stop::TSC
+    sub_problem::Pr
+    sub_options::Op
     tol::Real
     vector_transport_method::VT
     X::T
@@ -108,20 +112,22 @@ mutable struct BundleMethodOptions{
         IR<:AbstractInverseRetractionMethod,
         TM<:AbstractManifold,
         P,
+        Pr<:Problem,
+        Op<:Options,
         T,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
     }
-        # bundle_points = [p, subgrad]
-        # J = Set(1)
-        # lin_errors = [0]
-        return new{S,A,L,P,IR,TR,SC,T,VT}(
+        #bundle_points = [p, subgrad]
+        return new{S,typeof(bundle_points),L,P,Pr,Op,IR,TR,SC,T,VT}(
             index_set,
             bundle_points,
             lin_errors,
             p,
             deepcopy(p),
+            sub_problem,
+            sub_options,
             m,
             inverse_retraction_method,
             retraction_method,

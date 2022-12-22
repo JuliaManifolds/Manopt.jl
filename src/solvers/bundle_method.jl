@@ -43,7 +43,7 @@ perform a bundle method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂F(p_k))`` in place 
 # Input
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `∂F`- the (sub)gradient ``\partial F:\mathcal M→ T\mathcal M`` of F
+* `gradF`- the (sub)gradient ``\partial F:\mathcal M→ T\mathcal M`` of F
   restricted to always only returning one value/element from the subgradient.
   This function can be passed as an allocation function `(M, q) -> X` or
   a mutating function `(M, X, q) -> X`, see `evaluation`.
@@ -57,14 +57,14 @@ function bundle_method!(
     gradF!!::TdF,
     p;
     m::Real=0.0125,
+    tol::Real=1e-10,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M),
     retraction_method::TRetr=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
-    tol::Real=1e-10,
     vector_transport_method::VTransp=default_vector_transport_method(M),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #especially may contain debug
-) where {TF,TdF,TRetr,VTransp}
+) where {IR,TF,TdF,TRetr,VTransp}
     prb = BundleProblem(M, F, gradF!!; evaluation=evaluation)
     o = BundleMethodOptions(
         M,
@@ -87,16 +87,22 @@ function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
     o.lin_errors = [0]
     return o
 end
-using JuMP, COSMO, Ipopt
-function jump_subsolver(index_set, lin_errs, X)
-    vector_model = Model(COSMO.Optimizer)#, add_bridges = false) -- Removing bridges breaks this
-    set_optimizer_attribute(vector_model, "verbose", false)
-    @variable(vector_model, λ[1:length(index_set)])
-    @constraint(vector_model, λ .>= 0)
-    @constraint(vector_model, sum(λ) == 1)
-    @objective(vector_model, Min, 0.5 * (sum(λ .* X))^2 + sum(λ .* lin_errs))
-    optimize!(vector_model)
-    return value.(λ), objective_value(vector_model)
+function subsolver(X, o)
+    f(λ) = 0.5 * (sum(λ .* X))^2 + sum(λ .* o.lin_errs)
+    gradf(λ) = abs(sum(λ .* X)) * X + o.lin_errs
+    g(λ) = -λ
+    gradg(λ) = -I(length(o.index_set))
+    h(λ) = sum(λ) - 1
+    gradh(λ) = ones(length(o.index_set))
+    o.sub_problem = ConstrainedProblem(
+        ℝ^(length(o.index_set)), f, gradf, g, gradg, h, gradh
+    )
+    o.sub_options = decorate_options(
+        GradientDescentOptions(
+            copy(λ); initial_gradient=zero_vector(ℝ^(length(o.index_set), λ))
+        ),
+    )
+    return get_solver_result(solve(o.sub_problem, o.sub_options))
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     get_subgradient!(prb, o.X, o.p)
@@ -111,7 +117,7 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
         ) for j in 1:length(o.index_set)
     ]
     # compute a solution λ of the minimization subproblem with some other solver
-    λ = jump_subsolver(o.index_set, o.lin_errors, transported_subgrads)
+    λ = subsolver(transported_subgrads, o)
     g = sum(λ .* transported_subgrads)
     ε = sum(λ .* o.lin_errors)
     δ = -norm(prb.M, o.p, o.X)^2 - ε
@@ -129,23 +135,16 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     end
     positive_indices = intersect(o.index_set, Set(findall(j -> j > 0, λ)))
     o.index_set = union(positive_indices, iter + 1)
-    o.lin_errors = []
-    for j in 1:length(o.index_set)
-        push!(
-            o.lin_errors,
-            get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_points[1, j]) - inner(
-                prb.M,
-                o.bundle_points[1, j],
-                o.bundle_points[2, j],
-                inverse_retract(
-                    prb.M,
-                    o.bundle_points[1, j],
-                    o.p_last_serious,
-                    o.inverse_retraction_method,
-                ),
+    o.lin_errors = [
+        get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_points[1, j]) - inner(
+            prb.M,
+            o.bundle_points[1, j],
+            o.bundle_points[2, j],
+            inverse_retract(
+                prb.M, o.bundle_points[1, j], o.p_last_serious, o.inverse_retraction_method
             ),
-        )
-    end
+        ) for j in 1:length(o.index_set)
+    ]
     return o
 end
 get_solver_result(o::BundleMethodOptions) = o.p_last_serious
