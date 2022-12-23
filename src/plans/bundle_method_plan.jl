@@ -40,17 +40,17 @@ The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory withi
 When the non-mutating variant is called with a `T=`[`MutatingEvaluation`](@ref)
 memory for the result is allocated.
 """
-function get_subgradient(prb::BundleProblem{AllocatingEvaluation}, q)
+function get_bundle_subgradient(prb::BundleProblem{AllocatingEvaluation}, q)
     return prb.subgradient!!(prb.M, q)
 end
-function get_subgradient(prb::BundleProblem{MutatingEvaluation}, q)
+function get_bundle_subgradient(prb::BundleProblem{MutatingEvaluation}, q)
     X = zero_vector(prb.M, q)
     return prb.subgradient!!(prb.M, X, q)
 end
-function get_subgradient!(prb::BundleProblem{AllocatingEvaluation}, X, q)
+function get_bundle_subgradient!(prb::BundleProblem{AllocatingEvaluation}, X, q)
     return copyto!(prb.M, X, prb.subgradient!!(prb.M, q))
 end
-function get_subgradient!(prb::BundleProblem{MutatingEvaluation}, X, q)
+function get_bundle_subgradient!(prb::BundleProblem{MutatingEvaluation}, X, q)
     return prb.subgradient!!(prb.M, X, q)
 end
 
@@ -72,70 +72,92 @@ stores option values for a [`bundle_method`](@ref) solver
 * `X` the current element from the possible subgradients at `p` that is used
 """
 mutable struct BundleMethodOptions{
-    A<:AbstractArray,
+    A<:Array,
     IR<:AbstractInverseRetractionMethod,
-    L<:AbstractArray,
+    L<:Array,
     P,
-    Pr<:Problem,
-    Op<:Options,
     T,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
-    S<:AbstractSet,
+    S<:Set,
     VT<:AbstractVectorTransportMethod,
 } <: Options where {P,T}
     bundle_points::A
     inverse_retraction_method::IR
-    index_set::S
     lin_errors::L
-    m::Real
     p::P
     p_last_serious::P
+    X::T
     retraction_method::TR
     stop::TSC
-    sub_problem::Pr
-    sub_options::Op
-    tol::Real
+    index_set::S
     vector_transport_method::VT
-    X::T
+    m::Real
+    tol::Real
     function BundleMethodOptions(
         M::TM,
         p::P;
         m::Real=0.0125,
+        #lin_errors::L=[0],
+        #index_set::S=Set(1),
         inverse_retraction_method::IR=default_inverse_retraction_method(M),
         retraction_method::TR=default_retraction_method(M),
         stopping_criterion::SC=StopAfterIteration(5000),
         subgrad::T=zero_vector(M, p),
+        #bundle_points::A=[p, subgrad],
         tol::Real=1e-8,
         vector_transport_method::VT=default_vector_transport_method(M),
     ) where {
+        #A<:Array,
         IR<:AbstractInverseRetractionMethod,
-        TM<:AbstractManifold,
+        #L<:Array,
         P,
-        Pr<:Problem,
-        Op<:Options,
         T,
+        TM<:AbstractManifold,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
+        #S<:Set,
         VT<:AbstractVectorTransportMethod,
     }
-        #bundle_points = [p, subgrad]
-        return new{S,typeof(bundle_points),L,P,Pr,Op,IR,TR,SC,T,VT}(
-            index_set,
+        index_set = Set(1)
+        bundle_points = [p, subgrad]
+        lin_errors = []
+        return new{
+            typeof(bundle_points),IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT
+        }(
             bundle_points,
+            inverse_retraction_method,
             lin_errors,
             p,
             deepcopy(p),
-            sub_problem,
-            sub_options,
-            m,
-            inverse_retraction_method,
+            subgrad,
             retraction_method,
             stopping_criterion,
-            subgrad,
-            tol,
+            index_set,
             vector_transport_method,
+            m,
+            tol,
         )
     end
 end
 get_iterate(o::BundleMethodOptions) = o.p
+
+function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T) where {T}
+    d = length(o.index_set)
+    lin_errors = o.lin_errors
+    N = ℝ^d
+    f(N, λ) = 0.5 * norm(prb.M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* lin_errors)
+    function gradf(N, λ)
+        return [
+            inner(prb.M, o.p_last_serious, X[i], sum(λ .* X)) + lin_errors[i] for i in 1:d
+        ]
+    end
+    g(N, λ) = -λ
+    function gradg(N, λ)
+        return project.(Ref(N), Ref(λ), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
+    end
+    h(N, λ) = sum(λ) - 1
+    gradh(N, λ) = zero_vector(N, λ) .+ 1
+    return exact_penalty_method(N, f, gradf, rand(N); G=g, H=h, gradG=gradg, gradH=gradh)# evaluation = MutatingEvaluation(),
+    #smoothing = LinearQuadraticHuber())
+end

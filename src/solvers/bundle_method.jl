@@ -11,7 +11,7 @@ not necessarily deterministic.
 # Input
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `∂F`– the (sub)gradient ``\partial F: \mathcal M→ T\mathcal M`` of F
+* `gradF`– the (sub)gradient ``\partial F: \mathcal M→ T\mathcal M`` of F
   restricted to always only returning one value/element from the subgradient.
   This function can be passed as an allocation function `(M, q) -> X` or
   a mutating function `(M, X, q) -> X`, see `evaluation`.
@@ -36,7 +36,7 @@ function bundle_method(M::AbstractManifold, F::TF, gradF::TdF, p; kwargs...) whe
     return bundle_method!(M, F, gradF, p_res; kwargs...)
 end
 @doc raw"""
-    bundle_method!(M, F, ∂F, p)
+    bundle_method!(M, F, gradF, p)
 
 perform a bundle method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂F(p_k))`` in place of `p`
 
@@ -64,7 +64,7 @@ function bundle_method!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M),
     kwargs..., #especially may contain debug
-) where {IR,TF,TdF,TRetr,VTransp}
+) where {TF,TdF,TRetr,IR,VTransp}
     prb = BundleProblem(M, F, gradF!!; evaluation=evaluation)
     o = BundleMethodOptions(
         M,
@@ -80,35 +80,35 @@ function bundle_method!(
     return get_solver_return(solve(prb, o))
 end
 function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
-    o.p_last_serious = o.bundle_points[1, 1]
-    o.X = zero_vector(prb.M, o.bundle_points[1, 1])
     o.index_set = Set(1) # initialize index set
     o.bundle_points = [o.p, o.X]
     o.lin_errors = [0]
+    o.p_last_serious = o.bundle_points[1, 1]
+    o.X = zero_vector(prb.M, o.bundle_points[1, 1])
     return o
 end
-function subsolver(X, o)
-    f(λ) = 0.5 * (sum(λ .* X))^2 + sum(λ .* o.lin_errs)
-    gradf(λ) = abs(sum(λ .* X)) * X + o.lin_errs
-    g(λ) = -λ
-    gradg(λ) = -I(length(o.index_set))
-    h(λ) = sum(λ) - 1
-    gradh(λ) = ones(length(o.index_set))
-    o.sub_problem = ConstrainedProblem(
-        ℝ^(length(o.index_set)), f, gradf, g, gradg, h, gradh
-    )
-    o.sub_options = decorate_options(
-        GradientDescentOptions(
-            copy(λ); initial_gradient=zero_vector(ℝ^(length(o.index_set), λ))
-        ),
-    )
-    return get_solver_result(solve(o.sub_problem, o.sub_options))
-end
+# function subsolver(X, o)
+#     f(λ) = 0.5 * (sum(λ .* X))^2 + sum(λ .* o.lin_errs)
+#     gradf(λ) = abs(sum(λ .* X)) * X + o.lin_errs
+#     g(λ) = -λ
+#     gradg(λ) = -I(length(o.index_set))
+#     h(λ) = sum(λ) - 1
+#     gradh(λ) = ones(length(o.index_set))
+#     o.sub_problem = ConstrainedProblem(
+#         ℝ^(length(o.index_set)), f, gradf, g, gradg, h, gradh
+#     )
+#     o.sub_options = decorate_options(
+#         GradientDescentOptions(
+#             copy(λ); initial_gradient=zero_vector(ℝ^(length(o.index_set), λ))
+#         ),
+#     )
+#     return get_solver_result(solve(o.sub_problem, o.sub_options))
+# end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
-    get_subgradient!(prb, o.X, o.p)
-    o.bundle_points = hcat([o.bundle_points], [o.p, o.X])
+    get_bundle_subgradient!(prb, o.X, o.p)
+    #o.bundle_points = hcat(o.bundle_points, [o.p, o.X])
     transported_subgrads = [
-        vector_transport_to!(
+        vector_transport_to(
             prb.M,
             o.bundle_points[1, j],
             o.bundle_points[2, j],
@@ -117,7 +117,7 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
         ) for j in 1:length(o.index_set)
     ]
     # compute a solution λ of the minimization subproblem with some other solver
-    λ = subsolver(transported_subgrads, o)
+    λ = BundleMethodSubsolver(prb, o, transported_subgrads)
     g = sum(λ .* transported_subgrads)
     ε = sum(λ .* o.lin_errors)
     δ = -norm(prb.M, o.p, o.X)^2 - ε
@@ -125,7 +125,7 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
         return o
     else
         q = retract(M, o.p_last_serious, -g, o.retraction_method)
-        X_q = get_subgradient(prb, o.X, q) # not sure about this
+        X_q = get_bundle_subgradient(prb, q) # not sure about this
         if get_cost(prb, q) <= (get_cost(prb, o.p_last_serious) + o.m * δ)
             o.p_last_serious = q
             o.bundle_points = hcat(o.bundle_points, [o.p_last_serious, X_q])
@@ -148,3 +148,10 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     return o
 end
 get_solver_result(o::BundleMethodOptions) = o.p_last_serious
+
+# Debugging
+# M = SymmetricPositiveDefinite(3)
+# F(M,y) = sum(1 / (2 * length(y)) * distance.(Ref(M), data, Ref(y)) .^ 2)
+# ∇F(M,y) = sum(1 / length(y) * grad_distance.(Ref(M), data, Ref(y)))
+# data = [rand(M) for i = 1:100];
+# bundle_method(M, F, ∇F, data[1])
