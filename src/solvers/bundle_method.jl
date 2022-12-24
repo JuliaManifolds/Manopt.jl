@@ -80,38 +80,21 @@ function bundle_method!(
     return get_solver_return(solve(prb, o))
 end
 function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
+    o.p_last_serious = o.p
+    o.X = zero_vector(prb.M, o.p)
     o.index_set = Set(1) # initialize index set
-    o.bundle_points = [o.p, o.X]
     o.lin_errors = [0]
-    o.p_last_serious = o.bundle_points[1, 1]
-    o.X = zero_vector(prb.M, o.bundle_points[1, 1])
+    o.bundle_points = [o.p; o.X]
     return o
 end
-# function subsolver(X, o)
-#     f(λ) = 0.5 * (sum(λ .* X))^2 + sum(λ .* o.lin_errs)
-#     gradf(λ) = abs(sum(λ .* X)) * X + o.lin_errs
-#     g(λ) = -λ
-#     gradg(λ) = -I(length(o.index_set))
-#     h(λ) = sum(λ) - 1
-#     gradh(λ) = ones(length(o.index_set))
-#     o.sub_problem = ConstrainedProblem(
-#         ℝ^(length(o.index_set)), f, gradf, g, gradg, h, gradh
-#     )
-#     o.sub_options = decorate_options(
-#         GradientDescentOptions(
-#             copy(λ); initial_gradient=zero_vector(ℝ^(length(o.index_set), λ))
-#         ),
-#     )
-#     return get_solver_result(solve(o.sub_problem, o.sub_options))
-# end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
-    get_bundle_subgradient!(prb, o.X, o.p)
+    #get_bundle_subgradient!(prb, o.X, o.p)
     #o.bundle_points = hcat(o.bundle_points, [o.p, o.X])
     transported_subgrads = [
         vector_transport_to(
             prb.M,
             o.bundle_points[1, j],
-            o.bundle_points[2, j],
+            get_bundle_subgradient!(prb, o.bundle_points[2, j], o.bundle_points[1, j]),
             o.p_last_serious,
             o.vector_transport_method,
         ) for j in 1:length(o.index_set)
@@ -120,17 +103,19 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     λ = BundleMethodSubsolver(prb, o, transported_subgrads)
     g = sum(λ .* transported_subgrads)
     ε = sum(λ .* o.lin_errors)
-    δ = -norm(prb.M, o.p, o.X)^2 - ε
-    if δ <= o.tol
+    δ = -norm(prb.M, o.p_last_serious, g)^2 - ε
+    if δ == 0 ||  -δ <= o.tol
         return o
     else
-        q = retract(M, o.p_last_serious, -g, o.retraction_method)
+        q = retract(prb.M, o.p_last_serious, -g, o.retraction_method)
         X_q = get_bundle_subgradient(prb, q) # not sure about this
         if get_cost(prb, q) <= (get_cost(prb, o.p_last_serious) + o.m * δ)
             o.p_last_serious = q
-            o.bundle_points = hcat(o.bundle_points, [o.p_last_serious, X_q])
+            temp = hcat(o.bundle_points, [o.p_last_serious, X_q])
+            o.bundle_points = temp
         else
-            o.bundle_points = hcat(o.bundle_points, [q, X_q])
+            temp = hcat(o.bundle_points, [q, X_q])
+            o.bundle_points = temp
         end
     end
     positive_indices = intersect(o.index_set, Set(findall(j -> j > 0, λ)))

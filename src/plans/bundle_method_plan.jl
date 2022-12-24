@@ -72,7 +72,7 @@ stores option values for a [`bundle_method`](@ref) solver
 * `X` the current element from the possible subgradients at `p` that is used
 """
 mutable struct BundleMethodOptions{
-    A<:Array,
+    A<:Matrix,
     IR<:AbstractInverseRetractionMethod,
     L<:Array,
     P,
@@ -119,8 +119,8 @@ mutable struct BundleMethodOptions{
         #S<:Set,
         VT<:AbstractVectorTransportMethod,
     }
-        index_set = Set(1)
-        bundle_points = [p, subgrad]
+        index_set = Set()
+        bundle_points = []
         lin_errors = []
         return new{
             typeof(bundle_points),IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT
@@ -141,7 +141,6 @@ mutable struct BundleMethodOptions{
     end
 end
 get_iterate(o::BundleMethodOptions) = o.p
-
 function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T) where {T}
     d = length(o.index_set)
     lin_errors = o.lin_errors
@@ -158,6 +157,5 @@ function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T)
     end
     h(N, λ) = sum(λ) - 1
     gradh(N, λ) = zero_vector(N, λ) .+ 1
-    return exact_penalty_method(N, f, gradf, rand(N); G=g, H=h, gradG=gradg, gradH=gradh)# evaluation = MutatingEvaluation(),
-    #smoothing = LinearQuadraticHuber())
+    return exact_penalty_method(N, f, gradf, rand(N); G=g, H=h, gradG=gradg, gradH=gradh)
 end
