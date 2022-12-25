@@ -69,6 +69,8 @@ mutable struct TrustRegionsState{
     η_Cauchy::T
     Hη_Cauchy::T
     τ::R
+    reduction_threshold::R
+    augmentation_threshold::R
     function TrustRegionsState{P,T,SC,RTR,R,Proj}(
         p::P,
         X::T,
@@ -79,6 +81,8 @@ mutable struct TrustRegionsState{
         randomize::Bool,
         stopping_citerion::SC,
         retraction_method::RTR,
+        reduction_threshold::R,
+        augmentation_threshold::R,
         project!::Proj=copyto!,
     ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
         trs = new{P,T,SC,RTR,R,Proj}()
@@ -91,6 +95,8 @@ mutable struct TrustRegionsState{
         trs.ρ_prime = ρ_prime
         trs.ρ_regularization = ρ_regularization
         trs.randomize = randomize
+        trs.reduction_threshold = reduction_threshold
+        trs.augmentation_threshold = augmentation_threshold
         trs.project! = project!
         return trs
     end
@@ -106,6 +112,8 @@ function TrustRegionsState(
     max_trust_region_radius::R=sqrt(manifold_dimension(M)),
     trust_region_radius::R=max_trust_region_radius / 8,
     retraction_method::RTR=default_retraction_method(M),
+    reduction_threshold::R=0.1,
+    augmentation_threshold::R=0.75,
     project!::Proj=copyto!,
 ) where {
     TM<:AbstractManifold,
@@ -126,6 +134,8 @@ function TrustRegionsState(
         randomize,
         stopping_criterion,
         retraction_method,
+        reduction_threshold,
+        augmentation_threshold,
         project!,
     )
 end
@@ -188,6 +198,22 @@ see [`truncated_conjugate_gradient_descent`](@ref).
   that the iterates produced are not monotonically improving the cost
   when very close to convergence. This is because the corrected cost
   improvement could change sign if it is negative but very small.
+* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method
+    [`truncated_conjugate_gradient_descent`](@ref), which computes an
+    approximate solution for the trust-region subproblem. The tCG-method aborts
+    if the residual is less than or equal to the initial residual to the power of 1+θ.
+* `κ` – (`0.1`) the linear convergence target rate of the tCG-method
+    [`truncated_conjugate_gradient_descent`](@ref), which computes an
+    approximate solution for the trust-region subproblem. The method aborts if the
+    residual is less than or equal to κ times the initial residual.
+* `reduction_threshold` – (`0.1`) Trust-region reduction threshold: if ρ (the performance ratio for
+    the iterate) is less than this bound, the trust-region radius and thus the trust-regions
+    decreases.
+* `augmentation_threshold` – (`0.75`) Trust-region augmentation threshold: if ρ (the performance ratio for
+    the iterate) is greater than this and further conditions apply, the trust-region radius and thus the trust-regions increases.
+* `return_options` – (`false`) – if activated, the extended result, i.e. the
+  complete [`Options`](@ref) are returned. This can be used to access recorded values.
+  If set to false (default) just the optimal value `x_opt` is returned
 
 # Output
 
@@ -240,6 +266,8 @@ function trust_regions!(
     ρ_regularization=1000.0,
     θ::Float64=1.0,
     κ::Float64=0.1,
+    reduction_threshold::Float64=0.1,
+    augmentation_threshold::Float64=0.75,
     kwargs..., #collect rest
 ) where {TF,TdF,TH,Tprec,Proj}
     (ρ_prime >= 0.25) && throw(
@@ -268,6 +296,10 @@ function trust_regions!(
         randomize=randomize,
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
+        θ=θ,
+        κ=κ,
+        reduction_threshold=reduction_threshold,
+        augmentation_threshold=augmentation_threshold,
         (project!)=project!,
     )
     trs = decorate_state(trs; kwargs...)
@@ -361,11 +393,11 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     # Update the Hessian approximation
     update_hessian!(M, mho.hessian!!, trs.p, trs.p_proposal, trs.η)
     # Choose the new TR radius based on the model performance.
-    # If the actual decrease is smaller than 1/4 of the predicted decrease,
+    # If the actual decrease is smaller than reduction_threshold of the predicted decrease,
     # then reduce the TR radius.
-    if ρ < 0.1 || !model_decreased || isnan(ρ)
+    if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius /= 4
-    elseif ρ > 3 / 4 && (
+    elseif ρ > o.augmentation_threshold / 4 && (
         (trs.tcg_options.ηPη >= trs.trust_region_radius^2) || (trs.tcg_options.δHδ <= 0)
     )
         trs.trust_region_radius = min(

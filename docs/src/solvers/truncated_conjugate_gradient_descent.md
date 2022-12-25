@@ -5,14 +5,15 @@ The aim is to solve the trust-region subproblem
 ```math
 \operatorname*{arg\,min}_{η  ∈  T_{x}\mathcal{M}} m_{x}(η) = F(x) +
 ⟨\operatorname{grad}F(x), η⟩_{x} + \frac{1}{2} ⟨
-\operatorname{Hess}F(x)[η], η⟩_{x}
+\mathcal{H}[η], η⟩_{x}
 ```
 
 ```math
 \text{s.t.} \; ⟨η, η⟩_{x} \leq {Δ}^2
 ```
 
-on a manifold by using the Steihaug-Toint truncated conjugate-gradient method.
+on a manifold by using the Steihaug-Toint truncated conjugate-gradient method, 
+abbreviated tCG-method.
 All terms involving the trust-region radius use an inner product w.r.t. the
 preconditioner; this is because the iterates grow in length w.r.t. the
 preconditioner, guaranteeing that we do not re-enter the trust-region.
@@ -27,12 +28,11 @@ Initialize ``η_0 = η`` if using randomized approach and
 
 Repeat until a convergence criterion is reached
 
-1. Set ``κ = ⟨δ_k, \operatorname{Hess}F(x)[δ_k]⟩_x``,
-    ``α =\frac{⟨r_k, z_k⟩_x}{κ}`` and
+1. Set ``α =\frac{⟨r_k, z_k⟩_x}{⟨δ_k, \mathcal{H}[δ_k]⟩_x}`` and
     ``⟨η_k, η_k⟩_{x}^* = ⟨η_k, \operatorname{P}(η_k)⟩_x +
     2α ⟨η_k, \operatorname{P}(δ_k)⟩_{x} +  {α}^2
     ⟨δ_k, \operatorname{P}(δ_k)⟩_{x}``.
-2. If ``κ ≤ 0`` or ``⟨η_k, η_k⟩_x^* ≥ Δ^2``
+2. If ``⟨δ_k, \mathcal{H}[δ_k]⟩_x ≤ 0`` or ``⟨η_k, η_k⟩_x^* ≥ Δ^2``
     return ``η_{k+1} = η_k + τ δ_k`` and stop.
 3. Set ``η_{k}^*= η_k + α δ_k``, if
     ``⟨η_k, η_k⟩_{x} + \frac{1}{2} ⟨η_k,
@@ -40,7 +40,7 @@ Repeat until a convergence criterion is reached
     η_k^*⟩_{x} + \frac{1}{2} ⟨η_k^*,
     \operatorname{Hess}[F] (η_k)_ {x}⟩_{x}``
     set ``η_{k+1} = η_k`` else set ``η_{k+1} = η_{k}^*``.
-4. Set ``r_{k+1} = r_k + α \operatorname{Hess}[F](δ_k)_x``,
+4. Set ``r_{k+1} = r_k + α \mathcal{H}[δ_k]``,
      ``z_{k+1} = \operatorname{P}(r_{k+1})``,
      ``β = \frac{⟨r_{k+1},  z_{k+1}⟩_{x}}{⟨r_k, z_k
    ⟩_{x}}`` and ``δ_{k+1} = -z_{k+1} + β δ_k``.
@@ -95,6 +95,36 @@ stands, as subsequent iterates will move further outside the trust-region
 boundary. A sensible strategy, just as in the case considered above, is to
 move to the trust-region boundary by finding ``τ``.
 
+
+Although it is virtually impossible in practice to know how many iterations are
+necessary to provide a good estimate ``η_{k}`` of the trust-region subproblem, 
+the method stops after a certain number of iterations, which is realised by 
+[`StopAfterIteration`](@ref). In order to increase the convergence rate of 
+the underlying trust-region method, see 
+[`trust_regions`](@ref), a typical stopping criterion 
+is to stop as soon as an iteration ``k`` is reached for which
+
+```math
+  \Vert r_k \Vert_x \leqq \Vert r_0 \Vert_x \min \left( \Vert r_0 \Vert^{θ}_x, κ \right 
+```
+
+holds, where ``0 < κ < 1`` and ``θ > 0`` are chosen in advance. This is 
+realized in this method by [`StopIfResidualIsReducedByFactorOrPower`](@ref). 
+It can be shown shown that under appropriate conditions the iterates ``x_k``
+of the underlying trust-region method converge to nondegenerate critical
+points with an order of convergence of at least ``\min \left( θ + 1, 2 \right)``, 
+see [[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)]. 
+The method also aborts if the curvature of the model is negative, i.e. if 
+``\langle \delta_k, \mathcal{H}[δ_k] \rangle_x \leqq 0``, which is realised by 
+[`StopWhenCurvatureIsNegative`](@ref). If the next possible approximate 
+solution ``η_{k}^{*}`` calculated in iteration ``k`` lies outside the 
+trust region, i.e. if ``\lVert η_{k}^{*} \rVert_x \geq Δ``, then the method 
+aborts, which is realised by [`StopWhenTrustRegionIsExceeded`](@ref). 
+Furthermore, the method aborts if the new model value evaluated at ``η_{k}^{*}`` 
+is greater than the previous model value evaluated at ``η_{k}``, which 
+is realised by [`StopWhenModelIncreased`](@ref). 
+
+
 ## Interface
 
 ```@docs
@@ -115,4 +145,17 @@ StopWhenResidualReducedByFactorOrPower
 StopWhenTrustRegionIsExceeded
 StopWhenCurvatureIsNegative
 StopWhenModelIncreased
+```
+
+## Literature 
+
+```@raw html
+<ul>
+<li id="AbsilMahonySepulchre2008">[<a>Absil, Mahony, Sepulchre, 2008</a>]
+  Absil, Pierre-Antoine and Mahony, Robert and Sepulchre, Rodolphe: 
+  <emph> Optimization Algorithms on Matrix Manifolds </emph>
+  Mathematics of Computation - Math. Comput., Volume 78.
+  doi: <a href="https://doi.org/10.1515/9781400830244">10.1515/9781400830244</a>,
+</li>
+</ul>
 ```

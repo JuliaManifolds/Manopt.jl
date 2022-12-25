@@ -89,6 +89,11 @@ end
     @test s2.reason == ""
     @test s2(p, o, 1)
     @test length(s2.reason) > 0
+    s3 = StopIfResidualIsReducedByFactorOrPower()
+    update_stopping_criterion!(s3, :ResidualFactor, 0.5)
+    @test s3.κ == 0.5
+    update_stopping_criterion!(s3, :ResidualPower, 0.5)
+    @test s3.θ == 0.5
 end
 
 @testset "Stop with step size" begin

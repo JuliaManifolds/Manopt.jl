@@ -523,6 +523,7 @@ end
 function (d::DebugWarnIfCostIncreases)(
     p::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
 )
+    (i < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if cost > d.old_cost + d.tol

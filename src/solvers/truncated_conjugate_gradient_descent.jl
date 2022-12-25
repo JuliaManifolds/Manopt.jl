@@ -267,7 +267,8 @@ m_x(η) = F(x) + ⟨\operatorname{grad}F(x),η⟩_x + \frac{1}{2}⟨\operatornam
 \text{such that}\quad ⟨η,η⟩_x ≤ Δ^2
 ```
 
-with the [`truncated_conjugate_gradient_descent`](@ref).
+on a manifold M by using the Steihaug-Toint truncated conjugate-gradient method,
+abbreviated tCG-method.
 For a description of the algorithm and theorems offering convergence guarantees,
 see the reference:
 
@@ -285,17 +286,17 @@ see the reference:
 * `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_X\operatorname{grad}f(x)``
 * `x` – a point on the manifold ``x ∈ \mathcal M``
 * `η` – an update tangential vector ``η ∈ T_x\mathcal M``
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
+* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_x\operatorname{grad}f(x)``
 
 # Optional
 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
    allocation (default) or [`InplaceEvaluation`](@ref) in place
 * `preconditioner` – a preconditioner for the hessian H
-* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate. The algorithm will
-    terminate early if the residual was reduced by a power of 1+theta.
-* `κ` – (`0.1`) the linear convergence target rate: algorithm will terminate
-    early if the residual was reduced by a factor of kappa.
+* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate. The method aborts
+    if the residual is less than or equal to the initial residual to the power of 1+θ.
+* `κ` – (`0.1`) the linear convergence target rate. The method aborts if the
+    residual is less than or equal to κ times the initial residual.
 * `randomize` – set to true if the trust-region solve is to be initiated with a
     random tangent vector. If set to true, no preconditioner will be
     used. This option is set to true in some scenarios to escape saddle
