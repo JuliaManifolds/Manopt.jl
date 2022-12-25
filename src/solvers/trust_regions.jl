@@ -59,7 +59,7 @@ mutable struct TrustRegionsState{
     project!::Proj
     ρ_prime::R
     ρ_regularization::R
-    tcg_options::TruncatedConjugateGradientState{P,T,R}
+    tcg_state::TruncatedConjugateGradientState{P,T,R}
     p_proposal::P
     f_proposal::R
     # Random
@@ -83,6 +83,7 @@ mutable struct TrustRegionsState{
         retraction_method::RTR,
         reduction_threshold::R,
         augmentation_threshold::R,
+        tcg_state::TruncatedConjugateGradientState{P,T,R},
         project!::Proj=copyto!,
     ) where {P,T,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
         trs = new{P,T,SC,RTR,R,Proj}()
@@ -95,6 +96,7 @@ mutable struct TrustRegionsState{
         trs.ρ_prime = ρ_prime
         trs.ρ_regularization = ρ_regularization
         trs.randomize = randomize
+        trs.tcg_state = tcg_state
         trs.reduction_threshold = reduction_threshold
         trs.augmentation_threshold = augmentation_threshold
         trs.project! = project!
@@ -104,7 +106,8 @@ end
 function TrustRegionsState(
     M::TM,
     p::P,
-    X::T=zero_vector(M, p);
+    X::T,
+    tcg_state::TruncatedConjugateGradientState{P,T,R};
     ρ_prime::R=0.1,
     ρ_regularization::R=1000.0,
     randomize::Bool=false,
@@ -136,6 +139,7 @@ function TrustRegionsState(
         retraction_method,
         reduction_threshold,
         augmentation_threshold,
+        tcg_state,
         project!,
     )
 end
@@ -288,7 +292,17 @@ function trust_regions!(
     trs = TrustRegionsState(
         M,
         p,
-        get_gradient(mp, p);
+        get_gradient(mp, p),
+        TruncatedConjugateGradientState(
+            M,
+            p,
+            zero_vector(M, p);
+            θ=θ,
+            κ=κ,
+            trust_region_radius,
+            randomize=randomize,
+            (project!)=project!,
+        );
         trust_region_radius=trust_region_radius,
         max_trust_region_radius=max_trust_region_radius,
         ρ_prime=ρ_prime,
@@ -296,8 +310,6 @@ function trust_regions!(
         randomize=randomize,
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
-        θ=θ,
-        κ=κ,
         reduction_threshold=reduction_threshold,
         augmentation_threshold=augmentation_threshold,
         (project!)=project!,
@@ -318,14 +330,6 @@ function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     trs.Hη_Cauchy = zero_vector(M, trs.p)
     trs.τ = zero(trs.trust_region_radius)
     trs.Hgrad = zero_vector(M, trs.p)
-    trs.tcg_options = TruncatedConjugateGradientState(
-        M,
-        trs.p,
-        trs.η;
-        trust_region_radius=trs.trust_region_radius,
-        randomize=trs.randomize,
-        (project!)=trs.project!,
-    )
     return trs
 end
 
@@ -344,17 +348,17 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
         zero_vector!(M, trs.η, trs.p)
     end
     # Solve TR subproblem - update options
-    trs.tcg_options.p = trs.p
-    trs.tcg_options.η = trs.η
-    trs.tcg_options.trust_region_radius = trs.trust_region_radius
-    solve!(mp, trs.tcg_options)
+    trs.tcg_state.p = trs.p
+    trs.tcg_state.η = trs.η
+    trs.tcg_state.trust_region_radius = trs.trust_region_radius
+    solve!(mp, trs.tcg_state)
     #
-    trs.η = trs.tcg_options.η
-    trs.Hη = trs.tcg_options.Hη
+    trs.η = trs.tcg_state.η
+    trs.Hη = trs.tcg_state.Hη
 
     # Initialize the cost function F und the gradient of the cost function
     # gradF at the point x
-    trs.X = trs.tcg_options.X
+    trs.X = trs.tcg_state.X
     fx = get_cost(mp, trs.p)
     # If using randomized approach, compare result with the Cauchy point.
     if trs.randomize
@@ -397,9 +401,8 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     # then reduce the TR radius.
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius /= 4
-    elseif ρ > o.augmentation_threshold / 4 && (
-        (trs.tcg_options.ηPη >= trs.trust_region_radius^2) || (trs.tcg_options.δHδ <= 0)
-    )
+    elseif ρ > trs.augmentation_threshold / 4 &&
+        ((trs.tcg_state.ηPη >= trs.trust_region_radius^2) || (trs.tcg_state.δHδ <= 0))
         trs.trust_region_radius = min(
             2 * trs.trust_region_radius, trs.max_trust_region_radius
         )

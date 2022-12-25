@@ -149,7 +149,6 @@ update_hessian!(M, f, p, p_proposal, X) = f
 
 update_hessian_basis!(M, f, p) = f
 
-
 @doc raw"""
     ApproxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real}
 
@@ -186,7 +185,7 @@ Then we approximate the Hessian by the finite difference of the gradients, where
 
 ## Keyword arguments
 
-* `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
+* `evaluation` ([`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
 * `steplength` (``2^{-14}``) step length ``c`` to approximate the gradient evaluations
 * `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use in the approximation.
 * `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
@@ -268,7 +267,7 @@ A functor to approximate the Hessian by the symmetric rank one update.
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
 * `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
-* `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
+* `evaluation` ([`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
 * `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
 """
 mutable struct ApproxHessianSymmetricRankOne{E,P,G,T,B<:AbstractBasis{ℝ},VTR,R<:Real}
@@ -296,7 +295,7 @@ function ApproxHessianSymmetricRankOne(
 }
     if evaluation == AllocatingEvaluation()
         grad_tmp = gradient(M, p)
-    elseif evaluation == MutatingEvaluation()
+    elseif evaluation == InplaceEvaluation()
         grad_tmp = zero_vector(M, p)
         gradient(M, grad_tmp, p)
     end
@@ -320,7 +319,7 @@ function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
     )
 end
 
-function (f::ApproxHessianSymmetricRankOne{MutatingEvaluation})(M, Y, p, X)
+function (f::ApproxHessianSymmetricRankOne{InplaceEvaluation})(M, Y, p, X)
     # Update Basis if necessary
     # if distance(M, p, f.p_tmp) >= eps(Float64)
     if p != f.p_tmp
@@ -354,7 +353,7 @@ function update_hessian!(
 end
 
 function update_hessian!(
-    M, f::ApproxHessianSymmetricRankOne{MutatingEvaluation}, p, p_proposal, X
+    M, f::ApproxHessianSymmetricRankOne{InplaceEvaluation}, p, p_proposal, X
 )
     grad_proposal = zero_vector(M, p_proposal)
     f.gradient!!(M, grad_proposal, p_proposal)
@@ -378,7 +377,7 @@ function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{AllocatingEva
     return f.grad_tmp = f.gradient!!(M, f.p_tmp)
 end
 
-function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{MutatingEvaluation}, p)
+function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{InplaceEvaluation}, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
     copyto!(f.p_tmp, p)
     return f.gradient!!(M, f.grad_tmp, f.p_tmp)
@@ -402,7 +401,7 @@ A functor to approximate the Hessian by the BFGS update.
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
 * `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
-* `evaluation` (`AllocatingEvaluation()`) whether the gradient is given as an allocation function or an in-place (`MutatingEvaluation()`).
+* `evaluation` ([`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
 * `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
 """
 mutable struct ApproxHessianBFGS{
@@ -430,7 +429,7 @@ function ApproxHessianBFGS(
 ) where {mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},VTR<:AbstractVectorTransportMethod}
     if evaluation == AllocatingEvaluation()
         grad_tmp = gradient(M, p)
-    elseif evaluation == MutatingEvaluation()
+    elseif evaluation == InplaceEvaluation()
         grad_tmp = zero_vector(M, p)
         gradient(M, grad_tmp, p)
     end
@@ -453,7 +452,7 @@ function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
     )
 end
 
-function (f::ApproxHessianBFGS{MutatingEvaluation})(M, Y, p, X)
+function (f::ApproxHessianBFGS{InplaceEvaluation})(M, Y, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
@@ -483,7 +482,7 @@ function update_hessian!(M, f::ApproxHessianBFGS{AllocatingEvaluation}, p, p_pro
         f.matrix * sk_c * sk_c' * f.matrix / dot(sk_c, f.matrix * sk_c)
 end
 
-function update_hessian!(M, f::ApproxHessianBFGS{MutatingEvaluation}, p, p_proposal, X)
+function update_hessian!(M, f::ApproxHessianBFGS{InplaceEvaluation}, p, p_proposal, X)
     grad_proposal = zero_vector(M, p_proposal)
     f.gradient!!(M, grad_proposal, p_proposal)
     yk_c = get_coordinates(
@@ -506,7 +505,7 @@ function update_hessian_basis!(M, f::ApproxHessianBFGS{AllocatingEvaluation}, p)
     return f.grad_tmp = f.gradient!!(M, f.p_tmp)
 end
 
-function update_hessian_basis!(M, f::ApproxHessianBFGS{MutatingEvaluation}, p)
+function update_hessian_basis!(M, f::ApproxHessianBFGS{InplaceEvaluation}, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
     copyto!(f.p_tmp, p)
     return f.gradient!!(M, f.grad_tmp, f.p_tmp)
