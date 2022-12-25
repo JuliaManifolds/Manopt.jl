@@ -4,114 +4,96 @@ import Random: seed!
 include("trust_region_model.jl")
 
 @testset "Riemannian Trust-Region" begin
-    seed!(141)
     n = size(A, 1)
-    p = 2
-    N = Grassmann(n, p)
+    N = Grassmann(n, 2)
     M = PowerManifold(N, ArrayPowerRepresentation(), 2)
-    x = random_point(M)
+    p = [1.0; 0.0; 0.0;; 0.0; 1.0; 0.0;;; 0.0; 1.0; 0.0;; 0.0; 0.0; 1.0]
 
-    @test_throws ErrorException trust_regions(M, cost, rgrad, rhess, x; ρ_prime=0.3)
+    @test_throws ErrorException trust_regions(M, cost, rgrad, rhess, p; ρ_prime=0.3)
     @test_throws ErrorException trust_regions(
-        M, cost, rgrad, rhess, x; max_trust_region_radius=-0.1
+        M, cost, rgrad, rhess, p; max_trust_region_radius=-0.1
     )
     @test_throws ErrorException trust_regions(
-        M, cost, rgrad, rhess, x; trust_region_radius=-0.1
+        M, cost, rgrad, rhess, p; trust_region_radius=-0.1
     )
     @test_throws ErrorException trust_regions(
-        M, cost, rgrad, rhess, x; max_trust_region_radius=0.1, trust_region_radius=0.11
+        M, cost, rgrad, rhess, p; max_trust_region_radius=0.1, trust_region_radius=0.11
     )
 
     @testset "Allocating Variant" begin
-        X = trust_regions(
-            M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, debug=[:Stop]
+        p1 = trust_regions(
+            M, cost, rgrad, rhess, p; max_trust_region_radius=8.0, debug=[:Stop]
         )
         opt = trust_regions(
-            M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, return_state=true
+            M, cost, rgrad, rhess, p; max_trust_region_radius=8.0, return_state=true
         )
         @test isapprox(M, X, get_solver_result(opt))
 
-        X2 = deepcopy(x)
-        trust_regions!(M, cost, rgrad, rhess, X2; max_trust_region_radius=8.0)
-        @test isapprox(M, X, X2)
-        XuR = trust_regions(
-            M, cost, rgrad, rhess, x; max_trust_region_radius=8.0, randomize=true
+        q = copy(M, p)
+        trust_regions!(M, cost, rgrad, rhess, q; max_trust_region_radius=8.0)
+        @test isapprox(M, X, q)
+        p2 = trust_regions(
+            M, cost, rgrad, rhess, p; max_trust_region_radius=8.0, randomize=true
         )
 
-        @test cost(M, XuR) ≈ cost(M, X)
+        @test cost(M, p2) ≈ cost(M, p1)
 
-        XaH = trust_regions(
+        p3 = trust_regions(
             M,
             cost,
             rgrad,
             ApproxHessianFiniteDifference(
                 M,
-                x,
+                p,
                 rgrad;
                 steplength=2^(-9),
                 vector_transport_method=ProjectionTransport(),
             ),
-            x;
+            p;
             max_trust_region_radius=8.0,
             stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
         )
-        XaH2 = deepcopy(x)
+        q2 = copy(M, p)
         trust_regions!(
             M,
             cost,
             rgrad,
             ApproxHessianFiniteDifference(
                 M,
-                x,
+                p,
                 rgrad;
                 steplength=2^(-9),
                 vector_transport_method=ProjectionTransport(),
             ),
-            XaH2;
+            q2;
             stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
             max_trust_region_radius=8.0,
         )
-        @test isapprox(M, XaH, XaH2; atol=1e-6)
-        @test cost(M, XaH) ≈ cost(M, X)
+        @test isapprox(M, p3, q2; atol=1e-6)
+        @test cost(M, p3) ≈ cost(M, p1)
 
-        ξ = random_tangent(M, x)
-        @test_throws MethodError get_hessian(SubGradientProblem(M, cost, rgrad), x, ξ)
+        X =  zero_vector(M,p)
+        @test_throws MethodError get_hessian(SubGradientProblem(M, cost, rgrad), x, X)
 
-        η = truncated_conjugate_gradient_descent(
-            M, cost, rgrad, x, ξ, rhess; trust_region_radius=0.5
+        Y = truncated_conjugate_gradient_descent(
+            M, cost, rgrad, p, X, rhess; trust_region_radius=0.5
         )
-        ηOpt = truncated_conjugate_gradient_descent(
-            M, cost, rgrad, x, ξ, rhess; trust_region_radius=0.5, return_state=true
-        )
-        @test get_solver_result(ηOpt) == η
+        cost(M, X) > cost(M, Y)
     end
     @testset "Mutating" begin
         g = RGrad(M, A)
         h = RHess(M, A, p)
-        x3 = deepcopy(x)
+        p1 = copy(M; p)
         trust_regions!(
             M,
             cost,
             g,
             h,
-            x3;
+            p1;
             max_trust_region_radius=8.0,
             evaluation=InplaceEvaluation(),
-            debug=[:Stop],
         )
-        x4 = deepcopy(x)
-        opt = trust_regions!(
-            M,
-            cost,
-            g,
-            h,
-            x4;
-            max_trust_region_radius=8.0,
-            evaluation=InplaceEvaluation(),
-            return_state=true,
-        )
-        @test isapprox(M, x3, x4)
-        XaH = deepcopy(x)
+        p2 = copy(M, p)
         trust_regions!(
             M,
             cost,
@@ -124,11 +106,11 @@ include("trust_region_model.jl")
                 vector_transport_method=ProjectionTransport(),
                 evaluation=InplaceEvaluation(),
             ),
-            XaH;
+            p2;
             stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
             max_trust_region_radius=8.0,
             evaluation=InplaceEvaluation(),
         )
-        @test cost(M, XaH) ≈ cost(M, x3)
+        @test cost(M, p2) ≈ cost(M, p1)
     end
 end
