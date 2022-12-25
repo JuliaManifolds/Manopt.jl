@@ -11,8 +11,18 @@ specify a problem for hessian based algorithms.
   → \mathcal T\mathcal M$ of the cost function $F$
 * `hessian`      : the hessian $\operatorname{Hess}F(x)[⋅]: \mathcal T_{x} \mathcal M
   → \mathcal T_{x} \mathcal M$ of the cost function $F$
-* `preconditioner`       : the symmetric, positive definite
-    preconditioner (approximation of the inverse of the Hessian of $F$)
+* `preconditioner`       : the symmetric, positive definite preconditioner
+    as an approximation of the inverse of the Hessian of $f$, i.e. as a map with the same
+    input variables as the `hessian`.
+
+Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have to forms
+
+* as a function `(M, p) -> X`  and `(M, p, X) -> Y`, resp. i.e. an [`AllocatingEvaluation`](@ref)
+* as a function `(M, X, p) -> X` and (M, Y, p, X), resp., i.e. an [`InplaceEvaluation`](@ref)
+
+# Constructor
+    ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner = (M, p, X) -> X;
+        evaluation=AllocatingEvaluation())
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
@@ -22,15 +32,22 @@ struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
     cost::C
     gradient!!::G
     hessian!!::H
-    preconditioner::Pre
+    preconditioner!!::Pre
     function ManifoldHessianObjective(
         cost::C,
         grad::G,
         hess::H,
-        pre::Pre;
+        precond=nothing;
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {C,G,H,Pre}
-        return new{typeof(evaluation),C,G,H,Pre}(M, cost, grad, hess, pre)
+    ) where {C,G,H}
+        if isnothing(precond)
+            if evaluation isa InplaceEvaluation
+                precond = (M, Y, p, X) -> (Y .= X)
+            else
+                precond = (M, p, X) -> X
+            end
+        end
+        return new{typeof(evaluation),C,G,H,typeof(precond)}(cost, grad, hess, precond)
     end
 end
 
@@ -84,6 +101,9 @@ tangent vector `X`.
 function get_preconditioner(mp::AbstractManoptProblem, p, X)
     return get_preconditioner(get_manifold(mp), get_objective(mp), p, X)
 end
+function get_preconditioner!(mp::AbstractManoptProblem, Y, p, X)
+    return get_preconditioner!(get_manifold(mp), Y, get_objective(mp), p, X)
+end
 
 @doc raw"""
     get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
@@ -93,9 +113,31 @@ inverse of the Hessian of the cost function `F`) of a
 [`ManifoldHessianObjective`](@ref) `mho` at the point `p` applied to a
 tangent vector `X`.
 """
-function get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
-    return mho.preconditioner(M, p, X)
+function get_preconditioner(
+    M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
+)
+    return mho.preconditioner!!(M, p, X)
 end
+function get_preconditioner(
+    M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
+)
+    Y = zero_vector(M, p)
+    mho.preconditioner!!(M, Y, p, X)
+    return Y
+end
+function get_preconditioner!(
+    M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
+)
+    copyto!(M, Y, p, mho.preconditioner!!(M, p, X))
+    return Y
+end
+function get_preconditioner!(
+    M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
+)
+    mho.preconditioner!!(M, Y, p, X)
+    return Y
+end
+
 @doc raw"""
     ApproxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real}
 

@@ -20,8 +20,8 @@ specify an objetive containing a cost and its gradient
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
 
-* as a function `p -> X` that allocates memory for `X`, i.e. an [`AllocatingEvaluation`](@ref)
-* as a function `(X, p) -> X` that work in place of `X`, i.e. an [`InplaceEvaluation`](@ref)
+* as a function `(M, p) -> X` that allocates memory for `X`, i.e. an [`AllocatingEvaluation`](@ref)
+* as a function `(M, X, p) -> X` that work in place of `X`, i.e. an [`InplaceEvaluation`](@ref)
 
 # Constructors
     ManifoldGradientObjective(cost, gradient; evaluation=AllocatingEvaluation())

@@ -7,7 +7,7 @@ function get_gradient!(mp::AbstractManoptProblem, ::AbstractFloat, p)
     X = get_objective(mp).gradient!!(get_manifold(mp), p)
     return X
 end
-function get_hessian!(mp::HessianProblem, ::AbstractFloat, p, X)
+function get_hessian!(mp::AbstractManoptProblem, ::AbstractFloat, p, X)
     Y = get_objective(mp).hessian!!(get_manifold(mp), p, X)
     return Y
 end

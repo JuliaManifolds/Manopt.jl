@@ -1,22 +1,37 @@
-using Manopt, Manifolds, Test, Random
+using Manopt, Manifolds, Test
 
 @testset "Hessian access functions" begin
     M = Euclidean(2)
     f(M, p) = 1
-    gradF(M, p) = zero(2)
-    gradF!(M, X, p) = copyto!(M, X, p, zeros(2))
-    HessF(M, p, X) = X
-    HessF!(M, Y, p, X) = copyto!(M, Y, p, X)
-    precon = (M, p, X) -> X
-    P1 = HessianProblem(M, f, gradF, HessF, precon)
-    P2 = HessianProblem(M, f, gradF!, HessF!, precon; evaluation=InplaceEvaluation())
+    grad_f(M, p) = zeros(2)
+    grad_f!(M, X, p) = copyto!(M, X, p, zeros(2))
+    Hess_f(M, p, X) = 0.5 * X
+    Hess_f!(M, Y, p, X) = copyto!(M, Y, p, 0.5 * X)
+    precon(M, p, X) = X
+    precon!(M, Y, p, X) = copyto!(M, Y, p, X)
+
+    mho1 = ManifoldHessianObjective(f, grad_f, Hess_f)
+    mho2 = ManifoldHessianObjective(f, grad_f, Hess_f, precon)
+    mho3 = ManifoldHessianObjective(f, grad_f!, Hess_f!; evaluation=InplaceEvaluation())
+    mho4 = ManifoldHessianObjective(f, grad_f, Hess_f)
 
     p = zeros(2)
     X = ones(2)
-    @test get_hessian(P1, p, X) == get_hessian(P2, p, X)
-    Y1 = similar(X)
-    Y2 = similar(X)
-    get_hessian!(P1, Y1, p, X)
-    get_hessian!(P2, Y2, p, X)
-    @test Y1 == Y2
+
+    for mho in [mho1, mho2, mho3, mho4]
+        mp = DefaultManoptProblem(M, mho)
+        Y = similar(X)
+        # Gradient
+        @test get_gradient(mp, p) == zeros(2)
+        get_gradient!(mp, Y, p)
+        @test Y == zeros(2)
+        # Hessian
+        @test get_hessian(mp, p, X) == 0.5 * X
+        get_hessian!(mp, Y, p, X)
+        @test Y == 0.5 * X
+        # precon
+        @test get_preconditioner(mp, p, X) == X
+        get_preconditioner!(mp, Y, p, X)
+        @test Y == X
+    end
 end
