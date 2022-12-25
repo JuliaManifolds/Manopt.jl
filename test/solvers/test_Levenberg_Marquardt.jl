@@ -163,7 +163,7 @@ end
         x0,
         length(ts_r2) * 2;
         return_options=true,
-        evaluation=MutatingEvaluation(),
+        evaluation=InplaceEvaluation(),
     )
     @test isapprox(o_mut.options.x[1], 2, atol=0.01)
     @test isapprox(o_mut.options.x[2], -3, atol=0.01)
@@ -188,7 +188,7 @@ end
     @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
 
     p_r2_mut = NonlinearLeastSquaresProblem(
-        M, F_reg_r2!, jacF_reg_r2!, length(ts_r2) * 2; evaluation=MutatingEvaluation()
+        M, F_reg_r2!, jacF_reg_r2!, length(ts_r2) * 2; evaluation=InplaceEvaluation()
     )
 
     X_r2 = similar(x0)
@@ -237,7 +237,7 @@ end
             jacF_reg_r2!,
             x0;
             return_options=true,
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
     end
 end

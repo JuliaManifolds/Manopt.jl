@@ -247,14 +247,14 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         )
 
         SR1_mutating = ApproxHessianSymmetricRankOne(
-            M, p_1, gradF!; evaluation=MutatingEvaluation()
+            M, p_1, gradF!; evaluation=InplaceEvaluation()
         )
 
         BFGS_allocating = ApproxHessianBFGS(
             M, p_1, gradF; evaluation=AllocatingEvaluation()
         )
 
-        BFGS_mutating = ApproxHessianBFGS(M, p_1, gradF!; evaluation=MutatingEvaluation())
+        BFGS_mutating = ApproxHessianBFGS(M, p_1, gradF!; evaluation=InplaceEvaluation())
 
         Y = [0.0; 1.0; 0.0; 0.0]
 

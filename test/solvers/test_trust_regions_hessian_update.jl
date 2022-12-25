@@ -122,7 +122,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             hess!,
             X3;
             trust_region_radius=1.0,
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
 
         X4 = deepcopy(x)
@@ -134,7 +134,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             hess!,
             X4;
             trust_region_radius=1.0,
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
 
         @test isapprox(M, X3, X4)
@@ -146,7 +146,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             cost,
             grad!,
             ApproxHessianSymmetricRankOne(
-                M, XaHSR1, grad!; nu=eps(Float64)^2, evaluation=MutatingEvaluation()
+                M, XaHSR1, grad!; nu=eps(Float64)^2, evaluation=InplaceEvaluation()
             ),
             deepcopy(x);
             stopping_criterion=StopWhenAny(
@@ -156,7 +156,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             θ=0.1,
             κ=0.9,
             retraction_method=ProjectionRetraction(),
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
 
         @test cost(M, XaHSR1) ≈ cost(M, X3)
@@ -167,7 +167,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             M,
             cost,
             grad!,
-            ApproxHessianBFGS(M, XaHBFGS, grad!; evaluation=MutatingEvaluation()),
+            ApproxHessianBFGS(M, XaHBFGS, grad!; evaluation=InplaceEvaluation()),
             deepcopy(x);
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
@@ -176,7 +176,7 @@ using Manopt, Manifolds, ManifoldsBase, LinearAlgebra, Test
             θ=0.1,
             κ=0.9,
             retraction_method=ProjectionRetraction(),
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
 
         @test cost(M, XaHBFGS) ≈ cost(M, X3)

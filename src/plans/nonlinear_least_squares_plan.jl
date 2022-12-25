@@ -18,14 +18,14 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the function ``F`` has to 
 * as a functions `(M::AbstractManifold, p) -> v` that allocates memory for `v` itself for
   an [`AllocatingEvaluation`](@ref),
 * as a function `(M::AbstractManifold, v, p) -> v` that works in place of `v` for a
-  [`MutatingEvaluation`](@ref).
+  [`InplaceEvaluation`](@ref).
 
 Also the Jacobian ``jacF!!`` is required:
 
 * as a functions `(M::AbstractManifold, p; basis_domain::AbstractBasis) -> v` that allocates
   memory for `v` itself for an [`AllocatingEvaluation`](@ref),
 * as a function `(M::AbstractManifold, v, p; basis_domain::AbstractBasis) -> v` that works
-  in place of `v` for an [`MutatingEvaluation`](@ref).
+  in place of `v` for an [`InplaceEvaluation`](@ref).
 
 # Constructors
 

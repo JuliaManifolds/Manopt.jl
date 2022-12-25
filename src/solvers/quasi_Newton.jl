@@ -125,9 +125,9 @@ function quasi_Newton!(
             local_dir_upd; θ=cautious_function
         )
     end
-
-    p = GradientProblem(M, F, gradF; evaluation=evaluation)
-    o = QuasiNewtonState(
+    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
+    mp = DefaultManoptProblem(M, mgo)
+    qns = QuasiNewtonState(
         M,
         x;
         initial_vector=get_gradient(p, x),
@@ -137,8 +137,8 @@ function quasi_Newton!(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_state(o; kwargs...)
-    return get_solver_return(solve!(p, o))
+    qns = decorate_state(qns; kwargs...)
+    return get_solver_return(solve!(mp, qns))
 end
 
 function initialize_solver!(p::AbstractManoptProblem, s::QuasiNewtonState)
