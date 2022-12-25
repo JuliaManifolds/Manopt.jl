@@ -273,7 +273,7 @@ function trust_regions!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(p::HessianProblem, s::TrustRegionsState)
+function initialize_solver!(p::AbstractManoptProblem, s::TrustRegionsState)
     get_gradient!(p, s.gradient, s.x)
     s.η = zero_vector(p.M, s.x)
     s.Hη = zero_vector(p.M, s.x)
@@ -295,24 +295,26 @@ function initialize_solver!(p::HessianProblem, s::TrustRegionsState)
     return s
 end
 
-function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
+function step_solver!(mp::AbstractManoptProblem, s::TrustRegionsState, ::Any)
+    M = get_manifold(mp)
+    O = get_objective(mp)
     # Determine eta0
     if s.randomize
         # Random vector in T_x M (this has to be very small)
-        s.η = random_tangent(p.M, s.x, 10.0^(-6))
-        while norm(p.M, s.x, s.η) > s.trust_region_radius
+        s.η = random_tangent(M, s.x, 10.0^(-6))
+        while norm(M, s.x, s.η) > s.trust_region_radius
             # inside trust-region
             s.η *= sqrt(sqrt(eps(Float64)))
         end
     else
-        zero_vector!(p.M, s.η, s.x)
+        zero_vector!(M, s.η, s.x)
     end
     # Solve TR subproblem - update options
     s.tcg_options.x = s.x
     s.tcg_options.η = s.η
     s.tcg_options.trust_region_radius = s.trust_region_radius
     s.tcg_options.stop = StopWhenAny(
-        StopAfterIteration(manifold_dimension(p.M)),
+        StopAfterIteration(manifold_dimension(M)),
         StopWhenAll(
             StopIfResidualIsReducedByPower(o.θ), StopIfResidualIsReducedByFactor(o.κ)
         ),
@@ -320,7 +322,7 @@ function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
         StopWhenCurvatureIsNegative(),
         StopWhenModelIncreased(),
     )
-    solve!(p, s.tcg_options)
+    solve!(mp, s.tcg_options)
     #
     s.η = s.tcg_options.η
     s.Hη = s.tcg_options.Hη
@@ -328,39 +330,38 @@ function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
     # Initialize the cost function F und the gradient of the cost function
     # gradF at the point x
     s.gradient = s.tcg_options.gradient
-    fx = get_cost(p, s.x)
+    fx = get_cost(mp, s.x)
     # If using randomized approach, compare result with the Cauchy point.
     if s.randomize
-        norm_grad = norm(p.M, s.x, s.gradient)
+        norm_grad = norm(M, s.x, s.gradient)
         # Check the curvature,
-        get_hessian!(p, s.Hgrad, s.x, s.gradient)
-        s.τ = inner(p.M, s.x, s.gradient, s.Hgrad)
+        get_hessian!(mp, s.Hgrad, s.x, s.gradient)
+        s.τ = inner(M, s.x, s.gradient, s.Hgrad)
         s.τ = (s.τ <= 0) ? one(s.τ) : min(norm_grad^3 / (s.trust_region_radius * s.τ), 1)
         # compare to Cauchy point and store best
-        model_value =
-            fx + inner(p.M, s.x, s.gradient, s.η) + 0.5 * inner(p.M, s.x, s.Hη, s.η)
+        model_value = fx + inner(M, s.x, s.gradient, s.η) + 0.5 * inner(M, s.x, s.Hη, s.η)
         modle_value_Cauchy = fx
         -s.τ * s.trust_region_radius * norm_grad
         +0.5 * s.τ^2 * s.trust_region_radius^2 / (norm_grad^2) *
-        inner(p.M, s.x, s.Hgrad, s.gradient)
+        inner(M, s.x, s.Hgrad, s.gradient)
         if modle_value_Cauchy < model_value
-            copyto!(p.M, s.η, (-s.τ * s.trust_region_radius / norm_grad) * s.gradient)
-            copyto!(p.M, s.Hη, (-s.τ * s.trust_region_radius / norm_grad) * s.Hgrad)
+            copyto!(M, s.η, (-s.τ * s.trust_region_radius / norm_grad) * s.gradient)
+            copyto!(M, s.Hη, (-s.τ * s.trust_region_radius / norm_grad) * s.Hgrad)
         end
     end
     # Compute the tentative next iterate (the proposal)
-    retract!(p.M, s.x_proposal, s.x, s.η, s.retraction_method)
+    retract!(M, s.x_proposal, s.x, s.η, s.retraction_method)
     # Check the performance of the quadratic model against the actual cost.
     ρ_reg = max(1, abs(fx)) * eps(Float64) * s.ρ_regularization
-    ρnum = fx - get_cost(p, s.x_proposal)
-    ρden = -inner(p.M, s.x, s.η, s.gradient) - 0.5 * inner(p.M, s.x, s.η, s.Hη)
+    ρnum = fx - get_cost(mp, s.x_proposal)
+    ρden = -inner(M, s.x, s.η, s.gradient) - 0.5 * inner(M, s.x, s.η, s.Hη)
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
     ρ = (abs(ρnum / fx) < sqrt(eps(Float64))) ? 1 : ρnum / ρden # stability for small absolute relative model change
 
     model_decreased = ρden ≥ 0
     # Update the Hessian approximation
-    update_hessian!(p.M, p.hessian!!, o.x, o.x_proposal, o.η)
+    update_hessian!(M, O.hessian!!, o.x, o.x_proposal, o.η)
     # Choose the new TR radius based on the model performance.
     # If the actual decrease is smaller than 1/4 of the predicted decrease,
     # then reduce the TR radius.
@@ -375,7 +376,7 @@ function step_solver!(p::HessianProblem, s::TrustRegionsState, ::Any)
     if model_decreased &&
         (ρ > s.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
         copyto!(s.x, s.x_proposal)
-        update_hessian_basis!(p.M, p.hessian!!, s.x)
+        update_hessian_basis!(M, O.hessian!!, s.x)
     end
     return s
 end

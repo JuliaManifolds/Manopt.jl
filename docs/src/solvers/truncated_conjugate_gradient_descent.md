@@ -111,10 +111,8 @@ TruncatedConjugateGradientState
 ## Additional Stopping Criteria
 
 ```@docs
-StopIfResidualIsReducedByPower
-StopIfResidualIsReducedByFactor
+StopWhenResidualReducedByFactorOrPower
 StopWhenTrustRegionIsExceeded
 StopWhenCurvatureIsNegative
 StopWhenModelIncreased
-update_stopping_criterion!(::StopIfResidualIsReducedByPower, ::Val{:ResidualPower}, ::Any)
 ```

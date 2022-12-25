@@ -1,4 +1,3 @@
-
 @doc raw"""
     TruncatedConjugateGradientState <: AbstractHessianSolverState
 
@@ -31,7 +30,7 @@ a default value is given in brackets if a parameter can be left out in initializ
         randomize=false,
         θ=1.0,
         κ=0.1,
-        project! = copyto!,
+        project!=copyto!,
     )
 
     and a slightly involved `stopping_criterion`
@@ -62,31 +61,6 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
     project!::Proj
     initialResidualNorm::Float64
     function TruncatedConjugateGradientState(
-        p::HessianProblem,
-        x::P,
-        η::T,
-        trust_region_radius::R,
-        randomize::Bool;
-        project!::Proj=copyto!,
-        θ::Float64=1.0,
-        κ::Float64=0.1,
-        stop::StoppingCriterion=StopAfterIteration(manifold_dimension(p.M)) |
-                                StopIfResidualIsReducedByFactorOrPower(; κ=κ, θ=θ) |
-                                StopWhenTrustRegionIsExceeded() |
-                                StopWhenCurvatureIsNegative() |
-                                StopWhenModelIncreased(),
-    ) where {P,T,R<:Real,Proj}
-        return TruncatedConjugateGradientState(
-            p.M,
-            x,
-            η;
-            trust_region_radius=trust_region_radius,
-            (project!)=project!,
-            randomize=randomize,
-            stopping_criterion=stop,
-        )
-    end
-    function TruncatedConjugateGradientState(
         M::AbstractManifold,
         x::P,
         η::T;
@@ -103,17 +77,180 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
                                               StopWhenCurvatureIsNegative() |
                                               StopWhenModelIncreased(),
     ) where {P,T,R<:Real,F}
-        o = new{P,T,R,typeof(stopping_criterion),F}()
-        o.x = x
-        o.stop = stopping_criterion
-        o.η = η
-        o.trust_region_radius = trust_region_radius
-        o.randomize = randomize
-        o.project! = project!
-        o.model_value = zero(trust_region_radius)
-        o.κ = zero(trust_region_radius)
-        return o
+        tcgs = new{P,T,R,typeof(stopping_criterion),F}()
+        tcgs.x = x
+        tcgs.stop = stopping_criterion
+        tcgs.η = η
+        tcgs.trust_region_radius = trust_region_radius
+        tcgs.randomize = randomize
+        tcgs.project! = project!
+        tcgs.model_value = zero(trust_region_radius)
+        tcgs.κ = zero(trust_region_radius)
+        return tcgs
     end
+end
+
+#
+# Spcial stopping Criteria
+#
+
+@doc raw"""
+    StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
+A functor for testing if the norm of residual at the current iterate is reduced
+either by a power of 1+θ or by a factor κ compared to the norm of the initial
+residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \
+\min \left( \kappa, \Vert r_0 \Vert_{x}^{\theta} \right)$.
+# Fields
+* `κ` – the reduction factor
+* `θ` – part of the reduction power
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`get_reason`](@ref).
+# Constructor
+    StopIfResidualIsReducedByFactorOrPower(; κ=0.1, θ=1.0)
+initialize the StopIfResidualIsReducedByFactorOrPower functor to indicate to stop after
+the norm of the current residual is lesser than either the norm of the initial residual
+to the power of 1+θ or the norm of the initial residual times κ.
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
+    κ::Float64
+    θ::Float64
+    reason::String
+    StopIfResidualIsReducedByFactorOrPower(; κ::Float64=0.1, θ::Float64=1.0) = new(κ, θ, "")
+end
+function (c::StopIfResidualIsReducedByFactorOrPower)(
+    mp::AbstractManoptProblem, tcgstate::TruncatedConjugateGradientState, i::Int
+)
+    if norm(get_manifold(mp), tcgstate.x, tcgstate.residual) <=
+       tcgstate.initialResidualNorm * min(c.κ, tcgstate.initialResidualNorm^(c.θ)) && i > 0
+        c.reason = "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
+        return true
+    end
+    return false
+end
+@doc raw"""
+    update_stopping_criterion!(c::StopIfResidualIsReducedByFactorOrPower, :ResidualPower, v)
+Update the residual Power `θ`  to `v`.
+"""
+function update_stopping_criterion!(
+    c::StopIfResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v
+)
+    c.θ = v
+    return c
+end
+
+@doc raw"""
+    update_stopping_criterion!(c::StopIfResidualIsReducedByFactorOrPower, :ResidualFactor, v)
+Update the residual Factor `κ` to `v`.
+"""
+function update_stopping_criterion!(
+    c::StopIfResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v
+)
+    c.κ = v
+    return c
+end
+
+@doc raw"""
+    StopWhenTrustRegionIsExceeded <: StoppingCriterion
+
+A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
+mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
+≧ trust_region_radius$. terminate the algorithm when the trust region has been left.
+
+# Fields
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`get_reason`](@ref).
+* `storage` – stores the necessary parameters `η, δ, residual` to check the
+    criterion.
+
+# Constructor
+
+    StopWhenTrustRegionIsExceeded([a])
+
+initialize the StopWhenTrustRegionIsExceeded functor to indicate to stop after
+the norm of the next iterate is greater than the trust-region radius using the
+[`StoreStateAction`](@ref) `a`, which is initialized to store
+`:η, :δ, :residual` by default.
+
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
+    reason::String
+end
+StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
+function (c::StopWhenTrustRegionIsExceeded)(
+    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
+)
+    if tcgs.ηPη >= tcgs.trust_region_radius^2 && i >= 0
+        c.reason = "Trust-region radius violation (‖η‖² = $(tcgs.ηPη)) >= $(tcgs.trust_region_radius^2) = trust_region_radius²). \n"
+        return true
+    end
+    return false
+end
+
+@doc raw"""
+    StopWhenCurvatureIsNegative <: StoppingCriterion
+
+A functor for testing if the curvature of the model is negative, i.e.
+$\langle \delta_k, \operatorname{Hess}[F](\delta_k)\rangle_x \leqq 0$.
+In this case, the model is not strictly convex, and the stepsize as computed
+does not give a reduction of the model.
+
+# Fields
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`get_reason`](@ref).
+
+# Constructor
+
+    StopWhenCurvatureIsNegative()
+
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
+    reason::String
+end
+StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("")
+function (c::StopWhenCurvatureIsNegative)(
+    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
+)
+    if tcgs.δHδ <= 0 && i > 0
+        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(tcgs.δHδ))) <= 0).\n"
+        return true
+    end
+    return false
+end
+
+@doc raw"""
+    StopWhenModelIncreased <: StoppingCriterion
+
+A functor for testing if the curvature of the model value increased.
+
+# Fields
+* `reason` – stores a reason of stopping if the stopping criterion has one be
+    reached, see [`get_reason`](@ref).
+
+# Constructor
+
+    StopWhenModelIncreased()
+
+# See also
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+mutable struct StopWhenModelIncreased <: StoppingCriterion
+    reason::String
+end
+StopWhenModelIncreased() = StopWhenModelIncreased("")
+function (c::StopWhenModelIncreased)(
+    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
+)
+    if i > 0 && (tcgs.new_model_value > tcgs.model_value)
+        c.reason = "Model value increased from $(tcgs.model_value) to $(tcgs.new_model_value).\n"
+        return true
+    end
+    return false
 end
 
 @doc raw"""
@@ -247,73 +384,68 @@ function truncated_conjugate_gradient_descent!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(p::HessianProblem, s::TruncatedConjugateGradientState)
-    (s.randomize) || zero_vector!(p.M, s.η, s.x)
-    s.Hη = s.randomize ? get_hessian(p, s.x, s.η) : zero_vector(p.M, s.x)
-    s.gradient = get_gradient(p, s.x)
-    s.residual = s.randomize ? s.gradient + s.Hη : s.gradient
-    s.z = s.randomize ? s.residual : get_preconditioner(p, s.x, s.residual)
-    s.δ = -deepcopy(s.z)
-    s.Hδ = zero_vector(p.M, s.x)
-    s.δHδ = inner(p.M, s.x, s.δ, s.Hδ)
-    s.ηPδ = s.randomize ? inner(p.M, s.x, s.η, s.δ) : zero(s.δHδ)
-    s.δPδ = inner(p.M, s.x, s.residual, s.z)
-    s.ηPη = s.randomize ? inner(p.M, s.x, s.η, s.η) : zero(s.δHδ)
-    if s.randomize
-        s.model_value = inner(p.M, s.x, s.η, s.gradient) + 0.5 * inner(p.M, s.x, s.η, s.Hη)
+function initialize_solver!(
+    mp::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState
+)
+    M = get_manifold(mp)
+    (tcgs.randomize) || zero_vector!(M, tcgs.η, tcgs.x)
+    tcgs.Hη = tcgs.randomize ? get_hessian(mp, tcgs.x, tcgs.η) : zero_vector(M, tcgs.x)
+    tcgs.gradient = get_gradient(mp, tcgs.x)
+    tcgs.residual = tcgs.randomize ? tcgs.gradient + tcgs.Hη : tcgs.gradient
+    tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.x, tcgs.residual)
+    tcgs.δ = -deepcopy(tcgs.z)
+    tcgs.Hδ = zero_vector(M, tcgs.x)
+    tcgs.δHδ = inner(M, tcgs.x, tcgs.δ, tcgs.Hδ)
+    tcgs.ηPδ = tcgs.randomize ? inner(M, tcgs.x, tcgs.η, tcgs.δ) : zero(tcgs.δHδ)
+    tcgs.δPδ = inner(M, tcgs.x, tcgs.residual, tcgs.z)
+    tcgs.ηPη = tcgs.randomize ? inner(M, tcgs.x, tcgs.η, tcgs.η) : zero(tcgs.δHδ)
+    if tcgs.randomize
+        tcgs.model_value =
+            inner(M, tcgs.x, tcgs.η, tcgs.gradient) +
+            0.5 * inner(M, tcgs.x, tcgs.η, tcgs.Hη)
     else
-        s.model_value = 0
+        tcgs.model_value = 0
     end
-    s.z_r = inner(p.M, s.x, s.z, s.residual)
-    s.initialResidualNorm = sqrt(inner(p.M, s.x, s.residual, s.residual))
-    return s
+    tcgs.z_r = inner(M, tcgs.x, tcgs.z, tcgs.residual)
+    tcgs.initialResidualNorm = sqrt(inner(M, tcgs.x, tcgs.residual, tcgs.residual))
+    return tcgs
 end
-function step_solver!(p::HessianProblem, s::TruncatedConjugateGradientState, ::Any)
+function step_solver!(p::AbstractManoptProblem, s::TruncatedConjugateGradientState, ::Any)
     # Updates
-    get_hessian!(p, o.Hδ, o.x, o.δ)
-    o.δHδ = inner(p.M, o.x, o.δ, o.Hδ)
-    α = o.z_r / o.δHδ
-    ηPη_new = o.ηPη + 2 * α * o.ηPδ + α^2 * o.δPδ
+    get_hessian!(p, s.Hδ, s.x, s.δ)
+    s.δHδ = inner(p.M, s.x, s.δ, s.Hδ)
+    α = s.z_r / s.δHδ
+    ηPη_new = s.ηPη + 2 * α * s.ηPδ + α^2 * s.δPδ
     # Check against negative curvature and trust-region radius violation.
-    if o.δHδ <= 0 || ηPη_new >= o.trust_region_radius^2
-        τ = (-o.ηPδ + sqrt(o.ηPδ^2 + o.δPδ * (o.trust_region_radius^2 - o.ηPη))) / o.δPδ
-        o.η = o.η + τ * o.δ
-        o.Hη = o.Hη + τ * o.Hδ
-        o.ηPη = ηPη_new
+    if s.δHδ <= 0 || ηPη_new >= s.trust_region_radius^2
+        τ = (-s.ηPδ + sqrt(s.ηPδ^2 + s.δPδ * (s.trust_region_radius^2 - s.ηPη))) / s.δPδ
+        s.η = s.η + τ * s.δ
+        s.Hη = s.Hη + τ * s.Hδ
+        s.ηPη = ηPη_new
         return o
     end
-    o.ηPη = ηPη_new
-    new_η = o.η + α * o.δ
-    new_Hη = o.Hη + α * o.Hδ
-    # No negative curvature and o.η - α * (o.δ) inside TR: accept it.
-    o.new_model_value =
-        inner(p.M, o.x, new_η, o.gradient) + 0.5 * inner(p.M, o.x, new_η, new_Hη)
-    o.new_model_value >= o.model_value && return o
-    copyto!(p.M, o.η, o.x, new_η)
-    o.model_value = o.new_model_value
-    copyto!(p.M, o.Hη, o.x, new_Hη)
-    o.residual = o.residual + α * o.Hδ
-
-    #=
-    if norm(p.M, o.x, o.residual) <= o.initialResidualNorm * min(o.initialResidualNorm^(0.1), 0.9)
-        if 0.9 < o.initialResidualNorm^(0.1)
-            print("Linear \n")
-        else
-            print("Superlinear \n")
-        end
-    end
-    =#
+    s.ηPη = ηPη_new
+    new_η = s.η + α * s.δ
+    new_Hη = s.Hη + α * s.Hδ
+    # No negative curvature and s.η - α * (s.δ) inside TR: accept it.
+    s.new_model_value =
+        inner(p.M, s.x, new_η, s.gradient) + 0.5 * inner(p.M, s.x, new_η, new_Hη)
+    s.new_model_value >= s.model_value && return o
+    copyto!(p.M, s.η, s.x, new_η)
+    s.model_value = s.new_model_value
+    copyto!(p.M, s.Hη, s.x, new_Hη)
+    s.residual = s.residual + α * s.Hδ
 
     # Precondition the residual.
-    o.z = o.randomize ? o.residual : get_preconditioner(p, o.x, o.residual)
-    zr = inner(p.M, o.x, o.z, o.residual)
+    s.z = s.randomize ? s.residual : get_preconditioner(p, s.x, s.residual)
+    zr = inner(p.M, s.x, s.z, s.residual)
     # Compute new search direction.
-    β = zr / o.z_r
-    o.z_r = zr
-    o.δ = -o.z + β * o.δ
-    o.project!(p.M, o.δ, o.x, o.δ)
-    o.ηPδ = β * (α * o.δPδ + o.ηPδ)
-    o.δPδ = o.z_r + β^2 * o.δPδ
+    β = zr / s.z_r
+    s.z_r = zr
+    s.δ = -s.z + β * s.δ
+    s.project!(p.M, s.δ, s.x, s.δ)
+    s.ηPδ = β * (α * s.δPδ + s.ηPδ)
+    s.δPδ = s.z_r + β^2 * s.δPδ
     return o
 end
 get_solver_result(s::TruncatedConjugateGradientState) = s.η
