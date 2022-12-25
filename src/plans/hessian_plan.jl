@@ -330,6 +330,8 @@ function (f::ApproxHessianSymmetricRankOne{InplaceEvaluation})(M, Y, p, X)
     return Y
 end
 
+update_hessian!(M, f, p, p_proposal, X) = f
+
 function update_hessian!(
     M, f::ApproxHessianSymmetricRankOne{AllocatingEvaluation}, p, p_proposal, X
 )
@@ -364,6 +366,8 @@ function update_hessian!(
         f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
     end
 end
+
+update_hessian_basis!(M, f, p) = f
 
 function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{AllocatingEvaluation}, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)

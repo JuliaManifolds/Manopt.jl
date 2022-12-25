@@ -40,9 +40,9 @@ a default value is given in brackets if a parameter can be left out in initializ
 """
 mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion,Proj} <:
                AbstractHessianSolverState
-    x::P
+    p::P
     stop::SC
-    gradient::T
+    X::T
     η::T
     Hη::T
     δ::T
@@ -62,14 +62,14 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
     initialResidualNorm::Float64
     function TruncatedConjugateGradientState(
         M::AbstractManifold,
-        x::P,
+        p::P,
         η::T;
         trust_region_radius::R=injectivity_radius(M) / 4.0,
         randomize::Bool=false,
         project!::F=copyto!,
         θ::Float64=1.0,
         κ::Float64=0.1,
-        stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(p.M)) |
+        stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
                                               StopIfResidualIsReducedByFactorOrPower(;
                                                   κ=κ, θ=θ
                                               ) |
@@ -78,14 +78,13 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
                                               StopWhenModelIncreased(),
     ) where {P,T,R<:Real,F}
         tcgs = new{P,T,R,typeof(stopping_criterion),F}()
-        tcgs.x = x
+        tcgs.p = p
         tcgs.stop = stopping_criterion
         tcgs.η = η
         tcgs.trust_region_radius = trust_region_radius
         tcgs.randomize = randomize
         tcgs.project! = project!
         tcgs.model_value = zero(trust_region_radius)
-        tcgs.κ = zero(trust_region_radius)
         return tcgs
     end
 end
@@ -122,7 +121,7 @@ end
 function (c::StopIfResidualIsReducedByFactorOrPower)(
     mp::AbstractManoptProblem, tcgstate::TruncatedConjugateGradientState, i::Int
 )
-    if norm(get_manifold(mp), tcgstate.x, tcgstate.residual) <=
+    if norm(get_manifold(mp), tcgstate.p, tcgstate.residual) <=
        tcgstate.initialResidualNorm * min(c.κ, tcgstate.initialResidualNorm^(c.θ)) && i > 0
         c.reason = "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
         return true
@@ -305,9 +304,8 @@ see the reference:
 * `project!` : (`copyto!`) specify a projection operation for tangent vectors
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
-* `stopping_criterion` – ([`StopWhenAny`](@ref), [`StopAfterIteration`](@ref),
-    [`StopIfResidualIsReducedByFactor`](@ref), [`StopIfResidualIsReducedByPower`](@ref),
-    [`StopWhenCurvatureIsNegative`](@ref), [`StopWhenTrustRegionIsExceeded`](@ref) )
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)` | `[`StopIfResidualIsReducedByFactor`](@ref)` | `
+    [`StopIfResidualIsReducedByFactorOrPower`](@ref)` | '[`StopWhenCurvatureIsNegative`](@ref)` | `[`StopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
@@ -337,42 +335,43 @@ solve the trust-region subproblem in place of `x`.
 # Input
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
-* `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_X\operatorname{grad}f(x)``
-* `x` – a point on the manifold ``x ∈ \mathcal M``
-* `η` – an update tangential vector ``η ∈ T_x\mathcal M``
+* `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of `f`
+* `Hess_f` – the hessian ``\operatorname{Hess}f(x): T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}f(p)[X]``
+* `p` – a point on the manifold ``p ∈ \mathcal M``
+* `X` – an update tangential vector ``X ∈ T_x\mathcal M``
 
 For more details and all optional arguments, see [`truncated_conjugate_gradient_descent`](@ref).
 """
 function truncated_conjugate_gradient_descent!(
     M::AbstractManifold,
-    F::TF,
-    gradF::TG,
-    x,
-    η,
-    H::TH;
+    f::TF,
+    grad_f::TG,
+    p,
+    X,
+    Hess_f::TH;
     trust_region_radius::Float64=injectivity_radius(M) / 4,
     evaluation=AllocatingEvaluation(),
     preconditioner::Tprec=(M, x, ξ) -> ξ,
     θ::Float64=1.0,
     κ::Float64=0.1,
     randomize::Bool=false,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(manifold_dimension(M)),
-        StopWhenAll(StopIfResidualIsReducedByPower(θ), StopIfResidualIsReducedByFactor(κ)),
-        StopWhenTrustRegionIsExceeded(),
-        StopWhenCurvatureIsNegative(),
-        StopWhenModelIncreased(),
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
+                                          StopIfResidualIsReducedByFactorOrPower(;
+                                              κ=κ, θ=θ
+                                          ) |
+                                          StopWhenTrustRegionIsExceeded() |
+                                          StopWhenCurvatureIsNegative() |
+                                          StopWhenModelIncreased(),
     project!::Proj=copyto!,
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec,Proj}
-    p = HessianProblem(M, F, gradF, H, preconditioner; evaluation=evaluation)
-    o = TruncatedConjugateGradientState(
+    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
+    mp = DefaultManoptProblem(M, mho)
+    tcgs = TruncatedConjugateGradientState(
         M,
-        x,
-        η;
+        p,
+        X;
         trust_region_radius=trust_region_radius,
         randomize=randomize,
         θ=θ,
@@ -380,72 +379,77 @@ function truncated_conjugate_gradient_descent!(
         stopping_criterion=stopping_criterion,
         (project!)=project!,
     )
-    o = decorate_state(o; kwargs...)
-    return get_solver_return(solve!(p, o))
+    tcgs = decorate_state(tcgs; kwargs...)
+    return get_solver_return(solve!(mp, tcgs))
 end
 
 function initialize_solver!(
     mp::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState
 )
     M = get_manifold(mp)
-    (tcgs.randomize) || zero_vector!(M, tcgs.η, tcgs.x)
-    tcgs.Hη = tcgs.randomize ? get_hessian(mp, tcgs.x, tcgs.η) : zero_vector(M, tcgs.x)
-    tcgs.gradient = get_gradient(mp, tcgs.x)
-    tcgs.residual = tcgs.randomize ? tcgs.gradient + tcgs.Hη : tcgs.gradient
-    tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.x, tcgs.residual)
+    (tcgs.randomize) || zero_vector!(M, tcgs.η, tcgs.p)
+    tcgs.Hη = tcgs.randomize ? get_hessian(mp, tcgs.p, tcgs.η) : zero_vector(M, tcgs.p)
+    tcgs.X = get_gradient(mp, tcgs.p)
+    tcgs.residual = tcgs.randomize ? tcgs.X + tcgs.Hη : tcgs.X
+    tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
     tcgs.δ = -deepcopy(tcgs.z)
-    tcgs.Hδ = zero_vector(M, tcgs.x)
-    tcgs.δHδ = inner(M, tcgs.x, tcgs.δ, tcgs.Hδ)
-    tcgs.ηPδ = tcgs.randomize ? inner(M, tcgs.x, tcgs.η, tcgs.δ) : zero(tcgs.δHδ)
-    tcgs.δPδ = inner(M, tcgs.x, tcgs.residual, tcgs.z)
-    tcgs.ηPη = tcgs.randomize ? inner(M, tcgs.x, tcgs.η, tcgs.η) : zero(tcgs.δHδ)
+    tcgs.Hδ = zero_vector(M, tcgs.p)
+    tcgs.δHδ = inner(M, tcgs.p, tcgs.δ, tcgs.Hδ)
+    tcgs.ηPδ = tcgs.randomize ? inner(M, tcgs.p, tcgs.η, tcgs.δ) : zero(tcgs.δHδ)
+    tcgs.δPδ = inner(M, tcgs.p, tcgs.residual, tcgs.z)
+    tcgs.ηPη = tcgs.randomize ? inner(M, tcgs.p, tcgs.η, tcgs.η) : zero(tcgs.δHδ)
     if tcgs.randomize
         tcgs.model_value =
-            inner(M, tcgs.x, tcgs.η, tcgs.gradient) +
-            0.5 * inner(M, tcgs.x, tcgs.η, tcgs.Hη)
+            inner(M, tcgs.p, tcgs.η, tcgs.X) + 0.5 * inner(M, tcgs.p, tcgs.η, tcgs.Hη)
     else
         tcgs.model_value = 0
     end
-    tcgs.z_r = inner(M, tcgs.x, tcgs.z, tcgs.residual)
-    tcgs.initialResidualNorm = sqrt(inner(M, tcgs.x, tcgs.residual, tcgs.residual))
+    tcgs.z_r = inner(M, tcgs.p, tcgs.z, tcgs.residual)
+    tcgs.initialResidualNorm = sqrt(inner(M, tcgs.p, tcgs.residual, tcgs.residual))
     return tcgs
 end
-function step_solver!(p::AbstractManoptProblem, s::TruncatedConjugateGradientState, ::Any)
-    # Updates
-    get_hessian!(p, s.Hδ, s.x, s.δ)
-    s.δHδ = inner(p.M, s.x, s.δ, s.Hδ)
-    α = s.z_r / s.δHδ
-    ηPη_new = s.ηPη + 2 * α * s.ηPδ + α^2 * s.δPδ
+function step_solver!(
+    mp::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, ::Any
+)
+    M = get_manifold(mp)
+    get_hessian!(mp, tcgs.Hδ, tcgs.p, tcgs.δ)
+    tcgs.δHδ = inner(M, tcgs.p, tcgs.δ, tcgs.Hδ)
+    α = tcgs.z_r / tcgs.δHδ
+    ηPη_new = tcgs.ηPη + 2 * α * tcgs.ηPδ + α^2 * tcgs.δPδ
     # Check against negative curvature and trust-region radius violation.
-    if s.δHδ <= 0 || ηPη_new >= s.trust_region_radius^2
-        τ = (-s.ηPδ + sqrt(s.ηPδ^2 + s.δPδ * (s.trust_region_radius^2 - s.ηPη))) / s.δPδ
-        s.η = s.η + τ * s.δ
-        s.Hη = s.Hη + τ * s.Hδ
-        s.ηPη = ηPη_new
-        return o
+    if tcgs.δHδ <= 0 || ηPη_new >= tcgs.trust_region_radius^2
+        τ =
+            (
+                -tcgs.ηPδ +
+                sqrt(tcgs.ηPδ^2 + tcgs.δPδ * (tcgs.trust_region_radius^2 - tcgs.ηPη))
+            ) / tcgs.δPδ
+        tcgs.η = tcgs.η + τ * tcgs.δ
+        tcgs.Hη = tcgs.Hη + τ * tcgs.Hδ
+        tcgs.ηPη = ηPη_new
+        return tcgs
     end
-    s.ηPη = ηPη_new
-    new_η = s.η + α * s.δ
-    new_Hη = s.Hη + α * s.Hδ
+    tcgs.ηPη = ηPη_new
+    new_η = tcgs.η + α * tcgs.δ
+    new_Hη = tcgs.Hη + α * tcgs.Hδ
     # No negative curvature and s.η - α * (s.δ) inside TR: accept it.
-    s.new_model_value =
-        inner(p.M, s.x, new_η, s.gradient) + 0.5 * inner(p.M, s.x, new_η, new_Hη)
-    s.new_model_value >= s.model_value && return o
-    copyto!(p.M, s.η, s.x, new_η)
-    s.model_value = s.new_model_value
-    copyto!(p.M, s.Hη, s.x, new_Hη)
-    s.residual = s.residual + α * s.Hδ
+    tcgs.new_model_value =
+        inner(M, tcgs.p, new_η, tcgs.X) + 0.5 * inner(M, tcgs.p, new_η, new_Hη)
+    tcgs.new_model_value >= tcgs.model_value && return tcgs
+    copyto!(M, tcgs.η, tcgs.p, new_η)
+    tcgs.model_value = tcgs.new_model_value
+    copyto!(M, tcgs.Hη, tcgs.p, new_Hη)
+    tcgs.residual = tcgs.residual + α * tcgs.Hδ
 
     # Precondition the residual.
-    s.z = s.randomize ? s.residual : get_preconditioner(p, s.x, s.residual)
-    zr = inner(p.M, s.x, s.z, s.residual)
+    tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
+    zr = inner(M, tcgs.p, tcgs.z, tcgs.residual)
     # Compute new search direction.
-    β = zr / s.z_r
-    s.z_r = zr
-    s.δ = -s.z + β * s.δ
-    s.project!(p.M, s.δ, s.x, s.δ)
-    s.ηPδ = β * (α * s.δPδ + s.ηPδ)
-    s.δPδ = s.z_r + β^2 * s.δPδ
-    return o
+    β = zr / tcgs.z_r
+    tcgs.z_r = zr
+    tcgs.δ = -tcgs.z + β * tcgs.δ
+    tcgs.project!(M, tcgs.δ, tcgs.p, tcgs.δ)
+    tcgs.ηPδ = β * (α * tcgs.δPδ + tcgs.ηPδ)
+    tcgs.δPδ = tcgs.z_r + β^2 * tcgs.δPδ
+    return tcgs
 end
 get_solver_result(s::TruncatedConjugateGradientState) = s.η

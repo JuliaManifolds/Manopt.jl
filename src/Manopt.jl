@@ -360,9 +360,8 @@ export Linesearch, ArmijoLinesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria
-export StopIfResidualIsReducedByFactor,
-    StopIfResidualIsReducedByPower,
-    StopWhenCurvatureIsNegative,
+export StopWhenCurvatureIsNegative,
+    StopIfResidualIsReducedByFactorOrPower,
     StopWhenSmallerOrEqual,
     StopWhenTrustRegionIsExceeded,
     StopWhenModelIncreased
