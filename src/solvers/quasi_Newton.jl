@@ -147,42 +147,43 @@ function initialize_solver!(p::AbstractManoptProblem, s::QuasiNewtonState)
     return s.yk = deepcopy(s.gradient)
 end
 
-function step_solver!(p::AbstractManoptProblem, s::QuasiNewtonState, iter)
-    s.gradient = get_gradient(p, s.x)
-    η = s.direction_update(p, s)
-    α = s.stepsize(p, s, iter, η)
-    x_old = deepcopy(s.x)
-    retract!(p.M, s.x, s.x, α * η, s.retraction_method)
+function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
+    M = get_manifold(mp)
+    qns.gradient = get_gradient(mp, qns.x)
+    η = qns.direction_update(mp, qns)
+    α = qns.stepsize(mp, qns, iter, η)
+    p_old = copy(M, get_iterate(qns))
+    retract!(M, qns.x, qns.x, α * η, qns.retraction_method)
     β = locking_condition_scale(
-        p.M, s.direction_update, x_old, α * η, s.x, s.vector_transport_method
+        M, qns.direction_update, p_old, α * η, qns.x, qns.vector_transport_method
     )
     vector_transport_to!(
-        p.M, s.sk, x_old, α * η, s.x, get_update_vector_transport(s.direction_update)
+        M, qns.sk, p_old, α * η, qns.x, get_update_vector_transport(qns.direction_update)
     )
     vector_transport_to!(
-        p.M,
-        s.gradient,
-        x_old,
-        s.gradient,
-        s.x,
-        get_update_vector_transport(s.direction_update),
+        M,
+        qns.gradient,
+        p_old,
+        qns.gradient,
+        qns.x,
+        get_update_vector_transport(qns.direction_update),
     )
-    s.yk = get_gradient(p, s.x) / β - s.gradient
-    update_hessian!(s.direction_update, p, s, x_old, iter)
-    return s
+    qns.yk = get_gradient(mp, qns.x) / β - qns.gradient
+    update_hessian!(qns.direction_update, mp, qns, p_old, iter)
+    return qns
 end
 
 function locking_condition_scale(
-    M::AbstractManifold, ::AbstractQuasiNewtonDirectionUpdate, x_old, v, x, vt
+    M::AbstractManifold, ::AbstractQuasiNewtonDirectionUpdate, p_old, v, x, vt
 )
-    return norm(M, x_old, v) / norm(M, x, vector_transport_to(M, x_old, v, x, vt))
+    return norm(M, p_old, v) / norm(M, x, vector_transport_to(M, p_old, v, x, vt))
 end
 
 @doc raw"""
-    update_hessian!(d, p, o, x_old, iter)
+    update_hessian!(d, mp, st, p_old, iter)
 
-update the hessian wihtin the [`QuasiNewtonState`](@ref) `o` given a [`Problem`](@ref) `p`
-as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `x_old`.
+update the hessian wihtin the [`QuasiNewtonState`](@ref) `o` given a [`AbstractManoptProblem`](@ref) `p`
+as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `p_old`.
 Note that the current (`iter`th) iterate is already stored in `o.x`.
 
 See also [`AbstractQuasiNewtonUpdateRule`](@ref) for the different rules that are available
@@ -191,14 +192,15 @@ within `d`.
 update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, ::Any, ::Any, ::Any, ::Any)
 
 function update_hessian!(
-    d::QuasiNewtonMatrixDirectionUpdate{InverseBFGS}, p, o, x_old, iter
+    d::QuasiNewtonMatrixDirectionUpdate{InverseBFGS}, mp, st, p_old, iter
 )
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+    M = get_manifold(mp)
+    update_basis!(d.basis, M, p_old, st.x, d.vector_transport_method)
+    yk_c = get_coordinates(M, st.x, st.yk, d.basis)
+    sk_c = get_coordinates(M, st.x, st.sk, d.basis)
+    skyk_c = inner(M, st.x, st.sk, st.yk)
     if iter == 1 && d.scale == true
-        d.matrix = skyk_c / inner(p.M, o.x, o.yk, o.yk) * d.matrix
+        d.matrix = skyk_c / inner(M, st.x, st.yk, st.yk) * d.matrix
     end
     d.matrix =
         (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
@@ -207,13 +209,14 @@ function update_hessian!(
 end
 
 # BFGS update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{BFGS}, p, o, x_old, iter)
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{BFGS}, mp, st, p_old, iter)
+    M = get_manifold(mp)
+    update_basis!(d.basis, M, p_old, st.x, d.vector_transport_method)
+    yk_c = get_coordinates(M, st.x, st.yk, d.basis)
+    sk_c = get_coordinates(M, st.x, st.sk, d.basis)
+    skyk_c = inner(M, st.x, st.sk, st.yk)
     if iter == 1 && d.scale == true
-        d.matrix = inner(p.M, o.x, o.yk, o.yk) / skyk_c * d.matrix
+        d.matrix = inner(M, st.x, st.yk, st.yk) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + yk_c * yk_c' / skyk_c -
@@ -222,13 +225,16 @@ function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{BFGS}, p, o, x_old,
 end
 
 # Inverse DFP update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{InverseDFP}, p, o, x_old, iter)
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+function update_hessian!(
+    d::QuasiNewtonMatrixDirectionUpdate{InverseDFP}, mp, st, p_old, iter
+)
+    M = get_manifold(mp)
+    update_basis!(d.basis, M, p_old, st.x, d.vector_transport_method)
+    yk_c = get_coordinates(M, st.x, st.yk, d.basis)
+    sk_c = get_coordinates(M, st.x, st.sk, d.basis)
+    skyk_c = inner(M, st.x, st.sk, st.yk)
     if iter == 1 && d.scale == true
-        d.matrix = inner(p.M, o.x, o.sk, o.sk) / skyk_c * d.matrix
+        d.matrix = inner(M, st.x, st.sk, st.sk) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + sk_c * sk_c' / skyk_c -
@@ -237,13 +243,14 @@ function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{InverseDFP}, p, o, 
 end
 
 # DFP update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{DFP}, p, o, x_old, iter)
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{DFP}, mp, st, p_old, iter)
+    M = get_manifold(mp)
+    update_basis!(d.basis, M, p_old, st.x, d.vector_transport_method)
+    yk_c = get_coordinates(M, st.x, st.yk, d.basis)
+    sk_c = get_coordinates(M, st.x, st.sk, d.basis)
+    skyk_c = inner(M, st.x, st.sk, st.yk)
     if iter == 1 && d.scale == true
-        d.matrix = skyk_c / inner(p.M, o.x, o.sk, o.sk) * d.matrix
+        d.matrix = skyk_c / inner(M, st.x, st.sk, st.sk) * d.matrix
     end
     d.matrix =
         (I - yk_c * sk_c' / skyk_c) * d.matrix * (I - sk_c * yk_c' / skyk_c) +
@@ -253,11 +260,12 @@ end
 
 # Inverse SR-1 update
 function update_hessian!(
-    d::QuasiNewtonMatrixDirectionUpdate{InverseSR1}, p, o, x_old, ::Int
+    d::QuasiNewtonMatrixDirectionUpdate{InverseSR1}, mp, st, p_old, ::Int
 )
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
+    M = get_manifold(mp)
+    update_basis!(d.basis, M, p_old, st.x, d.vector_transport_method)
+    yk_c = get_coordinates(M, st.x, st.yk, d.basis)
+    sk_c = get_coordinates(M, st.x, st.sk, d.basis)
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = sk_c - d.matrix * yk_c
@@ -268,10 +276,11 @@ function update_hessian!(
 end
 
 # SR-1 update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{SR1}, p, o, x_old, ::Int)
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{SR1}, mp, st, p_old, ::Int)
+    M = get_manifold(mp)
+    update_basis!(d.basis, M, p_old, st.x, d.vector_transport_method)
+    yk_c = get_coordinates(M, st.x, st.yk, d.basis)
+    sk_c = get_coordinates(M, st.x, st.sk, d.basis)
 
     # computing the new matrix which represents the approximating operator in the next iteration
     srvec = yk_c - d.matrix * sk_c
@@ -283,12 +292,13 @@ end
 
 # Inverse Broyden update
 function update_hessian!(
-    d::QuasiNewtonMatrixDirectionUpdate{InverseBroyden}, p, o, x_old, ::Int
+    d::QuasiNewtonMatrixDirectionUpdate{InverseBroyden}, mp, st, p_old, ::Int
 )
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+    M = get_manifold(mp)
+    update_basis!(d.basis, M, p_old, st.x, d.vector_transport_method)
+    yk_c = get_coordinates(M, st.x, st.yk, d.basis)
+    sk_c = get_coordinates(M, st.x, st.sk, d.basis)
+    skyk_c = inner(M, st.x, st.sk, st.yk)
     ykBkyk_c = yk_c' * d.matrix * yk_c
 
     φ = update_broyden_factor!(d, sk_c, yk_c, skyk_c, ykBkyk_c, d.update.update_rule)
@@ -304,11 +314,12 @@ function update_hessian!(
 end
 
 # Broyden update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{Broyden}, p, o, x_old, ::Int)
-    update_basis!(d.basis, p.M, x_old, o.x, d.vector_transport_method)
-    yk_c = get_coordinates(p.M, o.x, o.yk, d.basis)
-    sk_c = get_coordinates(p.M, o.x, o.sk, d.basis)
-    skyk_c = inner(p.M, o.x, o.sk, o.yk)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{Broyden}, mp, st, p_old, ::Int)
+    M = get_manifold(mp)
+    update_basis!(d.basis, M, p_old, st.x, d.vector_transport_method)
+    yk_c = get_coordinates(M, st.x, st.yk, d.basis)
+    sk_c = get_coordinates(M, st.x, st.sk, d.basis)
+    skyk_c = inner(M, st.x, st.sk, st.yk)
     skHksk_c = sk_c' * d.matrix * sk_c
 
     φ = update_broyden_factor!(d, sk_c, yk_c, skyk_c, skHksk_c, d.update.update_rule)
@@ -367,73 +378,75 @@ end
 
 # Cautious update
 function update_hessian!(
-    d::QuasiNewtonCautiousDirectionUpdate{U}, p, o, x_old, iter
+    d::QuasiNewtonCautiousDirectionUpdate{U}, mp, st, p_old, iter
 ) where {U<:AbstractQuasiNewtonDirectionUpdate}
+    M = get_manifold(mp)
     # computing the bound used in the decission rule
-    bound = d.θ(norm(p.M, o.x, o.gradient))
-    sk_normsq = norm(p.M, o.x, o.sk)^2
-    if sk_normsq != 0 && (inner(p.M, o.x, o.sk, o.yk) / sk_normsq) >= bound
-        update_hessian!(d.update, p, o, x_old, iter)
+    bound = d.θ(norm(M, st.x, st.gradient))
+    sk_normsq = norm(M, st.x, st.sk)^2
+    if sk_normsq != 0 && (inner(M, st.x, st.sk, st.yk) / sk_normsq) >= bound
+        update_hessian!(d.update, mp, st, p_old, iter)
     end
     return d
 end
 
 # Limited-memory update
 function update_hessian!(
-    d::QuasiNewtonLimitedMemoryDirectionUpdate{U}, p, o, x_old, ::Int
+    d::QuasiNewtonLimitedMemoryDirectionUpdate{U}, mp, st, p_old, ::Int
 ) where {U<:InverseBFGS}
     (capacity(d.memory_s) == 0) && return d
     # only transport the first if it does not get overwritten at the end
     start = length(d.memory_s) == capacity(d.memory_s) ? 2 : 1
-
+    M = get_manifold(mp)
     for i in start:length(d.memory_s)
         # transport all stored tangent vectors in the tangent space of the next iterate
         vector_transport_to!(
-            p.M, d.memory_s[i], x_old, d.memory_s[i], o.x, d.vector_transport_method
+            M, d.memory_s[i], p_old, d.memory_s[i], st.x, d.vector_transport_method
         )
         vector_transport_to!(
-            p.M, d.memory_y[i], x_old, d.memory_y[i], o.x, d.vector_transport_method
+            M, d.memory_y[i], p_old, d.memory_y[i], st.x, d.vector_transport_method
         )
     end
 
     # add newest
-    push!(d.memory_s, o.sk)
-    push!(d.memory_y, o.yk)
+    push!(d.memory_s, st.sk)
+    push!(d.memory_y, st.yk)
     return d
 end
 
 # all Cautious Limited Memory
 function update_hessian!(
     d::QuasiNewtonCautiousDirectionUpdate{QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,VT}},
-    p,
-    o,
-    x_old,
+    mp,
+    st,
+    p_old,
     iter,
 ) where {NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod}
     # computing the bound used in the decission rule
-    bound = d.θ(norm(p.M, x_old, get_gradient(p, x_old)))
-    sk_normsq = norm(p.M, o.x, o.sk)^2
+    M = get_manifold(pm)
+    bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
+    sk_normsq = norm(M, st.x, st.sk)^2
 
     # if the decission rule is fulfilled, the new sk and yk are added
-    if sk_normsq != 0 && (inner(p.M, o.x, o.sk, o.yk) / sk_normsq) >= bound
-        update_hessian!(d.update, p, o, x_old, iter)
+    if sk_normsq != 0 && (inner(M, st.x, st.sk, st.yk) / sk_normsq) >= bound
+        update_hessian!(d.update, mp, st, p_old, iter)
     else
         # the stored vectores are just transported to the new tangent space, sk and yk are not added
         for i in 1:length(d.update.memory_s)
             vector_transport_to!(
-                p.M,
+                M,
                 d.update.memory_s[i],
-                x_old,
+                p_old,
                 d.update.memory_s[i],
-                o.x,
+                st.x,
                 d.update.vector_transport_method,
             )
             vector_transport_to!(
-                p.M,
+                M,
                 d.update.memory_y[i],
-                x_old,
+                p_old,
                 d.update.memory_y[i],
-                o.x,
+                st.x,
                 d.update.vector_transport_method,
             )
         end

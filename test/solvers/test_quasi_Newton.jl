@@ -14,26 +14,27 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         M = Euclidean(4, 4)
         x = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
-            M, f, gradF, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
+            M, f, grad_f, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
         )
         @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
         # with State
         lrbfgs_o = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
         )
-        @test get_last_stepsize(GradientProblem(M, f, gradF), lrbfgs_o, lrbfgs_o.stepsize) >
-            0
+        @test get_last_stepsize(
+            GradientProblem(M, f, grad_f), lrbfgs_o, lrbfgs_o.stepsize
+        ) > 0
         @test lrbfgs_o.x == x_lrbfgs
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
@@ -43,7 +44,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         x_lrbfgs_cached_2 = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
@@ -54,7 +55,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         x_clrbfgs = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
@@ -64,7 +65,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         x_rbfgs_Huang = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             memory_size=-1,
             stepsize=WolfePowellBinaryLinesearch(
@@ -79,7 +80,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
                 x_direction = quasi_Newton(
                     M,
                     f,
-                    gradF,
+                    grad_f,
                     x;
                     direction_update=T,
                     cautious_update=c,
@@ -104,7 +105,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         x_lrbfgs = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
@@ -115,7 +116,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         x_clrbfgs = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(1e-9),
@@ -124,7 +125,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         x_cached_lrbfgs = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
@@ -147,7 +148,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             x_direction = quasi_Newton(
                 M,
                 f,
-                gradF,
+                grad_f,
                 x;
                 direction_update=T,
                 cautious_update=c,
@@ -238,7 +239,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         M = Sphere(n - 1)
         F(::Sphere, X) = X' * A * X
         gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
-        gradF!(::Sphere, X, p) = (X .= 2 * (A * X - X * (X' * A * X)))
+        grad_f!(::Sphere, X, p) = (X .= 2 * (A * X - X * (X' * A * X)))
 
         p_1 = [1.0; 0.0; 0.0; 0.0]
 
@@ -247,14 +248,14 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         )
 
         SR1_mutating = ApproxHessianSymmetricRankOne(
-            M, p_1, gradF!; evaluation=InplaceEvaluation()
+            M, p_1, grad_f!; evaluation=InplaceEvaluation()
         )
 
         BFGS_allocating = ApproxHessianBFGS(
             M, p_1, gradF; evaluation=AllocatingEvaluation()
         )
 
-        BFGS_mutating = ApproxHessianBFGS(M, p_1, gradF!; evaluation=InplaceEvaluation())
+        BFGS_mutating = ApproxHessianBFGS(M, p_1, grad_f!; evaluation=InplaceEvaluation())
 
         Y = [0.0; 1.0; 0.0; 0.0]
 

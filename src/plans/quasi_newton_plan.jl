@@ -375,6 +375,17 @@ function QuasiNewtonState(
         vector_transport_method,
     )
 end
+# Temporary
+get_iterate(qns::QuasiNewtonState) = qns.x
+function set_iterate!(qns::QuasiNewtonState, M, p)
+    copyto!(M, qns.x, p)
+    return qns
+end
+get_gradient(qns::QuasiNewtonState) = qns.gradient
+function set_gradient!(qns::QuasiNewtonState, M, p, X)
+    copyto!(M, p, qns.gradient, X)
+    return qns
+end
 
 @doc raw"""
     QuasiNewtonMatrixDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
@@ -444,17 +455,19 @@ function QuasiNewtonMatrixDirectionUpdate(
     )
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    p, o
+    mp, st
 ) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
+    M = get_manifold(mp)
     return get_vector(
-        p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.gradient, d.basis), d.basis
+        M, st.x, -d.matrix * get_coordinates(M, st.x, st.gradient, d.basis), d.basis
     )
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    p, o
+    mp, st
 ) where {T<:Union{BFGS,DFP,SR1,Broyden}}
+    M = get_manifold(mp)
     return get_vector(
-        p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.gradient, d.basis), d.basis
+        M, st.x, -d.matrix \ get_coordinates(M, st.x, st.gradient, d.basis), d.basis
     )
 end
 
@@ -531,20 +544,22 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         vector_transport_method,
     )
 end
-function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(p, o)
-    r = deepcopy(o.gradient)
+function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
+    M = get_manifold(mp)
+    p = get_iterate(st)
+    r = copy(M, p, get_gradient(st))
     m = length(d.memory_s)
     m == 0 && return -r
     for i in m:-1:1
-        d.ρ[i] = 1 / inner(p.M, o.x, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
-        d.ξ[i] = inner(p.M, o.x, d.memory_s[i], r) * d.ρ[i]
+        d.ρ[i] = 1 / inner(M, st.x, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
+        d.ξ[i] = inner(M, st.x, d.memory_s[i], r) * d.ρ[i]
         r .= r .- d.ξ[i] .* d.memory_y[i]
     end
-    r .= 1 / (d.ρ[m] * norm(p.M, o.x, last(d.memory_y))^2) .* r
+    r .= 1 / (d.ρ[m] * norm(M, st.x, last(d.memory_y))^2) .* r
     for i in 1:m
-        r .= r .+ (d.ξ[i] - d.ρ[i] * inner(p.M, o.x, d.memory_y[i], r)) .* d.memory_s[i]
+        r .= r .+ (d.ξ[i] - d.ρ[i] * inner(M, st.x, d.memory_y[i], r)) .* d.memory_s[i]
     end
-    d.project && project!(p.M, r, o.x, r)
+    d.project && project!(M, r, st.x, r)
     return -r
 end
 
@@ -609,7 +624,7 @@ function QuasiNewtonCautiousDirectionUpdate(
 } where {T<:AbstractQuasiNewtonUpdateRule}
     return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
 end
-(d::QuasiNewtonCautiousDirectionUpdate)(p, o) = d.update(p, o)
+(d::QuasiNewtonCautiousDirectionUpdate)(mp, st) = d.update(mp, st)
 
 # access the inner vector transport method
 function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)

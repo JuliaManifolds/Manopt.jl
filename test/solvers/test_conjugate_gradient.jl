@@ -5,7 +5,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     M = Euclidean(2)
     f(M, x) = norm(x)^2
     gradF(::Euclidean, x) = 2 * x
-    P = GradientProblem(M, f, gradF)
+    P = GradientProblem(M, f, grad_f)
     x0 = [0.0, 1.0]
     sC = StopAfterIteration(1)
     s = ConstantStepsize(M)
@@ -102,7 +102,7 @@ end
     x_opt = conjugate_gradient_descent(
         M,
         f,
-        gradF,
+        grad_f,
         x0;
         stepsize=ArmijoLinesearch(),
         coefficient=FletcherReevesCoefficient(),
@@ -113,7 +113,7 @@ end
     x_opt2 = conjugate_gradient_descent(
         M,
         f,
-        gradF,
+        grad_f,
         x0;
         stepsize=ArmijoLinesearch(),
         coefficient=FletcherReevesCoefficient(),

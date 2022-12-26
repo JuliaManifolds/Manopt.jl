@@ -1,4 +1,92 @@
 @doc raw"""
+    ExactPenaltyMethodState{P,T} <: AbstractManoptSolverState
+
+Describes the exact penalty method, with
+
+# Fields
+a default value is given in brackets if a parameter can be left out in initialization.
+
+* `x` – a set point on a manifold as starting point
+* `sub_problem` – problem for the subsolver
+* `sub_options` – options of the subproblem
+* `ϵ` – (`1e–3`) the accuracy tolerance
+* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
+* `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
+* `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ρ` – (`1.0`) the penalty parameter
+* `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(min_stepsize)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+
+
+# Constructor
+
+    ExactPenaltyMethodState(M::AbstractManifold, P::ConstrainedProblem, x; kwargs...)
+
+construct an exact penalty options with the fields and defaults as above, where the
+manifold `M` and the [`ConstrainedProblem`](@ref) `P` are used for defaults in the keyword
+arguments.
+
+# See also
+[`exact_penalty_method`](@ref)
+"""
+mutable struct ExactPenaltyMethodState{
+    P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState,TStopping<:StoppingCriterion
+} <: AbstractManoptSolverState
+    x::P
+    sub_problem::Pr
+    sub_options::Op
+    ϵ::Real
+    ϵ_min::Real
+    u::Real
+    u_min::Real
+    ρ::Real
+    θ_ρ::Real
+    θ_u::Real
+    θ_ϵ::Real
+    stop::TStopping
+    function ExactPenaltyMethodState(
+        ::AbstractManifold,
+        x0::P,
+        sub_problem::Pr,
+        sub_options::Op;
+        ϵ::Real=1e-3,
+        ϵ_min::Real=1e-6,
+        ϵ_exponent=1 / 100,
+        θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
+        u::Real=1e-1,
+        u_min::Real=1e-6,
+        u_exponent=1 / 100,
+        θ_u=(u_min / u)^(u_exponent),
+        ρ::Real=1.0,
+        θ_ρ::Real=0.3,
+        stopping_criterion::StoppingCriterion=StopWhenAny(
+            StopAfterIteration(300),
+            StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),
+        ),
+    ) where {P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState}
+        o = new{P,Pr,Op,typeof(stopping_criterion)}()
+        o.x = x0
+        o.sub_problem = sub_problem
+        o.sub_options = sub_options
+        o.ϵ = ϵ
+        o.ϵ_min = ϵ_min
+        o.u = u
+        o.u_min = u_min
+        o.ρ = ρ
+        o.θ_ρ = θ_ρ
+        o.θ_u = θ_u
+        o.θ_ϵ = θ_ϵ
+        o.stop = stopping_criterion
+        return o
+    end
+end
+get_iterate(O::ExactPenaltyMethodState) = O.x
+function set_iterate!(O::ExactPenaltyMethodState, M, p)
+    O.x = p
+    return O
+end
+
+@doc raw"""
     exact_penalty_method(M, F, gradF, x=random_point(M); kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
@@ -113,7 +201,7 @@ function exact_penalty_method!(
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
     smoothing=LogarithmicSumOfExponentials(),
-    problem=ConstrainedProblem(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
+    problem=ConstrainedObjective(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
     sub_cost=ExactPenaltyCost(problem, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(problem, ρ, u; smoothing=smoothing),
     sub_problem::AbstractManoptProblem=GradientProblem(
@@ -162,10 +250,10 @@ end
 #
 # Solver functions
 #
-function initialize_solver!(::ConstrainedProblem, s::ExactPenaltyMethodState)
+function initialize_solver!(::ConstrainedObjective, s::ExactPenaltyMethodState)
     return s
 end
-function step_solver!(p::ConstrainedProblem, s::ExactPenaltyMethodState, iter)
+function step_solver!(p::ConstrainedObjective, s::ExactPenaltyMethodState, iter)
     # use subsolver to minimize the smoothed penalized function
     s.sub_problem.cost.ρ = s.ρ
     s.sub_problem.cost.u = s.u

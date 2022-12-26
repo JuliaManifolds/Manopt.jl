@@ -564,65 +564,68 @@ mutable struct WolfePowellLinesearch{
 end
 
 function (a::WolfePowellLinesearch)(
-    p::AbstractManoptProblem,
-    s::AbstractManoptSolverState,
+    mp::AbstractManoptProblem,
+    ams::AbstractManoptSolverState,
     ::Int,
-    η=-get_gradient(p, get_iterate(s));
+    η=-get_gradient(mp, get_iterate(ams));
     kwargs...,
 )
     step = 1.0
     s_plus = 1.0
     s_minus = 1.0
-    f0 = get_cost(p, get_iterate(s))
-    xNew = retract(p.M, get_iterate(s), step * η, a.retraction_method)
-    fNew = get_cost(p, xNew)
-    η_xNew = vector_transport_to(p.M, get_iterate(s), η, xNew, a.vector_transport_method)
-    if fNew > f0 + a.c1 * step * inner(p.M, get_iterate(s), η, get_gradient(s))
-        while (fNew > f0 + a.c1 * step * inner(p.M, get_iterate(s), η, get_gradient(s))) &&
-            (s_minus > 10^(-9)) # decrease
+    M = get_manifold(mp)
+    f0 = get_cost(mp, get_iterate(ams))
+    p_new = retract(M, get_iterate(ams), step * η, a.retraction_method)
+    fNew = get_cost(mp, p_new)
+    η_xNew = vector_transport_to(M, get_iterate(ams), η, p_new, a.vector_transport_method)
+    if fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
+        while (
+            fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
+        ) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
-            s = s_minus
-            retract!(p.M, xNew, get_iterate(s), s * η, a.retraction_method)
-            fNew = get_cost(p, xNew)
+            step = s_minus
+            retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
+            fNew = get_cost(mp, p_new)
         end
         s_plus = 2.0 * s_minus
     else
         vector_transport_to!(
-            p.M, η_xNew, get_iterate(s), η, xNew, a.vector_transport_method
+            M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method
         )
-        if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-            a.c2 * inner(p.M, get_iterate(s), η, get_gradient(s))
-            while fNew <= f0 + a.c1 * s * inner(p.M, get_iterate(s), η, get_gradient(s)) &&
+        if inner(M, p_new, get_gradient(mp, p_new), η_xNew) <
+            a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
+            while fNew <=
+                  f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams)) &&
                 (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
-                s = s_plus
-                retract!(p.M, xNew, get_iterate(s), s * η, a.retraction_method)
-                fNew = get_cost(p, xNew)
+                step = s_plus
+                retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
+                fNew = get_cost(mp, p_new)
             end
             s_minus = s_plus / 2.0
         end
     end
-    retract!(p.M, xNew, get_iterate(s), s_minus * η, a.retraction_method)
-    vector_transport_to!(p.M, η_xNew, get_iterate(s), η, xNew, a.vector_transport_method)
-    while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-          a.c2 * inner(p.M, get_iterate(s), η, get_gradient(s))
-        s = (s_minus + s_plus) / 2
-        retract!(p.M, xNew, get_iterate(s), s * η, a.retraction_method)
-        fNew = get_cost(p, xNew)
-        if fNew <= f0 + a.c1 * s * inner(p.M, get_iterate(s), η, get_gradient(s))
-            s_minus = s
+    retract!(M, p_new, get_iterate(ams), s_minus * η, a.retraction_method)
+    vector_transport_to!(M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method)
+    while inner(M, p_new, get_gradient(mp, p_new), η_xNew) <
+          a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
+        step = (s_minus + s_plus) / 2
+        retract!(M, p_new, get_iterate(ams), s * η, a.retraction_method)
+        fNew = get_cost(mp, p_new)
+        if fNew <= f0 + a.c1 * s * inner(M, get_iterate(ams), η, get_gradient(ams))
+            s_minus = step
         else
-            s_plus = s
+            s_plus = step
         end
         abs(s_plus - s_minus) <= a.linesearch_stopsize && break
-        retract!(p.M, xNew, get_iterate(s), s_minus * η, a.retraction_method)
+        retract!(M, p_new, get_iterate(ams), s_minus * η, a.retraction_method)
         vector_transport_to!(
-            p.M, η_xNew, get_iterate(s), η, xNew, a.vector_transport_method
+            M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method
         )
     end
-    s = s_minus
-    a.last_stepsize = s
-    return s
+    step = s_minus
+    a.last_stepsize = step
+    return step
 end
 
 @doc raw"""

@@ -13,7 +13,7 @@ using Manopt, Manifolds, Test
     gradF2(N, x) = -log(N[2], x[N, 2], data[2])
     gradF2!(N, Y, x) = (Y .= -log(N[2], x[N, 2], data[2]))
     gradF(N, x) = ProductRepr([-log(N[i], x[N, i], data[i]) for i in [1, 2]]...)
-    function gradF!(N, Y, x)
+    function grad_f!(N, Y, x)
         log!(N[1], Y[N, 1], x[N, 1], data[1])
         log!(N[2], Y[N, 2], x[N, 2], data[2])
         return Y .*= -1
@@ -21,26 +21,26 @@ using Manopt, Manifolds, Test
     x = ProductRepr([0.0, 0.0, 1.0], [0.0, 0.0, 1.0])
 
     @testset "Test gradient access" begin
-        Pf = AlternatingGradientProblem(N, f, gradF)
+        Pf = AlternatingGradientProblem(N, f, grad_f)
         Pv = AlternatingGradientProblem(N, f, [gradF1, gradF2])
-        Pf! = AlternatingGradientProblem(N, f, gradF!; evaluation=InplaceEvaluation())
+        Pf! = AlternatingGradientProblem(N, f, grad_f!; evaluation=InplaceEvaluation())
         Pv! = AlternatingGradientProblem(
             N, f, [gradF1!, gradF2!]; evaluation=InplaceEvaluation()
         )
         for P in [Pf, Pv, Pf!, Pv!]
             Y = zero_vector(N, x)
-            @test get_gradient(P, x)[N, 1] == gradF(N, x)[N, 1]
-            @test get_gradient(P, x)[N, 2] == gradF(N, x)[N, 2]
+            @test get_gradient(P, x)[N, 1] == grad_f(N, x)[N, 1]
+            @test get_gradient(P, x)[N, 2] == grad_f(N, x)[N, 2]
             get_gradient!(P, Y, x)
-            @test Y[N, 1] == gradF(N, x)[N, 1]
-            @test Y[N, 2] == gradF(N, x)[N, 2]
-            @test get_gradient(P, 1, x) == gradF(N, x)[N, 1]
-            @test get_gradient(P, 2, x) == gradF(N, x)[N, 2]
+            @test Y[N, 1] == grad_f(N, x)[N, 1]
+            @test Y[N, 2] == grad_f(N, x)[N, 2]
+            @test get_gradient(P, 1, x) == grad_f(N, x)[N, 1]
+            @test get_gradient(P, 2, x) == grad_f(N, x)[N, 2]
             Y = zero_vector(N, x)
             get_gradient!(P, Y[N, 1], 1, x)
-            @test Y[N, 1] == gradF(N, x)[N, 1]
+            @test Y[N, 1] == grad_f(N, x)[N, 1]
             get_gradient!(P, Y[N, 2], 2, x)
-            @test Y[N, 2] == gradF(N, x)[N, 2]
+            @test Y[N, 2] == grad_f(N, x)[N, 2]
         end
     end
     @testset "Test high level interface" begin
