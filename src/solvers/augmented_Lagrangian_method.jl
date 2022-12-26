@@ -29,10 +29,10 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    AugmentedLagrangianMethodState(M::AbstractManifold, co::ConstrainedObjective, p; kwargs...)
+    AugmentedLagrangianMethodState(M::AbstractManifold, co::ConstrainedManifoldObjective, p; kwargs...)
 
 construct an augmented Lagrangian method options with the fields and defaults as above,
-where the manifold `M` and the [`ConstrainedObjective`](@ref) `co` are used for defaults
+where the manifold `M` and the [`ConstrainedManifoldObjective`](@ref) `co` are used for defaults
 in the keyword arguments.
 
 # See also
@@ -59,7 +59,7 @@ mutable struct AugmentedLagrangianMethodState{
     stop::TStopping
     function AugmentedLagrangianMethodState(
         M::AbstractManifold,
-        co::ConstrainedObjective,
+        co::ConstrainedManifoldObjective,
         p::P,
         sub_problem::Pr,
         sub_state::St;
@@ -179,7 +179,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_grad` – ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagranian gradient, expecially with the same numbers `ρ,μ` as in the options for the sub problem
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
 * `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
-* `sub_problem` – ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
+* `sub_problem` – ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
 * `sub_options` – ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
@@ -231,7 +231,7 @@ function augmented_Lagrangian_method!(
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
-    _objective=ConstrainedObjective(f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation),
+    _objective=ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation),
     sub_cost=AugmentedLagrangianCost(_objective, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(_objective, ρ, μ, λ),
     sub_kwargs=[],

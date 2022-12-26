@@ -16,7 +16,7 @@ using LinearAlgebra: I, tr
     sol = augmented_Lagrangian_method(M, f, grad_f, p0; g=g, grad_g=grad_g)
     @test distance(M, sol, v0) < 8 * 1e-4
 
-    co = ConstrainedObjective(f, grad_f; g=g, grad_g=grad_g)
+    co = ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g)
     mp = DefaultManoptProblem(M, co)
     # dummy ALM problem
     alms = AugmentedLagrangianMethodState(

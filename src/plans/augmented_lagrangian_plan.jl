@@ -2,10 +2,10 @@
     AugmentedLagrangianCost{CO,R,T}
 
 Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
-of the augmented Lagrangian associated to the [`ConstrainedObjective`](@ref) `co`.
+of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
 
 This struct is also a functor `(M,p) -> v` that can be used as a cost function within a solver,
-based on the internal [`ConstrainedObjective`](@ref) we can compute
+based on the internal [`ConstrainedManifoldObjective`](@ref) we can compute
 
 ```math
 \mathcal L_\rho(p, μ, λ)
@@ -42,13 +42,13 @@ end
     AugmentedLagrangianGrad{CO,R,T}
 
 Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
-of the augmented Lagrangian associated to the [`ConstrainedObjective`](@ref) `co`.
+of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
 
 This struct is also a functor in both formats
 * `(M, p) -> X` to compute the gradient in allocating fashion.
 * `(M, X, p)` to compute the gradient in in-place fashion.
 
-based on the internal [`ConstrainedObjective`](@ref) and computes the gradient
+based on the internal [`ConstrainedManifoldObjective`](@ref) and computes the gradient
 ``\operatorname{grad} \mathcal L_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
 """
 mutable struct AugmentedLagrangianGrad{CO,R,T}
@@ -81,7 +81,7 @@ end
 # Allocating vector -> we can omit a few of the ineq gradients.
 function (
     LG::AugmentedLagrangianGrad{
-        <:ConstrainedObjective{AllocatingEvaluation,<:VectorConstraint}
+        <:ConstrainedManifoldObjective{AllocatingEvaluation,<:VectorConstraint}
     }
 )(
     M::AbstractManifold, X, p
@@ -104,7 +104,7 @@ end
 # mutating vector -> we can omit a few of the ineq gradients and allocations.
 function (
     LG::AugmentedLagrangianGrad{
-        <:ConstrainedObjective{InplaceEvaluation,<:VectorConstraint}
+        <:ConstrainedManifoldObjective{InplaceEvaluation,<:VectorConstraint}
     }
 )(
     M::AbstractManifold, X, p

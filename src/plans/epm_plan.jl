@@ -57,7 +57,7 @@ mutable struct ExactPenaltyCost{S,CO,R}
     u::R
 end
 function ExactPenaltyCost(
-    co::ConstrainedObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()
+    co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()
 ) where {R}
     return ExactPenaltyCost{typeof(smoothing),typeof(co),R}(co, ρ, u)
 end
@@ -105,7 +105,7 @@ mutable struct ExactPenaltyGrad{S,CO,R}
     u::R
 end
 function ExactPenaltyGrad(
-    co::ConstrainedObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()
+    co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()
 ) where {R}
     return ExactPenaltyGrad{typeof(smoothing),typeof(co),R}(co, ρ, u)
 end
@@ -160,7 +160,7 @@ end
 function (
     EG::ExactPenaltyGrad{
         <:LinearQuadraticHuber,
-        <:ConstrainedObjective{AllocatingEvaluation,<:VectorConstraint},
+        <:ConstrainedManifoldObjective{AllocatingEvaluation,<:VectorConstraint},
     }
 )(
     M::AbstractManifold, X, p::P
@@ -189,7 +189,7 @@ end
 # Variant 3: Vectors of mutating gradients - we can spare a few gradient evaluations and allocations
 function (
     EG::ExactPenaltyGrad{
-        <:LinearQuadraticHuber,<:ConstrainedObjective{InplaceEvaluation,<:VectorConstraint}
+        <:LinearQuadraticHuber,<:ConstrainedManifoldObjective{InplaceEvaluation,<:VectorConstraint}
     }
 )(
     M::AbstractManifold, X, p::P

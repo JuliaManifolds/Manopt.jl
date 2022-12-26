@@ -32,12 +32,12 @@ using Manopt, ManifoldsBase, Test
     end
     grad_h1(M, p) = [0.0, 0.0, 2.0]
     grad_h1!(M, X, p) = (X .= [0.0, 0.0, 2.0])
-    cofa = ConstrainedObjective(f, grad_f, g, grad_g, h, grad_h)
-    cofm = ConstrainedObjective(
+    cofa = ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h)
+    cofm = ConstrainedManifoldObjective(
         f, grad_f!, g, grad_g!, h, grad_h!; evaluation=InplaceEvaluation()
     )
-    cova = ConstrainedObjective(f, grad_f, [g1, g2], [grad_g1, grad_g2], [h1], [grad_h1])
-    covm = ConstrainedObjective(
+    cova = ConstrainedManifoldObjective(f, grad_f, [g1, g2], [grad_g1, grad_g2], [h1], [grad_h1])
+    covm = ConstrainedManifoldObjective(
         f,
         grad_f!,
         [g1, g2],
@@ -46,10 +46,10 @@ using Manopt, ManifoldsBase, Test
         [grad_h1!];
         evaluation=InplaceEvaluation(),
     )
-    @test repr(cofa) === "ConstrainedObjective{AllocatingEvaluation,FunctionConstraint}."
-    @test repr(cofm) === "ConstrainedObjective{InplaceEvaluation,FunctionConstraint}."
-    @test repr(cova) === "ConstrainedObjective{AllocatingEvaluation,VectorConstraint}."
-    @test repr(covm) === "ConstrainedObjective{InplaceEvaluation,VectorConstraint}."
+    @test repr(cofa) === "ConstrainedManifoldObjective{AllocatingEvaluation,FunctionConstraint}."
+    @test repr(cofm) === "ConstrainedManifoldObjective{InplaceEvaluation,FunctionConstraint}."
+    @test repr(cova) === "ConstrainedManifoldObjective{AllocatingEvaluation,VectorConstraint}."
+    @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}."
 
     p = [1.0, 2.0, 3.0]
     c = [[0.0, -3.0], [5.0]]
@@ -59,26 +59,26 @@ using Manopt, ManifoldsBase, Test
 
     @testset "Partial Constructors" begin
         # At least one constraint necessary
-        @test_throws ErrorException ConstrainedObjective(f, grad_f)
-        @test_throws ErrorException ConstrainedObjective(
+        @test_throws ErrorException ConstrainedManifoldObjective(f, grad_f)
+        @test_throws ErrorException ConstrainedManifoldObjective(
             f, grad_f!; evaluation=InplaceEvaluation()
         )
-        co1f = ConstrainedObjective(f, grad_f!; g=g, grad_g=grad_g)
+        co1f = ConstrainedManifoldObjective(f, grad_f!; g=g, grad_g=grad_g)
         @test get_constraints(M, co1f, p) == [c[1], []]
         @test get_grad_equality_constraints(M, co1f, p) == []
         @test get_grad_inequality_constraints(M, co1f, p) == gg
 
-        co1v = ConstrainedObjective(f, grad_f!; g=[g1, g2], grad_g=[grad_g1, grad_g2])
+        co1v = ConstrainedManifoldObjective(f, grad_f!; g=[g1, g2], grad_g=[grad_g1, grad_g2])
         @test get_constraints(M, co1v, p) == [c[1], []]
         @test get_grad_equality_constraints(M, co1v, p) == []
         @test get_grad_inequality_constraints(M, co1v, p) == gg
 
-        co2f = ConstrainedObjective(f, grad_f!; h=h, grad_h=grad_h)
+        co2f = ConstrainedManifoldObjective(f, grad_f!; h=h, grad_h=grad_h)
         @test get_constraints(M, co2f, p) == [[], c[2]]
         @test get_grad_equality_constraints(M, co2f, p) == gh
         @test get_grad_inequality_constraints(M, co2f, p) == []
 
-        co2v = ConstrainedObjective(f, grad_f!; h=[h1], grad_h=[grad_h1])
+        co2v = ConstrainedManifoldObjective(f, grad_f!; h=[h1], grad_h=[grad_h1])
         @test get_constraints(M, co2v, p) == [[], c[2]]
         @test get_grad_equality_constraints(M, co2v, p) == gh
         @test get_grad_inequality_constraints(M, co2v, p) == []
