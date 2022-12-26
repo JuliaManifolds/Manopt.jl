@@ -52,7 +52,7 @@ struct DebugRenderAsy <: DebugAction
     folder::String
     DebugRenderAsy(f, n) = new(n, f)
 end
-function (d::DebugRenderAsy)(::PrimalDualProblem, ::ChambollePockState, i)
+function (d::DebugRenderAsy)(::TwoManifoldProblem, ::ChambollePockState, i)
     if i >= 0
         orig_file = joinpath(d.folder, d.name * "-vid-$(lpad(i[1],7,"0")).asy")
         asymptote_export_S2_data(orig_file; data=f)

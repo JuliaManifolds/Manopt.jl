@@ -125,7 +125,7 @@ function primal_dual_semismooth_Newton!(
     IRM<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    p = PrimalDualSemismoothNewtonProblem(
+    p = TwoManifoldProblem(
         M,
         N,
         cost,
@@ -158,13 +158,9 @@ function primal_dual_semismooth_Newton!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(
-    ::PrimalDualSemismoothNewtonProblem, ::PrimalDualSemismoothNewtonState
-) end
+function initialize_solver!(::TwoManifoldProblem, ::PrimalDualSemismoothNewtonState) end
 
-function step_solver!(
-    p::PrimalDualSemismoothNewtonProblem, s::PrimalDualSemismoothNewtonState, iter
-)
+function step_solver!(p::TwoManifoldProblem, s::PrimalDualSemismoothNewtonState, iter)
     # do step
     primal_dual_step!(p, s)
     s.m = ismissing(s.update_primal_base) ? s.m : s.update_primal_base(p, s, iter)
@@ -176,9 +172,7 @@ function step_solver!(
     return s
 end
 
-function primal_dual_step!(
-    p::PrimalDualSemismoothNewtonProblem, s::PrimalDualSemismoothNewtonState
-)
+function primal_dual_step!(p::TwoManifoldProblem, s::PrimalDualSemismoothNewtonState)
 
     # construct X
     X = construct_primal_dual_residual_vector(p, s)
@@ -209,7 +203,7 @@ raw"""
 Constructs the vector representation of $X(p^{(k)}, ξ_{n}^{(k)}) \in \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 """
 function construct_primal_dual_residual_vector(
-    p::PrimalDualSemismoothNewtonProblem, s::PrimalDualSemismoothNewtonState
+    p::TwoManifoldProblem, s::PrimalDualSemismoothNewtonState
 )
 
     # Compute primal vector
@@ -266,7 +260,7 @@ onstruct_primal_dual_residual_covariant_derivative_matrix(p, o)
 Constructs the matrix representation of $V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
 """
 function construct_primal_dual_residual_covariant_derivative_matrix(
-    p::PrimalDualSemismoothNewtonProblem, s::PrimalDualSemismoothNewtonState
+    p::TwoManifoldProblem, s::PrimalDualSemismoothNewtonState
 )
 
     # construct bases

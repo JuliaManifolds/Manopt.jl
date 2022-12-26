@@ -59,8 +59,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
     x0 = deepcopy(data)
     ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
-    p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
-    p_linearized = PrimalDualProblem(
+    p_exact = TwoManifoldProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
+    p_linearized = TwoManifoldProblem(
         M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
     )
     o_exact = ChambollePockState(M, m, n, zero.(x0), ξ0; variant=:exact)
@@ -77,10 +77,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
     @test all(get_iterate(osm) .== x0)
 
     @testset "test Mutating/Allocation Problem Variants" begin
-        p1 = PrimalDualProblem(
+        p1 = TwoManifoldProblem(
             M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
         )
-        p2 = PrimalDualProblem(
+        p2 = TwoManifoldProblem(
             M,
             N,
             cost,
@@ -138,8 +138,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test Z1 == Z2
     end
     @testset "Primal/Dual residual" begin
-        p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
-        p_linearized = PrimalDualProblem(
+        p_exact = TwoManifoldProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
+        p_linearized = TwoManifoldProblem(
             M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
         )
         o_exact = ChambollePockState(M, m, n, x0, ξ0; variant=:exact)

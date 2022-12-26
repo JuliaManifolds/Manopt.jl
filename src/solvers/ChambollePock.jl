@@ -138,7 +138,7 @@ function ChambollePock!(
     IRM<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    p = PrimalDualProblem(
+    p = TwoManifoldProblem(
         M,
         N,
         cost,
@@ -171,9 +171,9 @@ function ChambollePock!(
     return get_solver_return(solve!(p, o))
 end
 
-function initialize_solver!(::PrimalDualProblem, ::ChambollePockState) end
+function initialize_solver!(::TwoManifoldProblem, ::ChambollePockState) end
 
-function step_solver!(p::PrimalDualProblem, s::ChambollePockState, iter)
+function step_solver!(p::TwoManifoldProblem, s::ChambollePockState, iter)
     primal_dual_step!(p, s, Val(s.relax))
     s.m = ismissing(s.update_primal_base) ? s.m : s.update_primal_base(p, s, iter)
     if !ismissing(s.update_dual_base)
@@ -189,7 +189,7 @@ end
 #
 # Variant 1: primal relax
 #
-function primal_dual_step!(p::PrimalDualProblem, s::ChambollePockState, ::Val{:primal})
+function primal_dual_step!(p::TwoManifoldProblem, s::ChambollePockState, ::Val{:primal})
     dual_update!(p, s, s.xbar, Val(s.variant))
     if ismissing(p.Λ!!)
         ptξn = s.ξ
@@ -229,7 +229,7 @@ end
 #
 # Variant 2: dual relax
 #
-function primal_dual_step!(p::PrimalDualProblem, s::ChambollePockState, ::Val{:dual})
+function primal_dual_step!(p::TwoManifoldProblem, s::ChambollePockState, ::Val{:dual})
     if ismissing(p.Λ!!)
         ptξbar = s.ξbar
     else
@@ -265,7 +265,7 @@ end
 # depending on whether its primal relaxed or dual relaxed we start from start=o.x or start=o.xbar here
 #
 function dual_update!(
-    p::PrimalDualProblem, s::ChambollePockState, start::P, ::Val{:linearized}
+    p::TwoManifoldProblem, s::ChambollePockState, start::P, ::Val{:linearized}
 ) where {P}
     # (1) compute update direction
     ξ_update = linearized_forward_operator(
@@ -289,7 +289,7 @@ end
 # depending on whether its primal relaxed or dual relaxed we start from start=o.x or start=o.xbar here
 #
 function dual_update!(
-    p::PrimalDualProblem, s::ChambollePockState, start::P, ::Val{:exact}
+    p::TwoManifoldProblem, s::ChambollePockState, start::P, ::Val{:exact}
 ) where {P}
     ξ_update = inverse_retract(
         p.N, s.n, forward_operator(p, start), s.inverse_retraction_method_dual

@@ -151,10 +151,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
     Ξ = X
 
     @testset "test Mutating/Allocation Problem Variants" begin
-        p1 = PrimalDualSemismoothNewtonProblem(
+        p1 = TwoManifoldProblem(
             M, N, cost, prox_F, Dprox_F, prox_G_dual, Dprox_G_dual, DΛ, adjoint_DΛ
         )
-        p2 = PrimalDualSemismoothNewtonProblem(
+        p2 = TwoManifoldProblem(
             M,
             N,
             cost,

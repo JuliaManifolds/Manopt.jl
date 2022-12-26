@@ -82,12 +82,12 @@ get_hessian
 get_preconditioner
 ```
 
-## [Primal dual based problem](@id PrimalDualProblem)
+## [Primal dual based problem](@id TwoManifoldProblem)
 
 ```@docs
-AbstractPrimalDualProblem
-PrimalDualProblem
-PrimalDualSemismoothNewtonProblem
+AbstractTwoManifoldProblem
+TwoManifoldProblem
+TwoManifoldProblem
 get_primal_prox
 get_dual_prox
 forward_operator

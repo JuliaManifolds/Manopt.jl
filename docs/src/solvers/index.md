@@ -15,7 +15,7 @@ The following algorithms are currently available
 | Solver  | File   | Problem & Option  |
 ----------|--------|-------------------|
 [Alternating Gradient Descent](@ref AlternatingGradientDescentSolver) | `alterating_gradient_descent.jl` | [`AlternatingGradientProblem`](@ref), [`AlternatingGradientDescentState`](@ref)
-[Chambolle-Pock](@ref ChambollePockSolver) | `Chambolle-Pock.jl` | [`PrimalDualProblem`](@ref), [`ChambollePockState`](@ref)
+[Chambolle-Pock](@ref ChambollePockSolver) | `Chambolle-Pock.jl` | [`TwoManifoldProblem`](@ref), [`ChambollePockState`](@ref)
 [Conjugate Gradient Descent](@ref CGSolver) | `cyclic_proximal_point.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointState`](@ref)
 [Cyclic Proximal Point](@ref CPPSolver) | `conjugate_gradient_descent.jl` | [`DefaultManoptProblem`](@ref), [`ConjugateGradientDescentState`](@ref)
 [Douglas–Rachford](@ref DRSolver) | `DouglasRachford.jl` | [`ProximalProblem`](@ref), [`DouglasRachfordState`](@ref)
@@ -27,7 +27,7 @@ The following algorithms are currently available
 [Nelder-Mead](@ref NelderMeadSolver) | `NelderMead.jl` | [`CostProblem`](@ref), [`NelderMeadState`](@ref)
 [Augmented Lagrangian Method](@ref AugmentedLagrangianSolver) | `augmented_Lagrangian_method.jl`| [`ConstrainedProblem`](@ref), [`AugmentedLagrangianMethodState`](@ref)
 [Particle Swarm](@ref ParticleSwarmSolver) | `particle_swarm.jl` | [`CostProblem`](@ref), [`ParticleSwarmState`](@ref)
-[Primal-dual Riemannian semismooth Newton Algorithm](@ref PDRSSNSolver) | | [`PrimalDualSemismoothNewtonProblem`](@ref) | [`PrimalDualSemismoothNewtonState`](@ref)
+[Primal-dual Riemannian semismooth Newton Algorithm](@ref PDRSSNSolver) | | [`TwoManifoldProblem`](@ref) | [`PrimalDualSemismoothNewtonState`](@ref)
 [Quasi-Newton Method](@ref quasiNewton) | `quasi_newton.jl`| [`DefaultManoptProblem`](@ref), [`QuasiNewtonState`](@ref)
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncated_conjugate_gradient_descent.jl` | [`HessianProblem`](@ref)
 [Subgradient Method](@ref SubgradientSolver) | `subgradient_method.jl` | [`DefaultManoptProblem`](@ref), [`SubGradientMethodState`](@ref)
