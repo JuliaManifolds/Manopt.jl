@@ -1,22 +1,41 @@
 @doc raw"""
-    AbstractPrimalDualProblem{T<:AbstractEvaluationType,M} <: AbstractManoptProblem{M}
+    TwoManifoldProblem{
+    MT<:AbstractManifold,NT<:AbstractManifold,O<:AbstractManifoldObjective
+} <: AbstractManoptProblem{MT}
 
 An abstract type for primal-dual-based problems.
 """
-abstract type AbstractPrimalDualProblem{T<:AbstractEvaluationType,M} <:
-              AbstractManoptProblem{M} end
+struct TwoManifoldProblem{
+    MT<:AbstractManifold,NT<:AbstractManifold,O<:AbstractManifoldObjective
+} <: AbstractManoptProblem{MT}
+    first_manifold::MT
+    second_manifold::NT
+    objective::S
+end
+get_manifold(tmp::TwoManifoldProblem) = get_manifold(tmp, 1)
+get_manifold(tmp::TwoManifoldProblem, i) = _get_manifold(tmp, Val(i))
+_get_manifold(tmp::TwoManifoldProblem, ::Val{1}) = tmp.first_manifold
+_get_manifold(tmp::TwoManifoldProblem, ::Val{i}) = tmp.second_manifold
+
+function TwoManifoldProblem(
+    M::MT, obj::O
+) where {MT<:AbstractManifold,O<:AbstractManifoldObjective}
+    return TwoManifoldProblem{MT,MT,O}(M, M, obj)
+end
+
+abstract type AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType} <:
+              AbstractManifoldCostObjective{E} end
 
 @doc raw"""
-    PrimalDualProblem {T, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractPrimalDualProblem
+    PrimalDualManifoldObjective{E<:AbstractEvaluationType} <: AbstractPrimalDualManifoldObjective{E}
 
-Describes a Problem for the linearized or exact Chambolle-Pock algorithm.[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020][^ChambollePock2011]
+Describes an Objective linearized or exact Chambolle-Pock algorithm.[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020][^ChambollePock2011]
 
 # Fields
 
 All fields with !! can either be mutating or nonmutating functions, which should be set
 depenting on the parameter `T <: AbstractEvaluationType`.
 
-* `M`, `N` – two manifolds ``\mathcal M``, ``\mathcal N``
 * `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
 * `linearized_forward_operator!!` linearized operator for the forward operation in the algorithm ``DΛ``
 * `linearized_adjoint_operator!!` The adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
@@ -24,11 +43,11 @@ depenting on the parameter `T <: AbstractEvaluationType`.
 * `prox_G_dual!!` the proximal map belonging to ``g_n^*``
 * `Λ!!` – (`fordward_operator`) the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
 
-Either ``DΛ`` (for the linearized) or ``Λ`` are required usually.
+Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
 # Constructor
 
-    LinearizedPrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_linearized_operator;
+    PrimalDualManifoldObjective(cost, prox_F, prox_G_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function,Missing}=missing,
         Λ::Union{Function,Missing}=missing,
         evaluation::AbstractEvaluationType=AllocatingEvaluation()
@@ -51,20 +70,17 @@ the second.
     > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
     > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
-mutable struct PrimalDualProblem{T<:AbstractEvaluationType,mT,nT<:AbstractManifold} <:
-               AbstractPrimalDualProblem{T,mT}
-    M::mT
-    N::nT
-    cost::Function
-    prox_F!!::Function
-    prox_G_dual!!::Function
-    linearized_forward_operator!!::Union{Function,Missing}
-    adjoint_linearized_operator!!::Function
-    Λ!!::Union{Function,Missing}
+mutable struct PrimalDualManifoldObjective{
+    T<:AbstractEvaluationType,TC,TP,TDP,LFO,ALFO,L
+} <: AbstractPrimalDualManifoldObjective{T}
+    cost::TC
+    prox_F!!::TP
+    prox_G_dual!!::TDP
+    linearized_forward_operator!!::LFO
+    adjoint_linearized_operator!!::ALFO
+    Λ!!::L
 end
 function PrimalDualProblem(
-    M::mT,
-    N::nT,
     cost,
     prox_F,
     prox_G_dual,
@@ -72,10 +88,16 @@ function PrimalDualProblem(
     linearized_forward_operator::Union{Function,Missing}=missing,
     Λ::Union{Function,Missing}=missing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {mT<:AbstractManifold,nT<:AbstractManifold}
-    return PrimalDualProblem{typeof(evaluation),mT,nT}(
-        M,
-        N,
+)
+    return PrimalDualProblem{
+        typeof(evaluation),
+        typeof(cost),
+        typeof(prox_f),
+        typeof(prox_g_dual),
+        typeof(linearized_forward_operator),
+        typeof(adjoiint_linearized_operator),
+        typeof(Λ),
+    }(
         cost,
         prox_F,
         prox_G_dual,
@@ -85,9 +107,12 @@ function PrimalDualProblem(
     )
 end
 
+function get_primal_prox(tmp::TwoManifoldProblem, σ, p)
+    return get_primal_prox(get_manifold(tmp, 1), get_objective(tmp), σ, p)
+end
 @doc raw"""
-    y = get_primal_prox(p::AbstractPrimalDualProblem, σ, x)
-    get_primal_prox!(p::AbstractPrimalDualProblem, y, σ, x)
+    q = get_primal_prox(M, p::AbstractPrimalDualManifoldObjective, σ, p)
+    get_primal_prox!(M, p::AbstractPrimalDualManifoldObjective, q, σ, p)
 
 Evaluate the proximal map of ``F`` stored within [`AbstractPrimalDualProblem`](@ref)
 
@@ -97,11 +122,17 @@ Evaluate the proximal map of ``F`` stored within [`AbstractPrimalDualProblem`](@
 
 which can also be computed in place of `y`.
 """
-get_primal_prox(::AbstractPrimalDualProblem, ::Any...)
+get_primal_prox(M::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
-function get_primal_prox(p::AbstractPrimalDualProblem{AllocatingEvaluation}, σ, x)
-    return p.prox_F!!(p.M, σ, x)
+function get_primal_prox(
+    M::AbstractManifold,
+    apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
+    σ,
+    p,
+)
+    return apdmo.prox_F!!(M, σ, p)
 end
+# edited until here ---
 function get_primal_prox(p::AbstractPrimalDualProblem{InplaceEvaluation}, σ, x)
     y = allocate_result(p.M, get_primal_prox, x)
     return p.prox_F!!(p.M, y, σ, x)
@@ -381,11 +412,11 @@ mutable struct ChambollePockState{
         )
     end
 end
-get_solver_result(s::AbstractPrimalDualSolverState) = get_iterate(s)
-get_iterate(s::ChambollePockState) = s.x
-function set_iterate!(s::ChambollePockState, p)
-    s.x = p
-    return O
+get_solver_result(cps::AbstractPrimalDualSolverState) = get_iterate(cps)
+get_iterate(cps::ChambollePockState) = cps.p
+function set_iterate!(cps::ChambollePockState, p)
+    cps.p = p
+    return cps
 end
 @doc raw"""
     primal_residual(p, o, x_old, ξ_old, n_old)
