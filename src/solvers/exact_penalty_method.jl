@@ -201,7 +201,9 @@ function exact_penalty_method!(
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
     smoothing=LogarithmicSumOfExponentials(),
-    problem=ConstrainedManifoldObjective(M, F, gradF, G, gradG, H, gradH; evaluation=evaluation),
+    problem=ConstrainedManifoldObjective(
+        M, F, gradF, G, gradG, H, gradH; evaluation=evaluation
+    ),
     sub_cost=ExactPenaltyCost(problem, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(problem, ρ, u; smoothing=smoothing),
     sub_problem::AbstractManoptProblem=GradientProblem(

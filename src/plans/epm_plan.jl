@@ -189,7 +189,8 @@ end
 # Variant 3: Vectors of mutating gradients - we can spare a few gradient evaluations and allocations
 function (
     EG::ExactPenaltyGrad{
-        <:LinearQuadraticHuber,<:ConstrainedManifoldObjective{InplaceEvaluation,<:VectorConstraint}
+        <:LinearQuadraticHuber,
+        <:ConstrainedManifoldObjective{InplaceEvaluation,<:VectorConstraint},
     }
 )(
     M::AbstractManifold, X, p::P

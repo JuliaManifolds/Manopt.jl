@@ -36,7 +36,9 @@ using Manopt, ManifoldsBase, Test
     cofm = ConstrainedManifoldObjective(
         f, grad_f!, g, grad_g!, h, grad_h!; evaluation=InplaceEvaluation()
     )
-    cova = ConstrainedManifoldObjective(f, grad_f, [g1, g2], [grad_g1, grad_g2], [h1], [grad_h1])
+    cova = ConstrainedManifoldObjective(
+        f, grad_f, [g1, g2], [grad_g1, grad_g2], [h1], [grad_h1]
+    )
     covm = ConstrainedManifoldObjective(
         f,
         grad_f!,
@@ -46,9 +48,12 @@ using Manopt, ManifoldsBase, Test
         [grad_h1!];
         evaluation=InplaceEvaluation(),
     )
-    @test repr(cofa) === "ConstrainedManifoldObjective{AllocatingEvaluation,FunctionConstraint}."
-    @test repr(cofm) === "ConstrainedManifoldObjective{InplaceEvaluation,FunctionConstraint}."
-    @test repr(cova) === "ConstrainedManifoldObjective{AllocatingEvaluation,VectorConstraint}."
+    @test repr(cofa) ===
+        "ConstrainedManifoldObjective{AllocatingEvaluation,FunctionConstraint}."
+    @test repr(cofm) ===
+        "ConstrainedManifoldObjective{InplaceEvaluation,FunctionConstraint}."
+    @test repr(cova) ===
+        "ConstrainedManifoldObjective{AllocatingEvaluation,VectorConstraint}."
     @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}."
 
     p = [1.0, 2.0, 3.0]
@@ -68,7 +73,9 @@ using Manopt, ManifoldsBase, Test
         @test get_grad_equality_constraints(M, co1f, p) == []
         @test get_grad_inequality_constraints(M, co1f, p) == gg
 
-        co1v = ConstrainedManifoldObjective(f, grad_f!; g=[g1, g2], grad_g=[grad_g1, grad_g2])
+        co1v = ConstrainedManifoldObjective(
+            f, grad_f!; g=[g1, g2], grad_g=[grad_g1, grad_g2]
+        )
         @test get_constraints(M, co1v, p) == [c[1], []]
         @test get_grad_equality_constraints(M, co1v, p) == []
         @test get_grad_inequality_constraints(M, co1v, p) == gg

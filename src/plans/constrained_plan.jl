@@ -254,7 +254,9 @@ function ConstrainedManifoldObjective(
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 ) where {TF,TGF}
-    return ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation)
+    return ConstrainedManifoldObjective(
+        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+    )
 end
 
 function get_constraints(mp::AbstractManoptProblem, p)
@@ -400,7 +402,10 @@ function get_grad_equality_constraint(
     return X[j]
 end
 function get_grad_equality_constraint(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}, p, j
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint},
+    p,
+    j,
 )
     X = zero_vector(M, p)
     co.grad_h!![j](M, X, p)
@@ -420,7 +425,9 @@ Evaluate the gradient of the `j`th equality constraint ``(\operatorname{grad} h(
     For the [`InplaceEvaluation`](@ref) of the [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
     since this is the only way to determine the number of cconstraints and allocates a full vector of tangent vectors
 """
-get_grad_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j)
+get_grad_equality_constraint!(
+    M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j
+)
 function get_grad_equality_constraint!(
     M::AbstractManifold,
     X,
@@ -487,19 +494,25 @@ function get_grad_equality_constraints(
     return co.grad_h!!(M, p)
 end
 function get_grad_equality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{AllocatingEvaluation,VectorConstraint}, p
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective{AllocatingEvaluation,VectorConstraint},
+    p,
 )
     return [grad_hi(M, p) for grad_hi in co.grad_h!!]
 end
 function get_grad_equality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{InplaceEvaluation,FunctionConstraint}, p
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective{InplaceEvaluation,FunctionConstraint},
+    p,
 )
     X = [zero_vector(M, p) for _ in 1:length(co.h(M, p))]
     co.grad_h!!(M, X, p)
     return X
 end
 function get_grad_equality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}, p
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint},
+    p,
 )
     X = [zero_vector(M, p) for _ in 1:length(co.h)]
     [grad_hi(M, Xj, p) for (Xj, grad_hi) in zip(X, co.grad_h!!)]
@@ -545,7 +558,10 @@ function get_grad_equality_constraints!(
     return X
 end
 function get_grad_equality_constraints!(
-    M::AbstractManifold, X, co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}, p
+    M::AbstractManifold,
+    X,
+    co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint},
+    p,
 )
     for (Xj, grad_hj) in zip(X, co.grad_h!!)
         grad_hj(M, Xj, p)
@@ -594,7 +610,10 @@ function get_grad_inequality_constraint(
     return X[i]
 end
 function get_grad_inequality_constraint(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}, p, i
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint},
+    p,
+    i,
 )
     X = zero_vector(M, p)
     co.grad_g!![i](M, X, p)
@@ -683,19 +702,25 @@ function get_grad_inequality_constraints(
     return co.grad_g!!(M, p)
 end
 function get_grad_inequality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{AllocatingEvaluation,VectorConstraint}, p
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective{AllocatingEvaluation,VectorConstraint},
+    p,
 )
     return [grad_gi(M, p) for grad_gi in co.grad_g!!]
 end
 function get_grad_inequality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{InplaceEvaluation,FunctionConstraint}, p
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective{InplaceEvaluation,FunctionConstraint},
+    p,
 )
     X = [zero_vector(M, p) for _ in 1:length(co.g(M, p))]
     co.grad_g!!(M, X, p)
     return X
 end
 function get_grad_inequality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}, p
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint},
+    p,
 )
     X = [zero_vector(M, p) for _ in 1:length(co.g)]
     [grad_gi(M, Xi, p) for (Xi, grad_gi) in zip(X, co.grad_g!!)]
@@ -741,7 +766,10 @@ function get_grad_inequality_constraints!(
     return X
 end
 function get_grad_inequality_constraints!(
-    M::AbstractManifold, X, co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}, p
+    M::AbstractManifold,
+    X,
+    co::ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint},
+    p,
 )
     for (Xi, grad_gi!) in zip(X, co.grad_g!!)
         grad_gi!(M, Xi, p)
@@ -749,6 +777,8 @@ function get_grad_inequality_constraints!(
     return X
 end
 
-function Base.show(io::IO, ::ConstrainedManifoldObjective{E,V}) where {E<:AbstractEvaluationType,V}
+function Base.show(
+    io::IO, ::ConstrainedManifoldObjective{E,V}
+) where {E<:AbstractEvaluationType,V}
     return print(io, "ConstrainedManifoldObjective{$E,$V}.")
 end

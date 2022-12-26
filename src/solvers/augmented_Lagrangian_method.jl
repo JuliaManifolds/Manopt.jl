@@ -231,7 +231,9 @@ function augmented_Lagrangian_method!(
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
-    _objective=ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation),
+    _objective=ConstrainedManifoldObjective(
+        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+    ),
     sub_cost=AugmentedLagrangianCost(_objective, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(_objective, ρ, μ, λ),
     sub_kwargs=[],
