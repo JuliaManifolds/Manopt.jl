@@ -68,6 +68,7 @@ stores option values for a [`bundle_method`](@ref) solver
 * `p_last_serious` - last serious iterate
 * `retraction_method` – the retration to use within
 * `stop` – a [`StoppingCriterion`](@ref)
+* `tol` - the tolerance parameter
 * `vector_transport_method` - the vector transport method to use within
 * `X` the current element from the possible subgradients at `p` that is used
 """
@@ -121,9 +122,7 @@ mutable struct BundleMethodOptions{
         index_set = Set(1)
         bundle_points = [(p, subgrad)]
         lin_errors = [0.0]
-        return new{
-            IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT
-        }(
+        return new{IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT}(
             bundle_points,
             inverse_retraction_method,
             lin_errors,
@@ -156,24 +155,15 @@ function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T)
     end
     h(N, λ) = sum(λ) - 1
     gradh(N, λ) = zero_vector(N, λ) .+ 1
-    return exact_penalty_method(N, f, gradf, rand(N); G=g, H=h, gradG=gradg, gradH=gradh)
+    return exact_penalty_method(
+        N,
+        f,
+        gradf,
+        rand(N);
+        G=g,
+        H=h,
+        gradG=gradg,
+        gradH=gradh,
+        smoothing=LinearQuadraticHuber(),
+    )
 end
-# function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T) where {T}
-#     d = length(o.index_set)
-#     lin_errors = o.lin_errors
-#     N = Manifolds.ProbabilitySimplex(d-1)
-#     f(N, λ) = 0.5 * norm(prb.M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* lin_errors)
-#     function gradf(N, λ)
-#         return [
-#             inner(prb.M, o.p_last_serious, X[i], sum(λ .* X)) + lin_errors[i] for i in 1:d
-#         ]
-#     end
-#     # randfloat = rand()
-#     # if randfloat === 0.0
-#     #     randfloat = 1.0
-#     # end
-#     # x1 = 1.0
-#     # x2 = 1.0 - rand()
-#     # xn = vcat(x1, x2, [])
-#     return gradient_descent(N, f, gradf, x)
-# end
