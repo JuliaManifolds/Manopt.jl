@@ -53,7 +53,7 @@ for all optional parameters, see [`stochastic_gradient_descent`](@ref).
 """
 function stochastic_gradient_descent!(
     M::AbstractManifold,
-    gradF::TDF,
+    grad_f::TDF,
     x;
     cost::TF=Missing(),
     direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, x)),
@@ -62,13 +62,13 @@ function stochastic_gradient_descent!(
                                           StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=ConstantStepsize(M),
     order_type::Symbol=:Random,
-    order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
+    order=collect(1:(grad_f isa Function ? length(grad_f(M, x)) : length(grad_f))),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     kwargs...,
 ) where {TDF,TF}
-    p = ManifoldStochasticGradientObjective(M, gradF; cost=cost, evaluation=evaluation)
-    mp = DefaultManoptProblem(M, os)
-    o = StochasticGradientDescentState(
+    msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
+    mp = DefaultManoptProblem(M, msgo)
+    sgds = StochasticGradientDescentState(
         M,
         x,
         zero_vector(M, x);
@@ -79,8 +79,8 @@ function stochastic_gradient_descent!(
         order=order,
         retraction_method=retraction_method,
     )
-    o = decorate_state(o; kwargs...)
-    return get_solver_return(solve!(mp, o))
+    sgds = decorate_state(sgds; kwargs...)
+    return get_solver_return(solve!(mp, sgds))
 end
 function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescentState)
     s.k = 1
@@ -88,8 +88,8 @@ function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescen
     return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentState, iter)
-    step, s.gradient = s.direction(mp, s, iter)
-    retract!(mp.M, s.x, s.x, -step * s.gradient)
+    step, s.X = s.direction(mp, s, iter)
+    retract!(get_manifold(mp), s.p, s.p, -step * s.X)
     s.k = ((s.k) % length(s.order)) + 1
     return s
 end

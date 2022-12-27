@@ -269,8 +269,8 @@ mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} 
     X_old::T
 end
 function MomentumGradient(
-    M::AbstractManifold;
-    p::P=random_point(M),
+    M::AbstractManifold,
+    p::P=random_point(M);
     direction::DirectionUpdateRule=IdentityUpdateRule(),
     vector_transport_method::VTM=ParallelTransport(),
     X=zero_vector(M, p),
@@ -342,8 +342,8 @@ mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function AverageGradient(
-    M::AbstractManifold;
-    p::P=random_point(M),
+    M::AbstractManifold,
+    p::P=random_point(M);
     n::Int=10,
     direction::DirectionUpdateRule=IdentityUpdateRule(),
     gradients=[zero_vector(M, p) for _ in 1:n],

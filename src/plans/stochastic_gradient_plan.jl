@@ -55,9 +55,9 @@ function ManifoldStochasticGradientObjective(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 )
     return ManifoldStochasticGradientObjective{
-        typeof(evaluation),TM,typeof(cost),typeof(grad_f!!)
+        typeof(evaluation),typeof(cost),typeof(grad_f!!)
     }(
-        M, cost, grad_f!!
+        cost, grad_f!!
     )
 end
 
@@ -117,7 +117,7 @@ function get_gradients(
     sgo::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:AbstractVector},
     p,
 ) where {TC}
-    X = [zero_vector(M, p) for _ in p.gradient!!]
+    X = [zero_vector(M, p) for _ in sgo.gradient!!]
     get_gradients!(M, X, sgo, p)
     return X
 end
@@ -143,10 +143,10 @@ function get_gradients!(
 end
 # Passdown from problem
 function get_gradients(mp::AbstractManoptProblem, p)
-    return get_gradient(get_manifold(mp), get_objective(mp), p)
+    return get_gradients(get_manifold(mp), get_objective(mp), p)
 end
 function get_gradients!(mp::AbstractManoptProblem, X, p)
-    return get_gradient!(get_manifold(mp), X, get_objective(mp), p)
+    return get_gradients!(get_manifold(mp), X, get_objective(mp), p)
 end
 
 @doc raw"""
@@ -182,12 +182,12 @@ function get_gradient(
     k,
 ) where {TC}
     X = zero_vector(M, p)
-    return get_gradient!(M, p, X, k, x)
+    return get_gradient!(M, X, sgo, p, k)
 end
 function get_gradient!(
     M::AbstractManifold,
-    sgo::ManifoldStochasticGradientObjective{AllocatingEvaluation,TC,<:Function},
     X,
+    sgo::ManifoldStochasticGradientObjective{AllocatingEvaluation,TC,<:Function},
     p,
     k,
 ) where {TC}
@@ -196,8 +196,8 @@ function get_gradient!(
 end
 function get_gradient!(
     M::AbstractManifold,
-    sgo::ManifoldStochasticGradientObjective{AllocatingEvaluation,TC,<:AbstractVector},
     X,
+    sgo::ManifoldStochasticGradientObjective{AllocatingEvaluation,TC,<:AbstractVector},
     p,
     k,
 ) where {TC}
@@ -206,8 +206,8 @@ function get_gradient!(
 end
 function get_gradient!(
     ::AbstractManifold,
-    ::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:Function},
     ::Any,
+    ::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:Function},
     ::Any,
     ::Any,
 ) where {TC}
@@ -217,8 +217,8 @@ function get_gradient!(
 end
 function get_gradient!(
     M::AbstractManifold,
-    sgo::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:AbstractVector},
     X,
+    sgo::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:AbstractVector},
     p,
     k,
 ) where {TC}
@@ -262,8 +262,8 @@ function get_gradient(
     sgo::ManifoldStochasticGradientObjective{AllocatingEvaluation,TC,<:AbstractVector},
     p,
 ) where {TC}
-    X = zero_vector(p.M, x)
-    get_gradedient!(M, X, sgo, p)
+    X = zero_vector(M, p)
+    get_gradient!(M, X, sgo, p)
     return X
 end
 function get_gradient!(
@@ -283,7 +283,7 @@ function get_gradient(
     sgo::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:AbstractVector},
     p,
 ) where {TC}
-    X = zero_vector(p.M, x)
+    X = zero_vector(M, p)
     get_gradient!(M, X, sgo, p)
     return X
 end
@@ -341,8 +341,8 @@ mutable struct StochasticGradientDescentState{
     TStep<:Stepsize,
     RM<:AbstractRetractionMethod,
 } <: AbstractGradientSolverState
-    x::TX
-    gradient::TV
+    p::TX
+    X::TV
     direction::D
     stop::TStop
     stepsize::TStep
@@ -397,11 +397,11 @@ function StochasticGradient(M::AbstractManifold; p=random_point(M), X=zero_vecto
 end
 
 function (sg::StochasticGradient)(
-    p::ManifoldStochasticGradientObjective, s::StochasticGradientDescentState, iter
+    apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, iter
 )
     # for each new epoche choose new order if we are at random order
-    ((s.k == 1) && (s.order_type == :Random)) && shuffle!(s.order)
+    ((sgds.k == 1) && (sgds.order_type == :Random)) && shuffle!(sgds.order)
     # i is the gradient to choose, either from the order or completely random
-    j = s.order_type == :Random ? rand(1:length(s.order)) : s.order[s.k]
-    return s.stepsize(p, s, iter), get_gradient!(p, sg.dir, s.x, j)
+    j = sgds.order_type == :Random ? rand(1:length(sgds.order)) : sgds.order[sgds.k]
+    return sgds.stepsize(apm, sgds, iter), get_gradient!(apm, sg.dir, sgds.p, j)
 end
