@@ -1,9 +1,10 @@
 @doc raw"""
-    AbstractManifoldCostObjective{T} <: AbstractManifoldObjective{T}
+    AbstractManifoldCostObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
 Representing objectives on manifolds with a cost function implemented.
 """
-abstract type AbstractManifoldCostObjective{T} <: AbstractManifoldObjective{T} end
+abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType} <:
+              AbstractManifoldObjective{T} end
 
 @doc raw"""
     ManifoldCostObjective{T,Tcost} <: AbstractManifoldCostObjective{T}

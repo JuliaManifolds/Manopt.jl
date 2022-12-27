@@ -6,7 +6,7 @@ An abstract type to specify the kind of evaluation a [`AbstractManifoldObjective
 abstract type AbstractEvaluationType end
 
 @doc raw"""
-    AbstractManifoldObjective{T}
+    AbstractManifoldObjective{T<:AbstractEvaluationType}
 
 Describe the collection of the optimization function ``f\colon \mathcal M → \bbR` (or even a vectorial range)
 and its corresponding elements, which might for example be a gradient or (one or more) prxomial maps.
@@ -75,9 +75,9 @@ or a reference to that field represented by an instance of [`FieldReference`](@r
 Futher, in a function that uses fields accessed this way, you need to dispatch on
 `FieldReference` type to determine which access pattern needs to be used.
 """
-macro access_field(ex)
+macro access_field(ex, Teval=:Teval)
     @assert ex.head === :.
     obj = ex.args[1]
     fieldname = ex.args[2]
-    return esc(:(Manopt._access_field($obj, $fieldname, Teval())))
+    return esc(:(Manopt._access_field($obj, $fieldname, $Teval())))
 end
