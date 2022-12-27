@@ -163,11 +163,11 @@ end
 # Solver functions
 #
 function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
-    copyto!(get_manifold(mp), s.X, s.p, get_gradient(mp, s.p))
+    get_gradient!(mp, s.X, s.p)
     return s
 end
 function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, i)
     step, s.X = s.direction(p, s, i)
-    retract!(get_manifold(p), s.p, s.p, -step * s.X, s.retraction_method)
+    retract!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
     return s
 end

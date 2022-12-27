@@ -147,7 +147,7 @@ function get_gradient!(
     M::AbstractManifold, X, mgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
 )
     _, Y = mgo.costgrad!!(M, p)
-    copyto!(M, p, X, Y)
+    copyto!(M, X, p, Y)
     return X
 end
 function get_gradient!(

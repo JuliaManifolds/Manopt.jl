@@ -67,19 +67,4 @@ TestState() = TestState([])
         @test_throws ErrorException set_iterate!(s, M, 0)
         @test_throws ErrorException set_iterate!(r, M, 0)
     end
-
-    @testset "FieldReference" begin
-        X = [10.0, 12.0]
-        o = TestState([1.0, 2.0])
-        Teval = InplaceEvaluation
-        fa = Manopt.@access_field o.storage
-        @test fa === o.storage
-
-        Teval = AllocatingEvaluation
-        fa = Manopt.@access_field o.storage
-        @test fa isa Manopt.FieldReference
-        @test fa[] === o.storage
-        fa[] = X
-        @test fa[] === X
-    end
 end

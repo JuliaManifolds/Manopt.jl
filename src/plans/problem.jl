@@ -20,14 +20,28 @@ abstract type AbstractManoptProblem{M<:AbstractManifold} end
 @doc raw"""
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
 
-Model a default manifold problem, that (just) consists of the domain of optimisatio,
-that is an `AbstractManifold` and a [`AbstractManifoldObjective`](@ref)
+Model a default manifold problem, that (just) consists of the domain of optimisation,
+that is an `AbstractManifold` and an [`AbstractManifoldObjective`](@ref)
 """
 struct DefaultManoptProblem{TM<:AbstractManifold,Objective<:AbstractManifoldObjective} <:
        AbstractManoptProblem{TM}
     manifold::TM
     objective::Objective
 end
+
+"""
+    evaluation_type(mp::AbstractManoptProblem)
+
+Get the [`AbstractEvaluationType`](@ref) of the objective in [`AbstractManoptProblem`](@ref)
+`mp`.
+"""
+evaluation_type(mp::AbstractManoptProblem) = evaluation_type(get_objective(mp))
+"""
+    evaluation_type(::AbstractManifoldObjective{Teval})
+
+Get the [`AbstractEvaluationType`](@ref) of the objective.
+"""
+evaluation_type(::AbstractManifoldObjective{Teval}) where {Teval} = Teval
 
 @doc raw"""
     get_manifold(mp::AbstractManoptProblem)
