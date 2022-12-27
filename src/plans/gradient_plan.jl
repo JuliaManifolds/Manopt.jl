@@ -132,13 +132,10 @@ function get_gradient(
 end
 
 function get_gradient!(
-    M::AbstractManifold,
-    X::FieldReference,
-    mgo::AbstractManifoldGradientObjective{AllocatingEvaluation},
-    p,
+    M::AbstractManifold, X, mgo::AbstractManifoldGradientObjective{AllocatingEvaluation}, p
 )
-    X[] = mgo.gradient!!(M, p)
-    return X[]
+    copyto!(M, X, p, mgo.gradient!!(M, p))
+    return X
 end
 function get_gradient!(
     M::AbstractManifold, X, mgo::AbstractManifoldGradientObjective{InplaceEvaluation}, p
@@ -147,14 +144,11 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-    M::AbstractManifold,
-    X::FieldReference,
-    mgo::ManifoldCostGradientObjective{AllocatingEvaluation},
-    p,
+    M::AbstractManifold, X, mgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
 )
     _, Y = mgo.costgrad!!(M, p)
-    X[] = Y
-    return X[]
+    copyto!(M, X, p, Y)
+    return X
 end
 function get_gradient!(
     M::AbstractManifold, X, mgo::ManifoldCostGradientObjective{InplaceEvaluation}, p

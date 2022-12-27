@@ -133,14 +133,14 @@ end
 
 function get_jacobian!(
     p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    jacF::FieldReference,
+    jacF,
     x,
     basis_domain::AbstractBasis,
 ) where {mT}
-    return jacF[] = p.jacobian!!(get_manifold(p), x; basis_domain=basis_domain)
+    return copyto!(jacF, p.jacobian!!(get_manifold(p), x; basis_domain=basis_domain))
 end
 function get_jacobian!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
     jacF,
     x,
     basis_domain::AbstractBasis,
@@ -150,13 +150,13 @@ end
 
 function get_residuals!(
     p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    residuals::FieldReference,
+    residuals,
     x,
 ) where {mT}
-    return residuals[] = get_objective(p).F(p.M, x)
+    return copyto!(residuals, get_objective(p).F(p.M, x))
 end
 function get_residuals!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
     residuals,
     x,
 ) where {mT}
@@ -172,7 +172,7 @@ function step_solver!(
 
     M = get_manifold(p)
     basis_ox = _maybe_get_basis(M, o.x, p.jacB)
-    get_jacobian!(p, (@access_field o.jacF), o.x, basis_ox)
+    get_jacobian!(p, o.jacF, o.x, basis_ox)
     λk = o.damping_term * norm(o.residual_values)
 
     JJ = transpose(o.jacF) * o.jacF + λk * I
@@ -187,7 +187,7 @@ function step_solver!(
     temp_x = retract(M, o.x, o.step_vector, o.retraction_method)
 
     normFk2 = norm(o.residual_values)^2
-    get_residuals!(p, (@access_field o.candidate_residual_values), temp_x)
+    get_residuals!(p, o.candidate_residual_values, temp_x)
 
     ρk =
         2 * (normFk2 - norm(o.candidate_residual_values)^2) / (

@@ -68,8 +68,7 @@ function GradientDescentState(
 end
 
 function (r::IdentityUpdateRule)(mp::AbstractManoptProblem, s::GradientDescentState, i)
-    Teval = evaluation_type(mp)
-    return get_stepsize(mp, s, i), get_gradient!(mp, (@access_field s.X Teval), s.p)
+    return get_stepsize(mp, s, i), get_gradient!(mp, s.X, s.p)
 end
 
 @doc raw"""
@@ -164,8 +163,7 @@ end
 # Solver functions
 #
 function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
-    Teval = evaluation_type(mp)
-    get_gradient!(mp, (@access_field s.X Teval), s.p)
+    get_gradient!(mp, s.X, s.p)
     return s
 end
 function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, i)
