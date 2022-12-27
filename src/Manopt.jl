@@ -184,7 +184,8 @@ export AbstractManifoldObjective,
     ManifoldHessianObjective,
     ManifoldStochasticGradientObjective,
     ManifoldSubgradientObjective,
-    PrimalDualManifoldObjective
+    PrimalDualManifoldObjective,
+    PrimalDualManifoldSemismoothNewtonObjective
 #
 # Evaluation & Problems - old
 export Problem,

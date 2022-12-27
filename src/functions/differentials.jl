@@ -201,7 +201,8 @@ function differential_geodesic_startpoint(M::AbstractManifold, p, q, t, X)
     return jacobi_field(M, p, q, t, X, βdifferential_geodesic_startpoint)
 end
 function differential_geodesic_startpoint!(M::AbstractManifold, Y, p, q, t, X)
-    return jacobi_field!(M, Y, p, q, t, X, βdifferential_geodesic_startpoint)
+    jacobi_field!(M, Y, p, q, t, X, βdifferential_geodesic_startpoint)
+    return Y
 end
 
 @doc raw"""

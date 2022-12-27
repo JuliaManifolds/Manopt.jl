@@ -1,7 +1,6 @@
 using Manopt, Manifolds, ManifoldsBase, Test
 
-@testset "Test primal dual plan" begin
-    #
+@testset "Test higher order primal dual plan" begin
     # Perform an really easy test, just compute a mid point
     #
     pixelM = Sphere(2)
@@ -11,29 +10,31 @@ using Manopt, Manifolds, ManifoldsBase, Test
     α = 1
     # known minimizer
     δ = min(α / distance(pixelM, data[1], data[2]), 0.5)
-    x_hat = shortest_geodesic(M, data, reverse(data), δ)
+    p_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = M
-    fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
-    Λ(M, x) = ProductRepr(x, forward_logs(M, x))
-    prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
-    cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
-    prox_F(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
-    prox_F!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
-    prox_G_dual(N, n, λ, ξ) = project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0)
-    prox_G_dual!(N, η, n, λ, ξ) = project_collaborative_TV(N, η, λ, n, ξ, Inf, Inf, 1.0)
+    fidelity(M, p) = 1 / 2 * distance(M, p, f)^2
+    Λ(M, p) = ProductRepr(p, forward_logs(M, p))
+    prior(M, p) = norm(norm.(Ref(M.manifold), p, submanifold_component(N, Λ(p), 2)), 1)
+    cost(M, p) = (1 / α) * fidelity(M, p) + prior(M, p)
+    prox_f(M, λ, p) = prox_distance(M, λ / α, data, p, 2)
+    prox_f!(M, q, λ, p) = prox_distance!(M, q, λ / α, data, p, 2)
+    prox_g_dual(N, n, λ, X) = project_collaborative_TV(N, λ, n, X, Inf, Inf, 1.0)
+    prox_g_dual!(N, η, n, λ, X) = project_collaborative_TV(N, η, λ, n, X, Inf, Inf, 1.0)
     DΛ(M, m, X) = differential_forward_logs(M, m, X)
     DΛ!(M, Y, m, X) = differential_forward_logs!(M, Y, m, X)
-    adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(M, m, ξ)
-    adjoint_DΛ!(N, Y, m, n, ξ) = adjoint_differential_forward_logs!(M, Y, m, ξ)
+    adjoint_DΛ(N, m, n, X) = adjoint_differential_forward_logs(M, m, X)
+    adjoint_DΛ!(N, Y, m, n, X) = adjoint_differential_forward_logs!(M, Y, m, X)
 
-    function differential_project_collaborative_TV(N::PowerManifold, x, Ξ, Η, p=2.0, q=1.0)
-        Y = zero_vector(N, x)
-        return differential_project_collaborative_TV!(N, Y, x, Ξ, Η, p, q)
+    function differential_project_collaborative_TV(
+        N::PowerManifold, p, ξ, η, p1=2.0, p2=1.0
+    )
+        ζ = zero_vector(N, p)
+        return differential_project_collaborative_TV!(N, ζ, p, ξ, η, p1, p2)
     end
     function differential_project_collaborative_TV!(
-        N::PowerManifold, Y, x, Ξ, Η, p=2.0, q=1.0
+        N::PowerManifold, ζ, p, ξ, η, p1=2.0, p2=1.0
     )
-        Y = zero_vector(N, x)
+        ζ = zero_vector!(N, ζ, p)
         pdims = power_dimensions(N)
         if length(pdims) == 1
             d = 1
@@ -56,9 +57,9 @@ using Manopt, Manifolds, ManifoldsBase, Test
         maxInd = last(R).I
         e_k_vals = [1 * (1:d .== k) for k in 1:d]
 
-        if q == Inf
-            if p == Inf || d == 1
-                norms = norm.(Ref(N.manifold), x, Ξ)
+        if p2 == Inf
+            if p1 == Inf || d == 1
+                norms = norm.(Ref(N.manifold), p, ξ)
 
                 for i in R # iterate over all pixel
                     for k in 1:d # for all direction combinations
@@ -66,27 +67,27 @@ using Manopt, Manifolds, ManifoldsBase, Test
                         J = I .+ e_k_vals[k] #i + e_k is j
                         if all(J .<= maxInd)
                             # this is neighbor in range,
-                            Y[N, I..., k] += if norms[I..., k] <= 1
-                                Η[N, I..., k]
+                            ζ[N, I..., k] += if norms[I..., k] <= 1
+                                η[N, I..., k]
                             else
                                 1 / norms[I..., k] * (
-                                    Η[N, I..., k] .-
+                                    η[N, I..., k] .-
                                     1 / norms[I..., k]^2 .* inner(
                                         N.manifold,
-                                        x[N, I..., k],
-                                        Η[N, I..., k],
-                                        Ξ[N, I..., k],
-                                    ) .* Ξ[N, I..., k]
+                                        p[N, I..., k],
+                                        η[N, I..., k],
+                                        ξ[N, I..., k],
+                                    ) .* ξ[N, I..., k]
                                 )
                             end
                         else
-                            Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
+                            ζ[N, I..., k] = zero_vector(N.manifold, p[N, I..., k])
                         end
                     end # directions
                 end # i in R
-                return Y
-            elseif p == 2
-                norms = norm.(Ref(N.manifold), x, Ξ)
+                return ζ
+            elseif p1 == 2
+                norms = norm.(Ref(N.manifold), p, ξ)
                 norms_ = sqrt.(sum(norms .^ 2; dims=length(pdims)))
 
                 for i in R # iterate over all pixel
@@ -96,81 +97,82 @@ using Manopt, Manifolds, ManifoldsBase, Test
                         if all(J .<= maxInd)
                             # this is neighbor in range,
                             if norms_[I...] <= 1
-                                Y[N, I..., k] += Η[N, I..., k]
+                                ζ[N, I..., k] += η[N, I..., k]
                             else
                                 for κ in 1:d
-                                    Y[N, I..., κ] += if k != κ
+                                    ζ[N, I..., κ] += if k != κ
                                         -1 / norms_[I...]^3 * inner(
                                             N.manifold,
-                                            x[N, I..., k],
-                                            Η[N, I..., k],
-                                            Ξ[N, I..., k],
-                                        ) .* Ξ[N, I..., κ]
+                                            p[N, I..., k],
+                                            η[N, I..., k],
+                                            ξ[N, I..., k],
+                                        ) .* ξ[N, I..., κ]
                                     else
                                         1 / norms_[I...] * (
-                                            Η[N, I..., k] .-
+                                            η[N, I..., k] .-
                                             1 / norms_[I...]^2 .* inner(
                                                 N.manifold,
-                                                x[N, I..., k],
-                                                Η[N, I..., k],
-                                                Ξ[N, I..., k],
-                                            ) .* Ξ[N, I..., k]
+                                                p[N, I..., k],
+                                                η[N, I..., k],
+                                                ξ[N, I..., k],
+                                            ) .* ξ[N, I..., k]
                                         )
                                     end
                                 end
                             end
                         else
-                            Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
+                            ζ[N, I..., k] = zero_vector(N.manifold, p[N, I..., k])
                         end
                     end # directions
                 end # i in R
-                return Y
+                return ζ
             else
-                throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
+                throw(ErrorException("The case p=$p1, q=$p2 is not yet implemented"))
             end
         end # end q
-        throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
+        throw(ErrorException("The case p=$p1, q=$p2 is not yet implemented"))
     end
 
-    Dprox_F(M, λ, x, η) = differential_geodesic_startpoint(M, x, data, λ / (α + λ), η)
-    function Dprox_F!(M, Y, λ, x, η)
-        return differential_geodesic_startpoint!(M, Y, x, data, λ / (α + λ), η)
+    Dprox_F(M, λ, p, X) = differential_geodesic_startpoint(M, p, data, λ / (α + λ), X)
+    function Dprox_F!(M, Y, λ, p, X)
+        differential_geodesic_startpoint!(M, Y, p, data, λ / (α + λ), X)
+        return Y
     end
-    function Dprox_G_dual(N, n, λ, ξ, η)
-        return differential_project_collaborative_TV(N, n, ξ, η, Inf, Inf)
+    function Dprox_G_dual(N, n, λ, X, Y)
+        return differential_project_collaborative_TV(N, n, X, Y, Inf, Inf)
     end
-    function Dprox_G_dual!(N, Y, n, λ, ξ, η)
-        return differential_project_collaborative_TV!(N, Y, n, ξ, η, Inf, Inf)
+    function Dprox_G_dual!(N, Z, n, λ, X, Y)
+        return differential_project_collaborative_TV!(N, Z, n, X, Y, Inf, Inf)
     end
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = m
-    x0 = deepcopy(data)
+    p0 = deepcopy(data)
     ξ0 = zero_vector(M, m)
-    X = log(M, x0, m)# TODO construct tangent vector
+    X = log(M, p0, m)# TODO construct tangent vector
     Ξ = X
 
     @testset "test Mutating/Allocation Problem Variants" begin
-        p1 = TwoManifoldProblem(
-            M, N, cost, prox_F, Dprox_F, prox_G_dual, Dprox_G_dual, DΛ, adjoint_DΛ
+        obj1 = PrimalDualManifoldSemismoothNewtonObjective(
+            cost, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
         )
-        p2 = TwoManifoldProblem(
-            M,
-            N,
+        p1 = TwoManifoldProblem(M, N, obj1)
+        obj2 = PrimalDualManifoldSemismoothNewtonObjective(
             cost,
-            prox_F!,
+            prox_f!,
             Dprox_F!,
-            prox_G_dual!,
+            prox_g_dual!,
             Dprox_G_dual!,
             DΛ!,
             adjoint_DΛ!;
             evaluation=InplaceEvaluation(),
         )
-        x1 = get_differential_primal_prox(p1, 1.0, x0, X)
-        x2 = get_differential_primal_prox(p2, 1.0, x0, X)
+        p2 = TwoManifoldProblem(M, N, obj2)
+        x1 = get_differential_primal_prox(p1, 1.0, p0, X)
+        x2 = get_differential_primal_prox(p2, 1.0, p0, X)
         @test x1 == x2
-        get_differential_primal_prox!(p1, x1, 0.8, x0, X)
-        get_differential_primal_prox!(p2, x2, 0.8, x0, X)
+        get_differential_primal_prox!(p1, x1, 1.0, p0, X)
+        get_differential_primal_prox!(p2, x2, 1.0, p0, X)
         @test x1 == x2
 
         ξ1 = get_differential_dual_prox(p1, n, 1.0, ξ0, Ξ)

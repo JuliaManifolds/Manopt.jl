@@ -23,9 +23,9 @@ using Manopt, Manifolds, ManifoldsBase, Test
     end
     prior(M, x) = norm(norm.(Ref(pixelM), x, (Λ(M, x))[N, :vector]), 1)
     cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
-    prox_F(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
-    prox_F!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
-    function prox_G_dual(N, n, λ, ξ)
+    prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
+    prox_f!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
+    function prox_g_dual(N, n, λ, ξ)
         return ProductRepr(
             ξ[N, :point],
             project_collaborative_TV(
@@ -33,7 +33,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             ),
         )
     end
-    function prox_G_dual!(N, η, n, λ, ξ)
+    function prox_g_dual!(N, η, n, λ, ξ)
         η[N, :point] .= ξ[N, :point]
         project_collaborative_TV!(
             base_manifold(N), η[N, :vector], λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
@@ -59,10 +59,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
     p0 = deepcopy(data)
     X0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
-    pdmoe = PrimalDualManifoldObjective(cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
+    pdmoe = PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
     p_exact = TwoManifoldProblem(M, N, pdmoe)
     pdmol = PrimalDualManifoldObjective(
-        cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
+        cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
     )
     p_linearized = TwoManifoldProblem(M, N, pdmol)
     s_exact = ChambollePockState(M, m, n, zero.(p0), X0; variant=:exact)
@@ -89,13 +89,13 @@ using Manopt, Manifolds, ManifoldsBase, Test
 
     @testset "test Mutating/Allocation Problem Variants" begin
         pdmoa = PrimalDualManifoldObjective(
-            cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
+            cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
         )
         p1 = TwoManifoldProblem(M, N, pdmoa)
         pdmoi = PrimalDualManifoldObjective(
             cost,
-            prox_F!,
-            prox_G_dual!,
+            prox_f!,
+            prox_g_dual!,
             adjoint_DΛ!;
             linearized_forward_operator=DΛ!,
             Λ=Λ!,
@@ -149,10 +149,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test Z1 == Z2
     end
     @testset "Primal/Dual residual" begin
-        pmdoe = PrimalDualManifoldObjective(cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
+        pmdoe = PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
         p_exact = TwoManifoldProblem(M, N, pdmoe)
         pmdol = PrimalDualManifoldObjective(
-            cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
+            cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
         )
         p_linearized = TwoManifoldProblem(M, N, pmdol)
         s_exact = ChambollePockState(M, m, n, p0, X0; variant=:exact)
