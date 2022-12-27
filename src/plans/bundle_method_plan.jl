@@ -72,7 +72,6 @@ stores option values for a [`bundle_method`](@ref) solver
 * `X` the current element from the possible subgradients at `p` that is used
 """
 mutable struct BundleMethodOptions{
-    A<:Matrix,
     IR<:AbstractInverseRetractionMethod,
     L<:Array,
     P,
@@ -82,7 +81,7 @@ mutable struct BundleMethodOptions{
     S<:Set,
     VT<:AbstractVectorTransportMethod,
 } <: Options where {P,T}
-    bundle_points::A
+    bundle_points::AbstractVector{Tuple{P,T}}
     inverse_retraction_method::IR
     lin_errors::L
     p::P
@@ -119,11 +118,11 @@ mutable struct BundleMethodOptions{
         #S<:Set,
         VT<:AbstractVectorTransportMethod,
     }
-        index_set = Set()
-        bundle_points = []
-        lin_errors = []
+        index_set = Set(1)
+        bundle_points = [(p, subgrad)]
+        lin_errors = [0.0]
         return new{
-            typeof(bundle_points),IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT
+            IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT
         }(
             bundle_points,
             inverse_retraction_method,
@@ -159,3 +158,22 @@ function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T)
     gradh(N, λ) = zero_vector(N, λ) .+ 1
     return exact_penalty_method(N, f, gradf, rand(N); G=g, H=h, gradG=gradg, gradH=gradh)
 end
+# function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T) where {T}
+#     d = length(o.index_set)
+#     lin_errors = o.lin_errors
+#     N = Manifolds.ProbabilitySimplex(d-1)
+#     f(N, λ) = 0.5 * norm(prb.M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* lin_errors)
+#     function gradf(N, λ)
+#         return [
+#             inner(prb.M, o.p_last_serious, X[i], sum(λ .* X)) + lin_errors[i] for i in 1:d
+#         ]
+#     end
+#     # randfloat = rand()
+#     # if randfloat === 0.0
+#     #     randfloat = 1.0
+#     # end
+#     # x1 = 1.0
+#     # x2 = 1.0 - rand()
+#     # xn = vcat(x1, x2, [])
+#     return gradient_descent(N, f, gradf, x)
+# end

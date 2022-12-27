@@ -82,9 +82,9 @@ end
 function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
     o.p_last_serious = o.p
     o.X = zero_vector(prb.M, o.p)
-    o.index_set = Set(1) # initialize index set
-    o.lin_errors = [0]
-    o.bundle_points = [o.p; o.X]
+    # o.index_set = Set(1) # initialize index set
+    # o.lin_errors = [0]
+    # o.bundle_points = hcat([o.p, o.X],[o.p, o.X])
     return o
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
@@ -93,8 +93,8 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     transported_subgrads = [
         vector_transport_to(
             prb.M,
-            o.bundle_points[1, j],
-            get_bundle_subgradient!(prb, o.bundle_points[2, j], o.bundle_points[1, j]),
+            o.bundle_points[j][1],
+            get_bundle_subgradient!(prb, o.bundle_points[j][2], o.bundle_points[j][1]),
             o.p_last_serious,
             o.vector_transport_method,
         ) for j in 1:length(o.index_set)
@@ -104,29 +104,29 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     g = sum(λ .* transported_subgrads)
     ε = sum(λ .* o.lin_errors)
     δ = -norm(prb.M, o.p_last_serious, g)^2 - ε
-    if δ == 0 ||  -δ <= o.tol
+    if δ == 0 || -δ <= o.tol
         return o
     else
         q = retract(prb.M, o.p_last_serious, -g, o.retraction_method)
         X_q = get_bundle_subgradient(prb, q) # not sure about this
         if get_cost(prb, q) <= (get_cost(prb, o.p_last_serious) + o.m * δ)
             o.p_last_serious = q
-            temp = hcat(o.bundle_points, [o.p_last_serious, X_q])
-            o.bundle_points = temp
+            #o.bundle_points = hcat(o.bundle_points, [o.p_last_serious, X_q])
+            push!(o.bundle_points,(o.p_last_serious,X_q))
         else
-            temp = hcat(o.bundle_points, [q, X_q])
-            o.bundle_points = temp
+            #o.bundle_points = hcat(o.bundle_points, [q, X_q])
+            push!(o.bundle_points,(q,X_q))
         end
     end
     positive_indices = intersect(o.index_set, Set(findall(j -> j > 0, λ)))
     o.index_set = union(positive_indices, iter + 1)
     o.lin_errors = [
-        get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_points[1, j]) - inner(
+        get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_points[j][1]) - inner(
             prb.M,
-            o.bundle_points[1, j],
-            o.bundle_points[2, j],
+            o.bundle_points[j][1],
+            o.bundle_points[j][2],
             inverse_retract(
-                prb.M, o.bundle_points[1, j], o.p_last_serious, o.inverse_retraction_method
+                prb.M, o.bundle_points[j][1], o.p_last_serious, o.inverse_retraction_method
             ),
         ) for j in 1:length(o.index_set)
     ]
@@ -136,7 +136,7 @@ get_solver_result(o::BundleMethodOptions) = o.p_last_serious
 
 # Debugging
 # M = SymmetricPositiveDefinite(3)
-# F(M,y) = sum(1 / (2 * length(y)) * distance.(Ref(M), data, Ref(y)) .^ 2)
-# ∇F(M,y) = sum(1 / length(y) * grad_distance.(Ref(M), data, Ref(y)))
+# F(M,y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
+# ∇F(M,y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
 # data = [rand(M) for i = 1:100];
 # bundle_method(M, F, ∇F, data[1])
