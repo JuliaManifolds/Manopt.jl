@@ -8,11 +8,11 @@ using Manopt, Manifolds, Test
         return 1 / 2 *
                (distance(N[1], x[N, 1], data[1])^2 + distance(N[2], x[N, 2], data[2])^2)
     end
-    gradF1(N, x) = -log(N[1], x[N, 1], data[1])
-    gradF1!(N, Y, x) = (Y .= -log(N[1], x[N, 1], data[1]))
-    gradF2(N, x) = -log(N[2], x[N, 2], data[2])
-    gradF2!(N, Y, x) = (Y .= -log(N[2], x[N, 2], data[2]))
-    gradF(N, x) = ProductRepr([-log(N[i], x[N, i], data[i]) for i in [1, 2]]...)
+    grad_f1(N, x) = -log(N[1], x[N, 1], data[1])
+    grad_f1!(N, Y, x) = (Y .= -log(N[1], x[N, 1], data[1]))
+    grad_f2(N, x) = -log(N[2], x[N, 2], data[2])
+    grad_f2!(N, Y, x) = (Y .= -log(N[2], x[N, 2], data[2]))
+    grad_f(N, x) = ProductRepr([-log(N[i], x[N, i], data[i]) for i in [1, 2]]...)
     function grad_f!(N, Y, x)
         log!(N[1], Y[N, 1], x[N, 1], data[1])
         log!(N[2], Y[N, 2], x[N, 2], data[2])
