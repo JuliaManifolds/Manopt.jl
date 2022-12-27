@@ -62,7 +62,7 @@ function RecordSolverState(s::S, format::Vector{<:Any}) where {S<:AbstractManopt
     return RecordSolverState{S}(s; RecordFactory(get_state(s), format)...)
 end
 function RecordSolverState(s::S, symbol::Symbol) where {S<:AbstractManoptSolverState}
-    return RecordSolverState{O}(s; Iteration=RecordFactory(get_state(s), symbol))
+    return RecordSolverState{S}(s; Iteration=RecordFactory(get_state(s), symbol))
 end
 
 dispatch_state_decorator(::RecordSolverState) = Val(true)
@@ -87,7 +87,7 @@ function get_record_state(s::AbstractManoptSolverState)
     return _get_record_state(s, dispatch_state_decorator(s))
 end
 function _get_record_state(s::AbstractManoptSolverState, ::Val{true})
-    return _get_record_state(s.state)
+    return get_record_state(s.state)
 end
 function _get_record_state(::AbstractManoptSolverState, ::Val{false})
     return error("No Record decoration found")
@@ -122,7 +122,7 @@ function get_record(s::RecordSolverState, symbol::Symbol=:Iteration)
     return get_record(get_record_action(s, symbol))
 end
 function get_record(s::RecordSolverState, symbol::Symbol, i...)
-    return get_record(get_record_action(o, s), i...)
+    return get_record(get_record_action(s, symbol), i...)
 end
 function get_record(s::AbstractManoptSolverState, symbol::Symbol=:Iteration)
     return get_record(get_record_state(s), symbol)
@@ -348,17 +348,18 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
         return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
 end
-function (r::RecordChange)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+    M = get_manifold(amp)
     record_or_reset!(
         r,
         if has_storage(r.storage, :Iterate)
-            distance(p.M, s.x, get_storage(r.storage, :Iterate), r.invretr)
+            distance(M, get_iterate(s), get_storage(r.storage, :Iterate), r.invretr)
         else
             0.0
         end,
         i,
     )
-    r.storage(p, s, i)
+    r.storage(amp, s, i)
     return r.recorded_values
 end
 
@@ -412,13 +413,15 @@ mutable struct RecordEntryChange <: RecordAction
     end
 end
 function (r::RecordEntryChange)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
 )
     value = 0.0
     if has_storage(r.storage, r.field)
-        value = r.distance(p, s, getfield(s, r.field), get_storage(r.storage, r.field))
+        value = r.distance(
+            amp, ams, getfield(ams, r.field), get_storage(r.storage, r.field)
+        )
     end
-    r.storage(p, s, i)
+    r.storage(amp, ams, i)
     return record_or_reset!(r, value, i)
 end
 
@@ -477,10 +480,8 @@ mutable struct RecordCost <: RecordAction
     recorded_values::Array{Float64,1}
     RecordCost() = new(Array{Float64,1}())
 end
-function (r::RecordCost)(
-    p::P, s::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
-    return record_or_reset!(r, get_cost(p, get_iterate(s)), i)
+function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+    return record_or_reset!(r, get_cost(amp, get_iterate(s)), i)
 end
 
 @doc raw"""

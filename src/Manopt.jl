@@ -238,6 +238,7 @@ export get_cost,
     get_iterate,
     get_gradients,
     get_gradients!,
+    get_manifold,
     get_preconditioner,
     get_preconditioner!,
     get_primal_prox,
@@ -254,7 +255,8 @@ export get_cost,
     adjoint_linearized_operator,
     adjoint_linearized_operator!,
     forward_operator,
-    forward_operator!
+    forward_operator!,
+    get_objective
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
