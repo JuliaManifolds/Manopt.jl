@@ -68,9 +68,9 @@ For all optional parameters, see [`quasi_Newton`](@ref).
 """
 function quasi_Newton!(
     M::AbstractManifold,
-    F::TF,
-    gradF::TDF,
-    x;
+    f::TF,
+    grad_f::TDF,
+    p;
     cautious_update::Bool=false,
     cautious_function::Function=x -> x * 10^(-4),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -103,7 +103,7 @@ function quasi_Newton!(
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,
-            x,
+            p,
             direction_update,
             memory_size;
             scale=scale_initial_operator,
@@ -125,12 +125,12 @@ function quasi_Newton!(
             local_dir_upd; θ=cautious_function
         )
     end
-    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
     mp = DefaultManoptProblem(M, mgo)
     qns = QuasiNewtonState(
         M,
-        x;
-        initial_vector=get_gradient(p, x),
+        p;
+        initial_vector=get_gradient(mp, p),
         direction_update=local_dir_upd,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,

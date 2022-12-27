@@ -183,7 +183,8 @@ export AbstractManifoldObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
     ManifoldStochasticGradientObjective,
-    ManifoldSubgradientObjective
+    ManifoldSubgradientObjective,
+    PrimalDualManifoldObjective
 #
 # Evaluation & Problems - old
 export Problem,
@@ -192,7 +193,6 @@ export Problem,
     ConstrainedManifoldObjective,
     DefaultManoptProblem,
     NonlinearLeastSquaresProblem,
-    TwoManifoldProblem,
     TwoManifoldProblem,
     AbstractEvaluationType,
     AllocatingEvaluation,

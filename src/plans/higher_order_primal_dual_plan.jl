@@ -1,11 +1,10 @@
 @doc raw"""
-    TwoManifoldProblem {T <: AbstractEvaluationType, mT <: AbstractManifold, nT <: AbstractManifold} <: AbstractTwoManifoldProblem{T,mT}
+    ManifoldPrimalDualSemismoothNewtonObjective{E<:AbstractEvaluationType, TCost, LO, ALO, PF, DPF, PG, DPG, L} <: AbstractTwoManifoldProblem{E}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [^DiepeveenLellmann2021]
 
 # Fields
 
-* `M`, `N` – two manifolds $\mathcal M$, $\mathcal N$
 * `cost` $F + G(Λ(⋅))$ to evaluate interims cost function values
 * `linearized_operator` the linearization $DΛ(⋅)[⋅]$ of the operator $Λ(⋅)$.
 * `linearized_adjoint_operator` The adjoint differential $(DΛ)^* \colon \mathcal N \to T\mathcal M$
@@ -18,7 +17,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 # Constructor
 
-    TwoManifoldProblem(M, N, cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ)
+    ManifoldPrimalDualSemismoothNewtonObjective(cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ)
 
 [^DiepeveenLellmann2021]:
     > W. Diepeveen, J. Lellmann:
@@ -26,7 +25,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
     > SIAM Journal on Imaging Sciences, 2021.
     > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
-mutable struct PrimalDualSemismoothNewtonObjective{
+mutable struct ManifoldPrimalDualSemismoothNewtonObjective{
     E<:AbstractEvaluationType,TC,PF,DPF,PG,DPG,LFO,ALO,L
 } <: AbstractPrimalDualManifoldObjective{E}
     cost::TC
@@ -38,7 +37,7 @@ mutable struct PrimalDualSemismoothNewtonObjective{
     adjoint_linearized_operator!!::ALO
     Λ!!::L
 end
-function PrimalDualSemismoothNewtonObjective(
+function ManifoldPrimalDualSemismoothNewtonObjective(
     cost,
     prox_F,
     diff_prox_F,
@@ -49,7 +48,7 @@ function PrimalDualSemismoothNewtonObjective(
     Λ=missing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 )
-    return PrimalDualSemismoothNewtonObjective{
+    return ManifoldPrimalDualSemismoothNewtonObjective{
         typeof(evaluation),
         typeof(cost),
         typeof(prox_F),
@@ -118,7 +117,7 @@ mutable struct PrimalDualSemismoothNewtonState{
     X::T
     primal_stepsize::Float64
     dual_stepsize::Float64
-    reg_param::Float64
+    regularization_parameter::Float64
     stop::StoppingCriterion
     update_primal_base::Union{Function,Missing}
     update_dual_base::Union{Function,Missing}
@@ -134,7 +133,7 @@ mutable struct PrimalDualSemismoothNewtonState{
         X::T;
         primal_stepsize::Float64=1 / sqrt(8),
         dual_stepsize::Float64=1 / sqrt(8),
-        reg_param::Float64=1e-5,
+        regularization_parameter::Float64=1e-5,
         stopping_criterion::StoppingCriterion=StopAfterIteration(50),
         update_primal_base::Union{Function,Missing}=missing,
         update_dual_base::Union{Function,Missing}=missing,
@@ -156,7 +155,7 @@ mutable struct PrimalDualSemismoothNewtonState{
             X,
             primal_stepsize,
             dual_stepsize,
-            reg_param,
+            regularization_parameter,
             stopping_criterion,
             update_primal_base,
             update_dual_base,
@@ -172,7 +171,7 @@ function set_iterate!(pdsn::PrimalDualSemismoothNewtonState, p)
     return pdsn
 end
 @doc raw"""
-    y = get_differential_primal_prox(M::AbstractManifold, pdsno::PrimalDualSemismoothNewtonObjective σ, x)
+    y = get_differential_primal_prox(M::AbstractManifold, pdsno::ManifoldPrimalDualSemismoothNewtonObjective σ, x)
     get_differential_primal_prox!(p::TwoManifoldProblem, y, σ, x)
 
 Evaluate the differential proximal map of ``F`` stored within [`TwoManifoldProblem`](@ref)
@@ -184,7 +183,7 @@ D\operatorname{prox}_{σF}(x)[X]
 which can also be computed in place of `y`.
 """
 get_differential_primal_prox(
-    M::AbstractManifold, pdsno::PrimalDualSemismoothNewtonObjective, ::Any...
+    M::AbstractManifold, pdsno::ManifoldPrimalDualSemismoothNewtonObjective, ::Any...
 )
 
 function get_differential_primal_prox(tmo::TwoManifoldProblem, σ, p, X)
@@ -201,7 +200,7 @@ end
 
 function get_differential_primal_prox(
     M::AbstractManifold,
-    pdsno::PrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
+    pdsno::ManifoldPrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
     σ,
     p,
     X,
@@ -210,7 +209,7 @@ function get_differential_primal_prox(
 end
 function get_differential_primal_prox(
     M::AbstractManifold,
-    pdsno::PrimalDualSemismoothNewtonObjective{InplaceEvaluation},
+    pdsno::ManifoldPrimalDualSemismoothNewtonObjective{InplaceEvaluation},
     σ,
     p,
     X,
@@ -221,7 +220,7 @@ function get_differential_primal_prox(
 end
 function get_differential_primal_prox!(
     M::AbstractManifold,
-    pdsno::PrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
+    pdsno::ManifoldPrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
     Y,
     σ,
     p,
@@ -232,7 +231,7 @@ function get_differential_primal_prox!(
 end
 function get_differential_primal_prox!(
     M::AbstractManifold,
-    pdsno::PrimalDualSemismoothNewtonObjective{InplaceEvaluation},
+    pdsno::ManifoldPrimalDualSemismoothNewtonObjective{InplaceEvaluation},
     Y,
     σ,
     p,
@@ -243,8 +242,8 @@ function get_differential_primal_prox!(
 end
 
 @doc raw"""
-    η = get_differential_dual_prox(N::AbstractManifold, pdsno::PrimalDualSemismoothNewtonObjective, n, τ, X, ξ)
-    get_differential_dual_prox!(N::AbstractManifold, pdsno::PrimalDualSemismoothNewtonObjective, η, n, τ, X, ξ)
+    η = get_differential_dual_prox(N::AbstractManifold, pdsno::ManifoldPrimalDualSemismoothNewtonObjective, n, τ, X, ξ)
+    get_differential_dual_prox!(N::AbstractManifold, pdsno::ManifoldPrimalDualSemismoothNewtonObjective, η, n, τ, X, ξ)
 
 Evaluate the differential proximal map of ``G_n^*`` stored within [`TwoManifoldProblem`](@ref)
 
@@ -255,7 +254,9 @@ D\operatorname{prox}_{τG_n^*}(X)[ξ]
 which can also be computed in place of `η`.
 """
 get_differential_dual_prox(
-    ::AbstractManifold, ::PrimalDualSemismoothNewtonObjective{AllocatingEvaluation}, Any...
+    ::AbstractManifold,
+    ::ManifoldPrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
+    Any...,
 )
 
 function get_differential_dual_prox(tmo::TwoManifoldProblem, n, τ, X, ξ)
@@ -272,7 +273,7 @@ end
 
 function get_differential_dual_prox(
     N::AbstractManifold,
-    pdsno::PrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
+    pdsno::ManifoldPrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
     n,
     τ,
     X,
@@ -282,7 +283,7 @@ function get_differential_dual_prox(
 end
 function get_differential_dual_prox(
     N::AbstractManifold,
-    pdsno::PrimalDualSemismoothNewtonObjective{InplaceEvaluation},
+    pdsno::ManifoldPrimalDualSemismoothNewtonObjective{InplaceEvaluation},
     n,
     τ,
     X,
@@ -295,7 +296,7 @@ end
 function get_differential_dual_prox!(
     N::AbstractManifold,
     η,
-    pdsno::PrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
+    pdsno::ManifoldPrimalDualSemismoothNewtonObjective{AllocatingEvaluation},
     n,
     τ,
     X,
@@ -307,7 +308,7 @@ end
 function get_differential_dual_prox!(
     N::AbstractManifold,
     η,
-    pdsno::PrimalDualSemismoothNewtonObjective{InplaceEvaluation},
+    pdsno::ManifoldPrimalDualSemismoothNewtonObjective{InplaceEvaluation},
     n,
     τ,
     X,

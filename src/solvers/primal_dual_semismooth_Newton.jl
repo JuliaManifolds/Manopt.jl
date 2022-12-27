@@ -179,7 +179,7 @@ function primal_dual_step!(p::TwoManifoldProblem, s::PrimalDualSemismoothNewtonS
 
     # construct matrix
     ∂X = construct_primal_dual_residual_covariant_derivative_matrix(p, s)
-    ∂X += s.reg_param * sparse(I, size(∂X))  # prevent singular matrix at solution
+    ∂X += s.regularization_parameter * sparse(I, size(∂X))  # prevent singular matrix at solution
 
     # solve matrix -> find coordinates
     d_coords = ∂X \ -X

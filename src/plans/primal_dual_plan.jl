@@ -17,6 +17,8 @@ get_manifold(tmp::TwoManifoldProblem, i) = _get_manifold(tmp, Val(i))
 _get_manifold(tmp::TwoManifoldProblem, ::Val{1}) = tmp.first_manifold
 _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 
+get_objective(tmo::TwoManifoldProblem) = tmo.objective
+
 function TwoManifoldProblem(
     M::MT, obj::O
 ) where {MT<:AbstractManifold,O<:AbstractManifoldObjective}
@@ -80,27 +82,27 @@ mutable struct PrimalDualManifoldObjective{
     adjoint_linearized_operator!!::ALFO
     Λ!!::L
 end
-function TwoManifoldProblem(
+function PrimalDualManifoldObjective(
     cost,
-    prox_F,
-    prox_G_dual,
+    prox_f,
+    prox_g_dual,
     adjoint_linearized_operator;
     linearized_forward_operator::Union{Function,Missing}=missing,
     Λ::Union{Function,Missing}=missing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
 )
-    return TwoManifoldProblem{
+    return PrimalDualManifoldObjective{
         typeof(evaluation),
         typeof(cost),
         typeof(prox_f),
         typeof(prox_g_dual),
         typeof(linearized_forward_operator),
-        typeof(adjoiint_linearized_operator),
+        typeof(adjoint_linearized_operator),
         typeof(Λ),
     }(
         cost,
-        prox_F,
-        prox_G_dual,
+        prox_f,
+        prox_g_dual,
         linearized_forward_operator,
         adjoint_linearized_operator,
         Λ,
@@ -178,11 +180,11 @@ which can also be computed in place of `Y`.
 """
 get_dual_prox(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
-function get_dual_prox(tmp::TwoManifoldProblem, τ, X)
-    return get_dual_prox(get_manifold(tmp, 2), get_objective(tmp), τ, X)
+function get_dual_prox(tmp::TwoManifoldProblem, n, τ, X)
+    return get_dual_prox(get_manifold(tmp, 2), get_objective(tmp), n, τ, X)
 end
-function get_dual_prox!(tmp::TwoManifoldProblem, Y, τ, X)
-    return get_dual_prox(get_manifold(tmp, 2), Y, get_objective(tmp), τ, X)
+function get_dual_prox!(tmp::TwoManifoldProblem, Y, n, τ, X)
+    return get_dual_prox!(get_manifold(tmp, 2), Y, get_objective(tmp), n, τ, X)
     return Y
 end
 
@@ -417,7 +419,7 @@ function adjoint_linearized_operator!(
 end
 function adjoint_linearized_operator!(
     ::AbstractManifold,
-    ::AbstractManifold,
+    N::AbstractManifold,
     X,
     apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
     m,
@@ -589,6 +591,19 @@ V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}X_{k-1} - X_k \bigr]
 where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockState`](@ref)
 """
 function primal_residual(
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
+)
+    return primal_residual(
+        get_manifold(tmp, 1),
+        get_manifold(tmp, 2),
+        get_objective(tmp),
+        apds,
+        p_old,
+        X_old,
+        n_old,
+    )
+end
+function primal_residual(
     M::AbstractManifold,
     N::AbstractManifold,
     apdmo::AbstractPrimalDualManifoldObjective,
@@ -599,7 +614,7 @@ function primal_residual(
 )
     return norm(
         M,
-        apds.x,
+        apds.p,
         1 / apds.primal_stepsize *
         inverse_retract(M, apds.p, p_old, apds.inverse_retraction_method) -
         vector_transport_to(
@@ -656,6 +671,20 @@ and for the `:exact` variant
 where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
 """
 function dual_residual(
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
+)
+    return dual_residual(
+        get_manifold(tmp, 1),
+        get_manifold(tmp, 2),
+        get_objective(tmp),
+        apds,
+        p_old,
+        X_old,
+        n_old,
+    )
+end
+
+function dual_residual(
     M::AbstractManifold,
     N::AbstractManifold,
     apdmo::AbstractPrimalDualManifoldObjective,
@@ -664,7 +693,7 @@ function dual_residual(
     X_old,
     n_old,
 )
-    if s.variant === :linearized
+    if apds.variant === :linearized
         return norm(
             N,
             apds.n,
@@ -687,7 +716,7 @@ function dual_residual(
                 apds.n,
             ),
         )
-    elseif s.variant === :exact
+    elseif apds.variant === :exact
         return norm(
             N,
             apds.n,
@@ -707,9 +736,9 @@ function dual_residual(
                         apds.m,
                         vector_transport_to(
                             M,
-                            apds.x,
+                            apds.p,
                             inverse_retract(
-                                M, apd.p, x_old, apds.inverse_retraction_method
+                                M, apds.p, p_old, apds.inverse_retraction_method
                             ),
                             apds.m,
                             apds.vector_transport_method,
@@ -723,7 +752,7 @@ function dual_residual(
     else
         throw(
             DomainError(
-                s.variant,
+                apds.variant,
                 "Unknown Chambolle–Pock variant, allowed are `:exact` or `:linearized`.",
             ),
         )
@@ -774,20 +803,20 @@ mutable struct DebugDualResidual <: DebugAction
     end
 end
 function (d::DebugDualResidual)(
-    tmo::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
 )
-    M = get_manifold(tmo, 1)
-    N = get_manifold(tmo, 2)
-    apdmo = get_objective(tmo)
+    M = get_manifold(tmp, 1)
+    N = get_manifold(tmp, 2)
+    apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        xOld, XOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        p_old, X_old, n_old = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
         Printf.format(
             d.io,
             Printf.Format(d.format),
-            dual_residual(M, N, apdmo, apds, xOld, XOld, nOld),
+            dual_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
-    return d.storage(p, apds, i)
+    return d.storage(tmp, apds, i)
 end
 @doc raw"""
     DebugPrimalResidual <: DebugAction
@@ -830,11 +859,11 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
 end
 function (d::DebugPrimalResidual)(
-    tmo::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
 )
-    M = get_manifold(tmo, 1)
-    N = get_manifold(tmo, 2)
-    apdmo = get_objective(tmo)
+    M = get_manifold(tmp, 1)
+    N = get_manifold(tmp, 2)
+    apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
         xOld, XOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
         Printf.format(
@@ -843,7 +872,7 @@ function (d::DebugPrimalResidual)(
             primal_residual(M, N, apdmo, apds, xOld, XOld, nOld),
         )
     end
-    return d.storage(p, apds, i)
+    return d.storage(tmp, apds, i)
 end
 @doc raw"""
     DebugPrimalDualResidual <: DebugAction
@@ -886,19 +915,19 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
 end
 function (d::DebugPrimalDualResidual)(
-    tmo::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
 )
-    M = get_manifold(tmo, 1)
-    N = get_manifold(tmo, 2)
-    apdmo = get_objective(tmo)
+    M = get_manifold(tmp, 1)
+    N = get_manifold(tmp, 2)
+    apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        xOld, XOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        p_old, X_old, n_old = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
         v =
-            primal_residual(M, N, apdmo, apds, xOld, XOld, nOld) +
-            dual_residual(p, apds, xOld, XOld, nOld)
+            primal_residual(M, N, apdmo, apds, p_old, X_old, n_old) +
+            dual_residual(tmp, apds, p_old, X_old, n_old)
         Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(M))
     end
-    return d.storage(p, apds, i)
+    return d.storage(tmp, apds, i)
 end
 
 #
@@ -968,20 +997,21 @@ mutable struct DebugDualChange <: DebugAction
     end
 end
 function (d::DebugDualChange)(
-    tmo::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
 )
-    N = get_manifold(tmo, 2)
+    N = get_manifold(tmp, 2)
     if all(has_storage.(Ref(d.storage), [:X, :n])) && i > 0 # all values stored
-        XOld, nOld = get_storage.(Ref(d.storage), [:X, :n]) #fetch
+        X_old, n_old = get_storage.(Ref(d.storage), [:X, :n]) #fetch
         v = norm(
             N,
             apds.n,
-            vector_transport_to(N, nOld, XOld, apds.n, apds.vector_transport_method_dual) -
-            apds.X,
+            vector_transport_to(
+                N, n_old, X_old, apds.n, apds.vector_transport_method_dual
+            ) - apds.X,
         )
         Printf.format(d.io, Printf.Format(d.format), v)
     end
-    return d.storage(p, apds, i)
+    return d.storage(tmp, apds, i)
 end
 
 """
@@ -1004,7 +1034,8 @@ function DebugDualBaseChange(;
 )
     return DebugEntryChange(
         :n,
-        (p, o, x, y) -> distance(p.N, x, y, o.inverse_retraction_method_dual);
+        (p, o, x, y) ->
+            distance(get_manifold(p, 2), x, y, o.inverse_retraction_method_dual);
         storage=storage,
         prefix=prefix,
         kwargs...,
@@ -1028,7 +1059,11 @@ see their constructors for detail, on `o.n`.
 """
 function DebugPrimalBaseChange(opts...; prefix="Primal Base Change:", kwargs...)
     return DebugEntryChange(
-        :m, (p, o, x, y) -> distance(M, x, y), opts...; prefix=prefix, kwargs...
+        :m,
+        (p, o, x, y) -> distance(get_manifold(p, 1), x, y),
+        opts...;
+        prefix=prefix,
+        kwargs...,
     )
 end
 
@@ -1051,7 +1086,7 @@ RecordPrimalChange() = RecordChange()
 Create an [`RecordAction`](@ref) that records the dual base point,
 i.e. [`RecordIterate`](@ref), i.e. `o.x`.
 """
-RecordPrimalIterate(x) = RecordIterate(x)
+RecordPrimalIterate(p) = RecordIterate(p)
 
 """
     RecordDualIterate(X)
@@ -1102,4 +1137,6 @@ RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
 Create an [`RecordAction`](@ref) that records the primal base point change,
 i.e. [`RecordEntryChange`](@ref) of `o.m` with distance to the last value to store a value.
 """
-RecordPrimalBaseChange() = RecordEntryChange(:m, (p, o, x, y) -> distance(M, x, y))
+function RecordPrimalBaseChange()
+    return RecordEntryChange(:m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y))
+end

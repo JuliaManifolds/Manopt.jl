@@ -71,7 +71,7 @@ n = m
 x0 = deepcopy(f)
 ξ0 = zero_vector(M, m)
 
-storage = StoreStateAction((:Iterate, :n, :ξbar))
+storage = StoreStateAction((:Iterate, :n, :Xbar))
 
 # print(m)
 @time o = ChambollePock(
