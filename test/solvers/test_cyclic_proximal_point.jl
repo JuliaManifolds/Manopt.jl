@@ -10,12 +10,7 @@ using Manifolds, Manopt, Test, Dates
             (N, λ, p) -> prox_distance(N, λ, q, p), (N, λ, p) -> prox_TV(N, 0.5 * λ, p)
         )
         q2 = cyclic_proximal_point(
-            N,
-            f,
-            proxes,
-            q;
-            λ=i -> π / (2 * i),
-            stopping_criterion=StopAfterIteration(100),
+            N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
         @test f(N, q) > f(N, q2)
         o = CyclicProximalPointState(

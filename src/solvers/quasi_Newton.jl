@@ -423,7 +423,7 @@ function update_hessian!(
     iter,
 ) where {NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod}
     # computing the bound used in the decission rule
-    M = get_manifold(pm)
+    M = get_manifold(mp)
     bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
     sk_normsq = norm(M, st.x, st.sk)^2
 
