@@ -179,6 +179,7 @@ export AbstractManoptProblem, DefaultManoptProblem
 #
 # Objectives
 export AbstractManifoldObjective,
+    ManifoldAlternatingGradientObjective,
     ManifoldCostObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
@@ -190,7 +191,6 @@ export AbstractManifoldObjective,
 # Evaluation & Problems - old
 export Problem,
     ProximalProblem,
-    AlternatingGradientProblem,
     ConstrainedManifoldObjective,
     DefaultManoptProblem,
     NonlinearLeastSquaresProblem,

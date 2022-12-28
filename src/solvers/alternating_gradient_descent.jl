@@ -1,16 +1,136 @@
+"""
+    AlternatingGradientDescentState <: AbstractGradientDescentSolverState
+
+Store the fields for an alternating gradient descent algorithm,
+see also [`AlternatingGradientProblem`](@ref) and [`alternating_gradient_descent`](@ref).
+
+# Fields
+* `direction` (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)
+* `evaluation_order` – (`:Linear`) – whether
+* `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
+  to use a randomly permuted sequence (`:FixedRandom`), a per
+  cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
+* `order` the current permutation
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `stepsize` ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
+* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
+* `p` the current iterate
+* `X` (`zero_vector(M,p)`) the current gradient tangent vector
+* `k`, ì` internal counters for the outer and inner iterations, respectively.
+
+# Constructors
+
+    AlternatingGradientDescentState(M, p; kwargs...)
+
+Generate the options for point `p` and and where `inner_iterations`, `order_type`, `order`,
+`retraction_method`, `stopping_criterion`, and `stepsize`` are keyword arguments
+"""
+mutable struct AlternatingGradientDescentState{
+    P,
+    T,
+    D<:DirectionUpdateRule,
+    TStop<:StoppingCriterion,
+    TStep<:Stepsize,
+    RM<:AbstractRetractionMethod,
+} <: AbstractGradientSolverState
+    p::P
+    X::T
+    direction::D
+    stop::TStop
+    stepsize::TStep
+    order_type::Symbol
+    order::Vector{<:Int}
+    retraction_method::RM
+    k::Int # current iterate
+    i::Int # inner iterate
+    inner_iterations::Int
+end
+function AlternatingGradientDescentState(
+    M::AbstractManifold,
+    p::P;
+    X::T=zero_vector(M, p),
+    inner_iterations::Int=5,
+    order_type::Symbol=:Linear,
+    order::Vector{<:Int}=Int[],
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
+    stepsize::Stepsize=ConstantStepsize(M),
+) where {P,T}
+    return AlternatingGradientDescentState{
+        P,
+        T,
+        AlternatingGradient,
+        typeof(stopping_criterion),
+        typeof(stepsize),
+        typeof(retraction_method),
+    }(
+        p,
+        X,
+        AlternatingGradient(zero_vector(M, p)),
+        stopping_criterion,
+        stepsize,
+        order_type,
+        order,
+        retraction_method,
+        0,
+        0,
+        inner_iterations,
+    )
+end
+"""
+    AlternatingGradient <: DirectionUpdateRule
+
+The default gradient processor, which just evaluates the (alternating) gradient on one of
+the components
+"""
+struct AlternatingGradient{T} <: AbstractGradientGroupProcessor
+    dir::T
+end
+
+function (ag::AlternatingGradient)(
+    amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, iter
+)
+    M = get_manifold(amp)
+    # at begin of inner iterations reset internal vector to zero
+    (ag.i == 1) && zero_vector!(M, ag.dir, agds.p)
+    # update order(k)th component inplace
+    get_gradient!(amp, ag.dir[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
+    return agds.stepsize(amp, agds, iter), ag.dir # return urrent full gradient
+end
+
+# update Armijo to work on the kth gradient only.
+function (a::ArmijoLinesearch)(
+    amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int
+)
+    M = get_manifold(amp)
+    X = zero_vector(M, agds.x)
+    get_gradient!(amp, X[M, agds.order[agds.k]], agds.x, agds.order[agds.k])
+    a.last_stepsize = linesearch_backtrack(
+        M,
+        p -> amp.cost(M, p),
+        agds.p,
+        X,
+        a.last_stepsize,
+        a.sufficient_decrease,
+        a.contraction_factor,
+        a.retraction_method,
+    )
+    return a.last_stepsize
+end
+
 @doc raw"""
-    alternating_gradient_descent(M, F, gradF, x)
+    alternating_gradient_descent(M::ProductManifold, f, grad_f, p)
 
 perform an alternating gradient descent
 
 # Input
 
 * `M` – the product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
-* `F` – the objective function (cost) defined on `M`.
-* `gradF` – a gradient, that can be of two cases
+* `f` – the objective function (cost) defined on `M`.
+* `grad_f` – a gradient, that can be of two cases
   * is a single function returning a `ProductRepr` or
   * is a vector functions each returning a component part of the whole gradient
-* `x` – an initial value ``x ∈ \mathcal M``
+* `p` – an initial value ``p_0 ∈ \mathcal M``
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by
@@ -41,45 +161,46 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
 
 """
 function alternating_gradient_descent(
-    M::ProductManifold, F, gradF::Union{TgF,AbstractVector{<:TgF}}, x; kwargs...
+    M::ProductManifold, f, grad_f::Union{TgF,AbstractVector{<:TgF}}, p; kwargs...
 ) where {TgF}
-    x_res = copy(M, x)
-    return alternating_gradient_descent!(M, F, gradF, x_res; kwargs...)
+    q = copy(M, p)
+    return alternating_gradient_descent!(M, f, grad_f, q; kwargs...)
 end
 @doc raw"""
-    alternating_gradient_descent!(M, F, gradF, x)
+    alternating_gradient_descent!(M::ProductManifold, f, grad_f, p)
 
-perform a alternating gradient descent in place of `x`.
+perform a alternating gradient descent in place of `p`.
 
 # Input
 
-* `M` a manifold ``\mathcal M``
-* `F` – the objective functioN (cost)
-* `gradF` – a gradient function, that either returns a vector of the subgradients
+* `M` a product manifold ``\mathcal M``
+* `f` – the objective functioN (cost)
+* `grad_f` – a gradient function, that either returns a vector of the subgradients
   or is a vector of gradients
-* `x` – an initial value ``x ∈ \mathcal M``
+* `p` – an initial value ``p_0 ∈ \mathcal M``
 
 for all optional parameters, see [`alternating_gradient_descent`](@ref).
 """
 function alternating_gradient_descent!(
     M::ProductManifold,
-    F,
-    gradF::Union{TgF,AbstractVector{<:TgF}},
-    x;
+    f,
+    grad_f::Union{TgF,AbstractVector{<:TgF}},
+    p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inner_iterations::Int=5,
     stopping_criterion::StoppingCriterion=StopAfterIteration(100) |
                                           StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=ArmijoLinesearch(M),
     order_type::Symbol=:Linear,
-    order=collect(1:(gradF isa Function ? length(gradF(M, x)) : length(gradF))),
+    order=collect(1:(grad_f isa Function ? length(grad_f(M, p)) : length(grad_f))),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     kwargs...,
 ) where {TgF}
-    p = AlternatingGradientProblem(M, F, gradF; evaluation=evaluation)
-    o = AlternatingGradientDescentState(
+    agmo = ManifoldAlternatingGradientObjective(f, grad_f; evaluation=evaluation)
+    dmp = DefaultManoptProblem(M, agmo)
+    agds = AlternatingGradientDescentState(
         M,
-        x;
+        p;
         inner_iterations=inner_iterations,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
@@ -87,28 +208,25 @@ function alternating_gradient_descent!(
         order=order,
         retraction_method=retraction_method,
     )
-    o = decorate_state(o; kwargs...)
-    return get_solver_return(solve!(p, o))
+    agds = decorate_state(agds; kwargs...)
+    return get_solver_return(solve!(dmp, agds))
 end
-function initialize_solver!(
-    ::AlternatingGradientProblem, s::AlternatingGradientDescentState
-)
+function initialize_solver!(::AbstractManoptProblem, s::AlternatingGradientDescentState)
     s.k = 1
     s.i = 1
     (s.order_type == :FixedRandom || s.order_type == :Random) && (shuffle!(s.order))
     return s
 end
-function step_solver!(
-    p::AlternatingGradientProblem, s::AlternatingGradientDescentState, iter
-)
-    step, get_gradient(s) = s.direction(p, s, iter)
-    j = s.order[s.k]
-    retract!(p.M[j], s.x[p.M, j], s.x[p.M, j], -step * s.gradient[p.M, j])
-    s.i += 1
-    if s.i > s.inner_iterations
-        s.k = ((s.k) % length(s.order)) + 1
-        (s.order_type == :Random) && (shuffle!(s.order))
-        s.i = 1
+function step_solver!(amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, i)
+    M = get_manifold(amp)
+    step, get_gradient(agds) = agds.direction(amp, agds, i)
+    j = agds.order[agds.k]
+    retract!(M[j], agds.p[M, j], agds.p[M, j], -step * agds.X[M, j])
+    agds.i += 1
+    if agds.i > agds.inner_iterations
+        agds.k = ((agds.k) % length(agds.order)) + 1
+        (agds.order_type == :Random) && (shuffle!(agds.order))
+        agds.i = 1
     end
-    return s
+    return agds
 end

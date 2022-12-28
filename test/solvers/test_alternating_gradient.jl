@@ -4,66 +4,72 @@ using Manopt, Manifolds, Test
     M = Sphere(2)
     N = M × M
     data = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
-    function f(N, x)
+    function f(N, p)
         return 1 / 2 *
-               (distance(N[1], x[N, 1], data[1])^2 + distance(N[2], x[N, 2], data[2])^2)
+               (distance(N[1], p[N, 1], data[1])^2 + distance(N[2], p[N, 2], data[2])^2)
     end
-    grad_f1(N, x) = -log(N[1], x[N, 1], data[1])
-    grad_f1!(N, Y, x) = (Y .= -log(N[1], x[N, 1], data[1]))
-    grad_f2(N, x) = -log(N[2], x[N, 2], data[2])
-    grad_f2!(N, Y, x) = (Y .= -log(N[2], x[N, 2], data[2]))
-    grad_f(N, x) = ProductRepr([-log(N[i], x[N, i], data[i]) for i in [1, 2]]...)
-    function grad_f!(N, Y, x)
-        log!(N[1], Y[N, 1], x[N, 1], data[1])
-        log!(N[2], Y[N, 2], x[N, 2], data[2])
-        return Y .*= -1
+    grad_f1(N, p) = -log(N[1], p[N, 1], data[1])
+    grad_f1!(N, X, p) = (X .= -log(N[1], p[N, 1], data[1]))
+    grad_f2(N, p) = -log(N[2], p[N, 2], data[2])
+    grad_f2!(N, X, p) = (X .= -log(N[2], p[N, 2], data[2]))
+    grad_f(N, p) = ProductRepr([-log(N[i], p[N, i], data[i]) for i in [1, 2]]...)
+    function grad_f!(N, X, p)
+        log!(N[1], X[N, 1], p[N, 1], data[1])
+        log!(N[2], X[N, 2], p[N, 2], data[2])
+        return X .*= -1
     end
-    x = ProductRepr([0.0, 0.0, 1.0], [0.0, 0.0, 1.0])
+    p = ProductRepr([0.0, 0.0, 1.0], [0.0, 0.0, 1.0])
 
     @testset "Test gradient access" begin
-        Pf = AlternatingGradientProblem(N, f, grad_f)
-        Pv = AlternatingGradientProblem(N, f, [gradF1, gradF2])
-        Pf! = AlternatingGradientProblem(N, f, grad_f!; evaluation=InplaceEvaluation())
-        Pv! = AlternatingGradientProblem(
-            N, f, [gradF1!, gradF2!]; evaluation=InplaceEvaluation()
+        objf = ManifoldAlternatingGradientObjective(f, grad_f)
+        Pf = DefaultManoptProblem(N, objf)
+        objv = ManifoldAlternatingGradientObjective(f, [grad_f1, grad_f2])
+        Pv = DefaultManoptProblem(N, objv)
+        objf! = ManifoldAlternatingGradientObjective(
+            f, grad_f!; evaluation=InplaceEvaluation()
         )
+        Pf! = DefaultManoptProblem(N, objf!)
+        objv! = ManifoldAlternatingGradientObjective(
+            f, [grad_f1!, grad_f2!]; evaluation=InplaceEvaluation()
+        )
+        Pv! = DefaultManoptProblem(N, objv!)
         for P in [Pf, Pv, Pf!, Pv!]
-            Y = zero_vector(N, x)
-            @test get_gradient(P, x)[N, 1] == grad_f(N, x)[N, 1]
-            @test get_gradient(P, x)[N, 2] == grad_f(N, x)[N, 2]
-            get_gradient!(P, Y, x)
-            @test Y[N, 1] == grad_f(N, x)[N, 1]
-            @test Y[N, 2] == grad_f(N, x)[N, 2]
-            @test get_gradient(P, 1, x) == grad_f(N, x)[N, 1]
-            @test get_gradient(P, 2, x) == grad_f(N, x)[N, 2]
-            Y = zero_vector(N, x)
-            get_gradient!(P, Y[N, 1], 1, x)
-            @test Y[N, 1] == grad_f(N, x)[N, 1]
-            get_gradient!(P, Y[N, 2], 2, x)
-            @test Y[N, 2] == grad_f(N, x)[N, 2]
+            X = zero_vector(N, p)
+            @test get_gradient(P, p)[N, 1] == grad_f(N, p)[N, 1]
+            @test get_gradient(P, p)[N, 2] == grad_f(N, p)[N, 2]
+            get_gradient!(P, X, p)
+            @test X[N, 1] == grad_f(N, p)[N, 1]
+            @test X[N, 2] == grad_f(N, p)[N, 2]
+            @test get_gradient(P, p, 1) == grad_f(N, p)[N, 1]
+            @test get_gradient(P, p, 2) == grad_f(N, p)[N, 2]
+            X = zero_vector(N, p)
+            get_gradient!(P, X[N, 1], p, 1)
+            @test X[N, 1] == grad_f(N, p)[N, 1]
+            get_gradient!(P, X[N, 2], p, 2)
+            @test X[N, 2] == grad_f(N, p)[N, 2]
         end
     end
     @testset "Test high level interface" begin
-        y2 = allocate(x)
-        copyto!(N, y2, x)
-        y3 = allocate(x)
-        copyto!(N, y3, x)
-        y = alternating_gradient_descent(
-            N, f, [gradF1!, gradF2!], x; order_type=:Linear, evaluation=InplaceEvaluation()
-        )
-        alternating_gradient_descent!(
-            N, f, [gradF1!, gradF2!], y2; order_type=:Linear, evaluation=InplaceEvaluation()
-        )
-        @test isapprox(N, y, y2)
-        o = alternating_gradient_descent!(
+        q = allocate(p)
+        copyto!(N, q, p)
+        q2 = allocate(p)
+        copyto!(N, q2, p)
+        q3 = alternating_gradient_descent(
             N,
             f,
-            [gradF1!, gradF2!],
-            y3;
-            evaluation=InplaceEvaluation(),
+            [grad_f1!, grad_f2!],
+            p;
             order_type=:Linear,
-            return_state=true,
+            evaluation=InplaceEvaluation(),
         )
-        @test isapprox(N, y, o.x; atol=10^-3)
+        alternating_gradient_descent!(
+            N,
+            f,
+            [grad_f1!, grad_f2!],
+            q;
+            order_type=:Linear,
+            evaluation=InplaceEvaluation(),
+        )
+        @test isapprox(N, q3, q)
     end
 end

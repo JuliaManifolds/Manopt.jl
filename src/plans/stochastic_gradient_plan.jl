@@ -354,9 +354,9 @@ end
 
 function StochasticGradientDescentState(
     M::AbstractManifold,
-    x::P,
+    p::P,
     X::Q;
-    direction::D=StochasticGradient(zero_vector(M, x)),
+    direction::D=StochasticGradient(zero_vector(M, p)),
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
     retraction_method::RM=default_retraction_method(M),
@@ -371,7 +371,7 @@ function StochasticGradientDescentState(
     S<:Stepsize,
 }
     return StochasticGradientDescentState{P,Q,D,SC,S,RM}(
-        x,
+        p,
         X,
         direction,
         stopping_criterion,
