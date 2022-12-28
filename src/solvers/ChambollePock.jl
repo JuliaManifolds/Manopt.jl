@@ -107,8 +107,8 @@ function ChambollePock!(
     M::AbstractManifold,
     N::AbstractManifold,
     cost::TF,
-    x::P,
-    ξ::T,
+    p::P,
+    X::T,
     m::P,
     n::Q,
     prox_F::Function,
@@ -138,7 +138,7 @@ function ChambollePock!(
     IRM<:AbstractInverseRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    PrimalDualManifoldObjective(
+    pdmo = PrimalDualManifoldObjective(
         cost,
         prox_F,
         prox_G_dual,
@@ -146,15 +146,16 @@ function ChambollePock!(
         linearized_forward_operator=linearized_forward_operator,
         Λ=Λ,
     )
-    tmp = TwoManifoldProblem(M, N)
+    tmp = TwoManifoldProblem(M, N, pdmo)
     o = ChambollePockState(
         M,
         m,
         n,
-        x,
-        ξ,
-        primal_stepsize,
-        dual_stepsize;
+        p,
+        X;
+        N=N,
+        primal_stepsize=primal_stepsize,
+        dual_stepsize=dual_stepsize,
         acceleration=acceleration,
         relaxation=relaxation,
         stopping_criterion=stopping_criterion,
@@ -172,18 +173,22 @@ end
 
 function initialize_solver!(::TwoManifoldProblem, ::ChambollePockState) end
 
-function step_solver!(p::TwoManifoldProblem, s::ChambollePockState, iter)
-    primal_dual_step!(p, s, Val(s.relax))
-    s.m = ismissing(s.update_primal_base) ? s.m : s.update_primal_base(p, s, iter)
-    if !ismissing(s.update_dual_base)
-        n_old = deepcopy(s.n)
-        s.n = s.update_dual_base(p, s, iter)
-        vector_transport_to!(p.N, s.ξ, n_old, s.ξ, s.n, s.vector_transport_method_dual)
+function step_solver!(tmp::TwoManifoldProblem, cps::ChambollePockState, iter)
+    N = get_manifold(tmp, 2)
+    primal_dual_step!(tmp, cps, Val(cps.relax))
+    cps.m =
+        ismissing(cps.update_primal_base) ? cps.m : cps.update_primal_base(tmp, cps, iter)
+    if !ismissing(cps.update_dual_base)
+        n_old = deepcopy(cps.n)
+        cps.n = cps.update_dual_base(tmp, cps, iter)
         vector_transport_to!(
-            p.N, s.Xbar, n_old, s.Xbar, s.n, s.vector_transport_method_dual
+            N, cps.X, n_old, cps.X, cps.n, cps.vector_transport_method_dual
+        )
+        vector_transport_to!(
+            N, cps.Xbar, n_old, cps.Xbar, cps.n, cps.vector_transport_method_dual
         )
     end
-    return s
+    return cps
 end
 #
 # Variant 1: primal relax
@@ -233,11 +238,14 @@ end
 # Variant 2: dual relax
 #
 function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::Val{:dual})
-    if ismissing(tmp.Λ!!)
+    obj = get_objective(tmp)
+    M = get_manifold(tmp, 1)
+    N = get_manifold(tmp, 2)
+    if !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
         ptXbar = cps.Xbar
     else
         ptXbar = vector_transport_to(
-            tmp.N,
+            N,
             cps.n,
             cps.Xbar,
             forward_operator(tmp, cps.m),
@@ -249,10 +257,10 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
         cps.p,
         cps.primal_stepsize,
         retract(
-            tmp.M,
+            M,
             cps.p,
             vector_transport_to(
-                tmp.M,
+                M,
                 cps.m,
                 -cps.primal_stepsize *
                 (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXbar)),
