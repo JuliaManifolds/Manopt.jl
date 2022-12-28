@@ -1,14 +1,14 @@
 @doc raw"""
-    cyclic_proximal_point(M, F, proxes, x)
+    cyclic_proximal_point(M, f, proxes_f, x)
 
 perform a cyclic proximal point algorithm.
 
 # Input
 
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of ``F``
-* `x` – an initial value ``x ∈ \mathcal M``
+* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
+* `proxes_f` – an Array of proximal maps (`Function`s) `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
+* `p` – an initial value ``p ∈ \mathcal M``
 
 # Optional
 the default values are given in brackets
@@ -28,31 +28,31 @@ and the ones that are passed to [`decorate_state`](@ref) for decorators.
 the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function cyclic_proximal_point(
-    M::AbstractManifold, F::TF, proxes::Union{Tuple,AbstractVector}, x0; kwargs...
+    M::AbstractManifold, f::TF, proxes_f::Union{Tuple,AbstractVector}, p; kwargs...
 ) where {TF}
-    x_res = copy(M, x0)
-    return cyclic_proximal_point!(M, F, proxes, x_res; kwargs...)
+    q = copy(M, p)
+    return cyclic_proximal_point!(M, f, proxes_f, q; kwargs...)
 end
 
 @doc raw"""
     cyclic_proximal_point!(M, F, proxes, x)
 
-perform a cyclic proximal point algorithm in place of `x`.
+perform a cyclic proximal point algorithm in place of `p`.
 
 # Input
 
 * `M` – a manifold ``\mathcal M``
 * `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `proxes` – an Array of proximal maps (`Function`s) `(λ,x) -> y` for the summands of ``F``
-* `x` – an initial value ``x ∈ \mathcal M``
+* `proxes` – an Array of proximal maps (`Function`s) `(M, λ, p) -> q` or `(M, q, λ, p)` for the summands of ``F``
+* `p` – an initial value ``p ∈ \mathcal M``
 
 for all options, see [`cyclic_proximal_point`](@ref).
 """
 function cyclic_proximal_point!(
     M::AbstractManifold,
-    F::TF,
-    proxes::Union{Tuple,AbstractVector},
-    x0;
+    f::TF,
+    proxes_f::Union{Tuple,AbstractVector},
+    p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     evaluation_order::Symbol=:Linear,
     stopping_criterion::StoppingCriterion=StopWhenAny(
@@ -61,25 +61,25 @@ function cyclic_proximal_point!(
     λ=i -> 1 / i,
     kwargs..., #decorator options
 ) where {TF}
-    p = ProximalProblem(M, F, proxes; evaluation=evaluation)
-    o = CyclicProximalPointState(
-        M, x0; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
+    mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation=evaluation)
+    dmp = DefaultManoptProblem(M, mpo)
+    cpps = CyclicProximalPointState(
+        M, p; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
     )
-    o = decorate_state(o; kwargs...)
-    return get_solver_return(solve!(p, o))
+    cpps = decorate_state(cpps; kwargs...)
+    return get_solver_return(solve!(dmp, cpps))
 end
-function initialize_solver!(p::ProximalProblem, s::CyclicProximalPointState)
-    c = length(p.proximal_maps!!)
-    s.order = collect(1:c)
-    (s.order_type == :FixedRandom) && shuffle!(s.order)
-    return s
+function initialize_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState)
+    c = length(get_objective(amp).proximal_maps!!)
+    cpps.order = collect(1:c)
+    (cpps.order_type == :FixedRandom) && shuffle!(cpps.order)
+    return cpps
 end
-function step_solver!(p::ProximalProblem, s::CyclicProximalPointState, iter)
-    c = length(p.proximal_maps!!)
-    λi = s.λ(iter)
-    for k in s.order
-        get_proximal_map!(p, s.x, λi, s.x, k)
+function step_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState, i)
+    λi = cpps.λ(i)
+    for k in cpps.order
+        get_proximal_map!(amp, cpps.x, λi, cpps.x, k)
     end
-    (s.order_type == :Random) && shuffle(s.order)
-    return s
+    (cpps.order_type == :Random) && shuffle(cpps.order)
+    return cpps
 end

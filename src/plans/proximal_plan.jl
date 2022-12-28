@@ -4,58 +4,52 @@
 #
 #
 @doc raw"""
-    ProximalProblem <:AbstractManoptProblem
+    ManifoldProximalMapObjective{E<:AbstractEvaluationType, TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E}
 
 specify a problem for solvers based on the evaluation of proximal map(s).
 
 # Fields
-* `M` - a Riemannian manifold
 * `cost` - a function ``F:\mathcal M→ℝ`` to
   minimize
 * `proxes` - proximal maps ``\operatorname{prox}_{λ\varphi}:\mathcal M→\mathcal M``
-  as functions (λ,x) -> y, i.e. the prox parameter λ also belongs to the signature of the proximal map.
-* `number_of_proxes` - (length(proxes)) number of proximal Maps,
+  as functions `(M, λ, p) -> q`.
+* `number_of_proxes` - (`ones(length(proxes))`` number of proximal Maps per function,
   e.g. if one of the maps is a combined one such that the proximal Maps
-  functions return more than one entry per function
-
+  functions return more than one entry per function, you have to adapt this value.
+  if not speciifed, it is set to one prox per function.
 # See also
+
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
 """
-mutable struct ProximalProblem{
-    T<:AbstractEvaluationType,
-    mT<:AbstractManifold,
-    TCost,
-    TProxes<:Union{Tuple,AbstractVector},
-} <: AbstractManoptProblem{mT}
-    M::mT
-    cost::TCost
-    proximal_maps!!::TProxes
-    number_of_proxes::Vector{Int}
-    function ProximalProblem(
-        M::mT,
-        cF,
-        proxMaps::Union{Tuple,AbstractVector};
+mutable struct ManifoldProximalMapObjective{E<:AbstractEvaluationType,TC,TP,V} <:
+               AbstractManifoldCostObjective{E}
+    cost::TC
+    proximal_maps!!::TP
+    number_of_proxes::V
+    function ManifoldProximalMapObjective(
+        f,
+        proxes_f::Union{Tuple,AbstractVector};
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:AbstractManifold}
-        return new{typeof(evaluation),mT,typeof(cF),typeof(proxMaps)}(
-            M, cF, proxMaps, ones(length(proxMaps))
+    )
+        np = ones(length(proxes_f))
+        return new{typeof(evaluation),typeof(f),typeof(proxes_f),typeof(np)}(
+            f, proxes_f, np
         )
     end
-    function ProximalProblem(
-        M::mT,
-        cF,
-        proxMaps::Union{Tuple,AbstractVector},
-        nOP::Vector{Int};
+    function ManifoldProximalMapObjective(
+        f,
+        proxes_f::Union{Tuple,AbstractVector},
+        nOP::Vector{<:Integer};
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:AbstractManifold}
-        return if length(nOP) != length(proxMaps)
+    )
+        return if length(nOP) != length(proxes_f)
             throw(
                 ErrorException(
-                    "The number_of_proxes ($(nOP)) has to be the same length as the number of proxes ($(length(proxMaps)).",
+                    "The number_of_proxes ($(nOP)) has to be the same length as the number of proxes ($(length(proxes_f)).",
                 ),
             )
         else
-            new{typeof(evaluation),mT,typeof(cF),typeof(proxMaps)}(M, cF, proxMaps, nOP)
+            new{typeof(evaluation),typeof(f),typeof(proxes_f),typeof(nOP)}(f, proxes_f, nOP)
         end
     end
 end
@@ -64,26 +58,48 @@ function check_prox_number(n, i)
     return true
 end
 @doc raw"""
-    get_proximal_map(p,λ,x,i)
+    q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p, i)
+    get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalMapObjective, λ, p, i)
 
-evaluate the `i`th proximal map of `ProximalProblem p` at the point `x` of `p.M` with parameter ``λ>0``.
+evaluate the `i`th proximal map of `ManifoldProximalMapObjective p` at the point `p` of `p.M` with parameter ``λ>0``.
 """
-function get_proximal_map(p::ProximalProblem{AllocatingEvaluation}, λ, x, i)
-    check_prox_number(length(p.proximal_maps!!), i)
-    return p.proximal_maps!![i](p.M, λ, x)
+get_proximal_map(::AbstractManifold, ::ManifoldProximalMapObjective, ::Any...)
+
+function get_proximal_map(amp::AbstractManoptProblem, λ, p, i)
+    return get_proximal_map(get_manifold(amp), get_objective(amp), λ, p, i)
 end
-function get_proximal_map!(p::ProximalProblem{AllocatingEvaluation}, y, λ, x, i)
-    check_prox_number(length(p.proximal_maps!!), i)
-    return copyto!(p.M, y, p.proximal_maps!![i](p.M, λ, x))
+function get_proximal_map!(amp::AbstractManoptProblem, q, λ, p, i)
+    return get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p, i)
+    return q
 end
-function get_proximal_map(p::ProximalProblem{InplaceEvaluation}, λ, x, i)
-    check_prox_number(length(p.proximal_maps!!), i)
-    y = allocate_result(p.M, get_proximal_map, x)
-    return p.proximal_maps!![i](p.M, y, λ, x)
+
+function get_proximal_map(
+    M::AbstractManifold, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p, i
+)
+    check_prox_number(length(mpo.proximal_maps!!), i)
+    return mpo.proximal_maps!![i](M, λ, p)
 end
-function get_proximal_map!(p::ProximalProblem{InplaceEvaluation}, y, λ, x, i)
-    check_prox_number(length(p.proximal_maps!!), i)
-    return p.proximal_maps!![i](p.M, y, λ, x)
+function get_proximal_map!(
+    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p, i
+)
+    check_prox_number(length(mpo.proximal_maps!!), i)
+    copyto!(M, q, mpo.proximal_maps!![i](M, λ, p))
+    return nothing
+end
+function get_proximal_map(
+    M::AbstractManifold, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i
+)
+    check_prox_number(length(mpo.proximal_maps!!), i)
+    q = allocate_result(M, get_proximal_map, p)
+    mpo.proximal_maps!![i](M, q, λ, p)
+    return nothing
+end
+function get_proximal_map!(
+    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i
+)
+    check_prox_number(length(mpo.proximal_maps!!), i)
+    mpo.proximal_maps!![i](M, q, λ, p)
+    return q
 end
 #
 #
@@ -96,12 +112,12 @@ end
 stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
-* `x` – the current iterate
+* `p` – the current iterate
 * `stopping_criterion` – a [`StoppingCriterion`](@ref)
-* `λ` – (@(iter) -> 1/iter) a function for the values of λ_k per iteration/cycle
+* `λ` – (@(i) -> 1/i) a function for the values of ``λ_k`` per iteration(cycle ``ì``
 * `oder_type` – (`:LinearOrder`) – whether
   to use a randomly permuted sequence (`:FixedRandomOrder`), a per
-  cycle permuted sequence (`RandomOrder`) or the default linear one.
+  cycle permuted sequence (`:RandomOrder`) or the default linear one.
 
 # Constructor
     CyclicProximalPointState(M, p)
@@ -109,15 +125,15 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 Generate the options with the following keyword arguments
 
 * `stopping_criterion` (`StopAfterIteration(2000)`) – a [`StoppingCriterion`](@ref).
-* `λ` ( `(iter) -> 1.0 / iter`) a function to compute the ``λ_k, k ∈ \mathbb N``,
-* `evaluation_order`(`:LinearOrder`) a Symbol indicating the order the proxes are applied.
+* `λ` ( `i -> 1.0 / i`) – a function to compute the ``λ_k, k ∈ \mathbb N``,
+* `evaluation_order` – (`:LinearOrder`) – a Symbol indicating the order the proxes are applied.
 
 # See also
 [`cyclic_proximal_point`](@ref)
 """
-mutable struct CyclicProximalPointState{TX,TStop<:StoppingCriterion,Tλ} <:
+mutable struct CyclicProximalPointState{P,TStop<:StoppingCriterion,Tλ} <:
                AbstractManoptSolverState
-    x::TX
+    p::P
     stop::TStop
     λ::Tλ
     order_type::Symbol
@@ -126,25 +142,26 @@ end
 
 function CyclicProximalPointState(
     ::AbstractManifold,
-    x::P;
+    p::P;
     stopping_criterion::S=StopAfterIteration(2000),
-    λ::F=(iter) -> 1.0 / iter,
+    λ::F=(i) -> 1.0 / i,
     evaluation_order::Symbol=:LinearOrder,
 ) where {P,S,F}
-    return CyclicProximalPointState{P,S,F}(x, stopping_criterion, λ, evaluation_order, [])
+    return CyclicProximalPointState{P,S,F}(p, stopping_criterion, λ, evaluation_order, [])
 end
-get_iterate(O::CyclicProximalPointState) = O.x
-function set_iterate!(O::CyclicProximalPointState, p)
-    O.x = p
-    return O
+get_iterate(cpps::CyclicProximalPointState) = cpps.x
+function set_iterate!(cpps::CyclicProximalPointState, p)
+    cpps.p = p
+    return p
 end
+
 @doc raw"""
     DouglasRachfordState <: AbstractManoptSolverState
 
 Store all options required for the DouglasRachford algorithm,
 
 # Fields
-* `x` - the current iterate (result) For the parallel Douglas-Rachford, this is
+* `p` - the current iterate (result) For the parallel Douglas-Rachford, this is
   not a value from the `PowerManifold` manifold but the mean.
 * `s` – the last result of the double reflection at the proxes relaxed by `α`.
 * `λ` – function to provide the value for the proximal parameter during the calls
@@ -172,11 +189,11 @@ Generate the options for a Manifold `M` and an initial point `p`, where the foll
 * `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
   or not.
 """
-mutable struct DouglasRachfordState{TX,Tλ,Tα,TR,S} <: AbstractManoptSolverState
-    x::TX
-    xtmp::TX
-    s::TX
-    stmp::TX
+mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S} <: AbstractManoptSolverState
+    p::P
+    p_tmp::P
+    s::P
+    s_tmp::P
     λ::Tλ
     α::Tα
     R::TR
@@ -184,22 +201,22 @@ mutable struct DouglasRachfordState{TX,Tλ,Tα,TR,S} <: AbstractManoptSolverStat
     parallel::Bool
     function DouglasRachfordState(
         ::AbstractManifold,
-        x::P;
-        λ::Fλ=(iter) -> 1.0,
-        α::Fα=(iter) -> 0.9,
+        p::P;
+        λ::Fλ=i -> 1.0,
+        α::Fα=i -> 0.9,
         R::FR=Manopt.reflect,
         stopping_criterion::S=StopAfterIteration(300),
         parallel=false,
     ) where {P,Fλ,Fα,FR,S<:StoppingCriterion}
         return new{P,Fλ,Fα,FR,S}(
-            x, deepcopy(x), deepcopy(x), deepcopy(x), λ, α, R, stopping_criterion, parallel
+            p, copy(p), copy(p), copy(p), λ, α, R, stopping_criterion, parallel
         )
     end
 end
-get_iterate(O::DouglasRachfordState) = O.x
-function set_iterate!(O::DouglasRachfordState, p)
-    O.x = p
-    return O
+get_iterate(drs::DouglasRachfordState) = drs.p
+function set_iterate!(drs::DouglasRachfordState, p)
+    drs.p = p
+    return drs
 end
 #
 # Debug
@@ -226,12 +243,16 @@ mutable struct DebugProximalParameter <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugProximalParameter)(::ProximalProblem, s::DouglasRachfordState, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), s.λ(i))
+function (d::DebugProximalParameter)(
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(i))
     return nothing
 end
-function (d::DebugProximalParameter)(::ProximalProblem, s::CyclicProximalPointState, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), s.λ(i))
+function (d::DebugProximalParameter)(
+    ::AbstractManoptProblem, cpps::CyclicProximalPointState, i::Int
+)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(i))
     return nothing
 end
 
@@ -248,10 +269,12 @@ mutable struct RecordProximalParameter <: RecordAction
     RecordProximalParameter() = new(Array{Float64,1}())
 end
 function (r::RecordProximalParameter)(
-    ::ProximalProblem, s::CyclicProximalPointState, i::Int
+    ::AbstractManoptProblem, cpps::CyclicProximalPointState, i::Int
 )
-    return record_or_reset!(r, s.λ(i), i)
+    return record_or_reset!(r, cpps.λ(i), i)
 end
-function (r::RecordProximalParameter)(::ProximalProblem, s::DouglasRachfordState, i::Int)
-    return record_or_reset!(r, s.λ(i), i)
+function (r::RecordProximalParameter)(
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+)
+    return record_or_reset!(r, cpps.λ(i), i)
 end

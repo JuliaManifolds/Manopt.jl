@@ -2,40 +2,31 @@ using Manifolds, Manopt, Test
 @testset "DouglasRachford" begin
     # Though this seems a strange way, it is a way to compute the mid point
     M = Sphere(2)
-    p = [1.0, 0.0, 0.0]
-    q = [0.0, 1.0, 0.0]
-    r = [0.0, 0.0, 1.0]
+    d1 = [1.0, 0.0, 0.0]
+    d2 = [0.0, 1.0, 0.0]
+    d3 = [0.0, 0.0, 1.0]
     start = [0.0, 0.0, 1.0]
-    result = result = geodesic(M, p, q, distance(M, p, q) / 2)
-    f(M, x) = distance(M, x, p)^2 + distance(M, x, q)^2
-    prox1 = (M, η, x) -> prox_distance(M, η, p, x)
-    prox2 = (M, η, x) -> prox_distance(M, η, q, x)
+    result = result = geodesic(M, d1, d2, distance(M, d1, d2) / 2)
+    f(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2
+    prox1 = (M, η, p) -> prox_distance(M, η, d1, p)
+    prox2 = (M, η, p) -> prox_distance(M, η, d2, p)
     @test_throws ErrorException DouglasRachford(M, f, Array{Function,1}([prox1]), start) # we need more than one prox
     xHat = DouglasRachford(M, f, [prox1, prox2], start)
     @test f(M, start) > f(M, xHat)
     @test distance(M, xHat, result) ≈ 0
     # but we can also compute the riemannian center of mass (locally) on Sn
     # though also this is not that useful, but easy to test that DR works
-    F2(M, x) = distance(M, x, p)^2 + distance(M, x, q)^2 + distance(M, x, r)^2
-    prox1 = (M, η, x) -> prox_distance(M.manifold, η, p, x)
-    prox2 = (M, η, x) -> prox_distance(M.manifold, η, q, x)
-    prox3 = (M, η, x) -> prox_distance(M.manifold, η, r, x)
-    o = DouglasRachford(
-        M,
-        F2,
-        [prox1, prox2, prox3],
-        start;
-        debug=[DebugCost(), DebugIterate(), DebugProximalParameter(), 100],
-        record=[RecordCost(), RecordProximalParameter()],
-        return_state=true,
-    )
-    xHat2 = get_solver_result(o)
-    drec2 = get_record(o)
-    result2 = mean(M, [p, q, r])
+    F2(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2 + distance(M, p, d3)^2
+    prox1 = (M, η, p) -> prox_distance(M, η, d1, p)
+    prox2 = (M, η, p) -> prox_distance(M, η, d2, p)
+    prox3 = (M, η, p) -> prox_distance(M, η, d3, p)
+    xHat2 = DouglasRachford(M, F2, [prox1, prox2, prox3], start;)
+    result2 = mean(M, [d1, d2, d3])
     # since the default does not run that long -> rough estimate
     @test distance(M, xHat2, result2) ≈ 0
     #test getter/set
-    O = DouglasRachfordState(M, p)
-    set_iterate!(O, q)
-    @test get_iterate(O) == q
+    O = DouglasRachfordState(M, d1)
+    set_iterate!(O, d2)
+    @test get_iterate(O) == d2
+    # ToDo record / debug λ
 end
