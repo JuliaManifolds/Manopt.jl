@@ -78,7 +78,7 @@ end
 function step_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState, i)
     λi = cpps.λ(i)
     for k in cpps.order
-        get_proximal_map!(amp, cpps.x, λi, cpps.x, k)
+        get_proximal_map!(amp, cpps.p, λi, cpps.p, k)
     end
     (cpps.order_type == :Random) && shuffle(cpps.order)
     return cpps

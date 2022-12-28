@@ -69,7 +69,7 @@ function get_proximal_map(amp::AbstractManoptProblem, λ, p, i)
     return get_proximal_map(get_manifold(amp), get_objective(amp), λ, p, i)
 end
 function get_proximal_map!(amp::AbstractManoptProblem, q, λ, p, i)
-    return get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p, i)
+    get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p, i)
     return q
 end
 
@@ -84,7 +84,7 @@ function get_proximal_map!(
 )
     check_prox_number(length(mpo.proximal_maps!!), i)
     copyto!(M, q, mpo.proximal_maps!![i](M, λ, p))
-    return nothing
+    return q
 end
 function get_proximal_map(
     M::AbstractManifold, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i
@@ -92,7 +92,7 @@ function get_proximal_map(
     check_prox_number(length(mpo.proximal_maps!!), i)
     q = allocate_result(M, get_proximal_map, p)
     mpo.proximal_maps!![i](M, q, λ, p)
-    return nothing
+    return q
 end
 function get_proximal_map!(
     M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i
@@ -149,7 +149,7 @@ function CyclicProximalPointState(
 ) where {P,S,F}
     return CyclicProximalPointState{P,S,F}(p, stopping_criterion, λ, evaluation_order, [])
 end
-get_iterate(cpps::CyclicProximalPointState) = cpps.x
+get_iterate(cpps::CyclicProximalPointState) = cpps.p
 function set_iterate!(cpps::CyclicProximalPointState, p)
     cpps.p = p
     return p

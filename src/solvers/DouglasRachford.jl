@@ -96,13 +96,13 @@ function DouglasRachford!(
         prox2 = proxes_f[2]
     else # more than 2 -> parallelDouglasRachford
         parallel = length(proxes_f)
-        prox1 = (M, λ, x) -> [proxes_f[i](M.manifold, λ, x[i]) for i in 1:parallel]
-        prox2 = (M, λ, x) -> fill(mean(M.manifold, x), parallel)
+        prox1 = (M, λ, p) -> [proxes_f[i](M.manifold, λ, p[i]) for i in 1:parallel]
+        prox2 = (M, λ, p) -> fill(mean(M.manifold, p), parallel)
     end
     if parallel > 0
         M = PowerManifold(M, NestedPowerRepresentation(), parallel)
-        x = [copy(p) for i in 1:parallel]
-        nF = (M, x) -> f(M.manifold, x[1])
+        p = [copy(M.manifold, p) for i in 1:parallel]
+        nF = (M, p) -> f(M.manifold, p[1])
     else
         nF = f
     end
