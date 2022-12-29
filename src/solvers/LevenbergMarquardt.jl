@@ -107,7 +107,7 @@ end
 # Solver functions
 #
 function initialize_solver!(
-    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     lms::LevenbergMarquardtState,
 ) where {mT}
     M = get_manifold(dmp)
@@ -116,10 +116,10 @@ function initialize_solver!(
     return lms
 end
 function initialize_solver!(
-    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
     lms::LevenbergMarquardtState,
 ) where {mT}
-    get_objective(dmp).F(get_manifold(M), lms.residual_values, lms.p)
+    get_objective(dmp).F(get_manifold(dmp), lms.residual_values, lms.p)
     lms.X = get_gradient(dmp, lms.p)
     return lms
 end
@@ -133,7 +133,7 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
 end
 
 function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     jacF,
     p,
     basis_domain::AbstractBasis,
@@ -142,38 +142,35 @@ function get_jacobian!(
     return copyto!(jacF, nlso.jacobian!!(get_manifold(dmp), p; basis_domain=basis_domain))
 end
 function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
     jacF,
     p,
     basis_domain::AbstractBasis,
 ) where {mT}
     nlso = get_objective(dmp)
-    return nlso.jacobian!!(M, jacF, p; basis_domain=basis_domain)
+    return nlso.jacobian!!(get_manifold(dmp), jacF, p; basis_domain=basis_domain)
 end
 
 function get_residuals!(
-    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     residuals,
     p,
 ) where {mT}
-    return copyto!(residuals, get_objective(dmp).F(M, p))
+    return copyto!(residuals, get_objective(dmp).F(get_manifold(dmp), p))
 end
 function get_residuals!(
-    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
     residuals,
     p,
 ) where {mT}
-    return get_objective(dmp).F(M, residuals, p)
+    return get_objective(dmp).F(get_manifold(dmp), residuals, p)
 end
 
-function step_solver!(
-    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{Teval}},
-    lms::LevenbergMarquardtState,
-    i::Integer,
-) where {Teval<:AbstractEvaluationType,mT}
+function step_solver!(dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, i::Integer)
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
     M = get_manifold(dmp)
-    basis_ox = _maybe_get_basis(M, lms.p, dmp.jacB)
+    nlso = get_objective(dmp)
+    basis_ox = _maybe_get_basis(M, lms.p, nlso.jacB)
     get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
     λk = lms.damping_term * norm(lms.residual_values)
 

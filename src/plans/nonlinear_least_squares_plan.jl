@@ -36,7 +36,7 @@ Also the Jacobian ``jacF!!`` is required:
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
 struct NonlinearLeastSquaresObjective{E<:AbstractEvaluationType,TC,TJ,TB<:AbstractBasis} <:
-       AbstractManifoldCostObjective{E,TC}
+       AbstractManifoldGradientObjective{E,TC,TJ}
     F::TC
     jacobian!!::TJ
     jacB::TB
