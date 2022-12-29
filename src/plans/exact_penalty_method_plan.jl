@@ -56,6 +56,18 @@ mutable struct ExactPenaltyCost{S,CO,R}
     ρ::R
     u::R
 end
+function set_objective_parameter!(
+    ams::AbstractManifoldObjective, ::Val{:Cost}, ::Val{:ρ}, ρ
+)
+    ams.cost.ρ = ρ
+    return ams
+end
+function set_objective_parameter!(
+    ams::AbstractManifoldObjective, ::Val{:Cost}, ::Val{:u}, u
+)
+    ams.cost.u = u
+    return ams
+end
 function ExactPenaltyCost(
     co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()
 ) where {R}
@@ -81,6 +93,7 @@ function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(M::AbstractManifold, p)
     cost_eq = (n > 0) ? sum(sqrt.(hp .^ 2 .+ L.u^2)) : 0.0
     return get_cost(M, L.co, p) + (L.ρ) * (cost_ineq + cost_eq)
 end
+
 @doc raw"""
     ExactPenaltyGrad{S<:SmoothingTechnique, Pr<:ConstrainedProblem, R}
 
@@ -103,6 +116,18 @@ mutable struct ExactPenaltyGrad{S,CO,R}
     co::CO
     ρ::R
     u::R
+end
+function set_objective_parameter!(
+    ams::AbstractManifoldObjective, ::Val{:Gradient}, ::Val{:ρ}, ρ
+)
+    ams.gradient!!.ρ = ρ
+    return ams
+end
+function set_objective_parameter!(
+    ams::AbstractManifoldObjective, ::Val{:Gradient}, ::Val{:u}, u
+)
+    ams.gradient!!.u = u
+    return ams
 end
 function ExactPenaltyGrad(
     co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()

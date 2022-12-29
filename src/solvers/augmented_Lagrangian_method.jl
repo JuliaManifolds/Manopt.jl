@@ -11,7 +11,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 * `p` – a point on a manifold as starting point and current iterate
 * `sub_problem` – problem for the subsolver
-* `sub_options` – options of the subproblem
+* `sub_state` – options of the subproblem
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `λ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
@@ -43,7 +43,7 @@ mutable struct AugmentedLagrangianMethodState{
 } <: AbstractManoptSolverState
     p::P
     sub_problem::Pr
-    sub_options::Op
+    sub_state::Op
     ϵ::Real
     ϵ_min::Real
     λ_max::Real
@@ -82,7 +82,7 @@ mutable struct AugmentedLagrangianMethodState{
         alms = new{P,Pr,St,typeof(stopping_criterion)}()
         alms.p = p
         alms.sub_problem = sub_problem
-        alms.sub_options = sub_state
+        alms.sub_state = sub_state
         alms.ϵ = ϵ
         alms.ϵ_min = ϵ_min
         alms.λ_max = λ_max
@@ -180,7 +180,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
 * `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
 * `sub_problem` – ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
-* `sub_options` – ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `sub_state` – ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Output
@@ -240,7 +240,7 @@ function augmented_Lagrangian_method!(
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
-    sub_options::AbstractManoptSolverState=decorate_state(
+    sub_state::AbstractManoptSolverState=decorate_state(
         QuasiNewtonState(
             M,
             copy(p);
@@ -266,7 +266,7 @@ function augmented_Lagrangian_method!(
         _objective,
         p,
         sub_problem,
-        sub_options;
+        sub_state;
         ϵ=ϵ,
         ϵ_min=ϵ_min,
         λ_max=λ_max,
@@ -302,11 +302,11 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     sub_obj.gradient!!.ρ = alms.ρ
     sub_obj.gradient!!.μ = alms.μ
     sub_obj.gradient!!.λ = alms.λ
-    set_iterate!(alms.sub_options, M, copy(M, alms.p))
+    set_iterate!(alms.sub_state, M, copy(M, alms.p))
 
     update_stopping_criterion!(alms, :MinIterateChange, alms.ϵ)
 
-    alms.p = get_solver_result(solve!(alms.sub_problem, alms.sub_options))
+    alms.p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
 
     # update multipliers
     cost_ineq = get_inequality_constraints(mp, alms.p)
