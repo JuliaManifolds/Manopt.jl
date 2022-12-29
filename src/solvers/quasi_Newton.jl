@@ -168,7 +168,8 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
         qns.x,
         get_update_vector_transport(qns.direction_update),
     )
-    qns.yk = get_gradient(mp, qns.x) / β - qns.gradient
+    new_grad = get_gradient(mp, qns.x)
+    qns.yk = new_grad / β - qns.gradient
     update_hessian!(qns.direction_update, mp, qns, p_old, iter)
     return qns
 end
