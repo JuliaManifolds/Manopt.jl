@@ -35,10 +35,9 @@ Also the Jacobian ``jacF!!`` is required:
 
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
-struct NonlinearLeastSquaresObjective{
-    T<:AbstractEvaluationType,mT<:AbstractManifold,TF,TJ,TB<:AbstractBasis
-} <: AbstractManifoldObjective{T}
-    F::TF
+struct NonlinearLeastSquaresObjective{E<:AbstractEvaluationType,TC,TJ,TB<:AbstractBasis} <:
+       AbstractManifoldCostObjective{E,TC}
+    F::TC
     jacobian!!::TJ
     jacB::TB
     num_components::Int
@@ -61,50 +60,51 @@ function get_cost(
     return 1//2 * norm(nlso.F(M, p))^2
 end
 function get_cost(
-    M::AbstractManifold, P::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
 )
-    residual_values = zeros(P.num_components)
-    P.F(P.M, residual_values, p)
+    residual_values = zeros(nlso.num_components)
+    nlso.F(M, residual_values, p)
     return 1//2 * norm(residual_values)^2
 end
 
 function get_gradient(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, x
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
 )
-    basis_x = _maybe_get_basis(M, x, nlso.jacB)
-    Jval = nlso.jacobian!!(M, x; basis_domain=basis_x)
-    residual_values = nlso.F(M, x)
-    return get_vector(M, x, transpose(Jval) * residual_values, basis_x)
+    basis_x = _maybe_get_basis(M, p, nlso.jacB)
+    Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
+    residual_values = nlso.F(M, p)
+    return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
 end
 function get_gradient(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, x
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
 )
-    basis_x = _maybe_get_basis(M, x, nlso.jacB)
+    basis_x = _maybe_get_basis(M, p, nlso.jacB)
     Jval = zeros(nlso.num_components, manifold_dimension(M))
-    nlso.jacobian!!(M, Jval, x; basis_domain=basis_x)
+    nlso.jacobian!!(M, Jval, p; basis_domain=basis_x)
     residual_values = zeros(nlso.num_components)
-    nlso.F(M, residual_values, x)
-    return get_vector(M, x, transpose(Jval) * residual_values, basis_x)
+    nlso.F(M, residual_values, p)
+    return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
 end
 
 function get_gradient!(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, X, x
+    M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
 )
-    basis_x = _maybe_get_basis(M, x, nlso.jacB)
-    Jval = nlso.jacobian!!(M, x; basis_domain=basis_x)
-    residual_values = nlso.F(M, x)
-    return get_vector!(M, X, x, transpose(Jval) * residual_values, basis_x)
+    basis_x = _maybe_get_basis(M, p, nlso.jacB)
+    Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
+    residual_values = nlso.F(M, p)
+    return get_vector!(M, X, p, transpose(Jval) * residual_values, basis_x)
 end
 
 function get_gradient!(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, X, x
 )
-    basis_x = _maybe_get_basis(M, x, nlso.jacB)
+    basis_p = _maybe_get_basis(M, x, nlso.jacB)
     Jval = zeros(nlso.num_components, manifold_dimension(M))
-    nlso.jacobian!!(M, Jval, x; basis_domain=basis_x)
+    nlso.jacobian!!(M, Jval, x; basis_domain=basis_p)
     residual_values = zeros(nlso.num_components)
     nlso.F(M, residual_values, x)
-    return get_vector!(M, X, x, transpose(Jval) * residual_values, basis_x)
+    get_vector!(M, X, x, transpose(Jval) * residual_values, basis_p)
+    return X
 end
 
 @doc raw"""
@@ -153,13 +153,13 @@ mutable struct LevenbergMarquardtState{
     TGrad,
     Tparams<:Real,
 } <: AbstractGradientSolverState
-    x::P
+    p::P
     stop::TStop
     retraction_method::TRTM
     residual_values::Tresidual_values
     candidate_residual_values::Tresidual_values
     jacF::TJac
-    gradient::TGrad
+    X::TGrad
     step_vector::TGrad
     last_stepsize::Tparams
     η::Tparams
@@ -169,10 +169,10 @@ mutable struct LevenbergMarquardtState{
     expect_zero_residual::Bool
     function LevenbergMarquardtState(
         M::AbstractManifold,
-        initialX::P,
+        p::P,
         initial_residual_values::Tresidual_values,
         initial_jacF::TJac,
-        initial_gradient::TGrad=zero_vector(M, initialX);
+        initial_gradient::TGrad=zero_vector(M, p);
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-12) |
                                               StopWhenStepsizeLess(1e-12),
@@ -205,7 +205,7 @@ mutable struct LevenbergMarquardtState{
             TGrad,
             Tparams,
         }(
-            initialX,
+            p,
             stopping_criterion,
             retraction_method,
             initial_residual_values,

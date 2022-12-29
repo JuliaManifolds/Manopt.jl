@@ -707,24 +707,25 @@ mutable struct WolfePowellBinaryLinesearch{
 end
 
 function (a::WolfePowellBinaryLinesearch)(
-    p::AbstractManoptProblem,
-    s::AbstractManoptSolverState,
+    amp::AbstractManoptProblem,
+    ams::AbstractManoptSolverState,
     ::Int,
-    η=-get_gradient(p, get_iterate(s));
+    η=-get_gradient(amp, get_iterate(ams));
     kwargs...,
 )
+    M = get_manifold(amp)
     α = 0.0
     β = Inf
     t = 1.0
-    f0 = get_cost(p, get_iterate(s))
-    xNew = retract(p.M, get_iterate(s), t * η, a.retraction_method)
-    fNew = get_cost(p, xNew)
-    η_xNew = vector_transport_to(p.M, get_iterate(s), η, xNew, a.vector_transport_method)
-    gradient_new = get_gradient(p, xNew)
-    nAt = fNew > f0 + a.c1 * t * inner(p.M, get_iterate(s), η, get_gradient(s))
+    f0 = get_cost(amp, get_iterate(ams))
+    xNew = retract(M, get_iterate(ams), t * η, a.retraction_method)
+    fNew = get_cost(amp, xNew)
+    η_xNew = vector_transport_to(M, get_iterate(ams), η, xNew, a.vector_transport_method)
+    gradient_new = get_gradient(amp, xNew)
+    nAt = fNew > f0 + a.c1 * t * inner(M, get_iterate(ams), η, get_gradient(ams))
     nWt =
-        inner(p.M, xNew, gradient_new, η_xNew) <
-        a.c2 * inner(p.M, get_iterate(s), η, get_gradient(s))
+        inner(M, xNew, gradient_new, η_xNew) <
+        a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
     while (nAt || nWt) &&
               (t > a.linesearch_stopsize) &&
               ((α + β) / 2 - 1 > a.linesearch_stopsize)
@@ -732,17 +733,17 @@ function (a::WolfePowellBinaryLinesearch)(
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t = isinf(β) ? 2 * α : (α + β) / 2
         # Update trial point
-        retract!(p.M, xNew, get_iterate(s), t * η, a.retraction_method)
-        fNew = get_cost(p, xNew)
-        gradient_new = get_gradient(p, xNew)
+        retract!(M, xNew, get_iterate(ams), t * η, a.retraction_method)
+        fNew = get_cost(amp, xNew)
+        gradient_new = get_gradient(amp, xNew)
         vector_transport_to!(
-            p.M, η_xNew, get_iterate(s), η, xNew, a.vector_transport_method
+            M, η_xNew, get_iterate(ams), η, xNew, a.vector_transport_method
         )
         # Update conditions
-        nAt = fNew > f0 + a.c1 * t * inner(p.M, get_iterate(s), η, get_gradient(s))
+        nAt = fNew > f0 + a.c1 * t * inner(M, get_iterate(ams), η, get_gradient(ams))
         nWt =
-            inner(p.M, xNew, gradient_new, η_xNew) <
-            a.c2 * inner(p.M, get_iterate(s), η, get_gradient(s))
+            inner(M, xNew, gradient_new, η_xNew) <
+            a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
     end
     a.last_stepsize = t
     return t

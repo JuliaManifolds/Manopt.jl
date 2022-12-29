@@ -127,11 +127,11 @@ using Manopt, Manifolds, Test
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
         n3 = gradient_descent(
-            M, f, grad_f, pts[1]; direction=MomentumGradient(M; p=copy(M, pts[1])), debug=[]
+            M, f, grad_f, pts[1]; direction=MomentumGradient(M, copy(M, pts[1]))
         )
         @test isapprox(M, north, n3)
         n4 = gradient_descent(
-            M, f, grad_f, pts[1]; direction=AverageGradient(M; p=copy(M, pts[1]), n=5)
+            M, f, grad_f, pts[1]; direction=AverageGradient(M, copy(M, pts[1]); n=5)
         )
         @test isapprox(M, north, n4; atol=1e-7)
     end

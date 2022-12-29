@@ -10,7 +10,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         ABC = [A, B, C]
         x_solution = mean(ABC)
         f(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
-        gradF(::Euclidean, x) = -A - B - C + 3 * x
+        grad_f(::Euclidean, x) = -A - B - C + 3 * x
         M = Euclidean(4, 4)
         x = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
@@ -26,9 +26,8 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
         )
-        @test get_last_stepsize(
-            GradientProblem(M, f, grad_f), lrbfgs_o, lrbfgs_o.stepsize
-        ) > 0
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        @test get_last_stepsize(dmp, lrbfgs_o, lrbfgs_o.stepsize) > 0
         @test lrbfgs_o.x == x_lrbfgs
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
@@ -69,7 +68,9 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             x;
             memory_size=-1,
             stepsize=WolfePowellBinaryLinesearch(
-                ExponentialRetraction(), ParallelTransport()
+                M;
+                retraction_method=ExponentialRetraction(),
+                vector_transport_method=ParallelTransport(),
             ),
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
@@ -98,7 +99,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         A = (A + A') / 2
         M = Sphere(n - 1)
         f(::Sphere, X) = X' * A * X
-        gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         x_solution = abs.(eigvecs(A)[:, 1])
 
         x = Matrix{Float64}(I, n, n)[n, :]
@@ -195,7 +196,11 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             gradF,
             x;
             memory_size=8,
-            stepsize=WolfePowellBinaryLinesearch(QRRetraction(), ProjectionTransport()),
+            stepsize=WolfePowellBinaryLinesearch(
+                M;
+                retraction_method=QRRetraction(),
+                vector_transport_method=ProjectionTransport(),
+            ),
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,

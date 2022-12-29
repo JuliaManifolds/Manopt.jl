@@ -106,7 +106,7 @@ end
     M = Rotations(3)
     x0 = exp(M, ref_R, get_vector(M, ref_R, randn(3) * 0.00001, DefaultOrthonormalBasis()))
 
-    o = LevenbergMarquardt(M, F_RLM, jacF_RLM, x0, length(pts_LM); return_options=true)
+    o = LevenbergMarquardt(M, F_RLM, jacF_RLM, x0, length(pts_LM); return_state=true)
     x_opt = get_options(o).x
     @test norm(M, x_opt, get_gradient(o)) < 2e-3
     @test distance(M, ref_R, x_opt) < 1e-2

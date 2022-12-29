@@ -41,7 +41,7 @@ depenting on the parameter `T <: AbstractEvaluationType`.
 * `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
 * `linearized_forward_operator!!` linearized operator for the forward operation in the algorithm ``DΛ``
 * `linearized_adjoint_operator!!` The adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
-* `prox_F!!` the proximal map belonging to ``f``
+* `prox_f!!` the proximal map belonging to ``f``
 * `prox_G_dual!!` the proximal map belonging to ``g_n^*``
 * `Λ!!` – (`fordward_operator`) the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
 
@@ -49,7 +49,7 @@ Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
 # Constructor
 
-    PrimalDualManifoldObjective(cost, prox_F, prox_G_dual, adjoint_linearized_operator;
+    PrimalDualManifoldObjective(cost, prox_f, prox_G_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function,Missing}=missing,
         Λ::Union{Function,Missing}=missing,
         evaluation::AbstractEvaluationType=AllocatingEvaluation()
@@ -76,8 +76,8 @@ mutable struct PrimalDualManifoldObjective{
     T<:AbstractEvaluationType,TC,TP,TDP,LFO,ALFO,L
 } <: AbstractPrimalDualManifoldObjective{T,TC,TP}
     cost::TC
-    prox_F!!::TP
-    prox_G_dual!!::TDP
+    prox_f!!::TP
+    prox_g_dual!!::TDP
     linearized_forward_operator!!::LFO
     adjoint_linearized_operator!!::ALFO
     Λ!!::L
@@ -137,13 +137,13 @@ function get_primal_prox(
     σ,
     p,
 )
-    return apdmo.prox_F!!(M, σ, p)
+    return apdmo.prox_f!!(M, σ, p)
 end
 function get_primal_prox(
     M::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, σ, p
 )
     q = allocate_result(M, get_primal_prox, p)
-    return apdmo.prox_F!!(M, q, σ, p)
+    return apdmo.prox_f!!(M, q, σ, p)
 end
 function get_primal_prox!(
     M::AbstractManifold,
@@ -152,7 +152,7 @@ function get_primal_prox!(
     σ,
     p,
 )
-    copyto!(M, q, apdmo.prox_F!!(M, σ, p))
+    copyto!(M, q, apdmo.prox_f!!(M, σ, p))
     return q
 end
 function get_primal_prox!(
@@ -162,7 +162,7 @@ function get_primal_prox!(
     σ,
     p,
 )
-    apdmo.prox_F!!(M, q, σ, p)
+    apdmo.prox_f!!(M, q, σ, p)
     return q
 end
 
@@ -195,7 +195,7 @@ function get_dual_prox(
     τ,
     X,
 )
-    return apdmo.prox_G_dual!!(M, n, τ, X)
+    return apdmo.prox_g_dual!!(M, n, τ, X)
 end
 function get_dual_prox(
     M::AbstractManifold,
@@ -205,7 +205,7 @@ function get_dual_prox(
     X,
 )
     Y = allocate_result(M, get_dual_prox, X)
-    return apdmo.prox_G_dual!!(M, Y, n, τ, X)
+    return apdmo.prox_g_dual!!(M, Y, n, τ, X)
 end
 function get_dual_prox!(
     M::AbstractManifold,
@@ -215,7 +215,7 @@ function get_dual_prox!(
     τ,
     X,
 )
-    copyto!(M, Y, apdmo.prox_G_dual!!(M, n, τ, X))
+    copyto!(M, Y, apdmo.prox_g_dual!!(M, n, τ, X))
     return Y
 end
 function get_dual_prox!(
@@ -226,7 +226,7 @@ function get_dual_prox!(
     τ,
     X,
 )
-    apdmo.prox_G_dual!!(M, Y, n, τ, X)
+    apdmo.prox_g_dual!!(M, Y, n, τ, X)
     return Y
 end
 

@@ -49,10 +49,10 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
     > link: [https://econpapers.repec.org/paper/vuawpaper/1993-11.htm](https://econpapers.repec.org/paper/vuawpaper/1993-11.htm).
 """
 function LevenbergMarquardt(
-    M::AbstractManifold, F::TF, gradF::TDF, x, num_components::Int=-1; kwargs...
+    M::AbstractManifold, F::TF, jacF::TDF, p, num_components::Int=-1; kwargs...
 ) where {TF,TDF}
-    x_res = copy(M, x)
-    return LevenbergMarquardt!(M, F, gradF, x_res, num_components; kwargs...)
+    q = copy(M, p)
+    return LevenbergMarquardt!(M, F, jacF, q, num_components; kwargs...)
 end
 
 @doc raw"""
@@ -64,7 +64,7 @@ function LevenbergMarquardt!(
     M::AbstractManifold,
     F::TF,
     jacF::TDF,
-    x,
+    p,
     num_components::Int=-1;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
@@ -78,7 +78,7 @@ function LevenbergMarquardt!(
 ) where {TF,TDF}
     if num_components == -1
         if evaluation === AllocatingEvaluation()
-            num_components = length(F(M, x))
+            num_components = length(F(M, p))
         else
             throw(
                 ArgumentError(
@@ -87,40 +87,41 @@ function LevenbergMarquardt!(
             )
         end
     end
-    p = NonlinearLeastSquaresProblem(
-        M, F, jacF, num_components; evaluation=evaluation, jacB=jacB
+    nlso = NonlinearLeastSquaresObjective(
+        F, jacF, num_components; evaluation=evaluation, jacB=jacB
     )
-    o = LevenbergMarquardtState(
+    nlsp = DefaultManoptProblem(M, nlso)
+    lms = LevenbergMarquardtState(
         M,
-        x,
-        similar(x, num_components),
-        similar(x, num_components, manifold_dimension(M));
+        p,
+        similar(p, num_components),
+        similar(p, num_components, manifold_dimension(M));
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
     )
-    o = decorate_options(o; debug=debug, kwargs...)
-    return get_solver_return(solve(p, o))
+    lms = decorate_state(lms; debug=debug, kwargs...)
+    return get_solver_return(solve!(nlsp, lms))
 end
 #
 # Solver functions
 #
 function initialize_solver!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    s::LevenbergMarquardtState,
+    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    lms::LevenbergMarquardtState,
 ) where {mT}
-    M = get_manifold(p)
-    s.residual_values = get_objective(p).F(M, s.x)
-    s.gradient = get_gradient(p, s.x)
-    return s
+    M = get_manifold(dmp)
+    lms.residual_values = get_objective(dmp).F(M, lms.p)
+    lms.X = get_gradient(dmp, lms.p)
+    return lms
 end
 function initialize_solver!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
-    o::LevenbergMarquardtState,
+    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
+    lms::LevenbergMarquardtState,
 ) where {mT}
-    get_objective(p).F(get_manifold(M), o.residual_values, o.x)
-    o.gradient = get_gradient(p, o.x)
-    return o
+    get_objective(dmp).F(get_manifold(M), lms.residual_values, lms.p)
+    lms.X = get_gradient(dmp, lms.p)
+    return lms
 end
 
 function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
@@ -132,82 +133,83 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
 end
 
 function get_jacobian!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     jacF,
-    x,
+    p,
     basis_domain::AbstractBasis,
 ) where {mT}
-    return copyto!(jacF, p.jacobian!!(get_manifold(p), x; basis_domain=basis_domain))
+    nlso = get_objective(dmp)
+    return copyto!(jacF, nlso.jacobian!!(get_manifold(dmp), p; basis_domain=basis_domain))
 end
 function get_jacobian!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
+    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
     jacF,
-    x,
+    p,
     basis_domain::AbstractBasis,
 ) where {mT}
-    return p.jacobian!!(p.M, jacF, x; basis_domain=basis_domain)
+    nlso = get_objective(dmp)
+    return nlso.jacobian!!(M, jacF, p; basis_domain=basis_domain)
 end
 
 function get_residuals!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     residuals,
-    x,
+    p,
 ) where {mT}
-    return copyto!(residuals, get_objective(p).F(p.M, x))
+    return copyto!(residuals, get_objective(dmp).F(M, p))
 end
 function get_residuals!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
+    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{InplaceEvaluation}},
     residuals,
-    x,
+    p,
 ) where {mT}
-    return get_objective(p).F(p.M, residuals, x)
+    return get_objective(dmp).F(M, residuals, p)
 end
 
 function step_solver!(
-    p::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{Teval}},
-    o::LevenbergMarquardtState,
+    dmp::DefaultManoptProblem{mT,NonlinearLeastSquaresObjective{Teval}},
+    lms::LevenbergMarquardtState,
     i::Integer,
 ) where {Teval<:AbstractEvaluationType,mT}
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
+    M = get_manifold(dmp)
+    basis_ox = _maybe_get_basis(M, lms.p, dmp.jacB)
+    get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
+    λk = lms.damping_term * norm(lms.residual_values)
 
-    M = get_manifold(p)
-    basis_ox = _maybe_get_basis(M, o.x, p.jacB)
-    get_jacobian!(p, o.jacF, o.x, basis_ox)
-    λk = o.damping_term * norm(o.residual_values)
-
-    JJ = transpose(o.jacF) * o.jacF + λk * I
+    JJ = transpose(lms.jacF) * lms.jacF + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    grad_f_c = transpose(o.jacF) * o.residual_values
+    grad_f_c = transpose(lms.jacF) * lms.residual_values
     sk = cholesky(JJ) \ -grad_f_c
-    get_vector!(M, o.gradient, o.x, grad_f_c, basis_ox)
+    get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
 
-    get_vector!(M, o.step_vector, o.x, sk, basis_ox)
-    o.last_stepsize = norm(M, o.x, o.step_vector)
-    temp_x = retract(M, o.x, o.step_vector, o.retraction_method)
+    get_vector!(M, lms.step_vector, lms.p, sk, basis_ox)
+    lms.last_stepsize = norm(M, lms.p, lms.step_vector)
+    temp_x = retract(M, lms.p, lms.step_vector, lms.retraction_method)
 
-    normFk2 = norm(o.residual_values)^2
-    get_residuals!(p, o.candidate_residual_values, temp_x)
+    normFk2 = norm(lms.residual_values)^2
+    get_residuals!(dmp, lms.candidate_residual_values, temp_x)
 
     ρk =
-        2 * (normFk2 - norm(o.candidate_residual_values)^2) / (
-            -2 * inner(M, o.x, o.gradient, o.step_vector) - norm(o.jacF * sk)^2 -
+        2 * (normFk2 - norm(lms.candidate_residual_values)^2) / (
+            -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacF * sk)^2 -
             λk * norm(sk)
         )
-    if ρk >= o.η
-        copyto!(M, o.x, temp_x)
-        copyto!(o.residual_values, o.candidate_residual_values)
-        if o.expect_zero_residual
-            o.damping_term = max(o.damping_term_min, o.damping_term / o.β)
+    if ρk >= lms.η
+        copyto!(M, lms.p, temp_x)
+        copyto!(lms.residual_values, lms.candidate_residual_values)
+        if lms.expect_zero_residual
+            lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
     else
-        o.damping_term *= o.β
+        lms.damping_term *= lms.β
     end
-    return o
+    return lms
 end
 
 function _get_last_stepsize(
-    ::AbstractManoptProblem, o::LevenbergMarquardtState, ::Val{false}, vars...
+    ::AbstractManoptProblem, lms::LevenbergMarquardtState, ::Val{false}, vars...
 )
-    return o.last_stepsize
+    return lms.last_stepsize
 end
