@@ -293,38 +293,4 @@ function step_solver!(
     epms.ϵ = max(epms.ϵ_min, epms.ϵ * epms.θ_ϵ)
     return epms
 end
-# closed form: Problem -> function, state -> AbstractEvaluationType
-function step_solver!(
-    amp::AbstractManoptProblem, epms::ExactPenaltyMethodState{P,F,AllocatingEvaluation}, i
-) where {P,F}
-    M = get_manifold(amp)
-    epms.p = epms.sub_problem(M, p, X; ρ=ρ, u=u)
-    # get new evaluation of penalty
-    cost_ineq = get_inequality_constraints(amp, epms.p)
-    cost_eq = get_equality_constraints(amp, epms.p)
-    max_violation = max(max(maximum(cost_ineq; init=0), 0), maximum(abs.(cost_eq); init=0))
-    # update ρ if necessary
-    (max_violation > epms.u) && (epms.ρ = epms.ρ / epms.θ_ρ)
-    # update u and ϵ
-    epms.u = max(epms.u_min, epms.u * epms.θ_u)
-    epms.ϵ = max(epms.ϵ_min, epms.ϵ * epms.θ_ϵ)
-    return epms
-end
-# closed form: Problem -> function, state -> AbstractEvaluationType
-function step_solver!(
-    amp::AbstractManoptProblem, epms::ExactPenaltyMethodState{P,F,InplaceEvaluation}, i
-) where {P,F}
-    M = get_manifold(amp)
-    epms.sub_problem(M, epms.p, p, X; ρ=ρ, u=u)
-    # get new evaluation of penalty
-    cost_ineq = get_inequality_constraints(amp, epms.p)
-    cost_eq = get_equality_constraints(amp, epms.p)
-    max_violation = max(max(maximum(cost_ineq; init=0), 0), maximum(abs.(cost_eq); init=0))
-    # update ρ if necessary
-    (max_violation > epms.u) && (epms.ρ = epms.ρ / epms.θ_ρ)
-    # update u and ϵ
-    epms.u = max(epms.u_min, epms.u * epms.θ_u)
-    epms.ϵ = max(epms.ϵ_min, epms.ϵ * epms.θ_ϵ)
-    return epms
-end
 get_solver_result(epms::ExactPenaltyMethodState) = epms.p
