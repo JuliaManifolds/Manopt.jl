@@ -109,7 +109,7 @@ end
 function initialize_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     lms::LevenbergMarquardtState,
-) where {mT}
+) where {mT<:AbstractManifold}
     M = get_manifold(dmp)
     lms.residual_values = get_objective(dmp).F(M, lms.p)
     lms.X = get_gradient(dmp, lms.p)
@@ -118,8 +118,8 @@ end
 function initialize_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
     lms::LevenbergMarquardtState,
-) where {mT}
-    get_objective(dmp).F(get_manifold(dmp), lms.residual_values, lms.p)
+) where {mT<:AbstractManifold}
+    get_objective(dmp).F(get_manifold(M), lms.residual_values, lms.p)
     lms.X = get_gradient(dmp, lms.p)
     return lms
 end
@@ -166,7 +166,11 @@ function get_residuals!(
     return get_objective(dmp).F(get_manifold(dmp), residuals, p)
 end
 
-function step_solver!(dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, i::Integer)
+function step_solver!(
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
+    lms::LevenbergMarquardtState,
+    i::Integer,
+) where {mT<:AbstractManifold}
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
