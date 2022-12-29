@@ -32,21 +32,26 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
         Y = similar(X)
         FG(M, Y, p)
         @test FG(M, p) == Y
-        O = FrankWolfeState(M, p, oracle!)
+        O = FrankWolfeState(M, p, oracle!, InplaceEvaluation())
         set_iterate!(O, 2 .* p)
         @test get_iterate(O) == 2 .* p
     end
     @testset "Two small Test runs" begin
         @testset "Testing with an Oracle" begin
             p2a = Frank_Wolfe_method(
-                M, f, grad_f!, p; subtask=oracle!, evaluation=InplaceEvaluation()
+                M,
+                f,
+                grad_f!,
+                p;
+                sub_problem=oracle!,
+                sub_state=InplaceEvaluation(),
+                evaluation=InplaceEvaluation(),
             )
             @test f(M, p2a) < f(M, p)
-            p2b = Frank_Wolfe_method(M, f, grad_f, p; subtask=oracle)
+            p2b = Frank_Wolfe_method(
+                M, f, grad_f, p; sub_problem=oracle, sub_state=AllocatingEvaluation()
+            )
             @test f(M, p2b) ≈ f(M, p2a)
-            o2 = Frank_Wolfe_method(M, f, grad_f, p; subtask=oracle, return_state=true)
-            p2c = get_solver_result(o2)
-            @test f(M, p2c) ≈ f(M, p2a)
         end
         @testset "Testing with an Subsolver" begin
             # This is not a useful run since the subproblem is not constraint
