@@ -209,7 +209,7 @@ end
         # Additional Specific Debugs
         a1 = DebugGradient(; long=false, io=io)
         a1(p_r2, o_r2, 1)
-        @test String(take!(io)) == "gradF(x):[0.0, 0.0]"
+        @test String(take!(io)) == "grad f(p):[0.0, 0.0]"
     end
 
     @testset "errors" begin
