@@ -10,7 +10,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         ABC = [A, B, C]
         x_solution = mean(ABC)
         f(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
-        gradF(::Euclidean, x) = -A - B - C + 3 * x
+        grad_f(::Euclidean, x) = -A - B - C + 3 * x
         M = Euclidean(4, 4)
         x = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
@@ -98,7 +98,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         A = (A + A') / 2
         M = Sphere(n - 1)
         f(::Sphere, X) = X' * A * X
-        gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         x_solution = abs.(eigvecs(A)[:, 1])
 
         x = Matrix{Float64}(I, n, n)[n, :]

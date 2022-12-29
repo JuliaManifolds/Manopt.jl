@@ -198,11 +198,13 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     # reflect last
     xr = retract(M, m, -s.α * ξ, s.retraction_method)
     Costr = get_cost(mp, xr)
+    continue_steps = true
     # is it better than the worst but not better than the best?
     if Costr >= s.costs[first(ind)] && Costr < s.costs[last(ind)]
         # store as last
         s.population[last(ind)] = xr
         s.costs[last(ind)] = Costr
+        continue_steps = false
     end
     # --- Expansion ---
     if Costr < s.costs[first(ind)] # reflected is better than fist -> expand
@@ -211,31 +213,35 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
         # successful? use the expanded, otherwise still use xr
         s.population[last(ind)] .= Coste < Costr ? xe : xr
         s.costs[last(ind)] = min(Coste, Costr)
+        continue_steps = false
     end
     # --- Contraction ---
-    if Costr > s.costs[ind[end - 1]] # even worse than second worst
+    if continue_steps && Costr > s.costs[ind[end - 1]] # even worse than second worst
         step = (Costr < s.costs[last(ind)] ? -s.ρ : s.ρ)
         xc = retract(M, m, step * ξ, s.retraction_method)
         Costc = get_cost(mp, xc)
         if Costc < s.costs[last(ind)] # better than last ? -> store
             s.population[last(ind)] = xc
             s.costs[last(ind)] = Costc
+            continue_steps = false
         end
     end
     # --- Shrink ---
-    for i in 2:length(ind)
-        retract!(
-            M,
-            s.population[ind[i]],
-            s.population[ind[1]],
-            inverse_retract(
-                M, s.population[ind[1]], s.population[ind[i]], s.inverse_retraction_method
-            ),
-            s.σ,
-            s.retraction_method,
-        )
-        # update cost
-        s.costs[ind[i]] = get_cost(mp, s.population[ind[i]])
+    if continue_steps
+        for i in 2:length(ind)
+            retract!(
+                M,
+                s.population[ind[i]],
+                s.population[ind[1]],
+                inverse_retract(
+                    M, s.population[ind[1]], s.population[ind[i]], s.inverse_retraction_method
+                ),
+                s.σ,
+                s.retraction_method,
+            )
+            # update cost
+            s.costs[ind[i]] = get_cost(mp, s.population[ind[i]])
+        end
     end
     # store best
     s.p = s.population[argmin(s.costs)]
