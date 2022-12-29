@@ -4,7 +4,7 @@
 #
 #
 @doc raw"""
-    ManifoldProximalMapObjective{E<:AbstractEvaluationType, TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E}
+    ManifoldProximalMapObjective{E<:AbstractEvaluationType, TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E, TC}
 
 specify a problem for solvers based on the evaluation of proximal map(s).
 
@@ -22,7 +22,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
 """
 mutable struct ManifoldProximalMapObjective{E<:AbstractEvaluationType,TC,TP,V} <:
-               AbstractManifoldCostObjective{E}
+               AbstractManifoldCostObjective{E,TC}
     cost::TC
     proximal_maps!!::TP
     number_of_proxes::V

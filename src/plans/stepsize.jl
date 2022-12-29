@@ -610,9 +610,9 @@ function (a::WolfePowellLinesearch)(
     while inner(M, p_new, get_gradient(mp, p_new), η_xNew) <
           a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
         step = (s_minus + s_plus) / 2
-        retract!(M, p_new, get_iterate(ams), s * η, a.retraction_method)
+        retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
         fNew = get_cost(mp, p_new)
-        if fNew <= f0 + a.c1 * s * inner(M, get_iterate(ams), η, get_gradient(ams))
+        if fNew <= f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
             s_minus = step
         else
             s_plus = step

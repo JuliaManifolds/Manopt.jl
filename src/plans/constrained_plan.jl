@@ -74,7 +74,7 @@ A keyword argument variant of the constructor above, where you can leave out eit
 """
 struct ConstrainedManifoldObjective{
     T<:AbstractEvaluationType,CT<:ConstraintType,TCost,GF,TG,GG,TH,GH
-} <: AbstractManifoldGradientObjective{T}
+} <: AbstractManifoldGradientObjective{T,TCost,GF}
     cost::TCost
     gradient!!::GF
     g::TG

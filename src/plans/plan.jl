@@ -1,7 +1,6 @@
 include("objective.jl")
 include("problem.jl")
 include("solver_state.jl")
-include("subsolver_plan.jl")
 
 include("debug.jl")
 include("record.jl")
@@ -25,6 +24,8 @@ include("primal_dual_plan.jl")
 include("higher_order_primal_dual_plan.jl")
 
 include("stochastic_gradient_plan.jl")
+
+include("subsolver_plan.jl")
 
 include("stopping_criterion.jl")
 include("stepsize.jl")

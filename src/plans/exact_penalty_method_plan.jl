@@ -56,22 +56,18 @@ mutable struct ExactPenaltyCost{S,CO,R}
     ρ::R
     u::R
 end
-function set_objective_parameter!(
-    ams::AbstractManifoldObjective, ::Val{:Cost}, ::Val{:ρ}, ρ
-)
-    ams.cost.ρ = ρ
-    return ams
-end
-function set_objective_parameter!(
-    ams::AbstractManifoldObjective, ::Val{:Cost}, ::Val{:u}, u
-)
-    ams.cost.u = u
-    return ams
-end
 function ExactPenaltyCost(
     co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()
 ) where {R}
     return ExactPenaltyCost{typeof(smoothing),typeof(co),R}(co, ρ, u)
+end
+function set_function_parameter!(epc::ExactPenaltyCost, ::Val{:ρ}, ρ)
+    epc.ρ = ρ
+    return epc
+end
+function set_function_parameter!(epc::ExactPenaltyCost, ::Val{:u}, u)
+    epc.u = u
+    return epc
 end
 function (L::ExactPenaltyCost{<:LogarithmicSumOfExponentials})(M::AbstractManifold, p)
     gp = get_inequality_constraints(M, L.co, p)
@@ -117,17 +113,13 @@ mutable struct ExactPenaltyGrad{S,CO,R}
     ρ::R
     u::R
 end
-function set_objective_parameter!(
-    ams::AbstractManifoldObjective, ::Val{:Gradient}, ::Val{:ρ}, ρ
-)
-    ams.gradient!!.ρ = ρ
-    return ams
+function set_function_parameter!(epg::ExactPenaltyGrad, ::Val{:ρ}, ρ)
+    epg.ρ = ρ
+    return epg
 end
-function set_objective_parameter!(
-    ams::AbstractManifoldObjective, ::Val{:Gradient}, ::Val{:u}, u
-)
-    ams.gradient!!.u = u
-    return ams
+function set_function_parameter!(epg::ExactPenaltyGrad, ::Val{:u}, u)
+    epg.u = u
+    return epg
 end
 function ExactPenaltyGrad(
     co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()

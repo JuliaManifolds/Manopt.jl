@@ -25,8 +25,8 @@ function TwoManifoldProblem(
     return TwoManifoldProblem{MT,MT,O}(M, M, obj)
 end
 
-abstract type AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType} <:
-              AbstractManifoldCostObjective{E} end
+abstract type AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <:
+              AbstractManifoldCostObjective{E,C} end
 
 @doc raw"""
     PrimalDualManifoldObjective{E<:AbstractEvaluationType} <: AbstractPrimalDualManifoldObjective{E}
@@ -74,7 +74,7 @@ the second.
 """
 mutable struct PrimalDualManifoldObjective{
     T<:AbstractEvaluationType,TC,TP,TDP,LFO,ALFO,L
-} <: AbstractPrimalDualManifoldObjective{T}
+} <: AbstractPrimalDualManifoldObjective{T,TC,TP}
     cost::TC
     prox_F!!::TP
     prox_G_dual!!::TDP

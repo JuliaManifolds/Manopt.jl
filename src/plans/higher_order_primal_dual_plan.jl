@@ -27,7 +27,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 """
 mutable struct PrimalDualManifoldSemismoothNewtonObjective{
     E<:AbstractEvaluationType,TC,PF,DPF,PG,DPG,LFO,ALO,L
-} <: AbstractPrimalDualManifoldObjective{E}
+} <: AbstractPrimalDualManifoldObjective{E,TC,PF}
     cost::TC
     prox_f!!::PF
     diff_prox_f!!::DPF

@@ -35,7 +35,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
-       AbstractManifoldGradientObjective{T}
+       AbstractManifoldGradientObjective{T,C,G}
     cost::C
     gradient!!::G
     hessian!!::H

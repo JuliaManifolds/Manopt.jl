@@ -1,5 +1,5 @@
 @doc raw"""
-    ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:AbstractManifoldCostObjective{T}
+    ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:AbstractManifoldCostObjective{T, C}
 
 A structure to store information about a objective for a subgradient based optimization problem
 
@@ -16,7 +16,7 @@ a (cost) function `f(M, p)` and a function `∂f(M, p)` that returns a not neces
 element from the subdifferential at `p` on a manifold `M`.
 """
 struct ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:
-       AbstractManifoldCostObjective{T}
+       AbstractManifoldCostObjective{T,C}
     cost::C
     subgradient!!::S
     function ManifoldSubgradientObjective(

@@ -3,11 +3,11 @@
 
 Representing objectives on manifolds with a cost function implemented.
 """
-abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType} <:
+abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
               AbstractManifoldObjective{T} end
 
 @doc raw"""
-    ManifoldCostObjective{T,Tcost} <: AbstractManifoldCostObjective{T}
+    ManifoldCostObjective{T, TC} <: AbstractManifoldCostObjective{T, TC}
 
 speficy an [`AbstractManifoldObjective`](@ref) that does only have information about
 the cost function ``f\colon \mathbb M → ℝ`` implemented as a function `(M, p) -> c`
@@ -25,9 +25,9 @@ the type `T` can be set for consistency reasons with other problems.
 # Used with
 [`NelderMead`](@ref), [`particle_swarm`](@ref)
 """
-struct ManifoldCostObjective{T<:AbstractEvaluationType,Tcost} <:
-       AbstractManifoldCostObjective{T}
-    cost::Tcost
+struct ManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
+       AbstractManifoldCostObjective{T,TC}
+    cost::TC
 end
 function ManifoldCostObjective(cost::Tcost) where {Tcost}
     return ManifoldCostObjective{AllocatingEvaluation,Tcost}(cost)

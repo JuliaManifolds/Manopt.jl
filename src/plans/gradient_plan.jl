@@ -1,11 +1,11 @@
 @doc raw"""
-    AbstractManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldCostObjective{T}
+    AbstractManifoldGradientObjective{E<:AbstractEvaluationType, TC, TG} <: AbstractManifoldCostObjective{E, TC}
 
 An abstract type for all functions that provide a (full) gradient, where
 `T` is a [`AbstractEvaluationType`](@ref) for the gradient function.
 """
-abstract type AbstractManifoldGradientObjective{T<:AbstractEvaluationType} <:
-              AbstractManifoldCostObjective{T} end
+abstract type AbstractManifoldGradientObjective{E<:AbstractEvaluationType,TC,TG} <:
+              AbstractManifoldCostObjective{E,TC} end
 
 @doc raw"""
     ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldGradientObjective{T}
@@ -30,7 +30,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to f
 [`gradient_decent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
 struct ManifoldGradientObjective{T<:AbstractEvaluationType,C,G} <:
-       AbstractManifoldGradientObjective{T}
+       AbstractManifoldGradientObjective{T,C,G}
     cost::C
     gradient!!::G
 end
@@ -39,6 +39,8 @@ function ManifoldGradientObjective(
 ) where {C,G}
     return ManifoldGradientObjective{typeof(evaluation),C,G}(cost, gradient)
 end
+
+get_gradient_function(amo::AbstractManifoldGradientObjective) = amo.gradient!!
 
 @doc raw"""
     ManifoldCostGradientObjective{T} <: AbstractManifoldObjective{T}
@@ -62,7 +64,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to f
 # Used with
 [`gradient_decent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
-struct ManifoldCostGradientObjective{T,CG} <: AbstractManifoldGradientObjective{T}
+struct ManifoldCostGradientObjective{T,CG} <: AbstractManifoldGradientObjective{T,CG,CG}
     costgrad!!::CG
 end
 function ManifoldCostGradientObjective(
@@ -72,6 +74,9 @@ function ManifoldCostGradientObjective(
 end
 
 get_cost_function(cgo::ManifoldCostGradientObjective) = (M, p) -> get_cost(M, cgo, p)
+function get_gradient_function(cgo::ManifoldCostGradientObjective)
+    return (M, p) -> get_gradient(M, cgo, p)
+end
 
 @doc raw"""
     get_gradient(mp::AbstractManoptProblem, p)

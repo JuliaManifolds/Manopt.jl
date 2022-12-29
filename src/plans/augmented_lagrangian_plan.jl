@@ -26,6 +26,18 @@ mutable struct AugmentedLagrangianCost{CO,R,T}
     μ::T
     λ::T
 end
+function set_function_parameter!(alc::AugmentedLagrangianCost, ::Val{:ρ}, ρ)
+    alc.ρ = ρ
+    return alc
+end
+function set_function_parameter!(alc::AugmentedLagrangianCost, ::Val{:μ}, μ)
+    alc.μ = μ
+    return alc
+end
+function set_function_parameter!(alc::AugmentedLagrangianCost, ::Val{:λ}, λ)
+    alc.λ = λ
+    return alc
+end
 function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
     gp = get_inequality_constraints(M, L.co, p)
     hp = get_equality_constraints(M, L.co, p)
@@ -61,6 +73,20 @@ function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
     X = zero_vector(M, p)
     return LG(M, X, p)
 end
+
+function set_function_parameter!(alg::AugmentedLagrangianGrad, ::Val{:ρ}, ρ)
+    alg.ρ = ρ
+    return alg
+end
+function set_function_parameter!(alg::AugmentedLagrangianGrad, ::Val{:μ}, μ)
+    alg.μ = μ
+    return alg
+end
+function set_function_parameter!(alg::AugmentedLagrangianGrad, ::Val{:λ}, λ)
+    alg.λ = λ
+    return alg
+end
+
 # default, that is especially when the grad_g and grad_h are functions.
 function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, X, p)
     gp = get_inequality_constraints(M, LG.co, p)

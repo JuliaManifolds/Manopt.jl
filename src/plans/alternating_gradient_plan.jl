@@ -25,7 +25,7 @@ Create a alternating gradient problem with an optional `cost` and the gradient e
 function (returning an array) or a vector of functions.
 """
 struct ManifoldAlternatingGradientObjective{E<:AbstractEvaluationType,TCost,TGradient} <:
-       AbstractManifoldGradientObjective{E}
+       AbstractManifoldGradientObjective{E,TCost,TGradient}
     cost::TCost
     gradient!!::TGradient
 end

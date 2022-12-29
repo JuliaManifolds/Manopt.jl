@@ -34,7 +34,7 @@ Note that this can also be used with a [`gradient_decent`](@ref), since the (com
 is just the sums of the single gradients.
 """
 struct ManifoldStochasticGradientObjective{T<:AbstractEvaluationType,TCost,TGradient} <:
-       AbstractManifoldGradientObjective{T}
+       AbstractManifoldGradientObjective{T,TCost,TGradient}
     cost::TCost
     gradient!!::TGradient
 end
