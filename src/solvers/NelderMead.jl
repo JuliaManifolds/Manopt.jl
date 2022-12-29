@@ -234,7 +234,10 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
                 s.population[ind[i]],
                 s.population[ind[1]],
                 inverse_retract(
-                    M, s.population[ind[1]], s.population[ind[i]], s.inverse_retraction_method
+                    M,
+                    s.population[ind[1]],
+                    s.population[ind[i]],
+                    s.inverse_retraction_method,
                 ),
                 s.σ,
                 s.retraction_method,
