@@ -477,9 +477,10 @@ function update_hessian!(M, f::ApproxHessianBFGS{AllocatingEvaluation}, p, p_pro
     )
     sk_c = get_coordinates(M, p, X, f.basis)
     skyk_c = dot(sk_c, yk_c)
-    return f.matrix =
+    f.matrix =
         f.matrix + yk_c * yk_c' / skyk_c -
         f.matrix * sk_c * sk_c' * f.matrix / dot(sk_c, f.matrix * sk_c)
+    return f
 end
 
 function update_hessian!(M, f::ApproxHessianBFGS{InplaceEvaluation}, p, p_proposal, X)
@@ -494,19 +495,22 @@ function update_hessian!(M, f::ApproxHessianBFGS{InplaceEvaluation}, p, p_propos
     )
     sk_c = get_coordinates(M, p, X, f.basis)
     skyk_c = dot(sk_c, yk_c)
-    return f.matrix =
+    f.matrix =
         f.matrix + yk_c * yk_c' / skyk_c -
         f.matrix * sk_c * sk_c' * f.matrix / dot(sk_c, f.matrix * sk_c)
+    return f
 end
 
 function update_hessian_basis!(M, f::ApproxHessianBFGS{AllocatingEvaluation}, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
     copyto!(f.p_tmp, p)
-    return f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    f.grad_tmp = f.gradient!!(M, f.p_tmp)
+    return f
 end
 
 function update_hessian_basis!(M, f::ApproxHessianBFGS{InplaceEvaluation}, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
     copyto!(f.p_tmp, p)
-    return f.gradient!!(M, f.grad_tmp, f.p_tmp)
+    f.gradient!!(M, f.grad_tmp, f.p_tmp)
+    return f
 end

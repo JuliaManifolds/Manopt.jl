@@ -175,13 +175,13 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         M = Stiefel(n, k)
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         f(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
-        gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
+        grad_f = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
 
         x = Matrix{Float64}(I, n, n)[:, 2:(k + 1)]
         x_inverseBFGSCautious = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             memory_size=8,
             vector_transport_method=ProjectionTransport(),
@@ -193,7 +193,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         x_inverseBFGSHuang = quasi_Newton(
             M,
             f,
-            gradF,
+            grad_f,
             x;
             memory_size=8,
             stepsize=WolfePowellBinaryLinesearch(
@@ -216,7 +216,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         A = (A + A') / 2
         M = Sphere(n - 1)
         F(::Sphere, X) = X' * A * X
-        gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         x_solution = abs.(eigvecs(A)[:, 1])
 
         x = [
@@ -228,7 +228,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         x_lrbfgs = quasi_Newton(
             M,
             F,
-            gradF,
+            grad_f,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
@@ -243,13 +243,14 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         A = (A + A') / 2
         M = Sphere(n - 1)
         F(::Sphere, X) = X' * A * X
-        gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         grad_f!(::Sphere, X, p) = (X .= 2 * (A * X - X * (X' * A * X)))
 
         p_1 = [1.0; 0.0; 0.0; 0.0]
+        p_2 = [0.0; 0.0; 1.0; 0.0]
 
         SR1_allocating = ApproxHessianSymmetricRankOne(
-            M, p_1, gradF; evaluation=AllocatingEvaluation()
+            M, p_1, grad_f; evaluation=AllocatingEvaluation()
         )
 
         SR1_mutating = ApproxHessianSymmetricRankOne(
@@ -257,67 +258,42 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         )
 
         BFGS_allocating = ApproxHessianBFGS(
-            M, p_1, gradF; evaluation=AllocatingEvaluation()
+            M, p_1, grad_f; evaluation=AllocatingEvaluation()
         )
 
         BFGS_mutating = ApproxHessianBFGS(M, p_1, grad_f!; evaluation=InplaceEvaluation())
 
         Y = [0.0; 1.0; 0.0; 0.0]
-
-        p_1 = [1.0; 0.0; 0.0; 0.0]
-
         X_1 = SR1_allocating(M, p_1, Y)
-
-        p_2 = [0.0; 0.0; 1.0; 0.0]
-
         SR1_allocating.p_tmp = p_2
-
-        p_1 = [1.0; 0.0; 0.0; 0.0]
-
         X_2 = SR1_allocating(M, p_1, Y)
-
         @test isapprox(M, p_1, X_1, X_2; atol=1e-10)
-
-        p_1 = [1.0; 0.0; 0.0; 0.0]
 
         X_3 = zero_vector(M, p_1)
         X_4 = zero_vector(M, p_1)
-
         SR1_mutating(M, X_3, p_1, Y)
-
-        p_2 = [0.0; 0.0; 1.0; 0.0]
-
         SR1_mutating.p_tmp = p_2
-
-        p_1 = [1.0; 0.0; 0.0; 0.0]
-
         SR1_mutating(M, X_4, p_1, Y)
-
         @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
 
-        p_1 = [1.0; 0.0; 0.0; 0.0]
-
         X_5 = BFGS_allocating(M, p_1, Y)
-
-        p_2 = [0.0; 0.0; 1.0; 0.0]
-
         X_6 = BFGS_allocating(M, p_2, Y)
-
-        p_1 = [1.0; 0.0; 0.0; 0.0]
-
         @test isapprox(M, p_1, X_5, X_6; atol=1e-10)
 
         X_7 = zero_vector(M, p_1)
         X_8 = zero_vector(M, p_1)
-
-        p_1 = [1.0; 0.0; 0.0; 0.0]
-
         BFGS_mutating(M, X_7, p_1, Y)
-
-        p_2 = [0.0; 0.0; 1.0; 0.0]
-
         BFGS_mutating(M, X_8, p_2, Y)
 
         @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
+
+        BFGS_allocating.grad_tmp = ones(4)
+        BFGS_allocating.matrix = one(zeros(3, 3))
+        Manopt.update_hessian!(M, BFGS_allocating, p_1, p_2, Y)
+        test_m = [1.0 -1.0 5.0; -1.0 2.0 -5.0; 5.0 -5.0 26.0]
+        @test isapprox(test_m, BFGS_allocating.matrix)
+
+        update_hessian_basis!(M, BFGS_allocating, p_1)
+        @test isapprox(M, p_1, BFGS_allocating.grad_tmp, [0.0, 2.0, 0.0, 6.0])
     end
 end

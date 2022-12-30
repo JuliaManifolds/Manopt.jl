@@ -9,7 +9,8 @@ using Manopt, ManifoldsBase, Test
     )
     set_iterate!(gst, M, p)
     @test get_iterate(gst) == p
-    gst.X = [1.0, 0.0]
+    set_gradient!(gst, M, p, [1.0, 0.0])
+    @test isapprox(M, p, get_gradient(gst), [1.0, 0.0])
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)
     mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
@@ -52,4 +53,25 @@ using Manopt, ManifoldsBase, Test
     b3(mp, gst, 2)
     b3(mp, gst, 3)
     @test b3.recorded_values == [1.0, 1.0, 1.0]
+    @testset "CostGradObjective" begin
+        costgrad(M, p) = (f(M, p), grad_f(M, p))
+        mcgo = ManifoldCostGradientObjective(costgrad)
+        f2 = get_cost_function(mcgo)
+        @test f(M, p) == f2(M, p)
+        @test f(M, p) == get_cost(M, mcgo, p)
+        grad_f2 = get_gradient_function(mcgo)
+        X = grad_f(M, p)
+        @test isapprox(M, p, X, grad_f2(M, p))
+        @test isapprox(M, p, X, get_gradient(M, mcgo, p))
+        Y = zero_vector(M, p)
+        get_gradient!(M, Y, mcgo, p)
+        @test isapprox(M, p, X, Y)
+
+        grad_f!(M, X, q) = -2 * log!(M, X, q, p)
+        costgrad!(M, X, p) = (f(M, p), grad_f!(M, X, p))
+        mcgo! = ManifoldCostGradientObjective(costgrad!; evaluation=InplaceEvaluation())
+        @test isapprox(M, p, X, get_gradient(M, mcgo!, p))
+        get_gradient!(M, Y, mcgo, p)
+        @test isapprox(M, p, X, Y)
+    end
 end

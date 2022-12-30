@@ -179,10 +179,11 @@ export AbstractManoptProblem, DefaultManoptProblem
 #
 # Objectives
 export AbstractManifoldObjective,
-    ManifoldAlternatingGradientObjective,
-    ManifoldCostObjective,
     ConstrainedManifoldObjective,
     NonlinearLeastSquaresObjective,
+    ManifoldAlternatingGradientObjective,
+    ManifoldCostGradientObjective,
+    ManifoldCostObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
     ManifoldProximalMapObjective,
@@ -227,12 +228,10 @@ export FrankWolfeCost, FrankWolfeGradient
 #
 # Accessors and helpers for AbstractManoptSolverState
 export linesearch_backtrack
-export get_cost,
-    get_gradient,
-    get_gradient!,
-    get_subgradient,
-    get_subgradient!,
-    get_proximal_map,
+export get_cost, get_cost_function
+export get_gradient, get_gradient_function, get_gradient!
+export get_subgradient, get_subgradient!
+export get_proximal_map,
     get_proximal_map!,
     get_state,
     get_initial_stepsize,
@@ -250,6 +249,7 @@ export get_cost,
     get_dual_prox!,
     get_differential_dual_prox,
     get_differential_dual_prox!,
+    set_gradient!,
     set_iterate!,
     set_objective_parameter!,
     set_problem_parameter!,
@@ -357,8 +357,8 @@ export augmented_Lagrangian_method,
 export decorate_state
 export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
 export solve!
-export ApproxHessianFiniteDifference,
-    ApproxHessianSymmetricRankOne, ApproxHessianBFGS, update_hessian_basis!
+export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
+export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 #
 # Stepsize

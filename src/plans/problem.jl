@@ -85,11 +85,3 @@ access the cost function from within the [`AbstractManoptProblem`](@ref).
     By default this forwards to getting the const function from the internal [`AbstractManifoldObjective`](@ref).
 """
 get_cost_function(p::AbstractManoptProblem) = get_cost_function(get_objective(p))
-
-@doc raw"""
-    get_cost_function(obj::AbstractManifoldObjective)
-
-access the cost function from within the [`AbstractManoptProblem`](@ref).
-By default this returns `obj.cost`.
-"""
-get_cost(obj::AbstractManifoldObjective) = obj.cost

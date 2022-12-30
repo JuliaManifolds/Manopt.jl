@@ -19,12 +19,6 @@ _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 
 get_objective(tmo::TwoManifoldProblem) = tmo.objective
 
-function TwoManifoldProblem(
-    M::MT, obj::O
-) where {MT<:AbstractManifold,O<:AbstractManifoldObjective}
-    return TwoManifoldProblem{MT,MT,O}(M, M, obj)
-end
-
 abstract type AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <:
               AbstractManifoldCostObjective{E,C} end
 
@@ -184,7 +178,7 @@ function get_dual_prox(tmp::TwoManifoldProblem, n, τ, X)
     return get_dual_prox(get_manifold(tmp, 2), get_objective(tmp), n, τ, X)
 end
 function get_dual_prox!(tmp::TwoManifoldProblem, Y, n, τ, X)
-    return get_dual_prox!(get_manifold(tmp, 2), Y, get_objective(tmp), n, τ, X)
+    get_dual_prox!(get_manifold(tmp, 2), Y, get_objective(tmp), n, τ, X)
     return Y
 end
 
@@ -205,7 +199,8 @@ function get_dual_prox(
     X,
 )
     Y = allocate_result(M, get_dual_prox, X)
-    return apdmo.prox_g_dual!!(M, Y, n, τ, X)
+    apdmo.prox_g_dual!!(M, Y, n, τ, X)
+    return Y
 end
 function get_dual_prox!(
     M::AbstractManifold,

@@ -70,12 +70,17 @@ end
 function ManifoldCostGradientObjective(
     costgrad::CG; evaluation::AbstractEvaluationType=AllocatingEvaluation()
 ) where {CG}
-    return ManifoldGradientObjective{typeof(evaluation),CG}(costgrad)
+    return ManifoldCostGradientObjective{typeof(evaluation),CG}(costgrad)
 end
 
 get_cost_function(cgo::ManifoldCostGradientObjective) = (M, p) -> get_cost(M, cgo, p)
 function get_gradient_function(cgo::ManifoldCostGradientObjective)
     return (M, p) -> get_gradient(M, cgo, p)
+end
+
+function get_cost(M::AbstractManifold, cgo::ManifoldCostGradientObjective, p)
+    v, _ = cgo.costgrad!!(M, p)
+    return v
 end
 
 @doc raw"""
@@ -209,7 +214,7 @@ set the (current) gradient stored within an [`AbstractGradientSolverState`](@ref
 The default function modifies `s.X`.
 """
 function set_gradient!(agst::AbstractGradientSolverState, M, p, X)
-    copyto!(M, p, agst.X, X)
+    copyto!(M, agst.X, p, X)
     return agst
 end
 
