@@ -55,7 +55,7 @@ specify an objetive containing one function to perform a combined computation of
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
 
 * as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X`, i.e. an [`AllocatingEvaluation`](@ref)
-* as a function `(X, p) -> (c, X)` that work in place of `X`, i.e. an [`InplaceEvaluation`](@ref)
+* as a function `(M, X, p) -> (c, X)` that work in place of `X`, i.e. an [`InplaceEvaluation`](@ref)
 
 # Constructors
 
