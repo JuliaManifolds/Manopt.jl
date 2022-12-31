@@ -296,12 +296,12 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     M = get_manifold(mp)
     sub_obj = get_objective(alms.sub_problem)
     # use subsolver to minimize the augmented Lagrangian
-    set_problem_parameter!(alms.sub_problem, :Cost, :ρ, alms.ρ)
-    set_problem_parameter!(alms.sub_problem, :Cost, :μ, alms.μ)
-    set_problem_parameter!(alms.sub_problem, :Cost, :λ, alms.λ)
-    set_problem_parameter!(alms.sub_problem, :Gradient, :ρ, alms.ρ)
-    set_problem_parameter!(alms.sub_problem, :Gradient, :μ, alms.μ)
-    set_problem_parameter!(alms.sub_problem, :Gradient, :λ, alms.λ)
+    set_manopt_parameter!(alms.sub_problem, :Cost, :ρ, alms.ρ)
+    set_manopt_parameter!(alms.sub_problem, :Cost, :μ, alms.μ)
+    set_manopt_parameter!(alms.sub_problem, :Cost, :λ, alms.λ)
+    set_manopt_parameter!(alms.sub_problem, :Gradient, :ρ, alms.ρ)
+    set_manopt_parameter!(alms.sub_problem, :Gradient, :μ, alms.μ)
+    set_manopt_parameter!(alms.sub_problem, :Gradient, :λ, alms.λ)
     set_iterate!(alms.sub_state, M, copy(M, alms.p))
 
     update_stopping_criterion!(alms, :MinIterateChange, alms.ϵ)

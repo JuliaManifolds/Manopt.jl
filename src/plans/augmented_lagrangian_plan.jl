@@ -26,15 +26,15 @@ mutable struct AugmentedLagrangianCost{CO,R,T}
     μ::T
     λ::T
 end
-function set_function_parameter!(alc::AugmentedLagrangianCost, ::Val{:ρ}, ρ)
+function set_manopt_parameter!(alc::AugmentedLagrangianCost, ::Val{:ρ}, ρ)
     alc.ρ = ρ
     return alc
 end
-function set_function_parameter!(alc::AugmentedLagrangianCost, ::Val{:μ}, μ)
+function set_manopt_parameter!(alc::AugmentedLagrangianCost, ::Val{:μ}, μ)
     alc.μ = μ
     return alc
 end
-function set_function_parameter!(alc::AugmentedLagrangianCost, ::Val{:λ}, λ)
+function set_manopt_parameter!(alc::AugmentedLagrangianCost, ::Val{:λ}, λ)
     alc.λ = λ
     return alc
 end
@@ -74,15 +74,15 @@ function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
     return LG(M, X, p)
 end
 
-function set_function_parameter!(alg::AugmentedLagrangianGrad, ::Val{:ρ}, ρ)
+function set_manopt_parameter!(alg::AugmentedLagrangianGrad, ::Val{:ρ}, ρ)
     alg.ρ = ρ
     return alg
 end
-function set_function_parameter!(alg::AugmentedLagrangianGrad, ::Val{:μ}, μ)
+function set_manopt_parameter!(alg::AugmentedLagrangianGrad, ::Val{:μ}, μ)
     alg.μ = μ
     return alg
 end
-function set_function_parameter!(alg::AugmentedLagrangianGrad, ::Val{:λ}, λ)
+function set_manopt_parameter!(alg::AugmentedLagrangianGrad, ::Val{:λ}, λ)
     alg.λ = λ
     return alg
 end

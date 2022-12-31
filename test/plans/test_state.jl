@@ -1,5 +1,5 @@
 using Manifolds, Manopt, Test, ManifoldsBase
-
+import Manopt: set_manopt_parameter!
 using Dates
 
 struct TestStateProblem{M<:AbstractManifold} <: AbstractManoptProblem{M} end
@@ -7,6 +7,7 @@ mutable struct TestState <: AbstractManoptSolverState
     storage::Vector{Float64}
 end
 TestState() = TestState([])
+set_manopt_parameter!(s::TestState, ::Val, v) = s
 
 @testset "Manopt Solver State" begin
     @testset "Generic State" begin
@@ -16,6 +17,7 @@ TestState() = TestState([])
         a = ArmijoLinesearch(M; initial_stepsize=1.0)
         @test get_last_stepsize(pr, s, a) == 1.0
         @test get_initial_stepsize(a) == 1.0
+        set_manopt_parameter!(s, :Dummy, 1)
     end
 
     @testset "Decreasing Stepsize" begin

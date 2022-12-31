@@ -251,9 +251,9 @@ export get_proximal_map,
     get_differential_dual_prox!,
     set_gradient!,
     set_iterate!,
-    set_objective_parameter!,
-    set_problem_parameter!,
-    set_state_parameter!,
+    set_manopt_parameter!,
+    set_manopt_parameter!,
+    set_manopt_parameter!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -261,6 +261,7 @@ export get_proximal_map,
     forward_operator,
     forward_operator!,
     get_objective
+export set_manopt_parameter!
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
@@ -375,7 +376,7 @@ export StopWhenCurvatureIsNegative,
 export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
 export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
-export are_these_stopping_critera_active, update_stopping_criterion!
+export update_stopping_criterion!
 export StoppingCriterion, StoppingCriterionSet, Stepsize
 #
 # Data functions

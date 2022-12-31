@@ -273,10 +273,10 @@ function step_solver!(
 ) where {P}
     M = get_manifold(amp)
     # use subsolver to minimize the smoothed penalized function
-    set_problem_parameter!(epms.sub_problem, :Cost, :ρ, epms.ρ)
-    set_problem_parameter!(epms.sub_problem, :Cost, :u, epms.u)
-    set_problem_parameter!(epms.sub_problem, :Gradient, :ρ, epms.ρ)
-    set_problem_parameter!(epms.sub_problem, :Gradient, :u, epms.u)
+    set_manopt_parameter!(epms.sub_problem, :Cost, :ρ, epms.ρ)
+    set_manopt_parameter!(epms.sub_problem, :Cost, :u, epms.u)
+    set_manopt_parameter!(epms.sub_problem, :Gradient, :ρ, epms.ρ)
+    set_manopt_parameter!(epms.sub_problem, :Gradient, :u, epms.u)
     set_iterate!(epms.sub_state, M, copy(M, epms.p))
     update_stopping_criterion!(epms, :MinIterateChange, epms.ϵ)
 
