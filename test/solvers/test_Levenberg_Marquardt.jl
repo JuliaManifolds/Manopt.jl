@@ -204,14 +204,6 @@ end
     get_gradient!(p_r2_mut, X_r2, x0)
     @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
 
-    @testset "debug options" begin
-        io = IOBuffer()
-        # Additional Specific Debugs
-        a1 = DebugGradient(; long=false, io=io)
-        a1(p_r2, o_r2, 1)
-        @test String(take!(io)) == "grad f(p):[0.0, 0.0]"
-    end
-
     @testset "errors" begin
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
