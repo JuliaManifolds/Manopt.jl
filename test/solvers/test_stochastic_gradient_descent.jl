@@ -119,5 +119,4 @@ using Manopt, Manifolds, Test
         )
         @test norm(x5) ≈ 1
     end
-
 end
