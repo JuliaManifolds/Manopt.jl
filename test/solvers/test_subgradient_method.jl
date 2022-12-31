@@ -34,8 +34,12 @@ using Manopt, ManifoldsBase, Manifolds, Test
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p, 1)
         sgs2 = subgradient_method(M, f, ∂f, p0; return_state=true)
         p_star2 = get_solver_result(sgs2)
+        @test get_subgradient(sgs2) == -∂f(M, p_star2)
         @test f(M, p_star2) <= f(M, p0)
+        set_iterate!(sgs2, M, p)
+        @test get_iterate(sgs2) == p
     end
+
     @testset "Mutating Subgradient" begin
         function ∂f!(M, X, q)
             d = distance(M, p, q)

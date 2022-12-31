@@ -88,14 +88,14 @@ struct AlternatingGradient{T} <: AbstractGradientGroupProcessor
 end
 
 function (ag::AlternatingGradient)(
-    amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, iter
+    amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, i
 )
     M = get_manifold(amp)
     # at begin of inner iterations reset internal vector to zero
-    (ag.i == 1) && zero_vector!(M, ag.dir, agds.p)
+    (i == 1) && zero_vector!(M, ag.dir, agds.p)
     # update order(k)th component inplace
     get_gradient!(amp, ag.dir[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
-    return agds.stepsize(amp, agds, iter), ag.dir # return urrent full gradient
+    return agds.stepsize(amp, agds, i), ag.dir # return urrent full gradient
 end
 
 # update Armijo to work on the kth gradient only.
@@ -103,11 +103,11 @@ function (a::ArmijoLinesearch)(
     amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int
 )
     M = get_manifold(amp)
-    X = zero_vector(M, agds.x)
-    get_gradient!(amp, X[M, agds.order[agds.k]], agds.x, agds.order[agds.k])
+    X = zero_vector(M, agds.p)
+    get_gradient!(amp, X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
     a.last_stepsize = linesearch_backtrack(
         M,
-        p -> amp.cost(M, p),
+        p -> get_cost(amp, p),
         agds.p,
         X,
         a.last_stepsize,
@@ -211,15 +211,19 @@ function alternating_gradient_descent!(
     agds = decorate_state(agds; kwargs...)
     return get_solver_return(solve!(dmp, agds))
 end
-function initialize_solver!(::AbstractManoptProblem, s::AlternatingGradientDescentState)
-    s.k = 1
-    s.i = 1
-    (s.order_type == :FixedRandom || s.order_type == :Random) && (shuffle!(s.order))
-    return s
+function initialize_solver!(
+    amp::AbstractManoptProblem, agds::AlternatingGradientDescentState
+)
+    agds.k = 1
+    agds.i = 1
+    get_gradient!(amp, agds.X, agds.p)
+    (agds.order_type == :FixedRandom || agds.order_type == :Random) &&
+        (shuffle!(agds.order))
+    return agds
 end
 function step_solver!(amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, i)
     M = get_manifold(amp)
-    step, get_gradient(agds) = agds.direction(amp, agds, i)
+    step, agds.X = agds.direction(amp, agds, i)
     j = agds.order[agds.k]
     retract!(M[j], agds.p[M, j], agds.p[M, j], -step * agds.X[M, j])
     agds.i += 1

@@ -11,7 +11,7 @@ include("trust_region_model.jl")
     # generate a 3x2x2 Array
     p = zeros(3, 2, 2)
     p[:, :, 1] = [1.0 0.0; 0.0 1.0; 0.0 0.0]
-    p[:, :, 1] = [0.0 0.0; 1.0 1.0; 0.0 1.0]
+    p[:, :, 2] = [0.0 0.0; 1.0 0.0; 0.0 1.0]
 
     @test_throws ErrorException trust_regions(M, cost, rgrad, rhess, p; ρ_prime=0.3)
     @test_throws ErrorException trust_regions(

@@ -410,22 +410,6 @@ function Base.:|(s1::StopWhenAny, s2::T) where {T<:StoppingCriterion}
     return StopWhenAny(s1.criteria..., s2)
 end
 
-#
-# Functions for Criteria
-#
-"""
-    are_these_stopping_critera_active(c::StoppingCriterion, cond)
-
-Return `true` if any criterion from the given set is both active and fulfils the given
-condition `cond` (`cond(c)` returns `true`).
-"""
-function are_these_stopping_critera_active(cond::Function, c::StoppingCriterionSet)
-    return any(cc -> are_these_stopping_critera_active(cond, cc), get_stopping_criteria(c))
-end
-function are_these_stopping_critera_active(cond::Function, c::StoppingCriterion)
-    return !isempty(c.reason) && cond(c)
-end
-
 @doc raw"""
     get_active_stopping_criteria(c)
 
