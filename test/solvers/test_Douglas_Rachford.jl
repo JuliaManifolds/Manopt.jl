@@ -23,7 +23,7 @@ using Manifolds, Manopt, Test
     xHat2 = DouglasRachford(M, F2, [prox1, prox2, prox3], start;)
     result2 = mean(M, [d1, d2, d3])
     # since the default does not run that long -> rough estimate
-    @test distance(M, xHat2, result2) ≈ 0
+    @test distance(M, xHat2, result2) ≈ 0 atol = 1e-7
     #test getter/set
     s = DouglasRachfordState(M, d1)
     set_iterate!(s, d2)
