@@ -212,7 +212,7 @@ function get_gradient!(
     ::Any,
 ) where {TC}
     return error(
-        "A mutating variant of the stochastic gradient as a single function is not implemented.",
+        "An inplace variant for single entries of the stochastic gradient as a single function is not implemented, since the size can not be determined.",
     )
 end
 function get_gradient!(
@@ -249,13 +249,26 @@ function get_gradient(
     return sum(get_gradients(M, sgo, p))
 end
 function get_gradient!(
-    M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective{T,TC,<:Function}, p
-) where {T<:AbstractEvaluationType,TC}
+    M::AbstractManifold,
+    X,
+    sgo::ManifoldStochasticGradientObjective{AllocatingEvaluation,TC,<:Function},
+    p,
+) where {TC}
     zero_vector!(M, X, p)
     for Xi in sgo.gradient!!(M, p)
         X += Xi
     end
     return X
+end
+function get_gradient!(
+    ::AbstractManifold,
+    ::Any,
+    ::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:Function},
+    ::Any,
+) where {TC}
+    return error(
+        "An inplace variant for (sum of) the stochastic gradient as a single function is not implemented, since the size can not be determined.",
+    )
 end
 function get_gradient(
     M::AbstractManifold,

@@ -33,6 +33,7 @@ TestState() = TestState([])
         s = TestState(zeros(3))
         r = RecordSolverState(s, RecordIteration())
         d = DebugSolverState(s, DebugIteration())
+        ret = Manopt.ReturnSolverState(s)
         dr = DebugSolverState(r, DebugIteration())
         M = Euclidean()
 
@@ -48,6 +49,7 @@ TestState() = TestState([])
 
         @test dispatch_state_decorator(r) === Val(true)
         @test dispatch_state_decorator(dr) === Val(true)
+        @test dispatch_state_decorator(ret) === Val(true)
         @test dispatch_state_decorator(d) === Val(true)
         @test dispatch_state_decorator(s) === Val(false)
 
@@ -66,5 +68,22 @@ TestState() = TestState([])
         @test_throws ErrorException get_iterate(r)
         @test_throws ErrorException set_iterate!(s, M, 0)
         @test_throws ErrorException set_iterate!(r, M, 0)
+    end
+    @testset "Iteration and Gradient setters" begin
+        M = Euclidean(3)
+        s1 = NelderMeadState(M)
+        s2 = GradientDescentState(M)
+        p = 3.0 * ones(3)
+        X = ones(3)
+        d1 = DebugSolverState(s1, DebugIteration())
+        set_iterate!(d1, M, p)
+        @test d1.state.p == 3 * ones(3)
+        @test_throws ErrorException set_gradient!(d1, M, p, X)
+
+        d2 = DebugSolverState(s2, DebugIteration())
+        set_iterate!(d2, M, p)
+        @test d2.state.p == 3 * ones(3)
+        set_gradient!(d2, M, p, X)
+        @test d2.state.X == ones(3)
     end
 end

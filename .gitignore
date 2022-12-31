@@ -17,3 +17,4 @@ docs/src/examples/*.md
 Manifest.toml
 *.DS_Store
 docs/src/contributing.md
+coverage

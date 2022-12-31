@@ -26,6 +26,9 @@ using Manopt, Manifolds, Test
     end for x in pts]
 
     @testset "Constructors" begin
+        sg = StochasticGradient(M; p=p)
+        @test sg.dir == zero_vector(M, p)
+
         msgo1 = ManifoldStochasticGradientObjective(sgrad_f1)
         dmp1 = DefaultManoptProblem(M, msgo1)
         msgo1i = ManifoldStochasticGradientObjective(
@@ -39,11 +42,20 @@ using Manopt, Manifolds, Test
         )
         dmp2i = DefaultManoptProblem(M, msgo2i)
         @test get_gradient(dmp1, p, 1) == zeros(3)
+        @test get_gradient(dmp1, p) == zeros(3)
         @test get_gradient(dmp2, p, 1) == zeros(3)
+        @test get_gradient(dmp2, p) == zeros(3)
+        X = zero_vector(M, p)
+        get_gradient!(dmp1, X, p)
+        @test X == zeros(3)
+        get_gradient!(dmp2, X, p)
+        @test X == zeros(3)
         for pr in [dmp1, dmp2, dmp2i]
             X = zero_vector(M, p)
             get_gradient!(pr, X, p, 1)
             @test X == get_gradient(pr, p, 1)
+            get_gradient!(pr, X, p)
+            @test X == get_gradient(pr, p)
         end
         @test get_gradients(dmp1, p) == get_gradients(dmp2, p)
         @test get_gradients(dmp2i, p) == get_gradients(dmp2, p)
@@ -60,6 +72,8 @@ using Manopt, Manifolds, Test
         Z5 = similar.(Z)
         get_gradients!(dmp1i, Z5, p)
         @test Z == Z5
+        X = zero_vector(M, p)
+        @test_throws ErrorException get_gradient!(dmp1i, X, p)
         @test_throws ErrorException get_gradients(dmp1i, p)
         @test_throws ErrorException get_gradient!(dmp1i, Z4, p, 1)
         sgds = StochasticGradientDescentState(
@@ -105,4 +119,5 @@ using Manopt, Manifolds, Test
         )
         @test norm(x5) ≈ 1
     end
+
 end

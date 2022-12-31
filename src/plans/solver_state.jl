@@ -149,16 +149,16 @@ _get_gradient(s::AbstractManoptSolverState, ::Val{true}) = get_gradient(s.state)
 
 set the iterate within an [`AbstractManoptSolverState`](@ref) to some (start) value `X` at `p`.
 """
-function set_gradient!(s::AbstractManoptSolverState, M, X, p)
-    return _set_gradient!(s, M, X, p, dispatch_state_decorator(s))
+function set_gradient!(s::AbstractManoptSolverState, M, p, X)
+    return _set_gradient!(s, M, p, X, dispatch_state_decorator(s))
 end
 function _set_gradient!(s::AbstractManoptSolverState, ::Any, ::Any, ::Any, ::Val{false})
     return error(
         "It seems the AbstractManoptSolverState $s do not provide (write) access to a gradient",
     )
 end
-function _set_gradient!(s::AbstractManoptSolverState, M, p, X::Val{true})
-    return set_iterate!(s.state, M, p, X)
+function _set_gradient!(s::AbstractManoptSolverState, M, p, X, ::Val{true})
+    return set_gradient!(s.state, M, p, X)
 end
 
 """
@@ -264,8 +264,6 @@ function (a::StoreStateAction)(
                 merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_iterate(s))))
             elseif key == :Gradient
                 merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_gradient(s))))
-            else
-                @warn "$key is not a field of $s, no storage updated."
             end
         end
     end

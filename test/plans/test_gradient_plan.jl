@@ -71,7 +71,7 @@ using Manopt, ManifoldsBase, Test
         costgrad!(M, X, p) = (f(M, p), grad_f!(M, X, p))
         mcgo! = ManifoldCostGradientObjective(costgrad!; evaluation=InplaceEvaluation())
         @test isapprox(M, p, X, get_gradient(M, mcgo!, p))
-        get_gradient!(M, Y, mcgo, p)
+        get_gradient!(M, Y, mcgo!, p)
         @test isapprox(M, p, X, Y)
     end
 end

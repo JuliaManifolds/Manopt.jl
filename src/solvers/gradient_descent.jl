@@ -55,7 +55,7 @@ mutable struct GradientDescentState{
 end
 function GradientDescentState(
     M::AbstractManifold,
-    p::P=random_pint(M);
+    p::P=random_point(M);
     X::T=zero_vector(M, p),
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(),

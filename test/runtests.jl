@@ -2,6 +2,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
 
 @testset "Manopt.jl" begin
     @testset "Plan Tests         " begin
+        include("plans/test_problem.jl")
         include("plans/test_state.jl")
         include("plans/test_debug.jl")
         include("plans/test_nelder_mead_plan.jl")

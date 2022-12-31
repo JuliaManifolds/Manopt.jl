@@ -81,4 +81,26 @@ using Manifolds, Manopt, Test, Dates
         set_iterate!(O, p)
         @test get_iterate(O) == p
     end
+    @testset "Debug and Record prox parameter" begin
+        io = IOBuffer()
+        M = Euclidean(3)
+        p = ones(3)
+        O = CyclicProximalPointState(M, p)
+        f(M, p) = costL2TV(M, q, 0.5, p)
+        proxes = (
+            (M, λ, p) -> prox_distance(M, λ, q, p), (M, λ, p) -> prox_TV(M, 0.5 * λ, p)
+        )
+        s = CyclicProximalPointState(
+            M, f; stopping_criterion=StopAfterIteration(1), λ=i -> i
+        )
+        mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
+        p = DefaultManoptProblem(M, mpo)
+        ds = DebugSolverState(s, DebugProximalParameter(; io=io))
+        step_solver!(p, ds, 1)
+        debug = String(take!(io))
+        @test startswith(debug, "λ:")
+        rs = RecordSolverState(s, RecordProximalParameter())
+        step_solver!(p, rs, 1)
+        @test get_record(rs) == [1.0]
+    end
 end

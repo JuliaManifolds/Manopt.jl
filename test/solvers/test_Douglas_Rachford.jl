@@ -25,8 +25,19 @@ using Manifolds, Manopt, Test
     # since the default does not run that long -> rough estimate
     @test distance(M, xHat2, result2) ≈ 0
     #test getter/set
-    O = DouglasRachfordState(M, d1)
-    set_iterate!(O, d2)
-    @test get_iterate(O) == d2
-    # ToDo record / debug λ
+    s = DouglasRachfordState(M, d1)
+    set_iterate!(s, d2)
+    @test get_iterate(s) == d2
+    @testset "Debug and Record prox parameter" begin
+        io = IOBuffer()
+        mpo = ManifoldProximalMapObjective(f, [prox1, prox2, prox3])
+        p = DefaultManoptProblem(M, mpo)
+        ds = DebugSolverState(s, DebugProximalParameter(; io=io))
+        step_solver!(p, ds, 1)
+        debug = String(take!(io))
+        @test startswith(debug, "λ:")
+        rs = RecordSolverState(s, RecordProximalParameter())
+        step_solver!(p, rs, 1)
+        @test get_record(rs) == [1.0]
+    end
 end

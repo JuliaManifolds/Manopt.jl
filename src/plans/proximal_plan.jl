@@ -244,13 +244,13 @@ mutable struct DebugProximalParameter <: DebugAction
     end
 end
 function (d::DebugProximalParameter)(
-    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+    ::AbstractManoptProblem, cpps::CyclicProximalPointState, i::Int
 )
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(i))
     return nothing
 end
 function (d::DebugProximalParameter)(
-    ::AbstractManoptProblem, cpps::CyclicProximalPointState, i::Int
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
 )
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(i))
     return nothing
