@@ -110,7 +110,7 @@ begin
     M = Sphere(2)
     x = 1 / sqrt(2) * [1.0, 0.0, 1.0]
     Random.seed!(42)
-    data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
+    data = [exp(M, x,  σ * rand(M; vector_at=x)) for i in 1:n]
 end
 
 # ╔═╡ 9b130a57-293d-429d-88b5-78bfacbf836f

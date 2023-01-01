@@ -106,7 +106,7 @@ function set_iterate!(alms::AugmentedLagrangianMethodState, M, p)
 end
 
 @doc raw"""
-    augmented_Lagrangian_method(M, f, grad_f, p=random_point(M); kwargs...)
+    augmented_Lagrangian_method(M, f, grad_f, p=rand(M); kwargs...)
 
 perform the augmented Lagrangian method (ALM)[^LiuBoumal2020]. The aim of the ALM is to find the solution of the [`ConstrainedProblem`](@ref)
 
@@ -195,13 +195,13 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
     > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 """
 function augmented_Lagrangian_method(
-    M::AbstractManifold, f::TF, grad_f::TGF, p=random_point(M); kwargs...
+    M::AbstractManifold, f::TF, grad_f::TGF, p=rand(M); kwargs...
 ) where {TF,TGF}
     q = copy(M, p)
     return augmented_Lagrangian_method!(M, f, grad_f, q; kwargs...)
 end
 @doc raw"""
-    augmented_Lagrangian_method!(M, f, grad_f p=random_point(M); kwargs...)
+    augmented_Lagrangian_method!(M, f, grad_f p=rand(M); kwargs...)
 
 perform the augmented Lagrangian method (ALM) in-place of `p`.
 
@@ -211,7 +211,7 @@ function augmented_Lagrangian_method!(
     M::AbstractManifold,
     f::TF,
     grad_f::TGF,
-    p=random_point(M);
+    p=rand(M);
     g=nothing,
     h=nothing,
     grad_g=nothing,

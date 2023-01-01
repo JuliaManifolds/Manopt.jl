@@ -246,7 +246,7 @@ where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector 
 last direction multiplied by momentum ``m``.
 
 # Fields
-* `p_old` - (`random_point(M)`) remember the last iterate for parallel transporting the last direction
+* `p_old` - (`rand(M)`) remember the last iterate for parallel transporting the last direction
 * `momentum` – (`0.2`) factor for momentum
 * `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
   add the momentum to.
@@ -260,7 +260,7 @@ Equivalently you can also use a `Manifold` `M` instead of the [`AbstractManoptPr
 
     MomentumGradient(
         M::AbstractManifold;
-        p=random_point(M),
+        p=rand(M),
         s::DirectionUpdateRule=IdentityUpdateRule();
         X=zero_vector(p.M, x0), momentum=0.2
         vector_transport_method=default_vector_transport_method(M),
@@ -280,7 +280,7 @@ mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} 
 end
 function MomentumGradient(
     M::AbstractManifold,
-    p::P=random_point(M);
+    p::P=rand(M);
     direction::DirectionUpdateRule=IdentityUpdateRule(),
     vector_transport_method::VTM=ParallelTransport(),
     X=zero_vector(M, p),
@@ -353,7 +353,7 @@ mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
 end
 function AverageGradient(
     M::AbstractManifold,
-    p::P=random_point(M);
+    p::P=rand(M);
     n::Int=10,
     direction::DirectionUpdateRule=IdentityUpdateRule(),
     gradients=[zero_vector(M, p) for _ in 1:n],

@@ -27,7 +27,6 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @testset "Helper & Data Tests" begin
         include("helpers/test_error_measures.jl")
         include("helpers/test_data.jl")
-        include("helpers/test_random.jl")
         include("helpers/test_checks.jl")
     end
     @testset "Solver Tests       " begin

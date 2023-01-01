@@ -329,7 +329,7 @@ function forward_operator(
     apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
     p,
 )
-    q = random_point(N)
+    q = rand(N)
     apdmo.Λ!!(M, q, p)
     return q
 end

@@ -151,7 +151,6 @@ function __init__()
             mean
         import Random: rand, randperm
         using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
-        include("helpers/random.jl")
         # adaptions for Nonmutating manifolds
         const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
         include("functions/manifold_functions.jl")
@@ -159,7 +158,7 @@ function __init__()
         include("plans/nonmutating_manifolds_plans.jl")
         include("plans/alternating_gradient_plan.jl")
         include("solvers/alternating_gradient_descent.jl")
-        export random_point, random_tangent, mid_point, mid_point!, reflect, reflect!
+        export mid_point, mid_point!, reflect, reflect!
         export AlternatingGradientDescentState, AlternatingGradientProblem
         export AlternatingGradient
         export alternating_gradient_descent, alternating_gradient_descent!

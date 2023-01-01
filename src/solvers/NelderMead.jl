@@ -87,7 +87,7 @@ mutable struct NelderMeadState{
     end
 end
 function NelderMeadState(M::AbstractManifold; kwargs...)
-    population = [random_point(M) for i in 1:(manifold_dimension(M) + 1)]
+    population = [rand(M) for i in 1:(manifold_dimension(M) + 1)]
     return NelderMeadState(M, population; kwargs...)
 end
 get_iterate(O::NelderMeadState) = O.p
@@ -111,7 +111,7 @@ and
 
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function to minimize
-* `population` – (n+1 `random_point(M)`s) an initial population of ``n+1`` points, where ``n``
+* `population` – (n+1 `rand(M)`s) an initial population of ``n+1`` points, where ``n``
   is the dimension of the manifold `M`.
 
 # Optional
@@ -137,7 +137,7 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
 function NelderMead(
     M::AbstractManifold,
     f::TF,
-    population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
+    population=[rand(M) for i in 1:(manifold_dimension(M) + 1)];
     kwargs...,
 ) where {TF}
     res_population = copy.(Ref(M), population)
@@ -154,7 +154,7 @@ For more options see [`NelderMead`](@ref).
 function NelderMead!(
     M::AbstractManifold,
     f::TF,
-    population=[random_point(M) for i in 1:(manifold_dimension(M) + 1)];
+    population=[rand(M) for i in 1:(manifold_dimension(M) + 1)];
     stopping_criterion::StoppingCriterion=StopAfterIteration(200000),
     α=1.0,
     γ=2.0,

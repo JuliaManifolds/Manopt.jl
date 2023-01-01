@@ -7,7 +7,7 @@ n = size(A, 1)
 p = 2
 N = Grassmann(n, p)
 M = PowerManifold(N, ArrayPowerRepresentation(), 2)
-x = random_point(M)
+x = rand(M)
 
 x_opt = trust_regions(M, cost, rgrad, rhess, x; max_trust_region_radius=8.0)
 @btime x_opt = trust_regions($M, $cost, $rgrad, $rhess, $x; max_trust_region_radius=8.0)

@@ -1,5 +1,5 @@
 @doc raw"""
-    check_differential(M, F, dF, p=random_point(M), X=random_tangent(M,p))
+    check_differential(M, F, dF, p=rand(M), X=rand(M; vector_at=p))
 
 Check numerivcally whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 
@@ -24,8 +24,8 @@ function check_differential(
     M::AbstractManifold,
     F,
     dF,
-    p=random_point(M),
-    X=random_tangent(M, p);
+    p=rand(M),
+    X=rand(M; vector_at=p);
     plot=false,
     throw_error=false,
     io::Union{IO,Nothing}=nothing,
@@ -70,7 +70,7 @@ function check_differential(
 end
 
 @doc raw"""
-    check_gradient(M, F, gradF, p=random_point(M), X=random_tangent(M,p); kwargs...)
+    check_gradient(M, F, gradF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
 Check numerivcally whether the gradient `gradF(M,p)` of `F(M,p)` is correct.
 
@@ -84,8 +84,8 @@ function check_gradient(
     M::AbstractManifold,
     F,
     gradF,
-    p=random_point(M),
-    X=random_tangent(M, p);
+    p=rand(M),
+    X=rand(M; vector_at=p);
     check_vector=true,
     throw_error=false,
     kwargs...,

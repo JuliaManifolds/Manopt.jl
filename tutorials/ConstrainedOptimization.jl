@@ -128,7 +128,7 @@ grad_g(M, p) = project.(
 md"We further start in a random point:"
 
 # ╔═╡ 72e99369-165b-494e-9acc-7719a12d9d8d
-x0 = random_point(M);
+x0 = rand(M);
 
 # ╔═╡ aedd3604-7df6-46c5-a393-213da785b84f
 md" Let's check a few things for the initial point"

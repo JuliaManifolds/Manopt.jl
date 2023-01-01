@@ -34,7 +34,7 @@ begin
     σ = π / 8
     x = zeros(Float64, m + 1)
     x[2] = 1.0
-    data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
+    data = [exp(M, x, σ * rand(M; vector_at=x)) for i in 1:n]
 end
 
 # ╔═╡ 604b880f-faf5-4d1c-a6b9-cd94e2a8bf46

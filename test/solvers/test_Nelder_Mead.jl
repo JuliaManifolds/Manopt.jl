@@ -31,7 +31,7 @@ Random.seed!(29)
         A = randn(3, 3)
         A .= (A - A') ./ 2
         f(::Rotations, x) = norm(A * x * x * A)
-        x0 = [random_point(M) for _ in 1:12]
+        x0 = [rand(M) for _ in 1:12]
         o = NelderMead(
             M,
             f,

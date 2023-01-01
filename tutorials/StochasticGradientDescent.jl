@@ -28,7 +28,7 @@ which of course can be (and is) solved by a gradient descent, see the introducti
 If ``N`` is very large, evaluating the complete gradient might be quite expensive.
 A remedy is to evaluate only one of the terms at a time and choose a random order for these.
 
-We first initialize the packages 
+We first initialize the packages
 """
 
 # ╔═╡ 84528b83-f11d-42de-9e86-fc9f3d451500
@@ -52,7 +52,7 @@ begin
     M = Sphere(2)
     x = 1 / sqrt(2) * [1.0, 0.0, 1.0]
     Random.seed!(42)
-    data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
+    data = [exp(M, x,  σ * rand(M; vector_at=x)) for i in 1:n]
     localpath = join(splitpath(@__FILE__)[1:(end - 1)], "/") # files folder
     image_prefix = localpath * "/stochastic_gradient_descent"
     @info image_prefix

@@ -159,8 +159,8 @@ i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i
 
 # Optional
 * `n` - (`100`) number of random initial positions of x0
-* `x0` – the initial positions of each particle in the swarm ``x_k^{(0)} ∈ \mathcal M`` for ``k = 1, \dots, n``, per default these are n [`random_point`](@ref)s
-* `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a [`random_tangent`](@ref) per inital position
+* `x0` – the initial positions of each particle in the swarm ``x_k^{(0)} ∈ \mathcal M`` for ``k = 1, \dots, n``, per default these are n random points on `M`
+* `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per inital position
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
@@ -181,7 +181,7 @@ function particle_swarm(
     M::AbstractManifold,
     F::TF;
     n::Int=100,
-    x0::AbstractVector=[random_point(M) for i in 1:n],
+    x0::AbstractVector=[rand(M) for i in 1:n],
     kwargs...,
 ) where {TF}
     x_res = copy.(Ref(M), x0)
@@ -189,7 +189,7 @@ function particle_swarm(
 end
 
 @doc raw"""
-    patricle_swarm!(M, F; n=100, x0::AbstractVector=[random_point(M) for i in 1:n], kwargs...)
+    patricle_swarm!(M, F; n=100, x0::AbstractVector=[rand(M) for i in 1:n], kwargs...)
 
 perform the particle swarm optimization algorithm (PSO), starting with the initial particle positions ``x_0``[^Borckmans2010]
 in place of `x0`.
@@ -200,7 +200,7 @@ in place of `x0`.
 
 # Optional
 * `n` - (`100`) number of random initial positions of x0
-* `x0` – the initial positions of each particle in the swarm ``x_k^{(0)} ∈ \mathcal M`` for ``k = 1, \dots, n``, per default these are n [`random_point`](@ref)s
+* `x0` – the initial positions of each particle in the swarm ``x_k^{(0)} ∈ \mathcal M`` for ``k = 1, \dots, n``, per default these are n random points on `M`s
 
 for more optional arguments, see [`particle_swarm`](@ref).
 """
@@ -208,8 +208,8 @@ function particle_swarm!(
     M::AbstractManifold,
     f::TF;
     n::Int=100,
-    x0::AbstractVector=[random_point(M) for i in 1:n],
-    velocity::AbstractVector=[random_tangent(M, y) for y in x0],
+    x0::AbstractVector=[rand(M) for i in 1:n],
+    velocity::AbstractVector=[rand(M; vector_at=y) for y in x0],
     inertia::Real=0.65,
     social_weight::Real=1.4,
     cognitive_weight::Real=1.4,

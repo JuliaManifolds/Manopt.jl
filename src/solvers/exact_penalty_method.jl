@@ -86,7 +86,7 @@ function set_iterate!(epms::ExactPenaltyMethodState, M, p)
 end
 
 @doc raw"""
-    exact_penalty_method(M, F, gradF, p=random_point(M); kwargs...)
+    exact_penalty_method(M, F, gradF, p=rand(M); kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
 
@@ -179,14 +179,14 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function exact_penalty_method(
-    M::AbstractManifold, f::TF, grad_f::TGF, p=random_point(M); kwargs...
+    M::AbstractManifold, f::TF, grad_f::TGF, p=rand(M); kwargs...
 ) where {TF,TGF}
     q = copy(M, p)
     return exact_penalty_method!(M, f, grad_f, q; kwargs...)
 end
 
 @doc raw"""
-    exact_penalty_method!(M, f, grad_f, p=random_point(M); kwargs...)
+    exact_penalty_method!(M, f, grad_f, p=rand(M); kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020] in place of `p`.
 
@@ -196,7 +196,7 @@ function exact_penalty_method!(
     M::AbstractManifold,
     f::TF,
     grad_f::TGF,
-    p=random_point(M);
+    p=rand(M);
     g=nothing,
     h=nothing,
     grad_g=nothing,

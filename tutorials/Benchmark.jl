@@ -31,7 +31,7 @@ begin
     σ = π / 8
     x = zeros(Float64, m + 1)
     x[2] = 1.0
-    data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
+    data = [exp(M, x, σ * rand(M, vector_at=x)) for i in 1:n]
 end;
 
 # ╔═╡ 1436cdc7-1e84-4438-937d-2211856348de
@@ -55,7 +55,7 @@ We further set the stopping criterion to be a little more strict. Then we obtain
 # ╔═╡ 5a2d6d9f-20dc-41a2-bfce-32509a1ef106
 begin
     sc = StopWhenGradientNormLess(1e-10)
-    x0 = random_point(M)
+    x0 = rand(M)
     m1 = gradient_descent(M, F, gradF, x0; stopping_criterion=sc)
     @benchmark gradient_descent($M, $F, $gradF, $x0; stopping_criterion=$sc)
 end

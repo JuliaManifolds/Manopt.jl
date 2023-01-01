@@ -339,7 +339,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     # Determine eta0
     if trs.randomize
         # Random vector in T_x M (this has to be very small)
-        trs.η = random_tangent(M, trs.p, 10.0^(-6))
+        trs.η = 10.0^(-6) * rand(M; vector_at=trs.p)
         while norm(M, trs.p, trs.η) > trs.trust_region_radius
             # inside trust-region
             trs.η *= sqrt(sqrt(eps(Float64)))

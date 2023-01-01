@@ -405,7 +405,7 @@ thereof.
 struct StochasticGradient{T} <: AbstractGradientGroupProcessor
     dir::T
 end
-function StochasticGradient(M::AbstractManifold; p=random_point(M), X=zero_vector(M, p))
+function StochasticGradient(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
     return StochasticGradient{typeof(X)}(X)
 end
 

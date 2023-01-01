@@ -67,7 +67,7 @@ M = SymmetricPositiveDefinite(n)
 
 # ╔═╡ 09e304f8-b153-4076-81d7-a3a01644d65a
 begin
-    data = [random_point(M) for _ in 1:N]
+    data = [rand(M) for _ in 1:N]
     weights = rand(N)
     weights ./= sum(weights)
 end;

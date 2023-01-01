@@ -7,7 +7,7 @@ Describes a Gradient based descent algorithm, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p – (`random_point(M)` the current iterate
+* `p – (`rand(M)` the current iterate
 * `X` – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``, initialised to zero vector.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`ConstantStepsize`](@ref)`()`) a [`Stepsize`](@ref)
@@ -17,7 +17,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    GradientDescentState(M, p=random_point(M); X=zero_vector(M, p), kwargs...)
+    GradientDescentState(M, p=rand(M); X=zero_vector(M, p), kwargs...)
 
 Generate gradient descent options, where `X` can be used to set the tangent vector to store
 the gradient in a certain type; it will be initialised accordingly at a later stage.
@@ -55,7 +55,7 @@ mutable struct GradientDescentState{
 end
 function GradientDescentState(
     M::AbstractManifold,
-    p::P=random_point(M);
+    p::P=rand(M);
     X::T=zero_vector(M, p),
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
     stepsize::Stepsize=ConstantStepsize(),

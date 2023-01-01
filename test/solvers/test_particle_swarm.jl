@@ -31,8 +31,8 @@ using Random
         Random.seed!(42)
         M = Sphere(2)
         f(::Sphere, p) = transpose(p) * A * p
-        p_start = [random_point(M) for i in 1:3]
-        X_start = [random_tangent(M, y) for y in p_start]
+        p_start = [rand(M) for i in 1:3]
+        X_start = [rand(M; vector_at=y) for y in p_start]
         p = DefaultManoptProblem(M, ManifoldCostObjective(f))
         o = ParticleSwarmState(M, zero.(p_start), X_start)
         # test set_iterate
