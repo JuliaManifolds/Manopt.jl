@@ -44,7 +44,7 @@ end
         X = zero_vector(M, p)
         # allocating
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
-        mcgoa = ManifoldCostGradientObjective(TestCostCount(0), TestGradCount(0))
+        mcgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         sco1 = Manopt.SimpleCacheObjective(M, mgoa; p=p)
         # We evaluated on init -> 1
         @test get_gradient_function(sco1).i == 1
@@ -80,8 +80,8 @@ end
         get_gradient!(M, X, sco2, q)
         @test X == zero_vector(M, q)
         @test get_cost(M, sco2, q) == 1.0
-        @test get_gradient_function(sco3).i == 2
-        @test get_cost_function(sco3).i == 2
+        @test get_gradient_function(sco2).i == 2
+        @test get_cost_function(sco2).i == 2
 
         mcgoa = ManifoldCostGradientObjective(TestCostGradCount(0))
         sco3 = Manopt.SimpleCacheObjective(M, mcgoa; p=p, initialized=false)
