@@ -4,7 +4,7 @@
 Returns the default [`Stepsize`](@ref) functor used when running the solver specified by the
 [`AbstractManoptSolverState`](@ref) `ams` running with an objective on the [`AbstractManifold`](@ref) `M`.
 """
-default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
+default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
 """
     ConstantStepsize <: Stepsize
@@ -16,9 +16,9 @@ A functor that always returns a fixed step size.
 
 # Constructors
 
-    ConstantStepsize(s)
+    ConstantStepsize(s::Real)
 
-initialize the stepsize to a constant `s` (deprecated)
+initialize the stepsize to a constant `s`.
 
     ConstantStepsize(M::AbstractManifold=DefaultManifold(2); stepsize=injectivity_radius(M)/2)
 

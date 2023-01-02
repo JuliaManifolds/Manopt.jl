@@ -1,4 +1,78 @@
-export DouglasRachford
+@doc raw"""
+    DouglasRachfordState <: AbstractManoptSolverState
+
+Store all options required for the DouglasRachford algorithm,
+
+# Fields
+* `p` - the current iterate (result) For the parallel Douglas-Rachford, this is
+  not a value from the `PowerManifold` manifold but the mean.
+* `s` – the last result of the double reflection at the proxes relaxed by `α`.
+* `λ` – function to provide the value for the proximal parameter during the calls
+* `α` – relaxation of the step from old to new iterate, i.e.
+  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
+  of the double reflection involved in the DR algorithm
+* `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
+* `stop` – a [`StoppingCriterion`](@ref)
+* `parallel` – indicate whether we are running a parallel Douglas-Rachford or not.
+
+# Constructor
+
+    DouglasRachfordState(M, p; kwargs...)
+
+Generate the options for a Manifold `M` and an initial point `p`, where the following keyword arguments can be used
+
+* `λ` – (`(iter)->1.0`) function to provide the value for the proximal parameter
+  during the calls
+* `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
+  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
+  of the double reflection involved in the DR algorithm
+* `R` – ([`reflect`](@ref)) method employed in the iteration to perform the reflection of `x` at
+  the prox `p`.
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
+* `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
+  or not.
+"""
+mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S} <: AbstractManoptSolverState
+    p::P
+    p_tmp::P
+    s::P
+    s_tmp::P
+    λ::Tλ
+    α::Tα
+    R::TR
+    stop::S
+    parallel::Bool
+    function DouglasRachfordState(
+        ::AbstractManifold,
+        p::P;
+        λ::Fλ=i -> 1.0,
+        α::Fα=i -> 0.9,
+        R::FR=Manopt.reflect,
+        stopping_criterion::S=StopAfterIteration(300),
+        parallel=false,
+    ) where {P,Fλ,Fα,FR,S<:StoppingCriterion}
+        return new{P,Fλ,Fα,FR,S}(
+            p, copy(p), copy(p), copy(p), λ, α, R, stopping_criterion, parallel
+        )
+    end
+end
+get_iterate(drs::DouglasRachfordState) = drs.p
+function set_iterate!(drs::DouglasRachfordState, p)
+    drs.p = p
+    return drs
+end
+
+function (d::DebugProximalParameter)(
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(i))
+    return nothing
+end
+function (r::RecordProximalParameter)(
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+)
+    return record_or_reset!(r, cpps.λ(i), i)
+end
 @doc raw"""
      DouglasRachford(M, f, proxes_f, p)
 Computes the Douglas-Rachford algorithm on the manifold ``\mathcal M``, initial

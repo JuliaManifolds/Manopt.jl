@@ -1,4 +1,3 @@
-
 """
     SubGradientMethodState <: AbstractManoptSolverState
 
@@ -34,7 +33,7 @@ mutable struct SubGradientMethodState{
         M::TM,
         p::P;
         stopping_criterion::SC=StopAfterIteration(5000),
-        stepsize::S=ConstantStepsize(M),
+        stepsize::S=default_stepsize(M, SubGradientMethodState),
         X::T=zero_vector(M, p),
         retraction_method::TR=default_retraction_method(M),
     ) where {
@@ -55,6 +54,9 @@ get_subgradient(sgs::SubGradientMethodState) = sgs.X
 function set_iterate!(sgs::SubGradientMethodState, M, p)
     copyto!(M, sgs.p, p)
     return sgs
+end
+function default_stepsize(M::AbstractManifold, ::Type{SubGradientMethodState})
+    return ConstantStepsize(M)
 end
 
 @doc raw"""
@@ -123,7 +125,7 @@ function subgradient_method!(
     ∂f!!::TdF,
     p;
     retraction_method::TRetr=default_retraction_method(M),
-    stepsize::Stepsize=ConstantStepsize(M),
+    stepsize::Stepsize=default_stepsize(M, SubGradientMethodState),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #especially may contain debug

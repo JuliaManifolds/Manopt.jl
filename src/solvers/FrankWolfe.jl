@@ -55,7 +55,7 @@ mutable struct FrankWolfeState{
         initial_vector::T=zero_vector(M, p),
         stopping_criterion::TStop=StopAfterIteration(200) |
                                   StopWhenGradientNormLess(1.0e-6),
-        stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
+        stepsize::TStep=default_stepsize(M, FrankWolfeState),
         retraction_method::TM=default_retraction_method(M),
         inverse_retraction_method::ITM=default_inverse_retraction_method(M),
     ) where {
@@ -86,6 +86,9 @@ function set_iterate!(O::FrankWolfeState, p)
     return O
 end
 get_gradient(O::FrankWolfeState) = O.X
+function default_stepsize(::AbstractManifold, ::Type{FrankWolfeState})
+    return DecreasingStepsize(; length=2.0, shift=2)
+end
 
 @doc raw"""
     Frank_Wolfe_method(M, F, grad_F, p)
@@ -114,9 +117,7 @@ use a retraction and its inverse.
 * `evaluation` ([`AllocatingEvaluation`](@ref)) whether `grad_F` is an inplace or allocating (default) funtion
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
 * `stopping_criterion` – [`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`
-* `subtask` specify the oracle, can either be a closed form solution (in place function `oracle(M, q, p, X)`
-  or a subsolver, e.g. (by default) a [`GradientProblem`](@ref) with [`GradientDescentState`](@ref)
-  using the [`FrankWolfeCost`](@ref) and [`FrankWolfeGradient`](@ref).
+* `retraction_method` – (`default_retraction_method(M)`) a type of retraction
 * `stepsize` ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`
   a [`Stepsize`](@ref) to use; but it has to be always less than 1. The default is the one proposed by Frank & Wolfe:
   ``s_k = \frac{2}{k+2}``.
@@ -141,6 +142,7 @@ function Frank_Wolfe_method!(
     grad_f,
     p;
     initial_vector=zero_vector(M, p),
+    retraction_method=default_retraction_method(M),
     sub_cost=FrankWolfeCost(p, initial_vector),
     sub_grad=FrankWolfeGradient(p, initial_vector),
     sub_objective=ManifoldGradientObjective(sub_cost, sub_grad),
@@ -152,15 +154,17 @@ function Frank_Wolfe_method!(
             M,
             copy(M, p);
             stopping_criterion=sub_stopping_criterion,
-            stepsize=ArmijoLinesearch(M),
+            stepsize=default_stepsize(
+                M, GradientDescentState; retraction_method=retraction_method
+            ),
         ),
         sub_kwargs...,
     ),
     evaluation=AllocatingEvaluation(),
+    stepsize::TStep=default_stepsize(M, FrankWolfeState),
     stopping_criterion::TStop=StopAfterIteration(200) |
                               StopWhenGradientNormLess(1.0e-8) |
                               StopWhenChangeLess(1.0e-8),
-    stepsize::TStep=DecreasingStepsize(; length=2.0, shift=2),
     kwargs..., #collect rest
 ) where {TStop<:StoppingCriterion,TStep<:Stepsize}
     mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
@@ -171,6 +175,7 @@ function Frank_Wolfe_method!(
         sub_problem,
         sub_state;
         initial_vector=initial_vector,
+        retraction_method=retraction_method,
         stepsize=stepsize,
         stopping_criterion=stopping_criterion,
     )

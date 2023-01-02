@@ -54,7 +54,7 @@ function AlternatingGradientDescentState(
     order::Vector{<:Int}=Int[],
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
-    stepsize::Stepsize=ConstantStepsize(M),
+    stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
 ) where {P,T}
     return AlternatingGradientDescentState{
         P,
@@ -116,6 +116,10 @@ function (a::ArmijoLinesearch)(
         a.retraction_method,
     )
     return a.last_stepsize
+end
+
+function default_stepsize(M::AbstractManifold, ::Type{AlternatingGradientDescentState})
+    return ArmijoLinesearch(M)
 end
 
 @doc raw"""
@@ -190,7 +194,7 @@ function alternating_gradient_descent!(
     inner_iterations::Int=5,
     stopping_criterion::StoppingCriterion=StopAfterIteration(100) |
                                           StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=ArmijoLinesearch(M),
+    stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
     order_type::Symbol=:Linear,
     order=collect(1:(grad_f isa Function ? length(grad_f(M, p)) : length(grad_f))),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),

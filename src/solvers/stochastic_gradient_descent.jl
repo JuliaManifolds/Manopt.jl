@@ -1,3 +1,105 @@
+
+"""
+    StochasticGradientDescentState <: AbstractGradientDescentSolverState
+
+Store the following fields for a default stochastic gradient descent algorithm,
+see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient_descent`](@ref).
+
+# Fields
+
+* `x` the current iterate
+* `direction` ([`StochasticGradient`](@ref)) a direction update to use
+* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
+* `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
+* `evaluation_order` – (`:Random`) – whether
+  to use a randomly permuted sequence (`:FixedRandom`), a per
+  cycle permuted sequence (`:Linear`) or the default `:Random` one.
+* `order` the current permutation
+* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+
+# Constructor
+    StochasticGradientDescentState(M, x)
+
+Create a `StochasticGradientDescentState` with start point `x`.
+all other fields are optional keyword arguments, and the defaults are taken from `M`.
+"""
+mutable struct StochasticGradientDescentState{
+    TX,
+    TV,
+    D<:DirectionUpdateRule,
+    TStop<:StoppingCriterion,
+    TStep<:Stepsize,
+    RM<:AbstractRetractionMethod,
+} <: AbstractGradientSolverState
+    p::TX
+    X::TV
+    direction::D
+    stop::TStop
+    stepsize::TStep
+    order_type::Symbol
+    order::Vector{<:Int}
+    retraction_method::RM
+    k::Int # current iterate
+end
+
+function StochasticGradientDescentState(
+    M::AbstractManifold,
+    p::P,
+    X::Q;
+    direction::D=StochasticGradient(zero_vector(M, p)),
+    order_type::Symbol=:RandomOrder,
+    order::Vector{<:Int}=Int[],
+    retraction_method::RM=default_retraction_method(M),
+    stopping_criterion::SC=StopAfterIteration(1000),
+    stepsize::S=default_stepsize(M, StochasticGradientDescentState),
+) where {
+    P,
+    Q,
+    D<:DirectionUpdateRule,
+    RM<:AbstractRetractionMethod,
+    SC<:StoppingCriterion,
+    S<:Stepsize,
+}
+    return StochasticGradientDescentState{P,Q,D,SC,S,RM}(
+        p,
+        X,
+        direction,
+        stopping_criterion,
+        stepsize,
+        order_type,
+        order,
+        retraction_method,
+        0,
+    )
+end
+
+"""
+    StochasticGradient <: AbstractGradientGroupProcessor
+
+The default gradient processor, which just evaluates the (stochastic) gradient or a subset
+thereof.
+"""
+struct StochasticGradient{T} <: AbstractGradientGroupProcessor
+    dir::T
+end
+function StochasticGradient(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
+    return StochasticGradient{typeof(X)}(X)
+end
+
+function (sg::StochasticGradient)(
+    apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, iter
+)
+    # for each new epoche choose new order if we are at random order
+    ((sgds.k == 1) && (sgds.order_type == :Random)) && shuffle!(sgds.order)
+    # i is the gradient to choose, either from the order or completely random
+    j = sgds.order_type == :Random ? rand(1:length(sgds.order)) : sgds.order[sgds.k]
+    return sgds.stepsize(apm, sgds, iter), get_gradient!(apm, sg.dir, sgds.p, j)
+end
+
+function default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
+    return ConstantStepsize(M)
+end
+
 @doc raw"""
     stochastic_gradient_descent(M, gradF, x)
 
@@ -60,7 +162,7 @@ function stochastic_gradient_descent!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
                                           StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=ConstantStepsize(M),
+    stepsize::Stepsize=default_stepsize(M, StochasticGradientDescentState),
     order_type::Symbol=:Random,
     order=collect(1:(grad_f isa Function ? length(grad_f(M, x)) : length(grad_f))),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),

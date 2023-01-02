@@ -531,8 +531,7 @@ function (d::DebugWarnIfCostIncreases)(
             @warn """The cost increased.
             At iteration #$i the cost increased from $(d.old_cost) to $(cost)."""
             if st isa GradientDescentState && st.stepsize isa ConstantStepsize
-                @warn """You seem to be running a `gradient_decent` with the default `ConstantStepsize`.
-                For ease of use, this is set as the default, but might not converge.
+                @warn """You seem to be running a `gradient_decent` with a `ConstantStepsize`.
                 Maybe consider to use `ArmijoLinesearch` (if applicable) or use
                 `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,st,i))."""
             end

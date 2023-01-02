@@ -1,4 +1,118 @@
 @doc raw"""
+    QuasiNewtonState <: AbstractManoptSolverState
+
+These Quasi Newton [`AbstractManoptSolverState`](@ref) represent any quasi-Newton based method and can be
+used with any update rule for the direction.
+
+# Fields
+* `x` – the current iterate, a point on a manifold
+* `gradient` – the current gradient
+* `sk` – the current step
+* `yk` the current gradient difference
+* `direction_update` - an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
+* `retraction_method` – an `AbstractRetractionMethod`
+* `stop` – a [`StoppingCriterion`](@ref)
+
+# Constructor
+
+    QuasiNewtonState(
+        M::AbstractManifold,
+        x;
+        initial_vector=zero_vector(M,x),
+        direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(M, x, InverseBFGS(), 20;
+            vector_transport_method=vector_transport_method,
+        )
+        stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
+        retraction_method::RM=default_retraction_method(M),
+        vector_transport_method::VTM=default_vector_transport_method(M),
+        stepsize=default_stepsize(M; QuasiNewtonState)
+    )
+
+# See also
+[`GradientProblem`](@ref)
+"""
+mutable struct QuasiNewtonState{
+    P,
+    T,
+    D<:AbstractQuasiNewtonDirectionUpdate,
+    SC<:StoppingCriterion,
+    S<:Stepsize,
+    RTR<:AbstractRetractionMethod,
+    VT<:AbstractVectorTransportMethod,
+} <: AbstractGradientSolverState
+    x::P
+    gradient::T
+    sk::T
+    yk::T
+    direction_update::D
+    retraction_method::RTR
+    stepsize::S
+    stop::SC
+    vector_transport_method::VT
+end
+function QuasiNewtonState(
+    M::AbstractManifold,
+    x::P;
+    initial_vector::T=zero_vector(M, x),
+    vector_transport_method::VTM=default_vector_transport_method(M),
+    direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
+        M, x, InverseBFGS(), 20; vector_transport_method=vector_transport_method
+    ),
+    stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
+    retraction_method::RM=default_retraction_method(M),
+    stepsize::S=default_stepsize(
+        M,
+        QuasiNewtonState;
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+    ),
+) where {
+    P,
+    T,
+    D<:AbstractQuasiNewtonDirectionUpdate,
+    SC<:StoppingCriterion,
+    S<:Stepsize,
+    RM<:AbstractRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+}
+    sk_init = zero_vector(M, x)
+    return QuasiNewtonState{P,typeof(sk_init),D,SC,S,RM,VTM}(
+        x,
+        initial_vector,
+        sk_init,
+        copy(M, sk_init),
+        direction_update,
+        retraction_method,
+        stepsize,
+        stopping_criterion,
+        vector_transport_method,
+    )
+end
+# Temporary
+get_iterate(qns::QuasiNewtonState) = qns.x
+function set_iterate!(qns::QuasiNewtonState, M, p)
+    copyto!(M, qns.x, p)
+    return qns
+end
+get_gradient(qns::QuasiNewtonState) = qns.gradient
+function set_gradient!(qns::QuasiNewtonState, M, p, X)
+    copyto!(M, p, qns.gradient, X)
+    return qns
+end
+function default_stepsize(
+    M::AbstractManifold,
+    ::Type{QuasiNewtonState};
+    vector_transport_method=default_vector_transport_method(M),
+    retraction_method=default_retraction_method(M),
+)
+    return WolfePowellLinesearch(
+        M;
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+        linesearch_stopsize=1e-12,
+    )
+end
+@doc raw"""
     quasi_Newton(M, F, gradF, x)
 
 Perform a quasi Newton iteration for `F` on the manifold `M` starting
@@ -90,11 +204,11 @@ function quasi_Newton!(
         end
     ),
     scale_initial_operator::Bool=true,
-    stepsize::Stepsize=WolfePowellLinesearch(
-        M;
+    stepsize::Stepsize=default_stepsize(
+        M,
+        QuasiNewtonState;
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
-        linesearch_stopsize=1e-12,
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
                                           StopWhenGradientNormLess(1e-6),

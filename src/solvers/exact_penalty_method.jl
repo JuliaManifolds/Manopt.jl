@@ -234,7 +234,7 @@ function exact_penalty_method!(
                 M, copy(M, p), InverseBFGS(), 30
             ),
             stopping_criterion=sub_stopping_criterion,
-            stepsize=WolfePowellLinesearch(M, 1e-4, 0.999; linesearch_stopsize=1e-8),
+            stepsize=default_stepsize(M, QuasiNewtonState),
         ),
         sub_kwargs...,
     ),

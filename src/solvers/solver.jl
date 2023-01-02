@@ -46,15 +46,6 @@ function decorate_state(
 end
 
 """
-    get_solver_result(ams::AbstractManoptSolverState)
-
-Return the final result after all iterations that is stored within
-the [`AbstractManoptSolverState`](@ref) `ams`, which was modified during the iterations.
-By default it uses[`get_iterate`](@ref)
-"""
-get_solver_result(ams::AbstractManoptSolverState) = get_iterate(ams)
-
-"""
     initialize_solver!(ams::AbstractManoptProblem, amp::AbstractManoptSolverState)
 
 Initialize the solver to the optimization [`AbstractManoptProblem`](@ref) `amp` by

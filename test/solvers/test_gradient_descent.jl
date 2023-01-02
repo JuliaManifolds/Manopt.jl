@@ -132,6 +132,7 @@ using Manopt, Manifolds, Test
             grad_f,
             pts[1];
             direction=MomentumGradient(M, copy(M, pts[1])),
+            stepsize=ConstantStepsize(M),
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, north, n3)
@@ -152,6 +153,7 @@ using Manopt, Manifolds, Test
             f,
             grad_f,
             1 / sqrt(2) .* [1.0, -1.0, 0.0];
+            stepsize=ConstantStepsize(1.0),
             debug=[DebugWarnIfCostIncreases(:Once)],
         )
     end

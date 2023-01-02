@@ -10,7 +10,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `p – (`rand(M)` the current iterate
 * `X` – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``, initialised to zero vector.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `stepsize` – ([`ConstantStepsize`](@ref)`()`) a [`Stepsize`](@ref)
+* `stepsize` – ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
 * `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
 * `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
   the default set for your manifold.
@@ -39,7 +39,7 @@ mutable struct GradientDescentState{
         p::P,
         X::T,
         stop::StoppingCriterion=StopAfterIteration(100),
-        step::Stepsize=ConstantStepsize(),
+        step::Stepsize=default_stepsize(M, GradientDescentState),
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         direction::DirectionUpdateRule=IdentityUpdateRule(),
     ) where {P,T}
@@ -58,17 +58,26 @@ function GradientDescentState(
     p::P=rand(M);
     X::T=zero_vector(M, p),
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    stepsize::Stepsize=ConstantStepsize(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    stepsize::Stepsize=default_stepsize(
+        M, GradientDescentState; retraction_method=retraction_method
+    ),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P,T}
     return GradientDescentState{P,T}(
         p, X, stopping_criterion, stepsize, retraction_method, direction
     )
 end
-
 function (r::IdentityUpdateRule)(mp::AbstractManoptProblem, s::GradientDescentState, i)
     return get_stepsize(mp, s, i), get_gradient!(mp, s.X, s.p)
+end
+function default_stepsize(
+    M::AbstractManifold,
+    ::Type{GradientDescentState};
+    retraction_method=default_retraction_method(M),
+)
+    # take a default with a slightly defensive initial step size.
+    return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=0.5)
 end
 
 @doc raw"""
@@ -137,11 +146,13 @@ function gradient_descent!(
     F::TF,
     gradF::TDF,
     p;
-    stepsize::Stepsize=ConstantStepsize(M),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    stepsize::Stepsize=default_stepsize(
+        M, GradientDescentState; retraction_method=retraction_method
+    ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(1e-9),
-    debug=[DebugWarnIfCostIncreases()],
+    debug=stepsize isa ConstantStepsize ? [DebugWarnIfCostIncreases()] : [],
     direction=IdentityUpdateRule(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #collect rest
