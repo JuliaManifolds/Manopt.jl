@@ -365,10 +365,7 @@ export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLag
 # Stepsize
 export Stepsize
 export ArmijoLinesearch,
-    ConstantStepsize,
-    DecreasingStepsize,
-    Linesearch,
-    NonmonotoneLinesearch
+    ConstantStepsize, DecreasingStepsize, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria
@@ -383,9 +380,8 @@ export StopAfter,
     StopWhenCurvatureIsNegative,
     StopWhenGradientNormLess,
     StopWhenModelIncreased
-    StopWhenSmallerOrEqual,
-    StopWhenStepsizeLess,
-    StopWhenTrustRegionIsExceeded,
+StopWhenSmallerOrEqual,
+StopWhenStepsizeLess, StopWhenTrustRegionIsExceeded,
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 export update_stopping_criterion!
 #

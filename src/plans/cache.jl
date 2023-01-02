@@ -14,7 +14,7 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
     SimpleCacheObjective(M::AbstractManifold, obj::AbstractManifoldGradientObjective; kwargs...)
 
 ## Keyword
-* `p` (`rand(M)`) – a point on the manifold to initialize the cache with
+* `p` (`rand(M)`) – a point on the manifold to initialize the cache with
 * `X` (`get_gradient(M, obj, p)` or `zero_vector(M,p)`) – a tangent vector to store the gradient in, see also `initialize`
 * `c` (`get_cost(M, obj, p)` or `0.0`) – a value to store the cost function in `initialize`
 * `initialized` (`true`) – whether to initialize the cached `X` and `c` or not.
@@ -78,10 +78,10 @@ function get_gradient!(M::AbstractManifold, X, sco::SimpleCacheObjective, p)
         get_gradient!(M, sco.X, sco.objective, p)
         scop_neq_p && (sco.c_valid = false)
         copyto!(M, sco.p, p)
-        copyto!(M, X, sco.p, sco.X)
         # if we switched points, invalidate c
         sco.X_valid = true
     end
+    copyto!(M, X, sco.p, sco.X)
     return X
 end
 get_gradient_function(sco::SimpleCacheObjective) = get_gradient_function(sco.objective)
@@ -91,7 +91,7 @@ get_gradient_function(sco::SimpleCacheObjective) = get_gradient_function(sco.obj
 #
 function get_cost(
     M::AbstractManifold,
-    sco::SimpleCacheObjective{AllocatingEvaluation,TC,TG,ManifoldCostGradientObjective},
+    sco::SimpleCacheObjective{AllocatingEvaluation,TC,TG,<:ManifoldCostGradientObjective},
     p,
 ) where {TC,TG}
     scop_neq_p = sco.p != p
@@ -105,7 +105,7 @@ function get_cost(
 end
 function get_cost(
     M::AbstractManifold,
-    sco::SimpleCacheObjective{InplaceEvaluation,TC,TG,ManifoldCostGradientObjective},
+    sco::SimpleCacheObjective{InplaceEvaluation,TC,TG,<:ManifoldCostGradientObjective},
     p,
 ) where {TC,TG}
     scop_neq_p = sco.p != p
@@ -158,10 +158,10 @@ function get_gradient!(
     if scop_neq_p || !sco.X_valid
         sco.c, sco.X = sco.objective.costgrad!!(M, p)
         copyto!(M, sco.p, p)
-        copyto!(M, X, sco.p, sco.X)
         sco.X_valid = true
         sco.c_valid = true
     end
+    copyto!(M, X, sco.p, sco.X)
     return X
 end
 function get_gradient!(
@@ -174,9 +174,9 @@ function get_gradient!(
     if scop_neq_p || !sco.X_valid
         sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
         sco.p = p
-        copyto!(M, X, sco.p, sco.X)
         sco.X_valid = true
         sco.c_valid = true
     end
+    copyto!(M, X, sco.p, sco.X)
     return X
 end
