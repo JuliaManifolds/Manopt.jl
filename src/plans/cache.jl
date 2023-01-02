@@ -112,7 +112,6 @@ function get_cost(
     if scop_neq_p || !sco.c_valid
         sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
         copyto!(M, sco.p, p)
-        copyto!(M, X, sco.p, sco.X)
         sco.X_valid = true
         sco.c_valid = true
     end

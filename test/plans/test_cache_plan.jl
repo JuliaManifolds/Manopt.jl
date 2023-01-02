@@ -33,7 +33,7 @@ end
 function (tcgc::TestCostGradCount)(M, X, p)
     tcgc.i += 1
     X .= p
-    return 1.0, X
+    return norm(p), X
 end
 
 @testset "Test Caches" begin
@@ -134,11 +134,16 @@ end
         @test get_gradient(M, sco4, q) == q
         get_gradient!(M, X, sco4, q) #cached
         @test X == q
-        @test get_cost(M, sco4, q) == 1.0
+        @test get_cost(M, sco4, q) == norm(q)
         @test sco4.objective.costgrad!!.i == 3
         get_gradient!(M, X, sco4, r)
         @test X == r
         @test get_gradient(M, sco4, r) == r # cached
         @test sco4.objective.costgrad!!.i == 4
+        @test get_cost(M, sco4, s) == norm(s)
+        get_gradient!(M, X, sco4, s) # cached
+        @test X == s
+        @test get_gradient(M, sco4, s) == s # cached
+        @test sco4.objective.costgrad!!.i == 5
     end
 end
