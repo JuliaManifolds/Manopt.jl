@@ -1,3 +1,50 @@
+
+"""
+    NelderMeadSimplex
+
+A simplex for the Nelder-Mead algorithm.
+
+# Constructors
+
+    NelderMeadSimplex(M::AbstractManifold)
+
+Construct a simplex using random points from manifold `M`.
+
+    NelderMeadSimplex(
+        M::AbstractManifold,
+        p,
+        B::AbstractBasis=DefaultOrthonormalBasis();
+        a::Real=0.025,
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    )
+
+Construct a simplex from a basis `B` with one point being `p` and other points
+constructed by moving by `a` in each principal direction defined by basis `B` of the tangent
+space at point `p` using retraction `retraction_method`. This works similarly to how
+the initial simplex is constructed in the Euclidean Nelder-Mead algorithm.
+"""
+struct NelderMeadSimplex{TP}
+    pts::Vector{TP}
+end
+
+function NelderMeadSimplex(M::AbstractManifold)
+    return NelderMeadSimplex([rand(M) for i in 1:(manifold_dimension(M) + 1)])
+end
+function NelderMeadSimplex(
+    M::AbstractManifold,
+    p,
+    B::AbstractBasis=DefaultOrthonormalBasis();
+    a::Real=0.025,
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+)
+    M_dim = manifold_dimension(M)
+    vecs = [
+        get_vector(M, p, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
+    ]
+    pts = map(X -> retract(M, p, X), vecs)
+    return NelderMeadSimplex(pts)
+end
+
 @doc raw"""
     NelderMeadState <: AbstractManoptSolverState
 
@@ -17,7 +64,7 @@ after the description
 * `γ` – (`2.`) expansion parameter (``γ > 0``)
 * `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
 * `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
-* `p` – (`copy(population[1])`) - a field to collect the current best value (initialized to _some_ point here)
+* `p` – (`copy(population.pts[1])`) - a field to collect the current best value (initialized to _some_ point here)
 * `retraction_method` – (`default_retraction_method(M)`) the rectraction to use.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 
@@ -39,7 +86,7 @@ mutable struct NelderMeadState{
     TR<:AbstractRetractionMethod,
     TI<:AbstractInverseRetractionMethod,
 } <: AbstractManoptSolverState
-    population::Vector{T}
+    population::NelderMeadSimplex{T}
     stop::S
     α::Tα
     γ::Tγ
@@ -51,7 +98,7 @@ mutable struct NelderMeadState{
     inverse_retraction_method::TI
     function NelderMeadState(
         M::AbstractManifold,
-        population::Vector{T};
+        population::NelderMeadSimplex{T};
         stopping_criterion::StoppingCriterion=StopAfterIteration(2000),
         α=1.0,
         γ=2.0,
@@ -61,7 +108,7 @@ mutable struct NelderMeadState{
         inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             M
         ),
-        p::T=copy(M, population[1]),
+        p::T=copy(M, population.pts[1]),
     ) where {T}
         return new{
             T,
@@ -97,8 +144,9 @@ function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)
 end
 
 @doc raw"""
-    NelderMead(M, f [, population])
-perform a Nelder-Mead minimization problem for the cost function ``f\colon \mathcal M`` on the
+    NelderMead(M::AbstractManifold, f [, population::NelderMeadSimplex])
+
+Solve a Nelder-Mead minimization problem for the cost function ``f\colon \mathcal M`` on the
 manifold `M`. If the initial population `p` is not given, a random set of
 points is chosen.
 
@@ -137,15 +185,16 @@ the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) fo
 function NelderMead(
     M::AbstractManifold,
     f::TF,
-    population=[rand(M) for i in 1:(manifold_dimension(M) + 1)];
+    population::NelderMeadSimplex=NelderMeadSimplex(M);
     kwargs...,
 ) where {TF}
-    res_population = copy.(Ref(M), population)
+    res_population = NelderMeadSimplex(copy.(Ref(M), population.pts))
     return NelderMead!(M, f, res_population; kwargs...)
 end
 @doc raw"""
-    NelderMead(M, F [, population])
-perform a Nelder Mead minimization problem for the cost function `f` on the
+    NelderMead(M::AbstractManifold, f [, population::NelderMeadSimplex])
+
+Solve a Nelder Mead minimization problem for the cost function `f` on the
 manifold `M`. If the initial population `population` is not given, a random set of
 points is chosen. If it is given, the computation is done in place of `population`.
 
@@ -154,7 +203,7 @@ For more options see [`NelderMead`](@ref).
 function NelderMead!(
     M::AbstractManifold,
     f::TF,
-    population=[rand(M) for i in 1:(manifold_dimension(M) + 1)];
+    population::NelderMeadSimplex=NelderMeadSimplex(M);
     stopping_criterion::StoppingCriterion=StopAfterIteration(200000),
     α=1.0,
     γ=2.0,
@@ -187,14 +236,14 @@ end
 #
 function initialize_solver!(mp::AbstractManoptProblem, s::NelderMeadState)
     # init cost and p
-    s.costs = get_cost.(Ref(mp), s.population)
-    return s.p = s.population[argmin(s.costs)] # select min
+    s.costs = get_cost.(Ref(mp), s.population.pts)
+    return s.p = s.population.pts[argmin(s.costs)] # select min
 end
 function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     M = get_manifold(mp)
-    m = mean(M, s.population)
+    m = mean(M, s.population.pts)
     ind = sortperm(s.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
-    ξ = inverse_retract(M, m, s.population[last(ind)], s.inverse_retraction_method)
+    ξ = inverse_retract(M, m, s.population.pts[last(ind)], s.inverse_retraction_method)
     # reflect last
     xr = retract(M, m, -s.α * ξ, s.retraction_method)
     Costr = get_cost(mp, xr)
@@ -202,7 +251,7 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     # is it better than the worst but not better than the best?
     if Costr >= s.costs[first(ind)] && Costr < s.costs[last(ind)]
         # store as last
-        s.population[last(ind)] = xr
+        s.population.pts[last(ind)] = xr
         s.costs[last(ind)] = Costr
         continue_steps = false
     end
@@ -211,7 +260,7 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
         xe = retract(M, m, -s.γ * s.α * ξ, s.retraction_method)
         Coste = get_cost(mp, xe)
         # successful? use the expanded, otherwise still use xr
-        s.population[last(ind)] .= Coste < Costr ? xe : xr
+        s.population.pts[last(ind)] .= Coste < Costr ? xe : xr
         s.costs[last(ind)] = min(Coste, Costr)
         continue_steps = false
     end
@@ -221,7 +270,7 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
         xc = retract(M, m, step * ξ, s.retraction_method)
         Costc = get_cost(mp, xc)
         if Costc < s.costs[last(ind)] # better than last ? -> store
-            s.population[last(ind)] = xc
+            s.population.pts[last(ind)] = xc
             s.costs[last(ind)] = Costc
             continue_steps = false
         end
@@ -231,22 +280,22 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
         for i in 2:length(ind)
             retract!(
                 M,
-                s.population[ind[i]],
-                s.population[ind[1]],
+                s.population.pts[ind[i]],
+                s.population.pts[ind[1]],
                 inverse_retract(
                     M,
-                    s.population[ind[1]],
-                    s.population[ind[i]],
+                    s.population.pts[ind[1]],
+                    s.population.pts[ind[i]],
                     s.inverse_retraction_method,
                 ),
                 s.σ,
                 s.retraction_method,
             )
             # update cost
-            s.costs[ind[i]] = get_cost(mp, s.population[ind[i]])
+            s.costs[ind[i]] = get_cost(mp, s.population.pts[ind[i]])
         end
     end
     # store best
-    s.p = s.population[argmin(s.costs)]
+    s.p = s.population.pts[argmin(s.costs)]
     return s
 end
