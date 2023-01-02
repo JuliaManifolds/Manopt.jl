@@ -379,9 +379,10 @@ export StopAfter,
     StopWhenCostLess,
     StopWhenCurvatureIsNegative,
     StopWhenGradientNormLess,
-    StopWhenModelIncreased
-StopWhenSmallerOrEqual,
-StopWhenStepsizeLess, StopWhenTrustRegionIsExceeded,
+    StopWhenModelIncreased,
+    StopWhenSmallerOrEqual,
+    StopWhenStepsizeLess,
+    StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 export update_stopping_criterion!
 #
