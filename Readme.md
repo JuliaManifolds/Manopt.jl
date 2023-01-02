@@ -1,6 +1,6 @@
 # Manopt.jl
 
-Optimization on Manifolds.
+Optimization Algorithm on Riemannian Manifolds.
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://manoptjl.org/stable)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
@@ -14,23 +14,43 @@ For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://
 
 > Find the minimizer x on ℳ, i.e. the (or a) point where f attains its minimum.
 
-`Manopt.jl` provides a framework for optimization on manifolds.
-Based on [Manopt](https://manopt.org) and
-[MVIRT](https://ronnybergmann.net/mvirt/), both implemented in Matlab,
-this toolbox aims to provide an easy access to optimization methods on manifolds
-for [Julia](https://julialang.org), including example data and visualization methods.
+`Manopt.jl` provides
+
+* A framework to implement arbitrary optimization algorithms on Riemannian Manifolds
+* A library of optimization algorithms on Riemannian manifolds
+* an easy-to-use interface for (debug) output and recording values during an algorithm run.
+* several tools to investigate the algorithms, gradients, and optimality criteria
 
 ## Getting started
 
 In Julia you can get started by just typing
 
 ```julia
-] add Manopt
+using Pkg; Pkg.ad("Manopt");
 ```
 
 then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial or the
 [examples](https://github.com/JuliaManifolds/Manopt.jl/tree/master/examples)
 in this repository.
+
+Manopt.jl is based on [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/),
+hence the algorithms can be used with _any_ manifold defined e.g. within [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/).
+
+## Further Packages & Links
+
+`Manopt.jl` belongs to the Manopt family:
+
+*  [manopt.org](https://www.manopt.org) – The Matlab version of Manopt, see also their :octocat: [GitHub repository](https://github.com/NicolasBoumal/manopt)
+* [pymanopt.org](https://www.pymanopt.org/) – The Python version of Manopt – providing also several AD backends, see also their :octocat: [GitHub repository](https://github.com/pymanopt/pymanopt)
+
+but there are also more packages providing tools on manifolds:
+
+* [Jax Geometry](https://bitbucket.org/stefansommer/jaxgeometry/src/main/) (Python/Jax) for differential geometry and stochastic dynamics with deep learning
+* [Geomstats](https://geomstats.github.io) (Python with several backends) focusing on statistics and machine learning :octocat: [GitHub repository](https://github.com/geomstats/geomstats)
+* [Geoopt](https://geoopt.readthedocs.io/en/latest/) (Python & PyTorch) – Riemannian ADAM & SGD. :octocat: [GitHub repository](https://github.com/geoopt/geoopt)
+* [McTorch](https://github.com/mctorch/mctorch) (Python & PyToch) – Riemannian SGD, Adagrad, ASA & CG.
+* [ROPTLIB](https://www.math.fsu.edu/~whuang2/papers/ROPTLIB.htm) (C++) a Riemannian OPTimization LIBrary :octocat: [GitHub repository](https://github.com/whuang08/ROPTLIB)
+* [TF Riemopt](https://github.com/master/tensorflow-riemopt) (Python & TensorFlow) Riemannian optimization using TensorFlow
 
 ## Citation
 

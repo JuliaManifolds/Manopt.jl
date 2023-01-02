@@ -1,7 +1,6 @@
 #
 # Stopping Criteria
 #
-
 @doc raw"""
     StopAfterIteration <: StoppingCriterion
 

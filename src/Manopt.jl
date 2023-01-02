@@ -363,21 +363,31 @@ export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 #
 # Stepsize
-export ConstantStepsize, DecreasingStepsize
-export Linesearch, ArmijoLinesearch, NonmonotoneLinesearch
+export Stepsize
+export ArmijoLinesearch,
+    ConstantStepsize,
+    DecreasingStepsize,
+    Linesearch,
+    NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria
-export StopWhenCurvatureIsNegative,
+export StoppingCriterion, StoppingCriterionSet
+export StopAfter,
+    StopAfterIteration,
     StopIfResidualIsReducedByFactorOrPower,
-    StopWhenSmallerOrEqual,
-    StopWhenTrustRegionIsExceeded,
+    StopWhenAll,
+    StopWhenAny,
+    StopWhenChangeLess,
+    StopWhenCostLess,
+    StopWhenCurvatureIsNegative,
+    StopWhenGradientNormLess,
     StopWhenModelIncreased
-export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
-export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny
+    StopWhenSmallerOrEqual,
+    StopWhenStepsizeLess,
+    StopWhenTrustRegionIsExceeded,
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
 export update_stopping_criterion!
-export StoppingCriterion, StoppingCriterionSet, Stepsize
 #
 # Data functions
 export artificial_S1_signal, artificial_S1_slope_signal, artificialIn_SAR_image
