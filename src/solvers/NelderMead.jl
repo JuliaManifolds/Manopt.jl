@@ -21,7 +21,8 @@ Construct a simplex using random points from manifold `M`.
 Construct a simplex from a basis `B` with one point being `p` and other points
 constructed by moving by `a` in each principal direction defined by basis `B` of the tangent
 space at point `p` using retraction `retraction_method`. This works similarly to how
-the initial simplex is constructed in the Euclidean Nelder-Mead algorithm.
+the initial simplex is constructed in the Euclidean Nelder-Mead algorithm, just in
+the tangent space at point `p`.
 """
 struct NelderMeadSimplex{TP}
     pts::Vector{TP}
@@ -41,7 +42,7 @@ function NelderMeadSimplex(
     vecs = [
         get_vector(M, p, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
     ]
-    pts = map(X -> retract(M, p, X), vecs)
+    pts = map(X -> retract(M, p, X, retraction_method), vecs)
     return NelderMeadSimplex(pts)
 end
 
@@ -70,9 +71,10 @@ after the description
 
 # Constructors
 
-    NelderMead(M[, population]; kwargs...)
+    NelderMead(M[, population::NelderMeadSimplex]; kwargs...)
 
-construct a Nelder-Mead Option with a default popultion (if not provided) of set of `dimension(M)+1` random points.
+Construct a Nelder-Mead Option with a default popultion (if not provided) of set of
+`dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
 
 In the constructor all fields (besides the population) are keyword arguments.
 """
@@ -98,7 +100,7 @@ mutable struct NelderMeadState{
     inverse_retraction_method::TI
     function NelderMeadState(
         M::AbstractManifold,
-        population::NelderMeadSimplex{T};
+        population::NelderMeadSimplex{T}=NelderMeadSimplex(M);
         stopping_criterion::StoppingCriterion=StopAfterIteration(2000),
         α=1.0,
         γ=2.0,
@@ -133,10 +135,7 @@ mutable struct NelderMeadState{
         )
     end
 end
-function NelderMeadState(M::AbstractManifold; kwargs...)
-    population = [rand(M) for i in 1:(manifold_dimension(M) + 1)]
-    return NelderMeadState(M, population; kwargs...)
-end
+
 get_iterate(O::NelderMeadState) = O.p
 function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)
     O.p = p
@@ -204,7 +203,8 @@ function NelderMead!(
     M::AbstractManifold,
     f::TF,
     population::NelderMeadSimplex=NelderMeadSimplex(M);
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200000),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200000) |
+                                          NelderMeadPopulationCriterion(),
     α=1.0,
     γ=2.0,
     ρ=1 / 2,
@@ -241,37 +241,41 @@ function initialize_solver!(mp::AbstractManoptProblem, s::NelderMeadState)
 end
 function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     M = get_manifold(mp)
-    m = mean(M, s.population.pts)
+
     ind = sortperm(s.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
-    ξ = inverse_retract(M, m, s.population.pts[last(ind)], s.inverse_retraction_method)
+    permute!(s.costs, ind)
+    permute!(s.population.pts, ind)
+    m = mean(M, s.population.pts[1:(end - 1)])
+    ξ = inverse_retract(M, m, s.population.pts[end], s.inverse_retraction_method)
+
     # reflect last
     xr = retract(M, m, -s.α * ξ, s.retraction_method)
     Costr = get_cost(mp, xr)
     continue_steps = true
     # is it better than the worst but not better than the best?
-    if Costr >= s.costs[first(ind)] && Costr < s.costs[last(ind)]
+    if Costr >= s.costs[1] && Costr < s.costs[end]
         # store as last
-        s.population.pts[last(ind)] = xr
-        s.costs[last(ind)] = Costr
+        s.population.pts[end] = xr
+        s.costs[end] = Costr
         continue_steps = false
     end
     # --- Expansion ---
-    if Costr < s.costs[first(ind)] # reflected is better than fist -> expand
+    if Costr < s.costs[1] # reflected is better than fist -> expand
         xe = retract(M, m, -s.γ * s.α * ξ, s.retraction_method)
         Coste = get_cost(mp, xe)
         # successful? use the expanded, otherwise still use xr
-        s.population.pts[last(ind)] .= Coste < Costr ? xe : xr
-        s.costs[last(ind)] = min(Coste, Costr)
+        s.population.pts[end] = Coste < Costr ? xe : xr
+        s.costs[end] = min(Coste, Costr)
         continue_steps = false
     end
     # --- Contraction ---
-    if continue_steps && Costr > s.costs[ind[end - 1]] # even worse than second worst
-        step = (Costr < s.costs[last(ind)] ? -s.ρ : s.ρ)
+    if continue_steps && Costr > s.costs[end - 1] # even worse than second worst
+        step = (Costr < s.costs[end] ? -s.ρ : s.ρ)
         xc = retract(M, m, step * ξ, s.retraction_method)
         Costc = get_cost(mp, xc)
-        if Costc < s.costs[last(ind)] # better than last ? -> store
-            s.population.pts[last(ind)] = xc
-            s.costs[last(ind)] = Costc
+        if Costc < s.costs[end] # better than last ? -> store
+            s.population.pts[end] = xc
+            s.costs[end] = Costc
             continue_steps = false
         end
     end
@@ -280,22 +284,45 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
         for i in 2:length(ind)
             retract!(
                 M,
-                s.population.pts[ind[i]],
-                s.population.pts[ind[1]],
+                s.population.pts[i],
+                s.population.pts[1],
                 inverse_retract(
-                    M,
-                    s.population.pts[ind[1]],
-                    s.population.pts[ind[i]],
-                    s.inverse_retraction_method,
+                    M, s.population.pts[1], s.population.pts[i], s.inverse_retraction_method
                 ),
                 s.σ,
                 s.retraction_method,
             )
             # update cost
-            s.costs[ind[i]] = get_cost(mp, s.population.pts[ind[i]])
+            s.costs[i] = get_cost(mp, s.population.pts[i])
         end
     end
     # store best
     s.p = s.population.pts[argmin(s.costs)]
     return s
+end
+
+mutable struct NelderMeadPopulationCriterion{TF<:Real,TX<:Real} <: StoppingCriterion
+    tol_f::TF
+    tol_x::TX
+    reason::String
+    function NelderMeadPopulationCriterion(tol_f::Real=1e-8, tol_x::Real=1e-8)
+        return new{typeof(tol_f),typeof(tol_x)}(tol_f, tol_x, "")
+    end
+end
+
+function (c::NelderMeadPopulationCriterion)(
+    mp::AbstractManoptProblem, s::NelderMeadState, i::Int
+)
+    (i == 0) && (c.reason = "") # reset on init
+    M = get_manifold(mp)
+    max_cdiff = maximum(cs -> abs(s.costs[1] - cs), s.costs[2:end])
+    max_xdiff = maximum(
+        p -> distance(M, s.population.pts[1], p, s.inverse_retraction_method),
+        s.population.pts[2:end],
+    )
+    if max_cdiff < c.tol_f && max_xdiff < c.tol_x
+        c.reason = "The simplex has shrunk below the assumed level (maximum cost difference is $max_cdiff, maximum point distance is $max_xdiff).\n"
+        return true
+    end
+    return false
 end
