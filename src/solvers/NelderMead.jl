@@ -60,7 +60,7 @@ after the description
 
 * `population` – an `Array{`point`,1}` of ``n+1`` points ``x_i``, ``i=1,…,n+1``, where ``n`` is the
   dimension of the manifold.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
 * `α` – (`1.`) reflection parameter (``α > 0``)
 * `γ` – (`2.`) expansion parameter (``γ > 0``)
 * `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
@@ -101,7 +101,8 @@ mutable struct NelderMeadState{
     function NelderMeadState(
         M::AbstractManifold,
         population::NelderMeadSimplex{T}=NelderMeadSimplex(M);
-        stopping_criterion::StoppingCriterion=StopAfterIteration(2000),
+        stopping_criterion::StoppingCriterion=StopAfterIteration(2000) |
+                                              StopWhenPopulationConcentrated(),
         α=1.0,
         γ=2.0,
         ρ=1 / 2,
@@ -163,7 +164,7 @@ and
 
 # Optional
 
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
 * `α` – (`1.`) reflection parameter (``α > 0``)
 * `γ` – (`2.`) expansion parameter (``γ``)
 * `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
@@ -203,8 +204,8 @@ function NelderMead!(
     M::AbstractManifold,
     f::TF,
     population::NelderMeadSimplex=NelderMeadSimplex(M);
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200000) |
-                                          NelderMeadPopulationCriterion(),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(2000) |
+                                          StopWhenPopulationConcentrated(),
     α=1.0,
     γ=2.0,
     ρ=1 / 2,
@@ -301,16 +302,16 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     return s
 end
 
-mutable struct NelderMeadPopulationCriterion{TF<:Real,TX<:Real} <: StoppingCriterion
+mutable struct StopWhenPopulationConcentrated{TF<:Real,TX<:Real} <: StoppingCriterion
     tol_f::TF
     tol_x::TX
     reason::String
-    function NelderMeadPopulationCriterion(tol_f::Real=1e-8, tol_x::Real=1e-8)
+    function StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_x::Real=1e-8)
         return new{typeof(tol_f),typeof(tol_x)}(tol_f, tol_x, "")
     end
 end
 
-function (c::NelderMeadPopulationCriterion)(
+function (c::StopWhenPopulationConcentrated)(
     mp::AbstractManoptProblem, s::NelderMeadState, i::Int
 )
     (i == 0) && (c.reason = "") # reset on init
@@ -321,7 +322,7 @@ function (c::NelderMeadPopulationCriterion)(
         s.population.pts[2:end],
     )
     if max_cdiff < c.tol_f && max_xdiff < c.tol_x
-        c.reason = "The simplex has shrunk below the assumed level (maximum cost difference is $max_cdiff, maximum point distance is $max_xdiff).\n"
+        c.reason = "After $i iterations the simplex has shrunk below the assumed level (maximum cost difference is $max_cdiff, maximum point distance is $max_xdiff).\n"
         return true
     end
     return false
