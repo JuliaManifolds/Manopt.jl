@@ -8,7 +8,7 @@ A simplex for the Nelder-Mead algorithm.
 
     NelderMeadSimplex(M::AbstractManifold)
 
-Construct a simplex using random points from manifold `M`.
+Construct a  simplex using ``n+1`` random points from manifold `M`, where ``n`` is the manifold dimension of `M`.
 
     NelderMeadSimplex(
         M::AbstractManifold,
