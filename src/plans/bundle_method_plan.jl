@@ -140,17 +140,12 @@ mutable struct BundleMethodOptions{
     end
 end
 get_iterate(o::BundleMethodOptions) = o.p_last_serious
-function BundleMethodSubsolver(o::BundleMethodOptions, X::T) where {T}
+function BundleMethodSubsolver(M::AbstractManifold, o::BundleMethodOptions, X::T) where {T}
     d = length(o.index_set)
-    lin_errors = o.lin_errors
     λ = Variable(d)
-    problem = minimize(0.5 * (sum(λ .* X))^2 + sum(λ .* lin_errors))
-    #add_constraint!(λ, λ .> 0)
-    problem.constraints +=  λ .>= 0
-    problem.constraints += sum(λ) == 1
-    #add_constraint!(λ, sum(λ) == 1)
+    problem = minimize(0.5 * norm(M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* o.lin_errors))
+    problem.constraints +=  [i >= 0 for i in λ]
+    problem.constraints += [sum(λ) == 1]
     solve!(problem, SCS.Optimizer; silent_solver=true)
-    # Check the status of the problem
-    #problem.status # :Optimal, :Infeasible, :Unbounded etc.
-    return evaluate(λ)#, problem.optval
+    return evaluate(λ)
 end
