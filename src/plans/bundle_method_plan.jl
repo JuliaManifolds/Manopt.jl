@@ -122,6 +122,7 @@ mutable struct BundleMethodOptions{
         index_set = Set(1)
         bundle_points = [(p, subgrad)]
         lin_errors = [0.0]
+        #Float64[]
         return new{IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT}(
             bundle_points,
             inverse_retraction_method,
@@ -138,7 +139,7 @@ mutable struct BundleMethodOptions{
         )
     end
 end
-get_iterate(o::BundleMethodOptions) = o.p
+get_iterate(o::BundleMethodOptions) = o.p_last_serious
 function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T) where {T}
     d = length(o.index_set)
     lin_errors = o.lin_errors
@@ -154,12 +155,12 @@ function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T)
         return project.(Ref(N), Ref(λ), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
     end
     h(N, λ) = sum(λ) - 1
-    gradh(N, λ) = zero_vector(N, λ) .+ 1
+    gradh(N, λ) = ones(d)
     return exact_penalty_method(
         N,
         f,
         gradf,
-        rand(N);
+        zeros(d);
         G=g,
         H=h,
         gradG=gradg,
