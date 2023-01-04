@@ -94,22 +94,18 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
             o.vector_transport_method,
         ) for j in 1:length(o.index_set)
     ]
-    # compute a solution λ of the minimization subproblem with some other solver
     λ = BundleMethodSubsolver(prb, o, transported_subgradients)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* o.lin_errors)
     δ = -norm(prb.M, o.p_last_serious, g)^2 - ε
-    if δ == 0 || -δ <= o.tol
-        return o
+    (δ == 0 || -δ <= o.tol) && (return o)
+    q = retract(prb.M, o.p_last_serious, -g, o.retraction_method)
+    X_q = get_bundle_subgradient(prb, q) # not sure about this
+    if get_cost(prb, q) <= (get_cost(prb, o.p_last_serious) + o.m * δ)
+        o.p_last_serious = q
+        push!(o.bundle_points, (o.p_last_serious, X_q))
     else
-        q = retract(prb.M, o.p_last_serious, -g, o.retraction_method)
-        X_q = get_bundle_subgradient(prb, q) # not sure about this
-        if get_cost(prb, q) <= (get_cost(prb, o.p_last_serious) + o.m * δ)
-            o.p_last_serious = q
-            push!(o.bundle_points, (o.p_last_serious, X_q))
-        else
-            push!(o.bundle_points, (q, X_q))
-        end
+        push!(o.bundle_points, (q, X_q))
     end
     positive_indices = intersect(o.index_set, Set(findall(j -> j > 0, λ)))
     o.index_set = union(positive_indices, iter + 1)
@@ -126,10 +122,3 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     return o
 end
 get_solver_result(o::BundleMethodOptions) = o.p_last_serious
-
-# Testing
-# M = SymmetricPositiveDefinite(3)
-# F(M,y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
-# gradF(M,y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
-# data = [rand(M) for i = 1:100];
-# bundle_method(M, F, gradF, data[1])
