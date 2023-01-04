@@ -332,7 +332,7 @@ We can see that the number of cost function calls varies, depending on how many 
 
 # ╔═╡ Cell order:
 # ╟─65e3c376-ad9f-11ec-003e-7f033e6865d8
-# ╠═85cf1234-ae76-4cb7-9c14-366f25aa6f15
+# ╟─85cf1234-ae76-4cb7-9c14-366f25aa6f15
 # ╠═94145efb-62fa-4b61-8e57-07d6c2ce66d8
 # ╠═02d0a5a5-8c12-4eec-8a3a-1269b5bb69c9
 # ╠═9ab2a874-8f27-469a-8972-e346148babf4
