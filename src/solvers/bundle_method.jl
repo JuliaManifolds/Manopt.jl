@@ -94,7 +94,7 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
             o.vector_transport_method,
         ) for j in 1:length(o.index_set)
     ]
-    λ = BundleMethodSubsolver(prb, o, transported_subgradients)
+    λ = BundleMethodSubsolver(o, transported_subgradients)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* o.lin_errors)
     δ = -norm(prb.M, o.p_last_serious, g)^2 - ε

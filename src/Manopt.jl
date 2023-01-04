@@ -5,6 +5,7 @@ module Manopt
 using Colors
 using ColorSchemes
 using ColorTypes
+using Convex
 using Markdown
 using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
 using Dates: Period, Nanosecond, value, Millisecond, canonicalize
@@ -12,6 +13,7 @@ using Requires
 using Random: shuffle!
 using Statistics: std, cov, mean, cor
 using DataStructures: CircularBuffer, capacity, length, size, push!
+using SCS
 using StaticArrays
 using SparseArrays
 using Printf
