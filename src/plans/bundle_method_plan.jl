@@ -30,8 +30,8 @@ struct BundleProblem{T<:AbstractEvaluationType,mT<:AbstractManifold,C,S} <: Prob
     end
 end
 """
-    get_subgradient(prb, q)
-    get_subgradient!(prb, X, q)
+    get_bundle_subgradient(prb, q)
+    get_bundle_subgradient!(prb, X, q)
 
 Evaluate the (sub)gradient of a [`SubGradientProblem`](@ref) `prb` at the point `q`.
 
@@ -165,6 +165,7 @@ function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T)
         H=h,
         gradG=gradg,
         gradH=gradh,
-        smoothing=LinearQuadraticHuber(),
+        #smoothing=LinearQuadraticHuber(),
+        debug = ["    ", :Iteration, :Cost, "\n", 50]
     )
 end
