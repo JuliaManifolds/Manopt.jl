@@ -68,7 +68,7 @@ begin
     localpath = join(splitpath(@__FILE__)[1:(end - 1)], "/") # files folder
     image_prefix = localpath * "/regression"
     @info image_prefix
-    render_asy = true # on CI or when you do not have asymptote, this should be false
+    render_asy = false # on CI or when you do not have asymptote, this should be false
 end;
 
 # ╔═╡ 75b3aff8-842e-407d-84e4-6373129911f3

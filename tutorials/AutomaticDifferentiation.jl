@@ -30,7 +30,7 @@ In this Notebook we will take a look at a few possibilities to approximate or de
 
 1. Working _instrinsically_, i.e. staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
 
-2. Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
+2. Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
 
 Let's first load all the packages we need.
 """

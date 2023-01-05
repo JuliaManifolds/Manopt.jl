@@ -1,8 +1,11 @@
 ### A Pluto.jl notebook ###
-# v0.19.14
+# v0.19.16
 
 using Markdown
 using InteractiveUtils
+
+# ╔═╡ d7a9540f-ad40-46e2-8730-c61e875f1ea2
+using Pkg; Pkg.status()
 
 # ╔═╡ d18893e3-89ec-46fc-9265-0daac744caea
 using Manopt, Manifolds, Colors, PlutoUI
@@ -288,6 +291,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
@@ -301,9 +305,9 @@ PlutoUI = "~0.7.38"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.0"
+julia_version = "1.8.4"
 manifest_format = "2.0"
-project_hash = "43bf8cb61864d97458ff17f46246f46275c82093"
+project_hash = "3f75549ac2ed95f2a34e1b8f4435a4cb4fd8ab8a"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -384,7 +388,7 @@ version = "3.43.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "0.5.2+0"
+version = "1.0.1+0"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -812,7 +816,7 @@ version = "1.0.0"
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
-version = "1.10.0"
+version = "1.10.1"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -855,6 +859,7 @@ version = "17.4.0+0"
 # ╔═╡ Cell order:
 # ╟─3b55c91e-bda9-11ec-0399-b77442d8ff45
 # ╠═d18893e3-89ec-46fc-9265-0daac744caea
+# ╠═d7a9540f-ad40-46e2-8730-c61e875f1ea2
 # ╟─b2a115cc-5d4e-4052-afc1-2972ed493958
 # ╠═c19c8ede-ea81-4b10-85c2-f73051d8090a
 # ╠═b5ba2630-e247-46b9-b306-faf8a531f22a

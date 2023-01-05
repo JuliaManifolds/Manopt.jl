@@ -321,7 +321,7 @@ them to the current iterates tangent space.
 # Constructors
     AverageGradient(
         p::GradientProlem,
-        x0,
+        x0;
         n::Int=10
         s::DirectionUpdateRule=IdentityUpdateRule();
         gradients = fill(zero_vector(p.M, o.x),n),
@@ -331,18 +331,6 @@ them to the current iterates tangent space.
 
 Add average to a gradient problem, `n` determines the size of averaging and `gradients` can be prefilled with some history
 Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`](@ref) `p`.
-
-    AverageGradient(
-        p::StochasticGradientProblem
-        x0
-        n::Int=10
-        s::DirectionUpdateRule=IdentityUpdateRule();
-        gradients = fill(zero_vector(p.M, o.x),n),
-        last_iterate = deepcopy(x0),
-        vector_transport_method = ParallelTransport()
-    )
-
-Add average to a stochastic gradient problem, `n` determines the size of averaging and `gradients` can be prefilled with some history
 """
 mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule

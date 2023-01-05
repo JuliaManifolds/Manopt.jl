@@ -45,7 +45,7 @@ use_local = false
 use_local || Pkg.activate()
 
 # ╔═╡ 8b0eae06-2218-4a22-a7ae-fc2344ab09f1
-Random.seed!(42);
+Random.seed!(12345);
 
 # ╔═╡ 6db180cf-ccf9-4a9e-b69f-1b39db6703d3
 md"""
@@ -202,12 +202,12 @@ grad_g2! = [
 ];
 
 # ╔═╡ ce8f1156-a350-4fde-bd39-b08a16b2821d
-# with_terminal() do
+with_terminal() do
 	@time global v2 = augmented_Lagrangian_method(
     	M, f, grad_f!, x0; g=g2, grad_g=grad_g2!, evaluation=InplaceEvaluation(),
     	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 	);
-# end
+end
 
 # ╔═╡ f6617b0f-3688-4429-974b-990e0279cb38
 md"""
@@ -318,7 +318,7 @@ md"""
 # ╔═╡ Cell order:
 # ╟─23c48862-6984-11ed-0a6d-9f6c98ae7134
 # ╟─d7bbeb6b-709a-451b-9eb2-2eb7245dbe03
-# ╟─7c0b460e-34e4-4d7b-be51-71f4a38f28e3
+# ╠═7c0b460e-34e4-4d7b-be51-71f4a38f28e3
 # ╠═c0139831-bd6f-4a60-a4a3-a5bcfca00b35
 # ╠═8c8c5f4a-d635-48b3-8b8b-702a9428f8e0
 # ╠═52ab458b-bc91-4dc5-bd09-9bc6cea89909

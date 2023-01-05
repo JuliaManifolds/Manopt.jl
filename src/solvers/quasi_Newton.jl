@@ -109,7 +109,7 @@ function default_stepsize(
         M;
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
-        linesearch_stopsize=1e-12,
+        linesearch_stopsize=1e-10,
     )
 end
 @doc raw"""
