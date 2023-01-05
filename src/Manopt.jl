@@ -170,6 +170,14 @@ function __init__()
         using .Plots
         include("helpers/check_plots.jl")
     end
+    @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
+        using .QuadraticModels:
+            QuadraticModel
+    end
+    @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
+        using .RipQP:
+            ripqp
+    end
     return nothing
 end
 #

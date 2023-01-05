@@ -86,15 +86,10 @@ function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
 end
 function BundleMethodSubsolver(M::A, o::BundleMethodOptions, X::T) where {A<:AbstractManifold, T}
     d = length(o.index_set)
-    λ = Variable(d)
-    add_constraint!(λ, λ >= 0)
-    add_constraint!(λ, sum(λ) == 1)
-    objective = 0.5 * norm(M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* o.lin_errors)
-    problem = minimize(objective)
-    # problem.constraints +=  [i >= 0 for i in λ]
-    # problem.constraints += [sum(λ) == 1]
-    solve!(problem, SCS.Optimizer; silent_solver=true)
-    return evaluate(λ)
+    H = reduce(hcat, [[inner(M, o.p_last_serious, X[i], X[j]) for j in 1:d] for i in 1:d])'
+    B = reshape(ones(d), 1, d)
+    qm = QuadraticModel(o.lin_errors, tril(H); A = B, lcon = [1.0] , ucon = [1.0], lvar = zeros(d), c0 = 0.0)
+    return ripqp(qm; display = false).solution
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     transported_subgradients = [
