@@ -34,14 +34,14 @@ The following algorithms are currently available
 [Stochastic Gradient Descent](@ref StochasticGradientDescentSolver) | `stochastic_gradient_descent.jl` | [`DefaultManoptProblem`](@ref), [`StochasticGradientDescentState`](@ref)
 [The Riemannian Trust-Regions Solver](@ref trust_regions) | `trust_regions.jl` | [`HessianProblem`](@ref), [`TrustRegionsState`](@ref)
 
-Note that the solvers (or their [`AbstractSolverState`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection).
+Note that the solvers (or their [`AbstractManoptSolverState`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection).
 
 ## Technical Details
 
  The main function a solver calls is
 
 ```@docs
-solve!(p::AbstractManoptProblem, s::AbstractSolverState)
+solve!(p::AbstractManoptProblem, s::AbstractManoptSolverState)
 ```
 
 which is a framework that you in general should not change or redefine.
@@ -53,5 +53,5 @@ initialize_solver!
 step_solver!
 get_solver_result
 get_solver_return
-stop_solver!(p::AbstractManoptProblem, s::AbstractSolverState, i::Int)
+stop_solver!(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
 ```
