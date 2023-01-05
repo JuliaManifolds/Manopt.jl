@@ -87,9 +87,12 @@ end
 function BundleMethodSubsolver(M::A, o::BundleMethodOptions, X::T) where {A<:AbstractManifold, T}
     d = length(o.index_set)
     λ = Variable(d)
-    problem = minimize(0.5 * norm(M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* o.lin_errors))
-    problem.constraints +=  [i >= 0 for i in λ]
-    problem.constraints += [sum(λ) == 1]
+    add_constraint!(λ, λ >= 0)
+    add_constraint!(λ, sum(λ) == 1)
+    objective = 0.5 * norm(M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* o.lin_errors)
+    problem = minimize(objective)
+    # problem.constraints +=  [i >= 0 for i in λ]
+    # problem.constraints += [sum(λ) == 1]
     solve!(problem, SCS.Optimizer; silent_solver=true)
     return evaluate(λ)
 end
