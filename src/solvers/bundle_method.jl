@@ -84,6 +84,15 @@ function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
     o.X = zero_vector(prb.M, o.p)
     return o
 end
+function BundleMethodSubsolver(M::A, o::BundleMethodOptions, X::T) where {A<:AbstractManifold, T}
+    d = length(o.index_set)
+    λ = Variable(d)
+    problem = minimize(0.5 * norm(M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* o.lin_errors))
+    problem.constraints +=  [i >= 0 for i in λ]
+    problem.constraints += [sum(λ) == 1]
+    solve!(problem, SCS.Optimizer; silent_solver=true)
+    return evaluate(λ)
+end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     transported_subgradients = [
         vector_transport_to(
