@@ -13,7 +13,7 @@ StoppingCriterionSet
 ```
 
 Then the stopping criteria `s` might have certain internal values to check against,
-and this is done when calling them as a function `s(p::AbstractManoptProblem, s::AbstractManoptSolverState)`,
+and this is done when calling them as a function `s(amp::AbstractManoptProblem, ams::AbstractManoptSolverState)`,
 where the [`AbstractManoptProblem`](@ref) and the [`AbstractManoptSolverState`](@ref) together represent
 the current state of the solver. The functor returns either `false` when the stopping criterion is not fulfilled or `true` otherwise.
 One field all criteria should have is the `s.reason`, a string giving the reason to stop, see [`get_reason`](@ref).

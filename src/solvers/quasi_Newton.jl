@@ -295,9 +295,9 @@ function locking_condition_scale(
 end
 
 @doc raw"""
-    update_hessian!(d, mp, st, p_old, iter)
+    update_hessian!(d, amp, st, p_old, iter)
 
-update the hessian wihtin the [`QuasiNewtonState`](@ref) `o` given a [`AbstractManoptProblem`](@ref) `p`
+update the hessian wihtin the [`QuasiNewtonState`](@ref) `o` given a [`AbstractManoptProblem`](@ref) `amp`
 as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `p_old`.
 Note that the current (`iter`th) iterate is already stored in `o.x`.
 
