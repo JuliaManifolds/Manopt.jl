@@ -84,10 +84,10 @@ function get_cost(M::AbstractManifold, cgo::ManifoldCostGradientObjective, p)
 end
 
 @doc raw"""
-    get_gradient(mp::AbstractManoptProblem, p)
-    get_gradient!(mp::AbstractManoptProblem, X, p)
+    get_gradient(amp::AbstractManoptProblem, p)
+    get_gradient!(amp::AbstractManoptProblem, X, p)
 
-evaluate the gradient of an [`AbstractManoptProblem`](@ref) `mp` at `p`.
+evaluate the gradient of an [`AbstractManoptProblem`](@ref) `amp` at the point `p`.
 
 The evaluation is done in place of `X` for the `!`-variant.
 """
@@ -256,7 +256,6 @@ last direction multiplied by momentum ``m``.
 # Constructors
 
 Add momentum to a gradient problem, where by default just a gradient evaluation is used
-Equivalently you can also use a `Manifold` `M` instead of the [`AbstractManoptProblem`](@ref) `p`.
 
     MomentumGradient(
         M::AbstractManifold;

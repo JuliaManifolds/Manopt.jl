@@ -34,6 +34,7 @@ for t in tutorials
             output_format=documenter_output,
             write_files=false,
             use_distributed=true,
+            previous_dir=tutorial_output_folder,
         ),
         ["$(t[:file]).jl"],
     )
@@ -101,7 +102,8 @@ makedocs(;
         "Plans" => [
             "Specify a Solver" => "plans/index.md",
             "Problem" => "plans/problem.md",
-            "Options" => "plans/options.md",
+            "Objective" => "plans/objective.md",
+            "Solver State" => "plans/state.md",
             "Stepsize" => "plans/stepsize.md",
             "Stopping Criteria" => "plans/stopping_criteria.md",
             "Debug Output" => "plans/debug.md",

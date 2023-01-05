@@ -81,14 +81,14 @@ end
 * `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `reg_param` – (`1e-5`) regularisation parameter for the Newton matrix
 * `stop` - a [`StoppingCriterion`](@ref)
-* `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
-* `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
+* `update_primal_base` (`( amp, ams, i) -> o.m`) function to update the primal base
+* `update_dual_base` (`(amp, ams, i) -> o.n`) function to update the dual base
 * `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 * `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
 
-where for the last two the functions a [`Problem`](@ref) `p`,
-[`AbstractManoptSolverState`](@ref) `o` and the current iterate `i` are the arguments.
+where for the update functions a [`AbstractManoptProblem`](@ref) `amp`,
+[`AbstractManoptSolverState`](@ref) `ams` and the current iterate `i` are the arguments.
 If you activate these to be different from the default identity, you have to provide
 `p.Λ` for the algorithm to work (which might be `missing`).
 

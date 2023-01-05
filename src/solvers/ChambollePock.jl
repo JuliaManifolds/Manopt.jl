@@ -31,7 +31,7 @@ initialized automatically and values with a default may be left out.
 * `vector_transport_method_dual` - (`default_vector_transport_method(N)`) a
   vector transport to use on manifold ``\mathcal N``.
 
-where for the last two the functions a [`Problem`](@ref)` p`,
+where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
 [`AbstractManoptSolverState`](@ref)` o` and the current iterate `i` are the arguments.
 If you activate these to be different from the default identity, you have to provide
 `p.Λ` for the algorithm to work (which might be `missing` in the linearized case).

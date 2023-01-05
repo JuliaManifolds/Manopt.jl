@@ -60,7 +60,7 @@ end
 """
     solve!(p,o)
 
-run the solver implemented for the [`Problem`](@ref)` p` and the
+run the solver implemented for the [`AbstractManoptProblem`](@ref)` p` and the
 [`AbstractManoptSolverState`](@ref)` o` employing [`initialize_solver!`](@ref), [`step_solver!`](@ref),
 as well as the [`stop_solver!`](@ref) of the solver.
 """

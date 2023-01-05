@@ -35,7 +35,7 @@ end
 Get the [`AbstractEvaluationType`](@ref) of the objective in [`AbstractManoptProblem`](@ref)
 `mp`.
 """
-evaluation_type(mp::AbstractManoptProblem) = evaluation_type(get_objective(mp))
+evaluation_type(amp::AbstractManoptProblem) = evaluation_type(get_objective(amp))
 """
     evaluation_type(::AbstractManifoldObjective{Teval})
 
@@ -44,13 +44,13 @@ Get the [`AbstractEvaluationType`](@ref) of the objective.
 evaluation_type(::AbstractManifoldObjective{Teval}) where {Teval} = Teval
 
 @doc raw"""
-    get_manifold(mp::AbstractManoptProblem)
+    get_manifold(amp::AbstractManoptProblem)
 
 return the manifold stored within an [`AbstractManoptProblem`](@ref)
 """
 get_manifold(::AbstractManoptProblem)
 
-get_manifold(mp::DefaultManoptProblem) = mp.manifold
+get_manifold(amp::DefaultManoptProblem) = amp.manifold
 
 @doc raw"""
     get_objective(mp::AbstractManoptProblem)
@@ -59,16 +59,16 @@ return the objective [`AbstractManifoldObjective`](@ref) stored within an [`Abst
 """
 get_objective(::AbstractManoptProblem)
 
-get_objective(mp::DefaultManoptProblem) = mp.objective
+get_objective(amp::DefaultManoptProblem) = amp.objective
 
 @doc raw"""
-    get_cost(mp::AbstractManoptProblem, p)
+    get_cost(amp::AbstractManoptProblem, p)
 
 evaluate the cost function `f` stored within the [`AbstractManifoldObjective`](@ref) of an
-[`AbstractManoptProblem`](@ref) `mp` at the point `p`.
+[`AbstractManoptProblem`](@ref) `amp` at the point `p`.
 """
-function get_cost(mp::AbstractManoptProblem, p)
-    return get_cost(get_manifold(mp), get_objective(mp), p)
+function get_cost(amp::AbstractManoptProblem, p)
+    return get_cost(get_manifold(amp), get_objective(amp), p)
 end
 
 @doc raw"""
@@ -79,9 +79,9 @@ evaluate the cost function `f` defined on `M` stored within the [`AbstractManifo
 get_cost(::AbstractManifold, ::AbstractManifoldObjective, p)
 
 @doc raw"""
-    get_cost_function(p::AbstractManoptProblem)
+    get_cost_function(amp::AbstractManoptProblem)
 
-access the cost function from within the [`AbstractManoptProblem`](@ref).
-    By default this forwards to getting the const function from the internal [`AbstractManifoldObjective`](@ref).
+access the cost function from within the [`AbstractManoptProblem`](@ref) `amp`.
+By default this forwards to getting the const function from the internal [`AbstractManifoldObjective`](@ref).
 """
-get_cost_function(p::AbstractManoptProblem) = get_cost_function(get_objective(p))
+get_cost_function(amp::AbstractManoptProblem) = get_cost_function(get_objective(amp))

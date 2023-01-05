@@ -81,7 +81,7 @@ callable structures. The naming Scheme follows functions, see for
 example [`StopAfterIteration`](@ref).
 
 Every StoppingCriterion has to provide a constructor and its function has to have
-the interface `(p,o,i)` where a [`Problem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
+the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
 and the current number of iterations are the arguments and returns a Bool whether
 to stop or not.
 
@@ -109,7 +109,7 @@ An abstract type for the functors representing step sizes, i.e. they are callabl
 structures. The naming scheme is `TypeOfStepSize`, e.g. `ConstantStepsize`.
 
 Every Stepsize has to provide a constructor and its function has to have
-the interface `(p,o,i)` where a [`Problem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
+the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
 and the current number of iterations are the arguments
 and returns a number, namely the stepsize to use.
 
@@ -220,7 +220,7 @@ internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields f
 [`AbstractManoptSolverState`](@ref)s
 
 This functor posesses the usual interface of functions called during an
-iteration, i.e. acts on `(p,o,i)`, where `p` is a [`Problem`](@ref),
+iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref),
 `o` is an [`AbstractManoptSolverState`](@ref) and `i` is the current iteration.
 
 # Fields

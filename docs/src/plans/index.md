@@ -4,8 +4,11 @@
 CurrentModule = Manopt
 ```
 
-In order to start a solver, both a [AbstractManoptProblem](@ref AbstractManoptProblemSection) and [AbstractManoptSolverState](@ref AbstractManoptSolverStateSection) are required.
-Together they form a __plan__.
-Everything related to problems, options, and their tools in general, is explained in this
-section and its subpages. The specific `AbstractManoptSolverState` related to a certain (concrete) solver can be
-found on the specific solver page, see [The solvers overview](@ref SolversSection).
+For any optimisation performed in `Manopt.jl`
+we need information about both the optimisation task or “problem” at hand as well as the solver and all its parameters.
+This together is called a __plan__ in `Manopt.jl` and it consists of two data structures:
+
+* The [Manopt Problem](@ref ProblemSection) describes all _static_ data of our task, most prominently the manifold and the objective.
+* The [Solver State](@ref SolverStateSection) describes all _varying_ data and parameters for the solver we aim to use. This also means that each solver has its own data structure for the state.
+
+By splitting these two parts, we can use one problem and solve it using different solvers.

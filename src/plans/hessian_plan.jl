@@ -59,18 +59,18 @@ struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
 end
 
 @doc raw"""
-    Y = get_hessian(mp::AbstractManoptProblem{T}, p, X)
-    get_hessian!(mp::AbstractManoptProblem{T}, Y, p, X)
+    Y = get_hessian(amp::AbstractManoptProblem{T}, p, X)
+    get_hessian!(amp::AbstractManoptProblem{T}, Y, p, X)
 
-evaluate the Hessian of an [`AbstractManoptProblem`](@ref) `mp` at `p`
+evaluate the Hessian of an [`AbstractManoptProblem`](@ref) `amp` at `p`
 applied to a tangent vector `X`, i.e. compute ``\operatorname{Hess}f(q)[X]``,
 which can also happen in-place of `Y`.
 """
-function get_hessian(mp::AbstractManoptProblem, p, X)
-    return get_hessian(get_manifold(mp), get_objective(mp), p, X)
+function get_hessian(amp::AbstractManoptProblem, p, X)
+    return get_hessian(get_manifold(amp), get_objective(amp), p, X)
 end
-function get_hessian!(mp::AbstractManoptProblem, Y, p, X)
-    return get_hessian!(get_manifold(mp), Y, get_objective(mp), p, X)
+function get_hessian!(amp::AbstractManoptProblem, Y, p, X)
+    return get_hessian!(get_manifold(amp), Y, get_objective(amp), p, X)
 end
 function get_hessian(
     M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
@@ -98,18 +98,18 @@ function get_hessian!(
 end
 
 @doc raw"""
-    get_preconditioner(mp::AbstractManoptProblem, p, X)
+    get_preconditioner(amp::AbstractManoptProblem, p, X)
 
 evaluate the symmetric, positive definite preconditioner (approximation of the
 inverse of the Hessian of the cost function `f`) of a
-[`HessianPrAbstractManoptProblemoblem`](@ref) `mp` at the point `p` applied to a
+[`HessianPrAbstractManoptProblemoblem`](@ref) `amp` at the point `p` applied to a
 tangent vector `X`.
 """
-function get_preconditioner(mp::AbstractManoptProblem, p, X)
-    return get_preconditioner(get_manifold(mp), get_objective(mp), p, X)
+function get_preconditioner(amp::AbstractManoptProblem, p, X)
+    return get_preconditioner(get_manifold(amp), get_objective(amp), p, X)
 end
-function get_preconditioner!(mp::AbstractManoptProblem, Y, p, X)
-    return get_preconditioner!(get_manifold(mp), Y, get_objective(mp), p, X)
+function get_preconditioner!(amp::AbstractManoptProblem, Y, p, X)
+    return get_preconditioner!(get_manifold(amp), Y, get_objective(amp), p, X)
 end
 
 @doc raw"""

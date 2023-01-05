@@ -27,19 +27,19 @@ struct ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:
 end
 
 @doc raw"""
-    get_subgradient(mp::AbstractManoptProblem, p)
-    get_subgradient!(mp::AbstractManoptProblem, X, p)
+    get_subgradient(amp::AbstractManoptProblem, p)
+    get_subgradient!(amp::AbstractManoptProblem, X, p)
 
-evaluate the subgradient of an [`AbstractManoptProblem`](@ref) `mp` at `p`.
+evaluate the subgradient of an [`AbstractManoptProblem`](@ref) `amp` at point `p`.
 
 The evaluation is done in place of `X` for the `!`-variant.
 The result might not be deterministic, _one_ element of the subdifferential is returned.
 """
-function get_subgradient(mp::AbstractManoptProblem, p)
-    return get_subgradient(get_manifold(mp), get_objective(mp), p)
+function get_subgradient(amp::AbstractManoptProblem, p)
+    return get_subgradient(get_manifold(amp), get_objective(amp), p)
 end
-function get_subgradient!(mp::AbstractManoptProblem, X, p)
-    return get_subgradient!(get_manifold(mp), X, get_objective(mp), p)
+function get_subgradient!(amp::AbstractManoptProblem, X, p)
+    return get_subgradient!(get_manifold(amp), X, get_objective(amp), p)
 end
 
 """

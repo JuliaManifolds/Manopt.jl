@@ -48,8 +48,14 @@ end
 """
     StopWhenGradientNormLess <: StoppingCriterion
 
-stores a threshold when to stop looking at the norm of the gradient from within
-a [`GradientProblem`](@ref).
+A stopping criterion based on the current gradient norm.
+
+# Constructor
+
+    StopWhenGradientNormLess(ε::Float64)
+
+Create a stopping criterion with threshold `ε` for the gradient, that is, this criterion
+indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`.
 """
 mutable struct StopWhenGradientNormLess <: StoppingCriterion
     threshold::Float64
@@ -89,11 +95,17 @@ For the storage a [`StoreStateAction`](@ref) is used
 
 # Constructor
 
-    StopWhenChangeLess(ε[, a])
+    StopWhenChangeLess(
+        ε::Float64;
+        storage::StoreStateAction=StoreStateAction((:Iterate,)),
+        manifold::AbstractManifold=DefaultManifold(3),
+        inverse_retraction_method::IRT=default_inverse_retraction_method(manifold)
+    )
 
 initialize the stopping criterion to a threshold `ε` using the
 [`StoreStateAction`](@ref) `a`, which is initialized to just store `:Iterate` by
-default.
+default. You can also provide an inverse_retraction_method for the `distance` or a manifold
+to use its default inverse retraction.
 """
 mutable struct StopWhenChangeLess{IRT} <: StoppingCriterion
     threshold::Float64
@@ -181,7 +193,7 @@ end
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
 
 # Constructor
 

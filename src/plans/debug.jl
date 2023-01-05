@@ -3,7 +3,7 @@
 
 A `DebugAction` is a small functor to print/issue debug output.
 The usual call is given by `(p,o,i) -> s` that performs the debug based on
-a [`Problem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o` and the current iterate `i`.
+a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o` and the current iterate `i`.
 
 By convention `i=0` is interpreted as "For Initialization only", i.e. only debug
 info that prints initialization reacts, `i<0` triggers updates of variables
