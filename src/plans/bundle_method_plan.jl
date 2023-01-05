@@ -140,7 +140,7 @@ mutable struct BundleMethodOptions{
     end
 end
 get_iterate(o::BundleMethodOptions) = o.p_last_serious
-function BundleMethodSubsolver(M::AbstractManifold, o::BundleMethodOptions, X::T) where {T}
+function BundleMethodSubsolver(M::A, o::BundleMethodOptions, X::T) where {A<:AbstractManifold, T}
     d = length(o.index_set)
     λ = Variable(d)
     problem = minimize(0.5 * norm(M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* o.lin_errors))
