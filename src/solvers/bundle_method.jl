@@ -84,14 +84,14 @@ function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
     o.X = zero_vector(prb.M, o.p)
     return o
 end
-function BundleMethodSubsolver(M::A, o::BundleMethodOptions, X::T) where {A<:AbstractManifold, T}
-    d = length(o.index_set)
-    H = reduce(hcat, [[inner(M, o.p_last_serious, X[i], X[j]) for j in 1:d] for i in 1:d])'
+function bundle_method_sub_solver(M::A, p::P, d::Int, e::E, X::T) where {A<:AbstractManifold, E<:AbstractArray, P, T}
+    H = reduce(hcat, [[inner(M, p, X[i], X[j]) for j in 1:d] for i in 1:d])'
     B = reshape(ones(d), 1, d)
-    qm = QuadraticModel(o.lin_errors, tril(H); A = B, lcon = [1.0] , ucon = [1.0], lvar = zeros(d), c0 = 0.0)
+    qm = QuadraticModel(e, tril(H); A = B, lcon = [1.0] , ucon = [1.0], lvar = zeros(d), c0 = 0.0)
     return ripqp(qm; display = false).solution
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
+    d = length(o.index_set)
     transported_subgradients = [
         vector_transport_to(
             prb.M,
@@ -99,9 +99,9 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
             get_bundle_subgradient!(prb, o.bundle_points[j][2], o.bundle_points[j][1]),
             o.p_last_serious,
             o.vector_transport_method,
-        ) for j in 1:length(o.index_set)
+        ) for j in 1:d
     ]
-    λ = BundleMethodSubsolver(prb.M, o, transported_subgradients)
+    λ = bundle_method_sub_solver(prb.M, o.p_last_serious, d, o.lin_errors, transported_subgradients)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* o.lin_errors)
     δ = -norm(prb.M, o.p_last_serious, g)^2 - ε
@@ -124,7 +124,7 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
             inverse_retract(
                 prb.M, o.bundle_points[j][1], o.p_last_serious, o.inverse_retraction_method
             ),
-        ) for j in 1:length(o.index_set)
+        ) for j in 1:d
     ]
     return o
 end
