@@ -166,6 +166,6 @@ function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T)
         gradG=gradg,
         gradH=gradh,
         #smoothing=LinearQuadraticHuber(),
-        debug = ["    ", :Iteration, :Cost, "\n", 50]
+        #debug = ["    ", :Iteration, :Cost, "\n", 50]
     )
 end
