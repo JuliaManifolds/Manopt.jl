@@ -35,7 +35,7 @@ Describes the constrained objective
 
 It consists of
 * an cost function ``f(p)``
-* the gradient of ``f``, ``\operatorname{grad}f(p)`` (cf. [`Abstract`](@ref))
+* the gradient of ``f``, ``\operatorname{grad}f(p)`` [`AbstractManifoldGradientObjective`](@ref)
 * inequality constraints ``g(p)``, either a function `g` returning a vector or a vector `[g1, g2,...,gm]` of functions.
 * equality constraints ``h(p)``, either a function `h` returning a vector or a vector `[h1, h2,...,hn]` of functions.
 * gradient(s) of the inequality constraints ``\operatorname{grad}g(p) ∈ (T_p\mathcal M)^m``, either a function or a vector of functions.

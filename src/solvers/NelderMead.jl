@@ -302,12 +302,28 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     return s
 end
 
-mutable struct StopWhenPopulationConcentrated{TF<:Real,TX<:Real} <: StoppingCriterion
+"""
+    StopWhenPopulationConcentrated <: StoppingCriterion
+
+A stopping criterion for [`NelderMead`](@ref) to indicate to stop when
+both
+
+* the maximal distance of the first to the remaining the cost values and
+* the maximal diistance of the first to the remaining the population points
+
+drops below a ceertain tolerance `tol_f` and `tol_p`, respectively.
+
+# Constructor
+
+    StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_x::Real=1e-8)
+
+"""
+mutable struct StopWhenPopulationConcentrated{TF<:Real,TP<:Real} <: StoppingCriterion
     tol_f::TF
-    tol_x::TX
+    tol_p::TP
     reason::String
-    function StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_x::Real=1e-8)
-        return new{typeof(tol_f),typeof(tol_x)}(tol_f, tol_x, "")
+    function StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_p::Real=1e-8)
+        return new{typeof(tol_f),typeof(tol_p)}(tol_f, tol_p, "")
     end
 end
 
@@ -321,7 +337,7 @@ function (c::StopWhenPopulationConcentrated)(
         p -> distance(M, s.population.pts[1], p, s.inverse_retraction_method),
         s.population.pts[2:end],
     )
-    if max_cdiff < c.tol_f && max_xdiff < c.tol_x
+    if max_cdiff < c.tol_f && max_xdiff < c.tol_p
         c.reason = "After $i iterations the simplex has shrunk below the assumed level (maximum cost difference is $max_cdiff, maximum point distance is $max_xdiff).\n"
         return true
     end

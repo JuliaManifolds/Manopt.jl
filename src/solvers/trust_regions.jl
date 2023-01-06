@@ -216,9 +216,6 @@ see [`truncated_conjugate_gradient_descent`](@ref).
     decreases.
 * `augmentation_threshold` – (`0.75`) Trust-region augmentation threshold: if ρ (the performance ratio for
     the iterate) is greater than this and further conditions apply, the trust-region radius and thus the trust-regions increases.
-* `return_options` – (`false`) – if activated, the extended result, i.e. the
-  complete [`Options`](@ref) are returned. This can be used to access recorded values.
-  If set to false (default) just the optimal value `x_opt` is returned
 
 # Output
 

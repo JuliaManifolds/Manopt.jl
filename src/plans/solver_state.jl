@@ -1,7 +1,7 @@
 
 @inline _extract_val(::Val{T}) where {T} = T
 
-"""
+@doc raw"""
     AbstractManoptSolverState
 
 A general super type for all solver states.
@@ -15,6 +15,21 @@ provide the access functions accordingly
 * `stop` a [`StoppingCriterion`](@ref).
 """
 abstract type AbstractManoptSolverState end
+
+@doc raw"""
+    AbstractGradientSolverState <: AbstractManoptSolverState
+
+A generic [`AbstractManoptSolverState`](@ref) type for gradient based options data.
+
+It assumes that
+
+* the iterate is stored in the field `p`
+* the gradient at `p` is stored in `X`.
+
+# see also
+[`GradientDescentState`](@ref), [`StochasticGradientDescentState`](@ref), [`SubGradientMethodState`](@ref), [`QuasiNewtonState`](@ref).
+"""
+abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
 
 """
     dispatch_state_decorator(s::AbstractManoptSolverState)
@@ -100,7 +115,8 @@ _get_gradient(s::AbstractManoptSolverState, ::Val{true}) = get_gradient(s.state)
 """
     set_gradient!(s::AbstractManoptSolverState, M::AbstractManifold, p, X)
 
-set the iterate within an [`AbstractManoptSolverState`](@ref) to some (start) value `X` at `p`.
+set the gradient within an (possibly decorated) [`AbstractManoptSolverState`](@ref)
+to some (start) value `X` in the tangent space at `p`.
 """
 function set_gradient!(s::AbstractManoptSolverState, M, p, X)
     return _set_gradient!(s, M, p, X, dispatch_state_decorator(s))
@@ -162,7 +178,7 @@ get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result
     AbstractStateAction
 
 a common `Type` for `AbstractStateActions` that might be triggered in decoraters,
-for example [`DebugAbstractManoptSolverState`](@ref) or [`RecordAbstractManoptSolverState`](@ref).
+for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverState`](@ref).
 """
 abstract type AbstractStateAction end
 

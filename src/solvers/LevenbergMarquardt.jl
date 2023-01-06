@@ -30,7 +30,7 @@ The implementation follows Algorithm 1[^Adachi2022].
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(1e-12))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 ...
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state`](@ref) for decorators.
 
 # Output
 

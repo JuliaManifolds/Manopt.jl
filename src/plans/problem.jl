@@ -77,11 +77,3 @@ end
 evaluate the cost function `f` defined on `M` stored within the [`AbstractManifoldObjective`](@ref) at the point `p`.
 """
 get_cost(::AbstractManifold, ::AbstractManifoldObjective, p)
-
-@doc raw"""
-    get_cost_function(amp::AbstractManoptProblem)
-
-access the cost function from within the [`AbstractManoptProblem`](@ref) `amp`.
-By default this forwards to getting the const function from the internal [`AbstractManifoldObjective`](@ref).
-"""
-get_cost_function(amp::AbstractManoptProblem) = get_cost_function(get_objective(amp))

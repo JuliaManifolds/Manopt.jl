@@ -123,7 +123,7 @@ using Manopt, Manifolds, Test
         f(M, p) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(p)) .^ 2)
         grad_f(M, p) = 1 / 4 * sum(-log.(Ref(M), Ref(p), pts))
         n2 = gradient_descent(M, f, grad_f, pts[1])
-        # Since we called gradient_decent n2 is newly allocated
+        # Since we called gradient_descent n2 is newly allocated
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
         n3 = gradient_descent(

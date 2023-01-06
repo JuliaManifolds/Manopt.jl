@@ -14,3 +14,15 @@ CurrentModule = Manopt
 ```@docs
     NelderMeadState
 ```
+
+## Simplex
+
+```@docs
+NelderMeadSimplex
+```
+
+## Additional Stopping Criteria
+
+```@docs
+StopWhenPopulationConcentrated
+```

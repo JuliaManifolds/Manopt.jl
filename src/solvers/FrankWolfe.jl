@@ -11,8 +11,8 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 * `X` – the current gradient ``\operatorname{grad} F(p)``, i.e. a tangent vector to `p`.
 * `evalulation` [`AllocatingEvaluation`](@ref) specify the  type if it is a function.
 * `inverse_retraction_method` – (`default_inverse_retraction_method(M)`) an inverse retraction method to use within Frank Wolfe.
-* `sub_problem` – problem for the subsolver
-* `sub_state` – options of the subproblem
+* `sub_problem` – an [`AbstractManoptProblem`](@ref) problem for the subsolver
+* `sub_state` – an [`AbstractManoptSolverState`](@ref) for the subsolver
 * `stop` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a [`StoppingCriterion`](@ref)
 * `stepsize` - ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`) ``s_k`` which by default is set to ``s_k = \frac{2}{k+2}``.
 * `retraction_method` – (`default_retraction_method(M)`) a retraction to use within Frank-Wolfe

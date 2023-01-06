@@ -7,8 +7,8 @@ Describes the exact penalty method, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `p` – a set point on a manifold as starting point
-* `sub_problem` – problem for the subsolver
-* `sub_state` – options of the subproblem
+* `sub_problem` – an [`AbstractManoptProblem`](@ref) problem for the subsolver
+* `sub_state` – an [`AbstractManoptSolverState`](@ref) for the subsolver
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
@@ -20,10 +20,10 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    ExactPenaltyMethodState(M::AbstractManifold, P::ConstrainedProblem, p; kwargs...)
+    ExactPenaltyMethodState(M::AbstractManifold, p, sub_problem, sub_state; kwargs...)
 
 construct an exact penalty options with the fields and defaults as above, where the
-manifold `M` and the [`ConstrainedProblem`](@ref) `P` are used for defaults in the keyword
+manifold `M` is used for defaults in the keyword
 arguments.
 
 # See also
@@ -31,7 +31,7 @@ arguments.
 [`exact_penalty_method`](@ref)
 """
 mutable struct ExactPenaltyMethodState{P,Pr,Op,TStopping<:StoppingCriterion} <:
-               AbstractManoptSubProblemSolverState
+               AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
     sub_state::Op
@@ -89,7 +89,8 @@ end
 @doc raw"""
     exact_penalty_method(M, F, gradF, p=rand(M); kwargs...)
 
-perform the exact penalty method (EPM)[^LiuBoumal2020]. The aim of the EPM is to find the solution of the [`ConstrainedProblem`](@ref)
+perform the exact penalty method (EPM)[^LiuBoumal2020].
+The aim of the EPM is to find a solution of the constrained optimisation task
 
 ```math
 \begin{aligned}

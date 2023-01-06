@@ -9,7 +9,7 @@ stories option values for a [`subgradient_method`](@ref) solver
 * `stop` – ([`StopAfterIteration`](@ref)`(5000)``)a [`StoppingCriterion`](@ref)
 * `p` – (initial or current) value the algorithm is at
 * `p_star` – optimal value (initialized to a copy of `p`.)
-* `X` ([`zero_vector`](@ref)`(M, p)`) the current element from the possible subgradients at
+* `X` (`zero_vector(M, p)`) the current element from the possible subgradients at
    `p` that was last evaluated.
 
 # Constructor

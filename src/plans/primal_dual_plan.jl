@@ -19,6 +19,11 @@ _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 
 get_objective(tmo::TwoManifoldProblem) = tmo.objective
 
+@doc raw"""
+AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <: AbstractManifoldCostObjective{E,C}
+
+A common abstract super type for objectives that consider primal-dual problems.
+"""
 abstract type AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <:
               AbstractManifoldCostObjective{E,C} end
 
@@ -299,7 +304,7 @@ end
     q = forward_operator(M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, p)
     forward_operator!(M::AbstractManifold, N::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, p)
 
-Evaluate the forward operator of ``Λ(x)`` stored within the [`AbstractTwoManifoldProblem`](@ref)
+Evaluate the forward operator of ``Λ(x)`` stored within the [`TwoManifoldProblem`](@ref)
 (in place of `q`).
 """
 forward_operator(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)

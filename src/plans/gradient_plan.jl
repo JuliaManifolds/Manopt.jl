@@ -8,6 +8,17 @@ abstract type AbstractManifoldGradientObjective{E<:AbstractEvaluationType,TC,TG}
               AbstractManifoldCostObjective{E,TC} end
 
 @doc raw"""
+    get_gradient_function(amgo::AbstractManifoldGradientObjective{E<:AbstractEvaluationType})
+
+return the function to evaluate (just) the gradient ``\operatorname{grad} f(p)``.
+Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
+
+* `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
+* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `X`.
+"""
+get_gradient_function(amgo::AbstractManifoldGradientObjective) = amgo.gradient!!
+
+@doc raw"""
     ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldGradientObjective{T}
 
 specify an objetive containing a cost and its gradient
@@ -27,7 +38,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to f
     ManifoldGradientObjective(cost, gradient; evaluation=AllocatingEvaluation())
 
 # Used with
-[`gradient_decent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
+[`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
 struct ManifoldGradientObjective{T<:AbstractEvaluationType,C,G} <:
        AbstractManifoldGradientObjective{T,C,G}
@@ -39,8 +50,6 @@ function ManifoldGradientObjective(
 ) where {C,G}
     return ManifoldGradientObjective{typeof(evaluation),C,G}(cost, gradient)
 end
-
-get_gradient_function(amo::AbstractManifoldGradientObjective) = amo.gradient!!
 
 @doc raw"""
     ManifoldCostGradientObjective{T} <: AbstractManifoldObjective{T}
@@ -62,7 +71,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to f
     ManifoldCostGradientObjective(costgrad; evaluation=AllocatingEvaluation())
 
 # Used with
-[`gradient_decent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
+[`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
 struct ManifoldCostGradientObjective{T,CG} <: AbstractManifoldGradientObjective{T,CG,CG}
     costgrad!!::CG
@@ -183,21 +192,6 @@ abstract type DirectionUpdateRule end
 The default gradient direction update is the identity, i.e. it just evaluates the gradient.
 """
 struct IdentityUpdateRule <: DirectionUpdateRule end
-
-"""
-    AbstractGradientSolverState <: AbstractManoptSolverState
-
-A generic [`AbstractManoptSolverState`](@ref) type for gradient based options data.
-
-It assumes that
-
-* the iterate is stored in the field `p`
-* the gradient at `p` is stored in `X`.
-
-# see also
-[`GradientDescentState`](@ref), [`StochasticGradientDescentState`](@ref), [`SubGradientMethodState`](@ref), [`QuasiNewtonState`](@ref).
-"""
-abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
 
 @doc raw"""
     get_gradient(agst::AbstractGradientSolverState)

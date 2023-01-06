@@ -1,5 +1,5 @@
 @doc raw"""
-    PrimalDualManifoldSemismoothNewtonObjective{E<:AbstractEvaluationType, TCost, LO, ALO, PF, DPF, PG, DPG, L} <: AbstractTwoManifoldProblem{E}
+    PrimalDualManifoldSemismoothNewtonObjective{E<:AbstractEvaluationType, TC, LO, ALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{E, TC, PF}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [^DiepeveenLellmann2021]
 
@@ -174,7 +174,7 @@ end
     y = get_differential_primal_prox(M::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective σ, x)
     get_differential_primal_prox!(p::TwoManifoldProblem, y, σ, x)
 
-Evaluate the differential proximal map of ``F`` stored within [`TwoManifoldProblem`](@ref)
+Evaluate the differential proximal map of ``F`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
 
 ```math
 D\operatorname{prox}_{σF}(x)[X]
@@ -245,7 +245,7 @@ end
     η = get_differential_dual_prox(N::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, n, τ, X, ξ)
     get_differential_dual_prox!(N::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, η, n, τ, X, ξ)
 
-Evaluate the differential proximal map of ``G_n^*`` stored within [`TwoManifoldProblem`](@ref)
+Evaluate the differential proximal map of ``G_n^*`` stored within [`PrimalDualManifoldSemismoothNewtonObjective`](@ref)
 
 ```math
 D\operatorname{prox}_{τG_n^*}(X)[ξ]

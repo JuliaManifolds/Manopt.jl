@@ -31,7 +31,7 @@ allocate memory for their result, i.e. they work out of place.
 struct AllocatingEvaluation <: AbstractEvaluationType end
 
 @doc raw"""
-    InplaceEvaluation
+    InplaceEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) indicating that the problem uses functions that
 do not allocate memory but work on their input, i.e. in place.

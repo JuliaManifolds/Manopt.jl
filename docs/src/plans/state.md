@@ -1,4 +1,4 @@
-# [AbstractManoptSolverState](@id AbstractManoptSolverStateSection)
+# [The Solver State](@id SolverStateSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -14,11 +14,9 @@ AbstractManoptSolverState
 get_state
 ```
 
-Since the [`AbstractManoptSolverState`](@ref) directly relate to a solver,
-the concrete states are documented together wirth the corresponding [solvers](@ref SolversSection).
+Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,
+the concrete states are documented together with the corresponding [solvers](@ref SolversSection).
 This page documents the general functionality available for every state.
-
-This page documents the absract type hierarchy and the concept of a decorator for a state.
 
 A first example is to access, i.e. obtain or set, the current iterate.
 This might be useful to continue investigation at the current iterate, or to set up a solver for a next experiment, respectively.
@@ -26,6 +24,8 @@ This might be useful to continue investigation at the current iterate, or to set
 ```@docs
 get_iterate
 set_iterate!
+get_gradient(::AbstractManifoldGradientObjective)
+set_gradient!
 ```
 
 ## Decorators for AbstractManoptSolverState
@@ -38,20 +38,6 @@ is_state_decorator
 decorate_state
 ```
 
-In general decorators often perform actions so we introduce
-
-```@docs
-AbstractStateAction
-```
-
-as well as a helper for storing values using keys, i.e.
-
-```@docs
-get_storage
-has_storage
-update_storage!
-```
-
 A simple example is the
 
 ```@docs
@@ -60,10 +46,32 @@ ReturnSolverState
 
 as well as [`DebugSolverState`](@ref) and [`RecordSolverState`](@ref).
 
+## State Actions
+
+A state action is a struct for callback functions that can be attached within
+for example the just mentioned debug decorator or the record decorator.
+
+```@docs
+AbstractStateAction
+```
+
+Several state decorators or actions might store intermediate values like the (last) iterate to compute some change or the last gradient. In order to minimise the storage of these, there is a generic [`StoreStateAction`](@ref)
+that acts as generic common storage that can be shared among different actions.
+
+```@docs
+StoreStateAction
+get_storage
+has_storage
+update_storage!
+```
+
 ## Abstract States
 
 In a few cases it is useful to have a hierarchy of types. These are
 
 ```@docs
+AbstractSubProblemSolverState
+AbstractGradientSolverState
+AbstractHessianSolverState
 AbstractPrimalDualSolverState
 ```

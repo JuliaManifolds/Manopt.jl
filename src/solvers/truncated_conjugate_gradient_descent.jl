@@ -312,8 +312,7 @@ see the reference:
 * `project!` : (`copyto!`) specify a projection operation for tangent vectors
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)` | `[`StopIfResidualIsReducedByFactor`](@ref)` | `
-    [`StopWhenResidualIsReducedByFactorOrPower`](@ref)` | '[`StopWhenCurvatureIsNegative`](@ref)` | `[`StopWhenTrustRegionIsExceeded`](@ref) )
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)` | [`StopWhenResidualIsReducedByFactorOrPower`](@ref)` | '[`StopWhenCurvatureIsNegative`](@ref)` | `[`StopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.

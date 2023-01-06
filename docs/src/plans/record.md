@@ -7,11 +7,11 @@ On the one hand, the high-level interfaces provide a `record=` keyword, that acc
 For example recording the gradient from the [`GradientDescentState`](@ref) is
 automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
-## [Record Slver States](@id RecordSolverState)
+## [Record Solver States](@id RecordSolverState)
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["plans/record_options.jl"]
+Pages = ["plans/record.jl"]
 Order = [:type, :function]
 Private = true
 ```

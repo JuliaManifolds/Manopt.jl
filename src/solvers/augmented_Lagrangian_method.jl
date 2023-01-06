@@ -10,8 +10,8 @@ Describes the augmented Lagrangian method, with
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `p` – a point on a manifold as starting point and current iterate
-* `sub_problem` – problem for the subsolver
-* `sub_state` – options of the subproblem
+* `sub_problem` – an [`AbstractManoptProblem`](@ref) problem for the subsolver
+* `sub_state` – an [`AbstractManoptSolverState`](@ref) for the subsolver
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `λ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
@@ -109,7 +109,8 @@ end
 @doc raw"""
     augmented_Lagrangian_method(M, f, grad_f, p=rand(M); kwargs...)
 
-perform the augmented Lagrangian method (ALM)[^LiuBoumal2020]. The aim of the ALM is to find the solution of the [`ConstrainedProblem`](@ref)
+perform the augmented Lagrangian method (ALM)[^LiuBoumal2020].
+The aim of the ALM is to find the solution of the constrained optimisation task
 
 ```math
 \begin{aligned}

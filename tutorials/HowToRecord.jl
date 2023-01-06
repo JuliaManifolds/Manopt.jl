@@ -22,7 +22,7 @@ This tutorial illustrates how to:
 * define an own `RecordAction` to perform individual recordings.
 
 Several predefined recordings exist, for example `RecordCost()` or `RecordGradient()`, depending on the solver used.
-For fields of the `Options` this can be directly done using the [`RecordEntry(:field)`].
+For fields of the `State` this can be directly done using the [`RecordEntry(:field)`].
 For other recordings, for example more advanced computations before storing a value, an own `RecordAction` can be defined.
 
 We illustrate these using the gradient descent from the mean computation tutorial.
@@ -85,7 +85,7 @@ R = gradient_descent(M, F, gradF, data[1]; record=:Cost, return_state=true)
 
 # ╔═╡ 7552c7ba-6d45-4ed9-856c-b00be28a84a0
 md"""
-From the returned options, we see that the `Options` are encapsulated (decorated) with
+From the returned options, we see that the `State` are encapsulated (decorated) with
 `RecordSolverState`.
 
 You can attach different recorders to some operations (`:Start`. `:Stop`, `:Iteration` at time of
@@ -105,7 +105,7 @@ R2 = gradient_descent(M, F, gradF, data[1]; record=[:Iteration, :Cost], return_s
 
 # ╔═╡ 4943d34f-0aff-4879-94a6-337ce42b2e36
 md"""
-Here, the symbol `:Cost` is mapped to using the `RecordCost` action. The same holds for `:Iteration` and `:Iterate` and any member field of the current `Options`.
+Here, the symbol `:Cost` is mapped to using the `RecordCost` action. The same holds for `:Iteration` and `:Iterate` and any member field of the current `State`.
 To access these you can first extract the group of records (that is where the `:Iteration`s are recorded – note the plural) and then access the `:Cost`
 """
 
@@ -319,7 +319,7 @@ R4 = gradient_descent(
     data[1];
     record=[:Count => RecordCount()],
     return_state=true,
-	
+
 )
 
 # ╔═╡ 15159704-4a1f-4110-add2-796a1ff640ab

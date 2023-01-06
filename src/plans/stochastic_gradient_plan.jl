@@ -30,7 +30,7 @@ function (returning an array of tangent vectors) or a vector of functions (each 
 # Used with
 [`stochastic_gradient_descent`](@ref)
 
-Note that this can also be used with a [`gradient_decent`](@ref), since the (complete) gradient
+Note that this can also be used with a [`gradient_descent`](@ref), since the (complete) gradient
 is just the sums of the single gradients.
 """
 struct ManifoldStochasticGradientObjective{T<:AbstractEvaluationType,TCost,TGradient} <:

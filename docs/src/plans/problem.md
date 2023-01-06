@@ -8,6 +8,8 @@ A problem describes all static data of an optimisation task and has as a super t
 
 ```@docs
 AbstractManoptProblem
+get_objective
+get_manifold
 ```
 
 Usually, such a problem is determined by the manifold or domain of the optimisation and the objective with all its properties used within an algorithm – see [The Objective](@ref ObjectiveSection). For that we can just use

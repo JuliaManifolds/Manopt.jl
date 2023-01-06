@@ -22,17 +22,17 @@ The following algorithms are currently available
 [Exact Penalty Method](@ref ExactPenaltySolver) | `exact_penalty_method.jl`|  [`ExactPenaltyMethodState`](@ref)
 [Frank-Wolfe algorithm](@ref FrankWolfe) | `FrankWolfe.jl` | [`FrankWolfeState`](@ref)
 [Gradient Descent](@ref GradientDescentSolver) | `gradient_descent.jl` |   [`GradientDescentState`](@ref)
-[Levenberg-Marquardt](@ref) | `LevenbergMarquardt.jl` | [`NonlinearLeastSquaresProblem`](@ref)
+[Levenberg-Marquardt](@ref) | `LevenbergMarquardt.jl` |
 [`LevenbergMarquardtState`](@ref)
-[Nelder-Mead](@ref NelderMeadSolver) | `NelderMead.jl` | [`CostProblem`](@ref), [`NelderMeadState`](@ref)
+[Nelder-Mead](@ref NelderMeadSolver) | `NelderMead.jl` | [`NelderMeadState`](@ref)
 [Augmented Lagrangian Method](@ref AugmentedLagrangianSolver) | `augmented_Lagrangian_method.jl`| [`AugmentedLagrangianMethodState`](@ref)
-[Particle Swarm](@ref ParticleSwarmSolver) | `particle_swarm.jl` | [`CostProblem`](@ref), [`ParticleSwarmState`](@ref)
+[Particle Swarm](@ref ParticleSwarmSolver) | `particle_swarm.jl` | [`ParticleSwarmState`](@ref)
 [Primal-dual Riemannian semismooth Newton Algorithm](@ref PDRSSNSolver) | | [`TwoManifoldProblem`](@ref) | [`PrimalDualSemismoothNewtonState`](@ref)
 [Quasi-Newton Method](@ref quasiNewton) | `quasi_newton.jl`| [`QuasiNewtonState`](@ref)
-[Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncated_conjugate_gradient_descent.jl` | [`HessianProblem`](@ref)
+[Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncated_conjugate_gradient_descent.jl` |
 [Subgradient Method](@ref SubgradientSolver) | `subgradient_method.jl` | [`SubGradientMethodState`](@ref)
 [Stochastic Gradient Descent](@ref StochasticGradientDescentSolver) | `stochastic_gradient_descent.jl` | [`StochasticGradientDescentState`](@ref)
-[The Riemannian Trust-Regions Solver](@ref trust_regions) | `trust_regions.jl` | [`HessianProblem`](@ref), [`TrustRegionsState`](@ref)
+[The Riemannian Trust-Regions Solver](@ref trust_regions) | `trust_regions.jl` | [`TrustRegionsState`](@ref)
 
 Note that the solvers (or their [`AbstractManoptSolverState`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection).
 
@@ -53,5 +53,5 @@ initialize_solver!
 step_solver!
 get_solver_result
 get_solver_return
-stop_solver!(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+stop_solver!(p::AbstractManoptProblem, s::AbstractManoptSolverState, Any)
 ```

@@ -177,7 +177,10 @@ export ℝ, ℂ, &, |
 export AbstractManoptProblem, DefaultManoptProblem
 #
 # Objectives
-export AbstractManifoldObjective,
+export AbstractManifoldGradientObjective,
+    AbstractManifoldCostObjective,
+    AbstractManifoldObjective,
+    AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
     NonlinearLeastSquaresObjective,
     ManifoldAlternatingGradientObjective,
@@ -199,10 +202,13 @@ export Problem,
     TwoManifoldProblem,
     AbstractEvaluationType,
     AllocatingEvaluation,
-    InplaceEvaluation
+    InplaceEvaluation,
+    evaluation_type
 #
 # AbstractManoptSolverState
-export AbstractManoptSolverState,
+export AbstractGradientSolverState,
+    AbstractHessianSolverState,
+    AbstractManoptSolverState,
     AbstractPrimalDualSolverState,
     AugmentedLagrangianMethodState,
     ChambollePockState,
@@ -223,6 +229,7 @@ export AbstractManoptSolverState,
     TrustRegionsState
 
 export FrankWolfeCost, FrankWolfeGradient
+export NelderMeadSimplex
 #
 # Accessors and helpers for AbstractManoptSolverState
 export linesearch_backtrack
@@ -290,18 +297,6 @@ export WolfePowellLinesearch,
     operator_to_matrix,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
-
-export AugmentedLagrangianMethodState,
-    ConjugateGradientDescentState,
-    ExactPenaltyMethodState,
-    GradientDescentState,
-    AbstractHessianSolverState,
-    SubGradientMethodState,
-    NelderMeadSimplex,
-    NelderMeadState,
-    TruncatedConjugateGradientState,
-    TrustRegionsState,
-    ParticleSwarmState
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 
@@ -379,6 +374,7 @@ export StopAfter,
     StopWhenCurvatureIsNegative,
     StopWhenGradientNormLess,
     StopWhenModelIncreased,
+    StopWhenPopulationConcentrated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenTrustRegionIsExceeded

@@ -6,7 +6,7 @@ On the high level interfaces, like [`gradient_descent`](@ref), you can just use 
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["plans/debug_options.jl"]
+Pages = ["plans/debug.jl"]
 Order = [:type, :function]
 Private = true
 ```
@@ -16,7 +16,7 @@ Private = true
 The decorator to print debug during the iterations can be activated by
 decorating the [`AbstractManoptSolverState`](@ref) with [`DebugSolverState`](@ref) and implementing
 your own [`DebugAction`](@ref)s.
-For example printing a gradient from the [`GradientDescentSolverState`](@ref) is
+For example printing a gradient from the [`GradientDescentState`](@ref) is
 automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
 ```@autodocs
