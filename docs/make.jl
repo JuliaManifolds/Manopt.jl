@@ -2,94 +2,71 @@ using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
 using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML, Pkg
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
-tutorial_menu = Array{Pair{String,String},1}()
+struct Notebook
+    name::String
+    title::String
+end
 
-#
-# Generate Pluto Tutorial HTMLs
+function build(dir::String, notebooks::Vector{Notebook})
+    bopts = BuildOptions(
+        dir;
+        output_format=documenter_output,
+        write_files=true,
+        use_distributed=true
+    )
+    files = [nb.name * ".jl" for nb in notebooks]
+    build_notebooks(bopts, files)
+    return nothing
+end
+
+@info " \n      Rendering Tutorials\n "
+
 tutorial_src_folder = joinpath(@__DIR__, "..", "tutorials/")
 tutorial_output_folder = joinpath(@__DIR__, "src/", "tutorials/")
 tutorial_relative_path = "tutorials/"
 mkpath(tutorial_output_folder)
-#
-# Tutorials
-@info " \n      Rendering Tutorials\n "
-tutorials = [
-    Dict(:file => "Optimize!", :title => "Get Started: Optimize!"),
-    Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
-    Dict(:file => "HowToRecord", :title => "Record Values"),
-    Dict(:file => "ConstrainedOptimization", :title => "Do constrained Optimization"),
-    Dict(:file => "GeodesicRegression", :title => "Do Geodesic Regression"),
-    Dict(:file => "Bezier", :title => "Use Bézier Curves"),
-    Dict(:file => "SecondOrderDifference", :title => "Compute a Second Order Difference"),
-    Dict(:file => "StochasticGradientDescent", :title => "Do Stochastic Gradient Descent"),
-    Dict(:file => "Benchmark", :title => "Speed up! Using `gradF!`"),
-    Dict(:file => "JacobiFields", :title => "Illustrate Jacobi Fields"),
+
+tutorials = Notebook[
+    Notebook("Optimize!", "Get Started: Optimize!"),
+    Notebook("AutomaticDifferentiation", "Use AD in Manopt"),
+    Notebook("HowToRecord", "Record Values"),
+    Notebook("ConstrainedOptimization", "Do constrained Optimization"),
+    Notebook("GeodesicRegression", "Do Geodesic Regression"),
+    Notebook("Bezier", "Use Bézier Curves"),
+    Notebook("SecondOrderDifference", "Compute a Second Order Difference"),
+    Notebook("StochasticGradientDescent", "Do Stochastic Gradient Descent"),
+    Notebook("Benchmark", "Speed up! Using `gradF!`"),
+    Notebook("JacobiFields", "Illustrate Jacobi Fields"),
 ]
-# build menu and write files myself - tp set edit url correctly.
-for t in tutorials
-    global tutorial_menu
-    rendered = build_notebooks( #though not really parallel here
-        BuildOptions(
-            tutorial_src_folder;
-            output_format=documenter_output,
-            write_files=false,
-            use_distributed=true,
-        ),
-        ["$(t[:file]).jl"],
-    )
-    write(
-        tutorial_output_folder * t[:file] * ".md",
-        """
-        ```@meta
-        EditURL = "$(tutorial_src_folder)$(t[:file]).jl"
-        ```
-        $(rendered["$(t[:file]).jl"][1])
-        """,
-    )
-    push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path, t[:file] * ".md"))
+
+build(tutorial_src_folder, tutorials)
+
+tutorial_menu = map(tutorials) do nb::Notebook
+    nb.title => joinpath(tutorial_relative_path, nb.name * ".md")
 end
 
-example_menu = Array{Pair{String,String},1}()
+@info " \n      Rendering Examples\n "
 
 examples_src_folder = joinpath(@__DIR__, "..", "examples/")
 examples_output_folder = joinpath(@__DIR__, "src/", "examples/")
 examples_relative_path = "examples/"
 mkpath(examples_output_folder)
+
 examples = [
-    Dict(:file => "robustPCA", :title => "Robust PCA"),
-    Dict(:file => "smallestEigenvalue", :title => "Rayleigh quotient"),
-    Dict(
-        :file => "FrankWolfeSPDMean", :title => "Frank Wolfe for Riemannian Center of Mass"
-    ),
+    Notebook("robustPCA", "Robust PCA"),
+    Notebook("smallestEigenvalue", "Rayleigh quotient"),
+    Notebook("FrankWolfeSPDMean", "Frank Wolfe for Riemannian Center of Mass")
 ]
-@info " \n      Rendering Examples\n "
-# build menu and write files myself - tp set edit url correctly.
-for e in examples
-    global example_menu
-    rendered = build_notebooks( #though not really parallel here
-        BuildOptions(
-            examples_src_folder;
-            output_format=documenter_output,
-            write_files=false,
-            use_distributed=true,
-        ),
-        ["$(e[:file]).jl"],
-    )
-    write(
-        examples_output_folder * e[:file] * ".md",
-        """
-        ```@meta
-        EditURL = "$(examples_src_folder)$(e[:file]).jl"
-        ```
-        $(rendered["$(e[:file]).jl"][1])
-        """,
-    )
-    push!(example_menu, e[:title] => joinpath(examples_relative_path, e[:file] * ".md"))
+
+build(examples_src_folder, examples)
+
+example_menu = map(examples) do nb::Notebook
+    nb.title => joinpath(examples_relative_path, nb.name * ".md")
 end
 
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
-isdir(generated_path) || mkdir(generated_path)
+mkpath(generated_path)
 open(joinpath(generated_path, "contributing.md"), "w") do io
     # Point to source license file
     println(
@@ -107,6 +84,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
 end
 
 @info " \n      Rendering Documentation\n "
+
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
