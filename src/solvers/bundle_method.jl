@@ -61,7 +61,9 @@ function bundle_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M),
     retraction_method::TRetr=default_retraction_method(M),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
+    stopping_criterion::StoppingCriterion=StopWhenAny(
+        StopAfterIteration(5000), StopWhenChangeLess(1e-12)
+    ),
     vector_transport_method::VTransp=default_vector_transport_method(M),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
@@ -85,7 +87,9 @@ function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
     return o
 end
 function bundle_method_sub_solver(::Any, ::Any, ::Any)
-    throw(ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded."""))
+    throw(
+        ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
+    )
 end
 function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     transported_subgradients = [

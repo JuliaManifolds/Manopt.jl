@@ -195,9 +195,9 @@ function grad_distance(M, y, x, p::Int=2)
     if p == 2
         return -log(M, x, y)
     elseif p == 1 && x == y
-        return zero_vector(M,x)
+        return zero_vector(M, x)
     else
-        return -distance(M, x, y)^(p - 2) * log(M, x, y) 
+        return -distance(M, x, y)^(p - 2) * log(M, x, y)
     end
 end
 function grad_distance!(M, X, y, x, p::Int=2)
@@ -205,7 +205,7 @@ function grad_distance!(M, X, y, x, p::Int=2)
     if p == 2
         X .*= -one(eltype(X))
     elseif p == 1 && x == y
-        X = zero_vector(M,x)
+        X = zero_vector(M, x)
     else
         X .*= -distance(M, x, y)^(p - 2)
     end
