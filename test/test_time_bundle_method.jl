@@ -46,4 +46,4 @@ end
 t1 = time_bundle(Hyperbolic)
 t2 = time_bundle(SymmetricPositiveDefinite)
 
-display(plot([3:100], t1, t2; title="", labels = ["Hyperbolic Space", "Symmetric Pos Def Matirces"], xlabel = "Dimension", ylabel = "Time"))
+display(plot([3:100], [t1 t2]; title="", label = ["Hyperbolic Space" "Symmetric Pos Def Matirces"], xlabel = "Dimension", ylabel = "Time"))
