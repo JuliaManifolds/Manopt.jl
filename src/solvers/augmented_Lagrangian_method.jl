@@ -242,7 +242,7 @@ function augmented_Lagrangian_method!(
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
-    sub_state::AbstractManoptSolverState=decorate_state(
+    sub_state::AbstractManoptSolverState=decorate_state!(
         QuasiNewtonState(
             M,
             copy(p);
@@ -282,8 +282,9 @@ function augmented_Lagrangian_method!(
         θ_ϵ=θ_ϵ,
         stopping_criterion=stopping_criterion,
     )
-    mp = DefaultManoptProblem(M, _objective)
-    alms = decorate_state(alms; kwargs...)
+    obj = decorate_objective!(M, _objective; kwargs...)
+    mp = DefaultManoptProblem(M, obj)
+    alms = decorate_state!(alms; kwargs...)
     return get_solver_return(solve!(mp, alms))
 end
 

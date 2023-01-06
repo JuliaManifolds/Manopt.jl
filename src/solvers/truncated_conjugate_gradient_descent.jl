@@ -317,7 +317,7 @@ see the reference:
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
 
-and the ones that are passed to [`decorate_state`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
@@ -374,7 +374,8 @@ function truncated_conjugate_gradient_descent!(
     kwargs..., #collect rest
 ) where {TF,TG,TH,Tprec,Proj}
     mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
-    mp = DefaultManoptProblem(M, mho)
+    dmho = decorate_objective!(M, mho; kwargs...)
+    mp = DefaultManoptProblem(M, dmho)
     tcgs = TruncatedConjugateGradientState(
         M,
         p,
@@ -386,7 +387,7 @@ function truncated_conjugate_gradient_descent!(
         stopping_criterion=stopping_criterion,
         (project!)=project!,
     )
-    tcgs = decorate_state(tcgs; kwargs...)
+    tcgs = decorate_state!(tcgs; kwargs...)
     return get_solver_return(solve!(mp, tcgs))
 end
 

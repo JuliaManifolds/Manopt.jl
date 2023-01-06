@@ -4,6 +4,7 @@ The Objective describes that actual cost function and all its properties.
 
 ```@docs
 AbstractManifoldObjective
+decorate_objective!
 ```
 
 Which has two main different possibilities for its containing functions concerning the evaluation mode – not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).

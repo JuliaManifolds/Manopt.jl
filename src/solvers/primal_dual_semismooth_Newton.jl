@@ -136,7 +136,8 @@ function primal_dual_semismooth_Newton!(
         Λ=Λ,
         evaluation=evaluation,
     )
-    tmp = TwoManifoldProblem(M, N, pdmsno)
+    dpdmsno = decorate_objective!(M, pdmsno; kwargs...)
+    tmp = TwoManifoldProblem(M, N, dpdmsno)
     pdsn = PrimalDualSemismoothNewtonState(
         M,
         m,
@@ -153,7 +154,7 @@ function primal_dual_semismooth_Newton!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    pdsn = decorate_state(pdsn; kwargs...)
+    pdsn = decorate_state!(pdsn; kwargs...)
     return get_solver_return(solve!(tmp, pdsn))
 end
 

@@ -227,7 +227,7 @@ function exact_penalty_method!(
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
-    sub_state::AbstractManoptSolverState=decorate_state(
+    sub_state::AbstractManoptSolverState=decorate_state!(
         QuasiNewtonState(
             M,
             copy(M, p);
@@ -260,8 +260,9 @@ function exact_penalty_method!(
         θ_u=θ_u,
         stopping_criterion=stopping_criterion,
     )
-    dmp = DefaultManoptProblem(M, _objective)
-    epms = decorate_state(emps; kwargs...)
+    deco_o = decorate_objective!(M, _objective; kwargs...)
+    dmp = DefaultManoptProblem(M, deco_o)
+    epms = decorate_state!(emps; kwargs...)
     return get_solver_return(solve!(dmp, epms))
 end
 #

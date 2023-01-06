@@ -285,7 +285,8 @@ function ChambollePock!(
         linearized_forward_operator=linearized_forward_operator,
         Λ=Λ,
     )
-    tmp = TwoManifoldProblem(M, N, pdmo)
+    dpdmo = decorate_objective!(M, pdmo; kwargs...)
+    tmp = TwoManifoldProblem(M, N, dpdmo)
     o = ChambollePockState(
         M,
         m,
@@ -306,7 +307,7 @@ function ChambollePock!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_state(o; kwargs...)
+    o = decorate_state!(o; kwargs...)
     return get_solver_return(solve!(tmp, o))
 end
 

@@ -30,7 +30,7 @@ The implementation follows Algorithm 1[^Adachi2022].
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(1e-12))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 ...
-and the ones that are passed to [`decorate_state`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
@@ -90,7 +90,8 @@ function LevenbergMarquardt!(
     nlso = NonlinearLeastSquaresObjective(
         F, jacF, num_components; evaluation=evaluation, jacB=jacB
     )
-    nlsp = DefaultManoptProblem(M, nlso)
+    dnlso = decorate_objective!(M, nlso; kwargs...)
+    nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
         M,
         p,
@@ -100,7 +101,7 @@ function LevenbergMarquardt!(
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
     )
-    lms = decorate_state(lms; debug=debug, kwargs...)
+    lms = decorate_state!(lms; debug=debug, kwargs...)
     return get_solver_return(solve!(nlsp, lms))
 end
 #

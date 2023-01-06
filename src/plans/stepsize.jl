@@ -200,7 +200,7 @@ function (a::ArmijoLinesearch)(
 )
     a.last_stepsize = linesearch_backtrack(
         get_manifold(mp),
-        p -> get_cost_function(mp)(get_manifold(mp), p),
+        p -> get_cost_function(get_objective(mp))(get_manifold(mp), p),
         get_iterate(s),
         get_gradient!(mp, get_gradient(s), get_iterate(s)),
         a.initial_guess(mp, s, i, a.last_stepsize),

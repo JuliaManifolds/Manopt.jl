@@ -241,7 +241,8 @@ function quasi_Newton!(
         )
     end
     mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
-    mp = DefaultManoptProblem(M, mgo)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    mp = DefaultManoptProblem(M, dmgo)
     qns = QuasiNewtonState(
         M,
         p;
@@ -252,7 +253,7 @@ function quasi_Newton!(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    qns = decorate_state(qns; kwargs...)
+    qns = decorate_state!(qns; kwargs...)
     return get_solver_return(solve!(mp, qns))
 end
 

@@ -92,7 +92,8 @@ function conjugate_gradient_descent!(
     kwargs...,
 ) where {TF,TDF}
     mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
-    dmp = DefaultManoptProblem(M, mgo)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    dmp = DefaultManoptProblem(M, dmgo)
     X = zero_vector(M, p)
     cgs = ConjugateGradientDescentState(
         M,
@@ -104,7 +105,7 @@ function conjugate_gradient_descent!(
         vector_transport_method,
         X,
     )
-    cgs = decorate_state(cgs; kwargs...)
+    cgs = decorate_state!(cgs; kwargs...)
     return get_solver_return(solve!(dmp, cgs))
 end
 function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState)

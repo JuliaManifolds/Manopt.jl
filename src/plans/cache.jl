@@ -179,3 +179,35 @@ function get_gradient!(
     copyto!(M, X, sco.p, sco.X)
     return X
 end
+
+#
+# Factory
+#
+@doc raw"""
+    objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Symbol)
+
+Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o`
+on the `AbstractManifold M` based on the symbol `cache`.
+
+The following caches are available
+
+* `:Simple` generates a [`SimpleCacheObjective`](@ref)
+"""
+function objective_cache_factory(M, o, cache::Symbol)
+    (cache == :Simple) && return SimpleCacheObjective(M, o)
+    return o
+end
+
+@doc raw"""
+    objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array}Symbol)
+
+Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o`
+on the `AbstractManifold M` based on the symbol `cache[1]`,
+where the second element `cache[2]` is an array of further arguements for the cache and
+the third is passed down as keyword arguments.
+
+For all availabel caches see the simpler variant with symbols.
+"""
+function CacheObjectiveFactory(M, o, cache::Tuple{Symbol,<:AbstractArray,<:AbstractArray})
+    (cache[1] == :Simple) && return SimpleCacheObjective(M, o; cache[3]...)
+end

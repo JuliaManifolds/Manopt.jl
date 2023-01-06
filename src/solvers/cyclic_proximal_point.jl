@@ -21,7 +21,7 @@ the default values are given in brackets
   summable) sequence of λi
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
 
-and the ones that are passed to [`decorate_state`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
@@ -62,11 +62,12 @@ function cyclic_proximal_point!(
     kwargs..., #decorator options
 ) where {TF}
     mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation=evaluation)
-    dmp = DefaultManoptProblem(M, mpo)
+    dmpo = decorate_objective!(M, mpo; kwargs...)
+    dmp = DefaultManoptProblem(M, dmpo)
     cpps = CyclicProximalPointState(
         M, p; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
     )
-    cpps = decorate_state(cpps; kwargs...)
+    cpps = decorate_state!(cpps; kwargs...)
     return get_solver_return(solve!(dmp, cpps))
 end
 function initialize_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState)

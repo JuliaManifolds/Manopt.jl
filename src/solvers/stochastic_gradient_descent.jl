@@ -176,7 +176,8 @@ function stochastic_gradient_descent!(
     kwargs...,
 ) where {TDF,TF}
     msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
-    mp = DefaultManoptProblem(M, msgo)
+    dmsgo = decorate_objective!(M, msgo; kwargs...)
+    mp = DefaultManoptProblem(M, dmsgo)
     sgds = StochasticGradientDescentState(
         M,
         x,
@@ -188,7 +189,7 @@ function stochastic_gradient_descent!(
         order=order,
         retraction_method=retraction_method,
     )
-    sgds = decorate_state(sgds; kwargs...)
+    sgds = decorate_state!(sgds; kwargs...)
     return get_solver_return(solve!(mp, sgds))
 end
 function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescentState)

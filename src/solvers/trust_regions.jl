@@ -286,7 +286,8 @@ function trust_regions!(
         ),
     )
     mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
-    mp = DefaultManoptProblem(M, mho)
+    dmho = decorate_objective!(M, mho; kwargs...)
+    mp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
         M,
         p,
@@ -312,7 +313,7 @@ function trust_regions!(
         augmentation_threshold=augmentation_threshold,
         (project!)=project!,
     )
-    trs = decorate_state(trs; kwargs...)
+    trs = decorate_state!(trs; kwargs...)
     return get_solver_return(solve!(mp, trs))
 end
 

@@ -90,7 +90,7 @@ not necessarily deterministic.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 ...
-and the ones that are passed to [`decorate_state`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
@@ -131,7 +131,8 @@ function subgradient_method!(
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
-    mp = DefaultManoptProblem(M, sgo)
+    dsgo = decorate_objective!(M, sgo; kwargs...)
+    mp = DefaultManoptProblem(M, dsgo)
     sgs = SubGradientMethodState(
         M,
         p;
@@ -139,7 +140,7 @@ function subgradient_method!(
         stepsize=stepsize,
         retraction_method=retraction_method,
     )
-    sgs = decorate_state(sgs; kwargs...)
+    sgs = decorate_state!(sgs; kwargs...)
     return get_solver_return(solve!(mp, sgs))
 end
 function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState)

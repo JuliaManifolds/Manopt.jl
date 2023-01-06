@@ -172,7 +172,7 @@ i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 ...
-and the ones that are passed to [`decorate_state`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
@@ -225,7 +225,8 @@ function particle_swarm!(
     ),
     kwargs..., #collect rest
 ) where {TF}
-    mp = DefaultManoptProblem(M, ManifoldCostObjective(f))
+    dmco = decorate_objective!(M, ManifoldCostObjective(f); kwargs...)
+    mp = DefaultManoptProblem(M, dmco)
     o = ParticleSwarmState(
         M,
         x0,
@@ -238,7 +239,7 @@ function particle_swarm!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_state(o; kwargs...)
+    o = decorate_state!(o; kwargs...)
     return get_solver_return(solve!(mp, o))
 end
 

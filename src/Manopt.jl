@@ -349,7 +349,7 @@ export augmented_Lagrangian_method,
     trust_regions,
     trust_regions!
 # Solver helpers
-export decorate_state
+export decorate_state!, decorate_objective!
 export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
 export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS

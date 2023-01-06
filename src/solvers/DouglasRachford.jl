@@ -111,7 +111,7 @@ the default parameter is given in brackets
   its first argument is the result then (assuming all are equal after the second
   prox.
 
-and the ones that are passed to [`decorate_state`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
@@ -181,11 +181,12 @@ function DouglasRachford!(
         nF = f
     end
     mpo = ManifoldProximalMapObjective(nF, (prox1, prox2); evaluation=evaluation)
-    dmp = DefaultManoptProblem(M, mpo)
+    dmpo = decorate_objective!(M, mpo; kwargs...)
+    dmp = DefaultManoptProblem(M, dmpo)
     drs = DouglasRachfordState(
         M, p; λ=λ, α=α, R=R, stopping_criterion=stopping_criterion, parallel=parallel > 0
     )
-    drs = decorate_state(drs; kwargs...)
+    drs = decorate_state!(drs; kwargs...)
     return get_solver_return(solve!(dmp, drs))
 end
 function initialize_solver!(::AbstractManoptProblem, ::DouglasRachfordState) end

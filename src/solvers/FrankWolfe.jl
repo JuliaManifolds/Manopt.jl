@@ -122,7 +122,7 @@ use a retraction and its inverse.
   a [`Stepsize`](@ref) to use; but it has to be always less than 1. The default is the one proposed by Frank & Wolfe:
   ``s_k = \frac{2}{k+2}``.
 
-all further keywords are passed down to [`decorate_state`](@ref), e.g. `debug`.
+all further keywords are passed down to [`decorate_state!`](@ref), e.g. `debug`.
 
 # Output
 
@@ -149,7 +149,7 @@ function Frank_Wolfe_method!(
     sub_problem=DefaultManoptProblem(M, sub_objective),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) | StopWhenStepsizeLess(1e-8),
-    sub_state=decorate_state(
+    sub_state=decorate_state!(
         GradientDescentState(
             M,
             copy(M, p);
@@ -168,7 +168,8 @@ function Frank_Wolfe_method!(
     kwargs..., #collect rest
 ) where {TStop<:StoppingCriterion,TStep<:Stepsize}
     mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
-    dmp = DefaultManoptProblem(M, mgo)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    dmp = DefaultManoptProblem(M, dmgo)
     fws = FrankWolfeState(
         M,
         p,
@@ -179,7 +180,7 @@ function Frank_Wolfe_method!(
         stepsize=stepsize,
         stopping_criterion=stopping_criterion,
     )
-    fws = decorate_state(fws; kwargs...)
+    fws = decorate_state!(fws; kwargs...)
     return get_solver_return(solve!(dmp, fws))
 end
 function initialize_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState)

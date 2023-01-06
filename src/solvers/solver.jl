@@ -1,7 +1,7 @@
 @doc raw"""
-    decorate_state(o)
+    decorate_state!(s::AbstractManoptSolverState)
 
-decorate the [`AbstractManoptSolverState`](@ref)` o` with specific decorators.
+decorate the [`AbstractManoptSolverState`](@ref)` s` with specific decorators.
 
 # Optional Arguments
 optional arguments provide necessary details on the decorators. A specific
@@ -17,12 +17,14 @@ one is used to activate certain decorators.
 * `return_state` - (`false`) indicate whether to wrap the options in a [`ReturnSolverState`](@ref),
   indicating that the solver should return options and not (only) the minimizer.
 
+other keywords are ignored.
+
 # See also
 
 [`DebugSolverState`](@ref), [`RecordSolverState`](@ref), [`ReturnSolverState`](@ref)
 """
-function decorate_state(
-    s::O;
+function decorate_state!(
+    s::S;
     debug::Union{
         Missing, # none
         DebugAction, # single one for :All
@@ -39,11 +41,39 @@ function decorate_state(
         Array{<:Any,1}, # a formated string with symbols orAbstractStateActions
     }=missing,
     return_state=false,
-) where {O<:AbstractManoptSolverState}
-    o = ismissing(debug) ? s : DebugSolverState(s, debug)
-    o = ismissing(record) ? o : RecordSolverState(o, record)
-    o = (return_state) ? ReturnSolverState(o) : o
-    return o
+    kwargs..., # ignore all others
+) where {S<:AbstractManoptSolverState}
+    deco_s = ismissing(debug) ? s : DebugSolverState(s, debug)
+    deco_s = ismissing(record) ? deco_s : RecordSolverState(deco_s, record)
+    deco_s = (return_state) ? ReturnSolverState(deco_s) : deco_s
+    return deco_s
+end
+
+@doc raw"""
+    decorate_objective!(M, o::AbstractManifoldObjective)
+
+decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
+
+# Optional Arguments
+
+optional arguments provide necessary details on the decorators.
+A specific one is used to activate certain decorators.
+
+* `cache` – (`missing`) currenlty only supports the [`SimpleCacheObjective`](@ref)
+  which is activated by either specifying the symbol `:Simple` or the tuple
+  (`:Simple, kwargs...`) to pass down eyword arguments
+
+other keywords are ignored.
+
+# See also
+
+[`CacheManifoldObjective`](@ref)
+"""
+function decorate_objective!(
+    M::AbstractManifold, o::O; cache::Union{Missing,Symbol}=missing, kargs...
+) where {O<:AbstractManifoldObjective}
+    deco_o = ismissing(cache) ? o : CacheManifoldObjective(M, o, cache)
+    return deco_o
 end
 
 """

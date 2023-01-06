@@ -172,7 +172,7 @@ and
 * `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
 
-and the ones that are passed to [`decorate_state`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 !!! note
     The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
@@ -216,7 +216,8 @@ function NelderMead!(
     ),
     kwargs..., #collect rest
 ) where {TF}
-    mp = DefaultManoptProblem(M, ManifoldCostObjective(f))
+    dmco = decorate_objective!(M, ManifoldCostObjective(f); kwargs...)
+    mp = DefaultManoptProblem(M, dmco)
     s = NelderMeadState(
         M,
         population;
@@ -228,7 +229,7 @@ function NelderMead!(
         retraction_method=retraction_method,
         inverse_retraction_method=inverse_retraction_method,
     )
-    s = decorate_state(s; kwargs...)
+    s = decorate_state!(s; kwargs...)
     solve!(mp, s)
     return get_solver_return(s)
 end

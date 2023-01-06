@@ -201,7 +201,8 @@ function alternating_gradient_descent!(
     kwargs...,
 ) where {TgF}
     agmo = ManifoldAlternatingGradientObjective(f, grad_f; evaluation=evaluation)
-    dmp = DefaultManoptProblem(M, agmo)
+    dagmo = decorate_objective!(M, agmo; kwargs...)
+    dmp = DefaultManoptProblem(M, dagmo)
     agds = AlternatingGradientDescentState(
         M,
         p;
@@ -212,7 +213,7 @@ function alternating_gradient_descent!(
         order=order,
         retraction_method=retraction_method,
     )
-    agds = decorate_state(agds; kwargs...)
+    agds = decorate_state!(agds; kwargs...)
     return get_solver_return(solve!(dmp, agds))
 end
 function initialize_solver!(

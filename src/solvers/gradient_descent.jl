@@ -110,7 +110,7 @@ with different choices of the stepsize ``s_k`` available (see `stepsize` option 
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
-All other keyword arguments are passed to [`decorate_state`](@ref) for decorators.
+All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
@@ -158,8 +158,9 @@ function gradient_descent!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #collect rest
 ) where {TF,TDF}
-    os = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
-    mp = DefaultManoptProblem(M, os)
+    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    mp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
         M,
         p;
@@ -168,7 +169,7 @@ function gradient_descent!(
         direction=direction,
         retraction_method=retraction_method,
     )
-    s = decorate_state(s; debug=debug, kwargs...)
+    s = decorate_state!(s; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, s))
 end
 #
