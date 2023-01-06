@@ -4,8 +4,18 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 81249a52-fb98-463a-a6e2-9cf9c25f02fb
-using Pkg
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
+# ╔═╡ b198b15d-e547-47f7-a274-9ca0bc2331d6
+using Pkg;
 
 # ╔═╡ 727ca485-8350-4adc-9aa0-59bbb84a9205
 using Manopt, Manifolds, Random, Colors, PlutoUI
@@ -39,30 +49,12 @@ The following is a little bit of setup to save/include the generated images. If 
 If you downloaded only the notebook, the code runs but the images might not show.
 """
 
-# ╔═╡ 4235a1ba-3cf2-49dc-9a26-32fafc7a7008
-begin
-    localpath = join(splitpath(@__FILE__)[1:(end - 1)], "/") # files folder
-    image_prefix = localpath * "/optimize"
-    #@info image_prefix
-    render_asy = false # on CI or when you do not have asymptote, this should be false
-	use_local = false #when developing a new version, keep this false to use the current Julia environment. Set it to `true` to use Pluto's own package management (restart required)
-end;
-
-# ╔═╡ 950555e7-80a0-4e1c-bea9-cf3e556f4589
-use_local || Pkg.activate()
-
 # ╔═╡ 65489070-9066-46bb-b5b1-52732dbe9bc7
 md"""
 # Example
 
 To get started with our example we first have to load the necessary packages.
-Using the setup from above you can either use a local (Pluto managed) environment or your local environment by setting `use_local` accordingly.
-
-Usually when introducing new features or breaking releases, the Documentation does not use the local variant, otherwise it usually does.
 """
-
-# ╔═╡ 3d010940-aa2e-44d3-988b-5d6b7bec54f0
-Pkg.status(["Manopt","Manifolds"])
 
 # ╔═╡ 177cc292-94d3-4344-857e-30483f592a55
 md"""
@@ -97,21 +89,6 @@ begin
     Random.seed!(42)
     data = [exp(M, x,  σ * rand(M; vector_at=x)) for i in 1:n]
 end
-
-# ╔═╡ 9b130a57-293d-429d-88b5-78bfacbf836f
-asymptote_export_S2_signals(
-    image_prefix * "/startDataAndCenter.asy";
-    points=[[x], data],
-    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
-    dot_size=3.5,
-    camera_position=(1.0, 0.5, 0.5),
-)
-
-# ╔═╡ d2bc2e63-6ae7-4f54-b176-f74e66365b1a
-render_asy && render_asymptote(image_prefix * "/startDataAndCenter.asy"; render=2)
-
-# ╔═╡ 6ea36d50-96f0-46e1-8d90-529f0b23120d
-PlutoUI.LocalResource(image_prefix * "/startDataAndCenter.png")
 
 # ╔═╡ e21d6d03-4c61-457b-a9c7-fad5b4f369db
 md"""
@@ -250,21 +227,6 @@ md"""
 Let's add this point to our data image
 """
 
-# ╔═╡ fb07943f-54b4-4cb3-b1fd-f3ab06b4d033
-asymptote_export_S2_signals(
-    image_prefix * "/startDataCenterMean.asy";
-    points=[[x], data, [xMean3]],
-    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]),
-    dot_size=3.5,
-    camera_position=(1.0, 0.5, 0.5),
-)
-
-# ╔═╡ 5e1e6db2-39da-4857-8745-eda6ae510fa8
-render_asy && render_asymptote(image_prefix * "/startDataCenterMean.asy"; render=2)
-
-# ╔═╡ c9e09455-1af2-40aa-aa05-7fa329b5eec7
-PlutoUI.LocalResource(image_prefix * "/startDataCenterMean.png")
-
 # ╔═╡ a17ddd91-0839-48fe-ab78-445226ee4ff9
 md"""
 ## Computing the Median
@@ -336,27 +298,10 @@ We can access the recorded values using `get_record`, that consists of a tuple p
 # ╔═╡ c835b5ec-085e-4c9d-b777-76036515bcd1
 values = get_record(o)
 
-# ╔═╡ 9a19d3bb-4487-4469-a856-b1a0f3f540a7
-asymptote_export_S2_signals(
-    image_prefix * "/startDataCenterMedianAndMean.asy";
-    points=[[x], data, [xMean], [xMedian]],
-    colors=Dict(
-        :points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]
-    ),
-    dot_size=3.5,
-    camera_position=(1.0, 0.5, 0.5),
-)
-
-# ╔═╡ e6e8cc14-a67b-4e6a-a83b-73f9ba1e1dcb
-render_asy && render_asymptote(image_prefix * "/startDataCenterMedianAndMean.asy"; render=2)
-
 # ╔═╡ 6cd0aaab-e0bf-428e-a84c-f456a32f8e36
 md"""
 In the following image the mean (orange), median (magenta) are shown.
 """
-
-# ╔═╡ 97e1bec2-3577-423a-a012-ca1b5413b29a
-PlutoUI.LocalResource(image_prefix * "/startDataCenterMedianAndMean.png")
 
 # ╔═╡ 0ba01385-6502-4e66-afee-4c4af391c9b9
 md"""
@@ -374,15 +319,125 @@ md"""
 	> arxiv: [1201.0925](https://arxiv.org/abs/1201.0925).
 """
 
+# ╔═╡ 31880e73-c585-4519-9d51-5523ea2f2c14
+md"""
+## Technical Details
+
+This notebook tries to be able to run in both in a __development__ style mode, since for the documentation we want to make sure, the output refers to the most resent version, that is also with `Manopt.jl` in `]Pkg.develop` mode.
+
+It should also be able to run with a __tutorial__ mode, where this notebook uses the internal package management of `Pluto.jl`.
+
+A mix of both is __automatic__, which checks whether the folder containing this notebook is called “tutorials” and the parent folder contains `Manopt.jl`s main file. Note that also development checks this before but would error if the prequisists are not fulfilled.
+"""
+
+# ╔═╡ e023bf0e-1a5f-4c48-b0f7-a4234260138c
+# hideall
+nb_default_mode = :auto;
+
+# ╔═╡ 14ddaae2-e0cd-445d-b38d-0d37ea1c6e31
+# hideall
+@bind nb_mode Select([:develop => "development 🛠️", :tutorial => "Tutorial 📖", :auto => "auto ⚙️"]; default=nb_default_mode)
+
+# ╔═╡ 750d07d8-63a2-4507-95d2-6a219301bb79
+# hideall
+begin
+	Pkg.activate(; temp=true)
+    packages = [
+  		PackageSpec(; name="Manifolds", version="0.8"),
+   		PackageSpec(; name="Colors", version="0.12"),
+   		PackageSpec(; name="PlutoUI", version="0.7"),
+	]
+	manopt_pkg = PackageSpec(; name="Manopt", version="0.3.51")
+	if nb_mode === :develop || nb_mode === :auto
+		curr_folder = pwd()
+		parent_folder = dirname(curr_folder)
+		manopt_file = joinpath(parent_folder,"src","Manopt.jl")
+		if endswith(curr_folder,"tutorials") && isfile(manopt_file)
+			# Manopt in dev mode
+			Pkg.develop(path=parent_folder)
+			nb_dev = true
+		else
+			nb_dev = false
+			push!(packages, manopt_pkg)
+			if nb_mode === :develop
+				error("Development mode not possible, we are either not in the `tutorials/` folder or in `../src/` there is no `Manopt.jl` file,");
+			end
+		end
+	else
+		nb_dev = false
+		push!(packages, manopt_pkg)
+	end
+	Pkg.add(packages)
+end;
+
+# ╔═╡ 4235a1ba-3cf2-49dc-9a26-32fafc7a7008
+begin
+	localpath = join(splitpath(@__FILE__)[1:(end - 1)], "/") # files folder
+    image_prefix = localpath * "/optimize"
+    nb_dev && (@info image_prefix)
+    render_asy = false # on CI or when you do not have asymptote, this should be false
+end;
+
+# ╔═╡ 9b130a57-293d-429d-88b5-78bfacbf836f
+asymptote_export_S2_signals(
+    image_prefix * "/startDataAndCenter.asy";
+    points=[[x], data],
+    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
+    dot_size=3.5,
+    camera_position=(1.0, 0.5, 0.5),
+)
+
+# ╔═╡ d2bc2e63-6ae7-4f54-b176-f74e66365b1a
+render_asy && render_asymptote(image_prefix * "/startDataAndCenter.asy"; render=2)
+
+# ╔═╡ 6ea36d50-96f0-46e1-8d90-529f0b23120d
+PlutoUI.LocalResource(image_prefix * "/startDataAndCenter.png")
+
+# ╔═╡ fb07943f-54b4-4cb3-b1fd-f3ab06b4d033
+asymptote_export_S2_signals(
+    image_prefix * "/startDataCenterMean.asy";
+    points=[[x], data, [xMean3]],
+    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange]),
+    dot_size=3.5,
+    camera_position=(1.0, 0.5, 0.5),
+)
+
+# ╔═╡ 5e1e6db2-39da-4857-8745-eda6ae510fa8
+render_asy && render_asymptote(image_prefix * "/startDataCenterMean.asy"; render=2);
+
+# ╔═╡ c9e09455-1af2-40aa-aa05-7fa329b5eec7
+PlutoUI.LocalResource(image_prefix * "/startDataCenterMean.png")
+
+# ╔═╡ 9a19d3bb-4487-4469-a856-b1a0f3f540a7
+asymptote_export_S2_signals(
+    image_prefix * "/startDataCenterMedianAndMean.asy";
+    points=[[x], data, [xMean], [xMedian]],
+    colors=Dict(
+        :points => [TolVibrantBlue, TolVibrantTeal, TolVibrantOrange, TolVibrantMagenta]
+    ),
+    dot_size=3.5,
+    camera_position=(1.0, 0.5, 0.5),
+)
+
+# ╔═╡ e6e8cc14-a67b-4e6a-a83b-73f9ba1e1dcb
+render_asy && render_asymptote(image_prefix * "/startDataCenterMedianAndMean.asy"; render=2)
+
+# ╔═╡ 97e1bec2-3577-423a-a012-ca1b5413b29a
+PlutoUI.LocalResource(image_prefix * "/startDataCenterMedianAndMean.png")
+
+# ╔═╡ 3d010940-aa2e-44d3-988b-5d6b7bec54f0
+# hideall
+nb_dev && Pkg.status(["Manopt", "Manifolds"]);
+
 # ╔═╡ Cell order:
 # ╟─6bf76330-ad0e-11ec-0c00-894872624127
 # ╟─960f171c-4f52-4104-a827-c6b918b7538d
+# ╟─b198b15d-e547-47f7-a274-9ca0bc2331d6
+# ╟─750d07d8-63a2-4507-95d2-6a219301bb79
 # ╠═4235a1ba-3cf2-49dc-9a26-32fafc7a7008
 # ╟─65489070-9066-46bb-b5b1-52732dbe9bc7
-# ╠═81249a52-fb98-463a-a6e2-9cf9c25f02fb
-# ╠═950555e7-80a0-4e1c-bea9-cf3e556f4589
 # ╠═727ca485-8350-4adc-9aa0-59bbb84a9205
-# ╠═3d010940-aa2e-44d3-988b-5d6b7bec54f0
+# ╟─3d010940-aa2e-44d3-988b-5d6b7bec54f0
 # ╟─177cc292-94d3-4344-857e-30483f592a55
 # ╠═0b405c42-19a5-480d-b1dc-0fb8811a48fa
 # ╟─803fc640-bbed-4700-8a1e-f414c6446eea
@@ -398,7 +453,7 @@ md"""
 # ╠═c067f4d1-b54b-4228-85cf-70cdbbdc948b
 # ╟─7aee0626-14ba-431e-af84-79c2dfc021da
 # ╠═51daafb5-84a0-47fd-ac40-4d53888cd914
-# ╠═863bf8b8-272c-40d6-985f-0a7cf9454756
+# ╟─863bf8b8-272c-40d6-985f-0a7cf9454756
 # ╠═38df2fb3-f742-4652-857c-baa403985ff8
 # ╟─244eb6ea-0bdb-4443-8dc1-40419966198a
 # ╠═eedfedbc-f305-48ff-8aa7-78b6aa6c4d02
@@ -421,3 +476,6 @@ md"""
 # ╟─6cd0aaab-e0bf-428e-a84c-f456a32f8e36
 # ╟─97e1bec2-3577-423a-a012-ca1b5413b29a
 # ╟─0ba01385-6502-4e66-afee-4c4af391c9b9
+# ╟─31880e73-c585-4519-9d51-5523ea2f2c14
+# ╟─e023bf0e-1a5f-4c48-b0f7-a4234260138c
+# ╠═14ddaae2-e0cd-445d-b38d-0d37ea1c6e31
