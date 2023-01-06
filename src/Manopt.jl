@@ -5,7 +5,6 @@ module Manopt
 using Colors
 using ColorSchemes
 using ColorTypes
-using Convex
 using Markdown
 using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
 using Dates: Period, Nanosecond, value, Millisecond, canonicalize
@@ -13,7 +12,6 @@ using Requires
 using Random: shuffle!
 using Statistics: std, cov, mean, cor
 using DataStructures: CircularBuffer, capacity, length, size, push!
-using SCS
 using StaticArrays
 using SparseArrays
 using Printf
@@ -173,11 +171,13 @@ function __init__()
     @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
         using .QuadraticModels:
             QuadraticModel
+        @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
+            using .RipQP:
+                ripqp
+            include("solvers/bundle_method_sub_solver.jl")
+        end 
     end
-    @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
-        using .RipQP:
-            ripqp
-    end
+   
     return nothing
 end
 #
@@ -231,6 +231,8 @@ export linesearch_backtrack
 export get_cost,
     get_gradient,
     get_gradient!,
+    get_bundle_subgradient,
+    get_bundle_subgradient!,
     get_subgradient,
     get_subgradient!,
     get_proximal_map,
