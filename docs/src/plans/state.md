@@ -18,6 +18,8 @@ Since the [`AbstractManoptSolverState`](@ref) directly relate to a solver,
 the concrete states are documented together wirth the corresponding [solvers](@ref SolversSection).
 This page documents the general functionality available for every state.
 
+This page documents the absract type hierarchy and the concept of a decorator for a state.
+
 A first example is to access, i.e. obtain or set, the current iterate.
 This might be useful to continue investigation at the current iterate, or to set up a solver for a next experiment, respectively.
 
@@ -57,3 +59,11 @@ ReturnSolverState
 ```
 
 as well as [`DebugSolverState`](@ref) and [`RecordSolverState`](@ref).
+
+## Abstract States
+
+In a few cases it is useful to have a hierarchy of types. These are
+
+```@docs
+AbstractPrimalDualSolverState
+```

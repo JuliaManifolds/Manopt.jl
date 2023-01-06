@@ -2,7 +2,7 @@
     AlternatingGradientDescentState <: AbstractGradientDescentSolverState
 
 Store the fields for an alternating gradient descent algorithm,
-see also [`AlternatingGradientProblem`](@ref) and [`alternating_gradient_descent`](@ref).
+see also [`alternating_gradient_descent`](@ref).
 
 # Fields
 * `direction` (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)

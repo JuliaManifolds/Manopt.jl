@@ -159,7 +159,7 @@ function __init__()
         include("plans/alternating_gradient_plan.jl")
         include("solvers/alternating_gradient_descent.jl")
         export mid_point, mid_point!, reflect, reflect!
-        export AlternatingGradientDescentState, AlternatingGradientProblem
+        export AlternatingGradientDescentState
         export AlternatingGradient
         export alternating_gradient_descent, alternating_gradient_descent!
     end
@@ -203,8 +203,7 @@ export Problem,
 #
 # AbstractManoptSolverState
 export AbstractManoptSolverState,
-    AbstractGradientState,
-    AbstractHessianState,
+    AbstractPrimalDualSolverState,
     AugmentedLagrangianMethodState,
     ChambollePockState,
     ConjugateGradientDescentState,
@@ -217,7 +216,6 @@ export AbstractManoptSolverState,
     NelderMeadState,
     ParticleSwarmState,
     PrimalDualSemismoothNewtonState,
-    PrimalDualState,
     RecordSolverState,
     StochasticGradientDescentState,
     SubGradientMethodState,
@@ -373,7 +371,7 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 export StoppingCriterion, StoppingCriterionSet
 export StopAfter,
     StopAfterIteration,
-    StopIfResidualIsReducedByFactorOrPower,
+    StopWhenResidualIsReducedByFactorOrPower,
     StopWhenAll,
     StopWhenAny,
     StopWhenChangeLess,

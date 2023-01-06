@@ -12,7 +12,6 @@ CurrentModule = Manopt
 ## State
 
 ```@docs
-AbstractGradientState
 GradientDescentState
 ```
 

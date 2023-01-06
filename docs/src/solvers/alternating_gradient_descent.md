@@ -9,12 +9,6 @@ alternating_gradient_descent
 alternating_gradient_descent!
 ```
 
-## Problem
-
-```@docs
-AlternatingGradientProblem
-```
-
 ## State
 
 ```@docs

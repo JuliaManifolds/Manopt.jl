@@ -90,7 +90,7 @@ end
     @test s2.reason == ""
     @test s2(hp, tcgs, 1)
     @test length(s2.reason) > 0
-    s3 = StopIfResidualIsReducedByFactorOrPower()
+    s3 = StopWhenResidualIsReducedByFactorOrPower()
     update_stopping_criterion!(s3, :ResidualFactor, 0.5)
     @test s3.κ == 0.5
     update_stopping_criterion!(s3, :ResidualPower, 0.5)

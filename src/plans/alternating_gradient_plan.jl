@@ -14,10 +14,10 @@ An alternating gradient objective consists of
     This Objective is usually defied using the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
 
 # Constructors
-    AlternatingGradientProblem(M::ProductManifold, F, gradF::Function;
+    ManifoldAlternatingGradientObjective(F, gradF::Function;
         evaluation=AllocatingEvaluation()
     )
-    AlternatingGradientProblem(M::ProductManifold, F, gradF::AbstractVector{<:Function};
+    ManifoldAlternatingGradientObjective(F, gradF::AbstractVector{<:Function};
         evaluation=AllocatingEvaluation()
     )
 
@@ -124,8 +124,8 @@ function get_gradient!(
 end
 
 @doc raw"""
-    get_gradient(p::AlternatingGradientProblem, p, k)
-    get_gradient!(p::AlternatingGradientProblem, X, p, k)
+    X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, k)
+    get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, k)
 
 Evaluate one of the component gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 """

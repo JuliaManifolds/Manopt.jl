@@ -59,10 +59,9 @@ ChambollePock
 ChambollePock!
 ```
 
-## Problem & State
+## State
 
 ```@docs
-PrimalDualState
 ChambollePockState
 ```
 

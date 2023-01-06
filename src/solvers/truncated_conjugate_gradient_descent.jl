@@ -71,7 +71,7 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
         θ::Float64=1.0,
         κ::Float64=0.1,
         stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
-                                              StopIfResidualIsReducedByFactorOrPower(;
+                                              StopWhenResidualIsReducedByFactorOrPower(;
                                                   κ=κ, θ=θ
                                               ) |
                                               StopWhenTrustRegionIsExceeded() |
@@ -95,7 +95,7 @@ end
 #
 
 @doc raw"""
-    StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
+    StopWhenResidualIsReducedByFactorOrPower <: StoppingCriterion
 A functor for testing if the norm of residual at the current iterate is reduced
 either by a power of 1+θ or by a factor κ compared to the norm of the initial
 residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \
@@ -106,21 +106,23 @@ residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
 # Constructor
-    StopIfResidualIsReducedByFactorOrPower(; κ=0.1, θ=1.0)
-initialize the StopIfResidualIsReducedByFactorOrPower functor to indicate to stop after
+    StopWhenResidualIsReducedByFactorOrPower(; κ=0.1, θ=1.0)
+initialize the StopWhenResidualIsReducedByFactorOrPower functor to indicate to stop after
 the norm of the current residual is lesser than either the norm of the initial residual
 to the power of 1+θ or the norm of the initial residual times κ.
 # See also
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
+mutable struct StopWhenResidualIsReducedByFactorOrPower <: StoppingCriterion
     κ::Float64
     θ::Float64
     reason::String
-    StopIfResidualIsReducedByFactorOrPower(; κ::Float64=0.1, θ::Float64=1.0) = new(κ, θ, "")
+    function StopWhenResidualIsReducedByFactorOrPower(; κ::Float64=0.1, θ::Float64=1.0)
+        return new(κ, θ, "")
+    end
 end
-function (c::StopIfResidualIsReducedByFactorOrPower)(
+function (c::StopWhenResidualIsReducedByFactorOrPower)(
     mp::AbstractManoptProblem, tcgstate::TruncatedConjugateGradientState, i::Int
 )
     if norm(get_manifold(mp), tcgstate.p, tcgstate.residual) <=
@@ -131,22 +133,22 @@ function (c::StopIfResidualIsReducedByFactorOrPower)(
     return false
 end
 @doc raw"""
-    update_stopping_criterion!(c::StopIfResidualIsReducedByFactorOrPower, :ResidualPower, v)
+    update_stopping_criterion!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualPower, v)
 Update the residual Power `θ`  to `v`.
 """
 function update_stopping_criterion!(
-    c::StopIfResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v
+    c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v
 )
     c.θ = v
     return c
 end
 
 @doc raw"""
-    update_stopping_criterion!(c::StopIfResidualIsReducedByFactorOrPower, :ResidualFactor, v)
+    update_stopping_criterion!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualFactor, v)
 Update the residual Factor `κ` to `v`.
 """
 function update_stopping_criterion!(
-    c::StopIfResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v
+    c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v
 )
     c.κ = v
     return c
@@ -311,7 +313,7 @@ see the reference:
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)` | `[`StopIfResidualIsReducedByFactor`](@ref)` | `
-    [`StopIfResidualIsReducedByFactorOrPower`](@ref)` | '[`StopWhenCurvatureIsNegative`](@ref)` | `[`StopWhenTrustRegionIsExceeded`](@ref) )
+    [`StopWhenResidualIsReducedByFactorOrPower`](@ref)` | '[`StopWhenCurvatureIsNegative`](@ref)` | `[`StopWhenTrustRegionIsExceeded`](@ref) )
     a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
     where for the default, the maximal number of iterations is set to the dimension of the
     manifold, the power factor is `θ`, the reduction factor is `κ`.
@@ -363,7 +365,7 @@ function truncated_conjugate_gradient_descent!(
     κ::Float64=0.1,
     randomize::Bool=false,
     stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
-                                          StopIfResidualIsReducedByFactorOrPower(;
+                                          StopWhenResidualIsReducedByFactorOrPower(;
                                               κ=κ, θ=θ
                                           ) |
                                           StopWhenTrustRegionIsExceeded() |
