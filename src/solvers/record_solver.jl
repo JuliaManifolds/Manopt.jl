@@ -1,13 +1,13 @@
 """
-    initialize_solver!(p,o)
+    initialize_solver!(ams::AbstractManoptProblem, rss::RecordSolverState)
 
 Initialize the solver to the optimization [`AbstractManoptProblem`](@ref) by initializing
 the encapsulated [`AbstractManoptSolverState`](@ref) from within the [`RecordSolverState`](@ref)` o`.
 """
-function initialize_solver!(p::AbstractManoptProblem, s::RecordSolverState)
-    initialize_solver!(p, s.state)
-    get(s.recordDictionary, :Start, RecordGroup())(p, get_state(s), 0)
-    return s
+function initialize_solver!(amp::AbstractManoptProblem, rss::RecordSolverState)
+    initialize_solver!(amp, rss.state)
+    get(rss.recordDictionary, :Start, RecordGroup())(amp, get_state(rss), 0)
+    return rss
 end
 
 """
