@@ -1,27 +1,29 @@
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
 using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML, Pkg
-# Load an unregistered package (for now) to update exports of Pluto notebooks
 
 struct Notebook
     name::String
     title::String
 end
 
-function build(dir::String, notebooks::Vector{Notebook})
+function build(dir::String, output_dir::String, notebooks::Vector{Notebook})
     bopts = BuildOptions(
-        dir;
-        output_format=documenter_output,
-        write_files=true,
-        use_distributed=true
+        dir; output_format=documenter_output, write_files=true, use_distributed=true
     )
     files = [nb.name * ".jl" for nb in notebooks]
     build_notebooks(bopts, files)
+    for nb in notebooks
+        filename = nb.name * ".md"
+        src = joinpath(dir, filename)
+        dst = joinpath(output_dir, filename)
+        mv(src, dst; force=true)
+    end
     return nothing
 end
 
 @info " \n      Rendering Tutorials\n "
 
-tutorial_src_folder = joinpath(@__DIR__, "..", "tutorials/")
+tutorial_src_folder = joinpath(dirname(@__DIR__), "tutorials/")
 tutorial_output_folder = joinpath(@__DIR__, "src/", "tutorials/")
 tutorial_relative_path = "tutorials/"
 mkpath(tutorial_output_folder)
@@ -39,7 +41,7 @@ tutorials = Notebook[
     Notebook("JacobiFields", "Illustrate Jacobi Fields"),
 ]
 
-build(tutorial_src_folder, tutorials)
+build(tutorial_src_folder, tutorial_output_folder, tutorials)
 
 tutorial_menu = map(tutorials) do nb::Notebook
     nb.title => joinpath(tutorial_relative_path, nb.name * ".md")
@@ -47,7 +49,7 @@ end
 
 @info " \n      Rendering Examples\n "
 
-examples_src_folder = joinpath(@__DIR__, "..", "examples/")
+examples_src_folder = joinpath(dirname(@__DIR__), "examples/")
 examples_output_folder = joinpath(@__DIR__, "src/", "examples/")
 examples_relative_path = "examples/"
 mkpath(examples_output_folder)
@@ -55,10 +57,10 @@ mkpath(examples_output_folder)
 examples = [
     Notebook("robustPCA", "Robust PCA"),
     Notebook("smallestEigenvalue", "Rayleigh quotient"),
-    Notebook("FrankWolfeSPDMean", "Frank Wolfe for Riemannian Center of Mass")
+    Notebook("FrankWolfeSPDMean", "Frank Wolfe for Riemannian Center of Mass"),
 ]
 
-build(examples_src_folder, examples)
+build(examples_src_folder, examples_output_folder, examples)
 
 example_menu = map(examples) do nb::Notebook
     nb.title => joinpath(examples_relative_path, nb.name * ".md")
