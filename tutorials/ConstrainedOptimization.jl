@@ -178,7 +178,7 @@ md" ## A faster Augmented Lagrangian Run "
 
 # ╔═╡ c72709e1-7bae-4345-b29b-4ef1e791292b
 md"""
-Now this is a little slow, so we can modify two things, that we will directly do both – but one could also just change one of these – :
+Now this is a little slow, so we can modify two things, that we will directly do both – but one could also just change one of these – :
 
 1. Gradients should be evaluated in place, so for example
 """

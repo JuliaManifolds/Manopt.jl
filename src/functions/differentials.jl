@@ -228,6 +228,7 @@ end
 Compute ``D_p\exp_p X[Y]`` (in place of `Z`).
 
 # See also
+
 [`differential_exp_argument`](@ref), [`jacobi_field`](@ref)
 """
 function differential_exp_basepoint(M::AbstractManifold, p, X, Y)

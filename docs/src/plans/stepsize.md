@@ -7,7 +7,7 @@ CurrentModule = Manopt
 Most iterative algorithms determine a direction along which the algorithm will proceed and
 determine a step size to find the next iterate. How advanced the step size computation can be implemented depends (among others) on the properties the corresponding problem provides.
 
-Within `Manopt.jl`, the step size determination is implemented as a `functor` based on
+Within `Manopt.jl`, the step size determination is implemented as a `functor` which is a subtype of [`Stepsize`](@refbased on
 
 ```@docs
 Stepsize
@@ -23,4 +23,5 @@ Currently, the following step sizes are available
 Modules = [Manopt]
 Pages = ["plans/stepsize.jl"]
 Order = [:type,:function]
+Filter = t -> t != Stepsize
 ```

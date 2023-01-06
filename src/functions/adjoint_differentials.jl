@@ -299,6 +299,7 @@ end
 computes the adjoint of ``D_p log_p q[X]`` (in place of `Y`).
 
 # See also
+
 [`differential_log_basepoint`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function adjoint_differential_log_basepoint(M::AbstractManifold, p, q, X)
@@ -315,6 +316,7 @@ end
 Compute the adjoint of ``D_q log_p q[X]`` (in place of `Y`).
 
 # See also
+
 [`differential_log_argument`](@ref), [`adjoint_Jacobi_field`](@ref)
 """
 function adjoint_differential_log_argument(M::AbstractManifold, p, q, X)

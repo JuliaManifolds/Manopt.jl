@@ -11,7 +11,7 @@ F(p) + G(Λ(p)),
 where $F:\mathcal M → \overline{ℝ}$, $G:\mathcal N → \overline{ℝ}$, and
 $Λ:\mathcal M →\mathcal N$.
 If the manifolds $\mathcal M$ or $\mathcal N$ are not Hadamard, it has to be considered locally,
-i.e. on geodesically convex sets $\mathcal C \subset \mathcal M$ and $\mathcal D \subset\mathcal N$
+i.e. on geodesically convex sets $\mathcal C \subset \mathcal M$ and $\mathcal D \subset\mathcal N$
 such that $Λ(\mathcal C) \subset \mathcal D$.
 
 The algorithm comes down to applying the Riemannian semismooth Newton method to the rewritten primal-dual optimality conditions, i.e., we define the vector field $X: \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N} \rightarrow \mathcal{T} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$ as

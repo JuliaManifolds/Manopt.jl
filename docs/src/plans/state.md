@@ -4,21 +4,22 @@
 CurrentModule = Manopt
 ```
 
-For most algorithms a certain set of options can either be
-generated beforehand of the function with keywords can be used.
-Generally the type
+Given an [`AbstractManoptProblem`](@ref), that is a certain optimisation task,
+the state specifies the solver to use. It contains the parameters of a solver and all
+fields necessary during the algorithm, e.g. the current iterate, a [`StoppingCriterion`](@ref)
+or a [`Stepsize`](@ref).
 
 ```@docs
 AbstractManoptSolverState
 get_state
 ```
 
-Since the [`AbstractManoptSolverState`](@ref) directly relate to a solver, they are documented with the
-corresponding [solvers](@ref SolversSection).
-You can always access the options (since they
-might be decorated) by calling [`get_state`](@ref).
+Since the [`AbstractManoptSolverState`](@ref) directly relate to a solver,
+the concrete states are documented together wirth the corresponding [solvers](@ref SolversSection).
+This page documents the general functionality available for every state.
 
-For easier access, and to abstract where these are actually stored, there exists
+A first example is to access, i.e. obtain or set, the current iterate.
+This might be useful to continue investigation at the current iterate, or to set up a solver for a next experiment, respectively.
 
 ```@docs
 get_iterate
@@ -38,13 +39,12 @@ decorate_state
 In general decorators often perform actions so we introduce
 
 ```@docs
-AbstractManoptSolverStateAction
+AbstractStateAction
 ```
 
 as well as a helper for storing values using keys, i.e.
 
 ```@docs
-StoreSolverStateAction
 get_storage
 has_storage
 update_storage!

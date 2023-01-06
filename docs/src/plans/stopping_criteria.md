@@ -29,6 +29,7 @@ Further stopping criteria might be available for individual solvers.
 Modules = [Manopt]
 Pages = ["plans/stopping_criterion.jl"]
 Order = [:type]
+Filter = t -> t != StoppingCriterion && t != StoppingCriterionSet
 ```
 
 ## Functions for Stopping Criteria

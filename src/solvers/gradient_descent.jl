@@ -24,7 +24,8 @@ the gradient in a certain type; it will be initialised accordingly at a later st
 All following fields are keyword arguments.
 
 # See also
-[`gradient_descent`](@ref), [`GradientProblem`](@ref)
+
+[`gradient_descent`](@ref)
 """
 mutable struct GradientDescentState{
     P,T,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod

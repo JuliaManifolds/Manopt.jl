@@ -28,6 +28,7 @@ where the manifold is used within the defaults of the other fields mentioned abo
 which are keyword arguments here.
 
 # See also
+
 [`particle_swarm`](@ref)
 """
 mutable struct ParticleSwarmState{

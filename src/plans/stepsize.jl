@@ -1,4 +1,21 @@
 """
+    Stepsize
+
+An abstract type for the functors representing step sizes, i.e. they are callable
+structures. The naming scheme is `TypeOfStepSize`, e.g. `ConstantStepsize`.
+
+Every Stepsize has to provide a constructor and its function has to have
+the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
+and the current number of iterations are the arguments
+and returns a number, namely the stepsize to use.
+
+# See also
+
+[`Linesearch`](@ref)
+"""
+abstract type Stepsize end
+
+"""
     default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
 
 Returns the default [`Stepsize`](@ref) functor used when running the solver specified by the
@@ -130,7 +147,7 @@ last step size.
 * `last_stepsize` – (`initialstepsize`) the last step size we start the search with
 * `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
     before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
-* `initial_guess` (`(p,o,i,l) -> l`)  based on a [`GradientProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o`
+* `initial_guess` (`(p,o,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o`
   and a current iterate `i` and a last step size `l`, this returns an initial guess. The default uses the last obtained stepsize
 # Constructor
 
@@ -139,7 +156,7 @@ last step size.
 with the Fields above as keyword arguments and the retraction is set to the default retraction on `M`.
 
 The constructors return the functor to perform Armijo line search, where two interfaces are available:
-* based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o`
+* based on a tuple `(amp, ams, i)` of a [`AbstractManoptProblem`](@ref) `amp`, [`AbstractManoptSolverState`](@ref) `ams`
   and a current iterate `i`.
 * with `(M, x, F, gradFx[,η=-gradFx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#Manifold) `M`, a current
   point `x` a function `F`, that maps from the manifold to the reals,

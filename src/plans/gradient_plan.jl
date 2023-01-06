@@ -325,11 +325,15 @@ them to the current iterates tangent space.
         s::DirectionUpdateRule=IdentityUpdateRule();
         gradients = fill(zero_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
-        vector_transport_method = ParallelTransport()
+        vector_transport_method = default_vector_transport_method(M)
     )
 
-Add average to a gradient problem, `n` determines the size of averaging and `gradients` can be prefilled with some history
-Equivalently you can also use a `Manifold` `M` instead of the [`GradientProblem`](@ref) `p`.
+Add average to a gradient problem, where
+* `n` determines the size of averaging
+* `s` is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
+* `gradients` can be prefilled with some history
+* `last_iterate` stores the last iterate
+* `vector_transport_method` determines how to transport all gradients to the current iterates tangent space before averaging
 """
 mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule

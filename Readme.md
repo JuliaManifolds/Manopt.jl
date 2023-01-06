@@ -40,8 +40,8 @@ hence the algorithms can be used with _any_ manifold defined e.g. within [`Manif
 
 `Manopt.jl` belongs to the Manopt family:
 
-*  [manopt.org](https://www.manopt.org) – The Matlab version of Manopt, see also their :octocat: [GitHub repository](https://github.com/NicolasBoumal/manopt)
-* [pymanopt.org](https://www.pymanopt.org/) – The Python version of Manopt – providing also several AD backends, see also their :octocat: [GitHub repository](https://github.com/pymanopt/pymanopt)
+*  [manopt.org](https://www.manopt.org) – The Matlab version of Manopt, see also their :octocat: [GitHub repository](https://github.com/NicolasBoumal/manopt)
+* [pymanopt.org](https://www.pymanopt.org/) – The Python version of Manopt – providing also several AD backends, see also their :octocat: [GitHub repository](https://github.com/pymanopt/pymanopt)
 
 but there are also more packages providing tools on manifolds:
 

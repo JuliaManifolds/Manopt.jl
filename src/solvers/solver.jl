@@ -18,6 +18,7 @@ one is used to activate certain decorators.
   indicating that the solver should return options and not (only) the minimizer.
 
 # See also
+
 [`DebugSolverState`](@ref), [`RecordSolverState`](@ref), [`ReturnSolverState`](@ref)
 """
 function decorate_state(

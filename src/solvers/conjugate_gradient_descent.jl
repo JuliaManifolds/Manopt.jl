@@ -35,8 +35,8 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 # Optional
 * `coefficient` : ([`ConjugateDescentCoefficient`](@ref) `<:` [`DirectionUpdateRule`](@ref))
   rule to compute the descent direction update coefficient ``β_k``,
-  as a functor, i.e. the resulting function maps `(p,o,i) -> β`, where
-  `p` is the current [`GradientProblem`](@ref), `o` are the
+  as a functor, i.e. the resulting function maps `(amp, cgs, i) -> β`, where
+  `amp` is an [`AbstractManoptProblem`](@ref), `cgs` are the
   [`ConjugateGradientDescentState`](@ref) `o` and `i` is the current iterate.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.

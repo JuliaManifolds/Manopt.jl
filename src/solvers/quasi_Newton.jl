@@ -29,7 +29,8 @@ used with any update rule for the direction.
     )
 
 # See also
-[`GradientProblem`](@ref)
+
+[`quasi_Newton`](@ref)
 """
 mutable struct QuasiNewtonState{
     P,

@@ -142,7 +142,8 @@ A default value is given in brackets if a parameter can be left out in initializ
 Generate Levenberg-Marquardt options.
 
 # See also
-[`gradient_descent`](@ref), [`GradientProblem`](@ref)
+
+[`gradient_descent`](@ref), [`LevenbergMarquardt`](@ref)
 """
 mutable struct LevenbergMarquardtState{
     P,

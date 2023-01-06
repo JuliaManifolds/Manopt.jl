@@ -318,6 +318,7 @@ The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields above.
 
 # See also
+
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 [`QuasiNewtonCautiousDirectionUpdate`](@ref)
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
@@ -402,6 +403,7 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
         )
 
 # See also
+
 [`InverseBFGS`](@ref)
 [`QuasiNewtonCautiousDirectionUpdate`](@ref)
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
@@ -500,6 +502,7 @@ the corresponding step size is chosen.
 Generate a cautious update for either a matrix based or a limited memorz based update rule.
 
 # See also
+
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 

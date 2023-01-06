@@ -36,6 +36,7 @@ where the manifold `M` and the [`ConstrainedManifoldObjective`](@ref) `co` are u
 in the keyword arguments.
 
 # See also
+
 [`augmented_Lagrangian_method`](@ref)
 """
 mutable struct AugmentedLagrangianMethodState{

@@ -1,6 +1,30 @@
-#
-# Stopping Criteria
-#
+@doc raw"""
+    StoppingCriterion
+
+An abstract type for the functors representing stopping criteria, i.e. they are
+callable structures. The naming Scheme follows functions, see for
+example [`StopAfterIteration`](@ref).
+
+Every StoppingCriterion has to provide a constructor and its function has to have
+the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
+and the current number of iterations are the arguments and returns a Bool whether
+to stop or not.
+
+By default each `StoppingCriterion` should provide a fields `reason` to provide
+details when a criterion is met (and that is empty otherwise).
+"""
+abstract type StoppingCriterion end
+
+@doc raw"""
+    StoppingCriterionGroup <: StoppingCriterion
+
+An abstract type for a Stopping Criterion that itself consists of a set of
+Stopping criteria. In total it acts as a stopping criterion itself. Examples
+are [`StopWhenAny`](@ref) and [`StopWhenAll`](@ref) that can be used to
+combine stopping criteria.
+"""
+abstract type StoppingCriterionSet <: StoppingCriterion end
+
 @doc raw"""
     StopAfterIteration <: StoppingCriterion
 

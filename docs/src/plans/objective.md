@@ -6,11 +6,11 @@ The Objective describes that actual cost function and all its properties.
 AbstractManifoldObjective
 ```
 
-Which has two main different possibilities for its containing functions concerning the evaluation mode – not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
+Which has two main different possibilities for its containing functions concerning the evaluation mode – not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
 
 ```@docs
 AllocatingEvaluation
-AllocatingEvaluation
+InplaceEvaluation
 ```
 
 ## Cost function

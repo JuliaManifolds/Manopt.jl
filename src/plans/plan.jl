@@ -5,6 +5,9 @@ include("solver_state.jl")
 include("debug.jl")
 include("record.jl")
 
+include("stopping_criterion.jl")
+include("stepsize.jl")
+
 include("cost_plan.jl")
 include("gradient_plan.jl")
 include("constrained_plan.jl")
@@ -26,5 +29,3 @@ include("stochastic_gradient_plan.jl")
 include("subsolver_plan.jl")
 
 include("cache.jl")
-include("stopping_criterion.jl")
-include("stepsize.jl")

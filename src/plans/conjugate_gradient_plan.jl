@@ -16,6 +16,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 
 # See also
+
 [`conjugate_gradient_descent`](@ref), [`DefaultManoptProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
 mutable struct ConjugateGradientDescentState{

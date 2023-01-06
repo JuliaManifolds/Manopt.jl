@@ -36,6 +36,7 @@ a default value is given in brackets if a parameter can be left out in initializ
     and a slightly involved `stopping_criterion`
 
 # See also
+
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion,Proj} <:
@@ -110,6 +111,7 @@ initialize the StopIfResidualIsReducedByFactorOrPower functor to indicate to sto
 the norm of the current residual is lesser than either the norm of the initial residual
 to the power of 1+θ or the norm of the initial residual times κ.
 # See also
+
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopIfResidualIsReducedByFactorOrPower <: StoppingCriterion
@@ -173,6 +175,7 @@ the norm of the next iterate is greater than the trust-region radius using the
 `:η, :δ, :residual` by default.
 
 # See also
+
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
@@ -206,6 +209,7 @@ does not give a reduction of the model.
     StopWhenCurvatureIsNegative()
 
 # See also
+
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
@@ -236,6 +240,7 @@ A functor for testing if the curvature of the model value increased.
     StopWhenModelIncreased()
 
 # See also
+
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenModelIncreased <: StoppingCriterion

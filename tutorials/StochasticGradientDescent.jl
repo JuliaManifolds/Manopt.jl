@@ -100,7 +100,7 @@ For the mean, the gradient is
 ```
 
 which we define in `Manopt.jl` in two different ways:
-either as one function returning all gradients as a vector (see `gradF`), or – maybe more fitting for a large scale problem, as a vector of small gradient functions (see `gradf`)
+either as one function returning all gradients as a vector (see `gradF`), or – maybe more fitting for a large scale problem, as a vector of small gradient functions (see `gradf`)
 """
 
 # ╔═╡ 12a60ec6-cd18-4eea-a0af-0cabd43686b8

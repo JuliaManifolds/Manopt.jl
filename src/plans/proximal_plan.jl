@@ -129,6 +129,7 @@ Generate the options with the following keyword arguments
 * `evaluation_order` – (`:LinearOrder`) – a Symbol indicating the order the proxes are applied.
 
 # See also
+
 [`cyclic_proximal_point`](@ref)
 """
 mutable struct CyclicProximalPointState{P,TStop<:StoppingCriterion,Tλ} <:

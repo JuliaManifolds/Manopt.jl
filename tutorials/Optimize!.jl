@@ -61,6 +61,9 @@ Using the setup from above you can either use a local (Pluto managed) environmen
 Usually when introducing new features or breaking releases, the Documentation does not use the local variant, otherwise it usually does.
 """
 
+# ╔═╡ 3d010940-aa2e-44d3-988b-5d6b7bec54f0
+Pkg.status(["Manopt","Manifolds"])
+
 # ╔═╡ 177cc292-94d3-4344-857e-30483f592a55
 md"""
 Let's load a few colors from [Paul Tol](https://personal.sron.nl/~pault/).
@@ -238,7 +241,7 @@ with_terminal() do
             "\n",
             :Stop,
         ],
-        stopping_criterion=StopWhenGradientNormLess(1e-15) | StopAfterIteration(200),
+        stopping_criterion=StopWhenGradientNormLess(1e-15) | StopAfterIteration(200),
     )
 end
 
@@ -372,13 +375,14 @@ md"""
 """
 
 # ╔═╡ Cell order:
-# ╠═6bf76330-ad0e-11ec-0c00-894872624127
+# ╟─6bf76330-ad0e-11ec-0c00-894872624127
 # ╟─960f171c-4f52-4104-a827-c6b918b7538d
 # ╠═4235a1ba-3cf2-49dc-9a26-32fafc7a7008
 # ╟─65489070-9066-46bb-b5b1-52732dbe9bc7
 # ╠═81249a52-fb98-463a-a6e2-9cf9c25f02fb
 # ╠═950555e7-80a0-4e1c-bea9-cf3e556f4589
 # ╠═727ca485-8350-4adc-9aa0-59bbb84a9205
+# ╠═3d010940-aa2e-44d3-988b-5d6b7bec54f0
 # ╟─177cc292-94d3-4344-857e-30483f592a55
 # ╠═0b405c42-19a5-480d-b1dc-0fb8811a48fa
 # ╟─803fc640-bbed-4700-8a1e-f414c6446eea

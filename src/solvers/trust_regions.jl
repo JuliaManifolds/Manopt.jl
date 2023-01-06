@@ -44,6 +44,7 @@ construct a trust-regions Option with all other fields from above being
 keyword arguments
 
 # See also
+
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsState{
