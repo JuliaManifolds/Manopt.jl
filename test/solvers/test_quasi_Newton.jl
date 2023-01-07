@@ -12,41 +12,43 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         f(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
         grad_f(::Euclidean, x) = -A - B - C + 3 * x
         M = Euclidean(4, 4)
-        x = zeros(Float64, 4, 4)
+        p = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
-            M, f, grad_f, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
+            M, f, grad_f, p; stopping_criterion=StopWhenGradientNormLess(10^(-6))
         )
         @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
         # with State
-        lrbfgs_o = quasi_Newton(
+        lrbfgs_s = quasi_Newton(
             M,
             f,
             grad_f,
-            x;
+            p;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
         )
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-        @test get_last_stepsize(dmp, lrbfgs_o, lrbfgs_o.stepsize) > 0
-        @test lrbfgs_o.x == x_lrbfgs
+        @test get_last_stepsize(dmp, lrbfgs_s, lrbfgs_s.stepsize) > 0
+        @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs
+        set_gradient!(lrbfgs_s, M, p, grad_f(M, p))
+        @test isapprox(M, p, Manopt.get_gradient(lrbfgs_s), grad_f(M, p))
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
             M,
             f,
             grad_f,
-            x;
+            p;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-            basis=get_basis(M, x, DefaultOrthonormalBasis()),
+            basis=get_basis(M, p, DefaultOrthonormalBasis()),
         )
-        @test x_lrbfgs_cached == x_lrbfgs
+        @test isapprox(M, x_lrbfgs_cached, x_lrbfgs)
 
         x_lrbfgs_cached_2 = quasi_Newton(
             M,
             f,
             grad_f,
-            x;
+            p;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-            basis=get_basis(M, x, DefaultOrthonormalBasis()),
+            basis=get_basis(M, p, DefaultOrthonormalBasis()),
             memory_size=-1,
         )
         @test isapprox(M, x_lrbfgs_cached_2, x_lrbfgs; atol=1e-5)
@@ -55,7 +57,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             M,
             f,
             grad_f,
-            x;
+            p;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
@@ -65,7 +67,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             M,
             f,
             grad_f,
-            x;
+            p;
             memory_size=-1,
             stepsize=WolfePowellBinaryLinesearch(
                 M;
@@ -82,7 +84,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
                     M,
                     f,
                     grad_f,
-                    x;
+                    p;
                     direction_update=T,
                     cautious_update=c,
                     memory_size=-1,
@@ -253,7 +255,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             M, p_1, grad_f; evaluation=AllocatingEvaluation()
         )
 
-        SR1_mutating = ApproxHessianSymmetricRankOne(
+        SR1_inplace = ApproxHessianSymmetricRankOne(
             M, p_1, grad_f!; evaluation=InplaceEvaluation()
         )
 
@@ -261,29 +263,37 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             M, p_1, grad_f; evaluation=AllocatingEvaluation()
         )
 
-        BFGS_mutating = ApproxHessianBFGS(M, p_1, grad_f!; evaluation=InplaceEvaluation())
+        BFGS_inplace = ApproxHessianBFGS(M, p_1, grad_f!; evaluation=InplaceEvaluation())
 
         Y = [0.0; 1.0; 0.0; 0.0]
         X_1 = SR1_allocating(M, p_1, Y)
         SR1_allocating.p_tmp = p_2
         X_2 = SR1_allocating(M, p_1, Y)
         @test isapprox(M, p_1, X_1, X_2; atol=1e-10)
+        update_hessian_basis!(M, SR1_allocating, p_1)
+        update_hessian_basis!(M, SR1_allocating, p_2)
 
         X_3 = zero_vector(M, p_1)
         X_4 = zero_vector(M, p_1)
-        SR1_mutating(M, X_3, p_1, Y)
-        SR1_mutating.p_tmp = p_2
-        SR1_mutating(M, X_4, p_1, Y)
+        SR1_inplace(M, X_3, p_1, Y)
+        SR1_inplace.p_tmp = p_2
+        SR1_inplace(M, X_4, p_1, Y)
         @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
+        update_hessian_basis!(M, SR1_inplace, p_1)
+        update_hessian_basis!(M, SR1_inplace, p_2)
 
         X_5 = BFGS_allocating(M, p_1, Y)
         X_6 = BFGS_allocating(M, p_2, Y)
         @test isapprox(M, p_1, X_5, X_6; atol=1e-10)
+        update_hessian_basis!(M, BFGS_allocating, p_1)
+        update_hessian_basis!(M, BFGS_allocating, p_2)
 
         X_7 = zero_vector(M, p_1)
         X_8 = zero_vector(M, p_1)
-        BFGS_mutating(M, X_7, p_1, Y)
-        BFGS_mutating(M, X_8, p_2, Y)
+        BFGS_inplace(M, X_7, p_1, Y)
+        BFGS_inplace(M, X_8, p_2, Y)
+        update_hessian_basis!(M, BFGS_inplace, p_1)
+        update_hessian_basis!(M, BFGS_inplace, p_2)
 
         @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
 
@@ -294,6 +304,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         @test isapprox(test_m, BFGS_allocating.matrix)
 
         update_hessian_basis!(M, BFGS_allocating, p_1)
+        update_hessian_basis!(M, BFGS_allocating, p_2)
         @test isapprox(M, p_1, BFGS_allocating.grad_tmp, [0.0, 2.0, 0.0, 6.0])
     end
 end

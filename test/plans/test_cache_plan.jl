@@ -37,6 +37,19 @@ function (tcgc::TestCostGradCount)(M, X, p)
 end
 
 @testset "Test Caches" begin
+    @testset "Test Factory" begin
+        M = Euclidean(3)
+        # allocating
+        mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
+        s1 = objective_cache_factory(M, mgoa, :Simple)
+        @test s1 isa SimpleCacheObjective
+        # pass a keyword
+        s2 = objective_cache_factory(M, mgoa, (:Simple, [], [:initialized => false]))
+        @test s2 isa SimpleCacheObjective
+        # but not initialized
+        @test !s2.X_valid
+        @test !s2.c_valid
+    end
     @testset "SimpleCacheObjective" begin
         M = Euclidean(3)
         p = zeros(3)

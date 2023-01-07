@@ -19,8 +19,9 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     diff = grad_2 - grad_1
 
     dU = SteepestDirectionUpdateRule()
-    O = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
-    @test O.coefficient(dmp, O, 1) == 0
+    cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
+    @test cgs.coefficient(dmp, cgs, 1) == 0
+    @test default_stepsize(M, typeof(cgs)) isa ConstantStepsize
 
     dU = ConjugateDescentCoefficient()
     cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))

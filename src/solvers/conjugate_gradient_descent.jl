@@ -1,4 +1,4 @@
-function default_stepsize(M::AbstractManifold, ::Type{ConjugateGradientDescentState})
+function default_stepsize(M::AbstractManifold, ::Type{<:ConjugateGradientDescentState})
     return ConstantStepsize(M)
 end
 

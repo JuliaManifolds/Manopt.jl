@@ -357,17 +357,17 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     mp, st
 ) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
     M = get_manifold(mp)
-    return get_vector(
-        M, st.x, -d.matrix * get_coordinates(M, st.x, st.gradient, d.basis), d.basis
-    )
+    p = get_iterate(st)
+    X = get_gradient(st)
+    return get_vector(M, p, -d.matrix * get_coordinates(M, p, X, d.basis), d.basis)
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     mp, st
 ) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     M = get_manifold(mp)
-    return get_vector(
-        M, st.x, -d.matrix \ get_coordinates(M, st.x, st.gradient, d.basis), d.basis
-    )
+    p = get_iterate(st)
+    X = get_gradient(st)
+    return get_vector(M, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
 end
 
 @doc raw"""
@@ -426,10 +426,10 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
     M::AbstractManifold,
-    x,
+    p,
     ::NT,
     memory_size::Int;
-    initial_vector::T=zero_vector(M, x),
+    initial_vector::T=zero_vector(M, p),
     scale=1.0,
     project=true,
     vector_transport_method::V=default_vector_transport_method(M),
@@ -451,15 +451,15 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
     m = length(d.memory_s)
     m == 0 && return -r
     for i in m:-1:1
-        d.ρ[i] = 1 / inner(M, st.x, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
-        d.ξ[i] = inner(M, st.x, d.memory_s[i], r) * d.ρ[i]
+        d.ρ[i] = 1 / inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
+        d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .= r .- d.ξ[i] .* d.memory_y[i]
     end
-    r .= 1 / (d.ρ[m] * norm(M, st.x, last(d.memory_y))^2) .* r
+    r .= 1 / (d.ρ[m] * norm(M, p, last(d.memory_y))^2) .* r
     for i in 1:m
-        r .= r .+ (d.ξ[i] - d.ρ[i] * inner(M, st.x, d.memory_y[i], r)) .* d.memory_s[i]
+        r .= r .+ (d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)) .* d.memory_s[i]
     end
-    d.project && project!(M, r, st.x, r)
+    d.project && project!(M, r, p, r)
     return -r
 end
 
