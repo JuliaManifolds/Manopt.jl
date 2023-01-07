@@ -67,12 +67,12 @@ other keywords are ignored.
 
 # See also
 
-[`CacheManifoldObjective`](@ref)
+[`objective_cache_factory`](@ref)
 """
 function decorate_objective!(
     M::AbstractManifold, o::O; cache::Union{Missing,Symbol}=missing, kargs...
 ) where {O<:AbstractManifoldObjective}
-    deco_o = ismissing(cache) ? o : CacheManifoldObjective(M, o, cache)
+    deco_o = ismissing(cache) ? o : objective_cache_factory(M, o, cache)
     return deco_o
 end
 

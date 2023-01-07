@@ -1,5 +1,9 @@
 # [A Manifold Objective](@id ObjectiveSection)
 
+```@meta
+CurrentModule = Manopt
+```
+
 The Objective describes that actual cost function and all its properties.
 
 ```@docs
@@ -155,4 +159,5 @@ Since single function calls, e.g. to the cost or the gradient, might be expensiv
 
 ```@docs
 SimpleCacheObjective
+objective_cache_factory
 ```

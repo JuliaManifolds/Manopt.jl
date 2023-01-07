@@ -299,7 +299,7 @@ export WolfePowellLinesearch,
     WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
-
+export objective_cache_factory
 #
 # Direction Update Rules
 export DirectionUpdateRule,

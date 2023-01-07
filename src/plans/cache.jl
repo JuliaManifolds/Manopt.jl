@@ -208,6 +208,6 @@ the third is passed down as keyword arguments.
 
 For all availabel caches see the simpler variant with symbols.
 """
-function CacheObjectiveFactory(M, o, cache::Tuple{Symbol,<:AbstractArray,<:AbstractArray})
+function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray,<:AbstractArray})
     (cache[1] == :Simple) && return SimpleCacheObjective(M, o; cache[3]...)
 end

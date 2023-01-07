@@ -1,5 +1,8 @@
+# [Debug Output](@id DebugSection)
 
-### [Debug Output](@id DebugSection)
+```@meta
+CurrentModule = Manopt
+```
 
 Debug output can easily be added to any solver run.
 On the high level interfaces, like [`gradient_descent`](@ref), you can just use the `debug=` keyword.

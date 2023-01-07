@@ -12,7 +12,7 @@ tutorial_relative_path = "tutorials/"
 mkpath(tutorial_output_folder)
 #
 # Tutorials
-@info " \n      Rendering Tutorials\n "
+@info " \n      Rendering Tutorials"
 tutorials = [
     Dict(:file => "Optimize!", :title => "Get Started: Optimize!"),
     #    Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
@@ -69,7 +69,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
     end
 end
 
-@info " \n      Rendering Documentation\n "
+@info " \n      Rendering Documentation"
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],

@@ -1,5 +1,8 @@
-
 ### [Record values](@id RecordSection)
+
+```@meta
+CurrentModule = Manopt
+```
 
 To record values during the iterations of a solver run, there are in general two possibilities.
 On the one hand, the high-level interfaces provide a `record=` keyword, that accepts several different inputs. For more details see [How to record](../tutorials/HowToRecord.md).
