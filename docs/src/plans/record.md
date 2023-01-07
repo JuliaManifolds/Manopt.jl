@@ -24,7 +24,9 @@ see [recording values](@ref RecordSection) for details on the decorated solver.
 Further specific [`RecordAction`](@ref)s can be found when specific types of [`AbstractManoptSolverState`](@ref) define them on their corresponding site.
 
 ## Technical Details: The Record Solver
-```@autodocs
-Modules = [Manopt]
-Pages   = ["record_solver.jl"]
+
+```@docs
+initialize_solver!(amp::AbstractManoptProblem, rss::RecordSolverState)
+step_solver!(p::AbstractManoptProblem, s::RecordSolverState, i)
+stop_solver!(p::AbstractManoptProblem, s::RecordSolverState, i)
 ```

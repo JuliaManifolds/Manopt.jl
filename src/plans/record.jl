@@ -2,9 +2,9 @@
     RecordAction
 
 A `RecordAction` is a small functor to record values.
-The usual call is given by `(amp, ams, i) -> s` that performs the record based on
-a [`AbstractManoptProblem`](@ref) `amp`, [`AbstractManoptSolverState`](@ref) `ams`
-and the current iterate `i`.
+The usual call is given by
+`(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s` that performs the record,
+where `i` is the current iteration.
 
 By convention `i<=0` is interpreted as "For Initialization only", i.e. only
 initialize internal values, but not trigger any record, the same holds for

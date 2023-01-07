@@ -17,13 +17,13 @@ Private = true
 ## Technical Details: The Debug Solver
 
 The decorator to print debug during the iterations can be activated by
-decorating the [`AbstractManoptSolverState`](@ref) with [`DebugSolverState`](@ref) and implementing
+decorating the state of a solver and implementing
 your own [`DebugAction`](@ref)s.
 For example printing a gradient from the [`GradientDescentState`](@ref) is
 automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
-```@autodocs
-Modules = [Manopt]
-Pages   = ["debug_solver.jl"]
-Private = true
+```@docs
+initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
+step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
+stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i::Int)
 ```

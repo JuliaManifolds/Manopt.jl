@@ -1,8 +1,8 @@
 """
     initialize_solver!(ams::AbstractManoptProblem, rss::RecordSolverState)
 
-Initialize the solver to the optimization [`AbstractManoptProblem`](@ref) by initializing
-the encapsulated [`AbstractManoptSolverState`](@ref) from within the [`RecordSolverState`](@ref)` o`.
+Extend the initialization of the solver by a hook to run records
+that were added to the `:Start` entry.
 """
 function initialize_solver!(amp::AbstractManoptProblem, rss::RecordSolverState)
     initialize_solver!(amp, rss.state)
@@ -11,26 +11,25 @@ function initialize_solver!(amp::AbstractManoptProblem, rss::RecordSolverState)
 end
 
 """
-    step_solver!(p,o,iter)
+    step_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, i)
 
-Do one iteration step (the `iter`th) for [`AbstractManoptProblem`](@ref)` p` by modifying
-the values in the [`AbstractManoptSolverState`](@ref)` s.state` and record the result(s).
+Extend the `i`th step of the solver by a hook to run records,
+that were added to the `:Iteration` entry.
 """
-function step_solver!(p::AbstractManoptProblem, s::RecordSolverState, i)
-    step_solver!(p, s.state, i)
-    get(s.recordDictionary, :Iteration, RecordGroup())(p, get_state(s), i)
-    return s
+function step_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, i)
+    step_solver!(amp, rss.state, i)
+    get(rss.recordDictionary, :Iteration, RecordGroup())(amp, get_state(rss), i)
+    return rss
 end
 
 """
     stop_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, i)
 
-determine whether the solver for [`AbstractManoptProblem`](@ref)  `amp` and the
-[`RecordSolverState`](@ref) `rss` should stop at iteration `i`.
-If so, do a (final) record to `:All` and `:Stop`.
+Extend the check, whether to stop the solver by a hook to run records,
+that were added to the `:Stop` entry.
 """
-function stop_solver!(p::AbstractManoptProblem, s::RecordSolverState, i::Int)
-    stop = stop_solver!(p, s.state, i)
-    stop && get(s.recordDictionary, :Stop, RecordGroup())(p, get_state(s), i)
+function stop_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, i)
+    stop = stop_solver!(amp, rss.state, i)
+    stop && get(rss.recordDictionary, :Stop, RecordGroup())(amp, get_state(rss), i)
     return stop
 end
