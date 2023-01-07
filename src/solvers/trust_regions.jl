@@ -232,16 +232,16 @@ function trust_regions(
 end
 
 @doc raw"""
-    trust_regions!(M, F, gradF, hessF, x; kwargs...)
+    trust_regions!(M, f, grad_f, Hess_f, x; kwargs...)
 
 evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `x`.
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
-* `gradF`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
+* `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `grad_f`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
+* `Hess_f` – the hessian ``H( \mathcal M, x, ξ)`` of ``F``
 * `x` – an initial value ``x  ∈  \mathcal M``
-* `H` – the hessian ``H( \mathcal M, x, ξ)`` of ``F``
 
 for more details and all options, see [`trust_regions`](@ref)
 """

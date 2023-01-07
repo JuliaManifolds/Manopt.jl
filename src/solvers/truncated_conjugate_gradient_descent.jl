@@ -260,14 +260,14 @@ function (c::StopWhenModelIncreased)(
 end
 
 @doc raw"""
-    truncated_conjugate_gradient_descent(M, F, gradF, x, η, HessF, trust_region_radius)
+    truncated_conjugate_gradient_descent(M, f, grad_f, p, η, Hess_f, trust_region_radius)
 
 solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{η ∈ T_xM}
-m_x(η) \quad\text{where}
-m_x(η) = F(x) + ⟨\operatorname{grad}F(x),η⟩_x + \frac{1}{2}⟨\operatorname{Hess}F(x)[η],η⟩_x,
+\operatorname*{arg\,min}_{η ∈ T_pM}
+m_p(η) \quad\text{where}
+m_p(η) = f(p) + ⟨\operatorname{grad} f(p),η⟩_x + \frac{1}{2}⟨\operatorname{Hess} f(p)[η],η⟩_x,
 ```
 
 ```math
@@ -288,12 +288,11 @@ see the reference:
 # Input
 
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F: \mathcal M → ℝ`` to minimize
-* `gradF` – the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M`` of `F`
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_X\operatorname{grad}f(x)``
-* `x` – a point on the manifold ``x ∈ \mathcal M``
-* `η` – an update tangential vector ``η ∈ T_x\mathcal M``
-* `HessF` – the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_x\operatorname{grad}f(x)``
+* `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of `F`
+* `Hess_f` – the hessian ``\operatorname{Hess}f: T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
+* `p` – a point on the manifold ``p ∈ \mathcal M``
+* `η` – an update tangential vector ``η ∈ T_p\mathcal M``
 
 # Optional
 
@@ -318,8 +317,6 @@ see the reference:
     manifold, the power factor is `θ`, the reduction factor is `κ`.
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
-
-# Output
 
 # Output
 

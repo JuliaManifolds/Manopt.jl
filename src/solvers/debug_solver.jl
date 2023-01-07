@@ -1,11 +1,8 @@
 """
     initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
 
-Initialize the solver to the optimization [`AbstractManoptProblem`](@ref) `amp` by
-initializing all values in the [`DebugSolverState`](@ref) `dss`.
-
-Since debug acts as a decorator this also calls the `initialize_solver!`
-of the correpsonding internally stored options
+Extend the initialization of the solver by a hook to run debug
+that were added to the `:Start` and `:All` entries of the debug lists.
 """
 function initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
     initialize_solver!(amp, dss.state)
@@ -16,8 +13,8 @@ end
 """
     step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
 
-    Do one iteration step (the `i`th) for [`AbstractManoptProblem`](@ref) `amp` by modifying
-the values in the [`AbstractManoptSolverState`](@ref)` s.state` and print the debug specified
+Extend the `i`th step of the solver by a hook to run debug prints,
+that were added to the `:Step` and `:All` entries of the debug lists.
 """
 function step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
     step_solver!(amp, dss.state, i)
@@ -29,9 +26,8 @@ end
 """
     stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
 
-determine whether the solver for [`AbstractManoptProblem`](@ref) `amp` and the [`DebugSolverState`](@ref) `dss`
-should stop at iteration `i` by calling the function corresponding to the internally stored [`AbstractManoptSolverState`](@ref).
-If so, print debug from `:All` and `:Stop`.
+Extend the check, whether to stop the solver by a hook to run debug,
+that were added to the `:Stop` and `:All` entries of the debug lists.
 """
 function stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i::Int)
     stop = stop_solver!(amp, dss.state, i)

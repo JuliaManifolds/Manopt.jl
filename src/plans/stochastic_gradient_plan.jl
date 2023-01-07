@@ -67,9 +67,8 @@ end
 
 Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `p` (in place of `X`).
 
-Note that for the [`InplaceEvaluation`](@ref) based problem and a single function for the
-stochastic gradient, the allocating variant is not available, since the number of
-tangent vectors can not be determined in this case..
+If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+since the length (or number of elements of the gradient) can not be determined.
 """
 function get_gradients(
     M::AbstractManifold,
@@ -155,9 +154,8 @@ end
 
 Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 
-Note that for the [`InplaceEvaluation`](@ref) based problem and a single function for the
-stochastic gradient, it is not possible to derive the number `n`, and it would also require
-`n` allocations`.
+If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
 function get_gradient(
     M::AbstractManifold,
@@ -238,9 +236,8 @@ end
 
 Evaluate the complete gradient ``\operatorname{grad} f = \displaystyle\sum_{i=1}^n \operatorname{grad} f_i(p)`` at `p` (in place of `X`).
 
-Note that for the [`InplaceEvaluation`](@ref) based problem and a single function for the
-stochastic gradient, it is not possible to derive the number `n`, and it would also require
-`n` allocations`.
+If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
 function get_gradient(
     M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{T,TC,<:Function}, p

@@ -95,7 +95,6 @@ stands, as subsequent iterates will move further outside the trust-region
 boundary. A sensible strategy, just as in the case considered above, is to
 move to the trust-region boundary by finding ``τ``.
 
-
 Although it is virtually impossible in practice to know how many iterations are
 necessary to provide a good estimate ``η_{k}`` of the trust-region subproblem,
 the method stops after a certain number of iterations, which is realised by
@@ -105,7 +104,7 @@ the underlying trust-region method, see
 is to stop as soon as an iteration ``k`` is reached for which
 
 ```math
-  \Vert r_k \Vert_x \leqq \Vert r_0 \Vert_x \min \left( \Vert r_0 \Vert^{θ}_x, κ \right
+  \Vert r_k \Vert_x \leqq \Vert r_0 \Vert_x \min \left( \Vert r_0 \Vert^{θ}_x, κ \right)
 ```
 
 holds, where ``0 < κ < 1`` and ``θ > 0`` are chosen in advance. This is
