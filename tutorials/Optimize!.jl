@@ -4,9 +4,6 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 727ca485-8350-4adc-9aa0-59bbb84a9205
-using Manopt, Manifolds, Random, Colors, PlutoUI
-
 # ╔═╡ 6bf76330-ad0e-11ec-0c00-894872624127
 md"""
 # Get Started: Optimize!
@@ -44,19 +41,22 @@ _nb_mode = :auto;
 
 # ╔═╡ b198b15d-e547-47f7-a274-9ca0bc2331d6
 # hideall
-if _nb_mode === :auto || _nb_mode === :development
-	import Pkg
-	curr_folder = pwd()
-	parent_folder = dirname(curr_folder)
-	manopt_file = joinpath(parent_folder,"src","Manopt.jl")
-	# the tutorial is still in the package and not standalone
-	_in_package =  endswith(curr_folder,"tutorials") && isfile(manopt_file)
-	if _in_package
-		eval(:(Pkg.develop(path=parent_folder)))  # directory of MyPkg
-	end
-else
-	_in_package = false
-end;
+begin
+	if _nb_mode === :auto || _nb_mode === :development
+		import Pkg
+		curr_folder = pwd()
+		parent_folder = dirname(curr_folder)
+		manopt_file = joinpath(parent_folder,"src","Manopt.jl")
+		# the tutorial is still in the package and not standalone
+		_in_package =  endswith(curr_folder,"tutorials") && isfile(manopt_file)
+		if _in_package
+			eval(:(Pkg.develop(path=parent_folder)))  # directory of MyPkg
+		end
+	else
+		_in_package = false
+	end;
+	using Manopt, Manifolds, Random, Colors, PlutoUI
+end
 
 # ╔═╡ 4235a1ba-3cf2-49dc-9a26-32fafc7a7008
 # hideall
@@ -67,16 +67,22 @@ begin
     render_asy = false # on CI or when you do not have asymptote, this should be false
 end;
 
+# ╔═╡ b15e9a15-286e-4efe-9818-ba071cb7a255
+md"""
+Since the loading is a little complicated, we show, which versions of packages were installed in the following.
+"""
+
+# ╔═╡ 3ab0dcf7-7fa9-436b-88b6-42b800a4c464
+with_terminal() do
+	Pkg.status()
+end
+
 # ╔═╡ 65489070-9066-46bb-b5b1-52732dbe9bc7
 md"""
 # Example
 
 To get started with our example we first have to load the necessary packages.
 """
-
-# ╔═╡ 3d010940-aa2e-44d3-988b-5d6b7bec54f0
-# hideall
-_in_package && Pkg.status(["Manopt", "Manifolds"]);
 
 # ╔═╡ 177cc292-94d3-4344-857e-30483f592a55
 md"""
@@ -401,7 +407,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 [compat]
 Colors = "~0.12.10"
 Manifolds = "~0.8.42"
-Manopt = "0.3, 0.4"
+Manopt = "0.3.51, 0.4"
 PlutoUI = "~0.7.49"
 """
 
@@ -411,7 +417,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.4"
 manifest_format = "2.0"
-project_hash = "d4c5e42e1e0e4be511f9bab7530080bc8ef4713b"
+project_hash = "04dcf0e5c379ae6f38bddec69cb5bcdfb49b658e"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -1078,9 +1084,9 @@ version = "17.4.0+0"
 # ╠═a3c81cc3-02a9-41cd-8eb7-3d665d42c024
 # ╠═b198b15d-e547-47f7-a274-9ca0bc2331d6
 # ╠═4235a1ba-3cf2-49dc-9a26-32fafc7a7008
+# ╟─b15e9a15-286e-4efe-9818-ba071cb7a255
+# ╠═3ab0dcf7-7fa9-436b-88b6-42b800a4c464
 # ╟─65489070-9066-46bb-b5b1-52732dbe9bc7
-# ╠═727ca485-8350-4adc-9aa0-59bbb84a9205
-# ╠═3d010940-aa2e-44d3-988b-5d6b7bec54f0
 # ╟─177cc292-94d3-4344-857e-30483f592a55
 # ╠═0b405c42-19a5-480d-b1dc-0fb8811a48fa
 # ╟─803fc640-bbed-4700-8a1e-f414c6446eea
