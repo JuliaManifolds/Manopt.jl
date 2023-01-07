@@ -153,7 +153,7 @@ get_grad_inequality_constraints
 get_grad_inequality_constraints!
 ```
 
-## Cache Objective
+## [Cache Objective](@id CacheSection)
 
 Since single function calls, e.g. to the cost or the gradient, might be expensive, a simple cache objective exists as a decorator, that caches one cost value or gradient
 
