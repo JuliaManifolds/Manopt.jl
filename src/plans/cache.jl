@@ -210,4 +210,5 @@ For all availabel caches see the simpler variant with symbols.
 """
 function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray,<:AbstractArray})
     (cache[1] == :Simple) && return SimpleCacheObjective(M, o; cache[3]...)
+    return o
 end

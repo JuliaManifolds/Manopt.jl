@@ -43,12 +43,14 @@ end
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         s1 = objective_cache_factory(M, mgoa, :Simple)
         @test s1 isa SimpleCacheObjective
+        @test objective_cache_factory(M, mgoa, :none) == mgoa
         # pass a keyword
         s2 = objective_cache_factory(M, mgoa, (:Simple, [], [:initialized => false]))
         @test s2 isa SimpleCacheObjective
         # but not initialized
         @test !s2.X_valid
         @test !s2.c_valid
+        @test objective_cache_factory(M, mgoa, (:none, [], [])) == mgoa
     end
     @testset "SimpleCacheObjective" begin
         M = Euclidean(3)
