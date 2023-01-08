@@ -193,7 +193,7 @@ begin
         pts = [geodesic(M.manifold, x[M, :point], x[M, :vector], ti) for ti in a.times]
         gradients = grad_distance.(Ref(M.manifold), a.data, pts)
         Y[M, :point] .= sum(
-            adjoint_differential_exp_basepoint.(
+            Manopt.adjoint_differential_exp_basepoint.(
                 Ref(M.manifold),
                 Ref(x[M, :point]),
                 [ti * x[M, :vector] for ti in a.times],
@@ -201,7 +201,7 @@ begin
             ),
         )
         Y[M, :vector] .= sum(
-            adjoint_differential_exp_argument.(
+            Manopt.adjoint_differential_exp_argument.(
                 Ref(M.manifold),
                 Ref(x[M, :point]),
                 [ti * x[M, :vector] for ti in a.times],
@@ -475,7 +475,7 @@ begin
         pts = [geodesic(TM.manifold, p[TM, :point], p[TM, :vector], ti) for ti in x[N, 2]]
         gradients = grad_distance.(Ref(TM.manifold), a.data, pts)
         Y[TM, :point] .= sum(
-            adjoint_differential_exp_basepoint.(
+            Manopt.adjoint_differential_exp_basepoint.(
                 Ref(TM.manifold),
                 Ref(p[TM, :point]),
                 [ti * p[TM, :vector] for ti in x[N, 2]],
@@ -483,7 +483,7 @@ begin
             ),
         )
         Y[TM, :vector] .= sum(
-            adjoint_differential_exp_argument.(
+            Manopt.adjoint_differential_exp_argument.(
                 Ref(TM.manifold),
                 Ref(p[TM, :point]),
                 [ti * p[TM, :vector] for ti in x[N, 2]],
@@ -948,6 +948,12 @@ git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.10"
 
+[[deps.ManifoldDiff]]
+deps = ["LinearAlgebra", "ManifoldsBase", "Markdown", "Requires"]
+git-tree-sha1 = "52761bb1bd5146e424d229045208405745f7ff4a"
+uuid = "af67fdf4-a580-4b9f-bbec-742ef357defd"
+version = "0.2.0"
+
 [[deps.Manifolds]]
 deps = ["Colors", "Distributions", "Einsum", "Graphs", "HybridArrays", "Kronecker", "LinearAlgebra", "ManifoldsBase", "Markdown", "MatrixEquations", "Quaternions", "Random", "RecipesBase", "RecursiveArrayTools", "Requires", "SimpleWeightedGraphs", "SpecialFunctions", "StaticArrays", "Statistics", "StatsBase"]
 git-tree-sha1 = "57300c1019bad5c89f398f198212fbaa87ff6b4a"
@@ -961,7 +967,7 @@ uuid = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
 version = "0.13.28"
 
 [[deps.Manopt]]
-deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
+deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldDiff", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
 path = "/Users/ronnber/Repositories/Julia/Manopt.jl"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 version = "0.4.0"

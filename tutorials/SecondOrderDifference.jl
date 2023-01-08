@@ -657,6 +657,12 @@ git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.10"
 
+[[deps.ManifoldDiff]]
+deps = ["LinearAlgebra", "ManifoldsBase", "Markdown", "Requires"]
+git-tree-sha1 = "52761bb1bd5146e424d229045208405745f7ff4a"
+uuid = "af67fdf4-a580-4b9f-bbec-742ef357defd"
+version = "0.2.0"
+
 [[deps.Manifolds]]
 deps = ["Colors", "Distributions", "Einsum", "Graphs", "HybridArrays", "Kronecker", "LinearAlgebra", "ManifoldsBase", "Markdown", "MatrixEquations", "Quaternions", "Random", "RecipesBase", "RecursiveArrayTools", "Requires", "SimpleWeightedGraphs", "SpecialFunctions", "StaticArrays", "Statistics", "StatsBase"]
 git-tree-sha1 = "57300c1019bad5c89f398f198212fbaa87ff6b4a"
@@ -670,7 +676,7 @@ uuid = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
 version = "0.13.28"
 
 [[deps.Manopt]]
-deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
+deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldDiff", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
 path = "/Users/ronnber/Repositories/Julia/Manopt.jl"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 version = "0.4.0"
