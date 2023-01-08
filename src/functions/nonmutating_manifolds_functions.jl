@@ -1,58 +1,23 @@
-function adjoint_Jacobi_field(
-    M::NONMUTATINGMANIFOLDS,
-    p::Real,
-    q::Real,
-    t::Real,
-    X::Real,
-    β=βdifferential_geodesic_startpoint,
-)
-    x = shortest_geodesic(M, p, q, t)
-    B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
-    V = get_vectors(M, p, B)
-    Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
-    # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y = sum(
-        (inner.(Ref(M), Ref(x), Ref(X), Θ)) .*
-        (β.(B.data.eigenvalues, Ref(t), Ref(distance(M, p, q)))) .* V,
-    )[1]
-    return Y
-end
-function jacobi_field(
-    M::NONMUTATINGMANIFOLDS,
-    p::Real,
-    q::Real,
-    t::Real,
-    X::Real,
-    β=βdifferential_geodesic_startpoint,
-)
-    x = shortest_geodesic(M, p, q, t)
-    B = get_basis(M, p, DiagonalizingOrthonormalBasis(log(M, p, q)))
-    V = get_vectors(M, p, B)
-    Θ = vector_transport_to.(Ref(M), Ref(p), V, Ref(x), Ref(ParallelTransport()))
-    Y = zero_vector(M, p)
-    # Decompose wrt. frame, multiply with the weights from w and recompose with Θ.
-    Y = sum(
-        (inner.(Ref(M), Ref(p), Ref(X), V)) .*
-        (β.(B.data.eigenvalues, Ref(t), Ref(distance(M, p, q)))) .* Θ,
-    )[1]
-    return Y
-end
 function grad_TV2(M::NONMUTATINGMANIFOLDS, q, p::Int=1)
     c = mid_point(M, q[1], q[3], q[2]) # nearest mid point of x and z to y
     d = distance(M, q[2], c)
     innerLog = -log(M, c, q[2])
     X = [zero_vector(M, q[i]) for i in 1:3]
     if p == 2
-        X[1] = adjoint_differential_geodesic_startpoint(M, q[1], q[3], 1 / 2, innerLog)
+        X[1] = adjoint_differential_shortest_geodesic_startpoint(
+            M, q[1], q[3], 1 / 2, innerLog
+        )
         X[2] = -log(M, q[2], c)
-        X[3] = adjoint_differential_geodesic_endpoint(M, q[1], q[3], 1 / 2, innerLog)
+        X[3] = adjoint_differential_shortest_geodesic_endpoint(
+            M, q[1], q[3], 1 / 2, innerLog
+        )
     else
         if d > 0 # gradient case (subdifferential contains zero, see above)
-            X[1] = adjoint_differential_geodesic_startpoint(
+            X[1] = adjoint_differential_shortest_geodesic_startpoint(
                 M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
             )
             X[2] = -log(M, q[2], c) / (d^(2 - p))
-            X[3] = adjoint_differential_geodesic_endpoint(
+            X[3] = adjoint_differential_shortest_geodesic_endpoint(
                 M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
             )
         end

@@ -60,7 +60,9 @@ using ManifoldsBase:
     get_basis,
     get_component,
     get_coordinates,
+    get_coordinates!,
     get_vector,
+    get_vector!,
     get_vectors,
     get_iterator,
     manifold_dimension,
@@ -70,6 +72,7 @@ using ManifoldsBase:
     power_dimensions,
     project,
     project!,
+    requires_caching,
     retract,
     retract!,
     inverse_retract,
@@ -85,9 +88,37 @@ using ManifoldsBase:
     representation_size,
     set_component!
 
-import ManifoldsBase: mid_point, mid_point!
+using ManifoldDiff:
+    adjoint_Jacobi_field,
+    adjoint_Jacobi_field!,
+    adjoint_differential_shortest_geodesic_startpoint,
+    adjoint_differential_shortest_geodesic_startpoint!,
+    adjoint_differential_shortest_geodesic_endpoint,
+    adjoint_differential_shortest_geodesic_endpoint!,
+    adjoint_differential_exp_basepoint,
+    adjoint_differential_exp_basepoint!,
+    adjoint_differential_exp_argument,
+    adjoint_differential_exp_argument!,
+    adjoint_differential_log_basepoint,
+    adjoint_differential_log_basepoint!,
+    adjoint_differential_log_argument,
+    adjoint_differential_log_argument!,
+    jacobi_field,
+    jacobi_field!,
+    differential_shortest_geodesic_startpoint,
+    differential_shortest_geodesic_startpoint!,
+    differential_shortest_geodesic_endpoint,
+    differential_shortest_geodesic_endpoint!,
+    differential_exp_basepoint,
+    differential_exp_basepoint!,
+    differential_exp_argument,
+    differential_exp_argument!,
+    differential_log_basepoint,
+    differential_log_basepoint!,
+    differential_log_argument,
+    differential_log_argument!
 
-using ManifoldsBase: get_vector!, get_coordinates!, requires_caching
+import ManifoldsBase: mid_point, mid_point!
 
 include("plans/plan.jl")
 # Functions
@@ -96,7 +127,6 @@ include("functions/adjoint_differentials.jl")
 include("functions/costs.jl")
 include("functions/differentials.jl")
 include("functions/gradients.jl")
-include("functions/Jacobi_fields.jl")
 include("functions/proximal_maps.jl")
 # solvers general framework
 include("solvers/solver.jl")
@@ -394,27 +424,12 @@ export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_S
 export render_asymptote
 #
 # Coeffs & Helpers for differentials
-export βdifferential_geodesic_startpoint, βdifferential_exp_basepoint
-export βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
-export jacobi_field, adjoint_Jacobi_field
 #
 # Adjoint differentials
-export adjoint_differential_geodesic_startpoint, adjoint_differential_geodesic_startpoint!
-export adjoint_differential_geodesic_endpoint, adjoint_differential_geodesic_endpoint!
-export adjoint_differential_exp_basepoint, adjoint_differential_exp_basepoint!
-export adjoint_differential_exp_argument, adjoint_differential_exp_argument!
-export adjoint_differential_log_basepoint, adjoint_differential_log_basepoint!
-export adjoint_differential_log_argument, adjoint_differential_log_argument!
 export adjoint_differential_forward_logs, adjoint_differential_forward_logs!
 export adjoint_differential_bezier_control, adjoint_differential_bezier_control!
 #
 # Differentials
-export differential_geodesic_startpoint, differential_geodesic_startpoint!
-export differential_geodesic_endpoint, differential_geodesic_endpoint!
-export differential_exp_basepoint, differential_exp_basepoint!
-export differential_exp_argument, differential_exp_argument!
-export differential_log_basepoint, differential_log_basepoint!
-export differential_log_argument, differential_log_argument!
 export differential_forward_logs, differential_forward_logs!
 export differential_bezier_control, differential_bezier_control!
 #

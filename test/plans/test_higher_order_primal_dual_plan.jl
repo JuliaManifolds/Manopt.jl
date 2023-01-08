@@ -133,9 +133,11 @@ using Manopt, Manifolds, ManifoldsBase, Test
         throw(ErrorException("The case p=$p1, q=$p2 is not yet implemented"))
     end
 
-    Dprox_F(M, λ, p, X) = differential_geodesic_startpoint(M, p, data, λ / (α + λ), X)
+    function Dprox_F(M, λ, p, X)
+        return Manopt.differential_shortest_geodesic_startpoint(M, p, data, λ / (α + λ), X)
+    end
     function Dprox_F!(M, Y, λ, p, X)
-        differential_geodesic_startpoint!(M, Y, p, data, λ / (α + λ), X)
+        Manopt.differential_shortest_geodesic_startpoint!(M, Y, p, data, λ / (α + λ), X)
         return Y
     end
     function Dprox_G_dual(N, n, λ, X, Y)

@@ -320,7 +320,7 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         eⱼ = zeros(Mdims)
         eⱼ[j] = 1
         Θⱼ = get_vector(M, pdsn.m, eⱼ, Θ)
-        Gⱼ = differential_geodesic_endpoint(M, pdsn.m, pdsn.p, 1 / 2, Θⱼ)
+        Gⱼ = differential_shortest_geodesic_endpoint(M, pdsn.m, pdsn.p, 1 / 2, Θⱼ)
         Fⱼ = 2 * differential_log_argument(M, qb, qₚ, Gⱼ)
         Eⱼ = differential_exp_argument(M, qb, q₅, Fⱼ)
         D₂ⱼ = -differential_log_argument(M, pdsn.p, q₄, Eⱼ)

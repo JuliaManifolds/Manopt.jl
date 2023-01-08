@@ -183,7 +183,7 @@ md"The tangent vector now moves as a differential along the geodesic as"
 W = jacobi_field.(Ref(M), Ref(p), Ref(q), T, Ref(X));
 
 # ╔═╡ fab5b16b-e05e-4a8a-b001-236422d9e245
-md"""Which can also be called using `differential_geodesic_startpoint`.
+md"""Which can also be called using `differential_shortest_geodesic_startpoint`.
 We can add to the image above by creating extended tangent vectors
 that include their base points"""
 
@@ -231,7 +231,7 @@ md"If we further move the end point, too, we can derive that differential in dir
 # ╔═╡ 84090442-ea5f-4a1e-9c66-b0e828463853
 begin
     Y = [0.2, 0.0, -0.5]
-    W2 = differential_geodesic_endpoint.(Ref(M), Ref(p), Ref(q), T, Ref(Y))
+    W2 = differential_shortest_geodesic_endpoint.(Ref(M), Ref(p), Ref(q), T, Ref(Y))
     V2 = [Tuple([a, b]) for (a, b) in zip(r, W2)]
 end;
 

@@ -155,7 +155,7 @@ easily computed since it is just a distance with respect to ``r`` and a
 concatenation of a geodesic, where the start or end point is the argument,
 respectively, with a distance.
 Hence the adjoint differentials
-[`adjoint_differential_geodesic_startpoint`](https://manoptjl.org/stable/functions/adjointdifferentials.html#Manopt.adjoint_differential_geodesic_startpoint-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}) and [`adjoint_differential_geodesic_endpoint`](https://manoptjl.org/stable/functions/adjointdifferentials.html#Manopt.adjoint_differential_geodesic_endpoint-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}) can be employed.
+[`adjoint_differential_shortest_geodesic_startpoint`](https://manoptjl.org/stable/functions/adjointdifferentials.html#Manopt.adjoint_differential_shortest_geodesic_startpoint-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}) and [`adjoint_differential_shortest_geodesic_endpoint`](https://manoptjl.org/stable/functions/adjointdifferentials.html#Manopt.adjoint_differential_shortest_geodesic_endpoint-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}) can be employed.
 The gradient is also directly implemented, see [`grad_TV2`](https://manoptjl.org/stable/functions/gradients.html#Manopt.grad_TV2).
 We obtain
 """
