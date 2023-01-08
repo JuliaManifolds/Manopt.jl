@@ -11,6 +11,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         x = [p, q, p]
         y = [p, p, q]
         V = [X, zero_vector(M, p), -X]
+        Y = Manopt.differential_log_argument(M, p, q, -X)
         W = similar.(V)
         @test norm(
             N,
@@ -20,14 +21,12 @@ using Manifolds, Manopt, Test, ManifoldsBase
         differential_forward_logs!(N, W, x, V)
         @test norm(N, x, W - [-X, [π / 2, 0.0, 0.0], zero_vector(M, p)]) ≈ 0 atol =
             8 * 10.0^(-16)
-        @test isapprox(
-            N, x, Manopt.differential_log_argument(N, x, y, V), [V[1], V[2], V[2]]
-        )
+        @test isapprox(N, x, Manopt.differential_log_argument(N, x, y, V), [V[1], V[2], Y])
         Manopt.differential_log_argument!(N, W, x, y, V)
-        @test isapprox(N, x, W, [V[1], V[2], V[2]])
+        @test isapprox(N, x, W, [V[1], V[2], Y])
     end
     @testset "forward logs on a multivariate power manifold" begin
-        S = Sphere(2)X
+        S = Sphere(2)
         M = PowerManifold(S, NestedPowerRepresentation(), 2, 2)
         p = [zeros(3) for i in [1, 2], j in [1, 2]]
         p[1, 1] = [1.0, 0.0, 0.0]
