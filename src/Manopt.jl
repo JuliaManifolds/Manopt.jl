@@ -204,7 +204,7 @@ end
 export ℝ, ℂ, &, |
 #
 # Problems
-export AbstractManoptProblem, DefaultManoptProblem
+export AbstractManoptProblem, DefaultManoptProblem, TwoManifoldProblem
 #
 # Objectives
 export AbstractManifoldGradientObjective,
@@ -226,14 +226,7 @@ export AbstractManifoldGradientObjective,
     SimpleCacheObjective
 #
 # Evaluation & Problems - old
-export Problem,
-    ProximalProblem,
-    DefaultManoptProblem,
-    TwoManifoldProblem,
-    AbstractEvaluationType,
-    AllocatingEvaluation,
-    InplaceEvaluation,
-    evaluation_type
+export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
 #
 # AbstractManoptSolverState
 export AbstractGradientSolverState,

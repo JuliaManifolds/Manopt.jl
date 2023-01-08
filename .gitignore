@@ -11,8 +11,6 @@ examples/**/*.tex
 examples/**/*.pdf
 examples/**/*.mp4
 examples/**/*.jld2
-docs/src/tutorials/*.md
-docs/src/examples/*.md
 .vscode
 Manifest.toml
 *.DS_Store
