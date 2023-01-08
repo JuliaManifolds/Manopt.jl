@@ -250,7 +250,7 @@ d_2(x,y,z) := \min_{c ∈ \mathcal C_{x,z}} d_{\mathcal M}(c,y),\qquad x,y,z∈\
 
 Another model is based on logarithmic maps, see [^BoumalAbsil2011], but that is not considered here.
 An advantage of the model considered here is that it only consist of the evaluation of geodesics.
-This yields a gradient of ``A(b)`` with respect to ``b`` [`adjoint_Jacobi_field`](https://manoptjl.org/stable/functions/Jacobi_fields.html#Manopt.adjoint_Jacobi_field)s. The following image shows the negative gradient (scaled)
+This yields a gradient of ``A(b)`` with respect to ``b`` `adjoint_Jacobi_field`s. The following image shows the negative gradient (scaled)
 """
 
 # ╔═╡ 7b545a1e-b9c3-4c57-a5ee-3a629407b67a

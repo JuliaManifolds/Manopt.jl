@@ -45,7 +45,7 @@ begin
 	else
 		_in_package = false
 	end;
-	using Manopt, Manifolds, Random, Colors, PlutoUI
+	using Manopt, Manifolds, ManifoldDiff, Random, Colors, PlutoUI
 end
 
 # ╔═╡ ce37ed06-6245-4e61-adee-7f4ee1164b2c
@@ -180,7 +180,7 @@ r = shortest_geodesic(M, p, q, T);
 md"The tangent vector now moves as a differential along the geodesic as"
 
 # ╔═╡ d7308356-100f-4766-9afe-588960b925dd
-W = jacobi_field.(Ref(M), Ref(p), Ref(q), T, Ref(X));
+W = Manopt.jacobi_field.(Ref(M), Ref(p), Ref(q), T, Ref(X), ManifoldDiff.:βdifferential_shortest_geodesic_startpoint);
 
 # ╔═╡ fab5b16b-e05e-4a8a-b001-236422d9e245
 md"""Which can also be called using `differential_shortest_geodesic_startpoint`.
@@ -231,7 +231,7 @@ md"If we further move the end point, too, we can derive that differential in dir
 # ╔═╡ 84090442-ea5f-4a1e-9c66-b0e828463853
 begin
     Y = [0.2, 0.0, -0.5]
-    W2 = differential_shortest_geodesic_endpoint.(Ref(M), Ref(p), Ref(q), T, Ref(Y))
+    W2 = Manopt.differential_shortest_geodesic_endpoint.(Ref(M), Ref(p), Ref(q), T, Ref(Y))
     V2 = [Tuple([a, b]) for (a, b) in zip(r, W2)]
 end;
 
@@ -281,11 +281,19 @@ md"""
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
+ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[compat]
+Colors = "~0.12.10"
+ManifoldDiff = "~0.2.0"
+Manifolds = "~0.8.42"
+Manopt = "~0.4.0"
+PlutoUI = "~0.7.49"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -294,7 +302,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.4"
 manifest_format = "2.0"
-project_hash = "d68995bb5552da7ed60f3875533099d69e947b88"
+project_hash = "a45ac05353b450d4652a2dca99303944944ba8da"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -612,6 +620,12 @@ git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.10"
 
+[[deps.ManifoldDiff]]
+deps = ["LinearAlgebra", "ManifoldsBase", "Markdown", "Requires"]
+git-tree-sha1 = "52761bb1bd5146e424d229045208405745f7ff4a"
+uuid = "af67fdf4-a580-4b9f-bbec-742ef357defd"
+version = "0.2.0"
+
 [[deps.Manifolds]]
 deps = ["Colors", "Distributions", "Einsum", "Graphs", "HybridArrays", "Kronecker", "LinearAlgebra", "ManifoldsBase", "Markdown", "MatrixEquations", "Quaternions", "Random", "RecipesBase", "RecursiveArrayTools", "Requires", "SimpleWeightedGraphs", "SpecialFunctions", "StaticArrays", "Statistics", "StatsBase"]
 git-tree-sha1 = "57300c1019bad5c89f398f198212fbaa87ff6b4a"
@@ -625,7 +639,7 @@ uuid = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
 version = "0.13.28"
 
 [[deps.Manopt]]
-deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
+deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldDiff", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
 path = "/Users/ronnber/Repositories/Julia/Manopt.jl"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 version = "0.4.0"
@@ -993,7 +1007,7 @@ version = "17.4.0+0"
 # ╠═fa6e15b8-2201-4095-8ebd-ddcd749fe11d
 # ╟─99526567-14aa-4526-9a8d-48e2a3ba15a6
 # ╠═84090442-ea5f-4a1e-9c66-b0e828463853
-# ╠═bf3205fa-5348-42f9-8c1d-16e3fbcbc06c
+# ╟─bf3205fa-5348-42f9-8c1d-16e3fbcbc06c
 # ╠═c319b655-b3e5-4190-bf3c-d5af55da42ba
 # ╠═63b0d8ae-9a1b-46ff-978c-753f1cbdefe9
 # ╠═18278235-a049-4bd5-91dd-bddd31bcb8fb

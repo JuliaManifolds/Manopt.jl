@@ -30,7 +30,7 @@ that is for a given point `p` and a tangent vector `X` we have
 F(q) = ⟨X, \log_p q⟩
 ```
 
-Its gradient can be computed easily using [`adjoint_differential_log_argument`](@ref).
+Its gradient can be computed easily using `adjoint_differential_log_argument`.
 
 The values `p`and `X` are stored within this functor and hsould be references to the
 iterate and gradient from within [`FrankWolfeState`](@ref).

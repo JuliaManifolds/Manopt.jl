@@ -116,7 +116,6 @@ makedocs(;
             "Differentials" => "functions/differentials.md",
             "Adjoint Differentials" => "functions/adjointdifferentials.md",
             "Gradients" => "functions/gradients.md",
-            "Jacobi Fields" => "functions/Jacobi_fields.md",
             "Proximal Maps" => "functions/proximal_maps.md",
             "Specific Manifold Functions" => "functions/manifold.md",
         ],

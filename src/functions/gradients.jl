@@ -13,7 +13,7 @@ evaluated at the points given in `T` (elementwise in ``[0,N]``, where ``N`` is t
 number of segments of the Bézier curve). The [`get_bezier_junctions`](@ref) are fixed for
 this gradient (interpolation constraint). For the unconstrained gradient,
 see [`grad_L2_acceleration_bezier`](@ref) and set ``λ=0`` therein. This gradient is computed using
-[`adjoint_Jacobi_field`](@ref)s. For details, see [^BergmannGousenbourger2018].
+`adjoint_Jacobi_field`s. For details, see [^BergmannGousenbourger2018].
 See [`de_casteljau`](@ref) for more details on the curve.
 
 # See also
@@ -438,7 +438,7 @@ d_2(q_1,q_2,q_3) = \min_{c ∈ \mathcal C_{q_1,q_3}} d(c, q_2).
 ```
 
 While the (sub)gradient with respect to ``q_2`` is easy, the other two require
-the evaluation of an [`adjoint_Jacobi_field`](@ref).
+the evaluation of an `adjoint_Jacobi_field`.
 """
 function grad_TV2(M::AbstractManifold, q, p::Int=1)
     X = [zero_vector(M, x) for x in q]

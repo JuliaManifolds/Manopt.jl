@@ -65,7 +65,7 @@ Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format
 
 ### Functions on Manifolds
 
-Several functions are available, implemented on an arbitrary manifold, [cost functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions), and [gradients](@ref GradientFunctions) as well as [proximal maps](@ref proximalMapFunctions), but also several [jacobi Fields](@ref JacobiFieldFunctions) and their [adjoints](@ref adjointDifferentialFunctions).
+Several functions are available, implemented on an arbitrary manifold, [cost functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions) and their [adjoints](@ref adjointDifferentialFunctions), and [gradients](@ref GradientFunctions) as well as [proximal maps](@ref proximalMapFunctions).
 
 ### Optimization Algorithms (Solvers)
 
