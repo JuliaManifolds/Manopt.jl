@@ -29,9 +29,7 @@ In Julia you can get started by just typing
 using Pkg; Pkg.ad("Manopt");
 ```
 
-then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial or the
-[examples](https://github.com/JuliaManifolds/Manopt.jl/tree/master/examples)
-in this repository.
+and then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial.
 
 Manopt.jl is based on [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/),
 hence the algorithms can be used with _any_ manifold defined e.g. within [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/).
