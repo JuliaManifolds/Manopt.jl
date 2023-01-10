@@ -155,7 +155,11 @@ get_grad_inequality_constraints!
 
 ## [Cache Objective](@id CacheSection)
 
-Since single function calls, e.g. to the cost or the gradient, might be expensive, a simple cache objective exists as a decorator, that caches one cost value or gradient
+Since single function calls, e.g. to the cost or the gradient, might be expensive,
+a simple cache objective exists as a decorator, that caches one cost value or gradient.
+
+_This feature was just recently introduced and might still be a little instable.
+The `cache::Symbol=` keyword argument of the solvers might be extended or still change slightly for example._
 
 ```@docs
 SimpleCacheObjective
