@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "/Users/ronnber/Repositories/Julia/Manopt.jl/docs/../tutorials/AutomaticDifferentiation.jl"
+EditURL = "/tutorials/AutomaticDifferentiation.jl"
 ```
 ```@raw html
 <style>
@@ -247,5 +247,3 @@ end</code></pre>
 
 <!-- PlutoStaticHTML.End -->
 ```
-
-

@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "/Users/ronnber/Repositories/Julia/Manopt.jl/docs/../tutorials/StochasticGradientDescent.jl"
+EditURL = "/tutorials/StochasticGradientDescent.jl"
 ```
 ```@raw html
 <style>
@@ -152,7 +152,7 @@ end</code></pre>
  Time  (median):     5.349 μs              ┊ GC (median):     0.00%
  Time  (mean ± σ):   9.043 μs ± 55.784 μs  ┊ GC (mean ± σ):  40.39% ±  6.77%
 
-                     ▂▇█▇▅▂                                   
+                     ▂▇█▇▅▂
   ▃▄▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▄▆██████▇▅▄▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▂▂ ▃
   1.95 μs        Histogram: frequency by time        10.9 μs &lt;
 
@@ -184,7 +184,7 @@ end</code></pre>
  Time  (median):     5.111 μs               ┊ GC (median):     0.00%
  Time  (mean ± σ):   7.014 μs ±  30.657 μs  ┊ GC (mean ± σ):  29.35% ±  6.66%
 
-                     ▁▆█▇▄▁                                    
+                     ▁▆█▇▄▁
   ▃▇▄▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▄██████▆▄▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▁▂▂▂ ▃
   1.81 μs         Histogram: frequency by time        10.7 μs &lt;
 
@@ -207,7 +207,7 @@ end</code></pre>
  Time  (median):     5.139 μs               ┊ GC (median):     0.00%
  Time  (mean ± σ):   7.863 μs ±  40.574 μs  ┊ GC (mean ± σ):  34.27% ±  6.68%
 
-                     ▁▅█▇▅▁                                    
+                     ▁▅█▇▅▁
   ▂▄▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▃▅██████▇▅▄▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▂▂▂▂▂ ▃
   1.84 μs         Histogram: frequency by time        10.6 μs &lt;
 
@@ -234,7 +234,7 @@ end</code></pre>
  Time  (median):     480.760 ms               ┊ GC (median):    8.85%
  Time  (mean ± σ):   482.758 ms ±   7.100 ms  ┊ GC (mean ± σ):  9.13% ±  0.99%
 
-  ▁           ▁█▁  █  ▁     ▁                          ▁      ▁  
+  ▁           ▁█▁  █  ▁     ▁                          ▁      ▁
   █▁▁▁▁▁▁▁▁▁▁▁███▁▁█▁▁█▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁█ ▁
   474 ms           Histogram: frequency by time          498 ms &lt;
 
@@ -242,5 +242,3 @@ end</code></pre>
 
 <!-- PlutoStaticHTML.End -->
 ```
-
-

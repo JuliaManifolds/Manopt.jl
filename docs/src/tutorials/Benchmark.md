@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "/Users/ronnber/Repositories/Julia/Manopt.jl/docs/../tutorials/Benchmark.jl"
+EditURL = "/tutorials/Benchmark.jl"
 ```
 ```@raw html
 <style>
@@ -117,7 +117,7 @@ end</code></pre>
  Time  (median):     62.946 ms              ┊ GC (median):    16.09%
  Time  (mean ± σ):   62.413 ms ±  2.231 ms  ┊ GC (mean ± σ):  14.32% ±  2.45%
 
-       ▂  ▂     ▅    ▂                  ▂▅▅▂▂▂ ▅▂█             
+       ▂  ▂     ▅    ▂                  ▂▅▅▂▂▂ ▅▂█
   ▅▁▁▅▁█▁███▅▅▅▅██▅▅███▁▅▁▅█▅▁▁▅▁▁▁██▅▁▅██████▅███▅▅▁▁▁▁▁▁▁▅▅ ▁
   58.2 ms         Histogram: frequency by time        66.4 ms &lt;
 
@@ -181,7 +181,7 @@ end</code></pre>
  Time  (median):     32.561 ms              ┊ GC (median):    0.00%
  Time  (mean ± σ):   32.651 ms ±  1.446 ms  ┊ GC (mean ± σ):  0.96% ±  3.71%
 
-              ▁▁█▃                                             
+              ▁▁█▃
   ▃▃▂▂▂▃▄▂▆▅▄▄█████▇▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▂▂▁▃ ▂
   30.5 ms         Histogram: frequency by time        38.8 ms &lt;
 
@@ -195,5 +195,3 @@ end</code></pre>
 
 <!-- PlutoStaticHTML.End -->
 ```
-
-

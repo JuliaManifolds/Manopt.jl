@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "/Users/ronnber/Repositories/Julia/Manopt.jl/docs/../tutorials/SecondOrderDifference.jl"
+EditURL = "/tutorials/SecondOrderDifference.jl"
 ```
 ```@raw html
 <style>
@@ -294,5 +294,3 @@ end;</code></pre>
 
 <!-- PlutoStaticHTML.End -->
 ```
-
-

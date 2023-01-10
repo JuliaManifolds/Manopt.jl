@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "/Users/ronnber/Repositories/Julia/Manopt.jl/docs/../tutorials/GeodesicRegression.jl"
+EditURL = "/tutorials/GeodesicRegression.jl"
 ```
 ```@raw html
 <style>
@@ -554,5 +554,3 @@ end;</code></pre>
 
 <!-- PlutoStaticHTML.End -->
 ```
-
-

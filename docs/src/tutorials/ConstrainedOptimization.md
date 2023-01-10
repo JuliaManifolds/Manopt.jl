@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "/Users/ronnber/Repositories/Julia/Manopt.jl/docs/../tutorials/ConstrainedOptimization.jl"
+EditURL = "/tutorials/ConstrainedOptimization.jl"
 ```
 ```@raw html
 <style>
@@ -168,7 +168,7 @@ end</code></pre>
     	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
     );
 end</code></pre>
-<pre id="plutouiterminal">Initial F(x): -0.000549 | 
+<pre id="plutouiterminal">Initial F(x): -0.000549 |
 # 50    F(x): -0.116647 | Last Change: 1.039050
 # 100   F(x): -0.116647 | Last Change: 0.000000
 The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
@@ -215,7 +215,7 @@ The algorithm performed a step with a change (0.0) less than 1.0e-6.
     	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
     );
 end</code></pre>
-<pre id="plutouiterminal">Initial F(x): -0.000549 | 
+<pre id="plutouiterminal">Initial F(x): -0.000549 |
 # 50    F(x): -0.116647 | Last Change: 1.038985
 # 100   F(x): -0.116647 | Last Change: 0.000000
 The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
@@ -251,7 +251,7 @@ The algorithm performed a step with a change (0.0) less than 1.0e-6.
     	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
     );
 end</code></pre>
-<pre id="plutouiterminal">Initial F(x): -0.000549 | 
+<pre id="plutouiterminal">Initial F(x): -0.000549 |
 # 50    F(x): -0.115820 | Last Change: 1.018575
 # 100   F(x): -0.116644 | Last Change: 0.015787
 The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
@@ -278,7 +278,7 @@ The algorithm performed a step with a change (0.0) less than 1.0e-6.
     	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
     );
 end</code></pre>
-<pre id="plutouiterminal">Initial F(x): -0.000549 | 
+<pre id="plutouiterminal">Initial F(x): -0.000549 |
 # 50    F(x): -0.116649 | Last Change: 0.009309
 # 100   F(x): -0.116647 | Last Change: 0.000335
 The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
@@ -328,5 +328,3 @@ end</code></pre>
 
 <!-- PlutoStaticHTML.End -->
 ```
-
-
