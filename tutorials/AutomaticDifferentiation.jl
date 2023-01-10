@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.16
+# v0.19.19
 
 using Markdown
 using InteractiveUtils
@@ -58,7 +58,7 @@ begin
 		_in_package = false
 	end;
 	using Manopt, Manifolds, Random, LinearAlgebra, PlutoUI
-	using FiniteDifferences
+	using FiniteDifferences, ManifoldDiff
 end
 
 # ╔═╡ b0769dfa-28cf-440e-9ba2-1ef488f171a9
@@ -160,10 +160,10 @@ gradf1(p) = 2 * (A * p - p * p' * A * p)
 md"""Manifolds provides a finite difference scheme in tangent spaces, that you can introduce to use an existing framework (if the wrapper is implemented) form Euclidean space. Here we use `FiniteDiff.jl`."""
 
 # ╔═╡ 08456b40-74ec-4319-93e7-130b5cf70ac3
-r_backend = Manifolds.TangentDiffBackend(Manifolds.FiniteDifferencesBackend())
+r_backend = ManifoldDiff.TangentDiffBackend(ManifoldDiff.FiniteDifferencesBackend())
 
 # ╔═╡ 12327b62-7e79-4381-b6a7-f85b08a8251b
-gradf1_FD(p) = Manifolds.gradient(M, f1, p, r_backend)
+gradf1_FD(p) = ManifoldDiff.gradient(M, f1, p, r_backend)
 
 # ╔═╡ 07f9a630-e53d-45ea-b109-3d4de190723d
 begin
@@ -222,7 +222,7 @@ md"The gradient is now computed combining our gradient scheme with FiniteDiffere
 # ╔═╡ 89cd6b4b-f9ef-47ac-afd3-cf9aacf43256
 function grad_f2_AD(M, p)
     return Manifolds.gradient(
-        M, F, p, Manifolds.RiemannianProjectionBackend(Manifolds.FiniteDifferencesBackend())
+        M, F, p, Manifolds.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
     )
 end
 
@@ -287,7 +287,7 @@ We define this here again as a function `grad_G_FD` that could be used in the `M
 # ╔═╡ 6f1d748f-27ce-496b-8561-f16972da50cc
 function grad_G_FD(N, q)
     return Manifolds.gradient(
-        N, G, q, Manifolds.RiemannianProjectionBackend(Manifolds.FiniteDifferencesBackend())
+        N, G, q, ManifoldDiff.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
     )
 end
 
@@ -323,6 +323,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -331,6 +332,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 FiniteDifferences = "~0.12.24"
+ManifoldDiff = "~0.2.1"
 Manifolds = "~0.8.42"
 Manopt = "~0.3.51, 0.4"
 PlutoUI = "~0.7.49"
@@ -342,7 +344,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.4"
 manifest_format = "2.0"
-project_hash = "ee91e7b7d4b15ba99e42f560c47c7038cf1e8a4a"
+project_hash = "35c202072fb67051e72f82bae77939b2feafa716"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -398,9 +400,9 @@ version = "0.5.1"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "9489214b993cd42d17f44c36e359bf6a7c919abf"
+git-tree-sha1 = "e7ff6cadf743c098e08fca25c91103ee4303c9bb"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.15.0"
+version = "1.15.6"
 
 [[deps.ChangesOfVariables]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
@@ -433,10 +435,10 @@ uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.10"
 
 [[deps.Compat]]
-deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "b153278a25dd42c65abbf4e62344f9d22e59191b"
+deps = ["Dates", "LinearAlgebra", "UUIDs"]
+git-tree-sha1 = "00a2cccc7f098ff3b66806862d275ca3db9e6e5a"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.43.0"
+version = "4.5.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -468,10 +470,6 @@ version = "1.0.0"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
-
-[[deps.DelimitedFiles]]
-deps = ["Mmap"]
-uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[deps.DensityInterface]]
 deps = ["InverseFunctions", "Test"]
@@ -523,9 +521,9 @@ version = "0.13.6"
 
 [[deps.FiniteDifferences]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Printf", "Random", "Richardson", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "0ee1275eb003b6fc7325cb14301665d1072abda1"
+git-tree-sha1 = "3f605dd6db5640c5278f2551afc9427656439f42"
 uuid = "26cc04aa-876d-5657-8c51-4c34ba976000"
-version = "0.12.24"
+version = "0.12.26"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
@@ -670,20 +668,26 @@ git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.10"
 
+[[deps.ManifoldDiff]]
+deps = ["LinearAlgebra", "ManifoldsBase", "Markdown", "Requires"]
+git-tree-sha1 = "27fb7c5a75793bf96371d044a7b9f11b5415f130"
+uuid = "af67fdf4-a580-4b9f-bbec-742ef357defd"
+version = "0.2.1"
+
 [[deps.Manifolds]]
-deps = ["Colors", "Distributions", "Einsum", "Graphs", "HybridArrays", "Kronecker", "LinearAlgebra", "ManifoldsBase", "Markdown", "MatrixEquations", "Quaternions", "Random", "RecipesBase", "RecursiveArrayTools", "Requires", "SimpleWeightedGraphs", "SpecialFunctions", "StaticArrays", "Statistics", "StatsBase"]
-git-tree-sha1 = "57300c1019bad5c89f398f198212fbaa87ff6b4a"
+deps = ["Colors", "Distributions", "Einsum", "Graphs", "HybridArrays", "Kronecker", "LinearAlgebra", "ManifoldDiff", "ManifoldsBase", "Markdown", "MatrixEquations", "Quaternions", "Random", "RecipesBase", "RecursiveArrayTools", "Requires", "SimpleWeightedGraphs", "SpecialFunctions", "StaticArrays", "Statistics", "StatsBase"]
+git-tree-sha1 = "43caf1eb5dfaf511e6400753a8f86e48728347a5"
 uuid = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
-version = "0.8.42"
+version = "0.8.44"
 
 [[deps.ManifoldsBase]]
 deps = ["LinearAlgebra", "Markdown", "Random"]
-git-tree-sha1 = "c92e14536ba3c1b854676ba067926dbffe3624a9"
+git-tree-sha1 = "9724e0f7993fb3df5e23cd8f4628b4ed425c5766"
 uuid = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
-version = "0.13.28"
+version = "0.13.29"
 
 [[deps.Manopt]]
-deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
+deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldDiff", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
 path = "/Users/ronnber/Repositories/Julia/Manopt.jl"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 version = "0.4.0"
@@ -794,9 +798,9 @@ version = "2.6.0"
 
 [[deps.Quaternions]]
 deps = ["LinearAlgebra", "Random", "RealDot"]
-git-tree-sha1 = "a3c34ce146e39c9e313196bb853894c133f3a555"
+git-tree-sha1 = "da095158bdc8eaccb7890f9884048555ab771019"
 uuid = "94ee1d12-ae83-5a48-8b1c-48b8ff168ae0"
-version = "0.7.3"
+version = "0.7.4"
 
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
@@ -814,15 +818,15 @@ version = "0.1.0"
 
 [[deps.RecipesBase]]
 deps = ["SnoopPrecompile"]
-git-tree-sha1 = "18c35ed630d7229c5584b945641a73ca83fb5213"
+git-tree-sha1 = "261dddd3b862bd2c940cf6ca4d1c8fe593e457c8"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-version = "1.3.2"
+version = "1.3.3"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterfaceCore", "ArrayInterfaceStaticArraysCore", "ChainRulesCore", "DocStringExtensions", "FillArrays", "GPUArraysCore", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables", "ZygoteRules"]
-git-tree-sha1 = "66e6a85fd5469429a3ac30de1bd491e48a6bac00"
+git-tree-sha1 = "fcf0962b399f3bc0fa13ae7274db7879c3ef9f1e"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
-version = "2.34.1"
+version = "2.35.0"
 
 [[deps.Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
@@ -901,10 +905,10 @@ uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
 version = "2.1.7"
 
 [[deps.StaticArrays]]
-deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "cd56bf18ed715e8b09f06ef8c6b781e6cdc49911"
+deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
+git-tree-sha1 = "6954a456979f23d05085727adb17c4551c19ecd1"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.4.4"
+version = "1.5.12"
 
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"

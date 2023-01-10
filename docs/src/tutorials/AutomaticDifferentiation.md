@@ -28,7 +28,7 @@ EditURL = "/Users/ronnber/Repositories/Julia/Manopt.jl/docs/../tutorials/Automat
 <!--
     # This information is used for caching.
     [PlutoStaticHTML.State]
-    input_sha = "a0d24a20d2118c87b8da99ccfb183e2975017b3dba7ca593db0eb7fa5c96a136"
+    input_sha = "47c78bffb5acbfe4710f85019af91f48c82c7ac040c2df1cf5b453592f73e2d6"
     julia_version = "1.8.4"
 -->
 
@@ -59,15 +59,15 @@ EditURL = "/Users/ronnber/Repositories/Julia/Manopt.jl/docs/../tutorials/Automat
 <pre class='language-julia'><code class='language-julia'>with_terminal() do
     Pkg.status()
 end</code></pre>
-<pre id="plutouiterminal">�[32m�[1mStatus�[22m�[39m `/private/var/folders/_v/wg192lpd3mb1lp55zz7drpcw0000gn/T/jl_ZBVgT5/Project.toml`
-�[32m⌃�[39m�[90m [26cc04aa] �[39mFiniteDifferences v0.12.24
- �[90m [1cead3c2] �[39mManifolds v0.8.42
+<pre id="plutouiterminal">�[32m�[1mStatus�[22m�[39m `/private/var/folders/_v/wg192lpd3mb1lp55zz7drpcw0000gn/T/jl_hpuuJD/Project.toml`
+ �[90m [26cc04aa] �[39mFiniteDifferences v0.12.26
+ �[90m [af67fdf4] �[39mManifoldDiff v0.2.1
+ �[90m [1cead3c2] �[39mManifolds v0.8.44
  �[90m [0fc0a36d] �[39mManopt v0.4.0 `~/Repositories/Julia/Manopt.jl`
  �[90m [7f904dfe] �[39mPlutoUI v0.7.49
  �[90m [37e2e46d] �[39mLinearAlgebra
  �[90m [44cfe95a] �[39mPkg v1.8.0
  �[90m [9a3f8284] �[39mRandom
-�[36m�[1mInfo�[22m�[39m Packages marked with �[32m⌃�[39m have new versions available and may be upgradable.
 </pre>
 
 
@@ -103,10 +103,10 @@ end</code></pre>
 
 <div class="markdown"><p>Manifolds provides a finite difference scheme in tangent spaces, that you can introduce to use an existing framework (if the wrapper is implemented) form Euclidean space. Here we use <code>FiniteDiff.jl</code>.</p></div>
 
-<pre class='language-julia'><code class='language-julia'>r_backend = Manifolds.TangentDiffBackend(Manifolds.FiniteDifferencesBackend())</code></pre>
-<pre class="code-output documenter-example-output" id="var-r_backend">Manifolds.TangentDiffBackend{Manifolds.FiniteDifferencesBackend{FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}}, ExponentialRetraction, LogarithmicInverseRetraction, DefaultOrthonormalBasis{ℝ, ManifoldsBase.TangentSpaceType}, DefaultOrthonormalBasis{ℝ, ManifoldsBase.TangentSpaceType}}(Manifolds.FiniteDifferencesBackend{FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}}(FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}([-2, -1, 0, 1, 2], [0.08333333333333333, -0.6666666666666666, 0.0, 0.6666666666666666, -0.08333333333333333], ([-0.08333333333333333, 0.5, -1.5, 0.8333333333333334, 0.25], [0.08333333333333333, -0.6666666666666666, 0.0, 0.6666666666666666, -0.08333333333333333], [-0.25, -0.8333333333333334, 1.5, -0.5, 0.08333333333333333]), 10.0, 1.0, Inf, 0.05555555555555555, 1.4999999999999998, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}([-3, -2, -1, 0, 1, 2, 3], [-0.5, 2.0, -2.5, 0.0, 2.5, -2.0, 0.5], ([0.5, -4.0, 12.5, -20.0, 17.5, -8.0, 1.5], [-0.5, 2.0, -2.5, 0.0, 2.5, -2.0, 0.5], [-1.5, 8.0, -17.5, 20.0, -12.5, 4.0, -0.5]), 10.0, 1.0, Inf, 0.5365079365079365, 10.0))), ExponentialRetraction(), LogarithmicInverseRetraction(), DefaultOrthonormalBasis(ℝ), DefaultOrthonormalBasis(ℝ))</pre>
+<pre class='language-julia'><code class='language-julia'>r_backend = ManifoldDiff.TangentDiffBackend(ManifoldDiff.FiniteDifferencesBackend())</code></pre>
+<pre class="code-output documenter-example-output" id="var-r_backend">ManifoldDiff.TangentDiffBackend{ManifoldDiff.FiniteDifferencesBackend{FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}}, ExponentialRetraction, LogarithmicInverseRetraction, DefaultOrthonormalBasis{ℝ, ManifoldsBase.TangentSpaceType}, DefaultOrthonormalBasis{ℝ, ManifoldsBase.TangentSpaceType}}(ManifoldDiff.FiniteDifferencesBackend{FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}}(FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}([-2, -1, 0, 1, 2], [0.08333333333333333, -0.6666666666666666, 0.0, 0.6666666666666666, -0.08333333333333333], ([-0.08333333333333333, 0.5, -1.5, 0.8333333333333334, 0.25], [0.08333333333333333, -0.6666666666666666, 0.0, 0.6666666666666666, -0.08333333333333333], [-0.25, -0.8333333333333334, 1.5, -0.5, 0.08333333333333333]), 10.0, 1.0, Inf, 0.05555555555555555, 1.4999999999999998, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}([-3, -2, -1, 0, 1, 2, 3], [-0.5, 2.0, -2.5, 0.0, 2.5, -2.0, 0.5], ([0.5, -4.0, 12.5, -20.0, 17.5, -8.0, 1.5], [-0.5, 2.0, -2.5, 0.0, 2.5, -2.0, 0.5], [-1.5, 8.0, -17.5, 20.0, -12.5, 4.0, -0.5]), 10.0, 1.0, Inf, 0.5365079365079365, 10.0))), ExponentialRetraction(), LogarithmicInverseRetraction(), DefaultOrthonormalBasis(ℝ), DefaultOrthonormalBasis(ℝ))</pre>
 
-<pre class='language-julia'><code class='language-julia'>gradf1_FD(p) = Manifolds.gradient(M, f1, p, r_backend)</code></pre>
+<pre class='language-julia'><code class='language-julia'>gradf1_FD(p) = ManifoldDiff.gradient(M, f1, p, r_backend)</code></pre>
 <pre class="code-output documenter-example-output" id="var-gradf1_FD">gradf1_FD (generic function with 1 method)</pre>
 
 <pre class='language-julia'><code class='language-julia'>begin
@@ -146,7 +146,7 @@ end</code></pre>
 
 <pre class='language-julia'><code class='language-julia'>function grad_f2_AD(M, p)
     return Manifolds.gradient(
-        M, F, p, Manifolds.RiemannianProjectionBackend(Manifolds.FiniteDifferencesBackend())
+        M, F, p, Manifolds.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
     )
 end</code></pre>
 <pre class="code-output documenter-example-output" id="var-grad_f2_AD">grad_f2_AD (generic function with 1 method)</pre>
@@ -209,7 +209,7 @@ end</code></pre>
 
 <pre class='language-julia'><code class='language-julia'>function grad_G_FD(N, q)
     return Manifolds.gradient(
-        N, G, q, Manifolds.RiemannianProjectionBackend(Manifolds.FiniteDifferencesBackend())
+        N, G, q, ManifoldDiff.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
     )
 end</code></pre>
 <pre class="code-output documenter-example-output" id="var-grad_G_FD">grad_G_FD (generic function with 1 method)</pre>
