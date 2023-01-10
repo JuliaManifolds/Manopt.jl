@@ -38,7 +38,7 @@ function decorate_state!(
         RecordAction, # single action
         Array{RecordAction,1}, # a group to be set in :All
         Dict{Symbol,RecordAction}, # a dictionary for precise settings
-        Array{<:Any,1}, # a formated string with symbols orAbstractStateActions
+        Array{<:Any,1}, # a formated string with symbols or AbstractStateActions
     }=missing,
     return_state=false,
     kwargs..., # ignore all others
@@ -59,9 +59,9 @@ decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
 optional arguments provide necessary details on the decorators.
 A specific one is used to activate certain decorators.
 
-* `cache` – (`missing`) currenlty only supports the [`SimpleCacheObjective`](@ref)
+* `cache` – (`missing`) currently only supports the [`SimpleCacheObjective`](@ref)
   which is activated by either specifying the symbol `:Simple` or the tuple
-  (`:Simple, kwargs...`) to pass down eyword arguments
+  (`:Simple, kwargs...`) to pass down keyword arguments
 
 other keywords are ignored.
 
@@ -70,7 +70,7 @@ other keywords are ignored.
 [`objective_cache_factory`](@ref)
 """
 function decorate_objective!(
-    M::AbstractManifold, o::O; cache::Union{Missing,Symbol}=missing, kargs...
+    M::AbstractManifold, o::O; cache::Union{Missing,Symbol}=missing, kwargs...
 ) where {O<:AbstractManifoldObjective}
     deco_o = ismissing(cache) ? o : objective_cache_factory(M, o, cache)
     return deco_o
@@ -89,10 +89,10 @@ function initialize_solver!(p::AbstractManoptProblem, s::ReturnSolverState)
 end
 
 """
-    solve!(p,o)
+    solve!(p::AbstractManoptProblem, s::AbstractManoptSolverState)
 
 run the solver implemented for the [`AbstractManoptProblem`](@ref)` p` and the
-[`AbstractManoptSolverState`](@ref)` o` employing [`initialize_solver!`](@ref), [`step_solver!`](@ref),
+[`AbstractManoptSolverState`](@ref)` s` employing [`initialize_solver!`](@ref), [`step_solver!`](@ref),
 as well as the [`stop_solver!`](@ref) of the solver.
 """
 function solve!(p::AbstractManoptProblem, s::AbstractManoptSolverState)
