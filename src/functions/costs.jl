@@ -118,6 +118,7 @@ E(x) = d_{\mathcal M}^2(f,x) + \alpha \operatorname{TV}(x)
 ```
 
 # See also
+
 [`costTV`](@ref)
 """
 costL2TV(M, f, α, x) = 1 / 2 * distance(M, f, x)^2 + α * costTV(M, x)
@@ -135,6 +136,7 @@ E(x) = d_{\mathcal M}^2(f,x) + \alpha\operatorname{TV}(x)
 ```
 
 # See also
+
 [`costTV`](@ref), [`costTV2`](@ref)
 """
 function costL2TVTV2(M::PowerManifold, f, α, β, x)
@@ -152,6 +154,7 @@ E(x) = d_{\mathcal M}^2(f,x) + β\operatorname{TV}_2(x)
 ```
 
 # See also
+
 [`costTV2`](@ref)
 """
 function costL2TV2(M::PowerManifold, f, β, x)
@@ -192,6 +195,7 @@ E^q(x) = \sum_{i ∈ \mathcal G}
 ```
 
 # See also
+
 [`grad_TV`](@ref), [`prox_TV`](@ref)
 """
 function costTV(M::PowerManifold, x, p=1, q=1)
@@ -233,6 +237,7 @@ d_2^p(x_1,x_2,x_3) = \min_{c ∈ \mathcal C} d_{\mathcal M}(c,x_2).
 ```
 
 # See also
+
 [`grad_TV2`](@ref), [`prox_TV2`](@ref)
 """
 function costTV2(M::MT, x::Tuple{T,T,T}, p=1) where {MT<:AbstractManifold,T}
@@ -259,6 +264,7 @@ where ``c_i(⋅,⋅)`` denotes the mid point between its two arguments that is
 nearest to ``x_i``.
 
 # See also
+
 [`grad_TV2`](@ref), [`prox_TV2`](@ref)
 """
 function costTV2(M::PowerManifold, x, p::Int=1, Sum::Bool=true)

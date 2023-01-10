@@ -1,8 +1,82 @@
-export DouglasRachford
 @doc raw"""
-     DouglasRachford(M, F, proxMaps, x)
+    DouglasRachfordState <: AbstractManoptSolverState
+
+Store all options required for the DouglasRachford algorithm,
+
+# Fields
+* `p` - the current iterate (result) For the parallel Douglas-Rachford, this is
+  not a value from the `PowerManifold` manifold but the mean.
+* `s` – the last result of the double reflection at the proxes relaxed by `α`.
+* `λ` – function to provide the value for the proximal parameter during the calls
+* `α` – relaxation of the step from old to new iterate, i.e.
+  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
+  of the double reflection involved in the DR algorithm
+* `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
+* `stop` – a [`StoppingCriterion`](@ref)
+* `parallel` – indicate whether we are running a parallel Douglas-Rachford or not.
+
+# Constructor
+
+    DouglasRachfordState(M, p; kwargs...)
+
+Generate the options for a Manifold `M` and an initial point `p`, where the following keyword arguments can be used
+
+* `λ` – (`(iter)->1.0`) function to provide the value for the proximal parameter
+  during the calls
+* `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
+  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
+  of the double reflection involved in the DR algorithm
+* `R` – ([`reflect`](@ref)) method employed in the iteration to perform the reflection of `x` at
+  the prox `p`.
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
+* `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
+  or not.
+"""
+mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S} <: AbstractManoptSolverState
+    p::P
+    p_tmp::P
+    s::P
+    s_tmp::P
+    λ::Tλ
+    α::Tα
+    R::TR
+    stop::S
+    parallel::Bool
+    function DouglasRachfordState(
+        ::AbstractManifold,
+        p::P;
+        λ::Fλ=i -> 1.0,
+        α::Fα=i -> 0.9,
+        R::FR=Manopt.reflect,
+        stopping_criterion::S=StopAfterIteration(300),
+        parallel=false,
+    ) where {P,Fλ,Fα,FR,S<:StoppingCriterion}
+        return new{P,Fλ,Fα,FR,S}(
+            p, copy(p), copy(p), copy(p), λ, α, R, stopping_criterion, parallel
+        )
+    end
+end
+get_iterate(drs::DouglasRachfordState) = drs.p
+function set_iterate!(drs::DouglasRachfordState, p)
+    drs.p = p
+    return drs
+end
+
+function (d::DebugProximalParameter)(
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(i))
+    return nothing
+end
+function (r::RecordProximalParameter)(
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+)
+    return record_or_reset!(r, cpps.λ(i), i)
+end
+@doc raw"""
+     DouglasRachford(M, f, proxes_f, p)
 Computes the Douglas-Rachford algorithm on the manifold ``\mathcal M``, initial
-data ``x_0`` and the (two) proximal maps `proxMaps`.
+data ``p`` and the (two) proximal maps `proxMaps`.
 
 For ``k>2`` proximal
 maps the problem is reformulated using the parallelDouglasRachford: a vectorial
@@ -21,7 +95,7 @@ i.e. component wise in a vector.
 # Optional values
 the default parameter is given in brackets
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
-  or [`MutatingEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
+  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
 * `λ` – (`(iter) -> 1.0`) function to provide the value for the proximal parameter
   during the calls
 * `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.
@@ -37,17 +111,17 @@ the default parameter is given in brackets
   its first argument is the result then (assuming all are equal after the second
   prox.
 
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
 the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function DouglasRachford(
-    M::AbstractManifold, F::TF, proxes::Vector{<:Any}, x; kwargs...
+    M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p; kwargs...
 ) where {TF}
-    x_res = copy(M, x)
-    return DouglasRachford!(M, F, proxes, x_res; kwargs...)
+    q = copy(M, p)
+    return DouglasRachford!(M, f, proxes_f, q; kwargs...)
 end
 @doc raw"""
      DouglasRachford(M, F, proxMaps, x)
@@ -63,18 +137,18 @@ i.e. component wise in a vector.
 
 # Input
 * `M` – a Riemannian Manifold ``\mathcal M``
-* `F` – a cost function consisting of a sum of cost functions
-* `proxes` – functions of the form `(λ,x)->...` performing a proximal map,
-  where `⁠λ` denotes the proximal parameter, for each of the summands of `F`.
-* `x0` – initial data ``x_0 ∈ \mathcal M``
+* `f` – a cost function consisting of a sum of cost functions
+* `proxes_f` – functions of the form `(M, λ, p)->q` or `(M, q, λ, p)->q` performing a proximal map,
+  where `⁠λ` denotes the proximal parameter, for each of the summands of `f`.
+* `p` – initial point ``p ∈ \mathcal M``
 
 For more options, see [`DouglasRachford`](@ref).
 """
 function DouglasRachford!(
     M::AbstractManifold,
-    F::TF,
-    proxes::Vector{<:Any},
-    x;
+    f::TF,
+    proxes_f::Vector{<:Any},
+    p;
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
     R::TR=Manopt.reflect,
@@ -85,49 +159,45 @@ function DouglasRachford!(
     ),
     kwargs..., #especially may contain decorator options
 ) where {TF,Tλ,Tα,TR}
-    if length(proxes) < 2
+    if length(proxes_f) < 2
         throw(
             ErrorException(
                 "Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps.",
             ),
         )
-    elseif length(proxes) == 2
-        prox1 = proxes[1]
-        prox2 = proxes[2]
-        parallel = 0
+    elseif length(proxes_f) == 2
+        prox1 = proxes_f[1]
+        prox2 = proxes_f[2]
     else # more than 2 -> parallelDouglasRachford
-        parallel = length(proxes)
-        prox1 = (M, λ, x) -> [proxes[i](M, λ, x[i]) for i in 1:parallel]
-        prox2 = (M, λ, x) -> fill(mean(M.manifold, x), parallel)
+        parallel = length(proxes_f)
+        prox1 = (M, λ, p) -> [proxes_f[i](M.manifold, λ, p[i]) for i in 1:parallel]
+        prox2 = (M, λ, p) -> fill(mean(M.manifold, p), parallel)
     end
     if parallel > 0
         M = PowerManifold(M, NestedPowerRepresentation(), parallel)
-        x = [copy(x) for i in 1:parallel]
-        nF = (M, x) -> F(M.manifold, x[1])
+        p = [copy(M.manifold, p) for i in 1:parallel]
+        nF = (M, p) -> f(M.manifold, p[1])
     else
-        nF = F
+        nF = f
     end
-    p = ProximalProblem(M, nF, (prox1, prox2); evaluation=evaluation)
-    o = DouglasRachfordOptions(
-        M,
-        x;
-        λ=λ,
-        α=α,
-        R=Manopt.reflect,
-        stopping_criterion=stopping_criterion,
-        parallel=parallel > 0,
+    mpo = ManifoldProximalMapObjective(nF, (prox1, prox2); evaluation=evaluation)
+    dmpo = decorate_objective!(M, mpo; kwargs...)
+    dmp = DefaultManoptProblem(M, dmpo)
+    drs = DouglasRachfordState(
+        M, p; λ=λ, α=α, R=R, stopping_criterion=stopping_criterion, parallel=parallel > 0
     )
-    o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(p, o))
+    drs = decorate_state!(drs; kwargs...)
+    return get_solver_return(solve!(dmp, drs))
 end
-function initialize_solver!(::ProximalProblem, ::DouglasRachfordOptions) end
-function step_solver!(p::ProximalProblem, o::DouglasRachfordOptions, iter)
-    get_proximal_map!(p, o.xtmp, o.λ(iter), o.s, 1)
-    o.stmp = o.R(p.M, o.xtmp, o.s)
-    o.x = get_proximal_map(p, o.λ(iter), o.stmp, 2)
-    o.stmp = o.R(p.M, o.x, o.stmp)
+function initialize_solver!(::AbstractManoptProblem, ::DouglasRachfordState) end
+function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
+    M = get_manifold(amp)
+    get_proximal_map!(amp, drs.p_tmp, drs.λ(i), drs.s, 1)
+    drs.s_tmp = drs.R(M, drs.p_tmp, drs.s)
+    drs.p = get_proximal_map(amp, drs.λ(i), drs.s_tmp, 2)
+    drs.s_tmp = drs.R(M, drs.p, drs.s_tmp)
     # relaxation
-    o.s = shortest_geodesic(p.M, o.s, o.stmp, o.α(iter))
-    return o
+    drs.s = shortest_geodesic(M, drs.s, drs.s_tmp, drs.α(i))
+    return drs
 end
-get_solver_result(o::DouglasRachfordOptions) = o.parallel ? o.x[1] : o.x
+get_solver_result(drs::DouglasRachfordState) = drs.parallel ? drs.p[1] : drs.p

@@ -1,43 +1,39 @@
 """
-    initialize_solver!(p::Problem, o::DebugOptions)
+    initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
 
-Initialize the solver to the optimization [`Problem`](@ref) by initializing all
-values in the [`DebugOptions`](@ref)` o`.
-
-Since debug acts as a decorator this also calls the `initialize_solver!`
-of the correpsonding internally stored options
+Extend the initialization of the solver by a hook to run debug
+that were added to the `:Start` and `:All` entries of the debug lists.
 """
-function initialize_solver!(p::Problem, o::DebugOptions)
-    initialize_solver!(p, o.options)
-    get(o.debugDictionary, :Start, DebugDivider(""))(p, get_options(o), 0)
-    get(o.debugDictionary, :All, DebugDivider(""))(p, get_options(o), 0)
-    return o
+function initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
+    initialize_solver!(amp, dss.state)
+    get(dss.debugDictionary, :Start, DebugDivider(""))(amp, get_state(dss), 0)
+    get(dss.debugDictionary, :All, DebugDivider(""))(amp, get_state(dss), 0)
+    return dss
 end
 """
-    step_solver!(p::Problem, o::DebugOptions, i)
+    step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
 
-    Do one iteration step (the `i`th) for [`Problem`](@ref)` p` by modifying
-the values in the [`Options`](@ref)` o.options` and print the debug specified
+Extend the `i`th step of the solver by a hook to run debug prints,
+that were added to the `:Step` and `:All` entries of the debug lists.
 """
-function step_solver!(p::Problem, o::DebugOptions, i)
-    step_solver!(p, o.options, i)
-    get(o.debugDictionary, :Step, DebugDivider(""))(p, get_options(o), i)
-    get(o.debugDictionary, :All, DebugDivider(""))(p, get_options(o), i)
-    return o
+function step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
+    step_solver!(amp, dss.state, i)
+    get(dss.debugDictionary, :Step, DebugDivider(""))(amp, get_state(dss), i)
+    get(dss.debugDictionary, :All, DebugDivider(""))(amp, get_state(dss), i)
+    return dss
 end
 
 """
-    stop_solver!(p,o,i)
+    stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
 
-determine whether the solver for [`Problem`](@ref) `p` and the [`DebugOptions`](@ref) `o`
-should stop at iteration `i` by calling the function corresponding to the internally stored [`Options`](@ref).
-If so, print debug from `:All` and `:Stop`.
+Extend the check, whether to stop the solver by a hook to run debug,
+that were added to the `:Stop` and `:All` entries of the debug lists.
 """
-function stop_solver!(p::Problem, o::DebugOptions, i::Int)
-    s = stop_solver!(p, o.options, i)
-    if s
-        get(o.debugDictionary, :Stop, DebugDivider(""))(p, get_options(o), typemin(Int))
-        get(o.debugDictionary, :All, DebugDivider(""))(p, get_options(o), typemin(Int))
+function stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i::Int)
+    stop = stop_solver!(amp, dss.state, i)
+    if stop
+        get(dss.debugDictionary, :Stop, DebugDivider(""))(amp, get_state(dss), typemin(Int))
+        get(dss.debugDictionary, :All, DebugDivider(""))(amp, get_state(dss), typemin(Int))
     end
-    return s
+    return stop
 end

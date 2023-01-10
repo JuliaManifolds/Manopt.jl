@@ -2,7 +2,7 @@
     AbstractQuasiNewtonDirectionUpdate
 
 An abstract representation of an Quasi Newton Update rule to determine the next direction
-given current [`QuasiNewtonOptions`](@ref).
+given current [`QuasiNewtonState`](@ref).
 
 All subtypes should be functors, i.e. one should be able to call them as `H(M,x,d)` to compute a new direction update.
 """
@@ -27,7 +27,7 @@ Then the update formula reads
 H^\mathrm{BFGS}_{k+1} = \widetilde{H}^\mathrm{BFGS}_k  + \frac{y_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{BFGS}_k s_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k }{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k s_k}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -56,7 +56,7 @@ B^\mathrm{BFGS}_{k+1}  = \Bigl(
 \Bigr) + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -85,7 +85,7 @@ H^\mathrm{DFP}_{k+1} = \Bigl(
 \Bigr) + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -110,7 +110,7 @@ B^\mathrm{DFP}_{k+1} = \widetilde{B}^\mathrm{DFP}_k
 - \frac{\widetilde{B}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k y_k}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -138,7 +138,7 @@ H^\mathrm{SR1}_{k+1} = \widetilde{H}^\mathrm{SR1}_k
 }
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -182,7 +182,7 @@ B^\mathrm{SR1}_{k+1} = \widetilde{B}^\mathrm{SR1}_k
 }
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -226,7 +226,7 @@ H^\mathrm{Br}_{k+1} = \widetilde{H}^\mathrm{Br}_k
   \Bigr)^{\mathrm{T}}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -267,7 +267,7 @@ B^\mathrm{Br}_{k+1} = \widetilde{B}^\mathrm{Br}_k
  \Bigr)^{\mathrm{T}}
 ```
 
-where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonOptions`](@ref)) of
+where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
 
 ```math
 T^{S}_{x_k, α_k η_k}(α_k η_k) \quad\text{and}\quad
@@ -284,115 +284,6 @@ mutable struct InverseBroyden <: AbstractQuasiNewtonUpdateRule
     update_rule::Symbol
 end
 InverseBroyden(φ::Float64) = InverseBroyden(φ, :constant)
-
-@doc raw"""
-    QuasiNewtonOptions <: Options
-
-These Quasi Newton [`Options`](@ref) represent any quasi-Newton based method and can be
-used with any update rule for the direction.
-
-# Fields
-* `x` – the current iterate, a point on a manifold
-* `gradient` – the current gradient
-* `sk` – the current step
-* `yk` the current gradient difference
-* `direction_update` - an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
-* `retraction_method` – an `AbstractRetractionMethod`
-* `stop` – a [`StoppingCriterion`](@ref)
-
-# Constructor
-
-    QuasiNewtonOptions(
-        M::AbstractManifold,
-        x;
-        initial_vector=zero_vector(M,x),
-        direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(M, x, InverseBFGS(), 20;
-            vector_transport_method=vector_transport_method,
-        )
-        stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
-        retraction_method::RM=default_retraction_method(M),
-        vector_transport_method::VTM=default_vector_transport_method(M),
-        stepsize=WolfePowellLinesearch(M; retraction_method, vector_transport_method, linesearch_stopsize=1e-12,
-    )
-
-# See also
-[`GradientProblem`](@ref)
-"""
-mutable struct QuasiNewtonOptions{
-    P,
-    T,
-    D<:AbstractQuasiNewtonDirectionUpdate,
-    SC<:StoppingCriterion,
-    S<:Stepsize,
-    RTR<:AbstractRetractionMethod,
-    VT<:AbstractVectorTransportMethod,
-} <: AbstractGradientOptions
-    x::P
-    gradient::T
-    sk::T
-    yk::T
-    direction_update::D
-    retraction_method::RTR
-    stepsize::S
-    stop::SC
-    vector_transport_method::VT
-end
-function QuasiNewtonOptions(
-    M::AbstractManifold,
-    x::P;
-    initial_vector::T=zero_vector(M, x),
-    vector_transport_method::VTM=default_vector_transport_method(M),
-    direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
-        M, x, InverseBFGS(), 20; vector_transport_method=vector_transport_method
-    ),
-    stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
-    retraction_method::RM=default_retraction_method(M),
-    stepsize::S=WolfePowellLinesearch(
-        M;
-        retraction_method=retraction_method,
-        vector_transport_method=vector_transport_method,
-        linesearch_stopsize=1e-12,
-    ),
-) where {
-    P,
-    T,
-    D<:AbstractQuasiNewtonDirectionUpdate,
-    SC<:StoppingCriterion,
-    S<:Stepsize,
-    RM<:AbstractRetractionMethod,
-    VTM<:AbstractVectorTransportMethod,
-}
-    sk_init = zero_vector(M, x)
-    return QuasiNewtonOptions{P,typeof(sk_init),D,SC,S,RM,VTM}(
-        x,
-        initial_vector,
-        sk_init,
-        copy(M, sk_init),
-        direction_update,
-        retraction_method,
-        stepsize,
-        stopping_criterion,
-        vector_transport_method,
-    )
-end
-@deprecate QuasiNewtonOptions(
-    x,
-    g,
-    d,
-    st,
-    s;
-    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-) QuasiNewtonOptions(
-    DefaultManifold(2),
-    x;
-    initial_vector=g,
-    direction_update=d,
-    stopping_criterion=st,
-    stepsize=s,
-    retraction_method=retraction_method,
-    vector_transport_method=vector_transport_method,
-)
 
 @doc raw"""
     QuasiNewtonMatrixDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
@@ -427,6 +318,7 @@ The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields above.
 
 # See also
+
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 [`QuasiNewtonCautiousDirectionUpdate`](@ref)
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
@@ -462,18 +354,20 @@ function QuasiNewtonMatrixDirectionUpdate(
     )
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    p, o
+    mp, st
 ) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
-    return get_vector(
-        p.M, o.x, -d.matrix * get_coordinates(p.M, o.x, o.gradient, d.basis), d.basis
-    )
+    M = get_manifold(mp)
+    p = get_iterate(st)
+    X = get_gradient(st)
+    return get_vector(M, p, -d.matrix * get_coordinates(M, p, X, d.basis), d.basis)
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    p, o
+    mp, st
 ) where {T<:Union{BFGS,DFP,SR1,Broyden}}
-    return get_vector(
-        p.M, o.x, -d.matrix \ get_coordinates(p.M, o.x, o.gradient, d.basis), d.basis
-    )
+    M = get_manifold(mp)
+    p = get_iterate(st)
+    X = get_gradient(st)
+    return get_vector(M, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
 end
 
 @doc raw"""
@@ -509,6 +403,7 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
         )
 
 # See also
+
 [`InverseBFGS`](@ref)
 [`QuasiNewtonCautiousDirectionUpdate`](@ref)
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
@@ -531,10 +426,10 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
     M::AbstractManifold,
-    x,
+    p,
     ::NT,
     memory_size::Int;
-    initial_vector::T=zero_vector(M, x),
+    initial_vector::T=zero_vector(M, p),
     scale=1.0,
     project=true,
     vector_transport_method::V=default_vector_transport_method(M),
@@ -549,20 +444,22 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         vector_transport_method,
     )
 end
-function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(p, o)
-    r = deepcopy(o.gradient)
+function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
+    M = get_manifold(mp)
+    p = get_iterate(st)
+    r = copy(M, p, get_gradient(st))
     m = length(d.memory_s)
     m == 0 && return -r
     for i in m:-1:1
-        d.ρ[i] = 1 / inner(p.M, o.x, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
-        d.ξ[i] = inner(p.M, o.x, d.memory_s[i], r) * d.ρ[i]
+        d.ρ[i] = 1 / inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
+        d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .= r .- d.ξ[i] .* d.memory_y[i]
     end
-    r .= 1 / (d.ρ[m] * norm(p.M, o.x, last(d.memory_y))^2) .* r
+    r .= 1 / (d.ρ[m] * norm(M, p, last(d.memory_y))^2) .* r
     for i in 1:m
-        r .= r .+ (d.ξ[i] - d.ρ[i] * inner(p.M, o.x, d.memory_y[i], r)) .* d.memory_s[i]
+        r .= r .+ (d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)) .* d.memory_s[i]
     end
-    d.project && project!(p.M, r, o.x, r)
+    d.project && project!(M, r, p, r)
     return -r
 end
 
@@ -605,6 +502,7 @@ the corresponding step size is chosen.
 Generate a cautious update for either a matrix based or a limited memorz based update rule.
 
 # See also
+
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 
@@ -627,7 +525,7 @@ function QuasiNewtonCautiousDirectionUpdate(
 } where {T<:AbstractQuasiNewtonUpdateRule}
     return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
 end
-(d::QuasiNewtonCautiousDirectionUpdate)(p, o) = d.update(p, o)
+(d::QuasiNewtonCautiousDirectionUpdate)(mp, st) = d.update(mp, st)
 
 # access the inner vector transport method
 function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)

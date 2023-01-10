@@ -25,8 +25,8 @@ using Manopt, Manifolds, Test
         adjoint_differential_bezier_control!(M, aT1a, BezierSegment([pT, pC]), 0.5, aX)
         @test aT1a.pts == aT1
         aT2 = [
-            adjoint_differential_geodesic_startpoint(M, pT, pC, 0.5, aX),
-            adjoint_differential_geodesic_endpoint(M, pT, pC, 0.5, aX),
+            Manopt.adjoint_differential_shortest_geodesic_startpoint(M, pT, pC, 0.5, aX),
+            Manopt.adjoint_differential_shortest_geodesic_endpoint(M, pT, pC, 0.5, aX),
         ]
         @test aT1 ≈ aT2
         #

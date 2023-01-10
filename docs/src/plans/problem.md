@@ -1,104 +1,29 @@
-# [Problems](@id ProblemSection)
+# [A Manopt Problem](@id ProblemSection)
 
 ```@meta
 CurrentModule = Manopt
 ```
 
-A problem usually contains its cost function and provides an
-implementation to access the cost
+A problem describes all static data of an optimisation task and has as a super type
 
 ```@docs
-Problem
-get_cost
+AbstractManoptProblem
+get_objective
+get_manifold
 ```
 
-A problem can be of different type, more specifically, whether its containing functions,
-for example to compute the gradient, work with allocation or without it. To be precise, an
-allocation function `X = gradF(x)` allocates memory for its result `X`, while `gradF!(X,x)` does not.
+Usually, such a problem is determined by the manifold or domain of the optimisation and the objective with all its properties used within an algorithm – see [The Objective](@ref ObjectiveSection). For that we can just use
 
 ```@docs
-AbstractEvaluationType
-AllocatingEvaluation
-MutatingEvaluation
+DefaultManoptProblem
 ```
 
-## Cost based problem
+The exception to these are the primal dual-based solvers ([Chambolle-Pock](@ref ChambollePockSolver) and the [PD Semismooth Newton](@ref PDRSSNSolver)]), which both need two manifolds as their domain(s), hence thre also exists a
 
 ```@docs
-CostProblem
+TwoManifoldProblem
 ```
 
-## Gradient based problem
-
-```@docs
-AbstractGradientProblem
-GradientProblem
-StochasticGradientProblem
-get_gradient
-get_gradients
-```
-
-## Subgradient based problem
-
-```@docs
-SubGradientProblem
-get_subgradient
-```
-
-## [Constrained based problem](@id ConstrainedProblem)
-
-```@docs
-ConstrainedProblem
-FunctionConstraint
-VectorConstraint
-ConstraintType
-get_constraints
-get_equality_constraint
-get_equality_constraints
-get_grad_equality_constraint
-get_grad_equality_constraint!
-get_grad_equality_constraints
-get_grad_equality_constraints!
-get_inequality_constraint
-get_inequality_constraints
-get_grad_inequality_constraint
-get_grad_inequality_constraint!
-get_grad_inequality_constraints
-get_grad_inequality_constraints!
-```
-
-## [Proximal Map(s) based problem](@id ProximalProblem)
-
-```@docs
-ProximalProblem
-get_proximal_map
-```
-
-## [Hessian based problem](@id HessianProblem)
-
-```@docs
-HessianProblem
-get_hessian
-get_preconditioner
-```
-
-## [Primal dual based problem](@id PrimalDualProblem)
-
-```@docs
-AbstractPrimalDualProblem
-PrimalDualProblem
-PrimalDualSemismoothNewtonProblem
-get_primal_prox
-get_dual_prox
-forward_operator
-linearized_forward_operator
-adjoint_linearized_operator
-get_differential_primal_prox
-get_differential_dual_prox
-```
-
-## Nonlinear least squares problem
-
-```@docs
-NonlinearLeastSquaresProblem
-```
+From the two ingredients here, you can find more information about
+* the [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html) in [ManifoldsBase.jl](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/)
+* the [`AbstractManifoldObjective`](@ref) on the [page about the objective](@ref ObjectiveSection).

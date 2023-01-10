@@ -44,6 +44,7 @@ using ManifoldsBase:
     allocate,
     allocate_result,
     allocate_result_type,
+    copy,
     copyto!,
     default_inverse_retraction_method,
     default_retraction_method,
@@ -59,7 +60,9 @@ using ManifoldsBase:
     get_basis,
     get_component,
     get_coordinates,
+    get_coordinates!,
     get_vector,
+    get_vector!,
     get_vectors,
     get_iterator,
     manifold_dimension,
@@ -69,6 +72,7 @@ using ManifoldsBase:
     power_dimensions,
     project,
     project!,
+    requires_caching,
     retract,
     retract!,
     inverse_retract,
@@ -84,9 +88,37 @@ using ManifoldsBase:
     representation_size,
     set_component!
 
-import ManifoldsBase: mid_point, mid_point!
+using ManifoldDiff:
+    adjoint_Jacobi_field,
+    adjoint_Jacobi_field!,
+    adjoint_differential_shortest_geodesic_startpoint,
+    adjoint_differential_shortest_geodesic_startpoint!,
+    adjoint_differential_shortest_geodesic_endpoint,
+    adjoint_differential_shortest_geodesic_endpoint!,
+    adjoint_differential_exp_basepoint,
+    adjoint_differential_exp_basepoint!,
+    adjoint_differential_exp_argument,
+    adjoint_differential_exp_argument!,
+    adjoint_differential_log_basepoint,
+    adjoint_differential_log_basepoint!,
+    adjoint_differential_log_argument,
+    adjoint_differential_log_argument!,
+    jacobi_field,
+    jacobi_field!,
+    differential_shortest_geodesic_startpoint,
+    differential_shortest_geodesic_startpoint!,
+    differential_shortest_geodesic_endpoint,
+    differential_shortest_geodesic_endpoint!,
+    differential_exp_basepoint,
+    differential_exp_basepoint!,
+    differential_exp_argument,
+    differential_exp_argument!,
+    differential_log_basepoint,
+    differential_log_basepoint!,
+    differential_log_argument,
+    differential_log_argument!
 
-using ManifoldsBase: get_vector!, get_coordinates!, requires_caching
+import ManifoldsBase: mid_point, mid_point!
 
 include("plans/plan.jl")
 # Functions
@@ -95,7 +127,6 @@ include("functions/adjoint_differentials.jl")
 include("functions/costs.jl")
 include("functions/differentials.jl")
 include("functions/gradients.jl")
-include("functions/Jacobi_fields.jl")
 include("functions/proximal_maps.jl")
 # solvers general framework
 include("solvers/solver.jl")
@@ -150,7 +181,6 @@ function __init__()
             mean
         import Random: rand, randperm
         using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
-        include("helpers/random.jl")
         # adaptions for Nonmutating manifolds
         const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
         include("functions/manifold_functions.jl")
@@ -158,8 +188,8 @@ function __init__()
         include("plans/nonmutating_manifolds_plans.jl")
         include("plans/alternating_gradient_plan.jl")
         include("solvers/alternating_gradient_descent.jl")
-        export random_point, random_tangent, mid_point, mid_point!, reflect, reflect!
-        export AlternatingGradientDescentOptions, AlternatingGradientProblem
+        export mid_point, mid_point!, reflect, reflect!
+        export AlternatingGradientDescentState
         export AlternatingGradient
         export alternating_gradient_descent, alternating_gradient_descent!
     end
@@ -174,59 +204,71 @@ end
 export ℝ, ℂ, &, |
 #
 # Problems
-export Problem,
-    ProximalProblem,
-    ConstrainedProblem,
-    CostProblem,
-    SubGradientProblem,
-    GradientProblem,
-    HessianProblem,
-    NonlinearLeastSquaresProblem,
-    PrimalDualSemismoothNewtonProblem,
-    PrimalDualProblem,
-    StochasticGradientProblem,
-    AbstractEvaluationType,
-    AllocatingEvaluation,
-    MutatingEvaluation
+export AbstractManoptProblem, DefaultManoptProblem, TwoManifoldProblem
 #
-# Options
-export Options,
-    AbstractGradientOptions,
-    AugmentedLagrangianMethodOptions,
-    ChambollePockOptions,
-    ConjugateGradientDescentOptions,
-    CyclicProximalPointOptions,
-    DouglasRachfordOptions,
-    ExactPenaltyMethodOptions,
-    FrankWolfeOptions,
-    GradientDescentOptions,
-    AbstractHessianOptions,
-    LevenbergMarquardtOptions,
-    NelderMeadOptions,
-    ParticleSwarmOptions,
-    PrimalDualSemismoothNewtonOptions,
-    PrimalDualOptions,
-    RecordOptions,
-    StochasticGradientDescentOptions,
-    SubGradientMethodOptions,
-    TruncatedConjugateGradientOptions,
-    TrustRegionsOptions
+# Objectives
+export AbstractManifoldGradientObjective,
+    AbstractManifoldCostObjective,
+    AbstractManifoldObjective,
+    AbstractPrimalDualManifoldObjective,
+    ConstrainedManifoldObjective,
+    NonlinearLeastSquaresObjective,
+    ManifoldAlternatingGradientObjective,
+    ManifoldCostGradientObjective,
+    ManifoldCostObjective,
+    ManifoldGradientObjective,
+    ManifoldHessianObjective,
+    ManifoldProximalMapObjective,
+    ManifoldStochasticGradientObjective,
+    ManifoldSubgradientObjective,
+    PrimalDualManifoldObjective,
+    PrimalDualManifoldSemismoothNewtonObjective,
+    SimpleCacheObjective
+#
+# Evaluation & Problems - old
+export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
+#
+# AbstractManoptSolverState
+export AbstractGradientSolverState,
+    AbstractHessianSolverState,
+    AbstractManoptSolverState,
+    AbstractPrimalDualSolverState,
+    AugmentedLagrangianMethodState,
+    ChambollePockState,
+    ConjugateGradientDescentState,
+    CyclicProximalPointState,
+    DouglasRachfordState,
+    ExactPenaltyMethodState,
+    FrankWolfeState,
+    GradientDescentState,
+    LevenbergMarquardtState,
+    NelderMeadState,
+    ParticleSwarmState,
+    PrimalDualSemismoothNewtonState,
+    RecordSolverState,
+    StochasticGradientDescentState,
+    SubGradientMethodState,
+    TruncatedConjugateGradientState,
+    TrustRegionsState
+
 export FrankWolfeCost, FrankWolfeGradient
+export NelderMeadSimplex
 #
-# Accessors and helpers for Options
-export linesearch_backtrack
-export get_cost,
-    get_gradient,
-    get_gradient!,
-    get_subgradient,
-    get_subgradient!,
-    get_proximal_map,
+# Accessors and helpers for AbstractManoptSolverState
+export linesearch_backtrack, default_stepsize
+export get_cost, get_cost_function
+export get_gradient, get_gradient_function, get_gradient!
+export get_subgradient, get_subgradient!
+export get_proximal_map,
     get_proximal_map!,
-    get_options,
+    get_state,
     get_initial_stepsize,
     get_iterate,
     get_gradients,
     get_gradients!,
+    get_manifold,
+    get_preconditioner,
+    get_preconditioner!,
     get_primal_prox,
     get_primal_prox!,
     get_differential_primal_prox,
@@ -235,15 +277,21 @@ export get_cost,
     get_dual_prox!,
     get_differential_dual_prox,
     get_differential_dual_prox!,
+    set_gradient!,
     set_iterate!,
+    set_manopt_parameter!,
+    set_manopt_parameter!,
+    set_manopt_parameter!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
     adjoint_linearized_operator!,
     forward_operator,
-    forward_operator!
+    forward_operator!,
+    get_objective
+export set_manopt_parameter!
 export get_hessian, get_hessian!, ApproxHessianFiniteDifference
-export is_options_decorator, dispatch_options_decorator
+export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export get_constraints,
     get_inequality_constraint,
@@ -261,7 +309,7 @@ export get_constraints,
 export ConstraintType, FunctionConstraint, VectorConstraint
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 
-export QuasiNewtonOptions, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
@@ -272,20 +320,9 @@ export WolfePowellLinesearch,
     operator_to_matrix,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
-
-export AugmentedLagrangianMethodOptions,
-    ConjugateGradientDescentOptions,
-    ExactPenaltyMethodOptions,
-    GradientDescentOptions,
-    AbstractHessianOptions,
-    SubGradientMethodOptions,
-    NelderMeadOptions,
-    TruncatedConjugateGradientOptions,
-    TrustRegionsOptions,
-    ParticleSwarmOptions
-export AbstractOptionsAction, StoreOptionsAction
+export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
-
+export objective_cache_factory
 #
 # Direction Update Rules
 export DirectionUpdateRule,
@@ -335,31 +372,37 @@ export augmented_Lagrangian_method,
     trust_regions,
     trust_regions!
 # Solver helpers
-export decorate_options
+export decorate_state!, decorate_objective!
 export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
-export solve
-export ApproxHessianFiniteDifference,
-    ApproxHessianSymmetricRankOne, ApproxHessianBFGS, update_hessian_basis!
+export solve!
+export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
+export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 #
 # Stepsize
-export ConstantStepsize, DecreasingStepsize
-export Linesearch, ArmijoLinesearch, NonmonotoneLinesearch
+export Stepsize
+export ArmijoLinesearch,
+    ConstantStepsize, DecreasingStepsize, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria
-export StopIfResidualIsReducedByFactor,
-    StopIfResidualIsReducedByPower,
-    StopIfResidualIsReducedByFactorOrPower,
+export StoppingCriterion, StoppingCriterionSet
+export StopAfter,
+    StopAfterIteration,
+    StopWhenResidualIsReducedByFactorOrPower,
+    StopWhenAll,
+    StopWhenAny,
+    StopWhenChangeLess,
+    StopWhenCostLess,
     StopWhenCurvatureIsNegative,
+    StopWhenGradientNormLess,
+    StopWhenModelIncreased,
+    StopWhenPopulationConcentrated,
     StopWhenSmallerOrEqual,
-    StopWhenTrustRegionIsExceeded,
-    StopWhenModelIncreased
-export StopAfterIteration, StopWhenChangeLess, StopWhenGradientNormLess, StopWhenCostLess
-export StopWhenStepsizeLess, StopAfter, StopWhenAll, StopWhenAny
+    StopWhenStepsizeLess,
+    StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria, get_stopping_criteria, get_reason
-export are_these_stopping_critera_active, update_stopping_criterion!
-export StoppingCriterion, StoppingCriterionSet, Stepsize
+export update_stopping_criterion!
 #
 # Data functions
 export artificial_S1_signal, artificial_S1_slope_signal, artificialIn_SAR_image
@@ -374,27 +417,12 @@ export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_S
 export render_asymptote
 #
 # Coeffs & Helpers for differentials
-export βdifferential_geodesic_startpoint, βdifferential_exp_basepoint
-export βdifferential_exp_argument, βdifferential_log_basepoint, βdifferential_log_argument
-export jacobi_field, adjoint_Jacobi_field
 #
 # Adjoint differentials
-export adjoint_differential_geodesic_startpoint, adjoint_differential_geodesic_startpoint!
-export adjoint_differential_geodesic_endpoint, adjoint_differential_geodesic_endpoint!
-export adjoint_differential_exp_basepoint, adjoint_differential_exp_basepoint!
-export adjoint_differential_exp_argument, adjoint_differential_exp_argument!
-export adjoint_differential_log_basepoint, adjoint_differential_log_basepoint!
-export adjoint_differential_log_argument, adjoint_differential_log_argument!
 export adjoint_differential_forward_logs, adjoint_differential_forward_logs!
 export adjoint_differential_bezier_control, adjoint_differential_bezier_control!
 #
 # Differentials
-export differential_geodesic_startpoint, differential_geodesic_startpoint!
-export differential_geodesic_endpoint, differential_geodesic_endpoint!
-export differential_exp_basepoint, differential_exp_basepoint!
-export differential_exp_argument, differential_exp_argument!
-export differential_log_basepoint, differential_log_basepoint!
-export differential_log_argument, differential_log_argument!
 export differential_forward_logs, differential_forward_logs!
 export differential_bezier_control, differential_bezier_control!
 #
@@ -436,7 +464,7 @@ export BezierSegment,
     get_bezier_segments
 #
 # Debugs
-export DebugOptions, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
+export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
 export DebugChange,
     DebugGradientChange, DebugIterate, DebugIteration, DebugDivider, DebugTime
 export DebugCost, DebugStoppingCriterion, DebugFactory, DebugActionFactory
@@ -449,7 +477,7 @@ export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
 #
 # Records - and access functions
-export get_record, get_record_options, get_record_action, has_record
+export get_record, get_record_state, get_record_action, has_record
 export RecordAction
 export RecordActionFactory, RecordFactory
 export RecordGroup, RecordEvery

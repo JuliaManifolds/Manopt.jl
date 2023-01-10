@@ -12,7 +12,7 @@ F(p) + G(Λ(p)),
 where $F:\mathcal M → \overline{ℝ}$, $G:\mathcal N → \overline{ℝ}$, and
 $Λ:\mathcal M →\mathcal N$.
 If the manifolds $\mathcal M$ or $\mathcal N$ are not Hadamard, it has to be considered locally,
-i.e. on geodesically convex sets $\mathcal C \subset \mathcal M$ and $\mathcal D \subset\mathcal N$
+i.e. on geodesically convex sets $\mathcal C \subset \mathcal M$ and $\mathcal D \subset\mathcal N$
 such that $Λ(\mathcal C) \subset \mathcal D$.
 
 The algorithm is available in four variants: exact versus linearized (see `variant`)
@@ -59,11 +59,10 @@ ChambollePock
 ChambollePock!
 ```
 
-## Problem & Options
+## State
 
 ```@docs
-PrimalDualOptions
-ChambollePockOptions
+ChambollePockState
 ```
 
 ## Useful Terms

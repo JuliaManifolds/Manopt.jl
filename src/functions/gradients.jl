@@ -13,7 +13,7 @@ evaluated at the points given in `T` (elementwise in ``[0,N]``, where ``N`` is t
 number of segments of the Bézier curve). The [`get_bezier_junctions`](@ref) are fixed for
 this gradient (interpolation constraint). For the unconstrained gradient,
 see [`grad_L2_acceleration_bezier`](@ref) and set ``λ=0`` therein. This gradient is computed using
-[`adjoint_Jacobi_field`](@ref)s. For details, see [^BergmannGousenbourger2018].
+`adjoint_Jacobi_field`s. For details, see [^BergmannGousenbourger2018].
 See [`de_casteljau`](@ref) for more details on the curve.
 
 # See also
@@ -119,12 +119,14 @@ function _grad_acceleration_bezier(
     dt = (max(T...) - min(T...)) / (n - 1)
     inner = -2 / ((dt)^3) .* log.(Ref(M), mid, center)
     asForward =
-        adjoint_differential_geodesic_startpoint.(
+        adjoint_differential_shortest_geodesic_startpoint.(
             Ref(M), forward, backward, Ref(0.5), inner
         )
     asCenter = -2 / ((dt)^3) * log.(Ref(M), center, mid)
     asBackward =
-        adjoint_differential_geodesic_endpoint.(Ref(M), forward, backward, Ref(0.5), inner)
+        adjoint_differential_shortest_geodesic_endpoint.(
+            Ref(M), forward, backward, Ref(0.5), inner
+        )
     # effect of these to the centrol points is the preliminary gradient
     grad_B = [
         BezierSegment(a.pts .+ b.pts .+ c.pts) for (a, b, c) in zip(
@@ -143,17 +145,17 @@ function _grad_acceleration_bezier(
         m = length(Bt[k].pts)
         # updates b-
         X1 =
-            grad_B[k - 1].pts[end - 1] .+ adjoint_differential_geodesic_startpoint(
+            grad_B[k - 1].pts[end - 1] .+ adjoint_differential_shortest_geodesic_startpoint(
                 M, Bt[k - 1].pts[end - 1], Bt[k].pts[1], 2.0, grad_B[k].pts[2]
             )
         # update b+ - though removed in reduced form
         X2 =
-            grad_B[k].pts[2] .+ adjoint_differential_geodesic_startpoint(
+            grad_B[k].pts[2] .+ adjoint_differential_shortest_geodesic_startpoint(
                 M, Bt[k].pts[2], Bt[k].pts[1], 2.0, grad_B[k - 1].pts[end - 1]
             )
         # update p - effect from left and right segment as well as from c1 cond
         X3 =
-            grad_B[k].pts[1] .+ adjoint_differential_geodesic_endpoint(
+            grad_B[k].pts[1] .+ adjoint_differential_shortest_geodesic_endpoint(
                 M, Bt[k - 1].pts[m - 1], Bt[k].pts[1], 2.0, grad_B[k].pts[2]
             )
         # store
@@ -221,9 +223,9 @@ where both total variations refer to the intrinsic ones, [`grad_TV`](@ref) and
 function grad_intrinsic_infimal_convolution_TV12(M::AbstractManifold, f, u, v, α, β)
     c = mid_point(M, u, v, f)
     iL = log(M, c, f)
-    return adjoint_differential_geodesic_startpoint(M, u, v, 1 / 2, iL) +
+    return adjoint_differential_shortest_geodesic_startpoint(M, u, v, 1 / 2, iL) +
            α * β * grad_TV(M, u),
-    adjoint_differential_geodesic_endpoint(M, u, v, 1 / 2, iL) +
+    adjoint_differential_shortest_geodesic_endpoint(M, u, v, 1 / 2, iL) +
     α * (1 - β) * grad_TV2(M, v)
 end
 @doc raw"""
@@ -436,7 +438,7 @@ d_2(q_1,q_2,q_3) = \min_{c ∈ \mathcal C_{q_1,q_3}} d(c, q_2).
 ```
 
 While the (sub)gradient with respect to ``q_2`` is easy, the other two require
-the evaluation of an [`adjoint_Jacobi_field`](@ref).
+the evaluation of an `adjoint_Jacobi_field`.
 """
 function grad_TV2(M::AbstractManifold, q, p::Int=1)
     X = [zero_vector(M, x) for x in q]
@@ -447,22 +449,26 @@ function grad_TV2!(M::AbstractManifold, X, q, p::Int=1)
     d = distance(M, q[2], c)
     innerLog = -log(M, c, q[2])
     if p == 2
-        X[1] .= adjoint_differential_geodesic_startpoint(M, q[1], q[3], 1 / 2, innerLog)
+        X[1] .= adjoint_differential_shortest_geodesic_startpoint(
+            M, q[1], q[3], 1 / 2, innerLog
+        )
         log!(M, X[2], q[2], c)
         X[2] .*= -1
-        X[3] .= adjoint_differential_geodesic_endpoint(M, q[1], q[3], 1 / 2, innerLog)
+        X[3] .= adjoint_differential_shortest_geodesic_endpoint(
+            M, q[1], q[3], 1 / 2, innerLog
+        )
     else
         if d == 0 # subdifferential containing zero
             for i in 1:3
                 zero_vector!(M, X[i], q[i])
             end
         else
-            X[1] .= adjoint_differential_geodesic_startpoint(
+            X[1] .= adjoint_differential_shortest_geodesic_startpoint(
                 M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
             )
             log!(M, X[2], q[2], c)
             X[2] .*= -1 / (d^(2 - p))
-            X[3] .= adjoint_differential_geodesic_endpoint(
+            X[3] .= adjoint_differential_shortest_geodesic_endpoint(
                 M, q[1], q[3], 1 / 2, innerLog / (d^(2 - p))
             )
         end

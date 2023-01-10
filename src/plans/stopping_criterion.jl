@@ -1,6 +1,29 @@
-#
-# Stopping Criteria
-#
+@doc raw"""
+    StoppingCriterion
+
+An abstract type for the functors representing stopping criteria, i.e. they are
+callable structures. The naming Scheme follows functions, see for
+example [`StopAfterIteration`](@ref).
+
+Every StoppingCriterion has to provide a constructor and its function has to have
+the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
+and the current number of iterations are the arguments and returns a Bool whether
+to stop or not.
+
+By default each `StoppingCriterion` should provide a fields `reason` to provide
+details when a criterion is met (and that is empty otherwise).
+"""
+abstract type StoppingCriterion end
+
+@doc raw"""
+    StoppingCriterionGroup <: StoppingCriterion
+
+An abstract type for a Stopping Criterion that itself consists of a set of
+Stopping criteria. In total it acts as a stopping criterion itself. Examples
+are [`StopWhenAny`](@ref) and [`StopWhenAll`](@ref) that can be used to
+combine stopping criteria.
+"""
+abstract type StoppingCriterionSet <: StoppingCriterion end
 
 @doc raw"""
     StopAfterIteration <: StoppingCriterion
@@ -25,7 +48,9 @@ mutable struct StopAfterIteration <: StoppingCriterion
     reason::String
     StopAfterIteration(mIter::Int) = new(mIter, "")
 end
-function (c::StopAfterIteration)(::P, ::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopAfterIteration)(
+    ::P, ::O, i::Int
+) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     (i == 0) && (c.reason = "") # reset on init
     if i >= c.maxIter
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
@@ -47,18 +72,27 @@ end
 """
     StopWhenGradientNormLess <: StoppingCriterion
 
-stores a threshold when to stop looking at the norm of the gradient from within
-a [`GradientProblem`](@ref).
+A stopping criterion based on the current gradient norm.
+
+# Constructor
+
+    StopWhenGradientNormLess(ε::Float64)
+
+Create a stopping criterion with threshold `ε` for the gradient, that is, this criterion
+indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`.
 """
 mutable struct StopWhenGradientNormLess <: StoppingCriterion
     threshold::Float64
     reason::String
     StopWhenGradientNormLess(ε::Float64) = new(ε, "")
 end
-function (c::StopWhenGradientNormLess)(p::Problem, o::Options, i::Int)
+function (c::StopWhenGradientNormLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    M = get_manifold(mp)
     (i == 0) && (c.reason = "") # reset on init
-    if norm(p.M, get_iterate(o), get_gradient(o)) < c.threshold
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(p.M,get_iterate(o),get_gradient(o)))) is less than $(c.threshold).\n"
+    if norm(M, get_iterate(s), get_gradient(s)) < c.threshold
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
         return true
     end
     return false
@@ -80,39 +114,51 @@ end
     StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
-optimization variable from within a [`Options`](@ref), i.e `get_iterate(o)`.
-For the storage a [`StoreOptionsAction`](@ref) is used
+optimization variable from within a [`AbstractManoptSolverState`](@ref), i.e `get_iterate(o)`.
+For the storage a [`StoreStateAction`](@ref) is used
 
 # Constructor
 
-    StopWhenChangeLess(ε[, a])
+    StopWhenChangeLess(
+        ε::Float64;
+        storage::StoreStateAction=StoreStateAction((:Iterate,)),
+        manifold::AbstractManifold=DefaultManifold(3),
+        inverse_retraction_method::IRT=default_inverse_retraction_method(manifold)
+    )
 
 initialize the stopping criterion to a threshold `ε` using the
-[`StoreOptionsAction`](@ref) `a`, which is initialized to just store `:Iterate` by
-default.
+[`StoreStateAction`](@ref) `a`, which is initialized to just store `:Iterate` by
+default. You can also provide an inverse_retraction_method for the `distance` or a manifold
+to use its default inverse retraction.
 """
-mutable struct StopWhenChangeLess <: StoppingCriterion
+mutable struct StopWhenChangeLess{IRT} <: StoppingCriterion
     threshold::Float64
     reason::String
-    storage::StoreOptionsAction
-    function StopWhenChangeLess(
-        ε::Float64, a::StoreOptionsAction=StoreOptionsAction((:Iterate,))
-    )
-        return new(ε, "", a)
-    end
+    storage::StoreStateAction
+    inverse_retraction::IRT
 end
-function (c::StopWhenChangeLess)(P::Problem, O::Options, i)
+function StopWhenChangeLess(
+    ε::Float64;
+    storage::StoreStateAction=StoreStateAction((:Iterate,)),
+    manifold::AbstractManifold=DefaultManifold(3),
+    inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
+) where {IRT<:AbstractInverseRetractionMethod}
+    return StopWhenChangeLess{IRT}(ε, "", storage, inverse_retraction_method)
+end
+
+function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     (i == 0) && (c.reason = "") # reset on init
     if has_storage(c.storage, :Iterate)
+        M = get_manifold(mp)
         x_old = get_storage(c.storage, :Iterate)
-        d = distance(P.M, get_iterate(O), x_old, default_inverse_retraction_method(P.M))
+        d = distance(M, get_iterate(s), x_old, c.inverse_retraction)
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
-            c.storage(P, O, i)
+            c.storage(mp, s, i)
             return true
         end
     end
-    c.storage(P, O, i)
+    c.storage(mp, s, i)
     return false
 end
 
@@ -130,7 +176,7 @@ end
     StopWhenStepsizeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the last step size determined or found
-during the last iteration from within a [`Options`](@ref).
+during the last iteration from within a [`AbstractManoptSolverState`](@ref).
 
 # Constructor
 
@@ -145,11 +191,13 @@ mutable struct StopWhenStepsizeLess <: StoppingCriterion
         return new(ε, "")
     end
 end
-function (c::StopWhenStepsizeLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenStepsizeLess)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
     (i == 0) && (c.reason = "") # reset on init
-    s = get_last_stepsize(p, o, i)
-    if s < c.threshold && i > 0
-        c.reason = "The algorithm computed a step size ($s) less than $(c.threshold).\n"
+    step = get_last_stepsize(p, s, i)
+    if step < c.threshold && i > 0
+        c.reason = "The algorithm computed a step size ($step) less than $(c.threshold).\n"
         return true
     end
     return false
@@ -169,7 +217,7 @@ end
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`Problem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
 
 # Constructor
 
@@ -182,10 +230,12 @@ mutable struct StopWhenCostLess <: StoppingCriterion
     reason::String
     StopWhenCostLess(ε::Float64) = new(ε, "")
 end
-function (c::StopWhenCostLess)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenCostLess)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
     (i == 0) && (c.reason = "") # reset on init
-    if i > 0 && get_cost(p, get_iterate(o)) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(o)))) less than the threshold ($(c.threshold)).\n"
+    if i > 0 && get_cost(p, get_iterate(s)) < c.threshold
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)).\n"
         return true
     end
     return false
@@ -224,9 +274,11 @@ mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
     reason::String
     StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "")
 end
-function (c::StopWhenSmallerOrEqual)(::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenSmallerOrEqual)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
     (i == 0) && (c.reason = "") # reset on init
-    if getfield(o, c.value) <= c.minValue
+    if getfield(s, c.value) <= c.minValue
         c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
         return true
     end
@@ -258,7 +310,7 @@ mutable struct StopAfter <: StoppingCriterion
         end
     end
 end
-function (c::StopAfter)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopAfter)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     if value(c.start) == 0 || i <= 0 # (re)start timer
         c.reason = ""
         c.start = Nanosecond(time_ns())
@@ -304,9 +356,9 @@ mutable struct StopWhenAll{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAll(c...) = new{typeof(c)}(c, "")
 end
-function (c::StopWhenAll)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.reason = "") # reset on init
-    if all(subC -> subC(p, o, i), c.criteria)
+    if all(subC -> subC(p, s, i), c.criteria)
         c.reason = string([get_reason(subC) for subC in c.criteria]...)
         return true
     end
@@ -357,9 +409,9 @@ mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAny(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, "")
 end
-function (c::StopWhenAny)(p::P, o::O, i::Int) where {P<:Problem,O<:Options}
+function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.reason = "") # reset on init
-    if any(subC -> subC(p, o, i), c.criteria)
+    if any(subC -> subC(p, s, i), c.criteria)
         c.reason = string([get_reason(subC) for subC in c.criteria]...)
         return true
     end
@@ -391,22 +443,6 @@ function Base.:|(s1::S, s2::StopWhenAny) where {S<:StoppingCriterion}
 end
 function Base.:|(s1::StopWhenAny, s2::T) where {T<:StoppingCriterion}
     return StopWhenAny(s1.criteria..., s2)
-end
-
-#
-# Functions for Criteria
-#
-"""
-    are_these_stopping_critera_active(c::StoppingCriterion, cond)
-
-Return `true` if any criterion from the given set is both active and fulfils the given
-condition `cond` (`cond(c)` returns `true`).
-"""
-function are_these_stopping_critera_active(cond::Function, c::StoppingCriterionSet)
-    return any(cc -> are_these_stopping_critera_active(cond, cc), get_stopping_criteria(c))
-end
-function are_these_stopping_critera_active(cond::Function, c::StoppingCriterion)
-    return !isempty(c.reason) && cond(c)
 end
 
 @doc raw"""
@@ -446,10 +482,10 @@ get_reason(c::sC) where {sC<:StoppingCriterion} = c.reason
     get_reason(o)
 
 return the current reason stored within the [`StoppingCriterion`](@ref) from
-within the [`Options`](@ref) This reason is empty if the criterion has never
+within the [`AbstractManoptSolverState`](@ref) This reason is empty if the criterion has never
 been met.
 """
-get_reason(o::Options) = get_reason(get_options(o).stop)
+get_reason(s::AbstractManoptSolverState) = get_reason(get_state(s).stop)
 
 @doc raw"""
     get_stopping_criteria(c)
@@ -465,22 +501,22 @@ get_stopping_criteria(c::StopWhenAny) = c.criteria
 
 @doc raw"""
     update_stopping_criterion!(c::Stoppingcriterion, s::Symbol, v::value)
-    update_stopping_criterion!(o::Options, s::Symbol, v::value)
+    update_stopping_criterion!(s::AbstractManoptSolverState, symbol::Symbol, v::value)
     update_stopping_criterion!(c::Stoppingcriterion, ::Val{Symbol}, v::value)
 
 Update a value within a stopping criterion, specified by the symbol `s`, to `v`.
 If a criterion does not have a value assigned that corresponds to `s`, the update is ignored.
 
-For the second signature, the stopping criterion within the [`Options`](@ref) `o` is updated.
+For the second signature, the stopping criterion within the [`AbstractManoptSolverState`](@ref) `o` is updated.
 
 To see which symbol updates which value, see the specific stopping criteria. They should
 use dispatch per symbol value (the third signature).
 """
 update_stopping_criterion!(c, s, v)
 
-function update_stopping_criterion!(o::Options, s::Symbol, v)
-    update_stopping_criterion!(o.stop, s, v)
-    return o
+function update_stopping_criterion!(s::AbstractManoptSolverState, symbol::Symbol, v)
+    update_stopping_criterion!(s.stop, symbol, v)
+    return s
 end
 function update_stopping_criterion!(c::StopWhenAll, s::Symbol, v)
     for d in c.criteria

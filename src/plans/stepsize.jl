@@ -1,4 +1,29 @@
 """
+    Stepsize
+
+An abstract type for the functors representing step sizes, i.e. they are callable
+structures. The naming scheme is `TypeOfStepSize`, e.g. `ConstantStepsize`.
+
+Every Stepsize has to provide a constructor and its function has to have
+the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
+and the current number of iterations are the arguments
+and returns a number, namely the stepsize to use.
+
+# See also
+
+[`Linesearch`](@ref)
+"""
+abstract type Stepsize end
+
+"""
+    default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
+
+Returns the default [`Stepsize`](@ref) functor used when running the solver specified by the
+[`AbstractManoptSolverState`](@ref) `ams` running with an objective on the `AbstractManifold M`.
+"""
+default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
+
+"""
     ConstantStepsize <: Stepsize
 
 A functor that always returns a fixed step size.
@@ -8,9 +33,9 @@ A functor that always returns a fixed step size.
 
 # Constructors
 
-    ConstantStepsize(s)
+    ConstantStepsize(s::Real)
 
-initialize the stepsize to a constant `s` (deprecated)
+initialize the stepsize to a constant `s`.
 
     ConstantStepsize(M::AbstractManifold=DefaultManifold(2); stepsize=injectivity_radius(M)/2)
 
@@ -20,17 +45,16 @@ radius, unless the radius is infinity, then the default step size is `1`.
 mutable struct ConstantStepsize{T} <: Stepsize
     length::T
 end
-@deprecate ConstantStepsize(s::Real) ConstantStepsize(; stepsize=s)
 function ConstantStepsize(
     M::AbstractManifold=DefaultManifold(2);
     stepsize=isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 2,
 )
     return ConstantStepsize{typeof(stepsize)}(stepsize)
 end
-function (s::ConstantStepsize)(
-    p::P, o::O, i::Int, args...; kwargs...
-) where {P<:Problem,O<:Options}
-    return s.length
+function (cs::ConstantStepsize)(
+    ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Any, args...; kwargs...
+)
+    return cs.length
 end
 get_initial_stepsize(s::ConstantStepsize) = s.length
 
@@ -90,7 +114,7 @@ function DecreasingStepsize(
 end
 function (s::DecreasingStepsize)(
     ::P, ::O, i::Int, args...; kwargs...
-) where {P<:Problem,O<:Options}
+) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     return (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
@@ -123,7 +147,7 @@ last step size.
 * `last_stepsize` – (`initialstepsize`) the last step size we start the search with
 * `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
     before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
-* `initial_guess` (`(p,o,i,l) -> l`)  based on a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
+* `initial_guess` (`(p,o,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o`
   and a current iterate `i` and a last step size `l`, this returns an initial guess. The default uses the last obtained stepsize
 # Constructor
 
@@ -132,7 +156,7 @@ last step size.
 with the Fields above as keyword arguments and the retraction is set to the default retraction on `M`.
 
 The constructors return the functor to perform Armijo line search, where two interfaces are available:
-* based on a tuple `(p,o,i)` of a [`GradientProblem`](@ref) `p`, [`Options`](@ref) `o`
+* based on a tuple `(amp, ams, i)` of a [`AbstractManoptProblem`](@ref) `amp`, [`AbstractManoptSolverState`](@ref) `ams`
   and a current iterate `i`.
 * with `(M, x, F, gradFx[,η=-gradFx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#Manifold) `M`, a current
   point `x` a function `F`, that maps from the manifold to the reals,
@@ -147,20 +171,6 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     last_stepsize::Float64
     linesearch_stopsize::Float64
     initial_guess::F
-    @deprecate ArmijoLinesearch(
-        s::Float64=1.0,
-        r::AbstractRetractionMethod=ExponentialRetraction(),
-        contraction_factor::Float64=0.95,
-        sufficient_decrease::Float64=0.1,
-        linesearch_stopsize::Float64=0.0,
-    ) ArmijoLinesearch(
-        DefaultManifold(2);
-        initial_stepsize=s,
-        retraction_method=r,
-        contraction_factor=contraction_factor,
-        sufficient_decrease=sufficient_decrease,
-        linesearch_stopsize=linesearch_stopsize,
-    )
     function ArmijoLinesearch(
         M;
         initial_stepsize::Float64=1.0,
@@ -182,14 +192,18 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     end
 end
 function (a::ArmijoLinesearch)(
-    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
+    mp::AbstractManoptProblem,
+    s::AbstractManoptSolverState,
+    i::Int,
+    η=-get_gradient(mp, get_iterate(s));
+    kwargs...,
 )
     a.last_stepsize = linesearch_backtrack(
-        p.M,
-        x -> p.cost(p.M, x),
-        get_iterate(o),
-        get_gradient!(p, o.gradient, get_iterate(o)),
-        a.initial_guess(p, o, i, a.last_stepsize),
+        get_manifold(mp),
+        p -> get_cost_function(get_objective(mp))(get_manifold(mp), p),
+        get_iterate(s),
+        get_gradient!(mp, get_gradient(s), get_iterate(s)),
+        a.initial_guess(mp, s, i, a.last_stepsize),
         a.sufficient_decrease,
         a.contraction_factor,
         a.retraction_method,
@@ -323,7 +337,7 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 * `max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
 * `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
 * `strategy` – (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
-* `storage` – (`x`, `gradient`) a [`StoreOptionsAction`](@ref) to store `old_x` and `old_gradient`, the x-value and corresponding gradient of the previous iteration
+* `storage` – (`x`, `gradient`) a [`StoreStateAction`](@ref) to store `old_x` and `old_gradient`, the x-value and corresponding gradient of the previous iteration
 * `stepsize_reduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
 * `sufficient_decrease` – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
 * `vector_transport_method` – (`ParallelTransport()`) the vector transport method to use
@@ -353,7 +367,7 @@ mutable struct NonmonotoneLinesearch{
     initial_stepsize::Float64
     old_costs::T
     strategy::Symbol
-    storage::StoreOptionsAction
+    storage::StoreStateAction
     linesearch_stopsize::Float64
     function NonmonotoneLinesearch(
         M::AbstractManifold=DefaultManifold(2);
@@ -368,7 +382,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :gradient)),
         linesearch_stopsize::Float64=0.0,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
@@ -414,48 +428,26 @@ mutable struct NonmonotoneLinesearch{
             linesearch_stopsize,
         )
     end
-    @deprecate NonmonotoneLinesearch(
-        initial_stepsize::Float64,
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
-        vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-        stepsize_reduction::Float64=0.5,
-        sufficient_decrease::Float64=1e-4,
-        memory_size::Int=10,
-        min_stepsize::Float64=1e-3,
-        max_stepsize::Float64=1e3,
-        strategy::Symbol=:direct,
-        storage::StoreOptionsAction=StoreOptionsAction((:Iterate, :gradient)),
-        linesearch_stopsize::Float64=0.0,
-    ) NonmonotoneLinesearch(
-        DefaultManifold(3);
-        initial_stepsize=initial_stepsize,
-        retraction_method=retraction_method,
-        vector_transport_method=vector_transport_method,
-        stepsize_reduction=stepsize_reduction,
-        sufficient_decrease=sufficient_decrease,
-        memory_size=memory_size,
-        min_stepsize=min_stepsize,
-        max_stepsize=max_stepsize,
-        strategy=strategy,
-        storage=storage,
-        linesearch_stopsize=linesearch_stopsize,
-    )
 end
 function (a::NonmonotoneLinesearch)(
-    p::GradientProblem, o::Options, i::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
+    mp::AbstractManoptProblem,
+    s::AbstractManoptSolverState,
+    i::Int,
+    η=-get_gradient(mp, get_iterate(s));
+    kwargs...,
 )
     if !all(has_storage.(Ref(a.storage), [:Iterate, :gradient]))
-        old_x = get_iterate(o)
-        old_gradient = get_gradient(p, get_iterate(o))
+        old_x = get_iterate(s)
+        old_gradient = get_gradient(mp, get_iterate(s))
     else
         old_x, old_gradient = get_storage.(Ref(a.storage), [:Iterate, :gradient])
     end
-    update_storage!(a.storage, o)
+    update_storage!(a.storage, s)
     return a(
-        p.M,
-        get_iterate(o),
-        x -> get_cost(p, x),
-        get_gradient(p, get_iterate(o)),
+        get_manifold(mp),
+        get_iterate(s),
+        x -> get_cost(mp, x),
+        get_gradient(mp, get_iterate(s)),
         η,
         old_x,
         old_gradient,
@@ -580,19 +572,6 @@ mutable struct WolfePowellLinesearch{
     last_stepsize::Float64
     linesearch_stopsize::Float64
 
-    @deprecate WolfePowellLinesearch(
-        retr::AbstractRetractionMethod=ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999,
-    ) WolfePowellLinesearch(
-        DefaultManifold(3),
-        c1,
-        c2,
-        retraction_method=retr,
-        vector_transport_method=vtr,
-        linesearch_stopsize=1e-12,
-    )
     function WolfePowellLinesearch(
         M::AbstractManifold,
         c1::Float64=10^(-4),
@@ -610,64 +589,68 @@ mutable struct WolfePowellLinesearch{
 end
 
 function (a::WolfePowellLinesearch)(
-    p::P, o::O, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
-) where {
-    P<:GradientProblem{T,mT} where {T<:AbstractEvaluationType,mT<:AbstractManifold},
-    O<:Options,
-}
-    s = 1.0
+    mp::AbstractManoptProblem,
+    ams::AbstractManoptSolverState,
+    ::Int,
+    η=-get_gradient(mp, get_iterate(ams));
+    kwargs...,
+)
+    step = 1.0
     s_plus = 1.0
     s_minus = 1.0
-    f0 = get_cost(p, get_iterate(o))
-    xNew = retract(p.M, get_iterate(o), s * η, a.retraction_method)
-    fNew = get_cost(p, xNew)
-    η_xNew = vector_transport_to(p.M, get_iterate(o), η, xNew, a.vector_transport_method)
-    if fNew > f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))
-        while (fNew > f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))) &&
-            (s_minus > 10^(-9)) # decrease
+    M = get_manifold(mp)
+    f0 = get_cost(mp, get_iterate(ams))
+    p_new = retract(M, get_iterate(ams), step * η, a.retraction_method)
+    fNew = get_cost(mp, p_new)
+    η_xNew = vector_transport_to(M, get_iterate(ams), η, p_new, a.vector_transport_method)
+    if fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
+        while (
+            fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
+        ) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
-            s = s_minus
-            retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
-            fNew = get_cost(p, xNew)
+            step = s_minus
+            retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
+            fNew = get_cost(mp, p_new)
         end
         s_plus = 2.0 * s_minus
     else
         vector_transport_to!(
-            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+            M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method
         )
-        if inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-            a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
-            while fNew <= f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o)) &&
+        if inner(M, p_new, get_gradient(mp, p_new), η_xNew) <
+            a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
+            while fNew <=
+                  f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams)) &&
                 (s_plus < 10^(9))# increase
                 s_plus = s_plus * 2.0
-                s = s_plus
-                retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
-                fNew = get_cost(p, xNew)
+                step = s_plus
+                retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
+                fNew = get_cost(mp, p_new)
             end
             s_minus = s_plus / 2.0
         end
     end
-    retract!(p.M, xNew, get_iterate(o), s_minus * η, a.retraction_method)
-    vector_transport_to!(p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method)
-    while inner(p.M, xNew, get_gradient(p, xNew), η_xNew) <
-          a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
-        s = (s_minus + s_plus) / 2
-        retract!(p.M, xNew, get_iterate(o), s * η, a.retraction_method)
-        fNew = get_cost(p, xNew)
-        if fNew <= f0 + a.c1 * s * inner(p.M, get_iterate(o), η, get_gradient(o))
-            s_minus = s
+    retract!(M, p_new, get_iterate(ams), s_minus * η, a.retraction_method)
+    vector_transport_to!(M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method)
+    while inner(M, p_new, get_gradient(mp, p_new), η_xNew) <
+          a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
+        step = (s_minus + s_plus) / 2
+        retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
+        fNew = get_cost(mp, p_new)
+        if fNew <= f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
+            s_minus = step
         else
-            s_plus = s
+            s_plus = step
         end
         abs(s_plus - s_minus) <= a.linesearch_stopsize && break
-        retract!(p.M, xNew, get_iterate(o), s_minus * η, a.retraction_method)
+        retract!(M, p_new, get_iterate(ams), s_minus * η, a.retraction_method)
         vector_transport_to!(
-            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+            M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method
         )
     end
-    s = s_minus
-    a.last_stepsize = s
-    return s
+    step = s_minus
+    a.last_stepsize = step
+    return step
 end
 
 @doc raw"""
@@ -732,19 +715,6 @@ mutable struct WolfePowellBinaryLinesearch{
     last_stepsize::Float64
     linesearch_stopsize::Float64
 
-    @deprecate WolfePowellBinaryLinesearch(
-        retr::AbstractRetractionMethod=ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999,
-    ) WolfePowellBinaryLinesearch(
-        DefaultManifold(3),
-        c1,
-        c2,
-        retraction_method=retr,
-        vector_transport_method=vtr,
-        linesearch_stopsize=1e-9,
-    )
     function WolfePowellBinaryLinesearch(
         M::AbstractManifold,
         c1::Float64=10^(-4),
@@ -762,20 +732,25 @@ mutable struct WolfePowellBinaryLinesearch{
 end
 
 function (a::WolfePowellBinaryLinesearch)(
-    p::GradientProblem, o::Options, ::Int, η=-get_gradient(p, get_iterate(o)); kwargs...
+    amp::AbstractManoptProblem,
+    ams::AbstractManoptSolverState,
+    ::Int,
+    η=-get_gradient(amp, get_iterate(ams));
+    kwargs...,
 )
+    M = get_manifold(amp)
     α = 0.0
     β = Inf
     t = 1.0
-    f0 = get_cost(p, get_iterate(o))
-    xNew = retract(p.M, get_iterate(o), t * η, a.retraction_method)
-    fNew = get_cost(p, xNew)
-    η_xNew = vector_transport_to(p.M, get_iterate(o), η, xNew, a.vector_transport_method)
-    gradient_new = get_gradient(p, xNew)
-    nAt = fNew > f0 + a.c1 * t * inner(p.M, get_iterate(o), η, get_gradient(o))
+    f0 = get_cost(amp, get_iterate(ams))
+    xNew = retract(M, get_iterate(ams), t * η, a.retraction_method)
+    fNew = get_cost(amp, xNew)
+    η_xNew = vector_transport_to(M, get_iterate(ams), η, xNew, a.vector_transport_method)
+    gradient_new = get_gradient(amp, xNew)
+    nAt = fNew > f0 + a.c1 * t * inner(M, get_iterate(ams), η, get_gradient(ams))
     nWt =
-        inner(p.M, xNew, gradient_new, η_xNew) <
-        a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
+        inner(M, xNew, gradient_new, η_xNew) <
+        a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
     while (nAt || nWt) &&
               (t > a.linesearch_stopsize) &&
               ((α + β) / 2 - 1 > a.linesearch_stopsize)
@@ -783,71 +758,116 @@ function (a::WolfePowellBinaryLinesearch)(
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t = isinf(β) ? 2 * α : (α + β) / 2
         # Update trial point
-        retract!(p.M, xNew, get_iterate(o), t * η, a.retraction_method)
-        fNew = get_cost(p, xNew)
-        gradient_new = get_gradient(p, xNew)
+        retract!(M, xNew, get_iterate(ams), t * η, a.retraction_method)
+        fNew = get_cost(amp, xNew)
+        gradient_new = get_gradient(amp, xNew)
         vector_transport_to!(
-            p.M, η_xNew, get_iterate(o), η, xNew, a.vector_transport_method
+            M, η_xNew, get_iterate(ams), η, xNew, a.vector_transport_method
         )
         # Update conditions
-        nAt = fNew > f0 + a.c1 * t * inner(p.M, get_iterate(o), η, get_gradient(o))
+        nAt = fNew > f0 + a.c1 * t * inner(M, get_iterate(ams), η, get_gradient(ams))
         nWt =
-            inner(p.M, xNew, gradient_new, η_xNew) <
-            a.c2 * inner(p.M, get_iterate(o), η, get_gradient(o))
+            inner(M, xNew, gradient_new, η_xNew) <
+            a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
     end
     a.last_stepsize = t
     return t
 end
 
 @doc raw"""
-    get_stepsize(p::Problem, o::Options, vars...)
+    get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
 
-return the stepsize stored within [`Options`](@ref) `o` when solving [`Problem`](@ref) `p`.
+return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the
+[`AbstractManoptProblem`](@ref) `amp`.
 This method also works for decorated options and the [`Stepsize`](@ref) function within
 the options, by default stored in `o.stepsize`.
 """
-function get_stepsize(p::Problem, o::Options, vars...; kwargs...)
-    return get_stepsize(p, o, dispatch_options_decorator(o), vars...; kwargs...)
+function get_stepsize(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
+)
+    return _get_stepsize(amp, ams, dispatch_state_decorator(ams), vars...; kwargs...)
 end
-function get_stepsize(p::Problem, o::Options, ::Val{true}, vars...; kwargs...)
-    return get_stepsize(p, o.options, vars...; kwargs...)
+function _get_stepsize(
+    amp::AbstractManoptProblem,
+    ams::AbstractManoptSolverState,
+    ::Val{true},
+    vars...;
+    kwargs...,
+)
+    return get_stepsize(amp, ams.state, vars...; kwargs...)
 end
-function get_stepsize(p::Problem, o::Options, ::Val{false}, vars...; kwargs...)
-    return o.stepsize(p, o, vars...; kwargs...)
+function _get_stepsize(
+    amp::AbstractManoptProblem,
+    ams::AbstractManoptSolverState,
+    ::Val{false},
+    vars...;
+    kwargs...,
+)
+    return ams.stepsize(amp, ams, vars...; kwargs...)
 end
 
-function get_initial_stepsize(p::Problem, o::Options, vars...; kwargs...)
-    return get_initial_stepsize(
-        p::Problem, o::Options, dispatch_options_decorator(o), vars...; kwargs...
+function get_initial_stepsize(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
+)
+    return _get_initial_stepsize(
+        amp::AbstractManoptProblem,
+        ams::AbstractManoptSolverState,
+        dispatch_state_decorator(ams),
+        vars...;
+        kwargs...,
     )
 end
-function get_initial_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
-    return get_initial_stepsize(p, o.options)
+function _get_initial_stepsize(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...
+)
+    return get_initial_stepsize(amp, ams.state)
 end
-function get_initial_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
-    return get_initial_stepsize(o.stepsize)
+function _get_initial_stepsize(
+    ::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
+)
+    return get_initial_stepsize(ams.stepsize)
 end
 
-function get_last_stepsize(p::Problem, o::Options, vars...)
-    return _get_last_stepsize(p, o, dispatch_options_decorator(o), vars...)
+function get_last_stepsize(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...
+)
+    return _get_last_stepsize(amp, ams, dispatch_state_decorator(ams), vars...)
 end
-function _get_last_stepsize(p::Problem, o::Options, ::Val{true}, vars...)
-    return get_last_stepsize(p, o.options, vars...)
+function _get_last_stepsize(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...
+)
+    return get_last_stepsize(amp, ams.state, vars...)
 end
-function _get_last_stepsize(p::Problem, o::Options, ::Val{false}, vars...)
-    return get_last_stepsize(p, o, o.stepsize, vars...)
+function _get_last_stepsize(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
+)
+    return get_last_stepsize(amp, ams, ams.stepsize, vars...)
 end
 #
 # dispatch on stepsize
-function get_last_stepsize(p::Problem, o::Options, s::Stepsize, vars...)
-    return s(p, o, vars...)
+function get_last_stepsize(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, step::Stepsize, vars...
+)
+    return step(amp, ams, vars...)
 end
-function get_last_stepsize(::Problem, ::Options, s::ArmijoLinesearch, vars...)
-    return s.last_stepsize
+function get_last_stepsize(
+    ::AbstractManoptProblem, ::AbstractManoptSolverState, step::ArmijoLinesearch, ::Any...
+)
+    return step.last_stepsize
 end
-function get_last_stepsize(::Problem, ::Options, s::WolfePowellLinesearch, vars...)
-    return s.last_stepsize
+function get_last_stepsize(
+    ::AbstractManoptProblem,
+    ::AbstractManoptSolverState,
+    step::WolfePowellLinesearch,
+    ::Any...,
+)
+    return step.last_stepsize
 end
-function get_last_stepsize(::Problem, ::Options, s::WolfePowellBinaryLinesearch, vars...)
-    return s.last_stepsize
+function get_last_stepsize(
+    ::AbstractManoptProblem,
+    ::AbstractManoptSolverState,
+    step::WolfePowellBinaryLinesearch,
+    ::Any...,
+)
+    return step.last_stepsize
 end

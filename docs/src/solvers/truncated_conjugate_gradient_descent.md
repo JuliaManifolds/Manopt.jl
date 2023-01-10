@@ -12,7 +12,7 @@ The aim is to solve the trust-region subproblem
 \text{s.t.} \; ⟨η, η⟩_{x} \leq {Δ}^2
 ```
 
-on a manifold by using the Steihaug-Toint truncated conjugate-gradient method, 
+on a manifold by using the Steihaug-Toint truncated conjugate-gradient method,
 abbreviated tCG-method.
 All terms involving the trust-region radius use an inner product w.r.t. the
 preconditioner; this is because the iterates grow in length w.r.t. the
@@ -82,10 +82,10 @@ line ``η_k + α δ_k``. If our aim is to minimize the model within
 the trust-region, it makes far more sense to reduce ``m_x(⋅)`` along
 ``η_k + α δ_k`` as much as we can while staying within the
 trust-region, and this means moving to the trust-region boundary along this
-line. Thus, when ``κ ≤ 0`` at iteration k, we replace 
+line. Thus, when ``κ ≤ 0`` at iteration k, we replace
 ``α = \frac{⟨r_k, z_k⟩_{x}}{κ}`` with ``τ`` described as above.
 The other possibility is that ``η_{k+1}`` would lie outside the trust-region at
-iteration k (i.e. ``⟨η_k, η_k⟩_{x}^{* } ≥ {Δ}^2`` 
+iteration k (i.e. ``⟨η_k, η_k⟩_{x}^{* } ≥ {Δ}^2``
 that can be identified with the norm of ``η_{k+1}``). In
 particular, when ``\operatorname{Hess}[F] (⋅)_{x}`` is positive deﬁnite
 and ``η_{k+1}`` lies outside the trust region, the solution to the
@@ -95,34 +95,33 @@ stands, as subsequent iterates will move further outside the trust-region
 boundary. A sensible strategy, just as in the case considered above, is to
 move to the trust-region boundary by finding ``τ``.
 
-
 Although it is virtually impossible in practice to know how many iterations are
-necessary to provide a good estimate ``η_{k}`` of the trust-region subproblem, 
-the method stops after a certain number of iterations, which is realised by 
-[`StopAfterIteration`](@ref). In order to increase the convergence rate of 
-the underlying trust-region method, see 
-[`trust_regions`](@ref), a typical stopping criterion 
+necessary to provide a good estimate ``η_{k}`` of the trust-region subproblem,
+the method stops after a certain number of iterations, which is realised by
+[`StopAfterIteration`](@ref). In order to increase the convergence rate of
+the underlying trust-region method, see
+[`trust_regions`](@ref), a typical stopping criterion
 is to stop as soon as an iteration ``k`` is reached for which
 
 ```math
-  \Vert r_k \Vert_x \leqq \Vert r_0 \Vert_x \min \left( \Vert r_0 \Vert^{θ}_x, κ \right 
+  \Vert r_k \Vert_x \leqq \Vert r_0 \Vert_x \min \left( \Vert r_0 \Vert^{θ}_x, κ \right)
 ```
 
-holds, where ``0 < κ < 1`` and ``θ > 0`` are chosen in advance. This is 
-realized in this method by [`StopIfResidualIsReducedByFactorOrPower`](@ref). 
+holds, where ``0 < κ < 1`` and ``θ > 0`` are chosen in advance. This is
+realized in this method by [`StopWhenResidualIsReducedByFactorOrPower`](@ref).
 It can be shown shown that under appropriate conditions the iterates ``x_k``
 of the underlying trust-region method converge to nondegenerate critical
-points with an order of convergence of at least ``\min \left( θ + 1, 2 \right)``, 
-see [[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)]. 
-The method also aborts if the curvature of the model is negative, i.e. if 
-``\langle \delta_k, \mathcal{H}[δ_k] \rangle_x \leqq 0``, which is realised by 
-[`StopWhenCurvatureIsNegative`](@ref). If the next possible approximate 
-solution ``η_{k}^{*}`` calculated in iteration ``k`` lies outside the 
-trust region, i.e. if ``\lVert η_{k}^{*} \rVert_x \geq Δ``, then the method 
-aborts, which is realised by [`StopWhenTrustRegionIsExceeded`](@ref). 
-Furthermore, the method aborts if the new model value evaluated at ``η_{k}^{*}`` 
-is greater than the previous model value evaluated at ``η_{k}``, which 
-is realised by [`StopWhenModelIncreased`](@ref). 
+points with an order of convergence of at least ``\min \left( θ + 1, 2 \right)``,
+see [[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)].
+The method also aborts if the curvature of the model is negative, i.e. if
+``\langle \delta_k, \mathcal{H}[δ_k] \rangle_x \leqq 0``, which is realised by
+[`StopWhenCurvatureIsNegative`](@ref). If the next possible approximate
+solution ``η_{k}^{*}`` calculated in iteration ``k`` lies outside the
+trust region, i.e. if ``\lVert η_{k}^{*} \rVert_x \geq Δ``, then the method
+aborts, which is realised by [`StopWhenTrustRegionIsExceeded`](@ref).
+Furthermore, the method aborts if the new model value evaluated at ``η_{k}^{*}``
+is greater than the previous model value evaluated at ``η_{k}``, which
+is realised by [`StopWhenModelIncreased`](@ref).
 
 
 ## Interface
@@ -132,29 +131,29 @@ is realised by [`StopWhenModelIncreased`](@ref).
   truncated_conjugate_gradient_descent!
 ```
 
-## Options
+## State
 
 ```@docs
-TruncatedConjugateGradientOptions
+TruncatedConjugateGradientState
 ```
 
-## Additional Stopping Criteria
+## Stopping Criteria
 
 ```@docs
-StopIfResidualIsReducedByPower
-StopIfResidualIsReducedByFactor
+StopWhenResidualIsReducedByFactorOrPower
 StopWhenTrustRegionIsExceeded
 StopWhenCurvatureIsNegative
 StopWhenModelIncreased
-update_stopping_criterion!(::StopIfResidualIsReducedByPower, ::Val{:ResidualPower}, ::Any)
+update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, ::Any)
+update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, ::Any)
 ```
 
-## Literature 
+## Literature
 
 ```@raw html
 <ul>
 <li id="AbsilMahonySepulchre2008">[<a>Absil, Mahony, Sepulchre, 2008</a>]
-  Absil, Pierre-Antoine and Mahony, Robert and Sepulchre, Rodolphe: 
+  Absil, Pierre-Antoine and Mahony, Robert and Sepulchre, Rodolphe:
   <emph> Optimization Algorithms on Matrix Manifolds </emph>
   Mathematics of Computation - Math. Comput., Volume 78.
   doi: <a href="https://doi.org/10.1515/9781400830244">10.1515/9781400830244</a>,

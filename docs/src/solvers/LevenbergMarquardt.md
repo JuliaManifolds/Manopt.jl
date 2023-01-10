@@ -12,5 +12,5 @@ LevenbergMarquardt!
 ## Options
 
 ```@docs
-LevenbergMarquardtOptions
+LevenbergMarquardtState
 ```

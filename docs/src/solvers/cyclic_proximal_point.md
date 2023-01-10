@@ -1,8 +1,6 @@
 # [Cyclic Proximal Point](@id CPPSolver)
 
-The Cyclic Proximal Point (CPP) algorithm is a [Proximal Problem](@ref ProximalProblem).
-
-It aims to minimize
+The Cyclic Proximal Point (CPP) algorithm aims to minimize
 
 ```math
 F(x) = \sum_{i=1}^c f_i(x)
@@ -23,10 +21,10 @@ cyclic_proximal_point
 cyclic_proximal_point!
 ```
 
-## Options
+## State
 
 ```@docs
-CyclicProximalPointOptions
+CyclicProximalPointState
 ```
 
 ## Debug Functions

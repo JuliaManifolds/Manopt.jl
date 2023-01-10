@@ -5,10 +5,10 @@ subgradient_method
 subgradient_method!
 ```
 
-## Options
+## State
 
 ```@docs
-SubGradientMethodOptions
+SubGradientMethodState
 ```
 
 For [`DebugAction`](@ref)s and [`RecordAction`](@ref)s to record (sub)gradient,

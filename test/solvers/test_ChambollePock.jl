@@ -22,8 +22,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
     end
     prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
     cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
-    prox_F(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
-    function prox_G_dual(N, n, λ, ξ)
+    prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
+    function prox_g_dual(N, n, λ, ξ)
         return ProductRepr(
             ξ[N, :point],
             project_collaborative_TV(
@@ -31,7 +31,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             ),
         )
     end
-    function prox_G_dual!(N, η, n, λ, ξ)
+    function prox_g_dual!(N, η, n, λ, ξ)
         copyto!(N, η[N, :point], ξ[N, :point])
         project_collaborative_TV!(
             base_manifold(N), η[N, :vector], λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
@@ -46,7 +46,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     x0 = deepcopy(data)
     ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
     @testset "Test Variants" begin
-        callargs_linearized = [M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_DΛ]
+        callargs_linearized = [M, N, cost, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ]
         o1 = ChambollePock(
             callargs_linearized...;
             linearized_forward_operator=DΛ,
@@ -60,7 +60,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             variant=:linearized,
         )
         @test o1 ≈ o2 atol = 2 * 1e-7
-        callargs_exact = [M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_DΛ]
+        callargs_exact = [M, N, cost, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ]
         o3 = ChambollePock(callargs_exact...; Λ=Λ, relax=:dual, variant=:exact)
         o4 = ChambollePock(callargs_exact...; Λ=Λ, relax=:primal, variant=:exact)
         @test o3 ≈ o4 atol = 2 * 1e-7
@@ -70,7 +70,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             linearized_forward_operator=DΛ,
             relax=:dual,
             variant=:linearized,
-            return_options=true,
+            return_state=true,
         )
         @test get_solver_result(o1a) == o1
         o2a = ChambollePock(

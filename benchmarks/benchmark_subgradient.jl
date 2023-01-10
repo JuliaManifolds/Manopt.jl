@@ -23,8 +23,8 @@ function ∂f!(M, X, y)
     return X
 end
 x2 = copy(x0)
-subgradient_method!(M, f, ∂f!, x2; evaluation=MutatingEvaluation())
-@btime subgradient_method!($M, $f, $∂f!, x3; evaluation=$(MutatingEvaluation())) setup = (
+subgradient_method!(M, f, ∂f!, x2; evaluation=InplaceEvaluation())
+@btime subgradient_method!($M, $f, $∂f!, x3; evaluation=$(InplaceEvaluation())) setup = (
     x3 = deepcopy($x0)
 )
 

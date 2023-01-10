@@ -21,8 +21,8 @@ using Manopt, Manifolds, ManifoldsBase, Test
     Λ(M, x) = ProductRepr(x, forward_logs(M, x))
     prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
     cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
-    prox_F(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
-    prox_G_dual(N, n, λ, ξ) = project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0) # non-isotropic
+    prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
+    prox_g_dual(N, n, λ, ξ) = project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0) # non-isotropic
     DΛ(M, m, X) = differential_forward_logs(M, m, X)
     adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(M, m, ξ)
 
@@ -130,7 +130,9 @@ using Manopt, Manifolds, ManifoldsBase, Test
         throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
     end
 
-    Dprox_F(M, λ, x, η) = differential_geodesic_startpoint(M, x, data, λ / (α + λ), η)
+    function Dprox_F(M, λ, x, η)
+        return Manopt.differential_shortest_geodesic_startpoint(M, x, data, λ / (α + λ), η)
+    end
     function Dprox_G_dual(N, n, λ, ξ, η)
         return differential_project_collaborative_TV(N, λ, n, ξ, η, Inf, Inf)
     end
@@ -148,15 +150,15 @@ using Manopt, Manifolds, ManifoldsBase, Test
         ξ0,
         m,
         n,
-        prox_F,
+        prox_f,
         Dprox_F,
-        prox_G_dual,
+        prox_g_dual,
         Dprox_G_dual,
         DΛ,
         adjoint_DΛ;
         primal_stepsize=σ,
         dual_stepsize=τ,
-        return_options=true,
+        return_state=true,
     )
     y = get_solver_result(o)
     @test x_hat ≈ y atol = 2 * 1e-7
@@ -170,16 +172,16 @@ using Manopt, Manifolds, ManifoldsBase, Test
         ξ0,
         m,
         n,
-        prox_F,
+        prox_f,
         Dprox_F,
-        prox_G_dual,
+        prox_g_dual,
         Dprox_G_dual,
         DΛ,
         adjoint_DΛ;
         primal_stepsize=σ,
         dual_stepsize=τ,
         update_dual_base=update_dual_base,
-        return_options=false,
+        return_state=false,
     )
     y2 = o2
     @test x_hat ≈ y2 atol = 2 * 1e-7

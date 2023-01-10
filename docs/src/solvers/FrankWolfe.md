@@ -9,10 +9,10 @@ Frank_Wolfe_method
 Frank_Wolfe_method!
 ```
 
-## Options
+## State
 
 ```@docs
-FrankWolfeOptions
+FrankWolfeState
 ```
 
 ## Helpers

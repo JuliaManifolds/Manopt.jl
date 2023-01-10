@@ -5,43 +5,42 @@
 CurrentModule = Manopt
 ```
 
-Solvers can be applied to [`Problem`](@ref)s with solver
-specific [`Options`](@ref).
+Solvers can be applied to [`AbstractManoptProblem`](@ref)s with solver
+specific [`AbstractManoptSolverState`](@ref).
 
 # List of Algorithms
 
 The following algorithms are currently available
 
-| Solver  | File   | Problem & Option  |
-----------|--------|-------------------|
-[Alternating Gradient Descent](@ref AlternatingGradientDescentSolver) | `alterating_gradient_descent.jl` | [`AlternatingGradientProblem`](@ref), [`AlternatingGradientDescentOptions`](@ref)
-[Chambolle-Pock](@ref ChambollePockSolver) | `Chambolle-Pock.jl` | [`PrimalDualProblem`](@ref), [`ChambollePockOptions`](@ref)
-[Conjugate Gradient Descent](@ref CGSolver) | `cyclic_proximal_point.jl` | [`ProximalProblem`](@ref), [`CyclicProximalPointOptions`](@ref)
-[Cyclic Proximal Point](@ref CPPSolver) | `conjugate_gradient_descent.jl` | [`GradientProblem`](@ref), [`ConjugateGradientDescentOptions`](@ref)
-[Douglas–Rachford](@ref DRSolver) | `DouglasRachford.jl` | [`ProximalProblem`](@ref), [`DouglasRachfordOptions`](@ref)
-[Exact Penalty Method](@ref ExactPenaltySolver) | `exact_penalty_method.jl`| [`ConstrainedProblem`](@ref), [`ExactPenaltyMethodOptions`](@ref)
-[Frank-Wolfe algorithm](@ref FrankWolfe) | `FrankWolfe.jl` |  [`GradientProblem`](@ref), [`FrankWolfeOptions`](@ref)
-[Gradient Descent](@ref GradientDescentSolver) | `gradient_descent.jl` |  [`GradientProblem`](@ref), [`GradientDescentOptions`](@ref)
-[Nelder-Mead](@ref NelderMeadSolver) | `NelderMead.jl` | [`CostProblem`](@ref), [`NelderMeadOptions`](@ref)
-[Augmented Lagrangian Method](@ref AugmentedLagrangianSolver) | `augmented_Lagrangian_method.jl`| [`ConstrainedProblem`](@ref), [`AugmentedLagrangianMethodOptions`](@ref)
-[Particle Swarm](@ref ParticleSwarmSolver) | `particle_swarm.jl` | [`CostProblem`](@ref), [`ParticleSwarmOptions`](@ref)
-[Primal-dual Riemannian semismooth Newton Algorithm](@ref PDRSSNSolver) | | [`PrimalDualSemismoothNewtonProblem`](@ref) | [`PrimalDualSemismoothNewtonOptions`](@ref)
-[Quasi-Newton Method](@ref quasiNewton) | `quasi_newton.jl`| [`GradientProblem`](@ref), [`QuasiNewtonOptions`](@ref)
-[Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | `truncated_conjugate_gradient_descent.jl` | [`HessianProblem`](@ref)
-[Subgradient Method](@ref SubgradientSolver) | `subgradient_method.jl` | [`SubGradientProblem`](@ref), [`SubGradientMethodOptions`](@ref)
-[Stochastic Gradient Descent](@ref StochasticGradientDescentSolver) | `stochastic_gradient_descent.jl` | [`StochasticGradientProblem`](@ref), [`StochasticGradientDescentOptions`](@ref)
-[The Riemannian Trust-Regions Solver](@ref trust_regions) | `trust_regions.jl` | [`HessianProblem`](@ref), [`TrustRegionsOptions`](@ref)
-[Levenberg-Marquardt](@ref) | `LevenbergMarquardt.jl` | [`LevenbergMarquardtOptions`](@ref)
-[`TruncatedConjugateGradientOptions`](@ref)
+| Solver   | Function & State    | Objective   |
+|:---------|:----------------|:---------|
+[Alternating Gradient Descent](@ref AlternatingGradientDescentSolver) | [`alternating_gradient_descent`](@ref) [`AlternatingGradientDescentState`](@ref) | ``f=(f_1,\ldots,f_n)``, ``\operatorname{grad} f_i`` |
+[Chambolle-Pock](@ref ChambollePockSolver) | [`ChambollePock`](@ref), [`ChambollePockState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}``, ``\operatorname{prox}_{τ G^*}``, ``Λ`` |
+[Conjugate Gradient Descent](@ref CGSolver) | [`conjugate_gradient_descent`](@ref), [`ConjugateGradientDescentState`](@ref) | ``f``, ``\operatorname{grad} f``
+[Cyclic Proximal Point](@ref CPPSolver) | [`cyclic_proximal_point`](@ref), [`CyclicProximalPointState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
+[Douglas–Rachford](@ref DRSolver) | [`DouglasRachford`](@ref), [`DouglasRachfordState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
+[Exact Penalty Method](@ref ExactPenaltySolver) | [`exact_penalty_method`](@ref), [`ExactPenaltyMethodState`](@ref) | ``f``, ``\operatorname{grad} f``, ``g``, ``\operatorname{grad} g_i``, ``h``, ``\operatorname{grad} h_j`` |
+[Frank-Wolfe algorithm](@ref FrankWolfe) | [`Frank_Wolfe_method`](@ref), [`FrankWolfeState`](@ref) | sub-problem solver |
+[Gradient Descent](@ref GradientDescentSolver) | [`gradient_descent`](@ref), [`GradientDescentState`](@ref) | ``f``, ``\operatorname{grad} f`` |
+[Levenberg-Marquardt](@ref) | [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref) | ``f = \sum_i f_i`` ``\operatorname{grad} f_i`` (Jacobian)|
+[Nelder-Mead](@ref NelderMeadSolver) | [`NelderMead`](@ref), [`NelderMeadState`](@ref) | ``f``
+[Augmented Lagrangian Method](@ref AugmentedLagrangianSolver) | [`augmented_Lagrangian_method`](@ref), [`AugmentedLagrangianMethodState`](@ref) | ``f``, ``\operatorname{grad} f``, ``g``, ``\operatorname{grad} g_i``, ``h``, ``\operatorname{grad} h_j`` |
+[Particle Swarm](@ref ParticleSwarmSolver) | [`particle_swarm`](@ref), [`ParticleSwarmState`](@ref) | ``f`` |
+[Primal-dual Riemannian semismooth Newton Algorithm](@ref PDRSSNSolver) | [`primal_dual_semismooth_Newton`](@ref),  [`PrimalDualSemismoothNewtonState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}`` & diff., ``\operatorname{prox}_{τ G^*}`` & diff., ``Λ``
+[Quasi-Newton Method](@ref quasiNewton) | [`quasi_Newton`](@ref), [`QuasiNewtonState`](@ref) | ``f``, ``\operatorname{grad} f`` |
+[Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | [`truncated_conjugate_gradient_descent`](@ref), [`TruncatedConjugateGradientState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
+[Subgradient Method](@ref SubgradientSolver) | [`subgradient_method`](@ref), [`SubGradientMethodState`](@ref) | ``f``, ``∂ f`` |
+[Stochastic Gradient Descent](@ref StochasticGradientDescentSolver) | [`stochastic_gradient_descent`](@ref), [`StochasticGradientDescentState`](@ref) | ``f = \sum_i f_i``, ``\operatorname{grad} f_i`` |
+[The Riemannian Trust-Regions Solver](@ref trust_regions) | [`trust_regions`](@ref), [`TrustRegionsState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
 
-Note that the solvers (or their [`Options`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection).
+Note that the solvers (their [`AbstractManoptSolverState`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection). This is done using the `debug=` and `record=` keywords in the function calls. Similarly, since 0.4 we provide a (simple) [caching of the objective function](@ref CacheSection) using the `cache=` keyword in any of the function calls..
 
 ## Technical Details
 
  The main function a solver calls is
 
 ```@docs
-solve(p::Problem, o::Options)
+solve!(p::AbstractManoptProblem, s::AbstractManoptSolverState)
 ```
 
 which is a framework that you in general should not change or redefine.
@@ -53,5 +52,5 @@ initialize_solver!
 step_solver!
 get_solver_result
 get_solver_return
-stop_solver!(p::Problem, o::Options, i::Int)
+stop_solver!(p::AbstractManoptProblem, s::AbstractManoptSolverState, Any)
 ```

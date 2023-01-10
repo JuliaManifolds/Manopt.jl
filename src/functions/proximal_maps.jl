@@ -349,7 +349,7 @@ function prox_TV2!(
         ∂F!,
         y;
         stopping_criterion=stopping_criterion,
-        evaluation=MutatingEvaluation(),
+        evaluation=InplaceEvaluation(),
         kwargs...,
     )
     return y

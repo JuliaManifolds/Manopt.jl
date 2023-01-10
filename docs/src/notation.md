@@ -8,6 +8,4 @@ with the following additional or slightly changed notation
 |:--:|:--------------- |:--:|:-- |
 | ``∇`` | The [Levi-Cevita connection](https://en.wikipedia.org/wiki/Levi-Civita_connection) | | |
 | ``\operatorname{grad}f`` | The Riemannian gradient | ``∇f``| due to possible confusion with the connection, we try to avoid ``∇f`` |
-| ``\operatorname{Hess}f``| The Riemannian Hessian | |
-| ``p,q``| points on a manifold | | when definiting functions |
-| ``x_k, y_k`` | points on a manifold | | iterates of an algorithm |
+| ``\operatorname{Hess}f``| The Riemannian Hessian | |

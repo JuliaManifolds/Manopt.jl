@@ -6,60 +6,61 @@ function ManifoldsBase.default_inverse_retraction_method(::TestPolarManifold)
     return PolarInverseRetraction()
 end
 
-@testset "Debug Options" begin
+@testset "Debug State" begin
     # helper to get debug as string
     @testset "Basic Debug Output" begin
         io = IOBuffer()
         M = ManifoldsBase.DefaultManifold(2)
-        x = [4.0, 2.0]
-        o = GradientDescentOptions(
-            M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        p = [4.0, 2.0]
+        st = GradientDescentState(
+            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
-        f(M, y) = distance(M, y, x) .^ 2
-        gradf(M, y) = -2 * log(M, y, x)
-        p = GradientProblem(M, f, gradf)
-        a1 = DebugDivider("|", io)
-        @test Manopt.dispatch_options_decorator(DebugOptions(o, a1)) === Val{true}()
+        f(M, q) = distance(M, q, p) .^ 2
+        grad_f(M, q) = -2 * log(M, q, p)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        a1 = DebugDivider("|"; io=io)
+        @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
         # constructors
-        @test DebugOptions(o, a1).debugDictionary[:All] == a1
-        @test DebugOptions(o, [a1]).debugDictionary[:All].group[1] == a1
-        @test DebugOptions(o, Dict(:A => a1)).debugDictionary[:A] == a1
-        @test DebugOptions(o, ["|"]).debugDictionary[:All].group[1].divider == a1.divider
-        # single AbstractOptionsActions
+        @test DebugSolverState(st, a1).debugDictionary[:All] == a1
+        @test DebugSolverState(st, [a1]).debugDictionary[:All].group[1] == a1
+        @test DebugSolverState(st, Dict(:A => a1)).debugDictionary[:A] == a1
+        @test DebugSolverState(st, ["|"]).debugDictionary[:All].group[1].divider ==
+            a1.divider
+        # single AbstractStateActions
         # DebugDivider
-        a1(p, o, 0)
+        a1(mp, st, 0)
         s = @test String(take!(io)) == "|"
-        DebugGroup([a1, a1])(p, o, 0)
+        DebugGroup([a1, a1])(mp, st, 0)
         @test String(take!(io)) == "||"
-        DebugEvery(a1, 10, false)(p, o, 9)
+        DebugEvery(a1, 10, false)(mp, st, 9)
         @test String(take!(io)) == ""
-        DebugEvery(a1, 10, true)(p, o, 10)
+        DebugEvery(a1, 10, true)(mp, st, 10)
         @test String(take!(io)) == "|"
-        @test DebugEvery(a1, 10, true)(p, o, -1) == nothing
+        @test DebugEvery(a1, 10, true)(mp, st, -1) == nothing
         # Debug Cost
         @test DebugCost(; format="A %f").format == "A %f"
-        DebugCost(; long=false, io=io)(p, o, 0)
+        DebugCost(; long=false, io=io)(mp, st, 0)
         @test String(take!(io)) == "F(x): 0.000000"
-        DebugCost(; long=false, io=io)(p, o, -1)
+        DebugCost(; long=false, io=io)(mp, st, -1)
         @test String(take!(io)) == ""
         # entry
-        DebugEntry(:x; prefix="x:", io=io)(p, o, 0)
-        @test String(take!(io)) == "x: $x"
-        DebugEntry(:x; prefix="x:", io=io)(p, o, -1)
+        DebugEntry(:p; prefix="x:", io=io)(mp, st, 0)
+        @test String(take!(io)) == "x: $p"
+        DebugEntry(:p; prefix="x:", io=io)(mp, st, -1)
         @test String(take!(io)) == ""
         # Change of Iterate
-        a2 = DebugChange(; storage=StoreOptionsAction((:Iterate,)), prefix="Last: ", io=io)
-        a2(p, o, 0) # init
-        o.x = [3.0, 2.0]
-        a2(p, o, 1)
+        a2 = DebugChange(; storage=StoreStateAction((:Iterate,)), prefix="Last: ", io=io)
+        a2(mp, st, 0) # init
+        st.p = [3.0, 2.0]
+        a2(mp, st, 1)
         a2inv = DebugChange(;
-            storage=StoreOptionsAction((:Iterate,)),
+            storage=StoreStateAction((:Iterate,)),
             prefix="Last: ",
             io=io,
             invretr=PolarInverseRetraction(),
         )
         a2mani = DebugChange(;
-            storage=StoreOptionsAction((:Iterate,)),
+            storage=StoreStateAction((:Iterate,)),
             prefix="Last: ",
             io=io,
             manifold=TestPolarManifold(),
@@ -70,50 +71,55 @@ end
         @test String(take!(io)) == "Last: 1.000000"
         # Change of Gradient
         a3 = DebugGradientChange(;
-            storage=StoreOptionsAction((:Gradient,)), prefix="Last: ", io=io
+            storage=StoreStateAction((:Gradient,)), prefix="Last: ", io=io
         )
-        a3(p, o, 0) # init
-        o.gradient = [1.0, 0.0]
-        a3(p, o, 1)
+        a3(mp, st, 0) # init
+        st.X = [1.0, 0.0]
+        a3(mp, st, 1)
         @test String(take!(io)) == "Last: 1.000000"
         # Iterate
-        DebugIterate(; io=io)(p, o, 0)
+        DebugIterate(; io=io)(mp, st, 0)
         @test String(take!(io)) == ""
-        DebugIterate(; io=io)(p, o, 1)
-        @test String(take!(io)) == "x: $(o.x)"
+        DebugIterate(; io=io)(mp, st, 1)
+        @test String(take!(io)) == "p: $(st.p)"
         # Iteration
-        DebugIteration(; io=io)(p, o, 0)
+        DebugIteration(; io=io)(mp, st, 0)
         @test String(take!(io)) == "Initial "
-        DebugIteration(; io=io)(p, o, 23)
+        DebugIteration(; io=io)(mp, st, 23)
         @test String(take!(io)) == "# 23    "
         # DEbugEntryChange - reset
-        o.x = x
-        a3 = DebugEntryChange(:x, (p, o, x, y) -> distance(p.M, x, y); prefix="Last: ", io)
+        st.p = p
+        a3 = DebugEntryChange(
+            :p,
+            (mp, o, x, y) -> distance(Manopt.get_manifold(mp), x, y);
+            prefix="Last: ",
+            io,
+        )
         a4 = DebugEntryChange(
-            :x,
-            (p, o, x, y) -> distance(p.M, x, y);
-            initial_value=x,
+            :p,
+            (mp, o, x, y) -> distance(Manopt.get_manifold(mp), x, y);
+            initial_value=p,
             format="Last: %1.1f",
             io,
         )
-        a3(p, o, 0) # init
+        a3(mp, st, 0) # init
         @test String(take!(io)) == ""
-        a4(p, o, 0) # init
+        a4(mp, st, 0) # init
         @test String(take!(io)) == ""
         #change
-        o.x = [3.0, 2.0]
-        a3(p, o, 1)
+        st.p = [3.0, 2.0]
+        a3(mp, st, 1)
         @test String(take!(io)) == "Last: 1.0"
-        a4(p, o, 1)
+        a4(mp, st, 1)
         @test String(take!(io)) == "Last: 1.0"
         # StoppingCriterion
-        DebugStoppingCriterion(io)(p, o, 1)
+        DebugStoppingCriterion(; io=io)(mp, st, 1)
         @test String(take!(io)) == ""
-        o.stop(p, o, 19)
-        DebugStoppingCriterion(io)(p, o, 19)
+        st.stop(mp, st, 19)
+        DebugStoppingCriterion(; io=io)(mp, st, 19)
         @test String(take!(io)) == ""
-        o.stop(p, o, 20)
-        DebugStoppingCriterion(io)(p, o, 20)
+        st.stop(mp, st, 20)
+        DebugStoppingCriterion(; io=io)(mp, st, 20)
         @test String(take!(io)) ==
             "The algorithm reached its maximal number of iterations (20).\n"
         df = DebugFactory([:Stop, "|"])
@@ -130,7 +136,7 @@ end
             :Iterate,
             :Cost,
             :Stepsize,
-            :x,
+            :p,
             :Time,
             :IterativeTime,
         ]
@@ -174,35 +180,35 @@ end
 
     @testset "Debug Warnings" begin
         M = ManifoldsBase.DefaultManifold(2)
-        x = [4.0, 2.0]
-        o = GradientDescentOptions(
-            M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        p = [4.0, 2.0]
+        st = GradientDescentState(
+            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, y) = Inf
-        gradf(M, y) = Inf .* ones(2)
-        p = GradientProblem(M, f, gradf)
+        grad_f(M, y) = Inf .* ones(2)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 
         w1 = DebugWarnIfCostNotFinite()
         @test_logs (:warn,) (
             :warn,
             "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.",
-        ) w1(p, o, 0)
+        ) w1(mp, st, 0)
         w2 = DebugWarnIfCostNotFinite(:Always)
         @test_logs (
             :warn, "The cost is not finite.\nAt iteration #0 the cost evaluated to Inf."
-        ) w2(p, o, 0)
+        ) w2(mp, st, 0)
 
-        o.gradient = gradf(M, x)
-        w3 = DebugWarnIfFieldNotFinite(:gradient)
+        st.X = grad_f(M, p)
+        w3 = DebugWarnIfFieldNotFinite(:X)
         @test_logs (:warn,) (
             :warn,
-            "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:gradient, :Always) to get all warnings.",
-        ) w3(p, o, 0)
-        w4 = DebugWarnIfFieldNotFinite(:gradient, :Always)
+            "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:X, :Always) to get all warnings.",
+        ) w3(mp, st, 0)
+        w4 = DebugWarnIfFieldNotFinite(:X, :Always)
         @test_logs (
             :warn,
-            "The field o.gradient is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
-        ) w4(p, o, 1)
+            "The field o.X is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
+        ) w4(mp, st, 1)
 
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)
@@ -212,28 +218,28 @@ end
     @testset "Debug Time" begin
         io = IOBuffer()
         M = ManifoldsBase.DefaultManifold(2)
-        x = [4.0, 2.0]
-        o = GradientDescentOptions(
-            M, x; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        p = [4.0, 2.0]
+        st = GradientDescentState(
+            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
-        f(M, y) = distance(M, y, x) .^ 2
-        gradf(M, y) = -2 * log(M, y, x)
-        p = GradientProblem(M, f, gradf)
+        f(M, q) = distance(M, q, p) .^ 2
+        grad_f(M, q) = -2 * log(M, q, p)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         d1 = DebugTime(; start=true, io=io)
         @test d1.last_time != Nanosecond(0)
         d2 = DebugTime(; io=io)
         @test d2.last_time == Nanosecond(0)
-        d2(p, o, 1)
+        d2(mp, st, 1)
         @test d2.last_time != Nanosecond(0) # changes on first call
         t = d2.last_time
         sleep(0.002)
-        d2(p, o, 2)
+        d2(mp, st, 2)
         @test t == d2.last_time # but not afterwards
         @test endswith(String(take!(io)), "seconds")
         d3 = DebugTime(; start=true, mode=:iterative, io=io)
         @test d3.last_time != Nanosecond(0) # changes on first call
         t = d3.last_time
-        d3(p, o, 2)
+        d3(mp, st, 2)
         @test t != d3.last_time # and later as well
         t = d3.last_time
         sleep(0.002)
