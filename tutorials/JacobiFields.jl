@@ -292,7 +292,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Colors = "~0.12.10"
 ManifoldDiff = "~0.2.0"
 Manifolds = "~0.8.42"
-Manopt = "~0.4.0"
+Manopt = "0.3.51, 0.4"
 PlutoUI = "~0.7.49"
 """
 
