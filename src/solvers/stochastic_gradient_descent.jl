@@ -136,7 +136,7 @@ perform a stochastic gradient descent
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function stochastic_gradient_descent(
     M::AbstractManifold, gradF::TDF, x; kwargs...

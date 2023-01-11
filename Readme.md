@@ -12,7 +12,7 @@ Optimization Algorithm on Riemannian Manifolds.
 For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold)
 ℳ to the real line, we aim to solve
 
-> Find the minimizer x on ℳ, i.e. the (or a) point where f attains its minimum.
+> Find the minimizer p on ℳ, i.e. the (or a) point where f attains its minimum.
 
 `Manopt.jl` provides
 

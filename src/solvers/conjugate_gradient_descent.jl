@@ -50,7 +50,7 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function conjugate_gradient_descent(
     M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...

@@ -192,7 +192,7 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
     > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:

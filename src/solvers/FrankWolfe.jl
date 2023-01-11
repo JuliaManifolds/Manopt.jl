@@ -33,7 +33,7 @@ mutable struct FrankWolfeState{
     P,
     T,
     Pr,
-    Op,
+    St,
     TStep<:Stepsize,
     TStop<:StoppingCriterion,
     TM<:AbstractRetractionMethod,
@@ -42,7 +42,7 @@ mutable struct FrankWolfeState{
     p::P
     X::T
     sub_problem::Pr
-    sub_state::Op
+    sub_state::St
     stop::TStop
     stepsize::TStep
     retraction_method::TM
@@ -126,7 +126,7 @@ all further keywords are passed down to [`decorate_state!`](@ref), e.g. `debug`.
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function Frank_Wolfe_method(M::AbstractManifold, f, grad_f, p; kwargs...)
     q = copy(M, p)

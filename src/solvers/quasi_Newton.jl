@@ -161,7 +161,7 @@ The ``k``th iteration consists of
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function quasi_Newton(M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...) where {TF,TDF}
     x_res = copy(M, x)

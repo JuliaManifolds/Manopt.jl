@@ -135,6 +135,7 @@ include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
+include("solvers/difference_of_convex_algorithm.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
 include("solvers/NelderMead.jl")
@@ -216,6 +217,7 @@ export AbstractManifoldGradientObjective,
     ManifoldAlternatingGradientObjective,
     ManifoldCostGradientObjective,
     ManifoldCostObjective,
+    ManifoldDifferenceOfConvexObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
     ManifoldProximalMapObjective,
@@ -237,6 +239,7 @@ export AbstractGradientSolverState,
     ChambollePockState,
     ConjugateGradientDescentState,
     CyclicProximalPointState,
+    DifferenceOfConvexState,
     DouglasRachfordState,
     ExactPenaltyMethodState,
     FrankWolfeState,
@@ -346,6 +349,8 @@ export augmented_Lagrangian_method,
     conjugate_gradient_descent!,
     cyclic_proximal_point,
     cyclic_proximal_point!,
+    difference_of_convex_algorithm,
+    difference_of_convex_algorithm!,
     DouglasRachford,
     DouglasRachford!,
     exact_penalty_method,
