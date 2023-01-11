@@ -140,32 +140,3 @@ mutable struct BundleMethodOptions{
     end
 end
 get_iterate(o::BundleMethodOptions) = o.p_last_serious
-function BundleMethodSubsolver(prb::BundleProblem, o::BundleMethodOptions, X::T) where {T}
-    d = length(o.index_set)
-    lin_errors = o.lin_errors
-    N = ℝ^d
-    f(N, λ) = 0.5 * norm(prb.M, o.p_last_serious, sum(λ .* X))^2 + sum(λ .* lin_errors)
-    function gradf(N, λ)
-        return [
-            inner(prb.M, o.p_last_serious, X[i], sum(λ .* X)) + lin_errors[i] for i in 1:d
-        ]
-    end
-    g(N, λ) = -λ
-    function gradg(N, λ)
-        return project.(Ref(N), Ref(λ), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d])
-    end
-    h(N, λ) = sum(λ) - 1
-    gradh(N, λ) = ones(d)
-    return exact_penalty_method(
-        N,
-        f,
-        gradf,
-        zeros(d);
-        G=g,
-        H=h,
-        gradG=gradg,
-        gradH=gradh,
-        #smoothing=LinearQuadraticHuber(),
-        debug = ["    ", :Iteration, :Cost, "\n", 50]
-    )
-end
