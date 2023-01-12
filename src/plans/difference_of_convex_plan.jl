@@ -179,3 +179,130 @@ function set_manopt_parameter!(ldcg::LinearizedDCGrad, ::Val{:X}, X)
     ldcg.Xk = X
     return ldcg
 end
+
+#
+# Difference of Convex Proximal Algorithm plan
+#
+@doc raw"""
+    ManifoldDifferenceOfConvexProximalObjective <: Problem
+
+Specify an objective [`difference_of_convex_proximal`](@ref) algorithm.
+The problem is of the form
+```math
+    \operatorname*{argmin}_{p\in \mathcal M} g(p) - h(p)
+```
+where both ``g`` and ``h`` are convex, lsc. and proper.
+# Fields
+* `M`  – an `AbstractManifold`
+* `cost` – (`nothing`) implementation of ``f(p) = g(p)-h(p)`` (optional)
+* `grad_h!!` – a function ``\operatorname{grad}h: \mathcal M → T\mathcal M``,
+* `prox_g!!` – a function ``\operatorname{prox}_{\lambda g}: \mathcal M → \mathcal M``
+Note that the gradient and the prox might be given in two possible signatures
+* `grad_h(M, p)` and `prox_g(M, λ, p)` , respectively, which does an [`AllocatingEvaluation`](@ref)
+* `grad_h!(M, X, p)` and `prox_g(M, q, λ, p)` , respectively, which does an [`InplaceEvaluation`](@ref)
+ in place of `X` and `q`, respectively.
+"""
+struct ManifoldDifferenceOfConvexProximalObjective{
+    E<:AbstractEvaluationType,TCost,TGProx,THGrad
+} <: AbstractManifoldCostObjective{E,TCost}
+    cost::TCost
+    prox_g!!::TGProx
+    grad_h!!::THGrad
+    function DifferenceOfConvexProblem(
+        prox_g::TGP,
+        grad_h::THG;
+        cost::TC=nothing,
+        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    ) where {TC,TGP,THG}
+        return new{typeof(evaluation),TC,TGP,THG}(cost, prox_g, grad_h)
+    end
+end
+
+@doc raw"""
+    get_proximal_map(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, λ, p)
+
+Evaluate the proximal map of [`DifferenceOfConvexProxProblem`](@ref) `P`
+with parameter `λ` at `p`
+` `ProximalProblem p` at the point `x` of `p.M` with parameter ``λ>0``.
+"""
+function get_proximal_map(
+    M::AbstractManifold,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
+    λ,
+    p,
+)
+    return dcpo.prox_g!!(M, λ, p)
+end
+function get_proximal_map(
+    M::AbstractManifold,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
+    λ,
+    p,
+)
+    q = allocate_result(M, get_proximal_map, p)
+    dcpo.prox_g!!(p.M, q, λ, p)
+    return q
+end
+function get_proximal_map!(
+    M::AbstractManifold,
+    q,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
+    λ,
+    p,
+)
+    copyto!(M, q, dcpo.prox_g!!(M, λ, p))
+    return q
+end
+function get_proximal_map!(
+    M::AbstractManifold,
+    q,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
+    λ,
+    p,
+)
+    dcpo.prox_g!!(M, q, λ, p)
+    return q
+end
+
+"""
+    X = get_gradient(M::AbstractManifold, dcpo::DifferenceOfConvexProxProblem, p)
+    get_gradient!(M::AbstractManifold, X, dcpo::DifferenceOfConvexProxProblem, p)
+
+Evaluate the gradient of ``h`` from within a [`DifferenceOfConvexProxProblem`](@ref)` `P`
+at the point `p` (in place of X).
+"""
+get_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, x)
+
+function get_gradient(
+    M::AbstractManifold,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
+    p,
+)
+    return dcpo.grad_h!!(M, p)
+end
+function get_gradient(
+    M::AbstractManifold,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
+    p,
+)
+    X = zero_vector(M, p)
+    dcpo.grad_h!!(M, X, p)
+    return X
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
+    p,
+)
+    return copyto!(M, X, x, dcpo.grad_h!!(p.M, x))
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
+    p,
+)
+    dcpo.grad_h!!(M, X, p)
+    return X
+end

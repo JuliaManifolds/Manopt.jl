@@ -20,7 +20,7 @@ include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("subgradient_plan.jl")
 include("nonlinear_least_squares_plan.jl")
-include("difference_of_convx_plan.jl")
+include("difference_of_convex_plan.jl")
 
 include("primal_dual_plan.jl")
 include("higher_order_primal_dual_plan.jl")

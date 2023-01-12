@@ -1,6 +1,7 @@
 
 @doc raw"""
-    DifferenceOfConvexState{Type} <: Options
+    DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
+               AbstractManoptSolverState
 
 A struct to store the current state of the [`difference_of_convex_algorithm`])(@ref).
 It comes in two forms, depending on the realisation of the `subproblem`.
