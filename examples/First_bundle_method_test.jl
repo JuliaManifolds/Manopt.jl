@@ -1,7 +1,6 @@
 using Manopt, Manifolds, Random, QuadraticModels, RipQP
-#M=ℝ^3
-M = Hyperbolic(4)
-#M = SymmetricPositiveDefinite(3)
+
+M = SymmetricPositiveDefinite(3)
 Random.seed!(42)
 data = [rand(M; σ=0.4) for i in 1:100]
 
