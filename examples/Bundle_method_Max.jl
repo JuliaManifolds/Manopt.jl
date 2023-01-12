@@ -1,8 +1,7 @@
 using Manopt, Manifolds, Random, QuadraticModels, RipQP
 
-M = Hyperbolic(4)
-#M = SymmetricPositiveDefinite(3)
-Random.seed!(42)
+M = SymmetricPositiveDefinite(27)
+#Random.seed!(42)
 data = [rand(M; σ=0.4) for i in 1:100]
 
 F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
@@ -12,17 +11,28 @@ gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y),
 
 F3(M, y) = max(F(M, y), F2(M, y))
 function gradF3(M, y)
-    if F3(M, y) == F(M, y)
+    if F3(M, y) == F(M, y) && F3(M, y) != F2(M, y)
         return gradF(M, y)
-    else
+    elseif F3(M, y) == F2(M, y) && F3(M, y) != F(M, y)
         return gradF2(M, y)
+    else
+        r = rand()
+        return r * gradF(M, y) + (1 - r) * gradF2(M, y)
     end
 end
 
+G(M, y) = (F(M, y) - F2(M, y))^2
+m = particle_swarm(M, G)
+
 maxfunc_optimum = bundle_method(
-    M, F3, gradF3, data[1]; stopping_criterion=StopAfterIteration(100)
-)#, debug = [:Iteration, :Cost, "\n"])
-println("$(F3(M, maxfunc_optimum) == F2(M, maxfunc_optimum))")
+    M,
+    F3,
+    gradF3,
+    m;
+    stopping_criterion=StopAfterIteration(100),
+    debug=[:Iteration, :Cost, "\n"],
+)
+#println("$(F3(M, maxfunc_optimum) == F2(M, maxfunc_optimum))")
 
 # for j in 1:10
 #     print("$j")
