@@ -104,6 +104,15 @@ function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
     λ = bundle_method_sub_solver(prb.M, o, transported_subgradients)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* o.lin_errors)
+    if (
+        get_cost(prb, o.p) >=
+        get_cost(prb, o.p_last_serious) +
+        inner(prb.M, o.p_last_serious, g, log(prb.M, o.p_last_serious, o.p)) - ε
+    )
+        println("Yes")
+    else
+        println("No")
+    end
     δ = -norm(prb.M, o.p_last_serious, g)^2 - ε
     (δ == 0 || -δ <= o.tol) && (return o)
     q = retract(prb.M, o.p_last_serious, -g, o.retraction_method)
