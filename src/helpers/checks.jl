@@ -54,7 +54,9 @@ function check_differential(
     y = log10.(L[L .> 0])
     (a, b) = find_best_slope_window(x, y, length(x))[1:2]
     if isapprox(b, 2.0; atol=slope_tol)
-        plot && return plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=a, b=b, i=1, j=length(y))
+        plot && return plot_slope(
+            T[L .> 0], L[L .> 0]; line_base=L[1], a=a, b=b, i=1, j=length(y)
+        )
         (io !== nothing) && print(
             io,
             "You gradients slope is globally $(@sprintf("%.4f", b)), so within 2 ± $(slope_tol).\n",
