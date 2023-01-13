@@ -24,6 +24,16 @@ Returns the default [`Stepsize`](@ref) functor used when running the solver spec
 default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
 """
+    max_stepsize(M::AbstractManifold, p)
+
+Get the maximum stepsize at point `p` on manifold `M`. It should be used to limit the
+distance an algorithm is trying to move in a single step.
+"""
+function max_stepsize(M::AbstractManifold, p)
+    return injectivity_radius(M, p)
+end
+
+"""
     ConstantStepsize <: Stepsize
 
 A functor that always returns a fixed step size.
@@ -595,14 +605,20 @@ function (a::WolfePowellLinesearch)(
     η=-get_gradient(mp, get_iterate(ams));
     kwargs...,
 )
-    step = 1.0
-    s_plus = 1.0
-    s_minus = 1.0
     M = get_manifold(mp)
-    f0 = get_cost(mp, get_iterate(ams))
-    p_new = retract(M, get_iterate(ams), step * η, a.retraction_method)
+    cur_p = get_iterate(ams)
+    grad_norm = norm(M, cur_p, η)
+    max_step = max_stepsize(M, cur_p)
+    # max_step_increase is the upper limit for s_plus
+    max_step_increase = ifelse(isfinite(max_step), min(1e9, max_step / grad_norm), 1e9)
+    step = ifelse(isfinite(max_step), min(1.0, max_step / (2*grad_norm)), 1.0)
+    s_plus = step
+    s_minus = step
+    
+    f0 = get_cost(mp, cur_p)
+    p_new = retract(M, cur_p, step * η, a.retraction_method)
     fNew = get_cost(mp, p_new)
-    η_xNew = vector_transport_to(M, get_iterate(ams), η, p_new, a.vector_transport_method)
+    η_xNew = vector_transport_to(M, cur_p, η, p_new, a.vector_transport_method)
     if fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
         while (
             fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
@@ -621,7 +637,7 @@ function (a::WolfePowellLinesearch)(
             a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
             while fNew <=
                   f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams)) &&
-                (s_plus < 10^(9))# increase
+                (s_plus < max_step_increase)# increase
                 s_plus = s_plus * 2.0
                 step = s_plus
                 retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
