@@ -611,10 +611,10 @@ function (a::WolfePowellLinesearch)(
     max_step = max_stepsize(M, cur_p)
     # max_step_increase is the upper limit for s_plus
     max_step_increase = ifelse(isfinite(max_step), min(1e9, max_step / grad_norm), 1e9)
-    step = ifelse(isfinite(max_step), min(1.0, max_step / (2*grad_norm)), 1.0)
+    step = ifelse(isfinite(max_step), min(1.0, max_step / (2 * grad_norm)), 1.0)
     s_plus = step
     s_minus = step
-    
+
     f0 = get_cost(mp, cur_p)
     p_new = retract(M, cur_p, step * η, a.retraction_method)
     fNew = get_cost(mp, p_new)
