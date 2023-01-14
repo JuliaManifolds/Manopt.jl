@@ -19,3 +19,4 @@ coverage
 
 /.quarto/
 tutorials/*.ipynb
+tutorials/*_files/*
