@@ -18,3 +18,4 @@ docs/src/contributing.md
 coverage
 
 /.quarto/
+tutorials/*.ipynb

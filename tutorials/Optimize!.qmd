@@ -17,9 +17,10 @@ We will finally consider a nonsmooth example with a second, a little bit more co
 ## Loading the necessary packages
 
 ```{julia}
-	using Pkg; Pkg.activate();
-	using Manopt, Manifolds, Random, Colors, PlutoUI
-	Random.seed!(42);
+using Pkg;
+Pkg.activate(".");
+using Manopt, Manifolds, Random, Colors, PlutoUI
+Random.seed!(42);
 ```
 
 Now assume we are on the [Sphere]() and hace some points measured
@@ -29,8 +30,7 @@ Now assume we are on the [Sphere]() and hace some points measured
     σ = π / 8
     M = Sphere(2)
     p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
-    Random.seed!(42)
-    data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n]
+    data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
 ```
 
 ```{julia}

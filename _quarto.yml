@@ -1,7 +1,7 @@
 
 project:
   title: "Manopt.jl"
-  execute-dir: project
+  #execute-dir: project
 
 crossref:
   fig-prefix: Figure
@@ -15,6 +15,6 @@ execute:
   freeze: auto
   eval: true
   echo: true
-  output: false
+  output: true
 
 jupyter: julia-1.8
