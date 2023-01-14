@@ -1,0 +1,20 @@
+
+project:
+  title: "Manopt.jl"
+  execute-dir: project
+
+crossref:
+  fig-prefix: Figure
+  tbl-prefix: Table
+bibliography:
+  - CITATION.bib
+  - bib/bibliography.bib
+fig-format: png
+format: gfm
+execute:
+  freeze: auto
+  eval: true
+  echo: true
+  output: false
+
+jupyter: julia-1.8

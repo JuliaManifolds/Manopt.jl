@@ -1,0 +1,49 @@
+# Get Started: Optimize!
+
+In this tutorial, we want to use `Manopt.jl` solve the optimization problem
+
+```math
+\operatorname*{argmin}_{p ∈ \mathcal M} f(p)
+```
+
+where $\mathcal M$ is a [Riemannian manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and $f\colon \mathcal M → ℝ$ is the cost function.
+
+We will take a loot at how to define the optimisation problem, that is the manifold, the cost functin and (in our example) a gradient to call one specific solver.
+
+After that we will dive into general keyword arguments that are available for all solvers as well as specific keywords that are available for the solver we consider here.
+
+We will finally consider a nonsmooth example with a second, a little bit more complicated solver.
+
+## Loading the necessary packages
+
+```{julia}
+	using Pkg; Pkg.activate();
+	using Manopt, Manifolds, Random, Colors, PlutoUI
+	Random.seed!(42);
+```
+
+Now assume we are on the [Sphere]() and hace some points measured
+
+```{julia}
+    n = 100
+    σ = π / 8
+    M = Sphere(2)
+    p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+    Random.seed!(42)
+    data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n]
+```
+
+```{julia}
+TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
+TolVibrantTeal = RGBA{Float64}(colorant"#009988")
+asymptote_export_S2_signals(
+    "optimize/startDataAndCenter.asy";
+    points=[[p], data],
+    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
+    dot_size=3.5,
+    camera_position=(1.0, 0.5, 0.5),
+)
+render_asymptote("optimize/startDataAndCenter.asy"; render=2)
+```
+
+![The start point and random data on the sphere](optimize/startDataCenterMean.png)
