@@ -24,6 +24,16 @@ Returns the default [`Stepsize`](@ref) functor used when running the solver spec
 default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
 """
+    max_stepsize(M::AbstractManifold, p)
+
+Get the maximum stepsize at point `p` on manifold `M`. It should be used to limit the
+distance an algorithm is trying to move in a single step.
+"""
+function max_stepsize(M::AbstractManifold, p)
+    return injectivity_radius(M, p)
+end
+
+"""
     ConstantStepsize <: Stepsize
 
 A functor that always returns a fixed step size.
@@ -133,6 +143,17 @@ the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
 
+function armijo_initial_guess(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int, l::Real
+)
+    M = get_manifold(mp)
+    X = get_gradient(s)
+    p = get_iterate(s)
+    grad_norm = norm(M, p, X)
+    max_step = max_stepsize(M, p)
+    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
+end
+
 @doc raw"""
     ArmijoLinesearch <: Linesearch
 
@@ -178,7 +199,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
         contraction_factor::Float64=0.95,
         sufficient_decrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
-        initial_guess=(p, o, i, l) -> l,
+        initial_guess=armijo_initial_guess,
     )
         return new{typeof(retraction_method),typeof(initial_guess)}(
             initial_stepsize,
@@ -198,11 +219,12 @@ function (a::ArmijoLinesearch)(
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
+    X = get_gradient!(mp, get_gradient(s), get_iterate(s))
     a.last_stepsize = linesearch_backtrack(
         get_manifold(mp),
         p -> get_cost_function(get_objective(mp))(get_manifold(mp), p),
         get_iterate(s),
-        get_gradient!(mp, get_gradient(s), get_iterate(s)),
+        X,
         a.initial_guess(mp, s, i, a.last_stepsize),
         a.sufficient_decrease,
         a.contraction_factor,
@@ -595,14 +617,20 @@ function (a::WolfePowellLinesearch)(
     η=-get_gradient(mp, get_iterate(ams));
     kwargs...,
 )
-    step = 1.0
-    s_plus = 1.0
-    s_minus = 1.0
     M = get_manifold(mp)
-    f0 = get_cost(mp, get_iterate(ams))
-    p_new = retract(M, get_iterate(ams), step * η, a.retraction_method)
+    cur_p = get_iterate(ams)
+    grad_norm = norm(M, cur_p, η)
+    max_step = max_stepsize(M, cur_p)
+    # max_step_increase is the upper limit for s_plus
+    max_step_increase = ifelse(isfinite(max_step), min(1e9, max_step / grad_norm), 1e9)
+    step = ifelse(isfinite(max_step), min(1.0, max_step / grad_norm), 1.0)
+    s_plus = step
+    s_minus = step
+
+    f0 = get_cost(mp, cur_p)
+    p_new = retract(M, cur_p, step * η, a.retraction_method)
     fNew = get_cost(mp, p_new)
-    η_xNew = vector_transport_to(M, get_iterate(ams), η, p_new, a.vector_transport_method)
+    η_xNew = vector_transport_to(M, cur_p, η, p_new, a.vector_transport_method)
     if fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
         while (
             fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
@@ -621,7 +649,7 @@ function (a::WolfePowellLinesearch)(
             a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
             while fNew <=
                   f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams)) &&
-                (s_plus < 10^(9))# increase
+                (s_plus < max_step_increase)# increase
                 s_plus = s_plus * 2.0
                 step = s_plus
                 retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)

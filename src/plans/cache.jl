@@ -70,7 +70,7 @@ function get_gradient(M::AbstractManifold, sco::SimpleCacheObjective, p)
         copyto!(M, sco.p, p)
         sco.X_valid = true
     end
-    return sco.X
+    return copy(M, p, sco.X)
 end
 function get_gradient!(M::AbstractManifold, X, sco::SimpleCacheObjective, p)
     scop_neq_p = sco.p != p
@@ -130,7 +130,7 @@ function get_gradient(
         sco.X_valid = true
         sco.c_valid = true
     end
-    return sco.X
+    return copy(M, p, sco.X)
 end
 function get_gradient(
     M::AbstractManifold,
