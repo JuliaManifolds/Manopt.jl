@@ -143,6 +143,17 @@ the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
 
+function armijo_initial_guess(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int, l::Real
+)
+    M = get_manifold(mp)
+    X = get_gradient(s)
+    p = get_iterate(s)
+    grad_norm = norm(M, p, X)
+    max_step = max_stepsize(M, p)
+    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
+end
+
 @doc raw"""
     ArmijoLinesearch <: Linesearch
 
@@ -188,7 +199,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
         contraction_factor::Float64=0.95,
         sufficient_decrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
-        initial_guess=(p, o, i, l) -> l,
+        initial_guess=armijo_initial_guess,
     )
         return new{typeof(retraction_method),typeof(initial_guess)}(
             initial_stepsize,
@@ -208,11 +219,12 @@ function (a::ArmijoLinesearch)(
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
+    X = get_gradient!(mp, get_gradient(s), get_iterate(s))
     a.last_stepsize = linesearch_backtrack(
         get_manifold(mp),
         p -> get_cost_function(get_objective(mp))(get_manifold(mp), p),
         get_iterate(s),
-        get_gradient!(mp, get_gradient(s), get_iterate(s)),
+        X,
         a.initial_guess(mp, s, i, a.last_stepsize),
         a.sufficient_decrease,
         a.contraction_factor,
@@ -611,7 +623,7 @@ function (a::WolfePowellLinesearch)(
     max_step = max_stepsize(M, cur_p)
     # max_step_increase is the upper limit for s_plus
     max_step_increase = ifelse(isfinite(max_step), min(1e9, max_step / grad_norm), 1e9)
-    step = ifelse(isfinite(max_step), min(1.0, max_step / (2 * grad_norm)), 1.0)
+    step = ifelse(isfinite(max_step), min(1.0, max_step / grad_norm), 1.0)
     s_plus = step
     s_minus = step
 
