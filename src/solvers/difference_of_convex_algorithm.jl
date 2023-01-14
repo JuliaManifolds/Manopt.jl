@@ -138,8 +138,7 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 """
 function difference_of_convex_algorithm(M::AbstractManifold, cost, g, ∂h, p; kwargs...)
     q = copy(M, p)
-    difference_of_convex_algorithm!(M, cost, g, ∂h, q; kwargs...)
-    return q
+    return difference_of_convex_algorithm!(M, cost, g, ∂h, q; kwargs...)
 end
 
 @doc raw"""
