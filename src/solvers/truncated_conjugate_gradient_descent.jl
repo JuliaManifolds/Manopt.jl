@@ -405,12 +405,13 @@ function initialize_solver!(
     tcgs.ηPη = tcgs.randomize ? inner(M, tcgs.p, tcgs.η, tcgs.η) : zero(tcgs.δHδ)
     if tcgs.randomize
         tcgs.model_value =
-            inner(M, tcgs.p, tcgs.η, tcgs.X) + 0.5 * inner(M, tcgs.p, tcgs.η, tcgs.Hη)
+            real(inner(M, tcgs.p, tcgs.η, tcgs.X)) +
+            0.5 * real(inner(M, tcgs.p, tcgs.η, tcgs.Hη))
     else
         tcgs.model_value = 0
     end
     tcgs.z_r = inner(M, tcgs.p, tcgs.z, tcgs.residual)
-    tcgs.initialResidualNorm = sqrt(inner(M, tcgs.p, tcgs.residual, tcgs.residual))
+    tcgs.initialResidualNorm = norm(M, tcgs.p, tcgs.residual)
     return tcgs
 end
 function step_solver!(
@@ -438,7 +439,7 @@ function step_solver!(
     new_Hη = tcgs.Hη + α * tcgs.Hδ
     # No negative curvature and s.η - α * (s.δ) inside TR: accept it.
     tcgs.new_model_value =
-        inner(M, tcgs.p, new_η, tcgs.X) + 0.5 * inner(M, tcgs.p, new_η, new_Hη)
+        real(inner(M, tcgs.p, new_η, tcgs.X)) + 0.5 * real(inner(M, tcgs.p, new_η, new_Hη))
     tcgs.new_model_value >= tcgs.model_value && return tcgs
     copyto!(M, tcgs.η, tcgs.p, new_η)
     tcgs.model_value = tcgs.new_model_value
