@@ -1,2 +1,4 @@
 project:
   output-dir: ../docs/src/tutorials
+
+format: gfm

@@ -20,3 +20,4 @@ coverage
 /.quarto/
 tutorials/*.ipynb
 tutorials/*_files/*
+docs/src/tutorials/Optimize!_files

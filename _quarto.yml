@@ -9,8 +9,9 @@ crossref:
 bibliography:
   - CITATION.bib
   - bib/bibliography.bib
+csl: nature.csl
 fig-format: png
-format: gfm
+
 execute:
   freeze: auto
   eval: true

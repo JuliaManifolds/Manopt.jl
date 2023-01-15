@@ -1,29 +1,63 @@
-# Get Started: Optimize!
+---
+title: "Get Started: Optimize!"
+bibliography: ../bib/bibliography.bib
+csl: ../bib/ima-journal-of-numerical-analysis.csl
+---
 
-In this tutorial, we want to use `Manopt.jl` solve the optimization problem
+In this tutorial, we woill both introduce the basics of optimisation on manifolds as well as
+how to use [`Manopt.jl`](https://manoptjl.org) to perform optimisation on manifolds in [Julia](https://julialang.org).
 
-```math
-\operatorname*{argmin}_{p ∈ \mathcal M} f(p)
-```
+For more theoretical background, see e.g. [@doCarmo1992] for an introduction to Riemannian manifolds
+amnd [@AbsilMahonySepulchre2008] or [@Boumal2023] to read more about optimisation thereon.
 
-where $\mathcal M$ is a [Riemannian manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) and $f\colon \mathcal M → ℝ$ is the cost function.
+Let $\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
+and let $f\colon \mathcal M → ℝ$ be a cost function.
+We aim to compute a point $p^*$ where $f$ is _minimal_ or in other words $p^*$ is a _minimizer_ of $f$.
 
-We will take a loot at how to define the optimisation problem, that is the manifold, the cost functin and (in our example) a gradient to call one specific solver.
+We also write this as
 
-After that we will dive into general keyword arguments that are available for all solvers as well as specific keywords that are available for the solver we consider here.
+\begin{equation}
+    \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
+\end{equation*}
 
-We will finally consider a nonsmooth example with a second, a little bit more complicated solver.
+and would like to find $p^*$ numerically.
+As an example we take the generalisation of the [(arithemtic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
+In the Euclidean case with $d\in\mathbb N$, that is for $n\in \mathbb N$ data points $y_1,\ldots,y_n \in \mathbb R^d$ the mean
+
+$$
+  \sum_{i=1}^n y_i
+$$
+
+
+can not be directly generalised to data $q_1,\ldots,q_n$, since on a manifold we do not have an addition.
+But the mean can also be charcterised as
+
+$$
+  \operatorname*{arg\,min}_{x\in\mathbb R^d} \sum_{i=1}^n \lVert x - y_i\rVert^2
+$$
+
+and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [@Karcher1977]
+
+$$
+  \operatorname*{arg\,min}_{p\in\mathbb R^d} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
+$$
 
 ## Loading the necessary packages
 
 ```{julia}
+#| echo: false
+#| code-fold: true
+#| output: false
 using Pkg;
-Pkg.activate(".");
-using Manopt, Manifolds, Random, Colors, PlutoUI
+Pkg.activate("."); # for reproducibility use the local tutorial environment.
+```
+
+```{julia}
+using Manopt, Manifolds, Random
 Random.seed!(42);
 ```
 
-Now assume we are on the [Sphere]() and hace some points measured
+Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html) $\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
 
 ```{julia}
     n = 100
@@ -33,17 +67,7 @@ Now assume we are on the [Sphere]() and hace some points measured
     data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
 ```
 
-```{julia}
-TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
-TolVibrantTeal = RGBA{Float64}(colorant"#009988")
-asymptote_export_S2_signals(
-    "optimize/startDataAndCenter.asy";
-    points=[[p], data],
-    colors=Dict(:points => [TolVibrantBlue, TolVibrantTeal]),
-    dot_size=3.5,
-    camera_position=(1.0, 0.5, 0.5),
-)
-render_asymptote("optimize/startDataAndCenter.asy"; render=2)
-```
+## Literature
 
-![The start point and random data on the sphere](optimize/startDataCenterMean.png)
+::: {#refs}
+:::
