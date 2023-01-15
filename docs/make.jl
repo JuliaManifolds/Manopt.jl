@@ -1,5 +1,5 @@
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
-using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML, Pkg
+using Manopt, Manifolds, Literate, Pluto, Pkg
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
 tutorial_menu = Array{Pair{String,String},1}()
@@ -9,10 +9,9 @@ tutorial_menu = Array{Pair{String,String},1}()
 tutorial_src_folder = joinpath(@__DIR__, "..", "tutorials/")
 tutorial_output_folder = joinpath(@__DIR__, "src/", "tutorials/")
 tutorial_relative_path = "tutorials/"
-mkpath(tutorial_output_folder)
+#mkpath(tutorial_output_folder)
 #
-# Tutorials
-@info " \n      Rendering Tutorials"
+# Tutorials - reduced to generating the menu for now
 tutorials = [
     Dict(:file => "Optimize!", :title => "Get Started: Optimize!"),
     Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
@@ -28,7 +27,7 @@ tutorials = [
 # build menu and write files myself - tp set edit url correctly.
 for t in tutorials
     global tutorial_menu
-    rendered = build_notebooks( #though not really parallel here
+    #=rendered = build_notebooks( #though not really parallel here
         BuildOptions(
             tutorial_src_folder;
             output_format=documenter_output,
@@ -46,7 +45,7 @@ for t in tutorials
         ```
         $(rendered["$(t[:file]).jl"][1])
         """,
-    )
+    ) =#
     push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path, t[:file] * ".md"))
 end
 
@@ -69,7 +68,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
     end
 end
 
-@info " \n      Rendering Documentation"
+# @info " \n      Rendering Documentation"
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
