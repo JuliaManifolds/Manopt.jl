@@ -1,3 +1,15 @@
+
+"""
+    max_stepsize(M::TangentBundle, p)
+
+Tangent bundle has injectivity radius of either infinity (for flat manifolds) or 0
+(for non-flat manifolds). This makes a guess of what a reasonable maximum stepsize
+on a tangent bundle might be.
+"""
+function max_stepsize(M::TangentBundle, p)
+    return max_stepsize(M.manifold, p[M, :point])
+end
+
 """
     mid_point(M, p, q, x)
     mid_point!(M, y, p, q, x)
