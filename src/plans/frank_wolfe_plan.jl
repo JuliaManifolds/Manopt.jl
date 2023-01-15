@@ -17,7 +17,7 @@ mutable struct FrankWolfeCost{P,T}
     X::T
 end
 function (FWO::FrankWolfeCost)(M, q)
-    return inner(M, FWO.p, FWO.X, log(M, FWO.p, q))
+    return real(inner(M, FWO.p, FWO.X, log(M, FWO.p, q)))
 end
 
 @doc raw"""

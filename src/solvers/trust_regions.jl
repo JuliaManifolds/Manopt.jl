@@ -364,7 +364,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
         norm_grad = norm(M, trs.p, trs.X)
         # Check the curvature,
         get_hessian!(mp, trs.Hgrad, trs.p, trs.X)
-        trs.τ = inner(M, trs.p, trs.X, trs.Hgrad)
+        trs.τ = real(inner(M, trs.p, trs.X, trs.Hgrad))
         trs.τ = if (trs.τ <= 0)
             one(trs.τ)
         else
@@ -372,11 +372,13 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
         end
         # compare to Cauchy point and store best
         model_value =
-            fx + inner(M, trs.p, trs.X, trs.η) + 0.5 * inner(M, trs.p, trs.Hη, trs.η)
+            fx +
+            real(inner(M, trs.p, trs.X, trs.η)) +
+            0.5 * real(inner(M, trs.p, trs.Hη, trs.η))
         modle_value_Cauchy = fx
         -trs.τ * trs.trust_region_radius * norm_grad
         +0.5 * trs.τ^2 * trs.trust_region_radius^2 / (norm_grad^2) *
-        inner(M, trs.p, trs.Hgrad, trs.X)
+        real(inner(M, trs.p, trs.Hgrad, trs.X))
         if modle_value_Cauchy < model_value
             copyto!(M, trs.η, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.X)
             copyto!(M, trs.Hη, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.Hgrad)
@@ -387,7 +389,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     # Check the performance of the quadratic model against the actual cost.
     ρ_reg = max(1, abs(fx)) * eps(Float64) * trs.ρ_regularization
     ρnum = fx - get_cost(mp, trs.p_proposal)
-    ρden = -inner(M, trs.p, trs.η, trs.X) - 0.5 * inner(M, trs.p, trs.η, trs.Hη)
+    ρden = -real(inner(M, trs.p, trs.η, trs.X)) - 0.5 * real(inner(M, trs.p, trs.η, trs.Hη))
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
     ρ = (abs(ρnum / fx) < sqrt(eps(Float64))) ? 1 : ρnum / ρden # stability for small absolute relative model change
