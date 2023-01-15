@@ -60,4 +60,24 @@ Random.seed!(42)
         @test mid_point(M, p, q, -1.0) ≈ -π / 2
         @test mid_point(M, 0, π / 2) ≈ π / 4
     end
+
+    @testset "max_stepsize" begin
+        M = Sphere(2)
+        TM = TangentBundle(M)
+        TTM = TangentBundle(TM)
+
+        R3 = Euclidean(3)
+        TR3 = TangentBundle(R3)
+        p = [0.0, 1.0, 0.0]
+        X = [0.0, 0.0, 0.0]
+
+        @test Manopt.max_stepsize(M, p) == π
+        @test Manopt.max_stepsize(TM, ArrayPartition(p, X)) == π
+        @test Manopt.max_stepsize(
+            TTM, ArrayPartition(ArrayPartition(p, X), ArrayPartition(X, X))
+        ) == π
+
+        @test Manopt.max_stepsize(R3, p) == Inf
+        @test Manopt.max_stepsize(TR3, ArrayPartition(p, X)) == Inf
+    end
 end
