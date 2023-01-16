@@ -126,7 +126,7 @@ end
 
 @testset "CG on complex manifolds" begin
     M = Euclidean(2; field=ℂ)
-    A = [1 im; -im 1]
+    A = [2 im; -im 2]
     f(::Euclidean, p) = real(p' * A * p)
     grad_f(::Euclidean, p) = 2 * A * p
     p0 = [2.0, 1 + im]
