@@ -21,3 +21,4 @@ coverage
 tutorials/*.ipynb
 tutorials/*_files/*
 docs/src/tutorials/Optimize!_files
+tutorials/_freeze

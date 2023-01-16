@@ -5,7 +5,7 @@ In this tutorial, we woill both introduce the basics of optimisation on
 manifolds as well as how to use [`Manopt.jl`](https://manoptjl.org) to
 perform optimisation on manifolds in [Julia](https://julialang.org).
 
-For more theoretical background, see e.g. (Carmo, 1992) for an
+For more theoretical background, see e.g. (do Carmo, 1992) for an
 introduction to Riemannian manifolds amnd (Absil *et al.*, 2008) or
 (Boumal, 2022) to read more about optimisation thereon.
 
@@ -52,7 +52,10 @@ using Manopt, Manifolds, Random
 Random.seed!(42);
 ```
 
-Now assume we are on the [Sphere]() and hace some points measured
+Now assume we are on the
+[Sphere](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html)
+$\mathcal M = \mathbb S^2$ and we generate some random points “around”
+some initial point $p$
 
 ``` julia
     n = 100
@@ -78,14 +81,15 @@ University Press.
 
 <div id="ref-Boumal2023" class="csl-entry">
 
-<span class="smallcaps">Boumal</span>, N. (2022) [An introduction to
-optimization on smooth manifolds](https://www.nicolasboumal.net/book).
+<span class="smallcaps">Boumal</span>, N. (2022) *[An introduction to
+optimization on smooth manifolds](https://www.nicolasboumal.net/book)*.
 
 </div>
 
 <div id="ref-doCarmo1992" class="csl-entry">
 
-<span class="smallcaps">Carmo</span>, M.P. do (1992) *[Riemannian
+<span class="smallcaps">do</span> <span class="smallcaps">Carmo</span>,
+M.P. (1992) *[Riemannian
 geometry](https://doi.org/10.1007/978-1-4757-2201-7)*, Mathematics:
 Theory & applications. Birkhäuser Boston, Inc., Boston, MA.
 

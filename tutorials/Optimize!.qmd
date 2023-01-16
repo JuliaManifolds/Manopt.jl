@@ -1,6 +1,6 @@
 ---
 title: "Get Started: Optimize!"
-bibliography: ../bib/bibliography.bib
+bibliography: ../bib/manopt-bibliography.yaml
 csl: ../bib/ima-journal-of-numerical-analysis.csl
 ---
 

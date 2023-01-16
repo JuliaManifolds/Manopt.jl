@@ -1,4 +1,21 @@
 project:
+  title: "Manopt.jl Tutorials"
   output-dir: ../docs/src/tutorials
 
+crossref:
+  fig-prefix: Figure
+  tbl-prefix: Table
+bibliography:
+  - ../CITATION.bib
+  - ../bib/manopt-bibliography.yaml
+csl: nature.csl
+fig-format: png
 format: gfm
+
+execute:
+  freeze: auto
+  eval: true
+  echo: true
+  output: true
+
+jupyter: julia-1.8

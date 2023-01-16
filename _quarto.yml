@@ -8,7 +8,7 @@ crossref:
   tbl-prefix: Table
 bibliography:
   - CITATION.bib
-  - bib/bibliography.bib
+  - bib/manopt-bibliography.yaml
 csl: nature.csl
 fig-format: png
 
