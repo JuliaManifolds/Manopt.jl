@@ -37,6 +37,9 @@ using Manifolds, Manopt, Test, ManifoldsBase
         p = 0
         q = π / 4
         @test grad_distance(M, p, q) == q - p
+        @test grad_distance(M, p, q, 1) == -distance(M, q, p)^(-1) * log(M, q, p)
+        p = q
+        @test grad_distance(M, p, q, 1) == zero_vector(M, p)
     end
     @testset "Sphere (Mutating)" begin
         M = Sphere(2)
@@ -50,6 +53,19 @@ using Manifolds, Manopt, Test, ManifoldsBase
             Z = [0.0, 0.0, -π / 2] # known solution
             @test X == Y
             @test X == Z
+            U = zero_vector(M, p)
+            grad_distance!(M, U, p, q, 1)
+            V = grad_distance(M, p, q, 1)
+            W = -distance(M, q, p)^(-1) * log(M, q, p) # solution
+            @test U == V
+            @test U == W
+            w = q
+            U = zero_vector(M, w)
+            grad_distance!(M, U, w, q, 1)
+            V = grad_distance(M, w, q, 1)
+            W = zero_vector(M, w) # solution
+            @test U == V
+            @test U == W
         end
         @testset "Gradient of total variation" begin
             Y = grad_TV(M, (p, q))
