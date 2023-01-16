@@ -1,7 +1,7 @@
 using Manopt, Manifolds, Random, QuadraticModels, RipQP
 
-l = Int(1e4)
-M = Stiefel(3,2)
+l = Int(1e2)
+M = SymmetricPositiveDefinite(3)
 #Random.seed!(42)
 data = [rand(M; σ=0.4) for i in 1:l]
 

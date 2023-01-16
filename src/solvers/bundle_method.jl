@@ -51,31 +51,24 @@ mutable struct BundleMethodState{
         M::TM,
         p::P;
         m::Real=0.0125,
-        #lin_errors::L=[0],
-        #index_set::S=Set(1),
         inverse_retraction_method::IR=default_inverse_retraction_method(M),
         retraction_method::TR=default_retraction_method(M),
         stopping_criterion::SC=StopAfterIteration(5000),
         X::T=zero_vector(M, p),
-        #bundle_points::A=[p, subgrad],
         tol::Real=1e-8,
         vector_transport_method::VT=default_vector_transport_method(M),
     ) where {
-        #A<:Array,
         IR<:AbstractInverseRetractionMethod,
-        #L<:Array,
         P,
         T,
         TM<:AbstractManifold,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
-        #S<:Set,
         VT<:AbstractVectorTransportMethod,
     }
         index_set = Set(1)
         bundle_points = [(p, X)]
         lin_errors = [0.0]
-        #Float64[]
         return new{IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT}(
             bundle_points,
             inverse_retraction_method,
@@ -92,7 +85,7 @@ mutable struct BundleMethodState{
         )
     end
 end
-get_iterate(bms::BundleMethodState) = bms.p_last_serious
+get_iterate(bms::BundleMethodState) = bms.p
 get_subgradient(bms::BundleMethodState) = bms.X
 function set_iterate!(bms::BundleMethodState, M, p)
     copyto!(M, bms.p, p)
@@ -213,15 +206,16 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     λ = bundle_method_sub_solver(M, bms, transported_subgradients)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* bms.lin_errors)
-    if (
-        get_cost(mp, bms.p) >=
-        get_cost(mp, bms.p_last_serious) +
-        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, bms.p)) - ε
-    )
-        println("Yes")
-    else
-        println("No")
-    end
+    # Check transported subgradient ε inequality
+    # if (
+    #     get_cost(mp, bms.p) >=
+    #     get_cost(mp, bms.p_last_serious) +
+    #     inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, bms.p)) - ε
+    # )
+    #     println("Yes")
+    # else
+    #     println("No")
+    # end
     δ = -norm(M, bms.p_last_serious, g)^2 - ε
     (δ == 0 || -δ <= bms.tol) && (return bms)
     q = retract(M, bms.p_last_serious, -g, bms.retraction_method)

@@ -1,6 +1,6 @@
 using Manopt, ManifoldsBase, Manifolds, Test, QuadraticModels, RipQP
 
-@testset "Bundle Plan" begin
+@testset "Subgradient Plan for Bundle Method" begin
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
     p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
