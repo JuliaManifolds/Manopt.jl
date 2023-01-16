@@ -127,16 +127,18 @@ end
 @testset "CG on complex manifolds" begin
     M = Euclidean(2; field=ℂ)
     A = [2 im; -im 2]
-    f(::Euclidean, p) = real(p' * A * p)
-    grad_f(::Euclidean, p) = 2 * A * p
+    fc(::Euclidean, p) = real(p' * A * p)
+    grad_fc(::Euclidean, p) = 2 * A * p
     p0 = [2.0, 1 + im]
-    x_opt = conjugate_gradient_descent(
+    # just one step as a test
+    p1 = conjugate_gradient_descent(
         M,
-        f,
-        grad_f,
+        fc,
+        grad_fc,
         p0;
         stepsize=ArmijoLinesearch(M),
         coefficient=FletcherReevesCoefficient(),
-        stopping_criterion=StopAfterIteration(15),
+        stopping_criterion=StopAfterIteration(1),
     )
+    @test fc(M, p1) ≤ fc(M, p0)
 end
