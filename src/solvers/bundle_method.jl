@@ -1,60 +1,165 @@
 @doc raw"""
-    bundle_method(M, F, gradF, x)
+    BundleMethodState <: AbstractManoptSolverState
+stores option values for a [`bundle_method`](@ref) solver
 
-perform a bundle method ``p_{k+1} = \mathrm{retr}(p_k, gradF(p_k))``,
+# Fields
 
-where ``\mathrm{retr}`` is a retraction, ``s_k`` can be specified as a function but is
-usually set to a constant value. Though the subgradient might be set valued,
-the argument `∂F` should always return _one_ element from the subgradient, but
-not necessarily deterministic.
+* `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
+* `bundle_points` - collects each iterate `p` with the computed subgradient `∂` at the iterate
+* `lin_errors` - linearization errors at the last serious step
+* `m` - the parameter to test the decrease of the cost
+* `p` - current iterate
+* `p_last_serious` - last serious iterate
+* `retraction_method` – the retration to use within
+* `stop` – a [`StoppingCriterion`](@ref)
+* `tol` - the tolerance parameter
+* `vector_transport_method` - the vector transport method to use within
+* `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
+    `p` that was last evaluated.
+
+# Constructor
+
+BundleMethodState(M::AbstractManifold, p; kwargs...)
+
+with keywords for all fields above besides `p_last_serious` which obtains the same type as `p`.
+You can use e.g. `X=` to specify the type of tangent vector to use
+
+"""
+mutable struct BundleMethodState{
+    IR<:AbstractInverseRetractionMethod,
+    L<:Array,
+    P,
+    T,
+    TR<:AbstractRetractionMethod,
+    TSC<:StoppingCriterion,
+    S<:Set,
+    VT<:AbstractVectorTransportMethod,
+} <: AbstractManoptSolverState where {P,T}
+    bundle_points::AbstractVector{Tuple{P,T}}
+    inverse_retraction_method::IR
+    lin_errors::L
+    p::P
+    p_last_serious::P
+    X::T
+    retraction_method::TR
+    stop::TSC
+    index_set::S
+    vector_transport_method::VT
+    m::Real
+    tol::Real
+    function BundleMethodState(
+        M::TM,
+        p::P;
+        m::Real=0.0125,
+        #lin_errors::L=[0],
+        #index_set::S=Set(1),
+        inverse_retraction_method::IR=default_inverse_retraction_method(M),
+        retraction_method::TR=default_retraction_method(M),
+        stopping_criterion::SC=StopAfterIteration(5000),
+        X::T=zero_vector(M, p),
+        #bundle_points::A=[p, subgrad],
+        tol::Real=1e-8,
+        vector_transport_method::VT=default_vector_transport_method(M),
+    ) where {
+        #A<:Array,
+        IR<:AbstractInverseRetractionMethod,
+        #L<:Array,
+        P,
+        T,
+        TM<:AbstractManifold,
+        TR<:AbstractRetractionMethod,
+        SC<:StoppingCriterion,
+        #S<:Set,
+        VT<:AbstractVectorTransportMethod,
+    }
+        index_set = Set(1)
+        bundle_points = [(p, X)]
+        lin_errors = [0.0]
+        #Float64[]
+        return new{IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT}(
+            bundle_points,
+            inverse_retraction_method,
+            lin_errors,
+            p,
+            deepcopy(p),
+            X,
+            retraction_method,
+            stopping_criterion,
+            index_set,
+            vector_transport_method,
+            m,
+            tol,
+        )
+    end
+end
+get_iterate(bms::BundleMethodState) = bms.p_last_serious
+get_subgradient(bms::BundleMethodState) = bms.X
+function set_iterate!(bms::BundleMethodState, M, p)
+    copyto!(M, bms.p, p)
+    return bms
+end
+
+@doc raw"""
+    bundle_method(M, f, ∂f, p)
+
+perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, 
+
+where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
+
+with ``X_{q_j}\in∂f(q_j)``, and
+
+where ``\mathrm{retr}`` is a retraction and `p_k` is the last serious iterate. 
+Though the subgradient might be set valued, the argument `∂f` should always 
+return _one_ element from the subgradient, but not necessarily deterministic.
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `gradF`– the (sub)gradient ``\partial F: \mathcal M→ T\mathcal M`` of F
-  restricted to always only returning one value/element from the subgradient.
-  This function can be passed as an allocation function `(M, q) -> X` or
-  a mutating function `(M, X, q) -> X`, see `evaluation`.
-* `p` – an initial value ``p ∈ \mathcal M``
+* `f` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of f
+  restricted to always only returning one value/element from the subdifferential.
+  This function can be passed as an allocation function `(M, p) -> X` or
+  a mutating function `(M, X, p) -> X`, see `evaluation`.
+* `p` – an initial value ``p_0=p ∈ \mathcal M``
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
-   allocation (default) form `∂F(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
-   of the form `∂F!(M, X, p)`.
+   allocation (default) form `∂f(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
+   of the form `∂f!(M, X, p)`.
 * `retraction` – (`default_retraction_method(M)`) a `retraction(M,p,X)` to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 ...
-and the ones that are passed to [`decorate_options`](@ref) for decorators.
+and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
-function bundle_method(M::AbstractManifold, F::TF, gradF::TdF, p; kwargs...) where {TF,TdF}
-    p_res = copy(M, p)
-    return bundle_method!(M, F, gradF, p_res; kwargs...)
+function bundle_method(M::AbstractManifold, f::TF, ∂f::TdF, p; kwargs...) where {TF,TdF}
+    p_star = copy(M, p)
+    return bundle_method!(M, f, ∂f, p_star; kwargs...)
 end
 @doc raw"""
-    bundle_method!(M, F, gradF, p)
+    bundle_method!(M, f, ∂f, p)
 
-perform a bundle method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂F(p_k))`` in place of `p`
+perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place of `p`
 
 # Input
+
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `gradF`- the (sub)gradient ``\partial F:\mathcal M→ T\mathcal M`` of F
-  restricted to always only returning one value/element from the subgradient.
-  This function can be passed as an allocation function `(M, q) -> X` or
-  a mutating function `(M, X, q) -> X`, see `evaluation`.
-* `p` – an initial value ``p ∈ \mathcal M``
+* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
+* `∂f`- the (sub)gradient ``\partial f:\mathcal M→ T\mathcal M`` of F
+  restricted to always only returning one value/element from the subdifferential.
+  This function can be passed as an allocation function `(M, p) -> X` or
+  a mutating function `(M, X, p) -> X`, see `evaluation`.
+* `p` – an initial value ``p_0=p ∈ \mathcal M``
 
 for more details and all optional parameters, see [`bundle_method`](@ref).
 """
 function bundle_method!(
     M::AbstractManifold,
-    F::TF,
-    gradF!!::TdF,
+    f::TF,
+    ∂f!!::TdF,
     p;
     m::Real=0.0125,
     tol::Real=1e-8,
@@ -67,8 +172,10 @@ function bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
-    prb = BundleProblem(M, F, gradF!!; evaluation=evaluation)
-    o = BundleMethodOptions(
+    sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
+    dsgo = decorate_objective!(M, sgo; kwargs...)
+    mp = DefaultManoptProblem(M, dsgo)
+    bms = BundleMethodState(
         M,
         p;
         m=m,
@@ -78,63 +185,65 @@ function bundle_method!(
         tol=tol,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_options(o; kwargs...)
-    return get_solver_return(solve(prb, o))
+    bms = decorate_state!(bms; kwargs...)
+    return get_solver_return(solve!(mp, bms))
 end
-function initialize_solver!(prb::BundleProblem, o::BundleMethodOptions)
-    o.p_last_serious = o.p
-    o.X = zero_vector(prb.M, o.p)
-    return o
+function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
+    M = get_manifold(mp)
+    copyto!(M, bms.p_last_serious, bms.p)
+    bms.X = zero_vector(M, bms.p)
+    return bms
 end
 function bundle_method_sub_solver(::Any, ::Any, ::Any)
     throw(
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
 end
-function step_solver!(prb::BundleProblem, o::BundleMethodOptions, iter)
+function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
+    M = get_manifold(mp)
     transported_subgradients = [
         vector_transport_to(
-            prb.M,
-            o.bundle_points[j][1],
-            get_bundle_subgradient!(prb, o.bundle_points[j][2], o.bundle_points[j][1]),
-            o.p_last_serious,
-            o.vector_transport_method,
-        ) for j in 1:length(o.index_set)
+            M,
+            bms.bundle_points[j][1],
+            get_subgradient!(mp, bms.bundle_points[j][2], bms.bundle_points[j][1]),
+            bms.p_last_serious,
+            bms.vector_transport_method,
+        ) for j in 1:length(bms.index_set)
     ]
-    λ = bundle_method_sub_solver(prb.M, o, transported_subgradients)
+    λ = bundle_method_sub_solver(M, bms, transported_subgradients)
     g = sum(λ .* transported_subgradients)
-    ε = sum(λ .* o.lin_errors)
+    ε = sum(λ .* bms.lin_errors)
     if (
-        get_cost(prb, o.p) >=
-        get_cost(prb, o.p_last_serious) +
-        inner(prb.M, o.p_last_serious, g, log(prb.M, o.p_last_serious, o.p)) - ε
+        get_cost(mp, bms.p) >=
+        get_cost(mp, bms.p_last_serious) +
+        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, bms.p)) - ε
     )
         println("Yes")
     else
         println("No")
     end
-    δ = -norm(prb.M, o.p_last_serious, g)^2 - ε
-    (δ == 0 || -δ <= o.tol) && (return o)
-    q = retract(prb.M, o.p_last_serious, -g, o.retraction_method)
-    X_q = get_bundle_subgradient(prb, q) # not sure about this
-    if get_cost(prb, q) <= (get_cost(prb, o.p_last_serious) + o.m * δ)
-        o.p_last_serious = q
-        push!(o.bundle_points, (o.p_last_serious, X_q))
+    δ = -norm(M, bms.p_last_serious, g)^2 - ε
+    (δ == 0 || -δ <= bms.tol) && (return bms)
+    q = retract(M, bms.p_last_serious, -g, bms.retraction_method)
+    X_q = get_subgradient(mp, q)
+    if get_cost(mp, q) <= (get_cost(mp, bms.p_last_serious) + bms.m * δ)
+        bms.p_last_serious = q
+        push!(bms.bundle_points, (bms.p_last_serious, X_q))
     else
-        push!(o.bundle_points, (q, X_q))
+        push!(bms.bundle_points, (q, X_q))
     end
-    positive_indices = intersect(o.index_set, Set(findall(j -> j > 0, λ)))
-    o.index_set = union(positive_indices, iter + 1)
-    o.lin_errors = [
-        get_cost(prb, o.p_last_serious) - get_cost(prb, o.bundle_points[j][1]) - inner(
-            prb.M,
-            o.bundle_points[j][1],
-            o.bundle_points[j][2],
+    positive_indices = intersect(bms.index_set, Set(findall(j -> j > 0, λ)))
+    bms.index_set = union(positive_indices, i + 1)
+    bms.lin_errors = [
+        get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle_points[j][1]) - inner(
+            M,
+            bms.bundle_points[j][1],
+            bms.bundle_points[j][2],
             inverse_retract(
-                prb.M, o.bundle_points[j][1], o.p_last_serious, o.inverse_retraction_method
+                M, bms.bundle_points[j][1], bms.p_last_serious, bms.inverse_retraction_method
             ),
-        ) for j in 1:length(o.index_set)
+        ) for j in 1:length(bms.index_set)
     ]
-    return o
+    return bms
 end
-get_solver_result(o::BundleMethodOptions) = o.p_last_serious
+get_solver_result(bms::BundleMethodState) = bms.p_last_serious
