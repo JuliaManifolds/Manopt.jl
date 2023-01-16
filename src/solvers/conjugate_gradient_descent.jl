@@ -113,7 +113,8 @@ function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDe
     cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)
     # remember the first gradient in coefficient calculation
     cgs.coefficient(amp, cgs, 0)
-    return cgs.β = 0.0
+    cgs.β = 0.0
+    return cgs
 end
 function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i)
     M = get_manifold(amp)
