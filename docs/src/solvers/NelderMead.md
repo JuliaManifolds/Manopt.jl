@@ -9,8 +9,20 @@ CurrentModule = Manopt
     NelderMead!
 ```
 
-## Options
+## State
 
 ```@docs
-    NelderMeadOptions
+    NelderMeadState
+```
+
+## Simplex
+
+```@docs
+NelderMeadSimplex
+```
+
+## Additional Stopping Criteria
+
+```@docs
+StopWhenPopulationConcentrated
 ```

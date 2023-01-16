@@ -10,10 +10,10 @@ conjugate_gradient_descent
 conjugate_gradient_descent!
 ```
 
-## Options
+## State
 
 ```@docs
-ConjugateGradientDescentOptions
+ConjugateGradientDescentState
 ```
 
 ## [Available Coefficients](@id cg-coeffs)

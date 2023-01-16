@@ -1,6 +1,5 @@
-using Manopt, Manifolds, Test, Random
-using LinearAlgebra: I, eigvecs, tr
-Random.seed!(42)
+using Manopt, Manifolds, Test
+using LinearAlgebra: I, eigvecs, tr, Diagonal
 
 @testset "Riemannian quasi-Newton Methods" begin
     @testset "Mean of 3 Matrices" begin
@@ -10,53 +9,55 @@ Random.seed!(42)
         C = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; -5.0 0.0 0.0 0.0]
         ABC = [A, B, C]
         x_solution = mean(ABC)
-        F(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
-        gradF(::Euclidean, x) = -A - B - C + 3 * x
+        f(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
+        grad_f(::Euclidean, x) = -A - B - C + 3 * x
         M = Euclidean(4, 4)
-        x = zeros(Float64, 4, 4)
+        p = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
-            M, F, gradF, x; stopping_criterion=StopWhenGradientNormLess(10^(-6))
+            M, f, grad_f, p; stopping_criterion=StopWhenGradientNormLess(10^(-6))
         )
         @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
-        # with Options
-        lrbfgs_o = quasi_Newton(
+        # with State
+        lrbfgs_s = quasi_Newton(
             M,
-            F,
-            gradF,
-            x;
+            f,
+            grad_f,
+            p;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-            return_options=true,
+            return_state=true,
         )
-        @test get_last_stepsize(GradientProblem(M, F, gradF), lrbfgs_o, lrbfgs_o.stepsize) >
-            0
-        @test lrbfgs_o.x == x_lrbfgs
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        @test get_last_stepsize(dmp, lrbfgs_s, lrbfgs_s.stepsize) > 0
+        @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs
+        set_gradient!(lrbfgs_s, M, p, grad_f(M, p))
+        @test isapprox(M, p, Manopt.get_gradient(lrbfgs_s), grad_f(M, p))
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
             M,
-            F,
-            gradF,
-            x;
+            f,
+            grad_f,
+            p;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-            basis=get_basis(M, x, DefaultOrthonormalBasis()),
+            basis=get_basis(M, p, DefaultOrthonormalBasis()),
         )
-        @test x_lrbfgs_cached == x_lrbfgs
+        @test isapprox(M, x_lrbfgs_cached, x_lrbfgs)
 
         x_lrbfgs_cached_2 = quasi_Newton(
             M,
-            F,
-            gradF,
-            x;
+            f,
+            grad_f,
+            p;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
-            basis=get_basis(M, x, DefaultOrthonormalBasis()),
+            basis=get_basis(M, p, DefaultOrthonormalBasis()),
             memory_size=-1,
         )
         @test isapprox(M, x_lrbfgs_cached_2, x_lrbfgs; atol=1e-5)
 
         x_clrbfgs = quasi_Newton(
             M,
-            F,
-            gradF,
-            x;
+            f,
+            grad_f,
+            p;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
@@ -64,12 +65,14 @@ Random.seed!(42)
 
         x_rbfgs_Huang = quasi_Newton(
             M,
-            F,
-            gradF,
-            x;
+            f,
+            grad_f,
+            p;
             memory_size=-1,
             stepsize=WolfePowellBinaryLinesearch(
-                ExponentialRetraction(), ParallelTransport()
+                M;
+                retraction_method=ExponentialRetraction(),
+                vector_transport_method=ParallelTransport(),
             ),
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
         )
@@ -79,9 +82,9 @@ Random.seed!(42)
             for c in [true, false]
                 x_direction = quasi_Newton(
                     M,
-                    F,
-                    gradF,
-                    x;
+                    f,
+                    grad_f,
+                    p;
                     direction_update=T,
                     cautious_update=c,
                     memory_size=-1,
@@ -97,15 +100,15 @@ Random.seed!(42)
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
         M = Sphere(n - 1)
-        F(::Sphere, X) = X' * A * X
-        gradF(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        f(::Sphere, X) = X' * A * X
+        grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         x_solution = abs.(eigvecs(A)[:, 1])
 
         x = Matrix{Float64}(I, n, n)[n, :]
         x_lrbfgs = quasi_Newton(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
@@ -115,8 +118,8 @@ Random.seed!(42)
 
         x_clrbfgs = quasi_Newton(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             x;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(1e-9),
@@ -124,8 +127,8 @@ Random.seed!(42)
 
         x_cached_lrbfgs = quasi_Newton(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             x;
             basis=get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size=-1,
@@ -147,8 +150,8 @@ Random.seed!(42)
 
             x_direction = quasi_Newton(
                 M,
-                F,
-                gradF,
+                f,
+                grad_f,
                 x;
                 direction_update=T,
                 cautious_update=c,
@@ -173,14 +176,14 @@ Random.seed!(42)
         k = 2
         M = Stiefel(n, k)
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
-        F(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
-        gradF = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
+        f(::Stiefel, X) = tr((X' * A * X) * Diagonal(k:-1:1))
+        grad_f = GradF(A, Diagonal(Float64.(collect(k:-1:1))))
 
         x = Matrix{Float64}(I, n, n)[:, 2:(k + 1)]
         x_inverseBFGSCautious = quasi_Newton(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             x;
             memory_size=8,
             vector_transport_method=ProjectionTransport(),
@@ -191,16 +194,117 @@ Random.seed!(42)
 
         x_inverseBFGSHuang = quasi_Newton(
             M,
-            F,
-            gradF,
+            f,
+            grad_f,
             x;
             memory_size=8,
-            stepsize=WolfePowellBinaryLinesearch(QRRetraction(), ProjectionTransport()),
+            stepsize=WolfePowellBinaryLinesearch(
+                M;
+                retraction_method=QRRetraction(),
+                vector_transport_method=ProjectionTransport(),
+            ),
             vector_transport_method=ProjectionTransport(),
             retraction_method=QRRetraction(),
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(1e-6),
         )
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol=2e-4)
+    end
+
+    @testset "Wolfe Powell linesearch" begin
+        n = 4
+        rayleigh_atol = 1e-8
+        A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
+        A = (A + A') / 2
+        M = Sphere(n - 1)
+        F(::Sphere, X) = X' * A * X
+        grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        x_solution = abs.(eigvecs(A)[:, 1])
+
+        x = [
+            0.7011245948687502
+            -0.1726003159556036
+            0.38798265967671103
+            -0.5728026616491424
+        ]
+        x_lrbfgs = quasi_Newton(
+            M,
+            F,
+            grad_f,
+            x;
+            basis=get_basis(M, x, DefaultOrthonormalBasis()),
+            memory_size=-1,
+            stopping_criterion=StopWhenGradientNormLess(1e-9),
+        )
+        @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
+    end
+
+    @testset "update rules" begin
+        n = 4
+        A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
+        A = (A + A') / 2
+        M = Sphere(n - 1)
+        F(::Sphere, X) = X' * A * X
+        grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
+        grad_f!(::Sphere, X, p) = (X .= 2 * (A * X - X * (X' * A * X)))
+
+        p_1 = [1.0; 0.0; 0.0; 0.0]
+        p_2 = [0.0; 0.0; 1.0; 0.0]
+
+        SR1_allocating = ApproxHessianSymmetricRankOne(
+            M, p_1, grad_f; evaluation=AllocatingEvaluation()
+        )
+
+        SR1_inplace = ApproxHessianSymmetricRankOne(
+            M, p_1, grad_f!; evaluation=InplaceEvaluation()
+        )
+
+        BFGS_allocating = ApproxHessianBFGS(
+            M, p_1, grad_f; evaluation=AllocatingEvaluation()
+        )
+
+        BFGS_inplace = ApproxHessianBFGS(M, p_1, grad_f!; evaluation=InplaceEvaluation())
+
+        Y = [0.0; 1.0; 0.0; 0.0]
+        X_1 = SR1_allocating(M, p_1, Y)
+        SR1_allocating.p_tmp = p_2
+        X_2 = SR1_allocating(M, p_1, Y)
+        @test isapprox(M, p_1, X_1, X_2; atol=1e-10)
+        update_hessian_basis!(M, SR1_allocating, p_1)
+        update_hessian_basis!(M, SR1_allocating, p_2)
+
+        X_3 = zero_vector(M, p_1)
+        X_4 = zero_vector(M, p_1)
+        SR1_inplace(M, X_3, p_1, Y)
+        SR1_inplace.p_tmp = p_2
+        SR1_inplace(M, X_4, p_1, Y)
+        @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
+        update_hessian_basis!(M, SR1_inplace, p_1)
+        update_hessian_basis!(M, SR1_inplace, p_2)
+
+        X_5 = BFGS_allocating(M, p_1, Y)
+        X_6 = BFGS_allocating(M, p_2, Y)
+        @test isapprox(M, p_1, X_5, X_6; atol=1e-10)
+        update_hessian_basis!(M, BFGS_allocating, p_1)
+        update_hessian_basis!(M, BFGS_allocating, p_2)
+
+        X_7 = zero_vector(M, p_1)
+        X_8 = zero_vector(M, p_1)
+        BFGS_inplace(M, X_7, p_1, Y)
+        BFGS_inplace(M, X_8, p_2, Y)
+        update_hessian_basis!(M, BFGS_inplace, p_1)
+        update_hessian_basis!(M, BFGS_inplace, p_2)
+
+        @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
+
+        BFGS_allocating.grad_tmp = ones(4)
+        BFGS_allocating.matrix = one(zeros(3, 3))
+        Manopt.update_hessian!(M, BFGS_allocating, p_1, p_2, Y)
+        test_m = [1.0 -1.0 5.0; -1.0 2.0 -5.0; 5.0 -5.0 26.0]
+        @test isapprox(test_m, BFGS_allocating.matrix)
+
+        update_hessian_basis!(M, BFGS_allocating, p_1)
+        update_hessian_basis!(M, BFGS_allocating, p_2)
+        @test isapprox(M, p_1, BFGS_allocating.grad_tmp, [0.0, 2.0, 0.0, 6.0])
     end
 end

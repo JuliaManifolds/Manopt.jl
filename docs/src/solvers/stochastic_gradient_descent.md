@@ -9,10 +9,10 @@ stochastic_gradient_descent
 stochastic_gradient_descent!
 ```
 
-## Options
+## State
 
 ```@docs
-StochasticGradientDescentOptions
+StochasticGradientDescentState
 ```
 
 Additionally, the options share a [`DirectionUpdateRule`](@ref),
@@ -20,6 +20,6 @@ so you can also apply [`MomentumGradient`](@ref) and [`AverageGradient`](@ref) h
 The most inner one should always be.
 
 ```@docs
-AbstractStochasticGradientProcessor
+AbstractGradientGroupProcessor
 StochasticGradient
 ```

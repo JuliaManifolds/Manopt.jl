@@ -42,7 +42,7 @@ Repeat until a convergence criterion is reached
 4. Set ``{x}^* = \operatorname{retr}_{x_k}(η^*)``.
 5. Set ``\rho = \frac{F(x_k)-F({x}^*)}{m_{x_k}(η)-m_{x_k}(η^*)}``, where
     ``m_{x_k}(⋅)`` describes the quadratic model function.
-6. Update the trust-region radius:``\Delta = \begin{cases}\frac{1}{4} \Delta &\text{ if } \rho < \frac{1}{4} \, \text{or} \, m_{x_k}(η)-m_{x_k}(η^*) \leq 0 \, \text{or}  \, \rho = \pm  ∈ fty , \\\operatorname{min}(2 \Delta, \bar{\Delta}) &\text{ if } \rho > \frac{3}{4} \, \text{and the tcg-method stopped because of negative curvature or exceeding the trust-region},\\\Delta & \, \text{otherwise.}\end{cases}``
+6. Update the trust-region radius:``\Delta = \begin{cases}\frac{1}{4} \Delta &\text{ if } \rho < \frac{1}{4} \, \text{or} \, m_{x_k}(η)-m_{x_k}(η^*) \leq 0 \, \text{or}  \, \rho = \pm  ∈ fty , \\\operatorname{min}(2 \Delta, \bar{\Delta}) &\text{ if } \rho > \frac{3}{4} \, \text{and the tcg-method stopped because of negative curvature or exceeding the trust-region},\\\Delta & \, \text{otherwise.}\end{cases}``
 7. If ``m_{x_k}(η)-m_{x_k}(η^*) \geq 0`` and ``\rho > \rho'`` set
     ``x_k = {x}^*``.
 8. Set ``k = k+1``.
@@ -78,7 +78,8 @@ trust-regions subproblem
 
 with the Steihaug-Toint truncated conjugate-gradient (tcg) method. The problem
 as well as the solution method is described in the
-[`truncated_conjugate_gradient_descent`](@ref).
+[`truncated_conjugate_gradient_descent`](@ref). In this inner solver, the
+stopping criterion  [`StopWhenResidualIsReducedByFactorOrPower`](@ref) so that superlinear or at least linear convergence in the trust-region method can be achieved.
 
 To step number 3: if using a random tangent vector as an initial vector, compare
 the result of the tcg-method with the Cauchy point. Convergence proofs assume
@@ -133,15 +134,16 @@ trust_regions
 trust_regions!
 ```
 
-## Options
+## State
 
 ```@docs
-AbstractHessianOptions
-TrustRegionsOptions
+TrustRegionsState
 ```
 
 ## Approximation of the Hessian
 
 ```@docs
 ApproxHessianFiniteDifference
+ApproxHessianSymmetricRankOne
+ApproxHessianBFGS
 ```

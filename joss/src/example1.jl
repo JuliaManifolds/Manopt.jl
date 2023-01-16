@@ -24,7 +24,7 @@ o = gradient_descent(
     pts[1];
     debug=[:Iteration, " | ", :Change, " | ", :Cost, "\n", :Stop],
     record=[:x, :Change, :Cost],
-    return_options=true,
+    return_state=true,
 )
 x_mean2 = get_solver_result(o)
 values = get_record(o) # vector with a tuple per iteration

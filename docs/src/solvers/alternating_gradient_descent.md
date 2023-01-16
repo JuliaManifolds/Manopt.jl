@@ -9,16 +9,10 @@ alternating_gradient_descent
 alternating_gradient_descent!
 ```
 
-## Problem
+## State
 
 ```@docs
-AlternatingGradientProblem
-```
-
-## Options
-
-```@docs
-AlternatingGradientDescentOptions
+AlternatingGradientDescentState
 ```
 
 Additionally, the options share a [`DirectionUpdateRule`](@ref),

@@ -13,34 +13,40 @@ Random.seed!(29)
                 i in 1:div(length(x), 2)
             ])
         end
-        x0 = [8 * randn(6) for i in 1:7]
-        o = NelderMead(M, Rosenbrock, x0; record=[RecordCost()], return_options=true)
-        x = get_solver_result(o)
-        rec = get_record(o)
-        nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
-        @test any(map(!, nonincreasing)) == false
+        for initial_simplex in [
+            NelderMeadSimplex([8 * randn(6) for i in 1:7]),
+            NelderMeadSimplex(M, zeros(6)),
+            NelderMeadSimplex(M),
+        ]
+            rst = NelderMead(
+                M, Rosenbrock, initial_simplex; record=[RecordCost()], return_state=true
+            )
+            x = get_solver_result(rst)
+            rec = get_record(rst)
+            nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
+            @test any(map(!, nonincreasing)) == false
 
-        x2 = NelderMead(M, Rosenbrock, x0)
-        @test x == x2
+            x2 = NelderMead(M, Rosenbrock, initial_simplex)
+            @test x == x2
 
-        set_iterate!(o, ones(6))
-        @test get_iterate(o) == ones(6)
+            set_iterate!(rst, M, ones(6))
+            @test get_iterate(rst) == ones(6)
+        end
     end
+
     @testset "Rotations" begin
         M = Rotations(3)
         A = randn(3, 3)
         A .= (A - A') ./ 2
         f(::Rotations, x) = norm(A * x * x * A)
-        x0 = [random_point(M) for _ in 1:12]
+        x0 = NelderMeadSimplex([rand(M) for _ in 1:12])
         o = NelderMead(
             M,
             f,
             x0;
             record=[RecordCost()],
-            return_options=true,
-            retraction_method=QRRetraction(),
-            inverse_retraction_method=QRInverseRetraction(),
-            stopping_criterion=StopAfterIteration(500),
+            return_state=true,
+            stopping_criterion=StopAfterIteration(400),
         )
         x = get_solver_result(o)
         rec = get_record(o)

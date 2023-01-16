@@ -1,12 +1,14 @@
 #
 # For the manifolds that are nonmutating only, we have to introduce a few special cases
 #
-function get_gradient!(p::GradientProblem{AllocatingEvaluation}, ::AbstractFloat, x)
-    X = p.gradient!!(p.M, x)
+import Base: copy
+
+function get_gradient!(mp::AbstractManoptProblem, ::AbstractFloat, p)
+    X = get_objective(mp).gradient!!(get_manifold(mp), p)
     return X
 end
-function get_hessian!(p::HessianProblem{AllocatingEvaluation}, ::AbstractFloat, x, X)
-    Y = p.hessian!!(p.M, x, X)
+function get_hessian!(mp::AbstractManoptProblem, ::AbstractFloat, p, X)
+    Y = get_objective(mp).hessian!!(get_manifold(mp), p, X)
     return Y
 end
 function linesearch_backtrack(
@@ -24,13 +26,13 @@ function linesearch_backtrack(
 ) where {TF,T}
     x_new = retract(M, x, s * η, retr)
     fNew = F(x_new)
-    while fNew < f0 + decrease * s * inner(M, x, η, gradF) # increase
+    while fNew < f0 + decrease * s * real(inner(M, x, η, gradF)) # increase
         x_new = retract(M, x, s * η, retr)
         fNew = F(x_new)
         s = s / contract
     end
     s = s * contract # correct last
-    while fNew > f0 + decrease * s * inner(M, x, η, gradF) # decrease
+    while fNew > f0 + decrease * s * real(inner(M, x, η, gradF)) # decrease
         s = contract * s
         x_new = retract(M, x, s * η, retr)
         fNew = F(x_new)
@@ -38,11 +40,21 @@ function linesearch_backtrack(
     end
     return s
 end
-# modify gradient descent step_solver
-function step_solver!(
-    p::GradientProblem{T,<:NONMUTATINGMANIFOLDS}, o::GradientDescentOptions, iter
-) where {T<:AbstractEvaluationType}
-    s, o.gradient = o.direction(p, o, iter)
-    o.x = retract(p.M, o.x, -s .* o.gradient, o.retraction_method)
-    return o
+#
+# Specific solver steps
+#
+function initialize_solver!(
+    mp::AbstractManoptProblem{M}, s::GradientDescentState
+) where {M<:NONMUTATINGMANIFOLDS}
+    s.X = get_gradient(mp, s.p)
+    return s
 end
+function step_solver!(
+    p::AbstractManoptProblem{M}, s::GradientDescentState, i
+) where {M<:NONMUTATINGMANIFOLDS}
+    step, s.X = s.direction(p, s, i)
+    s.p = retract(get_manifold(p), s.p, -step * s.X, s.retraction_method)
+    return s
+end
+#Hack for now?
+copy(::NONMUTATINGMANIFOLDS, p) = p

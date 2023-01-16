@@ -1,6 +1,6 @@
 
 @doc raw"""
-    NonlinearLeastSquaresProblem{T<:AbstractEvaluationType} <: Problem{T}
+    NonlinearLeastSquaresObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
 A type for nonlinear least squares problems.
 `T` is a [`AbstractEvaluationType`](@ref) for the `F` and Jacobian functions.
@@ -8,7 +8,6 @@ A type for nonlinear least squares problems.
 Specify a nonlinear least squares problem
 
 # Fields
-* `M`        – a manifold ``\mathcal M``
 * `F`        – a function ``F: \mathcal M → ℝ^d`` to minimize
 * `jacF!!`   – Jacobian of the function ``F``
 * `jacB`     – the basis of tangent space used for computing the Jacobian.
@@ -19,14 +18,14 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the function ``F`` has to 
 * as a functions `(M::AbstractManifold, p) -> v` that allocates memory for `v` itself for
   an [`AllocatingEvaluation`](@ref),
 * as a function `(M::AbstractManifold, v, p) -> v` that works in place of `v` for a
-  [`MutatingEvaluation`](@ref).
+  [`InplaceEvaluation`](@ref).
 
 Also the Jacobian ``jacF!!`` is required:
 
 * as a functions `(M::AbstractManifold, p; basis_domain::AbstractBasis) -> v` that allocates
   memory for `v` itself for an [`AllocatingEvaluation`](@ref),
 * as a function `(M::AbstractManifold, v, p; basis_domain::AbstractBasis) -> v` that works
-  in place of `v` for an [`MutatingEvaluation`](@ref).
+  in place of `v` for an [`InplaceEvaluation`](@ref).
 
 # Constructors
 
@@ -34,78 +33,82 @@ Also the Jacobian ``jacF!!`` is required:
 
 # See also
 
-[`LevenbergMarquardt`](@ref), [`LevenbergMarquardtOptions`](@ref)
+[`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
-struct NonlinearLeastSquaresProblem{
-    T<:AbstractEvaluationType,mT<:AbstractManifold,TF,TJ,TB<:AbstractBasis
-} <: Problem{T}
-    M::mT
-    F::TF
+struct NonlinearLeastSquaresObjective{E<:AbstractEvaluationType,TC,TJ,TB<:AbstractBasis} <:
+       AbstractManifoldGradientObjective{E,TC,TJ}
+    F::TC
     jacobian!!::TJ
     jacB::TB
     num_components::Int
 end
-function NonlinearLeastSquaresProblem(
-    M::mT,
+function NonlinearLeastSquaresObjective(
     F::TF,
     jacF::TJ,
     num_components::Int;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     jacB::TB=DefaultOrthonormalBasis(),
-) where {mT<:AbstractManifold,TF,TJ,TB<:AbstractBasis}
-    return NonlinearLeastSquaresProblem{typeof(evaluation),mT,TF,TJ,TB}(
-        M, F, jacF, jacB, num_components
+) where {TF,TJ,TB<:AbstractBasis}
+    return NonlinearLeastSquaresObjective{typeof(evaluation),TF,TJ,TB}(
+        F, jacF, jacB, num_components
     )
 end
 
-function (d::DebugGradient)(::NonlinearLeastSquaresProblem, o::Options, i::Int)
-    (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_gradient(o))
-    return nothing
+function get_cost(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
+)
+    return 1//2 * norm(nlso.F(M, p))^2
 end
-
-function get_cost(P::NonlinearLeastSquaresProblem{AllocatingEvaluation}, p)
-    return 1//2 * norm(P.F(P.M, p))^2
-end
-function get_cost(P::NonlinearLeastSquaresProblem{MutatingEvaluation}, p)
-    residual_values = zeros(P.num_components)
-    P.F(P.M, residual_values, p)
+function get_cost(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
+)
+    residual_values = zeros(nlso.num_components)
+    nlso.F(M, residual_values, p)
     return 1//2 * norm(residual_values)^2
 end
 
-function get_gradient(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, x)
-    basis_x = _maybe_get_basis(p.M, x, p.jacB)
-    Jval = p.jacobian!!(p.M, x; basis_domain=basis_x)
-    residual_values = p.F(p.M, x)
-    return get_vector(p.M, x, transpose(Jval) * residual_values, basis_x)
+function get_gradient(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
+)
+    basis_x = _maybe_get_basis(M, p, nlso.jacB)
+    Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
+    residual_values = nlso.F(M, p)
+    return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
 end
-function get_gradient(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, x)
-    basis_x = _maybe_get_basis(p.M, x, p.jacB)
-    Jval = zeros(p.num_components, manifold_dimension(p.M))
-    p.jacobian!!(p.M, Jval, x; basis_domain=basis_x)
-    residual_values = zeros(p.num_components)
-    p.F(p.M, residual_values, x)
-    return get_vector(p.M, x, transpose(Jval) * residual_values, basis_x)
-end
-
-function get_gradient!(p::NonlinearLeastSquaresProblem{AllocatingEvaluation}, X, x)
-    basis_x = _maybe_get_basis(p.M, x, p.jacB)
-    Jval = p.jacobian!!(p.M, x; basis_domain=basis_x)
-    residual_values = p.F(p.M, x)
-    return get_vector!(p.M, X, x, transpose(Jval) * residual_values, basis_x)
+function get_gradient(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
+)
+    basis_x = _maybe_get_basis(M, p, nlso.jacB)
+    Jval = zeros(nlso.num_components, manifold_dimension(M))
+    nlso.jacobian!!(M, Jval, p; basis_domain=basis_x)
+    residual_values = zeros(nlso.num_components)
+    nlso.F(M, residual_values, p)
+    return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
 end
 
-function get_gradient!(p::NonlinearLeastSquaresProblem{MutatingEvaluation}, X, x)
-    basis_x = _maybe_get_basis(p.M, x, p.jacB)
-    Jval = zeros(p.num_components, manifold_dimension(p.M))
-    p.jacobian!!(p.M, Jval, x; basis_domain=basis_x)
-    residual_values = zeros(p.num_components)
-    p.F(p.M, residual_values, x)
-    return get_vector!(p.M, X, x, transpose(Jval) * residual_values, basis_x)
+function get_gradient!(
+    M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
+)
+    basis_x = _maybe_get_basis(M, p, nlso.jacB)
+    Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
+    residual_values = nlso.F(M, p)
+    return get_vector!(M, X, p, transpose(Jval) * residual_values, basis_x)
+end
+
+function get_gradient!(
+    M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
+)
+    basis_p = _maybe_get_basis(M, p, nlso.jacB)
+    Jval = zeros(nlso.num_components, manifold_dimension(M))
+    nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
+    residual_values = zeros(nlso.num_components)
+    nlso.F(M, residual_values, p)
+    get_vector!(M, X, p, transpose(Jval) * residual_values, basis_p)
+    return X
 end
 
 @doc raw"""
-    LevenbergMarquardtOptions{P,T} <: AbstractGradientOptions
+    LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
 
 Describes a Gradient based descent algorithm, with
 
@@ -134,14 +137,15 @@ A default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    LevenbergMarquardtOptions(M, initialX, initial_residual_values, initial_jacF; initial_vector), kwargs...)
+    LevenbergMarquardtState(M, initialX, initial_residual_values, initial_jacF; initial_vector), kwargs...)
 
 Generate Levenberg-Marquardt options.
 
 # See also
-[`gradient_descent`](@ref), [`GradientProblem`](@ref)
+
+[`gradient_descent`](@ref), [`LevenbergMarquardt`](@ref)
 """
-mutable struct LevenbergMarquardtOptions{
+mutable struct LevenbergMarquardtState{
     P,
     TStop<:StoppingCriterion,
     TRTM<:AbstractRetractionMethod,
@@ -149,14 +153,14 @@ mutable struct LevenbergMarquardtOptions{
     TJac,
     TGrad,
     Tparams<:Real,
-} <: AbstractGradientOptions
-    x::P
+} <: AbstractGradientSolverState
+    p::P
     stop::TStop
     retraction_method::TRTM
     residual_values::Tresidual_values
     candidate_residual_values::Tresidual_values
     jacF::TJac
-    gradient::TGrad
+    X::TGrad
     step_vector::TGrad
     last_stepsize::Tparams
     η::Tparams
@@ -164,12 +168,12 @@ mutable struct LevenbergMarquardtOptions{
     damping_term_min::Tparams
     β::Tparams
     expect_zero_residual::Bool
-    function LevenbergMarquardtOptions(
+    function LevenbergMarquardtState(
         M::AbstractManifold,
-        initialX::P,
+        p::P,
         initial_residual_values::Tresidual_values,
         initial_jacF::TJac,
-        initial_gradient::TGrad=zero_vector(M, initialX);
+        initial_gradient::TGrad=zero_vector(M, p);
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-12) |
                                               StopWhenStepsizeLess(1e-12),
@@ -202,7 +206,7 @@ mutable struct LevenbergMarquardtOptions{
             TGrad,
             Tparams,
         }(
-            initialX,
+            p,
             stopping_criterion,
             retraction_method,
             initial_residual_values,

@@ -32,6 +32,5 @@ function plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1, j=length(x))
             linewidth=2,
         )
     end
-    gui(fig)
-    return nothing
+    return fig
 end

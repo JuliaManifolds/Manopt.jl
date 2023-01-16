@@ -1,101 +1,77 @@
 @doc raw"""
-    SubGradientProblem <: Problem
+    ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:AbstractManifoldCostObjective{T, C}
 
-A structure to store information about a subgradient based optimization problem
+A structure to store information about a objective for a subgradient based optimization problem
 
 # Fields
-* `manifold` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
 * `cost` – the function $F$ to be minimized
 * `subgradient` – a function returning a subgradient $\partial F$ of $F$
 
 # Constructor
 
-    SubGradientProblem(M, f, ∂f)
+    ManifoldSubgradientObjective(f, ∂f)
 
-Generate the [`Problem`] for a subgradient problem, i.e. a function `f` on the
-manifold `M` and a function `∂f` that returns an element from the subdifferential
-at a point.
+Generate the [`ManifoldSubgradientObjective`](@ref) for a subgradient objective, i.e.
+a (cost) function `f(M, p)` and a function `∂f(M, p)` that returns a not necessarily deterministic
+element from the subdifferential at `p` on a manifold `M`.
 """
-struct SubGradientProblem{T<:AbstractEvaluationType,mT<:AbstractManifold,C,S} <: Problem{T}
-    M::mT
+struct ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:
+       AbstractManifoldCostObjective{T,C}
     cost::C
     subgradient!!::S
-    function SubGradientProblem(
-        M::mT,
-        cost::C,
-        subgrad::S;
-        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {mT<:AbstractManifold,C,S}
-        return new{typeof(evaluation),mT,C,S}(M, cost, subgrad)
+    function ManifoldSubgradientObjective(
+        cost::C, subgrad::S; evaluation::AbstractEvaluationType=AllocatingEvaluation()
+    ) where {C,S}
+        return new{typeof(evaluation),C,S}(cost, subgrad)
     end
 end
-"""
-    get_subgradient(p, q)
-    get_subgradient!(p, X, q)
 
-Evaluate the (sub)gradient of a [`SubGradientProblem`](@ref) `p` at the point `q`.
+@doc raw"""
+    get_subgradient(amp::AbstractManoptProblem, p)
+    get_subgradient!(amp::AbstractManoptProblem, X, p)
+
+evaluate the subgradient of an [`AbstractManoptProblem`](@ref) `amp` at point `p`.
 
 The evaluation is done in place of `X` for the `!`-variant.
-The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
-When the non-mutating variant is called with a `T=`[`MutatingEvaluation`](@ref)
-memory for the result is allocated.
+The result might not be deterministic, _one_ element of the subdifferential is returned.
 """
-function get_subgradient(p::SubGradientProblem{AllocatingEvaluation}, q)
-    return p.subgradient!!(p.M, q)
+function get_subgradient(amp::AbstractManoptProblem, p)
+    return get_subgradient(get_manifold(amp), get_objective(amp), p)
 end
-function get_subgradient(p::SubGradientProblem{MutatingEvaluation}, q)
-    X = zero_vector(p.M, q)
-    return p.subgradient!!(p.M, X, q)
-end
-function get_subgradient!(p::SubGradientProblem{AllocatingEvaluation}, X, q)
-    return copyto!(p.M, X, p.subgradient!!(p.M, q))
-end
-function get_subgradient!(p::SubGradientProblem{MutatingEvaluation}, X, q)
-    return p.subgradient!!(p.M, X, q)
+function get_subgradient!(amp::AbstractManoptProblem, X, p)
+    return get_subgradient!(get_manifold(amp), X, get_objective(amp), p)
 end
 
 """
-    SubGradientMethodOptions <: Options
-stores option values for a [`subgradient_method`](@ref) solver
+    X = get_subgradient(M;;AbstractManifold, sgo::ManifoldSubgradientObjective, p)
+    get_subgradient!(M;;AbstractManifold, X, sgo::ManifoldSubgradientObjective, p)
 
-# Fields
-* `retraction_method` – the retration to use within
-* `stepsize` – a [`Stepsize`](@ref)
-* `stop` – a [`StoppingCriterion`](@ref)
-* `x` – (initial or current) value the algorithm is at
-* `x_optimal` – optimal value
-* `∂` the current element from the possible subgradients at `x` that is used
+Evaluate the (sub)gradient of a [`ManifoldSubgradientObjective`](@ref) `sgo`
+at the point `p`.
+
+The evaluation is done in place of `X` for the `!`-variant.
+The result might not be deterministic, _one_ element of the subdifferential is returned.
 """
-mutable struct SubGradientMethodOptions{
-    TR<:AbstractRetractionMethod,TS<:Stepsize,TSC<:StoppingCriterion,P,T
-} <: Options where {P,T}
-    retraction_method::TR
-    stepsize::TS
-    stop::TSC
-    x::P
-    x_optimal::P
-    ∂::T
-    function SubGradientMethodOptions(
-        M::TM,
-        x::P;
-        stopping_criterion::SC=StopAfterIteration(5000),
-        stepsize::S=ConstantStepsize(M),
-        subgrad::T=zero_vector(M, x),
-        retraction_method::TR=default_retraction_method(M),
-    ) where {
-        TM<:AbstractManifold,
-        P,
-        T,
-        SC<:StoppingCriterion,
-        S<:Stepsize,
-        TR<:AbstractRetractionMethod,
-    }
-        return new{TR,S,SC,P,T}(
-            retraction_method, stepsize, stopping_criterion, x, deepcopy(x), subgrad
-        )
-    end
-    @deprecate SubGradientMethodOptions(M, x, S, s, r=ExponentialRetraction()) SubGradientMethodOptions(
-        M, x; stopping_criterion=S, stepsize=s, retraction_method=r
-    )
+function get_subgradient(
+    M::AbstractManifold, sgo::ManifoldSubgradientObjective{AllocatingEvaluation}, p
+)
+    return sgo.subgradient!!(M, p)
 end
-get_iterate(o::SubGradientMethodOptions) = o.x
+function get_subgradient(
+    M::AbstractManifold, sgo::ManifoldSubgradientObjective{InplaceEvaluation}, p
+)
+    X = zero_vector(M, p)
+    return sgo.subgradient!!(M, X, p)
+end
+function get_subgradient!(
+    M::AbstractManifold, X, sgo::ManifoldSubgradientObjective{AllocatingEvaluation}, p
+)
+    copyto!(M, X, sgo.subgradient!!(M, p))
+    return X
+end
+function get_subgradient!(
+    M::AbstractManifold, X, sgo::ManifoldSubgradientObjective{InplaceEvaluation}, p
+)
+    sgo.subgradient!!(M, X, p)
+    return X
+end

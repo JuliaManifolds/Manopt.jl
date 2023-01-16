@@ -1,5 +1,5 @@
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
-using Manopt, Manifolds, Literate, Pluto, PlutoStaticHTML, Pkg
+using Manopt, Manifolds, Literate, Pluto, Pkg
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
 tutorial_menu = Array{Pair{String,String},1}()
@@ -9,10 +9,9 @@ tutorial_menu = Array{Pair{String,String},1}()
 tutorial_src_folder = joinpath(@__DIR__, "..", "tutorials/")
 tutorial_output_folder = joinpath(@__DIR__, "src/", "tutorials/")
 tutorial_relative_path = "tutorials/"
-mkpath(tutorial_output_folder)
+#mkpath(tutorial_output_folder)
 #
-# Tutorials
-@info " \n      Rendering Tutorials\n "
+# Tutorials - reduced to generating the menu for now
 tutorials = [
     Dict(:file => "Optimize!", :title => "Get Started: Optimize!"),
     Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
@@ -28,12 +27,13 @@ tutorials = [
 # build menu and write files myself - tp set edit url correctly.
 for t in tutorials
     global tutorial_menu
-    rendered = build_notebooks( #though not really parallel here
+    #=rendered = build_notebooks( #though not really parallel here
         BuildOptions(
             tutorial_src_folder;
             output_format=documenter_output,
             write_files=false,
             use_distributed=true,
+            previous_dir=tutorial_output_folder,
         ),
         ["$(t[:file]).jl"],
     )
@@ -45,46 +45,8 @@ for t in tutorials
         ```
         $(rendered["$(t[:file]).jl"][1])
         """,
-    )
+    ) =#
     push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path, t[:file] * ".md"))
-end
-
-example_menu = Array{Pair{String,String},1}()
-
-examples_src_folder = joinpath(@__DIR__, "..", "examples/")
-examples_output_folder = joinpath(@__DIR__, "src/", "examples/")
-examples_relative_path = "examples/"
-mkpath(examples_output_folder)
-examples = [
-    Dict(:file => "robustPCA", :title => "Robust PCA"),
-    Dict(:file => "smallestEigenvalue", :title => "Rayleigh quotient"),
-    Dict(
-        :file => "FrankWolfeSPDMean", :title => "Frank Wolfe for Riemannian Center of Mass"
-    ),
-]
-@info " \n      Rendering Examples\n "
-# build menu and write files myself - tp set edit url correctly.
-for e in examples
-    global example_menu
-    rendered = build_notebooks( #though not really parallel here
-        BuildOptions(
-            examples_src_folder;
-            output_format=documenter_output,
-            write_files=false,
-            use_distributed=true,
-        ),
-        ["$(e[:file]).jl"],
-    )
-    write(
-        examples_output_folder * e[:file] * ".md",
-        """
-        ```@meta
-        EditURL = "$(examples_src_folder)$(e[:file]).jl"
-        ```
-        $(rendered["$(e[:file]).jl"][1])
-        """,
-    )
-    push!(example_menu, e[:title] => joinpath(examples_relative_path, e[:file] * ".md"))
 end
 
 generated_path = joinpath(@__DIR__, "src")
@@ -106,7 +68,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
     end
 end
 
-@info " \n      Rendering Documentation\n "
+# @info " \n      Rendering Documentation"
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
@@ -136,11 +98,11 @@ makedocs(;
             "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Trust-Regions Solver" => "solvers/trust_regions.md",
         ],
-        "Examples" => example_menu,
         "Plans" => [
             "Specify a Solver" => "plans/index.md",
             "Problem" => "plans/problem.md",
-            "Options" => "plans/options.md",
+            "Objective" => "plans/objective.md",
+            "Solver State" => "plans/state.md",
             "Stepsize" => "plans/stepsize.md",
             "Stopping Criteria" => "plans/stopping_criteria.md",
             "Debug Output" => "plans/debug.md",
@@ -153,7 +115,6 @@ makedocs(;
             "Differentials" => "functions/differentials.md",
             "Adjoint Differentials" => "functions/adjointdifferentials.md",
             "Gradients" => "functions/gradients.md",
-            "Jacobi Fields" => "functions/Jacobi_fields.md",
             "Proximal Maps" => "functions/proximal_maps.md",
             "Specific Manifold Functions" => "functions/manifold.md",
         ],

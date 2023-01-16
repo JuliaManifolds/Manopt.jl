@@ -9,10 +9,10 @@ CurrentModule = Manopt
   augmented_Lagrangian_method!
 ```
 
-## Options
+## State
 
 ```@docs
-AugmentedLagrangianMethodOptions
+AugmentedLagrangianMethodState
 ```
 
 ## Helping Functions

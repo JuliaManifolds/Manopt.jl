@@ -23,9 +23,9 @@ using Manopt, Manifolds, ManifoldsBase, Test
     end
     prior(M, x) = norm(norm.(Ref(pixelM), x, (Λ(M, x))[N, :vector]), 1)
     cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
-    prox_F(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
-    prox_F!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
-    function prox_G_dual(N, n, λ, ξ)
+    prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
+    prox_f!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
+    function prox_g_dual(N, n, λ, ξ)
         return ProductRepr(
             ξ[N, :point],
             project_collaborative_TV(
@@ -33,7 +33,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             ),
         )
     end
-    function prox_G_dual!(N, η, n, λ, ξ)
+    function prox_g_dual!(N, η, n, λ, ξ)
         η[N, :point] .= ξ[N, :point]
         project_collaborative_TV!(
             base_manifold(N), η[N, :vector], λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
@@ -56,71 +56,82 @@ using Manopt, Manifolds, ManifoldsBase, Test
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)
-    x0 = deepcopy(data)
-    ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
+    p0 = deepcopy(data)
+    X0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
-    p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
-    p_linearized = PrimalDualProblem(
-        M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
+    pdmoe = PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
+    p_exact = TwoManifoldProblem(M, N, pdmoe)
+    pdmol = PrimalDualManifoldObjective(
+        cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
     )
-    o_exact = ChambollePockOptions(M, m, n, zero.(x0), ξ0; variant=:exact)
-    o_linearized = ChambollePockOptions(M, m, n, x0, ξ0; variant=:linearized)
+    p_linearized = TwoManifoldProblem(M, N, pdmol)
+    s_exact = ChambollePockState(M, m, n, zero.(p0), X0; variant=:exact)
+    s_linearized = ChambollePockState(M, m, n, p0, X0; variant=:linearized)
     n_old = ProductRepr(n[N, :point], n[N, :vector])
-    x_old = copy(x0)
-    ξ_old = ProductRepr(ξ0[N, :point], ξ0[N, :vector])
+    p_old = copy(p0)
+    ξ_old = ProductRepr(X0[N, :point], X0[N, :vector])
 
-    set_iterate!(o_exact, x0)
-    @test all(get_iterate(o_exact) .== x0)
+    set_iterate!(s_exact, p0)
+    @test all(get_iterate(s_exact) .== p0)
 
-    osm = PrimalDualSemismoothNewtonOptions(M, m, n, zero.(x0), ξ0, 0.0, 0.0, 0.0)
-    set_iterate!(osm, x0)
-    @test all(get_iterate(osm) .== x0)
+    osm = PrimalDualSemismoothNewtonState(
+        M,
+        m,
+        n,
+        zero.(p0),
+        X0;
+        primal_stepsize=0.0,
+        dual_stepsize=0.0,
+        regularization_parameter=0.0,
+    )
+    set_iterate!(osm, p0)
+    @test all(get_iterate(osm) .== p0)
 
     @testset "test Mutating/Allocation Problem Variants" begin
-        p1 = PrimalDualProblem(
-            M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
+        pdmoa = PrimalDualManifoldObjective(
+            cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
         )
-        p2 = PrimalDualProblem(
-            M,
-            N,
+        p1 = TwoManifoldProblem(M, N, pdmoa)
+        pdmoi = PrimalDualManifoldObjective(
             cost,
-            prox_F!,
-            prox_G_dual!,
+            prox_f!,
+            prox_g_dual!,
             adjoint_DΛ!;
             linearized_forward_operator=DΛ!,
             Λ=Λ!,
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
-        x1 = get_primal_prox(p1, 1.0, x0)
-        x2 = get_primal_prox(p2, 1.0, x0)
+        p2 = TwoManifoldProblem(M, N, pdmoi)
+        x1 = get_primal_prox(p1, 1.0, p0)
+        x2 = get_primal_prox(p2, 1.0, p0)
         @test x1 == x2
-        get_primal_prox!(p1, x1, 0.8, x0)
-        get_primal_prox!(p2, x2, 0.8, x0)
+        get_primal_prox!(p1, x1, 0.8, p0)
+        get_primal_prox!(p2, x2, 0.8, p0)
         @test x1 == x2
 
-        ξ1 = get_dual_prox(p1, n, 1.0, ξ0)
-        ξ2 = get_dual_prox(p2, n, 1.0, ξ0)
+        ξ1 = get_dual_prox(p1, n, 1.0, X0)
+        ξ2 = get_dual_prox(p2, n, 1.0, X0)
         @test ξ1[N, :point] == ξ2[N, :point]
         @test ξ1[N, :vector] == ξ2[N, :vector]
-        get_dual_prox!(p1, ξ1, n, 1.0, ξ0)
-        get_dual_prox!(p2, ξ2, n, 1.0, ξ0)
+        get_dual_prox!(p1, ξ1, n, 1.0, X0)
+        get_dual_prox!(p2, ξ2, n, 1.0, X0)
         @test ξ1[N, :point] == ξ2[N, :point]
         @test ξ1[N, :vector] == ξ2[N, :vector]
 
-        y1 = forward_operator(p1, x0)
-        y2 = forward_operator(p2, x0)
+        y1 = forward_operator(p1, p0)
+        y2 = forward_operator(p2, p0)
         @test y1[N, :point][1] == y2[N, :point][1]
         @test y1[N, :point][2] == y2[N, :point][2]
         @test y1[N, :vector][1] == y2[N, :vector][1]
         @test y1[N, :vector][2] == y2[N, :vector][2]
-        forward_operator!(p1, y1, x0)
-        forward_operator!(p2, y2, x0)
+        forward_operator!(p1, y1, p0)
+        forward_operator!(p2, y2, p0)
         @test y1[N, :point][1] == y2[N, :point][1]
         @test y1[N, :point][2] == y2[N, :point][2]
         @test y1[N, :vector][1] == y2[N, :vector][1]
         @test y1[N, :vector][2] == y2[N, :vector][2]
 
-        X = log(M, m, x0)
+        X = log(M, m, p0)
         Y1 = linearized_forward_operator(p1, m, X, n)
         Y2 = linearized_forward_operator(p2, m, X, n)
         @test Y1[N, :point] == Y2[N, :point]
@@ -130,133 +141,135 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test Y1[N, :point] == Y2[N, :point]
         @test Y1[N, :vector] == Y2[N, :vector]
 
-        Z1 = adjoint_linearized_operator(p1, m, n, ξ0)
-        Z2 = adjoint_linearized_operator(p2, m, n, ξ0)
+        Z1 = adjoint_linearized_operator(p1, m, n, X0)
+        Z2 = adjoint_linearized_operator(p2, m, n, X0)
         @test Z1 == Z2
-        adjoint_linearized_operator!(p1, Z1, m, n, ξ0)
-        adjoint_linearized_operator!(p2, Z2, m, n, ξ0)
+        adjoint_linearized_operator!(p1, Z1, m, n, X0)
+        adjoint_linearized_operator!(p2, Z2, m, n, X0)
         @test Z1 == Z2
     end
     @testset "Primal/Dual residual" begin
-        p_exact = PrimalDualProblem(M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; Λ=Λ)
-        p_linearized = PrimalDualProblem(
-            M, N, cost, prox_F, prox_G_dual, adjoint_DΛ; linearized_forward_operator=DΛ
+        pmdoe = PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
+        p_exact = TwoManifoldProblem(M, N, pdmoe)
+        pmdol = PrimalDualManifoldObjective(
+            cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
         )
-        o_exact = ChambollePockOptions(M, m, n, x0, ξ0; variant=:exact)
-        o_linearized = ChambollePockOptions(M, m, n, x0, ξ0; variant=:linearized)
-        @test primal_residual(p_exact, o_exact, x_old, ξ_old, n_old) ≈ 0 atol = 1e-16
-        @test primal_residual(p_linearized, o_linearized, x_old, ξ_old, n_old) ≈ 0 atol =
+        p_linearized = TwoManifoldProblem(M, N, pmdol)
+        s_exact = ChambollePockState(M, m, n, p0, X0; variant=:exact)
+        s_linearized = ChambollePockState(M, m, n, p0, X0; variant=:linearized)
+        @test primal_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 0 atol = 1e-16
+        @test primal_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) ≈ 0 atol =
             1e-16
-        @test dual_residual(p_exact, o_exact, x_old, ξ_old, n_old) ≈ 4.0 atol = 1e-16
-        @test dual_residual(p_linearized, o_linearized, x_old, ξ_old, n_old) ≈ 0.0 atol =
+        @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 4.0 atol = 1e-16
+        @test dual_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) ≈ 0.0 atol =
             1e-16
 
-        step_solver!(p_exact, o_exact, 1)
-        step_solver!(p_linearized, o_linearized, 1)
-        @test primal_residual(p_exact, o_exact, x_old, ξ_old, n_old) > 0
-        @test primal_residual(p_linearized, o_linearized, x_old, ξ_old, n_old) > 0
-        @test dual_residual(p_exact, o_exact, x_old, ξ_old, n_old) > 4.0
-        @test dual_residual(p_linearized, o_linearized, x_old, ξ_old, n_old) > 0
+        step_solver!(p_exact, s_exact, 1)
+        step_solver!(p_linearized, s_linearized, 1)
+        @test primal_residual(p_exact, s_exact, p_old, ξ_old, n_old) > 0
+        @test primal_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) > 0
+        @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) > 4.0
+        @test dual_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) > 0
 
-        o_err = ChambollePockOptions(M, m, n, x0, ξ0; variant=:err)
-        @test_throws DomainError dual_residual(p_exact, o_err, x_old, ξ_old, n_old)
+        o_err = ChambollePockState(M, m, n, p0, X0; variant=:err)
+        @test_throws DomainError dual_residual(p_exact, o_err, p_old, ξ_old, n_old)
     end
     @testset "Debug prints" begin
-        a = StoreOptionsAction((:Iterate, :ξ, :n, :m))
-        update_storage!(a, Dict(:Iterate => x_old, :ξ => ξ_old, :n => n_old, :m => copy(m)))
+        a = StoreStateAction((:Iterate, :X, :n, :m))
+        update_storage!(a, Dict(:Iterate => p_old, :X => ξ_old, :n => n_old, :m => copy(m)))
         io = IOBuffer()
 
         d1 = DebugDualResidual(; storage=a, io=io)
-        d1(p_exact, o_exact, 1)
+        d1(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Residual:")
 
         d2 = DebugPrimalResidual(; storage=a, io=io)
-        d2(p_exact, o_exact, 1)
+        d2(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Residual: ")
 
         d3 = DebugPrimalDualResidual(; storage=a, io=io)
-        d3(p_exact, o_exact, 1)
+        d3(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "PD Residual: ")
 
         d4 = DebugPrimalChange(; storage=a, prefix="Primal Change: ", io=io)
-        d4(p_exact, o_exact, 1)
+        d4(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Change: ")
 
         d5 = DebugPrimalIterate(; io=io)
-        d5(p_exact, o_exact, 1)
+        d5(p_exact, s_exact, 1)
         s = String(take!(io))
-        @test startswith(s, "x:")
+        @test startswith(s, "p:")
 
         d6 = DebugDualIterate(; io=io)
-        d6(p_exact, o_exact, 1)
+        d6(p_exact, s_exact, 1)
         s = String(take!(io))
-        @test startswith(s, "ξ:")
+        @test startswith(s, "X:")
 
         d7 = DebugDualChange(; storage=a, io=io)
-        d7(p_exact, o_exact, 1)
+        d7(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
 
-        d7a = DebugDualChange((ξ0, n); storage=a, io=io)
-        d7a(p_exact, o_exact, 1)
+        d7a = DebugDualChange((X0, n); storage=a, io=io)
+        d7a(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
 
         d8 = DebugDualBaseIterate(; io=io)
-        d8(p_exact, o_exact, 1)
+        d8(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "n:")
 
         d9 = DebugDualBaseChange(; storage=a, io=io)
-        d9(p_exact, o_exact, 1)
+        d9(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Base Change:")
 
         d10 = DebugPrimalBaseIterate(; io=io)
-        d10(p_exact, o_exact, 1)
+        d10(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "m:")
 
         d11 = DebugPrimalBaseChange(; storage=a, io=io)
-        d11(p_exact, o_exact, 1)
+        d11(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Base Change:")
 
-        d12 = DebugDualResidual((x0, ξ0, n); storage=a, io=io)
-        d12(p_exact, o_exact, 1)
+        d12 = DebugDualResidual((p0, X0, n); storage=a, io=io)
+        d12(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Residual:")
 
-        d13 = DebugPrimalDualResidual((x0, ξ0, n); storage=a, io=io)
-        d13(p_exact, o_exact, 1)
+        d13 = DebugPrimalDualResidual((p0, X0, n); storage=a, io=io)
+        d13(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "PD Residual:")
 
-        d14 = DebugPrimalResidual((x0, ξ0, n); storage=a, io=io)
-        d14(p_exact, o_exact, 1)
+        d14 = DebugPrimalResidual((p0, X0, n); storage=a, io=io)
+        d14(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Residual:")
     end
     @testset "Records" begin
-        a = StoreOptionsAction((:Iterate, :ξ, :n, :m))
-        update_storage!(a, Dict(:Iterate => x_old, :ξ => ξ_old, :n => n_old, :m => copy(m)))
+        a = StoreStateAction((:Iterate, :X, :n, :m))
+        update_storage!(a, Dict(:Iterate => p_old, :X => ξ_old, :n => n_old, :m => copy(m)))
         io = IOBuffer()
 
         for r in [
             RecordPrimalChange(),
-            RecordPrimalIterate(x0),
-            RecordDualIterate(ξ0),
+            RecordPrimalIterate(p0),
+            RecordDualIterate(X0),
             RecordDualChange(),
             RecordDualBaseIterate(n),
             RecordDualBaseChange(),
-            RecordPrimalBaseIterate(x0),
+            RecordPrimalBaseIterate(p0),
             RecordPrimalBaseChange(),
         ]
-            r(p_exact, o_exact, 1)
+            r(p_exact, s_exact, 1)
             @test length(get_record(r)) == 1
         end
     end

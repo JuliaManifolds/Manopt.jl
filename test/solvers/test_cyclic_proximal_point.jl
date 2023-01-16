@@ -4,62 +4,47 @@ using Manifolds, Manopt, Test, Dates
     @testset "Allocating" begin
         n = 100
         N = PowerManifold(Circle(), n)
-        f = artificial_S1_signal(n)
-        F(M, x) = costL2TV(M, f, 0.5, x)
+        q = artificial_S1_signal(n)
+        f(M, p) = costL2TV(M, q, 0.5, p)
         proxes = (
-            (N, λ, x) -> prox_distance(N, λ, f, x), (N, λ, x) -> prox_TV(N, 0.5 * λ, x)
+            (N, λ, p) -> prox_distance(N, λ, q, p), (N, λ, p) -> prox_TV(N, 0.5 * λ, p)
         )
-        o = cyclic_proximal_point(
-            N,
-            F,
-            proxes,
-            f;
-            λ=i -> π / (2 * i),
-            stopping_criterion=StopAfterIteration(100),
-            debug=[
-                DebugIterate(), " ", DebugCost(), " ", DebugProximalParameter(), "\n", 10000
-            ],
-            record=[RecordProximalParameter(), RecordIterate(f), RecordCost()],
-            return_options=true,
+        q2 = cyclic_proximal_point(
+            N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
-        fR = get_solver_result(o)
-        fR2 = cyclic_proximal_point(
-            N, F, proxes, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
-        )
-        @test fR == fR2
-        rec = get_record(o)
-        @test F(N, f) > F(N, fR)
-        o = CyclicProximalPointOptions(
+        @test f(N, q) > f(N, q2)
+        o = CyclicProximalPointState(
             N, f; stopping_criterion=StopAfterIteration(1), λ=i -> π / (2 * i)
         )
-        p = ProximalProblem(N, F, proxes, [1, 2])
+        mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
+        p = DefaultManoptProblem(N, mpo)
         @test_throws ErrorException get_proximal_map(p, 1.0, f, 3)
-        @test_throws ErrorException ProximalProblem(N, F, proxes, [1, 2, 2])
+        @test_throws ErrorException ManifoldProximalMapObjective(f, proxes, [1, 2, 2])
     end
     @testset "Mutating" begin
         n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
-        f = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
-        F(N, x) = costL2TV(N, f, 0.5, x)
+        q = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
+        f(N, p) = costL2TV(N, q, 0.5, p)
         proxes! = (
-            (N, y, λ, x) -> prox_distance!(N, y, λ, f, x),
-            (N, y, λ, x) -> prox_TV!(N, y, 0.5 * λ, x),
+            (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
+            (N, q, λ, p) -> prox_TV!(N, q, 0.5 * λ, p),
         )
         proxes = (
-            (N, λ, x) -> prox_distance(N, λ, f, x), (N, λ, x) -> prox_TV(N, 0.5 * λ, x)
+            (N, λ, p) -> prox_distance(N, λ, q, p), (N, λ, p) -> prox_TV(N, 0.5 * λ, p)
         )
         s1 = cyclic_proximal_point(
-            N, F, proxes, f; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
+            N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
         s2 = cyclic_proximal_point(
             N,
-            F,
+            f,
             proxes!,
-            f;
+            q;
             λ=i -> π / (2 * i),
             stopping_criterion=StopAfterIteration(100),
-            evaluation=MutatingEvaluation(),
+            evaluation=InplaceEvaluation(),
         )
         @test isapprox(N, s1, s2)
     end
@@ -67,31 +52,55 @@ using Manifolds, Manopt, Test, Dates
         n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
-        f = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
-        F(N, x) = costL2TV(N, f, 0.5, x)
+        q = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
+        f(N, x) = costL2TV(N, q, 0.5, x)
         proxes! = (
-            (N, y, λ, x) -> prox_distance!(N, y, λ, f, x),
-            (N, y, λ, x) -> prox_TV!(N, y, 0.5 * λ, x),
+            (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
+            (N, q, λ, p) -> prox_TV!(N, q, 0.5 * λ, p),
         )
         proxes = (
-            (N, λ, x) -> prox_distance(N, λ, f, x), (N, λ, x) -> prox_TV(N, 0.5 * λ, x)
+            (N, λ, p) -> prox_distance(N, λ, q, p), (N, λ, p) -> prox_TV(N, 0.5 * λ, p)
         )
         for i in 1:2
-            p1 = ProximalProblem(N, F, proxes)
-            g = deepcopy(f)
-            get_proximal_map!(p1, g, 1.0, g, i)
-            @test isapprox(N, g, get_proximal_map(p1, 1.0, f, i))
-            p2 = ProximalProblem(N, F, proxes!; evaluation=MutatingEvaluation())
-            g = deepcopy(f)
-            get_proximal_map!(p2, g, 1.0, g, i)
-            @test isapprox(N, g, get_proximal_map(p2, 1.0, f, i))
+            mpo1 = ManifoldProximalMapObjective(f, proxes)
+            dmp1 = DefaultManoptProblem(N, mpo1)
+            r = deepcopy(q)
+            get_proximal_map!(dmp1, r, 1.0, r, i)
+            @test isapprox(N, r, get_proximal_map(dmp1, 1.0, q, i))
+            mpo2 = ManifoldProximalMapObjective(f, proxes!; evaluation=InplaceEvaluation())
+            dmp2 = DefaultManoptProblem(N, mpo2)
+            r = deepcopy(q)
+            get_proximal_map!(dmp2, r, 1.0, r, i)
+            @test isapprox(N, r, get_proximal_map(dmp2, 1.0, q, i))
         end
     end
     @testset "Option accsess functions" begin
         M = Euclidean(3)
         p = ones(3)
-        O = CyclicProximalPointOptions(M, zeros(3))
+        O = CyclicProximalPointState(M, zeros(3))
         set_iterate!(O, p)
         @test get_iterate(O) == p
+    end
+    @testset "Debug and Record prox parameter" begin
+        io = IOBuffer()
+        M = Euclidean(3)
+        p = ones(3)
+        O = CyclicProximalPointState(M, p)
+        f(M, p) = costL2TV(M, q, 0.5, p)
+        proxes = (
+            (M, λ, p) -> prox_distance(M, λ, q, p), (M, λ, p) -> prox_TV(M, 0.5 * λ, p)
+        )
+        s = CyclicProximalPointState(
+            M, f; stopping_criterion=StopAfterIteration(1), λ=i -> i
+        )
+        mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
+        p = DefaultManoptProblem(M, mpo)
+        ds = DebugSolverState(s, DebugProximalParameter(; io=io))
+        step_solver!(p, ds, 1)
+        debug = String(take!(io))
+        @test startswith(debug, "λ:")
+        rs = RecordSolverState(s, RecordProximalParameter())
+        step_solver!(p, rs, 1)
+        @test get_record(rs) == [1.0]
     end
 end

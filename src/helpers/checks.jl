@@ -1,5 +1,5 @@
 @doc raw"""
-    check_differential(M, F, dF, p=random_point(M), X=random_tangent(M,p))
+    check_differential(M, F, dF, p=rand(M), X=rand(M; vector_at=p))
 
 Check numerivcally whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 
@@ -12,9 +12,11 @@ This implements the method described in Section 4.8 [^Boumal2022].
 * `io` – (`nothing`) provide an `IO` to print the check result to
 * `limits` (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
-* `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale.
+* `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
 * `retraction_method` - (`default_retraction_method(M)`) retraction method to use for the check
 * `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
+
+Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
 
 [^Boumal2022]:
     > Boumal, N.: _An Introduction to Optimization on Smooth Manifolds_, book in preparation, 2022.
@@ -24,8 +26,8 @@ function check_differential(
     M::AbstractManifold,
     F,
     dF,
-    p=random_point(M),
-    X=random_tangent(M, p);
+    p=rand(M),
+    X=rand(M; vector_at=p);
     plot=false,
     throw_error=false,
     io::Union{IO,Nothing}=nothing,
@@ -62,15 +64,15 @@ function check_differential(
     # otherwise
     # find best contiguous window of length w
     (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
-    plot && plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
     msg = "You gradient fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 2 ± $(slope_tol).\n"
     (io !== nothing) && print(io, msg)
     throw_error && throw(ErrorException(msg))
+    plot && return plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
     return false
 end
 
 @doc raw"""
-    check_gradient(M, F, gradF, p=random_point(M), X=random_tangent(M,p); kwargs...)
+    check_gradient(M, F, gradF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
 Check numerivcally whether the gradient `gradF(M,p)` of `F(M,p)` is correct.
 
@@ -84,16 +86,16 @@ function check_gradient(
     M::AbstractManifold,
     F,
     gradF,
-    p=random_point(M),
-    X=random_tangent(M, p);
+    p=rand(M),
+    X=rand(M; vector_at=p);
     check_vector=true,
     throw_error=false,
     kwargs...,
 )
     gradient = gradF(M, p)
     check_vector && is_vector(M, p, gradient, throw_error;)
-    # function for the directional derivative
-    df(M, p, Y) = inner(M, p, gradient, Y)
+    # function for the directional derivative - real so it also works on complex manifolds
+    df(M, p, Y) = real(inner(M, p, gradient, Y))
     return check_differential(M, F, df, p, X; throw_error=throw_error, kwargs...)
 end
 
