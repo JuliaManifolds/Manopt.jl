@@ -110,15 +110,16 @@ function conjugate_gradient_descent!(
 end
 function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState)
     cgs.X = get_gradient(amp, cgs.p)
-    cgs.δ = -cgs.X
+    cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)
+    # remember the first gradient in coefficient calculation
+    cgs.coefficient(amp, cgs, 0)
     return cgs.β = 0.0
 end
 function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i)
     M = get_manifold(amp)
-    p_old = cgs.p
-    retract!(
-        M, cgs.p, cgs.p, get_stepsize(amp, cgs, i, cgs.δ) * cgs.δ, cgs.retraction_method
-    )
+    p_old = copy(M, cgs.p)
+    current_stepsize = get_stepsize(amp, cgs, i, cgs.δ)
+    retract!(M, cgs.p, cgs.p, current_stepsize * cgs.δ, cgs.retraction_method)
     get_gradient!(amp, cgs.X, cgs.p)
     cgs.β = cgs.coefficient(amp, cgs, i)
     vector_transport_to!(M, cgs.δ, p_old, cgs.δ, cgs.p, cgs.vector_transport_method)

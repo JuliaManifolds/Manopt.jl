@@ -269,7 +269,11 @@ function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
             key => if key === :Iterate
                 get_iterate(s)
             else
-                (key === :gradient ? get_gradient(s) : getproperty(s, key))
+                (if key === :gradient
+                        deepcopy(get_gradient(s))
+                    else
+                        deepcopy(getproperty(s, key))
+                    end)
             end for key in a.keys
         ),
     )
