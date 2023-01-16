@@ -22,6 +22,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 mutable struct ConjugateGradientDescentState{
     P,
     T,
+    F,
     TCoeff<:DirectionUpdateRule,
     TStepsize<:Stepsize,
     TStop<:StoppingCriterion,
@@ -31,7 +32,7 @@ mutable struct ConjugateGradientDescentState{
     p::P
     X::T
     δ::T
-    β::Float64
+    β::F
     coefficient::TCoeff
     stepsize::TStepsize
     stop::TStop
@@ -47,7 +48,8 @@ mutable struct ConjugateGradientDescentState{
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
         initial_gradient::T=zero_vector(M, p),
     ) where {P,T}
-        cgs = new{P,T,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
+        βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
+        cgs = new{P,T,βT,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         cgs.p = p
         cgs.X = initial_gradient
         cgs.δ = copy(M, p, initial_gradient)
@@ -56,6 +58,7 @@ mutable struct ConjugateGradientDescentState{
         cgs.stepsize = s
         cgs.coefficient = dC
         cgs.vector_transport_method = vtr
+        cgs.β = zero(βT)
         return cgs
     end
 end
