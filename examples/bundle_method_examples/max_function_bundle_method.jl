@@ -1,8 +1,9 @@
-using Manopt, Manifolds, Random, QuadraticModels, RipQP
+using Manopt, Manifolds, Random, QuadraticModels, RipQP, FiniteDifferences, ManifoldDiff
 
 l = Int(1e2)
+# Random.seed!(42)
+r_backend = ManifoldDiff.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
 M = SymmetricPositiveDefinite(3)
-#Random.seed!(42)
 data = [rand(M; σ=0.4) for i in 1:l]
 
 F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
@@ -22,15 +23,18 @@ function gradF3(M, y)
     end
 end
 
+# Find intersection point between F and F2
 G(M, y) = (F(M, y) - F2(M, y))^2
-m = particle_swarm(M, G)
+gradG(y) = ManifoldDiff.gradient(M, G, y, r_backend)
+m = NelderMead(M, G)
+#m = subgradient_method(M, G, gradG, rand(M))
 
 bundle_min = bundle_method(
     M,
     F3,
     gradF3,
     m;
-    # stopping_criterion=StopAfterIteration(100),
+    stopping_criterion=StopAfterIteration(100),
     # debug=[:Iteration, :Cost, "\n"],
 )
 
@@ -39,7 +43,7 @@ subgradient_min = subgradient_method(
     F3,
     gradF3,
     m;
-    # stopping_criterion=StopAfterIteration(100),
+    stopping_criterion=StopAfterIteration(100),
     # debug=[:Iteration, :Cost, "\n"],
 )
 
