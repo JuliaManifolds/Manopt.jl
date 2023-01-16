@@ -64,7 +64,7 @@ function plot_time_graphs(m::Int)
         label=["Hyperbolic Space" "Symmetric Pos Def Matirces"],
         xlabel="Dimension",
         ylabel="Time",
-        legend = :outertop,
+        legend=:outertop,
     )
     p2 = plot(
         [3:m],
@@ -73,7 +73,7 @@ function plot_time_graphs(m::Int)
         label=["Hyperbolic Space" "Symmetric Pos Def Matirces"],
         xlabel="Dimension",
         ylabel="Time",
-        legend = :outertop,
+        legend=:outertop,
     )
     display(plot(p1, p2))
     return nothing

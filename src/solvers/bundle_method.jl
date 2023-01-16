@@ -234,7 +234,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             bms.bundle_points[j][1],
             bms.bundle_points[j][2],
             inverse_retract(
-                M, bms.bundle_points[j][1], bms.p_last_serious, bms.inverse_retraction_method
+                M,
+                bms.bundle_points[j][1],
+                bms.p_last_serious,
+                bms.inverse_retraction_method,
             ),
         ) for j in 1:length(bms.index_set)
     ]
