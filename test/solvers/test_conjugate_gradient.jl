@@ -123,3 +123,20 @@ end
     )
     @test get_solver_result(x_opt2) == x_opt
 end
+
+@testset "CG on complex manifolds" begin
+    M = Euclidean(2; field=ℂ)
+    A = [1 im; -im 1]
+    f(::Euclidean, p) = real(p' * A * p)
+    grad_f(::Euclidean, p) = 2 * A * p
+    p0 = [2.0, 1+im]
+    x_opt = conjugate_gradient_descent(
+        M,
+        f,
+        grad_f,
+        p0;
+        stepsize=ArmijoLinesearch(M),
+        coefficient=FletcherReevesCoefficient(),
+        stopping_criterion=StopAfterIteration(15),
+    )
+end
