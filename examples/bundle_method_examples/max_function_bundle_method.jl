@@ -2,14 +2,16 @@ using Manopt, Manifolds, Random, QuadraticModels, RipQP, FiniteDifferences, Mani
 
 l = Int(1e2)
 # Random.seed!(42)
-r_backend = ManifoldDiff.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
-M = SymmetricPositiveDefinite(3)
+r_backend = ManifoldDiff.RiemannianProjectionBackend(
+    ManifoldDiff.FiniteDifferencesBackend()
+)
+M = SymmetricPositiveDefinite(27)
 data = [rand(M; σ=0.4) for i in 1:l]
 
 F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
 gradF(M, y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
-F2(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), Ref(y), data))
-gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y), 1))
+F2(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), Ref(y), data) .^ 4)
+gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y), 4))
 
 F3(M, y) = max(F(M, y), F2(M, y))
 function gradF3(M, y)

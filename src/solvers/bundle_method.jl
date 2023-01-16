@@ -206,15 +206,15 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* bms.lin_errors)
     # Check transported subgradients ε-inequality
-    if (
-        get_cost(mp, bms.p) >=
-        get_cost(mp, bms.p_last_serious) +
-        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, bms.p)) - ε
-    )
-        println("Yes")
-    else
-        println("No")
-    end
+    # if (
+    #     get_cost(mp, bms.p) >=
+    #     get_cost(mp, bms.p_last_serious) +
+    #     inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, bms.p)) - ε
+    # )
+    #     println("Yes")
+    # else
+    #     println("No")
+    # end
     δ = -norm(M, bms.p_last_serious, g)^2 - ε
     (δ == 0 || -δ <= bms.tol) && (return bms)
     q = retract(M, bms.p_last_serious, -g, bms.retraction_method)

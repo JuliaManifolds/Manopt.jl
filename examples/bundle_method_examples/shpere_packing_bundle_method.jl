@@ -19,6 +19,22 @@ end
 G(M, y) = -minimum(minimum.(F(M, y)))
 gradG(M, y) = ManifoldDiff.gradient(M, G, y, r_backend)
 
-b = bundle_method(M, G, gradG, rand(M); debug = [:Iteration, :Cost, "\n"], stopping_criterion = StopAfterIteration(30))
-s = subgradient_method(M, G, gradG, rand(M); debug = [:Iteration, :Cost, "\n"], stopping_criterion = StopAfterIteration(30))
+# The paramer m is very influent here! For small m the bundle method loops at the first iterate!
+b = bundle_method(
+    M,
+    G,
+    gradG,
+    rand(M);
+    m=0.99,
+    debug=[:Iteration, :Cost, "\n"],
+    stopping_criterion=StopAfterIteration(40),
+)
+s = subgradient_method(
+    M,
+    G,
+    gradG,
+    rand(M);
+    debug=[:Iteration, :Cost, "\n"],
+    stopping_criterion=StopAfterIteration(40),
+)
 distance(M, b, s)
