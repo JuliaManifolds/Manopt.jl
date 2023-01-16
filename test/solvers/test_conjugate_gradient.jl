@@ -129,7 +129,7 @@ end
     A = [1 im; -im 1]
     f(::Euclidean, p) = real(p' * A * p)
     grad_f(::Euclidean, p) = 2 * A * p
-    p0 = [2.0, 1+im]
+    p0 = [2.0, 1 + im]
     x_opt = conjugate_gradient_descent(
         M,
         f,
