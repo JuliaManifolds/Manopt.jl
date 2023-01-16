@@ -33,6 +33,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @testset "Solver Tests       " begin
         include("solvers/test_alternating_gradient.jl")
         include("solvers/test_augmented_lagrangian.jl")
+        include("solvers/test_bundle_method.jl")
         include("solvers/test_ChambollePock.jl")
         include("solvers/test_conjugate_gradient.jl")
         include("solvers/test_Douglas_Rachford.jl")
