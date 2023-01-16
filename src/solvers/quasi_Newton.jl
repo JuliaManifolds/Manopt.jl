@@ -539,12 +539,12 @@ end
 
 # all Cautious Limited Memory
 function update_hessian!(
-    d::QuasiNewtonCautiousDirectionUpdate{QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,VT}},
+    d::QuasiNewtonCautiousDirectionUpdate{<:QuasiNewtonLimitedMemoryDirectionUpdate},
     mp,
     st,
     p_old,
     iter,
-) where {NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod}
+)
     # computing the bound used in the decission rule
     M = get_manifold(mp)
     p = get_iterate(st)
