@@ -15,18 +15,21 @@ function compare_times(manifold_name, n::Int)
         gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y), 1))
 
         F3(M, y) = max(F(M, y), F2(M, y))
-        function gradF3(M, y)
-            if F3(M, y) == F(M, y)
+        function subgradF3(M, y)
+            if F3(M, y) == F(M, y) && F3(M, y) != F2(M, y)
                 return gradF(M, y)
-            else
+            elseif F3(M, y) == F2(M, y) && F3(M, y) != F(M, y)
                 return gradF2(M, y)
+            else
+                r = rand()
+                return r * gradF(M, y) + (1 - r) * gradF2(M, y)
             end
         end
 
         push!(t, @timed(bundle_method(
             M,
             F3,
-            gradF3,
+            subgradF3,
             data[1];
             # m = 0.0125,
             # tol = 1e-8,
@@ -39,7 +42,7 @@ function compare_times(manifold_name, n::Int)
         push!(s, @timed(subgradient_method(
             M,
             F3,
-            gradF3,
+            subgradF3,
             data[1];
             # stopping_criterion=StopWhenAny(
             #     StopAfterIteration(20), StopWhenChangeLess(1e-8)
@@ -61,6 +64,7 @@ function plot_time_graphs(m::Int)
         label=["Hyperbolic Space" "Symmetric Pos Def Matirces"],
         xlabel="Dimension",
         ylabel="Time",
+        legend = :outertop,
     )
     p2 = plot(
         [3:m],
@@ -69,7 +73,8 @@ function plot_time_graphs(m::Int)
         label=["Hyperbolic Space" "Symmetric Pos Def Matirces"],
         xlabel="Dimension",
         ylabel="Time",
+        legend = :outertop,
     )
-    #display(plot(p1, p2))
+    display(plot(p1, p2))
     return nothing
 end

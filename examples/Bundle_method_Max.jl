@@ -1,8 +1,9 @@
 using Manopt, Manifolds, Random, QuadraticModels, RipQP
 
-M = SymmetricPositiveDefinite(27)
+l = Int(1e4)
+M = Stiefel(3,2)
 #Random.seed!(42)
-data = [rand(M; σ=0.4) for i in 1:100]
+data = [rand(M; σ=0.4) for i in 1:l]
 
 F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
 gradF(M, y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
@@ -24,14 +25,26 @@ end
 G(M, y) = (F(M, y) - F2(M, y))^2
 m = particle_swarm(M, G)
 
-maxfunc_optimum = bundle_method(
+bundle_min = bundle_method(
     M,
     F3,
     gradF3,
     m;
-    stopping_criterion=StopAfterIteration(100),
-    debug=[:Iteration, :Cost, "\n"],
+    # stopping_criterion=StopAfterIteration(100),
+    # debug=[:Iteration, :Cost, "\n"],
 )
+
+subgradient_min = subgradient_method(
+    M,
+    F3,
+    gradF3,
+    m;
+    # stopping_criterion=StopAfterIteration(100),
+    # debug=[:Iteration, :Cost, "\n"],
+)
+
+println("Distance between minima: $(distance(M, bundle_min, subgradient_min))")
+
 #println("$(F3(M, maxfunc_optimum) == F2(M, maxfunc_optimum))")
 
 # for j in 1:10

@@ -1,7 +1,7 @@
 using Manopt, Manifolds, Random, QuadraticModels, RipQP
 
 M = SymmetricPositiveDefinite(3)
-Random.seed!(42)
+#Random.seed!(42)
 data = [rand(M; σ=0.4) for i in 1:100]
 
 F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
