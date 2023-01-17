@@ -45,7 +45,7 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` - (`default_retraction_method(M)`) a retraction method to use.
-* `stepsize` - (`Constant(1.)`) A [`Stepsize`](@ref) function applied to the
+* `stepsize` - ([`ArmijoLinesearch`](@ref) via [`default_stepsize`](@ref)) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
 * `stopping_criterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
   a function indicating when to stop.
