@@ -1,7 +1,9 @@
-function default_stepsize(M::AbstractManifold, ::Type{<:ConjugateGradientDescentState})
-    return ConstantStepsize(M)
+function default_stepsize(M::AbstractManifold, ::Type{<:ConjugateGradientDescentState};
+    retraction_method=default_retraction_method(M),
+)
+    # take a default with a slightly defensive initial step size.
+    return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
-
 @doc raw"""
     conjugate_gradient_descent(M, F, gradF, x)
 
@@ -83,7 +85,7 @@ function conjugate_gradient_descent!(
     p;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    stepsize::Stepsize=default_stepsize(M, ConjugateGradientDescentState),
+    stepsize::Stepsize=default_stepsize(M, ConjugateGradientDescentState; retraction_method=retraction_method),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))

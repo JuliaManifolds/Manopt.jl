@@ -21,7 +21,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     dU = SteepestDirectionUpdateRule()
     cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
     @test cgs.coefficient(dmp, cgs, 1) == 0
-    @test default_stepsize(M, typeof(cgs)) isa ConstantStepsize
+    @test default_stepsize(M, typeof(cgs)) isa ArmijoLinesearch
 
     dU = ConjugateDescentCoefficient()
     cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
@@ -141,4 +141,31 @@ end
         stopping_criterion=StopAfterIteration(1),
     )
     @test fc(M, p1) ≤ fc(M, p0)
+end
+
+@testset "Euclidean Quadratic function test" begin
+    M = Euclidean(2)
+    A = [1.0 0; 0 0.1]
+    f(M, p) = p' * A * p
+    grad_f(M, p) = 2 * A * p
+    p0 = [0.1; 1]
+    struct CGStepsize <: Stepsize end
+    function (cs::CGStepsize)(
+        amp::AbstractManoptProblem,
+        cgds::ConjugateGradientDescentState,
+        i,
+        args...;
+        kwargs...,
+    ) # for this example we have a closed form solution for the best step size
+        M = get_manifold(amp)
+        p = get_iterate(cgds)
+        X = -get_gradient(amp, p)
+        α = 0.5 * inner(M, p, X, cgds.δ) / inner(M, p, cgds.δ, A * cgds.δ)
+        return α
+    end
+    # should be zero after 2 steps
+    p1 = conjugate_gradient_descent(
+        M, f, grad_f, p0; stepsize=CGStepsize(), stopping_criterion=StopAfterIteration(2)
+    )
+    @test norm(p1) ≈ 0 atol = 4 * 1e-16
 end
