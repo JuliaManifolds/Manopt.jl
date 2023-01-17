@@ -87,10 +87,10 @@ function conjugate_gradient_descent!(
     p;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
     ),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),

@@ -136,7 +136,6 @@ end
         fc,
         grad_fc,
         p0;
-        stepsize=ArmijoLinesearch(M),
         coefficient=FletcherReevesCoefficient(),
         stopping_criterion=StopAfterIteration(1),
     )
