@@ -264,14 +264,17 @@ the [`AbstractManoptSolverState`](@ref) `o`.
 """
 function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
     return update_storage!(
-        a,
-        Dict(
-            key => if key === :Iterate
-                get_iterate(s)
-            else
-                (key === :gradient ? get_gradient(s) : getproperty(s, key))
-            end for key in a.keys
-        ),
+        a, Dict(key => if key === :Iterate
+            get_iterate(s)
+        else
+            (
+                if key === :gradient
+                    deepcopy(get_gradient(s))
+                else
+                    deepcopy(getproperty(s, key))
+                end
+            )
+        end for key in a.keys)
     )
 end
 

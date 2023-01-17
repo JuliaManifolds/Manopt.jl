@@ -1,7 +1,11 @@
-function default_stepsize(M::AbstractManifold, ::Type{<:ConjugateGradientDescentState})
-    return ConstantStepsize(M)
+function default_stepsize(
+    M::AbstractManifold,
+    ::Type{<:ConjugateGradientDescentState};
+    retraction_method=default_retraction_method(M),
+)
+    # take a default with a slightly defensive initial step size.
+    return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
-
 @doc raw"""
     conjugate_gradient_descent(M, F, gradF, x)
 
@@ -41,7 +45,7 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` - (`default_retraction_method(M)`) a retraction method to use.
-* `stepsize` - (`Constant(1.)`) A [`Stepsize`](@ref) function applied to the
+* `stepsize` - ([`ArmijoLinesearch`](@ref) via [`default_stepsize`](@ref)) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
 * `stopping_criterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
   a function indicating when to stop.
@@ -83,8 +87,10 @@ function conjugate_gradient_descent!(
     p;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    stepsize::Stepsize=default_stepsize(M, ConjugateGradientDescentState),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    stepsize::Stepsize=default_stepsize(
+        M, ConjugateGradientDescentState; retraction_method=retraction_method
+    ),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
@@ -110,15 +116,17 @@ function conjugate_gradient_descent!(
 end
 function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState)
     cgs.X = get_gradient(amp, cgs.p)
-    cgs.δ = -cgs.X
-    return cgs.β = 0.0
+    cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)
+    # remember the first gradient in coefficient calculation
+    cgs.coefficient(amp, cgs, 0)
+    cgs.β = 0.0
+    return cgs
 end
 function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i)
     M = get_manifold(amp)
-    p_old = cgs.p
-    retract!(
-        M, cgs.p, cgs.p, get_stepsize(amp, cgs, i, cgs.δ) * cgs.δ, cgs.retraction_method
-    )
+    p_old = copy(M, cgs.p)
+    current_stepsize = get_stepsize(amp, cgs, i, cgs.δ)
+    retract!(M, cgs.p, cgs.p, current_stepsize * cgs.δ, cgs.retraction_method)
     get_gradient!(amp, cgs.X, cgs.p)
     cgs.β = cgs.coefficient(amp, cgs, i)
     vector_transport_to!(M, cgs.δ, p_old, cgs.δ, cgs.p, cgs.vector_transport_method)

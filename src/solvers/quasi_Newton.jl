@@ -308,7 +308,6 @@ function update_hessian!(
 )
     M = get_manifold(mp)
     p = get_iterate(st)
-    X = get_gradient(st)
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
@@ -540,12 +539,12 @@ end
 
 # all Cautious Limited Memory
 function update_hessian!(
-    d::QuasiNewtonCautiousDirectionUpdate{QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,VT}},
+    d::QuasiNewtonCautiousDirectionUpdate{<:QuasiNewtonLimitedMemoryDirectionUpdate},
     mp,
     st,
     p_old,
     iter,
-) where {NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod}
+)
     # computing the bound used in the decission rule
     M = get_manifold(mp)
     p = get_iterate(st)

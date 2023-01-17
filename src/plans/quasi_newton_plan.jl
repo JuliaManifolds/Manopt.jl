@@ -414,13 +414,17 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
     > doi: [10.1137/140955483](https://doi.org/10.1137/140955483)
 """
 mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
-    NT<:AbstractQuasiNewtonUpdateRule,T,VT<:AbstractVectorTransportMethod
+    NT<:AbstractQuasiNewtonUpdateRule,
+    T,
+    F,
+    V<:AbstractVector{F},
+    VT<:AbstractVectorTransportMethod,
 } <: AbstractQuasiNewtonDirectionUpdate
     memory_s::CircularBuffer{T}
     memory_y::CircularBuffer{T}
-    ξ::Vector{Float64}
-    ρ::Vector{Float64}
-    scale::Float64
+    ξ::Vector{F}
+    ρ::Vector{F}
+    scale::F
     project::Bool
     vector_transport_method::VT
 end
@@ -432,14 +436,19 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     initial_vector::T=zero_vector(M, p),
     scale=1.0,
     project=true,
-    vector_transport_method::V=default_vector_transport_method(M),
-) where {NT<:AbstractQuasiNewtonUpdateRule,T,V<:AbstractVectorTransportMethod}
-    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,V}(
+    vector_transport_method::VTM=default_vector_transport_method(M),
+) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod}
+    mT = allocate_result_type(
+        M, QuasiNewtonLimitedMemoryDirectionUpdate, (p, initial_vector, scale)
+    )
+    m1 = zeros(mT, memory_size)
+    m2 = zeros(mT, memory_size)
+    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,mT,typeof(m1),VTM}(
         CircularBuffer{T}(memory_size),
         CircularBuffer{T}(memory_size),
-        zeros(memory_size),
-        zeros(memory_size),
-        scale,
+        m1,
+        m2,
+        convert(mT, scale),
         project,
         vector_transport_method,
     )
