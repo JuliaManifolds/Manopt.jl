@@ -1,4 +1,6 @@
-function default_stepsize(M::AbstractManifold, ::Type{<:ConjugateGradientDescentState};
+function default_stepsize(
+    M::AbstractManifold,
+    ::Type{<:ConjugateGradientDescentState};
     retraction_method=default_retraction_method(M),
 )
     # take a default with a slightly defensive initial step size.
@@ -85,7 +87,9 @@ function conjugate_gradient_descent!(
     p;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    stepsize::Stepsize=default_stepsize(M, ConjugateGradientDescentState; retraction_method=retraction_method),
+    stepsize::Stepsize=default_stepsize(
+        M, ConjugateGradientDescentState; retraction_method=retraction_method
+    ),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
