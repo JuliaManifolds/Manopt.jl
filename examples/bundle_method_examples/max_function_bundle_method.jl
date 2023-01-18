@@ -5,7 +5,7 @@ l = Int(1e2)
 r_backend = ManifoldDiff.RiemannianProjectionBackend(
     ManifoldDiff.FiniteDifferencesBackend()
 )
-M = SymmetricPositiveDefinite(27)
+M = SymmetricPositiveDefinite(3)
 data = [rand(M; σ=0.4) for i in 1:l]
 
 F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)

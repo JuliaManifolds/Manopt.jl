@@ -59,10 +59,10 @@ function plot_graphs(m::Int)
     p1 = plot(
         [3:m],
         [t1 t2];
-        title="Mean distance between bundle and subgradient methods",
+        title="f = max{d,d^2} bundle and subgradient methods",
         label=["Hyperbolic Space" "Sym Pos Def Matirces"],
         xlabel="Dimension",
-        ylabel="Mean distance (10 loops)",
+        ylabel="Mean distance bundle-subgrad",
         legend=:outertop,
     )
 
