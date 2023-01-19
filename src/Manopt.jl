@@ -154,6 +154,7 @@ include("helpers/checks.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
+include("deprecated.jl")
 
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
@@ -329,7 +330,7 @@ export DirectionUpdateRule,
     IdentityUpdateRule, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,
-    HeestenesStiefelCoefficient,
+    HestenesStiefelCoefficient,
     FletcherReevesCoefficient,
     PolakRibiereCoefficient,
     ConjugateDescentCoefficient,

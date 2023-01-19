@@ -25,7 +25,7 @@ ConjugateDescentCoefficient
 DaiYuanCoefficient
 FletcherReevesCoefficient
 HagerZhangCoefficient
-HeestenesStiefelCoefficient
+HestenesStiefelCoefficient
 LiuStoreyCoefficient
 PolakRibiereCoefficient
 SteepestDirectionUpdateRule

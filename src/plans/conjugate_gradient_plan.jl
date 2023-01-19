@@ -302,7 +302,7 @@ function (u::HagerZhangCoefficient)(
 end
 
 @doc raw"""
-    HeestenesStiefelCoefficient <: DirectionUpdateRule
+    HestenesStiefelCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
@@ -321,7 +321,7 @@ Then the update reads
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 # Constructor
-    HeestenesStiefelCoefficient(
+    HestenesStiefelCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
         a::StoreStateAction=()
     )
@@ -336,18 +336,18 @@ See also [`conjugate_gradient_descent`](@ref)
     > J. Research Nat. Bur. Standards, 49 (1952), pp. 409–436.
     > doi: [10.6028/jres.049.044](http://dx.doi.org/10.6028/jres.049.044)
 """
-mutable struct HeestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
+mutable struct HestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     transport_method::TVTM
     storage::StoreStateAction
-    function HeestenesStiefelCoefficient(
+    function HestenesStiefelCoefficient(
         transport_method::AbstractVectorTransportMethod=ParallelTransport(),
         storage_action::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
     )
         return new{typeof(transport_method)}(transport_method, storage_action)
     end
 end
-function (u::HeestenesStiefelCoefficient)(
+function (u::HestenesStiefelCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)

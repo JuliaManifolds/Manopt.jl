@@ -66,7 +66,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     @test cgs.coefficient(dmp, cgs, 2) ==
         dot(diff, grad_2) / denom - 2 * ndiffsq * dot(δ1, grad_2) / denom^2
 
-    dU = HeestenesStiefelCoefficient()
+    dU = HestenesStiefelCoefficient()
     O = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
     O.X = grad_1
     O.δ = δ1
