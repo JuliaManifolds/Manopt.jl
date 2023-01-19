@@ -2,7 +2,6 @@
 title: "Get Started: Optimize!"
 bibliography: ../bib/manopt-bibliography.yaml
 csl: ../bib/harvard1.csl
-format: gfm
 ---
 
 In this tutorial, we will both introduce the basics of optimisation on manifolds as well as
@@ -11,9 +10,9 @@ how to use [`Manopt.jl`](https://manoptjl.org) to perform optimisation on manifo
 For more theoretical background, see e.g. [@doCarmo1992] for an introduction to Riemannian manifolds
 and [@AbsilMahonySepulchre2008] or [@Boumal2023] to read more about optimisation thereon.
 
-Let ``\mathcal M`` denote a [Riemannian manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
-and let ``f\colon \mathcal M → ℝ`` be a cost function.
-We aim to compute a point ``p^*`` where ``f`` is _minimal_ or in other words ``p^*`` is a _minimizer_ of ``f``.
+Let$\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
+and let$f\colon \mathcal M → ℝ$ be a cost function.
+We aim to compute a point$p^*$ where$f$ is _minimal_ or in other words$p^*$ is a _minimizer_ of$f$.
 
 We also write this as
 
@@ -21,27 +20,27 @@ We also write this as
     \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
 ```
 
-and would like to find ``p^*`` numerically.
+and would like to find$p^*$ numerically.
 As an example we take the generalisation of the [(arithemtic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
-In the Euclidean case with ``d\in\mathbb N``, that is for ``n\in \mathbb N`` data points ``y_1,\ldots,y_n \in \mathbb R^d`` the mean
+In the Euclidean case with$d\in\mathbb N$, that is for$n\in \mathbb N$ data points$y_1,\ldots,y_n \in \mathbb R^d$ the mean
 
-````
+```math
   \sum_{i=1}^n y_i
-````
+```
 
 
-can not be directly generalised to data ``q_1,\ldots,q_n``, since on a manifold we do not have an addition.
+can not be directly generalised to data$q_1,\ldots,q_n$, since on a manifold we do not have an addition.
 But the mean can also be charcterised as
 
-````
+```math
   \operatorname*{arg\,min}_{x\in\mathbb R^d} \frac{1}{2}\sum_{i=1}^n \lVert x - y_i\rVert^2
-````
+```
 
-and using the Riemannian distance ``d_\mathcal M``, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [@Karcher1977]
+and using the Riemannian distance$d_\mathcal M$, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [@Karcher1977]
 
-````
+```math
   \operatorname*{arg\,min}_{p\in\mathbb R^d} \sum_{i=1}^n -\log_p q_i
-````
+```math
 
 Luckily the gradient can be computed and is
 
@@ -61,7 +60,7 @@ using Manopt, Manifolds, Random
 Random.seed!(42);
 ```
 
-Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html) ``\mathcal M = \mathbb S^2`` and we generate some random points “around” some initial point ``p``
+Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html)$\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
 
 ```{julia}
     n = 100
@@ -71,7 +70,7 @@ Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/
     data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
 ```
 
-Now we can define the cost function ``f`` and its (Riemannian) gradient ``\operatorname{grad} f``
+Now we can define the cost function $f$ and its (Riemannian) gradient $\operatorname{grad} f$
 for the Riemannian center of mass:
 
 ```{julia}
@@ -89,6 +88,5 @@ m1 = gradient_descent(M, f, grad_f, data[1])
 
 ## Literature
 
-```rawhtml
 ::: {#refs}
 :::

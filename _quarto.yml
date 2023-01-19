@@ -18,4 +18,9 @@ execute:
   echo: true
   output: true
 
+format:
+  commonmark:
+    variant: -raw_html
+    wrap: none
+
 jupyter: julia-1.8
