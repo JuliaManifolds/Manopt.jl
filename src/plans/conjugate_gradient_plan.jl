@@ -6,7 +6,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Fields
 * `p` – the current iterate, a point on a manifold
-* `X` – the current gradient, also denoted as ``ξ`` or ``ξ_k`` for the gradient in the ``k``th step.
+* `X` – the current gradient, also denoted as ``ξ`` or ``X_k`` for the gradient in the ``k``th step.
 * `δ` – the current descent direction, i.e. also tangent vector
 * `β` – the current update coefficient rule, see .
 * `coefficient` – a [`DirectionUpdateRule`](@ref) function to determine the new `β`
@@ -79,14 +79,14 @@ end
     ConjugateDescentCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
+``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^Flethcer1987] adapted to manifolds:
 
 ```math
 β_k =
-\frac{ \lVert ξ_{k+1} \rVert_{x_{k+1}}^2 }
-{\langle -\delta_k,ξ_k \rangle_{x_k}}.
+\frac{ \lVert X_{k+1} \rVert_{p_{k+1}}^2 }
+{\langle -\delta_k,X_k \rangle_{p_k}}.
 ```
 
 See also [`conjugate_gradient_descent`](@ref)
@@ -125,19 +125,19 @@ end
     DaiYuanCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
+``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``, based on [^DaiYuan1999] adapted to manifolds:
 
-Let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
+Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
 
 ````math
 β_k =
-\frac{ \lVert ξ_{k+1} \rVert_{x_{k+1}}^2 }
-{\langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}}}.
+\frac{ \lVert X_{k+1} \rVert_{p_{k+1}}^2 }
+{\langle P_{p_{k+1}\gets p_k}\delta_k, \nu_k \rangle_{p_{k+1}}}.
 ````
 
 See also [`conjugate_gradient_descent`](@ref)
@@ -188,13 +188,13 @@ end
     FletcherReevesCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
+``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^FletcherReeves1964] adapted to manifolds:
 
 ````math
 β_k =
-\frac{\lVert ξ_{k+1}\rVert_{x_{k+1}}^2}{\lVert ξ_{k}\rVert_{x_{k}}^2}.
+\frac{\lVert X_{k+1}\rVert_{p_{k+1}}^2}{\lVert X_k\rVert_{x_{k}}^2}.
 ````
 
 See also [`conjugate_gradient_descent`](@ref)
@@ -233,18 +233,18 @@ end
     HagerZhangCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
+``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``, based on [^HagerZhang2005]
-adapted to manifolds: let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
+adapted to manifolds: let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 ````math
 β_k = \Bigl\langle\nu_k -
-\frac{ 2\lVert \nu_k\rVert_{x_{k+1}}^2 }{ \langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}} }
-P_{x_{k+1}\gets x_k}\delta_k,
-\frac{ξ_{k+1}}{ \langle P_{x_{k+1}\gets x_k}\delta_k, \nu_k \rangle_{x_{k+1}} }
-\Bigr\rangle_{x_{k+1}}.
+\frac{ 2\lVert \nu_k\rVert_{p_{k+1}}^2 }{ \langle P_{p_{k+1}\gets p_k}\delta_k, \nu_k \rangle_{p_{k+1}} }
+P_{p_{k+1}\gets p_k}\delta_k,
+\frac{X_{k+1}}{ \langle P_{p_{k+1}\gets p_k}\delta_k, \nu_k \rangle_{p_{k+1}} }
+\Bigr\rangle_{p_{k+1}}.
 ````
 
 This method includes a numerical stability proposed by those authors.
@@ -305,17 +305,17 @@ end
     HeestenesStiefelCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
+``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^HeestensStiefel1952]
 adapted to manifolds as follows:
 
-Let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``.
+Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``.
 Then the update reads
 
 ````math
-β_k = \frac{\langle ξ_{k+1}, \nu_k \rangle_{x_{k+1}} }
-    { \langle P_{x_{k+1}\gets x_k} \delta_k, \nu_k\rangle_{x_{k+1}} },
+β_k = \frac{\langle X_{k+1}, \nu_k \rangle_{p_{k+1}} }
+    { \langle P_{p_{k+1}\gets p_k} \delta_k, \nu_k\rangle_{p_{k+1}} },
 ````
 
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
@@ -368,20 +368,20 @@ end
     LiuStoreyCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
+``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^LuiStorey1991]
 adapted to manifolds:
 
-Let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
+Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the coefficient reads
 
 ````math
 β_k = -
-\frac{ \langle ξ_{k+1},\nu_k \rangle_{x_{k+1}} }
-{\langle \delta_k,ξ_k \rangle_{x_k}}.
+\frac{ \langle X_{k+1},\nu_k \rangle_{p_{k+1}} }
+{\langle \delta_k,X_k \rangle_{p_k}}.
 ````
 
 See also [`conjugate_gradient_descent`](@ref)
@@ -396,7 +396,7 @@ Construct the Lui Storey coefficient update rule, where the parallel transport i
 default vector transport and a new storage is created by default.
 
 [^LuiStorey1991]:
-    > [Y. Liu and C. Storey, Efficient generalized conjugate gradient algorithms, Part 1: Theory
+    > Y. Liu and C. Storey, Efficient generalized conjugate gradient algorithms, Part 1: Theory
     > J. Optim. Theory Appl., 69 (1991), pp. 129–137.
     > doi: [10.1007/BF00940464](https://doi.org/10.1007/BF00940464)
 """
@@ -429,23 +429,24 @@ end
     PolakRibiereCoefficient <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` o` include the last iterates
-``x_k,ξ_k``, the current iterates ``x_{k+1},ξ_{k+1}`` of the iterate and the gradient, respectively,
+the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
+``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
 and the last update direction ``\delta=\delta_k``,  based on [^PolakRibiere1969][^Polyak1969]
 adapted to manifolds:
 
-Let ``\nu_k = ξ_{k+1} - P_{x_{k+1}\gets x_k}ξ_k``,
+Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 Then the update reads
 
 ````math
 β_k =
-\frac{ \langle ξ_{k+1}, \nu_k \rangle_{x_{k+1}} }
-{\lVert ξ_k \rVert_{x_k}^2 }.
+\frac{ \langle X_{k+1}, \nu_k \rangle_{p_{k+1}} }
+{\lVert X_k \rVert_{p_k}^2 }.
 ````
 
 # Constructor
+
     PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
         a::StoreStateAction=()
@@ -497,7 +498,7 @@ end
     SteepestDirectionUpdateRule <: DirectionUpdateRule
 
 The simplest rule to update is to have no influence of the last direction and
-hence return an update ``β = 0`` for all [`ConjugateGradientDescentState`](@ref)` o`
+hence return an update ``β = 0`` for all [`ConjugateGradientDescentState`](@ref)` cgds`
 
 See also [`conjugate_gradient_descent`](@ref)
 """
@@ -506,4 +507,76 @@ function (u::SteepestDirectionUpdateRule)(
     ::DefaultManoptProblem, ::ConjugateGradientDescentState, i
 )
     return 0.0
+end
+
+@doc raw"""
+    ConjugateGradientRestart <: DirectionUpdateRule
+
+An update rule might require a restart, that is one gradient step, if the last two gradients
+are nearly orthogonal, cf. [^HagerZhang2006], page 12 (in the pdf, 46 in Journal page numbers).
+This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
+
+When obtain from the [`ConjugateGradientDescentState`](@ref)` cgs` the last
+``p_k,X_k`` and the current ``p_{k+1},X_{k+1}`` iterate and the gradient, respectively.
+
+Then a restart is performed, i.e. ``β_k = 0`` returned if
+
+```math
+    \frac{ ⟨X_{k+1}, P_{p_{k+1}\gets p_k}X_k⟩}{\lVert X_k \rVert_{p_k}} > ξ,
+```
+where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``,
+and ``ξ`` is the `threshold`.
+
+# Constructor
+
+    PolakRibiereCoefficient(
+        direction_update::D,
+        threshold=Inf;
+        manifold = DefaultManifold(),
+        vector_transport_method::V=default_vector_transport_method(manifold),
+        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
+    )
+
+[^HagerZhang2006]:
+    > W. W. Hager and H. Zhang, A Survey of Nonlinear Conjugate Gradient Methods
+    > Pacific Journal of Optimization, Vol. 2, 2006, pp. 35-58.
+    > url: [http://www.yokohamapublishers.jp/online2/pjov2-1.html](http://www.yokohamapublishers.jp/online2/pjov2-1.html)
+"""
+mutable struct ConjugateGradientRestart{
+    DUR<:DirectionUpdateRule,VT<:AbstractVectorTransportMethod,F
+} <: DirectionUpdateRule
+    direction_update::DUR
+    storage::StoreStateAction
+    threshold::F
+    vector_transport_method::VT
+    function ConjugateGradientRestart(
+        direction_update::D,
+        threshold=Inf;
+        manifold=DefaultManifold(),
+        vector_transport_method::V=default_vector_transport_method(manifold),
+        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
+    ) where {D<:DirectionUpdateRule,V<:AbstractVectorTransportMethod}
+        return new{D,V,typeof(threshold)}(
+            direction_update, a, threshold, vector_transport_method
+        )
+    end
+end
+function (u::ConjugateGradientRestart)(
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
+)
+    M = get_manifold(amp)
+    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
+        update_storage!(u.storage, cgs) # if not given store current as old
+    end
+    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :gradient])
+
+    # call actual rule
+    β = u.direction_update(amp, cgs, i)
+    # update storage only after that in case they share
+    update_storage!(u.storage, cgs)
+
+    denom = norm(M, cgs.p, cgs.X)
+    Xoldpk = vector_transport_to(M, p_old, X_old, cgr.p, u.vector_transport_method)
+    nom = inner(M, cgs.p, cgs.X, Xoldpk)
+    return (nom / denom) > u.threshold ? zero(β) : β
 end
