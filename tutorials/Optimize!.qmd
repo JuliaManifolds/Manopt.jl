@@ -38,14 +38,14 @@ and using the Riemannian distance $d_\mathcal M$, this can be written on Riemann
 
 ```math
   \operatorname*{arg\,min}_{p\in\mathbb R^d}
-  \frac{1}{n} \sum_{i=1}^n d_{\mathcal M}(p, q_i)
-```math
+  \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
+```
 
 Fortunately the gradient can be computed and is
 
 ```math
   \operatorname*{arg\,min}_{p\in\mathbb R^d} \frac{1}{n} \sum_{i=1}^n -\log_p q_i
-```math
+```
 
 ## Loading the necessary packages
 
@@ -57,13 +57,16 @@ using Pkg;
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
+Let's assume you have already installed both Manotp and Manifolds in Julia (using e.g. `using Pkg; Pkg.add(["Manopt", "Manifolds"])`).
+Then we can get started by loading both packages – and `Random` for persistency in this tutorial.
+
 ```{julia}
-#| output: false
 using Manopt, Manifolds, Random
 Random.seed!(42);
 ```
 
-Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html)$\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
+Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html)
+$\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
 
 ```{julia}
     n = 100
@@ -81,13 +84,33 @@ f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 ```
 
-and just call [`gradient_descent`]().
+and just call [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/).
 For a first start, we do not have to provide more than the manifold, the cost, the gradient,
 and a startig point, which we just set to the first data point
 
 ```{julia}
 m1 = gradient_descent(M, f, grad_f, data[1])
 ```
+
+This is nice as a first run and agrees with the [`mean`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.mean-Tuple{AbstractManifold,%20Vararg{Any}})
+
+```{julia}
+m2 = mean(M, data)
+distance(M, m1, m2)
+```
+
+
+On the other hand we do not get much insight into the run of the solber.
+We could add some debug output first
+
+```{julia}
+m1 = gradient_descent(
+  M, f, grad_f, data[1];
+  debug = [:Iteration, " ", :Cost, " | ", :Change, :Stop, "\n"],
+  )
+```
+
+
 
 ## Literature
 

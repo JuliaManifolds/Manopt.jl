@@ -19,7 +19,7 @@ execute:
 
 format:
   commonmark:
-    variant: -raw_html
+    variant: -raw_html+tex_math_dollars
     wrap: preserve
 
 jupyter: julia-1.8
