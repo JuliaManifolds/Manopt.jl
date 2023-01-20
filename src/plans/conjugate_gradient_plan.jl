@@ -576,7 +576,7 @@ function (u::ConjugateGradientRestart)(
     update_storage!(u.storage, cgs)
 
     denom = norm(M, cgs.p, cgs.X)
-    Xoldpk = vector_transport_to(M, p_old, X_old, cgr.p, u.vector_transport_method)
+    Xoldpk = vector_transport_to(M, p_old, X_old, cgs.p, u.vector_transport_method)
     nom = inner(M, cgs.p, cgs.X, Xoldpk)
     return (nom / denom) > u.threshold ? zero(β) : β
 end
