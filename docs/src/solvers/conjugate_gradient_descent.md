@@ -21,6 +21,7 @@ ConjugateGradientDescentState
 The update rules act as [`DirectionUpdateRule`](@ref), which internally always first evaluate the gradient itself.
 
 ```@docs
+ConjugateGradientRestart
 ConjugateDescentCoefficient
 DaiYuanCoefficient
 FletcherReevesCoefficient
