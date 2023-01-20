@@ -512,7 +512,7 @@ end
 @doc raw"""
     ConjugateGradientRestart <: DirectionUpdateRule
 
-An update rule might require a restart, that is one gradient step, if the last two gradients
+An update rule might require a restart, that is using pure gradient as descent direction, if the last two gradients
 are nearly orthogonal, cf. [^HagerZhang2006], page 12 (in the pdf, 46 in Journal page numbers).
 This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
 
@@ -532,7 +532,7 @@ and ``ξ`` is the `threshold`.
     PolakRibiereCoefficient(
         direction_update::D,
         threshold=Inf;
-        manifold = DefaultManifold(),
+        manifold::AbstractManifold = DefaultManifold(),
         vector_transport_method::V=default_vector_transport_method(manifold),
         a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
     )
@@ -552,7 +552,7 @@ mutable struct ConjugateGradientRestart{
     function ConjugateGradientRestart(
         direction_update::D,
         threshold=Inf;
-        manifold=DefaultManifold(),
+        manifold::AbstractManifold=DefaultManifold(),
         vector_transport_method::V=default_vector_transport_method(manifold),
         a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
     ) where {D<:DirectionUpdateRule,V<:AbstractVectorTransportMethod}
@@ -577,6 +577,6 @@ function (u::ConjugateGradientRestart)(
 
     denom = norm(M, cgs.p, cgs.X)
     Xoldpk = vector_transport_to(M, p_old, X_old, cgs.p, u.vector_transport_method)
-    nom = inner(M, cgs.p, cgs.X, Xoldpk)
-    return (nom / denom) > u.threshold ? zero(β) : β
+    num = inner(M, cgs.p, cgs.X, Xoldpk)
+    return (num / denom) > u.threshold ? zero(β) : β
 end
