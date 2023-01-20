@@ -530,7 +530,7 @@ The default threshold is chosen as `0.2` as recommended in `
 
 # Constructor
 
-    PolakRibiereCoefficient(
+    ConjugateGradientRestart(
         direction_update::D,
         threshold=0.2;
         manifold::AbstractManifold = DefaultManifold(),
