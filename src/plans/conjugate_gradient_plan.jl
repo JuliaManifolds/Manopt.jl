@@ -526,12 +526,13 @@ Then a restart is performed, i.e. ``β_k = 0`` returned if
 ```
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``,
 and ``ξ`` is the `threshold`.
+The default threshold is chosen as `0.2` as recommended in `
 
 # Constructor
 
     PolakRibiereCoefficient(
         direction_update::D,
-        threshold=Inf;
+        threshold=0.2;
         manifold::AbstractManifold = DefaultManifold(),
         vector_transport_method::V=default_vector_transport_method(manifold),
         a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
@@ -539,8 +540,13 @@ and ``ξ`` is the `threshold`.
 
 [^HagerZhang2006]:
     > W. W. Hager and H. Zhang, A Survey of Nonlinear Conjugate Gradient Methods
-    > Pacific Journal of Optimization, Vol. 2, 2006, pp. 35-58.
+    > Pacific Journal of Optimization 2, 2006, pp. 35-58.
     > url: [http://www.yokohamapublishers.jp/online2/pjov2-1.html](http://www.yokohamapublishers.jp/online2/pjov2-1.html)
+
+[^Powell1977]:
+    > M.J.D. Powell: Restart Procedures for the Conjugate Gradient Method,
+    > Methematical Programming 12, 1977, pp. 241–254
+    > doi: [10.1007/BF01593790](https://doi.org/10.1007/BF01593790)
 """
 mutable struct ConjugateGradientRestart{
     DUR<:DirectionUpdateRule,VT<:AbstractVectorTransportMethod,F
@@ -551,7 +557,7 @@ mutable struct ConjugateGradientRestart{
     vector_transport_method::VT
     function ConjugateGradientRestart(
         direction_update::D,
-        threshold=Inf;
+        threshold=0.2;
         manifold::AbstractManifold=DefaultManifold(),
         vector_transport_method::V=default_vector_transport_method(manifold),
         a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
