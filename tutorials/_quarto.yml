@@ -8,13 +8,18 @@ crossref:
 bibliography:
   - ../CITATION.bib
   - ../bib/manopt-bibliography.yaml
+csl: ../bib/harvard1.csl
 fig-format: png
-format: gfm
 
 execute:
   freeze: auto
   eval: true
   echo: true
   output: true
+
+format:
+  commonmark:
+    variant: -raw_html
+    wrap: preserve
 
 jupyter: julia-1.8
