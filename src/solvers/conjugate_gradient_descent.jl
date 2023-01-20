@@ -24,7 +24,7 @@ Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a
 [`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
-These can all be combined with a [`ConjugateGradientRestart`](@ref) rule.
+These can all be combined with a [`ConjugateGradientBealeRestart`](@ref) rule.
 
 They all compute ``β_k`` such that this algorithm updates the search direction as
 ````math

@@ -510,10 +510,11 @@ function (u::SteepestDirectionUpdateRule)(
 end
 
 @doc raw"""
-    ConjugateGradientRestart <: DirectionUpdateRule
+    ConjugateGradientBealeRestart <: DirectionUpdateRule
 
-An update rule might require a restart, that is using pure gradient as descent direction, if the last two gradients
-are nearly orthogonal, cf. [^HagerZhang2006], page 12 (in the pdf, 46 in Journal page numbers).
+An update rule might require a restart, that is using pure gradient as descent direction,
+if the last two gradients are nearly orthogonal, cf. [^HagerZhang2006], page 12 (in the pdf, 46 in Journal page numbers).
+this method is names after E. Beale [^Beale1972].
 This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
 
 When obtain from the [`ConjugateGradientDescentState`](@ref)` cgs` the last
@@ -526,11 +527,11 @@ Then a restart is performed, i.e. ``β_k = 0`` returned if
 ```
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``,
 and ``ξ`` is the `threshold`.
-The default threshold is chosen as `0.2` as recommended in `
+The default threshold is chosen as `0.2` as recommended in [^Powell1977].
 
 # Constructor
 
-    ConjugateGradientRestart(
+    ConjugateGradientBealeRestart(
         direction_update::D,
         threshold=0.2;
         manifold::AbstractManifold = DefaultManifold(),
@@ -538,24 +539,29 @@ The default threshold is chosen as `0.2` as recommended in `
         a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
     )
 
+[^Beale1972]:
+    > E.M.L. Beale:, _A derivation of conjugate gradients_,
+    > in: F.A. Lootsma, ed., Numerical methods for nonlinear optimization,
+    > Academic Press, London, 1972, pp. 39-43, ISBN 9780124556508.
+
 [^HagerZhang2006]:
-    > W. W. Hager and H. Zhang, A Survey of Nonlinear Conjugate Gradient Methods
+    > W. W. Hager and H. Zhang, _A Survey of Nonlinear Conjugate Gradient Methods_
     > Pacific Journal of Optimization 2, 2006, pp. 35-58.
     > url: [http://www.yokohamapublishers.jp/online2/pjov2-1.html](http://www.yokohamapublishers.jp/online2/pjov2-1.html)
 
 [^Powell1977]:
-    > M.J.D. Powell: Restart Procedures for the Conjugate Gradient Method,
+    > M.J.D. Powell, _Restart Procedures for the Conjugate Gradient Method_,
     > Methematical Programming 12, 1977, pp. 241–254
     > doi: [10.1007/BF01593790](https://doi.org/10.1007/BF01593790)
 """
-mutable struct ConjugateGradientRestart{
+mutable struct ConjugateGradientBealeRestart{
     DUR<:DirectionUpdateRule,VT<:AbstractVectorTransportMethod,F
 } <: DirectionUpdateRule
     direction_update::DUR
     storage::StoreStateAction
     threshold::F
     vector_transport_method::VT
-    function ConjugateGradientRestart(
+    function ConjugateGradientBealeRestart(
         direction_update::D,
         threshold=0.2;
         manifold::AbstractManifold=DefaultManifold(),
@@ -567,7 +573,7 @@ mutable struct ConjugateGradientRestart{
         )
     end
 end
-function (u::ConjugateGradientRestart)(
+function (u::ConjugateGradientBealeRestart)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)

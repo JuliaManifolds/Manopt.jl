@@ -337,7 +337,7 @@ export DirectionUpdateRule,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
     HagerZhangCoefficient,
-    ConjugateGradientRestart
+    ConjugateGradientBealeRestart
 #
 # Solvers
 export augmented_Lagrangian_method,

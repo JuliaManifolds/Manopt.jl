@@ -6,8 +6,8 @@ struct DummyCGCoeff <: DirectionUpdateRule end
 @testset "Test Restart CG" begin
     M = Euclidean(2)
     du = DummyCGCoeff()
-    dur2 = ConjugateGradientRestart(du, 0.3)
-    dur3 = ConjugateGradientRestart(du, 0.1)
+    dur2 = ConjugateGradientBealeRestart(du, 0.3)
+    dur3 = ConjugateGradientBealeRestart(du, 0.1)
     f(M, p) = norm(M, p)^2
     grad_f(M, p) = p
     p0 = [1.0, 0.0]
