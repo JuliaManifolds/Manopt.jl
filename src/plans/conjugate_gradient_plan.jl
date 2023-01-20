@@ -514,7 +514,7 @@ end
 
 An update rule might require a restart, that is using pure gradient as descent direction,
 if the last two gradients are nearly orthogonal, cf. [^HagerZhang2006], page 12 (in the pdf, 46 in Journal page numbers).
-this method is names after E. Beale [^Beale1972].
+This method is named after E. Beale [^Beale1972].
 This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
 
 When obtain from the [`ConjugateGradientDescentState`](@ref)` cgs` the last
