@@ -1,7 +1,5 @@
 ---
 title: "Get Started: Optimize!"
-bibliography: ../bib/manopt-bibliography.yaml
-csl: ../bib/harvard1.csl
 ---
 
 In this tutorial, we will both introduce the basics of optimisation on manifolds as well as

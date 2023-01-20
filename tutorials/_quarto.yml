@@ -8,7 +8,6 @@ crossref:
 bibliography:
   - ../CITATION.bib
   - ../bib/manopt-bibliography.yaml
-csl: nature.csl
 fig-format: png
 format: gfm
 

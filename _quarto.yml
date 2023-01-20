@@ -9,7 +9,7 @@ crossref:
 bibliography:
   - CITATION.bib
   - bib/manopt-bibliography.yaml
-csl: nature.csl
+csl: journal-of-the-royal-statistical-society.csl
 fig-format: png
 
 execute:
