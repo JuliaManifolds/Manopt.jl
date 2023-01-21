@@ -35,7 +35,7 @@ mutable struct SubGradientMethodState{
         stopping_criterion::SC=StopAfterIteration(5000),
         stepsize::S=default_stepsize(M, SubGradientMethodState),
         X::T=zero_vector(M, p),
-        retraction_method::TR=default_retraction_method(M),
+        retraction_method::TR=default_retraction_method(M, typeof(p)),
     ) where {
         TM<:AbstractManifold,
         P,
@@ -86,7 +86,7 @@ not necessarily deterministic.
    allocation (default) form `∂F(M, y)` or [`InplaceEvaluation`](@ref) in place, i.e. is
    of the form `∂F!(M, X, x)`.
 * `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref)
-* `retraction` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 ...
@@ -124,7 +124,7 @@ function subgradient_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    retraction_method::TRetr=default_retraction_method(M),
+    retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(M, SubGradientMethodState),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),

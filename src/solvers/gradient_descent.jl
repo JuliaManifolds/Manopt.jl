@@ -12,7 +12,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
 * `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
-* `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use, defaults to
   the default set for your manifold.
 
 # Constructor
@@ -37,11 +37,12 @@ mutable struct GradientDescentState{
     stop::TStop
     retraction_method::TRTM
     function GradientDescentState{P,T}(
+        M::AbstractManifold,
         p::P,
         X::T,
         stop::StoppingCriterion=StopAfterIteration(100),
         step::Stepsize=default_stepsize(M, GradientDescentState),
-        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         direction::DirectionUpdateRule=IdentityUpdateRule(),
     ) where {P,T}
         o = new{P,T,typeof(stop),typeof(step),typeof(retraction_method)}()
@@ -59,14 +60,14 @@ function GradientDescentState(
     p::P=rand(M);
     X::T=zero_vector(M, p),
     stopping_criterion::StoppingCriterion=StopAfterIteration(100),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, GradientDescentState; retraction_method=retraction_method
     ),
     direction::DirectionUpdateRule=IdentityUpdateRule(),
 ) where {P,T}
     return GradientDescentState{P,T}(
-        p, X, stopping_criterion, stepsize, retraction_method, direction
+        M, p, X, stopping_criterion, stepsize, retraction_method, direction
     )
 end
 function (r::IdentityUpdateRule)(mp::AbstractManoptProblem, s::GradientDescentState, i)

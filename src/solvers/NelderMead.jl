@@ -15,7 +15,7 @@ Construct a  simplex using ``n+1`` random points from manifold `M`, where ``n`` 
         p,
         B::AbstractBasis=DefaultOrthonormalBasis();
         a::Real=0.025,
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     )
 
 Construct a simplex from a basis `B` with one point being `p` and other points
@@ -36,7 +36,7 @@ function NelderMeadSimplex(
     p,
     B::AbstractBasis=DefaultOrthonormalBasis();
     a::Real=0.025,
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
 )
     M_dim = manifold_dimension(M)
     vecs = [
@@ -66,8 +66,8 @@ after the description
 * `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
 * `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
 * `p` – (`copy(population.pts[1])`) - a field to collect the current best value (initialized to _some_ point here)
-* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use.
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use.
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 
 # Constructors
 
@@ -107,9 +107,9 @@ mutable struct NelderMeadState{
         γ=2.0,
         ρ=1 / 2,
         σ=1 / 2,
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            M
+            M, typeof(p)
         ),
         p::T=copy(M, population.pts[1]),
     ) where {T}
@@ -169,8 +169,8 @@ and
 * `γ` – (`2.`) expansion parameter (``γ``)
 * `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
 * `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
-* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
@@ -210,9 +210,9 @@ function NelderMead!(
     γ=2.0,
     ρ=1 / 2,
     σ=1 / 2,
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M
+        M, typeof(p)
     ),
     kwargs..., #collect rest
 ) where {TF}

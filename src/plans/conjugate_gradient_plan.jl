@@ -12,7 +12,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 * `coefficient` – a [`DirectionUpdateRule`](@ref) function to determine the new `β`
 * `stepsize` – a [`Stepsize`](@ref) function
 * `stop` – a [`StoppingCriterion`](@ref)
-* `retraction_method` – (`default_retraction_method(M)`) a type of retraction
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a type of retraction
 
 
 # See also
@@ -68,8 +68,8 @@ function ConjugateGradientDescentState(
     sC::StoppingCriterion,
     s::Stepsize,
     dU::DirectionUpdateRule,
-    retr::AbstractRetractionMethod=default_retraction_method(M),
-    vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    vtr::AbstractVectorTransportMethod=default_vector_transport_method(M, typeof(p)),
     initial_gradient::T=zero_vector(M, p),
 ) where {P,T}
     return ConjugateGradientDescentState{P,T}(M, p, sC, s, dU, retr, vtr, initial_gradient)

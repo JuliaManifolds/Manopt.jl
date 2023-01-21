@@ -15,9 +15,9 @@ Describes a particle swarm optimizing algorithm, with
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
 * `stopping_criterion` – (`[`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
-* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M, eltype(x))`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, eltype(x))`) an inverse retraction to use.
+* `vector_transport_method` - (`default_vector_transport_method(M, eltype(x))`) a vector transport to use
 
 # Constructor
 
@@ -55,24 +55,24 @@ mutable struct ParticleSwarmState{
 
     function ParticleSwarmState(
         M::AbstractManifold,
-        x0::AbstractVector,
+        x::AbstractVector,
         velocity::AbstractVector;
         inertia=0.65,
         social_weight=1.4,
         cognitive_weight=1.4,
         stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
                                               StopWhenChangeLess(1e-4),
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(x)),
         inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            M
+            M, eltype(x)
         ),
         vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-            M
+            M, eltype(x)
         ),
     )
         o = new{
-            typeof(x0),
-            eltype(x0),
+            typeof(x),
+            eltype(x),
             typeof(velocity),
             typeof(inertia + social_weight + cognitive_weight),
             typeof(stopping_criterion),
@@ -80,7 +80,7 @@ mutable struct ParticleSwarmState{
             typeof(inverse_retraction_method),
             typeof(vector_transport_method),
         }()
-        o.x = x0
+        o.x = x
         o.p = deepcopy(x0)
         o.velocity = velocity
         o.inertia = inertia
@@ -160,14 +160,14 @@ i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i
 
 # Optional
 * `n` - (`100`) number of random initial positions of x0
-* `x0` – the initial positions of each particle in the swarm ``x_k^{(0)} ∈ \mathcal M`` for ``k = 1, \dots, n``, per default these are n random points on `M`
+* `x` – the initial positions of each particle in the swarm ``x_k^{(0)} ∈ \mathcal M`` for ``k = 1, \dots, n``, per default these are n random points on `M`
 * `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per inital position
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an `inverse_retraction(M,x,y)` to use.
-* `vector_transport_mthod` - (`default_vector_transport_method(M)`) a vector transport method to use.
+* `retraction_method` – (`default_retraction_method(M, eltype(x))`) a `retraction(M,x,ξ)` to use.
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, eltype(x))`) an `inverse_retraction(M,x,y)` to use.
+* `vector_transport_mthod` - (`default_vector_transport_method(M, eltype(x))`) a vector transport method to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
@@ -209,19 +209,19 @@ function particle_swarm!(
     M::AbstractManifold,
     f::TF;
     n::Int=100,
-    x0::AbstractVector=[rand(M) for i in 1:n],
-    velocity::AbstractVector=[rand(M; vector_at=y) for y in x0],
+    x::AbstractVector=[rand(M) for i in 1:n],
+    velocity::AbstractVector=[rand(M; vector_at=y) for y in x],
     inertia::Real=0.65,
     social_weight::Real=1.4,
     cognitive_weight::Real=1.4,
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
                                           StopWhenChangeLess(1e-4),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(x)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M
+        M, etype(x)
     ),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-        M
+        M, eltype(x)
     ),
     kwargs..., #collect rest
 ) where {TF}
@@ -229,7 +229,7 @@ function particle_swarm!(
     mp = DefaultManoptProblem(M, dmco)
     o = ParticleSwarmState(
         M,
-        x0,
+        x,
         velocity;
         inertia=inertia,
         social_weight=social_weight,

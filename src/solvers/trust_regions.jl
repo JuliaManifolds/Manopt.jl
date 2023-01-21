@@ -115,7 +115,7 @@ function TrustRegionsState(
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
     max_trust_region_radius::R=sqrt(manifold_dimension(M)),
     trust_region_radius::R=max_trust_region_radius / 8,
-    retraction_method::RTR=default_retraction_method(M),
+    retraction_method::RTR=default_retraction_method(M, typeof(p)),
     reduction_threshold::R=0.1,
     augmentation_threshold::R=0.75,
     project!::Proj=copyto!,
@@ -182,7 +182,7 @@ see [`truncated_conjugate_gradient_descent`](@ref).
 * `project!` : (`copyto!`) specify a projection operation for tangent vectors within the TCG
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
-* `retraction` – (`default_retraction_method(M)`) approximation of the exponential map
+* `retraction` – (`default_retraction_method(M, typeof(p))`) approximation of the exponential map
 * `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
@@ -257,7 +257,7 @@ function trust_regions!(
     else
         (M, p, X) -> X
     end,
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
                                           StopWhenGradientNormLess(1e-6),
     max_trust_region_radius=sqrt(manifold_dimension(M)),
