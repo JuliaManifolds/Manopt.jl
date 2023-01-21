@@ -107,9 +107,11 @@ mutable struct NelderMeadState{
         γ=2.0,
         ρ=1 / 2,
         σ=1 / 2,
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(
+            M, eltype(population.pts)
+        ),
         inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            M, typeof(p)
+            M, eltype(population.pts)
         ),
         p::T=copy(M, population.pts[1]),
     ) where {T}
@@ -210,9 +212,11 @@ function NelderMead!(
     γ=2.0,
     ρ=1 / 2,
     σ=1 / 2,
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(
+        M, eltype(population.pts)
+    ),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M, typeof(p)
+        M, eltype(population.pts)
     ),
     kwargs..., #collect rest
 ) where {TF}

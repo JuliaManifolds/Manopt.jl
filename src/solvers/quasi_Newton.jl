@@ -53,8 +53,8 @@ mutable struct QuasiNewtonState{
 end
 function QuasiNewtonState(
     M::AbstractManifold,
-    x::P;
-    initial_vector::T=zero_vector(M, x),
+    p::P;
+    initial_vector::T=zero_vector(M, p),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
         M, x, InverseBFGS(), 20; vector_transport_method=vector_transport_method
@@ -76,9 +76,9 @@ function QuasiNewtonState(
     RM<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    sk_init = zero_vector(M, x)
+    sk_init = zero_vector(M, p)
     return QuasiNewtonState{P,typeof(sk_init),D,SC,S,RM,VTM}(
-        x,
+        p,
         initial_vector,
         sk_init,
         copy(M, sk_init),
@@ -103,8 +103,8 @@ end
 function default_stepsize(
     M::AbstractManifold,
     ::Type{QuasiNewtonState};
-    vector_transport_method=default_vector_transport_method(M, typeof(p)),
-    retraction_method=default_retraction_method(M, typeof(p)),
+    vector_transport_method=default_vector_transport_method(M),
+    retraction_method=default_retraction_method(M),
 )
     return WolfePowellLinesearch(
         M;

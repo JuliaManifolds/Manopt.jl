@@ -81,7 +81,7 @@ mutable struct ParticleSwarmState{
             typeof(vector_transport_method),
         }()
         o.x = x
-        o.p = deepcopy(x0)
+        o.p = deepcopy(x)
         o.velocity = velocity
         o.inertia = inertia
         o.social_weight = social_weight
@@ -218,7 +218,7 @@ function particle_swarm!(
                                           StopWhenChangeLess(1e-4),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(x)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M, etype(x)
+        M, eltype(x)
     ),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, eltype(x)

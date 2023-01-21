@@ -139,11 +139,11 @@ perform a stochastic gradient descent
 the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
 """
 function stochastic_gradient_descent(
-    M::AbstractManifold, gradF::TDF, x; kwargs...
+    M::AbstractManifold, gradF::TDF, p; kwargs...
 ) where {TDF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    return stochastic_gradient_descent!(M, gradF, x_res; kwargs...)
+    q = allocate(p)
+    copyto!(M, q, p)
+    return stochastic_gradient_descent!(M, gradF, q; kwargs...)
 end
 
 @doc raw"""
@@ -163,9 +163,9 @@ for all optional parameters, see [`stochastic_gradient_descent`](@ref).
 function stochastic_gradient_descent!(
     M::AbstractManifold,
     grad_f::TDF,
-    x;
+    p;
     cost::TF=Missing(),
-    direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, x)),
+    direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, p)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
                                           StopWhenGradientNormLess(1e-9),
