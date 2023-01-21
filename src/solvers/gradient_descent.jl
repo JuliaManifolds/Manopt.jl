@@ -105,7 +105,7 @@ with different choices of the stepsize ``s_k`` available (see `stepsize` option 
 * `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `grad_f!(M, X, p)`.
-* `retraction_method` – (`default_retraction_method(M)`) a retraction to use
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a retraction to use
 * `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
   functor.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
@@ -148,7 +148,7 @@ function gradient_descent!(
     F::TF,
     gradF::TDF,
     p;
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, GradientDescentState; retraction_method=retraction_method
     ),

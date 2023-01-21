@@ -161,6 +161,7 @@ A functor representing Armijo line search including the last runs state, i.e. a
 last step size.
 
 # Fields
+
 * `initial_stepsize` – (`1.0`) and initial step size
 * `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
 * `contraction_factor` – (`0.95`) exponent for line search reduction
