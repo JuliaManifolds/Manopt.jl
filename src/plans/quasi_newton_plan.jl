@@ -342,7 +342,7 @@ function QuasiNewtonMatrixDirectionUpdate(
     m::MT,
     ;
     scale::Bool=true,
-    vector_transport_method::V=default_vector_transport_method(M, typeof(p)),
+    vector_transport_method::V=default_vector_transport_method(M),
 ) where {
     U<:AbstractQuasiNewtonUpdateRule,
     MT<:AbstractMatrix,
