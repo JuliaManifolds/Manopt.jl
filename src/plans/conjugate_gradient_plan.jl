@@ -175,7 +175,9 @@ function (u::DaiYuanCoefficient)(
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
-    p_old, X_old, δ_old = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :gradient)
+    δ_old = get_storage(u.storage, :δ)
     update_storage!(u.storage, cgs)
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
@@ -221,10 +223,11 @@ function (u::FletcherReevesCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
+    if !has_storage(u.storage, :Iterate) || !has_storage(u.storage, :gradient)
         update_storage!(u.storage, cgs) # if not given store current as old
     end
-    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :gradient])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :gradient)
     update_storage!(u.storage, cgs)
     return inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, X_old, X_old)
 end
@@ -284,7 +287,9 @@ function (u::HagerZhangCoefficient)(
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
-    p_old, X_old, δ_old = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :gradient)
+    δ_old = get_storage(u.storage, :δ)
     update_storage!(u.storage, cgs)
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
@@ -355,7 +360,9 @@ function (u::HestenesStiefelCoefficient)(
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
-    p_old, X_old, δ_old = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :gradient)
+    δ_old = get_storage(u.storage, :δ)
     update_storage!(u.storage, cgs)
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
     δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.transport_method)
@@ -418,7 +425,9 @@ function (u::LiuStoreyCoefficient)(
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
         update_storage!(u.storage, cgs) # if not given store current as old
     end
-    p_old, X_old, δ_old = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :gradient)
+    δ_old = get_storage(u.storage, :δ)
     update_storage!(u.storage, cgs)
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
     ν = cgs.X - gradienttr # notation y from [HZ06]
@@ -485,7 +494,8 @@ function (u::PolakRibiereCoefficient)(
     if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
         update_storage!(u.storage, cgs) # if not given store current as old
     end
-    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :gradient])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :gradient)
     update_storage!(u.storage, cgs)
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
