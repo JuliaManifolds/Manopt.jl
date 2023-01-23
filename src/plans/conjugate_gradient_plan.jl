@@ -116,7 +116,8 @@ function (u::ConjugateDescentCoefficient)(
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
-    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :Gradient])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
     update_storage!(u.storage, cgs)
     return inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, -cgs.δ, X_old)
 end
@@ -171,7 +172,9 @@ function (u::DaiYuanCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :Gradient, :δ]))
+    if !has_storage(u.storage, :Iterate) ||
+        !has_storage(u.storage, :Gradient) ||
+        !has_storage(u.storage, :δ)
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
@@ -283,7 +286,9 @@ function (u::HagerZhangCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :Gradient, :δ]))
+    if !has_storage(u.storage, :Iterate) ||
+        !has_storage(u.storage, :Gradient) ||
+        !has_storage(u.storage, :δ)
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
@@ -356,7 +361,9 @@ function (u::HestenesStiefelCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :Gradient, :δ]))
+    if !has_storage(u.storage, :Iterate) ||
+        !has_storage(u.storage, :Gradient) ||
+        !has_storage(u.storage, :δ)
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
@@ -422,7 +429,9 @@ function (u::LiuStoreyCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :Gradient, :δ]))
+    if !has_storage(u.storage, :Iterate) ||
+        !has_storage(u.storage, :Gradient) ||
+        !has_storage(u.storage, :δ)
         update_storage!(u.storage, cgs) # if not given store current as old
     end
     p_old = get_storage(u.storage, :Iterate)
@@ -587,10 +596,11 @@ function (u::ConjugateGradientBealeRestart)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :Gradient]))
+    if !has_storage(u.storage, :Iterate) || !has_storage(u.storage, :Gradient)
         update_storage!(u.storage, cgs) # if not given store current as old
     end
-    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :Gradient])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
 
     # call actual rule
     β = u.direction_update(amp, cgs, i)
