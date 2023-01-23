@@ -458,11 +458,13 @@ function (a::NonmonotoneLinesearch)(
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
-    if !all(has_storage.(Ref(a.storage), [:Iterate, :Gradient]))
-        old_x = get_iterate(s)
-        old_gradient = get_gradient(mp, get_iterate(s))
+    if !has_storage(a.storage, :Iterate) || !has_storage(a.storage, :Gradient)
+        p_old = get_iterate(s)
+        X_old = get_gradient(mp, p_old)
     else
-        old_x, old_gradient = get_storage.(Ref(a.storage), [:Iterate, :Gradient])
+        #fetch
+        p_old = get_storage(a.storage, :Iterate)
+        X_old = get_storage(a.storage, :Gradient)
     end
     update_storage!(a.storage, s)
     return a(
@@ -471,8 +473,8 @@ function (a::NonmonotoneLinesearch)(
         x -> get_cost(mp, x),
         get_gradient(mp, get_iterate(s)),
         η,
-        old_x,
-        old_gradient,
+        p_old,
+        X_old,
         i,
     )
 end

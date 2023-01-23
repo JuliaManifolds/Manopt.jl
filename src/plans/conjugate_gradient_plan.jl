@@ -112,7 +112,7 @@ function (u::ConjugateDescentCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :Gradient]))
+    if !has_storage(u.storage, :Iterate) || !has_storage(u.storage, :Gradient)
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
@@ -500,7 +500,7 @@ function (u::PolakRibiereCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :Gradient]))
+    if !has_storage(u.storage, :Iterate) || !has_storage(u.storage, :Gradient)
         update_storage!(u.storage, cgs) # if not given store current as old
     end
     p_old = get_storage(u.storage, :Iterate)
