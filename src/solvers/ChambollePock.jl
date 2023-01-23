@@ -21,14 +21,14 @@ initialized automatically and values with a default may be left out.
 * `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`default_retraction_method(M)`) the retraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse
   retraction to use on the manifold ``\mathcal M``.
-* `inverse_retraction_method_dual` - (`default_inverse_retraction_method(N)`)
+* `inverse_retraction_method_dual` - (`default_inverse_retraction_method(N, typeof(n))`)
   an inverse retraction to use on manifold ``\mathcal N``.
-* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to
+* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to
   use on the manifold ``\mathcal M``.
-* `vector_transport_method_dual` - (`default_vector_transport_method(N)`) a
+* `vector_transport_method_dual` - (`default_vector_transport_method(N, typeof(n))`) a
   vector transport to use on manifold ``\mathcal N``.
 
 where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
@@ -91,11 +91,15 @@ mutable struct ChambollePockState{
         variant::Symbol=:exact,
         update_primal_base::Union{Function,Missing}=missing,
         update_dual_base::Union{Function,Missing}=missing,
-        retraction_method::RM=default_retraction_method(M),
-        inverse_retraction_method::IRM=default_inverse_retraction_method(M),
-        inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(N),
-        vector_transport_method::VTM=default_vector_transport_method(M),
-        vector_transport_method_dual::VTM_Dual=default_vector_transport_method(N),
+        retraction_method::RM=default_retraction_method(M, typeof(p)),
+        inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
+        inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(
+            N, typeof(p)
+        ),
+        vector_transport_method::VTM=default_vector_transport_method(M, typeof(n)),
+        vector_transport_method_dual::VTM_Dual=default_vector_transport_method(
+            N, typeof(n)
+        ),
     ) where {
         P,
         Q,
@@ -149,12 +153,12 @@ Perform the Riemannian Chambolle–Pock algorithm.
 
 Given a `cost` function $\mathcal E:\mathcal M → ℝ$ of the form
 ```math
-\mathcal E(x) = F(x) + G( Λ(x) ),
+\mathcal E(p) = F(p) + G( Λ(p) ),
 ```
 where $F:\mathcal M → ℝ$, $G:\mathcal N → ℝ$,
 and $Λ:\mathcal M → \mathcal N$. The remaining input parameters are
 
-* `x,ξ` primal and dual start points $x∈\mathcal M$ and $ξ∈T_n\mathcal N$
+* `p, X` primal and dual start points $x∈\mathcal M$ and $ξ∈T_n\mathcal N$
 * `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
 * `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m): T_{m}\mathcal M → T_{Λ(m)}\mathcal N$
 * `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
@@ -186,13 +190,13 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
-* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
     > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
@@ -205,8 +209,8 @@ function ChambollePock(
     M::AbstractManifold,
     N::AbstractManifold,
     cost::TF,
-    x::P,
-    ξ::T,
+    p::P,
+    X::T,
     m::P,
     n::Q,
     prox_F::Function,
@@ -216,18 +220,18 @@ function ChambollePock(
     linearized_forward_operator::Union{Function,Missing}=missing,
     kwargs...,
 ) where {TF,P,T,Q}
-    x_res = copy(M, x)
-    ξ_res = copy(N, n, ξ)
-    m_res = copy(M, m)
-    n_res = copy(N, n)
+    q = copy(M, p)
+    Y = copy(N, n, X)
+    m2 = copy(M, m)
+    n2 = copy(N, n)
     return ChambollePock!(
         M,
         N,
         cost,
-        x_res,
-        ξ_res,
-        m_res,
-        n_res,
+        q,
+        Y,
+        m2,
+        n2,
         prox_F,
         prox_G_dual,
         adjoint_linear_operator;
@@ -263,9 +267,9 @@ function ChambollePock!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(200),
     update_primal_base::Union{Function,Missing}=missing,
     update_dual_base::Union{Function,Missing}=missing,
-    retraction_method::RM=default_retraction_method(M),
-    inverse_retraction_method::IRM=default_inverse_retraction_method(M),
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    retraction_method::RM=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     variant=ismissing(Λ) ? :exact : :linearized,
     kwargs...,
 ) where {

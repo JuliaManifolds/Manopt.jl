@@ -45,12 +45,12 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
   [`ConjugateGradientDescentState`](@ref) `o` and `i` is the current iterate.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
-* `retraction_method` - (`default_retraction_method(M)`) a retraction method to use.
+* `retraction_method` - (`default_retraction_method(M, typeof(p))`) a retraction method to use.
 * `stepsize` - ([`ArmijoLinesearch`](@ref) via [`default_stepsize`](@ref)) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
 * `stopping_criterion` : (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
   a function indicating when to stop.
-* `vector_transport_method` – (`default_vector_transport_method(M)`) vector transport method to transport
+* `vector_transport_method` – (`default_vector_transport_method(M, typeof(p))`) vector transport method to transport
   the old descent direction when computing the new descent direction.
 
 # Output
@@ -88,14 +88,14 @@ function conjugate_gradient_descent!(
     p;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
     ),
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
-    vector_transport_method=default_vector_transport_method(M),
+    vector_transport_method=default_vector_transport_method(M, typeof(p)),
     kwargs...,
 ) where {TF,TDF}
     mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)

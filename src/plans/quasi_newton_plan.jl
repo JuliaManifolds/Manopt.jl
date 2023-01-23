@@ -313,7 +313,7 @@ The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update 
 
 # Constructor
     QuasiNewtonMatrixDirectionUpdate(M::AbstractMatrix, update, basis, matrix;
-    scale=true, vector_transport_method=default_vector_transport_method(M))
+    scale=true, vector_transport_method=default_vector_transport_method(M, typeof(p)))
 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields above.
 
@@ -436,7 +436,7 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     initial_vector::T=zero_vector(M, p),
     scale=1.0,
     project=true,
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod}
     mT = allocate_result_type(
         M, QuasiNewtonLimitedMemoryDirectionUpdate, (p, initial_vector, scale)
