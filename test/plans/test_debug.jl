@@ -207,7 +207,7 @@ end
         w4 = DebugWarnIfFieldNotFinite(:X, :Always)
         @test_logs (
             :warn,
-            "The field o.X is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
+            "The field s.X is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
         ) w4(mp, st, 1)
 
         df1 = DebugFactory([:WarnCost])
