@@ -103,7 +103,7 @@ Construct the conjugate descent coefficient update rule, a new storage is create
 mutable struct ConjugateDescentCoefficient <: DirectionUpdateRule
     storage::StoreStateAction
     function ConjugateDescentCoefficient(
-        a::StoreStateAction=StoreStateAction((:Iterate, :gradient))
+        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient))
     )
         return new(a)
     end
@@ -112,11 +112,12 @@ function (u::ConjugateDescentCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
+    if !has_storage(u.storage, :Iterate) || !has_storage(u.storage, :Gradient)
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
-    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :gradient])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
     update_storage!(u.storage, cgs)
     return inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, -cgs.δ, X_old)
 end
@@ -162,7 +163,7 @@ mutable struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreStateAction
     function DaiYuanCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -171,11 +172,15 @@ function (u::DaiYuanCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
+    if !has_storage(u.storage, :Iterate) ||
+        !has_storage(u.storage, :Gradient) ||
+        !has_storage(u.storage, :δ)
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
-    p_old, X_old, δ_old = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
+    δ_old = get_storage(u.storage, :δ)
     update_storage!(u.storage, cgs)
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
@@ -212,7 +217,7 @@ Construct the Fletcher Reeves coefficient update rule, a new storage is created 
 mutable struct FletcherReevesCoefficient <: DirectionUpdateRule
     storage::StoreStateAction
     function FletcherReevesCoefficient(
-        a::StoreStateAction=StoreStateAction((:Iterate, :gradient))
+        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient))
     )
         return new(a)
     end
@@ -221,10 +226,11 @@ function (u::FletcherReevesCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
+    if !has_storage(u.storage, :Iterate) || !has_storage(u.storage, :Gradient)
         update_storage!(u.storage, cgs) # if not given store current as old
     end
-    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :gradient])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
     update_storage!(u.storage, cgs)
     return inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, X_old, X_old)
 end
@@ -271,7 +277,7 @@ mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreStateAction
     function HagerZhangCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -280,11 +286,15 @@ function (u::HagerZhangCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
+    if !has_storage(u.storage, :Iterate) ||
+        !has_storage(u.storage, :Gradient) ||
+        !has_storage(u.storage, :δ)
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
-    p_old, X_old, δ_old = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
+    δ_old = get_storage(u.storage, :δ)
     update_storage!(u.storage, cgs)
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
@@ -342,7 +352,7 @@ mutable struct HestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <
     storage::StoreStateAction
     function HestenesStiefelCoefficient(
         transport_method::AbstractVectorTransportMethod=ParallelTransport(),
-        storage_action::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
+        storage_action::StoreStateAction=StoreStateAction((:Iterate, :Gradient, :δ)),
     )
         return new{typeof(transport_method)}(transport_method, storage_action)
     end
@@ -351,11 +361,15 @@ function (u::HestenesStiefelCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
+    if !has_storage(u.storage, :Iterate) ||
+        !has_storage(u.storage, :Gradient) ||
+        !has_storage(u.storage, :δ)
         update_storage!(u.storage, cgs) # if not given store current as old
         return 0.0
     end
-    p_old, X_old, δ_old = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
+    δ_old = get_storage(u.storage, :δ)
     update_storage!(u.storage, cgs)
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
     δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.transport_method)
@@ -406,7 +420,7 @@ mutable struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreStateAction
     function LiuStoreyCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient, :δ)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -415,10 +429,14 @@ function (u::LiuStoreyCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient, :δ]))
+    if !has_storage(u.storage, :Iterate) ||
+        !has_storage(u.storage, :Gradient) ||
+        !has_storage(u.storage, :δ)
         update_storage!(u.storage, cgs) # if not given store current as old
     end
-    p_old, X_old, δ_old = get_storage.(Ref(u.storage), [:Iterate, :gradient, :δ])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
+    δ_old = get_storage(u.storage, :δ)
     update_storage!(u.storage, cgs)
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
     ν = cgs.X - gradienttr # notation y from [HZ06]
@@ -473,7 +491,7 @@ mutable struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     storage::StoreStateAction
     function PolakRibiereCoefficient(
         t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=StoreStateAction((:Iterate, :gradient)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient)),
     )
         return new{typeof(t)}(t, a)
     end
@@ -482,10 +500,11 @@ function (u::PolakRibiereCoefficient)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
+    if !has_storage(u.storage, :Iterate) || !has_storage(u.storage, :Gradient)
         update_storage!(u.storage, cgs) # if not given store current as old
     end
-    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :gradient])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
     update_storage!(u.storage, cgs)
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.transport_method)
@@ -536,7 +555,7 @@ The default threshold is chosen as `0.2` as recommended in [^Powell1977].
         threshold=0.2;
         manifold::AbstractManifold = DefaultManifold(),
         vector_transport_method::V=default_vector_transport_method(manifold),
-        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient, :δ)),
     )
 
 [^Beale1972]:
@@ -566,7 +585,7 @@ mutable struct ConjugateGradientBealeRestart{
         threshold=0.2;
         manifold::AbstractManifold=DefaultManifold(),
         vector_transport_method::V=default_vector_transport_method(manifold),
-        a::StoreStateAction=StoreStateAction((:Iterate, :gradient, :δ)),
+        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient, :δ)),
     ) where {D<:DirectionUpdateRule,V<:AbstractVectorTransportMethod}
         return new{D,V,typeof(threshold)}(
             direction_update, a, threshold, vector_transport_method
@@ -577,10 +596,11 @@ function (u::ConjugateGradientBealeRestart)(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
-    if !all(has_storage.(Ref(u.storage), [:Iterate, :gradient]))
+    if !has_storage(u.storage, :Iterate) || !has_storage(u.storage, :Gradient)
         update_storage!(u.storage, cgs) # if not given store current as old
     end
-    p_old, X_old = get_storage.(Ref(u.storage), [:Iterate, :gradient])
+    p_old = get_storage(u.storage, :Iterate)
+    X_old = get_storage(u.storage, :Gradient)
 
     # call actual rule
     β = u.direction_update(amp, cgs, i)

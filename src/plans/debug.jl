@@ -597,22 +597,33 @@ It can also be set to `:No` to deactivate the warning, but this makes this Actio
 All other symbols are handled as if they were `:Always:`
 
 # Example
-    DebugWaranIfFieldNotFinite(:gradient)
+    DebugWaranIfFieldNotFinite(:Gradient)
 
 Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
 """
 mutable struct DebugWarnIfFieldNotFinite <: DebugAction
     status::Symbol
     field::Symbol
-    DebugWarnIfFieldNotFinite(field::Symbol, warn::Symbol=:Once) = new(warn, field)
+    function DebugWarnIfFieldNotFinite(field::Symbol=:Gradient, warn::Symbol=:Once)
+        return new(warn, field)
+    end
 end
 function (d::DebugWarnIfFieldNotFinite)(
     ::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
 )
     if d.status !== :No
-        v = getproperty(st, d.field)
+        if d.field == :Iterate
+            v = get_iterate(st)
+            s = "The iterate"
+        elseif d.field == :Gradient
+            v = get_gradient(st)
+            s = "The gradient"
+        else
+            v = getproperty(st, d.field)
+            s = "The field s.$(d.field)"
+        end
         if !all(isfinite.(v))
-            @warn """The field o.$(d.field) is or contains values that are not finite.
+            @warn """$s is or contains values that are not finite.
             At iteration #$i it evaluated to $(v)."""
             if d.status === :Once
                 @warn "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
@@ -704,7 +715,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
-* `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `:gradient`.
+* `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
 * `:Time` creates a [`DebugTime`](@ref)
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 
@@ -719,7 +730,7 @@ function DebugActionFactory(s::Symbol)
     (s == :Iteration) && return DebugIteration()
     (s == :Stepsize) && return DebugStepsize()
     (s == :WarnCost) && return DebugWarnIfCostNotFinite()
-    (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:gradient)
+    (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
     (s == :Time) && return DebugTime()
     (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
     return DebugEntry(s)

@@ -223,17 +223,20 @@ mutable struct StoreStateAction <: AbstractStateAction
     end
 end
 function (a::StoreStateAction)(
-    ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+    amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     #update values (maybe only once)
     if !a.once || a.last_stored != i
         for key in a.keys
-            if hasproperty(s, key)
-                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(getproperty(s, key))))
-            elseif key == :Iterate
-                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_iterate(s))))
-            elseif key == :Gradient
-                merge!(a.values, Dict{Symbol,Any}(key => deepcopy(get_gradient(s))))
+            if key === :Iterate
+                M = get_manifold(amp)
+                a.values[key] = copy(M, get_iterate(s))
+            elseif key === :Gradient
+                M = get_manifold(amp)
+                p = get_iterate(s)
+                a.values[key] = copy(M, p, get_gradient(s))
+            elseif hasproperty(s, key)
+                a.values[key] = deepcopy(getproperty(s, key))
             end
         end
     end
@@ -257,31 +260,28 @@ return whether the [`AbstractStateAction`](@ref) `a` has a value stored at the
 has_storage(a::AbstractStateAction, key) = haskey(a.values, key)
 
 """
-    update_storage!(a,o)
+    update_storage!(a, s)
 
 update the [`AbstractStateAction`](@ref) `a` internal values to the ones given on
-the [`AbstractManoptSolverState`](@ref) `o`.
+the [`AbstractManoptSolverState`](@ref) `s`.
 """
 function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
-    return update_storage!(
-        a, Dict(key => if key === :Iterate
-            get_iterate(s)
+    for key in a.keys
+        if key === :Iterate
+            a.values[key] = deepcopy(get_iterate(s))
+        elseif key === :Gradient
+            a.values[key] = deepcopy(get_gradient(s))
         else
-            (
-                if key === :gradient
-                    deepcopy(get_gradient(s))
-                else
-                    deepcopy(getproperty(s, key))
-                end
-            )
-        end for key in a.keys)
-    )
+            a.values[key] = deepcopy(getproperty(s, key))
+        end
+    end
+    return a.keys
 end
 
 """
-    update_storage!(a,o)
+    update_storage!(a, d)
 
-update the [`AbstractStateAction`](@ref) `a` internal values to the ones given in
+Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given in
 the dictionary `d`. The values are merged, where the values from `d` are preferred.
 """
 function update_storage!(a::AbstractStateAction, d::Dict{Symbol,<:Any})
