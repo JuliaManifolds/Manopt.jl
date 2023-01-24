@@ -28,9 +28,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "About" => "about.md",
-        "How to..." => [
-            "Get started: Optimize!" => "tutorials/Optimize!.md",
-        ],
+        "How to..." => ["Get started: Optimize!" => "tutorials/Optimize!.md"],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",

@@ -24,7 +24,7 @@ If you want to delve right into `Manopt.jl` check out the
 manifold as well as a manifold for your favourite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
 [record](@ref RecordSection) certain data or
-[debout outpuy](@ref DebugSection) throughout iterations.
+[debug output](@ref DebugSection) throughout iterations.
 
 If you use `Manopt.jl`in your work, please cite the following
 

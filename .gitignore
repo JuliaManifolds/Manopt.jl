@@ -4,13 +4,6 @@
 /docs/build/
 /docs/site/
 Tutorials/.ipynb_checkpoints
-examples/**/*.asy
-examples/**/*.png
-examples/**/*.csv
-examples/**/*.tex
-examples/**/*.pdf
-examples/**/*.mp4
-examples/**/*.jld2
 .vscode
 Manifest.toml
 *.DS_Store
@@ -20,5 +13,4 @@ coverage
 /.quarto/
 tutorials/*.ipynb
 tutorials/*_files/*
-docs/src/tutorials/Optimize!_files
 tutorials/_freeze

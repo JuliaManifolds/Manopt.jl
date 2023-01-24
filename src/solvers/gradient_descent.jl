@@ -58,7 +58,8 @@ function GradientDescentState(
     M::AbstractManifold,
     p::P=rand(M);
     X::T=zero_vector(M, p),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(100),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+                                          StopWhenGradientNormLess(1e-9),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stepsize::Stepsize=default_stepsize(
         M, GradientDescentState; retraction_method=retraction_method

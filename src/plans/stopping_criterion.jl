@@ -153,7 +153,7 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
         x_old = get_storage(c.storage, :Iterate)
         d = distance(M, get_iterate(s), x_old, c.inverse_retraction)
         if d < c.threshold && i > 0
-            c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
+            c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold) in its $(i)th step.\n"
             c.storage(mp, s, i)
             return true
         end
@@ -197,7 +197,7 @@ function (c::StopWhenStepsizeLess)(
     (i == 0) && (c.reason = "") # reset on init
     step = get_last_stepsize(p, s, i)
     if step < c.threshold && i > 0
-        c.reason = "The algorithm computed a step size ($step) less than $(c.threshold).\n"
+        c.reason = "The algorithm computed a step size ($step) less than $(c.threshold) in iteration $(i).\n"
         return true
     end
     return false
@@ -235,7 +235,7 @@ function (c::StopWhenCostLess)(
 )
     (i == 0) && (c.reason = "") # reset on init
     if i > 0 && get_cost(p, get_iterate(s)) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)).\n"
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)) after iteration $(i).\n"
         return true
     end
     return false
@@ -279,7 +279,7 @@ function (c::StopWhenSmallerOrEqual)(
 )
     (i == 0) && (c.reason = "") # reset on init
     if getfield(s, c.value) <= c.minValue
-        c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
+        c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)) after iteration $(i).\n"
         return true
     end
     return false
@@ -317,7 +317,7 @@ function (c::StopAfter)(::AbstractManoptProblem, ::AbstractManoptSolverState, i:
     else
         cTime = Nanosecond(time_ns()) - c.start
         if i > 0 && (cTime > Nanosecond(c.threshold))
-            c.reason = "The algorithm ran for about $(floor(cTime, typeof(c.threshold))) and has hence reached the threshold of $(c.threshold).\n"
+            c.reason = "The algorithm ran for about $(floor(cTime, typeof(c.threshold))) and has hence reached the threshold of $(c.threshold) after iteration $(i).\n"
             return true
         end
     end

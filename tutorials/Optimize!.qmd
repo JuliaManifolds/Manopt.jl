@@ -61,7 +61,7 @@ Let's assume you have already installed both Manotp and Manifolds in Julia (usin
 Then we can get started by loading both packages – and `Random` for persistency in this tutorial.
 
 ```{julia}
-using Manopt, Manifolds, Random
+using Manopt, Manifolds, Random, LinearAlgebra
 Random.seed!(42);
 ```
 
@@ -69,11 +69,11 @@ Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/
 $\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
 
 ```{julia}
-    n = 100
-    σ = π / 8
-    M = Sphere(2)
-    p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
-    data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+n = 100
+σ = π / 8
+M = Sphere(2)
+p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
 ```
 
 Now we can define the cost function $f$ and its (Riemannian) gradient $\operatorname{grad} f$
@@ -92,25 +92,126 @@ and a startig point, which we just set to the first data point
 m1 = gradient_descent(M, f, grad_f, data[1])
 ```
 
-This is nice as a first run and agrees with the [`mean`](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html#Statistics.mean-Tuple{AbstractManifold,%20Vararg{Any}})
+In order to get more details, we further add the `debug=` keyword argument, which
+act as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern).
 
-```{julia}
-m2 = mean(M, data)
-distance(M, m1, m2)
+This way we can easily specify a certain debug to be printed.
+The goal is to get an output of the form
+
+```{shell}
+# i | Last Change: [...] | F(x): [...] |
 ```
 
+but where we also want to fix the display format for the change and the cost
+numbers (the `[...]`) to have a certain format. Furthermore, the reason why the solver stopped should be printed at the end
 
-On the other hand we do not get much insight into the run of the solber.
-We could add some debug output first
+These can easily be specified using either a Symbol – using the default format for numbers – or a tuple of a symbol and a format-string in the `debug=` keyword that is avaiable for every solver.
+We can also – for illustration reasons – just look at the first 6 steps by setting a [`stopping_criterion=`](https://manoptjl.org/stable/plans/stopping_criteria/)
 
 ```{julia}
-m1 = gradient_descent(
-  M, f, grad_f, data[1];
-  debug = [:Iteration, " ", :Cost, " | ", :Change, :Stop, "\n"],
+m2 = gradient_descent(M, f, grad_f, data[1];
+    debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
+        (:Cost, " F(x): %1.11f | "), "\n", :Stop],
+    stopping_criterion = StopAfterIteration(6)
   )
 ```
 
+See [here](https://manoptjl.org/stable/plans/debug/#Manopt.DebugActionFactory-Tuple{Symbol}) for the list of available symbols.
 
+| !!! info \"Technical Detail\"
+|     The `debug=` keyword is actually a list of [`DebugActions`](https://manoptjl.org/stable/plans/debug/#Manopt.DebugAction) added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
+
+The default stopping criterion for [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/) is, to either stopwhen the gradient is small (`<1e-9`) or a max number of iterations is reached (as a fallback.
+Combining stopping-criteria can be done by `|` or `&`.
+We further pass a number `25` to `debug=` to only an output every `25`th iteration:
+
+```{julia}
+m3 = gradient_descent(M, f, grad_f, data[1];
+    debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
+        (:Cost, " F(x): %1.11f | "), "\n", :Stop, 25],
+    stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
+)
+```
+
+We can finally use another way to determine the stepsize, for example
+a little more expensive [`ArmijoLineSeach`](https://manoptjl.org/stable/plans/stepsize/#Manopt.ArmijoLinesearch) than the default [stepsize](https://manoptjl.org/stable/plans/stepsize/) rule used on the Sphere.
+
+```{julia}
+m4 = gradient_descent(M, f, grad_f, data[1];
+    debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
+        (:Cost, " F(x): %1.11f | "), "\n", :Stop, 2],
+      stepsize = ArmijoLinesearch(M; contraction_factor=0.999, sufficient_decrease=0.5),
+    stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
+)
+```
+
+Then we reach approximately the same point as in the previous run, but in far less steps
+
+```{julia}
+[f(M, m3)-f(M,m4), distance(M, m3, m4)]
+```
+
+## Example 2: Computing the median of symmetric positive definite matrices.
+
+For the second example let's consider the manifold of [$3 × 3$ symmetric positive definite matrices](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite.html) and again 100 random points
+```{julia}
+N = SymmetricPositiveDefinite(3)
+m = 100
+σ = 0.005
+q = Matrix{Float64}(I, 3, 3)
+data2 = [exp(N, q, σ * rand(N; vector_at=q)) for i in 1:m];
+```
+
+Instead of the mean, let's consider a non-smooth optimisation task:
+The median can be generalized to Manifolds as the minimiser of the sum of distances, see e.g. [@Bacak:2014]. We define
+
+```{julia}
+g(N, q) = sum(1 / (2 * m) * distance.(Ref(N), Ref(q), data2))
+```
+
+Since the function is non-smooth, we can not use a gradient-based approach.
+But since for every summand the [proximal map](https://manoptjl.org/stable/functions/proximal_maps/#Manopt.prox_distance) is available, we can use the
+[cyclic proximal point algorithm (CPPA)](https://manoptjl.org/stable/solvers/cyclic_proximal_point/). We hence define the vector of proximal maps as
+
+```{julia}
+proxes_g = Function[(N, λ, q) -> prox_distance(N, λ / m, di, q, 1) for di in data2];
+```
+
+Besides also looking at a some debug prints, we can also easily record these values. Similarly to `debug=`, `record=` also accepts Symbols, see list [here](https://manoptjl.org/stable/plans/record/#Manopt.RecordFactory-Tuple{AbstractManoptSolverState,%20Vector}), to indicate things to record. We further set `return_state` to true to obtain not just the (approximate) minimizer.
+
+```{julia}
+s = cyclic_proximal_point(N, g, proxes_g, data2[1];
+  debug=[:Iteration," | ",:Change," | ",(:Cost, "F(x): %1.12f"),"\n", 1000, :Stop,
+        ],
+        record=[:Iteration, :Change, :Cost, :Iterate],
+        return_state=true,
+    );
+```
+
+| !!!note \"Technical Detail\"
+|    The recording is realised by [`RecordActions`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
+
+First, the computed median can be accessed as
+```{julia}
+median = get_solver_result(s)
+```
+
+but we can also look at the recorded values. For simplicity (of output), lets just look
+at the recorded values at iteration 42
+
+```{julia}
+get_record(s)[42]
+```
+
+But we can also access whole serieses and see that the cost does not decrease that fast; actually, the CPPA might converge relatively slow. For that we can for
+example access the `:Cost` that was recorded every `:Iterate` as well as the (maybe a little boring) `:Iteration`-number in a semilogplot.
+
+```{julia}
+x = get_record(s, :Iteration, :Iteration)
+y = get_record(s, :Iteration, :Cost)
+using Plots
+plot(x,y,xaxis=:log, label="CPPA Cost")
+```
 
 ## Literature
 
