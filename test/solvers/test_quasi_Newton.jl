@@ -307,4 +307,14 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         update_hessian_basis!(M, BFGS_allocating, p_2)
         @test isapprox(M, p_1, BFGS_allocating.grad_tmp, [0.0, 2.0, 0.0, 6.0])
     end
+
+    @testset "A small complex example" begin
+        M = Euclidean(2; field=ℂ)
+        A = [2 im; -im 2]
+        fc(::Euclidean, p) = real(p' * A * p)
+        grad_fc(::Euclidean, p) = 2 * A * p
+        p0 = [2.0, 1 + im]
+        p4 = quasi_Newton(M, fc, grad_fc, p0; stopoing_criterion=StopAfterIteration(3))
+        @test fc(M, p4) ≤ fc(M, p0)
+    end
 end

@@ -317,7 +317,7 @@ during the last iteration.
 # Additional Fields
 * `storage` a [`StoreStateAction`](@ref) to store (at least) `o.x` to use this
   as the last value (to compute the change
-* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+* `invretr` - (`default_inverse_retraction_method(manifold, p)`) the inverse retraction to be
   used for approximating distance.
 
 # Additional constructor keyword parameters
@@ -338,14 +338,14 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
         return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
     function RecordChange(
-        x0,
+        p,
         a::StoreStateAction=StoreStateAction((:Iterate,));
         manifold::AbstractManifold=DefaultManifold(1),
         invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            manifold
+            manifold, typeof(p)
         ),
     )
-        update_storage!(a, Dict(:Iterate => x0))
+        update_storage!(a, Dict(:Iterate => p))
         return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
     end
 end

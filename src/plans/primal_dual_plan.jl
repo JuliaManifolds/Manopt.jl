@@ -671,7 +671,10 @@ function (d::DebugDualResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        p_old, X_old, n_old = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         Printf.format(
             d.io,
             Printf.Format(d.format),
@@ -727,11 +730,14 @@ function (d::DebugPrimalResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        xOld, XOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         Printf.format(
             d.io,
             Printf.Format(d.format),
-            primal_residual(M, N, apdmo, apds, xOld, XOld, nOld),
+            primal_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
     return d.storage(tmp, apds, i)
@@ -783,7 +789,10 @@ function (d::DebugPrimalDualResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        p_old, X_old, n_old = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         v =
             primal_residual(M, N, apdmo, apds, p_old, X_old, n_old) +
             dual_residual(tmp, apds, p_old, X_old, n_old)
@@ -863,7 +872,9 @@ function (d::DebugDualChange)(
 )
     N = get_manifold(tmp, 2)
     if all(has_storage.(Ref(d.storage), [:X, :n])) && i > 0 # all values stored
-        X_old, n_old = get_storage.(Ref(d.storage), [:X, :n]) #fetch
+        #fetch
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         v = norm(
             N,
             apds.n,

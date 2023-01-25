@@ -161,6 +161,7 @@ A functor representing Armijo line search including the last runs state, i.e. a
 last step size.
 
 # Fields
+
 * `initial_stepsize` – (`1.0`) and initial step size
 * `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
 * `contraction_factor` – (`0.95`) exponent for line search reduction
@@ -404,7 +405,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreStateAction=StoreStateAction((:Iterate, :gradient)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :Gradient)),
         linesearch_stopsize::Float64=0.0,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
@@ -458,11 +459,13 @@ function (a::NonmonotoneLinesearch)(
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
-    if !all(has_storage.(Ref(a.storage), [:Iterate, :gradient]))
-        old_x = get_iterate(s)
-        old_gradient = get_gradient(mp, get_iterate(s))
+    if !has_storage(a.storage, :Iterate) || !has_storage(a.storage, :Gradient)
+        p_old = get_iterate(s)
+        X_old = get_gradient(mp, p_old)
     else
-        old_x, old_gradient = get_storage.(Ref(a.storage), [:Iterate, :gradient])
+        #fetch
+        p_old = get_storage(a.storage, :Iterate)
+        X_old = get_storage(a.storage, :Gradient)
     end
     update_storage!(a.storage, s)
     return a(
@@ -471,8 +474,8 @@ function (a::NonmonotoneLinesearch)(
         x -> get_cost(mp, x),
         get_gradient(mp, get_iterate(s)),
         η,
-        old_x,
-        old_gradient,
+        p_old,
+        X_old,
         i,
     )
 end

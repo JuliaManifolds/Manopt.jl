@@ -10,12 +10,12 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 * `p` – the current iterate, i.e. a point on the manifold
 * `X` – the current gradient ``\operatorname{grad} F(p)``, i.e. a tangent vector to `p`.
 * `evalulation` [`AllocatingEvaluation`](@ref) specify the  type if it is a function.
-* `inverse_retraction_method` – (`default_inverse_retraction_method(M)`) an inverse retraction method to use within Frank Wolfe.
+* `inverse_retraction_method` – (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use within Frank Wolfe.
 * `sub_problem` – an [`AbstractManoptProblem`](@ref) problem for the subsolver
 * `sub_state` – an [`AbstractManoptSolverState`](@ref) for the subsolver
 * `stop` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a [`StoppingCriterion`](@ref)
 * `stepsize` - ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`) ``s_k`` which by default is set to ``s_k = \frac{2}{k+2}``.
-* `retraction_method` – (`default_retraction_method(M)`) a retraction to use within Frank-Wolfe
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a retraction to use within Frank-Wolfe
 
 For the subtask, we need a method to solve
 
@@ -56,8 +56,8 @@ mutable struct FrankWolfeState{
         stopping_criterion::TStop=StopAfterIteration(200) |
                                   StopWhenGradientNormLess(1.0e-6),
         stepsize::TStep=default_stepsize(M, FrankWolfeState),
-        retraction_method::TM=default_retraction_method(M),
-        inverse_retraction_method::ITM=default_inverse_retraction_method(M),
+        retraction_method::TM=default_retraction_method(M, typeof(p)),
+        inverse_retraction_method::ITM=default_inverse_retraction_method(M, typeof(p)),
     ) where {
         P,
         Pr,
@@ -117,7 +117,7 @@ use a retraction and its inverse.
 * `evaluation` ([`AllocatingEvaluation`](@ref)) whether `grad_F` is an inplace or allocating (default) funtion
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
 * `stopping_criterion` – [`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`
-* `retraction_method` – (`default_retraction_method(M)`) a type of retraction
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a type of retraction
 * `stepsize` ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`
   a [`Stepsize`](@ref) to use; but it has to be always less than 1. The default is the one proposed by Frank & Wolfe:
   ``s_k = \frac{2}{k+2}``.
@@ -142,7 +142,7 @@ function Frank_Wolfe_method!(
     grad_f,
     p;
     initial_vector=zero_vector(M, p),
-    retraction_method=default_retraction_method(M),
+    retraction_method=default_retraction_method(M, typeof(p)),
     sub_cost=FrankWolfeCost(p, initial_vector),
     sub_grad=FrankWolfeGradient(p, initial_vector),
     sub_objective=ManifoldGradientObjective(sub_cost, sub_grad),

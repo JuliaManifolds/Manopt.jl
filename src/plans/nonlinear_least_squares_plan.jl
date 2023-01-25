@@ -119,7 +119,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 * `x` – a point (of type `P`) on a manifold as starting point
 * `stop` – (`StopAfterIteration(200) | StopWhenGradientNormLess(1e-12) | StopWhenStepsizeLess(1e-12)`)
   a [`StoppingCriterion`](@ref)
-* `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use, defaults to
   the default set for your manifold.
 * `residual_values` – value of ``F`` calculated in the solver setup or the previous iteration
 * `residual_values_temp` – value of ``F`` for the current proposal point
@@ -177,7 +177,7 @@ mutable struct LevenbergMarquardtState{
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-12) |
                                               StopWhenStepsizeLess(1e-12),
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         η::Real=0.2,
         damping_term_min::Real=0.1,
         β::Real=5.0,
