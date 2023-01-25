@@ -13,7 +13,7 @@ This implements the method described in Section 4.8 [^Boumal2022].
 * `limits` (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
 * `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
-* `retraction_method` - (`default_retraction_method(M)`) retraction method to use for the check
+* `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
 * `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
 
 Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
@@ -34,7 +34,7 @@ function check_differential(
     limits=(-8.0, 0.0),
     N=101,
     log_range=range(limits[1], limits[2]; length=N),
-    retraction_method=default_retraction_method(M),
+    retraction_method=default_retraction_method(M, typeof(p)),
     slope_tol=0.1,
     window=nothing,
 )
@@ -94,8 +94,8 @@ function check_gradient(
 )
     gradient = gradF(M, p)
     check_vector && is_vector(M, p, gradient, throw_error;)
-    # function for the directional derivative
-    df(M, p, Y) = inner(M, p, gradient, Y)
+    # function for the directional derivative - real so it also works on complex manifolds
+    df(M, p, Y) = real(inner(M, p, gradient, Y))
     return check_differential(M, F, df, p, X; throw_error=throw_error, kwargs...)
 end
 

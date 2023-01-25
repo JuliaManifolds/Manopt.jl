@@ -194,11 +194,23 @@ corresponding zero tangent vector, since this is an element of the subdifferenti
   distance
 """
 function grad_distance(M, y, x, p::Int=2)
-    return (p == 2) ? -log(M, x, y) : -distance(M, x, y)^(p - 2) * log(M, x, y)
+    if p == 2
+        return -log(M, x, y)
+    elseif p == 1 && x == y
+        return zero_vector(M, x)
+    else
+        return -distance(M, x, y)^(p - 2) * log(M, x, y)
+    end
 end
 function grad_distance!(M, X, y, x, p::Int=2)
     log!(M, X, x, y)
-    X .*= (p == 2) ? -one(eltype(X)) : -distance(M, x, y)(p - 2)
+    if p == 2
+        X .*= -one(eltype(X))
+    elseif p == 1 && x == y
+        X = zero_vector(M, x)
+    else
+        X .*= -distance(M, x, y)^(p - 2)
+    end
     return X
 end
 

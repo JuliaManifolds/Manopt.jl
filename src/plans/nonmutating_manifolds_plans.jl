@@ -26,13 +26,13 @@ function linesearch_backtrack(
 ) where {TF,T}
     x_new = retract(M, x, s * η, retr)
     fNew = F(x_new)
-    while fNew < f0 + decrease * s * inner(M, x, η, gradF) # increase
+    while fNew < f0 + decrease * s * real(inner(M, x, η, gradF)) # increase
         x_new = retract(M, x, s * η, retr)
         fNew = F(x_new)
         s = s / contract
     end
     s = s * contract # correct last
-    while fNew > f0 + decrease * s * inner(M, x, η, gradF) # decrease
+    while fNew > f0 + decrease * s * real(inner(M, x, η, gradF)) # decrease
         s = contract * s
         x_new = retract(M, x, s * η, retr)
         fNew = F(x_new)

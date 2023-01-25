@@ -115,7 +115,7 @@ function TrustRegionsState(
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
     max_trust_region_radius::R=sqrt(manifold_dimension(M)),
     trust_region_radius::R=max_trust_region_radius / 8,
-    retraction_method::RTR=default_retraction_method(M),
+    retraction_method::RTR=default_retraction_method(M, typeof(p)),
     reduction_threshold::R=0.1,
     augmentation_threshold::R=0.75,
     project!::Proj=copyto!,
@@ -182,7 +182,7 @@ see [`truncated_conjugate_gradient_descent`](@ref).
 * `project!` : (`copyto!`) specify a projection operation for tangent vectors within the TCG
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
-* `retraction` – (`default_retraction_method(M)`) approximation of the exponential map
+* `retraction` – (`default_retraction_method(M, typeof(p))`) approximation of the exponential map
 * `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
   [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
@@ -257,7 +257,7 @@ function trust_regions!(
     else
         (M, p, X) -> X
     end,
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
                                           StopWhenGradientNormLess(1e-6),
     max_trust_region_radius=sqrt(manifold_dimension(M)),
@@ -364,7 +364,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
         norm_grad = norm(M, trs.p, trs.X)
         # Check the curvature,
         get_hessian!(mp, trs.Hgrad, trs.p, trs.X)
-        trs.τ = inner(M, trs.p, trs.X, trs.Hgrad)
+        trs.τ = real(inner(M, trs.p, trs.X, trs.Hgrad))
         trs.τ = if (trs.τ <= 0)
             one(trs.τ)
         else
@@ -372,11 +372,13 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
         end
         # compare to Cauchy point and store best
         model_value =
-            fx + inner(M, trs.p, trs.X, trs.η) + 0.5 * inner(M, trs.p, trs.Hη, trs.η)
+            fx +
+            real(inner(M, trs.p, trs.X, trs.η)) +
+            0.5 * real(inner(M, trs.p, trs.Hη, trs.η))
         modle_value_Cauchy = fx
         -trs.τ * trs.trust_region_radius * norm_grad
         +0.5 * trs.τ^2 * trs.trust_region_radius^2 / (norm_grad^2) *
-        inner(M, trs.p, trs.Hgrad, trs.X)
+        real(inner(M, trs.p, trs.Hgrad, trs.X))
         if modle_value_Cauchy < model_value
             copyto!(M, trs.η, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.X)
             copyto!(M, trs.Hη, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.Hgrad)
@@ -387,7 +389,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     # Check the performance of the quadratic model against the actual cost.
     ρ_reg = max(1, abs(fx)) * eps(Float64) * trs.ρ_regularization
     ρnum = fx - get_cost(mp, trs.p_proposal)
-    ρden = -inner(M, trs.p, trs.η, trs.X) - 0.5 * inner(M, trs.p, trs.η, trs.Hη)
+    ρden = -real(inner(M, trs.p, trs.η, trs.X)) - 0.5 * real(inner(M, trs.p, trs.η, trs.Hη))
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
     ρ = (abs(ρnum / fx) < sqrt(eps(Float64))) ? 1 : ρnum / ρden # stability for small absolute relative model change

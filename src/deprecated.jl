@@ -1,0 +1,2 @@
+Base.@deprecate_binding HeestenesStiefelCoefficient HestenesStiefelCoefficient
+export HeestenesStiefelCoefficient

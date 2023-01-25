@@ -244,7 +244,7 @@ last direction multiplied by momentum ``m``.
 * `momentum` – (`0.2`) factor for momentum
 * `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
   add the momentum to.
-* `vector_transport_method` – `default_vector_transport_method(M)` vector transport method to use
+* `vector_transport_method` – `default_vector_transport_method(M, typeof(p))` vector transport method to use
 * `X_old` – (`zero_vector(M,x0)`) the last gradient/direction update added as momentum
 
 # Constructors
@@ -256,7 +256,7 @@ Add momentum to a gradient problem, where by default just a gradient evaluation 
         p=rand(M),
         s::DirectionUpdateRule=IdentityUpdateRule();
         X=zero_vector(p.M, x0), momentum=0.2
-        vector_transport_method=default_vector_transport_method(M),
+        vector_transport_method=default_vector_transport_method(M, typeof(p)),
     )
 
 Initialize a momentum gradient rule to `s`. Note that the keyword agruments `p` and `X`
@@ -275,7 +275,7 @@ function MomentumGradient(
     M::AbstractManifold,
     p::P=rand(M);
     direction::DirectionUpdateRule=IdentityUpdateRule(),
-    vector_transport_method::VTM=ParallelTransport(),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     X=zero_vector(M, p),
     momentum=0.2,
 ) where {P,VTM<:AbstractVectorTransportMethod}
@@ -313,16 +313,17 @@ them to the current iterates tangent space.
 
 # Constructors
     AverageGradient(
-        p::GradientProlem,
-        x0;
+        M::AbstractManifold,
+        p::P=rand(M);
         n::Int=10
         s::DirectionUpdateRule=IdentityUpdateRule();
         gradients = fill(zero_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
-        vector_transport_method = default_vector_transport_method(M)
+        vector_transport_method = default_vector_transport_method(M, typeof(p))
     )
 
 Add average to a gradient problem, where
+
 * `n` determines the size of averaging
 * `s` is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
 * `gradients` can be prefilled with some history
@@ -342,7 +343,7 @@ function AverageGradient(
     n::Int=10,
     direction::DirectionUpdateRule=IdentityUpdateRule(),
     gradients=[zero_vector(M, p) for _ in 1:n],
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {P,VTM}
     return AverageGradient{P,eltype(gradients),VTM}(
         gradients, p, direction, vector_transport_method
@@ -396,7 +397,7 @@ This compute a Nesterov type update using the following steps, see [^ZhangSra201
 Then the direction from ``x_k`` to ``x_k+1``, i.e. ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
 
 # Constructor
-    Nesterov(x0::P, γ=0.001, μ=0.9, schrinkage = k -> 0.8;
+    Nesterov(M::AbstractManifold, p::P; γ=0.001, μ=0.9, schrinkage = k -> 0.8;
         inverse_retraction_method=LogarithmicInverseRetraction())
 
 Initialize the Nesterov acceleration, where `x0` initializes `v`.
@@ -419,7 +420,7 @@ function Nesterov(
     μ::T=0.9,
     shrinkage::Function=i -> 0.8,
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M
+        M, typeof(p)
     ),
 ) where {P,T}
     return Nesterov{P,T}(γ, μ, copy(M, p), shrinkage, inverse_retraction_method)

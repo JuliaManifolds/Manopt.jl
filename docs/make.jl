@@ -1,6 +1,5 @@
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
-using Manopt, Manifolds, Pkg
-# Load an unregistered package (for now) to update exports of Pluto notebooks
+using Manopt, Manifolds
 
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"

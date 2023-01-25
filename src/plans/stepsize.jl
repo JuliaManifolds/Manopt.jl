@@ -24,6 +24,16 @@ Returns the default [`Stepsize`](@ref) functor used when running the solver spec
 default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
 """
+    max_stepsize(M::AbstractManifold, p)
+
+Get the maximum stepsize at point `p` on manifold `M`. It should be used to limit the
+distance an algorithm is trying to move in a single step.
+"""
+function max_stepsize(M::AbstractManifold, p)
+    return injectivity_radius(M, p)
+end
+
+"""
     ConstantStepsize <: Stepsize
 
 A functor that always returns a fixed step size.
@@ -133,6 +143,17 @@ the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
 
+function armijo_initial_guess(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int, l::Real
+)
+    M = get_manifold(mp)
+    X = get_gradient(s)
+    p = get_iterate(s)
+    grad_norm = norm(M, p, X)
+    max_step = max_stepsize(M, p)
+    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
+end
+
 @doc raw"""
     ArmijoLinesearch <: Linesearch
 
@@ -140,6 +161,7 @@ A functor representing Armijo line search including the last runs state, i.e. a
 last step size.
 
 # Fields
+
 * `initial_stepsize` – (`1.0`) and initial step size
 * `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
 * `contraction_factor` – (`0.95`) exponent for line search reduction
@@ -178,7 +200,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
         contraction_factor::Float64=0.95,
         sufficient_decrease::Float64=0.1,
         linesearch_stopsize::Float64=0.0,
-        initial_guess=(p, o, i, l) -> l,
+        initial_guess=armijo_initial_guess,
     )
         return new{typeof(retraction_method),typeof(initial_guess)}(
             initial_stepsize,
@@ -198,11 +220,12 @@ function (a::ArmijoLinesearch)(
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
+    X = get_gradient!(mp, get_gradient(s), get_iterate(s))
     a.last_stepsize = linesearch_backtrack(
         get_manifold(mp),
         p -> get_cost_function(get_objective(mp))(get_manifold(mp), p),
         get_iterate(s),
-        get_gradient!(mp, get_gradient(s), get_iterate(s)),
+        X,
         a.initial_guess(mp, s, i, a.last_stepsize),
         a.sufficient_decrease,
         a.contraction_factor,
@@ -245,7 +268,7 @@ function linesearch_backtrack(
 ) where {TF,T}
     xNew = retract(M, x, s * η, retr)
     fNew = F(xNew)
-    search_dir_inner = inner(M, x, η, gradFx)
+    search_dir_inner = real(inner(M, x, η, gradFx))
     extended = false
     while fNew < f0 + decrease * s * search_dir_inner # increase
         extended = true
@@ -382,7 +405,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreStateAction=StoreStateAction((:Iterate, :gradient)),
+        storage::StoreStateAction=StoreStateAction((:Iterate, :Gradient)),
         linesearch_stopsize::Float64=0.0,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
@@ -436,11 +459,13 @@ function (a::NonmonotoneLinesearch)(
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
-    if !all(has_storage.(Ref(a.storage), [:Iterate, :gradient]))
-        old_x = get_iterate(s)
-        old_gradient = get_gradient(mp, get_iterate(s))
+    if !has_storage(a.storage, :Iterate) || !has_storage(a.storage, :Gradient)
+        p_old = get_iterate(s)
+        X_old = get_gradient(mp, p_old)
     else
-        old_x, old_gradient = get_storage.(Ref(a.storage), [:Iterate, :gradient])
+        #fetch
+        p_old = get_storage(a.storage, :Iterate)
+        X_old = get_storage(a.storage, :Gradient)
     end
     update_storage!(a.storage, s)
     return a(
@@ -449,8 +474,8 @@ function (a::NonmonotoneLinesearch)(
         x -> get_cost(mp, x),
         get_gradient(mp, get_iterate(s)),
         η,
-        old_x,
-        old_gradient,
+        p_old,
+        X_old,
         i,
     )
 end
@@ -466,10 +491,10 @@ function (a::NonmonotoneLinesearch)(
         vector_transport_to(M, old_x, old_gradient, x, a.vector_transport_method)
 
     #compute the new Barzilai-Borwein step size
-    s1 = inner(M, x, x_diff, grad_diff)
-    s2 = inner(M, x, grad_diff, grad_diff)
+    s1 = real(inner(M, x, x_diff, grad_diff))
+    s2 = real(inner(M, x, grad_diff, grad_diff))
     s2 = s2 == 0 ? 1.0 : s2
-    s3 = inner(M, x, x_diff, x_diff)
+    s3 = real(inner(M, x, x_diff, x_diff))
     #indirect strategy
     if a.strategy == :inverse
         if s1 > 0
@@ -595,17 +620,23 @@ function (a::WolfePowellLinesearch)(
     η=-get_gradient(mp, get_iterate(ams));
     kwargs...,
 )
-    step = 1.0
-    s_plus = 1.0
-    s_minus = 1.0
     M = get_manifold(mp)
-    f0 = get_cost(mp, get_iterate(ams))
-    p_new = retract(M, get_iterate(ams), step * η, a.retraction_method)
+    cur_p = get_iterate(ams)
+    grad_norm = norm(M, cur_p, η)
+    max_step = max_stepsize(M, cur_p)
+    # max_step_increase is the upper limit for s_plus
+    max_step_increase = ifelse(isfinite(max_step), min(1e9, max_step / grad_norm), 1e9)
+    step = ifelse(isfinite(max_step), min(1.0, max_step / grad_norm), 1.0)
+    s_plus = step
+    s_minus = step
+
+    f0 = get_cost(mp, cur_p)
+    p_new = retract(M, cur_p, step * η, a.retraction_method)
     fNew = get_cost(mp, p_new)
-    η_xNew = vector_transport_to(M, get_iterate(ams), η, p_new, a.vector_transport_method)
-    if fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
+    η_xNew = vector_transport_to(M, cur_p, η, p_new, a.vector_transport_method)
+    if fNew > f0 + a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
         while (
-            fNew > f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
+            fNew > f0 + a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
         ) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             step = s_minus
@@ -617,11 +648,12 @@ function (a::WolfePowellLinesearch)(
         vector_transport_to!(
             M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method
         )
-        if inner(M, p_new, get_gradient(mp, p_new), η_xNew) <
-            a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
+        if real(inner(M, p_new, get_gradient(mp, p_new), η_xNew)) <
+            a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
             while fNew <=
-                  f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams)) &&
-                (s_plus < 10^(9))# increase
+                  f0 +
+                  a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams))) &&
+                (s_plus < max_step_increase)# increase
                 s_plus = s_plus * 2.0
                 step = s_plus
                 retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
@@ -632,12 +664,12 @@ function (a::WolfePowellLinesearch)(
     end
     retract!(M, p_new, get_iterate(ams), s_minus * η, a.retraction_method)
     vector_transport_to!(M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method)
-    while inner(M, p_new, get_gradient(mp, p_new), η_xNew) <
-          a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
+    while real(inner(M, p_new, get_gradient(mp, p_new), η_xNew)) <
+          a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
         step = (s_minus + s_plus) / 2
         retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
         fNew = get_cost(mp, p_new)
-        if fNew <= f0 + a.c1 * step * inner(M, get_iterate(ams), η, get_gradient(ams))
+        if fNew <= f0 + a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
             s_minus = step
         else
             s_plus = step
@@ -747,10 +779,10 @@ function (a::WolfePowellBinaryLinesearch)(
     fNew = get_cost(amp, xNew)
     η_xNew = vector_transport_to(M, get_iterate(ams), η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(amp, xNew)
-    nAt = fNew > f0 + a.c1 * t * inner(M, get_iterate(ams), η, get_gradient(ams))
+    nAt = fNew > f0 + a.c1 * t * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     nWt =
-        inner(M, xNew, gradient_new, η_xNew) <
-        a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
+        real(inner(M, xNew, gradient_new, η_xNew)) <
+        a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     while (nAt || nWt) &&
               (t > a.linesearch_stopsize) &&
               ((α + β) / 2 - 1 > a.linesearch_stopsize)
@@ -765,10 +797,10 @@ function (a::WolfePowellBinaryLinesearch)(
             M, η_xNew, get_iterate(ams), η, xNew, a.vector_transport_method
         )
         # Update conditions
-        nAt = fNew > f0 + a.c1 * t * inner(M, get_iterate(ams), η, get_gradient(ams))
+        nAt = fNew > f0 + a.c1 * t * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
         nWt =
-            inner(M, xNew, gradient_new, η_xNew) <
-            a.c2 * inner(M, get_iterate(ams), η, get_gradient(ams))
+            real(inner(M, xNew, gradient_new, η_xNew)) <
+            a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     end
     a.last_stepsize = t
     return t
