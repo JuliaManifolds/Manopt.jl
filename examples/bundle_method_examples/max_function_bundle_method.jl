@@ -1,11 +1,11 @@
-using Manopt, Manifolds, Random, QuadraticModels, RipQP, FiniteDifferences, ManifoldDiff
+using Manopt, Manifolds, Random, QuadraticModels, RipQP, ManifoldDiff, FiniteDifferences
 
 l = Int(1e2)
 # Random.seed!(42)
 r_backend = ManifoldDiff.RiemannianProjectionBackend(
     ManifoldDiff.FiniteDifferencesBackend()
 )
-M = SymmetricPositiveDefinite(3)
+M = Hyperbolic(4)
 data = [rand(M; σ=0.4) for i in 1:l]
 
 F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
@@ -36,7 +36,7 @@ bundle_min = bundle_method(
     F3,
     gradF3,
     m;
-    stopping_criterion=StopAfterIteration(100),
+    stopping_criterion=StopAfterIteration(1000),
     # debug=[:Iteration, :Cost, "\n"],
 )
 

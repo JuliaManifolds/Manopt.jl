@@ -11,7 +11,7 @@ gradF(M, y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
     F,
     gradF,
     data[1];
-    stopping_criterion=StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
+    stopping_criterion=StopAfterIteration(100)#StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
 )
 @time m_mean = mean(M, data)
 mean_dist = distance(M, b_mean, m_mean)
@@ -27,7 +27,7 @@ gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y),
     F2,
     gradF2,
     data[1];
-    stopping_criterion=StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
+    stopping_criterion=StopAfterIteration(100) #StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
 )
 # @time m_median = median(M, data)
 # median_dist = distance(M, b_median, m_median)
