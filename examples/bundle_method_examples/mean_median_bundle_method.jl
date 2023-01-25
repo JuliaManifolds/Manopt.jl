@@ -1,6 +1,6 @@
 using Manopt, Manifolds, Random, QuadraticModels, RipQP
 
-M = SymmetricPositiveDefinite(4)
+M = Sphere(4)
 Random.seed!(55)
 data = [rand(M; σ=0.4) for i in 1:100]
 
@@ -29,9 +29,9 @@ gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y),
     data[1];
     stopping_criterion=StopAfterIteration(100) #StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
 )
-# @time m_median = median(M, data)
-# median_dist = distance(M, b_median, m_median)
-# println("Distance between medians: $median_dist")
-# println(
-#     "$(F2(M, b_median) <= F2(M,m_median) ? "F2(bundle_median) ≤ F2(manifolds_median)" : "F2(bundle_median) > F2(manifolds_median)")",
-# )
+@time m_median = median(M, data)
+median_dist = distance(M, b_median, m_median)
+println("Distance between medians: $median_dist")
+println(
+    "$(F2(M, b_median) <= F2(M,m_median) ? "F2(bundle_median) ≤ F2(manifolds_median)" : "F2(bundle_median) > F2(manifolds_median)")",
+)

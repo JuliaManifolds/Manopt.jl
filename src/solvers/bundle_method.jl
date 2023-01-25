@@ -46,12 +46,14 @@ mutable struct BundleMethodState{
     stop::TSC
     index_set::S
     vector_transport_method::VT
+    diam::Real
     m::Real
     tol::Real
     function BundleMethodState(
         M::TM,
         p::P;
         m::Real=0.0125,
+        diam::Real=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopAfterIteration(5000),
@@ -82,6 +84,7 @@ mutable struct BundleMethodState{
             stopping_criterion,
             index_set,
             vector_transport_method,
+            diam,
             m,
             tol,
         )
@@ -159,6 +162,7 @@ function bundle_method!(
     ∂f!!::TdF,
     p;
     m::Real=0.0125,
+    diam::Real=1.0,
     tol::Real=1e-8,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -174,6 +178,7 @@ function bundle_method!(
         M,
         p;
         m=m,
+        diam=diam,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -208,6 +213,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     λ = bundle_method_sub_solver(M, bms, transported_subgradients)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* bms.lin_errors)
+    bms.diam = bms.diam / i
     # Check transported subgradients ε-inequality
     r = rand(M)
     if (
@@ -219,6 +225,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         println(r)
         println(bms.p)
         println(bms.p_last_serious)
+    else
+        println("Yes")
     end
     δ = -norm(M, bms.p_last_serious, g)^2 - ε
     (δ == 0 || -δ <= bms.tol) && (return bms)
@@ -243,7 +251,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 bms.p_last_serious,
                 bms.inverse_retraction_method,
             ),
-        ) for j in 1:length(bms.index_set)
+        ) + (4 * bms.diam * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]))
+        for j in 1:length(bms.index_set)
     ]
     return bms
 end
