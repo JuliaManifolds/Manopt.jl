@@ -4,13 +4,14 @@ stores option values for a [`bundle_method`](@ref) solver
 
 # Fields
 
-* `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
 * `bundle_points` - collects each iterate `p` with the computed subgradient `∂` at the iterate
+* `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
+* `inverse_retraction_method` - the inverse retraction to use within
 * `lin_errors` - linearization errors at the last serious step
 * `m` - the parameter to test the decrease of the cost
 * `p` - current iterate
 * `p_last_serious` - last serious iterate
-* `retraction_method` – the retration to use within
+* `retraction_method` – the retraction to use within
 * `stop` – a [`StoppingCriterion`](@ref)
 * `tol` - the tolerance parameter
 * `vector_transport_method` - the vector transport method to use within
@@ -51,12 +52,12 @@ mutable struct BundleMethodState{
         M::TM,
         p::P;
         m::Real=0.0125,
-        inverse_retraction_method::IR=default_inverse_retraction_method(M),
-        retraction_method::TR=default_retraction_method(M),
+        inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
+        retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         tol::Real=1e-8,
-        vector_transport_method::VT=default_vector_transport_method(M),
+        vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -119,9 +120,11 @@ return _one_ element from the subgradient, but not necessarily deterministic.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
-* `retraction` – (`default_retraction_method(M)`) a `retraction(M,p,X)` to use.
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
+* `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,p,X)` to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
+* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
 ...
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
@@ -158,10 +161,10 @@ function bundle_method!(
     m::Real=0.0125,
     tol::Real=1e-8,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inverse_retraction_method::IR=default_inverse_retraction_method(M),
-    retraction_method::TRetr=default_retraction_method(M),
+    inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
+    retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
-    vector_transport_method::VTransp=default_vector_transport_method(M),
+    vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -207,15 +210,15 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ε = sum(λ .* bms.lin_errors)
     # Check transported subgradients ε-inequality
     r = rand(M)
-    println(r)
-    println(bms.p)
-    println(bms.p_last_serious)
     if (
         get_cost(mp, r) <
         get_cost(mp, bms.p_last_serious) +
         inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
     )
         println("No")
+        println(r)
+        println(bms.p)
+        println(bms.p_last_serious)
     end
     δ = -norm(M, bms.p_last_serious, g)^2 - ε
     (δ == 0 || -δ <= bms.tol) && (return bms)
