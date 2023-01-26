@@ -46,18 +46,29 @@ iterations.
 mutable struct StopAfterIteration <: StoppingCriterion
     maxIter::Int
     reason::String
-    StopAfterIteration(mIter::Int) = new(mIter, "")
+    at_iteration::Int
+    StopAfterIteration(mIter::Int) = new(mIter, "", 0)
 end
 function (c::StopAfterIteration)(
     ::P, ::O, i::Int
 ) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if i >= c.maxIter
+        c.at_iteration = i
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
     end
     return false
 end
+function status_summary(c::StopAfterIteration)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Max Iteration $(c.maxIter):\t$s"
+end
+indicates_convergence(c::StopAfterIteration) = false
 
 """
     update_stopping_criterion!(c::StopAfterIteration, :;MaxIteration, v::Int)
@@ -84,20 +95,30 @@ indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm 
 mutable struct StopWhenGradientNormLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    StopWhenGradientNormLess(ε::Float64) = new(ε, "")
+    at_iteration::Int
+    StopWhenGradientNormLess(ε::Float64) = new(ε, "", 0)
 end
 function (c::StopWhenGradientNormLess)(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     M = get_manifold(mp)
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if norm(M, get_iterate(s), get_gradient(s)) < c.threshold
         c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
+        c.at_iteration = i
         return true
     end
     return false
 end
-
+function status_summary(c::StopWhenGradientNormLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|∇f| < $(c.threshold) : $s"
+end
+indicates_convergence(c::StopWhenGradientNormLess) = true
 """
     update_stopping_criterion!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
 
@@ -136,6 +157,7 @@ mutable struct StopWhenChangeLess{IRT} <: StoppingCriterion
     reason::String
     storage::StoreStateAction
     inverse_retraction::IRT
+    at_iteration::Int
 end
 function StopWhenChangeLess(
     ε::Float64;
@@ -143,17 +165,20 @@ function StopWhenChangeLess(
     manifold::AbstractManifold=DefaultManifold(3),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{IRT}(ε, "", storage, inverse_retraction_method)
+    return StopWhenChangeLess{IRT}(ε, "", storage, inverse_retraction_method, 0)
 end
-
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if has_storage(c.storage, :Iterate)
         M = get_manifold(mp)
         x_old = get_storage(c.storage, :Iterate)
         d = distance(M, get_iterate(s), x_old, c.inverse_retraction)
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
+            c.at_iteration = i
             c.storage(mp, s, i)
             return true
         end
@@ -161,6 +186,12 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
     c.storage(mp, s, i)
     return false
 end
+function status_summary(c::StopWhenChangeLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|∇p| < $(c.threshold) : $s"
+end
+indicates_convergence(c::StopWhenChangeLess) = true
 
 """
     update_stopping_criterion!(c::StopWhenChangeLess, :MinIterateChange, v::Int)
