@@ -81,6 +81,25 @@ function default_stepsize(
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
+function show(io::IO, gds::GradientDescentState)
+    i = get_count(gds, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for gradient_descent
+    $Iter
+    ## Parameters
+    * retraction method: $(gds.retraction_method)
+
+    ## Stepsize
+    $(gds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(gds.stop))
+    This indicates convergence: $Conv
+    """
+    return print(io, s)
+end
 
 @doc raw"""
     gradient_descent(M, f, grad_f, p; kwargs...)

@@ -126,7 +126,7 @@ end
 function status_summary(c::StopWhenGradientNormLess)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "|∇f| < $(c.threshold): $s"
+    return "|Δf| < $(c.threshold): $s"
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
 function show(io::IO, c::StopWhenGradientNormLess)
@@ -203,7 +203,7 @@ end
 function status_summary(c::StopWhenChangeLess)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "|∇p| < $(c.threshold): $s"
+    return "|Δp| < $(c.threshold): $s"
 end
 indicates_convergence(c::StopWhenChangeLess) = true
 function show(io::IO, c::StopWhenChangeLess)
@@ -474,10 +474,10 @@ function status_summary(c::StopWhenAll)
     return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAll)
-    return all(indicates_convergence(ci) for ci in c.criteria)
+    return any(indicates_convergence(ci) for ci in c.criteria)
 end
-function get_count(c::StopWhenAll, ::Val{:Iterations})
-    return maximum(get_count(ci, Val{:Iterations}) for ci in c.criteria)
+function get_count(c::StopWhenAll, v::Val{:Iterations})
+    return maximum(get_count(ci, v) for ci in c.criteria)
 end
 function show(io::IO, c::StopWhenAll)
     s = replace(status_summary(c), "\n" => "\n    ") #increase indent
@@ -546,10 +546,12 @@ function status_summary(c::StopWhenAny)
     return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAny)
-    return any(indicates_convergence(ci) for ci in c.criteria)
+    return any(indicates_convergence(ci) for ci in get_active_stopping_criteria(c))
 end
-function get_count(c::StopWhenAny, ::Val{:Iterations})
-    return minimum(get_count(ci, Val{:Iterations}) for ci in c.criteria)
+function get_count(c::StopWhenAny, v::Val{:Iterations})
+    iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
+    (length(iters) == 0) && (return 0)
+    return minimum(iters)
 end
 function show(io::IO, c::StopWhenAny)
     s = replace(status_summary(c), "\n" => "\n    ") #increase indent
