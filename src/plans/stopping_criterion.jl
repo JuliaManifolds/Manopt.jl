@@ -250,6 +250,9 @@ function status_summary(c::StopWhenStepsizeLess)
     s = has_stopped ? "reached" : "not reached"
     return "Stepsize s < $(c.threshold):\t$s"
 end
+function show(io::IO, c::StopWhenStepsizeLess)
+    return print(io, "StopWhenStepsizeLess($(c.threshold))\n  $(status_summary(c))")
+end
 """
     update_stopping_criterion!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
@@ -514,10 +517,10 @@ function status_summary(c::StopWhenAny)
     end
     return "$s\nOverall: $s"
 end
-function indicates_convergence(c::StopWhenAll)
+function indicates_convergence(c::StopWhenAny)
     return any(indicates_convergence(ci) for ci in c.criteria)
 end
-function get_count(c::StopWhenAll, ::Val{:Iterations})
+function get_count(c::StopWhenAny, ::Val{:Iterations})
     return minimum(get_count(ci, Val{:Iterations}) for ci in c.criteria)
 end
 
