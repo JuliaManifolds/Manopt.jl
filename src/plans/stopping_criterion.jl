@@ -76,6 +76,9 @@ function status_summary(c::StopAfterIteration)
     s = has_stopped ? "reached" : "not reached"
     return "Max Iteration $(c.maxIter):\t$s"
 end
+function show(io::IO, c::StopAfterIteration)
+    return print(io, "StopAfterIteration($(c.maxIter))\n    $(status_summary(c))")
+end
 
 """
     update_stopping_criterion!(c::StopAfterIteration, :;MaxIteration, v::Int)
@@ -123,9 +126,13 @@ end
 function status_summary(c::StopWhenGradientNormLess)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "|∇f| < $(c.threshold) : $s"
+    return "|∇f| < $(c.threshold): $s"
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
+function show(io::IO, c::StopWhenGradientNormLess)
+    return print(io, "StopWhenGradientNormLess($(c.threshold))\n    $(status_summary(c))")
+end
+
 """
     update_stopping_criterion!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
 
@@ -196,9 +203,12 @@ end
 function status_summary(c::StopWhenChangeLess)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "|∇p| < $(c.threshold) : $s"
+    return "|∇p| < $(c.threshold): $s"
 end
 indicates_convergence(c::StopWhenChangeLess) = true
+function show(io::IO, c::StopWhenChangeLess)
+    return print(io, "StopWhenChangeLess($(c.threshold))\n    $(status_summary(c))")
+end
 
 """
     update_stopping_criterion!(c::StopWhenChangeLess, :MinIterateChange, v::Int)
@@ -251,7 +261,7 @@ function status_summary(c::StopWhenStepsizeLess)
     return "Stepsize s < $(c.threshold):\t$s"
 end
 function show(io::IO, c::StopWhenStepsizeLess)
-    return print(io, "StopWhenStepsizeLess($(c.threshold))\n  $(status_summary(c))")
+    return print(io, "StopWhenStepsizeLess($(c.threshold))\n    $(status_summary(c))")
 end
 """
     update_stopping_criterion!(c::StopWhenStepsizeLess, :MinStepsize, v)
@@ -299,6 +309,9 @@ function status_summary(c::StopWhenCostLess)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
     return "f(x) < $(c.threshold):\t$s"
+end
+function show(io::IO, c::StopWhenCostLess)
+    return print(io, "StopWhenCostLess($(c.threshold))\n    $(status_summary(c))")
 end
 
 """
@@ -354,6 +367,12 @@ function status_summary(c::StopWhenSmallerOrEqual)
     s = has_stopped ? "reached" : "not reached"
     return "Field :$(c.value) ≤ $(c.minValue):\t$s"
 end
+function show(io::IO, c::StopWhenSmallerOrEqual)
+    return print(
+        io, "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))\n    $(status_summary(c))"
+    )
+end
+
 """
     StopAfter <: StoppingCriterion
 
@@ -401,6 +420,10 @@ function status_summary(c::StopAfter)
     return "stopped after $(c.threshold):\t$s"
 end
 indicates_convergence(c::StopAfter) = false
+function show(io::IO, c::StopAfter)
+    return print(io, "StopAfter(:$(c.threshold))\n    $(status_summary(c))")
+end
+
 """
     update_stopping_criterion!(c::StopAfter, :MaxTime, v::Period)
 
@@ -444,11 +467,11 @@ end
 function status_summary(c::StopWhenAll)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    s = "Stop When _all_ of the following are fulfilled:\n"
+    r = "Stop When _all_ of the following are fulfilled:\n"
     for cs in c.criteria
-        s = "$s    $(status_summary)\n"
+        r = "$r    $(status_summary(cs))\n"
     end
-    return "$s\nOverall: $s"
+    return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAll)
     return all(indicates_convergence(ci) for ci in c.criteria)
@@ -456,6 +479,11 @@ end
 function get_count(c::StopWhenAll, ::Val{:Iterations})
     return maximum(get_count(ci, Val{:Iterations}) for ci in c.criteria)
 end
+function show(io::IO, c::StopWhenAll)
+    s = replace(status_summary(c), "\n" => "\n    ") #increase indent
+    return print(io, "StopWhenAll with the Stopping Criteria\n    $(s)")
+end
+
 """
     &(s1,s2)
     s1 & s2
@@ -511,11 +539,11 @@ end
 function status_summary(c::StopWhenAny)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    s = "Stop When _one_ of the following are fulfilled:\n"
+    r = "Stop When _one_ of the following are fulfilled:\n"
     for cs in c.criteria
-        s = "$s    $(status_summary)\n"
+        r = "$r    $(status_summary(cs))\n"
     end
-    return "$s\nOverall: $s"
+    return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAny)
     return any(indicates_convergence(ci) for ci in c.criteria)
@@ -523,7 +551,10 @@ end
 function get_count(c::StopWhenAny, ::Val{:Iterations})
     return minimum(get_count(ci, Val{:Iterations}) for ci in c.criteria)
 end
-
+function show(io::IO, c::StopWhenAny)
+    s = replace(status_summary(c), "\n" => "\n    ") #increase indent
+    return print(io, "StopWhenAny with the Stopping Criteria\n    $(s)")
+end
 """
     |(s1,s2)
     s1 | s2
