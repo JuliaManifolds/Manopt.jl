@@ -65,6 +65,7 @@ should be returned at the end of a solver instead of the usual minimizer.
 struct ReturnSolverState{S<:AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
 end
+show(io::IO, rst::ReturnSolverState) = show(io, rst.state)
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
 
 """

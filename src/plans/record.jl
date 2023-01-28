@@ -65,6 +65,21 @@ end
 function RecordSolverState(s::S, symbol::Symbol) where {S<:AbstractManoptSolverState}
     return RecordSolverState{S}(s; Iteration=RecordFactory(get_state(s), symbol))
 end
+function show(io::IO, rst::RecordSolverState)
+    if length(rst.recordDictionary) > 0
+        return print(
+            io,
+            """
+            $(rst.state)
+
+            ## Debug
+            $(rst.recordDictionary)
+            """,
+        )
+    else
+        return show(io, rst.state)
+    end
+end
 
 dispatch_state_decorator(::RecordSolverState) = Val(true)
 

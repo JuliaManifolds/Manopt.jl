@@ -15,6 +15,7 @@ to indicate a call from [`stop_solver!`](@ref) that returns true afterwards.
 or to @info. The default is the `print` function on the default `Base.stdout`.
 """
 abstract type DebugAction <: AbstractStateAction end
+status_summary(da::DebugAction) = "$(da)"
 
 @doc raw"""
     DebugSolverState <: AbstractManoptSolverState
@@ -69,7 +70,27 @@ function DebugSolverState(
 ) where {S<:AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
+function show(io::IO, dst::DebugSolverState)
+    if length(dst.debugDictionary) > 0
+        s = ""
+        if length(dst.debugDictionary) == 1 && first(keys(dst.debugDictionary)) === :All
+            s = "\n    $(status_summary(dst.debugDictionary[:All]))"
+        else
+            for (k, v) in dst.debugDictionary
+                s = "$s\n    :$k = $(status_summary(v))"
+            end
+        end
+        return print(
+            io,
+            """
+            $(dst.state)
 
+            ## Debug$s""",
+        )
+    else
+        return show(io, dst.state)
+    end
+end
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
 #
@@ -97,6 +118,9 @@ function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     for di in d.group
         di(p, st, i)
     end
+end
+function show(io::IO, dg::DebugGroup)
+    return print(io, "[ $(join(["$(status_summary(di))" for di in dg.group], ", ")) ]")
 end
 
 @doc raw"""
@@ -128,7 +152,18 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         d.debug(p, st, -1)
     end
 end
-
+function show(io::IO, de::DebugEvery)
+    return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update)")
+end
+function status_summary(de::DebugEvery)
+    s = ""
+    if de.debug isa DebugGroup
+        s = ("$(de.debug)")[3:(end - 2)]
+    else
+        s = "$(de.debug)"
+    end
+    return "[$s, $(de.every)]"
+end
 #
 # Special single ones
 #
@@ -267,7 +302,8 @@ function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverStat
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
     return nothing
 end
-
+show(io::IO, di::DebugIteration) = print(io, "DebugIteration(; format=\"$(di.format)\")")
+status_summary(di::DebugIteration) = "(:Iteration, \"$(di.format)\")"
 @doc raw"""
     DebugCost <: DebugAction
 
