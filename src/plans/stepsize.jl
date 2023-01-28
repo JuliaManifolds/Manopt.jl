@@ -67,6 +67,7 @@ function (cs::ConstantStepsize)(
     return cs.length
 end
 get_initial_stepsize(s::ConstantStepsize) = s.length
+show(io::IO, cs::ConstantStepsize) = print(io, "ConstantStepsize($(cs.length))")
 
 @doc raw"""
     DecreasingStepsize()
@@ -128,7 +129,12 @@ function (s::DecreasingStepsize)(
     return (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
-
+function show(io::IO, s::DecreasingStepsize)
+    return print(
+        io,
+        "DecreasingStepsize(; length=$(s.length),  factor=$(s.factor),  subtrahend=$(s.subtrahend),  shift=$(s.shift))",
+    )
+end
 """
     Linesearch <: Stepsize
 
@@ -171,9 +177,10 @@ last step size.
     before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
 * `initial_guess` (`(p,o,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o`
   and a current iterate `i` and a last step size `l`, this returns an initial guess. The default uses the last obtained stepsize
+
 # Constructor
 
-    ArmijoLineSearch(M)
+    ArmijoLineSearch(M=DefaultManifld(2))
 
 with the Fields above as keyword arguments and the retraction is set to the default retraction on `M`.
 
@@ -194,7 +201,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     linesearch_stopsize::Float64
     initial_guess::F
     function ArmijoLinesearch(
-        M;
+        M=DefaultManifold(2);
         initial_stepsize::Float64=1.0,
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         contraction_factor::Float64=0.95,
@@ -236,55 +243,68 @@ function (a::ArmijoLinesearch)(
     return a.last_stepsize
 end
 get_initial_stepsize(a::ArmijoLinesearch) = a.initial_stepsize
+function show(io::IO, als::ArmijoLinesearch)
+    return print(
+        io,
+        """
+        Armijolineseach() with keyword parameters
+          * initial_stepsize = $(als.initial_stepsize)
+          * retraction_methode = $(als.retraction_method)
+          * contraction_factore = $(als.contraction_factor)
+          * sufficient_decreasee = $(als.sufficient_decrease)
+          * linesearch_stopsizee = $(als.linesearch_stopsize)
+        and a last stepsize of $(als.last_stepsize)""",
+    )
+end
 
 @doc raw"""
     linesearch_backtrack(M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x); stop_step=0.)
 
 perform a linesearch for
 * a manifold `M`
-* a cost function `F`,
-* an iterate `x`
+* a cost function `f`,
+* an iterate `p`
 * the gradient ``\operatorname{grad}F(x)``
 * an initial stepsize `s` usually called ``γ``
 * a sufficient `decrease`
 * a `contract`ion factor ``σ``
-* a `retr`action, which defaults to the `ExponentialRetraction()`
+* a `retr`action, which defaults to the `default_retraction_method(M)`
 * a search direction ``η = -\operatorname{grad}F(x)``
 * an offset, ``f_0 = F(x)``
 * a keyword `stop_step` as a minimal step size when to stop
 """
 function linesearch_backtrack(
     M::AbstractManifold,
-    F::TF,
-    x,
+    f::TF,
+    p,
     gradFx::T,
     s,
     decrease,
     contract,
-    retr::AbstractRetractionMethod=ExponentialRetraction(),
+    retr::AbstractRetractionMethod=default_retraction_method(M),
     η::T=-gradFx,
-    f0=F(x);
+    f0=f(p);
     stop_step=0.0,
 ) where {TF,T}
-    xNew = retract(M, x, s * η, retr)
-    fNew = F(xNew)
-    search_dir_inner = real(inner(M, x, η, gradFx))
+    p_new = retract(M, p, s * η, retr)
+    fNew = f(p_new)
+    search_dir_inner = real(inner(M, p, η, gradFx))
     extended = false
     while fNew < f0 + decrease * s * search_dir_inner # increase
         extended = true
         s = s / contract
-        retract!(M, xNew, x, s * η, retr)
-        fNew = F(xNew)
+        retract!(M, p_new, p, s * η, retr)
+        fNew = f(p_new)
     end
     if extended
         s *= contract  # undo last increase
-        retract!(M, xNew, x, s * η, retr)
-        fNew = F(xNew)
+        retract!(M, p_new, p, s * η, retr)
+        fNew = f(p_new)
     end
     while fNew > f0 + decrease * s * search_dir_inner # decrease
         s = contract * s
-        retract!(M, xNew, x, s * η, retr)
-        fNew = F(xNew)
+        retract!(M, p_new, p, s * η, retr)
+        fNew = f(p_new)
         (s < stop_step) && break
     end
     return s
@@ -546,7 +566,23 @@ function (a::NonmonotoneLinesearch)(
     )
     return a.initial_stepsize
 end
-
+function show(io::IO, a::NonmonotoneLinesearch)
+    return print(
+        io,
+        """
+        NonmonotoneLinesearch() with keyword arguments
+          * initial_stepsize = $(a.initial_stepsize)
+          * linesearch_stopsize = $(a.linesearch_stopsize)
+          * max_stepsize = $(a.max_stepsize)
+          * memory_size = $(length(a.old_costs))
+          * min_stepsize = $(a.min_stepsize),
+          * stepsize_reduction = $(a.stepsize_reduction)
+          * strategy = :$(a.strategy)
+          * sufficient_decrease = $(a.sufficient_decrease)
+          * retraction_method = $(a.retraction_method)
+          * vector_transport_method = $(a.vector_transport_method)""",
+    )
+end
 @doc raw"""
     WolfePowellLinesearch <: Linesearch
 
@@ -569,14 +605,6 @@ In this case the retraction and the vector transport are also keyword arguments 
 The other constructor is kept for backward compatibility.
 Note that the `linesearch_stopsize` to stop for too small stepsizes is only available in the
 new signature including `M`.
-For the old (deprecated) signature the `linesearch_stopsize` is set to the old hard-coded default of  `1e-12`
-
-    WolfePowellLinesearch(
-        retr::AbstractRetractionMethod=ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999
-    )
 
     WolfePowellLinesearch(
         M,
@@ -598,7 +626,7 @@ mutable struct WolfePowellLinesearch{
     linesearch_stopsize::Float64
 
     function WolfePowellLinesearch(
-        M::AbstractManifold,
+        M::AbstractManifold=DefaultManifold(2),
         c1::Float64=10^(-4),
         c2::Float64=0.999;
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -612,7 +640,6 @@ mutable struct WolfePowellLinesearch{
         )
     end
 end
-
 function (a::WolfePowellLinesearch)(
     mp::AbstractManoptProblem,
     ams::AbstractManoptSolverState,
@@ -684,6 +711,16 @@ function (a::WolfePowellLinesearch)(
     a.last_stepsize = step
     return step
 end
+function show(io::IO, a::WolfePowellLinesearch)
+    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
+    return print(
+        io,
+        """
+        WolfePowellLinesearch(DefaultManifold(2), $(a.c1), $(a.c2)) with keyword arguments
+          * retraction_method = $(a.retraction_method)
+          * vector_transport_method = $(a.vector_transport_method)$s""",
+    )
+end
 
 @doc raw"""
     WolfePowellBinaryLinesearch <: Linesearch
@@ -713,15 +750,6 @@ There exist two constructors, where, when prodivind the manifold `M` as a first 
 parameter, its default retraction and vector transport are the default.
 In this case the retraction and the vector transport are also keyword arguments for ease of use.
 The other constructor is kept for backward compatibility.
-Note that the `linesearch_stopsize` to stop for too small stepsizes is only available in the
-new signature including `M`, for the first it is set to the old default of `1e-9`.
-
-    WolfePowellBinaryLinesearch(
-        retr::AbstractRetractionMethod=ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod=ParallelTransport(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999
-    )
 
     WolfePowellLinesearch(
         M,
@@ -748,7 +776,7 @@ mutable struct WolfePowellBinaryLinesearch{
     linesearch_stopsize::Float64
 
     function WolfePowellBinaryLinesearch(
-        M::AbstractManifold,
+        M::AbstractManifold=DefaultManifold(2),
         c1::Float64=10^(-4),
         c2::Float64=0.999;
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -762,7 +790,6 @@ mutable struct WolfePowellBinaryLinesearch{
         )
     end
 end
-
 function (a::WolfePowellBinaryLinesearch)(
     amp::AbstractManoptProblem,
     ams::AbstractManoptSolverState,
@@ -805,7 +832,17 @@ function (a::WolfePowellBinaryLinesearch)(
     a.last_stepsize = t
     return t
 end
-
+function show(io::IO, a::WolfePowellBinaryLinesearch)
+    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
+    return print(
+        io,
+        """
+        WolfePowellBinaryLinesearch(DefaultManifold(2), $(a.c1), $(a.c2)) with keyword arguments
+          * retraction_method = $(a.retraction_method)
+          * vector_transport_method = $(a.vector_transport_method)
+          * linesearch_stopsize = $(a.linesearch_stopsize)$s""",
+    )
+end
 @doc raw"""
     get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
 
