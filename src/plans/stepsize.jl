@@ -249,11 +249,11 @@ function show(io::IO, als::ArmijoLinesearch)
         """
         Armijolineseach() with keyword parameters
           * initial_stepsize = $(als.initial_stepsize)
-          * retraction_methode = $(als.retraction_method)
-          * contraction_factore = $(als.contraction_factor)
-          * sufficient_decreasee = $(als.sufficient_decrease)
-          * linesearch_stopsizee = $(als.linesearch_stopsize)
-        and a last stepsize of $(als.last_stepsize)""",
+          * retraction_method = $(als.retraction_method)
+          * contraction_factor = $(als.contraction_factor)
+          * sufficient_decrease = $(als.sufficient_decrease)
+          * linesearch_stopsize = $(als.linesearch_stopsize)
+        and a computed last stepsize of $(als.last_stepsize)""",
     )
 end
 
