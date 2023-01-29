@@ -57,21 +57,21 @@ end
             storage=StoreStateAction((:Iterate,)),
             prefix="Last: ",
             io=io,
-            invretr=PolarInverseRetraction(),
+            inverse_retraction=PolarInverseRetraction(),
         )
-        a2mani = DebugChange(;
+        a2mani = DebugChange(
+            TestPolarManifold();
             storage=StoreStateAction((:Iterate,)),
             prefix="Last: ",
             io=io,
-            manifold=TestPolarManifold(),
         )
-        @test a2inv.invretr === PolarInverseRetraction()
-        @test a2mani.invretr === PolarInverseRetraction()
-        @test a2.invretr === LogarithmicInverseRetraction()
+        @test a2inv.inverse_retraction === PolarInverseRetraction()
+        @test a2mani.inverse_retraction === PolarInverseRetraction()
+        @test a2.inverse_retraction === LogarithmicInverseRetraction()
         @test String(take!(io)) == "Last: 1.000000"
         # Change of Gradient
         a3 = DebugGradientChange(;
-            storage=StoreStateAction((:Gradient,)), prefix="Last: ", io=io
+            storage=StoreStateAction((:Gradient, :Iterate)), prefix="Last: ", io=io
         )
         a3(mp, st, 0) # init
         st.X = [1.0, 0.0]

@@ -252,9 +252,11 @@ function show(io::IO, als::ArmijoLinesearch)
           * retraction_method = $(als.retraction_method)
           * contraction_factor = $(als.contraction_factor)
           * sufficient_decrease = $(als.sufficient_decrease)
-          * linesearch_stopsize = $(als.linesearch_stopsize)
-        and a computed last stepsize of $(als.last_stepsize)""",
+          * linesearch_stopsize = $(als.linesearch_stopsize)""",
     )
+end
+function status_summary(als::ArmijoLinesearch)
+    return "$(a)\nand a computed last stepsize of $(als.last_stepsize)"
 end
 
 @doc raw"""

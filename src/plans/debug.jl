@@ -70,7 +70,7 @@ function DebugSolverState(
 ) where {S<:AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
-function show(io::IO, dst::DebugSolverState)
+function status_summary(dst::DebugSolverState)
     if length(dst.debugDictionary) > 0
         s = ""
         if length(dst.debugDictionary) == 1 && first(keys(dst.debugDictionary)) === :All
@@ -87,14 +87,17 @@ function show(io::IO, dst::DebugSolverState)
 
             ## Debug$s""",
         )
-    else
-        return show(io, dst.state)
+    else # for length 1 the group is equivvalent to the summary of the single state
+        return status_summary(io, dst.state)
     end
+end
+function show(io::IO, dst::DebugSolverState)
+    return print(io, "DebugSolverState($(dst.state), $(dst.debugDictionary))")
 end
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
 #
-# Meta Debugs
+# Meta Debug Acrions
 #
 """
     DebugGroup <: DebugAction
@@ -119,8 +122,12 @@ function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         di(p, st, i)
     end
 end
+function status_summary(dg::DebugGroup)
+    return "[ $( join(["$(status_summary(di))" for di in dg.group], ", ")) ]"
+end
 function show(io::IO, dg::DebugGroup)
-    return print(io, "[ $(join(["$(status_summary(di))" for di in dg.group], ", ")) ]")
+    s = join(["$(di)" for di in dg.group], ", ")
+    return print(io, "DebugGroup([$s])")
 end
 
 @doc raw"""
@@ -183,22 +190,22 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
   used for approximating distance.
 """
-mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAction
+mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
-    invretr::TInvRetr
-    function DebugChange(;
+    inverse_retraction::IR
+    function DebugChange(
+        M::AbstractManifold=DefaultManifold(2);
         storage::StoreStateAction=StoreStateAction((:Iterate,)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-        manifold::AbstractManifold=DefaultManifold(1),
-        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            manifold
+        inverse_retraction::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            M
         ),
     )
-        return new{typeof(invretr)}(io, format, storage, invretr)
+        return new{typeof(inverse_retraction)}(io, format, storage, inverse_retraction)
     end
 end
 function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverState, i)
@@ -206,11 +213,21 @@ function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverSta
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(M, get_iterate(st), get_storage(d.storage, :Iterate), d.invretr),
+        distance(
+            M, get_iterate(st), get_storage(d.storage, :Iterate), d.inverse_retraction
+        ),
     )
     d.storage(mp, st, i)
     return nothing
 end
+function show(io::IO, dc::DebugChange)
+    return print(
+        io,
+        "DebugIteration(; format=\"$(dc.format)\", inverse_retraction=$(dc.inverse_retraction))",
+    )
+end
+status_summary(dc::DebugChange) = "(:Change, \"$(dc.format)\")"
+
 @doc raw"""
     DebugGradientChange()
 
@@ -223,31 +240,47 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
 """
-mutable struct DebugGradientChange <: DebugAction
+mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
-    function DebugGradientChange(;
-        storage::StoreStateAction=StoreStateAction((:Gradient,)),
+    vector_transport_method::VTR
+    function DebugGradientChange(
+        M::AbstractManifold=DefaultManifold(2);
+        storage::StoreStateAction=StoreStateAction((:Gradient, :Iterate)),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-    )
-        return new(io, format, storage)
+        vector_transport_method::VTR=default_vector_transport_method(M),
+    ) where {VTR<:AbstractVectorTransportMethod}
+        return new{VTR}(io, format, storage, vector_transport_method)
     end
 end
 function (d::DebugGradientChange)(
     pm::AbstractManoptProblem, st::AbstractManoptSolverState, i
 )
-    M = get_manifold(pm)
-    (i > 0) && Printf.format(
-        d.io,
-        Printf.Format(d.format),
-        distance(M, get_gradient(st), get_storage(d.storage, :Gradient)),
-    )
+    if i > 0
+        M = get_manifold(pm)
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :Gradient)
+        p = get_iterate(st)
+        X = get_gradient(st)
+        l = norm(
+            M, p, X - vector_transport_to(M, p_old, X_old, p, d.vector_transport_method)
+        )
+        Printf.format(d.io, Printf.Format(d.format), l)
+    end
     d.storage(pm, st, i)
     return nothing
 end
+function show(io::IO, dgc::DebugGradientChange)
+    return print(
+        io,
+        "DebugGradientChange(; format=\"$(dgc.format), vector_transport_method=$(dgc.vector_transport_method)\")",
+    )
+end
+status_summary(di::DebugGradientChange) = "(:GradientChange, \"$(di.format)\")"
+
 @doc raw"""
     DebugIterate <: DebugAction
 
@@ -277,6 +310,10 @@ function (d::DebugIterate)(::AbstractManoptProblem, st::AbstractManoptSolverStat
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
     return nothing
 end
+function show(io::IO, di::DebugIterate)
+    return print(io, "DebugIterate(; format=\"$(di.format)\")")
+end
+status_summary(di::DebugIterate) = "(:Iterate, \"$(di.format)\")"
 
 @doc raw"""
     DebugIteration <: DebugAction
@@ -304,6 +341,7 @@ function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverStat
 end
 show(io::IO, di::DebugIteration) = print(io, "DebugIteration(; format=\"$(di.format)\")")
 status_summary(di::DebugIteration) = "(:Iteration, \"$(di.format)\")"
+
 @doc raw"""
     DebugCost <: DebugAction
 
@@ -331,6 +369,8 @@ function (d::DebugCost)(p::AbstractManoptProblem, st::AbstractManoptSolverState,
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
     return nothing
 end
+show(io::IO, di::DebugCost) = print(io, "DebugCost(; format=\"$(di.format)\")")
+status_summary(di::DebugCost) = "(:Cost, \"$(di.format)\")"
 
 @doc raw"""
     DebugDivider <: DebugAction
@@ -352,6 +392,8 @@ function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState,
     end
     return nothing
 end
+show(io::IO, di::DebugDivider) = print(io, "DebugDivider(; divider=\"$(di.divider)\")")
+status_summary(di::DebugDivider) = "\"$(di.divider)\""
 
 @doc raw"""
     DebugEntry <: RecordAction
@@ -378,6 +420,9 @@ end
 function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
     return nothing
+end
+function show(io::IO, di::DebugEntry)
+    return print(io, "DebugEntry(:$(di.field); format=\"$(di.format)\")")
 end
 
 @doc raw"""
@@ -427,7 +472,6 @@ mutable struct DebugEntryChange <: DebugAction
         return new(d, f, format, io, storage)
     end
 end
-
 function (d::DebugEntryChange)(
     p::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
 )
@@ -441,6 +485,11 @@ function (d::DebugEntryChange)(
     Printf.format(d.io, Printf.Format(d.format), v)
     d.storage(p, st, i)
     return nothing
+end
+function show(io::IO, di::DebugEntryChange)
+    return print(
+        io, "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(di.format)\")"
+    )
 end
 
 @doc raw"""
@@ -459,6 +508,8 @@ function (d::DebugStoppingCriterion)(
     print(d.io, (i >= 0 || i == typemin(Int)) ? get_reason(st) : "")
     return nothing
 end
+show(io::IO, ::DebugStoppingCriterion) = print(io, "DebugStoppingCriterion()")
+status_summary(::DebugStoppingCriterion) = ":Stop"
 
 @doc raw"""
     DebugTime()
@@ -509,7 +560,15 @@ function (d::DebugTime)(::AbstractManoptProblem, ::AbstractManoptSolverState, i)
     end
     return nothing
 end
-
+function show(io::IO, di::DebugTime)
+    return print(io, "DebugTime(; format=\"$(di.format)\", mode=:$(di.mode))")
+end
+function status_summary(di::DebugTime)
+    if di.mode === :iterative
+        return "(:IterativeTime, \"$(di.format)\")"
+    end
+    return "(:Time, \"$(di.format)\")"
+end
 """
     reset!(d::DebugTime)
 
@@ -519,7 +578,6 @@ function reset!(d::DebugTime)
     d.last_time = Nanosecond(time_ns())
     return d
 end
-
 """
     stop!(d::DebugTime)
 
@@ -581,6 +639,9 @@ function (d::DebugWarnIfCostIncreases)(
     end
     return nothing
 end
+function show(io::IO, di::DebugWarnIfCostIncreases)
+    return print(io, "DebugWarnIfCostIncreases(; tol=\"$(di.tol)\")")
+end
 
 @doc raw"""
     DebugWarnIfCostNotFinite <: DebugAction
@@ -617,6 +678,8 @@ function (d::DebugWarnIfCostNotFinite)(
     end
     return nothing
 end
+show(io::IO, ::DebugWarnIfCostNotFinite) = print(io, "DebugWarnIfCostNotFinite()")
+status_summary(::DebugWarnIfCostNotFinite) = ":WarnCost"
 
 @doc raw"""
     DebugWarnIfFieldNotFinite <: DebugAction
@@ -668,6 +731,9 @@ function (d::DebugWarnIfFieldNotFinite)(
         end
     end
     return nothing
+end
+function show(io::IO, dw::DebugWarnIfFieldNotFinite)
+    return print(io, "DebugWarnIfFieldNotFinite(:$(dw.field))")
 end
 
 @doc raw"""

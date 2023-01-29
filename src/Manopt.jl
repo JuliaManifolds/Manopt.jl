@@ -1,5 +1,10 @@
 """
-`Manopt.jl` – Optimization on Manifolds in Julia.
+🏔️ Manopt.jl – Optimization on Manifolds in Julia.
+
+- 📚 Documentation: https://manoptjl.org
+- 📦 Repository: https://github.com/JuliaManifolds/Manopt.jl
+- 💬 Discussions: https://github.com/JuliaManifolds/Manopt.jl/discussions
+- 🎯 Issues: https://github.com/JuliaManifolds/Manopt.jl/issues
 """
 module Manopt
 import Base: &, copy, getindex, identity, setindex!, show, |

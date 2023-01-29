@@ -1,3 +1,11 @@
+"""
+status_summary(e)
+
+return a string reportingabout the current status of `e`, e.g.
+a [`Problem`](@ref), [`Objective`](@ref), [`Stepsize`](@ref) or [`AbstractStateAction`](@ref)s.
+"""
+function status_summary end
+
 include("objective.jl")
 include("problem.jl")
 include("solver_state.jl")
