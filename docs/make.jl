@@ -29,7 +29,7 @@ makedocs(;
         "About" => "about.md",
         "How to..." => [
             "Get started: Optimize!" => "tutorials/Optimize!.md",
-            "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md"
+            "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
         ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
