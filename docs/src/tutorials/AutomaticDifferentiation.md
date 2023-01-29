@@ -1,29 +1,20 @@
----
-title: "Using Automatic Differentiation in Manopt.jl"
----
+Using Automatic Differentiation in Manopt.jl
+================
 
 Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7, the support of automatic differentiation support has been extended.
 
 This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function $f\colon \mathcal M → ℝ$. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](https://manoptjl.org).
 
-While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDifferences.jl/latest/), you can also use [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl), [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/), [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/), or  [Zygote.jl](https://fluxml.ai/Zygote.jl/).
+While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDifferences.jl/latest/), you can also use [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl), [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/), [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/), or [Zygote.jl](https://fluxml.ai/Zygote.jl/).
 
 In this tutorial we will take a look at a few possibilities to approximate or derive the gradient of a function $f:\mathcal M \to ℝ$ on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
 
-1. Working _instrinsically_, i.e. staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
-2. Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
-
-```{julia}
-#| echo: false
-#| code-fold: true
-#| output: false
-using Pkg;
-Pkg.activate("."); # for reproducibility use the local tutorial environment.
-```
+1.  Working *instrinsically*, i.e. staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
+2.  Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
 
 We first load all necessary packages
 
-```{julia}
+``` julia
 using Manopt, Manifolds, Random, LinearAlgebra
 using FiniteDifferences, ManifoldDiff
 Random.seed!(42);
@@ -33,64 +24,66 @@ Random.seed!(42);
 
 A first idea is to generalize (multivariate) finite differences to Riemannian manifolds. Let $X_1,\ldots,X_d ∈ T_p\mathcal M$ denote an orthonormal basis of the tangent space $T_p\mathcal M$ at the point $p∈\mathcal M$ on the Riemannian manifold.
 
-We can generalize the notion of a directional derivative, i.e. for the “direction” $Y∈T_p\mathcal M$. Let $c\colon [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, e.g. $c(t)= \exp_p(tY)$. We obtain
+We can generalize the notion of a directional derivative, i.e. for the “direction” $Y∈T_p\mathcal M$. Let $c\colon [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, e.g. $c(t)= \exp_p(tY)$. We obtain
 
-```math
-	Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t \to 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
+``` math
+    Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t \to 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
 ```
 
 We can approximate $Df(p)[X]$ by a finite difference scheme for an $h>0$ as
 
-```math
+``` math
 DF(p)[Y] ≈ G_h(Y) := \frac{1}{h}(f(\exp_p(hY))-f(p))
 ```
 
 Furthermore the gradient $\operatorname{grad}f$ is the Riesz representer of the differential, ie.
 
-```math
-	Df(p)[Y] = g_p(\operatorname{grad}f(p), Y),\qquad \text{ for all } Y ∈ T_p\mathcal M
+``` math
+    Df(p)[Y] = g_p(\operatorname{grad}f(p), Y),\qquad \text{ for all } Y ∈ T_p\mathcal M
 ```
 
 and since it is a tangent vector, we can write it in terms of a basis as
 
-```math
-	\operatorname{grad}f(p) = \sum_{i=1}^{d} g_p(\operatorname{grad}f(p),X_i)X_i
-	= \sum_{i=1}^{d} Df(p)[X_i]X_i
+``` math
+    \operatorname{grad}f(p) = \sum_{i=1}^{d} g_p(\operatorname{grad}f(p),X_i)X_i
+    = \sum_{i=1}^{d} Df(p)[X_i]X_i
 ```
 
 and perform the approximation from above to obtain
-```math
-	\operatorname{grad}f(p) ≈ \sum_{i=1}^{d} G_h(X_i)X_i
+
+``` math
+    \operatorname{grad}f(p) ≈ \sum_{i=1}^{d} G_h(X_i)X_i
 ```
+
 for some suitable step size $h$. This comes at the cost of $d+1$ function evaluations and $d$ exponential maps.
 
-This is the first variant we can use. An advantage is that it is _intrinsic_ in the sense that it does not require any embedding of the manifold.
+This is the first variant we can use. An advantage is that it is *intrinsic* in the sense that it does not require any embedding of the manifold.
 
 ### An Example: The Rayleigh Quotient
 
 The Rayleigh quotient is concerned with finding eigenvalues (and eigenvectors) of a symmetric matrix $A\in ℝ^{(n+1)×(n+1)}$. The optimization problem reads
 
-```math
+``` math
 F\colon ℝ^{n+1} \to ℝ,\quad F(\mathbf x) = \frac{\mathbf x^\mathrm{T}A\mathbf x}{\mathbf x^\mathrm{T}\mathbf x}
 ```
 
 Minimizing this function yields the smallest eigenvalue $\lambda_1$ as a value and the corresponding minimizer $\mathbf x^*$ is a corresponding eigenvector.
 
-Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere $ 𝕊^n$ of unit vectors in $ \mathbb R^{n+1}$, i.e.
+Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere \$ 𝕊^n\$ of unit vectors in \$ R^{n+1}\$, i.e.
 
-```math
+``` math
 \operatorname*{arg\,min}_{p \in 𝕊^n}\ f(p) = \operatorname*{arg\,min}_{\ p \in 𝕊^n} p^\mathrm{T}Ap
 ```
 
 We can compute the Riemannian gradient exactly as
 
-```math
+``` math
 \operatorname{grad} f(p) = 2(Ap - pp^\mathrm{T}Ap)
 ```
 
 so we can compare it to the approximation by finite differences.
 
-```{julia}
+``` julia
 n = 200
 A = randn(n + 1, n + 1)
 A = Symmetric(A)
@@ -100,9 +93,11 @@ f1(p) = p' * A'p
 gradf1(p) = 2 * (A * p - p * p' * A * p)
 ```
 
+    gradf1 (generic function with 1 method)
+
 Manifolds provides a finite difference scheme in tangent spaces, that you can introduce to use an existing framework (if the wrapper is implemented) form Euclidean space. Here we use `FiniteDiff.jl`.
 
-```{julia}
+``` julia
 r_backend = ManifoldDiff.TangentDiffBackend(
     ManifoldDiff.FiniteDifferencesBackend()
 )
@@ -115,6 +110,8 @@ X2 = gradf1_FD(p)
 norm(M, p, X1 - X2)
 ```
 
+    1.0189722538768155e-12
+
 We obtain quite a good approximation of the gradient.
 
 ## 2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold
@@ -125,36 +122,36 @@ Since we can use the pushforward of the embedding to also embed the tangent spac
 
 If both $T_p\mathcal M$ and $T_p\mathbb R^m$ have the same inner product, or in other words the manifold is isometrically embedded in $\mathbb R^m$ (like for example the sphere $\mathbb S^n\subset\mathbb R^{m+1}$), then this restriction of the differential directly translates to a projection of the gradient, i.e.
 
-```math
+``` math
 \operatorname{grad}f(p) = \operatorname{Proj}_{T_p\mathcal M}(\operatorname{grad} \tilde f(p))
 ```
 
 More generally we might have to take a change of the metric into account, i.e.
 
-```math
+``` math
 \langle  \operatorname{Proj}_{T_p\mathcal M}(\operatorname{grad} \tilde f(p)), X \rangle
 = Df(p)[X] = g_p(\operatorname{grad}f(p), X)
 ```
 
-or in words: we have to change the Riesz representer of the (restricted/projected) differential of $f$ ($\tilde f$) to the one with respect to the Riemannian metric. This is done using [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple{AbstractManifold,%20AbstractMetric,%20Any,%20Any}).
+or in words: we have to change the Riesz representer of the (restricted/projected) differential of $f$ ($\tilde f$) to the one with respect to the Riemannian metric. This is done using [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple%7BAbstractManifold,%20AbstractMetric,%20Any,%20Any%7D).
 
 ### A Continued Example
 
 We continue with the Rayleigh Quotient from before, now just starting with the defintion of the Euclidean case in the embedding, the function $F$.
 
-```{julia}
+``` julia
 F(x) = x' * A * x / (x' * x);
 ```
 
 The cost function is the same by restriction
 
-```{julia}
+``` julia
 f2(M, p) = F(p);
 ```
 
 The gradient is now computed combining our gradient scheme with FiniteDifferences.
 
-```{julia}
+``` julia
 function grad_f2_AD(M, p)
     return Manifolds.gradient(
         M, F, p, Manifolds.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
@@ -164,13 +161,15 @@ X3 = grad_f2_AD(M, p)
 norm(M, p, X1 - X3)
 ```
 
+    1.7755980346412189e-12
+
 ### An Example for a Nonisometrically Embedded Manifold
 
 on the manifold $\mathcal P(3)$ of symmetric positive definite matrices.
 
-The following function computes (half) the distance squared (with respect to the linear affine metric) on the manifold $\mathcal P(3)$ to the identity, i.e. $I_3$. Denoting the unit matrix we consider the function
+The following function computes (half) the distance squared (with respect to the linear affine metric) on the manifold $\mathcal P(3)$ to the identity, i.e. $I_3$. Denoting the unit matrix we consider the function
 
-```math
+``` math
     G(q)
     = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3)
     = \lVert \operatorname{Log}(q) \rVert_F^2,
@@ -179,32 +178,38 @@ The following function computes (half) the distance squared (with respect to the
 where $\operatorname{Log}$ denotes the matrix logarithm and $\lVert \cdot \rVert_F$ is the Frobenius norm.
 This can be computed for symmetric positive definite matrices by summing the squares of the logarithms of the eigenvalues of $q$ and dividing by two:
 
-```{julia}
+``` julia
 G(q) = sum(log.(eigvals(Symmetric(q))) .^ 2) / 2
 ```
 
-We can also interpret this as a function on the space of matrices and apply the Euclidean finite differences machinery; in this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer (see again [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple{AbstractManifold,%20AbstractMetric,%20Any,%20Any})) after projecting onto the tangent space $T_p\mathcal P(n)$ at $p$.
+    G (generic function with 1 method)
 
-Let's first define a point and the manifold $N=\mathcal P(3)$.
+We can also interpret this as a function on the space of matrices and apply the Euclidean finite differences machinery; in this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer (see again [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple%7BAbstractManifold,%20AbstractMetric,%20Any,%20Any%7D)) after projecting onto the tangent space $T_p\mathcal P(n)$ at $p$.
 
-```{julia}
+Let’s first define a point and the manifold $N=\mathcal P(3)$.
+
+``` julia
 rotM(α) = [1.0 0.0 0.0; 0.0 cos(α) sin(α); 0.0 -sin(α) cos(α)]
 q = rotM(π / 6) * [1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 3.0] * transpose(rotM(π / 6))
 N = SymmetricPositiveDefinite(3)
 is_point(N, q)
 ```
 
+    true
+
 We could first just compute the gradient using `FiniteDifferences.jl`, but this yields the Euclidean gradient:
 
-```{julia}
+``` julia
 FiniteDifferences.grad(central_fdm(5, 1), G, q)
 ```
+
+    ([3.240417492806275e-14 -2.3531899864903462e-14 0.0; 0.0 0.3514812167654708 0.017000516835452926; 0.0 0.0 0.36129646973723023],)
 
 Instead, we use the [`RiemannianProjectedBackend`](https://juliamanifolds.github.io/Manifolds.jl/latest/features/differentiation.html#Manifolds.RiemannianProjectionBackend) of `Manifolds.jl`, which in this case internally uses `FiniteDifferences.jl` to compute a Euclidean gradient but then uses the conversion explained above to derive the Riemannian gradient.
 
 We define this here again as a function `grad_G_FD` that could be used in the `Manopt.jl` framework within a gradient based optimization.
 
-```{julia}
+``` julia
 function grad_G_FD(N, q)
     return Manifolds.gradient(
         N, G, q, ManifoldDiff.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
@@ -213,19 +218,31 @@ end
 G1 = grad_G_FD(N, q)
 ```
 
-Now, we can again compare this to the (known) solution of the gradient, namely the gradient of (half of) the distance squared, i.e. $G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3)$ is given by $\operatorname{grad} G(q) = -\operatorname{log}_q I_3$, where $\operatorname{log}$ is the [logarithmic map](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple{SymmetricPositiveDefinite,%20Vararg{Any,%20N}%20where%20N}) on the manifold.
+    3×3 Matrix{Float64}:
+      3.24042e-14  -2.64734e-14  -5.09481e-15
+     -2.64734e-14   1.86368       0.826856
+     -5.09481e-15   0.826856      2.81845
 
-```{julia}
+Now, we can again compare this to the (known) solution of the gradient, namely the gradient of (half of) the distance squared, i.e. $G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3)$ is given by $\operatorname{grad} G(q) = -\operatorname{log}_q I_3$, where $\operatorname{log}$ is the [logarithmic map](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple%7BSymmetricPositiveDefinite,%20Vararg%7BAny,%20N%7D%20where%20N%7D) on the manifold.
+
+``` julia
 G2 = -log(N, q, Matrix{Float64}(I, 3, 3))
 ```
 
+    3×3 Matrix{Float64}:
+     -0.0  -0.0       -0.0
+     -0.0   1.86368    0.826856
+     -0.0   0.826856   2.81845
+
 Both terms agree up to $1.8×10^{-12}$:
 
-```{julia}
+``` julia
 norm(G1 - G2)
 isapprox(M, q, G1, G2; atol=2 * 1e-12)
 ```
 
+    true
+
 ## Summary
 
-This tutorial illustrates how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use _any_ differentiation framework within the embedding to derive a Riemannian gradient.
+This tutorial illustrates how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use *any* differentiation framework within the embedding to derive a Riemannian gradient.
