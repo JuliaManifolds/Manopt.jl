@@ -1,4 +1,5 @@
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"

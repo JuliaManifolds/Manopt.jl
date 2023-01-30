@@ -29,6 +29,7 @@ makedocs(;
         "About" => "about.md",
         "How to..." => [
             "Get started: Optimize!" => "tutorials/Optimize!.md",
+            "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
             "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
         ],
         "Solvers" => [
