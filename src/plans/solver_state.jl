@@ -312,7 +312,6 @@ Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given o
 the [`AbstractManoptSolverState`](@ref) `s`.
 """
 function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
-    error("FFDF")
     for key in a.keys
         if key === :Iterate
             a.values[key] = deepcopy(get_iterate(s))
@@ -345,7 +344,7 @@ function update_storage!(
         elseif key === :Gradient
             a.values[key] = deepcopy(get_gradient(s))
         else
-            a.values[key] = deepcopy(getproperty(s, key))
+            qa.values[key] = deepcopy(getproperty(s, key))
         end
     end
 
@@ -356,7 +355,7 @@ function update_storage!(
         if key === :Iterate
             copyto!(M, a.point_values[key], get_iterate(s))
         else
-            copyto!(M, a.point_values[key], getproperty(s, key))
+            copyto!(M, a.point_values[key], getproperty(s, key)::typeof(a.point_values[key]))
         end
         a.point_init = merge(a.point_init, kt)
     end
@@ -365,7 +364,7 @@ function update_storage!(
         if key === :Gradient
             copyto!(M, a.tangent_values[key], get_gradient(s))
         else
-            copyto!(M, a.tangent_values[key], getproperty(s, key))
+            copyto!(M, a.tangent_values[key], getproperty(s, key)::typeof(a.tangent_values[key]))
         end
         a.tangent_init = merge(a.tangent_init, kt)
     end
