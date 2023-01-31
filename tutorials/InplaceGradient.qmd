@@ -1,5 +1,3 @@
-
-
 ---
 title: "Speedup using Inplace Evaluation"
 ---
