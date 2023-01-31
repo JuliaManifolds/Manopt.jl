@@ -44,8 +44,8 @@ mutable struct GradientDescentState{
         retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
         direction::DirectionUpdateRule=IdentityUpdateRule(),
     ) where {P,T}
-        o = new{P,T,typeof(stop),typeof(step),typeof(retraction_method)}()
-        o.direction = direction
+        o = new{P,T,typeof(stop),typeof(step),typeof(retraction_method)}()                             #NOTICE here we have new for
+        o.direction = direction                                                                        #inner contructor
         o.p = p
         o.retraction_method = retraction_method
         o.stepsize = step
@@ -54,6 +54,7 @@ mutable struct GradientDescentState{
         return o
     end
 end
+
 function GradientDescentState(
     M::AbstractManifold,
     p::P=rand(M);
@@ -183,4 +184,9 @@ function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, i)
     step, s.X = s.direction(p, s, i)
     retract!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
     return s
+end
+
+
+function testfunction2(x)
+    return x*2
 end
