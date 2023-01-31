@@ -1,3 +1,4 @@
+using Revise
 using Manopt, Manifolds, ManifoldsBase, Test
 using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
@@ -18,12 +19,12 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     δ2 = [0.5, 2.0]
     diff = grad_2 - grad_1
 
-    dU = SteepestDirectionUpdateRule()
+    dU = Manopt.DirectionUpdateRuleStorage(M, SteepestDirectionUpdateRule())
     cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
     @test cgs.coefficient(dmp, cgs, 1) == 0
     @test default_stepsize(M, typeof(cgs)) isa ArmijoLinesearch
 
-    dU = ConjugateDescentCoefficient()
+    dU = Manopt.DirectionUpdateRuleStorage(M, ConjugateDescentCoefficient())
     cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
     cgs.X = grad_1
     cgs.δ = δ1
@@ -33,7 +34,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     cgs.δ = δ2
     @test cgs.coefficient(dmp, cgs, 2) == dot(grad_2, grad_2) / dot(-δ2, grad_1)
 
-    dU = DaiYuanCoefficient()
+    dU = Manopt.DirectionUpdateRuleStorage(M, DaiYuanCoefficient())
     cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
     cgs.X = grad_1
     cgs.δ = δ1
@@ -43,7 +44,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     cgs.δ = δ2
     @test cgs.coefficient(dmp, cgs, 2) == dot(grad_2, grad_2) / dot(δ2, grad_2 - grad_1)
 
-    dU = FletcherReevesCoefficient()
+    dU = Manopt.DirectionUpdateRuleStorage(M, FletcherReevesCoefficient())
     cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
     cgs.X = grad_1
     cgs.δ = δ1
@@ -53,7 +54,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     cgs.δ = δ2
     @test cgs.coefficient(dmp, cgs, 2) == dot(grad_2, grad_2) / dot(grad_1, grad_1)
 
-    dU = HagerZhangCoefficient()
+    dU = Manopt.DirectionUpdateRuleStorage(M, HagerZhangCoefficient())
     cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
     cgs.X = grad_1
     cgs.δ = δ1
@@ -66,7 +67,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     @test cgs.coefficient(dmp, cgs, 2) ==
         dot(diff, grad_2) / denom - 2 * ndiffsq * dot(δ1, grad_2) / denom^2
 
-    dU = HestenesStiefelCoefficient()
+    dU = Manopt.DirectionUpdateRuleStorage(M, HestenesStiefelCoefficient())
     O = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
     O.X = grad_1
     O.δ = δ1
@@ -75,7 +76,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     O.δ = δ2
     @test O.coefficient(dmp, O, 2) == dot(diff, grad_2) / dot(δ1, diff)
 
-    dU = LiuStoreyCoefficient()
+    dU = Manopt.DirectionUpdateRuleStorage(M, LiuStoreyCoefficient())
     O = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
     O.X = grad_1
     O.δ = δ1
@@ -84,7 +85,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     O.δ = δ2
     @test O.coefficient(dmp, O, 2) == -dot(grad_2, diff) / dot(δ1, grad_1)
 
-    dU = PolakRibiereCoefficient()
+    dU = Manopt.DirectionUpdateRuleStorage(M, PolakRibiereCoefficient())
     O = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
     O.X = grad_1
     O.δ = δ1

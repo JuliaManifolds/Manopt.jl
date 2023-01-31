@@ -211,15 +211,40 @@ Initialize the Functor to a set of keys, where the dictionary is initialized to
 be empty. Further, `once` determines whether more that one update per iteration
 are effective, otherwise only the first update is stored, all others are ignored.
 """
-mutable struct StoreStateAction <: AbstractStateAction
-    values::Dict{Symbol,<:Any}
-    keys::NTuple{N,Symbol} where {N}
+mutable struct StoreStateAction{TPS,TXS,TPI,TTI} <: AbstractStateAction
+    values::Dict{Symbol,Any}
+    keys::Vector{Symbol} # for values
+    point_values::TPS
+    tangent_values::TXS
+    point_init::TPI
+    tangent_init::TTI
     once::Bool
     last_stored::Int
     function StoreStateAction(
-        keys::NTuple{N,Symbol} where {N}=NTuple{0,Symbol}(), once=true
+        general_keys::Vector{Symbol}=Symbol[],
+        point_values=NamedTuple(),
+        tangent_values=NamedTuple(),
+        once=true,
     )
-        return new(Dict{Symbol,Any}(), keys, once, -1)
+        point_init = NamedTuple{keys(point_values)}(map(u -> false, keys(point_values)))
+        tangent_init = NamedTuple{keys(tangent_values)}(
+            map(u -> false, keys(tangent_values))
+        )
+        return new{
+            typeof(point_values),
+            typeof(tangent_values),
+            typeof(point_init),
+            typeof(tangent_init),
+        }(
+            Dict{Symbol,Any}(),
+            general_keys,
+            point_values,
+            tangent_values,
+            point_init,
+            tangent_init,
+            once,
+            -1,
+        )
     end
 end
 function (a::StoreStateAction)(
@@ -227,45 +252,67 @@ function (a::StoreStateAction)(
 )
     #update values (maybe only once)
     if !a.once || a.last_stored != i
-        for key in a.keys
-            if key === :Iterate
-                M = get_manifold(amp)
-                a.values[key] = copy(M, get_iterate(s))
-            elseif key === :Gradient
-                M = get_manifold(amp)
-                p = get_iterate(s)
-                a.values[key] = copy(M, p, get_gradient(s))
-            elseif hasproperty(s, key)
-                a.values[key] = deepcopy(getproperty(s, key))
-            end
-        end
+        update_storage!(a, amp, s)
     end
     return a.last_stored = i
 end
 
 """
-    get_storage(a,key)
+    get_storage(a::AbstractStateAction, key::Symbol)
 
-return the internal value of the [`AbstractStateAction`](@ref) `a` at the
+Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
 `Symbol` `key`.
 """
-get_storage(a::AbstractStateAction, key) = a.values[key]
+get_storage(a::AbstractStateAction, key::Symbol) = a.values[key]
 
 """
-    get_storage(a,key)
+    get_point_storage(a::AbstractStateAction, key::Symbol)
 
-return whether the [`AbstractStateAction`](@ref) `a` has a value stored at the
+Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
+`Symbol` `key` that represents a point.
+"""
+get_point_storage(a::AbstractStateAction, key::Symbol) = a.point_values[key]
+
+"""
+    get_tangent_storage(a::AbstractStateAction, key::Symbol)
+
+Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
+`Symbol` `key` that represents a tangent vector.
+"""
+get_tangent_storage(a::AbstractStateAction, key::Symbol) = a.tangent_values[key]
+
+"""
+    has_storage(a::AbstractStateAction, key::Symbol)
+
+Return whether the [`AbstractStateAction`](@ref) `a` has a value stored at the
 `Symbol` `key`.
 """
-has_storage(a::AbstractStateAction, key) = haskey(a.values, key)
+has_storage(a::AbstractStateAction, key::Symbol) = haskey(a.values, key)
 
 """
-    update_storage!(a, s)
+    has_point_storage(a::AbstractStateAction, key::Symbol)
 
-update the [`AbstractStateAction`](@ref) `a` internal values to the ones given on
+Return whether the [`AbstractStateAction`](@ref) `a` has a point value stored at the
+`Symbol` `key`.
+"""
+has_point_storage(a::AbstractStateAction, key::Symbol) = a.point_init[key]
+
+"""
+    has_tangent_storage(a::AbstractStateAction, key::Symbol)
+
+Return whether the [`AbstractStateAction`](@ref) `a` has a point value stored at the
+`Symbol` `key`.
+"""
+has_tangent_storage(a::AbstractStateAction, key::Symbol) = a.tangent_init[key]
+
+"""
+    update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
+
+Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given on
 the [`AbstractManoptSolverState`](@ref) `s`.
 """
 function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
+    error("FFDF")
     for key in a.keys
         if key === :Iterate
             a.values[key] = deepcopy(get_iterate(s))
@@ -278,8 +325,55 @@ function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
     return a.keys
 end
 
+function _storage_key_true(nt::NamedTuple)
+    return map(key -> NamedTuple{(key,),Tuple{Bool}}(true), keys(nt))
+end
+
 """
-    update_storage!(a, d)
+    update_storage!(a::AbstractStateAction, amp::AbstractManoptProblem, s::AbstractManoptSolverState)
+
+Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given on
+the [`AbstractManoptSolverState`](@ref) `s`.
+Optimized using the information from `amp`
+"""
+function update_storage!(
+    a::AbstractStateAction, amp::AbstractManoptProblem, s::AbstractManoptSolverState
+)
+    for key in a.keys
+        if key === :Iterate
+            a.values[key] = deepcopy(get_iterate(s))
+        elseif key === :Gradient
+            a.values[key] = deepcopy(get_gradient(s))
+        else
+            a.values[key] = deepcopy(getproperty(s, key))
+        end
+    end
+
+    M = get_manifold(amp)
+
+    pt_kts = _storage_key_true(a.point_values)
+    map(keys(a.point_values), pt_kts) do key, kt
+        if key === :Iterate
+            copyto!(M, a.point_values[key], get_iterate(s))
+        else
+            copyto!(M, a.point_values[key], getproperty(s, key))
+        end
+        a.point_init = merge(a.point_init, kt)
+    end
+    tv_kts = _storage_key_true(a.tangent_values)
+    map(keys(a.tangent_values), tv_kts) do key, kt
+        if key === :Gradient
+            copyto!(M, a.tangent_values[key], get_gradient(s))
+        else
+            copyto!(M, a.tangent_values[key], getproperty(s, key))
+        end
+        a.tangent_init = merge(a.tangent_init, kt)
+    end
+    return a.keys
+end
+
+"""
+    update_storage!(a::AbstractStateAction, d::Dict{Symbol,<:Any})
 
 Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given in
 the dictionary `d`. The values are merged, where the values from `d` are preferred.

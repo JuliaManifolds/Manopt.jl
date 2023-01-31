@@ -107,7 +107,7 @@ function conjugate_gradient_descent!(
         p,
         stopping_criterion,
         stepsize,
-        coefficient,
+        DirectionUpdateRuleStorage(M, coefficient, p),
         retraction_method,
         vector_transport_method,
         X,
@@ -127,10 +127,11 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     M = get_manifold(amp)
     p_old = copy(M, cgs.p)
     current_stepsize = get_stepsize(amp, cgs, i, cgs.δ)
-    retract!(M, cgs.p, cgs.p, current_stepsize * cgs.δ, cgs.retraction_method)
+    retract!(M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method)
     get_gradient!(amp, cgs.X, cgs.p)
     cgs.β = cgs.coefficient(amp, cgs, i)
     vector_transport_to!(M, cgs.δ, p_old, cgs.δ, cgs.p, cgs.vector_transport_method)
-    cgs.δ .= -cgs.X .+ cgs.β * cgs.δ
+    cgs.δ .*= cgs.β
+    cgs.δ .-= cgs.X
     return cgs
 end

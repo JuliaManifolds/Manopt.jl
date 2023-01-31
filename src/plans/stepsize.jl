@@ -266,24 +266,24 @@ function linesearch_backtrack(
     f0=F(x);
     stop_step=0.0,
 ) where {TF,T}
-    xNew = retract(M, x, s * η, retr)
+    xNew = retract(M, x, η, s, retr)
     fNew = F(xNew)
     search_dir_inner = real(inner(M, x, η, gradFx))
     extended = false
     while fNew < f0 + decrease * s * search_dir_inner # increase
         extended = true
         s = s / contract
-        retract!(M, xNew, x, s * η, retr)
+        retract!(M, xNew, x, η, s, retr)
         fNew = F(xNew)
     end
     if extended
         s *= contract  # undo last increase
-        retract!(M, xNew, x, s * η, retr)
+        retract!(M, xNew, x, η, s, retr)
         fNew = F(xNew)
     end
     while fNew > f0 + decrease * s * search_dir_inner # decrease
         s = contract * s
-        retract!(M, xNew, x, s * η, retr)
+        retract!(M, xNew, x, η, s, retr)
         fNew = F(xNew)
         (s < stop_step) && break
     end
@@ -631,7 +631,7 @@ function (a::WolfePowellLinesearch)(
     s_minus = step
 
     f0 = get_cost(mp, cur_p)
-    p_new = retract(M, cur_p, step * η, a.retraction_method)
+    p_new = retract(M, cur_p, η, step, a.retraction_method)
     fNew = get_cost(mp, p_new)
     η_xNew = vector_transport_to(M, cur_p, η, p_new, a.vector_transport_method)
     if fNew > f0 + a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
@@ -640,7 +640,7 @@ function (a::WolfePowellLinesearch)(
         ) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             step = s_minus
-            retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
+            retract!(M, p_new, get_iterate(ams), η, step, a.retraction_method)
             fNew = get_cost(mp, p_new)
         end
         s_plus = 2.0 * s_minus
@@ -656,18 +656,18 @@ function (a::WolfePowellLinesearch)(
                 (s_plus < max_step_increase)# increase
                 s_plus = s_plus * 2.0
                 step = s_plus
-                retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
+                retract!(M, p_new, get_iterate(ams), η, step, a.retraction_method)
                 fNew = get_cost(mp, p_new)
             end
             s_minus = s_plus / 2.0
         end
     end
-    retract!(M, p_new, get_iterate(ams), s_minus * η, a.retraction_method)
+    retract!(M, p_new, get_iterate(ams), η, s_minus, a.retraction_method)
     vector_transport_to!(M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method)
     while real(inner(M, p_new, get_gradient(mp, p_new), η_xNew)) <
           a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
         step = (s_minus + s_plus) / 2
-        retract!(M, p_new, get_iterate(ams), step * η, a.retraction_method)
+        retract!(M, p_new, get_iterate(ams), η, step, a.retraction_method)
         fNew = get_cost(mp, p_new)
         if fNew <= f0 + a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
             s_minus = step
@@ -675,7 +675,7 @@ function (a::WolfePowellLinesearch)(
             s_plus = step
         end
         abs(s_plus - s_minus) <= a.linesearch_stopsize && break
-        retract!(M, p_new, get_iterate(ams), s_minus * η, a.retraction_method)
+        retract!(M, p_new, get_iterate(ams), η, s_minus, a.retraction_method)
         vector_transport_to!(
             M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method
         )
@@ -775,7 +775,7 @@ function (a::WolfePowellBinaryLinesearch)(
     β = Inf
     t = 1.0
     f0 = get_cost(amp, get_iterate(ams))
-    xNew = retract(M, get_iterate(ams), t * η, a.retraction_method)
+    xNew = retract(M, get_iterate(ams), η, t, a.retraction_method)
     fNew = get_cost(amp, xNew)
     η_xNew = vector_transport_to(M, get_iterate(ams), η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(amp, xNew)
@@ -790,7 +790,7 @@ function (a::WolfePowellBinaryLinesearch)(
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t = isinf(β) ? 2 * α : (α + β) / 2
         # Update trial point
-        retract!(M, xNew, get_iterate(ams), t * η, a.retraction_method)
+        retract!(M, xNew, get_iterate(ams), η, t, a.retraction_method)
         fNew = get_cost(amp, xNew)
         gradient_new = get_gradient(amp, xNew)
         vector_transport_to!(
