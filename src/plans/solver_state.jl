@@ -194,9 +194,24 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref
 
 # Fields
 * `values` – a dictionary to store interims values based on certain `Symbols`
-* `keys` – an `NTuple` of `Symbols` to refer to fields of `AbstractManoptSolverState`
+* `keys` – a `Vector` of `Symbols` to refer to fields of `AbstractManoptSolverState`
+* `point_values` – a `NamedTuple` of mutable values of points on a manifold to be stored in
+  `StoreStateAction`. Manifold is later determined by `AbstractManoptProblem` passed
+  to `update_storage!`.
+* `point_init` – a `NamedTuple` of boolean values indicating whether a point in
+  `point_values` with matching key has been already initialized to a value. When it is
+  false, it corresponds to a general value not being stored for the key present in the
+  vector `keys`.
+* `tangent_values` – a `NamedTuple` of mutable values of tangent vectors on a manifold to be
+  stored in `StoreStateAction`. Manifold is later determined by `AbstractManoptProblem`
+  passed to `update_storage!`. It is not specified at which point the vectors are tangent
+  but for storage it should not matter.
+* `vector_init` – a `NamedTuple` of boolean values indicating whether a tangent vector in
+  `tangent_values` with matching key has been already initialized to a value. When it is
+  false, it corresponds to a general value not being stored for the key present in the
+  vector `keys`.
 * `once` – whether to update the internal values only once per iteration
-* `lastStored` – last iterate, where this `AbstractStateAction` was called (to determine `once`
+* `lastStored` – last iterate, where this `AbstractStateAction` was called (to determine `once`)
 
 # Constructiors
 
@@ -205,11 +220,18 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref
 Initialize the Functor to an (empty) set of keys, where `once` determines
 whether more that one update per iteration are effective
 
-    AbstractStateAction(keys, once=true])
+    function StoreStateAction(
+        general_keys::Vector{Symbol}=Symbol[],
+        point_values::NamedTuple=NamedTuple(),
+        tangent_values::NamedTuple=NamedTuple(),
+        once::Bool=true,
+    ))
 
 Initialize the Functor to a set of keys, where the dictionary is initialized to
 be empty. Further, `once` determines whether more that one update per iteration
 are effective, otherwise only the first update is stored, all others are ignored.
+Make a copy of points and tangent vectors passed to `point_values` and `tangent_values`
+for later storage respective fields.
 """
 mutable struct StoreStateAction{TPS,TXS,TPI,TTI} <: AbstractStateAction
     values::Dict{Symbol,Any}
@@ -230,6 +252,12 @@ mutable struct StoreStateAction{TPS,TXS,TPI,TTI} <: AbstractStateAction
         tangent_init = NamedTuple{keys(tangent_values)}(
             map(u -> false, keys(tangent_values))
         )
+        point_values_copy = NamedTuple{keys(point_values)}(
+            map(u -> copy(point_values[u]), keys(point_values))
+        )
+        tangent_values_copy = NamedTuple{keys(tangent_values)}(
+            map(u -> copy(tangent_values[u]), keys(tangent_values))
+        )
         return new{
             typeof(point_values),
             typeof(tangent_values),
@@ -238,8 +266,8 @@ mutable struct StoreStateAction{TPS,TXS,TPI,TTI} <: AbstractStateAction
         }(
             Dict{Symbol,Any}(),
             general_keys,
-            point_values,
-            tangent_values,
+            point_values_copy,
+            tangent_values_copy,
             point_init,
             tangent_init,
             once,

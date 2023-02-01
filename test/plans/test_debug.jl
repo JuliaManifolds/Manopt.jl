@@ -48,8 +48,10 @@ end
         @test String(take!(io)) == "x: $p"
         DebugEntry(:p; prefix="x:", io=io)(mp, st, -1)
         @test String(take!(io)) == ""
-        # Change of Iterate
-        a2 = DebugChange(; storage=StoreStateAction([:Iterate]), prefix="Last: ", io=io)
+        # Change of Iterate and recording a custom field
+        a2 = DebugChange(;
+            storage=StoreStateAction([:Iterate], (; p=p)), prefix="Last: ", io=io
+        )
         a2(mp, st, 0) # init
         st.p = [3.0, 2.0]
         a2(mp, st, 1)

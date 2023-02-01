@@ -5,14 +5,13 @@ struct DirectionUpdateRuleStorage{TC<:DirectionUpdateRule,TStorage<:StoreStateAc
 end
 
 function DirectionUpdateRuleStorage(
-    M::AbstractManifold, dur::DirectionUpdateRule, p0=rand(M), X0=zero_vector(M, p0)
+    M::AbstractManifold, dur::DirectionUpdateRule, p=rand(M), X=zero_vector(M, p)
 )
     ursp = update_rule_storage_points(dur)
     ursv = update_rule_storage_vectors(dur)
+    # StoreStateAction makes a copy
     sa = StoreStateAction(
-        Symbol[],
-        NamedTuple{ursp}(map(x -> copy(M, p0), ursp)),
-        NamedTuple{ursv}(map(x -> copy(M, p0, X0), ursv)),
+        Symbol[], NamedTuple{ursp}(map(x -> p, ursp)), NamedTuple{ursv}(map(x -> X, ursv))
     )
     return DirectionUpdateRuleStorage{typeof(dur),typeof(sa)}(dur, sa)
 end
@@ -49,6 +48,7 @@ mutable struct ConjugateGradientDescentState{
     TVTM<:AbstractVectorTransportMethod,
 } <: AbstractGradientSolverState
     p::P
+    p_old::P
     X::T
     δ::T
     β::F
@@ -71,6 +71,7 @@ mutable struct ConjugateGradientDescentState{
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
         cgs = new{P,T,βT,typeof(coef),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         cgs.p = p
+        cgs.p_old = copy(M, p)
         cgs.X = initial_gradient
         cgs.δ = copy(M, p, initial_gradient)
         cgs.stop = sC

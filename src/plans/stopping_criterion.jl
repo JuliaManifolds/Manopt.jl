@@ -121,7 +121,7 @@ For the storage a [`StoreStateAction`](@ref) is used
 
     StopWhenChangeLess(
         ε::Float64;
-        storage::StoreStateAction=StoreStateAction((:Iterate,)),
+        storage::StoreStateAction=StoreStateAction([:Iterate]),
         manifold::AbstractManifold=DefaultManifold(3),
         inverse_retraction_method::IRT=default_inverse_retraction_method(manifold)
     )
