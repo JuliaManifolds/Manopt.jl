@@ -329,7 +329,7 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
     storage::StoreStateAction
     invretr::TInvRetr
     function RecordChange(
-        a::StoreStateAction=StoreStateAction((:Iterate,));
+        a::StoreStateAction=StoreStateAction([:Iterate]);
         manifold::AbstractManifold=DefaultManifold(1),
         invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             manifold
@@ -339,7 +339,7 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
     end
     function RecordChange(
         p,
-        a::StoreStateAction=StoreStateAction((:Iterate,));
+        a::StoreStateAction=StoreStateAction([:Iterate]);
         manifold::AbstractManifold=DefaultManifold(1),
         invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             manifold, typeof(p)
@@ -403,11 +403,11 @@ mutable struct RecordEntryChange <: RecordAction
     field::Symbol
     distance::Any
     storage::StoreStateAction
-    function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction((f,)))
+    function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
         return new(Float64[], f, d, a)
     end
     function RecordEntryChange(
-        v::T where {T}, f::Symbol, d, a::StoreStateAction=StoreStateAction((f,))
+        v::T where {T}, f::Symbol, d, a::StoreStateAction=StoreStateAction([f])
     )
         update_storage!(a, Dict(f => v))
         return new(Float64[], f, d, a)

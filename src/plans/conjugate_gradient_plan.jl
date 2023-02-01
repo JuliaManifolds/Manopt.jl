@@ -62,20 +62,21 @@ mutable struct ConjugateGradientDescentState{
         p::P,
         sC::StoppingCriterion,
         s::Stepsize,
-        dC::DirectionUpdateRuleStorage,
+        dC::DirectionUpdateRule,
         retr::AbstractRetractionMethod=ExponentialRetraction(),
         vtr::AbstractVectorTransportMethod=ParallelTransport(),
         initial_gradient::T=zero_vector(M, p),
     ) where {P,T}
+        coef = DirectionUpdateRuleStorage(M, dC, p, initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
-        cgs = new{P,T,βT,typeof(dC),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
+        cgs = new{P,T,βT,typeof(coef),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         cgs.p = p
         cgs.X = initial_gradient
         cgs.δ = copy(M, p, initial_gradient)
         cgs.stop = sC
         cgs.retraction_method = retr
         cgs.stepsize = s
-        cgs.coefficient = dC
+        cgs.coefficient = coef
         cgs.vector_transport_method = vtr
         cgs.β = zero(βT)
         return cgs
@@ -86,7 +87,7 @@ function ConjugateGradientDescentState(
     p::P,
     sC::StoppingCriterion,
     s::Stepsize,
-    dU::DirectionUpdateRuleStorage,
+    dU::DirectionUpdateRule,
     retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     vtr::AbstractVectorTransportMethod=default_vector_transport_method(M, typeof(p)),
     initial_gradient::T=zero_vector(M, p),
@@ -614,10 +615,12 @@ mutable struct ConjugateGradientBealeRestart{
 end
 
 function update_rule_storage_points(dur::ConjugateGradientBealeRestart)
-    return update_rule_storage_points(dur.direction_update)
+    dur_p = update_rule_storage_points(dur.direction_update)
+    return :Iterate in dur_p ? dur_p : (:Iterate, dur_p...)
 end
 function update_rule_storage_vectors(dur::ConjugateGradientBealeRestart)
-    return update_rule_storage_vectors(dur.direction_update)
+    dur_X = update_rule_storage_vectors(dur.direction_update)
+    return :Gradient in dur_X ? dur_X : (:Gradient, dur_X...)
 end
 
 function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
@@ -631,7 +634,7 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
     X_old = get_tangent_storage(u.storage, :Gradient)
 
     # call actual rule
-    β = u.direction_update(amp, cgs, i)
+    β = u.coefficient.direction_update(amp, cgs, i)
 
     denom = norm(M, cgs.p, cgs.X)
     Xoldpk = vector_transport_to(
@@ -640,5 +643,5 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
     num = inner(M, cgs.p, cgs.X, Xoldpk)
     # update storage only after that in case they share
     update_storage!(u.storage, amp, cgs)
-    return (num / denom) > u.threshold ? zero(β) : β
+    return (num / denom) > u.coefficient.threshold ? zero(β) : β
 end

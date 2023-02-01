@@ -107,7 +107,7 @@ function conjugate_gradient_descent!(
         p,
         stopping_criterion,
         stepsize,
-        DirectionUpdateRuleStorage(M, coefficient, p, X),
+        coefficient,
         retraction_method,
         vector_transport_method,
         X,

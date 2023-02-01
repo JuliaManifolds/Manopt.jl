@@ -131,19 +131,23 @@ initialize the stopping criterion to a threshold `ε` using the
 default. You can also provide an inverse_retraction_method for the `distance` or a manifold
 to use its default inverse retraction.
 """
-mutable struct StopWhenChangeLess{IRT} <: StoppingCriterion
+mutable struct StopWhenChangeLess{
+    IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction
+} <: StoppingCriterion
     threshold::Float64
     reason::String
-    storage::StoreStateAction
+    storage::TSSA
     inverse_retraction::IRT
 end
 function StopWhenChangeLess(
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction((:Iterate,)),
+    storage::StoreStateAction=StoreStateAction([:Iterate]),
     manifold::AbstractManifold=DefaultManifold(3),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{IRT}(ε, "", storage, inverse_retraction_method)
+    return StopWhenChangeLess{IRT,typeof(storage)}(
+        ε, "", storage, inverse_retraction_method
+    )
 end
 
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)

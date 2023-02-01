@@ -222,9 +222,9 @@ mutable struct StoreStateAction{TPS,TXS,TPI,TTI} <: AbstractStateAction
     last_stored::Int
     function StoreStateAction(
         general_keys::Vector{Symbol}=Symbol[],
-        point_values=NamedTuple(),
-        tangent_values=NamedTuple(),
-        once=true,
+        point_values::NamedTuple=NamedTuple(),
+        tangent_values::NamedTuple=NamedTuple(),
+        once::Bool=true,
     )
         point_init = NamedTuple{keys(point_values)}(map(u -> false, keys(point_values)))
         tangent_init = NamedTuple{keys(tangent_values)}(
@@ -344,7 +344,7 @@ function update_storage!(
         elseif key === :Gradient
             a.values[key] = deepcopy(get_gradient(s))
         else
-            qa.values[key] = deepcopy(getproperty(s, key))
+            a.values[key] = deepcopy(getproperty(s, key))
         end
     end
 
@@ -355,7 +355,9 @@ function update_storage!(
         if key === :Iterate
             copyto!(M, a.point_values[key], get_iterate(s))
         else
-            copyto!(M, a.point_values[key], getproperty(s, key)::typeof(a.point_values[key]))
+            copyto!(
+                M, a.point_values[key], getproperty(s, key)::typeof(a.point_values[key])
+            )
         end
         a.point_init = merge(a.point_init, kt)
     end
@@ -364,7 +366,9 @@ function update_storage!(
         if key === :Gradient
             copyto!(M, a.tangent_values[key], get_gradient(s))
         else
-            copyto!(M, a.tangent_values[key], getproperty(s, key)::typeof(a.tangent_values[key]))
+            copyto!(
+                M, a.tangent_values[key], getproperty(s, key)::typeof(a.tangent_values[key])
+            )
         end
         a.tangent_init = merge(a.tangent_init, kt)
     end
@@ -380,5 +384,5 @@ the dictionary `d`. The values are merged, where the values from `d` are preferr
 function update_storage!(a::AbstractStateAction, d::Dict{Symbol,<:Any})
     merge!(a.values, d)
     # update keys
-    return a.keys = Tuple(keys(a.values))
+    return a.keys = collect(keys(a.values))
 end

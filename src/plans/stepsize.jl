@@ -379,7 +379,10 @@ and vector transport are set to the default ones on `M`, repsectively.
 The constructors return the functor to perform nonmonotone line search.
 """
 mutable struct NonmonotoneLinesearch{
-    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,T<:AbstractVector
+    TRM<:AbstractRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+    T<:AbstractVector,
+    TSSA<:StoreStateAction,
 } <: Linesearch
     retraction_method::TRM
     vector_transport_method::VTM
@@ -390,7 +393,7 @@ mutable struct NonmonotoneLinesearch{
     initial_stepsize::Float64
     old_costs::T
     strategy::Symbol
-    storage::StoreStateAction
+    storage::TSSA
     linesearch_stopsize::Float64
     function NonmonotoneLinesearch(
         M::AbstractManifold=DefaultManifold(2);
@@ -405,7 +408,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreStateAction=StoreStateAction((:Iterate, :Gradient)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :Gradient]),
         linesearch_stopsize::Float64=0.0,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
@@ -436,7 +439,10 @@ mutable struct NonmonotoneLinesearch{
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
         end
         return new{
-            typeof(retraction_method),typeof(vector_transport_method),Vector{Float64}
+            typeof(retraction_method),
+            typeof(vector_transport_method),
+            Vector{Float64},
+            typeof(storage),
         }(
             retraction_method,
             vector_transport_method,

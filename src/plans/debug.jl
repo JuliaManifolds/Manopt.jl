@@ -139,7 +139,7 @@ debug for the amount of change of the iterate (stored in `get_iterate(o)` of the
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreStateAction( (:Iterate,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
@@ -154,7 +154,7 @@ mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAc
     storage::StoreStateAction
     invretr::TInvRetr
     function DebugChange(;
-        storage::StoreStateAction=StoreStateAction((:Iterate,)),
+        storage::StoreStateAction=StoreStateAction([:Iterate]),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
@@ -183,7 +183,7 @@ debug for the amount of change of the gradient (stored in `get_gradient(o)` of t
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreStateAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
@@ -193,7 +193,7 @@ mutable struct DebugGradientChange <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugGradientChange(;
-        storage::StoreStateAction=StoreStateAction((:Gradient,)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :Gradient]),
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
@@ -379,11 +379,11 @@ mutable struct DebugEntryChange <: DebugAction
     function DebugEntryChange(
         f::Symbol,
         d;
-        storage::StoreStateAction=StoreStateAction((f,)),
+        storage::StoreStateAction=StoreStateAction([f]),
         prefix::String="Change of $f:",
         format::String="$prefix%s",
         io::IO=stdout,
-        initial_value::T where {T}=NaN,
+        initial_value::Any=NaN,
     )
         if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
             update_storage!(storage, Dict(f => initial_value))

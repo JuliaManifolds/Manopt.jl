@@ -127,7 +127,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     # RecordEntryChange
     set_iterate!(gds, M, p)
     e = RecordEntryChange(:p, (p, o, x, y) -> distance(get_manifold(p), x, y))
-    @test update_storage!(e.storage, gds) == (:p,)
+    @test update_storage!(e.storage, gds) == [:p]
     e2 = RecordEntryChange(dmp, :p, (p, o, x, y) -> distance(get_manifold(p), x, y))
     @test e.field == e2.field
     e(dmp, gds, 1)
