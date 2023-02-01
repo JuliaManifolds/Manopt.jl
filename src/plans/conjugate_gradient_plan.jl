@@ -63,8 +63,8 @@ mutable struct ConjugateGradientDescentState{
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
-        retr::AbstractRetractionMethod=ExponentialRetraction(),
-        vtr::AbstractVectorTransportMethod=ParallelTransport(),
+        retr::AbstractRetractionMethod=default_retraction_method(M),
+        vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
     ) where {P,T}
         coef = DirectionUpdateRuleStorage(M, dC, p, initial_gradient)
@@ -163,9 +163,9 @@ Then the coefficient reads
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    DaiYuanCoefficient(
-        t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=(),
+    function DaiYuanCoefficient(
+        M::AbstractManifold=DefaultManifold(2);
+        t::AbstractVectorTransportMethod=default_vector_transport_method(M)
     )
 
 Construct the Dai Yuan coefficient update rule, where the parallel transport is the
@@ -178,7 +178,10 @@ default vector transport and a new storage is created by default.
 """
 struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
-    function DaiYuanCoefficient(t::AbstractVectorTransportMethod=ParallelTransport())
+    function DaiYuanCoefficient(
+        M::AbstractManifold=DefaultManifold(2);
+        t::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    )
         return new{typeof(t)}(t)
     end
 end
@@ -275,9 +278,9 @@ This method includes a numerical stability proposed by those authors.
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    HagerZhangCoefficient(
-        t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=(),
+    function HagerZhangCoefficient(
+        M::AbstractManifold = DefaultManifold(2);
+        t::AbstractVectorTransportMethod=default_vector_transport_method(M)
     )
 
 Construct the Hager Zhang coefficient update rule, where the parallel transport is the
@@ -291,7 +294,10 @@ default vector transport and a new storage is created by default.
 mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     transport_method::TVTM
-    function HagerZhangCoefficient(t::AbstractVectorTransportMethod=ParallelTransport())
+    function HagerZhangCoefficient(
+        M::AbstractManifold=DefaultManifold(2);
+        t::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    )
         return new{typeof(t)}(t)
     end
 end
@@ -349,9 +355,9 @@ Then the update reads
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 # Constructor
-    HestenesStiefelCoefficient(
-        t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=()
+    function HestenesStiefelCoefficient(
+        M::AbstractManifold = DefaultManifold(2);
+        transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M)
     )
 
 Construct the Heestens Stiefel coefficient update rule, where the parallel transport is the
@@ -368,7 +374,8 @@ struct HestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
        DirectionUpdateRule
     transport_method::TVTM
     function HestenesStiefelCoefficient(
-        transport_method::AbstractVectorTransportMethod=ParallelTransport()
+        M::AbstractManifold=DefaultManifold(2);
+        transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M),
     )
         return new{typeof(transport_method)}(transport_method)
     end
@@ -422,9 +429,9 @@ Then the coefficient reads
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    LiuStoreyCoefficient(
-        t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=()
+    function LiuStoreyCoefficient(
+        M::AbstractManifold = DefaultManifold(2);
+        t::AbstractVectorTransportMethod=default_vector_transport_method(M)
     )
 
 Construct the Lui Storey coefficient update rule, where the parallel transport is the
@@ -437,7 +444,10 @@ default vector transport and a new storage is created by default.
 """
 struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
-    function LiuStoreyCoefficient(t::AbstractVectorTransportMethod=ParallelTransport())
+    function LiuStoreyCoefficient(
+        M::AbstractManifold=DefaultManifold(2);
+        t::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    )
         return new{typeof(t)}(t)
     end
 end
@@ -486,9 +496,9 @@ Then the update reads
 
 # Constructor
 
-    PolakRibiereCoefficient(
-        t::AbstractVectorTransportMethod=ParallelTransport(),
-        a::StoreStateAction=()
+    function PolakRibiereCoefficient(
+        M::AbstractManifold=DefaultManifold(2);
+        t::AbstractVectorTransportMethod=default_vector_transport_method(M)
     )
 
 Construct the PolakRibiere coefficient update rule, where the parallel transport is the
@@ -508,7 +518,10 @@ See also [`conjugate_gradient_descent`](@ref)
 """
 struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
-    function PolakRibiereCoefficient(t::AbstractVectorTransportMethod=ParallelTransport())
+    function PolakRibiereCoefficient(
+        M::AbstractManifold=DefaultManifold(2);
+        t::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    )
         return new{typeof(t)}(t)
     end
 end
