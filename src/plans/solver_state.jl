@@ -213,6 +213,11 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref
 * `once` – whether to update the internal values only once per iteration
 * `lastStored` – last iterate, where this `AbstractStateAction` was called (to determine `once`)
 
+To handle the general storage, use `get_storage` and `has_storage`. For the point storage
+use `get_point_storage` and `has_point_storage`. For tangent vector storage use
+`get_tangent_storage` and `has_tangent_storage`. Point and tangent storage have been
+optimized to be more efficient
+
 # Constructiors
 
     AbstractStateAction([keys=(), once=true])
@@ -233,7 +238,9 @@ are effective, otherwise only the first update is stored, all others are ignored
 Make a copy of points and tangent vectors passed to `point_values` and `tangent_values`
 for later storage respective fields.
 """
-mutable struct StoreStateAction{TPS,TXS,TPI,TTI} <: AbstractStateAction
+mutable struct StoreStateAction{
+    TPS<:NamedTuple,TXS<:NamedTuple,TPI<:NamedTuple,TTI<:NamedTuple
+} <: AbstractStateAction
     values::Dict{Symbol,Any}
     keys::Vector{Symbol} # for values
     point_values::TPS
@@ -338,6 +345,8 @@ has_tangent_storage(a::AbstractStateAction, key::Symbol) = a.tangent_init[key]
 
 Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given on
 the [`AbstractManoptSolverState`](@ref) `s`.
+
+Warning: it does not update point and tangent vector storage.
 """
 function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
     for key in a.keys
