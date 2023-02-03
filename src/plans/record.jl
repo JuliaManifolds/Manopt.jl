@@ -15,6 +15,7 @@ called from within [`stop_solver!`](@ref) which returns true afterwards.
 * `recorded_values` an `Array` of the recorded values.
 """
 abstract type RecordAction <: AbstractStateAction end
+status_summary(ra::RecordAction) = "$(ra)"
 
 @doc raw"""
     RecordSolverState <: AbstractManoptSolverState
@@ -245,12 +246,19 @@ mutable struct RecordGroup <: RecordAction
     end
     RecordGroup() = new(Array{RecordAction,1}(), Dict{Symbol,Int}())
 end
-
 function (d::RecordGroup)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     for ri in d.group
         ri(p, s, i)
     end
 end
+function status_summary(rg::RecordGroup)
+    return "[ $( join(["$(status_summary(ri))" for ri in rg.group], ", ")) ] with $(length(get_record(rg))) recorded tuples."
+end
+function show(io::IO, rg::RecordGroup)
+    s = join(["$(ri)" for ri in rg.group], ", ")
+    return print(io, "Record([$s])")
+end
+
 @doc raw"""
     get_record(r::RecordGroup)
 
@@ -293,6 +301,21 @@ getindex(r::RecordGroup, s::NTuple{N,Symbol}) where {N} = get_record(r, s)
 getindex(r::RecordGroup, i) = get_record(r, i)
 
 @doc raw"""
+    RecordCost <: RecordAction
+
+record the current cost function value, see [`get_cost`](@ref).
+"""
+mutable struct RecordCost <: RecordAction
+    recorded_values::Array{Float64,1}
+    RecordCost() = new(Array{Float64,1}())
+end
+function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+    return record_or_reset!(r, get_cost(amp, get_iterate(s)), i)
+end
+show(io::IO, ::RecordCost) = print(io, "RecordCost()")
+status_summary(di::RecordCost) = ":Cost"
+
+@doc raw"""
     RecordEvery <: RecordAction
 
 record only every $i$th iteration.
@@ -318,6 +341,18 @@ function (d::RecordEvery)(p::AbstractManoptProblem, s::AbstractManoptSolverState
         d.record(p, s, 0)
     end
 end
+function show(io::IO, re::RecordEvery)
+    return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update)")
+end
+function status_summary(re::RecordEvery)
+    s = ""
+    if re.record isa RecordGroup
+        s = ("$(re.record)")[3:(end - 2)]
+    else
+        s = "$(re.record)"
+    end
+    return "[$s, $(re.record)]"
+end
 get_record(r::RecordEvery) = get_record(r.record)
 get_record(r::RecordEvery, i) = get_record(r.record, i)
 getindex(r::RecordEvery, i) = get_record(r, i)
@@ -334,8 +369,8 @@ during the last iteration.
 # Additional Fields
 * `storage` a [`StoreStateAction`](@ref) to store (at least) `o.x` to use this
   as the last value (to compute the change
-* `invretr` - (`default_inverse_retraction_method(manifold, p)`) the inverse retraction to be
-  used for approximating distance.
+* `inverse_retraction_method` - (`default_inverse_retraction_method(manifold, p)`) the
+  inverse retraction to be used for approximating distance.
 
 # Additional constructor keyword parameters
 * `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
@@ -344,26 +379,24 @@ for approximating the distance.
 mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: RecordAction
     recorded_values::Vector{Float64}
     storage::StoreStateAction
-    invretr::TInvRetr
+    inverse_retraction_method::TInvRetr
     function RecordChange(
         a::StoreStateAction=StoreStateAction((:Iterate,));
         manifold::AbstractManifold=DefaultManifold(1),
-        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            manifold
-        ),
-    )
-        return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
+        inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
+    ) where {IRT<:AbstractInverseRetractionMethod}
+        return new{IRT}(Vector{Float64}(), a, inverse_retraction_method)
     end
     function RecordChange(
         p,
         a::StoreStateAction=StoreStateAction((:Iterate,));
         manifold::AbstractManifold=DefaultManifold(1),
-        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+        inverse_retraction_method::IRT=default_inverse_retraction_method(
             manifold, typeof(p)
         ),
-    )
+    ) where {IRT<:AbstractInverseRetractionMethod}
         update_storage!(a, Dict(:Iterate => p))
-        return new{typeof(invretr)}(Vector{Float64}(), a, invretr)
+        return new{IRT}(Vector{Float64}(), a, inverse_retraction_method)
     end
 end
 function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
@@ -371,7 +404,12 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
     record_or_reset!(
         r,
         if has_storage(r.storage, :Iterate)
-            distance(M, get_iterate(s), get_storage(r.storage, :Iterate), r.invretr)
+            distance(
+                M,
+                get_iterate(s),
+                get_storage(r.storage, :Iterate),
+                r.inverse_retraction_method,
+            )
         else
             0.0
         end,
@@ -380,6 +418,12 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
     r.storage(amp, s, i)
     return r.recorded_values
 end
+function show(io::IO, rc::RecordChange)
+    return print(
+        io, "DebugChange(; inverse_retraction_method=\"$(rc.inverse_retraction_method)\")"
+    )
+end
+status_summary(rc::RecordChange) = ":Change"
 
 @doc raw"""
     RecordEntry{T} <: RecordAction
@@ -402,6 +446,9 @@ function (r::RecordEntry{T})(
     ::AbstractManoptProblem, s::AbstractManoptSolverState, i
 ) where {T}
     return record_or_reset!(r, getfield(s, r.field), i)
+end
+function show(io::IO, di::RecordEntry)
+    return print(io, "RecordEntry(:$(di.field))")
 end
 
 @doc raw"""
@@ -442,6 +489,9 @@ function (r::RecordEntryChange)(
     r.storage(amp, ams, i)
     return record_or_reset!(r, value, i)
 end
+function show(io::IO, rec::RecordEntryChange)
+    return print(io, "RecordEntryChange(:$(rec.field), $(rec.distance))")
+end
 
 @doc raw"""
     RecordIterate <: RecordAction
@@ -469,12 +519,15 @@ function RecordIterate()
         ),
     )
 end
-
 function (r::RecordIterate{T})(
     ::AbstractManoptProblem, s::AbstractManoptSolverState, i
 ) where {T}
     return record_or_reset!(r, get_iterate(s), i)
 end
+function show(io::IO, ri::RecordIterate)
+    return print(io, "RecordIterate($(eltype(ri.recorded_values)))")
+end
+status_summary(di::RecordIterate) = ":Iterate"
 
 @doc raw"""
     RecordIteration <: RecordAction
@@ -488,19 +541,8 @@ end
 function (r::RecordIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     return record_or_reset!(r, i, i)
 end
-
-@doc raw"""
-    RecordCost <: RecordAction
-
-record the current cost function value, see [`get_cost`](@ref).
-"""
-mutable struct RecordCost <: RecordAction
-    recorded_values::Array{Float64,1}
-    RecordCost() = new(Array{Float64,1}())
-end
-function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
-    return record_or_reset!(r, get_cost(amp, get_iterate(s)), i)
-end
+show(io::IO, ::RecordIteration) = print(io, "RecordIteration()")
+status_summary(::RecordIteration) = ":Iteration"
 
 @doc raw"""
     RecordTime <: RecordAction
@@ -538,6 +580,10 @@ function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState,
         return record_or_reset!(r, t, i)
     end
 end
+function show(io::IO, ri::RecordTime)
+    return print(io, "RecordTime(; mode=:$(ri.mode))")
+end
+status_summary(ri::RecordTime) = (ri.mode === :iterative ? ":IterativeTime" : ":Time")
 
 @doc raw"""
     RecordFactory(s::AbstractManoptSolverState, a)
