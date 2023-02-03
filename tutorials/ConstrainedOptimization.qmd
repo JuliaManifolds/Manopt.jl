@@ -27,7 +27,7 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 
 ```{julia}
 using Distributions, LinearAlgebra, Manifolds, Manopt, Random
-Random.seed!(12345);
+Random.seed!(42);
 ```
 
 In this tutorial we want to look at different ways to specify the problem and its implications. We start with specifying an example problems to illustrayte the different available forms.
@@ -37,7 +37,7 @@ We will consider the problem of a Nonnegative PCA, cf. Section 5.1.2 in [@LiuBou
 let $v_0 ∈ ℝ^d$, $\lVert v_0 \rVert=1$ be given spike signal, that is a signal that is sparse with only $s=\lfloor δd \rfloor$ nonzero entries.
 
 ```math
-  Z = \sqrt{σ} v_0v_0^{\mathrm{T}}+N,
+Z = \sqrt{σ} v_0v_0^{\mathrm{T}}+N,
 ```
 
 where $\sigma$ is a signal-to-noise ratio and $N$ is a matrix with random entries, where the diagonal entries are distributed with zero mean and standard deviation $1/d$ on the off-diagonals and $2/d$ on the daigonal
@@ -114,7 +114,10 @@ Now as a first method we can just call the [Augmented Lagrangian Method](https:/
 ```{julia}
 @time v1 = augmented_Lagrangian_method(
    	M, f, grad_f, p0; g=g, grad_g=grad_g,
-   	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
+    debug=[:Iteration, :Cost, :Stop, " | ", (:Change, "Δp : %1.5e"), 20, "\n"],
+    stopping_criterion = StopAfterIteration(300) | (
+        StopWhenSmallerOrEqual(:ϵ, 1e-5) & StopWhenChangeLess(1e-8)
+    )
 );
 ```
 
@@ -155,7 +158,10 @@ We obtain
 ```{julia}
 @time v2 = augmented_Lagrangian_method(
     	M, f, grad_f!, p0; g=g2, grad_g=grad_g2!, evaluation=InplaceEvaluation(),
-    	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
+    	debug=[:Iteration, :Cost, :Stop, " | ", (:Change, "Δp : %1.5e"), 20, "\n"],
+		stopping_criterion = StopAfterIteration(300) | (
+          StopWhenSmallerOrEqual(:ϵ, 1e-5) & StopWhenChangeLess(1e-8)
+		)
 	);
 ```
 
