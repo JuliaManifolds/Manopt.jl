@@ -1,6 +1,6 @@
 ---
 references:
-- id: AbsilMahonySepulchre2008
+- id: AbsilMahonySepulchre:2008
   author:
     - family: Absil
       given: P.-A.
@@ -8,7 +8,7 @@ references:
       given: R.
     - family: Sepulchre
       given: R.
-  citation-key: AbsilMahonySepulchre2008
+  citation-key: AbsilMahonySepulchre:2008
   DOI: 10.1515/9781400830244
   issued:
     - year: 2008
@@ -19,58 +19,329 @@ references:
 - id: Bacak:2014
   author:
     - family: Bačák
-      given: M.
+      given: Miroslav
   citation-key: Bacak:2014
-  container-title: SIAM Journal on Optimization
-  DOI: 10.1137/140953393
-  issue: '3'
+  collection-title: De gruyter series in nonlinear analysis and applications
+  DOI: 10.1515/9783110361629
+  event-place: Berlin
   issued:
     - year: 2014
-  page: 1542–1566
-  title: Computing medians and means in Hadamard spaces
-  type: article-journal
-  volume: '24'
+  publisher: De Gruyter
+  publisher-place: Berlin
+  title: Convex analysis and optimization in hadamard spaces
+  type: book
+  volume: '22'
 
-- id: Boumal2023
+- id: BergmannFitschenPerschSteidl:2018:1
+  author:
+    - family: Bergmann
+      given: Ronny
+    - family: Fitschen
+      given: Jan Henrik
+    - family: Persch
+      given: Johannes
+    - family: Steidl
+      given: Gabriele
+  citation-key: BergmannFitschenPerschSteidl:2018:1
+  container-title: Journal of Mathematical Imaging and Vision
+  DOI: 10.1007/s10851-018-0840-y
+  issue: '9'
+  issued:
+    - year: 2018
+  page: 1459–1481
+  title: >-
+    Priors with coupled first and second order differences for manifold-valued
+    image processing
+  type: article-journal
+  volume: '60'
+
+- id: BergmannGousenbourger:2018:2
+  abstract: >-
+    We derive a variational model to fit a composite Bézier curve to a set of
+    data points on a Riemannian manifold. The resulting curve is obtained in
+    such a way that its mean squared acceleration is minimal in addition to
+    remaining close the data points. We approximate the acceleration by
+    discretizing the squared second order derivative along the curve. We derive
+    a closed-form, numerically stable and efficient algorithm to compute the
+    gradient of a Bézier curve on manifolds with respect to its control points,
+    expressed as a concatenation of so-called adjoint Jacobi fields. Several
+    examples illustrate the capabilites and validity of this approach both for
+    interpolation and approximation. The examples also illustrate that the
+    approach outperforms previous works tackling this problem.
+  author:
+    - family: Bergmann
+      given: Ronny
+    - family: Gousenbourger
+      given: Pierre-Yves
+  citation-key: BergmannGousenbourger:2018:2
+  container-title: Frontiers in Applied Mathematics and Statistics
+  DOI: 10.3389/fams.2018.00059
+  issued:
+    - year: 2018
+  title: >-
+    A variational model for data fitting on manifolds by minimizing the
+    acceleration of a Bézier curve
+  type: article-journal
+  volume: '4'
+
+- id: BergmannHerzog:2019
+  abstract: >-
+    Karush-Kuhn-Tucker (KKT) conditions for equality and inequality constrained
+    optimization problems on smooth manifolds are formulated. Under the Guignard
+    constraint qualification, local minimizers are shown to admit Lagrange
+    multipliers. The linear independence, Mangasarian-Fromovitz, and Abadie
+    constraint qualifications are also formulated, and the chain “LICQ implies
+    MFCQ implies ACQ implies GCQ” is proved. Moreover, classical connections
+    between these constraint qualifications and the set of Lagrange multipliers
+    are established, which parallel the results in Euclidean space. The
+    constrained Riemannian center of mass on the sphere serves as an
+    illustrating numerical example.
+  author:
+    - family: Bergmann
+      given: R.
+    - family: Herzog
+      given: R.
+  citation-key: BergmannHerzog:2019
+  container-title: SIAM Journal on Optimization
+  DOI: 10.1137/18M1181602
+  issue: '4'
+  issued:
+    - year: 2019
+  page: 2423–2444
+  title: >-
+    Intrinsic formulation of KKT conditions and constraint qualifications on
+    smooth manifolds
+  type: article-journal
+  volume: '29'
+
+- id: Boumal:2020:1
   author:
     - family: Boumal
       given: Nicolas
-  citation-key: Boumal2023
+  citation-key: Boumal:2020:1
+  issued:
+    - year: 2020
+      month: 8
+  title: An introduction to optimization on smooth manifolds
+  type: book
+  URL: http://www.nicolasboumal.net/book
+
+- id: FerreiraSantosSouza:2021
+  abstract: >-
+    In this paper we propose a Riemannian version of the difference of convex
+    algorithm (DCA) to solve a minimization problem involving the difference of
+    convex (DC) function. Equivalence between the classical and a simplified
+    Riemannian version of the DCA is stablished. We also prove that under mild
+    assumptions the Riemannian version of the DCA is well defined and every
+    cluster point of the sequence generated by the proposed method, if any, is a
+    critical point of the objective DC function. Some duality relations between
+    the DC problem and its dual are also established. Applications to the
+    problem of maximizing a convex function in a compact set and manifold-valued
+    image denoising are presented in the DC context.
+  accessed:
+    - year: 2022
+      month: 5
+      day: 11
+  author:
+    - family: Ferreira
+      given: Orizon P.
+    - family: Santos
+      given: Elianderson M.
+    - family: Souza
+      given: João Carlos O.
+  citation-key: FerreiraSantosSouza:2021
+  container-title: arXiv:2112.05250 [math]
+  issued:
+    - year: 2021
+      month: 12
+      day: 9
+  source: arXiv.org
+  title: The difference of convex algorithm on Riemannian manifolds
+  type: article-journal
+  URL: http://arxiv.org/abs/2112.05250
+
+- id: HanMishraJawanpuriaGao:2021
+  abstract: >-
+    In this paper, we comparatively analyze the Bures-Wasserstein (BW) geometry
+    with the popular Affine-Invariant (AI) geometry for Riemannian optimization
+    on the symmetric positive definite (SPD) matrix manifold. Our study begins
+    with an observation that the BW metric has a linear dependence on SPD
+    matrices in contrast to the quadratic dependence of the AI metric. We build
+    on this to show that the BW metric is a more suitable and robust choice for
+    several Riemannian optimization problems over ill-conditioned SPD matrices.
+    We show that the BW geometry has a non-negative curvature, which further
+    improves convergence rates of algorithms over the non-positively curved AI
+    geometry. Finally, we verify that several popular cost functions, which are
+    known to be geodesic convex under the AI geometry, are also geodesic convex
+    under the BW geometry. Extensive experiments on various applications support
+    our findings.
+  accessed:
+    - year: 2022
+      month: 5
+      day: 18
+  author:
+    - family: Han
+      given: Andi
+    - family: Mishra
+      given: Bamdev
+    - family: Jawanpuria
+      given: Pratik
+    - family: Gao
+      given: Junbin
+  citation-key: HanMishraJawanpuriaGao:2021
+  issued:
+    - year: 2021
+      month: 6
+      day: 1
+  number: arXiv:2106.00286
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    On Riemannian Optimization over Positive Definite Matrices with the
+    Bures-Wasserstein Geometry
+  type: article
+  URL: http://arxiv.org/abs/2106.00286
+
+- id: HanMishraJawanpuriaGao:2021a
+  abstract: >-
+    This paper proposes a generalized Bures-Wasserstein (BW) Riemannian geometry
+    for the manifold of symmetric positive definite matrices. We explore the
+    generalization of the BW geometry in three different ways: 1) by
+    generalizing the Lyapunov operator in the metric, 2) by generalizing the
+    orthogonal Procrustes distance, and 3) by generalizing the Wasserstein
+    distance between the Gaussians. We show that they all lead to the same
+    geometry. The proposed generalization is parameterized by a symmetric
+    positive definite matrix $\mathbf{M}$ such that when $\mathbf{M} =
+    \mathbf{I}$, we recover the BW geometry. We derive expressions for the
+    distance, geodesic, exponential/logarithm maps, Levi-Civita connection, and
+    sectional curvature under the generalized BW geometry. We also present
+    applications and experiments that illustrate the efficacy of the proposed
+    geometry.
+  accessed:
+    - year: 2022
+      month: 5
+      day: 19
+  author:
+    - family: Han
+      given: Andi
+    - family: Mishra
+      given: Bamdev
+    - family: Jawanpuria
+      given: Pratik
+    - family: Gao
+      given: Junbin
+  citation-key: HanMishraJawanpuriaGao:2021a
+  issued:
+    - year: 2021
+      month: 10
+      day: 20
+  number: arXiv:2110.10464
+  publisher: arXiv
+  source: arXiv.org
+  title: Generalized Bures-Wasserstein Geometry for Positive Definite Matrices
+  type: article
+  URL: http://arxiv.org/abs/2110.10464
+
+- id: LiuBoumal:2019
+  author:
+    - family: Liu
+      given: Changshuo
+    - family: Boumal
+      given: Nicolas
+  citation-key: LiuBoumal:2019
+  container-title: Applied Mathematics & Optimization
+  DOI: 10.1007/s00245-019-09564-3
+  issued:
+    - year: 2019
+      month: 3
+  publisher: Springer Science and Business Media LLC
+  title: Simple algorithms for optimization on Riemannian manifolds with constraints
+  type: article-journal
+
+- id: MalagoMontrucchioPistone:2018
+  accessed:
+    - year: 2022
+      month: 5
+      day: 18
+  author:
+    - family: Malagò
+      given: Luigi
+    - family: Montrucchio
+      given: Luigi
+    - family: Pistone
+      given: Giovanni
+  citation-key: MalagoMontrucchioPistone:2018
+  container-title: Information Geometry
+  container-title-short: Info. Geo.
+  DOI: 10.1007/s41884-018-0014-4
+  ISSN: 2511-2481, 2511-249X
+  issue: '2'
+  issued:
+    - year: 2018
+      month: 12
+  language: en
+  page: 137-179
+  source: DOI.org (Crossref)
+  title: Wasserstein Riemannian geometry of Gaussian densities
+  type: article-journal
+  URL: http://link.springer.com/10.1007/s41884-018-0014-4
+  volume: '1'
+
+- id: SilvaLouzeiroBergmannHerzog:2022
+  accessed:
+    - year: 2022
+      month: 5
+      day: 12
+  author:
+    - family: Silva Louzeiro
+      given: Maurício
+    - family: Bergmann
+      given: Ronny
+    - family: Herzog
+      given: Roland
+  citation-key: SilvaLouzeiroBergmannHerzog:2022
+  container-title: SIAM Journal on Optimization
+  container-title-short: SIAM J. Optim.
+  DOI: 10.1137/21M1400699
+  ISSN: 1052-6234, 1095-7189
+  issue: '2'
   issued:
     - year: 2022
       month: 6
-  title: An introduction to optimization on smooth manifolds
-  type: book
-  URL: https://www.nicolasboumal.net/book
-
-- id: doCarmo1992
-  author:
-    - family: Carmo
-      given: Manfredo Perdigão
-      non-dropping-particle: do
-  citation-key: doCarmo1992
-  collection-title: 'Mathematics: Theory & applications'
-  DOI: 10.1007/978-1-4757-2201-7
-  ISBN: 0-8176-3490-8
-  issued:
-    - year: 1992
-  page: xiv+300
-  publisher: Birkhäuser Boston, Inc., Boston, MA
-  title: Riemannian geometry
-  type: book
-
-- id: Karcher1977
-  author:
-    - family: Karcher
-      given: Hermann
-  citation-key: Karcher1977
-  container-title: Communications on Pure and Applied Mathematics
-  DOI: 10.1002/cpa.3160300502
-  issue: '5'
-  issued:
-    - year: 1977
-  page: 509–541
-  title: Riemannian center of mass and mollifier smoothing
+  language: en
+  page: 854-873
+  source: DOI.org (Crossref)
+  title: Fenchel Duality and a Separation Theorem on Hadamard Manifolds
   type: article-journal
-  volume: '30'
+  URL: https://epubs.siam.org/doi/10.1137/21M1400699
+  volume: '32'
+
+- id: YamakawaSato:2022
+  accessed:
+    - year: 2022
+      month: 4
+      day: 28
+  author:
+    - family: Yamakawa
+      given: Yuya
+    - family: Sato
+      given: Hiroyuki
+  citation-key: YamakawaSato:2022
+  container-title: Computational Optimization and Applications
+  container-title-short: Comput Optim Appl
+  DOI: 10.1007/s10589-021-00336-w
+  ISSN: 0926-6003, 1573-2894
+  issue: '2'
+  issued:
+    - year: 2022
+      month: 3
+  language: en
+  page: 397-421
+  source: DOI.org (Crossref)
+  title: >-
+    Sequential optimality conditions for nonlinear optimization on Riemannian
+    manifolds and a globally convergent augmented Lagrangian method
+  type: article-journal
+  URL: https://link.springer.com/10.1007/s10589-021-00336-w
+  volume: '81'
 ...
