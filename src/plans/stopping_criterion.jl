@@ -91,7 +91,7 @@ function (c::StopWhenGradientNormLess)(
 )
     M = get_manifold(mp)
     (i == 0) && (c.reason = "") # reset on init
-    if norm(M, get_iterate(s), get_gradient(s)) < c.threshold
+    if (norm(M, get_iterate(s), get_gradient(s)) < c.threshold) && (i > 0)
         c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
         return true
     end
