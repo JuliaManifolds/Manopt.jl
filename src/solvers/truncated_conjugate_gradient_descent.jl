@@ -164,17 +164,13 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
-* `storage` – stores the necessary parameters `η, δ, residual` to check the
-    criterion.
 
 # Constructor
 
-    StopWhenTrustRegionIsExceeded([a])
+    StopWhenTrustRegionIsExceeded()
 
 initialize the StopWhenTrustRegionIsExceeded functor to indicate to stop after
-the norm of the next iterate is greater than the trust-region radius using the
-[`StoreStateAction`](@ref) `a`, which is initialized to store
-`:η, :δ, :residual` by default.
+the norm of the next iterate is greater than the trust-region radius.
 
 # See also
 
