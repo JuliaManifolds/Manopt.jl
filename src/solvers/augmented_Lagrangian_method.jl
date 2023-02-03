@@ -297,7 +297,6 @@ function initialize_solver!(::AbstractManoptProblem, alms::AugmentedLagrangianMe
 end
 function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState, iter)
     M = get_manifold(mp)
-    sub_obj = get_objective(alms.sub_problem)
     # use subsolver to minimize the augmented Lagrangian
     set_manopt_parameter!(alms.sub_problem, :Cost, :ρ, alms.ρ)
     set_manopt_parameter!(alms.sub_problem, :Cost, :μ, alms.μ)
@@ -309,7 +308,7 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
 
     update_stopping_criterion!(alms, :MinIterateChange, alms.ϵ)
 
-    alms.p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
+    copyto!(M, alms.p, get_solver_result(solve!(alms.sub_problem, alms.sub_state)))
 
     # update multipliers
     cost_ineq = get_inequality_constraints(mp, alms.p)

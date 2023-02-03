@@ -118,15 +118,14 @@ Now as a first method we can just call the [Augmented Lagrangian Method](https:/
 );
 ```
 
-    Initial F(x): 0.000657 | 
+    Initial F(x): 0.000657 |
 
     # 50    F(x): -0.120344 | Last Change: 1.049035
-    # 100   
+    # 100   F(x): -0.119963 | Last Change: 0.008114
 
-    F(x): -0.119963 | Last Change: 0.008114
     The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
     The algorithm performed a step with a change (0.0) less than 1.0e-6.
-      2.205239 seconds (9.40 M allocations: 8.190 GiB, 27.54% gc time, 11.29% compilation time: 88% of which was recompilation)
+      2.386258 seconds (9.40 M allocations: 8.190 GiB, 28.89% gc time, 11.62% compilation time: 73% of which was recompilation)
 
 Now we have both a lower function value and the point is nearly within the constraints, … up to numerical inaccuracies
 
@@ -172,24 +171,24 @@ We obtain
     );
 ```
 
-    Initial F(x): 0.000657 | 
+    Initial F(x): 0.000657 |
 
     # 50    F(x): -0.120343 | Last Change: 1.049289
-    # 100   
+    # 100
 
     F(x): -0.120250 | Last Change: 0.028941
 
     # 150   F(x): NaN | Last Change: NaN
-    # 200   
+    # 200
 
     F(x): NaN | Last Change: NaN
 
     # 250   F(x): NaN | Last Change: NaN
-    # 300   
+    # 300
 
     F(x): NaN | Last Change: NaN
     The algorithm reached its maximal number of iterations (300).
-     12.231798 seconds (13.97 M allocations: 49.419 GiB, 24.86% gc time, 3.65% compilation time)
+     13.129635 seconds (13.97 M allocations: 49.419 GiB, 24.66% gc time, 3.59% compilation time)
 
 As a technical remark: Note that (by default) the change to [`InplaceEvaluation`](https://manoptjl.org/stable/plans/problem/#Manopt.InplaceEvaluation)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
 
@@ -220,15 +219,13 @@ and [`LinearQuadraticHuber`](https://manoptjl.org/stable/solvers/exact_penalty_m
 );
 ```
 
-    Initial F(x): 0.000657 | 
+    Initial F(x): 0.000657 |
 
     # 50    F(x): -0.119609 | Last Change: 1.030083
-    # 100   
-
-    F(x): -0.120341 | Last Change: 0.014608
+    # 100   F(x): -0.120341 | Last Change: 0.014608
     The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
     The algorithm performed a step with a change (2.580956827951785e-8) less than 1.0e-6.
-      1.504211 seconds (6.25 M allocations: 3.839 GiB, 25.26% gc time, 31.39% compilation time)
+      1.454777 seconds (6.25 M allocations: 3.839 GiB, 23.75% gc time, 30.27% compilation time)
 
 We obtain a similar cost value as for the Augmented Lagrangian Solver above, but here the constraint is actually fulfilled and not just numerically “on the boundary”.
 
@@ -255,15 +252,15 @@ The second smoothing technique is often beneficial, when we have a lot of constr
 );
 ```
 
-    Initial F(x): 0.000657 | 
+    Initial F(x): 0.000657 |
 
     # 50    F(x): -0.120346 | Last Change: 0.008883
-    # 100   
+    # 100
 
     F(x): -0.120344 | Last Change: 0.000161
     The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
     The algorithm performed a step with a change (5.771194914292421e-8) less than 1.0e-6.
-      0.683839 seconds (2.73 M allocations: 687.442 MiB, 6.75% gc time, 59.86% compilation time)
+      0.740191 seconds (2.73 M allocations: 687.416 MiB, 8.99% gc time, 58.64% compilation time)
 
 For the result we see the same behaviour as for the other smoothing.
 
@@ -291,7 +288,7 @@ Note that this is much faster, since every iteration of the algorithms above doe
 );
 ```
 
-      0.062299 seconds (154.22 k allocations: 32.308 MiB, 93.42% compilation time: 100% of which was recompilation)
+      0.065059 seconds (154.22 k allocations: 32.308 MiB, 94.30% compilation time: 100% of which was recompilation)
 
 ``` julia
 f(M, w1)
