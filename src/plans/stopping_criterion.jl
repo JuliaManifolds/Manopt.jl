@@ -91,7 +91,7 @@ function (c::StopWhenGradientNormLess)(
 )
     M = get_manifold(mp)
     (i == 0) && (c.reason = "") # reset on init
-    if norm(M, get_iterate(s), get_gradient(s)) < c.threshold
+    if (norm(M, get_iterate(s), get_gradient(s)) < c.threshold) && (i > 0)
         c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
         return true
     end
@@ -275,7 +275,7 @@ mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
     StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "")
 end
 function (c::StopWhenSmallerOrEqual)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+    ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     (i == 0) && (c.reason = "") # reset on init
     if getfield(s, c.value) <= c.minValue
