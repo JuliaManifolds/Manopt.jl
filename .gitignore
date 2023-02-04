@@ -14,3 +14,4 @@ coverage
 tutorials/*.ipynb
 tutorials/*_files/*
 tutorials/_freeze
+tutorials/img

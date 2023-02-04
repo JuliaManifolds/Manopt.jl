@@ -160,49 +160,22 @@ references:
   type: article-journal
   URL: http://arxiv.org/abs/2112.05250
 
-- id: HanMishraJawanpuriaGao:2021
-  abstract: >-
-    In this paper, we comparatively analyze the Bures-Wasserstein (BW) geometry
-    with the popular Affine-Invariant (AI) geometry for Riemannian optimization
-    on the symmetric positive definite (SPD) matrix manifold. Our study begins
-    with an observation that the BW metric has a linear dependence on SPD
-    matrices in contrast to the quadratic dependence of the AI metric. We build
-    on this to show that the BW metric is a more suitable and robust choice for
-    several Riemannian optimization problems over ill-conditioned SPD matrices.
-    We show that the BW geometry has a non-negative curvature, which further
-    improves convergence rates of algorithms over the non-positively curved AI
-    geometry. Finally, we verify that several popular cost functions, which are
-    known to be geodesic convex under the AI geometry, are also geodesic convex
-    under the BW geometry. Extensive experiments on various applications support
-    our findings.
-  accessed:
-    - year: 2022
-      month: 5
-      day: 18
+- id: Fletcher:2013
   author:
-    - family: Han
-      given: Andi
-    - family: Mishra
-      given: Bamdev
-    - family: Jawanpuria
-      given: Pratik
-    - family: Gao
-      given: Junbin
-  citation-key: HanMishraJawanpuriaGao:2021
+    - family: Fletcher
+      given: P. Thomas
+  citation-key: Fletcher2013
+  container-title: International Journal of Computer Vision
+  DOI: 10.1007/s11263-012-0591-y
+  issue: '2'
   issued:
-    - year: 2021
-      month: 6
-      day: 1
-  number: arXiv:2106.00286
-  publisher: arXiv
-  source: arXiv.org
-  title: >-
-    On Riemannian Optimization over Positive Definite Matrices with the
-    Bures-Wasserstein Geometry
-  type: article
-  URL: http://arxiv.org/abs/2106.00286
+    - year: 2013
+  page: 171–185
+  title: Geodesic regression and the theory of least squares on Riemannian manifolds
+  type: article-journal
+  volume: '105'
 
-- id: HanMishraJawanpuriaGao:2021a
+- id: HanMishraJawanpuriaGao:2021
   abstract: >-
     This paper proposes a generalized Bures-Wasserstein (BW) Riemannian geometry
     for the manifold of symmetric positive definite matrices. We explore the
@@ -230,7 +203,7 @@ references:
       given: Pratik
     - family: Gao
       given: Junbin
-  citation-key: HanMishraJawanpuriaGao:2021a
+  citation-key: HanMishraJawanpuriaGao:2021
   issued:
     - year: 2021
       month: 10
@@ -241,6 +214,48 @@ references:
   title: Generalized Bures-Wasserstein Geometry for Positive Definite Matrices
   type: article
   URL: http://arxiv.org/abs/2110.10464
+
+- id: HanMishraJawanpuriaGao:2021a
+  abstract: >-
+    In this paper, we comparatively analyze the Bures-Wasserstein (BW) geometry
+    with the popular Affine-Invariant (AI) geometry for Riemannian optimization
+    on the symmetric positive definite (SPD) matrix manifold. Our study begins
+    with an observation that the BW metric has a linear dependence on SPD
+    matrices in contrast to the quadratic dependence of the AI metric. We build
+    on this to show that the BW metric is a more suitable and robust choice for
+    several Riemannian optimization problems over ill-conditioned SPD matrices.
+    We show that the BW geometry has a non-negative curvature, which further
+    improves convergence rates of algorithms over the non-positively curved AI
+    geometry. Finally, we verify that several popular cost functions, which are
+    known to be geodesic convex under the AI geometry, are also geodesic convex
+    under the BW geometry. Extensive experiments on various applications support
+    our findings.
+  accessed:
+    - year: 2022
+      month: 5
+      day: 18
+  author:
+    - family: Han
+      given: Andi
+    - family: Mishra
+      given: Bamdev
+    - family: Jawanpuria
+      given: Pratik
+    - family: Gao
+      given: Junbin
+  citation-key: HanMishraJawanpuriaGao:2021a
+  issued:
+    - year: 2021
+      month: 6
+      day: 1
+  number: arXiv:2106.00286
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    On Riemannian Optimization over Positive Definite Matrices with the
+    Bures-Wasserstein Geometry
+  type: article
+  URL: http://arxiv.org/abs/2106.00286
 
 - id: LiuBoumal:2019
   author:

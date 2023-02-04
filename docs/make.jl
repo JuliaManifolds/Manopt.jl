@@ -32,7 +32,8 @@ makedocs(;
             "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
             "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
             "Record values" => "tutorials/HowToRecord.md",
-            "do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
+            "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
+            "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
         ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
