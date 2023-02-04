@@ -6,6 +6,27 @@ function default_stepsize(
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
+function show(io::IO, cgds::ConjugateGradientDescentState)
+    i = get_count(cgds, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver State
+    $Iter
+    ## Parameters
+    * conjugate gradient coefficient: $(cgds.coefficient) (last β=$(cgds.β))
+    * retraction method: $(cgds.retraction_method)
+    * vector transport method: $(cgds.vector_transport_method)
+
+    ## Stepsize
+    $(cgds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(cgds.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+
 @doc raw"""
     conjugate_gradient_descent(M, F, gradF, x)
 
