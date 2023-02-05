@@ -4,7 +4,7 @@ function show(io::IO, cpps::CyclicProximalPointState)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cpps.stop) ? "Yes" : "No"
     s = """
-    # Solver state for `Manopt.jl`s Cycluc Proximal Point Algorithm Solver State
+    # Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm
     $Iter
     ## Parameters
     * evaluation order of the proximal maps: :$(cpps.order_type)

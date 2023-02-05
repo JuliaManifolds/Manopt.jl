@@ -86,7 +86,7 @@ function show(io::IO, gds::GradientDescentState)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
     s = """
-    # Solver state for `Manopt.jl`s Gradient Descent Solver State
+    # Solver state for `Manopt.jl`s Gradient Descent Solver
     $Iter
     ## Parameters
     * retraction method: $(gds.retraction_method)

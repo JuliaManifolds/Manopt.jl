@@ -140,6 +140,10 @@ using Manopt, Manifolds, Test
             M, f, grad_f, pts[1]; direction=AverageGradient(M, copy(M, pts[1]); n=5)
         )
         @test isapprox(M, north, n4; atol=1e-7)
+        n5 = copy(M, pts[1])
+        r = gradient_descent!(M, f, grad_f, n5; return_state=true)
+        @test isapprox(M, n5, n2)
+        @test startswith(repr(r), "# Solver state for `Manopt.jl`s Gradient Descent Solver")
     end
     @testset "Warning when cost increases" begin
         M = Sphere(2)

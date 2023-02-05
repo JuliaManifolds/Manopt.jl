@@ -11,7 +11,7 @@ function show(io::IO, cgds::ConjugateGradientDescentState)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
     s = """
-    # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver State
+    # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
     $Iter
     ## Parameters
     * conjugate gradient coefficient: $(cgds.coefficient) (last β=$(cgds.β))
