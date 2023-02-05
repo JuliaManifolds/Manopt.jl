@@ -361,10 +361,6 @@ function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
     return a.keys
 end
 
-function _storage_key_true(nt::NamedTuple)
-    return map(key -> NamedTuple{(key,),Tuple{Bool}}(true), keys(nt))
-end
-
 """
     update_storage!(a::AbstractStateAction, amp::AbstractManoptProblem, s::AbstractManoptSolverState)
 
@@ -387,8 +383,7 @@ function update_storage!(
 
     M = get_manifold(amp)
 
-    pt_kts = _storage_key_true(a.point_values)
-    map(keys(a.point_values), pt_kts) do key, kt
+    map(keys(a.point_values)) do key
         if key === :Iterate
             copyto!(M, a.point_values[key], get_iterate(s))
         else
@@ -396,10 +391,10 @@ function update_storage!(
                 M, a.point_values[key], getproperty(s, key)::typeof(a.point_values[key])
             )
         end
-        a.point_init = merge(a.point_init, kt)
     end
-    tv_kts = _storage_key_true(a.tangent_values)
-    map(keys(a.tangent_values), tv_kts) do key, kt
+    a.point_init = NamedTuple{keys(a.point_values)}(map(u -> true, keys(a.point_values)))
+
+    map(keys(a.tangent_values)) do key
         if key === :Gradient
             copyto!(M, a.tangent_values[key], get_gradient(s))
         else
@@ -407,8 +402,11 @@ function update_storage!(
                 M, a.tangent_values[key], getproperty(s, key)::typeof(a.tangent_values[key])
             )
         end
-        a.tangent_init = merge(a.tangent_init, kt)
     end
+    a.tangent_init = NamedTuple{keys(a.tangent_values)}(
+        map(u -> true, keys(a.tangent_values))
+    )
+
     return a.keys
 end
 
