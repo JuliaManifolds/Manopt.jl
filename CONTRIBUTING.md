@@ -49,7 +49,8 @@ The two technical functions `initialize_solver!` and `step_solver!` should be do
 
 ### Provide a new example
 
-The `examples/` folder features several examples covering all solvers. Still, if you have a new example that you implemented yourself for fun or for a paper, feel free to add it to the repository as well. Also, if you have a [Pluto](https://github.com/fonsp/Pluto.jl) notebook of your example, feel free to contribute that.
+Example problems are available at [`ManoptExamples.jl`](https://github.com/JuliaManifolds/ManoptExamples.jl),
+where also their reproducible Quarto-Markdown files are stored.
 
 ### Code style
 
