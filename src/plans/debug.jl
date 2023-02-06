@@ -171,7 +171,12 @@ function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverSta
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(M, get_iterate(st), get_storage(d.storage, :Iterate), d.invretr),
+        distance(
+            M,
+            get_iterate(st),
+            get_storage(d.storage, PointStorageKey(:Iterate)),
+            d.invretr,
+        ),
     )
     d.storage(mp, st, i)
     return nothing
@@ -208,7 +213,7 @@ function (d::DebugGradientChange)(
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(M, get_gradient(st), get_storage(d.storage, :Gradient)),
+        distance(M, get_gradient(st), get_storage(d.storage, TangentStorageKey(:Gradient))),
     )
     d.storage(pm, st, i)
     return nothing

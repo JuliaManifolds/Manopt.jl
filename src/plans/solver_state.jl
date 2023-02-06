@@ -171,6 +171,24 @@ end
 get_solver_result(s::AbstractManoptSolverState, ::Val{false}) = get_iterate(s)
 get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result(s.state)
 
+"""
+    struct PointStorageKey{key} end
+
+Refer to point storage of [`StoreStateAction`](@ref) in `get_storage` and `has_storage`
+functions
+"""
+struct PointStorageKey{key} end
+PointStorageKey(key::Symbol) = PointStorageKey{key}()
+
+"""
+    struct TangentStorageKey{key} end
+
+Refer to tangent storage of [`StoreStateAction`](@ref) in `get_storage` and `has_storage`
+functions
+"""
+struct TangentStorageKey{key} end
+TangentStorageKey(key::Symbol) = TangentStorageKey{key}()
+
 #
 # Common Actions for decorated AbstractManoptSolverState
 #
@@ -213,10 +231,9 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref
 * `once` – whether to update the internal values only once per iteration
 * `lastStored` – last iterate, where this `AbstractStateAction` was called (to determine `once`)
 
-To handle the general storage, use `get_storage` and `has_storage`. For the point storage
-use `get_point_storage` and `has_point_storage`. For tangent vector storage use
-`get_tangent_storage` and `has_tangent_storage`. Point and tangent storage have been
-optimized to be more efficient
+To handle the general storage, use `get_storage` and `has_storage` with keys as `Symbol`s.
+For the point storage use `PointStorageKey`. For tangent vector storage use
+`TangentStorageKey`. Point and tangent storage have been optimized to be more efficient.
 
 # Constructiors
 
@@ -301,20 +318,32 @@ Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
 get_storage(a::AbstractStateAction, key::Symbol) = a.values[key]
 
 """
-    get_point_storage(a::AbstractStateAction, key::Symbol)
+    get_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
 
 Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
 `Symbol` `key` that represents a point.
 """
-get_point_storage(a::AbstractStateAction, key::Symbol) = a.point_values[key]
+function get_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
+    if haskey(a.point_values, key)
+        return a.point_values[key]
+    else
+        return get_storage(a, key)
+    end
+end
 
 """
-    get_tangent_storage(a::AbstractStateAction, key::Symbol)
+    get_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {key}
 
 Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
 `Symbol` `key` that represents a tangent vector.
 """
-get_tangent_storage(a::AbstractStateAction, key::Symbol) = a.tangent_values[key]
+function get_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {key}
+    if haskey(a.tangent_values, key)
+        return a.tangent_values[key]
+    else
+        return get_storage(a, key)
+    end
+end
 
 """
     has_storage(a::AbstractStateAction, key::Symbol)
@@ -325,20 +354,32 @@ Return whether the [`AbstractStateAction`](@ref) `a` has a value stored at the
 has_storage(a::AbstractStateAction, key::Symbol) = haskey(a.values, key)
 
 """
-    has_point_storage(a::AbstractStateAction, key::Symbol)
+    has_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
 
 Return whether the [`AbstractStateAction`](@ref) `a` has a point value stored at the
 `Symbol` `key`.
 """
-has_point_storage(a::AbstractStateAction, key::Symbol) = a.point_init[key]
+function has_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
+    if haskey(a.point_init, key)
+        return a.point_init[key]
+    else
+        return has_storage(a, key)
+    end
+end
 
 """
-    has_tangent_storage(a::AbstractStateAction, key::Symbol)
+    has_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {key}
 
 Return whether the [`AbstractStateAction`](@ref) `a` has a point value stored at the
 `Symbol` `key`.
 """
-has_tangent_storage(a::AbstractStateAction, key::Symbol) = a.tangent_init[key]
+function has_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {key}
+    if haskey(a.tangent_init, key)
+        return a.tangent_init[key]
+    else
+        return has_storage(a, key)
+    end
+end
 
 """
     update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
