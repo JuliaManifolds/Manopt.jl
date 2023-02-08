@@ -143,7 +143,7 @@ using Manopt, Manifolds, Test
         n5 = copy(M, pts[1])
         r = gradient_descent!(M, f, grad_f, n5; return_state=true)
         @test isapprox(M, n5, n2)
-        @test startswith(repr(r), "# Solver state for `Manopt.jl`s Gradient Descent Solver")
+        @test startswith(repr(r), "# Solver state for `Manopt.jl`s Gradient Descent")
     end
     @testset "Warning when cost increases" begin
         M = Sphere(2)
