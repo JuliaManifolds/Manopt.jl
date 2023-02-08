@@ -111,7 +111,7 @@ function show(io::IO, alms::AugmentedLagrangianMethodState)
     * ϵ: $(alms.ϵ) (ϵ_min: $(alms.ϵ_min), θ_ϵ: $(alms.θ_ϵ))
     * λ: $(alms.λ) (λ_min: $(alms.λ_min), λ_max: $(alms.λ_max))
     * μ: $(alms.μ) (μ_max: $(alms.μ_max))
-    * ρ: $(alms.ρ) (ϵ_min: $(alms.ϵ_min), θ_ρ: $(alms.θ_ρ))
+    * ρ: $(alms.ρ) (θ_ρ: $(alms.θ_ρ))
     * τ: $(alms.τ)
     * current penalty: $(alms.penalty)
 

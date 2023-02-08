@@ -25,4 +25,5 @@ using LinearAlgebra: I, tr
     epms = ExactPenaltyMethodState(M, x0, dmp, NelderMeadState(M))
     set_iterate!(epms, M, 2 .* x0)
     @test get_iterate(epms) == 2 .* x0
+    @test startswith(repr(epms), "# Solver state for `Manopt.jl`s Exact Penalty Method\n")
 end
