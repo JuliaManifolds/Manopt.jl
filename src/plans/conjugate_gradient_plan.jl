@@ -10,9 +10,7 @@ function DirectionUpdateRuleStorage(
     ursp = update_rule_storage_points(dur)
     ursv = update_rule_storage_vectors(dur)
     # StoreStateAction makes a copy
-    sa = StoreStateAction(
-        Symbol[], NamedTuple{ursp}(map(x -> p, ursp)), NamedTuple{ursv}(map(x -> X, ursv))
-    )
+    sa = StoreStateAction(M, Symbol[], ursp, ursv; p_init=p, X_init=X)
     return DirectionUpdateRuleStorage{typeof(dur),typeof(sa)}(dur, sa)
 end
 
@@ -123,8 +121,8 @@ Construct the conjugate descent coefficient update rule, a new storage is create
 """
 struct ConjugateDescentCoefficient <: DirectionUpdateRule end
 
-update_rule_storage_points(::ConjugateDescentCoefficient) = (:Iterate,)
-update_rule_storage_vectors(::ConjugateDescentCoefficient) = (:Gradient,)
+update_rule_storage_points(::ConjugateDescentCoefficient) = Tuple{:Iterate}
+update_rule_storage_vectors(::ConjugateDescentCoefficient) = Tuple{:Gradient}
 
 function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficient})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -187,8 +185,8 @@ struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdat
     end
 end
 
-update_rule_storage_points(::DaiYuanCoefficient) = (:Iterate,)
-update_rule_storage_vectors(::DaiYuanCoefficient) = (:Gradient, :δ)
+update_rule_storage_points(::DaiYuanCoefficient) = Tuple{:Iterate}
+update_rule_storage_vectors(::DaiYuanCoefficient) = Tuple{:Gradient,:δ}
 
 function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficient})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -239,8 +237,8 @@ Construct the Fletcher Reeves coefficient update rule, a new storage is created 
 """
 struct FletcherReevesCoefficient <: DirectionUpdateRule end
 
-update_rule_storage_points(::FletcherReevesCoefficient) = (:Iterate,)
-update_rule_storage_vectors(::FletcherReevesCoefficient) = (:Gradient,)
+update_rule_storage_points(::FletcherReevesCoefficient) = Tuple{:Iterate}
+update_rule_storage_vectors(::FletcherReevesCoefficient) = Tuple{:Gradient}
 
 function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficient})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -304,8 +302,8 @@ mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     end
 end
 
-update_rule_storage_points(::HagerZhangCoefficient) = (:Iterate,)
-update_rule_storage_vectors(::HagerZhangCoefficient) = (:Gradient, :δ)
+update_rule_storage_points(::HagerZhangCoefficient) = Tuple{:Iterate}
+update_rule_storage_vectors(::HagerZhangCoefficient) = Tuple{:Gradient,:δ}
 
 function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficient})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -383,8 +381,8 @@ struct HestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
     end
 end
 
-update_rule_storage_points(::HestenesStiefelCoefficient) = (:Iterate,)
-update_rule_storage_vectors(::HestenesStiefelCoefficient) = (:Gradient, :δ)
+update_rule_storage_points(::HestenesStiefelCoefficient) = Tuple{:Iterate}
+update_rule_storage_vectors(::HestenesStiefelCoefficient) = Tuple{:Gradient,:δ}
 
 function (u::DirectionUpdateRuleStorage{<:HestenesStiefelCoefficient})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -454,8 +452,8 @@ struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpd
     end
 end
 
-update_rule_storage_points(::LiuStoreyCoefficient) = (:Iterate,)
-update_rule_storage_vectors(::LiuStoreyCoefficient) = (:Gradient, :δ)
+update_rule_storage_points(::LiuStoreyCoefficient) = Tuple{:Iterate}
+update_rule_storage_vectors(::LiuStoreyCoefficient) = Tuple{:Gradient,:δ}
 
 function (u::DirectionUpdateRuleStorage{<:LiuStoreyCoefficient})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -528,8 +526,8 @@ struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <: Direction
     end
 end
 
-update_rule_storage_points(::PolakRibiereCoefficient) = (:Iterate,)
-update_rule_storage_vectors(::PolakRibiereCoefficient) = (:Gradient,)
+update_rule_storage_points(::PolakRibiereCoefficient) = Tuple{:Iterate}
+update_rule_storage_vectors(::PolakRibiereCoefficient) = Tuple{:Gradient}
 
 function (u::DirectionUpdateRuleStorage{<:PolakRibiereCoefficient})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -559,8 +557,8 @@ See also [`conjugate_gradient_descent`](@ref)
 """
 struct SteepestDirectionUpdateRule <: DirectionUpdateRule end
 
-update_rule_storage_points(::SteepestDirectionUpdateRule) = ()
-update_rule_storage_vectors(::SteepestDirectionUpdateRule) = ()
+update_rule_storage_points(::SteepestDirectionUpdateRule) = Tuple{}
+update_rule_storage_vectors(::SteepestDirectionUpdateRule) = Tuple{}
 
 function (u::DirectionUpdateRuleStorage{SteepestDirectionUpdateRule})(
     ::DefaultManoptProblem, ::ConjugateGradientDescentState, i
@@ -631,13 +629,13 @@ mutable struct ConjugateGradientBealeRestart{
     end
 end
 
-function update_rule_storage_points(dur::ConjugateGradientBealeRestart)
+@inline function update_rule_storage_points(dur::ConjugateGradientBealeRestart)
     dur_p = update_rule_storage_points(dur.direction_update)
-    return :Iterate in dur_p ? dur_p : (:Iterate, dur_p...)
+    return :Iterate in dur_p.parameters ? dur_p : Tuple{:Iterate,dur_p.parameters...}
 end
-function update_rule_storage_vectors(dur::ConjugateGradientBealeRestart)
+@inline function update_rule_storage_vectors(dur::ConjugateGradientBealeRestart)
     dur_X = update_rule_storage_vectors(dur.direction_update)
-    return :Gradient in dur_X ? dur_X : (:Gradient, dur_X...)
+    return :Gradient in dur_X.parameters ? dur_X : Tuple{:Gradient,dur_X.parameters...}
 end
 
 function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(

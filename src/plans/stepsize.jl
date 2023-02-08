@@ -473,7 +473,7 @@ function (a::NonmonotoneLinesearch)(
         p_old = get_storage(a.storage, :Iterate)
         X_old = get_storage(a.storage, :Gradient)
     end
-    update_storage!(a.storage, s)
+    update_storage!(a.storage, mp, s)
     return a(
         get_manifold(mp),
         get_iterate(s),

@@ -243,6 +243,21 @@ Initialize the Functor to an (empty) set of keys, where `once` determines
 whether more that one update per iteration are effective
 
     function StoreStateAction(
+        M::AbstractManifold,
+        dictionary_symbols::Vector{Symbol},
+        ::Type{TPS},
+        ::Type{TTS};
+        p_init=rand(M),
+        X_init=zero_vector(M, p_init),
+        once=true,
+    ) where {TPS<:Tuple,TTS<:Tuple}
+
+Initialize the general storage keys to `dictionary_symbols`, point storage keys to `TPS` and
+tangent vector storage tu `TTS`. For example you may call
+`StorageStateAction(M, Symbol[], Tuple{:Iterate}, Tuple{:Gradient})` to create efficient
+storage for point representing iterate and tangent vector representing gradient.
+
+    function StoreStateAction(
         general_keys::Vector{Symbol}=Symbol[],
         point_values::NamedTuple=NamedTuple(),
         tangent_values::NamedTuple=NamedTuple(),
@@ -299,6 +314,22 @@ mutable struct StoreStateAction{
         )
     end
 end
+@inline function StoreStateAction(
+    M::AbstractManifold,
+    dictionary_symbols::Vector{Symbol},
+    ::Type{TPS},
+    ::Type{TTS};
+    p_init=rand(M),
+    X_init=zero_vector(M, p_init),
+    once=true,
+) where {TPS<:Tuple,TTS<:Tuple}
+    TPS_tuple = Tuple(TPS.parameters)
+    TTS_tuple = Tuple(TTS.parameters)
+    point_values = NamedTuple{TPS_tuple}(map(_ -> p_init, TPS_tuple))
+    tangent_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
+    return StoreStateAction(dictionary_symbols, point_values, tangent_values, once)
+end
+
 function (a::StoreStateAction)(
     amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
@@ -379,27 +410,6 @@ function has_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {ke
     else
         return has_storage(a, key)
     end
-end
-
-"""
-    update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
-
-Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given on
-the [`AbstractManoptSolverState`](@ref) `s`.
-
-Warning: it does not update point and tangent vector storage.
-"""
-function update_storage!(a::AbstractStateAction, s::AbstractManoptSolverState)
-    for key in a.keys
-        if key === :Iterate
-            a.values[key] = deepcopy(get_iterate(s))
-        elseif key === :Gradient
-            a.values[key] = deepcopy(get_gradient(s))
-        else
-            a.values[key] = deepcopy(getproperty(s, key))
-        end
-    end
-    return a.keys
 end
 
 """

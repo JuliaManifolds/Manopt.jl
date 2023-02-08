@@ -50,7 +50,9 @@ end
         @test String(take!(io)) == ""
         # Change of Iterate and recording a custom field
         a2 = DebugChange(;
-            storage=StoreStateAction([:Iterate], (; p=p)), prefix="Last: ", io=io
+            storage=StoreStateAction(M, Symbol[], Tuple{:Iterate}, Tuple{}; p_init=p),
+            prefix="Last: ",
+            io=io,
         )
         a2(mp, st, 0) # init
         st.p = [3.0, 2.0]
