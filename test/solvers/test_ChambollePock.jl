@@ -72,6 +72,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
             variant=:linearized,
             return_state=true,
         )
+        @test startswith(repr(o1a),"# Solver state for `Manopt.jl`s Chambolle-Pock Algorithm")
         @test get_solver_result(o1a) == o1
         o2a = ChambollePock(
             callargs_linearized...;

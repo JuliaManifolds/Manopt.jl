@@ -68,21 +68,18 @@ function RecordSolverState(s::S, symbol::Symbol) where {S<:AbstractManoptSolverS
 end
 function status_summary(rst::RecordSolverState)
     if length(rst.recordDictionary) > 0
-        return print(
-            io,
-            """
-            $(rst.state)
+        return """
+               $(rst.state)
 
-            ## Record
-            $(rst.recordDictionary)
-            """,
-        )
+               ## Record
+               $(rst.recordDictionary)
+               """
     else
-        return show(io, rst.state)
+        return "RecordSolverState($(rst.state), $(rst.recordDictionary))"
     end
 end
 function show(io::IO, rst::RecordSolverState)
-    return print(io, "RecordSolverState($(rst.state), $(rst.recordDictionary))")
+    return print(io, status_summary(rst))
 end
 dispatch_state_decorator(::RecordSolverState) = Val(true)
 
