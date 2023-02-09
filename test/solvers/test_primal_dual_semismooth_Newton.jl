@@ -160,7 +160,9 @@ using Manopt, Manifolds, ManifoldsBase, Test
         dual_stepsize=τ,
         return_state=true,
     )
-    @test startswith(repr(s), "# Solver state for `Manopt.jl`s primal dual semismooth Newton")
+    @test startswith(
+        repr(s), "# Solver state for `Manopt.jl`s primal dual semismooth Newton"
+    )
     y = get_solver_result(s)
     @test x_hat ≈ y atol = 2 * 1e-7
 
