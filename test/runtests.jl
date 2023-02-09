@@ -6,6 +6,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("plans/test_state.jl")
         include("plans/test_conjugate_gradient_plan.jl")
         include("plans/test_debug.jl")
+        include("plans/test_storage.jl")
         include("plans/test_cache_plan.jl")
         include("plans/test_nelder_mead_plan.jl")
         include("plans/test_nonmutating.jl")
