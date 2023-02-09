@@ -18,5 +18,14 @@ using Test, Manopt, ManifoldsBase
     @test has_storage(a, Manopt.PointStorageKey(:p))
     @test has_storage(a, Manopt.TangentStorageKey(:X))
     @test get_storage(a, Manopt.PointStorageKey(:p)) == p
-    @test get_storage(a, Manopt.PointStorageKey(:X)) == [0.0, 0.0]
+    @test get_storage(a, Manopt.TangentStorageKey(:X)) == [0.0, 0.0]
+
+    a2 = StoreStateAction(M, Symbol[], Tuple{:p}, Tuple{:X})
+    @test !has_storage(a2, Manopt.PointStorageKey(:p))
+    @test !has_storage(a2, Manopt.TangentStorageKey(:X))
+    update_storage!(a2, mp, st)
+    @test has_storage(a2, Manopt.PointStorageKey(:p))
+    @test has_storage(a2, Manopt.TangentStorageKey(:X))
+    @test get_storage(a2, Manopt.PointStorageKey(:p)) == p
+    @test get_storage(a2, Manopt.TangentStorageKey(:X)) == [0.0, 0.0]
 end
