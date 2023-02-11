@@ -26,6 +26,9 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
         )
+        @test startswith(
+            repr(lrbfgs_s), "# Solver state for `Manopt.jl`s Quasi Newton Method\n"
+        )
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         @test get_last_stepsize(dmp, lrbfgs_s, lrbfgs_s.stepsize) > 0
         @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs

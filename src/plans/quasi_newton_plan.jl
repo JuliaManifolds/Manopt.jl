@@ -14,6 +14,7 @@ abstract type AbstractQuasiNewtonDirectionUpdate end
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
 """
 abstract type AbstractQuasiNewtonUpdateRule end
+state_summary(qnur::AbstractQuasiNewtonDirectionUpdate) = "$(repr(qnur))"
 
 @doc raw"""
     BFGS <: AbstractQuasiNewtonUpdateRule
@@ -335,6 +336,9 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     update::NT
     vector_transport_method::VT
 end
+function state_summary(d::QuasiNewtonMatrixDirectionUpdate)
+    return "$(d.update) with initial scaling $(d.scale) and vector transport method $(d.vector_transport_method)."
+end
 function QuasiNewtonMatrixDirectionUpdate(
     M::AbstractManifold,
     update::U,
@@ -369,7 +373,6 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     X = get_gradient(st)
     return get_vector(M, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
 end
-
 @doc raw"""
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
@@ -427,6 +430,13 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     scale::F
     project::Bool
     vector_transport_method::VT
+end
+function state_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
+    s = "limited memory $T (size $(length(d.memory_s)))"
+    (d.scale != 1.0) && (s = "$(s) initial scaling $(d.scale)")
+    d.project && (s = "$(s), projections, ")
+    s = "$(s)and $(d.vector_transport_method) as vector transport."
+    return s
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
     M::AbstractManifold,
