@@ -1,10 +1,13 @@
 """
 status_summary(e)
 
-return a string reportingabout the current status of `e`, e.g.
-a [`Problem`](@ref), [`Objective`](@ref), [`Stepsize`](@ref) or [`AbstractStateAction`](@ref)s.
+return a string reportin gabout the current status of `e`,
+where `e` is a type from Manopt, e.g. an [`AbstractManoptSolverState`](@ref)s.
+
+This method is similar to `show` but just returns a string.
+It might also be more verbose in explaining, or hide internal information.
 """
-function status_summary end
+status_summary(e)
 
 include("objective.jl")
 include("problem.jl")

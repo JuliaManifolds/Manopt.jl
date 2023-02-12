@@ -1,5 +1,5 @@
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
-using Manopt, Manifolds, Literate, Pluto, Pkg
+using Manopt, Manifolds, Pkg
 # Load an unregistered package (for now) to update exports of Pluto notebooks
 
 tutorial_menu = Array{Pair{String,String},1}()
