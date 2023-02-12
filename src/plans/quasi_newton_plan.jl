@@ -14,7 +14,6 @@ abstract type AbstractQuasiNewtonDirectionUpdate end
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
 """
 abstract type AbstractQuasiNewtonUpdateRule end
-status_summary(qnur::AbstractQuasiNewtonDirectionUpdate) = "$(repr(qnur))"
 
 @doc raw"""
     BFGS <: AbstractQuasiNewtonUpdateRule
