@@ -15,7 +15,6 @@ to indicate a call from [`stop_solver!`](@ref) that returns true afterwards.
 or to @info. The default is the `print` function on the default `Base.stdout`.
 """
 abstract type DebugAction <: AbstractStateAction end
-status_summary(da::DebugAction) = "$(da)"
 
 @doc raw"""
     DebugSolverState <: AbstractManoptSolverState
@@ -80,19 +79,16 @@ function status_summary(dst::DebugSolverState)
                 s = "$s\n    :$k = $(status_summary(v))"
             end
         end
-        return print(
-            io,
-            """
-            $(dst.state)
+        return """
+               $(dst.state)
 
-            ## Debug$s""",
-        )
+               ## Debug$s"""
     else # for length 1 the group is equivvalent to the summary of the single state
-        return status_summary(io, dst.state)
+        return status_summary(dst.state)
     end
 end
 function show(io::IO, dst::DebugSolverState)
-    return print(io, "DebugSolverState($(dst.state), $(dst.debugDictionary))")
+    return print(io, status_summary(dst))
 end
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
@@ -160,7 +156,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     end
 end
 function show(io::IO, de::DebugEvery)
-    return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update)")
+    return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update))")
 end
 function status_summary(de::DebugEvery)
     s = ""

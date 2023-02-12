@@ -7,7 +7,7 @@ where `e` is a type from Manopt, e.g. an [`AbstractManoptSolverState`](@ref)s.
 This method is similar to `show` but just returns a string.
 It might also be more verbose in explaining, or hide internal information.
 """
-status_summary(e)
+status_summary(e) = "$(e)"
 
 include("objective.jl")
 include("problem.jl")

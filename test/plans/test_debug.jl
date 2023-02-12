@@ -6,6 +6,8 @@ function ManifoldsBase.default_inverse_retraction_method(::TestPolarManifold)
     return PolarInverseRetraction()
 end
 
+struct TestDebugAction <: DebugAction end
+
 @testset "Debug State" begin
     # helper to get debug as string
     @testset "Basic Debug Output" begin
@@ -17,6 +19,8 @@ end
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
+        # summary fallback to show
+        @test Manopt.status_summary(TestDebugAction()) === "TestDebugAction()"
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         a1 = DebugDivider("|"; io=io)
         @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
@@ -26,6 +30,8 @@ end
         @test DebugSolverState(st, Dict(:A => a1)).debugDictionary[:A] == a1
         @test DebugSolverState(st, ["|"]).debugDictionary[:All].group[1].divider ==
             a1.divider
+        @test endswith(repr(DebugSolverState(st, a1)), "\"|\"")
+        @test repr(DebugSolverState(st, Dict{Symbol,DebugAction}())) == repr(st)
         # single AbstractStateActions
         # DebugDivider
         a1(mp, st, 0)
@@ -259,5 +265,24 @@ end
         @test t != d3.last_time
         Manopt.stop!(d3)
         @test d3.last_time == Nanosecond(0)
+    end
+    @testset "Debug show/summaries" begin
+        d1 = DebugDivider("|")
+        d2 = DebugIterate()
+        d3 = DebugGroup([d1, d2])
+        @test repr(d3) == "DebugGroup([$(d1), $(d2)])"
+        ts = "[ $(Manopt.status_summary(d1)), $(Manopt.status_summary(d2)) ]"
+        @test Manopt.status_summary(d3) == ts
+        d4 = DebugEvery(d1, 4)
+        @test repr(d4) == "DebugEvery($(d1), 4, true)"
+        @test Manopt.status_summary(d4) === "[$(d1), 4]"
+        ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
+        @test repr(DebugChange()) == ts2
+        @test Manopt.status_summary(DebugChange()) == "(:Change, \"Last Change: %f\")"
+        @test repr(DebugCost()) == "DebugCost(; format=\"F(x): %f\")"
+        @test Manopt.status_summary(DebugCost()) == "(:Cost, \"F(x): %f\")"
+        @test repr(DebugDivider("|")) == "DebugDivider(; divider=\"|\")"
+        @test Manopt.status_summary(DebugDivider("a")) == "\"a\""
+        @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\")"
     end
 end
