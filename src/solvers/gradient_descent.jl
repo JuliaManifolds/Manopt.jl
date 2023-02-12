@@ -35,7 +35,7 @@ mutable struct GradientDescentState{
     direction::DirectionUpdateRule
     stepsize::TStepsize
     stop::TStop
-    retraction_method::TRTM
+    trs::TRTM
     function GradientDescentState{P,T}(
         M::AbstractManifold,
         p::P,
@@ -89,7 +89,7 @@ function show(io::IO, gds::GradientDescentState)
     # Solver state for `Manopt.jl`s Gradient Descent
     $Iter
     ## Parameters
-    * retraction method: $(gds.retraction_method)
+    * retraction method: $(gds.trs)
 
     ## Stepsize
     $(gds.stepsize)
@@ -200,6 +200,6 @@ function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
 end
 function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, i)
     step, s.X = s.direction(p, s, i)
-    retract!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
+    retract!(get_manifold(p), s.p, s.p, s.X, -step, s.trs)
     return s
 end

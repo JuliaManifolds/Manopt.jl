@@ -144,6 +144,27 @@ function TrustRegionsState(
         project!,
     )
 end
+function show(io::IO, trs::TrustRegionsState)
+    i = get_count(trs, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Trust Region Method
+    $Iter
+    ## Parameters
+    * augmentation threshold: $(trs.augmentation_threshold)
+    * randomize: $(trs.randomize)
+    * reduction threshold: $(trs.reduction_threshold)
+    * retraction method: $(trs.retraction_method)
+    * ρ‘: $(trs.ρ_prime)
+    * ρ_regularization: $(trs.ρ_regularization)
+    * trust region radius: $(trs.trust_region_radius) (max: $(trs.max_trust_region_radius))
+
+    ## Stopping Criterion
+    $(status_summary(trs.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 
 @doc raw"""
     trust_regions(M, f, grad_f, hess_f, p)
