@@ -14,7 +14,7 @@ abstract type AbstractQuasiNewtonDirectionUpdate end
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
 """
 abstract type AbstractQuasiNewtonUpdateRule end
-state_summary(qnur::AbstractQuasiNewtonDirectionUpdate) = "$(repr(qnur))"
+status_summary(qnur::AbstractQuasiNewtonDirectionUpdate) = "$(repr(qnur))"
 
 @doc raw"""
     BFGS <: AbstractQuasiNewtonUpdateRule
@@ -336,7 +336,7 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     update::NT
     vector_transport_method::VT
 end
-function state_summary(d::QuasiNewtonMatrixDirectionUpdate)
+function status_summary(d::QuasiNewtonMatrixDirectionUpdate)
     return "$(d.update) with initial scaling $(d.scale) and vector transport method $(d.vector_transport_method)."
 end
 function QuasiNewtonMatrixDirectionUpdate(
@@ -431,7 +431,7 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     project::Bool
     vector_transport_method::VT
 end
-function state_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
+function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     s = "limited memory $T (size $(length(d.memory_s)))"
     (d.scale != 1.0) && (s = "$(s) initial scaling $(d.scale)")
     d.project && (s = "$(s), projections, ")

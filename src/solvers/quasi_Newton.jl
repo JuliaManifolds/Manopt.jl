@@ -97,7 +97,7 @@ function show(io::IO, qns::QuasiNewtonState)
     # Solver state for `Manopt.jl`s Quasi Newton Method
     $Iter
     ## Parameters
-    * direction update:        $(state_summary(qns.direction_update))
+    * direction update:        $(status_summary(qns.direction_update))
     * retraction method:       $(qns.retraction_method)
     * vector trnasport method: $(qns.vector_transport_method)
 

@@ -89,6 +89,22 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
         return tcgs
     end
 end
+function show(io::IO, tcgs::TruncatedConjugateGradientState)
+    i = get_count(tcgs, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
+    $Iter
+    ## Parameters
+    * randomize: $(tcgs.randomize)
+    * trust region radius: $(tcgs.trust_region_radius)
+
+    ## Stopping Criterion
+    $(status_summary(tcgs.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 
 #
 # Spcial stopping Criteria

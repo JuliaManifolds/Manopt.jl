@@ -44,11 +44,12 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("solvers/test_Levenberg_Marquardt.jl")
         include("solvers/test_Nelder_Mead.jl")
         include("solvers/test_quasi_Newton.jl")
-        include("solvers/test_trust_regions.jl")
-        include("solvers/test_trust_regions_hessian_update.jl")
         include("solvers/test_particle_swarm.jl")
         include("solvers/test_primal_dual_semismooth_Newton.jl")
         include("solvers/test_stochastic_gradient_descent.jl")
         include("solvers/test_subgradient_method.jl")
+        include("solvers/test_truncated_cg.jl")
+        include("solvers/test_trust_regions.jl")
+        include("solvers/test_trust_regions_hessian_update.jl")
     end
 end
