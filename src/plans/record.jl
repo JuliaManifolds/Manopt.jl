@@ -15,7 +15,6 @@ called from within [`stop_solver!`](@ref) which returns true afterwards.
 * `recorded_values` an `Array` of the recorded values.
 """
 abstract type RecordAction <: AbstractStateAction end
-status_summary(ra::RecordAction) = "$(ra)"
 
 @doc raw"""
     RecordSolverState <: AbstractManoptSolverState
@@ -249,11 +248,11 @@ function (d::RecordGroup)(p::AbstractManoptProblem, s::AbstractManoptSolverState
     end
 end
 function status_summary(rg::RecordGroup)
-    return "[ $( join(["$(status_summary(ri))" for ri in rg.group], ", ")) ] with $(length(get_record(rg))) recorded tuples."
+    return "[ $( join(["$(status_summary(ri))" for ri in rg.group], ", ")) ]"
 end
 function show(io::IO, rg::RecordGroup)
     s = join(["$(ri)" for ri in rg.group], ", ")
-    return print(io, "Record([$s])")
+    return print(io, "RecordGroup([$s])")
 end
 
 @doc raw"""
@@ -273,7 +272,7 @@ return an array of recorded values with respect to the `s`, see [`RecordGroup`](
 
 return an array of tuples, where each tuple is a recorded set corresponding to the symbols `s1, s2,...` per iteration / record call.
 """
-get_record(r::RecordGroup) = [zip(get_record.(r.group)...)...]
+get_record(r::RecordGroup) = length(r.group) > 0 ? [zip(get_record.(r.group)...)...] : []
 get_record(r::RecordGroup, i) = get_record(r.group[i])
 get_record(r::RecordGroup, s::Symbol) = get_record(r.group[r.indexSymbols[s]])
 function get_record(r::RecordGroup, s::NTuple{N,Symbol}) where {N}
@@ -324,9 +323,9 @@ This method does not perform any record itself but relies on it's childrens meth
 mutable struct RecordEvery <: RecordAction
     record::RecordAction
     every::Int
-    alwaysUpdate::Bool
-    function RecordEvery(r::RecordAction, every::Int=1, alwaysUpdate::Bool=true)
-        return new(r, every, alwaysUpdate)
+    always_update::Bool
+    function RecordEvery(r::RecordAction, every::Int=1, always_update::Bool=true)
+        return new(r, every, always_update)
     end
 end
 function (d::RecordEvery)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
@@ -334,21 +333,21 @@ function (d::RecordEvery)(p::AbstractManoptProblem, s::AbstractManoptSolverState
         d.record(p, s, i)
     elseif (rem(i, d.every) == 0)
         d.record(p, s, i)
-    elseif d.alwaysUpdate
+    elseif d.always_update
         d.record(p, s, 0)
     end
 end
 function show(io::IO, re::RecordEvery)
-    return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update)")
+    return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update))")
 end
 function status_summary(re::RecordEvery)
     s = ""
     if re.record isa RecordGroup
-        s = ("$(re.record)")[3:(end - 2)]
+        s = ("$(status_summary(re.record))")[3:(end - 2)]
     else
         s = "$(re.record)"
     end
-    return "[$s, $(re.record)]"
+    return "[$s, $(re.every)]"
 end
 get_record(r::RecordEvery) = get_record(r.record)
 get_record(r::RecordEvery, i) = get_record(r.record, i)
@@ -417,7 +416,7 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
 end
 function show(io::IO, rc::RecordChange)
     return print(
-        io, "DebugChange(; inverse_retraction_method=\"$(rc.inverse_retraction_method)\")"
+        io, "DebugChange(; inverse_retraction_method=$(rc.inverse_retraction_method))"
     )
 end
 status_summary(rc::RecordChange) = ":Change"
