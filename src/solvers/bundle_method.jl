@@ -46,14 +46,12 @@ mutable struct BundleMethodState{
     stop::TSC
     index_set::S
     vector_transport_method::VT
-    diam::Real
     m::Real
     tol::Real
     function BundleMethodState(
         M::TM,
         p::P;
         m::Real=0.0125,
-        diam::Real=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopAfterIteration(5000),
@@ -84,13 +82,12 @@ mutable struct BundleMethodState{
             stopping_criterion,
             index_set,
             vector_transport_method,
-            diam,
             m,
             tol,
         )
     end
 end
-get_iterate(bms::BundleMethodState) = bms.p
+get_iterate(bms::BundleMethodState) = bms.p_last_serious
 get_subgradient(bms::BundleMethodState) = bms.X
 function set_iterate!(bms::BundleMethodState, M, p)
     copyto!(M, bms.p, p)
@@ -162,7 +159,6 @@ function bundle_method!(
     ∂f!!::TdF,
     p;
     m::Real=0.0125,
-    diam::Real=1.0,
     tol::Real=1e-8,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -178,7 +174,6 @@ function bundle_method!(
         M,
         p;
         m=m,
-        diam=diam,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -215,21 +210,24 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ε = sum(λ .* bms.lin_errors)
     
     # Check transported subgradients ε-inequality
-    # r = rand(M)
-    # if (
-    #     get_cost(mp, r) <
-    #     get_cost(mp, bms.p_last_serious) +
-    #     inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
-    # )
-    #     println("No")
-    #     println(r)
-    #     println(bms.p)
-    #     println(bms.p_last_serious)
-    # else
-    #     println("Yes")
-    # end
+    r = rand(M)
+    if (
+        get_cost(mp, r) <
+        get_cost(mp, bms.p_last_serious) +
+        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
+    )
+        println("No")
+        println(r)
+        println(bms.p)
+        println(bms.p_last_serious)
+    else
+        println("Yes")
+    end
     ξ = -norm(M, bms.p_last_serious, g)^2 - ε
-    (isapprox(ξ, 0.0; atol = 0.0, rtol = eps(Float64)) || -ξ <= bms.tol) && (return bms)
+    # if -ξ ≤ bms.tol 
+    #     println("TOL")
+    #     return bms
+    # end
     bms.p = retract(M, bms.p_last_serious, -g, bms.retraction_method)
     bms.X = get_subgradient(mp, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * ξ)
@@ -240,6 +238,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     positive_indices = intersect(bms.index_set, Set(findall(j -> j > 0, λ)))
     bms.index_set = union(positive_indices, i + 1)
+    ϱ = [sqrt(3 * distance(M, bms.p_last_serious, bms.bundle_points[j][1])* distance(M, bms.p, bms.bundle_points[j][1])* distance(M, bms.p_last_serious, bms.p)) * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for j in 1:length(bms.index_set)]
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle_points[j][1]) - inner(
             M,
@@ -251,11 +250,14 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 bms.p_last_serious,
                 bms.inverse_retraction_method,
             ),
-        ) # + sqrt(2 * bms.diam^3) * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2])
+        )
         for j in 1:length(bms.index_set)
     ]
-    # println(bms.diam)
-    #bms.diam = sum([distance(M, bms.bundle_points[j][1], bms.p_last_serious) for j in 1:length(bms.index_set)])/length()
+    bms.lin_errors = bms.lin_errors + ϱ
+    # Y = get_subgradient(mp, bms.p_last_serious)
+    # println(norm(M, bms.p_last_serious, Y))
+    #println(ε)
+    println(ϱ)
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
