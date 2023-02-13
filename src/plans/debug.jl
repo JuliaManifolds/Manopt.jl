@@ -161,7 +161,7 @@ end
 function status_summary(de::DebugEvery)
     s = ""
     if de.debug isa DebugGroup
-        s = ("$(de.debug)")[3:(end - 2)]
+        s = status_summary(de.debug)[3:(end - 2)]
     else
         s = "$(de.debug)"
     end
@@ -370,7 +370,7 @@ function (d::DebugEntryChange)(
 end
 function show(io::IO, dec::DebugEntryChange)
     return print(
-        io, "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(di.format)\")"
+        io, "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(dec.format)\")"
     )
 end
 
@@ -422,7 +422,7 @@ end
 function show(io::IO, dgc::DebugGradientChange)
     return print(
         io,
-        "DebugGradientChange(; format=\"$(dgc.format), vector_transport_method=$(dgc.vector_transport_method)\")",
+        "DebugGradientChange(; format=\"$(dgc.format)\", vector_transport_method=$(dgc.vector_transport_method))",
     )
 end
 status_summary(di::DebugGradientChange) = "(:GradientChange, \"$(di.format)\")"

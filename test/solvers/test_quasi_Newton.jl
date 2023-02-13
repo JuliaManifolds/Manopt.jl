@@ -2,6 +2,16 @@ using Manopt, Manifolds, Test
 using LinearAlgebra: I, eigvecs, tr, Diagonal
 
 @testset "Riemannian quasi-Newton Methods" begin
+    @testset "Show & Status" begin
+        M = Euclidean(4)
+        p = zeros(Float64, 4)
+        qnu = InverseBFGS()
+        d = QuasiNewtonMatrixDirectionUpdate(M, qnu)
+        @test Manopt.status_summary(d) ==
+            "$(qnu) with initial scaling true and vector transport method ParallelTransport()."
+        s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], true, InverseBFGS(), ParallelTransport())\n"
+        @test repr(d) == s
+    end
     @testset "Mean of 3 Matrices" begin
         # Mean of 3 matrices
         A = [18.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]

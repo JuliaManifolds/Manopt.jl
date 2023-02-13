@@ -93,6 +93,11 @@ struct TestDebugAction <: DebugAction end
         @test String(take!(io)) == "Initial "
         DebugIteration(; io=io)(mp, st, 23)
         @test String(take!(io)) == "# 23    "
+        @test repr(DebugIteration()) == "DebugIteration(; format=\"# %-6d\")"
+        @test Manopt.status_summary(DebugIteration()) == "(:Iteration, \"# %-6d\")"
+        # DebugEntryChange
+        dec = DebugEntryChange(:p, x -> x)
+        @test startswith(repr(dec), "DebugEntryChange(:p")
         # DEbugEntryChange - reset
         st.p = p
         a3 = DebugEntryChange(
@@ -128,6 +133,10 @@ struct TestDebugAction <: DebugAction end
         DebugStoppingCriterion(; io=io)(mp, st, 20)
         @test String(take!(io)) ==
             "The algorithm reached its maximal number of iterations (20).\n"
+        @test repr(DebugStoppingCriterion()) == "DebugStoppingCriterion()"
+        @test Manopt.status_summary(DebugStoppingCriterion()) == ":Stop"
+
+        # Factory
         df = DebugFactory([:Stop, "|"])
         @test isa(df[:Stop], DebugStoppingCriterion)
         @test isa(df[:All], DebugGroup)
@@ -182,6 +191,17 @@ struct TestDebugAction <: DebugAction end
         @test DebugActionFactory(a3) == a3
         @test DebugFactory([(:Iterate, "A")])[:All].group[1].format == "A"
         @test DebugActionFactory((:Iterate, "A")).format == "A"
+        # Status for multiple dictionaries
+        dss = DebugSolverState(st, DebugFactory([:Stop, 20, "|"]))
+        @test contains(Manopt.status_summary(dss), ":Stop")
+        # DebugEvery summary
+        de = DebugEvery(DebugGroup([DebugDivider("|"), DebugIteration()]), 10)
+        @test Manopt.status_summary(de) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"
+        # DebugGradientChange
+        dgc = DebugGradientChange()
+        dgc_s = "DebugGradientChange(; format=\"Last Change: %f\", vector_transport_method=ParallelTransport())"
+        @test repr(dgc) == dgc_s
+        @test Manopt.status_summary(dgc) == "(:GradientChange, \"Last Change: %f\")"
     end
 
     @testset "Debug Warnings" begin
@@ -195,6 +215,8 @@ struct TestDebugAction <: DebugAction end
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 
         w1 = DebugWarnIfCostNotFinite()
+        @test repr(w1) == "DebugWarnIfCostNotFinite()"
+        @test Manopt.status_summary(w1) == ":WarnCost"
         @test_logs (:warn,) (
             :warn,
             "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.",
@@ -206,6 +228,7 @@ struct TestDebugAction <: DebugAction end
 
         st.X = grad_f(M, p)
         w3 = DebugWarnIfFieldNotFinite(:X)
+        @test repr(w3) == "DebugWarnIfFieldNotFinite(:X)"
         @test_logs (:warn,) (
             :warn,
             "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:X, :Always) to get all warnings.",
@@ -265,6 +288,12 @@ struct TestDebugAction <: DebugAction end
         @test t != d3.last_time
         Manopt.stop!(d3)
         @test d3.last_time == Nanosecond(0)
+        drs = "DebugTime(; format=\"time spent: %s\", mode=:cumulative)"
+        @test repr(DebugTime()) == drs
+        drs2 = "(:IterativeTime, \"time spent: %s\")"
+        @test Manopt.status_summary(DebugTime(; mode=:iterative)) == drs2
+        drs3 = "(:Time, \"time spent: %s\")"
+        @test Manopt.status_summary(DebugTime(; mode=:cumulative)) == drs3
     end
     @testset "Debug show/summaries" begin
         d1 = DebugDivider("|")

@@ -343,7 +343,7 @@ end
 function status_summary(re::RecordEvery)
     s = ""
     if re.record isa RecordGroup
-        s = ("$(status_summary(re.record))")[3:(end - 2)]
+        s = status_summary(re.record)[3:(end - 2)]
     else
         s = "$(re.record)"
     end
