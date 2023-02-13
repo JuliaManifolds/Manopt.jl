@@ -180,7 +180,7 @@ last step size.
 
 # Constructor
 
-    ArmijoLineSearch(M=DefaultManifld(2))
+    ArmijoLineSearch(M=DefaultManifold())
 
 with the Fields above as keyword arguments and the retraction is set to the default retraction on `M`.
 
@@ -201,7 +201,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     linesearch_stopsize::Float64
     initial_guess::F
     function ArmijoLinesearch(
-        M::AbstractManifold=DefaultManifold(2);
+        M::AbstractManifold=DefaultManifold();
         initial_stepsize::Float64=1.0,
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         contraction_factor::Float64=0.95,
@@ -256,7 +256,7 @@ function show(io::IO, als::ArmijoLinesearch)
     )
 end
 function status_summary(als::ArmijoLinesearch)
-    return "$(a)\nand a computed last stepsize of $(als.last_stepsize)"
+    return "$(als)\nand a computed last stepsize of $(als.last_stepsize)"
 end
 
 @doc raw"""
@@ -628,7 +628,7 @@ mutable struct WolfePowellLinesearch{
     linesearch_stopsize::Float64
 
     function WolfePowellLinesearch(
-        M::AbstractManifold=DefaultManifold(2),
+        M::AbstractManifold=DefaultManifold(),
         c1::Float64=10^(-4),
         c2::Float64=0.999;
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -714,14 +714,17 @@ function (a::WolfePowellLinesearch)(
     return step
 end
 function show(io::IO, a::WolfePowellLinesearch)
-    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
     return print(
         io,
         """
-        WolfePowellLinesearch(DefaultManifold(2), $(a.c1), $(a.c2)) with keyword arguments
+        WolfePowellLinesearch(DefaultManifold(), $(a.c1), $(a.c2)) with keyword arguments
           * retraction_method = $(a.retraction_method)
-          * vector_transport_method = $(a.vector_transport_method)$s""",
+          * vector_transport_method = $(a.vector_transport_method)""",
     )
+end
+function status_summary(a::WolfePowellLinesearch)
+    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
+    return "$a$s"
 end
 
 @doc raw"""
@@ -754,7 +757,7 @@ In this case the retraction and the vector transport are also keyword arguments 
 The other constructor is kept for backward compatibility.
 
     WolfePowellLinesearch(
-        M,
+        M=DefaultManifold(),
         c1::Float64=10^(-4),
         c2::Float64=0.999;
         retraction_method = default_retraction_method(M),
@@ -778,7 +781,7 @@ mutable struct WolfePowellBinaryLinesearch{
     linesearch_stopsize::Float64
 
     function WolfePowellBinaryLinesearch(
-        M::AbstractManifold=DefaultManifold(2),
+        M::AbstractManifold=DefaultManifold(),
         c1::Float64=10^(-4),
         c2::Float64=0.999;
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -835,15 +838,18 @@ function (a::WolfePowellBinaryLinesearch)(
     return t
 end
 function show(io::IO, a::WolfePowellBinaryLinesearch)
-    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
     return print(
         io,
         """
-        WolfePowellBinaryLinesearch(DefaultManifold(2), $(a.c1), $(a.c2)) with keyword arguments
+        WolfePowellBinaryLinesearch(DefaultManifold(), $(a.c1), $(a.c2)) with keyword arguments
           * retraction_method = $(a.retraction_method)
           * vector_transport_method = $(a.vector_transport_method)
-          * linesearch_stopsize = $(a.linesearch_stopsize)$s""",
+          * linesearch_stopsize = $(a.linesearch_stopsize)""",
     )
+end
+function status_summary(a::WolfePowellBinaryLinesearch)
+    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
+    return "$a$s"
 end
 @doc raw"""
     get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)

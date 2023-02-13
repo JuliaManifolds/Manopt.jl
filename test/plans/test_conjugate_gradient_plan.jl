@@ -34,7 +34,6 @@ struct DummyCGCoeff <: DirectionUpdateRule end
         cgbr = ConjugateGradientBealeRestart(ConjugateDescentCoefficient())
         s1 = "ConjugateGradientBealeRestart(ConjugateDescentCoefficient(), 0.2; vector_transport_method=$pt)"
         @test repr(cgbr) == s1
-        @test repr(DaiYuanCoefficient()) == "DaiYuanCoefficient($pt)"
-        @test repr(DaiYuanCoefficient()) == "DaiYuanCoefficient($pt)"
+        @test repr(LiuStoreyCoefficient()) == "LiuStoreyCoefficient($pt)"
     end
 end

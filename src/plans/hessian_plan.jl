@@ -310,7 +310,7 @@ function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        copyto!(f.p_tmp, p)
+        copyto!(M, f.p_tmp, p)
         f.grad_tmp = f.gradient!!(M, f.p_tmp)
     end
 
@@ -322,7 +322,6 @@ end
 
 function (f::ApproxHessianSymmetricRankOne{InplaceEvaluation})(M, Y, p, X)
     # Update Basis if necessary
-    # if distance(M, p, f.p_tmp) >= eps(Float64)
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
         copyto!(f.p_tmp, p)
@@ -443,7 +442,7 @@ function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        copyto!(f.p_tmp, p)
+        copyto!(M, f.p_tmp, p)
         f.grad_tmp = f.gradient!!(M, f.p_tmp)
     end
 
@@ -457,7 +456,7 @@ function (f::ApproxHessianBFGS{InplaceEvaluation})(M, Y, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        copyto!(f.p_tmp, p)
+        copyto!(M, f.p_tmp, p)
         f.gradient!!(M, f.grad_tmp, f.p_tmp)
     end
 
