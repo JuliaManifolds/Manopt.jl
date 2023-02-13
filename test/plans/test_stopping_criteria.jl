@@ -56,18 +56,21 @@ end
     a = StopAfterIteration(200)
     b = StopWhenChangeLess(1e-6)
     c = StopWhenGradientNormLess(1e-6)
-    d = StopWhenAll(a, b, c)
-    @test typeof(d) === typeof(a & b & c)
-    @test typeof(d) === typeof(a & (b & c))
-    @test typeof(d) === typeof((a & b) & c)
-    update_stopping_criterion!(d, :MinIterateChange, 1e-8)
-    @test d.criteria[2].threshold == 1e-8
-    e = StopWhenAny(a, b, c)
-    @test typeof(e) === typeof(a | b | c)
-    @test typeof(e) === typeof(a | (b | c))
-    @test typeof(e) === typeof((a | b) | c)
+    d = StopWhenSubgradientNormLess(1e-6)
+    e = StopWhenAll(a, b, c, d)
+    @test typeof(e) === typeof(a & b & c & d)
+    @test typeof(e) === typeof(a & (b & c & d))
+    @test typeof(e) === typeof((a & b) & c & d)
+    update_stopping_criterion!(e, :MinIterateChange, 1e-8)
+    @test e.criteria[2].threshold == 1e-8
+    e = StopWhenAny(a, b, c, d)
+    @test typeof(e) === typeof(a | b | c | d)
+    @test typeof(e) === typeof(a | (b | (c | d)))
+    @test typeof(e) === typeof(a | ((b | c) | d))
+    @test typeof(e) === typeof(((a | b) | c) | d)
+    @test typeof(e) === typeof((a | (b | c)) | d)
     update_stopping_criterion!(e, :MinGradNorm, 1e-9)
-    @test d.criteria[3].threshold == 1e-9
+    @test e.criteria[3].threshold == 1e-9
 end
 
 @testset "TCG stopping criteria" begin

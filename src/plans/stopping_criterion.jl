@@ -111,6 +111,47 @@ function update_stopping_criterion!(
 end
 
 """
+    StopWhenSubgradientNormLess <: StoppingCriterion
+
+A stopping criterion based on the current subgradient norm.
+
+# Constructor
+
+    StopWhenSubgradientNormLess(ε::Float64)
+
+Create a stopping criterion with threshold `ε` for the subgradient, that is, this criterion
+indicates to stop when [`get_subgradient`](@ref) returns a subgradient vector of norm less than `ε`.
+"""
+mutable struct StopWhenSubgradientNormLess <: StoppingCriterion
+    threshold::Float64
+    reason::String
+    StopWhenSubgradientNormLess(ε::Float64) = new(ε, "")
+end
+function (c::StopWhenSubgradientNormLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    M = get_manifold(mp)
+    (i == 0) && (c.reason = "") # reset on init
+    if (norm(M, get_iterate(s), get_subgradient(s)) < c.threshold) && (i > 0)
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
+        return true
+    end
+    return false
+end
+
+"""
+    update_stopping_criterion!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
+
+Update the minimal subgradient norm when an algorithm shall stop
+"""
+function update_stopping_criterion!(
+    c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64
+)
+    c.threshold = v
+    return c
+end
+
+"""
     StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
