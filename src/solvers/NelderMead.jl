@@ -374,11 +374,11 @@ end
 function status_summary(c::StopWhenPopulationConcentrated)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "Population concentration: in f < $(c.tol_f) and in p < $(c.col_p):\t$s"
+    return "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):\t$s"
 end
 function show(io::IO, c::StopWhenPopulationConcentrated)
     return print(
         io,
-        "StopWhenPopulationCincentrate($(c.f_tol), $(f.p_tol))\n    $(status_summary(c))",
+        "StopWhenPopulationCincentrate($(c.f_tol), $(c.p_tol))\n    $(status_summary(c))",
     )
 end

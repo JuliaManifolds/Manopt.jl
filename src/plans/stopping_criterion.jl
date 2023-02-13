@@ -421,7 +421,7 @@ function status_summary(c::StopAfter)
 end
 indicates_convergence(c::StopAfter) = false
 function show(io::IO, c::StopAfter)
-    return print(io, "StopAfter(:$(c.threshold))\n    $(status_summary(c))")
+    return print(io, "StopAfter($(repr(c.threshold)))\n    $(status_summary(c))")
 end
 
 """
