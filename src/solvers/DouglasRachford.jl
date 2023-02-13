@@ -64,7 +64,6 @@ function show(io::IO, drs::DouglasRachfordState)
     s = """
     # Solver state for `Manopt.jl`s $P Douglas Rachford Algorithm
     $Iter
-
     ## Stopping Criterion
     $(status_summary(drs.stop))
     This indicates convergence: $Conv"""
