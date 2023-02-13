@@ -293,7 +293,7 @@ function update_storage!(a::AbstractStateAction, d::Dict{Symbol,<:Any})
 end
 
 """
-    get_count(s::AbstractManoptSolverState, :Symbol)
+    get_count(ams::AbstractManoptSolverState, ::Symbol)
 
 Obtain the count for a certain countable size, e.g. the `:Iterations`.
 This function returns 0 if there was nothing to count
@@ -301,7 +301,7 @@ This function returns 0 if there was nothing to count
 Available symbols from within the solver state
 
 * `:Iterations` is passed on to the `stop` field to obtain the
-  iterataion the solver stopped.
+  iterataion at which the solver stopped.
 """
 function get_count(ams::AbstractManoptSolverState, s::Symbol)
     return get_count(ams, Val(s))

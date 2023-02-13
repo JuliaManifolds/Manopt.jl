@@ -93,7 +93,7 @@ end
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
 #
-# Meta Debug Acrions
+# Meta Debug Actions
 #
 """
     DebugGroup <: DebugAction

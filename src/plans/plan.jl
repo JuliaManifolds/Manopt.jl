@@ -1,5 +1,5 @@
 """
-status_summary(e)
+    status_summary(e)
 
 return a string reportin gabout the current status of `e`,
 where `e` is a type from Manopt, e.g. an [`AbstractManoptSolverState`](@ref)s.
