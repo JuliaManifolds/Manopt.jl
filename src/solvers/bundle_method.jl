@@ -210,24 +210,27 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ε = sum(λ .* bms.lin_errors)
     
     # Check transported subgradients ε-inequality
-    r = rand(M)
-    if (
-        get_cost(mp, r) <
-        get_cost(mp, bms.p_last_serious) +
-        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
-    )
-        println("No")
-        println(r)
-        println(bms.p)
-        println(bms.p_last_serious)
-    else
-        println("Yes")
-    end
+    # r = rand(M)
+    # if (
+    #     get_cost(mp, r) <
+    #     get_cost(mp, bms.p_last_serious) +
+    #     inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
+    # )
+    #     println("No")
+    #     println(r)
+    #     println(bms.p)
+    #     println(bms.p_last_serious)
+    # else
+    #     println("Yes")
+    # end
+
     ξ = -norm(M, bms.p_last_serious, g)^2 - ε
+    
     # if -ξ ≤ bms.tol 
     #     println("TOL")
     #     return bms
     # end
+
     bms.p = retract(M, bms.p_last_serious, -g, bms.retraction_method)
     bms.X = get_subgradient(mp, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * ξ)
@@ -254,10 +257,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         for j in 1:length(bms.index_set)
     ]
     bms.lin_errors = bms.lin_errors + ϱ
-    # Y = get_subgradient(mp, bms.p_last_serious)
-    # println(norm(M, bms.p_last_serious, Y))
-    #println(ε)
-    println(ϱ)
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
