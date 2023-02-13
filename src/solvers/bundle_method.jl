@@ -4,7 +4,7 @@ stores option values for a [`bundle_method`](@ref) solver
 
 # Fields
 
-* `bundle_points` - collects each iterate `p` with the computed subgradient `∂` at the iterate
+* `bundle_points` - bundle that collects each iterate with the computed subgradient at the iterate
 * `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
 * `inverse_retraction_method` - the inverse retraction to use within
 * `lin_errors` - linearization errors at the last serious step
@@ -90,7 +90,7 @@ mutable struct BundleMethodState{
         )
     end
 end
-get_iterate(bms::BundleMethodState) = bms.p_last_serious
+get_iterate(bms::BundleMethodState) = bms.p
 get_subgradient(bms::BundleMethodState) = bms.X
 function set_iterate!(bms::BundleMethodState, M, p)
     copyto!(M, bms.p, p)
@@ -213,30 +213,30 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     λ = bundle_method_sub_solver(M, bms, transported_subgradients)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* bms.lin_errors)
-    bms.diam = bms.diam / i
+    
     # Check transported subgradients ε-inequality
-    r = rand(M)
-    if (
-        get_cost(mp, r) <
-        get_cost(mp, bms.p_last_serious) +
-        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
-    )
-        println("No")
-        println(r)
-        println(bms.p)
-        println(bms.p_last_serious)
+    # r = rand(M)
+    # if (
+    #     get_cost(mp, r) <
+    #     get_cost(mp, bms.p_last_serious) +
+    #     inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
+    # )
+    #     println("No")
+    #     println(r)
+    #     println(bms.p)
+    #     println(bms.p_last_serious)
+    # else
+    #     println("Yes")
+    # end
+    ξ = -norm(M, bms.p_last_serious, g)^2 - ε
+    (isapprox(ξ, 0.0; atol = 0.0, rtol = eps(Float64)) || -ξ <= bms.tol) && (return bms)
+    bms.p = retract(M, bms.p_last_serious, -g, bms.retraction_method)
+    bms.X = get_subgradient(mp, bms.p)
+    if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * ξ)
+        bms.p_last_serious = bms.p
+        push!(bms.bundle_points, (bms.p_last_serious, bms.X))
     else
-        println("Yes")
-    end
-    δ = -norm(M, bms.p_last_serious, g)^2 - ε
-    (δ == 0 || -δ <= bms.tol) && (return bms)
-    q = retract(M, bms.p_last_serious, -g, bms.retraction_method)
-    X_q = get_subgradient(mp, q)
-    if get_cost(mp, q) <= (get_cost(mp, bms.p_last_serious) + bms.m * δ)
-        bms.p_last_serious = q
-        push!(bms.bundle_points, (bms.p_last_serious, X_q))
-    else
-        push!(bms.bundle_points, (q, X_q))
+        push!(bms.bundle_points, (bms.p, bms.X))
     end
     positive_indices = intersect(bms.index_set, Set(findall(j -> j > 0, λ)))
     bms.index_set = union(positive_indices, i + 1)
@@ -251,9 +251,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 bms.p_last_serious,
                 bms.inverse_retraction_method,
             ),
-        ) + (4 * bms.diam * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]))
+        ) # + sqrt(2 * bms.diam^3) * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2])
         for j in 1:length(bms.index_set)
     ]
+    # println(bms.diam)
+    #bms.diam = sum([distance(M, bms.bundle_points[j][1], bms.p_last_serious) for j in 1:length(bms.index_set)])/length()
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
