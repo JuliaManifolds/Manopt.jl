@@ -299,7 +299,7 @@ getindex(r::RecordGroup, i) = get_record(r, i)
 @doc raw"""
     RecordCost <: RecordAction
 
-record the current cost function value, see [`get_cost`](@ref).
+Record the current cost function value, see [`get_cost`](@ref).
 """
 mutable struct RecordCost <: RecordAction
     recorded_values::Array{Float64,1}

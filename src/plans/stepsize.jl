@@ -201,7 +201,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     linesearch_stopsize::Float64
     initial_guess::F
     function ArmijoLinesearch(
-        M=DefaultManifold(2);
+        M::AbstractManifold=DefaultManifold(2);
         initial_stepsize::Float64=1.0,
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         contraction_factor::Float64=0.95,
