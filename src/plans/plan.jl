@@ -1,7 +1,7 @@
 """
     status_summary(e)
 
-return a string reportin gabout the current status of `e`,
+Return a string reporting about the current status of `e`,
 where `e` is a type from Manopt, e.g. an [`AbstractManoptSolverState`](@ref)s.
 
 This method is similar to `show` but just returns a string.
