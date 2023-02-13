@@ -51,6 +51,7 @@ end
     p = TestStopProblem()
     o = TestStopState()
     s = StopAfter(Second(1))
+    @test !Manopt.indicates_convergende(s)
     @test Manopt.status_summary(s) == "stopped after $(s.threshold):\tnot reached"
     @test repr(s) == "StopAfter(Second(1))\n    $(Manopt.status_summary(s))"
     s(p, o, 0) # Start

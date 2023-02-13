@@ -379,6 +379,6 @@ end
 function show(io::IO, c::StopWhenPopulationConcentrated)
     return print(
         io,
-        "StopWhenPopulationCincentrate($(c.f_tol), $(c.p_tol))\n    $(status_summary(c))",
+        "StopWhenPopulationConcentrated($(c.tol_f), $(c.tol_p))\n    $(status_summary(c))",
     )
 end
