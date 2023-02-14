@@ -208,7 +208,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     λ = bundle_method_sub_solver(M, bms, transported_subgradients)
     g = sum(λ .* transported_subgradients)
     ε = sum(λ .* bms.lin_errors)
-    
+
     # Check transported subgradients ε-inequality
     # r = rand(M)
     # if (
@@ -225,23 +225,22 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     # end
 
     ξ = -norm(M, bms.p_last_serious, g)^2 - ε
-    
+
     # if -ξ ≤ bms.tol 
     #     println("TOL")
     #     return bms
     # end
 
-    bms.p = retract(M, bms.p_last_serious, -g, bms.retraction_method)
-    bms.X = get_subgradient(mp, bms.p)
+    retract!(M, bms.p, bms.p_last_serious, -g, bms.retraction_method)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * ξ)
         bms.p_last_serious = bms.p
+        get_subgradient!(mp, bms.X, bms.p)
         push!(bms.bundle_points, (bms.p_last_serious, bms.X))
     else
         push!(bms.bundle_points, (bms.p, bms.X))
     end
     positive_indices = intersect(bms.index_set, Set(findall(j -> j > 0, λ)))
     bms.index_set = union(positive_indices, i + 1)
-    ϱ = [sqrt(3 * distance(M, bms.p_last_serious, bms.bundle_points[j][1])* distance(M, bms.p, bms.bundle_points[j][1])* distance(M, bms.p_last_serious, bms.p)) * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for j in 1:length(bms.index_set)]
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle_points[j][1]) - inner(
             M,
@@ -253,10 +252,15 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 bms.p_last_serious,
                 bms.inverse_retraction_method,
             ),
-        )
-        for j in 1:length(bms.index_set)
+        ) +
+        sqrt(
+            3 *
+            distance(M, bms.p_last_serious, bms.bundle_points[j][1]) *
+            distance(M, bms.p, bms.bundle_points[j][1]) *
+            distance(M, bms.p_last_serious, bms.p),
+        ) * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for
+        j in 1:length(bms.index_set)
     ]
-    bms.lin_errors = bms.lin_errors + ϱ
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
