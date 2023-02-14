@@ -232,9 +232,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     # end
 
     retract!(M, bms.p, bms.p_last_serious, -g, bms.retraction_method)
+    get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * ξ)
         bms.p_last_serious = bms.p
-        get_subgradient!(mp, bms.X, bms.p)
         push!(bms.bundle_points, (bms.p_last_serious, bms.X))
     else
         push!(bms.bundle_points, (bms.p, bms.X))
