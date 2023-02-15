@@ -248,7 +248,7 @@ perform a linesearch for
 * an initial stepsize `s` usually called ``γ``
 * a sufficient `decrease`
 * a `contract`ion factor ``σ``
-* a `retr`action, which defaults to the `ExponentialRetraction()`
+* a `retr`action, which defaults to the `default_retraction_method(M)`
 * a search direction ``η = -\operatorname{grad}F(x)``
 * an offset, ``f_0 = F(x)``
 * a keyword `stop_step` as a minimal step size when to stop
@@ -261,7 +261,7 @@ function linesearch_backtrack(
     s,
     decrease,
     contract,
-    retr::AbstractRetractionMethod=ExponentialRetraction(),
+    retr::AbstractRetractionMethod=default_retraction_method(M),
     η::T=-gradFx,
     f0=F(x);
     stop_step=0.0,
