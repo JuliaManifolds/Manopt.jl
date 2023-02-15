@@ -203,7 +203,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             get_subgradient!(mp, bms.bundle_points[j][2], bms.bundle_points[j][1]),
             bms.p_last_serious,
             bms.vector_transport_method,
-        ) for j in 1:length(bms.index_set)
+        ) for j in bms.index_set
     ]
     λ = bundle_method_sub_solver(M, bms, transported_subgradients)
     g = sum(λ .* transported_subgradients)
@@ -239,6 +239,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     else
         push!(bms.bundle_points, (bms.p, bms.X))
     end
+    println(bms.index_set)
     positive_indices = intersect(bms.index_set, Set(findall(j -> j > 0, λ)))
     bms.index_set = union(positive_indices, i + 1)
     bms.lin_errors = [
@@ -259,7 +260,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             distance(M, bms.p, bms.bundle_points[j][1]) *
             distance(M, bms.p_last_serious, bms.p),
         ) * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for
-        j in 1:length(bms.index_set)
+        j in bms.index_set
     ]
     return bms
 end
