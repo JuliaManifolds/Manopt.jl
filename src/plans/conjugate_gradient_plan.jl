@@ -5,12 +5,15 @@ struct DirectionUpdateRuleStorage{TC<:DirectionUpdateRule,TStorage<:StoreStateAc
 end
 
 function DirectionUpdateRuleStorage(
-    M::AbstractManifold, dur::DirectionUpdateRule, p=rand(M), X=zero_vector(M, p)
+    M::AbstractManifold,
+    dur::DirectionUpdateRule,
+    p_init=rand(M),
+    X_init=zero_vector(M, p_init),
 )
     ursp = update_rule_storage_points(dur)
     ursv = update_rule_storage_vectors(dur)
     # StoreStateAction makes a copy
-    sa = StoreStateAction(M, Symbol[], ursp, ursv; p_init=p, X_init=X)
+    sa = StoreStateAction(M, Symbol[], ursp, ursv; p_init=p_init, X_init=X_init)
     return DirectionUpdateRuleStorage{typeof(dur),typeof(sa)}(dur, sa)
 end
 
@@ -177,12 +180,12 @@ default vector transport and a new storage is created by default.
 """
 struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
-    function DaiYuanCoefficient(
-        M::AbstractManifold=DefaultManifold(2);
-        t::AbstractVectorTransportMethod=default_vector_transport_method(M),
-    )
+    function DaiYuanCoefficient(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
     end
+end
+function DaiYuanCoefficient(M::AbstractManifold=DefaultManifold(2))
+    return DaiYuanCoefficient(default_vector_transport_method(M))
 end
 
 update_rule_storage_points(::DaiYuanCoefficient) = Tuple{:Iterate}
@@ -278,10 +281,8 @@ This method includes a numerical stability proposed by those authors.
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    function HagerZhangCoefficient(
-        M::AbstractManifold = DefaultManifold(2);
-        t::AbstractVectorTransportMethod=default_vector_transport_method(M)
-    )
+    function HagerZhangCoefficient(t::AbstractVectorTransportMethod)
+    function HagerZhangCoefficient(M::AbstractManifold = DefaultManifold(2))
 
 Construct the Hager Zhang coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
@@ -294,12 +295,13 @@ default vector transport and a new storage is created by default.
 mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     transport_method::TVTM
-    function HagerZhangCoefficient(
-        M::AbstractManifold=DefaultManifold(2);
-        t::AbstractVectorTransportMethod=default_vector_transport_method(M),
-    )
+
+    function HagerZhangCoefficient(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
     end
+end
+function HagerZhangCoefficient(M::AbstractManifold=DefaultManifold(2))
+    return HagerZhangCoefficient(default_vector_transport_method(M))
 end
 
 update_rule_storage_points(::HagerZhangCoefficient) = Tuple{:Iterate}
@@ -355,10 +357,8 @@ Then the update reads
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
 # Constructor
-    function HestenesStiefelCoefficient(
-        M::AbstractManifold = DefaultManifold(2);
-        transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M)
-    )
+    function HestenesStiefelCoefficient(transport_method::AbstractVectorTransportMethod)
+    function HestenesStiefelCoefficient(M::AbstractManifold = DefaultManifold(2))
 
 Construct the Heestens Stiefel coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
@@ -373,12 +373,12 @@ See also [`conjugate_gradient_descent`](@ref)
 struct HestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
        DirectionUpdateRule
     transport_method::TVTM
-    function HestenesStiefelCoefficient(
-        M::AbstractManifold=DefaultManifold(2);
-        transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M),
-    )
-        return new{typeof(transport_method)}(transport_method)
+    function HestenesStiefelCoefficient(t::AbstractVectorTransportMethod)
+        return new{typeof(t)}(t)
     end
+end
+function HestenesStiefelCoefficient(M::AbstractManifold=DefaultManifold(2))
+    return HestenesStiefelCoefficient(default_vector_transport_method(M))
 end
 
 update_rule_storage_points(::HestenesStiefelCoefficient) = Tuple{:Iterate}
@@ -429,10 +429,8 @@ Then the coefficient reads
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    function LiuStoreyCoefficient(
-        M::AbstractManifold = DefaultManifold(2);
-        t::AbstractVectorTransportMethod=default_vector_transport_method(M)
-    )
+    function LiuStoreyCoefficient(t::AbstractVectorTransportMethod)
+    function LiuStoreyCoefficient(M::AbstractManifold = DefaultManifold(2))
 
 Construct the Lui Storey coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
@@ -444,12 +442,12 @@ default vector transport and a new storage is created by default.
 """
 struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
-    function LiuStoreyCoefficient(
-        M::AbstractManifold=DefaultManifold(2);
-        t::AbstractVectorTransportMethod=default_vector_transport_method(M),
-    )
+    function LiuStoreyCoefficient(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
     end
+end
+function LiuStoreyCoefficient(M::AbstractManifold=DefaultManifold(2))
+    return LiuStoreyCoefficient(default_vector_transport_method(M))
 end
 
 update_rule_storage_points(::LiuStoreyCoefficient) = Tuple{:Iterate}
@@ -518,12 +516,12 @@ See also [`conjugate_gradient_descent`](@ref)
 """
 struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
-    function PolakRibiereCoefficient(
-        M::AbstractManifold=DefaultManifold(2);
-        t::AbstractVectorTransportMethod=default_vector_transport_method(M),
-    )
+    function PolakRibiereCoefficient(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
     end
+end
+function PolakRibiereCoefficient(M::AbstractManifold=DefaultManifold(2))
+    return PolakRibiereCoefficient(default_vector_transport_method(M))
 end
 
 update_rule_storage_points(::PolakRibiereCoefficient) = Tuple{:Iterate}
