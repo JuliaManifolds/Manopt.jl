@@ -6,7 +6,7 @@ end
 
 function DirectionUpdateRuleStorage(
     M::AbstractManifold,
-    dur::DirectionUpdateRule,
+    dur::DirectionUpdateRule;
     p_init=rand(M),
     X_init=zero_vector(M, p_init),
 )
@@ -68,7 +68,7 @@ mutable struct ConjugateGradientDescentState{
         vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
     ) where {P,T}
-        coef = DirectionUpdateRuleStorage(M, dC, p, initial_gradient)
+        coef = DirectionUpdateRuleStorage(M, dC; p_init=p, X_init=initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
         cgs = new{P,T,βT,typeof(coef),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         cgs.p = p
