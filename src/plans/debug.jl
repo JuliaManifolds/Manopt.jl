@@ -152,18 +152,38 @@ mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAc
     io::IO
     format::String
     storage::StoreStateAction
-    invretr::TInvRetr
-    function DebugChange(;
-        storage::StoreStateAction=StoreStateAction([:Iterate]),
+    inverse_retraction_method::TInvRetr
+    function DebugChange(
+        M::AbstractManifold=DefaultManifold();
+        storage::Union{Nothing,StoreStateAction}=nothing,
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-        manifold::AbstractManifold=DefaultManifold(1),
-        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            manifold
+        manifold::Union{Nothing,AbstractManifold}=nothing,
+        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
+        inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            M
         ),
     )
-        return new{typeof(invretr)}(io, format, storage, invretr)
+        irm = inverse_retraction_method
+        # Deprecated, remove in Manopt 0.5
+        if !isnothing(manifold)
+            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+            irm = default_inverse_retraction_method(manifold)
+        end
+        if !isnothing(invretr)
+            @warn "invretr keyword is deprecated, use `inverse_retraction_method`, which this one overrides for now."
+            irm = invretr
+        end
+        # Is this how this is intended?
+        if isnothing(storage)
+            if M isa DefaultManifold
+                storage = StoreStateAction([:Iterate])
+            else
+                storage = StoreStateAction(M, Symbol[], Tuple{:Iterate})
+            end
+        end
+        return new{typeof(irm)}(io, format, storage, irm)
     end
 end
 function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverState, i)
@@ -175,7 +195,7 @@ function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverSta
             M,
             get_iterate(st),
             get_storage(d.storage, PointStorageKey(:Iterate)),
-            d.invretr,
+            d.inverse_retraction_method,
         ),
     )
     d.storage(mp, st, i)
