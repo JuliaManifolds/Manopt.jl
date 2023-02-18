@@ -64,13 +64,17 @@ using Manopt, Manifolds, Test
             order_type=:Linear,
             evaluation=InplaceEvaluation(),
         )
-        alternating_gradient_descent!(
+        r = alternating_gradient_descent!(
             N,
             f,
             [grad_f1!, grad_f2!],
             q;
             order_type=:Linear,
             evaluation=InplaceEvaluation(),
+            return_state=true,
+        )
+        @test startswith(
+            repr(r), "# Solver state for `Manopt.jl`s Alternating Gradient Descent Solver"
         )
         @test isapprox(N, q3, q)
     end

@@ -6,6 +6,8 @@ function ManifoldsBase.default_inverse_retraction_method(::TestPolarManifold)
     return PolarInverseRetraction()
 end
 
+struct TestDebugAction <: DebugAction end
+
 @testset "Debug State" begin
     # helper to get debug as string
     @testset "Basic Debug Output" begin
@@ -17,6 +19,8 @@ end
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
+        # summary fallback to show
+        @test Manopt.status_summary(TestDebugAction()) === "TestDebugAction()"
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         a1 = DebugDivider("|"; io=io)
         @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
@@ -26,6 +30,8 @@ end
         @test DebugSolverState(st, Dict(:A => a1)).debugDictionary[:A] == a1
         @test DebugSolverState(st, ["|"]).debugDictionary[:All].group[1].divider ==
             a1.divider
+        @test endswith(repr(DebugSolverState(st, a1)), "\"|\"")
+        @test repr(DebugSolverState(st, Dict{Symbol,DebugAction}())) == repr(st)
         # single AbstractStateActions
         # DebugDivider
         a1(mp, st, 0)
@@ -73,9 +79,8 @@ end
         @test a2mani.inverse_retraction_method === PolarInverseRetraction()
         @test a2.inverse_retraction_method === LogarithmicInverseRetraction()
         @test String(take!(io)) == "Last: 1.000000"
-        # Change of Gradient
         a3 = DebugGradientChange(;
-            storage=StoreStateAction([:Gradient]), prefix="Last: ", io=io
+            storage=StoreStateAction([:Gradient, :Iterate]), prefix="Last: ", io=io
         )
         a3(mp, st, 0) # init
         st.X = [1.0, 0.0]
@@ -91,6 +96,11 @@ end
         @test String(take!(io)) == "Initial "
         DebugIteration(; io=io)(mp, st, 23)
         @test String(take!(io)) == "# 23    "
+        @test repr(DebugIteration()) == "DebugIteration(; format=\"# %-6d\")"
+        @test Manopt.status_summary(DebugIteration()) == "(:Iteration, \"# %-6d\")"
+        # DebugEntryChange
+        dec = DebugEntryChange(:p, x -> x)
+        @test startswith(repr(dec), "DebugEntryChange(:p")
         # DEbugEntryChange - reset
         st.p = p
         a3 = DebugEntryChange(
@@ -126,6 +136,10 @@ end
         DebugStoppingCriterion(; io=io)(mp, st, 20)
         @test String(take!(io)) ==
             "The algorithm reached its maximal number of iterations (20).\n"
+        @test repr(DebugStoppingCriterion()) == "DebugStoppingCriterion()"
+        @test Manopt.status_summary(DebugStoppingCriterion()) == ":Stop"
+
+        # Factory
         df = DebugFactory([:Stop, "|"])
         @test isa(df[:Stop], DebugStoppingCriterion)
         @test isa(df[:All], DebugGroup)
@@ -180,6 +194,17 @@ end
         @test DebugActionFactory(a3) == a3
         @test DebugFactory([(:Iterate, "A")])[:All].group[1].format == "A"
         @test DebugActionFactory((:Iterate, "A")).format == "A"
+        # Status for multiple dictionaries
+        dss = DebugSolverState(st, DebugFactory([:Stop, 20, "|"]))
+        @test contains(Manopt.status_summary(dss), ":Stop")
+        # DebugEvery summary
+        de = DebugEvery(DebugGroup([DebugDivider("|"), DebugIteration()]), 10)
+        @test Manopt.status_summary(de) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"
+        # DebugGradientChange
+        dgc = DebugGradientChange()
+        dgc_s = "DebugGradientChange(; format=\"Last Change: %f\", vector_transport_method=ParallelTransport())"
+        @test repr(dgc) == dgc_s
+        @test Manopt.status_summary(dgc) == "(:GradientChange, \"Last Change: %f\")"
     end
 
     @testset "Debug Warnings" begin
@@ -193,6 +218,8 @@ end
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 
         w1 = DebugWarnIfCostNotFinite()
+        @test repr(w1) == "DebugWarnIfCostNotFinite()"
+        @test Manopt.status_summary(w1) == ":WarnCost"
         @test_logs (:warn,) (
             :warn,
             "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.",
@@ -204,6 +231,7 @@ end
 
         st.X = grad_f(M, p)
         w3 = DebugWarnIfFieldNotFinite(:X)
+        @test repr(w3) == "DebugWarnIfFieldNotFinite(:X)"
         @test_logs (:warn,) (
             :warn,
             "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:X, :Always) to get all warnings.",
@@ -263,5 +291,30 @@ end
         @test t != d3.last_time
         Manopt.stop!(d3)
         @test d3.last_time == Nanosecond(0)
+        drs = "DebugTime(; format=\"time spent: %s\", mode=:cumulative)"
+        @test repr(DebugTime()) == drs
+        drs2 = "(:IterativeTime, \"time spent: %s\")"
+        @test Manopt.status_summary(DebugTime(; mode=:iterative)) == drs2
+        drs3 = "(:Time, \"time spent: %s\")"
+        @test Manopt.status_summary(DebugTime(; mode=:cumulative)) == drs3
+    end
+    @testset "Debug show/summaries" begin
+        d1 = DebugDivider("|")
+        d2 = DebugIterate()
+        d3 = DebugGroup([d1, d2])
+        @test repr(d3) == "DebugGroup([$(d1), $(d2)])"
+        ts = "[ $(Manopt.status_summary(d1)), $(Manopt.status_summary(d2)) ]"
+        @test Manopt.status_summary(d3) == ts
+        d4 = DebugEvery(d1, 4)
+        @test repr(d4) == "DebugEvery($(d1), 4, true)"
+        @test Manopt.status_summary(d4) === "[$(d1), 4]"
+        ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
+        @test repr(DebugChange()) == ts2
+        @test Manopt.status_summary(DebugChange()) == "(:Change, \"Last Change: %f\")"
+        @test repr(DebugCost()) == "DebugCost(; format=\"F(x): %f\")"
+        @test Manopt.status_summary(DebugCost()) == "(:Cost, \"F(x): %f\")"
+        @test repr(DebugDivider("|")) == "DebugDivider(; divider=\"|\")"
+        @test Manopt.status_summary(DebugDivider("a")) == "\"a\""
+        @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\")"
     end
 end

@@ -89,7 +89,26 @@ function QuasiNewtonState(
         vector_transport_method,
     )
 end
-# Temporary
+function show(io::IO, qns::QuasiNewtonState)
+    i = get_count(qns, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(qns.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Quasi Newton Method
+    $Iter
+    ## Parameters
+    * direction update:        $(status_summary(qns.direction_update))
+    * retraction method:       $(qns.retraction_method)
+    * vector trnasport method: $(qns.vector_transport_method)
+
+    ## Stepsize
+    $(qns.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(qns.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 get_iterate(qns::QuasiNewtonState) = qns.p
 function set_iterate!(qns::QuasiNewtonState, M, p)
     copyto!(M, qns.p, p)

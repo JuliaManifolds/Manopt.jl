@@ -12,6 +12,7 @@ or a [`Stepsize`](@ref).
 ```@docs
 AbstractManoptSolverState
 get_state
+Manopt.get_count
 ```
 
 Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,

@@ -142,6 +142,7 @@ function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficient})(
     update_storage!(u.storage, amp, cgs)
     return coef
 end
+show(io::IO, ::ConjugateDescentCoefficient) = print(io, "ConjugateDescentCoefficient()")
 
 @doc raw"""
     DaiYuanCoefficient <: DirectionUpdateRule
@@ -212,6 +213,9 @@ function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficient})(
     update_storage!(u.storage, amp, cgs)
     return coef
 end
+function show(io::IO, u::DaiYuanCoefficient)
+    return print(io, "DaiYuanCoefficient($(u.transport_method))")
+end
 
 @doc raw"""
     FletcherReevesCoefficient <: DirectionUpdateRule
@@ -256,6 +260,9 @@ function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficient})(
     coef = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, X_old, X_old)
     update_storage!(u.storage, amp, cgs)
     return coef
+end
+function show(io::IO, ::FletcherReevesCoefficient)
+    return print(io, "FletcherReevesCoefficient()")
 end
 
 @doc raw"""
@@ -336,6 +343,9 @@ function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficient})(
     update_storage!(u.storage, amp, cgs)
     return coef
 end
+function show(io::IO, u::HagerZhangCoefficient)
+    return print(io, "HagerZhangCoefficient($(u.transport_method))")
+end
 
 @doc raw"""
     HestenesStiefelCoefficient <: DirectionUpdateRule
@@ -405,6 +415,9 @@ function (u::DirectionUpdateRuleStorage{<:HestenesStiefelCoefficient})(
     update_storage!(u.storage, amp, cgs)
     return max(0, β)
 end
+function show(io::IO, u::HestenesStiefelCoefficient)
+    return print(io, "HestenesStiefelCoefficient($(u.transport_method))")
+end
 
 @doc raw"""
     LiuStoreyCoefficient <: DirectionUpdateRule
@@ -470,6 +483,9 @@ function (u::DirectionUpdateRuleStorage{<:LiuStoreyCoefficient})(
     coef = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, -δ_old, X_old)
     update_storage!(u.storage, amp, cgs)
     return coef
+end
+function show(io::IO, u::LiuStoreyCoefficient)
+    return print(io, "LiuStoreyCoefficient($(u.transport_method))")
 end
 
 @doc raw"""
@@ -543,6 +559,9 @@ function (u::DirectionUpdateRuleStorage{<:PolakRibiereCoefficient})(
     β = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, X_old, X_old)
     update_storage!(u.storage, amp, cgs)
     return max(0, β)
+end
+function show(io::IO, u::PolakRibiereCoefficient)
+    return print(io, "PolakRibiereCoefficient($(u.transport_method))")
 end
 
 @doc raw"""
@@ -658,4 +677,10 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
     # update storage only after that in case they share
     update_storage!(u.storage, amp, cgs)
     return (num / denom) > u.coefficient.threshold ? zero(β) : β
+end
+function show(io::IO, u::ConjugateGradientBealeRestart)
+    return print(
+        io,
+        "ConjugateGradientBealeRestart($(u.direction_update), $(u.threshold); vector_transport_method=$(u.vector_transport_method))",
+    )
 end

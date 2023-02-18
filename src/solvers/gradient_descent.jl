@@ -59,7 +59,8 @@ function GradientDescentState(
     M::AbstractManifold,
     p::P=rand(M);
     X::T=zero_vector(M, p),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(100),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+                                          StopWhenGradientNormLess(1e-9),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, GradientDescentState; retraction_method=retraction_method
@@ -80,6 +81,24 @@ function default_stepsize(
 )
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
+end
+function show(io::IO, gds::GradientDescentState)
+    i = get_count(gds, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Gradient Descent
+    $Iter
+    ## Parameters
+    * retraction method: $(gds.retraction_method)
+
+    ## Stepsize
+    $(gds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(gds.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end
 
 @doc raw"""
@@ -125,21 +144,21 @@ function gradient_descent(
     return gradient_descent!(M, F, gradF, x_res; kwargs...)
 end
 @doc raw"""
-    gradient_descent!(M, F, gradF, x)
+    gradient_descent!(M, f, grad_f, p)
 
 perform a gradient_descent
 
 ```math
-x_{k+1} = \operatorname{retr}_{x_k}\bigl( s_k\operatorname{grad}f(x_k) \bigr)
+p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr)
 ```
 
-in place of `x` with different choices of ``s_k`` available.
+in place of `p` with different choices of ``s_k`` available.
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `gradF` – the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
-* `x` – an initial value ``x ∈ \mathcal M``
+* `f` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `grad_f` – the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
+* `p` – an initial value ``p ∈ \mathcal M``
 
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
 """

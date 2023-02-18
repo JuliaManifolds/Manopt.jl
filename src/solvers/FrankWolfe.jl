@@ -9,7 +9,6 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 * `p` – the current iterate, i.e. a point on the manifold
 * `X` – the current gradient ``\operatorname{grad} F(p)``, i.e. a tangent vector to `p`.
-* `evalulation` [`AllocatingEvaluation`](@ref) specify the  type if it is a function.
 * `inverse_retraction_method` – (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use within Frank Wolfe.
 * `sub_problem` – an [`AbstractManoptProblem`](@ref) problem for the subsolver
 * `sub_state` – an [`AbstractManoptSolverState`](@ref) for the subsolver
@@ -79,6 +78,25 @@ mutable struct FrankWolfeState{
             inverse_retraction_method,
         )
     end
+end
+function show(io::IO, fws::FrankWolfeState)
+    i = get_count(fws, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Frank Wolfe Method
+    $Iter
+    ## Parameters
+    * inverse retraction method: $(fws.inverse_retraction_method)
+    * retraction method: $(fws.retraction_method)
+
+    ## Stepsize
+    $(fws.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(fws.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end
 get_iterate(O::FrankWolfeState) = O.p
 function set_iterate!(O::FrankWolfeState, p)

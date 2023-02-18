@@ -100,6 +100,26 @@ mutable struct AugmentedLagrangianMethodState{
         return alms
     end
 end
+function show(io::IO, alms::AugmentedLagrangianMethodState)
+    i = get_count(alms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(alms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Augmented Lagrangian Method
+    $Iter
+    ## Parameters
+    * ϵ: $(alms.ϵ) (ϵ_min: $(alms.ϵ_min), θ_ϵ: $(alms.θ_ϵ))
+    * λ: $(alms.λ) (λ_min: $(alms.λ_min), λ_max: $(alms.λ_max))
+    * μ: $(alms.μ) (μ_max: $(alms.μ_max))
+    * ρ: $(alms.ρ) (θ_ρ: $(alms.θ_ρ))
+    * τ: $(alms.τ)
+    * current penalty: $(alms.penalty)
+
+    ## Stopping Criterion
+    $(status_summary(alms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
 function set_iterate!(alms::AugmentedLagrangianMethodState, M, p)
     alms.p = p
@@ -297,7 +317,6 @@ function initialize_solver!(::AbstractManoptProblem, alms::AugmentedLagrangianMe
 end
 function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState, iter)
     M = get_manifold(mp)
-    sub_obj = get_objective(alms.sub_problem)
     # use subsolver to minimize the augmented Lagrangian
     set_manopt_parameter!(alms.sub_problem, :Cost, :ρ, alms.ρ)
     set_manopt_parameter!(alms.sub_problem, :Cost, :μ, alms.μ)
@@ -309,7 +328,7 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
 
     update_stopping_criterion!(alms, :MinIterateChange, alms.ϵ)
 
-    alms.p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
+    copyto!(M, alms.p, get_solver_result(solve!(alms.sub_problem, alms.sub_state)))
 
     # update multipliers
     cost_ineq = get_inequality_constraints(mp, alms.p)

@@ -15,6 +15,14 @@ details when a criterion is met (and that is empty otherwise).
 """
 abstract type StoppingCriterion end
 
+indicates_convergence(c::StoppingCriterion) = false
+function get_count(c::StoppingCriterion, ::Val{:Iterations})
+    if hasfield(typeof(c), :at_iteration)
+        return getfield(c, :at_iteration)
+    else
+        return 0
+    end
+end
 @doc raw"""
     StoppingCriterionGroup <: StoppingCriterion
 
@@ -46,17 +54,30 @@ iterations.
 mutable struct StopAfterIteration <: StoppingCriterion
     maxIter::Int
     reason::String
-    StopAfterIteration(mIter::Int) = new(mIter, "")
+    at_iteration::Int
+    StopAfterIteration(mIter::Int) = new(mIter, "", 0)
 end
 function (c::StopAfterIteration)(
     ::P, ::O, i::Int
 ) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if i >= c.maxIter
+        c.at_iteration = i
         c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
     end
     return false
+end
+function status_summary(c::StopAfterIteration)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Max Iteration $(c.maxIter):\t$s"
+end
+function show(io::IO, c::StopAfterIteration)
+    return print(io, "StopAfterIteration($(c.maxIter))\n    $(status_summary(c))")
 end
 
 """
@@ -84,18 +105,32 @@ indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm 
 mutable struct StopWhenGradientNormLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    StopWhenGradientNormLess(ε::Float64) = new(ε, "")
+    at_iteration::Int
+    StopWhenGradientNormLess(ε::Float64) = new(ε, "", 0)
 end
 function (c::StopWhenGradientNormLess)(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     M = get_manifold(mp)
-    (i == 0) && (c.reason = "") # reset on init
-    if norm(M, get_iterate(s), get_gradient(s)) < c.threshold
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if (norm(M, get_iterate(s), get_gradient(s)) < c.threshold) && (i > 0)
         c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
+        c.at_iteration = i
         return true
     end
     return false
+end
+function status_summary(c::StopWhenGradientNormLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|Δf| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenGradientNormLess) = true
+function show(io::IO, c::StopWhenGradientNormLess)
+    return print(io, "StopWhenGradientNormLess($(c.threshold))\n    $(status_summary(c))")
 end
 
 """
@@ -138,6 +173,7 @@ mutable struct StopWhenChangeLess{
     reason::String
     storage::TSSA
     inverse_retraction::IRT
+    at_iteration::Int
 end
 function StopWhenChangeLess(
     ε::Float64;
@@ -146,24 +182,36 @@ function StopWhenChangeLess(
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
     return StopWhenChangeLess{IRT,typeof(storage)}(
-        ε, "", storage, inverse_retraction_method
+        ε, "", storage, inverse_retraction_method, 0
     )
 end
-
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if has_storage(c.storage, :Iterate)
         M = get_manifold(mp)
         x_old = get_storage(c.storage, :Iterate)
         d = distance(M, get_iterate(s), x_old, c.inverse_retraction)
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
+            c.at_iteration = i
             c.storage(mp, s, i)
             return true
         end
     end
     c.storage(mp, s, i)
     return false
+end
+function status_summary(c::StopWhenChangeLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|Δp| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenChangeLess) = true
+function show(io::IO, c::StopWhenChangeLess)
+    return print(io, "StopWhenChangeLess($(c.threshold))\n    $(status_summary(c))")
 end
 
 """
@@ -191,22 +239,34 @@ initialize the stopping criterion to a threshold `ε`.
 mutable struct StopWhenStepsizeLess <: StoppingCriterion
     threshold::Float64
     reason::String
+    at_iteration::Int
     function StopWhenStepsizeLess(ε::Float64)
-        return new(ε, "")
+        return new(ε, "", 0)
     end
 end
 function (c::StopWhenStepsizeLess)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     step = get_last_stepsize(p, s, i)
     if step < c.threshold && i > 0
         c.reason = "The algorithm computed a step size ($step) less than $(c.threshold).\n"
+        c.at_iteration = i
         return true
     end
     return false
 end
-
+function status_summary(c::StopWhenStepsizeLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Stepsize s < $(c.threshold):\t$s"
+end
+function show(io::IO, c::StopWhenStepsizeLess)
+    return print(io, "StopWhenStepsizeLess($(c.threshold))\n    $(status_summary(c))")
+end
 """
     update_stopping_criterion!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
@@ -232,17 +292,30 @@ initialize the stopping criterion to a threshold `ε`.
 mutable struct StopWhenCostLess <: StoppingCriterion
     threshold::Float64
     reason::String
-    StopWhenCostLess(ε::Float64) = new(ε, "")
+    at_iteration::Int
+    StopWhenCostLess(ε::Float64) = new(ε, "", 0)
 end
 function (c::StopWhenCostLess)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if i > 0 && get_cost(p, get_iterate(s)) < c.threshold
         c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)).\n"
+        c.at_iteration = 0
         return true
     end
     return false
+end
+function status_summary(c::StopWhenCostLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "f(x) < $(c.threshold):\t$s"
+end
+function show(io::IO, c::StopWhenCostLess)
+    return print(io, "StopWhenCostLess($(c.threshold))\n    $(status_summary(c))")
 end
 
 """
@@ -276,17 +349,32 @@ mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
     value::Symbol
     minValue::Real
     reason::String
-    StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "")
+    at_iteration::Int
+    StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "", 0)
 end
 function (c::StopWhenSmallerOrEqual)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+    ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if getfield(s, c.value) <= c.minValue
         c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
+        c.at_iteration = i
         return true
     end
     return false
+end
+function status_summary(c::StopWhenSmallerOrEqual)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Field :$(c.value) ≤ $(c.minValue):\t$s"
+end
+function show(io::IO, c::StopWhenSmallerOrEqual)
+    return print(
+        io, "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))\n    $(status_summary(c))"
+    )
 end
 
 """
@@ -306,26 +394,38 @@ mutable struct StopAfter <: StoppingCriterion
     threshold::Period
     reason::String
     start::Nanosecond
+    at_iteration::Int
     function StopAfter(t::Period)
         return if value(t) < 0
             error("You must provide a positive time period")
         else
-            new(t, "", Nanosecond(0))
+            new(t, "", Nanosecond(0), 0)
         end
     end
 end
 function (c::StopAfter)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     if value(c.start) == 0 || i <= 0 # (re)start timer
         c.reason = ""
+        c.at_iteration = 0
         c.start = Nanosecond(time_ns())
     else
         cTime = Nanosecond(time_ns()) - c.start
         if i > 0 && (cTime > Nanosecond(c.threshold))
             c.reason = "The algorithm ran for about $(floor(cTime, typeof(c.threshold))) and has hence reached the threshold of $(c.threshold).\n"
+            c.at_iteration = i
             return true
         end
     end
     return false
+end
+function status_summary(c::StopAfter)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "stopped after $(c.threshold):\t$s"
+end
+indicates_convergence(c::StopAfter) = false
+function show(io::IO, c::StopAfter)
+    return print(io, "StopAfter($(repr(c.threshold)))\n    $(status_summary(c))")
 end
 
 """
@@ -367,6 +467,25 @@ function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState
         return true
     end
     return false
+end
+function status_summary(c::StopWhenAll)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    r = "Stop When _all_ of the following are fulfilled:\n"
+    for cs in c.criteria
+        r = "$r    $(status_summary(cs))\n"
+    end
+    return "$(r)Overall: $s"
+end
+function indicates_convergence(c::StopWhenAll)
+    return any(indicates_convergence(ci) for ci in c.criteria)
+end
+function get_count(c::StopWhenAll, v::Val{:Iterations})
+    return maximum(get_count(ci, v) for ci in c.criteria)
+end
+function show(io::IO, c::StopWhenAll)
+    s = replace(status_summary(c), "\n" => "\n    ") #increase indent
+    return print(io, "StopWhenAll with the Stopping Criteria\n    $(s)")
 end
 
 """
@@ -421,7 +540,27 @@ function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState
     end
     return false
 end
-
+function status_summary(c::StopWhenAny)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    r = "Stop When _one_ of the following are fulfilled:\n"
+    for cs in c.criteria
+        r = "$r    $(status_summary(cs))\n"
+    end
+    return "$(r)Overall: $s"
+end
+function indicates_convergence(c::StopWhenAny)
+    return any(indicates_convergence(ci) for ci in get_active_stopping_criteria(c))
+end
+function get_count(c::StopWhenAny, v::Val{:Iterations})
+    iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
+    (length(iters) == 0) && (return 0)
+    return minimum(iters)
+end
+function show(io::IO, c::StopWhenAny)
+    s = replace(status_summary(c), "\n" => "\n    ") #increase indent
+    return print(io, "StopWhenAny with the Stopping Criteria\n    $(s)")
+end
 """
     |(s1,s2)
     s1 | s2

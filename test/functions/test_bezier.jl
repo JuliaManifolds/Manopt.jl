@@ -37,7 +37,7 @@ using Manopt, Manifolds, Test
                 ).pts .-
                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
             ),
-        ) ≈ 0 atol = 10^(-12)
+        ) ≈ 0 atol = 2e-12
 
         # cost and gradient
         T = collect(range(0.0, 2.0; length=51))

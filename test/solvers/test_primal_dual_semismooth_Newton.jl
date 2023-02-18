@@ -142,7 +142,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     x0 = deepcopy(data)
     ξ0 = zero_vector(M, m)
 
-    o = primal_dual_semismooth_Newton(
+    s = primal_dual_semismooth_Newton(
         M,
         N,
         cost,
@@ -160,7 +160,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
         dual_stepsize=τ,
         return_state=true,
     )
-    y = get_solver_result(o)
+    @test startswith(
+        repr(s), "# Solver state for `Manopt.jl`s primal dual semismooth Newton"
+    )
+    y = get_solver_result(s)
     @test x_hat ≈ y atol = 2 * 1e-7
 
     update_dual_base(p, o, i) = o.n

@@ -305,15 +305,16 @@ where ``B_k`` is the matrix representing the operator with respect to the basis 
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used. In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}`` and ``B_{k+1}``, and the basis ``\{b_i\}^{n}_{i=1}`` is transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport, or generated there.
 
 # Fields
-* `basis` – the basis.
-* `matrix` – the matrix which represents the approximating operator.
-* `scale` – indicates whether the initial matrix (= identity matrix) should be scaled before the first update.
 * `update` – a [`AbstractQuasiNewtonUpdateRule`](@ref).
-* `vector_transport_method` – an `AbstractVectorTransportMethod`
+* `basis` – the basis.
+* `matrix` – (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`)
+  the matrix which represents the approximating operator.
+* `scale` – (`true) indicates whether the initial matrix (= identity matrix) should be scaled before the first update.
+* `vector_transport_method` – (`vector_transport_method`)an `AbstractVectorTransportMethod`
 
 # Constructor
-    QuasiNewtonMatrixDirectionUpdate(M::AbstractMatrix, update, basis, matrix;
-    scale=true, vector_transport_method=default_vector_transport_method(M, typeof(p)))
+    QuasiNewtonMatrixDirectionUpdate(M::AbstractManifold, update, basis, matrix;
+    scale=true, vector_transport_method=default_vector_transport_method(M))
 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields above.
 
@@ -335,11 +336,20 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     update::NT
     vector_transport_method::VT
 end
+function status_summary(d::QuasiNewtonMatrixDirectionUpdate)
+    return "$(d.update) with initial scaling $(d.scale) and vector transport method $(d.vector_transport_method)."
+end
+function show(io::IO, d::QuasiNewtonMatrixDirectionUpdate)
+    s = """
+        QuasiNewtonMatrixDirectionUpdate($(d.basis), $(d.matrix), $(d.scale), $(d.update), $(d.vector_transport_method))
+        """
+    return print(io, s)
+end
 function QuasiNewtonMatrixDirectionUpdate(
     M::AbstractManifold,
     update::U,
-    basis::B,
-    m::MT,
+    basis::B=DefaultOrthonormalBasis(),
+    m::MT=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M)),
     ;
     scale::Bool=true,
     vector_transport_method::V=default_vector_transport_method(M),
@@ -369,7 +379,6 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     X = get_gradient(st)
     return get_vector(M, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
 end
-
 @doc raw"""
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
@@ -427,6 +436,13 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     scale::F
     project::Bool
     vector_transport_method::VT
+end
+function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
+    s = "limited memory $T (size $(length(d.memory_s)))"
+    (d.scale != 1.0) && (s = "$(s) initial scaling $(d.scale)")
+    d.project && (s = "$(s), projections, ")
+    s = "$(s)and $(d.vector_transport_method) as vector transport."
+    return s
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
     M::AbstractManifold,

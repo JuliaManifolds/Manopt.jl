@@ -165,6 +165,26 @@ mutable struct PrimalDualSemismoothNewtonState{
         )
     end
 end
+function show(io::IO, pdsns::PrimalDualSemismoothNewtonState)
+    i = get_count(pdsns, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(pdsns.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s primal dual semismooth Newton
+    $Iter
+    ## Parameters
+    * primal_stepsize:           $(pdsns.primal_stepsize)
+    * dual_stepsize:             $(pdsns.dual_stepsize)
+    * regularization_parameter:  $(pdsns.regularization_parameter)
+    * retraction_method:         $(pdsns.retraction_method)
+    * inverse_retraction_method: $(pdsns.inverse_retraction_method)
+    * vector_transport_method:   $(pdsns.vector_transport_method)
+
+    ## Stopping Criterion
+    $(status_summary(pdsns.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 get_iterate(pdsn::PrimalDualSemismoothNewtonState) = pdsn.p
 function set_iterate!(pdsn::PrimalDualSemismoothNewtonState, p)
     pdsn.p = p

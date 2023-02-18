@@ -11,14 +11,13 @@ initialized automatically and values with a default may be left out.
 * `X` - an initial tangent vector ``X^{(0)}∈T^*\mathcal N`` (and its previous iterate)
 * `pbar` - the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `Xbar` - the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
-* `Θ` – factor to damp the helping ``\tilde x``
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
 * `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `acceleration` – (`0.`) acceleration factor due to Chambolle & Pock
 * `relaxation` – (`1.`) relaxation in the primal relaxation step (to compute `pbar`)
-* `relax` – (`_primal`) which variable to relax (`:primal` or `:dual`)
+* `relax` – (`:primal`) which variable to relax (`:primal` or `:dual`)
 * `stop` - a [`StoppingCriterion`](@ref)
-* `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
+* `variant` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
@@ -133,6 +132,31 @@ mutable struct ChambollePockState{
             vector_transport_method_dual,
         )
     end
+end
+function show(io::IO, cps::ChambollePockState)
+    i = get_count(cps, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cps.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Chambolle-Pock Algorithm
+    $Iter
+    ## Parameters
+    * primal_stepsize:  $(cps.primal_stepsize)
+    * dual_stepsize:    $(cps.dual_stepsize)
+    * acceleration:     $(cps.acceleration)
+    * relaxation:       $(cps.relaxation)
+    * relax:            $(cps.relax)
+    * variant:          :$(cps.variant)
+    * retraction_method:              $(cps.retraction_method)
+    * inverse_retraction_method:      $(cps.inverse_retraction_method)
+    * vector_transport_method:        $(cps.vector_transport_method)
+    * inverse_retraction_method_dual: $(cps.inverse_retraction_method_dual)
+    * vector_transport_method_dual:   $(cps.vector_transport_method_dual)
+
+    ## Stopping Criterion
+    $(status_summary(cps.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end
 get_solver_result(apds::AbstractPrimalDualSolverState) = get_iterate(apds)
 get_iterate(apds::AbstractPrimalDualSolverState) = apds.p

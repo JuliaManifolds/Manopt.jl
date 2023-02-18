@@ -69,11 +69,31 @@ function DebugSolverState(
 ) where {S<:AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
+function status_summary(dst::DebugSolverState)
+    if length(dst.debugDictionary) > 0
+        s = ""
+        if length(dst.debugDictionary) == 1 && first(keys(dst.debugDictionary)) === :All
+            s = "\n    $(status_summary(dst.debugDictionary[:All]))"
+        else
+            for (k, v) in dst.debugDictionary
+                s = "$s\n    :$k = $(status_summary(v))"
+            end
+        end
+        return """
+               $(dst.state)
 
+               ## Debug$s"""
+    else # for length 1 the group is equivvalent to the summary of the single state
+        return status_summary(dst.state)
+    end
+end
+function show(io::IO, dst::DebugSolverState)
+    return print(io, status_summary(dst))
+end
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
 #
-# Meta Debugs
+# Meta Debug Actions
 #
 """
     DebugGroup <: DebugAction
@@ -97,6 +117,13 @@ function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     for di in d.group
         di(p, st, i)
     end
+end
+function status_summary(dg::DebugGroup)
+    return "[ $( join(["$(status_summary(di))" for di in dg.group], ", ")) ]"
+end
+function show(io::IO, dg::DebugGroup)
+    s = join(["$(di)" for di in dg.group], ", ")
+    return print(io, "DebugGroup([$s])")
 end
 
 @doc raw"""
@@ -128,7 +155,18 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         d.debug(p, st, -1)
     end
 end
-
+function show(io::IO, de::DebugEvery)
+    return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update))")
+end
+function status_summary(de::DebugEvery)
+    s = ""
+    if de.debug isa DebugGroup
+        s = status_summary(de.debug)[3:(end - 2)]
+    else
+        s = "$(de.debug)"
+    end
+    return "[$s, $(de.every)]"
+end
 #
 # Special single ones
 #
@@ -148,11 +186,11 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
   used for approximating distance.
 """
-mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAction
+mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
-    inverse_retraction_method::TInvRetr
+    inverse_retraction_method::IR
     function DebugChange(
         M::AbstractManifold=DefaultManifold();
         storage::Union{Nothing,StoreStateAction}=nothing,
@@ -201,97 +239,13 @@ function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverSta
     d.storage(mp, st, i)
     return nothing
 end
-@doc raw"""
-    DebugGradientChange()
-
-debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`AbstractManoptSolverState`](@ref) `o`)
-during the last iteration. See [`DebugEntryChange`](@ref) for the general case
-
-# Keyword Parameters
-* `storage` – (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
-* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default steream to print the debug to.
-* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
-"""
-mutable struct DebugGradientChange <: DebugAction
-    io::IO
-    format::String
-    storage::StoreStateAction
-    function DebugGradientChange(;
-        storage::StoreStateAction=StoreStateAction([:Iterate, :Gradient]),
-        io::IO=stdout,
-        prefix::String="Last Change: ",
-        format::String="$(prefix)%f",
+function show(io::IO, dc::DebugChange)
+    return print(
+        io,
+        "DebugChange(; format=\"$(dc.format)\", inverse_retraction=$(dc.inverse_retraction_method))",
     )
-        return new(io, format, storage)
-    end
 end
-function (d::DebugGradientChange)(
-    pm::AbstractManoptProblem, st::AbstractManoptSolverState, i
-)
-    M = get_manifold(pm)
-    (i > 0) && Printf.format(
-        d.io,
-        Printf.Format(d.format),
-        distance(M, get_gradient(st), get_storage(d.storage, TangentStorageKey(:Gradient))),
-    )
-    d.storage(pm, st, i)
-    return nothing
-end
-@doc raw"""
-    DebugIterate <: DebugAction
-
-debug for the current iterate (stored in `get_iterate(o)`).
-
-# Constructor
-    DebugIterate()
-
-# Parameters
-
-* `io` – (`stdout`) default steream to print the debug to.
-* `long::Bool` whether to print `x:` or `current iterate`
-"""
-mutable struct DebugIterate <: DebugAction
-    io::IO
-    format::String
-    function DebugIterate(;
-        io::IO=stdout,
-        long::Bool=false,
-        prefix=long ? "current iterate:" : "p:",
-        format="$prefix %s",
-    )
-        return new(io, format)
-    end
-end
-function (d::DebugIterate)(::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
-    return nothing
-end
-
-@doc raw"""
-    DebugIteration <: DebugAction
-
-# Constructor
-
-    DebugIteration()
-
-# Keyword parameters
-
-* `format` - (`"# %-6d"`) format to print the output using an sprintf format.
-* `io` – (`stdout`) default steream to print the debug to.
-
-debug for the current iteration (prefixed with `#` by )
-"""
-mutable struct DebugIteration <: DebugAction
-    io::IO
-    format::String
-    DebugIteration(; io::IO=stdout, format="# %-6d") = new(io, format)
-end
-function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
-    (i == 0) && print(d.io, "Initial ")
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
-    return nothing
-end
+status_summary(dc::DebugChange) = "(:Change, \"$(dc.format)\")"
 
 @doc raw"""
     DebugCost <: DebugAction
@@ -320,6 +274,8 @@ function (d::DebugCost)(p::AbstractManoptProblem, st::AbstractManoptSolverState,
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
     return nothing
 end
+show(io::IO, di::DebugCost) = print(io, "DebugCost(; format=\"$(di.format)\")")
+status_summary(di::DebugCost) = "(:Cost, \"$(di.format)\")"
 
 @doc raw"""
     DebugDivider <: DebugAction
@@ -341,9 +297,11 @@ function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState,
     end
     return nothing
 end
+show(io::IO, di::DebugDivider) = print(io, "DebugDivider(; divider=\"$(di.divider)\")")
+status_summary(di::DebugDivider) = "\"$(di.divider)\""
 
 @doc raw"""
-    DebugEntry <: RecordAction
+    DebugEntry <: DebugAction
 
 print a certain fields entry of type {T} during the iterates, where a `format` can be
 specified how to print the entry.
@@ -367,6 +325,9 @@ end
 function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
     return nothing
+end
+function show(io::IO, di::DebugEntry)
+    return print(io, "DebugEntry(:$(di.field); format=\"$(di.format)\")")
 end
 
 @doc raw"""
@@ -416,7 +377,6 @@ mutable struct DebugEntryChange <: DebugAction
         return new(d, f, format, io, storage)
     end
 end
-
 function (d::DebugEntryChange)(
     p::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
 )
@@ -431,6 +391,125 @@ function (d::DebugEntryChange)(
     d.storage(p, st, i)
     return nothing
 end
+function show(io::IO, dec::DebugEntryChange)
+    return print(
+        io, "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(dec.format)\")"
+    )
+end
+
+@doc raw"""
+    DebugGradientChange()
+
+debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`AbstractManoptSolverState`](@ref) `o`)
+during the last iteration. See [`DebugEntryChange`](@ref) for the general case
+
+# Keyword Parameters
+* `storage` – (`StoreStateAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
+* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io` – (`stdout`) default steream to print the debug to.
+* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+"""
+mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
+    io::IO
+    format::String
+    storage::StoreStateAction
+    vector_transport_method::VTR
+    function DebugGradientChange(
+        M::AbstractManifold=DefaultManifold(2);
+        storage::StoreStateAction=StoreStateAction([:Gradient, :Iterate]),
+        io::IO=stdout,
+        prefix::String="Last Change: ",
+        format::String="$(prefix)%f",
+        vector_transport_method::VTR=default_vector_transport_method(M),
+    ) where {VTR<:AbstractVectorTransportMethod}
+        return new{VTR}(io, format, storage, vector_transport_method)
+    end
+end
+function (d::DebugGradientChange)(
+    pm::AbstractManoptProblem, st::AbstractManoptSolverState, i
+)
+    if i > 0
+        M = get_manifold(pm)
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :Gradient)
+        p = get_iterate(st)
+        X = get_gradient(st)
+        l = norm(
+            M, p, X - vector_transport_to(M, p_old, X_old, p, d.vector_transport_method)
+        )
+        Printf.format(d.io, Printf.Format(d.format), l)
+    end
+    d.storage(pm, st, i)
+    return nothing
+end
+function show(io::IO, dgc::DebugGradientChange)
+    return print(
+        io,
+        "DebugGradientChange(; format=\"$(dgc.format)\", vector_transport_method=$(dgc.vector_transport_method))",
+    )
+end
+status_summary(di::DebugGradientChange) = "(:GradientChange, \"$(di.format)\")"
+
+@doc raw"""
+    DebugIterate <: DebugAction
+
+debug for the current iterate (stored in `get_iterate(o)`).
+
+# Constructor
+    DebugIterate()
+
+# Parameters
+
+* `io` – (`stdout`) default steream to print the debug to.
+* `long::Bool` whether to print `x:` or `current iterate`
+"""
+mutable struct DebugIterate <: DebugAction
+    io::IO
+    format::String
+    function DebugIterate(;
+        io::IO=stdout,
+        long::Bool=false,
+        prefix=long ? "current iterate:" : "p:",
+        format="$prefix %s",
+    )
+        return new(io, format)
+    end
+end
+function (d::DebugIterate)(::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
+    return nothing
+end
+function show(io::IO, di::DebugIterate)
+    return print(io, "DebugIterate(; format=\"$(di.format)\")")
+end
+status_summary(di::DebugIterate) = "(:Iterate, \"$(di.format)\")"
+
+@doc raw"""
+    DebugIteration <: DebugAction
+
+# Constructor
+
+    DebugIteration()
+
+# Keyword parameters
+
+* `format` - (`"# %-6d"`) format to print the output using an sprintf format.
+* `io` – (`stdout`) default steream to print the debug to.
+
+debug for the current iteration (prefixed with `#` by )
+"""
+mutable struct DebugIteration <: DebugAction
+    io::IO
+    format::String
+    DebugIteration(; io::IO=stdout, format="# %-6d") = new(io, format)
+end
+function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
+    (i == 0) && print(d.io, "Initial ")
+    (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
+    return nothing
+end
+show(io::IO, di::DebugIteration) = print(io, "DebugIteration(; format=\"$(di.format)\")")
+status_summary(di::DebugIteration) = "(:Iteration, \"$(di.format)\")"
 
 @doc raw"""
     DebugStoppingCriterion <: DebugAction
@@ -448,6 +527,8 @@ function (d::DebugStoppingCriterion)(
     print(d.io, (i >= 0 || i == typemin(Int)) ? get_reason(st) : "")
     return nothing
 end
+show(io::IO, ::DebugStoppingCriterion) = print(io, "DebugStoppingCriterion()")
+status_summary(::DebugStoppingCriterion) = ":Stop"
 
 @doc raw"""
     DebugTime()
@@ -498,7 +579,15 @@ function (d::DebugTime)(::AbstractManoptProblem, ::AbstractManoptSolverState, i)
     end
     return nothing
 end
-
+function show(io::IO, di::DebugTime)
+    return print(io, "DebugTime(; format=\"$(di.format)\", mode=:$(di.mode))")
+end
+function status_summary(di::DebugTime)
+    if di.mode === :iterative
+        return "(:IterativeTime, \"$(di.format)\")"
+    end
+    return "(:Time, \"$(di.format)\")"
+end
 """
     reset!(d::DebugTime)
 
@@ -508,7 +597,6 @@ function reset!(d::DebugTime)
     d.last_time = Nanosecond(time_ns())
     return d
 end
-
 """
     stop!(d::DebugTime)
 
@@ -570,6 +658,9 @@ function (d::DebugWarnIfCostIncreases)(
     end
     return nothing
 end
+function show(io::IO, di::DebugWarnIfCostIncreases)
+    return print(io, "DebugWarnIfCostIncreases(; tol=\"$(di.tol)\")")
+end
 
 @doc raw"""
     DebugWarnIfCostNotFinite <: DebugAction
@@ -606,6 +697,8 @@ function (d::DebugWarnIfCostNotFinite)(
     end
     return nothing
 end
+show(io::IO, ::DebugWarnIfCostNotFinite) = print(io, "DebugWarnIfCostNotFinite()")
+status_summary(::DebugWarnIfCostNotFinite) = ":WarnCost"
 
 @doc raw"""
     DebugWarnIfFieldNotFinite <: DebugAction
@@ -657,6 +750,9 @@ function (d::DebugWarnIfFieldNotFinite)(
         end
     end
     return nothing
+end
+function show(io::IO, dw::DebugWarnIfFieldNotFinite)
+    return print(io, "DebugWarnIfFieldNotFinite(:$(dw.field))")
 end
 
 @doc raw"""
