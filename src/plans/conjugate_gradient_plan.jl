@@ -13,7 +13,9 @@ function DirectionUpdateRuleStorage(
     ursp = update_rule_storage_points(dur)
     ursv = update_rule_storage_vectors(dur)
     # StoreStateAction makes a copy
-    sa = StoreStateAction(M, Symbol[], ursp, ursv; p_init=p_init, X_init=X_init)
+    sa = StoreStateAction(
+        M; store_points=ursp, store_vectors=ursv, p_init=p_init, X_init=X_init
+    )
     return DirectionUpdateRuleStorage{typeof(dur),typeof(sa)}(dur, sa)
 end
 
@@ -610,7 +612,6 @@ The default threshold is chosen as `0.2` as recommended in [^Powell1977].
         threshold=0.2;
         manifold::AbstractManifold = DefaultManifold(),
         vector_transport_method::V=default_vector_transport_method(manifold),
-        a::StoreStateAction=StoreStateAction((:Iterate, :Gradient, :δ)),
     )
 
 [^Beale1972]:

@@ -216,9 +216,9 @@ mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
         # Is this how this is intended?
         if isnothing(storage)
             if M isa DefaultManifold
-                storage = StoreStateAction([:Iterate])
+                storage = StoreStateAction(M; store_fields=[:Iterate])
             else
-                storage = StoreStateAction(M, Symbol[], Tuple{:Iterate})
+                storage = StoreStateAction(M; store_points=Tuple{:Iterate})
             end
         end
         return new{typeof(irm)}(io, format, storage, irm)
