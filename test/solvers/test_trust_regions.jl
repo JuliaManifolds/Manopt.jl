@@ -25,7 +25,11 @@ include("trust_region_model.jl")
     )
 
     @testset "Allocating Variant" begin
-        p1 = trust_regions(M, cost, rgrad, rhess, p; max_trust_region_radius=8.0)
+        s = trust_regions(
+            M, cost, rgrad, rhess, p; max_trust_region_radius=8.0, return_state=true
+        )
+        @test startswith(repr(s), "# Solver state for `Manopt.jl`s Trust Region Method\n")
+        p1 = get_solver_result(s)
         q = copy(M, p)
         trust_regions!(M, cost, rgrad, rhess, q; max_trust_region_radius=8.0)
         @test isapprox(M, p1, q)

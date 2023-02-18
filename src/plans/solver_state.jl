@@ -65,6 +65,8 @@ should be returned at the end of a solver instead of the usual minimizer.
 struct ReturnSolverState{S<:AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
 end
+status_summary(rst::ReturnSolverState) = status_summary(rst.state)
+show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState($(rst.state))")
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
 
 """
@@ -288,4 +290,23 @@ function update_storage!(a::AbstractStateAction, d::Dict{Symbol,<:Any})
     merge!(a.values, d)
     # update keys
     return a.keys = Tuple(keys(a.values))
+end
+
+"""
+    get_count(ams::AbstractManoptSolverState, ::Symbol)
+
+Obtain the count for a certain countable size, e.g. the `:Iterations`.
+This function returns 0 if there was nothing to count
+
+Available symbols from within the solver state
+
+* `:Iterations` is passed on to the `stop` field to obtain the
+  iterataion at which the solver stopped.
+"""
+function get_count(ams::AbstractManoptSolverState, s::Symbol)
+    return get_count(ams, Val(s))
+end
+
+function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
+    return get_count(ams.stop, v)
 end

@@ -138,7 +138,26 @@ mutable struct NelderMeadState{
         )
     end
 end
+function show(io::IO, nms::NelderMeadState)
+    i = get_count(nms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(nms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Nelder Mead Algorithm
+    $Iter
+    ## Parameters
+    * α: $(nms.α)
+    * γ: $(nms.γ)
+    * ρ: $(nms.ρ)
+    * σ: $(nms.σ)
+    * inverse retraction method: $(nms.inverse_retraction_method)
+    * retraction method:         $(nms.retraction_method)
 
+    ## Stopping Criterion
+    $(status_summary(nms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 get_iterate(O::NelderMeadState) = O.p
 function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)
     O.p = p
@@ -327,15 +346,18 @@ mutable struct StopWhenPopulationConcentrated{TF<:Real,TP<:Real} <: StoppingCrit
     tol_f::TF
     tol_p::TP
     reason::String
+    at_iteration::Int
     function StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_p::Real=1e-8)
-        return new{typeof(tol_f),typeof(tol_p)}(tol_f, tol_p, "")
+        return new{typeof(tol_f),typeof(tol_p)}(tol_f, tol_p, "", 0)
     end
 end
-
 function (c::StopWhenPopulationConcentrated)(
     mp::AbstractManoptProblem, s::NelderMeadState, i::Int
 )
-    (i == 0) && (c.reason = "") # reset on init
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     M = get_manifold(mp)
     max_cdiff = maximum(cs -> abs(s.costs[1] - cs), s.costs[2:end])
     max_xdiff = maximum(
@@ -344,7 +366,19 @@ function (c::StopWhenPopulationConcentrated)(
     )
     if max_cdiff < c.tol_f && max_xdiff < c.tol_p
         c.reason = "After $i iterations the simplex has shrunk below the assumed level (maximum cost difference is $max_cdiff, maximum point distance is $max_xdiff).\n"
+        c.at_iteration = i
         return true
     end
     return false
+end
+function status_summary(c::StopWhenPopulationConcentrated)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):\t$s"
+end
+function show(io::IO, c::StopWhenPopulationConcentrated)
+    return print(
+        io,
+        "StopWhenPopulationConcentrated($(c.tol_f), $(c.tol_p))\n    $(status_summary(c))",
+    )
 end

@@ -37,7 +37,7 @@ using Manifolds, Manopt, Test, Dates
         s1 = cyclic_proximal_point(
             N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
-        s2 = cyclic_proximal_point(
+        r = cyclic_proximal_point(
             N,
             f,
             proxes!,
@@ -45,8 +45,13 @@ using Manifolds, Manopt, Test, Dates
             λ=i -> π / (2 * i),
             stopping_criterion=StopAfterIteration(100),
             evaluation=InplaceEvaluation(),
+            return_state=true,
         )
+        s2 = get_solver_result(r)
         @test isapprox(N, s1, s2)
+        @test startswith(
+            repr(r), "# Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm"
+        )
     end
     @testset "Problem access functions" begin
         n = 3
@@ -74,7 +79,7 @@ using Manifolds, Manopt, Test, Dates
             @test isapprox(N, r, get_proximal_map(dmp2, 1.0, q, i))
         end
     end
-    @testset "Option accsess functions" begin
+    @testset "State accsess functions" begin
         M = Euclidean(3)
         p = ones(3)
         O = CyclicProximalPointState(M, zeros(3))

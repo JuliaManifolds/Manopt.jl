@@ -17,4 +17,5 @@ Still there might be the need to set certain parameters within any of these stru
 
 ```@docs
 set_manopt_parameter!
+Manopt.status_summary
 ```

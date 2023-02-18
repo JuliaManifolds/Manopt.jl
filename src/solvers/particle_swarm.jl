@@ -93,6 +93,26 @@ mutable struct ParticleSwarmState{
         return o
     end
 end
+function show(io::IO, pss::ParticleSwarmState)
+    i = get_count(pss, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(pss.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm
+    $Iter
+    ## Parameters
+    * inertia:          $(pss.inertia)
+    * social_weight:    $(pss.social_weight)
+    * cognitive_weight: $(pss.cognitive_weight)
+    * inverse retraction method: $(pss.inverse_retraction_method)
+    * retraction method:         $(pss.retraction_method)
+    * vector transport method:   $(pss.vector_transport_method)
+
+    ## Stopping Criterion
+    $(status_summary(pss.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 #
 # Accessors
 #

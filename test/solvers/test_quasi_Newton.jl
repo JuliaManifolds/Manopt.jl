@@ -2,6 +2,16 @@ using Manopt, Manifolds, Test
 using LinearAlgebra: I, eigvecs, tr, Diagonal
 
 @testset "Riemannian quasi-Newton Methods" begin
+    @testset "Show & Status" begin
+        M = Euclidean(4)
+        p = zeros(Float64, 4)
+        qnu = InverseBFGS()
+        d = QuasiNewtonMatrixDirectionUpdate(M, qnu)
+        @test Manopt.status_summary(d) ==
+            "$(qnu) with initial scaling true and vector transport method ParallelTransport()."
+        s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], true, InverseBFGS(), ParallelTransport())\n"
+        @test repr(d) == s
+    end
     @testset "Mean of 3 Matrices" begin
         # Mean of 3 matrices
         A = [18.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
@@ -25,6 +35,9 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             p;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
+        )
+        @test startswith(
+            repr(lrbfgs_s), "# Solver state for `Manopt.jl`s Quasi Newton Method\n"
         )
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         @test get_last_stepsize(dmp, lrbfgs_s, lrbfgs_s.stepsize) > 0
@@ -252,22 +265,24 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         p_2 = [0.0; 0.0; 1.0; 0.0]
 
         SR1_allocating = ApproxHessianSymmetricRankOne(
-            M, p_1, grad_f; evaluation=AllocatingEvaluation()
+            M, copy(M, p_1), grad_f; evaluation=AllocatingEvaluation()
         )
 
         SR1_inplace = ApproxHessianSymmetricRankOne(
-            M, p_1, grad_f!; evaluation=InplaceEvaluation()
+            M, copy(M, p_1), grad_f!; evaluation=InplaceEvaluation()
         )
 
         BFGS_allocating = ApproxHessianBFGS(
-            M, p_1, grad_f; evaluation=AllocatingEvaluation()
+            M, copy(M, p_1), grad_f; evaluation=AllocatingEvaluation()
         )
 
-        BFGS_inplace = ApproxHessianBFGS(M, p_1, grad_f!; evaluation=InplaceEvaluation())
+        BFGS_inplace = ApproxHessianBFGS(
+            M, copy(M, p_1), grad_f!; evaluation=InplaceEvaluation()
+        )
 
         Y = [0.0; 1.0; 0.0; 0.0]
         X_1 = SR1_allocating(M, p_1, Y)
-        SR1_allocating.p_tmp = p_2
+        SR1_allocating.p_tmp .= p_2
         X_2 = SR1_allocating(M, p_1, Y)
         @test isapprox(M, p_1, X_1, X_2; atol=1e-10)
         update_hessian_basis!(M, SR1_allocating, p_1)
@@ -276,7 +291,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         X_3 = zero_vector(M, p_1)
         X_4 = zero_vector(M, p_1)
         SR1_inplace(M, X_3, p_1, Y)
-        SR1_inplace.p_tmp = p_2
+        SR1_inplace.p_tmp .= p_2
         SR1_inplace(M, X_4, p_1, Y)
         @test isapprox(M, p_1, X_3, X_4; atol=1e-10)
         update_hessian_basis!(M, SR1_inplace, p_1)
@@ -300,12 +315,16 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         BFGS_allocating.grad_tmp = ones(4)
         BFGS_allocating.matrix = one(zeros(3, 3))
         Manopt.update_hessian!(M, BFGS_allocating, p_1, p_2, Y)
-        test_m = [1.0 -1.0 5.0; -1.0 2.0 -5.0; 5.0 -5.0 26.0]
+        test_m = [
+            7.0 -1.0 3.0
+            -1.0 1.1428571428571428 -0.42857142857142855
+            3.0 -0.42857142857142855 2.2857142857142856
+        ]
         @test isapprox(test_m, BFGS_allocating.matrix)
 
         update_hessian_basis!(M, BFGS_allocating, p_1)
         update_hessian_basis!(M, BFGS_allocating, p_2)
-        @test isapprox(M, p_1, BFGS_allocating.grad_tmp, [0.0, 2.0, 0.0, 6.0])
+        @test isapprox(M, p_1, BFGS_allocating.grad_tmp, [0.0, 8.0, 0.0, 4.0])
     end
 
     @testset "A small complex example" begin

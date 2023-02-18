@@ -72,7 +72,25 @@ function StochasticGradientDescentState(
         0,
     )
 end
+function show(io::IO, sgds::StochasticGradientDescentState)
+    i = get_count(sgds, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(sgds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Stochastic Gradient Descent
+    $Iter
+    ## Parameters
+    * order: $(sgds.order_type)
+    * retraction method: $(sgds.retraction_method)
 
+    ## Stepsize
+    $(sgds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(sgds.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 """
     StochasticGradient <: AbstractGradientGroupProcessor
 
