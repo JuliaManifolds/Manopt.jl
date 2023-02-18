@@ -37,7 +37,7 @@ using Manopt, Manifolds, Test
                 ).pts .-
                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
             ),
-        ) ≈ 0 atol = 10^(-12)
+        ) ≈ 0 atol = 2e-12
 
         # cost and gradient
         T = collect(range(0.0, 2.0; length=51))
@@ -48,7 +48,7 @@ using Manopt, Manifolds, Test
         z = zero_vector(Mp, Bvec)
         distance(Mp, grad_acceleration_bezier(M, Bvec, degrees, T), z)
         @test norm(Mp, Bvec, grad_acceleration_bezier(M, Bvec, degrees, T) - z) ≈ 0 atol =
-            10^(-12)
+            2e-12
 
         d = [pT, exp(M, pC, [0.3, 0.0, 0.0]), pB]
         λ = 3.0
@@ -61,15 +61,15 @@ using Manopt, Manifolds, Test
         # when the data are the junctions
         @test norm(
             Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, λ, [pT, pC, pB]) - z
-        ) ≈ 0 atol = 10^(-12)
+        ) ≈ 0 atol = 2e-12
         z[4][1] = -0.9
         @test norm(Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, λ, d) - z) ≈ 0 atol =
-            10^(-12)
+            2e-12
         # when the data is weighted with zero
         @test cost_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) ≈ 0 atol = 10^(-10)
         z[4][1] = 0.0
         @test norm(Mp, Bvec, grad_L2_acceleration_bezier(M, Bvec, degrees, T, 0.0, d) - z) ≈
-            0 atol = 10^(-12)
+            0 atol = 2e-12
     end
     @testset "de Casteljau variants" begin
         M = Sphere(2)

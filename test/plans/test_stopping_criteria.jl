@@ -100,7 +100,12 @@ end
 @testset "Stop with step size" begin
     mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
     dmp = DefaultManoptProblem(Euclidean(), mgo)
-    gds = GradientDescentState(Euclidean(), 1.0; stepsize=ConstantStepsize(Euclidean()))
+    gds = GradientDescentState(
+        Euclidean(),
+        1.0;
+        stopping_criterion=StopAfterIteration(100),
+        stepsize=ConstantStepsize(Euclidean()),
+    )
     s1 = StopWhenStepsizeLess(0.5)
     @test !s1(dmp, gds, 1)
     @test s1.reason == ""
