@@ -1,53 +1,5 @@
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
-using Manopt, Manifolds, Pkg
-# Load an unregistered package (for now) to update exports of Pluto notebooks
-
-tutorial_menu = Array{Pair{String,String},1}()
-
-#
-# Generate Pluto Tutorial HTMLs
-tutorial_src_folder = joinpath(@__DIR__, "..", "tutorials/")
-tutorial_output_folder = joinpath(@__DIR__, "src/", "tutorials/")
-tutorial_relative_path = "tutorials/"
-#mkpath(tutorial_output_folder)
-#
-# Tutorials - reduced to generating the menu for now
-tutorials = [
-    Dict(:file => "Optimize!", :title => "Get Started: Optimize!"),
-    Dict(:file => "AutomaticDifferentiation", :title => "Use AD in Manopt"),
-    Dict(:file => "HowToRecord", :title => "Record Values"),
-    Dict(:file => "ConstrainedOptimization", :title => "Do constrained Optimization"),
-    Dict(:file => "GeodesicRegression", :title => "Do Geodesic Regression"),
-    Dict(:file => "Bezier", :title => "Use Bézier Curves"),
-    Dict(:file => "SecondOrderDifference", :title => "Compute a Second Order Difference"),
-    Dict(:file => "StochasticGradientDescent", :title => "Do Stochastic Gradient Descent"),
-    Dict(:file => "Benchmark", :title => "Speed up! Using `gradF!`"),
-    Dict(:file => "JacobiFields", :title => "Illustrate Jacobi Fields"),
-]
-# build menu and write files myself - tp set edit url correctly.
-for t in tutorials
-    global tutorial_menu
-    #=rendered = build_notebooks( #though not really parallel here
-        BuildOptions(
-            tutorial_src_folder;
-            output_format=documenter_output,
-            write_files=false,
-            use_distributed=true,
-            previous_dir=tutorial_output_folder,
-        ),
-        ["$(t[:file]).jl"],
-    )
-    write(
-        tutorial_output_folder * t[:file] * ".md",
-        """
-        ```@meta
-        EditURL = "$(tutorial_src_folder)$(t[:file]).jl"
-        ```
-        $(rendered["$(t[:file]).jl"][1])
-        """,
-    ) =#
-    push!(tutorial_menu, t[:title] => joinpath(tutorial_relative_path, t[:file] * ".md"))
-end
+using Manopt, Manifolds
 
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
@@ -68,7 +20,6 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
     end
 end
 
-# @info " \n      Rendering Documentation"
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
@@ -76,7 +27,14 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "About" => "about.md",
-        "How to..." => tutorial_menu,
+        "How to..." => [
+            "Get started: Optimize!" => "tutorials/Optimize!.md",
+            "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
+            "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
+            "Record values" => "tutorials/HowToRecord.md",
+            "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
+            "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
+        ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
