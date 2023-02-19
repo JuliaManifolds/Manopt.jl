@@ -424,7 +424,7 @@ mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugA
                 storage = StoreStateAction(M; store_fields=[:Iterate, :Gradient])
             else
                 storage = StoreStateAction(
-                    M; store_points=Tuple{:Iterate}, store_tangents=Tuple{:Gradient}
+                    M; store_points=[:Iterate], store_vectors=[:Gradient]
                 )
             end
         end

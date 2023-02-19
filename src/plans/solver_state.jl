@@ -239,6 +239,11 @@ For the point storage use `PointStorageKey`. For tangent vector storage use
 
 # Constructiors
 
+   StoreStateAction(s::Vector{Symbol})
+
+This is equivalent as providing `s` to the keyword `store_fields`, just that here, no manifold
+is necessay for the construciton.
+
     StoreStateAction(M)
 
 ## Keyword arguments

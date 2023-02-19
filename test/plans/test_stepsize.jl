@@ -9,7 +9,8 @@ using Manopt, Manifolds, Test
 
     s2 = NonmonotoneLinesearch()
     @test startswith(repr(s2), "NonmonotoneLinesearch() with keyword arguments\n")
-
+    s2b = NonmonotoneLinesearch(Euclidean(2)) # with manifold -> faster storage
+    @test startswith(repr(s2b), "NonmonotoneLinesearch() with keyword arguments\n")
     s3 = WolfePowellBinaryLinesearch()
     @test startswith(repr(s3), "WolfePowellBinaryLinesearch(DefaultManifold(), ")
     # no stepsize yet so repr and summary are the same

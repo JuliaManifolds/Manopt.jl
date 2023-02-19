@@ -205,6 +205,9 @@ struct TestDebugAction <: DebugAction end
         dgc_s = "DebugGradientChange(; format=\"Last Change: %f\", vector_transport_method=ParallelTransport())"
         @test repr(dgc) == dgc_s
         @test Manopt.status_summary(dgc) == "(:GradientChange, \"Last Change: %f\")"
+        # Faster storage
+        dgc2 = DebugGradientChange(Euclidean(2))
+        @test repr(dgc2) == dgc_s
     end
 
     @testset "Debug Warnings" begin
