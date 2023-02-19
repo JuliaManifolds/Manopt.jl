@@ -1,4 +1,4 @@
-using Manopt, Test, ManifoldsBase, Dates
+using Manopt, Test, ManifoldsBase, Dates, Manifolds
 
 struct TestPolarManifold <: AbstractManifold{ℝ} end
 
@@ -56,7 +56,7 @@ struct TestDebugAction <: DebugAction end
         @test String(take!(io)) == ""
         # Change of Iterate and recording a custom field
         a2 = DebugChange(;
-            storage=StoreStateAction(M, Symbol[], Tuple{:Iterate}, Tuple{}; p_init=p),
+            storage=StoreStateAction(M; store_points=Tuple{:Iterate}, p_init=p),
             prefix="Last: ",
             io=io,
         )
@@ -64,7 +64,7 @@ struct TestDebugAction <: DebugAction end
         st.p = [3.0, 2.0]
         a2(mp, st, 1)
         a2inv = DebugChange(;
-            storage=StoreStateAction([:Iterate]),
+            storage=StoreStateAction(M; store_fields=[:Iterate]),
             prefix="Last: ",
             io=io,
             inverse_retraction_method=PolarInverseRetraction(),
@@ -305,16 +305,23 @@ struct TestDebugAction <: DebugAction end
         @test repr(d3) == "DebugGroup([$(d1), $(d2)])"
         ts = "[ $(Manopt.status_summary(d1)), $(Manopt.status_summary(d2)) ]"
         @test Manopt.status_summary(d3) == ts
+
         d4 = DebugEvery(d1, 4)
         @test repr(d4) == "DebugEvery($(d1), 4, true)"
         @test Manopt.status_summary(d4) === "[$(d1), 4]"
+
         ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
         @test repr(DebugChange()) == ts2
         @test Manopt.status_summary(DebugChange()) == "(:Change, \"Last Change: %f\")"
+        # check that a nondefault manifold works as well - not sure how to test this then
+        d = DebugChange(Euclidean(2))
+
         @test repr(DebugCost()) == "DebugCost(; format=\"F(x): %f\")"
         @test Manopt.status_summary(DebugCost()) == "(:Cost, \"F(x): %f\")"
+
         @test repr(DebugDivider("|")) == "DebugDivider(; divider=\"|\")"
         @test Manopt.status_summary(DebugDivider("a")) == "\"a\""
+
         @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\")"
     end
 end

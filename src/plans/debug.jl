@@ -197,8 +197,8 @@ mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-        manifold::Union{Nothing,AbstractManifold}=nothing,
-        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
+        manifold::Union{Nothing,<:AbstractManifold}=nothing,
+        invretr::Union{Nothing,<:AbstractInverseRetractionMethod}=nothing,
         inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             M
         ),
@@ -415,13 +415,22 @@ mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugA
     storage::StoreStateAction
     vector_transport_method::VTR
     function DebugGradientChange(
-        M::AbstractManifold=DefaultManifold(2);
-        storage::StoreStateAction=StoreStateAction([:Gradient, :Iterate]),
+        M::AbstractManifold=DefaultManifold();
+        storage::Union{Nothing,StoreStateAction}=nothing,
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
         vector_transport_method::VTR=default_vector_transport_method(M),
     ) where {VTR<:AbstractVectorTransportMethod}
+        if isnothing(storage)
+            if M isa DefaultManifold
+                storage = StoreStateAction(M; store_fields=[:Iterate, :Gradient])
+            else
+                storage = StoreStateAction(
+                    M; store_points=Tuple{:Iterate}, store_tangents=Tuple{:Gradient}
+                )
+            end
+        end
         return new{VTR}(io, format, storage, vector_transport_method)
     end
 end

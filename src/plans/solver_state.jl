@@ -317,21 +317,6 @@ mutable struct StoreStateAction{
     end
 end
 @inline function StoreStateAction(
-    M::AbstractManifold,
-    dictionary_symbols::Vector{Symbol},
-    ::Type{TPS},
-    ::Type{TTS};
-    p_init=rand(M),
-    X_init=zero_vector(M, p_init),
-    once=true,
-) where {TPS<:Tuple,TTS<:Tuple}
-    TPS_tuple = Tuple(TPS.parameters)
-    TTS_tuple = Tuple(TTS.parameters)
-    point_values = NamedTuple{TPS_tuple}(map(_ -> p_init, TPS_tuple))
-    tangent_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
-    return StoreStateAction(dictionary_symbols, point_values, tangent_values, once)
-end
-@inline function StoreStateAction(
     M::AbstractManifold;
     store_fields::Vector{Symbol}=Symbol[],
     store_points::Type{TPS}=Tuple{},

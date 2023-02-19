@@ -10,7 +10,7 @@ using Test, Manopt, ManifoldsBase
     grad_f(M, q) = -2 * log(M, q, p)
     mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 
-    a = StoreStateAction(M, [:p, :X], Tuple{}, Tuple{})
+    a = StoreStateAction(M; store_fields=[:p, :X])
 
     @test !has_storage(a, Manopt.PointStorageKey(:p))
     @test !has_storage(a, Manopt.TangentStorageKey(:X))
@@ -20,7 +20,7 @@ using Test, Manopt, ManifoldsBase
     @test get_storage(a, Manopt.PointStorageKey(:p)) == p
     @test get_storage(a, Manopt.TangentStorageKey(:X)) == [0.0, 0.0]
 
-    a2 = StoreStateAction(M, Symbol[], Tuple{:p}, Tuple{:X})
+    a2 = StoreStateAction(M; store_points=Tuple{:p}, store_vectors=Tuple{:X})
     @test !has_storage(a2, Manopt.PointStorageKey(:p))
     @test !has_storage(a2, Manopt.TangentStorageKey(:X))
     update_storage!(a2, mp, st)
