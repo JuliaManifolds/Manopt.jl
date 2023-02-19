@@ -54,4 +54,5 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("solvers/test_trust_regions.jl")
         include("solvers/test_trust_regions_hessian_update.jl")
     end
+    include("test_deprecated.jl")
 end
