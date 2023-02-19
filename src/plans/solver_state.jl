@@ -319,14 +319,22 @@ end
 @inline function StoreStateAction(
     M::AbstractManifold;
     store_fields::Vector{Symbol}=Symbol[],
-    store_points::Type{TPS}=Tuple{},
-    store_vectors::Type{TTS}=Tuple{},
+    store_points::Union{Type{TPS},Vector{Symbol}}=Tuple{},
+    store_vectors::Union{Type{TTS},Vector{Symbol}}=Tuple{},
     p_init=rand(M),
     X_init=zero_vector(M, p_init),
     once=true,
 ) where {TPS<:Tuple,TTS<:Tuple}
-    TPS_tuple = Tuple(TPS.parameters)
-    TTS_tuple = Tuple(TTS.parameters)
+    if store_points isa Vector{Symbol}
+        TPS_tuple = tuple(store_points...)
+    else
+        TPS_tuple = Tuple(TPS.parameters)
+    end
+    if store_vectors isa Vector{Symbol}
+        TTS_tuple = tuple(store_vectors...)
+    else
+        TTS_tuple = Tuple(TTS.parameters)
+    end
     point_values = NamedTuple{TPS_tuple}(map(_ -> p_init, TPS_tuple))
     tangent_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
     return StoreStateAction(store_fields, point_values, tangent_values, once)
