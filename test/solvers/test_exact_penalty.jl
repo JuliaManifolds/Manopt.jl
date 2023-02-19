@@ -12,7 +12,7 @@ using LinearAlgebra: I, tr
     g(M, p) = -p # i.e. p ≥ 0
     mI = -Matrix{Float64}(I, d, d)
     grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
-    x0 = project(M, [ones(2)..., zeros(d - 1)..., 0.1])
+    x0 = project(M, [ones(2)..., zeros(d - 3)..., 0.1])
     sol_lse = exact_penalty_method(M, f, grad_f, x0; g=g, grad_g=grad_g)
     sol_lqh = exact_penalty_method(
         M, f, grad_f, x0; g=g, grad_g=grad_g, smoothing=LinearQuadraticHuber()
