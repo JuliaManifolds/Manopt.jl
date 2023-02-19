@@ -377,7 +377,7 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 * `max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
 * `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
 * `strategy` – (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
-* `storage` – (`x`, `gradient`) a [`StoreStateAction`](@ref) to store `old_x` and `old_gradient`, the x-value and corresponding gradient of the previous iteration
+* `storage` – (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
 * `stepsize_reduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
 * `sufficient_decrease` – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
 * `vector_transport_method` – (`ParallelTransport()`) the vector transport method to use
@@ -413,7 +413,7 @@ mutable struct NonmonotoneLinesearch{
     storage::TSSA
     linesearch_stopsize::Float64
     function NonmonotoneLinesearch(
-        M::AbstractManifold=DefaultManifold(2);
+        M::AbstractManifold=DefaultManifold();
         initial_stepsize::Float64=1.0,
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
@@ -425,7 +425,7 @@ mutable struct NonmonotoneLinesearch{
         min_stepsize::Float64=1e-3,
         max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::StoreStateAction=StoreStateAction([:Iterate, :Gradient]),
+        storage::Union{Nothing,StoreStateAction}=nothing,
         linesearch_stopsize::Float64=0.0,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
@@ -454,6 +454,15 @@ mutable struct NonmonotoneLinesearch{
         end
         if memory_size <= 0
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
+        end
+        if isnothing(storage)
+            if (M isa DefaultManifold) || (rand(M) isa Number)
+                storage = StoreStateAction(M; store_fields=[:Iterate, :Gradient])
+            else
+                storage = StoreStateAction(
+                    M; store_points=Tuple{:Iterate}, store_vectors=Tuple{:Gradient}
+                )
+            end
         end
         return new{
             typeof(retraction_method),

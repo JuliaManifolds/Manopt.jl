@@ -176,11 +176,24 @@ mutable struct StopWhenChangeLess{
     at_iteration::Int
 end
 function StopWhenChangeLess(
+    M::AbstractManifold,
+    ε::Float64;
+    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
+    inverse_retraction_method::IRT=default_inverse_retraction_method(M),
+) where {IRT<:AbstractInverseRetractionMethod}
+    return StopWhenChangeLess{IRT,typeof(storage)}(
+        ε, "", storage, inverse_retraction_method, 0
+    )
+end
+function StopWhenChangeLess(
     ε::Float64;
     storage::StoreStateAction=StoreStateAction([:Iterate]),
-    manifold::AbstractManifold=DefaultManifold(3),
+    manifold::AbstractManifold=DefaultManifold(),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
+    if !(manifold isa DefaultManifold)
+        @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+    end
     return StopWhenChangeLess{IRT,typeof(storage)}(
         ε, "", storage, inverse_retraction_method, 0
     )
