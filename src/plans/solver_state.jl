@@ -202,6 +202,22 @@ for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverSt
 """
 abstract type AbstractStateAction end
 
+"""
+    _storage_copy_point(M::AbstractManifold, p)
+
+Make a copy of point `p` from manifold `M` for storage in [`StoreStateAction`](@ref).
+"""
+_storage_copy_point(M::AbstractManifold, p) = copy(M, p)
+_storage_copy_point(::AbstractManifold, p::Number) = fill(p)
+
+"""
+    _storage_copy_vector(M::AbstractManifold, X)
+
+Make a copy of tangent vector `X` from manifold `M` for storage in [`StoreStateAction`](@ref).
+"""
+_storage_copy_vector(M::AbstractManifold, X) = copy(M, SA_F64[], X)
+_storage_copy_vector(::AbstractManifold, X::Number) = fill(X)
+
 @doc raw"""
     StoreStateAction <: AbstractStateAction
 
@@ -259,7 +275,7 @@ types (than the default) for your points/vectors on `M`.
 * `once` (`true`) whether to update internal storage only once per iteration or on every update call
 """
 mutable struct StoreStateAction{
-    TPS<:NamedTuple,TXS<:NamedTuple,TPI<:NamedTuple,TTI<:NamedTuple
+    TPS_asserts,TXS_assert,TPS<:NamedTuple,TXS<:NamedTuple,TPI<:NamedTuple,TTI<:NamedTuple
 } <: AbstractStateAction
     values::Dict{Symbol,Any}
     keys::Vector{Symbol} # for values
@@ -273,21 +289,24 @@ mutable struct StoreStateAction{
         general_keys::Vector{Symbol}=Symbol[],
         point_values::NamedTuple=NamedTuple(),
         tangent_values::NamedTuple=NamedTuple(),
-        once::Bool=true,
+        once::Bool=true;
+        M::AbstractManifold=DefaultManifold(),
     )
         point_init = NamedTuple{keys(point_values)}(map(u -> false, keys(point_values)))
         tangent_init = NamedTuple{keys(tangent_values)}(
             map(u -> false, keys(tangent_values))
         )
         point_values_copy = NamedTuple{keys(point_values)}(
-            map(u -> copy(point_values[u]), keys(point_values))
+            map(u -> _storage_copy_point(M, point_values[u]), keys(point_values))
         )
         tangent_values_copy = NamedTuple{keys(tangent_values)}(
-            map(u -> copy(tangent_values[u]), keys(tangent_values))
+            map(u -> _storage_copy_vector(M, tangent_values[u]), keys(tangent_values))
         )
         return new{
             typeof(point_values),
             typeof(tangent_values),
+            typeof(point_values_copy),
+            typeof(tangent_values_copy),
             typeof(point_init),
             typeof(tangent_init),
         }(
@@ -323,7 +342,28 @@ end
     end
     point_values = NamedTuple{TPS_tuple}(map(_ -> p_init, TPS_tuple))
     tangent_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
-    return StoreStateAction(store_fields, point_values, tangent_values, once)
+    return StoreStateAction(store_fields, point_values, tangent_values, once; M=M)
+end
+
+@generated function extract_type_from_namedtuple(::Type{nt}, ::Val{key}) where {nt,key}
+    for i in 1:length(nt.parameters[1])
+        if nt.parameters[1][i] === key
+            return nt.parameters[2].parameters[i]
+        end
+    end
+    return Any
+end
+
+function _store_point_assert_type(
+    ::StoreStateAction{TPS_asserts,TXS_assert}, key::Val
+) where {TPS_asserts,TXS_assert}
+    return extract_type_from_namedtuple(TPS_asserts, key)
+end
+
+function _store_tangent_assert_type(
+    ::StoreStateAction{TPS_asserts,TXS_assert}, key::Val
+) where {TPS_asserts,TXS_assert}
+    return extract_type_from_namedtuple(TXS_assert, key)
 end
 
 function (a::StoreStateAction)(
@@ -435,7 +475,9 @@ function update_storage!(
             copyto!(M, a.point_values[key], get_iterate(s))
         else
             copyto!(
-                M, a.point_values[key], getproperty(s, key)::typeof(a.point_values[key])
+                M,
+                a.point_values[key],
+                getproperty(s, key)::_store_point_assert_type(a, Val(key)),
             )
         end
     end
@@ -446,7 +488,9 @@ function update_storage!(
             copyto!(M, a.tangent_values[key], get_gradient(s))
         else
             copyto!(
-                M, a.tangent_values[key], getproperty(s, key)::typeof(a.tangent_values[key])
+                M,
+                a.tangent_values[key],
+                getproperty(s, key)::_store_tangent_assert_type(a, Val(key)),
             )
         end
     end
