@@ -474,8 +474,7 @@ function update_storage!(
     end
 
     M = get_manifold(amp)
-
-    map(keys(a.point_values)) do key
+    @inline function update_points(key)
         if key === :Iterate
             copyto!(M, a.point_values[key], get_iterate(s))
         else
@@ -486,9 +485,10 @@ function update_storage!(
             )
         end
     end
+    map(update_points, keys(a.point_values))
     a.point_init = NamedTuple{keys(a.point_values)}(map(u -> true, keys(a.point_values)))
 
-    map(keys(a.tangent_values)) do key
+    @inline function update_tangent(key)
         if key === :Gradient
             copyto!(M, a.tangent_values[key], get_gradient(s))
         else
@@ -499,6 +499,8 @@ function update_storage!(
             )
         end
     end
+    map(update_tangent, keys(a.tangent_values))
+
     a.tangent_init = NamedTuple{keys(a.tangent_values)}(
         map(u -> true, keys(a.tangent_values))
     )

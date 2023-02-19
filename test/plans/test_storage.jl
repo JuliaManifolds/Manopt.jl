@@ -44,6 +44,11 @@ using Test, Manopt, ManifoldsBase, Manifolds
         @test keys(a2.tangent_values) == keys(a2b.tangent_values)
         @test keys(a2.keys) == keys(a2b.keys)
 
+        # make sure fast storage is actually fast
+        @test (@allocated update_storage!(a2, mp, st)) == 0
+        @test (@allocated has_storage(a2, Manopt.PointStorageKey(:p))) == 0
+        @test (@allocated get_storage(a2, Manopt.PointStorageKey(:p))) == 0
+
         a3 = StoreStateAction(M; store_points=[:p], store_vectors=[:X])
         @test !has_storage(a3, Manopt.PointStorageKey(:p))
         @test !has_storage(a3, Manopt.TangentStorageKey(:X))
@@ -52,5 +57,12 @@ using Test, Manopt, ManifoldsBase, Manifolds
         @test has_storage(a3, Manopt.TangentStorageKey(:X))
         @test get_storage(a3, Manopt.PointStorageKey(:p)) == p_fast
         @test get_storage(a3, Manopt.TangentStorageKey(:X)) == X_zero_fast
+
+        # make sure fast storage is actually fast
+        @test (@allocated update_storage!(a3, mp, st)) == 0
+        @test (@allocated has_storage(a3, Manopt.PointStorageKey(:p))) == 0
+        @test (@allocated get_storage(a3, Manopt.PointStorageKey(:p))) == 0
     end
+
+    @test Manopt.extract_type_from_namedtuple(typeof((; a=10, b='a')), Val(:c)) === Any
 end
