@@ -134,12 +134,12 @@ function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficient})(
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-        !has_storage(u.storage, TangentStorageKey(:Gradient))
+        !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, TangentStorageKey(:Gradient))
+    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
     coef = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, -cgs.δ, X_old)
     update_storage!(u.storage, amp, cgs)
     return coef
@@ -199,14 +199,14 @@ function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficient})(
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-        !has_storage(u.storage, TangentStorageKey(:Gradient)) ||
-        !has_storage(u.storage, TangentStorageKey(:δ))
+        !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
+        !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, TangentStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, TangentStorageKey(:δ))
+    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
     ν = cgs.X - gradienttr #notation y from [HZ06]
@@ -254,11 +254,11 @@ function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficient})(
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-        !has_storage(u.storage, TangentStorageKey(:Gradient))
+        !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, TangentStorageKey(:Gradient))
+    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
     coef = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, X_old, X_old)
     update_storage!(u.storage, amp, cgs)
     return coef
@@ -321,14 +321,14 @@ function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficient})(
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-        !has_storage(u.storage, TangentStorageKey(:Gradient)) ||
-        !has_storage(u.storage, TangentStorageKey(:δ))
+        !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
+        !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, TangentStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, TangentStorageKey(:δ))
+    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
     ν = cgs.X - gradienttr #notation y from [HZ06]
@@ -401,14 +401,14 @@ function (u::DirectionUpdateRuleStorage{<:HestenesStiefelCoefficient})(
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-        !has_storage(u.storage, TangentStorageKey(:Gradient)) ||
-        !has_storage(u.storage, TangentStorageKey(:δ))
+        !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
+        !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, TangentStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, TangentStorageKey(:δ))
+    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
     δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.transport_method)
@@ -473,13 +473,13 @@ function (u::DirectionUpdateRuleStorage{<:LiuStoreyCoefficient})(
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-        !has_storage(u.storage, TangentStorageKey(:Gradient)) ||
-        !has_storage(u.storage, TangentStorageKey(:δ))
+        !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
+        !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, TangentStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, TangentStorageKey(:δ))
+    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
     ν = cgs.X - gradienttr # notation y from [HZ06]
     coef = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, -δ_old, X_old)
@@ -550,11 +550,11 @@ function (u::DirectionUpdateRuleStorage{<:PolakRibiereCoefficient})(
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-        !has_storage(u.storage, TangentStorageKey(:Gradient))
+        !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, TangentStorageKey(:Gradient))
+    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
     ν = cgs.X - gradienttr
@@ -661,11 +661,11 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-        !has_storage(u.storage, TangentStorageKey(:Gradient))
+        !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, TangentStorageKey(:Gradient))
+    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
 
     # call actual rule
     β = u.coefficient.direction_update(amp, cgs, i)

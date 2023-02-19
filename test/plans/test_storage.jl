@@ -24,24 +24,24 @@ using Test, Manopt, ManifoldsBase, Manifolds
         a = StoreStateAction(M; store_fields=[:p, :X])
 
         @test !has_storage(a, Manopt.PointStorageKey(:p))
-        @test !has_storage(a, Manopt.TangentStorageKey(:X))
+        @test !has_storage(a, Manopt.VectorStorageKey(:X))
         update_storage!(a, mp, st)
         @test has_storage(a, Manopt.PointStorageKey(:p))
-        @test has_storage(a, Manopt.TangentStorageKey(:X))
+        @test has_storage(a, Manopt.VectorStorageKey(:X))
         @test get_storage(a, Manopt.PointStorageKey(:p)) == p
-        @test get_storage(a, Manopt.TangentStorageKey(:X)) == X_zero
+        @test get_storage(a, Manopt.VectorStorageKey(:X)) == X_zero
 
         a2 = StoreStateAction(M; store_points=Tuple{:p}, store_vectors=Tuple{:X})
         @test !has_storage(a2, Manopt.PointStorageKey(:p))
-        @test !has_storage(a2, Manopt.TangentStorageKey(:X))
+        @test !has_storage(a2, Manopt.VectorStorageKey(:X))
         update_storage!(a2, mp, st)
         @test has_storage(a2, Manopt.PointStorageKey(:p))
-        @test has_storage(a2, Manopt.TangentStorageKey(:X))
+        @test has_storage(a2, Manopt.VectorStorageKey(:X))
         @test get_storage(a2, Manopt.PointStorageKey(:p)) == p_fast
-        @test get_storage(a2, Manopt.TangentStorageKey(:X)) == X_zero_fast
+        @test get_storage(a2, Manopt.VectorStorageKey(:X)) == X_zero_fast
         a2b = StoreStateAction(M; store_points=Tuple{:p}, store_vectors=Tuple{:X})
         @test keys(a2.point_values) == keys(a2b.point_values)
-        @test keys(a2.tangent_values) == keys(a2b.tangent_values)
+        @test keys(a2.vector_values) == keys(a2b.vector_values)
         @test keys(a2.keys) == keys(a2b.keys)
 
         # make sure fast storage is actually fast
@@ -51,12 +51,12 @@ using Test, Manopt, ManifoldsBase, Manifolds
 
         a3 = StoreStateAction(M; store_points=[:p], store_vectors=[:X])
         @test !has_storage(a3, Manopt.PointStorageKey(:p))
-        @test !has_storage(a3, Manopt.TangentStorageKey(:X))
+        @test !has_storage(a3, Manopt.VectorStorageKey(:X))
         update_storage!(a3, mp, st)
         @test has_storage(a3, Manopt.PointStorageKey(:p))
-        @test has_storage(a3, Manopt.TangentStorageKey(:X))
+        @test has_storage(a3, Manopt.VectorStorageKey(:X))
         @test get_storage(a3, Manopt.PointStorageKey(:p)) == p_fast
-        @test get_storage(a3, Manopt.TangentStorageKey(:X)) == X_zero_fast
+        @test get_storage(a3, Manopt.VectorStorageKey(:X)) == X_zero_fast
 
         # make sure fast storage is actually fast
         @test (@allocated update_storage!(a3, mp, st)) == 0

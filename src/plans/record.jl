@@ -375,9 +375,11 @@ during the last iteration.
 with the above fields as keywords. For the `DefaultManifold` only the field storage is used.
 Providing the actual manifold moves the default storage to the efficient point storage.
 """
-mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: RecordAction
+mutable struct RecordChange{
+    TInvRetr<:AbstractInverseRetractionMethod,TStorage<:StoreStateAction
+} <: RecordAction
     recorded_values::Vector{Float64}
-    storage::StoreStateAction
+    storage::TStorage
     inverse_retraction_method::TInvRetr
     function RecordChange(
         M::AbstractManifold=DefaultManifold();
@@ -397,7 +399,7 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
                 storage = StoreStateAction(M; store_points=Tuple{:Iterate})
             end
         end
-        return new{typeof(irm)}(Vector{Float64}(), storage, irm)
+        return new{typeof(irm),typeof(storage)}(Vector{Float64}(), storage, irm)
     end
     function RecordChange(
         p,
@@ -408,7 +410,7 @@ mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: Record
         ),
     ) where {IRT<:AbstractInverseRetractionMethod}
         update_storage!(a, Dict(:Iterate => p))
-        return new{IRT}(Vector{Float64}(), a, inverse_retraction_method)
+        return new{IRT,typeof(a)}(Vector{Float64}(), a, inverse_retraction_method)
     end
 end
 function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
@@ -474,19 +476,17 @@ record a certain entries change during iterates
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
 * `storage` – a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
-mutable struct RecordEntryChange <: RecordAction
+mutable struct RecordEntryChange{TStorage<:StoreStateAction} <: RecordAction
     recorded_values::Vector{Float64}
     field::Symbol
     distance::Any
-    storage::StoreStateAction
+    storage::TStorage
     function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
-        return new(Float64[], f, d, a)
+        return new{typeof(a)}(Float64[], f, d, a)
     end
-    function RecordEntryChange(
-        v::T where {T}, f::Symbol, d, a::StoreStateAction=StoreStateAction([f])
-    )
+    function RecordEntryChange(v, f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
         update_storage!(a, Dict(f => v))
-        return new(Float64[], f, d, a)
+        return new{typeof(a)}(Float64[], f, d, a)
     end
 end
 function (r::RecordEntryChange)(

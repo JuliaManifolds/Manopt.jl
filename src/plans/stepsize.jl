@@ -456,7 +456,7 @@ mutable struct NonmonotoneLinesearch{
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
         end
         if isnothing(storage)
-            if (M isa DefaultManifold) || (rand(M) isa Number)
+            if M isa DefaultManifold
                 storage = StoreStateAction(M; store_fields=[:Iterate, :Gradient])
             else
                 storage = StoreStateAction(

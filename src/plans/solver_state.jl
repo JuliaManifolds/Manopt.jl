@@ -183,13 +183,13 @@ struct PointStorageKey{key} end
 PointStorageKey(key::Symbol) = PointStorageKey{key}()
 
 """
-    struct TangentStorageKey{key} end
+    struct VectorStorageKey{key} end
 
 Refer to tangent storage of [`StoreStateAction`](@ref) in `get_storage` and `has_storage`
 functions
 """
-struct TangentStorageKey{key} end
-TangentStorageKey(key::Symbol) = TangentStorageKey{key}()
+struct VectorStorageKey{key} end
+VectorStorageKey(key::Symbol) = VectorStorageKey{key}()
 
 #
 # Common Actions for decorated AbstractManoptSolverState
@@ -238,12 +238,12 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref
   `point_values` with matching key has been already initialized to a value. When it is
   false, it corresponds to a general value not being stored for the key present in the
   vector `keys`.
-* `tangent_values` – a `NamedTuple` of mutable values of tangent vectors on a manifold to be
+* `vector_values` – a `NamedTuple` of mutable values of tangent vectors on a manifold to be
   stored in `StoreStateAction`. Manifold is later determined by `AbstractManoptProblem`
   passed to `update_storage!`. It is not specified at which point the vectors are tangent
   but for storage it should not matter.
 * `vector_init` – a `NamedTuple` of boolean values indicating whether a tangent vector in
-  `tangent_values` with matching key has been already initialized to a value. When it is
+  `vector_values` with matching key has been already initialized to a value. When it is
   false, it corresponds to a general value not being stored for the key present in the
   vector `keys`.
 * `once` – whether to update the internal values only once per iteration
@@ -251,7 +251,7 @@ iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref
 
 To handle the general storage, use `get_storage` and `has_storage` with keys as `Symbol`s.
 For the point storage use `PointStorageKey`. For tangent vector storage use
-`TangentStorageKey`. Point and tangent storage have been optimized to be more efficient.
+`VectorStorageKey`. Point and tangent storage have been optimized to be more efficient.
 
 # Constructiors
 
@@ -285,48 +285,46 @@ mutable struct StoreStateAction{
     values::Dict{Symbol,Any}
     keys::Vector{Symbol} # for values
     point_values::TPS
-    tangent_values::TXS
+    vector_values::TXS
     point_init::TPI
-    tangent_init::TTI
+    vector_init::TTI
     once::Bool
     last_stored::Int
     function StoreStateAction(
         general_keys::Vector{Symbol}=Symbol[],
         point_values::NamedTuple=NamedTuple(),
-        tangent_values::NamedTuple=NamedTuple(),
+        vector_values::NamedTuple=NamedTuple(),
         once::Bool=true;
         M::AbstractManifold=DefaultManifold(),
     )
         point_init = NamedTuple{keys(point_values)}(map(u -> false, keys(point_values)))
-        tangent_init = NamedTuple{keys(tangent_values)}(
-            map(u -> false, keys(tangent_values))
-        )
+        vector_init = NamedTuple{keys(vector_values)}(map(u -> false, keys(vector_values)))
         point_values_copy = NamedTuple{keys(point_values)}(
             map(u -> _storage_copy_point(M, point_values[u]), keys(point_values))
         )
-        tangent_values_copy = NamedTuple{keys(tangent_values)}(
-            map(u -> _storage_copy_vector(M, tangent_values[u]), keys(tangent_values))
+        vector_values_copy = NamedTuple{keys(vector_values)}(
+            map(u -> _storage_copy_vector(M, vector_values[u]), keys(vector_values))
         )
         return new{
             typeof(point_values),
-            typeof(tangent_values),
+            typeof(vector_values),
             typeof(point_values_copy),
-            typeof(tangent_values_copy),
+            typeof(vector_values_copy),
             typeof(point_init),
-            typeof(tangent_init),
+            typeof(vector_init),
         }(
             Dict{Symbol,Any}(),
             general_keys,
             point_values_copy,
-            tangent_values_copy,
+            vector_values_copy,
             point_init,
-            tangent_init,
+            vector_init,
             once,
             -1,
         )
     end
 end
-@inline function StoreStateAction(
+@noinline function StoreStateAction(
     M::AbstractManifold;
     store_fields::Vector{Symbol}=Symbol[],
     store_points::Union{Type{TPS},Vector{Symbol}}=Tuple{},
@@ -346,8 +344,8 @@ end
         TTS_tuple = Tuple(TTS.parameters)
     end
     point_values = NamedTuple{TPS_tuple}(map(_ -> p_init, TPS_tuple))
-    tangent_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
-    return StoreStateAction(store_fields, point_values, tangent_values, once; M=M)
+    vector_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
+    return StoreStateAction(store_fields, point_values, vector_values, once; M=M)
 end
 
 @generated function extract_type_from_namedtuple(::Type{nt}, ::Val{key}) where {nt,key}
@@ -365,7 +363,7 @@ function _store_point_assert_type(
     return extract_type_from_namedtuple(TPS_asserts, key)
 end
 
-function _store_tangent_assert_type(
+function _store_vector_assert_type(
     ::StoreStateAction{TPS_asserts,TXS_assert}, key::Val
 ) where {TPS_asserts,TXS_assert}
     return extract_type_from_namedtuple(TXS_assert, key)
@@ -404,14 +402,14 @@ function get_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
 end
 
 """
-    get_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {key}
+    get_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
 
 Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
-`Symbol` `key` that represents a tangent vector.
+`Symbol` `key` that represents a vector vector.
 """
-function get_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {key}
-    if haskey(a.tangent_values, key)
-        return a.tangent_values[key]
+function get_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
+    if haskey(a.vector_values, key)
+        return a.vector_values[key]
     else
         return get_storage(a, key)
     end
@@ -440,14 +438,14 @@ function has_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
 end
 
 """
-    has_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {key}
+    has_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
 
 Return whether the [`AbstractStateAction`](@ref) `a` has a point value stored at the
 `Symbol` `key`.
 """
-function has_storage(a::AbstractStateAction, ::TangentStorageKey{key}) where {key}
-    if haskey(a.tangent_init, key)
-        return a.tangent_init[key]
+function has_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
+    if haskey(a.vector_init, key)
+        return a.vector_init[key]
     else
         return has_storage(a, key)
     end
@@ -488,22 +486,20 @@ function update_storage!(
     map(update_points, keys(a.point_values))
     a.point_init = NamedTuple{keys(a.point_values)}(map(u -> true, keys(a.point_values)))
 
-    @inline function update_tangent(key)
+    @inline function update_vector(key)
         if key === :Gradient
-            copyto!(M, a.tangent_values[key], get_gradient(s))
+            copyto!(M, a.vector_values[key], get_gradient(s))
         else
             copyto!(
                 M,
-                a.tangent_values[key],
-                getproperty(s, key)::_store_tangent_assert_type(a, Val(key)),
+                a.vector_values[key],
+                getproperty(s, key)::_store_vector_assert_type(a, Val(key)),
             )
         end
     end
-    map(update_tangent, keys(a.tangent_values))
+    map(update_vector, keys(a.vector_values))
 
-    a.tangent_init = NamedTuple{keys(a.tangent_values)}(
-        map(u -> true, keys(a.tangent_values))
-    )
+    a.vector_init = NamedTuple{keys(a.vector_values)}(map(u -> true, keys(a.vector_values)))
 
     return a.keys
 end
