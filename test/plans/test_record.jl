@@ -123,7 +123,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test e.recorded_values == [1.0] # no p0 -> assume p is the first iterate
 
     dinvretr = RecordChange(; inverse_retraction_method=PolarInverseRetraction())
-    dmani = RecordChange(; manifold=Symplectic(2))
+    dmani = RecordChange(Symplectic(2))
     @test dinvretr.inverse_retraction_method === PolarInverseRetraction()
     @test dmani.inverse_retraction_method === CayleyInverseRetraction()
     @test d.inverse_retraction_method === LogarithmicInverseRetraction()

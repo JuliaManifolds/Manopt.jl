@@ -171,7 +171,7 @@ end
 # Special single ones
 #
 @doc raw"""
-    DebugChange()
+    DebugChange(M=DefaultManifold())
 
 debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
@@ -181,9 +181,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
-* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
-  for approximating the distance.
-* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) the inverse retraction to be
   used for approximating distance.
 """
 mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
@@ -197,8 +195,8 @@ mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-        manifold::Union{Nothing,<:AbstractManifold}=nothing,
-        invretr::Union{Nothing,<:AbstractInverseRetractionMethod}=nothing,
+        manifold::Union{Nothing,AbstractManifold}=nothing,
+        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
         inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             M
         ),
@@ -213,7 +211,6 @@ mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
             @warn "invretr keyword is deprecated, use `inverse_retraction_method`, which this one overrides for now."
             irm = invretr
         end
-        # Is this how this is intended?
         if isnothing(storage)
             if M isa DefaultManifold
                 storage = StoreStateAction(M; store_fields=[:Iterate])

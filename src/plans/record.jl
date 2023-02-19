@@ -368,20 +368,36 @@ during the last iteration.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(manifold, p)`) the
   inverse retraction to be used for approximating distance.
 
-# Additional constructor keyword parameters
-* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
-for approximating the distance.
+# Constructor
+
+    RecordChange(M=DefaultManifold();)
+
+with the above fields as keywords. For the `DefaultManifold` only the field storage is used.
+Providing the actual manifold moves the default storage to the efficient point storage.
 """
 mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: RecordAction
     recorded_values::Vector{Float64}
     storage::StoreStateAction
     inverse_retraction_method::TInvRetr
     function RecordChange(
-        a::StoreStateAction=StoreStateAction([:Iterate]);
-        manifold::AbstractManifold=DefaultManifold(1),
-        inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
+        M::AbstractManifold=DefaultManifold();
+        storage::Union{Nothing,StoreStateAction}=nothing,
+        manifold::Union{Nothing,AbstractManifold}=nothing,
+        inverse_retraction_method::IRT=default_inverse_retraction_method(M),
     ) where {IRT<:AbstractInverseRetractionMethod}
-        return new{IRT}(Vector{Float64}(), a, inverse_retraction_method)
+        irm = inverse_retraction_method
+        if !isnothing(manifold)
+            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+            irm = default_inverse_retraction_method(manifold)
+        end
+        if isnothing(storage)
+            if M isa DefaultManifold
+                storage = StoreStateAction(M; store_fields=[:Iterate])
+            else
+                storage = StoreStateAction(M; store_points=Tuple{:Iterate})
+            end
+        end
+        return new{typeof(irm)}(Vector{Float64}(), storage, irm)
     end
     function RecordChange(
         p,
