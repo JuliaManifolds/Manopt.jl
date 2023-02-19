@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* started this Changelog (checking the last few patches backwards)
+* a `status_summary` that displays the main parameters within several structures of Manopt,
+  most prominently a solver state
+
+### Changed
+
+* Improved storage performance by introducing separate named tuples for points and vectors
+* changed the `show` methods of `AbstractManoptSolverState`s to display their `state_summary
+* Move tutorials to be rendered with Quarto into the documentation.
 
 ## [0.4.7] - 14/02/2023
 
