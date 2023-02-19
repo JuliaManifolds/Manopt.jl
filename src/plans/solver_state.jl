@@ -239,38 +239,24 @@ For the point storage use `PointStorageKey`. For tangent vector storage use
 
 # Constructiors
 
-    AbstractStateAction([keys=(), once=true])
+    StoreStateAction(M)
 
-Initialize the Functor to an (empty) set of keys, where `once` determines
-whether more that one update per iteration are effective
+## Keyword arguments
 
-    function StoreStateAction(
-        M::AbstractManifold,
-        dictionary_symbols::Vector{Symbol},
-        ::Type{TPS},
-        ::Type{TTS};
-        p_init=rand(M),
-        X_init=zero_vector(M, p_init),
-        once=true,
-    ) where {TPS<:Tuple,TTS<:Tuple}
+* `store_fields` (`Symbol[]`)
+* `store_points` (`Symbol[]`)
+* `store_vectors` (`Symbol[]`)
 
-Initialize the general storage keys to `dictionary_symbols`, point storage keys to `TPS` and
-tangent vector storage tu `TTS`. For example you may call
-`StorageStateAction(M, Symbol[], Tuple{:Iterate}, Tuple{:Gradient})` to create efficient
-storage for point representing iterate and tangent vector representing gradient.
+as vectors of symbols each referring to fields of the state (lower case symbols)
+or semantic ones (upper case).
 
-    function StoreStateAction(
-        general_keys::Vector{Symbol}=Symbol[],
-        point_values::NamedTuple=NamedTuple(),
-        tangent_values::NamedTuple=NamedTuple(),
-        once::Bool=true,
-    ))
+* `p_init` (`rand(M)`)
+* `X_init` (`zero_vector(M, p_init)`)
 
-Initialize the Functor to a set of keys, where the dictionary is initialized to
-be empty. Further, `once` determines whether more that one update per iteration
-are effective, otherwise only the first update is stored, all others are ignored.
-Make a copy of points and tangent vectors passed to `point_values` and `tangent_values`
-for later storage respective fields.
+are used to initialize the point and vector storages, change these if you use other
+types (than the default) for your points/vectors on `M`.
+
+* `once` (`true`) whether to update internal storage only once per iteration or on every update call
 """
 mutable struct StoreStateAction{
     TPS<:NamedTuple,TXS<:NamedTuple,TPI<:NamedTuple,TTI<:NamedTuple
