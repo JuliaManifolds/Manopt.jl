@@ -417,11 +417,11 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
     M = get_manifold(amp)
     record_or_reset!(
         r,
-        if has_storage(r.storage, :Iterate)
+        if has_storage(r.storage, PointStorageKey(:Iterate))
             distance(
                 M,
                 get_iterate(s),
-                get_storage(r.storage, :Iterate),
+                get_storage(r.storage, PointStorageKey(:Iterate)),
                 r.inverse_retraction_method,
             )
         else

@@ -203,9 +203,9 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
         c.reason = ""
         c.at_iteration = 0
     end
-    if has_storage(c.storage, :Iterate)
+    if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
-        x_old = get_storage(c.storage, :Iterate)
+        x_old = get_storage(c.storage, PointStorageKey(:Iterate))
         d = distance(M, get_iterate(s), x_old, c.inverse_retraction)
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"

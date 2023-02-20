@@ -436,8 +436,8 @@ function (d::DebugGradientChange)(
 )
     if i > 0
         M = get_manifold(pm)
-        p_old = get_storage(d.storage, :Iterate)
-        X_old = get_storage(d.storage, :Gradient)
+        p_old = get_storage(d.storage, PointStorageKey(:Iterate))
+        X_old = get_storage(d.storage, VectorStorageKey(:Gradient))
         p = get_iterate(st)
         X = get_gradient(st)
         l = norm(
