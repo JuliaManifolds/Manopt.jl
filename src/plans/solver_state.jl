@@ -202,13 +202,22 @@ for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverSt
 """
 abstract type AbstractStateAction end
 
+mutable struct StorageRef{T}
+    x::T
+end
+
+function Base.copyto!(sr::StorageRef, new_x)
+    sr.x = copy(new_x)
+    return sr
+end
+
 """
     _storage_copy_point(M::AbstractManifold, p)
 
 Make a copy of point `p` from manifold `M` for storage in [`StoreStateAction`](@ref).
 """
 _storage_copy_point(M::AbstractManifold, p) = copy(M, p)
-_storage_copy_point(::AbstractManifold, p::Number) = fill(p)
+_storage_copy_point(::AbstractManifold, p::Number) = StorageRef(p)
 
 """
     _storage_copy_vector(M::AbstractManifold, X)
@@ -216,7 +225,7 @@ _storage_copy_point(::AbstractManifold, p::Number) = fill(p)
 Make a copy of tangent vector `X` from manifold `M` for storage in [`StoreStateAction`](@ref).
 """
 _storage_copy_vector(M::AbstractManifold, X) = copy(M, SA_F64[], X)
-_storage_copy_vector(::AbstractManifold, X::Number) = fill(X)
+_storage_copy_vector(::AbstractManifold, X::Number) = StorageRef(X)
 
 @doc raw"""
     StoreStateAction <: AbstractStateAction
@@ -393,9 +402,14 @@ get_storage(a::AbstractStateAction, key::Symbol) = a.values[key]
 Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
 `Symbol` `key` that represents a point.
 """
-function get_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
+@inline function get_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
     if haskey(a.point_values, key)
-        return a.point_values[key]
+        val = a.point_values[key]
+        if val isa StorageRef
+            return val.x
+        else
+            return val
+        end
     else
         return get_storage(a, key)
     end
@@ -407,9 +421,14 @@ end
 Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
 `Symbol` `key` that represents a vector vector.
 """
-function get_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
+@inline function get_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
     if haskey(a.vector_values, key)
-        return a.vector_values[key]
+        val = a.vector_values[key]
+        if val isa StorageRef
+            return val.x
+        else
+            return val
+        end
     else
         return get_storage(a, key)
     end

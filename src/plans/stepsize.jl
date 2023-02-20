@@ -491,13 +491,14 @@ function (a::NonmonotoneLinesearch)(
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
-    if !has_storage(a.storage, :Iterate) || !has_storage(a.storage, :Gradient)
+    if !has_storage(a.storage, PointStorageKey(:Iterate)) ||
+        !has_storage(a.storage, VectorStorageKey(:Gradient))
         p_old = get_iterate(s)
         X_old = get_gradient(mp, p_old)
     else
         #fetch
-        p_old = get_storage(a.storage, :Iterate)
-        X_old = get_storage(a.storage, :Gradient)
+        p_old = get_storage(a.storage, PointStorageKey(:Iterate))
+        X_old = get_storage(a.storage, VectorStorageKey(:Gradient))
     end
     update_storage!(a.storage, mp, s)
     return a(
