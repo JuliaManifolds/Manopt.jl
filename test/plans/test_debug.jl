@@ -326,5 +326,16 @@ struct TestDebugAction <: DebugAction end
         @test Manopt.status_summary(DebugDivider("a")) == "\"a\""
 
         @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\")"
+
+        @test repr(DebugStepsize()) == "DebugStepsize(; format=\"s:%s\")"
+        @test Manopt.status_summary(DebugStepsize()) == "(:Stepsize, \"s:%s\")"
+
+        @test repr(DebugGradientNorm()) == "DebugGradientNorm(; format=\"|grad f(p)|:%s\")"
+        dgn_s = "(:GradientNorm, \"|grad f(p)|:%s\")"
+        @test Manopt.status_summary(DebugGradientNorm()) == dgn_s
+
+        @test repr(DebugGradient()) == "DebugGradient(; format=\"grad f(p):%s\")"
+        dg_s = "(:Gradient, \"grad f(p):%s\")"
+        @test Manopt.status_summary(DebugGradient()) == dg_s
     end
 end

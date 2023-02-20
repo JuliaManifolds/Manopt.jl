@@ -110,7 +110,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test c2[:It1] == [10, 20]
     # RecordChange
     d = RecordChange()
-    sd = "DebugChange(; inverse_retraction_method=LogarithmicInverseRetraction())"
+    sd = "RecordChange(; inverse_retraction_method=LogarithmicInverseRetraction())"
     @test repr(d) == sd
     @test Manopt.status_summary(d) == ":Change"
     d(dmp, gds, 1)
@@ -211,4 +211,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     # stop after 20 so 21 hits
     h3(dmp, gds, 20)
     @test length(h3.recorded_values) == 1
+    @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
+    # since only the type is stored we get
+    @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
 end

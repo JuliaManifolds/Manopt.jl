@@ -434,7 +434,7 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
 end
 function show(io::IO, rc::RecordChange)
     return print(
-        io, "DebugChange(; inverse_retraction_method=$(rc.inverse_retraction_method))"
+        io, "RecordChange(; inverse_retraction_method=$(rc.inverse_retraction_method))"
     )
 end
 status_summary(rc::RecordChange) = ":Change"
