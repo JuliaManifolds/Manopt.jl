@@ -77,6 +77,8 @@ using ManifoldsBase:
     default_retraction_method,
     default_vector_transport_method,
     distance,
+    embed_project,
+    embed_project!,
     exp,
     exp!,
     geodesic,
