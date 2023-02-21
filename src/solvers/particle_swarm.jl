@@ -298,8 +298,8 @@ get_solver_result(s::ParticleSwarmState) = s.g
 # but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
 #
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::ParticleSwarmState, i)
-    if has_storage(c.storage, :Iterate)
-        x_old = get_storage(c.storage, :Iterate)
+    if has_storage(c.storage, PointStorageKey(:Iterate))
+        x_old = get_storage(c.storage, PointStorageKey(:Iterate))
         n = length(s.x)
         d = distance(
             PowerManifold(get_manifold(mp), NestedPowerRepresentation(), n), s.x, x_old

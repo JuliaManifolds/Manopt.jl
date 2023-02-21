@@ -171,37 +171,54 @@ end
 # Special single ones
 #
 @doc raw"""
-    DebugChange()
+    DebugChange(M=DefaultManifold())
 
 debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreStateAction( (:Iterate,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
-* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
-  for approximating the distance.
-* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) the inverse retraction to be
   used for approximating distance.
 """
 mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
-    inverse_retraction::IR
+    inverse_retraction_method::IR
     function DebugChange(
-        M::AbstractManifold=DefaultManifold(2);
-        storage::StoreStateAction=StoreStateAction((:Iterate,)),
+        M::AbstractManifold=DefaultManifold();
+        storage::Union{Nothing,StoreStateAction}=nothing,
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-        inverse_retraction::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+        manifold::Union{Nothing,AbstractManifold}=nothing,
+        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
+        inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             M
         ),
     )
-        return new{typeof(inverse_retraction)}(io, format, storage, inverse_retraction)
+        irm = inverse_retraction_method
+        # Deprecated, remove in Manopt 0.5
+        if !isnothing(manifold)
+            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+            irm = default_inverse_retraction_method(manifold)
+        end
+        if !isnothing(invretr)
+            @warn "invretr keyword is deprecated, use `inverse_retraction_method`, which this one overrides for now."
+            irm = invretr
+        end
+        if isnothing(storage)
+            if M isa DefaultManifold
+                storage = StoreStateAction(M; store_fields=[:Iterate])
+            else
+                storage = StoreStateAction(M; store_points=Tuple{:Iterate})
+            end
+        end
+        return new{typeof(irm)}(io, format, storage, irm)
     end
 end
 function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverState, i)
@@ -210,7 +227,10 @@ function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverSta
         d.io,
         Printf.Format(d.format),
         distance(
-            M, get_iterate(st), get_storage(d.storage, :Iterate), d.inverse_retraction
+            M,
+            get_iterate(st),
+            get_storage(d.storage, PointStorageKey(:Iterate)),
+            d.inverse_retraction_method,
         ),
     )
     d.storage(mp, st, i)
@@ -219,7 +239,7 @@ end
 function show(io::IO, dc::DebugChange)
     return print(
         io,
-        "DebugChange(; format=\"$(dc.format)\", inverse_retraction=$(dc.inverse_retraction))",
+        "DebugChange(; format=\"$(dc.format)\", inverse_retraction=$(dc.inverse_retraction_method))",
     )
 end
 status_summary(dc::DebugChange) = "(:Change, \"$(dc.format)\")"
@@ -342,11 +362,11 @@ mutable struct DebugEntryChange <: DebugAction
     function DebugEntryChange(
         f::Symbol,
         d;
-        storage::StoreStateAction=StoreStateAction((f,)),
+        storage::StoreStateAction=StoreStateAction([f]),
         prefix::String="Change of $f:",
         format::String="$prefix%s",
         io::IO=stdout,
-        initial_value::T where {T}=NaN,
+        initial_value::Any=NaN,
     )
         if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
             update_storage!(storage, Dict(f => initial_value))
@@ -392,13 +412,22 @@ mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugA
     storage::StoreStateAction
     vector_transport_method::VTR
     function DebugGradientChange(
-        M::AbstractManifold=DefaultManifold(2);
-        storage::StoreStateAction=StoreStateAction((:Gradient, :Iterate)),
+        M::AbstractManifold=DefaultManifold();
+        storage::Union{Nothing,StoreStateAction}=nothing,
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
         vector_transport_method::VTR=default_vector_transport_method(M),
     ) where {VTR<:AbstractVectorTransportMethod}
+        if isnothing(storage)
+            if M isa DefaultManifold
+                storage = StoreStateAction(M; store_fields=[:Iterate, :Gradient])
+            else
+                storage = StoreStateAction(
+                    M; store_points=[:Iterate], store_vectors=[:Gradient]
+                )
+            end
+        end
         return new{VTR}(io, format, storage, vector_transport_method)
     end
 end
@@ -407,8 +436,8 @@ function (d::DebugGradientChange)(
 )
     if i > 0
         M = get_manifold(pm)
-        p_old = get_storage(d.storage, :Iterate)
-        X_old = get_storage(d.storage, :Gradient)
+        p_old = get_storage(d.storage, PointStorageKey(:Iterate))
+        X_old = get_storage(d.storage, VectorStorageKey(:Gradient))
         p = get_iterate(st)
         X = get_gradient(st)
         l = norm(

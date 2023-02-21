@@ -156,7 +156,7 @@ For the storage a [`StoreStateAction`](@ref) is used
 
     StopWhenChangeLess(
         ε::Float64;
-        storage::StoreStateAction=StoreStateAction((:Iterate,)),
+        storage::StoreStateAction=StoreStateAction([:Iterate]),
         manifold::AbstractManifold=DefaultManifold(3),
         inverse_retraction_method::IRT=default_inverse_retraction_method(manifold)
     )
@@ -166,29 +166,46 @@ initialize the stopping criterion to a threshold `ε` using the
 default. You can also provide an inverse_retraction_method for the `distance` or a manifold
 to use its default inverse retraction.
 """
-mutable struct StopWhenChangeLess{IRT} <: StoppingCriterion
+mutable struct StopWhenChangeLess{
+    IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction
+} <: StoppingCriterion
     threshold::Float64
     reason::String
-    storage::StoreStateAction
+    storage::TSSA
     inverse_retraction::IRT
     at_iteration::Int
 end
 function StopWhenChangeLess(
+    M::AbstractManifold,
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction((:Iterate,)),
-    manifold::AbstractManifold=DefaultManifold(3),
+    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
+    inverse_retraction_method::IRT=default_inverse_retraction_method(M),
+) where {IRT<:AbstractInverseRetractionMethod}
+    return StopWhenChangeLess{IRT,typeof(storage)}(
+        ε, "", storage, inverse_retraction_method, 0
+    )
+end
+function StopWhenChangeLess(
+    ε::Float64;
+    storage::StoreStateAction=StoreStateAction([:Iterate]),
+    manifold::AbstractManifold=DefaultManifold(),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{IRT}(ε, "", storage, inverse_retraction_method, 0)
+    if !(manifold isa DefaultManifold)
+        @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+    end
+    return StopWhenChangeLess{IRT,typeof(storage)}(
+        ε, "", storage, inverse_retraction_method, 0
+    )
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     if i == 0 # reset on init
         c.reason = ""
         c.at_iteration = 0
     end
-    if has_storage(c.storage, :Iterate)
+    if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
-        x_old = get_storage(c.storage, :Iterate)
+        x_old = get_storage(c.storage, PointStorageKey(:Iterate))
         d = distance(M, get_iterate(s), x_old, c.inverse_retraction)
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"

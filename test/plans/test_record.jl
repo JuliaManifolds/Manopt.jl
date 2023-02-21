@@ -110,7 +110,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test c2[:It1] == [10, 20]
     # RecordChange
     d = RecordChange()
-    sd = "DebugChange(; inverse_retraction_method=LogarithmicInverseRetraction())"
+    sd = "RecordChange(; inverse_retraction_method=LogarithmicInverseRetraction())"
     @test repr(d) == sd
     @test Manopt.status_summary(d) == ":Change"
     d(dmp, gds, 1)
@@ -123,7 +123,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test e.recorded_values == [1.0] # no p0 -> assume p is the first iterate
 
     dinvretr = RecordChange(; inverse_retraction_method=PolarInverseRetraction())
-    dmani = RecordChange(; manifold=Symplectic(2))
+    dmani = RecordChange(Symplectic(2))
     @test dinvretr.inverse_retraction_method === PolarInverseRetraction()
     @test dmani.inverse_retraction_method === CayleyInverseRetraction()
     @test d.inverse_retraction_method === LogarithmicInverseRetraction()
@@ -140,7 +140,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     set_iterate!(gds, M, p)
     e = RecordEntryChange(:p, (p, o, x, y) -> distance(get_manifold(p), x, y))
     @test startswith(repr(e), "RecordEntryChange(:p")
-    @test update_storage!(e.storage, gds) == (:p,)
+    @test update_storage!(e.storage, dmp, gds) == [:p]
     e2 = RecordEntryChange(dmp, :p, (p, o, x, y) -> distance(get_manifold(p), x, y))
     @test e.field == e2.field
     e(dmp, gds, 1)
@@ -211,4 +211,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     # stop after 20 so 21 hits
     h3(dmp, gds, 20)
     @test length(h3.recorded_values) == 1
+    @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
+    # since only the type is stored we get
+    @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
 end

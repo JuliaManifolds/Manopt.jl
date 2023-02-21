@@ -69,6 +69,8 @@ end
     b = StopWhenChangeLess(1e-6)
     sb = "StopWhenChangeLess(1.0e-6)\n    $(Manopt.status_summary(b))"
     @test repr(b) == sb
+    b2 = StopWhenChangeLess(Euclidean(), 1e-6) # second constructor
+    @test repr(b2) == sb
     c = StopWhenGradientNormLess(1e-6)
     sc = "StopWhenGradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c))"
     @test repr(c) == sc

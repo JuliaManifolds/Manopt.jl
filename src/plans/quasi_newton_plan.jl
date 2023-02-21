@@ -478,14 +478,15 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
     for i in m:-1:1
         d.ρ[i] = 1 / inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
         d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
-        r .= r .- d.ξ[i] .* d.memory_y[i]
+        r .-= d.ξ[i] .* d.memory_y[i]
     end
     r .= 1 / (d.ρ[m] * norm(M, p, last(d.memory_y))^2) .* r
     for i in 1:m
-        r .= r .+ (d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)) .* d.memory_s[i]
+        r .+= (d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)) .* d.memory_s[i]
     end
-    d.project && project!(M, r, p, r)
-    return -r
+    d.project && embed_project!(M, r, p, r)
+    r .*= -1
+    return r
 end
 
 @doc raw"""

@@ -2,6 +2,8 @@ using Manopt, Manifolds, Test
 
 struct DummyCGCoeff <: DirectionUpdateRule end
 (u::DummyCGCoeff)(p, s, i) = 0.2
+Manopt.update_rule_storage_points(::DummyCGCoeff) = Tuple{}
+Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
 
 @testset "Conjugate Gradient Descent Plan" begin
     @testset "Test Restart CG" begin

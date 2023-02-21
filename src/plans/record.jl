@@ -368,42 +368,60 @@ during the last iteration.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(manifold, p)`) the
   inverse retraction to be used for approximating distance.
 
-# Additional constructor keyword parameters
-* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
-for approximating the distance.
+# Constructor
+
+    RecordChange(M=DefaultManifold();)
+
+with the above fields as keywords. For the `DefaultManifold` only the field storage is used.
+Providing the actual manifold moves the default storage to the efficient point storage.
 """
-mutable struct RecordChange{TInvRetr<:AbstractInverseRetractionMethod} <: RecordAction
+mutable struct RecordChange{
+    TInvRetr<:AbstractInverseRetractionMethod,TStorage<:StoreStateAction
+} <: RecordAction
     recorded_values::Vector{Float64}
-    storage::StoreStateAction
+    storage::TStorage
     inverse_retraction_method::TInvRetr
     function RecordChange(
-        a::StoreStateAction=StoreStateAction((:Iterate,));
-        manifold::AbstractManifold=DefaultManifold(1),
-        inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
+        M::AbstractManifold=DefaultManifold();
+        storage::Union{Nothing,StoreStateAction}=nothing,
+        manifold::Union{Nothing,AbstractManifold}=nothing,
+        inverse_retraction_method::IRT=default_inverse_retraction_method(M),
     ) where {IRT<:AbstractInverseRetractionMethod}
-        return new{IRT}(Vector{Float64}(), a, inverse_retraction_method)
+        irm = inverse_retraction_method
+        if !isnothing(manifold)
+            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+            irm = default_inverse_retraction_method(manifold)
+        end
+        if isnothing(storage)
+            if M isa DefaultManifold
+                storage = StoreStateAction(M; store_fields=[:Iterate])
+            else
+                storage = StoreStateAction(M; store_points=Tuple{:Iterate})
+            end
+        end
+        return new{typeof(irm),typeof(storage)}(Vector{Float64}(), storage, irm)
     end
     function RecordChange(
         p,
-        a::StoreStateAction=StoreStateAction((:Iterate,));
+        a::StoreStateAction=StoreStateAction([:Iterate]);
         manifold::AbstractManifold=DefaultManifold(1),
         inverse_retraction_method::IRT=default_inverse_retraction_method(
             manifold, typeof(p)
         ),
     ) where {IRT<:AbstractInverseRetractionMethod}
         update_storage!(a, Dict(:Iterate => p))
-        return new{IRT}(Vector{Float64}(), a, inverse_retraction_method)
+        return new{IRT,typeof(a)}(Vector{Float64}(), a, inverse_retraction_method)
     end
 end
 function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     M = get_manifold(amp)
     record_or_reset!(
         r,
-        if has_storage(r.storage, :Iterate)
+        if has_storage(r.storage, PointStorageKey(:Iterate))
             distance(
                 M,
                 get_iterate(s),
-                get_storage(r.storage, :Iterate),
+                get_storage(r.storage, PointStorageKey(:Iterate)),
                 r.inverse_retraction_method,
             )
         else
@@ -416,7 +434,7 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
 end
 function show(io::IO, rc::RecordChange)
     return print(
-        io, "DebugChange(; inverse_retraction_method=$(rc.inverse_retraction_method))"
+        io, "RecordChange(; inverse_retraction_method=$(rc.inverse_retraction_method))"
     )
 end
 status_summary(rc::RecordChange) = ":Change"
@@ -458,19 +476,17 @@ record a certain entries change during iterates
 * `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
 * `storage` – a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
-mutable struct RecordEntryChange <: RecordAction
+mutable struct RecordEntryChange{TStorage<:StoreStateAction} <: RecordAction
     recorded_values::Vector{Float64}
     field::Symbol
     distance::Any
-    storage::StoreStateAction
-    function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction((f,)))
-        return new(Float64[], f, d, a)
+    storage::TStorage
+    function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
+        return new{typeof(a)}(Float64[], f, d, a)
     end
-    function RecordEntryChange(
-        v::T where {T}, f::Symbol, d, a::StoreStateAction=StoreStateAction((f,))
-    )
+    function RecordEntryChange(v, f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
         update_storage!(a, Dict(f => v))
-        return new(Float64[], f, d, a)
+        return new{typeof(a)}(Float64[], f, d, a)
     end
 end
 function (r::RecordEntryChange)(
