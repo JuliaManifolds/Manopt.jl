@@ -49,7 +49,6 @@ mutable struct QuasiNewtonState{
     retraction_method::RTR
     stepsize::S
     stop::SC
-    p_old::P
     vector_transport_method::VT
 end
 function QuasiNewtonState(
@@ -87,7 +86,6 @@ function QuasiNewtonState(
         retraction_method,
         stepsize,
         stopping_criterion,
-        copy(M, p),
         vector_transport_method,
     )
 end
@@ -289,21 +287,21 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     qns.X = get_gradient(mp, qns.p)
     η = qns.direction_update(mp, qns)
     α = qns.stepsize(mp, qns, iter, η)
-    copyto!(M, qns.p_old, get_iterate(qns))
+    p_old = copy(M, get_iterate(qns))
     αη = α * η
     retract!(M, qns.p, qns.p, η, α, qns.retraction_method)
     β = locking_condition_scale(
-        M, qns.direction_update, qns.p_old, αη, qns.p, qns.vector_transport_method
+        M, qns.direction_update, p_old, αη, qns.p, qns.vector_transport_method
     )
     vector_transport_to!(
-        M, qns.sk, qns.p_old, αη, qns.p, get_update_vector_transport(qns.direction_update)
+        M, qns.sk, p_old, αη, qns.p, get_update_vector_transport(qns.direction_update)
     )
     vector_transport_to!(
-        M, qns.X, qns.p_old, qns.X, qns.p, get_update_vector_transport(qns.direction_update)
+        M, qns.X, p_old, qns.X, qns.p, get_update_vector_transport(qns.direction_update)
     )
     new_grad = get_gradient(mp, qns.p)
     qns.yk .= new_grad ./ β .- qns.X
-    update_hessian!(qns.direction_update, mp, qns, qns.p_old, iter)
+    update_hessian!(qns.direction_update, mp, qns, p_old, iter)
     return qns
 end
 
