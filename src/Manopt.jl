@@ -203,6 +203,10 @@ function __init__()
         using .Plots
         include("helpers/check_plots.jl")
     end
+    @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
+        using .LineSearches
+        include("linesearches_compat.jl")
+    end
     return nothing
 end
 #

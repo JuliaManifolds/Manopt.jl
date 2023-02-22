@@ -32,6 +32,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("helpers/test_error_measures.jl")
         include("helpers/test_data.jl")
         include("helpers/test_checks.jl")
+        include("helpers/test_linesearches.jl")
     end
     @testset "Solver Tests       " begin
         include("solvers/test_alternating_gradient.jl")

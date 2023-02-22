@@ -42,6 +42,7 @@ mutable struct QuasiNewtonState{
     VT<:AbstractVectorTransportMethod,
 } <: AbstractGradientSolverState
     p::P
+    p_old::P
     X::T
     sk::T
     yk::T
@@ -49,6 +50,7 @@ mutable struct QuasiNewtonState{
     retraction_method::RTR
     stepsize::S
     stop::SC
+    new_grad::T
     vector_transport_method::VT
 end
 function QuasiNewtonState(
@@ -57,7 +59,7 @@ function QuasiNewtonState(
     initial_vector::T=zero_vector(M, p),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
-        M, x, InverseBFGS(), 20; vector_transport_method=vector_transport_method
+        M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method
     ),
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
@@ -79,6 +81,7 @@ function QuasiNewtonState(
     sk_init = zero_vector(M, p)
     return QuasiNewtonState{P,typeof(sk_init),D,SC,S,RM,VTM}(
         p,
+        copy(M, p),
         initial_vector,
         sk_init,
         copy(M, sk_init),
@@ -86,6 +89,7 @@ function QuasiNewtonState(
         retraction_method,
         stepsize,
         stopping_criterion,
+        copy(M, p, initial_vector),
         vector_transport_method,
     )
 end
@@ -214,7 +218,7 @@ function quasi_Newton!(
     basis::AbstractBasis=DefaultOrthonormalBasis(),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    memory_size::Int=20,
+    memory_size::Int=min(manifold_dimension(M), 20),
     stabilize=true,
     initial_operator::AbstractMatrix=(
         if memory_size >= 0
@@ -284,24 +288,24 @@ end
 
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     M = get_manifold(mp)
-    qns.X = get_gradient(mp, qns.p)
+    get_gradient!(mp, qns.X, qns.p)
     η = qns.direction_update(mp, qns)
     α = qns.stepsize(mp, qns, iter, η)
-    p_old = copy(M, get_iterate(qns))
+    copyto!(M, qns.p_old, get_iterate(qns))
     αη = α * η
     retract!(M, qns.p, qns.p, η, α, qns.retraction_method)
     β = locking_condition_scale(
-        M, qns.direction_update, p_old, αη, qns.p, qns.vector_transport_method
+        M, qns.direction_update, qns.p_old, αη, qns.p, qns.vector_transport_method
     )
     vector_transport_to!(
-        M, qns.sk, p_old, αη, qns.p, get_update_vector_transport(qns.direction_update)
+        M, qns.sk, qns.p_old, αη, qns.p, get_update_vector_transport(qns.direction_update)
     )
     vector_transport_to!(
-        M, qns.X, p_old, qns.X, qns.p, get_update_vector_transport(qns.direction_update)
+        M, qns.X, qns.p_old, qns.X, qns.p, get_update_vector_transport(qns.direction_update)
     )
-    new_grad = get_gradient(mp, qns.p)
-    qns.yk .= new_grad ./ β .- qns.X
-    update_hessian!(qns.direction_update, mp, qns, p_old, iter)
+    get_gradient!(mp, qns.new_grad, qns.p)
+    qns.yk .= qns.new_grad ./ β .- qns.X
+    update_hessian!(qns.direction_update, mp, qns, qns.p_old, iter)
     return qns
 end
 
