@@ -12,9 +12,8 @@ gradF(M, y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
     F,
     gradF,
     data[1];
-    tol=tol,
-    stopping_criterion=StopAfterIteration(10),#StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
-    #debug = [:Iteration, :GradientNorm, "\n"]
+    #StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
+    debug = [:Iteration, :Stop, "\n"]
 )
 @time m_mean = mean(M, data; stop_iter=100)
 mean_dist = distance(M, b_mean, m_mean)
@@ -31,9 +30,8 @@ gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y),
     F2,
     gradF2,
     data[1];
-    tol=tol,
-    stopping_criterion=StopAfterIteration(10),#StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
-    #debug = [:Iteration, :GradientNorm, "\n"]
+    #stopping_criterion=StopAfterIteration(10),#StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
+    debug = [:Iteration, :Stop, "\n"]
 )
 @time m_median = median(M, data; stop_iter=100)
 median_dist = distance(M, b_median, m_median)

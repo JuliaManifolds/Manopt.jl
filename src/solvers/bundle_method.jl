@@ -13,10 +13,10 @@ stores option values for a [`bundle_method`](@ref) solver
 * `p_last_serious` - last serious iterate
 * `retraction_method` – the retraction to use within
 * `stop` – a [`StoppingCriterion`](@ref)
-* `tol` - the tolerance parameter
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
     `p` that was last evaluated.
+* `ξ` - the stopping parameter given by ξ = -\norm{g}^2 - ε 
 
 # Constructor
 
@@ -47,16 +47,15 @@ mutable struct BundleMethodState{
     index_set::S
     vector_transport_method::VT
     m::Real
-    tol::Real
+    ξ::Real
     function BundleMethodState(
         M::TM,
         p::P;
         m::Real=0.0125,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopAfterIteration(5000),
+        stopping_criterion::SC=StopWhenBundleLess(1e-8),
         X::T=zero_vector(M, p),
-        tol::Real=1e-8,
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
     ) where {
         IR<:AbstractInverseRetractionMethod,
@@ -67,10 +66,11 @@ mutable struct BundleMethodState{
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
     }
-        # Initialize indes set, bundle points, and linearization errors
+        # Initialize indes set, bundle points, linearization errors, and stopping parameter
         index_set = Set(1)
         bundle_points = [(p, X)]
         lin_errors = [0.0]
+        ξ = 0.0
         return new{IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT}(
             bundle_points,
             inverse_retraction_method,
@@ -83,7 +83,7 @@ mutable struct BundleMethodState{
             index_set,
             vector_transport_method,
             m,
-            tol,
+            ξ
         )
     end
 end
@@ -117,6 +117,7 @@ return _one_ element from the subgradient, but not necessarily deterministic.
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
 
 # Optional
+* `m` - a real number that controls the decrease of the cost function
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
@@ -159,11 +160,10 @@ function bundle_method!(
     ∂f!!::TdF,
     p;
     m::Real=0.0125,
-    tol::Real=1e-8,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
+    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-8),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
@@ -177,7 +177,6 @@ function bundle_method!(
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
-        tol=tol,
         vector_transport_method=vector_transport_method,
     )
     bms = decorate_state!(bms; kwargs...)
@@ -224,16 +223,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     #     println("Yes")
     # end
 
-    ξ = -norm(M, bms.p_last_serious, g)^2 - ε
-
-    # if -ξ ≤ bms.tol 
-    #     println("TOL")
-    #     return bms
-    # end
+    bms.ξ = -norm(M, bms.p_last_serious, g)^2 - ε
 
     retract!(M, bms.p, bms.p_last_serious, -g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
-    if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * ξ)
+    if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         bms.p_last_serious = bms.p
         push!(bms.bundle_points, (bms.p_last_serious, bms.X))
     else
@@ -255,7 +249,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             ),
         ) +
         sqrt(
-            3 *
+            4 *
             distance(M, bms.p_last_serious, bms.bundle_points[j][1]) *
             distance(M, bms.p, bms.bundle_points[j][1]) *
             distance(M, bms.p_last_serious, bms.p),
@@ -265,3 +259,52 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
+
+"""
+    StopWhenBundleLess <: StoppingCriterion
+
+A stopping criterion for [`bundle_method`](@ref) to indicate to stop when
+
+* the parameter ξ = -\norm{g}^2 - ε 
+
+is less than a given tolerance tol.
+
+# Constructor
+
+    StopWhenBundleLess(tol::Real=1e-8)
+
+"""
+mutable struct StopWhenBundleLess{T<:Real} <: StoppingCriterion
+    tol::T
+    reason::String
+    at_iteration::Int
+    function StopWhenBundleLess(tol::Real=1e-8)
+        return new{typeof(tol)}(tol, "", 0)
+    end
+end
+function (b::StopWhenBundleLess)(
+    mp::AbstractManoptProblem, bms::BundleMethodState, i::Int
+)
+    if i == 0 # reset on init
+        b.reason = ""
+        b.at_iteration = 0
+    end
+    M = get_manifold(mp)
+    if -bms.ξ ≤ tol
+        b.reason = "After $i iterations the parameter -ξ = $(-bms.ξ) is less than tol = $(b.tol).\n"
+        b.at_iteration = i
+        return true
+    end
+    return false
+end
+function status_summary(b::StopWhenBundleLess)
+    has_stopped = length(b.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Stopping parameter: -ξ ≤ $(b.tol):\t$s"
+end
+function show(io::IO, b::StopWhenBundleLess)
+    return print(
+        io,
+        "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))",
+    )
+end
