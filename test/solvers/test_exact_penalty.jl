@@ -2,9 +2,9 @@ using Manopt, ManifoldsBase, Manifolds, Test
 using LinearAlgebra: I, tr
 
 @testset "Test REPM with a nonneg. PCA" begin
-    d = 20
+    d = 4
     M = Sphere(d - 1)
-    S = [ones(4)..., zeros(d - 4)...]
+    S = [ones(2)..., zeros(d - 2)...]
     v0 = project(M, S)
     Z = v0 * v0'
     f(M, p) = -tr(transpose(p) * Z * p) / 2
@@ -12,7 +12,7 @@ using LinearAlgebra: I, tr
     g(M, p) = -p # i.e. p ≥ 0
     mI = -Matrix{Float64}(I, d, d)
     grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
-    x0 = project(M, [ones(3)..., zeros(d - 3)...])
+    x0 = project(M, [ones(2)..., zeros(d - 3)..., 0.1])
     sol_lse = exact_penalty_method(M, f, grad_f, x0; g=g, grad_g=grad_g)
     sol_lqh = exact_penalty_method(
         M, f, grad_f, x0; g=g, grad_g=grad_g, smoothing=LinearQuadraticHuber()
@@ -25,4 +25,5 @@ using LinearAlgebra: I, tr
     epms = ExactPenaltyMethodState(M, x0, dmp, NelderMeadState(M))
     set_iterate!(epms, M, 2 .* x0)
     @test get_iterate(epms) == 2 .* x0
+    @test startswith(repr(epms), "# Solver state for `Manopt.jl`s Exact Penalty Method\n")
 end

@@ -5,8 +5,10 @@ using Manopt, Manifolds, Test
     N = M × M
     data = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
     function f(N, p)
-        return 1 / 2 *
-               (distance(N[1], p[N, 1], data[1])^2 + distance(N[2], p[N, 2], data[2])^2)
+        return 1 / 2 * (
+            distance(N[1], p[N, Val(1)], data[1])^2 +
+            distance(N[2], p[N, Val(2)], data[2])^2
+        )
     end
     grad_f1(N, p) = -log(N[1], p[N, 1], data[1])
     grad_f1!(N, X, p) = (X .= -log(N[1], p[N, 1], data[1]))
@@ -62,13 +64,17 @@ using Manopt, Manifolds, Test
             order_type=:Linear,
             evaluation=InplaceEvaluation(),
         )
-        alternating_gradient_descent!(
+        r = alternating_gradient_descent!(
             N,
             f,
             [grad_f1!, grad_f2!],
             q;
             order_type=:Linear,
             evaluation=InplaceEvaluation(),
+            return_state=true,
+        )
+        @test startswith(
+            repr(r), "# Solver state for `Manopt.jl`s Alternating Gradient Descent Solver"
         )
         @test isapprox(N, q3, q)
     end

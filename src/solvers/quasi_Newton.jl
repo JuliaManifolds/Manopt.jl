@@ -89,7 +89,26 @@ function QuasiNewtonState(
         vector_transport_method,
     )
 end
-# Temporary
+function show(io::IO, qns::QuasiNewtonState)
+    i = get_count(qns, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(qns.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Quasi Newton Method
+    $Iter
+    ## Parameters
+    * direction update:        $(status_summary(qns.direction_update))
+    * retraction method:       $(qns.retraction_method)
+    * vector trnasport method: $(qns.vector_transport_method)
+
+    ## Stepsize
+    $(qns.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(qns.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 get_iterate(qns::QuasiNewtonState) = qns.p
 function set_iterate!(qns::QuasiNewtonState, M, p)
     copyto!(M, qns.p, p)
@@ -269,18 +288,19 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     η = qns.direction_update(mp, qns)
     α = qns.stepsize(mp, qns, iter, η)
     p_old = copy(M, get_iterate(qns))
-    retract!(M, qns.p, qns.p, α * η, qns.retraction_method)
+    αη = α * η
+    retract!(M, qns.p, qns.p, η, α, qns.retraction_method)
     β = locking_condition_scale(
-        M, qns.direction_update, p_old, α * η, qns.p, qns.vector_transport_method
+        M, qns.direction_update, p_old, αη, qns.p, qns.vector_transport_method
     )
     vector_transport_to!(
-        M, qns.sk, p_old, α * η, qns.p, get_update_vector_transport(qns.direction_update)
+        M, qns.sk, p_old, αη, qns.p, get_update_vector_transport(qns.direction_update)
     )
     vector_transport_to!(
         M, qns.X, p_old, qns.X, qns.p, get_update_vector_transport(qns.direction_update)
     )
     new_grad = get_gradient(mp, qns.p)
-    qns.yk = new_grad / β - qns.X
+    qns.yk .= new_grad ./ β .- qns.X
     update_hessian!(qns.direction_update, mp, qns, p_old, iter)
     return qns
 end

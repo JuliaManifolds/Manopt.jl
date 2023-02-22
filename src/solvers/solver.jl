@@ -43,8 +43,13 @@ function decorate_state!(
     return_state=false,
     kwargs..., # ignore all others
 ) where {S<:AbstractManoptSolverState}
-    deco_s = ismissing(debug) ? s : DebugSolverState(s, debug)
-    deco_s = ismissing(record) ? deco_s : RecordSolverState(deco_s, record)
+    deco_s = s
+    if !ismissing(debug) && !(debug isa AbstractArray && length(debug) == 0)
+        deco_s = DebugSolverState(s, debug)
+    end
+    if !ismissing(record) && !(record isa AbstractArray && length(record) == 0)
+        deco_s = RecordSolverState(deco_s, record)
+    end
     deco_s = (return_state) ? ReturnSolverState(deco_s) : deco_s
     return deco_s
 end

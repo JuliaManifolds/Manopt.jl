@@ -122,6 +122,9 @@ end
         return_state=true,
     )
     @test get_solver_result(x_opt2) == x_opt
+    @test startswith(
+        repr(x_opt2), "# Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver"
+    )
 end
 
 @testset "CG on complex manifolds" begin

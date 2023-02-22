@@ -77,6 +77,26 @@ function AlternatingGradientDescentState(
         inner_iterations,
     )
 end
+function show(io::IO, agds::AlternatingGradientDescentState)
+    Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
+    Conv = indicates_convergence(agds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver
+    $Iter
+    ## Parameters
+    * order: :$(agds.order_type)
+    * retraction method: $(agds.retraction_method)
+
+
+    ## Stepsize
+    $(agds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(agds.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+
 """
     AlternatingGradient <: DirectionUpdateRule
 

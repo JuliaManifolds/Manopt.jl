@@ -48,9 +48,13 @@ Random.seed!(29)
             return_state=true,
             stopping_criterion=StopAfterIteration(400),
         )
+        @test startswith(repr(o), "# Solver state for `Manopt.jl`s Nelder Mead Algorithm")
         x = get_solver_result(o)
         rec = get_record(o)
         nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
         @test any(map(!, nonincreasing)) == false
+        f = StopWhenPopulationConcentrated(1e-1, 1e-2)
+        sf = "StopWhenPopulationConcentrated($(1e-1), $(1e-2))\n    $(Manopt.status_summary(f))"
+        @test repr(f) == sf
     end
 end

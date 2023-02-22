@@ -89,6 +89,22 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
         return tcgs
     end
 end
+function show(io::IO, tcgs::TruncatedConjugateGradientState)
+    i = get_count(tcgs, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
+    $Iter
+    ## Parameters
+    * randomize: $(tcgs.randomize)
+    * trust region radius: $(tcgs.trust_region_radius)
+
+    ## Stopping Criterion
+    $(status_summary(tcgs.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 
 #
 # Spcial stopping Criteria
@@ -118,13 +134,18 @@ mutable struct StopWhenResidualIsReducedByFactorOrPower <: StoppingCriterion
     κ::Float64
     θ::Float64
     reason::String
+    at_iteration::Int
     function StopWhenResidualIsReducedByFactorOrPower(; κ::Float64=0.1, θ::Float64=1.0)
-        return new(κ, θ, "")
+        return new(κ, θ, "", 0)
     end
 end
 function (c::StopWhenResidualIsReducedByFactorOrPower)(
     mp::AbstractManoptProblem, tcgstate::TruncatedConjugateGradientState, i::Int
 )
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if norm(get_manifold(mp), tcgstate.p, tcgstate.residual) <=
        tcgstate.initialResidualNorm * min(c.κ, tcgstate.initialResidualNorm^(c.θ)) && i > 0
         c.reason = "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
@@ -132,6 +153,18 @@ function (c::StopWhenResidualIsReducedByFactorOrPower)(
     end
     return false
 end
+function status_summary(c::StopWhenResidualIsReducedByFactorOrPower)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Residual reduced by factor $(c.κ) or power $(c.θ):\t$s"
+end
+function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
+    return print(
+        io,
+        "StopWhenResidualIsReducedByFactorOrPower($(c.κ), $(c.θ))\n    $(status_summary(c))",
+    )
+end
+
 @doc raw"""
     update_stopping_criterion!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualPower, v)
 Update the residual Power `θ`  to `v`.
@@ -164,17 +197,13 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
-* `storage` – stores the necessary parameters `η, δ, residual` to check the
-    criterion.
 
 # Constructor
 
-    StopWhenTrustRegionIsExceeded([a])
+    StopWhenTrustRegionIsExceeded()
 
 initialize the StopWhenTrustRegionIsExceeded functor to indicate to stop after
-the norm of the next iterate is greater than the trust-region radius using the
-[`StoreStateAction`](@ref) `a`, which is initialized to store
-`:η, :δ, :residual` by default.
+the norm of the next iterate is greater than the trust-region radius.
 
 # See also
 
@@ -182,18 +211,31 @@ the norm of the next iterate is greater than the trust-region radius using the
 """
 mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
+    at_iteration::Int
 end
-StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
+StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("", 0)
 function (c::StopWhenTrustRegionIsExceeded)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if tcgs.ηPη >= tcgs.trust_region_radius^2 && i >= 0
         c.reason = "Trust-region radius violation (‖η‖² = $(tcgs.ηPη)) >= $(tcgs.trust_region_radius^2) = trust_region_radius²). \n"
+        c.at_iteration = i
         return true
     end
     return false
 end
-
+function status_summary(c::StopWhenTrustRegionIsExceeded)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Trust region exceeded:\t$s"
+end
+function show(io::IO, c::StopWhenTrustRegionIsExceeded)
+    return print(io, "StopWhenTrustRegionIsExceeded()\n    $(status_summary(c))")
+end
 @doc raw"""
     StopWhenCurvatureIsNegative <: StoppingCriterion
 
@@ -216,16 +258,30 @@ does not give a reduction of the model.
 """
 mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
+    at_iteration::Int
 end
-StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("")
+StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("", 0)
 function (c::StopWhenCurvatureIsNegative)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if tcgs.δHδ <= 0 && i > 0
         c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(tcgs.δHδ))) <= 0).\n"
+        c.at_iteration = i
         return true
     end
     return false
+end
+function status_summary(c::StopWhenCurvatureIsNegative)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Cuvature is negative:\t$s"
+end
+function show(io::IO, c::StopWhenCurvatureIsNegative)
+    return print(io, "StopWhenCurvatureIsNegative()\n    $(status_summary(c))")
 end
 
 @doc raw"""
@@ -247,16 +303,29 @@ A functor for testing if the curvature of the model value increased.
 """
 mutable struct StopWhenModelIncreased <: StoppingCriterion
     reason::String
+    at_iteration::Int
 end
-StopWhenModelIncreased() = StopWhenModelIncreased("")
+StopWhenModelIncreased() = StopWhenModelIncreased("", 0)
 function (c::StopWhenModelIncreased)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if i > 0 && (tcgs.new_model_value > tcgs.model_value)
         c.reason = "Model value increased from $(tcgs.model_value) to $(tcgs.new_model_value).\n"
         return true
     end
     return false
+end
+function status_summary(c::StopWhenModelIncreased)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Model Increased:\t$s"
+end
+function show(io::IO, c::StopWhenModelIncreased)
+    return print(io, "StopWhenModelIncreased()\n    $(status_summary(c))")
 end
 
 @doc raw"""

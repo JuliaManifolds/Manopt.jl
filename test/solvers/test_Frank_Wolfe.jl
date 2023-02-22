@@ -33,6 +33,7 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
         FG(M, Y, p)
         @test FG(M, p) == Y
         O = FrankWolfeState(M, p, oracle!, InplaceEvaluation())
+        @test startswith(repr(O), "# Solver state for `Manopt.jl`s Frank Wolfe Method\n")
         set_iterate!(O, 2 .* p)
         @test get_iterate(O) == 2 .* p
     end

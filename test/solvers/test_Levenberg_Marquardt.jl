@@ -107,6 +107,8 @@ end
     x0 = exp(M, ref_R, get_vector(M, ref_R, randn(3) * 0.00001, DefaultOrthonormalBasis()))
 
     lm_r = LevenbergMarquardt(M, F_RLM, jacF_RLM, x0, length(pts_LM); return_state=true)
+    lm_rs = "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm\n"
+    @test startswith(repr(lm_r), lm_rs)
     p_opt = get_state(lm_r).p
     @test norm(M, p_opt, get_gradient(lm_r)) < 2e-3
     @test distance(M, ref_R, p_opt) < 1e-2
