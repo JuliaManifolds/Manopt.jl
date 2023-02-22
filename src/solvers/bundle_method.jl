@@ -83,7 +83,7 @@ mutable struct BundleMethodState{
             index_set,
             vector_transport_method,
             m,
-            ξ
+            ξ,
         )
     end
 end
@@ -233,7 +233,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     else
         push!(bms.bundle_points, (bms.p, bms.X))
     end
-    println(bms.index_set)
     positive_indices = intersect(bms.index_set, Set(findall(j -> j > 0, λ)))
     bms.index_set = union(positive_indices, i + 1)
     bms.lin_errors = [
@@ -248,13 +247,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 bms.inverse_retraction_method,
             ),
         ) +
-        sqrt(
-            4 *
-            distance(M, bms.p_last_serious, bms.bundle_points[j][1]) *
-            distance(M, bms.p, bms.bundle_points[j][1]) *
-            distance(M, bms.p_last_serious, bms.p),
-        ) * norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for
-        j in bms.index_set
+        2 *
+        distance(M, bms.p_last_serious, bms.bundle_points[j][1]) *
+        norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for j in bms.index_set
     ]
     return bms
 end
@@ -282,15 +277,13 @@ mutable struct StopWhenBundleLess{T<:Real} <: StoppingCriterion
         return new{typeof(tol)}(tol, "", 0)
     end
 end
-function (b::StopWhenBundleLess)(
-    mp::AbstractManoptProblem, bms::BundleMethodState, i::Int
-)
+function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodState, i::Int)
     if i == 0 # reset on init
         b.reason = ""
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if -bms.ξ ≤ tol
+    if -bms.ξ ≤ b.tol && i > 0
         b.reason = "After $i iterations the parameter -ξ = $(-bms.ξ) is less than tol = $(b.tol).\n"
         b.at_iteration = i
         return true
@@ -303,8 +296,5 @@ function status_summary(b::StopWhenBundleLess)
     return "Stopping parameter: -ξ ≤ $(b.tol):\t$s"
 end
 function show(io::IO, b::StopWhenBundleLess)
-    return print(
-        io,
-        "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))",
-    )
+    return print(io, "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))")
 end
