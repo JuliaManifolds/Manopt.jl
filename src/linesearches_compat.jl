@@ -2,7 +2,26 @@
 """
     LineSearchesStepsize <: Stepsize
 
-Wrapper for LineSearches.jl.
+Wrapper for line searches available in the `LineSearches.jl` library.
+
+## Constructors
+
+    LineSearchesStepsize(
+        M::AbstractManifold,
+        ls;
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    )
+    LineSearchesStepsize(
+        ls;
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    )
+
+Wrap linesearch `ls` (for example `HagerZhang` or `MoreThuente`) that will work on manifold
+`M`. Retraction used for determining the line along which the search is performed can be
+provided as `retraction_method`. Gradient vectors are transported between points using
+`vector_transport_method`.
 """
 struct LineSearchesStepsize{
     TLS,TRM<:AbstractRetractionMethod,TVTM<:AbstractVectorTransportMethod
@@ -14,8 +33,21 @@ end
 function LineSearchesStepsize(
     M::AbstractManifold,
     ls;
-    retraction_method=default_retraction_method(M),
-    vector_transport_method=default_vector_transport_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
+        M
+    ),
+)
+    return LineSearchesStepsize(
+        ls;
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+    )
+end
+function LineSearchesStepsize(
+    ls;
+    retraction_method=ExponentialRetraction(),
+    vector_transport_method=ParallelTransport(),
 )
     return LineSearchesStepsize{
         typeof(ls),typeof(retraction_method),typeof(vector_transport_method)
@@ -58,8 +90,21 @@ function (cs::LineSearchesStepsize)(
         return (phi, dphi)
     end
     dϕ_0 = -norm(M, p, η)^2
-    α, fp = cs.linesearch(ϕ, dϕ, ϕdϕ, 1.0, fp, dϕ_0)
-    return α
+    try
+        α, fp = cs.linesearch(ϕ, dϕ, ϕdϕ, 1.0, fp, dϕ_0)
+        return α
+    catch ex
+        if isa(ex, LineSearches.LineSearchException)
+            return zero(dϕ_0)
+        else
+            rethrow(ex)
+        end
+    end
 end
 #get_initial_stepsize(s::LineSearchesStepsize) = s.length
-#show(io::IO, cs::LineSearchesStepsize) = print(io, "LineSearchesStepsize()")
+function show(io::IO, cs::LineSearchesStepsize)
+    return print(
+        io,
+        "LineSearchesStepsize($(cs.linesearch); retraction_method=$(cs.retraction_method), vector_transport_method=$(cs.vector_transport_method))",
+    )
+end
