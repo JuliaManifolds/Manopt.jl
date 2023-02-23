@@ -6,6 +6,27 @@ function default_stepsize(
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
+function show(io::IO, cgds::ConjugateGradientDescentState)
+    i = get_count(cgds, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
+    $Iter
+    ## Parameters
+    * conjugate gradient coefficient: $(cgds.coefficient) (last β=$(cgds.β))
+    * retraction method: $(cgds.retraction_method)
+    * vector transport method: $(cgds.vector_transport_method)
+
+    ## Stepsize
+    $(cgds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(cgds.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+
 @doc raw"""
     conjugate_gradient_descent(M, F, gradF, x)
 
@@ -125,12 +146,13 @@ function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDe
 end
 function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i)
     M = get_manifold(amp)
-    p_old = copy(M, cgs.p)
+    copyto!(M, cgs.p_old, cgs.p)
     current_stepsize = get_stepsize(amp, cgs, i, cgs.δ)
-    retract!(M, cgs.p, cgs.p, current_stepsize * cgs.δ, cgs.retraction_method)
+    retract!(M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method)
     get_gradient!(amp, cgs.X, cgs.p)
     cgs.β = cgs.coefficient(amp, cgs, i)
-    vector_transport_to!(M, cgs.δ, p_old, cgs.δ, cgs.p, cgs.vector_transport_method)
-    cgs.δ .= -cgs.X .+ cgs.β * cgs.δ
+    vector_transport_to!(M, cgs.δ, cgs.p_old, cgs.δ, cgs.p, cgs.vector_transport_method)
+    cgs.δ .*= cgs.β
+    cgs.δ .-= cgs.X
     return cgs
 end

@@ -470,6 +470,10 @@ function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverStat
     Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
+function show(io::IO, dg::DebugGradient)
+    return print(io, "DebugGradient(; format=\"$(dg.format)\")")
+end
+status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 
 @doc raw"""
     DebugGradientNorm <: DebugAction
@@ -508,6 +512,10 @@ function (d::DebugGradientNorm)(
     )
     return nothing
 end
+function show(io::IO, dgn::DebugGradientNorm)
+    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\")")
+end
+status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 
 @doc raw"""
     DebugStepsize <: DebugAction
@@ -538,7 +546,10 @@ function (d::DebugStepsize)(
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, i))
     return nothing
 end
-
+function show(io::IO, ds::DebugStepsize)
+    return print(io, "DebugStepsize(; format=\"$(ds.format)\")")
+end
+status_summary(ds::DebugStepsize) = "(:Stepsize, \"$(ds.format)\")"
 #
 # Records
 #
@@ -562,6 +573,7 @@ function (r::RecordGradient{T})(
 ) where {T}
     return record_or_reset!(r, get_gradient(s), i)
 end
+show(io::IO, ::RecordGradient{T}) where {T} = print(io, "RecordGradient{$T}()")
 
 @doc raw"""
     RecordGradientNorm <: RecordAction
@@ -578,6 +590,7 @@ function (r::RecordGradientNorm)(
     M = get_manifold(mp)
     return record_or_reset!(r, norm(M, get_iterate(ast), get_gradient(ast)), i)
 end
+show(io::IO, ::RecordGradientNorm) = print(io, "RecordGradientNorm()")
 
 @doc raw"""
     RecordStepsize <: RecordAction

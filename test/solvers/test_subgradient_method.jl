@@ -7,6 +7,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
     sgs = SubGradientMethodState(
         M, p0; stopping_criterion=StopAfterIteration(200), stepsize=ConstantStepsize(M)
     )
+    @test startswith(repr(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
     @test get_iterate(sgs) == p0
     sgs.X = [1.0, 0.0]
     f(M, q) = distance(M, q, p)

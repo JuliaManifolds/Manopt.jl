@@ -14,10 +14,10 @@ function test_max_function(N)
         gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y), 1))
 
         F3(M, y) = max(F(M, y), F2(M, y))
-        function gradF3(M, y)
-            if F3(M, y) == F(M, y) && F3(M, y) != F2(M, y)
+        function subgradF3(M, y)
+            if isapprox(F3(M, y), F(M, y)) && !isapprox(F3(M, y), F2(M, y))
                 return gradF(M, y)
-            elseif F3(M, y) == F2(M, y) && F3(M, y) != F(M, y)
+            elseif isapprox(F3(M, y), F2(M, y)) && !isapprox(F3(M, y), F(M, y))
                 return gradF2(M, y)
             else
                 r = rand()
@@ -26,24 +26,25 @@ function test_max_function(N)
         end
 
         # Find intersection point between F and F2
-        G(M, y) = (F(M, y) - F2(M, y))^2
-        m = NelderMead(M, G)
+        # G(M, y) = (F(M, y) - F2(M, y))^2
+        # m = NelderMead(M, G)
+        m = rand(data)
 
         bundle_min = bundle_method(
             M,
             F3,
-            gradF3,
+            subgradF3,
             m;
-            stopping_criterion=StopAfterIteration(10),
+            # stopping_criterion=StopAfterIteration(10),
             # debug=[:Iteration, :Cost, "\n"],
         )
 
         subgradient_min = subgradient_method(
             M,
             F3,
-            gradF3,
+            subgradF3,
             m;
-            stopping_criterion=StopAfterIteration(10),
+            stopping_criterion=StopWhenChangeLess(1e-8),
             # debug=[:Iteration, :Cost, "\n"],
         )
 

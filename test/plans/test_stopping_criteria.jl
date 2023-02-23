@@ -2,12 +2,15 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
 
 struct TestStopProblem <: AbstractManoptProblem{ManifoldsBase.DefaultManifold} end
 struct TestStopState <: AbstractManoptSolverState end
+struct myStoppingCriteriaSet <: StoppingCriterionSet end
+struct DummyStoppingCriterion <: StoppingCriterion end
 
 @testset "StoppingCriteria" begin
-    struct myStoppingCriteriaSet <: StoppingCriterionSet end
     @test_throws ErrorException get_stopping_criteria(myStoppingCriteriaSet())
 
     s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(0.1))
+    @test Manopt.indicates_convergence(s) #due to all and change this is true
+    @test startswith(repr(s), "StopWhenAll with the")
     s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
     @test get_stopping_criteria(s)[1].maxIter == get_stopping_criteria(s2)[1].maxIter
 
@@ -21,6 +24,8 @@ struct TestStopState <: AbstractManoptSolverState end
     @test length(s3.reason) > 0
     # repack
     sn = StopWhenAny(StopAfterIteration(10), s3)
+    @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iters
+    @test startswith(repr(sn), "StopWhenAny with the")
     sn2 = StopWhenAny([StopAfterIteration(10), s3])
     @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
     @test get_stopping_criteria(sn)[2].threshold == get_stopping_criteria(sn2)[2].threshold
@@ -29,6 +34,8 @@ struct TestStopState <: AbstractManoptSolverState end
     @test get_active_stopping_criteria(s3) == [s3]
     @test get_active_stopping_criteria(StopAfterIteration(1)) == []
     sm = StopWhenAll(StopAfterIteration(10), s3)
+    s1 = "StopAfterIteration(10)\n    Max Iteration 10:\tnot reached"
+    @test repr(StopAfterIteration(10)) == s1
     @test !sm(p, s, 9)
     @test sm(p, s, 11)
     an = sm.reason
@@ -36,12 +43,17 @@ struct TestStopState <: AbstractManoptSolverState end
     @test length(m.captures) == 2 # both have to be active
     update_stopping_criterion!(s3, :MinCost, 1e-2)
     @test s3.threshold == 1e-2
+    # Dummy withoout iterations has a reasonable fallback
+    @test Manopt.get_count(DummyStoppingCriterion(), Val(:Iterations)) == 0
 end
 
 @testset "Test StopAfter" begin
     p = TestStopProblem()
     o = TestStopState()
     s = StopAfter(Second(1))
+    @test !Manopt.indicates_convergence(s)
+    @test Manopt.status_summary(s) == "stopped after $(s.threshold):\tnot reached"
+    @test repr(s) == "StopAfter(Second(1))\n    $(Manopt.status_summary(s))"
     s(p, o, 0) # Start
     @test s(p, o, 1) == false
     sleep(1.02)
@@ -55,17 +67,26 @@ end
 @testset "Stopping Criterion &/| operators" begin
     a = StopAfterIteration(200)
     b = StopWhenChangeLess(1e-6)
+    sb = "StopWhenChangeLess(1.0e-6)\n    $(Manopt.status_summary(b))"
+    @test repr(b) == sb
+    b2 = StopWhenChangeLess(Euclidean(), 1e-6) # second constructor
+    @test repr(b2) == sb
     c = StopWhenGradientNormLess(1e-6)
-    d = StopWhenAll(a, b, c)
-    @test typeof(d) === typeof(a & b & c)
-    @test typeof(d) === typeof(a & (b & c))
-    @test typeof(d) === typeof((a & b) & c)
+    sc = "StopWhenGradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c))"
+    @test repr(c) == sc
+    c2 = StopWhenSubgradientNormLess(1e-6)
+    d = StopWhenAll(a, b, c, c2)
+    @test typeof(d) === typeof(a & b & c & c2)
+    @test typeof(d) === typeof(a & (b & c & c2))
+    @test typeof(d) === typeof((a & b) & c & c2)
     update_stopping_criterion!(d, :MinIterateChange, 1e-8)
     @test d.criteria[2].threshold == 1e-8
-    e = StopWhenAny(a, b, c)
-    @test typeof(e) === typeof(a | b | c)
-    @test typeof(e) === typeof(a | (b | c))
-    @test typeof(e) === typeof((a | b) | c)
+    e = StopWhenAny(a, b, c, c2)
+    @test typeof(e) === typeof(a | b | c | c2)
+    @test typeof(e) === typeof(a | (b | (c | c2)))
+    @test typeof(e) === typeof(a | ((b | c) | c2))
+    @test typeof(e) === typeof(((a | b) | c) | c2)
+    @test typeof(e) === typeof((a | (b | c)) | c2)
     update_stopping_criterion!(e, :MinGradNorm, 1e-9)
     @test d.criteria[3].threshold == 1e-9
 end
@@ -100,7 +121,12 @@ end
 @testset "Stop with step size" begin
     mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
     dmp = DefaultManoptProblem(Euclidean(), mgo)
-    gds = GradientDescentState(Euclidean(), 1.0; stepsize=ConstantStepsize(Euclidean()))
+    gds = GradientDescentState(
+        Euclidean(),
+        1.0;
+        stopping_criterion=StopAfterIteration(100),
+        stepsize=ConstantStepsize(Euclidean()),
+    )
     s1 = StopWhenStepsizeLess(0.5)
     @test !s1(dmp, gds, 1)
     @test s1.reason == ""

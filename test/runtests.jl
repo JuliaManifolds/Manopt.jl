@@ -6,6 +6,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("plans/test_state.jl")
         include("plans/test_conjugate_gradient_plan.jl")
         include("plans/test_debug.jl")
+        include("plans/test_storage.jl")
         include("plans/test_cache_plan.jl")
         include("plans/test_nelder_mead_plan.jl")
         include("plans/test_nonmutating.jl")
@@ -15,6 +16,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("plans/test_primal_dual_plan.jl")
         include("plans/test_higher_order_primal_dual_plan.jl")
         include("plans/test_record.jl")
+        include("plans/test_stepsize.jl")
         include("plans/test_stopping_criteria.jl")
     end
     @testset "Function Tests     " begin
@@ -45,11 +47,13 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("solvers/test_Levenberg_Marquardt.jl")
         include("solvers/test_Nelder_Mead.jl")
         include("solvers/test_quasi_Newton.jl")
-        include("solvers/test_trust_regions.jl")
-        include("solvers/test_trust_regions_hessian_update.jl")
         include("solvers/test_particle_swarm.jl")
         include("solvers/test_primal_dual_semismooth_Newton.jl")
         include("solvers/test_stochastic_gradient_descent.jl")
         include("solvers/test_subgradient_method.jl")
+        include("solvers/test_truncated_cg.jl")
+        include("solvers/test_trust_regions.jl")
+        include("solvers/test_trust_regions_hessian_update.jl")
     end
+    include("test_deprecated.jl")
 end

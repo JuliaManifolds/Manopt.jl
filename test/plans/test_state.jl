@@ -14,6 +14,8 @@ set_manopt_parameter!(s::TestState, ::Val, v) = s
         M = Euclidean(3)
         pr = TestStateProblem{typeof(M)}()
         s = TestState()
+        @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
+        @test Manopt.status_summary(Manopt.ReturnSolverState(s)) == "TestState(Float64[])"
         a = ArmijoLinesearch(M; initial_stepsize=1.0)
         @test get_last_stepsize(pr, s, a) == 1.0
         @test get_initial_stepsize(a) == 1.0

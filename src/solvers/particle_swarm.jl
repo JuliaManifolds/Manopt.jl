@@ -93,6 +93,26 @@ mutable struct ParticleSwarmState{
         return o
     end
 end
+function show(io::IO, pss::ParticleSwarmState)
+    i = get_count(pss, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(pss.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm
+    $Iter
+    ## Parameters
+    * inertia:          $(pss.inertia)
+    * social_weight:    $(pss.social_weight)
+    * cognitive_weight: $(pss.cognitive_weight)
+    * inverse retraction method: $(pss.inverse_retraction_method)
+    * retraction method:         $(pss.retraction_method)
+    * vector transport method:   $(pss.vector_transport_method)
+
+    ## Stopping Criterion
+    $(status_summary(pss.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 #
 # Accessors
 #
@@ -278,8 +298,8 @@ get_solver_result(s::ParticleSwarmState) = s.g
 # but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
 #
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::ParticleSwarmState, i)
-    if has_storage(c.storage, :Iterate)
-        x_old = get_storage(c.storage, :Iterate)
+    if has_storage(c.storage, PointStorageKey(:Iterate))
+        x_old = get_storage(c.storage, PointStorageKey(:Iterate))
         n = length(s.x)
         d = distance(
             PowerManifold(get_manifold(mp), NestedPowerRepresentation(), n), s.x, x_old
