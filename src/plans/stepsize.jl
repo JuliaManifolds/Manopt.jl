@@ -959,3 +959,53 @@ function get_last_stepsize(
 )
     return step.last_stepsize
 end
+
+# stepsize storage
+
+stepsize_storage_points(::Stepsize) = Tuple{}
+
+stepsize_storage_vectors(::Stepsize) = Tuple{}
+
+"""
+    StepsizeStorage{TS<:Stepsize,TStorage<:StoreStateAction}
+
+Storage for stepsize kept between iterations of a solver.
+"""
+mutable struct StepsizeStorage{TS<:Stepsize,TStorage<:StoreStateAction,T<:Number} <:
+               Stepsize
+    stepsize::TS
+    storage::TStorage
+    alpha::T
+    last_f_p::T
+end
+
+function StepsizeStorage(
+    M::AbstractManifold,
+    stepsize::Stepsize;
+    p_init=rand(M),
+    X_init=zero_vector(M, p_init),
+    last_alpha::T=NaN,
+    last_f_p::T=NaN,
+) where {T<:Number}
+    ssp = stepsize_storage_points(stepsize)
+    ssv = stepsize_storage_vectors(stepsize)
+    # StoreStateAction makes a copy
+    sa = StoreStateAction(
+        M; store_points=ssp, store_vectors=ssv, p_init=p_init, X_init=X_init
+    )
+    return StepsizeStorage{typeof(stepsize),typeof(sa),T}(
+        stepsize, sa, last_alpha, last_f_p
+    )
+end
+
+function (cs::StepsizeStorage)(
+    amp::AbstractManoptProblem, s::AbstractManoptSolverState, i, args...; kwargs...
+)
+    return cs.stepsize(amp, s, i, args...; kwargs...)
+end
+
+function get_last_stepsize(
+    ::AbstractManoptProblem, ::AbstractManoptSolverState, step::StepsizeStorage, args...
+)
+    return step.alpha
+end

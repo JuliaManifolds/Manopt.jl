@@ -37,7 +37,7 @@ mutable struct QuasiNewtonState{
     T,
     D<:AbstractQuasiNewtonDirectionUpdate,
     SC<:StoppingCriterion,
-    S<:Stepsize,
+    S<:StepsizeStorage,
     RTR<:AbstractRetractionMethod,
     VT<:AbstractVectorTransportMethod,
 } <: AbstractGradientSolverState
@@ -79,7 +79,8 @@ function QuasiNewtonState(
     VTM<:AbstractVectorTransportMethod,
 }
     sk_init = zero_vector(M, p)
-    return QuasiNewtonState{P,typeof(sk_init),D,SC,S,RM,VTM}(
+    stepsize_storage = StepsizeStorage(M, stepsize; p_init=p, X_init=initial_vector)
+    return QuasiNewtonState{P,typeof(sk_init),D,SC,typeof(stepsize_storage),RM,VTM}(
         p,
         copy(M, p),
         initial_vector,
@@ -87,7 +88,7 @@ function QuasiNewtonState(
         copy(M, sk_init),
         direction_update,
         retraction_method,
-        stepsize,
+        stepsize_storage,
         stopping_criterion,
         copy(M, p, initial_vector),
         vector_transport_method,
