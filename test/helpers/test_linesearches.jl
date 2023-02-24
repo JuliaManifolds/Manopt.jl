@@ -42,7 +42,16 @@ using Test
             stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
             return_state=true,
         )
+
         @test rosenbrock(M, get_iterate(x_opt)) < 1.503084
         @test startswith(sprint(show, ls_hz), "LineSearchesStepsize(HagerZhang")
+
+        mgo = ManifoldGradientObjective(rosenbrock, rosenbrock_grad!)
+        mp = DefaultManoptProblem(M, mgo)
+        @test get_last_stepsize(mp, x_opt, x_opt.stepsize, 1) == x_opt.stepsize.alpha
+
+        stepsize_storage = Manopt.StepsizeStorage(M, ls_hz; p_init=x0)
+        # this tests catching LineSearchException
+        @test iszero(stepsize_storage(mp, x_opt, 1, zero_vector(M, x0)))
     end
 end
