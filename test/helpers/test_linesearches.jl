@@ -52,6 +52,6 @@ using Test
 
         stepsize_storage = Manopt.StepsizeStorage(M, ls_hz; p_init=x0)
         # this tests catching LineSearchException
-        @test iszero(stepsize_storage(mp, x_opt, 1, zero_vector(M, x0)))
+        @test iszero(stepsize_storage(mp, x_opt, 1, NaN * zero_vector(M, x0)))
     end
 end
