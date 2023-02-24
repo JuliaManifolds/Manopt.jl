@@ -1005,7 +1005,7 @@ function (cs::StepsizeStorage)(
 end
 
 function get_last_stepsize(
-    ::AbstractManoptProblem, ::AbstractManoptSolverState, step::StepsizeStorage, args...
+    amp::AbstractManoptProblem, s::AbstractManoptSolverState, step::StepsizeStorage, args...
 )
-    return step.alpha
+    return get_last_stepsize(amp, s, step.stepsize, args...)
 end

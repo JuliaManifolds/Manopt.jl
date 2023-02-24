@@ -223,3 +223,12 @@ function get_initial_alpha(
     is.dϕ_0_previous[] = dphi_0
     return state.alpha = αguess
 end
+
+function get_last_stepsize(
+    ::AbstractManoptProblem,
+    ::AbstractManoptSolverState,
+    step::StepsizeStorage{<:LineSearchesStepsize},
+    args...,
+)
+    return step.alpha
+end
