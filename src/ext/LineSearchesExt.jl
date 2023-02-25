@@ -90,7 +90,7 @@ function (cs::StepsizeStorage{<:LineSearchesStepsize})(
     dphi_0 = real(inner(M, p, X, η))
 
     # guess initial alpha
-    get_initial_alpha(M, css.initial_step, cs, p, η, fp, dphi_0)
+    get_initial_stepsize_guess(M, css.initial_step, cs, p, η, fp, dphi_0)
     α0 = cs.last_stepsize
 
     cs.initial_cost = fp
@@ -165,7 +165,7 @@ end
 # code below was adapted from https://github.com/JuliaNLSolvers/LineSearches.jl/blob/master/src/initialguess.jl
 
 """
-    get_initial_alpha(
+    get_initial_stepsize_guess(
         M::AbstractManifold, initial_stepsize, state::StepsizeStorage, p, η, phi_0, dphi_0
     )
 
@@ -175,11 +175,11 @@ when line search state is equal `state`, objective value at `p` is equal to `phi
 real component of inner product between gradient and line search direction at `p` is
 equal to `dphi_0`.
 """
-get_initial_alpha(
+get_initial_stepsize_guess(
     M::AbstractManifold, initial_stepsize, state::StepsizeStorage, p, η, phi_0, dphi_0
 )
 
-function get_initial_alpha(
+function get_initial_stepsize_guess(
     M::AbstractManifold,
     initial_stepsize::InitialStatic{T},
     state::StepsizeStorage,
@@ -196,7 +196,7 @@ function get_initial_alpha(
     end
 end
 
-function get_initial_alpha(
+function get_initial_stepsize_guess(
     ::AbstractManifold,
     initial_stepsize::InitialPrevious,
     state::StepsizeStorage,
@@ -212,7 +212,7 @@ function get_initial_alpha(
     return state.last_stepsize = max(initial_stepsize.alphamin, state.last_stepsize)
 end
 
-function get_initial_alpha(
+function get_initial_stepsize_guess(
     ::AbstractManifold,
     initial_stepsize::InitialQuadratic{T},
     state::StepsizeStorage,
@@ -238,7 +238,7 @@ function get_initial_alpha(
     return state.last_stepsize = αguess
 end
 
-function get_initial_alpha(
+function get_initial_stepsize_guess(
     ::AbstractManifold,
     initial_stepsize::InitialConstantChange{T},
     state::StepsizeStorage,
