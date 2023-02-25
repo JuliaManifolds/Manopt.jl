@@ -50,7 +50,7 @@ mutable struct QuasiNewtonState{
     retraction_method::RTR
     stepsize::S
     stop::SC
-    new_grad::T
+    X_old::T
     vector_transport_method::VT
 end
 function QuasiNewtonState(
@@ -304,8 +304,8 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     vector_transport_to!(
         M, qns.X, qns.p_old, qns.X, qns.p, get_update_vector_transport(qns.direction_update)
     )
-    get_gradient!(mp, qns.new_grad, qns.p)
-    qns.yk .= qns.new_grad ./ β .- qns.X
+    get_gradient!(mp, qns.X_old, qns.p)
+    qns.yk .= qns.X_old ./ β .- qns.X
     update_hessian!(qns.direction_update, mp, qns, qns.p_old, iter)
     return qns
 end
