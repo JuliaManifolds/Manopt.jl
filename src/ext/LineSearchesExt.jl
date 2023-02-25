@@ -16,14 +16,16 @@ Wrapper for line searches available in the `LineSearches.jl` library.
     LineSearchesStepsize(
         linesearch,
         initial_stepsize;
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-        vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M),
+        retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+        vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
     )
 
-Wrap `linesearch` (for example `HagerZhang` or `MoreThuente`) and initial step selector
-`initial_stepsize` that will work on manifold `M`. Retraction used for determining the line along which
-the search initial_stepsize performed can be provided as `retraction_method`. Gradient vectors are
-transported between points using `vector_transport_method`.
+Wrap `linesearch` (for example [`HagerZhang`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.HagerZhang)
+or [`MoreThuente`)(https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.MoreThuente))
+and initial step selector `initial_stepsize` that will work on manifold `M`. Retraction used
+for determining the line along which the search initial_stepsize performed can be provided
+as `retraction_method`. Gradient vectors are transported between points using
+`vector_transport_method`.
 """
 struct LineSearchesStepsize{
     TLS,TIS,TRM<:AbstractRetractionMethod,TVTM<:AbstractVectorTransportMethod
@@ -167,9 +169,9 @@ end
         M::AbstractManifold, initial_stepsize, state::StepsizeStorage, p, η, phi_0, dphi_0
     )
 
-Calculate initial stepsize using method `initial_stepsize` from LineSearches.jl, when optimizing on
-manifold `M` performing line search starting at point `p` in direction `η`, when
-line search state is equal `state`, objective value at `p` is equal to `phi_0` and
+Calculate initial stepsize using method `initial_stepsize` from LineSearches.jl, when
+optimizing on manifold `M` performing line search starting at point `p` in direction `η`,
+when line search state is equal `state`, objective value at `p` is equal to `phi_0` and
 real component of inner product between gradient and line search direction at `p` is
 equal to `dphi_0`.
 """
