@@ -37,7 +37,7 @@ mutable struct QuasiNewtonState{
     T,
     D<:AbstractQuasiNewtonDirectionUpdate,
     SC<:StoppingCriterion,
-    S<:StepsizeStorage,
+    S<:Stepsize,
     RTR<:AbstractRetractionMethod,
     VT<:AbstractVectorTransportMethod,
 } <: AbstractGradientSolverState

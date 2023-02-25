@@ -48,7 +48,8 @@ using Test
 
         mgo = ManifoldGradientObjective(rosenbrock, rosenbrock_grad!)
         mp = DefaultManoptProblem(M, mgo)
-        @test get_last_stepsize(mp, x_opt, x_opt.stepsize, 1) == x_opt.stepsize.alpha
+        @test get_last_stepsize(mp, x_opt, x_opt.stepsize, 1) ==
+            x_opt.stepsize.last_stepsize
 
         stepsize_storage = Manopt.StepsizeStorage(M, ls_hz; p_init=x0)
         # this tests catching LineSearchException

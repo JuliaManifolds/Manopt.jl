@@ -975,8 +975,8 @@ mutable struct StepsizeStorage{TS<:Stepsize,TStorage<:StoreStateAction,T<:Number
                Stepsize
     stepsize::TS
     storage::TStorage
-    alpha::T
-    last_f_p::T
+    last_stepsize::T
+    initial_cost::T
 end
 
 function StepsizeStorage(
@@ -984,8 +984,8 @@ function StepsizeStorage(
     stepsize::Stepsize;
     p_init=rand(M),
     X_init=zero_vector(M, p_init),
-    last_alpha::T=NaN,
-    last_f_p::T=NaN,
+    last_stepsize::T=NaN,
+    initial_cost::T=NaN,
 ) where {T<:Number}
     ssp = stepsize_storage_points(stepsize)
     ssv = stepsize_storage_vectors(stepsize)
@@ -994,7 +994,7 @@ function StepsizeStorage(
         M; store_points=ssp, store_vectors=ssv, p_init=p_init, X_init=X_init
     )
     return StepsizeStorage{typeof(stepsize),typeof(sa),T}(
-        stepsize, sa, last_alpha, last_f_p
+        stepsize, sa, last_stepsize, initial_cost
     )
 end
 
