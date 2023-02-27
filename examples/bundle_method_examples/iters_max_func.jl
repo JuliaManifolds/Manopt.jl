@@ -49,26 +49,36 @@ function test_max_function(N,m_par)
         return_state=true,
         # debug=[:Iteration, :Cost, "\n"],
     )
-    return (get_record_action(bundle_min)[:Cost][end] - get_record_action(subgradient_min)[:Cost][end]), get_record_action(bundle_min)[:Iteration], get_record_action(bundle_min)[:Cost], get_record_action(subgradient_min)[:Iteration], get_record_action(subgradient_min)[:Cost]
+    return get_record_action(bundle_min)[:Cost][end], get_record_action(subgradient_min)[:Cost][end], get_record_action(bundle_min)[:Iteration], get_record_action(bundle_min)[:Cost], get_record_action(subgradient_min)[:Iteration], get_record_action(subgradient_min)[:Cost]
 end
 
 function plot_graphs_max(n::Int)
 
     fig = plot() # produces an empty plot
 
-    for m_par in 0.4:0.1:0.8
-        a, x1b, y1b, x1s, y1s = test_max_function(Hyperbolic(n), m_par)
-         # b, x2b, y2b, x2s, y2s = test_max_function(SymmetricPositiveDefinite(m))
-        plot!(fig, x1b, y1b, label=L"m = %$m_par") # the loop fills in the plot with this
-        # p1 = plot(
-        #     [x1b x1s],
-        #     [y1b y1s];
-        #     label=["Bundle Method" "Subgradient Method"],
-        #     xlabel="Iterations",
-        #     ylabel="Cost",
-        #     legend=:outertop,
-        # )
-    end
+    # Plot bundle methods with variable m-parameter
+    # for m_par in 0.3:0.1:0.4
+    #     a, x1b, y1b, x1s, y1s = test_max_function(Hyperbolic(n), m_par)
+    #     # b, x2b, y2b, x2s, y2s = test_max_function(SymmetricPositiveDefinite(m))
+    #     plot!(fig, x1b, y1b; xlabel="Iterations", ylabel="Cost", label=L"m = %$m_par") # the loop fills in the plot with this
+    # end
+
+    # Plot bundle method and subgradient
+    mb, ms, x1b, y1b, x1s, y1s = test_max_function(Hyperbolic(n), 0.0125)
+    plot!(fig, x1b, y1b; xlabel="Iterations", ylabel="Cost", label="Bundle Method")
+    hline!([mb]; linestyle=:dash, label="$mb")
+    plot!(fig, x1s, y1s; xlabel="Iterations", ylabel="Cost", label="Subgradient Method")
+    hline!([ms]; linestyle=:dash, label="$ms")
+
+    # p1 = plot(
+    #     [x1b x1s],
+    #     [y1b y1s];
+    #     label=["Bundle Method" "Subgradient Method"],
+    #     xlabel="Iterations",
+    #     ylabel="Cost",
+    #     legend=:outertop,
+    # )
+
     # p1s = plot(
     #     x1s,
     #     y1s;
@@ -98,6 +108,6 @@ function plot_graphs_max(n::Int)
 
     # p = plot(p1b, p1s)#; plot_title = "max{d,d^2}", window_title="Numerical Example")
     display(fig)
-
-    return nothing
+    savefig(fig,"bundle_min_sub_min.png")
+    return mb, ms, mb-ms
 end
