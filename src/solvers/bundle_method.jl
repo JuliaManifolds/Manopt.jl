@@ -282,7 +282,6 @@ function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodSta
         b.reason = ""
         b.at_iteration = 0
     end
-    M = get_manifold(mp)
     if -bms.ξ ≤ b.tol && i > 0
         b.reason = "After $i iterations the parameter -ξ = $(-bms.ξ) is less than tol = $(b.tol).\n"
         b.at_iteration = i
