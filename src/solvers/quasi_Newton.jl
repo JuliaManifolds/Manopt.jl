@@ -79,8 +79,7 @@ function QuasiNewtonState(
     VTM<:AbstractVectorTransportMethod,
 }
     sk_init = zero_vector(M, p)
-    stepsize_storage = StepsizeStorage(M, stepsize; p_init=p, X_init=initial_vector)
-    return QuasiNewtonState{P,typeof(sk_init),D,SC,typeof(stepsize_storage),RM,VTM}(
+    return QuasiNewtonState{P,typeof(sk_init),D,SC,typeof(stepsize),RM,VTM}(
         p,
         copy(M, p),
         initial_vector,
@@ -88,7 +87,7 @@ function QuasiNewtonState(
         copy(M, sk_init),
         direction_update,
         retraction_method,
-        stepsize_storage,
+        stepsize,
         stopping_criterion,
         copy(M, p, initial_vector),
         vector_transport_method,
