@@ -233,7 +233,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     else
         push!(bms.bundle_points, (bms.p, bms.X))
     end
-    positive_indices = intersect(bms.index_set, Set(findall(j -> j > 0, λ)))
+    positive_indices = intersect(bms.index_set, Set(findall(j -> j > eps(Float64), λ)))
     bms.index_set = union(positive_indices, i + 1)
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle_points[j][1]) - inner(
