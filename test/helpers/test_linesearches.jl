@@ -49,4 +49,17 @@ using Test
 
     # this tests catching LineSearchException
     @test iszero(ls_hz(mp, x_opt, 1, NaN * zero_vector(M, x0)))
+
+    # test rethrowing errors
+    function rosenbrock_throw(::AbstractManifold, x)
+        return error("test exception")
+    end
+    mgo_throw = ManifoldGradientObjective(
+        rosenbrock_throw, rosenbrock_grad!; evaluation=InplaceEvaluation()
+    )
+    mp_throw = DefaultManoptProblem(M, mgo_throw)
+    st_qn = QuasiNewtonState(M, x0)
+    initialize_solver!(mp, st_qn)
+    ls_mt = Manopt.LineSearchesStepsize(M, LineSearches.MoreThuente())
+    @test_throws ErrorException ls_mt(mp_throw, st_qn, 1; fp=rosenbrock(M, x0))
 end
