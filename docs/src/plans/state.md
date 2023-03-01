@@ -64,6 +64,15 @@ StoreStateAction
 get_storage
 has_storage
 update_storage!
+PointStorageKey
+VectorStorageKey
+```
+
+as well as two internal functions
+
+```@docs
+_storage_copy_vector
+_storage_copy_point
 ```
 
 ## Abstract States
