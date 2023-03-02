@@ -84,6 +84,7 @@ makedocs(;
         ],
         "Contributing to Manopt.jl" => "contributing.md",
         "Notation" => "notation.md",
+        "Extensions" => "extensions.md",
         "Function Index" => "list.md",
     ],
 )
