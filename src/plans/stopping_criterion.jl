@@ -126,7 +126,7 @@ end
 function status_summary(c::StopWhenGradientNormLess)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "|Δf| < $(c.threshold): $s"
+    return "|∇f| < $(c.threshold): $s"
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
 function show(io::IO, c::StopWhenGradientNormLess)

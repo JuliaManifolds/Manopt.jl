@@ -480,7 +480,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
         d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .-= d.ξ[i] .* d.memory_y[i]
     end
-    r .= 1 / (d.ρ[m] * norm(M, p, last(d.memory_y))^2) .* r
+    r .*= 1 / (d.ρ[m] * norm(M, p, last(d.memory_y))^2)
     for i in 1:m
         r .+= (d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)) .* d.memory_s[i]
     end
