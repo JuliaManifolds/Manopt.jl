@@ -131,6 +131,7 @@ include("functions/proximal_maps.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
@@ -233,6 +234,7 @@ export AbstractGradientSolverState,
     AbstractHessianSolverState,
     AbstractManoptSolverState,
     AbstractPrimalDualSolverState,
+    AdaptiveRegularizationState,
     AugmentedLagrangianMethodState,
     ChambollePockState,
     ConjugateGradientDescentState,
