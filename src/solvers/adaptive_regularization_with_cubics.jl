@@ -6,7 +6,7 @@
 
 
 @doc raw"""
-    AdaptiveRegularizationState{P,T} <: AbstractHessianSolverState      
+    AdaptiveRegularizationState{P,T} <: AbstractHessianSolverState
 
 Describes ... algorithm, with
 
@@ -17,7 +17,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `X` – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``, initialised to zero vector.
 * `H` – (`zero_vector(M,p)`) the current hessian, $\operatorname{Hess}F(p)[⋅]$, initialised to zero vector.
 * `s` (`zero_vector(M,p)`)- the tangent vector step resulting from minimizing the model problem in the tangent space \mathcal T_{p} \mathcal M
-* `ς`– the current regularization parameter 
+* `ς`– the current regularization parameter
 * `ρ`– the current regularized ratio of actual improvement
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
@@ -29,7 +29,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `γ1`
 * `γ2`
 * `γ3`
-    
+
 # Constructor
 
     AdaptiveRegularizationState(M, p=rand(M); X=zero_vector(M, p), H=zero_vector(M, p), kwargs...)
@@ -102,7 +102,7 @@ function AdaptiveRegularizationState(
     S::T=zero_vector(M, p),
     ς::Real=0.01,# find sensible value for inital ς
     ρ::Real=1,
-    stop::StoppingCriterion=StopAfterIteration(100),    
+    stop::StoppingCriterion=StopAfterIteration(100),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     ςmin::Real=1e-10, #Set the below to appropriate default vals.
     θ::Real=1,
@@ -113,12 +113,12 @@ function AdaptiveRegularizationState(
     γ3::Real=2
     ) where{P,T}
     return AdaptiveRegularizationState{P,T}(M, p, X, H, S, ς, ρ, stop, retraction_method, ςmin , θ, η1, η2, γ1, γ2, γ3)
-end 
+end
 
 
 
 
-function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveRegularizationState)     
+function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveRegularizationState)
 	dim=manifold_dimension(M)
 	T=spdiagm(-1=>zeros(dim-1),0=>zeros(dim),1=>zeros(dim-1))
 	Q = [zero_vector(M,s.p) for _ in 1:dim]
@@ -136,14 +136,14 @@ function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveR
 
 	for j in 1:dim-1
 		β=norm(M,s.p,r)
-		#Note: not doing MGS causes fast loss of orthogonality. 
-		if β>1e-10  # β large enough-> Do regular procedure: MGS of r wrt. Q 
+		#Note: not doing MGS causes fast loss of orthogonality.
+		if β>1e-10  # β large enough-> Do regular procedure: MGS of r wrt. Q
 			for i in 1:j
 				r=r-inner(M,s.p,Q[i],r)*Q[i]
 			end
 			q=r/β
 
-		else # Generate new random vec and MGS of new vec wrt. Q 
+		else # Generate new random vec and MGS of new vec wrt. Q
 			r=rand(M,vector_at=s.p)
 			for i in 1:j
 				r=r-inner(M,s.p,Q[i],r)*Q[i]
@@ -158,12 +158,12 @@ function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveR
 		T[j,j+1]=β
 		T[j+1,j]=β
 
-		#We have created the j+1'th orthonormal vector and the (j+1)x(j+1) T matrix. 
-		#Now compute the gradient corresponding to the j dimensional model. 
+		#We have created the j+1'th orthonormal vector and the (j+1)x(j+1) T matrix.
+		#Now compute the gradient corresponding to the j dimensional model.
 
 		e1=zeros(j+1)#what is the standard Julia way?
 		e1[1]=1
-		model_gradnorm=norm(gradnorm*e1+T[1:j+1,1:j]*y+s.ς*norm(y,2)*vcat(y,0),2)	
+		model_gradnorm=norm(gradnorm*e1+T[1:j+1,1:j]*y+s.ς*norm(y,2)*vcat(y,0),2)
 
 		#check stopping condition
 		#print(model_gradnorm," <= ",Θ*norm(y,2)^2)
@@ -174,7 +174,7 @@ function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveR
 
 		#Minimize the (j+1) dimensional model by in the subspace of TₚM spanned by the (j+1) orthogonal vectors
 		y=minimize_cubic_grad_descent(gradnorm,T[1:j+1,1:j+1],s.ς) # verified this in 2-dim.
-		
+
 	end
 	#Assemble the tangent vector
 	S_opt=zero_vector(M,s.p)
@@ -193,18 +193,16 @@ function minimize_cubic_grad_descent(gradnorm,T,ς)
 	#T, the sparse kxk matrix that tridiagonalizes the hessian
 	k=size(T)[1] # Dimension of subspace of TₚM spanned by k lanczos vectors.
 	Mₑ=Euclidean(k)
-	e₁=zeros(k)
-	e₁[1]=1
 	function cost(M,p)
-		return gradnorm*p[1] + 0.5*p'*T*p +ς/3*norm(M,p,p)^3   
+		return gradnorm*p[1] + 0.5*p'*T*p +ς/3*norm(M,p,p)^3
 	end
 	function grad(M,p)
-		return gradnorm*e₁+T*p +ς*p*norm(M,p,p)
+        X = T*p +ς*p*norm(M,p,p)
+        X[1] += gradnorm
+		return X
 	end
 	return gradient_descent(Mₑ,cost,grad,rand(Mₑ))
 end
-
-
 
 #Update the Regularization parameter in the same way as its done in Numerical Section of Boumal equation (39)
 function UpdateRegParameterAndIterate!(M::AbstractManifold,s::AdaptiveRegularizationState)
@@ -222,7 +220,7 @@ function UpdateRegParameterAndIterate!(M::AbstractManifold,s::AdaptiveRegulariza
     elseif s.η1<=s.ρ<s.η2
         println("successful")
         #leave regParam unchanged
-    else #unsuccessful 
+    else #unsuccessful
         println("unsuccessful")
         s.ς=s.γ2*s.ς                #IMPORTANT:Adding safeguards?
     end
@@ -237,11 +235,14 @@ function ComputeRegRatio!(M::AbstractManifold,
     s.ρ=tmp1/tmp2
 end
 
-function step_solver!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveRegularizationState)
+function step_solver!(dmp::AbstractManoptProblem,s::AdaptiveRegularizationState)
+    M = get_manifold(dmp)
+    mho = get_objective(dmp)
     Lanczos!(M,mho,s)
     ComputeRegRatio!(M,mho,s)
     UpdateRegParameterAndIterate!(M,s)
-end 
+    return s
+end
 
 
 
@@ -257,20 +258,20 @@ end
 
 
 
-function OLDLanczos(M,mho::ManifoldHessianObjective,s::AdaptiveRegularizationState) #will alter function input 
+function OLDLanczos(M,mho::ManifoldHessianObjective,s::AdaptiveRegularizationState) #will alter function input
 	dim=manifold_dimension(M)
     T=spdiagm(-1=>zeros(dim-1),0=>zeros(dim),1=>zeros(dim-1)) #Tridiag sp.matrix to store α's and β's
     qvecs=Vector(undef,dim) #Store orthonormal vecs. find better way. store in state?
 
     v=get_gradient(M,mho,s.p)
     q=v/norm(M,s.p,v)
-	qvecs[1]=q 
+	qvecs[1]=q
 
 	Hq=get_hessian(M,mho,s.p,q)
-	α=inner(M,s.p,q,Hq) 
-    T[1,1]=α    
+	α=inner(M,s.p,q,Hq)
+    T[1,1]=α
     #Here solve the k=1 case analytically.
-    
+
 	Hq_perp=Hq-α*q #must i embed?
 	for j in 2:dim
 		β=norm(Hq_perp,2)
@@ -282,7 +283,7 @@ function OLDLanczos(M,mho::ManifoldHessianObjective,s::AdaptiveRegularizationSta
 		#	reorthogonalize
 		#end
 
-		q=1/β*Hq_perp  
+		q=1/β*Hq_perp
         u=get_hessian(M,mho,s.p,q)-β*qvecs[j-1]
         α=inner(M,s.p,u,q)
 		Hq_perp=u-α*q
@@ -292,20 +293,11 @@ function OLDLanczos(M,mho::ManifoldHessianObjective,s::AdaptiveRegularizationSta
         T[j-1,j]=β
         T[j,j-1]=β
 
-        #solve the problem here 
+        #solve the problem here
 
         model_gradnorm=abc#write the modelnorm
-		
+
 	end
 	return qvecs
 
 end
-
-
-
-
-
-
-
-
-
