@@ -204,6 +204,10 @@ function __init__()
         using .Plots
         include("helpers/check_plots.jl")
     end
+    @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
+        using .LineSearches
+        include("ext/LineSearchesExt.jl")
+    end
     @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
         using .QuadraticModels: QuadraticModel
         @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
