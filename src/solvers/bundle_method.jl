@@ -48,10 +48,12 @@ mutable struct BundleMethodState{
     vector_transport_method::VT
     m::Real
     ξ::Real
+    diam::Real
     function BundleMethodState(
         M::TM,
         p::P;
         m::Real=0.0125,
+        diam::Real=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopWhenBundleLess(1e-8),
@@ -84,6 +86,7 @@ mutable struct BundleMethodState{
             vector_transport_method,
             m,
             ξ,
+            diam,
         )
     end
 end
@@ -160,6 +163,7 @@ function bundle_method!(
     ∂f!!::TdF,
     p;
     m::Real=0.0125,
+    diam::Real=1.0,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -174,6 +178,7 @@ function bundle_method!(
         M,
         p;
         m=m,
+        diam=diam,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -209,22 +214,19 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ε = sum(λ .* bms.lin_errors)
 
     # Check transported subgradients ε-inequality
-    # r = rand(M)
-    # if (
-    #     get_cost(mp, r) <
-    #     get_cost(mp, bms.p_last_serious) +
-    #     inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
-    # )
-    #     println("No")
-    #     println(r)
-    #     println(bms.p)
-    #     println(bms.p_last_serious)
-    # else
-    #     println("Yes")
-    # end
+    v = rand(M; vector_at = bms.p_last_serious)
+    v = rand(0.0:bms.diam) * v/norm(M, bms.p_last_serious, v)
+    r = retract(M, bms.p_last_serious, v, Manifolds.default_retraction_method(M, typeof(bms.p_last_serious)))
+    r = rand(M)
+    if (
+        get_cost(mp, r) <
+        get_cost(mp, bms.p_last_serious) +
+        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
+    )
+        println("No")
+    end
 
     bms.ξ = -norm(M, bms.p_last_serious, g)^2 - ε
-
     retract!(M, bms.p, bms.p_last_serious, -g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
@@ -247,8 +249,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 bms.inverse_retraction_method,
             ),
         ) +
-        2 *
-        distance(M, bms.p_last_serious, bms.bundle_points[j][1]) *
+        bms.diam * 
+        sqrt(
+            2 *
+            distance(M, bms.p_last_serious, bms.bundle_points[j][1])
+        ) *
         norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for j in bms.index_set
     ]
     return bms
