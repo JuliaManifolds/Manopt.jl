@@ -168,7 +168,7 @@ function (c::StopWhenSubgradientNormLess)(
     M = get_manifold(mp)
     (i == 0) && (c.reason = "") # reset on init
     if (norm(M, get_iterate(s), get_subgradient(s)) < c.threshold) && (i > 0)
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
+        c.reason = "After $i iterations the algorithm reached an approximate critical point: the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
         return true
     end
     return false
