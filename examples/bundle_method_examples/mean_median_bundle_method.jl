@@ -1,8 +1,8 @@
 using Manopt, Manifolds, Random, QuadraticModels, RipQP
 
-M = SymmetricPositiveDefinite(3)#   Hyperbolic(9)
+M = Hyperbolic(9)
 # Random.seed!(55)
-data = [rand(M; σ=0.4) for i in 1:100]
+data = [rand(M) for i in 1:100]
 tol = 1e-6
 
 F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
@@ -13,7 +13,7 @@ gradF(M, y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
     gradF,
     data[1];
     #StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
-    #debug=[:Iteration, :Stop, "\n"],
+    debug=["    ", :Iteration, :Cost, "\n"],
 )
 @time m_mean = mean(M, data; stop_iter=100)
 mean_dist = distance(M, b_mean, m_mean)
@@ -31,7 +31,7 @@ gradF2(M, y) = sum(1 / (2 * length(data)) * grad_distance.(Ref(M), data, Ref(y),
     gradF2,
     data[1];
     #stopping_criterion=StopAfterIteration(10),#StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
-    #debug=[:Iteration, :Stop, "\n"],
+    debug=["    ", :Iteration, :Cost, "\n"],
 )
 @time m_median = median(M, data; stop_iter=100)
 median_dist = distance(M, b_median, m_median)

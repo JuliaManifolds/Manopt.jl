@@ -35,7 +35,14 @@ function test_dist_function(N)
         return_state=true,
         # debug=[:Iteration, :Cost, "\n"],
     )
-    return (get_record_action(bundle_min)[:Cost][end] - get_record_action(subgradient_min)[:Cost][end]), get_record_action(bundle_min)[:Iteration], get_record_action(bundle_min)[:Cost], get_record_action(subgradient_min)[:Iteration], get_record_action(subgradient_min)[:Cost]
+    return (
+        get_record_action(bundle_min)[:Cost][end] -
+        get_record_action(subgradient_min)[:Cost][end]
+    ),
+    get_record_action(bundle_min)[:Iteration],
+    get_record_action(bundle_min)[:Cost],
+    get_record_action(subgradient_min)[:Iteration],
+    get_record_action(subgradient_min)[:Cost]
 end
 
 function plot_graphs_median(m::Int)
@@ -82,8 +89,15 @@ function plot_graphs_median(m::Int)
         legend=:outertop,
     )
 
-    p = plot(p1b, p1s, p2b, p2s; plot_title="Riemannian Distance", window_title="Numerical Example")
+    p = plot(
+        p1b,
+        p1s,
+        p2b,
+        p2s;
+        plot_title="Riemannian Distance",
+        window_title="Numerical Example",
+    )
     display(p)
-    
-    return a,b
+
+    return a, b
 end

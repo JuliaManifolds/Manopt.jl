@@ -2,10 +2,11 @@ using Manopt, Manifolds, Random, QuadraticModels, RipQP
 
 function check_maxfunc(M)
     println(manifold_dimension(M))
-    for i in 1:100
+    for i in 1:10
+        println("Test $i")
         l = Int(1e2)
-        # Random.seed!(42)
-        data = [rand(M; σ=0.4) for i in 1:l]
+        Random.seed!(i+30)
+        data = [rand(M) for j in 1:l]
 
         F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
         gradF(M, y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
@@ -33,9 +34,28 @@ function check_maxfunc(M)
             M,
             F3,
             subgradF3,
-            data[51];
-            # stopping_criterion=StopAfterIteration(1000),
-            # debug=[:Iteration, :Cost, "\n"],
+            data[i];
+            diam = 10.0,
+            #stopping_criterion=StopAfterIteration(10),
+            debug=["    ", :Iteration, :Cost, "\n", 1],
+        )
+
+        subgrad_min = subgradient_method(
+            M,
+            F3,
+            subgradF3,
+            data[i];
+            # stopping_criterion=StopWhenSubgradientNormLess(1e-8),
+            debug=["    ", :Iteration, :Cost, "\n", 1000],
+        )
+
+        println("Distance between minima: $(distance(M, bundle_min, subgrad_min))")
+        println(
+            "$(F3(M, bundle_min) < F3(M, subgrad_min) ? "F3(bundle_min) < F3(subgrad_min)" : "F3(bundle_min) ≥ F3(subgrad_min)")",
+        )
+        println(
+            "    |F3(bundle_min) - F3(subgrad_min)| = $(abs(F3(M, bundle_min) - F3(M, subgrad_min)))",
         )
     end
+    # return bundle_min
 end
