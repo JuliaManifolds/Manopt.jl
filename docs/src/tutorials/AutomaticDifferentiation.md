@@ -10,7 +10,7 @@ While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDiffe
 In this tutorial we will take a look at a few possibilities to approximate or derive the gradient of a function $f:\mathcal M \to ℝ$ on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
 
 1.  Working *instrinsically*, i.e. staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
-2.  Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
+2.  Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differentiation – and then compute the corresponding Riemannian gradient from there.
 
 We first load all necessary packages
 
