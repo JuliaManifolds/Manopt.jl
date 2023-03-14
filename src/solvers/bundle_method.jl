@@ -214,9 +214,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ε = sum(λ .* bms.lin_errors)
 
     # Check transported subgradients ε-inequality
-    v = rand(M; vector_at = bms.p_last_serious)
-    v = rand(0.0:bms.diam) * v/norm(M, bms.p_last_serious, v)
-    r = retract(M, bms.p_last_serious, v, Manifolds.default_retraction_method(M, typeof(bms.p_last_serious)))
+    # v = rand(M; vector_at = bms.bundle_points[1][1])
+    v = get_subgradient(mp, bms.bundle_points[1][1])
+    v = rand(0.0:bms.diam) * v/norm(M, bms.bundle_points[1][1], v)
+    r = retract(M, bms.bundle_points[1][1], -v, Manifolds.default_retraction_method(M, typeof(bms.bundle_points[1][1])))
     r = rand(M)
     if (
         get_cost(mp, r) <
@@ -288,7 +289,7 @@ function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodSta
         b.at_iteration = 0
     end
     if -bms.ξ ≤ b.tol && i > 0
-        b.reason = "After $i iterations the parameter -ξ = $(-bms.ξ) is less than tol = $(b.tol).\n"
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tol).\n"
         b.at_iteration = i
         return true
     end
