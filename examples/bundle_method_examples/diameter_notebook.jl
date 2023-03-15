@@ -45,41 +45,61 @@ begin
 end
 
 # ╔═╡ 6d74fa80-c53f-411a-93c0-0c4418a56e26
-function level_set_diameter(M, f, subgradf, p0)
+function level_set_diameter(M, f, ∂f, p0; sub_solver::Function=augmented_Lagrangian_method, iter_cap::Int=60, random_seed::Int=42, distr_var::Real=1., show_err::Bool=false)
 	N = M^2
-	Random.seed!(42)
-    prod_data = [rand(N) for j in 1:10000]
+	Random.seed!(random_seed)
+    prod_data = [rand(N; σ = distr_var) for j in 1:10000]
     G(N, q) = -sum(1 / (2 * length(prod_data)) * distance.(Ref(N), Ref(q), prod_data).^2)
     gradG(N, q) = -sum(1 / length(prod_data) * grad_distance.(Ref(N), prod_data, Ref(q)))
     H1(N, q) = f(M, q[N, 1]) - f(M, p0)
 	function gradH1(N, q) 
 		r = rand(N)
-		set_component!(N, r, subgradf(M, q[N, 1]), 1)
+		set_component!(N, r, ∂f(M, q[N, 1]), 1)
 		set_component!(N, r, zeros(representation_size(M)), 2)
 		return r
 	end
-    #gradH1(N, q) = hcat(subgradf(M, q[N, 1]), zeros(representation_size(M)))
+    #gradH1(N, q) = hcat(∂f(M, q[N, 1]), zeros(representation_size(M)))
     H2(N, q) = f(M, q[N, 2]) - f(M, p0)
 	function gradH2(N, q) 
 		r = rand(N)
 		set_component!(N, r, zeros(representation_size(M)), 1)
-		set_component!(N, r, subgradf(M, q[N, 2]), 2)
+		set_component!(N, r, ∂f(M, q[N, 2]), 2)
 		return r
 	end
-    #gradH2(N, q) = hcat(zeros(representation_size(M)), subgradf(M, q[N, 2]))
+    #gradH2(N, q) = hcat(zeros(representation_size(M)), ∂f(M, q[N, 2]))
     H(N, q) = [H1(N, q), H2(N, q)]
     gradH(N, q) = [gradH1(N, q), gradH2(N, q)]
 	initial_product_point = prod_data[1]
-	pts = augmented_Lagrangian_method(
-            N, G, gradG, initial_product_point; 
-            g=H, grad_g=gradH, 
-            record=[:Iterate, :Cost],
-            return_state=true,
-            debug=[:Iteration, :Cost, :Stop, "\n"],
-            stopping_criterion=StopWhenAny(StopWhenCostNan(), StopAfterIteration(60) | (
-                StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
-            )),
-    )
+	pts = 0.
+	err = ""
+	try
+		pts = sub_solver(
+				N, G, gradG, initial_product_point; 
+				g=H, grad_g=gradH, 
+				record=[:Iterate, :Cost],
+				return_state=true,
+				# debug=[:Iteration, :Cost, :Stop, "\n"],
+				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(300) | (
+					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
+				)),
+		)
+	catch e
+		err = "$e. Ran ALM with a $iter_cap iterations cap."
+    finally
+        pts = sub_solver(
+				N, G, gradG, initial_product_point; 
+				g=H, grad_g=gradH, 
+				record=[:Iterate, :Cost],
+				return_state=true,
+				# debug=[:Iteration, :Cost, :Stop, "\n"],
+				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(iter_cap) | (
+					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
+				)),
+		)
+    end
+	if show_err
+		println("\n $err")
+	end
 	# Get the iterate corresponding to the last non-NaN value of the cost function
 	if length(get_record_action(pts)[:Iterate]) > 1 
 		p_diam = get_record_action(pts)[:Iterate][end-1]
@@ -102,8 +122,8 @@ begin
             F3,
             subgradF3,
             p0;
-            diam = 10.,
-            stopping_criterion=StopWhenBundleLess(1e-6),
+            diam = diam,
+            stopping_criterion=StopWhenBundleLess(1e-6)|StopAfterIteration(5000),
             debug=["    ", :Iteration, (:Cost,"F(p): %1.9e"),"\n", :Stop, 5],
         )
  end
@@ -116,7 +136,7 @@ begin
 	F3,
 	subgradF3,
 	p0;
-	stopping_criterion=StopWhenSubgradientNormLess(1e-6),
+	stopping_criterion=StopWhenSubgradientNormLess(1e-6)|StopAfterIteration(5000),
 	debug=["    ", :Iteration, (:Cost,"F(p): %1.9e"), "\n", :Stop, 5],
 	)
 end
@@ -141,6 +161,6 @@ end
 # ╠═06ab01c9-da04-453e-b669-6cfadaeb7337
 # ╠═6d74fa80-c53f-411a-93c0-0c4418a56e26
 # ╠═90d0ea98-1cd9-4d90-8381-8d1a9243bd56
-# ╠═5f92e023-7360-479d-8841-7ea1ebfda6e3
+# ╟─5f92e023-7360-479d-8841-7ea1ebfda6e3
 # ╟─89f0d2b2-9015-4627-8dfe-d7f92ea9f105
-# ╟─008c4811-4980-4dd9-b8eb-6b16cd995d04
+# ╠═008c4811-4980-4dd9-b8eb-6b16cd995d04
