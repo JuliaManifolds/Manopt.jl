@@ -56,6 +56,19 @@ mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S} <: AbstractManoptSolverState
         )
     end
 end
+function show(io::IO, drs::DouglasRachfordState)
+    i = get_count(drs, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(drs.stop) ? "Yes" : "No"
+    P = drs.parallel ? "Parallel " : ""
+    s = """
+    # Solver state for `Manopt.jl`s $P Douglas Rachford Algorithm
+    $Iter
+    ## Stopping Criterion
+    $(status_summary(drs.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 get_iterate(drs::DouglasRachfordState) = drs.p
 function set_iterate!(drs::DouglasRachfordState, p)
     drs.p = p

@@ -1,29 +1,52 @@
 """
-`Manopt.jl` – Optimization on Manifolds in Julia.
+🏔️ Manopt.jl – Optimization on Manifolds in Julia.
+
+- 📚 Documentation: https://manoptjl.org
+- 📦 Repository: https://github.com/JuliaManifolds/Manopt.jl
+- 💬 Discussions: https://github.com/JuliaManifolds/Manopt.jl/discussions
+- 🎯 Issues: https://github.com/JuliaManifolds/Manopt.jl/issues
 """
 module Manopt
-using Colors
+import Base: &, copy, getindex, identity, setindex!, show, |
+import LinearAlgebra: reflect!
+import ManifoldsBase: mid_point, mid_point!
+
 using ColorSchemes
 using ColorTypes
-using Markdown
-using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
-using Dates: Period, Nanosecond, value, Millisecond, canonicalize
-using Requires
-using Random: shuffle!
-using Statistics: std, cov, mean, cor
-using DataStructures: CircularBuffer, capacity, length, size, push!
-using StaticArrays
-using SparseArrays
-using Printf
-import LinearAlgebra: reflect!
-import Base: &, |, copy, getindex, identity, setindex!, show
+using Colors
+using DataStructures: CircularBuffer, capacity, length, push!, size
+using Dates: Millisecond, Nanosecond, Period, canonicalize, value
+using LinearAlgebra: Diagonal, I, eigen, eigvals, tril
+using ManifoldDiff:
+    adjoint_Jacobi_field,
+    adjoint_Jacobi_field!,
+    adjoint_differential_exp_argument,
+    adjoint_differential_exp_argument!,
+    adjoint_differential_exp_basepoint,
+    adjoint_differential_exp_basepoint!,
+    adjoint_differential_log_argument,
+    adjoint_differential_log_argument!,
+    adjoint_differential_log_basepoint,
+    adjoint_differential_log_basepoint!,
+    adjoint_differential_shortest_geodesic_endpoint,
+    adjoint_differential_shortest_geodesic_endpoint!,
+    adjoint_differential_shortest_geodesic_startpoint,
+    adjoint_differential_shortest_geodesic_startpoint!,
+    differential_exp_argument,
+    differential_exp_argument!,
+    differential_exp_basepoint,
+    differential_exp_basepoint!,
+    differential_log_argument,
+    differential_log_argument!,
+    differential_log_basepoint,
+    differential_log_basepoint!,
+    differential_shortest_geodesic_endpoint,
+    differential_shortest_geodesic_endpoint!,
+    differential_shortest_geodesic_startpoint,
+    differential_shortest_geodesic_startpoint!,
+    jacobi_field,
+    jacobi_field!
 using ManifoldsBase:
-    ℝ,
-    ℂ,
-    ×,
-    ^,
-    _read,
-    _write,
     AbstractBasis,
     AbstractDecoratorManifold,
     AbstractInverseRetractionMethod,
@@ -34,13 +57,17 @@ using ManifoldsBase:
     CachedBasis,
     DefaultManifold,
     DefaultOrthonormalBasis,
+    DiagonalizingOrthonormalBasis,
     ExponentialRetraction,
     LogarithmicInverseRetraction,
     NestedPowerRepresentation,
     ParallelTransport,
-    ProjectionTransport,
     PowerManifold,
+    ProjectionTransport,
     QRRetraction,
+    ^,
+    _read,
+    _write,
     allocate,
     allocate_result,
     allocate_result_type,
@@ -50,75 +77,53 @@ using ManifoldsBase:
     default_retraction_method,
     default_vector_transport_method,
     distance,
+    embed_project,
+    embed_project!,
     exp,
     exp!,
-    log,
-    log!,
-    injectivity_radius,
-    inner,
     geodesic,
     get_basis,
     get_component,
     get_coordinates,
     get_coordinates!,
+    get_iterator,
     get_vector,
     get_vector!,
     get_vectors,
-    get_iterator,
+    injectivity_radius,
+    inner,
+    inverse_retract,
+    inverse_retract!,
+    is_point,
+    is_vector,
+    log,
+    log!,
     manifold_dimension,
-    NestedPowerRepresentation,
     norm,
     number_eltype,
     power_dimensions,
     project,
     project!,
+    representation_size,
     requires_caching,
     retract,
     retract!,
-    inverse_retract,
-    inverse_retract!,
-    is_point,
-    is_vector,
+    set_component!,
     shortest_geodesic,
     vector_transport_to,
     vector_transport_to!,
     zero_vector,
     zero_vector!,
-    DiagonalizingOrthonormalBasis,
-    representation_size,
-    set_component!
-
-using ManifoldDiff:
-    adjoint_Jacobi_field,
-    adjoint_Jacobi_field!,
-    adjoint_differential_shortest_geodesic_startpoint,
-    adjoint_differential_shortest_geodesic_startpoint!,
-    adjoint_differential_shortest_geodesic_endpoint,
-    adjoint_differential_shortest_geodesic_endpoint!,
-    adjoint_differential_exp_basepoint,
-    adjoint_differential_exp_basepoint!,
-    adjoint_differential_exp_argument,
-    adjoint_differential_exp_argument!,
-    adjoint_differential_log_basepoint,
-    adjoint_differential_log_basepoint!,
-    adjoint_differential_log_argument,
-    adjoint_differential_log_argument!,
-    jacobi_field,
-    jacobi_field!,
-    differential_shortest_geodesic_startpoint,
-    differential_shortest_geodesic_startpoint!,
-    differential_shortest_geodesic_endpoint,
-    differential_shortest_geodesic_endpoint!,
-    differential_exp_basepoint,
-    differential_exp_basepoint!,
-    differential_exp_argument,
-    differential_exp_argument!,
-    differential_log_basepoint,
-    differential_log_basepoint!,
-    differential_log_argument,
-    differential_log_argument!
-
-import ManifoldsBase: mid_point, mid_point!
+    ×,
+    ℂ,
+    ℝ
+using Markdown
+using Printf
+using Random: shuffle!
+using Requires
+using SparseArrays
+using StaticArrays
+using Statistics: cor, cov, mean, std
 
 include("plans/plan.jl")
 # Functions
@@ -156,6 +161,7 @@ include("helpers/checks.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("data/artificialDataFunctions.jl")
+include("deprecated.jl")
 
 function __init__()
     @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
@@ -198,6 +204,10 @@ function __init__()
     @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
         using .Plots
         include("helpers/check_plots.jl")
+    end
+    @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
+        using .LineSearches
+        include("ext/LineSearchesExt.jl")
     end
     return nothing
 end
@@ -335,13 +345,14 @@ export DirectionUpdateRule,
     IdentityUpdateRule, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,
-    HeestenesStiefelCoefficient,
+    HestenesStiefelCoefficient,
     FletcherReevesCoefficient,
     PolakRibiereCoefficient,
     ConjugateDescentCoefficient,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
-    HagerZhangCoefficient
+    HagerZhangCoefficient,
+    ConjugateGradientBealeRestart
 #
 # Solvers
 export augmented_Lagrangian_method,

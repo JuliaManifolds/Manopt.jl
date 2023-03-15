@@ -26,7 +26,7 @@ For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://
 In Julia you can get started by just typing
 
 ```julia
-using Pkg; Pkg.ad("Manopt");
+using Pkg; Pkg.add("Manopt");
 ```
 
 and then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial.

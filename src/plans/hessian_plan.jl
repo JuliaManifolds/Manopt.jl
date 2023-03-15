@@ -188,8 +188,8 @@ Then we approximate the Hessian by the finite difference of the gradients, where
 
 * `evaluation` ([`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
 * `steplength` (``2^{-14}``) step length ``c`` to approximate the gradient evaluations
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use in the approximation.
-* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use in the approximation.
+* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 """
 mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
     p_dir::P
@@ -207,8 +207,8 @@ function ApproxHessianFiniteDifference(
     tangent_vector=zero_vector(M, p),
     steplength::R=2^-14,
     evaluation=AllocatingEvaluation(),
-    retraction_method::RTR=default_retraction_method(M),
-    vector_transport_method::VTR=default_vector_transport_method(M),
+    retraction_method::RTR=default_retraction_method(M, typeof(p)),
+    vector_transport_method::VTR=default_vector_transport_method(M, typeof(p)),
 ) where {
     mT<:AbstractManifold,
     P,
@@ -310,7 +310,7 @@ function (f::ApproxHessianSymmetricRankOne{AllocatingEvaluation})(M, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        copyto!(f.p_tmp, p)
+        copyto!(M, f.p_tmp, p)
         f.grad_tmp = f.gradient!!(M, f.p_tmp)
     end
 
@@ -322,7 +322,6 @@ end
 
 function (f::ApproxHessianSymmetricRankOne{InplaceEvaluation})(M, Y, p, X)
     # Update Basis if necessary
-    # if distance(M, p, f.p_tmp) >= eps(Float64)
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
         copyto!(f.p_tmp, p)
@@ -443,7 +442,7 @@ function (f::ApproxHessianBFGS{AllocatingEvaluation})(M, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        copyto!(f.p_tmp, p)
+        copyto!(M, f.p_tmp, p)
         f.grad_tmp = f.gradient!!(M, f.p_tmp)
     end
 
@@ -457,7 +456,7 @@ function (f::ApproxHessianBFGS{InplaceEvaluation})(M, Y, p, X)
     # Update Basis if necessary
     if p != f.p_tmp
         update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
-        copyto!(f.p_tmp, p)
+        copyto!(M, f.p_tmp, p)
         f.gradient!!(M, f.grad_tmp, f.p_tmp)
     end
 

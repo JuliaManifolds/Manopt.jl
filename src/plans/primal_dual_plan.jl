@@ -644,7 +644,7 @@ mutable struct DebugDualResidual <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugDualResidual(;
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
@@ -653,7 +653,7 @@ mutable struct DebugDualResidual <: DebugAction
     end
     function DebugDualResidual(
         initial_values::Tuple{P,T,Q};
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
@@ -671,7 +671,10 @@ function (d::DebugDualResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        p_old, X_old, n_old = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         Printf.format(
             d.io,
             Printf.Format(d.format),
@@ -702,7 +705,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugPrimalResidual(;
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
@@ -711,7 +714,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
     function DebugPrimalResidual(
         values::Tuple{P,T,Q};
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
@@ -727,11 +730,14 @@ function (d::DebugPrimalResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        xOld, XOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         Printf.format(
             d.io,
             Printf.Format(d.format),
-            primal_residual(M, N, apdmo, apds, xOld, XOld, nOld),
+            primal_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
     return d.storage(tmp, apds, i)
@@ -758,7 +764,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugPrimalDualResidual(;
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
@@ -767,7 +773,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
     function DebugPrimalDualResidual(
         values::Tuple{P,T,Q};
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
@@ -783,7 +789,10 @@ function (d::DebugPrimalDualResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        p_old, X_old, n_old = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         v =
             primal_residual(M, N, apdmo, apds, p_old, X_old, n_old) +
             dual_residual(tmp, apds, p_old, X_old, n_old)
@@ -802,7 +811,7 @@ Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
 function DebugPrimalChange(;
-    storage::StoreStateAction=StoreStateAction((:Iterate,)),
+    storage::StoreStateAction=StoreStateAction([:Iterate]),
     prefix="Primal Change: ",
     kwargs...,
 )
@@ -838,7 +847,7 @@ mutable struct DebugDualChange <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugDualChange(;
-        storage::StoreStateAction=StoreStateAction((:X, :n)),
+        storage::StoreStateAction=StoreStateAction([:X, :n]),
         io::IO=stdout,
         prefix="Dual Change: ",
         format="$prefix%s",
@@ -847,7 +856,7 @@ mutable struct DebugDualChange <: DebugAction
     end
     function DebugDualChange(
         values::Tuple{T,P};
-        storage::StoreStateAction=StoreStateAction((:X, :n)),
+        storage::StoreStateAction=StoreStateAction([:X, :n]),
         io::IO=stdout,
         prefix="Dual Change: ",
         format="$prefix%s",
@@ -863,7 +872,9 @@ function (d::DebugDualChange)(
 )
     N = get_manifold(tmp, 2)
     if all(has_storage.(Ref(d.storage), [:X, :n])) && i > 0 # all values stored
-        X_old, n_old = get_storage.(Ref(d.storage), [:X, :n]) #fetch
+        #fetch
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         v = norm(
             N,
             apds.n,
@@ -886,13 +897,13 @@ This method is further set display `o.n`.
 DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
 
 """
-    DebugDualChange(; storage=StoreStateAction((:X)), io::IO=stdout)
+    DebugDualChange(; storage=StoreStateAction([:n]), io::IO=stdout)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
 function DebugDualBaseChange(;
-    storage::StoreStateAction=StoreStateAction((:n)), prefix="Dual Base Change:", kwargs...
+    storage::StoreStateAction=StoreStateAction([:n]), prefix="Dual Base Change:", kwargs...
 )
     return DebugEntryChange(
         :n,
@@ -914,7 +925,7 @@ This method is further set display `o.m`.
 DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
 
 """
-    DebugPrimalBaseChange(a::StoreStateAction=StoreStateAction((:m)),io::IO=stdout)
+    DebugPrimalBaseChange(a::StoreStateAction=StoreStateAction([:m]),io::IO=stdout)
 
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.

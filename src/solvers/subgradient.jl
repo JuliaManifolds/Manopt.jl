@@ -35,7 +35,7 @@ mutable struct SubGradientMethodState{
         stopping_criterion::SC=StopAfterIteration(5000),
         stepsize::S=default_stepsize(M, SubGradientMethodState),
         X::T=zero_vector(M, p),
-        retraction_method::TR=default_retraction_method(M),
+        retraction_method::TR=default_retraction_method(M, typeof(p)),
     ) where {
         TM<:AbstractManifold,
         P,
@@ -48,6 +48,24 @@ mutable struct SubGradientMethodState{
             p, copy(M, p), retraction_method, stepsize, stopping_criterion, X
         )
     end
+end
+function show(io::IO, sgms::SubGradientMethodState)
+    i = get_count(sgms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(sgms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Subgradient Method
+    $Iter
+    ## Parameters
+    * retraction method: $(sgms.retraction_method)
+
+    ## Stepsize
+    $(sgms.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(sgms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end
 get_iterate(sgs::SubGradientMethodState) = sgs.p
 get_subgradient(sgs::SubGradientMethodState) = sgs.X
@@ -86,7 +104,7 @@ not necessarily deterministic.
    allocation (default) form `∂F(M, y)` or [`InplaceEvaluation`](@ref) in place, i.e. is
    of the form `∂F!(M, X, x)`.
 * `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref)
-* `retraction` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 ...
@@ -124,7 +142,7 @@ function subgradient_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    retraction_method::TRetr=default_retraction_method(M),
+    retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(M, SubGradientMethodState),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),

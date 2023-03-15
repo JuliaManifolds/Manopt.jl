@@ -80,6 +80,23 @@ mutable struct ExactPenaltyMethodState{P,Pr,Op,TStopping<:StoppingCriterion} <:
         return epms
     end
 end
+function show(io::IO, epms::ExactPenaltyMethodState)
+    i = get_count(epms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(epms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Exact Penalty Method
+    $Iter
+    ## Parameters
+    * ϵ: $(epms.ϵ) (ϵ_min: $(epms.ϵ_min), θ_ϵ: $(epms.θ_ϵ))
+    * u: $(epms.u) (ϵ_min: $(epms.u_min), θ_u: $(epms.θ_u))
+    * ρ: $(epms.ρ) (θ_ρ: $(epms.θ_ρ))
+
+    ## Stopping Criterion
+    $(status_summary(epms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 get_iterate(epms::ExactPenaltyMethodState) = epms.p
 function set_iterate!(epms::ExactPenaltyMethodState, M, p)
     epms.p = p

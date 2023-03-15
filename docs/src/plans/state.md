@@ -12,6 +12,7 @@ or a [`Stepsize`](@ref).
 ```@docs
 AbstractManoptSolverState
 get_state
+Manopt.get_count
 ```
 
 Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,
@@ -63,6 +64,15 @@ StoreStateAction
 get_storage
 has_storage
 update_storage!
+PointStorageKey
+VectorStorageKey
+```
+
+as well as two internal functions
+
+```@docs
+_storage_copy_vector
+_storage_copy_point
 ```
 
 ## Abstract States

@@ -1,3 +1,19 @@
+
+function show(io::IO, cpps::CyclicProximalPointState)
+    i = get_count(cpps, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cpps.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm
+    $Iter
+    ## Parameters
+    * evaluation order of the proximal maps: :$(cpps.order_type)
+
+    ## Stopping Criterion
+    $(status_summary(cpps.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 @doc raw"""
     cyclic_proximal_point(M, f, proxes_f, x)
 

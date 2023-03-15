@@ -7,7 +7,7 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 
 # Fields
 
-* `x` the current iterate
+* `p` the current iterate
 * `direction` ([`StochasticGradient`](@ref)) a direction update to use
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
@@ -15,10 +15,10 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `order` the current permutation
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 
 # Constructor
-    StochasticGradientDescentState(M, x)
+    StochasticGradientDescentState(M, p)
 
 Create a `StochasticGradientDescentState` with start point `x`.
 all other fields are optional keyword arguments, and the defaults are taken from `M`.
@@ -49,7 +49,7 @@ function StochasticGradientDescentState(
     direction::D=StochasticGradient(zero_vector(M, p)),
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
-    retraction_method::RM=default_retraction_method(M),
+    retraction_method::RM=default_retraction_method(M, typeof(p)),
     stopping_criterion::SC=StopAfterIteration(1000),
     stepsize::S=default_stepsize(M, StochasticGradientDescentState),
 ) where {
@@ -72,7 +72,25 @@ function StochasticGradientDescentState(
         0,
     )
 end
+function show(io::IO, sgds::StochasticGradientDescentState)
+    i = get_count(sgds, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(sgds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Stochastic Gradient Descent
+    $Iter
+    ## Parameters
+    * order: $(sgds.order_type)
+    * retraction method: $(sgds.retraction_method)
 
+    ## Stepsize
+    $(sgds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(sgds.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 """
     StochasticGradient <: AbstractGradientGroupProcessor
 
@@ -132,18 +150,18 @@ perform a stochastic gradient descent
 * `order_type` (`:RandomOder`) a type of ordering of gradient evaluations.
   values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a retraction to use.
 
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function stochastic_gradient_descent(
-    M::AbstractManifold, gradF::TDF, x; kwargs...
+    M::AbstractManifold, gradF::TDF, p; kwargs...
 ) where {TDF}
-    x_res = allocate(x)
-    copyto!(M, x_res, x)
-    return stochastic_gradient_descent!(M, gradF, x_res; kwargs...)
+    q = allocate(p)
+    copyto!(M, q, p)
+    return stochastic_gradient_descent!(M, gradF, q; kwargs...)
 end
 
 @doc raw"""
@@ -163,16 +181,16 @@ for all optional parameters, see [`stochastic_gradient_descent`](@ref).
 function stochastic_gradient_descent!(
     M::AbstractManifold,
     grad_f::TDF,
-    x;
+    p;
     cost::TF=Missing(),
-    direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, x)),
+    direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, p)),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
                                           StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=default_stepsize(M, StochasticGradientDescentState),
     order_type::Symbol=:Random,
-    order=collect(1:(grad_f isa Function ? length(grad_f(M, x)) : length(grad_f))),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    order=collect(1:(grad_f isa Function ? length(grad_f(M, p)) : length(grad_f))),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     kwargs...,
 ) where {TDF,TF}
     msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
@@ -180,8 +198,8 @@ function stochastic_gradient_descent!(
     mp = DefaultManoptProblem(M, dmsgo)
     sgds = StochasticGradientDescentState(
         M,
-        x,
-        zero_vector(M, x);
+        p,
+        zero_vector(M, p);
         direction=direction,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,

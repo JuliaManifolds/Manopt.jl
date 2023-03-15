@@ -11,7 +11,7 @@ see also [`alternating_gradient_descent`](@ref).
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `order` the current permutation
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
 * `stepsize` ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `p` the current iterate
@@ -52,7 +52,7 @@ function AlternatingGradientDescentState(
     inner_iterations::Int=5,
     order_type::Symbol=:Linear,
     order::Vector{<:Int}=Int[],
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
     stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
 ) where {P,T}
@@ -77,6 +77,26 @@ function AlternatingGradientDescentState(
         inner_iterations,
     )
 end
+function show(io::IO, agds::AlternatingGradientDescentState)
+    Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
+    Conv = indicates_convergence(agds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver
+    $Iter
+    ## Parameters
+    * order: :$(agds.order_type)
+    * retraction method: $(agds.retraction_method)
+
+
+    ## Stepsize
+    $(agds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(agds.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+
 """
     AlternatingGradient <: DirectionUpdateRule
 
@@ -147,7 +167,7 @@ perform an alternating gradient descent
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 
 # Output
 
@@ -197,7 +217,7 @@ function alternating_gradient_descent!(
     stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
     order_type::Symbol=:Linear,
     order=collect(1:(grad_f isa Function ? length(grad_f(M, p)) : length(grad_f))),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     kwargs...,
 ) where {TgF}
     agmo = ManifoldAlternatingGradientObjective(f, grad_f; evaluation=evaluation)

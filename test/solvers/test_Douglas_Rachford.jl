@@ -26,6 +26,8 @@ using Manifolds, Manopt, Test
     @test distance(M, xHat2, result2) ≈ 0 atol = 1e-7
     #test getter/set
     s = DouglasRachfordState(M, d1)
+    sr = "# Solver state for `Manopt.jl`s  Douglas Rachford Algorithm\n"
+    @test startswith(repr(s), sr)
     set_iterate!(s, d2)
     @test get_iterate(s) == d2
     @testset "Debug and Record prox parameter" begin

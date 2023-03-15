@@ -24,4 +24,7 @@ using LinearAlgebra: I, tr
     )
     set_iterate!(alms, M, 2 .* p0)
     @test get_iterate(alms) == 2 .* p0
+    @test startswith(
+        repr(alms), "# Solver state for `Manopt.jl`s Augmented Lagrangian Method\n"
+    )
 end
