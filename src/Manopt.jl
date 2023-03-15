@@ -332,9 +332,7 @@ export QuasiNewtonCautiousDirectionUpdate,
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export WolfePowellLinesearch,
-    operator_to_matrix,
-    square_matrix_vector_product,
-    WolfePowellBinaryLinesearch
+    operator_to_matrix, square_matrix_vector_product, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
