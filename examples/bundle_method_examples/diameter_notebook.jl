@@ -92,7 +92,7 @@ function level_set_diameter(M, f, subgradf, p0)
 end
 
 # ╔═╡ 90d0ea98-1cd9-4d90-8381-8d1a9243bd56
-diam = 1.#level_set_diameter(M, F3, subgradF3, p0)
+diam = level_set_diameter(M, F3, subgradF3, p0)
 
 # ╔═╡ 5f92e023-7360-479d-8841-7ea1ebfda6e3
 begin
@@ -102,8 +102,8 @@ begin
             F3,
             subgradF3,
             p0;
-            diam = diam,
-            stopping_criterion=StopWhenSubgradientNormLess(1e-6),
+            diam = 10.,
+            stopping_criterion=StopWhenBundleLess(1e-6),
             debug=["    ", :Iteration, (:Cost,"F(p): %1.9e"),"\n", :Stop, 5],
         )
  end

@@ -421,6 +421,45 @@ function show(io::IO, c::StopWhenCostNan)
     return print(io, "StopWhenCostNan()\n    $(status_summary(c))")
 end
 
+"""
+    StopWhenIterNan <: StoppingCriterion
+
+stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+
+# Constructor
+
+    StopWhenIterNan()
+
+initialize the stopping criterion to NaN.
+"""
+mutable struct StopWhenIterNan <: StoppingCriterion
+    reason::String
+    at_iteration::Int
+    StopWhenIterNan() = new("", 0)
+end
+function (c::StopWhenIterNan)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if i > 0 && any(isnan.(get_iterate(s)))
+        c.reason = "The algorithm reached a $(get_iterate(s)) iterate.\n"
+        c.at_iteration = 0
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenIterNan)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "f(x) is NaN:\t$s"
+end
+function show(io::IO, c::StopWhenIterNan)
+    return print(io, "StopWhenIterNan()\n    $(status_summary(c))")
+end
+
 @doc raw"""
     StopWhenSmallerOrEqual <: StoppingCriterion
 
