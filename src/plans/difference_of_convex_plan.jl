@@ -208,7 +208,7 @@ struct ManifoldDifferenceOfConvexProximalObjective{
     cost::TCost
     prox_g!!::TGProx
     grad_h!!::THGrad
-    function DifferenceOfConvexProblem(
+    function ManifoldDifferenceOfConvexProximalObjective(
         prox_g::TGP,
         grad_h::THG;
         cost::TC=nothing,
@@ -240,7 +240,7 @@ function get_proximal_map(
     p,
 )
     q = allocate_result(M, get_proximal_map, p)
-    dcpo.prox_g!!(p.M, q, λ, p)
+    dcpo.prox_g!!(M, q, λ, p)
     return q
 end
 function get_proximal_map!(

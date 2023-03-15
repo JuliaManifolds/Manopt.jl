@@ -130,7 +130,7 @@ function difference_of_convex_proximal_point(
     M::AbstractManifold, prox_g, grad_h, p; kwargs...
 )
     q = copy(M, p)
-    difference_of_convex_proximal_point!(M, grad_g, grad_h, q; kwargs...)
+    difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
     return q
 end
 
@@ -161,7 +161,7 @@ function difference_of_convex_proximal_point!(
     inverse_retraction_method=default_inverse_retraction_method(M),
     retraction_method=default_retraction_method(M),
     stepsize=ArmijoLinesearch(M),
-    stopping_criterion=StopAfterIteration,
+    stopping_criterion=StopAfterIteration(200),
     kwargs...,
 )
     mdcpo = ManifoldDifferenceOfConvexProximalObjective(
@@ -177,8 +177,9 @@ function difference_of_convex_proximal_point!(
         stopping_criterion=stopping_criterion,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
+        λ=λ,
     )
-    ddcps = decorate_options(dcps; kwargs...)
+    ddcps = decorate_state!(dcps; kwargs...)
     return get_solver_return(solve!(dmp, ddcps))
 end
 function initialize_solver!(
@@ -190,8 +191,8 @@ function step_solver!(amp::AbstractManoptProblem, dcps::DifferenceOfConvexProxim
     M = get_manifold(amp)
     # each line is one step in the documented solver steps. Note that we can reuse dcps.X
     get_gradient!(amp, dcps.X, dcps.p)
-    retract!(M, dcps.q, dcps.p, dpcs.λ(i) * dcps.X, dcps.retraction_method)
-    get_proximal_map!(amp, dcps.r, dpcs.λ(i), dcps.q)
+    retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
+    get_proximal_map!(amp, dcps.r, dcps.λ(i), dcps.q)
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
     s = dcps.stepsize(amp, dcps, i)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)

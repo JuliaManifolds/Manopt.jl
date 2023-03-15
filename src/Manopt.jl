@@ -1,10 +1,10 @@
-"""
+@doc raw"""
 🏔️ Manopt.jl – Optimization on Manifolds in Julia.
 
-- 📚 Documentation: https://manoptjl.org
-- 📦 Repository: https://github.com/JuliaManifolds/Manopt.jl
-- 💬 Discussions: https://github.com/JuliaManifolds/Manopt.jl/discussions
-- 🎯 Issues: https://github.com/JuliaManifolds/Manopt.jl/issues
+- 📚 Documentation: [manoptjl.org](https://manoptjl.org)
+- 📦 Repository: [github.com/JuliaManifolds/Manopt.jl](https://github.com/JuliaManifolds/Manopt.jl)
+- 💬 Discussions: [github.com/JuliaManifolds/Manopt.jl/discussions](https://github.com/JuliaManifolds/Manopt.jl/discussions)
+- 🎯 Issues: [github.com/JuliaManifolds/Manopt.jl/issues](https://github.com/JuliaManifolds/Manopt.jl/issues)
 """
 module Manopt
 import Base: &, copy, getindex, identity, setindex!, show, |
@@ -332,7 +332,6 @@ export QuasiNewtonCautiousDirectionUpdate,
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export WolfePowellLinesearch,
-    StrongWolfePowellLinesearch,
     operator_to_matrix,
     square_matrix_vector_product,
     WolfePowellBinaryLinesearch
