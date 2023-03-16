@@ -158,6 +158,12 @@ function difference_of_convex_algorithm!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     sub_cost=LinearizedDCCost(g, p, initial_vector),
     sub_grad=LinearizedDCGrad(grad_g, p, initial_vector; evaluation=evaluation),
+    sub_use_hessian=true,
+    sub_hess=if sub_use_hessian
+        ApproxHessianFiniteDifference(M, copy(M, p0), sub_grad; evaluation=evaluation)
+    else
+        nothing
+    end,
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(1e-12) |
@@ -169,7 +175,11 @@ function difference_of_convex_algorithm!(
         );
         sub_kwargs...,
     ),
-    sub_objective=ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation),
+    sub_objective=if is_nothing(sub_hess)
+        ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+    else
+        ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
+    end,
     sub_problem::Union{AbstractManoptProblem,Function}=DefaultManoptProblem(
         M, sub_objective
     ),

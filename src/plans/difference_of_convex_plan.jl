@@ -71,7 +71,7 @@ function get_subgradient!(
 end
 
 @doc raw"""
-    LinearizedSubProblem
+    LinearizedDCCost
 
 A functor `(M,q) → ℝ` to represent the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref),
 i.e. a cost function of the form
@@ -125,28 +125,28 @@ for a point `pk` and a tangent vector `Xk` at `pk` (the outer iterates) that are
 
 # Fields
 
-* `grad_g` the gradient of ``g`` (see [`LinearizedSubProblem`](@ref)) as
+* `grad_g!!` the gradient of ``g`` (see [`LinearizedSubProblem`](@ref)) as
 * `pk` a point on a manifold
 * `Xk` a tangent vector at `pk`
 
 # Constructor
-    LinearizedDCGrad(grad_f, p, X; evaluation=AllocatingEvaluation())
+    LinearizedDCGrad(grad_g, p, X; evaluation=AllocatingEvaluation())
 
 Where you specify whether `grad_g` is [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref),
 while this function still provides _both_ signatures.
 """
 mutable struct LinearizedDCGrad{E<:AbstractEvaluationType,P,T,TG}
-    grad_g::TG
+    grad_g!!::TG
     pk::P
     Xk::T
     function LinearizedDCGrad(
-        grad_g::TG, pk::P, Xk::T; evaluation::E=AllocatingEvaluation()
+        grad_g!!::TG, pk::P, Xk::T; evaluation::E=AllocatingEvaluation()
     ) where {TG,P,T,E<:AbstractEvaluationType}
         return new{E,P,T,TG}(grad_g, pk, Xk)
     end
 end
 function (grad_F::LinearizedDCGrad{AllocatingEvaluation})(M, p)
-    return grad_F.grad_g(M, p) .-
+    return grad_F.grad_g!!(M, p) .-
            adjoint_differential_log_argument(M, grad_F.pk, p, grad_F.Xk)
 end
 function (grad_F::LinearizedDCGrad{AllocatingEvaluation})(M, X, p)
@@ -154,21 +154,21 @@ function (grad_F::LinearizedDCGrad{AllocatingEvaluation})(M, X, p)
         M,
         X,
         p,
-        grad_F.grad_f(M, p) .-
+        grad_F.grad_g!!(M, p) .-
         adjoint_differential_log_argument(M, grad_F.pk, p, grad_F.Xk),
     )
-    return Y
+    return X
 end
 function (grad_F!::LinearizedDCGrad{InplaceEvaluation})(M, X, p)
-    grad_F!.grad_f(M, X, p)
+    grad_F!.grad_g!!(M, X, p)
     X .-= adjoint_differential_log_argument(M, grad_F!.pk, p, grad_F!.Xk)
     return X
 end
 function (grad_F!::LinearizedDCGrad{InplaceEvaluation})(M, p)
     X = zero_vector(M, p)
-    grad_F!.grad_g(M, X, p)
+    grad_F!.grad_g!!(M, X, p)
     X .-= adjoint_differential_log_argument(M, grad_F!.pk, p, grad_F!.Xk)
-    return Y
+    return X
 end
 
 function set_manopt_parameter!(ldcg::LinearizedDCGrad, ::Val{:p}, ρ)
@@ -193,94 +193,53 @@ The problem is of the form
 ```
 where both ``g`` and ``h`` are convex, lsc. and proper.
 # Fields
-* `M`  – an `AbstractManifold`
+
 * `cost` – (`nothing`) implementation of ``f(p) = g(p)-h(p)`` (optional)
+* `gradient` - the gradient of the cost
 * `grad_h!!` – a function ``\operatorname{grad}h: \mathcal M → T\mathcal M``,
-* `prox_g!!` – a function ``\operatorname{prox}_{\lambda g}: \mathcal M → \mathcal M``
-Note that the gradient and the prox might be given in two possible signatures
-* `grad_h(M, p)` and `prox_g(M, λ, p)` , respectively, which does an [`AllocatingEvaluation`](@ref)
-* `grad_h!(M, X, p)` and `prox_g(M, q, λ, p)` , respectively, which does an [`InplaceEvaluation`](@ref)
- in place of `X` and `q`, respectively.
+
+Note that both the gradients miht be given in two possible signatures
+as allocating or Inplace.
+
+ # Constructor
+
+    ManifoldDifferenceOfConvexProximalObjective(gradh; cost=norhting, gradient=nothing)
+
+an note that neither cost nor gradient are required for the algorithm,
+just for eventual debug or stopping criteria.
 """
 struct ManifoldDifferenceOfConvexProximalObjective{
-    E<:AbstractEvaluationType,TCost,TGProx,THGrad
-} <: AbstractManifoldCostObjective{E,TCost}
+    E<:AbstractEvaluationType,THGrad,TCost,TGrad
+} <: AbstractManifoldGradientObjective{E,TCost,TGrad}
     cost::TCost
-    prox_g!!::TGProx
+    gradient!!::TGrad
     grad_h!!::THGrad
     function ManifoldDifferenceOfConvexProximalObjective(
-        prox_g::TGP,
-        grad_h::THG;
-        cost::TC=nothing,
-        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {TC,TGP,THG}
-        return new{typeof(evaluation),TC,TGP,THG}(cost, prox_g, grad_h)
+        grad_h::THG; cost::TC=nothing, gradient::TG=nothing, e::ET=AllocatingEvaluation()
+    ) where {ET<:AbstractEvaluationType,TC,TG,THG}
+        return new{ET,THG,TC,TG}(cost, gradient, grad_h)
     end
 end
 
 @doc raw"""
-    get_proximal_map(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, λ, p)
+    X = get_subtrahend_gradient(M::AbstractManifold, dcpo::DifferenceOfConvexProxProblem, p)
+    get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::DifferenceOfConvexProxProblem, p)
 
-Evaluate the proximal map of [`DifferenceOfConvexProxProblem`](@ref) `P`
-with parameter `λ` at `p`
-` `ProximalProblem p` at the point `x` of `p.M` with parameter ``λ>0``.
+Evaluate the gradient of the subtrahend ``h`` from within
+a [`DifferenceOfConvexProxProblem`](@ref)` `P` at the point `p` (in place of X).
 """
-function get_proximal_map(
-    M::AbstractManifold,
-    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
-    λ,
-    p,
+get_subtrahend_gradient(
+    M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, x
 )
-    return dcpo.prox_g!!(M, λ, p)
-end
-function get_proximal_map(
-    M::AbstractManifold,
-    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
-    λ,
-    p,
-)
-    q = allocate_result(M, get_proximal_map, p)
-    dcpo.prox_g!!(M, q, λ, p)
-    return q
-end
-function get_proximal_map!(
-    M::AbstractManifold,
-    q,
-    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
-    λ,
-    p,
-)
-    copyto!(M, q, dcpo.prox_g!!(M, λ, p))
-    return q
-end
-function get_proximal_map!(
-    M::AbstractManifold,
-    q,
-    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
-    λ,
-    p,
-)
-    dcpo.prox_g!!(M, q, λ, p)
-    return q
-end
 
-"""
-    X = get_gradient(M::AbstractManifold, dcpo::DifferenceOfConvexProxProblem, p)
-    get_gradient!(M::AbstractManifold, X, dcpo::DifferenceOfConvexProxProblem, p)
-
-Evaluate the gradient of ``h`` from within a [`DifferenceOfConvexProxProblem`](@ref)` `P`
-at the point `p` (in place of X).
-"""
-get_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, x)
-
-function get_gradient(
+function get_subtrahend_gradient(
     M::AbstractManifold,
     dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
     p,
 )
     return dcpo.grad_h!!(M, p)
 end
-function get_gradient(
+function get_subtrahend_gradient(
     M::AbstractManifold,
     dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
     p,
@@ -289,7 +248,7 @@ function get_gradient(
     dcpo.grad_h!!(M, X, p)
     return X
 end
-function get_gradient!(
+function get_subtrahend_gradient!(
     M::AbstractManifold,
     X,
     dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
@@ -297,7 +256,7 @@ function get_gradient!(
 )
     return copyto!(M, X, x, dcpo.grad_h!!(p.M, x))
 end
-function get_gradient!(
+function get_subtrahend_gradient!(
     M::AbstractManifold,
     X,
     dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
@@ -305,4 +264,110 @@ function get_gradient!(
 )
     dcpo.grad_h!!(M, X, p)
     return X
+end
+
+@doc raw"""
+    ProximalDCCost
+
+A functor `(M, p) → ℝ` to represent the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref),
+i.e. the cost function of the proximal map of `g`.
+
+```math
+    F_{p_k}(p) = \frac{1}{2λ}d_{\mathcal M}(p_k,p)^2 + g(p)
+```
+
+for a point `pk` and a proximal parameter ``λ``.
+
+# Fields
+
+* `g`  - a function
+* `pk` - a point on a manifold
+* `λ`  - the prox parameter
+
+# Constructor
+    ProximalDCCost(g, p, λ)
+"""
+mutable struct ProximalDCCost{P,TG,R}
+    g::TG
+    pk::P
+    λ::R
+end
+(F::ProximalDCCost)(M, p) = 1 / (2 * F.λ) * distance(M, p, F.pk)^2 + F - g(M, p)
+
+function set_manopt_parameter!(pdcc::ProximalDCCost, ::Val{:p}, ρ)
+    return pdcc.pk .= p
+    return pdcc
+end
+function set_manopt_parameter!(pdcc::ProximalDCCost, ::Val{:λ}, λ)
+    pdcc.λ = λ
+    return pdcc
+end
+
+@doc raw"""
+    ProximalDCGrad
+
+A functor `(M,X,p) → ℝ` to represent the gradient of the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref),
+i.e. the gradient function of the proximal map cost function of `g`, i.e. of
+
+```math
+    F_{p_k}(p) = \frac{1}{2λ}d_{\mathcal M}(p_k,p)^2 + g(p)
+```
+
+which reads
+
+```math
+    \operatorname{grad} F_{p_k}(p) = \operatorname{grad} g(p) - \frac{1}{λ}\log_p p_k
+```
+
+for a point `pk` and a proximal parameter `λ`.
+
+# Fields
+
+* `grad_g`  - a gradient function
+* `pk` - a point on a manifold
+* `λ`  - the prox parameter
+
+# Constructor
+    ProximalDCGrad(grad_g, pk, λ; evaluation=AllocatingEvaluation())
+
+Where you specify whether `grad_g` is [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref),
+while this function still always provides _both_ signatures.
+"""
+mutable struct ProximalDCGrad{E<:AbstractEvaluationType,P,TG,R}
+    grad_g!!::TG
+    pk::P
+    λ::R
+    function LinearizedDCGrad(
+        grad_g::TG, pk::P, λ::R; evaluation::E=AllocatingEvaluation()
+    ) where {TG,P,R,E<:AbstractEvaluationType}
+        return new{E,P,TG,R}(grad_g, pk, λ)
+    end
+end
+function (grad_F::ProximalDCGrad{AllocatingEvaluation})(M, p)
+    return 1 / (2 * grad_F.λ) * distance(M, p, grad_F.pk)^2 + grad_F.grad_g!!(M, p)
+end
+function (grad_F::ProximalDCGrad{AllocatingEvaluation})(M, X, p)
+    copyto!(
+        M, X, p, 1 / (2 * grad_F.λ) * distance(M, p, grad_F.pk)^2 + grad_F.grad_g!!(M, p)
+    )
+    return X
+end
+function (grad_F!::ProximalDCGrad{InplaceEvaluation})(M, X, p)
+    gradF!.grad_g!!(M, X, p)
+    X .-= 1 / gradF!.λ * log(M, p, grad_F!.pk)
+    return X
+end
+function (grad_F!::ProximalDCGrad{InplaceEvaluation})(M, p)
+    X = zero_vector(M, p)
+    gradF!.grad_g!!(M, X, p)
+    X .-= 1 / gradF!.λ * log(M, p, grad_F!.pk)
+    return X
+end
+function set_manopt_parameter!(pdcg::ProximalDCGrad, ::Val{:p}, ρ)
+    return pdcg.pk .= p
+    return pdcg
+end
+function set_manopt_parameter!(pdcg::ProximalDCGrad, ::Val{:λ}, λ)
+    pdcg.λ = λ
+    return pdcg
 end

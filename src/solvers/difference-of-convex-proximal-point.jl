@@ -21,6 +21,8 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 mutable struct DifferenceOfConvexProximalState{
     P,
     T,
+    Pr,
+    St,
     S<:Stepsize,
     SC<:StoppingCriterion,
     RTR<:AbstractRetractionMethod,
@@ -31,6 +33,8 @@ mutable struct DifferenceOfConvexProximalState{
     p::P
     q::P
     r::P
+    sub_problem::Pr
+    sub_state::St
     X::T
     retraction_method::RTR
     inverse_retraction_method::ITR
@@ -38,7 +42,9 @@ mutable struct DifferenceOfConvexProximalState{
     stop::SC
     function DifferenceOfConvexProximalState(
         M::AbstractManifold,
-        p::P;
+        p::P,
+        sub_problem::Pr,
+        sub_state::St;
         X::T=zero_vector(M, p),
         stepsize::S=ArmijoLinesearch(M),
         stopping_criterion::SC=StopWhenChangeLess(1e-8),
@@ -48,17 +54,21 @@ mutable struct DifferenceOfConvexProximalState{
     ) where {
         P,
         T,
+        Pr,
+        St,
         S<:Stepsize,
         SC<:StoppingCriterion,
         I<:AbstractInverseRetractionMethod,
         R<:AbstractRetractionMethod,
         Fλ,
     }
-        return new{P,T,S,SC,R,I,Fλ}(
+        return new{P,T,Pr,St,S,SC,R,I,Fλ}(
             λ,
             p,
             copy(M, p),
             copy(M, p),
+            sub_problem,
+            sub_state,
             X,
             retraction_method,
             inverse_retraction_method,
@@ -151,49 +161,148 @@ For all further details, especially the keyword arguments, see [`difference_of_c
 """
 function difference_of_convex_proximal_point!(
     M,
-    prox_g,
+    grad_g,
     grad_h,
     p;
     X=zero_vector(M, p),
     λ=i -> 1 / 2,
     evaluation=AllocatingEvaluation(),
     cost=nothing,
+    gradient=nothing,
+    prox_g=nothing,
     inverse_retraction_method=default_inverse_retraction_method(M),
     retraction_method=default_retraction_method(M),
     stepsize=ArmijoLinesearch(M),
     stopping_criterion=StopAfterIteration(200),
+    sub_cost=ProximalDCCost(g, copy(M, p), λ(1)),
+    sub_grad=ProximalDCGrad(grad_g, copy(M, p), λ(1); evaluation=evaluation),
+    sub_use_hessian=true,
+    sub_hess=if sub_use_hessian
+        ApproxHessianFiniteDifference(M, copy(M, p0), sub_grad; evaluation=evaluation)
+    else
+        nothing
+    end,
+    sub_kwargs=[],
+    sub_stopping_criterion=StopAfterIteration(300) |
+                           StopWhenGradientNormLess(1e-12) |
+                           StopWhenStepsizeLess(1e-8),
+    sub_stepsize=ArmijoLinesearch(M),
+    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=decorate_state!(
+        GradientDescentState(
+            M, copy(M, p); stepsize=sub_stepsize, stopping_criterion=sub_stopping_criterion
+        );
+        sub_kwargs...,
+    ),
+    sub_objective=if is_nothing(sub_hess)
+        ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+    else
+        ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
+    end,
+    sub_problem::Union{AbstractManoptProblem,Function}=DefaultManoptProblem(
+        M, sub_objective
+    ),
     kwargs...,
 )
     mdcpo = ManifoldDifferenceOfConvexProximalObjective(
-        prox_g, grad_h; cost=cost, evaluation=evaluation
+        grad_h; cost=cost, gradient=gradient, evaluation=evaluation
     )
     dmdcpo = decorate_objective!(M, mdcpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmdcpo)
-    dcps = DifferenceOfConvexProximalState(
-        M,
-        p;
-        X=X,
-        stepsize=stepsize,
-        stopping_criterion=stopping_criterion,
-        inverse_retraction_method=inverse_retraction_method,
-        retraction_method=retraction_method,
-        λ=λ,
-    )
+    if isnothgin(prox_g)
+        dcps = DifferenceOfConvexProximalState(
+            M,
+            p,
+            sub_problem,
+            sub_options;
+            X=X,
+            stepsize=stepsize,
+            stopping_criterion=stopping_criterion,
+            inverse_retraction_method=inverse_retraction_method,
+            retraction_method=retraction_method,
+            λ=λ,
+        )
+    else
+        dcps = DifferenceOfConvexProximalState(
+            M,
+            p,
+            prox_g,
+            evaluation;
+            X=X,
+            stepsize=stepsize,
+            stopping_criterion=stopping_criterion,
+            inverse_retraction_method=inverse_retraction_method,
+            retraction_method=retraction_method,
+            λ=λ,
+        )
+    end
     ddcps = decorate_state!(dcps; kwargs...)
     return get_solver_return(solve!(dmp, ddcps))
 end
-function initialize_solver!(
-    amp::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState
-)
+function initialize_solver!(::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState)
     return dcps
 end
-function step_solver!(amp::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState, i)
+#=
+    Varant I: Allocating closed form of the prox
+=#
+function step_solver!(
+    amp::AbstractManoptProblem,
+    dcps::DifferenceOfConvexProximalState{P,T,<:Function,AllocatingEvaluation},
+    i,
+) where {P,T}
     M = get_manifold(amp)
     # each line is one step in the documented solver steps. Note that we can reuse dcps.X
-    get_gradient!(amp, dcps.X, dcps.p)
+    get_subtrahend_gradient!(amp, dcps.X, dcps.p)
     retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
-    get_proximal_map!(amp, dcps.r, dcps.λ(i), dcps.q)
+    copyto!(M, dcps.r, dcps.sub_problem(M, dcps.λ(i), dcps.q))
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
+    s = dcps.stepsize(amp, dcps, i)
+    retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
+    return dcps
+end
+#=
+    Varant II: In-Place closed form of the prox
+=#
+
+function step_solver!(
+    amp::AbstractManoptProblem,
+    dcps::DifferenceOfConvexProximalState{P,T,<:Function,InplaceEvaluation},
+    i,
+) where {P,T}
+    M = get_manifold(amp)
+    # each line is one step in the documented solver steps. Note that we can reuse dcps.X
+    get_subtrahend_gradient!(amp, dcps.X, dcps.p)
+    retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
+    dcps.sub_problem(M, dcps.r, dcps.λ(i), dcps.q)
+    inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
+    s = dcps.stepsize(amp, dcps, i)
+    retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
+    return dcps
+end
+#=
+    Varant III: Subsolver variant of the prox
+=#
+function step_solver!(
+    amp::AbstractManoptProblem,
+    dcps::DifferenceOfConvexProximalState{
+        P,T,<:AbstractManoptProblem,<:AbstractManoptSolverState
+    },
+    i,
+) where {P,T}
+    M = get_manifold(amp)
+    # Evaluate gradient of h into X
+    get_subtrahend_gradient!(amp, dcps.X, dcps.p)
+    # do a step in that direction
+    retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
+    # use this point (q) for the prox
+    set_manopt_parameter!(dcps.sub_problem, :Cost, :p, dcps.q)
+    set_manopt_parameter!(dcps.sub_problem, :Cost, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Gradient, :p, dcs.q)
+    set_manopt_parameter!(dcps.sub_problem, :Gradient, :λ, dcps.λ(i))
+    set_iterate!(dcps.sub_state, M, dcps.q)
+    copyto!(M, dcps.r, get_solver_result(solve!(dcps.sub_problem, dcps.sub_state)))
+    # use that direction
+    inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
+    # to determine a step size
     s = dcps.stepsize(amp, dcps, i)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     return dcps
