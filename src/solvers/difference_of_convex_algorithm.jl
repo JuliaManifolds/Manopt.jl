@@ -187,7 +187,9 @@ function difference_of_convex_algorithm!(
     stopping_criterion=StopAfterIteration(200),
     kwargs..., #collect rest
 )
-    mdco = ManifoldDifferenceOfConvexObjective(f, ∂h; gradient=gradient, evaluation=evaluation)
+    mdco = ManifoldDifferenceOfConvexObjective(
+        f, ∂h; gradient=gradient, evaluation=evaluation
+    )
     dmdco = decorate_objective!(M, mdco; kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
     # For now only subsolvers - TODO closed form solution init here

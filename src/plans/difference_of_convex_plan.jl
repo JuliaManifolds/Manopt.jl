@@ -30,7 +30,7 @@ struct ManifoldDifferenceOfConvexObjective{E,TCost,TGrad,TSubGrad} <:
     ∂h!!::TSubGrad
     function ManifoldDifferenceOfConvexObjective(
         cost::TC, ∂h::TSH; gradient::TG=nothing, evaluation::ET=AllocatingEvaluation()
-    ) where {ET<:AbstractEvaluationType, TC,TG,TSH}
+    ) where {ET<:AbstractEvaluationType,TC,TG,TSH}
         return new{ET,TC,TG,TSH}(cost, gradient, ∂h)
     end
 end
@@ -225,7 +225,10 @@ struct ManifoldDifferenceOfConvexProximalObjective{
     gradient!!::TGrad
     grad_h!!::THGrad
     function ManifoldDifferenceOfConvexProximalObjective(
-        grad_h::THG; cost::TC=nothing, gradient::TG=nothing, evaluation::ET=AllocatingEvaluation()
+        grad_h::THG;
+        cost::TC=nothing,
+        gradient::TG=nothing,
+        evaluation::ET=AllocatingEvaluation(),
     ) where {ET<:AbstractEvaluationType,TC,TG,THG}
         return new{ET,THG,TC,TG}(cost, gradient, grad_h)
     end
@@ -241,7 +244,6 @@ a [`DifferenceOfConvexProxProblem`](@ref)` `P` at the point `p` (in place of X).
 get_subtrahend_gradient(
     M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p
 )
-
 
 function get_subtrahend_gradient(
     M::AbstractManifold,
