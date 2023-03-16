@@ -6,7 +6,7 @@ describe the trust-regions solver, with
 
 
 # Fields
-where all but `x` are keyword arguments in the constructor
+where all but `p` are keyword arguments in the constructor
 
 * `p` : the current iterate
 * `stop` : (`StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6))
@@ -38,7 +38,11 @@ where all but `x` are keyword arguments in the constructor
 
 # Constructor
 
-    TrustRegionsState(M, p)
+    TrustRegionsState(M,
+        p=rand(M),
+        X=zero_vector(M,p),
+        tcg_state=TruncatedConjugateGradientState(M, p, X),
+)
 
 construct a trust-regions Option with all other fields from above being
 keyword arguments
@@ -106,9 +110,11 @@ mutable struct TrustRegionsState{
 end
 function TrustRegionsState(
     M::TM,
-    p::P,
-    X::T,
-    tcg_state::TruncatedConjugateGradientState{P,T,R};
+    p::P=rand(M),
+    X::T=zero_vector(M, p),
+    tcg_state::TruncatedConjugateGradientState{P,T,R}=TruncatedConjugateGradientState(
+        M, p, X
+    );
     ρ_prime::R=0.1,
     ρ_regularization::R=1000.0,
     randomize::Bool=false,

@@ -25,7 +25,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    TruncatedConjugateGradientState(M, p, x, η;
+    TruncatedConjugateGradientState(M, p=rand(M), η=zero_vector(M,p);
         trust_region_radius=injectivity_radius(M)/4,
         randomize=false,
         θ=1.0,
@@ -63,8 +63,8 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
     initialResidualNorm::Float64
     function TruncatedConjugateGradientState(
         M::AbstractManifold,
-        p::P,
-        η::T;
+        p::P=rand(M),
+        η::T=zero_vector(M, p);
         trust_region_radius::R=injectivity_radius(M) / 4.0,
         randomize::Bool=false,
         project!::F=copyto!,
