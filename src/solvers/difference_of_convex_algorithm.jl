@@ -157,7 +157,7 @@ function difference_of_convex_algorithm!(
     initial_vector=zero_vector(M, p),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     sub_cost=LinearizedDCCost(g, p, initial_vector),
-    sub_grad=LinearizedSubProblemGrad(grad_g, p, initial_vector; evaluation=evaluation),
+    sub_grad=LinearizedDCGrad(grad_g, p, initial_vector; evaluation=evaluation),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(1e-12) |
