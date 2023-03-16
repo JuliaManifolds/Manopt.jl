@@ -154,13 +154,14 @@ function difference_of_convex_algorithm!(
     ∂h,
     p;
     grad_g=nothing,
+    gradient=nothing,
     initial_vector=zero_vector(M, p),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     sub_cost=LinearizedDCCost(g, p, initial_vector),
     sub_grad=LinearizedDCGrad(grad_g, p, initial_vector; evaluation=evaluation),
     sub_use_hessian=true,
     sub_hess=if sub_use_hessian
-        ApproxHessianFiniteDifference(M, copy(M, p0), sub_grad; evaluation=evaluation)
+        ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation)
     else
         nothing
     end,
@@ -175,7 +176,7 @@ function difference_of_convex_algorithm!(
         );
         sub_kwargs...,
     ),
-    sub_objective=if is_nothing(sub_hess)
+    sub_objective=if isnothing(sub_hess)
         ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
     else
         ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
@@ -186,7 +187,7 @@ function difference_of_convex_algorithm!(
     stopping_criterion=StopAfterIteration(200),
     kwargs..., #collect rest
 )
-    mdco = ManifoldDifferenceOfConvexObjective(f, ∂h; evaluation=evaluation)
+    mdco = ManifoldDifferenceOfConvexObjective(f, ∂h; gradient=gradient, evaluation=evaluation)
     dmdco = decorate_objective!(M, mdco; kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
     # For now only subsolvers - TODO closed form solution init here
@@ -221,14 +222,19 @@ function step_solver!(
     i,
 )
     M = get_manifold(amp)
+    get_subtrahend_gradient!(amp, dcs.X, dcs.p)
     set_manopt_parameter!(dcs.sub_problem, :Cost, :p, dcs.p)
     set_manopt_parameter!(dcs.sub_problem, :Cost, :X, dcs.X)
     set_manopt_parameter!(dcs.sub_problem, :Gradient, :p, dcs.p)
     set_manopt_parameter!(dcs.sub_problem, :Gradient, :X, dcs.X)
-    set_iterate!(dcs.sub_state, M, dcs.p)
+    set_iterate!(dcs.sub_state, M, copy(M, dcs.p))
     solve!(dcs.sub_problem, dcs.sub_state) # call the subsolver
     # copy result from subsolver to current iterate
     copyto!(M, dcs.p, get_solver_result(dcs.sub_state))
+    # small hack: store gradient_f in X at end of iteration for a check
+    if !isnothing(get_gradient_function(get_objective(amp)))
+        get_gradient!(amp, dcs.X, dcs.p)
+    end
     return dcs
 end
 #

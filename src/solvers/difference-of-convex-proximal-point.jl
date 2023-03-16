@@ -137,10 +137,10 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
     > doi: [10.1007/s10589-020-00173-3](https://doi.org/10.1007/s10589-020-00173-3)
 """
 function difference_of_convex_proximal_point(
-    M::AbstractManifold, prox_g, grad_h, p; kwargs...
+    M::AbstractManifold, g, grad_g, grad_h, p; kwargs...
 )
     q = copy(M, p)
-    difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
+    difference_of_convex_proximal_point!(M, g, grad_g, grad_h, q; kwargs...)
     return q
 end
 
@@ -161,6 +161,7 @@ For all further details, especially the keyword arguments, see [`difference_of_c
 """
 function difference_of_convex_proximal_point!(
     M,
+    g,
     grad_g,
     grad_h,
     p;
@@ -169,7 +170,6 @@ function difference_of_convex_proximal_point!(
     evaluation=AllocatingEvaluation(),
     cost=nothing,
     gradient=nothing,
-    prox_g=nothing,
     inverse_retraction_method=default_inverse_retraction_method(M),
     retraction_method=default_retraction_method(M),
     stepsize=ArmijoLinesearch(M),
@@ -178,7 +178,7 @@ function difference_of_convex_proximal_point!(
     sub_grad=ProximalDCGrad(grad_g, copy(M, p), λ(1); evaluation=evaluation),
     sub_use_hessian=true,
     sub_hess=if sub_use_hessian
-        ApproxHessianFiniteDifference(M, copy(M, p0), sub_grad; evaluation=evaluation)
+        ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation)
     else
         nothing
     end,
@@ -193,7 +193,7 @@ function difference_of_convex_proximal_point!(
         );
         sub_kwargs...,
     ),
-    sub_objective=if is_nothing(sub_hess)
+    sub_objective=if isnothing(sub_hess)
         ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
     else
         ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
@@ -208,33 +208,18 @@ function difference_of_convex_proximal_point!(
     )
     dmdcpo = decorate_objective!(M, mdcpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmdcpo)
-    if isnothgin(prox_g)
-        dcps = DifferenceOfConvexProximalState(
-            M,
-            p,
-            sub_problem,
-            sub_options;
-            X=X,
-            stepsize=stepsize,
-            stopping_criterion=stopping_criterion,
-            inverse_retraction_method=inverse_retraction_method,
-            retraction_method=retraction_method,
-            λ=λ,
-        )
-    else
-        dcps = DifferenceOfConvexProximalState(
-            M,
-            p,
-            prox_g,
-            evaluation;
-            X=X,
-            stepsize=stepsize,
-            stopping_criterion=stopping_criterion,
-            inverse_retraction_method=inverse_retraction_method,
-            retraction_method=retraction_method,
-            λ=λ,
-        )
-    end
+    dcps = DifferenceOfConvexProximalState(
+        M,
+        p,
+        sub_problem,
+        sub_state;
+        X=X,
+        stepsize=stepsize,
+        stopping_criterion=stopping_criterion,
+        inverse_retraction_method=inverse_retraction_method,
+        retraction_method=retraction_method,
+        λ=λ,
+    )
     ddcps = decorate_state!(dcps; kwargs...)
     return get_solver_return(solve!(dmp, ddcps))
 end
@@ -296,14 +281,18 @@ function step_solver!(
     # use this point (q) for the prox
     set_manopt_parameter!(dcps.sub_problem, :Cost, :p, dcps.q)
     set_manopt_parameter!(dcps.sub_problem, :Cost, :λ, dcps.λ(i))
-    set_manopt_parameter!(dcps.sub_problem, :Gradient, :p, dcs.q)
+    set_manopt_parameter!(dcps.sub_problem, :Gradient, :p, dcps.q)
     set_manopt_parameter!(dcps.sub_problem, :Gradient, :λ, dcps.λ(i))
-    set_iterate!(dcps.sub_state, M, dcps.q)
-    copyto!(M, dcps.r, get_solver_result(solve!(dcps.sub_problem, dcps.sub_state)))
+    set_iterate!(dcps.sub_state, M, copy(M, dcps.q))
+    solve!(dcps.sub_problem, dcps.sub_state)
+    copyto!(M, dcps.r, get_solver_result(dcps.sub_state))
     # use that direction
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
     # to determine a step size
     s = dcps.stepsize(amp, dcps, i)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
+    if !isnothing(get_gradient_function(get_objective(amp)))
+        get_gradient!(amp, dcps.X, dcps.p)
+    end
     return dcps
 end
