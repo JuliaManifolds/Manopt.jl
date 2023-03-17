@@ -32,7 +32,7 @@ function check_maxfunc(M)
 
         p0 = data[1]
         
-        diam = 0.1 #level_set_diameter(M, F3, subgradF3, p0)
+        diam = level_set_diameter(M, F3, subgradF3, p0)
         println("Level set diameter = $diam")
 
         bundle_min = bundle_method(

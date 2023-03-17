@@ -47,11 +47,43 @@ asymptote_export_SPD("export2.fig"; data=img2, scale_axes=(12.,12.,12.), color_s
 # ╔═╡ 7c03e397-1dd8-4f58-9bb9-c412284b8690
 render_asymptote("export2.fig")
 
-# ╔═╡ 5582ddd4-396a-4609-892d-84060303e461
-
-
 # ╔═╡ eee8994b-7167-4e06-9f61-a4bd54c399f3
-s = subgradient_method(N, f, gradf, img2; stopping_criterion=StopAfterIteration(90), debug=[:Iteration, :Cost, "\n"])
+#s = subgradient_method(N, f, gradf, img2; stopping_criterion=StopAfterIteration(90), debug=[:Iteration, :Cost, "\n"])
+
+# ╔═╡ d1cd19f4-1412-4831-bed3-8b1abf25bfa0
+begin
+	img3 = artificial_SPD_image2(16)
+	asymptote_export_SPD("export3.fig"; data=img3, scale_axes=(8.,8.,8.), color_scheme=ColorSchemes.hsv)
+	render_asymptote("export3.fig")
+end
+
+# ╔═╡ ec0de758-b00b-4bdd-a0d3-b2361b03c74a
+begin
+	data=img3#map(p -> exp(M, p, rand(M; vector_at=p, tangent_distr=:Rician, σ=0.03)), img3) 
+	α = 6.0
+	L = PowerManifold(M, NestedPowerRepresentation(), size(img3)[1], size(img3)[2])
+	g(L, q) = 1 / α * costL2TV(L, data, α, q)
+	gradg(L, q) = 1 / α * grad_distance(L, data, q) + grad_TV(L, q)
+end
+
+# ╔═╡ 6749f982-99cb-4dd2-ad56-9aec03a3663d
+s=subgradient_method(L, g, gradg, data; 
+stepsize = ConstantStepsize(1e-2),
+debug=[:Iteration, (:Cost,"F(p): %1.15e"), "\n"],
+stopping_criterion=StopAfterIteration(5000))
+
+# ╔═╡ d9416139-6170-421a-b181-641d50c98695
+b=bundle_method(L, g, gradg, data; 
+m=0.9, diam=100., debug=[:Iteration, (:Cost,"F(p): %1.16e"), "\n"], stopping_criterion=StopAfterIteration(20))
+
+# ╔═╡ ed110367-2d6c-4eba-adb1-14ae9a4b1175
+#g(L, s) ≈ g(L, b)
+
+# ╔═╡ a9d0b9a7-1ed3-4f1e-aefe-8e518f1899bf
+begin
+	asymptote_export_SPD("b.fig"; data=s, scale_axes=(8.,8.,8.), color_scheme=ColorSchemes.hsv)
+	render_asymptote("b.fig")
+end
 
 # ╔═╡ Cell order:
 # ╠═1c1f69c8-c330-11ed-2117-2ba0918ec216
@@ -66,5 +98,10 @@ s = subgradient_method(N, f, gradf, img2; stopping_criterion=StopAfterIteration(
 # ╠═2aa71666-c59f-416b-b11a-01931a08f695
 # ╠═997a9286-1788-46e6-8a5f-ae8cee7d43a2
 # ╠═7c03e397-1dd8-4f58-9bb9-c412284b8690
-# ╠═5582ddd4-396a-4609-892d-84060303e461
 # ╠═eee8994b-7167-4e06-9f61-a4bd54c399f3
+# ╠═d1cd19f4-1412-4831-bed3-8b1abf25bfa0
+# ╠═ec0de758-b00b-4bdd-a0d3-b2361b03c74a
+# ╠═6749f982-99cb-4dd2-ad56-9aec03a3663d
+# ╠═d9416139-6170-421a-b181-641d50c98695
+# ╠═ed110367-2d6c-4eba-adb1-14ae9a4b1175
+# ╠═a9d0b9a7-1ed3-4f1e-aefe-8e518f1899bf

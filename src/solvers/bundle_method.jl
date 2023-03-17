@@ -215,17 +215,17 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
 
     # Check transported subgradients ε-inequality
     # v = rand(M; vector_at = bms.bundle_points[1][1])
-    v = get_subgradient(mp, bms.bundle_points[1][1])
-    v = rand(0.0:bms.diam) * v/norm(M, bms.bundle_points[1][1], v)
-    r = retract(M, bms.bundle_points[1][1], -v, Manifolds.default_retraction_method(M, typeof(bms.bundle_points[1][1])))
-    r = rand(M)
-    if (
-        get_cost(mp, r) <
-        get_cost(mp, bms.p_last_serious) +
-        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
-    )
-        println("No")
-    end
+    # v = get_subgradient(mp, bms.bundle_points[1][1])
+    # v = rand(0.0:bms.diam) * v/norm(M, bms.bundle_points[1][1], v)
+    # r = retract(M, bms.bundle_points[1][1], -v, Manifolds.default_retraction_method(M, typeof(bms.bundle_points[1][1])))
+    # r = rand(M)
+    # if (
+    #     get_cost(mp, r) <
+    #     get_cost(mp, bms.p_last_serious) +
+    #     inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
+    # )
+    #     println("No")
+    # end
 
     bms.ξ = -norm(M, bms.p_last_serious, g)^2 - ε
     retract!(M, bms.p, bms.p_last_serious, -g, bms.retraction_method)
