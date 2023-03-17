@@ -170,7 +170,6 @@ function difference_of_convex_algorithm!(
     else
         StopAfterIteration(300) | StopWhenChangeLess(1e-8) | StopWhenGradientNormLess(1e-8)
     end,
-    StopAfterIteration(200),
     # Subsolver Magic Cascade.
     sub_cost=LinearizedDCCost(g, p, initial_vector),
     sub_grad=if isnothing(grad_g)
@@ -190,7 +189,7 @@ function difference_of_convex_algorithm!(
         );
         sub_kwargs...,
     ),
-    sub_objective=if isnothing(sub_cost) || isnothing(sub_options)
+    sub_objective=if isnothing(sub_cost) || isnothing(sub_grad)
         nothing
     else
         if isnothing(sub_hess)
@@ -199,7 +198,7 @@ function difference_of_convex_algorithm!(
             ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
         end
     end,
-    sub_problem::Union{AbstractManoptProblem,Function}=if isnothing(sub_objetcive)
+    sub_problem::Union{AbstractManoptProblem,Function}=if isnothing(sub_objective)
         nothing
     else
         DefaultManoptProblem(M, sub_objective)
@@ -213,7 +212,7 @@ function difference_of_convex_algorithm!(
     dmp = DefaultManoptProblem(M, dmdco)
     # For now only subsolvers - TODO closed form solution init here
 
-    if isnothting(sub_problem)
+    if isnothing(sub_problem)
         error(
             """
             Subproblem not correctly intialized. Please provide _either_

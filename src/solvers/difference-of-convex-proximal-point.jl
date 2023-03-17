@@ -139,11 +139,9 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
     Computational Optimization and Applications (76), 2020, pp. 649–673.
     > doi: [10.1007/s10589-020-00173-3](https://doi.org/10.1007/s10589-020-00173-3)
 """
-function difference_of_convex_proximal_point(
-    M::AbstractManifold, g, grad_g, grad_h, p; kwargs...
-)
+function difference_of_convex_proximal_point(M::AbstractManifold, grad_h, p; kwargs...)
     q = copy(M, p)
-    difference_of_convex_proximal_point!(M, g, grad_g, grad_h, q; kwargs...)
+    difference_of_convex_proximal_point!(M, grad_h, q; kwargs...)
     return q
 end
 function difference_of_convex_proximal_point(
@@ -201,7 +199,7 @@ function difference_of_convex_proximal_point!(
         );
         sub_kwargs...,
     ),
-    sub_objective=if isnothing(sub_cost) || isnothing(sub_options)
+    sub_objective=if isnothing(sub_cost) || isnothing(sub_grad)
         nothing
     else
         if isnothing(sub_hess)
@@ -210,7 +208,7 @@ function difference_of_convex_proximal_point!(
             ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
         end
     end,
-    sub_problem::Union{AbstractManoptProblem,Function}=if isnothing(sub_objetcive)
+    sub_problem::Union{AbstractManoptProblem,Function}=if isnothing(sub_objective)
         nothing
     else
         DefaultManoptProblem(M, sub_objective)
