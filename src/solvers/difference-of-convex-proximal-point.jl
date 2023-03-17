@@ -141,15 +141,13 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 """
 function difference_of_convex_proximal_point(M::AbstractManifold, grad_h, p; kwargs...)
     q = copy(M, p)
-    difference_of_convex_proximal_point!(M, grad_h, q; kwargs...)
-    return q
+    return difference_of_convex_proximal_point!(M, grad_h, q; kwargs...)
 end
 function difference_of_convex_proximal_point(
     M::AbstractManifold, prox_g, grad_h, p; kwargs...
 )
     q = copy(M, p)
-    difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
-    return q
+    return difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
 end
 @doc raw"""
     difference_of_convex_proximal_point!(M, prox_g, grad_h, p; cost=nothing, kwargs...)
